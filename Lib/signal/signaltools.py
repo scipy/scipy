@@ -3,10 +3,29 @@ import sigtools
 import MLab
 
 modedict = {'valid':0, 'same':1, 'full':2}
+boundary = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
+                                                                            
+def _valfrommode(mode):
+    try:
+        val = modedict[mode]
+    except KeyError:
+        if val not in [0,1,2]:
+            raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
+        val = mode
+    return val
+
+def _bvalfromboundary(boundary):
+    try:
+        val = boundarydict[boundary]
+    except KeyError:
+        if val not in [0,1,2]:
+            raise ValueError, "Acceptable boundary flags are 'fill', 'wrap' (or 'circular'), \n  and 'symm' (or 'symmetric')."
+        val = boundary << 2
+    return val
 
 
 def correlateND(volume, kernel, mode='full'):
-    """ correlateND(in1, in2, mode='full')  Cross-correlation of in1 with in2.
+    """ correlateND(in1, in2, mode='full')  Filtering of in1 with in2.
 
   Description:
 
@@ -39,12 +58,7 @@ def correlateND(volume, kernel, mode='full'):
         volume = temp
         del temp
 
-    try:
-        val = modedict[mode]
-    except KeyError:
-        if val not in [0,1,2]:
-            raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
-        val = mode
+    val = _valfrommode(mode)
 
     return sigtools._correlateND(volume, kernel, val)
 
@@ -82,13 +96,8 @@ def convolveND(volume,kernel,mode='full'):
         del temp
 
     slice_obj = [slice(None,None,-1)]*len(kernel.shape)
-    try:
-        val = modedict[mode]
-    except KeyError:
-        if val not in [0,1,2]:
-            raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
-        val = mode
-        
+    val = _valfrommode(mode)
+    
     return sigtools._correlateND(volume,kernel[slice_obj],val)
 
 def order_filterND(a, domain, order):
@@ -108,9 +117,9 @@ def order_filterND(a, domain, order):
     in -- an N-dimensional input array.
     domain -- a mask array with the same number of dimensions as in.  Each
               dimension should have an odd number of elements.
-    rank -- an non-negative integer which selects the element from the sorted
-            list (0 corresponds to the largest element, 1 is the next largest
-            element, etc.)
+    rank -- an non-negative integer which selects the element from the
+            sorted list (0 corresponds to the largest element, 1 is the
+            next largest element, etc.)
 
   Output: (out,)
 
@@ -220,15 +229,221 @@ def wienerND(im,mysize=None,noise=None):
 
     return out
 
-def convolve2d():
-    pass
+def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
+    """ convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0)
+
+  Description:
+
+     Convolve in1 and in2 with output size determined by mode and boundary
+     conditions determined by boundary and fillvalue.
+
+  Inputs:
+
+    in1 -- a 2-dimensional array.
+    in2 -- a 2-dimensional array.
+    mode -- a flag indicating the size of the output
+            'valid'  (0): The output consists only of those elements that
+                            do not rely on the zero-padding.
+            'same'   (1): The output is the same size as the input centered
+                            with respect to the 'full' output.
+            'full'   (2): The output is the full discrete linear convolution
+                            of the inputs. (*Default*)
+    boundary -- a flag indicating how to handle boundaries
+                'fill' : pad input arrays with fillvalue. (*Default*)
+                'wrap' : circular boundary conditions.
+                'symm' : symmetrical boundary conditions.
+    fillvalue -- value to fill pad input arrays with (*Default* = 0)
+
+  Outputs:  (out,)
+
+    out -- a 2-dimensional array containing a subset of the discrete linear
+           convolution of in1 with in2.
+
+    """
+    val = _valfrommode(mode)
+    bval = _bvalfromboundary(boundary)
+        
+    return sigtools._convolve2d(volume,kernel,1,val,bval,fillvalue)
 
 def correlate2d():
-    pass
+    """ correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0)
 
-def medfilt2d():
-    pass
+  Description:
+
+     Cross correlate in1 and in2 with output size determined by mode
+     and boundary conditions determined by boundary and fillvalue.
+
+  Inputs:
+
+    in1 -- a 2-dimensional array.
+    in2 -- a 2-dimensional array.
+    mode -- a flag indicating the size of the output
+            'valid'  (0): The output consists only of those elements that
+                            do not rely on the zero-padding.
+            'same'   (1): The output is the same size as the input centered
+                            with respect to the 'full' output.
+            'full'   (2): The output is the full discrete linear convolution
+                            of the inputs. (*Default*)
+    boundary -- a flag indicating how to handle boundaries
+                'fill' : pad input arrays with fillvalue. (*Default*)
+                'wrap' : circular boundary conditions.
+                'symm' : symmetrical boundary conditions.
+    fillvalue -- value to fill pad input arrays with (*Default* = 0)
+
+  Outputs:  (out,)
+
+    out -- a 2-dimensional array containing a subset of the discrete linear
+           cross-correlation of in1 with in2.
+
+    """
+    val = _valfrommode(mode)
+    bval = _bvalfromboundary(boundary)
+        
+    return sigtools._convolve2d(volume,kernel,0,val,bval,fillvalue)    
+
+def medfilt2d(input, kernel_size=3):
+    """
+ medfilt2d(in, kernel_size=3)  Perform a median filter on input array.
+
+  Description:
+
+    Apply a median filter to the input array using a local window-size
+    given by kernel_size (must be odd).
+
+  Inputs:
+
+    in -- An 2 dimensional input array.
+    kernel_size -- A scalar or an length-2 list giving the size of the
+                   median filter window in each dimension.  Elements of
+                   kernel_size should be odd.  If kernel_size is a scalar,
+                   then this scalar is used as the size in each dimension.
+
+  Outputs: (out,)
+
+    out -- An array the same size as input containing the median filtered
+           result.
+    """
+    image = MLab.asarray(input)
+    if kernel_size == None:
+        kernel_size = [3] * 2
+    kernel_size = MLab.asarray(kernel_size)
+    if len(kernel_size.shape) == 0:
+        kernel_size = [kernel_size.toscalar()] * 2
+    kernel_size = MLab.asarray(kernel_size)
+
+    for size in kernel_size:
+        if (size % 2) != 1:
+            raise ValueError, "Each element of kernel_size should be odd." 
+
+    return sigtools._medfilt2d(image, kernel_size)
+
+def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
+          maxiter=25, grid_density=16):
+    """
+ remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
+       maxiter=25, grid_density=16)
+
+  Description:
+
+    Calculate the filter-coefficients for the finite impulse response
+    (FIR) filter whose transfer function minimizes the maximum error
+    between the desired gain and the realized gain in the specified bands
+    using the remez exchange algorithm.
+
+  Inputs:
+
+    numtaps -- The desired number of taps in the filter.
+    bands -- A montonic sequence containing the band edges.  All elements
+             must be non-negative and less than 1/2 the sampling frequency
+             as given by Hz.
+    desired -- A sequency half the size of bands containing the desired gain
+               in each of the specified bands
+    weight -- A relative weighting to give to each band region.
+    type --- The type of filter:
+             'bandpass' : flat response in bands.
+             'differentiator' : frequency proportional response in bands.
+
+  Outputs: (out,)
+
+    out -- A rank-1 array containing the coefficients of the optimal
+           (in a minimax sense) filter.
     
+    """
+    # Convert type
+    try:
+        tnum = {'bandpass':1, 'differentiator':2}[type]
+    except KeyError:
+        raise ValueError, "Type must be 'bandpass', or 'differentiator'"
+
+    # Convert weight
+    if weight is None:
+        weight = [1] * len(desired)
+
+    return sigtools._remez(numtaps, bands, desired, weight, tnum, Hz,
+                           maxiter, grid_density)
+
+def lfilter(b, a, x, axis=-1, zi=None):
+    """
+ lfilter(b, a, x, axis=-1, zi=None)  Filter data in 1-D with an IIR or FIR filter
+
+  Description
+
+    Filter a data sequence, x, using a digital filter.  This works for many
+    fundamental data types (including Object type).  The filter is a direct
+    form II transposed implementation of the standard difference equation
+    (see "Algorithm"). 
+
+  Inputs:
+
+    b -- The numerator coefficient vector in a 1-D sequence.
+    a -- The denominator coefficient vector in a 1-D sequence.  If a[0]
+         is not 1, then both a and b are normalized by a[0].
+    x -- An N-dimensional input array.
+    axis -- The axis of the input data array along which to apply the
+            linear filter. The filter is applied to each subarray along
+            this axis (*Default* = -1)
+    zi -- Initial conditions for the filter delays.  It is a vector
+          (or array of vectors) of length max(len(a),len(b))-1.  If
+          zi=None or is not given then initial rest is assumed.
+
+  Outputs: (y, {zf})
+
+    y -- The output of the digital filter.
+    zf -- If zi is None, this is not returned, otherwise, zf holds the
+          final filter delay values.
+
+  Algorithm:
+
+    The filter function is implemented as a direct II transposed structure.
+    This means that the filter implements
+
+    y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
+                     - a[1]*y[n-1] + ... + a[na]*y[n-na]
+
+    using the following difference equaitions:
+
+    y[m] = b[0]*x[m] + z[0,m-1]
+    z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
+    ...
+    z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
+    z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
+
+    where m is the output sample number and n=max(len(a),len(b)) is the
+    model order.
+
+    The rational transfer function describing this filter in the
+    z-transform domain is
+                                -1               -nb
+                    b[0] + b[1]z  + ... + b[nb] z
+            Y(z) = ---------------------------------- X(z)
+                                -1               -na
+                    a[0] + a[1]z  + ... + a[na] z
+                    
+    """
+    if zi is None:
+        return sigtools._linear_filter(b, a, x, axis)
+    else:
+        return sigtools._linear_filter(b, a, x, axis, zi)
 
 def test():
     a = [3,4,5,6,5,4]

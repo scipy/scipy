@@ -2111,7 +2111,7 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 }
 
 
-static char doc_remez[] = "h = _remez(numtaps, bands, des, weight, Hz, type, maxiter, grid_density) \n  returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse \n  response given a set of band edges, the desired response on those bands,\n  and the weight given to the error in those bands.  Bands is a monotonic\n   vector with band edges given in frequency domain where Hz is the sampling\n   frequency.";
+static char doc_remez[] = "h = _remez(numtaps, bands, des, weight, type, Hz, maxiter, grid_density) \n  returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse \n  response given a set of band edges, the desired response on those bands,\n  and the weight given to the error in those bands.  Bands is a monotonic\n   vector with band edges given in frequency domain where Hz is the sampling\n   frequency.";
  
 static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
         PyObject *bands, *des, *weight;
@@ -2151,7 +2151,7 @@ static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
 	numbands = a_des->dimensions[0];
 	if ((a_bands->dimensions[0] != 2*numbands) || (a_weight->dimensions[0] != numbands)) {
 	  PyErr_SetString(PyExc_ValueError,
-			  "The inputs des and weight must have same length.  The input bands must have twice the length.");
+			  "The inputs desired and weight must have same length.\n  The input bands must have twice this length.");
 	  goto fail;
 	}
 
@@ -2248,6 +2248,9 @@ static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 	    break;
 	case PyArray_DOUBLE:
 	    d_medfilt2((double *)DATA(a_image), (double *)DATA(a_out), Nwin, DIMS(a_image));
+	    break;
+	default:
+	  PYERR("2D median filter only supports Int8, Float32, and Float64.");
 	}
     }
 
