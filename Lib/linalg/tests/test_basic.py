@@ -18,7 +18,7 @@ Bugs:
 import Numeric
 from Numeric import arange, add, array
 
-from scipy_base.testing import rand
+from scipy_test.testing import rand
 def random(size):
     return rand(*size)
 
@@ -28,9 +28,9 @@ sys.path.insert(0,d)
 from __init__ import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 del sys.path[0]
 
-from scipy_base.testing import assert_array_almost_equal, assert_equal
-from scipy_base.testing import assert_almost_equal, assert_array_equal
-from scipy_base.testing import ScipyTestCase
+from scipy_test.testing import assert_array_almost_equal, assert_equal
+from scipy_test.testing import assert_almost_equal, assert_array_equal
+from scipy_test.testing import ScipyTestCase
 import unittest
 
 def get_mat(n):

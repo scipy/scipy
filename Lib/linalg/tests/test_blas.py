@@ -10,9 +10,9 @@
 from Numeric import arange, add, array
 import math
 
-from scipy_base.testing import assert_array_almost_equal, assert_equal
-from scipy_base.testing import assert_almost_equal, assert_array_equal
-from scipy_base.testing import ScipyTestCase
+from scipy_test.testing import assert_array_almost_equal, assert_equal
+from scipy_test.testing import assert_almost_equal, assert_array_equal
+from scipy_test.testing import ScipyTestCase
 import unittest
 from scipy_distutils.misc_util import PostponedException
 

@@ -14,7 +14,7 @@
 import Numeric
 dot = Numeric.dot
 
-from scipy_base.testing import rand
+from scipy_test.testing import rand
 def random(size):
     return rand(*size)
 
@@ -24,9 +24,9 @@ sys.path.insert(0,d)
 from __init__ import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
 del sys.path[0]
 
-from scipy_base.testing import assert_array_almost_equal
-from scipy_base.testing import assert_almost_equal
-from scipy_base.testing import ScipyTestCase
+from scipy_test.testing import assert_array_almost_equal
+from scipy_test.testing import assert_almost_equal
+from scipy_test.testing import ScipyTestCase
 import unittest
 
 
@@ -119,6 +119,18 @@ class test_lu(ScipyTestCase):
         assert_array_almost_equal(Numeric.dot(pl,u),a)
 
     #XXX: need more tests
+
+class test_lu_solve(unittest.TestCase):        
+    def check_lu(self):
+        a = scipy.stats.random((10,10))
+        b = scipy.stats.random(10)
+        
+        x1 = scipy.linalg.solve(a,b)
+        
+        lu_a = scipy.linalg.lu_factor(a)
+        x2 = scipy.linalg.lu_solve(lu_a,b)
+        
+        assert_array_equal(x1,x2)
 
 class test_svd(ScipyTestCase):
 
