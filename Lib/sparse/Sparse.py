@@ -311,7 +311,9 @@ class csc_matrix(spmatrix):
             raise ValueError, "Data and row list should have same length"
         if (len(self.indptr) != N+1):
             raise ValueError, "Index pointer should be of of size N+1"
-        if (nzmax>0) and (max(self.rowind[:nnz]) >= M):
+        if (nzmax < nnz):
+            raise ValueError, "Nzmax must not be less than nnz."
+        if (nnz>0) and (max(self.rowind[:nnz]) >= M):
             raise ValueError, "Row-values must be < M."
         if (self.indptr[-1] > len(self.rowind)):
             raise ValueError, \
@@ -682,7 +684,9 @@ class csr_matrix(spmatrix):
             raise ValueError, "Data and row list should have same length"
         if (len(self.indptr) != M+1):
             raise ValueError, "Index pointer should be of length #rows + 1"
-        if (len(self.colind)>0) and (max(self.colind) >= N):
+        if (nzmax < nnz):
+            raise ValueError, "Nzmax must not be less than nnz."
+        if (nnz>0) and (max(self.colind[:nnz]) >= M):
             raise ValueError, "Column-values must be < N."
         if (self.indptr[-1] > len(self.colind)):
             raise ValueError, \
