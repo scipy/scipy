@@ -6,11 +6,14 @@
 from scipy_version import scipy_version as __version__
 
 # SciPy has levels
-# Level 0 -- Numeric and core routines in basic.py, misc.py, and handy.py
+# Level 0 -- Numeric and core routines in scipy_base
 #
-# Level 1 -- Level 0 + fft, special, linalg (these can depend on Level 0), stats
+# Level 1 -- Level 0 + fft, special, linalg, stats
 # Level 1a -- Core routines which depend on Level 1.
+
 # Level 2 -- plotting interface.
+#
+# Level 3
 # Packages which define own functions plus depend on Levels 0-2.
 #
 # Level 0, 1, 2 should be imported in order and then other levels imported
