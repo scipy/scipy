@@ -442,7 +442,7 @@ def toeplitz(c,r=None):
         return c   
     if r is None:
         r = c
-        r[0] = conjugoate(r[0])
+        r[0] = conjugate(r[0])
         c = conjugate(c)
     r,c = map(asarray_chkfinite,(r,c))
     r,c = map(ravel,(r,c))
