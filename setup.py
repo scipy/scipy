@@ -26,10 +26,23 @@ elif 'bdist_rpm' in sys.argv:
 else:
     command_sdist = 0
 
-# Note that when running bdist_rpm, scipy_core directory does
-# not exist. So, scipy_distutils must be installed before
-# running bdist_rpm.
-sys.path.insert(0,'scipy_core')
+# Try to detect if we are building in the scipy source directory (the most
+# common case).  We do this by checking for a scipy_core subdir.  If this is
+# the case, we add the current dir+/scipy_core to sys.path and to the
+# environment's PYTHONPATH, so that bdist_rpm works without requiring
+# scipy_distutils to be previously installed. However, such a situation
+# is abnormal because building scipy requires f2py, and f2py in turn
+# requires scipy_distutils (though, f2py can be installed without
+# scipy_distutils).
+
+scipy_core_dir = os.path.join(os.getcwd(),'scipy_core')
+if os.path.isdir(scipy_core_dir):
+    ppath = os.environ.setdefault('PYTHONPATH',scipy_core_dir)
+    if ppath != scipy_core_dir:
+        ppath = '%s%s%s' % (scipy_core_dir,os.pathsep,ppath)
+    os.environ['PYTHONPATH'] = ppath
+sys.path.insert(0,scipy_core_dir)
+
 try:
     import scipy_distutils
     # Declare all scipy_distutils related imports here.
@@ -59,11 +72,11 @@ def setup_package(ignore_packages=[]):
 
     os.chdir(local_path)
     sys.path.insert(0,os.path.join(local_path,'Lib'))
-    # setup files of subpackages require scipy_core:
-    sys.path.insert(0,os.path.join(local_path,'scipy_core'))
     try:
         from scipy_version import scipy_version
 
+        # If a minor version number is odd then this indicates
+        # development version from CVS. Otherwise, its release version.
         # Uncomment when making releases:
         #if not command_sdist: scipy_version = '0.3.3'
 
@@ -101,7 +114,6 @@ def setup_package(ignore_packages=[]):
               )
 
     finally:
-        del sys.path[0]
         del sys.path[0]
         os.chdir(old_path)
 

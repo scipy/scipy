@@ -6,12 +6,49 @@
 ! $Revision$ $Date$
 !
 ! Additions by Travis Oliphant
-! 
+!
+! Contents:
+!  {s,d,c,z}
+!   gebal
+!   gehrd
+!   gbsv
+!   gesv
+!   getrf
+!   getrs
+!   getri
+!   gesdd
+!   gelss
+!   geqrf
+!   geev
+!   gegv
+!   {s,d}syev
+!   {c,z}heev
+!   posv
+!   potrf
+!   potrs
+!   potri
+!   lauum
+!   trtri
+!   laswp
+!   gees
+!   ggev
+! Todo:
+!   {s,d}syevr
+!   {c,z}heevr
+!   {s,d}sygv
+!   {c,z}hegv
+!   {s,d}sygvd
+!   {c,z}hegvd
+!   {s,d}sygvx
+!   {c,z}hegvx
+!
 ! Usage:
 !   f2py -c flapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
 
 python module generic_flapack
 interface
+
+   include 'generic_flapack_evr.pyf'
 
    subroutine <tchar=s,d,c,z>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
    !
@@ -315,7 +352,7 @@ interface
 
    subroutine <tchar=s,d,c,z>geqrf(m,n,a,tau,work,lwork,info)
 
-   ! qr_a,tau,work,info = geqrf(a,lwork=3*n,overwrite_a=0)
+   ! qr_a,tau,info = geqrf(a,lwork=3*n,overwrite_a=0)
    ! Compute a QR factorization of a real M-by-N matrix A:
    !   A = Q * R.
 
@@ -327,8 +364,8 @@ interface
      <type_in> dimension(m,n),intent(in,out,copy,out=qr) :: a
      <type_in> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
-     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     integer optional,intent(in),depend(n),check(lwork>=n) :: lwork=3*n
+     <type_in> dimension(lwork),intent(hide,cache),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <tchar=s,d,c,z>geqrf
 
@@ -726,7 +763,7 @@ interface
 
    subroutine <tchar=c,z>gees(compute_v,sort_t,<tchar>select,n,a,nrows,sdim,w,vs,ldvs,work,lwork,rwork,bwork,info)
 
-     ! t,sdim,w,vs,work,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
+     ! t,sdim,w,vs,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
      ! For an NxN matrix compute the eigenvalues, the schur form T, and optionally
      !  the matrix of Schur vectors Z.  This gives the Schur factorization 
      !  A = Z * T * Z^H  -- a complex matrix is in Schur form if it is upper 
@@ -747,8 +784,8 @@ interface
      <type_in> intent(out),dimension(n) :: w
      <type_in> intent(out),depend(ldvs,n),dimension(ldvs,n) :: vs
      integer intent(hide),depend(compute_v,n) :: ldvs=((compute_v==1)?n:1)
-     <type_in> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = 3*n
+     <type_in> intent(hide,cache),depend(lwork),dimension(lwork) :: work
+     integer optional,intent(in),check(lwork >= MAX(1,3*n)),depend(n) :: lwork = 3*n
      <rtype_in> optional,intent(hide),depend(n),dimension(n) :: rwork
      logical optional,intent(hide),depend(n),dimension(n) :: bwork
      integer intent(out) :: info
@@ -756,7 +793,7 @@ interface
 
    subroutine <tchar=d,s>gees(compute_v,sort_t,<tchar>select,n,a,nrows,sdim,wr,wi,vs,ldvs,work,lwork,bwork,info)
 
-     ! t,sdim,w,vs,work,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
+     ! t,sdim,w,vs,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
      ! For an NxN matrix compute the eigenvalues, the schur form T, and optionally
      !  the matrix of Schur vectors Z.  This gives the Schur factorization 
      !  A = Z * T * Z^H  -- a real matrix is in Schur form if it is upper quasi-
@@ -778,8 +815,8 @@ interface
     <type_in> intent(out),dimension(n) :: wi
     <type_in> intent(out),depend(ldvs,n),dimension(ldvs,n) :: vs
     integer intent(hide),depend(compute_v,n) :: ldvs=((compute_v==1)?n:1)
-    <type_in> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-    integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = 3*n
+    <type_in> intent(hide,cache),depend(lwork),dimension(lwork) :: work
+    integer optional,intent(in),check(lwork >= MAX(1,3*n)),depend(n) :: lwork = 3*n
     <rtype_in> optional,intent(hide),depend(n),dimension(n) :: rwork
     logical optional,intent(hide),depend(n),dimension(n) :: bwork
     integer intent(out) :: info

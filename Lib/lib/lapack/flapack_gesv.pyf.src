@@ -10,7 +10,8 @@
 !   spgv, hpgv, spgvd, hpgvd, spgvx, hpgvx (..., packed storage) - Not Implemented
 !   sbgv, hbgv, sbgvd, hbgvd, sbgvx, hbgvx (..., band) - Not Implemented
 !   gges,ggesx (GNEP, general, Schur Factorization) - Not Implemented
-!   ggev,ggevx (GNEP, general, eigenvalues/vectors)
+!   ggev (GNEP, general, eigenvalues/vectors)
+!   ggevx (GNEP, general, eigenvalues/vectors, expert)  - Not Implemented
 !   ggsvd (GSVD, general, singular values/vectors) - Not Implemented
 !   gegv (general, eigenvalues/vectors, deprecated, use ggev instead) - Removed
 !

@@ -33,6 +33,8 @@ def configuration(parent_package='',parent_path=None):
     local_path = get_path(__name__,parent_path)
     def local_join(*paths):
         return os.path.join(*((local_path,)+paths))
+    def local_glob(path):
+        return glob(os.path.join(local_path,path))
 
     numpy_info = get_info('numpy',notfound_action=2)
     lapack_opt = get_info('lapack_opt')
@@ -128,12 +130,19 @@ def configuration(parent_package='',parent_path=None):
     config['ext_modules'].append(ext)
 
     # flapack:
-    ext_args = {'name': dot_join(parent_package,package,'flapack'),
-                'sources': [generate_pyf],
-                'depends': map(local_join,['generic_flapack.pyf',
-                                           'flapack_user_routines.pyf',
-                                           'interface_gen.py'])
-                }
+    ext_args = {}
+    if 1:
+        dict_append(ext_args,
+                    name = dot_join(parent_package,package,'flapack'),
+                    sources = [generate_pyf],
+                    depends = map(local_join,['generic_flapack.pyf',
+                                              'flapack_user_routines.pyf',
+                                              'interface_gen.py']))
+    else:
+        dict_append(ext_args,
+                    name = dot_join(parent_package,package,'flapack'),
+                    sources = [local_join('flapack.pyf.src')],
+                    depends = local_glob('flapack_*.pyf.src'))
     dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)

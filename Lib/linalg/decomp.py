@@ -76,7 +76,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
         return w, vl
     return w, vr
         
-def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
+def eig(a,b=None,left=0,right=1,sym_pos=0,overwrite_a=0,overwrite_b=0):
     """ Solve ordinary and generalized eigenvalue problem
     of a square matrix.
 
@@ -86,6 +86,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
       b     -- An N x N matrix [default is identity(N)].
       left  -- Return left eigenvectors [disabled].
       right -- Return right eigenvectors [enabled].
+      sym_pos -- Assume a is symmetric and positive definite [disabled].
 
     Outputs:
 
@@ -278,7 +279,7 @@ def svd(a,compute_uv=1,overwrite_a=0):
     gesdd, = get_lapack_funcs(('gesdd',),(a1,))
     if gesdd.module_name[:7] == 'flapack':
         lwork = calc_lwork.gesdd(gesdd.prefix,m,n,compute_uv)[1]
-        u,s,v,info = gesdd(a1,compute_uv = compute_uv, lwork = lwork,
+        u,s,vh,info = gesdd(a1,compute_uv = compute_uv, lwork = lwork,
                       overwrite_a = overwrite_a)
     else: # 'clapack'
         raise NotImplementedError,'calling gesdd from %s' % (gesdd.module_name)
@@ -286,7 +287,7 @@ def svd(a,compute_uv=1,overwrite_a=0):
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal gesdd'%(-info)
     if compute_uv:
-        return u,s,v
+        return u,s,vh
     else:
         return s
 
@@ -362,26 +363,30 @@ def cho_solve(clow, b):
     return b
 
 
-def qr(a,overwrite_a=0,lwork=None):
+def qr(a,compute_r=1,overwrite_a=0):
     """QR decomposition of an M x N matrix a.
 
     Description:
 
-      Find a unitary matrix, q, and an upper-trapezoidal matrix r
-      such that q * r = a
+      Find a orthogonal/unitary matrix, q, and an upper-trapezoidal
+      matrix r such that q * r = a
 
     Inputs:
 
       a -- the matrix
+      compute_r=1   -- if non-zero then return matrix r
       overwrite_a=0 -- if non-zero then discard the contents of a,
                      i.e. a is used as a work array if possible.
 
-      lwork=None -- >= shape(a)[1]. If None (or -1) compute optimal
-                    work array size. 
-
     Outputs:
     
-      q, r -- matrices such that q * r = a
+      q, r -- matrices such that q * r = a [compute_r==1]
+      q    -- orthogonal/unitary matrix [compute_r==0]
+
+    Definitions:
+
+      q * r = a
+      q^H * q = I
 
     """
     a1 = asarray_chkfinite(a)
@@ -390,26 +395,23 @@ def qr(a,overwrite_a=0,lwork=None):
     M,N = a1.shape
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     geqrf, = get_lapack_funcs(('geqrf',),(a1,))
-    if lwork is None or lwork == -1:
-        # get optimal work array
-        qr,tau,work,info = geqrf(a1,lwork=-1,overwrite_a=1)
-        lwork = work[0]
-    qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)    
+    lwork = calc_lwork.geqrf(geqrf.prefix,M,N)[1]
+    qr,tau,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)    
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geqrf'%(-info)
-    gemm, = get_blas_funcs(('gemm',),(qr,))
-    t = qr.typecode()
-    R = basic.triu(qr)
-    Q = scipy_base.identity(M,typecode=t)
-    ident = scipy_base.identity(M,typecode=t)
-    zeros = scipy_base.zeros
-    for i in range(min(M,N)):
-        v = zeros((M,),t)
-        v[i] = 1
-        v[i+1:M] = qr[i+1:M,i]
-        H = gemm(-tau[i],v,v,1+0j,ident,trans_b=2)
-        Q = gemm(1,Q,H)
-    return Q, R
+    if geqrf.prefix in 'dDsS':
+        gqr, = get_lapack_funcs(('orgqr',),(qr,))
+    else:
+        gqr, = get_lapack_funcs(('ungqr',),(qr,))
+    lwork = calc_lwork.gqr(gqr.prefix,M,N)[1]
+    if compute_r:
+        R = basic.triu(qr)
+    Q,info = gqr(qr,tau,lwork=lwork,overwrite_qr=1)
+    if info<0: raise ValueError,\
+       'illegal value in %-th argument of internal gqr'%(-info)
+    if compute_r:
+        return Q, R
+    return Q
 
 _double_precision = ['i','l','d']
 
@@ -438,16 +440,13 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
             typ = 'F'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     gees, = get_lapack_funcs(('gees',),(a1,))
-    if lwork is None or lwork == -1:
-        # get optimal work array
-        result = gees(lambda x: None,a,lwork=-1)
-        lwork = result[-2][0]
-    result = gees(lambda x: None,a,lwork=result[-2][0],overwrite_a=overwrite_a)
+    lwork = calc_lwork.gees(gees.prefix,a1.shape[0],compute_v=1)[1]
+    result = gees(lambda *x: None,a,lwork=lwork,overwrite_a=overwrite_a)
     info = result[-1]
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal gees'%(-info)
     elif info>0: raise LinAlgError, "Schur form not found.  Possibly ill-conditioned."
-    return result[0], result[-3]
+    return result[0], result[-2]
 
 eps = scipy_base.limits.double_epsilon
 feps = scipy_base.limits.float_epsilon
