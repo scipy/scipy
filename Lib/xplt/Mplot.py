@@ -8,6 +8,7 @@ import types
 import write_style
 from write_style import inches, points
 from signaltools import medfiltND
+import scipy
 
 _hold = 0
 
