@@ -1,8 +1,8 @@
 from cephes import *
 from Numeric import *
 import types
-from fastumath import *
-from scipy.basic import squeeze
+from scipy_base.fastumath import *
+from scipy_base import squeeze
     
 class general_function:
     """

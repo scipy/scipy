@@ -28,13 +28,13 @@ __all__ = ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',
 
 import Numeric
 import MLab
-from scipy.handy import r1array
+from scipy_base import r1array
 from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
 min = MLab.min
 abs = absolute
-__version__="0.4.1"
+__version__="0.4.2"
 
 def rosen(x):  # The Rosenbrock function
     return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)

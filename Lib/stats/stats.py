@@ -708,6 +708,36 @@ Returns: percentile-position of score (0-100) relative to a
     return pct
 
 
+def histogram2(a, bins):
+    """ histogram(a,bins) -- Compute histogram of a using divisions in bins
+
+         Description:
+            Count the number of times values from array a fall into
+            numerical ranges defined by bins.  Range x is given by
+            bins[x] <= range_x < bins[x+1] where x =0,N and N is the
+            length of the bins array.  The last range is given by
+            bins[N] <= range_N < infinity.  Values less than bins[0] are
+            not included in the histogram.
+         Arguments:
+            a -- 1D array.  The array of values to be divied into bins
+            bins -- 1D array.  Defines the ranges of values to use during
+                    histogramming.
+         Returns:
+            1D array.  Each value represents the occurences for a given
+            bin (range) of values.
+
+         Caveat:
+            This should probably have an axis argument that would histogram
+            along a specific axis (kinda like matlab)
+
+    """
+    n = Numeric.searchsorted(Numeric.sort(a), bins)
+    n = Numeric.concatenate([ n, [len(a)]])
+    return n[ 1:]-n[:-1]
+
+
+
+
 def histogram (a,numbins=10,defaultlimits=None,printextras=1):
     """
 Returns (i) an array of histogram bin counts, (ii) the smallest value

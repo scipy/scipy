@@ -23,13 +23,7 @@ import string
 
 # Level 0
 # modules to import under the scipy namespace
-import fastumath, basic, handy, misc
-from fastumath import *
-from basic import *
-from handy import *
-from misc import *
-from helpmod import help, source
-from Matrix import Matrix as Mat
+from scipy_base import *
 
 # needs fastumath
 Inf = inf = Numeric.array(1e308)**10
@@ -42,8 +36,7 @@ from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn
 from stats import mean, median, std, cov, corrcoef
 
 # Functions to be subsumed that need Level 0 and Level 1
-from basic1a import *
-from scimath import *
+from common import *
 
 try:
     import fftw

@@ -1,6 +1,6 @@
 import _minpack
 from common_routines import *
-from scipy.handy import r1array
+from scipy_base import r1array
 
 error = _minpack.error
 
