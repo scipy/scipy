@@ -16,12 +16,27 @@ def rmdir(dir,depth=0):
                 print cmd
                 os.system(cmd)
     
+ignore = ['*.o', '*.pyc', '*.a', '*.so', 'core', '*.dll', '*.pyd']
+
+import fnmatch from fnmatch
+def allowed_file_type(file):
+    for i in ignore:
+        if fnmatch(file, i):
+            return 0
+    return 1
 
 def adddir(dir,depth=0):
     import os
     path = os.path.abspath(dir)
     all_files = os.listdir(path)
+    all_files = filter(allowed_file_type, all_files)
     indent = '   ' * depth
+    
+    if os.path.isdir(dir):
+        print indent, dir
+        cmd = 'cvs add ' + dir
+        os.system(cmd)
+
     for i in all_files:        
         if not i == 'CVS':
             print indent, i
