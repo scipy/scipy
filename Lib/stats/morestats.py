@@ -352,6 +352,112 @@ def anderson(x,dist='norm'):
     S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])))
     A2 = -N-S
     return A2, critical, sig
+
+
+def _find_repeats(arr):
+    """Find repeats in the sorted array and return a list of the
+    repeats, position of first one in the array and how many there were.
+    """
+    lastval = arr[0]
+    howmany = 0
+    ind = 1
+    N = len(arr)
+    repeat = 0
+    reppos = []
+    replist = []
+    repnum = []
+    while ind < N:
+        if arr[ind] != lastval:
+            if repeat:
+                repnum.append(howmany+1)
+                repeat = 0
+                howmany = 0
+        else:
+            howmany += 1
+            repeat = 1
+            if (howmany == 1):
+                reppos.append(ind-1)
+                replist.append(arr[ind])
+        lastval = arr[ind]
+        ind += 1
+    if repeat:
+        repnum.append(howmany+1)
+    return replist, reppos, repnum
+            
+def ansari(x,y):
+    """Determine if the scale parameter for two distributions with equal
+    medians is the same.
+
+    Specifically, compute the AB statistic and critical values for rejection
+    of the null hypothesis that the ratio of variances is 1.
+    """
+    x,y = asarray(x),asarray(y)
+    m = len(x)
+    n = len(y)
+    N = m+n
+    xy = r_[x,y]  # combine
+    sxy = sort(xy)
+    replist,reppos,repnum = _find_repeats(sxy)
+    if N % 2: # N odd
+        ranks = r_[1:(N+1)/2+1,(N-1)/2:0:-1]*1.0
+    else:
+        ranks = r_[1:N/2+1,N/2:0:-1]*1.0
+    repeats = 0
+    if replist != []:  # repeats
+        repeats = 1
+        for k in range(len(replist)):
+            pos = reppos[k]
+            num = repnum[k]
+            ranks[pos:pos+num] = sum(ranks[pos:pos+num])*1.0/num
+    # Now compute AB
+    AB = 0.0
+    for k in n:
+        # find the position in the xy array for this value
+        pos = nonzero(xy==y[k])[0]
+        AB += ranks[pos]
+    print AB
+    if N % 2:  # N odd
+        mnAB = m*(N+1.0)**2 / 4.0 / N
+        varAB = m*n*(N+1.0)*(3+N**2)/(48.0*N**2)
+    else:
+        mnAB = m*(N+2.0)/4.0
+        varAB = m*n*(N+2)*(N-2.0)/48/(N-1.0)
+    if repeats:
+        pass
+    return AB
+
+
+#Tests to include (from R) -- some of these already in stats.
+########
+# Ansari-Bradley
+# Bartlett
+# Binomial
+# Pearson's Chi-squared
+# Association Between Paired samples
+# Fisher's exact test
+# Fligner-Killeen Test
+# Friedman Rank Sum
+# Kruskal-Wallis
+# Kolmogorov-Smirnov
+# Cochran-Mantel-Haenszel Chi-Squared for Count
+# McNemar's Chi-squared for Count
+# Mood Two-Sample
+# Test For Equal Means in One-Way Layout
+# Pairwise Comparisons of proportions
+# Pairwise t tests
+# Tabulate p values for pairwise comparisons
+# Pairwise Wilcoxon rank sum tests
+# Power calculations two sample test of prop.
+# Power calculations for one and two sample t tests
+# Equal or Given Proportions
+# Trend in Proportions
+# Quade Test
+# Student's T Test
+# F Test to compare two variances
+# Wilcoxon Rank Sum and Signed Rank Tests
+
+
+
     
 
 
