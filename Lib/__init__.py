@@ -1,3 +1,10 @@
+"""
+SciPy --- A scientific computing package for Python
+
+Available subpackages
+======================
+"""
+
 #try:
     #import gui_thread
 #except:
@@ -86,8 +93,46 @@ except ImportError:
 #else:
 #    print "Plotting methods available: ", _plot
 
+_pkgs = ['cluster','cow','fftpack','fftw','ga','gplt','integrate',
+         'interpolate', 'io', 'linalg', 'optimize', 'plt',
+         'signal', 'sparse', 'special', 'stats', 'weave',
+         'xplt']
 
+_pkg_doc = ['Vector Quantization / Kmeans',
+            'Cluster of Workstations',
+            'FFT algorithms',
+            'FFT algorithms using fftw',
+            'Genetic Algorithms',
+            'Plotting with gnuplot',
+            'Integration',
+            'Interpolation',
+            'Input/Output',
+            'Linear Algebra',
+            'Optimization',
+            'Plotting with wxPython',
+            'Signal Processing',
+            'Sparse Matrices',
+            'Special Functions',
+            'Statistics',
+            'C/C++ integration',
+            'Plotting with X']
 
+def _extend_doc(st,p,pd):
+    _lengths = [len(x) for x in p]
+    _ml = max(_lengths)
+    k = 0
+    for name in p:
+        try:
+            exec "import %s" % name
+            st += "%s%s --- %s\n" % (name, ' '*(_ml-_lengths[k]), pd[k])
+        except ImportError:
+            pass
+        k += 1
+    return st
+
+__doc__ = _extend_doc(__doc__,_pkgs,_pkg_doc)
+
+            
 #---- testing ----#
 
 def test(level=1):
