@@ -150,8 +150,12 @@ def add_close_event_handler(proxy_obj):
         proxy_obj.wx_obj.PushEventHandler(close_handler)
     except AttributeError:
         # its a standard class that just needs to let us
-        # know when it dies.    
-        proxy_obj.PushEventHandler(close_handler)
+        # know when it dies.
+        try:
+            proxy_obj.PushEventHandler(close_handler)
+        except AttributeError:
+            # Not a wx object at all - so don't bother.
+            pass
         
 def generate_method(method,wx_class):
     """ Create a proxy method.
