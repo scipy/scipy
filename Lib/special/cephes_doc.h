@@ -91,7 +91,7 @@
 #define stdtri_doc "stdtri(k,p) returns the argument t such that stdtr(k,t) is equal to p."
 #define struve_doc "struve(v,x) returns the Struve function Hv(x) of order v at x, x\nmust be positive unless v is an integer."
 #define tandg_doc "tandg(x) calculates the tangent of the angle x given in degrees."
-#define wofz_doc "wofz(z) returns the value of the faddeeva function for complex argument\nz: exp(-z**2)*erfc(-i*z)"
+#define wofz_doc "wofz(z) returns the value of the fadeeva function for complex argument\nz: exp(-z**2)*erfc(-i*z)"
 #define y0_doc "y0(x) returns the Bessel function of the second kind of order 0 at x."
 #define y1_doc "y1(x) returns the Bessel function of the second kind of order 1 at x."
 #define yn_doc "yn(n,x) returns the Bessel function of the second kind of integer\norder n at x."

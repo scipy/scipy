@@ -54,7 +54,6 @@
     k1       -- Modified Bessel function of the third kind of order 1.
     k1e      -- Exponentially scaled modified Bessel function of the
                   third kind of order 1.    
-    besselpoly -- Integral of a bessel function times x**lambda.
 
   Statistical Functions
 
@@ -106,13 +105,13 @@
     hyp2f1   -- Gauss hypergeometric function (2F1)
     hyp1f1   -- Confluent hypergeometric function (1F1)
     hyp2f0   -- Hypergeometric function (2F0) 
-    hyp1f2    -- Hypergeometric function (1F2)
-    hyp3f0  -- Hypergeometric function (3F0)
+    hyp1f2   -- Hypergeometric function (1F2)
+    hyp3f0   -- Hypergeometric function (3F0)
 
   Other Special Functions
 
     expn     -- Exponential integral.
-    wofz     -- Faddeeva function.
+    wofz     -- Fadeeva function.
     fresnl   -- Fresnel sine and cosine integrals.
     dawsn    -- Dawson's integral.
     shichi   -- Hyperbolic sine and cosine integrals.
@@ -121,6 +120,7 @@
     struve   -- Struve function.
     zeta     -- Riemann zeta function of two arguments.
     zetac    -- Riemann zeta function.
+    besselpoly -- Integral of a bessel function times x**lambda.
 
   Convenience Functions
 
@@ -135,7 +135,8 @@
     log1p    -- log(1+x)
     expm1    -- exp(x)-1
     cosm1    -- cos(x)-1
-    round    -- round the argument to the nearest integer.
+    round    -- round the argument to the nearest integer. If argument
+                 ends in 0.5 exactly, pick the nearest even integer.
 
  """
 __all__ = []
