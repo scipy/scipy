@@ -62,6 +62,16 @@ int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r);
 int msm1_wrap(double m, double q, double x, double *f1r, double *d1r);
 int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r);
 int msm2_wrap(double m, double q, double x, double *f2r, double *d2r);
+double pmv_wrap(double, double, double);
+int pbwa_wrap(double, double, double *, double *);
+int prolate_aswfa_wrap(double, double, double, double, double, double *, double *);
+int prolate_radial1_wrap(double, double, double, double, double, double *, double *);
+int prolate_radial2_wrap(double, double, double, double, double, double *, double *);
+int oblate_aswfa_wrap(double, double, double, double, double, double *, double *);
+int oblate_radial1_wrap(double, double, double, double, double, double *, double *);
+int oblate_radial2_wrap(double, double, double, double, double, double *, double *);
+
+
 #endif
 
 

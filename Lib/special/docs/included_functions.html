@@ -412,6 +412,23 @@ can be either 1 or 2.
 <DD>hyp3f0(a,b,c,x) returns (y,err) with the hypergeometric function 3F0 in y and an error estimate in err.  
 </DL>
 
+<h1> Parabolic Cylinder Functions </h1>
+<DL>
+<DT>(w,wp) = pbwa(a,x)
+<DD>pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in 
+w and the derivative, W'(a,x) in wp.  May not be accurate for large (>5) 
+arguments in a and/or x.
+
+<DL>
+<DT>
+
+<h1> Legendre Functions </h1>
+<DL>
+<DT>y = lpmv(m,v,x)
+<DD>lpmv(m,v,x) returns the associated legendre function of integer order
+m and nonnegative degree v: |x|<=1.
+
+
 <h1> Mathieu Functions </h1>
 
 <DL>
@@ -458,6 +475,52 @@ parameter q
 <DD>mathieu_modsem2(m,q,x) evaluates the odd modified Matheiu function
 of the second kind, Ms2m(x,q), and its derivative at x for order m and 
 parameter q
+
+
+<h1> Spheroidal Functions </h1>
+<DL>
+<DT>(s,sp) = pro_ang(m,n,c,cv,x)
+<DD>pro_ang(m,n,c,cv,x) computes the prolate sheroidal angular function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
+|x|<1.0
+
+<DL>
+<DT>(s,sp) = pro_rad1(m,n,c,cv,x)
+<DD>pro_rad1(m,n,c,cv,x) computes the prolate sheroidal radial function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
+x>1.0
+
+<DL>
+<DT>(s,sp) = pro_rad2(m,n,c,cv,x)
+<DD>pro_rad2(m,n,c,cv,x) computes the prolate sheroidal radial function 
+of the second kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
+x>1.0
+
+<DL>
+<DT>(s,sp) = obl_ang(m,n,c,cv,x)
+<DD>obl_ang(m,n,c,cv,x) computes the oblate sheroidal angular function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
+|x|<1.0
+
+<DL>
+<DT>(s,sp) = obl_rad1(m,n,c,cv,x)
+<DD>obl_rad1(m,n,c,cv,x) computes the oblate sheroidal radial function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
+x>1.0
+
+<DL>
+<DT>(s,sp) = obl_rad2(m,n,c,cv,x)
+<DD>obl_rad2(m,n,c,cv,x) computes the oblate sheroidal radial function 
+of the second kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
+x>1.0
+
+
 
 
 <h1> Other Special Functions </h1>

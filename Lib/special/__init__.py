@@ -131,7 +131,7 @@
     erfc       -- Complemented error function (1- erf(x))
     ervinv     -- Inverse of error function
     ervcinv    -- Inverse of erfc
-    fresnel      -- Fresnel sine and cosine integrals.
+    fresnel    -- Fresnel sine and cosine integrals.
 
   HyperGeometric Functions
 

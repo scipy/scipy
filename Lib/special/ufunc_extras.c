@@ -202,6 +202,28 @@ extern void PyUFunc_d_DDDD(char **args, int *dimensions, int *steps, void *func)
 	}
 }
 
+extern void PyUFunc_ff_ff_As_dd_dd(char **args, int *dimensions, int *steps, void *func) {
+	int i, is1=steps[0],is2=steps[1],os1=steps[2],os2=steps[3];
+	char *ip1=args[0], *ip2=args[1], *op1=args[2], *op2=args[3];
+	int n=dimensions[0];
+	double to1, to2;
+	
+	for(i=0; i<n; i++, ip1+=is1, ip2+=is2, op1+=os1, op2+=os2) {
+		((IntFunc_dd_dd *)func)((double)*(float *)ip1, (double)*(float *)ip2, &to1, &to2);
+		*(float *)op1 = (float)to1;
+		*(float *)op2 = (float)to2;
+	}
+}
+
+extern void PyUFunc_dd_dd(char **args, int *dimensions, int *steps, void *func) {
+	int i, is1=steps[0],is2=steps[1],os1=steps[2],os2=steps[3];
+	char *ip1=args[0], *ip2=args[1], *op1=args[2], *op2=args[3];
+	int n=dimensions[0];
+	
+	for(i=0; i<n; i++, ip1+=is1, ip2+=is2, op1+=os1, op2+=os2) {
+		((IntFunc_dd_dd *)func)(*(double *)ip1, *(double *)ip2, (double *)op1, (double *)op2);
+	}
+}
 
 
 extern void PyUFunc_ff_ffff_As_dd_dddd(char **args, int *dimensions, int *steps, void *func) {
@@ -478,6 +500,30 @@ extern void PyUFunc_dddd_dd(char **args, int *dimensions, int *steps, void *func
 		*(double *)op1 = ((DoubleFunc_dddd_dd *)func)(*(double *)ip1, *(double *)ip2, *(double *)ip3, *(double *)ip4, (double *)op2);
 	}
 }
+
+extern void PyUFunc_fffff_ff_As_ddddd_dd(char **args, int *dimensions, int *steps, void *func) {
+	int i, is1=steps[0],is2=steps[1],is3=steps[2],is4=steps[3],is5=steps[4], os1=steps[5],os2=steps[6];
+	char *ip1=args[0], *ip2=args[1], *ip3=args[2], *ip4=args[3], *ip5=args[4], *op1=args[5], *op2=args[6];
+	int n=dimensions[0];
+	double to1, to2;
+	
+	for(i=0; i<n; i++, ip1+=is1, ip2+=is2, ip3+=is3, ip4+=is4, ip5+=is5, op1+=os1, op2+=os2) {
+		((IntFunc_ddddd_dd *)func)((double)*(float *)ip1, (double)*(float *)ip2, (double)*(float *)ip3, (double)*(float *)ip4, (double)*(float *)ip5, &to1, &to2);
+		*(float *)op1 = (float)to1;
+		*(float *)op2 = (float)to2;
+	}
+}
+
+extern void PyUFunc_ddddd_dd(char **args, int *dimensions, int *steps, void *func) {
+	int i, is1=steps[0],is2=steps[1],is3=steps[2],is4=steps[3],is5=steps[4],os1=steps[5],os2=steps[6];
+	char *ip1=args[0], *ip2=args[1], *ip3=args[2], *ip4=args[3], *ip5=args[4], *op1=args[5], *op2=args[6];
+	int n=dimensions[0];
+	
+	for(i=0; i<n; i++, ip1+=is1, ip2+=is2, ip3+=is3, ip4+=is4, ip5+=is5, op1+=os1, op2+=os2) {
+		((IntFunc_ddddd_dd *)func)(*(double *)ip1, *(double *)ip2, *(double *)ip3, *(double *)ip4, *(double *)ip5, (double *)op1, (double *)op2);
+	}
+}
+
 
 extern void PyUFunc_ffff_ff_As_dddi_dd(char **args, int *dimensions, int *steps, void *func) {
 	int i, is1=steps[0],is2=steps[1],is3=steps[2],is4=steps[3],os1=steps[4],os2=steps[5];

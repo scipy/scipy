@@ -444,8 +444,6 @@ int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   return 0;  
 }
 
-/* Stopped here --- below these need to be added to cephes */
-
 
 double pmv_wrap(double m, double v, double x){
   int int_m;
@@ -456,6 +454,7 @@ double pmv_wrap(double m, double v, double x){
   F_FUNC(lpmv,LPMV)(&v, &int_m, &x, &out);
   return out;
 }
+
 
 /* if x > 0 return w1f and w1d.
     otherwise return w2f and w2d (after abs(x))
@@ -477,7 +476,7 @@ int pbwa_wrap(double a, double x, double *wf, double *wd) {
 }
 
 
-int prolate_aswfa_wrap(double m, double n, double c, double x, double cv, double *s1f, double *s1d)
+int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d)
 {
   int kd = 1;
   int int_m, int_n;
@@ -493,7 +492,7 @@ int prolate_aswfa_wrap(double m, double n, double c, double x, double cv, double
   return 0;
 }
 
-int oblate_aswfa_wrap(double m, double n, double c, double x, double cv, double *s1f, double *s1d)
+int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d)
 {
   int kd = -1;
   int int_m, int_n;
@@ -509,7 +508,7 @@ int oblate_aswfa_wrap(double m, double n, double c, double x, double cv, double 
   return 0;
 }
 
-int prolate_radial1_wrap(double m, double n, double c, double x, double cv, double *r1f, double *r1d)
+int prolate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d)
 {
   int kf=1;
   double r2f, r2d;
@@ -526,7 +525,7 @@ int prolate_radial1_wrap(double m, double n, double c, double x, double cv, doub
   return 0;  
 }
 
-int prolate_radial2_wrap(double m, double n, double c, double x, double cv, double *r2f, double *r2d)
+int prolate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d)
 {
   int kf=2;
   double r1f, r1d;
@@ -543,7 +542,7 @@ int prolate_radial2_wrap(double m, double n, double c, double x, double cv, doub
   return 0;  
 }
 
-int oblate_radial1_wrap(double m, double n, double c, double x, double cv, double *r1f, double *r1d)
+int oblate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d)
 {
   int kf=1;
   double r2f, r2d;
@@ -560,7 +559,7 @@ int oblate_radial1_wrap(double m, double n, double c, double x, double cv, doubl
   return 0;  
 }
 
-int oblate_radial2_wrap(double m, double n, double c, double x, double cv, double *r2f, double *r2d)
+int oblate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d)
 {
   int kf=2;
   double r1f, r1d;
@@ -576,6 +575,9 @@ int oblate_radial2_wrap(double m, double n, double c, double x, double cv, doubl
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,r2f,r2d);
   return 0;  
 }
+
+/* Stopped here --- below these need to be added to cephes */
+
 
 int modified_fresnel_plus_wrap(double x, Py_complex *Fplus, Py_complex *Kplus)
 {
