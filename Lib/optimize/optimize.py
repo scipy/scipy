@@ -1,4 +1,4 @@
-is# ******NOTICE***************
+# ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
 # You may copy and use this module as you see fit with no
