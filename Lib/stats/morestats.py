@@ -1,15 +1,17 @@
+# Author:  Travis Oliphant, 2002
+#
 
-from __future__ import nested_scopes
+import statlib
+import stats
 import distributions
 import inspect
 from scipy_base import isscalar, r_, log, sum
 from scipy_base import zeros, arange, sort, amin, amax, any, where
 import types
 import scipy.optimize as optimize
-import stats
-import distributions
 
-__all__ = ['probplot','ppcc_max','ppcc_plot','boxcox','boxcox_llf']
+#__all__ = ['probplot','ppcc_max','ppcc_plot','boxcox','boxcox_llf',
+#           'boxcox_normplot','boxcox_normmax','shapiro']
 
 def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     """Return (osm, osr){,(scale,loc,r)} where (osm, osr) are order statistic
@@ -236,4 +238,53 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
         try: plot.expand_limits(5)
         except: pass
     return svals, ppcc
-        
+
+def shapiro(x,a=None,reta=0):
+    """Shapiro and Wilk test for normality.
+
+    Given random variates x, compute the W statistic and its p-value
+    for a normality test.
+
+    If p-value is high, one cannot reject the null hypothesis of normality
+    with this test.  P-value is probability that the W statistic is
+    as large as it is if samples are actually from a normal distribution.
+
+    Output:  W statistic and its p-value
+
+              if reta is nonzero then also return the computed "a" values
+                 as the third output.  If these are known for a given size
+                 they can be given as input instead of computed internally. 
+    
+    """
+    N = len(x)
+    if N < 3:
+        raise ValueError, "Data must be at least length 3."
+    if a is None:
+        a = zeros(N,'f')
+        init = 0
+    else:
+        assert(len(a) == N/2), "a must be == len(x)/2"
+        init = 1
+    y = sort(x)
+    a,w,pw,ifault = statlib.swilk(y,a[:N/2],init)
+    if not ifault in [0,2]:
+        print ifault
+    if N > 5000:
+        print "p-value may not be accurate for N > 5000."
+    if reta:
+        return w, pw, a
+    else:        
+        return w, pw
+
+
+################## test functions #########################
+
+def test(level=1):
+    from scipy_base.testing import module_test
+    module_test(__name__,__file__,level=level)
+
+def test_suite(level=1):
+    from scipy_base.testing import module_test_suite
+    return module_test_suite(__name__,__file__,level=level)
+
+

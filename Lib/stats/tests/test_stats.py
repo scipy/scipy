@@ -649,8 +649,7 @@ class test_std(TestCase):
              [8.0, 12.0, 7.0]]
         b1 = array((3.7859388972001824, 5.2915026221291814,
                     2.0816659994661335))
-        b2 = array((4.5276925690687087, 2.1213203435596424,
-                    7.2111025509279782))
+        b2 = array((1.0,2.0,2.64575131106))
         assert_array_almost_equal(stats.std(a),b2,11)
         assert_array_almost_equal(stats.std(a,axis=0),b1,11)
 

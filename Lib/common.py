@@ -9,7 +9,7 @@ from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, hstack, product, array, typename
 import scipy_base.fastumath
 
-__all__ = ['factorial','comb','rand','randn','disp','who','lena','central_diff_weights', 'derivative']
+__all__ = ['factorial','comb','rand','randn','who','lena','central_diff_weights', 'derivative']
     
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
@@ -138,17 +138,6 @@ def lena():
 #-----------------------------------------------------------------------------
 # Matlab like functions for output and information on the variables used.
 #-----------------------------------------------------------------------------
-def disp(mesg, device=None, linefeed=1):
-    """Display a message to device (default is sys.stdout) with(out) linefeed.
-    """
-    if device is None:
-        device = sys.stdout
-    if linefeed:
-        device.write('%s\n' % mesg)
-    else:
-        device.write('%s' % mesg)
-    device.flush()
-    return
 
 def who(vardict=None):
     """Print the Numeric arrays in the given dictionary (or globals() if None).

@@ -652,7 +652,6 @@ Returns: Score and 2-tail probability
     k2 = s*s + k*k
     return k2, chisqprob(k2,2)
 
-# Shapiro-Wilk W test
 # Anderson-Darling Test
 # Martinez-Iglewicz test
 # K-S test
@@ -885,11 +884,11 @@ integer (the axis over which to operate).
     mn = expand_dims(mean(a,axis),axis)
     deviations = a - mn
     n = a.shape[axis]
-    var = ss(deviations,axis)/(n-1.0)
+    vals = ss(deviations,axis)/(n-1.0)
     if bias:
-        return var * (n-1.0)/n
+        return vals * (n-1.0)/n
     else:
-        return var
+        return vals
 
 def std (a, axis=-1, bias=0):
     """
