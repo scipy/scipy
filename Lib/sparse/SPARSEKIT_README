@@ -1,38 +1,37 @@
-The files from SPARSKIT are used and modified with permission from the author.  
-
 -----------------------------------------------------------------------
                    S P A R S K I T   V E R S I O N  2.
 ----------------------------------------------------------------------- 
 
-Latest update : Wed Sep  2 18:12:58 CDT 1998
+Latest update : Wed Jun 16 04:50:55 CDT 1999
 
 -----------------------------------------------------------------------
 
-IMPORTANT: 
----------- 
+Welcome  to SPARSKIT  VERSION  2.  SPARSKIT is  a  package of  FORTRAN
+subroutines  for working  with  sparse matrices.  It includes  general
+sparse  matrix  manipulation  routines  as  well as  a  few  iterative
+solvers, see detailed description of contents below.
 
-Copyright @1990, @1994 Yousef Saad.
------------------------------------- 
+ Copyright (C) 1999 Yousef Saad
 
-Permission to copy all or  part of any  material contained in SPARSKIT
-is only  granted upon approval from Yousef  Saad.  Not  any portion of
-SPARSKIT can   be used  for  commercial  purposes  or  as  part of   a
-commercial package.  This notice should accompany   the package in any
-approved copy.
-
-Note to contributors: Before  contributing any software be aware  that
-above  note     is   the only    global  limitation    against copying
-software. Eventually this copyright note may be replaced.
+SPARSKIT is  free software; you  can redistribute it and/or  modify it
+under the terms of the GNU  General Public License as published by the
+Free  Software Foundation  [version 2  of  the License,  or any  later
+version.] A  copy of the licencing  agreement is attached  in the file
+GNU.  For additional information  contact the Free Software Foundation
+Inc., 65 Mass Ave, Cambridge, MA 02139, USA.
 
 DISCLAIMER
 ----------
 
-SPARSKIT comes  with no warranty whatsoever.   The author/contributors
-of SPARKSIT are not liable for any loss/damage or inconvenience caused
-in  the use of the software  in  SPARSKIT or any modification thereof.
+This program  is distributed in the  hope that it will  be useful, but
+WITHOUT   ANY  WARRANTY;   without  even   the  implied   warranty  of
+MERCHANTABILITY  or FITNESS  FOR A  PARTICULAR PURPOSE.   See  the GNU
+General Public License for more details.
+
+For information on SPARSKIT contact the author at saad@cs.umn.edu
 
 ---------------------------------------------------
-              S P A R S K I T   VERSION 2  
+            S P A R S K I T   VERSION 2  
 ---------------------------------------------------
 
 In this directory you will  find  all relevant subdirectories and  the
@@ -91,297 +90,13 @@ instructions.
 	  (misc. routines includind routines for 
           plotting.. BLAS1 is also added for completeness) 
 
+ See the file "logfile" for a complete revision history. 
+
  Report any problems, suggestions, etc.. to
- ----------------------------------------------------------------------- 
 
 	Yousef Saad.
 	saad@cs.umn.edu
 
-----------------------------------------------------------------------
-SPARSKIT Revision History
-------------------------------------------------------------------------
+ ----------------------------------------------------------------------- 
 
-May 9, 1994 (Version 2)
-
-Warning:
-The interface for gen57pt has changed.
-The interface for csrbnd has changed.
-The interface for bsrcsr has changed.
-
-New or rearranged modules: 
-ITSOL/ilut.f       -- four preconditioners (old UNSUPP/SOLVERS plus ilutp)
-ITSOL/iters.f      -- nine iterative solvers using reverse communication
-MATGEN             -- rearranged into three subdirectories: FDIF, FEM, MISC.
-MATGEN/MISC/sobel.f-- generate matrices from a statistical application
-ORDERINGS/ccn      -- routines for strongly connected components
-ORDERINGS/color.f  -- coloring based routines for reordering
-ORDERINGS/levset.f -- level set based routines for reordering
-UNSUPP/PLOTS       -- many routines have been moved to the INOUT module
-
-New format:  VBR (Variable block row)
-------------------------------------------------------------------------
-May 25, 1994
-Fixed a bug in FORMATS/unary.f/levels, found by Aart J.C. Bik, Leiden.
-------------------------------------------------------------------------
-June 3, 1994
-The symmetric and nonsymmetric carpenter square format has been renamed
-to the symmetric and unsymmetric sparse skyline format.  This is simply
-a name change for the functions:
-        csrucs to csruss
-        ucscsr to usscsr
-        csrscs to csrsss
-        scscsr to ssscsr  
-This is a new format that was not in version 1 of SPARSKIT.
-------------------------------------------------------------------------
-June 27, 1994
-
-The function ssrcsr has changed, to make it more flexible (K. Wu, UMN).
-The old version will still be available in xssrcsr, but may be deleted
-in the near future.  Please let us know of any bugs, or errors in the
-code documentation.
-
-The interface to msrcsr has changed, to make the function in place
-(R. Bramley, Indiana).
-
-A number of minor bug fixes to the INOUT module (R. Bramley, Indiana).
-
-ICOPY in ccn.f was renamed to CCNICOPY to eliminate name conflicts
-with other libraries.
-
-Very minor typographical fixes were made to the paper.* documentation.
-------------------------------------------------------------------------
-August 3, 1994
-
-dinfo13.f was modified very slightly to handle skew-symmetric matrices.
-------------------------------------------------------------------------
-August 8, 1994
-
-Bug fixed in usscsr (D. Su).
-
-Bug fixed in ssrcsr (K. Wu).
-------------------------------------------------------------------------
-August 18, 1994
-
-New, more efficient version of cooell.  The old version will still be 
-available in xcooell, but may be deleted in the near future.  (K. Wu)
-
-Bug fixed in INFO/infofun/ansym.  (K. Wu)
-------------------------------------------------------------------------
-September 22, 1994
-
-Bug fixed in FORMATS/unary/getdia.  (John Red-horse, Sandia)
-
-Changes to ITSOL/iters.f:
-Bug fix in TFQMR; initialization of workspace; number of matrix-vector
-multiplications reported now includes those done in initialization;
-added routine FOM (Full Orthogonalization Method).  (K. Wu)
-
-This version has only been tested on Solaris, and the test script 
-output is in out.new.  The other outputs are somewhat out of date.
-The changes have not been major; please let us know if you find
-any incompatibilities.  Thanks.  (E. Chow)
-------------------------------------------------------------------------
-October 10, 1994
-
-formats.f: revised ssrcsr to be able to sort the column of the matrix
-produced, revised cooell to fill the unused entries in AO,JAO with zero
-diagonal elements.  (K. Wu)
-
-unary.f: new routine clncsr for removing duplicate entries, sorting
-columns of the input matrix, it requires less work space than csort.
-(K. Wu)
-
-iters.f: bug fix in fom.  (K. Wu)
-
-chkfmt1.f (test program): bug fix in call to ssrcsr.
-
-dotests script: slight modification when running fmt.ex
-
-matvec.f: added atmuxr, Tranpose(A) times a vector, where A is rectangular
-in CSR format.  Also useful for A times a vector, where A is rectangular
-in CSC format.  Very similar to atmux.  (E. Chow)
-------------------------------------------------------------------------
-October 17, 1994
-
-Minor fix to ilut.f, proper stopping when maxits is a multiple of the
-Krylov subspace size.
-
-A number of changes to iters.f:
-(1) add reorthgonalization to the Modified Gram-Schmidt procedures;
-(2) check number of matrix-vector multiplications used at the end of
-evey Arnoldi step;
-(3) in the initialization stage of the iterative solvers, clear fpar
-elements to zero.
-------------------------------------------------------------------------
-November 16, 1994
-
-Selective reorthogonalization replaces reorthogonalization change
-of Oct. 17, 1994.
-------------------------------------------------------------------------
-November 23, 1994
-
-Added csrcsc2, a minor variation on csrcsc for rectangular matrices.
-csrcsc now calls csrcsc2.
-
-Removed a useless line in infofun.f that could give a compiler warning.
-
-In the ILUT preconditioner, lfil-1 new fill-ins for rows in the 
-strictly upper part was used.  This has been changed to lfil,
-to be consistent with the strictly lower part.
-
-Replaced levset.f with dsepart.f, which adds a number of new partitioners:
-rdis, dse2way, dse, in addition to the original dblstr.
-The new perphn subroutine no longer takes the iperm array.
-------------------------------------------------------------------------
-January 3, 1995
-
-FORMATS/formats.f:ellcsr  ia(1) was not set.  (Reported by J. Schoon.)
-------------------------------------------------------------------------
-January 30, 1995
-
-BLASSM/blassm.f:amub  fixed the documentation. (Reported by D. O'Leary.)
-------------------------------------------------------------------------
-February 27, 1995
-
-iters.f: the reverse communication protocol has been augmented to make
-performing users own convergence test easier. minor bug fixes.
-
-unary.f: subroutine clncsr is slightly changed so that it will remove
-zero entries. also minor corrections to its documentation.
-
-formats.f: subroutine ssrcsr is slightly changed so it may optionally
-remove zero entries. also minor corrections to its documentation.
-
-infofun.f: subroutine ansym is rewritten to compute the Frobineus norm
-of the pattern-nonsymmetric part directly insead of computing it from
-the difference between the Frobineus of the whole matrix and its
-pattern-symmetric part. This should make the answer of 'FAN' more
-reliable.
-------------------------------------------------------------------------
-March 21, 1995
-
-Bug fix in iters.f:fom.
-Also, FOM, GMRES, FGMRES modified so that if a zero pivot is 
-encountered in the triangular solve part of the algorithm,
-the solve is truncated.
-
-The latest output of the dotests script as run on a solaris 2 machine
-is in out.sol2.
-------------------------------------------------------------------------
-March 27, 1995
-
-Fixes to ILUT and ILUTP.
-Backed out of the change of Nov. 23, 1994.  The original code was
-correct (lenu includes the diagonal).
-A smaller drop tolerance than prescribed was used (namely, by
-the 1-norm of the row); this has now been fixed.
-------------------------------------------------------------------------
-April 12, 1995
-
-Minor fix in rilut.f.  A duplicate call to ilut has been removed.
-------------------------------------------------------------------------
-April 21, 1995
-
-Cleaner versions of ILUT and ILUTP.  Note that the interface has been
-changed slightly (workspace parameters have been coalesced), and the
-definition of lfil has changed.
-ILUK, the standard level ILU(k), has been added to ilut.f.
-Due to these changes, ilut.f, and rilut.f have changed.
-Also, riters.f riter2.f have changed where they call ilut.
-
-The Block Sparse Row (BSR) format has changed, so that entries are
-stored in A(ni,ni,nnz), rather than A(nnz,ni,ni), where the blocks
-are ni by ni, and there are nnz blocks.  This stores the entries of
-the blocks contiguously so that they may be passed to other subroutines.
-As a result of this change, the following codes have changed:
-FORMATS/formats.f:bsrcsr - additionally takes extra workspace
-FORMATS/formats.f:csrbsr
-MATGEN/FDID/genmat.f:gen57bl - output n is now block dimension
-FORMATS/chkfmt1.f
-FORMATS/rvbr.f
-MATGEN/FDIF/rgenblk.f
-BLASSM/rmatvec.f
-
-The latest output of the dotests script from our Solaris machines here
-is in out.04-21-95.
-------------------------------------------------------------------------
-April 22, 1995
-
-Now you can ask csrbsr to tell you the number of block nonzeros beforehand.
-Also, a minor fix if job.eq.0.
-------------------------------------------------------------------------
-April 25, 1995
-
-csrbsr cleaned up even more.
-------------------------------------------------------------------------
-May 22, 1995
-
-iters.f - fixed rare bug in bcg and bcgstab: termination test not done
-properly if they breakdown on the first step.
-------------------------------------------------------------------------
-July 27, 1995
-
-Fixed a bug in the header documentation for csrcsc(), describing
-the appending of data structures.  Detected by Dan Stanescu, Concordia.
-
-Fixed compilation errors in UNSUPP/PLOTS/texgrid1.f for IBM machines,
-detected by Regis Gras, Laboratoire CEPHAG.
-------------------------------------------------------------------------
-Sept. 22, 1995
-
-Fixed  a bug   in the ILUT/ILUTP  routines --   found by Larry  Wigton
-[Boeing]  This bug caused  small elements  to  be  stored in  L factor
-produced by  ILUT.  Recall that  the ILUT  codes have been  revised on
-April  21 line   above  and there  are   changes in  meanings   of the
-parameters and calling  sequences.   The drop strategy  used  has also
-been modified slightly.
-
-We also  added two new preconditioning  routines named ILUD  and ILUDP
-[The difference between these and ILUT is  that there is no control of
-storage. Drop strategy is controled by only one parameter (tol). [This
-should be bigger than in ILUT in general.]
------------------------------------------------------------------------
-Sept. 26, 1995
-
-infofun.f:ansym was improved again.
------------------------------------------------------------------------
-Feb 17th, 1996:
- Bug fix in getdia (bug reported by Norm Fuchs, Purdue).
------------------------------------------------------------------------
-
-August 13th, 1996
- 1. A few more fixes to ILUT, ILUTP [ILUTP did not give the same result as
- ILUT when pivoting is not done. This is now fixed.
- 2. Small bug in (SPARSKIT2/ITSOL/iters.f) subroutine tidycg reported
- by Laura Dutto.
- 3. documentation error in minor (SPARSKIT2/ITSOL/iters.f) subroutine 
- FGMRES requires more storage than stated.
-
-Sep. 6, 1997 
- one routine (dperm1) has been added to FORMATS/unary.f
- (slightly modified from PSPARSIB).. YS 
-
-Nov. 20, 1997 
- Implicit none caused some minor compilation problems because of
- order of declarations [reported by Stefan Nilsson (Chalmers) and
- Christer Andersson (NADA, Sweden)]. Fixed by changing order of
- declarations. YS 
-
------------------------------------------------------------------------  
-
-Aug. 16th, 1998.
- removed useless argument in function mindom (ORDERINGS/dsepart.f)  
- added one option to gen57pt in MATGEN/FDIF/matgen.f
-
-Sept. 2nd 1998,
- - fixed yet other compiler problems with double declarations of
-   integer n in ilut.f -- these show up with gnu f77. 
- - fixed an incorrect declaration of arraw iwk in coicsr in 
-   FORMATS/formats (reported by Dan Lee -- bmw)
- - removed unnecessary declaration of stopbis in tfqmr 
- - lenr was not initialized in nonz() in infofun (reported by Massino 
-   Caspari). 
- - a spurious "g" character was inadvertantly introduced in the previous
-   version. [reported by Mike Botchev (CWI, NL)..  
-
------------------------------------------------------------------------ 
+ 

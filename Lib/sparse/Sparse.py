@@ -173,7 +173,7 @@ class spmatrix:
         new = spmatrix(self.shape[0],self.shape[1],min((self.nzmax + other.nzmax,product(self.shape))),typecode=self.ptype)
         ierr = array(0)
         iw = zeros((self.shape[1],))
-        spadd(array(self.shape[0]),array(self.shape[1]),array(1),self.data,self.index[0],self.index[1],other.data,other.index[0],other.index[1],new.data,new.index[0],new.index[1],array(new.nzmax),iw,ierr)
+        spadd(1,self.data,self.index[0],self.index[1],other.data,other.index[0],other.index[1],new.data,new.index[0],new.index[1],array(new.nzmax),iw,ierr,self.shape[0],self.shape[1])
         nels = max(new.index[1])-1
         new.data = array(new.data[:nels],copy=1)
         new.index[0] = array(new.index[0][:nels],copy=1)
@@ -205,10 +205,11 @@ class spmatrix:
             iw = zeros((self.shape[1],))
             ierr = array(0)
             while 1:  # mult returns error if array wasn't big enough
-                mult(array(self.shape[0]),array(other.shape[1]),array(1),
+                mult(array(1),
                      self.data, self.index[0], self.index[1], other.data,
                      other.index[0], other.index[1], new.data, new.index[0],
-                     new.index[1], array(new.nzmax), iw, ierr)
+                     new.index[1], array(new.nzmax), iw, ierr,
+                     array(self.shape[0]),array(other.shape[1]))
                 if (ierr[0] == 0 or new.nzmax > 5*self.nzmax):
                     break
                 # make output array bigger for the next try
@@ -220,7 +221,7 @@ class spmatrix:
         
         elif type(other) in [ArrayType, types.ListType]:
             assert self.storage == 'CSR'
-            other = array(other,copy=0,typecode=self.ptype)
+            other = array(other,copy=0).astype(self.ptype)
             assert len(other.shape)==1 and len(other) == self.shape[1]
             matvec = eval('_sparsekit.'+self.ftype+'amux')
             y = zeros((self.shape[0]),self.ptype)
@@ -298,20 +299,21 @@ def spdiags(diags,offsets,m,n):
         offsets -- diagonals to set (0 is main)
         M, N    -- sparse matrix returned is M X N
     """
-    diags = array(diags,copy=0)
+    diags = array(transpose(diags),copy=1)
     if diags.typecode() not in 'fdFD':
         diags = diags.astype('d')
     offsets = array(offsets,copy=0)
     mtype = diags.typecode()
-    assert(len(offsets) == diags.shape[0])
+    assert(len(offsets) == diags.shape[1])
     # set correct diagonal to csr conversion routine for this type
     diagfunc = eval('_sparsekit.'+_transtabl[mtype]+'diacsr')
     # construct empty sparse matrix and pass it's main parameters to
     #  the diagonal to csr conversion routine.
     nzmax = diags.shape[0]*diags.shape[1]
     s = spmatrix(m,n,nzmax,typecode=mtype)
-    diagfunc(array(m), array(n), array(0), array(diags.shape[0]), diags,
-             array(diags.shape[1]), offsets, s.data, s.index[0], s.index[1])
+    diagfunc(array(m), array(n), array(0),  diags,
+             offsets, s.data, s.index[0], s.index[1],
+             array(diags.shape[1]),array(diags.shape[0]))
 
     # compute how-many elements were actually filled
     s.lastel = min([m,n])*len(offsets) - 1 - \

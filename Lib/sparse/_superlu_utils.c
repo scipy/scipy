@@ -2,8 +2,8 @@
 #include "Python.h"
 #include <setjmp.h>
 
-extern jmp_buf _superlu_py_jmpbuf;
-extern PyObject *_superlumodule_memory_dict;
+jmp_buf _superlu_py_jmpbuf;
+PyObject *_superlumodule_memory_dict;
 
 void superlu_delete_allkeys() 
 {

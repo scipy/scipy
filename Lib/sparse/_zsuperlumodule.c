@@ -23,11 +23,11 @@
 #include <setjmp.h>
 #include "Python.h"
 #include "Numeric/arrayobject.h"
-#include "zsp_defs.h"
-#include "util.h"
+#include "SuperLU/SRC/zsp_defs.h"
+#include "SuperLU/SRC/util.h"
 
-jmp_buf _superlu_py_jmpbuf;
-PyObject *_superlumodule_memory_dict;
+extern jmp_buf _superlu_py_jmpbuf;
+extern PyObject *_superlumodule_memory_dict;
 
 /* Natively handles Compressed Sparse Row */
 
@@ -108,7 +108,7 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   int info, dims[1], full_output=0;
   SuperMatrix A, B, L, U;
   
-  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "perm_c", "full_output"};
+  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "perm_c", "full_output",NULL};
 
   /* Get input arguments */
   if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|Oi", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &perm_c, &full_output))

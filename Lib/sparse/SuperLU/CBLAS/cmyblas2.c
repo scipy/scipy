@@ -8,7 +8,7 @@
  *     This is only used when the system lacks an efficient BLAS library.
  */
 
-#include "scomplex.h"
+#include "../SRC/scomplex.h"
 
 /*
  * Solves a dense UNIT lower triangular system. The unit lower 
