@@ -18,7 +18,7 @@ static double dminarg1,dminarg2;
         (dminarg1) : (dminarg2))
 
 #define SIGN(a)   ((a) > 0.0 ? 1.0 : -1.0)
-#define ERROR(num,val) params->error_num=(num); return (val)
+#define ERROR(params,num,val) (params)->error_num=(num); return (val)
 #define SIGNERR -1
 #define CONVERR -2
 

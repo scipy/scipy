@@ -13,7 +13,7 @@ bisect(double (*f)(double, void*), double xa, double xb, double xtol, double rto
     fa = (*f)(xa,params);
     fb = (*f)(xb,params);
     params->funcalls = 2;
-    if (fa*fb > 0) {ERROR(SIGNERR,0.0);}
+    if (fa*fb > 0) {ERROR(params,SIGNERR,0.0);}
     if (fa == 0) return xa;
     if (fb == 0) return xb;
     dm = xb - xa;
@@ -30,5 +30,5 @@ bisect(double (*f)(double, void*), double xa, double xb, double xtol, double rto
         if (fm == 0 || fabs(dm) < tol)
             return xm;
     }
-    ERROR(CONVERR,xa);
+    ERROR(params,CONVERR,xa);
 }

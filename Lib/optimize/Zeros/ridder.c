@@ -17,7 +17,7 @@ ridder(double (*f)(double, void*), double xa, double xb, double xtol, double rto
     fa = (*f)(xa,params);
     fb = (*f)(xb,params);
     params->funcalls = 2;
-    if (fa*fb > 0) {ERROR(SIGNERR,0.0);}
+    if (fa*fb > 0) {ERROR(params,SIGNERR,0.0);}
     if (fa == 0) return xa;
     if (fb == 0) return xb;
     params->iterations=0;
@@ -42,5 +42,5 @@ ridder(double (*f)(double, void*), double xa, double xb, double xtol, double rto
         if (fn == 0.0 || fabs(xb - xa) < tol)
             return xn;
     }
-    ERROR(CONVERR,xn);
+    ERROR(params,CONVERR,xn);
 }

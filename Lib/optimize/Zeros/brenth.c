@@ -43,7 +43,7 @@ brenth(double (*f)(double, void*), double xa, double xb, double xtol, double rto
     fpre = (*f)(xpre,params);
     fcur = (*f)(xcur,params);
     params->funcalls = 2;
-    if (fpre*fcur > 0) {ERROR(SIGNERR,0.0);}
+    if (fpre*fcur > 0) {ERROR(params,SIGNERR,0.0);}
     if (fpre == 0) return xpre;
     if (fcur == 0) return xcur;
     params->iterations = 0;
@@ -101,5 +101,5 @@ brenth(double (*f)(double, void*), double xa, double xb, double xtol, double rto
         fcur = (*f)(xcur, params);
         params->funcalls++;
     }
-    ERROR(CONVERR,xcur);
+    ERROR(params,CONVERR,xcur);
 }
