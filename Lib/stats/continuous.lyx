@@ -502,6 +502,14 @@ Non-central moments are defined using the PDF
 \end_inset 
 
  which may be easier to compute numerically.
+ Note that 
+\begin_inset Formula $q=F\left(x\right)$
+\end_inset 
+
+ so that 
+\begin_inset Formula $dq=f\left(x\right)dx.$
+\end_inset 
+
  Central moments are computed similarly 
 \begin_inset Formula $\mu =\mu _{1}^{\prime }$
 \end_inset 
@@ -618,7 +626,64 @@ l_{\mathbf{x}}\left(\boldsymbols \theta \right) & = & -\sum _{i=1}^{N}\log f\lef
 \begin_inset Formula $\left(x_{i}-L\right)/S$
 \end_inset 
 
- in the log-likelihood function and minimizing.
+ in the log-likelihood function adding 
+\begin_inset Formula $N\log S$
+\end_inset 
+
+ and minimizing, thus 
+\begin_inset Formula \begin{eqnarray*}
+l_{\mathbf{x}}\left(L,S;\boldsymbol {\theta }\right) & = & N\log S-\sum _{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol \theta \right)\\
+ & = & N\log S+l_{\frac{\mathbf{x}-S}{L}}\left(\boldsymbol {\theta }\right)
+\end{eqnarray*}
+
+\end_inset 
+
+ If desired, sample estimates for 
+\begin_inset Formula $L$
+\end_inset 
+
+ and 
+\begin_inset Formula $S$
+\end_inset 
+
+ (not necessarily maximum likelihood estimates) can be obtained from samples
+ estimates of the mean and variance using 
+\begin_inset Formula \begin{eqnarray*}
+\hat{S} & = & \sqrt{\frac{\hat{\mu }_{2}}{\mu _{2}}}\\
+\hat{L} & = & \hat{\mu }-\hat{S}\mu 
+\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\mu $
+\end_inset 
+
+ and 
+\begin_inset Formula $\mu _{2}$
+\end_inset 
+
+ are assumed known as the mean and variance of the
+\series bold 
+ untransformed 
+\series default 
+distribution (when 
+\begin_inset Formula $L=0$
+\end_inset 
+
+ and 
+\begin_inset Formula $S=1$
+\end_inset 
+
+) and 
+\begin_inset Formula \begin{eqnarray*}
+\hat{\mu } & = & \frac{1}{N}\sum _{i=1}^{N}x_{i}=\bar{\mathbf{x}}\\
+\hat{\mu }_{2} & = & \frac{1}{N-1}\sum _{i=1}^{N}\left(x_{i}-\hat{\mu }\right)^{2}=\frac{N}{N-1}\overline{\left(\mathbf{x}-\bar{\mathbf{x}}\right)^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Subsection
 
 Standard notation for mean
@@ -634,8 +699,11 @@ We will use
 \begin_inset Formula $N$
 \end_inset 
 
- should be clear from context.
- 
+ should be clear from context as the number of samples 
+\begin_inset Formula $x_{i}$
+\end_inset 
+
+
 \layout Section
 
 Alpha 
