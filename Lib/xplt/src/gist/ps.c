@@ -905,30 +905,51 @@ static int DrwText(Engine *engine, GpReal x0, GpReal y0, const char *text)
 
   /* Guess at the bounding box for the text */
   if (!psEngine->curClip) {
-    GpReal dx=0.0, dy=0.0;
-    if (alignH==TH_CENTER) dx= 0.5*width;
-    else if (alignH==TH_RIGHT) dx= width;
-    if (alignV==TV_TOP || alignV==TV_CAP) dy= height;
-    else if (alignV==TV_HALF) dy= height-0.4*lineHeight;
-    else if (alignV==TV_BASE) dy= height-0.8*lineHeight;
-    else if (alignV==TV_BOTTOM) dy= height-lineHeight;
     if (gistA.t.orient==TX_RIGHT) {
-      x0-= dx;
-      y0-= dy;
+
+      if (alignH==TH_CENTER) x0 -= 0.5*width;
+      else if (alignH==TH_RIGHT) x0 -= width;
+
+      if (alignV==TV_TOP || alignV==TV_CAP) y0 -= height;
+      else if (alignV==TV_HALF) y0 -= height-0.4*lineHeight;
+      else if (alignV==TV_BASE) y0 -= height-0.8*lineHeight;
+      else if (alignV==TV_BOTTOM) y0 -= height-lineHeight;
+
     } else if (gistA.t.orient==TX_LEFT) {
-      x0+= dx;
-      y0+= dy;
+
+      if (alignH==TH_CENTER) x0 -= 0.5*width;
+      else if (alignH==TH_LEFT) x0 -= width;
+
+      if (alignV==TV_HALF) y0 -= .4*lineHeight;
+      else if (alignV==TV_BASE) y0 -= 0.8*lineHeight;
+      else if (alignV==TV_BOTTOM) y0 -= lineHeight;
+
     } else if (gistA.t.orient==TX_UP) {
-      x0-= dy;
-      y0+= dx;
-    } else {
-      x0+= dy;
-      y0-= dx;
+      
+      if (alignH==TH_CENTER) y0 -= 0.5*width;
+      else if (alignH==TH_RIGHT) y0 -= width;
+
+      if (alignV==TV_HALF) x0 -= 0.4*lineHeight;
+      else if (alignV==TV_BASE) x0 -= 0.8*lineHeight;
+      else if (alignV==TV_BOTTOM) x0 -= lineHeight;
+
+    } else { /* TX_DOWN */
+
+      if (alignH==TH_CENTER) y0 -= 0.5*width;
+      else if (alignH==TH_LEFT) y0 -= width;
+
+      if (alignV==TV_TOP || alignV==TV_CAP) x0 -= height;
+      else if (alignV==TV_HALF) x0 -= height-0.4*lineHeight;
+      else if (alignV==TV_BASE) x0 -= height-0.8*lineHeight;
+      else if (alignV==TV_BOTTOM) x0 -= height-lineHeight;
+
     }
+
     if (x0>xmin) xmin= x0;
     if (x0+width<xmax) xmax= x0+width;
     if (y0>ymin) ymin= y0;
-    if (y0+height<ymax) ymax= y0+height;
+    if (y0+height<ymax) ymax= y0+height;    
+
     xll= (int)xmin;
     xur= (int)xmax;
     yll= (int)ymin;

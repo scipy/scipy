@@ -265,7 +265,7 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
     legy = Numeric.ones(legarr.shape)
     dy = fontsize*points*1.2
     deltay = fontsize*points / 2.8
-    deltax = fontsize*points / 2.8 * DX / DY
+    deltax = fontsize*points / 2.6 * DX / DY
     ypos = lly + deltay;
     if linetypes is None:
         linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
