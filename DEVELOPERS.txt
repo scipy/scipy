@@ -41,12 +41,14 @@ Currently Scipy consists of the following files and directories:
     Scipy structure (this document).
 
   setup.py
-    Script for building and installing Scipy.
+    Script for building and installing Scipy. It calls also
+    scipy_core/setup.py with the same command line arguments
+    as specified for setup.py. You'll find scipy_core related
+    files in scipy_core/{dist,build}.
 
   MANIFEST.in
-    Additions to distutils generated Scipy tar-balls [Each Scipy
-    module may contain its own MANIFEST.in and the main setup.py
-    should merge them into MANIFEST.in].
+    Additions to distutils generated Scipy tar-balls.
+    Its usage is depreciated, in general.
 
   scipy_core/
     Contains three modules, scipy_base, scipy_distutils, and scipy_test,
@@ -58,9 +60,7 @@ Currently Scipy consists of the following files and directories:
     Contains Scipy __init__.py and the directories of Scipy modules.
 
   Lib_chaco/
-    Contains packages related to Chaco. [Can we move these packages
-    under Lib/? No need, new hooks in setup.py takes care of this; in
-    fact, we can introduce also contrib/ directory]
+    Contains Scipy modules related to Chaco.
 
   tutorial/
     Scipy tutorial.
@@ -78,9 +78,9 @@ follow the following conventions:
 
 * Ideally, each Scipy module should be self-contained as much as
   possible, that is, it must be usable as standalone and have minimal
-  dependencies to other packagers or modules, even if they would be
-  also Scipy modules. The exception is ``scipy_base`` that is encouraged
-  to be used as a replacement of ``Numeric`` or ``numarray`` modules
+  dependencies to other packages or modules, even if they would be
+  also Scipy modules. The exception is ``scipy_base``, its usage is 
+  encouraged as a replacement of ``Numeric`` or ``numarray`` modules
   to simplify the future transition Numeric->Numarray.
 
 * Directory ``xxx/`` must contain 
@@ -97,7 +97,9 @@ follow the following conventions:
     corresponding to modules ``xxx/<name>{.py,.so,/}``.  See below for
     more details.
 
-  + a file ``MANIFEST.in``.
+  + a file ``MANIFEST.in`` that may contain only ``include setup.py`` line.
+    DO NOT specify sources in MANIFEST.in, you must specify all sources
+    in setup_xxx.py file. Otherwise Scipy tar-ball will miss these sources.
 
 [Open issues: where we should put documentation?]
 
@@ -109,7 +111,7 @@ Each Scipy module setup_xxx.py file should contain a function
 as an argument to distutils setup function.
 
 For example, a minimal setup_xxx.py file for a pure Python Scipy
-module xxx is::
+module xxx would be::
 
   def configuration(parent_package='',parent_path=None):
       package = 'xxx'
@@ -122,21 +124,25 @@ module xxx is::
       setup(**configuration(parent_path=''))
 
 A Scipy module may have also a ``xxx/setup.py`` file that should contain
-a statement::
+one statement::
 
   execfile('setup_xxx.py')
 
 Ideally there should be no need for this file but
-``distutils/command/bdist_rpm.py`` has ``setup.py`` hardcoded and
-therefore building .rpm files using ``setup_xxx.py`` would fail.
+``distutils/command/bdist_rpm.py`` (Python versions <=2.3) has
+``setup.py`` hardcoded in and therefore building .rpm files without
+the above described ``setup.py`` file will fail.  This is only
+relevant when you wish to distribute Scipy module separately from
+scipy.
+
 
 get_path
 ++++++++
 
 ``scipy_distutils.misc_util`` provides function
-``get_path(modulename,parent_path=None)`` that returns the location of
-``modulename``. In ``setup_xxx.py`` file this can be used to determine
-the local directory name as follows::
+``get_path(modulename,parent_path=None)`` that returns the directory
+of ``modulename``. In ``setup_xxx.py`` file this can be used to
+determine the local directory name as follows::
 
   local_path = get_path(__name__,parent_path)
 

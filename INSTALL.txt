@@ -289,8 +289,8 @@ This issue is explained in chaco mailing list thread starting at
 
   http://www.scipy.org/site_content/mailman?fn=scipy-chaco/2003-November/000503.html
 
-In summary, you cannot use chaco under Linux, MacOSX, and other
-non-Windows platforms in short term, try next year again.
+In summary, you cannot use chaco under Linux, MacOSX, or any other
+non-Windows platform in short term, try next year again.
 
 BLAS sources shipped with LAPACK are incomplete
 -----------------------------------------------
