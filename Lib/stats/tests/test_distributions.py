@@ -10,6 +10,7 @@ from scipy_test.testing import assert_array_almost_equal
 from scipy_test.testing import ScipyTestCase as TestCase
 import scipy
 from scipy import stats
+import types
 
 def kolmogorov_test(diststr,args=(),N=20,significance=0.01):
     qtest = stats.ksoneisf(significance,N)
@@ -69,12 +70,39 @@ class test_%s(TestCase):
 """ % (dist,dist,dist,args,alpha,dist,args,alpha,dist,args,alpha,args)
     exec exstr
 
+
+class test_randint(TestCase):
+    def check_rvs(self):
+        vals = stats.randint(5,30,size=100)
+        assert(scipy.all(vals < 30) & scipy.all(vals >= 5))
+        assert(len(vals) == 100)
+        val = stats.randint(15,46)
+        assert((val >= 15) & (val < 46))
+        assert(isinstance(val,types.IntType))
+
+    def check_pdf(self):
+        k = scipy.r_[0:36]
+        out = scipy.where((k >= 5) & (k < 30), 1.0/(30-5), 0)
+        vals = stats.randint.pdf(k,5,30)
+        assert(scipy.all(vals == out))
+
+    def check_cdf(self):
+        x = scipy.r_[0:36:100j]
+        k = scipy.floor(x)
+        out = scipy.select([k>=30,k>=5],[1.0,(k-5.0+1)/(30-5.0)],0)
+        vals = stats.randint.cdf(x,5,30)
+        assert_array_almost_equal(vals, out, decimal=12)
+
+
+
+
 def test_suite(level=1):
     suites = []
     if level > 0:
         for dist in dists:
             thistest = eval("test_%s"%dist)
             suites.append( unittest.makeSuite(thistest,'check_') )
+        suites.append( unittest.makeSuite(test_randint,'check_') )
     total_suite = unittest.TestSuite(suites)
     return total_suite
 

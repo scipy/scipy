@@ -2495,8 +2495,8 @@ class rv_discrete:
         else:
             return self._munp(n,*args)
 
-        def __call__(self, *args, **kwds):
-            return self.rvs(*args,**kwds)
+    def __call__(self, *args, **kwds):
+        return self.rvs(*args,**kwds)
     
 # Binomial
 
@@ -2694,7 +2694,7 @@ poisson = poisson_gen(a=0,name='Poisson')
 ## Discrete Uniform
 
 class randint_gen(rv_discrete):
-    """Random integers >=min < max. If instance is called random numbers
+    """Random integers >=min and <max. If instance is called random numbers
     are generated with >=0 and <min if max is None.
     """
     def _argcheck(self, min, max):
@@ -2703,9 +2703,10 @@ class randint_gen(rv_discrete):
         return (max > min)
     def _pdf(self, k, min, max):
         fact = 1.0 / (max - min)
+        return fact
     def _cdf(self, x, min, max):
         k = floor(x)
-        return (k-min)*1.0/(max-min)
+        return (k-min+1)*1.0/(max-min)
     def _ppf(self, q, min, max):
         vals = ceil(q*(max-min)+min)
         temp = randintcdf(vals-1,min,max)
@@ -2724,12 +2725,12 @@ class randint_gen(rv_discrete):
         if max is None:
             max = min
             min = 0
-        U = rv.random(size=self._size)
+        U = random(size=size)
         val = floor((max-min)*U + min)
-        if isinstance(a, Num.ArrayType):
-            return a.astype(Num.Int)
+        if isinstance(val, Num.ArrayType):
+            return val.astype(Num.Int)
         else:
-            return int(a)
+            return int(val)
 randint = randint_gen(name='random integer')
 
 # Zipf distribution
