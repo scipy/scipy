@@ -18,6 +18,9 @@ subobj2 = re.compile("(\s+)(\w+)(\s+)---(\s+)([\w*])")
 import scipy
 UfuncType = scipy.UfuncType
 
+def isfortrantype(obj):
+    return repr(type(obj))=="<type 'fortran'>"
+
 def makenewparent(name, parent):
     new = name
     if '.' in name:
@@ -44,7 +47,10 @@ def toPage(obj, name, parent, mod):
     elif typ is types.TypeType:
         return ClassPage(newparent, obj)
     elif typ is types.ModuleType:
-        return ModulePage(newparent, obj, canedit=0)    
+        if re.match(r'This module \'\w+\' is auto-generated with f2py',
+                    getattr(obj,'__doc__','')):
+            return F2pyModulePage(newparent, obj, canedit=0)
+        return ModulePage(newparent, obj, canedit=0)
     elif typ is types.MethodType:
         return BasePage(newparent, obj)
     elif inspect.ismethoddescriptor(obj):
@@ -52,6 +58,8 @@ def toPage(obj, name, parent, mod):
     elif typ is types.InstanceType:
         return BasePage(newparent, obj, name=name, canedit=0)
     elif typ is types.DictType:
+        return BasePage(newparent, obj, name=name, canedit=0)
+    elif isfortrantype(obj):
         return BasePage(newparent, obj, name=name, canedit=0)
     else:
         print "Err 3:", typ
@@ -62,7 +70,7 @@ class BasePage(rend.Page):
 
     def __init__(self, parent, obj, **kw):
         self.parent = parent
-        self.obj = obj
+        self.obj = scipy.ppresolve(obj)
         self.name = kw.pop('name',None)
         if self.name is None:
             self.name = self.obj.__name__
@@ -116,10 +124,6 @@ class ModulePage(BasePage):
     def __init__(self, parent, module, **kw):
         BasePage.__init__(self, parent, module, **kw)
 
-        # Avoid postponed import modules
-        if hasattr(module, '_ppimport_module'):
-            self.obj = module._ppimport_module
-        
         # If the module.__all__ variable is not defined
         #  then parse the doc-string and pull out all names
         #  where a name occurs on a single line with this pattern:
@@ -131,7 +135,7 @@ class ModulePage(BasePage):
             doc = module.__doc__
             if doc is None:
                 self.all = []
-            else:
+            else:                
                 self.all = [x[1] for x in subobj.findall(doc)]
                 self.all.extend([x[1] for x in subobj2.findall(doc)])
         if self.all is None:
@@ -142,12 +146,6 @@ class ModulePage(BasePage):
             print "Err 1: ", name, self.all
             return None
         child = getattr(self.obj,name,None)
-
-        # special handle postponed import modules
-        #  by causing it to import so that a new getattr
-        #  returns the actual module
-        if hasattr(child, '_ppimport_module'):
-            child = getattr(self.obj,name,None)
 
         if child is None:
             print "Err 2: ", self.obj, name, getattr(self.obj, name, None)
@@ -163,6 +161,19 @@ class ModulePage(BasePage):
         doc = subobj.sub("\\1<a href=\\2>\\2</a>\\3--\\4\\5",doc)
         doc = subobj2.sub("\\1<a href=\\2>\\2</a>\\3---\\4\\5",doc)
         return doc
+
+
+f2pysubobj = re.compile(r"  ([\w,]+) = (\w+)(.*)")
+class F2pyModulePage(ModulePage):
+
+    def __init__(self, parent, module, **kw):
+        BasePage.__init__(self, parent, module, **kw)    
+        self.all = [a for a in dir(module) if isfortrantype(getattr(module,a))]
+
+    def dochtml(self, doc):
+        doc = f2pysubobj.sub(r"  \1 = <a href=\2>\2</a>\3",doc)
+        return doc
+
 
 class ClassPage(BasePage):
     addSlash = True   # I have subchildren
