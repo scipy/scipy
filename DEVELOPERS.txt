@@ -207,14 +207,15 @@ So, the contents of a typical xxx/__init__.py file would be::
 File xxx/tests/test_yyy.py
 --------------------------
 
-Ideally, each Python code, extension module, or a subpackage in ``xxx/``
-directory should have the corresponding ``test_<name>.py`` file in
-``xxx/tests/`` directory. This file should define classes derived
-from ScipyTestCase class. Methods of such classes that names start
-with ``bench_`` or ``check_`` or ``test_`` are passed on to unittest
-machinery. These methods may have optional arguments, the default
-value of the first argument defines the testing level number. Default
-level is 1.
+Ideally, each Python code, extension module, or a subpackage in
+``xxx/`` directory should have the corresponding ``test_<name>.py``
+file in ``xxx/tests/`` directory. This file should define classes
+derived from ``ScipyTestCase`` (or from ``unittest.TestCase``) class
+and have names starting with ``test``. The methods of these classes
+which names start with ``bench``, ``check``, or ``test``, are passed
+on to unittest machinery. In addition, the value of the first optional
+argument of these methods determine the level of the corresponding
+test. Default level is 1.
 
 A minimal example of a ``test_yyy.py`` file that implements tests for
 a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
@@ -248,8 +249,22 @@ functions::
   assert_array_almost_equal(x,y,decimal=6,err_msg='')
   rand(*shape) # returns random array with a given shape
 
-``ScipyTest`` managed running ``tests/test_*.py`` scripts. When using
-its ``.run()`` method then the level and verbosity parameters for
-tests are taken from ``sys.argv`` and the method
-``.test(level,verbosity)`` is called.
+``ScipyTest`` can be used for running ``tests/test_*.py`` scripts.
+For instance, to run all test scripts of the module ``xxx``, execute
+in Python:
+
+  >>> ScipyTest('xxx').test(level=1,verbosity=1)
+
+or equivalently,
+
+  >>> import xxx
+  >>> ScipyTest(xxx).test(level=1,verbosity=1)
+
+To run only tests for ``xxx.yyy`` module, execute:
+
+  >>> ScipyTest('xxx.yyy').test(level=1,verbosity=1)
+
+To take the level and verbosity parameters for tests from
+``sys.argv``, use ``ScipyTest.run`` method (this is supported only
+when ``optparse`` is installed).
 
