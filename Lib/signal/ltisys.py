@@ -270,8 +270,8 @@ class lti:
         return lsim(self, U, T, X0=X0)
 
 
-def lsim(system, U, T, X0=None):
-    """Simulate output of a continuous-time linear system.
+def lsim2(system, U, T, X0=None):
+    """Simulate output of a continuous-time linear system, using ODE solver.
 
     Inputs:
 
@@ -331,6 +331,93 @@ def lsim(system, U, T, X0=None):
     xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc))
     yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
     return T, squeeze(transpose(yout)), xout
+
+
+def lsim(system, U, T, X0=None, interp=1):
+    """Simulate output of a continuous-time linear system.
+
+    Inputs:
+
+      system -- an instance of the LTI class or a tuple describing the
+                system.  The following gives the number of elements in
+                the tuple and the interpretation.
+                  2 (num, den)
+                  3 (zeros, poles, gain)
+                  4 (A, B, C, D)
+      U -- an input array describing the input at each time T
+           (interpolation is assumed between given times).
+           If there are multiple inputs, then each column of the 
+           rank-2 array represents an input.
+      T -- the time steps at which the input is defined and at which
+           the output is desired.
+      X0 -- (optional, default=0) the initial conditions on the state vector.
+      interp -- linear (1) or zero-order hold (0) interpolation
+
+    Outputs: (T, yout, xout)
+
+      T -- the time values for the output.
+      yout -- the response of the system.
+      xout -- the time-evolution of the state-vector.
+    """
+    # system is an lti system or a sequence
+    #  with 2 (num, den)
+    #       3 (zeros, poles, gain)
+    #       4 (A, B, C, D)
+    #  describing the system
+    #  U is an input vector at times T
+    #   if system describes multiple inputs
+    #   then U can be a rank-2 array with the number of columns
+    #   being the number of inputs
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+    U = r1array(U)
+    T = r1array(T)
+    if len(U.shape) == 1:
+        U.shape = (U.shape[0],1)
+    sU = U.shape        
+    if len(T.shape) != 1:
+        raise ValueError, "T must be a rank-1 array."
+    if sU[0] != len(T):
+        raise ValueError, "U must have the same number of rows as elements in T."
+    if sU[1] != sys.inputs:
+        raise ValueError, "System does not define that many inputs."
+
+    if X0 is None:
+        X0 = zeros(sys.B.shape[0],sys.A.typecode())
+
+    xout = Mat(zeros((len(T),sys.B.shape[0]),sys.A.typecode()))
+    xout[0] = X0
+    A = Mat(sys.A)
+    B = Mat(sys.B)
+    dt = T[1]-T[0]
+    G = Mat(linalg.expm(A*dt))
+    Am1 = A.I
+    Am2 = Am1*Am1
+    I = Mat(eye(A.shape[0],typecode=A.typecode()))
+    GmI = G-I
+    F1 = Am1*GmI*B
+    if interp:
+        F2 = (Am2*GmI/dt- Am1) * B
+
+    U = Mat(U)
+    for k in xrange(1,len(T)):
+        dt1 = T[k] - T[k-1]
+        if dt1 != dt:
+            dt = dt1
+            G = Mat(linalg.expm(A*dt))
+            GmI = G-I
+            F1 = Am1*GmI*B
+            if interp:
+                F2 = (Am2*GmI/dt- Am1) * B
+
+        xout[k] = xout[k-1]*G.T + U[k-1]*F1.T
+        if interp:
+            xout[k] = xout[k] + (U[k]-U[k-1])*F2.T
+
+    yout = (sys.C * xout.T + sys.D * U.T).T
+    return T, squeeze(yout), squeeze(xout)
 
 
 def impulse(system, X0=None, T=None, N=None):
