@@ -5,6 +5,7 @@
 """
 from Numeric import *
 from fastumath import *
+from scipy import r1array
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays
@@ -31,7 +32,7 @@ class linear_1d:
     interp_axis = -1 # used to set which is default interpolation
                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
                      
-    def __init__(self,x,y,axis = -1, copy = 1,bounds_error=1):
+    def __init__(self,x,y,axis = -1, copy = 1,bounds_error=1, fill_value=None):
         """Initialize a 1d linear interpolation class
 
         Description:
@@ -63,16 +64,15 @@ class linear_1d:
         """      
         self.axis = axis
         self.copy = copy
-        self.bounds_error = bounds_error        
-        
-        # !! Haven't implemented bounds_error = 0 yet.
-        if self.bounds_error != 1:
-            raise NotImplementedError, 'bounds_error must be 1 currently.'
+        self.bounds_error = bounds_error
+        if fill_value is None:
+            self.fill_value = array(0.0) / array(0.0)
+        else:
+            self.fill_value = fill_value
             
         # Check that both x and y are at least 1 dimensional.    
         if len(shape(x)) == 0 or len(shape(y)) == 0:
-            raise ValueError, "x and y arrays must have at least one dimension."    
-            
+            raise ValueError, "x and y arrays must have at least one dimension."                
         # make a "view" of the y array that is rotated to the
         # interpolation axis.  
         oriented_x = x
@@ -99,6 +99,7 @@ class linear_1d:
         # 1. Handle values in x_new that are outside of x.  Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
+        x_new = r1array(x_new)
         out_of_bounds = self._check_bounds(x_new)
         # 2. Find where in the orignal data, the values to interpolate
         #    would be inserted.  
@@ -119,13 +120,20 @@ class linear_1d:
         y_hi = take(self.y,hi,axis=self.interp_axis);
         slope = (y_hi-y_lo)/(x_hi-x_lo)
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new-x_lo) + y_lo        
+        y_new = slope*(x_new-x_lo) + y_lo 
         # 6. Fill any values that were out of bounds with NaN
         # !! Need to think about how to do this efficiently for 
-        # !! mutli-dimensional Cases.  
-        # !! putmask(x,mask,values) works fine for 1D, but not for 
-        # !! Multidimensional.
-        
+        # !! mutli-dimensional Cases.
+        yshape = y_new.shape
+        y_new = y_new.flat
+        new_shape = list(yshape)
+        new_shape[self.interp_axis] = 1
+        sec_shape = [1]*len(new_shape)
+        sec_shape[self.interp_axis] = len(out_of_bounds)
+        out_of_bounds.shape = sec_shape
+        new_out = ones(new_shape)*out_of_bounds
+        putmask(y_new, new_out.flat, self.fill_value)
+        y_new.shape = yshape      
         # Rotate the values of y_new back so that they coorespond to the
         # correct x_new values.
         result = swapaxes(y_new,self.interp_axis,self.axis)

@@ -106,14 +106,13 @@ def freqz(b, a, worN=None, whole=0):
     w = r1array(w)
     zm1 = exp(-1j*w)
     return polyval(b[::-1], zm1) / polyval(a[::-1], zm1), w
-    
-        
+            
     
 def tf2zpk(b,a):
-    """Return zero, pole, gain (z,p,k) representation from a numerator, denominator
-    representation of a linear filter.
+    """Return zero, pole, gain (z,p,k) representation from a numerator,
+    denominator representation of a linear filter.
     """
-    b,a = map(r1array,(b,a))
+    b,a = normalize(b,a)
     b = (b+0.0) / a[0]
     a = (a+0.0) / a[0]
     k = b[0]
@@ -123,7 +122,8 @@ def tf2zpk(b,a):
     return z, p, k
     
 def zpk2tf(z,p,k):
-    """Return polynomial transfer function representation from zeros and poles
+    """Return polynomial transfer function representation from zeros
+    and poles
 
     Inputs:
 
@@ -134,7 +134,17 @@ def zpk2tf(z,p,k):
 
       b, a --- numerator and denominator polynomials.
     """
-    b = k * poly(z)
+    z = r1array(z)
+    k = r1array(k)
+    if len(z.shape) > 1:
+        temp = poly(z[0])
+        b = zeros((z.shape[0], z.shape[1]+1), temp.typecode())
+        if len(k) == 1:
+            k = [k[0]]*z.shape[0]
+        for i in range(z.shape[0]):
+            b[i] = k[i] * poly(z[i])
+    else:
+        b = k * poly(z)
     a = poly(p)
     return b, a
 
@@ -142,10 +152,18 @@ def normalize(b,a):
     """Normalize polynomial representation of a transfer function.
     """
     b,a = map(r1array,(b,a))
+    if len(a.shape) != 1:
+        raise ValueError, "Denominator polynomial must be rank-1 array."
+    if len(b.shape) > 2:
+        raise ValueError, "Numerator polynomial must be rank-1 or rank-2 array."
+    if len(b.shape) == 1:
+        b = Numeric.asarray([b],b.typecode())
     while a[0] == 0.0 and len(a) > 1:
         a = a[1:]
-    while b[0] == 0.0 and len(b) > 1:
-        b = b[1:]
+    while Numeric.allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+        b = b[:,1:]
+    if b.shape[0] == 1:
+        b = b[0]        
     outb = b * (1.0) / a[0]
     outa = a * (1.0) / a[0]
     return outb, outa

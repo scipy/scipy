@@ -41,14 +41,13 @@ _namespaces = ['MLab','handy', 'misc', 'fastumath'] # MLab includes Numeric
 _partials = {'Matrix' : ['Matrix']}
 import os,sys
 from helpmod import help, source
-from handy import __
 
 __all__=[]
 
 somenames2all(__all__, _partials, globals())
 names2all(__all__, _namespaces, globals())
 modules2all(__all__, _modules, globals())
-objects2all(__all__, ['help', 'source','__'])
+objects2all(__all__, ['help', 'source'])
 
 
 try:

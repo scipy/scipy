@@ -437,13 +437,6 @@ def lfilter(b, a, x, axis=-1, zi=None):
     else:
         return sigtools._linear_filter(b, a, x, axis, zi)
 
-#def lsim(b,a,x,t,y0=None):
-#    # define a function and pass it to lsim
-#    xfunc = scipy.interpolate.linear_1d(t,x)
-#    rout = scipy.integrate.odeint(fprime, y0, t, args=(b,a,xfunc))
-#    return rout[0]
-
-
 
 def test():
     a = [3,4,5,6,5,4]

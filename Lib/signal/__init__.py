@@ -47,7 +47,7 @@
  
 """
 _modules = ['sigtools']
-_namespaces = ['signaltools', 'bsplines', 'filter_design']
+_namespaces = ['signaltools', 'bsplines', 'filter_design', 'ltisys']
 
 __all__ = []
 
