@@ -285,7 +285,7 @@ def pinv(a, cond=-1):
     """
     a = asarray(a)
     t = a.typecode()
-    b = scipy.identity(a.shape[0],t)
+    b = scipy_base.identity(a.shape[0],t)
     return lstsq(a, b, cond=cond)[0]
 
 

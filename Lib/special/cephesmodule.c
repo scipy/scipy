@@ -1176,6 +1176,10 @@ static int type_from_char(char typechar)
   case '1': return PyArray_SBYTE;
   case 's': return PyArray_SHORT;
   case 'i': return PyArray_INT;
+#ifdef PyArray_UNSIGNED_TYPES
+  case 'w': return PyArray_USHORT;
+  case 'u': return PyArray_UINT;
+#endif
   case 'l': return PyArray_LONG;
   case 'f': return PyArray_FLOAT;
   case 'd': return PyArray_DOUBLE;

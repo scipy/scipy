@@ -1,4 +1,4 @@
-/* numpyio.c -- Version 0.9.1
+/* numpyio.c -- Version 0.9.9
  * 
  * Author:  Travis E. Oliphant
  * Date  :  March 1999
@@ -668,6 +668,10 @@ static int PyTypeFromChar(char ctype)
   case '1': return PyArray_SBYTE;
   case 's': return PyArray_SHORT;
   case 'i': return PyArray_INT;
+#ifdef PyArray_UNSIGNED_TYPES
+  case 'u': return PyArray_UINT;
+  case 'w': return PyArray_USHORT;
+#endif
   case 'l': return PyArray_LONG;
   case 'f': return PyArray_FLOAT;
   case 'd': return PyArray_DOUBLE;

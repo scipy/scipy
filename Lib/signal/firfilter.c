@@ -21,6 +21,10 @@ static void fname ## _onemultadd(char *sum, char *term1, char *term2) { \
   (*((type *) sum)) += (*((type *) term1)) * \
   (*((type *) term2)); return; }
 
+#ifdef PyArray_UNSIGNED_TYPES
+MAKE_ONEMULTADD(USHORT, unsigned short)
+MAKE_ONEMULTADD(UINT, unsigned int)
+#endif
 MAKE_ONEMULTADD(UCHAR, unsigned char)
 MAKE_ONEMULTADD(SCHAR, signed char)
 MAKE_ONEMULTADD(SHORT, short)
@@ -48,7 +52,13 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
 					 UCHAR_onemultadd,
 					 SCHAR_onemultadd,
 					 SHORT_onemultadd,
+#ifdef PyArray_UNSIGNED_TYPES
+                                         USHORT_onemultadd,
+#endif
 					 INT_onemultadd,
+#ifdef PyArray_UNSIGNED_TYPES
+                                         UINT_onemultadd,
+#endif
 					 LONG_onemultadd,
 					 FLOAT_onemultadd,
 					 DOUBLE_onemultadd,

@@ -1475,9 +1475,15 @@ static void OBJECT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int
   *((PyObject **)op) = tmp; 
 }
 
+#ifdef PyArray_UNSIGNED_TYPES
+static MultAddFunction *MultiplyAddFunctions[] = {NULL,UBYTE_MultAdd,SBYTE_MultAdd,SHORT_MultAdd,NULL,INT_MultAdd,NULL,LONG_MultAdd,
+FLOAT_MultAdd, DOUBLE_MultAdd, 
+CFLOAT_MultAdd, CDOUBLE_MultAdd, OBJECT_MultAdd};
+#else
 static MultAddFunction *MultiplyAddFunctions[] = {NULL,UBYTE_MultAdd,SBYTE_MultAdd,SHORT_MultAdd,INT_MultAdd,LONG_MultAdd,
 FLOAT_MultAdd, DOUBLE_MultAdd, 
 CFLOAT_MultAdd, CDOUBLE_MultAdd, OBJECT_MultAdd};
+#endif
 
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
@@ -1587,6 +1593,11 @@ COMPARE(LONG_compare, long)
 COMPARE(BYTE_compare, char)
 COMPARE(UNSIGNEDBYTE_compare, unsigned char)
 
+#ifdef PyArray_UNSIGNED_TYPES
+COMPARE(USHORT_compare, unsigned short)
+COMPARE(UINT_compare, unsigned int)
+#endif
+
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
         return PyObject_Compare(*ip1, *ip2);
@@ -1597,7 +1608,14 @@ typedef int (*CompareFunction) Py_FPROTO((const void *, const void *));
 
 CompareFunction compare_functions[] = {NULL,
 (CompareFunction)UNSIGNEDBYTE_compare,(CompareFunction)BYTE_compare,(CompareFunction)SHORT_compare,
-(CompareFunction)INT_compare,(CompareFunction)LONG_compare,
+#ifdef PyArray_UNSIGNED_TYPES
+(CompareFunction)USHORT_compare,
+#endif
+(CompareFunction)INT_compare,
+#ifdef PyArray_UNSIGNED_TYPES
+(CompareFunction)UINT_compare,
+#endif
+(CompareFunction)LONG_compare,
 (CompareFunction)FLOAT_compare,(CompareFunction)DOUBLE_compare,
 NULL,NULL,(CompareFunction)OBJECT_compare};
 
@@ -1751,6 +1769,10 @@ fail:
 
 
 static BasicFilterFunction *BasicFilterFunctions[] = {NULL,NULL,NULL,NULL,NULL,NULL,
+#ifdef PyArray_UNSIGNED_TYPES
+NULL,
+NULL,
+#endif
 FLOAT_filt, DOUBLE_filt, 
 CFLOAT_filt, CDOUBLE_filt, OBJECT_filt }; 
 /* There is the start of an OBJECT_filt, but it may need work */
