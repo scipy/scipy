@@ -1,6 +1,4 @@
-#from Numeric import *
 from fastumath import *
-#from fastumath import *
 from scipy import *
 import scipy.limits
 import sys
@@ -10,11 +8,11 @@ import wxplt
 import plot_objects
 
 plot_module = wxplt
-
 plot_class = gui_thread.register(plot_module.plot_frame)
 
 _figure = []
 _active = None
+
 
 def figure(which_one = None):
     global _figure; global _active
@@ -33,7 +31,15 @@ def figure(which_one = None):
         _active = which_one
         _active.Raise()
     else:
-        raise ValueError, "The specified figure or index is not not known"
+        try:
+            if which_one.__type_hack__ == "plot_canvas":
+                _active = which_one
+                _figure.append(_active)
+                _active.Raise()
+            else:
+                raise ValueError, "The specified figure or index is not not known"
+        except (AtrributeError):
+            pass
     fig = current()
     return fig
     
@@ -170,6 +176,7 @@ def hold(state):
 def axis(setting):
     validate_active()
     x_ticks = _active.x_axis.ticks
+    print type(x_ticks), dir(x_ticks)    
     x_interval = x_ticks[1]- x_ticks[0]
     y_ticks = _active.y_axis.ticks
     x_interval = x_ticks[1]- y_ticks[0]
@@ -197,6 +204,8 @@ def axis(setting):
 
 def save(file_name,format='png'):
     _active.save(file_name,format)
+
+
 ##########################################################
 #----------------- plotting machinery -------------------#
 ##########################################################
@@ -500,4 +509,3 @@ def speed_test():
             p.SetSize(s2)
         else: 
             p.SetSize(s1)
-            
