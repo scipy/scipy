@@ -6,14 +6,14 @@ SciPy requires the following software installed:
 
 1) Python 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
      http://www.python.org
-2) Numerical Python 20.x or 21.x
+2) Numerical Python 20.3 or newer but < Numarray
      http://www.numpy.org/
 3) ATLAS 3.2.1 or newer with complete LAPACK (see NOTES 2, 3, 4)
      http://math-atlas.sourceforge.net/
      http://www.netlib.org/lapack/
 4) f2py 2.13.175-1250 or newer
      http://cens.ioc.ee/projects/f2py2e/
-5) C, C++, Fortran 77 compilers.
+5) C, C++, Fortran 77 compilers (see COMPILER NOTES)
    gcc 2.95.x, 3.1.x compilers are recommended
      http://gcc.gnu.org/
 
@@ -46,6 +46,7 @@ NOTES
        make lapacklib    # On 400MHz PII it takes about 15min. 
      that will create lapack_LINUX.a when using
      INSTALL/make.inc.LINUX, for example.
+     If using Intel Fortran Compiler, see additional notes below.
    * Get the latest stable ATLAS sources from
        http://math-atlas.sourceforge.net/
      and unpack to /path/to/src/
@@ -56,7 +57,7 @@ NOTES
      where arch may vary (see the output of the previous command).
    * Make optimized LAPACK library:
        cd /path/to/src/ATLAS/lib/Linux_PII/
-       mkdir tmp; cd tmp;
+       mkdir tmp; cd tmp
        ar x ../liblapack.a
        cp /path/to/src/LAPACK/lapack_LINUX.a ../liblapack.a
        ar r ../liblapack.a *.o
@@ -105,17 +106,46 @@ From a tar ball
 Unpack SciPy-<version>.tar.gz, change to SciPy-<version> directory,
 and run
 
-   python setup.py install
+  python setup.py install
 
-This can take several minutes to hours, depending on the speed of your
-computer. You can specify which Fortran compiler to use by
+This can take several minutes to hours depending on the speed of your
+computer. 
+
+COMPILER NOTES
+==============
+
+You can specify which Fortran compiler to use by
 
   export FC_VENDOR=<Vendor>
 
 before the install command. <Vendor> is Absoft, Sun, SGI, Intel, 
 Itanium, NAG, Compaq, Digital, Gnu, or VAST.
+Or use the following install command:
 
-XXX: From rpm,deb,zip,..
+  python setup.py build build_flib --fcompiler=<Vendor> install
+
+Intel Fortran Compiler
+----------------------
+
+Intel Fortran Compiler (IFC) compiled codes are not binary compatible
+with g77 compiled codes. Therefore, when using IFC, *all* Fortran
+codes used in SciPy must be compiled with IFC, this also includes
+LAPACK, BLAS, and ATLAS libraries. Usage of GCC for compiling C codes
+is OK.
+
+IFC version 5.0 is not supported (because its bugs cause segfaults in
+scipy tests).
+
+Minimum IFC flags for building LAPACK and LAPACK are
+  -FI -w90 -w95 -cm -O3
+
+When finishing LAPACK build, you must recompile ?lamch.f without
+any optimization (otherwise infinite loops occur when using these
+routines):
+  cd /path/to/src/LAPACK/SRC
+  ifc -FI -w90 -w95 -cm -O0 -c ?lamch.f
+  cd ..
+  make lapacklib
 
 TESTING
 =======
