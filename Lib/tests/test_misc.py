@@ -46,15 +46,15 @@ class test_sum(unittest.TestCase):
         assert_equal(val,real_sum)
 
 class test_mean(unittest.TestCase):
-    def check_default_cols(self):
+    def check_default_rows(self):
         z = array(((1,2),(3,4)),Float)
         val = mean(z)
-        desired = array((2.,3.))
+        desired = array((1.5.,3.5))
         assert_array_equal(val,desired)
-    def check_rows(self):
+    def check_cols(self):
         z = array(((1,2),(3,4)),Float)
-        val = mean(z,axis=-1)
-        desired = array((1.5,3.5))
+        val = mean(z,axis=0)
+        desired = array((2,3))
         assert_array_equal(val,desired)
     def check_cols(self):
         z = array(((1,2),(3,4)),Float)
@@ -108,8 +108,8 @@ class test_isnan(unittest.TestCase):
         assert(isnan(array((-1.,))/0.) == 0)
     def check_ind(self): 
         assert(isnan(array((0.,))/0.) == 1)
-    def check_qnan(self): 
-        assert(isnan(log(-1.)) == 1)
+    #def check_qnan(self):             log(-1) return pi*j now
+    #    assert(isnan(log(-1.)) == 1)
     def check_integer(self):
         assert(isnan(1) == 0)
     def check_complex(self):
@@ -128,8 +128,8 @@ class test_isfinite(unittest.TestCase):
         assert(isfinite(array((-1.,))/0.) == 0)
     def check_ind(self): 
         assert(isfinite(array((0.,))/0.) == 0)
-    def check_qnan(self): 
-        assert(isfinite(log(-1.)) == 0)
+    #def check_qnan(self): 
+    #    assert(isfinite(log(-1.)) == 0)
     def check_integer(self):
         assert(isfinite(1) == 1)
     def check_complex(self):
@@ -152,9 +152,9 @@ class test_isinf(unittest.TestCase):
         assert(isinf(array(-1.)/0.) == 1)
     def check_ind(self): 
         assert(isinf(array((0.,))/0.) == 0)
-    def check_qnan(self): 
-        assert(isinf(log(-1.)) == 0)
-        assert(isnan(log(-1.)) == 1)
+    #def check_qnan(self): 
+    #    assert(isinf(log(-1.)) == 0)
+    #    assert(isnan(log(-1.)) == 1)
 
 class test_isposinf(unittest.TestCase):
     def check_generic(self):
