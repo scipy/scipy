@@ -1512,11 +1512,11 @@ def kstest(rvs,cdf,args=(),N=20):
     distribution.
     """
     if type(rvs) is StringType:
-        cdf = eval("scipy.stats."+rvs+"cdf")    
+        cdf = eval("scipy.stats."+rvs+".cdf")    
         rvs = eval("scipy.stats."+rvs)
     if type(cdf) is StringType:
-        cdf = eval("scipy.stats."+cdf+"cdf")        
-    if type(rvs) in [FunctionType, MethodType]:
+        cdf = eval("scipy.stats."+cdf+".cdf")        
+    if callable(rvs):
         kwds = {'size':N}
         vals = sb.sort(rvs(*args,**kwds))
     else:
@@ -1524,7 +1524,7 @@ def kstest(rvs,cdf,args=(),N=20):
         N = len(vals)
     cdfvals = cdf(vals, *args)
     D = max(abs(cdfvals - sb.arange(1.0,N+1)/N))
-    return D, distributions.ksonesf(D,N)
+    return D, distributions.ksone.sf(D,N)
 
 def chisquare(f_obs,f_exp=None):
     """

@@ -36,6 +36,62 @@ Discrete Statistical Distributions
 Discrete random variables take on only a countable number of values.
  The commonly used distributions are included in SciPy and described in
  this document.
+ Each discrete distribution can take one extra integer parameter: 
+\begin_inset Formula $L.$
+\end_inset 
+
+ The relationship between the general distribution and the standard one
+ is 
+\begin_inset Formula \[
+p\left(x\right)=p_{0}\left(x-L\right)\]
+
+\end_inset 
+
+ which allows for shifting of the input.
+ When a distribution generator is initialized, the discrete distribution
+ can either specify the beginning and ending (integer) values 
+\begin_inset Formula $a$
+\end_inset 
+
+ and 
+\begin_inset Formula $b$
+\end_inset 
+
+ which must be such that 
+\begin_inset Formula \[
+p_{0}\left(x\right)=0\quad x<a\textrm{ or }x>b\]
+
+\end_inset 
+
+ in which case, it is assumed that the pdf function is specified on the
+ integers 
+\begin_inset Formula $a+mk\leq b$
+\end_inset 
+
+ where 
+\begin_inset Formula $k$
+\end_inset 
+
+ is a non-negative integer (
+\begin_inset Formula $0,1,2,\ldots $
+\end_inset 
+
+) and 
+\begin_inset Formula $m$
+\end_inset 
+
+ is a positive integer multiplier.
+ Alternatively, the two lists 
+\begin_inset Formula $x_{k}$
+\end_inset 
+
+ and 
+\begin_inset Formula $p\left(x_{k}\right)$
+\end_inset 
+
+ can be provided directly in which case a dictionary is set up internally
+ to evaulate probabilities and generate random variates.
+ 
 \layout Subsection
 
 Probability Mass Function (PMF)
@@ -45,14 +101,14 @@ The probability mass function of a random variable X is defined as the probabili
 ty that the random variable takes on a particular value.
  
 \begin_inset Formula \[
-p\left(k\right)=P\left[X=k\right]\]
+p\left(x_{k}\right)=P\left[X=x_{k}\right]\]
 
 \end_inset 
 
  This is also sometimes called the probability density function, although
  technically 
 \begin_inset Formula \[
-p\left(x\right)=\sum _{k}p\left(k\right)\delta \left(x-k\right)\]
+p\left(x\right)=\sum _{k}p\left(x_{k}\right)\delta \left(x-x_{k}\right)\]
 
 \end_inset 
 
@@ -77,14 +133,14 @@ Cumulative Distribution Function (CDF)
 
 The cumulative distribution function is 
 \begin_inset Formula \[
-F\left(x\right)=P\left[X\leq x\right]=\sum _{n\leq x}p\left(n\right)\]
+F\left(x\right)=P\left[X\leq x\right]=\sum _{x_{k}\leq x}p\left(x_{k}\right)\]
 
 \end_inset 
 
  and is also useful to be able to compute.
  Note that 
 \begin_inset Formula \[
-F\left(k\right)-F\left(k-1\right)=p\left(k\right)\]
+F\left(x_{k}\right)-F\left(x_{k-1}\right)=p\left(x_{k}\right)\]
 
 \end_inset 
 
@@ -118,14 +174,39 @@ G\left(q\right)=F^{-1}\left(q\right)\]
 
 \end_inset 
 
-and is the smallest non-negative integer 
-\begin_inset Formula $k$
+ for discrete distributions, this must be modified for cases where there
+ is no 
+\begin_inset Formula $x_{k}$
+\end_inset 
+
+ such that 
+\begin_inset Formula $F\left(x_{k}\right)=q.$
+\end_inset 
+
+ In these cases we choose 
+\begin_inset Formula $G\left(q\right)$
+\end_inset 
+
+ to be the smallest value 
+\begin_inset Formula $x_{k}=G\left(q\right)$
 \end_inset 
 
  for which 
-\begin_inset Formula $q\leq F\left(k\right).$
+\begin_inset Formula $F\left(x_{k}\right)\geq q$
 \end_inset 
 
+.
+ If 
+\begin_inset Formula $q=0$
+\end_inset 
+
+ then we define 
+\begin_inset Formula $G\left(0\right)=a-1$
+\end_inset 
+
+.
+ This definition allows random variates to be defined in the same way as
+ with continuous rv's.
  
 \layout Subsection
 
@@ -163,13 +244,13 @@ Hazard functions
 If desired, the hazard function and the cumulative hazard function could
  be defined as 
 \begin_inset Formula \[
-h\left(k\right)=\frac{p\left(k\right)}{1-F\left(k\right)}\]
+h\left(x_{k}\right)=\frac{p\left(x_{k}\right)}{1-F\left(x_{k}\right)}\]
 
 \end_inset 
 
  and 
 \begin_inset Formula \[
-H\left(x\right)=\sum _{n\leq x}h\left(n\right)=\sum _{n\leq x}\frac{F\left(n\right)-F\left(n-1\right)}{1-F\left(n\right)}.\]
+H\left(x\right)=\sum _{x_{k}\leq x}h\left(x_{k}\right)=\sum _{x_{k}\leq x}\frac{F\left(x_{k}\right)-F\left(x_{k-1}\right)}{1-F\left(x_{k}\right)}.\]
 
 \end_inset 
 
@@ -181,7 +262,7 @@ Moments
 
 Non-central moments are defined using the PDF 
 \begin_inset Formula \[
-\mu _{m}^{\prime }=E\left[X^{m}\right]=\sum _{k}k^{m}p\left(k\right).\]
+\mu _{m}^{\prime }=E\left[X^{m}\right]=\sum _{k}x_{k}^{m}p\left(x_{k}\right).\]
 
 \end_inset 
 
@@ -191,24 +272,24 @@ Non-central moments are defined using the PDF
 
 
 \begin_inset Formula \begin{eqnarray*}
-\mu _{m}=E\left[\left(X-\mu \right)^{2}\right] & = & \sum _{k}\left(k-\mu \right)^{m}p\left(k\right)\\
- & = & \sum _{k=0}^{m}\left(\begin{array}{c}
+\mu _{m}=E\left[\left(X-\mu \right)^{2}\right] & = & \sum _{k}\left(x_{k}-\mu \right)^{m}p\left(x_{k}\right)\\
+ & = & \sum _{k=0}^{m}\left(-1\right)^{m-k}\left(\begin{array}{c}
  m\\
  k\end{array}
-\right)\left(-\mu \right)^{k}\mu _{m-k}^{\prime }
+\right)\mu ^{m-k}\mu _{k}^{\prime }
 \end{eqnarray*}
 
 \end_inset 
 
  The mean is the first moment 
 \begin_inset Formula \[
-\mu =\mu _{1}^{\prime }=E\left[X\right]=\sum _{k}kp\left(k\right)\]
+\mu =\mu _{1}^{\prime }=E\left[X\right]=\sum _{k}x_{k}p\left(x_{k}\right)\]
 
 \end_inset 
 
  the variance is the second central moment 
 \begin_inset Formula \[
-\mu _{2}=E\left[\left(X-\mu \right)^{2}\right]=\sum _{k}k^{2}p\left(k\right)-\mu ^{2}.\]
+\mu _{2}=E\left[\left(X-\mu \right)^{2}\right]=\sum _{x_{k}}x_{k}^{2}p\left(x_{k}\right)-\mu ^{2}.\]
 
 \end_inset 
 
@@ -226,6 +307,18 @@ Skewness is defined as
 
  so that a normal distribution has a kurtosis of zero.
  
+\layout Subsection
+
+Moment generating function
+\layout Standard
+
+The moment generating funtion is defined as 
+\begin_inset Formula \[
+M_{X}\left(t\right)=E\left[e^{Xt}\right]=\sum _{x_{k}}e^{x_{k}t}p\left(x_{k}\right)\]
+
+\end_inset 
+
+
 \layout Subsection
 
 Fitting data
@@ -433,6 +526,24 @@ G\left(q;p\right) & = & \begin{cases}
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+M\left(t\right)=1-p\left(1-e^{t}\right)\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+\mu _{m}^{\prime }=p\]
+
+\end_inset 
+
+
 \layout Section
 
 Binomial
@@ -496,6 +607,12 @@ I_{x}\left(a,b\right)=\frac{\Gamma \left(a+b\right)}{\Gamma \left(a\right)\Gamma
 \end_inset 
 
  
+\begin_inset Formula \[
+M\left(t\right)=\left[1-p\left(1-e^{t}\right)\right]^{n}\]
+
+\end_inset 
+
+ 
 \layout Section
 
 Poisson
@@ -549,6 +666,15 @@ F\left(x;\lambda \right) & = & \sum _{n=0}^{\left\lfloor x\right\rfloor }e^{-\la
 \end_inset 
 
 
+\layout Description
+
+
+\begin_inset Formula \[
+M\left(t\right)=\exp \left[\lambda \left(e^{t}-1\right)\right]\]
+
+\end_inset 
+
+
 \layout Section
 
 Geometric
@@ -577,7 +703,17 @@ G\left(q;p\right) & = & \left\lceil \frac{\log \left(1-q\right)}{\log \left(1-p\
 
 \end_inset 
 
- 
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \frac{p}{e^{-t}-\left(1-p\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Negative Binomial
@@ -741,6 +877,44 @@ F\left(x;\alpha \right) & = & \frac{1}{\zeta \left(\alpha \right)}\sum _{k=1}^{\
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \frac{\textrm{Li}_{a}\left(e^{t}\right)}{\zeta \left(a\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula $\zeta _{i}=\zeta \left(a-i\right)$
+\end_inset 
+
+ and 
+\begin_inset Formula $\textrm{Li}_{n}\left(z\right)$
+\end_inset 
+
+ is the 
+\begin_inset Formula $n^{\textrm{th}}$
+\end_inset 
+
+ polylogarithm function of 
+\begin_inset Formula $z$
+\end_inset 
+
+ defined as 
+\begin_inset Formula \[
+\textrm{Li}_{n}\left(z\right)\equiv \sum _{k=1}^{\infty }\frac{z^{k}}{k^{n}}\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{a-n}\left(e^{t}\right)}{\zeta \left(a\right)}\right|_{t=0}=\frac{\zeta \left(a-n\right)}{\zeta \left(a\right)}\]
+
+\end_inset 
+
+
 \layout Section
 
 Logarithmic (Log-Series, Series)
@@ -785,6 +959,20 @@ where
 \end_inset 
 
 
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & -\frac{1}{\log \left(1-p\right)}\sum _{k=1}^{\infty }\frac{e^{tk}p^{k}}{k}\\
+ & = & \frac{\log \left(1-pe^{t}\right)}{\log \left(1-p\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+ Thus, 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{1-n}\left(pe^{t}\right)}{\log \left(1-p\right)}\right|_{t=0}=-\frac{\textrm{Li}_{1-n}\left(p\right)}{\log \left(1-p\right)}.\]
+
+\end_inset 
+
+
 \layout Section
 
 Discrete Uniform (randint)
@@ -817,6 +1005,58 @@ G\left(q;a,b\right) & = & \left\lceil q\left(b-a\right)+a\right\rceil \\
 \gamma _{1} & = & 0\\
 \gamma _{2} & = & -\frac{6}{5}\frac{\left(b-a\right)^{2}+1}{\left(b-a-1\right)\left(b-a+1\right)}.
 \end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \frac{1}{b-a}\sum _{k=a}^{b-1}e^{tk}\\
+ & = & \frac{e^{bt}-e^{at}}{\left(b-a\right)\left(e^{t}-1\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Discrete Laplacian
+\layout Standard
+
+Defined over all integers for 
+\begin_inset Formula $a>0$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \tanh \left(\frac{a}{2}\right)e^{-a\left|k\right|},\\
+F\left(x\right) & = & \left\{ \begin{array}{cc}
+ \frac{e^{a\left(\left\lfloor x\right\rfloor +1\right)}}{e^{a}+1} & \left\lfloor x\right\rfloor <0,\\
+ 1-\frac{e^{-a\left\lfloor x\right\rfloor }}{e^{a}+1} & \left\lfloor x\right\rfloor \geq 0.\end{array}
+\right.\\
+G\left(q\right) & = & \left\{ \begin{array}{cc}
+ \left\lceil \frac{1}{a}\log \left[q\left(e^{a}+1\right)\right]-1\right\rceil  & q<\frac{1}{1+e^{-a}},\\
+ \left\lceil -\frac{1}{a}\log \left[\left(1-q\right)\left(1+e^{a}\right)\right]\right\rceil  & q\geq \frac{1}{1+e^{-a}}.\end{array}
+\right.
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \tanh \left(\frac{a}{2}\right)\sum _{k=-\infty }^{\infty }e^{tk}e^{-a\left|k\right|}\\
+ & = & C\left(1+\sum _{k=1}^{\infty }e^{-\left(t+a\right)k}+\sum _{1}^{\infty }e^{\left(t-a\right)k}\right)\\
+ & = & \tanh \left(\frac{a}{2}\right)\left(1+\frac{e^{-\left(t+a\right)}}{1-e^{-\left(t+a\right)}}+\frac{e^{t-a}}{1-e^{t-a}}\right)\\
+ & = & \frac{\tanh \left(\frac{a}{2}\right)\sinh a}{\cosh a-\cosh t}.
+\end{eqnarray*}
+
+\end_inset 
+
+ Thus, 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=M^{\left(n\right)}\left(0\right)=\left[1+\left(-1\right)^{n}\right]\textrm{Li}_{-n}\left(e^{-a}\right)\]
 
 \end_inset 
 

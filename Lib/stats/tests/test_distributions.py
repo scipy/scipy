@@ -13,7 +13,7 @@ from scipy import stats
 
 def kolmogorov_test(diststr,args=(),N=20,significance=0.01):
     qtest = stats.ksoneisf(significance,N)
-    cdf = eval('stats.'+diststr+'cdf')
+    cdf = eval('stats.'+diststr+'.cdf')
     dist = eval('stats.'+diststr)
     # Get random numbers
     kwds = {'size':N}
@@ -26,21 +26,21 @@ def kolmogorov_test(diststr,args=(),N=20,significance=0.01):
 
 # generate test cases to test cdf and distribution consistency
 
-dists = ['uniform','stnorm','norm','lognorm','expon','beta',
-         'power','bradford','burr','fisk','cauchy','halfcauchy',
+dists = ['uniform','norm','lognorm','expon','beta',
+         'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
          'foldcauchy','gamma','gengamma','loggamma',
          'alpha','anglit','arcsine','betaprime','erlang',
-         'dgamma','extreme3','exponweib','exponpow','frechet',
+         'dgamma','exponweib','exponpow','frechet_l','frechet_r',
          'gilbrat','f','ncf','chi2','chi','nakagami','genpareto',
          'genextreme','genhalflogistic','pareto','lomax','halfnorm',
          'halflogistic','fatiguelife','foldnorm','ncx2','t','nct',
-         'weibull','dweibull','maxwell','rayleigh','genlogistic',
-         'logistic','gumbel','gompertz','hypsecant','laplace',
-         'reciprocal','triang','tukeylambda']
+         'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
+         'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
+         'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda']
 
 for dist in dists:
     distfunc = eval('stats.'+dist)
-    nargs = distfunc.func_code.co_argcount - 1  # size argument is last
+    nargs = distfunc.numargs
     alpha = 0.01
     if dist == 'fatiguelife':
         alpha = 0.001        

@@ -193,7 +193,6 @@ interface package rpy.
 
 import pstats
 from stats import *
-from rv2 import *
 from distributions import *
 from rv import *
 from morestats import *

@@ -317,12 +317,12 @@ def anderson(x,dist='norm'):
     if dist == 'norm':
         s = stats.std(x)
         w = (y-xbar)/s
-        z = distributions.normcdf(w)
+        z = distributions.norm.cdf(w)
         sig = array([15,10,5,2.5,1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N),3)
     elif dist == 'expon':
         w = y / xbar
-        z = distributions.exponcdf(w)
+        z = distributions.expon.cdf(w)
         sig = array([15,10,5,2.5,1])
         critical = around(_Avals_expon / (1.0 + 0.6/N),3)
     elif dist == 'logistic':
@@ -336,7 +336,7 @@ def anderson(x,dist='norm'):
         sol0=array([xbar,stats.std(x)])
         sol = optimize.fsolve(rootfunc,sol0,args=(x,N),xtol=1e-5)
         w = (y-sol[0])/sol[1]
-        z = distributions.logisticcdf(w)
+        z = distributions.logistic.cdf(w)
         sig = array([25,10,5,2.5,1,0.5])
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
     else:
@@ -349,7 +349,7 @@ def anderson(x,dist='norm'):
         s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
         xbar = -s*log(sum(exp(-x/s))*1.0/N)
         w = (y-xbar)/s
-        z = distributions.gumbelcdf(w)
+        z = distributions.gumbel.cdf(w)
         sig = array([25,10,5,2.5,1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)),3)
     i = arange(1,N+1)
@@ -448,7 +448,7 @@ def ansari(x,y):
         else:  # N even
             varAB = m*n*(16*fac-N*(N+2)**2)/(16.0 * N * (N-1))
     z = (AB - mnAB)/sqrt(varAB)
-    pval = (1-distributions.normcdf(abs(z)))*2.0
+    pval = (1-distributions.norm.cdf(abs(z)))*2.0
     return AB, pval
 
 def bartlett(*args):
@@ -487,7 +487,7 @@ def bartlett(*args):
     numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq))
     denom = 1.0 + (1.0/(3*(k-1)))*((sum(1.0/(Ni-1.0)))-1.0/(Ntot-k))
     T = numer / denom
-    pval = distributions.chi2sf(T,k-1) # 1 - cdf
+    pval = distributions.chi2.sf(T,k-1) # 1 - cdf
     return T, pval
 
 
@@ -565,7 +565,7 @@ def levene(*args,**kwds):
     denom = (k-1.0)*dvar
 
     W = numer / denom
-    pval = distributions.fsf(W,k-1,Ntot-k) # 1 - cdf
+    pval = distributions.f.sf(W,k-1,Ntot-k) # 1 - cdf
     return W, pval
 
 def binom_test(x,n=None,p=0.5):
@@ -596,16 +596,16 @@ def binom_test(x,n=None,p=0.5):
     if (p > 1.0) or (p < 0.0):
         raise ValueError, "p must be in range [0,1]"
 
-    d = distributions.binompdf(x,n,p)
+    d = distributions.binom.pdf(x,n,p)
     rerr = 1+1e-7
     if (x*1.0/n < p):
         i = arange(x+1,n+1)
-        y = sum(distributions.binompdf(i,n,p) <= d*rerr)
-        pval = distributions.binomcdf(x,n,p) + distributions.binomsf(n-y,n,p)
+        y = sum(distributions.binom.pdf(i,n,p) <= d*rerr)
+        pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
     else:
         i = arange(0,x)
-        y = sum(distributions.binompdf(i,n,p) <= d*rerr)
-        pval = distributions.binomcdf(y-1,n,p) + distributions.binomsf(x-1,n,p)
+        y = sum(distributions.binom.pdf(i,n,p) <= d*rerr)
+        pval = distributions.binom.cdf(y-1,n,p) + distributions.binom.sf(x-1,n,p)
 
     return min(1.0,pval)
 
@@ -679,7 +679,7 @@ def fligner(*args,**kwds):
 
     Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0)/varsq
 
-    pval = distributions.chi2sf(Xsq,k-1) # 1 - cdf
+    pval = distributions.chi2.sf(Xsq,k-1) # 1 - cdf
     return Xsq, pval
 
 
@@ -707,7 +707,7 @@ def mood(x,y):
     mnM = n*(N*N-1.0)/12
     varM = m*n*(N+1.0)*(N+2)*(N-2)/180
     z = (M-mnM)/sqrt(varM)
-    p = distributions.normcdf(z)
+    p = distributions.norm.cdf(z)
     pval = 2*min(p,1-p)
     return z, pval
 
@@ -742,11 +742,11 @@ def oneway(*args,**kwds):
     tmp = sum((1-Wi/swi)**2 / (Ni-1.0))/(k*k-1.0)
     if evar:
         F = ((sum(Ni*(Mi-my)**2) / (k-1.0)) / (sum((Ni-1.0)*Vi) / (N-k)))
-        pval = distributions.fsf(F,k-1,n-k)  # 1-cdf
+        pval = distributions.f.sf(F,k-1,n-k)  # 1-cdf
     else:
         m = sum(Wi*Mi)*1.0/swi
         F = sum(Wi*(Mi-m)**2) / ((k-1.0)*(1+2*(k-2)*tmp))
-        pval = distributions.fsf(F,k-1.0,1.0/(3*tmp))
+        pval = distributions.f.sf(F,k-1.0,1.0/(3*tmp))
 
     return F, pval
 
