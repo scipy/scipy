@@ -1,5 +1,6 @@
 import sigtools
 import scipy.special as special
+import Numeric
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
