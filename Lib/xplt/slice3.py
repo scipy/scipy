@@ -1,3 +1,4 @@
+# $Id$
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -13,15 +14,11 @@
 # This has been fixed by creating an access function.
 
 from Numeric import *
-from scipy_base.fastumath import *
 from shapetest import *
 from types import *
 from pl3d import *
 from arrayfns import *
-try:
-    from gistC import *
-except ImportError:
-    from scipy.xplt.gistC import *
+from gistC import *
 
  #
  # Caveats:
@@ -60,10 +57,13 @@ except ImportError:
  #     zone triangulated the same way!
 
 def plane3 (normal, point) :
-#  plane3(normal, point)
-#        or plane3([nx,ny,nz], [px,py,pz])
 
-#    returns [nx,ny,nz,pp] for the specified plane.
+   """
+   plane3(normal, point)
+         or plane3([nx,ny,nz], [px,py,pz])
+
+     returns [nx,ny,nz,pp] for the specified plane.
+   """
 
    # the normal doesn't really need to be normalized, but this
    # has the desirable side effect of blowing up if normal==0
@@ -75,52 +75,55 @@ def plane3 (normal, point) :
 _Mesh3Error = "Mesh3Error"
 
 def mesh3 (x, y = None, z = None, ** kw) :
-#   mesh3(x,y,z)
-#        or mesh3(x,y,z, funcs = [f1,f2,...])
-#        or mesh3(xyz, funcs = [f1,f2,...])
-#        or mesh3(nxnynz, dxdydz, x0y0z0, funcs = [f1,f2,...])
 
-#    make mesh3 argument for slice3, xyz3, getv3, etc., functions.
-#    X, Y, and Z are each 3D coordinate arrays.  The optional F1, F2,
-#    etc. are 3D arrays of function values (e.g. density, temperature)
-#    which have one less value along each dimension than the coordinate
-#    arrays.  The "index" of each zone in the returned mesh3 is
-#    the index in these cell-centered Fi arrays, so every index from
-#    one through the total number of cells indicates one real cell.
-#    The Fi arrays can also have the same dimensions as X, Y, or Z
-#    in order to represent point-centered quantities.
+   """
+    mesh3(x,y,z)
+         or mesh3(x,y,z, funcs = [f1,f2,...])
+         or mesh3(xyz, funcs = [f1,f2,...])
+         or mesh3(nxnynz, dxdydz, x0y0z0, funcs = [f1,f2,...])
 
-#    If X has four dimensions and the length of the first is 3, then
-#    it is interpreted as XYZ (which is the quantity actually stored
-#    in the returned cell list).
+     make mesh3 argument for slice3, xyz3, getv3, etc., functions.
+     X, Y, and Z are each 3D coordinate arrays.  The optional F1, F2,
+     etc. are 3D arrays of function values (e.g. density, temperature)
+     which have one less value along each dimension than the coordinate
+     arrays.  The "index" of each zone in the returned mesh3 is
+     the index in these cell-centered Fi arrays, so every index from
+     one through the total number of cells indicates one real cell.
+     The Fi arrays can also have the same dimensions as X, Y, or Z
+     in order to represent point-centered quantities.
 
-#    If X is a vector of 3 integers, it is interpreted as [nx,ny,nz]
-#    of a uniform 3D mesh, and the second and third arguments are
-#    [dx,dy,dz] and [x0,y0,z0] respectively.  (DXDYDZ represent the
-#    size of the entire mesh, not the size of one cell, and NXNYNZ are
-#    the number of cells, not the number of points.)
+     If X has four dimensions and the length of the first is 3, then
+     it is interpreted as XYZ (which is the quantity actually stored
+     in the returned cell list).
 
-#    Added by ZCM 1/13/97: if x, y, and z are one-dimensional of
-#    the same length and if the keyword verts exists and yields
-#    an NCELLS by 8 integer array, then we have an unstructured
-#    rectangular mesh, and the subscripts of cell i's vertices
-#    are verts[i, 0:8].
+     If X is a vector of 3 integers, it is interpreted as [nx,ny,nz]
+     of a uniform 3D mesh, and the second and third arguments are
+     [dx,dy,dz] and [x0,y0,z0] respectively.  (DXDYDZ represent the
+     size of the entire mesh, not the size of one cell, and NXNYNZ are
+     the number of cells, not the number of points.)
 
-#    Added by ZCM 10/10/97: if x, y, and z are one-dimensional
-#    of the same length or not, and verts does not exist, then
-#    we have a structured reectangular mesh with unequally spaced
-#    nodes.
+     Added by ZCM 1/13/97: if x, y, and z are one-dimensional of
+     the same length and if the keyword verts exists and yields
+     an NCELLS by 8 integer array, then we have an unstructured
+     rectangular mesh, and the subscripts of cell i's vertices
+     are verts[i, 0:8].
 
-#    other sorts of meshes are possible -- a mesh which lives
-#    in a binary file is an obvious example -- which would need
-#    different workers for xyz3, getv3, getc3, and iterator3
-#    iterator3_rect may be more general than the other three;
-#    as long as the cell dimensions are the car of the list
-#    which is the 2nd car of m3, it will work 
+     Added by ZCM 10/10/97: if x, y, and z are one-dimensional
+     of the same length or not, and verts does not exist, then
+     we have a structured reectangular mesh with unequally spaced
+     nodes.
+
+     Other sorts of meshes are possible -- a mesh which lives
+     in a binary file is an obvious example -- which would need
+     different workers for xyz3, getv3, getc3, and iterator3
+     iterator3_rect may be more general than the other three;
+     as long as the cell dimensions are the car of the list
+     which is the 2nd car of m3, it will work.
+   """
 
    dims = shape (x)
-   if len (dims) == 1 and y is not None and len (x) == len (y) \
-      and z is not None and len(x) == len (z) and kw.has_key ("verts") :
+   if len (dims) == 1 and y != None and len (x) == len (y) \
+      and z != None and len(x) == len (z) and kw.has_key ("verts") :
       virtuals = [xyz3_irreg, getv3_irreg,
                   getc3_irreg, iterator3_irreg]
       dims = kw ["verts"]
@@ -153,11 +156,11 @@ def mesh3 (x, y = None, z = None, ** kw) :
       xyz = x
       dims = dims [1:4]
    elif len (dims) == 1 and len (x) == 3 and type (x [0]) == IntType \
-      and y is not None and z is not None and len (y) == len (z) == 3 :
+      and y != None and z != None and len (y) == len (z) == 3 :
       xyz = array ([y, z])
       dims = (1 + x [0], 1 + x [1], 1 + x [2])
       virtuals [0] = xyz3_unif
-   elif len (dims) == 1 and y is not None and z is not None and len (y.shape) == 1 \
+   elif len (dims) == 1 and y != None and z != None and len (y.shape) == 1 \
       and len (z.shape) == 1 and x.typecode () == y.typecode () == \
       z.typecode () == Float : 
       # regular mesh with unequally spaced points
@@ -166,8 +169,8 @@ def mesh3 (x, y = None, z = None, ** kw) :
       virtuals [0] = xyz3_unif
    else :
       if len (dims) != 3 or min (dims) < 2 or \
-         y is None or len (shape (y)) != 3 or shape (y) != dims or \
-         z is None or len (shape (z)) != 3 or shape (z) != dims:
+         y == None or len (shape (y)) != 3 or shape (y) != dims or \
+         z == None or len (shape (z)) != 3 or shape (z) != dims:
          raise _Mesh3Error, "X,Y,Z are not viable 3D coordinate mesh arrays"
       xyz = array ( [x, y, z])
    dim_cell = (dims [0] - 1, dims [1] - 1, dims [2] - 1)
@@ -238,68 +241,66 @@ _Slice3Error = "Slice3Error"
 
 
 def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
-#  slice3 (m3, fslice, nverts, xyzverts)
-#        or color_values= slice3(m3, fslice, nverts, xyzverts, fcolor)
-#        or color_values= slice3(m3, fslice, nverts, xyzverts, fcolor, 1)
 
-#    slice the 3D mesh M3 using the slicing function FSLICE, returning
-#    the list [NVERTS, XYZVERTS, color].  Note that it is impossible to
-#    pass arguments as addresses, as yorick does in this routine.
-#    NVERTS is the number of vertices in each polygon of the slice, and
-#    XYZVERTS is the 3-by-sum(NVERTS) list of polygon vertices.  If the
-#    FCOLOR argument is present, the values of that coloring function on
-#    the polygons are returned as the value of the slice3 function
-#    (numberof(color_values) == numberof(NVERTS) == number of polygons).
+   """
+   slice3 (m3, fslice, nverts, xyzverts)
+         or color_values= slice3(m3, fslice, nverts, xyzverts, fcolor)
+         or color_values= slice3(m3, fslice, nverts, xyzverts, fcolor, 1)
 
-#    If the slice function FSLICE is a function, it should be of the
-#    form:
-#       func fslice(m3, chunk)
-#    returning a list of function values on the specified chunk of the
-#    mesh m3.  The format of chunk depends on the type of m3 mesh, so
-#    you should use only the other mesh functions xyz3 and getv3 which
-#    take m3 and chunk as arguments.  The return value of fslice should
-#    have the same dimensions as the return value of getv3; the return
-#    value of xyz3 has an additional first dimension of length 3.
-#    N. B. (ZCM 2/24/97) I have eliminated the globals iso_index
-#    and _value, so for isosurface_slicer only, the call must be
-#    of the form fslice (m3, chunk, iso_index, _value).
-#       Likewise, I have eliminated normal and projection, so
-#    for plane slicer only, we do fslice (m3, chunk, normal, projection).
+     slice the 3D mesh M3 using the slicing function FSLICE, returning
+     the list [NVERTS, XYZVERTS, color].  Note that it is impossible to
+     pass arguments as addresses, as yorick does in this routine.
+     NVERTS is the number of vertices in each polygon of the slice, and
+     XYZVERTS is the 3-by-sum(NVERTS) list of polygon vertices.  If the
+     FCOLOR argument is present, the values of that coloring function on
+     the polygons are returned as the value of the slice3 function
+     (numberof(color_values) == numberof(NVERTS) == number of polygons).
 
-#    If FSLICE is a list of 4 numbers, it is taken as a slicing plane
-#    with the equation FSLICE(+:1:3)*xyz(+)-FSLICE(4), as returned by
-#    plane3.
+     If the slice function FSLICE is a function, it should be of the
+     form:
+        func fslice(m3, chunk)
+     returning a list of function values on the specified chunk of the
+     mesh m3.  The format of chunk depends on the type of m3 mesh, so
+     you should use only the other mesh functions xyz3 and getv3 which
+     take m3 and chunk as arguments.  The return value of fslice should
+     have the same dimensions as the return value of getv3; the return
+     value of xyz3 has an additional first dimension of length 3.
 
-#    If FSLICE is a single integer, the slice will be an isosurface for
-#    the FSLICEth variable associated with the mesh M3.  In this case,
-#    the keyword value= must also be present, representing the value
-#    of that variable on the isosurface.
+     If FSLICE is a list of 4 numbers, it is taken as a slicing plane
+     with the equation FSLICE(+:1:3)*xyz(+)-FSLICE(4), as returned by
+     plane3.
 
-#    If FCOLOR is nil, slice3 returns nil.  If you want to color the
-#    polygons in a manner that depends only on their vertex coordinates
-#    (e.g.- by a 3D shading calculation), use this mode.
+     If FSLICE is a single integer, the slice will be an isosurface for
+     the FSLICEth variable associated with the mesh M3.  In this case,
+     the keyword value= must also be present, representing the value
+     of that variable on the isosurface.
 
-#    If FCOLOR is a function, it should be of the form:
-#       func fcolor(m3, cells, l, u, fsl, fsu, ihist)
-#    returning a list of function values on the specified cells of the
-#    mesh m3.  The cells argument will be the list of cell indices in
-#    m3 at which values are to be returned.  l, u, fsl, fsu, and ihist
-#    are interpolation coefficients which can be used to interpolate
-#    from vertex centered values to the required cell centered values,
-#    ignoring the cells argument.  See getc3 source code.
-#    The return values should always have dimsof(cells).
+     If FCOLOR is nil, slice3 returns nil.  If you want to color the
+     polygons in a manner that depends only on their vertex coordinates
+     (e.g.- by a 3D shading calculation), use this mode.
 
-#    If FCOLOR is a single integer, the slice will be an isosurface for
-#    the FCOLORth variable associated with the mesh M3.
+     If FCOLOR is a function, it should be of the form:
+        func fcolor(m3, cells, l, u, fsl, fsu, ihist)
+     returning a list of function values on the specified cells of the
+     mesh m3.  The cells argument will be the list of cell indices in
+     m3 at which values are to be returned.  l, u, fsl, fsu, and ihist
+     are interpolation coefficients which can be used to interpolate
+     from vertex centered values to the required cell centered values,
+     ignoring the cells argument.  See getc3 source code.
+     The return values should always have dimsof(cells).
 
-#    If the optional argument after FCOLOR is non-nil and non-zero,
-#    then the FCOLOR function is called with only two arguments:
-#       func fcolor(m3, cells)
+     If FCOLOR is a single integer, the slice will be an isosurface for
+     the FCOLORth variable associated with the mesh M3.
 
-#    The keyword argument NODE, if present and nonzero, is a signal
-#       to return node-centered values rather than cell-centered
-#       values. (ZCM 4/16/97)
+     If the optional argument after FCOLOR is non-nil and non-zero,
+     then the FCOLOR function is called with only two arguments:
+        func fcolor(m3, cells)
 
+     The keyword argument NODE, if present and nonzero, is a signal
+     to return node-centered values rather than cell-centered
+     values. (ZCM 4/16/97)
+
+   """
 
    global _poly_permutations
 
@@ -335,7 +336,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
 
    if need_clist :
       fcolor = args [0]
-      if fcolor is None :
+      if fcolor == None :
          need_clist = 0
    else :
       fcolor = None
@@ -369,7 +370,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
    results = []
    chunk = iterator3 (m3)
    cell_offsets = [0, 0, 0, 0]
-   while chunk is not None :
+   while chunk != None :
 
       # get the values of the slicing function at the vertices of
       # this chunk
@@ -395,7 +396,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          # front, and negative if in back.
       else :
          fs = fslice (m3, chunk)
-      if node == 1 and fcolor is not None and fcolor != FunctionType :
+      if node == 1 and fcolor != None and fcolor != FunctionType :
          # need vertex-centered data
          col = getv3 (fcolor, m3, chunk)
          if type (col) == ListType :
@@ -411,7 +412,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          cell_offset = fs [2]
 
       # will need cell list if fslice did not compute xyz
-      got_xyz = _xyz3 is not None
+      got_xyz = _xyz3 != None
       need_clist = need_clist or not got_xyz
 
       # If the m3 mesh is totally unstructured, the chunk should be
@@ -503,7 +504,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             clist = None
          i8.append (len (results)) # Treat regular case as hex
 
-      if clist is not None :
+      if clist != None :
          #  we need to save:
          # (1) the absolute cell indices of the cells in clist
          # (2) the corresponding ncells-by-2-by-2-by-2 (by-3-by-2,
@@ -533,7 +534,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                   indices), (no_cells, 2, 2, 2))
                _xyz3 = new_xyz3
                del new_xyz3
-            if col is not None :
+            if col != None :
                col = reshape (take (ravel (col), indices), (no_cells, 2, 2, 2))
                # NB: col represents node colors, and is only used
                # if those are requested.
@@ -544,12 +545,12 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          else :
             clist = None
          nchunk = nchunk + 1
-         need_vert_col = col is not None
+         need_vert_col = col != None
          results.append ( [clist, fs, _xyz3, col])
       else :
          results.append ( [None, None, None, None])
       chunk = iterator3 (m3, chunk)
-      # endwhile chunk is not None
+      # endwhile chunk != None
 
    # collect the results of the chunking loop
    if not ntotal and not (ntotal8 + ntotal6 + ntotal5 + ntotal4) :
@@ -585,10 +586,10 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          if need_clist :
             clist [l:k] = results [itot [i] [j]] [0]
          fs [l:k] = reshape (results [itot [i] [j]] [1], (k - l, _no_verts [i]))
-         if xyz is not None :
+         if xyz != None :
             xyz [l:k] = reshape (results [itot [i] [j]] [2],
                (k - l, 3, _no_verts [i]))
-         if col is not None :
+         if col != None :
             col [l:k] = reshape (results [itot [i] [j]] [3],
                (k - l, _no_verts [i]))
       if not got_xyz :
@@ -628,7 +629,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          take (ravel (xyz [:, 2]), upper) * fsl), (len (lower),))
       xyz = new_xyz
       del new_xyz
-      if col is not None :
+      if col != None :
          # Extract subset of the data the same way
          col = take (ravel (col), lower) * fsu - \
             take (ravel (col), upper) * fsl
@@ -664,7 +665,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       xyz1 [:,1] = take (ravel (xyz [:,1]), order)
       xyz1 [:,2] = take (ravel (xyz [:,2]), order)
       xyz = xyz1
-      if col is not None :
+      if col != None :
          col = take (col, order)
       edges = take (edges, order)
       pattern = take (pattern, order)
@@ -698,15 +699,15 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       xyzverts = xyz
 
       # finally, deal with any fcolor function
-      if fcolor is None :
+      if fcolor == None :
          new_results.append ( [nverts, xyzverts, None])
          continue
 
       # if some polys have been split, need to split clist as well
       if len (list) > len (clist) :
          clist = take (clist, take (cells, list))
-      if col is None :
-         if nointerp is None :
+      if col == None :
+         if nointerp == None :
             if type (fcolor) == FunctionType :
                col = fcolor (m3, clist + cell_offsets [i], lower, upper, fsl,
                   fsu, pattern - 1)
@@ -726,7 +727,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
    for i in range (len (new_results)) :
       nv_n = nv_n + len (new_results [i] [0])
       xyzv_n = xyzv_n + shape (new_results [i] [1]) [0]
-      if new_results [i] [2] is not None :
+      if new_results [i] [2] != None :
          col_n = col_n + len (new_results [i] [2])
    nverts = zeros (nv_n, Int)
    xyzverts = zeros ( (xyzv_n, 3), Float )
@@ -742,7 +743,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       xyzv_n2 = shape (new_results [i] [1]) [0]
       nverts [nv_n1:nv_n1 + nv_n2] = new_results [i] [0]
       xyzverts [xyzv_n1:xyzv_n1 + xyzv_n2] = new_results [i] [1]
-      if new_results [i] [2] is not None :
+      if new_results [i] [2] != None :
          col_n2 = len (new_results [i] [2])
          col [col_n1:col_n1 + col_n2] = new_results [i] [2]
          col_n1 = col_n1 + col_n2
@@ -770,51 +771,52 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
 _Slice3MeshError = "Slice3MeshError"
 
 def slice3mesh (xyz, * args, ** kw) :
-   # slice3mesh (z, color = None, smooth = 0)
-   # slice3mesh (nxny, dxdy, x0y0, z, color = None, smooth = 0)
-   # slice3mesh (x, y, z, color = None, smooth = 0)
-   #
-   # slice3mesh returns a triple [nverts, xyzverts, color]
-   #  nverts is no_cells long and the ith entry tells how many
-   #     vertices the ith cell has.
-   #  xyzverts is sum (nverts) by 3 and gives the vertex
-   #     coordinates of the cells in order.
-   #  color, if present, is len (nverts) long and contains
-   #     a color value for each cell in the mesh if smooth == 0;
-   #     sum (nverts) long and contains a color value for each
-   #     node in the mesh if smooth == 1.
-   # There are a number of ways to call slice3mesh:
-   #    slice3mesh (z, color = None, smooth = 0)
-   # z is a two dimensional array of function values, assumed
-   # to be on a uniform mesh nx by ny nodes (assuming z is nx by ny)
-   # nx being the number of nodes in the x direction, ny the number
-   # in the y direction.
-   # color, if specified, is either an nx - 1 by ny - 1 array
-   # of cell-centered values by which the surface is to
-   # be colored, or an nx by ny array of vertex-
-   # centered values, which will be averaged over each
-   # cell to give cell-centered values if smooth == 0, or
-   # returned as a node-centered array sum (nverts) long if
-   # smooth == 1.
-   #    slice3mesh (nxny, dxdy, x0y0, z, color = None, smooth = 0)
-   # In this case, slice3mesh accepts the specification for
-   # a regular 2d mesh: nxny is the number of cells in the
-   # x direction and the y direction (i. e., its two components
-   # are nx - 1 and ny - 1, nx by ny being the node size;
-   # x0y0 are the initial
-   # values of x and y; and dxdy are the increments in the
-   # two directions. z is the height of a surface above
-   # the xy plane and must be dimensioned nx by ny. 
-   # color, if specified, is as above.
-   #   slice3mesh (x, y, z, color = None, smooth = 0)
-   # z is as above, an nx by ny array of function values
-   # on a mesh of the same dimensions. There are two choices
-   # for x and y: they can both be one-dimensional, dimensioned
-   # nx and ny respectively, in which case they represent a
-   # mesh whose edges are parallel to the axes; or else they
-   # can both be nx by ny, in which case they represent a
-   # general quadrilateral mesh.
-   # color, if specified, is as above.
+
+   """
+   slice3mesh returns a triple [nverts, xyzverts, color]
+    nverts is no_cells long and the ith entry tells how many
+       vertices the ith cell has.
+    xyzverts is sum (nverts) by 3 and gives the vertex
+       coordinates of the cells in order.
+    color, if present, is len (nverts) long and contains
+       a color value for each cell in the mesh.
+
+   There are a number of ways to call slice3mesh:
+
+      slice3mesh (z, color = None)
+
+   z is a two dimensional array of cell function values, assumed
+      to be on a uniform mesh nx by ny cells (assuming z is nx by ny)
+      nx being the number of cells in the x direction, ny the number
+      in the y direction.
+   color, if specified, is either an nx by ny array
+      of cell-centered values by which the surface is to
+      be colored, or an nx +1 by ny + 1 array of vertex-
+      centered values, which will be averaged over each
+      cell to give cell-centered values.
+
+      slice3mesh (nxny, dxdy, x0y0, z, color = None)
+
+   In this case, slice3mesh accepts the specification for
+   a regular 2d mesh: nxny is the number of cells in the
+   x direction and the y direction; x0y0 are the initial
+   values of x and y; and dxdy are the increments in the
+   two directions. z is the height of a surface above
+   the xy plane and must be dimensioned nx + 1 by ny + 1.
+   color, if specified, is as above.
+
+      slice3mesh (x, y, z, color = None)
+
+   z is as above, an nx by ny array of function values
+   on a mesh of the same dimensions. There are two choices
+   for x and y: they can both be one-dimensional, dimensioned
+   nx and ny respectively, in which case they represent a
+   mesh whose edges are parallel to the axes; or else they
+   can both be nx by ny, in which case they represent a
+   general quadrilateral mesh.
+   color, if specified, is as above.
+   """
+
    two_d = 0
    if kw.has_key ("smooth") :
       smooth = kw ["smooth"]
@@ -876,7 +878,7 @@ def slice3mesh (xyz, * args, ** kw) :
       color = kw ["color"]
    else :
       color = None
-   if color is not None :
+   if color != None :
 #     col = array (len (nverts), Float )
       if shape (color) == (ncx - 1, ncy - 1) :
          col = color
@@ -934,6 +936,36 @@ def slice3mesh (xyz, * args, ** kw) :
    return [nverts, xyzverts, col]
    
 def iterator3 (m3 , chunk = None, clist = None) :
+
+   """
+   iterator3 (m3)
+   iterator3 (m3, chunk, clist)
+   iterator3_rect (m3)
+   iterator3_rect (m3, chunk, clist)
+   iterator3_irreg (m3)
+   iterator3_irreg (m3, chunk, clist)
+
+   The iterator3 functions combine three distinct operations:
+   (1) If only the M3 argument is given, return the initial
+       chunk of the mesh.  The chunk will be no more than
+       chunk3_limit cells of the mesh.
+   (2) If only M3 and CHUNK are given, return the next CHUNK,
+       or None if there are no more chunks.
+   (3) If M3, CHUNK, and CLIST are all specified, return the
+       absolute cell index list corresponding to the index list
+       CLIST of the cells in the CHUNK.
+       Do not increment the chunk in this case.
+
+   The form of the CHUNK argument and return value for cases (1)
+   and (2) is not specified, but it must be recognized by the
+   xyz3 and getv3 functions which go along with this iterator3.
+   (For case (3), CLIST and the return value are both ordinary
+   index lists.)
+   In the irregular case, it is guaranteed that the returned chunk
+   consists of only one type of cell (tetrahedra, hexahedra,
+   pyramids, or prisms).
+   """
+
    return m3 [0] [3] (m3, chunk, clist)
 
 # biggest temporary is 3 doubles times this,
@@ -942,13 +974,42 @@ _chunk3_limit = 10000
 
 def iterator3_rect (m3, chunk, clist) :
 
+   """
+   iterator3 (m3)
+   iterator3 (m3, chunk, clist)
+   iterator3_rect (m3)
+   iterator3_rect (m3, chunk, clist)
+   iterator3_irreg (m3)
+   iterator3_irreg (m3, chunk, clist)
+
+   The iterator3 functions combine three distinct operations:
+   (1) If only the M3 argument is given, return the initial
+       chunk of the mesh.  The chunk will be no more than
+       chunk3_limit cells of the mesh.
+   (2) If only M3 and CHUNK are given, return the next CHUNK,
+       or None if there are no more chunks.
+   (3) If M3, CHUNK, and CLIST are all specified, return the
+       absolute cell index list corresponding to the index list
+       CLIST of the cells in the CHUNK.
+       Do not increment the chunk in this case.
+
+   The form of the CHUNK argument and return value for cases (1)
+   and (2) is not specified, but it must be recognized by the
+   xyz3 and getv3 functions which go along with this iterator3.
+   (For case (3), CLIST and the return value are both ordinary
+   index lists.)
+   In the irregular case, it is guaranteed that the returned chunk
+   consists of only one type of cell (tetrahedra, hexahedra,
+   pyramids, or prisms).
+   """
+
 #  Note: if you look at the yorick version of this routine, you
 #  will see that the significance of the subscripts is reversed.
 #  This is because we do things in row-major order.
 
    global _chunk3_limit
    
-   if chunk is None :
+   if chunk == None :
       dims = m3 [1] [0]      # [ni,nj,nk] cell dimensions
       [ni, nj, nk] = [dims [0], dims [1], dims [2]]
       njnk = nj * nk
@@ -974,7 +1035,7 @@ def iterator3_rect (m3, chunk, clist) :
       nk = chunk [3,2]
       njnk = nj * nk
       offsets = array ( [njnk, nj, 1], Int)
-      if clist is not None :
+      if clist != None :
          # add offset for this chunk to clist and return
          return sum (offsets * ( chunk [0] - 1)) + clist
 
@@ -1028,27 +1089,57 @@ def iterator3_rect (m3, chunk, clist) :
    return chunk
 
 def iterator3_irreg (m3, chunk, clist) :
-#  Does the same thing as iterator3_rect only for an irregular
-#  rectangular mesh. It simply splits a large mesh into smaller
-#  parts. Whether this is necessary I am not sure.
-#  Certainly it makes it easier in the irregular case to handle
-#  the four different types of cells separately.
-#  if clist is present, in the irregular case it is already
-#  the list of absolute cell indices, so it is simply returned.
-#  This and other routines to do with irregular meshes return a
-#  chunk which is a 2-list. The first item delimits the chunk;
-#  the second gives a list of corresponding cell numbers.
+
+   """
+   iterator3 (m3)
+   iterator3 (m3, chunk, clist)
+   iterator3_rect (m3)
+   iterator3_rect (m3, chunk, clist)
+   iterator3_irreg (m3)
+   iterator3_irreg (m3, chunk, clist)
+
+   The iterator3 functions combine three distinct operations:
+   (1) If only the M3 argument is given, return the initial
+       chunk of the mesh.  The chunk will be no more than
+       chunk3_limit cells of the mesh.
+   (2) If only M3 and CHUNK are given, return the next CHUNK,
+       or None if there are no more chunks.
+   (3) If M3, CHUNK, and CLIST are all specified, return the
+       absolute cell index list corresponding to the index list
+       CLIST of the cells in the CHUNK.
+       Do not increment the chunk in this case.
+
+   The form of the CHUNK argument and return value for cases (1)
+   and (2) is not specified, but it must be recognized by the
+   xyz3 and getv3 functions which go along with this iterator3.
+   (For case (3), CLIST and the return value are both ordinary
+   index lists.)
+   In the irregular case, it is guaranteed that the returned chunk
+   consists of only one type of cell (tetrahedra, hexahedra,
+   pyramids, or prisms).
+ 
+   iterator3_irreg Does the same thing as iterator3_rect only for an 
+   irregular rectangular mesh. It simply splits a large mesh into smaller
+   parts. Whether this is necessary I am not sure.
+   Certainly it makes it easier in the irregular case to handle
+   the four different types of cells separately.
+   if clist is present, in the irregular case it is already
+   the list of absolute cell indices, so it is simply returned.
+   This and other routines to do with irregular meshes return a
+   chunk which is a 2-list. The first item delimits the chunk;
+   the second gives a list of corresponding cell numbers.
+   """
 
    global _chunk3_limit
 
-   if clist is not None:
+   if clist != None:
       return clist
 
    dims = m3 [1] [0]     # ncells by _no_verts array of subscripts
                          # (or a list of from one to four of same)
 
    if type (dims) != ListType :
-      if chunk is None:     # get the first chunk
+      if chunk == None:     # get the first chunk
          return [ [0, min (shape (dims) [0], _chunk3_limit)],
                   arange (0, min (shape (dims) [0], _chunk3_limit),
                   typecode = Int)]
@@ -1063,7 +1154,7 @@ def iterator3_irreg (m3, chunk, clist) :
                      typecode = Int)]
    else :
       totals = m3 [1] [3] # cumulative totals of numbers of cells
-      if chunk is None :
+      if chunk == None :
          return [ [0, min (totals [0], _chunk3_limit)],
                   arange (0, min (totals [0], _chunk3_limit),
                   typecode = Int)]
@@ -1082,24 +1173,33 @@ def iterator3_irreg (m3, chunk, clist) :
 
 
 def getv3 (i, m3, chunk) :
-#  getv3(i, m3, chunk)
 
-#    return vertex values of the Ith function attached to 3D mesh M3
-#    for cells in the specified CHUNK.  The CHUNK may be a list of
-#    cell indices, in which case getv3 returns a 2x2x2x(dimsof(CHUNK))
-#    list of vertex coordinates.  CHUNK may also be a mesh-specific data
-#    structure used in the slice3 routine, in which case getv3 may
-#    return a (ni)x(nj)x(nk) array of vertex values.  For meshes which
-#    are logically rectangular or consist of several rectangular
-#    patches, this is up to 8 times less data, with a concomitant
-#    performance advantage.  Use getv3 when writing slicing functions
-#    for slice3.
+   """
+   getv3(i, m3, chunk)
+
+     return vertex values of the Ith function attached to 3D mesh M3
+     for cells in the specified CHUNK.  The CHUNK may be a list of
+     cell indices, in which case getv3 returns a 2x2x2x(dimsof(CHUNK))
+     list of vertex coordinates.  CHUNK may also be a mesh-specific data
+     structure used in the slice3 routine, in which case getv3 may
+     return a (ni)x(nj)x(nk) array of vertex values.  For meshes which
+     are logically rectangular or consist of several rectangular
+     patches, this is up to 8 times less data, with a concomitant
+     performance advantage.  Use getv3 when writing slicing functions
+     for slice3.
+   """
 
    return m3 [0] [1] (i, m3, chunk)
 
 _Getv3Error = "Getv3Error"
 
 def getv3_rect (i, m3, chunk) :
+
+   """
+   getv3_rect(i, m3, chunk) does the job for a regular rectangular
+     mesh.
+   """
+
    fi = m3 [2]
    i = i - 1
    if i < 0 or is_scalar (fi) or i >= len (fi) :
@@ -1130,16 +1230,19 @@ def getv3_rect (i, m3, chunk) :
       return [retval, chunk]
 
 def getv3_irreg (i, m3, chunk) :
-#  for an irregular mesh, returns a 3-list whose elements are:
-#  (1) the function values for the ith function on the vertices of the
-#  given chunk. (The function values must have the same dimension
-#  as the coordinates; there is no attempt to convert zone-centered
-#  values to vertex-centered values.)
-#  (2) an array of relative cell numbers within the list of cells
-#  of this type.
-#  (3) a number that can be added to these relative numbers to give
-#  the absolute cell numbers for correct access to their coordinates
-#  and function values.
+
+   """
+     for an irregular mesh, returns a 3-list whose elements are:
+     (1) the function values for the ith function on the vertices of the
+     given chunk. (The function values must have the same dimension
+     as the coordinates; there is no attempt to convert zone-centered
+     values to vertex-centered values.)
+     (2) an array of relative cell numbers within the list of cells
+     of this type.
+     (3) a number that can be added to these relative numbers to gives
+     the absolute cell numbers for correct access to their coordinates
+     and function values.
+   """
    
    fi = m3 [2]
    i = i - 1
@@ -1187,29 +1290,32 @@ def getv3_irreg (i, m3, chunk) :
 _Getc3Error = "Getc3Error"
 
 def getc3 (i, m3, chunk, *args) :
-#  getc3(i, m3, chunk)
-#        or getc3(i, m3, clist, l, u, fsl, fsu, cells)
 
-#    return cell values of the Ith function attached to 3D mesh M3
-#    for cells in the specified CHUNK.  The CHUNK may be a list of
-#    cell indices, in which case getc3 returns a (dimsof(CHUNK))
-#    list of vertex coordinates.  CHUNK may also be a mesh-specific data
-#    structure used in the slice3 routine, in which case getc3 may
-#    return a (ni)x(nj)x(nk) array of vertex values.  There is no
-#    savings in the amount of data for such a CHUNK, but the gather
-#    operation is cheaper than a general list of cell indices.
-#    Use getc3 when writing colorng functions for slice3.
+   """
+   getc3(i, m3, chunk)
+         or getc3(i, m3, clist, l, u, fsl, fsu, cells)
 
-#    If CHUNK is a CLIST, the additional arguments L, U, FSL, and FSU
-#    are vertex index lists which override the CLIST if the Ith attached
-#    function is defined on mesh vertices.  L and U are index lists into
-#    the (dimsof(CLIST))x2x2x2 vertex value array, say vva, and FSL
-#    and FSU are corresponding interpolation coefficients; the zone
-#    centered value is computed as a weighted average of involving these
-#    coefficients.  The CELLS argument is required by histogram to do
-#    the averaging.  See the source code for details.
-#    By default, this conversion (if necessary) is done by averaging
-#    the eight vertex-centered values.
+     return cell values of the Ith function attached to 3D mesh M3
+     for cells in the specified CHUNK.  The CHUNK may be a list of
+     cell indices, in which case getc3 returns a (dimsof(CHUNK))
+     list of vertex coordinates.  CHUNK may also be a mesh-specific data
+     structure used in the slice3 routine, in which case getc3 may
+     return a (ni)x(nj)x(nk) array of vertex values.  There is no
+     savings in the amount of data for such a CHUNK, but the gather
+     operation is cheaper than a general list of cell indices.
+     Use getc3 when writing colorng functions for slice3.
+
+     If CHUNK is a CLIST, the additional arguments L, U, FSL, and FSU
+     are vertex index lists which override the CLIST if the Ith attached
+     function is defined on mesh vertices.  L and U are index lists into
+     the (dimsof(CLIST))x2x2x2 vertex value array, say vva, and FSL
+     and FSU are corresponding interpolation coefficients; the zone
+     centered value is computed as a weighted average of involving these
+     coefficients.  The CELLS argument is required by histogram to do
+     the averaging.  See the source code for details.
+     By default, this conversion (if necessary) is done by averaging
+     the eight vertex-centered values.
+    """
 
    if len (args) == 0 :
       l = None
@@ -1229,6 +1335,12 @@ def getc3 (i, m3, chunk, *args) :
    return m3 [0] [2] (i, m3, chunk, l, u, fsl, fsu, cells)
 
 def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
+
+   """
+   getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) does the job
+     for a regular rectangular mesh.
+   """
+
    fi = m3 [2]
    m3 = m3 [1]
    if ( i < 1 or i > len (fi)) :
@@ -1264,7 +1376,7 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
          no_cells = shape (indices) [0]
          indices = ravel (indices)
          corners = take (ravel (fi [i - 1]), indices)
-         if l is None :
+         if l == None :
             return 0.125 * sum (transpose (reshape (corners, (no_cells, 8))))
          else :
             # interpolate corner values to get edge values
@@ -1274,19 +1386,22 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
             return histogram (cells, corners) / histogram (cells)
 
 def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
-#  Same thing as getc3_rect, i. e., returns the same type of
-#  data structure, but from an irregular rectangular mesh.
-#     m3 [1] is a 2-list; m3[1] [0] is an array whose ith element
-#        is an array of coordinate indices for the ith cell,
-#        or a list of up to four such arrays.
-#        m3 [1] [1] is the 3 by nverts array of coordinates.
-#     m3 [2] is a list of arrays of vertex-centered or cell-centered
-#        data.
-#  chunk may be a list, in which case chunk [0] is a 2-sequence
-#     representing a range of cell indices; or it may be a one-dimensional
-#     array, in which case it is a nonconsecutive set of cell indices.
-#     It is guaranteed that all cells indexed by the chunk are the
-#     same type.
+
+   """
+      Same thing as getc3_rect, i. e., returns the same type of
+      data structure, but from an irregular mesh.
+      m3 [1] is a 2-list; m3[1] [0] is an array whose ith element
+         is an array of coordinate indices for the ith cell,
+         or a list of up to four such arrays.
+         m3 [1] [1] is the 3 by nverts array of coordinates.
+      m3 [2] is a list of arrays of vertex-centered or cell-centered
+         data.
+      chunk may be a list, in which case chunk [0] is a 2-sequence
+      representing a range of cell indices; or it may be a one-dimensional
+      array, in which case it is a nonconsecutive set of cell indices.
+      It is guaranteed that all cells indexed by the chunk are the
+      same type.
+   """
 
    fi = m3 [2]
    if i < 1 or i > len (fi) :
@@ -1348,7 +1463,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
    no_cells = shp [0]
    indices = ravel (indices)
    corners = take (fi [i - 1], indices)
-   if l is None :
+   if l == None :
       return (1. / shp [1]) * transpose ((sum (transpose (reshape (corners,
          (no_cells, shp [1]))) [0:shp [1]])))
    else :
@@ -1478,284 +1593,304 @@ _ContourError = "ContourError"
 def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
    edges = 0, color = None, cmin = None, cmax = None, 
    zaxis_min = None, zaxis_max = None, split = 0) :
-#  plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
-#  edges = 0, color = None, cmin = None, cmax = None, split = 0
-#  zaxis_min = None, zaxis_max = None, )
 
-#    Plot filled z contours on the specified surface. NVERTS and
-#    XYZVERTS arrays specify the polygons for the surface being
-#    drawn. CONTOURS can be one of the following:
-#       N, an integer: Plot N contours (therefore, N+1 colored
-#       components of the surface)
-#       CVALS, a vector of floats: draw the contours at the
-#       specified levels.
-#    SCALE can be "lin", "log", or "normal" specifying the
-#    contour scale. (Only applicable if contours = N, of course).
-#    If CLEAR = 1, clear the display list first.
-#    If EDGES = 1, plot the edges.
-#    The algorithm is to apply slice2x repeatedly to the surface.
-#    If color is None, then bytscl the palette into N + 1 colors
-#    and send each of the slices to pl3tree with the appropriate color.
-#    If color == "bg", will plot only the edges.
-#    If CMIN is given, use it instead of the minimum z actually
-#    being plotted in the computation of contour levels. If CMAX is given,
-#    use it instead of the maximum z actually being plotted in the
-#    computation of contour levels. This is done so that a component
-#    of a larger graph will have the same colors at the same levels
-#    as every other component, rather than its levels being based
-#    on its own max and min, which may lie inside those of the
-#    rest of the graph.
-#    ZAXIS_MIN and ZAXIS_MAX represent axis limits on z as expressed
-#    by the user. If present, ZAXIS_MIN will inhibit plotting of all
-#    lesser z values, and ZAXIS_MAX will inhibit the plotting of all
-#    greater z values.
+   """
+   plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
+   edges = 0, color = None, cmin = None, cmax = None, split = 0
+   zaxis_min = None, zaxis_max = None, )
 
-# ------------------------------------------------------------------------
-     # 1. Get contour colors
-     if type (contours) == IntType :
-        n = contours
-        if cmin is not None :
-           vcmin = cmin
-           minz = min (xyzverts [:, 2])
-        else :
-           vcmin = min (xyzverts [:, 2])
-           minz = vcmin
-        if cmax is not None :
-           vcmax = cmax
-           maxz = max (xyzverts [:, 2])
-        else :
-           vcmax = max (xyzverts [:, 2])
-           maxz = vcmax
-        if scale == "lin" :
-            vc = vcmin + arange (1, n + 1, typecode = Float) * \
-               (vcmax - vcmin) / (n + 1)
-        elif scale == "log" :
-            vc = vcmin + exp (arange (1, n + 1, typecode = Float) * \
-               log (vcmax - vcmin) / (n + 1))
-        elif scale == "normal" :
-            zlin = xyzverts [:, 2]
-            lzlin = len (zlin)
-            zbar = add.reduce (zlin) / lzlin
-            zs = sqrt ( (add.reduce (zlin ** 2) - lzlin * zbar ** 2) /
-                (lzlin - 1))
-            z1 = zbar - 2. * zs
-            z2 = zbar + 2. * zs
-            diff = (z2 - z1) / (n - 1)
-            vc = z1 + arange (n) * diff
-        else :
-            raise _ContourError, "Incomprehensible scale parameter."
-     elif type (contours) == ArrayType and contours.typecode () == Float :
-        n = len (contours)
-        vc = sort (contours)
-     else :
-        raise _ContourError, "Incorrect contour specification."
-     if split == 0 :
-        colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
-     else :
-        colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('b')
-     # 2. Loop through slice2x calls
-     nv = array (nverts, copy = 1)
-     xyzv = array (xyzverts, copy = 1)
-     if clear == 1 :
-        clear3 ( ) # Clear any previous plot or we're in trouble
-     # find imin--contours below this number need not be computed,
-     # and imax--contours at this level and above need not be computed.
-     imin = imax = 0
-     for i in range (n) :
-        if vc [i] <= minz :
-           imin = i + 1
-        if vc [i] >= maxz :
-           imax = i
-           break
-        if i == n - 1 :
-           imax = n
-     # now make sure that the minimum and maximum contour levels computed
-     # are not outside the axis limits.
-     if zaxis_min is not None and zaxis_min > vc [imin] :
-        for i in range (imin, imax) :
-           if i + 1 < imax and zaxis_min > vc [i + 1] :
-              imin = i + 1
-           else :
-              break
-        vc [imin] = zaxis_min
-     if zaxis_max is not None and zaxis_max < vc [imax - 1] :
-        for i in range (imax - imin) :
-           if imax - 2 >= imin and zaxis_max < vc [imax - 2] :
-              imax = imax - 1
-           else :
-              break
-        vc [imax - 1] = zaxis_max
-     for i in range (imin, imax) :
-        [nv, xyzv, d1, nvb, xyzvb, d2] = \
-           slice2x (array ( [0., 0., 1., vc [i]], Float) , nv, xyzv, None)
-        if i == imin and zaxis_min is not None and zaxis_min == vc [i]:
-           # Don't send the "back" surface if it's below zaxis_min.
-           continue
-        else:
-           if color is None :
-              pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
-                 split = 0, edges = edges)
-           else :
-              # N. B. Force edges to be on, otherwise the graph is empty.
-              pl3tree (nvb, xyzvb, "bg", split = 0, edges = 1)
-     if zaxis_max is None or vc [imax - 1] < zaxis_max:
-        # send "front" surface if it's not beyond zaxis_max
-        if color is None :
-           pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
-              split = 0, edges = edges)
-        else :
-           pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
+     Plot filled z contours on the specified surface. NVERTS and
+     XYZVERTS arrays specify the polygons for the surface being
+     drawn. CONTOURS can be one of the following:
+        N, an integer: Plot N contours (therefore, N+1 colored
+        components of the surface)
+        CVALS, a vector of floats: draw the contours at the
+        specified levels.
+     SCALE can be "lin", "log", or "normal" specifying the
+     contour scale. (Only applicable if contours = N, of course).
+     If CLEAR = 1, clear the display list first.
+     If EDGES = 1, plot the edges.
+     The algorithm is to apply slice2x repeatedly to the surface.
+     If color == None, then bytscl the palette into N + 1 colors
+     and send each of the slices to pl3tree with the appropriate color.
+     If color == "bg", will plot only the edges.
+     If CMIN is given, use it instead of the minimum z actually
+     being plotted in the computation of contour levels. If CMAX is given,
+     use it instead of the maximum z actually being plotted in the
+     computation of contour levels. This is done so that a component
+     of a larger graph will have the same colors at the same levels
+     as every other component, rather than its levels being based
+     on its own max and min, which may lie inside those of the
+     rest of the graph.
+     ZAXIS_MIN and ZAXIS_MAX represent axis limits on z as expressed
+     by the user. If present, ZAXIS_MIN will inhibit plotting of all
+     lesser z values, and ZAXIS_MAX will inhibit the plotting of all
+     greater z values.
+   """
+
+   # 1. Get contour colors
+   if type (contours) == IntType :
+      n = contours
+      if cmin != None :
+         vcmin = cmin
+         minz = min (xyzverts [:, 2])
+      else :
+         vcmin = min (xyzverts [:, 2])
+         minz = vcmin
+      if cmax != None :
+         vcmax = cmax
+         maxz = max (xyzverts [:, 2])
+      else :
+         vcmax = max (xyzverts [:, 2])
+         maxz = vcmax
+      if scale == "lin" :
+          vc = vcmin + arange (1, n + 1, typecode = Float) * \
+             (vcmax - vcmin) / (n + 1)
+      elif scale == "log" :
+          vc = vcmin + exp (arange (1, n + 1, typecode = Float) * \
+             log (vcmax - vcmin) / (n + 1))
+      elif scale == "normal" :
+          zlin = xyzverts [:, 2]
+          lzlin = len (zlin)
+          zbar = add.reduce (zlin) / lzlin
+          zs = sqrt ( (add.reduce (zlin ** 2) - lzlin * zbar ** 2) /
+              (lzlin - 1))
+          z1 = zbar - 2. * zs
+          z2 = zbar + 2. * zs
+          diff = (z2 - z1) / (n - 1)
+          vc = z1 + arange (n) * diff
+      else :
+          raise _ContourError, "Incomprehensible scale parameter."
+   elif type (contours) == ArrayType and contours.typecode () == Float :
+      n = len (contours)
+      vc = sort (contours)
+   else :
+      raise _ContourError, "Incorrect contour specification."
+   if split == 0 :
+      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
+   else :
+      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('b')
+   # 2. Loop through slice2x calls
+   nv = array (nverts, copy = 1)
+   xyzv = array (xyzverts, copy = 1)
+   if clear == 1 :
+      clear3 ( ) # Clear any previous plot or we're in trouble
+   # find imin--contours below this number need not be computed,
+   # and imax--contours at this level and above need not be computed.
+   imin = imax = 0
+   for i in range (n) :
+      if vc [i] <= minz :
+         imin = i + 1
+      if vc [i] >= maxz :
+         imax = i
+         break
+      if i == n - 1 :
+         imax = n
+   # now make sure that the minimum and maximum contour levels computed
+   # are not outside the axis limits.
+   if zaxis_min != None and zaxis_min > vc [imin] :
+      for i in range (imin, imax) :
+         if i + 1 < imax and zaxis_min > vc [i + 1] :
+            imin = i + 1
+         else :
+            break
+      vc [imin] = zaxis_min
+   if zaxis_max != None and zaxis_max < vc [imax - 1] :
+      for i in range (imax - imin) :
+         if imax - 2 >= imin and zaxis_max < vc [imax - 2] :
+            imax = imax - 1
+         else :
+            break
+      vc [imax - 1] = zaxis_max
+   for i in range (imin, imax) :
+      [nv, xyzv, d1, nvb, xyzvb, d2] = \
+         slice2x (array ( [0., 0., 1., vc [i]], Float) , nv, xyzv, None)
+      if i == imin and zaxis_min != None and zaxis_min == vc [i]:
+         # Don't send the "back" surface if it's below zaxis_min.
+         continue
+      else:
+         if color == None :
+            pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
+               split = 0, edges = edges)
+         else :
+            # N. B. Force edges to be on, otherwise the graph is empty.
+            pl3tree (nvb, xyzvb, "bg", split = 0, edges = 1)
+   if zaxis_max == None or vc [imax - 1] < zaxis_max:
+      # send "front" surface if it's not beyond zaxis_max
+      if color == None :
+         pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
+            split = 0, edges = edges)
+      else :
+         pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
 
 def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
    edges = 0, color = None, cmin = None, cmax = None,
    caxis_min = None, caxis_max = None, split = 0) :
-#  pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
-#  edges = 0, color = None, cmin = None, cmax = None,
-#  caxis_min = None, caxis_max = None, split = 0)
 
-#    Plot filled z contours on the specified surface. VALUES is
-#    a node-centered array the same length as SUM (NVERTS) whose
-#    contours will be drawn. NVERTS and
-#    XYZVERTS arrays specify the polygons for the surface being
-#    drawn. CONTOURS can be one of the following:
-#       N, an integer: Plot N contours (therefore, N+1 colored
-#       components of the surface)
-#       CVALS, a vector of floats: draw the contours at the
-#       specified levels.
-#    SCALE can be "lin", "log", or "normal" specifying the
-#    contour scale. (Only applicable if contours = N, of course).
-#    If CLEAR == 1, clear the display list first.
-#    If EDGES == 1, plot the edges.
-#    The algorithm is to apply slice2x repeatedly to the surface.
-#    If color is None, then bytscl the palette into N + 1 colors
-#    and send each of the slices to pl3tree with the appropriate color.
-#    If color == "bg", will plot only the edges.
-#    If CMIN is given, use it instead of the minimum c actually
-#    being plotted in the computation of contour levels. If CMAX is given,
-#    use it instead of the maximum c actually being plotted in the
-#    computation of contour levels. This is done so that a component
-#    of a larger graph will have the same colors at the same levels
-#    as every other component, rather than its levels being based
-#    on its own max and min, which may lie inside those of the
-#    rest of the graph.
-#    CAXIS_MIN and CAXIS_MAX represent axis limits on c as expressed
-#    by the user. If present, CAXIS_MIN will inhibit plotting of all
-#    lesser c values, and CAXIS_MAX will inhibit the plotting of all
-#    greater c values.
+   """
+   pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
+   edges = 0, color = None, cmin = None, cmax = None,
+   caxis_min = None, caxis_max = None, split = 0)
 
-# ------------------------------------------------------------------------
-     # 1. Get contour colors
-     if type (contours) == IntType :
-        n = contours
-        if cmin is not None :
-            vcmin = cmin
-            minz = min (values)
-        else :
-            vcmin = min (values)
-            minz = vcmin
-        if cmax is not None :
-            vcmax = cmax
-            maxz = max (values)
-        else :
-            vcmax = max (values)
-            maxz = vcmax
-        if scale == "lin" :
-            vc = vcmin + arange (1, n + 1, \
-               typecode = Float) * \
-               (vcmax - vcmin) / (n + 1)
-        elif scale == "log" :
-            vc = vcmin + exp (arange (1, n + 1, \
-               typecode = Float) * \
-               log (vcmax - vcmin) / (n + 1))
-        elif scale == "normal" :
-            zbar = add.reduce (values) / lzlin
-            zs = sqrt ( (add.reduce (values ** 2) - lzlin * zbar ** 2) /
-                (lzlin - 1))
-            z1 = zbar - 2. * zs
-            z2 = zbar + 2. * zs
-            diff = (z2 - z1) / (n - 1)
-            vc = z1 + arange (n) * diff
-        else :
-            raise _ContourError, "Incomprehensible scale parameter."
-     elif type (contours) == ArrayType and contours.typecode () == Float :
-        n = len (contours)
-        vc = sort (contours)
-     else :
-        raise _ContourError, "Incorrect contour specification."
-     if split == 0 :
-        colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
-     else :
-        colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('b')
-     # 2. Loop through slice2x calls
-     nv = array (nverts, copy = 1)
-     xyzv = array (xyzverts, copy = 1)
-     vals = array (values, copy = 1)
-     if clear == 1 :
-        clear3 ( ) # Clear any previous plot or we're in trouble
-     # find imin--contours below this number need not be computed,
-     # and imax--contours at this level and above need not be computed.
-     imin = imax = 0
-     for i in range (n) :
-        if vc [i] <= minz :
-           imin = i + 1
-        if vc [i] >= maxz :
-           imax = i
-           break
-        if i == n - 1 :
-           imax = n
-     # now make sure that the minimum and maximum contour levels computed
-     # are not outside the axis limits.
-     if caxis_min is not None and caxis_min > vc [imin] :
-        for i in range (imin, imax) :
-           if i + 1 < imax and caxis_min > vc [i + 1] :
-              imin = i + 1
-           else :
-              break
-        vc [imin] = caxis_min
-     if caxis_max is not None and caxis_max < vc [imax - 1] :
-        for i in range (imax - imin) :
-           if imax - 2 >= imin and caxis_max < vc [imax - 2] :
-              imax = imax - 1
-           else :
-              break
-        vc [imax - 1] = caxis_max
-     for i in range (n) :
-        if vc [i] <= minz :
-           continue
-        if vc [i] >= maxz :
-           break
-        [nv, xyzv, vals, nvb, xyzvb, d2] = \
-           slice2x (vc [i], nv, xyzv, vals)
-        if i == imin and caxis_min is not None and caxis_min == vc [i]:
-           # Don't send the "back" surface if it's below caxis_min.
-           continue
-        else:
-           if color is None :
-              pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
-                 split = 0, edges = edges)
-           else :
-              # N. B. Force edges to be on, otherwise the graph is empty.
-              pl3tree (nvb, xyzvb, "bg", split = 0, edges = 1)
-     if caxis_max is None or vc [imax - 1] < caxis_max:
-        # send "front" surface if it's not beyond caxis_max
-        if color is None :
-           pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
-              split = 0, edges = edges)
-        else :
-           pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
+     Plot filled z contours on the specified surface. VALUES is
+     a node-centered array the same length as SUM (NVERTS) whose
+     contours will be drawn. NVERTS and
+     XYZVERTS arrays specify the polygons for the surface being
+     drawn. CONTOURS can be one of the following:
+        N, an integer: Plot N contours (therefore, N+1 colored
+        components of the surface)
+        CVALS, a vector of floats: draw the contours at the
+        specified levels.
+     SCALE can be "lin", "log", or "normal" specifying the
+     contour scale. (Only applicable if contours = N, of course).
+     If CLEAR == 1, clear the display list first.
+     If EDGES == 1, plot the edges.
+     The algorithm is to apply slice2x repeatedly to the surface.
+     If color == None, then bytscl the palette into N + 1 colors
+     and send each of the slices to pl3tree with the appropriate color.
+     If color == "bg", will plot only the edges.
+     If CMIN is given, use it instead of the minimum c actually
+     being plotted in the computation of contour levels. If CMAX is given,
+     use it instead of the maximum c actually being plotted in the
+     computation of contour levels. This is done so that a component
+     of a larger graph will have the same colors at the same levels
+     as every other component, rather than its levels being based
+     on its own max and min, which may lie inside those of the
+     rest of the graph.
+     CAXIS_MIN and CAXIS_MAX represent axis limits on c as expressed
+     by the user. If present, CAXIS_MIN will inhibit plotting of all
+     lesser c values, and CAXIS_MAX will inhibit the plotting of all
+     greater c values.
+   """
+
+   # 1. Get contour colors
+   if type (contours) == IntType :
+      n = contours
+      if cmin != None :
+          vcmin = cmin
+          minz = min (values)
+      else :
+          vcmin = min (values)
+          minz = vcmin
+      if cmax != None :
+          vcmax = cmax
+          maxz = max (values)
+      else :
+          vcmax = max (values)
+          maxz = vcmax
+      if scale == "lin" :
+          vc = vcmin + arange (1, n + 1, \
+             typecode = Float) * \
+             (vcmax - vcmin) / (n + 1)
+      elif scale == "log" :
+          vc = vcmin + exp (arange (1, n + 1, \
+             typecode = Float) * \
+             log (vcmax - vcmin) / (n + 1))
+      elif scale == "normal" :
+          zbar = add.reduce (values) / lzlin
+          zs = sqrt ( (add.reduce (values ** 2) - lzlin * zbar ** 2) /
+              (lzlin - 1))
+          z1 = zbar - 2. * zs
+          z2 = zbar + 2. * zs
+          diff = (z2 - z1) / (n - 1)
+          vc = z1 + arange (n) * diff
+      else :
+          raise _ContourError, "Incomprehensible scale parameter."
+   elif type (contours) == ArrayType and contours.typecode () == Float :
+      n = len (contours)
+      vc = sort (contours)
+   else :
+      raise _ContourError, "Incorrect contour specification."
+   if split == 0 :
+      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
+   else :
+      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('b')
+   # 2. Loop through slice2x calls
+   nv = array (nverts, copy = 1)
+   xyzv = array (xyzverts, copy = 1)
+   vals = array (values, copy = 1)
+   if clear == 1 :
+      clear3 ( ) # Clear any previous plot or we're in trouble
+   # find imin--contours below this number need not be computed,
+   # and imax--contours at this level and above need not be computed.
+   imin = imax = 0
+   for i in range (n) :
+      if vc [i] <= minz :
+         imin = i + 1
+      if vc [i] >= maxz :
+         imax = i
+         break
+      if i == n - 1 :
+         imax = n
+   # now make sure that the minimum and maximum contour levels computed
+   # are not outside the axis limits.
+   if caxis_min != None and caxis_min > vc [imin] :
+      for i in range (imin, imax) :
+         if i + 1 < imax and caxis_min > vc [i + 1] :
+            imin = i + 1
+         else :
+            break
+      vc [imin] = caxis_min
+   if caxis_max != None and caxis_max < vc [imax - 1] :
+      for i in range (imax - imin) :
+         if imax - 2 >= imin and caxis_max < vc [imax - 2] :
+            imax = imax - 1
+         else :
+            break
+      vc [imax - 1] = caxis_max
+   for i in range (n) :
+      if vc [i] <= minz :
+         continue
+      if vc [i] >= maxz :
+         break
+      [nv, xyzv, vals, nvb, xyzvb, d2] = \
+         slice2x (vc [i], nv, xyzv, vals)
+      if i == imin and caxis_min != None and caxis_min == vc [i]:
+         # Don't send the "back" surface if it's below caxis_min.
+         continue
+      else:
+         if color == None :
+            pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
+               split = 0, edges = edges)
+         else :
+            # N. B. Force edges to be on, otherwise the graph is empty.
+            pl3tree (nvb, xyzvb, "bg", split = 0, edges = 1)
+   if caxis_max == None or vc [imax - 1] < caxis_max:
+      # send "front" surface if it's not beyond caxis_max
+      if color == None :
+         pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
+            split = 0, edges = edges)
+      else :
+         pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
 
 def slice2x (plane, nverts, xyzverts, values = None) :
-#  slice2x (plane, nverts, xyzverts, values = None)
 
-#    Slice a polygon list, retaining only those polygons or
-#    parts of polygons on the positive side of PLANE, that is,
-#    the side where xyz(+)*PLANE(+:1:3)-PLANE(4) > 0.0.
-#    The NVERTS, VALUES, and XYZVERTS arrays serve as both
-#    input and output, and have the meanings of the return
-#    values from the slice3 function.
-#    Actually, since Python can't treat an argument as an output,
-#    this routine will return a sextuple of values (None for
-#    missing args). 
+   """
+   slice2x (plane, nverts, xyzverts, values)
+
+     Slice a polygon list, retaining only those polygons or
+     parts of polygons on the positive side of PLANE, that is,
+     the side where xyz(+)*PLANE(+:1:3)-PLANE(4) > 0.0.
+     The NVERTS, VALUES, and XYZVERTS arrays have the meanings of
+     the return values from the slice3 function.
+     Python returns a sextuple
+     [nverts, xyzverts, values, nvertb, xyzvertb, valueb]
+     with None in the place of missing or None input arguments.
+
+   slice2_precision= precision
+     Controls how slice2 (or slice2x) handles points very close to
+     the slicing plane.  PRECISION should be a positive number or zero.
+     Zero PRECISION means to clip exactly to the plane, with points
+     exactly on the plane acting as if they were slightly on the side
+     the normal points toward.  Positive PRECISION means that edges
+     are clipped to parallel planes a distance PRECISION on either
+     side of the given plane.  (Polygons lying entirely between these
+     planes are completely discarded.)
+
+     Default value is 0.0.
+
+   """
+
 #    Note (ZCM 2/24/97) Reomved _slice2x as a global and added
 #    it as a final argument to slice2.
 
@@ -1768,20 +1903,22 @@ _Pl3surfError = "Pl3surfError"
 
 def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
             lim = None, edges = 0) :
-#  pl3surf (nverts, xyzverts)
-#        or pl3surf (nverts, xyzverts, values)
+   """
+   pl3surf (nverts, xyzverts)
+         or pl3surf (nverts, xyzverts, values)
 
-#    Perform simple 3D rendering of an object created by slice3
-#    (possibly followed by slice2).  NVERTS and XYZVERTS are polygon
-#    lists as returned by slice3, so XYZVERTS is sum(NVERTS)-by-3,
-#    where NVERTS is a list of the number of vertices in each polygon.
-#    If present, the VALUES should have the same length as NVERTS;
-#    they are used to color the polygon.  If VALUES is not specified,
-#    the 3D lighting calculation set up using the light3 function
-#    will be carried out.  Keywords cmin= and cmax= as for plf, pli,
-#    or plfp are also accepted.  (If you do not supply VALUES, you
-#    probably want to use the ambient= keyword to light3 instead of
-#    cmin= here, but cmax= may still be useful.)
+     Perform simple 3D rendering of an object created by slice3
+     (possibly followed by slice2).  NVERTS and XYZVERTS are polygon
+     lists as returned by slice3, so XYZVERTS is sum(NVERTS)-by-3,
+     where NVERTS is a list of the number of vertices in each polygon.
+     If present, the VALUES should have the same length as NVERTS;
+     they are used to color the polygon.  If VALUES is not specified,
+     the 3D lighting calculation set up using the light3 function
+     will be carried out.  Keywords cmin= and cmax= as for plf, pli,
+     or plfp are also accepted.  (If you do not supply VALUES, you
+     probably want to use the ambient= keyword to light3 instead of
+     cmin= here, but cmax= may still be useful.)
+   """
 
    _draw3 = get_draw3_ ( )
    if type (nverts) == ListType :
@@ -1806,7 +1943,7 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
       x = xyztmp [:, 0]
       y = xyztmp [:, 1]
       z = xyztmp [:, 2]
-      if values is None :
+      if values == None :
 #        xyzverts [:, 0] = x
 #        xyzverts [:, 1] = y
 #        xyzverts [:, 2] = z
@@ -1852,10 +1989,10 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) or \
       nverts.typecode () != Int :
       raise _Pl3surfError, "illegal or inconsistent polygon list"
-   if values is not None and len (values) != len (nverts) :
+   if values != None and len (values) != len (nverts) :
       raise _Pl3surfError, "illegal or inconsistent polygon color values"
 
-   if values is not None :
+   if values != None :
       values = array (values, Float )
 
    clear3 ( )
@@ -1876,46 +2013,55 @@ _Pl3treeError = "Pl3treeError"
 
 def pl3tree (nverts, xyzverts = None, values = None, plane = None,
              cmin = None, cmax = None, split = 1, edges = 0) :
-#  pl3tree, nverts, xyzverts
-#        or pl3tree, nverts, xyzverts, values, plane
 
-#    Add the polygon list specified by NVERTS (number of vertices in
-#    each polygon) and XYZVERTS (3-by-sum(NVERTS) vertex coordinates)
-#    to the currently displayed b-tree.  If VALUES is specified, it
-#    must have the same dimension as NVERTS, and represents the color
-#    of each polygon.  (ZCM 7/18/97) Or, if VALUES == "bg" ("background")
-#    Then each polygon will be filled with the background color,
-#    giving just a wire frame. If VALUES is not specified, the polygons
-#    are assumed to form an isosurface which will be shaded by the
-#    current 3D lighting model; the isosurfaces are at the leaves of
-#    the b-tree, sliced by all of the planes.  If PLANE is specified,
-#    the XYZVERTS must all lie in that plane, and that plane becomes
-#    a new slicing plane in the b-tree.
+   """
+   pl3tree (nverts, xyzverts = None, values = None, plane = None,
+      cmin = None, cmax = None)
 
-#    Each leaf of the b-tree consists of a set of sliced isosurfaces.
-#    A node of the b-tree consists of some polygons in one of the
-#    planes, a b-tree or leaf entirely on one side of that plane, and
-#    a b-tree or leaf on the other side.  The first plane you add
-#    becomes the root node, slicing any existing leaf in half.  When
-#    you add an isosurface, it propagates down the tree, getting
-#    sliced at each node, until its pieces reach the existing leaves,
-#    to which they are added.  When you add a plane, it also propagates
-#    down the tree, getting sliced at each node, until its pieces
-#    reach the leaves, which it slices, becoming the nodes closest to
-#    the leaves.
+     Add the polygon list specified by NVERTS (number of vertices in
+     each polygon) and XYZVERTS (3-by-sum(NVERTS) vertex coordinates)
+     to the currently displayed b-tree.  If VALUES is specified, it
+     must have the same dimension as NVERTS, and represents the color
+     of each polygon.  If VALUES is not specified, the polygons
+     are assumed to form an isosurface which will be shaded by the
+     current 3D lighting model; the isosurfaces are at the leaves of
+     the b-tree, sliced by all of the planes.  If PLANE is specified,
+     the XYZVERTS must all lie in that plane, and that plane becomes
+     a new slicing plane in the b-tree.
 
-#    This structure is relatively easy to plot, since from any
-#    viewpoint, a node can always be plotted in the order from one
-#    side, then the plane, then the other side.
+     Each leaf of the b-tree consists of a set of sliced isosurfaces.
+     A node of the b-tree consists of some polygons in one of the
+     planes, a b-tree or leaf entirely on one side of that plane, and
+     a b-tree or leaf on the other side.  The first plane you add
+     becomes the root node, slicing any existing leaf in half.  When
+     you add an isosurface, it propagates down the tree, getting
+     sliced at each node, until its pieces reach the existing leaves,
+     to which they are added.  When you add a plane, it also propagates
+     down the tree, getting sliced at each node, until its pieces
+     reach the leaves, which it slices, becoming the nodes closest to
+     the leaves.
 
-#    This routine assumes a "split palette"; the colors for the
-#    VALUES will be scaled to fit from color 0 to color 99, while
-#    the colors from the shading calculation will be scaled to fit
-#    from color 100 to color 199.  (If VALUES is specified as a char
-#    array, however, it will be used without scaling.)
-#    You may specifiy a cmin= or cmax= keyword to affect the
-#    scaling; cmin is ignored if VALUES is not specified (use the
-#    ambient= keyword from light3 for that case).
+     tree is a 4-element list like this:
+      [plane, back_tree, inplane_leaf, front_tree]
+      plane= tree [0]  is None if this is just a leaf
+                       in which case, only inplane_leaf is not None
+      back_tree= tree [1]    is the part behind plane
+      inplane_leaf= tree [2] is the part in the plane itself
+      front_tree= tree [3]   is the part in front of plane
+
+     This structure is relatively easy to plot, since from any
+     viewpoint, a node can always be plotted in the order from one
+     side, then the plane, then the other side.
+
+     This routine assumes a "split palette"; the colors for the
+     VALUES will be scaled to fit from color 0 to color 99, while
+     the colors from the shading calculation will be scaled to fit
+     from color 100 to color 199.  (If VALUES is specified as a char
+     array, however, it will be used without scaling.)
+     You may specifiy a cmin= or cmax= keyword to affect the
+     scaling; cmin is ignored if VALUES is not specified (use the
+     ambient= keyword from light3 for that case).
+   """
 
 #    (ZCM 4/23/97) Add the split keyword. This will determine
 #    whether or not to split the palette (half to the isosurfaces
@@ -1941,9 +2087,9 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
    xyzverts = array (xyzverts, Float )
    if values == "background" :
       values = "bg"
-   elif values is not None and values != "bg" :
+   elif values != None and values != "bg" :
       values = array (values, values.typecode ())
-   if plane is not None :
+   if plane != None :
       plane = plane.astype (Float)
 
    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) > 0 or \
@@ -1962,7 +2108,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
       array_set (list, cumsum (nverts) [0:-1], ones (len (nverts), Int))
       tpc = values.typecode ()
       values = (histogram (cumsum (list), values) / nverts).astype (tpc)
-   if plane is not None :
+   if plane != None :
       if (len (shape (plane)) != 1 or shape (plane) [0] != 4) :
          raise _Pl3treeError, "illegal plane format, try plane3 function"
 
@@ -2380,11 +2526,14 @@ palette_dict = {
    }
 
 def split_palette ( * name) :
-#  split_palette
-#        or split_palette ("palette_name.gp")
-#    split the current palette or the specified palette into two
-#    parts; colors 0 to 99 will be a compressed version of the
-#    original, while colors 100 to 199 will be a gray scale.
+
+   """
+   split_palette
+         or split_palette ("palette_name.gp")
+     split the current palette or the specified palette into two
+     parts; colors 0 to 99 will be a compressed version of the
+     original, while colors 100 to 199 will be a gray scale.
+   """
 
    if len (name) > 0 :
       dum = palette (name [0])
@@ -2419,12 +2568,14 @@ def split_palette ( * name) :
    palette (newr, newg, newb)
 
 def split_bytscl (x, upper, cmin = None, cmax = None) :
-#  split_bytscl(x, 0)
-#        or split_bytscl(x, 1)
-#    as bytscl function, but scale to the lower half of a split
-#    palette (0-99, normally the color scale) if the second parameter
-#    is zero or nil, or the upper half (100-199, normally the gray
-#    scale) if the second parameter is non-zero.
+
+   """
+   split_bytscl (x, upper, cmin = None, cmax = None)
+     as bytscl function, but scale to the lower half of a split
+     palette (0-99, normally the color scale) if the second parameter
+     is zero or nil, or the upper half (100-199, normally the gray
+     scale) if the second parameter is non-zero.
+   """
 
    x = bytscl (x, cmin = cmin, cmax = cmax, top = 99).astype('b')
 
@@ -2440,9 +2591,9 @@ def _pl3tree (tree, minmax) :
    #   back_tree= tree [1]    is the part behind plane
    #   inplane_leaf= tree [2] is the part in the plane itself
    #   front_tree= tree [3]   is the part in front of plane
-   if tree is None or tree == [] :
+   if tree == None or tree == [] :
       return None
-   if tree [0] is None or tree [0] == [] :
+   if tree [0] == None or tree [0] == [] :
       # only the leaf is non-nil (but not a plane)
       return _pl3leaf ( tree [2], 1, minmax)
 
@@ -2461,33 +2612,33 @@ def _pl3tree (tree, minmax) :
       q1 = _pl3tree (tree [3], minmax)
       q2 = _pl3leaf (tree [2], 0, minmax)
       q3 = _pl3tree (tree [1], minmax)
-   if q1 is not None :
-      if q2 is not None and q3 is None :
+   if q1 != None :
+      if q2 != None and q3 == None :
          return [min (q2 [0], q1 [0]),
                  max (q2 [1], q1 [1]),
                  min (q2 [2], q1 [2]),
                  max (q2 [3], q1 [3])]
-      elif q2 is None and q3 is not None :
+      elif q2 == None and q3 != None :
          return [min (q3 [0], q1 [0]),
                  max (q3 [1], q1 [1]),
                  min (q3 [2], q1 [2]),
                  max (q3 [3], q1 [3])]
-      elif q2 is not None and q3 is not None :
+      elif q2 != None and q3 != None :
          return [min (q3 [0], q2 [0], q1 [0]),
                  max (q3 [1], q2 [1], q1 [1]),
                  min (q3 [2], q2 [2], q1 [2]),
                  max (q3 [3], q2 [3], q1 [3])]
       else :
          return q1
-   elif q2 is not None :
-      if q3 is None :
+   elif q2 != None :
+      if q3 == None :
          return q2
       else :
          return [min (q2 [0], q3 [0]),
                  max (q2 [1], q3 [1]),
                  min (q2 [2], q3 [2]),
                  max (q2 [3], q3 [3])]
-   elif q3 is not None :
+   elif q3 != None :
       return q3
    else :
       return None
@@ -2609,7 +2760,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
    # when one coordinate is insignificant with
    # respect to the others and doesn't have significant digits.
    # It is awfully hard to come up with a numerical criterion for this.)
-   if item [2] is None or not_plane or has_multiple_components ():
+   if item [2] == None or not_plane or has_multiple_components ():
       minx = minmax [0]
       maxx = minmax [1]
       miny = minmax [2]
@@ -2619,7 +2770,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
       _xyzverts [:, 0] = (_xyzverts [:, 0] - minx) / (maxx - minx)
       _xyzverts [:, 1] = (_xyzverts [:, 1] - miny) / (maxy - miny)
       _xyzverts [:, 2] = (_xyzverts [:, 2] - minz) / (maxz - minz)
-   if  item [2] is None :
+   if  item [2] == None :
       # this is an isosurface to be shaded (no values specified)
       _xyzverts = get3_xy (_xyzverts, 1)
       # accumulate nverts and values
@@ -2672,22 +2823,22 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
    return [_list, _vlist, item [6]]
 
 def _pl3tree_add (leaf, plane, tree) :
-   if tree is not None and tree != [] and \
-      not is_scalar (tree) and tree [0] is not None :
+   if tree != None and tree != [] and \
+      not is_scalar (tree) and tree [0] != None :
       # tree has slicing plane, slice new leaf or plane and descend
       [back, leaf1] = _pl3tree_slice (tree [0], leaf)
       if back :
-         if len (tree) >= 2 and tree [1] is not None and tree [1] != [] :
+         if len (tree) >= 2 and tree [1] != None and tree [1] != [] :
             _pl3tree_add (back, plane, tree [1])
          else :
             tree [1] = [None, [], back, []]
       if (leaf1) :
-         if len (tree) >= 4 and tree [3] is not None and tree [3] != [] :
+         if len (tree) >= 4 and tree [3] != None and tree [3] != [] :
             _pl3tree_add (leaf1, plane, tree [3])
          else :
             tree [3] = [None, [], leaf1, []]
 
-   elif plane is not None :
+   elif plane != None :
       # tree is just a leaf, but this leaf has slicing plane
       tree [0] = plane
       tmp = tree [2]
@@ -2708,17 +2859,17 @@ def _pl3tree_slice (plane, leaf) :
    for ll in leaf :
       # each item in the leaf list is itself a list
       nvf = ll [0]
-      if nvf is not None :
+      if nvf != None :
          nvb = array (nvf, copy = 1)
       else :
          nvb = None
       xyzf = ll [1]
-      if xyzf is not None :
+      if xyzf != None :
          xyzb = array (xyzf, copy = 1)
       else :
          xyzb = None
       valf = ll [2]
-      if valf is not None :
+      if valf != None :
          tpc = valf.typecode()
          valb = array (valf, copy = 1)
       else :
@@ -2737,17 +2888,17 @@ def _pl3tree_slice (plane, leaf) :
          ll6 = 0
       [nvf, xyzf, valf, nvb, xyzb, valb] = \
          slice2x (plane, nvf, xyzf, valf)
-      if valf is not None:
+      if valf != None:
          valf = valf.astype (tpc)
-      if valb is not None:
+      if valb != None:
          valb = valb.astype (tpc)
-      if nvf is not None :
-         if frnt is not None :
+      if nvf != None :
+         if frnt != None :
             frnt = [ [nvf, xyzf, valf, ll [3], ll4, ll5, ll6]] + frnt
          else :
             frnt = [ [nvf, xyzf, valf, ll [3], ll4, ll5, ll6]]
-      if nvb is not None :
-         if back is not None :
+      if nvb != None :
+         if back != None :
             back = [ [nvb, xyzb, valb, ll [3], ll4, ll5, ll6]] + back
          else :
             back = [ [nvb, xyzb, valb, ll [3], ll4, ll5, ll6]]
@@ -2760,7 +2911,7 @@ def pl3tree_prt () :
    _draw3_n = get_draw3_n_ ()
    if len (_draw3_list) >= _draw3_n :
       tree = _draw3_list [_draw3_n:]
-      if tree is None or tree == [] or tree [0] != pl3tree :
+      if tree == None or tree == [] or tree [0] != pl3tree :
          print "<current 3D display not a pl3tree>"
 #        raise _Pl3tree_prtError, "<current 3D display not a pl3tree>"
       else :
@@ -2768,16 +2919,16 @@ def pl3tree_prt () :
          _pl3tree_prt (tree, 0)
 
 def pl3_other_prt(tree = None):
-   if tree is None:
+   if tree == None:
       pl3tree_prt ()
    else :
-      if tree is None or tree == []:
+      if tree == None or tree == []:
          print "<current 3D display not a pl3tree>"
       else :
          _pl3tree_prt (tree, 0)
 
 def _pl3tree_prt (tree, depth) :
-   if tree is None or tree == [] :
+   if tree == None or tree == [] :
       return
    indent = (" " * (1 + 2 * depth)) [0:-1]
    print indent + "+DEPTH= " + `depth`
@@ -2787,7 +2938,7 @@ def _pl3tree_prt (tree, depth) :
    back = tree [1]
    list = tree [2]
    frnt = tree [3]
-   if back is None or back == [] :
+   if back == None or back == [] :
       print indent + "back = []"
    else :
       _pl3tree_prt (back, depth + 1)
@@ -2799,7 +2950,7 @@ def _pl3tree_prt (tree, depth) :
       print indent + "nverts= " + `shape (leaf [1]) [0]` + \
          ", nvals= " + `len (leaf [2])`
 
-   if frnt is None or frnt == [] :
+   if frnt == None or frnt == [] :
       print  indent + "frnt = []"
    else :
          _pl3tree_prt (frnt, depth + 1)
@@ -2861,18 +3012,21 @@ def _plane_slicer (m3, chunk, normal, projection) :
          projection, x]
 
 def xyz3 (m3, chunk) :
-#  xyz3 (m3, chunk)
 
-#    return vertex coordinates for CHUNK of 3D mesh M3.  The CHUNK
-#    may be a list of cell indices, in which case xyz3 returns a
-#    (dimsof(CHUNK))x3x2x2x2 list of vertex coordinates.  CHUNK may
-#    also be a mesh-specific data structure used in the slice3
-#    routine, in which case xyz3 may return a 3x(ni)x(nj)x(nk)
-#    array of vertex coordinates.  For meshes which are logically
-#    rectangular or consist of several rectangular patches, this
-#    is up to 8 times less data, with a concomitant performance
-#    advantage.  Use xyz3 when writing slicing functions or coloring
-#    functions for slice3.
+   """
+   xyz3 (m3, chunk)
+
+     return vertex coordinates for CHUNK of 3D mesh M3.  The CHUNK
+     may be a list of cell indices, in which case xyz3 returns a
+     (dimsof(CHUNK))x3x2x2x2 list of vertex coordinates.  CHUNK may
+     also be a mesh-specific data structure used in the slice3
+     routine, in which case xyz3 may return a 3x(ni)x(nj)x(nk)
+     array of vertex coordinates.  For meshes which are logically
+     rectangular or consist of several rectangular patches, this
+     is up to 8 times less data, with a concomitant performance
+     advantage.  Use xyz3 when writing slicing functions or coloring
+     functions for slice3.
+   """
 
    xyz = m3 [0] [0] (m3, chunk)
    return xyz
@@ -3062,19 +3216,22 @@ def xyz3_unif (m3, chunk) :
    return xyz
 
 def to_corners3 (list, nj, nk) :
-#  to_corners3(list, nj, nk)
-#    convert an array of cell indices in an (ni-1)-by-(NJ-1)-by-(NK-1)
-#    logically rectangular grid of cells into the list of
-#    len(LIST)-by-2-by-2-by-2 cell corner indices in the
-#    corresponding ni-by-NJ-by-NK array of vertices.
-#    Note that this computation in Yorick gives an absolute offset
-#    for each cell quantity in the grid. In Yorick it is legal to
-#    index a multidimensional array with an absolute offset. In
-#    Python it is not. However, an array can be flattened if
-#    necessary.
-#    Other changes from Yorick were necessitated by row-major
-#    order and 0-origin indices, and of course the lack of
-#    Yorick array facilities.
+
+   """
+   to_corners3(list, nj, nk)
+     convert an array of cell indices in an (ni-1)-by-(NJ-1)-by-(NK-1)
+     logically rectangular grid of cells into the list of
+     len(LIST)-by-2-by-2-by-2 cell corner indices in the
+     corresponding ni-by-NJ-by-NK array of vertices.
+     Note that this computation in Yorick gives an absolute offset
+     for each cell quantity in the grid. In Yorick it is legal to
+     index a multidimensional array with an absolute offset. In
+     Python it is not. However, an array can be flattened if
+     necessary.
+     Other changes from Yorick were necessitated by row-major
+     order and 0-origin indices, and of course the lack of
+     Yorick array facilities.
+   """
 
    njnk = nj * nk
    kk = list / (nk - 1)

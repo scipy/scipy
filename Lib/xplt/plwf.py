@@ -1,3 +1,4 @@
+# $Id$
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -18,41 +19,43 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
    ecolor =  None, ewidth = None, cull = None, scale = None, cmax = None,
    clear = 1) :
 
-#  plwf (z)
-#  or plwf (z, y, x)
+   """
+   plwf (z)
+   or plwf (z, y, x)
 
-#    plots a 3-D wire frame of the given Z array, which must have the
-#    same dimensions as the mesh (X, Y).  If X and Y are not given, they
-#    default to the first and second indices of Z, respectively.
-#    The drawing order of the zones is determined by a simple "painter's
-#    algorithm", which works fairly well if the mesh is reasonably near
-#    rectilinear, but can fail even then if the viewpoint is chosen to
-#    produce extreme fisheye perspective effects.  Look at the resulting
-#    plot carefully to be sure the algorithm has correctly rendered the
-#    model in each case.
+     plots a 3-D wire frame of the given Z array, which must have the
+     same dimensions as the mesh (X, Y).  If X and Y are not given, they
+     default to the first and second indices of Z, respectively.
+     The drawing order of the zones is determined by a simple "painter's
+     algorithm", which works fairly well if the mesh is reasonably near
+     rectilinear, but can fail even then if the viewpoint is chosen to
+     produce extreme fisheye perspective effects.  Look at the resulting
+     plot carefully to be sure the algorithm has correctly rendered the
+     model in each case.
 
-#  KEYWORDS: fill   -- optional colors to use (default is to make zones
-#                      have background color), same dimension options as
-#                      for z argument to plf function
-#            shade  -- set non-zero to compute shading from current
-#                      3D lighting sources
-#            edges  -- default is 1 (draw edges), but if you provide fill
-#                      colors, you may set to 0 to supress the edges
-#            ecolor, ewidth  -- color and width of edges
-#            cull   -- default is 1 (cull back surfaces), but if you want
-#                      to see the "underside" of the model, set to 0
-#            scale  -- by default, Z is scaled to "reasonable" maximum
-#                      and minimum values related to the scale of (X,Y).
-#                      This keyword alters the default scaling factor, in
-#                      the sense that scale=2.0 will produce twice the
-#                      Z-relief of the default scale=1.0.
-#            cmax   -- the ambient= keyword in light3 can be used to
-#                      control how dark the darkest surface is; use this
-#                      to control how light the lightest surface is
-#                      the lightwf routine can change this parameter
-#                      interactively
+   KEYWORDS: fill   -- optional colors to use (default is to make zones
+                       have background color), same dimension options as
+                       for z argument to plf function
+             shade  -- set non-zero to compute shading from current
+                       3D lighting sources
+             edges  -- default is 1 (draw edges), but if you provide fill
+                       colors, you may set to 0 to supress the edges
+             ecolor, ewidth  -- color and width of edges
+             cull   -- default is 1 (cull back surfaces), but if you want
+                       to see the "underside" of the model, set to 0
+             scale  -- by default, Z is scaled to "reasonable" maximum
+                       and minimum values related to the scale of (X,Y).
+                       This keyword alters the default scaling factor, in
+                       the sense that scale=2.0 will produce twice the
+                       Z-relief of the default scale=1.0.
+             cmax   -- the ambient= keyword in light3 can be used to
+                       control how dark the darkest surface is; use this
+                       to control how light the lightest surface is
+                       the lightwf routine can change this parameter
+                       interactively
 
-#  SEE ALSO: lightwf, plm, plf, orient3, light3, fma, window3
+   SEE ALSO: lightwf, plm, plf, orient3, light3, fma3, window3
+   """
 
    _draw3 = get_draw3_ ( )
    _square = get_square_ ( )
@@ -106,7 +109,7 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
          jedge = tmp
          x = transpose (array (xyz1 [0]))
          y = transpose (array (xyz1 [1]))
-         if fill is not None :
+         if fill != None :
             fill = transpose (fill)
       else :
          x = xyz1 [0]
@@ -119,12 +122,12 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
       if iedge < 0.0 :
          x = reverse (x, 0)
          y = reverse (y, 0)
-         if fill is not None :
+         if fill != None :
             fill = reverse (fill, 0)
       if jedge < 0.0 :
          x = reverse (x, 1)
          y = reverse (y, 1)
-         if fill is not None :
+         if fill != None :
             fill = reverse (fill, 1)
       xmax = maxelt_ (x)
       xmin = minelt_ (x)
@@ -147,7 +150,7 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
             dif = (ydif - xdif) / 2.
             xmin = xmin - dif
             xmax = xmax + dif
-      if fill is not None :
+      if fill != None :
          if len (fill.shape) == 1:
             fill = bytscl (fill)
          else:
@@ -155,29 +158,29 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
             l = fill.shape [1]
             fill = reshape ( bytscl (ravel (fill)), (k, l))
       if cull == 0 : #transparent mesh
-         if ecolor is not None :
+         if ecolor != None :
             plm (y, x, color = ecolor)
          else :
             plm (y, x)
-      elif ecolor is not None and ewidth is not None and cmax is not None :
+      elif ecolor != None and ewidth != None and cmax != None :
          plf (fill, y, x, edges = edges, ecolor = ecolor,
               ewidth = ewidth, cmin = 0.0, cmax = cmax, legend = "")
-      elif ecolor is not None and ewidth is not None :
+      elif ecolor != None and ewidth != None :
          plf (fill, y, x, edges = edges, ewidth = ewidth,
               cmin = 0.0, ecolor = ecolor, legend = "")
-      elif ecolor is not None and cmax is not None :
+      elif ecolor != None and cmax != None :
          plf (fill, y, x, edges = edges, ecolor = ecolor,
               cmin = 0.0, cmax = cmax, legend = "")
-      elif ewidth is not None and cmax is not None :
+      elif ewidth != None and cmax != None :
          plf (fill, y, x, edges = edges,  ewidth = ewidth,
               cmin = 0.0, cmax = cmax, legend = "")
-      elif ecolor is not None :
+      elif ecolor != None :
          plf (fill, y, x, edges = edges, ecolor = ecolor,
               cmin = 0.0, legend = "")
-      elif ewidth is not None :
+      elif ewidth != None :
          plf (fill, y, x, edges = edges, ewidth = ewidth,
               cmin = 0.0, legend = "")
-      elif cmax is not None :
+      elif cmax != None :
          plf (fill, y, x, edges = edges,
               cmin = 0.0, cmax = cmax, legend = "")
       else :
@@ -196,14 +199,17 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
 _LightwfError = "LightwfError"
 
 def lightwf (cmax) :
-#  lightwf (cmax)
-#    Sets the cmax= parameter interactively, assuming the current
-#    3D display list contains the result of a previous plwf call.
-#    This changes the color of the brightest surface in the picture.
-#    The darkest surface color can be controlled using the ambient=
-#    keyword to light3.
 
-#  SEE ALSO: plwf, light3
+   """
+   lightwf (cmax)
+     Sets the cmax= parameter interactively, assuming the current
+     3D display list contains the result of a previous plwf call.
+     This changes the color of the brightest surface in the picture.
+     The darkest surface color can be controlled using the ambient=
+     keyword to light3.
+
+   SEE ALSO: plwf, light3
+   """
 
    _draw3_list = get_draw3_list_ ()
    _draw3_n = get_draw3_n_ ()
@@ -218,37 +224,39 @@ _Xyz_wfError = "Xyz_wfError"
 
 def xyz_wf (z, y, x, scale = 1.0) :
 
-#  xyz_wf (z, [y, x] [,scale = 1.0])
-#     returns a 3-by-ni-by-nj array whose 0th entry is x, 1th entry
-#     is y, and 2th entry is z. z is ni-by-nj. x and y, if present,
-#     must be the same shape. If not present, integer ranges will
-#     be used to create an equally spaced coordinate grid in x and y.
-#     The function which scales the "topography" of z(x,y) is
-#     potentially useful apart from plwf.
-#     For example, the xyz array used by plwf can be converted from
-#     a quadrilateral mesh plotted using plf to a polygon list plotted
-#     using plfp like this:
-#       xyz= xyz_wf(z,y,x,scale=scale);
-#       ni= shape(z)[1];
-#       nj= shape(z)[2];
-#       list = ravel (outer (add,
-#          ravel(outer(add,adders,zeros(nj-1, Int))) +
-#          arange((ni-1)*(nj-1), typecode = Float),
-#          array ( [[0, 1], [nj + 1, nj]])))
-#       xyz=array([take(ravel(xyz[0]),list),
-#          take(ravel(xyz[1]),list),
-#          take(ravel(xyz[2]),list)])
-#       nxyz= ones((ni-1)*(nj-1)) * 4;
-#     The resulting array xyz is 3-by-(4*(nj-1)*(ni-1)). 
-#     xyz[0:3,4*i:4*(i+1)] are the clockwise coordinates of the
-#     vertices of cell number i.
+   """
+   xyz_wf (z, [y, x] [,scale = 1.0])
+      returns a 3-by-ni-by-nj array whose 0th entry is x, 1th entry
+      is y, and 2th entry is z. z is ni-by-nj. x and y, if present,
+      must be the same shape. If not present, integer ranges will
+      be used to create an equally spaced coordinate grid in x and y.
+      The function which scales the "topography" of z(x,y) is
+      potentially useful apart from plwf.
+      For example, the xyz array used by plwf can be converted from
+      a quadrilateral mesh plotted using plf to a polygon list plotted
+      using plfp like this:
+        xyz= xyz_wf(z,y,x,scale=scale);
+        ni= shape(z)[1];
+        nj= shape(z)[2];
+        list = ravel (add.outer (
+           ravel(add.outer (adders,zeros(nj-1, Int))) +
+           arange((ni-1)*(nj-1), typecode = Int),
+           array ( [[0, 1], [nj + 1, nj]])))
+        xyz=array([take(ravel(xyz[0]),list),
+           take(ravel(xyz[1]),list),
+           take(ravel(xyz[2]),list)])
+        nxyz= ones((ni-1)*(nj-1)) * 4;
+      The resulting array xyz is 3-by-(4*(nj-1)*(ni-1)).
+      xyz[0:3,4*i:4*(i+1)] are the clockwise coordinates of the
+      vertices of cell number i.
+   """
 
    if len (shape (z)) < 2 :
       raise _Xyz_wfError, "impossible dimensions for z array"
    nx = shape (z) [0]
    ny = shape (z) [1]
-   if y is None or x is None :
-      if x is not None or y is not None :
+   if y == None or x == None :
+      if x != None or y != None :
          raise _Xyz_wfError, "either give y,x both or neither"
       x = span (0, ny - 1, ny, nx)
       y = transpose (span (0, nx - 1, nx, ny))
@@ -256,7 +264,7 @@ def xyz_wf (z, y, x, scale = 1.0) :
       raise _Xyz_wfError, "x, y, and z must all have same dimensions"
    xyscl = max (maxelt_ (x) - minelt_ (x),
                 maxelt_ (y) - minelt_ (y))
-   if scale is not None:
+   if scale != None:
       xyscl = xyscl * scale
    dz = maxelt_ (z) - minelt_ (z)
    zscl= dz + (dz == 0.0)

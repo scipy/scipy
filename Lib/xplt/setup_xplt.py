@@ -722,6 +722,8 @@ gistsource = ["src/gist/gist.c",
               "src/gist/hlevel.c",
               "src/gist/ps.c",
               "src/gist/cgm.c",
+              "src/gist/eps.c",
+              "src/gist/style.c",
               "src/gist/xfancy.c",
               "src/gist/xbasic.c"]
 

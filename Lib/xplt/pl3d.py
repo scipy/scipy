@@ -1,8 +1,8 @@
+# $Id$
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from scipy_base.fastumath import *
 from shapetest import *
 from yorick import *
 from arrayfns import *
@@ -16,74 +16,83 @@ from arrayfns import *
 #     Copyright (c) 1997.  The Regents of the University of California.
 #                   All rights reserved.
 
-#  General overview of module pl3d:
+"""
+   General overview of module pl3d:
 
-#  (1) Viewing transform machinery.  Arguably the simplest model
-#      is the CAD/CAM notion that the object you see is oriented
-#      as you see it in the current picture.  You can then move
-#      it left, right, up, down, or toward or away from you,
-#      or you can rotate it about any of the three axes (horizontal,
-#      vertical, or out of the screen).  The xyz coordinates of the
-#      object remains unchanged throughout all of this, but this
-#      object coordinate system changes relative to the fixed
-#      xyz of the viewer, in which x is always to the right, y is
-#      up, and z is directed out of the screen.  Initially, the
-#      two coordinate systems coincide.
+   (1) Viewing transform machinery.  Arguably the simplest model
+       is the CAD/CAM notion that the object you see is oriented
+       as you see it in the current picture.  You can then move
+       it left, right, up, down, or toward or away from you,
+       or you can rotate it about any of the three axes (horizontal,
+       vertical, or out of the screen).  The xyz coordinates of the
+       object remains unchanged throughout all of this, but this
+       object coordinate system changes relative to the fixed
+       xyz of the viewer, in which x is always to the right, y is
+       up, and z is directed out of the screen.  Initially, the
+       two coordinate systems coincide.
 
-#      rot3, xangle,yangle,zangle
-#        Rotate the object about viewer's x-axis by xangle, then
-#        about viewer's y-axis by yangle, then about viewer's
-#        z-axis by zangle
-#      mov3, xchange,ychange,zchange
-#        Move the object by the specified amounts.
+       rot3 (xangle,yangle,zangle)
+         Rotate the object about viewer's x-axis by xangle, then
+         about viewer's y-axis by yangle, then about viewer's
+         z-axis by zangle
+       mov3 (xchange,ychange,zchange)
+         Move the object by the specified amounts.
 
-#      setz3, zcamera
-#        The "camera" is located at (0,0,zcamera) in the viewer's
-#        coordinate system, looking in the minus-z direction.
-#        Initially, zcamera is very large, and the magnification
-#        factor is correspondingly large, giving an isometric view.
-#        Decreasing zcamera makes the perspective more extreme.
-#        If parts of the object are behind the camera, strange things
-#        may happen.
+       setz3 (zcamera)
+         The "camera" is located at (0,0,zcamera) in the viewer's
+         coordinate system, looking in the minus-z direction.
+         Initially, zcamera is very large, and the magnification
+         factor is correspondingly large, giving an isometric view.
+         Decreasing zcamera makes the perspective more extreme.
+         If parts of the object are behind the camera, strange things
+         may happen.
 
-#      undo3
-#      undo3, n
-#        Undo the last N (default 1) viewpoint commands (rot3, mov3,
-#        or setz3).  Up to 100 viewpoint changes are remembered.
-#      viewpoint= save3()
-#      ...
-#      restore3, viewpoint
-#        The current viewpoint transformation can be saved and later
-#        restored.
+       undo3 ()
+       undo3 (n)
+         Undo the last N (default 1) viewpoint commands (rot3, mov3,
+         or setz3).  Up to 100 viewpoint changes are remembered.
+       viewpoint= save3()
+       ...
+       restore3 (viewpoint)
+         The current viewpoint transformation can be saved and later
+         restored.
 
-#      gnomon, on_off
-#        Toggle the gnomon (a simple display showing the orientation
-#        of the xyz axes of the object).
-
+       gnomon (on_off)
+         Toggle the gnomon (a simple display showing the orientation
+         of the xyz axes of the object).
+"""
 
 #  ------------------------------------------------------------------------
 
 
 def set_draw3_ ( n ) :
-#  set_draw3_ ( 0 | 1 ) is used to set the global _draw3,
-#  which controls whether the function draw3 actually shows a drawing.
+
+   """
+   set_draw3_ ( 0 | 1 ) is used to set the global draw3_,
+   which controls whether the function draw3 actually shows a drawing.
+   """
    
    global _draw3
    _draw3 = n
 
 def setrot3_ (x) :
+
    # ZCM 2/21/97 change reflects the fact that I hadn't realized
    # that car and cdr, as functions, return the item replaced.
+
    global _draw3_list
    oldx = _draw3_list [0]
    _draw3_list [0] = x
    undo3_set_ (setrot3_, oldx)
 
 def rot3 (xa = 0., ya = 0., za = 0.) :
-#  rot3 (xa, ya, za)
-#  rotate the current 3D plot by XA about viewer's x-axis,
-#  YA about viewer's y-axis, and ZA about viewer's z-axis.
-#  SEE ALSO: orient3, mov3, aim3, setz3, undo3, save3, restore3, light3
+
+   """
+   rot3 (xa, ya, za)
+   rotate the current 3D plot by XA about viewer's x-axis,
+   YA about viewer's y-axis, and ZA about viewer's z-axis.
+   SEE ALSO: orient3, mov3, aim3, setz3, undo3, save3, restore3, light3
+   """
 
    x = array ([1.,0.,0.], Float)
    y = array ([0.,1.,0.], Float)
@@ -102,32 +111,39 @@ def rot3_ (a, x, y) :
    return [multiply (ca, x) + multiply (sa, y), multiply (-sa, x) + multiply (ca, y)]
 
 def mov3 ( xa = 0., ya = 0., za = 0. ) :
-#  mov3 ( [xa [, ya [, za]]])
-#  move the current 3D plot by XA along the viewer's x axis,
-#  YA along the viewer's y axis, and ZA along the viewer's z axis.
-#  SEE ALSO: rot3, orient3, setz3, undo3, save3, restore3, light3
 
-   gr = array (getrot3_ (), copy = 1)
+   """
+   mov3 ( [xa [, ya [, za]]])
+   move the current 3D plot by XA along the viewer's x axis,
+   YA along the viewer's y axis, and ZA along the viewer's z axis.
+   SEE ALSO: rot3, orient3, setz3, undo3, save3, restore3, light3
+   """
+
    gr = dot (transpose (gr), transpose (xa))
    setorg3_ ( getorg3_ () - gr) 
 
 def aim3 ( xa = 0., ya = 0., za = 0. ) :
-#  aim3 ( [xa [, ya [, za]]])
-#  move the current 3D plot to put the point (XA, YA, ZA) in object
-#  coordinates at the point (0, 0, 0) -- the aim point -- in the
-#  viewer's coordinates. If any of the XA, YA, or ZA is nil, it defaults
-#  SEE ALSO: mov3, rot3, orient3, setz3, undo3, save3, restore3, light3
-#  to zero.
+
+   """
+   aim3 ( [xa [, ya [, za]]])
+   move the current 3D plot to put the point (XA, YA, ZA) in object
+   coordinates at the point (0, 0, 0) -- the aim point -- in the
+   viewer's coordinates. If any of the XA, YA, or ZA is nil, it defaults
+   SEE ALSO: mov3, rot3, orient3, setz3, undo3, save3, restore3, light3
+   """
 
    setorg3_ (x)
 
 _ZcError = "ZcError"
 
 def setz3 ( zc = None ) :
-#  setz3 ( [zc] )
-#  Set the camera position to z = ZC (x = y = 0) in the viewer's coordinate
-#  system. If zc is None, set the camera to infinity (default).
-#  SEE ALSO: rot3, orient3, undo3, save3, restore3, light3
+
+   """
+   setz3 ( [zc] )
+   Set the camera position to z = ZC (x = y = 0) in the viewer's coordinate
+   system. If zc is None, set the camera to infinity (default).
+   SEE ALSO: rot3, orient3, undo3, save3, restore3, light3
+   """
 
    if not is_scalar (zc) :
       raise _ZcError, "camera position must be scalar."
@@ -135,23 +151,24 @@ def setz3 ( zc = None ) :
    setzc3_ (zc)
 
 def orient3 ( ** kw ) :
-#  orient3 ( [phi = val1, theta = val2] )
-#  Set the orientation of the object to (PHI, THETA). Orientations
-#  are a subset of the possible rotation matrices in which the z axis
-#  of the object appears vertical on the screen (that is, the object
-#  z axis projects onto the viewer y axis). The THETA angle is the
-#  angle from the viewer y axis to the object z axis, positive if
-#  the object z axis is tilted towards you (toward viewer +z). PHI is
-#  zero when the object x axis coincides with the viewer x axis. If
-#  neither PHI nor THETA is specified, PHI defaults to - pi / 4 and
-#  THETA defaults to pi / 6. If only PHI is specified, THETA remains
-#  unchanged, unless the current THETA is near pi / 2, in which case
-#  THETA returns to pi / 6, or unless the current orientation does
-#  not have a vertical z axis, in which case THETA returns to its
-#  default. If only THETA is specified, PHI retains its current value.
-#  Unlike rot3, orient3 is not a cumulative operation.
-#  SEE ALSO: rot3, mov3, aim3, save3, restore3, light3
 
+   """
+   orient3 ( [phi = val1, theta = val2] )
+   Set the orientation of the object to (PHI, THETA). Orientations
+   are a subset of the possible rotation matrices in which the z axis
+   of the object appears vertical on the screen (that is, the object
+   z axis projects onto the viewer y axis). The THETA angle is the
+   angle from the viewer y axis to the object z axis, positive if
+   the object z axis is tilted towards you (toward viewer +z). PHI is
+   zero when the object x axis coincides with the viewer x axis. If
+   neither PHI nor THETA is specified, PHI defaults to - pi / 4 and
+   THETA defaults to pi / 6. If only PHI is specified, THETA remains
+   unchanged, unless the current THETA is near pi / 2, in which case
+   THETA returns to pi / 6, or unless the current orientation does
+   not have a vertical z axis, in which case THETA returns to its
+   default.
+   Unlike rot3, orient3 is not a cumulative operation.
+   """
    # Notes with regard to global variables: (ZCM 2/21/97)
    # _orient3_phi, _orient3_theta, the default orientation angles,
    #    are known and referred to only in this routine. I have started
@@ -215,21 +232,25 @@ import copy
 
 def save3 ( ) :
 
-#  view = save3 ( )
-#    Save the current 3D viewing transformation and lighting.
-#    Actually, this doesn't save anything; it returns a copy
-#    of the current 3D viewing transformation and lighting, so
-#    that the user can put it aside somewhere.
-#  SEE ALSO: restore3, rot3, mov3, aim3, light3
+   """
+   view = save3 ( )
+     Save the current 3D viewing transformation and lighting.
+     Actually, this doesn't save anything; it returns a copy
+     of the current 3D viewing transformation and lighting, so
+     that the user can put it aside somewhere.
+   SEE ALSO: restore3, rot3, mov3, aim3, light3
+   """
 
    return _draw3_list [0:_draw3_n]
 
 def restore3 ( view = None ) :
 
-#  restore3 ( view )
-#  Restore a previously saved 3D viewing transformation and lighting.
-#  If view is missing, rotate object to viewer's coordinate system.
-#  SEE ALSO: restore3, rot3, mov3, aim3, light3
+   """
+   restore3 ( view )
+   Restore a previously saved 3D viewing transformation and lighting.
+   If view is missing, rotate object to viewer's coordinate system.
+   SEE ALSO: restore3, rot3, mov3, aim3, light3
+   """
 
    global _draw3_list, _draw3_view, _light3_list, _draw3_n
 
@@ -247,46 +268,48 @@ _LightingError = "LightingError"
 
 def light3 ( * kw, ** kwds ) :
 
-#  light3 (ambient=a_level,
-#                   diffuse=d_level,
-#                   specular=s_level,
-#                   spower=n,
-#                   sdir=xyz)
-#    Sets lighting properties for 3D shading effects.
-#    A surface will be shaded according to its to its orientation
-#    relative to the viewing direction.
+   """
+   light3 (ambient=a_level,
+                    diffuse=d_level,
+                    specular=s_level,
+                    spower=n,
+                    sdir=xyz)
+     Sets lighting properties for 3D shading effects.
+     A surface will be shaded according to its to its orientation
+     relative to the viewing direction.
 
-#    The ambient level A_LEVEL is a light level (arbitrary units)
-#    that is added to every surface independent of its orientation.
+     The ambient level A_LEVEL is a light level (arbitrary units)
+     that is added to every surface independent of its orientation.
 
-#    The diffuse level D_LEVEL is a light level which is proportional
-#    to cos(theta), where theta is the angle between the surface
-#    normal and the viewing direction, so that surfaces directly
-#    facing the viewer are bright, while surfaces viewed edge on are
-#    unlit (and surfaces facing away, if drawn, are shaded as if they
-#    faced the viewer).
+     The diffuse level D_LEVEL is a light level which is proportional
+     to cos(theta), where theta is the angle between the surface
+     normal and the viewing direction, so that surfaces directly
+     facing the viewer are bright, while surfaces viewed edge on are
+     unlit (and surfaces facing away, if drawn, are shaded as if they
+     faced the viewer).
 
-#    The specular level S_LEVEL is a light level proportional to a high
-#    power spower=N of 1+cos(alpha), where alpha is the angle between
-#    the specular reflection angle and the viewing direction.  The light
-#    source for the calculation of alpha lies in the direction XYZ (a
-#    3 element vector) in the viewer's coordinate system at infinite
-#    distance.  You can have ns light sources by making S_LEVEL, N, and
-#    XYZ (or any combination) be vectors of length ns (3-by-ns in the
-#    case of XYZ).  (See source code for specular_hook function
-#    definition if powers of 1+cos(alpha) aren't good enough for you.)
+     The specular level S_LEVEL is a light level proportional to a high
+     power spower=N of 1+cos(alpha), where alpha is the angle between
+     the specular reflection angle and the viewing direction.  The light
+     source for the calculation of alpha lies in the direction XYZ (a
+     3 element vector) in the viewer's coordinate system at infinite
+     distance.  You can have ns light sources by making S_LEVEL, N, and
+     XYZ (or any combination) be vectors of length ns (3-by-ns in the
+     case of XYZ).  (See source code for specular_hook function
+     definition if powers of 1+cos(alpha) aren't good enough for you.)
 
-#    With no arguments, return to the default lighting.
+     With no arguments, return to the default lighting.
 
-#  EXAMPLES:
-#    light3 ( diffuse=.1, specular=1., sdir=[0,0,-1])
-#      (dramatic "tail lighting" effect)
-#    light3 ( diffuse=.5, specular=1., sdir=[1,.5,1])
-#      (classic "over your right shoulder" lighting)
-#    light3 ( ambient=.1,diffuse=.1,specular=1.,
-#            sdir=[[0,0,-1],[1,.5,1]],spower=[4,2])
-#      (two light sources combining previous effects)
-#  SEE ALSO: rot3, save3, restore3
+   EXAMPLES:
+     light3 ( diffuse=.1, specular=1., sdir=[0,0,-1])
+       (dramatic "tail lighting" effect)
+     light3 ( diffuse=.5, specular=1., sdir=[1,.5,1])
+       (classic "over your right shoulder" lighting)
+     light3 ( ambient=.1,diffuse=.1,specular=1.,
+             sdir=[[0,0,-1],[1,.5,1]],spower=[4,2])
+       (two light sources combining previous effects)
+   SEE ALSO: rot3, save3, restore3
+   """
 
    global _draw3_list, _draw3_nv
    if len (kw) > 0 : kwds = kw [0]
@@ -339,21 +362,23 @@ def light3_ (arg) :
    
 def get3_light (xyz, * nxyz) :
 
-#  get3_light(xyz, nxyz)
-#     or get3_light(xyz)
+   """
+   get3_light(xyz, nxyz)
+      or get3_light(xyz)
 
-#    return 3D lighting for polygons with vertices XYZ.  If NXYZ is
-#    specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
-#    list of numbers of vertices for each polygon (as for the plfp
-#    function).  If NXYZ is not specified, XYZ should be a quadrilateral
-#    mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
-#    the return value is len (NXYZ) long; in the second case, the
-#    return value is (ni-1)-by-(nj-1).
+     return 3D lighting for polygons with vertices XYZ.  If NXYZ is
+     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     list of numbers of vertices for each polygon (as for the plfp
+     function).  If NXYZ is not specified, XYZ should be a quadrilateral
+     mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
+     the return value is len (NXYZ) long; in the second case, the
+     return value is (ni-1)-by-(nj-1).
 
-#    The parameters of the lighting calculation are set by the
-#    light3 function.
+     The parameters of the lighting calculation are set by the
+     light3 function.
 
-#    SEE ALSO: light3, set3_object, get3_normal, get3_centroid
+     SEE ALSO: light3, set3_object, get3_normal, get3_centroid
+     """
 
    global _draw3_list, _draw3_nv
    list = _draw3_list [_draw3_nv:]
@@ -405,25 +430,27 @@ def get3_light (xyz, * nxyz) :
 
 def get3_normal (xyz, *nxyz) :
 
-#    get3_normal(xyz, nxyz)
-#        or get3_normal(xyz)
+   """
+     get3_normal(xyz, nxyz)
+         or get3_normal(xyz)
 
-#    return 3D normals for polygons with vertices XYZ.  If NXYZ is
-#    specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
-#    list of numbers of vertices for each polygon (as for the plfp
-#    function).  If NXYZ is not specified, XYZ should be a quadrilateral
-#    mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
-#    the return value is len(NXYZ)-by-3; in the second case, the
-#    return value is (ni-1)-by-(nj-1)-by-3.
+     return 3D normals for polygons with vertices XYZ.  If NXYZ is
+     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     list of numbers of vertices for each polygon (as for the plfp
+     function).  If NXYZ is not specified, XYZ should be a quadrilateral
+     mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
+     the return value is len(NXYZ)-by-3; in the second case, the
+     return value is (ni-1)-by-(nj-1)-by-3.
 
-#    The normals are constructed from the cross product of the lines
-#    joining the midpoints of two edges which as nearly quarter the
-#    polygon as possible (the medians for a quadrilateral).  No check
-#    is made that these not be parallel; the returned "normal" is
-#    [0,0,0] in that case.  Also, if the polygon vertices are not
-#    coplanar, the "normal" has no precisely definable meaning.
+     The normals are constructed from the cross product of the lines
+     joining the midpoints of two edges which as nearly quarter the
+     polygon as possible (the medians for a quadrilateral).  No check
+     is made that these not be parallel; the returned "normal" is
+     [0,0,0] in that case.  Also, if the polygon vertices are not
+     coplanar, the "normal" has no precisely definable meaning.
 
-#    SEE ALSO: get3_centroid, get3_light
+     SEE ALSO: get3_centroid, get3_light
+     """
 
    if len (nxyz) == 0 :
       # if no polygon list is given, assume xyz is 2D mesh
@@ -473,21 +500,23 @@ def get3_normal (xyz, *nxyz) :
 
 def get3_centroid (xyz, * nxyz) :
 
-#    get3_centroid(xyz, *nxyz)
-#        or get3_centroid(xyz)
+   """
+     get3_centroid(xyz, *nxyz)
+         or get3_centroid(xyz)
 
-#    return 3D centroids for polygons with vertices XYZ.  If NXYZ is
-#    specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
-#    list of numbers of vertices for each polygon (as for the plfp
-#    function).  If NXYZ is not specified, XYZ should be a quadrilateral
-#    mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
-#    the return value is len(NXYZ) in length; in the second case, the
-#    return value is (ni-1)-by-(nj-1)-by-3.
+     return 3D centroids for polygons with vertices XYZ.  If NXYZ is
+     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     list of numbers of vertices for each polygon (as for the plfp
+     function).  If NXYZ is not specified, XYZ should be a quadrilateral
+     mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
+     the return value is len(NXYZ) in length; in the second case, the
+     return value is (ni-1)-by-(nj-1)-by-3.
 
-#    The centroids are constructed as the mean value of all vertices
-#    of each polygon.
+     The centroids are constructed as the mean value of all vertices
+     of each polygon.
 
-#    SEE ALSO: get3_normal, get3_light
+     SEE ALSO: get3_normal, get3_light
+   """
 
    if len (nxyz) == 0 :
       # if no polygon list is given, assume xyz is 2D mesh
@@ -511,23 +540,26 @@ _Get3Error = "Get3Error"
 
 def get3_xy (xyz, *flg) :
 
-#    get3_xy (xyz)
-#        or get3_xy(xyz, 1)
+   """
+     get3_xy (xyz)
+         or get3_xy(xyz, 1)
 
-#    Given anything-by-3 coordinates XYZ, return X and Y in viewer's
-#    coordinate system (set by rot3, mov3, orient3, etc.).  If the
-#    second argument is present and non-zero, also return Z (for use
-#    in sort3d or get3_light, for example).  If the camera position
-#    has been set to a finite distance with setz3, the returned
-#    coordinates will be tangents of angles for a perspective
-#    drawing (and Z will be scaled by 1/zc).
-#    Unlike the Yorick version, this function returns a 3-by-anything
-#    array of coordinates.
-#    Actually, what it returns is a 3-by-anything python array, whose
-#    0th element is the x array, whose 1th element is the y array, and 
-#    whose 2th element is the z array if asked for.
-#    I believe that x, y, and z can be either 1d or 2d, so this
-#    routine is written in two cases.
+     Given anything-by-3 coordinates XYZ, return X and Y in viewer's
+     coordinate system (set by rot3, mov3, orient3, etc.).  If the
+     second argument is present and non-zero, also return Z (for use
+     in sort3d or get3_light, for example).  If the camera position
+     has been set to a finite distance with setz3, the returned
+     coordinates will be tangents of angles for a perspective
+     drawing (and Z will be scaled by 1/zc).
+     Unlike the Yorick version, this function returns a 3-by-anything
+     array of coordinates.
+     Actually, what it returns is a 3-by-anything python array, whose
+     0th element is the x array, whose 1th element is the y array, and
+     whose 2th element is the z array if asked for.
+     I believe that x, y, and z can be either 1d or 2d, so this
+     routine is written in two cases.
+
+   """
 
    # rotate and translate to viewer's coordinate system
    shp = shape (xyz)
@@ -584,10 +616,12 @@ _undo3_list = []
 
 def undo3 (n = 1) :
 
-#    undo3
-#        or undo3, n
-#    Undo the effects of the last N (default 1) rot3, orient3, mov3, aim3,
-#    setz3, or light3 commands.
+   """
+     undo3 ()
+         or undo3 (n)
+     Undo the effects of the last N (default 1) rot3, orient3, mov3, aim3,
+     setz3, or light3 commands.
+   """
 
    global _in_undo3, _undo3_list
    n = 2 * n
@@ -609,31 +643,33 @@ def undo3 (n = 1) :
 
 def set3_object (fnc, arg) :
 
-#    set3_object (drawing_function, [arg1,arg2,...])
+   """
+     set3_object (drawing_function, [arg1,arg2,...])
 
-#    set up to trigger a call to draw3, adding a call to the
-#    3D display list of the form:
+     set up to trigger a call to draw3, adding a call to the
+     3D display list of the form:
 
-#       DRAWING_FUNCTION ( [ARG1, ARG2, ...]))
+        DRAWING_FUNCTION ( [ARG1, ARG2, ...]))
 
-#    When draw3 calls DRAWING_FUNCTION, the external variable _draw3
-#    will be non-zero, so DRAWING_FUNCTION can be written like this:
+     When draw3 calls DRAWING_FUNCTION, the external variable draw3_
+     will be non-zero, so DRAWING_FUNCTION can be written like this:
 
-#    def drawing_function(arg) :
-#      
-#      if (_draw3) :
-#         arg1= arg [0]
-#         arg1= arg [1]
-#         ...
-#         ...<calls to get3_xy, sort3d, get3_light, etc.>...
-#         ...<calls to graphics functions plfp, plf, etc.>...
-#         return
-#      
-#      ...<verify args>...
-#      ...<do orientation and lighting independent calcs>...
-#      set3_object (drawing_function, [arg1,arg2,...])
-#    
-#  SEE ALSO: get3_xy, get3_light, sort3d
+     def drawing_function(arg) :
+
+       if (draw3_) :
+          arg1= arg [0]
+          arg1= arg [1]
+          ...
+          ...<calls to get3_xy, sort3d, get3_light, etc.>...
+          ...<calls to graphics functions plfp, plf, etc.>...
+          return
+
+       ...<verify args>...
+       ...<do orientation and lighting independent calcs>...
+       set3_object (drawing_function, [arg1,arg2,...])
+
+   SEE ALSO: get3_xy, get3_light, sort3d
+   """
 
    global _draw3_list
    _draw3_list = _draw3_list + [fnc, arg]
@@ -740,8 +776,10 @@ def clear3 ( ) :
 
 def window3 ( * n , **kw ) :
 
-#  window3 ( ) or window3 (n)
-#  initialize style="nobox.gs" window for 3D graphics
+   """
+   window3 ( ) or window3 (n)
+   initialize style="nobox.gs" window for 3D graphics
+   """
 
    if kw.has_key ("dump") :
       dump = kw ["dump"]
@@ -764,28 +802,30 @@ def window3 ( * n , **kw ) :
 
 def sort3d (z, npolys) :
 
-#  sort3d(z, npolys) 
-#    given Z and NPOLYS, with len(Z)==sum(npolys), return
-#    a 2-element list [LIST, VLIST] such that Z[VLIST] and NPOLYS[LIST] are
-#    sorted from smallest average Z to largest average Z, where
-#    the averages are taken over the clusters of length NPOLYS.
-#    Within each cluster (polygon), the cyclic order of Z[VLIST]
-#    remains unchanged, but the absolute order may change.
+   """
+   sort3d(z, npolys)
+     given Z and NPOLYS, with len(Z)==sum(npolys), return
+     a 2-element list [LIST, VLIST] such that Z[VLIST] and NPOLYS[LIST] are
+     sorted from smallest average Z to largest average Z, where
+     the averages are taken over the clusters of length NPOLYS.
+     Within each cluster (polygon), the cyclic order of Z[VLIST]
+     remains unchanged, but the absolute order may change.
 
-#    This sorting order produces correct or nearly correct order
-#    for a plfp command to make a plot involving hidden or partially
-#    hidden surfaces in three dimensions.  It works best when the
-#    polys form a set of disjoint closed, convex surfaces, and when
-#    the surface normal changes only very little between neighboring
-#    polys.  (If the latter condition holds, then even if sort3d
-#    mis-orders two neighboring polys, their colors will be very
-#    nearly the same, and the mistake won't be noticeable.)  A truly
-#    correct 3D sorting routine is impossible, since there may be no
-#    rendering order which produces correct surface hiding (some polys
-#    may need to be split into pieces in order to do that).  There
-#    are more nearly correct algorithms than this, but they are much
-#    slower.
-#  SEE ALSO: get3_xy
+     This sorting order produces correct or nearly correct order
+     for a plfp command to make a plot involving hidden or partially
+     hidden surfaces in three dimensions.  It works best when the
+     polys form a set of disjoint closed, convex surfaces, and when
+     the surface normal changes only very little between neighboring
+     polys.  (If the latter condition holds, then even if sort3d
+     mis-orders two neighboring polys, their colors will be very
+     nearly the same, and the mistake won't be noticeable.)  A truly
+     correct 3D sorting routine is impossible, since there may be no
+     rendering order which produces correct surface hiding (some polys
+     may need to be split into pieces in order to do that).  There
+     are more nearly correct algorithms than this, but they are much
+     slower.
+   SEE ALSO: get3_xy
+   """
 
    # first compute z, the z-centroid of every poly
    # get a list the same length as x, y, or z which is 1 for each
@@ -840,9 +880,12 @@ def limits_ (square = 0, yfactor = 1., xfactor = 1.) :
    _yfactor = yfactor
 
 def draw3 (called_as_idler = 0, lims = None) :
-#  draw3 (called_as_idler = 0, lims = None):
-#  Draw the current 3d display list.
-#  Ordinarily triggered automatically when the drawing changes.)
+
+   """
+      draw3 (called_as_idler = 0, lims = None):
+   Draw the current 3d display list.
+   Ordinarily triggered automatically when the drawing changes.
+   """
 
    global _draw3, _draw3_changes, _draw3_list, _draw3_n, _gnomon
    if _draw3_changes :
@@ -869,12 +912,12 @@ def draw3 (called_as_idler = 0, lims = None) :
                first = 0
             else :
                fv = fnc (list [1])
-               if fv is not None and lims is not None :
+               if fv is not None and lims is not None:
                   lims = [min (fv [0], lims [0]),
                           max (fv [1], lims [1]),
                           min (fv [2], lims [2]),
                           max (fv [3], lims [3])]
-               elif fv is not None :
+               elif fv is not None:
                   lims = fv
          else :
             fnc (list [1])
@@ -959,21 +1002,24 @@ set_default_gnomon (0)
 
 def gnomon (* on, ** kw) :
 
-#  gnomon ()
-#     or gnomon (onoff)
-#    Toggle the gnomon display. If on is present and non-zero,
-#    turn on the gnomon. If zero, turn it off.
-#   
-#    The gnomon shows the X, Y, and Z axis directions in the
-#    object coordinate system. The directions are labeled.
-#    The gnomon is always infinitely far behind the object
-#    (away from the camera).
-#   
-#    There is a mirror-through-the-screen-plane ambiguity in the
-#    display which is resolved in two ways: (1) the (X, Y, Z)
-#    coordinate system is right-handed, and (2) If the tip of an
-#    axis projects into the screen, its label is drawn in opposite
-#    polarity to the other text in the screen.
+   """
+   gnomon ()
+      or gnomon (onoff)
+     Toggle the gnomon display. If on is present and non-zero,
+     turn on the gnomon. If zero, turn it off.
+
+     The gnomon shows the X, Y, and Z axis directions in the
+     object coordinate system. The directions are labeled.
+     The gnomon is always infinitely far behind the object
+     (away from the camera).
+
+     There is a mirror-through-the-screen-plane ambiguity in the
+     display which is resolved in two ways: (1) the (X, Y, Z)
+     coordinate system is right-handed, and (2) If the tip of an
+     axis projects into the screen, its label is drawn in opposite
+     polarity to the other text in the screen.
+   """
+
 #    (ZCM 4/4/97) Add keyword argument chr to allow specification
 #    of the axis labels.
 
@@ -1137,15 +1183,17 @@ def spin3 (nframes = 30, axis = array ([-1, 1, 0],  Float), tlimit = 60.,
    dtmin = 0.0, bracket_time = array ([2., 2.],  Float), lims = None,
    timing = 0, angle = 2. * pi) :
 
-#  spin3 ( ) or spin3 (nframes) os spin3 (nframes, axis)
-#    Spin the current 3D display list about AXIS over NFRAMES.  Keywords
-#    tlimit= the total time allowed for the movie in seconds (default 60),
-#    dtmin= the minimum allowed interframe time in seconds (default 0.0),
-#    bracket_time= (as for movie function in movie.i), timing = 1 if
-#    you want timing measured and printed out, 0 if not.
+   """
+   spin3 ( ) or spin3 (nframes) os spin3 (nframes, axis)
+     Spin the current 3D display list about AXIS over NFRAMES.  Keywords
+     tlimit= the total time allowed for the movie in seconds (default 60),
+     dtmin= the minimum allowed interframe time in seconds (default 0.0),
+     bracket_time= (as for movie function in movie.i), timing = 1 if
+     you want timing measured and printed out, 0 if not.
 
-#    The default AXIS is [-1,1,0] and the default NFRAMES is 30.
-#  SEE ALSO: rot3
+     The default AXIS is [-1,1,0] and the default NFRAMES is 30.
+   SEE ALSO: rot3
+   """
 
    # Note on global variables (ZCM 2/21/97):
    # I see no better way of sharing these between spin3 and _spin3

@@ -3,11 +3,13 @@
 #
 #  NAME:  gist.py
 #
-#  Scipy CHANGES:
-#  03/06/03 teo Changed all == None checks to is None checks
-#  03/10/03 teo Changed eps to work with windows (noepsi=1)
-
+#  SCIPY
+#  09/28/03 teo Changed eps file to accept noepsi when not available.
+#  09/28/03 teo Changed all == None to is None and != None to not is None
+#
 #  CHANGES:
+#  03/13/03 llc Add one NOTE on plfc.
+#  03/12/03 llc Updated doc comments.
 #  12/25/02 mdh Add plh to draw histograms
 #  11/26/01 llc Add docstring for plmk (missing).
 #  11/05/01 llc Use pydoc's help (not the one in help.py).
@@ -16,46 +18,48 @@
 #               Also, merge in documentation (if it exists) from gist.help 
 #               after each function, so that pydoc's help can return it.
 #  10/12/01 llc Re-port of gist from archived version.
+#  03/19/03 llc Dave Grote reported a bug in plfc:  nc==None should be 
+#               nc is None.
+#  04/07/03 mdh Modifications to plh to add labels below x-axis; removed 
+#               legend and added label keyword.
 #
 #  ---------------------------------------------------------------------
-"""
-      Version: $Id$
-      Copyright (c) 1996, 1997, The Regents of the University of
-      California.  All rights reserved.  See Legal.htm for full
-      text and disclaimer.
 
+"""
      Gist is a portable graphics package for scientific applications. It
-     can produce interactive graphics in the X-window and Macintosh
-     environments (the Python module currently supports only X11), and
-     it can produce file output conforming to ANSI standard CGM or
-     standard Postscript.
+     can produce interactive graphics for Unix/Linux (X11), Windows, 
+     and Mac platforms, as well as produce file output conforming to ANSI 
+     standard CGM or standard Postscript.
 
-     Gist was developed by David H. Munro <munro@icf.llnl.gov> at
+     Gist was developed by David H. Munro (munro1@llnl.gov) at
      Lawrence Livermore National Laboratory, as part of his Yorick
-     scientific interpreter. Gist is distributed as part of Yorick, and
-     is available at the following sites:
+     scientific interpreter. Lee Busby was the original author of 
+     the Python Gist C extension module.  He adapted much of the 
+     module from similar code written by Munro for Yorick.
 
-       wuarchive.wustl.edu: /languages/yorick/yorick-1.2.tar.gz
-       sunsite.unc.edu: /pub/languages/yorick/yorick-1.2.tar.gz
-       sunsite.unc.edu: /pub/Linux/apps/math/matrix/yorick-1.2.tar.gz
-       netlib.att.com: /netlib/env/yorick-1.2.tar.gz
-       netlib2.cs.utk.edu: /env/yorick-1.2.tar.gz
+     Copyright (c) 1996, 1997, The Regents of the University of
+     California.  All rights reserved.  See Legal.htm for full
+     text and disclaimer.
 
-     Much of the code in the Python Gist C extension module was
-     adapted from similar code in Yorick, and this help file also
-     originated there. I am greatly indebted to Dave for his prior work.
-     Questions about this module should be directed to me, Lee Busby,
-     <busby1@llnl.gov>.
+     *********************************************************************
 
+     This version of PyGist is built on the portability layer from 
+     Yorick 1.5.  The documentation for each function has been 
+     integrated with the function using pydoc.  Type:
+
+        help(function_name)
+
+     to get the inline documentation for function_name.
+     Hit spacebar to page down, and 'q' to end documentation.
+     Single quotes and backquotes delimiting strings in documentation
+     should be double quotes.
 """
 
-__version__ = "$Id$"
+__version__ = "1.5.18"
 
 from Numeric import *
-from scipy_base.fastumath import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path
 from gistC import *
-from helpmod import help as ghelp
 from pydoc import help
 from shapetest import *
 from arrayfns import *
@@ -143,22 +147,25 @@ def moush(*arg):
 #            Requires Ghostscript and its associated ps2epsi utility.
 #  ---------------------------------------------------------------------
 
-def eps(name, epsi=0, pdf=0):
+import os
+def eps(name):
    """
+   eps(name)
       Write the picture in the current graphics window to the Encapsulated
-      PostScript file NAME+".eps" (i.e.- the suffix .eps is added to NAME).
+      PostScript file NAME+".epsi" (i.e.- the suffix .epsi is added to NAME).
       The last extension of name is stripped to avoid .eps.eps files
+
+      If epsi is 1, this function requires the ps2epsi utility which comes
+      with the project GNU Ghostscript program.  Any hardcopy file associated
+      with the current window is first closed, but the default hardcopy file is
+      unaffected.  As a side effect, legends are turned off and color table
+      dumping is turned on for the current window.
       
-      If epsi is 1, this function requires the ps2epsi utility which
-      comes with the project GNU Ghostscript program and will place a
-      bitmap image in the postscript file. 
-      Any hardcopy file associated with the current window is first closed,
-      but the default hardcopy file is unaffected.  As a side effect,
-      legends are turned off and color table dumping is turned on for
-      the current window.
+      The environment variable PS2EPSI_FORMAT contains the format for the
+      command to start the ps2epsi program.
+      
       SEE ALSO: window, fma, hcp, hcp_finish, plg
    """
-   import os
    name,ignore = os.path.splitext(name)
    if ignore == '.eps':
       totalname = name
@@ -373,6 +380,8 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       The function being contoured takes the value Z at each point
       (X, Y) -- that is, the Z array is presumed to be point-centered.
 
+      NOTE:  The ireg argument was not in the Yorick Gist plfc.
+
       The CONTOURS keyword can be an integer specifying the number of
       contours desired, or a list of the values of Z at which you want
       contour curves.  These curves divide the mesh into len(CONTOURS+1)
@@ -456,16 +465,14 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
    plmesh (y, x, ireg, triangle = triangle)
    for i in range (n + 1) :
       [nc, yc, xc] = contour (array ( [vc [i], vc [i + 1]]), z)
-#     is_scalar and type  do not work with multiarray objects or rank-0 arrays
-#     .. Try skipping
-#     if (is_scalar(nc) and nc == 0 or nc is None) :
-#        continue
+      if (is_scalar(nc) and nc == 0 or nc is None) :
+         continue
       plfp ( (ones (len (nc)) * colors [i]).astype ('b'),
          yc, xc, nc, edges = 0)
 
-def plh (y, x = None, width = 1, hide = 0, legend = None, color = None):
+def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
    """
-   plh ( y, x = None)
+   plh ( y, [x, labels, <keylist>])
       draws a histogram, where the height of the bars is given
       by Y. If X is None, the bars in the histogram have a
       width equal to unity. If X is a single real number, the
@@ -476,40 +483,93 @@ def plh (y, x = None, width = 1, hide = 0, legend = None, color = None):
       the origin. However, if X is a one-dimensional array
       with one element more than Y, then X is interpreted as
       the locations of the start and end points of the bars in
-      the histogram.
-
+      the histogram. If X is a one-dimensional array with twice
+      as many elements as Y, then X represents the start and
+      end points for each bar separately.
+      The keyword color is either a single color, representing
+      the fill color of the bars, or a list of colors, one for
+      each bar.
+      If the keyword labels is given, then the horizontal tick
+      marks and numerical labels are switched off. The keyword
+      labels should then consist of a list of strings, with the
+      same number of elements as Y. These labels are then drawn
+      below the horizontal axis. The keyword height, if given,
+      specifies the font height for the labels.
+      To switch the tick marks and labels back on for subsequent
+      plots, you can execute
+      window(style="work.gs")
+      which will reset the window to the usual work.gs style sheet.
+      
+      
       The following keywords are legal (each has a separate help entry):
-    KEYWORDS: legend, width, hide, color
+    KEYWORDS: width, hide, color, height
     SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
               color_bar, spann, contour, limits, logxy, range, fma, hcp
    """
 
+   color_dict = { 'bg':-1, 'fg':-2, 'black':-3, 'white':-4, 'red':-5,
+      'green':-6, 'blue':-7, 'cyan':-8, 'magenta':-9, 'yellow':-10 }
    n = len(y)
-   barx = zeros(n*4,'d')
-   if x==None:
-      for i in range(n-1):
-         barx[4*i+2:4*i+6] = i+1
-      barx[-2:] = n
+   barx = [[]] * n
+   if x is None:
+      for i in range(n):
+         barx[i] = array([i,i,i+1,i+1])
    else:
       if type(x) == IntType or type(x) == FloatType:
+         # x denotes the width of the bars, which are all equal
          for i in range(n-1):
-            barx[4*i+2:4*i+6] = i * x
-         barx[-2:] = n * x
+            barx[i] = array([i,i,i+1,i+1]) * x
       elif type(x) == ListType or type(x) == ArrayType:
          if len(x) == n:
-            for i in range(n-1):
-               barx[4*i+2:4*i+6] = barx[4*i] + x[i]
-            barx[-2:] = barx[-3] + x[-1]
+            # x denotes the width of the bars, which can be different
+            offset = 0
+            for i in range(n):
+               barx[i] = offset + array([0,0,1,1]) * x[i]
+               offset = offset + x[i]
          elif len(x) == n + 1:
-            barx[:2] = x[0]
-            for i in range(1,n+1):
-               barx[4*i-2:4*i+2] = x[i]
-            barx[-2:] = x[-1]
+            for i in range(n):
+               barx[i] = array([x[i],x[i],x[i+1],x[i+1]])
+         elif len(x) == 2*n:
+            for i in range(n):
+               barx[i] = array([x[2*i],x[2*i],x[2*i+1],x[2*i+1]])
          else:
             raise "plh error: inconsistent length of X"
-   bary = zeros(4*n,'d')
+   bary = [[]] * n
    for i in range(n):
-      bary[4*i+1:4*i+3] = y[i]
-   pldj (barx[1:], bary[1:], barx[:-1], bary[:-1], width=width, hide=hide, \
-         legend = legend, color = color)
+      bary[i] = array([0,y[i],y[i],0])
+   if labels:
+      if current_window() < 0:
+         window(style="boxed.gs",legends=0)
+      style = get_style()
+      if style['systems'][0]['ticks']['horizontal']['flags'] & 99:
+         # We need to switch off tick marks and labels here
+         window(style="boxed.gs", legends=0)
+         style = get_style()
+         flags = style['systems'][0]['ticks']['horizontal']['flags']
+         flags = flags & ( ~ 99) # Switch off horizontal tick marks, labels
+         style['systems'][0]['ticks']['horizontal']['flags'] = flags
+         set_style(style)
+   if color:
+      if type(color) != ListType:
+         color = [color] * n
+      for i in range(n):
+         z = color[i]
+         if type(z) == StringType: z = color_dict[z]
+         plfp(array([z],'b'),bary[i],barx[i],[4])
+   for i in range(n):
+      plg(bary[i],barx[i],width=width,hide=hide,marks=0)
+   if labels:
+      [left,right,bottom,top] = viewport()
+      hticks = style['systems'][0]['ticks']['horizontal']
+      scale = (right-left)/(barx[-1][-1]-barx[0][0])
+      y = bottom - hticks['labelOff'] + hticks['tickLen'][0] + hticks['tickOff']
+      if height:
+         for i in range(n):
+            x = left + scale * ((barx[i][0]+barx[i][-1])/2. - barx[0][0])
+            plt(labels[i],x,y,justify="CT",height=height)
+      else:
+         for i in range(n):
+            x = left + scale * ((barx[i][0]+barx[i][-1])/2. - barx[0][0])
+            plt(labels[i],x,y,justify="CT")
+
 

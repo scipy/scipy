@@ -1,3 +1,4 @@
+# $Id$
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -18,44 +19,47 @@ from yorick import *
 def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    bracket_time = array ([2., 2.], Float ), lims = None, timing = 0) :
 
-#  movie (draw_frame, time_limit = 120., min_interframe = 0.0,
-#     bracket_time = array ([2., 2.], Float ), lims = None, timing = 0)
-#    runs a movie based on the given DRAW_FRAME function.  The movie
-#    stops after a total elapsed time of TIME_LIMIT seconds, which
-#    defaults to 60 (one minute), or when the DRAW_FRAME function
-#    returns zero.
+   """
+   movie (draw_frame, time_limit = 120., min_interframe = 0.0,
+      bracket_time = array ([2., 2.], Float ), lims = None, timing = 0)
+     runs a movie based on the given DRAW_FRAME function.  The movie
+     stops after a total elapsed time of TIME_LIMIT seconds, which
+     defaults to 60 (one minute), or when the DRAW_FRAME function
+     returns zero.
 
-#    note: All but the first argument are keyword arguments, with
-#    defaults as shown.
+     note: All but the first argument are keyword arguments, with
+     defaults as shown.
 
-#    def draw_frame(i) :
-#      # Input argument i is the frame number.
-#      # draw_frame should return non-zero if there are more
-#      # frames in this movie.  A zero return will stop the
-#      # movie.
-#      # draw_frame must NOT include any fma command if the
-#      # making_movie variable is set (movie sets this variable
-#      # before calling draw_frame)
+     def draw_frame(1) :
+       # Input argument i is the frame number.
+       # draw_frame should return non-zero if there are more
+       # frames in this movie.  A zero return will stop the
+       # movie.
+       # draw_frame must NOT include any fma command if the
+       # making_movie variable is set (movie sets this variable
+       # before calling draw_frame)
 
-#    If MIN_INTERFRAME is specified, a pause will be added as
-#    necessary to slow down the movie.  MIN_INTERFRAME is a time
-#    in seconds (default 0).
+     If MIN_INTERFRAME is specified, a pause will be added as
+     necessary to slow down the movie.  MIN_INTERFRAME is a time
+     necessary to slow down the movie.  MIN_INTERFRAME is a time
+     in seconds (default 0).
 
-#    The keyword bracket_time= (again a time in seconds) can be
-#    used to adjust the duration of the pauses after the first
-#    and last frames.  It may also be a two element array [beg, end].
-#    If the pause at the end is greater than five seconds, you will
-#    be prompted to explain that hitting <RETURN> will abort the final
-#    pause. Well, the Python version does not have this capability.
+     The keyword bracket_time= (again a time in seconds) can be
+     used to adjust the duration of the pauses after the first
+     and last frames.  It may also be a two element array [beg, end].
+     If the pause at the end is greater than five seconds, you will
+     be prompted to explain that hitting <RETURN> will abort the final
+     pause. Well, the Python version does not have this capability.
 
-#    timing = 1 enables a timing printout for your movie.
+     timing = 1 enables a timing printout for your movie.
 
-#    If every frame of your movie has the same limits, use the
-#    limits command to fix the limits before you call movie.
+     If every frame of your movie has the same limits, use the
+     limits command to fix the limits before you call movie.
 
-#  BUG:  If you hit <RETURN> to start a movie early, it will not
-#        pause at the end of the movie at all.  You probably should
-#        not use long initial pauses.
+   BUG:  If you hit <RETURN> to start a movie early, it will not
+         pause at the end of the movie at all.  You probably should
+         not use long initial pauses.
+   """
 
    global movie_timing, making_movie
    if is_scalar (bracket_time) :
@@ -78,7 +82,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
       elapsed0 = array(elapsed, copy = 1)
    i = i + 1
    more = draw_frame (i)
-   if lims is not None:
+   if lims != None:
       limits (lims [0], lims [1], lims [2], lims [3])
    else:
       limits (square = 1)
@@ -102,7 +106,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
       this_frame = zeros (3)
       i = i + 1
       more = draw_frame (i)
-      if lims is not None:
+      if lims != None:
          limits (lims [0], lims [1], lims [2], lims [3])
       else :
          limits (square = 1)
@@ -136,11 +140,13 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    animate (0)
 
 def movie_stats ( *timing ) :
-   
-#  movie_stats ( ) or movie_stats ( timing )
-#    prints statistics from the last movie command, or from the
-#    command which produced TIMING.  TIMING is the contents of the
-#    movie_timing external variable after the movie command completes.
+
+   """
+   movie_stats ( ) or movie_stats ( timing )
+     prints statistics from the last movie command, or from the
+     command which produced TIMING.  TIMING is the contents of the
+     movie_timing external variable after the movie command completes.
+   """
 
    if len (timing) > 0 :
       timing = timing [0]

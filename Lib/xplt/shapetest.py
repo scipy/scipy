@@ -2,9 +2,9 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 # I've felt the need for such a test for a long time;
 # this tells you whether an item is a scalar or not.
+
 from types import *
 from Numeric import *
-from scipy_base.fastumath import *
 
 def is_scalar (x) :
    if type (x) == StringType : return 1
@@ -16,7 +16,7 @@ def is_scalar (x) :
 
 # This routine should be able to tell you the size of any object:
 def no_of_dims (x) :
-   if x is None : return 0
+   if x == None : return 0
    if (type (x) == ArrayType) : return len (x.shape)
    if (type (x) == ListType or type (x) == TupleType) : return 1
    # I don't know if there are any other possibilities.

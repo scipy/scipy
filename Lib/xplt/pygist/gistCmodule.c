@@ -17,30 +17,38 @@
  *               Lawrence Livermore National Laboratory
  *            Michiel de Hoon (contributor; Windows/Cygwin ports) 
  *               University of Tokyo, Institute of Medical Science 
+ *            Dave Grote (contributor:  bug fixes)
+ *               Lawrence Berkeley National Laboratory
  *
  *  VERSION:  Original version was based on graph.c in Yorick 1.3.
  *            This version has been mostly upgraded to Yorick 1.5.
  *
- *  SCIPY_CHANGES:  
- *  03/10/03 teo Fix Setting up of highlevel hook for deleting high-level 
- *                 display engines when the graphic windows are killed.  
- *                 This was in part of the error handling for the old gist.  
- *               Used pyg_jmpbuf in SETJMP0 as was likely desired.   
- *               Setup routine for 
- *                   XErrHandler to call in gist's g_on_panic routine as 
- *                   part of xbasic.c  This is an additional error handler 
- *                   but it should only be called in very rare circumstances.  
- *                   This could cause strange behavior when it is called 
- *                   asynchronously, but previously the code would
- *                   have been trying to run a NULL function. 
- *
- *
  *  CHANGES:
+ *  05/13/03 llc Remove ifdef on GxPointClick.
+ *  04/22/03 llc Fix bug in PLF.
+ *  04/08/03 llc Remove include of limits.h and unused defines;
+ *               Replace DISPLAY_ENGINE with GpFXEngine, DISPLAY_MOUSE with
+ *               GxPointClick, and DISPLAY_ZOOM_FACTOR with gxZoomFactor, and
+ *               remove use NO_XLIB, and NO_MOUSE. 
+ *  04/07/03 mdh Implement justify option for plt (align).
+ *               Add functions as those in style.i in yorick to allow
+ *               allow users to change style properties interactively:
+ *               get_text_attributes, get_legend, get_line_attributes,
+ *               get_axis_style, get_tick_style, get_system, 
+ *               get_systems_list, get_style, ... similarly for set*.
+ *  03/25/03 dpg Provide a way to change CGM file size via pldefault.
+ *  03/12/03 llc Remove version and help comments; add to gist.py.
  *  02/25/03 llc Fix mouse command so data is returned.
+ *  02/20/03 llc Correct mouse return; see MouseCallBack.
  *  02/13/03 llc Disable initial pygist printout upon import (except 
  *               when DEBUG flag is on).
  *  02/13/03 dpg Add plremove implementation. 
  *               Correct bug in pli (iMax anad JMax were reversed).
+ *  01/17/03 llc Remove remaining warnings with gcc 2.96 by:
+ *               - Reduce to one dummy for file
+ *               - Remove dumpFreeList, Add1 cumsum, equal, greater, 
+ *                 greater_equal, less, logical_and, not_equal, 
+ *                 WeightedHist if not INCLUDE_EXTRA_GISTCODE.
  *  01/13/03 mdh Add back on omitted bug fix for Windows (wait_for_expose).
  *  12/27/02 mdh Windows/Cygwin adjustments (e.g. pyg_on_idle calls for
  *               Windows); fix formats for pointers.
@@ -51,6 +59,8 @@
  *  11/25/02 dhm Rework of play resulted in change to PyOS_InputHook and
  *               other improvements (multi-line strings).
  *  11/24/02 dhm fix event/exception handling interface
+ *  11/19/02 llc Use gist interface provided by Dave Munro for PyOS_InputHook.
+ *               Remove old solutions now that play/unix has changed.
  *  11/15/02 mhd Add u_enterloop for third approach to interfacing Python
  *               to gist.  Save the last approach as USE_U_WAITER.
  *  11/13/02 llc Add back option to switch between two interfaces to Python.
@@ -90,14 +100,6 @@
  *  11/03/01 llc Started from version with changes from Dave Munro:
  *               turn on rl_getc_function, and add readline.h include. 
  *               Must use with version of python built with readline.
- *  11/19/02 llc Use gist interface provided by Dave Munro for PyOS_InputHook.
- *               Remove old solutions now that play/unix has changed.
- *  01/17/03 llc Remove remaining warnings with gcc 2.96 by:
- *               - Reduce to one dummy for file
- *               - Remove dumpFreeList, Add1 cumsum, equal, greater, 
- *                 greater_equal, less, logical_and, not_equal, 
- *                 WeightedHist if not INCLUDE_EXTRA_GISTCODE.
- *  02/20/03 llc Correct mouse return; see MouseCallBack.
  *
  * Modified in December, 1997 to coexist with the readline library used
  * in Python's interpreter. William Magro, Cornell Theory Center.
@@ -164,7 +166,6 @@
 extern "C" {
 #endif
 
-#include <limits.h>
 #include <stdio.h>
 #include <math.h>
 #include <setjmp.h>
@@ -179,30 +180,10 @@ extern "C" {
 #include "pstdlib.h"
 #include "play.h"
 #include "pmin.h"
-
-/* primitive allowance for other non-X windows systems (untested) */
-#ifndef DISPLAY_ENGINE
-#  define DISPLAY_ENGINE GpFXEngine
-#endif
-#ifdef NO_XLIB
-#  define NO_MOUSE
-#else
-#  ifndef NO_MOUSE
-#    ifndef DISPLAY_MOUSE
-#      define DISPLAY_MOUSE GxPointClick
-#    endif
-#  endif
-#endif
-#ifdef NO_MOUSE
-#  ifndef DISPLAY_ZOOM_FACTOR
-static double gxZoomFactor = 1.0;
-#  endif
-#endif
-#ifndef DISPLAY_ZOOM_FACTOR
-#  define DISPLAY_ZOOM_FACTOR gxZoomFactor
-#endif
+#include "style.h"
 
 static int dummy = 0;
+
 
 /* We add a component to the default Gist search path, for style and
    palette files in our Python distribution.
@@ -215,7 +196,6 @@ static char *gistpath = 0, *oldgistpath = 0;
 #define OUR_SPECIAL_DIR "/gist"
 
 /* Mouse() related stuff */
-#ifndef NO_MOUSE
 static int MouseCallBack (Engine * engine, int system,
 			  int release, double x, double y,
 			  int butmod, double xn, double yn);
@@ -224,7 +204,6 @@ static double mouseX0ndc, mouseY0ndc, mouseX1ndc, mouseY1ndc;
 static int mouseButton, mouseModifier, mouseSystem, mouseError;
 static char *defaultPrompts[2] = {
   "<Click mouse at point>", "<Press, drag, and release mouse>" };
-#endif
 
 /* The Gist library uses SINGLE_P in order to typedef GpReal, so use the
  * same setting for SINGLE_P as in your copy of libgist.a. (Note that
@@ -264,7 +243,7 @@ static void clearMemList (void);
 
 #define ERRSS(s) ((PyObject *)(PyErr_SetString(GistError,s),0))
 #define ERRMSG(s) (PyErr_SetString(GistError,s))
-#define SETJMP0 if(setjmp(pyg_jmpbuf)){p_pending_events();return(0);}
+#define SETJMP0 if(setjmp(jmpbuf)){p_pending_events();return(0);}
 #define SETKW(ob, target, func, s) \
   if(ob && ob != Py_None && !func(ob, &target, s)) return 0
 #define BUILD_KWT(kd,K,kwt) if (-1 == build_kwt (kd, K, kwt)) return 0;
@@ -836,9 +815,6 @@ static void PrintTypeWidth (char *line, int suffix);
 static void clear_pyMsh(void);
 static void get_mesh(GaQuadMesh *m);
 
-/* Only called on g_on_panic */
-static void Xerror_longjmp (char *message);
-
 static int pyg_on_idle(void);
 static void pyg_on_connect(int dis, int fd);
 static void pyg_on_keyline(char *msg);
@@ -925,14 +901,6 @@ static void pyg_on_exception(int signal, char *errmsg)
     PyErr_SetString (GistError, errmsg);
   }
 }
-
-/* only called on g_on_panic by XErrHandler in xbasic.c */
-static void Xerror_longjmp (char *message)
-{
-  PyErr_SetString (GistError, message);
-  longjmp (jmpbuf, 1);
-}
-
 
 static char gist_module_documentation[] =
 "Gist Graphics Package, version1.5"
@@ -1644,17 +1612,11 @@ static char *CheckDefaultWindow(void)
       return ("failed to create drawing -- Gist work.gs style sheet missing");
     ghDevices[0].doLegends= defaultLegends;
 
-#ifndef NO_XLIB
     gist_private_map = gist_rgb_hint = 0;
     ghDevices[0].display=
-      DISPLAY_ENGINE(windowNames[0], 0, defaultDPI, (char *)0);
+      GpFXEngine(windowNames[0], 0, defaultDPI, (char *)0);
     if (!ghDevices[0].display)
       return ("failed to open X display or create X window");
-#else
-    ghDevices[0].display= 0;
-    ghDevices[0].hcp= hcpDefault;
-    hcpDefault= 0;
-#endif
 
     curPlotter= 0;
     GhSetPlotter(0);
@@ -2301,7 +2263,6 @@ static PyObject *contour (PyObject * self, PyObject * args, PyObject * kd)
   return retval;
 }
 
-#ifndef NO_MOUSE
 static int MouseCallBack (Engine * engine, int system,
 			  int release, double x, double y,
 			  int butmod, double xn, double yn)
@@ -2342,7 +2303,6 @@ static int MouseCallBack (Engine * engine, int system,
   }
   return 0;
 }
-#endif
 
 /* Used only by plq() */
 static void PermitNewline (int nSpaces)
@@ -3642,7 +3602,6 @@ static char mouse__doc__[] =
 
 static PyObject *mouse (PyObject * self, PyObject * args)
 {
-#ifdef DISPLAY_MOUSE
   char *prompt = 0;
   int system = -1, style = 0;
   int n = curPlotter;
@@ -3663,7 +3622,7 @@ static PyObject *mouse (PyObject * self, PyObject * args)
   else if (prompt[0])
     YPrompt (prompt);
   mouseError = 0;
-  mouseError |= DISPLAY_MOUSE (ghDevices[n].display, style, system,
+  mouseError |= GxPointClick (ghDevices[n].display, style, system,
 			       &MouseCallBack);
   if (!prompt || prompt[0])
     YPrompt ("\n");
@@ -3682,9 +3641,6 @@ static PyObject *mouse (PyObject * self, PyObject * args)
       mouseX0ndc, mouseY0ndc, mouseX1ndc, mouseY1ndc,
       mouseSystem, mouseButton, mouseModifier);
   }
-#else
-  return ERRSS ("no mouse function in this version of Python/Gist");
-#endif
 }
 
 /*  -------------------------------------------------------------------- */
@@ -4103,18 +4059,19 @@ static char pldefault__doc__[] =
 "       dpi, style, legends  (see window command)\n"
 "       palette              (to set default filename as in palette command)\n"
 "       maxcolors            (default 200)\n"
+"       cgmfilesize          (default 10 MB) in units of MBytes\n"
 "\n"
 "   SEE ALSO: window, plsys, plq, pledit, plg\n";
 
 #undef N_KEYWORDS
-#define N_KEYWORDS 29
+#define N_KEYWORDS 30
 static char *dfltKeys[N_KEYWORDS+1]= {
   "color", "type", "width",
   "marks", "mcolor", "marker", "msize", "mspace", "mphase",
   "rays", "arrowl", "arroww", "rspace", "rphase",
   "font", "height", "orient", "justify", "opaque",
   "hollow", "aspect", "dpi", "style", "legends", "palette", "maxcolors",
-  "edges", "ecolor", "ewidth", 0 };
+  "edges", "ecolor", "ewidth", "cgmfilesize", 0 };
 
 static PyObject *pldefault (PyObject * self, PyObject * args, PyObject * kd)
 {
@@ -4209,6 +4166,13 @@ static PyObject *pldefault (PyObject * self, PyObject * args, PyObject * kd)
   }
   SETKW(kwt[27], gistA.e.color,     setkw_color,    dfltKeys[27]);
   SETKW(kwt[28], gistA.e.width,     setkw_double,   dfltKeys[28]);
+
+  {
+  int filesize;
+  extern long gCGMFileSize;
+  SETKW(kwt[29], filesize,     setkw_integer,   dfltKeys[29]);
+  gCGMFileSize = ((long)1000000)*((long)filesize);
+  }
 
   /* store all default settings */
   GhSetLines();
@@ -4633,7 +4597,6 @@ static PyObject *plf (PyObject * self, PyObject * args, PyObject * kd)
   long iMax= 0, jMax= 0;
   double *z = 0;
   GpColor *zc = 0;
-  GpColor *zc1 = 0;
   GaQuadMesh mesh;
   int convertedZ= 0;
   int rgb = 0;
@@ -4737,18 +4700,19 @@ static PyObject *plf (PyObject * self, PyObject * args, PyObject * kd)
   SETKW(kwt[8],  gistA.e.width,    setkw_double, plfKeys[8]);
   gistA.rgb = rgb;
 
-/*
- *  LLC:  For some reason, the following yields unaligned accesses on the Alpha.
   if (mesh.iMax==iMax) zc += rgb? 3*(iMax+1) : iMax+1;
- *  Use the following instead.
- */
-  if (mesh.iMax==iMax) zc1 = zc + ( rgb? 3*(iMax+1) : iMax+1 );
   curElement = -1;
   PyFPE_START_PROTECT("plf", return 0)
-  curElement = GdFillMesh(NOCOPY_MESH, &mesh, gistD.region, zc1, iMax);
+  curElement = GdFillMesh(NOCOPY_MESH, &mesh, gistD.region, zc, iMax);
   PyFPE_END_PROTECT(dummy)
   clearArrayList ();
-  if (convertedZ && zc) free (zc);
+  /* 
+   *  04/22/03 LLC 
+   *  Do not free zc:  if (convertedZ && zc) free (zc);
+   *  zc could be not on an 8-byte boundary on the alphas;
+   *  free yields unaligned access messages.
+   *  Also, I do not find it freed in yorick.
+   */
   if (curElement < 0)  {
     return ERRSS ("Gist GdFillMesh plotter failed");
   }
@@ -5692,7 +5656,7 @@ static char plt__doc__[] =
 "plt( text, x, y, tosys=0/1 )\n"
 "     Plot TEXT (a string) at the point (X,Y).  The exact relationship\n"
 "     between the point (X,Y) and the TEXT is determined by the\n"
-"     justify keyword.  TEXT may contain newline (`\n') characters\n"
+"     justify keyword.  TEXT may contain newline (`\\n') characters\n"
 "     to output multiple lines of text with a single call.  The\n"
 "     coordinates (X,Y) are NDC coordinates (outside of any coordinate\n"
 "     system) unless the tosys keyword is present and non-zero, in\n"
@@ -5720,6 +5684,7 @@ static PyObject *plt (PyObject * self, PyObject * args, PyObject * kd)
   char *text = 0;
   double x = 0.0, y = 0.0;
   int toSys = 0;
+  char* align = 0;
   PyObject *kwt[NELT (pltKeys) - 1];
 
   SETJMP0;			/* See Xerror_longjmp() */
@@ -5756,7 +5721,29 @@ static PyObject *plt (PyObject * self, PyObject * args, PyObject * kd)
       return ERRSS ("orient= keyword must be 0, 1, 2, or 3");
     }
   }
-  SETKW(kwt[6],  dummy,           setkw_justify,  pltKeys[6]);
+  SETKW(kwt[6],    align,        setkw_string,   pltKeys[6]);
+  if (align)
+  { if (strlen(align)!=2) 
+      return ERRSS ("justify= keyword should consist of two characters");
+    switch (align[0])
+    { case 'N': gistA.t.alignH = TH_NORMAL; break;
+      case 'L': gistA.t.alignH = TH_LEFT; break;
+      case 'C': gistA.t.alignH = TH_CENTER; break;
+      case 'R': gistA.t.alignH = TH_RIGHT; break;
+      default:
+        return ERRSS ("unknown first character in the justify= keyword");
+    }
+    switch (align[1])
+    { case 'N': gistA.t.alignV = TV_NORMAL; break;
+      case 'T': gistA.t.alignV = TV_TOP; break;
+      case 'C': gistA.t.alignV = TV_CAP; break;
+      case 'H': gistA.t.alignV = TV_HALF; break;
+      case 'A': gistA.t.alignV = TV_BASE; break;
+      case 'B': gistA.t.alignV = TV_BOTTOM; break;
+      default:
+        return ERRSS ("unknown second character in the justify= keyword");
+    }
+  }
   SETKW(kwt[7],  gistA.t.opaque,  setkw_boolean,  pltKeys[7]);
   SETKW(kwt[8],  toSys,           setkw_boolean,  pltKeys[8]);
 
@@ -7774,7 +7761,6 @@ static PyObject *window (PyObject * self, PyObject * args, PyObject * kd)
   nColors = GhGetPalette (n, &palette);
 
     /* check for width and height specs */
-#ifndef NO_XLIB
   if (kwt[8]) {
     extern int gx75width, gx100width;
     int width;
@@ -7789,7 +7775,6 @@ static PyObject *window (PyObject * self, PyObject * args, PyObject * kd)
     if (height>30) gx75height= gx100height= height;
     else { gx75height= 450; gx100height= 600; }
   }
-#endif
 
   if (nGiven || kwt[0] || kwt[1] || kwt[2]) {
     /* display= and/or dpi= keywords */
@@ -7833,10 +7818,9 @@ static PyObject *window (PyObject * self, PyObject * args, PyObject * kd)
       GpKillEngine (engine);
     }
     if (nGiven ? (!display || display[0]) : (display && display[0]))  {
-#ifndef NO_XLIB
       gist_private_map = privmap;
       gist_rgb_hint = rgb;
-      engine= DISPLAY_ENGINE(windowNames[n], 0, dpi, display);
+      engine= GpFXEngine(windowNames[n], 0, dpi, display);
       if (!engine)  {
 	return ERRSS ("failed to open X display or create X window");
       } else {
@@ -7845,9 +7829,6 @@ static PyObject *window (PyObject * self, PyObject * args, PyObject * kd)
       ghDevices[n].display = engine;
       if (palette)
 	GhSetPalette (n, palette, nColors);
-#else
-      return ERRSS ("No interactive graphics in this Pygist -- hcp only");
-#endif
     }
   }
 
@@ -8022,19 +8003,15 @@ static char zoom_factor__doc__[] =
 
 static PyObject *zoom_factor (PyObject * self, PyObject * args)
 {
-  if (!PyArg_ParseTuple (args, "d", &DISPLAY_ZOOM_FACTOR)) {
+  if (!PyArg_ParseTuple (args, "d", &gxZoomFactor)) {
     return ERRSS ("Zoomfactor takes one floating point argument.");
   }
-  /*
-   * avert various disasters -- doesn't address DISPLAY_ZOOM_FACTOR==1.0,
-   * which would be frustrating...
-   */
-  if (DISPLAY_ZOOM_FACTOR < 0.0)
-    DISPLAY_ZOOM_FACTOR = -DISPLAY_ZOOM_FACTOR;
-  if (DISPLAY_ZOOM_FACTOR < 0.05)
-    DISPLAY_ZOOM_FACTOR = 0.05;
-  else if (DISPLAY_ZOOM_FACTOR > 20.0)
-    DISPLAY_ZOOM_FACTOR = 20.0;
+  if (gxZoomFactor < 0.0)
+    gxZoomFactor = -gxZoomFactor;
+  if (gxZoomFactor < 0.05)
+    gxZoomFactor = 0.05;
+  else if (gxZoomFactor > 20.0)
+    gxZoomFactor = 20.0;
   Py_INCREF (Py_None);
   return Py_None;
 }
@@ -8114,6 +8091,1184 @@ static PyObject *pyg_register (PyObject * self, PyObject * args)
   return Py_None;
 }
 
+
+/* Following functions correspond to those in style.i in yorick, which allow
+ * users to change style properties interactively.
+ * The routines get_style and set_style are meant to be called by the user; the
+ * other functions are for internal use.
+ * Michiel de Hoon 2003.04.06. */
+
+static PyObject* get_text_attributes(GpTextAttribs *attributes)
+{ char *alignH;
+  char *alignV;
+  char *orient;
+  PyObject *dictionary;
+  /* Py_BuildValue does not accept unsigned long; build it separately */
+  PyObject *color = PyLong_FromUnsignedLong(attributes->color);
+  /* If PyLong_FromUnsignedLong fails, then Py_BuildValue will fail also.
+   * Therefore, no need to check for color==NULL explicitly. */
+  switch (attributes->alignH)
+  { default:
+    case TH_NORMAL: alignH = "normal"; break;
+    case TH_LEFT: alignH = "left"; break;
+    case TH_CENTER: alignH = "center"; break;
+    case TH_RIGHT: alignH = "right"; break;
+  }
+  switch (attributes->alignV)
+  { default:
+    case TV_NORMAL: alignV = "normal"; break;
+    case TV_TOP: alignV = "top"; break;
+    case TV_CAP: alignV = "cap"; break;
+    case TV_HALF: alignV = "half"; break;
+    case TV_BASE: alignV = "base"; break;
+    case TV_BOTTOM: alignV = "bottom"; break;
+  }
+  switch (attributes->orient)
+  { default:
+    case TX_RIGHT: orient = "right"; break;
+    case TX_UP: orient = "up"; break;
+    case TX_LEFT: orient = "left"; break;
+    case TX_DOWN: orient = "down"; break;
+  }
+  dictionary =
+    Py_BuildValue("{s:i,s:d,s:s,s:s,s:s,s:O}",
+		    "font",attributes->font,
+		    "height",attributes->height,
+		    "orient",orient,
+		    "alignH",alignH,
+		    "alignV",alignV,
+		    "color",color);
+  /* Py_BuildValue with O increased the reference count of color by one */
+  Py_XDECREF(color);
+  return dictionary;
+}
+
+static PyObject* get_legend(GeLegendBox *legends)
+{ PyObject *dictionary;
+  PyObject *textStyle = get_text_attributes(&(legends->textStyle));
+  /* If get_text_attributes fails, then Py_BuildValue will fail also.
+   * Therefore, no need to check for textStyle==NULL explicitly. */
+  dictionary =
+    Py_BuildValue("{s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:O}",
+                    "x", legends->x,
+                    "y", legends->y,
+                    "dx", legends->dx,
+                    "dy", legends->dy,
+                    "nchars", legends->nchars,
+                    "nlines", legends->nlines,
+                    "nwrap", legends->nwrap,
+                    "textStyle", textStyle);
+  /* Py_BuildValue with O increased the reference count of textStyle by one */
+  Py_XDECREF(textStyle);
+  return dictionary;
+}
+
+static PyObject* get_line_attributes(GpLineAttribs *attributes)
+{ PyObject *dictionary;
+  /* Py_BuildValue does not accept unsigned long; build it separately */
+  PyObject *color = PyLong_FromUnsignedLong(attributes->color);
+  /* If PyLong_FromUnsignedLong fails, then Py_BuildValue will fail also.
+   * Therefore, no need to check for color==NULL explicitly. */
+  char* type;
+  switch (attributes->type)
+  { default:
+    case L_NONE: type = "none"; break;
+    case L_SOLID: type = "solid"; break;
+    case L_DASH: type = "dash"; break;
+    case L_DOT: type = "dot"; break;
+    case L_DASHDOT: type = "dashdot"; break;
+    case L_DASHDOTDOT: type = "dashdotdot"; break;
+  }
+  dictionary = Py_BuildValue("{s:d,s:s,s:O}",
+                              "width", attributes->width,
+                              "type", type,
+	                      "color", color);
+  /* Py_BuildValue with O increased the reference count of color by one */
+  Py_XDECREF(color);
+  return dictionary;
+}
+
+static PyObject* get_axis_style(GaAxisStyle *axis)
+{ PyObject *dictionary;
+  int dimensions[] = {TICK_LEVELS};
+  /* If any of these fail, then Py_BuildValue will fail also.
+   * Therefore, no need to check for NULL pointers explicitly. */
+  PyObject *tickStyle = get_line_attributes(&(axis->tickStyle));
+  PyObject *gridStyle = get_line_attributes(&(axis->gridStyle));
+  PyObject *textStyle = get_text_attributes(&(axis->textStyle));
+  PyArrayObject *tickLen =
+    (PyArrayObject *)PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
+  if (tickLen)
+  { int i;
+    double* data = (double*) A_DATA(tickLen);
+    for (i = 0; i < TICK_LEVELS; i++) data[i] = axis->tickLen[i];
+  }
+  dictionary =
+    Py_BuildValue(
+      "{s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:O,s:O,s:O,s:O}",
+		   "nMajor", axis->nMajor,
+		   "nMinor", axis->nMinor,
+		   "logAdjMajor", axis->logAdjMajor,
+		   "logAdjMinor", axis->logAdjMinor,
+		   "nDigits", axis->nDigits,
+		   "gridLevel", axis->gridLevel,
+		   "flags", axis->flags,
+                   "tickOff", axis->tickOff,
+                   "labelOff", axis->labelOff,
+                   "xOver", axis->xOver,
+                   "yOver", axis->yOver,
+		   "tickStyle", tickStyle,
+		   "gridStyle", gridStyle,
+		   "textStyle", textStyle,
+		   "tickLen", tickLen
+		 );
+  /* Py_BuildValue with O increased the reference count of color by one */
+  Py_XDECREF(tickStyle);
+  Py_XDECREF(gridStyle);
+  Py_XDECREF(textStyle);
+  Py_XDECREF(tickLen);
+  return dictionary;
+}
+
+static PyObject* get_tick_style(GaTickStyle *ticks)
+{ PyObject *frameStyle = get_line_attributes(&(ticks->frameStyle));
+  PyObject *horizontal = get_axis_style(&(ticks->horiz));
+  PyObject *vertical = get_axis_style(&(ticks->vert));
+  /* If any of these fail, then Py_BuildValue will fail also.
+   * Therefore, no need to check for NULL pointers explicitly. */
+  PyObject *dictionary =
+    Py_BuildValue("{s:i,s:O,s:O,s:O}",
+		   "frame", ticks->frame,
+                   "frameStyle", frameStyle,
+                   "horizontal", horizontal,
+                   "vertical", vertical);
+  Py_XDECREF(frameStyle);
+  Py_XDECREF(horizontal);
+  Py_XDECREF(vertical);
+  return dictionary;
+}
+
+static PyObject* get_system(GfakeSystem *systems)
+{ PyObject *dictionary;
+  PyObject *ticks = get_tick_style(&systems->ticks);
+  /* Find the viewport */
+  int dimensions[] = {4};
+  PyArrayObject *viewport =
+    (PyArrayObject *)PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
+  if (viewport)
+  { int i;
+    double *data = (double*) A_DATA(viewport);
+    for (i = 0; i < 4; i++) data[i] = systems->viewport[i];
+  }
+  /* Now put all this in the dictionary */
+  dictionary =
+    Py_BuildValue("{s:O,s:s,s:O}",
+		   "viewport", viewport,
+                   "legend", systems->legend,
+                   "ticks", ticks);
+  Py_XDECREF(viewport);
+  Py_XDECREF(ticks);
+  return dictionary;
+}
+
+static PyObject* get_systems_list(int n, GfakeSystem *systems)
+{ int i;
+  PyObject *list = PyList_New(n);
+  if (!list) return NULL;
+  for (i = 0; i < n; i++)
+  { PyObject *system = get_system(&(systems[i]));
+    if(!system || PyList_SetItem(list,i,system)==-1)
+    /* Py_DECREF applied to the list will apply Py_DECREF to its items */
+    { Py_DECREF(list);
+      return NULL;
+    }
+  }
+  return list;
+}
+
+static char get_style__doc__[] =
+"dictionary = get_style()\n"
+"     Returns a nested dictionary that contains the style information that is\n"
+"     usually stored in the style files (*.gs). By modifying values stored in\n"
+"     this dictionary and calling set_style, the style of the current drawing\n"
+"     can be changed. The returned dictionary has the following structure:\n"
+"\n"
+"     ['landscape']: Set orientation to portrait (0) or landscape (1)\n"
+"     ['legend']:\n"
+"       ['x']: NDC horizontal location of the legend box\n"
+"       ['y']: NDC vertical location of the legend box\n"
+"       ['dx']: NDC horizontal offset to 2nd column\n"
+"       ['dy']: NDC vertical offset to 2nd column\n"
+"       ['nchars']: Maximum number of characters on a line\n"
+"       ['nlines']: Maximum number of lines\n"
+"       ['nwrap']: Maximum number of lines to wrap long legends\n"
+"       ['textStyle']:\n"
+"         ['height']: Character height in NDC, default 0.0156 (12pt)\n"
+"         ['font']: Text font, specified by an integer:\n"
+"                    Courier: 0\n"
+"                    Times: 4\n"
+"                    Helvetica: 8\n"
+"                    Symbol: 12\n"
+"                    New Century: 16\n"
+"                    (add 1 for bold, 2 for italic)\n"
+"         ['color']: Text color\n"
+"         ['orient']: Text path ('right', 'up', 'left', 'down')\n"
+"         ['alignH']: Horizontal alignment\n"
+"                     ('normal', 'left', 'center', 'right')\n"
+"         ['alignV']: Vertical alignment\n"
+"                     ('normal', 'top', 'cap', 'half', 'base', 'bottom')\n"
+"     ['contourlegend']:\n"
+"       ['x']: NDC horizontal location of the contour legend box\n"
+"       ['y']: NDC vertical location of the contour legend box\n"
+"       ['dx']: NDC horizontal offset to 2nd column in the contour legend box\n"
+"       ['dy']: NDC vertical offset to 2nd column in the contour legend box\n"
+"       ['nchars']: Maximum number of characters on a line\n"
+"       ['nlines']: Maximum number of lines\n"
+"       ['nwrap']: Maximum number of lines to wrap long legends\n"
+"       ['textStyle']:\n"
+"         ['height']: Character height in NDC, default 0.0156 (12pt)\n"
+"         ['font']: Text font, specified by an integer:\n"
+"                    Courier: 0\n"
+"                    Times: 4\n"
+"                    Helvetica: 8\n"
+"                    Symbol: 12\n"
+"                    New Century: 16\n"
+"                    (add 1 for bold, 2 for italic)\n"
+"         ['color']: Text color\n"
+"         ['orient']: Text path ('right', 'up', 'left', 'down')\n"
+"         ['alignH']: Horizontal alignment\n"
+"                     ('normal', 'left', 'center', 'right')\n"
+"         ['alignV']: Vertical alignment\n"
+"                     ('normal', 'top', 'cap', 'half', 'base', 'bottom')\n"
+"     ['systems']: returns a list of systems, each of which is a dictionary\n"
+"                  with the following keys:\n"
+"       ['legend']: default legend\n"
+"       ['viewport']: Viewport size, array([left, right, bottom, top]) \n"
+"       ['ticks']:\n"
+"         ['frame']: Switch the frame on (1) or off (0)\n"
+"         ['frameStyle']:\n"
+"           ['color']: Color of the frame\n"
+"           ['width']: Line width of the frame\n"
+"           ['type']: Line style of the frame:\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"         ['horizontal']:\n"
+"           ['nDigits']: Number of digits for the tick labels\n"
+"           ['nMinor']: Number of minor tick marks\n"
+"           ['nMajor']: Number of major tick marks\n"
+"           ['logAdjMinor']: Adjustment factor for nMinor for a log scale\n"
+"           ['logAdjMajor']: Adjustment factor for nMajor for a log scale\n"
+"           ['flags']: Integer, given by the sum of\n"
+"                       1: There are ticks at the bottom edge of the viewport\n"
+"                       2: There are ticks at the upper edge of the viewport\n"
+"                       4: Ticks are centered on the axis\n"
+"                       8: Ticks are go inward from the axis\n"
+"                      16: Ticks are go outward from the axis\n"
+"                      32: There are labels at the bottom edge\n"
+"                      64: There are labels at the upper edge\n"
+"                     128: There is a full grid\n"
+"                     256: There is a single grid line at the origin\n"
+"                     512: Alternative tick generator is used\n"
+"                    1024: Alternative label generator is used\n"
+"           ['xOver']: Horizontal position of the overflow label\n"
+"           ['yOver']: Vertical position of the overflow label\n"
+"           ['labelOff']: Offset from the edge of the viewport to the labels\n"
+"           ['tickOff']: Offset from the edge of the viewport to the ticks\n"
+"           ['tickLen']: Tick lengths in NDC\n"
+"           ['tickStyle']:\n"
+"             ['color']: Color of the ticks\n"
+"             ['width']: Line width of the ticks\n"
+"             ['type']: Line type of the ticks\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"           ['gridLevel']: Level of the ticks at which the grid is drawn\n"
+"           ['gridStyle']:\n"
+"             ['color']: Color of the grid\n"
+"             ['width']: Line width of the grid\n"
+"             ['type']: Line type of the grid\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"         ['vertical']:\n"
+"           ['nDigits']: Number of digits for the tick labels\n"
+"           ['nMinor']: Number of minor tick marks\n"
+"           ['nMajor']: Number of major tick marks\n"
+"           ['logAdjMinor']: Adjustment factor for nMinor for a log scale\n"
+"           ['logAdjMajor']: Adjustment factor for nMajor for a log scale\n"
+"           ['flags']: Integer, given by the sum of\n"
+"                       1: There are ticks at the left edge of the viewport\n"
+"                       2: There are ticks at the right edge of the viewport\n"
+"                       4: Ticks are centered on the axis\n"
+"                       8: Ticks are go inward from the axis\n"
+"                      16: Ticks are go outward from the axis\n"
+"                      32: There are labels at the left edge\n"
+"                      64: There are labels at the right edge\n"
+"                     128: There is a full grid\n"
+"                     256: There is a single grid line at the origin\n"
+"                     512: Alternative tick generator is used\n"
+"                    1024: Alternative label generator is used\n"
+"           ['xOver']: Horizontal position of the overflow label\n"
+"           ['yOver']: Vertical position of the overflow label\n"
+"           ['labelOff']: Offset from the edge of the viewport to the labels\n"
+"           ['tickOff']: Offset from the edge of the viewport to the ticks\n"
+"           ['tickLen']: Tick lengths in NDC\n"
+"           ['tickStyle']:\n"
+"             ['color']: Color of the ticks\n"
+"             ['width']: Line width of the ticks\n"
+"             ['type']: Line type of the ticks\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"           ['gridLevel']: Level of the ticks at which the grid is drawn\n"
+"           ['gridStyle']:\n"
+"             ['color']: Color of the grid\n"
+"             ['width']: Line width of the grid\n"
+"             ['type']: Line type of the grid\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"\n"
+"   SEE ALSO: set_style\n";
+
+static PyObject *get_style (PyObject * self, PyObject * args)
+{
+  int i;
+  int n;
+  int landscape;
+  GeLegendBox legendboxes[2];
+  GfakeSystem *fakesystems;
+  PyObject *dictionary; /* return value */
+  PyObject *legends[2];
+  PyObject *systems;
+  if (!PyArg_ParseTuple(args, "")) return NULL;
+  /* Call the Gist function first to find out how many systems there are */
+  n = raw_style(0, &landscape, 0, 0);
+  if (n==0) return ERRSS ("no current drawing");
+  if (n==-1) return ERRSS ("unknown error in raw_style");
+  /* Now that we know how many systems there are, save enough space for them */
+  fakesystems = (GfakeSystem*)malloc(n*sizeof(GfakeSystem));
+  if(!fakesystems) return PyErr_NoMemory();
+  for (i = 0; i < n; i++) fakesystems[i].legend = 0;
+  /* Call the Gist function to get the style information */
+  if (raw_style(0, &landscape, fakesystems, legendboxes)==-1)
+    return ERRSS ("unknown error in raw_style");
+  /* Put the style information in a dictionary */
+  legends[0] = get_legend(&(legendboxes[0]));
+  legends[1] = get_legend(&(legendboxes[1]));
+  systems = get_systems_list(n, fakesystems);
+  dictionary =
+    Py_BuildValue("{s:i,s:O,s:O,s:O}",
+                   "landscape", landscape,
+                   "legend", legends[0],
+                   "contourlegend", legends[1],
+                   "systems", systems);
+  /* Free the allocated memory */
+  for (i = 0; i < n; i++) p_free(fakesystems[i].legend);
+  free(fakesystems);
+  Py_XDECREF(legends[0]);
+  Py_XDECREF(legends[1]);
+  Py_XDECREF(systems);
+  if(!dictionary) return PyErr_NoMemory();
+  return dictionary;
+}
+
+/*----------------------------------------------------------------------------*/
+
+int set_line_attributes(PyObject *dictionary, GpLineAttribs *attributes)
+{ PyObject *width;
+  PyObject *color;
+  PyObject *type;
+  char* ctype;
+  /*--------------------------------------------------------------------------*/
+  width = PyDict_GetItemString(dictionary,"width");
+  if (!width)
+  { ERRMSG("key width not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  type = PyDict_GetItemString(dictionary,"type");
+  if (!type)
+  { ERRMSG("key type not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  color = PyDict_GetItemString(dictionary,"color");
+  if (!color)
+  { ERRMSG("key color not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  /* OK, we've got everything */
+  if (PyFloat_Check(width)) attributes->width = PyFloat_AsDouble(width);
+  else if (PyInt_Check(width)) attributes->width = (double) PyInt_AsLong(width);
+  else
+  { ERRMSG("width should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyString_Check(type))
+  { ERRMSG("type should be of type String");
+    return 0;
+  }
+  ctype = PyString_AsString(type);
+  if(!strcmp(ctype,"none")) attributes->type = L_NONE;
+  else if (!strcmp(ctype,"solid")) attributes->type = L_SOLID;
+  else if (!strcmp(ctype,"dash")) attributes->type = L_DASH;
+  else if (!strcmp(ctype,"dot")) attributes->type = L_DOT;
+  else if (!strcmp(ctype,"dashdot")) attributes->type = L_DASHDOT;
+  else if (!strcmp(ctype,"dashdotdot")) attributes->type = L_DASHDOTDOT;
+  else
+  { ERRMSG("unrecognized value for type");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyInt_Check(color))
+  { long lcolor = PyInt_AsLong(color);
+    if (lcolor<0)
+    { ERRMSG("number for color should be non-negative");
+      return 0;
+    }
+    attributes->color = (unsigned long)lcolor;
+  }
+  else if (PyLong_Check(color))
+    attributes->color = PyLong_AsUnsignedLong(color);
+  else
+  { ERRMSG("color should be a non-negative number");
+    return 0;
+  }
+  return 1;
+}
+
+int set_text_attributes(PyObject* dictionary, GpTextAttribs *attributes)
+{ PyObject *font;
+  PyObject *height;
+  PyObject *orient;
+  PyObject *alignH;
+  PyObject *alignV;
+  PyObject *color;
+  char* salignH;
+  char* salignV;
+  char* sorient;
+  /*--------------------------------------------------------------------------*/
+  font = PyDict_GetItemString(dictionary,"font");
+  if (!font)
+  { ERRMSG("key font not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  height = PyDict_GetItemString(dictionary,"height");
+  if (!height)
+  { ERRMSG("key height not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  orient = PyDict_GetItemString(dictionary,"orient");
+  if (!orient)
+  { ERRMSG("key orient not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  alignH = PyDict_GetItemString(dictionary,"alignH");
+  if (!alignH)
+  { ERRMSG("key alignH not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  alignV = PyDict_GetItemString(dictionary,"alignV");
+  if (!alignV)
+  { ERRMSG("key alignV not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  color = PyDict_GetItemString(dictionary,"color");
+  if (!color)
+  { ERRMSG("key color not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(font))
+  { ERRMSG("font should be an Integer");
+    return 0;
+  }
+  attributes->font = (int) PyInt_AsLong(font);
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(height))
+    attributes->height = PyFloat_AsDouble(height);
+  else if (PyInt_Check(height))
+    attributes->height = (double) PyInt_AsLong(height);
+  else
+  { ERRMSG("height should be a Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyString_Check(orient))
+  { ERRMSG("orient should be a String");
+    return 0;
+  }
+  sorient = PyString_AsString(orient);
+  if (!strcmp(sorient,"right")) attributes->orient = TX_RIGHT;
+  else if (!strcmp(sorient,"up")) attributes->orient = TX_UP;
+  else if (!strcmp(sorient,"left")) attributes->orient = TX_LEFT;
+  else if (!strcmp(sorient,"down")) attributes->orient = TX_DOWN;
+  else
+  { ERRMSG("orient should be 'right', 'up', 'left', or 'down'");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyString_Check(alignH))
+  { ERRMSG("alignH should be a String");
+    return 0;
+  }
+  salignH = PyString_AsString(alignH);
+  if (!strcmp(salignH,"normal")) attributes->alignH = TH_NORMAL;
+  else if (!strcmp(salignH,"left")) attributes->alignH = TH_LEFT;
+  else if (!strcmp(salignH,"center")) attributes->alignH = TH_CENTER;
+  else if (!strcmp(salignH,"right")) attributes->alignH = TH_RIGHT;
+  else
+  { ERRMSG("alignH should be 'normal', 'left', 'center', or 'right'");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyString_Check(alignV))
+  { ERRMSG("alignV should be a String");
+    return 0;
+  }
+  salignV = PyString_AsString(alignV);
+  if (!strcmp(salignV,"normal")) attributes->alignV = TV_NORMAL;
+  else if (!strcmp(salignV,"top")) attributes->alignV = TV_TOP;
+  else if (!strcmp(salignV,"cap")) attributes->alignV = TV_CAP;
+  else if (!strcmp(salignV,"half")) attributes->alignV = TV_HALF;
+  else if (!strcmp(salignV,"base")) attributes->alignV = TV_BASE;
+  else if (!strcmp(salignV,"bottom")) attributes->alignV = TV_BOTTOM;
+  else
+  { ERRMSG("alignV should be 'normal', 'top', 'cap', 'half', 'base', or 'bottom'");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyInt_Check(color))
+  { long lcolor = PyInt_AsLong(color);
+    if (lcolor<0)
+    { ERRMSG("number for color should be non-negative");
+      return 0;
+    }
+    attributes->color = (unsigned long)lcolor;
+  }
+  else if (PyLong_Check(color))
+    attributes->color = PyLong_AsUnsignedLong(color);
+  else
+  { ERRMSG("color should be a non-negative number");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  return 1;
+}
+
+int set_axis_style(PyObject *dictionary, GaAxisStyle *axis)
+{ int i;
+  double *data;
+  PyObject *nMajor;
+  PyObject *nMinor;
+  PyObject *logAdjMajor;
+  PyObject *logAdjMinor;
+  PyObject *nDigits;
+  PyObject *gridLevel;
+  PyObject *flags;
+  PyObject *tickOff;
+  PyObject *labelOff;
+  PyObject *xOver;
+  PyObject *yOver;
+  PyObject *tickStyle;
+  PyObject *gridStyle;
+  PyObject *textStyle;
+  PyArrayObject *tickLen;
+  /*--------------------------------------------------------------------------*/
+  nMajor = PyDict_GetItemString(dictionary,"nMajor");
+  if (!nMajor)
+  { ERRMSG("key nMajor not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  nMinor = PyDict_GetItemString(dictionary,"nMinor");
+  if (!nMinor)
+  { ERRMSG("key nMinor not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  logAdjMajor = PyDict_GetItemString(dictionary,"logAdjMajor");
+  if (!logAdjMajor)
+  { ERRMSG("key logAdjMajor not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  logAdjMinor = PyDict_GetItemString(dictionary,"logAdjMinor");
+  if (!logAdjMinor)
+  { ERRMSG("key logAdjMinor not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  nDigits = PyDict_GetItemString(dictionary,"nDigits");
+  if (!nDigits)
+  { ERRMSG("key nDigits not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  gridLevel = PyDict_GetItemString(dictionary,"gridLevel");
+  if (!gridLevel)
+  { ERRMSG("key gridLevel not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  flags = PyDict_GetItemString(dictionary,"flags");
+  if (!flags)
+  { ERRMSG("key flags not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  tickOff = PyDict_GetItemString(dictionary,"tickOff");
+  if (!tickOff)
+  { ERRMSG("key tickOff not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  labelOff = PyDict_GetItemString(dictionary,"labelOff");
+  if (!labelOff)
+  { ERRMSG("key labelOff not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  xOver = PyDict_GetItemString(dictionary,"xOver");
+  if (!xOver)
+  { ERRMSG("key xOver not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  yOver = PyDict_GetItemString(dictionary,"yOver");
+  if (!yOver)
+  { ERRMSG("key yOver not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  tickStyle = PyDict_GetItemString(dictionary,"tickStyle");
+  if (!tickStyle)
+  { ERRMSG("key tickStyle not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  textStyle = PyDict_GetItemString(dictionary,"textStyle");
+  if (!textStyle)
+  { ERRMSG("key textStyle not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  gridStyle = PyDict_GetItemString(dictionary,"gridStyle");
+  if (!gridStyle)
+  { ERRMSG("key gridStyle not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  tickLen = (PyArrayObject*) PyDict_GetItemString(dictionary,"tickLen");
+  if (!tickLen)
+  { ERRMSG("key tickLen not found in dictionary");
+    return 0;
+  }
+  /* OK, we've got everything */
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(nMajor)) axis->nMajor = PyFloat_AsDouble(nMajor);
+  else if (PyInt_Check(nMajor)) axis->nMajor = (double) PyInt_AsLong(nMajor);
+  else
+  { ERRMSG("nMajor should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(nMinor)) axis->nMinor = PyFloat_AsDouble(nMinor);
+  else if (PyInt_Check(nMinor)) axis->nMinor = (double) PyInt_AsLong(nMinor);
+  else
+  { ERRMSG("nMinor should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(logAdjMajor))
+    axis->logAdjMajor = PyFloat_AsDouble(logAdjMajor);
+  else if (PyInt_Check(logAdjMajor))
+    axis->logAdjMajor = (double) PyInt_AsLong(logAdjMajor);
+  else
+  { ERRMSG("logAdjMajor should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(logAdjMinor))
+    axis->logAdjMinor = PyFloat_AsDouble(logAdjMinor);
+  else if (PyInt_Check(logAdjMinor))
+    axis->logAdjMinor = (double) PyInt_AsLong(logAdjMinor);
+  else
+  { ERRMSG("logAdjMinor should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(nDigits))
+  { ERRMSG("nDigits should be of type Integer");
+    return 0;
+  }
+  axis->nDigits = (int)PyInt_AsLong(nDigits);
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(gridLevel))
+  { ERRMSG("gridLevel should be of type Integer");
+    return 0;
+  }
+  axis->gridLevel = (int)PyInt_AsLong(gridLevel);
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(flags))
+  { ERRMSG("flags should be of type Integer");
+    return 0;
+  }
+  axis->flags = (int)PyInt_AsLong(flags);
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(tickOff)) axis->tickOff = PyFloat_AsDouble(tickOff);
+  else if (PyInt_Check(tickOff)) axis->tickOff = (double) PyInt_AsLong(tickOff);
+  else
+  { ERRMSG("tickOff should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(labelOff))
+    axis->labelOff = PyFloat_AsDouble(labelOff);
+  else if (PyInt_Check(labelOff))
+    axis->labelOff = (double) PyInt_AsLong(labelOff);
+  else
+  { ERRMSG("labelOff should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(xOver)) axis->xOver = PyFloat_AsDouble(xOver);
+  else if (PyInt_Check(xOver)) axis->xOver = (double) PyInt_AsLong(xOver);
+  else
+  { ERRMSG("xOver should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(yOver)) axis->yOver = PyFloat_AsDouble(yOver);
+  else if (PyInt_Check(yOver)) axis->yOver = (double) PyInt_AsLong(yOver);
+  else
+  { ERRMSG("yOver should be of type Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if(!set_line_attributes(tickStyle,&(axis->tickStyle))) return 0;
+  if(!set_text_attributes(textStyle,&(axis->textStyle))) return 0;
+  if(!set_line_attributes(gridStyle,&(axis->gridStyle))) return 0;
+  /*--------------------------------------------------------------------------*/
+  /* Get the tick lengths from the array */
+  if (!PyArray_Check(tickLen))
+  { ERRMSG("tickLen is not a NumPy array");
+    return 0;
+  }
+  if (tickLen->nd != 1)
+  { ERRMSG("tickLen should be one-dimensional");
+    return 0;
+  }
+  if (tickLen->descr->type_num != PyArray_DOUBLE)
+  { ERRMSG("tickLen array should be of type float");
+    return 0;
+  }
+  if(tickLen->dimensions[0]!=TICK_LEVELS)
+  { ERRMSG("tickLen array has incorrect length");
+    return 0;
+  }
+  data = (double*) A_DATA(tickLen);
+    for (i = 0; i < TICK_LEVELS; i++) axis->tickLen[i] = data[i];
+  return 1;
+}
+
+int set_tick_style(PyObject *dictionary, GaTickStyle *ticks)
+{ PyObject *frame;
+  PyObject *frameStyle;
+  PyObject *horizontal;
+  PyObject *vertical;
+  /*--------------------------------------------------------------------------*/
+  frame = PyDict_GetItemString(dictionary,"frame");
+  if (!frame)
+  { ERRMSG("key frame not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  frameStyle = PyDict_GetItemString(dictionary,"frameStyle");
+  if (!frameStyle)
+  { ERRMSG("key frameStyle not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  horizontal = PyDict_GetItemString(dictionary,"horizontal");
+  if (!horizontal)
+  { ERRMSG("key horizontal not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  vertical = PyDict_GetItemString(dictionary,"vertical");
+  if (!vertical)
+  { ERRMSG("key vertical not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  /* OK, we've got everything */
+  if (!PyInt_Check(frame))
+  { ERRMSG("frame should be of type integer");
+    return 0;
+  }
+  ticks->frame = (int) PyInt_AsLong(frame);
+  /*--------------------------------------------------------------------------*/
+  if(!set_line_attributes(frameStyle,&(ticks->frameStyle))) return 0;
+  if(!set_axis_style(horizontal,&(ticks->horiz))) return 0;
+  if(!set_axis_style(vertical,&(ticks->vert))) return 0;
+  /*--------------------------------------------------------------------------*/
+  return 1;
+}
+
+int set_system(PyObject *dictionary, GfakeSystem *system)
+{ int i;
+  PyObject *ticks;
+  PyObject *legend;
+  PyArrayObject *viewport;
+  double *data;
+  /*--------------------------------------------------------------------------*/
+  ticks = PyDict_GetItemString(dictionary,"ticks");
+  if (!ticks)
+  { ERRMSG("key ticks not found in dictionary in style");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  legend = PyDict_GetItemString(dictionary,"legend");
+  if (!legend)
+  { ERRMSG("key legend not found in dictionary in style");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  viewport = (PyArrayObject*) PyDict_GetItemString(dictionary,"viewport");
+  if (!viewport)
+  { ERRMSG("key viewport not found in dictionary in style");
+    return 0;
+  }
+  /* OK, we've got everything */
+  /*--------------------------------------------------------------------------*/
+  if(!set_tick_style(ticks,&(system->ticks))) return 0;
+  /* PyString_AsString returns a char pointer to the data inside legend.
+   * So system->legend should not be freed later on */
+  if (!PyString_Check(legend))
+  { ERRMSG("legend should be a string");
+    return 0;
+  }
+  system->legend = PyString_AsString(legend);
+  /*--------------------------------------------------------------------------*/
+  /* Find the viewport */
+  if (!PyArray_Check(viewport))
+  { ERRMSG("viewport is not a NumPy array");
+    return 0;
+  }
+  if (viewport->nd != 1)
+  { ERRMSG("viewport should be one-dimensional");
+    return 0;
+  }
+  if (viewport->descr->type_num != PyArray_DOUBLE)
+  { ERRMSG("viewport array should be of type float");
+    return 0;
+  }
+  if(viewport->dimensions[0]!=4)
+  { ERRMSG("viewport array should have length 4");
+    return 0;
+  }
+  data = (double*) A_DATA(viewport);
+    for (i = 0; i < 4; i++) system->viewport[i] = data[i];
+  /*--------------------------------------------------------------------------*/
+  return 1;
+}
+
+int set_systems_list(PyObject *list, int n, GfakeSystem systems[])
+{ int i;
+  for (i = 0; i < n; i++)
+  { PyObject *system = PyList_GetItem(list,i);
+    if(!system)
+    { ERRMSG("Error retrieving system from list in style dictionary");
+      return 0;
+    }
+    if(!set_system(system,&(systems[i]))) return 0;
+  }
+  return 1;
+}
+
+int set_legend(PyObject *dictionary, GeLegendBox *legend)
+{ PyObject *x;
+  PyObject *y;
+  PyObject *dx;
+  PyObject *dy;
+  PyObject *nchars;
+  PyObject *nlines;
+  PyObject *nwrap;
+  PyObject *textStyle;
+  /*--------------------------------------------------------------------------*/
+  x = PyDict_GetItemString(dictionary,"x");
+  if (!x)
+  { ERRMSG("key x not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  y = PyDict_GetItemString(dictionary,"y");
+  if (!y)
+  { ERRMSG("key y not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  dx = PyDict_GetItemString(dictionary,"dx");
+  if (!dx)
+  { ERRMSG("key dx not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  dy = PyDict_GetItemString(dictionary,"dy");
+  if (!dy)
+  { ERRMSG("key dy not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  nchars = PyDict_GetItemString(dictionary,"nchars");
+  if (!nchars)
+  { ERRMSG("key nchars not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  nlines = PyDict_GetItemString(dictionary,"nlines");
+  if (!nlines)
+  { ERRMSG("key nlines not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  nwrap = PyDict_GetItemString(dictionary,"nwrap");
+  if (!nwrap)
+  { ERRMSG("key nwrap not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  textStyle = PyDict_GetItemString(dictionary,"textStyle");
+  if (!textStyle)
+  { ERRMSG("key textStyle not found in dictionary");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(x)) legend->x = PyFloat_AsDouble(x);
+  else if (PyInt_Check(x)) legend->x = (double) PyInt_AsLong(x);
+  else
+  { ERRMSG("x should be a Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(y)) legend->y = PyFloat_AsDouble(y);
+  else if (PyInt_Check(y)) legend->y = (double) PyInt_AsLong(y);
+  else
+  { ERRMSG("y should be a Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(dx)) legend->dx = PyFloat_AsDouble(dx);
+  else if (PyInt_Check(dx)) legend->dx = (double) PyInt_AsLong(dx);
+  else
+  { ERRMSG("dx should be a Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (PyFloat_Check(dy)) legend->dy = PyFloat_AsDouble(dy);
+  else if (PyInt_Check(dy)) legend->dy = (double) PyInt_AsLong(dy);
+  else
+  { ERRMSG("dy should be a Float");
+    return 0;
+  }
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(nchars))
+  { ERRMSG("nchars should be an Integer");
+    return 0;
+  }
+  legend->nchars = (int) PyInt_AsLong(nchars);
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(nlines))
+  { ERRMSG("nlines should be an Integer");
+    return 0;
+  }
+  legend->nlines = (int) PyInt_AsLong(nlines);
+  /*--------------------------------------------------------------------------*/
+  if (!PyInt_Check(nwrap))
+  { ERRMSG("nwrap should be an Integer");
+    return 0;
+  }
+  legend->nwrap = (int) PyInt_AsLong(nwrap);
+  /*--------------------------------------------------------------------------*/
+  if(!set_text_attributes(textStyle, &(legend->textStyle))) return 0;
+  /*--------------------------------------------------------------------------*/
+  return 1;
+}
+
+static char set_style__doc__[] =
+"set_style(dictionary)\n"
+"     Takes a nested dictionary containing the (possibly modified) style\n"
+"     information that is usually stored in the style files (*.gs), and\n"
+"     applies it to the current plot. A starting point for the dictionary can\n"
+"     be obtained by calling get_style. The nested dictionary has the\n"
+"     following structure:\n"
+"\n"
+"     ['landscape']: Set orientation to portrait (0) or landscape (1)\n"
+"     ['legend']:\n"
+"       ['x']: NDC horizontal location of the legend box\n"
+"       ['y']: NDC vertical location of the legend box\n"
+"       ['dx']: NDC horizontal offset to 2nd column\n"
+"       ['dy']: NDC vertical offset to 2nd column\n"
+"       ['nchars']: Maximum number of characters on a line\n"
+"       ['nlines']: Maximum number of lines\n"
+"       ['nwrap']: Maximum number of lines to wrap long legends\n"
+"       ['textStyle']:\n"
+"         ['height']: Character height in NDC, default 0.0156 (12pt)\n"
+"         ['font']: Text font, specified by an integer:\n"
+"                    Courier: 0\n"
+"                    Times: 4\n"
+"                    Helvetica: 8\n"
+"                    Symbol: 12\n"
+"                    New Century: 16\n"
+"                    (add 1 for bold, 2 for italic)\n"
+"         ['color']: Text color\n"
+"         ['orient']: Text path ('right', 'up', 'left', 'down')\n"
+"         ['alignH']: Horizontal alignment\n"
+"                     ('normal', 'left', 'center', 'right')\n"
+"         ['alignV']: Vertical alignment\n"
+"                     ('normal', 'top', 'cap', 'half', 'base', 'bottom')\n"
+"     ['contourlegend']:\n"
+"       ['x']: NDC horizontal location of the contour legend box\n"
+"       ['y']: NDC vertical location of the contour legend box\n"
+"       ['dx']: NDC horizontal offset to 2nd column in the contour legend box\n"
+"       ['dy']: NDC vertical offset to 2nd column in the contour legend box\n"
+"       ['nchars']: Maximum number of characters on a line\n"
+"       ['nlines']: Maximum number of lines\n"
+"       ['nwrap']: Maximum number of lines to wrap long legends\n"
+"       ['textStyle']:\n"
+"         ['height']: Character height in NDC, default 0.0156 (12pt)\n"
+"         ['font']: Text font, specified by an integer:\n"
+"                    Courier: 0\n"
+"                    Times: 4\n"
+"                    Helvetica: 8\n"
+"                    Symbol: 12\n"
+"                    New Century: 16\n"
+"                    (add 1 for bold, 2 for italic)\n"
+"         ['color']: Text color\n"
+"         ['orient']: Text path ('right', 'up', 'left', 'down')\n"
+"         ['alignH']: Horizontal alignment\n"
+"                     ('normal', 'left', 'center', 'right')\n"
+"         ['alignV']: Vertical alignment\n"
+"                     ('normal', 'top', 'cap', 'half', 'base', 'bottom')\n"
+"     ['systems']: returns a list of systems, each of which is a dictionary\n"
+"                  with the following keys:\n"
+"       ['legend']: default legend\n"
+"       ['viewport']: Viewport size, array([left, right, bottom, top]) \n"
+"       ['ticks']:\n"
+"         ['frame']: Switch the frame on (1) or off (0)\n"
+"         ['frameStyle']:\n"
+"           ['color']: Color of the frame\n"
+"           ['width']: Line width of the frame\n"
+"           ['type']: Line style of the frame:\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"         ['horizontal']:\n"
+"           ['nDigits']: Number of digits for the tick labels\n"
+"           ['nMinor']: Number of minor tick marks\n"
+"           ['nMajor']: Number of major tick marks\n"
+"           ['logAdjMinor']: Adjustment factor for nMinor for a log scale\n"
+"           ['logAdjMajor']: Adjustment factor for nMajor for a log scale\n"
+"           ['flags']: Integer, given by the sum of"
+"                       1: There are ticks at the bottom edge of the viewport\n"
+"                       2: There are ticks at the upper edge of the viewport\n"
+"                       4: Ticks are centered on the axis\n"
+"                       8: Ticks are go inward from the axis\n"
+"                      16: Ticks are go outward from the axis\n"
+"                      32: There are labels at the bottom edge\n"
+"                      64: There are labels at the upper edge\n"
+"                     128: There is a full grid\n"
+"                     256: There is a single grid line at the origin\n"
+"                     512: Alternative tick generator is used\n"
+"                    1024: Alternative label generator is used\n"
+"           ['xOver']: Horizontal position of the overflow label\n"
+"           ['yOver']: Vertical position of the overflow label\n"
+"           ['labelOff']: Offset from the edge of the viewport to the labels\n"
+"           ['tickOff']: Offset from the edge of the viewport to the ticks\n"
+"           ['tickLen']: Tick lengths in NDC\n"
+"           ['tickStyle']:\n"
+"             ['color']: Color of the ticks\n"
+"             ['width']: Line width of the ticks\n"
+"             ['type']: Line type of the ticks\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"           ['gridLevel']: Level of the ticks at which the grid is drawn\n"
+"           ['gridStyle']:\n"
+"             ['color']: Color of the grid\n"
+"             ['width']: Line width of the grid\n"
+"             ['type']: Line type of the grid\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"         ['vertical']:\n"
+"           ['nDigits']: Number of digits for the tick labels\n"
+"           ['nMinor']: Number of minor tick marks\n"
+"           ['nMajor']: Number of major tick marks\n"
+"           ['logAdjMinor']: Adjustment factor for nMinor for a log scale\n"
+"           ['logAdjMajor']: Adjustment factor for nMajor for a log scale\n"
+"           ['flags']: Integer, given by the sum of"
+"                       1: There are ticks at the left edge of the viewport\n"
+"                       2: There are ticks at the right edge of the viewport\n"
+"                       4: Ticks are centered on the axis\n"
+"                       8: Ticks are go inward from the axis\n"
+"                      16: Ticks are go outward from the axis\n"
+"                      32: There are labels at the left edge\n"
+"                      64: There are labels at the right edge\n"
+"                     128: There is a full grid\n"
+"                     256: There is a single grid line at the origin\n"
+"                     512: Alternative tick generator is used\n"
+"                    1024: Alternative label generator is used\n"
+"           ['xOver']: Horizontal position of the overflow label\n"
+"           ['yOver']: Vertical position of the overflow label\n"
+"           ['labelOff']: Offset from the edge of the viewport to the labels\n"
+"           ['tickOff']: Offset from the edge of the viewport to the ticks\n"
+"           ['tickLen']: Tick lengths in NDC\n"
+"           ['tickStyle']:\n"
+"             ['color']: Color of the ticks\n"
+"             ['width']: Line width of the ticks\n"
+"             ['type']: Line type of the ticks\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"           ['gridLevel']: Level of the ticks at which the grid is drawn\n"
+"           ['gridStyle']:\n"
+"             ['color']: Color of the grid\n"
+"             ['width']: Line width of the grid\n"
+"             ['type']: Line type of the grid\n"
+"                   ('none', 'solid', 'dash', 'dot', 'dashdot', 'dashdotdot')\n"
+"\n"
+"   SEE ALSO: get_style\n";
+
+static PyObject *set_style (PyObject * self, PyObject * args)
+{
+  PyObject *dictionary;
+  PyObject *landscape;
+  PyObject *systems;
+  PyObject *contourlegend;
+  PyObject *legend;
+  long n;
+  GeLegendBox legendboxes[2];
+  GfakeSystem *fakesystems;
+  int ilandscape;
+  int ok = PyArg_ParseTuple(args,"O!",&PyDict_Type,&dictionary);
+  if (!ok) return NULL;
+  /* PyDict_GetItemString borrows the reference -- don't Py_DECREF */
+  landscape = PyDict_GetItemString(dictionary,"landscape");
+  if (!landscape) return ERRSS("key landscape not found in dictionary");
+  systems = PyDict_GetItemString(dictionary,"systems");
+  if (!systems) return ERRSS("key systems not found in dictionary");
+  legend = PyDict_GetItemString(dictionary,"legend");
+  if (!legend) return ERRSS("key legend not found in dictionary");
+  contourlegend = PyDict_GetItemString(dictionary,"contourlegend");
+  if (!contourlegend)
+    return ERRSS("key contourlegend not found in dictionary");
+  if (!PyInt_Check(landscape))
+    return ERRSS("landscape should be of type integer");
+  ilandscape = (int) PyInt_AsLong(landscape);
+  n = PyList_Size(systems);
+  fakesystems = (GfakeSystem*)malloc(n*sizeof(GfakeSystem));
+  if(!set_systems_list(systems, n, fakesystems)) return NULL;
+  if(!set_legend(legend,&legendboxes[0])) return NULL;
+  if(!set_legend(contourlegend,&legendboxes[1])) return NULL;
+  if(raw_style(n,&ilandscape,fakesystems,legendboxes)==-1)
+    return ERRSS("unknown error in raw_style");
+  free(fakesystems);
+  return PyInt_FromLong(n);
+}
+
 /*
  *  10/30/01 llc Moved PyMethodDef to end, after doc strings are defined.
  *               Also move initgistC, which uses gist_methods.
@@ -8167,7 +9322,8 @@ static struct PyMethodDef gist_methods[] =
   { "pyg_idler",      PYCF   pyg_idler,      1,     pyg_idler__doc__ },
   { "pyg_pending",    PYCF   pyg_pending,    1,     pyg_pending__doc__ },
   { "pyg_register",   PYCF   pyg_register,   1,     pyg_register__doc__ },
-
+  { "get_style",      PYCF   get_style,      1,     get_style__doc__ },
+  { "set_style",      PYCF   set_style,      1,     set_style__doc__ },
   { 0, 0 }
 };
 
@@ -8190,16 +9346,6 @@ void initgistC (void)
   if (PyErr_Occurred ()) {
     Py_FatalError ("Cannot initialize module gist");
   }
-
-#ifdef DEBUG
-  TO_STDOUT ( "\nPyGist version 1.5.11 ($Id$)\n"
-"    This version of gist uses pydoc for documentation.\n"
-"       help(function_name)\n"
-"    provides documentation for function_name\n"
-"    Hit spacebar to page down, and 'q' to end documentation\n"
-"    Single quotes and backquotes delimiting strings in documentation\n"
-"    should be double quotes.\n\n" );
-#endif
 
 #ifdef import_array
   import_array();
@@ -8262,9 +9408,6 @@ void initgistC (void)
     /* do not call p_handler -- would disturb python signal handling */
     p_xhandler(pyg_abort_hook, pyg_on_exception);
 
-    /* Setup GhHandler so that high-level windows are destroyed on X-events */
-    GhSetXHandler(Xerror_longjmp);
-
     /* note that g_on_keyline might be useful, especially for Windows */
     g_on_keyline = pyg_on_keyline;
 
@@ -8291,7 +9434,6 @@ void initgistC (void)
      p_pending_events();
      return;
   }
-  memcpy(&jmpbuf, &pyg_jmpbuf, sizeof(jmp_buf));
 }
 
 static int
