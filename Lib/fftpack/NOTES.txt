@@ -53,8 +53,8 @@ djbfft_info:
     include_dirs = ['/path/to/include']
 
 Note that when using fftw libraries provided by a Linux distribution
-then fftw-dev (or similar) must be installed as well, otherwise
-system_info.py won't detect fftw libraries.
+then fftw-dev (or fftw-devel or similar) must be installed as well, 
+otherwise system_info.py won't detect fftw libraries.
 
 DJBFFT library is fastest for power-of-two (<=8192) Fourier
 transforms. FFTW is superior for non-power-of-two transforms and
