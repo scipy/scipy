@@ -5,3 +5,4 @@ include */setup_*.py
 include special/specfun.pyf
 include linalg2/generic_*.pyf
 include linalg2/flapack_user_routines.pyf
+include *.txt

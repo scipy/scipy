@@ -1,0 +1,22 @@
+Many people have contributed to these codes
+
+In particular thank you to 
+
+Individuals:
+
+Eric Jones for cow, compiler, cluster, gui_thread, gplt, ga, plt, linalg, and the 
+testing interface as well as designing the build process.
+
+Travis Oliphant for fft, integrate, interpolate (with Pearu Peterson), io, linalg, optimize, signal, sparse, special, xplt, many basic functions, and assisting with the build process
+
+Travis Vaught
+Prabhu ?
+
+Institutions:
+
+Agilent has given a genereous donation for support of SciPy.
+
+Brigham Young University has provided resources for students to work on SciPy.
+
+Enthought for providing resources and financing for the development of SciPy.
+
