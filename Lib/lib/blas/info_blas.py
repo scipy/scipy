@@ -2,8 +2,9 @@
 Wrappers to BLAS library
 ========================
 
-fblas - wrappers for Fortran [*] BLAS routines
-cblas - wrappers for ATLAS BLAS routines
+fblas -- wrappers for Fortran [*] BLAS routines
+cblas -- wrappers for ATLAS BLAS routines
+get_blas_funcs -- query for wrapper functions.
 
 [*] If ATLAS libraries are available then Fortran routines
     actually use ATLAS routines and should perform equally

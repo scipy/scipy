@@ -4,7 +4,7 @@
 
 from info_lapack import __doc__
 
-__all__ = ['get_lapack_funcs','calc_lwork']
+__all__ = ['get_lapack_funcs','calc_lwork','flapack','clapack']
 
 import calc_lwork
 
@@ -88,3 +88,4 @@ def %(func_name)s(*args,**kws):
     return clapack_func(*args,**kws)
 func_code = %(func_name)s.func_code
 '''
+

@@ -2,10 +2,10 @@
 Wrappers to LAPACK library
 ==========================
 
-  flapack - wrappers for Fortran [*] LAPACK routines
-  clapack - wrappers for ATLAS LAPACK routines
-  calc_lwork - calculate optimal lwork parameters
-  get_lapack_funcs - query for wrapper functions.
+  flapack -- wrappers for Fortran [*] LAPACK routines
+  clapack -- wrappers for ATLAS LAPACK routines
+  calc_lwork -- calculate optimal lwork parameters
+  get_lapack_funcs -- query for wrapper functions.
 
 [*] If ATLAS libraries are available then Fortran routines
     actually use ATLAS routines and should perform equally
