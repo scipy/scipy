@@ -303,14 +303,25 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 
 	stat->ops[SOLVE] = 0;
 	
-	for (k = 0; k < nrhs; ++k) {
+        if (trans == TRANS) {
+            
+            for (k = 0; k < nrhs; ++k) {
 	    
-	    /* Multiply by inv(U'). */
-	    sp_ctrsv("U", "T", "N", L, U, &Bmat[k*ldb], stat, info);
-	    
-	    /* Multiply by inv(L'). */
-	    sp_ctrsv("L", "T", "U", L, U, &Bmat[k*ldb], stat, info);
-	    
+                /* Multiply by inv(U'). */
+                sp_ctrsv("U", "T", "N", L, U, &Bmat[k*ldb], stat, info);
+                
+                /* Multiply by inv(L'). */
+                sp_ctrsv("L", "T", "U", L, U, &Bmat[k*ldb], stat, info);
+            }
+        }
+        else {
+            for (k = 0; k < nrhs; ++k) {                
+                /* Multiply by conj(inv(U')). */
+                sp_ctrsv("U", "C", "N", L, U, &Bmat[k*ldb], stat, info);
+                
+                /* Multiply by conj(inv(L')). */
+                sp_ctrsv("L", "C", "U", L, U, &Bmat[k*ldb], stat, info);
+            }	    
 	}
 	
 	/* Compute the final solution X := Pr'*X (=inv(Pr)*X) */
@@ -320,7 +331,7 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	    for (k = 0; k < n; k++) rhs_work[k] = soln[k];
 	}
 
-    }
+    } 
 
     SUPERLU_FREE(work);
     SUPERLU_FREE(soln);

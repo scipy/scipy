@@ -43,7 +43,6 @@ void z_div(doublecomplex *c, doublecomplex *a, doublecomplex *b)
     c->i = ci;
 }
 
-
 /* Returns sqrt(z.r^2 + z.i^2) */
 double z_abs(doublecomplex *z)
 {

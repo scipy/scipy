@@ -50,7 +50,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *             follows:   
  *                trans = 'N' or 'n'   A*x = b.   
  *                trans = 'T' or 't'   A'*x = b.   
- *                trans = 'C' or 'c'   A'*x = b.   
+ *                trans = 'C' or 'c'   A**H*x = b.   
  *
  *   diag   - (input) char*
  *             On entry, diag specifies whether or not A is unit   
@@ -86,6 +86,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     NCformat *Ustore;
     complex   *Lval, *Uval;
     int incx = 1, incy = 1;
+    complex temp;
     complex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
     complex comp_zero = {0.0, 0.0};
     int nrow;
@@ -97,7 +98,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     /* Test the input parameters */
     *info = 0;
     if ( !lsame_(uplo,"L") && !lsame_(uplo, "U") ) *info = -1;
-    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") ) *info = -2;
+    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") && !lsame_(trans, "C")) *info = -2;
     else if ( !lsame_(diag, "U") && !lsame_(diag, "N") ) *info = -3;
     else if ( L->nrow != L->ncol || L->nrow < 0 ) *info = -4;
     else if ( U->nrow != U->ncol || U->nrow < 0 ) *info = -5;
@@ -218,7 +219,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 	    } /* for k ... */
 	    
 	}
-    } else { /* Form x := inv(A')*x */
+    } else if (lsame_(trans, "T")) { /* Form x := inv(A')*x */
 	
 	if ( lsame_(uplo, "L") ) {
 	    /* Form x := inv(L')*x */
@@ -248,13 +249,13 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		    solve_ops += 4 * nsupc * (nsupc - 1);
 #ifdef _CRAY
                     ftcs1 = _cptofcd("L", strlen("L"));
-                    ftcs2 = _cptofcd("T", strlen("T"));
+                    ftcs2 = _cptofcd(trans, strlen("T"));
                     ftcs3 = _cptofcd("U", strlen("U"));
 		    CTRSV(ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			&x[fsupc], &incx);
 #else
-		    ctrsv_("L", "T", "U", &nsupc, &Lval[luptr], &nsupr,
-			&x[fsupc], &incx);
+                    ctrsv_("L", trans, "U", &nsupc, &Lval[luptr], &nsupr,
+                           &x[fsupc], &incx);
 #endif
 		}
 	    }
@@ -284,18 +285,99 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 		} else {
 #ifdef _CRAY
                     ftcs1 = _cptofcd("U", strlen("U"));
-                    ftcs2 = _cptofcd("T", strlen("T"));
+                    ftcs2 = _cptofcd(trans, strlen("T"));
                     ftcs3 = _cptofcd("N", strlen("N"));
 		    CTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			    &x[fsupc], &incx);
 #else
-		    ctrsv_("U", "T", "N", &nsupc, &Lval[luptr], &nsupr,
+                    ctrsv_("U", trans, "N", &nsupc, &Lval[luptr], &nsupr,
+                               &x[fsupc], &incx);
+#endif
+		}
+	    } /* for k ... */
+	}
+    } else { /* Form x := conj(inv(A'))*x */
+	
+	if ( lsame_(uplo, "L") ) {
+	    /* Form x := conj(inv(L'))*x */
+    	    if ( L->nrow == 0 ) return 0; /* Quick return */
+	    
+	    for (k = Lstore->nsuper; k >= 0; --k) {
+	    	fsupc = L_FST_SUPC(k);
+	    	istart = L_SUB_START(fsupc);
+	    	nsupr = L_SUB_START(fsupc+1) - istart;
+	    	nsupc = L_FST_SUPC(k+1) - fsupc;
+	    	luptr = L_NZ_START(fsupc);
+
+		solve_ops += 8 * (nsupr - nsupc) * nsupc;
+
+		for (jcol = fsupc; jcol < L_FST_SUPC(k+1); jcol++) {
+		    iptr = istart + nsupc;
+		    for (i = L_NZ_START(jcol) + nsupc; 
+				i < L_NZ_START(jcol+1); i++) {
+			irow = L_SUB(iptr);
+                        cc_conj(&temp, &Lval[i]);
+			cc_mult(&comp_zero, &x[irow], &temp);
+		    	c_sub(&x[jcol], &x[jcol], &comp_zero);
+			iptr++;
+		    }
+		}
+		
+		if ( nsupc > 1 ) {
+		    solve_ops += 4 * nsupc * (nsupc - 1);
+#ifdef _CRAY
+                    ftcs1 = _cptofcd("L", strlen("L"));
+                    ftcs2 = _cptofcd(trans, strlen("T"));
+                    ftcs3 = _cptofcd("U", strlen("U"));
+		    CTRSV(ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
+			&x[fsupc], &incx);
+#else
+                    ctrsv_("L", trans, "U", &nsupc, &Lval[luptr], &nsupr,
+                           &x[fsupc], &incx);
+#endif
+		}
+	    }
+	} else {
+	    /* Form x := conj(inv(U'))*x */
+	    if ( U->nrow == 0 ) return 0; /* Quick return */
+	    
+	    for (k = 0; k <= Lstore->nsuper; k++) {
+	    	fsupc = L_FST_SUPC(k);
+	    	nsupr = L_SUB_START(fsupc+1) - L_SUB_START(fsupc);
+	    	nsupc = L_FST_SUPC(k+1) - fsupc;
+	    	luptr = L_NZ_START(fsupc);
+
+		for (jcol = fsupc; jcol < L_FST_SUPC(k+1); jcol++) {
+		    solve_ops += 8*(U_NZ_START(jcol+1) - U_NZ_START(jcol));
+		    for (i = U_NZ_START(jcol); i < U_NZ_START(jcol+1); i++) {
+			irow = U_SUB(i);
+                        cc_conj(&temp, &Uval[i]);
+			cc_mult(&comp_zero, &x[irow], &temp);
+		    	c_sub(&x[jcol], &x[jcol], &comp_zero);
+		    }
+		}
+
+		solve_ops += 4 * nsupc * (nsupc + 1);
+
+		if ( nsupc == 1 ) {
+                    cc_conj(&temp, &Lval[luptr]);
+		    c_div(&x[fsupc], &x[fsupc], &temp);
+		} else {
+#ifdef _CRAY
+                    ftcs1 = _cptofcd("U", strlen("U"));
+                    ftcs2 = _cptofcd(trans, strlen("T"));
+                    ftcs3 = _cptofcd("N", strlen("N"));
+		    CTRSV( ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
 			    &x[fsupc], &incx);
+#else
+                    ctrsv_("U", trans, "N", &nsupc, &Lval[luptr], &nsupr,
+                               &x[fsupc], &incx);
 #endif
 		}
 	    } /* for k ... */
 	}
     }
+
 
     stat->ops[SOLVE] += solve_ops;
     SUPERLU_FREE(work);

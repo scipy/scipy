@@ -37,7 +37,7 @@ def configuration(parent_package='',parent_path=None):
     #        ('USER_FREE','superlu_python_module_free')]
     
     # Extension
-    sources = ['_zsuperlumodule.c','_superlu_utils.c']
+    sources = ['_zsuperlumodule.c','_superlu_utils.c','_superluobject.c']
     ext_args = {'name':dot_join(parent_package,package,'_zsuperlu'),
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
@@ -46,7 +46,7 @@ def configuration(parent_package='',parent_path=None):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
-    sources = ['_dsuperlumodule.c','_superlu_utils.c']
+    sources = ['_dsuperlumodule.c','_superlu_utils.c','_superluobject.c']
     ext_args = {'name':dot_join(parent_package,package,'_dsuperlu'),
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
@@ -55,7 +55,7 @@ def configuration(parent_package='',parent_path=None):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
-    sources = ['_csuperlumodule.c','_superlu_utils.c']
+    sources = ['_csuperlumodule.c','_superlu_utils.c','_superluobject.c']
     ext_args = {'name':dot_join(parent_package,package,'_csuperlu'),
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
@@ -64,7 +64,7 @@ def configuration(parent_package='',parent_path=None):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
-    sources = ['_ssuperlumodule.c','_superlu_utils.c']
+    sources = ['_ssuperlumodule.c','_superlu_utils.c','_superluobject.c']
     ext_args = {'name':dot_join(parent_package,package,'_ssuperlu'),
                 'sources':map(local_join,sources),
                 'libraries': [superlu],

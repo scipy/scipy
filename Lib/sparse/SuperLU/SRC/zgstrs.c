@@ -302,16 +302,29 @@ zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	}
 
 	stat->ops[SOLVE] = 0;
+        
+        if (trans == TRANS) {
 	
-	for (k = 0; k < nrhs; ++k) {
-	    
-	    /* Multiply by inv(U'). */
-	    sp_ztrsv("U", "T", "N", L, U, &Bmat[k*ldb], stat, info);
-	    
-	    /* Multiply by inv(L'). */
-	    sp_ztrsv("L", "T", "U", L, U, &Bmat[k*ldb], stat, info);
-	    
-	}
+            for (k = 0; k < nrhs; ++k) {
+                
+                /* Multiply by inv(U'). */
+                sp_ztrsv("U", "T", "N", L, U, &Bmat[k*ldb], stat, info);
+                
+                /* Multiply by inv(L'). */
+                sp_ztrsv("L", "T", "U", L, U, &Bmat[k*ldb], stat, info);
+                
+            }
+        }
+        else {
+            for (k = 0; k < nrhs; ++k) {
+                /* Multiply by inv(U'). */
+                sp_ztrsv("U", "C", "N", L, U, &Bmat[k*ldb], stat, info);
+                
+                /* Multiply by inv(L'). */
+                sp_ztrsv("L", "C", "U", L, U, &Bmat[k*ldb], stat, info);
+                
+            }
+        }
 	
 	/* Compute the final solution X := Pr'*X (=inv(Pr)*X) */
 	for (i = 0; i < nrhs; i++) {

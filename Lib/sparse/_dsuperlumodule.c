@@ -21,97 +21,11 @@
 */
 
 #include <setjmp.h>
-#include "Python.h"
-#include "Numeric/arrayobject.h"
 #include "SuperLU/SRC/dsp_defs.h"
-#include "SuperLU/SRC/util.h"
+#include "_superluobject.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
 
-/* Natively handles Compressed Sparse Row and CSC */
-
-static int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject *nzvals, PyArrayObject *colind, PyArrayObject *rowptr)
-{
-  int retval = -1, err=0;
-
-  err = (nzvals->descr->type_num != PyArray_DOUBLE);
-  err += (nzvals->nd != 1);
-  err += (nnz > nzvals->dimensions[0]);
-  if (err) {
-    PyErr_SetString(PyExc_TypeError, "Fourth argument must be a 1-D double array at least as big as third argument.");
-    return retval;
-  }
-
-  if (setjmp(_superlu_py_jmpbuf)) return -1;
-  else dCreate_CompRow_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)colind->data, (int *)rowptr->data, SLU_NR, SLU_D, SLU_GE);
-  retval = 0;
-  return retval;
-}
-
-static int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject *nzvals, PyArrayObject *rowind, PyArrayObject *colptr)
-{
-  int retval = -1, err=0;
-
-  err = (nzvals->descr->type_num != PyArray_DOUBLE);
-  err += (nzvals->nd != 1);
-  err += (nnz > nzvals->dimensions[0]);
-  if (err) {
-    PyErr_SetString(PyExc_TypeError, "Fifth argument must be a 1-D double array at least as big as fourth argument.");
-    return retval;
-  }
-
-
-  if (setjmp(_superlu_py_jmpbuf)) return retval;
-  else dCreate_CompCol_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)rowind->data, (int *)colptr->data, SLU_NC, SLU_D, SLU_GE);
-
-  retval = 0;
-  return retval;
-}
-
-
-static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
-{
-  int m, n, ldx, nd;
-  PyArrayObject *aX;
- 
-  if (!PyArray_Check(PyX)) {
-    PyErr_SetString(PyExc_TypeError, "dgssv: Second argument is not an array.");
-    return -1;
-  }
-  aX = (PyArrayObject *)PyX;
-
-  nd = aX->nd;
-  if (nd == 1) {
-    m = aX->dimensions[0];
-    n = 1;
-    ldx = m;
-  }
-  else {  /* nd == 2 */
-    m = aX->dimensions[1];
-    n = aX->dimensions[0];
-    ldx = m;
-  }
-
-  if (setjmp(_superlu_py_jmpbuf)) return -1;
-  else dCreate_Dense_Matrix(X, m, n, (double *)aX->data, ldx, SLU_DN, SLU_D, SLU_GE);
-
-  return 0;
-}
-
-static colperm_t superlu_module_getpermc(int permc_spec)
-{
-  switch(permc_spec) {
-  case 0:
-    return NATURAL;
-  case 1:
-    return MMD_ATA;
-  case 2:
-    return MMD_AT_PLUS_A;
-  case 3:
-    return COLAMD;
-  }
-  ABORT("Invalid input for permc_spec.");
-}
 
 static char doc_dgssv[] = "Direct inversion of sparse matrix.\n\nX = dgssv(A,B) solves A*X = B for X.";
 
@@ -121,7 +35,7 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   PyArrayObject *nzvals=NULL;
   PyArrayObject *colind=NULL, *rowptr=NULL;
   int M, N, nnz;
-  int info, full_output=0;
+  int info;
   int csc=0, permc_spec=2;
   int *perm_r=NULL, *perm_c=NULL;
   SuperMatrix A, B, L, U;
@@ -129,24 +43,24 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   SuperLUStat_t stat;
   
 
-  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "permc_spec", "full_output",NULL};
+  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "permc_spec",NULL};
 
   /* Get input arguments */
-  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|iii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec, &full_output))
+  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|ii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec))
     return NULL;
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_DOUBLE,1,2);
-
   if (Py_X == NULL) goto fail;
+
   if (csc) {
-      if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail;
+      if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) goto fail;
   }
   else {
-      if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail; 
+      if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) goto fail; 
   }
 
-  if (Dense_from_Numeric(&B, Py_X)) goto fail;
+  if (DenseSuper_from_Numeric(&B, Py_X)) goto fail;
 
 
   /* B and Py_X  share same data now but Py_X "owns" it */
@@ -173,12 +87,10 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   Destroy_CompCol_Matrix(&U);
   StatFree(&stat);
  
-  if (full_output)
-      return Py_BuildValue("Ni", Py_X, info);
-  else
-      return Py_X;
+  return Py_BuildValue("Ni", Py_X, info);
 
  fail:
+
   SUPERLU_FREE(perm_r);
   SUPERLU_FREE(perm_c);
   Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
@@ -190,10 +102,107 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   return NULL;
 }
 
+
+/*******************************Begin Code Adapted from PySparse *****************/
+
+
+static char doc_dgstrf[] = "dgstrf(A, ...)\n\
+\n\
+performs a factorization of the sparse matrix A=*(M,N,nnz,nzvals,rowind,colptr) and \n\
+returns a factored_lu object.\n\
+\n\
+arguments\n\
+---------\n\
+\n\
+Matrix to be factorized is represented as M,N,nnz,nzvals,rowind,colptr\n\
+  as separate arguments.  This is compressed sparse column representation.\n\
+\n\
+M         number of rows\n\
+N         number of columns (can factor non-square matrices)\n\
+nnz       number of non-zero elements\n\
+nzvals    non-zero values \n\
+rowind    row-index for this column (same size as nzvals)\n\
+colptr    index into rowind for first non-zero value in this column\n\
+          size is (N+1).  Last value should be nnz. \n\
+\n\
+additional keyword arguments:\n\
+-----------------------------\n\
+permc_spec          specifies the matrix ordering used for the factorization\n\
+                    0: natural ordering\n\
+                    1: MMD applied to the structure of A^T * A\n\
+                    2: MMD applied to the structure of A^T + A\n\
+                    3: COLAMD, approximate minimum degree column ordering\n\
+                    (default: 2)\n\
+\n\
+diag_pivot_thresh   threshhold for partial pivoting.\n\
+                    0.0 <= diag_pivot_thresh <= 1.0\n\
+                    0.0 corresponds to no pivoting\n\
+                    1.0 corresponds to partial pivoting\n\
+                    (default: 1.0)\n\
+\n\
+drop_tol            drop tolerance parameter\n\
+                    0.0 <= drop_tol <= 1.0\n\
+                    0.0 corresponds to exact factorization\n\
+                    CAUTION: the drop_tol is not implemented in SuperLU 2.0\n\
+                    (default: 0.0)\n\
+\n\
+relax               to control degree of relaxing supernodes\n\
+                    (default: 1)\n\
+\n\
+panel_size          a panel consist of at most panel_size consecutive columns.\n\
+                    (default: 10)\n\
+";
+
+static PyObject *
+Py_dgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
+
+  /* default value for SuperLU parameters*/
+  double diag_pivot_thresh = 1.0;
+  double drop_tol = 0.0;
+  int relax = 1;
+  int panel_size = 10;
+  int permc_spec = 2;
+  int M, N, nnz;
+  PyArrayObject *rowind, *colptr, *nzvals;
+  SuperMatrix A;
+  PyObject *result;
+  
+  static char *kwlist[] = {"M","N","nnz","nzvals","rowind","colptr","permc_spec","diag_pivot_thresh", "drop_tol", "relax", "panel_size", NULL};
+
+  int res = PyArg_ParseTupleAndKeywords(args, keywds, "iiiO!O!O!|iddii", kwlist, 
+                                        &M, &N, &nnz,
+					&PyArray_Type, &nzvals,
+                                        &PyArray_Type, &rowind,
+                                        &PyArray_Type, &colptr,
+					&permc_spec,
+					&diag_pivot_thresh,
+					&drop_tol,
+					&relax,
+					&panel_size);
+  if (!res)
+    return NULL;
+
+  if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, rowind, colptr, PyArray_DOUBLE)) goto fail;
+ 
+  result = newSciPyLUObject(&A, diag_pivot_thresh, drop_tol, relax, panel_size,\
+                            permc_spec, PyArray_DOUBLE);
+  if (result == NULL) goto fail;
+
+  Destroy_SuperMatrix_Store(&A); /* arrays of input matrix will not be freed */  
+  return result;
+
+ fail:
+  Destroy_SuperMatrix_Store(&A); /* arrays of input matrix will not be freed */
+  return NULL;
+}
+
+
+/*******************************End Code Adapted from PySparse *****************/
    
 static PyMethodDef dSuperLU_Methods[] = {
    {"dgssv", (PyCFunction) Py_dgssv, METH_VARARGS|METH_KEYWORDS, doc_dgssv},  
-   /*   {"_dgstrf", Py_dgstrf, METH_VARARGS, doc_dgstrf},
+   {"dgstrf", (PyCFunction) Py_dgstrf, METH_VARARGS|METH_KEYWORDS, doc_dgstrf},
+   /*
    {"_dgstrs", Py_dgstrs, METH_VARARGS, doc_dgstrs},
    {"_dgscon", Py_dgscon, METH_VARARGS, doc_dgscon},
    {"_dgsequ", Py_dgsequ, METH_VARARGS, doc_dgsequ},
@@ -203,11 +212,19 @@ static PyMethodDef dSuperLU_Methods[] = {
 };
 
 
-void init_dsuperlu()
+DL_EXPORT(void)
+init_dsuperlu()
 {
-  Py_InitModule("_dsuperlu", dSuperLU_Methods);
-  import_array();
+  PyObject *m, *d;
+  
+  SciPySuperLUType.ob_type = &PyType_Type;
 
+  m = Py_InitModule("_dsuperlu", dSuperLU_Methods);
+  d = PyModule_GetDict(m);
+
+  PyDict_SetItemString(d, "SciPyLUType", (PyObject *)&SciPySuperLUType);
+
+  import_array();
 }
 
 

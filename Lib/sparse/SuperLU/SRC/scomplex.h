@@ -42,6 +42,11 @@ typedef struct { float r, i; } complex;
     	(c)->i = ci; \
     }
 
+#define cc_conj(a, b) { \
+        (a)->r = (b)->r; \
+        (a)->i = -((b)->i); \
+    }
+
 /* Complex equality testing */
 #define c_eq(a, b)  ( (a)->r == (b)->r && (a)->i == (b)->i )
 

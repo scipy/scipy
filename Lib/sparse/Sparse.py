@@ -57,8 +57,30 @@ class dictmatrix(dict):
         dict.__init__(self)
         self.shape = (0,0)
         self.storage = 'dict'
-        self.data = {}
         self.type = None
+        self.maxprint = MAXPRINT
+
+    def __repr__(self):
+        return "<%dx%d dictmatrix of type '%s' with %d non-zero elements>" % (self.shape + (self.type, len(self.keys())))
+
+    def __str__(self):
+        val = ''
+        nnz = len(self.keys())
+        keys = self.keys()
+        keys.sort()
+        if nnz > self.maxprint:
+            for k in xrange(self.maxprint / 2):
+                key = keys[k]
+                val += "  %s\t%s\n" % (str(key),str(self[key]))
+            val = val + "   :    \t  :\n"
+            for k in xrange(nnz-self.maxprint/2,nnz):
+                key = keys[k]
+                val += "  %s\t%s\n" % (str(key),str(self[key]))
+        else:
+            for k in xrange(nnz):
+                key = keys[k]
+                val += "  %s\t%s\n" % (str(key),str(self[key]))
+        return val[:-1]
 
     def __getitem__(self, key):
         return self.get(key,0)
@@ -100,10 +122,9 @@ class dictmatrix(dict):
         return res
 
     def __mul__(self, other):
-        if (isinstance(other, list) or (isinstance(other, ArrayType) and rank(other)==1) and \
-            len(other)==self.shape[1]):
-            return self.matvec(other)
-        
+        other = asarray(other)
+        if rank(other) > 0:
+            return self.matvec(other)        
         res = dictmatrix()
         for key in self.keys():
             res[key] = other * self[key]
@@ -111,6 +132,14 @@ class dictmatrix(dict):
 
     def __len__(self):
         return len(self.keys())
+
+    def transp(self):
+        # Transpose (return the transposed)
+        new = dictmatrix()
+        for key in self.keys():
+            new[key[1],key[0]] = self[key]
+        return new
+        
 
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
@@ -122,12 +151,13 @@ class dictmatrix(dict):
         return res
 
     def matvec(self, other):
-        if len(other) != self.shape[1]:
+        other = asarray(other)
+        if other.shape[0] != self.shape[1]:
             raise ValueError, "Dimensions do not match."
         keys = self.keys()
         res = [0]*self.shape[0]
         for key in keys:
-            res[int(key[0])] += self[key] * other[int(key[1])]
+            res[int(key[0])] += self[key] * other[int(key[1]),...]
         return array(res)        
 
     def setdiag(self, values, k=0):
@@ -194,12 +224,16 @@ class dictmatrix(dict):
             ftype = 'd'
         return ftype, nnz, data, rowind, col_ptr
 
-    def dense(self,typecode='d'):
+    def dense(self,typecode=None):
+        if typecode is None:
+            typecode = self.type
+        if typecode is None:
+            typecode = 'd'
         new = zeros(self.shape,typecode)
         for key in self.keys():
             ikey0 = int(key[0])
             ikey1 = int(key[1])
-            new[ikey0,ikey1] = value
+            new[ikey0,ikey1] = self[key]
         return new
 
                
@@ -497,7 +531,7 @@ def spdiags(diags,offsets,m,n):
                sum(_spdiags_tosub(offsets, a=min([n-m,0]), b=max([n-m,0])))
     return s
 
-def sparse_linear_solve(A,b,permc_spec=0):
+def solve(A,b,permc_spec=2):
     if not hasattr(A, 'getCSR') and not hasattr(A, 'getCSC'):
         raise ValueError, "Sparse matrix must be able to return CSC format--"\
               "A.getCSC()--or CSR format--A.getCSR()"
@@ -510,12 +544,18 @@ def sparse_linear_solve(A,b,permc_spec=0):
         ftype, lastel, data, index0, index1 = A.getCSR()
         csc = 0
     M,N = A.shape
-    gssv = eval('_superlu.' + ftype + 'gssv')
-    return gssv(M,N,lastel,data,index0,index1,b,csc,permc_spec)
+    gssv = eval('_superlu.' + _transtabl[ftype] + 'gssv')
+    return gssv(M,N,lastel,data,index0,index1,b,csc,permc_spec)[0]
     
 
-splinsolve = sparse_linear_solve
-solve = splinsolve
+def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
+              drop_tol=0.0, relax=1, panel_size=10):
+    ftype, nnz, data, rowind, colptr = A.getCSC()
+    M,N = A.shape
+    gstrf = eval('_superlu.' + _transtabl[ftype] + 'gstrf')
+    return gstrf(M,N,nnz,data,rowind,colptr,permc_spec,
+                 diag_pivot_thresh, drop_tol, relax, panel_size)
+        
 
 if __name__ == "__main__":
     a = spmatrix(arange(1,9),[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4])

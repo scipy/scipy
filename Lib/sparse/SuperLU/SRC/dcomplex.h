@@ -42,6 +42,11 @@ typedef struct { double r, i; } doublecomplex;
     	(c)->i = ci; \
     }
 
+#define zz_conj(a, b) { \
+        (a)->r = (b)->r; \
+        (a)->i = -((b)->i); \
+    }
+
 /* Complex equality testing */
 #define z_eq(a, b)  ( (a)->r == (b)->r && (a)->i == (b)->i )
 

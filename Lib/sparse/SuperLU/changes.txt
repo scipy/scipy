@@ -10,8 +10,13 @@ Changes made to the SuperLU3.0 tree
 
 * Altered SRC/?sp_defs.h to add header for ?Create_CompRow_Matrix
 
-* Altered SRC/util.c SRC/util.h to add Destroy_CompRow_Matrix  (a nicety because Destroy_CompCol_Matrix 
-  would work due to binary compatibility, but...)
+* Altered SRC/util.c SRC/util.h to add Destroy_CompRow_Matrix  
+  (a nicety because Destroy_CompCol_Matrix would work due to binary compatibility, but...)
 
+* Altered zsp_blas2.c, csp_blas2.c, zgstrs.c, cgstrs.c, dcomplex.h, scomplex.h to add support 
+   for solving A**H * x = b after factoring. 
+
+
+* Tried to get rid of some compiler errors (added void to argument lists in headers of util.h).
 
 
