@@ -4,7 +4,7 @@
     !! found, get rid of it!
 """
 
-__all__ = ['interp1d','interp2d']
+__all__ = ['interp1d']
 
 from scipy_base import *
 from scipy_base.fastumath import *
@@ -61,6 +61,7 @@ class interp2d:
         self.z = array(z,copy=1)
         if rank(z) != 2:
             raise ValueError, "Grid values is not a 2-d array."
+
 
         
 
