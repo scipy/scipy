@@ -9,6 +9,8 @@ Developing Scipy
 :Revision: $Revision$
 :Discussions to: scipy-dev@scipy.org
 
+.. Contents::
+
 Introduction
 ------------
 
@@ -79,35 +81,54 @@ follow the following conventions:
   to be used as a replacement of ``Numeric`` or ``numarray`` modules
   to simplify the future transition Numeric->Numarray.
 
-* Directory ``xxx/`` must contain a file ``setup_xxx.py`` that
-  defines ``configuration(parent_package='')`` function.
-  See ... for more details.
+* Directory ``xxx/`` must contain 
 
-* Directory ``xxx/`` must contain a file ``info_xxx.py``. See ..
-  more details.
+  + a file ``setup_xxx.py`` that defines
+    ``configuration(parent_package='')`` function.  See ... for more
+    details.
 
-* Directory ``xxx/`` may contain a directory ``tests/`` that
-  contains files ``test_<name>.py`` corresponding to files
-  ``xxx/<name>.py``.
-  See ... for more details.
+  + a file ``info_xxx.py``. See .. more details.
 
-* Directory ``xxx/`` may contain a ``MANIFEST.in``.
+* Directory ``xxx/`` may contain 
 
-* Directory ``xxx/`` may contain a file ``pre___init__.py`` that
-  should contain the documentation string of the module, usually found
-  in ``__init__.py`` file. See ... for more details.
+  + a directory ``tests/`` that contains files ``test_<name>.py``
+    corresponding to modules ``xxx/<name>{.py,.so,/}``.  See ... for
+    more details.
+
+  + a file ``MANIFEST.in``.
+
+  + a file ``pre___init__.py`` that should contain the documentation
+    string of the module, usually found in ``__init__.py`` file. See
+    ... for more details.
 
 [Open issues: where we should put documentation?]
 
 File xxx/setup_xxx.py
 ---------------------
 
-...
+Each Scipy module setup_xxx.py file must contain a function
+``configuration(..)`` that returns a dictionary which must be usable
+as an argument to distutils setup function.
+
+For example, a minimal setup_xxx.py file for a pure Python Scipy
+module xxx is::
+
+  def configuration(parent_package=''):
+      package = 'xxx'
+      from scipy_distutils.misc_util import default_config_dict
+      config = default_config_dict(package,parent_package)
+      return config
+
+  if __name__ == '__main__':
+      from scipy_distutils.core import setup
+      setup(**configuration())
+
+
 
 Files xxx/__init__.py and xxx/pre___init__.py
 ---------------------------------------------
 
-To speed up the import time as well as minimize memory usage, scipy
+To speed up the import time as well as to minimize memory usage, scipy
 uses ppimport hooks to transparently postpone importing large modules
 that might not be used during a Scipy usage session. But in order to
 have an access to documentation of all Scipy modules, including of the
@@ -122,6 +143,7 @@ So, the contents of a typical xxx/__init__.py file is::
   #
 
   from pre___init__ import __doc__
+  #from info_xxx import __doc__
   ...
 
 [xxx/pre___init__.py functionality will be replaced with more general
@@ -165,4 +187,53 @@ ignore
 File xxx/tests/test_yyy.py
 --------------------------
 
-...
+Ideally, each Python code, extension module, or a subpackage in ``xxx/``
+directory should have the corresponding ``test_<name>.py`` file in
+``xxx/tests/`` directory. This file should define a function
+``test_suite_list`` that must return a list of 2-tuples
+``(<ScipyTestCase class>, <method name pattern>)``.
+
+A minimal example of a ``test_yyy.py`` file that implements tests for
+a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
+
+  from scipy_test.testing import set_package_path, sys
+  from scipy_test.testing import ScipyTestCase
+
+  set_package_path()
+  # make sure that all xxx symbols are imported before the del statement:
+  from xxx.yyy import zzz
+  del sys.path[0]
+
+  class test_zzz(ScipyTestCase):
+      def check_simple(self):
+          assert zzz()=='Hello from zzz'
+      #...
+
+  # defining test_suite_list function is obligatory
+  def test_suite_list(level=1):
+      suite_list = []
+      if level > 0:
+          suite_list += [
+              (test_zzz,'check_'),
+	      #...
+	      ]
+      if level > 5:
+          #...
+      return suite_list
+
+  if __name__ == "__main__":
+      from scipy_test.testing import ScipyTest
+      ScipyTest('xxx.yyy').test(level=1,verbosity=2)
+
+``ScipyTestCase`` is derived from ``unittest.TestCase`` and it
+implements additional method ``measure(self, code_str, times=1)``.
+
+``scipy_test.testing`` module provides also the following convenience
+functions::
+
+  assert_equal(ctual,desired,err_msg='',verbose=1)
+  assert_almost_equal(actual,desired,decimal=7,err_msg='',verbose=1)
+  assert_approx_equal(actual,desired,significant=7,err_msg='',verbose=1)
+  assert_array_equal(x,y,err_msg='')
+  assert_array_almost_equal(x,y,decimal=6,err_msg='')
+  rand(*shape) # returns random array with a given shape
