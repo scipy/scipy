@@ -628,7 +628,7 @@ def exec_code(code,inputs,returns,global_vars,addendum=None):
     exec_code = build_globals(global_vars)
     exec_code = exec_code + build_inputs(inputs)
     exec_code = exec_code + code
-    exec exec_code
+    exec exec_code in globals, globals
     #perhaps do something here to catch errors
     if len(returns) == 1:
         results = eval(returns[0])
@@ -667,7 +667,7 @@ def loop_code(code,loop_var,inputs,returns,global_vars,addendum=None):
     _loop_data = inputs[loop_var]
     del inputs[loop_var] #not strictly necessary
     exec_code = build_loop_code(code,loop_var,inputs,returns,global_vars)
-    exec exec_code
+    exec exec_code in globals, globals
     return _all_results
 
 #------------------------------------------------
