@@ -40,27 +40,13 @@ functions include:
       writecc (listoflists,file,extra=2,writetype='w'):
       writedelimited (listoflists, delimiter, file, writetype='w'):
 
-Some of these functions have alternate versions which are defined only if
-Numeric (NumPy) can be imported.  These functions are generally named as
-above, with an 'a' prefix.
-
-      aabut (source, *args):
-      acolex (a,indices,axis=1):
-      acollapse (a,keepcols,collapsecols,sterr=0,ns=0):
-      adm (a,criterion):
-      aget (namepattern,verbose=1):
-      alinexand (a,columnlist,valuelist):
-      alinexor (a,columnlist,valuelist):
-      aput (outarray,fname,writetype='w'):
-      arecode (a,listmap,col='all'):
-      arowcompare (row1, row2):
-      arowsame (row1, row2):
-      aunique(inarray):
 
 Currently, the code is all but completely un-optimized.  In many cases, the
 array versions of functions amount simply to aliases to built-in array
 functions/methods.  Their inclusion here is for function name consistency.
 Additions, suggestions, or comments are welcome (strang@nmr.mgh.harvard.edu).
+(Note: this file has been modified, and therefore comments should be sent to scipy-users
+or scipy-dev mailing list).
 """
 
 import string, sys, os, copy, math, stats
@@ -698,8 +684,7 @@ def sortrows(a,axis=0):
 def unique(inarray):
     """\nReturns unique items in the FIRST dimension of the passed array. Only
     works on arrays NOT including string items (e.g., type 'O' or 'c').
-    """
-    
+    """    
     inarray = asarray(inarray)
     uniques = N.array([inarray[0]])
     if len(uniques.shape) == 1:            # IF IT'S A 1D ARRAY

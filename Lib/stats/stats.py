@@ -133,7 +133,7 @@ SUPPORT FUNCTIONS:  writecc
 ## CHANGE LOG:
 ## ===========
 ## 02-02-10 ... require Numeric, eliminate "list-only" functions (only 1 set of functions now
-###             and no Dispatch class)
+###             and no Dispatch class), removed all references to aXXXX functions.
 ## 00-04-13 ... pulled all "global" statements, except from aanova()
 ##              added/fixed lots of documentation, removed io.py dependency
 ##              changed to version 0.5
@@ -616,7 +616,6 @@ kurtosis=3(n-1)/(n+1)) Valid only for n>20.  Axis can equal None
 (ravel array first), an integer (the axis over which to operate),
 or a sequence (operate over multiple axes).
 
-Usage:   akurtosistest(a,axis=None)
 Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
 """
     if axis is None:
@@ -648,7 +647,6 @@ curve.  Can operate over multiple axes.  Axis can equal
 None (ravel array first), an integer (the axis over which to
 operate), or a sequence (operate over multiple axes).
 
-Usage:   anormaltest(a,axis=None)
 Returns: z-score and 2-tail probability
 """
     if axis is None:
@@ -669,20 +667,18 @@ def itemfreq(a):
 Returns a 2D array of item frequencies.  Column 1 contains item values,
 column 2 contains their respective counts.  Assumes a 1D array is passed.
 
-Usage:   aitemfreq(a)
 Returns: a 2D frequency table (col [0:n-1]=scores, col n=frequencies)
 """
-    scores = pstat.aunique(a)
+    scores = pstat.unique(a)
     scores = sort(scores)
     freq = zeros(len(scores))
     for i in range(len(scores)):
         freq[i] = add.reduce(equal(a,scores[i]))
-    return array(pstat.aabut(scores, freq))
+    return array(pstat.abut(scores, freq))
 
 
 def scoreatpercentile (a, percent):
     """
-Usage:   ascoreatpercentile(a,percent)   0<percent<100
 Returns: score at given percentile, relative to a distribution
 """
     percent = percent / 100.0
@@ -701,7 +697,6 @@ def percentileofscore (a,score,histbins=10,defaultlimits=None):
 Note: result of this function depends on the values used to histogram
 the data(!).
 
-Usage:   apercentileofscore(a,score,histbins=10,defaultlimits=None)
 Returns: percentile-position of score (0-100) relative to a
 """
     h, lrl, binsize, extras = histogram(a,histbins,defaultlimits)
@@ -720,7 +715,6 @@ can be None (the routine picks bins spanning all the numbers in the
 a) or a 2-sequence (lowerlimit, upperlimit).  Returns all of the
 following: array of bin values, lowerreallimit, binsize, extrapoints.
 
-Usage:   ahistogram(a,numbins=10,defaultlimits=None,printextras=1)
 Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
 """
     a = ravel(a)               # flatten any >1D arrays
@@ -756,7 +750,6 @@ Returns a cumulative frequency histogram, using the histogram function.
 Defaultreallimits can be None (use all data), or a 2-sequence containing
 lower and upper limits on values to include.
 
-Usage:   acumfreq(a,numbins=10,defaultreallimits=None)
 Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 """
     h,l,b,e = histogram(a,numbins,defaultreallimits)
@@ -770,7 +763,6 @@ Returns a relative frequency histogram, using the histogram function.
 Defaultreallimits can be None (use all data), or a 2-sequence containing
 lower and upper limits on values to include.
 
-Usage:   arelfreq(a,numbins=10,defaultreallimits=None)
 Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 """
     h,l,b,e = histogram(a,numbins,defaultreallimits)
@@ -790,7 +782,6 @@ array in *args is one level of a factor.  If an F_oneway() run on the
 transformed data and found significant, variances are unequal.   From
 Maxwell and Delaney, p.112.
 
-Usage:   aobrientransform(*args)    *args = 1D arrays, one per level of factor
 Returns: transformed data for use in an ANOVA
 """
     TINY = 1e-10
@@ -827,8 +818,6 @@ array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate), or a sequence
 (operate over multiple axes).  Set keepdims=1 to return an array
 with the same number of axes as a.
-
-Usage:   asamplevar(a,axis=None,keepdims=0)
 """
     if axis is None:
         a = ravel(a)
@@ -844,7 +833,7 @@ Usage:   asamplevar(a,axis=None,keepdims=0)
             n = n*a.shape[d]
     else:
         n = a.shape[axis]
-    svar = ass(deviations,axis,keepdims) / float(n)
+    svar = ss(deviations,axis,keepdims) / float(n)
     return svar
 
 
@@ -854,9 +843,8 @@ array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate), or a sequence
 (operate over multiple axes).  Set keepdims=1 to return an array
 with the same number of axes as a.
-
 """
-    return sqrt(asamplevar(a,axis,keepdims))
+    return sqrt(samplevar(a,axis,keepdims))
 
 
 def signaltonoise(instack,axis=0):
@@ -865,7 +853,6 @@ Calculates signal-to-noise.  Axis can equal None (ravel array
 first), an integer (the axis over which to operate), or a
 sequence (operate over multiple axes).
 
-Usage:   asignaltonoise(instack,axis=0):
 Returns: array containing the value of (mean/stdev) along axis,
          or 0 when stdev=0
 """
@@ -881,8 +868,6 @@ array (i.e., N-1).  Axis can equal None (ravel array first), an
 integer (the axis over which to operate), or a sequence (operate
 over multiple axes).  Set keepdims=1 to return an array with the
 same number of axes as a.
-
-Usage:   avar(a,axis=None,keepdims=0)
 """
     if axis is None:
         a = ravel(a)
@@ -895,7 +880,7 @@ Usage:   avar(a,axis=None,keepdims=0)
             n = n*a.shape[d]
     else:
         n = a.shape[axis]
-    var = ass(deviations,axis,keepdims)/float(n-1)
+    var = ss(deviations,axis,keepdims)/float(n-1)
     return var
 
 
@@ -907,7 +892,6 @@ first), an integer (the axis over which to operate), or a
 sequence (operate over multiple axes).  Set keepdims=1 to return
 an array with the same number of axes as a.
 
-Usage:   astdev(a,axis=None,keepdims=0)
 """
     return sqrt(avar(a,axis,keepdims))
 
@@ -920,7 +904,6 @@ first), an integer (the axis over which to operate), or a
 sequence (operate over multiple axes).  Set keepdims=1 to return
 an array with the same number of axes as a.
 
-Usage:   asterr(a,axis=None,keepdims=0)
 """
     if axis is None:
         a = ravel(a)
@@ -936,7 +919,6 @@ integer (the axis over which to operate), or a sequence (operate
 over multiple axes).  Set keepdims=1 to return an array with the
 same number of axes as a.
 
-Usage:   asem(a,axis=None, keepdims=0)
 """
     if axis is None:
         a = ravel(a)
@@ -957,7 +939,6 @@ Returns the z-score of a given input score, given thearray from which
 that score came.  Not appropriate for population calculations, nor for
 arrays > 1D.
 
-Usage:   az(a, score)
 """
     z = (score-amean(a)) / samplestd(a)
     return z
@@ -968,7 +949,6 @@ def zs (a):
 Returns a 1D array of z-scores, one for each score in the passed array,
 computed relative to the passed array.
 
-Usage:   azs(a)
 """
     zscores = []
     for item in a:
@@ -982,7 +962,6 @@ Returns an array of z-scores the shape of scores (e.g., [x,y]), compared to
 array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
 of the compare array.
 
-Usage:   azs(scores, compare, axis=0)
 """
     mns = amean(compare,axis)
     sstd = asamplestdev(compare,0)
@@ -997,7 +976,6 @@ def round(a,digits=1):
      """
     Rounds all values in array a to 'digits' decimal places.
     
-    Usage:   around(a,digits)
     Returns: a, where each value is rounded to 'digits' decimals
     """
      def r(x,d=digits):
@@ -1029,7 +1007,6 @@ def threshold(a,threshmin=None,threshmax=None,newval=0):
 Like Numeric.clip() except that values <threshmid or >threshmax are replaced
 by newval instead of by threshmin/threshmax (respectively).
 
-Usage:   athreshold(a,threshmin=None,threshmax=None,newval=0)
 Returns: a, with values <threshmin or >threshmax replaced with newval
 """
     mask = zeros(a.shape)
@@ -1050,7 +1027,6 @@ array (i.e., with proportiontocut=0.1, slices 'leftmost' 10% AND
 non-integer slice index (i.e., conservatively slices off
 proportiontocut).
 
-Usage:   atrimboth (a,proportiontocut)
 Returns: trimmed version of array a
 """
     lowercut = int(proportiontocut*len(a))
@@ -1065,7 +1041,6 @@ def trim1 (a,proportiontocut,tail='right'):
     10% of scores).  Slices off LESS if proportion results in a non-integer
     slice index (i.e., conservatively slices off proportiontocut).
     
-    Usage:   atrim1(a,proportiontocut,tail='right')  or set tail='left'
     Returns: trimmed version of array a
     """
     if string.lower(tail) == 'right':
@@ -1085,7 +1060,6 @@ def covariance(X):
     """
 Computes the covariance matrix of a matrix X.  Requires a 2D matrix input.
 
-Usage:   acovariance(X)
 Returns: covariance matrix of X
 """
     if len(X.shape) <> 2:
@@ -1099,7 +1073,6 @@ def correlation(X):
     """
 Computes the correlation matrix of a matrix X.  Requires a 2D matrix input.
 
-Usage:   acorrelation(X)
 Returns: correlation matrix of X
 """
     C = acovariance(X)
@@ -1112,7 +1085,6 @@ def paired(x,y):
 Interactively determines the type of data in x and y, and then runs the
 appropriated statistic for paired group data.
 
-Usage:   apaired(x,y)     x,y = the two arrays of values to be compared
 Returns: appropriate statistic name, value, and probability
 """
     samples = ''
@@ -1176,7 +1148,6 @@ def pearsonr(x,y):
 Calculates a Pearson correlation coefficient and returns p.  Taken
 from Heiman's Basic Statistics for the Behav. Sci (2nd), p.195.
 
-Usage:   apearsonr(x,y)      where x,y are equal length arrays
 Returns: Pearson's r, two-tailed p-value
 """
     TINY = 1.0e-20
@@ -1184,11 +1155,11 @@ Returns: Pearson's r, two-tailed p-value
     xmean = amean(x)
     ymean = amean(y)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
-    r_den = math.sqrt((n*ass(x) - asquare_of_sums(x))*(n*ass(y)-asquare_of_sums(y)))
+    r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = (r_num / r_den)
     df = n-2
     t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
-    prob = abetai(0.5*df,0.5,df/(df+t*t))
+    prob = betai(0.5*df,0.5,df/(df+t*t))
     return r,prob
 
 
@@ -1197,7 +1168,6 @@ def spearmanr(x,y):
 Calculates a Spearman rank-order correlation coefficient.  Taken
 from Heiman's Basic Statistics for the Behav. Sci (1st), p.192.
 
-Usage:   aspearmanr(x,y)      where x,y are equal-length arrays
 Returns: Spearman's r, two-tailed p-value
 """
     TINY = 1e-30
@@ -1208,7 +1178,7 @@ Returns: Spearman's r, two-tailed p-value
     rs = 1 - 6*dsq / float(n*(n**2-1))
     t = rs * math.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
     df = n-2
-    probrs = abetai(0.5*df,0.5,df/(df+t*t))
+    probrs = betai(0.5*df,0.5,df/(df+t*t))
 # probability values for rs are from part 2 of the spearman function in
 # Numerical Recipies, p.510.  They close to tables, but not exact.(?)
     return rs, probrs
@@ -1220,27 +1190,26 @@ Calculates a point-biserial correlation coefficient and the associated
 probability value.  Taken from Heiman's Basic Statistics for the Behav.
 Sci (1st), p.194.
 
-Usage:   apointbiserialr(x,y)      where x,y are equal length arrays
 Returns: Point-biserial r, two-tailed p-value
 """
     TINY = 1e-30
-    categories = pstat.aunique(x)
-    data = pstat.aabut(x,y)
+    categories = pstat.unique(x)
+    data = pstat.abut(x,y)
     if len(categories) <> 2:
         raise ValueError, "Exactly 2 categories required (in x) for pointbiserialr()."
     else:   # there are 2 categories, continue
-        codemap = pstat.aabut(categories,arange(2))
-        recoded = pstat.arecode(data,codemap,0)
-        x = pstat.alinexand(data,0,categories[0])
-        y = pstat.alinexand(data,0,categories[1])
-        xmean = amean(pstat.acolex(x,1))
-        ymean = amean(pstat.acolex(y,1))
+        codemap = pstat.abut(categories,arange(2))
+        recoded = pstat.recode(data,codemap,0)
+        x = pstat.linexand(data,0,categories[0])
+        y = pstat.linexand(data,0,categories[1])
+        xmean = amean(pstat.colex(x,1))
+        ymean = amean(pstat.colex(y,1))
         n = len(data)
         adjust = math.sqrt((len(x)/float(n))*(len(y)/float(n)))
-        rpb = (ymean - xmean)/asamplestdev(pstat.acolex(data,1))*adjust
+        rpb = (ymean - xmean)/asamplestdev(pstat.colex(data,1))*adjust
         df = n-2
         t = rpb*math.sqrt(df/((1.0-rpb+TINY)*(1.0+rpb+TINY)))
-        prob = abetai(0.5*df,0.5,df/(df+t*t))
+        prob = betai(0.5*df,0.5,df/(df+t*t))
         return rpb, prob
 
 
@@ -1249,7 +1218,6 @@ def kendalltau(x,y):
 Calculates Kendall's tau ... correlation of ordinal data.  Adapted
 from function kendl1 in Numerical Recipies.  Needs good test-cases.@@@
 
-Usage:   akendalltau(x,y)
 Returns: Kendall's tau, two-tailed p-value
 """
     n1 = 0
@@ -1285,7 +1253,6 @@ Calculates a regression line on two arrays, x and y, corresponding to x,y
 pairs.  If a single 2D array is passed, alinregress finds dim with 2 levels
 and splits data into x,y pairs along that dim.
 
-Usage:   alinregress(*args)    args=2 equal-length arrays, or one 2D array
 Returns: slope, intercept, r, two-tailed prob, sterr-of-the-estimate
 """
     TINY = 1.0e-20
@@ -1304,13 +1271,13 @@ Returns: slope, intercept, r, two-tailed prob, sterr-of-the-estimate
     xmean = amean(x)
     ymean = amean(y)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
-    r_den = math.sqrt((n*ass(x) - asquare_of_sums(x))*(n*ass(y)-asquare_of_sums(y)))
+    r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = r_num / r_den
     z = 0.5*math.log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
-    prob = abetai(0.5*df,0.5,df/(df+t*t))
-    slope = r_num / (float(n)*ass(x) - asquare_of_sums(x))
+    prob = betai(0.5*df,0.5,df/(df+t*t))
+    slope = r_num / (float(n)*ss(x) - square_of_sums(x))
     intercept = ymean - slope*xmean
     sterrest = math.sqrt(1-r*r)*asamplestdev(y)
     return slope, intercept, r, prob, sterrest
@@ -1327,7 +1294,6 @@ of scores a, given a population mean.  If printit=1, results are printed
 to the screen.  If printit='filename', the results are output to 'filename'
 using the given writemode (default=append).  Returns t-value, and prob.
 
-Usage:   attest_1samp(a,popmean,Name='Sample',printit=0,writemode='a')
 Returns: t-value, two-tailed prob
 """
     if type(a) != ArrayType:
@@ -1338,7 +1304,7 @@ Returns: t-value, two-tailed prob
     df = n-1
     svar = ((n-1)*v) / float(df)
     t = (x-popmean)/math.sqrt(svar*(1.0/n))
-    prob = abetai(0.5*df,0.5,df/(df+t*t))
+    prob = betai(0.5*df,0.5,df/(df+t*t))
 
     if printit <> 0:
         statname = 'Single-sample T-test.'
@@ -1359,8 +1325,6 @@ to 'filename' using the given writemode (default=append).  Axis
 can equal None (ravel array first), or an integer (the axis over
 which to operate on a and b).
 
-Usage:   attest_ind (a,b,axis=None,printit=0,
-                     Name1='Samp1',Name2='Samp2',writemode='a')
 Returns: t-value, two-tailed p-value
 """
     if axis is None:
@@ -1378,7 +1342,7 @@ Returns: t-value, two-tailed p-value
     zerodivproblem = equal(svar,0)
     t = (x1-x2)/sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
     t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
-    probs = abetai(0.5*df,0.5,float(df)/(df+t*t))
+    probs = betai(0.5*df,0.5,float(df)/(df+t*t))
 
     if type(t) == ArrayType:
         probs = reshape(probs,t.shape)
@@ -1410,8 +1374,6 @@ to 'filename' using the given writemode (default=append).  Axis
 can equal None (ravel array first), or an integer (the axis over
 which to operate on a and b).
 
-Usage:   attest_rel(a,b,axis=None,printit=0,
-                    name1='Samp1',name2='Samp2',writemode='a')
 Returns: t-value, two-tailed p-value
 """
     if axis is None:
@@ -1433,7 +1395,7 @@ Returns: t-value, two-tailed p-value
     t = add.reduce(d,axis) / denom      # N-D COMPUTATION HERE!!!!!!
     t = where(zerodivproblem,1.0,t)          # replace NaN t-values with 1.0
     t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
-    probs = abetai(0.5*df,0.5,float(df)/(df+t*t))
+    probs = betai(0.5*df,0.5,float(df)/(df+t*t))
     if type(t) == ArrayType:
         probs = reshape(probs,t.shape)
     if len(probs) == 1:
@@ -1457,7 +1419,6 @@ Calculates a one-way chi square for array of observed frequencies and returns
 the result.  If no expected frequencies are given, the total N is assumed to
 be equally distributed across all groups.
 
-Usage:   achisquare(f_obs, f_exp=None)   f_obs = array of observed cell freq.
 Returns: chisquare-statistic, associated p-value
 """
 
@@ -1475,7 +1436,6 @@ Computes the Kolmogorov-Smirnof statistic on 2 samples.  Modified from
 Numerical Recipies in C, page 493.  Returns KS D-value, prob.  Not ufunc-
 like.
 
-Usage:   aks_2samp(data1,data2)  where data1 and data2 are 1D arrays
 Returns: KS D-value, p-value
 """
     j1 = 0    # zeros(data1.shape[1:]) TRIED TO MAKE THIS UFUNC-LIKE
@@ -1517,7 +1477,6 @@ you have 2 independent samples of ranks.  REMEMBER: Mann-Whitney U is
 significant if the u-obtained is LESS THAN or equal to the critical
 value of U.
 
-Usage:   amannwhitneyu(x,y)     where x,y are arrays of values for 2 conditions
 Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
 """
     n1 = len(x)
@@ -1544,7 +1503,6 @@ See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
 Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
 code.
 
-Usage:   atiecorrect(rankvals)
 Returns: T correction factor for U or H
 """
     sorted,posn = ashellsort(array(rankvals))
@@ -1568,7 +1526,6 @@ def ranksums(x,y):
 Calculates the rank sums statistic on the provided scores and returns
 the result.
 
-Usage:   aranksums(x,y)     where x,y are arrays of values for 2 conditions
 Returns: z-statistic, two-tailed p-value
 """
     n1 = len(x)
@@ -1589,7 +1546,6 @@ def wilcoxont(x,y):
 Calculates the Wilcoxon T-test for related samples and returns the
 result.  A non-parametric T-test.
 
-Usage:   awilcoxont(x,y)     where x,y are equal-length arrays for 2 conditions
 Returns: t-statistic, two-tailed p-value
 """
     if len(x) <> len(y):
@@ -1622,7 +1578,6 @@ groups, requiring at least 5 subjects in each group.  This function
 calculates the Kruskal-Wallis H and associated p-value for 3 or more
 independent samples.
 
-Usage:   akruskalwallish(*args)     args are separate arrays for 3+ conditions
 Returns: H-statistic (corrected for ties), associated p-value
 """
     assert len(args) == 3, "Need at least 3 groups in stats.akruskalwallish()"
@@ -1660,14 +1615,13 @@ probability value.  It assumes 3 or more repeated measures.  Only 3
 levels requires a minimum of 10 subjects in the study.  Four levels
 requires 5 subjects per level(??).
 
-Usage:   afriedmanchisquare(*args)   args are separate arrays for 2+ conditions
 Returns: chi-square statistic, associated p-value
 """
     k = len(args)
     if k < 3:
         raise ValueError, '\nLess than 3 levels.  Friedman test not appropriate.\n'
     n = len(args[0])
-    data = apply(pstat.aabut,args)
+    data = apply(pstat.abut,args)
     data = data.astype(Float)
     for i in range(len(data)):
         data[i] = arankdata(data[i])
@@ -1679,6 +1633,12 @@ Returns: chi-square statistic, associated p-value
 #####################################
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
+
+from special import binomcdf, binomcdfc, binomcdfinv, betacdf, betaq, fcdf, \
+     fcdfc, fp, gammacdf, gammacdfc, gammaq, negbinomcdf, neginomcdfinv, \
+     possioncdf, poissioncdfc, possioncdfinv, studentcdf, studentq, \
+     chi2cdf, chi2cdfc, chi2p, normalcdf, normalq, smirnovcdfc, smirnovp, \
+     kolmogorovcdfc, kolmogorovp
 
 zprob = special.normalcdf
 erfc = special.erfc
@@ -1771,20 +1731,18 @@ from:
     I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
     Lond B 354: 1239-1260.
 
-Usage:   aglm(data,para)
 Returns: statistic, p-value ???
 """
     if len(para) <> len(data):
         print "data and para must be same length in aglm"
         return
     n = len(para)
-    p = pstat.aunique(para)
+    p = pstat.unique(para)
     x = zeros((n,len(p)))  # design matrix
     for l in range(len(p)):
         x[:,l] = equal(para,p[l])
     b = dot(dot(LA.inverse(dot(transpose(x),x)),  # i.e., b=inv(X'X)X'Y
-                    transpose(x)),
-              data)
+                    transpose(x)),data)
     diffs = (data - dot(x,b))
     s_sq = 1./(n-len(p)) * dot(transpose(diffs), diffs)
 
@@ -1793,7 +1751,7 @@ Returns: statistic, p-value ???
         df = n-2
         fact = sum(1.0/sum(x,0))  # i.e., 1/n1 + 1/n2 + 1/n3 ...
         t = dot(c,b) / sqrt(s_sq*fact)
-        probs = abetai(0.5*df,0.5,float(df)/(df+t*t))
+        probs = betai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs
 
 def anova(data,effects=['A','B','C','D','E','F','G','H','I','J','K']):
@@ -2062,7 +2020,7 @@ lists-of-lists.
                 try:
                     # Tack this column onto existing ones
                     tmp = D[dcount].shape
-                    D[dcount] = pstat.aabut(D[dcount],scratch)
+                    D[dcount] = pstat.abut(D[dcount],scratch)
                 except AttributeError: # i.e., D[dcount]=integer/float
                     # If this is the first, plug it in
                     D[dcount] = scratch
@@ -2142,10 +2100,10 @@ lists-of-lists.
             btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
     ## Average Marray over non-source axes (1=keep squashed dims)
-            sourceMarray = amean(Marray,btwnonsourcedims,1)
+            sourceMarray = mean(Marray,btwnonsourcedims,1)
 
     ## Calculate harmonic means for each level in source
-            sourceNarray = aharmonicmean(Narray,btwnonsourcedims,1)
+            sourceNarray = harmonicmean(Narray,btwnonsourcedims,1)
 
     ## Calc grand average (ga), used for ALL effects
             ga = sum((sourceMarray*sourceNarray)/
@@ -2154,7 +2112,7 @@ lists-of-lists.
 
     ## If GRAND interaction, use harmonic mean of ALL cell Ns
             if source == Nallsources-1:
-                sourceNarray = aharmonicmean(Narray)
+                sourceNarray = harmonicmean(Narray)
 
     ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
             sub_effects = 1.0 * ga # start with grand mean
@@ -2358,7 +2316,7 @@ lists-of-lists.
     return
 
 
-def Dfull_model(workd,subjslots):
+def d_full_model(workd,subjslots):
      """
      RESTRICTS NOTHING (i.e., FULL MODEL CALCULATION).  Subtracts D-variable
 cell-mean for each between-subj group and then calculates the SS array.
@@ -2368,7 +2326,7 @@ cell-mean for each between-subj group and then calculates the SS array.
      return sserr
 
 
-def Drestrict_mean(workd,subjslots):
+def d_restrict_mean(workd,subjslots):
      """
      RESTRICTS GRAND MEA  Subtracts D-variable cell-mean for each between-
 subj group, and then adds back each D-variable's grand mean.
@@ -2386,7 +2344,7 @@ subj group, and then adds back each D-variable's grand mean.
      return sserr
 
 
-def Drestrict_source(workd,subjslots,source):
+def d_restrict_source(workd,subjslots,source):
      """
 Calculates error for a given model on array workd.  Subjslots is an
 array of 1s and 0s corresponding to whether or not the subject is a
@@ -2396,7 +2354,6 @@ source=0 means to restrict workd's grand mean; source>0 means to
 restrict the columns of the main data array, DA, specified (in binary)
 by the source-value.
 
-Usage:   Derrorcalc(workd,subjslots,source)  source:-1=nothing, 0=mean
 Returns: SS array for multivariate F calculation
 """
 ###
@@ -2441,10 +2398,10 @@ Returns: SS array for multivariate F calculation
          for dim in btwnonsourcedims: # collapse all non-source dims
              if dim == len(DM[dindex].shape)-1:
                  raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
-             sourceDMarray = amean(sourceDMarray,dim,1)
+             sourceDMarray = mean(sourceDMarray,dim,1)
 
        ## Calculate harmonic means for each level in source
-         sourceDNarray = aharmonicmean(DN[dindex],btwnonsourcedims,1)
+         sourceDNarray = harmonicmean(DN[dindex],btwnonsourcedims,1)
 
        ## Calc grand average (ga), used for ALL effects
          variableNs = sum(sourceDNarray,
@@ -2455,8 +2412,8 @@ Returns: SS array for multivariate F calculation
 
        ## If GRAND interaction, use harmonic mean of ALL cell Ns
          if source == Nallsources-1:
-             sourceDNarray = aharmonicmean(DN[dindex],
-                                           range(len(sourceDMarray.shape)-1))
+             sourceDNarray = harmonicmean(DN[dindex],
+                                          range(len(sourceDMarray.shape)-1))
                 
        ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
          sub_effects = ga *1.0   # start with grand mean
@@ -2488,7 +2445,7 @@ Returns: SS array for multivariate F calculation
          return SS
 
 
-def multivar_SScalc(workd):
+def multivar_sscalc(workd):
 ###
 ### DO SS CALCS ON THE OUTPUT FROM THE SOURCE=0 AND SOURCE=-1 CASES
 ###
@@ -2537,19 +2494,18 @@ i.e., calculate full-model using a D-variable.
      while incr(idx,loopcap) <> -1:  # loop through source btw level-combos
          mask = tsubjslots[idx]
          thisgroup = tworkd*mask[NewAxis,:]
-         groupmns = amean(compress(mask,thisgroup),1)
+         groupmns = mean(compress(mask,thisgroup),1)
 
 ### THEN SUBTRACT THEM FROM APPROPRIATE SUBJECTS
          errors = errors - multiply.outer(groupmns,mask)
      return errors
 
 
-def F_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
+def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
      """
 Calculation of Wilks lambda F-statistic for multivarite data, per
 Maxwell & Delaney p.657.
 
-Usage:   F_value_wilks_lambda(ER,EF,dfnum,dfden,a,b)
 """
      if type(ER) in [IntType, FloatType]:
          ER = array([[ER]])
@@ -2620,13 +2576,14 @@ def round4(num):
          return 'N/A'
 
 
-def F_oneway(*args):
+def f_oneway(*args):
     """
 Performs a 1-way ANOVA, returning an F-value and probability given
 any number of groups.  From Heiman, pp.394-7.
 
-Usage:   aF_oneway (*args)    where *args is 2 or more arrays, one per
+Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
                                   treatment group
+
 Returns: f-value, probability
 """
     na = len(args)            # ANOVA on 'na' groups, each in it's own array
@@ -2635,16 +2592,16 @@ Returns: f-value, probability
     ns = [0]*na
     alldata = []
     tmp = map(array,args)
-    means = map(amean,tmp)
-    vars = map(avar,tmp)
+    means = map(mean,tmp)
+    vars = map(var,tmp)
     ns = map(len,args)
     alldata = concatenate(args)
     bign = len(alldata)
-    sstot = ass(alldata)-(asquare_of_sums(alldata)/float(bign))
+    sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
     ssbn = 0
     for a in args:
-        ssbn = ssbn + asquare_of_sums(array(a))/float(len(a))
-    ssbn = ssbn - (asquare_of_sums(alldata)/float(bign))
+        ssbn = ssbn + square_of_sums(array(a))/float(len(a))
+    ssbn = ssbn - (square_of_sums(alldata)/float(bign))
     sswn = sstot-ssbn
     dfbn = na-1
     dfwn = bign - na
@@ -2655,7 +2612,7 @@ Returns: f-value, probability
     return f, prob
 
 
-def F_value (ER,EF,dfR,dfF):
+def f_value (ER,EF,dfR,dfF):
     """
 Returns an F-statistic given the following:
         ER  = error associated with the null hypothesis (the Restricted model)
@@ -2684,7 +2641,7 @@ def outputfstats(Enum, Eden, dfnum, dfden, f, prob):
      return
 
 
-def F_value_multivariate(ER, EF, dfnum, dfden):
+def f_value_multivariate(ER, EF, dfnum, dfden):
      """
 Returns an F-statistic given the following:
         ER  = error associated with the null hypothesis (the Restricted model)
@@ -2703,12 +2660,11 @@ where ER and EF are matrices from a multivariate F calculation.
 
 
 #####################################
-#######  ASUPPORT FUNCTIONS  ########
+#######  SUPPORT FUNCTIONS  ########
 #####################################
 
 def sign(a):
     """
-Usage:   asign(a)
 Returns: array shape of a, with -1 where a<0 and +1 where a>=0
 """
     a = asarray(a)
@@ -2728,7 +2684,6 @@ axis over which to operate), or a sequence (operate over multiple
 axes).  If keepdims=1, the resulting array will have as many
 axes as the input array.
 
-Usage:   sum(a, axis=None, keepdims=0)
 Returns: array summed along 'axis'(s), same _number_ of dims if keepdims=1
 """
      if type(a) == ArrayType and a.typecode() in ['l','s','b']:
@@ -2763,7 +2718,6 @@ passed array.  Axis can equal None (ravel array first), an
 integer (the axis over which to operate), or a sequence (operate
 over multiple axes, but this last one just barely makes sense).
 
-Usage:   acumsum(a,axis=None)
 """
     if axis is None:
         a = ravel(a)
@@ -2788,7 +2742,6 @@ the array.  Axis can equal None (ravel array first), an integer
 multiple axes).  Set keepdims=1 to maintain the original number
 of axes.
 
-Usage:   ass(a, axis=None, keepdims=0)
 Returns: sum-along-'axis' for (a*a)
 """
     if axis is None:
@@ -2804,8 +2757,6 @@ returns the sum (along 'axis') of all resulting multiplications.
 Axis can equal None (ravel array first), an integer (the
 axis over which to operate), or a sequence (operate over multiple
 axes).  A trivial function, but included for completeness.
-
-Usage:   summult(array1,array2,axis=None,keepdims=0)
 """
     if axis is None:
         array1 = ravel(array1)
@@ -2822,7 +2773,6 @@ axis over which to operate), or a sequence (operate over multiple
 axes).  If keepdims=1, the returned array will have the same
 NUMBER of axes as the original.
 
-Usage:   asquare_of_sums(a, axis=None, keepdims=0)
 Returns: the square of the sum over dim(s) in axis
 """
     if axis is None:
@@ -2843,7 +2793,6 @@ can equal None (ravel array first), an integer (the axis over
 which to operate), or a sequence (operate over multiple axes).
 keepdims=1 means the return shape = len(a.shape) = len(b.shape)
 
-Usage:   sumdiffsquared(a,b)
 Returns: sum[ravel(a-b)**2]
 """
     if axis is None:
@@ -2856,7 +2805,6 @@ def shellsort(a):
     """
 Shellsort algorithm.  Sorts a 1D-array.
 
-Usage:   ashellsort(a)
 Returns: sorted-a, sorting-index-vector (for original array)
 """
     n = len(a)
@@ -2883,7 +2831,6 @@ def rankdata(a):
 Ranks the data in a, dealing with ties appropritely.  Assumes
 a 1D a.  Adapted from Gary Perlman's |Stat ranksort.
 
-Usage:   arankdata(a)
 Returns: array of length equal to a, containing rank scores
 """
     n = len(a)
@@ -2909,7 +2856,6 @@ Returns a binary vector, 1=within-subject factor, 0=between.  Input
 equals the entire data array (i.e., column 1=random factor, last
 column = measured values.
 
-Usage:   afindwithin(data)     data in |Stat format
 """
     numfact = len(data[0])-2
     withinvec = [0]*numfact
