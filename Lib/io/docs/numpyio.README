@@ -1,0 +1,174 @@
+
+This source file and makefile are intended to be used with python with
+Numerical extensions.
+
+To install:
+
+1) copy Makefile.pre.in from your python configuration directory 
+(e.g. /usr/lib/python1.5/config/Makefile.pre.in) to this directory.  
+2) make -f Makefile.pre.in boot
+3) make
+
+4) install in a directory on your Python path.
+
+executing make once compiles both sigtools and numpyio.
+
+There is a module called mIO.py that defines MATLAB-like binary file 
+interface using numpyio.  It is a recommended front-end for numpyio and 
+imported into signaltools.py
+
+Usage:
+
+import mIO
+
+fid = mIO.fopen('somefile','r','ieee-le')   # little-endian
+somedata = fid.fread(number_of_els,type)   # type can be all kinds of things
+                                          # like int32, float, complex, etc.
+                                          # check mIO.py for details
+
+# somedata is 1-D array of number_of_els (set the shape to whatever you want
+
+There are useful methods called fort_write and fort_read to this object 
+that allow you to use the struct module syntax to read in FORTRAN records into
+a list and write FORTRAN records.  
+
+
+Any Questions or problems or bug-reports send to
+Oliphant.Travis@altavista.net
+
+
+Background:
+
+  Once compiled, numpyio is a loadable module that can be used in
+python for reading and writing arbitrary binary data to and from
+Numerical Python arrays.  I work in Medical Imaging and often have
+large data sets to manipulate.  I came from a background of using
+MATLAB but only having doubles to work with really puts a crimp on the
+sizes of the data sets I could manipulate.  The fact that Numerical
+Python has more data types defined than doubles encouraged me to try
+it out.  I have been very impressed with its speed and utility, but I
+needed some way to read large data sets from an arbitrary binary file
+into Numerical Python arrays.  I didn't see any obvious way to do this
+so I wrote an extension module.  Although there is not much
+documentation, having the sources available is ultimately better than
+documentation.  
+
+
+Description:
+
+The module defines 5 methods for reading and writing NumPy arrays:
+
+********************************************************************
+
+g = numpyio.fread( fid, Num, read_type { mem_type, byteswap})
+
+     fid =       open file pointer object (i.e. from fid = open("filename") )
+     Num =       number of elements to read of type read_type
+     read_type = a character in 'cb1silfdFD' (PyArray types)
+                 describing how to interpret bytes on disk.
+OPTIONAL
+     mem_type =  a character (PyArray type) describing what kind of
+                 PyArray to return in g.   Default = read_type
+     byteswap =  0 for no byteswapping or a 1 to byteswap (to handle
+                 different endianness).    Default = 0
+
+************************************************************************
+
+numpyio.fwrite( fid, Num, myarray { write_type, byteswap} )
+ 
+     fid =       open file stream
+     Num =       number of elements to write
+     myarray =   NumPy array holding the data to write (will be
+                 written as if ravel(myarray) was passed)
+OPTIONAL
+     write_type = character ('cb1silfdFD') describing how to write the 
+                  data (what datatype to use)  Default = type of
+                  myarray.
+     byteswap =   0 or 1 to determine if byteswapping occurs on write.
+                  Default = 0.
+
+
+These are the main routines, note that mem_type or write_type is
+specified then a blind typecast is done with no checking to see if it
+makes sense to do so.  I'm trusting the user knows what she wants to
+do.
+
+Three support routines are also included.
+
+************************************
+
+numpyio.bswap(myarray)
+
+     myarray = an array whose elements you want to byteswap.
+
+     This does an inplace byte-swap so that myarray is changed in
+     memory.
+
+*********************************************************
+
+out = numpyio.packbits(myarray)
+
+     myarray = an array whose (assumed binary) elements you want to
+               pack into bits (must be of integer type, 'cb1sl')
+
+     This routine packs the elements of a binary-valued dataset into a
+     1-D NumPy array of type PyArray_UBYTE ('b') whose bits correspond to
+     the logical (0 or nonzero) value of the input elements. 
+
+     If myarray has more dimensions than 2 it packs each slice (rows*columns)
+     separately.  The number of elements per slice (rows*columns) is 
+     important to know to be able to unpack the data later.
+
+     Example:
+  >>> a = array([[[1,0,1],
+  ...             [0,1,0]],
+  ...            [[1,1,0],
+  ...             [0,0,1]]])
+  >>> b = numpyio.packbits(a)
+  >>> b
+  array([168, 196], 'b')
+
+      Note that 168 = 128 + 32 + 8
+                196 = 128 + 64 + 4
+
+
+*****************************************************************
+
+out = numpyio.unpackbits(myarray, elements_per_slice {, out_type} )
+
+     myarray =        Array of integer type ('cb1sl') whose least
+                      significant byte is a bit-field for the
+                      resulting output array.
+
+     elements_per_slice = Necessary for interpretation of myarray.
+                          This is how many elements in the
+                          rows*columns of original packed structure.
+
+OPTIONAL
+     out_type =       The type of output array to populate with 1's
+                      and 0's.  Must be an integer type.
+
+
+The output array will be a 1-D array of 1's and zero's 
+
+Example:  (See above)  (It prints out a nice message saying how your
+	                machine interprets multibyte numbers.)
+
+  >>> c = numpyio.unpackbits(b,6)
+  This is a little-endian machine
+  >>> c
+  array([1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1],'b')  
+
+********************************************************************
+
+
+Enjoy,
+
+Travis
+
+
+
+
+
+
+
