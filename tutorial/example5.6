@@ -1,4 +1,4 @@
->>> from optimize import fmin_ncg
+>>> from scipy.optimize import fmin_ncg
 >>> def rosen_hess_p(x,p):
         x = asarray(x)
         Hp = zeros(len(x),x.typecode())

@@ -1,4 +1,4 @@
->>> from optimize import fmin_ncg
+>>> from scipy.optimize import fmin_ncg
 >>> def rosen_hess(x):
         x = asarray(x)
         H = diag(-400*x[:-1],1) - diag(400*x[:-1],-1)
