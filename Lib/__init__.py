@@ -1,6 +1,6 @@
 __all__ = ["optimize", "integrate", "signal", "special", "io", "fft",
-           "interpolate", "stats"]
-
+           "interpolate", "stats",'fastumath']
+           
 from Numeric import *
 import os,sys
 from helpmod import help, source
