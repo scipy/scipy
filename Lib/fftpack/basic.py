@@ -332,16 +332,3 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     See ifftn.__doc__ for more information.
     """
     return ifftn(x,shape,axes,overwrite_x)
-
-################## test functions #########################
-
-def test(level=10):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)    
-
-
-

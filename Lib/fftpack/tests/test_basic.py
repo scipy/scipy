@@ -11,7 +11,7 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py [<level>]
 """
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from fftpack import ifft,fft,fftn,ifftn,rfft,irfft
 from fftpack import _fftpack as fftpack
@@ -25,9 +25,6 @@ from scipy_test.testing import rand
 def random(size):
     return rand(*size)
 
-from scipy_test.testing import assert_array_almost_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, assert_array_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
 
 def get_mat(n):
@@ -136,7 +133,7 @@ class test_fft(ScipyTestCase):
             y = fftpack.zrfft(x)
             assert_array_almost_equal(y,y2)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         try:
             from FFT import fft as FFT_fft
         except ImportError:
@@ -221,7 +218,7 @@ class test_ifft(ScipyTestCase):
             assert_array_almost_equal (ifft(fft(x)),x)
             assert_array_almost_equal (fft(ifft(x)),x)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         try:
             from FFT import inverse_fft as FFT_ifft
         except ImportError:
@@ -295,7 +292,7 @@ class test_rfft(ScipyTestCase):
             y = fftpack.drfft(x)
             assert_array_almost_equal(y,y1)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         try:
             from FFT import real_fft as FFT_rfft
         except ImportError:
@@ -371,7 +368,7 @@ class test_irfft(ScipyTestCase):
             assert_array_almost_equal (irfft(rfft(x)),x)
             assert_array_almost_equal (rfft(irfft(x)),x)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         try:
             from FFT import inverse_real_fft as FFT_irfft
         except ImportError:
@@ -541,7 +538,7 @@ class test_fftn(ScipyTestCase):
         assert_array_almost_equal (y,Numeric.swapaxes(\
             fftn(Numeric.swapaxes(large_x1,-1,-2)),-1,-2))
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         try:
             from FFT import fftnd as FFT_fftn
         except ImportError:
@@ -598,36 +595,5 @@ class test_ifftn(ScipyTestCase):
             assert_array_almost_equal (ifftn(fftn(x)),x)
             assert_array_almost_equal (fftn(ifftn(x)),x)
 
-
-#####################################
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_fft,'check_') )
-        suites.append( unittest.makeSuite(test_ifft,'check_') )
-        suites.append( unittest.makeSuite(test_fftn,'check_') )
-        suites.append( unittest.makeSuite(test_ifftn,'check_') )
-        suites.append( unittest.makeSuite(test_rfft,'check_') )
-        suites.append( unittest.makeSuite(test_irfft,'check_') )
-    if level > 5:
-        suites.append( unittest.makeSuite(test_fft,'bench_') )
-        suites.append( unittest.makeSuite(test_ifft,'bench_') )
-        suites.append( unittest.makeSuite(test_fftn,'bench_') )
-        suites.append( unittest.makeSuite(test_rfft,'bench_') )
-        suites.append( unittest.makeSuite(test_irfft,'bench_') )
-
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('fftpack.basic').run()

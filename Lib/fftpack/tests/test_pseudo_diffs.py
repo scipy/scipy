@@ -11,7 +11,7 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
 from fftpack import shift
@@ -21,13 +21,9 @@ del sys.path[0]
 import Numeric
 from Numeric import arange, add, array, sin, cos, pi,exp,tanh,sum
 
-from scipy_test.testing import rand
 def random(size):
     return rand(*size)
 
-from scipy_test.testing import assert_array_almost_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, assert_array_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
 
 def direct_diff(x,k=1,period=None):
@@ -193,7 +189,7 @@ class test_diff(ScipyTestCase):
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         print
         print 'Differentiation of periodic functions'
         print '====================================='
@@ -256,7 +252,7 @@ class test_tilbert(ScipyTestCase):
                 assert_array_almost_equal(itilbert(tilbert(f,h),h),f)
                 assert_array_almost_equal(tilbert(itilbert(f,h),h),f)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         print
         print ' Tilbert transform of periodic functions'
         print '========================================='
@@ -339,7 +335,7 @@ class test_hilbert(ScipyTestCase):
             assert_array_almost_equal(direct_hilbert(direct_ihilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         print
         print ' Hilbert transform of periodic functions'
         print '========================================='
@@ -404,7 +400,7 @@ class test_shift(ScipyTestCase):
             assert_array_almost_equal(shift(sin(x),pi),-sin(x))
             assert_array_almost_equal(shift(sin(x),pi/2),cos(x))
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         print
         print ' Shifting periodic functions'
         print '=============================='
@@ -436,38 +432,5 @@ class test_shift(ScipyTestCase):
             sys.stdout.flush()
             print ' (secs for %s calls)' % (repeat)
 
-#####################################
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_diff,'check_') )
-        suites.append( unittest.makeSuite(test_tilbert,'check_') )
-        suites.append( unittest.makeSuite(test_itilbert,'check_') )
-        suites.append( unittest.makeSuite(test_hilbert,'check_') )
-        suites.append( unittest.makeSuite(test_ihilbert,'check_') )
-        suites.append( unittest.makeSuite(test_shift,'check_') )
-
-    if level > 5:
-        suites.append( unittest.makeSuite(test_shift,'bench_') )
-        suites.append( unittest.makeSuite(test_diff,'bench_') )
-        suites.append( unittest.makeSuite(test_tilbert,'bench_') )
-        suites.append( unittest.makeSuite(test_itilbert,'bench_') )
-        suites.append( unittest.makeSuite(test_hilbert,'bench_') )
-        suites.append( unittest.makeSuite(test_ihilbert,'bench_') )
-        pass
-
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('fftpack.pseudo_diffs').run()

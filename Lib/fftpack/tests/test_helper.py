@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 del sys.path[0]
@@ -21,13 +21,9 @@ del sys.path[0]
 import Numeric
 from Numeric import pi
 
-from scipy_test.testing import rand
 def random(size):
     return rand(*size)
 
-from scipy_test.testing import assert_array_almost_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, assert_array_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
 
 class test_fftshift(ScipyTestCase):
@@ -67,27 +63,5 @@ class test_rfftfreq(ScipyTestCase):
         assert_array_almost_equal(10*rfftfreq(10),x)
         assert_array_almost_equal(10*pi*rfftfreq(10,pi),x)
 
-#####################################
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_fftshift,'check_') )
-        suites.append( unittest.makeSuite(test_fftfreq,'check_') )
-        suites.append( unittest.makeSuite(test_rfftfreq,'check_') )
-    if level > 5:
-        pass
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('fftpack.helper').run()

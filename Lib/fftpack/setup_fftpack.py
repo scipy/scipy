@@ -59,46 +59,16 @@ def configuration(parent_package=''):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
-    import f2py2e
-    if f2py2e.__version__.version < '2.23.190-1367':
-        import warnings
-        warnings.warn(\
-        '\n'+'WARNING!'*9+'\n\n'
-        '  fftpack2 requires F2PY version 2.23.190-1367 or higher but got %s\n\n'%
-        f2py2e.__version__.version
-        +'WARNING!'*9+'\n\n')
-    return config
-
-def get_package_config(name):
-    sys.path.insert(0,os.path.join('scipy_core',name))
-    try:
-        mod = __import__('setup_'+name)
-        config = mod.configuration()
-    finally:
-        del sys.path[0]
     return config
 
 if __name__ == '__main__':
-    extra_packages = []
-    try: import scipy_base
-    except ImportError: extra_packages.append('scipy_base')
-    try: import scipy_test
-    except ImportError: extra_packages.append('scipy_test')
-    try: import scipy_distutils
-    except ImportError:
-        extra_packages.append('scipy_distutils')
-        sys.args.insert(0,'scipy_core')
-
     from scipy_distutils.core import setup
-    from scipy_distutils.misc_util import merge_config_dicts
     from fftpack_version import fftpack_version
-
-    config_dict = merge_config_dicts([configuration()] + \
-                                     map(get_package_config,extra_packages))
 
     setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',
           author='Pearu Peterson',
           author_email = 'pearu@cens.ioc.ee',
+          maintainer_email = 'scipy-dev@scipy.org',
           license = 'SciPy License (BSD Style)',
-          **config_dict)
+          **configuration())
