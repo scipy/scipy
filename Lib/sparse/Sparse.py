@@ -165,7 +165,7 @@ class dictmatrix(dict):
         return ftype, nnz, data, colind, row_ptr
 
     def getCSC(self):
-        # Return Compressed Sparse Row format arrays for this matrix
+        # Return Compressed Sparse Column format arrays for this matrix
         keys = self.keys()
         keys.sort(csc_cmp)
         nnz = len(keys)
