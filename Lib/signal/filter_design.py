@@ -1537,7 +1537,8 @@ def firwin(N, cutoff, width=None, window='hamming'):
     win = get_window(window,N,fftbins=1)
     alpha = N//2
     m = Num.arange(0,N)
-    return win*special.sinc(cutoff*(m-alpha))
+    h = win*special.sinc(cutoff*(m-alpha))
+    return h / sum(h)
     
     
     

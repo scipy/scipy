@@ -738,9 +738,9 @@ def general_gaussian(M,p,sig,sym=1):
 
 
 def slepian(M,width,sym=1):
-    if (M>83):
+    if (M*width > 27.38):
         raise ValueError, "Cannot reliably obtain slepian sequences for"\
-              " M > 83."
+              " M*width > 27.38."
     if M < 1:
         return Numeric.array([])
     if M == 1:
