@@ -22,18 +22,21 @@ def figure(which_one = None):
         title ='Figure %d' % len(_figure)
         _figure.append(plot_class(title=title))
         _active = _figure[-1]
+    elif (type(which_one) == type(1)) or (type(which_one) == type(1.)):
+        try:    
+            _active = _figure[int(which_one)]
+            _active.Raise()
+        except IndexError:
+            msg = "There are currently only %d active figures" % len(_figure)
+            raise IndexError, msg
+    elif which_one in _figure:
+        _active = which_one
+        _active.Raise()
     else:
-        if (type(which_one) == type(1)) or (type(which_one) == type(1.)):
-            try:    
-                _active = _figure[int(which_one)]
-            except IndexError:
-                msg = "There are currently only %d active figures" % len(_figure)
-                raise IndexError, msg
-                                
-        #try:    _figure.index(which_one)
-        #except ValueError: _figure.append(which_one)
-        #_active = which_one
-    return current()
+        raise ValueError, "The specified figure or index is not not known"
+    fig = current()
+    return fig
+    
     
 def validate_active():
     global _active
