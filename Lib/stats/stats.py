@@ -1312,7 +1312,7 @@ Returns: Kendall's tau, two-tailed p-value
     n2 = 0
     iss = 0
     for j in range(len(x)-1):
-        for k in range(j,len(y)):
+        for k in range(j+1,len(y)):
             a1 = x[j] - x[k]
             a2 = y[j] - y[k]
             aa = a1 * a2
@@ -1324,11 +1324,11 @@ Returns: Kendall's tau, two-tailed p-value
                 else:
                     iss = iss -1
             else:
-                if (a1):
+                if a1:
                     n1 = n1 + 1
-                else:
+                if a2:
                     n2 = n2 + 1
-    tau = iss / math.sqrt(n1*n2)
+    tau = iss / math.sqrt(float(n1*n2))
     svar = (4.0*len(x)+10.0) / (9.0*len(x)*(len(x)-1))
     z = tau / math.sqrt(svar)
     prob = erfc(abs(z)/1.4142136)
@@ -1526,7 +1526,10 @@ def kstest(rvs,cdf,args=(),N=20):
         vals = sb.sort(rvs)
         N = len(vals)
     cdfvals = cdf(vals, *args)
-    D = max(abs(cdfvals - sb.arange(1.0,N+1)/N))
+    D1 = sb.amax(abs(cdfvals - sb.arange(1.0,N+1)/N))
+#    D2 = sb.amax(abs(cdfvals - sb.arange(0.0,N)/N))
+#    D = max(D1,D2)
+    D = D1
     return D, distributions.ksone.sf(D,N)
 
 def chisquare(f_obs,f_exp=None):
