@@ -77,6 +77,7 @@ Generalized Eigenvalue and Singular Value Problems
   Drivers::
 
     w,v,info = sygv|hegv(a,b,itype=1,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0,overwrite_b=0)
+    w,v,info = sygvd|hegvd(a,b,itype=1,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0,overwrite_b=0)
     (alphar,alphai|alpha),beta,vl,vr,info = ggev(a,b,compute_vl=1,compute_vr=1,lwork=min_lwork,overwrite_a=0,overwrite_b=0)
 
 

@@ -18,6 +18,9 @@
 ! <sym=sy,sy,he,he>
 ! <rwork=,,rwork\,,\2>
 ! <rworkptr=,,float*\,,double*\,>
+! <rworkl=,,rwork\,lrwork\,,\2>
+! <rworklc=,,rwork\,&lrwork\,,\2>
+! <rworklptr=,,float*\,int*\,,double*\,int*\,>
 
 subroutine <prefix><sym>gv(itype,compute_v,lower,n,w,a,b,work,lwork,<rwork>info)
   !
@@ -39,6 +42,30 @@ subroutine <prefix><sym>gv(itype,compute_v,lower,n,w,a,b,work,lwork,<rwork>info)
   callstatement (*f2py_func)(&itype,(compute_v?"V":"N"),(lower?"L":"U"),&n,a,&n,b,&n,w,work,&lwork,<rwork>&info)
   callprotoargument int*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctype>*,int*,<rworkptr>int*
 end subroutine <prefix><sym>gv
+
+subroutine <prefix><sym>gvd(itype,compute_v,lower,n,w,a,b,work,lwork,<rworkl>iwork,liwork,info)
+  !
+  ! w,v,info = sygvd|hegvd(a,b,itype=1,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0,overwrite_b=0)
+  !
+  integer check(1<=itype && itype<=3):: itype = 1
+  integer :: compute_v=1
+  integer :: lower=0
+  integer intent(hide),depend(a) :: n = shape(a,0)
+  <ftype> dimension(n,n),intent(in,out,copy,out=v) :: a
+  <ftype> dimension(n,n),intent(in,copy) :: b
+  <ftypereal> dimension(n),intent(out) :: w
+  <_lwork=(compute_v?1+6*n+2*n*n:2*n+1),\0,(compute_v?2*n+n*n:n+1),\2>
+  integer optional,intent(in),depend(n,compute_v) :: lwork=<_lwork>
+  check(<_lwork>\<=lwork) lwork
+  <ftype> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+  integer intent(hide),depend(n,compute_v) :: lrwork = (compute_v?1+5*n+2*n*n:n)
+  <ftypereal> dimension(lrwork),intent(hide,cache),depend(lrwork) :: rwork
+  integer intent(hide),depend(compute_v,n) :: liwork = (compute_v?3+5*n:1)
+  integer intent(hide,cache),dimension(liwork),depend(liwork) :: iwork
+  integer intent(out) :: info
+  callstatement (*f2py_func)(&itype,(compute_v?"V":"N"),(lower?"L":"U"),&n,a,&n,b,&n,w,work,&lwork,<rworklc>iwork,&liwork,&info)
+  callprotoargument int*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctype>*,int*,<rworklptr>int*,int*,int*
+end subroutine <prefix><sym>gvd
 
 ! <alpha=alphar\,alphai,\0,alpha,\2>
 ! <alphaptr=float*\,float*,double*\,double*,complex_float*,complex_double*>
