@@ -4,15 +4,20 @@ import os
 from glob import glob
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
-from scipy_distutils.misc_util import fortran_library_item, update_version
-from scipy_distutils.atlas_info import get_atlas_info
+from scipy_distutils.misc_util import fortran_library_item
+from scipy_distutils.system_info import get_info
 
 def configuration(parent_package=''):
     config = default_config_dict('integrate',parent_package)
+    atlas_info = get_info('atlas')
     local_path = get_path(__name__)
 
     # need info about blas -- how to get this???
-    blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
+    #blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
+
+    atlas_library_dirs = atlas_info.get('library_dirs',[])
+    atlas_libraries = atlas_info.get('libraries',[])
+    blas_libraries = atlas_libraries
 
     f_libs = []
     

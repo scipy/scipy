@@ -10,6 +10,7 @@ from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 import interface_gen
 from scipy_distutils.atlas_info import get_atlas_info
+from scipy_distutils.system_info import dict_append
 
 # needed now for pyf_extensions
 
@@ -27,9 +28,10 @@ def configuration(parent_package=''):
     return config
        
 def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
-    blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
-    
-    if not atlas_library_dirs:
+    #blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
+    atlas_info = get_atlas_info()
+    #if not atlas_library_dirs:
+    if not atlas_info:
         msg = 'Atlas libraries not found.  Either install them in /usr/lib/atlas'\
               ' or /usr/local/lib/atlas and retry setup.py, or edit setup.py'\
               ' to specify your own blas and lapack directories and libs'
@@ -58,7 +60,16 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
     if dep_util.newer_group(sources,mod_file):
         gen_function(local_path,output_path)
 
-    print 'file:', mod_file    
+    print 'file:', mod_file
+    ext_args = {'name':dot_join(parent_package,mod_name),
+                'sources':[mod_file],
+                'f2py_options':['--no-wrap-functions'],
+                'define_macros':define_macros,
+                }
+    dict_append(ext_args,**atlas_info)
+    ext = Extension(**ext_args)
+    ext.need_fcompiler_opts = 1
+    return ext
     ext = Extension(dot_join(parent_package,mod_name),[mod_file],
                     library_dirs=atlas_library_dirs,
                     libraries = lapack_libraries,
