@@ -2860,7 +2860,7 @@ triang            =  _inst._triangular
 #uniform           =  _inst._uniform
 von_mises         =  _inst._von_Mises
 wald             =  _inst._Wald
-weibull           =  _inst._Weibull
+#weibull           =  _inst._Weibull
 zipf              =  _inst._Zipf
 
 #     Geometrical Point Generators, Permutations and Subsampling Routines

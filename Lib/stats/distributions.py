@@ -473,16 +473,16 @@ def cosinestats(mean=0.0, scale=1.0, full=0):
 
 ## Double Gamma distribution
 
-def dgammapdf(x, mean=0.0, scale=1.0, shape=1.0): 
-    A, B, C, x = arr(mean), arr(scale), arr(shape), arr(x)
+def dgammapdf(x, a, loc=0.0, scale=1.0):
+    A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
     sv = errp(0)
-    y = (x-A)*1.0/B
+    y = arr((x-A*1.0)/B)
     Px = 1.0/(2*B*special.gamma(C))*abs(y)**(C-1) * exp(-abs(y))
     sv = errp(sv)
     return select([(B>0) & (C>0)], [Px], scipy.nan)
 
-def dgammacdf(x, mean=0.0, scale=1.0, shape=1.0):
-    A, B, C, x = arr(mean), arr(scale), arr(shape), arr(x)
+def dgammacdf(x, a, loc=0.0, scale=1.0):
+    A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
     z = arr((x-A*1.0)/B)
     sv = errp(0)
     fac1 = special.gammainc(C,abs(z))
@@ -490,27 +490,27 @@ def dgammacdf(x, mean=0.0, scale=1.0, shape=1.0):
     return select([(B<=0)|(C<=0),x<=A], [scipy.nan, 0.5-0.5*fac1],
                   0.5+0.5*fac1)
 
-def dgammasf(x, mean=0.0, scale=1.0, shape=1.0):
-    A, B, C, x = arr(mean), arr(scale), arr(shape), arr(x)
+def dgammasf(x, a, loc=0.0, scale=1.0):
+    A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
     z = arr((x-A*1.0)/B)
     sv = errp(0)
     fac1 = special.gammainc(C,abs(z))
     sv = errp(sv)
     return select([(B<=0)|(C<=0),x<=A], [scipy.nan, 0.5+0.5*fac1],
                   0.5-0.5*fac1)
-    
-def dgammappf(q, mean=0.0, scale=1.0, shape=1.0):
-    A, B, C, q = arr(mean), arr(scale), arr(shape), arr(q)
+
+def dgammappf(q, a, loc=0.0, scale=1.0):
+    A, B, C, q = arr(loc), arr(scale), arr(a), arr(q)
     sv = errp(0)
-    fac = special.gammainccinv(C,1-abs(2*q-1))
+    fac = special.gammainccinv(C,abs(2*q-1))
     sv = errp(sv)
     return select([(B<=0) | (C<=0), q<=0.5], [scipy.nan, A-B*fac], A+B*fac)
 
-def dgammaisf(p, mean=0.0, scale=1.0, shape=1.0):
-    return dgammappf(1.0-p,mean, scale, shape)
+def dgammaisf(q, a, loc=0.0, scale=1.0):
+    return dgammappf(1.0-q, a, loc, scale)
 
-def dgammastats(mean=0.0, scale=1.0, shape=1.0, full=0):
-    A, B, C = arr(mean), arr(scale), arr(shape)
+def dgammastats(shape, loc=0.0, scale=1.0, full=0):
+    A, B, C = arr(loc), arr(scale), arr(shape)
     cond = (B>0) & (C>0)
     mu = select([cond], [A], scipy.nan)
     var = select([cond],[C*(C+1)*B*B], scipy.nan)
@@ -519,6 +519,60 @@ def dgammastats(mean=0.0, scale=1.0, shape=1.0, full=0):
     g1 = where(cond,0.0,scipy.nan)
     g2 = scipy.nan
     return mu, var, g1, g2
+
+
+## Double Weibull distribution
+##
+
+def dweibullpdf(x, a, loc=0.0, scale=1.0):
+    A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
+    sv = errp(0)
+    y = arr((x-A*1.0)/B)
+    Px = 1.0/(2*B*special.gamma(C))*abs(y)**(C-1) * exp(-abs(y))
+    sv = errp(sv)
+    return select([(B>0) & (C>0)], [Px], scipy.nan)
+
+def dweibullcdf(x, a, loc=0.0, scale=1.0):
+    A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
+    z = arr((x-A*1.0)/B)
+    sv = errp(0)
+    fac1 = special.gammainc(C,abs(z))
+    sv = errp(sv)
+    return select([(B<=0)|(C<=0),x<=A], [scipy.nan, 0.5-0.5*fac1],
+                  0.5+0.5*fac1)
+
+def dweibullsf(x, a, loc=0.0, scale=1.0):
+    A, B, C, x = arr(loc), arr(scale), arr(shape), arr(x)
+    z = arr((x-A*1.0)/B)
+    sv = errp(0)
+    fac1 = special.gammainc(C,abs(z))
+    sv = errp(sv)
+    return select([(B<=0)|(C<=0),x<=A], [scipy.nan, 0.5+0.5*fac1],
+                  0.5-0.5*fac1)
+    
+def dweibullppf(q, a, loc=0.0, scale=1.0):
+    A, B, C, q = arr(loc), arr(scale), arr(shape), arr(q)
+    sv = errp(0)
+    fac = special.gammainccinv(C,1-abs(2*q-1))
+    sv = errp(sv)
+    return select([(B<=0) | (C<=0), q<=0.5], [scipy.nan, A-B*fac], A+B*fac)
+
+def dweibullisf(q, a, loc=0.0, scale=1.0):
+    return dweibullppf(1.0-q, a, loc, scale)
+
+def dweibullstats(a, loc=0.0, scale=1.0, full=0):
+    A, B, C = arr(loc), arr(scale), arr(a)
+    cond = (B>0) & (C>0)
+    mu = select([cond], [A], scipy.nan)
+    var = select([cond],[special.gamma(1+2.0/C)*B*B], scipy.nan)
+    if not full:
+        return mu, var
+    g1 = where(cond,0.0,scipy.nan)
+    g2 = scipy.nan
+    return mu, var, g1, g2
+
+
+
 
 ## ERLANG
 ##
@@ -1596,45 +1650,43 @@ def waldstats(mean=1.0, scale=1.0, full=0):
 
 ## Weibull
 
-def weibullpdf(x, scale=1.0, shape=0.5):
-    a, b, x = map(arr,(shape, scale, x))
-    assert all((a>0) & (b>0)), _posstr
-    ib = 1.0/ b
-    x = arr(x * ib)
-    Px = a * ib * x**(a-1.0) * exp(-x**a)
-    return where(x<=0,0,Px)
+def weibullpdf(x, shape, loc=0.0, scale=1.0):
+    c, b, A, x = map(arr,(shape, scale, loc, x))
+    x = arr((x-A*1.0)/b)
+    Px = c * x**(c-1.0) * exp(-x**c)
+    return select([(c<=0)|(b<=0),x>0],[scipy.nan,Px/b])
 
-def weibullcdf(x, scale=1.0, shape=0.5):
-    a, b, x = map(arr,(shape, scale, x))
-    assert all((a>0) & (b>0)), _posstr
-    x = where(x<0,0,x)
-    return -special.expm1(-(x*1.0/b)**a)
+def weibullcdf(x, shape, loc=0.0, scale=1.0):
+    c, b, A, x = map(arr,(shape, scale, loc, x))
+    x = arr((x-A*1.0)/b)
+    Cx = -special.expm1(-x**c)
+    return select([(c<=0)|(b<=0),x>0],[scipy.nan,Cx])
 
-def weibullsf(x, scale=1.0, shape=0.5):
-    a, b, x = map(arr,(shape, scale, x))
-    assert all((a>0) & (b>0)), _posstr
-    x = where(x<0,0,x)
-    return exp(-(x*1.0/b)**a)
+def weibullsf(x, shape, loc=0.0, scale=1.0):
+    c, b, A, x = map(arr,(shape, scale, loc, x))
+    x = arr((x-A*1.0)/b)
+    Cx = exp(-x**c)
+    return select([(c<=0)|(b<=0),x>0],[scipy.nan,Cx],1)
 
-def weibullppf(q, scale=1.0, shape=0.5):
-    a, b, q = map(arr,(shape, scale, q))
-    assert all((a>0) & (b>0)), _posstr
-    assert all((0<=q) & (q<=1)), _quantstr
-    return b*pow(log(1.0/(1-q)),1.0/a)
+def weibullppf(q, shape, loc=0.0, scale=1.0):
+    a, b, loc, q = map(arr,(shape, scale, loc, q))
+    cond1 = (a>0) & (b>0) & (0<=q) & (q<=1)
+    vals = b*pow(arr(log(1.0/(1-q))),1.0/a) + loc
+    return where(cond1, vals, scipy.nan)
 
-def weibullisf(p, scale=1.0, shape=0.5):
-    a, b, p = map(arr,(shape, scale, p))
-    assert all((a>0) & (b>0)), _posstr
-    assert all((0<=p)&(p<=1)), _quantstr
-    return b*pow(log(1.0/p),1.0/a)
+def weibullisf(q, shape, loc=0.0, scale=1.0):
+    a, b, loc, q = map(arr,(shape, scale, loc, q))
+    cond1 = (a>0) & (b>0) & (0<=q) & (q<=1)
+    vals = b*pow(arr(log(1.0/q)),1.0/a) + loc
+    return where(cond1, vals, scipy.nan)
 
-def weibullstats(scale=1.0, shape=0.5, full=0):
-    a, b = map(arr,(shape, scale))
-    assert all((a>0) & (b>0)), _posstr
+def weibullstats(shape, loc=0.0, scale=1.0, full=0):
+    a, loc, b = map(arr,(shape, loc, scale))
+    cond = (a>0) & (b>0)
     gam = special.gamma
     ia = 1.0/a
-    mn = b*gam(1+ia)
-    var = b*b*(gam(1+2*ia)-gam(1+ia)**2)
+    mn = _wc(cond, b*gam(1+ia)+loc)
+    var = _wc(cond, b*b*(gam(1+2*ia)-gam(1+ia)**2))
     if not full:
         return mn, var
     den = (gam(1+2*ia)-gam(1+ia)**2)
@@ -1643,9 +1695,8 @@ def weibullstats(scale=1.0, shape=0.5, full=0):
     g2 = 12*gam(1+ia)**2 * gam(1+2*ia) - 6*gam(1+ia)**4
     g2 += gam(1+4*ia) - 4*gam(1+ia)*gam(1+3*ia) - 3*gam(1+2*ia)**2
     g2 /= den**2.0
-    return mn, var, g1, g2
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
         
-
 ### DISCRETE DISTRIBUTIONS
 ###
 

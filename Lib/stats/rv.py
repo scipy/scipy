@@ -174,14 +174,20 @@ def gamma(a, loc=0.0, scale=1.0, size=None):
     #  ranlib.
     return _build_random_array(rand.gamma, (1.0/scale, a), size) + loc
 
+def betaprime(a, b, loc=0.0, scale=1.0, size=None):
+    u1 = gamma(a,size=size)
+    u2 = gamma(b,size=size)
+    return (u1 / u2)*scale + loc
+
 def erlang(n, loc=0.0, scale=1.0, size=None):
     """Erlang distributed random variables."""
     if (n != floor(n)):
         raise TypeError, "Erlang distribution only defined for integer n."
     return gamma(n, loc=loc, scale=scale, size=size)
 
-def dgamma(shape=1.0, loc=0.0, scale=1.0, size=None):
-    return abs(gamma(scale, shape, mean, size=size))
+def dgamma(a, loc=0.0, scale=1.0, size=None):
+    u = random(size=size)
+    return (gamma(a, 0.0, 1.0, size=size)*(where(u>=0.5,1,-1)))*scale+loc
 
 def gilbrat(size=None):
     """returns array of gilbert distributed random numbers (special case of
@@ -229,52 +235,15 @@ def nct(df, nc, size=None):
     with df degrees of freedom."""    
     return normal(nc)*Numeric.sqrt(df) / Numeric.sqrt(noncentral_chi2(df,nc,size))
 
-def bernoulli(pr=0.5, size=None):
-    return binom(1, pr, size)
+def weibull(c, loc=0.0, scale=1.0, size=None):
+    """Weibull distributed random variates."""
+    u = random(size=size)
+    return pow(log(1.0/(1.0-u)), 1.0/c)*scale + loc
 
-def binom(trials, pr=0.5, size=None):
-    """returns array of binomially distributed random integers.
-
-           trials is the number of trials in the binomial distribution.
-           p is the probability of an event in each trial of the binomial distribution."""
-    return _build_random_array(rand.binomial, (trials, pr), size)
-
-def nbinom(trials, pr=0.5, size=None):
-    """returns array of negative binomially distributed random integers.
-    
-           trials is the number of trials in the negative binomial
-                  distribution.
-           p is the probability of an event in each trial of the
-                  negative binomial distribution.
-    """
-    return _build_random_array(rand.negative_binomial, (trials, pr), size)
-
-def multinom(trials, probs, size=None):
-    """returns array of multinomial distributed integer vectors.
-
-           trials is the number of trials in each multinomial distribution.
-           probs is a one dimensional array. There are len(prob)+1 events. 
-           prob[i] is the probability of the i-th event, 0<=i<len(prob).
-           The probability of event len(prob) is 1.-Numeric.sum(prob).
-
-       The first form returns a single 1-D array containing one multinomially
-           distributed vector.
-
-           The second form returns an array of size (m, n, ..., len(probs)).
-           In this case, output[i,j,...,:] is a 1-D array containing a multinomially
-           distributed integer 1-D array."""
-        # Check preconditions on arguments
-    probs = Numeric.array(probs)
-    if len(probs.shape) != 1:
-        raise ArgumentError, "probs must be 1 dimensional."
-        # Compute shape of output
-    if type(size) == type(0): size = [size]
-    final_shape = size[:]
-    final_shape.append(probs.shape[0]+1)
-    x = rand.multinomial(trials, probs.astype(Numeric.Float32), Numeric.multiply.reduce(size))
-        # Change its shape to the desire one
-    x.shape = final_shape
-    return x
+def dweibull(c, loc=0.0, scale=1.0, size=None):
+    """Weibull distributed random variates."""
+    u = random(size=size)
+    return (weibull(c, 0.0, 1.0, size=size)*(where(u>=0.5,1,-1)))*scale+loc
 
 def maxwell(scale=1.0, size=None):
     """return array of Maxwell distributed random numbers"""
@@ -285,11 +254,7 @@ def rayleigh(scale=1.0, size=None):
     by the scale parameter."""
     return chi(2,loc=0.0,scale=scale,size=size)
 
-def poisson(mu, size=None):
-    """returns array of poisson distributed random integers with specifed mean."""
-    if (mu < 0):
-        raise ValueError, "mu must be > 0."
-    return _build_random_array(rand.poisson, (mu,), size)
+
 
 def randwppf(ppf, args=(), size=None):
     """returns an array of randomly distributed integers of a distribution
@@ -324,6 +289,61 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
     return apply(_vppf,(U,)+args)
 
 
+## DISCRETE
+
+def bernoulli(pr=0.5, size=None):
+    return binom(1, pr, size)
+
+def binom(trials, pr=0.5, size=None):
+    """returns array of binomially distributed random integers.
+
+           trials is the number of trials in the binomial distribution.
+           p is the probability of an event in each trial of the binomial distribution."""
+    return _build_random_array(rand.binomial, (trials, pr), size)
+
+def nbinom(trials, pr=0.5, size=None):
+    """returns array of negative binomially distributed random integers.
+    
+           trials is the number of trials in the negative binomial
+                  distribution.
+           p is the probability of an event in each trial of the
+                  negative binomial distribution.
+    """
+    return _build_random_array(rand.negative_binomial, (trials, pr), size)
+
+
+def multinom(trials, probs, size=None):
+    """returns array of multinomial distributed integer vectors.
+
+           trials is the number of trials in each multinomial distribution.
+           probs is a one dimensional array. There are len(prob)+1 events. 
+           prob[i] is the probability of the i-th event, 0<=i<len(prob).
+           The probability of event len(prob) is 1.-Numeric.sum(prob).
+
+       The first form returns a single 1-D array containing one multinomially
+           distributed vector.
+
+           The second form returns an array of size (m, n, ..., len(probs)).
+           In this case, output[i,j,...,:] is a 1-D array containing a multinomially
+           distributed integer 1-D array."""
+        # Check preconditions on arguments
+    probs = Numeric.array(probs)
+    if len(probs.shape) != 1:
+        raise ArgumentError, "probs must be 1 dimensional."
+        # Compute shape of output
+    if type(size) == type(0): size = [size]
+    final_shape = size[:]
+    final_shape.append(probs.shape[0]+1)
+    x = rand.multinomial(trials, probs.astype(Numeric.Float32), Numeric.multiply.reduce(size))
+        # Change its shape to the desire one
+    x.shape = final_shape
+    return x
+
+def poisson(mu, size=None):
+    """returns array of poisson distributed random integers with specifed mean."""
+    if (mu < 0):
+        raise ValueError, "mu must be > 0."
+    return _build_random_array(rand.poisson, (mu,), size)
 
 def mean_var_test(x, type, mean, var, skew=[]):
     n = len(x) * 1.0

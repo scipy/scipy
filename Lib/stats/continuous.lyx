@@ -490,6 +490,32 @@ m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
 \layout Section
 
 Beta Prime
+\layout Standard
+
+Defined over 
+\begin_inset Formula \( 0<x<\infty . \)
+\end_inset 
+
+ 
+\begin_inset Formula \( \alpha ,\beta >0. \)
+\end_inset 
+
+ (Note the CDF evaluation uses Eq.
+ 3.194.1 on pg.
+ 313 of Gradshteyn & Ryzhik (sixth edition).
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\alpha ,\beta \right)  & = & \frac{\Gamma \left( \alpha +\beta \right) }{\Gamma \left( \alpha \right) \Gamma \left( \beta \right) }x^{\alpha -1}\left( 1+x\right) ^{-\alpha -\beta }\\
+F\left( x;\alpha ,\beta \right)  & = & \frac{\Gamma \left( \alpha +\beta \right) }{\alpha \Gamma \left( \alpha \right) \Gamma \left( \beta \right) }x^{\alpha }\, _{2}F_{1}\left( \alpha +\beta ,\alpha ;1+\alpha ;-x\right) \\
+G\left( q;\alpha ,\beta \right)  & = & F^{-1}\left( x;\alpha ,\beta \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Bradford
@@ -507,7 +533,7 @@ k & = & \log \left( 1+c\right)
 \begin_inset Formula \begin{eqnarray*}
 f\left( x;c\right)  & = & \frac{c}{k\left( 1+cx\right) }I_{\left( 0,1\right) }\left( x\right) \\
 F\left( x;c\right)  & = & \frac{\log \left( 1+cx\right) }{k}\\
-G\left( \alpha \;c\right)  & = & \frac{\left( 1+c\right) ^{\alpha }-1}{c}\\
+G\left( \alpha \; c\right)  & = & \frac{\left( 1+c\right) ^{\alpha }-1}{c}\\
 \mu  & = & \frac{c-k}{ck}\\
 \mu _{2} & = & \frac{\left( c+2\right) k-2c}{2ck^{2}}\\
 \gamma _{1} & = & \frac{\sqrt{2}\left( 12c^{2}-9kc\left( c+2\right) +2k^{2}\left( c\left( c+3\right) +3\right) \right) }{\sqrt{c\left( c\left( k-2\right) +2k\right) }\left( 3c\left( k-2\right) +6k\right) }\\
@@ -611,12 +637,69 @@ Chi-squared
 \layout Section
 
 Cosine
+\layout Standard
+
+Approximation to the normal distribution.
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{1}{2\pi }\left[ 1+\cos x\right] I_{\left[ -\pi ,\pi \right] }\left( x\right) \\
+F\left( x\right)  & = & \frac{1}{2\pi }\left[ \pi +x+\sin x\right] I_{\left[ -\pi ,\pi \right] }\left( x\right) +I_{\left( \pi ,\infty \right) }\left( x\right) \\
+G\left( \alpha \right)  & = & F^{-1}\left( \alpha \right) \\
+\mu =m_{d}=m_{n} & = & 0\\
+\mu _{2} & = & \frac{\pi ^{2}}{3}-2\\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & \frac{-6\left( \pi ^{4}-90\right) }{5\left( \pi ^{2}-6\right) ^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Double Exponential
 \layout Section
 
 Double Gamma
+\layout Standard
+
+The double gamma is the signed version of the Gamma distribution.
+ For 
+\begin_inset Formula \( \alpha >0: \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\alpha \right)  & = & \frac{1}{2\Gamma \left( \alpha \right) }\left| x\right| ^{\alpha -1}e^{-\left| x\right| }\\
+F\left( x;\alpha \right)  & = & \left\{ \begin{array}{ccc}
+\frac{1}{2}-\frac{1}{2}\Gamma \left( \alpha ,\left| x\right| \right)  &  & x\leq 0\\
+\frac{1}{2}+\frac{1}{2}\Gamma \left( \alpha ,\left| x\right| \right)  &  & x>0
+\end{array}\right. \\
+G\left( q;\alpha \right)  & = & \left\{ \begin{array}{ccc}
+-\Gamma ^{-1}\left( \alpha ,\left| 2q-1\right| \right)  &  & q\leq \frac{1}{2}\\
+\Gamma ^{-1}\left( \alpha ,\left| 2q-1\right| \right)  &  & q>\frac{1}{2}
+\end{array}\right. 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu =m_{n} & = & 0\\
+\mu _{2} & = & \alpha \left( \alpha +1\right) \\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & \textrm{NA}\\
+m_{d} & = & \textrm{NA}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Doubly Non-central F
@@ -626,6 +709,38 @@ Doubly Non-central t
 \layout Section
 
 Double Weibull
+\layout Standard
+
+This is a signed form of the Weibull distribution.
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{c}{2}\left| x\right| ^{c-1}\exp \left( -\left| x\right| ^{c}\right) \\
+F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+\frac{1}{2}\exp \left( -\left| x\right| ^{c}\right)  &  & x\leq 0\\
+1-\frac{1}{2}\exp \left( -\left| x\right| ^{c}\right)  &  & x>0
+\end{array}\right. \\
+G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
+-\log ^{1/c}\left( \frac{1}{2q}\right)  &  & q\leq \frac{1}{2}\\
+\log ^{1/c}\left( \frac{1}{2q-1}\right)  &  & q>\frac{1}{2}
+\end{array}\right. 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+m_{d}=\mu  & = & 0\\
+\mu _{2} & = & \Gamma \left( \frac{c+2}{c}\right) \\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & \textrm{NA}\\
+m_{d} & = & \textrm{NA bimodal}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Exponential
@@ -1438,11 +1553,11 @@ This is Chi distribution with
 \begin_inset Formula \( S. \)
 \end_inset 
 
- 
+ It is also the weibull distribution scaled by 
 \begin_inset Formula \begin{eqnarray*}
-f\left( r\right)  & = & re^{-r^{2}/2}\\
-F\left( r\right)  & = & 1-e^{-r^{2}/2}\\
-G\left( \alpha \right)  & = & \sqrt{2\log \left( \frac{1}{1-\alpha }\right) }
+f\left( r\right)  & = & re^{-r^{2}/2}I_{[0,\infty )}\left( x\right) \\
+F\left( r\right)  & = & 1-e^{-r^{2}/2}I_{[0,\infty )}\left( x\right) \\
+G\left( q\right)  & = & \sqrt{2\log \left( \frac{1}{1-q}\right) }
 \end{eqnarray*}
 
 \end_inset 
@@ -1516,5 +1631,45 @@ Wishart
 Wrapped Cauchy
 \layout Section
 
-Weibull
+Weibull (Frechet)
+\layout Standard
+
+A flexible distribution with a single shape parameter: 
+\begin_inset Formula \( c>0. \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & cx^{c-1}\exp \left( -x^{c}\right) I_{\left( 0,\infty \right) }\left( x\right) \\
+F\left( x;c\right)  & = & 1-\exp \left( -x^{c}\right) I_{\left( 0,\infty \right) }\left( x\right) \\
+G\left( q;c\right)  & = & \log ^{1/c}\left( \frac{1}{1-q}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \Gamma \left( \frac{c+1}{c}\right) \\
+\mu _{2} & = & \Gamma \left( \frac{c+2}{c}\right) -\Gamma ^{2}\left( \frac{c+1}{c}\right) \\
+\gamma _{1} & = & \frac{2\Gamma ^{3}\left( \frac{c+1}{c}\right) -3\Gamma \left( \frac{c+1}{c}\right) \Gamma \left( \frac{c+2}{c}\right) +\Gamma \left( \frac{c+3}{c}\right) }{\left[ \Gamma \left( \frac{c+2}{c}\right) -\Gamma ^{2}\left( \frac{c+1}{c}\right) \right] ^{3/2}}\\
+\gamma _{2} & = & \frac{-3\Gamma ^{4}\left( \frac{c+1}{c}\right) +6\Gamma ^{2}\left( \frac{c+1}{c}\right) \Gamma \left( \frac{c+2}{c}\right) -4\Gamma \left( \frac{c+1}{c}\right) \Gamma \left( \frac{c+3}{c}\right) +\Gamma \left( \frac{c+4}{c}\right) }{\left[ \Gamma \left( \frac{c+2}{c}\right) -\Gamma ^{2}\left( \frac{c+1}{c}\right) \right] ^{2}}-3\\
+m_{d} & = & \left( \frac{c-1}{c}\right) ^{1/c}\, c>1\quad 0\, c\leq 1.\\
+m_{n} & = & \log ^{1/c}\left( 2\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ The Weibull distribution with 
+\begin_inset Formula \( c=1 \)
+\end_inset 
+
+ is the exponential distribution while with 
+\begin_inset Formula \( c=2 \)
+\end_inset 
+
+ it is the standard Rayleigh distribution.
+ 
 \the_end
