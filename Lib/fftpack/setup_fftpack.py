@@ -5,7 +5,7 @@ import os
 import sys
 from glob import glob
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import get_path,dot_join,\
          default_config_dict,dict_append
@@ -22,7 +22,7 @@ def configuration(parent_package=''):
     #djbfft_info = None
     #fftw_info = None
     config = default_config_dict(package_name,parent_package)
-    local_path = get_path(__name__)
+    local_path = get_path(__name__,parent_path)
     test_path = os.path.join(local_path,'tests')
     config['packages'].append(dot_join(parent_package,package_name,'tests'))
     config['package_dir'][package_name+'.tests'] = test_path

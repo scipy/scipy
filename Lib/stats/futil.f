@@ -2,8 +2,8 @@ C     Sorts an array arr(1:N) into ascending numerical order
 C      using the QuickSort algorithm.  On output arr is replaced with its
 C      sorted rearrangement.
       SUBROUTINE DQSORT(N,ARR)
-CF2PY INTENT(IN,OUT,COPY), ARR
-CF2PY INTENT(HIDE), DEPEND(ARR), N=len(ARR)
+CF2PY INTENT(IN,OUT,COPY) ARR
+CF2PY INTEGER, INTENT(HIDE), DEPEND(ARR) :: N=len(ARR)
       INTEGER N,M,NSTACK
       REAL*8 ARR(N)
       PARAMETER (M=7, NSTACK=100)
@@ -87,11 +87,11 @@ C     NLIST is the number of repeated elements found.
 C     Algorithm first sorts the list and then walks down it
 C       counting repeats as they are found.
       SUBROUTINE DFREPS(ARR,N,REPLIST,REPNUM,NLIST)
-CF2PY INTENT(IN), ARR
-CF2PY INTENT(OUT), REPLIST
-CF2PY INTENT(OUT), REPNUM
-CF2PY INTENT(OUT), NLIST
-CF2PY INTENT(HIDE), DEPEND(ARR), N=len(ARR)
+CF2PY INTENT(IN) ARR
+CF2PY INTENT(OUT) REPLIST
+CF2PY INTENT(OUT) REPNUM
+CF2PY INTENT(OUT) NLIST
+CF2PY INTEGER, INTENT(HIDE), DEPEND(ARR) :: N=len(ARR)
       REAL*8 REPLIST(N), ARR(N)
       REAL*8 LASTVAL
       INTEGER REPNUM(N)
@@ -128,9 +128,3 @@ CF2PY INTENT(HIDE), DEPEND(ARR), N=len(ARR)
       ENDIF
       NLIST = NLIST - 1
       END
-
-
-
-         
-         
-      

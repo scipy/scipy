@@ -3,13 +3,14 @@
 """
 
 
-import unittest
-from scipy_test.testing import assert_array_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, rand
-from scipy_test.testing import assert_array_almost_equal
+import unittest,sys
+from scipy_test.testing import *
 from scipy_test.testing import ScipyTestCase as TestCase
+set_package_path()
 import scipy
 from scipy import stats
+del sys.path[0]
+
 import types
 
 def kolmogorov_test(diststr,args=(),N=20,significance=0.01):
@@ -188,32 +189,6 @@ class test_dlaplace(TestCase):
         assert(isinstance(val, scipy.ArrayType))
         assert(val.typecode() in scipy.typecodes['AllInteger'])
         
-                       
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        for dist in dists:
-            thistest = eval("test_%s"%dist)
-            suites.append( unittest.makeSuite(thistest,'check_') )
-        suites.append( unittest.makeSuite(test_binom, 'check_') )
-        suites.append( unittest.makeSuite(test_bernoulli, 'check_') )
-        suites.append( unittest.makeSuite(test_nbinom, 'check_') )
-        suites.append( unittest.makeSuite(test_geom, 'check_') )
-        suites.append( unittest.makeSuite(test_hypergeom, 'check_') )
-        suites.append( unittest.makeSuite(test_logser, 'check_') )
-        suites.append( unittest.makeSuite(test_randint,'check_') )
-        suites.append( unittest.makeSuite(test_poisson, 'check_') )
-        suites.append( unittest.makeSuite(test_zipf, 'check_') )
-        suites.append( unittest.makeSuite(test_dlaplace, 'check_') )
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
-
 if __name__ == "__main__":
-    test()
+    ScipyTest('stats.distributions').run()
+

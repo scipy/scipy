@@ -209,3 +209,6 @@ ppcc_plot
 For many more stat related functions install the software R and the 
 interface package rpy.
 """
+
+postpone_import = 1
+global_symbols = ['mean','median','std','cov','corrcoef','find_repeats']

@@ -42,3 +42,5 @@ Optimization Tools
    fixed_point -- Single-variable fixed-point solver.
 
 """
+
+postpone_import = 1

@@ -1014,17 +1014,3 @@ def circstd(samples, high=2*pi, low=0):
 #Y Student's T Test
 #Y F Test to compare two variances
 #XY Wilcoxon Rank Sum and Signed Rank Tests
-
-
-
-################## test functions #########################
-
-def test(level=1):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)
-
-

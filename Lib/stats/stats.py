@@ -2881,15 +2881,3 @@ column = measured values.
         if len(pstat.unique(pstat.colex(rows,0))) < len(rows):   # if fewer subjects than scores on this factor
             withinvec[col-1] = 1
     return withinvec
-
-
-################## test functions #########################
-
-def test(level=1):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)
-

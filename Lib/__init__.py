@@ -114,10 +114,10 @@ del _import_packages
 #special = ppimport('special');  _level_docs(special)
 io = ppimport('io');            _level_docs(io)
 #linalg = ppimport('linalg');    _level_docs(linalg)
-stats = ppimport('stats');      _level_docs(stats)
+#stats = ppimport('stats');      _level_docs(stats)
 
-for n in ['mean','median','std','cov','corrcoef','find_repeats']:
-    exec '%s = ppimport_attr(stats,%s)' % (n,`n`)
+#for n in ['mean','median','std','cov','corrcoef','find_repeats']:
+#    exec '%s = ppimport_attr(stats,%s)' % (n,`n`)
 
 #for n in ['isinf','isfinite','isnan']:
 #    exec '%s = ppimport_attr(special,%s)' % (n,`n`)
@@ -127,7 +127,7 @@ from common import *
 from pilutil import *
 
 # Level 2
-optimize = ppimport('optimize');       _level_docs(optimize)
+#optimize = ppimport('optimize');       _level_docs(optimize)
 integrate = ppimport('integrate');     _level_docs(integrate)
 signal = ppimport('signal');           _level_docs(signal)
 sparse = ppimport('sparse');           _level_docs(sparse)

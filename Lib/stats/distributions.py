@@ -2861,15 +2861,3 @@ class dlaplace_gen(rv_discrete):
         return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
 dlaplace = dlaplace_gen(a=1,name='discrete Laplacian')
 
-################## test functions #########################
-
-def test(level=1):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)
-
-
-

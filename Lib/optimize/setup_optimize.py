@@ -5,10 +5,10 @@ from glob import glob
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     package = 'optimize'
     config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__)    
+    local_path = get_path(__name__,parent_path)    
 
     minpack = glob(os.path.join(local_path,'minpack','*.f'))
     config['fortran_libraries'].append(('minpack',{'sources':minpack}))

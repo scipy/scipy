@@ -3,10 +3,13 @@
 
 
 import unittest
+import sys
+from scipy_test.testing import *
+set_package_path()
 import scipy
 import scipy.stats as stats
-from scipy_test.testing import assert_array_equal, assert_equal, assert_approx_equal
-from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
+del sys.path[0]
+
 import Numeric
 N = Numeric
 
@@ -109,28 +112,9 @@ class test_find_repeats(unittest.TestCase):
         assert_array_equal(res,[1,2,3,4])
         assert_array_equal(nums,[3,3,2,2])
 
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_shapiro,'check_') )
-        suites.append( unittest.makeSuite(test_anderson,'check_') )
-        suites.append( unittest.makeSuite(test_ansari,'check_') )
-        suites.append( unittest.makeSuite(test_bartlett,'check_') )
-        suites.append( unittest.makeSuite(test_levene,'check_') )
-        suites.append( unittest.makeSuite(test_binom_test,'check_') )
-        suites.append( unittest.makeSuite(test_find_repeats,'check_') )
-                
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    test()
+    ScipyTest('stats.morestats').run()
+
 
 
         

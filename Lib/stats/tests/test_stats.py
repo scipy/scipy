@@ -7,12 +7,17 @@
 """
 
 import unittest
+import sys
+from scipy_test.testing import *
+set_package_path()
+#XXX: fix scipy.stats to stats
 import scipy
-from scipy_test.testing import assert_array_equal, assert_equal, assert_approx_equal
-from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
+import scipy_base.fastumath as math
+del sys.path[0]
+
 import Numeric
 N = Numeric
-import scipy_base.fastumath as math
+
 
 """ Numbers in docstrings begining with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -816,34 +821,7 @@ class test_moments(TestCase):
         y = scipy.stats.kurtosis(self.testcase,0,0)
         assert_approx_equal(y,1.64)
 
-
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_gmean,'check_') )
-        suites.append( unittest.makeSuite(test_hmean,'check_') )
-        suites.append( unittest.makeSuite(test_mean,'check_') )
-        suites.append( unittest.makeSuite(test_median,'check_') )
-        suites.append( unittest.makeSuite(test_std,'check_') )
-        suites.append( unittest.makeSuite(test_round, 'check_') )
-        suites.append( unittest.makeSuite(test_basicstats, 'check_') )
-        suites.append( unittest.makeSuite(test_corr, 'check_') )
-        suites.append( unittest.makeSuite(test_regression, 'check_') )
-        suites.append( unittest.makeSuite(test_variability, 'check_') )
-        suites.append( unittest.makeSuite(test_moments, 'check_') )
-##    suites.append( unittest.makeSuite(test_anova, 'check_') )
-        
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
-
 if __name__ == "__main__":
-    test()
+    ScipyTest('stats.stats').run()
 
 
