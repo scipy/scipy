@@ -271,7 +271,7 @@ def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25
     plotlims = gist.limits()
     conv_factorx = (viewp[1] - viewp[0]) / (plotlims[1]-plotlims[0])
     conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])    
-    width = fac*(x[2]-x[1])
+    width = fac*(x[1]-x[0])
     x0 = x-width/2.0
     x1 = x+width/2.0
     gist.pldj(x0,ye,x1,ye,color=_colors[linecolor],type=_types[linetype])
@@ -334,7 +334,8 @@ def legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=
     _hold = 1
     for k in range(len(text)):
         plot(legarr,ypos*legy,linetypes[k])
-        #print llx+width+deltax, ypos-deltay
+        print linetypes[k], text[k]
+        print llx+width+deltax, ypos-deltay
         if text[k] != "":
             gist.plt(text[k],llx+width+deltax,ypos-deltay,
                      color=color,font=tfont,height=fontsize,tosys=0)
