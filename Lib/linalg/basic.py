@@ -397,7 +397,9 @@ def tri(N, M=None, k=0, typecode=None):
         lower left corner up to the k-th are all ones.
     """
     if M is None: M = N
-    if type(M) == type('d'): 
+    if type(M) == type('d'):
+        #pearu: any objections to remove this feature?
+        #       As tri(N,'d') is equivalent to tri(N,typecode='d')
         typecode = M
         M = N
     m = greater_equal(subtract.outer(arange(N), arange(M)),-k)
@@ -410,7 +412,7 @@ def tril(m, k=0):
     """ returns the elements on and below the k-th diagonal of m.  k=0 is the
         main diagonal, k > 0 is above and k < 0 is below the main diagonal.
     """
-    svsp = m.spacesaver()
+    svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m,savespace=1)
     out = tri(m.shape[0], m.shape[1], k=k, typecode=m.typecode())*m
     out.savespace(svsp)
@@ -420,7 +422,7 @@ def triu(m, k=0):
     """ returns the elements on and above the k-th diagonal of m.  k=0 is the
         main diagonal, k > 0 is above and k < 0 is below the main diagonal.
     """
-    svsp = m.spacesaver()
+    svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m,savespace=1)
     out = (1-tri(m.shape[0], m.shape[1], k-1, m.typecode()))*m
     out.savespace(svsp)
