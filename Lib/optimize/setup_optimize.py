@@ -31,7 +31,7 @@ def configuration(parent_package='',parent_path=None):
                     sources, libraries=['rootfind'])
     config['ext_modules'].append(ext)
 
-    lapack = system_info.lapack_opt_info().get_info()
+    lapack = system_info.get_info('lapack_opt')
     sources = ['lbfgsb.pyf','routines.f']
     sources = [os.path.join(local_path,'lbfgsb-0.9',x) for x in sources]
     ext = Extension(dot_join(parent_package, package, "_lbfgsb"),
