@@ -355,10 +355,11 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             a_hi = a_j
             phi_hi = phi_aj
         else:
-            derphi_aj = derphi(a_j)
+            derphi_aj = derphi(a_j)            
             if abs(derphi_aj) <= -c2*derphi0:
                 a_star = a_j
                 val_star = phi_aj
+                valprime_star = derphi_aj
                 break
             if derphi_aj*(a_hi - a_lo) >= 0:
                 phi_rec = phi_hi
@@ -375,8 +376,9 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         if (i > maxiter):
             a_star = a_j
             val_star = phi_aj
+            valprime_star = None
             break    
-    return a_star, val_star
+    return a_star, val_star, valprime_star
 
 def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                 args=(), c1=1e-4, c2=0.9, amax=50):
@@ -389,28 +391,31 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
     Outputs: (alpha0, gc, fc)
     """
 
-    global fc, gc
-    fc = 0
-    gc = 0    
+    global _ls_fc, _ls_gc, _ls_ingfk
+    _ls_fc = 0
+    _ls_gc = 0
+    _ls_ingfk = None
     def phi(alpha):
-        global fc
-        fc += 1
+        global _ls_fc
+        _ls_fc += 1
         return f(xk+alpha*pk,*args)
 
     if isinstance(myfprime,type(())):
         def phiprime(alpha):
-            global fc
-            fc += len(xk)+1
+            global _ls_fc, _ls_ingfk
+            _ls_fc += len(xk)+1
             eps = myfprime[1]
             fprime = myfprime[0]
             newargs = (f,eps) + args
-            return Num.dot(fprime(xk+alpha*pk,*newargs),pk)        
+            _ls_ingfk = fprime(xk+alpha*pk,*newargs)
+            return Num.dot(_ls_ingfk,pk)
     else:
         fprime = myfprime
         def phiprime(alpha):
-            global gc
-            gc += 1
-            return Num.dot(fprime(xk+alpha*pk,*args),pk)            
+            global _ls_gc, _ls_ingfk
+            _ls_gc += 1
+            _ls_ingfk = fprime(xk+alpha*pk,*args)
+            return Num.dot(_ls_ingfk,pk)
 
     alpha0 = 0
     phi0 = old_fval
@@ -428,21 +433,24 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
     while 1:         # bracketing phase 
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
-            alpha_star, fval_star = zoom(alpha0, alpha1, phi_a0, phi_a1,
-                                         derphi_a0, phi, phiprime, phi0,
-                                         derphi0, c1, c2)
+            alpha_star, fval_star, fprime_star = \
+                        zoom(alpha0, alpha1, phi_a0,
+                             phi_a1, derphi_a0, phi, phiprime,
+                             phi0, derphi0, c1, c2)
             break
 
         derphi_a1 = phiprime(alpha1)
         if (abs(derphi_a1) <= -c2*derphi0):
             alpha_star = alpha1
             fval_star = phi_a1
+            fprime_star = derphi_a1
             break
 
         if (derphi_a1 >= 0):
-            alpha_star, fval_star = zoom(alpha1, alpha0, phi_a1, phi_a0,
-                                         derphi_a1, phi, phiprime,
-                                         phi0, derphi0, c1, c2)
+            alpha_star, fval_star, fprime_star = \
+                        zoom(alpha1, alpha0, phi_a1,
+                             phi_a0, derphi_a1, phi, phiprime,
+                             phi0, derphi0, c1, c2)
             break
 
         alpha2 = 2 * alpha1   # increase by factor of two on each iteration
@@ -457,9 +465,13 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         if (i > maxiter):          
             alpha_star = alpha1
             fval_star = phi_a1
+            fprime_star = None
             break
 
-    return alpha_star, fc, gc, fval_star, old_fval
+    if fprime_star is not None:
+        fprime_star = _ls_ingfk
+        
+    return alpha_star, _ls_fc, _ls_gc, fval_star, old_fval, fprime_star
     
 
 def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
@@ -593,7 +605,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
     gtol = N*avegtol
     I = MLab.eye(N)
     Hk = I
-
+    old_fval = f(x0,*args)
+    old_old_fval = old_fval + 5000
+    func_calls += 1
     if app_fprime:
         gfk = apply(approx_fprime,(x0,f,epsilon)+args)
         myfprime = (approx_fprime,epsilon)
@@ -607,25 +621,24 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
         allvecs = [x0]
     sk = [2*gtol]
     warnflag = 0
-    old_fval = f(x0,*args)
-    old_old_fval = old_fval + 5000
-    func_calls += 1
     while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
-        alpha_k, fc, gc, old_fval, old_old_fval = \
+        alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                  line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args)
         func_calls = func_calls + fc
+        grad_calls = grad_calls + gc
         xkp1 = xk + alpha_k * pk
         if retall:
             allvecs.append(xkp1)
         sk = xkp1 - xk
         xk = xkp1
-        if app_fprime:
-            gfkp1 = apply(approx_fprime,(xkp1,f,epsilon)+args)
-            func_calls = func_calls + gc + len(x0) + 1
-        else:
-            gfkp1 = apply(fprime,(xkp1,)+args)
-            grad_calls = grad_calls + gc + 1
+        if gfkp1 is None:
+            if app_fprime:
+                gfkp1 = apply(approx_fprime,(xkp1,f,epsilon)+args)
+                func_calls = func_calls + len(x0) + 1
+            else:
+                gfkp1 = apply(fprime,(xkp1,)+args)
+                grad_calls = grad_calls + 1
 
         yk = gfkp1 - gfk
         k = k + 1
@@ -737,6 +750,11 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
     N = len(x0)
     gtol = N*avegtol
 
+    xk = x0
+    old_fval = f(xk,*args)
+    old_old_fval = old_fval + 5000
+    func_calls +=1 
+
     if app_fprime:
         gfk = apply(approx_fprime,(x0,f,epsilon)+args)
         myfprime = (approx_fprime,epsilon)
@@ -745,30 +763,28 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
         gfk = apply(fprime,(x0,)+args)
         myfprime = fprime
         grad_calls = grad_calls + 1
-    xk = x0
     if retall:
         allvecs = [xk]
     sk = [2*gtol]
     warnflag = 0
     pk = -gfk
 
-    old_fval = f(xk,*args)
-    old_old_fval = old_fval + 5000
     while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
         deltak = Num.dot(gfk,gfk)
-        alpha_k, fc, gc, old_fval, old_old_fval = \
+        alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                  line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args,c2=0.3)
         func_calls += fc
         grad_calls += gc
         xk = xk + alpha_k*pk
         if retall:
             allvecs.append(xk)
-        if app_fprime:
-            gfkp1 = apply(approx_fprime,(xk,f,epsilon)+args)
-            func_calls = func_calls + gc + len(x0) + 1
-        else:
-            gfkp1 = apply(fprime,(xk,)+args)
-            grad_calls = grad_calls + gc + 1
+        if gfkp1 is None:
+            if app_fprime:
+                gfkp1 = apply(approx_fprime,(xk,f,epsilon)+args)
+                func_calls = func_calls + len(x0) + 1
+            else:
+                gfkp1 = apply(fprime,(xk,)+args)
+                grad_calls = grad_calls + 1
 
         yk = gfkp1 - gfk
         beta_k = pymax(0,Num.dot(yk,gfkp1)/deltak)
@@ -777,7 +793,7 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
         k = k + 1
         
     if disp or full_output:
-        fval = apply(f,(xk,)+args)
+        fval = old_fval
     if warnflag == 2:
         if disp:
             print "Warning: Desired error not necessarily achieved due to precision loss"
