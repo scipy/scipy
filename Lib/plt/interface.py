@@ -1,5 +1,9 @@
 from Numeric import *
-import gui_thread
+import sys
+if sys.modules.has_key('scipy.gui_thread'):
+    import scipy.gui_thread as gui_thread
+elif sys.modules.has_key('gui_thread'):
+    import gui_thread
 import wxplt
 
 plot_module = wxplt
@@ -433,4 +437,3 @@ def speed_test():
         else: 
             p.SetSize(s1)
             
-        
