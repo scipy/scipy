@@ -6,17 +6,6 @@
 ! 2004
 !
 
-python module bicg__user__routines 
-    interface bicg_user_interface 
-        subroutine <_c>matsplit(omega,b,work,ldw,method,flag) ! in :iterative:Jacobi.f:Jacobi:unknown_interface
-            <_t>, :: omega 
-            <_t>, dimension(1000) :: b
-            <_t> intent(hide), dimension(ldw,3), depend(ldw) :: work
-            integer, :: ldw
-            character*(5) :: which
-        end subroutine <_c>matsplit
-    end interface bicg_user_interface
-end python module bicg__user__routines
 python module iterative ! in 
     interface  ! in :iterative
         subroutine <_c>bicgrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:BiCG.f

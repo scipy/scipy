@@ -33,9 +33,9 @@ def configuration(parent_package='',parent_path=None):
     QMR = ['QMR.f.src','QMRREVCOM.f.src']
     SOR = ['SOR.f.src','SORREVCOM.f.src']
     Util = ['STOPTEST2.f.src','getbreak.f.src']
-    sources = Util + BiCG + BiCGSTAB + CG + CGS + QMR + ['iterative.pyf.src']
+    sources = Util + BiCG + BiCGSTAB + CG + CGS + QMR + ['_iterative.pyf.src']
     ext_args = {
-        'name': dot_join(parent_package,package,'iterative'),
+        'name': dot_join(parent_package,package,'_iterative'),
         'sources': sources,
         }
     dict_append(ext_args, **lapack_opt)
