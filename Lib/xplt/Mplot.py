@@ -1006,22 +1006,30 @@ def axes(type='b|'):
     y1 = [vals[2], vals[3]]
     xplt.plot(x0,y0,type,x1,y1,type,hold=1)
     
-def bode(w,H,win=0):
+
+def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'):
     """Plot a bode plot of the transfer function H as a function of w.
     """
-
-    subplot(2,1,win,lm=0.2*inches)
+    if freq == 'Hz':
+        w = w /2.0 / pi
+    subplot(2,1,win,lm=0.2*inches,frame=frame,color=color)
     gist.plsys(1)
-    gist.plg(abs(H),w,type='solid',color='blue',marks=0)
-    gist.logxy(1,1)
-    gist.gridxy(1,1)
-    xlabel('Frequency (rad/s)')
-    ylabel('Magnitude',deltax=-0.016)
-    title("Bode Plot")
-    gist.plsys(2)
-    gist.plg(scipy.unwrap(MLab.angle(H)),w,type='solid',color='blue',marks=0)
+    gist.plg(20*scipy.log10(abs(H)),w,type='solid',color=lcolor,marks=0)
     gist.logxy(1,0)
     gist.gridxy(1,1)
-    xlabel('Frequency (rad/s)')
-    ylabel('Phase (rad)',deltax=-0.016)
+    if freq == 'Hz':
+        xlabel('Frequency (Hz)',color=tcolor,deltay=-0.005)
+    else:
+        xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)         
+    ylabel('Magnitude (dB)',color=tcolor,deltax=-0.005)
+    title("Bode Plot",color=tcolor)
+    gist.plsys(2)
+    gist.plg(180/pi*scipy.unwrap(MLab.angle(H)),w,type='solid',color=lcolor,marks=0)
+    gist.logxy(1,0)
+    gist.gridxy(1,1)
+    if freq == 'Hz':
+        xlabel('Frequency (Hz)',color=tcolor,deltay=-0.005)
+    else:
+        xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)         
+    ylabel('Phase (deg.)',color=tcolor,deltax=-0.005)
     

@@ -399,7 +399,7 @@ def lsim(system, U, T, X0=None, interp=1):
     dt = T[1]-T[0]
     lam, vt = linalg.eig(A)
     vti = linalg.inv(vt)
-    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt)
+    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.typecode())
     ATm1 = linalg.inv(AT)
     ATm2 = dot(ATm1,ATm1)
     I = eye(A.shape[0],typecode=A.typecode())
@@ -412,7 +412,7 @@ def lsim(system, U, T, X0=None, interp=1):
         dt1 = T[k] - T[k-1]
         if dt1 != dt:
             dt = dt1
-            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt)
+            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.typecode())
             GTmI = GT-I
             F1T = dot(dot(BT,GTmI),ATm1)
             if interp:
