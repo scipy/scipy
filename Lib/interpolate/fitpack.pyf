@@ -44,7 +44,193 @@ static int imax(int i1,int i2) {
 }
   '''
 
-  interface  ! in :dfitpack
+  interface
+
+     !!!!!!!!!! Univariate spline !!!!!!!!!!!
+
+     subroutine splev(t,n,c,k,x,y,m,ier)
+       ! y = splev(t,c,k,x)
+       real*8 dimension(n),intent(in) :: t
+       integer intent(hide),depend(t) :: n=len(t)
+       real*8 dimension(n-k-1),depend(n,k),check(len(c)==n-k-1),intent(in) :: c
+       integer :: k
+       real*8 dimension(m),intent(in) :: x
+       real*8 dimension(m),depend(m),intent(out) :: y
+       integer intent(hide),depend(x) :: m=len(x)
+       integer intent(hide) :: ier
+     end subroutine splev
+
+     subroutine splder(t,n,c,k,nu,x,y,m,wrk,ier)
+       ! dy = splder(t,c,k,x,[nu])
+       real*8 dimension(n) :: t
+       integer depend(t),intent(hide) :: n=len(t)
+       real*8 dimension(n-k-1),depend(n,k),check(len(c)==n-k-1),intent(in) :: c
+       integer :: k
+       integer depend(k),check(0<=nu && nu<=k) :: nu = 1
+       real*8 dimension(m) :: x
+       real*8 dimension(m),depend(m),intent(out) :: y
+       integer depend(x),intent(hide) :: m=len(x)
+       real*8 dimension(n),depend(n),intent(cache,hide) :: wrk
+       integer intent(hide) :: ier
+     end subroutine splder
+
+     function splint(t,n,c,k,a,b,wrk)
+       ! iy = splint(t,c,k,a,b)
+       real*8 dimension(n),intent(in) :: t
+       integer intent(hide),depend(t) :: n=len(t)
+       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       integer intent(in) :: k
+       real*8 intent(in) :: a
+       real*8 intent(in) :: b
+       real*8 dimension(n),depend(n),intent(cache,hide) :: wrk
+       real*8 :: splint
+     end function splint
+
+     subroutine sproot(t,n,c,zero,mest,m,ier)
+       ! zero,m,ier = sproot(t,c[,mest])
+       real*8 dimension(n),intent(in) :: t
+       integer intent(hide),depend(t),check(n>=8) :: n=len(t)
+       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       real*8 dimension(mest),intent(out),depend(mest) :: zero
+       integer optional,intent(in),depend(n) :: mest=3*(n-7)
+       integer intent(out) :: m
+       integer intent(out) :: ier
+     end subroutine sproot
+
+     subroutine spalde(t,n,c,k,x,d,ier)
+       ! d,ier = spalde(t,c,k,x)
+
+       callprotoargument double*,int*,double*,int*,double*,double*,int*
+       callstatement {int k1=k+1; (*f2py_func)(t,&n,c,&k1,&x,d,&ier); }
+
+       real*8 dimension(n) :: t
+       integer intent(hide),depend(t) :: n=len(t)
+       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       integer intent(in) :: k
+       real*8 intent(in) :: x
+       real*8 dimension(k+1),intent(out),depend(k) :: d
+       integer intent(out) :: ier
+     end subroutine spalde
+ 
+     subroutine fpcurf0(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,n,t,c,fp,fpint,wrk,nrdata,ier)
+       ! x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier = \
+       !   fpcurf0(x,y,k,[w,xb,xe,s,nest])
+
+       fortranname fpcurf
+       callprotoargument int*,double*,double*,double*,int*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*
+       callstatement (*f2py_func)(&iopt,x,y,w,&m,&xb,&xe,&k,&s,&nest,&tol,&maxit,&k1,&k2,&n,t,c,&fp,fpint,wrk,wrk+nest,wrk+nest*k2,wrk+nest*2*k2,wrk+nest*3*k2,nrdata,&ier)
+
+       integer intent(hide) :: iopt = 0
+       real*8 dimension(m),intent(in,out) :: x
+       real*8 dimension(m),depend(m),check(len(y)==m),intent(in,out) :: y
+       real*8 dimension(m),depend(m),check(len(w)==m),intent(in,out) :: w = 1.0
+       integer intent(hide),depend(x),check(m>k),depend(k) :: m=len(x)
+       real*8 intent(in,out),depend(x),check(xb<=x[0]) :: xb = x[0]
+       real*8 intent(in,out),depend(x,m),check(xe>=x[m-1]) :: xe = x[m-1]
+       integer check(1<=k && k<=5),intent(in,out) :: k
+       real*8 check(s>=0.0),depend(m),intent(in,out) :: s = m
+       integer intent(in),depend(m,s,k,k1),check(nest>=2*k1) :: nest = (s==0.0?m+k+1:MAX(m/2,2*k1))
+       real*8 intent(hide) :: tol = 0.001
+       integer intent(hide) :: maxit = 20
+       integer intent(hide),depend(k) :: k1=k+1
+       integer intent(hide),depend(k) :: k2=k+2
+       integer intent(out) :: n
+       real*8 dimension(nest),intent(out),depend(nest) :: t
+       real*8 dimension(nest),depend(nest),intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(nest),depend(nest),intent(out,cache)  :: fpint
+       real*8 dimension(nest*3*k2+m*k1),intent(cache,hide),depend(nest,k1,k2,m) :: wrk
+       integer dimension(nest),depend(nest),intent(out,cache) :: nrdata
+       integer intent(out) :: ier
+     end subroutine fpcurf0
+
+     subroutine fpcurf1(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,n,t,c,fp,fpint,wrk,nrdata,ier)
+       ! x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier = \
+       !   fpcurf1(x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier)
+
+       fortranname fpcurf
+       callprotoargument int*,double*,double*,double*,int*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*
+       callstatement (*f2py_func)(&iopt,x,y,w,&m,&xb,&xe,&k,&s,&nest,&tol,&maxit,&k1,&k2,&n,t,c,&fp,fpint,wrk,wrk+nest,wrk+nest*k2,wrk+nest*2*k2,wrk+nest*3*k2,nrdata,&ier)
+
+       integer intent(hide) :: iopt = 1
+       real*8 dimension(m),intent(in,out,overwrite) :: x
+       real*8 dimension(m),depend(m),check(len(y)==m),intent(in,out,overwrite) :: y
+       real*8 dimension(m),depend(m),check(len(w)==m),intent(in,out,overwrite) :: w
+       integer intent(hide),depend(x),check(m>k),depend(k) :: m=len(x)
+       real*8 intent(in,out) :: xb
+       real*8 intent(in,out) :: xe
+       integer check(1<=k && k<=5),intent(in,out) :: k
+       real*8 check(s>=0.0),intent(in,out) :: s
+       integer intent(hide),depend(t) :: nest = len(t)
+       real*8 intent(hide) :: tol = 0.001
+       integer intent(hide) :: maxit = 20
+       integer intent(hide),depend(k) :: k1=k+1
+       integer intent(hide),depend(k) :: k2=k+2
+       integer intent(in,out) :: n
+       real*8 dimension(nest),intent(in,out,overwrite) :: t
+       real*8 dimension(nest),depend(nest),check(len(c)==nest),intent(in,out,overwrite) :: c
+       real*8 intent(in,out) :: fp
+       real*8 dimension(nest),depend(nest),check(len(fpint)==nest),intent(in,out,cache,overwrite)  :: fpint
+       real*8 dimension(nest*3*k2+m*k1),intent(cache,hide),depend(nest,k1,k2,m) :: wrk
+       integer dimension(nest),depend(nest),check(len(nrdata)==nest),intent(in,out,cache,overwrite) :: nrdata
+       integer intent(in,out) :: ier
+     end subroutine fpcurf1
+
+     subroutine fpcurfm1(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,n,t,c,fp,fpint,wrk,nrdata,ier)
+       ! x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier = \
+       !   fpcurfm1(x,y,k,t,[w,xb,xe])
+
+       fortranname fpcurf
+       callprotoargument int*,double*,double*,double*,int*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*
+       callstatement (*f2py_func)(&iopt,x,y,w,&m,&xb,&xe,&k,&s,&nest,&tol,&maxit,&k1,&k2,&n,t,c,&fp,fpint,wrk,wrk+nest,wrk+nest*k2,wrk+nest*2*k2,wrk+nest*3*k2,nrdata,&ier)
+
+       integer intent(hide) :: iopt = -1
+       real*8 dimension(m),intent(in,out) :: x
+       real*8 dimension(m),depend(m),check(len(y)==m),intent(in,out) :: y
+       real*8 dimension(m),depend(m),check(len(w)==m),intent(in,out) :: w = 1.0
+       integer intent(hide),depend(x),check(m>k),depend(k) :: m=len(x)
+       real*8 intent(in,out),depend(x),check(xb<=x[0]) :: xb = x[0]
+       real*8 intent(in,out),depend(x,m),check(xe>=x[m-1]) :: xe = x[m-1]
+       integer check(1<=k && k<=5),intent(in,out) :: k
+       real*8 intent(out) :: s = -1
+       integer intent(hide),depend(n) :: nest = n
+       real*8 intent(hide) :: tol = 0.001
+       integer intent(hide) :: maxit = 20
+       integer intent(hide),depend(k) :: k1=k+1
+       integer intent(hide),depend(k) :: k2=k+2
+       integer intent(out),depend(t) :: n = len(t)
+       real*8 dimension(n),intent(in,out,overwrite) :: t
+       real*8 dimension(nest),depend(nest),intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(nest),depend(nest),intent(out,cache)  :: fpint
+       real*8 dimension(nest*3*k2+m*k1),intent(cache,hide),depend(nest,k1,k2,m) :: wrk
+       integer dimension(nest),depend(nest),intent(out,cache) :: nrdata
+       integer intent(out) :: ier
+     end subroutine fpcurfm1
+
+     !!!!!!!!!! Bivariate spline !!!!!!!!!!!
+
+     subroutine bispev(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,z,wrk,lwrk,iwrk,kwrk,ier)
+       ! z,ier = bispev(tx,ty,c,kx,ky,x,y)
+       real*8 dimension(nx),intent(in) :: tx
+       integer intent(hide),depend(tx) :: nx=len(tx)
+       real*8 dimension(ny),intent(in) :: ty
+       integer intent(hide),depend(ty) :: ny=len(ty)
+       real*8 intent(in),dimension((nx-kx-1)*(ny-ky-1)),depend(nx,ny,kx,ky),&
+            check(len(c)==(nx-kx-1)*(ny-ky-1)):: c
+       integer :: kx
+       integer :: ky
+       real*8 intent(in),dimension(mx) :: x
+       integer intent(hide),depend(x) :: mx=len(x)
+       real*8 intent(in),dimension(my) :: y
+       integer intent(hide),depend(y) :: my=len(y)
+       real*8 dimension(mx,my),depend(mx,my),intent(out,c) :: z
+       real*8 dimension(lwrk),depend(lwrk),intent(hide,cache) :: wrk
+       integer intent(hide),depend(mx,kx,my,ky) :: lwrk=mx*(kx+1)+my*(ky+1)
+       integer dimension(kwrk),depend(kwrk),intent(hide,cache) :: iwrk
+       integer intent(hide),depend(mx,my) :: kwrk=mx+my
+       integer intent(out) :: ier
+     end subroutine bispev
 
      subroutine surfit_smth(iopt,m,x,y,z,w,xb,xe,yb,ye,kx,ky,s,nxest,nyest,&
           nmax,eps,nx,tx,ny,ty,c,fp,wrk1,lwrk1,wrk2,lwrk2,&
@@ -180,5 +366,3 @@ static int imax(int i1,int i2) {
   end interface
 end python module dfitpack
 
-! This file was auto-generated with f2py (version:2.35.229-1475).
-! See http://cens.ioc.ee/projects/f2py2e/
