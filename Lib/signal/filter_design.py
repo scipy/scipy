@@ -4,16 +4,17 @@
 import MLab
 from fastumath import *
 import Numeric
+from Numeric import concatenate
 Num = MLab
 abs = absolute
 pi = Numeric.pi
 import scipy
 from scipy import r1array, poly, polyval, comb, roots
-from scipy import special, optimize, linalg
+from scipy import special, optimize, linalg, real, imag, sign
 import string, types
 
 
-def freqs(b,a,worN=None):
+def freqs(b,a,worN=None,factor=5):
     """Compute frequency response of analog filter.
 
     Description:
@@ -21,9 +22,9 @@ def freqs(b,a,worN=None):
        Given the numerator (b) and denominator (a) of a filter compute its
        frequency response.
 
-               b[0]*(jw)**(nb-1) + b[1]*(jw)**(nb-2) + ... + b[nb-2]*jw + b[nb-1]
-       H(w) = --------------------------------------------------------------------
-               a[0]*(jw)**(na-1) + a[1]*(jw)**(na-2) + ... + a[na-2]*jw + a[na-1]
+               b[0]*(jw)**(nb-1) + b[1]*(jw)**(nb-2) + ... + b[nb-1]
+       H(w) = --------------------------------------------------------
+               a[0]*(jw)**(na-1) + a[1]*(jw)**(na-2) + ... + a[na-1]
 
     Inputs:
 
@@ -32,28 +33,51 @@ def freqs(b,a,worN=None):
                 parts of the response curve (determined by pole-zero locations).
                 If a single integer, the compute at that many frequencies.
                 Otherwise, compute the response at frequencies given in worN.
-    Outputs: (h,w)
+    Outputs: (w,h)
 
-       h -- The frequency response.
        w -- The frequencies at which h was computed.
+       h -- The frequency response.
     """
-    factor = 1.4
     if worN is None:
         z, p, k = tf2zpk(b,a)  # get poles and zeros
-        maximag = max(concatenate((z.imag,p.imag)))
-        minimag = min(concatenate((z.imag,p.imag)))
-        w = scipy.grid[minimag*factor:maximag*factor:200]
-    if isinstance(worN, types.IntType):
+        val = max(concatenate((real(p),imag(p))))
+        if len(z) != 0:
+            val = max(concatenate(([val],real(z),imag(z))))
+        val2 = min(concatenate((real(p),imag(p))))
+        if len(z) != 0:
+            va2 = min(concatenate(([val],real(z),imag(z))))
+        if val == 0:
+            val = -val2
+        if val2 == 0:
+            val2 = -val
+        if val2 == val:
+            if val < 0:
+                val = -val
+            val2 = -val
+        w = scipy.grid[val2*(1-sign(val2)*factor):val*(1+sign(val)*factor):200j]
+    elif isinstance(worN, types.IntType):
         N = worN
         z, p, k = tf2zpk(b,a)  # get poles and zeros
-        maximag = max(concatenate((z.imag,p.imag)))
-        minimag = min(concatenate((z.imag,p.imag)))
-        w = scipy.linspace(minimag*factor,maximag*factor,N)
+        val = max(concatenate((real(p),imag(p))))
+        if len(z) != 0:
+            val = max(concatenate(([val],real(z),imag(z))))
+        val2 = min(concatenate((real(p),imag(p))))
+        if val == 0:
+            val = -val2
+        if val2 == 0:
+            val2 = -val        
+        if len(z) != 0:
+            va2 = min(concatenate(([val],real(z),imag(z))))
+        if val2 == val:
+            if val < 0:
+                val = -val
+            val2 = -val
+        w = scipy.linspace(val2*(1-sign(val2)*factor),val*(1+sign(val)*factor),N)
     else:
         w = worN
     w = r1array(w)
     s = 1j*w
-    return polyval(b, s) / polyval(a, s), w
+    return w, polyval(b, s) / polyval(a, s)
 
 def freqz(b, a, worN=None, whole=0):
     """Compute frequency response of a digital filter.
@@ -79,10 +103,10 @@ def freqz(b, a, worN=None, whole=0):
                 unit-circle.  If whole is non-zero compute frequencies from 0
                 to 2*pi.
 
-    Outputs: (h,w)
+    Outputs: (w,h)
 
-       h -- The frequency response.
        w -- The frequencies at which h was computed.
+       h -- The frequency response.
     """
     b, a = map(r1array, (b,a))
     if whole:
@@ -99,7 +123,7 @@ def freqz(b, a, worN=None, whole=0):
         w = worN
     w = r1array(w)
     zm1 = exp(-1j*w)
-    return polyval(b[::-1], zm1) / polyval(a[::-1], zm1), w
+    return w, polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
             
     
 def tf2zpk(b,a):

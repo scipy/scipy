@@ -842,7 +842,7 @@ class Plot:
 #destructor
     def __del__(self):
         try: self.close()
-        except (ValueError, IOError): pass
+        except (ValueError, IOError, AttributeError): pass
 
 #this version of prepare surf does all the coordinate mapping in python.
 #Initially I thought this was a good idea, but now I have no idea why I thought
