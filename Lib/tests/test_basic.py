@@ -390,7 +390,33 @@ class test_cumprod(unittest.TestCase):
                                    array([[ 1,  2,   6,   24],
                                           [ 5, 30, 210, 1890],
                                           [10, 30, 120,  600]],ctype))
-    
+
+
+class test_trapz(unittest.TestCase):
+    def check_basic(self):
+        pass
+
+
+class test_diff(unittest.TestCase):
+    pass
+
+class test_corrcoef(unittest.TestCase):
+    pass
+
+class test_cov(unittest.TestCase):
+    pass
+
+class test_squeeze(unittest.TestCase):
+    pass
+
+class test_sinc(unittest.TestCase):
+    pass
+
+class test_angle(unittest.TestCase):
+    pass
+
+
+
         
 ##################################################
 
