@@ -6,6 +6,9 @@
 #  PURPOSE:  Demonstrate 3D functions in pygist.
 #
 #  CHANGES:
+#  12/06/03 mdh Change demo5_n from an array of floats to an array of ints
+#               (no reason to use floats and the change avoids a deprecation
+#               warning.
 #  04/22/03 llc This version is the original demo5 in gist3d with the
 #               tests using the non-existent PR module commented out.
 #               PR is part of the outdated pyPDB.  These tests read in
@@ -33,7 +36,7 @@ window3 (hcp = "talk.ps", dump = 1)
 
 palette ("gray.gp")
 
-demo5_n = 20. * ones (3)
+demo5_n = 20 * ones (3)
 
 making_movie = 0
 

@@ -20,6 +20,33 @@ def get_special_dirs(plat):
         return ['/usr/lib']
     return []
 
+
+cygwin = 0
+if sys.platform=='cygwin':
+    cygwin = 1
+
+macosx = 0
+if sys.platform=='darwin':
+    macosx = 1
+
+for keyword in sys.argv:
+    if keyword=='--x11':
+        sys.argv.remove(keyword)
+        cygwin = 0
+        macosx = 0
+
+windows = 0
+if sys.platform=='win32':
+    windows = 1
+
+x11 = 0
+if not (windows or cygwin or macosx):
+    x11 = 1
+if 'NO_XLIB' in os.environ:
+    x11 = 0
+        
+
+
 gistsource = ["src/gist/gist.c",
               "src/gist/tick.c",
               "src/gist/tick60.c",
@@ -38,76 +65,102 @@ gistsource = ["src/gist/gist.c",
               "src/gist/xfancy.c",
               "src/gist/xbasic.c"]
 
-cygwin_unixsource = ["src/play/unix/dir.c",
-                     "src/play/unix/files.c",
-                     "src/play/unix/pathnm.c",
-                     "src/play/unix/slinks.c",
-                     "src/play/unix/stdinit.c",
-                     "src/play/unix/uevent.c",
-                     "src/play/unix/uinbg.c",
-                     "src/play/unix/usernm.c"]
+if cygwin:
+    unixsource = ["src/play/unix/dir.c",
+                  "src/play/unix/files.c",
+                  "src/play/unix/pathnm.c",
+                  "src/play/unix/slinks.c",
+                  "src/play/unix/stdinit.c",
+                  "src/play/unix/uevent.c",
+                  "src/play/unix/uinbg.c",
+                  "src/play/unix/usernm.c"]
+elif macosx:
+    unixsource = ["src/play/unix/dir.c",
+                  "src/play/unix/files.c",
+                  "src/play/unix/pathnm.c",
+                  "src/play/unix/timew.c",
+                  "src/play/unix/slinks.c",
+                  "src/play/unix/stdinit.c",
+                  "src/play/unix/uevent.c",
+                  "src/play/unix/uinbg.c",
+                  "src/play/unix/usernm.c"]
+elif not (windows):
+    unixsource = ["src/play/unix/dir.c",
+                  "src/play/unix/files.c",
+                  "src/play/unix/fpuset.c",
+                  "src/play/unix/pathnm.c",
+                  "src/play/unix/timew.c",
+                  "src/play/unix/uevent.c",
+                  "src/play/unix/ugetc.c",
+                  "src/play/unix/umain.c",
+                  "src/play/unix/usernm.c",
+                  "src/play/unix/slinks.c"]
 
-unixsource = ["src/play/unix/dir.c",
-              "src/play/unix/files.c",
-              "src/play/unix/fpuset.c",
-              "src/play/unix/pathnm.c",
-              "src/play/unix/timew.c",
-              "src/play/unix/uevent.c",
-              "src/play/unix/ugetc.c",
-              "src/play/unix/umain.c",
-              "src/play/unix/usernm.c",
-              "src/play/unix/slinks.c"]
+if not (windows or cygwin or macosx):
+    x11source = ["src/play/x11/colors.c",
+                 "src/play/x11/connect.c",
+                 "src/play/x11/cursors.c",
+                 "src/play/x11/errors.c",
+                 "src/play/x11/events.c",
+                 "src/play/x11/fills.c",
+                 "src/play/x11/fonts.c",
+                 "src/play/x11/images.c",
+                 "src/play/x11/lines.c",
+                 "src/play/x11/pals.c",
+                 "src/play/x11/pwin.c",
+                 "src/play/x11/resource.c",
+                 "src/play/x11/rgbread.c",
+                 "src/play/x11/textout.c",
+                 "src/play/x11/rect.c",
+                 "src/play/x11/clips.c",
+                 "src/play/x11/points.c"]
 
-x11source = ["src/play/x11/colors.c",
-             "src/play/x11/connect.c",
-             "src/play/x11/cursors.c",
-             "src/play/x11/errors.c",
-             "src/play/x11/events.c",
-             "src/play/x11/fills.c",
-             "src/play/x11/fonts.c",
-             "src/play/x11/images.c",
-             "src/play/x11/lines.c",
-             "src/play/x11/pals.c",
-             "src/play/x11/pwin.c",
-             "src/play/x11/resource.c",
-             "src/play/x11/rgbread.c",
-             "src/play/x11/textout.c",
-             "src/play/x11/rect.c",
-             "src/play/x11/clips.c",
-             "src/play/x11/points.c"]
-
-winsource = ["src/play/win/pscr.c",
-             "src/play/win/pals.c",
-             "src/play/win/ptext.c",
-             "src/play/win/pfill.c",
-             "src/play/win/pcell.c",
-             "src/play/win/pmin.c",
-             "src/play/win/plines.c",
-             "src/play/win/prect.c",
-             "src/play/win/points.c",
-             "src/play/win/cursors.c",
-             "src/play/win/pwin.c",
-             "src/play/win/timew.c",
-             "src/play/win/clips.c",
-             "src/play/win/getdc.c",
-             "src/play/win/files.c",
-             "src/play/win/usernm.c",
-             "src/play/win/pathnm.c"]
-
-cygwin_winsource = ["src/play/win/pscr.c",
-                    "src/play/win/pals.c",
-                    "src/play/win/ptext.c",
-                    "src/play/win/pfill.c",
-                    "src/play/win/pcell.c",
-                    "src/play/win/pmin.c",
-                    "src/play/win/plines.c",
-                    "src/play/win/prect.c",
-                    "src/play/win/points.c",
-                    "src/play/win/cursors.c",
-                    "src/play/win/pwin.c",
-                    "src/play/win/timew.c",
-                    "src/play/win/clips.c",
-                    "src/play/win/getdc.c"]
+if windows:
+    winsource = ["src/play/win/pscr.c",
+                 "src/play/win/pals.c",
+                 "src/play/win/ptext.c",
+                 "src/play/win/pfill.c",
+                 "src/play/win/pcell.c",
+                 "src/play/win/pmin.c",
+                 "src/play/win/plines.c",
+                 "src/play/win/prect.c",
+                 "src/play/win/points.c",
+                 "src/play/win/cursors.c",
+                 "src/play/win/pwin.c",
+                 "src/play/win/timew.c",
+                 "src/play/win/clips.c",
+                 "src/play/win/getdc.c",
+                 "src/play/win/files.c",
+                 "src/play/win/usernm.c",
+                 "src/play/win/pathnm.c"]
+elif cygwin:
+    winsource = ["src/play/win/pscr.c",
+                 "src/play/win/pals.c",
+                 "src/play/win/ptext.c",
+                 "src/play/win/pfill.c",
+                 "src/play/win/pcell.c",
+                 "src/play/win/pmin.c",
+                 "src/play/win/plines.c",
+                 "src/play/win/prect.c",
+                 "src/play/win/points.c",
+                 "src/play/win/cursors.c",
+                 "src/play/win/pwin.c",
+                 "src/play/win/timew.c",
+                 "src/play/win/clips.c",
+                 "src/play/win/getdc.c"]
+elif macosx:
+    macsource = ["src/play/mac/pscr.m",
+                 "src/play/mac/pals.m",
+                 "src/play/mac/text.m",
+                 "src/play/mac/cell.m",
+                 "src/play/mac/bitblt.m",
+                 "src/play/mac/points.m",
+                 "src/play/mac/cursors.m",
+                 "src/play/mac/pwin.m",
+                 "src/play/mac/clips.m",
+                 "src/play/mac/pen.m",
+                 "src/play/mac/color.m",
+                 "src/play/mac/font.m"]
 
 allsource = ["src/play/all/hash.c",
              "src/play/all/hash0.c",
@@ -120,11 +173,14 @@ allsource = ["src/play/all/hash.c",
              "src/play/all/bitlrot.c",
              "src/play/all/bitmrot.c"]
 
+
 def filter_playsource(sources,local_path):
-    if sys.platform == 'win32':
+    if windows:
         playsource = winsource + allsource
-    elif sys.platform == 'cygwin':
-        playsource = cygwin_unixsource + cygwin_winsource + allsource
+    elif cygwin:
+        playsource = unixsource + winsource + allsource
+    elif macosx:
+        playsource = unixsource + macsource + allsource
     else:
         playsource = unixsource + x11source + allsource
     return [os.path.join(local_path,n) for n in playsource]
@@ -134,15 +190,20 @@ def getallparams(gistpath,local_path,config_path):
     extra_compile_args = ['-DGISTPATH="\\"' + gistpath + '\\""' ]
 
     extra_link_args = []
-    if sys.platform in ['win32','cygwin']:
+    if windows or cygwin:
         extra_compile_args.append("-DWINDOWS")
         extra_compile_args.append("-mwindows")
         extra_link_args.append("-mwindows")
         libraries = []
     else:
         libraries = x11_info.get('libraries',['X11'])
-    if sys.platform=='cygwin':
+    if cygwin:
         extra_compile_args.append("-DCYGWIN")
+    if macosx:
+        extra_compile_args.append("-DMACOSX")
+        extra_link_args.append('-framework')
+        extra_link_args.append('Cocoa')
+        
 
     include_dirs = ['src/gist', 'src/play', 'src/play/unix' ]
 

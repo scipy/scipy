@@ -1,20 +1,22 @@
 # $Id$
+#  ---------------------------------------------------------------------
+#
+#  NAME:     MOVIE.PY
+#
+#  PURPOSE:  Support functions for making animated sequences.
+#
+#  CHANGES:
+#  05/05/03 mdh time (in original yorick script) was changed to timing
+#               to avoid onflict with the time module, but two occurrences 
+#               were missed.
+#
+#  ---------------------------------------------------------------------
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from gist import *
 from shapetest import *
 from yorick import *
-
-#
-#  MOVIE.PY
-#  Support functions for making animated sequences.
-#
-#  $Id$
-#
-
-#    Copyright (c) 1997.  The Regents of the University of California.
-#                  All rights reserved.
 
 def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    bracket_time = array ([2., 2.], Float ), lims = None, timing = 0) :
@@ -77,7 +79,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    making_movie = 1
 
    i = 0
-   if time == 1 :
+   if timing == 1 :
       elapsed = timer_ (elapsed)
       elapsed0 = array(elapsed, copy = 1)
    i = i + 1
@@ -87,7 +89,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    else:
       limits (square = 1)
    fma ( )
-   if time == 1 :
+   if timing == 1 :
       [elapsed, this_frame] = timer_ (elapsed, this_frame)
       wait = bracket_time [0] - this_frame [2]
       waited = waited0 = 0.0

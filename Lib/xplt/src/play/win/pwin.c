@@ -1,6 +1,18 @@
 /*
  * pwin.c -- $Id$
  * routines to create graphics devices for MS Windows
+ * 
+ * CHANGES:
+ * 12/06/04 mdh Correct bug in p_destroy: 
+ *              The call to DestroyWindow effectively calls the w_winproc 
+ *              window routine with the WM_DESTROY message. It does not simply 
+ *              post this message, but calls w_winproc immediately. In the 
+ *              w_winproc function, pw is free'd:  p_free(pw);
+ *              (line 400 in src/play/win/pscr.c). So, by the time we get to 
+ *              the end of the p_destroy routine, pw has been freed and we 
+ *              cannot access pw->pbflag, pw->pen, and pw->brush. Moving the 
+ *              last two lines to the top of the p_destroy routine solves the 
+ *              problem.
  *
  * Copyright (c) 2000.  See accompanying LEGAL file for details.
  */
@@ -142,6 +154,10 @@ void
 p_destroy(p_win *pw)
 {
   if (pw->s && pw->s->font_win==pw) pw->s->font_win = 0;
+  if ((pw->pbflag&1) && pw->pen)
+    DeleteObject(pw->pen), pw->pen = 0;
+  if ((pw->pbflag&2) && pw->brush)
+    DeleteObject(pw->brush), pw->brush = 0;
   if (pw->w) {
     pw->ctx = 0;           /* do not call on_destroy handler */
     DestroyWindow(pw->w);  /* WM_DESTROY handler does most of work */
@@ -156,10 +172,6 @@ p_destroy(p_win *pw)
     pw->dc = 0;
     pw->pixels = 0;  /* really belongs to parent window */
   }
-  if ((pw->pbflag&1) && pw->pen)
-    DeleteObject(pw->pen), pw->pen = 0;
-  if ((pw->pbflag&2) && pw->brush)
-    DeleteObject(pw->brush), pw->brush = 0;
 }
 
 p_win *

@@ -71,10 +71,25 @@ p_wait_while(int *flag)
   MSG msg;
   if (!w_checksig()) {
     while (*flag) {
-      GetMessage(&msg, 0, 0,0);
+      double wait_secs = p_timeout();
+      if (wait_secs >= 0.0)
+      { UINT timeout = (UINT)(1000*wait_secs); /* milliseconds */
+        UINT timerid = SetTimer(NULL, 0, timeout, NULL);
+        GetMessage(&msg, 0, 0,0);
+        KillTimer(NULL, timerid);
+        if (msg.message==WM_TIMER)
+        { p_on_idle(0);
+          continue;
+        }
+      }
+      else if(!PeekMessage(&msg, 0, 0,0, PM_REMOVE))
+      { p_on_idle(0);
+        continue;
+      }
       if (msg.message == WM_QUIT) break;
       TranslateMessage(&msg);
       DispatchMessage(&msg);
+      p_on_idle(1);
       if (w_checksig()) break;
     }
   }

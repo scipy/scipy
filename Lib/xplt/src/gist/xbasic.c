@@ -4,6 +4,10 @@
  * $Id$
  *
  * Implement the basic X windows engine for GIST.
+ *  
+ * CHANGES:
+ * 12/06/04 mdh Correct bug: Do not set xeng->w in Kill because xeng has 
+ *              already been freed.
  *
  */
 /*    Copyright (c) 1994.  The Regents of the University of California.
@@ -449,7 +453,6 @@ Kill(Engine *engine)
   p_win *w = xeng->win;
   ShutDown(xeng);
   if (w) {
-    xeng->w = 0;
     p_destroy(w);
   }
   /* for program-driven Kill(), can take care of p_disconnect immediately */

@@ -4,10 +4,17 @@
 #  NAME:  gist.py
 #
 #  SCIPY
+#  10/15/04 teo Added convert_bounding box.
 #  09/28/03 teo Changed eps file to accept noepsi when not available.
 #  09/28/03 teo Changed all == None to is None and != None to not is None
 #
 #  CHANGES:
+#  11/08/04 mdh plh: Change test if color is a list; also test if array. 
+#  06/16/03 mdh plh: Added a keyword (height) for font size of labels. 
+#  04/07/03 mdh Modifications to plh to add labels below x-axis; removed 
+#               legend and added label keyword.
+#  03/19/03 llc Dave Grote reported a bug in plfc:  nc==None should be 
+#               nc is None.
 #  03/13/03 llc Add one NOTE on plfc.
 #  03/12/03 llc Updated doc comments.
 #  12/25/02 mdh Add plh to draw histograms
@@ -55,11 +62,11 @@
      should be double quotes.
 """
 
-__version__ = "1.5.18"
+__version__ = "1.5.22"
 
 from Numeric import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path
-from gistC import *
+from scipy.xplt.gistC import *
 from pydoc import help
 from shapetest import *
 from arrayfns import *
@@ -601,7 +608,7 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
          style['systems'][0]['ticks']['horizontal']['flags'] = flags
          set_style(style)
    if color:
-      if type(color) != ListType:
+      if type(color) != ListType and type(color) != ArrayType:
          color = [color] * n
       for i in range(n):
          z = color[i]

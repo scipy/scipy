@@ -6,6 +6,8 @@
 # 
 #  NAME:    gistdemolow.py
 #  CHANGES:
+#  11/08/04 mdh Fix typo on line 124 and 132. First arg should be 6.
+#               Add font test #25 and a better histogram demo.
 #  04/07/03 llc Add plh test.
 #  03/14/03 llc Add test for plfp (test 23).
 #  12/03/01 llc Correct titles for Test 12 and Test 18.  
@@ -121,7 +123,7 @@ def grtest():
 
   print "Test 13:  Commands: pledit(color=\"fg\", type=0, marker=i)"
   for i in range(1,6): pledit(i, color="fg", type=0, marker=i)
-  pledit(i, color="fg", type=0, marker='A')
+  pledit(6, color="fg", type=0, marker='A')
   print "Changes the colors to foreground, types to no lines."
   print "Markers are point, plus, asterisk, O, X, A."
   if quitnow(): return
@@ -129,7 +131,7 @@ def grtest():
 
   print "Test 14:  Commands: pledit(marks=0, type=i)"
   for i in range(1,6): pledit(i, marks=0, type=i)
-  pledit(i, color="fg", type=1, width=4)
+  pledit(6, color="fg", type=1, width=4)
   print "Changes line types to solid, dash, dot, dashdot, dashdotdot."
   print "Outermost cardioid becomes a thick, solid line."
   if quitnow(): return
@@ -292,13 +294,48 @@ def grtest():
   unzoom()
 
   print "Test 24:  Commands: plot histogram plh(...)"
-  plh ( array([2.1, 7.3, 35.1]), labels=['Amsterdam', 'Bay Area', 'Tokyo'], 
-        color=["magenta","cyan","yellow"] )
+  palette('earth.gp')
+  data = array([7.58, 1.67, 5.28, 6.35, 4.08, 6.83, 2.24, 5.80, 5.93, 9.42,
+               2.37, 4.47, 4.91, 3.99, 5.14, 7.15, 5.69, 6.56, 1.24, 3.18])
+  aminoacids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+                'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+  colors = 8 * arange(1,len(data)+1)
+  plh (data, labels = aminoacids, color = colors) 
+  ylimits(0,10.0)
+  pltitle ("Amino acid abundance (%) in SwissProt v. 36")
   if quitnow(): return
   fma()
   unzoom()
 
-  print "Test 25:  Lissajous animation"
+  print "Test 25:  Commands: plot text plt(...)"
+  window(style="nobox.gs")
+  plt("Courier",0,1,tosys=1,height=20,font=0)
+  plt("Courier-Bold",0,2,tosys=1,height=20,font=1)
+  plt("Courier-Oblique",0,3,tosys=1,height=20,font=2)
+  plt("Courier-BoldOblique",0,4,tosys=1,height=20,font=3)
+  plt("Times-Roman",0,5,tosys=1,height=20,font=4)
+  plt("Times-Bold",0,6,tosys=1,height=20,font=5)
+  plt("Times-Italic",0,7,tosys=1,height=20,font=6)
+  plt("Times-BoldItalic",0,8,tosys=1,height=20,font=7)
+  plt("Helvetica",0,9,tosys=1,height=20,font=8)
+  plt("Helvetica-Bold",0,10,tosys=1,height=20,font=9)
+  plt("Helvetica-Oblique",0,11,tosys=1,height=20,font=10)
+  plt("Helvetica-BoldOblique",0,12,tosys=1,height=20,font=11)
+  plt("Symbol",0,13,tosys=1,height=20,font=12)
+  plt("Symbol",0,14,tosys=1,height=20,font=13)
+  plt("Symbol",0,15,tosys=1,height=20,font=14)
+  plt("Symbol",0,16,tosys=1,height=20,font=15)
+  plt("NewCenturySchlbk-Roman",0,17,tosys=1,height=20,font=16)
+  plt("NewCenturySchlbk-Bold",0,18,tosys=1,height=20,font=17)
+  plt("NewCenturySchlbk-Italic",0,19,tosys=1,height=20,font=18)
+  plt("NewCenturySchlbk-BoldItalic",0,20,tosys=1,height=20,font=19)
+  limits(0,2,0,22)
+  if quitnow(): return
+  fma()
+  window(style="work.gs")
+  unzoom()
+
+  print "Test 26:  Lissajous animation"
   print "First run without animation mode"
   print "Second run with animation mode"
   print "Press RETURN to continue"

@@ -228,11 +228,27 @@ p_wait_while(int *flag)
   NSEvent* event;
   if (!m_checksig())
   { while (*flag)
-    { event = [NSApp nextEventMatchingMask: NSAnyEventMask
-                                 untilDate: [NSDate distantPast]
+    { NSDate* wakeup_time;
+      double wait_secs = p_timeout();
+      View* view = m_screen.lockedView;
+      if (view)
+      { [view unlockFocus];
+        m_screen.lockedView = NULL;
+        [[view window] flushWindow];
+      }
+      if (wait_secs >= 0.0)
+        wakeup_time = [NSDate dateWithTimeIntervalSinceNow: wait_secs];
+      else
+        wakeup_time = [NSDate distantPast];
+      event = [NSApp nextEventMatchingMask: NSAnyEventMask
+                                 untilDate: wakeup_time
                                     inMode: NSDefaultRunLoopMode
                                    dequeue: YES];
-      [NSApp sendEvent: event];
+      if (event)
+      { [NSApp sendEvent: event];
+        p_on_idle(1);
+      }
+      else p_on_idle(0);
       if (m_checksig()) break;
     }
   }

@@ -24,7 +24,19 @@
  *            This version has been mostly upgraded to Yorick 1.5.
  *
  *  CHANGES:
- *  05/13/03 llc Remove ifdef on GxPointClick.
+ *  11/16/04 llc Fix GxPointClick; replace ifdef on this w/ MOUSE_CLICK.
+ *               mouse function was not working because of this.
+ *  11/09/04 mdh The Py_InitModule4 needs to be called even if the module
+ *               has already been initialized.  Move the initialized test. 
+ *  11/08/04 mdh Added a couple of changes for Mac OSX.
+ *  11/04/04 dpg Changed TRY macro to return a MemoryError only if an 
+ *               exception has not already been raised (in which case, it
+ *               returns NULL). Also, fixed casting warning in contour's TRY 
+ *               with PyTuple_GetSlice, changing 0 to (PyOject*) NULL.
+ *  11/03/04 dpg Discovered that beginning with Numeric 23.4, which has
+ *               stricter type checking (problems converting longs to ints),
+ *               PyArray_INT had to be changed to PyArray_LONG. (else there
+ *               were problems in plc, ...).
  *  04/22/03 llc Fix bug in PLF.
  *  04/08/03 llc Remove include of limits.h and unused defines;
  *               Replace DISPLAY_ENGINE with GpFXEngine, DISPLAY_MOUSE with
@@ -255,7 +267,7 @@ static void clearMemList (void);
 /* New definition of TRY: (second argument m = 1 for memerr) */
 
 #define TRY(e, m) do{if(!(e)){clearArrayList();clearFreeList(0);\
-               clearMemList();return (m);}} while(0)
+               clearMemList();return (PyErr_Occurred() ? 0 : m);}} while(0)
 #define TRYS(e) {char * errstr; \
                  if( (errstr=(e)) != NULL ) { \
                        clearArrayList(); \
@@ -2171,7 +2183,7 @@ static PyObject *contour (PyObject * self, PyObject * args, PyObject * kd)
 
   {  PyObject * newargs;
      n = PyTuple_Size(args);
-     TRY (newargs = PyTuple_GetSlice (args, 1, n), 0);
+     TRY (newargs = PyTuple_GetSlice (args, 1, n), (PyObject *) NULL);
      TRY (setz_mesh (newargs, &zop, errstr, kwt[0]), (PyObject *) NULL);
   }
   if (!pyMsh.y)  {
@@ -3602,6 +3614,11 @@ static char mouse__doc__[] =
 
 static PyObject *mouse (PyObject * self, PyObject * args)
 {
+/*  Don't know why this define is needed, but GxPointClick as the define 
+ *  define was not working.
+ */
+#define MOUSE_CLICK
+#ifdef MOUSE_CLICK 
   char *prompt = 0;
   int system = -1, style = 0;
   int n = curPlotter;
@@ -3641,6 +3658,9 @@ static PyObject *mouse (PyObject * self, PyObject * args)
       mouseX0ndc, mouseY0ndc, mouseX1ndc, mouseY1ndc,
       mouseSystem, mouseButton, mouseModifier);
   }
+#else
+  return ERRSS ("no mouse function in this version of Python/Gist");
+#endif
 }
 
 /*  -------------------------------------------------------------------- */
@@ -6126,8 +6146,7 @@ static int set_reg (PyObject *op)
   int i, ok, nr, nc, ne, newlen, *p2, *p1;
   PyArrayObject *ra2, *ra1;
 
-  ok = (isARRAY(op) && (A_NDIM(op) == 2) && ((A_TYPE(op) == PyArray_LONG)
-     || (A_TYPE(op) == PyArray_LONG)));
+  ok = (isARRAY(op) && (A_NDIM(op) == 2) && (A_TYPE(op) == PyArray_LONG));
   if (!ok) {
      return (int) ERRSS ("(ireg) must be a 2-D int array");
   }
@@ -8023,7 +8042,7 @@ static char pyg_unhook__doc__[] =
 static PyObject *pyg_unhook (PyObject * self, PyObject * args)
 {
   /* _tkinter needs PyOs_InputHook */
-#ifdef CYGWIN
+#if defined(CYGWIN) || defined(MACOSX)
   if (PyOS_InputHook == p_pending_events) PyOS_InputHook = 0;
 #else
   if (PyOS_InputHook == p_wait_stdin) PyOS_InputHook = 0;
@@ -9335,11 +9354,11 @@ void initgistC (void)
   PyObject *m, *d, *sys_path;
   int i, n;
 
-  if (already_initialized)
-    return;
   m = Py_InitModule4 ("gistC", gist_methods,
 		      gist_module_documentation,
 		      (PyObject *) 0, PYTHON_API_VERSION);
+  if (already_initialized)
+    return;
   d = PyModule_GetDict (m);
   GistError = PyString_FromString ("gist.error");
   PyDict_SetItemString (d, "error", GistError);
@@ -9416,7 +9435,7 @@ void initgistC (void)
      *   _tkinter module, so if it is already set, leave it alone
      */
     if (!PyOS_InputHook)
-#ifdef CYGWIN
+#if defined(CYGWIN) || defined(MACOSX)
       PyOS_InputHook = p_pending_events;
 #else
       PyOS_InputHook = p_wait_stdin;
