@@ -1,3 +1,4 @@
+import gui_thread
 #get version
 import scipy_version
 __version__ = scipy_version.version
@@ -49,12 +50,7 @@ names2all(__all__, _namespaces, globals())
 modules2all(__all__, _modules, globals())
 objects2all(__all__, ['help', 'source','__'])
 
-# add some directories to the path so we can import their
-# modules.
 
-d,f = os.path.split(__file__)
-sys.path.append(os.path.join(d,'gui_thread'))
-#import gui_thread
 try:
     import scipy.fft
     __all__.append('fft')

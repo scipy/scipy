@@ -4,15 +4,10 @@ from fastumath import *
 from scipy import *
 import scipy.limits
 import sys
-#if sys.modules.has_key('scipy.gui_thread'):
-#    import scipy.gui_thread as gui_thread
-#elif sys.modules.has_key('gui_thread'):
-#    import gui_thread
-try:
-    import scipy.gui_thread
-except ImportError:
-    import gui_thread
+import gui_thread
 import wxplt
+
+import plot_objects
 
 plot_module = wxplt
 
@@ -390,15 +385,64 @@ def remove_bad_vals(x):
     small = scipy.limits.double_min / 10
     y = clip(y,small,big)
     return y
+
+def stem(*data):
+    if len(data) == 1:
+        n = arange(len(data[0]))
+        x = data[0]
+        ltype = ['b-','mo']
+    if len(data) == 2:
+        if type(data[1]) is types.StringType:
+            ltype = [data[1],'mo']
+            n = arange(len(data[0]))
+            x = data[0]
+        elif type(data[1]) in [types.ListType, types.TupleType]:
+            n = arange(len(data[0]))
+            x = data[0]            
+            ltype = data[1][:2]
+        else:
+            n = data[0]
+            x = data[1]
+            ltype = ['b-','mo']
+    elif len(data) > 2:
+        n = data[0]
+        x = data[1]
+        ltype = data[2]
+        if type(ltype) is types.StringType:
+            ltype = [ltype,'mo']
+    else:
+        raise ValueError, "Invalid input arguments."
+
+    if len(n) != len(x):
+        raise SizeMismatch, ('lengths', len(n), len(x))
+    # line at zero:
+    newdata = []
+    newdata.extend([[n[0],n[-1]],[0,0],ltype[0]])
+
+    # stems
+    for k in range(len(x)):
+        newdata.extend([[n[k],n[k]],[0,x[k]],ltype[0]])
+
+    # circles
+    newdata.extend([n,x,ltype[1]])
+    keywds = {'fill_style': 'transparent'}
+    return plot(*newdata,**keywds)
     
-def plot(*data):
+                           
+    
+def plot(*data,**keywds):
     groups = plot_groups(data)
     lines = []
     for group in groups:
         lines.extend(lines_from_group(group))
         #default to markers being invisible
         #lines[-1].markers.visible = 'no'
-    # check for hold here    
+    # check for hold here
+    for name in plot_objects.poly_marker._attributes.keys():
+        value = keywds.get(name)
+        if value is not None:
+            for k in range(len(lines)):
+                exec('lines[k].markers.%s = value' % name)
     validate_active()
     if not _active.hold in ['on','yes']:
         _active.line_list.data = [] # clear it out

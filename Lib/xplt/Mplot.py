@@ -373,10 +373,16 @@ def plot(x,*args,**keywds):
       only two plots are being compared, the x-axis does not have to be
       repeated.
     """
+    try:
+        override = 1
+        savesys = gist.plsys(2)
+        gist.plsys(savesys)
+    except:
+        override = 0
     global _hold
     if "hold" in keywds.keys():
         _hold = keywds['hold']
-    if _hold:
+    if _hold or override:
         pass
     else:
         gist.fma()
@@ -514,7 +520,7 @@ def full_page(win,dpi=75):
     gist.window(win,style=_current_style,width=int(dpi*8.5),height=dpi*11,dpi=dpi)
 
 plotframe = gist.plsys
-def subplot(win,Numy,Numx,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=11*inches,pw=8.5*inches,dpi=100,ls=0.5*inches,rs=0.5*inches,ts=0.5*inches,bs=0.5*inches):
+def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=11*inches,pw=8.5*inches,dpi=75,ls=0.75*inches,rs=0.75*inches,ts=0.75*inches,bs=0.75*inches):
     # Use gist.plsys to change coordinate systems 
     systems=[]
     ind = -1
@@ -565,7 +571,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
 def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
-    y0 = vp[2] - 0.050 + deltay
+    y0 = vp[2] - 0.040 + deltay
     if text != "":
         gist.plt(text, xmidpt, y0, color=color,
                  font=font, justify="CT", height=fontsize)
@@ -575,7 +581,7 @@ def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0
 def ylabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
     vp = gist.viewport()
     ymidpt = (vp[2] + vp[3])/2.0 + deltay
-    x0 = vp[0] - 0.050 + deltax
+    x0 = vp[0] - 0.040 + deltax
     if text != "":
         gist.plt(text, x0, ymidpt, color=color,
                  font=font, justify="CB", height=fontsize, orient=1)
@@ -597,19 +603,42 @@ def title3(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0
                  height=fontsize, color=color)
 
 
-def stem(m, y, linetype='b-', mtype='mo'):
+def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
     y0 = Numeric.zeros(len(y),y.typecode())
     y1 = y
     x0 = m
     x1 = m
-    if not _hold:
+    try:
+        override = 1
+        savesys = gist.plsys(2)
+        gist.plsys(savesys)
+    except:
+        override = 0
+    if not (_hold or override):
         gist.fma()
     thetype,thecolor,themarker,tomark = _parse_type_arg(linetype,0)
+    lcolor = thecolor
     gist.pldj(x0, y0, x1, y1, color=thecolor, type=thetype)
     thetype,thecolor,themarker,tomark = _parse_type_arg(mtype,0)
     if themarker not in ['o','x','.','*']:
         themarker = 'o'
     gist.plg(y,m,color=thecolor,marker=themarker,type='none')
+    gist.plg(Numeric.zeros(len(m)),m,color=lcolor,marks=0)
+    gist.limits()
+    lims = gist.limits()
+    newlims = [None]*4
+    vp = gist.viewport()
+    factor1 = vp[1] - vp[0]
+    factor2 = vp[3] - vp[2]
+    cfactx = factor1 / (lims[1] - lims[0])
+    cfacty = factor2 / (lims[3] - lims[2])
+    d1 = shift / cfactx
+    d2 = shift / cfacty
+    newlims[0] = lims[0] - d1
+    newlims[1] = lims[1] + d1
+    newlims[2] = lims[2] - d2
+    newlims[3] = lims[3] + d2
+    gist.limits(*newlims)
     return
 
 
