@@ -11,7 +11,7 @@ cf2py intent(in) :: m,n,compute_uv
 
 
       INTEGER MINMN, MNTHR, MINWRK, MAXWRK, SMLSIZ, BDSPAC, BDSPAN
-      INTEGER            ILAENV
+      INTEGER            ILAENV, WRKBL
       EXTERNAL           ILAENV
       INTRINSIC          INT, MAX, MIN
 
