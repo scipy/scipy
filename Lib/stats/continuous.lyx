@@ -370,7 +370,7 @@ Inverse Survival Function (ISF)
 
 \layout Standard
 
-Moment Generationg Function (MGF) 
+Moment Generating Function (MGF) 
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -3209,6 +3209,33 @@ h\left[X\right] & = & \log\left(2e\right)\\
 \end_inset 
 
 
+\layout Section
+
+Left-skewed Lévy
+\layout Standard
+
+Special case of Lévy-stable distribution with 
+\begin_inset Formula $\alpha=\frac{1}{2}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\beta=-1$
+\end_inset 
+
+ the support is 
+\begin_inset Formula $x<0$
+\end_inset 
+
+.
+ In standard form
+\begin_inset Formula \begin{eqnarray*}
+f\left(x\right) & = & \frac{1}{\left|x\right|\sqrt{2\pi\left|x\right|}}\exp\left(-\frac{1}{2\left|x\right|}\right)\\
+F\left(x\right) & = & 2\Phi\left(\frac{1}{\sqrt{\left|x\right|}}\right)-1\\
+G\left(q\right) & = & -\left[\Phi^{-1}\left(\frac{q+1}{2}\right)\right]^{-2}.\end{eqnarray*}
+
+\end_inset 
+
+No moments.
 \layout Section
 
 Lévy

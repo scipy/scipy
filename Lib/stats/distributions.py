@@ -193,7 +193,7 @@ class rv_frozen:
 ##   _argcheck
 
 ##   Correct, but potentially slow defaults exist for the remaining
-##       methods but for speed and/or accuracy you can over-rxide
+##       methods but for speed and/or accuracy you can over-ride
 ##
 ##     _cdf, _ppf, _rvs, _isf, _sf
 ##
@@ -1985,6 +1985,64 @@ levy = levy_gen(a=0.0,name="levy", longname = "A Levy", extradoc="""
 Levy distribution
 """
                 )
+
+## Left-skewed Levy Distribution
+
+class levy_l_gen(rv_continuous):
+    def _pdf(self, x):
+        ax = abs(x)
+        return 1/sqrt(2*ax)/ax*exp(-1/(2*ax))
+    def _cdf(self, x):
+        ax = abs(x)
+        return 2*norm._cdf(1/sqrt(ax))-1
+    def _ppf(self, q):
+        val = norm._ppf((q+1.0)/2)
+        return -1.0/(val*val)
+    def _stats(self):
+        return inf, inf, nan, nan
+levy_l = levy_l_gen(b=0.0,name="levy_l", longname = "A left-skewed Levy", extradoc="""
+
+Left-skewed Levy distribution
+"""
+                )
+
+## Levy-stable Distribution (only random variates)
+
+class levy_stable_gen(rv_continuous):
+    def _rvs(self, alpha, beta):
+        sz = self._size
+        TH = uniform.rvs(loc=-pi/2.0,scale=pi,size=sz)
+        W = expon.rvs(size=sz)
+        if alpha==1:
+            return 2/pi*(pi/2+beta*TH)*tan(TH)-beta*log((pi/2*W*cos(TH))/(pi/2+beta*TH))
+        # else
+        ialpha = 1.0/alpha
+        aTH = alpha*TH
+        if beta==0:
+            return W/(cos(TH)/tan(aTH)+sin(TH))*((cos(aTH)+sin(aTH)*tan(TH))/W)**ialpha
+        # else
+        val0 = beta*tan(pi*alpha/2)
+        th0 = arctan(val0)/alpha
+        val3 = W/(cos(TH)/tan(alpha*(th0+TH))+sin(TH))
+        res3 = val3*((cos(aTH)+sin(aTH)*tan(TH)-val0*(sin(aTH)-cos(aTH)*tan(TH)))/W)**ialpha
+        return res3
+        
+    def _argcheck(self, alpha, beta):        
+        if beta == -1:
+            self.b = 0.0
+        elif beta == 1:
+            self.a = 0.0
+        return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
+    
+    def _pdf(self, x, alpha, beta):
+        raise NotImplementedError
+
+levy_stable = levy_stable_gen(name='levy_stable', longname="A Levy-stable",
+                    shapes="alpha, beta", extradoc="""
+
+Levy-stable distribution (only random variates available -- ignore other docs)
+"""
+                    )
     
 
 ## Logistic (special case of generalized logistic with c=1)
@@ -2145,7 +2203,7 @@ mielke = mielke_gen(a=0.0, name='mielke', longname="A Mielke's Beta-Kappa",
 Mielke's Beta-Kappa distribution
 """
                     )
-
+     
 # Nakagami (cf Chi)
 
 class nakagami_gen(rv_continuous):
@@ -2708,7 +2766,7 @@ Tukey-Lambda distribution
                               )
 
 # Uniform
-# loc to loc + shape
+# loc to loc + scale
 
 class uniform_gen(rv_continuous):
     def _rvs(self):
@@ -2728,7 +2786,7 @@ uniform = uniform_gen(a=0.0,b=1.0, name='uniform', longname="A uniform",
 
 Uniform distribution
 
-   constant between loc and loc+shape
+   constant between loc and loc+scale
 """
                       )
 
