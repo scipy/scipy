@@ -317,7 +317,8 @@ class csc_matrix(spmatrix):
         self.nzmax = nzmax
         self.typecode = self.data.typecode()
         if self.typecode not in 'fdFD':
-            raise ValueError, "Only floating point sparse matrix types allowed"
+            self.data = self.data.astype('d')
+            self.typecode = 'd'
         self.ftype = _transtabl[self.typecode]
         
 
@@ -455,22 +456,26 @@ class csc_matrix(spmatrix):
         if (K1 != K2):
             raise ValueError, "Shape mismatch error."
         a, rowa, ptra = self.data, self.rowind, self.indptr
-        typecode = _coerce_rules[(self.typecode,bmat.typecode)]
-        ftype = _transtabl[typecode]
         if isinstance(bmat,csr_matrix):
             bmat._check()
+            typecode = _coerce_rules[(self.typecode,bmat.typecode)]
+            ftype = _transtabl[typecode]            
             func = getattr(sparsetools,ftype+'cscmucsr')
             b = bmat.data
             rowb = bmat.colind
             ptrb = bmat.indptr
         elif isinstance(bmat,csc_matrix):
             bmat._check()
+            typecode = _coerce_rules[(self.typecode,bmat.typecode)]
+            ftype = _transtabl[typecode]                        
             func = getattr(sparsetools,ftype+'cscmucsc')
             b = bmat.data
             rowb = bmat.rowind
             ptrb = bmat.indptr
         else:
             bmat = bmat.tocsc()
+            typecode = _coerce_rules[(self.typecode,bmat.typecode)]
+            ftype = _transtabl[typecode]                        
             func = getattr(sparsetools,ftype+'cscmucsc')
             b = bmat.data
             rowb = bmat.rowind
@@ -683,7 +688,8 @@ class csr_matrix(spmatrix):
         self.nzmax = len(self.colind)
         self.typecode = self.data.typecode()
         if self.typecode not in 'fdFD':
-            raise ValueError, "Only floating point sparse matrix types allowed"
+            self.typecode = 'd'
+            self.data = self.data.astype('d')
         self.ftype = _transtabl[self.typecode]
 
         
@@ -817,12 +823,12 @@ class csr_matrix(spmatrix):
         M,K1 = self.shape
         K2,N = bmat.shape
         a, rowa, ptra = self.data, self.colind, self.indptr
-        typecode = _coerce_rules[(self.typecode,bmat.typecode)]
-        ftype = _transtabl[typecode]
         if (K1 != K2):
             raise ValueError, "Shape mismatch error."
-        if isinstance(bmat,csc_matrix):
+        if isinstance(bmat,csc_matrix):            
             bmat._check()
+            typecode = _coerce_rules[(self.typecode,bmat.typecode)]
+            ftype = _transtabl[typecode]            
             func = getattr(sparsetools,ftype+'csrmucsc')
             b = bmat.data
             colb = bmat.rowind
@@ -831,6 +837,8 @@ class csr_matrix(spmatrix):
             firstarg = ()
         elif isinstance(bmat,csr_matrix):
             bmat._check()
+            typecode = _coerce_rules[(self.typecode,bmat.typecode)]
+            ftype = _transtabl[typecode]            
             func = getattr(sparsetools,ftype+'cscmucsc')
             b, colb, rowb = a, rowa, ptra
             a, rowa, ptra = bmat.data, bmat.colind, bmat,indptr
@@ -838,6 +846,8 @@ class csr_matrix(spmatrix):
             firstarg = (N,)
         else:
             bmat = bmat.tocsc()
+            typecode = _coerce_rules[(self.typecode,bmat.typecode)]
+            ftype = _transtabl[typecode]            
             func = getattr(sparsetools,ftype+'csrmucsc')
             b = bmat.data
             colb = bmat.colind
@@ -1339,7 +1349,7 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
         raise ValueError, "Can only factor square matrices."
     csc = A.tocsc()
     gstrf = eval('_superlu.' + csc.ftype + 'gstrf')
-    return gstrf(N,csc.nnz,csc.data,csc.rowind,csc.colptr,permc_spec,
+    return gstrf(N,csc.nnz,csc.data,csc.rowind,csc.indptr,permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
         
 
