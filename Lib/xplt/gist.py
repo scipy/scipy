@@ -6,7 +6,7 @@ try:
     from gistC import *
 except ImportError:
     from scipy.xplt.gistC import *
-from helpmod import help
+from helpmod import help as ghelp
 from shapetest import *
 from arrayfns import *
 

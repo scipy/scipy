@@ -561,8 +561,9 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
       representation.           
     """
     x,y,z=map(myasarray,[x,y,z])
+    x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
     m=len(x)
-    if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'
+    if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'  
     if w is None: w=ones(m,'d')
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
@@ -661,6 +662,8 @@ def bisplev(x,y,tck,dx=0,dy=0):
     if not (0<=dx<kx): raise ValueError,"0<=dx=%d<kx=%d must hold"%(dx,kx)
     if not (0<=dy<ky): raise ValueError,"0<=dy=%d<ky=%d must hold"%(dy,ky)
     x,y=map(myasarray,[x,y])
+    if (len(x.shape) != 1) or (len(y.shape) != 1):
+        raise ValueError, "First two entries should be rank-1 arrays."
     z,ier=_fitpack._bispev(tx,ty,c,kx,ky,x,y,dx,dy)
     if ier==10: raise ValueError,"Invalid input data"
     if ier: raise TypeError,"An error occurred"

@@ -1569,8 +1569,11 @@ To evaluate the two-dimensional spline and it's partial derivatives (up
 interpolate.bisplev
 \series default 
  is required.
- This function takes as the first two arguments two 1-D arrays which together
- specify the points at which to evaluate the spline.
+ This function takes as the first two arguments 
+\series bold 
+two 1-D arrays
+\series default 
+ whose cross-product specifies the domain over which to evaluate the spline.
  The third argument is the 
 \emph on 
 tck 
@@ -1599,6 +1602,80 @@ It is important to note that two dimensional interpolation should not be
  The signal processing toolbox contains (soon) more appropriate algorithms
  for finding the spline representation of an image.
  The two dimensional interpolation commands are intended for use when interpolat
-ing a two dimensional function as shown in the example that follows.
+ing a two dimensional function as shown in the example that follows (See
+ also Figure 
+\begin_inset LatexCommand \ref{fig:2d_interp}
+
+\end_inset 
+
+).
+ This example uses the 
+\series bold 
+grid 
+\series default 
+command in SciPy which is useful for defining a 
+\begin_inset Quotes eld
+\end_inset 
+
+mesh-grid
+\begin_inset Quotes erd
+\end_inset 
+
+ in many dimensions.
+ The number of output arguments and the number of dimensions of each argument
+ is determined by the number of indexing objects passed in 
+\series bold 
+grid[].
+
+\series default 
  
+\begin_inset Include \verbatiminput{example6.3}
+
+\end_inset 
+
+
+\layout Standard
+\added_space_top 0.3cm \added_space_bottom 0.3cm \align center 
+\begin_float fig 
+\layout Standard
+\align center 
+
+\begin_inset Figure size 267 377
+file 2d_func.pdf
+width 3 45
+flags 11
+
+\end_inset 
+
+\SpecialChar ~
+\SpecialChar ~
+
+\begin_inset Figure size 267 377
+file 2d_interp.pdf
+width 3 45
+flags 11
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:2d_interp}
+
+\end_inset 
+
+Example of two-dimensional spline interpolation.
+\end_float 
+\layout Section
+
+Signal Processing
+\layout Standard
+
+The signal processing toolbox currently contains some filtering functions,
+ a limited set of filter design tools, and a few B-spline interpolation
+ algorithms for one- and two-dimensional data.
+ While the B-spline algorithms could technically be placed under the interpolati
+on category, they are included here due to there heavy use of filter-theory
+ and transfer-function 
 \the_end

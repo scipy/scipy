@@ -8,6 +8,7 @@
     legend    -- Construct and place a legend.
     arrow     -- Draw an arrow.
     plot      -- Plot curves.
+    plot3     -- Plot surfaces (no axes currently plotted).
     xlabel    -- Place a label on the x-axis.
     ylabel    -- Place a label on the y-axis.
     title     -- Place a title above the plot.
@@ -25,10 +26,11 @@
                  three-dimensional array.
 """
 
+from gist import *
 import os, sys
 from Mplot import *
 from write_style import *
 gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
                         'site-packages','scipy','xplt')
 os.environ['GISTPATH'] = gistpath
-from gist import *
+sys.path = [gistpath] + sys.path

@@ -1,5 +1,6 @@
 
 import gist
+import pl3d, plwf
 import Numeric
 from Numeric import ravel, reshape, repeat, arange, transpose, compress
 import MLab
@@ -579,6 +580,13 @@ def title(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0)
         gist.plt(text,xmidpt,vp[3] + 0.02 + deltay, font=font, justify='CB',
                  height=fontsize, color=color)
 
+def title3(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
+    vp = gist.viewport()
+    xmidpt = (vp[0] + vp[1])/2.0 + deltax
+    if text != "":
+        gist.plt(text,xmidpt,vp[3]-0.05-deltay, font=font, justify='CB',
+                 height=fontsize, color=color)
+
 
 def makeleg(leg,pos,lenx,dd,theight=12):
     # Place legend
@@ -718,18 +726,29 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         yval = slice2[1]*(xe1[0] - xb1[0])/(img1.shape[0]) + xb1[0]
         gist.pldj([xstart],[yval],[xstop],[yval],type='dash',width=2,color='white')
 
-
     if cb:
         colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04) 
-
-
-from MLab import rand
-def testit(N):
-    for k in range(1,N+1):
-        gist.plsys(k)
-        gist.plg(rand(100))
-    gist.redraw()
-
+def plot3(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
+          zscale=1.0,palette=None,gnomon=0):
+    """Plot a three-dimensional wire-frame (surface): z=f(x,y)
+    """
+    if win is None:
+        pl3d.window3()
+    else:
+        pl3d.window3(win)
+    pl3d.set_draw3_(0)
+    pl3d.orient3(phi=phi*pi/180,theta=theta*pi/180)
+    pl3d.light3()
+    if palette is not None:
+        try:
+            gist.palette('%s.gp' % palette)
+        except:
+            raise ValueError, "%s palette not available." % palette
+    plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
+    [xmin,xmax,ymin,ymax] = pl3d.draw3(1)
+    gist.limits(xmin,xmax,ymin,ymax)
+    pl3d.gnomon(gnomon)
+    
 
 
 

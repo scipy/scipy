@@ -1,52 +1,14 @@
->>> # Cubic-spline
->>> x = arange(0,2*pi+pi/4,2*pi/8)
->>> y = sin(x)
->>> tck = interpolate.splrep(x,y,s=0)
->>> xnew = arange(0,2*pi,pi/50)
->>> ynew = interpolate.splev(xnew,tck,der=0)
->>> xplt.plot(x,y,'x',xnew,ynew,xnew,sin(xnew),x,y,'b')
->>> xplt.legend(['Linear','Cubic Spline', 'True'],['b-x','m','r'])
->>> xplt.limits(-0.05,6.33,-1.05,1.05)
->>> xplt.title('Cubic-spline interpolation')
->>> xplt.eps('interp_cubic')
+>>> # Define function over sparse 20x20 grid
+>>> x,y = grid[-1:1:20L,-1:1:20L]
+>>> z = (x+y)*exp(-6.0*(x*x+y*y))
+>>> xplt.plot3(x,y,z,shade=1,palette='rainbow')
+>>> xplt.title3("Sparsely sampled function.")
+>>> xplt.eps("2d_func")
 
->>> # Derivative of spline
->>> yder = interpolate.splev(xnew,tck,der=1)
->>> xplt.plot(xnew,yder,xnew,cos(xnew),'|')
->>> xplt.legend(['Cubic Spline', 'True'])
->>> xplt.limits(-0.05,6.33,-1.05,1.05)
->>> xplt.title('Derivative estimation from spline')
->>> xplt.eps('interp_cubic_der')
-
->>> # Integral of spline
->>> def integ(x,tck,constant=-1):
->>>     x = asarray_1d(x)
->>>     out = zeros(x.shape, x.typecode())
->>>     for n in xrange(len(out)):
->>>         out[n] = interpolate.splint(0,x[n],tck)
->>>     out += constant
->>>     return out
->>>
->>> yint = integ(xnew,tck)
->>> xplt.plot(xnew,yint,xnew,-cos(xnew),'|')
->>> xplt.legend(['Cubic Spline', 'True'])
->>> xplt.limits(-0.05,6.33,-1.05,1.05)
->>> xplt.title('Integral estimation from spline')
->>> xplt.eps('interp_cubic_int')
-
->>> # Roots of spline
->>> print interpolate.sproot(tck)
-[ 0.      3.1416]
-
->>> # Parametric spline
->>> t = arange(0,1.1,.1)
->>> x = sin(2*pi*t)
->>> y = cos(2*pi*t)
->>> tck,u = interpolate.splprep([x,y],s=0)
->>> unew = arange(0,1.01,0.01)
->>> out = interpolate.splev(unew,tck)
->>> xplt.plot(x,y,'x',out[0],out[1],sin(2*pi*unew),cos(2*pi*unew),x,y,'b')
->>> xplt.legend(['Linear','Cubic Spline', 'True'],['b-x','m','r'])
->>> xplt.limits(-1.05,1.05,-1.05,1.05)
->>> xplt.title('Spline of parametrically-defined curve')
->>> xplt.eps('interp_cubic_param')
+>>> # Interpolate function over new 70x70 grid
+>>> xnew,ynew = grid[-1:1:70L,-1:1:70L]
+>>> tck = interpolate.bisplrep(x,y,z,s=0)
+>>> znew = interpolate.bisplev(xnew[:,0],ynew[0,:],tck)
+>>> xplt.plot3(xnew,ynew,znew,shade=1,palette='rainbow')
+>>> xplt.title3("Interpolated function.")
+>>> xplt.eps("2d_interp")

@@ -1,6 +1,6 @@
 """ Signal Processing Tools
 
-  A collection of signal processing tools:
+ A collection of signal processing tools:
  
     convolve      --  N-dimensional convolution.
     correlate     --  N-dimensional correlation.
@@ -12,5 +12,10 @@
     wiener        --  N-dimensional wiener filter.
     remez         --  Optimal FIR filter design.
     lfilter       --  FIR and IIR digital linear filtering.
+
+    bsplines (module) --- A collection of routines for finding
+                          B-splines using IIR filters.
 """
 from signaltools import *
+import bsplines
+import spline
