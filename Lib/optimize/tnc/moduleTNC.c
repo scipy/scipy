@@ -23,10 +23,8 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* @(#) $Jeannot: moduleTNC.c,v 1.4 2004/04/03 16:23:31 js Exp $ */
-
 static char const rcsid[] =
-  "@(#) $Jeannot: moduleTNC.c,v 1.4 2004/04/03 16:23:31 js Exp $";
+  "@(#) $Jeannot: moduleTNC.c,v 1.7 2004/04/13 09:45:56 js Exp $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -149,6 +147,7 @@ static int function(double x[], double *f, double g[], void *state)
   }
   
   arglist = Py_BuildValue("(O)", py_list);
+  Py_DECREF(py_list);
   result = PyEval_CallObject(py_state->py_function, arglist);
   Py_DECREF(arglist);
 
@@ -156,7 +155,10 @@ static int function(double x[], double *f, double g[], void *state)
     goto failure;
 
   if (result == Py_None)
+  {
+    Py_DECREF(result);
     return 1;
+  }
 
   if (!PyArg_ParseTuple(result, "dO!", f, &PyList_Type, &py_grad))
   {
@@ -168,16 +170,19 @@ static int function(double x[], double *f, double g[], void *state)
   if (PyList_IntoDoubleArray(py_grad, g, py_state->n))
     goto failure;
 
+  Py_DECREF(result);
+
   return 0;
     
 failure:
   py_state->failed = 1;
+  Py_DECREF(result);
   return 1;
 }
 
 PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 {
-  PyObject *py_x0, *py_low, *py_up, *py_list, *py_scale;
+  PyObject *py_x0, *py_low, *py_up, *py_list, *py_scale, *res;
   PyObject *py_function = NULL;
   pytnc_state py_state;
   int n, n1, n2, n3;
@@ -205,7 +210,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     
   if (PyList_Size(py_scale) != 0)
   {  
-    scale = PyList_AsDoubleArray(py_x0, &n3);
+    scale = PyList_AsDoubleArray(py_scale, &n3);
     if (scale == NULL)
     {
       PyErr_SetString(PyExc_ValueError, "Invalid parameters.");
@@ -253,7 +258,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   Py_INCREF(py_function);
   
-  rc = tnc(n, x, &f, NULL, function, &py_state, low, up, NULL, msg,
+  rc = tnc(n, x, &f, NULL, function, &py_state, low, up, scale, msg,
     maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, rescale,
     &nfeval);
 
@@ -268,6 +273,13 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     free(x);
     return NULL;
   }
+  
+  if (rc == TNC_ENOMEM)
+  {
+    PyErr_SetString(PyExc_MemoryError, "Not enough memory for TNC.");
+    free(x);
+    return NULL;
+  }
 
   py_list = PyDoubleArray_AsList(n, x);
   free(x);
@@ -277,7 +289,10 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  return Py_BuildValue("(iiO)", rc, nfeval, py_list);
+  res = Py_BuildValue("(iiO)", rc, nfeval, py_list);
+  Py_DECREF(py_list);
+
+  return res;
 }
 
 static PyMethodDef moduleTNC_methods[] =
