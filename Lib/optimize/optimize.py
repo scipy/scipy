@@ -379,7 +379,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8
+def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
               maxiter=None, full_output=0, disp=1):
     """Minimize a function using the BFGS algorithm.
 
