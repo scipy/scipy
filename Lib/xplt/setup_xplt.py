@@ -13,17 +13,18 @@ def configuration(parent_package=''):
        This will install *.gs and *.gp files to
        '%spython%s/site-packages/scipy/xplt' % (sys.prefix,sys.version[:3])
     """
+    package = 'xplt'
     x11 = x11_info().get_info()
     if not x11:
         return {}
 
-    config = default_config_dict('xplt',parent_package)
+    config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
     
     sources = ['gistCmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
 
-    ext_arg = {'name':dot_join(parent_package,'xplt.gistC'),
+    ext_arg = {'name':dot_join(parent_package,package,'gistC'),
                'sources':sources}
     dict_append(ext_arg,**x11)
     dict_append(ext_arg,libraries=['m'])

@@ -2,28 +2,18 @@
 
 import os
 from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path
+from scipy_distutils.misc_util import get_path, dot_join, default_config_dict
 
 def configuration(parent_package=''):
+    package = 'io'
     local_path = get_path(__name__)
-    if parent_package:
-        parent_package += '.'
-    packages = []
-    ext_modules = []
-    
-    from scipy_distutils.core import Extension
-    if parent_package:
-        packages.append(parent_package+'io')
-    
+    config = default_config_dict(package,parent_package)
+     
     sources = ['numpyiomodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(parent_package+'io.numpyio',sources)
-    ext_modules.append(ext)
-    #packages.append(parent_package+'io.tests') 
-    results = {'packages': packages,
-               'ext_modules': ext_modules,
-              }
-    return results          
+    ext = Extension(dot_join(parent_package,package,'numpyio'),sources)
+    config['ext_modules'].append(ext)
+    return config
 
 if __name__ == '__main__':    
     from scipy_distutils.core import setup

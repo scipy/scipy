@@ -1,13 +1,12 @@
-import os
-from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path
+#!/usr/bin/env python
+
+from scipy_distutils.misc_util import default_config_dict
 
 def configuration(parent_package=''):
-    if parent_package:
-        parent_package += '.'
-    local_path = get_path(__name__)
-    
-    packages = []
-    packages.append(parent_package+'cow')
-    #packages.append(parent_package+'cow.tests') 
-    return {'packages': packages}
+    package = 'cow'
+    config = default_config_dict(package,parent_package)
+    return config
+
+if __name__ == '__main__':
+    from scipy_distutils.core import setup
+    setup(**configuration())

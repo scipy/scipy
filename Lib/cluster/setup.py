@@ -15,7 +15,7 @@ setup (name = "cluster",
        maintainer_email = "scipy-devel@scipy.org",
        description = "Clustering Algorithms (Information Theory)",
        url = "http://www.scipy.org",
-       
+
        packages = ['cluster'],
        package_dir = {'cluster':'.'},
        include_dirs = ['src'],

@@ -8,7 +8,8 @@ from scipy_distutils.misc_util import fortran_library_item
 from scipy_distutils.system_info import get_info
 
 def configuration(parent_package=''):
-    config = default_config_dict('integrate',parent_package)
+    package = 'integrate'
+    config = default_config_dict(package,parent_package)
     atlas_info = get_info('atlas')
     local_path = get_path(__name__)
 
@@ -41,20 +42,20 @@ def configuration(parent_package=''):
     # quadpack
     sources = ['_quadpackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,'integrate._quadpack'),sources,
+    ext = Extension(dot_join(parent_package,package,'_quadpack'),sources,
                     libraries=['quadpack'])
     config['ext_modules'].append(ext)
 
     # odepack
     sources = ['_odepackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,'integrate._odepack'),sources,
+    ext = Extension(dot_join(parent_package,package,'_odepack'),sources,
                     libraries=['odepack','mach'])
     config['ext_modules'].append(ext)
 
     # vode
     sources = [os.path.join(local_path,'vode.pyf')]
-    ext = Extension(dot_join(parent_package,'integrate.vode'),
+    ext = Extension(dot_join(parent_package,package,'vode'),
                     sources,
                     library_dirs=atlas_library_dirs,
                     libraries=['odepack'])

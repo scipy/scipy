@@ -22,13 +22,10 @@ from scipy_distutils.system_info import get_info,dict_append,\
      LapackSrcNotFoundError,BlasSrcNotFoundError
 
 def configuration(parent_package=''):
+    package = 'linalg'
     from interface_gen import generate_interface
-    config = default_config_dict('linalg',parent_package)
+    config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
-    test_path = os.path.join(local_path,'tests')
-
-    config['packages'].append(dot_join(parent_package,'linalg.tests'))
-    config['package_dir']['linalg.tests'] = test_path
 
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
@@ -84,7 +81,7 @@ def configuration(parent_package=''):
         if dep_util.newer_group(sources,mod_file):
             generate_interface(mod_name,sources[0],mod_file)
         sources = filter(lambda s:s[-4:]!='.pyf',sources)
-        ext_args = {'name':dot_join(parent_package,'linalg',mod_name),
+        ext_args = {'name':dot_join(parent_package,package,mod_name),
                     'sources':[mod_file]+sources}
         dict_append(ext_args,**atlas_info)
         ext = Extension(**ext_args)
@@ -95,12 +92,12 @@ def configuration(parent_package=''):
     for f in ['det.f','lu.f', #'wrappers.c','inv.f',
               ]:
         flinalg.append(os.path.join(local_path,'src',f))
-    ext_args = {'name':dot_join(parent_package,'linalg','_flinalg'),
+    ext_args = {'name':dot_join(parent_package,package,'_flinalg'),
                 'sources':flinalg}
     dict_append(ext_args,**atlas_info)
     config['ext_modules'].append(Extension(**ext_args))
 
-    ext_args = {'name':dot_join(parent_package,'linalg','calc_lwork'),
+    ext_args = {'name':dot_join(parent_package,package,'calc_lwork'),
                 'sources':[os.path.join(local_path,'src','calc_lwork.f')],
                 }
     dict_append(ext_args,**atlas_info)

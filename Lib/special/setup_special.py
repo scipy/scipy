@@ -8,7 +8,8 @@ from scipy_distutils.system_info import dict_append
 import shutil
 
 def configuration(parent_package=''):
-    config = default_config_dict('special',parent_package)
+    package = 'special'
+    config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
 
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
@@ -34,12 +35,13 @@ def configuration(parent_package=''):
     sources = ['cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
                'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,'special.cephes'),sources,
-                    libraries = ['amos','toms','c_misc','cephes','mach', 'cdf', 'specfun']
+    ext = Extension(dot_join(parent_package,package,'cephes'),sources,
+                    libraries = ['amos','toms','c_misc','cephes','mach',
+                                 'cdf', 'specfun']
                     )
     config['ext_modules'].append(ext)
 
-    ext_args = {'name':dot_join(parent_package,'special.specfun'),
+    ext_args = {'name':dot_join(parent_package,package,'specfun'),
                 'sources':[os.path.join(local_path,'specfun.pyf')],
                 'f2py_options':['--no-wrap-functions'],
                 #'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
@@ -59,7 +61,6 @@ def configuration(parent_package=''):
         print "### Big Endian detected ####"
         shutil.copy2(os.path.join(cephes_path,'mconf_BE.h'),os.path.join(cephes_path,'mconf.h'))
 
-        
     return config
 
 if __name__ == '__main__':

@@ -8,7 +8,8 @@ from scipy_distutils.system_info import get_info,dict_append
 import shutil
 
 def configuration(parent_package=''):
-    config = default_config_dict('sparse',parent_package)
+    package = 'sparse'
+    config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
 
     atlas_info = get_info('atlas')
@@ -31,7 +32,7 @@ def configuration(parent_package=''):
     
     # Extension
     sources = ['_zsuperlumodule.c']
-    ext_args = {'name':dot_join(parent_package,'sparse._zsuperlu'),
+    ext_args = {'name':dot_join(parent_package,package,'_zsuperlu'),
                 'sources':[os.path.join(local_path,x) for x in sources],
                 'libraries': ['superlu','myblas']
                 }
@@ -40,7 +41,7 @@ def configuration(parent_package=''):
     config['ext_modules'].append(ext)
 
     sources = ['_dsuperlumodule.c']
-    ext_args = {'name':dot_join(parent_package,'sparse._dsuperlu'),
+    ext_args = {'name':dot_join(parent_package,package,'_dsuperlu'),
                 'sources':[os.path.join(local_path,x) for x in sources],
                 'libraries': ['superlu','myblas']
                 }
@@ -49,7 +50,7 @@ def configuration(parent_package=''):
     config['ext_modules'].append(ext)
 
     sources = ['_csuperlumodule.c']
-    ext_args = {'name':dot_join(parent_package,'sparse._csuperlu'),
+    ext_args = {'name':dot_join(parent_package,package,'_csuperlu'),
                 'sources':[os.path.join(local_path,x) for x in sources],
                 'libraries': ['superlu','myblas']
                 }
@@ -58,7 +59,7 @@ def configuration(parent_package=''):
     config['ext_modules'].append(ext)
 
     sources = ['_ssuperlumodule.c']
-    ext_args = {'name':dot_join(parent_package,'sparse._ssuperlu'),
+    ext_args = {'name':dot_join(parent_package,package,'_ssuperlu'),
                 'sources':[os.path.join(local_path,x) for x in sources],
                 'libraries': ['superlu','myblas']
                 }
@@ -66,7 +67,7 @@ def configuration(parent_package=''):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
-    ext_args = {'name':dot_join(parent_package,'sparse._sparsekit'),
+    ext_args = {'name':dot_join(parent_package,package,'_sparsekit'),
                 'sources':[os.path.join(local_path,'_sparsekit.pyf')],
                 #'f2py_options':['--no-wrap-functions'],
                 #'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
