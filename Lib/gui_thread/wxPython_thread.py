@@ -14,6 +14,7 @@ import new
 import types
 import thread
 import inspect
+import atexit
 from scipy_base import ParallelExec
 
 def get_extmodules(module,pexec):
@@ -121,3 +122,5 @@ def wxPython_thread():
     # Start wxPython application in background:
     pexec('call_holder.call.run()')
 
+    atexit.register(pexec.shutdown)
+    return
