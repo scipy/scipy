@@ -56,11 +56,6 @@ class test_comb(unittest.TestCase):
         for key in resdict.keys():
             assert_equal(comb(key[0],key[1],exact=1),resdict[key])
 
-
-class test_resample(unittest.TestCase):
-    def check_basic(self):
-       pass 
-    
                                         
 ##################################################
 
@@ -69,7 +64,6 @@ def test_suite():
     suites.append( unittest.makeSuite(test_roots,'check_') )
     suites.append( unittest.makeSuite(test_factorial,'check_') )
     suites.append( unittest.makeSuite(test_comb,'check_') )
-    suites.append( unittest.makeSuite(test_resample,'check_') )
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
