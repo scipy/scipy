@@ -3,9 +3,10 @@ import scipy.special as special
 from scipy import iscomplex, fft, ifft
 from scipy import polyadd, polymul, polydiv, polysub, \
                   roots, poly, polyval, polyder
+import types
 import scipy
 import Numeric
-from Numeric import array, asarray
+from Numeric import array, asarray, arange
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
@@ -444,37 +445,53 @@ def lfilter(b, a, x, axis=-1, zi=None):
         return sigtools._linear_filter(b, a, x, axis, zi)
 
 def blackman(M):
-    """blackman(M) returns the M-point Blackman window.
+    """The M-point Blackman window.
     """
     n = arange(0,M)
     return 0.42-0.5*cos(2.0*pi*n/(M-1)) + 0.08*cos(4.0*pi*n/(M-1))
 
 def bartlett(M):
-    """bartlett(M) returns the M-point Bartlett window.
+    """The M-point Bartlett window.
     """
     n = arange(0,M)
     return where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
 
 def hanning(M):
-    """hanning(M) returns the M-point Hanning window.
+    """The M-point Hanning window.
     """
     n = arange(0,M)
     return 0.5-0.5*cos(2.0*pi*n/(M-1))
 
 def hamming(M):
-    """hamming(M) returns the M-point Hamming window.
+    """The M-point Hamming window.
     """
     n = arange(0,M)
     return 0.54-0.46*cos(2.0*pi*n/(M-1))
 
 def kaiser(M,beta):
-    """kaiser(M, beta) returns a Kaiser window of length M with shape
-    parameter beta. It depends on the cephes module for the modified bessel
-    function i0.
+    """Returns a Kaiser window of length M with shape parameter beta.
     """
     n = arange(0,M)
     alpha = (M-1)/2.0
     return special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
+
+def gaussian(M,std):
+    """Returns a Gaussian window of length M with standard-deviation std.
+    """
+    n = arange(0,M)-(M-1.0)/2.0
+    sig2 = 2*std*std
+    return exp(-n**2 / sig2)
+
+def general_gaussian(M,p,sig):
+    """Returns a window with a generalized Gaussian shape.
+
+    exp(-0.5*(x/sig)**(2*p))
+
+    half power point is at (2*log(2)))**(1/(2*p))*sig
+    """
+    n = arange(0,M)-(M-1.0)/2.0
+    return exp(-0.5*(n/sig)**(2*p))
+    
 
 def hilbert(x, N=None):
     """Return the hilbert transform of x of length N.
@@ -665,6 +682,95 @@ def residue(b,a,tol=1e-3,rtype='avg'):
 
 def residuez(b,a,tol=1e-3):
     pass
+
+
+def _get_window(window,Nx):
+    try:
+        beta = float(window)
+    except (TypeError, ValueError):
+        args = ()
+        if isinstance(window, types.TupleType):
+            winstr = window[0]
+            if len(window) > 1:
+                args = window[1:]
+        elif isinstance(window, types.StringType):
+            if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
+                        'general gaussian', 'general_gaussian',
+                        'general gauss', 'general_gauss', 'ggs']:
+                raise ValueError, "That window needs a parameter -- pass a tuple"
+            else:
+                winstr = window
+
+        if winstr in ['blackman', 'black', 'blk']:
+            winfunc = blackman
+        elif winstr in ['hamming', 'hamm', 'ham']:
+            winfunc = hamming
+        elif winstr in ['bartlett', 'bart', 'brt']:
+            winfunc = bartlett
+        elif winstr in ['hanning', 'hann', 'han']:
+            winfunc = hanning
+        elif winstr in ['kaiser', 'ksr']:
+            winfunc = kaiser
+        elif winstr in ['gaussian', 'gauss', 'gss']:
+            winfunc = gaussian
+        elif winstr in ['general gaussian', 'general_gaussian',
+                        'general gauss', 'general_gauss', 'ggs']:
+            winfunc = general_gaussian
+        else:
+            raise ValueError, "Unknown window type."
+
+        params = (Nx,)+args
+    else:
+        winfunc = kaiser
+        params = (Nx,beta)
+
+    return winfunc(*params)
+        
+
+def resample(x,num,axis=0,window=None):
+    """Resample to num samples using Fourier method along the given axis.
+
+    Window controls a Fourier-domain window that tapers the Fourier spectrum
+    before zero-padding to aleviate ringing in the resampled values for
+    non, band-limited signals.
+
+    If window is a string then use the named window.  If window is a float, then
+    it represents a value of beta for a kaiser window.  If window is a tuple,
+    then the first component is a string representing the window, and the next
+    arguments are parameters for that window.
+
+    Possible windows are:
+           'blackman'       ('black',   'blk')
+           'hamming'        ('hamm',    'ham')
+           'bartlett'       ('bart',    'brt')
+           'hanning'        ('hann',    'han')
+           'kaiser'         ('ksr')             # requires parameter (beta)
+           'gaussian'       ('gauss',   'gss')  # requires parameter (std.)
+           'general gauss'  ('general', 'ggs')  # requires two parameters
+                                                      (power, width)
+    """
+    x = asarray(x)
+    from scipy import fft,ifft
+    X = fft(x,axis=axis)
+    Nx = x.shape[axis]
+    if window is not None:
+        W = _get_window(window,Nx)
+        X = X*W
+    sl = [slice(None)]*len(x.shape)
+    newshape = list(x.shape)
+    newshape[axis] = num
+    N = int(Numeric.minimum(num,Nx))
+    Y = Numeric.zeros(newshape,'D')
+    sl[axis] = slice(0,(N+1)/2)
+    Y[sl] = X[sl]
+    sl[axis] = slice(-(N-1)/2,None)
+    Y[sl] = X[sl]
+    y = ifft(Y,axis=axis)*(float(num)/float(Nx))
+
+    if x.typecode() not in ['F','D']:
+        return y.real
+    else:
+        return y
 
 
 def test():

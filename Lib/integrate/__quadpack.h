@@ -75,10 +75,10 @@ double quad_function(double *x) {
   if ((result = PyEval_CallObject(multipack_python_function, arglist))==NULL) goto fail;
 
   Py_DECREF(arglist);
-  if (!PyFloat_Check(result))
+  d_result = PyFloat_AsDouble(result);
+  if (d_result == -1) 
     PYERR(quadpack_error,"Supplied function does not return a double.")
 
-  d_result = PyFloat_AS_DOUBLE(result);
   Py_DECREF(result);
 
   return d_result;
