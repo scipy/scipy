@@ -78,7 +78,8 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     tmp = Numeric.asarray(x)
     t = tmp.typecode()
     if t=='D':
-        overwrite_x = overwrite_x or tmp is not x
+        overwrite_x = overwrite_x or (tmp is not x and not \
+                                      hasattr(x,'__array__'))
         work_function = fftpack.zfft
     elif t=='F':
         raise NotImplementedError
@@ -104,7 +105,8 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     tmp = Numeric.asarray(x)
     t = tmp.typecode()
     if t=='D':
-        overwrite_x = overwrite_x or tmp is not x
+        overwrite_x = overwrite_x or (tmp is not x and not \
+                                      hasattr(x,'__array__'))
         work_function = fftpack.zfft
     elif t=='F':
         raise NotImplementedError
@@ -245,7 +247,8 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     tmp = Numeric.asarray(x)
     t = tmp.typecode()
     if t=='D':
-        overwrite_x = overwrite_x or tmp is not x
+        overwrite_x = overwrite_x or (tmp is not x and not \
+                                      hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
     elif t=='F':
         raise NotImplementedError
@@ -273,7 +276,8 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     tmp = Numeric.asarray(x)
     t = tmp.typecode()
     if t=='D':
-        overwrite_x = overwrite_x or tmp is not x
+        overwrite_x = overwrite_x or (tmp is not x and not \
+                                      hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
     elif t=='F':
         raise NotImplementedError
