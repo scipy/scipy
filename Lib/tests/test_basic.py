@@ -404,7 +404,7 @@ class test_trapz(unittest.TestCase):
         y = x**2 + 2*x + 1
         dx = x[:,1:,:] - x[:,:-1,:]
         val = add.reduce(dx*(y[:,1:,:] + y[:,:-1,:])/2.0,1)
-        assert_array_equal(trapz(y,x,1),val)        
+        assert_array_equal(trapz(y,x,axis=1),val)        
 
 class test_diff(unittest.TestCase):
     def check_basic(self):
