@@ -1,0 +1,84 @@
+
+Here's what is available (all in double precision):
+LSODE 
+LSODES
+LSODA
+LSODAR
+LSODI
+LSOIBT
+
+To receive the document try:
+send only DOC from odepack
+
+To receive the demo program try:
+send only DEMO from odepack
+
+
+
+                     I. Summary of the ODEPACK Solvers
+
+
+  A. Solvers for explicitly given systems.
+
+       In the solvers below, it is assumed that the ODE's are given
+  explicitly, so that the system can be written in the form
+          dy/dt  =  f(t,y) ,
+  where y is the vector of dependent variables, and t is the independent
+  variable.
+
+
+  1. LSODE (Livermore Solver for Ordinary Differential Equations) is the
+     basic solver of the collection.  It solves stiff and nonstiff systems
+     of the form dy/dt = f.  In the stiff case, it treats the Jacobian matrix
+     df/dy as either a full or a banded matrix, and as either user-supplied
+     or internally approximated by difference quotients.  It uses Adams methods
+     (predictor-corrector) in the nonstiff case, and Backward Differentiation
+     Formula (BDF) methods in the stiff case.  The linear systems that arise
+     are solved by direct methods (LU factor/solve).  LSODE supersedes the older
+     GEAR and GEARB packages, and reflects a complete redesign of the user
+     interface and internal organization, with some algorithmic improvements.
+
+
+  2. LSODES, written jointly with A. H. Sherman, solves systems dy/dt = f
+     and in the stiff case treats the Jacobian matrix in general sparse
+     form.  It determines the sparsity structure on its own (or optionally
+     accepts this information from the user), and uses parts of the Yale Sparse
+     Matrix Package (YSMP) to solve the linear systems that arise.
+     LSODES supersedes, and improves upon, the older GEARS package.
+
+
+  3. LSODA, written jointly with L. R. Petzold, solves systems dy/dt = f
+     with a full or banded Jacobian when the problem is stiff, but it
+     automatically selects between nonstiff (Adams) and stiff (BDF) methods.
+     It uses the nonstiff method initially, and dynamically monitors data
+     in order to decide which method to use.
+
+
+  4. LSODAR, also written jointly with L. R. Petzold, is a variant of LSODA
+     with a rootfinding capability added.  Thus it solves problems dy/dt = f
+     with full or banded Jacobian and automatic method selection, and at
+     the same time, it finds the roots of any of a set of given functions
+     of the form g(t,y).  This is often useful for finding stop conditions
+     or points at which switches are to be made in the function f.
+
+
+  B. Solvers for linearly implicit systems.
+
+       In the solvers below, it is assumed that the derivative dy/dt is
+  implicit, but occurs linearly, so that the system can be written
+          A(t,y) dy/dt  =  g(t,y) ,
+  where A is a square matrix.  These solvers allow A to be singular,
+  in which case the system is a differential-algebraic system, but in that
+  case users must be very careful to supply a well-posed problem with
+  consistent initial conditions.
+
+
+  5. LSODI, written jointly with J. F. Painter, solves linearly implicit
+     systems in which the matrices involved (A, dg/dy, and d(A dy/dt)/dy) are
+     all assumed to be either full or banded.  LSODI supersedes the older
+     GEARIB solver and improves upon it in numerous ways.
+
+
+  6. LSOIBT, written jointly with C. S. Kenney, solves linearly implicit
+     systems in which the matrices involved are all assumed to be
+     block-tridiagonal.  Linear systems are solved by the LU method.
