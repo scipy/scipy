@@ -13,9 +13,13 @@ import os
 import sys
 from glob import glob
 
-# With a setup.py command that does not include sdist, both scipy and
-# scipy_base are handled together.
-command_sdist = 'sdist' in sys.argv
+# Use 'setup.py sdist_packagers -f' to create separate tar-balls
+# for Scipy and Scipy_core.
+if 'sdist_packagers' in sys.argv:
+    sys.argv[sys.argv.index('sdist_packagers')] = 'sdist'
+    command_sdist = 1
+else:
+    command_sdist = 0
 
 # Note that when running bdist_rpm, scipy_core directory does
 # not exist. So, scipy_distutils must be installed before
