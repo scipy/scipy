@@ -3698,25 +3698,243 @@ z_{m}\left[n\right]=\sum _{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1
 \end_inset 
 
 ).
- 
+ The command 
+\family typewriter 
+signal.lfiltic
+\family default 
+ performs this function.
 \layout Subsubsection
 
 Other filters
-\layout Subsubsection
+\layout Paragraph
 
-Filter design
+Median Filter
+\layout Paragraph
+
+Order Filter
+\layout Paragraph
+
+Wiener filter
+\layout Paragraph
+
+Hilber filter
+\layout Paragraph
+
+Detrend
 \layout Subsection
 
-Linear Systems
+Filter design
+\layout Subsubsection
+
+Finite-impulse response design 
+\layout Subsubsection
+
+Inifinite-impulse response design
+\layout Subsubsection
+
+Analog filter frequency response
+\layout Subsubsection
+
+Digital filter frequency response
+\layout Subsection
+
+Linear Time-Invariant Systems
+\layout Subsubsection
+
+LTI Object
+\layout Subsubsection
+
+Continuous-Time Simulation
+\layout Subsubsection
+
+Step response
+\layout Subsubsection
+
+Impulse response
 \layout Section
 
 Input/Output
+\layout Subsection
+
+Binary 
+\layout Subsubsection
+
+Arbitrary binary input and output (fopen)
+\layout Subsubsection
+
+Read and write Matlab .mat files
+\layout Subsection
+
+Text-file 
+\layout Subsubsection
+
+Read text-files (read_array)
+\layout Subsubsection
+
+Write a text-file (write_array)
 \layout Section
 
 Fourier Transforms
+\layout Subsection
+
+One-dimensional
+\layout Subsection
+
+Two-dimensional
+\layout Subsection
+
+N-dimensional
+\layout Subsection
+
+Shifting
+\layout Subsection
+
+Sample frequencies
+\layout Subsection
+
+Hilbert transform
+\layout Subsection
+
+Tilbert transform
 \layout Section
 
 Linear Algebra
+\layout Standard
+
+When SciPy is built using the optimized ATLAS LAPACK and BLAS libraries,
+ it has very fast linear algebra capabilities.
+ If you dig deep enough, all of the raw lapack and blas libraries are available
+ for your use for even more speed.
+ In this section, some easier-to-use interfaces to these routines are described.
+\layout Standard
+
+All of these linear algebra routines expect an object that can be converted
+ into a 2-dimensional array.
+ The output of these routines is also a two-dimensional array.
+ There is a matrix class defined in Numeric that scipy inherits and extends.
+ You can initialize this class with an appropriate Numeric array in order
+ to get objects for which multiplication is matrix-multiplication instead
+ of the default, element-by-element multiplication.
+ 
+\layout Subsection
+
+Matrix Class
+\layout Standard
+
+The matrix class is initialized with the SciPy command 
+\family typewriter 
+mat
+\family default 
+ which is just convenient short-hand for 
+\family typewriter 
+Matrix.Matrix
+\family default 
+.
+ If you are going to be doing a lot of matrix-math, it is convenient to
+ convert arrays into matrices using this command.
+\layout Subsection
+
+Basic routines
+\layout Subsubsection
+
+Finding Inverse
+\layout Standard
+
+The inverse of a matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ is the matrix 
+\begin_inset Formula $\mathbf{B}$
+\end_inset 
+
+ such that 
+\begin_inset Formula $\mathbf{AB}=\mathbf{I}$
+\end_inset 
+
+ where 
+\begin_inset Formula $\mathbf{I}$
+\end_inset 
+
+ is the identity matrix consisting of ones down the main diagonal.
+ Usually 
+\begin_inset Formula $\mathbf{B}$
+\end_inset 
+
+ is denoted 
+\begin_inset Formula $\mathbf{B}=\mathbf{A}^{-1}$
+\end_inset 
+
+.
+ In SciPy, the matrix inverse of the Numeric array, 
+\family typewriter 
+a
+\family default 
+, is obtained using 
+\family typewriter 
+linalg.inv(a)
+\family default 
+, or using 
+\family typewriter 
+a.I
+\family default 
+ if 
+\family typewriter 
+a
+\family default 
+ is a Matrix.
+ 
+\layout Subsubsection
+
+Solving linear system
+\layout Subsubsection
+
+Finding Determinant
+\layout Subsubsection
+
+Computing norms
+\layout Subsubsection
+
+Solving least-squares problems
+\layout Subsubsection
+
+Pseudo-inverses
+\layout Subsection
+
+Decompositions
+\layout Subsubsection
+
+Eigenvalues and eigenvectors
+\layout Subsubsection
+
+Singular value decomposition
+\layout Subsubsection
+
+LU decomposition
+\layout Subsubsection
+
+Cholesky decomposition
+\layout Subsubsection
+
+QR decomposition
+\layout Subsubsection
+
+Schur decomposition
+\layout Subsection
+
+Matrix Functions
+\layout Subsubsection
+
+Exponential function
+\layout Subsubsection
+
+Trigonemetric function
+\layout Subsubsection
+
+Hyperbolic trigonometric functions
+\layout Subsubsection
+
+Arbitrary function
 \layout Section
 
 Statistics
@@ -3734,10 +3952,77 @@ info(stats)
 \family default 
 \emph on 
 .
+\layout Section
+
+Interfacing with Python Imaging Library
+\layout Standard
+
+If you have the Python Imaging Library installed, SciPy provides some convenient
+ functions that make use of it's facilities particularly for reading, writing,
+ displaying, and rotating images.
+ In SciPy an image is always a two- or three-dimensional array.
+ Gray-scale, and colormap images are always two-dimensional arrays while
+ RGB images are three-dimensional with the third dimension specifying the
+ channel.
  
-\emph default 
-kdf 
+\layout Standard
+
+Commands available include 
+\layout Itemize
+
+fromimage --- convert a PIL image to a Numeric array
+\layout Itemize
+
+toimage --- convert Numeric array to PIL image
+\layout Itemize
+
+imsave --- save Numeric array to an image file
+\layout Itemize
+
+imread --- read an image file into a Numeric array
+\layout Itemize
+
+imrotate --- rotate an image (a Numeric array) counter-clockwise
+\layout Itemize
+
+imresize --- resize an image using the PIL
+\layout Itemize
+
+imshow --- external viewer of a Numeric array (using PIL)
+\layout Itemize
+
+imfilter --- fast, simple built-in filters provided by PIL
+\layout Itemize
+
+radon --- simple radon transform based on imrotate
 \layout Section
 
 Plotting with xplt
+\layout Subsection
+
+Basic commands 
+\layout Subsection
+
+Adding a legend
+\layout Subsection
+
+Drawing a histogram
+\layout Subsection
+
+Drawing a barplot
+\layout Subsection
+
+Plotting color arrays
+\layout Subsection
+
+Contour plots
+\layout Subsection
+
+Three-dimensional plots
+\layout Subsection
+
+Placing text and arrows
+\layout Subsection
+
+Special plots
 \the_end

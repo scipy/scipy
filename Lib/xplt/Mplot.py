@@ -711,16 +711,24 @@ def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
             gist.pause(plen)
     gist.animate(0)
 
-def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, labelfont='helvetica'):
+def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,dpi=75):
+    if (aspect < 0.1) or (aspect > 10):
+        aspect = 1.618
     if isinstance(color, types.StringType):
         color = _colornum[color]
     fid = open(style,'w')
-    fid.write(write_style.style2string(write_style.getsys(color=color,frame=frame,labelsize=labelsize,font=labelfont)))
+    syst = write_style.getsys(color=color,frame=frame,
+                             labelsize=labelsize,font=labelfont)
+    cntr = (5.5*inches,4.25*inches)  # horizontal, vertical
+    height = 4.25*inches
+    width = aspect*height
+    syst['viewport'] = [cntr[0]-width/2.0,cntr[0]+width/2.0,cntr[1]-height/2.0,cntr[1]+height/2.0]
+    fid.write(write_style.style2string(syst,landscape=1))
     fid.close()
     if n is None:
-        gist.window(style=style)
+        gist.window(style=style,width=int(width*1.25/inches*dpi),height=int(height*1.4/inches*dpi),dpi=dpi)
     else:
-        gist.window(n,style=style)
+        gist.window(n,style=style,width=int(width*1.25/inches*dpi),height=int(height*1.4/inches*dpi),dpi=dpi)
     _current_style = style
     return
 

@@ -467,7 +467,7 @@ def lfiltic(b,a,y,x=None):
     y = {y[-1],y[-2],...,y[-N]}
 
     If x is not given, its inital conditions are assumed zero.
-    If either vector is too short, then it zeros are added
+    If either vector is too short, then zeros are added
       to achieve the proper length.
 
     The output vector zi contains
@@ -497,11 +497,7 @@ def lfiltic(b,a,y,x=None):
         zi[m] -= Numeric.sum(a[m+1:]*y[:N-m])
 
     return zi
-
     
-        
-    
-
 
 def boxcar(M,sym=1):
     """The M-point boxcar window.
@@ -1174,25 +1170,16 @@ def detrend(data, axis=-1, type='linear', bp=0):
         return ret
 
 
-def test():
-    a = [3,4,5,6,5,4]
-    b = [1,2,3]
-    c = convolve(a,b)
-    if (Numeric.product(equal(c,[3,10,22,28,32,32,23,12]))==0):
-        print "Error in convolve."
+################## test functions #########################
 
-    f = [[3,4,5],[2,3,4],[1,2,5]]
-    d = medfilt(f)
-    if (Numeric.product(ravel(equal(d,[[0,3,0],[2,3,3],[0,2,0]])))==0):
-        print "Error in medfilt."
+def test(level=1):
+    from scipy_test.testing import module_test
+    module_test(__name__,__file__,level=level)
 
-    g = Numeric.array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
-    correct = Numeric.array([[2.16374269,3.2222222222, 2.8888888889, 1.6666666667],[2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],[2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],[1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
-    h = wiener(g)
-    if (Numeric.abs(Numeric.product(Numeric.ravel(h-correct)))> 1e-7):
-        print "Error in wiener."
+def test_suite(level=1):
+    from scipy_test.testing import module_test_suite
+    return module_test_suite(__name__,__file__,level=level)
 
-    return
 
 if __name__ == "__main__":
     test()

@@ -16,6 +16,11 @@
      bswap -- in-place byte-swapping
      packbits -- Pack a binary array of 1's and 0's into an array of bytes
      unpackbits -- Unpack an array packed by packbits.
+
+     save --- simple storing of Python dictionary into module
+               that can then be imported and the data accessed as
+               attributes of the module.
+
 """
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray

@@ -362,11 +362,18 @@ static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
   default:
     PYERR("Incorrect type.");
   }
-  
-  if (ret < 0) PYERR("Problem occured inside routine.");
 
-  Py_DECREF(a_sig);
-  return PyArray_Return(out);
+  if (ret == 0) {
+    Py_DECREF(a_sig);
+    return PyArray_Return(out);
+  }
+
+  if (ret == -1) PYERR("Could not allocate enough memory.");
+  if (ret == -2) PYERR("|z1| must be less than 1.0");
+  if (ret == -3) PYERR("Sum to find symmetric boundary conditions did not converge.");
+
+  PYERR("Unknown error.");
+
  
  fail:
   Py_XDECREF(a_sig);
