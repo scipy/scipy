@@ -223,8 +223,8 @@ class lti:
             self.__dict__['zeros'], self.__dict__['poles'], \
                                     self.__dict__['gain'] = ss2zpk(*args)
             self.__dict__['num'], self.__dict__['den'] = ss2tf(*args)
-            self.inputs = B.shape[-1]
-            self.outputs = C.shape[0]
+            self.inputs = self.B.shape[-1]
+            self.outputs = self.C.shape[0]
         else:
             raise ValueError, "Needs 2, 3, or 4 arguments."
 
