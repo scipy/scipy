@@ -121,7 +121,7 @@ def y0_zeros(nt,complex=1):
     """Returns nt (complex or real) zeros of Y0(z), z0, and the value
     of Y0'(z0) = -Y1(z0) at each zero.
     """
-    if not isscalar(nt) or (floor(nt)!=n) or (nt <=0):
+    if not isscalar(nt) or (floor(nt)!=nt) or (nt <=0):
         raise ValueError, "Arguments must be scalar positive integer."
     kf = 0
     kc = (complex != 1)
@@ -130,7 +130,7 @@ def y1_zeros(nt,complex=1):
     """Returns nt (complex or real) zeros of Y1(z), z1, and the value
     of Y1'(z1) = Y0(z1) at each zero.
     """
-    if not isscalar(nt) or (floor(nt)!=n) or (nt <=0):
+    if not isscalar(nt) or (floor(nt)!=nt) or (nt <=0):
         raise ValueError, "Arguments must be scalar positive integer."
     kf = 1
     kc = (complex != 1)
@@ -139,7 +139,7 @@ def y1p_zeros(nt,complex=1):
     """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
     of Y1(z1') at each zero.
     """
-    if not isscalar(nt) or (floor(nt)!=n) or (nt <=0):
+    if not isscalar(nt) or (floor(nt)!=nt) or (nt <=0):
         raise ValueError, "Arguments must be scalar positive integer."
     kf = 2
     kc = (complex != 1)

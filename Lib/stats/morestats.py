@@ -3,13 +3,16 @@
 
 from __future__ import nested_scopes
 
+import math
 import statlib
 import stats
 import distributions
 import inspect
 from scipy_base import isscalar, r_, log, sum, around, unique, asarray
 from scipy_base import zeros, arange, sort, amin, amax, any, where, \
-     array, atleast_1d, sqrt, ceil, floor, array, poly1d
+     array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
+     pi, exp
+import scipy
 import types
 import scipy.optimize as optimize
 
@@ -34,7 +37,7 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     i = arange(2,N)
     Ui[1:-1] = (i-0.3175)/(N+0.365)
     try:
-        ppf_func = eval('distributions.%sppf'%dist)
+        ppf_func = eval('distributions.%s.ppf'%dist)
     except AttributError:
         raise dist, "is not a valid distribution with a ppf."
     if sparams is None:
@@ -57,7 +60,9 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
         # perform a linear fit.
         slope, intercept, r, prob, sterrest = stats.linregress(osm,osr)
     if plot is not None:
-        try: xplt.limits()
+        try:
+            import scipy.xplt as xplt
+            xplt.limits()
         except: pass
         plot.plot(osm, osr, 'o', osm, slope*osm + intercept)
         plot.title('Probability Plot')
@@ -83,7 +88,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     See also ppcc_plot
     """
     try:
-        ppf_func = eval('distributions.%sppf'%dist)
+        ppf_func = eval('distributions.%s.ppf'%dist)
     except AttributError:
         raise dist, "is not a valid distribution with a ppf."
     res = inspect.getargspec(ppf_func)
@@ -128,7 +133,9 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
         ppcc[k] = r2[-1]
         k += 1
     if plot is not None:
-        try: xplt.limits()
+        try:
+            import scipy.xplt as xplt
+            xplt.limits()
         except: pass
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
@@ -151,7 +158,7 @@ def boxcox_llf(lmb, data):
 def _boxcox_conf_interval(x, lmax, alpha):
     # Need to find the lambda for which
     #  f(x,lmbda) >= f(x,lmax) - 0.5*chi^2_alpha;1
-    fac = 0.5*distributions.chi2ppf(1-alpha,1)
+    fac = 0.5*distributions.chi2.ppf(1-alpha,1)
     target = boxcox_llf(lmax,x)-fac
     def rootfunc(lmbda,data,target):
         return boxcox_llf(lmbda,data) - target
@@ -195,7 +202,7 @@ def boxcox(x,lmbda=None,alpha=None):
     def tempfunc(lmb, data):  # function to minimize
         return -boxcox_llf(lmb,data)
     lmax = optimize.brent(tempfunc, brack=(-2.0,2.0),args=(x,))
-    y = boxcox(x, lmax)
+    y, lmax = boxcox(x, lmax)
     if alpha is None:
         return y, lmax
     # Otherwise find confidence interval
@@ -215,7 +222,7 @@ def boxcox_normmax(x,brack=(-1.0,1.0)):
     #  and computes a linear regression (including the correlation)
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
-    xvals = distributions.normppf(Ui)
+    xvals = distributions.norm.ppf(Ui)
     def tempfunc(lmbda, xvals, samps):
         y = boxcox(samps,lmbda)
         yvals = sort(y)
@@ -233,10 +240,12 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
         ppcc[k] = r2[-1]
         k +=1
     if plot is not None:
-        try: xplt.limits()
+        try:
+            import scipy.xplt as xplt
+            xplt.limits()
         except: pass
         plot.plot(svals, ppcc, 'x')
-        plot.title('(%s) Box-Cox Normality Plot' % dist)
+        plot.title('Box-Cox Normality Plot')
         plot.xlabel('Prob Plot Corr. Coef.',deltay=-0.01)
         plot.ylabel('Transformation parameter',deltax=-0.01)
         try: plot.expand_limits(5)
@@ -349,7 +358,7 @@ def anderson(x,dist='norm'):
         s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
         xbar = -s*log(sum(exp(-x/s))*1.0/N)
         w = (y-xbar)/s
-        z = distributions.gumbel.cdf(w)
+        z = distributions.gumbel_l.cdf(w)
         sig = array([25,10,5,2.5,1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)),3)
     i = arange(1,N+1)
@@ -589,7 +598,7 @@ def binom_test(x,n=None,p=0.5):
     elif len(x) == 1:
         x = x[0]
         if n is None or n < x:
-            raise ValuError, "n must be >= x"
+            raise ValueError, "n must be >= x"
     else:
         raise ValueError, "Incorrect length for x."
 
@@ -670,7 +679,7 @@ def fligner(*args,**kwds):
         allZij.extend(list(Zij[i]))
         g.append(len(allZij))
 
-    a = distributions.normppf(stats.rankdata(allZij)/(2*(Ntot+1.0)) + 0.5)
+    a = distributions.norm.ppf(stats.rankdata(allZij)/(2*(Ntot+1.0)) + 0.5)
 
     # compute Aibar
     Aibar = _apply_func(a,g,sum) / Ni
@@ -742,7 +751,7 @@ def oneway(*args,**kwds):
     tmp = sum((1-Wi/swi)**2 / (Ni-1.0))/(k*k-1.0)
     if evar:
         F = ((sum(Ni*(Mi-my)**2) / (k-1.0)) / (sum((Ni-1.0)*Vi) / (N-k)))
-        pval = distributions.f.sf(F,k-1,n-k)  # 1-cdf
+        pval = distributions.f.sf(F,k-1,N-k)  # 1-cdf
     else:
         m = sum(Wi*Mi)*1.0/swi
         F = sum(Wi*(Mi-m)**2) / ((k-1.0)*(1+2*(k-2)*tmp))
@@ -769,7 +778,7 @@ Returns: t-statistic, two-tailed p-value
     count = len(d)
     if (count < 10):
         print "Warning: sample size too small for normal approximation."
-    r = rankdata(abs(d))
+    r = stats.rankdata(abs(d))
     r_plus = sum((d > 0)*r)
     r_minus = sum((d < 0)*r)
     T = min(r_plus, r_minus)
@@ -784,7 +793,7 @@ Returns: t-statistic, two-tailed p-value
         V = se*se - corr
         se = sqrt((count*V - T*T)/(count-1.0))
     z = (T - mn)/se
-    prob = 2*(1.0 -zprob(abs(z)))
+    prob = 2*(1.0 -stats.zprob(abs(z)))
     return T, prob
 
 def _hermnorm(N):
@@ -820,7 +829,7 @@ def pdf_moments(cnt):
             if m % 2: # m is odd
                 momdiff = cnt[m-1]
             else:
-                momdiff = cnt[m-1] - sig*sig*factorial2(m-1)
+                momdiff = cnt[m-1] - sig*sig*scipy.factorial2(m-1)
             Ck += Dvals[k][m] / sig**m * momdiff
         # Add to totp 
         totp = totp +  Ck*Dvals[k]        
@@ -906,9 +915,6 @@ def pdfapprox(samples):
 #Y F Test to compare two variances
 #XY Wilcoxon Rank Sum and Signed Rank Tests
 
-
-
-    
 
 
 ################## test functions #########################
