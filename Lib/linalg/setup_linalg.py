@@ -49,6 +49,7 @@ def configuration(parent_package=''):
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/BLAS; useful for testing
 
+    f_libs = []
     atlas_version = None
     if atlas_info:
         # Try to determine ATLAS version
@@ -79,8 +80,19 @@ def configuration(parent_package=''):
         if atlas_version is None:
             print 'Failed to determine ATLAS version'
         os.chdir(cur_dir)
-
-    f_libs = []
+        if ('ATLAS_WITHOUT_LAPACK',None) in atlas_info.get('define_macros',[]):
+            lapack_info = get_info('lapack')
+            if not lapack_info:
+                warnings.warn(LapackNotFoundError.__doc__)
+                lapack_src_info = get_info('lapack_src')
+                if not lapack_src_info:
+                    raise LapackSrcNotFoundError,LapackSrcNotFoundError.__doc__
+                dict_append(lapack_info,libraries=['lapack_src'])
+                f_libs.append(fortran_library_item(\
+                'lapack_src',lapack_src_info['sources'],
+                ))
+            dict_append(lapack_info,**atlas_info)
+            atlas_info = lapack_info
     blas_info,lapack_info = {},{}
     if not atlas_info:
         warnings.warn(AtlasNotFoundError.__doc__)

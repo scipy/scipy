@@ -8,7 +8,7 @@ SciPy requires the following software installed:
      http://www.python.org
 2) Numerical Python 20.x or 21.x
      http://www.numpy.org/
-3) ATLAS 3.2.1 or newer (see NOTES 2 and 3)
+3) ATLAS 3.2.1 or newer (see NOTES 2, 3, 4)
      http://math-atlas.sourceforge.net/
 4) f2py 2.13.175-1250 or newer
      http://cens.ioc.ee/projects/f2py2e/
@@ -39,6 +39,18 @@ NOTES
    LAPACK_SRC/BLAS_SRC environment variables to indicate the location
    of the corresponding source directories).
 
+4) Debian users can use the following deb packages:
+     atlas2-headers
+   and
+     atlas2-base atlas2-base-dev
+   or
+     atlas2-sse atlas2-sse-dev
+   or
+     atlas2-sse2 atlas2-sse2-dev
+   or
+     atlas2-3dnow atlas2-3dnow-dev
+   It is not necessary to install blas or lapack libraries then.
+
 GETTING SCIPY
 =============
 
@@ -51,7 +63,6 @@ See
    http://www.scipy.org/site_content/tutorials/CVSInstruct
 Daily snapshots of SciPy CVS repository is available at
    http://www.scipy.org/site_content/download_list
-
 
 INSTALLATION
 ============
