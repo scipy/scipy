@@ -214,7 +214,11 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
                    
     """
     global _hold
+    sys = gist.plsys()
+    if sys == 0:
+        gist.plsys(1)
     viewp = gist.viewport()
+    gist.plsys(sys)
     width = (viewp[1] - viewp[0]) / 10.0;
     if lleft is None:
         lleft = gist.mouse(0,0,"Click on point for lower left coordinate.")
@@ -238,7 +242,7 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
     _hold = 1
     for k in range(len(text)):
         plot(legarr,ypos*legy,linetypes[k])
-        print llx+width+deltax, ypos-deltay
+        #print llx+width+deltax, ypos-deltay
         if text[k] != "":
             gist.plt(text[k],llx+width+deltax,ypos-deltay,
                      color=color,font=tfont,height=fontsize,tosys=0)
@@ -434,9 +438,11 @@ def plot(x,*args,**keywds):
     else:
         gist.fma()
     gist.animate(0)
+    savesys = gist.plsys()
     winnum = gist.window()
     if winnum < 0:
         gist.window(0)
+    gist.plsys(savesys)
     nargs = len(args)
     if nargs == 0:
         y = x
