@@ -482,6 +482,8 @@ def plot(x,*args,**keywds):
             x = scipy.real(x)
             y = scipy.real(y)
 	y = where(scipy.isfinite(y),y,0)
+        y = scipy.squeeze(y)
+        x = scipy.squeeze(x)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,width=linewidth)
 
         nowplotting = nowplotting + 1
