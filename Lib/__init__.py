@@ -41,13 +41,14 @@ _namespaces = ['MLab','handy', 'misc', 'fastumath']
 _partials = {'Matrix' : ['Matrix']}
 import os,sys
 from helpmod import help, source
+from Matrix import Matrix as Mat
 
 __all__=[]
 
 somenames2all(__all__, _partials, globals())
 names2all(__all__, _namespaces, globals())
 modules2all(__all__, _modules, globals())
-objects2all(__all__, ['help', 'source'])
+objects2all(__all__, ['help', 'source', 'Mat'])
 
 Inf = inf = 1e308**10
 NaN = nan = array(0.0) / array(0.0)
