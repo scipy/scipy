@@ -222,14 +222,12 @@ def getcolumns(stream, columns, separator):
     val = process_line(firstline, separator, collist, Float, 0)
     return len(val), collist
 
-
 def init_output(rowsize, colsize, collist, atype):
     if isinstance(atype, types.StringType):
         atype = {atype:collist}
     elif isinstance(atype, types.ListType) or \
          isinstance(atype, types.TupleType):
-        
-        
+        pass
     a = Numeric.zeros((rowsize, colsize),atype)
     return
 
