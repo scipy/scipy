@@ -197,6 +197,14 @@ For an example, see
 
   scipy_distutils/tests/swig_ext/gen_ext/
 
+Note that generated source files may be C or Fortran source files as
+well as Python files.
+
+All dependencies on auxiliary files (e.g. Python files, header files,
+etc that are used to generated sources and should not be installed)
+should be specified in ``depends`` list of the ``Extension``
+constructor.
+
 SourceGenerator [depreciated]
 +++++++++++++++++++++++++++++
 
