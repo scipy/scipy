@@ -29,7 +29,7 @@
 """
 
 from wxPython.wx import *
-print 'wxPython imported'
+print '<wxPython imported>\n>>> ',
 import thread, threading
 
 #################################

@@ -34,6 +34,8 @@
 #               General layout classes
 #----------------------------------------------------------
 from Numeric import *
+from fastumath import *
+import scipy.limits, scipy.misc
 
 LEFT,RIGHT,TOP,BOTTOM = 0,1,2,3 # used by same_as() method
 
@@ -389,11 +391,24 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
     """
     # pretty ugly code...
     # man, this needs some testing.
+    
+    # hmmm, all the nan stuff should have been handled before this 
+    # point...
+    #from scipy.misc import nan_to_num, isinf
+    #if is_number(bounds_info[0]): lower = nan_to_num(bounds_info[0])
+    #else:                         lower = nan_to_num(data_bounds[0])
+    #if is_number(bounds_info[1]): upper = nan_to_num(bounds_info[1])
+    #else:                         upper = nan_to_num(data_bounds[1])
+    #if is_number(bounds_info[2]): interval = nan_to_num(bounds_info[2])
+    #else:                         interval = bounds_info[2]
+
     if is_number(bounds_info[0]): lower = bounds_info[0]
     else:                         lower = data_bounds[0]
     if is_number(bounds_info[1]): upper = bounds_info[1]
     else:                         upper = data_bounds[1]
-    interval = bounds_info[2]               
+    interval = bounds_info[2]
+
+    #print 'raw input:', lower,upper,interval
     #print 'raw interval:', interval       
     if interval in ['linear','auto']:
         rng = abs(upper - lower)
@@ -424,11 +439,21 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
     if bounds_info[0] == 'auto':
         lower = auto_lower
     if bounds_info[1] == 'auto':
-        upper = auto_upper
-        
-    # if the lower and upper bound span 0, make sure ticks
+        upper = auto_upper        
+    
+    # again, we shouldn't need this
+    # cluge to handle inf values    
+    #if isinf(lower):
+    #    lower = nan_to_num(lower) / 10
+    #if isinf(upper):
+    #    upper = nan_to_num(upper) / 10    
+    #if isinf(interval):
+    #    interval = nan_to_num(interval) / 10    
+        # if the lower and upper bound span 0, make sure ticks
     # will hit exactly on zero.
+    
     if lower < 0 and upper > 0:
+        #print 'arrrgh',0,upper+interval,interval
         hi_ticks = arange(0,upper+interval,interval)
         low_ticks = - arange(interval,-lower+interval,interval)        
         ticks = concatenate((low_ticks[::-1],hi_ticks))
@@ -436,7 +461,10 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
         # othersize the ticks start and end on the lower and 
         # upper values.
         ticks = arange(lower,upper+interval,interval)
-
+    #cluge
+    if len(ticks) < 2:
+        ticks = array(((lower-lower*1e-7),lower))
+    #print 'ticks:',ticks
     if bounds_info[0] == 'fit': ticks[0] = lower
     if bounds_info[1] == 'fit': ticks[-1] = upper
     return ticks
@@ -538,4 +566,7 @@ def auto_interval(data_bounds):
     #print differences
     #print 'results:', magic_index, mantissa_index,interval, magnitude
     #print 'returned:',interval*magnitude
-    return interval*magnitude
+    result = interval*magnitude
+    if result == 0.0:
+        result = scipy.limits.float_epsilon
+    return result

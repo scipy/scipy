@@ -1,4 +1,7 @@
-from Numeric import *
+#from Numeric import *
+#from fastumath import *
+from scipy import *
+import scipy.limits
 import sys
 if sys.modules.has_key('scipy.gui_thread'):
     import scipy.gui_thread as gui_thread
@@ -216,12 +219,6 @@ NotImplemented = 'NotImplemented'
 
 #------------ Numerical constants ----------------
 
-#b = array((0.,0.,0.))
-#b1= array((0.,1.,-1))
-#bad = b1/b		
-#IND = bad[0] # comparisons of a==b where a=IND and b==IND fail.  why?
-#INF = bad[1]
-#NEG_INF = bad[2]
 # really should do better than this...
 BIG = 1e20
 SMALL = 1e-20
@@ -378,8 +375,17 @@ def process_format(format):
     return color,marker,line
     
 def remove_bad_vals(x):
-    return x    
-
+    # !! Fix axis order when interface changed.
+    # mapping:
+    #    NaN -> 0
+    #    Inf -> scipy.limits.double_max
+    #   -Inf -> scipy.limits.double_min
+    y = nan_to_num(x)    
+    big = scipy.limits.double_max / 10
+    small = scipy.limits.double_min / 10
+    y = clip(y,small,big)
+    return y
+    
 def plot(*data):
     groups = plot_groups(data)
     lines = []

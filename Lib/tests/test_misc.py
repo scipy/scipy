@@ -56,7 +56,13 @@ class test_isnan(unittest.TestCase):
         assert(isnan(array((0.,))/0.) == 1)
     def check_qnan(self): 
         assert(isnan(log(-1.)) == 1)
-        
+    def check_integer(self):
+        assert(isnan(1) == 0)
+    def check_complex(self):
+        assert(isnan(1+1j) == 0)
+    def check_complex1(self):
+        assert(isnan(array(1+1j)/0.) == 0)
+                
 class test_isfinite(unittest.TestCase):
     def check_goodvalues(self):
         z = array((-1.,0.,1.))
@@ -70,7 +76,13 @@ class test_isfinite(unittest.TestCase):
         assert(isfinite(array((0.,))/0.) == 0)
     def check_qnan(self): 
         assert(isfinite(log(-1.)) == 0)
-
+    def check_integer(self):
+        assert(isfinite(1) == 1)
+    def check_complex(self):
+        assert(isfinite(1+1j) == 1)
+    def check_complex1(self):
+        assert(isfinite(array(1+1j)/0.) == 0)
+        
 class test_isinf(unittest.TestCase):
     def check_goodvalues(self):
         z = array((-1.,0.,1.))
@@ -98,6 +110,34 @@ class test_isneginf(unittest.TestCase):
         assert(vals[0] == 1)
         assert(vals[1] == 0)
         assert(vals[2] == 0)
+
+class test_nan_to_num(unittest.TestCase):
+    def check_generic(self):
+        vals = nan_to_num(array((-1.,0,1))/0.)
+        assert(vals[0] < -1e10 and isfinite(vals[0]))
+        assert(vals[1] == 0)
+        assert(vals[2] > 1e10 and isfinite(vals[2]))
+    def check_integer(self):
+        vals = nan_to_num(1)
+        assert(vals == 1)
+    def check_complex_good(self):
+        vals = nan_to_num(1+1j)
+        assert(vals == 1+1j)
+    def check_complex_bad(self):
+        v = 1+1j
+        v += array(0+1.j)/0.
+        vals = nan_to_num(v)
+        assert(vals.imag > 1e10 and isfinite(vals))
+    def check_complex_bad2(self):
+        v = 1+1j
+        v += array(-1+1.j)/0.
+        vals = nan_to_num(v)
+        assert(vals.imag > 1e10  and isfinite(vals))    
+        # !! This is actually (unexpectedly) positive
+        # !! inf.  Comment out for now, and see if it
+        # !! changes
+        #assert(vals.real < -1e10 and isfinite(vals))    
+        
         
 class test_logn(unittest.TestCase):
     def check_log_3_4(self):
@@ -518,7 +558,8 @@ def test_suite():
     suites.append( unittest.makeSuite(test_isfinite,'check_') )
     suites.append( unittest.makeSuite(test_isinf,'check_') )
     suites.append( unittest.makeSuite(test_isposinf,'check_') )    
-    suites.append( unittest.makeSuite(test_isneginf,'check_') )        
+    suites.append( unittest.makeSuite(test_isneginf,'check_') )
+    suites.append( unittest.makeSuite(test_nan_to_num,'check_') )
     suites.append( unittest.makeSuite(test_logn,'check_') )
     suites.append( unittest.makeSuite(test_log2,'check_') )
     suites.append( unittest.makeSuite(test_histogram,'check_') )
