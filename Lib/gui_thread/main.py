@@ -102,8 +102,15 @@ def register(wx_class):
         #print 'proxy generated'
         return proxify(wx_class)
     else:
+        wx_class.init2 = wx_class.__init__
+        wx_class.__init__ = plain_class__init__
         return wx_class
-                 
+
+def plain_class__init__(self,*args,**kw):
+    self.init2(*args,**kw)
+    add_close_event_handler(self)
+    self.proxy_object_alive = 1
+    
 def proxify(wx_class):
     """ Create a proxy class for a wx_class.
     
@@ -133,7 +140,12 @@ def add_close_event_handler(proxy_obj):
         
     import gui_thread_guts
     close_handler = gui_thread_guts.CloseEvtHandler(proxy_obj)
-    proxy_obj.wx_obj.PushEventHandler(close_handler)
+    try:
+        proxy_obj.wx_obj.PushEventHandler(close_handler)
+    except AttributeError:
+        # its a standard class that just needs to let us
+        # know when it dies.    
+        proxy_obj.PushEventHandler(close_handler)
         
 def generate_method(method,wx_class):
     """ Create a proxy method.

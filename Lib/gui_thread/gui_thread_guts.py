@@ -53,7 +53,10 @@ class CloseEvtHandler(wxEvtHandler):
              alive.  Logic in the wrapper methods use this info
              to make sure they don't call a dead wxPython object.             
         """
-        self.proxy_obj.kill_proxy()
+        try:
+            self.proxy_obj.kill_proxy()
+        except AttributeError:
+            self.proxy_obj.proxy_object_alive = 0
         evt.Skip()
 
 #################################
