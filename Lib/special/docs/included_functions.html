@@ -238,7 +238,7 @@ integral((1+x**2/k)**(-k/2-1/2),x=-inf..t)
 <DD>stdtri(k,p) returns the argument t such that stdtr(k,t) is equal to p.
 
 <DT>p = chdtr(v,x)
-<DD>Returns the area under the left hand tail (from 0 to x) of the Chi
+<DD>chdtr(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi
 square probability density function with v degrees of freedom:
 1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
 
@@ -345,17 +345,14 @@ evaluated at x.
 ( 1F1(a,b;x) ) evaluated at the values a, b, and x.
 
 <DT>(y,err) = hyp2f0(a,b,x,type)
-<DD>hyp2f0 returns the hypergeometric function 2F0 in y and an error
-estimate in err.  The input type determines a convergence factor and
+<DD>hyp2f0(a,b,x,type) returns (y,err) with the hypergeometric function 2F0 in y and an error estimate in err.  The input type determines a convergence factor and
 can be either 1 or 2.
 
 <DT>(y,err) = hyp1f2(a,b,c,x)
-<DD>hyp1f2 returns the hypergeometric function 1F2 in y and an error
-estimate in err.  
+<DD>hyp1f2(a,b,c,x) returns (y,err) with the hypergeometric function 1F2 in y and an error estimate in err.  
 
 <DT>(y,err) = hyp3f0(a,b,c,x)
-<DD>hyp3f0 returns the hypergeometric function 3F0 in y and an error
-estimate in err.  
+<DD>hyp3f0(a,b,c,x) returns (y,err) with the hypergeometric function 3F0 in y and an error estimate in err.  
 </DL>
 
 <h1> Other Special Functions </h1>
