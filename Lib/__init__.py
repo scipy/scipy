@@ -3,7 +3,7 @@ _modules = ["optimize", "integrate", "signal", "special", "io",
             "interpolate", "stats"]
 
 # namespaces to subsume into the scipy namespace itself
-_namespaces = ['MLab', 'misc','handy','fastumath'] # MLab includes Numeric
+_namespaces = ['MLab', 'fastumath','misc','handy',] # MLab includes Numeric
 #_namespaces = [] # MLab includes Numeric
 import os,sys
 from helpmod import help, source

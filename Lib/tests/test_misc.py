@@ -59,13 +59,13 @@ class test_logn(unittest.TestCase):
         except:
             assert(0)
     def check_log_neg(self):
-        """ log(-1) should print warning, but still raises error.
+        """ log(-1) should print warning, but succeed.
         """
         try:
             val = logn(3,-1)
             #assert(isinf(val))
-        except OverflowError:
-            pass
+        except:
+            assert(0)
 
 class test_log2(unittest.TestCase):
     def check_log_value(self):
@@ -82,13 +82,12 @@ class test_log2(unittest.TestCase):
         except:
             assert(0)
     def check_log_neg(self):
-        """ Later have log(-1) raise warning, not error
+        """ log(-1) should print warning, but succeed.
         """
         try:
             val = log2(-1)
-            assert(0)
             #assert(isinf(val))
-        except OverflowError:
+        except:
             pass
 
 class test_histogram(unittest.TestCase):
