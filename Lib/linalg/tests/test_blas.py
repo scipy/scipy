@@ -31,12 +31,12 @@ class test_blas1_simple(ScipyTestCase):
             f = getattr(cblas,p+'axpy')
             assert_array_almost_equal(f(5,[1,2,3],[2,-1,3]),[7,9,18])
             f = getattr(fblas,p+'axpy')
-            assert_array_almost_equal(f([1,2,3],[2,-1,3]),[7,9,18],a=5)
+            assert_array_almost_equal(f([1,2,3],[2,-1,3],a=5),[7,9,18])
         for p in 'cz':
             f = getattr(cblas,p+'axpy')
             assert_array_almost_equal(f(5,[1,2j,3],[2,-1,3]),[7,10j-1,18])
             f = getattr(fblas,p+'axpy')
-            assert_array_almost_equal(f([1,2j,3],[2,-1,3]),[7,10j-1,18],a=5)
+            assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
     def check_copy(self):
         for p in 'sd':
             f = getattr(fblas,p+'copy')
