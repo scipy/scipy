@@ -8,6 +8,7 @@ from scipy_base import polyadd, polymul, polydiv, polysub, \
                       roots, poly, polyval, polyder, cast
 import types
 import scipy
+from scipy.stats import mean
 import Numeric
 from Numeric import array, asarray, arange, where, sqrt
 from umath import *
@@ -220,7 +221,7 @@ def wiener(im,mysize=None,noise=None):
 
     # Estimate the noise power if needed.
     if noise==None:
-        noise = Numeric.mean(Numeric.ravel(lVar))
+        noise = mean(Numeric.ravel(lVar))
 
     # Compute result
     # f = lMean + (maximum(0, lVar - noise) ./
@@ -1068,7 +1069,7 @@ def resample(x,num,t=None,axis=0,window=None):
 
 from scipy_base import expand_dims, unique, prod, sort, zeros, ones, \
      reshape, r_, any, c_, transpose, take, dot
-from scipy.stats import mean
+
 import scipy.linalg as linalg
 def detrend(data, axis=-1, type='linear', bp=0):
     """Remove linear trend along axis from data.
