@@ -6,7 +6,15 @@ from glob import glob
 import distutils
 from distutils.core import setup, Extension
 
-setup (name = "_vq",
+setup (name = "cluster",
+       maintainer = "SciPy Developers",
+       author = "eric jones",
+       maintainer_email = "scipy-devel@scipy.org",
+       description = "Clustering Algorithms (Information Theory)",
+       url = "http://www.scipy.org",
+       
+       packages = ['cluster'],
+       package_dir = {'cluster':'.'},
        include_dirs = ['src'],
-       ext_modules =  [ Extension('_vq',['src/vq_wrap.cpp']) ]
+       ext_modules =  [ Extension('cluster._vq',['src/vq_wrap.cpp']) ]
        )

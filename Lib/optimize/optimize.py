@@ -14,10 +14,11 @@ A collection of general-purpose optimization routines using Numeric
 
 fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls)
 fminBFGS    ---      Quasi-Newton method (uses function and gradient)
-fminNCG     ---      Line-search Newton Conjugate Gradient (uses function, gradient
-                     and hessian (if it's provided))
+fminNCG     ---      Line-search Newton Conjugate Gradient (uses function, 
+                     gradient and hessian (if it's provided))
 
 """
+
 import Numeric
 import MLab
 Num = Numeric
@@ -64,9 +65,11 @@ def rosen3_hess(x):
     return hessp
     
         
-def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, fulloutput=0, printmessg=1):
+def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
+         fulloutput=0, printmessg=1):
     """xopt,{fval,warnflag} = fmin(function, x0, args=(), xtol=1e-4, ftol=1e-4,
-    maxiter=200*len(x0), maxfun=200*len(x0), fulloutput=0, printmessg=0)
+                                   maxiter=200*len(x0), maxfun=200*len(x0), 
+                                   fulloutput=0, printmessg=0)
 
     Uses a Nelder-Mead Simplex algorithm to find the minimum of function
     of one or more variables.
@@ -100,7 +103,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, ful
         fsim[k+1] = f
 
     ind = Num.argsort(fsim)
-    fsim = Num.take(fsim,ind)     # sort so sim[0,:] has the lowest function value
+    fsim = Num.take(fsim,ind)  # sort so sim[0,:] has the lowest function value
     sim = Num.take(sim,ind,0)
     
     iterations = 1
@@ -174,7 +177,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, ful
     if funcalls >= maxfun:
         warnflag = 1
         if printmessg:
-            print "Warning: Maximum number of function evaluations has been exceeded."
+            print "Warning: Maximum number of function evaluations has "\
+                  "been exceeded."
     elif iterations >= maxiter:
         warnflag = 2
         if printmessg:
@@ -275,9 +279,10 @@ def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
         return alpha1, fc, 0
 
-    # Otherwise loop with cubic interpolation until we find an alpha which satifies
-    #  the first Wolfe condition (since we are backtracking, we will assume that
-    #  the value of alpha is not too small and satisfies the second condition.
+    # Otherwise loop with cubic interpolation until we find an alpha which 
+    # satifies the first Wolfe condition (since we are backtracking, we will
+    # assume that the value of alpha is not too small and satisfies the second
+    # condition.
 
     while 1:       # we are assuming pk is a descent direction
         factor = alpha0**2 * alpha1**2 * (alpha1-alpha0)
@@ -321,7 +326,8 @@ def approx_fhess_p(x0,p,fprime,*args):
     return (f2 - f1)/epsilon
 
 
-def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, fulloutput=0, printmessg=1):
+def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
+             fulloutput=0, printmessg=1):
     """xopt = fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5,
                        maxiter=None, fulloutput=0, printmessg=1)
 
@@ -373,7 +379,8 @@ def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, fulloutput
         rhok = 1 / Num.dot(yk,sk)
         A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
         A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
-        Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] * sk[Num.NewAxis,:]
+        Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
+                                               * sk[Num.NewAxis,:]
         gfk = gfkp1
 
 
@@ -402,9 +409,10 @@ def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, fulloutput
         return xk
 
 
-def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5, maxiter=None, fulloutput=0, printmessg=1):
-    """xopt = fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-                       maxiter=None, fulloutput=0, printmessg=1)
+def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
+            maxiter=None, fulloutput=0, printmessg=1):
+    """xopt = fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), 
+                      avextol=1e-5,maxiter=None, fulloutput=0, printmessg=1)
 
     Optimize the function, f, whose gradient is given by fprime using the
     Newton-CG method.  fhess_p must compute the hessian times an arbitrary
@@ -439,7 +447,7 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5, maxi
         i = 0
         dri0 = Num.dot(ri,ri)
 
-        if fhess is not None:               # you want to compute hessian once.
+        if fhess is not None:             # you want to compute hessian once.
             A = apply(fhess,(xk,)+args)
             hcalls = hcalls + 1
 
