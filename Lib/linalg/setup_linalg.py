@@ -240,7 +240,8 @@ def configuration(parent_package='',parent_path=None):
                                 sources,generate_interface,
                                 skip_names['fblas'])
     ext_args = {'name':dot_join(parent_package,package,'fblas'),
-                'sources':[fblas_pyf,sources[-1]]}
+                'sources':[fblas_pyf,sources[-1]],
+                'depends': sources[:4]}
     dict_append(ext_args,**atlas_info)
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1
@@ -259,7 +260,8 @@ def configuration(parent_package='',parent_path=None):
                                 sources,generate_interface,
                                 skip_names['cblas'])
     ext_args = {'name':dot_join(parent_package,package,'cblas'),
-                'sources':[cblas_pyf]}
+                'sources':[cblas_pyf],
+                'depends':sources}
     dict_append(ext_args,**atlas_info)
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1
@@ -277,7 +279,8 @@ def configuration(parent_package='',parent_path=None):
                                   sources,generate_interface,
                                   skip_names['flapack'])
     ext_args = {'name':dot_join(parent_package,package,'flapack'),
-                'sources':[flapack_pyf]}
+                'sources':[flapack_pyf],
+                'depends':sources}
     dict_append(ext_args,**atlas_info)
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1
@@ -295,7 +298,8 @@ def configuration(parent_package='',parent_path=None):
                                   sources,generate_interface,
                                   skip_names['clapack'])
     ext_args = {'name':dot_join(parent_package,package,'clapack'),
-                'sources':[clapack_pyf]}
+                'sources':[clapack_pyf],
+                'depends':sources}
     dict_append(ext_args,**atlas_info)
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1

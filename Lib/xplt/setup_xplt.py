@@ -238,7 +238,8 @@ def configuration(parent_package='',parent_path=None):
                'library_dirs':library_dirs,
                'libraries':libraries,
                'extra_compile_args':extra_compile_args,
-               'extra_link_args':extra_link_args}
+               'extra_link_args':extra_link_args,
+               'depends':[os.path.join(local_path,'src')]}
     ext = Extension (**ext_arg)
     config['ext_modules'].append(ext)
 

@@ -40,7 +40,8 @@ def configuration(parent_package=''):
                                target='spam.pyf',
                                sources=[os.path.join(local_path,'spam_src.pyf')])
     ext = Extension(name=dot_join(parent_package,package,'spam'),
-                    sources=[pyf_file])
+                    sources=[pyf_file],
+                    depends = pyf_file.sources)
     config['ext_modules'].append(ext)
 
     return config

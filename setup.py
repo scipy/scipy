@@ -70,7 +70,7 @@ def setup_package(ignore_packages=[]):
         # Applying the same commands to scipy_core.
         # Results can be found in scipy_core directory.
         c = '%s %s %s' % (sys.executable,
-                          os.path.join('scipy_core','setup.py'),
+                          os.path.abspath(os.path.join('scipy_core','setup.py')),
                           ' '.join(sys.argv[1:]))
         print c
         s = os.system(c)

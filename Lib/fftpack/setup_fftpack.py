@@ -71,4 +71,4 @@ if __name__ == '__main__':
           author_email = 'pearu@cens.ioc.ee',
           maintainer_email = 'scipy-dev@scipy.org',
           license = 'SciPy License (BSD Style)',
-          **configuration())
+          **configuration(parent_path=''))
