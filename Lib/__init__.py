@@ -101,12 +101,12 @@ __doc__ += _pkg_titles()
             
 #---- testing ----#
 
-def test(level=1):
+def test(level=1,verbosity=1):
     """ From this top level, there are possibly many many tests.
         Test only the quick tests by default.
     """
     import unittest
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=verbosity)
     runner.run(test_suite(level))
     return runner
 

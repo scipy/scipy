@@ -1561,11 +1561,11 @@ def test_suite(level=1):
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
-def test(level=10):
+def test(level=10,verbosity=1):
     all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=verbosity)
     runner.run(all_tests)
     return runner
 
 if __name__ == "__main__":
-    test()
+    test(1,2)
