@@ -570,8 +570,9 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon,
-              maxiter=None, full_output=0, disp=1, retall=0):
+def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
+              epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
+              retall=0):
     """Minimize a function using the BFGS algorithm.
 
     Description:
@@ -647,7 +648,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon
     while (gnorm > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                 linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args)
+           linesearch.line_search(f,myfprime,xk,pk,gfk,
+                                  old_fval,old_old_fval,args=args)
         func_calls = func_calls + fc
         grad_calls = grad_calls + gc
         xkp1 = xk + alpha_k * pk
@@ -721,7 +723,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon
     return retlist
 
 
-def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon,
+def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0):
     """Minimize a function with nonlinear conjugate gradient algorithm.
 
@@ -796,7 +798,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon,
     while (gnorm > gtol) and (k < maxiter):
         deltak = Num.dot(gfk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                 linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args,c2=0.3)
+           linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,
+                                  old_old_fval,args=args,c2=0.4)
         func_calls += fc
         grad_calls += gc
         xk = xk + alpha_k*pk
