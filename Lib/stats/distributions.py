@@ -13,6 +13,7 @@ from fastumath import *
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
+import types
 
 all = alltrue
 ## Special defines some of these distributions
@@ -373,6 +374,7 @@ def betaisf(q, a, b, loc=0.0, scale=1.0):
     return betappf(1-q,a,b,loc,scale)
 
 def betastats(a, b, loc=0.0, scale=1.0, full=0):
+    a, b, loc, scale = map(arr, (a, b, loc, scale))
     cond = (arr(a)>0) & (arr(b) > 0) & (arr(scale)>0)
     mn = _wc(cond,loc + scale*a*1.0 / (a+b))
     var = _wc(cond, scale*scale*(a*b)*1.0 / ((a+b)**2 * (a+b+1)))
@@ -1367,6 +1369,88 @@ def genparetostats(c, loc=0.0, scale=1.0, full=0):
     g2 = select([(c==0) | (scale <=0), c<1.0/4],
                 [scipy.nan, g2], scipy.inf)    
     return mn, var, g1, g2
+
+
+## Generalized Exponential
+
+def genexponpdf(x, a, b, c, loc=0.0, scale=1.0):
+    x, a, b, c, loc, scale = map(arr, (x, a, b, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 0
+    return
+
+
+## Generalized Extreme Value
+##  c=0 is just gumbel distribution. 
+
+def genextremepdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    tmp0 = arr(1-c*x)
+    tmp = pow(tmp0,1.0/c-1)
+    tmp2 = tmp*tmp0
+    Px = exp(-tmp2)*tmp
+    Px2 = exp(-exp(-x)-x)
+    limit = 1.0/c
+    return select([(scale <=0), c==0,
+                   ((c>0)&(x<limit)) | ((c<0) & (x > limit))],
+                  [scipy.nan, Px2/scale, Px / scale])
+
+def genextremecdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    tmp0 = arr(1-c*x)
+    limit = 1.0/c
+    tmp = pow(tmp0,limit)
+    Cx = exp(-tmp)
+    Cx2 = exp(-exp(-x))
+    return select([(scale <=0), c==0,
+                   ((c>0)&(x<limit)) | ((c<0) & (x>limit)),
+                   (c>0)],
+                  [scipy.nan, Cx2, Cx, 1])
+
+def genextremeppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    vals = 1.0/c*(1-(-log(q))**c)
+    vals2 = -log(-log(q))
+    return select([(scale <=0) | (q<0) | (q>1), c!=0],
+                  [scipy.nan, vals*scale+loc], vals2*scale+loc)
+
+def genextremesf(x, c, loc=0.0, scale=1.0):
+    return 1.0 - genextremecdf(x, c, loc, scale)
+
+def genextremeisf(q, c, loc=0.0, scale=1.0):
+    return genextremeppf(1-q, c, loc, scale)
+
+def genextremestats(c, loc=0.0, scale=1.0, full=0):
+    c, loc, scale = map(arr, (c, loc, scale))
+    sv = errp(0)
+    g1c = special.gamma(1+c)
+    g2c = special.gamma(1+2*c)                        
+    mu = 1.0/c * (1-g1c)
+    mu2 = 1.0/arr(c*c) * (1-2*g1c + g2c)
+    mn = select([scale <=0, c<=-1, c!=0],
+                [scipy.nan, scipy.inf, mu*scale+loc],
+                _EULER*scale + loc)
+    var = select([scale <=0, c<=-0.5, c!=0],
+                [scipy.nan, scipy.inf, mu2*scale*scale],
+                pi*pi/6*scale*scale)
+    if not full:
+        sv = errp(sv)
+        return mn, var
+
+    g3c = special.gamma(1+3*c)
+    g4c = special.gamma(1+4*c)
+    mu3p = 1.0/arr(c**3)*(1-3*g1c+3*g2c-g3c)
+    mu4p = 1.0/arr(c**4)*(1-4*g1c+6*g2c-4*g3c+g4c)
+    g1 = select([scale <=0, c<=-1.0/3.0, c!=0],
+                [scipy.nan, scipy.inf, mu3p / mu2**1.5],
+                12*sqrt(6)/pi**3 * _ZETA3)
+    g2 = select([scale<=0, c<=-0.25, c!=0],
+                [scipy.nan, scipy.inf, mu4p / mu2**2],
+                12.0/5.0)
+    sv = errp(sv)
+    return mn, var, g1, g2
     
 
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
@@ -1420,6 +1504,180 @@ def gammastats(a, loc=0.0, scale=1.0, full=0):
     g2 = 6.0/a
     return mn, var, where(cond, g1,scipy.nan), where(cond,g2,scipy.nan)
 
+# Generalized Gamma
+
+def gengammapdf(x, a, c, loc=0.0, scale=1.0):
+    x, a, c, loc, scale = map(arr, (x, a, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Px = abs(c)* x**(c*a-1) / special.gamma(a) * exp(-x**c)
+    sv = errp(sv)
+    return select([(a<=0) | (c==0) | (scale <=0), x>0],[scipy.nan, Px/scale])
+
+def gengammacdf(x, a, c, loc=0.0, scale=1.0):
+    x, a, c, loc, scale = map(arr, (x, a, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.gammainc(a, x**c) / special.gamma(a)
+    sv = errp(sv)
+    return select([(a<=0) | (c==0) | (scale <=0), x>0],[scipy.nan, Cx])
+
+def gengammappf(q, a, c, loc=0.0, scale=1.0):
+    q, a, c, loc, scale = map(arr, (q, a, c, loc, scale))
+    sv = errp(0)
+    vals = pow(special.gammaincinv(a, special.gamma(a)*q),1.0/c)
+    sv = errp(sv)
+    cond = (c!=0) & (a>0) & (scale > 0) & (q>=0) & (q<=1)
+    return _wc(cond, vals * scale + loc)
+
+def gengammasf(x, a, c, loc=0.0, scale=1.0):
+    return 1.0 - gengammacdf(x, a, c, loc, scale)
+
+def gengammaisf(q, a, c, loc=0.0, scale=1.0):
+    return gengammacdf(1.0-q, a, c, loc, scale)
+
+def gengammastats(a, c, loc=0.0, scale=1.0, full=0):
+    cond = (c!=0) & (a>0) & (scale > 0)
+    ga = special.gamma(a)
+    g1c = special.gamma(a+1.0/c)
+    g2c = special.gamma(a+2.0/c)
+    mu = g1c / ga
+    mu2 = g2c/ga - mu*mu
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    g3c = special.gamma(a+3.0/c)
+    g4c = special.gamma(a+4.0/c)    
+    mu3 = g3c/ga - 3*mu*mu2-mu**3
+    mu4 = g4c/ga - 4*mu*mu3-6*mu*mu*mu2 - mu**4
+    g1 = mu3/mu2**1.5
+    g2 = mu4/mu2**2.0 - 3
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+##  Generalized Half-Logistic
+##
+
+def genhalflogisticpdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    limit = 1.0/c
+    tmp = arr(1-c*x)
+    tmp0 = tmp**(limit-1)
+    tmp2 = tmp0*tmp
+    Px = 2*tmp0 / (1+tmp2)**2
+    return select([(c<=0) | (scale <=0), (x>=0)&(x<=limit)],
+                  [scipy.nan, Px/scale])
+
+def genhalflogisticcdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    limit = 1.0/c
+    tmp = arr(1-c*x)
+    tmp2 = tmp**(limit)
+    Cx = (1.0-tmp2) / (1+tmp2)
+    return select([(c<=0) | (scale <=0), x>=limit, x>=0],
+                  [scipy.nan, 1, Cx])
+
+def genhalflogisticppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    vals = 1.0/c*(1-((1.0-q)/(1.0+q))**c)
+    cond = (q>=0) & (q<=1) & (c>0) & (scale > 0)
+    return vals*scale + loc
+
+def genhalflogisticsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-genhalflogisticcdf(x, c, loc, scale)
+
+def genhalflogisticsf(q, c, loc=0.0, scale=1.0):
+    return genhalflogistic(1.0-q, c, loc, scale)
+
+def _genhalflogstats(c, loc=0.0, scale=1.0, full=0):
+    if (c<=0) or (scale <=0):
+        if full:
+            return (scipy.nan,)*2
+        else:
+            return (scipy.nan,)*4
+    mu = generic_moment(1, genhalflogisticpdf, 0, 1.0/c, c)
+    mu2p = generic_moment(2, genhalflogisticpdf, 0, 1.0/c, c)
+    mu2 = mu2p - mu*mu
+    mn = mu*scale + loc
+    var = mu2*scale*scale
+    if not full:
+        return mn, var
+    mu3p = generic_moment(3, genhalflogisticpdf, 0, 1.0/c, c)
+    mu4p = generic_moment(4, genhalflogisticpdf, 0, 1.0/c, c)
+    mu3 = mu3p - 3*mu*mu2 - mu**3
+    g1 = mu3 / mu2**1.5
+    mu4 = mu4p -  4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+    g2 = mu4 / mu2**2.0 - 3.0
+    return mn, var, g1, g2
+
+_vgenhalflogst = special.general_function(_genhalflogstats)    
+
+def genhalflogisticstats(c, loc=0.0, scale=1.0, full=0):
+    if not isinstance(full, types.IntType):
+        raise ValueError, "Full must be an integer."
+    return _vgenhalflogst(c, loc, scale, full)
+    
+
+
+## Gompertz (Truncated Gumbel)
+##  Defined for x>=0
+
+def gompertzpdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    ex = exp(x)
+    Px = c*ex*exp(-c*(ex-1))
+    return select([(c<=0) | (scale <=0), (x>=0)&(x<100)],
+                  [scipy.nan, Px/scale])
+
+def gompertzcdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    ex = exp(x)
+    Cx = 1.0-exp(-c*(ex-1))
+    return select([(c<=0) | (scale <=0), (x>=0)],
+                  [scipy.nan, Cx])
+
+def gompertzppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    cond = (q>=0) & (q<=1) & (c > 0) & (scale > 0)
+    vals = log(1.0-1.0/c*log(1.0-q))
+    return _wc(cond, vals*scale + loc)
+
+def gompertzsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-gompertzcdf(x, c, loc, scale)
+
+def gompertzisf(q, c, loc=0.0, scale=1.0):
+    return gompertzppf(1.0-q, c, loc, scale)
+
+def _gompstats(c, loc, scale, full):
+    if (c<=0) or (scale<=0):
+        return (scipy.nan,)*(2*(full!=0)+2)
+    mu = generic_moment(1, gompertzpdf, 0, scipy.inf, c)
+    mu2p = generic_moment(2, gompertzpdf, 0, scipy.inf, c)
+    mu2 = mu2p - mu*mu
+    mn = mu*scale + loc
+    var = mu2*scale*scale
+    if not full:
+        return mn, var
+    mu3p = generic_moment(3, gompertzpdf, 0, scipy.inf, c)
+    mu4p = generic_moment(4, gompertzpdf, 0, scipy.inf, c)
+    mu3 = mu3p - 3*mu*mu2 - mu**3
+    g1 = mu3 / mu2**1.5
+    mu4 = mu4p -  4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+    g2 = mu4 / mu2**2.0 - 3.0
+    return mn, var, g1, g2
+
+_vgompstats = special.general_function(_gompstats)
+    
+def gompertzstats(c, loc=0.0, scale=1.0, full=0):
+    if not isinstance(full, types.IntType):
+        raise ValueError, "Full must be an integer."
+    return _vgompstats(c, loc, scale, full)
+    
+    
 
 ## Gumbel, Log-Weibull, Fisher-Tippett, Gompertz
 ## if left is non-zero, reconstruct the left-skewed gumbel distribution. 
@@ -1490,6 +1748,54 @@ def halfcauchystats(loc=0.0, scale=1.0, full=0):
         return scipy.nan, scipy.nan
     else:
         return scipy.nan, scipy.nan, scipy.nan, scipy.nan
+
+
+## Half-Logistic
+##  
+
+def halflogisticpdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    ex = exp(-x)
+    Px = 2*ex / (1+ex)**2
+    return select([scale <=0, x>=0], [scipy.nan, Px/scale])
+
+def halflogisticcdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    ex = exp(-x)
+    Cx = (1-ex)/(1+ex)
+    return select([scale <=0, x>=0], [scipy.nan, Cx])
+
+def halflogisticppf(q, loc=0.0, scale=1.0):
+    q, loc, scale = map(arr, (q, loc, scale))
+    vals = log((1.0+q)/(1-q))
+    cond = (scale > 0) & (q<=1) & (q>=0)
+    return _wc(cond, vals*scale+loc)
+
+def halflogisticsf(x, loc=0.0, scale=1.0):
+    return 1.0-halflogisticcdf(x, loc, scale)
+
+def halflogisticisf(q, loc=0.0, scale=1.0):
+    return halflogisticppf(1.0-q, loc, scale)
+
+def halflogisticstats(loc=0.0, scale=1.0, full=0):
+    loc, scale = arr(loc), arr(scale)
+    mu = 2*log(2)
+    mu2p = pi*pi/3.0
+    mu2 = mu2p - mu*mu
+    cond = scale > 0
+    mn = select([1-cond],[scipy.nan],mu*scale + loc)
+    var = select([1-cond], [scipy.nan], mu2*scale*scale)
+    if not full:
+        return mn, var
+    mu3p = 9*(special.zetac(3.0)+1)
+    mu4p = 7*pi**4/15.0
+    mu3 = mu3p - 3*mu*mu2 - mu**3
+    mu4 = mu4p - 4*mu*mu3 - 6*mu**2 * mu2 - mu**4
+    g1 = mu3 / mu2**1.5
+    g2 = mu4 / mu2**2.0 - 3.0
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
 
 
 ## Half-normal = chi(1, loc, scale)

@@ -1636,9 +1636,25 @@ k
 Generalized Exponential
 \layout Standard
 
-Three positive shape parameters
+Three positive shape parameters for 
+\begin_inset Formula \( x\geq 0. \)
+\end_inset 
+
+ Note that 
+\begin_inset Formula \( a,b, \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c \)
+\end_inset 
+
+ are all 
+\begin_inset Formula \( >0. \)
+\end_inset 
+
+ 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b,c\right)  & = & \left( a+b\left( 1-e^{-sx}\right) \right) \exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
+f\left( x;a,b,c\right)  & = & \left( a+b\left( 1-e^{-cx}\right) \right) \exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
 F\left( x;a,b,c\right)  & = & 1-\exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
 G\left( q;a,b,c\right)  & = & F^{-1}
 \end{eqnarray*}
@@ -1664,7 +1680,7 @@ For
 \end_inset 
 
  defined on 
-\begin_inset Formula \( -\infty <x<1/c. \)
+\begin_inset Formula \( -\infty <x\leq 1/c. \)
 \end_inset 
 
  
@@ -1676,12 +1692,31 @@ G\left( q;c\right)  & = & \frac{1}{c}\left[ 1-\left( -\log q\right) ^{c}\right]
 
 \end_inset 
 
+
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\frac{1}{c^{n}}\sum _{k=0}^{n}\left( \begin{array}{c}
+n\\
+k
+\end{array}\right) \left( -1\right) ^{k}\Gamma \left( ck+1\right) \quad ck>-1\]
+
+\end_inset 
+
+ So,
+\begin_inset Formula \begin{eqnarray*}
+\mu _{1}^{\prime } & = & \frac{1}{c}\left( 1-\Gamma \left( 1+c\right) \right) \quad c>-1\\
+\mu _{2}^{\prime } & = & \frac{1}{c^{2}}\left( 1-2\Gamma \left( 1+c\right) +\Gamma \left( 1+2c\right) \right) \quad c>-\frac{1}{2}\\
+\mu _{3}^{\prime } & = & \frac{1}{c^{3}}\left( 1-3\Gamma \left( 1+c\right) +3\Gamma \left( 1+2c\right) -\Gamma \left( 1+3c\right) \right) \quad c>-\frac{1}{3}\\
+\mu _{4}^{\prime } & = & \frac{1}{c^{4}}\left( 1-4\Gamma \left( 1+c\right) +6\Gamma \left( 1+2c\right) -4\Gamma \left( 1+3c\right) +\Gamma \left( 1+4c\right) \right) \quad c>-\frac{1}{4}
+\end{eqnarray*}
+
+\end_inset 
+
  For 
 \begin_inset Formula \( c<0 \)
 \end_inset 
 
  defined on 
-\begin_inset Formula \( \frac{1}{c}<x<\infty . \)
+\begin_inset Formula \( \frac{1}{c}\leq x<\infty . \)
 \end_inset 
 
  For 
@@ -1697,8 +1732,18 @@ G\left( q;0\right)  & = & -\log \left( -\log q\right)
 
 \end_inset 
 
- This is just the Gumbel distribution.
+ This is just the Gumbel distribution for c=0.
  
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \gamma =-\psi _{0}\left( 1\right) \\
+\mu _{2} & = & \frac{\pi ^{2}}{6}\\
+\gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left( 3\right) \\
+\gamma _{2} & = & \frac{12}{5}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Generalized Gamma
@@ -1775,11 +1820,11 @@ For
 \begin_inset Formula \( c>0 \)
 \end_inset 
 
- we have 4
+ we have 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{2\left( 1-cx^{\frac{1}{c}-1}\right) }{\left( 1+\left( 1-cx^{1/c}\right) \right) ^{2}}\\
-F\left( x;c\right)  & = & \frac{1-\left( 1-cx^{1/c}\right) }{1+\left( 1-cx^{1/c}\right) }\\
-G\left( q;c\right)  & = & \left( \frac{2q}{c\left( 1+q\right) }\right) ^{c}
+f\left( x;c\right)  & = & \frac{2\left( 1-cx\right) ^{\frac{1}{c}-1}}{\left( 1+\left( 1-cx\right) ^{1/c}\right) ^{2}}\\
+F\left( x;c\right)  & = & \frac{1-\left( 1-cx\right) ^{1/c}}{1+\left( 1-cx\right) ^{1/c}}\\
+G\left( q;c\right)  & = & \frac{1}{c}\left[ 1-\left( \frac{1-q}{1+q}\right) ^{c}\right] 
 \end{eqnarray*}
 
 \end_inset 
@@ -1832,24 +1877,41 @@ For
 \end_inset 
 
  and 
-\begin_inset Formula \( b>0 \)
+\begin_inset Formula \( c>0 \)
 \end_inset 
 
- and 
-\begin_inset Formula \( a\geq 0 \)
+.
+ In JKB the two shape parameters 
+\begin_inset Formula \( b,a \)
 \end_inset 
 
- we have.
+ are reduced to the single shape-parameter 
+\begin_inset Formula \( c=b/a \)
+\end_inset 
+
+.
+ As 
+\begin_inset Formula \( a \)
+\end_inset 
+
+ is just a scale parameter when 
+\begin_inset Formula \( a\neq 0 \)
+\end_inset 
+
+.
  If 
-\begin_inset Formula \( c=1 \)
+\begin_inset Formula \( a=0, \)
 \end_inset 
 
- this is the exponential distribution.
- 
+ the distribution reduces to the exponential distribution scaled by 
+\begin_inset Formula \( 1/b. \)
+\end_inset 
+
+ Thus, the standard form is given as 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b\right)  & = & be^{ax}\exp \left[ -\frac{b}{a}\left( e^{ax}-1\right) \right] \\
-F\left( x;a,b\right)  & = & 1-\exp \left[ -\frac{b}{a}\left( e^{ax}-1\right) \right] \\
-G\left( q;a,b\right)  & = & \frac{1}{a}\log \left[ 1-\frac{a}{b}\log \left( 1-q\right) \right] 
+f\left( x;c\right)  & = & ce^{x}\exp \left[ -c\left( e^{x}-1\right) \right] \\
+F\left( x;c\right)  & = & 1-\exp \left[ -c\left( e^{x}-1\right) \right] \\
+G\left( q;c\right)  & = & \log \left[ 1-\frac{1}{c}\log \left( 1-q\right) \right] 
 \end{eqnarray*}
 
 \end_inset 
@@ -1874,7 +1936,7 @@ G\left( q\right)  & = & -\log \left( -\log \left( q\right) \right)
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \gamma =\psi _{0}\left( 1\right) \\
+\mu  & = & \gamma =-\psi _{0}\left( 1\right) \\
 \mu _{2} & = & \frac{\pi ^{2}}{6}\\
 \gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left( 3\right) \\
 \gamma _{2} & = & \frac{12}{5}\\
@@ -2014,22 +2076,48 @@ m_{n} & = & \Phi ^{-1}\left( \frac{3}{4}\right)
 
 \layout Section
 
-HalfLogistic 
+Half-Logistic 
 \layout Standard
 
 In the limit as 
 \begin_inset Formula \( c\rightarrow \infty  \)
 \end_inset 
 
- for the generalized logistic we have the half-logistic defined over 
-\begin_inset Formula \( x\geq 0 \)
+ for the generalized half-logistic we have the half-logistic defined over
+ 
+\begin_inset Formula \( x\geq 0. \)
 \end_inset 
 
+ Also, the distribution of 
+\begin_inset Formula \( \left| X\right|  \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( X \)
+\end_inset 
+
+ has logistic distribtution.
  
 \begin_inset Formula \begin{eqnarray*}
 f\left( x\right)  & = & \frac{2e^{-x}}{\left( 1+e^{-x}\right) ^{2}}\\
 F\left( x\right)  & = & \frac{1-e^{-x}}{1+e^{-x}}\\
 G\left( q\right)  & = & \log \left( \frac{1+q}{1-q}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=2^{n}\int _{0}^{\infty }\frac{y^{n}dy}{\cosh ^{2}\left( y\right) }=2\left( 1-2^{1-n}\right) n!\zeta \left( n\right) \quad n\neq 1\]
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu _{1}^{\prime } & = & 2\log \left( 2\right) \\
+\mu _{2}^{\prime } & = & 2\zeta \left( 2\right) =\frac{\pi ^{2}}{3}\\
+\mu _{3}^{\prime } & = & 9\zeta \left( 3\right) \\
+\mu _{4}^{\prime } & = & 42\zeta \left( 4\right) =\frac{7\pi ^{4}}{15}
 \end{eqnarray*}
 
 \end_inset 

@@ -210,7 +210,14 @@ def gamma(a, loc=0.0, scale=1.0, size=None):
         raise ValueError, _parmerr
     return _build_random_array(rand.gamma, (1.0/scale, a), size) + loc
 
-
+def gengamma(a, c, loc=0.0, scale=1.0, size=None):
+    """Generalized Gamma random numbers.
+    """
+    if (a<=0) or (c==0) or (scale<=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    vals = special.gammaincinv(a, special.gamma(a)*q)**(1.0/c)
+    return vals*scale + loc
 
 ######
 #####
@@ -315,6 +322,22 @@ def genpareto(c, loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return 1.0/c*(pow(1.0/(1-q),c)-1)
 
+def genextreme(c, loc=0.0, scale=1.0, size=None):
+    if (scale <=0):
+        raise ValueError, _scalerr
+    u = random(size=size)
+    if c == 0:
+        vals= -log(-log(u))
+    else:
+        vals = 1.0/c*(1-(-log(u))^c)
+    return vals*scale + loc
+
+def genhalflogistic(c, loc=0.0, scale=1.0, size=None):
+    if (c <=0) or (scale <=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return 1.0/c * (1-((1-u)/(1+u))**c)
+
 def pareto(c, loc=0.0, scale=1.0, size=None):
     """Pareto First Kind.
     """
@@ -334,6 +357,11 @@ def halfnorm(loc=0.0, scale=1.0, size=None):
     """HalfNormal Random variates."""
     # return chi(1, loc, scale, size)
     return abs(stnorm(size=size))*scale + loc
+
+def halflogistic(loc=0.0, scale=1.0, size=None):
+    """HalfLogistic Random variates."""
+    u = random(size=size)
+    return log((1+u)/(1-u))*scale + loc
 
 def fatiguelife(c, loc=0.0, scale=1.0, size=None):
     z = stnorm(size=size)
@@ -395,12 +423,19 @@ def genlogistic(shape, loc=0.0, scale=1.0, size=None):
 
 def logistic(loc=0.0, scale=1.0, size=None):
     """Logistic Random Numbers."""
-    return genlogist(1.0, loc=loc, scale=scale, size=size)
+    return genlogistic(1.0, loc=loc, scale=scale, size=size)
 
 def gumbel(loc=0.0, scale=1.0, size=None):
-    """Gumbel (Log-Weibull, Fisher-Tippett, Gompertz) RN"""
+    """Gumbel (Log-Weibull, Fisher-Tippett) RN"""
     u = random(size=size)
     return loc - scale*log(-log(u))
+
+def gompertz(c, loc=0.0, scale=1.0, size=None):
+    if (c<=0) or (scale <=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return log(1.0-1.0/c*log(1.0-q))*scale + loc
+
 
 def hypsecant(loc=0.0, scale=1.0, size=None):
     """Hyperbolic secant random numbers."""

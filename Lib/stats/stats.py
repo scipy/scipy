@@ -515,7 +515,7 @@ def moment(a,moment=1,axis=None):
     if moment == 1:
         return 0.0
     else:
-        mn = mean(a,axis,1)  # 1=keepdims
+        mn = mean(a,axis)  
         s = power((a-mn),moment)
         return mean(s,axis)
 

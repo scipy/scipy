@@ -3,7 +3,7 @@
 Copyright (c) 1999 Travis Oliphant all rights reserved
 Oliphant.Travis@altavista.net
 Permission to use, modify, and distribute this software is given under the 
-terms of the LGPL.  See http://www.fsf.org
+terms of the Scipy License
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 */
@@ -29,6 +29,7 @@ the result tuple when the full_output argument is non-zero.
 
 #include "Python.h"
 #include "Numeric/arrayobject.h"
+#include <setjmp.h>
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
@@ -37,11 +38,12 @@ the result tuple when the full_output argument is non-zero.
 #define MAX(n1,n2) ((n1) > (n2))?(n1):(n2);
 #define MIN(n1,n2) ((n1) > (n2))?(n2):(n1);
 
-#define STORE_VARS() PyObject *store_multipack_globals[4]
+#define STORE_VARS() PyObject *store_quadpack_globals[2]; jmp_buf store_jmp;
 
 #define INIT_FUNC(fun,arg,errobj) { /* Get extra arguments or set to zero length tuple */ \
-  store_multipack_globals[0] = multipack_python_function; \
-  store_multipack_globals[1] = multipack_extra_arguments; \
+  store_quadpack_globals[0] = quadpack_python_function; \
+  store_quadpack_globals[1] = quadpack_extra_arguments; \
+  memcpy(&store_jmp,&quadpack_jmpbuf,sizeof(jmp_buf)); \
   if (arg == NULL) { \
     if ((arg = PyTuple_New(0)) == NULL) goto fail; \
   } \
@@ -52,14 +54,17 @@ the result tuple when the full_output argument is non-zero.
   /* Set up callback functions */ \
   if (!PyCallable_Check(fun)) \
     PYERR(errobj,"First argument must be a callable function."); \
-  multipack_python_function = fun; \
-  multipack_extra_arguments = arg; }
+  quadpack_python_function = fun; \
+  quadpack_extra_arguments = arg;}
 
-#define RESTORE_FUNC() multipack_python_function = store_multipack_globals[0]; \
-  multipack_extra_arguments = store_multipack_globals[1];
+#define RESTORE_FUNC() quadpack_python_function = store_quadpack_globals[0]; \
+  quadpack_extra_arguments = store_quadpack_globals[1]; \
+  memcpy(&quadpack_jmpbuf, &store_jmp, sizeof(jmp_buf));
 
-static PyObject *multipack_python_function=NULL;
-static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
+static PyObject *quadpack_python_function=NULL;
+static PyObject *quadpack_extra_arguments=NULL;    /* a tuple */
+static jmp_buf quadpack_jmpbuf;
+
 
 
 

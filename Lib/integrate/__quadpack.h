@@ -45,9 +45,6 @@ void DQAWFE();
 void DQAWSE();
 void DQAWCE();
 
-/* We need to alter the extra_argument handling from standard behavior so that these 
-   integrators can be re-entrant.  To do it, we will define a statically-defined Python 
-   List to act as a stack to push the current globals onto and get them back*/
 
 static int already_printed_python_error = 0;
 
@@ -66,32 +63,28 @@ double quad_function(double *x) {
 
   PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*x)); 
                 /* arg1 now owns reference to Float object*/
-  if ((arglist = PySequence_Concat( arg1, multipack_extra_arguments)) == NULL) goto fail;
+  if ((arglist = PySequence_Concat( arg1, quadpack_extra_arguments)) == NULL) goto fail;
   Py_DECREF(arg1);    /* arglist has the reference to Float object. */
     
   /* Call function object --- stored as a global variable.  Extra
           arguments are in another global variable.
    */
-  if ((result = PyEval_CallObject(multipack_python_function, arglist))==NULL) goto fail;
+  if ((result = PyEval_CallObject(quadpack_python_function, arglist))==NULL) goto fail;
 
   Py_DECREF(arglist);
   d_result = PyFloat_AsDouble(result);
   if (d_result == -1) 
-    PYERR(quadpack_error,"Supplied function does not return a double.")
+    PYERR(quadpack_error,"Supplied function does not return a valid float.")
 
   Py_DECREF(result);
 
   return d_result;
 
  fail:
-  if (PyErr_Occurred() && !already_printed_python_error) {
-    PyErr_Print();
-    already_printed_python_error = 1;
-  }
   Py_XDECREF(arg1);
   Py_XDECREF(arglist);
   Py_XDECREF(result);
-  return 0.0;
+  longjmp(quadpack_jmpbuf, 1);
 }
 
 static char doc_qagse[] = "[result,abserr,infodict,ier] = _qagse(fun, a, b, | args, full_output, epsabs, epsrel, limit)";
@@ -134,8 +127,12 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   rlist = (double *)ap_rlist->data;
   elist = (double *)ap_elist->data;
 
-
-  DQAGSE(quad_function, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {
+    DQAGSE(quad_function, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  }
 
   RESTORE_FUNC();
 
@@ -208,7 +205,12 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   rlist = (double *)ap_rlist->data;
   elist = (double *)ap_elist->data;
 
-  DQAGIE(quad_function, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {
+    DQAGIE(quad_function, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  }
 
   RESTORE_FUNC();
 
@@ -298,8 +300,12 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   level = (int *)ap_level->data;
   ndin = (int *)ap_level->data;
 
-
-  DQAGPE(quad_function, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {    
+    DQAGPE(quad_function, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
+  }
 
   RESTORE_FUNC()
 
@@ -400,7 +406,12 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   rlist = (double *)ap_rlist->data;
   elist = (double *)ap_elist->data;
 
-  DQAWOE(quad_function, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {
+    DQAWOE(quad_function, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+  }
 
   RESTORE_FUNC();
 
@@ -496,7 +507,12 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   erlst = (double *)ap_erlst->data;
   ierlst = (int *)ap_ierlst->data;
 
-  DQAWFE(quad_function, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {
+    DQAWFE(quad_function, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
+  }
 
   RESTORE_FUNC();
 
@@ -580,7 +596,12 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   rlist = (double *)ap_rlist->data;
   elist = (double *)ap_elist->data;
 
-  DQAWCE(quad_function, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {
+    DQAWCE(quad_function, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  }
 
   RESTORE_FUNC();
 
@@ -655,7 +676,12 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   rlist = (double *)ap_rlist->data;
   elist = (double *)ap_elist->data;
 
-  DQAWSE(quad_function, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  if (setjmp(quadpack_jmpbuf)) {
+    goto fail;
+  }
+  else {
+    DQAWSE(quad_function, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  }
 
   RESTORE_FUNC();
 
