@@ -1,7 +1,12 @@
 #!/usr/local/lib/python
 
-import sys,time
-import scipy.optimize.zeros as cc
+import sys
+
+from scipy_test.testing import set_package_path
+set_package_path()
+from optimize import zeros as cc
+del sys.path[0]
+
 from math import sin,sqrt,log
 from whrandom import random
 
@@ -51,6 +56,7 @@ fstrings = ['f2','f3','f4','f5','f6']
 from scipy_test.testing import ScipyTestCase
 import unittest
 
+
 class test_basic(ScipyTestCase) :
 
     def check_run(self) :
@@ -58,15 +64,14 @@ class test_basic(ScipyTestCase) :
         b = sqrt(3)
         repeat = 2000
 
-        
         print 'TESTING CONVERGENCE\n'
         print 'zero should be 1\n'
         for i in range(len(functions)) :
             print 'function %s\n'%fstrings[i]
             for j in range(len(methods)) :
-                try :
+                try:
                     zero = methods[j](functions[i],a,b)
-                except :
+                except:
                     print '%s : failed'%mstrings[j]
                 else:
                     print '%s : %21.16f'%(mstrings[j],zero)
@@ -86,12 +91,12 @@ class test_basic(ScipyTestCase) :
             func = functions[i]
             for j in range(len(methods)) :
                 meth = methods[j]
-                try :
-                    time = self.measure("meth(func,a,b)",repeat)
-                except :
+                try:
+                    t = self.measure("meth(func,a,b)",repeat)
+                except:
                     print '%s : failed'%mstrings[j]
                 else:
-                    print '%s : %5.3f'%(mstrings[j],time)
+                    print '%s : %5.3f'%(mstrings[j],t)
             print '\n\n'
 
 
@@ -115,5 +120,5 @@ if __name__ == '__main__' :
     if len(sys.argv)>1:
         level = eval(sys.argv[1])
     else:
-        level = 10    
+        level = 1
     test(level)
