@@ -4,7 +4,7 @@ from scipy_base import atleast_1d
 
 error = _minpack.error
 
-__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point', 'bisection']
+__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point']
 
 def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
     """Find the roots of a function.

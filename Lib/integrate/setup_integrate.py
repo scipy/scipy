@@ -30,6 +30,7 @@ def configuration(parent_package=''):
 
     # should we try to weed through files and replace with calls to
     # LAPACK routines?
+    # Yes, someday...
     linpack_lite = glob(os.path.join(local_path,'linpack_lite','*.f'))
     f_libs.append(fortran_library_item('linpack_lite',linpack_lite))
 

@@ -2824,7 +2824,7 @@ column = measured values.
 
 ################## test functions #########################
 
-def test(level=10):
+def test(level=1):
     from scipy_base.testing import module_test
     module_test(__name__,__file__,level=level)
 
