@@ -94,7 +94,7 @@ class spmatrix:
         except AttributeError:
             try:
                 nzmax = self.nnz
-            except AtrributeError:
+            except AttributeError:
                 nzmax = 0
         return nzmax
 
@@ -229,10 +229,9 @@ class csc_matrix(spmatrix):
                     self.indptr = s.indptr
             elif isinstance(s, csr_matrix):
                 self.shape = s.shape
-                tcode = s.typecode
-                func = getattr(sparsetools,tcode+'transp')
+                func = getattr(sparsetools,s.ftype+'transp')
                 self.data, self.rowind, self.indptr = \
-                           func(s.data, s.colind, s.indptr)
+                           func(s.shape[1], s.data, s.colind, s.indptr)
             else:
                 temp = s.tocsc()
                 self.data = temp.data
@@ -337,9 +336,9 @@ class csc_matrix(spmatrix):
             raise ValueError, "Inconsistent shapes."
         typecode = _coerce_rules[(self.typecode,other.typecode)]
         nnz1, nnz2 = self.nnz, other.nnz
-        data1, data2 = _convert_data(self.data[:nnz1], other.data[:nnz2], typecode)
+        data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], typecode)
         func = getattr(sparsetools,_transtabl[typecode]+'cscadd')
-        c,rowc,ptrc,ierr = func(data1,self.rowind[:nnz1],self.indptr,data2,other.rowind[:nnz2],other.indptr)
+        c,rowc,ptrc,ierr = func(data1,self.rowind[:nnz1],self.indptr,data2,ocs.rowind[:nnz2],ocs.indptr)
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
@@ -620,10 +619,9 @@ class csr_matrix(spmatrix):
                     self.indptr = s.indptr
             elif isinstance(s, csc_matrix):
                 self.shape = s.shape
-                tcode = s.typecode
-                func = getattr(sparsetools,tcode+'transp')
+                func = getattr(sparsetools,s.ftype+'transp')
                 self.data, self.colind, self.indptr = \
-                           func(s.data, s.rowind, s.indptr)
+                           func(s.shape[1], s.data, s.rowind, s.indptr)
             else:
                 try:
                     temp = s.tocsr()
@@ -679,24 +677,22 @@ class csr_matrix(spmatrix):
 
     def _check(self):
         M,N = self.shape
+        nnz = self.indptr[-1]
+        nzmax = len(self.colind)
         if (rank(self.data) != 1) or (rank(self.colind) != 1) or \
            (rank(self.indptr) != 1):
             raise ValueError, "Data, colind, and indptr arrays "\
                   "should be rank 1."
-        if (len(self.data) != len(self.colind)):
+        if (len(self.data) != nzmax):
             raise ValueError, "Data and row list should have same length"
         if (len(self.indptr) != M+1):
             raise ValueError, "Index pointer should be of length #rows + 1"
-        if (nzmax < nnz):
-            raise ValueError, "Nzmax must not be less than nnz."
         if (nnz>0) and (max(self.colind[:nnz]) >= M):
             raise ValueError, "Column-values must be < N."
-        if (self.indptr[-1] > len(self.colind)):
+        if (nnz > nzmax):
             raise ValueError, \
                   "Last value of index list should be less than "\
                   "the size of data list"
-        self.nnz = self.indptr[-1]
-        self.nzmax = len(self.colind)
         self.typecode = self.data.typecode()
         if self.typecode not in 'fdFD':
             self.typecode = 'd'
@@ -801,14 +797,14 @@ class csr_matrix(spmatrix):
 
     def transp(self, copy=0):
         M,N = self.shape
-        new = csr_matrix(N,M,nzmax=0,typecode=self.typecode)
+        new = csc_matrix(N,M,nzmax=0,typecode=self.typecode)
         if copy:
             new.data = self.data.copy()
-            new.colind = self.rowind.copy()
+            new.rowind = self.colind.copy()
             new.indptr = self.indptr.copy()
         else:
             new.data = self.data
-            new.colind = self.rowind
+            new.rowind = self.colind
             new.indptr = self.indptr
         new._check()
         return new

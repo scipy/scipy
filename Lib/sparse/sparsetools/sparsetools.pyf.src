@@ -120,7 +120,7 @@ python module sparsetools ! in
         end subroutine <_c>cscmucsc
 
         subroutine <_c>transp(m,n,a,rowa,ptra,nnzamax,b,colb,ptrb) ! in :sparsetools:dspconv.f
-            integer intent(hide), depend(ptrb) :: m=(len(ptrb)-1)
+            integer intent(in) :: m
             integer intent(hide), depend(ptra) :: n=(len(ptra)-1)
             <_t> dimension(nnzamax) :: a
             integer dimension(nnzamax),depend(nnzamax) :: rowa
@@ -128,7 +128,7 @@ python module sparsetools ! in
             integer intent(hide), depend(a) :: nnzamax=len(a)
             <_t> intent(out),dimension(nnzamax),depend(nnzamax) :: b
             integer intent(out), dimension(nnzamax),depend(nnzamax) :: colb
-            integer intent(out), dimension(m + 1) :: ptrb
+            integer intent(out), dimension(m + 1), depend(m) :: ptrb
         end subroutine <_c>transp
 
         subroutine <_c>cscgetel(a,rowa,ptra,nnzamax,n,row,col,ind,val) ! in :sparsetools:dspconv.f
