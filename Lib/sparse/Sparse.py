@@ -1,45 +1,278 @@
 from Numeric import *
 from scipy_base.fastumath import *
+from scipy_base import isscalar
 import types
 import _sparsekit
+import _sparseutil
 import _superlu
 
 MAXPRINT=50
 # The formats that SPARSEKIT's convert programs understand.
 
-_formats = {'BND':[0,"Linpack Banded format"],
-            'CSR':[1,"Compressed Sparse Row format"],
-            'CSC':[2,"Compressed Sparse Column format"],
-            'COO':[3,"Coordinate format"],
-            'ELL':[4,"Ellpack-Itpack genralized diagonal format"],
-            'DIA':[5,"Diagonal format"],
-            'BSR':[6,"Block Sparse Row format"],
-            'MSR':[7,"Modified Compressed Sparse Row format"],
-            'SSK':[8,"Symmetric Skyline format"],
-            'NSK':[9,"Nonsymmetric Skyline format"],
-            'LNK':[10,"Linked list storage format"],
-            'JAD':[11,"Jagged Diagonal format"],
-            'SSS':[12,"The Symmetric Sparse Skyline format"],
-            'USS':[13,"The Unsymmetric Sparse Skyline format"],
-            'VBR':[14,"Variable Block Row format"]}
+_coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
+                 ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
+                 ('d','F'):'D', ('d','D'):'D', ('F','f'):'F',
+                 ('F','d'):'D', ('F','F'):'F', ('F','D'):'D',
+                 ('D','f'):'D', ('D','d'):'d', ('D','F'):'D',
+                 ('D','D'):'D'}
+_transtabl = {'f':'s','d':'d','F':'c','D':'z'}
+_itranstabl = {'s':'f','d':'d','c':'F','z':'D'}
+_formats = {'csc':[0,"Compressed Sparse Column"],
+            'csr':[1,"Compressed Sparse Row"],
+            'dok':[2,"Dictionary Of Keys"],
+            'lil':[3,"LInked List"],
+            'dod':[4,"Dictionary of Dictionaries"],
+            'sss':[5,"Symmetric Sparse Skyline"],           
+            'coo':[6,"COOrdinate"],
+            'lba':[7,"Linpack BAnded"],
+            'egd':[8,"Ellpack-itpack Generalized Diagonal"],
+            'dia':[9,"DIAgonal"],
+            'bsr':[10,"Block Sparse Row"],
+            'msr':[11,"Modified compressed Sparse Row"],
+            'bsc':[12,"Block Sparse Column"],
+            'msc':[13,"Modified compressed Sparse Column"],
+            'ssk':[14,"Symmetric SKyline"],
+            'nsk':[15,"Nonsymmetric SKyline"],
+            'jad':[16,"JAgged Diagonal"],
+            'uss':[17,"Unsymmetric Sparse Skyline"],
+            'vbr':[18,"Variable Block Row"],
+            'und':[19,"Undefined"]
+            }
+
+def _convert_data(data1,data2,newtype):
+    if data1.typecode() != newtype:
+        data1 = data1.astype(newtype)
+    if data2.typecode() != newtype:
+        data2 = data2.astype(newtype)
+    return data1, data2        
+    
+# This class provides a base class for all sparse matrices
+#   most of the work is provided by subclasses
+
+class spmatrix:
+    def __init__(self, format):
+        self.format = format
+        
+    def getmaxprint(self):
+        try:
+            maxprint = self.maxprint
+        except AttributeError:
+            maxprint = MAXPRINT
+        return maxprint
+        
+    def getnumtype(self):
+        try:
+            numtype = self.numtype
+        except AttributeError:
+            numtype = None
+        return numtype
+
+    def getnnz(self):
+        try:
+            nnz = self.nnz
+        except AttributeError:
+            nnz = 0
+        return nnz
+
+    def getformat(self):
+        try:
+            format = self.storage
+        except AttributeError:
+            format = 'UND'
+        return format
+
+    def rowcol(self, num):
+        return (None, None)
+
+    def getdata(self, num):
+        return None
+        
+    def listprint(self,start,stop):
+        # provides a way to print over a single index
+        val = ''
+        for ind in xrange(start,stop):
+            val = val + '  %s\t%s\n' % (self.rowcol(ind),self.getdata(ind))
+        return val
+    
+    def __repr__(self):
+        numtype = self.getnumtype()
+        nnz = self.getnnz()
+        format = self.getformat()
+        return "<%dx%d sparse matrix of type '%s' with %d non-zero "\
+               "elements in %s format>" % \
+               (self.shape + (numtype, nzmax, _formats[format][1]))
+
+    def __str__(self):
+        nnz = self.getnnz()
+        maxprint = self.getmaxprint()
+        val = ''
+        if nnz > maxprint:
+            val = val + self.listprint(0,maxprint/2)
+            val = val + "  :\t:\n"
+            val = val + self.listprint(nnz-maxprint/2,nnz)
+        else:
+            val = val + self.listprint(0,nnz)
+        return val[:-1]
+
+    def __cmp__(self,other):
+        raise TypeError, "Comparison of sparse matrices is not implemented."
+
+    def __nonzero__(self):  # Simple -- other ideas?
+        return self.getnnz() > 0
+
+    def __len__(self):
+        return self.getnnz()
+
+    def asformat(self, format):
+        # default converter goes through the CSC format
+        csc = self.toscs()
+        return eval('csc.as%s' % format)()
+ 
+    # default operations use the CSC format as a base
+    # thus, a new sparse matrix format just needs to define
+    #  an toscs method and then get CSCmatrix to define an
+    #  tofmt type to get functionality.
+
+    def __add__(self, other):
+        format = self.getformat()
+        csc = self.toscs()
+        res = csc + other
+        return eval('res.to%s' % format)
+
+    def __sub__(self, other):
+        format = self.getformat()
+        csc = self.toscs()
+        res = csc - other
+        return eval('res.to%s' % format)
+
+    def __rsub__(self, other): # other - self
+        format = self.getformat()
+        csc = self.toscs()
+        res = csc.__rsub__(other)
+        return eval('res.to%s' % format)
+
+    def __mul__(self, other):
+        format = self.getformat()
+        csc = self.toscs()
+        res = csc * other
+        return eval('res.to%s' % format)
+
+    def __rmul__(self, other):
+        format = self.getformat()
+        csc = self.toscs()
+        res = csc.__rmul__(other)
+        return eval('res.to%s' % format)
+        
+    def __neg__(self):
+        format = self.getformat()
+        csc = self.toscs()
+        res = -csc
+        return eval('res.to%s' % format)
+        
+# compressed sparse column matrix
+#  This can be instantiated in many ways
+#    - with another sparse matrix (sugar for .tocsc())
+#    - with M,N,nzmax,typecode  to construct a container
+#    - with data, ij, {M,N,nzmax}
+#           a[ij[k,0],ij[k,1]] = data[k]
+# 
+
+class csc_matrix(spmatrix):
+    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,typecode=Float):       
+        spmatrix.__init__(self, 'CSC')
+        if isinstance(s,spmatrix):
+            temp = s.tocsc()
+            self.data = temp.data
+            self.rowind = temp.rowind
+            self.indptr = temp.indptr
+            self.shape = temp.shape
+            self.numtype = temp.numtype
+            self.nnz = temp.nnz
+            self.nzmax = nzmax
+        elif isinstance(s,type(3)):
+            M=s
+            N=ij
+            self.data = zeros((nzmax,),typecode)
+            self.rowind = zeros((nzmax,))
+            self.indptr = zeros((N+1,))
+            self.shape = (M,N)
+            self.numtype = typecode
+            self.nnz = 0
+            self.nzmax = nzmax
+        elif isinstance(s,scipy_base.ArrayType) or \
+             isinstance(s,type([])):
+            temp = coo_matrix(s,ij,M=M,N=N,nzmax=nzmax,typecode=typecode)
+            temp = temp.tocsc()
+            self.data = temp.data
+            self.rowind = temp.rowind
+            self.indptr = temp.indptr
+            self.shape = temp.shape
+            self.numtype = temp.numtype
+            self.nnz = temp.nnz
+            self.nzmax = nzmax
+
+    def __add__(self, other):
+        if isspmatrix(other):
+            ocs = other.tocsc()
+            numtype = _coerce_rules[(self.numtype,other.numtype)]
+            data1, data2 = _coerce_data(self.data1, other.data2, numtype)
+            func = eval('sparsetools.'+_transtabl[numtype]+'cscadd')
+    
+# compressed sparse row matrix
+# 
+class csr_matrix(spmatrix):
+    def __init__(self):
+        pass
+    
+
+# dictionary of keys based matrix
+class dok_matrix(spmatrix):
+    pass
+
+# dictionary of dictionaries based matrix
+class dod_matrix(spmatrix):
+    pass
+
+# linked list matrix
+class lnk_matrix(spmatrix):
+    pass
+
+# coordinate lists format
+class coo_matrix(spmatrix):
+    pass
+
+# symmetric sparse skyline
+class sss_matrix(spmatrix):
+    pass
+
+# diagonal (banded) matrix
+class dia_matrix(spmatrix):
+    pass
+
+# ellpack-itpack generalized diagonal
+class egd_matrix(spmatrix):
+    pass
+
+# block sparse row
+# modified compressed sparse row
+# block sparse column
+# modified compressed sparse column
+# symmetric skyline
+# nonsymmetric skyline
+# jagged diagonal
+# unsymmetric sparse skyline
+# variable block row
+
+
 
 # So far only CSR format is supported internally.
 
-_transtabl = {'f':'s','d':'d','F':'c','D':'z'}
-_itranstabl = {'s':'f','d':'d','c':'F','z':'D'}
 
-# A sparse matrix class.  A sparse matrix can be initialized as:
-
-# a = spmatrix(M,N,nzmax,typecode=Float)
-#   Create an MxN matrix with room for nzmax non-zero elements of
-#     type typecode
-# a = spmatrix(data,row,col{,M,N,nzmax})
-#   Create a sparse matrix with non-zero elements data
-#     using a[row[i],col[i]] = data[i]
 
 
 #   A simple "dictionary-based" sparse matrix.
-#   keys must be 2-tuples of any object.  The object must have __int__ defined to return integer
+#   keys must be 2-tuples of any object.  The object must have __int__
+#    defined to return integer
 #   should also define __cmp__ as well to compare the integer-based keys
 
 
@@ -229,9 +462,9 @@ class dictmatrix(dict):
         keys = self.keys()
         keys.sort()
         nnz = len(keys)
-        data = [None]*nnz
-        colind = [None]*nnz
-        row_ptr = [None]*(self.shape[0]+1)
+        data = [0]*nnz
+        colind = [0]*nnz
+        row_ptr = [0]*(self.shape[0]+1)
         current_row = -1
         k = 0
         for key in keys:
@@ -293,6 +526,15 @@ class dictmatrix(dict):
             ikey1 = int(key[1])
             new[ikey0,ikey1] = self[key]
         return new
+
+# A sparse matrix class.  A sparse matrix can be initialized as:
+
+# a = spmatrix(M,N,nzmax,typecode=Float)
+#   Create an MxN matrix with room for nzmax non-zero elements of
+#     type typecode
+# a = spmatrix(data,row,col{,M,N,nzmax})
+#   Create a sparse matrix with non-zero elements data
+#     using a[row[i],col[i]] = data[i]
                
 class spmatrix:
     def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,
@@ -569,8 +811,7 @@ class spmatrix:
         return res
             
 def isspmatrix(x):
-    return hasattr(x,'__class__') and x.__class__ is spmatrix
-
+    return isinstance(x, spmatrix)
 
 def _spdiags_tosub(diag_num,a,b):
     part1 = where(less(diag_num,a),abs(diag_num-a),0)

@@ -74,14 +74,19 @@ def configuration(parent_package='',parent_path=None):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
-    ext_args = {'name':dot_join(parent_package,package,'_sparsekit'),
-                'sources':[local_join('_sparsekit.pyf')],
-                'libraries' : [sparsekit]
-                }
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+#    ext_args = {'name':dot_join(parent_package,package,'_sparsekit'),
+#                'sources':[local_join('_sparsekit.pyf')],
+#                'libraries' : [sparsekit]
+#                }
+#    dict_append(ext_args,**lapack_opt)
+#    ext = Extension(**ext_args)
+#    config['ext_modules'].append(ext)
 
+    sources = ['spblas.f.src','spconv.f.src','sparsetools.pyf.src']
+    sources = [local_join('sparsetools',x) for x in sources]
+    ext = Extension(dot_join(parent_package, package, 'sparsetools'), sources=sources)
+    config['ext_modules'].append(ext)
+    
     return config
 
 if __name__ == '__main__':
