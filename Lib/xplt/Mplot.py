@@ -501,7 +501,7 @@ def matplot(x,y=None,axis=-1):
     assert(len(x)==y.shape[axis])
     otheraxis = (1+axis) % 2
     sliceobj = [slice(None)]*2
-    if not _hold:
+    if not _hold and gist.plsys() < 2:
         gist.fma()
     clear_global_linetype()
     for k in range(y.shape[otheraxis]):
@@ -660,9 +660,29 @@ def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, l
 def full_page(win,dpi=75):
     gist.window(win,style=_current_style,width=int(dpi*8.5),height=dpi*11,dpi=dpi)
 
+def _add_color(system, color, frame=0):
+    system['ticks'] = { 
+        'horiz':{
+        'tickStyle':{'color':color},
+        'gridStyle':{'color':color},
+        'textStyle':{'color':color}
+        },
+        'vert':{
+        'tickStyle':{'color':color},
+        'gridStyle':{'color':color},
+        'textStyle':{'color':color}
+        },
+        'frame': frame,
+        'frameStyle':{'color':color}
+    }
+    return
+
+
 plotframe = gist.plsys
-def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=11*inches,pw=8.5*inches,dpi=75,ls=0.75*inches,rs=0.75*inches,ts=0.75*inches,bs=0.75*inches):
-    # Use gist.plsys to change coordinate systems 
+def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=11*inches,pw=8.5*inches,dpi=75,ls=0.75*inches,rs=0.75*inches,ts=0.75*inches,bs=0.75*inches,color='black',frame=0):
+    # Use gist.plsys to change coordinate systems
+    if type(color) is types.StringType:
+        color = _colornum[color]
     systems=[]
     ind = -1
     Yspace = (ph-bm-tm)/float(Numy)
@@ -673,6 +693,8 @@ def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=1
             xstart = lm + nX*Xspace + ls
             systems.append({})
             systems[-1]['viewport'] = [xstart,xstart+Xspace-(ls+rs),ystart,ystart+Yspace-(ts+bs)]
+            if color != -2:
+                _add_color(systems[-1],color,frame=frame)
     _current_style='/tmp/subplot%s.gs' % win
     fid = open(_current_style,'w')
     fid.write(write_style.style2string(systems))
@@ -956,7 +978,7 @@ def surf(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
     pl3d.set_draw3_(0)
     pl3d.orient3(phi=phi*pi/180,theta=theta*pi/180)
     pl3d.light3()
-    change_palette()
+    change_palette(palette)
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
     [xmin,xmax,ymin,ymax] = pl3d.draw3(1)
     gist.limits(xmin,xmax,ymin,ymax)
