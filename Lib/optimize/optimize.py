@@ -562,7 +562,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
+def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0):
     """Minimize a function using the BFGS algorithm.
 
@@ -579,7 +579,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
       fprime -- a function to compute the gradient of f.
       args -- extra arguments to f and fprime.
-      avegtol -- minimum average value of gradient for stopping
+      maxgtol -- maximum allowable gradient magnitude for stopping
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
 
@@ -599,9 +599,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     Additional Inputs:
 
-      avegtol -- the minimum occurs when fprime(xopt)==0.  This specifies how
-                 close to zero the average magnitude of fprime(xopt) needs
-                 to be.
       maxiter -- the maximum number of iterations.
       full_output -- if non-zero then return fopt, func_calls, grad_calls,
                      and warnflag in addition to xopt.
@@ -619,7 +616,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     grad_calls = 0
     k = 0
     N = len(x0)
-    gtol = N*avegtol
     I = MLab.eye(N)
     Hk = I
     old_fval = f(x0,*args)
@@ -636,9 +632,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     xk = x0
     if retall:
         allvecs = [x0]
+    gtol = maxgtol
     sk = [2*gtol]
     warnflag = 0
-    while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
+    while (Num.maximum.reduce(abs(gfk)) > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                  line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args)
@@ -660,15 +657,19 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         yk = gfkp1 - gfk
         k = k + 1
 
-        try:            
+        try:
             rhok = 1 / Num.dot(yk,sk)
         except ZeroDivisionError:
-            warnflag = 2
-            break
-        A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
-        A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
-        Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
-                                               * sk[Num.NewAxis,:]
+            #warnflag = 2
+            #break
+            print "Divide by zero encountered:  Hessian calculation reset."
+            Hk = I
+        else:
+            A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
+            A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
+            Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
+                 * sk[Num.NewAxis,:]
+
         gfk = gfkp1
 
 
@@ -1649,7 +1650,7 @@ if __name__ == "__main__":
     print "BFGS approximate gradient"
     print "========================="
     start = time.time()
-    x = fmin_bfgs(rosen, x0, avegtol=1e-4, maxiter=100)
+    x = fmin_bfgs(rosen, x0, gtol=1e-4, maxiter=100)
     print x
     times.append(time.time() - start)
     algor.append('BFGS without gradient\t')
@@ -1681,7 +1682,6 @@ if __name__ == "__main__":
     for k in range(len(algor)):
         print algor[k], "\t -- ", times[k]
         
-
 
 
 
