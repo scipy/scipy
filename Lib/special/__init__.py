@@ -324,6 +324,9 @@
   function and does not follow broadcasting and automatic
   array-looping rules.
  """
+
+from special_version import special_version as __version__
+
 from special import *
 import specfun
 import orthogonal

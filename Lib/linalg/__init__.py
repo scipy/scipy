@@ -39,6 +39,8 @@
  
 """
 
+from linalg_version import linalg_version as __version__
+
 from basic import *
 from decomp import *
 from matfuncs import *

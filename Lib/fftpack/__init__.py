@@ -51,6 +51,8 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fftfreq','rfftfreq'
            ]
 
+from fftpack_version import fftpack_version as __version__
+
 from basic import *
 from pseudo_diffs import *
 from helper import *
