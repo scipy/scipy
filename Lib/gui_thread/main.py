@@ -20,6 +20,11 @@ import thread, threading
 import sys, os, new
 
 running_in_second_thread = 0
+
+# this variable flags if something is currently running inside a
+# threading.Event.  If it is then other calls need not be proxied.
+in_proxy_call = 0
+
 gui_thread_finished = threading.Event()
 
 def gui_thread(finished):
@@ -70,16 +75,19 @@ def exit_gui_thread(last_exit = oldexitfunc):
     # don't wait on MS platforms -- it hangs.
     # On X11, we have to shut down the secondary thread.
     if running_in_second_thread and os.name != 'nt':
-    	import gui_thread_guts    	
+    	import gui_thread_guts
     	event_poster = gui_thread_guts.proxy_base()
     	event_catcher = event_poster.catcher
-        finished = threading.Event()
-        evt = gui_thread_guts.proxy_event(event_catcher.Close,
-                                          (),{},finished)
-        event_poster.post(evt)
-        # wait for event to get handled
-        finished.wait()
-        # wait for the gui_thread to die.        
+        if in_proxy_call:
+            event_catcher.Close()
+        else:
+            finished = threading.Event()
+            evt = gui_thread_guts.proxy_event(event_catcher.Close,
+                                              (),{},finished)
+            event_poster.post(evt)
+            # wait for event to get handled
+            finished.wait()
+        # wait for the gui_thread to die.
         gui_thread_finished.wait()
     if last_exit: last_exit()
        
@@ -100,13 +108,18 @@ def register(wx_class):
         #print 'proxy generated'
         return proxify(wx_class)
     else:
-        if not hasattr(wx_class, 'init2'):
-            wx_class.init2 = wx_class.__init__
+        if not hasattr(wx_class, '_iNiT2'):
+            if hasattr(wx_class, '__init__'):
+                wx_class._iNiT2 = wx_class.__init__
+            else:
+                wx_class._iNiT2 = None
             wx_class.__init__ = plain_class__init__
         return wx_class
 
 def plain_class__init__(self,*args,**kw):
-    self.init2(*args,**kw)
+    """This is apparently useful for apps like PyCrust."""
+    if self._iNiT2:
+        self._iNiT2(*args,**kw)
     add_close_event_handler(self)
     self.proxy_object_alive = 1
     
@@ -132,6 +145,8 @@ def proxify(wx_class):
     else:
         class_dict['__doc__'] = class_doc
     class_methods = get_all_methods(wx_class)
+    if class_methods.count('__init__') == 0:
+        class_methods.insert(0, '__init__')
     for method in class_methods:
         func = generate_method(method,wx_class)
         if func:
@@ -185,7 +200,7 @@ def generate_method(method,wx_class):
         #pre_test = 'from gui_thread_guts import proxy_base;'\
         #           'proxy_base.__init__(self)'
         arguments = 'arg_list = args'
-        results  = 'self.wx_obj = finished._result;' \
+        results  = 'self.wx_obj = ret_val;' \
                    'add_close_event_handler(self);' \
                    'self.proxy_object_alive = 1;'
     elif (method == '__getattr__') or (method == '__del__'):
@@ -194,21 +209,27 @@ def generate_method(method,wx_class):
         pre_test =  "if not self.proxy_object_alive: proxy_error()"
         call_method = '%s.%s' % (class_name,method)
         arguments = 'arg_list = tuple([self.wx_obj] + list(args))'
-        results  = 'return smart_return(finished._result, self)'
+        results  = 'return smart_return(ret_val)'
     body = """def %(method)s(self,*args,**kw):
                 \"\"\"%(documentation)s\"\"\"
                 %(pre_test)s
                 from gui_thread_guts import proxy_event, smart_return
-                %(import_statement)s #import statement
-                finished = threading.Event()
+                %(import_statement)s
                 # remove proxies if present
                 args = dereference_arglist(args)                
-                %(arguments)s #arguments
-                evt = proxy_event(%(call_method)s,arg_list,kw,finished)
-                self.post(evt)
-                finished.wait()
-                if finished.exception_info:
-                    raise finished.exception_info[0],finished.exception_info[1]
+                %(arguments)s # inserts proxied object up front
+                ret_val = None
+                if in_proxy_call:
+                    ret_val = apply(%(call_method)s, arg_list, kw)
+                else:
+                    finished = threading.Event()
+                    evt = proxy_event(%(call_method)s,arg_list,kw,finished)
+                    self.post(evt)
+                    finished.wait()
+                    if finished.exception_info:
+                        raise finished.exception_info[0], \
+                              finished.exception_info[1]
+                    ret_val = finished._result
                 %(results)s #results\n""" %locals()
     #if method == '__init__':
     #    print body
@@ -251,7 +272,7 @@ def is_proxy(x):
     return hasattr(x,'is_proxy')
 
 def is_proxy_attr(x):
-    return hasattr(x, '_proxy_attr__proxy')
+    hasattr(x, 'x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing')
 
 def get_proxy_attr_obj(x):
     return x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing
