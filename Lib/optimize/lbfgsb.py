@@ -34,7 +34,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad = False,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
-                  iprint=-1, maxeval=15000):
+                  iprint=-1, maxfun=15000):
     """
     Minimize a function func using the L-BFGS-B algorithm.
 
@@ -78,7 +78,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     iprint  -- controls the frequency of output. <0 means no output.
 
-    maxeval -- maximum number of function evaluations.
+    maxfun  -- maximum number of function evaluations.
 
 
     Returns:
@@ -179,7 +179,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             f[0], g = func_and_grad(x, *args)
         elif task_str.startswith('NEW_X'):
             # new iteration
-            if n_function_evals > maxeval:
+            if n_function_evals > maxfun:
                 task[:] = 'STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIMIT'
         else:
             break
@@ -187,7 +187,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     task_str = task.tostring().strip()
     if task_str.startswith('CONV'):
         warnflag = 0
-    elif n_function_evals > maxeval:
+    elif n_function_evals > maxfun:
         warnflag = 1
     else:
         warnflag = 2

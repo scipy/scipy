@@ -48,7 +48,7 @@ bracket     ---      Find a bracket containing the minimum.
 
 __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound','brent', 'golden','bracket','rosen','rosen_der',
-           'rosen_hess', 'rosen_hess_prod', 'brute']
+           'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime']
 
 import Numeric
 import MLab
@@ -62,7 +62,6 @@ import __builtin__
 pymin = __builtin__.min
 pymax = __builtin__.max
 __version__="0.5"
-import tnc
 
 def rosen(x):  # The Rosenbrock function
     return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)

@@ -33,6 +33,7 @@ value of the function, and whose second argument is the gradient of the function
 """
 
 import moduleTNC
+from scipy_base import asarray
 
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration
@@ -83,7 +84,7 @@ approx_fprime = optimize.approx_fprime
 
 
 def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=False, bounds=None, epsilon=1e-8,
-             scale=None, messages=MSG_ALL, maxCGit=-1, maxnfeval=None, eta=-1,
+             scale=None, messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=0, rescale=-1):
     """Minimize a function with variables subject to bounds, using gradient 
     information.
@@ -157,18 +158,21 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=False, bounds=None, eps
 
     if approx_grad:
         def func_and_grad(x):
+            x = asarray(x)
             f = func(x, *args)
             g = approx_fprime(x, func, epsilon, *args)
-            return f, g
+            return f, list(g)
     elif fprime is None:
         def func_and_grad(x):
+            x = asarray(x)
             f, g = func(x, *args)
-            return f, g
+            return f, list(g)
     else:
         def func_and_grad(x):
+            x = asarray(x)
             f = func(x, *args)
             g = fprime(x, *args)
-            return f, g
+            return f, list(g)
 
     low = [0]*n
     up = [0]*n
@@ -186,11 +190,11 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=False, bounds=None, eps
     if scale == None:
         scale = []
 
-    if maxeval == None:
-       maxeval = max(1000, 100*len(x))
+    if maxfun == None:
+       maxfun = max(1000, 100*len(x0))
         
-    return moduleTNC.minimize(func_and_grad, x, low, up, scale, messages, maxCGit,
-                              maxeval, eta, stepmx, accuracy,
+    return moduleTNC.minimize(func_and_grad, x0, low, up, scale, messages,
+                              maxCGit, maxfun, eta, stepmx, accuracy,
                               fmin, ftol, rescale)
 
 if __name__ == '__main__':
@@ -209,7 +213,7 @@ if __name__ == '__main__':
                         return f, g
 
                 # Optimizer call
-                rc, nf, x = minimize(f, [-7, 3], bounds=([-10, 10], [1, 10]))
+                rc, nf, x = minimize(function, [-7, 3], bounds=([-10, 10], [1, 10]))
 
                 print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
                 print "x =", x
