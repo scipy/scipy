@@ -78,8 +78,7 @@ c            ier    - integer
 c                     ier = 0 normal and reliable termination of the
 c                             routine. it is assumed that the requested
 c                             accuracy has been achieved.
-c                     ier.gt.0 abnormal tep
-ination of the routine
+c                     ier.gt.0 abnormal teermination of the routine
 c                             the estimates for the integral and error
 c                             are less reliable. it is assumed that the
 c                             requested accuracy has not been achieved.
