@@ -3,6 +3,7 @@
 
 import sigtools
 import scipy.special as special
+import scipy.linalg as linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from scipy_base import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray
@@ -10,7 +11,7 @@ import types
 import scipy
 from scipy.stats import mean
 import Numeric
-from Numeric import array, arange, where, sqrt, rank, zeros
+from Numeric import array, arange, where, sqrt, rank, zeros, NewAxis, argmax
 from scipy_base.fastumath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -734,6 +735,32 @@ def general_gaussian(M,p,sig,sym=1):
     if not sym and not odd:
         w = w[:-1]
     return w
+
+
+def slepian(M,width,sym=1):
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1
+
+    twoF = width/2.0
+    m = arange(0,M)
+    n = m[:,NewAxis]
+    k = m[NewAxis,:]
+
+    AF = twoF*special.sinc(twoF*(n-k))
+    [lam,vec] = linalg.svd(AF)
+    ind = argmax(abs(lam))
+    w = abs(vec[:,ind])
+    w = w / max(w)
+    
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+    
         
 
 def hilbert(x, N=None):
@@ -1088,7 +1115,7 @@ def get_window(window,Nx,fftbins=1):
     Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
                    parzen, bohman, blackmanharris, nuttall, barthann,
                    kaiser (needs beta), gaussian (needs std),
-                   general_gaussian (needs power, width).
+                   general_gaussian (needs power, width),
 
     If the window requires no parameters, then it can be a string.
     If the window requires parameters, the window argument should be a tuple
@@ -1145,6 +1172,8 @@ def get_window(window,Nx,fftbins=1):
             winfunc = general_gaussian
         elif winstr in ['boxcar', 'box', 'ones']:
             winfunc = boxcar
+        elif winstr in ['slepian', 'slep', 'optimal']:
+            winfunc = slepian
         else:
             raise ValueError, "Unknown window type."
 

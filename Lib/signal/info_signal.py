@@ -39,10 +39,12 @@ Signal Processing Tools
  Filter design:
  
     remez         --  Optimal FIR filter design.
+    firwin        --- Windowed FIR filter design.    
     iirdesign     --- IIR filter design given bands and gains
     iirfilter     --- IIR filter design given order and critical frequencies
     freqs         --- Analog filter frequency response
     freqz         --- Digital filter frequency response
+
 
  matlab-style IIR filter design:
  
