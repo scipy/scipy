@@ -136,14 +136,17 @@ is OK.
 IFC version 5.0 is not supported (because its bugs cause segfaults in
 scipy tests).
 
-Minimum IFC flags for building LAPACK and LAPACK are
-  -FI -w90 -w95 -cm -O3
+Minimum IFC flags for building LAPACK and ATLAS are
+  -FI -w90 -w95 -cm -O3 -unroll
+Also consult 'ifc -help' for additional optimization flags suitable
+for your computers CPU.
 
-When finishing LAPACK build, you must recompile ?lamch.f without
-any optimization (otherwise infinite loops occur when using these
-routines):
+When finishing LAPACK build, you must recompile ?lamch.f, xerbla.f
+with optimization disabled (otherwise infinite loops occur when using
+these routines):
+  make lapacklib
   cd /path/to/src/LAPACK/SRC
-  ifc -FI -w90 -w95 -cm -O0 -c ?lamch.f
+  ifc -FI -w90 -w95 -cm -O0 -c ?lamch.f xerbla.f
   cd ..
   make lapacklib
 
