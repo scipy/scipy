@@ -48,7 +48,8 @@ def get_color(in_color):
         color = wx.wxNamedColour(in_color) 
     else: 
         r,g,b = in_color
-        color = wx.wxColour(r,g,b) 
+        ##color = wx.wxColour(r,g,b) # mod by GAP 26092003
+        color = wx.wxColour(int(r),int(g),int(b)) 
     return color
 
 def default_font():
@@ -190,8 +191,10 @@ class text_object(box_object,property_object):
             # hmmm.  rotated text isn't being drawn with the correct font
             # also need to think about origin for rotated text
             if self.rotate == 90:
-                dc.DrawRotatedText(self.text,self.left(),self.bottom(),
-                                   self.rotate)
+                ##dc.DrawRotatedText(self.text,self.left(),self.bottom(),
+                ##                   self.rotate)    # mod by GAP 26092003
+                dc.DrawRotatedText(self.text,int(self.left()),int(self.bottom()),
+                                   int(self.rotate))
             else:
                 dc.DrawText(self.text,self.left(),self.top()) 
 
@@ -803,8 +806,8 @@ class poly_marker(poly_points):
             f(dc, xc, yc, size)
 
     def _circle(self, dc, xc, yc, size=1):
-	print xc, yc, size
-        dc.DrawEllipse(xc-3*size,yc-3*size,6*size,6*size)
+        ##dc.DrawEllipse(xc-3*size,yc-3*size,6*size,6*size)   #mod by GAP 26092003
+        dc.DrawEllipse(int(xc-3*size),int(yc-3*size),6*size,6*size)
 
     def _dot(self, dc, xc, yc, size=1):
         dc.DrawPoint(xc,yc)
@@ -850,12 +853,14 @@ class line_object(poly_points):
     def draw(self,dc):                   
         if hasattr(self,'clip'):
             c = self.clip
-            dc.SetClippingRegion(c[0]-1,c[1]-1,c[2]+2,c[3]+2)
+            ##dc.SetClippingRegion(c[0]-1,c[1]-1,c[2]+2,c[3]+2) # mod by GAP 26092003
+            dc.SetClippingRegion(int(c[0]-1),int(c[1]-1),int(c[2]+2),int(c[3]+2))
         self.line.draw(dc)
         if hasattr(self,'clip'): dc.DestroyClippingRegion()
         if hasattr(self,'clip'):
             c = self.clip
-            dc.SetClippingRegion(c[0]-5,c[1]-5,c[2]+10,c[3]+10)
+            ##dc.SetClippingRegion(c[0]-5,c[1]-5,c[2]+10,c[3]+10)  # mod by GAP 26092003
+            dc.SetClippingRegion(int(c[0]-5),int(c[1]-5),int(c[2]+10),int(c[3]+10))
         self.markers.draw(dc)        
         if hasattr(self,'clip'): dc.DestroyClippingRegion()
         
