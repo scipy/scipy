@@ -654,9 +654,16 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
     """
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
-    if not _hold:
-        gist.fma()
-    gist.animate(0)
+    try:
+        _style = None
+        saveval = gist.plsys(2)
+        gist.plsys(saveval)
+    except:
+        _style = 'default'        
+        if not _hold:
+            gist.fma()
+        gist.animate(0)
+    
     if _style is not None:
         if _style == "default":
             _style='/tmp/image.gs'
