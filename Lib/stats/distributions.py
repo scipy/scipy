@@ -2096,6 +2096,18 @@ wrapcauchy = wrapcauchy_gen(a=0.0,b=2*pi)
 ### DISCRETE DISTRIBUTIONS
 ###
 
+def entropy(pk):
+    """S = entropy(pk)
+
+    calculate the entropy of a distribution given the p_k values
+    S = sum(pk * log(pk))
+    """
+    pk = asarray(pk)
+    pk = 1.0* pk / sum(pk)
+    vec = where(pk == 0, 0, pk*log(pk))
+    return -sum(vec)
+    
+
 ## Handlers for generic case where xk and pk are given
 
 def _drv_pdf(self, xk, *args):
