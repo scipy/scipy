@@ -6,7 +6,7 @@ SciPy requires the following software installed:
 
 1) Python 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
      http://www.python.org
-2) Numerical Python 20.3 or newer but < Numarray
+2) Numerical Python 21.0 or newer but not Numarray (yet)
      http://www.numpy.org/
 3) ATLAS 3.2.1 or newer with complete LAPACK (see NOTES 2, 3, 4)
      http://math-atlas.sourceforge.net/
@@ -19,7 +19,7 @@ SciPy requires the following software installed:
 
 The following software is optional:
 
-6) FFTW 2.1.x (see fftpack/NOTES.txt)
+6) FFTW 2.1.x (see Lib/fftpack/NOTES.txt)
      http://www.fftw.org/
 7) wxPython
      http://www.wxpython.org/
@@ -106,17 +106,23 @@ properly before continuing SciPy installation.
 
 From tarballs
 -------------
-Unpack SciPy_core-<version>.tar.gz, change to SciPy_core-<version>
+Unpack SciPy-<version>.tar.gz, change to SciPy-<version>
 directory, and run
 
-  python setup_scipy_core.py install
+  python setup.py install
 
-Repeat the same procedure for SciPy-<version>.tar.gz but running
-
-  python setup_scipy.py install
-
-This can take several minutes to hours depending on the speed of your
+This may take several minutes to hours depending on the speed of your
 computer. 
+
+TESTING
+=======
+
+To test SciPy installation (highly recommended), execute in python
+
+   >>> import scipy
+   >>> scipy.test(level=1)
+
+where the test level can be varied from 1 to 10.
 
 COMPILER NOTES
 ==============
@@ -175,17 +181,6 @@ these routines):
   cd ..
   make lapacklib
 
-TESTING
-=======
-
-To test SciPy installation, run in python
-
-   >>> import scipy
-   >>> scipy.test(level=1)
-
-where the test level can vary from 1 to 10.
-
-
 KNOWN PROBLEMS
 ==============
 
@@ -210,7 +205,7 @@ To be sure that SciPy is built against a complete LAPACK, check the
 size of the file liblapack.a -- it should be about 6MB. The location
 of liblapack.a is shown by executing
 
-    python scipy_distutils/system.py
+    python scipy_core/scipy_distutils/system.py
 
 Fix:
   Follow the instructions in
@@ -229,7 +224,7 @@ If import clapack fails with the following error
 then you most probably have ATLAS 3.2.1 but linalg module was built
 for newer versions of ATLAS.
 Fix:
-  1) Remove scipy/linalg/clapack.pyf
+  1) Remove Lib/linalg/clapack.pyf
   2) Rebuild/reinstall scipy.
 
 Using non-Gnu Fortran Compiler
@@ -278,8 +273,8 @@ lists. Please include the following information to your message:
      python setup_atlas_version.py build_ext --inplace --force
      python -c 'import atlas_version'
 7) The output of the following commands
-     python scipy_distutils/system_info.py
-     python scipy_distutils/command/build_flib.py
+     python scipy_core/scipy_distutils/system_info.py
+     python scipy_core/scipy_distutils/command/build_flib.py
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy
    installation command can be very helpful. Since this output can be
