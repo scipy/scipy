@@ -47,8 +47,7 @@ Signal Processing Tools
     freqs         --- Analog filter frequency response
     freqz         --- Digital filter frequency response
 
-
- matlab-style IIR filter design:
+ Matlab-style IIR filter design:
  
     butter (buttord)  -- Butterworth
     cheby1 (cheb1ord) -- Chebyshev Type I
@@ -70,7 +69,14 @@ Signal Processing Tools
     tf2ss -- transfer function to state-space.
     ss2tf -- state-pace to transfer function.
     zpk2ss -- zero-pole-gain to state-space.
-    ss2zpk -- state-space to pole-zero-gain.    
+    ss2zpk -- state-space to pole-zero-gain.
+
+ Waveforms:
+
+    sawtooth -- Periodic sawtooth
+    square -- Square wave
+    gausspulse -- Gaussian modulated sinusoid
+    chirp -- Frequency swept cosine signal
 """
 
 postpone_import = 1
