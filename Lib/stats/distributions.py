@@ -14,7 +14,6 @@ from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
      zeros
 from scipy_base.fastumath import *
-
 from scipy_base import atleast_1d, polyval, angle, ceil, insert, extract, \
      any
 errp = special.errprint
@@ -213,7 +212,7 @@ def argsreduce(cond, *args):
     return newargs    
 
 class rv_continuous:
-    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None):
+    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None)
         if badvalue is None:
             badvalue = nan
         self.badvalue = badvalue
@@ -244,7 +243,6 @@ class rv_continuous:
         pdf_signature = inspect.getargspec(self._pdf.im_func)
         numargs2 = len(pdf_signature[0]) - 2
         self.numargs = max(numargs1, numargs2)
-        
     def _ppf_tosolve(self, x, q, *args):
         return apply(self.cdf, (x, )+args) - q
     def _ppf_single_call(self, q, *args):
@@ -590,7 +588,6 @@ class rv_continuous:
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
 
-
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
 class ksone_gen(rv_continuous):
@@ -612,7 +609,7 @@ kstwobign = kstwobign_gen(a=0.0,name='Kolmogorov-Smirnov two-sided large N stati
 
 # loc = mu, scale = std
 class norm_gen(rv_continuous):
-    """Normally distributied random variable.
+    """Normal (Gaussian) Distribution 
     """
     def _rvs(self):
         return rand.standard_normal(self._size)
@@ -624,7 +621,40 @@ class norm_gen(rv_continuous):
         return special.ndtri(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
-norm = norm_gen(name='normal')
+    def __call__(self,mu=0.0,std=1.0,size=1):
+        return rv_continuous.rvs(self,loc=mu,scale=std,size=size)
+    def rvs(self,mu=0.0,std=1.0,size=1):
+        """*size* normal random variates: mean=*mu*, st. dev.=*std*
+        """
+        return rv_continuous.rvs(self,loc=mu,scale=std,size=size)
+    def pdf(self,x,mu=0.0,std=1.0):
+        """pdf of normal random variable at x:  mean=*mu*, st. dev.=*std*
+        """
+        return rv_continuous.pdf(self,x,loc=mu,scale=std)
+    def cdf(self,x,mu=0.0,std=1.0):
+        """cdf of normal random variable at x:  mean=*mu*, st. dev.=*std*
+        """
+        return rv_continuous.cdf(self,x,loc=mu,scale=std)
+    def sf(self,x,mu=0.0,std=1.0):
+        """sf of normal random variable at x:  mean=*mu*, st. dev.=*std*
+        """
+        return rv_continuous.sf(self,x,loc=mu,scale=std)
+    def ppf(self,x,mu=0.0,std=1.0):
+        """ppf of normal random variable at x:  mean=*mu*, st. dev.=*std*
+        """
+        return rv_continuous.ppf(self,x,loc=mu,scale=std)
+    def isf(self,x,mu=0.0,std=1.0):
+        """isf of normal random variable at x:  mean=*mu*, st. dev.=*std*
+        """
+        return rv_continuous.isf(self,x,loc=mu,scale=std)
+    def stats(self,mu=0.0,std=1.0,moments='mv'):
+        """Statistics of the normal distribution: mean=*mu*, st. dev.=*std*
+
+             moments can contain 'm','v','s',or 'k' to return mean, variance, skew,
+             or kurtosis
+        """
+        return rv_continuous.isf(self,x,loc=mu,scale=std)
+norm = norm_gen(name='norm')
 
 ## Alpha distribution
 ##
@@ -637,7 +667,7 @@ class alpha_gen(rv_continuous):
         return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
     def _stats(self):
         return [scipy.inf]*2 + [scipy.nan]*2
-alpha = alpha_gen(a=0.0,name='alpha')
+alpha = alpha_gen(a=0.0,name='alpha',d1='this',d2='is',d3='a test')
 
 ## Anglit distribution
 ##
