@@ -364,7 +364,7 @@ def rename_functions(interface_in,prefix,suffix):
     for sub in sub_list:
         name = function_name(sub)
         new_name = prefix+name+suffix        
-        c_decl = "fortranname(%s)" % new_name
+        c_decl = "fortranname %s" % new_name
         #renamed_sub = string.replace(sub, name ,new_name ,1)
         renamed_sub = sub
         renamed_sub = string.replace(renamed_sub, '\n' , 
