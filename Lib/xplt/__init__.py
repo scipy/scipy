@@ -33,10 +33,14 @@ from write_style import *
 gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
                         'site-packages','scipy','xplt')
 os.environ['GISTPATH'] = gistpath
+display = os.environ.get('DISPLAY')
 
 maxwidth=os.environ.get('XPLT_MAXWIDTH')
 maxheight=os.environ.get('XPLT_MAXHEIGHT')
-if maxwidth is None or maxheight is None:
+
+# added check for X DISPLAY being available before calling xwininfo.
+# It causes crashes on telnet sessions without a display otherwise.
+if display and (maxwidth is None or maxheight is None):
     import commands
     str1 = commands.getoutput('xwininfo -root')
     ind1 = str1.find('Width:')
