@@ -1,7 +1,7 @@
 """UMFSparse:  A minimal sparse-matrix class for Python, useful for interfacing
 with the UMFPACK library for solving large linear systems,
 
-This file defines a class: UMFMatrix that defines a sparse-matrix class.
+This file defines a class: UMFmatrix that defines a sparse-matrix class.
 It is designed so that the attribute data points to the non-zero values in
 the matrix and index is a list of arrays which detail how to place the
 non-zero values in the array.  Currently only a compressed sparse row
@@ -19,23 +19,23 @@ MAXPRINT=50
 MEMALLOCSIZE=100
 
 # A sparse matrix class.  A sparse matrix can be initialized as:
-# a = UMFMatrix(N,nzmax,typecode=Float)
+# a = UMFmatrix(N,nzmax,typecode=Float)
 #      Create an NxN matrix with room for nzmax non-zero elements of
 #      type typecode 
-class UMFMatrix:
-    """DolMatrix defines a sparse-matrix class.
+class UMFmatrix:
+    """Dolmatrix defines a sparse-matrix class.
 
-    A = UMFMatrix(N,nzmax=None,typecode=Complex64)
+    A = UMFmatrix(N,nzmax=None,typecode=Complex64)
        Initialize an N x N sparse matrix with room for nzmax non-zero
        elements of the given typecode (Defaults to 'D')
 
-    A = UMFMatrix(otherSparse)
-       Make a copy of the Sparse Matrix (see copy() method)
+    A = UMFmatrix(otherSparse)
+       Make a copy of the Sparse matrix (see copy() method)
     """
 
     def __init__(self,N,nzmax=None,typecode=Numeric.Complex64,
                  zeroval=1e-16, chunks=MEMALLOCSIZE):
-        if isUMFMatrix(N):  # make a copy
+        if isUMFmatrix(N):  # make a copy
             self = N.copy()
             return
         if nzmax is None:
@@ -49,7 +49,7 @@ class UMFMatrix:
         return
 
     def copy(self):
-        s = UMFMatrix(1,0)
+        s = UMFmatrix(1,0)
         for attr in dir(self):
             if attr not in ['data','index']:
                 setattr(s,attr,getattr(self,attr))
@@ -109,7 +109,7 @@ class UMFMatrix:
         return val
 
     def __repr__(self):
-        return "<%dx%d UMFMatrix of type '%s' with %d elements>" % \
+        return "<%dx%d UMFmatrix of type '%s' with %d elements>" % \
                (self.shape + (self.data.typecode(), len(self.data)))
 
         
@@ -172,26 +172,26 @@ class UMFMatrix:
             return b
 
     def __neg__(self):
-        new = UMFMatrix(self.shape[0],0)
+        new = UMFmatrix(self.shape[0],0)
         new.data = -self.data
         new.index = self.index
         return new
 
     def conjugate(self,inplace=0):
         if inplace == 0:
-            new = UMFMatrix(self)
+            new = UMFmatrix(self)
         else:
             new = self
         new.data = conjugate(self.data)
         return new
 
-def isUMFMatrix(x):
-    return isinstance(x,UMFMatrix)
+def isUMFmatrix(x):
+    return isinstance(x,UMFmatrix)
 
 def splinsolve(A,b,factored=0,fulloutput=0,lvalcoef=(6,70,1)):
 
     if not factored:
-        assert(isUMFMatrix(A))
+        assert(isUMFmatrix(A))
         #print A.shape[1], b.shape[0]
         assert(A.shape[1] == b.shape[0])
         assert(A.shape[0] == A.shape[1])
@@ -241,8 +241,8 @@ def splinsolve(A,b,factored=0,fulloutput=0,lvalcoef=(6,70,1)):
 
 if __name__ == "__main__":
     print "From scratch: 10 x 10 with room for 10 elements initially."
-    print ">>> a = UMFSparse.UMFMatrix(10,10)"
-    b = UMFMatrix(10,10) 
+    print ">>> a = UMFSparse.UMFmatrix(10,10)"
+    b = UMFmatrix(10,10) 
     print "Representation of a matrix:"
     print repr(b)
     print "How a matrix prints."

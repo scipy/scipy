@@ -8,15 +8,15 @@
  *
  * SYNOPSIS:
  *
- * double ceil(), floor(), frexp(), ldexp();
+ * double ceil(), floor(), frexp(), ldexp(); --- gone
  * int signbit(), isnan(), isfinite();
  * double x, y;
  * int expnt, n;
  *
- * y = floor(x);
- * y = ceil(x);
- * y = frexp( x, &expnt );
- * y = ldexp( x, n );
+ * y = floor(x);             -gone 
+ * y = ceil(x);              -gone
+ * y = frexp( x, &expnt );   -gone
+ * y = ldexp( x, n );        -gone
  * n = signbit(x);
  * n = isnan(x);
  * n = isfinite(x);
@@ -63,7 +63,6 @@ Copyright 1984, 1995 by Stephen L. Moshier
 #include "mconf.h"
 
 #ifdef UNK
-/* ceil(), floor(), frexp(), ldexp() may need to be rewritten. */
 #undef UNK
 #if BIGENDIAN
 #define MIEEE 1

@@ -34,8 +34,7 @@ def test_suite(level=1):
     import scipy_base.testing
     import scipy_base
     this_mod = scipy_base
-    # ieee_754 gets tested in the type_check module.
     # testing is the module that actually does all the testing...
-    ignore = ['ieee_754','testing']
+    ignore = ['testing']
     return scipy_base.testing.harvest_test_suites(this_mod,ignore = ignore,
                                                   level=level)

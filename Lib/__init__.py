@@ -27,6 +27,7 @@ import string
 # Level 0
 # modules to import under the scipy namespace
 from scipy_base import *
+import Matrix as mat
 
 from helpmod import *
 

@@ -1,3 +1,3 @@
-"Rudimentary Sparse Matrix Class"
+"Rudimentary Sparse matrix Class"
 
 from UMFSparse import *

@@ -8,8 +8,8 @@
 
      read_array -- reading ascii streams into Numeric arrays
      write_array -- write an array to an ascii stream
-     loadmat -- read a MATLAB (version <= 4) style Mat file
-     savemat -- write a MATLAB (version <= 4) style Mat file
+     loadmat -- read a MATLAB (version <= 4) style mat file
+     savemat -- write a MATLAB (version <= 4) style mat file
 
      fread -- low-level reading
      fwrite -- low-level writing

@@ -224,19 +224,19 @@
     pbvv_seq -- **Sequence of parabolic cylinder functions Vv(x)
     pbdn_seq -- **Sequence of parabolic cylinder functions Dn(z), complex z
 
-  Mathieu and Related Functions (and derivatives)
+  mathieu and Related Functions (and derivatives)
 
     mathieu_a       -- Characteristic values for even solution (ce_m)
     mathieu_b       -- Characteristic values for odd solution (se_m)
     mathieu_A       -- **sequence of expansion coefficients for even solution
     mathieu_B       -- **sequence of expansion coefficients for odd solution
        ** All the following return both function and first derivative **
-    mathieu_cem     -- Even Mathieu function
-    mathieu_sem     -- Odd Mathieu function
-    mathieu_modcem1 -- Even modified Mathieu function of the first kind
-    mathieu_modcem2 -- Even modified Mathieu function of the second kind
-    mathieu_modsem1 -- Odd modified Mathieu function of the first kind
-    mathieu_modsem2 -- Odd modified Mathieu function of the second kind
+    mathieu_cem     -- Even mathieu function
+    mathieu_sem     -- Odd mathieu function
+    mathieu_modcem1 -- Even modified mathieu function of the first kind
+    mathieu_modcem2 -- Even modified mathieu function of the second kind
+    mathieu_modsem1 -- Odd modified mathieu function of the first kind
+    mathieu_modsem2 -- Odd modified mathieu function of the second kind
 
   Spheroidal Wave Functions
 

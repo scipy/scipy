@@ -163,7 +163,7 @@ class linear1d:
             raise ValueError, " A value in x_new is above the"\
                               " interpolation range."
         # !! Should we emit a warning if some values are out of bounds.
-        # !! Matlab does not.
+        # !! matlab does not.
         out_of_bounds = logical_or(below_bounds,above_bounds)
         return out_of_bounds
        

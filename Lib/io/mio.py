@@ -460,7 +460,7 @@ def loadmat(name, dict=None, appendmat=1):
 def savemat(filename, dict):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
-    This saves the arrayobjects in the given dictionary to a Matlab Version 4
+    This saves the arrayobjects in the given dictionary to a matlab Version 4
     style .mat file.
     """
     storage = {'D':0,'d':0,'F':1,'f':1,'l':2,'i':2,'s':3,'b':5}

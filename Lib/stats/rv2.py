@@ -527,7 +527,7 @@ class _pranv:
 
       See Wu, Pei-Chi, "Multiplicative, Congruential Random-Number Generators
       with multiplier (+ or -) 2**k1 (+ or -) 2**k2 and Modulus 2**p - 1, ACM
-      Transactions on Mathematical Software, June, 1997, Vol. 23, No. 2,
+      Transactions on mathematical Software, June, 1997, Vol. 23, No. 2,
       pp 255 - 265.  The generator has modulus 2**61 - 1, which is the
       Mersenne prime immediately following 2**31 - 1, and multiplier
       37**458191 % (2**61 - 1). Because 37 is the minimal primitive root of
@@ -555,7 +555,7 @@ class _pranv:
 
       _twister()
 
-      See M. Matsumoto and T. Nishamura, "Mersenne Twister," ACM Transactions
+      See M. matsumoto and T. Nishamura, "Mersenne Twister," ACM Transactions
       on Modeling and Computer Simulation, Jan. 1998, vol. 8, no. 1, pp 3-30.
       The period is 2**19937 - 1,(> 1e6000); the generator has a 623 dim-
       ensional equi-distributional property.  This means that every sequence
@@ -741,7 +741,7 @@ class _pranv:
 
          elif algorithm == 'twister':
             self._algorithm_name = \
-         "'Twister': Mersenne Twister MT19937 (Matsumoto and Nishamura, 1998)"
+         "'Twister': Mersenne Twister MT19937 (matsumoto and Nishamura, 1998)"
             self._fillbuf = self._twister # Set generator function pointer.
             self._build_iterator()        # Define _iterator;_ranbuf, _series.
             if seed == 0L:
@@ -2608,7 +2608,7 @@ class _pranv:
       See Fishman, George, "Monte Carlo," Springer-Verlag, 1996, pp 234-235.
       Algorithm OSPHERE was used.  For dimensions 2, 3, and 4, rejection
       algorithms were used. See Marsaglia, G., "Choosing a point from the
-      surface of a sphere," Annals of Mathematical Statistics, vol. 43,
+      surface of a sphere," Annals of mathematical Statistics, vol. 43,
       pp. 645-646, 1972."""
       d = len(center)
       buflim = self._ranbuf_size        # local alias

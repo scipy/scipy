@@ -402,8 +402,8 @@ def polygamma(n, x):
     return fac2
 
 def mathieu_A(m,q):
-    """Compute expansion coefficients for even Mathieu functions and
-    modified Mathieu functions.
+    """Compute expansion coefficients for even mathieu functions and
+    modified mathieu functions.
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError, "m and q must be scalars."
@@ -429,8 +429,8 @@ def mathieu_A(m,q):
     return fc[:km]
 
 def mathieu_B(m,q):
-    """Compute expansion coefficients for even Mathieu functions and
-    modified Mathieu functions.
+    """Compute expansion coefficients for even mathieu functions and
+    modified mathieu functions.
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError, "m and q must be scalars."

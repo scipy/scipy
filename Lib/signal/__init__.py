@@ -40,7 +40,7 @@
     freqs         --- Analog filter frequency response
     freqz         --- Digital filter frequency response
 
- Matlab-style IIR filter design:
+ matlab-style IIR filter design:
  
     butter (buttord)  -- Butterworth
     cheby1 (cheb1ord) -- Chebyshev Type I

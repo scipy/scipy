@@ -604,7 +604,7 @@ def hilbert(x, N=None):
         N = len(x)
     if N <=0:
         raise ValueError, "N must be positive."
-    if scipy.array_iscomplex(x):
+    if scipy.iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
         x = scipy.real(x)
     Xf = fft(x,N,axis=0)
@@ -632,7 +632,7 @@ def hilbert2(x,N=None):
         if N <=0:
             raise ValueError, "N must be positive."
         N = (N,N)
-    if scipy.array_iscomplex(x):
+    if scipy.iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
         x = scipy.real(x)
     print N
@@ -662,7 +662,7 @@ def hilbert2(x,N=None):
 def cmplx_sort(p):
     "sort roots based on magnitude."
     p = asarray(p)
-    if scipy.array_iscomplex(p):
+    if scipy.iscomplexobj(p):
         indx = Numeric.argsort(abs(p))
     else:
         indx = Numeric.argsort(p)
@@ -714,6 +714,7 @@ def unique_roots(p,tol=1e-3,rtype='min'):
     return array(pout), array(mult)
 
 from scipy_base import real_if_close, atleast_1d
+
 
 def invres(r,p,k,tol=1e-3,rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k

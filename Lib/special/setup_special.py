@@ -5,16 +5,7 @@ from glob import glob
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 from scipy_distutils.system_info import dict_append
-
-def _copyfile(src, dest, paths):
-    file_src = os.path.join(paths, src)
-    file_dest = os.path.join(paths, dest)
-    destid = open(file_dest,'w')
-    srcid = open(file_src,'r')
-    destid.write(srcid.read())
-    destid.close()
-    srcid.close()
-    return
+import shutil
 
 def configuration(parent_package=''):
     config = default_config_dict('special',parent_package)
@@ -63,10 +54,10 @@ def configuration(parent_package=''):
     cephes_path = os.path.join(local_path, 'cephes')
     if sys.byteorder == "little":
         print "### Little Endian detected ####"
-        _copyfile('mconf_LE.h','mconf.h',cephes_path)
+        shutil.copy2(os.path.join(cephes_path,'mconf_LE.h'),os.path.join(cephes_path,'mconf.h'))
     else:
         print "### Big Endian detected ####"
-        _copyfile('mconf_BE.h','mconf.h',cephes_path)
+        shutil.copy2(os.path.join(cephes_path,'mconf_BE.h'),os.path.join(cephes_path,'mconf.h'))
 
         
     return config

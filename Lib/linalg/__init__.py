@@ -9,7 +9,7 @@
    pinv2      --- Moore-Penrose pseudo inverse (using SVD)
    lstsq      --- Least-squares solve
 
- Matrix Factorizations:
+ matrix Factorizations:
  
    lu         --- LU decomposition
    cholesky   --- Cholesky factorization
@@ -21,7 +21,7 @@
    eigvals    --- only eigenvalues
    svd        --- singular value decomposition
 
- Matrix Functions
+ matrix Functions
  
    expm       --- exponential (using Pade approximation)
    cosm       --- cosine

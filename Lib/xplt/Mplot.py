@@ -441,7 +441,7 @@ def plot(x,*args,**keywds):
     if nargs == 0:
         y = x
         x = Numeric.arange(0,len(y))
-        if scipy.array_iscomplex(y):
+        if scipy.iscomplexobj(y):
             print "Warning: complex data plotting real part."
             y = y.real
         y = where(scipy.isfinite(y),y,0)
@@ -466,7 +466,7 @@ def plot(x,*args,**keywds):
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor]+_rmarkers[themarker])
             else:
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
-        if scipy.array_iscomplex(x) or scipy.array_iscomplex(y):
+        if scipy.iscomplexobj(x) or scipy.iscomplexobj(y):
             print "Warning: complex data provided, using only real part."
             x = scipy.real(x)
             y = scipy.real(y)

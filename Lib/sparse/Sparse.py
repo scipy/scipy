@@ -29,10 +29,10 @@ _transtabl = {'f':'s','d':'d','F':'c','D':'z'}
 
 # A sparse matrix class.  A sparse matrix can be initialized as:
 
-# a = spMatrix(M,N,nzmax,typecode=Float)
+# a = spmatrix(M,N,nzmax,typecode=Float)
 #      Create a MxN matrix with room for nzmax non-zero elements of type typecode
-# a = spMatrix(data,row,col{,M,N,nzmax}) 
-class spMatrix:
+# a = spmatrix(data,row,col{,M,N,nzmax}) 
+class spmatrix:
     def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,typecode=Float):
         if type(s) in [types.ListType, ArrayType]:
             s = array(s,copy=0,typecode=typecode)
@@ -63,7 +63,7 @@ class spMatrix:
             self.data = zeros((nzmax,),typecode)
             self.index = [zeros((nzmax,)),zeros((M+1,))]
             self.lastel = 0
-        elif isspMatrix(s) and s.storage=='CSR':  # make a copy
+        elif isspmatrix(s) and s.storage=='CSR':  # make a copy
             for attr in dir(s):
                 if attr not in ['data','index']:
                     setattr(self,attr,getattr(s,attr))
@@ -92,7 +92,7 @@ class spMatrix:
         return val
 
     def __repr__(self):
-        return "<%dx%d spMatrix of type '%s' with %d elements in %s>" % (self.shape + (self.ptype, self.nzmax, _formats[self.storage][1]))
+        return "<%dx%d spmatrix of type '%s' with %d elements in %s>" % (self.shape + (self.ptype, self.nzmax, _formats[self.storage][1]))
 
     def __str__(self):
         val = ''
@@ -144,7 +144,7 @@ class spMatrix:
                 ao = array(ao[:nels],copy=1)
                 jao = array(jao[:nels],copy=1)
                 iao = array(iao[:nr[0]],copy=1)
-                b = spMatrix(nr[0],nc[0],nels)
+                b = spmatrix(nr[0],nc[0],nels)
                 b.lastel = nels-1
                 b.data = ao
                 b.index = [jao,iao]
@@ -156,21 +156,21 @@ class spMatrix:
         if newtype == self.ptype:
             return self
         else:
-            b = spMatrix(self)
+            b = spmatrix(self)
             b.data = b.data.astype(newtype)
             b.ptype = newtype
             b.ftype = _transtabl[newtype]
             return b
 
     def __add__(self,other):
-        if not isspMatrix(other):
+        if not isspmatrix(other):
             raise TypeError, "Both matrices must be sparse."
         spadd = eval('_sparsekit.'+self.ftype+'aplb')
         assert self.shape == other.shape
         assert self.storage == 'CSR'
         if other.ftype != self.ftype:
             other = other.astype(self.ptype)
-        new = spMatrix(self.shape[0],self.shape[1],min((self.nzmax + other.nzmax,product(self.shape))),typecode=self.ptype)
+        new = spmatrix(self.shape[0],self.shape[1],min((self.nzmax + other.nzmax,product(self.shape))),typecode=self.ptype)
         ierr = array(0)
         iw = zeros((self.shape[1],))
         spadd(array(self.shape[0]),array(self.shape[1]),array(1),self.data,self.index[0],self.index[1],other.data,other.index[0],other.index[1],new.data,new.index[0],new.index[1],array(new.nzmax),iw,ierr)
@@ -182,7 +182,7 @@ class spMatrix:
         return new
 
     def __neg__(self):
-        new = spMatrix(self.shape[0],self.shape[1],self.nzmax)
+        new = spmatrix(self.shape[0],self.shape[1],self.nzmax)
         new.data = -self.data
         new.index = self.index
         new.ptype = self.ptype
@@ -191,16 +191,16 @@ class spMatrix:
         return new
 
     def __sub__(self,other):
-        if not isspMatrix(other):
+        if not isspmatrix(other):
             raise TypeError, "Right operand must also be sparse."
         return self + (-other)
 
     def __mul__(self,other):
-        if isspMatrix(other):
+        if isspmatrix(other):
             assert other.shape[0] == self.shape[1]
             assert self.storage == 'CSR'
             new_nz = self.nzmax + other.nzmax
-            new = spMatrix(self.shape[0],other.shape[1],new_nz,typecode=self.ptype)
+            new = spmatrix(self.shape[0],other.shape[1],new_nz,typecode=self.ptype)
             mult = eval('_sparsekit.'+self.ftype+'amub')
             iw = zeros((self.shape[1],))
             ierr = array(0)
@@ -228,7 +228,7 @@ class spMatrix:
             return y
         
         elif type(other) in [types.IntType, types.FloatType, types.ComplexType]:
-            new = spMatrix(self)           # make a copy
+            new = spmatrix(self)           # make a copy
             new.data = other*new.data
             new.ptype = new.data.typecode()
             new.ftype = _transtabl[new.ptype]
@@ -258,7 +258,7 @@ class spMatrix:
         assert self.storage=='CSR'
         M,N = self.shape
         if inplace == 0:
-            new = spMatrix(self) # make a copy
+            new = spmatrix(self) # make a copy
         else:
             new = self   # make a reference
         transp = eval('_sparsekit.'+self.ftype+'transp')
@@ -273,14 +273,14 @@ class spMatrix:
 
     def conj(self,inplace=0):
         if inplace == 0:
-            new = spMatrix(self)
+            new = spmatrix(self)
         else:
             new = self
         new.data = conjugate(self.data)
         return new
             
-def isspMatrix(x):
-    return hasattr(x,'__class__') and x.__class__ is spMatrix
+def isspmatrix(x):
+    return hasattr(x,'__class__') and x.__class__ is spmatrix
 
 
 def _spdiags_tosub(diag_num,a,b):
@@ -306,10 +306,10 @@ def spdiags(diags,offsets,m,n):
     assert(len(offsets) == diags.shape[0])
     # set correct diagonal to csr conversion routine for this type
     diagfunc = eval('_sparsekit.'+_transtabl[mtype]+'diacsr')
-    # construct empty sparse Matrix and pass it's main parameters to
+    # construct empty sparse matrix and pass it's main parameters to
     #  the diagonal to csr conversion routine.
     nzmax = diags.shape[0]*diags.shape[1]
-    s = spMatrix(m,n,nzmax,typecode=mtype)
+    s = spmatrix(m,n,nzmax,typecode=mtype)
     diagfunc(array(m), array(n), array(0), array(diags.shape[0]), diags,
              array(diags.shape[1]), offsets, s.data, s.index[0], s.index[1])
 
@@ -319,7 +319,7 @@ def spdiags(diags,offsets,m,n):
     return s
 
 def sparse_linear_solve(A,b):
-    assert isspMatrix(A)
+    assert isspmatrix(A)
     assert A.storage=='CSR'
     gssv = eval('_superlu.' + A.ftype + 'gssv')
     return gssv(A.shape[0],A.shape[1],A.lastel+1,A.data,A.index[0]-1,A.index[1]-1,b)
@@ -328,7 +328,7 @@ def sparse_linear_solve(A,b):
 splinsolve = sparse_linear_solve
 
 if __name__ == "__main__":
-    a = spMatrix(arange(1,9),[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4])
+    a = spmatrix(arange(1,9),[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4])
     print "Representation of a matrix:"
     print repr(a)
     print "How a matrix prints."

@@ -111,7 +111,7 @@ class general_cont_ppf:
 
 ##  Documentation for ranlib, rv2, cdflib and
 ## 
-##  Eric Wesstein's world of Mathematics http://mathworld.wolfram.com/
+##  Eric Wesstein's world of mathematics http://mathworld.wolfram.com/
 ##      http://mathworld.wolfram.com/topics/StatisticalDistributions.html
 ##
 ##  Documentation to Regress+ by Michael McLaughlin
@@ -2263,7 +2263,7 @@ def lomaxstats(x, c, scale=1.0, full=0):
 
 # MAXWELL
 #  a special case of chi with df = 3, loc=0.0, and given scale = 1.0/sqrt(a)
-#    where a is the parameter used in Mathworld description
+#    where a is the parameter used in mathworld description
 
 def maxwellpdf(x, scale=1.0):
     x, scale = arr(x), arr(scale)
