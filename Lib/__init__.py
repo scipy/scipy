@@ -101,9 +101,12 @@ _plot = []
 #    pass
 
 try:
-    import gplt
-    __all__.append('gplt')
-    _plot.append('gplt')
+#   gplt on win32 messes up focus and takes up 99%
+#   of processor -- works fine on *nix.
+    if sys.platform != 'win32':
+        import gplt
+        __all__.append('gplt')
+        _plot.append('gplt')
 except ImportError:
     pass
 
