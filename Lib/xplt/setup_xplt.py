@@ -6,7 +6,7 @@ import time
 from scipy_distutils.misc_util   import get_path, default_config_dict, dot_join
 from scipy_distutils.misc_util   import dict_append
 from scipy_distutils.core        import Extension
-from scipy_distutils.system_info import x11_info
+from scipy_distutils.system_info import get_info
 from distutils.command.config    import config
 from distutils.sysconfig         import get_python_lib
 #from distutils.core              import Extension
@@ -513,11 +513,28 @@ main(int argc, char *argv[])
         from string import replace
         self.fatality=0
 
-        # figure out directories to compile and load with X11
-        if 'X11BASE' in os.environ:
-            X11BASE=os.environ['X11BASE']
+        x11_info = get_info('x11')
+        if x11_info:
+            print "found X Window System, X11 headers and libraries"
+            xinc = x11_info.get('include_dirs','')
+            xinc = ' '.join(['-I'+d for d in xinc])
+            xlib = x11_info.get('library_dirs','')
+            xlib = ' '.join(['-L'+d for d in xlib])
+	    if xinc:
+            	print "  - using X11 header switch "+xinc
+            print "  - using X11 loader switch "+xlib
+            self.configfile.write("XINC="+xinc+"\n")
+            self.configfile.write("XLIB="+xlib+"\n")
+            print "appended to ../../Make.cfg"
         else:
-            X11BASE="/no/suggested/x11dir"
+            print "FATAL unable to find X11 includes (play/x11) $xinc"
+            self.fatality=1
+
+        print
+        print "  ============== end play/x11 configuration ==============="
+        return
+        # figure out directories to compile and load with X11
+        X11BASE=os.environ.get('X11BASE','/no/suggested/x11dir')
 
         # directory list is from autoconf, except openwin promoted near top
         xlist = [X11BASE+"/include",
@@ -732,6 +749,7 @@ allsource = ["src/play/all/hash.c",
              "src/play/all/bitmrot.c"]
 
 def getallparams(gistpath,local):
+    x11_info = get_info('x11')
     if windows:
         extra_compile_args = ['-DGISTPATH="\\"' + gistpath + '\\""' ]
     else:
@@ -750,9 +768,10 @@ def getallparams(gistpath,local):
     if windows or cygwin:
         libraries = []
     else:
-        libraries = ['X11']
+        libraries = x11_info.get('libraries','X11')
 
     library_dirs = [os.path.join(local,x) for x in ['.','src']]
+    library_dirs.extend(x11_info.get('library_dirs',[]))
     library_dirs.extend(get_special_dirs(sys.platform))
 
     include_dirs = [os.path.join(local,x) for x in include_dirs]
