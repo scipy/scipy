@@ -230,14 +230,14 @@ def process_line(line, separator, collist, atype, missing):
 def getcolumns(stream, columns, separator):
     comment = stream.comment
     lenc = stream.lencomment
-    k, K = 0, len(stream._buffer)
+    k, K = stream.linelist[0], len(stream._buffer)
     while k < K:
         firstline = stream._buffer[k]
         if firstline != '' and firstline[:lenc] != comment:
             break
         k = k + 1
     if k == K:
-        raise ValueError, "No data found in file."
+        raise ValueError, "First line to read not within %d lines of top." % K
     firstline = stream._buffer[k]
     N = len(columns)    
     collist = [None]*N
