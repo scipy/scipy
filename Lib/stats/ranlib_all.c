@@ -2124,6 +2124,7 @@ S10:
     *iseed2 = *(Xcg2+g-1);
 #undef numg
 }
+static void inrgcm(void);
 long ignlgi(void)
 /*
 **********************************************************************
@@ -2146,7 +2147,6 @@ extern void gscgn(long getset,long *g);
 extern long Xm1,Xm2,Xa1,Xa2,Xcg1[],Xcg2[];
 extern long Xqanti[];  
   */
-static void inrgcm(void);
 static long ignlgi,curntg,k,s1,s2,z;
 static long qqssd,qrgnin;
 /*
