@@ -33,17 +33,25 @@
     o The main wxApp that lives in the secondary thread (very simple)
       
 """
-import sys
-_in_thread = 0
-if not sys.modules.has_key('wxPython'):
-    _in_thread = 1
-    print '<Importing wxPython... ',
-    sys.stdout.flush()
-from wxPython.wx import *
-if _in_thread:
-    print 'done.>\n>>> ',
-    sys.stdout.flush()
-del _in_thread
+import sys, os
+if sys.platform != 'win32':
+    # For some reason, PythonWin hangs indefinitely with this code.
+    _in_thread = 0
+    if not sys.modules.has_key('wxPython'):
+        _in_thread = 1
+        print '<Importing wxPython... ',
+        sys.stdout.flush()
+    from wxPython.wx import *
+    if _in_thread:
+        print 'done.>\n>>> ',
+        sys.stdout.flush()
+    del _in_thread
+else:
+    if not sys.modules.has_key('wxPython'):
+        print_import = 1
+    from wxPython.wx import *
+    if print_import:
+        print "<wxPython imported>\n>>> ",
 
 import thread, threading
 import types, traceback
