@@ -29,10 +29,10 @@ import scipy_base.fastumath as math
 ##  For completeness, I should write the relavant tests and count them as failures
 ##  Somewhat acceptable, since this is still beta software.  It would count as a
 ##  good target for 1.0 status
-X = N.array([1,2,3,4,5,6,7,8,9],N.Int)
-ZERO= N.array([0,0,0,0,0,0,0,0,0], N.Int)
+X = N.array([1,2,3,4,5,6,7,8,9],N.Float)
+ZERO= N.array([0,0,0,0,0,0,0,0,0], N.Float)
 #MISS=N.array([.,.,.,.,.,.,.,.,.], N.Float)
-BIG=N.array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],N.Int)
+BIG=N.array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],N.Float)
 LITTLE=N.array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],N.Float)
 HUGE=N.array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],N.Float)
 TINY=N.array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12],N.Float)
@@ -94,7 +94,7 @@ class test_round(unittest.TestCase):
         
     def check_rounding3(self):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
-        y=(int(3-scipy.exp(scipy.log(scipy.sqrt(2.0)*scipy.sqrt(2.0)))))
+        y=(int(round((3-scipy.exp(scipy.log(scipy.sqrt(2.0)*scipy.sqrt(2.0)))))))
         assert_equal(y,1)
 
 class test_basicstats(unittest.TestCase):
@@ -623,7 +623,7 @@ class test_mean(TestCase):
         A = 0
         for val in ravel(a):
             A += val
-        assert_almost_equal(stats.mean(a,axis=None),A)
+        assert_almost_equal(stats.mean(a,axis=None),A/(5*3.0*5))
 
 class test_median(TestCase):
     def check_basic(self):

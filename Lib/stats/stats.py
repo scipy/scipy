@@ -1165,12 +1165,16 @@ from Heiman's Basic Statistics for the Behav. Sci (2nd), p.195.
 
 Returns: Pearson's r, two-tailed p-value
 """
+    # x and y should have same length.
     x,y = map(asarray, (x,y))
     TINY = 1.0e-20
     n = len(x)
-    r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
-    r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
+    mx,my = mean(x), mean(y)
+    xm,ym = x-mx, y-my
+    r_num = n*(add.reduce(xm*ym))
+    r_den = n*math.sqrt(ss(xm)*ss(ym))
     r = (r_num / r_den)
+    if (r > 1.0): r = 1.0  # numerical error caused this
     df = n-2
     t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = betai(0.5*df,0.5,df/(df+t*t))
@@ -1185,13 +1189,18 @@ from Heiman's Basic Statistics for the Behav. Sci (1st), p.192.
 Returns: Spearman's r, two-tailed p-value
 """
     n = len(x)
+    assert (n>2), "Length of array must be > 2."
     rankx = rankdata(x)
     ranky = rankdata(y)
     dsq = add.reduce((rankx-ranky)**2)
     rs = 1 - 6*dsq / float(n*(n**2-1))
-    t = rs * math.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
     df = n-2
-    probrs = betai(0.5*df,0.5,df/(df+t*t))
+    try:
+        t = rs * math.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+        probrs = betai(0.5*df,0.5,df/(df+t*t))
+    except ZeroDivisionError:
+        probrs = 0.0
+
 # probability values for rs are from part 2 of the spearman function in
 # Numerical Recipies, p.510.  They close to tables, but not exact.(?)
     return rs, probrs
@@ -1284,14 +1293,19 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
     n = len(x)
     xmean = mean(x,None)
     ymean = mean(y,None)
-    r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
-    r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
-    r = r_num / r_den
+    xm,ym = x-xmean, y-ymean
+    r_num = add.reduce(xm*ym)
+    r_den = math.sqrt(ss(xm)*ss(ym))
+    if r_den == 0.0:
+        r = 0.0
+    else:
+        r = r_num / r_den
+        if (r > 1.0): r = 1.0 # from numerical error
     #z = 0.5*math.log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = betai(0.5*df,0.5,df/(df+t*t))
-    slope = r_num / (float(n)*ss(x) - square_of_sums(x))
+    slope = r_num / ss(xm)
     intercept = ymean - slope*xmean
     sterrest = math.sqrt(1-r*r)*samplestd(y)
     return slope, intercept, r, prob, sterrest
