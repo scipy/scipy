@@ -8,6 +8,7 @@
 # A collection of optimization algorithms.  Version 0.4.1
 # CHANGES
 #  Added fminbound (July 2001)
+#  Added brute (Aug. 2002)
 
 # Minimization routines
 """optimize.py
@@ -22,6 +23,9 @@ fmin_powell ---      Powell (direction set) method (uses only function calls).
 fmin_bfgs   ---      Quasi-Newton method (uses function and gradient).
 fmin_ncg    ---      Line-search Newton Conjugate Gradient (uses function, 
                      gradient and hessian (if it's provided)).
+
+brute       ---      Perform a brute force search for the minimum
+                       with final optimization if desired.
 
 1-D Algorithms
 ===============
@@ -1146,6 +1150,74 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
     if flag == 1:
         print "\nMaximum number of function evaluations exceeded --- increase maxfun argument.\n"
     return
+
+
+import scipy.special as special
+
+def brute(func, ranges, args=(), Ns=20, full_output=0, finish=1):
+    """Minimize a function over a given range by brute force.
+
+    That is find the minimum of a function evaluated on a grid
+    given by the tuple ranges.
+
+    Inputs:
+
+    func        -- Function to be optimized
+    ranges       -- Tuple where each element is a tuple of parameters
+                      or a slice object to be handed to scipy.mgrid
+
+    args        -- Extra arguments to function.
+    Ns          -- Default number of samples if not given
+    full_output -- Nonzero to return evaluation grid.
+
+    Outputs: (x0, fval, {Jout})
+    """
+    N = len(ranges)
+    if N > 40:
+        raise ValueError, "Brute Force not possible with more than 40 variables."
+    lrange = list(ranges)
+    for k in range(N):
+        if type(lrange[k]) is not type(slice(None)):
+            if len(lrange[k]) < 3:
+                lrange[k] = tuple(lrange[k]) + (complex(Ns),)
+            lrange[k] = slice(*lrange[k])
+    if (N==1):
+        lrange = lrange[0]
+        
+    def _scalarfunc(*params):
+        params = squeeze(asarray(params))
+        return func(params,*args)
+        
+    vecfunc = special.general_function(_scalarfunc)
+    grid = scipy_base.mgrid[lrange]
+    if (N==1):
+        grid = (grid,)
+    Jout = vecfunc(*grid)
+    Nshape = shape(Jout)
+    indx = argmin(Jout.flat)
+    Nindx = zeros(N)
+    xmin = zeros(N,'d')
+    for k in range(N-1,-1,-1):
+        thisN = Nshape[k]
+        Nindx[k] = indx % Nshape[k]
+        indx = indx / thisN
+    for k in range(N):
+        xmin[k] = grid[k][tuple(Nindx)]
+
+    Jmin = Jout[tuple(Nindx)]
+    if (N==1):
+        grid = grid[0]
+        xmin = xmin[0]
+    if finish:
+        vals = fmin(func,xmin,args=args,full_output=1, disp=0)
+        xmin = vals[0]
+        Jmin = vals[1]
+        if vals[-1] > 0:
+            print "Warning: Final optimization did not succeed"        
+    if full_output:
+        return xmin, Jmin, grid, Jout
+    else:
+        return xmin
 
             
 if __name__ == "__main__":

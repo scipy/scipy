@@ -12,6 +12,11 @@
    leastsq     --  Minimize the sum of squares of M equations in
                      N unknowns given a starting estimate.
 
+  Global Optimizers
+
+   anneal      --  Simulated Annealing
+   brute       --  Brute Force searching Optimizer
+
   Scalar function minimizers
  
    fminbound   --  Bounded minimization of a scalar function.
@@ -39,6 +44,7 @@
 from optimize import *
 from minpack import *
 from zeros import *
+from anneal import *
 
 ################## test functions #########################
 

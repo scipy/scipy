@@ -431,10 +431,10 @@ def plot(x,*args,**keywds):
     except:
         override = 0
     global _hold
-    try: linewidth = float(keywds['width'])
-    except KeyError: linewidth = 1.0
-    if "hold" in keywds.keys():
-        _hold = keywds['hold']
+    try: _hold=keywds['hold']
+    except KeyError: pass
+    try: linewidth=float(keywds['width'])
+    except KeyError: linewidth=1.0
     if _hold or override:
         pass
     else:
