@@ -346,7 +346,8 @@ multivariate_normal(PyObject* self, PyObject* args) {
   if (PyErr_Occurred()) goto fail;
 
   if (n == 1) {
-    outarr_f = (PyArrayObject *)PyArray_FromDims(1, &n, PyArray_FLOAT);
+    int tmp = p; /* avoid "invalid pointer type" warnings from compiler */
+    outarr_f = (PyArrayObject *)PyArray_FromDims(1, &tmp, PyArray_FLOAT);
   }
   else {
     dims[0] = n;
