@@ -222,7 +222,7 @@ class machine_cluster:
         
     def load(self):        
         import string
-        import scipy.common.proc
+        import scipy.proc
         results = self.load_list()
         for i in range(len(self.workers)):            
             name = string.split(self.workers[i].host,'.')[0]
@@ -255,21 +255,21 @@ class machine_cluster:
         for i in psl: print i.str_with_name()
 
     def load_list(self):        
-        import scipy.common.proc
-        res = self.apply(scipy.common.proc.load_avg,())
+        import scipy.proc
+        res = self.apply(scipy.proc.load_avg,())
         return res
 
     def info_list(self):
-        import scipy.common.proc
-        res = self.apply(scipy.common.proc.machine_info,())
+        import scipy.proc
+        res = self.apply(scipy.proc.machine_info,())
         return res
     
     def ps_list(self,sort_by='cpu',**filters):
         import operator
-        import scipy.common.proc
-        res = self.apply(scipy.common.proc.ps_list,())
+        import scipy.proc
+        res = self.apply(scipy.proc.ps_list,())
         psl = reduce(operator.add,res)
-        psl = scipy.common.proc.ps_sort(psl,sort_by,**filters)        
+        psl = scipy.proc.ps_sort(psl,sort_by,**filters)        
         return psl
  
     def nice(self,increment=10):

@@ -18,7 +18,7 @@ Vector Quantization Module
 from Numeric import *
 from RandomArray import randint
 import scipy
-from scipy.common.misc import _common_type
+from scipy.misc import _common_type
 
 def whiten(obs):
     """* Normalize a group of observations on a per feature basis
