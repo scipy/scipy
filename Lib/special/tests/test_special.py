@@ -510,7 +510,7 @@ class test_hermite(unittest.TestCase):
     def check_hermite(self):
 
         herm = hermite(3)(.5)
-        assert_equal(herm,-5.0)
+        assert_almost_equal(herm,-5.0,8)
 
 class test_gegenbauer(unittest.TestCase):
 

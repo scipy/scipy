@@ -1,6 +1,7 @@
 #LyX 1.2 created this file. For more info see http://www.lyx.org/
 \lyxformat 220
 \textclass article
+\language english
 \inputencoding auto
 \fontscheme default
 \graphics default
@@ -617,7 +618,7 @@ M\left(t\right)=\left[1-p\left(1-e^{t}\right)\right]^{n}\]
 
 \end_inset 
 
- 
+
 \layout Section
 
 Poisson
@@ -732,8 +733,15 @@ The negative binomial random variable with parameters
 \begin_inset Formula $p\in \left(0,1\right)$
 \end_inset 
 
- can be defined as the number of independent trials required to accumulate
- a total of 
+ can be defined as the number of 
+\emph on 
+extra 
+\emph default 
+independent trials (beyond 
+\begin_inset Formula $n$
+\end_inset 
+
+) required to accumulate a total of 
 \begin_inset Formula $n$
 \end_inset 
 
@@ -741,17 +749,27 @@ The negative binomial random variable with parameters
 \begin_inset Formula $p.$
 \end_inset 
 
- Thus 
+ Equivalently, this random variable is the number of failures encoutered
+ while accumulating 
+\begin_inset Formula $n$
+\end_inset 
+
+ successes during independent trials of an experiment that succeeds with
+ probability 
+\begin_inset Formula $p.$
+\end_inset 
+
+ Thus, 
 \begin_inset Formula \begin{eqnarray*}
 p\left(k;n,p\right) & = & \left(\begin{array}{c}
- k-1\\
+ k+n-1\\
  n-1\end{array}
-\right)p^{n}\left(1-p\right)^{k-n}\quad k\geq n\\
-F\left(x;n,p\right) & = & \sum _{i=n}^{\left\lfloor x\right\rfloor }\left(\begin{array}{c}
- i-1\\
- n-1\end{array}
-\right)p^{n}\left(1-p\right)^{i-n}\\
- & = & I_{p}\left(n,\left\lfloor x\right\rfloor +1\right)\\
+\right)p^{n}\left(1-p\right)^{k}\quad k\geq 0\\
+F\left(x;n,p\right) & = & \sum _{i=0}^{\left\lfloor x\right\rfloor }\left(\begin{array}{c}
+ i+n-1\\
+ i\end{array}
+\right)p^{n}\left(1-p\right)^{i}\quad x\geq 0\\
+ & = & I_{p}\left(n,\left\lfloor x\right\rfloor +1\right)\quad x\geq 0\\
 \mu  & = & n\frac{1-p}{p}\\
 \mu _{2} & = & n\frac{1-p}{p^{2}}\\
 \gamma _{1} & = & \frac{2-p}{\sqrt{n\left(1-p\right)}}\\
@@ -760,6 +778,11 @@ F\left(x;n,p\right) & = & \sum _{i=n}^{\left\lfloor x\right\rfloor }\left(\begin
 
 \end_inset 
 
+ Recall that 
+\begin_inset Formula $I_{p}\left(a,b\right)$
+\end_inset 
+
+ is the incomplete beta integral.
  
 \layout Section
 

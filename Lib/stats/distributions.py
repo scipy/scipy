@@ -2202,10 +2202,11 @@ class rv_discrete:
         self.moment_tol = moment_tol
         self.inc = inc
         self._cdfvec = sgf(self._cdfsingle)
-
+        self.return_integers = 1
 
         if values is not None:
             self.xk, self.pk = values
+            self.return_integers = 0
             indx = argsort(ravel(self.xk))
             self.xk = take(ravel(self.xk),indx)
             self.pk = take(ravel(self,pk),indx)
@@ -2244,7 +2245,7 @@ class rv_discrete:
                 loc = args[-1]
             args = args[:self.numargs]
         if loc is None:
-            loc = 0.0            
+            loc = 0
         return args, loc
 
     def _nonzero(self, k, *args):
@@ -2298,6 +2299,9 @@ class rv_discrete:
             size = (size,)
             
         vals = reshape(self._rvs(*args),size)
+        if self.return_integers:
+            if vals.typecode not in ['1silbuw']:
+                vals = vals.astype(Num.Int)
         return vals + loc
 
     def pdf(self, k,*args, **kwds):
