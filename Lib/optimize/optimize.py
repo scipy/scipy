@@ -854,7 +854,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
                 d = p*1.0/q
                 u = x + d
                 if ((u-a) < tol2 or (b-u) < tol2):
-                    if xm-x > 0: d = tol1
+                    if xm-x >= 0: d = tol1
                     else: d = -tol1
         else:
             if (x>=xm): e=a-x
@@ -863,7 +863,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         if (abs(d) >= tol1):
             u = x + d
         else:
-            if d > 0: u = x + tol1
+            if d >= 0: u = x + tol1
             else: u = x - tol1
         fu = apply(func, (u,)+args)
         funcalls += 1

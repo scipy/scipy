@@ -94,9 +94,9 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     an = an_func(concatenate(([0],nn)))
     [x,v] = eig((diag(an)+diag(sqrt_bn,1)+diag(sqrt_bn,-1)))
     answer = []
-    sortind = argsort(x)
+    sortind = argsort(real(x))
     answer.append(take(x,sortind))
-    answer.append(take(mu*v[:,0]**2,sortind))
+    answer.append(take(mu*v[0]**2,sortind))
     return answer    
 
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)

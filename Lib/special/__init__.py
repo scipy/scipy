@@ -228,8 +228,8 @@
 
     mathieu_a       -- Characteristic values for even solution (ce_m)
     mathieu_b       -- Characteristic values for odd solution (se_m)
-    mathieu_A       -- **sequence of expansion coefficients for even solution
-    mathieu_B       -- **sequence of expansion coefficients for odd solution
+    mathieu_even_coef -- **sequence of expansion coefficients for even solution
+    mathieu_odd_coef  -- **sequence of expansion coefficients for odd solution
        ** All the following return both function and first derivative **
     mathieu_cem     -- Even mathieu function
     mathieu_sem     -- Odd mathieu function
