@@ -9,7 +9,7 @@ import Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy import r_, c_, eye, max, real
+from scipy import r_, c_, eye, real
 from scipy import r1array, r2array
 from scipy import poly, squeeze, Mat
 
