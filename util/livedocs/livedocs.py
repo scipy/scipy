@@ -57,7 +57,7 @@ def toPage(obj, name, parent, mod):
         return ClassPage(newparent, obj, havesource=1)
     elif typ is types.ModuleType:
         if re.match(r'This module \'\w+\' is auto-generated with f2py',
-                    getattr(obj,'__doc__','')):
+                    getattr(obj,'__doc__','') or ''):
             return F2pyModulePage(newparent, obj, canedit=0)
         return ModulePage(newparent, obj, canedit=0)
     elif typ is types.MethodType:
