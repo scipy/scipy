@@ -8,7 +8,7 @@ SciPy requires the following software installed:
      http://www.python.org
 2) Numerical Python 21.0 or newer but not Numarray (yet)
      http://www.numpy.org/
-3) ATLAS 3.2.1 or newer with complete LAPACK (see NOTES 2, 3, 4)
+3) ATLAS 3.2.1 or newer and complete LAPACK (see NOTES 2, 3, 4)
      http://math-atlas.sourceforge.net/
      http://www.netlib.org/lapack/
 4) f2py 2.23.190-1367 or newer
@@ -205,7 +205,7 @@ To be sure that SciPy is built against a complete LAPACK, check the
 size of the file liblapack.a -- it should be about 6MB. The location
 of liblapack.a is shown by executing
 
-    python scipy_core/scipy_distutils/system.py
+    python scipy_core/scipy_distutils/system_info.py
 
 Fix:
   Follow the instructions in
@@ -249,6 +249,11 @@ TROUBLESHOOTING
 If you experience problems when building/installing/testing SciPy, you
 can ask help from scipy-user@scipy.org or scipy-dev@scipy.org mailing
 lists. Please include the following information to your message:
+
+NOTE: With recent f2py version (>=2.33.xxx-xxxx) you can generate 
+some of the following information (items 1-5) in one command:
+
+  python -c 'from f2py2e.diagnose import run;run()'
 
 1) Platform information:
      python -c 'import os,sys;print os.name,sys.platform'
