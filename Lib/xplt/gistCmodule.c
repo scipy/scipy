@@ -600,6 +600,7 @@ static PyObject *plt (PyObject * self, PyObject * args, PyObject * kd);
 static PyObject *plv (PyObject * self, PyObject * args, PyObject * kd);
 static PyObject *redraw (PyObject * self, PyObject * args);
 static PyObject *set_slice2_precision (PyObject * self, PyObject * args);
+static PyObject *setdpi (PyObject * self, PyObject * args);
 static PyObject *slice2 (PyObject * self, PyObject * args);
 static PyObject *unzoom (PyObject * self, PyObject * args);
 static PyObject *viewport (PyObject * self, PyObject * args);
@@ -698,7 +699,7 @@ static int maxColors = 200; /* maximum number of colors for GpReadPalette */
 static int hcpDump = 1;
 static int hcpPSdefault = 0;
 static int hcpOnFMA = 0;
-static int defaultDPI = 75;
+static int defaultDPI = 100;
 static int defaultLegends = 1;
 static char *defaultStyle = 0;
 static char *defaultPalette = 0;
@@ -775,6 +776,7 @@ static struct PyMethodDef gist_methods[] =
   { "redraw",         PYCF   redraw,         1,     0 },
   { "set_slice2_precision", PYCF set_slice2_precision, 1, 0},
   { "slice2",         PYCF   slice2,         1,     0 },
+  { "set_default_dpi", PYCF setdpi,          1,     0 },
   { "unzoom",         PYCF   unzoom,         1,     0 },
   { "viewport",       PYCF   viewport,       1,     0 },
   { "window",         PYCFWK window,         KWFLG, 0 },
@@ -4785,6 +4787,18 @@ static PyObject *set_slice2_precision (PyObject * self, PyObject * args)
     return (PyObject *) ERRSS ("set_slice2_precision: bad value.");
  Py_INCREF (Py_None);
  return Py_None;
+}
+
+static PyObject *setdpi (PyObject * self, PyObject * args)
+{
+  int temp_dpi;
+  if ( ! PyArg_ParseTuple (args, "i", &temp_dpi))
+    return (PyObject *) ERRSS ("set_default_dpi: bad value.");
+  if ((temp_dpi != 75) && (temp_dpi != 100))
+    return (PyObject *) ERRSS ("set_default_dpi: value must be 75 or 100.");
+  defaultDPI = temp_dpi;
+  Py_INCREF (Py_None);
+  return Py_None;
 }
 
 /* Create a triangulation (mesh) array. */

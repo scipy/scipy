@@ -13,7 +13,10 @@ import scipy
 import scipy_base
 import scipy.signal as signal
 
+_dpi = 75
 _hold = 0
+
+gist.set_default_dpi(_dpi)
 
 try:
     import Scientific.Statistics.Histogram
@@ -711,7 +714,16 @@ def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
             gist.pause(plen)
     gist.animate(0)
 
-def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,dpi=75):
+def setdpi(num):
+    """ Set the dpi for new windows """
+    if num in [75,100]:
+        _dpi = num
+        gist.set_default_dpi(_dpi)
+    else:
+        raise ValueError, "DPI must be 75 or 100"
+
+def figure(n=None,style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618):
+    global _figures
     if (aspect < 0.1) or (aspect > 10):
         aspect = 1.618
     if isinstance(color, types.StringType):
@@ -726,14 +738,16 @@ def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, l
     fid.write(write_style.style2string(syst,landscape=1))
     fid.close()
     if n is None:
-        gist.window(style=style,width=int(width*1.25/inches*dpi),height=int(height*1.4/inches*dpi),dpi=dpi)
+        winnum = gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
+        if winnum < 0:
+            gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi)) 
     else:
-        gist.window(n,style=style,width=int(width*1.25/inches*dpi),height=int(height*1.4/inches*dpi),dpi=dpi)
-    _current_style = style
+        gist.window(n,style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
+        _current_style = style
     return
 
-def full_page(win,dpi=75):
-    gist.window(win,style=_current_style,width=int(dpi*8.5),height=dpi*11,dpi=dpi)
+def full_page(win):
+    gist.window(win,style=_current_style,width=int(_dpi*8.5),height=_dpi*11)
 
 def _add_color(system, color, frame=0):
     try:
@@ -790,7 +804,7 @@ def _remove_ticks(system):
 
 plotframe = gist.plsys
 import os
-def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',frame=0,fontsize=8,font=None,dpi=100,ticks=1):
+def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',frame=0,fontsize=8,font=None,ticks=1):
     # Use gist.plsys to change coordinate systems
 
     # all inputs (except fontsize) given as pixels, gist wants
@@ -817,20 +831,19 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
         pw = maxwidth
         printit = 1
         
-    if dpi != 100:
-        dpi = 75
+    if _dpi != 100:
         fontsize = 12
-    conv = inches *1.0 / dpi  # multiply by this factor to convert pixels to
+    conv = inches *1.0 / _dpi  # multiply by this factor to convert pixels to
                               # NDC
 
     # Use landscape mode unless requested height is large
     land = 1
-    maxw = 11*dpi
-    maxh = 8.5*dpi
-    if ph > (8.5*dpi) and pw < (8.5*dpi):
+    maxw = 11*_dpi
+    maxh = 8.5*_dpi
+    if ph > (8.5*_dpi) and pw < (8.5*_dpi):
         land = 0
-        maxh = 11*dpi
-        maxw = 8.5*dpi
+        maxh = 11*_dpi
+        maxw = 8.5*_dpi
     
     if ph > maxh:
         ph = maxh
@@ -847,9 +860,9 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     # Now we've got a suitable height and width
 
     if land:
-        cntr = array([5.5,4.25])*dpi  # landscape
+        cntr = array([5.5,4.25])*_dpi  # landscape
     else:
-        cntr = array([4.25,6.75])*dpi  # portrait
+        cntr = array([4.25,6.75])*_dpi  # portrait
 
     Yspace = ph/float(Numy)*conv
     Xspace = pw/float(Numx)*conv 
@@ -880,7 +893,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     fid.write(write_style.style2string(systems,landscape=land))
     fid.close()
     gist.winkill(win)
-    gist.window(win,style=_current_style,width=int(pw),height=int(ph),dpi=100)
+    gist.window(win,style=_current_style,width=int(pw),height=int(ph))
 
 _dwidth=6*inches
 _dheight=6*inches
