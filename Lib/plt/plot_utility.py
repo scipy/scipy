@@ -439,9 +439,6 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
 
     if bounds_info[0] == 'fit': ticks[0] = lower
     if bounds_info[1] == 'fit': ticks[-1] = upper
-    print bounds_info
-    print data_bounds
-    print ticks
     return ticks
 
 
