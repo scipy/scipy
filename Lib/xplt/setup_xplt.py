@@ -72,6 +72,12 @@ class config_pygist(config):
                   ' (remove Make.cfg to force reconfiguration).'
             print '*'*70
             return
+
+        from distutils.ccompiler import new_compiler
+        self.compiler = new_compiler(verbose=1)
+        from distutils.sysconfig import customize_compiler
+        customize_compiler(self.compiler)
+
         self.configfile = open(fn,'w')
         self.configfile.write('# Make.cfg from setup.py script ' + time.ctime() + '\n')
         if not windows:
