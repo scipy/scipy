@@ -510,11 +510,25 @@ G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
 
 \layout Section
 
-Arcsine
+Arcsine 
 \layout Standard
 
 Defined over 
 \begin_inset Formula \( x\in \left( 0,1\right)  \)
+\end_inset 
+
+.
+ To get the JKB definition put 
+\begin_inset Formula \( x=\frac{u+1}{2}. \)
+\end_inset 
+
+ i.e.
+ 
+\begin_inset Formula \( L=-1 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=2. \)
 \end_inset 
 
  
@@ -571,7 +585,7 @@ F\left( x;a,b\right)  & = & \int _{0}^{x}f\left( y;a,b\right) dy=I\left( x,a,b\r
 G\left( \alpha ;a,b\right)  & = & I^{-1}\left( x;a,b\right) \\
 \mu  & = & \frac{a}{a+b}\\
 \mu _{2} & = & \frac{ab\left( a+b+1\right) }{\left( a+b\right) ^{2}}\\
-\gamma _{1} & = & 2\left( b-a\right) \sqrt{\frac{a+b+1}{ab\left( a+b+2\right) }}\\
+\gamma _{1} & = & 2\frac{b-a}{a+b+2}\sqrt{\frac{a+b+1}{ab}}\\
 \gamma _{2} & = & \frac{6\left( a^{3}+a^{2}\left( 1-2b\right) +b^{2}\left( b+1\right) -2ab\left( b+2\right) \right) }{ab\left( a+b+2\right) \left( a+b+3\right) }\\
 m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
 \end{eqnarray*}
@@ -1127,7 +1141,55 @@ p & = & \exp \left( -\frac{c^{2}}{2}\right) \\
 
 \layout Section
 
-Fratio
+Fratio (or F)
+\layout Standard
+
+Defined for 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+.
+ The distribution of 
+\begin_inset Formula \( \left( X_{1}/X_{2}\right) \left( \nu _{2}/\nu _{1}\right)  \)
+\end_inset 
+
+ if 
+\begin_inset Formula \( X_{1} \)
+\end_inset 
+
+ is chi-squared with 
+\begin_inset Formula \( v_{1} \)
+\end_inset 
+
+ degrees of freedom and 
+\begin_inset Formula \( X_{2} \)
+\end_inset 
+
+ is chi-squared with 
+\begin_inset Formula \( v_{2} \)
+\end_inset 
+
+ degrees of freedom.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\nu _{1},\nu _{2}\right)  & = & \frac{\nu _{2}^{\nu _{2}/2}\nu _{1}^{\nu _{1}/2}x^{\nu _{1}/2-1}}{\left( \nu _{2}+\nu _{1}x\right) ^{\left( \nu _{1}+\nu _{2}\right) /2}B\left( \frac{\nu _{1}}{2},\frac{\nu _{2}}{2}\right) }\\
+F\left( x;v_{1},v_{2}\right)  & = & I\left( \frac{\nu _{1}}{2},\frac{\nu _{2}}{2},\frac{\nu _{2}x}{\nu _{2}+\nu _{1}x}\right) \\
+G\left( q;\nu _{1},\nu _{2}\right)  & = & \left[ \frac{\nu _{2}}{I^{-1}\left( \nu _{1}/2,\nu _{2}/2,q\right) }-\frac{\nu _{1}}{\nu _{2}}\right] ^{-1}.
+\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{\nu _{2}}{\nu _{2}-2}\quad \nu _{2}>2\\
+\mu _{2} & = & \frac{2\nu _{2}^{2}\left( \nu _{1}+\nu _{2}-2\right) }{\nu _{1}\left( \nu _{2}-2\right) ^{2}\left( \nu _{2}-4\right) }\quad v_{2}>4\\
+\gamma _{1} & = & \frac{2\left( 2\nu _{1}+\nu _{2}-2\right) }{\nu _{2}-6}\sqrt{\frac{2\left( \nu _{2}-4\right) }{\nu _{1}\left( \nu _{1}+\nu _{2}-2\right) }}\quad \nu _{2}>6\\
+\gamma _{2} & = & \frac{3\left[ 8+\left( \nu _{2}-6\right) \gamma _{1}^{2}\right] }{2\nu -16}\quad \nu _{2}>8
+\end{eqnarray*}
+
+\end_inset 
+
+ 
 \layout Section
 
 Gamma
@@ -1437,7 +1499,32 @@ m_{d}=m_{n}=\mu  & = & 0\\
 
 \layout Section
 
-Hypergeometric (Continous)
+Gauss Hypergeometric 
+\layout Standard
+
+
+\begin_inset Formula \( x\in \left[ 0,1\right]  \)
+\end_inset 
+
+, 
+\begin_inset Formula \( \alpha >0,\, \beta >0 \)
+\end_inset 
+
+
+\begin_inset Formula \[
+C^{-1}=\frac{\Gamma \left( \alpha \right) \Gamma \left( \beta \right) }{\Gamma \left( \alpha +\beta \right) }\, _{2}F_{1}\left( \gamma ,\alpha ;\alpha +\beta ;-z\right) \]
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\alpha ,\beta ,\gamma ,z\right)  & = & Cx^{\alpha -1}\frac{\left( 1-x\right) ^{\beta -1}}{\left( 1+zx\right) ^{\gamma }}\\
+\mu _{n}^{\prime } & = & \frac{B\left( k+\alpha ,\beta \right) }{B\left( \alpha ,\beta \right) }\frac{\, _{2}F_{1}\left( \gamma ,\alpha +k;\alpha +\beta +k;-z\right) }{\, _{2}F_{1}\left( \gamma ,\alpha ;\alpha +\beta ;-z\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Inverted Gamma
@@ -1538,6 +1625,66 @@ m_{d}=m_{n}=\mu  & = & 0\\
 \end_inset 
 
 
+\layout Standard
+
+The ML estimator of the location parameter is 
+\begin_inset Formula \[
+\hat{L}=\median \left( X_{i}\right) \]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \( X_{i} \)
+\end_inset 
+
+ is a sequence of 
+\begin_inset Formula \( N \)
+\end_inset 
+
+ mutually independent Laplace RV's and the median is some number between
+ the 
+\begin_inset Formula \( \frac{1}{2}N\textrm{th} \)
+\end_inset 
+
+ and the 
+\begin_inset Formula \( (N/2+1)\textrm{th} \)
+\end_inset 
+
+ order statistic (
+\emph on 
+e.g.
+
+\emph default 
+ take the average of these two) when 
+\begin_inset Formula \( N \)
+\end_inset 
+
+ is even.
+ Also, 
+\begin_inset Formula \[
+\hat{S}=\frac{1}{N}\sum _{j=1}^{N}\left| X_{j}-\hat{L}\right| .\]
+
+\end_inset 
+
+ Replace 
+\begin_inset Formula \( \hat{L} \)
+\end_inset 
+
+ with 
+\begin_inset Formula \( L \)
+\end_inset 
+
+ if it is known.
+ If 
+\begin_inset Formula \( L \)
+\end_inset 
+
+ is known then this estimator is distributed as 
+\begin_inset Formula \( \left( 2N\right) ^{-1}S\cdot \chi ^{2}_{2N} \)
+\end_inset 
+
+.
+ 
 \layout Section
 
 Log-Series
@@ -1673,6 +1820,51 @@ Noncentral chi
 \layout Section
 
 Noncentral chi-squared
+\layout Standard
+
+The distribution of 
+\begin_inset Formula \( \sum _{i=1}^{\nu }\left( U_{i}+\delta _{i}\right)  \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( U_{i} \)
+\end_inset 
+
+ are independent normal variables and 
+\begin_inset Formula \( \delta _{i} \)
+\end_inset 
+
+ are constants.
+ 
+\begin_inset Formula \( \lambda =\sum _{i=1}^{\nu }\delta _{i}^{2}>0. \)
+\end_inset 
+
+ (In communications it is called the Marcum-Q function).
+ Can be thought of as a Generalized Rayleigh-Rice distribution.
+ For 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\nu ,\lambda \right)  & = & e^{-\left( \lambda +x\right) /2}\frac{1}{2}\left( \frac{x}{\lambda }\right) ^{\left( \nu -2\right) /4}I_{\left( \nu -2\right) /2}\left( \sqrt{\lambda x}\right) \\
+F\left( x;\nu ,\lambda \right)  & = & \sum _{j=0}^{\infty }\left\{ \frac{\left( \lambda /2\right) ^{j}}{j!}e^{-\lambda /2}\right\} \textrm{Pr}\left[ \chi ^{2}_{\nu +2j}\leq x\right] \\
+G\left( q;\nu ,\lambda \right)  & = & F^{-1}\left( x;\nu ,\lambda \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \nu +\lambda \\
+\mu _{2} & = & 2\nu +4\lambda \\
+\gamma _{1} & = & \frac{\sqrt{8}\left( \nu +3\lambda \right) }{\left( \nu +2\lambda \right) ^{3/2}}\\
+\gamma _{2} & = & \frac{12\left( \nu +4\lambda \right) }{\left( \nu +2\lambda \right) ^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Noncentral F
@@ -2030,12 +2222,17 @@ G\left( q;\nu \right)  & = & \left\{ \begin{array}{ccc}
 m_{n}=m_{d}=\mu  & = & 0\\
 \mu _{2} & = & \frac{\nu }{\nu -2}\quad \nu >2\\
 \gamma _{1} & = & 0\quad \nu >3\\
-\gamma _{2} & = & \frac{3\nu }{\nu -4}\quad \nu >4
+\gamma _{2} & = & \frac{6}{\nu -4}\quad \nu >4
 \end{eqnarray*}
 
 \end_inset 
 
+ As 
+\begin_inset Formula \( \nu \rightarrow \infty , \)
+\end_inset 
 
+ this distribution approaches the standard normal distribution.
+ 
 \layout Section
 
 Student z

@@ -341,7 +341,7 @@ def betastats(a, b, loc=0.0, scale=1.0, full=0):
     var = _wc(cond, scale*scale*(a*b)*1.0 / ((a+b)**2 * (a+b+1)))
     if not full:
         return mn, var
-    g1 = 2.0*(b-a)*sqrt((1.0+a+b) / (a*b*(2+a+b)))
+    g1 = 2.0*(b-a)*sqrt((1.0+a+b) / (a*b)) / (2+a+b)
     g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
     g2 /= a*b*(a+b+2)*(a+b+3)
     return mn, var, _wc(cond, g1), _wc(cond, g2)
@@ -910,43 +910,62 @@ def extremelbstats(c, loc=0.0, scale=1.0, full=0):
     
 ## F
 
-def fpdf(x, dfn, dfd):
-    x = arr(x)
-    m = 1.0*dfd
-    n = 1.0*dfn
+def fpdf(x, dfn, dfd, loc=0.0, scale=1.0):
+    x, dfn, dfd, loc, scale = map(arr, (x, dfn, dfd, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    n = arr(1.0*dfn)
+    m = arr(1.0*dfd)
+    sv = errp(0)
     Px = m**(m/2) * n**(n/2) * x**(n/2-1)
     Px /= (m+n*x)**((n+m)/2)*special.beta(n/2,m/2)
-    return where(x>0,Px,0)
+    sv = errp(sv)
+    return select([(dfn<=0)|(dfd<=0)|(scale<=0),x>0],[scipy.nan, Px/scale])
 
-def fcdf(x, dfn, dfd):
-    x = arr(x)
-    x = where(x<0, 0, x)
-    return special.fdtr(dfn, dfd, x)
+def fcdf(x, dfn, dfd, loc=0.0, scale=1.0):
+    x, dfn, dfd, loc, scale = map(arr, (x, dfn, dfd, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.fdtr(dfn, dfd, x)
+    sv = errp(sv)
+    return select([(dfn<=0)|(dfd<=0)|(scale<=0),x>0],[scipy.nan, Cx])
 
-def fsf(x, dfn, dfd):
-    x = arr(x)
-    x = where(x<0, 0, x)
-    return special.fdtrc(dfn, dfd, x)
+def fsf(x, dfn, dfd, loc=0.0, scale=1.0):
+    x, dfn, dfd, loc, scale = map(arr, (x, dfn, dfd, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.fdtrc(dfn, dfd, x)
+    sv = errp(sv)
+    return select([(dfn<=0)|(dfd<=0)|(scale<=0),x>0],[scipy.nan, Cx])
 
-def fisf(p, dfn, dfd):
-    assert all((0<=p)&(p<=1)), _quantstr
-    return special.fdtri(dfn, dfd, p)
-    
-def fppf(q, dfn, dfd):
-    assert all((0<=q) & (q<=1)), _quantstr
-    return special.fdtri(dfn, dfd, 1-p)
+def fisf(q, dfn, dfd, loc=0.0, scale=1.0):
+    q, dfn, dfd, loc, scale = map(arr, (q, dfn, dfd, loc, scale))    
+    cond = (0<=q) & (q<=1) & (scale > 0) & (dfn > 0) & (dfd > 0)
+    sv = errp(0)
+    vals = special.fdtri(dfn, dfd, p)
+    sv = errp(sv)
+    return _wc(cond, vals*scale + loc)
+        
+def fppf(q, dfn, dfd, loc=0.0, scale=1.0):
+    return fisf(1-q, dfn, dfd, loc, scale)
 
-def fstats(dfn, dfd, full=0):
-    m = dfd*1.0
-    n = dfn*1.0
-    mn = m / (m-2)
-    var = 2*m*m*(m+n-2)/(n*(m-2)**2 * (m-4))
+def fstats(dfn, dfd, loc=0.0, scale=1.0, full=0):
+    dfn, dfd, loc, scale = map(arr, (dfn, dfd, loc, scale))
+    cond1 = (dfd > 2)
+    cond2 = (dfd > 4)
+    v2 = arr(dfd*1.0)
+    v1 = arr(dfn*1.0)
+    mn = _wc(cond1, v2 / (v2-2)*scale + loc)
+    var = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
+    var = _wc(cond2, var*scale*scale)
     if not full:
         return mn, var
-    g1 = 2*(m+2*n-2)/(m-6)*sqrt((2*m-4)/(n*(m+n-2)))
-    g2 = 12*(-16+20*m-8*m*m + m**3 + 44*n \
-             -32*m*n + 5*m*m*n-22*n*n + 5*m*n*n)
-    g2 /= n*(m-6)*(m-8)*(n+m-2)
+    cond3 = (dfd > 6)
+    cond4 = (dfd > 8)
+    g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))
+    g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
+#    g2 = 12*(-16+20*m-8*m*m + m**3 + 44*n \
+#             -32*m*n + 5*m*m*n-22*n*n + 5*m*n*n)
+#    g2 /= n*(m-6)*(m-8)*(n+m-2)
     return mn, var, g1, g2
 
 
@@ -1545,94 +1564,50 @@ def nakagamistats(df, loc=0.0, scale=1.0, full=0):
     
 
 # Non-central chi-squared
+# nc is lambda of definition, df is nu
+def ncx2pdf(x, df, nc, loc=0.0, scale=1.0):
+    x, df, nc, loc, scale = map(arr, (x, df, nc, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    df = where(df==1.0,0.9999999999999,df)
+    sv = errp(0)
+    a = arr(df/2.0)
+    Px = exp(-nc/2.0)*special.hyp0f1(a,nc*x/4.0)
+    Px *= exp(-x/2.0)*x**(a-1) / arr(2**a * special.gamma(a))
+    sv = errp(sv)
+    return select([(nc<0)|(df<=0)|(scale<=0),x>0],[scipy.nan,Px/scale])
 
-def ncx2pdf(x,df,nc):
-    assert all(nc>=0), _nonnegstr
-    assert all(df>0), _posstr
-    x = arr(x)
-    y = where(x<=0,1,x)
-    a = df/2.0
-    Px = 0.5**a*exp(-(nc+y)/2.0)*(y*1.0)**(a-1)
-    z = nc*y/4.0
-    Px *= special.hyp0f1(a,z)/special.gamma(a)
-    return where(x<=0,0,Px)
+def ncx2cdf(x, df, nc, loc=0.0, scale=1.0):
+    x, df, nc, loc, scale = map(arr, (x, df, nc, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.chndtr(x,df,nc)
+    sv = errp(sv)
+    return select([(nc<0)|(df<=0)|(scale<=0),x>0],[scipy.nan,Cx])
 
-##def _ncx2cdf(x,df,nc):
-##    from scipy.limits import double_epsilon as eps    
-##    nc = nc/2.0
-##    jmid = floor(nc)
-##    val = 0
-##    for j in range(jmid,-1,-1):
-##        term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
-##        val += term
-##        if (term < val*eps):
-##            print "Here", j
-##            break
-##    for j in range(jmid+1,2*jmid+2):
-##        term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
-##        val += term
-##        if (term < val*eps):
-##            break
-##    if (j == 2*jmid+1):
-##        for j in range(2*(jmid+1),2*(jmid+1)+1000):
-##            term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
-##            val += term
-##            if (term < val*eps):
-##                print "final break at ", j
-##                break
-##        if (j==(2*jmid+1002)):
-##            print "Warning:  Did not converge."
-##    return val
-        
-#def _ncx2cdf(x,df,nc):
-#    import scipy.integrate as integrate
-#    return integrate.quad(ncx2pdf,0,x,args=(df,nc))[0]
-#_vec_ncx2cdf = special.general_function(_ncx2cdf,'d')
+def ncx2sf(x,df,nc, loc=0.0, scale=1.0):
+    return 1-ncx2cdf(x,df,nc, loc, scale)
 
-#def ncx2cdf(x,df,nc):
-#    assert all(nc>=0), _nonnegstr
-#    assert all(df>0), _posstr
-#    x = where(x<0,0,x)
-#    return _vec_ncx2cdf(x,df,nc)
-
-def ncx2cdf(x,df,nc):
-    assert all(nc>=0), _nonnegstr
-    assert all(df>0), _posstr
-    x = arr(x)
-    x = where(x<0,0,x)
-    return special.chndtr(x,df,nc)
-
-def ncx2sf(x,df,nc):
-    return 1-ncx2cdf(x,df,nc)
+def ncx2ppf(q,df,nc, loc=0.0, scale=1.0):
+    x, df, nc, loc, scale = map(arr, (x, df, nc, loc, scale))
+    cond = (0<=q) & (q<=1) & (scale > 0) & (df > 0) & (nc > 0)
+    sv = errp(0)
+    vals = special.chndtrix(q,df,nc)
+    sv = errp(sv)
+    return _wc(cond, vals * scale + loc)
     
-##def _ncx2qfunc(x,q,df,nc):
-##    return _ncx2cdf(x,df,nc)-q
+def ncx2isf(p,df,nc, loc=0.0, scale=1.0):
+    return ncx2ppf(1-p,df,nc,loc,scale)
 
-##def _ncx2ppf(q,df,nc):
-##    import scipy.optimize as optimize
-##    return optimize.fsolve(_ncx2qfunc,nc+df,args=(q,df,nc))
-##_vec_ncx2q = special.general_function(_ncx2q,'d')
-
-##def ncx2ppf(q,df,nc):
-##    assert all((0<=q) & (q<=1)), _quantstr
-##    return _vec_ncx2ppf(q, df, nc)
-
-def ncx2ppf(q,df,nc):
-    assert all((0<=q) & (q<=1)), _quantstr
-    return special.chndtrix(q,df,nc)
-    
-def ncx2isf(p,df,nc):
-    assert all((0<=p)&(p<=1)), _quantstr
-    return ncx2ppf(1-p,df,nc)
-
-def ncx2stats(df,nc,full=0):
-    mn = nc+df
-    var = 2*(2*nc+df)
+def ncx2stats(df,nc,loc=0.0, scale=1.0, full=0):
+    df, nc, loc, scale = map(arr, (df, nc, loc, scale))
+    cond = (df > 0) & (scale > 0) & (nc > 0)
+    mn = _wc(cond, (nc+df)*scale + loc)
+    var = _wc(cond, 2*(2*nc+df)*scale*scale)
     if not full:
         return mn, var
     g1 = 2*sqrt(2)*(3*nc+df)/(2*nc+df)**1.5
     g2 = 12.0*(4*nc+df)/(2*nc+df)**2.0
-    return mn, var, g1, g2
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
 
 # Non-central F
 
@@ -1763,12 +1738,12 @@ def tisf(q, df, loc=0.0, scale=1.0):
 
 def tstats(df, loc=0.0, scale=1.0, full=0):
     df, loc, scale = map(arr, (df, loc, scale))
-    r = df*1.0
-    mn = _wc(r>1,loc)
+    r = arr(df*1.0)
+    mn = loc
     var = _wc(r>2,r/(r-2)*scale*scale)
     if not full:
         return mn, var
-    return mn, var, _wc(r>3, 0.0), _wc(r>4,3*r/(r-4.0))
+    return mn, var, 0.0, _wc(r>4,6.0/(r-4.0))
 
 ## Non-central T distribution
 

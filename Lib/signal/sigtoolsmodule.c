@@ -2000,12 +2000,11 @@ static PyObject *sigtools_order_filterND(PyObject *dummy, PyObject *args) {
 
 
 
-
 static char doc_linear_filter[] = "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  implemented using Direct Form II transposed flow diagram. If Vi is not given, Vf is not returned.";
  
 static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
-	PyObject *b, *a, *X, *Vi=NULL;
-	PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
+	PyObject *b=NULL, *a=NULL, *X=NULL, *Vi=NULL;
+	PyArrayObject *arY=NULL, *arb=NULL, *ara=NULL, *arX=NULL, *arVi=NULL, *arVf=NULL;
 	Generic_Array x, y, *vi=NULL, *vf=NULL;
 	Generic_Vector Vb, Va;
 	int dim = -1, typenum, k, thedim;
@@ -2089,13 +2088,15 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	/* If dimension to filter along is negative, make it the
 	   correct positive dimension */
 
-	RawFilter(Vb, Va, x, y, vi, vf, basic_filter, thedim);
+        fprintf(stderr, "Here.\n");
 
-	Py_DECREF(ara);
-	Py_DECREF(arb);
-	Py_DECREF(arX);
-	if (arVi != NULL)
-	  Py_DECREF(arVi);
+	RawFilter(Vb, Va, x, y, vi, vf, basic_filter, thedim);
+        fprintf(stderr, "Now, Here.\n");
+
+	Py_XDECREF(ara);
+	Py_XDECREF(arb);
+	Py_XDECREF(arX);
+	Py_XDECREF(arVi);
 
 	if (!input_flag) {
 	  return PyArray_Return(arY);

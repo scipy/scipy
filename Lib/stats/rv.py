@@ -308,10 +308,12 @@ def ncx2(df, nc, size=None):
     with df degrees of freedom and noncentrality parameter."""
     return _build_random_array(rand.noncentral_chi2, (df, nc), size)
 
-def t(df, size=None):
+def t(df, loc=0.0, scale=1.0, size=None):
     """returns array of student_t distributed random numbers
     with df degrees of freedom."""
-    return stnorm(size)*Num.sqrt(df) / Num.sqrt(chi2(df,size))
+    Y = f(df, df, size=size)
+    sY = sqrt(Y)
+    return 0.5*sqrt(df)*(sY - 1.0/sY)*scale + loc
 
 def nct(df, nc, size=None):
     """returns array of noncentral student_t distributed random numbers
