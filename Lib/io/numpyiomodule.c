@@ -748,12 +748,10 @@ static PyObject *
 
 
 static char convert_objects_doc[] = 
-"convert_objectarray(myarray, arraytype{, missing_value} ) -> out
-
-    myarray = Sequence of strings.
-    arraytype = Type of output array.
-    missing_value = Value to insert when conversion fails.
-";
+"convert_objectarray(myarray, arraytype{, missing_value} ) -> out \n\n"
+"    myarray = Sequence of strings.\n"
+"    arraytype = Type of output array.\n"
+"    missing_value = Value to insert when conversion fails.";
 
 /* *************************************************************************** */
 /* Method registration table: name-string -> function-pointer */
