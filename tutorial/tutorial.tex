@@ -1,13 +1,14 @@
 %% LyX 1.3 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
 \documentclass[english]{article}
-\usepackage[OT1]{fontenc}
-\usepackage[latin1]{inputenc}
+%\usepackage[T1]{fontenc}
+%\usepackage[latin1]{inputenc}
 \usepackage{geometry}
 \geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
 \usepackage{verbatim}
 \usepackage{subfigure}
 \usepackage{graphicx}
+\usepackage{amssymb}
 \IfFileExists{url.sty}{\usepackage{url}}
                       {\newcommand{\url}{\texttt}}
 
@@ -67,7 +68,7 @@ Python provides the facility of documentation strings. The functions
 and classes available in SciPy use this method for on-line documentation.
 There are two methods for reading these messages and getting help.
 Python provides the command \textbf{help} in the pydoc module. Entering
-this command with no arguments (i.e. \textgreater{}\textgreater{}\textgreater{}
+this command with no arguments (i.e. >\,{}>\,{}>
 help ) launches an interactive help session that allows searching
 through the keywords and modules available to all of Python. Running
 the command help with an object as the argument displays the calling
@@ -251,9 +252,10 @@ Finally, ensuring that objects are a certain Numeric type occurs often
 enough that it has been given a convenient interface in SciPy through
 the use of the \textbf{cast} dictionary. The dictionary is keyed by
 the type it is desired to cast to and the dictionary stores functions
-to perform the casting. Thus, \texttt{>>> a = cast{[}'f'{]}(d)} returns
-an array of float32 from d. This function is also useful as an easy
-way to get a scalar of a certain type: \texttt{>>> fpi = cast{[}'f'{]}(pi)}. 
+to perform the casting. Thus, \texttt{>\,{}>\,{}>
+a = cast{[}'f'{]}(d)} returns an array of float32 from d. This function
+is also useful as an easy way to get a scalar of a certain type: \texttt{>\,{}>\,{}>
+fpi = cast{[}'f'{]}(pi)}. 
 
 
 \subsubsection{Index Tricks}
@@ -268,20 +270,20 @@ arrays from the interactive session with Python. Suppose, for example
 that one wants to construct an array that begins with 3 followed by
 5 zeros and then contains 10 numbers spanning the range -1 to 1 (inclusive
 on both ends). Before SciPy, I would need to enter something like
-the following \texttt{>>> concatenate(({[}3{]},{[}0{]}{*}5,arange(-1,1.002,2/9.0))}.
-With the \textbf{r\_} command one can enter this as \texttt{>>> r\_{[}3,{[}0{]}{*}5,-1:1:10j{]}}
-which can ease typing in an interactive session. Notice how objects
-are concatenated, and the slicing syntax is used (abused) to construct
-ranges. The other term that deserves a little explanation is the use
-of the complex number 10j as the step size in the slicing syntax.
-This non-standard use allows the number to be interpreted as the number
-of points to produce in the range rather than as a step size (note
-we would have used the long integer notation, 10L, but this notation
-may go away in Python as the integers became unified). This non-standard
-usage may be unsightly to some, but it gives the user the ability
-to quickly construct complicated vectors in a very readable fashion.
-When the number of points is specified in this way, the end-point
-is inclusive.
+the following \texttt{>\,{}>\,{}> concatenate(({[}3{]},{[}0{]}{*}5,arange(-1,1.002,2/9.0))}.
+With the \textbf{r\_} command one can enter this as \texttt{>\,{}>\,{}>
+r\_{[}3,{[}0{]}{*}5,-1:1:10j{]}} which can ease typing in an interactive
+session. Notice how objects are concatenated, and the slicing syntax
+is used (abused) to construct ranges. The other term that deserves
+a little explanation is the use of the complex number 10j as the step
+size in the slicing syntax. This non-standard use allows the number
+to be interpreted as the number of points to produce in the range
+rather than as a step size (note we would have used the long integer
+notation, 10L, but this notation may go away in Python as the integers
+became unified). This non-standard usage may be unsightly to some,
+but it gives the user the ability to quickly construct complicated
+vectors in a very readable fashion. When the number of points is specified
+in this way, the end-point is inclusive.
 
 The {}``r'' stands for row concatenation because if the objects
 between commas are 2 dimensional arrays, they are stacked by rows
@@ -372,7 +374,7 @@ There are several other functions in the scipy\_base package including
 most of the other functions that are also in MLab that comes with
 the Numeric package. The reason for duplicating these functions is
 to allow SciPy to potentially alter their original interface and make
-it easier for users to know how to get access to functions \texttt{>>>
+it easier for users to know how to get access to functions \texttt{>\,{}>\,{}>
 from scipy import {*}. }
 
 New functions which should be mentioned are \textbf{mod(x,y)} which
@@ -435,12 +437,12 @@ module. Most of these functions can take array arguments and return
 array results following the same broadcasting rules as other math
 functions in Numerical Python. Many of these functions also accept
 complex-numbers as input. For a complete list of the available functions
-with a one-line description type \texttt{>>>info(special).} Each function
-also has it's own documentation accessible using help. If you don't
-see a function you need, consider writing it and contributing it to
-the library. You can write the function in either C, Fortran, or Python.
-Look in the source code of the library for examples of each of these
-kind of functions. 
+with a one-line description type \texttt{>\,{}>\,{}>info(special).}
+Each function also has it's own documentation accessible using help.
+If you don't see a function you need, consider writing it and contributing
+it to the library. You can write the function in either C, Fortran,
+or Python. Look in the source code of the library for examples of
+each of these kind of functions. 
 
 
 \section{Integration (integrate)}
@@ -1689,9 +1691,9 @@ eigenvalue problem is an example of the general eigenvalue problem
 for $\mathbf{B}=\mathbf{I}.$ When a generalized eigenvalue problem
 can be solved, then it provides a decomposition of $\mathbf{A}$ as
 \[
-\mathbf{A}=\mathbf{BV}\boldsymbol\Lambda\mathbf{V}^{-1}\]
+\mathbf{A}=\mathbf{BV}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
  where $\mathbf{V}$ is the collection of eigenvectors into columns
-and $\boldsymbol\Lambda$ is a diagonal matrix of eigenvalues. 
+and $\boldsymbol{\Lambda}$ is a diagonal matrix of eigenvalues. 
 
 By definition, eigenvectors are only defined up to a constant scale
 factor. In SciPy, the scaling factor for the eigenvectors is chosen
@@ -1739,9 +1741,9 @@ unitary%
 so that $\mathbf{D}^{-1}=\mathbf{D}^{H}.$%
 } matrix $\mathbf{V}$ while the eigenvectors of $\mathbf{A}\mathbf{A}^{H}$
 are collected by columns in the unitary matrix $\mathbf{U}$, the
-singular values are collected in an $M\times N$ zero matrix $\mathbf{\boldsymbol\Sigma}$
+singular values are collected in an $M\times N$ zero matrix $\mathbf{\boldsymbol{\Sigma}}$
 with main diagonal entries set to the singular values. Then \[
-\mathbf{A=U}\boldsymbol\Sigma\mathbf{V}^{H}\]
+\mathbf{A=U}\boldsymbol{\Sigma}\mathbf{V}^{H}\]
  is the singular-value decomposition of $\mathbf{A}.$ Every matrix
 has a singular value decomposition. Sometimes, the singular values
 are called the spectrum of $\mathbf{A}.$ The command \textbf{linalg.svd}
@@ -1806,8 +1808,8 @@ such that \[
 \mathbf{A=QR}.\]
  Notice that if the SVD of $\mathbf{A}$ is known then the QR decomposition
 can be found \[
-\mathbf{A}=\mathbf{U}\boldsymbol\Sigma\mathbf{V}^{H}=\mathbf{QR}\]
- implies that $\mathbf{Q}=\mathbf{U}$ and $\mathbf{R}=\boldsymbol\Sigma\mathbf{V}^{H}.$
+\mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{H}=\mathbf{QR}\]
+ implies that $\mathbf{Q}=\mathbf{U}$ and $\mathbf{R}=\boldsymbol{\Sigma}\mathbf{V}^{H}.$
 Note, however, that in SciPy independent algorithms are used to find
 QR and SVD decompositions. The command for QR decomposition is \textbf{linalg.qr}. 
 
@@ -1859,10 +1861,10 @@ it is not often used.
 
 Another method to compute the matrix exponential is to find an eigenvalue
 decomposition of $\mathbf{A}$: \[
-\mathbf{A}=\mathbf{V}\boldsymbol\Lambda\mathbf{V}^{-1}\]
+\mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
  and note that \[
-e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol\Lambda}\mathbf{V}^{-1}\]
- where the matrix exponential of the diagonal matrix $\boldsymbol\Lambda$
+e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}\]
+ where the matrix exponential of the diagonal matrix $\boldsymbol{\Lambda}$
 is just the exponential of its elements. This method is implemented
 in \textbf{linalg.expm2}. 
 
