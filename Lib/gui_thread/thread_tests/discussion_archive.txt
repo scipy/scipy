@@ -1,0 +1,395 @@
+This is an archive of the thread-sig discussion on this topic:
+
+******************************************************************
+Initial Post
+******************************************************************
+Hello,
+
+I'm curious as to why the following two threads behave differently.  When
+the "time" module is imported within the worker thread, a join() on that
+thread blocks indefinitely.  If however, the import outside of the worker
+thread, the join() occurs as I expected.
+
+Removing the join() on the second thread allows it to exit normally.  Why
+don't "import" and join() play well together, and is there a remedy?  I
+really need the import to occur within the worker thread because of some
+wxPython issues.
+
+I'm using 1.5.2.  The behavior is the same on both RH6.1 and NT 4.0.
+
+thanks,
+eric
+
+----------------------------------------------------------------------------
+---------------
+import threading ,time
+
+class without_import(threading.Thread):
+    def run(self):
+        time.sleep(.5)
+        print 'worker: without done'
+
+class with_import(threading.Thread):
+    def run(self):
+        import time
+        time.sleep(.5)
+        print 'worker: with done'
+
+############# this works fine
+wo = without_import()
+wo.start()
+wo.join()
+print 'main: without  import done'
+
+######## without join(), thread also terminates normally
+w = with_import()
+w.start()
+print 'main: with import done'
+
+"""
+##### uncommenting this blocks indefinitely
+w = with_import()
+w.start()
+w.join()
+print 'main: with import done'
+"""
+
+
+**********************
+Tim Peters responds
+**********************
+
+
+Huh!  Works fine for me under Win95 -- get a real OS <wink>.
+
+D:\Python>python misc/ttest.py
+worker: without done
+main: without  import done
+main: with import done
+worker: with done
+worker: with done
+main: with import done
+
+D:\Python>
+
+Are you running on a true multiprocessor?  I'm not.  Something to try:
+create a global mutex and use it to serialize the import in with_import.run.
+My bet is the problem will go away.
+
+BTW, you'll probably have more luck redirecting this to the Thread-SIG (to
+which I'm also sending this reply).
+
+
+******************************************************************
+* My Response
+******************************************************************
+
+
+Hmmm.  Thats odd.  It actually works for me when I run it this way.  The
+problem occurs if you run it like this:
+
+    D:\Python> python
+    PythonWin 1.5.2 (#0, Apr 13 1999, 10:51:12) [MSC 32 bit (Intel)] on
+win32
+    Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
+    >>> import ttest
+    worker: without done
+    main: without import done
+    main: with import done
+
+    code blocks!
+
+I've re-written the sample to illustrate the strangeness a little better.
+Running the thread_test.py code at the end of the message from the command
+line causes the problem.
+
+    >>> import thread_test
+    worker: without done
+    main: without import done
+    main: with import done
+
+    ! and then an endless block
+
+If I comment out the call to test() at the bottom of the module, and then
+run:
+
+    >>> import thread_test
+    >>> thread_test.test()
+    worker: without done
+    main: without import done
+    main: with import done
+    worker: with done
+    worker: with done
+    main: with import done
+    ALL TESTS PASS
+
+So the problem only appears when the thread is executed during a module
+import from the command line.
+
+thanks,
+eric
+
+------------- thread_test.py -----------------------------
+
+import threading ,time
+
+class without_import(threading.Thread):
+    def run(self):
+        time.sleep(.5)
+        print 'worker: without done'
+
+class with_import(threading.Thread):
+    def run(self):
+        import time
+        time.sleep(.5)
+        print 'worker: with done'
+
+def test():
+    ############# this works fine
+    wo = without_import()
+    wo.start()
+    wo.join()
+    print 'main: without import done'
+
+    ######## without join(), thread also terminates normally
+    w = with_import()
+    w.start()
+    print 'main: with import done'
+
+    ##### this blocks indefinitely
+    w = with_import()
+    w.start()
+    w.join()
+    print 'main: with import done'
+
+    print 'ALL TESTS PASS'
+
+test()
+
+******************************************************************
+* Mark Hammond Responds
+******************************************************************
+
+
+Damn.  The problem is clearly the import lock.
+
+* Main script is imported - this acquires the import lock.
+* Main script starts new thread
+* New thread attempts import - blocks on the import lock.
+* Main thread does a join() on the new thread; still holds the import lock.
+* Deadlocked.
+
+Hrm.  We have the situation that _any_ time code run via an import, creates
+threads which themselves do imports, we have a problem.
+
+Generally, code that creates threads waits for them to complete, so there
+are really 2 possibilities:
+
+* The top-level code being run by the import does not directly wait for the
+threads to terminate (but presumably something else does).  In this
+scenario, the new threads have been blocked on the import lock, and can
+only run when the top-level import has completed.
+
+* The top-level code being run by the import _does_ attempt synchronization
+with the threads, and finds itself dead-locked.
+
+Either situation isnt too flash, but Ive no decent ideas about what to do,
+other than document it, and _possibly_ expose a way so the defensive coder
+could raise some  exception should they detect they are being run in this
+way.
+
+The only other, much harder alternative, is to make the import lock more
+fine-grained - eg, effectively attach a lock to each module, so the threads
+are only locked out when the _same_ module is being imported by 2 threads
+(rather than _any_ module).  Im certainly not comfortable (with time or
+ability :-) to attempt this sort of patch!
+
+Mark.
+
+******************************************************************
+* My Response with patch
+******************************************************************
+
+
+OK.  I looked through the import.c file, and, best I can tell, the lock is
+totally encapsulated within import_lock() and import_unlock().  I've tried
+my hand at patching these for per module locking and inlcuded the changed
+functions (only 3) from import.c at the end of the message.  It didn't seem
+to bad, but then again, I'm new to looking at the Python core (and the
+INCREF/DECREF stuff).  There could be some naive/boneheaded mistakes here,
+so I ask for a review by the more experienced.  Any unintended affects here?
+I didn't notice any speed issues, but I'm certainly doing more work than the
+single lock approach.
+
+With the change, the thread_test.py module runs correctly.  I also
+successfully imported and played with some large modules like wxPython and
+VTK.
+The approach follows:
+
+Locking:
+1.  A lock structure is created for each module the request a lock.  A
+pointer to this structure is stored in a standard python dictionary.
+
+2.  When modules request a lock, this dictionary is checked for that modules
+entry.  If it does not exist, a new structure is allocated and its pointer
+is added to the dictionary.  Otherwise, the lock info is pulled from the
+dictionary.
+
+3.  The rest of locking proceeds in the same way as the current locking
+code, but  using this per module lock info.
+
+Unlocking:
+1.  Read the module lock pointer from the dictionary.  Failuer is fatal.
+
+2.  If lock_level is 0, do the standard stuff, and then delete the
+dictionary
+entry for this module.
+
+3.  If the dictionary is empty, delete the dictionary.
+
+These last two steps could really be saved until the shutdown of python.
+This would be more efficient (I'm pretty sure), but it would also
+necessitate altering other code.  Including them here keeps the entire
+process encapsulated in the lock functions.  The only other change is that
+the module name has to be passed to import_lock(char *mod_name) and
+import_unlock(char *mod_name).   They are only called once each (in
+import.c ).
+
+
+eric
+
+----------- changed functions in import.c ---------------------------
+
+static PyObject *import_locks = NULL;
+typedef struct {
+ PyThread_type_lock lock;
+ long thread;
+ int level;
+} mod_lock;
+
+static void
+lock_import(char* mod_name)
+{
+ PyObject* py_lock = NULL;
+ mod_lock *lock = NULL;
+ long current_thread = PyThread_get_thread_ident();
+
+ if (current_thread == -1)
+  return; /* Too bad */
+
+ if (import_locks == NULL) {
+     import_locks = PyDict_New();
+  if( !import_locks)
+         Py_FatalError("lock_import: failed to create lock list");
+ }
+    py_lock = PyDict_GetItemString(import_locks,mod_name);
+    if (!py_lock)
+
+        lock = malloc(sizeof(mod_lock));
+        lock->lock = PyThread_allocate_lock();
+        lock->thread = -1;
+        lock->level = 0;
+  py_lock = PyInt_FromLong((long)lock);
+  if(!py_lock)
+   Py_FatalError("lock_import: failed to create lock");
+  PyDict_SetItemString(import_locks,mod_name,py_lock);
+ }
+ else
+     lock = (mod_lock*)PyInt_AsLong(py_lock);
+ if( lock->thread == current_thread ) {
+     lock->level++;
+     return; /* ??what do we need to do to clean up REFs */
+ }
+ if (lock->thread != 1 || !PyThread_acquire_lock(lock->lock,0)) {
+    PyThreadState *tstate = PyEval_SaveThread();
+  PyThread_acquire_lock(lock->lock, 1);
+  PyEval_RestoreThread(tstate);
+ }
+    lock->thread = current_thread;
+    lock->level = 1;
+}
+
+static void
+unlock_import(char* mod_name)
+{
+ PyObject* py_lock = NULL;
+ mod_lock *lock = NULL;
+ long current_thread = PyThread_get_thread_ident();
+
+ if (current_thread == -1)
+  return; /* Too bad */
+    if (!import_locks)
+        Py_FatalError("unlock_import: no import lock list");
+
+    py_lock = PyDict_GetItemString(import_locks,mod_name);
+    if (!py_lock)
+        Py_FatalError("unlock_import: module was never locked");
+
+ lock = (mod_lock*)PyInt_AsLong(py_lock);
+ if (lock->thread != current_thread)
+  Py_FatalError("unlock_import: not holding the import lock");
+ lock->level--;
+ if (lock->level == 0) {
+  lock->thread = -1; /* not necessary */
+  PyThread_release_lock(lock->lock);
+  PyDict_DelItemString(import_locks,mod_name);
+  free(lock);
+  if(!PyDict_Size(import_locks))
+   py_DECREF(import_locks)
+ }
+}
+
+PyObject *
+PyImport_ImportModuleEx(name, globals, locals, fromlist)
+ char *name;
+ PyObject *globals;
+ PyObject *locals;
+ PyObject *fromlist;
+{
+ PyObject *result;
+ lock_import(name);
+ result = import_module_ex(name, globals, locals, fromlist);
+ unlock_import(name);
+ return result;
+}
+
+******************************************************************
+* And one more with a correction to the patch
+******************************************************************
+
+Oops.  A last minute edit didn't make it.  Here is unlock_import() again
+with a couple of line changes at the end.
+
+eric
+
+static void
+unlock_import(char* mod_name)
+{
+ PyObject* py_lock = NULL;
+ mod_lock *lock = NULL;
+ long current_thread = PyThread_get_thread_ident();
+
+ if (current_thread == -1)
+  return; /* Too bad */
+    if (!import_locks)
+        Py_FatalError("unlock_import: no import lock list");
+
+    py_lock = PyDict_GetItemString(import_locks,mod_name);
+    if (!py_lock)
+        Py_FatalError("unlock_import: module was never locked");
+
+ lock = (mod_lock*)PyInt_AsLong(py_lock);
+ if (lock->thread != current_thread)
+  Py_FatalError("unlock_import: not holding the import lock");
+ lock->level--;
+ if (lock->level == 0) {
+  lock->thread = -1; /* not necessary */
+  PyThread_release_lock(lock->lock);
+  PyDict_DelItemString(import_locks,mod_name);
+  free(lock);
+  if(!PyDict_Size(import_locks)) {
+   Py_DECREF(import_locks);
+   import_locks = NULL;
+  }
+ }
+}
