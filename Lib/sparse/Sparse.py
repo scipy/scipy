@@ -30,10 +30,16 @@ _transtabl = {'f':'s','d':'d','F':'c','D':'z'}
 # A sparse matrix class.  A sparse matrix can be initialized as:
 
 # a = spmatrix(M,N,nzmax,typecode=Float)
-#      Create a MxN matrix with room for nzmax non-zero elements of type typecode
-# a = spmatrix(data,row,col{,M,N,nzmax}) 
+#   Create an MxN matrix with room for nzmax non-zero elements of
+#     type typecode
+# a = spmatrix(data,row,col{,M,N,nzmax})
+#   Create a sparse matrix with non-zero elements data
+#     using a[row[i],col[i]] = data[i]
+#
+
 class spmatrix:
-    def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,typecode=Float):
+    def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,
+                 typecode=Float):
         if type(s) in [types.ListType, ArrayType]:
             s = array(s,copy=0,typecode=typecode)
             if s.typecode() not in 'fdFD':  # only support these 4 types.
@@ -57,6 +63,8 @@ class spmatrix:
         elif type(s) is types.IntType:
             M = int(s)
             N = int(i)
+            if j is None:
+                j = 0
             nzmax = int(j)
             self.ptype = typecode
             self.ftype = _transtabl[self.ptype]

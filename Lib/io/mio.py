@@ -2,12 +2,20 @@
 
 from Numeric import *
 from MLab import squeeze
-from scipy_base import atleast_1d
+from scipy_base import atleast_1d, cast
 from scipy_base.fastumath import *
 import numpyio
 import struct, os, sys
 import types
+try:
+    import scipy.sparse
+    have_sparse = 1
+except ImportError:
+    have_sparse = 0
 
+if sys.version_info[0] < 2 or sys.version_info[1] < 3:
+    False = 0
+    True = 1
 
 __all__ = ['fopen','loadmat','savemat']
 
@@ -20,8 +28,12 @@ def getsize_type(mtype):
         mtype = '1'
     elif mtype in ['s','short','int16','integer*2']:
         mtype = 's'
+    elif mtype in ['w','ushort','uint16','unsigned short']:
+        mtype = 'w'
     elif mtype in ['i','int']:
         mtype = 'i'
+    elif mtype in ['u','uint','uint32','unsigned int']:
+        mtype = 'u'
     elif mtype in ['l','long','int32','integer*4']:
         mtype = 'l'
     elif mtype in ['f','float','float32','real*4', 'real']:
@@ -109,6 +121,20 @@ class fopen:
         except:
             pass
 
+    def setformat(self, format):
+        if format in ['native','n','default']:
+            self.__dict__['bs'] = False
+            self.__dict__['format'] = 'native'
+        elif format in ['ieee-le','l','little-endian','le']:
+            self.__dict__['bs'] = not LittleEndian
+            self.__dict__['format'] = 'ieee-le'
+        elif format in ['ieee-be','b','big-endian','be']:
+            self.__dict__['bs'] = LittleEndian
+            self.__dict__['format'] = 'ieee-be'
+        else:
+            raise ValueError, "Unrecognized format: " + format
+        return
+        
     def write(self,data,mtype=None,bs=None):
         """Write to open file object the flattened Numeric array data.
 
@@ -122,7 +148,9 @@ class fopen:
                    character      : 'c', 'char', 'char*1'
                    signed char    : '1', 'schar', 'signed char'
                    short          : 's', 'short', 'int16', 'integer*2'
+                   unsigned short : 'w', 'ushort','uint16','unsigned short'
                    int            : 'i', 'int'
+                   unsigned int   : 'u', 'uint32','uint','unsigned int'
                    long           : 'l', 'long', 'int32', 'integer*4'
                    float          : 'f', 'float', 'float32', 'real*4'
                    double         : 'd', 'double', 'float64', 'real*8'
@@ -144,16 +172,20 @@ class fopen:
 
     fwrite = write
 
-    def read(self,count,stype,rtype=None,bs=None):
+    def read(self,count,stype,rtype=None,bs=None,c_is_b=0):
         """Read data from file and return it in a Numeric array.
 
         Inputs:
 
-          count -- an integer specifying the number of bytes to read or
-                   a tuple indicating the shape of the output array.
+          count -- an integer specifying the number of elements of type
+                   stype to read or a tuple indicating the shape of
+                   the output array.
           stype -- The data type of the stored data (see fwrite method).
           rtype -- The type of the output array.  Same as stype if None.
           bs -- Whether or not to byteswap (or use self.bs if None)
+          c_is_b --- If non-zero then the count is an integer
+                   specifying the total number of bytes to read
+                   (must be a multiple of the size of stype).
 
         Outputs: (output,)
 
@@ -163,8 +195,14 @@ class fopen:
             bs = self.bs
         else:
             bs = (bs == 1)
-        shape = None
-        if type(count) in [types.TupleType, types.ListType]:
+        howmany,stype = getsize_type(stype)
+        shape = None        
+        if c_is_b:
+            if count % howmany != 0:
+                raise ValueError, "When c_is_b is non-zero then " \
+                      "count is bytes\nand must be multiple of basic size."
+            count = count / howmany
+        elif type(count) in [types.TupleType, types.ListType]:
             shape = list(count)
             # allow -1 to specify unknown dimension size as in reshape
             minus_ones = shape.count(-1)
@@ -187,11 +225,12 @@ class fopen:
                 raise ValueError(
                     "illegal count; can only specify one unknown dimension")
             shape = tuple(shape)
-        howmany,stype = getsize_type(stype)
         if rtype is None:
             rtype = stype
         else:
             howmany,rtype = getsize_type(rtype)
+        if count == 0:
+            return zeros(0,rtype)
         retval = numpyio.fread(self.fid, count, stype, rtype, bs)
         if len(retval) == 1:
             retval = retval[0]
@@ -319,23 +358,304 @@ class fopen:
             if (self.fid.read(nn) == ''):
                 raise ValueError, "Unexpected end of file..."
             return retval
-                                      
-def loadmat(name, dict=None, appendmat=1):
-    """Load the MATLAB mat file saved in level 1.0 format.
+
+
+#### MATLAB Version 5 Support ###########
+
+# Portions of code borrowed and (heavily) adapted
+#    from matfile.py by Heiko Henkelmann
+
+## Notice in matfile.py file
+
+# Copyright (c) 2003 Heiko Henkelmann
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+
+class mat_struct:    # dummy structure holder
+    pass
+
+class mat_obj:    # dummy object holder
+    pass
+
+miINT8 = 1
+miUINT8 = 2
+miINT16 = 3
+miUINT16 = 4
+miINT32 = 5
+miUINT32 = 6
+miSINGLE = 7
+miDOUBLE = 9
+miINT64 =12
+miUINT64 = 13
+miMATRIX = 14
+
+miNumbers = (
+    miINT8,
+    miUINT8,
+    miINT16,
+    miUINT16,
+    miINT32,
+    miUINT32,
+    miSINGLE,
+    miDOUBLE,
+    miINT64,
+    miUINT64,
+    )
+
+miDataTypes = {
+    miINT8 : ('miINT8', 1,'1'),
+    miUINT8 : ('miUINT8', 1,'b'),
+    miINT16 : ('miINT16', 2,'s'),
+    miUINT16 :('miUINT16',2,'w'),
+    miINT32 : ('miINT32',4,'l'),
+    miUINT32 : ('miUINT32',4,'u'),
+    miSINGLE : ('miSINGLE',4,'f'),
+    miDOUBLE : ('miDOUBLE',8,'d'),
+    miINT64 : ('miINT64',8,'c'),   # Handle 64 bit integers as string data.
+    miUINT64 : ('miUINT64',8,'c'),
+    miMATRIX : ('miMATRIX',0,None),
+    }
+    
+mxCELL_CLASS = 1
+mxSTRUCT_CLASS = 2
+mxOBJECT_CLASS = 3
+mxCHAR_CLASS = 4
+mxSPARSE_CLASS = 5
+mxDOUBLE_CLASS = 6
+mxSINGLE_CLASS = 7
+mxINT8_CLASS = 8
+mxUINT8_CLASS = 9
+mxINT16_CLASS = 10
+mxUINT16_CLASS = 11
+mxINT32_CLASS = 12
+mxUINT32_CLASS = 13
+
+mxArrays = (
+    mxCHAR_CLASS,
+    mxDOUBLE_CLASS,
+    mxSINGLE_CLASS,
+    mxINT8_CLASS,
+    mxUINT8_CLASS,
+    mxINT16_CLASS,
+    mxUINT16_CLASS,
+    mxINT32_CLASS,
+    mxUINT32_CLASS,
+    )
+
+def _parse_header(fid, dict):
+    correct_endian = (ord('M')<<8) + ord('I')
+                 # if this number is read no BS    
+    fid.seek(126)  # skip to endian detector
+    endian_test = fid.read(1,'int16')
+    if (endian_test == correct_endian): openstr = 'n'
+    else:  # must byteswap
+        if LittleEndian:
+            openstr = 'b'
+        else: openstr = 'l'
+    fid.setformat(openstr)  # change byte-order if necessary
+    fid.rewind()    
+    dict['__header__'] = fid.fid.read(124).strip(' \t\n\000')
+    vers = fid.read(1,'int16')
+    dict['__version__'] = '%d.%d' % (vers >> 8, vers & 255)
+    fid.seek(2,1)  # move to start of data
+    return
+
+def _parse_array_flags(fid):
+    # first 8 bytes are always miUINT32 and 8 --- just a check
+    dtype, nbytes = fid.read(2,'u')
+    if (dtype != miUINT32) or (nbytes != 8):
+        raise IOError, "Invalid MAT file. Perhaps a byte-order problem."
+
+    # read array flags.
+    rawflags = fid.read(2,'u')
+    class_ = rawflags[0] & 255
+    flags = (rawflags[0] & 65535) >> 8
+    # Global and logical fields are currently ignored
+    if (flags & 8): cmplx = 1
+    else: cmplx = 0
+    if class_ == mxSPARSE_CLASS:
+        nzmax = rawflags[1]
+    else:
+        nzmax = None
+    return class_, cmplx, nzmax
+
+def _parse_mimatrix(fid,bytes): 
+    dclass, cmplx, nzmax =_parse_array_flags(fid)
+    dims = _get_element(fid)[0]
+    name = ''.join(asarray(_get_element(fid)[0]).astype('c'))
+    if dclass in mxArrays:
+        result, unused =_get_element(fid)
+        if type == mxCHAR_CLASS:
+            result = ''.join(asarray(result).astype('c'))
+        else:
+            if cmplx:
+                imag, unused =_get_element(fid)
+                result = result + cast[imag.typecode()](1j) * imag
+            result = squeeze(transpose(reshape(result,dims[::-1])))
+
+    elif dclass == mxCELL_CLASS:
+        length = product(dims)
+        result = zeros(length, PyObject)
+        for i in range(length):
+            sa, unused = _get_element(fid)
+            result[i]= sa
+        result = squeeze(transpose(reshape(result,dims[::-1])))
+        if rank(result)==0: result = result.toscalar()
+        
+    elif dclass == mxSTRUCT_CLASS:
+        length = product(dims)
+        result = zeros(length, PyObject)
+        namelength = _get_element(fid)[0]
+        # get field names
+        names = _get_element(fid)[0]
+        splitnames = [names[i:i+namelength] for i in \
+                      xrange(0,len(names),namelength)]
+        fieldnames = [''.join(asarray(x).astype('c')).strip('\x00')
+                              for x in splitnames]
+        for i in range(length):
+            result[i] = mat_struct()
+            for element in fieldnames:
+                val,unused = _get_element(fid)
+                result[i].__dict__[element] = val
+        result = squeeze(transpose(reshape(result,dims[::-1])))
+        if rank(result)==0: result = result.toscalar()        
+
+        # object is like a structure with but with a class name
+    elif dclass == mxOBJECT_CLASS:
+        class_name = ''.join(asarray(_get_element(fid)[0]).astype('c'))
+        length = product(dims)
+        result = zeros(length, PyObject)
+        namelength = _get_element(fid)[0]
+        # get field names
+        names = _get_element(fid)[0]
+        splitnames = [names[i:i+namelength] for i in \
+                      xrange(0,len(names),namelength)]
+        fieldnames = [''.join(asarray(x).astype('c')).strip('\x00')
+                              for x in splitnames]
+        for i in range(length):
+            result[i] = mat_obj()
+            result[i]._classname = class_name
+            for element in fieldnames:
+                val,unused = _get_element(fid)
+                result[i].__dict__[element] = val
+        result = squeeze(transpose(reshape(result,dims[::-1])))
+        if rank(result)==0: result = result.toscalar()        
+         
+    elif dclass == mxSPARSE_CLASS:
+        rowind, unused = _get_element(fid)
+        colind, unused = _get_element(fid)
+        res, unused = _get_element(fid)
+        if cmplx:
+            imag, unused = _get_element(fid)
+            res = res + cast[imag.typecode()](1j)*imag
+        if have_sparse:
+            spmat = scipy.sparse.spmatrix(dims[1],dims[0],typecode=res.typecode())
+            spmat.data = res
+            # stored with zero-based indices --- spmatrix needs 1 based
+            #  indices internally
+            spmat.index = [rowind+1, colind+1]
+            spmat.nzmax = len(res)
+            spmat.lastel = len(res)-1
+            result = spmat.transp(inplace=1)
+            result = spmat
+        else:
+            result = (rowind, colind, res)
+
+    return result, name
+    
+# Return a Python object for the element
+def _get_element(fid):
+
+    test = fid.fid.read(1)
+    if len(test) == 0:  # nothing left
+        raise EOFError
+    else:
+        fid.rewind(1)
+    # get the data tag
+    raw_tag = fid.read(1,'u')
+    
+    # check for compressed
+    numbytes = raw_tag >> 16
+    if numbytes > 0:  # compressed format
+        if numbytes > 4:
+            raise IOError, "Problem with MAT file: " \
+                  "too many bytes in compressed format."
+        dtype = raw_tag & 65535
+        el = fid.read(numbytes,miDataTypes[dtype][2],c_is_b=1)
+        fid.seek(4-numbytes,1)  # skip padding
+        return el, None
+
+    # otherwise parse tag
+    dtype = raw_tag
+    numbytes = fid.read(1,'u')
+    if dtype != miMATRIX:  # basic data type 
+        try:
+            outarr = fid.read(numbytes,miDataTypes[dtype][2],c_is_b=1)
+        except KeyError:
+            raise ValueError, "Unknown data type"
+        mod8 = numbytes%8
+        if mod8:       # skip past padding
+            skip = 8-mod8
+            fid.seek(skip,1)
+        return outarr, None
+
+    # handle miMatrix type
+    el, name = _parse_mimatrix(fid,numbytes)
+    return el, name
+
+def _loadv5(fid,basename):
+    # return a dictionary from a Matlab version 5 file
+    # always contains the variable __header__
+    dict = {}
+    _parse_header(fid,dict)
+    var = 0
+    while 1:  # file pointer to start of next data
+        try:
+            var = var + 1
+            el, varname = _get_element(fid)
+            if varname is None:
+                varname = '%s_%04d' % (basename,var)
+            dict[varname] = el
+        except EOFError:
+            break
+    return dict
+
+### END MATLAB v5 support #############
+
+def loadmat(name, dict=None, appendmat=1, basename='raw'):
+    """Load the MATLAB(tm) mat file.
 
     If name is a full path name load it in.  Otherwise search for the file
     on the sys.path list and load the first one found (the current directory
     is searched first).
 
-    Only Level 1.0 MAT files are supported so far.
+    Both v4 (Level 1.0) and v5 matfiles are supported.
 
     Inputs:
 
-      name -- name of the mat file (don't need .mat extension)
+      name -- name of the mat file (don't need .mat extension if appendmat=1)
       dict -- the dictionary to insert into.  If none the variables will be
               returned in a dictionary.
       appendmat -- non-zero to append the .mat extension to the end of the
                    given filename.
+      basename -- for MATLAB(tm) v5 matfiles raw data will have this basename.
 
     Outputs:
 
@@ -367,9 +687,16 @@ def loadmat(name, dict=None, appendmat=1):
 
     fid = fopen(full_name,'rb')
     test_vals = fid.fread(4,'byte')
-    if not (0 in test_vals):
-        fid.close()
-        raise ValueError, "Version 5.0 file format not supported."
+
+    if not (0 in test_vals):       # MATLAB version 5 format
+        fid.rewind()
+        thisdict = _loadv5(fid,basename)
+        if dict is not None:
+            dict.update(thisdict)
+            return
+        else:
+            return thisdict
+        
 
     testtype = struct.unpack('i',test_vals.tostring())
     # Check to see if the number is positive and less than 5000.
@@ -385,8 +712,7 @@ def loadmat(name, dict=None, appendmat=1):
         else:
             format = 'ieee-be'
 
-    fid.close()
-    fid = fopen(full_name, 'rb', format)
+    fid.setformat(format)
 
     length = fid.size()
     fid.rewind()  # back to the begining
@@ -414,15 +740,11 @@ def loadmat(name, dict=None, appendmat=1):
             fid.close()
             raise ValuError, "Hundreds digit of first integer should be zero."
 
-        if (P == 4):
-            fid.close()
-            raise ValueError, "No support for 16-bit unsigned integers."
-
         if (T not in [0,1]):
             fid.close()
             raise ValueError, "Cannot handle sparse matrices, yet."
 
-        storage = {0:'d',1:'f',2:'i',3:'s',5:'b'}[P]
+        storage = {0:'d',1:'f',2:'i',3:'s',4:'w',5:'b'}[P]
 
         varname = fid.fread(header[-1],'char')[:-1]
         varname = varname.tostring()
