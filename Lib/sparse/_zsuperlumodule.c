@@ -109,7 +109,7 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
 
 static char doc_zgstrf[] = "zgstrf(A, ...)\n\
 \n\
-performs a factorization of the sparse matrix A=*(M,N,nnz,nzvals,rowind,colptr) and \n\
+performs a factorization of the sparse matrix A=*(N,nnz,nzvals,rowind,colptr) and \n\
 returns a factored_lu object.\n\
 \n\
 see dgstrf for more information.";
@@ -128,10 +128,10 @@ Py_zgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
   SuperMatrix A;
   PyObject *result;
   
-  static char *kwlist[] = {"M","N","nnz","nzvals","rowind","colptr","permc_spec","diag_pivot_thresh", "drop_tol", "relax", "panel_size", NULL};
+  static char *kwlist[] = {"N","nnz","nzvals","rowind","colptr","permc_spec","diag_pivot_thresh", "drop_tol", "relax", "panel_size", NULL};
 
-  int res = PyArg_ParseTupleAndKeywords(args, keywds, "iiiO!O!O!|iddii", kwlist, 
-                                        &M, &N, &nnz,
+  int res = PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!|iddii", kwlist, 
+                                        &N, &nnz,
 					&PyArray_Type, &nzvals,
                                         &PyArray_Type, &rowind,
                                         &PyArray_Type, &colptr,

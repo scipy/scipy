@@ -566,8 +566,10 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
               drop_tol=0.0, relax=1, panel_size=10):
     ftype, nnz, data, rowind, colptr = A.getCSC()
     M,N = A.shape
+    if (M != N):
+        raise ValueError, "Can only factor square matrices."
     gstrf = eval('_superlu.' + ftype + 'gstrf')
-    return gstrf(M,N,nnz,data,rowind,colptr,permc_spec,
+    return gstrf(N,nnz,data,rowind,colptr,permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
         
 
