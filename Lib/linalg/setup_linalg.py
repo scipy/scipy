@@ -44,6 +44,7 @@ def configuration(parent_package='',parent_path=None):
     from interface_gen import generate_interface
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__,parent_path)
+    abs_local_path = os.path.abspath(local_path)
 
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
@@ -67,7 +68,7 @@ def configuration(parent_package='',parent_path=None):
         os.chdir(temp_path)
         cmd = '%s %s build_ext --inplace --force'%\
               (sys.executable,
-               os.path.join(local_path,'setup_atlas_version.py'))
+               os.path.join(abs_local_path,'setup_atlas_version.py'))
         print cmd
         s,o=run_command(cmd)
         if not s:
