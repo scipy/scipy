@@ -46,7 +46,7 @@ def configuration(parent_package=''):
     sources = ['_odepackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(dot_join(parent_package,'integrate._odepack'),sources,
-                    libraries=['odepack'])
+                    libraries=['odepack','mach'])
     config['ext_modules'].append(ext)
 
     # vode

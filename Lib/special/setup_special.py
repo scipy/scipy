@@ -20,7 +20,8 @@ def configuration(parent_package=''):
     config['libraries'].append(('cephes',{'sources':cephes}))
     
     # Fortran libraries
-    config['fortran_libraries'].append(('amos',{'sources':amos+mach}))
+    config['fortran_libraries'].append(('mach',{'sources':mach}))
+    config['fortran_libraries'].append(('amos',{'sources':amos}))
     config['fortran_libraries'].append(('toms',{'sources':toms}))
     
     # Extension
@@ -28,7 +29,7 @@ def configuration(parent_package=''):
                'toms_wrappers.c','ufunc_extras.c']
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(dot_join(parent_package,'special.cephes'),sources,
-                    libraries = ['amos','toms','c_misc','cephes']
+                    libraries = ['amos','toms','c_misc','cephes','mach']
                     )
     config['ext_modules'].append(ext)
 

@@ -6,8 +6,8 @@
 
 import unittest
 import scipy
-from scipy.scipy_test import assert_array_equal, assert_equal
-from scipy.scipy_test import assert_almost_equal, assert_array_almost_equal
+from scipy_test import assert_array_equal, assert_equal
+from scipy_test import assert_almost_equal, assert_array_almost_equal
 #from scipy import *
 from scipy import stats
 import math
