@@ -75,14 +75,15 @@ class config_pygist(config):
             built from 'body' and 'headers'.  Return true on success, false
             otherwise.
             """
-            from distutils.ccompiler import CompileError, LinkError
+            from distutils.ccompiler import CompileError, LinkError,\
+                 DistutilsExecError
             self._check_compiler()
             try:
                 src,obj,exe=self._link(body, headers, include_dirs,
                                        libraries, library_dirs, lang)
                 self.spawn([os.path.join('.',exe)])
                 ok = 1
-            except (CompileError, LinkError):
+            except (CompileError, LinkError, DistutilsExecError):
                 ok = 0
 
             self.announce(ok and "success!" or "failure.")
