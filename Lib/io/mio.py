@@ -248,14 +248,22 @@ class fopen:
             fmt = lookup_dict[self.format] + fmt
             numbytes = struct.calcsize(fmt)
             nn = struct.calcsize("i");
-            self.fid.read(nn)
-            data = struct.unpack(fmt,self.fid.read(numbytes))
-            self.fid.read(nn)
+            if (self.fid.read(nn) == ''):
+                raise ValueError, "Unexpected end of file..."
+            strdata = self.fid.read(numbytes)
+            if strdata == '':
+                raise ValueError, "Unexpected end of file..."
+            data = struct.unpack(fmt,strdata)
+            if (self.fid.read(nn) == ''):
+                raise ValueError, "Unexpected end of file..."
             return data
         else:  # Ignore format string and read in next record as an array.
             fmt = lookup_dict[self.format] + "i"
             nn = struct.calcsize(fmt)
-            nbytes = struct.unpack(fmt,self.fid.read(nn))[0]
+            nbytestr = self.fid.read(nn)
+            if nbytestr == '':
+                raise ValueError, "Unexpected end of file..."
+            nbytes = struct.unpack(fmt,nbytestr)[0]
             howmany, dtype = getsize_type(dtype)
             ncount = nbytes / howmany
             if ncount*howmany != nbytes:
@@ -268,7 +276,8 @@ class fopen:
             retval = numpyio.fread(self.fid, ncount, dtype, dtype, self.bs)
             if len(retval) == 1:
                 retval = retval[0]
-            self.fid.read(nn)
+            if (self.fid.read(nn) == ''):
+                raise ValueError, "Unexpected end of file..."
             return retval
                                       
 def loadmat(name, dict=None, appendmat=1):
