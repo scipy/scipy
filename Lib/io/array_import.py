@@ -320,8 +320,9 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
     # Intialize the output arrays
     outrange = range(numout)
     outarr = []
+    typecodes = "".join(Numeric.typecodes.values())
     for k in outrange:
-        if not atype[k] in "".join(Numeric.typecodes.values()):
+        if not atype[k] in typecodes:
             raise ValueError, "One of the array types is invalid, k=%d" % k
         outarr.append(Numeric.zeros((rowsize, colsize[k]),atype[k]))
     row = 0
@@ -336,7 +337,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
         block_row += 1
         if block_row >= rowsize:
             for k in outrange:
-                outarr[k].resize((outarr[k].shape[0] + rowsize,colsize))
+                outarr[k].resize((outarr[k].shape[0] + rowsize,colsize[k]))
             block_row = 0
     for k in outrange:
         if outarr[k].shape[0] != row:
@@ -367,15 +368,23 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
 
       file -- The open file.
     """
-      
+
     file = get_open_file(fileobject, mode='wa')
-    rank = len(arr.shape)
+    rank = Numeric.rank(arr)
     if rank > 2:
         raise ValueError, "Can-only write up to 2-D arrays."
 
     if rank == 0:
-        file.write(str(a[0])+linesep)
-    for k in range(arr.shape[0]):
+        h = 1
+        arr = Numeric.reshape(arr, (1,1))
+    elif rank == 1:
+        h = Numeric.shape(arr)[0]
+        arr = Numeric.reshape(arr, (h,1))
+    else:
+        h = Numeric.shape(arr)[0]
+        arr = asarray(arr)
+
+    for k in range(h):
         astr = Numeric.array2string(arr[k], max_line_width=sys.maxint,
                                     precision=precision,
                                     suppress_small=suppress_small,
