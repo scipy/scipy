@@ -4163,12 +4163,11 @@ For matrix
 \begin_inset Formula $\pm2,\pm1,$
 \end_inset 
 
- and 
+ 
 \begin_inset Formula $\pm$
 \end_inset 
 
-inf.
- Thus, 
+inf, and 'fro' (or 'f') Thus, 
 \begin_inset Formula \[
 \left\Vert \mathbf{A}\right\Vert =\left\{ \begin{array}{cc}
 \max_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=\textrm{inf}\\
@@ -4176,7 +4175,8 @@ inf.
 \max_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=1\\
 \min_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=-1\\
 \max\sigma_{i} & \textrm{ord}=2\\
-\min\sigma_{i} & \textrm{ord}=-2\end{array}\right.\]
+\min\sigma_{i} & \textrm{ord}=-2\\
+\sqrt{\textrm{trace}\left(\mathbf{A}^{H}\mathbf{A}\right)} & \textrm{ord}=\textrm{'fro'}\end{array}\right.\]
 
 \end_inset 
 
@@ -4377,7 +4377,7 @@ y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i}\]
 \begin_inset Minipage
 position 1
 inner_position 0
-height "0"
+height "0pt"
 width "45line%"
 collapsed false
 
@@ -4398,7 +4398,7 @@ preview false
 \begin_inset Minipage
 position 1
 inner_position 0
-height "0"
+height "0pt"
 width "45line%"
 collapsed false
 
@@ -4611,7 +4611,7 @@ for square matrices
 
  as 
 \begin_inset Formula \[
-\mathbf{A}=\mathbf{BV}\boldsymbol\Lambda\mathbf{V}^{H}\]
+\mathbf{A}=\mathbf{BV}\boldsymbol\Lambda\mathbf{V}^{-1}\]
 
 \end_inset 
 
@@ -5008,6 +5008,21 @@ where
 \begin_inset Formula $\mathbf{L}=\mathbf{U}^{H}.$
 \end_inset 
 
+ The command 
+\series bold 
+linagl.cholesky
+\series default 
+ computes the cholesky factorization.
+ For using cholesky factorization to solve systems of equations there are
+ also 
+\series bold 
+linalg.cho_factor
+\series default 
+ and 
+\series bold 
+linalg.cho_solve
+\series default 
+ routines that work similarly to their LU decomposition counterparts.
  
 \layout Subsubsection
 
@@ -5147,21 +5162,248 @@ linalg.rsf2csf
  from a real Schur form to a complex Schur form.
  The Schur form is especially useful in calculating functions of matrices.
  
+\layout Standard
+
+The following example illustrates the schur decomposition:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example10.3.6}
+preview false
+
+\end_inset 
+
+
 \layout Subsection
 
 Matrix Functions
+\layout Standard
+
+Consider the function 
+\begin_inset Formula $f\left(x\right)$
+\end_inset 
+
+ with Taylor series expansion 
+\begin_inset Formula \[
+f\left(x\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}x^{k}.\]
+
+\end_inset 
+
+ A matrix function can be defined using this Taylor series for the square
+ matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ as 
+\begin_inset Formula \[
+f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.\]
+
+\end_inset 
+
+ While, this serves as a useful representation of a matrix function, it
+ is rarely the best way to calculate a matrix function.
+ 
 \layout Subsubsection
 
-Exponential function
+Exponential and logarithm functions
+\layout Standard
+
+The matrix exponential is one of the more common matrix functions.
+ It can be defined for square matrices as 
+\begin_inset Formula \[
+e^{\mathbf{A}}=\sum_{k=0}^{\infty}\frac{1}{k!}\mathbf{A}^{k}.\]
+
+\end_inset 
+
+ The command 
+\series bold 
+linalg.expm3
+\series default 
+ uses this Taylor series definition to compute the matrix exponential.
+ Due to poor convergence properties it is not often used.
+ 
+\layout Standard
+
+Another method to compute the matrix exponential is to find an eigenvalue
+ decomposition of 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+: 
+\begin_inset Formula \[
+\mathbf{A}=\mathbf{V}\boldsymbol\Lambda\mathbf{V}^{-1}\]
+
+\end_inset 
+
+ and note that 
+\begin_inset Formula \[
+e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol\Lambda}\mathbf{V}^{-1}\]
+
+\end_inset 
+
+ where the matrix exponential of the diagonal matrix 
+\begin_inset Formula $\boldsymbol\Lambda$
+\end_inset 
+
+ is just the exponential of its elements.
+ This method is implemented in 
+\series bold 
+linalg.expm2
+\series default 
+.
+ 
+\layout Standard
+
+The preferred method for implementing the matrix exponential is to use scaling
+ and a Padé approximation for 
+\begin_inset Formula $e^{x}$
+\end_inset 
+
+.
+ This algorithm is implemented as 
+\series bold 
+linalg.expm
+\series default 
+.
+ 
+\layout Standard
+
+The inverse of the matrix exponential is the matrix logarithm defined as
+ the inverse of the matrix exponential.
+ 
+\begin_inset Formula \[
+\mathbf{A}\equiv\exp\left(\log\left(\mathbf{A}\right)\right).\]
+
+\end_inset 
+
+ The matrix logarithm can be obtained with 
+\series bold 
+linalg.logm
+\series default 
+.
+ 
 \layout Subsubsection
 
-Trigonemetric function
+Trigonometric functions
+\layout Standard
+
+The trigonometric functions 
+\begin_inset Formula $\sin$
+\end_inset 
+
+, 
+\begin_inset Formula $\cos$
+\end_inset 
+
+, and 
+\begin_inset Formula $\tan$
+\end_inset 
+
+ are implemented for matrices in 
+\series bold 
+linalg.sinm, linalg.cosm, 
+\series default 
+and 
+\series bold 
+linalg.tanm
+\series default 
+ respectively.
+ The matrix sin and cosine can be defined using Euler's identity as 
+\begin_inset Formula \begin{eqnarray*}
+\sin\left(\mathbf{A}\right) & = & \frac{e^{j\mathbf{A}}-e^{-j\mathbf{A}}}{2j}\\
+\cos\left(\mathbf{A}\right) & = & \frac{e^{j\mathbf{A}}+e^{-j\mathbf{A}}}{2}.\end{eqnarray*}
+
+\end_inset 
+
+ The tangent is 
+\begin_inset Formula \[
+\tan\left(x\right)=\frac{\sin\left(x\right)}{\cos\left(x\right)}=\left[\cos\left(x\right)\right]^{-1}\sin\left(x\right)\]
+
+\end_inset 
+
+and so the matrix tangent is defined as 
+\begin_inset Formula \[
+\left[\cos\left(\mathbf{A}\right)\right]^{-1}\sin\left(\mathbf{A}\right).\]
+
+\end_inset 
+
+
 \layout Subsubsection
 
 Hyperbolic trigonometric functions
+\layout Standard
+
+The hyperbolic trigonemetric functions 
+\begin_inset Formula $\sinh$
+\end_inset 
+
+, 
+\begin_inset Formula $\cosh$
+\end_inset 
+
+, and 
+\begin_inset Formula $\tanh$
+\end_inset 
+
+ can also be defined for matrices using the familiar definitions: 
+\begin_inset Formula \begin{eqnarray*}
+\sinh\left(\mathbf{A}\right) & = & \frac{e^{\mathbf{A}}-e^{-\mathbf{A}}}{2}\\
+\cosh\left(\mathbf{A}\right) & = & \frac{e^{\mathbf{A}}+e^{-\mathbf{A}}}{2}\\
+\tanh\left(\mathbf{A}\right) & = & \left[\cosh\left(\mathbf{A}\right)\right]^{-1}\sinh\left(\mathbf{A}\right).\end{eqnarray*}
+
+\end_inset 
+
+ These matrix functions can be found using 
+\series bold 
+linalg.sinhm
+\series default 
+, 
+\series bold 
+linalg.coshm
+\series default 
+, and 
+\series bold 
+linalg.tanhm
+\series default 
+.
+ 
 \layout Subsubsection
 
 Arbitrary function
+\layout Standard
+
+Finally, any arbitrary function that takes one complex number and returns
+ a complex number can be called as a matrix function using the command 
+\series bold 
+linalg.funm
+\series default 
+.
+ This command takes the matrix and an arbitrary Python function.
+ It then implements an algorithm from Golub and Van Loan's book 
+\begin_inset Quotes eld
+\end_inset 
+
+Matrix Computations
+\begin_inset Quotes erd
+\end_inset 
+
+ to compute function applied to the matrix using a Schur decomposition.
+ Note that 
+\emph on 
+the function needs to accept complex numbers
+\emph default 
+ as input in order to work with this algorithm.
+ For example the following code computes the zeroth-order Bessel function
+ applied to a matrix.
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example10.4.4}
+preview false
+
+\end_inset 
+
+
 \layout Section
 
 Statistics
