@@ -5,7 +5,7 @@ import sigtools
 import scipy.special as special
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from scipy_base import polyadd, polymul, polydiv, polysub, \
-                      roots, poly, polyval, polyder
+                      roots, poly, polyval, polyder, cast
 import types
 import scipy
 import Numeric
@@ -1081,6 +1081,9 @@ def detrend(data, axis=-1, type='linear', bp=0):
     if type not in ['linear','l','constant','c']:
         raise ValueError, "Trend type must be linear or constant"
     data = asarray(data)
+    dtype = data.typecode()
+    if dtype not in 'dfDF':
+        dtype = 'd'
     if type in ['constant','c']:
         ret = data - expand_dims(mean(data,axis),axis)
         return ret
@@ -1098,11 +1101,13 @@ def detrend(data, axis=-1, type='linear', bp=0):
         newdims = r_[axis,0:axis,axis+1:rnk]
         newdata = reshape(transpose(data,tuple(newdims)),(N,prod(dshape)/N))
         newdata = newdata.copy()  # make sure we have a copy
+        if newdata.typecode() not in 'dfDF':
+            newdata = newdata.astype(dtype)
         # Find leastsq fit and remove it for each piece
         for m in range(Nreg):
             Npts = bp[m+1] - bp[m]
-            A = ones((Npts,2),'d')
-            A[:,0] = arange(1,Npts+1)*1.0/Npts
+            A = ones((Npts,2),dtype)
+            A[:,0] = cast[dtype](arange(1,Npts+1)*1.0/Npts)
             sl = slice(bp[m],bp[m+1])
             coef,resids,rank,s = linalg.lstsq(A,newdata[sl])
             newdata[sl] = newdata[sl] - dot(A,coef)
