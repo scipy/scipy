@@ -203,7 +203,7 @@ def rand(*args):
 def randn(*args):
     """u = randn(d0,d1,...,dn) returns zero-mean, unit-variance Gaussian
     random numbers in an array of size (d0,d1,...,dn)."""
-    return stats.stnorm(size=args)
+    return stats.norm(size=args)
 
 def lena():
     import cPickle, os
