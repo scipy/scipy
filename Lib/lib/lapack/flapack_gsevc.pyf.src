@@ -1,0 +1,11 @@
+! -*- f90 -*-
+!
+! Contains wrappers for the following LAPACK routines:
+!
+!  Computational routines for the generalized symmetric definite eigenproblem:
+!
+!   sygst, hegst (symmetric/Hermitian, reduction) - Not Implemented
+!   spgst, hpgst (symmetric/Hermitian, reduction, packed storage) - Not Implemented
+!   pbstf (symmetric/Hermitian, split Cholesky factorization, banded) - Not Implemented
+!   sbgst,hbgst (symmetric/Hermitian, reduction, banded) - Not Implemented
+!

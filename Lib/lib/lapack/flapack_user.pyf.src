@@ -1,0 +1,8 @@
+python module gees__user__routines 
+    interface gees_user_interface
+        function <prefix>select(<_arg=arg1\,arg2,\0,arg,\2>)
+            <ftype> :: <_arg>
+            logical :: <prefix>select
+        end function <prefix>select
+    end interface gees_user_interface
+end python module gees__user__routines

@@ -1,0 +1,58 @@
+! -*- f90 -*-
+!
+! Contains wrappers for the following LAPACK routines:
+!
+!  Driver routines for generalized eigenvalue and singular value problems:
+!  
+!   sygv,hegv (GSEP, symmetric-definite eigenvalues/vectors) - Not Implemented
+!   sygvd,hegvd (GSEP, symmetric-definite eigenvalues/vectors, D&C) - Not Implemented
+!   sygvx,hegvx (GSEP, symmetric-definite eigenvalues/vectors, expert) - Not Implemented
+!   spgv, hpgv, spgvd, hpgvd, spgvx, hpgvx (..., packed storage) - Not Implemented
+!   sbgv, hbgv, sbgvd, hbgvd, sbgvx, hbgvx (..., band) - Not Implemented
+!   gges,ggesx (GNEP, general, Schur Factorization) - Not Implemented
+!   ggev,ggevx (GNEP, general, eigenvalues/vectors)
+!   ggsvd (GSVD, general, singular values/vectors) - Not Implemented
+!   gegv (general, eigenvalues/vectors, deprecated, use ggev instead) - Removed
+!
+
+! <alpha=alphar\,alphai,\0,alpha,\2>
+! <alphaptr=float*\,float*,double*\,double*,complex_float*,complex_double*>
+! <rwork=,,rwork\,,\2>
+! <rworkptr=,,float*\,,double*\,>
+
+subroutine <prefix>ggev(compute_vl,compute_vr,n,a,b,<alpha>,beta,vl,ldvl,vr,ldvr,work,lwork,<rwork>info)
+
+     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,<alpha>,beta,vl,&ldvl,vr,&ldvr,work,&lwork,<rwork>&info);}
+     callprotoargument char*,char*,int*,<ctype>*,int*,<ctype>*,int*,<alphaptr>,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<rworkptr>int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype>  dimension(n,n),intent(in,copy) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype> intent(in,copy), dimension(n,n) :: b
+    check(shape(b,0)==shape(b,1)) :: b
+
+    <ftype> intent(out), dimension(n), depend(n) :: <alpha>
+    <ftype> intent(out), dimension(n), depend(n) :: beta
+
+    <ftype>  depend(ldvl,n), dimension(ldvl,n),intent(out) :: vl
+    integer intent(hide),depend(n,compute_vl) :: ldvl=(compute_vl?n:1)
+    
+    <ftype>  depend(ldvr,n), dimension(ldvr,n),intent(out) :: vr
+    integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
+
+    ! <_lwork=8*n,\0,2*n,\2>
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=<_lwork>
+    check(lwork>=<_lwork>) :: lwork
+    <ftype> intent(hide,cache), dimension(lwork), depend(lwork) :: work
+    <ftypereal> intent(hide), dimension(8*n), depend(n) :: rwork
+
+    integer intent(out):: info
+
+end subroutine <prefix>ggev
+

@@ -1,0 +1,53 @@
+! -*- f90 -*-
+
+   subroutine <prefix>lauum(n,c,info,lower)
+   
+     ! a,info = lauum(c,lower=0,overwrite_c=0)
+     ! Compute product
+     ! U^T * U, C = U if lower = 0
+     ! L * L^T, C = L if lower = 1
+     ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,c,&n,&info)
+     callprotoargument char*,int*,<ctype>*,int*,int*
+
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     
+     integer depend(c),intent(hide):: n = shape(c,0)
+     <ftype> dimension(n,n),intent(in,out,copy,out=a) :: c
+     check(shape(c,0)==shape(c,1)) :: c
+     integer intent(out) :: info
+     
+   end subroutine <prefix>lauum
+
+   subroutine <prefix>laswp(n,a,nrows,k1,k2,piv,off,inc,m)
+
+   ! a = laswp(a,piv,k1=0,k2=len(piv)-1,off=0,inc=1,overwrite_a=0)
+   ! Perform row interchanges on the matrix A for each of row k1 through k2
+   ! 
+   ! piv pivots rows.
+
+     callstatement {int i;m=len(piv);for(i=0;i<m;++piv[i++]);++k1;++k2; (*f2py_func)(&n,a,&nrows,&k1,&k2,piv+off,&inc); for(i=0;i<m;--piv[i++]);}
+     callprotoargument int*,<ctype>*,int*,int*,int*,int*,int*
+
+     integer depend(a),intent(hide):: nrows = shape(a,0)
+     integer depend(a),intent(hide):: n = shape(a,1)
+     <ftype> dimension(nrows,n),intent(in,out,copy) :: a
+     integer dimension(*),intent(in),depend(nrows) :: piv
+     check(len(piv)<=nrows) :: piv
+!XXX: how to check that all elements in piv are < n?
+
+     integer optional,intent(in) :: k1 = 0
+     check(0<=k1) :: k1
+     integer optional,intent(in),depend(k1,piv,off) :: k2 = len(piv)-1
+     check(k1<=k2 && k2<len(piv)-off) :: k2
+
+     integer optional, intent(in),check(inc>0||inc<0) :: inc = 1
+     integer optional,intent(in),depend(piv) :: off=0
+     check(off>=0 && off<len(piv)) :: off
+
+     integer intent(hide),depend(piv,inc,off) :: m = (len(piv)-off)/abs(inc)
+     check(len(piv)-off>(m-1)*abs(inc)) :: m
+
+   end subroutine <prefix>laswp
+
