@@ -120,8 +120,8 @@ def vq(obs,code_book):
     """
     try:
         import _vq
-        from scipy.misc import _common_type
-        ct = _common_type(obs,code_book)
+        from scipy.misc import x_common_type
+        ct = x_common_type(obs,code_book)
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
         if   ct == 'f':
@@ -131,7 +131,6 @@ def vq(obs,code_book):
         else:
             results = py_vq(obs,code_book)
     except ImportError:
-        print 'py'
         results = py_vq(obs,code_book)
     return results        
 
