@@ -73,10 +73,10 @@ class plot_canvas(wx.wxWindow,property_object):
                  size=wx.wxPyDefaultSize,**attr):
         wx.wxWindow.__init__(self, parent, id, pos,size)
         wx.EVT_PAINT(self,self.OnPaint)
-        property_object.__init__(self,attr)
+        property_object.__init__(self, attr)
         background = wx.wxNamedColour(self.background_color)
         self.SetBackgroundColour(background) 
-        #self.SetBackgroundColour(wx.wxLIGHT_GREY)
+        #self.SetBackgroundColour(wx.wxWHITE)
         #self.title = text_object('')
         #self.x_title = text_object('')
         #self.y_title = text_object('')
@@ -172,8 +172,8 @@ class plot_canvas(wx.wxWindow,property_object):
             min_point = minimum.reduce(smalls)
             max_point = maximum.reduce(bigs)
         else:    
-            min_point = array((-1.,-1),)
-            max_point = array((1.,1))               
+            min_point = array((-1.,-1.),)
+            max_point = array((1.,1.))               
         data_x_bounds = array((min_point[0],max_point[0]))
         data_y_bounds = array((min_point[1],max_point[1]))
                    
@@ -186,8 +186,8 @@ class plot_canvas(wx.wxWindow,property_object):
         graph_area.trim_left(width)
         
         if self.aspect_ratio == 'equal':
-            x_scale = graph_area.width() / self.x_axis.range()
-            y_scale = graph_area.height() / self.y_axis.range()
+            x_scale = float(graph_area.width()) / self.x_axis.range()
+            y_scale = float(graph_area.height()) / self.y_axis.range()
             #print 'scales:', x_scale,y_scale,self.x_axis.range(),self.y_axis.range()
             if x_scale > y_scale:
                 new_width = y_scale * self.x_axis.range()
@@ -316,7 +316,7 @@ class plot_canvas(wx.wxWindow,property_object):
         dc.SetBrush(wx.wxBrush(fill_color))
         # NEEDED FOR REAL-TIME PLOTTING
         dc.DrawRectangle(gb.left(),gb.top(),
-                             gb.width()+1,gb.height()+1)
+                         gb.width()+1,gb.height()+1)
         #needed to make sure images stay within bounds
         dc.SetClippingRegion(gb.left()-1,gb.top()-1,
                              gb.width()+2,gb.height()+2)
@@ -364,18 +364,18 @@ class plot_canvas(wx.wxWindow,property_object):
         t1 = time.clock();self.reset_size(dc);t2 = time.clock()
         #print 'resize:',t2 - t1        
         
-        if not dc: dc = wx.wxClientDC(self)            
+        if not dc: dc = wx.wxClientDC(self)
         
-
 	# draw titles and axes labels
         t1 = time.clock()    
         for text in self.all_titles:
             text.draw(dc)        
 
         for axis in self.axes:
-            axis.draw_labels(dc)            
+            axis.draw_labels(dc)
         t2 = time.clock()
         #print 'text:',t2 - t1
+
         self.draw_graph_area(dc)
             
     def update(self):
@@ -433,7 +433,7 @@ class graph_printout(wx.wxPrintout):
         print_box.trim_bottom(y_margin)
         
         # Calculate a suitable scaling factor
-        scales = print_box.size() / graph_box.size()
+        scales = array(print_box.size(), Float)/graph_box.size()
         # Use x or y scaling factor, whichever fits on the DC
         scale = min(scales)
         # resize the graph and center on the page
@@ -470,7 +470,7 @@ class plot_frame(wx.wxFrame):
         wx.EVT_MENU(self, 200, self.OnFileSaveAs)
         menu.Append(203, '&Print...', 'Print the current plot')
         wx.EVT_MENU(self, 203, self.OnFilePrint)
-        menu.Append(204, '&Print Preview', 'Preview the current plot')
+        menu.Append(204, 'Print Pre&view', 'Preview the current plot')
         wx.EVT_MENU(self, 204, self.OnFilePreview)
         self.mainmenu.Append(menu, '&File')
         
@@ -494,6 +494,7 @@ class plot_frame(wx.wxFrame):
         self.CreateStatusBar(1)
 
         self.print_data = wx.wxPrintData()
+        self.print_data.SetPaperId(wx.wxPAPER_LETTER)
 
         self.client = plot_canvas(self)
         if visible: self.Show(1)
