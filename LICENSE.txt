@@ -1,4 +1,4 @@
-Copyright (c) 2001, Enthought, Inc.
+Copyright (c) 2001, 2002 Enthought, Inc.
 
 All rights reserved.
 
