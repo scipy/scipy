@@ -126,9 +126,6 @@ static void CDOUBLE_isfinite(char **args, int *dimensions, int *steps, void *fun
     }
 }
 
-
-
-
 static PyUFuncGenericFunction isnan_functions[] = {FLOAT_isnan, DOUBLE_isnan, CFLOAT_isnan, CDOUBLE_isnan, NULL};
 static PyUFuncGenericFunction isinf_functions[] = {FLOAT_isinf, DOUBLE_isinf, CFLOAT_isinf, CDOUBLE_isinf, NULL};
 static PyUFuncGenericFunction isfinite_functions[] = {FLOAT_isfinite, DOUBLE_isfinite, CFLOAT_isfinite, CDOUBLE_isfinite, NULL};

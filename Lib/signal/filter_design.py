@@ -4,7 +4,89 @@ Num = Numeric
 abs = absolute
 pi = Numeric.pi
 import scipy
-from scipy import r1array
+from scipy import r1array, poly
+
+def ba2zpk(b,a):
+    b = (b+0.0) / a[0]
+    a = (a+0.0) / a[0]
+    k = b[0]
+    b = (b+0.0) / b[0]
+    z = roots(b)
+    p = roots(a)
+    return z, p, k
+    
+def zpk2ba(z,p,k):
+    """Return polynomial transfer function representation from zeros and poles
+
+    Inputs:
+
+      z, p --- sequences representing the zeros and poles.
+      k --- system gain.
+
+    Outputs: (b,a)
+
+      b, a --- numerator and denominator polynomials.
+    """
+    b = k * poly(z)
+    a = poly(p)
+    return b, a
+
+def lp2lp(b,a,wo=1):
+    """Return a low-pass filter with cuttoff frequency wo
+    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    a,b = map(r1array,(a,b))
+    d = len(a)
+    n = len(b)
+    M = max((d,n))
+    pwo = pow(wo,arange(M-1,-1,-1))
+    start1 = max((n-d,0))
+    start2 = max((d-n,0))
+    b = b / pwo[start2:]
+    a = a / pwo[start1:]
+    b = b / a[0]
+    a = a / a[0]
+    return b, a
+
+def lp2hp(b,a,wo=1):
+    """Return a high-pass filter with cuttoff frequency wo
+    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    a,b = map(r1array,(a,b))
+    d = len(a)
+    n = len(b)
+    if wo != 1:
+        pwo = pow(wo,arange(max((d,n))))
+    else:
+        pwo = ones(max((d,n)),b.typecode())
+    if d >= n:
+        outa = a[::-1] * pwo
+        outb = Numeric.resize(b,d)
+        outb[:n] = b[::-1] * pwo[:n]
+    else:
+        outb = b[::-1] * pwo
+        outa = Numeric.resize(a,n)
+        outa[:d] = a[::-1] * pwo[:d]
+
+    outb = outb / outa[0]
+    outa = outa / outa[0]
+    return outb, outa
+
+def lp2bp(b,a,wo=1,bw=1):
+    """Return a band-pass filter with center frequency wo and bandwidth bw
+    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    a,b = map(r1array,(a,b))
+    d = len(a)
+    n = len(b)
+
+def lp2bs(b,a,wo=1,bw=1):
+    """Return a band-stop filter with center frequency wo and bandwidth bw
+    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    a,b = map(r1array,(a,b))
+    d = len(a)
+    n = len(b)
 
 
 def butter(N, Wn, bandtype='band', analog=0, output=''):
@@ -22,19 +104,15 @@ def butter(N, Wn, bandtype='band', analog=0, output=''):
     # pre-warp frequencies for digital filter design
     #  warped = 2*fs*tan(pi*Wn/fs)
 
-
     # convert to low-pass prototype
 
     # Get analog lowpass prototype
-
-    # transform to state-space
 
     # transform to lowpass, bandpass, highpass, or bandstop
 
     # Find discrete equivalent if necessary
 
-    # Transform to proper out type (pole-zero, state-space, numer-denom)
-    
+    # Transform to proper out type (pole-zero, state-space, numer-denom)    
     pass
 
 def cheby1():

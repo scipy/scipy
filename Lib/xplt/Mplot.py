@@ -368,7 +368,10 @@ def plot(x,*args,**keywds):
     Inputs:
 
       There can be a variable number of inputs which consist of pairs or
-      triples.  Each set of inputs requires a 
+      triples.  The second variable is plotted against the first using the
+      linetype specified by the optional third variable in the triple.  If
+      only two plots are being compared, the x-axis does not have to be
+      repeated.
     """
     global _hold
     if "hold" in keywds.keys():
@@ -592,6 +595,22 @@ def title3(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0
     if text != "":
         gist.plt(text,xmidpt,vp[3]-0.05-deltay, font=font, justify='CB',
                  height=fontsize, color=color)
+
+
+def stem(m, y, linetype='b-', mtype='mo'):
+    y0 = Numeric.zeros(len(y),y.typecode())
+    y1 = y
+    x0 = m
+    x1 = m
+    if not _hold:
+        gist.fma()
+    thetype,thecolor,themarker,tomark = _parse_type_arg(linetype,0)
+    gist.pldj(x0, y0, x1, y1, color=thecolor, type=thetype)
+    thetype,thecolor,themarker,tomark = _parse_type_arg(mtype,0)
+    if themarker not in ['o','x','.','*']:
+        themarker = 'o'
+    gist.plg(y,m,color=thecolor,marker=themarker,type='none')
+    return
 
 
 def makeleg(leg,pos,lenx,dd,theight=12):

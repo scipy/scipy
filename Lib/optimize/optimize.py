@@ -45,23 +45,23 @@ def rosen_der(x):
     return der
 
 def rosen_hess(x):
-        x = Num.asarray(x)
-        H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
-        diagonal = Num.zeros(len(x),x.typecode())
-        diagonal[0] = 1200*x[0]-400*x[1]+2
-        diagonal[-1] = 200
-        diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
-        H = H + MLab.diag(diagonal)
-        return H
+    x = Num.asarray(x)
+    H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
+    diagonal = Num.zeros(len(x),x.typecode())
+    diagonal[0] = 1200*x[0]-400*x[1]+2
+    diagonal[-1] = 200
+    diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
+    H = H + MLab.diag(diagonal)
+    return H
 
 def rosen_hess_p(x,p):
-        x = Num.asarray(x)
-        Hp = Num.zeros(len(x),x.typecode())
-        Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
-        Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
-                   -400*x[1:-1]*p[2:]
-        Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
-        return Hp
+    x = Num.asarray(x)
+    Hp = Num.zeros(len(x),x.typecode())
+    Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
+    Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
+               -400*x[1:-1]*p[2:]
+    Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
+    return Hp
 
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
@@ -224,7 +224,6 @@ def zoom(a_lo, a_hi):
     pass
 
     
-
 def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
     """Minimize the function f(xk+alpha pk)
 
