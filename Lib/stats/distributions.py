@@ -425,7 +425,7 @@ class rv_continuous:
         """
         loc,scale,size=map(kwds.get,['loc','scale','size'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
-        cond = logical_and(self._argcheck(*args),(scale > 0))
+        cond = logical_and(self._argcheck(*args),(scale >= 0))
         if not all(cond):
             raise ValueError, "Domain error in arguments."
 
@@ -438,7 +438,10 @@ class rv_continuous:
             size = (size,)
 
         vals = reshape(self._rvs(*args),size)
-        return vals * scale + loc
+        if scale == 0:
+            return loc*ones(size,'d')
+        else:
+            return vals * scale + loc
         
     def pdf(self,x,*args,**kwds):
         """Probability density function at x of the given RV.
