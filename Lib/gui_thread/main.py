@@ -17,6 +17,7 @@
 # Secondary Thread Start-up
 ###########################
 import thread, threading
+import sys, os, new
 
 running_in_second_thread = 0
 gui_thread_finished = threading.Event()
@@ -24,7 +25,6 @@ gui_thread_finished = threading.Event()
 def gui_thread(finished):
     """ Indirectly imports wxPython into the second thread
     """
-    import sys
     try:
         # If we can find a module named wxPython.  Odds are (maybe 100%),
         # we don't want to start a new thread with a MainLoop() in it.
@@ -65,10 +65,8 @@ def start():
 ###########################
 # Secondary Thread Clean-up
 ###########################
-import sys    
 oldexitfunc = getattr(sys, 'exitfunc', None)
 def exit_gui_thread(last_exit = oldexitfunc):    
-    import os
     # don't wait on MS platforms -- it hangs.
     # On X11, we have to shut down the secondary thread.
     if running_in_second_thread and os.name != 'nt':
@@ -120,13 +118,19 @@ def proxify(wx_class):
         are handled by the real wx_class object living
         in the wxPython thread.        
     """
-    import new  
     # generate proxy
     from gui_thread_guts import proxy_base
     class_name = 'proxy_'+wx_class.__name__
     class_bases = (proxy_base,)
     class_dict = {}
-    class_methods = get_all_methods(wx_class)    
+    class_doc = ""
+    try:
+        class_doc = getattr(wx_class, '__doc__')
+    except AttributeError:
+        pass
+    else:
+        class_dict['__doc__'] = class_doc
+    class_methods = get_all_methods(wx_class)
     for method in class_methods:
         func = generate_method(method,wx_class)
         if func:
@@ -167,7 +171,12 @@ def generate_method(method,wx_class):
     """
     module_name = wx_class.__module__
     class_name = wx_class.__name__
-    import_statement = 'from %s import %s' % (module_name,class_name)
+    import_statement = 'from %s import %s' % (module_name,class_name)    
+    documentation = ""
+    try:
+        documentation = getattr(getattr(wx_class, method), '__doc__')
+    except AttributeError:
+        pass
     if method == '__init__':
         call_method = class_name
         pre_test = ''
@@ -179,27 +188,27 @@ def generate_method(method,wx_class):
                    'self.proxy_object_alive = 1;'
     elif method == '__getattr__':
         return None
-    else:                 
+    else:
         pre_test =  "if not self.proxy_object_alive: proxy_error()"
         call_method = '%s.%s' % (class_name,method)
         arguments = 'arg_list = tuple([self.wx_obj] + list(args))'
-        results  = 'return finished._result'        
-    body = """def %s(self,*args,**kw):
-                %s
-                from gui_thread_guts import proxy_event
-                %s #import statement
+        results  = 'return smart_return(finished._result, self)'
+    body = """def %(method)s(self,*args,**kw):
+                \"\"\"%(documentation)s\"\"\"
+                %(pre_test)s
+                from gui_thread_guts import proxy_event, print_exception, smart_return
+                %(import_statement)s #import statement
                 finished = threading.Event()
                 # remove proxies if present
                 args = dereference_arglist(args)                
-                %s #arguments
-                evt = proxy_event(%s,arg_list,kw,finished)
+                %(arguments)s #arguments
+                evt = proxy_event(%(call_method)s,arg_list,kw,finished)
                 self.post(evt)
                 finished.wait()
                 if finished.exception_info:
-                    raise finished.exception_info[0],finished.exception_info[1]
-                %s #results\n""" %  (
-                                method,pre_test,import_statement,
-                                arguments, call_method, results)
+                    print_exception(finished.exception_info)
+                    raise finished.exception_info['type'],finished.exception_info['value']
+                %(results)s #results\n""" %locals()
     #if method == '__init__':
     #    print body
     exec(body)
@@ -212,10 +221,14 @@ def is_method(x,cls):
     
 def class_methods(cls):
     contents = dir(cls)
-    methods = filter(lambda x,cls=cls: is_method(x,cls), contents)    
-    return methods        
+    methods = filter(lambda x,cls=cls: callable(getattr(cls, x)), contents)
+    # using callable since it will handle more than just functions,
+    # using getattr since it works for vtk objects too
+    # (cls.__dict__[x]) won't work for vtk objects
+    return methods
 
 def get_all_methods(wx_class,top=1):
+    assert (wx_class) is types.ClassType or hasattr(wx_class, '__bases__')
     methods = []
     for base in wx_class.__bases__:
         methods.extend(get_all_methods(base,0))

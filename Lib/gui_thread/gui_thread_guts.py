@@ -15,10 +15,16 @@
       to notifies the wrapping proxy object when the window has 
       been closed.
     
-    o  Proxy Event class used to pass requests from the main thread
-       to the wxPython thread
+    o Proxy Event class used to pass requests from the main thread
+      to the wxPython thread
     
     o A base class for all proxy objects called proxy_base
+
+    o A proxied_callable class that handles callable attributes of a
+      proxied clas by making the call secondary thread.
+
+    o A proxy_attr class that handles attributes of a proxied object
+      correctly by dispatching calls to the secondary thread.
     
     o A wxPython class called event_catcher that lives in the
       secondary thread and catches/dispatches all events requested
@@ -31,7 +37,8 @@
 from wxPython.wx import *
 print '<wxPython imported>\n>>> ',
 import thread, threading
-import types
+import types, sys, traceback
+import main
 
 #################################
 # Window Close Event Handler 
@@ -98,74 +105,152 @@ class proxy_event(wxPyEvent):
 # A proxied callable object
 #################################
 
+def is_immutable(x):
+    """ Checks if object is completely immutable.  A tuple is not
+    considered completely immutable since it could contain references
+    to objects that could change.  Returns 1 if it is immutable or 0
+    if object is mutable."""    
+    imm = ()
+    try:
+        imm = (types.StringType, types.FloatType, types.IntType,
+               types.ComplexType, types.NoneType, types.UnicodeType)
+    except AttributeError:
+        imm = (types.StringType, types.FloatType, types.IntType,
+               types.ComplexType, type.NoneType)
+    if type(x) in imm:
+        return 1
+    else:
+        return 0
+
+
+def smart_return(ret, proxy):    
+    """ This intelligently returns an appropriately proxied object to
+    prevent crashing the interpreter.  If the object is immutable it
+    simply returns it.  If it is callable it returns a
+    proxied_callable and if it is niether it returns a proxy_attr."""
+    if callable(ret):
+        return proxied_callable(proxy, ret)
+    elif is_immutable(ret):
+        return ret
+    else:
+        return proxy_attr(proxy, ret)
+
+
 class proxied_callable:
 
     """This wraps any callable object so that the call is made via a
     proxy using a proxy_event.  This makes it possible for the user to
-    call methods of a proxy's attribute."""
+    call methods of a proxy's attribute.  """
     
-    def __init__(self, proxy, call_obj):
+    def __init__(self, proxy, call_obj):        
+        """ Create the proxied callable object.
+
+            proxy -- the proxied object whose attribute is being
+            proxied.
+
+            call_obj -- the callable attribute that is being proxied.
+        """
         self.proxy = proxy
         self.__dont_mess_with_me_unless_you_know_what_youre_doing = call_obj
-
-    def __call__(self, *args, **kw):
+        try:
+            call_obj.__doc__
+        except AttributeError:
+            pass
+        else:
+            self.__doc__ = call_obj.__doc__
+            
+    def __call__(self, *args, **kw):        
+        """Performs the call to the proxied callable object by
+        dispatching the method to the secondary thread."""        
         obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
         finished = threading.Event()
         evt = proxy_event(obj, args, kw, finished)
         self.proxy.post(evt)
         finished.wait()
         if finished.exception_info:
-            raise finished.exception_info[0],finished.exception_info[1]
-        return finished._result
+            print_exception(finished.exception_info)
+            raise finished.exception_info['type'], \
+                  finished.exception_info['value']
+
+        return smart_return(finished._result, self.proxy)
 
 
 ################################################################
-# A proxied attribute that handles callable internal attributes
+# A proxied attribute that handles callable internal attrubutes
 # properly.
 ################################################################
-
-def is_immutable(x):
-    imm = ()
-    try:
-        imm = (types.StringType, types.FloatType, types.IntType,
-               types.ComplexType, types.UnicodeType)
-    except AttributeError:
-        imm = (types.StringType, types.FloatType, types.IntType,
-               types.ComplexType)
-    if type(x) in imm:
-        return 1
-    else:
-        return 0
 
 class proxy_attr:
 
     """
     Description
 
-      This wraps a proxy's attribute such that any call to a callable
-      object returns a proxied_callable and any request for a data
-      attribute will return another proxy_attr.  This way a user can
-      call a method of a proxy's attribute.  Use the get_members and
-      get_methods member functions to get a list of the data and
-      functions of the proxied object.
+      This wraps a proxy's attribute such that a call to the
+      attribute's member function returns a proxied_callable and any
+      request for a data attribute will return another proxy_attr.
+      This way a user can call a method of a proxy's attribute.  Use
+      the get_members and get_methods member functions to get a list
+      of the data and functions of the proxied object.
 
     Caveats
 
       The user can always use
       _proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing
       and still get around proxying but atleast they were warned. :)
+      Also, this isnt a normal Python object in that
+      self.__class__.__dict__ will not contain any methods of the
+      proxied object.  Only self.__dict__ will contain these.  It
+      works but isn't perfect.
 
     """
     
+    __DONT_WRAP = ('__del__', '__init__', '__getattr__')
+
     def __init__(self, proxy, obj):
-        self.proxy = proxy
+        """ Create the proxied attribute.
+
+            proxy -- the proxied object whose attribute is being
+            proxied.
+
+            obj -- the attribute that is being proxied.
+        """
+        self.__proxy = proxy
         self.__dont_mess_with_me_unless_you_know_what_youre_doing = obj
+        if hasattr(obj, '__class__'):
+            try:
+                doc = obj.__class__.__doc__
+                self.__dict__['__doc__'] = doc
+            except AttributeError:
+                pass
+            self._set_attrs(obj, main.get_all_methods(obj.__class__))
+
+    def _get_meth (self, obj, name):
+        if name in self.__DONT_WRAP:
+            return None
+        try:
+            ret = getattr(obj, name)
+        except AttributeError:
+            return None
+        if callable(ret):
+            return proxied_callable(self.__proxy, ret)
+        elif is_immutable(ret):
+            return ret
+        else:
+            return None
+
+    def _set_attrs(self, obj, names):
+        for i in names:
+            tmp = self._get_meth(obj, i)
+            if tmp:
+                self.__dict__[i] = tmp
 
     def get_members(self):
+        """Returns a list of the members of the proxied attribute."""
         obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
         return dir(obj)
 
     def get_methods(self):
+        """Returns a list of the methods of the proxied attribute."""
         obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
         try:
             return dir(obj.__class__)
@@ -175,12 +260,7 @@ class proxy_attr:
     def __getattr__(self, key):
         obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
         ret = getattr(obj, key)
-        if callable(ret):
-            return proxied_callable(self.proxy, ret)
-        elif is_immutable(ret):
-            return ret
-        else:
-            return proxy_attr(self.proxy, ret)
+        return smart_return(ret, self.__proxy)
 
 #################################
 # Base class for all automatically generated proxy classes
@@ -208,7 +288,6 @@ class proxy_base:
             startup in the OnInit method of 
             second_thread_app.
         """
-        from wxPython.wx import wxPostEvent
         wxPostEvent(self.catcher, evt)        
 
     def __getattr__(self,key):        
@@ -216,13 +295,8 @@ class proxy_base:
             ret = self.__dict__[key]
         except KeyError:
             ret = getattr(self.__dict__['wx_obj'],key)
-        if callable(ret):
-            return proxied_callable(self, ret)
-        elif is_immutable(ret):
-            return ret
-        else:
-            return proxy_attr(self, ret)
-
+        return smart_return(ret, self)
+    
     # This needs a little thought
     #def __setattr__(self,key,val):        
     #    finished = threading.Event()
@@ -236,6 +310,12 @@ class proxy_base:
 #################################
 # Receives/Dispatches all events requested from the main thread.
 #################################        
+
+def print_exception(info):
+    """Prints the exception given a dictionary containing the
+    exception information."""    
+    print "Exception: %(filename)s:%(lineno)d: %(typename)s: %(value)s"\
+          " (in %(function)s)" %info
 
 class event_catcher(wxFrame):
     """ The "catcher" frame in the second thread.
@@ -253,21 +333,19 @@ class event_catcher(wxFrame):
             evt.finished.exception_info = None
             evt.finished.set()
         except:            
-            #print 'exception occured in the following call:'
-            #print '\tmethod:', evt.method
-            #print '\targuments:', evt.args
-            #print '\tkey words:', evt.kw            
-            import sys
-            err_type, err_msg = sys.exc_info()[:2]
-            #print '\terror:',err_type
-            #print '\tmessage:', err_msg
-
-            import sys
-            evt.finished.exception_info = sys.exc_info()[:2]           
-            evt.finished.set()
+            try:
+                type, value, tb = sys.exc_info()
+                info = traceback.extract_tb(tb)
+                filename, lineno, function, text = info[-1] # last line only
+                info = {'filename': filename, 'lineno': lineno,
+                        'type':type, 'typename': type.__name__,
+                        'value': value, 'function': function}
+                evt.finished.exception_info = info
+            finally:
+                type = value = tb = None # clean up
+                evt.finished.set()
 
     def OnCloseWindow(self,evt):
-        import main
         main.app.ExitMainLoop()
 
 #################################
