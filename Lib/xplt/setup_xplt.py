@@ -44,6 +44,7 @@ def configuration(parent_package=''):
                                    
         file_ext = ['*.gs','*.gp', '*.ps', '*.help']
         xplt_files = [glob(os.path.join(local_path,x)) for x in file_ext]
+	xplt_files = reduce(lambda x,y:x+y,xplt_files,[])
         xplt_path = os.path.join(local_path,'xplt')
         config['data_files'].extend( [(xplt_path,xplt_files)])
         
