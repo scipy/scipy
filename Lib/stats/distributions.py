@@ -41,16 +41,8 @@ def seed(x=0,y=0):
         raise ArgumentError, "seed requires integer arguments."
     if y == 0:
         import random
-        done = 0
-        sd = rv.initial_seed()
-        while not done:
-            try:
-                y = int(sd)
-                done = 1
-            except:
-                sd = sd / 2
-                done = 0
-        x = random.randint(1,2**30-1)        
+        y = int(rv.initial_seed())
+        x = random.randint(1,2**31-1)
     rand.set_seeds(x,y)
 
 seed()
