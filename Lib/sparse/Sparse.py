@@ -26,6 +26,7 @@ _formats = {'BND':[0,"Linpack Banded format"],
 # So far only CSR format is supported internally.
 
 _transtabl = {'f':'s','d':'d','F':'c','D':'z'}
+_itranstabl = {'s':'f','d':'d','c':'F','z':'D'}
 
 # A sparse matrix class.  A sparse matrix can be initialized as:
 
@@ -189,11 +190,11 @@ class dictmatrix(dict):
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
-        ftype = data.typecode()
-        if ftype not in ['d','D','f','F']:
-            data = data*1.0
-            ftype = 'd'
-        return ftype, nnz, data, colind, row_ptr
+        ptype = data.typecode()
+        if ptype not in ['d','D','f','F']:
+            data = data.astype('d')
+            ptype = 'd'
+        return _transtabl[ptype], nnz, data, colind, row_ptr
 
     def getCSC(self):
         # Return Compressed Sparse Column format arrays for this matrix
@@ -218,11 +219,11 @@ class dictmatrix(dict):
         data = array(data)
         rowind = array(rowind)
         col_ptr = array(col_ptr)
-        ftype = data.typecode()
-        if ftype not in ['d','D','f','F']:
-            data = data*1.0
-            ftype = 'd'
-        return ftype, nnz, data, rowind, col_ptr
+        ptype = data.typecode()
+        if ptype not in ['d','D','f','F']:
+            data = data.astype('d')
+            ptype = 'd'
+        return _transtabl[ptype], nnz, data, rowind, col_ptr
 
     def dense(self,typecode=None):
         if typecode is None:
@@ -235,12 +236,20 @@ class dictmatrix(dict):
             ikey1 = int(key[1])
             new[ikey0,ikey1] = self[key]
         return new
-
                
 class spmatrix:
     def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,
                  typecode=Float):
-        if type(s) in [types.ListType, ArrayType]:
+        if isinstance(s, dictmatrix):
+            ftype, nnz, data, index0, index1 = s.getCSR()
+            self.ftype = ftype
+            self.ptype = _itranstabl[ftype]
+            self.lastel = nnz-1
+            self.data = data
+            self.index = [index0+1, index1+1]
+            M, N = s.shape
+            nzmax = nnz
+        elif type(s) in [types.ListType, ArrayType]:
             s = array(s,copy=0,typecode=typecode)
             if s.typecode() not in 'fdFD':  # only support these 4 types.
                 s = s.astype('d')
@@ -489,10 +498,10 @@ class spmatrix:
         return new
 
     def getCSR(self):
-        return A.ftype, A.lastel+1, A.data, A.index[0]-1, A.index[1]-1
+        return self.ftype, self.lastel+1, self.data, self.index[0]-1, self.index[1]-1
 
     def getCSC(self):
-        B = A.transp()
+        B = self.transp()
         return B.ftype, B.lastel+1, B.data, B.index[0]-1, B.index[1]-1
 
             
@@ -549,7 +558,7 @@ def solve(A,b,permc_spec=2):
         ftype, lastel, data, index0, index1 = A.getCSR()
         csc = 0
     M,N = A.shape
-    gssv = eval('_superlu.' + _transtabl[ftype] + 'gssv')
+    gssv = eval('_superlu.' + ftype + 'gssv')
     return gssv(M,N,lastel,data,index0,index1,b,csc,permc_spec)[0]
     
 
@@ -557,7 +566,7 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
               drop_tol=0.0, relax=1, panel_size=10):
     ftype, nnz, data, rowind, colptr = A.getCSC()
     M,N = A.shape
-    gstrf = eval('_superlu.' + _transtabl[ftype] + 'gstrf')
+    gstrf = eval('_superlu.' + ftype + 'gstrf')
     return gstrf(M,N,nnz,data,rowind,colptr,permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
         
@@ -586,24 +595,24 @@ if __name__ == "__main__":
     print a
     print "Solve: single precision complex."
     a = a.astype('F')
-    x = splinsolve(a,b)
+    x = solve(a,b)
     print x
     print "Error: ",a*x-b
 
     print "Solve: double precision complex."
     a = a.astype('D')
-    x = splinsolve(a,b)
+    x = solve(a,b)
     print x
     print "Error: ",a*x-b
 
     print "Solve: double precision."
     a = a.astype('d')
-    x = splinsolve(a,b)
+    x = solve(a,b)
     print x
     print "Error: ",a*x-b
 
     print "Solve: single precision."
     a = a.astype('f')
-    x = splinsolve(a,b.astype('f'))
+    x = solve(a,b.astype('f'))
     print x
     print "Error: ",a*x-b
