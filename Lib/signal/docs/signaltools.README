@@ -1,9 +1,10 @@
 ## SIGTOOLS module 
 ##
-# Copyright 1999, Travis Oliphant
-# This code may be freely distributed under the terms of the LGPL
-#  Oliphant.Travis@altavista.net
-#
+#Copyright (c) 2002 Travis Oliphant all rights reserved
+#Oliphant.Travis@altavista.net
+#Permission to use, modify, and distribute this software is given under the 
+#terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
+#this distribution for specifics.
 
 I hope that this packages grows into a set of widely useful 1-D, 2-D,
 3-D, etc. filtering routines in this collection.  To start it off I
