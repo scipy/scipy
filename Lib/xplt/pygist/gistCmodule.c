@@ -22,15 +22,16 @@
  *            This version has been mostly upgraded to Yorick 1.5.
  *
  *  SCIPY_CHANGES:  
- *  03/10/03 teo Fix Setting up of highlevel hook for deleting high-level display
- *                 engines when the graphic windows are killed.  This was in
- *                 part of the error handling for the old gist.  
+ *  03/10/03 teo Fix Setting up of highlevel hook for deleting high-level 
+ *                 display engines when the graphic windows are killed.  
+ *                 This was in part of the error handling for the old gist.  
  *               Used pyg_jmpbuf in SETJMP0 as was likely desired.   
  *               Setup routine for 
- *                   XErrHandler to call in gist's g_on_panic routine as part of xbasic.c 
- *                   This is an additional error handler but it should only be 
- *                   called in very rare circumstances.  This could cause strange
- *		     behavior when it is called, but previously the code would
+ *                   XErrHandler to call in gist's g_on_panic routine as 
+ *                   part of xbasic.c  This is an additional error handler 
+ *                   but it should only be called in very rare circumstances.  
+ *                   This could cause strange behavior when it is called 
+ *                   asynchronously, but previously the code would
  *                   have been trying to run a NULL function. 
  *
  *

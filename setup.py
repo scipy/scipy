@@ -40,8 +40,6 @@ graphics_packages = [os.path.join('Lib',p) for p in graphics_packages]
 import copy
 saveargv = copy.copy(sys.argv)
 sys.argv = ['setup_xplt.py','config']
-if len(saveargv) > 2:
-    sys.argv += saveargv[2:]
 os.chdir(os.path.join('Lib','xplt'))
 execfile('setup_xplt.py')
 os.chdir(os.path.join('..','..'))

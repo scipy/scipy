@@ -18,8 +18,9 @@ import scipy.signal as signal
 
 _dpi = 75
 _hold = 0
+_maxcolors=256
 
-gist.pldefault(dpi=_dpi)
+gist.pldefault(dpi=_dpi,maxcolors=_maxcolors)
 
 # Get a directory that the user has write access to for
 #  storing temporary *.gp and *.gs files
@@ -622,9 +623,7 @@ def list_palettes():
                 print line[1:-1]
             k = k + 1
 
-            
-
-                         
+                                     
 def change_palette(pal):
     if pal is not None:
         if isinstance(pal, types.StringType):
@@ -640,6 +639,8 @@ def change_palette(pal):
             filename = os.path.join(_user_path,'_temp.gp')
             write_palette(filename,data)
             gist.palette(filename)
+
+chpal = change_palette
 
 def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     """Plot an image of a matrix.

@@ -1,6 +1,7 @@
 """ Plotting routines based on Gist (requires X-server)
 
   All Gist functions are also available as xplt.<command>
+  xplt.ghelp('plsys')
 
     histogram -- Plot a histogram.
     barplot   -- Construct a barplot.
@@ -8,6 +9,7 @@
     legend    -- Construct and place a legend.
     arrow     -- Draw an arrow.
     plot      -- Plot curves.
+    logxy     -- Change scale to logarithmic
     surf      -- Plot surfaces (no axes currently plotted).
     xlabel    -- Place a label on the x-axis.
     ylabel    -- Place a label on the y-axis.
@@ -20,7 +22,7 @@
     movie     -- Play a sequence of images as a movie.
     figure    -- Create a new figure.
     full_page -- Create a full_page window.
-    subplot   -- Draw a sub-divided full-page plot.
+    subplot   -- Draw a sub-divided plot.
     plotframe -- Change the plot system on a multi-plot page.
     twoplane  -- Create a plot showing two orthogonal planes of a
                  three-dimensional array.
@@ -30,6 +32,10 @@ used with Yorick.  Simpler commands are provided, but all of the low-level
 commands of gist are still available.
 """
 
+#try:
+#    import tkgist
+#except:
+#    pass
 from gist import *
 import os, sys
 from Mplot import *

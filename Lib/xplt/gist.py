@@ -5,6 +5,7 @@
 #
 #  Scipy CHANGES:
 #  03/06/03 teo Changed all == None checks to is None checks
+#  03/10/03 teo Changed eps to work with windows (noepsi=1)
 
 #  CHANGES:
 #  12/25/02 mdh Add plh to draw histograms
@@ -146,25 +147,29 @@ def eps(name, noepsi=0, pdf=0):
    """
    eps(name, noepsi=0, pdf=0)
       Write the picture in the current graphics window to the Encapsulated
-      PostScript file NAME+".epsi" (i.e.- the suffix .epsi is added to NAME).
-      The eps function requires the ps2epsi utility which comes with the
-      project GNU Ghostscript program.  Any hardcopy file associated with
-      the current window is first closed, but the default hardcopy file is
-      unaffected.  As a side effect, legends are turned off and color table
-      dumping is turned on for the current window.
-      The environment variable PS2EPSI_FORMAT contains the format for the
-      command to start the ps2epsi program.
+      PostScript file NAME+".eps" (i.e.- the suffix .eps is added to NAME).
+      The last extension of name is stripped to avoid .eps.eps files
+      
+      Unles noepsi is 1, this function requires the ps2epsi utility which
+      comes with the project GNU Ghostscript program.
+      Any hardcopy file associated with the current window is first closed,
+      but the default hardcopy file is unaffected.  As a side effect,
+      legends are turned off and color table dumping is turned on for
+      the current window.
       SEE ALSO: window, fma, hcp, hcp_finish, plg
    """
    import os
+   name,ignore = os.path.splitext(name)
    totalname = name
    apath, basename = os.path.split(name)
-   name = name + ".ps"
+   name = name + ".ps"   
    window (hcp = name, dump = 1, legends = 0)
    hcp ()
    window (hcp="")
+   res = 1
    if not noepsi:
-      os.system ("ps2epsi " + name)
+      res = os.system ("ps2epsi " + name)
+   if not res:
       os.remove(name)
       os.rename ("%s.epsi" % basename, "%s.eps" % totalname)
    else:
