@@ -17,8 +17,6 @@ def configuration(parent_package='',parent_path=None):
     def local_glob(*names):
         return glob.glob(os.path.join(*((local_path,)+names)))
 
-    numpy_info = get_info('numpy',notfound_action=2)
-
     blas_opt = get_info('blas_opt')
     if not blas_opt:
         raise NotFoundError,'no blas resources found'
@@ -35,7 +33,6 @@ def configuration(parent_package='',parent_path=None):
     # Extensions
     # quadpack:
     ext_args = {}
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,
                 name=dot_join(parent_package,package,'_quadpack'),
                 sources = [local_join('_quadpackmodule.c')],
@@ -46,7 +43,6 @@ def configuration(parent_package='',parent_path=None):
 
     # odepack
     ext_args = {}
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,
                 name=dot_join(parent_package,package,'_odepack'),
                 sources = [local_join('_odepackmodule.c')],
@@ -58,7 +54,6 @@ def configuration(parent_package='',parent_path=None):
 
     # vode
     ext_args = {}
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,
                 name=dot_join(parent_package,package,'vode'),
                 sources = [local_join('vode.pyf')],

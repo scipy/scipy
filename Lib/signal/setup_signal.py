@@ -10,19 +10,15 @@ def configuration(parent_package='',parent_path=None):
     local_path = get_path(__name__,parent_path)    
     config = default_config_dict(package, parent_package)
 
-    numpy_info = get_info('numpy',notfound_action=2)
-
     sources = ['sigtoolsmodule.c','firfilter.c','medianfilter.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,package,'sigtools'), sources,
-                    **numpy_info)
+    ext = Extension(dot_join(parent_package,package,'sigtools'), sources)
     config['ext_modules'].append(ext)
     
     sources = ['splinemodule.c','S_bspline_util.c','D_bspline_util.c',
                'C_bspline_util.c','Z_bspline_util.c','bspline_util.c']
     sources = [os.path.join(local_path,x) for x in sources]               
-    ext = Extension(dot_join(parent_package,package,'spline'),sources,
-                    **numpy_info)
+    ext = Extension(dot_join(parent_package,package,'spline'),sources)
     config['ext_modules'].append(ext)
 
     return config

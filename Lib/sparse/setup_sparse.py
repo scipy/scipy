@@ -18,7 +18,6 @@ def configuration(parent_package='',parent_path=None):
     def local_glob(*names):
         return glob.glob(os.path.join(*((local_path,)+names)))
 
-    numpy_info = get_info('numpy',notfound_action=2)
     lapack_opt = get_info('lapack_opt',notfound_action=2)
 
     if sys.platform=='win32':
@@ -41,7 +40,6 @@ def configuration(parent_package='',parent_path=None):
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -51,7 +49,6 @@ def configuration(parent_package='',parent_path=None):
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -61,7 +58,6 @@ def configuration(parent_package='',parent_path=None):
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -71,7 +67,6 @@ def configuration(parent_package='',parent_path=None):
                 'sources':map(local_join,sources),
                 'libraries': [superlu],
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -87,7 +82,7 @@ def configuration(parent_package='',parent_path=None):
     sources = ['spblas.f.src','spconv.f.src','sparsetools.pyf.src']
     sources = [local_join('sparsetools',x) for x in sources]
     ext = Extension(dot_join(parent_package, package, 'sparsetools'),
-                    sources,**numpy_info)
+                    sources)
     config['ext_modules'].append(ext)
     
     return config

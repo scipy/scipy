@@ -34,7 +34,6 @@ def configuration(parent_package='',parent_path=None):
     def local_join(*paths):
         return os.path.join(*((local_path,)+paths))
 
-    numpy_info = get_info('numpy',notfound_action=2)
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
@@ -110,7 +109,6 @@ def configuration(parent_package='',parent_path=None):
                                            'generic_fblas3.pyf',
                                            'interface_gen.py'])
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -122,7 +120,6 @@ def configuration(parent_package='',parent_path=None):
                                            'generic_cblas1.pyf',
                                            'interface_gen.py'])
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -134,7 +131,6 @@ def configuration(parent_package='',parent_path=None):
                                            'flapack_user_routines.pyf',
                                            'interface_gen.py'])
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -145,7 +141,6 @@ def configuration(parent_package='',parent_path=None):
                 'depends': map(local_join,['generic_clapack.pyf',
                                            'interface_gen.py'])
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -155,7 +150,6 @@ def configuration(parent_package='',parent_path=None):
                 'sources':[local_join('src','det.f'),
                            local_join('src','lu.f')]
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     config['ext_modules'].append(Extension(**ext_args))
 
@@ -163,7 +157,6 @@ def configuration(parent_package='',parent_path=None):
     ext_args = {'name':dot_join(parent_package,package,'calc_lwork'),
                 'sources':[local_join('src','calc_lwork.f')],
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     config['ext_modules'].append(Extension(**ext_args))
 
@@ -191,7 +184,6 @@ def configuration(parent_package='',parent_path=None):
         'name': dot_join(parent_package,package,'_iterative'),
         'sources': [local_join('iterative',x) for x in sources]
         }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args, **lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)    

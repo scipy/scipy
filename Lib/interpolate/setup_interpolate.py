@@ -11,8 +11,6 @@ def configuration(parent_package='',parent_path=None):
     local_path = get_path(__name__,parent_path)
     config = default_config_dict(package_name, parent_package)
 
-    numpy_info = get_info('numpy',notfound_action=2)
-
     fitpack = glob(os.path.join(local_path,'fitpack','*.f'))
     config['fortran_libraries'].append(('fitpack',{'sources':fitpack}))
     
@@ -23,7 +21,6 @@ def configuration(parent_package='',parent_path=None):
                 name=dot_join(parent_package,package_name,'_fitpack'),
                 sources = sources,
                 libraries = ['fitpack'])
-    dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
@@ -35,7 +32,6 @@ def configuration(parent_package='',parent_path=None):
         'sources': sources,
         'libraries': ['fitpack'],
         }
-    dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 

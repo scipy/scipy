@@ -15,8 +15,6 @@ def configuration(parent_package='',parent_path=None):
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__,parent_path)
 
-    numpy_info = get_info('numpy',notfound_action=2)
-
     define_macros = []
     if sys.byteorder == "little":
         define_macros.append(('USE_MCONF_LE',None))
@@ -60,7 +58,6 @@ def configuration(parent_package='',parent_path=None):
                              'cdf', 'specfun'],
                 define_macros = define_macros
                 )
-    dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
@@ -71,7 +68,6 @@ def configuration(parent_package='',parent_path=None):
                 'libraries' : ['specfun'],
                 'depends':specfun
                 }
-    dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1
     config['ext_modules'].append(ext)

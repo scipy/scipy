@@ -36,7 +36,6 @@ def configuration(parent_package='',parent_path=None):
     def local_glob(path):
         return glob(os.path.join(local_path,path))
 
-    numpy_info = get_info('numpy',notfound_action=2)
     lapack_opt = get_info('lapack_opt',notfound_action=2)
 
     atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[]) \
@@ -73,7 +72,6 @@ def configuration(parent_package='',parent_path=None):
                 sources = [local_join('flapack.pyf.src')],
                 depends = [__file__]+local_glob('flapack_*.pyf.src'),
                 f2py_options = ['skip:']+skip_names['flapack']+[':'])
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -102,7 +100,6 @@ def configuration(parent_package='',parent_path=None):
                 depends =  [local_join('clapack.pyf.src')] \
                 + local_glob('clapack_*.pyf.src'),
                 f2py_options = ['skip:']+skip_names['clapack']+[':'])
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -111,7 +108,6 @@ def configuration(parent_package='',parent_path=None):
     ext_args = {'name':dot_join(parent_package,package,'calc_lwork'),
                 'sources':[local_join('calc_lwork.f')],
                 }
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     config['ext_modules'].append(Extension(**ext_args))
 

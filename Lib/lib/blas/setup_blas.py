@@ -45,7 +45,6 @@ def configuration(parent_package='',parent_path=None):
     def local_glob(path):
         return glob(os.path.join(local_path,path))
 
-    numpy_info = get_info('numpy',notfound_action=2)
     blas_opt = get_info('blas_opt',notfound_action=2)
 
     atlas_version = ([v[3:-3] for k,v in blas_opt.get('define_macros',[]) \
@@ -78,7 +77,6 @@ def configuration(parent_package='',parent_path=None):
                            local_join('fblaswrap.f.src')],
                 depends = [__file__]+local_glob('fblas_l?.pyf.src'),
                 f2py_options = ['skip:']+skip_names['fblas']+[':'])
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**blas_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
@@ -106,7 +104,6 @@ def configuration(parent_package='',parent_path=None):
                 depends =  [local_join('cblas.pyf.src')] \
                 + local_glob('cblas_l?.pyf.src'),
                 f2py_options = ['skip:']+skip_names['cblas']+[':'])
-    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**blas_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)

@@ -23,8 +23,6 @@ def configuration(parent_package='', parent_path=None):
     # xxx has extension module ..
     from scipy_distutils.core import Extension
 
-    numpy_info = get_info('numpy',notfound_action=2)
-    
     # xxx has f2py generated extension module ..
     # xxx has swig generated extension module ..
 
@@ -45,7 +43,6 @@ def configuration(parent_package='', parent_path=None):
                 name=dot_join(parent_package,package,'spam'),
                 sources=[pyf_file],
                 depends = pyf_file.sources)
-    dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
