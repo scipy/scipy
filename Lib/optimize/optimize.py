@@ -5,17 +5,20 @@
 # guarantee implied provided you keep this notice in all copies.
 # *****END NOTICE************
 
-# A collection of optimization algorithms.  Version 0.3.1
+# A collection of optimization algorithms.  Version 0.4.1
+# CHANGES
+#  Added fminbound (July 2001)
 
 # Minimization routines
 """optimize.py
 
 A collection of general-purpose optimization routines using Numeric
 
-fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls)
-fminBFGS    ---      Quasi-Newton method (uses function and gradient)
+fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls).
+fminBFGS    ---      Quasi-Newton method (uses function and gradient).
 fminNCG     ---      Line-search Newton Conjugate Gradient (uses function, 
-                     gradient and hessian (if it's provided))
+                     gradient and hessian (if it's provided)).
+fminbound   ---      Bounded minimization for scalar functions.
 
 """
 
@@ -25,7 +28,8 @@ Num = Numeric
 max = MLab.max
 min = MLab.min
 abs = Num.absolute
-__version__="0.3.1"
+sqrt = Num.sqrt
+__version__="0.4.1"
 
 def rosen(x):  # The Rosenbrock function
     return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
@@ -602,8 +606,166 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     else:        
         return xk
 
-    
 
+
+def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500, 
+              full_output=0, disp=1):
+    """Bounded minimization for scalar functions.
+
+    Description:
+
+      Finds a local minimizer of the scalar function func in the interval
+      x1 < xopt < x2.
+
+    Inputs:
+
+      func -- the function to be minimized (must accept scalar input and return
+              scalar output).
+      x1, x2 -- the optimization bounds.
+      args -- extra arguments to pass to function.
+      xtol -- the convergence tolerance.
+      maxfun -- maximum function evaluations.
+      full_output -- Non-zero to return optional outputs. 
+      disp -- Non-zero to print messages.
+              0 : no message printing.
+              1 : non-convergence notification messages only.
+              2 : print a message on convergence too.
+              3 : print iteration results. 
+
+
+    Outputs: (xopt, {fval, ierr, numfunc})
+
+      xopt -- The minimizer of the function over the interval.
+      fval -- The function value at the minimum point.
+      ierr -- An error flag (1 if converged, 0 if maximum number of
+              function calls reached).
+      numfunc -- The number of function calls.
+    """
+
+    if x1 > x2:
+        raise ValueError, "The lower bound exceeds the upper bound."
+
+    flag = 1
+    header = ' Func-count     x          f(x)          Procedure'
+    step='       initial'
+
+    seps = sqrt(2.2e-16)
+    c = 0.5*(3.0-sqrt(5.0))
+    a, b = x1, x2
+    v = a + c*(b-a)
+    w, xf = v, v
+    d = e = 0.0
+    x = xf
+    fx = func(x,*args)
+    num = 1
+    fmin_data = (1, xf, fx)
+    if disp > 2:
+        print (" ")
+        print (header)
+        print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
+
+    fv = fw = fx
+    xm = 0.5*(a+b)
+    tol1 = seps*abs(xf) + xtol / 3.0
+    tol2 = 2.0*tol1
+
+    maxcount = maxfun
+    # Main loop
+
+    while ( abs(xf-xm) > (tol2 - 0.5*(b-a)) ):
+        gs = 1
+        # Check for parabolic fit
+        if abs(e) > tol1:
+            gs = 0
+            r = (xf-w)*(fx-fv)
+            q = (xf-v)*(fx-fw)
+            p = (xf-v)*q - (xf-w)*r
+            q = 2.0*(q-r)
+            if q > 0.0: p = -p
+            q = abs(q)
+            r = e
+            e = d
+
+            # Check for acceptability of parabola
+            if ( (abs(p) < abs(0.5*q*r)) and (p > q*(a-xf)) and (p < q*(b-xf))):
+                d = (p+0.0) / q;
+                x = xf + d
+                step = '       parabolic'
+
+                if ((x-a) < tol2) or ((b-x) < tol2):
+                    si = Numeric.sign(xm-xf) + ((xm-xf)==0)
+                    d = tol1*si
+            else:      # do a golden section step
+                gs = 1
+
+        if gs:  # Do a golden-section step
+            if xf >= xm:
+                e=a-xf
+            else:
+                e=b-xf
+            d = c*e
+            step = '       golden'
+
+        si = Numeric.sign(d) + (d == 0)
+        x = xf + si*max([abs(d), tol1])
+        fu = func(x,*args)
+        num += 1
+        fmin_data = (num, x, fu)
+        if disp > 2:
+            print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
+                
+        if fu <= fx:
+            if x >= xf:
+                a = xf
+            else:
+                b = xf
+            v, fv = w, fw
+            w, fw = xf, fx
+            xf, fx = x, fu
+        else:
+            if x < xf:
+                a = x
+            else:
+                b = x
+            if (fu <= fw) or (w == xf):
+                v, fv = w, fw
+                w, fw = x, fu
+            elif (fu <= fv) or (v == xf) or (v == w):
+                v, fv = x, fu
+
+        xm = 0.5*(a+b)
+        tol1 = seps*abs(xf) + xtol/3.0
+        tol2 = 2.0*tol1
+
+        if num >= maxcount:
+            flag = 0
+            fval = fx
+            if disp > 0:
+                _endprint(x, flag, fval, maxfun, tol, disp)
+            if full_output:
+                return xf, fval, flag, num
+            else:
+                return xf
+
+    fval = fx
+    if disp > 0:
+        _endprint(x, flag, fval, maxfun, xtol, disp)
+    
+    if full_output:
+        return xf, fval, flag, num
+    else:
+        return xf
+
+
+def _endprint(x, flag, fval, maxfun, xtol, disp):
+    if flag == 1:
+        if disp > 1:
+            print "\nOptimization terminated successfully;\n the returned value" + \
+                  " satisfies the termination criteria\n (using xtol = ", xtol, ")"
+    if flag == 0:
+        print "\nMaximum number of function evaluations exceeded --- increase maxfun argument.\n"
+    return
+            
 if __name__ == "__main__":
     import string
     import time
