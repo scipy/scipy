@@ -548,7 +548,7 @@ def write_palette(tofile,pal):
             pal = pal[:,0]
         palsize = pal.shape
     if len(palsize) == 1:
-        pal = multiply.outer(pal,ones((3,),pal.typecode()))
+        pal = Numeric.multiply.outer(pal,ones((3,),pal.typecode()))
         palsize = pal.shape
     if not (palsize[1] == 3 or palsize[0] == 3):
         raise TypeError, "If input is 2-d, the length of at least one dimension must be 3."

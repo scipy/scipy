@@ -11,7 +11,7 @@ import scipy
 from scipy.stats import mean
 import Numeric
 from Numeric import array, asarray, arange, where, sqrt, rank, zeros
-from umath import *
+from scipy_base.fastumath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}

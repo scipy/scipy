@@ -67,11 +67,11 @@
     ss2zpk -- state-space to pole-zero-gain.    
 """
 import sigtools
+from waveforms import *
 from signaltools import *
 from bsplines import *
 from filter_design import *
 from ltisys import *
-from waveforms import *
 
 #---- testing ----#
 def test(level=10):
