@@ -40,10 +40,8 @@ from gist import *
 import os, sys
 from Mplot import *
 from write_style import *
-import scipy_base
-base_file = os.path.split(scipy_base.__file__)[0]
-gistpath = os.path.join(base_file[:-5],'xplt','gistdata')
-os.environ['GISTPATH'] = gistpath
+
+os.environ['GISTPATH'] = os.path.join(os.path.dirname(__file__),'gistdata')
 
 display = os.environ.get('DISPLAY')
 
