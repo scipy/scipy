@@ -95,6 +95,11 @@ def mmread(source):
 
     rows,cols,entries,rep,field,symm = mminfo(source)
 
+    try:
+        from scipy.sparse import coo_matrix
+    except ImportError:
+        coo_matrix = None
+
     if rep == 'array':
         if field=='integer':
             a = zeros((rows,cols),typecode='i')
@@ -131,9 +136,9 @@ def mmread(source):
                 else:
                     i = j
         assert i in [0,j] and j==cols,`i,j,rows,cols`
-    elif rep=='coordinate':
-        # Temporary code:
-        # Read sparse matrix to dense until spmatrix could be used.
+
+    elif rep=='coordinate' and coo_matrix is None:
+        # Read sparse matrix to dense when coo_matrix is not available.
         if field=='integer':
             a = zeros((rows,cols),typecode='i')
         elif field=='real':
@@ -167,7 +172,40 @@ def mmread(source):
                     a[j,i] = conj(aij)
             k = k + 1
         assert k==entries,`k,entries`
-        entries = rows*cols
+    elif rep=='coordinate':
+        line = 1
+        k = 0
+        data,row,col = [],[],[]
+        while line:
+            line = source.readline()
+            if not line or line.startswith('%'):
+                continue
+            l = line.strip().split()
+            i,j = map(eval,l[:2])
+            i,j = i-1,j-1
+            if field=='complex':
+                aij = complex(*map(eval,l[2:]))
+            else:
+                aij = eval(l[2])
+            row.append(i)
+            col.append(j)
+            data.append(aij)
+            if i!=j:
+                if symm=='symmetric':
+                    row.append(j)
+                    col.append(i)
+                    data.append(aij)
+                elif symm=='skew-symmetric':
+                    row.append(j)
+                    col.append(i)
+                    data.append(-aij)
+                elif symm=='hermitian':
+                    row.append(j)
+                    col.append(i)
+                    data.append(conj(aij))
+            k = k + 1
+        assert k==entries,`k,entries`
+        a = coo_matrix(data,(row,col),M=rows,N=cols)
     else:
         raise NotImplementedError,`rep`
 

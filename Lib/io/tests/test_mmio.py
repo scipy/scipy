@@ -16,8 +16,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_rectangular(self):
@@ -25,8 +24,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,3,6,'array','integer','general'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,3,6))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_rectangular_real(self):
@@ -34,8 +32,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(3,2,6,'array','real','general'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(3,2,6))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_real(self):
@@ -43,8 +40,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','real','general'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_complex(self):
@@ -52,8 +48,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','complex','general'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_symmetric(self):
@@ -61,8 +56,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','integer','symmetric'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_skew_symmetric(self):
@@ -70,8 +64,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','integer','skew-symmetric'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_skew_symmetric_float(self):
@@ -79,8 +72,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','real','skew-symmetric'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_simple_hermitian(self):
@@ -88,8 +80,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','complex','hermitian'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(2,2,4))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_random_symmetric_real(self):
@@ -99,8 +90,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(20,20,400,'array','real','symmetric'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(20,20,400))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
     def check_random_rect_real(self):
@@ -109,8 +99,7 @@ class test_mmio_array(ScipyTestCase):
         fn = mktemp()
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(20,15,300,'array','real','general'))
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(20,15,300))
+        b = mmread(fn)
         assert_array_almost_equal(a,b)
 
 _exmpl_mtx = '''\
@@ -160,8 +149,7 @@ class test_mmio_coordinate(ScipyTestCase):
              [0,    0,    .015,      0,      0],
              [0,  250.5,    0,     -280,    33.32],
              [0,    0,      0,       0,     12]]
-        b,m,n,s = mmread(fn)
-        assert_equal((m,n,s),(5,5,25))
+        b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
         
 if __name__ == "__main__":
