@@ -1,11 +1,17 @@
 #!/usr/bin/env python
-# Usage:
-#   In the parent directory run
-#     python setup_linalg.py build --build-platlib=.
-#     python -c 'import linalg;linalg.test(1)'
 #
 # Created by: Pearu Peterson, April 2002
 #
+
+__usage__ = """
+Build linalg:
+  python setup_linalg.py build
+Run tests if scipy is installed:
+  python -c 'import scipy;scipy.linalg.test(<level>)'
+Run tests if linalg is not installed:
+  python tests/test_blas.py [<level>]
+"""
+
 
 from Numeric import arange, add, array
 import math
@@ -16,14 +22,14 @@ from scipy_test.testing import ScipyTestCase
 import unittest
 from scipy_distutils.misc_util import PostponedException
 
-import os,sys
-d = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0,d)
-#import cblas
-#import fblas
-try: import fblas
+import sys,os
+from scipy_test.testing import get_package_path
+if __name__ == "__main__":
+    __file__ = sys.argv[0]
+sys.path.insert(0,get_package_path(__file__))
+try: from linalg import fblas
 except: fblas = PostponedException()
-try: import cblas
+try: from linalg import cblas
 except: cblas = PostponedException()
 del sys.path[0]
 
@@ -140,12 +146,37 @@ def test_suite(level=1):
             suites.append( unittest.makeSuite(test_fblas1_simple,'check_') )
             suites.append( unittest.makeSuite(test_fblas2_simple,'check_') )
             suites.append( unittest.makeSuite(test_fblas3_simple,'check_') )
+        else:
+            print """
+****************************************************************
+WARNING: Importing fblas failed with the following exception:
+-----------
+%s
+-----------
+See scipy/INSTALL.txt for troubleshooting.
+****************************************************************
+""" %(fblas.__doc__)
         if not isinstance(cblas,PostponedException):
             suites.append( unittest.makeSuite(test_cblas1_simple,'check_') )
+        else:
+            print """
+****************************************************************
+WARNING: Importing cblas failed with the following exception:
+-----------
+%s
+-----------
+See scipy/INSTALL.txt for troubleshooting.
+Note that if atlas library is not found by scipy/system_info.py,
+then scipy skips building cblas and uses fblas instead.
+****************************************************************
+""" %(cblas.__doc__)
 
-    import test_fblas
-    suite = test_fblas.test_suite(level)
-    suites.append(suite)
+    if not isinstance(fblas,PostponedException):
+        sys.path.insert(0,os.path.dirname(__file__))
+        import test_fblas
+        del sys.path[0]
+        suite = test_fblas.test_suite(level)
+        suites.append(suite)
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
@@ -154,3 +185,10 @@ def test(level=10):
     runner = unittest.TextTestRunner()
     runner.run(all_tests)
     return runner
+
+if __name__ == "__main__":
+    if len(sys.argv)>1:
+        level = eval(sys.argv[1])
+    else:
+        level = 1
+    test(level)

@@ -17,11 +17,14 @@
 
 from Numeric import *
 from scipy_base.fastumath import *
-#import scipy.linalg.fblas as fblas
 
-#import sys
-#sys.path.append('..')
-import fblas
+import sys,os
+from scipy_test.testing import get_package_path
+if __name__ == "__main__":
+    __file__ = sys.argv[0]
+sys.path.insert(0,get_package_path(__file__))
+from linalg import fblas
+del sys.path[0]
 
 import unittest
 from scipy_test.testing import assert_array_equal, assert_array_almost_equal

@@ -15,12 +15,10 @@ except: fblas = PostponedException()
 try:
     import cblas
     if isinstance(fblas,PostponedException):
-        print fblas.__doc__  # XXX: make it a warning
         fblas = cblas
 except:
     cblas = PostponedException()
     if not isinstance(fblas,PostponedException):
-        print cblas.__doc__  # XXX: make it a warning
         cblas = fblas
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..

@@ -16,12 +16,10 @@ except: flapack = PostponedException()
 try:
     import clapack
     if isinstance(flapack,PostponedException):
-        warnings.warn(flapack.__doc__)
         flapack = clapack
 except:
     clapack = PostponedException()
     if not isinstance(flapack,PostponedException):
-        warnings.warn(clapack.__doc__)
         clapack = flapack
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
@@ -62,3 +60,13 @@ def get_lapack_funcs(names,arrays=(),debug=0):
         func.typecode = typecode
         funcs.append(func)
     return tuple(funcs)
+
+################## test functions #########################
+
+def test(level=10):
+    from scipy_test.testing import module_test
+    module_test(__name__,__file__,level=level)
+
+def test_suite(level=1):
+    from scipy_test.testing import module_test_suite
+    return module_test_suite(__name__,__file__,level=level)    
