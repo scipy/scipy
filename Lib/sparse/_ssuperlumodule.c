@@ -23,8 +23,8 @@
 #include <setjmp.h>
 #include "Python.h"
 #include "Numeric/arrayobject.h"
-#include "SuperLU2.0/SRC/ssp_defs.h"
-#include "SuperLU2.0/SRC/util.h"
+#include "SuperLU/SRC/ssp_defs.h"
+#include "SuperLU/SRC/util.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
 
@@ -38,15 +38,34 @@ static int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArray
   err += (nzvals->nd != 1);
   err += (nnz > nzvals->dimensions[0]);
   if (err) {
-    PyErr_SetString(PyExc_TypeError, "Fourth argument must be a 1-D float array at least as big as third argument.");
+    PyErr_SetString(PyExc_TypeError, "Fifth argument must be a 1-D float array at least as big as fourth argument.");
     return retval;
   }
 
   if (setjmp(_superlu_py_jmpbuf)) return retval;
-  else sCreate_CompRow_Matrix(A, m, n, nnz, (float *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _S, GE);
+  else sCreate_CompRow_Matrix(A, m, n, nnz, (float *)nzvals->data, (int *)colind->data, (int *)rowptr->data, SLU_NR, SLU_S, SLU_GE);
   retval = 0;
   return retval;
 }
+
+static int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArrayObject *nzvals, PyArrayObject *rowind, PyArrayObject *colptr)
+{
+  int retval = -1, err=0;
+
+  err = (nzvals->descr->type_num != PyArray_FLOAT);
+  err += (nzvals->nd != 1);
+  err += (nnz > nzvals->dimensions[0]);
+  if (err) {
+    PyErr_SetString(PyExc_TypeError, "Fifth argument must be a 1-D float array at least as big as fourth argument.");
+    return retval;
+  }
+
+  if (setjmp(_superlu_py_jmpbuf)) return retval;
+  else sCreate_CompCol_Matrix(A, m, n, nnz, (float *)nzvals->data, (int *)rowind->data, (int *)colptr->data, SLU_NC, SLU_S, SLU_GE);
+  retval = 0;
+  return retval;
+}
+
 
 static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
 {
@@ -72,108 +91,79 @@ static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
   }
 
   if (setjmp(_superlu_py_jmpbuf)) return -1;
-  else sCreate_Dense_Matrix(X, m, n, (float *)aX->data, ldx, DN, _S, GE);
+  else sCreate_Dense_Matrix(X, m, n, (float *)aX->data, ldx, SLU_DN, SLU_S, SLU_GE);
 
   return 0;
-}
-
-static PyObject *Numeric_from_Dense(SuperMatrix *B)
-{
-  PyArrayObject *aB;
-  DNformat *Bstore;
-  int nd, dims[2];
-
-  nd = 1 + (B->ncol > 1);
-  
-  if (nd == 1) {
-    dims[0] = B->nrow;
-  }
-  else {  /* nd == 2 */
-    dims[0] = B->ncol;
-    dims[1] = B->nrow;
-  }
-  Bstore = (DNformat *) B->Store;
-  /* This uses data whose nzval storage was allocated with Numeric to begin
-   * with, so we use .....DimsAndData 
-   */
-  aB = (PyArrayObject *)PyArray_FromDimsAndData(nd, dims, PyArray_FLOAT, (char *)Bstore->nzval);
-  
-  return (PyObject *)aB;
 }
 
 static char doc_sgssv[] = "Direct inversion of sparse matrix.\n\nX = sgssv(A,B) solves A*X = B for X.";
 
 static PyObject *Py_sgssv (PyObject *self, PyObject *args, PyObject *kwdict)
 {
-  PyObject *Py_B=NULL, *perm_c=NULL, *Py_X=NULL;
-  PyArrayObject *aperm_c=NULL, *aperm_r=NULL, *nzvals=NULL;
+  PyObject *Py_B=NULL, *Py_X=NULL;
+  PyArrayObject *nzvals=NULL;
   PyArrayObject *colind=NULL, *rowptr=NULL;
   int M, N, nnz;
-  int info, dims[1], full_output=0;
+  int info, full_output=0;
+  int csc;
+  int *perm_r=NULL, *perm_c=NULL;
   SuperMatrix A, B, L, U;
-  
-  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "perm_c","full_output",NULL};
+  superlu_options_t options;
+  SuperLUStat_t stat;
+
+  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "full_output",NULL};
 
   /* Get input arguments */
-  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|Oi", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &perm_c, &full_output))
+  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|ii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &full_output))
     return NULL;
+
+  superlu_flag_new_keys();
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_FLOAT,1,2);
   if (Py_X == NULL) goto fail;
-  if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail; 
-  if (Dense_from_Numeric(&B, Py_X)) goto fail;
-
-  if (perm_c == NULL) {
-    dims[0] = A.nrow;
-    aperm_c = (PyArrayObject *)PyArray_FromDims(1,dims,PyArray_INT);
-    /*
-     * Get column permutation vector perm_c[], according to permc_spec:
-     *   permc_spec = 0: use the natural ordering
-     *   permc_spec = 1: use minimum degree ordering on structure of A'*A
-     *   permc_spec = 2: use minimum degree ordering on structure of A'+A
-     */                                                                  
-    if (aperm_c == NULL) goto fail;
-    get_perm_c(0, &A, (int *)aperm_c->data);
+  if (csc) {
+      if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail;
   }
   else {
-    aperm_c = (PyArrayObject *)PyArray_ContiguousFromObject(perm_c,PyArray_INT,1,1);
-    if (aperm_c == NULL) goto fail;
-    dims[0] = aperm_c -> dimensions[0];
-    if (dims[0] != A.nrow) {
-      char msg[256];
-      sprintf(msg, "Permuation vector should be of size %d", A.nrow);
-      PyErr_SetString(PyExc_ValueError, msg);
-      goto fail;
-    }
+      if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail; 
   }
-  dims[0] = A.ncol;
-  aperm_r = (PyArrayObject *)PyArray_FromDims(1,dims,PyArray_INT);
-  if (aperm_r == NULL) goto fail;  
+
+  if (Dense_from_Numeric(&B, Py_X)) goto fail;
+
+  /* B and Py_X  share same data now but Py_X "owns" it */
+    
+  /* Setup options */
+  
+  if (setjmp(_superlu_py_jmpbuf)) goto fail;
+  else {
+      perm_c = intMalloc(N);
+      perm_r = intMalloc(M);
+      set_default_options(&options);
+      options.ColPerm = NATURAL;
+      StatInit(&stat);
 
   /* Compute direct inverse of sparse Matrix */
-  if (setjmp(_superlu_py_jmpbuf)) goto fail;
-  else sgssv(&A, (int *)aperm_c->data, (int *)aperm_r->data, &L, &U, &B, &info);
+      sgssv(&options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
+  }
 
+  SUPERLU_FREE(perm_r);
+  SUPERLU_FREE(perm_c);
+  if (csc) Destroy_CompCol_Matrix(&A);
+  else Destroy_CompRow_Matrix(&A);
+  Destroy_SuperMatrix_Store(&B);
+  Destroy_SuperNode_Matrix(&L);
+  Destroy_CompCol_Matrix(&U);
+  StatFree(&stat);
 
-  Py_DECREF(aperm_c);
-  Py_DECREF(aperm_r);
-  /* Output results (jsut solution for now)*/
   if (full_output)
-    Py_X = Py_BuildValue("Ni",Numeric_from_Dense(&B),info);
+      return Py_BuildValue("Ni", Py_X, info);
   else
-    Py_X = Numeric_from_Dense(&B);
+      return Py_X;
 
-  /* Delete all memory allocated in calls to SuperLU routines */
-  superlu_delete_allkeys();
-
-  return Py_X;
-    
  fail:
-  superlu_delete_allkeys();
+  superlu_delete_newkeys();  /* in case ABORT called inside SuperLU routine */
   Py_XDECREF(Py_X);
-  Py_XDECREF(aperm_c);
-  Py_XDECREF(aperm_r);
   return NULL;
 }
 

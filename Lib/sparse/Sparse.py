@@ -35,8 +35,165 @@ _transtabl = {'f':'s','d':'d','F':'c','D':'z'}
 # a = spmatrix(data,row,col{,M,N,nzmax})
 #   Create a sparse matrix with non-zero elements data
 #     using a[row[i],col[i]] = data[i]
-#
 
+
+#   A simple "dictionary-based" sparse matrix.
+#   keys must be 2-tuples of any object.  The object must have __int__ defined to return integer
+#   should also define __cmp__ as well to compare the integer-based keys
+
+
+def csc_cmp(x,y):
+    if (x == y): return 0
+    elif (x[1] == y[1]):
+        if (x[0] > y[0]): return 1
+        elif (x[0] == y[0]): return 0
+        else: return -1
+    elif (x[1] > y[1]): return 1
+    else: return -1
+        
+
+class dictmatrix(dict):
+    def __init__(self):
+        dict.__init__(self)
+        self.shape = (0,0)
+        self.storage = 'dict'
+        self.data = {}
+
+    def __getitem__(self, key):
+        return self.get(key,0)
+
+    def __setitem__(self, key, value):
+        if (value == 0):
+            return
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise KeyError, "Key must be a 2-tuple"
+        dict.__setitem__(self, key, value)
+        newrows = max(self.shape[0], int(key[0])+1)
+        newcols = max(self.shape[1], int(key[1])+1)
+        self.shape = (newrows, newcols)
+    
+    def __add__(self, other):
+        res = dictmatrix()
+        res.update(self)
+        for key in other.keys():
+            try:
+                res[key] += other[key]
+            except KeyError:
+                res[key] = other[key]
+        return res
+
+    def __sub__(self, other):
+        res = dictmatrix()
+        res.update(self)
+        for key in other.keys():
+            try:
+                res[key] -= other[key]
+            except KeyError:
+                res[key] = -other[key]
+        return res
+    
+    def __neg__(self):
+        res = dictmatrix()
+        for key in self.keys():
+            res[key] = -self[key]
+        return res
+
+    def __mul__(self, other):
+        if (isinstance(other, list) or (isinstance(other, ArrayType) and rank(other)==1) and \
+            len(other)==self.shape[1]):
+            return self.matvec(other)
+        
+        res = dictmatrix()
+        for key in self.keys():
+            res[key] = other * self[key]
+        return res
+
+    def __len__(self):
+        return len(self.keys())
+
+    def take(self, cols_or_rows, columns=1):
+        # Extract columns or rows as indictated from matrix
+        res = dictmatrix()
+        indx = int((columns == 1))
+        for key in self.keys():
+            if key[indx] in cols_or_rows:
+                res[key] = self[key]
+        return res
+
+    def matvec(self, other):
+        if len(other) != self.shape[1]:
+            raise ValueError, "Dimensions do not match."
+        keys = self.keys()
+        res = [0]*self.shape[0]
+        for key in keys:
+            res[int(key[0])] += self[key] * other[int(key[1])]
+        return array(res)        
+
+    def setdiag(self, values, k=0):
+        N = len(values)
+        for n in range(N):
+            self[n,n+k] = values[n]
+        return
+
+    def getCSR(self):
+        # Return Compressed Sparse Row format arrays for this matrix
+        keys = self.keys()
+        keys.sort()
+        nnz = len(keys)
+        data = [None]*nnz
+        colind = [None]*nnz
+        row_ptr = [None]*(self.shape[0]+1)
+        current_row = -1
+        k = 0
+        for key in keys:
+            ikey0 = int(key[0])
+            ikey1 = int(key[1])
+            if ikey0 != current_row:
+                current_row = ikey0
+                row_ptr[ikey0] = k
+            data[k] = self[key]
+            colind[k] = ikey1
+            k += 1
+        row_ptr[-1] = nnz+1
+        data = array(data)
+        colind = array(colind)
+        row_ptr = array(row_ptr)
+        ftype = data.typecode()
+        if ftype not in ['d','D','f','F']:
+            data = data*1.0
+            ftype = 'd'
+        return ftype, nnz, data, colind, row_ptr
+
+    def getCSC(self):
+        # Return Compressed Sparse Row format arrays for this matrix
+        keys = self.keys()
+        keys.sort(csc_cmp)
+        nnz = len(keys)
+        data = [None]*nnz
+        rowind = [None]*nnz
+        col_ptr = [None]*(self.shape[1]+1)
+        current_col = -1
+        k = 0
+        for key in keys:
+            ikey0 = int(key[0])
+            ikey1 = int(key[1])
+            if ikey1 != current_col:
+                current_col = ikey1
+                col_ptr[ikey1] = k
+            data[k] = self[key]
+            rowind[k] = ikey0
+            k += 1
+        col_ptr[-1] = nnz+1
+        data = array(data)
+        rowind = array(rowind)
+        col_ptr = array(col_ptr)
+        ftype = data.typecode()
+        if ftype not in ['d','D','f','F']:
+            data = data*1.0
+            ftype = 'd'
+        return ftype, nnz, data, rowind, col_ptr
+
+               
 class spmatrix:
     def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,
                  typecode=Float):
@@ -287,6 +444,9 @@ class spmatrix:
             new = self
         new.data = conjugate(self.data)
         return new
+
+    def getCSR(self):
+        return A.ftype, A.lastel+1, A.data, A.index[0]-1, A.index[1]-1
             
 def isspmatrix(x):
     return hasattr(x,'__class__') and x.__class__ is spmatrix
@@ -329,13 +489,24 @@ def spdiags(diags,offsets,m,n):
     return s
 
 def sparse_linear_solve(A,b):
-    assert isspmatrix(A)
-    assert A.storage=='CSR'
-    gssv = eval('_superlu.' + A.ftype + 'gssv')
-    return gssv(A.shape[0],A.shape[1],A.lastel+1,A.data,A.index[0]-1,A.index[1]-1,b)
+    if not hasattr(A, 'getCSR') and not hasattr(A, 'getCSC'):
+        raise ValueError, "Sparse matrix must be able to return CSC format--"\
+              "A.getCSC()--or CSR format--A.getCSR()"
+    if not hasattr(A,'shape'):
+        raise ValueError, "Sparse matrix must be able to return shape (rows,cols) = A.shape"
+    if hasattr(A, 'getCSC'):
+        ftype, lastel, data, index0, index1 = A.getCSC()
+        csc = 1
+    else:
+        ftype, lastel, data, index0, index1 = A.getCSR()
+        csc = 0
+    M,N = A.shape
+    gssv = eval('_superlu.' + ftype + 'gssv')
+    return gssv(M,N,lastel,data,index0,index1,b,csc)
     
 
 splinsolve = sparse_linear_solve
+solve = splinsolve
 
 if __name__ == "__main__":
     a = spmatrix(arange(1,9),[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4])

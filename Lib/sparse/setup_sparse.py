@@ -22,13 +22,16 @@ def configuration(parent_package='',parent_path=None):
     if not lapack_opt:
         raise NotFoundError,'no lapack/blas resources found'
 
-    superlu = ('superlu_src',{'sources':local_glob('SuperLU2.0','SRC','*.c')})
-    myblas = ('superlu_cblas_src',{'sources':local_glob('SuperLU2.0',
-                                                        'CBLAS','*.c')})
+    if sys.platform=='win32':
+        superlu_defs = [('NO_TIMER',1)]
+    else:
+        superlu_defs = []
+    superlu_defs.append(('USE_VENDOR_BLAS',1))
+    superlu = ('superlu_src',{'sources':local_glob('SuperLU','SRC','*.c'),'macros':superlu_defs})
 
     sparsekit = ('sparsekit_src',{'sources':local_glob('sparsekit','*.f')})
 
-    #SuperLU2.0/SRC/util.h  has been modifed to use these by default
+    #SuperLU/SRC/util.h  has been modifed to use these by default
     #macs = [('USER_ABORT','superlu_python_module_abort'),
     #        ('USER_MALLOC','superlu_python_module_malloc'),
     #        ('USER_FREE','superlu_python_module_free')]
@@ -37,7 +40,7 @@ def configuration(parent_package='',parent_path=None):
     sources = ['_zsuperlumodule.c','_superlu_utils.c']
     ext_args = {'name':dot_join(parent_package,package,'_zsuperlu'),
                 'sources':map(local_join,sources),
-                'libraries': [superlu,myblas]
+                'libraries': [superlu],
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -46,7 +49,7 @@ def configuration(parent_package='',parent_path=None):
     sources = ['_dsuperlumodule.c','_superlu_utils.c']
     ext_args = {'name':dot_join(parent_package,package,'_dsuperlu'),
                 'sources':map(local_join,sources),
-                'libraries': [superlu,myblas]
+                'libraries': [superlu],
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -55,7 +58,7 @@ def configuration(parent_package='',parent_path=None):
     sources = ['_csuperlumodule.c','_superlu_utils.c']
     ext_args = {'name':dot_join(parent_package,package,'_csuperlu'),
                 'sources':map(local_join,sources),
-                'libraries': [superlu,myblas]
+                'libraries': [superlu],
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -64,7 +67,7 @@ def configuration(parent_package='',parent_path=None):
     sources = ['_ssuperlumodule.c','_superlu_utils.c']
     ext_args = {'name':dot_join(parent_package,package,'_ssuperlu'),
                 'sources':map(local_join,sources),
-                'libraries': [superlu,myblas]
+                'libraries': [superlu],
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)

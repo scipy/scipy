@@ -4,8 +4,39 @@
 
 jmp_buf _superlu_py_jmpbuf;
 PyObject *_superlumodule_memory_dict=NULL;
+PyObject *_superlumodule_newmemory_list=NULL;
+int _superlumodule_flagnewmemory=0;
 
-void superlu_delete_allkeys() 
+void superlu_flag_new_keys()
+{
+  _superlumodule_flagnewmemory = 1;
+}
+
+void superlu_delete_newkeys()
+{
+  PyObject *keys=NULL, *key=NULL;
+  void *mem_ptr;
+  int i, N;
+ 
+  if (_superlumodule_memory_dict == NULL) {return;}
+  if (_superlumodule_newmemory_list == NULL) {return;}
+  keys = _superlumodule_newmemory_list;
+
+  N = PyList_Size(keys);
+  for (i = 0; i < N; i++) {
+    key = PyList_GET_ITEM(keys, i);
+    mem_ptr = (void *)PyInt_AS_LONG((PyIntObject *)key);
+    /* Only free if key not already removed from dictionary */
+    if (!(PyDict_DelItem(_superlumodule_memory_dict, key)))
+        free(mem_ptr);
+  }
+  
+  Py_XDECREF(keys);
+  _superlumodule_flagnewmemory=0;
+}
+
+
+void superlu_delete_allkeys()
 {
   PyObject *keys=NULL, *key=NULL;
   void *mem_ptr;
@@ -27,7 +58,7 @@ void superlu_delete_allkeys()
 
 /* Abort to be used inside the superlu module so that memory allocation 
    errors don't exit Python and memory allocated internal to SuperLU is freed.
-   This should free all the pointers in the dictionary of allocated memory.
+   Calling program should free all the pointers in the dictionary of allocated memory.
 */
 
 void superlu_python_module_abort(char *msg)
@@ -45,12 +76,18 @@ void *superlu_python_module_malloc(size_t size)
   if (_superlumodule_memory_dict == NULL) {
     _superlumodule_memory_dict = PyDict_New();
   }
+  if ((_superlumodule_flagnewmemory) & (_superlumodule_newmemory_list == NULL)) {
+    _superlumodule_newmemory_list = PyList_New(0);
+  }
   mem_ptr = malloc(size);
   keyval = (long) mem_ptr;
   if (mem_ptr == NULL) return NULL;
   key = PyInt_FromLong(keyval);
   if (key == NULL) goto fail;
   if (PyDict_SetItem(_superlumodule_memory_dict, key, Py_None)) goto fail;
+  if (_superlumodule_flagnewmemory) {
+    if (PyList_Append(_superlumodule_newmemory_list, key)) goto fail;
+  }
   Py_DECREF(key);
   return mem_ptr;
 
@@ -58,6 +95,7 @@ void *superlu_python_module_malloc(size_t size)
   Py_XDECREF(key);
   free(mem_ptr);
   superlu_python_module_abort("superlu_malloc: Cannot set dictionary key value in malloc.");
+  return NULL;
  
 }
 
