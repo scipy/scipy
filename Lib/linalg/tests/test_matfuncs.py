@@ -22,7 +22,7 @@ set_package_path()
 import scipy_base
 from scipy_base import dot,sqrt
 import linalg
-from linalg import signm,logm,funm, sqrtm
+from linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
 del sys.path[0]
 
 import unittest
@@ -99,6 +99,12 @@ class test_sqrtm(ScipyTestCase):
         esa = sqrtm(a)
         assert_array_almost_equal(dot(esa,esa),a)
 
+class test_expm(ScipyTestCase):
+    def check_zero(self):
+        a = array([[0.,0],[0,0]])
+        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
+        assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
 if __name__ == "__main__":
-    ScipyTest('linalg.matfuncs').run()
+    ScipyTest().run()

@@ -8,7 +8,7 @@ __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
 from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
-     isfinite, sqrt
+     isfinite, sqrt, identity
 from Matrix import Matrix as mat
 import scipy_base as sb
 from basic import solve, LinAlgError, inv, norm, triu, all_mat
@@ -28,7 +28,10 @@ def expm(A,q=7):
         A.savespace(0)
  
     # Scale A so that norm is < 1/2
-    val = log2(norm(A,Inf))
+    nA = norm(A,Inf)
+    if nA==0:
+        return identity(len(A), A.typecode())
+    val = log2(nA)
     e = int(floor(val))
     j = max(0,e+1)
     A = A / 2.0**j
