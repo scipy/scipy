@@ -381,11 +381,13 @@ class machine_cluster:
     # array specific routines
     def row_split(self,name,sequence):
         """experimental"""
-        q=scipy.split(a,len(self.workers))
-        herd.cluster.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),global_vars=(name,))
-    def row_rather(self,name):
+        import scipy
+	q=scipy.split(sequence,len(self.workers))
+        self.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),global_vars=(name,))
+    def row_gather(self,name):
         """experimental"""
-        concatenate(herd.cluster.[name])
+        from Numeric import concatenate
+        return concatenate(self[name])
         
     def loop_send_recv(self,package,loop_data,loop_var):        
         #----------------------------------------------------
