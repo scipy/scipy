@@ -74,7 +74,8 @@ class config_pygist(config):
             return
 
         from distutils.ccompiler import new_compiler
-        self.compiler = new_compiler(verbose=1)
+        self.compiler = new_compiler(compiler=self.compiler,
+                                     verbose=1)
         from distutils.sysconfig import customize_compiler
         customize_compiler(self.compiler)
 
@@ -877,7 +878,20 @@ def configuration(parent_package=''):
        'site-packages/scipy/xplt/gistdata' 
     """
 
-    config_pygist().run()
+    conf = config_pygist()
+    # Look to see if compiler is set on command line and add it 
+    #    This is repeating code, but I'm not sure how to avoid it
+    #    As this gets run before overall setup does.
+    #    This is needed so that compiler can be over-ridden from the
+    #    platform default in the configuration section of xplt.
+    for arg in sys.argv[1:]:
+        if arg[:11] == '--compiler=':
+            conf.compiler = arg[11:]
+            break
+        if arg[:2] == '-c':
+            conf.compiler = arg[2:]
+            break
+    conf.run()
 
     package = 'xplt'
     print '***********************************************'
