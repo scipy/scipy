@@ -1,3 +1,7 @@
+#
+# Author: Travis Oliphant 2001
+#
+
 from filter_design import tf2zpk, zpk2tf, normalize
 from Numeric import product, zeros, asarray, concatenate, \
      array, dot, transpose
@@ -5,7 +9,7 @@ import Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy import r_, c_, eye
+from scipy import r_, c_, eye, max
 from scipy import r1array, r2array
 from scipy import poly, squeeze, Mat
 
@@ -242,13 +246,39 @@ def lsim(system, U, T, X0=None):
     return squeeze(transpose(yout)), T, xout
 
 
-def impulse(system, U, T, X0=None):
+def impulse(system, X0=None, T=None, N=None):
     if isinstance(system, lti):
         sys = system
     else:
         sys = lti(*system)
-    eA,B,C = map(Mat,(linalg.expm(sys.A), sys.B, sys.C))
-    
+    if X0 is None:
+        B = sys.B
+    else:
+        B = sys.B + X0
+    if N is None:
+        N = 100
+    if T is None:
+        vals = linalg.eigvals(A)
+        tc = 1.0/max(vals)
+        T = arange(0,5*tc,5*tc / float(N))
+    h = zeros(T.shape, sys.A.typecode())
+    for k in range(len(h)):
+        eA = Mat(linalg.expm(A*t))
+        B,C = map(Mat, (B,sys.C))
+        h[k] = (C*eA*B).A
+    return t, h
 
-def step(system, U, T, X0=None):
-    pass
+def step(system, X0=None, T=None, N=None):
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+    if N is None:
+        N = 100
+    if T is None:
+        vals = linalg.eigvals(A)
+        tc = 1.0/max(vals)
+        T = arange(0,5*tc,5*tc / float(N))
+    U = ones(T.shape, sys.A.typecode())
+    return lsim(sys, U, T, X0=X0)
+    
