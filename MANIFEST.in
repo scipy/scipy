@@ -8,4 +8,9 @@ include Lib/sparse/SuperLU/*.inc
 recursive-include Lib_chaco/freetype/freetype2 *.h *.c *.i
 recursive-include Lib/xplt/src *.h *.c
 recursive-include Lib/xplt/pygist *.h *.c *.py
+recursive-include Lib_chaco/kiva/agg/src *.h *.py
+recursive-include Lib_chaco/kiva/agg/examples *.py
+recursive-include Lib_chaco/kiva/agg/docs *
+recursive-include Lib_chaco/agg2 *
+recursive-include Lib_chaco/freetype *
 global-include *.txt .build_py_ignore
