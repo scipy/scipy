@@ -207,6 +207,18 @@ Fix:
   1) Remove scipy/linalg/clapack.pyf
   2) Rebuild/reinstall scipy.
 
+Using Intel Fortran Compiler
+----------------------------
+If import scipy shows a message
+
+  ImportError: undefined symbol: s_wsfe
+
+and you are using Intel Fortran compiler, then it means that any of
+the (may be system provided) Fortran libraries such as LAPACK or BLAS
+were compiled with g77. See also compilers notes above.
+Fix: Recompile all Fortran libraries with the Intel compiler and
+rebuild/reinstall scipy.
+
 
 TROUBLESHOOTING
 ===============
