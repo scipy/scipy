@@ -109,6 +109,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         ml = -1 # changed to zero inside function call
     if mu is None:
         mu = -1 # changed to zero inside function call
+    t = t.copy()
     output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
                              full_output, rtol, atol, tcrit, h0, hmax, hmin,
                              ixpr, mxstep, mxhnil, mxordn, mxords)

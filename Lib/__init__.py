@@ -1,4 +1,8 @@
-import gui_thread
+try:
+    import gui_thread
+except:
+    print "Warning:  wxPython not loaded"
+
 #get version
 import scipy_version
 __version__ = scipy_version.scipy_version
@@ -47,7 +51,7 @@ import fastumath
 
 __all__=[]
 
-Inf = inf = 1e308**10
+Inf = inf = MLab.array(1e308)**10
 NaN = nan = MLab.array(0.0) / MLab.array(0.0)
 objects2all(__all__, ['Inf','inf','NaN','nan', 'Mat'])
 somenames2all(__all__, _partials, globals())

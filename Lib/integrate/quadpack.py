@@ -4,6 +4,7 @@
 import _quadpack
 from common_routines import *
 import sys
+import MLab
 
 
 def quad_explain(output=sys.stdout):
@@ -113,7 +114,7 @@ Weighting the integrand:
     return
     
 
-Inf = 1e308**10
+Inf = MLab.array(1e308)**10
 inf = Inf
 	
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
