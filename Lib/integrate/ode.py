@@ -200,6 +200,7 @@ def find_integrator(name):
         if re.match(name,cl.__name__,re.I):
             print 'Found integrator',cl.__name__
             return cl
+    return
 
 class IntegratorBase:
 
