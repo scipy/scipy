@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os,sys
+import os,sys,re
 from distutils import dep_util
 from glob import glob
 import warnings
@@ -33,6 +33,18 @@ from scipy_distutils.system_info import get_info,dict_append,\
      AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
      LapackSrcNotFoundError,BlasSrcNotFoundError
 
+if os.name == 'nt':
+    def run_command(command):
+        """ not sure how to get exit status on nt. """
+        in_pipe,out_pipe = os.popen4(command)
+        in_pipe.close()
+        text = out_pipe.read()
+        return 0, text
+else:
+    import commands
+    run_command = commands.getstatusoutput
+
+
 def configuration(parent_package=''):
     package = 'linalg'
     from interface_gen import generate_interface
@@ -42,6 +54,25 @@ def configuration(parent_package=''):
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/BLAS; useful for testing
+    if atlas_info:
+        # Try to determine the version of ATLAS
+        cmd = '%s %s build_ext --inplace'%\
+              (sys.executable,
+               os.path.join(local_path,'setup_atlas_version.py'))
+        print cmd
+        s,o=run_command(cmd)
+        if not s:
+            cmd = sys.executable+' -c "import atlas_version"'
+            s,o=run_command(cmd)
+            atlas_version = None
+            if not s:
+                m = re.match(r'ATLAS version (?P<version>\d+[.]\d+[.]\d+)',o)
+                if m:
+                    atlas_version = m.group('version')
+            if atlas_version is None:
+                #XXX: detect ATLAS 3.2.1
+                pass
+            print atlas_version
     f_libs = []
     blas_info,lapack_info = {},{}
     if not atlas_info:
