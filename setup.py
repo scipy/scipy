@@ -62,7 +62,7 @@ def setup_package(ignore_packages=[]):
         from scipy_version import scipy_version
 
         # Uncomment when making releases:
-        if not command_sdist: scipy_version = '0.3'
+        #if not command_sdist: scipy_version = '0.3.1'
 
         packages_path = ['Lib']
         if command_sdist:
