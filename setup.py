@@ -2,11 +2,14 @@
 """
 Installing scipy:
   python setup.py install
-  python setup.py build build_flib install --fcompiler=Gnu
+  python setup.py fc_config --fcompiler=Gnu install
+
+Building extensions in-place:
+  python setup.py build_src build_ext --inplace
 
 Creating scipy distribution:
-  python setup.py sdist -f
-
+  python setup.py sdist -f            #-> Scipy_complete
+  python setup.py sdist_packagers -f  #-> Scipy and Scipy_core
 """
 
 import os
@@ -100,11 +103,6 @@ def setup_package(ignore_packages=[]):
 
 if __name__ == "__main__":
     ignore_packages = [
-        #'sparse',
-        #'kiva','freetype','chaco','traits',
+        # list of package names that will not be built.
         ]
-    if sys.platform in ['win32','cygwin']:
-        # Fix sparse on windows.
-        #ignore_packages.append('sparse')
-	pass
     setup_package(ignore_packages)
