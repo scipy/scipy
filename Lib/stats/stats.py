@@ -872,12 +872,15 @@ array (i.e., N-1).  Axis can equal None (ravel array first), or an
 integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    mn = expand_dims(mean(a,axis),axis)
+    #mn = expand_dims(mean(a,axis),axis+1)
+    mn = mean(a,axis)
+    mn_shape = list(shape(a))
+    mn_shape[axis] = 1
+    mn.shape = mn_shape
     deviations = a - mn
     n = a.shape[axis]
     var = ss(deviations,axis)/(n-1.0)
     return var
-
 
 def std (a, axis=-1):
     """
