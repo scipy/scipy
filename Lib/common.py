@@ -230,7 +230,7 @@ def lena():
     import cPickle, os
     fname = os.path.join(os.path.dirname(__file__),'plt','lena.dat')
     f = open(fname,'rb')
-    lena = scipy.array(cPickle.load(f))
+    lena = array(cPickle.load(f))
     f.close()
     return lena
 
