@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict
@@ -9,7 +11,8 @@ def configuration(parent_package=''):
     
     config = default_config_dict()
 
-    config['packages'].append(parent_package+'signal')
+    if parent_package:
+        config['packages'].append(parent_package+'signal')
     
     sources = ['sigtoolsmodule.c','firfilter.c','medianfilter.c']
     sources = [os.path.join(local_path,x) for x in sources]
@@ -23,3 +26,7 @@ def configuration(parent_package=''):
     config['ext_modules'].append(ext)
 
     return config
+
+if __name__ == '__main__':
+    from scipy_distutils.core import setup
+    setup(**configuration())
