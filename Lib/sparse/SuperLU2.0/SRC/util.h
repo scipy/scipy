@@ -9,7 +9,7 @@
 
 /* Macros */
 #ifndef USER_ABORT
-#define USER_ABORT(msg) superlu_abort_and_exit(msg)
+#define USER_ABORT(msg) superlu_python_module_abort(msg)
 #endif
 
 #define ABORT(err_msg) \
@@ -19,13 +19,13 @@
 
 
 #ifndef USER_MALLOC
-#define USER_MALLOC(size) superlu_malloc(size)
+#define USER_MALLOC(size) superlu_python_module_malloc(size)
 #endif
 
 #define SUPERLU_MALLOC(size) USER_MALLOC(size)
 
 #ifndef USER_FREE
-#define USER_FREE(addr) superlu_free(addr)
+#define USER_FREE(addr) superlu_python_module_free(addr)
 #endif
 
 #define SUPERLU_FREE(addr) USER_FREE(addr)
@@ -84,11 +84,11 @@ typedef struct {
 extern "C" {
 #endif
 
-extern void    superlu_abort_and_exit(char*);
-extern void    *superlu_malloc (int);
+extern void    superlu_python_module_abort(char*);
+extern void    *superlu_python_module_malloc (int);
 extern int     *intMalloc (int);
 extern int     *intCalloc (int);
-extern void    superlu_free (void*);
+extern void    superlu_python_module_free (void*);
 extern void    SetIWork (int, int, int, int *, int **, int **, int **,
                          int **, int **, int **, int **);
 extern void    StatInit(int, int);

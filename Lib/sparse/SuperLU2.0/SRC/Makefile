@@ -34,7 +34,7 @@ include ../make.inc
 
 ALLAUX = superlu_timer.o lsame.o util.o memory.o get_perm_c.o mmd.o \
 	 sp_coletree.o sp_preorder.o sp_ienv.o relax_snode.o \
-	 xerbla.o
+	 xerbla.o colamd.o
 
 SCLAUX = slamch.o
 
@@ -104,10 +104,10 @@ complex16: $(ZLUSRC) $(ALLAUX) $(DZLAUX)
 ##################################
 # Do not optimize this routine   #
 ##################################
-slamch.o: slamch.c ; $(CC) -c $<
-dlamch.o: dlamch.c ; $(CC) -c $<
+slamch.o: slamch.c ; $(CC) -c $(NOOPTS) $<
+dlamch.o: dlamch.c ; $(CC) -c $(NOOPTS) $<
 
-superlu_timer.o:  superlu_timer.c ; $(CC) -c $<
+superlu_timer.o:  superlu_timer.c ; $(CC) -c $(NOOPTS) $<
 
 .c.o:
 	$(CC) $(CFLAGS) $(CDEFS) $(BLASDEF) -c $< $(VERBOSE)

@@ -1,5 +1,5 @@
-		SuperLU Version 1.1
-		===================
+		SuperLU (Version 2.0)
+		=====================
 
 SuperLU contains a set of subroutines to solve a sparse linear system 
 A*X=B. It uses Gaussian elimination with partial pivoting (GEPP). 
@@ -66,7 +66,7 @@ on your system setup:
    is no faster implementation of the BLAS already available on your machine.
    In this case, you should do the following:
 
-    1) In SuperLU/make.inc, undefine BLASDEF, and define:
+    1) In SuperLU/make.inc, undefine (comment out) BLASDEF, and define:
           BLASLIB = ../blas$(PLAT).a
 
     2) Go to the SuperLU/ directory, type:

@@ -1,22 +1,23 @@
 #include <stdio.h>
 
+
 main()
 {
     /* Local variables */
-    float base, emin, prec, emax, rmin, rmax, t, sfmin;
-    extern double slamch_(char *);
-    float rnd, eps;
+    double base, emin, prec, emax, rmin, rmax, t, sfmin;
+    extern double dlamch_(char *);
+    double rnd, eps;
 
-    eps = slamch_("Epsilon");
-    sfmin = slamch_("Safe minimum");
-    base = slamch_("Base");
-    prec = slamch_("Precision");
-    t = slamch_("Number of digits in mantissa");
-    rnd = slamch_("Rounding mode");
-    emin = slamch_("Minnimum exponent");
-    rmin = slamch_("Underflow threshold");
-    emax = slamch_("Largest exponent");
-    rmax = slamch_("Overflow threshold");
+    eps = dlamch_("Epsilon");
+    sfmin = dlamch_("Safe minimum");
+    base = dlamch_("Base");
+    prec = dlamch_("Precision");
+    t = dlamch_("Number of digits in mantissa");
+    rnd = dlamch_("Rounding mode");
+    emin = dlamch_("Minnimum exponent");
+    rmin = dlamch_("Underflow threshold");
+    emax = dlamch_("Largest exponent");
+    rmax = dlamch_("Overflow threshold");
 
     printf(" Epsilon                      = %e\n", eps);
     printf(" Safe minimum                 = %e\n", sfmin);
@@ -29,6 +30,5 @@ main()
     printf(" Largest exponent             = %.0f\n", emax);
     printf(" Overflow threshold           = %e\n", rmax);
     printf(" Reciprocal of safe minimum   = %e\n", 1./sfmin);
-
     return 0;
 }

@@ -14,13 +14,18 @@ def configuration(parent_package=''):
 
     atlas_info = get_info('atlas')
 
-    superlu = glob(os.path.join(local_path,'SuperLU','SRC','*.c'))
+    superlu = glob(os.path.join(local_path,'SuperLU2.0','SRC','*.c'))
     superlu.append(os.path.join(local_path,'_superlu_utils.c'))
-    myblas = glob(os.path.join(local_path,'SuperLU','CBLAS','*.c'))
+    myblas = glob(os.path.join(local_path,'SuperLU2.0','CBLAS','*.c'))
     sparsekit = glob(os.path.join(local_path,'sparsekit','*.f'))
     #mach = glob(os.path.join(local_path,'mach','*.f'))
 
     head = [os.path.join(sys.prefix,'include','python%d.%d' %sys.version_info[:2])]
+
+    #SuperLU2.0/SRC/util.h  has been modifed to use these by default
+    #macs = [('USER_ABORT','superlu_python_module_abort'),
+    #        ('USER_MALLOC','superlu_python_module_malloc'),
+    #        ('USER_FREE','superlu_python_module_free')]
     
     # C libraries
     config['libraries'].append(('superlu',{'sources':superlu,

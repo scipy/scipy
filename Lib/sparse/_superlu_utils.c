@@ -3,16 +3,16 @@
 #include <setjmp.h>
 
 jmp_buf _superlu_py_jmpbuf;
-PyObject *_superlumodule_memory_dict;
+PyObject *_superlumodule_memory_dict=NULL;
 
 void superlu_delete_allkeys() 
 {
   PyObject *keys=NULL, *key=NULL;
   void *mem_ptr;
   int i;
-  
+ 
+  if (_superlumodule_memory_dict == NULL) {return;}
   keys = PyDict_Keys(_superlumodule_memory_dict);
-  if (keys == NULL) return;
   
   for (i = 0; i < PyList_Size(keys); i++) {
     key = PyList_GET_ITEM(keys, i);

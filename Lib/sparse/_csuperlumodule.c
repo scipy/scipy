@@ -23,8 +23,8 @@
 #include <setjmp.h>
 #include "Python.h"
 #include "Numeric/arrayobject.h"
-#include "SuperLU/SRC/csp_defs.h"
-#include "SuperLU/SRC/util.h"
+#include "SuperLU2.0/SRC/csp_defs.h"
+#include "SuperLU2.0/SRC/util.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
 extern PyObject *_superlumodule_memory_dict;

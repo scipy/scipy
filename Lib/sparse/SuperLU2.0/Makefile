@@ -9,6 +9,8 @@
 #  Creation date:   October 2, 1995
 #
 #  Modified:        February 4, 1997  Version 1.0
+#		    November 15, 1997 Version 1.1
+#		    September 1, 1999 Version 2.0
 #
 ############################################################################
 

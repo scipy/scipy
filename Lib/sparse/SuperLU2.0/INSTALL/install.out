@@ -1,0 +1,32 @@
+---- SINGLE PRECISION
+ Epsilon                      = 5.960464e-08
+ Safe minimum                 = 1.175494e-38
+ Base                         = 2
+ Precision                    = 1.192093e-07
+ Number of digits in mantissa = 24
+ Rounding mode                = 1
+ Minimum exponent             = -125
+ Underflow threshold          = 1.175494e-38
+ Largest exponent             = 128
+ Overflow threshold           = 3.402823e+38
+ Reciprocal of safe minimum   = 8.507059e+37
+
+---- DOUBLE PRECISION
+ Epsilon                      = 1.110223e-16
+ Safe minimum                 = 2.225074e-308
+ Base                         = 2
+ Precision                    = 2.220446e-16
+ Number of digits in mantissa = 53
+ Rounding mode                = 1
+ Minimum exponent             = -1021
+ Underflow threshold          = 2.225074e-308
+ Largest exponent             = 1024
+ Overflow threshold           = 1.797693e+308
+ Reciprocal of safe minimum   = 4.494233e+307
+
+---- TIMER
+Time for 1,000,000 DAXPY ops  =       0.03 seconds
+DAXPY performance rate        =       66.7 mflops
+Including DSECND, time        =       0.03 seconds
+Average time for DSECND       =   3.47e-19 milliseconds
+Equivalent floating point ops =   1.16e-14 ops
