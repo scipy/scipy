@@ -1,4 +1,4 @@
- import _minpack
+import _minpack
 from common_routines import *
 
 def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
