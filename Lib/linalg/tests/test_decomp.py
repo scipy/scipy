@@ -245,9 +245,11 @@ class test_cholesky(ScipyTestCase):
         assert_array_almost_equal(cholesky(a,lower=1),c)
 
     def check_simple_complex(self):
-        c = [[3,3+4j,5],[0,2,2+7j],[0,0,7]]
-        a = Numeric.dot(Numeric.transpose(Numeric.conjugate(c)),c)
-        assert_array_almost_equal(cholesky(a),c)
+        m = Numeric.array([[3+1j,3+4j,5],[0,2+2j,2+7j],[0,0,7+4j]])
+        a = Numeric.dot(Numeric.transpose(Numeric.conjugate(m)),m)
+        c = cholesky(a)
+        a1 = Numeric.dot(Numeric.transpose(Numeric.conjugate(c)),c)
+        assert_array_almost_equal(a,a1)
         c = Numeric.transpose(c)
         a = Numeric.dot(c,Numeric.transpose(Numeric.conjugate(c)))
         assert_array_almost_equal(cholesky(a,lower=1),c)
@@ -255,12 +257,13 @@ class test_cholesky(ScipyTestCase):
     def check_random(self):
         n = 20
         for k in range(2):
-            c = random([n,n])
+            m = random([n,n])
             for i in range(n):
-                c[i,i] = 20*(.1+c[i,i])
-                for j in range(i): c[i,j] = 0
-            a = Numeric.dot(Numeric.transpose(c),c)
-            assert_array_almost_equal(cholesky(a),c)
+                m[i,i] = 20*(.1+m[i,i])
+            a = Numeric.dot(Numeric.transpose(m),m)
+            c = cholesky(a)
+            a1 = Numeric.dot(Numeric.transpose(c),c)
+            assert_array_almost_equal(a,a1)
             c = Numeric.transpose(c)
             a = Numeric.dot(c,Numeric.transpose(c))
             assert_array_almost_equal(cholesky(a,lower=1),c)
@@ -268,12 +271,13 @@ class test_cholesky(ScipyTestCase):
     def check_random_complex(self):
         n = 20
         for k in range(2):
-            c = random([n,n])+1j*random([n,n])
+            m = random([n,n])+1j*random([n,n])
             for i in range(n):
-                c[i,i] = 20*(.1+abs(c[i,i]))
-                for j in range(i): c[i,j] = 0
-            a = Numeric.dot(Numeric.transpose(Numeric.conjugate(c)),c)
-            assert_array_almost_equal(cholesky(a),c)
+                m[i,i] = 20*(.1+abs(m[i,i]))
+            a = Numeric.dot(Numeric.transpose(Numeric.conjugate(m)),m)
+            c = cholesky(a)
+            a1 = Numeric.dot(Numeric.transpose(Numeric.conjugate(c)),c)
+            assert_array_almost_equal(a,a1)
             c = Numeric.transpose(c)
             a = Numeric.dot(c,Numeric.transpose(Numeric.conjugate(c)))
             assert_array_almost_equal(cholesky(a,lower=1),c)

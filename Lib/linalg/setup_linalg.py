@@ -172,6 +172,8 @@ def configuration(parent_package='',parent_path=None):
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
             ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
+    elif atlas_version>'3.4.0' and atlas_version<='3.5.12':
+        skip_names['clapack'].extend('cpotrf zpotrf'.split())
 
     # atlas_version:
     ext_args = {'name':dot_join(parent_package,package,'atlas_version'),

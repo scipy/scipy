@@ -121,7 +121,9 @@ def interface_to_module(interface_in,module_name):
     pre_prefix = "!%f90 -*- f90 -*-\n"
     # heading and tail of the module definition.
     file_prefix = "\npython module " + module_name +" ! in\n" \
-             "    interface  \n"
+                  "!usercode '''#include \"cblas.h\"\n"\
+                  "!'''\n"\
+                  "    interface  \n"
     file_suffix = "\n    end interface\n" \
              "end module %s" % module_name
     return  pre_prefix + file_prefix + interface_in + file_suffix

@@ -9,6 +9,7 @@
 !   f2py -c clapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
 
 python module generic_clapack
+
 interface
 
    function <tchar=s,d,c,z>gesv(n,nrhs,a,piv,b,info,rowmajor)
@@ -141,9 +142,9 @@ interface
      ! C is triangular matrix of the corresponding Cholesky decomposition.
      ! clean==1 zeros strictly lower or upper parts of U or L, respectively
 
-     fortranname  clapack_<tchar=s,d,c,z>potrf
-     integer intent(c,hide) ::  <tchar=s,d,c,z>potrf
-     callstatement <tchar=s,d,c,z>potrf_return_value = info = (*f2py_func)(102-rowmajor,121+lower,n,a,n); if(clean){int i,j;if(lower){for(i=0;i<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;} else {for(i=0;i<n;++i) for(j=i+1;j<n;++j) *(a+j*n+i)=0.0;}}
+     fortranname  clapack_<tchar=s,d>potrf
+     integer intent(c,hide) ::  <tchar=s,d>potrf
+     callstatement <tchar=s,d>potrf_return_value = info = (*f2py_func)(102-rowmajor,121+lower,n,a,n); if(clean){int i,j;if(lower){for(i=0;i<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;} else {for(i=0;i<n;++i) for(j=i+1;j<n;++j) *(a+j*n+i)=0.0;}}
      callprotoargument const int,const int,const int,<type_in_c>*,const int
 
      integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
@@ -161,14 +162,14 @@ interface
    
      ! c,info = potrf(a,lower=0,clean=1,rowmajor=1,overwrite_a=0)
      ! Compute Cholesky decomposition of symmetric positive defined matrix:
-     ! A = U^T * U, C = U if lower = 0
-     ! A = L * L^T, C = L if lower = 1
+     ! A = U^H * U, C = U if lower = 0
+     ! A = L * L^H, C = L if lower = 1
      ! C is triangular matrix of the corresponding Cholesky decomposition.
      ! clean==1 zeros strictly lower or upper parts of U or L, respectively
 
-     fortranname  clapack_<tchar=s,d,c,z>potrf
-     integer intent(c,hide) ::  <tchar=s,d,c,z>potrf
-     callstatement <tchar=s,d,c,z>potrf_return_value = info = (*f2py_func)(102-rowmajor,121+lower,n,a,n); if(clean){int i,j,k;if(lower){for(i=0;i<n;++i) for(j=i+1;j<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i<n;++i) for(j=i+1;j<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}}}
+     fortranname  clapack_<tchar=c,z>potrf
+     integer intent(c,hide) ::  <tchar=c,z>potrf
+     callstatement <tchar=c,z>potrf_return_value = info = (*f2py_func)(102-rowmajor,121+lower,n,a,n); if(clean){int i,j,k;if(lower){for(i=0;i<n;++i) for(j=i+1;j<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i<n;++i) for(j=i+1;j<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}}}
      callprotoargument const int,const int,const int,<type_in_c>*,const int
 
      integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1

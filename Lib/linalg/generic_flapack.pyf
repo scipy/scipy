@@ -528,8 +528,8 @@ interface
    
      ! c,info = potrf(a,lower=0,clean=1,overwrite_a=0)
      ! Compute Cholesky decomposition of symmetric positive defined matrix:
-     ! A = U^T * U, C = U if lower = 0
-     ! A = L * L^T, C = L if lower = 1
+     ! A = U^H * U, C = U if lower = 0
+     ! A = L * L^H, C = L if lower = 1
      ! C is triangular matrix of the corresponding Cholesky decomposition.
      ! clean==1 zeros strictly lower or upper parts of U or L, respectively
 
