@@ -532,7 +532,7 @@ static int convert_from_object(PyObject *obj, Py_complex *cnum)
       xptr++;
       count--;
       /* strip leading whitespaces */
-      while isspace(*xptr) {xptr++; count--;}
+      while (isspace(*xptr)) {xptr++; count--;}
     }
     if (xptr[0] == '-') {
       rnegflag = -1;
