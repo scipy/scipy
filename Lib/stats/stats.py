@@ -1057,7 +1057,7 @@ def cov(m,y=None, rowvar=0, bias=0):
         fact = N*1.0
     else:
         fact = N-1.0
-    val = conjugate(dot(transpose(conjugate(m)),y)) / fact
+    val = squeeze(dot(transpose(m),conjugate(y))) / fact
     return val
 
 def corrcoef(x, y=None, rowvar=0, bias=0):

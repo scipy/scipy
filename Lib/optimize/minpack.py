@@ -210,9 +210,9 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
         retval = _minpack._lmdif(func,x0,args,full_output,ftol,xtol,gtol,maxfev,epsfcn,factor,diag)
     else:
         if col_deriv:
-            check_func(func,x0,args,n,(n,m))
+            check_func(Dfun,x0,args,n,(n,m))
         else:
-            check_func(func,x0,args,n,(m,n))
+            check_func(Dfun,x0,args,n,(m,n))
         if (maxfev == 0):
             maxfev = 100*(n+1)
         retval = _minpack._lmder(func,Dfun,x0,args,full_output,col_deriv,ftol,xtol,gtol,maxfev,factor,diag)
