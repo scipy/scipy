@@ -18,7 +18,8 @@ def rmdir(dir,depth=0):
     
 ignore = ['*.o', '*.pyc', '*.a', '*.so', 'core', '*.dll', '*.pyd']
 
-import fnmatch from fnmatch
+from fnmatch import fnmatch
+
 def allowed_file_type(file):
     for i in ignore:
         if fnmatch(file, i):
