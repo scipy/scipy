@@ -34,8 +34,8 @@ def read_data(name):
     return array(data)        
 
 def main():
-    import RandomArray
-    RandomArray.seed(1000,1000)
+    import scipy.stats
+    scipy.stats.seed(1000,1000)
     Ncodes = 40
     Nfeatures = 16
     Nobs = 4000        

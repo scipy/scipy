@@ -243,9 +243,9 @@ class standard_sync_client:
 
             # 1. Create an 256x256 image of random pixels
             #    between 0 and 1.
-            import RandomArray
-            image1 = RandomArray.uniform(0.,1.,(256,256))
-            image2 = RandomArray.uniform(0.,1.,(256,256))
+            import scipy.stats 
+            image1 = scipy.stats.uniform(0.,1.,(256,256))
+            image2 = scipy.stats.uniform(0.,1.,(256,256))
             # 2. Create connections to remote machines
             #    named cow3 and cow4 on port 10000
             remote1 = standard_sync_client('cow3',10000)

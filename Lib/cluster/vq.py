@@ -17,8 +17,8 @@
 """
 from Numeric import *
 from fastumath import *
-from RandomArray import randint
 import scipy
+from scipy.stats import randint
 from scipy.misc import x_common_type as _common_type
 
 def whiten(obs):

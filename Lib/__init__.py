@@ -8,7 +8,7 @@ from scipy_version import scipy_version as __version__
 # SciPy has levels
 # Level 0 -- Numeric and core routines in basic.py, misc.py, and handy.py
 #
-# Level 1 -- Level 0 + fft, special, linalg (these can depend on Level 0)
+# Level 1 -- Level 0 + fft, special, linalg (these can depend on Level 0), stats
 # Level 1a -- Core routines which depend on Level 1.
 # Level 2 -- plotting interface.
 # Packages which define own functions plus depend on Levels 0-2.
@@ -57,7 +57,7 @@ _partials0 = {'Matrix' : ['Matrix']}
 # these modules will just be imported (not subsumed)
 _level0_importonly = []
 
-_level1 = ["special", "io", "linalg"]  # fft is in this group.
+_level1 = ["special", "io", "linalg", "stats"]  # fft is in this group.
 _level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
                       # require level 0 and level 1
 # these modules will just be imported (not subsumed)                      
@@ -91,7 +91,7 @@ modules2all(__all__, _level1a_importonly, globals())
 
 # Level 2
 
-_level2 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "cluster", "weave"]
+_level2 = ["optimize", "integrate", "signal", "special", "interpolate", "cow", "ga", "cluster", "weave"]
 modules2all(__all__, _level2, globals())
 
 # Level 3
