@@ -58,7 +58,7 @@ _partials0 = {'Matrix' : ['Matrix']}
 _level0_importonly = []
 
 _level1 = ["special", "io", "linalg", "stats"]  # fft is in this group.
-_partials1_a = {'stats' : ['mean','median','std']}
+_partials1_a = {'stats' : ['mean','median','std','cov','corrcoef']}
 _level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
                       # require level 0 and level 1
 # these modules will just be imported (not subsumed)                      

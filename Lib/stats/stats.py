@@ -107,11 +107,10 @@ PROBABILITY CALCS:  chisqprob
                     erfcc
                     zprob
                     fprob
-                    betacf
-                    gammln 
                     betai
 
-  *** SEE ALSO: the scipy.special package also has statistical calculation functions. which are imported here too.***
+## Note that scipy.stats.distributions has many more statistical probability functions defined.
+
 
 ANOVA FUNCTIONS:  anova (NumPy required)
                   F_oneway
@@ -200,11 +199,33 @@ import Numeric
 N = Numeric
 import LinearAlgebra
 LA = LinearAlgebra
+import Matrix
 import scipy.special as special
+import scipy
 
 SequenceType = [ListType, TupleType, ArrayType]
 
 
+
+def _chk_asarray(a, axis):
+    if axis is None:
+        a = ravel(a)
+        outaxis = 0
+    else:
+        a = asarray(a)
+        outaxis = axis
+    return a, outaxis
+
+def _chk2_asarray(a, b,  axis):
+    if axis is None:
+        a = ravel(a)
+        b = ravel(b)
+        outaxis = 0
+    else:
+        a = asarray(a)
+        b = asarray(b)
+        outaxis = axis
+    return a, b, outaxis
 
 #####################################
 ########  ACENTRAL TENDENCY  ########
@@ -222,7 +243,7 @@ def gmean (a,axis=-1):
     dimensional array, the default is to calculate the geometric mean
     of each row.
     """
-    a = asarray(a)
+    a, axis = _chk_asarray(a, axis)
     size = a.shape[axis]
     prod = product(a,axis)
     return power(prod,1./size)
@@ -238,52 +259,41 @@ def hmean(a,axis=-1):
     
     Returns: harmonic mean computed over dim(s) in axis     
     """
-    a = asarray(a)
+    a, axis = _chk_asarray(a, axis)
     size = a.shape[axis]
     return size / add.reduce(1.0/a, axis)
 
-def mean(m,axis=-1):
+def mean(a,axis=-1):
     """Returns the mean of m along the given dimension.
 
        If m is of integer type, returns a floating point answer.
     """
-    if axis is None:
-        m = ravel(m)
-        axis = 0
-    else:
-        m = asarray(m)
-    return add.reduce(m,axis)/float(m.shape[axis])
+    a, axis = _chk_asarray(a, axis)
+    return add.reduce(a,axis)/float(a.shape[axis])
 
-def median(m, axis=-1):
+def median(a, axis=-1):
     """Returns a median of m along the first dimension of m.
     """
-    if axis is None:
-        m = ravel(m)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
+    sorted = sort(a,axis)
+    if a.shape[0] % 2 == 1:
+        return sorted[int(a.shape[0]/2)]
     else:
-        m = asarray(m)
-    sorted = sort(m,axis)
-    if m.shape[0] % 2 == 1:
-        return sorted[int(m.shape[0]/2)]
-    else:
-        index=m.shape[0]/2
+        index=a.shape[0]/2
         return (sorted[index-1]+sorted[index])/2.0
 
-def std(m,axis=-1):
+def std(a,axis=-1):
     """Returns the standard deviation along the given axis.
 
     The result is unbiased with division by N-1.  If m is of integer type
     returns a floating point answer.
     """
-    if axis is None:
-        x = ravel(m)
-        axis = 0
-    else:
-        x = asarray(m)
-    n = float(x.shape[axis])
-    sx2 = add.reduce(x**2, axis)
-    sx = add.reduce(x,axis)
+    a, axis = _chk_asarray(a, axis)
+    n = float(a.shape[axis])
+    sx2 = add.reduce(a**2, axis)
+    sx = add.reduce(a,axis)
     return sqrt((sx2 - sx**2/n)/(n-1.0))
+
 
 def mean_tmp (a,axis=None, keepdims=0):
     """Calculates the arithmetic mean of the values in the passed array.
@@ -349,7 +359,7 @@ def cmedian (a,numbins=1000):
     return median
 
 
-def medianscore (a,axis=None):
+def medianscore (a,axis=-1):
     """ Returns the 'middle' score of the passed array.  If there is an even
     number of scores, the mean of the 2 middle scores is returned.  Can function
     with 1D arrays, or on the FIRST axis of 2D arrays (i.e., axis can
@@ -357,10 +367,7 @@ def medianscore (a,axis=None):
 
     Returns: 'middle' score of the array, or the mean of the 2 middle scores
     """
-    a = asarray(a)
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     a = sort(a,axis)
     if a.shape[axis] % 2 == 0:   # if even number of elements
         indx = a.shape[axis]/2   # integer division correct
@@ -372,7 +379,7 @@ def medianscore (a,axis=None):
             median = median[0]
     return median
 
-def mode(a, axis=None):
+def mode(a, axis=-1):
     """Returns an array of the modal (most common) score in the passed array.
     If there is more than one such score, ONLY THE FIRST is returned.
     The bin-count for the modal values is also returned.  Operates on whole
@@ -381,10 +388,7 @@ def mode(a, axis=None):
     Returns: array of bin-counts for mode(s), array of corresponding modal values
     """
 
-    a = asarray(a)
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     scores = pstat.unique(ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
@@ -462,34 +466,28 @@ def tvar(a,limits=None,inclusive=(1,1)):
      term2 = add.reduce(ravel(a*mask))**2 / n
      return (term1 - term2) / n
 
-def tmin(a,lowerlimit=None,axis=None,inclusive=1):
+def tmin(a,lowerlimit=None,axis=-1,inclusive=1):
      """Returns the minimum value of a, along axis, including only values less
      than (or equal to, if inclusive=1) lowerlimit.  If the limit is set to None,
      all values in the array are used.
      """
-     a = asarray(a)
+     a, axis = _chk_asarray(a, axis)
      if inclusive:       lowerfcn = greater
      else:               lowerfcn = greater_equal
-     if axis is None:
-         a = ravel(a)
-         axis = 0
      if lowerlimit is None:
          lowerlimit = minimum.reduce(ravel(a))-11
      biggest = maximum.reduce(ravel(a))
      ta = where(lowerfcn(a,lowerlimit),a,biggest)
      return minimum.reduce(ta,axis)
 
-def tmax(a,upperlimit,axis=None,inclusive=1):
+def tmax(a,upperlimit,axis=-1,inclusive=1):
      """Returns the maximum value of a, along axis, including only values greater
      than (or equal to, if inclusive=1) upperlimit.  If the limit is set to None,
      a limit larger than the max value in the array is used.
      """
-     a = asarray(a)
+     a, axis = asarray(a, axis)
      if inclusive:       upperfcn = less
      else:               upperfcn = less_equal
-     if axis is None:
-         a = ravel(a)
-         axis = 0
      if upperlimit is None:
          upperlimit = maximum.reduce(ravel(a))+1
      smallest = minimum.reduce(ravel(a))
@@ -541,18 +539,15 @@ def tsem(a,limits=None,inclusive=(1,1)):
 ############  AMOMENTS  #############
 #####################################
 
-def moment(a,moment=1,axis=None):
+def moment(a,moment=1,axis=-1):
     """Calculates the nth moment about the mean for a sample (defaults to the
     1st moment).  Generally used to calculate coefficients of skewness and
-    kurtosis.  Axis can equal None (ravel array first), an integer
-    (the axis over which to operate), or a sequence (operate over
-    multiple axes).
-    
+    kurtosis.  Axis can equal None (ravel array first), or an integer
+    (the axis over which to operate).
+        
     Returns: appropriate moment along given axis
     """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     if moment == 1:
         return 0.0
     else:
@@ -561,7 +556,7 @@ def moment(a,moment=1,axis=None):
         return mean(s,axis)
 
 
-def variation(a,axis=None):
+def variation(a,axis=-1):
     """Returns the coefficient of variation, as defined in CRC Standard
     Probability and Statistics, p.6. Axis can equal None (ravel array
     first), an integer (the axis over which to operate), or a
@@ -570,7 +565,7 @@ def variation(a,axis=None):
     return 100.0*samplestd(a,axis)/mean(a,axis)
 
 
-def skew(a,axis=None): 
+def skew(a,axis=-1): 
     """Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
     weight in left tail).  Use askewtest() to see if it's close enough.
     Axis can equal None (ravel array first), an integer (the
@@ -587,7 +582,7 @@ def skew(a,axis=None):
     denom = denom + zero  # prevent divide-by-zero
     return where(zero, 0, moment(a,3,axis)/denom)
 
-def kurtosis(a,axis=None,fisher=1):
+def kurtosis(a,axis=-1,fisher=1):
     """Returns the kurtosis (fisher or pearson) of a distribution (normal ==> 3.0; >3 means
     heavier in the tails, and usually more peaked).  Use kurtosistest()
     to see if it's close enough.  Axis can equal None (ravel array
@@ -609,17 +604,14 @@ def kurtosis(a,axis=None,fisher=1):
         return vals
 
 
-def describe(a,axis=None):
+def describe(a,axis=-1):
      """Returns several descriptive statistics of the passed array.  Axis
      can equal None (ravel array first), an integer (the axis over
      which to operate), or a sequence (operate over multiple axes).
 
      Returns: n, (min,max), mean, standard deviation, skew, kurtosis
      """
-     a = asarray(a)
-     if axis is None:
-         a = ravel(a)
-         axis = 0
+     a, axis = _chk_asarray(a, axis)
      n = a.shape[axis]
      mm = (minimum.reduce(a),maximum.reduce(a))
      m = mean(a,axis)
@@ -632,7 +624,7 @@ def describe(a,axis=None):
 ########  NORMALITY TESTS  ##########
 #####################################
 
-def skewtest(a,axis=None):
+def skewtest(a,axis=-1):
     """Tests whether the skew is significantly different from a normal
     distribution.  Axis can equal None (ravel array first), an integer
     (the axis over which to operate), or a sequence (operate over
@@ -640,7 +632,7 @@ def skewtest(a,axis=None):
 
     Returns: z-score and 2-tail z-probability
     """
-    a = asarray(a)
+    a, axis = _chk_asarray(a, axis)
     if axis is None:
         a = ravel(a)
         axis = 0
@@ -656,7 +648,7 @@ def skewtest(a,axis=None):
     return Z, (1.0-zprob(Z))*2
 
 
-def kurtosistest(a,axis=None):
+def kurtosistest(a,axis=-1):
     """
 Tests whether a dataset has normal kurtosis (i.e.,
 kurtosis=3(n-1)/(n+1)) Valid only for n>20.  Axis can equal None
@@ -665,9 +657,7 @@ or a sequence (operate over multiple axes).
 
 Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     n = float(a.shape[axis])
     if n<20:
         print "akurtosistest only valid for n>=20 ... continuing anyway, n=",n
@@ -687,7 +677,7 @@ Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
     return Z, (1.0-zprob(Z))*2
 
 
-def normaltest(a,axis=None):
+def normaltest(a,axis=-1):
     """
 Tests whether skew and/OR kurtosis of dataset differs from normal
 curve.  Can operate over multiple axes.  Axis can equal
@@ -696,9 +686,7 @@ operate), or a sequence (operate over multiple axes).
 
 Returns: z-score and 2-tail probability
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     s,p = skewtest(a,axis)
     k,p = kurtosistest(a,axis)
     k2 = power(s,2) + power(k,2)
@@ -858,7 +846,7 @@ Returns: transformed data for use in an ANOVA
         return array(nargs)
 
 
-def samplevar (a,axis=None,keepdims=0):
+def samplevar (a,axis=-1,keepdims=0):
     """
 Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
@@ -866,25 +854,18 @@ an integer (the axis over which to operate), or a sequence
 (operate over multiple axes).  Set keepdims=1 to return an array
 with the same number of axes as a.
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a)
     if axis == 1:
         mn = mean(a,axis)[:,NewAxis]
     else:
         mn = mean_tmp(a,axis,keepdims=1)
     deviations = a - mn 
-    if type(axis) == ListType:
-        n = 1
-        for d in axis:
-            n = n*a.shape[d]
-    else:
-        n = a.shape[axis]
+    n = a.shape[axis]
     svar = ss(deviations,axis,keepdims) / float(n)
     return svar
 
 
-def samplestd (a, axis=None, keepdims=0):
+def samplestd (a, axis=-1, keepdims=0):
     """Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate), or a sequence
@@ -894,11 +875,10 @@ with the same number of axes as a.
     return sqrt(samplevar(a,axis,keepdims))
 
 
-def signaltonoise(instack,axis=0):
+def signaltonoise(instack,axis=-1):
     """
 Calculates signal-to-noise.  Axis can equal None (ravel array
-first), an integer (the axis over which to operate), or a
-sequence (operate over multiple axes).
+first), an integer (the axis over which to operate).
 
 Returns: array containing the value of (mean/stdev) along axis,
          or 0 when stdev=0
@@ -908,7 +888,7 @@ Returns: array containing the value of (mean/stdev) along axis,
     return where(equal(sd,0),0,m/sd)
 
 
-def var (a, axis=None,keepdims=0):
+def var(a, axis=-1,keepdims=0):
     """
 Returns the estimated population variance of the values in the passed
 array (i.e., N-1).  Axis can equal None (ravel array first), an
@@ -916,22 +896,15 @@ integer (the axis over which to operate), or a sequence (operate
 over multiple axes).  Set keepdims=1 to return an array with the
 same number of axes as a.
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     mn = mean_tmp(a,axis,1)
     deviations = a - mn
-    if type(axis) == ListType:
-        n = 1
-        for d in axis:
-            n = n*a.shape[d]
-    else:
-        n = a.shape[axis]
+    n = a.shape[axis]
     var = ss(deviations,axis,keepdims)/float(n-1)
     return var
 
 
-def std_tmp (a, axis=None, keepdims=0):
+def std_tmp (a, axis=-1, keepdims=0):
     """
 Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -943,7 +916,7 @@ an array with the same number of axes as a.
     return sqrt(var(a,axis,keepdims))
 
 
-def stderr (a, axis=None, keepdims=0):
+def stderr (a, axis=-1, keepdims=0):
     """
 Returns the estimated population standard error of the values in the
 passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -952,13 +925,11 @@ sequence (operate over multiple axes).  Set keepdims=1 to return
 an array with the same number of axes as a.
 
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
+    a, axis = _chk_asarray(a, axis)
     return std_tmp(a,axis,keepdims) / float(sqrt(a.shape[axis]))
 
 
-def sem (a, axis=None, keepdims=0):
+def sem (a, axis=-1, keepdims=0):
     """
 Returns the standard error of the mean (i.e., using N) of the values
 in the passed array.  Axis can equal None (ravel array first), an
@@ -967,15 +938,8 @@ over multiple axes).  Set keepdims=1 to return an array with the
 same number of axes as a.
 
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
-    if type(axis) == ListType:
-        n = 1
-        for d in axis:
-            n = n*a.shape[d]
-    else:
-        n = a.shape[axis]
+    a, axis = _chk_asarray(a, axis)
+    n = a.shape[axis]
     s = samplestd(a,axis,keepdims) / sqrt(n-1)
     return s
 
@@ -1003,7 +967,7 @@ computed relative to the passed array.
     return array(zscores)
 
 
-def zmap (scores, compare, axis=0):
+def zmap (scores, compare, axis=-1):
     """
 Returns an array of z-scores the shape of scores (e.g., [x,y]), compared to
 array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
@@ -1019,35 +983,7 @@ of the compare array.
 #######  ATRIMMING FUNCTIONS  #######
 #####################################
 
-def round(a,digits=1):
-     """
-    Rounds all values in array a to 'digits' decimal places.
-    
-    Returns: a, where each value is rounded to 'digits' decimals
-    """
-     def r(x,d=digits):
-         return round(x,d)
-
-     if type(a) <> ArrayType:
-         try:
-             a = array(a)
-         except:
-             a = array(a,'O')
-     shp = a.shape
-     if a.typecode() in ['f','F','d','D']:
-         b = ravel(a)
-         b = array(map(ar,b))
-         b.shape = shp
-     elif a.typecode() in ['o','O']:
-         b = ravel(a)*1
-         for i in range(len(b)):
-             if type(b[i]) == FloatType:
-                 b[i] = round(b[i],digits)
-         b.shape = shp
-     else:  # not a float, double or Object array
-         b = a*1
-     return b
-
+# Removed round --- same as Numeric.around 
 
 def threshold(a,threshmin=None,threshmax=None,newval=0):
     """
@@ -1056,6 +992,7 @@ by newval instead of by threshmin/threshmax (respectively).
 
 Returns: a, with values <threshmin or >threshmax replaced with newval
 """
+    a = asarray(a)
     mask = zeros(a.shape)
     if threshmin <> None:
         mask = mask + where(less(a,threshmin),1,0)
@@ -1076,6 +1013,7 @@ proportiontocut).
 
 Returns: trimmed version of array a
 """
+    a = asarray(a)
     lowercut = int(proportiontocut*len(a))
     uppercut = len(a) - lowercut
     return a[lowercut:uppercut]
@@ -1090,6 +1028,7 @@ def trim1 (a,proportiontocut,tail='right'):
     
     Returns: trimmed version of array a
     """
+    a = asarray(a)
     if string.lower(tail) == 'right':
         lowercut = 0
         uppercut = len(a) - int(proportiontocut*len(a))
@@ -1103,29 +1042,60 @@ def trim1 (a,proportiontocut,tail='right'):
 #####  ACORRELATION FUNCTIONS  ######
 #####################################
 
-def covariance(X):
+# Travis Oliphant Changes
+#  Cov is more flexible and computes an unbiased covariance matrix
+#    by default. 
+def cov(m,y=None, rowvar=0, bias=0):
+    """Estimate the covariance matrix.
+
+    If m is a vector, return the variance.  For matrices where each row
+    is an observation, and each column a variable, return the covariance
+    matrix.  Note that in this case diag(cov(m)) is a vector of
+    variances for each column.
+
+    cov(m) is the same as cov(m, m)
+
+    Normalization is by (N-1) where N is the number of observations
+    (unbiased estimate).  If bias is 1 then normalization is by N.
+
+    If rowvar is zero, then each row is a variables with
+    observations in the columns.
     """
-Computes the covariance matrix of a matrix X.  Requires a 2D matrix input.
+    m = asarray(m)
+    if y is None:
+        y = m
+    else:
+        y = asarray(y)
+    if rowvar:
+        m = transpose(m)
+        y = transpose(y)
+    N = m.shape[0]
+    if (y.shape[0] != N):
+        raise ValueError, "x and y must have the same number of observations."    
+    m = m - mean(m,axis=0)
+    y = y - mean(y,axis=0)
+    if bias:
+        fact = N*1.0
+    else:
+        fact = N-1.0
+    val = conjugate(dot(transpose(conjugate(m)),y)) / fact
+    return val
 
-Returns: covariance matrix of X
-"""
-    if len(X.shape) <> 2:
-        raise TypeError, "acovariance requires 2D matrices"
-    n = X.shape[0]
-    mX = mean(X,0)
-    return dot(transpose(X),X) / float(n) - multiply.outer(mX,mX)
+def corrcoef(x, y=None, rowvar=0, bias=0):
+    """The correlation coefficients formed from 2-d array x, where the
+    rows are the observations, and the columns are variables.
 
-
-def correlation(X):
+    corrcoef(x,y) where x and y are 1d arrays is the same as
+    corrcoef(transpose([x,y]))
+    
+    If rowvar is zero, then each row is a variables with
+    observations in the columns.
     """
-Computes the correlation matrix of a matrix X.  Requires a 2D matrix input.
+    c = cov(x, y, rowvar=rowvar, bias=bias)
+    d = diag(c)
+    return c/sqrt(multiply.outer(d,d))
 
-Returns: correlation matrix of X
-"""
-    C = acovariance(X)
-    V = diagonal(C)
-    return C / sqrt(multiply.outer(V,V))
-
+### End of Travis O. Changes
 
 def paired(x,y):
     """
@@ -1134,6 +1104,7 @@ appropriated statistic for paired group data.
 
 Returns: appropriate statistic name, value, and probability
 """
+    x,y = map(asarray, (x,y))
     samples = ''
     while samples not in ['i','r','I','R','c','C']:
         print '\nIndependent or related samples, or correlation (i,r,c): ',
@@ -1145,29 +1116,29 @@ Returns: appropriate statistic name, value, and probability
         r = obrientransform(x,y)
         f,p = F_oneway(pstat.colex(r,0),pstat.colex(r,1))
         if p<0.05:
-            vartype='unequal, p='+str(round(p,4))
+            vartype='unequal, p='+str(around(p,4))
         else:
             vartype='equal'
         print vartype
         if samples in ['i','I']:
             if vartype[0]=='e':
                 t,p = ttest_ind(x,y,None,0)
-                print '\nIndependent samples t-test:  ', round(t,4),round(p,4)
+                print '\nIndependent samples t-test:  ', around(t,4),around(p,4)
             else:
                 if len(x)>20 or len(y)>20:
                     z,p = ranksums(x,y)
-                    print '\nRank Sums test (NONparametric, n>20):  ', round(z,4),round(p,4)
+                    print '\nRank Sums test (NONparametric, n>20):  ', around(z,4),around(p,4)
                 else:
                     u,p = mannwhitneyu(x,y)
-                    print '\nMann-Whitney U-test (NONparametric, ns<20):  ', round(u,4),round(p,4)
+                    print '\nMann-Whitney U-test (NONparametric, ns<20):  ', around(u,4),around(p,4)
 
         else:  # RELATED SAMPLES
             if vartype[0]=='e':
                 t,p = ttest_rel(x,y,0)
-                print '\nRelated samples t-test:  ', round(t,4),round(p,4)
+                print '\nRelated samples t-test:  ', around(t,4),around(p,4)
             else:
                 t,p = ranksums(x,y)
-                print '\nWilcoxon T-test (NONparametric):  ', round(t,4),round(p,4)
+                print '\nWilcoxon T-test (NONparametric):  ', around(t,4),around(p,4)
     else:  # CORRELATION ANALYSIS
         corrtype = ''
         while corrtype not in ['c','C','r','R','d','D']:
@@ -1176,16 +1147,16 @@ Returns: appropriate statistic name, value, and probability
         if corrtype in ['c','C']:
             m,b,r,p,see = linregress(x,y)
             print '\nLinear regression for continuous variables ...'
-            lol = [['Slope','Intercept','r','Prob','SEestimate'],[round(m,4),round(b,4),round(r,4),round(p,4),round(see,4)]]
+            lol = [['Slope','Intercept','r','Prob','SEestimate'],[around(m,4),around(b,4),around(r,4),around(p,4),around(see,4)]]
             pstat.printcc(lol)
         elif corrtype in ['r','R']:
             r,p = spearmanr(x,y)
             print '\nCorrelation for ranked variables ...'
-            print "Spearman's r: ",round(r,4),round(p,4)
+            print "Spearman's r: ",around(r,4),around(p,4)
         else: # DICHOTOMOUS
             r,p = pointbiserialr(x,y)
             print '\nAssuming x contains a dichotomous variable ...'
-            print 'Point Biserial r: ',round(r,4),round(p,4)
+            print 'Point Biserial r: ',around(r,4),around(p,4)
     print '\n\n'
     return None
 
@@ -1197,6 +1168,7 @@ from Heiman's Basic Statistics for the Behav. Sci (2nd), p.195.
 
 Returns: Pearson's r, two-tailed p-value
 """
+    x,y = map(asarray, (x,y))
     TINY = 1.0e-20
     n = len(x)
     xmean = mean(x,None)
@@ -1239,6 +1211,7 @@ Sci (1st), p.194.
 
 Returns: Point-biserial r, two-tailed p-value
 """
+    x,y = map(asarray, (x,y))
     TINY = 1e-30
     categories = pstat.unique(x)
     data = pstat.abut(x,y)
@@ -1304,7 +1277,7 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
 """
     TINY = 1.0e-20
     if len(args) == 1:  # more than 1D array?
-        args = args[0]
+        args = asarray(args[0])
         if len(args) == 2:
             x = args[0]
             y = args[1]
@@ -1312,8 +1285,8 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
             x = args[:,0]
             y = args[:,1]
     else:
-        x = args[0]
-        y = args[1]
+        x = asarray(args[0])
+        y = asarray(args[1])
     n = len(x)
     xmean = mean(x,None)
     ymean = mean(y,None)
@@ -1343,8 +1316,7 @@ using the given writemode (default=append).  Returns t-value, and prob.
 
 Returns: t-value, two-tailed prob
 """
-    if type(a) != ArrayType:
-        a = array(a)
+    a = asarray(a)
     x = mean(a,None)
     v = var(a)
     n = len(a)
@@ -1363,7 +1335,7 @@ Returns: t-value, two-tailed prob
     return t,prob
 
 
-def ttest_ind (a, b, axis=None, printit=0, name1='Samp1', name2='Samp2',writemode='a'):
+def ttest_ind (a, b, axis=-1, printit=0, name1='Samp1', name2='Samp2',writemode='a'):
     """
 Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
 a, and b.  From Numerical Recipies, p.483.  If printit=1, results are
@@ -1374,10 +1346,7 @@ which to operate on a and b).
 
 Returns: t-value, two-tailed p-value
 """
-    if axis is None:
-        a = ravel(a)
-        b = ravel(b)
-        axis = 0
+    a, b, axis = _chk2_asarray(a, b, axis)
     x1 = mean(a,axis)
     x2 = mean(b,axis)
     v1 = var(a,axis)
@@ -1423,10 +1392,7 @@ which to operate on a and b).
 
 Returns: t-value, two-tailed p-value
 """
-    if axis is None:
-        a = ravel(a)
-        b = ravel(b)
-        axis = 0
+    a, b, axis = _chk2_asarray(a, b, axis)
     if len(a)<>len(b):
         raise ValueError, 'Unequal length arrays.'
     x1 = mean(a,axis)
@@ -1469,6 +1435,7 @@ be equally distributed across all groups.
 Returns: chisquare-statistic, associated p-value
 """
 
+    f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
         f_exp = array([sum(f_obs)/float(k)] * len(f_obs),Float)
@@ -1485,6 +1452,7 @@ like.
 
 Returns: KS D-value, p-value
 """
+    data1, data2 = map(asarray, (data1, data2))
     j1 = 0    # zeros(data1.shape[1:]) TRIED TO MAKE THIS UFUNC-LIKE
     j2 = 0    # zeros(data2.shape[1:])
     fn1 = 0.0 # zeros(data1.shape[1:],Float)
@@ -1510,7 +1478,7 @@ Returns: KS D-value, p-value
             d = dt
     try:
         en = math.sqrt(en1*en2/float(en1+en2))
-        prob = aksprob((en+0.12+0.11/en)*fabs(d))
+        prob = ksprob((en+0.12+0.11/en)*fabs(d))
     except:
         prob = 1.0
     return d, prob
@@ -1526,6 +1494,7 @@ value of U.
 
 Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
 """
+    x,y = asarray(x, y)
     n1 = len(x)
     n2 = len(y)
     ranked = rankdata(concatenate((x,y)))
@@ -1575,6 +1544,7 @@ the result.
 
 Returns: z-statistic, two-tailed p-value
 """
+    x,y = map(asarray, (x, y))
     n1 = len(x)
     n2 = len(y)
     alldata = concatenate((x,y))
@@ -1595,6 +1565,7 @@ result.  A non-parametric T-test.
 
 Returns: t-statistic, two-tailed p-value
 """
+    x, y = map(asarray, (x, y))
     if len(x) <> len(y):
         raise ValueError, 'Unequal N in awilcoxont.  Aborting.'
     d = x-y
@@ -1681,12 +1652,6 @@ Returns: chi-square statistic, associated p-value
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
 
-#from scipy.special import binomcdf, binomcdfc, binomcdfinv, betacdf, betaq, \
-#     fcdf, fcdfc, fp, gammacdf, gammacdfc, gammaq, negbinomcdf, \
-#     negbinomcdfinv, poissoncdf, poissoncdfc, poissoncdfinv, tcdf, tq, \
-#     chi2cdf, chi2cdfc, chi2p, stnormalcdf, stnormalq, ksonecdfc, ksonep, \
-#     kstwocdfc_largen, kstwop_largen
-
 zprob = special.ndtr
 erfc = special.erfc
 
@@ -1696,60 +1661,8 @@ def chisqprob(chisq,df):
     """
     return special.chdtrc(df,chisq)
 
-#ksprob = special.kolmogorovcdfc
-#fprob = special.fcdfc
-
-def betacf(a,b,x):
-    """
-    Evaluates the continued fraction form of the incomplete Beta function,
-    betai.  (Adapted from: Numerical Recipies in C.)  Can handle multiple
-    axes for x.
-    
-    """
-    ITMAX = 200
-    EPS = 3.0e-7
-
-    arrayflag = 1
-    if type(x) == ArrayType:
-        frozen = ones(x.shape,Float) *-1  #start out w/ -1s, should replace all
-    else:
-        arrayflag = 0
-        frozen = array([-1])
-        x = array([x])
-    mask = zeros(x.shape)
-    bm = az = am = 1.0
-    qab = a+b
-    qap = a+1.0
-    qam = a-1.0
-    bz = 1.0-qab*x/qap
-    for i in range(ITMAX+1):
-        if sum(ravel(equal(frozen,-1)))==0:
-            break
-        em = float(i+1)
-        tem = em + em
-        d = em*(b-em)*x/((qam+tem)*(a+tem))
-        ap = az + d*am
-        bp = bz+d*bm
-        d = -(a+em)*(qab+em)*x/((qap+tem)*(a+tem))
-        app = ap+d*az
-        bpp = bp+d*bz
-        aold = az*1
-        am = ap/bpp
-        bm = bp/bpp
-        az = app/bpp
-        bz = 1.0
-        newmask = less(abs(az-aold),EPS*abs(az))
-        frozen = where(newmask*equal(mask,0), az, frozen)
-        mask = clip(mask+newmask,0,1)
-    noconverge = sum(equal(frozen,-1))
-    if noconverge <> 0:
-        print 'a or b too big, or ITMAX too small in Betacf for ',noconverge,' elements'
-    if arrayflag:
-        return frozen
-    else:
-        return frozen[0]
-
-gammln = special.gammaln
+ksprob = special.kolmogorov
+fprob = special.fdtrc
 
 def betai(a,b,x):
     """
@@ -1760,6 +1673,7 @@ def betai(a,b,x):
     where a,b>0 and B(a,b) = G(a)*G(b)/(G(a+b)) where G(a) is the gamma
     function of a.
     """
+    x = asarray(x)
     x = where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
     return special.betainc(a,b,x)
 
@@ -2619,7 +2533,7 @@ def makelist(source,ncols):
 
 def round4(num):
      try:
-         return round(num,4)
+         return around(num,4)
      except:
          return 'N/A'
 
@@ -2672,19 +2586,19 @@ Returns an F-statistic given the following:
 
 
 def outputfstats(Enum, Eden, dfnum, dfden, f, prob):
-     Enum = round(Enum,3)
-     Eden = round(Eden,3)
-     dfnum = round(Enum,3)
-     dfden = round(dfden,3)
-     f = round(f,3)
-     prob = round(prob,3)
+     Enum = around(Enum,3)
+     Eden = around(Eden,3)
+     dfnum = around(Enum,3)
+     dfden = around(dfden,3)
+     f = around(f,3)
+     prob = around(prob,3)
      suffix = ''                       # for *s after the p-value
      if  prob < 0.001:  suffix = '  ***'
      elif prob < 0.01:  suffix = '  **'
      elif prob < 0.05:  suffix = '  *'
      title = [['EF/ER','DF','Mean Square','F-value','prob','']]
-     lofl = title+[[Enum, dfnum, round(Enum/float(dfnum),3), f, prob, suffix],
-                   [Eden, dfden, round(Eden/float(dfden),3),'','','']]
+     lofl = title+[[Enum, dfnum, around(Enum/float(dfnum),3), f, prob, suffix],
+                   [Eden, dfden, around(Eden/float(dfden),3),'','','']]
      pstat.printcc(lofl)
      return
 
