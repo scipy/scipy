@@ -468,7 +468,13 @@ def image(img,x=None,y=None,colormap = 'grey',scale='no'):
         _active.line_list.data = [] # clear it out
         _active.image_list.data = [] # clear it out
         _active.image_list.append(image)
-        axis('equal')
+        try:
+            axis('equal')
+        except AttributeError:
+            # cluge to handle case where ticks didn't exist when
+            # calling axis()
+            _active.client.layout_all()
+            axis('equal')
     else:
         _active.image_list.append(image)
         _active.update()                
