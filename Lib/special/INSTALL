@@ -1,0 +1,6 @@
+1. Make sure cephes/mconf.h file is correct (see README).
+2. Make sure amos/d1mach.f and amos/i1mach.f is correct for your machine.
+3. Check the makefile in cephes/ and amos/ for your system.
+4. Compile the libraries libcephes.a and libamos.a 
+5. Check the Makefile in the main directory and adjust for your system.
+6. Run the Makefile with make.

@@ -1,0 +1,42 @@
+*** mconf.h	Sat Jan  9 02:01:32 1999
+--- mconf.h.SGI	Sat Jan  9 01:59:16 1999
+***************
+*** 100,106 ****
+  
+  /* Intel IEEE, low order words come first:
+   */
+! #define IBMPC 1
+  
+  /* Motorola IEEE, high order words come first
+   * (Sun 680x0 workstation):
+--- 100,106 ----
+  
+  /* Intel IEEE, low order words come first:
+   */
+! /* #define IBMPC 1 */
+  
+  /* Motorola IEEE, high order words come first
+   * (Sun 680x0 workstation):
+***************
+*** 113,122 ****
+   * roundoff problems in pow.c:
+   * (Sun SPARCstation)
+   */
+! /* #define UNK 1 */
+  
+  /* If you define UNK, then be sure to set BIGENDIAN properly. */
+! #define BIGENDIAN 0
+  
+  /* Define this `volatile' if your compiler thinks
+   * that floating point arithmetic obeys the associative
+--- 113,122 ----
+   * roundoff problems in pow.c:
+   * (Sun SPARCstation)
+   */
+! #define UNK 1 
+  
+  /* If you define UNK, then be sure to set BIGENDIAN properly. */
+! #define BIGENDIAN 1
+  
+  /* Define this `volatile' if your compiler thinks
+   * that floating point arithmetic obeys the associative

@@ -1,8 +1,8 @@
 from orthogonal import P_roots
 from Numeric import sum
 
-def quad(func,a,b,n=5):
-    """val = quad(func,a,b,n=5)
+def gauss_quad(func,a,b,n=5):
+    """val = gauss_quad(func,a,b,n=5)
 
     Integrate func(x) from a to b using Gaussian Quadrature of order n.
     """
@@ -10,7 +10,7 @@ def quad(func,a,b,n=5):
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y))
 
-def quadtol(func,a,b,tol=1e-7,NMAX=50):
+def gauss_quadtol(func,a,b,tol=1e-7,NMAX=50):
     """val = quadtol(func,a,b,tol=1e-7,NMAX=30)
 
     Integrate func(x) from a to b using Gaussian Quadrature 
