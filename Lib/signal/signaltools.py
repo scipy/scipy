@@ -10,8 +10,8 @@ from scipy_base import polyadd, polymul, polydiv, polysub, \
 import types
 import scipy
 from scipy.stats import mean
-import Numeric
-from Numeric import array, arange, where, sqrt, rank, zeros, NewAxis, argmax
+import scipy_base as Numeric
+from scipy_base import array, arange, where, sqrt, rank, zeros, NewAxis, argmax, product
 from scipy_base.fastumath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -66,7 +66,7 @@ def correlate(in1, in2, mode='full'):
     kernel = asarray(in2)
     if rank(volume) == rank(kernel) == 0:
         return volume*kernel
-    if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
+    if (product(kernel.shape) > product(volume.shape)):
         temp = kernel
         kernel = volume
         volume = temp
@@ -75,6 +75,42 @@ def correlate(in1, in2, mode='full'):
     val = _valfrommode(mode)
 
     return sigtools._correlateND(volume, kernel, val)
+
+def _centered(arr, newsize):
+    # Return the center newsize portion of the array.
+    newsize = asarray(newsize)
+    currsize = array(arr.shape)
+    startind = (currsize - newsize) / 2
+    endind = startind + newsize
+    myslice = [slice(startind[k], endind[k]) for k in range(len(endind))]
+    return arr[tuple(myslice)]
+        
+def fftconvolve(in1, in2, mode="full"):
+    """Convolve two N-dimensional arrays using FFT. SEE convolve
+    """
+    s1 = array(in1.shape)
+    s2 = array(in2.shape)
+    if (s1.typecode() in ['D','F']) or (s2.typecode() in ['D', 'F']):
+        cmplx=1
+    else: cmplx=0
+    size = s1+s2-1
+    IN1 = fftn(in1,size)
+    IN1 *= fftn(in2,size)
+    ret = ifftn(IN1)
+    del IN1
+    if not cmplx:
+        ret = real(ret)
+    if mode == "full":
+        return ret
+    elif mode == "same":
+        if product(s1) > product(s2):
+            osize = s1
+        else:
+            osize = s2
+        return _centered(ret,osize)
+    elif mode == "valid":
+        return _centered(ret,abs(s2-s1)+1)
+            
 
 def convolve(in1, in2, mode='full'):
     """Convolve two N-dimensional arrays.
