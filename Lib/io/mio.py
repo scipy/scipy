@@ -550,6 +550,7 @@ def _parse_mimatrix(fid,bytes):
     dclass, cmplx, nzmax =_parse_array_flags(fid)
     dims = _get_element(fid)[0]
     name = ''.join(asarray(_get_element(fid)[0]).astype('c'))
+    tupdims = tuple(dims[::-1])
     if dclass in mxArrays:
         result, unused =_get_element(fid)
         if type == mxCHAR_CLASS:
@@ -558,7 +559,7 @@ def _parse_mimatrix(fid,bytes):
             if cmplx:
                 imag, unused =_get_element(fid)
                 result = result + cast[imag.typecode()](1j) * imag
-            result = squeeze(transpose(reshape(result,dims[::-1])))
+            result = squeeze(transpose(reshape(result,tupdims)))
 
     elif dclass == mxCELL_CLASS:
         length = product(dims)
@@ -566,7 +567,7 @@ def _parse_mimatrix(fid,bytes):
         for i in range(length):
             sa, unused = _get_element(fid)
             result[i]= sa
-        result = squeeze(transpose(reshape(result,dims[::-1])))
+        result = squeeze(transpose(reshape(result,tupdims)))
         if rank(result)==0: result = result.toscalar()
         
     elif dclass == mxSTRUCT_CLASS:
@@ -584,7 +585,7 @@ def _parse_mimatrix(fid,bytes):
             for element in fieldnames:
                 val,unused = _get_element(fid)
                 result[i].__dict__[element] = val
-        result = squeeze(transpose(reshape(result,dims[::-1])))
+        result = squeeze(transpose(reshape(result,tupdims)))
         if rank(result)==0: result = result.toscalar()        
 
         # object is like a structure with but with a class name
@@ -605,7 +606,7 @@ def _parse_mimatrix(fid,bytes):
             for element in fieldnames:
                 val,unused = _get_element(fid)
                 result[i].__dict__[element] = val
-        result = squeeze(transpose(reshape(result,dims[::-1])))
+        result = squeeze(transpose(reshape(result,tupdims)))
         if rank(result)==0: result = result.toscalar()        
          
     elif dclass == mxSPARSE_CLASS:
