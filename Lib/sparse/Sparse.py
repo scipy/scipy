@@ -282,9 +282,13 @@ class csc_matrix(spmatrix):
                 self.rowind = ij[0]
                 self.indptr = ij[1]
                 if M is None:
-                    M = max(self.rowind) + 1
+                    try:                        
+                        M = amax(self.rowind) + 1
+                    except ValueError:
+                        M = 0
                 if N is None:
                     N = len(self.indptr) - 1
+                    if N == -1: N = 0
                 self.shape = (M,N)
             else:
                 raise ValueError, "Unrecognized form for csc_matrix constructor."
