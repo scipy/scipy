@@ -2,7 +2,7 @@
 %% Do not edit unless you really know what you are doing.
 \documentclass[english]{article}
 %\usepackage[T1]{fontenc}
-%\usepackage[latin1]{inputenc}
+\usepackage[latin1]{inputenc}
 \usepackage{geometry}
 \geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
 \usepackage{verbatim}
@@ -1165,18 +1165,18 @@ case, the matrix multiplication can be accomplished using Fourier
 transforms.
 
 Let $x\left[n\right]$ define a one-dimensional signal indexed by
-the integer $n.$ Full, convolution of two one-dimensional signals
+the integer $n.$ Full convolution of two one-dimensional signals
 can be expressed as \[
 y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].\]
- This equation can only be implemented directly, if we limit the sequences
+ This equation can only be implemented directly if we limit the sequences
 to finite support sequences that can be stored in a computer, choose
 $n=0$ to be the starting point of both sequences, let $K+1$ be that
 value for which $y\left[n\right]=0$ for all $n>K+1$ and $M+1$ be
 that value for which $x\left[n\right]=0$ for all $n>M+1$, then the
 discrete convolution expression is \[
 y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
- For convenience assume $K\geq M.$ Then, the output of this operation
-is \begin{eqnarray*}
+ For convenience assume $K\geq M.$ Then, more explicitly the output
+of this operation is \begin{eqnarray*}
 y\left[0\right] & = & x\left[0\right]h\left[0\right]\\
 y\left[1\right] & = & x\left[0\right]h\left[1\right]+x\left[1\right]h\left[0\right]\\
 y\left[2\right] & = & x\left[0\right]h\left[2\right]+x\left[1\right]h\left[1\right]+x\left[2\right]h\left[0\right]\\
@@ -1353,8 +1353,31 @@ used as the output. The command to perform an order filter is \textbf{signal.ord
 
 \paragraph{Wiener filter}
 
+The Wiener filter is a simple deblurring filter for denoising images.
+This is not the Wiener filter commonly described in image reconstruction
+problems but instead it is a simple, local-mean filter. Let $x$ be
+the input signal, then the output is
+
+\[
+y=\left\{ \begin{array}{cc}
+\frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\
+m_{x} & \sigma_{x}^{2}<\sigma^{2}.\end{array}\right.\]
+ Where $m_{x}$ is the local estimate of the mean and $\sigma_{x}^{2}$
+is the local estimate of the variance. The window for these estimates
+is an optional input parameter (default is $3\times3$). The parameter
+$\sigma^{2}$ is a threshold noise parameter. If $\sigma$ is not
+given then it is estimated as the average of the local variances. 
+
 
 \paragraph{Hilbert filter}
+
+The Hilbert transform constructs the complex-valued analytic signal
+from a real signal. For example if $x=\cos\omega n$ then $y=\textrm{hilbert}\left(x\right)$
+would return (except near the edges) $y=\exp\left(j\omega n\right).$
+In the frequency domain, the hilbert transform performs\[
+Y=X\cdot H\]
+ where $H$ is 2 for positive frequencies, $0$ for negative frequencies
+and $1$ for zero-frequencies. 
 
 
 \paragraph{Detrend}
@@ -1400,6 +1423,9 @@ used as the output. The command to perform an order filter is \textbf{signal.ord
 
 
 \subsubsection{Read and write Matlab .mat files}
+
+
+\subsubsection{Saving workspace}
 
 
 \subsection{Text-file }
