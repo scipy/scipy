@@ -320,7 +320,7 @@ def _sph_harmonic(m,n,theta,phi):
     Pmn,Pmnd = lpmn(m,n,x)
     val = Pmn[m,n]
     val *= sqrt((2*n+1)/4.0/pi)
-    val *= exp(0.5*gammaln(n-m+1)-gammaln(n+m+1))
+    val *= exp(0.5*(gammaln(n-m+1)-gammaln(n+m+1)))
     val *= exp(1j*m*theta)
     return val
 
