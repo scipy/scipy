@@ -1,12 +1,17 @@
-"""optimize.py
+""" Optimization Tools
 
-A collection of general-purpose optimization routines using Numeric
+ A collection of general-purpose optimization routines.
 
-fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls)
-fminBFGS    ---      Quasi-Newton method (uses function and gradient)
-fminNCG     ---      Line-search Newton Conjugate Gradient (uses function, 
-                     gradient and hessian (if it's provided))
-
+   fmin --      Nelder-Mead Simplex algorithm
+                (uses only function calls)
+   fminBFGS --  Quasi-Newton method (can use function and gradient)
+   fminNCG --   Line-search Newton Conjugate Gradient (can use
+                function, gradient and hessian).
+   fsolve --    Non-linear equation solver.
+   leastsq --   Minimize the sum of squares of M equations in
+                 N unknowns given a starting estimate.
 """
 
 from optimize import fmin, fminBFGS, fminNCG
+from minpack import fsolve, leastsq
+

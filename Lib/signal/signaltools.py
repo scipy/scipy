@@ -420,7 +420,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
                      - a[1]*y[n-1] + ... + a[na]*y[n-na]
 
-    using the following difference equaitions:
+    using the following difference equations:
 
     y[m] = b[0]*x[m] + z[0,m-1]
     z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]

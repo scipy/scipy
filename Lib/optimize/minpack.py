@@ -1,22 +1,76 @@
-__version__ = "$Revision$"[10:-1]
-import _minpack
+ import _minpack
 from common_routines import *
 
 def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
-    """[x,infodict,ier,msg] = fsolve(func, x0, args=(), Dfun=None, full_output=0,
-                      col_deriv=0,xtol=1.49012e-8, maxfev=0, band=None, epsfcn=0.0,
-                      factor=100, diag=None)
+    """
+ fsolve(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0,
+        xtol=1.49012e-8, maxfev=0, band=None, epsfcn=0.0, factor=100,
+        diag=None)
 
-    return the roots of the N (non-linear) equations defined by func(x)=0
-    given a starting estimate x0.
+  Description:
 
-    Optional Inputs:
-      args         additional arguments to the function (single value or TUPLE)
-      Dfun         the jacobian of the function (derivatives across rows)
-      full_output  non-zero to return the optional
-                     outputs (otherwise only x is returned)
-        
-    other optional inputs available (see documentation).
+    Return the roots of the (non-linear) equations defined by
+    func(x)=0 given a starting estimate.
+
+  Inputs:
+
+    func -- A Python function or method which takes at least one
+            (possibly vector) argument.
+    x0 -- The starting estimate for the roots of func(x)=0.
+    args -- Any extra arguments to func are placed in this tuple.
+    Dfun -- A function or method to compute the Jacobian of func with
+            derivatives across the rows. If this is None, the
+            Jacobian will be estimated.
+    full_output -- non-zero to return the optional outputs.
+    col_deriv -- non-zero to specify that the Jacobian function
+                 computes derivatives down the columns (faster, because
+                 there is no transpose operation).
+
+  Outputs: (x, {infodict, ier, mesg})
+
+    x -- the solution (or the result of the last iteration for an
+         unsuccessful call.
+
+    infodict -- a dictionary of optional outputs with the keys:
+                'nfev' : the number of function calls
+                'njev' : the number of jacobian calls
+                'fvec' : the function evaluated at the output
+                'fjac' : the orthogonal matrix, q, produced by the
+                         QR facotrization of the final approximate
+                         Jacobi matrix, stored column wise.
+                'r'    : upper triangular matrix produced by QR
+                         factorization of same matrix.
+                'qtf'  : the vector (transpose(q) * fvec).
+    ier -- an integer flag.  If it is equal to 1 the solution was
+           found.  If it is not equal to 1, the solution was not
+           found and the following message gives more information.
+    mesg -- a string message giving information about the cause of
+            failure.
+
+  Extended Inputs:
+  
+   xtol -- The calculation will terminate if the relative error
+           between two consecutive iterates is at most xtol.
+   maxfev -- The maximum number of calls to the function. If zero,
+             then 100*(N+1) is the maximum where N is the number
+             of elements in x0.
+   band -- If set to a two-sequence containing the number of sub-
+           and superdiagonals within the band of the Jacobi matrix,
+           the Jacobi matrix is considered banded (only for Dfun=None).
+   epsfcn -- A suitable step length for the forward-difference
+             approximation of the Jacobian (for Dfun=None). If
+             epsfcn is less than the machine precision, it is assumed
+             that the relative errors in the functions are of
+             the order of the machine precision.
+   factor -- A parameter determining the initial step bound
+             (factor * || diag * x||). Should be in interval (0.1,100).
+   diag -- A sequency of N positive entries that serve as a
+           scale factors for the variables.
+
+  Remarks:
+
+    "fsolve" is a wrapper around MINPACK's hybrd and hybrj algorithms.
+
     """
     x0 = myasarray(x0)
     n = len(x0)
@@ -67,23 +121,84 @@ def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,m
 
 
 def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None):
-    """[x,infodict] = leastsq(func, x0, args=(), Dfun=None, full_output=0,
-                             ftol=1.49012e-8, xtol=1.49012e-8, gtol=0.0,
-                             maxfev=0, epsfcn=0.0, factor=100, diag=None)
+    """
+ leastsq(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0,
+         ftol=1.49012e-8, xtol=1.49012e-8, gtol=0.0, maxfev=0,
+         epsfcn=0.0, factor=100, diag=None)
 
-    return the point which minimizes the sum of squares of M (non-linear)
-    equations in N unknowns given a starting estimate, x0.
+  Description:
+
+    Return the point which minimizes the sum of squares of M
+    (non-linear) equations in N unknowns given a starting estimate, x0,
+    using a modification of the Levenberg-Marquardt algorithm.
 
                     x = arg min(sum(func(y)**2))
                              y
-             
-    Optional Inputs:
-      args         additional arguments to the function (single or TUPLE)
-      Dfun         the jacobian of the function (derivatives across rows)
-      full_output  non-zero to return the dictionary infodict with optional
-                     outputs (otherwise only x is returned)
-        
-    other optional inputs available (see documentation).
+
+  Inputs:
+
+    func -- A Python function or method which takes at least one
+            (possibly length N vector) argument and returns M
+            floating point numbers.
+    x0 -- The starting estimate for the minimization.
+    args -- Any extra arguments to func are placed in this tuple.
+    Dfun -- A function or method to compute the Jacobian of func with
+            derivatives across the rows. If this is None, the
+            Jacobian will be estimated.
+    full_output -- non-zero to return the optional outputs.
+    col_deriv -- non-zero to specify that the Jacobian function
+                 computes derivatives down the columns (faster, because
+                 there is no transpose operation).
+
+  
+  Outputs: (x, {infodict, ier, mesg})
+
+    x -- the solution (or the result of the last iteration for an
+         unsuccessful call.
+
+    infodict -- a dictionary of optional outputs with the keys:
+                'nfev' : the number of function calls
+                'njev' : the number of jacobian calls
+                'fvec' : the function evaluated at the output
+                'fjac' : the orthogonal matrix, q, produced by the
+                         QR facotrization of the final approximate
+                         Jacobi matrix, stored column wise.
+                'ipvt' : an integer array of length N which defines
+                         a permutation matrix, p, such that
+                         fjac*p = q*r, where r is upper triangular
+                         with diagonal elements of nonincreasing
+                         magnitude. Column j of p is column ipvt(j)
+                         of the identity matrix.
+                'qtf'  : the vector (transpose(q) * fvec).
+    ier -- an integer flag.  If it is equal to 1 the solution was
+           found.  If it is not equal to 1, the solution was not
+           found and the following message gives more information.
+    mesg -- a string message giving information about the cause of
+            failure.
+
+  Extended Inputs:
+  
+   ftol -- Relative error desired in the sum of squares.
+   xtol -- Relative error desired in the approximate solution.
+   gtol -- Orthogonality desired between the function vector
+           and the columns of the Jacobian.
+   maxfev -- The maximum number of calls to the function. If zero,
+             then 100*(N+1) is the maximum where N is the number
+             of elements in x0.
+   epsfcn -- A suitable step length for the forward-difference
+             approximation of the Jacobian (for Dfun=None). If
+             epsfcn is less than the machine precision, it is assumed
+             that the relative errors in the functions are of
+             the order of the machine precision.
+   factor -- A parameter determining the initial step bound
+             (factor * || diag * x||). Should be in interval (0.1,100).
+   diag -- A sequency of N positive entries that serve as a
+           scale factors for the variables.
+
+  Remarks:
+
+    "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
+
     """
     x0 = myasarray(x0)
     n = len(x0)
