@@ -148,7 +148,10 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
             else:
                 arguments = "()"
 
-            name = "<name>"
+            if hasattr(object,'name'):
+		name = "%s" % object.name
+            else:	
+                name = "<name>"
             if len(name+arguments) > maxwidth:
                 argstr = split_line(name, arguments, maxwidth)
             else:
