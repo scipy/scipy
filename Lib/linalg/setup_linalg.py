@@ -19,7 +19,7 @@ from scipy_distutils.misc_util import fortran_library_item
 
 from scipy_distutils.system_info import get_info,dict_append,\
      AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
-     LapackSrcNotFoundError
+     LapackSrcNotFoundError,BlasSrcNotFoundError
 
 def configuration(parent_package=''):
     from interface_gen import generate_interface
@@ -32,17 +32,24 @@ def configuration(parent_package=''):
 
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
-                     # Fortran LAPACK/ATLAS; useful for testing
+                     # Fortran LAPACK/BLAS; useful for testing
     f_libs = []
-    blas_info,lapack_info,lapack_src_info = {},{},{}
+    blas_info,lapack_info = {},{}
     if not atlas_info:
         warnings.warn(AtlasNotFoundError.__doc__)
         blas_info = get_info('blas')
+        #blas_info = {} # test building BLAS from sources.
+        if not blas_info:
+            warnings.warn(BlasNotFoundError.__doc__)
+            blas_src_info = get_info('blas_src')
+            if not blas_src_info:
+                raise BlasSrcNotFoundError,BlasSrcNotFoundError.__doc__
+            dict_append(blas_info,libraries=['blas_src'])
+            f_libs.append(fortran_library_item(\
+                'blas_src',blas_src_info['sources'],
+                ))
         lapack_info = get_info('lapack')
         #lapack_info = {} # test building LAPACK from sources.
-        if not blas_info:
-            #TODO: build from blas sources (see lapack_src below)
-            raise BlasNotFoundError,BlasNotFoundError.__doc__
         if not lapack_info:
             warnings.warn(LapackNotFoundError.__doc__)
             lapack_src_info = get_info('lapack_src')

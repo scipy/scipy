@@ -14,27 +14,36 @@ from scipy_base.testing import assert_array_almost_equal, assert_equal
 from scipy_base.testing import assert_almost_equal, assert_array_equal
 from scipy_base.testing import ScipyTestCase
 import unittest
-
+from scipy_distutils.misc_util import PostponedException
 
 import os,sys
 d = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,d)
-import cblas
-import fblas
+#import cblas
+#import fblas
+try: import fblas
+except: fblas = PostponedException()
+try: import cblas
+except: cblas = PostponedException()
 del sys.path[0]
 
-
-class test_blas1_simple(ScipyTestCase):
+class test_cblas1_simple(ScipyTestCase):
 
     def check_axpy(self):
         for p in 'sd':
             f = getattr(cblas,p+'axpy')
             assert_array_almost_equal(f(5,[1,2,3],[2,-1,3]),[7,9,18])
-            f = getattr(fblas,p+'axpy')
-            assert_array_almost_equal(f([1,2,3],[2,-1,3],a=5),[7,9,18])
         for p in 'cz':
             f = getattr(cblas,p+'axpy')
             assert_array_almost_equal(f(5,[1,2j,3],[2,-1,3]),[7,10j-1,18])
+
+class test_fblas1_simple(ScipyTestCase):
+
+    def check_axpy(self):
+        for p in 'sd':
+            f = getattr(fblas,p+'axpy')
+            assert_array_almost_equal(f([1,2,3],[2,-1,3],a=5),[7,9,18])
+        for p in 'cz':
             f = getattr(fblas,p+'axpy')
             assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
     def check_copy(self):
@@ -99,7 +108,7 @@ class test_blas1_simple(ScipyTestCase):
             assert_equal(f([-5,4+3j,6]),1)
     #XXX: need tests for rot,rotm,rotg,rotmg
 
-class test_blas2_simple(ScipyTestCase):
+class test_fblas2_simple(ScipyTestCase):
 
     def check_gemv(self):
         for p in 'sd':
@@ -112,7 +121,7 @@ class test_blas2_simple(ScipyTestCase):
             assert_array_almost_equal(f(3j,[[3-4j]],[-4],3,[5j]),[-48-21j])
 
 
-class test_blas3_simple(ScipyTestCase):
+class test_fblas3_simple(ScipyTestCase):
 
     def check_gemm(self):
         for p in 'sd':
@@ -127,9 +136,13 @@ class test_blas3_simple(ScipyTestCase):
 def test_suite(level=1):
     suites = []
     if level > 0:
-        suites.append( unittest.makeSuite(test_blas1_simple,'check_') )
-        suites.append( unittest.makeSuite(test_blas2_simple,'check_') )
-        suites.append( unittest.makeSuite(test_blas3_simple,'check_') )
+        if not isinstance(fblas,PostponedException):
+            suites.append( unittest.makeSuite(test_fblas1_simple,'check_') )
+            suites.append( unittest.makeSuite(test_fblas2_simple,'check_') )
+            suites.append( unittest.makeSuite(test_fblas3_simple,'check_') )
+        if not isinstance(cblas,PostponedException):
+            suites.append( unittest.makeSuite(test_cblas1_simple,'check_') )
+
     import test_fblas
     suite = test_fblas.test_suite(level)
     suites.append(suite)

@@ -37,8 +37,8 @@ NOTES
    LAPACK/BLAS libraries installed in your system or Fortran
    LAPACK/BLAS sources to be accessible by SciPy setup scripts (use
    LAPACK_SRC/BLAS_SRC environment variables to indicate the location
-   of the corresponding source directories). XXX: Building BLAS from
-   sources is not implemented yet.
+   of the corresponding source directories). 
+
 
 GETTING SCIPY
 =============
@@ -52,6 +52,7 @@ See
    http://www.scipy.org/site_content/tutorials/CVSInstruct
 Daily snapshot of SciPy CVS repository is available in
    ftp://scipy.org/pub/
+
 
 INSTALLATION
 ============
@@ -68,6 +69,7 @@ computer.
 
 XXX: From rpm,deb,zip,..
 
+
 TESTING
 =======
 
@@ -77,6 +79,7 @@ To test SciPy installation, run in python
    >>> scipy.test(level=1)
 
 where the test level can vary from 1 to 10.
+
 
 KNOWN PROBLEMS
 ==============
@@ -122,7 +125,6 @@ lists. Please include the following information to your message:
    full output (both stdout and stderr) of the SciPy installation 
    command can be very helpful.
 
-Before complaining problems with SciPy, you may find the following notes
-useful:
+You may find the following notes useful:
   http://www.tuxedo.org/~esr/faqs/smart-questions.html
   http://www.chiark.greenend.org.uk/~sgtatham/bugs.html
