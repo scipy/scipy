@@ -636,7 +636,7 @@ class csr_matrix(spmatrix):
             N=ij
             self.data = zeros((nzmax,),typecode)
             self.colind = zeros((nzmax,),'i')
-            self.indptr = zeros((N+1,),'i')
+            self.indptr = zeros((M+1,),'i')
             self.shape = (M,N)
         elif (isinstance(s,ArrayType) or \
               isinstance(s,type([]))):
@@ -687,12 +687,14 @@ class csr_matrix(spmatrix):
             raise ValueError, "Data and row list should have same length"
         if (len(self.indptr) != M+1):
             raise ValueError, "Index pointer should be of length #rows + 1"
-        if (nnz>0) and (max(self.colind[:nnz]) >= M):
+        if (nnz>0) and (max(self.colind[:nnz]) >= N):
             raise ValueError, "Column-values must be < N."
         if (nnz > nzmax):
             raise ValueError, \
                   "Last value of index list should be less than "\
                   "the size of data list"
+        self.nnz = nnz
+        self.nzmax = nzmax
         self.typecode = self.data.typecode()
         if self.typecode not in 'fdFD':
             self.typecode = 'd'
@@ -847,8 +849,8 @@ class csr_matrix(spmatrix):
             typecode = _coerce_rules[(self.typecode,bmat.typecode)]
             ftype = _transtabl[typecode]            
             func = getattr(sparsetools,ftype+'cscmucsc')
-            b, colb, rowb = a, rowa, ptra
-            a, rowa, ptra = bmat.data, bmat.colind, bmat,indptr
+            b, colb, ptrb = a, rowa, ptra
+            a, rowa, ptra = bmat.data, bmat.colind, bmat.indptr
             out = 'csr'
             firstarg = (N,)
         else:

@@ -6,11 +6,11 @@
 
 """
 __usage__ = """
-Build linalg:
-  python setup_linalg.py build
+Build sparse:
+  python setup_sparse.py build
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.sparse.test(<level>)'
-Run tests if linalg is not installed:
+Run tests if sparse is not installed:
   python tests/test_Sparse.py [<level>]
 """
 
@@ -19,39 +19,15 @@ from scipy_base import arange, zeros, array, dot
 
 import sys
 from scipy_test.testing import *
-from scipy.sparse import csc_matrix
+set_package_path()
+from sparse import csc_matrix, csr_matrix
+restore_path()
 
-import unittest
+class _test_cs(ScipyTestCase):
 
-
-class test_csc(ScipyTestCase):
-
-    dat = array([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
-    datsp = csc_matrix(dat)
-
-    def check_constructor1(self):
-        b = array([[1,0,0],[3,0,1],[0,2,0]],'d')
-        bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,3,2,1])
-        assert_array_equal(bsp.rowind,[0,1,2,1])
-        assert_array_equal(bsp.indptr,[0,2,3,4])
-        assert_equal(bsp.getnnz(),4)
-        assert_equal(bsp.getformat(),'csc')
-        
-    def check_constructor2(self):
-        b = zeros((6,6),'d')
-        b[2,4] = 5
-        bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[5])
-        assert_array_equal(bsp.rowind,[2])
-        assert_array_equal(bsp.indptr,[0,0,0,0,0,1,1])
-
-    def check_constructor3(self):
-        b = array([[1,0],[0,2],[3,0]],'d')
-        bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,3,2])
-        assert_array_equal(bsp.rowind,[0,2,1])
-        assert_array_equal(bsp.indptr,[0,2,3])
+    def setUp(self):
+        self.dat = array([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
+        self.datsp = self.spmatrix(self.dat)
 
     def check_getelement(self):
         assert_equal(self.datsp[0,0],1)
@@ -85,14 +61,77 @@ class test_csc(ScipyTestCase):
         assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
 
     def check_matvec(self):
-        b = csc_matrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        b = self.spmatrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         assert_array_almost_equal(b*[1,2,3],dot(b.todense(),[1,2,3]))
         assert_array_almost_equal([1,2,3,4]*b,dot([1,2,3,4],b.todense()))
 
     def check_matmat(self):
-        asp = csc_matrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
-        bsp = csc_matrix(array([[0,1],[1,0],[0,2]],'d'))
+        asp = self.spmatrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        bsp = self.spmatrix(array([[0,1],[1,0],[0,2]],'d'))
         assert_array_almost_equal((asp*bsp).todense(),dot(asp.todense(),bsp.todense()))
+
+class test_csr(_test_cs):
+
+    spmatrix = csr_matrix
+
+    def check_constructor1(self):
+        b = array([[0,4,0],
+                   [3,0,1],
+                   [0,2,0]],'d')
+        bsp = csr_matrix(b)
+        assert_array_almost_equal(bsp.data,[4,3,1,2])
+        assert_array_equal(bsp.colind,[1,0,2,1])
+        assert_array_equal(bsp.indptr,[0,1,3,4])
+        assert_equal(bsp.getnnz(),4)
+        assert_equal(bsp.getformat(),'csr')
+        assert_array_almost_equal(bsp.todense(),b)
+
+    def check_constructor2(self):
+        b = zeros((6,6),'d')
+        b[3,4] = 5
+        bsp = csr_matrix(b)
+        assert_array_almost_equal(bsp.data,[5])
+        assert_array_equal(bsp.colind,[4])
+        assert_array_equal(bsp.indptr,[0,0,0,0,1,1,1])
+        assert_array_almost_equal(bsp.todense(),b)
+        
+    def check_constructor3(self):
+        b = array([[1,0],
+                   [0,2],
+                   [3,0]],'d')
+        bsp = csr_matrix(b)
+        assert_array_almost_equal(bsp.data,[1,2,3])
+        assert_array_equal(bsp.colind,[0,1,0])
+        assert_array_equal(bsp.indptr,[0,1,2,3])
+        assert_array_almost_equal(bsp.todense(),b)
+
+class test_csc(_test_cs):
+
+    spmatrix = csc_matrix
+
+    def check_constructor1(self):
+        b = array([[1,0,0],[3,0,1],[0,2,0]],'d')
+        bsp = csc_matrix(b)
+        assert_array_almost_equal(bsp.data,[1,3,2,1])
+        assert_array_equal(bsp.rowind,[0,1,2,1])
+        assert_array_equal(bsp.indptr,[0,2,3,4])
+        assert_equal(bsp.getnnz(),4)
+        assert_equal(bsp.getformat(),'csc')
+        
+    def check_constructor2(self):
+        b = zeros((6,6),'d')
+        b[2,4] = 5
+        bsp = csc_matrix(b)
+        assert_array_almost_equal(bsp.data,[5])
+        assert_array_equal(bsp.rowind,[2])
+        assert_array_equal(bsp.indptr,[0,0,0,0,0,1,1])
+
+    def check_constructor3(self):
+        b = array([[1,0],[0,2],[3,0]],'d')
+        bsp = csc_matrix(b)
+        assert_array_almost_equal(bsp.data,[1,3,2])
+        assert_array_equal(bsp.rowind,[0,2,1])
+        assert_array_equal(bsp.indptr,[0,2,3])
     
 if __name__ == "__main__":
     ScipyTest('sparse.Sparse').run()
