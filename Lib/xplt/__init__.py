@@ -24,6 +24,10 @@
     plotframe -- Change the plot system on a multi-plot page.
     twoplane  -- Create a plot showing two orthogonal planes of a
                  three-dimensional array.
+
+Xplt is basically a wrapper around the lower-level gist plotting library
+used with Yorick.  Simpler commands are provided, but all of the low-level
+commands of gist are still available.
 """
 
 from gist import *
@@ -58,7 +62,8 @@ if display and (maxwidth is None or maxheight is None):
         os.environ['XPLT_MAXWIDTH']=str(maxwidth)
         os.environ['XPLT_MAXHEIGHT']=str(maxheight)
     except ValueError:
-        pass
+        if maxwidth is None: maxwidth = 800
+        if maxheight is None: maxheight = 600
 else:
     maxwidth = 800
     maxheight = 600
