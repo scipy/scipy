@@ -11,6 +11,7 @@ from __future__ import nested_scopes
 #  Added fminbound (July 2001)
 #  Added brute (Aug. 2002)
 #  Finished line search satisfying strong Wolfe conditions (Mar. 2004)
+#  Updated strong Wolfe conditions line search to use cubic-interpolation (Mar. 2004)
 
 # Minimization routines
 """optimize.py
@@ -257,24 +258,86 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         return x
 
 
+def _cubicmin(a,fa,fpa,b,fb,c,fc):
+    # finds the minimizer for a cubic polynomial that goes through the
+    #  points (a,fa), (b,fb), and (c,fc) with derivative at a of fpa.
+    #
+    # if no minimizer can be found return None
+    #
+    # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
+
+    C = fpa
+    D = fa
+    db = b-a
+    dc = c-a
+    if (db == 0) or (dc == 0) or (b==c): return None
+    denom = (db*dc)**2 * (db-dc)
+    [A,B] = Num.dot([[dc**2, -db**2],[-dc**3, db**3]],[fb-fa-C*db,fc-fa-C*dc])
+    A /= denom
+    B /= denom
+    radical = B*B-3*A*C
+    if radical < 0:  return None
+    if (A == 0): return None
+    xmin = a + (-B + sqrt(radical))/(3*A)
+    return xmin
+
+    
+def _quadmin(a,fa,fpa,b,fb):
+    # finds the minimizer for a quadratic polynomial that goes through
+    #  the points (a,fa), (b,fb) with derivative at a of fpa
+    # f(x) = B*(x-a)^2 + C*(x-a) + D
+    D = fa
+    C = fpa
+    db = b-a*1.0
+    if (db==0): return None
+    B = (fb-D-C*db)/(db*db)
+    if (B <= 0): return None
+    xmin = a  - C / (2.0*B)
+    return xmin
+
 def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
          phi, derphi, phi0, derphi0, c1, c2):
     maxiter = 10
     i = 0
+    delta1 = 0.2  # cubic interpolant check
+    delta2 = 0.1  # quadratic interpolant check
+    phi_rec = phi0
+    a_rec = 0
     while 1:
         # interpolate to find a trial step length between a_lo and a_hi
-        A = phi_lo;
-        B = derphi_lo;
+        # Need to choose interpolation here.  Use cubic interpolation and then if the
+        #  result is within delta * dalpha or outside of the interval bounded by a_lo or a_hi 
+        #  then use quadratic interpolation, if the result is still too close, then use bisection
+
         dalpha = a_hi-a_lo;
-        C = (phi_hi - phi_lo - dalpha*derphi_lo)/dalpha**2;
-        if (C<=0) or ((i%3)==2):
-            # Use bisection
-            a_j = a_lo + 0.5*dalpha;
-        else: 
-            # Use min of quadratic
-            a_j = a_lo - 0.5*B/C;
+        if dalpha < 0: a,b = a_hi,a_lo
+        else: a,b = a_lo, a_hi
+
+        # minimizer of cubic interpolant
+        #    (uses phi_lo, derphi_lo, phi_hi, and the most recent value of phi)
+        #      if the result is too close to the end points (or out of the interval)
+        #         then use quadratic interpolation with phi_lo, derphi_lo and phi_hi
+        #      if the result is stil too close to the end points (or out of the interval)
+        #         then use bisection
+
+        if (i > 0):
+            cchk = delta1*dalpha
+            a_j = _cubicmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi, a_rec, phi_rec)
+        if (i==0) or (a_j is None) or (a_j > b-cchk) or (a_j < a+cchk):
+            qchk = delta2*dalpha
+            a_j = _quadmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi)
+            if (a_j is None) or (a_j > b-qchk) or (a_j < a+qchk):
+                a_j = a_lo + 0.5*dalpha
+#                print "Using bisection."
+#            else: print "Using quadratic."
+#        else: print "Using cubic."
+
+        # Check new value of a_j 
+
         phi_aj = phi(a_j)
         if (phi_aj > phi0 + c1*a_j*derphi0) or (phi_aj >= phi_lo):
+            phi_rec = phi_hi
+            a_rec = a_hi
             a_hi = a_j
             phi_hi = phi_aj
         else:
@@ -284,8 +347,13 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
                 val_star = phi_aj
                 break
             if derphi_aj*(a_hi - a_lo) >= 0:
+                phi_rec = phi_hi
+                a_rec = a_hi
                 a_hi = a_lo
                 phi_hi = phi_lo
+            else:                
+                phi_rec = phi_lo
+                a_rec = a_lo
             a_lo = a_j
             phi_lo = phi_aj
             derphi_lo = derphi_aj
@@ -296,13 +364,14 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             break    
     return a_star, val_star
 
-def line_search(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
+def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                 args=(), c1=1e-4, c2=0.9, amax=50):
     """Find alpha that satisfies strong Wolfe conditions. 
     
     Uses the line search algorithm to enforce strong Wolfe conditions 
     Wright and Nocedal, 'Numerical Optimization', 1999, pg. 59-60
 
+    For the zoom phase it uses an algorithm by 
     Outputs: (alpha0, gc, fc)
     """
 
@@ -313,13 +382,21 @@ def line_search(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
         global fc
         fc += 1
         return f(xk+alpha*pk,*args)
-    def phiprime(alpha):
-        global fc, gc 
-        if fprime is approx_fprime:
+
+    if isinstance(myfprime,type(())):
+        def phiprime(alpha):
+            global fc
             fc += len(xk)+1
-        else:
+            eps = myfprime[1]
+            fprime = myfprime[0]
+            args = (f,eps)
+            return Num.dot(fprime(xk+alpha*pk,*args),pk)        
+    else:
+        fprime = myfprime
+        def phiprime(alpha):
+            global gc
             gc += 1
-        return Num.dot(fprime(xk+alpha*pk,*args),pk)
+            return Num.dot(fprime(xk+alpha*pk,*args),pk)            
 
     alpha0 = 0
     phi0 = old_fval
@@ -444,7 +521,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
+def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
               maxiter=None, full_output=0, disp=1):
     """Minimize a function using the BFGS algorithm.
 
@@ -503,18 +580,22 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
 
     if app_fprime:
         gfk = apply(approx_fprime,(x0,f,epsilon)+args)
+        myfprime = (approx_fprime,epsilon)
         func_calls = func_calls + len(x0) + 1
     else:
         gfk = apply(fprime,(x0,)+args)
+        myfprime = fprime
         grad_calls = grad_calls + 1
     xk = x0
     sk = [2*gtol]
     warnflag = 0
     old_fval = f(x0,*args)
+    old_old_fval = old_fval + 5000
     func_calls += 1
     while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
-        alpha_k, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval,args)
+        alpha_k, fc, gc, old_fval, old_old_fval = \
+                 line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args)
         func_calls = func_calls + fc
         xkp1 = xk + alpha_k * pk
         sk = xkp1 - xk
@@ -574,7 +655,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
 
 
 
-def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
+def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
               maxiter=None, full_output=0, disp=1):
     """Minimize a function with nonlinear conjugate gradient algorithm.
 
@@ -631,7 +712,7 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
 
     if app_fprime:
         gfk = apply(approx_fprime,(x0,f,epsilon)+args)
-        myfprime = approx_fprime
+        myfprime = (approx_fprime,epsilon)
         func_calls = func_calls + len(x0) + 1
     else:
         gfk = apply(fprime,(x0,)+args)
@@ -696,7 +777,7 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
         return xk
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-             epsilon=1e-8, maxiter=None, full_output=0, disp=1):
+             epsilon=1.49e-8, maxiter=None, full_output=0, disp=1):
     """Description:
 
     Minimize the function, f, whose gradient is given by fprime using the
@@ -1215,7 +1296,7 @@ def _myfunc(alpha, func, x0, direc, args=()):
     funcargs = (x0 + alpha * direc,)+args
     return func(*funcargs)
     
-def _linesearch_powell(func, p, xi, args=(), tol=1e-4):
+def _linesearch_powell(func, p, xi, args=(), tol=1e-3):
     # line-search algorithm using fminbound
     #  find the minimium of the function
     #  func(x0+ alpha*direc)
@@ -1431,31 +1512,44 @@ if __name__ == "__main__":
     times = []
     algor = []
     x0 = [0.8,1.2,0.7]
+    print "Nelder-Mead Simplex"
+    print "==================="
     start = time.time()
     x = fmin(rosen,x0)
     print x
     times.append(time.time() - start)
     algor.append('Nelder-Mead Simplex\t')
 
+    print
+    print "Powell Direction Set Method"
+    print "==========================="
     start = time.time()
     x = fmin_powell(rosen,x0)
     print x
     times.append(time.time() - start)
     algor.append('Powell Direction Set Method.')
 
+    print
+    print "Nonlinear CG"
+    print "============"
     start = time.time()
     x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=200)
     print x
     times.append(time.time() - start)
     algor.append('Nonlinear CG     \t')
-    
+
+    print
+    print "BFGS Quasi-Newton"
+    print "================="
     start = time.time()
     x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('BFGS Quasi-Newton\t')
 
-
+    print
+    print "BFGS approximate gradient"
+    print "========================="
     start = time.time()
     x = fmin_bfgs(rosen, x0, avegtol=1e-4, maxiter=100)
     print x
@@ -1463,6 +1557,9 @@ if __name__ == "__main__":
     algor.append('BFGS without gradient\t')
 
 
+    print
+    print "Newton-CG with Hessian product"
+    print "=============================="
     start = time.time()
     x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_prod, maxiter=80)
     print x
@@ -1470,12 +1567,16 @@ if __name__ == "__main__":
     algor.append('Newton-CG with hessian product')
     
 
+    print
+    print "Newton-CG with full Hessian"
+    print "==========================="
     start = time.time()
     x = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with full hessian')
 
+    print
     print "\nMinimizing the Rosenbrock function of order 3\n"
     print " Algorithm \t\t\t       Seconds"
     print "===========\t\t\t      ========="
