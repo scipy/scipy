@@ -72,6 +72,8 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 #define UNDERFLOW	4	/* underflow range error */
 #define TLOSS		5	/* total loss of precision */
 #define PLOSS		6	/* partial loss of precision */
+#define TOOMANY         7       /* too many iterations */
+#define MAXITER        500
 
 #define EDOM		33
 #define ERANGE		34
@@ -126,7 +128,7 @@ typedef struct
 #else 
 #define UNK 1        /* Machine not IEEE or DEC, 
                         constants given in decimal format */
-#define BIGENDIAN 1   /* This is a BE file */
+#define BIGENDIAN 0   /* This is a LE file */
 #endif
 
 

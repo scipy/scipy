@@ -65,14 +65,15 @@ int merror = 0;
  * messages is bound to the error codes defined
  * in mconf.h.
  */
-static char *ermsg[7] = {
+static char *ermsg[8] = {
 "unknown",      /* error code 0 */
 "domain",       /* error code 1 */
 "singularity",  /* et seq.      */
 "overflow",
 "underflow",
 "total loss of precision",
-"partial loss of precision"
+"partial loss of precision",
+"too many iterations"
 };
 
 
@@ -92,7 +93,7 @@ merror = code;
 /* Display error message defined
  * by the code argument.
  */
-if( (code <= 0) || (code >= 7) )
+if( (code <= 0) || (code >= 8) )
 	code = 0;
 if (print_error_messages) {
         printf( "\n%s ", name );

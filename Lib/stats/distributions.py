@@ -51,16 +51,17 @@ def moment_ppf(m, ppffunc, *args):
 ##  (needs cdf function) and uses brentq from scipy.optimize
 ##  to compute ppf from cdf.
 class general_cont_ppf:
-    def __init__(self, dist, xa=-10.0, xb=10.0):
+    def __init__(self, dist, xa=-10.0, xb=10.0, xtol=1e-14):
         self.dist = dist
         self.cdf = eval('%scdf'%dist)
         self.xa = xa
         self.xb = xb
+        self.xtol = xtol
         self.vecfunc = scipy.special.general_function(self._single_call)
     def _tosolve(self, x, q, *args):
         return apply(self.cdf, (x, )+args) - q
     def _single_call(self, q, *args):
-        return scipy.optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args)
+        return scipy.optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
     def __call__(self, q, *args):
         return self.vecfunc(q, *args)
             
@@ -127,14 +128,16 @@ def ksonesf(x,n):
     return special.smirnov(n,x)
 
 def ksoneisf(p,n):
-    return special.smirnovi(n,p)
+    return ksoneppf(1.0-p,n)
+    # return special.smirnovi(n,p)
 
 def ksonecdf(x,n):
     return 1-special.smirnov(n,x)
 
+_ksoneppf = general_cont_ppf('ksone',xa=0.0,xb=1.0)
 def ksoneppf(q,n):
     assert all((0<=q) & (q<=1)), _quantstr
-    return special.smirnovi(n,1-q)
+    return _ksoneppf(q,n)
 
 def kstwosf_largen(y):
     return special.kolmogorov(y)
@@ -452,7 +455,7 @@ def betaprimecdf(x, a, b, loc=0.0, scale=1.0):
     x = where(x==1.0,1.0-1e-6,x)  # hyp2f1 doesn't work at -1.0
     Cx = pow(x,a)*special.hyp2f1(a+b,a,1+a,-x)/a/special.beta(a,b)
     sv = errp(sv)
-    return select([(a<=0)|(b<=0)|(scale<=0),x>0],[scipy.nan, Cx])
+    return select([(a<=0)|(b<=0)|(scale<=0),x>500,x>0],[scipy.nan, 1.0, Cx])
 
 _betap_ppf = general_cont_ppf('betaprime')
 def betaprimeppf(q, a, b, loc=0.0, scale=1.0):
@@ -1014,7 +1017,7 @@ def exponweibcdf(x, a, c, loc=0.0, scale=1.0):
     x, a, c, loc, scale = map(arr, (x, a, c, loc, scale))
     x = arr((x-loc*1.0)/scale)
     exc = exp(-x**c)
-    Cx = arr(1-exc)**a
+    Cx = arr((1-exc)**a)
     return select([(a<=0) | (c<=0) | (scale<=0), x>0],[scipy.nan, Cx])
 
 def exponweibppf(q, a, c, loc=0.0, scale=1.0):
@@ -1284,20 +1287,20 @@ def foldnormstats(c=0.0, loc=0.0, scale=1.0, full=0):
 def frechetpdf(x, c, left=0, loc=0.0, scale=1.0):
     x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
     x = arr((x-loc*1.0)/scale)
-    x = arr(where(left, -x, x))
+    x = arr(where(left+x-x,-x,x))
     Px = c*pow(x,-(c+1))*exp(-x**(-c))
     return select([(scale <=0)|(c<=0),((x>0)&(left==0))|((x<0)&(left!=0))],[scipy.nan, Px/scale])
 
 def frechetcdf(x, c, left=0, loc=0.0, scale=1.0):
     x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
     x = arr((x-loc*1.0)/scale)
-    x = arr(where(left, -x, x))
+    x = arr(where(left+x-x,-x,x))
     Cx = exp(-x**(-c))
     return select([(scale <=0)|(c<=0),(x>0)&(left==0), (x<0)&(left!=0), left!=0],[scipy.nan, Cx, 1-Cx, 1])
 
 def frechetppf(q, c, left=0, loc=0.0, scale=1.0):
     q, c, loc, scale, left = map(arr, (q, c, loc,scale, left))
-    q = arr(where(left,1-q,q))
+    q = arr(where(left+q-q,1-q,q))
     vals = pow(-log(q),-1.0/c)
     cond = (q>=0)&(q<=1)&(scale >0)&(c >0)
     return select([1-cond, left==0], [scipy.nan, vals*scale + loc], -vals*scale + loc)
@@ -2564,13 +2567,13 @@ def paretopdf(x, b, loc=0.0, scale=1.0):
     x, b, loc, scale = map(arr, (x,b,loc,scale))
     x = arr((x-loc*1.0)/scale)
     Px = b * x**(-b-1)
-    return select([(b<=0)&(scale<=0.0)],[scipy.nan],Px/scale)
+    return select([(b<=0)&(scale<=0.0),x>=1.0],[scipy.nan,Px/scale])
 
 def paretocdf(x, b, loc=0.0, scale=1.0):
     x, b, loc, scale = map(arr, (x,b,loc,scale))
     x = arr((x-loc*1.0)/scale)
     Cx = 1 -  x**(-b)
-    return select([(b<=0)&(scale<=0.0)],[scipy.nan],Cx)
+    return select([(b<=0)&(scale<=0.0),x>=1.0],[scipy.nan,Cx])
 
 def paretosf(x, b, loc=0.0, scale=1.0):
     return 1-paretocdf(x, b, loc, scale)
@@ -2578,7 +2581,7 @@ def paretosf(x, b, loc=0.0, scale=1.0):
 def paretoppf(q, b, loc=0.0, scale=1.0):
     q, b, loc, scale = map(arr, (q,b,loc,scale))
     cond = (q>=0)&(q<=1)&(scale>0)&(b>0)
-    vals = (1-q, -1.0/b)
+    vals = pow(1-q, -1.0/b)
     return _wc(cond, vals*scale + loc)
 
 def paretoisf(q, b, loc=0.0, scale=1.0):
@@ -3022,7 +3025,7 @@ def waldstats(loc=0.0, scale=1.0, full=0):
 def weibullpdf(x, shape, left=0, loc=0.0, scale=1.0):
     c, b, A, x, left = map(arr,(shape, scale, loc, x, left))
     x = arr((x-A*1.0)/b)
-    x = arr(where(left,-x,x))
+    x = arr(where(left+x-x,-x,x))
     Px = c * x**(c-1.0) * exp(-x**c)
     return select([(c<=0)|(b<=0),((x>0)&(left==0))|((x<0)&(left!=0))],[scipy.nan,Px/b])
 
@@ -3420,5 +3423,17 @@ def zipfstats(a=4.0, full=0):
     mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
     g2 = mu4 / arr(var**2) - 3.0
     return mu, var, g1, g2
+
+
+################## test functions #########################
+
+def test(level=1):
+    from scipy_base.testing import module_test
+    module_test(__name__,__file__,level=level)
+
+def test_suite(level=1):
+    from scipy_base.testing import module_test_suite
+    return module_test_suite(__name__,__file__,level=level)
+
 
 

@@ -114,6 +114,7 @@ smirnovi (n, p)
      double p;
 {
   double e, t, dpde;
+  int iterations;
 
   if (p <= 0.0 || p > 1.0)
     {
@@ -122,6 +123,7 @@ smirnovi (n, p)
     }
   /* Start with approximation p = exp(-2 n e^2).  */
   e = sqrt (-log (p) / (2.0 * n));
+  iterations = 0;
   do
     {
       /* Use approximate derivative in Newton iteration. */
@@ -140,6 +142,11 @@ smirnovi (n, p)
 	  mtherr ("smirnovi", OVERFLOW);
 	  return 0.0;
 	}
+      if (++iterations > MAXITER) 
+        {
+          mtherr ("smirnovi", TOOMANY);
+          return (e);          
+        }
     }
   while (fabs (t / e) > 1e-10);
   return (e);
@@ -155,6 +162,7 @@ kolmogi (p)
      double p;
 {
   double y, t, dpdy;
+  int iterations;
 
   if (p <= 0.0 || p > 1.0)
     {
@@ -164,6 +172,7 @@ kolmogi (p)
   if ( (1.0 - p ) < 1e-16) return 0.0;
   /* Start with approximation p = 2 exp(-2 y^2).  */
   y = sqrt (-0.5 * log (0.5 * p));
+  iterations = 0;
   do
     {
       /* Use approximate derivative in Newton iteration. */
@@ -177,8 +186,13 @@ kolmogi (p)
 	  return 0.0;
 	}
       y = y + t;
+      if (++iterations > MAXITER) 
+        {
+          mtherr ("kolmogi", TOOMANY);
+          return (y);          
+        }      
     }
-  while (fabs (t / y) > 1e-10);
+  while (fabs (t / y) > 1.0e-10);
   return (y);
 }
 

@@ -216,7 +216,7 @@ def gengamma(a, c, loc=0.0, scale=1.0, size=None):
     if (a<=0) or (c==0) or (scale<=0):
         raise ValueError, _parmerr
     u = random(size=size)
-    vals = special.gammaincinv(a, special.gamma(a)*q)**(1.0/c)
+    vals = special.gammaincinv(a, special.gamma(a)*u)**(1.0/c)
     return vals*scale + loc
 
 def loggamma(c, loc=0.0, scale=1.0, size=None):
@@ -277,7 +277,7 @@ def exponweib(a, c, loc=0.0, scale=1.0, size=None):
     if (c <=0) or (scale <=0) or (a <=0):
         raise ValueError, _parmerr
     u = random(size=size)
-    return -pow(-log(1-pow(u,1.0/a)),1.0/c)*scale + loc
+    return pow(-log(1-pow(u,1.0/a)),1.0/c)*scale + loc
 
 def exponpow(b, loc=0.0, scale=1.0, size=None):
     """Exponentiated Weibull
@@ -287,10 +287,12 @@ def exponpow(b, loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return pow(log(1.0-log(1-u)),1.0/b)*scale + loc
 
-def frechet(c, loc=0.0, scale=1.0, size=None):
+def frechet(c, left=0, loc=0.0, scale=1.0, size=None):
     if (c <=0) or (scale <=0):
         raise ValueError, _parmerr
     u = random(size=size)
+    if left:
+        u = 1-u
     return pow(-log(u),-1.0/c)*scale + loc
 
 
@@ -300,13 +302,13 @@ def gilbrat(size=None):
     """
     return lognorm(std=1.0, loc=0.0, scale=1.0, size=size)
 
-def f(dfn, dfd, size=None):
+def f(dfn, dfd, loc=0.0, scale=1.0, size=None):
     """returns array of F distributed random numbers with dfn degrees of freedom in the numerator and dfd degrees of freedom in the denominator."""
-    return _build_random_array(rand.f, (dfn, dfd), size)
+    return _build_random_array(rand.f, (dfn, dfd), size)*scale + loc
 
-def ncf(dfn, dfd, nc, size=None):
+def ncf(dfn, dfd, nc, loc=0.0, scale=1.0, size=None):
     """returns array of noncentral F distributed random numbers with dfn degrees of freedom in the numerator and dfd degrees of freedom in the denominator, and noncentrality parameter nonc."""
-    return _build_random_array(rand.noncentral_f, (dfn, dfd, nc), size)
+    return _build_random_array(rand.noncentral_f, (dfn, dfd, nc), size)*scale + loc
 
 def chi2(df, loc=0.0, scale=1.0, size=None):
     """returns array of chi squared distributed random numbers with df degrees of freedom."""
@@ -329,7 +331,8 @@ def genpareto(c, loc=0.0, scale=1.0, size=None):
     if (scale <=0) or (c==0):
         raise ValueError, "Scale must be positive and parameter non-zero."
     u = random(size=size)
-    return 1.0/c*(pow(1.0/(1-q),c)-1)
+    vals = 1.0/c*(pow(1.0/(1-u),c)-1)
+    return vals*scale + loc
 
 def genextreme(c, loc=0.0, scale=1.0, size=None):
     if (scale <=0):
@@ -338,22 +341,23 @@ def genextreme(c, loc=0.0, scale=1.0, size=None):
     if c == 0:
         vals= -log(-log(u))
     else:
-        vals = 1.0/c*(1-(-log(u))^c)
+        vals = 1.0/c*(1-(-log(u))**c)
     return vals*scale + loc
 
 def genhalflogistic(c, loc=0.0, scale=1.0, size=None):
     if (c <=0) or (scale <=0):
         raise ValueError, _parmerr
     u = random(size=size)
-    return 1.0/c * (1-((1-u)/(1+u))**c)
+    vals = 1.0/c * (1-((1-u)/(1+u))**c)
+    return vals*scale + loc
 
-def pareto(c, loc=0.0, scale=1.0, size=None):
+def pareto(b, loc=0.0, scale=1.0, size=None):
     """Pareto First Kind.
     """
-    if (c<=0) or (scale <= 0):
+    if (b<=0) or (scale <= 0):
         raise ValueError, _parmerr
     u = random(size=size)
-    return (1-u)**(-1.0/c)
+    return pow(1-u,-1.0/b)*scale + loc
 
 # special case with no location parameter.  Use pareto if you need
 #   location parameter.
@@ -384,12 +388,13 @@ def fatiguelife(c, loc=0.0, scale=1.0, size=None):
 
 def foldnorm(c=0.0, loc=0.0, scale=1.0, size=None):
     """Folded Normal Random Variates."""
-    return abs(norm(c*scale, scale)) + loc
+    return abs(norm(c*scale, size=size)) + loc
 
-def ncx2(df, nc, size=None):
+def ncx2(df, nc, loc=0.0, scale=1.0, size=None):
     """returns array of noncentral chi squared distributed random numbers
     with df degrees of freedom and noncentrality parameter."""
-    return _build_random_array(rand.noncentral_chi2, (df, nc), size)
+    vals = _build_random_array(rand.noncentral_chi2, (df, nc), size)
+    return vals*scale + loc
 
 def t(df, loc=0.0, scale=1.0, size=None):
     """returns array of student_t distributed random numbers
@@ -398,20 +403,27 @@ def t(df, loc=0.0, scale=1.0, size=None):
     sY = sqrt(Y)
     return 0.5*sqrt(df)*(sY - 1.0/sY)*scale + loc
 
-def nct(df, nc, size=None):
+def nct(df, nc, loc=0.0, scale=1.0, size=None):
     """returns array of noncentral student_t distributed random numbers
     with df degrees of freedom."""    
-    return norm(nc)*Num.sqrt(df) / Num.sqrt(noncentral_chi2(df,nc,size))
+    vals = norm(nc,size=size)*Num.sqrt(df) / Num.sqrt(chi2(df,size=size))
+    return vals*scale + loc
 
-def weibull(c, loc=0.0, scale=1.0, size=None):
+def weibull(c, left=0, loc=0.0, scale=1.0, size=None):
     """Weibull distributed random variates."""
+    if (c <= 0):
+        raise ValueError, _parmerr
     u = random(size=size)
-    return pow(log(1.0/(1.0-u)), 1.0/c)*scale + loc
+    if left:
+        vals = -pow(log(1.0/u), 1.0/c)
+    else:
+        vals = pow(log(1.0/(1.0-u)), 1.0/c)
+    return vals*scale + loc
 
 def dweibull(c, loc=0.0, scale=1.0, size=None):
     """Weibull distributed random variates."""
     u = random(size=size)
-    return (weibull(c, 0.0, 1.0, size=size)*(Num.where(u>=0.5,1,-1)))*scale+loc
+    return (weibull(c, 0, 0.0, 1.0, size=size)*(Num.where(u>=0.5,1,-1)))*scale+loc
 
 def maxwell(scale=1.0, size=None):
     """return array of Maxwell distributed random numbers"""
@@ -434,10 +446,14 @@ def logistic(loc=0.0, scale=1.0, size=None):
     """Logistic Random Numbers."""
     return genlogistic(1.0, loc=loc, scale=scale, size=size)
 
-def gumbel(loc=0.0, scale=1.0, size=None):
+def gumbel(left=0, loc=0.0, scale=1.0, size=None):
     """Gumbel (Log-Weibull, Fisher-Tippett) RN"""
     u = random(size=size)
-    return loc - scale*log(-log(u))
+    if left:
+        vals = log(-log(1-u))
+    else:
+        vals = -log(-log(u))
+    return vals*scale + loc
 
 def gompertz(c, loc=0.0, scale=1.0, size=None):
     if (c<=0) or (scale <=0):

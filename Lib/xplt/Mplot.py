@@ -53,7 +53,7 @@ except ImportError:
                 plot(h[:,0],h[:,1])
             return h        
     except ImportError:
-        from scipy.stats import histogram as hist
+        from scipy.stats import histogram2 as hist
         def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
             """Plot a histogram.  ntype is the normalization type.
             

@@ -1,10 +1,11 @@
 """ Statistical Functions
 """
 import pstats
-from rv import *
 from stats import *
 from rv2 import *
 from distributions import *
+from rv import *
+
 
 #---- testing ----#
 def test(level=10):
