@@ -30,16 +30,20 @@ import unittest
     
 #---- testing ----#
 
-def test():
+def test(test_set = 'all'):
+    # The standard run test compiler which can take a while.
+    # Set test_set = 'fast' to just do the basic tests
     import unittest
     runner = unittest.TextTestRunner()
-    runner.run(test_suite())
+    runner.run(test_suite(test_set))
     return runner
 
-def test_suite():
+def test_suite(test_set = 'all'):
     import scipy_test
     import scipy
     ignore = ['xplt','plt','gui_thread','linalg','sparse']
+    if test_set != 'all':
+        ignore += ['compiler']
     return scipy_test.harvest_test_suites(scipy,ignore)
 
     
