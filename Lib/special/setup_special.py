@@ -20,6 +20,9 @@ def configuration(parent_package='',parent_path=None):
         define_macros.append(('USE_MCONF_LE',None))
     else:
         define_macros.append(('USE_MCONF_BE',None))
+    if sys.platform=='win32':
+        define_macros.append(('NOINFINITIES',None))
+        define_macros.append(('NONANS',None))
 
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
     cephes = glob(os.path.join(local_path,'cephes','*.c'))

@@ -166,10 +166,16 @@ typedef struct
 
 /* Define to ask for infinity support, else undefine. */
 #define INFINITIES 1
+#ifdef NOINFINITIES
+#undef INFINITIES
+#endif
 
 /* Define to ask for support of numbers that are Not-a-Number,
    else undefine.  This may automatically define INFINITIES in some files. */
 #define NANS 1
+#ifdef NONANS
+#undef NANS
+#endif
 
 /* Define to distinguish between -0.0 and +0.0.  */
 #define MINUSZERO 1
