@@ -112,7 +112,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   if ((sum = calloc(type_size,2))==NULL) return -3; /* No memory */
   value = sum + type_size;
 
-  if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[0]+Nwin[1]-1;}
+  if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[1]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
   else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]-Nwin[1]+1;}
   else return -1;  /* Invalid output flag */  
