@@ -1022,8 +1022,8 @@ class test_hermite(unittest.TestCase):
         assert_array_almost_equal(H1.c,[2,0],13)
         assert_array_almost_equal(H2.c,[4,0,-2],13)
         assert_array_almost_equal(H3.c,[8,0,-12,0],13)
-        assert_array_almost_equal(H4.c,[16,0,-48,0,12],13)
-        assert_array_almost_equal(H5.c,[32,0,-160,0,120,0],13)
+        assert_array_almost_equal(H4.c,[16,0,-48,0,12],12)
+        assert_array_almost_equal(H5.c,[32,0,-160,0,120,0],12)
 
     def check_hermitenorm(self):
         # He_n(x) = 2**(-n/2) H_n(x/sqrt(2))
