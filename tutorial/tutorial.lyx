@@ -4116,7 +4116,7 @@ preview false
 Computing norms
 \layout Standard
 
-Matrix and vector norms can be computed in SciPy.
+Matrix and vector norms can also be computed with SciPy.
  A wide range of norm definitions are available using different parameters
  to the order argument of 
 \series bold 
@@ -4192,31 +4192,961 @@ inf.
  
 \layout Subsubsection
 
-Solving least-squares problems
+Solving linear least-squares problems and pseudo-inverses
+\layout Standard
+
+Linear least-squares problems occur in many branches of applied mathematics.
+ In this problem a set of linear scaling coefficients is sought that allow
+ a model to fit data.
+ In particular it is assumed that data 
+\begin_inset Formula $y_{i}$
+\end_inset 
+
+ is related to data 
+\begin_inset Formula $\mathbf{x}_{i}$
+\end_inset 
+
+ through a set of coefficients 
+\begin_inset Formula $c_{j}$
+\end_inset 
+
+ and model functions 
+\begin_inset Formula $f_{j}\left(\mathbf{x}_{i}\right)$
+\end_inset 
+
+ via the model 
+\begin_inset Formula \[
+y_{i}=\sum_{j}c_{j}f_{j}\left(\mathbf{x}_{i}\right)+\epsilon_{i}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\epsilon_{i}$
+\end_inset 
+
+ represents uncertainty in the data.
+ The strategy of least squares is to pick the coefficients 
+\begin_inset Formula $c_{j}$
+\end_inset 
+
+ to minimize 
+\begin_inset Formula \[
+J\left(\mathbf{c}\right)=\sum_{i}\left|y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right|^{2}.\]
+
+\end_inset 
+
+ 
+\layout Standard
+
+Theoretically, a global minimum will occur when 
+\begin_inset Formula \[
+\frac{\partial J}{\partial c_{n}^{*}}=0=\sum_{i}\left(y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right)\left(-f_{n}^{*}\left(x_{i}\right)\right)\]
+
+\end_inset 
+
+or 
+\begin_inset Formula \begin{eqnarray*}
+\sum_{j}c_{j}\sum_{i}f_{j}\left(x_{i}\right)f_{n}^{*}\left(x_{i}\right) & = & \sum_{i}y_{i}f_{n}^{*}\left(x_{i}\right)\\
+\mathbf{A}^{H}\mathbf{Ac} & = & \mathbf{A}^{H}\mathbf{y}\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula \[
+\left\{ \mathbf{A}\right\} _{ij}=f_{j}\left(x_{i}\right).\]
+
+\end_inset 
+
+ When 
+\begin_inset Formula $\mathbf{A^{H}A}$
+\end_inset 
+
+ is invertible, then 
+\begin_inset Formula \[
+\mathbf{c}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\mathbf{y}=\mathbf{A}^{\dagger}\mathbf{y}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\mathbf{A}^{\dagger}$
+\end_inset 
+
+ is called the pseudo-inverse of 
+\begin_inset Formula $\mathbf{A}.$
+\end_inset 
+
+ Notice that using this definition of 
+\series bold 
+
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+
+\series default 
+ the model can be written 
+\begin_inset Formula \[
+\mathbf{y}=\mathbf{Ac}+\boldsymbol{\epsilon}.\]
+
+\end_inset 
+
+The command 
+\series bold 
+linalg.lstsq
+\series default 
+ will solve the linear least squares problem for 
+\begin_inset Formula $\mathbf{c}$
+\end_inset 
+
+ given 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{y}$
+\end_inset 
+
+.
+ In addition 
+\series bold 
+linalg.pinv 
+\series default 
+or 
+\series bold 
+linalg.pinv2 
+\series default 
+(uses a different method based on singular value decomposition) will find
+ 
+\begin_inset Formula $\mathbf{A}^{\dagger}$
+\end_inset 
+
+ given 
+\begin_inset Formula $\mathbf{A}.$
+\end_inset 
+
+ 
+\layout Standard
+
+The following example and figure demonstrate the use of 
+\series bold 
+linalg.lstsq
+\series default 
+ and 
+\series bold 
+linalg.pinv
+\series default 
+ for solving a data-fitting problem.
+ The data shown below were generated using the model: 
+\begin_inset Formula \[
+y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $x_{i}=0.1i$
+\end_inset 
+
+ for 
+\begin_inset Formula $i=1\ldots10$
+\end_inset 
+
+, 
+\begin_inset Formula $c_{1}=5$
+\end_inset 
+
+, and 
+\begin_inset Formula $c_{2}=4.$
+\end_inset 
+
+ Noise is added to 
+\begin_inset Formula $y_{i}$
+\end_inset 
+
+ and the coefficients 
+\begin_inset Formula $c_{1}$
+\end_inset 
+
+ and 
+\begin_inset Formula $c_{2}$
+\end_inset 
+
+ are estimated using linear least squares.
+ 
+\layout Standard
+
+
+\begin_inset Minipage
+position 1
+inner_position 0
+height "0"
+width "45line%"
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example10.2.5}
+preview false
+
+\end_inset 
+
+
+\end_inset 
+
+
+\hfill 
+
+\begin_inset Minipage
+position 1
+inner_position 0
+height "0"
+width "45line%"
+collapsed false
+
+\layout Standard
+
+
+\begin_inset Graphics
+	filename /home/travis/scipy/tutorial/lstsq_fit.eps
+	lyxscale 75
+	width 95line%
+	keepAspectRatio
+
+\end_inset 
+
+
+\end_inset 
+
+
 \layout Subsubsection
 
-Pseudo-inverses
+Generalized inverse 
+\layout Standard
+
+The generalized inverse is calculated using the command 
+\series bold 
+linalg.pinv
+\series default 
+ or 
+\series bold 
+linalg.pinv2.
+ 
+\series default 
+These two commands differ in how they compute the generalized inverse.
+ The first uses the linalg.lstsq algorithm while the second uses singular
+ value decomposition.
+ Let 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ be an 
+\begin_inset Formula $M\times N$
+\end_inset 
+
+ matrix, then if 
+\begin_inset Formula $M>N$
+\end_inset 
+
+ the generalized inverse is 
+\begin_inset Formula \[
+\mathbf{A}^{\dagger}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\]
+
+\end_inset 
+
+ while if 
+\begin_inset Formula $M<N$
+\end_inset 
+
+ matrix the generalized inverse is 
+\begin_inset Formula \[
+\mathbf{A}^{\#}=\mathbf{A}^{H}\left(\mathbf{A}\mathbf{A}^{H}\right)^{-1}.\]
+
+\end_inset 
+
+ In both cases for 
+\begin_inset Formula $M=N$
+\end_inset 
+
+, then 
+\begin_inset Formula \[
+\mathbf{A}^{\dagger}=\mathbf{A}^{\#}=\mathbf{A}^{-1}\]
+
+\end_inset 
+
+as long as 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ is invertible.
+ 
 \layout Subsection
 
 Decompositions
+\layout Standard
+
+In many applications it is useful to decompose a matrix using other representati
+ons.
+ There are several decompositions supported SciPy.
+ 
 \layout Subsubsection
 
 Eigenvalues and eigenvectors
+\layout Standard
+
+The eigenvalue-eigenvector problem is one of the most commonly employed
+ linear algebra operations.
+ In one popular form, the eigenvalue-eigenvector problem is to find for
+ some square matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ scalars 
+\begin_inset Formula $\lambda$
+\end_inset 
+
+ and corresponding vectors 
+\begin_inset Formula $\mathbf{v}$
+\end_inset 
+
+ such that 
+\begin_inset Formula \[
+\mathbf{Av}=\lambda\mathbf{v}.\]
+
+\end_inset 
+
+ For an 
+\begin_inset Formula $N\times N$
+\end_inset 
+
+ matrix, there are 
+\begin_inset Formula $N$
+\end_inset 
+
+ (not necessarily distinct) eigenvalues --- roots of the (characteristic)
+ polynomial 
+\begin_inset Formula \[
+\left|\mathbf{A}-\lambda\mathbf{I}\right|=0.\]
+
+\end_inset 
+
+
+\layout Standard
+
+The eigenvectors, 
+\begin_inset Formula $\mathbf{v}$
+\end_inset 
+
+, are also sometimes called right eigenvectors to distinguish them from
+ another set of left eigenvectors that satisfy 
+\begin_inset Formula \[
+\mathbf{v}_{L}^{H}\mathbf{A}=\lambda\mathbf{v}_{L}^{H}\]
+
+\end_inset 
+
+or 
+\begin_inset Formula \[
+\mathbf{A}^{H}\mathbf{v}_{L}=\lambda^{*}\mathbf{v}_{L}.\]
+
+\end_inset 
+
+ With it's default optional arguments, the command 
+\series bold 
+linalg.eig
+\series default 
+ returns 
+\begin_inset Formula $\lambda$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{v}.$
+\end_inset 
+
+ However, it can also return 
+\begin_inset Formula $\mathbf{v}_{L}$
+\end_inset 
+
+ and just 
+\begin_inset Formula $\lambda$
+\end_inset 
+
+ by itself (
+\series bold 
+linalg.eigvals
+\series default 
+ returns just 
+\begin_inset Formula $\lambda$
+\end_inset 
+
+ as well).
+ 
+\layout Standard
+
+In addtion, 
+\series bold 
+linalg.eig
+\series default 
+ can also solve the more general eigenvalue problem 
+\begin_inset Formula \begin{eqnarray*}
+\mathbf{Av} & = & \lambda\mathbf{Bv}\\
+\mathbf{A}^{H}\mathbf{v}_{L} & = & \lambda^{*}\mathbf{B}^{H}\mathbf{v}_{L}\end{eqnarray*}
+
+\end_inset 
+
+for square matrices 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{B}.$
+\end_inset 
+
+ The standard eigenvalue problem is an example of the general eigenvalue
+ problem for 
+\begin_inset Formula $\mathbf{B}=\mathbf{I}.$
+\end_inset 
+
+ When a generalized eigenvalue problem can be solved, then it provides a
+ decomposition of 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ as 
+\begin_inset Formula \[
+\mathbf{A}=\mathbf{BV}\boldsymbol\Lambda\mathbf{V}^{H}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\mathbf{V}$
+\end_inset 
+
+ is the collection of eigenvectors into columns and 
+\begin_inset Formula $\boldsymbol\Lambda$
+\end_inset 
+
+ is a diagonal matrix of eigenvalues.
+ 
+\layout Standard
+
+By definition, eigenvectors are only defined up to a constant scale factor.
+ In SciPy, the scaling factor for the eigenvectors is chosen so that 
+\begin_inset Formula $\left\Vert \mathbf{v}\right\Vert ^{2}=\sum_{i}v_{i}^{2}=1.$
+\end_inset 
+
+ 
+\layout Standard
+
+As an example, consider finding the eigenvalues and eigenvectors of the
+ matrix 
+\begin_inset Formula \[
+\mathbf{A}=\left[\begin{array}{ccc}
+1 & 5 & 2\\
+2 & 4 & 1\\
+3 & 6 & 2\end{array}\right].\]
+
+\end_inset 
+
+ The characteristic polynomial is 
+\begin_inset Formula \begin{eqnarray*}
+\left|\mathbf{A}-\lambda\mathbf{I}\right| & = & \left(1-\lambda\right)\left[\left(4-\lambda\right)\left(2-\lambda\right)-6\right]-\\
+ &  & 5\left[2\left(2-\lambda\right)-3\right]+2\left[12-3\left(4-\lambda\right)\right]\\
+ & = & -\lambda^{3}+7\lambda^{2}+8\lambda-3.\end{eqnarray*}
+
+\end_inset 
+
+ The roots of this polynomial are the eigenvalues of 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+: 
+\begin_inset Formula \begin{eqnarray*}
+\lambda_{1} & = & 7.9579\\
+\lambda_{2} & = & -1.2577\\
+\lambda_{3} & = & 0.2997.\end{eqnarray*}
+
+\end_inset 
+
+ The eigenvectors corresponding to each eigenvalue can be found using the
+ original equation.
+ The eigenvectors associated with these eigenvalues can then be found.
+ 
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example10.3.1}
+preview false
+
+\end_inset 
+
+
 \layout Subsubsection
 
 Singular value decomposition
+\layout Standard
+
+Singular Value Decompostion (SVD) can be thought of as an extension of the
+ eigenvalue problem to matrices that are not square.
+ Let 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ be an 
+\begin_inset Formula $M\times N$
+\end_inset 
+
+ matrix with 
+\begin_inset Formula $M$
+\end_inset 
+
+ and 
+\begin_inset Formula $N$
+\end_inset 
+
+ arbitrary.
+ The matrices 
+\begin_inset Formula $\mathbf{A}^{H}\mathbf{A}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{A}\mathbf{A}^{H}$
+\end_inset 
+
+ are square hermitian matrices
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+A hermition matrix 
+\begin_inset Formula $\mathbf{D}$
+\end_inset 
+
+ satisfies 
+\begin_inset Formula $\mathbf{D}^{H}=\mathbf{D}.$
+\end_inset 
+
+ 
+\end_inset 
+
+ of size 
+\begin_inset Formula $N\times N$
+\end_inset 
+
+ and 
+\begin_inset Formula $M\times M$
+\end_inset 
+
+ respectively.
+ It is known that the eigenvalues of square hermitian matrices are real
+ and non-negative.
+ In addtion, there are at most 
+\begin_inset Formula $\min\left(M,N\right)$
+\end_inset 
+
+ identical non-zero eigenvalues of 
+\begin_inset Formula $\mathbf{A}^{H}\mathbf{A}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{A}\mathbf{A}^{H}.$
+\end_inset 
+
+ Define these positive eigenvalues as 
+\begin_inset Formula $\sigma_{i}^{2}.$
+\end_inset 
+
+ The square-root of these are called singular values of 
+\begin_inset Formula $\mathbf{A}.$
+\end_inset 
+
+ The eigenvectors of 
+\begin_inset Formula $\mathbf{A}^{H}\mathbf{A}$
+\end_inset 
+
+ are collected by columns into an 
+\begin_inset Formula $N\times N$
+\end_inset 
+
+ unitary
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+A unitary matrix 
+\begin_inset Formula $\mathbf{D}$
+\end_inset 
+
+ satisfies 
+\begin_inset Formula $\mathbf{D}^{H}\mathbf{D}=\mathbf{I}=\mathbf{D}\mathbf{D}^{H}$
+\end_inset 
+
+ so that 
+\begin_inset Formula $\mathbf{D}^{-1}=\mathbf{D}^{H}.$
+\end_inset 
+
+
+\end_inset 
+
+ matrix 
+\begin_inset Formula $\mathbf{V}$
+\end_inset 
+
+ while the eigenvectors of 
+\begin_inset Formula $\mathbf{A}\mathbf{A}^{H}$
+\end_inset 
+
+ are collected by columns in the unitary matrix 
+\begin_inset Formula $\mathbf{U}$
+\end_inset 
+
+, the singular values are collected in an 
+\begin_inset Formula $M\times N$
+\end_inset 
+
+ zero matrix 
+\begin_inset Formula $\mathbf{\boldsymbol\Sigma}$
+\end_inset 
+
+ with main diagonal entries set to the singular values.
+ Then 
+\begin_inset Formula \[
+\mathbf{A=U}\boldsymbol\Sigma\mathbf{V}^{H}\]
+
+\end_inset 
+
+ is the singular-value decomposition of 
+\begin_inset Formula $\mathbf{A}.$
+\end_inset 
+
+ Every matrix has a singular value decomposition.
+ Sometimes, the singular values are called the spectrum of 
+\begin_inset Formula $\mathbf{A}.$
+\end_inset 
+
+ The command 
+\series bold 
+linalg.svd
+\series default 
+ will return 
+\begin_inset Formula $\mathbf{U}$
+\end_inset 
+
+, 
+\begin_inset Formula $\mathbf{V}^{H}$
+\end_inset 
+
+, and 
+\begin_inset Formula $\sigma_{i}$
+\end_inset 
+
+ as an array of the singular values.
+ To obtain the matrix 
+\begin_inset Formula $\mathbf{\Sigma}$
+\end_inset 
+
+ use 
+\series bold 
+linalg.diagsvd.
+ 
+\series default 
+The following example illustrates the use of 
+\series bold 
+linalg.svd
+\series default 
+.
+ 
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example10.3.2}
+preview false
+
+\end_inset 
+
+
 \layout Subsubsection
 
 LU decomposition
+\layout Standard
+
+The LU decompostion finds a representation for the 
+\begin_inset Formula $M\times N$
+\end_inset 
+
+ matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ as 
+\begin_inset Formula \[
+\mathbf{A}=\mathbf{PLU}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\mathbf{P}$
+\end_inset 
+
+ is an 
+\begin_inset Formula $M\times M$
+\end_inset 
+
+ permutation matrix (a permutation of the rows of the identity matrix),
+ 
+\begin_inset Formula $\mathbf{L}$
+\end_inset 
+
+ is in 
+\begin_inset Formula $M\times K$
+\end_inset 
+
+ lower triangular or trapezoidal matrix (
+\begin_inset Formula $K=\min\left(M,N\right)$
+\end_inset 
+
+) with unit-diagonal, and 
+\begin_inset Formula $\mathbf{U}$
+\end_inset 
+
+ is an upper triangular or trapezoidal matrix.
+ The SciPy command for this decomposition is 
+\series bold 
+linalg.lu
+\series default 
+.
+ 
+\layout Standard
+
+Such a decomposition is often useful for solving many simultaneous equations
+ where the left-hand-side does not change but the right hand side does.
+ For example, suppose we are going to solve 
+\begin_inset Formula \[
+\mathbf{A}\mathbf{x}_{i}=\mathbf{b}_{i}\]
+
+\end_inset 
+
+ for many different 
+\begin_inset Formula $\mathbf{b}_{i}$
+\end_inset 
+
+.
+ The LU decomposition allows this to be written as 
+\begin_inset Formula \[
+\mathbf{PLUx}_{i}=\mathbf{b}_{i}.\]
+
+\end_inset 
+
+ Because 
+\begin_inset Formula $\mathbf{L}$
+\end_inset 
+
+ is lower-triangular, the equation can be solved for 
+\begin_inset Formula $\mathbf{U}\mathbf{x}_{i}$
+\end_inset 
+
+ and finally 
+\begin_inset Formula $\mathbf{x}_{i}$
+\end_inset 
+
+ very rapidly using forward- and back-substitution.
+ An initial time spent factoring 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ allows for very rapid solution of similar systems of equations in the future.
+ If the intent for performing LU decomposition is for solving linear systems
+ then the command 
+\series bold 
+linalg.lu_factor
+\series default 
+ should be used followed by repeated applications of the command 
+\series bold 
+linalg.lu_solve
+\series default 
+ to solve the system for each new right-hand-side.
+ 
 \layout Subsubsection
 
 Cholesky decomposition
+\layout Standard
+
+Cholesky decomposition is a special case of LU decomposition applicable
+ to Hermitian positive definite matrices.
+ When 
+\begin_inset Formula $\mathbf{A}=\mathbf{A}^{H}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{x}^{H}\mathbf{Ax}\geq0$
+\end_inset 
+
+ for all 
+\begin_inset Formula $\mathbf{x}$
+\end_inset 
+
+, then decompositions of 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ can be found so that 
+\begin_inset Formula \begin{eqnarray*}
+\mathbf{A} & = & \mathbf{U}^{H}\mathbf{U}\\
+\mathbf{A} & = & \mathbf{L}\mathbf{L}^{H}\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula $\mathbf{L}$
+\end_inset 
+
+ is lower-triangular and 
+\begin_inset Formula $\mathbf{U}$
+\end_inset 
+
+ is upper triangular.
+ Notice that 
+\begin_inset Formula $\mathbf{L}=\mathbf{U}^{H}.$
+\end_inset 
+
+ 
 \layout Subsubsection
 
 QR decomposition
+\layout Standard
+
+The QR decomposition (sometimes called a polar decomposition) works for
+ any 
+\begin_inset Formula $M\times N$
+\end_inset 
+
+ array and finds an 
+\begin_inset Formula $M\times M$
+\end_inset 
+
+ unitary matrix 
+\begin_inset Formula $\mathbf{Q}$
+\end_inset 
+
+ and an 
+\begin_inset Formula $M\times N$
+\end_inset 
+
+ upper-trapezoidal matrix 
+\begin_inset Formula $\mathbf{R}$
+\end_inset 
+
+ such that 
+\begin_inset Formula \[
+\mathbf{A=QR}.\]
+
+\end_inset 
+
+ Notice that if the SVD of 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ is known then the QR decomposition can be found 
+\begin_inset Formula \[
+\mathbf{A}=\mathbf{U}\boldsymbol\Sigma\mathbf{V}^{H}=\mathbf{QR}\]
+
+\end_inset 
+
+ implies that 
+\begin_inset Formula $\mathbf{Q}=\mathbf{U}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{R}=\boldsymbol\Sigma\mathbf{V}^{H}.$
+\end_inset 
+
+ Note, however, that in SciPy independent algorithms are used to find QR
+ and SVD decompositions.
+ The command for QR decomposition is 
+\series bold 
+linalg.qr
+\series default 
+.
+ 
 \layout Subsubsection
 
 Schur decomposition
+\layout Standard
+
+For a square 
+\begin_inset Formula $N\times N$
+\end_inset 
+
+ matrix, 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+, the Schur decomposition finds (not-necessarily unique) matrices 
+\begin_inset Formula $\mathbf{T}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{Z}$
+\end_inset 
+
+ such that 
+\begin_inset Formula \[
+\mathbf{A}=\mathbf{ZT}\mathbf{Z}^{H}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\mathbf{Z}$
+\end_inset 
+
+ is a unitary matrix and 
+\begin_inset Formula $\mathbf{T}$
+\end_inset 
+
+ is either upper-triangular or quasi-upper triangular depending on whether
+ or not a real schur form or complex schur form is requested.
+ For a real schur form both 
+\begin_inset Formula $\mathbf{T}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{Z}$
+\end_inset 
+
+ are real-valued when 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ is real-valued.
+ When 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ is a real-valued matrix the real schur form is only quasi-upper triangular
+ because 
+\begin_inset Formula $2\times2$
+\end_inset 
+
+ blocks extrude from the main diagonal corresponding to any complex-valued
+ eigenvalues.
+ The command 
+\series bold 
+linalg.schur 
+\series default 
+finds the Schur decomposition while the command 
+\series bold 
+linalg.rsf2csf
+\series default 
+ converts 
+\begin_inset Formula $\mathbf{T}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\mathbf{Z}$
+\end_inset 
+
+ from a real Schur form to a complex Schur form.
+ The Schur form is especially useful in calculating functions of matrices.
+ 
 \layout Subsection
 
 Matrix Functions
