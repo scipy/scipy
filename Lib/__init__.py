@@ -1,5 +1,5 @@
 """
-SciPy --- A scientific computing package for Python
+SciPy: A scientific computing package for Python
 ===================================================
 
 Available subpackages 
@@ -10,6 +10,8 @@ Available subpackages
 from scipy_version import scipy_version as __version__
 from scipy_base import *
 from helpmod import *
+
+_pkg_func_docs = ""
 
 from scipy_test.testing import ScipyTest
 
@@ -40,6 +42,7 @@ def _pkg_titles():
         lines.append('%s%s --- %s' % (name, w*' ', title))
     return '\n'.join(lines)
 
+
 #----- Import packages ----#
 
 def _import_packages():
@@ -49,6 +52,7 @@ def _import_packages():
     from glob import glob
     import os
     frame = sys._getframe(1)
+    global _pkg_func_docs
 
     for info_file in glob(os.path.join(__path__[0],'*','info_*.py')):
 
@@ -67,7 +71,12 @@ def _import_packages():
             continue
 
         global_symbols = getattr(info_module,'global_symbols',[])
-        
+
+        if global_symbols != []:
+            _pkg_func_docs += "\n%s:\n" % package_name
+            for name in global_symbols:
+                _pkg_func_docs += "  %s -- %s\n" % (name, name)
+
         if getattr(info_module,'postpone_import',1):
             code = '%s = ppimport(%r)' % (package_name,package_name)
 
@@ -107,3 +116,52 @@ test = ScipyTest('scipy').test
 #----- update doc string -------#
 
 __doc__ += _pkg_titles()
+__doc__ += """
+
+Useful top level commands
+===========================
+
+All commands under scipy_base are also available under scipy itself for convenience
+
+info      --  Flexible help utility
+source    --  Print source for object
+
+Functions (without another home)
+=========================================
+
+factorial    --  n!
+factorial2   --  n!!
+factorialk   --  n!!...!
+comb         --  Combinations
+
+who          --  get list of defined variables
+
+central_diff_weights -- weights for central differencing
+derivative           -- numerically estimate derivatives
+
+pade         --  return a Pade approximation
+
+lena         --  return a famous image
+
+
+PIL Utilities (Requires Python Imaging Library)
+================================================
+
+fromimage    -- convert PIL image to array
+toimage      -- convert array to PIL image
+imread       -- read image from file
+imsave       -- save image to file
+imshow       -- show image using simple viewer
+imrotate     -- rotate image
+imresize     -- resize image
+imfilter     -- filter image
+radon        -- get Radon transform of image
+
+bytescale    -- linearly transform values in array
+
+"""
+__doc__ += """
+Functions defined in subpackage but available at top-level
+============================================================
+""" + _pkg_func_docs
+

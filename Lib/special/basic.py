@@ -62,11 +62,11 @@ def jnjnp_zeros(nt):
 
     See jn_zeros, jnp_zeros to get separated arrays of zeros.
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt>1400):
-        raise ValueError, "Number must be integer <=1400."
+    if not isscalar(nt) or (floor(nt)!=nt) or (nt>1200):
+        raise ValueError, "Number must be integer <= 1200."
     nt = int(nt)
-    zo,n,m,t = specfunc.jdzo(nt)
-    return zo,n,m,t
+    n,m,t,zo = specfun.jdzo(nt)
+    return zo[:nt],n[:nt],m[:nt],t[:nt]
 
 def jnyn_zeros(n,nt):
     """Compute nt zeros of the Bessel functions Jn(x), Jn'(x), Yn(x), and
@@ -450,7 +450,7 @@ def mathieu_odd_coef(m,q):
         kd = 3
 
     b = mathieu_b(m,q)
-    fc = specfunc.fcoef(kd,m,q,b)
+    fc = specfun.fcoef(kd,m,q,b)
     return fc[:km]
 
 def lpmn(m,n,z):

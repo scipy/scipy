@@ -36,7 +36,7 @@ Helper functions:
 
 Extension modules:
 
-  fftpack   --- Provides functions zfft, drfft, zrfft, zfftnd,
+  _fftpack   --- Provides functions zfft, drfft, zrfft, zfftnd,
                 destroy_*_cache
   convolve  --- Provides functions convolve, convolve_z,
                 init_convolution_kernel, destroy_convolve_cache

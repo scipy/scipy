@@ -24,7 +24,7 @@ gam = special.gamma
 
 import types, math
 import stats as st
-import rand
+import rand as randfile
 import rv
 
 
@@ -45,13 +45,13 @@ def seed(x=0,y=0):
                                             # bit of hackery to escape some 
                                             # wierd int/longint conversion
                                             # behavior
-    rand.set_seeds(x,y)
+    randfile.set_seeds(x,y)
 
 seed()
 
 def get_seed():
     "Return the current seed pair"
-    return rand.get_seeds()
+    return randfile.get_seeds()
 
 def _build_random_array(fun, args, size=None):
 # Build an array by applying function fun to
@@ -72,7 +72,15 @@ def _build_random_array(fun, args, size=None):
 
 def random(size=None):
     "Returns array of random numbers between 0 and 1"
-    return _build_random_array(rand.sample, (), size)
+    return _build_random_array(randfile.sample, (), size)
+
+def rand(*args):
+    """rand(d1,...,dn) returns a matrix of the given dimensions
+    which is initialized to random numbers from a uniform distribution
+    in the range [0,1).
+    """
+    return random(args)
+
 
 def random_integers(max, min=1, size=None):
     """random integers in range min to max inclusive"""
@@ -83,8 +91,7 @@ def permutation(arg):
     a permuation of the sequence"""
     if isinstance(arg,types.IntType):
         arg = Num.arange(arg)
-    return rand.permutation(arg)
-
+    return randfile.permutation(arg)
 
 ## Internal class to compute a ppf given a distribution.
 ##  (needs cdf function) and uses brentq from scipy.optimize
@@ -362,7 +369,7 @@ class rv_continuous:
     ## Could also define any of these (return 1-d using self._size to get number)
     def _rvs(self, *args):
         ## Use basic inverse cdf algorithm for RV generation as default.
-        U = rand.sample(self._size)
+        U = randfile.sample(self._size)
         Y = self._ppf(U,*args)
         return Y
 
@@ -823,7 +830,7 @@ Kolmogorov-Smirnov two-sided test for large N
 # loc = mu, scale = std
 class norm_gen(rv_continuous):
     def _rvs(self):
-        return rand.standard_normal(self._size)
+        return randfile.standard_normal(self._size)
     def _pdf(self,x):
         return 1.0/sqrt(2*pi)*exp(-x**2/2.0)
     def _cdf(self,x):
@@ -841,6 +848,12 @@ Normal distribution
 The location (loc) keyword specifies the mean.
 The scale (scale) keyword specifies the standard deviation.
 """)
+
+def randn(*args):
+    """u = randn(d0,d1,...,dn) returns zero-mean, unit-variance Gaussian
+    random numbers in an array of size (d0,d1,...,dn)."""
+    return norm.rvs(size=args)
+
 
 ## Alpha distribution
 ##
@@ -906,7 +919,7 @@ Arcsine distribution
 ##
 class beta_gen(rv_continuous):
     def _rvs(self, a, b):
-        return rand.beta(a,b,self._size)
+        return randfile.beta(a,b,self._size)
     def _pdf(self, x, a, b):
         Px = (1.0-x)**(b-1.0) * x**(a-1.0)
         Px /= special.beta(a,b)
@@ -1108,7 +1121,7 @@ Chi distribution
 ## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
 class chi2_gen(rv_continuous):
     def _rvs(self, df):
-        return rand.chi2(df,self._size)
+        return randfile.chi2(df,self._size)
     def _pdf(self, x, df):
         Px = x**(df/2.0-1)*exp(-x/2.0)
         Px /= special.gamma(df/2.0)* 2**(df/2.0)
@@ -1238,7 +1251,7 @@ Erlang distribution (Gamma with integer shape parameter)
 
 class expon_gen(rv_continuous):
     def _rvs(self):
-        return rand.standard_exp(self._size)
+        return randfile.standard_exp(self._size)
     def _pdf(self, x):
         return exp(-x)
     def _cdf(self, x):
@@ -1350,7 +1363,7 @@ A folded Cauchy distributions
 
 class f_gen(rv_continuous):
     def _rvs(self, dfn, dfd):
-        return rand.f(dfn, dfd, self._size)
+        return randfile.f(dfn, dfd, self._size)
     def _pdf(self, x, dfn, dfd):
         n = arr(1.0*dfn)
         m = arr(1.0*dfd)
@@ -1590,7 +1603,7 @@ Generalized extreme value (see gumbel_r for c=0)
 
 class gamma_gen(rv_continuous):
     def _rvs(self, a):
-        return rand.standard_gamma(a, self._size)
+        return randfile.standard_gamma(a, self._size)
     def _pdf(self, x, a):
         return x**(a-1)*exp(-x)/special.gamma(a)
     def _cdf(self, x, a):
@@ -2238,7 +2251,7 @@ Nakagami distribution
 
 class ncx2_gen(rv_continuous):
     def _rvs(self, df, nc):
-        return rand.noncentral_chi2(df,nc,self._size)        
+        return randfile.noncentral_chi2(df,nc,self._size)        
     def _pdf(self, x, df, nc):
         a = arr(df/2.0)
         Px = exp(-nc/2.0)*special.hyp0f1(a,nc*x/4.0)
@@ -2263,7 +2276,7 @@ Non-central chi-squared distribution
 
 class ncf_gen(rv_continuous):
     def _rvs(self, dfn, dfd, nc):
-        return rand.noncentral_f(dfn,dfd,nc,self._size)
+        return randfile.noncentral_f(dfn,dfd,nc,self._size)
     def _pdf(self, x, dfn, dfd, nc):
         n1,n2 = dfn, dfd
         Px = exp(-nc/2+nc*n1*x/(2*(n2+n1*x)))
@@ -2775,7 +2788,7 @@ Tukey-Lambda distribution
 
 class uniform_gen(rv_continuous):
     def _rvs(self):
-        return rand.uniform(0.0,1.0,self._size)
+        return randfile.uniform(0.0,1.0,self._size)
     def _pdf(self, x):
         return 1.0*(x==x)
     def _cdf(self, x):
@@ -3163,7 +3176,7 @@ class rv_discrete:
                 self.__doc__ = self.__doc__ + extradoc
 
     def _rvs(self, *args):
-        return self._ppf(rand.sample(self._size),*args)
+        return self._ppf(randfile.sample(self._size),*args)
 
     def __fix_loc(self, args, loc):
         N = len(args)
@@ -3543,7 +3556,7 @@ class rv_discrete:
 
 class binom_gen(rv_discrete):
     def _rvs(self, n, pr):
-        return rand.binomial(n,pr,self._size)
+        return randfile.binomial(n,pr,self._size)
     def _argcheck(self, n, pr):
         self.b = n
         return (n>=0) & (pr >= 0) & (pr <= 1)
@@ -3608,7 +3621,7 @@ Bernoulli distribution
 # Negative binomial
 class nbinom_gen(rv_discrete):
     def _rvs(self, n, pr):
-        return rand.negative_binomial(n, pr, self._size)
+        return randfile.negative_binomial(n, pr, self._size)
     def _argcheck(self, n, pr):
         return (n >= 0) & (pr >= 0) & (pr <= 1)
     def _cdf(self, x, n, pr):
@@ -3755,7 +3768,7 @@ Logarithmic (Log-Series, Series) distribution
 
 class poisson_gen(rv_discrete):
     def _rvs(self, mu):
-        return rand.poisson(mu, self._size)
+        return randfile.poisson(mu, self._size)
     def _pmf(self, k, mu):
         Pk = mu**k * exp(-mu) / arr(special.gamma(k+1))
         return Pk

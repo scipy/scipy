@@ -1,7 +1,7 @@
 from __future__ import nested_scopes
 
 import string, time, array
-import rand
+import rand as randfile
 import Numeric
 import sys
 import math
@@ -47,7 +47,7 @@ def multivariate_normal(mean, cov, size=None):
            n = 1
        else:
            n = Num.product(size)
-       output = rand.multivariate_normal(mean, cov, n)
+       output = randfile.multivariate_normal(mean, cov, n)
        if size is not None:
            final_shape = list(size[:])
            final_shape.append(mean.shape[0])
@@ -117,7 +117,7 @@ def multinom(trials, probs, size=None):
     if type(size) == type(0): size = [size]
     final_shape = size[:]
     final_shape.append(probs.shape[0]+1)
-    x = rand.multinomial(trials, probs.astype(Num.Float32), Num.multiply.reduce(size))
+    x = randfile.multinomial(trials, probs.astype(Num.Float32), Num.multiply.reduce(size))
         # Change its shape to the desire one
     x.shape = final_shape
     return x

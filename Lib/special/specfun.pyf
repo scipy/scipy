@@ -33,11 +33,11 @@ python module specfun ! in
         ! vvsa
 
         subroutine jdzo(nt,n,m,pcode,zo) ! in :specfun:specfun.f
-            integer intent(in), check((nt>0)&&(nt<1400)) :: nt
-            integer depend(nt), intent(out), dimension(nt) :: n
-            integer depend(nt), intent(out), dimension(nt) :: m
-            integer depend(nt), intent(out), dimension(nt) :: pcode
-            double precision intent(out), depend(nt), dimension(nt+1) :: zo
+            integer intent(in), check((nt>0)&&(nt<=1200)) :: nt
+            integer depend(nt), intent(out), dimension(1400) :: n
+            integer depend(nt), intent(out), dimension(1400) :: m
+            integer depend(nt), intent(out), dimension(1400) :: pcode
+            double precision intent(out), depend(nt), dimension(0:1400) :: zo
         end subroutine jdzo
 
         ! cbk

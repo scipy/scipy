@@ -189,6 +189,8 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
         
 
 def source(object, output=sys.stdout):
+    """Write source for this object to output.
+    """
     if inspect.isroutine(object):
         print >> output,  "In file: %s\n" % inspect.getsourcefile(object)
         print >> output,  inspect.getsource(object)

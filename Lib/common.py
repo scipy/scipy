@@ -11,7 +11,7 @@ from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, hstack, product, array, typename, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
-__all__ = ['factorial','factorial2','factorialk','comb','rand','randn','who',
+__all__ = ['factorial','factorial2','factorialk','comb','who',
            'lena','central_diff_weights', 'derivative', 'pade']
     
 def factorial(n,exact=0):
@@ -214,21 +214,6 @@ def pade(an, m):
     p = pq[:n+1]
     q = r_[1.0,pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
-
-
-
-
-def rand(*args):
-    """rand(d1,...,dn) returns a matrix of the given dimensions
-    which is initialized to random numbers from a uniform distribution
-    in the range [0,1).
-    """
-    return stats.random(args)
-
-def randn(*args):
-    """u = randn(d0,d1,...,dn) returns zero-mean, unit-variance Gaussian
-    random numbers in an array of size (d0,d1,...,dn)."""
-    return stats.norm.rvs(size=args)
 
 def lena():
     import cPickle, os

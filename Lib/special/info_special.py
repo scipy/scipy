@@ -336,4 +336,3 @@ Special Functions
 """
 
 postpone_import = 1
-global_symbols = ['isinf','isfinite','isnan']

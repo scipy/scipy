@@ -122,9 +122,9 @@ dlaplace        --  Discrete Laplacian
 
 Statistical Functions (adapted from Gary Strangman)
 
-gmean
-hmean
-mean
+gmean           --  _
+hmean           --  _
+mean            --  _
 cmedian
 median
 mode
@@ -215,4 +215,4 @@ interface package rpy.
 """
 
 postpone_import = 1
-global_symbols = ['mean','median','std','cov','corrcoef','find_repeats']
+global_symbols = ['mean','median','std','cov','corrcoef','find_repeats', 'rand', 'randn']
