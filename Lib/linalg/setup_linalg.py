@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import os,sys,re
+import os
+import sys
+import re
 from distutils import dep_util
 from glob import glob
 import warnings
@@ -221,7 +223,10 @@ if __name__ == '__main__':
 
     from scipy_distutils.core import setup
     from scipy_distutils.misc_util import merge_config_dicts
+    from linalg_version import linalg_version
 
     config_dict = merge_config_dicts([configuration()] + \
                                      map(get_package_config,extra_packages))
-    setup(**config_dict)
+
+    setup(version=linalg_version,
+          **config_dict)

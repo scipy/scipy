@@ -3,13 +3,15 @@
 
 import os
 from glob import glob
-from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path,dot_join,\
-     default_config_dict,dict_append
-from scipy_distutils.system_info import get_info,FFTWNotFoundError,\
-     DJBFFTNotFoundError
+
 
 def configuration(parent_package=''):
+    from scipy_distutils.core import Extension
+    from scipy_distutils.misc_util import get_path,dot_join,\
+         default_config_dict,dict_append
+    from scipy_distutils.system_info import get_info,FFTWNotFoundError,\
+         DJBFFTNotFoundError
+
     package_name = 'fftpack'
     fftw_info = get_info('fftw') or get_info('dfftw')
     if not fftw_info:
@@ -67,11 +69,36 @@ def configuration(parent_package=''):
         +'WARNING!'*9+'\n\n')
     return config
 
-if __name__ == '__main__':    
+def get_package_config(name):
+    sys.path.insert(0,os.path.join('scipy_core',name))
+    try:
+        mod = __import__('setup_'+name)
+        config = mod.configuration()
+    finally:
+        del sys.path[0]
+    return config
+
+if __name__ == '__main__':
+    extra_packages = []
+    try: import scipy_base
+    except ImportError: extra_packages.append('scipy_base')
+    try: import scipy_test
+    except ImportError: extra_packages.append('scipy_test')
+    try: import scipy_distutils
+    except ImportError:
+        extra_packages.append('scipy_distutils')
+        sys.args.insert(0,'scipy_core')
+
     from scipy_distutils.core import setup
-    setup(version='0.3',
+    from scipy_distutils.misc_util import merge_config_dicts
+    from fftpack_version import fftpack_version
+
+    config_dict = merge_config_dicts([configuration()] + \
+                                     map(get_package_config,extra_packages))
+
+    setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',
           author='Pearu Peterson',
           author_email = 'pearu@cens.ioc.ee',
           license = 'SciPy License (BSD Style)',
-          **configuration())
+          **config_dict)

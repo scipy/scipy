@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
+import sys
 from glob import glob
-from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
-from scipy_distutils.system_info import dict_append
 import shutil
 
 def configuration(parent_package=''):
+    from scipy_distutils.core import Extension
+    from scipy_distutils.misc_util import get_path,\
+         default_config_dict, dot_join
+    from scipy_distutils.system_info import dict_append
+
     package = 'special'
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
@@ -63,6 +66,33 @@ def configuration(parent_package=''):
 
     return config
 
+def get_package_config(name):
+    sys.path.insert(0,os.path.join('scipy_core',name))
+    try:
+        mod = __import__('setup_'+name)
+        config = mod.configuration()
+    finally:
+        del sys.path[0]
+    return config
+
 if __name__ == '__main__':
+    extra_packages = []
+    try: import scipy_base
+    except ImportError: extra_packages.append('scipy_base')
+    try: import scipy_test
+    except ImportError: extra_packages.append('scipy_test')
+    try: import scipy_distutils
+    except ImportError:
+        extra_packages.append('scipy_distutils')
+        sys.args.insert(0,'scipy_core')
+
     from scipy_distutils.core import setup
-    setup(**configuration())
+    from scipy_distutils.misc_util import merge_config_dicts
+    from special_version import special_version
+
+    config_dict = merge_config_dicts([configuration()] + \
+                                     map(get_package_config,extra_packages))
+
+    setup(version=special_version,
+          **config_dict)
+
