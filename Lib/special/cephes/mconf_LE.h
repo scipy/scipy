@@ -98,14 +98,37 @@ typedef struct
  */
 /* #define DEC 1 */
 
-/* Intel IEEE, low order words come first:
- */
-/* #define IBMPC 1 */
+/* Not sure about these pdp defines */
+#if defined(vax) || defined(__vax__) || defined(decvax) || \
+    defined(__decvax__) || defined(pro350) || defined(pdp11)
+#define DEC 1  
 
-/* Motorola IEEE, high order words come first
- * (Sun 680x0 workstation):
- */
-/* #define MIEEE 1 */
+#elif defined(ns32000) || defined(sun386) || \
+    defined(i386) || defined(MIPSEL) || defined(_MIPSEL) || \
+    defined(BIT_ZERO_ON_RIGHT) || defined(__alpha__) || defined(__alpha) || \
+    defined(sequent) || defined(i386) || \
+    defined(__ns32000__) || defined(__sun386__) || defined(__i386__)
+#define IBMPC 1   /* Intel IEEE, low order words come first */
+#define BIGENDIAN 0
+
+#elif defined(sel) || defined(pyr) || defined(mc68000) || defined (m68k) || \
+          defined(is68k) || defined(tahoe) || defined(ibm032) || \
+          defined(ibm370) || defined(MIPSEB) || defined(_MIPSEB) || \
+          defined(__convex__) || defined(DGUX) || defined(hppa) || \
+          defined(apollo) || defined(_CRAY) || defined(__hppa) || \
+          defined(__hp9000) || defined(__hp9000s300) || \
+          defined(__hp9000s700) || defined(__AIX) || defined(_AIX) \
+          defined(__pyr__) || defined(__mc68000__) || defined(__sparc) ||\
+          defined(_IBMR2) || defined (BIT_ZERO_ON_LEFT) 
+#define MIEEE 1     /* Motorola IEEE, high order words come first */
+#define BIGENDIAN 1
+
+#else 
+#define UNK 1        /* Machine not IEEE or DEC, 
+                        constants given in decimal format */
+#define BIGENDIAN 0   /* This is a LE file */
+#endif
+
 
 /* UNKnown arithmetic, invokes coefficients given in
  * normal decimal format.  Beware of range boundary
@@ -113,10 +136,7 @@ typedef struct
  * roundoff problems in pow.c:
  * (Sun SPARCstation)
  */
-#define UNK 1 */
-
-/* If you define UNK, then be sure to set BIGENDIAN properly. */
-#define BIGENDIAN 0
+/* #define UNK 1 */
 
 /* Define this `volatile' if your compiler thinks
  * that floating point arithmetic obeys the associative

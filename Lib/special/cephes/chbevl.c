@@ -57,6 +57,8 @@ Copyright 1985, 1987 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
+#include <stdio.h>
+
 double chbevl( x, array, n )
 double x;
 double array[];

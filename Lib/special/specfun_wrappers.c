@@ -264,3 +264,63 @@ int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_co
   return 0;
 }
 
+/* Integrals of bessel functions */
+
+/* int(j0(t),t=0..x) */
+/* int(y0(t),t=0..x) */
+
+int it1j0y0_wrap(double x, double *j0int, double *y0int)
+{
+  int flag = 0;
+
+  if (x < 0) {x = -x; flag=1;}
+  F_FUNC(itjya, ITJYA)(&x, j0int, y0int);
+  if (flag) {
+    *j0int = -(*j0int);
+    *y0int = NAN;    /* domain error */
+  }
+  return 0;
+}
+
+/* int((1-j0(t))/t,t=0..x) */
+/* int(y0(t)/t,t=x..inf) */
+
+int it2j0y0_wrap(double x, double *j0int, double *y0int) 
+{
+  int flag = 0;
+
+  if (x < 0) {x=-x; flag=1;}
+  F_FUNC(ittjya, ITTJYA)(&x, j0int, y0int);
+  if (flag) {
+    *y0int = NAN;  /* domain error */
+  }
+}
+
+/* Integrals of modified bessel functions */
+
+int it1i0k0_wrap(double x, double *i0int, double *k0int)
+{
+  int flag = 0;
+
+  if (x < 0) {x = -x; flag=1;}
+  F_FUNC(itika, ITIKA)(&x, i0int, k0int);
+  if (flag) {
+    *i0int = -(*i0int);
+    *k0int = NAN;    /* domain error */
+  }
+  return 0;
+}
+
+int it2i0k0_wrap(double x, double *i0int, double *k0int) 
+{
+  int flag = 0;
+
+  if (x < 0) {x=-x; flag=1;}
+  F_FUNC(ittika, ITTIKA)(&x, i0int, k0int);
+  if (flag) {
+    *k0int = NAN;  /* domain error */
+  }
+}
+
+
+

@@ -156,6 +156,22 @@ of the third kind of order 1 at x.  k1e(x) = exp(x) * k1(x)
 times a power:  y = integral(x^lambda jv(2*a*x),x=0..1)
 </DL>
 
+<DT>(ij0,iy0) = itj0y0(x)
+<DD>itj0y0(x) returns simple integrals from 0 to x of the zeroth order 
+bessel functions j0 and y0. 
+
+<DT>(ij0,iy0) = it2j0y0(x)
+<DD>it2j0y0(x) returns the integrals int((1-j0(t))/t,t=0..x) and 
+int(y0(t)/t,t=x..infinitity). 
+
+<DT>(ii0,ik0) = iti0k0(x)
+<DD>iti0k0(x) returns simple integrals from 0 to x of the zeroth order 
+modified bessel functions i0 and k0. 
+
+<DT>(ii0,ik0) = it2i0k0(x)
+<DD>it2i0k0(x) returns the integrals int((i0(t)-1)/t,t=0..x) and 
+int(k0(t)/t,t=x..infinitity). 
+
 
 <h1> Statistical Functions </h1>
 <DL>

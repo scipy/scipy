@@ -47,7 +47,14 @@ double modstruve_wrap(double v, double x);
 double itmodstruve0_wrap(double x);
 
 int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_complex *Kep);
+
+int it1j0y0_wrap(double x, double *, double *);
+int it2j0y0_wrap(double x, double *, double *);
+int it1i0k0_wrap(double x, double *, double *);
+int it2i0k0_wrap(double x, double *, double *);
+
 #endif
+
 
 
 

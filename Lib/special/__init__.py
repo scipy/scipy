@@ -53,8 +53,17 @@
                   third kind of order 0.
     k1       -- Modified Bessel function of the third kind of order 1.
     k1e      -- Exponentially scaled modified Bessel function of the
-                  third kind of order 1.    
+                  third kind of order 1.
 
+  Integrals of Bessel Functions.
+
+    itj0y0   -- Basic integrals of j0 and y0 from 0 to x.
+    it2j0y0  -- Integrals of (1-j0(t))/t from 0 to x and
+                  y0(t)/t from x to inf.
+    iti0k0   -- Basic integrals of i0 and k0 from 0 to x.
+    it2i0k0  -- Integrals of (i0(t)-1)/t from 0 to x and
+                  k0(t)/t from x to inf.
+                  
   Raw Statistical Functions (Friendly versions in scipy.stats)
 
     bdtr       -- Sum of terms 0 through k of of the binomial pdf.

@@ -183,6 +183,12 @@ static void * fresnl_data[] = { (void *)fresnl, (void *)fresnl };
 static void * shichi_data[] = { (void *)shichi, (void *)shichi, };
 static void * sici_data[] = { (void *)sici, (void *)sici, };
 
+
+static void * itj0y0_data[] = { (void *)it1j0y0_wrap, (void *)it1j0y0_wrap, };
+static void * it2j0y0_data[] = { (void *)it2j0y0_wrap, (void *)it2j0y0_wrap, };
+static void * iti0k0_data[] = { (void *)it1i0k0_wrap, (void *)it1i0k0_wrap, };
+static void * it2i0k0_data[] = { (void *)it2i0k0_wrap, (void *)it2i0k0_wrap, };
+
 /*
 static void * stdtr_data[] = { (void *)stdtr, (void *)stdtr, };
 static void * stdtri_data[] = { (void *)stdtri, (void *)stdtri, };
@@ -468,7 +474,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "hyp1f1", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes3_functions, hypU_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hyperu", hypU_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, hypU_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hyperu", hyperu_doc, 0);
 	PyDict_SetItemString(dictionary, "hyperu", f);
 	Py_DECREF(f);
 
@@ -646,6 +652,20 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_2_functions, sici_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "sici", sici_doc, 0);
 	PyDict_SetItemString(dictionary, "sici", f);
+	Py_DECREF(f);
+
+
+	f = PyUFunc_FromFuncAndData(cephes1_2_functions, itj0y0_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "itj0y0", itj0y0_doc, 0);
+	PyDict_SetItemString(dictionary, "itj0y0", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_2_functions, it2j0y0_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "it2j0y0", it2j0y0_doc, 0);
+	PyDict_SetItemString(dictionary, "it2j0y0", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_2_functions, iti0k0_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "iti0k0", iti0k0_doc, 0);
+	PyDict_SetItemString(dictionary, "iti0k0", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_2_functions, it2i0k0_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "it2i0k0", it2i0k0_doc, 0);
+	PyDict_SetItemString(dictionary, "it2i0k0", f);
 	Py_DECREF(f);
 
 

@@ -76,6 +76,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
 #include "mconf.h"
+#include <stdio.h>
 
 /* Chebyshev coefficients for exp(-x) I0(x)
  * in the interval [0,8].
