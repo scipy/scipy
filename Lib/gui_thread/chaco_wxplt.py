@@ -34,6 +34,9 @@ pexec('from gui_thread.wximporter import *;bg_app=wxBackgroundApp()',wait=1)
 # is called by atexit module:
 pexec('bg_app.run()')
 
+# .. and so pexec has no use in this namespace anymore:
+del pexec
+
 # Chaco must be imported from wxPython thread because it already
 # executes some wxPyhton functions.
 bg_app('import chaco.wxplt')
