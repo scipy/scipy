@@ -12,7 +12,7 @@ def configuration(parent_package=''):
     test_path = os.path.join(local_path,'tests')
 
     config = default_config_dict()
-    #config['packages'].append(dot_join(parent_package,'stats'))
+    config['packages'].append(dot_join(parent_package,'stats'))
     config['packages'].append(dot_join(parent_package,'stats.tests')) 
     config['package_dir']['stats.tests'] = test_path
 
