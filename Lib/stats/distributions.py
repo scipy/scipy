@@ -3776,6 +3776,51 @@ Poisson distribution
 """
                       )
 
+## (Planck) Discrete Exponential 
+
+class planck_gen(rv_discrete):
+    def _argcheck(self, lambda_):
+        if (lambda_ > 0):
+            self.a = 0
+            self.b = inf
+            return 1
+        elif (lambda_ < 0):
+            self.a = -inf
+            self.b = 0
+            return 1
+        return 0  # lambda_ = 0
+    def _pmf(self, k, lambda_):
+        fact = (1-exp(-lamba))
+        return fact*exp(-lambda_(k))
+    def _cdf(self, x, lambda_):
+        k = floor(x)
+        return 1-exp(-lambda_*(k+1))
+    def _ppf(self, q, lambda_):
+        val = ceil(-1.0/lambda_ * log(1-q)-1)
+        return val
+    def _stats(self, lambda_):
+        m2, m1 = arr(lambda_)
+        mu = 1/(exp(lambda_))-1)
+        var = exp(-lambda_)/(1-exp(-lambda))**2
+        g1 = 2*cosh(lambda_/2.0)
+        g2 = 4+2*cosh(lambda_)
+        return mu, var, g1, g2
+    def _entropy(self, lambda_):
+        l = lambda_
+        C = (1-exp(-l))
+        return l*exp(-l)/C - log(C)
+planck = planck_gen(name='planck',longname='A discrete exponential ',
+                    shapes="lambda_",
+                    extradoc="""
+
+Planck (Discrete Exponential)
+
+    pmf is p(k; b) = (1-exp(-b))*exp(-b*k) for kb >= 0
+"""
+                      )
+
+
+
 
 ## Discrete Uniform
 
@@ -3791,10 +3836,8 @@ class randint_gen(rv_discrete):
         k = floor(x)
         return (k-min+1)*1.0/(max-min)
     def _ppf(self, q, min, max):
-        vals = ceil(q*(max-min)+min)
-        temp = randint.cdf(vals-1,min,max)
-        vals = where((temp >= q) & (vals > 0), vals-1, vals)        
-        return vals
+        val = ceil(q*(max-min)+min)
+        return val
     def _stats(self, min, max):
         m2, m1 = arr(max), arr(min)
         mu = (m2 + m1 - 1.0) / 2
