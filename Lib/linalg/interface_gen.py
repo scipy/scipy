@@ -494,7 +494,7 @@ def generate_cblas(sdir):
     f.write(module_py)
     f.close()
     
-def generate_fblas():
+def generate_fblas(sdir):
     print "generating fblas interface"
     module_name = 'fblas'
     interface = ''
