@@ -1,5 +1,5 @@
 import sigtools
-import MLab
+import scipy.special as special
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
@@ -49,9 +49,9 @@ def correlate(in1, in2, mode='full'):
  
     """
     # Code is faster if kernel is smallest array.
-    volume = MLab.asarray(in1)
-    kernel = MLab.asarray(in2)
-    if (MLab.product(kernel.shape) > MLab.product(volume.shape)):
+    volume = Numeric.asarray(in1)
+    kernel = Numeric.asarray(in2)
+    if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
         temp = kernel
         kernel = volume
         volume = temp
@@ -86,9 +86,9 @@ def convolve(in1, in2, mode='full'):
            convolution of in1 with in2.
 
     """
-    volume = MLab.asarray(in1)
-    kernel = MLab.asarray(in2)
-    if (MLab.product(kernel.shape) > MLab.product(volume.shape)):
+    volume = Numeric.asarray(in1)
+    kernel = Numeric.asarray(in2)
+    if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
         temp = kernel
         kernel = volume
         volume = temp
@@ -125,7 +125,7 @@ def order_filter(a, domain, order):
            shape as in.
           
     """
-    domain = MLab.asarray(domain)
+    domain = Numeric.asarray(domain)
     size = domain.shape
     for k in range(len(size)):
         if (size[k] % 2) != 1:
@@ -155,21 +155,21 @@ def medfilt(volume,kernel_size=None):
            result.
   
     """
-    volume = MLab.asarray(volume)
+    volume = Numeric.asarray(volume)
     if kernel_size == None:
         kernel_size = [3] * len(volume.shape)
-    kernel_size = MLab.asarray(kernel_size)
+    kernel_size = Numeric.asarray(kernel_size)
     if len(kernel_size.shape) == 0:
         kernel_size = [kernel_size.toscalar()] * len(volume.shape)
-    kernel_size = MLab.asarray(kernel_size)
+    kernel_size = Numeric.asarray(kernel_size)
 
     for k in range(len(volume.shape)):
         if (kernel_size[k] % 2) != 1:
             raise ValueError, "Each element of kernel_size should be odd." 
 
-    domain = MLab.ones(kernel_size)
+    domain = Numeric.ones(kernel_size)
 
-    numels = MLab.product(kernel_size)
+    numels = Numeric.product(kernel_size)
     order = numels/2
     return sigtools._order_filterND(volume,domain,order)
 
@@ -196,20 +196,20 @@ def wiener(im,mysize=None,noise=None):
     out -- Wiener filtered result with the same shape as in.
 
     """
-    im = MLab.asarray(im)
+    im = Numeric.asarray(im)
     if mysize == None:
         mysize = [3] * len(im.shape)
-    mysize = MLab.asarray(mysize);
+    mysize = Numeric.asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlate(im,MLab.ones(mysize),1) / MLab.prod(mysize)
+    lMean = correlate(im,Numeric.ones(mysize),1) / Numeric.product(mysize)
 
     # Estimate the local variance
-    lVar = correlate(im**2,MLab.ones(mysize),1) / MLab.prod(mysize) - lMean**2
+    lVar = correlate(im**2,Numeric.ones(mysize),1) / Numeric.product(mysize) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
-        noise = MLab.mean(MLab.ravel(lVar))
+        noise = Numeric.mean(Numeric.ravel(lVar))
 
     # Compute result
     # f = lMean + (maximum(0, lVar - noise) ./
@@ -217,8 +217,8 @@ def wiener(im,mysize=None,noise=None):
     #
     out = im - lMean
     im = lVar - noise
-    im = MLab.maximum(im,0)
-    lVar = MLab.maximum(lVar,noise)
+    im = Numeric.maximum(im,0)
+    lVar = Numeric.maximum(lVar,noise)
     out = out / lVar
     out = out * im
     out = out + lMean
@@ -318,13 +318,13 @@ def medfilt2d(input, kernel_size=3):
     out -- An array the same size as input containing the median filtered
            result.
     """
-    image = MLab.asarray(input)
+    image = Numeric.asarray(input)
     if kernel_size == None:
         kernel_size = [3] * 2
-    kernel_size = MLab.asarray(kernel_size)
+    kernel_size = Numeric.asarray(kernel_size)
     if len(kernel_size.shape) == 0:
         kernel_size = [kernel_size.toscalar()] * 2
-    kernel_size = MLab.asarray(kernel_size)
+    kernel_size = Numeric.asarray(kernel_size)
 
     for size in kernel_size:
         if (size % 2) != 1:
@@ -437,23 +437,54 @@ def lfilter(b, a, x, axis=-1, zi=None):
     else:
         return sigtools._linear_filter(b, a, x, axis, zi)
 
+def blackman(M):
+    """blackman(M) returns the M-point Blackman window.
+    """
+    n = arange(0,M)
+    return 0.42-0.5*cos(2.0*pi*n/(M-1)) + 0.08*cos(4.0*pi*n/(M-1))
+
+def bartlett(M):
+    """bartlett(M) returns the M-point Bartlett window.
+    """
+    n = arange(0,M)
+    return where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
+
+def hanning(M):
+    """hanning(M) returns the M-point Hanning window.
+    """
+    n = arange(0,M)
+    return 0.5-0.5*cos(2.0*pi*n/(M-1))
+
+def hamming(M):
+    """hamming(M) returns the M-point Hamming window.
+    """
+    n = arange(0,M)
+    return 0.54-0.46*cos(2.0*pi*n/(M-1))
+
+def kaiser(M,beta):
+    """kaiser(M, beta) returns a Kaiser window of length M with shape parameter
+    beta. It depends on the cephes module for the modified bessel function i0.
+    """
+    n = arange(0,M)
+    alpha = (M-1)/2.0
+    return special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
 
 def test():
     a = [3,4,5,6,5,4]
     b = [1,2,3]
     c = convolve(a,b)
-    if (MLab.product(equal(c,[3,10,22,28,32,32,23,12]))==0):
+    if (Numeric.product(equal(c,[3,10,22,28,32,32,23,12]))==0):
         print "Error in convolve."
 
     f = [[3,4,5],[2,3,4],[1,2,5]]
     d = medfilt(f)
-    if (MLab.product(ravel(equal(d,[[0,3,0],[2,3,3],[0,2,0]])))==0):
+    if (Numeric.product(ravel(equal(d,[[0,3,0],[2,3,3],[0,2,0]])))==0):
         print "Error in medfilt."
 
-    g = MLab.array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
-    correct = MLab.array([[2.16374269,3.2222222222, 2.8888888889, 1.6666666667],[2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],[2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],[1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
+    g = Numeric.array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
+    correct = Numeric.array([[2.16374269,3.2222222222, 2.8888888889, 1.6666666667],[2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],[2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],[1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
     h = wiener(g)
-    if (MLab.abs(MLab.product(MLab.ravel(h-correct)))> 1e-7):
+    if (Numeric.abs(Numeric.product(Numeric.ravel(h-correct)))> 1e-7):
         print "Error in wiener."
 
     return

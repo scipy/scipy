@@ -8,6 +8,26 @@ import scipy_version
 __version__ = scipy_version.scipy_version
 del scipy_version
 
+# SciPy has levels
+# Level 0 -- Numeric and core routines in basic.py, misc.py, and handy.py
+#
+# Level 1 -- Level 0 + fft, special, linalg (these can depend on Level 0)
+# Level 2 -- plotting interface.
+# Packages which define own functions plus depend on Levels 0-2.
+#
+# Level 0, 1, 2 should be imported in order and then other levels imported
+#   as available.
+
+
+import Numeric
+import os,sys
+from helpmod import help, source
+from Matrix import Matrix as Mat
+import fastumath
+
+Inf = inf = Numeric.array(1e308)**10
+NaN = nan = Numeric.array(0.0) / Numeric.array(0.0)
+
 import string
 def somenames2all(alist, namedict, gldict):
     for key in namedict.keys():
@@ -34,43 +54,70 @@ def objects2all(alist, objlist):
     alist.extend(objlist)
 
 # modules to import under the scipy namespace
-_modules = ["fastumath", "misc", "optimize", "integrate", "signal",
-            "special", "io", "interpolate", "stats", "handy", "linalg"]
+_level0 = ["handy", "misc", "basic", "fastumath"]
+_partials0 = {'Matrix' : ['Matrix']}
 
-# namespaces to subsume into the scipy namespace itself
-_namespaces = ['MLab','handy', 'misc', 'fastumath']
-# MLab includes Numeric
+_level1 = ["special", "io", "linalg", "fastumath"]  # fft is in this group.
+_level1a = ["basic2"] # functions to be subsumed into scipy namespace which
+                      # require level 0 and level 1
 
-# partial list of namespaces to get
-_partials = {'Matrix' : ['Matrix']}
-import os,sys
-from helpmod import help, source
-from Matrix import Matrix as Mat
-import MLab
-import fastumath
+_level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "compiler", "cluster"]
 
 __all__=[]
 
-Inf = inf = MLab.array(1e308)**10
-NaN = nan = MLab.array(0.0) / MLab.array(0.0)
-objects2all(__all__, ['Inf','inf','NaN','nan', 'Mat'])
-somenames2all(__all__, _partials, globals())
-names2all(__all__, _namespaces, globals())
-modules2all(__all__, _modules, globals())
-objects2all(__all__, ['help', 'source'])
+somenames2all(__all__, _partials0, globals())
+names2all(__all__, _level0, globals())
+modules2all(__all__, _level0, globals())
+objects2all(__all__, ['help', 'source', "Inf", "inf", "NaN", "nan", "Mat"])
 
+# Level 1
 
 try:
-    import scipy.fft
-    __all__.append('fft')
+    import scipy.fftw
+    __all__.append('fftw')
 except ImportError:
-    pass
+    print "Warning: FFT package not found."
 
+_partials1 = {'fftw' : ['fft', 'fftnd', 'fft2d', 'fft3d',
+                        'ifft', 'ifft2d', 'ifft3d', 'ifftnd']}
+modules2all(__all__, _level1, globals())
+somenames2all(__all__, _partials1, globals())
+
+# Level 1a
+names2all(__all__, _level1a, globals())
+
+# Level 2
+_plot = []
 try:
     import xplt
     __all__.append('xplt')
+    _plot.append('xplt')
 except ImportError:
     pass
+
+try:
+    import plt
+    __all__.append('plt')
+    _plot.append('plt')
+except ImportError:
+    pass
+
+try:
+    import gplt
+    __all__.append('gplt')
+    _plot.append('gplt')
+except ImportError:
+    pass
+
+if _plot == []:
+    print "Warning: No plotting available."
+else:
+    print "Plotting methods available: ", _plot
+
+# Level 3
+
+modules2all(__all__, _level3, globals())
+
 
 #---- testing ----#
 

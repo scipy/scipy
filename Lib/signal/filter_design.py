@@ -8,16 +8,10 @@ Num = MLab
 abs = absolute
 pi = Numeric.pi
 import scipy
-from scipy import r1array, poly, polyval
-from scipy import special, optimize
+from scipy import r1array, poly, polyval, comb
+from scipy import special, optimize, linalg
 import string, types
 
-def factorial(n):
-    return special.gamma(n+1)
-
-def comb(N,k):
-    lgam = special.lgam
-    return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
 
 def freqs(b,a,worN=None):
     """Compute frequency response of analog filter.
@@ -117,8 +111,8 @@ def tf2zpk(b,a):
     a = (a+0.0) / a[0]
     k = b[0]
     b /= b[0]
-    z = MLab.roots(b)
-    p = MLab.roots(a)
+    z = linalg.roots(b)
+    p = linalg.roots(a)
     return z, p, k
     
 def zpk2tf(z,p,k):

@@ -1,4 +1,5 @@
 from cephes import *
+from Numeric import *
 import types
 
 class general_function:
@@ -40,6 +41,14 @@ class general_function:
     def __call__(self,*args):
         return arraymap(self.thefunc,args)
 
+
+def kaiser(M,beta):
+    """kaiser(M, beta) returns a Kaiser window of length M with shape parameter
+    beta. It depends on the cephes module for the modified bessel function i0.
+    """
+    n = arange(0,M)
+    alpha = (M-1)/2.0
+    return i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/i0(beta)
 
 
 
