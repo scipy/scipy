@@ -139,8 +139,8 @@ def setup_package(ignore_packages=[]):
                                         parent_path=path)
 
         #old style packages:
-        #config_list += map(get_separate_package_config,separate_packages)
-        #config_list += map(get_package_config,scipy_packages)
+        config_list += map(get_separate_package_config,separate_packages)
+        config_list += map(get_package_config,scipy_packages)
 
         config_dict = merge_config_dicts(config_list)
 
