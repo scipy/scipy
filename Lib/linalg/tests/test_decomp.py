@@ -17,21 +17,17 @@ Run tests if linalg is not installed:
 import Numeric
 dot = Numeric.dot
 
-from scipy_test.testing import rand
-def random(size):
-    return rand(*size)
-
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
+from linalg import lu_solve,lu_factor,solve
+import scipy_base
 del sys.path[0]
 
-from scipy_test.testing import assert_array_almost_equal
-from scipy_test.testing import assert_almost_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
-
+def random(size):
+    return rand(*size)
 
 class test_eigvals(ScipyTestCase):
 
@@ -57,7 +53,7 @@ class test_eigvals(ScipyTestCase):
                    (9+1j-Numeric.sqrt(92+6j))/2]
         assert_array_almost_equal(w,exact_w)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         import LinearAlgebra
         Numeric_eigvals = LinearAlgebra.eigenvalues
         print
@@ -132,13 +128,13 @@ class test_lu(ScipyTestCase):
 
 class test_lu_solve(unittest.TestCase):        
     def check_lu(self):
-        a = scipy.stats.random((10,10))
-        b = scipy.stats.random(10)
+        a = random((10,10))
+        b = random((10,))
         
-        x1 = scipy.linalg.solve(a,b)
+        x1 = solve(a,b)
         
-        lu_a = scipy.linalg.lu_factor(a)
-        x2 = scipy.linalg.lu_solve(lu_a,b)
+        lu_a = lu_factor(a)
+        x2 = lu_solve(lu_a,b)
         
         assert_array_equal(x1,x2)
 
@@ -313,6 +309,8 @@ dot = Numeric.dot
 transp = Numeric.transpose
 conj = Numeric.conjugate
 any = Numeric.sometrue
+ravel = Numeric.ravel
+iscomplex = scipy_base.iscomplex
 
 class test_schur(ScipyTestCase):
 
@@ -326,33 +324,5 @@ class test_schur(ScipyTestCase):
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
 
-#####################################
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_eigvals,'check_') )
-        suites.append( unittest.makeSuite(test_eig,'check_') )
-        suites.append( unittest.makeSuite(test_lu,'check_') )
-        suites.append( unittest.makeSuite(test_svd,'check_') )
-        suites.append( unittest.makeSuite(test_svdvals,'check_') )
-        suites.append( unittest.makeSuite(test_cholesky,'check_') )
-        suites.append( unittest.makeSuite(test_qr,'check_') )
-    if level > 5:
-        suites.append( unittest.makeSuite(test_eigvals,'bench_') )
-        suites.append( unittest.makeSuite(test_eig,'bench_') )
-
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('linalg.decomp').run()

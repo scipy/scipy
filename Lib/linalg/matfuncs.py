@@ -7,7 +7,8 @@ __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
 
 from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
-     cast, log, ogrid, isfinite, imag, real, absolute, amax, sign
+     cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
+     isfinite
 from Matrix import Matrix as mat
 import scipy_base
 from basic import solve, LinAlgError, inv, norm, triu
@@ -154,7 +155,6 @@ def funm(A,func,disp=1):
     #  it needs wrapping.
  
     # Perform Shur decomposition (lapack ?gees)
-    import scipy.special as ss
     A = asarray(A)
     if len(A.shape)!=2:
         raise ValueError, "Non-matrix input to matrix function."    
@@ -192,7 +192,7 @@ def funm(A,func,disp=1):
     if minden == 0.0:
         minden = tol
     err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
-    if product(ravel(logical_not(ss.isfinite(F)))):
+    if product(ravel(logical_not(isfinite(F)))):
         err = Inf
     if disp:
         if err > 1000*tol:
@@ -277,13 +277,3 @@ def signm(a,disp=1):
         return S0
     else:
         return S0, errest
-
-################## test functions #########################
-
-def test(level=10):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)

@@ -5,21 +5,17 @@
 __all__ = ['get_blas_funcs']
 
 import string
-from scipy_distutils.misc_util import PostponedException
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
-try: import fblas
-except: fblas = PostponedException()
-try:
-    import cblas
-    if isinstance(fblas,PostponedException):
-        fblas = cblas
-except:
-    cblas = PostponedException()
-    if not isinstance(fblas,PostponedException):
-        cblas = fblas
+
+import fblas
+import cblas
+if hasattr(cblas,'empty_module'):
+    cblas = fblas
+elif hasattr(fblas,'empty_module'):
+    fblas = cblas
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
@@ -59,13 +55,3 @@ def get_blas_funcs(names,arrays=(),debug=0):
         func.typecode = typecode
         funcs.append(func)
     return tuple(funcs)
-
-################## test functions #########################
-
-def test(level=10):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)    

@@ -23,16 +23,12 @@ import Numeric
 from Numeric import arange, add, array, dot
 
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 from linalg import pinv, pinv2
 del sys.path[0]
 
-from scipy_test.testing import rand
-from scipy_test.testing import assert_array_almost_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, assert_array_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
 
 def random(size):
@@ -112,7 +108,7 @@ class test_solve(ScipyTestCase):
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         import LinearAlgebra
         Numeric_solve = LinearAlgebra.solve_linear_equations
         print
@@ -186,7 +182,7 @@ class test_inv(ScipyTestCase):
             assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
                                       Numeric.identity(n))
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         import LinearAlgebra
         Numeric_inv = LinearAlgebra.inverse
         print
@@ -255,7 +251,7 @@ class test_det(ScipyTestCase):
             d2 = Numeric_det(a)
             assert_almost_equal(d1,d2)
 
-    def bench_random(self):
+    def bench_random(self,level=5):
         import LinearAlgebra
         Numeric_det = LinearAlgebra.determinant
         print
@@ -492,39 +488,5 @@ class test_pinv(ScipyTestCase):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
-#####################################
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_det,'check_') )
-        suites.append( unittest.makeSuite(test_solve,'check_') )
-        suites.append( unittest.makeSuite(test_inv,'check_') )
-        suites.append( unittest.makeSuite(test_lstsq,'check_') )
-        suites.append( unittest.makeSuite(test_tri,'check_') )
-        suites.append( unittest.makeSuite(test_triu,'check_') )
-        suites.append( unittest.makeSuite(test_tril,'check_') )
-        suites.append( unittest.makeSuite(test_toeplitz,'check_') )
-        suites.append( unittest.makeSuite(test_hankel,'check_') )
-        suites.append( unittest.makeSuite(test_pinv,'check_') )
-
-    if level > 5:
-        suites.append( unittest.makeSuite(test_det,'bench_') )
-        suites.append( unittest.makeSuite(test_solve,'bench_') )
-        suites.append( unittest.makeSuite(test_inv,'bench_') )
-        suites.append( unittest.makeSuite(test_lstsq,'bench_') )
-
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('linalg.basic').run()

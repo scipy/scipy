@@ -17,16 +17,13 @@ Run tests if linalg is not installed:
 from Numeric import array, identity
 
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 import scipy_base
 import linalg
 from linalg import signm,logm
 del sys.path[0]
 
-from scipy_test.testing import assert_array_almost_equal
-from scipy_test.testing import assert_almost_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
 
 class test_signm(ScipyTestCase):
@@ -83,27 +80,5 @@ class test_logm(ScipyTestCase):
                    [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
         logm((identity(7)*3.1+0j)-a)
 
-#####################################
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_signm,'check_') )
-        suites.append( unittest.makeSuite(test_logm,'check_') )
-    if level > 5:
-        pass
-
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10,verbosity=2):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner(verbosity=verbosity)
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('linalg.matfuncs').run()

@@ -19,15 +19,12 @@ from Numeric import *
 from scipy_base.fastumath import *
 
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from linalg import fblas
 del sys.path[0]
 
 import unittest
-from scipy_test.testing import assert_array_equal, assert_array_almost_equal
-
-from scipy_test.testing import assert_almost_equal,assert_equal
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5
@@ -564,8 +561,4 @@ def test(level=10):
     return runner
 
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('linalg.fblas').run()

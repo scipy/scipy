@@ -46,3 +46,5 @@ Linear algebra routines
    funm       --- Evaluating an arbitrary matrix function.
  
 """
+
+postpone_import = 1

@@ -3,15 +3,12 @@
 import os
 import sys
 import re
-from distutils import dep_util
+from distutils import dep_util,dir_util
 from glob import glob
 import warnings
+import shutil
 
 #-------------------
-# NB! Changing skip_single_routines or using_lapack_blas requires
-#  rm -f {clapack,flapack,cblas,fblas}.pyf
-# before rebuilding.
-
 # To skip wrapping single precision atlas/lapack/blas routines, set
 # the following flag to True:
 skip_single_routines = 0
@@ -36,13 +33,9 @@ else:
     run_command = commands.getstatusoutput
 
 def configuration(parent_package=''):
-    if sys.platform == 'win32':
-        import scipy_distutils.mingw32_support
-
     from scipy_distutils.core import Extension
-    from scipy_distutils.misc_util import get_path, default_config_dict
-    from scipy_distutils.misc_util import fortran_library_item, dot_join
-
+    from scipy_distutils.misc_util import fortran_library_item, dot_join,\
+         SourceGenerator, get_path, default_config_dict, get_build_temp
     from scipy_distutils.system_info import get_info,dict_append,\
          AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
          LapackSrcNotFoundError,BlasSrcNotFoundError
@@ -52,29 +45,26 @@ def configuration(parent_package=''):
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
 
-    m = re.compile(r'(build|install|bdist|run_f2py)')
-    if not filter(m.match,sys.argv):
-        sources = []
-        sources += glob(os.path.join(local_path,'src','*.f'))
-        sources += glob(os.path.join(local_path,'src','*.c'))
-        sources += glob(os.path.join(local_path,'generic_*.pyf'))
-        sources += [os.path.join(local_path,f) for f in [\
-            'flapack_user_routines.pyf','atlas_version.c']]
-        config['ext_modules'].append(Extension(\
-            name='fake_linalg_ext_module',
-            sources = sources))
-        return config
-
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/BLAS; useful for testing
 
     f_libs = []
     atlas_version = None
+    temp_path = os.path.join(get_build_temp(),'linalg','atlas_version')
+    dir_util.mkpath(temp_path,verbose=1)
+    atlas_version_file = os.path.join(temp_path,'atlas_version')
+
     if atlas_info:
+        if os.path.isfile(atlas_version_file):
+            atlas_version = open(atlas_version_file).read()
+            print 'ATLAS version',atlas_version
+
+    if atlas_info and atlas_version is None:
         # Try to determine ATLAS version
+        shutil.copy(os.path.join(local_path,'atlas_version.c'),temp_path)
         cur_dir = os.getcwd()
-        os.chdir(local_path)
+        os.chdir(temp_path)
         cmd = '%s %s build_ext --inplace --force'%\
               (sys.executable,
                os.path.join(local_path,'setup_atlas_version.py'))
@@ -91,15 +81,21 @@ def configuration(parent_package=''):
                     print 'ATLAS version',atlas_version
             if atlas_version is None:
                 if re.search(r'undefined symbol: ATL_buildinfo',o,re.M):
-                    atlas_version = '3.2.1' # or pre 3.3.6
-                    print 'ATLAS version',atlas_version,'(or pre 3.3.6)'
+                    atlas_version = '3.2.1_pre3.3.6'
+                    print 'ATLAS version',atlas_version
                 else:
                     print o
         else:
             print o
+        os.chdir(cur_dir)
         if atlas_version is None:
             print 'Failed to determine ATLAS version'
-        os.chdir(cur_dir)
+        else:
+            f = open(atlas_version_file,'w')
+            f.write(atlas_version)
+            f.close()
+
+    if atlas_info:
         if ('ATLAS_WITHOUT_LAPACK',None) in atlas_info.get('define_macros',[]):
             lapack_info = get_info('lapack')
             if not lapack_info:
@@ -113,7 +109,9 @@ def configuration(parent_package=''):
                 ))
             dict_append(lapack_info,**atlas_info)
             atlas_info = lapack_info
+
     blas_info,lapack_info = {},{}
+
     if not atlas_info:
         warnings.warn(AtlasNotFoundError.__doc__)
         blas_info = get_info('blas')
@@ -140,26 +138,13 @@ def configuration(parent_package=''):
                 'lapack_src',lapack_src_info['sources'],
                 ))
 
-    mod_sources = {}
-    if atlas_info or blas_info:
-        mod_sources['fblas'] = ['generic_fblas.pyf',
-                                'generic_fblas1.pyf',
-                                'generic_fblas2.pyf',
-                                'generic_fblas3.pyf',
-                                os.path.join('src','fblaswrap.f'),
-                                ]
-    if atlas_info or lapack_info:
-        mod_sources['flapack'] = ['generic_flapack.pyf']
-    if atlas_info:
-        mod_sources['cblas'] = ['generic_cblas.pyf',
-                                'generic_cblas1.pyf']
-        mod_sources['clapack'] = ['generic_clapack.pyf']
-    else:
         dict_append(atlas_info,**lapack_info)
         dict_append(atlas_info,**blas_info)
 
+    target_dir = ''
     skip_names = {'clapack':[],'flapack':[],'cblas':[],'fblas':[]}
     if skip_single_routines:
+        target_dir = 'dbl'
         skip_names['clapack'].extend(\
             'sgesv cgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
             ' sposv cposv spotrf cpotrf spotrs cpotrs spotri cpotri'\
@@ -177,29 +162,119 @@ def configuration(parent_package=''):
             ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
             ' sgemm cgemm'.split())
     if using_lapack_blas:
+        target_dir = os.path.join(target_dir,'blas')
         skip_names['fblas'].extend(\
             'drotmg srotmg drotm srotm'.split())
 
-    if atlas_version=='3.2.1':
+    if atlas_version=='3.2.1_pre3.3.6':
+        target_dir = os.path.join(target_dir,'atlas321')
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
             ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
 
-    for mod_name,sources in mod_sources.items():
-        sources = [os.path.join(local_path,s) for s in sources]
-        pyf_sources = filter(lambda s:s[-4:]=='.pyf',sources)
-        mod_file = os.path.join(local_path,mod_name+'.pyf')
-        if dep_util.newer_group(pyf_sources,mod_file):
-            generate_interface(mod_name,sources[0],mod_file,
-                               skip_names.get(mod_name,[]))
-        sources = filter(lambda s:s[-4:]!='.pyf',sources)
-        ext_args = {'name':dot_join(parent_package,package,mod_name),
-                    'sources':[mod_file]+sources}
-        dict_append(ext_args,**atlas_info)
-        ext = Extension(**ext_args)
-        ext.need_fcompiler_opts = 1
-        config['ext_modules'].append(ext)
+    # atlas_version:
+    ext_args = {'name':dot_join(parent_package,package,'atlas_version'),
+                'sources':[os.path.join(local_path,'atlas_version.c')]}
+    if atlas_info:
+        ext_args['libraries'] = [atlas_info['libraries'][-1]]
+        ext_args['library_dirs'] = atlas_info['library_dirs'][:]
+        ext_args['macros'] = [('ATLAS_INFO',atlas_version)]
+    else:
+        ext_args['macros'] = [('NO_ATLAS_INFO',1)]
+    ext = Extension(**ext_args)
+    config['ext_modules'].append(ext)
 
+    # In case any of atlas|lapack|blas libraries are not available
+    def generate_empty_pyf(target,sources,generator,skips):
+        name = os.path.basename(target)[:-4]
+        f = open(target,'w')
+        f.write('python module '+name+'\n')
+        f.write('usercode void empty_module(void) {}\n')
+        f.write('interface\n')
+        f.write('subroutine empty_module()\n')
+        f.write('intent(c) empty_module\n')
+        f.write('end subroutine empty_module\n')
+        f.write('end interface\nend python module'+name+'\n')
+        f.close()
+
+    # fblas:
+    def generate_fblas_pyf(target,sources,generator,skips):
+        generator('fblas',sources[0],target,skips)
+    if not (blas_info or atlas_info):
+        generate_fblas_pyf = generate_empty_pyf
+    sources = ['generic_fblas.pyf',
+               'generic_fblas1.pyf',
+               'generic_fblas2.pyf',
+               'generic_fblas3.pyf',
+               os.path.join('src','fblaswrap.f')]
+    sources = [os.path.join(local_path,s) for s in sources]
+    fblas_pyf = SourceGenerator(generate_fblas_pyf,
+                                os.path.join(target_dir,'fblas.pyf'),
+                                sources,generate_interface,
+                                skip_names['fblas'])
+    ext_args = {'name':dot_join(parent_package,package,'fblas'),
+                'sources':[fblas_pyf,sources[-1]]}
+    dict_append(ext_args,**atlas_info)
+    ext = Extension(**ext_args)
+    ext.need_fcompiler_opts = 1
+    config['ext_modules'].append(ext)
+
+    # cblas:
+    def generate_cblas_pyf(target,sources,generator,skips):
+        generator('cblas',sources[0],target,skips)
+    if not atlas_info:
+        generate_cblas_pyf = generate_empty_pyf
+    sources = ['generic_cblas.pyf',
+               'generic_cblas1.pyf']
+    sources = [os.path.join(local_path,s) for s in sources]
+    cblas_pyf = SourceGenerator(generate_cblas_pyf,
+                                os.path.join(target_dir,'cblas.pyf'),
+                                sources,generate_interface,
+                                skip_names['cblas'])
+    ext_args = {'name':dot_join(parent_package,package,'cblas'),
+                'sources':[cblas_pyf]}
+    dict_append(ext_args,**atlas_info)
+    ext = Extension(**ext_args)
+    ext.need_fcompiler_opts = 1
+    config['ext_modules'].append(ext)
+
+    # flapack:
+    def generate_flapack_pyf(target,sources,generator,skips):
+        generator('flapack',sources[0],target,skips)
+    if not (lapack_info or atlas_info):
+        generate_flapack_pyf = generate_empty_pyf
+    sources = ['generic_flapack.pyf','flapack_user_routines.pyf']
+    sources = [os.path.join(local_path,s) for s in sources]
+    flapack_pyf = SourceGenerator(generate_flapack_pyf,
+                                  os.path.join(target_dir,'flapack.pyf'),
+                                  sources,generate_interface,
+                                  skip_names['flapack'])
+    ext_args = {'name':dot_join(parent_package,package,'flapack'),
+                'sources':[flapack_pyf]}
+    dict_append(ext_args,**atlas_info)
+    ext = Extension(**ext_args)
+    ext.need_fcompiler_opts = 1
+    config['ext_modules'].append(ext)
+
+    # clapack:
+    def generate_clapack_pyf(target,sources,generator,skips):
+        generator('clapack',sources[0],target,skips)
+    if not atlas_info:
+        generate_cblas_pyf = generate_empty_pyf
+    sources = ['generic_clapack.pyf']
+    sources = [os.path.join(local_path,s) for s in sources]
+    clapack_pyf = SourceGenerator(generate_clapack_pyf,
+                                  os.path.join(target_dir,'clapack.pyf'),
+                                  sources,generate_interface,
+                                  skip_names['clapack'])
+    ext_args = {'name':dot_join(parent_package,package,'clapack'),
+                'sources':[clapack_pyf]}
+    dict_append(ext_args,**atlas_info)
+    ext = Extension(**ext_args)
+    ext.need_fcompiler_opts = 1
+    config['ext_modules'].append(ext)
+
+    # _flinalg:
     flinalg = []
     for f in ['det.f','lu.f', #'wrappers.c','inv.f',
               ]:
@@ -209,6 +284,7 @@ def configuration(parent_package=''):
     dict_append(ext_args,**atlas_info)
     config['ext_modules'].append(Extension(**ext_args))
 
+    # calc_lwork:
     ext_args = {'name':dot_join(parent_package,package,'calc_lwork'),
                 'sources':[os.path.join(local_path,'src','calc_lwork.f')],
                 }
@@ -218,29 +294,9 @@ def configuration(parent_package=''):
     config['fortran_libraries'].extend(f_libs)
     return config
 
-def get_package_config(name):
-    sys.path.insert(0,os.path.join('scipy_core',name))
-    try:
-        mod = __import__('setup_'+name)
-        config = mod.configuration()
-    finally:
-        del sys.path[0]
-    return config
-
 if __name__ == '__main__':
-    extra_packages = []
-    try: import scipy_base
-    except ImportError: extra_packages.append('scipy_base')
-    try: import scipy_test
-    except ImportError: extra_packages.append('scipy_test')
-    sys.path.insert(0,'scipy_core')
-
     from scipy_distutils.core import setup
-    from scipy_distutils.misc_util import merge_config_dicts
     from linalg_version import linalg_version
 
-    config_dict = merge_config_dicts([configuration()] + \
-                                     map(get_package_config,extra_packages))
-
     setup(version=linalg_version,
-          **config_dict)
+          **configuration())
