@@ -4,7 +4,6 @@ _modules = ["optimize", "integrate", "signal", "special", "io",
 
 # namespaces to subsume into the scipy namespace itself
 _namespaces = ['MLab', 'misc', 'fastumath'] # MLab includes Numeric
-
 import os,sys
 from helpmod import help, source
 
@@ -48,6 +47,8 @@ try:
 except ImportError:
     pass
 
+# for now, we'll aslo import misc
+import misc
     
 #---- testing ----#
 
