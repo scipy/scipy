@@ -81,7 +81,7 @@ section below).
 
 
 So, it is better to disable building chaco (then you will not need
-swig, opengl, etc dependencies) in scipy/setup.py by adding 
+swig, opengl, and other dependencies) in scipy/setup.py by adding 
 :: 
 
   chaco kiva traits freetype
@@ -143,6 +143,13 @@ NOTES
 
    * Move all ``lib*.a`` files from ``/path/to/src/ATLAS/lib/Linux_PII/``,
      say, to ``/usr/local/lib/atlas/``.
+     Also copying ``/path/to/src/ATLAS/include/{cblas.h,clapack.h}`` to
+     ``/usr/local/lib/atlas/`` might be a good idea.
+
+   * Define environment variable ATLAS that contains path to the directory
+     where you moved the atlas libraries. For example, in bash run::
+
+       export ATLAS=/usr/local/lib/atlas
 
 3) If you are willing to sacrifice the performance (by factor of 5 to
    15 for large problems) of the linalg module then it is possible to
@@ -279,7 +286,6 @@ KNOWN PROBLEMS
 
 Why Chaco is not working under non-Windows platforms?
 -----------------------------------------------------
-
 Although Chaco installs succesfully but importing chaco.wxplt gives
 ::
 
@@ -291,6 +297,11 @@ This issue is explained in chaco mailing list thread starting at
 
 In summary, you cannot use chaco under Linux, MacOSX, or any other
 non-Windows platform in short term, try next year again.
+
+Building kiva/agg fails with Internal compiler error
+-----------------------------------------------------
+You are probably using gcc-2.95 and the error can be avoided either by
+using gcc versions 3.x or disabling chaco packages in setup.py file.
 
 BLAS sources shipped with LAPACK are incomplete
 -----------------------------------------------
