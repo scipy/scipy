@@ -5423,6 +5423,20 @@ info(stats)
 \family default 
 \emph on 
 .
+\layout Subsection
+
+Random Variables
+\layout Standard
+
+There are two general distribution classes that have been implemented for
+ encapsulating continuous random variables and discrete random variables.
+ Over 80 continuous random variables and 10 discrete random variables have
+ been implemented using these classes.
+ The list of the random variables available is in the docstring for the
+ stats sub-package.
+ A detailed description of each of them is also located in the files continuous.l
+yx and discrete.lyx in the stats sub-directories.
+ 
 \layout Section
 
 Interfacing with Python Imaging Library

@@ -121,5 +121,6 @@ if __name__ == "__main__":
         ]
     if sys.platform in ['win32','cygwin']:
         # Fix sparse on windows.
-        ignore_packages.append('sparse')
+        #ignore_packages.append('sparse')
+	pass
     setup_package(ignore_packages)
