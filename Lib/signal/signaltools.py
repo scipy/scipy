@@ -713,7 +713,8 @@ def unique_roots(p,tol=1e-3,rtype='min'):
             mult.append(1)
     return array(pout), array(mult)
 
-from scipy import real_if_close, r1array
+from scipy_base import real_if_close, atleast_1d
+
 def invres(r,p,k,tol=1e-3,rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
@@ -743,7 +744,7 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
     p = []
     for k in range(len(pout)):
         p.extend([pout[k]]*mult[k])
-    a = r1array(poly(p))
+    a = atleast_1d(poly(p))
     if len(extra) > 0:
         b = polymul(extra,a)
     else:
@@ -805,7 +806,7 @@ def residue(b,a,tol=1e-3,rtype='avg'):
         for l in range(len(pout)):
             if l != n:
                 pn.extend([pout[l]]*mult[l])
-        an = r1array(poly(pn))
+        an = atleast_1d(poly(pn))
         # bn(s) / an(s) is (s-po[n])**Nn * b(s) / a(s) where Nn is
         # multiplicity of pole at po[n]
         sig = mult[n]
@@ -870,7 +871,7 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
         for l in range(len(pout)):
             if l != n:
                 pn.extend([pout[l]]*mult[l])
-        an = r1array(poly(pn))[::-1]
+        an = atleast_1d(poly(pn))[::-1]
         # bn(z) / an(z) is (1-po[n] z**(-1))**Nn * b(z) / a(z) where Nn is
         # multiplicity of pole at po[n] and b(z) and a(z) are polynomials.
         sig = mult[n]
@@ -915,7 +916,7 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
     p = []
     for k in range(len(pout)):
         p.extend([pout[k]]*mult[k])
-    a = r1array(poly(p))
+    a = atleast_1d(poly(p))
     if len(extra) > 0:
         b = polymul(extra,a)
     else:

@@ -8,7 +8,7 @@ __all__ = ['linear1d']
 
 from Numeric import *
 from scipy_base.fastumath import *
-from scipy_base import r1array
+from scipy_base import atleast_1d
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays
@@ -102,7 +102,7 @@ class linear1d:
         # 1. Handle values in x_new that are outside of x.  Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
-        x_new = r1array(x_new)
+        x_new = atleast_1d(x_new)
         out_of_bounds = self._check_bounds(x_new)
         # 2. Find where in the orignal data, the values to interpolate
         #    would be inserted.  

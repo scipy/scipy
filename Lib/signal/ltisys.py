@@ -9,9 +9,8 @@ import Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy import r_, c_, eye, real
-from scipy import r1array, r2array
-from scipy import poly, squeeze, Mat, diag
+from scipy_base import r_, c_, eye, real, atleast_1d, atleast_2d, poly, squeeze, diag
+from Matrix import Matrix as Mat
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.
@@ -70,7 +69,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     """Check state-space matrices and ensure they are rank-2.
     """
     A, B, C, D = map(none_to_empty, (A, B, C, D))
-    A, B, C, D = map(r2array, (A, B, C, D))
+    A, B, C, D = map(atleast_2d, (A, B, C, D))
 
     if ((len(A.shape) > 2) or (len(B.shape) > 2) or \
         (len(C.shape) > 2) or (len(D.shape) > 2)):
@@ -150,7 +149,7 @@ def ss2tf(A, B, C, D, input=0):
     type_test = A[:,0] + B[:,0] + C[0,:] + D
     num = Numeric.zeros((nout, num_states+1),type_test.typecode())
     for k in range(nout):
-        Ck = r2array(C[k,:])
+        Ck = atleast_2d(C[k,:])
         num[k] = poly(A - dot(B,Ck)) + (D[k]-1)*den
 
     return num, den
@@ -310,8 +309,8 @@ def lsim2(system, U, T, X0=None):
         sys = system
     else:
         sys = lti(*system)
-    U = r1array(U)
-    T = r1array(T)
+    U = atleast_1d(U)
+    T = atleast_1d(T)
     if len(U.shape) == 1:
         U.shape = (U.shape[0],1)
     sU = U.shape        
@@ -377,8 +376,8 @@ def lsim(system, U, T, X0=None, interp=1):
         sys = system
     else:
         sys = lti(*system)
-    U = r1array(U)
-    T = r1array(T)
+    U = atleast_1d(U)
+    T = atleast_1d(T)
     if len(U.shape) == 1:
         U.shape = (U.shape[0],1)
     sU = U.shape        

@@ -5,9 +5,9 @@
 from Numeric import *
 from scipy_base.fastumath import *
 import unittest
-from scipy_test import assert_array_equal, assert_equal
-from scipy_test import assert_almost_equal
-from scipy_test import assert_array_almost_equal
+from scipy_base.testing import assert_array_equal, assert_equal
+from scipy_base.testing import assert_almost_equal
+from scipy_base.testing import assert_array_almost_equal
 import scipy
 import scipy.stats as stats
 

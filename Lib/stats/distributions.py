@@ -10,7 +10,9 @@ import scipy.special as special
 import Numeric
 from Numeric import alltrue, where, arange, put, putmask, nonzero, ravel
 from scipy_base.fastumath import *
+
 import scipy_base
+from scipy_base import atleast_1d
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
@@ -2940,14 +2942,14 @@ def von_misescdf(x, b, loc=0.0):
     if len(x.shape) > 1 or len(b.shape) > 1 or len(loc.shape) > 1:
         raise ValueError, "Only works for 1-d arrays."
     loc = arr(angle(exp(1j*loc)))
-    x = r1array(angle(exp(1j*(x-loc))))*(b==b)
+    x = atleast_1d(angle(exp(1j*(x-loc))))*(b==b)
     from scipy_base.limits import double_epsilon as eps
     eps2 = sqrt(eps)
 
-    c_xsimple = r1array((b==0)&(x==x))
-    c_xiter = r1array((b<100)&(b > 0)&(x==x))
-    c_xnormal = r1array((b>=100)&(x==x))
-    c_bad = r1array((b<=0) | (x != x))
+    c_xsimple = atleast_1d((b==0)&(x==x))
+    c_xiter = atleast_1d((b<100)&(b > 0)&(x==x))
+    c_xnormal = atleast_1d((b>=100)&(x==x))
+    c_bad = atleast_1d((b<=0) | (x != x))
 
     indxiter = nonzero(c_xiter)
     xiter = take(x, indxiter)
@@ -2959,7 +2961,7 @@ def von_misescdf(x, b, loc=0.0):
     st = where(isnan(st),0.0,st)
     putmask(vals, c_xnormal, normcdf(x, scale=st))
         
-    biter = take(r1array(b)*(x==x), indxiter)
+    biter = take(atleast_1d(b)*(x==x), indxiter)
     if len(xiter) > 0:
         fac = special.i0(biter)
         x2 = xiter

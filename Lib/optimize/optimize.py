@@ -28,7 +28,7 @@ __all__ = ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',
 
 import Numeric
 import MLab
-from scipy_base import r1array
+from scipy_base import atleast_1d
 from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
@@ -50,7 +50,7 @@ def rosen_der(x):
     return der
 
 def rosen_hess(x):
-    x = r1array(x)
+    x = atleast_1d(x)
     H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
     diagonal = Num.zeros(len(x),x.typecode())
     diagonal[0] = 1200*x[0]-400*x[1]+2
@@ -60,7 +60,7 @@ def rosen_hess(x):
     return H
 
 def rosen_hess_prod(x,p):
-    x = r1array(x)
+    x = atleast_1d(x)
     Hp = Num.zeros(len(x),x.typecode())
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \

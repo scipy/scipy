@@ -9,17 +9,17 @@ Num = MLab
 abs = Numeric.absolute
 pi = Numeric.pi
 import scipy
-from scipy import r1array, poly, polyval, comb, roots, imag, real
+from scipy_base import atleast_1d, poly, polyval, comb, roots, imag, real
 from scipy import special, optimize, linalg
 import string, types
 
 
 def findfreqs(num, den, N):
-    ep = r1array(roots(den))+0j
-    tz = r1array(roots(num))+0j
+    ep = atleast_1d(roots(den))+0j
+    tz = atleast_1d(roots(num))+0j
 
     if len(ep) == 0:
-        ep = r1array(-1000)+0j
+        ep = atleast_1d(-1000)+0j
 
     ez = scipy.c_[Num.compress(ep.imag >=0, ep), Num.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
 
@@ -61,7 +61,7 @@ def freqs(b,a,worN=None,plot=None):
         w = findfreqs(b,a,N)
     else:
         w = worN
-    w = r1array(w)
+    w = atleast_1d(w)
     s = 1j*w
     h = polyval(b, s) / polyval(a, s)
     if not plot is None:
@@ -97,7 +97,7 @@ def freqz(b, a, worN=None, whole=0, plot=None):
        w -- The frequencies at which h was computed.
        h -- The frequency response.
     """
-    b, a = map(r1array, (b,a))
+    b, a = map(atleast_1d, (b,a))
     if whole:
         lastpoint = 2*pi
     else:
@@ -110,7 +110,7 @@ def freqz(b, a, worN=None, whole=0, plot=None):
         w = Num.arange(0,lastpoint,lastpoint/N)
     else:
         w = worN
-    w = r1array(w)
+    w = atleast_1d(w)
     zm1 = exp(-1j*w)
     h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
     if not plot is None:
@@ -143,8 +143,8 @@ def zpk2tf(z,p,k):
 
       b, a --- numerator and denominator polynomials.
     """
-    z = r1array(z)
-    k = r1array(k)
+    z = atleast_1d(z)
+    k = atleast_1d(k)
     if len(z.shape) > 1:
         temp = poly(z[0])
         b = zeros((z.shape[0], z.shape[1]+1), temp.typecode())
@@ -160,7 +160,7 @@ def zpk2tf(z,p,k):
 def normalize(b,a):
     """Normalize polynomial representation of a transfer function.
     """
-    b,a = map(r1array,(b,a))
+    b,a = map(atleast_1d,(b,a))
     if len(a.shape) != 1:
         raise ValueError, "Denominator polynomial must be rank-1 array."
     if len(b.shape) > 2:
@@ -182,7 +182,7 @@ def lp2lp(b,a,wo=1.0):
     """Return a low-pass filter with cuttoff frequency wo
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a,b = map(r1array,(a,b))
+    a,b = map(atleast_1d,(a,b))
     if type(wo) is type(a):
         wo = wo[0]
     wo = float(wo)
@@ -200,7 +200,7 @@ def lp2hp(b,a,wo=1.0):
     """Return a high-pass filter with cuttoff frequency wo
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a,b = map(r1array,(a,b))
+    a,b = map(atleast_1d,(a,b))
     if type(wo) is type(a):
         wo = wo[0]    
     d = len(a)
@@ -226,7 +226,7 @@ def lp2bp(b,a,wo=1.0, bw=1.0):
     """Return a band-pass filter with center frequency wo and bandwidth bw
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a,b = map(r1array,(a,b))
+    a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
     artype = b.typecode()
@@ -259,7 +259,7 @@ def lp2bs(b,a,wo=1,bw=1):
     """Return a band-stop filter with center frequency wo and bandwidth bw
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a,b = map(r1array,(a,b))
+    a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
     artype = b.typecode()
@@ -294,7 +294,7 @@ def bilinear(b,a,fs=1.0):
     The bilinear transform substitutes (z-1) / (z+1) for s
     """
     fs =float(fs)
-    a,b = map(r1array,(a,b))
+    a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
     artype = Num.Float
@@ -365,8 +365,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
     except IndexError:
         raise ValueError, "%s does not have order selection use iirfilter function." % ftype
 
-    wp = r1array(wp)
-    ws = r1array(ws)
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
     band_type = 2*(len(wp)-1)
     band_type +=1 
     if wp[0] >= ws[0]:
@@ -615,8 +615,8 @@ def buttord(wp, ws, gpass, gstop, analog=0):
 
     """
 
-    wp = r1array(wp)
-    ws = r1array(ws)
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
     filter_type = 2*(len(wp)-1)
     filter_type +=1 
     if wp[0] >= ws[0]:
@@ -722,8 +722,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
             use with scipy.signal.cheby1 to give filter results.
 
     """
-    wp = r1array(wp)
-    ws = r1array(ws)
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
     filter_type = 2*(len(wp)-1)
     if wp[0] < ws[0]:
         filter_type += 1
@@ -799,8 +799,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
             use with scipy.signal.cheby2 to give the filter.
 
     """
-    wp = r1array(wp)
-    ws = r1array(ws)
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
     filter_type = 2*(len(wp)-1)
     if wp[0] < ws[0]:
         filter_type += 1
@@ -900,8 +900,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
             use with scipy.signal.cheby2 to give the filter.
 
     """
-    wp = r1array(wp)
-    ws = r1array(ws)
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
     filter_type = 2*(len(wp)-1)
     filter_type += 1
     if wp[0] >= ws[0]:
