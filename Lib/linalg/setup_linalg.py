@@ -7,10 +7,22 @@ from distutils import dep_util
 from glob import glob
 import warnings
 
-# Changing skip_single_routines value requires
+#-------------------
+# NB! Changing skip_single_routines or using_lapack_blas requires
 #  rm -f {clapack,flapack,cblas,fblas}.pyf
 # before rebuilding.
+
+# To skip wrapping single precision atlas/lapack/blas routines, set
+# the following flag to True:
 skip_single_routines = 0
+
+# Some OS distributions (e.g. Redhat, Suse) provide a blas library that
+# is built using incomplete blas sources that come with lapack tar-ball.
+# In order to use such a library in scipy.linalg, the following flag
+# must be set to True:
+using_lapack_blas = 0
+
+#--------------------
 
 if os.name == 'nt':
     def run_command(command):
@@ -163,6 +175,10 @@ def configuration(parent_package=''):
             ' csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
             ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
             ' sgemm cgemm'.split())
+    if using_lapack_blas:
+        skip_names['fblas'].extend(\
+            'drotmg srotmg drotm srotm'.split())
+
     if atlas_version=='3.2.1':
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
