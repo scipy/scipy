@@ -2,6 +2,7 @@ include */setup_*.py
 include special/specfun.pyf
 include linalg/generic_*.pyf
 include linalg/flapack_user_routines.pyf
-include *.txt
-include *.inc
-include *.cfg
+include scipy_base/*.inc
+include sparse/SuperLU/*.inc
+include */*.cfg
+global-include *.txt
