@@ -1616,12 +1616,14 @@ class gengamma_gen(rv_continuous):
         return abs(c)* x**(c*a-1) / special.gamma(a) * exp(-x**c)
     def _cdf(self, x, a, c):
         val = special.gammainc(a,x**c)
-        return where(c>0,val,1-val)
+        cond = c + 0*val
+        return where(cond>0,val,1-val)
     def _ppf(self, q, a, c):
         val1 = special.gammaincinv(a,q)
-        val2 = special.gammaincinv(a,1-q)
+        val2 = special.gammaincinv(a,1.0-q)
         ic = 1.0/c
-        return where(c>0,pow(val1,ic),pow(val2,ic))
+        cond = c+0*val1+0*val2
+        return where(cond > 0,val1**ic,val2**ic)
     def _munp(self, n, a, c):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
     def _entropy(a,c):
