@@ -226,22 +226,22 @@ class machine_cluster:
     def info_summary(self):
         import string
         results = self.info()
+        labels = "%-8s  %-9s  %-4s  %-8s  %-8s  %-4s" % \
+                 ('MACHINE','CPU','GHZ','MB TOTAL', 
+                  'MB FREE','LOAD')
+        print labels          
         for i in range(len(self.workers)):            
             name = string.split(self.workers[i].host,'.')[0]
             res = results[i]
-#            s = "%6s: %2dx%s at %1.1f GHz, memory(tot,free): %4d MB %4d MB," \
-#                " current load: %1.2f" % (name[-6:], res['cpu_count'],      \
-#                res['cpu_type'][-8:],res['cpu_speed'],res['mem_total'],     \
-#                res['mem_free'], res['load_1'])
-            s = "%6s: %2dx%s %1.1f GHz, Memory(tot, free): %4d MB %4d MB," \
-                " current load: %1.2f" %  \
-                (name[-6:], res['cpu_count'],res['cpu_type'][-8:], \
+            s = "%-8s %2dx%-6s  %4.1f  %8.1f  %8.1f   %4.2f" %  \
+                (name[-8:], res['cpu_count'],res['cpu_type'][-6:], \
                  res['cpu_speed'],res['mem_total'],res['mem_free'],\
                  res['load_1'])
             print s
     
     def ps_list(self,sort_by='cpu',**filters):
         import operator
+        import scipy.common.proc
         res = self.apply(scipy.common.proc.ps_list,())
         psl = reduce(operator.add,res)
         psl = scipy.common.proc.ps_sort(psl,sort_by,**filters)        
@@ -249,6 +249,8 @@ class machine_cluster:
  
     def ps(self,sort_by='cpu',**filters):
         psl = self.ps_list(sort_by,**filters)
+        if len(psl):
+            print psl[0].labels_with_name()
         for i in psl: print i.str_with_name()
 
     def nice(self,increment=10):
