@@ -46,6 +46,7 @@ def yield():
 class TestPanel(wxPanel):
     def __init__(self, parent):
         wxPanel.__init__(self, parent, -1)
+        self.attr = None
         ID = NewId()
         btn = wxButton(self, ID, "Hello")
         EVT_BUTTON(self, ID, self.OnButton)
@@ -58,6 +59,7 @@ class TestFrame(wxFrame):
     def __init__(self, parent):
         wxFrame.__init__(self, parent, -1, "Hello Test")
         self.panel = TestPanel(self)
+        self.attr = [0, 0]
         EVT_CLOSE(self, self.OnClose)
         self.Show(1)
 
@@ -190,6 +192,20 @@ class test_gui_thread(unittest.TestCase):
         self.assertEqual(a.test_proxy(a), 1)
         self.assertEqual(a.test_kw(arg1=a), 1)
         self.assertEqual(a.test_proxy_attr(), 1)
+
+    def check_setattr(self):
+        "Checking if __setattr__ works."
+        f = gui_thread.register(TestFrame)
+        a = f(None)
+        a.attr = [1, "string"]
+        self.assertEqual(a.attr[0], 1)
+        self.assertEqual(a.attr[1], "string")
+
+        # checking the proxy_attr's __setattr__
+        a.panel.attr = [1, "string"]
+        self.assertEqual(a.panel.attr[0], 1)
+        self.assertEqual(a.panel.attr[1], "string")
+        a.Close()
 
 
 class test_proxy_attribute(unittest.TestCase):
