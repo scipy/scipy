@@ -1,5 +1,6 @@
 #this just adds errorbar plotting capabilities
 from Numeric import *
+from fastumath import *
 from types import StringType
 import pyPlot
 from pyPlot import *
