@@ -12,7 +12,7 @@
    See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
       quadrature roots and weights.
 """
-_moddict = {'quadrature': ['gauss_quad', 'gauss_quadtol'],
+_moddict = {'quadrature': ['gauss_quad', 'gauss_quadtol','romberg'],
             'odepack': ['odeint'],
             'quadpack': ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf',
                          'inf']
