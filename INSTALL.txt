@@ -4,12 +4,11 @@ PREREQUISITES
 
 SciPy requires the following software installed:
 
-1) Python 2.1.x or 2.2.x (see NOTES 1)
+1) Python 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
      http://www.python.org
 2) Numerical Python 20.x or 21.x
      http://www.numpy.org/
-3) ATLAS 3.3.14 or newer (see NOTES 2 and 3) or 
-   ATLAS 3.2.1 (see NOTES 2 and 4)
+3) ATLAS 3.2.1 or newer (see NOTES 2 and 3)
      http://math-atlas.sourceforge.net/
 4) f2py 2.13.175-1250 or newer
      http://cens.ioc.ee/projects/f2py2e/
@@ -40,10 +39,6 @@ NOTES
    LAPACK_SRC/BLAS_SRC environment variables to indicate the location
    of the corresponding source directories).
 
-4) If you are using ATLAS 3.2.1 then set
-     atlas_version_pre_3_3 = 1
-   in scipy/linalg/setup_linalg.py before building SciPy.
-
 GETTING SCIPY
 =============
 
@@ -54,8 +49,8 @@ Development version from CVS
 ----------------------------
 See
    http://www.scipy.org/site_content/tutorials/CVSInstruct
-Daily snapshot of SciPy CVS repository is available in
-   ftp://scipy.org/pub/
+Daily snapshots of SciPy CVS repository is available at
+   http://www.scipy.org/site_content/download_list
 
 
 INSTALLATION
@@ -125,11 +120,11 @@ If import clapack fails with the following error
   
   ImportError: .../clapack.so : undefined symbol: clapack_sgetri
 
-then you most probably have ATLAS 3.2.1.
+then you most probably have ATLAS 3.2.1 but linalg module was built
+for newer versions of ATLAS.
 Fix:
-  1) Set atlas_version_pre_3_3=1 in scipy/linalg/setup_linalg.py
-  2) Remove scipy/linalg/clapack.pyf
-  3) Rebuild/reinstall scipy.
+  1) Remove scipy/linalg/clapack.pyf
+  2) Rebuild/reinstall scipy.
 
 
 TROUBLESHOOTING
@@ -156,7 +151,11 @@ lists. Please include the following information to your message:
 5) f2py version:
      f2py -v
 6) ATLAS version, the locations of atlas and lapack libraries, building
-   information if any.
+   information if any. If you have ATLAS version 3.3.6 or newer, then
+   give the output of the last command in
+     cd scipy/linalg
+     python setup_atlas_version.py build_ext --inplace --force
+     python -c 'import atlas_version'
 7) The output of the following commands
      python scipy_distutils/system_info.py
      python scipy_distutils/command/build_flib.py
@@ -165,7 +164,7 @@ lists. Please include the following information to your message:
    command can be very helpful.
 9) In case of failing to import extension modules, the output of
      ldd /path/to/ext_module.so
-   can be informative.
+   can be useful.
 
 You may find the following notes useful:
   http://www.tuxedo.org/~esr/faqs/smart-questions.html

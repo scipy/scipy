@@ -5,13 +5,6 @@ from distutils import dep_util
 from glob import glob
 import warnings
 
-# XXX: system_info.py should set the following values.
-
-# Changing atlas_version_pre_3_3 value requires
-#  rm -f clapack.pyf
-# before rebuilding.
-atlas_version_pre_3_3 = 0
-
 # Changing skip_single_routines value requires
 #  rm -f {clapack,flapack,cblas,fblas}.pyf
 # before rebuilding.
@@ -46,6 +39,7 @@ else:
 
 
 def configuration(parent_package=''):
+
     package = 'linalg'
     from interface_gen import generate_interface
     config = default_config_dict(package,parent_package)
@@ -54,25 +48,38 @@ def configuration(parent_package=''):
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/BLAS; useful for testing
+
+    atlas_version = None
     if atlas_info:
-        # Try to determine the version of ATLAS
-        cmd = '%s %s build_ext --inplace'%\
+        # Try to determine ATLAS version
+        cur_dir = os.getcwd()
+        os.chdir(local_path)
+        cmd = '%s %s build_ext --inplace --force'%\
               (sys.executable,
                os.path.join(local_path,'setup_atlas_version.py'))
         print cmd
         s,o=run_command(cmd)
         if not s:
             cmd = sys.executable+' -c "import atlas_version"'
+            print cmd
             s,o=run_command(cmd)
-            atlas_version = None
             if not s:
                 m = re.match(r'ATLAS version (?P<version>\d+[.]\d+[.]\d+)',o)
                 if m:
                     atlas_version = m.group('version')
+                    print 'ATLAS version',atlas_version
             if atlas_version is None:
-                #XXX: detect ATLAS 3.2.1
-                pass
-            print atlas_version
+                if re.search(r'undefined symbol: ATL_buildinfo',o,re.M):
+                    atlas_version = '3.2.1' # or pre 3.3.6
+                    print 'ATLAS version',atlas_version,'(or pre 3.3.6)'
+                else:
+                    print o
+        else:
+            print o
+        if atlas_version is None:
+            print 'Failed to determine ATLAS version'
+        os.chdir(cur_dir)
+
     f_libs = []
     blas_info,lapack_info = {},{}
     if not atlas_info:
@@ -136,7 +143,7 @@ def configuration(parent_package=''):
             ' csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
             ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
             ' sgemm cgemm'.split())
-    if atlas_version_pre_3_3:
+    if atlas_version=='3.2.1':
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
             ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())

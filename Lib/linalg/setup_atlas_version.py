@@ -11,13 +11,13 @@ def configuration (parent_package=''):
     del config['fortran_libraries']
     local_path = get_path(__name__)
     atlas_info = get_info('atlas')
-    if atlas_info:
-        ext = Extension('atlas_version',
-                        sources=[os.path.join(local_path,'atlas_version.c')],
-                        **atlas_info)
-        config['ext_modules'].append(ext)
-    else:
-        print AtlasNotFoundError.__doc__
+    if not atlas_info:
+        raise AtlasNotFoundError,AtlasNotFoundError.__doc__
+    ext = Extension('atlas_version',
+                    sources=[os.path.join(local_path,'atlas_version.c')],
+                    libraries=[atlas_info['libraries'][-1]],
+                    library_dirs=atlas_info['library_dirs'])
+    config['ext_modules'].append(ext)
     return config
 
 if __name__ == '__main__':    
