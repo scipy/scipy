@@ -3,7 +3,7 @@
 import gist
 import pl3d, plwf
 import Numeric
-from Numeric import ravel, reshape, repeat, arange, transpose, compress
+from Numeric import ravel, reshape, repeat, arange, transpose, compress, where
 import MLab
 from MLab import pi, cos, sin, arctan2, array, angle
 import types
@@ -181,6 +181,7 @@ def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25
         pass
     else:
         gist.fma()
+    y = where(scipy.isfinite(y),y,0)
     gist.plg(y,x,color=_colors[ptcolor],marker=_markers[pttype],type='none')
     gist.pldj(x,yb,x,ye,color=_colors[linecolor],type=_types[linetype])
     viewp = gist.viewport()
@@ -465,6 +466,7 @@ def plot(x,*args,**keywds):
             print "Warning: complex data provided, using only real part."
             x = scipy.real(x)
             y = scipy.real(y)
+	y = where(scipy.isfinite(y),y,0)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark)
 
         nowplotting = nowplotting + 1
@@ -508,7 +510,8 @@ def matplot(x,y=None,axis=-1):
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]] 
         sliceobj[otheraxis] = k
-        gist.plg(y[sliceobj],x,type='solid',color=thiscolor,marks=0)
+	ysl = where(scipy.isfinite(y[sliceobj]),y[sliceobj],0)
+        gist.plg(ysl,x,type='solid',color=thiscolor,marks=0)
         append_global_linetype(_rcolors[thiscolor]+'-')
 
 
@@ -846,6 +849,7 @@ def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
     thetype,thecolor,themarker,tomark = _parse_type_arg(mtype,0)
     if themarker not in ['o','x','.','*']:
         themarker = 'o'
+    y = where(scipy.isfinite(y),y,0)
     gist.plg(y,m,color=thecolor,marker=themarker,type='none')
     gist.plg(Numeric.zeros(len(m)),m,color=lcolor,marks=0)
     gist.limits()

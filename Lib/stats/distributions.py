@@ -1292,7 +1292,7 @@ def hypergeompdf(k, tot=35, good=25, N=10):
 def _hypergeomcdf(k, tot, good, N):
     j = arange(0,k+1)
     return sum(hypergeompdf(j, tot, good, N),axis=-1)
-_vhypergeomcdf = special.general_function(hypergeomcdf,'d')
+_vhypergeomcdf = special.general_function(_hypergeomcdf,'d')
 
 def hypergeomcdf(k, tot=35, good=25, N=10):
     return _vhypergeomcdf(k, tot, good, N)
