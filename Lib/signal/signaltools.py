@@ -802,7 +802,11 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
     gain = a[0]
     brev, arev = b[::-1],a[::-1]
     krev,brev = polydiv(brev,arev)
-    k,b = krev[::-1],brev[::-1]
+    if krev == []:
+        k = []
+    else:
+        k = krev[::-1]    
+    b = brev[::-1]
     p = roots(a)
     r = p*0.0
     pout, mult = unique_roots(p,tol=tol,rtype=rtype)
