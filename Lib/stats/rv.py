@@ -73,12 +73,12 @@ def randint(min, max=None, size=None):
     if max is None:
         max = min
         min = 0
-    a = Num.floor(uniform(min, max, size))
+    a = Num.floor((max-min)*random(size=size)+min)
     if isinstance(a, Num.ArrayType):
         return a.astype(Num.Int)
     else:
         return int(a)
-     
+
 def random_integers(max, min=1, size=None):
     """random_integers(max, min=1, size=None) = random integers in range min-max inclusive"""
     return randint(min, max+1, size) 

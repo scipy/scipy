@@ -1,4 +1,4 @@
-# ******NOTICE***************
+is# ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
 # You may copy and use this module as you see fit with no
@@ -40,14 +40,14 @@ bracket     ---      Find a bracket containing the minimum.
 
 
 __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fminbound', 'brent',
-           'golden','bracket','rosen','rosen_der', 'rosen_hess','rosen_hess_prod',
-           'brute']
+           'golden','bracket','rosen','rosen_der', 'rosen_hess',
+           'rosen_hess_prod', 'brute']
 
 from __future__ import nested_scopes
 import Numeric
 import MLab
 from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze
+     squeeze, isscalar
 from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
@@ -86,7 +86,6 @@ def rosen_hess_prod(x,p):
                -400*x[1:-1]*p[2:]
     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
     return Hp
-
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
          full_output=0, disp=1):
@@ -363,9 +362,8 @@ def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
         phi_a0 = phi_a1
         phi_a1 = phi_a2
 
-epsilon = 1e-8
 
-def approx_fprime(xk,f,*args):
+def approx_fprime(xk,f,epsilon,*args):
     f0 = apply(f,(xk,)+args)
     grad = Num.zeros((len(xk),),'d')
     ei = Num.zeros((len(xk),),'d')
@@ -375,14 +373,14 @@ def approx_fprime(xk,f,*args):
         ei[k] = 0.0
     return grad
 
-def approx_fhess_p(x0,p,fprime,*args):
+def approx_fhess_p(x0,p,fprime,epsilon,*args):
     f2 = apply(fprime,(x0+epsilon*p,)+args)
     f1 = apply(fprime,(x0,)+args)
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
-              full_output=0, disp=1):
+def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8
+              maxiter=None, full_output=0, disp=1):
     """Minimize a function using the BFGS algorithm.
 
     Description:
@@ -395,8 +393,12 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
 
       f -- the Python function or method to be minimized.
       x0 -- the initial guess for the minimizer.
+
       fprime -- a function to compute the gradient of f.
       args -- extra arguments to f and fprime.
+      avegtol -- minimum average value of gradient for stopping
+      epsilon -- if fprime is approximated use this value for
+                 the step size (can be scalar or vector)
 
     Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag})
 
@@ -407,6 +409,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
       grad_calls -- the number of gradient calls.
       warnflag -- an integer warning flag:
                   1 : 'Maximum number of iterations exceeded.'
+                  2 : 'Gradient and/or function calls not changing'
 
     Additional Inputs:
 
@@ -434,7 +437,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
     Hk = I
 
     if app_fprime:
-        gfk = apply(approx_fprime,(x0,f)+args)
+        gfk = apply(approx_fprime,(x0,f,epsilon)+args)
         func_calls = func_calls + len(x0) + 1
     else:
         gfk = apply(fprime,(x0,)+args)
@@ -450,7 +453,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
         sk = xkp1 - xk
         xk = xkp1
         if app_fprime:
-            gfkp1 = apply(approx_fprime,(xkp1,f)+args)
+            gfkp1 = apply(approx_fprime,(xkp1,f,epsilon)+args)
             func_calls = func_calls + gc + len(x0) + 1
         else:
             gfkp1 = apply(fprime,(xkp1,)+args)
@@ -504,7 +507,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
 
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-             maxiter=None, full_output=0, disp=1):
+             epsilon=1e-8, maxiter=None, full_output=0, disp=1):
     """Description:
 
     Minimize the function, f, whose gradient is given by fprime using the
@@ -523,6 +526,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     fhess -- a function to compute the Hessian matrix of f.
     args -- extra arguments for f, fprime, fhess_p, and fhess (the same
             set of extra arguments is supplied to all of these functions).
+
+    epsilon -- if fhess is approximated use this value for
+                 the step size (can be scalar or vector)
 
   Outputs: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag})
 
@@ -584,7 +590,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         while Num.add.reduce(abs(ri)) > termcond:
             if fhess is None:
                 if fhess_p is None:
-                    Ap = apply(approx_fhess_p,(xk,psupi,fprime)+args)
+                    Ap = apply(approx_fhess_p,(xk,psupi,fprime,espilon)+args)
                     gcalls = gcalls + 2
                 else:
                     Ap = apply(fhess_p,(xk,psupi)+args)
@@ -1156,7 +1162,7 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
 
 import scipy.special as special
 
-def brute(func, ranges, args=(), Ns=20, full_output=0, finish=1):
+def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     """Minimize a function over a given range by brute force.
 
     That is find the minimum of a function evaluated on a grid
@@ -1172,7 +1178,13 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=1):
     Ns          -- Default number of samples if not given
     full_output -- Nonzero to return evaluation grid.
 
-    Outputs: (x0, fval, {Jout})
+    Outputs: (x0, fval, {grid, Jout})
+
+    x0          -- Value of arguments giving minimum over the grird
+    fval        -- Function value at minimum
+    grid        -- tuple with same length as x0 representing the
+                    evaluation grid
+    Jout        -- Function values over grid:  Jout = func(*grid)
     """
     N = len(ranges)
     if N > 40:
@@ -1210,8 +1222,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=1):
     if (N==1):
         grid = grid[0]
         xmin = xmin[0]
-    if finish:
-        vals = fmin(func,xmin,args=args,full_output=1, disp=0)
+    if callable(finish):
+        vals = finish(func,xmin,args=args,full_output=1, disp=0)
         xmin = vals[0]
         Jmin = vals[1]
         if vals[-1] > 0:
