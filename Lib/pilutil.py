@@ -49,15 +49,15 @@ def imsave(name, arr):
     return
 
 def fromimage(im, flatten=0):
-     """Takes a PIL image and returns a copy of the image in a Numeric container.
-     If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
+    """Takes a PIL image and returns a copy of the image in a Numeric container.
+    If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
 
     Optional arguments:
 
-     - flatten (0): if true, the image is flattened by calling convert('F') on
-     the image object before extracting the numerical data.  This flattens the
-     color layers into a single grayscale layer.  Note that the supplied image
-     object is NOT modified.
+    - flatten (0): if true, the image is flattened by calling convert('F') on
+    the image object before extracting the numerical data.  This flattens the
+    color layers into a single grayscale layer.  Note that the supplied image
+    object is NOT modified.
     """
     assert Image.isImageType(im), "Not a PIL image."
     if flatten:
