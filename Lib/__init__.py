@@ -4,37 +4,49 @@ import scipy_version
 __version__ = scipy_version.version
 del scipy_version
 
+import string
+def somenames2all(alist, namedict, gldict):
+    for key in namedict.keys():
+        exec("from %s import %s" % (key, string.join(namedict[key],',')), gldict)
+        alist.extend(namedict[key])
+    
+def names2all(alist, spaces, gldict):
+    for name in spaces:
+        exec("import %s" % name, gldict)
+        thelist = eval(name,gldict).__dict__.keys()
+        exec("from %s import *" % name, gldict)
+        exec("del %s" % name, gldict)
+        for key in thelist:
+            if key[0] == "_":
+                thelist.remove(key)
+        alist.extend(thelist)
+
+def modules2all(alist, mods, gldict):
+    for name in mods:
+        exec("import %s" % name, gldict)
+        alist.append(name)
+    
+def objects2all(alist, objlist):
+    alist.extend(objlist)
+
+
 # modules to import under the scipy namespace
-_modules = ["optimize", "integrate", "signal", "special", "io", 
-            "interpolate", "stats"]
+_modules = ["fastumath", "misc", "optimize", "integrate", "signal",
+            "special", "io", "interpolate", "stats"]
 
 # namespaces to subsume into the scipy namespace itself
-_namespaces = ['MLab', 'fastumath','misc','handy',] # MLab includes Numeric
+_namespaces = ['handy', 'misc', 'MLab', 'fastumath'] # MLab includes Numeric
 #_namespaces = [] # MLab includes Numeric
 import os,sys
 from helpmod import help, source
+from handy import *
+from misc import *
 
 __all__=[]
 
-for name in _namespaces:
-    exec("import %s" % name)
-    thelist = eval(name).__dict__.keys()
-    # we atleast want to keep misc around
-    #exec("del %s" % name) # clean namespace
-    exec("from %s import *" % name)
-    for key in thelist:
-        if key[0] == "_":
-            thelist.remove(key)
-
-    __all__.extend(thelist)
-
-
-for name in _modules:
-    exec("import %s" % name)
-    __all__.append(name)
-
-__all__.extend(['help', 'source'])
-
+names2all(__all__, _namespaces, globals())
+modules2all(__all__, _modules, globals())
+objects2all(__all__, ['help', 'source'])
 
 # add some directories to the path so we can import their
 # modules.

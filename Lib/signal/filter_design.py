@@ -1,12 +1,9 @@
 """Filter design.
-
-A collection of filter design functions.  Prim
-
-
+"""
 
 import MLab
-import scipy
-from scipy.fastumath import *
+from fastumath import *
+import Numeric
 Num = MLab
 abs = absolute
 pi = Numeric.pi
@@ -19,6 +16,9 @@ def factorial(n):
 def comb(N,k):
     lgam = scipy.special.lgam
     return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+
+def freqs(b,a,w=None,N=None):
+    pass
     
 def tf2zpk(b,a):
     b = (b+0.0) / a[0]
@@ -1282,7 +1282,6 @@ def besselap(N):
         raise ValueError, "Bessel Filter not supported for order %d" % N
 
     return z, p, k
-
 
 filter_dict = {'butter': [buttap,buttord],
                'butterworth' : [buttap,buttord],

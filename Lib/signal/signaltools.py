@@ -1,7 +1,4 @@
-from Numeric import *
-from fastumath import *# needed asarray
-
-import scipy.signal.sigtools
+import sigtools
 import MLab
 
 _modedict = {'valid':0, 'same':1, 'full':2}

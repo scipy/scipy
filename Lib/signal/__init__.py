@@ -32,12 +32,17 @@
  Filter design:
  
     remez         --  Optimal FIR filter design.
+    iirdesign     --- IIR filter design given bands and gains
+    iirfilter     --- IIR filter design given order and critical frequencies
+    
  
 """
-__all__ = ["sigtools"]
+_modules = ['sigtools']
+_namespaces = ['signaltools', 'bsplines', 'filter_design']
 
-import sigtools
+__all__ = []
 
-from signaltools import *
-from bsplines import *
-from signaltools import convolve
+import scipy
+scipy.modules2all(__all__, _modules, globals())
+scipy.names2all(__all__, _namespaces, globals())
+del scipy

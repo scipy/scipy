@@ -16,8 +16,13 @@ Interpolation Class
   linear_1d -- Create a class whose instances can linearly interpolate
                to compute unknown values.
 """
+__all__ = []
+_moddict = {'interpolate' : ['linear_1d'],
+            'fitpack' : ['splrep', 'splprep', 'splev', 'splint', 'sproot',
+                         'spalde', 'bisplrep', 'bisplev']
+            }
 
-from interpolate import linear_1d
-from fitpack import splrep, splprep, splev, splint, sproot, \
-                    spalde, bisplrep, bisplev
+import scipy
+scipy.somenames2all(__all__, _moddict, globals())
+del scipy
 

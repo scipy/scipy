@@ -13,5 +13,11 @@
      unpackbits -- Unpack an array packed by packbits.
 
 """
-from mio import *
-from numpyio import packbits, unpackbits, bswap, fread, fwrite
+__all__ = []
+
+_moddict = {'numpyio' : ['packbits', 'unpackbits','bswap', 'fread', 'fwrite']}
+
+import scipy
+scipy.names2all(__all__, ['mio'], globals())
+scipy.somenames2all(__all__, _moddict, globals())
+del scipy

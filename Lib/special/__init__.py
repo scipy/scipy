@@ -138,9 +138,9 @@
     round    -- round the argument to the nearest integer.
 
  """
-from special import *
+__all__ = []
+import scipy
+scipy.names2all(__all__, ['special'], globals())
+del scipy
 
-# sys.platform 
-#sunos
-#irix
-#hp-ux
+

@@ -13,6 +13,12 @@
    fsolve --     Non-linear equation solver.                 
 """
 
-from optimize import fmin, fmin_bfgs, fmin_ncg, fminbound
-from minpack import fsolve, leastsq
+_moddict = {'optimize' : ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound'],
+            'minpack' : ['fsolve', 'leastsq']
+            }
+__all__ = []
+
+import scipy
+scipy.somenames2all(__all__, _moddict, globals())
+del scipy
 
