@@ -238,7 +238,7 @@ static int imax(int i1,int i2) {
        !  nx,tx,ny,ty,c,fp,ier = surfit_smth(x,y,z,[w,xb,xe,yb,ye,kx,ky,s,eps,lwrk2])
 
        usercode '''
-       static int calc_lwrk1(void) {
+       int calc_lwrk1(void) {
          int u = nxest-kx-1;
          int v = nyest-ky-1;
          int km = MAX(kx,ky)+1;
@@ -250,7 +250,7 @@ static int imax(int i1,int i2) {
          else {b1=by;b2=by+u-kx;}
          return u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1;
        }
-       static int calc_lwrk2(void) {
+       int calc_lwrk2(void) {
          int u = nxest-kx-1;
          int v = nyest-ky-1;
          int bx = kx*v+ky+1;
@@ -305,7 +305,7 @@ static int imax(int i1,int i2) {
        ! tx,ty,c,fp,ier = surfit_lsq(x,y,z,tx,ty,[w,xb,xe,yb,ye,kx,ky,eps,lwrk2])
 
        usercode '''
-       static int calc_lwrk1(void) {
+       int calc_lwrk1(void) {
          int u = nxest-kx-1;
          int v = nyest-ky-1;
          int km = MAX(kx,ky)+1;
@@ -317,7 +317,7 @@ static int imax(int i1,int i2) {
          else {b1=by;b2=by+u-kx;}
          return u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1;
        }
-       static int calc_lwrk2(void) {
+       int calc_lwrk2(void) {
          int u = nxest-kx-1;
          int v = nyest-ky-1;
          int bx = kx*v+ky+1;
