@@ -18,7 +18,7 @@
 from Numeric import *
 from RandomArray import randint
 import scipy
-from scipy.misc import _common_type
+from scipy.misc import x_common_type as _common_type
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis

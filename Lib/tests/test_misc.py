@@ -43,6 +43,47 @@ class test_mean(unittest.TestCase):
         desired = array((2.,3.))
         assert_array_equal(val,desired)
 
+class test_isnan(unittest.TestCase):
+    def check_goodvalues(self):
+        z = array((-1.,0.,1.))
+        res = isnan(z) == 0
+        assert(alltrue(res))            
+    def check_posinf(self): 
+        assert(isnan(array((1.,))/0.) == 0)
+    def check_neginf(self): 
+        assert(isnan(array((-1.,))/0.) == 0)
+    def check_ind(self): 
+        assert(isnan(array((0.,))/0.) == 1)
+    def check_qnan(self): 
+        assert(isnan(log(-1.)) == 1)
+        
+class test_isfinite(unittest.TestCase):
+    def check_goodvalues(self):
+        z = array((-1.,0.,1.))
+        res = isfinite(z) == 1
+        assert(alltrue(res))            
+    def check_posinf(self): 
+        assert(isfinite(array((1.,))/0.) == 0)
+    def check_neginf(self): 
+        assert(isfinite(array((-1.,))/0.) == 0)
+    def check_ind(self): 
+        assert(isfinite(array((0.,))/0.) == 0)
+    def check_qnan(self): 
+        assert(isfinite(log(-1.)) == 0)
+
+class test_isinf(unittest.TestCase):
+    def check_goodvalues(self):
+        z = array((-1.,0.,1.))
+        res = isinf(z) == 0
+        assert(alltrue(res))            
+    def check_posinf(self): 
+        assert(isinf(array((1.,))/0.) == 1)
+    def check_neginf(self): 
+        assert(isinf(array((-1.,))/0.) == 1)
+    def check_ind(self): 
+        assert(isinf(array((0.,))/0.) == 1)
+    def check_qnan(self): 
+        assert(isinf(log(-1.)) == 1)        
 # Log tests need to be re-written when warnings are allowed
 # instead of errors for log values.
 
@@ -461,6 +502,9 @@ def test_suite():
     suites = []
     suites.append( unittest.makeSuite(test_sum,'check_') )
     suites.append( unittest.makeSuite(test_mean,'check_') )
+    suites.append( unittest.makeSuite(test_isnan,'check_') )
+    suites.append( unittest.makeSuite(test_isfinite,'check_') )
+    suites.append( unittest.makeSuite(test_isinf,'check_') )
     suites.append( unittest.makeSuite(test_logn,'check_') )
     suites.append( unittest.makeSuite(test_log2,'check_') )
     suites.append( unittest.makeSuite(test_histogram,'check_') )
