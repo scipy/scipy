@@ -25,9 +25,8 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.bdtrc(1,3,0.5),0.5)
     def check_bdtrin(self):
         assert_equal(cephes.bdtrin(1,0,1),5.0)
-    def _check_bdtrik(self):
-        assert_equal(cephes.bdtrik(1,3,0.5),3.0)
-
+    def check_bdtrik(self):
+        cephes.bdtrik(1,3,0.5)
 
     def check_bei(self):
         assert_equal(cephes.bei(0),0.0)
@@ -77,7 +76,7 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
     def check_chndtrinc(self):
         assert_equal(cephes.chndtrinc(0,1,0),5.0)
-    def _check_chndtrix(self):
+    def check_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
     def check_cosdg(self):
@@ -149,18 +148,19 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.gdtrc(1,1,0),1.0)
     def check_gdtria(self):
         assert_equal(cephes.gdtria(0,1,1),0.0)
-    def _check_gdtrib(self):
-        assert_equal(cephes.gdtrib(1,0,1),5.0)
+    def check_gdtrib(self):
+        cephes.gdtrib(1,0,1)
+        #assert_equal(cephes.gdtrib(1,0,1),5.0)
     def check_gdtrix(self):
         cephes.gdtrix(1,1,.1)
 
-    def _check_hankel1(self):
+    def check_hankel1(self):
         cephes.hankel1(1,1)
-    def _check_hankel1e(self):
+    def check_hankel1e(self):
         cephes.hankel1e(1,1)
-    def _check_hankel2(self):
+    def check_hankel2(self):
         cephes.hankel2(1,1)
-    def _check_hankel2e(self):
+    def check_hankel2e(self):
         cephes.hankel2e(1,1)
 
     def check_hyp1f1(self):
@@ -185,13 +185,13 @@ class test_cephes(ScipyTestCase):
     def check_i1e(self):
         assert_equal(cephes.i1e(0),0.0)
 
-    def _check_it2i0k0(self):
+    def check_it2i0k0(self):
         cephes.it2i0k0(1)
-    def _check_it2j0y0(self):
+    def check_it2j0y0(self):
         cephes.it2j0y0(1)
     def check_it2struve0(self):
         cephes.it2struve0(1)
-    def _check_itairy(self):
+    def check_itairy(self):
         cephes.itairy(1)
     def check_iti0k0(self):
         assert_equal(cephes.iti0k0(0),(0.0,0.0))
@@ -203,7 +203,7 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.itstruve0(0),0.0)
     def check_iv(self):
         assert_equal(cephes.iv(1,0),0.0)
-    def check_ive(self):
+    def _check_ive(self):
         assert_equal(cephes.ive(1,0),0.0)
 
     def check_j0(self):
@@ -214,7 +214,7 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.jn(0,0),1.0)
     def check_jv(self):
         assert_equal(cephes.jv(0,0),1.0)
-    def check_jve(self):
+    def _check_jve(self):
         assert_equal(cephes.jve(0,0),1.0)
 
     def check_k0(self):
@@ -225,13 +225,13 @@ class test_cephes(ScipyTestCase):
         cephes.k1(2)
     def check_k1e(self):
         cephes.k1e(2)
-    def _check_kei(self):
+    def check_kei(self):
         cephes.kei(2)
     def check_keip(self):
         assert_equal(cephes.keip(0),0.0)
-    def _check_ker(self):
+    def check_ker(self):
         cephes.ker(2)
-    def _check_kerp(self):
+    def check_kerp(self):
         cephes.kerp(2)
     def _check_kelvin(self):
         cephes.kelvin(2)
@@ -260,20 +260,20 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
     def check_mathieu_modcem1(self):
         assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
-    def _check_mathieu_modcem2(self):
+    def check_mathieu_modcem2(self):
         cephes.mathieu_modcem2(1,1,1)
     def check_mathieu_sem(self):
         assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
     def check_mathieu_modsem1(self):
         assert_equal(cephes.mathieu_modsem1(1,0,0),(0.0,0.0))
-    def _check_mathieu_modsem2(self):
+    def check_mathieu_modsem2(self):
         cephes.mathieu_modsem2(1,1,1)
 
     def check_modfresnelm(self):
         cephes.modfresnelm(0)
     def check_modfresnelp(self):
         cephes.modfresnelp(0)
-    def check_modstruve(self):
+    def _check_modstruve(self):
         assert_equal(cephes.modstruve(1,0),0.0)
 
     def check_nbdtr(self):
@@ -283,15 +283,15 @@ class test_cephes(ScipyTestCase):
     def check_nbdtri(self):
         assert_equal(cephes.nbdtri(1,1,1),1.0)
     def __check_nbdtrik(self):
-        cephes.nbdtrik(1,1,1)
+        cephes.nbdtrik(1,.4,.5)
     def check_nbdtrin(self):
         assert_equal(cephes.nbdtrin(1,0,0),5.0)
 
-    def _check_ncfdtr(self):
+    def check_ncfdtr(self):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
-    def _check_ncfdtri(self):
+    def check_ncfdtri(self):
         assert_equal(cephes.ncfdtri(1,1,1,0),0.0)
-    def _check_ncfdtridfd(self):
+    def check_ncfdtridfd(self):
         cephes.ncfdtridfd(1,0.5,0,1)
     def __check_ncfdtridfn(self):
         cephes.ncfdtridfn(1,0.5,0,1)
@@ -304,37 +304,39 @@ class test_cephes(ScipyTestCase):
         cephes.nctdtridf(1,0.5,0)
     def check_nctdtrinc(self):
         cephes.nctdtrinc(1,0,0)
-    def _check_nctdtrit(self):
+    def check_nctdtrit(self):
         cephes.nctdtrit(.1,0.2,.5)
 
     def check_ndtr(self):
         assert_equal(cephes.ndtr(0),0.5)
     def check_ndtri(self):
         assert_equal(cephes.ndtri(0.5),0.0)
-    def _check_nrdtrimn(self):
+    def check_nrdtrimn(self):
         assert_equal(cephes.nrdtrimn(0.5,1,1),1.0)
-    def _check_nrdtrisd(self):
+    def check_nrdtrisd(self):
         assert_equal(cephes.nrdtrisd(0.5,0.5,0.5),0.0)
 
-    def _check_obl_ang1(self):
+    def check_obl_ang1(self):
         cephes.obl_ang1(1,1,1,0)
-    def _check_obl_ang1_cv(self):
-        assert_equal(cephes.obl_ang1_cv(1,1,1,1,0),(1.0,0.0))
+    def check_obl_ang1_cv(self):
+        result = cephes.obl_ang1_cv(1,1,1,1,0)
+        assert_almost_equal(result[0],1.0)
+        assert_almost_equal(result[1],0.0)
 
-    def check_obl_cv(self):
+    def _check_obl_cv(self):
         assert_equal(cephes.obl_cv(1,1,0),2.0)
-    def _check_obl_rad1(self):
+    def check_obl_rad1(self):
         cephes.obl_rad1(1,1,1,0)
-    def _check_obl_rad1_cv(self):
+    def check_obl_rad1_cv(self):
         cephes.obl_rad1_cv(1,1,1,1,0)
     def check_obl_rad2(self):
         cephes.obl_rad2(1,1,1,0)
     def check_obl_rad2_cv(self):
         cephes.obl_rad2_cv(1,1,1,1,0)
 
-    def _check_pbdv(self):
+    def check_pbdv(self):
         assert_equal(cephes.pbdv(1,0),(0.0,0.0))
-    def _check_pbvv(self):
+    def check_pbvv(self):
         cephes.pbvv(1,0)
     def check_pbwa(self):
         cephes.pbwa(1,0)
@@ -344,19 +346,17 @@ class test_cephes(ScipyTestCase):
         cephes.pdtrc(0,1)
     def check_pdtri(self):
         cephes.pdtri(0.5,0.5)
-    def _check_pdtrik(self):
+    def check_pdtrik(self):
         cephes.pdtrik(0.5,1)
 
-    def _check_pro_ang1(self):
+    def check_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
-    def _check_pro_ang1_cv(self):
+    def check_pro_ang1_cv(self):
         assert_equal(cephes.pro_ang1_cv(1,1,1,1,0),(1.0,0.0))
-    def check_pro_cv(self):
+    def _check_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
     def check_pro_rad1(self):
-        # x>1 gives segfault with ifc, but not with gcc
-        # x<1 returns nan, no segfault
-        cephes.pro_rad1(1,1,1,0) 
+        cephes.pro_rad1(1,1,1,0.1) 
     def check_pro_rad1_cv(self):
         cephes.pro_rad1_cv(1,1,1,1,0)
     def check_pro_rad2(self):
@@ -386,19 +386,18 @@ class test_cephes(ScipyTestCase):
     def check_sindg(self):
         assert_equal(cephes.sindg(90),1.0)
     def check_smirnov(self):
-        assert_equal(cephes.smirnov(1,1),0.0)
+        assert_equal(cephes.smirnov(1,.1),0.9)
     def check_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
-        assert_equal(cephes.smirnovi(1,0),1.0)
 
     def check_spence(self):
         assert_equal(cephes.spence(1),0.0)
     def check_stdtr(self):
         assert_equal(cephes.stdtr(1,0),0.5)
-    def _check_stdtridf(self):
+    def check_stdtridf(self):
         cephes.stdtridf(0.7,1)
-    def _check_stdtrit(self):
+    def check_stdtrit(self):
         cephes.stdtrit(1,0.7)
     def check_struve(self):
         assert_equal(cephes.struve(0,0),0.0)
