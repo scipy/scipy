@@ -6,7 +6,7 @@ import Numeric
 import types, sys
 from scipy import special, stats, linalg
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, hstack, product, array
+     ones, NewAxis, transpose, hstack, product, array, typename
 import scipy_base.fastumath
 
 __all__ = ['factorial','comb','rand','randn','disp','who','lena','central_diff_weights', 'derivative']
@@ -171,7 +171,7 @@ def who(vardict=None):
                 original=1
             shapestr = " x ".join(map(str, var.shape))
             bytestr = str(var.itemsize()*Numeric.product(var.shape))
-            sta.append([namestr, shapestr, bytestr, _namefromtype[var.typecode()], original])
+            sta.append([namestr, shapestr, bytestr, typename(var.typecode()), original])
 
     maxname = 0
     maxshape = 0

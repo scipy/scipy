@@ -187,7 +187,10 @@
    ** These functions all return a polynomial class which can then be
       evaluated:  vals = chebyt(n)(x)
       This class also has an attribute 'weights' which
-      return the weights used for Gaussian quadrature.
+      return the roots, weights, and total weights for the appropriate 
+      form of Gaussian quadrature.  These are returned in an n x 3 array with roots
+      in the first column, weights in the second column, and total weights in the final
+      column
 
     legendre    -- **Legendre polynomial P_n(x) (lpn -- for function).
     chebyt      -- **Chebyshev polynomial T_n(x)

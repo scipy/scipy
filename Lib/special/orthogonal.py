@@ -65,7 +65,8 @@ _gam = cephes.gamma
 class orthopoly1d(poly1d):
     def __init__(self, roots, weights=None, hn=1.0, An=1.0, wfunc=None, limits=None, monic=0):
         poly1d.__init__(self, roots, r=1)
-        self.__dict__['weights'] = weights
+	equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
+	self.__dict__['weights'] = array(zip(roots,weights,equiv_weights)) 
         self.__dict__['weight_func'] = wfunc
         self.__dict__['limits'] = limits
         mu = sqrt(hn)
