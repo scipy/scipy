@@ -69,6 +69,9 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
 
     if hasattr(object, '_ppimport_attr'):
         object = object._ppimport_attr
+    elif hasattr(object,'_ppimport_importer') or \
+        hasattr(object, '_ppimport_module'):
+	object = object._ppimport_module
 
     if object is None:        
         info(info)
@@ -188,3 +191,44 @@ def source(object, output=sys.stdout):
         print >> output,  inspect.getsource(object)
     else:
         print >> output,  "Not available for this object."
+
+try:
+    import pydoc as _pydoc
+except ImportError:
+    _pydoc = None
+
+if _pydoc is not None:
+    
+    # Define new built-in 'help'.
+    # This is a wrapper around pydoc.help (with a twist
+    # (as in debian site.py) and ppimport support).
+    class _Helper:
+        def __repr__ (self):
+            return "Type help () for interactive help, " \
+                   "or help (object) for help about object."
+        def __call__ (self, *args, **kwds):
+            new_args = []
+            for a in args:
+                if hasattr(a,'_ppimport_module') or \
+		   hasattr(a,'_ppimport_importer'):
+                    a = a._ppimport_module
+		if hasattr(a,'_ppimport_attr'):
+		    a = a._ppimport_attr
+                new_args.append(a)
+            return _pydoc.help(*new_args, **kwds)
+    import __builtin__
+    __builtin__.help = _Helper()
+
+    import inspect as _inspect
+    _old_inspect_getfile = _inspect.getfile
+    def _inspect_getfile(object):
+	try:
+	    if hasattr(object,'_ppimport_importer') or \
+	       hasattr(object,'_ppimport_module'):
+		   object = object._ppimport_module
+	    if hasattr(object,'_ppimport_attr'):
+		object = object._ppimport_attr
+	except ImportError:
+	    object = object.__class__
+	return _old_inspect_getfile(object)
+    _inspect.getfile = _inspect_getfile

@@ -27,13 +27,7 @@ Level 0, 1, 2 should be imported in order and then other levels imported
 # modules to import under the scipy namespace
 from scipy_version import scipy_version as __version__
 from scipy_base import *
-
 from helpmod import *
-
-try:
-    help
-except NameError:
-    help = info
 
 #-------- doc string hooks --------#
 
