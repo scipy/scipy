@@ -738,6 +738,9 @@ def general_gaussian(M,p,sig,sym=1):
 
 
 def slepian(M,width,sym=1):
+    if (M>83):
+        raise ValueError, "Cannot reliably obtain slepian sequences for"\
+              " M > 83."
     if M < 1:
         return Numeric.array([])
     if M == 1:
@@ -747,12 +750,12 @@ def slepian(M,width,sym=1):
         M = M+1
 
     twoF = width/2.0
-    m = arange(0,M)
+    alpha = (M-1)/2.0
+    m = arange(0,M)-alpha
     n = m[:,NewAxis]
     k = m[NewAxis,:]
-
     AF = twoF*special.sinc(twoF*(n-k))
-    [lam,vec] = linalg.svd(AF)
+    [lam,vec] = linalg.eig(AF)
     ind = argmax(abs(lam))
     w = abs(vec[:,ind])
     w = w / max(w)
@@ -760,8 +763,7 @@ def slepian(M,width,sym=1):
     if not sym and not odd:
         w = w[:-1]
     return w
-    
-        
+            
 
 def hilbert(x, N=None):
     """Return the hilbert transform of x of length N.
@@ -1116,6 +1118,7 @@ def get_window(window,Nx,fftbins=1):
                    parzen, bohman, blackmanharris, nuttall, barthann,
                    kaiser (needs beta), gaussian (needs std),
                    general_gaussian (needs power, width),
+                   slepian (needs width)
 
     If the window requires no parameters, then it can be a string.
     If the window requires parameters, the window argument should be a tuple
@@ -1172,7 +1175,7 @@ def get_window(window,Nx,fftbins=1):
             winfunc = general_gaussian
         elif winstr in ['boxcar', 'box', 'ones']:
             winfunc = boxcar
-        elif winstr in ['slepian', 'slep', 'optimal']:
+        elif winstr in ['slepian', 'slep', 'optimal', 'dss']:
             winfunc = slepian
         else:
             raise ValueError, "Unknown window type."
