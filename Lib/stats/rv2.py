@@ -103,7 +103,9 @@ following conditions:
 import Numeric as Num
 import types
 import string, time, array
-from math import sqrt, log, floor, acos, fmod, cos, exp, tan
+from fastumath import sqrt, log, floor, arccos, fmod, cos, exp, tan, arctan2
+acos = arccos
+
 
 SequenceType = [types.TupleType, types.ListType, array.ArrayType, Num.ArrayType]
 
@@ -2236,10 +2238,10 @@ class _pranv:
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
       return Num.reshape(buffer, size)      
 
-   def _von_Mises(self, mean=0.0, shape=1.0, size=None):
+   def _von_Mises(self, b, loc=0.0, size=None):
       """Return von Mises distribution pseudo-random variates on [-pi, +pi].
 
-      von_Mises(mean=0.0, shape=1.0, size=None)
+      von_Mises(b, loc=0.0, size=None)
 
       <mean> must be in the open interval (-math.pi, +math.pi).  If <buffer>
       is specified, it must be a mutable sequence (list or array).  It is
@@ -2247,9 +2249,13 @@ class _pranv:
       returned.  Otherwise, a single von Mises RV is returned. The method is
       an algorithm of Best and Fisher, 1979; see Fisher, N. I., "Statistical
       Analysis of Circular Data," Cambridge University Press, 1995, p. 49."""
+
+      shape, mean = b, loc
+      z = exp(1j*mean)
+      mean = arctan2(z.imag, z.real)
       if not (-3.1415926535897931 < mean < +3.1415926535897931):
          raise ValueError, \
-            '<mean> must be in the open interval (-math.pi, math.pi)'
+            '<loc> must be in the open interval (-math.pi, math.pi)'
 
       else:
          a = 1.0 + sqrt( 1.0 + 4.0 * shape*shape )
@@ -2861,7 +2867,7 @@ logser       =  _inst._logser
 #randint           =  _inst._randint
 #rayleigh          =  _inst._Rayleigh
 #student_t         =  _inst._Student_t
-triang            =  _inst._triangular
+#triang            =  _inst._triangular
 #uniform           =  _inst._uniform
 von_mises         =  _inst._von_Mises
 invnorm             =  _inst._Wald

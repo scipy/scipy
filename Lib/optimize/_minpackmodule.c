@@ -21,8 +21,9 @@ void init_minpack() {
 
   s = PyString_FromString(" 1.10 ");
   PyDict_SetItemString(d, "__version__", s);
-  minpack_error = PyErr_NewException ("minpack.error", NULL, NULL);
   Py_DECREF(s);
+  minpack_error = PyErr_NewException ("minpack.error", NULL, NULL);
+  PyDict_SetItemString(d, "error", minpack_error);
   if (PyErr_Occurred())
     Py_FatalError("can't initialize module minpack");
 }

@@ -331,6 +331,7 @@ static void * cdftnc2_data[] = {(void *)cdftnc2_wrap, (void *)cdftnc2_wrap};
 static void * cdftnc3_data[] = {(void *)cdftnc3_wrap, (void *)cdftnc3_wrap};
 static void * cdftnc4_data[] = {(void *)cdftnc4_wrap, (void *)cdftnc4_wrap};
 
+static void * tklambda_data[] = {(void *)tukeylambdacdf, (void *)tukeylambdacdf};
 
 static char cephes_6_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
 static char cephes_5_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
@@ -874,6 +875,10 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes3_functions, cdftnc4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nctdtrinc", "", 0);
 	PyDict_SetItemString(dictionary, "nctdtrinc", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes2_functions, tklambda_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "tklmbda", "", 0);
+	PyDict_SetItemString(dictionary, "tklmbda", f);
 	Py_DECREF(f);
 
 }

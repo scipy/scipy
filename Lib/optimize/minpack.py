@@ -2,7 +2,9 @@ import _minpack
 from common_routines import *
 from scipy.handy import r1array
 
-def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
+error = _minpack.error
+
+def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
     """Find the roots of a function.
     
   Description:
@@ -16,7 +18,7 @@ def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,m
             (possibly vector) argument.
     x0 -- The starting estimate for the roots of func(x)=0.
     args -- Any extra arguments to func are placed in this tuple.
-    Dfun -- A function or method to compute the Jacobian of func with
+    fprime -- A function or method to compute the Jacobian of func with
             derivatives across the rows. If this is None, the
             Jacobian will be estimated.
     full_output -- non-zero to return the optional outputs.
@@ -54,9 +56,9 @@ def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,m
              of elements in x0.
    band -- If set to a two-sequence containing the number of sub-
            and superdiagonals within the band of the Jacobi matrix,
-           the Jacobi matrix is considered banded (only for Dfun=None).
+           the Jacobi matrix is considered banded (only for fprime=None).
    epsfcn -- A suitable step length for the forward-difference
-             approximation of the Jacobian (for Dfun=None). If
+             approximation of the Jacobian (for fprime=None). If
              epsfcn is less than the machine precision, it is assumed
              that the relative errors in the functions are of
              the order of the machine precision.
@@ -74,6 +76,7 @@ def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,m
     n = len(x0)
     if type(args) != type(()): args = (args,)
     check_func(func,x0,args,n,(n,))
+    Dfun = fprime
     if Dfun == None:
         if band == None:
             ml,mu = -10,-10

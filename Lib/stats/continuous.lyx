@@ -756,6 +756,62 @@ m_{n} & = & \sqrt{2\Gamma ^{-1}\left( \frac{\nu }{2},\frac{1}{2}\right) }
 \layout Section
 
 Chi-squared
+\layout Standard
+
+This is the gamma distribution with 
+\begin_inset Formula \( L=0.0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=2.0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \alpha =\nu /2 \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( \nu  \)
+\end_inset 
+
+ is called the degrees of freedom.
+ If 
+\begin_inset Formula \( Z_{1}\ldots Z_{\nu } \)
+\end_inset 
+
+ are all standard normal distributions, then 
+\begin_inset Formula \( W=\sum _{k}Z_{k}^{2} \)
+\end_inset 
+
+ has (standard) chi-square distribution with 
+\begin_inset Formula \( \nu  \)
+\end_inset 
+
+ degrees of freedom.
+ 
+\layout Standard
+
+The standard form (most often used in standard form only) is
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\alpha \right)  & = & \frac{1}{2\Gamma \left( \frac{\nu }{2}\right) }\left( \frac{x}{2}\right) ^{\nu /2-1}e^{-x/2}\\
+F\left( x;\alpha \right)  & = & \Gamma \left( \frac{\nu }{2},\frac{x}{2}\right) \\
+G\left( q;\alpha \right)  & = & 2\Gamma ^{-1}\left( \frac{\nu }{2},q\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \nu \\
+\mu _{2} & = & 2\nu \\
+\gamma _{1} & = & \frac{2\sqrt{2}}{\sqrt{\nu }}\\
+\gamma _{2} & = & \frac{12}{\nu }\\
+m_{d} & = & \frac{\nu }{2}-1
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Cosine
@@ -931,10 +987,10 @@ m_{n} & = & G\left( \frac{1}{2};c\right)
  
 \layout Section
 
-Extreme Value I
+Extreme Value I (Gumbel)
 \layout Section
 
-Extreme Value II
+Extreme Value II (Frechet)
 \layout Section
 
 Exponentiated Weibull
@@ -1215,7 +1271,10 @@ G\left( q;\sigma \right)  & = & \exp \left\{ \Phi ^{-1}\left( q\right) \right\}
 
 \layout Section
 
-Gumbel (Gompertz, LogWeibull, Fisher-Tippetts)
+Gompertz 
+\layout Section
+
+Gumbel (LogWeibull, Fisher-Tippetts)
 \layout Standard
 
 One of a clase of extreme value distributions (right-skewed).
@@ -1243,6 +1302,9 @@ m_{n} & = & -\log \left( \log 2\right)
 \end_inset 
 
 
+\layout Section
+
+Gumbel Left-skewed
 \layout Section
 
 HalfCauchy
@@ -1355,7 +1417,7 @@ Hyperbolic Secant
 Related to the logistic distribution and used in lifetime analysis.
  Standard form is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{\pi }\sech \left( x\right) \\
+f\left( x\right)  & = & \frac{1}{\pi }\textrm{sech}\left( x\right) \\
 F\left( x\right)  & = & \frac{2}{\pi }\arctan \left( e^{x}\right) \\
 G\left( q\right)  & = & \log \left( \tan \left( \frac{\pi }{2}q\right) \right) 
 \end{eqnarray*}
@@ -1983,6 +2045,53 @@ Symmetric Power
 \layout Section
 
 Triangular
+\layout Standard
+
+One shape parameter 
+\begin_inset Formula \( c\in [0,1] \)
+\end_inset 
+
+ giving the distance to the peak as a percentage of the total extent of
+ the non-zero portion.
+ The location parameter is the start of the non-zero portion, and the scale-para
+meter is the 
+\begin_inset Formula \( x \)
+\end_inset 
+
+-length of the non-zero portion.
+ In standard form we have 
+\begin_inset Formula \( x\in \left[ 0,1\right] . \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+2\frac{x}{c} &  & x<c\\
+2\frac{1-x}{1-c} &  & x\geq c
+\end{array}\right. \\
+F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+\frac{x^{2}}{c} &  & x<c\\
+\frac{x^{2}-2x+c}{c-1} &  & x\geq c
+\end{array}\right. \\
+G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
+\sqrt{cq} &  & q<c\\
+1-\sqrt{\left( 1-c\right) \left( 1-q\right) } &  & q\geq c
+\end{array}\right. 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{c}{3}\\
+\mu _{2} & = & \frac{1-c+c^{2}}{18}\\
+\gamma _{1} & = & \frac{\sqrt{2}\left( 2c-1\right) \left( c+1\right) \left( c-2\right) }{5\left( 1-c+c^{2}\right) ^{3/2}}\\
+\gamma _{2} & = & -\frac{3}{5}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
 \layout Section
 
 Truncated Exponential
@@ -1992,6 +2101,32 @@ Truncated Normal
 \layout Section
 
 Tukey-Lambda
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\lambda \right)  & = & F^{\prime }\left( x;\lambda \right) =\frac{1}{G^{\prime }\left( F\left( x;\lambda \right) ;\lambda \right) }=\frac{1}{F^{\lambda -1}\left( x;\lambda \right) +\left[ 1-F\left( x;\lambda \right) \right] ^{\lambda -1}}\\
+F\left( x;\lambda \right)  & = & G^{-1}\left( x;\lambda \right) \\
+G\left( p;\lambda \right)  & = & \frac{p^{\lambda }-\left( 1-p\right) ^{\lambda }}{\lambda }
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & 0\\
+\mu _{2} & = & \int _{-\infty }^{\infty }x^{2}f\left( x;\lambda \right) dx\\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & \frac{\int _{-\infty }^{\infty }x^{4}f\left( x;\lambda \right) dx}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+ Notice that the 
+\begin_inset Formula \( \lim _{\lambda \rightarrow 0}G\left( p;\lambda \right) =\log \left( p/\left( 1-p\right) \right)  \)
+\end_inset 
+
+
 \layout Section
 
 Uniform
@@ -2035,6 +2170,59 @@ G\left( q\right)  & = & q
 \layout Section
 
 Von Mises
+\layout Standard
+
+Defined for 
+\begin_inset Formula \( x\in \left[ -\pi ,\pi \right]  \)
+\end_inset 
+
+ with shape parameter 
+\begin_inset Formula \( b>0 \)
+\end_inset 
+
+.
+ Note, the PDF and CDF functions are periodic and are always defined over
+ 
+\begin_inset Formula \( x\in \left[ -\pi ,\pi \right]  \)
+\end_inset 
+
+ regardless of the location parameter.
+ Thus, if an input beyond this range is given, it is converted to the equivalent
+ angle in this range.
+ For values of 
+\begin_inset Formula \( b<100 \)
+\end_inset 
+
+ the PDF and CDF formulas below are used.
+ Otherwise, a normal approximation with variance 
+\begin_inset Formula \( 1/b \)
+\end_inset 
+
+ is used.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;b\right)  & = & \frac{e^{b\cos x}}{2\pi I_{0}\left( b\right) }\\
+F\left( x;b\right)  & = & \frac{1}{2}+\frac{x}{2\pi }+\sum _{k=1}^{\infty }\frac{I_{k}\left( b\right) \sin \left( kx\right) }{I_{0}\left( b\right) \pi k}\\
+G\left( q;b\right)  & = & F^{-1}\left( x;b\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & 0\\
+\mu _{2} & = & \int _{-\pi }^{\pi }x^{2}f\left( x;b\right) dx\\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & \frac{\int _{-\pi }^{\pi }x^{4}f\left( x;b\right) dx}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+ This is circular variance.
+ 
 \layout Section
 
 Wald 

@@ -4,10 +4,11 @@
 # Author:  Travis Oliphant  2002
 # 
 
+from __future__ import nested_scopes
 import scipy
 import scipy.special as special
 import Numeric
-from Numeric import alltrue, where, arange
+from Numeric import alltrue, where, arange, put, putmask, nonzero
 from fastumath import *
 errp = special.errprint
 select = scipy.select
@@ -29,6 +30,13 @@ _nonnegstr = "Parameter must be >= 0."
 # A function to return nan on condition failure.
 def _wc(cond, val):
     return where (cond, val, scipy.nan)
+
+# A moment computation function -- assumes
+#   parameters are valid.
+def generic_moment(m, pdfunc, a, b, *args):
+    def _integrand(x, m, *vals):
+        return x**m * apply(pdfunc, (x,)+vals)    
+    return scipy.integrate.quad(_integrand, a, b, args=(m,)+args)[0]
 
 ### Each distribution has up to 8 functions defined plus one function
 ##    to return random variates following the distribution ---
@@ -142,10 +150,16 @@ def stnormstats(full=0):
 # loc = mu, scale = std
 
 def normpdf(x, loc=0.0, scale=1.0):
-    return 1.0/sqrt(2*pi)/scale * exp(-(x-loc)**2 / (2.0*scale*scale))
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 1.0/sqrt(2*pi)*exp(-x*x/2.0)
+    return select([scale <= 0],[scipy.nan], Px/scale)
 
 def normcdf(x, loc=0.0, scale=1.0):
-    return special.ndtr((x-loc)*1.0/scale)
+    sv = errp(0)
+    vals = special.ndtr((x-loc)*1.0/scale)
+    sv = errp(sv)
+    return vals
 
 def normppf(q, loc=0.0, scale=1.0):
     q = arr(q)
@@ -286,11 +300,6 @@ def arcsinestats(loc=0.0, scale=1.0, full=0):
     g2 = mu4 / mu2**2 - 3
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
-
-    
-    
-    
-    
 
 ## Beta distribution
 ## 
@@ -480,22 +489,22 @@ def burrstats(c,d,loc=0.0,scale=1.0,full=0):
 # burr is a generalization
 
 def fiskpdf(x, c, loc=0.0, scale=1.0):
-    return burrpdf(x, c, d, loc, scale)
+    return burrpdf(x, c, 1.0, loc, scale)
 
 def fiskcdf(x, c, loc=0.0, scale=1.0):
-    return burrcdf(x, c, d, loc, scale)
+    return burrcdf(x, c, 1.0, loc, scale)
 
 def fisksf(x, c, loc=0.0, scale=1.0):
-    return burrsf(x, c, d, loc, scale)
+    return burrsf(x, c, 1.0, loc, scale)
 
 def fiskppf(x, c, loc=0.0, scale=1.0):
-    return burrppf(x, c, d, loc, scale)
+    return burrppf(x, c, 1.0, loc, scale)
 
 def fiskisf(x, c, loc=0.0, scale=1.0):
-    return burrisf(x, c, d, loc, scale)
+    return burrisf(x, c, 1.0, loc, scale)
 
 def fiskstats(x, c, loc=0.0, scale=1.0):
-    return burrstats(x, c, d, loc, scale)
+    return burrstats(x, c, 1.0, loc, scale)
 
 
 ## Cauchy
@@ -625,12 +634,7 @@ def chi2isf(p, df, loc=0.0, scale=1.0):
     return vals*scale + loc
 
 def chi2ppf(q, df, loc=0.0, scale=1.0):
-    q, loc, scale = map(arr,(p,loc,scale))    
-    sv = errp(0)
-    vals = where((0<=q)&(q<=1)&(df>0)&(scale>0),
-                 special.chdtri(df, 1-q), scipy.nan)
-    sv = errp(sv)
-    return vals*scale + loc
+    return chi2isf(1-q, df, loc, scale)
 
 def chi2stats(df, loc=0.0, scale=1.0, full=0):
     cond = arr(df) > 0
@@ -643,29 +647,30 @@ def chi2stats(df, loc=0.0, scale=1.0, full=0):
     return mn, var, g1, g2
 
 ## Cosine
-def cosinepdf(x, mean=0.0, scale=1.0):
-    A, B, x = arr(mean), arr(scale), arr(x)
-    Px = 1.0/2.0/pi/B*(1+cos((x-A)*1.0/B))
-    return select([B<=0,(y>=(A-pi*B))&(y<=(A+pi*B))],[scipy.nan, Px])
+def cosinepdf(x, loc=0.0, scale=1.0):
+    loc, B, x = arr(loc), arr(scale), arr(x)
+    x = arr((x-loc*1.0)/B)
+    Px = 1.0/2.0/pi*(1+cos(x))
+    return select([B<=0,(x>=-pi)&(x<=pi)],[scipy.nan, Px/B])
 
-def cosinecdf(x, mean=0.0, scale=1.0):
-    A, B, x = arr(mean), arr(scale), arr(x)
-    y = (x-A)*1.0/B
-    Cx = 1.0/2/pi*(pi + y + sin(y))
-    return select([B<=0, y>(A+pi*B), y>=(A-pi*B)],[scipy.nan, 1, Cx])
+def cosinecdf(x, loc=0.0, scale=1.0):
+    A, B, x = arr(loc), arr(scale), arr(x)
+    x = arr((x-A*1.0)/B)
+    Cx = 1.0/2/pi*(pi + x + sin(x))
+    return select([B<=0, x>pi, x>=-pi],[scipy.nan, 1, Cx])
 
-def cosinesf(x, mean=0.0, scale=1.0):
-    return 1.0-cosinecdf(x, mean, scale)
+def cosinesf(x, loc=0.0, scale=1.0):
+    return 1.0-cosinecdf(x, loc, scale)
 
-def cosineppf(q, mean=0.0, scale=1.0):
+def cosineppf(q, loc=0.0, scale=1.0):
     pass
 
-def cosineisf(p, mean=0.0, scale=1.0):
+def cosineisf(p, loc=0.0, scale=1.0):
     pass
 
-def cosinestats(mean=0.0, scale=1.0, full=0):
+def cosinestats(loc=0.0, scale=1.0, full=0):
     B = arr(scale)
-    mu = where(B>0,mean,scipy.nan)
+    mu = where(B>0,loc,scipy.nan)
     var = where(B>0,(pi*pi/3.0-2)*scale*scale, scipy.nan)
     if not full:
         return mu, var
@@ -2044,6 +2049,102 @@ def semicircularstats(loc=0.0, scale=1.0, full=0):
         return mn, var
     return mn, var, _wc(cond, 0.0), _wc(cond, -1.0)
 
+# Triangular
+# up-sloping line from loc to (loc + c) and then downsloping line from
+#    loc + c to loc + shape
+
+_trstr = "Left must be <= mode which must be <= right with left < right"
+
+def triangpdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    P1x = 2.0*x / c
+    P2x = 2.0*(1-x)/arr(1-c)
+    return select([(c<0)|(c>1)|(scale <=0), x>1, x>=c, x>=0],
+                  [scipy.nan, 0, P2x/scale,P1x/scale])
+    
+def triangcdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    C1x = x*x / c
+    C2x = (x*x-2*x+c) / arr(c-1)
+    return select([(c<0)|(c>1)|(scale <=0), x>1, x>=c, x>=0],
+                  [scipy.nan, 1, C2x, C1x])
+
+def triangsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-triangcdf(x, c, loc, scale)
+
+def triangppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    cond = (0<=q) & (q<=1) & (scale > 0) & (c>=0) & (c<=1)
+    x1 = sqrt(c*q)
+    x2 = 1-sqrt((1-c)*(1-q))
+    select([1-cond, q<c],[scipy.nan, x1*scale + loc], x2*scale + loc)
+
+def triangisf(p, c, loc=0.0, scale=1.0):
+    return triangppf(1.0-p, c, loc, scale)
+
+def triangstats(c, loc=0.0, scale=1.0, full=0):
+    cond = (c >=0) & (c <= 1) & (scale > 0)
+    mn = _wc(cond, (c+1.0) / 3 * scale + loc)
+    fac = (1.0-c+c*c)
+    var = _wc(cond, fac / 18.0*scale*scale)
+    if not full:
+        return mn, var
+    g1 = sqrt(2)*(2*c-1)*(c+1)*(c-2) / 5.0 / fac**1.5
+    g2 = -3.0/5
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+# Tukey-Lambda
+# A flexible distribution ranging from Cauchy (lam=-1)
+#   to logistic (lam=0.0)
+#   to approx Normal (lam=0.14)
+#   to u-shape (lam = 0.5)
+#   to Uniform from -1 to 1 (lam = 1)
+
+def tukeylambdapdf(x, lam, loc=0.0, scale=1.0):
+    x, lam, loc, scale = map(arr, (x, lam, loc, scale))
+    cond = (scale > 0)&(x==x)
+    x = where(cond, arr((x-loc*1.0)/scale), 0.0)
+    Fx = arr(special.tklmbda(x,lam))
+    Px = Fx**(lam-1.0) + (arr(1-Fx))**(lam-1.0)
+    Px = 1.0/arr(Px)
+    maglim = arr(1.0/lam)
+    return select([scale<=0, (lam>0)&((x<-maglim)|(x>maglim))],
+                  [scipy.nan, 0.0], Px/scale)
+
+def tukeylambdacdf(x, lam, loc=0.0, scale=1.0):
+    x, lam, loc, scale = map(arr, (x, lam, loc, scale))
+    cond = (scale > 0)&(x==x)
+    x = where(cond, arr((x-loc*1.0)/scale), 0.0)
+    return _wc(cond, special.tklmbda(x, lam))
+                
+def tukeylambdappf(q, lam, loc=0.0, scale=1.0):
+    q, lam, loc, scale = map(arr, (q, lam, loc, scale))
+    q = arr(q*1.0)
+    vals1 = (q**lam - (1-q)**lam)/lam
+    vals2 = log(q/(1-q))
+    return select([scale<=0, lam==0], [scipy.nan, vals2*scale+loc],
+                  vals1*scale + loc)
+
+def tukeylambdasf(x, lam, loc=0.0, scale=1.0):
+    return 1.0-tukeylambdacdf(x, lam, loc, scale)
+
+def tukeylambdaisf(q, lam, loc=0.0, scale=1.0):
+    return tukeylambdappf(1.0-q, lam, loc, scale)
+
+def tukeylambdastats(lam, loc=0.0, scale=1.0, full=0):
+    lam, loc, scale = arr(lam), arr(loc), arr(scale)
+    mn = _wc(scale>0,loc)
+    _vecfunc = special.general_function(generic_moment)
+    mu2 = _vecfunc(2, tukeylambdapdf, -scipy.inf, scipy.inf, lam, loc, scale)
+    var = _wc(scale>0, mu2*scale*scale)  
+    if not full:
+        return mn, var
+    g1 = 0
+    g2 = _vecfunc(4, tukeylambdapdf, -scipy.inf, scipy.inf, lam, loc, scale) / mu2**2 - 3.0
+    return mn, var, _wc(scale>0, g1), _wc(scale>0, g2)
+
 
 # Uniform
 
@@ -2078,120 +2179,86 @@ def uniformstats(loc=0.0, shape=1.0, full=0):
         return mn, var
     return mn, var, _wc(cond, 0.0), _wc(cond, -6.0/5.0)
 
-
-# Triangular
-
-_trstr = "Left must be <= mode which must be <= right with left < right"
-
-def triangpdf(x, left=0.0, mode=0.5, right=1.0):
-    x = arr(x)
-    a, b, c = left, right, mode
-    assert all((a <= c <= b) & (a<b)), _trstr
-    x = where(x<a,a,x)
-    x = where(x>b,b,x)
-    P1 = 2.0*(x-a) / (b-a) / (c-a)
-    P2 = 2.0*(b-x) / (b-a) / (b-c)
-    return where(x<c,P1,P2)
-    
-def triangcdf(x,left=0.0, mode=0.5, right=1.0):
-    x = arr(x)
-    a, b, c = left, right, mode
-    assert all((a <= c <= b) & (a<b)), _trstr
-    x = where(x<a,a,x)
-    x = where(x>b,b,x)
-    C1 = (x-a)**2.0 / (b-a) / (c-a)
-    C2 = 1.0-(b-x)**2.0 / (b-a) / (b-c)
-    return where(x<c,C1,C2)
-
-def triangsf(x, left=0.0, mode=0.5, right=1.0):
-    return 1.0-triangcdf(x, left, mode, right)
-
-def triangppf(q, left=0.0, mode=0.5, right=1.0):
-    a, b, c = left, right, mode
-    assert all((a <= c <= b) & (a<b)), _trstr
-    assert all((0<=q) & (q<=1)), _quantstr
-    q = arr(q)
-    Dc = (c-a)/(b-a)
-    x1 = b - sqrt((1-q)*(b-a)*(b-c))
-    x2 = a + sqrt(q*(b-a)*(c-a))
-    return where(q > Dc, x1, x2)
-
-def triangisf(p, left=0.0, mode=0.5, right=1.0):
-    return triangppf(1.0-p, left, mode, right)
-
-def triangstats(left=0.0, mode=0.5, right=1.0, full=0):
-    a, b, c = left, right, mode
-    assert all((a <= c <= b) & (a<b)), _trstr
-    mu = (a+b+c)/3.0
-    trm = (a*a + b*b + c*c - a*b - a*c - b*c)
-    var =  trm / 18.0
-    if not full:
-        return mu, var
-    mu3 = (a+b-2*c)*(a+c-2*b)*(b+c-2*a)/270.0
-    mu4 = trm / 135.0
-    g1 = mu3 / var**1.5
-    g2 = mu4 / var**2.0 - 3
-    return mu, var, g1, g2
-
 # Von-Mises
 
-def von_misespdf(x,mode=0.0, shape=1.0):
-    x = arr(x)
-    a, b = mode, shape
-    assert (-pi<=a<=pi)
-    assert (b>0), _posstr
-    box = where(x<=-pi,0,1)
-    box = where(x>=pi,0,box)
-    Px = exp(b*cos(x+pi-a)) / (2.0*pi*special.i0(b))
-    return Px*box
+# if x is not in range or loc is not in range it assumes they are angles
+#   and converts them to [-pi, pi] equivalents. 
+def von_misespdf(x,b,loc=0.0):
+    x, b, loc = map(arr, (x, b, loc))
+    loc = arr(angle(exp(1j*loc)))
+    x = arr(angle(exp(1j*(x-loc))))
+    Px1 = exp(b*cos(x)) / (2.0*pi*special.i0(b))
+    Px2 = normpdf(x, 0.0, sqrt(1.0/b))
+    return select([b < 0, b < 100],[scipy.nan, Px1], Px2)
 
-def von_misescdf(x, mode=0.0, shape=1.0):
-    x = arr(x)
-    a, b = mode, shape
-    assert (-pi<=a<=pi)
-    assert (b>0), _posstr
+def von_misescdf(x, b, loc=0.0):
+    x, b, loc = map(arr, (x, b, loc))
+    if len(x.shape) > 1 or len(b.shape) > 1 or len(loc.shape) > 1:
+        raise ValueError, "Only works for 1-d arrays."
+    loc = arr(angle(exp(1j*loc)))
+    x = r1array(angle(exp(1j*(x-loc))))*(b==b)
     from scipy.limits import double_epsilon as eps
     eps2 = sqrt(eps)
-    x = where(x<-pi,-pi,x)
-    x = where(x>pi,pi,x)
-    fac = special.i0(b)
-    x2 = x + pi
-    val = x2 / 2.0/ pi
-    for j in range(1,501):
-        trm1 = special.iv(j,b)/j/fac
-        trm2 = sin(j*(x2-a))/pi
-        val += trm1*trm2
-        if all(trm1 < eps2):
-            break
-    if (j == 500):
-        print "Warning: did not converge..."
-    return val
 
-def _vmqfunc(x,q,mode,shape):
-    return von_misescdf(x,mode,shape)-q
+    c_xsimple = r1array((b==0)&(x==x))
+    c_xiter = r1array((b<100)&(b > 0)&(x==x))
+    c_xnormal = r1array((b>=100)&(x==x))
+    c_bad = r1array((b<=0) | (x != x))
 
-def _vmppf(q,mode,shape,x0):
+    indxiter = nonzero(c_xiter)
+    xiter = take(x, indxiter)
+
+    vals = ones(len(c_xsimple),Numeric.Float)
+    putmask(vals, c_bad, scipy.nan)
+    putmask(vals, c_xsimple, x / 2.0/pi)
+    st = sqrt(b-0.5)
+    st = where(isnan(st),0.0,st)
+    putmask(vals, c_xnormal, normcdf(x, scale=st))
+        
+    biter = take(r1array(b)*(x==x), indxiter)
+    if len(xiter) > 0:
+        fac = special.i0(biter)
+        x2 = xiter
+        val = x2 / 2.0/ pi
+        for j in range(1,501):
+            trm1 = special.iv(j,biter)/j/fac
+            trm2 = sin(j*x2)/pi
+            val += trm1*trm2
+            if all(trm1 < eps2):
+                break
+        if (j == 500):
+            print "Warning: did not converge..."
+        put(vals, indxiter, val)
+    return vals + 0.5
+
+def _vmqfunc(x,q,b,loc):
+    return von_misescdf(x,b,loc)-q
+
+def _vmppf(q,b,loc,x0):
     import scipy.optimize as optimize
-    return optimize.fsolve(_vmqfunc,x0,args=(q,mode,shape))
+    return optimize.fsolve(_vmqfunc,x0,args=(q,b, loc))
 _vec_vmppf = special.general_function(_vmppf,'d')
 
-def von_misesppf(q,mode=0.0, shape=1.0, x0=None):
-    assert all((0<=q) & (q<=1)), _quanstr
+def von_misesppf(q, b, loc=0.0, x0=None):
     if x0 is None:
-        x0 = mode
+        x0 = loc
+    assert all((0<=q) & (q<=1)), _quanstr
     return _vec_vmppf(q, mode, shape,x0)
 
-def von_misesisf(p, mode=0.0, shape=1.0, x0=None):
+def von_misesisf(p, b, loc=0.0, x0=None):
     return von_misesppf(1-p, mode, shape, x0)
 
-def von_misesstats(mode=0.0, shape=1.0, full=0):
-    mn = mode
-    var = 1.0 - special.iv(mode, shape) / special.i0(shape)
+def von_misesstats(b, loc=0.0, full=0):
+    b, loc = arr(b), arr(loc)
+    mn = _wc(b>=0,loc)
+    _vecfunc = special.general_function(generic_moment)
+    mu2 = _vecfunc(2, von_misespdf, -pi, pi, b, loc)
+    var = _wc(b>=0, mu2)    
     if not full:
         return mn, var
-    print "Skew and Kertosis not available---returned as NaN"
-    return mn, var, scipy.nan, scipy.nan
-
+    g1 = 0
+    g2 = _vecfunc(4, von_misespdf, -pi, pi, b, loc) / mu2**2 - 3.0
+    return mn, var, _wc(b>=0, g1), _wc(b>=0, g2)
 
 ## Wald distribution (Inverse Normal with shape parameter mu=1.0)
 

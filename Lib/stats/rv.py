@@ -15,6 +15,11 @@ ArgumentError = "ArgumentError"
 _scalerr = "Scale must be positive."
 _parmerr = "Parameters must be positive."
 
+def _chkpos(parm):
+    if (parm <=0):
+        raise ValueError, _parmerr
+    return
+
 def seed(x=0,y=0):
     """seed(x, y), set the seed using the integers x, y; 
     Set a random one from clock if  y == 0
@@ -364,6 +369,23 @@ def reciprocal(a, b, loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return a*pow(b/a,u)*scale + loc
 
+def triang(c, loc=0.0, scale=1.0, size=None):
+    if (c<0) or (c>1):
+        raise ValueError, "C must be in [0,1]."
+    u = random(size=size)
+    return Num.where(u<c, sqrt(c*u), 1-sqrt((1-c)*(1-u)))*scale + loc
+
+def tukeylambda(lam, loc=0.0, scale=1.0, size=None):
+    """Tukey-Lambda random numbers.
+    """
+    _chkpos(scale)
+    u = random(size=size)
+    if (lam == 0):
+        return scale * log(u/(1.0-u)) + loc
+    else:
+        return scale*1.0/lam*(u**lam - (1-u)**lam) + loc
+
+    
 #####################################
 # General purpose continuous
 ######################################
