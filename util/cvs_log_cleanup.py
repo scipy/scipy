@@ -14,7 +14,7 @@ line = 1
 working_file = re.compile(r'Working file: (?P<filename>.*)').match
 descr_start = re.compile(r'----------------------------').match
 descr_end = re.compile(r'============================').match
-
+author_search = re.compile(r'author: (?P<name>.*?);').search
 while line:
     line = sys.stdin.readline()
     m = working_file(line)
@@ -27,10 +27,15 @@ while line:
             while line and not descr_end(line):
                 line = sys.stdin.readline()
                 line = sys.stdin.readline()
+                author = author_search(line)
+                if author:
+                    author = author.group('name')
                 line = sys.stdin.readline()
                 descr.append('  - ')
                 while line and not (descr_start(line) or descr_end(line)):
                     descr.append(line)
                     line = sys.stdin.readline()
+                if author:
+                    descr[-1] = descr[-1].rstrip() + ' (%s)\n' % (author)
             print '\n*',filename
             print ''.join(descr).rstrip()
