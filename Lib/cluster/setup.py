@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# !!! This is not used at all by the actual setup.py package
+# !!! It's just nice rebuilding cluster in place.
+
 import os, sys, string, re
 from glob import glob
 
