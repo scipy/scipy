@@ -1,6 +1,6 @@
 from Numeric import *
 from scipy_base.fastumath import *
-from scipy_base import isscalar, rank, shape, resize
+from scipy_base import isscalar, rank, shape, resize, ArrayType
 import types
 import sparsetools
 import _superlu
@@ -88,7 +88,7 @@ class spmatrix:
 
     def getformat(self):
         try:
-            format = self.storage
+            format = self.format
         except AttributeError:
             format = 'und'
         return format
@@ -112,7 +112,7 @@ class spmatrix:
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s' with %d non-zero "\
                "elements in %s format>" % \
-               (self.shape + (numtype, nzmax, _formats[format][1]))
+               (self.shape + (numtype, nnz, _formats[format][1]))
 
     def __str__(self):
         nnz = self.getnnz()
@@ -213,10 +213,10 @@ class csc_matrix(spmatrix):
             M=s
             N=ij
             self.data = zeros((nzmax,),typecode)
-            self.rowind = zeros((nzmax,))
-            self.indptr = zeros((N+1,))
+            self.rowind = zeros((nzmax,),'i')
+            self.indptr = zeros((N+1,),'i')
             self.shape = (M,N)
-        elif (isinstance(s,scipy_base.ArrayType) or \
+        elif (isinstance(s,ArrayType) or \
               isinstance(s,type([]))):
             if (rank(s) == 2):  # converting from a full array
                 M, N = s.shape
@@ -229,14 +229,19 @@ class csc_matrix(spmatrix):
                 irow = jcol = 0
                 nnz = sum(ravel(s != 0.0))
                 a = zeros((nnz,),numtype)
-                rowa = zeros((nnz,))
-                ptra = zeros((N,))
+                rowa = zeros((nnz,),'i')
+                ptra = zeros((N+1,),'i')
                 while 1:
                     a, ptra, rowa, irow, jcol, ierr = func(s, a, ptra, rowa, irow, jcol)
                     if (ierr == 0): break
                     nnz = nnz + ALLOCSIZE
                     a = resize1d(a, nnz)
                     rowa = resize1d(rowa, nnz)
+
+                self.data = a
+                self.rowind = rowa
+                self.indptr = ptra
+                self.shape = (M,N)
                     
             elif (rank(ij) == 2) and (shape(ij) == (len(s),2)):
                 temp = coo_matrix(s,ij,M=M,N=N,nzmax=nzmax,typecode=typecode)
@@ -275,10 +280,10 @@ class csc_matrix(spmatrix):
             raise ValueError, \
                   "Last value of index list should be less than "\
                   "the size of data list"
-        self.nnz = indptr[-1]
+        self.nnz = self.indptr[-1]
         self.nzmax = len(self.rowind)
         self.numtype = self.data.typecode()
-        self.ftype = _transtable[self.numtype]
+        self.ftype = _transtabl[self.numtype]
         if self.numtype not in 'fdFD':
             raise ValueError, "Only floating point sparse matrix types allowed"
         
@@ -359,7 +364,6 @@ class csc_matrix(spmatrix):
         return y
 
     def matmat(self, bmat):
-        raise NotImplementedError
         self._check()
         M,K1 = self.shape
         K2,N = bmat.shape
@@ -371,12 +375,23 @@ class csc_matrix(spmatrix):
             b = bmat.data
             colb = bmat.colind
             ptrb = bmat.indptr
-            
+        elif isintance(x,csc_matrix):
+            bmat._check()
+            func = getattr(sparsetools,bmat.ftype+'cscmucsc')
+            b = bmat.data
+            colb = bmat.rowind
+            ptrb = bmat.indptr
+        else:
+            bmat = bmat.tocsc()
+            func = getattr(sparsetools,bmat.ftype+'cscmucsc')
+            b = bmat.data
+            colb = bmat.rowind
+            ptrb = bmat.indptr
         newshape = (M,N)
-        ptrc = zeros((N+1,))
+        ptrc = zeros((N+1,),'i')
         nnzc = 2*max(len(self.data)+len(b))
         c = zeros((nnzc,),typecode)
-        rowc = zeros((nnzc,),typecode)
+        rowc = zeros((nnzc,),'i')
         irow = kcol = 0
         while 1:
             c, rowc, ptrc, irow, kcol, ierr = func(M,a,rowa,ptra,b,colb,ptrb,c,rowc,ptrc,irow,kcol)
@@ -385,7 +400,8 @@ class csc_matrix(spmatrix):
             percent_to_go = 1- (1.0*kcol) / N
             newnnzc = int(ceil((1+percent_to_go)*nnzc))
             c = resize1d(c,newnnzc)
-            newrowc = resize1d(rowc,newnnzc)                
+            newrowc = resize1d(rowc,newnnzc)
+            nnzc = newnnzc
             
     def prune():
         nnz = self.indptr[-1]
@@ -672,291 +688,7 @@ class coo_matrix(spmatrix):
 # jagged diagonal
 # unsymmetric sparse skyline
 # variable block row
-
-
-# A sparse matrix class.  A sparse matrix can be initialized as:
-
-# a = spmatrix(M,N,nzmax,typecode=Float)
-#   Create an MxN matrix with room for nzmax non-zero elements of
-#     type typecode
-# a = spmatrix(data,row,col{,M,N,nzmax})
-#   Create a sparse matrix with non-zero elements data
-#     using a[row[i],col[i]] = data[i]
                
-class spmatrix:
-    def __init__(self,s,i=None,j=None,M=None,N=None,nzmax=None,
-                 typecode=Float):
-        if isinstance(s, dictmatrix):
-            ftype, nnz, data, index0, index1 = s.getCSR()
-            self.ftype = ftype
-            self.ptype = _itranstabl[ftype]
-            self.lastel = nnz-1
-            self.data = data
-            self.index = [index0+1, index1+1]
-            M, N = s.shape
-            nzmax = nnz
-        elif type(s) in [types.ListType, ArrayType]:
-            s = array(s,copy=0,typecode=typecode)
-            if s.typecode() not in 'fdFD':  # only support these 4 types.
-                s = s.astype('d')
-            sz = len(s)
-            i = array(i,typecode='l',copy=0)
-            j = array(j,typecode='l',copy=0)
-            if nzmax is None:
-                nzmax = sz
-                if M is None:
-                    M = max(i)+1
-                if N is None:
-                    N = max(j)+1
-            self.ptype = s.typecode()
-            self.data = zeros((nzmax,),s.typecode())
-            self.ftype = _transtabl[self.ptype]
-            self.index = [zeros((nzmax,)),zeros((M+1,))]
-            convfunc = eval('_sparsekit.'+self.ftype+'coocsr')
-            convfunc(array(M),array(nzmax),s,i+1,j+1,self.data,self.index[0],self.index[1])
-            self.lastel = len(s)-1
-        elif type(s) is types.IntType:
-            M = int(s)
-            N = int(i)
-            if j is None:
-                j = 0
-            nzmax = int(j)
-            self.ptype = typecode
-            self.ftype = _transtabl[self.ptype]
-            self.data = zeros((nzmax,),typecode)
-            self.index = [zeros((nzmax,)),zeros((M+1,))]
-            self.lastel = 0
-        elif isspmatrix(s) and s.storage=='CSR':  # make a copy
-            for attr in dir(s):
-                if attr not in ['data','index']:
-                    setattr(self,attr,getattr(s,attr))
-            self.data = array(s.data,copy=1)
-            self.index = [array(s.index[0],copy=1),array(s.index[1],copy=1)]
-            return
-        else:
-            raise TypeError, "Unsupported type %s" % type(s)
-
-        self.storage = 'CSR'
-        self.shape = (M,N)
-        self.nzmax = nzmax
-        self.maxprint = MAXPRINT
-
-    def rowcol(self,key):
-        if key > self.lastel:
-            raise ValueError, "There are only %d nonzero entries." % (self.lastel+1)
-        row = searchsorted(self.index[1]-1,key+1)-1
-        col = self.index[0][key]-1
-        return (row,col)
-
-    def listprint(self,start,stop):
-        val = ''
-        for ind in xrange(start,stop):
-            val = val + '  %s\t%s\n' % (self.rowcol(ind),self.data[ind])
-        return val
-
-    def __repr__(self):
-        return "<%dx%d spmatrix of type '%s' with %d elements in %s>" % (self.shape + (self.ptype, self.nzmax, _formats[self.storage][1]))
-
-    def __str__(self):
-        val = ''
-        if self.nzmax > self.maxprint:
-            val = val + self.listprint(0,self.maxprint/2)
-            val = val + "  :\t:\n"
-            val = val + self.listprint(self.lastel-self.maxprint/2,self.lastel+1)
-        else:
-            val = val + self.listprint(0,self.lastel+1)
-        return val[:-1]
-
-    def __cmp__(self,other):
-        raise TypeError, "Comparison of sparse matrices is not implemented."
-
-    def __nonzero__(self):  # Simple -- other ideas?
-        return self.lastel > 0
-
-    def __len__(self):
-        return self.lastel + 1
-
-    def __getitem__(self,key):  
-        if key is None:
-            return 0.0
-        if type(key) == types.IntType:
-            return (self.data[key], self.rowcol(key))
-        elif type(key) == types.TupleType:
-            if len(key) == 2 and (type(key[0]),type(key[1])) == (types.IntType,)*2:
-                getelm = eval('_sparsekit.'+self.ftype+'getelm')
-                add = array(0)
-                val = getelm(array(key[0]+1),array(key[1]+1),self.data,self.index[0],self.index[1],add,array(0))
-                if add[0] > 0:
-                    return (self.data[add-1],add-1)
-                else:
-                    return (0.0, None)
-            elif len(key) == 2 and (type(key[0]),type(key[1])) == (types.SliceType,)*2:
-                if (key[0].step is not None and key[0].step != 1) or \
-                   (key[1].step is not None and key[1].step != 1):
-                    print "Ignoring step value in slice."
-                assert self.storage=='CSR'
-                submat = eval('_sparsekit.'+self.ftype+'submat')
-                nr = array(0)
-                nc = array(0)
-                ao = array(self.data,copy=1)
-                jao = array(self.index[0],copy=1)
-                iao = zeros((self.lastel+1,))
-                submat(array(self.shape[0]),array(1),array(key[0].start+1),array(key[0].stop),array(key[1].start+1),array(key[1].stop),self.data,self.index[0],self.index[1],nr,nc,ao,jao,iao)
-                nels = max(iao)-1
-                # Eliminate "extra memory"
-                ao = array(ao[:nels],copy=1)
-                jao = array(jao[:nels],copy=1)
-                iao = array(iao[:nr[0]],copy=1)
-                b = spmatrix(nr[0],nc[0],nels)
-                b.lastel = nels-1
-                b.data = ao
-                b.index = [jao,iao]
-                return b                                   
-        raise TypeError, "Cannot access sparse matrix that way."
-
-
-    def astype(self,newtype):
-        if newtype == self.ptype:
-            return self
-        else:
-            b = spmatrix(self)
-            b.data = b.data.astype(newtype)
-            b.ptype = newtype
-            b.ftype = _transtabl[newtype]
-            return b
-
-    def __add__(self,other):
-        if not isspmatrix(other):
-            raise TypeError, "Both matrices must be sparse."
-        spadd = eval('_sparsekit.'+self.ftype+'aplb')
-        assert self.shape == other.shape
-        assert self.storage == 'CSR'
-        if other.ftype != self.ftype:
-            other = other.astype(self.ptype)
-        new = spmatrix(self.shape[0],self.shape[1],min((self.nzmax + other.nzmax,product(self.shape))),typecode=self.ptype)
-        ierr = array(0)
-        iw = zeros((self.shape[1],))
-        spadd(1,self.data,self.index[0],self.index[1],other.data,other.index[0],other.index[1],new.data,new.index[0],new.index[1],array(new.nzmax),iw,ierr,self.shape[0],self.shape[1])
-        nels = max(new.index[1])-1
-        new.data = array(new.data[:nels],copy=1)
-        new.index[0] = array(new.index[0][:nels],copy=1)
-        new.lastel = nels - 1
-        new.nzmax = nels
-        return new
-
-    def __neg__(self):
-        new = spmatrix(self.shape[0],self.shape[1],self.nzmax)
-        new.data = -self.data
-        new.index = self.index
-        new.ptype = self.ptype
-        new.ftype = self.ftype
-        new.lastel = self.lastel
-        return new
-
-    def __sub__(self,other):
-        if not isspmatrix(other):
-            raise TypeError, "Right operand must also be sparse."
-        return self + (-other)
-
-    def __mul__(self,other):
-        if isspmatrix(other):
-            assert other.shape[0] == self.shape[1]
-            assert self.storage == 'CSR'
-            new_nz = self.nzmax + other.nzmax
-            new = spmatrix(self.shape[0],other.shape[1],new_nz,typecode=self.ptype)
-            mult = eval('_sparsekit.'+self.ftype+'amub')
-            iw = zeros((self.shape[1],))
-            ierr = array(0)
-            while 1:  # mult returns error if array wasn't big enough
-                mult(array(1),
-                     self.data, self.index[0], self.index[1], other.data,
-                     other.index[0], other.index[1], new.data, new.index[0],
-                     new.index[1], array(new.nzmax), iw, ierr,
-                     array(self.shape[0]),array(other.shape[1]))
-                if (ierr[0] == 0 or new.nzmax > 5*self.nzmax):
-                    break
-                # make output array bigger for the next try
-                new.expand(int(self.shape[0]/float(ierr[0])*new.nzmax + 1))
-            if (ierr[0] != 0):
-                raise ValueError, "Could not find a good size for sparse output: ierr = %d" % ierr[0]
-            new.cleanup()
-            return new
-        
-        elif type(other) in [ArrayType, types.ListType]:
-            assert self.storage == 'CSR'
-            other = array(other,copy=0).astype(self.ptype)
-            assert len(other.shape)==1 and len(other) == self.shape[1]
-            matvec = eval('_sparsekit.'+self.ftype+'amux')
-            y = zeros((self.shape[0]),self.ptype)
-            matvec(array(self.shape[0]),other,y,self.data,self.index[0],self.index[1])
-            return y
-        
-        elif type(other) in [types.IntType, types.FloatType, types.ComplexType]:
-            new = spmatrix(self)           # make a copy
-            new.data = other*new.data
-            new.ptype = new.data.typecode()
-            new.ftype = _transtabl[new.ptype]
-            return new
-
-    def __rmul__(self,other):
-        return self*other
-
-    def cleanup(self):  # eliminate unused entries from the end
-        assert self.storage=='CSR'
-        self.nzmax = searchsorted(equal(self.index[0],0),1)
-        self.lastel = self.nzmax-1
-        self.data = self.data[:self.nzmax]
-        self.index[0] = self.index[0][:self.nzmax]
-
-    def expand(self, new_nzmax):  # create more space
-        assert self.storage=='CSR'
-        tmp = self.data
-        tmpb = self.index[0]
-        self.data = zeros((new_nzmax,),self.ptype)
-        self.index[0] = zeros((new_nzmax,),self.ptype)
-        self.data[:self.nzmax] = tmp
-        self.index[0][:self.nzmax] = tmpb
-        self.nzmax = new_nzmax
-
-    def transp(self,inplace=0):
-        assert self.storage=='CSR'
-        M,N = self.shape
-        if inplace == 0:
-            new = spmatrix(self) # make a copy
-        else:
-            new = self   # make a reference
-        transp = eval('_sparsekit.'+self.ftype+'transp')
-        iwk = zeros((len(self.index[0]),))
-        ierr = array(0)
-        M,N = array(M),array(N)
-        transp(M,N,new.data,new.index[0],new.index[1],iwk,ierr)
-        if ierr[0] != 0:
-            raise ValueError, "Error during transpose: %d"  % ierr[0]
-        new.shape = (N[0],M[0])
-        return new
-
-    def conj(self,inplace=0):
-        if inplace == 0:
-            new = spmatrix(self)
-        else:
-            new = self
-        new.data = conjugate(self.data)
-        return new
-
-    def getCSR(self):
-        return self.ftype, self.lastel+1, self.data, self.index[0]-1, self.index[1]-1
-
-    def getCSC(self):
-        B = self.transp()
-        return B.ftype, B.lastel+1, B.data, B.index[0]-1, B.index[1]-1
-
-    def todict(self):
-        res = dictmatrix()
-        for k in range(self.nzmax):
-            row,col = self.rowcol(k)
-            res[row,col] = self.data[k]
-        return res
-            
 def isspmatrix(x):
     return isinstance(x, spmatrix)
 

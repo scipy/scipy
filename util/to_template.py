@@ -33,7 +33,7 @@ if sys.version[:3]>='2.3':
 else:
     import pre as re
 
-reg = re.compile(r"\ssubroutine\s(.+)\(.*\)")
+reg = re.compile(r"\ssubroutine\s(.+)\([^()]*\)")
 
 try:
     file = sys.argv[1]
@@ -52,8 +52,8 @@ if subs is None:
     print "Nothing to do..."
     sys.exit(1)
 for sub in subs:
-    newstr = newstr.replace(sub,'<s,d,c,z>'+sub[1:])
+    newstr = newstr.replace(sub,'<_c>'+sub[1:])
     
-newstr = newstr.replace('double precision','<real, double precision, complex, double complex>')
+newstr = newstr.replace('double precision','<_t>')
 
 outfile.write(newstr)
