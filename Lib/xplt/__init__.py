@@ -32,7 +32,7 @@ from Mplot import *
 from write_style import *
 import scipy_base
 base_file = os.path.split(scipy_base.__file__)[0]
-gistpath = os.path.join(base_file[:-5],'xplt')
+gistpath = os.path.join(base_file[:-5],'xplt','gistdata')
 os.environ['GISTPATH'] = gistpath
 
 display = os.environ.get('DISPLAY')
@@ -59,4 +59,7 @@ if display and (maxwidth is None or maxheight is None):
         os.environ['XPLT_MAXHEIGHT']=str(maxheight)
     except ValueError:
         pass
+else:
+    maxwidth = 800
+    maxheight = 600
 

@@ -21,6 +21,29 @@ _hold = 0
 
 gist.pldefault(dpi=_dpi)
 
+# Get a directory that the user has write access to for
+#  storing temporary *.gp and *.gs files
+import weave
+import tempfile
+import os
+import sys
+
+def _getdir(name='scipy_xplt'):
+    try:
+        path = os.path.join(os.environ['HOME'],'.' + name)
+    except KeyError:
+        path = os.path.join(tempfile.gettempdir(),"%s"%weave.catalog.whoami(),
+                            name)
+    if not os.path.exists(path):
+        weave.catalog.create_dir(path)
+        os.chmod(path,0700)
+    if not weave.catalog.is_writable(path):
+        print "warning: default directory is not write accessible."
+        print "default:", path
+    return path
+
+_user_path = _getdir()
+
 try:
     import Scientific.Statistics.Histogram
     SSH = Scientific.Statistics.Histogram
@@ -597,21 +620,25 @@ def list_palettes():
             else:
                 print line[1:-1]
             k = k + 1
+
+            
+
                          
 def change_palette(pal):
     if pal is not None:
         if isinstance(pal, types.StringType):
             try:
                 gist.palette('%s.gp' % pal)
-            except IOError:
+            except gist.error:
                 if len(pal) > 3 and pal[-2:] == 'gp':
                     gist.palette(pal)
                 else:
-                    raise ValueError, "Palette %d not found."
+                    raise ValueError, "Palette %s not found." % pal
         else:
             data = Numeric.asarray(pal)
-            write_palette('/tmp/_temp.gp',data)
-            gist.palette('/tmp/_temp.gp')
+            filename = os.path.join(_user_path,'_temp.gp')
+            write_palette(filename,data)
+            gist.palette(filename)
 
 def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     """Plot an image of a matrix.
@@ -685,7 +712,7 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
     
     if _style is not None:
         if _style == "default":
-            _style='/tmp/image.gs'
+            _style=os.path.join(_user_path,'image.gs')
             system = write_style.getsys(hticpos='below',vticpos='left',frame=1,
                                         color=color)
             fid = open(_style,'w')
@@ -727,7 +754,7 @@ def setdpi(num):
     else:
         raise ValueError, "DPI must be 75 or 100"
 
-def figure(n=None,style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618):
+def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618):
     global _figures
     if (aspect < 0.1) or (aspect > 10):
         aspect = 1.618
@@ -893,7 +920,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
                 _add_color(systems[-1],color,frame=frame)
             if ticks != 1:
                 _remove_ticks(systems[-1])
-    _current_style='/tmp/subplot%s.gs' % win
+    _current_style=os.path.join(_user_path,"subplot%s.gs" % win)
     fid = open(_current_style,'w')
     fid.write(write_style.style2string(systems,landscape=land))
     fid.close()
@@ -931,7 +958,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
     gist.animate(0)
     if _style is not None:
         if _style == 'default':
-            _style='/tmp/colorbar.gs'
+            _style=os.path.join(_user_path,"colorbar.gs")
             system = write_style.getsys(hticpos='below',vticpos='left',frame=1,color=color)
             fid = open(_style,'w')
             fid.write(write_style.style2string(system))
@@ -1146,10 +1173,11 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         _add_color(system, _colornum[color])
     systems.append(system)
 
-    write_style.writestyle("/tmp/two-plane.gs",systems)
+    the_style = os.path.join(_user_path,"two-plane.gs")
+    write_style.writestyle(the_style,systems)
 
-    gist.window(style='/tmp/two-plane.gs')
-    _current_style ='/tmp/two-plane.gs'
+    gist.window(style=the_style)
+    _current_style = the_style
     change_palette(palette)
     gist.plsys(1)
     if medfilt > 1:
