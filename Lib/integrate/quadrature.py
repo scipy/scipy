@@ -2,7 +2,7 @@
 
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb']
 
-from scipy.special.orthogonal import P_roots
+from scipy.special.orthogonal import p_roots
 from Numeric import sum, asarray
 import Numeric
 import scipy
@@ -27,7 +27,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     val -- Gaussian quadrature approximation to the integral.
     
     """
-    [x,w] = P_roots(n)
+    [x,w] = p_roots(n)
     ainf, binf = map(scipy.isinf,(a,b))    
     if ainf or binf:
         raise ValueError, "Gaussian quadrature is only available for finite limits."
