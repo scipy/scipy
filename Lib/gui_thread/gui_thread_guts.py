@@ -47,6 +47,7 @@ if sys.platform != 'win32':
         sys.stdout.flush()
     del _in_thread
 else:
+    print_import = 0 
     if not sys.modules.has_key('wxPython'):
         print_import = 1
     from wxPython.wx import *
