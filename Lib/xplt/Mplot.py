@@ -1004,7 +1004,7 @@ def axes(type='b|'):
     y0 = [0,0]
     x1 = [0,0]
     y1 = [vals[2], vals[3]]
-    xplt.plot(x0,y0,type,x1,y1,type,hold=1)
+    plot(x0,y0,type,x1,y1,type,hold=1)
     
 
 def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'):
