@@ -1,7 +1,7 @@
 # Functions to implement several important functions for 
 #   various Continous and Discrete Probability Distributions
 #
-# Author:  Travis Oliphant  2002
+# Author:  Travis Oliphant  2002-2003
 # 
 
 from __future__ import nested_scopes
@@ -195,7 +195,7 @@ class rv_frozen:
 ##   _argcheck
 
 ##   Correct, but potentially slow defaults exist for the remaining
-##       methods but for speed and/or accuracy you can over-ride
+##       methods but for speed and/or accuracy you can over-rxide
 ##
 ##     _cdf, _ppf, _rvs, _isf, _sf
 ##
@@ -240,7 +240,7 @@ def argsreduce(cond, *args):
     return newargs    
 
 class rv_continuous:
-    """A generic continuous random variable object.
+    """A Generic continuous random variable.
 
     Continuous random variables are defined from a standard form chosen
     for simplicity of representation.  The standard form may require
@@ -280,7 +280,7 @@ class rv_continuous:
         - frozen RV object with the same methods but holding the
             given shape, location, and scale fixed
     """
-    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None, shapes=None, extradoc=None):
+    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None, longname=None, shapes=None, extradoc=None):
         if badvalue is None:
             badvalue = nan
         self.badvalue = badvalue
@@ -312,9 +312,14 @@ class rv_continuous:
         numargs2 = len(pdf_signature[0]) - 2
         self.numargs = max(numargs1, numargs2)
 
+        if longname is None:
+            if name[0] in ['aeiouAEIOU']: hstr = "An "
+            else: hstr = "A "
+            longname = hstr + name
         if self.__doc__ is None:
             self.__doc__ = rv_continuous.__doc__
         if self.__doc__ is not None:
+            self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
                 self.__doc__ = self.__doc__.replace("generic",name)
             if shapes is None:
@@ -758,7 +763,6 @@ class rv_continuous:
         return rv_frozen(self,*args,**kwds)
                 
     def __call__(self, *args, **kwds):
-        raise ValueError
         return self.freeze(*args, **kwds)
 
 
@@ -772,14 +776,24 @@ class ksone_gen(rv_continuous):
         return 1.0-special.smirnov(n,x)
     def _ppf(self,q,n):
         return special.smirnovi(n,1.0-q)
-ksone = ksone_gen(a=0.0,name='ksone')
+ksone = ksone_gen(a=0.0,name='ksone', longname="Kolmogorov-Smirnov "\
+                  "A one-sided test statistic.", shapes="n",
+                  extradoc="""
+
+General Kolmogorov-Smirnov one-sided test.
+"""
+                  )
 
 class kstwobign_gen(rv_continuous):
     def _cdf(self,x):
         return 1.0-special.kolmogorov(x)
     def _ppf(self,q):
         return special.kolmogi(1.0-q)
-kstwobign = kstwobign_gen(a=0.0,name='Kolmogorov-Smirnov two-sided large N statistic')
+kstwobign = kstwobign_gen(a=0.0,name='kstwobign', longname='Kolmogorov-Smirnov two-sided large N statistic', extradoc="""
+
+Kolmogorov-Smirnov  two-sided large N stiatistics
+"""
+                          )
 
 
 ## Normal distribution
@@ -796,7 +810,7 @@ class norm_gen(rv_continuous):
         return special.ndtri(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
-norm = norm_gen(name='norm',extradoc="""
+norm = norm_gen(name='norm',longname='A normal',extradoc="""
 
 Normal distribution
 
@@ -831,7 +845,7 @@ class anglit_gen(rv_continuous):
         return (arcsin(sqrt(q))-pi/4)
     def _stats(self):
         return 0.0, pi*pi/16-0.5, 0.0, -2*(pi**4 - 96)/(pi*pi-8)**2
-anglit = anglit_gen(a=-pi/4,b=pi/4,name='anglit',extradoc="""
+anglit = anglit_gen(a=-pi/4,b=pi/4,name='anglit', extradoc="""
 
 Anglit distribution
 
@@ -941,7 +955,8 @@ class bradford_gen(rv_continuous):
             g2 /= 3*c*(c*(k-2)+2*k)**2
         return mu, mu2, g1, g2
 
-bradford = bradford_gen(a=0.0, b=1.0, name='bradford', shapes='c', extradoc="""
+bradford = bradford_gen(a=0.0, b=1.0, name='bradford', longname="A Bradford",
+                        shapes='c', extradoc="""
 
 Bradford distribution
 """)
@@ -979,7 +994,8 @@ class burr_gen(rv_continuous):
             g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
             g2 -= 3*g1c**4 * g1cd**4 -4*gd**2*g3c*g1c*g1cd*g3cd
         return mu, mu2, g1, g2
-burr = burr_gen(a=0.0, name='burr', shapes="c,d", extradoc="""
+burr = burr_gen(a=0.0, name='burr', longname="Burr",
+                shapes="c,d", extradoc="""
 
 Burr distribution
 """)
@@ -996,10 +1012,12 @@ class fisk_gen(burr_gen):
         return burr_gen._ppf(self, x, c, 1.0)
     def _stats(self, x, c):
         return burr_gen._stats(self, x, c, 1.0)
-fisk = fisk_gen(a=0.0, name='fink', shapes='c', extradoc="""
+fisk = fisk_gen(a=0.0, name='fink', longname="A funk",
+                shapes='c', extradoc="""
 
 Fink distribution.
-""")
+"""
+                )
 
 ## Cauchy
 
@@ -1018,7 +1036,11 @@ class cauchy_gen(rv_continuous):
         return tan(pi/2.0-pi*q)
     def _stats(self):
         return scipy.inf, scipy.inf, scipy.nan, scipy.nan
-cauchy = cauchy_gen()
+cauchy = cauchy_gen(name='cauchy',longname='Cauchy',extradoc="""
+
+Cauchy distribution
+"""
+                    )
 
 ## Chi
 ##   (positive square-root of chi-square)
@@ -1042,7 +1064,11 @@ class chi_gen(rv_continuous):
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
         g2 /= arr(mu2**2.0)
         return mu, mu2, g1, g2
-chi = chi_gen(a=0.0)
+chi = chi_gen(a=0.0,name='chi',shapes='df',extradoc="""
+
+Chi distribution
+"""
+              )
     
 
 ## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
@@ -1067,7 +1093,12 @@ class chi2_gen(rv_continuous):
         g1 = 2*sqrt(2.0/df)
         g2 = 12.0/df
         return mu, mu2, g1, g2
-chi2 = chi2_gen(a=0.0)
+chi2 = chi2_gen(a=0.0,name='chi2',longname='A chi-squared',shapes='df',
+                extradoc="""
+
+Chi-squared distribution
+"""
+                )
 
 ## Cosine (Approximation to the Normal)
 class cosine_gen(rv_continuous):
@@ -1077,7 +1108,10 @@ class cosine_gen(rv_continuous):
         return 1.0/2/pi*(pi + x + sin(x))
     def _stats(self):
         return 0.0, pi*pi/3.0-2.0, 0.0, -6.0*(pi**4-90)/(5.0*(pi*pi-6)**2)
-cosine = cosine_gen(a=-pi,b=pi)
+cosine = cosine_gen(a=-pi,b=pi,name='cosine',extradoc="""
+
+Cosine distribution (Approximation to the normal)
+""")
 
 ## Double Gamma distribution
 class dgamma_gen(rv_continuous):
@@ -1099,7 +1133,12 @@ class dgamma_gen(rv_continuous):
     def _stats(self, a):
         mu2 = a*(a+1.0)
         return 0.0, mu2, 0.0, (a+2.0)*(a+3.0)/mu2-3.0
-dgamma = dgamma_gen()
+dgamma = dgamma_gen(name='dgamma',longname="A double gamma",
+                    shapes='a',extradoc="""
+
+Double gamma distribution
+"""
+                    )
 
 ## Double Weibull distribution
 ##
@@ -1121,7 +1160,12 @@ class dweibull_gen(rv_continuous):
     def _stats(self, c):
         var = gam(1+2.0/c)
         return 0.0, var, 0.0, gam(1+4.0/c)/var
-dweibull = dweibull_gen()
+dweibull = dweibull_gen(name='dweibull',longname="A double Weibull",
+                        shapes='c',extradoc="""
+
+Double Weibull distribution
+"""
+                        )
 
 ## ERLANG
 ##
@@ -1144,7 +1188,12 @@ class erlang_gen(rv_continuous):
     def _stats(self, n):
         n = n*1.0
         return n, n, 2/sqrt(n), 6/n
-erlang = erlang_gen(a=0.0)
+erlang = erlang_gen(a=0.0,name='erlang',longname='An Erlang',
+                    shapes='n',extradoc="""
+
+Erlang distribution (Gamma with integer shape parameter)
+"""
+                    )
        
 ## Exponential (gamma distributed with a=1.0, loc=loc and scale=scale)
 ## scale == 1.0 / lambda
@@ -1160,7 +1209,12 @@ class expon_gen(rv_continuous):
         return -log(1.0-q)
     def _stats(self):
         return 1.0, 1.0, 2.0, 6.0
-expon = expon_gen(a=0.0,name='exponential')
+expon = expon_gen(a=0.0,name='expon',longname="An exponential",
+                  extradoc="""
+
+Exponential distribution
+"""
+                  )
 
 
 ## Exponentiated Weibull
@@ -1173,7 +1227,13 @@ class exponweib_gen(rv_continuous):
         return arr((1-exc)**a)
     def _ppf(self, q, a, c):
         return (-log(1-q**(1.0/a)))**arr(1.0/c)
-exponweib = exponweib_gen(a=0.0)
+exponweib = exponweib_gen(a=0.0,name='exponweib',
+                          longname="An exponentiated Weibull",
+                          shapes="a,c",extradoc="""
+
+Exponentiated Weibull distribution                          
+"""
+                          )
                    
 ## Exponential Power
 
@@ -1187,7 +1247,12 @@ class exponpow_gen(rv_continuous):
         return 1.0-exp(1-exp(xb))
     def _ppf(self, q, b):
         return pow(log(1.0-log(1.0-q)), 1.0/b)
-exponpow = exponpow_gen(a=0.0)     
+exponpow = exponpow_gen(a=0.0,name='exponpow',longname="An exponential power",
+                        shapes='b',extradoc="""
+
+Exponential Power distribution
+"""
+                        )
 
 ## Faigue-Life (Birnbaum-Sanders)
 class fatiguelife_gen(rv_continuous):
@@ -1214,7 +1279,13 @@ class fatiguelife_gen(rv_continuous):
         g1 = 4*c*sqrt(11*c2+6.0)/den**1.5
         g2 = 6*c2*(93*c2+41.0) / den**2.0
         return mu, mu2, g1, g2
-fatiguelife = fatiguelife_gen(a=0.0)
+fatiguelife = fatiguelife_gen(a=0.0,name='fatiguelife',
+                              longname="A fatigue-life (Birnbaum-Sanders)",
+                              shapes='c',extradoc="""
+
+Fatigue-life (Birnbaum-Sanders) distribution
+"""
+                              )
 
 ## Folded Cauchy
 
@@ -1227,7 +1298,13 @@ class foldcauchy_gen(rv_continuous):
         return 1.0/pi*(arctan(x-c) + arctan(x+c))
     def _stats(self, x, c):
         return scipy.inf, scipy.inf, scipy.nan, scipy.nan
-foldcauchy = foldcauchy_gen(a=0.0)
+foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy',
+                            longname = "A folded Cauchy",
+                            shapes='c',extradoc="""
+
+A folded Cauchy distributions
+"""
+                            )
         
 ## F
 
@@ -1259,7 +1336,12 @@ class f_gen(rv_continuous):
         g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
         g2 = where(v2 > 8, g2, scipy.nan)
         return mu, mu2, g1, g2
-f = f_gen(a=0.0)
+f = f_gen(a=0.0,name='f',longname='An F',shapes="dfn,dfd",
+          extradoc="""
+
+F distribution
+"""
+          )
 
 ## Folded Normal  
 ##   abs(Z) where (Z is normal with mu=L and std=S so that c=abs(L)/S)
@@ -1290,8 +1372,12 @@ class foldnorm_gen(rv_continuous):
         g2 -= 4*exp(-c2/2.0)*mu*(sqrt(2.0/pi)*(c2+2)+c*(c2+3)*exp(c2/2.0)*fac)
         g2 /= mu2**2.0
         return mu, mu2, g1, g2
-foldnorm = foldnorm_gen(a=0.0)
+foldnorm = foldnorm_gen(a=0.0,name='foldnorm',longname='A folded normal',
+                        shapes='c',extradoc="""
 
+Folded normal distribution
+"""
+                        )
 
 ## Extreme Value Type II or Frechet
 ## (defined in Regress+ documentation as Extreme LB) as
@@ -1306,8 +1392,19 @@ class frechet_r_gen(rv_continuous):
         return pow(-log(1-q),1.0/c)
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
-frechet_r = frechet_r_gen(a=0.0,name='frechet_right')
-weibull_min = frechet_r_gen(a=0.0,name='weibull_minimum')
+frechet_r = frechet_r_gen(a=0.0,name='frechet_r',longname="A Frechet right",
+                          shapes='c',extradoc="""
+
+A Frechet (right) distribution (also called Weibull minimum)
+"""
+                          )
+weibull_min = frechet_r_gen(a=0.0,name='weibull_min',
+                            longname="A Weibull minimum",
+                            shapes='c',extradoc="""
+
+A Weibull minimum distribution
+"""
+                            )
 
 class frechet_l_gen(rv_continuous):
     def _pdf(self, x, c):
@@ -1321,8 +1418,20 @@ class frechet_l_gen(rv_continuous):
         if (int(n) % 2): sgn = -1
         else:            sgn = 1
         return sgn*val
-frechet_l = frechet_l_gen(b=0.0,name='frechet_left')
-weibull_max = frechet_l_gen(b=0.0,name='weibull_maximum')
+frechet_l = frechet_l_gen(b=0.0,name='frechet_l',longname="A Frechet left",
+                          shapes='c',extradoc="""
+
+A Frechet (left) distribution (also called Weibull maximum)
+"""
+                          )
+weibull_max = frechet_l_gen(b=0.0,name='weibull_max',
+                            longname="A Weibull maximum",
+                            shapes='c',extradoc="""
+
+A Weibull maximum distribution
+"""
+                            )
+
 
 ## Generalized Logistic
 ##
@@ -1345,7 +1454,13 @@ class genlogistic_gen(rv_continuous):
         g2 = pi**4/15.0 + 6*zeta(4,c)
         g2 /= mu2**2.0
         return mu, mu2, g1, g2
-genlogistic = genlogistic_gen()
+genlogistic = genlogistic_gen(name='genlogistic',
+                              longname="A generalized logistic",
+                              shapes='c',extradoc="""
+
+Generalized logistic distribution
+"""
+                              )
 
 ## Generalized Pareto
 class genpareto_gen(rv_continuous):
@@ -1366,7 +1481,13 @@ class genpareto_gen(rv_continuous):
         k = arange(0,n+1)
         val = (-1.0/c)**n * sum(scipy.comb(n,k)*(-1)**k / (1.0-c*k))
         return where(c*n < 1, val, scipy.inf)
-genpareto = genpareto_gen()
+genpareto = genpareto_gen(name='genpareto',
+                          longname="A generalized Pareto",
+                          shapes='c',extradoc="""
+
+Generalized Pareto distribution
+"""                          
+                          )
 
 ## Generalized Exponential
 
@@ -1375,7 +1496,13 @@ class genexpon_gen(rv_continuous):
         return (a+b*(1-exp(-c*x)))*exp((a-b)*x+b*(1-exp(-c*x))/c)
     def _cdf(self, x, a, b, c):
         return 1.0-exp((a-b)*x + b*(1-exp(-c*x))/c)
-genexpon = genexpon_gen(a=0.0)
+genexpon = genexpon_gen(a=0.0,name='genexpon',
+                        longname='A generalized exponential',
+                        shapes='a,b,c',extradoc="""
+
+Generalized exponential distribution
+"""
+                        )
 
 ## Generalized Extreme Value
 ##  c=0 is just gumbel distribution.
@@ -1400,7 +1527,13 @@ class genextreme_gen(rv_continuous):
         k = arange(0,n+1)
         vals = 1.0/c**n * sum(scipy.comb(n,k) * (-1)**k * special.gamma(c*k + 1))
         return where(c*n > -1, vals, scipy.inf)
-genextreme = genextreme_gen()
+genextreme = genextreme_gen(name='genextreme',
+                            longname="A generalized extreme value",
+                            shapes='c',extradoc="""
+
+Generalized extreme value (see gumbel_r for c=0)
+"""
+                            )
         
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 
@@ -1419,7 +1552,12 @@ class gamma_gen(rv_continuous):
         return special.gammaincinv(a,q)
     def _stats(self, a):
         return a, a, 2.0/sqrt(a), 6.0/a
-gamma = gamma_gen(a=0.0,name='gamma')
+gamma = gamma_gen(a=0.0,name='gamma',longname='A gamma',
+                  shapes='a',extradoc="""
+
+Gamma distribution
+"""
+                  )
 
 # Generalized Gamma
 class gengamma_gen(rv_continuous):
@@ -1433,7 +1571,13 @@ class gengamma_gen(rv_continuous):
         return pow(special.gammaincinv(a, special.gamma(a)*q),1.0/c)
     def _munp(self, n, a, c):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
-gengamma = gengamma_gen(a=0.0)
+gengamma = gengamma_gen(a=0.0, name='gengamma',
+                        longname='A generalized gamma',
+                        shapes="a,c", extradoc="""
+
+Generalized gamma distribution
+"""
+                        )
 
 ##  Generalized Half-Logistic
 ##
@@ -1455,7 +1599,13 @@ class genhalflogistic_gen(rv_continuous):
         return (1.0-tmp2) / (1+tmp2)
     def _ppf(self, q, c):
         return 1.0/c*(1-((1.0-q)/(1.0+q))**c)
-genhalflogistic = genhalflogistic_gen(a=0.0)
+genhalflogistic = genhalflogistic_gen(a=0.0, name='genhalflogistic',
+                                      longname="A generalized half-logistic",
+                                      shapes='c',extradoc="""
+
+Generalized half-logistic
+"""
+                                      )
 
 ## Gompertz (Truncated Gumbel)
 ##  Defined for x>=0
@@ -1468,7 +1618,13 @@ class gompertz_gen(rv_continuous):
         return 1.0-exp(-c*(exp(x)-1))
     def _ppf(self, q, c):
         return log(1-1.0/c*log(1-q))
-gompertz = gompertz_gen(a=0.0)
+gompertz = gompertz_gen(a=0.0, name='gompertz',
+                        longname="A Gompertz (truncated Gumbel) distribution",
+                        shapes='c',extradoc="""
+
+Gompertz (truncated Gumbel) distribution
+"""
+                        )
     
 ## Gumbel, Log-Weibull, Fisher-Tippett, Gompertz
 ## The left-skewed gumbel distribution.
@@ -1485,8 +1641,12 @@ class gumbel_r_gen(rv_continuous):
     def _stats(self):
         return _EULER, pi*pi/6.0, \
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
-gumbel_r = gumbel_r_gen()
+gumbel_r = gumbel_r_gen(name='gumbel_r',longname="A (right-skewed) Gumbel",
+                        extradoc="""
 
+Right-skewed Gumbel (Log-Weibull, Fisher-Tippett, Gompertz) distribution
+"""
+                        )
 class gumbel_l_gen(rv_continuous):
     def _pdf(self, x):
         ex = exp(x)
@@ -1498,7 +1658,12 @@ class gumbel_l_gen(rv_continuous):
     def _stats(self):
         return _EULER, pi*pi/6.0, \
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
-gumbel_l = gumbel_l_gen()
+gumbel_l = gumbel_l_gen(name='gumbel_l',longname="A left-skewed Gumbel",
+                        extradoc="""
+
+Left-skewed Gumbel distribution
+"""
+                        )
 
 # Half-Cauchy
 
@@ -1511,7 +1676,12 @@ class halfcauchy_gen(rv_continuous):
         return tan(pi/2*q)
     def _stats(self):
         return scipy.inf, scipy.inf, scipy.nan, scipy.nan
-halfcauchy = halfcauchy_gen(a=0.0)
+halfcauchy = halfcauchy_gen(a=0.0,name='halfcauchy',
+                            longname="A Half-Cauchy",extradoc="""
+
+Half-Cauchy distribution
+"""
+                            )
 
 
 ## Half-Logistic
@@ -1530,7 +1700,13 @@ class halflogistic_gen(rv_continuous):
         if n==3: return 9*_ZETA3
         if n==4: return 7*pi**4 / 15.0
         return 2*(1-pow(2.0,1-n))*special.gamma(n+1)*special.zeta(n,1)
-halflogistic = halflogistic_gen(a=0.0)
+halflogistic = halflogistic_gen(a=0.0, name='halflogistic',
+                                longname="A half-logistic",
+                                extradoc="""
+
+Half-logistic distribution                                
+"""
+                                )
 
 
 ## Half-normal = chi(1, loc, scale)
@@ -1547,7 +1723,13 @@ class halfnorm_gen(rv_continuous):
     def _stats(self):
         return sqrt(2.0/pi), 1-2.0/pi, sqrt(2)*(4-pi)/(pi-2)**1.5, \
                8*(pi-3)/(pi-2)**2
-halfnorm = halfnorm_gen(a=0.0)
+halfnorm = halfnorm_gen(a=0.0, name='halfnorm',
+                        longname="A half-normal",
+                        extradoc="""
+                        
+Half-normal distribution
+"""                        
+                        )
 
 ## Hyperbolic Secant
 
@@ -1560,7 +1742,12 @@ class hypsecant_gen(rv_continuous):
         return log(tan(pi*q/2.0))
     def _stats(self):
         return 0, pi*pi/4, 0, 2
-hypsecant = hypsecant_gen()
+hypsecant = hypsecant_gen(name='hypsecant',longname="A hyperbolic secant",
+                          extradoc="""
+
+Hyperbolic secant distribution
+"""
+                          )
 
 ## Gauss Hypergeometric
 
@@ -1575,7 +1762,14 @@ class gausshyper_gen(rv_continuous):
         num = special.hyp2f1(c,a+n,a+b+n,-z)
         den = special.hyp2f1(c,a,a+b,-z)
         return fac*num / den
-gausshyper = gausshyper_gen(a=0.0, b=1.0)
+gausshyper = gausshyper_gen(a=0.0, b=1.0, name='gausshyper',
+                            longname="A Gauss hypergeometric",
+                            shapes="a,b,c,z",
+                            extradoc="""
+
+Gauss hypergeometric distribution
+"""
+                            )
 
 ##  Inverted Gamma
 #     special case of generalized gamma with c=-1
@@ -1590,7 +1784,12 @@ class invgamma_gen(rv_continuous):
         return pow(special.gammaincinv(a, special.gamma(a)*q),-1.0)
     def _munp(self, n, a):
         return special.gamma(a-n) / special.gamma(a)
-invgamma = invgamma_gen(a=0.0)
+invgamma = invgamma_gen(a=0.0, name='invgamma',longname="An inverted gamma",
+                        shapes='a',extradoc="""
+
+Inverted gamma distribution
+"""
+                        )
 
 
 ## Inverse Normal Distribution
@@ -1608,7 +1807,12 @@ class invnorm_gen(rv_continuous):
         return C1
     def _stats(self, mu):
         return mu, mu**3.0, 3*sqrt(mu), 15*mu
-invnorm = invnorm_gen(a=0.0)
+invnorm = invnorm_gen(a=0.0, name='invnorm', longname="An inverse normal",
+                      shapes="mu",extradoc="""
+
+Inverse normal distribution
+"""
+                      )
 
 ## Inverted Weibull
 
@@ -1622,7 +1826,13 @@ class invweibull_gen(rv_continuous):
         return exp(-xc1)
     def _ppf(self, q, c):
         return pow(-log(q),arr(-1.0/c))
-invweibull = invweibull_gen(rv_continuous)
+invweibull = invweibull_gen(name='invweibull',
+                            longname="An inverted Weibull",
+                            shapes='c',extradoc="""
+
+Inverted Weibull distribution
+"""
+                            )
 
 ## Johnson SB
 
@@ -1636,7 +1846,13 @@ class johnsonsb_gen(rv_continuous):
         return norm.cdf(a+b*log(x/(1.0-x)))
     def _ppf(self, q, a, b):
         return 1.0/(1+exp(-1.0/b*norm.ppf(q)-a))
-johnsonsb = johnsonsb_gen(a=0.0,b=1.0)
+johnsonsb = johnsonsb_gen(a=0.0,b=1.0,name='johnsonb',
+                          longname="A Johnson SB",
+                          shapes="a,b",extradoc="""
+
+Johnson SB distribution
+"""
+                          )
 
 ## Johnson SU
 class johnsonsu_gen(rv_continuous):
@@ -1650,7 +1866,12 @@ class johnsonsu_gen(rv_continuous):
         return norm.cdf(a+b*log(x+sqrt(x*x+1)))
     def _ppf(self, q, a, b):
         return sinh((norm.ppf(q)-a)/b)
-johnsonsu = johnsonsu_gen()
+johnsonsu = johnsonsu_gen(name='johnsonsu',longname="A Johnson SU",
+                          shapes="a,b", extradoc="""
+
+Johnson SB distribution
+"""
+                          )
 
 
 ## Laplace Distribution
@@ -1664,7 +1885,12 @@ class laplace_gen(rv_continuous):
         return where(q > 0.5, -log(2*(1-q)), log(2*q))
     def _stats(self):
         return 0, 2, 0, 3
-laplace = laplace_gen()
+laplace = laplace_gen(name='laplace', longname="A Laplace",
+                      extradoc="""
+
+Laplacian distribution
+"""
+                      )
 
 
 ## Logistic (special case of generalized logistic with c=1)
@@ -1679,8 +1905,13 @@ class logistic_gen(rv_continuous):
     def _ppf(self, q):
         return -log(1.0/q-1)
     def _stats(self):
-        return 0, pi*pi/3.0, 0, 6.0/5.0
-logistic = logistic_gen()
+        return 0, pi*pi/3.0, 0, 6.0/5.0    
+logistic = logistic_gen(name='logistic', longname="A logistic",
+                        extradoc="""
+
+Logistic distribution
+"""
+                        )
 
 
 ## Log Gamma
@@ -1692,7 +1923,12 @@ class loggamma_gen(rv_continuous):
         return special.gammainc(c, exp(x))/ special.gamma(c)
     def _ppf(self, q, c):
         return log(special.gammaincinv(c,q*special.gamma(c)))
-loggamma = loggamma_gen()
+loggamma = loggamma_gen(name='loggamma', longname="A log gamma",
+                        extradoc="""
+
+Log gamma distribution
+"""
+                        )
 
 ## Log-Laplace  (Log Double Exponential)
 ##
@@ -1706,7 +1942,13 @@ class loglaplace_gen(rv_continuous):
         return where(x < 1, 0.5*x**c, 1-0.5*x**(-c))
     def _ppf(self, q, c):
         return where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
-loglaplace = loglaplace_gen(a=0.0)
+loglaplace = loglaplace_gen(a=0.0, name='loglaplace',
+                            longname="A log-Laplace",shapes='c',
+                            extradoc="""
+
+Log-Laplace distribution (Log Double Exponential)
+"""
+                            )
 
 ## Lognormal (Cobb-Douglass)
 ## std is a shape parameter and is the variance of the underlying
@@ -1730,7 +1972,14 @@ class lognorm_gen(rv_continuous):
         g1 = sqrt((p-1))*(2+p)
         g2 = scipy.polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
-lognorm = lognorm_gen(a=0.0)
+lognorm = lognorm_gen(a=0.0, name='lognorm',
+                      longname='A lognormal', shapes='s',
+                      extradoc="""
+
+Lognormal distribution
+"""
+                      )
+
 # Gibrat's distribution is just lognormal with s=1
 
 class gilbrat_gen(lognorm_gen):
@@ -1744,7 +1993,12 @@ class gilbrat_gen(lognorm_gen):
         return lognorm_gen._ppf(self, q, 1.0)
     def _stats(self):
         return lognorm_gen._stats(self, 1.0)
-gilbrat = gilbrat_gen(a=0.0)
+gilbrat = gilbrat_gen(a=0.0, name='gilbrat', longname='A Gilbrat',
+                      extradoc="""
+
+Gilbrat distribution
+"""
+                      )
 
 
 # MAXWELL
@@ -1764,7 +2018,12 @@ class maxwell_gen(rv_continuous):
         val = 3*pi-8
         return 2*sqrt(2.0/pi), 3-8/pi, sqrt(2)*(32-10*pi)/val**1.5, \
                (-12*pi*pi + 160*pi - 384) / val**2.0
-maxwell = maxwell_gen(a=0.0)
+maxwell = maxwell_gen(a=0.0, name='maxwell', longname="A Maxwell",
+                      extradoc="""
+
+Maxwell distribution
+"""
+                      )
 
 # Mielke's Beta-Kappa
 
@@ -1776,7 +2035,12 @@ class mielke_gen(rv_continuous):
     def _ppf(self, q, k, s):
         qsk = pow(q,s*1.0/k)
         return pow(qsk/(1.0-qsk),1.0/s)
-mielke = mielke_gen(a=0.0)
+mielke = mielke_gen(a=0.0, name='mielke', longname="A Mielke's Beta-Kappa",
+                    shapes="k,s", extradoc="""
+
+Mielke's Beta-Kappa distribution
+"""
+                    )
 
 # Nakagami (cf Chi)
 
@@ -1794,7 +2058,12 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
-nakagami = nakagami_gen(a=0.0)
+nakagami = nakagami_gen(a=0.0, name="nakagami", longname="A Nakagami",
+                        shapes='nu', extradoc="""
+
+Nakagami distribution
+"""
+                        )
     
 
 # Non-central chi-squared
@@ -1816,7 +2085,12 @@ class ncx2_gen(rv_continuous):
         val = df + 2.0*nc
         return df + nc, 2*val, sqrt(8)*(val+nc)/val**1.5, \
                12.0*(val+2*nc)/val**2.0
-ncx2 = ncx2_gen(a=0.0)
+ncx2 = ncx2_gen(a=0.0, name='ncx2', longname="A non-central chi-squared",
+                shapes="df,nc", extradoc="""
+
+Non-central chi-squared distribution
+"""
+                )
 
 # Non-central F
 
@@ -1847,7 +2121,12 @@ class ncf_gen(rv_continuous):
                     ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) / \
                     ((dfd-2.0)**2.0 * (dfd-4.0)))
         return mu, mu2, None, None
-ncf = ncf_gen(a=0.0)
+ncf = ncf_gen(a=0.0, name='ncf', longname="A non-central F distribution",
+              shapes="dfn,dfd,nc", extradoc="""
+
+Non-central F distribution
+"""
+              )
 
 ## Student t distribution
 
@@ -1870,7 +2149,13 @@ class t_gen(rv_continuous):
         g1 = where(df > 3, 0.0, scipy.nan)
         g2 = where(df > 4, 6.0/(df-4.0), scipy.nan)
         return 0, mu2, g1, g2
-t = t_gen()
+t = t_gen(name='t',longname="Student's T",
+          shapes="df", extradoc="""
+
+Student's T distribution
+"""
+          )
+
 ## Non-central T distribution
 
 class nct_gen(rv_continuous):
@@ -1922,7 +2207,12 @@ class nct_gen(rv_continuous):
                                  2*(nc*nc+1)*val2)**2
             g2 = g2n / g2d
         return mu, mu2, g1, g2
-nct = nct_gen()
+nct = nct_gen(name="nct", longname="A Noncentral T",
+              shapes="df,nc", extradoc="""
+
+Non-central Student T distribution
+"""
+              )
 
 # Pareto
 
@@ -1959,7 +2249,12 @@ class pareto_gen(rv_continuous):
                    polyval([1.0,-7.0,12.0,0.0],bt)
             insert(g2, mask, vals)
         return mu, mu2, g1, g2
-pareto = pareto_gen(a=1.0)
+pareto = pareto_gen(a=1.0, name="pareto", longname="A Pareto",
+                    shapes="b", extradoc="""
+
+Pareto distribution
+"""
+                    )
 
 # LOMAX (Pareto of the second kind.)
 #  Special case of Pareto of the first kind (location=-1.0)
@@ -1974,7 +2269,13 @@ class lomax_gen(rv_continuous):
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')
         return mu, mu2, g1, g2
-lomax = lomax_gen(a=0.0)
+lomax = lomax_gen(a=0.0, name="lomax",
+                  longname="A Lomax (Pareto of the second kind)",
+                  shapes="c", extradoc="""
+
+Lomax (Pareto of the second kind) distribution
+"""
+                  )
 ## Power-function distribution
 ##   Special case of beta dist. with d =1.0
 
@@ -1989,8 +2290,14 @@ class powerlaw_gen(rv_continuous):
         return a/(a+1.0), a*(a+2.0)/(a+1.0)**2, \
                2*(1.0-a)*sqrt((a+2.0)/(a*(a+3.0))), \
                6*polyval([1,-1,-6,2],a)/(a*(a+3.0)*(a+4))
-powerlaw = powerlaw_gen(a=0.0, b=1.0)
-                                        
+powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw",
+                        longname="A power-function",
+                        shapes="a", extradoc="""
+
+Power-function distribution
+"""
+                        )
+
 # Power log normal
 
 class powerlognorm_gen(rv_continuous):
@@ -2000,7 +2307,13 @@ class powerlognorm_gen(rv_continuous):
         return 1.0 - pow(norm.cdf(-log(x)/s),c*1.0)
     def _ppf(self, q, c, s):
         return exp(-s*norm.ppf(pow(1.0-q,1.0/c)))
-powerlognorm = powerlognorm_gen(a=0.0)
+powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm",
+                                longname="A power log-normal",
+                                shapes="c,s", extradoc="""
+
+Power log-normal distribution
+"""
+                                )
 
 # Power Normal
 
@@ -2012,7 +2325,12 @@ class powernorm_gen(norm_gen):
         return 1.0-norm_gen._cdf(self, -x)**(c*1.0)
     def _ppf(self, q, c):
         return -norm_gen._ppf(self, pow(1.0-q,1.0/c))
-powernorm = powernorm_gen()
+powernorm = powernorm_gen(name='powernorm', longname="A power normal",
+                          shapes="c", extradoc="""
+
+Power normal distribution
+"""
+                          )
 
 # R-distribution ( a general-purpose distribution with a
 #  variety of shapes.
@@ -2025,7 +2343,12 @@ class rdist_gen(rv_continuous):
                special.hyp2f1(0.5,1.0-c/2.0,1.5,x*x)
     def _munp(self, c):
         return (1-(n % 2))*special.beta((n+1.0)/2,c/2.0)
-rdist = rdist_gen(a=-1.0,b=1.0)
+rdist = rdist_gen(a=-1.0,b=1.0, name="rdist", longname="An R-distributed",
+                  shapes="c", extradoc="""
+
+R-distribution
+"""
+                  )
 
 # Rayleigh distribution (this is chi with df=2 and loc=0.0)
 # scale is the mode.
@@ -2043,8 +2366,13 @@ class rayleigh_gen(rv_continuous):
         val = 4-pi
         return pi/2, val/2, 2*(pi-3)*sqrt(pi)/val**1.5, \
                6*pi/val-16/val**2
-rayleigh = rayleigh_gen(a=0.0)
+rayleigh = rayleigh_gen(a=0.0, name="rayleigh",
+                        longname="A Rayleigh",
+                        extradoc="""
 
+Rayleigh distribution
+"""
+                        )
 
 # Reciprocal Distribution
 class reciprocal_gen(rv_continuous):
@@ -2062,7 +2390,13 @@ class reciprocal_gen(rv_continuous):
         return a*pow(b*1.0/a,q)
     def _munp(self, n, a, b):
         return 1.0/self.d / n * (pow(b*1.0,n) - pow(a*1.0,n))
-reciprocal = reciprocal_gen()
+reciprocal = reciprocal_gen(name="reciprocal",
+                            longname="A reciprocal",
+                            shapes="a,b", extradoc="""
+
+Reciprocal distribution
+"""
+                            )
 
 # Rice distribution
 
@@ -2075,8 +2409,12 @@ class rice_gen(rv_continuous):
         b2 = b*b/2.0
         return 2.0**(nd2)*exp(-b2)*special.gamma(n1) * \
                special.hyp1f1(n1,1,b2)
-rice = rice_gen(a=0.0) 
+rice = rice_gen(a=0.0, name="rice", longname="A Rice",
+                shapes="b", extradoc="""
 
+Rician distribution
+"""
+                )
 
 # Reciprocal Inverse Gaussian
 
@@ -2088,7 +2426,13 @@ class recipinvgauss_gen(rv_continuous):
         trm2 = 1.0/mu + x
         isqx = 1.0/sqrt(x)
         return 1.0-norm.cdf(isqx*trm1)-exp(2.0/mu)*norm.cdf(-isqx*trm2)
-recipinvgauss = recipinvgauss_gen(a=0.0)
+recipinvgauss = recipinvgauss_gen(a=0.0, name='recipinvgauss',
+                                  longname="A reciprocal inverse Gaussian",
+                                  shapes="mu", extradoc="""
+
+Reciprocal inverse Gaussian
+"""
+                                  )
 
 # Semicircular
 
@@ -2099,8 +2443,13 @@ class semicircular_gen(rv_continuous):
         return 0.5+1.0/pi*(x*sqrt(1-x*x) + arcsin(x))
     def _stats(self, x):
         return 0, 0.25, 0, -1.0
-semicircular = semicircular_gen(a=-1.0,b=1.0)
+semicircular = semicircular_gen(a=-1.0,b=1.0, name="semicircular",
+                                longname="A semicircular",
+                                extradoc="""
 
+Semicircular distribution
+"""
+                                )
 
 # Triangular
 # up-sloping line from loc to (loc + c*scale) and then downsloping line from
@@ -2128,7 +2477,19 @@ class triang_gen(rv_continuous):
     def _stats(self, c):
         return (c+1.0)/3.0, (1.0-c+c*c)/18, sqrt(2)*(2*c-1)*(c+1)*(c-2) / \
                (5*(1.0-c+c*c)**1.5), -3.0/5.0
-triang = triang_gen(a=0.0, b=1.0)
+triang = triang_gen(a=0.0, b=1.0, name="triang", longname="A Triangular",
+                    shapes="c", extradoc="""
+
+Triangular distribution
+
+    up-sloping line from loc to (loc + c*scale) and then downsloping
+    for (loc + c*scale) to (loc+scale).
+
+    - standard form is in the range [0,1] with c the mode.
+    - location parameter shifts the start to loc
+    - scale changes the width from 1 to scale
+"""
+                    )
 
 # Truncated Exponential
 
@@ -2144,7 +2505,13 @@ class truncexpon_gen(rv_continuous):
         return -log(1-q+q*exp(-b))
     def _munp(self, n, b):
         return gam(n+1)-special.gammainc(1+n,b)
-truncexpon = truncexpon_gen(a=0.0)
+truncexpon = truncexpon_gen(a=0.0, name='truncexpon',
+                            longname="A truncated exponential",
+                            shapes="b", extradoc="""
+
+Truncated exponential distribution
+"""
+                            )
 
 # Truncated Normal
 
@@ -2168,7 +2535,12 @@ class truncnorm_gen(norm_gen):
         mu = (pB - pA) / d
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
-truncnorm = truncnorm_gen()
+truncnorm = truncnorm_gen(name='truncnorm', longname="A truncated normal",
+                          shapes="a,b", extradoc="""
+
+Truncated Normal distribution
+"""
+                          )
 
 # Tukey-Lambda
 # A flexible distribution ranging from Cauchy (lam=-1)
@@ -2192,7 +2564,18 @@ class tukeylambda_gen(rv_continuous):
         return where((lam == 0)&(q==q), vals2, vals1)
     def _stats(self, lam):
         return 0, None, 0, None
-tukeylambda = tukeylambda_gen()
+tukeylambda = tukeylambda_gen(name='tukeylambda', longname="A Tukey-Lambda",
+                              shapes="lam", extradoc="""
+
+Tukey-Lambda distribution
+
+   A flexible distribution ranging from Cauchy (lam=-1)
+   to logistic (lam=0.0)
+   to approx Normal (lam=0.14)
+   to u-shape (lam = 0.5)
+   to Uniform from -1 to 1 (lam = 1)
+"""
+                              )
 
 
 # Uniform
@@ -2209,7 +2592,14 @@ class uniform_gen(rv_continuous):
         return q
     def _stats(self):
         return 0.5, 1.0/12, 0, -1.2
-uniform = uniform_gen(a=0.0,b=1.0)
+uniform = uniform_gen(a=0.0,b=1.0, name='uniform', longname="A uniform",
+                      extradoc="""
+
+Uniform distribution
+
+   constant between loc and loc+shape
+"""
+                      )
 
 # Von-Mises
 
@@ -2262,7 +2652,16 @@ class vonmises_gen(rv_continuous):
         return vals + 0.5
     def _stats(self, b):
         return 0, None, 0, None
-vonmises = vonmises_gen()
+vonmises = vonmises_gen(name='vonmises', longname="A Von Mises",
+                        shapes="b", extradoc="""
+
+Von Mises distribution
+
+  if x is not in range or loc is not in range it assumes they are angles
+     and converts them to [-pi, pi] equivalents.
+
+"""
+                        )
 
 
 ## Wald distribution (Inverse Normal with shape parameter mu=1.0)
@@ -2276,7 +2675,12 @@ class wald_gen(invnorm_gen):
         return invnorm.cdf(x,1,0)
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
-wald = wald_gen(a=0.0)
+wald = wald_gen(a=0.0, name="wald", longname="A Wald",
+                extradoc="""
+
+Wald distribution
+"""
+                )
     
 ## Weibull
 ## See Frechet
@@ -2303,8 +2707,13 @@ class wrapcauchy_gen(rv_continuous):
             op = 1.0/pi*arctan(val*yp)
             insert(output, x<pi, op)
         return output    
-wrapcauchy = wrapcauchy_gen(a=0.0,b=2*pi)
+wrapcauchy = wrapcauchy_gen(a=0.0,b=2*pi, name='wrapcauchy',
+                            longname="A wrapped Cauchy",
+                            shapes="c", extradoc="""
 
+Wrapped Cauchy distribution
+"""
+                            )
 
 ### DISCRETE DISTRIBUTIONS
 ###
@@ -2427,23 +2836,23 @@ def make_dict(keys, values):
         d[key] = value
     return d
 
-# Must over-ride one of _pdf or _cdf or pass in
+# Must over-ride one of _pmf or _cdf or pass in
 #  x_k, p(x_k) lists in initialization
 
 class rv_discrete:
-    """A generic discrete random variable object.
+    """A generic discrete random variable.
 
     Discrete random variables are defined from a standard form.
     The standard form may require some other parameters to complete
     its specification.  The distribution methods also take an optional location
-    parameter using loc= keyword.  The default is loc=0.  The calling form of the
-    methods follow:
+    parameter using loc= keyword.  The default is loc=0.  The calling form
+    of the methods follow:
 
     generic.rvs(<shape(s)>,loc=0)
         - random variates 
 
-    generic.pdf(x,<shape(s)>,loc=0)
-        - probability density function
+    generic.pmf(x,<shape(s)>,loc=0)
+        - probability mass function
 
     generic.cdf(x,<shape(s)>,loc=0)
         - cumulative density function
@@ -2466,7 +2875,7 @@ class rv_discrete:
 
     myrv = generic(<shape(s)>,loc=0)
         - frozen RV object with the same methods but holding the
-            given shape, location, and scale fixed
+            given shape and location fixed.
 
     You can construct an aribtrary discrete rv where P{X=xk} = pk
     by passing to the rv_discrete initialization method (through the values=
@@ -2474,7 +2883,8 @@ class rv_discrete:
     X (xk) that occur with nonzero probability (pk).  
     """
     def __init__(self, a=0, b=scipy.inf, name=None, badvalue=None,
-                 moment_tol=1e-8,values=None,inc=1,shapes=None,extradoc=None):
+                 moment_tol=1e-8,values=None,inc=1,longname=None,
+                 shapes=None, extradoc=None):
         if badvalue is None:
             badvalue = scipy.nan
         self.badvalue = badvalue
@@ -2501,7 +2911,7 @@ class rv_discrete:
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = new.instancemethod(sgf(_drv_ppf), self, rv_discrete)
-            self._pdf = new.instancemethod(sgf(_drv_pdf), self, rv_discrete)
+            self._pmf = new.instancemethod(sgf(_drv_pmf), self, rv_discrete)
             self._cdf = new.instancemethod(sgf(_drv_cdf), self, rv_discrete)
             self._nonzero = new.instancemethod(_drv_nonzero, self, rv_discrete)
             self.generic_moment = new.instancemethod(_drv_moment,
@@ -2516,13 +2926,18 @@ class rv_discrete:
                                                      self, rv_discrete)
             cdf_signature = inspect.getargspec(self._cdf.im_func)
             numargs1 = len(cdf_signature[0]) - 2
-            pdf_signature = inspect.getargspec(self._pdf.im_func)
-            numargs2 = len(pdf_signature[0]) - 2
+            pmf_signature = inspect.getargspec(self._pmf.im_func)
+            numargs2 = len(pmf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
 
+        if longname is None:
+            if name[0] in ['aeiouAEIOU']: hstr = "An "
+            else: hstr = "A "
+            longname = hstr + name
         if self.__doc__ is None:
             self.__doc__ = rv_discrete.__doc__
         if self.__doc__ is not None:
+            self.__doc__ = self.__doc__.replace("A Generic",longname)
             if name is not None:
                 self.__doc__ = self.__doc__.replace("generic",name)
             if shapes is None:
@@ -2556,12 +2971,12 @@ class rv_discrete:
             cond &= (arg > 0)
         return cond
 
-    def _pdf(self, k, *args):
+    def _pmf(self, k, *args):
         return self.cdf(k,*args) - self.cdf(k-1,*args)
 
     def _cdfsingle(self, k, *args):
         m = arange(int(self.a),k+1)
-        return sum(self._pdf(m,*args))
+        return sum(self._pmf(m,*args))
 
     def _cdf(self, x, *args):
         k = floor(x)
@@ -2605,7 +3020,18 @@ class rv_discrete:
                 vals = vals.astype(Num.Int)
         return vals + loc
 
-    def pdf(self, k,*args, **kwds):
+    def pmf(self, k,*args, **kwds):
+        """Probability mass function at k of the given RV.
+
+        *args
+        =====
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        """
         loc = kwds.get('loc')
         args, loc  = self.__fix_loc(args, loc)
         k,loc = map(arr,(k,loc))
@@ -2617,10 +3043,21 @@ class rv_discrete:
         output = zeros(shape(cond),'d')
         insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
         goodargs = argsreduce(cond, *((k,)+args))
-        insert(output,cond,self._pdf(*goodargs))
+        insert(output,cond,self._pmf(*goodargs))
         return output
         
     def cdf(self, k, *args, **kwds):
+        """Cumulative distribution function at k of the given RV
+
+        *args
+        =====
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        """        
         loc = kwds.get('loc')
         args, loc = self.__fix_loc(args, loc)
         k,loc = map(arr,(k,loc))
@@ -2638,6 +3075,17 @@ class rv_discrete:
         return output
 
     def sf(self,k,*args,**kwds):
+        """Survival function (1-cdf) at k of the given RV
+
+        *args
+        =====
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        """        
         loc= kwds.get('loc')
         args, loc = self.__fix_loc(args, loc)
         k,loc = map(arr,(k,loc))
@@ -2655,6 +3103,17 @@ class rv_discrete:
         return output
 
     def ppf(self,q,*args,**kwds):
+        """Percent point function (inverse of cdf) at q of the given RV
+
+        *args
+        =====
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        """                
         loc = kwds.get('loc')
         args, loc = self.__fix_loc(args, loc)
         q,loc  = map(arr,(q,loc))
@@ -2672,6 +3131,18 @@ class rv_discrete:
         return output
         
     def isf(self,q,*args,**kwds):
+        """Inverse survival function (1-sf) at q of the given RV
+
+        *args
+        =====
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        """        
+
         loc = kwds.get('loc')
         args, loc = self.__fix_loc(args, loc)
         q,loc  = map(arr,(q,loc))
@@ -2689,6 +3160,23 @@ class rv_discrete:
         return output
 
     def stats(self, *args, **kwds):
+        """Some statistics of the given discrete RV
+
+        *args
+        =====
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+
+        **kwds
+        ======
+        loc     - location parameter (default=0)
+        moments - a string composed of letters ['mvsk'] specifying
+                   which moments to compute (default='mv')
+                   'm' = mean,
+                   'v' = variance,
+                   's' = (Fisher's) skew,
+                   'k' = (Fisher's) kurtosis.
+        """        
         loc,moments=map(kwds.get,['loc','moments'])
         N = len(args)
         if N > self.numargs:
@@ -2836,9 +3324,12 @@ class binom_gen(rv_discrete):
         return mu, var, g1, g2
 binom = binom_gen(a=0,name='binom',shapes="n,pr",extradoc="""
 
-Binomial RV:  Counts the number of successes in *n* independent
+Binomial distribution
+
+   Counts the number of successes in *n* independent
    trials when the probability of success each time is *pr*.
 """)
+
 # Bernoulli distribution
 
 class bernoulli_gen(binom_gen):
@@ -2856,7 +3347,9 @@ class bernoulli_gen(binom_gen):
         return binom_gen._stats(self, 1, pr)
 bernoulli = bernoulli_gen(a=0,b=1,name='bernoulli',shapes="pr",extradoc="""
 
-Bernoulli RV: 1 if binary experiment succeeds, 0 otherwise.  Experiment
+Bernoulli distribution
+
+   1 if binary experiment succeeds, 0 otherwise.  Experiment
    succeeds with probabilty *pr*.
 """
 )
@@ -2887,7 +3380,12 @@ class nbinom_gen(rv_discrete):
         g1 = (Q+P)/sqrt(n*P*Q)
         g2 = (1.0 + 6*P*Q) / (n*P*Q)
         return mu, var, g1, g2
-nbinom = nbinom_gen(name='negative binomial')
+nbinom = nbinom_gen(name='nbinom', longname="A negative binomial",
+                    shapes="n,pr", extradoc="""
+
+Negative binomial distribution
+"""
+                    )
 
 ## Geometric distribution
 
@@ -2896,7 +3394,7 @@ class geom_gen(rv_discrete):
         return rv._inst._geom(pr,size=(self._size,))
     def _argcheck(self, pr):
         return (pr<=1) & (pr >= 0)
-    def _pdf(self, k, pr):
+    def _pmf(self, k, pr):
         return (1-pr)**k * pr
     def _cdf(self, x, pr):
         k = floor(x)
@@ -2915,16 +3413,16 @@ class geom_gen(rv_discrete):
         g1 = (2.0-pr) / sqrt(qr)
         g2 = scipy.polyval([1,-6,6],pr)/(1.0-pr)
         return mu, var, g1, g2
-geom = geom_gen(a=1,name='geometric')
+geom = geom_gen(a=1,name='geom', longname="A geometric",
+                shapes="pr", extradoc="""
+
+Geometric distribution
+"""
+                )
 
 ## Hypergeometric distribution
 
 class hypergeom_gen(rv_discrete):
-    """
-       M is total number of objects, n is total number of Type I objects.
-       RV counts number of Type I objects in N drawn without replacement from
-       population.
-    """
     def _rvs(self, M, n, N):
         return rv._inst._hypergeom(M,n,N,size=(self._size,))
     def _argcheck(self, M, n, N):
@@ -2933,7 +3431,7 @@ class hypergeom_gen(rv_discrete):
         self.a = N-(M-n)
         self.b = min(n,N)
         return cond
-    def _pdf(self, k, M, n, N):
+    def _pmf(self, k, M, n, N):
         tot, good = M, n
         comb = scipy.comb
         bad = tot - good
@@ -2956,7 +3454,17 @@ class hypergeom_gen(rv_discrete):
              + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 + \
                              12*m*n2 - 6*n3)
         return mu, var, g1, g2
-hypergeom = hypergeom_gen(name='hypergeometric')
+hypergeom = hypergeom_gen(name='hypergeom',longname="A hypergeometric",
+                          shapes="M,n,N", extradoc="""
+
+Hypergeometric distribution
+
+   Models drawing objects from a bin. 
+   M is total number of objects, n is total number of Type I objects.
+   RV counts number of Type I objects in N drawn without replacement from
+   population.
+"""
+                          )
 
 ## Logarithmic (Log-Series), (Series) distribution
 
@@ -2965,7 +3473,7 @@ class logser_gen(rv_discrete):
         return rv._inst._logser(pr,size=(self._size,))
     def _argcheck(self, pr):
         return (pr > 0) & (pr < 1)
-    def _pdf(self, k, pr):
+    def _pmf(self, k, pr):
         return -pr**k * 1.0 / k / log(1-pr)
     def _stats(self, pr):
         r = log(1-pr)
@@ -2981,14 +3489,19 @@ class logser_gen(rv_discrete):
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
         g2 = mu4 / var**2 - 3.0
         return mu, var, g1, g2
-logser = logser_gen(a=1,name='logarithmic')
+logser = logser_gen(a=1,name='logser', longname='A logarithmic',
+                    shapes='pr', extradoc="""
+
+Logarithmic (Log-Series, Series) distribution
+"""
+                    )
 
 ## Poisson distribution
 
 class poisson_gen(rv_discrete):
     def _rvs(self, mu):
         return rand.poisson(mu, self._size)
-    def _pdf(self, k, mu):
+    def _pmf(self, k, mu):
         Pk = mu**k * exp(-mu) / arr(special.gamma(k+1))
         return Pk
     def _cdf(self, x, mu):
@@ -3006,20 +3519,22 @@ class poisson_gen(rv_discrete):
         g1 = 1.0/arr(sqrt(mu))
         g2 = 1.0 / arr(mu)
         return mu, var, g1, g2
-poisson = poisson_gen(a=0,name='Poisson')
+poisson = poisson_gen(a=0,name="poisson", longname='A Poisson',
+                      shapes="mu", extradoc="""
+
+Poisson distribution
+"""
+                      )
 
 
 ## Discrete Uniform
 
 class randint_gen(rv_discrete):
-    """Random integers >=min and <max. If instance is called random numbers
-    are generated with >=0 and <min if max is None.
-    """
     def _argcheck(self, min, max):
         self.a = min
         self.b = max-1
         return (max > min)
-    def _pdf(self, k, min, max):
+    def _pmf(self, k, min, max):
         fact = 1.0 / (max - min)
         return fact
     def _cdf(self, x, min, max):
@@ -3039,13 +3554,26 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
         return mu, var, g1, g2
     def rvs(self, min, max=None, size=None):
+        """An array of *size* random integers >= min and < max.
+    
+        If max is None, then range is >=0  and < min
+        """
         if max is None:
             max = min
             min = 0
         U = random(size=size)
         val = floor((max-min)*U + min)
         return arr(val).astype(Num.Int)
-randint = randint_gen(name='random integer')
+randint = randint_gen(name='randint',longname='A discrete uniform '\
+                      '(random integer)', shapes="min,max",
+                      extradoc="""
+
+Discrete Uniform
+
+    Random integers >=min and <max.
+"""
+                      )
+
 
 # Zipf distribution
 
@@ -3054,7 +3582,7 @@ class zipf_gen(rv_discrete):
         return rv._inst._Zipf(a, size=(self._size,))
     def _argcheck(self, a):
         return a > 1
-    def _pdf(self, k, a):
+    def _pmf(self, k, a):
         Pk = 1.0 / arr(special.zeta(a,1) * k**a)
         return Pk
     def _munp(self, n, a):
@@ -3074,12 +3602,18 @@ class zipf_gen(rv_discrete):
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
         g2 = mu4 / arr(var**2) - 3.0
         return mu, var, g1, g2
-zipf = zipf_gen(a=1,name='Zipf')
+zipf = zipf_gen(a=1,name='zipf', longname='A Zipf',
+                shapes="a", extradoc="""
+
+Zipf distribution
+"""
+                )
+                
 
 # Discrete Laplacian
 
 class dlaplace_gen(rv_discrete):
-    def _pdf(self, k, a):
+    def _pmf(self, k, a):
         return tanh(a/2.0)*exp(-a*abs(k))
     def _cdf(self, x, a):
         k = floor(x)
@@ -3099,5 +3633,10 @@ class dlaplace_gen(rv_discrete):
         mu2 = 2* (e2a + ea) / (1-ea)**3.0
         mu4 = 2* (e4a + 11*e3a + 11*e2a + ea) / (1-ea)**5.0
         return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
-dlaplace = dlaplace_gen(a=1,name='discrete Laplacian')
+dlaplace = dlaplace_gen(a=1,name='dlaplace', longname='A discrete Laplacian',
+                        shapes="a", extradoc="""
+                        
+Discrete Laplacian distribution. 
+"""
+                        )
 
