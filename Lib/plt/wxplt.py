@@ -6,6 +6,7 @@ import time
 
 from plot_utility import *
 from plot_objects import *
+from lena import lena
 
 def loop():
     global bub
@@ -813,29 +814,7 @@ class plot_frame(wx.wxFrame):
 # global functions
 
 def lena_obj():
-    import cPickle
-    import wxplt, os
-    d,junk = os.path.split(os.path.abspath(wxplt.__file__))
-    fname = os.path.join(d,'lena.dat')
-    f = open(fname,'rb')
-    import cPickle
-    lena = array(cPickle.load(f))
-    f.close()
-    #x_bounds = array((0.,1))
-    #y_bounds = array((0.,1))
-    #return image_object(lena,x_bounds,y_bounds,colormap='grey')
-    return image_object(lena,colormap='grey')
-
-def lena():
-    import cPickle
-    import wxplt, os
-    d,junk = os.path.split(os.path.abspath(wxplt.__file__))
-    fname = os.path.join(d,'lena.dat')
-    f = open(fname,'rb')
-    import cPickle
-    lena = array(cPickle.load(f))
-    f.close()
-    return lena
+    return image_object(lena(),colormap='grey')
 
 def _InitObjects():
     # 100 points sin function, plotted as green circles

@@ -1,14 +1,16 @@
 from scipy_base.fastumath import *
 from scipy import *
-from scipy_base import limits
+from scipy_base import limits, display_test
 import sys
-import gui_thread
-import wxplt
 
-import plot_objects
 
-plot_module = wxplt
-plot_class = gui_thread.register(plot_module.plot_frame)
+
+if not display_test.have_x11() or display_test.try_XOpenDisplay():
+    import wxplt
+    import plot_objects
+    import gui_thread
+    plot_module = wxplt
+    plot_class = gui_thread.register(plot_module.plot_frame)
 
 _figure = []
 _active = None
