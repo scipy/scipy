@@ -25,7 +25,7 @@ fminbound   ---      Bounded minimization for scalar functions.
 import Numeric
 import MLab
 from scipy.handy import r1array
-from Numeric import absolute, sqrt
+from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
 min = MLab.min
@@ -66,7 +66,7 @@ def rosen_hess_p(x,p):
 
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
-         full_output=0, printmessg=1):
+         full_output=0, disp=1):
     """Minimize a function using the simplex algorithm.
 
     Description:
@@ -96,12 +96,14 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       maxiter -- the maximum number of iterations to perform.
       maxfun -- the maximum number of function evaluations.
       full_output -- non-zero if fval and warnflag outputs are desired.
-      printmessg -- non-zero to print convergence messages.
+      disp -- non-zero to print convergence messages.
       
       """
-    x0 = r1array(x0)
-    assert (len(x0.shape)==1)
+    x0 = asarray(x0)
     N = len(x0)
+    rank = len(x0.shape)
+    if not -1 < rank < 2:
+        raise ValueError, "Initial guess must be a scalar or rank-1 sequence."
     if maxiter is None:
         maxiter = N * 200
     if maxfun is None:
@@ -110,7 +112,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     rho = 1; chi = 2; psi = 0.5; sigma = 0.5;
     one2np1 = range(1,N+1)
 
-    sim = Num.zeros((N+1,N),x0.typecode())
+    if rank == 0:
+        sim = Num.zeros((N+1,),x0.typecode())
+    else:        
+        sim = Num.zeros((N+1,N),x0.typecode())
     fsim = Num.zeros((N+1,),'d')
     sim[0] = x0
     fsim[0] = apply(func,(x0,)+args)
@@ -201,15 +206,15 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     if funcalls >= maxfun:
         warnflag = 1
-        if printmessg:
+        if disp:
             print "Warning: Maximum number of function evaluations has "\
                   "been exceeded."
     elif iterations >= maxiter:
         warnflag = 2
-        if printmessg:
+        if disp:
             print "Warning: Maximum number of iterations has been exceeded"
     else:
-        if printmessg:
+        if disp:
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iterations
@@ -352,7 +357,7 @@ def approx_fhess_p(x0,p,fprime,*args):
 
 
 def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
-              full_output=0, printmessg=1):
+              full_output=0, disp=1):
     """Minimize a function using the BFGS algorithm.
 
     Description:
@@ -386,13 +391,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
       maxiter -- the maximum number of iterations.
       full_output -- if non-zero then return fopt, func_calls, grad_calls,
                      and warnflag in addition to xopt.
-      printmessg -- print convergence message if non-zero.                
+      disp -- print convergence message if non-zero.                
       """
     app_fprime = 0
     if fprime is None:
         app_fprime = 1
 
-    x0 = r1array(x0)
+    x0 = asarray(x0)
     if maxiter is None:
         maxiter = len(x0)*200
     func_calls = 0
@@ -436,11 +441,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
         gfk = gfkp1
 
 
-    if printmessg or full_output:
+    if disp or full_output:
         fval = apply(f,(xk,)+args)
     if k >= maxiter:
         warnflag = 1
-        if printmessg:
+        if disp:
             print "Warning: Maximum number of iterations has been exceeded"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
@@ -448,7 +453,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
             print "         Gradient evaluations: %d" % grad_calls
     else:
         warnflag = 0
-        if printmessg:
+        if disp:
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
@@ -462,7 +467,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
 
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-             maxiter=None, full_output=0, printmessg=1):
+             maxiter=None, full_output=0, disp=1):
     """Minimze 
   Description:
 
@@ -500,7 +505,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
                the minimizer falls below this amount.  
     maxiter -- Maximum number of iterations to allow.
     full_output -- If non-zero return the optional outputs.
-    printmessg -- If non-zero print convergence message.                
+    disp -- If non-zero print convergence message.                
     
   Remarks:
 
@@ -511,7 +516,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     """
 
-    x0 = r1array(x0)
+    x0 = asarray(x0)
     fcalls = 0
     gcalls = 0
     hcalls = 0
@@ -577,11 +582,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         xk = xk + update
         k = k + 1
 
-    if printmessg or full_output:
+    if disp or full_output:
         fval = apply(f,(xk,)+args)
     if k >= maxiter:
         warnflag = 1
-        if printmessg:
+        if disp:
             print "Warning: Maximum number of iterations has been exceeded"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
@@ -590,7 +595,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "         Hessian evaluations: %d" % hcalls
     else:
         warnflag = 0
-        if printmessg:
+        if disp:
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k

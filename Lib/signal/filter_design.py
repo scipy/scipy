@@ -725,20 +725,20 @@ def ellipap(N,rp,rs):
         return z, p, k
 
     eps = Num.sqrt(10**(0.1*rp)-1)
-    k1 = eps / Num.sqrt(10**(0.1*rs)-1)
-    k1p = Num.sqrt(1-k1*k1)
-    if k1p == 1:
+    ck1 = eps / Num.sqrt(10**(0.1*rs)-1)
+    ck1p = Num.sqrt(1-ck1*ck1)
+    if ck1p == 1:
         raise ValueError, "Cannot design a filter with given rp and rs specifications."
 
     wp = 1
-    capk1 = special.ellpk([1-k1*k1,1-k1p*k1p])
-    if abs(1-k1p*k1p) < EPSILON:
+    val = special.ellpk([1-ck1*ck1,1-ck1p*ck1p])
+    if abs(1-ck1p*ck1p) < EPSILON:
         krat = 0
     else:
-        krat = N*capk1[0] / capk1[1]
+        krat = N*val[0] / val[1]
 
     m = optimize.fmin(kratio, 0.5, args=(krat,), maxfun=250, maxiter=250,
-                      printmessg=0)
+                      disp=0)
     if m < 0 or m > 1:
         m = optimize.fminbound(kratio, 0, 1, args=(krat,), maxfun=250,
                                maxiter=250, disp=0)
@@ -756,9 +756,9 @@ def ellipap(N,rp,rs):
     z = 1j*z
     z = Num.concatenate((z,conjugate(z)))
 
-    r = optimize.fmin(vratio, special.ellpk(1-m), args=(1/eps, k1p*k1p),
+    r = optimize.fmin(vratio, special.ellpk(1-m), args=(1/eps, ck1p*ck1p),
                       maxfun=250, maxiter=250, printmessg=0)
-    v0 = capk * r / (N*capk1[0])
+    v0 = capk * r / (N*capck1[0])
 
     [sv,cv,dv,phi] = special.ellpj(v0,1-m)
     p = -(c*d*sv*cv + 1j*s*dv) / (1-(d*sv)**2.0)
