@@ -1176,7 +1176,8 @@ Each function also has it's own documentation accessible using help.
  If you don't see a function you need, consider writing it and contributing
  it to the library.
  You can write the function in either C, Fortran, or Python.
- Look in the library for examples of each of these kind of functions.
+ Look in the source code of the library for examples of each of these kind
+ of functions.
  
 \layout Section
 
@@ -3113,13 +3114,594 @@ Filtering is a generic name for any system that modifies an input signal
  There are different kinds of filters for different kinds of operations.
  There are two broad kinds of filtering operations: linear and non-linear.
  Linear filters can always be reduced to multiplication of the flattened
- Numeric array by 
+ Numeric array by an appropriate matrix resulting in another flattened Numeric
+ array.
+ Of course, this is not usually the best way to compute the filter as the
+ matrices and vectors involved may be huge.
+ For example filtering a 
+\begin_inset Formula $512\times 512$
+\end_inset 
+
+ image with this method would require multiplication of a 
+\begin_inset Formula $512^{2}x512^{2}$
+\end_inset 
+
+matrix with a 
+\begin_inset Formula $512^{2}$
+\end_inset 
+
+ vector.
+ Just trying to store the 
+\begin_inset Formula $512^{2}\times 512^{2}$
+\end_inset 
+
+ matrix using a standard Numeric array would require 
+\begin_inset Formula $68,719,476,736$
+\end_inset 
+
+ elements.
+ At 4 bytes per element this would require 
+\begin_inset Formula $256\textrm{GB}$
+\end_inset 
+
+ of memory.
+ In most applications most of the elements of this matrix are zero and a
+ different method for computing the output of the filter is employed.
 \layout Subsubsection
 
-Convolution
+Convolution/Correlation
+\layout Standard
+
+Many linear filters also have the property of shift-invariance.
+ This means that the filtering operation is the same at different locations
+ in the signal and it implies that the filtering matrix can be constructed
+ from knowledge of one row (or column) of the matrix alone.
+ In this case, the matrix multiplication can be accomplished using Fourier
+ transforms.
+\layout Standard
+
+Let 
+\begin_inset Formula $x\left[n\right]$
+\end_inset 
+
+ define a one-dimensional signal indexed by the integer 
+\begin_inset Formula $n.$
+\end_inset 
+
+ Full, convolution of two one-dimensional signals can be expressed as 
+\begin_inset Formula \[
+y\left[n\right]=\sum _{k=-\infty }^{\infty }x\left[k\right]h\left[n-k\right].\]
+
+\end_inset 
+
+ This equation can only be implemented directly, if we limit the sequences
+ to finite support sequences that can be stored in a computer, choose 
+\begin_inset Formula $n=0$
+\end_inset 
+
+ to be the starting point of both sequences, let 
+\begin_inset Formula $K+1$
+\end_inset 
+
+ be that value for which 
+\begin_inset Formula $y\left[n\right]=0$
+\end_inset 
+
+ for all 
+\begin_inset Formula $n>K+1$
+\end_inset 
+
+ and 
+\begin_inset Formula $M+1$
+\end_inset 
+
+ be that value for which 
+\begin_inset Formula $x\left[n\right]=0$
+\end_inset 
+
+ for all 
+\begin_inset Formula $n>M+1$
+\end_inset 
+
+, then the discrete convolution expression is 
+\begin_inset Formula \[
+y\left[n\right]=\sum _{k=\max \left(n-M,0\right)}^{\min \left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
+
+\end_inset 
+
+ For convenience assume 
+\begin_inset Formula $K\geq M.$
+\end_inset 
+
+ Then, the output of this operation is 
+\begin_inset Formula \begin{eqnarray*}
+y\left[0\right] & = & x\left[0\right]h\left[0\right]\\
+y\left[1\right] & = & x\left[0\right]h\left[1\right]+x\left[1\right]h\left[0\right]\\
+y\left[2\right] & = & x\left[0\right]h\left[2\right]+x\left[1\right]h\left[1\right]+x\left[2\right]h\left[0\right]\\
+\vdots  & \vdots  & \vdots \\
+y\left[M\right] & = & x\left[0\right]h\left[M\right]+x\left[1\right]h\left[M-1\right]+\cdots +x\left[M\right]h\left[0\right]\\
+y\left[M+1\right] & = & x\left[1\right]h\left[M\right]+x\left[2\right]h\left[M-1\right]+\cdots +x\left[M+1\right]h\left[0\right]\\
+\vdots  & \vdots  & \vdots \\
+y\left[K\right] & = & x\left[K-M\right]h\left[M\right]+\cdots +x\left[K\right]h\left[0\right]\\
+y\left[K+1\right] & = & x\left[K+1-M\right]h\left[M\right]+\cdots +x\left[K\right]h\left[1\right]\\
+\vdots  & \vdots  & \vdots \\
+y\left[K+M-1\right] & = & x\left[K-1\right]h\left[M\right]+x\left[K\right]h\left[M-1\right]\\
+y\left[K+M\right] & = & x\left[K\right]h\left[M\right].
+\end{eqnarray*}
+
+\end_inset 
+
+ Thus, the full discrete convolution of two finite sequences of lengths
+ 
+\begin_inset Formula $K+1$
+\end_inset 
+
+ and 
+\begin_inset Formula $M+1$
+\end_inset 
+
+ respectively results in a finite sequence of length 
+\begin_inset Formula $K+M+1=\left(K+1\right)+\left(M+1\right)-1.$
+\end_inset 
+
+ 
+\layout Standard
+
+One dimensional convolution is implemented in SciPy with the function 
+\family typewriter 
+signal.convolve
+\family default 
+.
+ This function takes as inputs the signals 
+\begin_inset Formula $x,$
+\end_inset 
+
+ 
+\begin_inset Formula $h$
+\end_inset 
+
+, and an optional flag and returns the signal 
+\begin_inset Formula $y.$
+\end_inset 
+
+ The optional flag allows for specification of which part of the output
+ signal to return.
+ The default value of 'full' returns the entire signal.
+ If the flag has a value of 'same' then only the middle 
+\begin_inset Formula $K$
+\end_inset 
+
+ values are returned starting at 
+\begin_inset Formula $y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]$
+\end_inset 
+
+ so that the output has the same length as the largest input.
+ If the flag has a value of 'valid' then only the middle 
+\begin_inset Formula $K-M+1=\left(K+1\right)-\left(M+1\right)+1$
+\end_inset 
+
+ output values are returned where 
+\begin_inset Formula $z$
+\end_inset 
+
+ depends on all of the values of the smallest input from 
+\begin_inset Formula $h\left[0\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $h\left[M\right].$
+\end_inset 
+
+ In other words only the values 
+\begin_inset Formula $y\left[M\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $y\left[K\right]$
+\end_inset 
+
+ inclusive are returned.
+\layout Standard
+
+This same function 
+\family typewriter 
+signal.convolve
+\family default 
+ can actually take 
+\begin_inset Formula $N$
+\end_inset 
+
+-dimensional arrays as inputs and will return the 
+\begin_inset Formula $N$
+\end_inset 
+
+-dimensional convolution of the two arrays.
+ The same input flags are available for that case as well.
+ 
+\layout Standard
+
+Correlation is very similar to convolution except for the minus sign becomes
+ a plus sign.
+ Thus 
+\begin_inset Formula \[
+w\left[n\right]=\sum _{k=-\infty }^{\infty }y\left[k\right]x\left[n+k\right]\]
+
+\end_inset 
+
+ is the (cross) correlation of the signals 
+\begin_inset Formula $y$
+\end_inset 
+
+ and 
+\begin_inset Formula $x.$
+\end_inset 
+
+ For finite-length signals with 
+\begin_inset Formula $y\left[n\right]=0$
+\end_inset 
+
+ outside of the range 
+\begin_inset Formula $\left[0,K\right]$
+\end_inset 
+
+ and 
+\begin_inset Formula $x\left[n\right]=0$
+\end_inset 
+
+ outside of the range 
+\begin_inset Formula $\left[0,M\right],$
+\end_inset 
+
+ the summation can simplify to 
+\begin_inset Formula \[
+w\left[n\right]=\sum _{k=\max \left(0,-n\right)}^{\min \left(K,M-n\right)}y\left[k\right]x\left[n+k\right].\]
+
+\end_inset 
+
+Assuming again that 
+\begin_inset Formula $K\geq M$
+\end_inset 
+
+ this is 
+\begin_inset Formula \begin{eqnarray*}
+w\left[-K\right] & = & y\left[K\right]x\left[0\right]\\
+w\left[-K+1\right] & = & y\left[K-1\right]x\left[0\right]+y\left[K\right]x\left[1\right]\\
+\vdots  & \vdots  & \vdots \\
+w\left[M-K\right] & = & y\left[K-M\right]x\left[0\right]+y\left[K-M+1\right]x\left[1\right]+\cdots +y\left[K\right]x\left[M\right]\\
+w\left[M-K+1\right] & = & y\left[K-M-1\right]x\left[0\right]+\cdots +y\left[K-1\right]x\left[M\right]\\
+\vdots  & \vdots  & \vdots \\
+w\left[-1\right] & = & y\left[1\right]x\left[0\right]+y\left[2\right]x\left[1\right]+\cdots +y\left[M+1\right]x\left[M\right]\\
+w\left[0\right] & = & y\left[0\right]x\left[0\right]+y\left[1\right]x\left[1\right]+\cdots +y\left[M\right]x\left[M\right]\\
+w\left[1\right] & = & y\left[0\right]x\left[1\right]+y\left[1\right]x\left[2\right]+\cdots +y\left[M-1\right]x\left[M\right]\\
+w\left[2\right] & = & y\left[0\right]x\left[2\right]+y\left[1\right]x\left[3\right]+\cdots +y\left[M-2\right]x\left[M\right]\\
+\vdots  & \vdots  & \vdots \\
+w\left[M-1\right] & = & y\left[0\right]x\left[M-1\right]+y\left[1\right]x\left[M\right]\\
+w\left[M\right] & = & y\left[0\right]x\left[M\right].
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+The SciPy function 
+\family typewriter 
+signal.correlate
+\family default 
+ implements this operation.
+ Equivalent flags are available for this operation to return the full 
+\begin_inset Formula $K+M+1$
+\end_inset 
+
+ length sequence ('full') or a sequence with the same size as the largest
+ sequence starting at 
+\begin_inset Formula $w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]$
+\end_inset 
+
+ ('same') or a sequence where the values depend on all the values of the
+ smallest sequence ('valid').
+ This final option returns the 
+\begin_inset Formula $K-M+1$
+\end_inset 
+
+ values 
+\begin_inset Formula $w\left[M-K\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $w\left[0\right]$
+\end_inset 
+
+ inclusive.
+ 
+\layout Standard
+
+The function 
+\family typewriter 
+signal.correlate
+\family default 
+ can also take arbitrary 
+\begin_inset Formula $N$
+\end_inset 
+
+-dimensional arrays as input and return the 
+\begin_inset Formula $N$
+\end_inset 
+
+-dimensional convolution of the two arrays on output.
+ 
+\layout Standard
+
+When 
+\begin_inset Formula $N=2,$
+\end_inset 
+
+ 
+\family typewriter 
+signal.correlate
+\family default 
+ and/or 
+\family typewriter 
+signal.convolve
+\family default 
+ can be used to construct arbitrary image filters to perform actions such
+ as blurring, enhancing, and edge-detection for an image.
+ 
+\layout Standard
+
+Convolution is mainly used for filtering when one of the signals is much
+ smaller than the other (
+\begin_inset Formula $K\gg M$
+\end_inset 
+
+), otherwise linear filtering is more easily accomplished in the frequency
+ domain (see Fourier Transforms).
+ 
 \layout Subsubsection
 
-Non-linear filters
+Difference-equation filtering
+\layout Standard
+
+A general class of linear one-dimensional filters (that includes convolution
+ filters) are filters described by the difference equation 
+\begin_inset Formula \[
+\sum _{k=0}^{N}a_{k}y\left[n-k\right]=\sum _{k=0}^{M}b_{k}x\left[n-k\right]\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $x\left[n\right]$
+\end_inset 
+
+ is the input sequence and 
+\begin_inset Formula $y\left[n\right]$
+\end_inset 
+
+ is the output sequence.
+ If we assume initial rest so that 
+\begin_inset Formula $y\left[n\right]=0$
+\end_inset 
+
+ for 
+\begin_inset Formula $n<0$
+\end_inset 
+
+, then this kind of filter can be implemented using convolution.
+ However, the convolution filter sequence 
+\begin_inset Formula $h\left[n\right]$
+\end_inset 
+
+ could be infinite if 
+\begin_inset Formula $a_{k}\neq 0$
+\end_inset 
+
+ for 
+\begin_inset Formula $k\geq 1.$
+\end_inset 
+
+ In addition, this general class of linear filter allows initial conditions
+ to be placed on 
+\begin_inset Formula $y\left[n\right]$
+\end_inset 
+
+ for 
+\begin_inset Formula $n<0$
+\end_inset 
+
+ resulting in a filter that cannot be expressed using convolution.
+\layout Standard
+
+The difference equation filter can be thought of as finding 
+\begin_inset Formula $y\left[n\right]$
+\end_inset 
+
+ recursively in terms of it's previous values 
+\begin_inset Formula \[
+a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots -a_{N}y\left[n-N\right]+\cdots +b_{0}x\left[n\right]+\cdots +b_{M}x\left[n-M\right].\]
+
+\end_inset 
+
+Often 
+\begin_inset Formula $a_{0}=1$
+\end_inset 
+
+ is chosen for normalization.
+ The implementation in SciPy of this general difference equation filter
+ is a little more complicated then would be implied by the previous equation.
+ It is implemented so that only one signal needs to be delayed.
+ The actual implementation equations are (assuming 
+\begin_inset Formula $a_{0}=1$
+\end_inset 
+
+).
+ 
+\begin_inset Formula \begin{eqnarray*}
+y\left[n\right] & = & b_{0}x\left[n\right]+z_{0}\left[n-1\right]\\
+z_{0}\left[n\right] & = & b_{1}x\left[n\right]+z_{1}\left[n-1\right]-a_{1}y\left[n\right]\\
+z_{1}\left[n\right] & = & b_{2}x\left[n\right]+z_{2}\left[n-1\right]-a_{2}y\left[n\right]\\
+\vdots  & \vdots  & \vdots \\
+z_{K-2}\left[n\right] & = & b_{K-1}x\left[n\right]+z_{K-1}\left[n-1\right]-a_{K-1}y\left[n\right]\\
+z_{K-1}\left[n\right] & = & b_{K}x\left[n\right]-a_{K}y\left[n\right],
+\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula $K=\max \left(N,M\right).$
+\end_inset 
+
+ Note that 
+\begin_inset Formula $b_{K}=0$
+\end_inset 
+
+ if 
+\begin_inset Formula $K>M$
+\end_inset 
+
+ and 
+\begin_inset Formula $a_{K}=0$
+\end_inset 
+
+ if 
+\begin_inset Formula $K>N.$
+\end_inset 
+
+ In this way, the output at time 
+\begin_inset Formula $n$
+\end_inset 
+
+ depends only on the input at time 
+\begin_inset Formula $n$
+\end_inset 
+
+ and the value of 
+\begin_inset Formula $z_{0}$
+\end_inset 
+
+ at the previous time.
+ This can always be calculated as long as the 
+\begin_inset Formula $K$
+\end_inset 
+
+ values 
+\begin_inset Formula $z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]$
+\end_inset 
+
+ are computed and stored at each time step.
+ 
+\layout Standard
+
+The difference-equation filter is called using the command 
+\family typewriter 
+signal.lfilter
+\family default 
+ in SciPy.
+ This command takes as inputs the vector 
+\begin_inset Formula $b,$
+\end_inset 
+
+ the vector, 
+\begin_inset Formula $a,$
+\end_inset 
+
+ a signal 
+\begin_inset Formula $x$
+\end_inset 
+
+ and returns the vector 
+\begin_inset Formula $y$
+\end_inset 
+
+ (the same length as 
+\begin_inset Formula $x$
+\end_inset 
+
+) computed using the equation given above.
+ If 
+\begin_inset Formula $x$
+\end_inset 
+
+ is 
+\begin_inset Formula $N$
+\end_inset 
+
+-dimensional, then the filter is computed along the axis provided.
+ If, desired, initial conditions providing the values of 
+\begin_inset Formula $z_{0}\left[-1\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $z_{K-1}\left[-1\right]$
+\end_inset 
+
+ can be provided or else it will be assumed that they are all zero.
+ If initial conditions are provided, then the final conditions on the intermedia
+te variables are also returned.
+ These could be used, for example, to restart the calculation in the same
+ state.
+\layout Standard
+
+Sometimes it is more convenient to express the initial conditions in terms
+ of the signals 
+\begin_inset Formula $x\left[n\right]$
+\end_inset 
+
+ and 
+\begin_inset Formula $y\left[n\right].$
+\end_inset 
+
+ In other words, perhaps you have the values of 
+\begin_inset Formula $x\left[-M\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $x\left[-1\right]$
+\end_inset 
+
+ and the values of 
+\begin_inset Formula $y\left[-N\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $y\left[-1\right]$
+\end_inset 
+
+ and would like to determine what values of 
+\begin_inset Formula $z_{m}\left[-1\right]$
+\end_inset 
+
+ should be delivered as initial conditions to the difference-equation filter.
+ It is not difficult to show that for 
+\begin_inset Formula $0\leq m<K,$
+\end_inset 
+
+
+\begin_inset Formula \[
+z_{m}\left[n\right]=\sum _{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).\]
+
+\end_inset 
+
+ Using this formula we can find the intial condition vector 
+\begin_inset Formula $z_{0}\left[-1\right]$
+\end_inset 
+
+ to 
+\begin_inset Formula $z_{K-1}\left[-1\right]$
+\end_inset 
+
+ given initial conditions on 
+\begin_inset Formula $y$
+\end_inset 
+
+ (and 
+\begin_inset Formula $x$
+\end_inset 
+
+).
+ 
+\layout Subsubsection
+
+Other filters
 \layout Subsubsection
 
 Filter design

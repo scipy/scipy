@@ -395,7 +395,7 @@ static void correlateND(Generic_Array *ap1, Generic_Array *ap2, Generic_Array *r
 	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = 0;
 		break;
 	case 1:
-	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = -((ap2->dimensions[i]-1) >> 1);
+	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = -((ap2->dimensions[i]) >> 1);
 		break;
 	case 2:
 	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = 1 - ap2->dimensions[i];
@@ -1827,6 +1827,11 @@ static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
 	  PyErr_SetString(PyExc_ValueError, "Arrays must have the same number of dimensions.");
 	  goto fail;
 	}
+
+        if (ap1->nd == 0) {  /* Zero-dimensional arrays */
+          PyErr_SetString(PyExc_ValueError, "Cannot convolve zero-dimensional arrays.");
+          goto fail;
+        }
 	
 	n1 = PyArray_Size((PyObject *)ap1);
 	n2 = PyArray_Size((PyObject *)ap2);
@@ -2115,10 +2120,10 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	/* If dimension to filter along is negative, make it the
 	   correct positive dimension */
 
-        fprintf(stderr, "Here.\n");
+        /* fprintf(stderr, "Here.\n"); */
 
 	RawFilter(Vb, Va, x, y, vi, vf, basic_filter, thedim);
-        fprintf(stderr, "Now, Here.\n");
+        /* fprintf(stderr, "Now, Here.\n");*/
 
 	Py_XDECREF(ara);
 	Py_XDECREF(arb);

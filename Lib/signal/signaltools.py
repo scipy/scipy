@@ -10,7 +10,7 @@ import types
 import scipy
 from scipy.stats import mean
 import Numeric
-from Numeric import array, asarray, arange, where, sqrt
+from Numeric import array, asarray, arange, where, sqrt, rank, zeros
 from umath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -49,8 +49,8 @@ def correlate(in1, in2, mode='full'):
     mode -- a flag indicating the size of the output
             'valid'  (0): The output consists only of those elements that
                             do not rely on the zero-padding.
-            'same'   (1): The output is the same size as the input centered
-                            with respect to the 'full' output.
+            'same'   (1): The output is the same size as the largest input
+                            centered with respect to the 'full' output.
             'full'   (2): The output is the full discrete linear
                             cross-correlation of the inputs. (Default)
 
@@ -63,6 +63,8 @@ def correlate(in1, in2, mode='full'):
     # Code is faster if kernel is smallest array.
     volume = Numeric.asarray(in1)
     kernel = Numeric.asarray(in2)
+    if rank(volume) == rank(kernel) == 0:
+        return volume*kernel
     if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
         temp = kernel
         kernel = volume
@@ -86,9 +88,10 @@ def convolve(in1, in2, mode='full'):
     in2 -- an array with the same number of dimensions as in1.
     mode -- a flag indicating the size of the output
             'valid'  (0): The output consists only of those elements that
-                            do not rely on the zero-padding.
-            'same'   (1): The output is the same size as the input centered
-                            with respect to the 'full' output.
+                            are computed by scaling the larger array with all
+                            the values of the smaller array.
+            'same'   (1): The output is the same size as the largest input
+                            centered with respect to the 'full' output.
             'full'   (2): The output is the full discrete linear convolution
                             of the inputs. (Default)
 
@@ -100,6 +103,8 @@ def convolve(in1, in2, mode='full'):
     """
     volume = Numeric.asarray(in1)
     kernel = Numeric.asarray(in2)
+    if rank(volume) == rank(kernel) == 0:
+        return volume*kernel
     if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
         temp = kernel
         kernel = volume
@@ -407,8 +412,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
             linear filter. The filter is applied to each subarray along
             this axis (*Default* = -1)
     zi -- Initial conditions for the filter delays.  It is a vector
-          (or array of vectors) of length max(len(a),len(b))-1.  If
-          zi=None or is not given then initial rest is assumed.
+          (or array of vectors for an N-dimensional input) of length
+          max(len(a),len(b)).  If zi=None or is not given then initial
+          rest is assumed.  SEE signal.lfiltic for more information.
 
   Outputs: (y, {zf})
 
@@ -448,6 +454,53 @@ def lfilter(b, a, x, axis=-1, zi=None):
         return sigtools._linear_filter(b, a, x, axis)
     else:
         return sigtools._linear_filter(b, a, x, axis, zi)
+
+def lfiltic(b,a,y,x=None):
+    """Given a linear filter (b,a) and initial conditions on the output y
+    and the input x, return the inital conditions on the state vector zi
+    which is used by lfilter to generate the output given the input.
+
+    If M=len(b)-1 and N=len(a)-1.  Then, the initial conditions are given
+    in the vectors x and y as 
+
+    x = {x[-1],x[-2],...,x[-M]}
+    y = {y[-1],y[-2],...,y[-N]}
+
+    If x is not given, its inital conditions are assumed zero.
+    If either vector is too short, then it zeros are added
+      to achieve the proper length.
+
+    The output vector zi contains
+
+    zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
+    """
+    N = Numeric.size(a)-1
+    M = Numeric.size(b)-1
+    K = max(M,N)
+    y = Numeric.asarray(y)
+    zi = zeros(K,y.typecode())
+    if x is None:
+        x = zeros(M,y.typecode())
+    else:
+        x = Numeric.asarray(x)
+        L = Numeric.size(x)
+        if L < M:
+            x = r_[x,zeros(M-L)]
+    L = Numeric.size(y)
+    if L < N:
+        y = r_[y,zeros(N-L)]
+
+    for m in range(M):
+        zi[m] = Numeric.sum(b[m+1:]*x[:M-m])
+
+    for m in range(N):
+        zi[m] -= Numeric.sum(a[m+1:]*y[:N-m])
+
+    return zi
+
+    
+        
+    
 
 
 def boxcar(M,sym=1):
