@@ -1,13 +1,43 @@
 /* SIGTOOLS module by Travis Oliphant
 
-Copyright 1999 Travis Oliphant
+Copyright 2001 Travis Oliphant
 Permission to use, copy, modify, and distribute this software without fee
 is granted, under the terms of the LGPL provided this notification remain.
 */
 
 #include "Python.h"
 #include "Numeric/arrayobject.h"
+#include <setjmp.h>
 #include "sigtools.h"
+
+#define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
+
+#define DATA(arr) ((arr)->data)
+#define DIMS(arr) ((arr)->dimensions)
+#define STRIDES(arr) ((arr)->strides)
+#define ELSIZE(arr) ((arr)->descr->elsize)
+#define OBJECTTYPE(arr) ((arr)->descr->type_num)
+#define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
+#define RANK(arr) ((arr)->nd)
+#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+
+
+jmp_buf MALLOC_FAIL;
+
+char *check_malloc (size)
+	int size;
+{
+    char *the_block;
+    
+    the_block = (char *)malloc(size);
+    if (the_block == NULL)
+	{
+	    printf("\nERROR: unable to allocate %d bytes!\n", size);
+	    longjmp(MALLOC_FAIL,-1);
+	}
+    return(the_block);
+}
+
 
 
 /************************************************************************
@@ -1602,15 +1632,15 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	n2_nonzero = 0;
 	ap2_ptr = ap2->data;
 	/* Find out the number of non-zero entries in domain (allows for
-	 *  different shapped rank-filters to be used besides justrectangles)
+	 *  different shapped rank-filters to be used besides just rectangles)
 	 */
 	for (k=0; k < n2; k++) {
 	  n2_nonzero += (memcmp(ap2_ptr,ap2->descr->zero,ap2->descr->elsize) != 0);
 	  ap2_ptr += ap2->descr->elsize;
 	}
 
-	if (order >= n2_nonzero) {
-	  PyErr_SetString(PyExc_ValueError, "Order must be less than number of nonzero elements in domain (third argument).");
+	if ((order >= n2_nonzero) || (order < 0)) {
+	  PyErr_SetString(PyExc_ValueError, "Order must be non-negative and less than number of nonzero elements in domain.");
 	  goto fail;
 	}
 	
@@ -1747,7 +1777,7 @@ static void Py_copy_info_vec(Generic_Vector *gen, PyArrayObject *py_arr) {
 
 /******************************************/
 
-static char doc_correlateND[] = "out = correlateND(a,kernel,mode): mode = 0, 1, 2(default)";
+static char doc_correlateND[] = "out = _correlateND(a,kernel,mode) \n\n   mode = 0 - 'valid', 1 - 'same', \n  2 - 'full' (default)";
 
 static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
 	PyObject *kernel, *a0;
@@ -1831,7 +1861,128 @@ fail:
 }
 
 
-static char doc_order_filterND[] = "out = order_filterND(a,domain,order)";
+/*******************************************************************/
+
+static char doc_convolve2d[] = "out = _convolve2d(in1, in2, flip, mode, boundary, fillvalue)";
+
+static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
+
+    PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
+    int mode=2, boundary=0, typenum, flag, flip=1, ret;
+    int *aout_dimens, *dims=NULL;
+    char zeros[32];  /* Zeros */
+    int n1, n2, i;
+    PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL, *afill=NULL, *newfill=NULL;
+    
+    if (!PyArg_ParseTuple(args, "OO|iiiO", &in1, &in2, &flip, &mode, &boundary, &fill_value)) {
+        return NULL;
+    }
+
+    typenum = PyArray_ObjectType(in1, 0);  
+    typenum = PyArray_ObjectType(in2, typenum);
+    ain1 = (PyArrayObject *)PyArray_FromObject(in1, typenum, 2, 2);
+    if (ain1 == NULL) goto fail;
+    ain2 = (PyArrayObject *)PyArray_FromObject(in2, typenum, 2, 2);
+    if (ain2 == NULL) goto fail;
+
+    if (boundary == PAD) {
+	if (fill_value == NULL) {
+	    newfill = (PyArrayObject *)PyArray_FromDimsAndData(0, dims, typenum, zeros);
+	}
+	else {
+	    afill = (PyArrayObject *)PyArray_FromObject(fill_value, PyArray_CDOUBLE, 0, 0);
+	    if (afill == NULL) goto fail;
+	    newfill = (PyArrayObject *)PyArray_Cast(afill, typenum);
+	}
+	if (newfill == NULL) goto fail;
+    }
+    
+
+    n1 = PyArray_Size((PyObject *)ain1);
+    n2 = PyArray_Size((PyObject *)ain2);
+    
+    /* Swap if first argument is not the largest */
+    if (n1 < n2) { aout = ain1; ain1 = ain2; ain2 = aout; aout = NULL; }
+    aout_dimens = malloc(ain1->nd*sizeof(int));
+    switch(mode & OUTSIZE_MASK) {
+    case VALID:
+	for (i = 0; i < ain1->nd; i++) { 
+	    aout_dimens[i] = ain1->dimensions[i] - ain2->dimensions[i] + 1;
+	    if (aout_dimens[i] < 0) {
+		PyErr_SetString(PyExc_ValueError, "no part of the output is valid, use option 1 (same) or 2 (full) for third argument");
+		goto fail;
+	    }
+	}
+	break;
+    case SAME:
+	for (i = 0; i < ain1->nd; i++) { aout_dimens[i] = ain1->dimensions[i];}
+	break;
+    case FULL:
+	for (i = 0; i < ain1->nd; i++) { aout_dimens[i] = ain1->dimensions[i] + ain2->dimensions[i] - 1;}
+	break;
+    default: 
+	PyErr_SetString(PyExc_ValueError, 
+			"mode must be 0 (valid), 1 (same), or 2 (full)");
+	goto fail;
+    }
+	
+    aout = (PyArrayObject *)PyArray_FromDims(ain1->nd, aout_dimens, typenum);
+    free(aout_dimens);
+    if (aout == NULL) goto fail;
+
+    flag = mode + boundary + (typenum << TYPE_SHIFT) + \
+      (flip != 0) * FLIP_MASK;
+
+    ret = pylab_convolve_2d (ain1->data,       /* Input data Ns[0] x Ns[1] */
+		             ain1->strides,    /* Input strides */
+		             aout->data,       /* Output data */
+		             aout->strides,    /* Ouput strides */
+		             ain2->data,       /* coefficients in filter */
+		             ain2->strides,    /* coefficients strides */ 
+		             ain2->dimensions, /* Size of kernel Nwin[2] */
+			     ain1->dimensions, /* Size of image Ns[0] x Ns[1] */
+		             flag,             /* convolution parameters */
+		             newfill->data);   /* fill value */
+
+    Py_DECREF(ain1);
+    Py_DECREF(ain2);
+    Py_XDECREF(afill);
+    Py_XDECREF(newfill);
+
+    switch (ret) {
+    case 0:
+      return PyArray_Return(aout);
+      break;
+    case -5:
+    case -4:
+      PyErr_SetString(PyExc_ValueError,
+		      "convolve2d not available for this type.");
+      goto fail;
+    case -3:
+      PyErr_NoMemory();
+      goto fail;
+    case -2:
+      PyErr_SetString(PyExc_ValueError,
+		      "Invalid boundary type.");
+      goto fail;
+    case -1:
+      PyErr_SetString(PyExc_ValueError,
+		      "Invalid output flag.");
+      goto fail;
+    }
+
+fail:
+    Py_XDECREF(ain1);
+    Py_XDECREF(ain2);
+    Py_XDECREF(aout);
+    Py_XDECREF(afill);
+    Py_XDECREF(newfill);
+    return NULL;
+}
+
+/*******************************************************************/
+
+static char doc_order_filterND[] = "out = _order_filterND(a,domain,order)";
 
 static PyObject *sigtools_order_filterND(PyObject *dummy, PyObject *args) {
 	PyObject *domain, *a0;
@@ -1845,7 +1996,7 @@ static PyObject *sigtools_order_filterND(PyObject *dummy, PyObject *args) {
 
 
 
-static char doc_linear_filter[] = "(y,Vf) = linear_filter(b,a,X,Dim=-1,Vi=None)  implemented using Direct Form II transposed flow diagram. If Vi is not given, Vf is not returned.";
+static char doc_linear_filter[] = "(y,Vf) = _linear_filter(b,a,X,Dim=-1,Vi=None)  implemented using Direct Form II transposed flow diagram. If Vi is not given, Vf is not returned.";
  
 static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	PyObject *b, *a, *X, *Vi=NULL;
@@ -1960,7 +2111,7 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 }
 
 
-static char doc_remez[] = "h = remez(numtaps, bands, des, weight, Hz, type, maxiter, grid_density) returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse response given a set of band edges, the desired response on those bands, and the weight given to the error in those bands.  Bands is a monotonic vector with band edges given in frequency domain where Hz is the sampling frequency";
+static char doc_remez[] = "h = _remez(numtaps, bands, des, weight, Hz, type, maxiter, grid_density) \n  returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse \n  response given a set of band edges, the desired response on those bands,\n  and the weight given to the error in those bands.  Bands is a monotonic\n   vector with band edges given in frequency domain where Hz is the sampling\n   frequency.";
  
 static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
         PyObject *bands, *des, *weight;
@@ -2056,19 +2207,79 @@ static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
 	return NULL;
 }
    
+static char doc_median2d[] = "filt = _median2d(data, size)";
+
+static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
+{
+    PyObject *image=NULL, *size=NULL;
+    int flag=0, typenum;
+    PyArrayObject *a_image=NULL, *a_size;
+    PyArrayObject *a_out=NULL;
+    int Nwin[2] = {3,3};
+
+    if (!PyArg_ParseTuple(args, "O|O", &image, &size)) return NULL;
+
+    typenum = PyArray_ObjectType(image, 0);
+    a_image = (PyArrayObject *)PyArray_ContiguousFromObject(image, typenum, 2, 2);
+    if (a_image == NULL) goto fail;
+
+    if (size != NULL) {
+	a_size = (PyArrayObject *)PyArray_ContiguousFromObject(size, PyArray_LONG, 1, 1);
+	if (a_size == NULL) goto fail;
+	if ((RANK(a_size) != 1) || (DIMS(a_size)[0] < 2)) 
+	    PYERR("Size must be a length two sequence");
+	Nwin[0] = ((long *)DATA(a_size))[0];
+	Nwin[1] = ((long *)DATA(a_size))[1];
+    }  
+
+    a_out = (PyArrayObject *)PyArray_FromDims(2,DIMS(a_image),typenum);
+    if (a_out == NULL) goto fail;
+
+    if (setjmp(MALLOC_FAIL)) {
+	PYERR("Memory allocation error.");
+    }
+    else {
+	switch (typenum) {
+	case PyArray_UBYTE:
+	    b_medfilt2((unsigned char *)DATA(a_image), (unsigned char *)DATA(a_out), Nwin, DIMS(a_image));
+	    break;
+	case PyArray_FLOAT:
+	    f_medfilt2((float *)DATA(a_image), (float *)DATA(a_out), Nwin, DIMS(a_image));
+	    break;
+	case PyArray_DOUBLE:
+	    d_medfilt2((double *)DATA(a_image), (double *)DATA(a_out), Nwin, DIMS(a_image));
+	}
+    }
+
+    Py_DECREF(a_image);
+    Py_XDECREF(a_size);
+
+    return PyArray_Return(a_out);
+ 
+ fail:
+    Py_XDECREF(a_image);
+    Py_XDECREF(a_size);
+    Py_XDECREF(a_out);
+    return NULL;
+
+}
+
+
 
 static struct PyMethodDef toolbox_module_methods[] = {
-	{"correlateND", sigtools_correlateND, METH_VARARGS, doc_correlateND},
-	{"order_filterND", sigtools_order_filterND, METH_VARARGS, doc_order_filterND},
-	{"linear_filter",sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
-	{"remez",sigtools_remez, METH_VARARGS, doc_remez},
+	{"_correlateND", sigtools_correlateND, METH_VARARGS, doc_correlateND},
+	{"_convolve2d", sigtools_convolve2d, METH_VARARGS, doc_convolve2d},
+	{"_order_filterND", sigtools_order_filterND, METH_VARARGS, doc_order_filterND},
+	{"_linear_filter",sigtools_linear_filter, METH_VARARGS, doc_linear_filter},
+	{"_remez",sigtools_remez, METH_VARARGS, doc_remez},
+	{"_medfilt2d", sigtools_median2d, METH_VARARGS, doc_median2d},
 	{NULL,		NULL, 0}		/* sentinel */
 };
 
 /* Initialization function for the module (*must* be called initsigtools) */
 
 void initsigtools() {
-	PyObject *m, *d, *s;
+        PyObject *m, *d;
 	
 	/* Create the module and add the functions */
 	m = Py_InitModule("sigtools", toolbox_module_methods);
@@ -2083,13 +2294,11 @@ void initsigtools() {
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 
-        PyDict_SetItemString(d,"BANDPASS", PyInt_FromLong((long) BANDPASS));
+	/* PyDict_SetItemString(d,"BANDPASS", PyInt_FromLong((long) BANDPASS));
         PyDict_SetItemString(d,"DIFFERENTIATOR", PyInt_FromLong((long) DIFFERENTIATOR));
         PyDict_SetItemString(d,"HILBERT", PyInt_FromLong((long) HILBERT));
+        */
 
-	s = PyString_FromString("0.5.2");
-	PyDict_SetItemString(d, "__version__", s);
-	Py_DECREF(s);
 
 	/* Check for errors */
 	if (PyErr_Occurred())

@@ -2,6 +2,23 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define BOUNDARY_MASK 12
+#define OUTSIZE_MASK 3
+#define FLIP_MASK  16
+#define TYPE_MASK  (32+64+128+256+512)
+#define TYPE_SHIFT 5
+
+#define FULL  2
+#define SAME  1
+#define VALID 0
+
+#define CIRCULAR 8
+#define REFLECT  4
+#define PAD      0 
+
+#define MAXTYPES 10
+
+
 /* Generally useful structures for passing data into and out of
    subroutines.  Used in the generic routines instead of the
    Python Specific structures so that the routines can be easily

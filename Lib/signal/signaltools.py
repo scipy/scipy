@@ -1,21 +1,77 @@
 
-from sigtools import *
+import sigtools
 import MLab
 
 modedict = {'valid':0, 'same':1, 'full':2}
 
 
-def convolveND(volume,kernel,mode='full'):
-    """out = convolveND(in,kernel{,mode}) returns the true convolution of an N-D
-    input (in) with the N-D kernel (with index reversal) and zero-padded edges.
-    The size of the return depends on the third argument, mode:
+def correlateND(volume, kernel, mode='full'):
+    """ correlateND(in1, in2, mode='full')  Cross-correlation of in1 with in2.
 
-    'valid' (0):  The output consists only of those elements that do not rely
-                  on the zero-padding.
-    'same'  (1):  The output is the same size as the input centered with respect
-                  to the 'full' output.
-    'full'  (2):  The output is the full discrete linear convolution with the
-                  input.  (Default)
+  Description:
+
+     Cross-correlate in1 and in2 with the output size determined by mode.
+
+  Inputs:
+
+    in1 -- an N-dimensional array.
+    in2 -- an array with the same number of dimensions as in1.
+    mode -- a flag indicating the size of the output
+            'valid'  (0): The output consists only of those elements that
+                            do not rely on the zero-padding.
+            'same'   (1): The output is the same size as the input centered
+                            with respect to the 'full' output.
+            'full'   (2): The output is the full discrete linear
+                            cross-correlation of the inputs. (Default)
+
+  Outputs:  (out,)
+
+    out -- an N-dimensional array containing a subset of the discrete linear
+           cross-correlation of in1 with in2.
+ 
+    """
+    # Code is faster if kernel is smallest array.
+    volume = MLab.asarray(volume)
+    kernel = MLab.asarray(kernel)
+    if (MLab.product(kernel.shape) > MLab.product(volume.shape)):
+        temp = kernel
+        kernel = volume
+        volume = temp
+        del temp
+
+    try:
+        val = modedict[mode]
+    except KeyError:
+        if val not in [0,1,2]:
+            raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
+        val = mode
+
+    return sigtools._correlateND(volume, kernel, val)
+
+def convolveND(volume,kernel,mode='full'):
+    """ convolveND(in1, in2, mode='full')  Convolution of in1 with in2.
+
+  Description:
+
+     Convolve in1 and in2 with output size determined by mode.
+
+  Inputs:
+
+    in1 -- an N-dimensional array.
+    in2 -- an array with the same number of dimensions as in1.
+    mode -- a flag indicating the size of the output
+            'valid'  (0): The output consists only of those elements that
+                            do not rely on the zero-padding.
+            'same'   (1): The output is the same size as the input centered
+                            with respect to the 'full' output.
+            'full'   (2): The output is the full discrete linear convolution
+                            of the inputs. (Default)
+
+  Outputs:  (out,)
+
+    out -- an N-dimensional array containing a subset of the discrete linear
+           convolution of in1 with in2.
+
     """
     volume = MLab.asarray(volume)
     kernel = MLab.asarray(kernel)
@@ -29,36 +85,111 @@ def convolveND(volume,kernel,mode='full'):
     try:
         val = modedict[mode]
     except KeyError:
+        if val not in [0,1,2]:
+            raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
         val = mode
         
-    return correlateND(volume,kernel[slice_obj],val)
+    return sigtools._correlateND(volume,kernel[slice_obj],val)
 
+def order_filterND(a, domain, order):
+    """
+ order_filterND(in, domain, rank)  Perform an order filter on in.
 
+  Description:
+
+    Perform an order filter on the array in.  The domain argument acts as a
+    mask centered over each pixel.  The non-zero elements of domain are
+    used to select elements surrounding each input pixel which are placed
+    in a list.   The list is sorted, and the output for that pixel is the
+    element corresponding to rank in the sorted list.
+    
+  Inputs:
+
+    in -- an N-dimensional input array.
+    domain -- a mask array with the same number of dimensions as in.  Each
+              dimension should have an odd number of elements.
+    rank -- an non-negative integer which selects the element from the sorted
+            list (0 corresponds to the largest element, 1 is the next largest
+            element, etc.)
+
+  Output: (out,)
+
+    out -- the results of the order filter in an array with the same
+           shape as in.
+          
+    """
+    domain = MLab.asarray(domain)
+    size = domain.shape
+    for k in range(len(size)):
+        if (size[k] % 2) != 1:
+            raise ValueError, "Each dimension of domain argument should have an odd number of elements."
+    return sigtools._orderfilterND(a, domain, rank)
+   
 
 def medfiltND(volume,kernel_size=None):
-    """out = medfiltND(input{,kernel_size}) returns a median filtered version of
-    input where the median is taken over a window of size kernel_size whose
-    elements should be odd (kernel_size defaults to 3 along each axis).
+    """
+ medfiltND(in, kernel_size=3)  Perform a median filter on input array.
+
+  Description:
+
+    Apply a median filter to the input array using a local window-size
+    given by kernel_size.
+
+  Inputs:
+
+    in -- An N-dimensional input array.
+    kernel_size -- A scalar or an N-length list giving the size of the
+                   median filter window in each dimension.  Elements of
+                   kernel_size should be odd.  If kernel_size is a scalar,
+                   then this scalar is used as the size in each dimension.
+
+  Outputs: (out,)
+
+    out -- An array the same size as input containing the median filtered
+           result.
+  
     """
     volume = MLab.asarray(volume)
     if kernel_size == None:
         kernel_size = [3] * len(volume.shape)
     kernel_size = MLab.asarray(kernel_size)
+    if len(kernel_size.shape) == 0:
+        kernel_size = [kernel_size.toscalar()] * len(volume.shape)
+    kernel_size = MLab.asarray(kernel_size)
+
+    for k in range(len(volume.shape)):
+        if (kernel_size[k] % 2) != 1:
+            raise ValueError, "Each element of kernel_size should be odd." 
 
     domain = MLab.ones(kernel_size)
 
     numels = MLab.product(kernel_size)
     order = numels/2
-    if not (numels % 2):    # Even number in window
-        return (order_filterND(volume,domain,order-1) + order_filterND(volume,domain,order))
-    else:                   # Odd number in window 
-        return order_filterND(volume,domain,order)
+    return sigtools._order_filterND(volume,domain,order)
 
 
 def wienerND(im,mysize=None,noise=None):
-    """out = wienerND(im{,kernel_size,noise_power}) returns a wiener filtered
-    version of im with optional kernel size (default is 3 along each axis)
-    and noise power given.
+    """
+ wienerND(in, kernel_size=3, noise_power=None)  Perform a wiener filter.
+
+  Description:
+
+    Apply a wiener filter to the N-dimensional array in.
+
+  Inputs:
+
+    in -- an N-dimensional array.
+    kernel_size -- A scalar or an N-length list giving the size of the
+                   median filter window in each dimension.  Elements of
+                   kernel_size should be odd.  If kernel_size is a scalar,
+                   then this scalar is used as the size in each dimension.
+    noise -- The noise-power to use.  If None, then noise is estimated as
+             the average of the local variance of the input.
+
+  Outputs: (out,)
+
+    out -- Wiener filtered result with the same shape as in.
+
     """
     im = asarray(im)
     if mysize == None:
@@ -89,7 +220,15 @@ def wienerND(im,mysize=None,noise=None):
 
     return out
 
+def convolve2d():
+    pass
 
+def correlate2d():
+    pass
+
+def medfilt2d():
+    pass
+    
 
 def test():
     a = [3,4,5,6,5,4]
