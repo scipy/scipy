@@ -33,7 +33,7 @@
 */
 
 double
-brenth(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
+brenth(callback_type f, double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
 {
     double xpre = xa, xcur = xb;
     double xblk = 0.0, fpre, fcur, fblk = 0.0, spre = 0.0, scur = 0.0, sbis, tol;

@@ -3,7 +3,7 @@
 #include "zeros.h"
 
 double
-bisect(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
+bisect(callback_type f, double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
 {
     int i;
     double dm,xm,fm,fa,fb,tol;

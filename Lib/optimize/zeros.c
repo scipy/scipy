@@ -23,12 +23,6 @@ typedef struct {
 
 #include "Zeros/zeros.h"
 
-/*
-extern double brentq();
-extern double brenth();
-extern double ridder();
-extern double bisect();
-*/
 #define SIGNERR -1
 #define CONVERR -2
 
@@ -44,12 +38,12 @@ scipy_zeros_functions_func(double x, void *params)
     args = myparams->args;
     f = myparams->function;
     PyTuple_SetItem(args,0,Py_BuildValue("d",x));
-    val = PyFloat_AsDouble(retval=PyObject_CallObject(f,args));
-    Py_XDECREF(retval);
-    if (PyErr_Occurred()) {
-        fprintf(stderr, "Internal Error occured.\n");
+    retval=PyObject_CallObject(f,args);
+    if (retval==NULL) {
         longjmp(myparams->env, 1);
     }
+    val = PyFloat_AsDouble(retval);
+    Py_XDECREF(retval);
     return val;    
 }
 
@@ -58,7 +52,7 @@ scipy_zeros_functions_func(double x, void *params)
  */
 
 static PyObject *
-call_solver(double (*solver)(), PyObject *self, PyObject *args)
+call_solver(solver_type solver, PyObject *self, PyObject *args)
 {    
     double a,b,xtol,zero;
     int iter,i, len, fulloutput, disp=1, flag=0;
@@ -101,7 +95,7 @@ call_solver(double (*solver)(), PyObject *self, PyObject *args)
     if (!setjmp(env)) {  /* direct return */
         memcpy(params.env,env,sizeof(jmp_buf));
         params.error_num = 0;
-        zero = solver(scipy_zeros_functions_func,a,b,xtol,scipy_zeros_rtol,iter, &params);    
+        zero = solver(scipy_zeros_functions_func,a,b,xtol,scipy_zeros_rtol,iter, (default_parameters*)&params);    
         Py_DECREF(fargs);
         if (params.error_num != 0) {
             if (params.error_num == SIGNERR) {
@@ -119,7 +113,6 @@ call_solver(double (*solver)(), PyObject *self, PyObject *args)
         else return Py_BuildValue("d",zero);
     }
     else {  /* error return from Python function */
-        fprintf(stderr, "Error when calling Python function.  See traceback.\n");
         Py_DECREF(fargs);
         return NULL;        
     }
