@@ -635,5 +635,61 @@ There are several classical optimization algorithms provided by SciPy in
 scipy.optimize 
 \series default 
 package.
- 
+ An overview of the module is available using 
+\series bold 
+scipy.help 
+\series default 
+(or pydoc.help):
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.1}
+
+\end_inset 
+
+ The first four algorithms are minimization algorithms (fmin: Nelder-Mead
+ simplex, fminBFGS: BFGS, fminNCG: Newton Conjugate Gradient, and leastsq:
+ Levenburg-Marquardt) while the last algorithm actually finds the roots
+ of a general function of possibly many variables.
+ It is included in the optimization package because at the (non-boundary)
+ extreme points of a function, the gradient is equal to zero.
+\layout Subsection
+
+Nelder-Mead Simplex algorithm (scipy.optimize.fmin)
+\layout Standard
+
+The simplex algorithm is probably the simplest way to minimize a fairly
+ well-behaved function.
+ The simplex algorithm requires only function evaluations and is a good
+ choice for simple minimization problems.
+ However, because it does not use any gradient evaluations, it may take
+ longer to find the minimum.
+ To demonstrate the minimization function consider the problem of minimizing
+ the Rosenbrock function of 
+\begin_inset Formula \( N \)
+\end_inset 
+
+ variables:
+\begin_inset Formula \[
+f\left( \mathbf{x}\right) =\sum _{i=1}^{N}100\left( x_{i}-x^{2}_{i-1}\right) ^{2}^{2}+\left( 1-x_{i-1}\right) ^{2}.\]
+
+\end_inset 
+
+ The minimum value of this function is 0 which is achieved when 
+\begin_inset Formula \( x_{i}=1. \)
+\end_inset 
+
+ This minimum can be found using the 
+\series bold 
+fmin
+\series default 
+ routine as shown in the example below:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.2}
+
+\end_inset 
+
+
 \the_end

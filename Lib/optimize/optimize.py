@@ -79,7 +79,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       func -- the Python function or method to be minimized.
       x0 -- the initial guess.
       args -- extra arguments for func.
-      xtol -- relative tolerance
 
     Outputs: (xopt, {fopt, warnflag})
 
