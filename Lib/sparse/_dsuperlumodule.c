@@ -27,7 +27,6 @@
 #include "SuperLU2.0/SRC/util.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
-extern PyObject *_superlumodule_memory_dict;
 
 /* Natively handles Compressed Sparse Row */
 
@@ -43,7 +42,8 @@ static int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArray
     return retval;
   }
 
-  dCreate_CompRow_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _D, GE);
+  if (setjmp(_superlu_py_jmpbuf)) return -1;
+  else dCreate_CompRow_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _D, GE);
   retval = 0;
   return retval;
 }
@@ -71,7 +71,8 @@ static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
     ldx = m;
   }
 
-  dCreate_Dense_Matrix(X, m, n, (double *)aX->data, ldx, DN, _D, GE);
+  if (setjmp(_superlu_py_jmpbuf)) return -1;
+  else dCreate_Dense_Matrix(X, m, n, (double *)aX->data, ldx, DN, _D, GE);
 
   return 0;
 }
@@ -117,9 +118,13 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_DOUBLE,1,2);
   if (Py_X == NULL) goto fail;
+
+  fflush(stderr);
   if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail; 
+  fflush(stderr);
   if (Dense_from_Numeric(&B, Py_X)) goto fail;
 
+  fflush(stderr);
   if (perm_c == NULL) {
     dims[0] = A.nrow;
     aperm_c = (PyArrayObject *)PyArray_FromDims(1,dims,PyArray_INT);
@@ -150,7 +155,6 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   /* Compute direct inverse of sparse Matrix */
   if (setjmp(_superlu_py_jmpbuf)) goto fail;
   else dgssv(&A, (int *)aperm_c->data, (int *)aperm_r->data, &L, &U, &B, &info);
-
 
   Py_DECREF(aperm_r);
   Py_DECREF(aperm_c);

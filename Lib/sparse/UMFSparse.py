@@ -8,10 +8,9 @@ non-zero values in the array.  Currently only a compressed sparse row
 storage is implemented. 
 """
 
-import scriptall
-import Numeric
+import scipy_base
+import scipy.io as io
 import types
-import numpyio
 import struct
 import umfpack
 
@@ -33,15 +32,15 @@ class UMFmatrix:
        Make a copy of the Sparse matrix (see copy() method)
     """
 
-    def __init__(self,N,nzmax=None,typecode=Numeric.Complex64,
+    def __init__(self,N,nzmax=None,typecode=scipy_base.Complex64,
                  zeroval=1e-16, chunks=MEMALLOCSIZE):
         if isUMFmatrix(N):  # make a copy
             self = N.copy()
             return
         if nzmax is None:
             nzmax = chunks
-        self.data = Numeric.zeros((nzmax,),typecode)
-        self.index = Numeric.zeros((2*nzmax,),Numeric.Int32)
+        self.data = scipy_base.zeros((nzmax,),typecode)
+        self.index = scipy_base.zeros((2*nzmax,),scipy_base.Int32)
         self.filled=0
         self.shape = (N,N)
         self.maxprint = MAXPRINT
@@ -53,15 +52,15 @@ class UMFmatrix:
         for attr in dir(self):
             if attr not in ['data','index']:
                 setattr(s,attr,getattr(self,attr))
-        s.data = Numeric.array(self.data,copy=1)
-        s.index = Numeric.array(self.index,copy=1)
+        s.data = scipy_base.array(self.data,copy=1)
+        s.index = scipy_base.array(self.index,copy=1)
         return s
 
     def write(self,filename):
-        fid = open(filename,'w')
-        fid.write(struct.pack('BB',Numeric.LittleEndian,
-                              Numeric.array(3,'i').itemsize()))
-        if Numeric.LittleEndian:
+        fid = io.fopen(filename,'w')
+        fid.write(struct.pack('BB',scipy_base.LittleEndian,
+                              scipy_base.array(3,'i').itemsize()))
+        if scipy_base.LittleEndian:
             swapchar = '<'
         else:
             swapchar = '>'
@@ -69,14 +68,14 @@ class UMFmatrix:
                               self.storage, self.shape[0],
                               self.shape[1], len(self.data), self.maxprint,
                               self._memallocsize))
-        numpyio.fwrite(fid, len(self.data), self.data)
-        numpyio.fwrite(fid, 2*len(self.data), self.index[0])
+        fid.fwrite(len(self.data), self.data)
+        fid.fwrite(2*len(self.data), self.index[0])
 
     def read(self,filename):
-        fid = open(filename,'r')
+        fid = io.fopen(filename,'r')
         endianness,lsize = struct.unpack('BB',fid.read(2))
-        byteswap = (endianness != Numeric.LittleEndian)
-        tsize = Numeric.array([1],'i').itemsize()
+        byteswap = (endianness != scipy_base.LittleEndian)
+        tsize = scipy_base.array([1],'i').itemsize()
         if lsize != tsize:
             raise ValueError, "Stored size of an int, %d, is not the same as current size of an int, %d." % (lsize, tsize)
         str = fid.read(4+5*lsize)
@@ -86,9 +85,9 @@ class UMFmatrix:
             swapchar = '>'
         typecode, self.storage, shape0, shape1, nzmax, self.maxprint, self._memallocsize = struct.unpack('%sc3siiiii'%swapchar, str)
         self.shape = (shape0,shape1)
-        self.data = numpyio.fread(fid, nzmax, typecode, typecode, byteswap)
+        self.data = fid.fread(nzmax, typecode, typecode, byteswap)
         self.index = [None]*2
-        self.index = numpyio.fread(fid, 2*nzmax, 'i', 'i', byteswap)
+        self.index = fid.fread(2*nzmax, 'i', 'i', byteswap)
         fid.close()
         return
 
@@ -195,9 +194,9 @@ def splinsolve(A,b,factored=0,fulloutput=0,lvalcoef=(6,70,1)):
         #print A.shape[1], b.shape[0]
         assert(A.shape[1] == b.shape[0])
         assert(A.shape[0] == A.shape[1])
-        keep = Numeric.zeros((20,),'i')
-        icntl = Numeric.zeros((20,),'i')
-        cntl = Numeric.zeros((10,),'d')
+        keep = scipy_base.zeros((20,),'i')
+        icntl = scipy_base.zeros((20,),'i')
+        cntl = scipy_base.zeros((10,),'d')
         # Call initialization routine.
         umfpack.umz21i(keep,cntl,icntl)
 
@@ -207,19 +206,19 @@ def splinsolve(A,b,factored=0,fulloutput=0,lvalcoef=(6,70,1)):
         nzmax = len(A.data)
         lvalue = lvalcoef[0]*nzmax + lvalcoef[1]*n + lvalcoef[2]
         lindex = 6*nzmax + 70*n + 1
-        one = Numeric.array(1,'i')
-        value = Numeric.zeros((lvalue,),'D')
-        index = Numeric.zeros((lindex,),'i')
+        one = scipy_base.array(1,'i')
+        value = scipy_base.zeros((lvalue,),'D')
+        index = scipy_base.zeros((lindex,),'i')
         value[:A.filled] = A.data[:A.filled]
         index[:A.filled] = A.index[:A.filled]+one
         index[A.filled:2*A.filled] = A.index[nzmax:nzmax+A.filled]+one
-        info = Numeric.zeros((40,),'i')
-        rinfo = Numeric.zeros((20,),'d')
+        info = scipy_base.zeros((40,),'i')
+        rinfo = scipy_base.zeros((20,),'d')
         umfpack.umz2fa(n,ne,0,0,value, index,
                        keep, cntl, icntl, info, rinfo)
         # Call sparse linear solve routine.
-        x = Numeric.zeros((n,),'D')
-        w = Numeric.zeros((2*n,),'D')
+        x = scipy_base.zeros((n,),'D')
+        w = scipy_base.zeros((2*n,),'D')
         if info[0] < 0:
             print "Problem with factorization: %d" % info[0]
             return x, info[:24], rinfo[:8]
@@ -228,7 +227,7 @@ def splinsolve(A,b,factored=0,fulloutput=0,lvalcoef=(6,70,1)):
     else:
         assert(len(b.shape)==1)
         n = len(b)
-        x = Numeric.zeros((n,),'D')
+        x = scipy_base.zeros((n,),'D')
         value, index, keep, w, cntl, icntl, info, rinfo = A
         assert(2*n==len(w))
         umfpack.umz2so(0,0,value,index,keep,b,x,w,cntl,icntl,info,rinfo)

@@ -27,7 +27,6 @@
 #include "SuperLU2.0/SRC/util.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
-extern PyObject *_superlumodule_memory_dict;
 
 
 /* Natively handles Compressed Sparse Row */
@@ -44,7 +43,8 @@ static int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArray
     return retval;
   }
 
-  cCreate_CompRow_Matrix(A, m, n, nnz, (complex *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _C, GE);
+  if (setjmp(_superlu_py_jmpbuf)) return retval;
+  else cCreate_CompRow_Matrix(A, m, n, nnz, (complex *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _C, GE);
   retval = 0;
   return retval;
 }
@@ -72,7 +72,8 @@ static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
     ldx = m;
   }
 
-  cCreate_Dense_Matrix(X, m, n, (complex *)aX->data, ldx, DN, _C, GE);
+  if (setjmp(_superlu_py_jmpbuf)) return -1;
+  else cCreate_Dense_Matrix(X, m, n, (complex *)aX->data, ldx, DN, _C, GE);
 
   return 0;
 }

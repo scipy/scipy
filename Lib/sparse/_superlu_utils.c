@@ -42,6 +42,9 @@ void *superlu_python_module_malloc(size_t size)
   long keyval;
   void *mem_ptr; 
 
+  if (_superlumodule_memory_dict == NULL) {
+    _superlumodule_memory_dict = PyDict_New();
+  }
   mem_ptr = malloc(size);
   keyval = (long) mem_ptr;
   if (mem_ptr == NULL) return NULL;

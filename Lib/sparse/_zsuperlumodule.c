@@ -27,7 +27,6 @@
 #include "SuperLU2.0/SRC/util.h"
 
 extern jmp_buf _superlu_py_jmpbuf;
-extern PyObject *_superlumodule_memory_dict;
 
 /* Natively handles Compressed Sparse Row */
 
@@ -43,7 +42,8 @@ static int NRFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArray
     return retval;
   }
 
-  zCreate_CompRow_Matrix(A, m, n, nnz, (doublecomplex *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _Z, GE);
+  if (setjmp(_superlu_py_jmpbuf)) return retval;
+  else zCreate_CompRow_Matrix(A, m, n, nnz, (doublecomplex *)nzvals->data, (int *)colind->data, (int *)rowptr->data, NR, _Z, GE);
   retval = 0;
   return retval;
 }
@@ -71,7 +71,8 @@ static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
     ldx = m;
   }
 
-  zCreate_Dense_Matrix(X, m, n, (doublecomplex *)aX->data, ldx, DN, _Z, GE);
+  if (setjmp(_superlu_py_jmpbuf)) return -1;
+  else zCreate_Dense_Matrix(X, m, n, (doublecomplex *)aX->data, ldx, DN, _Z, GE);
 
   return 0;
 }
@@ -191,10 +192,6 @@ void init_zsuperlu()
   PyObject *m=NULL, *d=NULL;
   m = Py_InitModule("_zsuperlu", zSuperLU_Methods);
   import_array();
-
-  _superlumodule_memory_dict = PyDict_New();
-  d = PyModule_GetDict(m);
-  PyDict_SetItemString(d, "_memory_dict",_superlumodule_memory_dict);
 
   if (PyErr_Occurred())
     Py_FatalError("can't initialize module zsuperlu");
