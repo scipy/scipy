@@ -202,19 +202,9 @@ class machine_cluster:
         raise ClusterError, msg
         
     def load(self):        
-        import scipy.common.proc
-        res = self.apply(scipy.common.proc.load_avg,())
-        return res
-
-    def info(self):
-        import scipy.common.proc
-        res = self.apply(scipy.common.proc.machine_info,())
-        return res
-
-    def load_summary(self):        
         import string
         import scipy.common.proc
-        results = self.load()
+        results = self.load_list()
         for i in range(len(self.workers)):            
             name = string.split(self.workers[i].host,'.')[0]
             res = results[i]
@@ -223,9 +213,9 @@ class machine_cluster:
             if not ((i+1) % 5):
                 print
     
-    def info_summary(self):
+    def info(self):
         import string
-        results = self.info()
+        results = self.info_list()
         labels = "%-8s  %-9s  %-4s  %-8s  %-8s  %-4s" % \
                  ('MACHINE','CPU','GHZ','MB TOTAL', 
                   'MB FREE','LOAD')
@@ -238,6 +228,22 @@ class machine_cluster:
                  res['cpu_speed'],res['mem_total'],res['mem_free'],\
                  res['load_1'])
             print s
+
+    def ps(self,sort_by='cpu',**filters):
+        psl = self.ps_list(sort_by,**filters)
+        if len(psl):
+            print psl[0].labels_with_name()
+        for i in psl: print i.str_with_name()
+
+    def load_list(self):        
+        import scipy.common.proc
+        res = self.apply(scipy.common.proc.load_avg,())
+        return res
+
+    def info_list(self):
+        import scipy.common.proc
+        res = self.apply(scipy.common.proc.machine_info,())
+        return res
     
     def ps_list(self,sort_by='cpu',**filters):
         import operator
@@ -247,12 +253,6 @@ class machine_cluster:
         psl = scipy.common.proc.ps_sort(psl,sort_by,**filters)        
         return psl
  
-    def ps(self,sort_by='cpu',**filters):
-        psl = self.ps_list(sort_by,**filters)
-        if len(psl):
-            print psl[0].labels_with_name()
-        for i in psl: print i.str_with_name()
-
     def nice(self,increment=10):
         """* increment the interpreter daemon on all remote machines.
              hmmm. this doesn't seem to work. 
@@ -339,7 +339,7 @@ class machine_cluster:
         package = self.workers[0].apply_pack(function,args,keywords)
         return self._send_recv(package)
 
-    def loop_apply(self,function,loop_var,args,keywords=None):
+    def loop_apply(self,function,loop_var,args=(),keywords=None):
         #----------------------------------------------------
         # Prepare main package for sending
         # almost verbatim from loop_apply_pack in sync_cluster
@@ -377,6 +377,12 @@ class machine_cluster:
         package = self.workers[0].loop_code_pack(code,loop_var,
                         the_inputs,returns,global_vars)    
         return self.loop_send_recv(package,loop_data,loop_var)
+    
+    def array_split(self,name,sequence):
+        """experimental"""
+        q=scipy.split(a,len(self.workers))
+        herd.cluster.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),global_vars=(name,))
+    
         
     def loop_send_recv(self,package,loop_data,loop_var):        
         #----------------------------------------------------
