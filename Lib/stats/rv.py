@@ -219,6 +219,15 @@ def gengamma(a, c, loc=0.0, scale=1.0, size=None):
     vals = special.gammaincinv(a, special.gamma(a)*q)**(1.0/c)
     return vals*scale + loc
 
+def loggamma(c, loc=0.0, scale=1.0, size=None):
+    """Log Gamma distribution.
+    """
+    if (c <=0) or (scale<=0):
+        return ValueErro, _parmerr
+    u = random(size=size)
+    vals = log(special.gammaincinv(c,u*special.gamma(c)))
+    return vals*scale + loc
+
 ######
 #####
 
@@ -434,7 +443,7 @@ def gompertz(c, loc=0.0, scale=1.0, size=None):
     if (c<=0) or (scale <=0):
         raise ValueError, _parmerr
     u = random(size=size)
-    return log(1.0-1.0/c*log(1.0-q))*scale + loc
+    return log(1.0-1.0/c*log(1.0-u))*scale + loc
 
 
 def hypsecant(loc=0.0, scale=1.0, size=None):

@@ -1113,58 +1113,7 @@ def foldcauchystats(c, loc=0.0, scale=1.0, full=0):
     else:
         return (scipy.inf,)*4
 
-## Extreme Value Type II or Frechet
-## (defined in Regress+ documentation as Extreme LB) as
-##   a limiting value distribution.
-##
-
-def frechetpdf(x, c, left=0, loc=0.0, scale=1.0):
-    x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
-    x = arr((x-loc*1.0)/scale)
-    x = arr(where(left, -x, x))
-    Px = c*pow(x,-(c+1))*exp(-x**(-c))
-    return select([(scale <=0)|(c<=0),((x>0)&(left==0))|((x<0)&(left!=0))],[scipy.nan, Px/scale])
-
-def frechetcdf(x, c, left=0, loc=0.0, scale=1.0):
-    x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
-    x = arr((x-loc*1.0)/scale)
-    x = arr(where(left, -x, x))
-    Cx = exp(-x**(-c))
-    return select([(scale <=0)|(c<=0),(x>0)&(left==0), (x<0)&(left!=0), left!=0],[scipy.nan, Cx, 1-Cx, 1])
-
-def frechetppf(q, c, left=0, loc=0.0, scale=1.0):
-    q, c, loc, scale, left = map(arr, (q, c, loc,scale, left))
-    q = arr(where(left,1-q,q))
-    vals = pow(-log(q),-1.0/c)
-    cond = (q>=0)&(q<=1)&(scale >0)&(c >0)
-    return select([1-cond, left==0], [scipy.nan, vals*scale + loc], -vals*scale + loc)
-    
-def frechetsf(x, c, left=0, loc=0.0, scale=1.0):
-    return 1.0-frechetcdf(x, c, left, loc, scale)
-
-def frechetisf(q, c, left=0, loc=0.0, scale=1.0):
-    return frechetppf(1-q, c, left, loc, scale)
-
-def frechetstats(c, left=0, loc=0.0, scale=1.0, full=0):
-    c, loc, scale, left = map(arr, (c, loc, scale, left))
-    cond = (c > 0) & (scale > 0)
-    ic = 1.0/c
-    mu = special.gamma(1-ic)
-    g2c = special.gamma(1-2*ic)
-    mu2 = g2c - mu*mu
-    mn = select([1-cond,left==0], [scipy.nan, mu*scale + loc], -mu*scale+loc)
-    var = _wc(cond, mu2*scale*scale)
-    if not full:
-        return mn, var
-
-    g3c = special.gamma(1-3*ic)
-    g4c = special.gamma(1-4*ic)
-    g1 = (g3c - 3*mu*mu2 - mu**3) / mu2**1.5
-    g2 = (g4c - 4*g3c*g1c + 3*g2c*g2c) / mu2**2 - 6
-    return mn, var, _wc(cond, g1), _wc(cond, g2)
-    
-    
-    
+        
 ## F
 
 def fpdf(x, dfn, dfd, loc=0.0, scale=1.0):
@@ -1278,6 +1227,57 @@ def foldnormstats(c=0.0, loc=0.0, scale=1.0, full=0):
     return mn, var, _wc(cond, g1), _wc(cond, g2-3.0)
                    
 
+## Extreme Value Type II or Frechet
+## (defined in Regress+ documentation as Extreme LB) as
+##   a limiting value distribution.
+##
+
+def frechetpdf(x, c, left=0, loc=0.0, scale=1.0):
+    x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
+    x = arr((x-loc*1.0)/scale)
+    x = arr(where(left, -x, x))
+    Px = c*pow(x,-(c+1))*exp(-x**(-c))
+    return select([(scale <=0)|(c<=0),((x>0)&(left==0))|((x<0)&(left!=0))],[scipy.nan, Px/scale])
+
+def frechetcdf(x, c, left=0, loc=0.0, scale=1.0):
+    x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
+    x = arr((x-loc*1.0)/scale)
+    x = arr(where(left, -x, x))
+    Cx = exp(-x**(-c))
+    return select([(scale <=0)|(c<=0),(x>0)&(left==0), (x<0)&(left!=0), left!=0],[scipy.nan, Cx, 1-Cx, 1])
+
+def frechetppf(q, c, left=0, loc=0.0, scale=1.0):
+    q, c, loc, scale, left = map(arr, (q, c, loc,scale, left))
+    q = arr(where(left,1-q,q))
+    vals = pow(-log(q),-1.0/c)
+    cond = (q>=0)&(q<=1)&(scale >0)&(c >0)
+    return select([1-cond, left==0], [scipy.nan, vals*scale + loc], -vals*scale + loc)
+    
+def frechetsf(x, c, left=0, loc=0.0, scale=1.0):
+    return 1.0-frechetcdf(x, c, left, loc, scale)
+
+def frechetisf(q, c, left=0, loc=0.0, scale=1.0):
+    return frechetppf(1-q, c, left, loc, scale)
+
+def frechetstats(c, left=0, loc=0.0, scale=1.0, full=0):
+    c, loc, scale, left = map(arr, (c, loc, scale, left))
+    cond = (c > 0) & (scale > 0)
+    ic = 1.0/c
+    mu = special.gamma(1-ic)
+    g2c = special.gamma(1-2*ic)
+    mu2 = g2c - mu*mu
+    mn = select([1-cond,left==0], [scipy.nan, mu*scale + loc], -mu*scale+loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+
+    g3c = special.gamma(1-3*ic)
+    g4c = special.gamma(1-4*ic)
+    g1 = (g3c - 3*mu*mu2 - mu**3) / mu2**1.5
+    g2 = (g4c - 4*g3c*g1c + 3*g2c*g2c) / mu2**2 - 6
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+    
+
 ## Generalized Logistic
 ##
 def genlogisticpdf(x, c, loc=0.0, scale=1.0):
@@ -1377,7 +1377,8 @@ def genexponpdf(x, a, b, c, loc=0.0, scale=1.0):
     x, a, b, c, loc, scale = map(arr, (x, a, b, c, loc, scale))
     x = arr((x-loc*1.0)/scale)
     Px = 0
-    return
+    pass
+
 
 
 ## Generalized Extreme Value
@@ -1872,6 +1873,28 @@ def hypsecantstats(loc=0.0, scale=1.0, full=0):
     g1, g2 = 0, 2
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
+##  Inverted Gamma
+#     special case of generalized gamma with c=-1
+# 
+
+def invgammapdf(x, a, loc=0.0, scale=1.0):
+    return gengammapdf(x, a, -1, loc, scale)
+
+def invgammacdf(x, a, loc=0.0, scale=1.0):
+    return gengammacdf(x, a, -1, loc, scale)
+
+def invgammappf(q, a, loc=0.0, scale=1.0):
+    return gengammappf(q, a, -1, loc, scale)
+
+def invgammasf(x, a, loc=0.0, scale=1.0):
+    return gengammasf(x, a, -1, loc, scale)
+
+def invgammaisf(q, a, loc=0.0, scale=1.0):
+    return gengammaisf(q, a, -1, loc, scale)
+
+def invgammastats(a, loc=0.0, scale=1.0, full=0):
+    return gengammastats(a, -1, loc, scale, full=full)
+
 
 ## Inverse Normal Distribution
 # scale is gamma from DATAPLOT and B from Regress
@@ -1925,7 +1948,51 @@ def invnormstats(mu, loc=0.0, scale=1.0, full=0):
     g2 = 15*mu
     return mn, var, _wc(cond,g1), _wc(cond,g2)
 
+
+## Inverted Weibull
+
+def invweibullpdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    xc1 = x**(-c-1.0)
+    xc2 = xc1*x
+    Px = c*xc1*xc2
+    return select([(c<=0) | (scale<=0), x>0],
+                  [Px/sample])
+
+def invweibullcdf(x, c, loc=0.0,  scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    xc1 = x**(-c)
+    Cx = exp(-xc1)
+    return select([(c<=0) | (scale<=0), x>0],
+                  [Cx])
+
+def invweibullppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    vals = pow(-log(q),arr(-1.0/c))
+    cond = (q >=0) & (q<=1) & (c > 0 ) & (scale > 0)
+    return _wc(cond, vals*scale+loc)
+
+def invweibullisf(q, c, loc=0.0, scale=1.0):
+    return invweibullppf(1.0-q, c, loc, scale)
+
+def invweibullsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-invweibullcdf(x, c, loc, scale)
+
+def invweibullstats(x, c, loc=0.0, scale=1.0):
+    raise NotImplementedError, "Not Implemented."
     
+
+## Johnson SB
+
+def johnsonsbpdf():
+    pass
+
+## Johnson SU
+
+def johnsonsupdf():
+    pass
 
 ## Laplace Distribution
 
@@ -1998,7 +2065,50 @@ def logisticstats(loc=0.0, scale=1.0, full=0):
     g2 = 6.0/5
     return mn, var, g1, g2
 
-## Lognorm
+## Log Gamma
+#
+
+def loggammapdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Px = exp(c*x-exp(x))/ special.gamma(c)
+    sv = errp(sv)
+    return select([(scale <=0) | (c<=0)],[scipy.nan], Px / scale)
+
+def loggammacdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Px = special.gammainc(c, exp(x))/ special.gamma(c)
+    sv = errp(sv)
+    return select([(scale <=0) | (c<=0)],[scipy.nan], Cx)
+
+def loggammappf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    sv = errp(0)
+    vals = log(special.gammaincinv(c,q*special.gamma(c)))
+    sv = errp(sv)
+    return vals*scale + loc
+
+def loggammaisf(q, c, loc=0.0, scale=1.0):
+    return loggammappf(1.0-q, c, loc, scale)
+
+def loggammasf(x, c, loc=0.0, scale=1.0):
+    return 1.0-loggammacdf(x, c, loc, scale)
+
+def loggammastats(c, loc=0.0, select=1.0, full=1):
+    pass
+        
+
+## Log-Laplace
+##
+
+def loglaplacepdf():
+    pass
+
+
+## Lognormal
 ## std is a shape parameter and is the variance of the underlying
 ##    distribution.
 ## the mean of the underlying distribution is log(scale)
@@ -2135,6 +2245,10 @@ def maxwellstats(scale=1.0, full=0):
     g2 = (-12*pi*pi+160*pi-384)/(3*pi-8.0)**2
     return mu, var, _wc(cond, g1), _wc(cond, g2)
 
+# Mielke's Beta-Kappa
+
+def mielkepdf():
+    pass
 
 # Nakagami (cf Chi)
 
@@ -2476,6 +2590,16 @@ def powerstats(a, loc=0.0, scale=1.0, full=0):
     g2 = 6*polyval([1,-1,-6,2.],a)/(a*(a+3)*(a+4.0))
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
+# Power log normal
+
+def powerlognormpdf():
+    pass
+
+# Power Normal
+
+def powernormpdf():
+    pass
+
 # Reciprocal Distribution
 
 def reciprocalpdf(x, a, b, loc=0.0, scale=1.0):
@@ -2523,7 +2647,11 @@ def reciprocalstats(a, b, loc=0.0, scale=1.0, full=0):
     g2 /= 3*(a-b)*fac*fac
     g2 -= 3
     return mn, var, _wc(cond, g1), _wc(cond, g2)
-    
+
+# Reciprocal Inverse Gaussian
+
+def recipinvgauss():
+    pass
 
 # Rayleigh distribution (this is chi with df=2 and loc=0.0)
 # scale is the mode.
@@ -2646,6 +2774,14 @@ def triangstats(c, loc=0.0, scale=1.0, full=0):
     g1 = sqrt(2)*(2*c-1)*(c+1)*(c-2) / 5.0 / fac**1.5
     g2 = -3.0/5
     return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+# Truncated Exponential
+
+def truncexponpdf():
+    pass
+
+def truncnormpdf():
+    pass
 
 # Tukey-Lambda
 # A flexible distribution ranging from Cauchy (lam=-1)
@@ -2889,6 +3025,12 @@ def weibullstats(shape, left=0, loc=0.0, scale=1.0, full=0):
     g2 += gam(1+4*ia) - 4*gam(1+ia)*gam(1+3*ia) - 3*gam(1+2*ia)**2
     g2 /= den**2.0
     return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+
+# Wrapped Cauchy
+
+def wrapcauchypdf():
+    pass
 
         
 ### DISCRETE DISTRIBUTIONS

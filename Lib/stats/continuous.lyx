@@ -984,10 +984,10 @@ m_{d} & = & \textrm{NA}
 
 \layout Section
 
-Doubly Non-central F
+Doubly Non-central F*
 \layout Section
 
-Doubly Non-central t
+Doubly Non-central t*
 \layout Section
 
 Double Weibull
@@ -2151,7 +2151,7 @@ m_{d}=m_{n}=\mu  & = & 0\\
 
 \layout Section
 
-Gauss Hypergeometric 
+Gauss Hypergeometric (*)
 \layout Standard
 
 
@@ -2195,9 +2195,9 @@ Special case of the generalized Gamma distribution with
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,c\right)  & = & \frac{x^{-a-1}}{\Gamma \left( a\right) }\exp \left( -\frac{1}{x}\right) \\
-F\left( x;a,c\right)  & = & \frac{\Gamma \left( a,\frac{1}{x}\right) }{\Gamma \left( a\right) }\\
-G\left( q;a,c\right)  & = & \left\{ \Gamma ^{-1}\left[ a,\Gamma \left( a\right) q\right] \right\} ^{-1}
+f\left( x;a\right)  & = & \frac{x^{-a-1}}{\Gamma \left( a\right) }\exp \left( -\frac{1}{x}\right) \\
+F\left( x;a\right)  & = & \frac{\Gamma \left( a,\frac{1}{x}\right) }{\Gamma \left( a\right) }\\
+G\left( q;a\right)  & = & \left\{ \Gamma ^{-1}\left[ a,\Gamma \left( a\right) q\right] \right\} ^{-1}
 \end{eqnarray*}
 
 \end_inset 
@@ -2336,12 +2336,82 @@ two-parameter
 \layout Section
 
 Inverted Weibull
+\layout Standard
+
+Shape paramter 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+.
+ Then 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & cx^{-c-1}\exp \left( -x^{-c}\right) \\
+F\left( x;c\right)  & = & \exp \left( -x^{-c}\right) \\
+G\left( q;c\right)  & = & \left( -\log q\right) ^{-1/c}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Johnson SB
+\layout Standard
+
+Defined for 
+\begin_inset Formula \( x\in \left( 0,1\right)  \)
+\end_inset 
+
+ with two shape parameters 
+\begin_inset Formula \( a \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( b>0. \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,b\right)  & = & \frac{b}{x\left( 1-x\right) }\phi \left( a+b\log \frac{x}{1-x}\right) \\
+F\left( x;a,b\right)  & = & \Phi \left( a+b\log \frac{x}{1-x}\right) \\
+G\left( q;a,b\right)  & = & \frac{1}{1+\exp \left[ -\frac{1}{b}\left( \Phi ^{-1}\left( q\right) -a\right) \right] }
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Johnson SU
+\layout Standard
+
+Defined for all 
+\begin_inset Formula \( x \)
+\end_inset 
+
+ with two shape parameters 
+\begin_inset Formula \( a \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( b>0 \)
+\end_inset 
+
+.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,b\right)  & = & \frac{b}{\sqrt{x^{2}+1}}\phi \left( a+b\log \left( x+\sqrt{x^{2}+1}\right) \right) \\
+F\left( x;a,b\right)  & = & \Phi \left( a+b\log \left( x+\sqrt{x^{2}+1}\right) \right) \\
+G\left( q;a,b\right)  & = & \sinh \left[ \frac{\Phi ^{-1}\left( q\right) -a}{b}\right] 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 KSone
@@ -2383,7 +2453,7 @@ m_{d}=m_{n}=\mu  & = & 0\\
 
 The ML estimator of the location parameter is 
 \begin_inset Formula \[
-\hat{L}=\median \left( X_{i}\right) \]
+\hat{L}=\textrm{median}\left( X_{i}\right) \]
 
 \end_inset 
 
@@ -2478,7 +2548,36 @@ m_{n} & = & -\log \left( 2-1\right) =0
 
 \layout Section
 
-Log Double Exponential
+Log Double Exponential (Log-Laplace)
+\layout Standard
+
+Defined over 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ with 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+\frac{c}{2}x^{c-1} &  & 0<x<1\\
+\frac{c}{2}x^{-c-1} &  & x\geq 1
+\end{array}\right. \\
+F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+\frac{1}{2}x^{c} &  & 0<x<1\\
+1-\frac{1}{2}x^{-c} &  & x\geq 1
+\end{array}\right. \\
+G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
+\left( 2q\right) ^{1/c} &  & 0\leq q<\frac{1}{2}\\
+\left( 2-2q\right) ^{-1/c} &  & \frac{1}{2}\leq q\leq 1
+\end{array}\right. 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Log Gamma
@@ -2619,10 +2718,38 @@ G\left( q;\nu \right)  & = & \sqrt{\frac{1}{\nu }\Gamma ^{-1}\left( v,q\right) }
 
 \layout Section
 
-Noncentral beta
+Noncentral beta*
+\layout Standard
+
+Defined over 
+\begin_inset Formula \( x\in \left[ 0,1\right]  \)
+\end_inset 
+
+ with 
+\begin_inset Formula \( a>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( b>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c\geq 0 \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+F\left( x;a,b,c\right) =\sum _{j=0}^{\infty }\frac{e^{-c/2}\left( \frac{c}{2}\right) ^{j}}{j!}I_{B}\left( a+j,b;0\right) \]
+
+\end_inset 
+
+
 \layout Section
 
-Noncentral chi
+Noncentral chi*
 \layout Section
 
 Noncentral chi-squared
@@ -2841,7 +2968,7 @@ A generalized F distribution.
 \begin_inset Formula \begin{eqnarray*}
 f\left( x;\kappa ,\theta \right)  & = & \frac{\kappa x^{\kappa -1}}{\left( 1+x^{\theta }\right) ^{1+\frac{\kappa }{\theta }}}\\
 F\left( x;\kappa ,\theta \right)  & = & \frac{x^{\kappa }}{\left( 1+x^{\theta }\right) ^{\kappa /\theta }}\\
-G\left( q;\kappa ,\theta \right)  & = & F^{-1}\left( q;\kappa ,\theta \right) 
+G\left( q;\kappa ,\theta \right)  & = & \left( \frac{-p^{\theta /\kappa }}{p^{\theta /\kappa }-1}\right) ^{1/\theta }
 \end{eqnarray*}
 
 \end_inset 
@@ -3042,7 +3169,7 @@ m_{d} & = & 1
 
 \layout Section
 
-R-distribution
+R-distribution*
 \layout Standard
 
 A general-purpose distribution with a variety of shapes controlled by 
@@ -3107,7 +3234,7 @@ m_{n} & = & \sqrt{2\log \left( 2\right) }
 
 \layout Section
 
-Rice 
+Rice*
 \layout Standard
 
 Defined for 
@@ -3235,7 +3362,7 @@ m_{d}=m_{n}=\mu  & = & 0\\
  
 \layout Section
 
-Studentized Range
+Studentized Range*
 \layout Section
 
 Student t
@@ -3292,7 +3419,7 @@ m_{n}=m_{d}=\mu  & = & 0\\
  
 \layout Section
 
-Symmetric Power
+Symmetric Power*
 \layout Section
 
 Triangular
@@ -3576,10 +3703,7 @@ m_{d} & = & \frac{1}{2}\left( \sqrt{13}-3\right)
 
 \layout Section
 
-Waring
-\layout Section
-
-Wishart
+Wishart*
 \layout Section
 
 Wrapped Cauchy
