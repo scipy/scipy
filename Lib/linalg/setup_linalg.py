@@ -178,7 +178,7 @@ def configuration(parent_package=''):
     if atlas_info:
         ext_args['libraries'] = [atlas_info['libraries'][-1]]
         ext_args['library_dirs'] = atlas_info['library_dirs'][:]
-        ext_args['define_macros'] = [('ATLAS_INFO',atlas_version)]
+        ext_args['define_macros'] = [('ATLAS_INFO','"%s"' % atlas_version)]
     else:
         ext_args['define_macros'] = [('NO_ATLAS_INFO',1)]
     ext = Extension(**ext_args)
