@@ -25,7 +25,7 @@ def _bvalfromboundary(boundary):
 
 
 def correlate(volume, kernel, mode='full'):
-    """ correlate(in1, in2, mode='full')  Filtering of in1 with in2.
+    """Cross-correlate two N-dimensional arrays.
 
   Description:
 
@@ -63,7 +63,7 @@ def correlate(volume, kernel, mode='full'):
     return sigtools._correlateND(volume, kernel, val)
 
 def convolve(volume,kernel,mode='full'):
-    """ convolve(in1, in2, mode='full')  Convolution of in1 with in2.
+    """Convolve two N-dimensional arrays.
 
   Description:
 
@@ -101,9 +101,8 @@ def convolve(volume,kernel,mode='full'):
     return sigtools._correlateND(volume,kernel[slice_obj],val)
 
 def order_filter(a, domain, order):
-    """
- order_filter(in, domain, rank)  Perform an order filter on in.
-
+    """Perform an order filter on an N-dimensional array.
+    
   Description:
 
     Perform an order filter on the array in.  The domain argument acts as a
@@ -136,8 +135,7 @@ def order_filter(a, domain, order):
    
 
 def medfilt(volume,kernel_size=None):
-    """
- medfilt(in, kernel_size=3)  Perform a median filter on input array.
+    """Perform a median filter on an N-dimensional array.
 
   Description:
 
@@ -178,8 +176,7 @@ def medfilt(volume,kernel_size=None):
 
 
 def wiener(im,mysize=None,noise=None):
-    """
- wiener(in, kernel_size=3, noise_power=None)  Perform a wiener filter.
+    """Perform a wiener filter on an N-dimensional array.
 
   Description:
 
@@ -230,7 +227,7 @@ def wiener(im,mysize=None,noise=None):
     return out
 
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
-    """ convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0)
+    """Conolve two 2-dimensional arrays.
 
   Description:
 
@@ -266,7 +263,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     return sigtools._convolve2d(volume,kernel,1,val,bval,fillvalue)
 
 def correlate2d():
-    """ correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0)
+    """Cross-correlate two 2-dimensional arrays.
 
   Description:
 
@@ -302,8 +299,7 @@ def correlate2d():
     return sigtools._convolve2d(volume,kernel,0,val,bval,fillvalue)    
 
 def medfilt2d(input, kernel_size=3):
-    """
- medfilt2d(in, kernel_size=3)  Perform a median filter on input array.
+    """Median filter two 2-dimensional arrays.
 
   Description:
 
@@ -339,10 +335,8 @@ def medfilt2d(input, kernel_size=3):
 
 def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
           maxiter=25, grid_density=16):
-    """
- remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
-       maxiter=25, grid_density=16)
-
+    """Calculate the minimax optimal filter using Remez exchange algorithm.
+    
   Description:
 
     Calculate the filter-coefficients for the finite impulse response
@@ -383,8 +377,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
                            maxiter, grid_density)
 
 def lfilter(b, a, x, axis=-1, zi=None):
-    """
- lfilter(b, a, x, axis=-1, zi=None)  Filter data in 1-D with an IIR or FIR filter
+    """Filter data along one-dimension with an IIR or FIR filter.
 
   Description
 

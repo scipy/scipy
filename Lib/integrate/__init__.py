@@ -3,7 +3,7 @@
 
    gauss_quad    -- Integrate func(x) using Gaussian quadrature of order n.
    gauss_quadtol -- Integrate with given tolerance using Gaussian quadrature.
-   odeint        -- Integrate ordinary differential equations
+   odeint        -- Integrate ordinary differential equations.
    quad          -- General purpose integration.
    dblquad       -- General purpose double integration.
    tplquad       -- General purpose triple integration.

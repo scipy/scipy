@@ -2,11 +2,8 @@ import _minpack
 from common_routines import *
 
 def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
-    """
- fsolve(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0,
-        xtol=1.49012e-8, maxfev=0, band=None, epsfcn=0.0, factor=100,
-        diag=None)
-
+    """Find the roots of a function.
+    
   Description:
 
     Return the roots of the (non-linear) equations defined by
@@ -121,11 +118,8 @@ def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,m
 
 
 def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None):
-    """
- leastsq(func, x0, args=(), Dfun=None, full_output=0, col_deriv=0,
-         ftol=1.49012e-8, xtol=1.49012e-8, gtol=0.0, maxfev=0,
-         epsfcn=0.0, factor=100, diag=None)
-
+    """Minimize the sum of squares of a set of equations.
+    
   Description:
 
     Return the point which minimizes the sum of squares of M
@@ -249,7 +243,8 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
 
 def check_gradient(fcn,Dfcn,x0,col_deriv=0):
-    """good,err = check_gradient(fun,Dfun,x0,col_deriv=0)"""
+    """Perform a simple check on the gradient for correctness.
+    """
 
     x = myasarray(x0)
     n = len(x)

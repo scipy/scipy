@@ -9,25 +9,30 @@ import write_style
 from write_style import inches, points
 from signaltools import medfiltND
 
+_hold = 0
+
 try:
     import Scientific.Statistics.Histogram
     SSH = Scientific.Statistics.Histogram
     def histogram(data,numbins=80,range=None):
-        """h = histogram(data,numbins=80,range=None)"""
+        """Plot a histogram.
+        """
+
         h = SSH.Histogram(data,numbins,range)
-        mplot(h[:,0],h[:,1])
+        plot(h[:,0],h[:,1])
         return h
 except ImportError:
     try:
         import Statistics
         SSH = Statistics
         def histogram(data,numbins=80,range=None):
-            """h = histogram(data,numbins=80,range=None)"""
+            """Plot a histogram.
+            """
             h = SSH.histogram(data,numbins,range)
-            mplot(h[:,0],h[:,1])
+            plot(h[:,0],h[:,1])
             return h        
     except ImportError:        
-        pass
+        histogram = scipy.histogram
 
 def reverse_dict(dict):
     newdict = {}
@@ -56,38 +61,18 @@ def _find_and_set(dict, str, default):
             break
     return value
 
-def _parse_type_arg(thearg,nowplotting):
-    indx = nowplotting % len(_corder)
-    if type(thearg) is type(''):
-        tomark = 1
+def barplot(x,y,width=0.8,color=0):
+    """Plot a barplot.
 
-        thetype = _find_and_set(_types,thearg,'none')
-        thecolor = _find_and_set(_colors,thearg,_colors[_corder[indx]])
-        themarker = _find_and_set(_markers,thearg,None)
-        
-        if (themarker == None):
-            tomark = 0
-            if thetype == 'none':
-                thetype = 'solid'        
+    Description:
+    
+      Plot a barplot with centers at x and heights y with given color
 
-        return (thetype, thecolor, themarker, tomark)
+    Inputs:
 
-    else:  # no string this time
-        return ('solid',_colors[_corder[indx]],'Z',0)
-
-_GLOBAL_LINE_TYPES=[]
-def clear_global_linetype():
-    for k in range(len(_GLOBAL_LINE_TYPES)):
-        _GLOBAL_LINE_TYPES.pop()
-
-def append_global_linetype(arg):
-    _GLOBAL_LINE_TYPES.append(arg)
-
-def barplot(x,y,width=0.8,color=0,hold=1):
-    """barplot(x,y,width=0.8,color=0,hold=1)
-    plot a barplot with centers at x and heights y with color=color where color
-    is a number in the current palette.  If hold=1 then plot over current plot
-    otherwise refresh screen.
+      x, y -- Centers and heights of bars
+      width -- Relative width of the bars.
+      color -- A number from the current palette.
     """
     N = 4*Numeric.ones(len(x))
     hw = width * (x[1]-x[0])/ 2.0
@@ -99,18 +84,53 @@ def barplot(x,y,width=0.8,color=0,hold=1):
     Y = Numeric.array((Ya,Yb,Yb,Ya))
     X = Numeric.reshape(Numeric.transpose(X),(4*len(N),))
     Y = Numeric.reshape(Numeric.transpose(Y),(4*len(N),))
-    if not hold:
+    if not _hold:
         gist.fma()
     Z = color * Numeric.ones(len(N))
     gist.plfp(Z.astype('b'),Y,X,N)
     return
 
-def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25,hold=0):
-    "errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25, hold=0)"
+def hold(state):
+    """Draw subsequent plots over the current plot.
+
+    Inputs:
+
+      state -- If 'on' or 'yes' hold the current plot.
+               Otherwise refresh screen when drawing new plot.
+    """
+    global _hold
+    if state in ['on', 'yes']:
+        _hold = 1
+    elif state in ['off', 'no']:
+        _hold = 0
+    else:
+        raise ValueError, 'holds argument can be "on","off",'\
+                          '"yes","no". Not ' + state
+    return
+          
+
+def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25):
+    """Draw connected points with errorbars.
+
+    Description:
+
+      Plot connected points with errorbars.
+
+    Inputs:
+
+      x, y -- The points to plot.
+      err -- The error in the y values.
+      ptcolor -- The color for the points.
+      linecolor -- The color of the connecting lines and error bars.
+      pttype -- The type of point ('o', 'x', '+', '.', 'x', '*')
+      linetype -- The type of line ('-', '|', ':', '-.', '-:')
+      fac -- Adjusts how long the horizontal lines are which make the
+             top and bottom of the error bars.
+    """
     # create line arrays
     yb = y - err
     ye = y + err
-    if hold:
+    if _hold:
         pass
     else:
         gist.fma()
@@ -127,7 +147,24 @@ def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25
     gist.pldj(x0,yb,x1,yb,color=_colors[linecolor],type=_types[linetype])
     return
 
-def legend_base(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
+def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
+    """Construct and place a legend.
+
+    Description:
+
+      Build a legend and place it on the current plot with an interactive
+      prompt.
+
+    Inputs:
+
+      text -- A list of strings which document the curves.
+      linetypes -- If not given, then the text strings are associated
+                   with the curves in the order they were originally
+                   drawn.  Otherwise, associate the text strings with the
+                   corresponding curve types given.  See plot for description.
+                   
+    """
+    global _hold
     viewp = gist.viewport()
     width = (viewp[1] - viewp[0]) / 10.0;
     if lleft is None:
@@ -143,19 +180,21 @@ def legend_base(text,linetypes=None,lleft=None,color='black',tfont='helvetica',f
     legy = Numeric.ones(legarr.shape)
     dy = fontsize*points*1.15
     deltay = fontsize*points / 2.8
-    deltax = fontsize*points / 2.5
+    deltax = fontsize*points / 2.8
     ypos = lly + deltay;
     if linetypes is None:
         linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
     gist.plsys(0)
+    savehold = _hold
+    _hold = 1
     for k in range(len(text)):
-        mplot(legarr,ypos*legy,linetypes[k],hold=1)
+        plot(legarr,ypos*legy,linetypes[k])
         print llx+width+deltax, ypos-deltay
         if text[k] != "":
             gist.plt(text[k],llx+width+deltax,ypos-deltay,
                      color=color,font=tfont,height=fontsize,tosys=0)
         ypos = ypos + dy
-
+    _hold = savehold
     if nobox:
         pass
     else:
@@ -192,69 +231,82 @@ def ispointtype(linetype):
             return 0
     return 0
 
-def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
-    viewp = gist.viewport()
-    plotlims = gist.limits()
-    gist.limits(plotlims)
-    conv_factorx = (viewp[1] - viewp[0]) / (plotlims[1]-plotlims[0])
-    conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])
+##def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
+##    viewp = gist.viewport()
+##    plotlims = gist.limits()
+##    gist.limits(plotlims)
+##    conv_factorx = (viewp[1] - viewp[0]) / (plotlims[1]-plotlims[0])
+##    conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])
 
-    width = (plotlims[1] - plotlims[0]) / 10.0;
-    if lleft is None:
-        lleft = gist.mouse(-1,0,"Click on point for lower left coordinate.")
-        llx = lleft[0]
-        lly = lleft[1]
-    else:
-        llx,lly = lleft[:2]
+##    width = (plotlims[1] - plotlims[0]) / 10.0;
+##    if lleft is None:
+##        lleft = gist.mouse(-1,0,"Click on point for lower left coordinate.")
+##        llx = lleft[0]
+##        lly = lleft[1]
+##    else:
+##        llx,lly = lleft[:2]
 
-    dx = width / 3.0
-    legarr = Numeric.arange(llx,llx+width,dx)
-    legy = Numeric.ones(legarr.shape)
-    dy = fontsize*points/conv_factory*1.15
-    deltay = fontsize*points / conv_factory / 2.8
-    deltax = fontsize*points / conv_factorx / 2.5
-    ypos = lly + deltay;
-    if linetypes is None:
-        linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
-    for k in range(len(text)):
-        if ispointtype(linetypes[k]):
-            pt = len(legarr)/2
-            mplot([legarr[pt]],[ypos*legy[pt]],linetypes[k], hold=1)
-        else:
-            mplot(legarr,ypos*legy,linetypes[k],hold=1)
-        print llx+width+deltax, ypos-deltay
-        if text[k] != "":
-            gist.plt(text[k],llx+width+deltax,ypos-deltay,
-                     color=color,font=tfont,height=fontsize,tosys=1)
-        ypos = ypos + dy
+##    dx = width / 3.0
+##    legarr = Numeric.arange(llx,llx+width,dx)
+##    legy = Numeric.ones(legarr.shape)
+##    dy = fontsize*points/conv_factory*1.15
+##    deltay = fontsize*points / conv_factory / 2.8
+##    deltax = fontsize*points / conv_factorx / 2.8
+##    ypos = lly + deltay;
+##    if linetypes is None:
+##        linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
+##    for k in range(len(text)):
+##        if ispointtype(linetypes[k]):
+##            pt = len(legarr)/2
+##            plot([legarr[pt]],[ypos*legy[pt]],linetypes[k], hold=1)
+##        else:
+##            plot(legarr,ypos*legy,linetypes[k],hold=1)
+##        print llx+width+deltax, ypos-deltay
+##        if text[k] != "":
+##            gist.plt(text[k],llx+width+deltax,ypos-deltay,
+##                     color=color,font=tfont,height=fontsize,tosys=1)
+##        ypos = ypos + dy
 
-    if nobox:
-        pass
-    else:
-        maxlen = MLab.max(map(len,text))
-        c1 = (llx-deltax,lly-deltay)
-        c2 = (llx + width + deltax + fontsize*points/conv_factorx * maxlen/1.8 + deltax,
-              lly + len(text)*dy)
-        linesx0 = [c1[0],c1[0],c2[0],c2[0]]
-        linesy0 = [c1[1],c2[1],c2[1],c1[1]]
-        linesx1 = [c1[0],c2[0],c2[0],c1[0]]
-        linesy1 = [c2[1],c2[1],c1[1],c1[1]]
-        gist.pldj(linesx0,linesy0,linesx1,linesy1,color=color)
-    return
+##    if nobox:
+##        pass
+##    else:
+##        maxlen = MLab.max(map(len,text))
+##        c1 = (llx-deltax,lly-deltay)
+##        c2 = (llx + width + deltax + fontsize*points/conv_factorx * maxlen/1.8 + deltax,
+##              lly + len(text)*dy)
+##        linesx0 = [c1[0],c1[0],c2[0],c2[0]]
+##        linesy0 = [c1[1],c2[1],c2[1],c1[1]]
+##        linesx1 = [c1[0],c2[0],c2[0],c1[0]]
+##        linesy1 = [c2[1],c2[1],c1[1],c1[1]]
+##        gist.pldj(linesx0,linesy0,linesx1,linesy1,color=color)
+##    return
 
 import operator
 def arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None):
-    """arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None)
+    """Draw an arrow.   
 
-    Draw an arrow from (x0,y0) to (x1,y1) in the current coordinate system.
-    User can change the color of the line, the color of the arrowhead, the angle
-    of the arrowhead, the height of the arrowhead (in points), and the width of
-    the line.   The colors are indices into the current palette (0 to 240).
-    lc is the line color if it should be different from the arrowhead color.
-    lc can be negative or a spelled-out color.
+    Description:
+
+      Draw an arrow from (x0,y0) to (x1,y1) in the current coordinate system.
+
+    Inputs:
+
+      x0, y0 -- The beginning point.
+      x1, y1 -- Then ending point.
+      color -- The color of the arrowhead.  Number represents an index
+               in the current palette or a negative number or a spelled
+               out basic color. 
+      lc -- The color of the line (same as color by default).
+      ang -- The angle of the arrowhead.
+      height -- The height of the arrowhead in points.
+      width -- The width of the arrow line in points.
     """
     if lc is None:
         lc = color
+    if type(lc) is types.StringType:
+        lc = _colornum[lc]
+    if type(color) is types.StringType:
+        color = _colornum[color]
     vp = gist.viewport()
     plotlims = gist.limits()
     gist.limits(plotlims)
@@ -276,30 +328,68 @@ def arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None):
     gist.plfp(array([color],'b'),[y1,y1a,y1b],[x1,x1a,x1b],[3])
     return
 
-def mplot(x,y=None,*args,**keywds):
+def _parse_type_arg(thearg,nowplotting):
+    indx = nowplotting % len(_corder)
+    if type(thearg) is type(''):
+        tomark = 1
+
+        thetype = _find_and_set(_types,thearg,'none')
+        thecolor = _find_and_set(_colors,thearg,_colors[_corder[indx]])
+        themarker = _find_and_set(_markers,thearg,None)
+        
+        if (themarker == None):
+            tomark = 0
+            if thetype == 'none':
+                thetype = 'solid'        
+
+        return (thetype, thecolor, themarker, tomark)
+
+    else:  # no string this time
+        return ('solid',_colors[_corder[indx]],'Z',0)
+
+_GLOBAL_LINE_TYPES=[]
+def clear_global_linetype():
+    for k in range(len(_GLOBAL_LINE_TYPES)):
+        _GLOBAL_LINE_TYPES.pop()
+
+def append_global_linetype(arg):
+    _GLOBAL_LINE_TYPES.append(arg)
+
+
+def plot(x,*args,**keywds):
+    """Plot curves.
+
+    Description:
+
+      Plot one or more curves on the same graph.
+
+    Inputs:
+
+      There can be a variable number of inputs which consist of pairs or
+      triples.  Each set of inputs requires a 
+    """
+    global _hold
     if "hold" in keywds.keys():
-        hold = keywds['hold']
-    else:
-        hold = 0
-    if hold:
+        _hold = keywds['hold']
+    if _hold:
         pass
     else:
         gist.fma()
     gist.animate(0)
     nargs = len(args)
     if nargs == 0:
-        if y == None:
-            y = x
-            x = Numeric.arange(0,len(y))
+        y = x
+        x = Numeric.arange(0,len(y))
         gist.plg(y,x,type='solid',color='blue',marks=0)
         return
-    argpos = 0
+    y = args[0]
+    argpos = 1
     nowplotting = 0
     clear_global_linetype()
     while 1:
         try:
             thearg = args[argpos]
-        except:
+        except IndexError:
             thearg = 0
         thetype,thecolor,themarker,tomark = _parse_type_arg(thearg,nowplotting)
         if themarker == 'Z':  # args[argpos] was data or non-existent.
@@ -313,11 +403,30 @@ def mplot(x,y=None,*args,**keywds):
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark)
 
-        if argpos+1 >= nargs: break      # no more data
         nowplotting = nowplotting + 1
-        x = args[argpos]
-        y = args[argpos+1]
-        argpos = argpos+2
+
+        ## Argpos is pointing to the next potential triple of data.
+        ## Now one of four things can happen:
+        ##
+        ##   1:  argpos points to data, argpos+1 is a string
+        ##   2:  argpos points to data, end
+        ##   3:  argpos points to data, argpos+1 is data
+        ##   4:  argpos points to data, argpos+1 is data, argpos+2 is a string
+
+        if argpos >= nargs: break      # no more data
+
+        if argpos == nargs-1:          # this is a single data value.
+            x = x
+            y = args[argpos]
+            argpos = argpos+1
+        elif type(args[argpos+1]) is types.StringType:
+            x = x
+            y = args[argpos]
+            argpos = argpos+1
+        else:   # 3 
+            x = args[argpos]
+            y = args[argpos+1]
+            argpos = argpos+2
     return
 
 def matplot(x,y=None,axis=-1):
@@ -328,7 +437,8 @@ def matplot(x,y=None,axis=-1):
     assert(len(x)==y.shape[axis])
     otheraxis = (1+axis) % 2
     sliceobj = [slice(None)]*2
-    gist.fma()
+    if not _hold:
+        gist.fma()
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]] 
         sliceobj[otheraxis] = k
@@ -344,7 +454,8 @@ def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
 def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0):
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
-    gist.fma()
+    if not _hold:
+        gist.fma()
     gist.animate(0)
     if _style is None and mystyle==0:
         _style='/tmp/image.gs'
@@ -378,7 +489,7 @@ def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
             gist.pause(plen)
     gist.animate(0)
 
-def window(n=None, style='currstyle.gs', color=-2, frame=1, labelsize=14, labelfont='helvetica'):
+def figure(n=None, style='currstyle.gs', color=-2, frame=1, labelsize=14, labelfont='helvetica'):
     fid = open(style,'w')
     fid.write(write_style.style2string(write_style.getsys(color=color,frame=frame,labelsize=labelsize,font=labelfont)))
     fid.close()
@@ -390,7 +501,8 @@ def window(n=None, style='currstyle.gs', color=-2, frame=1, labelsize=14, labelf
 
 def full_page(win,dpi=75):
     gist.window(win,style=_current_style,width=int(dpi*8.5),height=dpi*11,dpi=dpi)
-    
+
+plotframe = gist.plsys
 def subplot(win,Numy,Numx,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=11*inches,pw=8.5*inches,dpi=100,ls=0.5*inches,rs=0.5*inches,ts=0.5*inches,bs=0.5*inches):
     # Use gist.plsys to change coordinate systems 
     systems=[]
@@ -418,7 +530,8 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
                zlabel=None,font='helvetica',fontsize=16,color='black'):
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
-    gist.fma()
+    if not _hold:
+        gist.fma()
     gist.animate(0)
     if _style is None and mystyle==0:
         _style='/tmp/colorbar.gs'
