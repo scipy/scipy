@@ -9,8 +9,8 @@ Num = MLab
 abs = Numeric.absolute
 pi = Numeric.pi
 import scipy
-from scipy_base import atleast_1d, poly, polyval, comb, roots, imag, real
-from scipy import special, optimize, linalg
+from scipy_base import atleast_1d, poly, polyval, roots, imag, real
+from scipy import comb, special, optimize, linalg
 import string, types
 
 

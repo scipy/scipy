@@ -3,9 +3,9 @@
 
 import sigtools
 import scipy.special as special
-from scipy import fft, ifft, ifftshift, fft2, ifft2
-from scipy import polyadd, polymul, polydiv, polysub, \
-                  roots, poly, polyval, polyder
+from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
+from scipy_base import polyadd, polymul, polydiv, polysub, \
+                      roots, poly, polyval, polyder
 import types
 import scipy
 import Numeric

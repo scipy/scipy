@@ -28,6 +28,8 @@ import string
 # modules to import under the scipy namespace
 from scipy_base import *
 
+from helpermod import *
+
 # Level 1
 # these modules will just be imported (not subsumed)
 import special, io, linalg, stats, fftpack
