@@ -57,7 +57,9 @@ scipy_packages += graphics_packages
 separate_packages = ['gui_thread','weave']
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 separate_packages += core_packages
-separate_packages += chaco_packages
+
+# enable building chaco here by uncommenting the following line:
+#separate_packages += chaco_packages
 
 #-------------------------------
 
