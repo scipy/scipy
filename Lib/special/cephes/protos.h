@@ -101,7 +101,9 @@ extern double kn ( int nn, double x );
 extern int levnsn ( int n, double r[], double a[], double e[], double refl[] );
 extern double log ( double x );
 extern double log10 ( double x );
+#ifndef log2
 extern double log2 ( double x );
+#endif
 extern long lrand ( void );
 extern long lsqrt ( long x );
 extern int minv ( double A[], double X[], int n, double B[], int IPS[] );
