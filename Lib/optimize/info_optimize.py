@@ -14,6 +14,9 @@ Optimization Tools
    leastsq     --  Minimize the sum of squares of M equations in
                      N unknowns given a starting estimate.
 
+   fmin_l_bfgs_b -- Zhu, Byrd, and Nocedal's L-BFGS-B constrained optimizer
+                      (if you use this please quote their papers -- see help)
+
   Global Optimizers
 
    anneal      --  Simulated Annealing

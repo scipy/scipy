@@ -4,6 +4,7 @@ import os
 from glob import glob
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy_distutils import system_info
 
 def configuration(parent_package='',parent_path=None):
     package = 'optimize'
@@ -27,6 +28,13 @@ def configuration(parent_package='',parent_path=None):
     sources = [os.path.join(local_path,x) for x in sources]    
     ext = Extension(dot_join(parent_package,package,'_zeros'),
                     sources, libraries=['rootfind'])
+    config['ext_modules'].append(ext)
+
+
+    lapack = system_info.lapack_opt_info().get_info()
+    sources = ['lbfgsb.pyf','routines.f']
+    sources = [os.path.join(local_path,'lbfgsb-0.9',x) for x in sources]
+    ext = Extension(name="_lbfgsb",sources=sources, **lapack)
     config['ext_modules'].append(ext)
     
     return config
