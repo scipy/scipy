@@ -100,8 +100,8 @@ Special Functions
 
   Ricatti-Bessel Functions
 
-    ricatti_jn -- **Sequence of Ricatti-Bessel functions of first kind.
-    ricatti_yn -- **Sequence of Ricatti-Bessel functions of second kind.
+    riccati_jn -- **Sequence of Ricatti-Bessel functions of first kind.
+    riccati_yn -- **Sequence of Ricatti-Bessel functions of second kind.
 
   Struve Functions
 

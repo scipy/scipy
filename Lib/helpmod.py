@@ -1,6 +1,7 @@
 import inspect
 import types
 import sys
+import pydoc
 
 # NOTE:  pydoc defines a help function which works simliarly to this
 #  except it uses a pager to take over the screen.
@@ -136,6 +137,17 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
         else:
             print >> output, inspect.getdoc(object)
 
+        methods = pydoc.allmethods(object)
+        if methods != []:
+            print >> output, "\n\nMethods:\n"
+            for meth in methods:
+                if meth[0] == '_':
+                    continue
+                thisobj = getattr(object, meth, None)
+                if thisobj is not None:
+                    methstr, other = pydoc.splitdoc(inspect.getdoc(thisobj) or "None")
+                print >> output, "  %s  --  %s" % (meth, methstr)
+
     elif type(object) is types.InstanceType: ## check for __call__ method
         print >> output, "Instance of class: ", object.__class__.__name__
         print >> output
@@ -186,6 +198,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
 
     elif hasattr(object, '__doc__'):
         print >> output, inspect.getdoc(object)
+
         
 
 def source(object, output=sys.stdout):

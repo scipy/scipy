@@ -49,7 +49,55 @@ def getsize_type(mtype):
     argout = (array(0,mtype).itemsize(),mtype)
     return argout
 
-class fopen:
+if sys.version[:3] < "2.2":
+    class file:
+        def __init__(self, name, mode='r', bufsize=-1):
+            self.fid = open(name, mode, bufsize)
+
+        def close(self):
+            self.fid.close()
+
+        def flush(self):
+            self.fid.flush()
+
+        def fileno(self):
+            return self.fid.fileno()
+
+        def isatty(self):
+            return self.fid.isatty()
+
+        def read(size=-1):
+            return self.fid.read(size)
+
+        def readline(size=-1):
+            return self.fid.readlines()
+
+        def readlines(sizehint=None):
+            if sizehint is None:
+                return self.fid.readlines()
+            else:
+                return self.fid.readlines(sizehint)
+
+        def seek(offset, whence=0):
+            self.fid.seek(offset, whence)
+
+        def tell():
+            return self.fid.tell()
+
+        def truncate(size=None):
+            if size is None:
+                self.fid.truncate()
+            else:
+                self.fid.truncate(size)
+
+        def write(str):
+            self.fid.write(str)
+
+        def writelines(sequence):
+            self.fid.write(sequence)
+            
+
+class fopen(file):
     """Class for reading and writing binary files into Numeric arrays.
 
     Inputs:
@@ -62,35 +110,37 @@ class fopen:
                 (['native', 'n'], ['ieee-le', 'l'], ['ieee-be', 'b']) for
                 native, little-endian, or big-endian respectively.
 
-    Methods:
-
-      read -- read data from file and return Numeric array
-      write -- write to file from Numeric array
-      fort_read -- read Fortran-formatted binary data from the file.
-      fort_write -- write Fortran-formatted binary data to the file.
-      rewind -- rewind to beginning of file
-      size -- get size of file
-      seek -- seek to some position in the file
-      tell -- return current position in file
-      close -- close the file
-
     Attributes (Read only):
 
       bs -- non-zero if byte-swapping is performed on read and write.
       format -- 'native', 'ieee-le', or 'ieee-be'
-      fid -- the file object
       closed -- non-zero if the file is closed.
       mode -- permissions with which this file was opened
       name -- name of the file
-      
     """
+
+#    Methods:
+#
+#      read -- read data from file and return Numeric array
+#      write -- write to file from Numeric array
+#      fort_read -- read Fortran-formatted binary data from the file.
+#      fort_write -- write Fortran-formatted binary data to the file.
+#      rewind -- rewind to beginning of file
+#      size -- get size of file
+#      seek -- seek to some position in the file
+#      tell -- return current position in file
+#      close -- close the file
+#      
+#      
+#
     
     def __init__(self,file_name,permission='rb',format='n'):
         if 'b' not in permission: permission += 'b'
         if type(file_name) in (types.StringType, types.UnicodeType):
-            self.__dict__['fid'] = open(file_name,permission)
+            file.__init__(self, file_name, permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
-            self.__dict__['fid'] = file_name 
+            self = file_name
+            
         if format in ['native','n','default']:
             self.__dict__['bs'] = 0
             self.__dict__['format'] = 'native'
@@ -103,24 +153,25 @@ class fopen:
         else:
             raise ValueError, "Unrecognized format: " + format
 
-        self.__dict__['seek'] = self.fid.seek
-        self.__dict__['tell']= self.fid.tell
-        self.__dict__['close'] = self.fid.close
-        self.__dict__['fileno'] = self.fid.fileno
-        self.__dict__['mode'] = self.fid.mode
-        self.__dict__['closed'] = self.fid.closed
-        self.__dict__['name'] = self.fid.name
-
-    def __setattr__(self, attribute):
-        raise SyntaxError, "There are no user-settable attributes."            
+#    def __setattr__(self, attribute):
+#        raise SyntaxError, "There are no user-settable attributes."            
 
     def __del__(self):
         try:
-            self.fid.close()
+            self.close()
         except:
             pass
 
+    def raw_read(self, size=-1):
+        """Read raw bytes from file as string."""
+        return file.read(self, size)
+
+    def raw_write(self, str):
+        """Write string to file as raw bytes."""
+        return file.read(self, str)
+
     def setformat(self, format):
+        """Set the byte-order of the file."""
         if format in ['native','n','default']:
             self.__dict__['bs'] = False
             self.__dict__['format'] = 'native'
@@ -166,7 +217,7 @@ class fopen:
             mtype = data.typecode()
         howmany,mtype = getsize_type(mtype)
         count = product(data.shape)
-        numpyio.fwrite(self.fid,count,data,mtype,bs)
+        numpyio.fwrite(self,count,data,mtype,bs)
         return 
 
     fwrite = write
@@ -208,10 +259,10 @@ class fopen:
             if minus_ones == 0:
                 count = product(shape)
             elif minus_ones == 1:
-                now = self.fid.tell()
-                self.fid.seek(0,2)
-                end = self.fid.tell()
-                self.fid.seek(now)
+                now = self.tell()
+                self.seek(0,2)
+                end = self.tell()
+                self.seek(now)
                 remaining_bytes = end - now
                 know_dimensions_size = -product(count) * getsize_type(stype)[0]
                 unknown_dimension_size, illegal = divmod(remaining_bytes,
@@ -230,7 +281,7 @@ class fopen:
             howmany,rtype = getsize_type(rtype)
         if count == 0:
             return zeros(0,rtype)
-        retval = numpyio.fread(self.fid, count, stype, rtype, bs)
+        retval = numpyio.fread(self, count, stype, rtype, bs)
         if len(retval) == 1:
             retval = retval[0]
         if shape is not None:
@@ -254,9 +305,9 @@ class fopen:
             sz = self.thesize
         except AttributeError:            
             curpos = self.tell()
-            self.fid.seek(0,2)
-            sz = self.fid.tell()
-            self.fid.seek(curpos)
+            self.seek(0,2)
+            sz = self.tell()
+            self.seek(curpos)
             self.__dict__['thesize'] = sz
         return sz
 
@@ -287,9 +338,9 @@ class fopen:
                 fmt = ">"+fmt
             str = apply(struct.pack,(fmt,)+args)
             strlen = struct.pack(nfmt,len(str))
-            self.fid.write(strlen)
-            self.fid.write(str)
-            self.fid.write(strlen)
+            self.write(strlen)
+            self.write(str)
+            self.write(strlen)
         elif type(fmt) == type(array([0])):
             if len(args) > 0:
                 sz,mtype = getsize_type(args[0])
@@ -297,9 +348,9 @@ class fopen:
                 sz,mtype = getsize_type(fmt.typecode())
             count = product(fmt.shape)
             strlen = struct.pack(nfmt,count*sz)
-            self.fid.write(strlen)
+            self.write(strlen)
             numpyio.fwrite(self.fid,count,fmt,mtype,self.bs)
-            self.fid.write(strlen)
+            self.write(strlen)
         else:
             raise TypeError, "Unknown type in first argument"
 
@@ -326,19 +377,19 @@ class fopen:
             fmt = lookup_dict[self.format] + fmt
             numbytes = struct.calcsize(fmt)
             nn = struct.calcsize("i");
-            if (self.fid.read(nn) == ''):
+            if (self.raw_read(nn) == ''):
                 raise ValueError, "Unexpected end of file..."
-            strdata = self.fid.read(numbytes)
+            strdata = self.raw_read(numbytes)
             if strdata == '':
                 raise ValueError, "Unexpected end of file..."
             data = struct.unpack(fmt,strdata)
-            if (self.fid.read(nn) == ''):
+            if (self.raw_read(nn) == ''):
                 raise ValueError, "Unexpected end of file..."
             return data
         else:  # Ignore format string and read in next record as an array.
             fmt = lookup_dict[self.format] + "i"
             nn = struct.calcsize(fmt)
-            nbytestr = self.fid.read(nn)
+            nbytestr = self.raw_read(nn)
             if nbytestr == '':
                 raise ValueError, "Unexpected end of file..."
             nbytes = struct.unpack(fmt,nbytestr)[0]
@@ -351,10 +402,10 @@ class fopen:
                 raise ValueError, "Negative number of bytes to read:\n    file is probably not opened with correct endian-ness."
             if ncount == 0:
                 raise ValueError, "End of file?  Zero-bytes to read."
-            retval = numpyio.fread(self.fid, ncount, dtype, dtype, self.bs)
+            retval = numpyio.fread(self, ncount, dtype, dtype, self.bs)
             if len(retval) == 1:
                 retval = retval[0]
-            if (self.fid.read(nn) == ''):
+            if (self.raw_read(nn) == ''):
                 raise ValueError, "Unexpected end of file..."
             return retval
 

@@ -116,6 +116,8 @@ geom            --  Geometric
 hypergeom       --  Hypergeometric
 logser          --  Logarithmic (Log-Series, Series)
 poisson         --  Poisson
+planck          --  Planck (Discrete Exponential)
+boltzmann       --  Boltzmann (Truncated Discrete Exponential)
 randint         --  Discrete Uniform
 zipf            --  Zipf
 dlaplace        --  Discrete Laplacian
@@ -125,90 +127,92 @@ Statistical Functions (adapted from Gary Strangman)
 gmean           --  _
 hmean           --  _
 mean            --  _
-cmedian
-median
-mode
-tmean
-tvar
-tmin
-tmax
-tstd
-tsem
-moment
-variation
-skew
-kurtosis
-describe
-skewtest
-kurtosistest
-normaltest
+cmedian         --  _
+median          --  _
+mode            --  _
+tmean           --  _
+tvar            --  _
+tmin            --  _
+tmax            --  _
+tstd            --  _
+tsem            --  _
+moment          --  _
+variation       --  _
+skew            --  _
+kurtosis        --  _
+describe        --  _
+skewtest        --  _
+kurtosistest    --  _
+normaltest      --  _
 
-itemfreq
-scoreatpercentile
-percentileofscore
-histogram2
-histogram
-cumfreq
-relfreq
+itemfreq            -- _
+scoreatpercentile   -- _
+percentileofscore   -- _
+histogram2   -- _
+histogram   -- _
+cumfreq   -- _
+relfreq   -- _
 
-obrientransform
-samplevar
-samplestd
-signaltonoise
-var
-std
-stderr
-sem
-z
-zs
-zmap
+obrientransform    -- _
+samplevar    -- _
+samplestd    -- _
+signaltonoise    -- _
+bayes_mvs   -- _
+var    -- _
+std    -- _
+stderr    -- _
+sem    -- _
+z    -- _
+zs    -- _
+zmap    -- _
 
-threshold
-trimboth
-trim1
-cov
-corrcoef
+threshold    -- _
+trimboth    -- _
+trim1    -- _
+cov    -- _
+corrcoef    -- _
 
-f_oneway
-paired
-pearsonr
-spearmanr
-pointbiserialr
-kendalltau
-linregress
+f_oneway    -- _
+paired    -- _
+pearsonr    -- _ 
+spearmanr    -- _
+pointbiserialr    -- _
+kendalltau    -- _
+linregress    -- _
 
-ttest_1samp
-ttest_ind
-ttest_rel
-kstest
-chisquare
-ks_2samp
-meanwhitneyu
-tiecorrect
-ranksums
-wilcoxon
-kruskal
-friedmanchisquare
+ttest_1samp    -- _
+ttest_ind    -- _
+ttest_rel    -- _
+kstest    -- _
+chisquare    -- _
+ks_2samp    -- _
+meanwhitneyu    -- _
+tiecorrect    -- _
+ranksums    -- _
+wilcoxon    -- _
+kruskal    -- _
+friedmanchisquare     -- _
 
-ansari
-bartlett
-levene
-shapiro
-anderson
-binom_test
-fligner
-mood
-oneway
+ansari    -- _
+bartlett    -- _
+levene    -- _
+shapiro    -- _
+anderson    -- _
+binom_test    -- _
+fligner    -- _
+mood    -- _
+oneway    -- _
 
 
-glm
-anova
+glm    -- _
+anova  -- _
 
 Plot-tests
 
-probplot
-ppcc_max
-ppcc_plot
+probplot    -- _
+ppcc_max    -- _
+ppcc_plot    -- _
+
 
 For many more stat related functions install the software R and the 
 interface package rpy.
