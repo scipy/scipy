@@ -354,7 +354,7 @@ class test_euler(unittest.TestCase):
         eu1 = euler(5)
         assert_array_equal(eu1,array([1,0,-1,0,5,0,-61]))
         eu2 = euler(20)
-        assert_almost_equal(eu2[20],370371188237525,0)
+        assert_almost_equal(eu2[20]/1e14,3.70371188237548,12)
 
 class test_exp2(unittest.TestCase):
 

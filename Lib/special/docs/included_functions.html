@@ -13,8 +13,8 @@ evaluated at x of Ai and Bi respectively.
 <DT>(Aie,Aipe,Bie,Bipe) = airye(z)
 <DD>airye(z) calculates the exponentially scaled Airy functions and 
 their derivatives evaluated at real or complex number z.  
-airye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))
-airye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))
+airye(z)[0:2] = airy(z)[0:2] * exp(2.0/3.0*z*sqrt(z))
+airye(z)[2:4] = airy(z)[2:4] * exp(-abs(real((2.0/3.0*z*sqrt(z)))))
 </DL>
 
 <DT>(Apt,Bpt,Ant,Bnt) = itairy(x)

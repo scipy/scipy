@@ -8,6 +8,7 @@ def parse(infile):
     d={}
     key=None
     val=''
+    prev_line = ''
     for line in infile.readlines():
         if not string.strip(line):
             continue
@@ -20,10 +21,13 @@ def parse(infile):
                 tok=string.split(tok[-1],'(')
                 key=tok[0]
             elif line[:4]=='<DD>' and key:
-                val=line[4:]
+                prev_line = prev_line[4:]
+                tok = string.split(prev_line,' = ')
+                val=tok[0]+'='+line[4:]
         else:
             if val:
                 val=val+line
+        prev_line = line
 
     return d
 

@@ -92,7 +92,7 @@ int cairy_wrap_e(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, 
   DO_MTHERR("airye:");
   
   id = 1;
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
+  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
   DO_MTHERR("airye:");
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &nz, &ierr);
   DO_MTHERR("airye:");

@@ -91,7 +91,7 @@
     kvp     -- Nth derivative of Kv(v,z)
     ivp     -- Nth derivative of Iv(v,z)
     h1vp    -- Nth derivative of H1v(v,z)
-    h2vp    -- Nth derivative of H2v(v,z)
+    h2vp    -- Nth derivative of H2v(v,z)    
 
   Spherical Bessel Functions
 
@@ -106,6 +106,15 @@
 
     ricatti_jn -- **Sequence of Ricatti-Bessel functions of first kind.
     ricatti_yn -- **Sequence of Ricatti-Bessel functions of second kind.
+
+  Struve Functions
+
+    struve       -- Struve function --- Hv(x)
+    modstruve    -- Modified struve function --- Lv(x)
+    itstruve0    -- Integral of H0(t) from 0 to x
+    it2struve0   -- Integral of H0(t)/t from x to Inf.
+    itmodstruve0 -- Integral of L0(t) from 0 to x.
+    
         
   Raw Statistical Functions (Friendly versions in scipy.stats)
 
@@ -260,14 +269,6 @@
     obl_ang1_cv -- Oblate spheroidal angluar function of the first kind
     obl_rad1_cv -- Oblate spheroidal radial function of the first kind
     obl_rad2_cv -- Oblate spheroidal radial function of the second kind
-
-  Struve Functions
-
-    struve       -- Struve function --- Hv(x)
-    modstruve    -- Modified struve function --- Lv(x)
-    itstruve0    -- Integral of H0(t) from 0 to x
-    it2struve0   -- Integral of H0(t)/t from x to Inf.
-    itmodstruve0 -- Integral of L0(t) from 0 to x.
 
   Kelvin Functions
   
