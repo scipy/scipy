@@ -1,6 +1,6 @@
 from scipy_base.fastumath import *
 from scipy import *
-import scipy.limits
+from scipy_base import limits
 import sys
 import gui_thread
 import wxplt
@@ -390,11 +390,11 @@ def remove_bad_vals(x):
     # !! Fix axis order when interface changed.
     # mapping:
     #    NaN -> 0
-    #    Inf -> scipy.limits.double_max
-    #   -Inf -> scipy.limits.double_min
+    #    Inf -> limits.double_max
+    #   -Inf -> limits.double_min
     y = nan_to_num(x)    
-    big = scipy.limits.double_max / 10
-    small = scipy.limits.double_min / 10
+    big = limits.double_max / 10
+    small = limits.double_min / 10
     y = clip(y,small,big)
     return y
 
