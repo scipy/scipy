@@ -89,6 +89,8 @@ class BasePage(rend.Page):
         doc = self.getdoc_fromtree()
         if doc is None:
             doc = cStringIO.StringIO()
+            if type(self.obj) is types.ModuleType:
+                reload(self.obj)
             scipy.info(self.obj, output=doc)
             doc = doc.getvalue()
         return T.xml(self.dochtml(doc))
