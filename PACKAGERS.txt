@@ -1,0 +1,94 @@
+
+Packaging Scipy
+===============
+
+Introduction
+------------
+
+People who have tried to create a distribution of a Scipy package have
+been faced with complex dependency issues between scipy and f2py2e
+modules. Namely, both Scipy and F2py tar-balls provide scipy_distutils
+module that may have different time stamps, for instance, not to
+mention that packaging tools (e.g. debian apt) don't like such cases
+at all. Scipy_distutils is part of the Scipy package while F2py ships
+scipy_distutils for the convenience of F2py users.  So, the issue of
+distributing Scipy and F2py have been brought up in Scipy and F2py
+mailing lists many times and the purpose of this document is to
+provide instructions for the packagers how to overcome this issue.
+
+Any suggestions, especially from the packagers, to improve these
+instructions are most welcome. Please, send your comments or patches
+to scipy-dev@scipy.org.
+
+Packaging Scipy and friends
+---------------------------
+
+Instead of using tar-balls from web, currently it is highly
+recommended getting scipy and other software from their CVS
+repository. Usually CVS versions are more stable than tar-balls
+(sometimes not but any issues will be quickly fixed), also core
+developers do not test tar-balls very frequently and occasionally some
+important files may be missing.
+
+1) Get scipy,f2py and their dependencies from CVS:
+
+  export CVSROOT=:pserver:anonymous@scipy.org:/home/cvsroot
+  cvs co scipy_core
+  cvs co -d scipy world/scipy
+
+  export CVSROOT=:pserver:anonymous@cens.ioc.ee:/home/cvs
+  cvs co f2py2e
+
+2) Disable scipy_core package in scipy/setup.py file by commenting out
+the following line:
+
+  separate_packages += core_packages
+
+For simplicity, disable also chaco by commenting out the line in
+setup.py:
+
+  separate_packages += chaco_packages
+
+3) Disable scipy_distutils checkout in f2py2e/setup.py file by replacing
+the line
+
+  if 'sdist' in sys.argv and not os.path.exists('other/scipy_distutils'):
+
+with
+
+  if 0:
+
+4) Create source tar-balls
+
+  cd scipy_core
+  python setup.py sdist
+  cp dist/Scipy_core-*.tar.gz ..
+  cd ..
+
+  cd f2py2e
+  cp dist/F2PY-*.tar.gz ..
+  cd ..
+
+  cd scipy
+  python setup.py sdist
+  cp dist/SciPy-*.tar.gz ..
+  cd ..
+
+5) Install scipy_core, f2py2e, and scipy strictly in the given order
+(now there are no overlaps in software installations):
+
+  Unpack tar-ball sources.
+
+  cd Scipy_core-*
+  python setup.py install
+  cd ..
+
+  cd F2PY-*
+  python setup.py install
+  cd ..
+
+  cd SciPy-*
+  python setup.py install
+  cd ..
+
+That's it!
