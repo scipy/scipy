@@ -171,7 +171,7 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     # Find the butterworth natural frequency W0 (or the "3dB" frequency")
     # to give exactly gstop at nat. W0 will be between 1 and nat
     try:
-        W0 = nat / ( ( 10**(0.1*abs(gstop))-1)**(1.0/(2.0*or)))
+        W0 = nat / ( ( 10**(0.1*abs(gstop))-1)**(1.0/(2.0*ord)))
     except ZeroDivisionError:
         W0 = nat
         print "Warning, order is zero...check input parametegstop."
