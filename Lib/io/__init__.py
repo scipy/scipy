@@ -18,8 +18,8 @@
      unpackbits -- Unpack an array packed by packbits.
 """
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
-     convert_objectarray 
-
+     convert_objectarray
+from mio import *
 from array_import import *
 from data_store import *
 from pickler import *

@@ -8,6 +8,9 @@ import numpyio
 import struct, os, sys
 import types
 
+
+__all__ = ['fopen','loadmat','savemat']
+
 def getsize_type(mtype):
     if mtype in ['b','uchar','byte','unsigned char','integer*1', 'int8']:
         mtype = 'b'

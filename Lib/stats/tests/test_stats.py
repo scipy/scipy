@@ -11,12 +11,13 @@ from scipy_base.testing import assert_almost_equal
 from scipy_base.testing import assert_array_almost_equal
 import scipy
 import scipy.stats as stats
+TestCase = scipy_base.testing.ScipyTestCase
 
 
 ##################################################
 ### Test for sum
 
-class test_gmean(unittest.TestCase):
+class test_gmean(TestCase):
 
     def check_1D_list(self):
         a = (1,2,3,4)
@@ -58,7 +59,7 @@ class test_gmean(unittest.TestCase):
         desired1 = scipy.stats.stats.gmean(a,axis=0)
         assert_array_almost_equal(desired1,actual,decimal=14)
 
-class test_hmean(unittest.TestCase):
+class test_hmean(TestCase):
     def check_1D_list(self):
         a = (1,2,3,4)
         actual= stats.hmean(a)
@@ -99,7 +100,7 @@ class test_hmean(unittest.TestCase):
         desired1 = scipy.stats.stats.hmean(a,axis=0)
         assert_array_almost_equal(desired1,actual,decimal=14)
 
-class test_mean(unittest.TestCase):
+class test_mean(TestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]
         af = [3.,4,5,10,-3,-5,-6]
@@ -129,7 +130,7 @@ class test_mean(unittest.TestCase):
             mn2 += A[:,k] / N2
         Numeric.allclose(stats.mean(a,axis=0),mn2,rtol=1e-13,atol=1e-13)            
 
-class test_median(unittest.TestCase):
+class test_median(TestCase):
     def check_basic(self):
         a1 = [3,4,5,10,-3,-5,6]
         a2 = [3,-6,-2,8,7,4,2,1]
@@ -138,7 +139,7 @@ class test_median(unittest.TestCase):
         assert_equal(stats.median(a2),2.5)
         assert_equal(stats.median(a3),3.5)        
 
-class test_std(unittest.TestCase):
+class test_std(TestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]
         af = [3.,4,5,10,-3,-5,-6]
@@ -158,6 +159,10 @@ class test_std(unittest.TestCase):
         assert_array_almost_equal(stats.std(a),b2,11)
         assert_array_almost_equal(stats.std(a,axis=0),b1,11)
 
+
+class test_cmedian(TestCase):
+    def check_basic(self):
+        
 
 def test_suite(level=1):
     suites = []
