@@ -12,6 +12,12 @@ void superlu_flag_new_keys()
   _superlumodule_flagnewmemory = 1;
 }
 
+void superlu_end_new_keys()
+{
+  _superlumodule_flagnewmemory = 0;
+  Py_XDECREF(_superlumodule_newmemory_list);
+}
+
 void superlu_delete_newkeys()
 {
   PyObject *keys=NULL, *key=NULL;
@@ -23,15 +29,25 @@ void superlu_delete_newkeys()
   keys = _superlumodule_newmemory_list;
 
   N = PyList_Size(keys);
+  fprintf(stderr, "N = %d\n", N);
+  fflush(stderr);
   for (i = 0; i < N; i++) {
     key = PyList_GET_ITEM(keys, i);
     mem_ptr = (void *)PyInt_AS_LONG((PyIntObject *)key);
     /* Only free if key not already removed from dictionary */
-    if (!(PyDict_DelItem(_superlumodule_memory_dict, key)))
+    if (!(PyDict_DelItem(_superlumodule_memory_dict, key))) {
         free(mem_ptr);
+        fprintf(stderr, "Freeing %p\n", mem_ptr);
+        fflush(stderr);
+    }
   }
   
+  fprintf(stderr, "Here..5\n");
+  fflush(stderr);
   Py_XDECREF(keys);
+  fprintf(stderr,"Here..7\n");
+  fflush(stderr);
+ 
   _superlumodule_flagnewmemory=0;
 }
 
@@ -76,9 +92,11 @@ void *superlu_python_module_malloc(size_t size)
   if (_superlumodule_memory_dict == NULL) {
     _superlumodule_memory_dict = PyDict_New();
   }
-  if ((_superlumodule_flagnewmemory) & (_superlumodule_newmemory_list == NULL)) {
+  if ((_superlumodule_newmemory_list == NULL) & (_superlumodule_flagnewmemory)) {
     _superlumodule_newmemory_list = PyList_New(0);
   }
+  fprintf(stderr, "Deep Inside One..\n");
+  fflush(stderr);
   mem_ptr = malloc(size);
   keyval = (long) mem_ptr;
   if (mem_ptr == NULL) return NULL;
@@ -87,6 +105,8 @@ void *superlu_python_module_malloc(size_t size)
   if (PyDict_SetItem(_superlumodule_memory_dict, key, Py_None)) goto fail;
   if (_superlumodule_flagnewmemory) {
     if (PyList_Append(_superlumodule_newmemory_list, key)) goto fail;
+    fprintf(stderr, "Putting in %p\n", mem_ptr);
+    fflush(stderr);
   }
   Py_DECREF(key);
   return mem_ptr;
@@ -99,7 +119,6 @@ void *superlu_python_module_malloc(size_t size)
  
 }
 
-
 void superlu_python_module_free(void *ptr)
 {
   PyObject *key;
@@ -107,7 +126,9 @@ void superlu_python_module_free(void *ptr)
 
   keyval = (long )ptr;
   key = PyInt_FromLong(keyval);
-  PyDict_DelItem(_superlumodule_memory_dict, key);
+  if (PyDict_DelItem(_superlumodule_memory_dict, key)) {fprintf(stderr,"Problem... "); fflush(stderr);}
+  fprintf(stderr, "Graceful Freeing %p\n", ptr);
+  fflush(stderr);
   free(ptr);
   Py_DECREF(key);
   return; 

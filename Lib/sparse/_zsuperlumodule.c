@@ -155,12 +155,17 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
 
   SUPERLU_FREE(perm_r);
   SUPERLU_FREE(perm_c);
-  if (csc) Destroy_CompCol_Matrix(&A);
-  else Destroy_CompRow_Matrix(&A);
+  Destroy_SuperMatrix_Store(&A);
   Destroy_SuperMatrix_Store(&B);
   Destroy_SuperNode_Matrix(&L);
   Destroy_CompCol_Matrix(&U);
   StatFree(&stat);
+
+  superlu_end_new_keys();
+
+  fprintf(stderr, "Here I'm done.\n");
+  fflush(stderr);
+
 
   if (full_output)
       return Py_BuildValue("Ni", Py_X, info);

@@ -10,7 +10,7 @@ Data input and output
 
      read_array -- reading ascii streams into Numeric arrays
      write_array -- write an array to an ascii stream
-     loadmat -- read a MATLAB (version <= 4) style mat file
+     loadmat -- read a MATLAB style mat file (version 4 and 5)
      savemat -- write a MATLAB (version <= 4) style mat file
 
      fread -- low-level reading

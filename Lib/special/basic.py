@@ -7,7 +7,6 @@ from scipy_base import *
 import types
 from scipy_base.fastumath import *
 import specfun
-from scipy import factorial
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.

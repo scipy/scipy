@@ -60,8 +60,12 @@ static int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArray
     return retval;
   }
 
+  fprintf(stderr, "Inside One..\n");
+  fflush(stderr);
   if (setjmp(_superlu_py_jmpbuf)) return retval;
   else dCreate_CompCol_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)rowind->data, (int *)colptr->data, SLU_NC, SLU_D, SLU_GE);
+  fprintf(stderr, "Inside Two..\n");
+  fflush(stderr);
   retval = 0;
   return retval;
 }
@@ -117,10 +121,15 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|ii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &full_output))
     return NULL;
 
+  fprintf(stderr, "Begin..\n");
+  fflush(stderr);
+
   superlu_flag_new_keys();
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_DOUBLE,1,2);
+  fprintf(stderr, "Two..\n");
+  fflush(stderr);
   if (Py_X == NULL) goto fail;
   if (csc) {
       if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail;
@@ -128,8 +137,13 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   else {
       if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail; 
   }
+  fprintf(stderr, "Three..\n");
+  fflush(stderr);
 
   if (Dense_from_Numeric(&B, Py_X)) goto fail;
+  fprintf(stderr, "Four..\n");
+  fflush(stderr);
+
 
   /* B and Py_X  share same data now but Py_X "owns" it */
     
@@ -143,19 +157,28 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
       options.ColPerm = NATURAL;
       StatInit(&stat);
 
+      fprintf(stderr,"Here...\n");
+      fflush(stderr);
   /* Compute direct inverse of sparse Matrix */
       dgssv(&options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
   }
+  
+  fprintf(stderr,"Here...2\n");
+  fflush(stderr);
 
   SUPERLU_FREE(perm_r);
   SUPERLU_FREE(perm_c);
-  if (csc) Destroy_CompCol_Matrix(&A);
-  else Destroy_CompRow_Matrix(&A);
+  Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
   Destroy_SuperMatrix_Store(&B);
   Destroy_SuperNode_Matrix(&L);
   Destroy_CompCol_Matrix(&U);
   StatFree(&stat);
 
+  superlu_end_new_keys();
+
+  fprintf(stderr,"Here...3\n");
+  fflush(stderr);
+ 
   if (full_output)
       return Py_BuildValue("Ni", Py_X, info);
   else
