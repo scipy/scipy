@@ -616,17 +616,11 @@ def _parse_mimatrix(fid,bytes):
             imag, unused = _get_element(fid)
             res = res + cast[imag.typecode()](1j)*imag
         if have_sparse:
-            spmat = scipy.sparse.spmatrix(dims[1],dims[0],typecode=res.typecode())
-            spmat.data = res
-            # stored with zero-based indices --- spmatrix needs 1 based
-            #  indices internally
-            spmat.index = [rowind+1, colind+1]
-            spmat.nzmax = len(res)
-            spmat.lastel = len(res)-1
-            result = spmat.transp(inplace=1)
+            spmat = scipy.sparse.csc_matrix(res, (rowind[:len(res)], colind),
+                                            M=dims[0],N=dims[1])
             result = spmat
         else:
-            result = (rowind, colind, res)
+            result = (dims, rowind, colind, res)
 
     return result, name
     
@@ -696,7 +690,8 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
     on the sys.path list and load the first one found (the current directory
     is searched first).
 
-    Both v4 (Level 1.0) and v5 matfiles are supported.
+    Both v4 (Level 1.0) and v6 matfiles are supported.  Version 7.0 files
+    are not yet supported.
 
     Inputs:
 

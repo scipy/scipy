@@ -238,6 +238,11 @@ class spmatrix:
         res = csc.matvec(vec)
         return res
 
+    def rmatvec(self, vec):
+	csc = self.tocsc()
+        res = csc.rmatvec(vec)
+        return res
+
     def todense(self):
         csc = self.tocsc()
         return csc.todense()
@@ -1256,6 +1261,16 @@ class dok_matrix(spmatrix, dict):
         for key in keys:
             res[int(key[0])] += self[key] * other[int(key[1]),...]
         return array(res)        
+
+    def rmatvec(self, other):
+        other = asarray(other)
+	if other.shape[-1] != self.shape[0]:
+	    raise ValueError, "Dimensions do not match."
+        keys = self.keys()
+	res = [0]*self.shape[1]
+	for key in keys:
+            res[int(key[1])] += other[..., int(key[0])] * self[key]
+	return array(res)
 
     def setdiag(self, values, k=0):
         N = len(values)
