@@ -1,5 +1,5 @@
-"""*
-Vector Quantization Module
+""" Vector Quantization Module
+
     Provides several routines used in creating a code book from a set of
     observations and comparing a set of observations to a code book.
     
@@ -14,99 +14,135 @@ Vector Quantization Module
     kmeans(obs,k_or_guess,iter=20,thresh=1e-5) -- 
         Train a codebook for mimimum distortion using the kmeans algorithm
     
-*"""
+"""
 from Numeric import *
 from RandomArray import randint
 import scipy
 from scipy.misc import _common_type
 
 def whiten(obs):
-    """* Normalize a group of observations on a per feature basis
+    """ Normalize a group of observations on a per feature basis
 
-    Description:
-        Before running kmeans algorithms, it is beneficial to "whiten", or scale,
-        the observation data on a per feature basis.  This is done by dividing
-        each feature by its standard deviation across all observations.
-    Arguments:
-        obs -- 2D array.
-                Each row of the array is an observation.  The
-                columns are the "features" seen during each observation
+        Description
+        
+            Before running kmeans algorithms, it is beneficial to "whiten", or
+            scale, the observation data on a per feature basis.  This is done
+            by dividing each feature by its standard deviation across all 
+            observations.
+            
+        Arguments
+        
+            obs -- 2D array.
+                    Each row of the array is an observation.  The
+                    columns are the "features" seen during each observation
 
-                          #   f0    f1    f2
-                    obs = [[  1.,   1.,   1.],  #o0
-                           [  2.,   2.,   2.],  #o1
-                           [  3.,   3.,   3.],  #o2
-                           [  4.,   4.,   4.]]) #o3
+                              #   f0    f1    f2
+                        obs = [[  1.,   1.,   1.],  #o0
+                               [  2.,   2.,   2.],  #o1
+                               [  3.,   3.,   3.],  #o2
+                               [  4.,   4.,   4.]]) #o3
 
-        XXX perhaps should have an axis variable here.
-    Outputs:
-        result -- 2D array.
-                Contains the values in obs scaled by the standard devation of
-                each column.
+            XXX perhaps should have an axis variable here.
+            
+        Outputs
+        
+            result -- 2D array.
+                    Contains the values in obs scaled by the standard devation 
+                    of each column.
 
-    Test:
-        >>> features  = array([[  1.9,2.3,1.7],
-        ...                    [  1.5,2.5,2.2],
-        ...                    [  0.8,0.6,1.7,]])
-        >>> whiten(features)
-        array([[ 3.41250074,  2.20300046,  5.88897275],
-               [ 2.69407953,  2.39456571,  7.62102355],
-               [ 1.43684242,  0.57469577,  5.88897275]])
+        Test
+        
+            >>> features  = array([[  1.9,2.3,1.7],
+            ...                    [  1.5,2.5,2.2],
+            ...                    [  0.8,0.6,1.7,]])
+            >>> whiten(features)
+            array([[ 3.41250074,  2.20300046,  5.88897275],
+                   [ 2.69407953,  2.39456571,  7.62102355],
+                   [ 1.43684242,  0.57469577,  5.88897275]])
 
-    *"""
+    """
     std_dev = scipy.stdev(obs,axis=0)
     return obs / std_dev
 
 def vq(obs,code_book):
-    """* Vector Quantization: assign features sets to codes in a code book.
+    """ Vector Quantization: assign features sets to codes in a code book.
 
-    Description:
-        Vector quantization determines which code in the code book best
-        represents an observation of a target.  The features of each
-        observation are compared to each code in the book, and assigned the
-        one closest to it.  The observations are contained in the obs array.
-        These features should be "whitened," or nomalized by the standard
-        deviation of all the features before being quantized.  The code book
-        can be created using the kmeans algorithm or something similar.
-
-    Note: 
-       This currently forces 32 bit math precision for speed.  Anyone know
-       of a situation where this undermines the accuracy of the algorithm?
+        Description:
+            Vector quantization determines which code in the code book best
+            represents an observation of a target.  The features of each
+            observation are compared to each code in the book, and assigned 
+            the one closest to it.  The observations are contained in the obs 
+            array. These features should be "whitened," or nomalized by the 
+            standard deviation of all the features before being quantized.  
+            The code book can be created using the kmeans algorithm or 
+            something similar.
+    
+        Note: 
+           This currently forces 32 bit math precision for speed.  Anyone know
+           of a situation where this undermines the accuracy of the algorithm?
+            
+            
+        Arguments:
+            obs -- 2D array.
+                    Each row of the array is an observation.  The
+                    columns are the "features" seen during each observation
+                    The features must be whitened first using the
+                    whiten function or something equivalent.
+            code_book -- 2D array.
+                    The code book is usually generated using the kmeans
+                    algorithm.  Each row of the array holds a different
+                    code, and the columns are the features of the code.
+                                    #   c0    c1    c2   c3
+                        code_book = [[  1.,   2.,   3.,   4.],  #f0
+                                     [  1.,   2.,   3.,   4.],  #f1
+                                     [  1.,   2.,   3.,   4.]]) #f2
+        Outputs:
+            code -- 1D array.
+                    If obs is a NxM array, then a length M array
+                    is returned that holds the selected code book index for
+                    each observation.
+            dist -- 1D array.
+            		The distortion (distance) between the observation and
+            		its nearest code        
+        Reference
         
+        Test
         
-    Arguments:
-        obs -- 2D array.
-                Each row of the array is an observation.  The
-                columns are the "features" seen during each observation
-                The features must be whitened first using the
-                whiten function or something equivalent.
-        code_book -- 2D array.
-                The code book is usually generated using the kmeans
-                algorithm.  Each row of the array holds a different
-                code, and the columns are the features of the code.
-                                #   c0    c1    c2   c3
-                    code_book = [[  1.,   2.,   3.,   4.],  #f0
-                                 [  1.,   2.,   3.,   4.],  #f1
-                                 [  1.,   2.,   3.,   4.]]) #f2
-    Outputs:
-        code -- 1D array.
-                If obs is a NxM array, then a length M array
-                is returned that holds the selected code book index for
-                each observation.
-        dist -- 1D array.
-        		The distortion (distance) between the observation and
-        		its nearest code        
-    Reference:
-    Test:
-        >>> code_book = array([[1.,1.,1.],
-        ...                    [2.,2.,2.]])
-        >>> features  = array([[  1.9,2.3,1.7],
-        ...                    [  1.5,2.5,2.2],
-        ...                    [  0.8,0.6,1.7]])
-        >>> vq(features,code_book)
-        (array([1, 1, 0]), array([ 0.43588989,  0.73484692,  0.83066239]))
+            >>> code_book = array([[1.,1.,1.],
+            ...                    [2.,2.,2.]])
+            >>> features  = array([[  1.9,2.3,1.7],
+            ...                    [  1.5,2.5,2.2],
+            ...                    [  0.8,0.6,1.7]])
+            >>> vq(features,code_book)
+            (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
-    *"""
+    """
+    try:
+        import _vq
+        from scipy.misc import _common_type
+        ct = _common_type(obs,code_book)
+        c_obs = obs.astype(ct)
+        c_code_book = code_book.astype(ct)
+        if   ct == 'f':
+            results = _vq.float_vq(c_obs,c_code_book)
+        elif ct == 'd': 
+            results = _vq.double_vq(c_obs,c_code_book)
+        else:
+            results = py_vq(obs,code_book)
+    except ImportError:
+        print 'py'
+        results = py_vq(obs,code_book)
+    return results        
+
+def py_vq(obs,code_book):
+    """ Python version of vq algorithm.
+    
+        This function is slower than the C versions, but it works for 
+        all input types.  If the inputs have the wrong types for the 
+        C versions of the function, this one is called as a last resort.
+        
+        Its about 20 times slower than the C versions.
+    """
     No,Nf = shape(obs) #No = observation count, Nf = feature count
     # code books and observations should have same number of features
     assert(Nf == code_book.shape[1])
@@ -114,7 +150,7 @@ def vq(obs,code_book):
     #create a memory block to use for the difference calculations    
     diff = zeros(shape(code_book),_common_type(obs,code_book))
     for o in obs:
-        subtract(code_book,o,diff) # faster version of --> diff = code_book - o       
+        subtract(code_book,o,diff) # faster version of --> diff = code_book - o
         dist = sqrt(sum(diff*diff,-1))
         code.append(argmin(dist))
         #something weird here dst does not work reliably because it sometime
@@ -123,41 +159,37 @@ def vq(obs,code_book):
         try:    dst = dst[0]
         except: pass
         min_dist.append(dst) 
-    return array(code), array(min_dist)
+    return array(code,typecode=Int), array(min_dist)
 
-def vq2(obs,code_book):
-    """* This could be faster when number of codebooks is small, but it becomes
+def py_vq2(obs,code_book):
+    """ This could be faster when number of codebooks is small, but it becomes
          a real memory hog when codebook is large.  It requires NxMxO storage
-         where N=number of obs, M = number of features, and O = number of codes.
-    *"""
+         where N=number of obs, M = number of features, and O = number of 
+         codes.
+    """
     No,Nf = shape(obs) #No = observation count, Nf = feature count
     # code books and observations should have same number of features
     assert(Nf == code_book.shape[1])
     diff = obs[NewAxis,:,:]-code_book[:,NewAxis,:]
     dist = sqrt(sum(diff*diff,-1))
     code = argmin(dist,0)
-    min_dist = minimum.reduce(dist,0) #the next line I think is equivalent - and should be faster
-    #min_dist = choose(code,dist) # but in practice, didn't seem to make much difference.
+    min_dist = minimum.reduce(dist,0) #the next line I think is equivalent 
+                                      #  - and should be faster
+    #min_dist = choose(code,dist) # but in practice, didn't seem to make 
+                                  # much difference.
     return code, min_dist
-
-"""*
-    A third approach that combines ideas from vq and vq2 could possibly be faster.
-    It would segment the obs into small chunks of obs (maybe 5 or 10 or even 
-    calculated for best memory usage...) and then reuse the memory allocated for
-    diff for every new chunk.  This moves as much of the loops to C without
-    having to allocate huge blocks of memory (as in vq2).
-    
-    A quick test showed this might gain 10-20% on windows, but thats it.
-*"""        
-
+       
 def kmeans_(obs,guess,thresh=1e-5):
-    """* See kmeans
-    Outputs:
+    """ See kmeans
+    
+    Outputs
+    
         code_book -- the lowest distortion codebook found.
         avg_dist -- the average distance a observation is
                     from a code in the book.  Lower means
                     the code_book matches the data better.
-    Test:
+    Test
+    
         Note: not whitened in this example.
         
         >>> features  = array([[ 1.9,2.3],
@@ -170,14 +202,13 @@ def kmeans_(obs,guess,thresh=1e-5):
         (array([[ 1.7       ,  2.4       ],
                [ 0.73333333,  1.13333333]]), 0.40563916697728591)
 
-    *"""
+    """
     
     code_book = array(guess,copy=1)
     Nc = code_book.shape[0]
     avg_dist=[]
     diff = thresh+1.
     while diff>thresh:
-        print diff
         #compute membership and distances between obs and code_book
         obs_code, distort = vq(obs,code_book)
         avg_dist.append(scipy.mean(distort))
@@ -197,11 +228,12 @@ def kmeans_(obs,guess,thresh=1e-5):
     return code_book, avg_dist[-1]
 
 def kmeans(obs,k_or_guess,iter=20,thresh=1e-5): 
-    """* Generate a code book with minimum distortion
+    """ Generate a code book with minimum distortion
         
-    Description:
+    Description
             
-    Arguments:
+    Arguments
+    
         obs -- 2D array
                 Each row of the array is an observation.  The
                 columns are the "features" seen during each observation
@@ -219,13 +251,17 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
         thresh -- float
             Terminate each kmeans run when the distortion change from 
             one iteration to the next is less than this value.  
-    Outputs:
+    Outputs
+    
         codesbook -- 2D array.
             The codes that best fit the observation
         distortion -- float
             The distortion between the observations and the codes.                
-    Reference:
-    Test:
+            
+    Reference
+    
+    Test
+    
         ("Not checked carefully for accuracy..." he said sheepishly)
         
         >>> features  = array([[ 1.9,2.3],
@@ -251,7 +287,7 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
                [ 1.32544402,  0.65607529],
                [ 0.40782893,  2.02786907]]), 0.5196582527686241)
                
-    *"""
+    """
     if int(iter) < 1:
         raise ValueError, 'iter must be >= to 1.'
     if type(k_or_guess) == type(array([])): 
