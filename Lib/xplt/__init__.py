@@ -9,7 +9,6 @@ from gist import *
 import pl3d
 import plwf
 import os, sys
-from Mplot import *
 from write_style import *
 
 os.environ['GISTPATH'] = os.path.join(os.path.dirname(__file__),'gistdata')
@@ -39,7 +38,10 @@ if display and (maxwidth is None or maxheight is None):
     except ValueError:
         pass
 
-if maxwidth is None or maxheight is None:
-    maxwidth = 800
-    maxheight = 600
+if maxwidth is None:
+    maxwidth = 1024
+if maxheight is None:    
+    maxheight = 768
+
+from Mplot import *
 

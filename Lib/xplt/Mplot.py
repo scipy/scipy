@@ -15,6 +15,8 @@ from write_style import inches, points
 import scipy
 import scipy_base
 import scipy.signal as signal
+from scipy.xplt import maxwidth as _maxwidth
+from scipy.xplt import maxheight as _maxheight
 
 _dpi = 75
 _hold = 0
@@ -832,7 +834,7 @@ def setdpi(num):
     else:
         raise ValueError, "DPI must be 75 or 100"
 
-def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,landscape=0):
+def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,land=0):
     global _figures
     if (aspect < 0.1) or (aspect > 10):
         aspect = 1.618
@@ -841,14 +843,14 @@ def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame
     fid = open(style,'w')
     syst = write_style.getsys(color=color,frame=frame,
                              labelsize=labelsize,font=labelfont)
-    if landscape:
+    if land:
         cntr = (5.5*inches,4.25*inches)  # horizontal, vertical
     else:
         cntr = (4.25*inches,5.5*inches)
     height = 4.25*inches
     width = aspect*height
     syst['viewport'] = [cntr[0]-width/2.0,cntr[0]+width/2.0,cntr[1]-height/2.0,cntr[1]+height/2.0]
-    fid.write(write_style.style2string(syst,landscape=landscape))
+    fid.write(write_style.style2string(syst,landscape=land))
     fid.close()
     if n is None:
         winnum = gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
@@ -936,10 +938,12 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     if ph is None:
         ph = Numy*300
         msg = 0
-    maxwidth=min(scipy.xplt.maxwidth,8.5*_dpi)
-    maxheight=min(scipy.xplt.minwidth,11*_dpi)
-    if landscape:
-        maxwidth, maxheight = maxheight, maxwidth
+    if land:
+        maxwidth=min(_maxwidth,11*_dpi)
+        maxheight=min(_maxheight,8.5*_dpi)        
+    else:
+        maxwidth=min(_maxwidth,8.5*_dpi)
+        maxheight=min(_maxheight,11*_dpi)
 
     printit = 0
     if ph > maxheight:
