@@ -639,10 +639,10 @@ static int convert_from_object(PyObject *obj, Py_complex *cnum)
     Py_DECREF(valobj);
     Py_DECREF(elobj);
     if (k==0) {
-      cnum->real = val;
+      cnum->real = val*rnegflag;
     }
     else {
-      cnum->imag = val;
+      cnum->imag = val*inegflag;
     }
     
   }
@@ -697,6 +697,7 @@ static PyObject *
   char *outptr;
   PyObject **arrptr;
   PyObject *numobj=NULL;
+  PyObject *comp_obj;
   Py_complex numc;
   PyArray_VectorUnaryFunc *funcptr;
 
@@ -734,7 +735,9 @@ static PyObject *
   if (builtins == NULL) goto fail;
 
   dict = PyModule_GetDict(builtins);
-
+  comp_obj = PyDict_GetItemString(dict, "complex");
+  if (comp_obj == NULL) goto fail;
+  
   /*  get_complex = PyDict_GetItemString(dict, "complex");
   get_float = PyDict_GetItemString(dict, "float");
   get_int = PyDict_GetItemString(dict, "int");
@@ -759,7 +762,7 @@ static PyObject *
     arrptr  += 1;
     numc.real = 0;
     numc.imag = 0;
-    numobj = PyObject_CallMethod(dict, "complex", "O", *arrptr);
+    numobj = PyObject_CallFunction(comp_obj, "O", *arrptr);
     if (numobj != NULL) {
       numc = PyComplex_AsCComplex(numobj);
       Py_DECREF(numobj);
