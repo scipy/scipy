@@ -11,12 +11,7 @@ import warnings
 skip_single_routines = 0
 
 if sys.platform == 'win32':
-    # force g77 for now
-    # XXX: g77 is forced already in scipy/setup.py
-    #      So, is this redundant code in what follows?
     from scipy_distutils.mingw32_support import *
-    from scipy_distutils.command import build_flib
-    build_flib.all_compilers = [build_flib.gnu_fortran_compiler]
 
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
@@ -37,13 +32,25 @@ else:
     import commands
     run_command = commands.getstatusoutput
 
-
 def configuration(parent_package=''):
 
     package = 'linalg'
     from interface_gen import generate_interface
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__)
+
+    m = re.compile(r'(build|install|bdist|run_f2py)')
+    if not filter(m.match,sys.argv):
+        sources = []
+        sources += glob(os.path.join(local_path,'src','*.f'))
+        sources += glob(os.path.join(local_path,'src','*.c'))
+        sources += glob(os.path.join(local_path,'generic_*.pyf'))
+        sources += [os.path.join(local_path,f) for f in [\
+            'flapack_user_routines.pyf','atlas_version.c']]
+        config['ext_modules'].append(Extension(\
+            name='fake_linalg_ext_module',
+            sources = sources))
+        return config
 
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
