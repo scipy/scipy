@@ -92,7 +92,10 @@ class spmatrix:
         try:
             nzmax = self.nzmax
         except AttributeError:
-            nzmax = 0
+            try:
+                nzmax = self.nnz
+            except AtrributeError:
+                nzmax = 0
         return nzmax
 
     def getformat(self):
