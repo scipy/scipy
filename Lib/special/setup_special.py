@@ -9,11 +9,13 @@ def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import get_path,\
          default_config_dict, dot_join
-    from scipy_distutils.system_info import dict_append
+    from scipy_distutils.system_info import dict_append, get_info
 
     package = 'special'
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__,parent_path)
+
+    numpy_info = get_info('numpy',notfound_action=2)
 
     define_macros = []
     if sys.byteorder == "little":
@@ -40,21 +42,26 @@ def configuration(parent_package='',parent_path=None):
                                           'macros':define_macros}))
 
     # Fortran libraries
-    config['fortran_libraries'].append(('mach',{'sources':mach}))
-    config['fortran_libraries'].append(('amos',{'sources':amos}))
-    config['fortran_libraries'].append(('toms',{'sources':toms}))
-    config['fortran_libraries'].append(('cdf',{'sources':cdf}))
-    config['fortran_libraries'].append(('specfun',{'sources':specfun}))
+    config['libraries'].append(('mach',{'sources':mach}))
+    config['libraries'].append(('amos',{'sources':amos}))
+    config['libraries'].append(('toms',{'sources':toms}))
+    config['libraries'].append(('cdf',{'sources':cdf}))
+    config['libraries'].append(('specfun',{'sources':specfun}))
     
     # Extension
     sources = ['cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
                'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,package,'cephes'),sources,
-                    libraries = ['amos','toms','c_misc','cephes','mach',
-                                 'cdf', 'specfun'],
-                    define_macros = define_macros
-                    )
+    ext_args = {}
+    dict_append(ext_args,
+                name=dot_join(parent_package,package,'cephes'),
+                sources = sources,
+                libraries = ['amos','toms','c_misc','cephes','mach',
+                             'cdf', 'specfun'],
+                define_macros = define_macros
+                )
+    dict_append(ext_args,**numpy_info)
+    ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
     ext_args = {'name':dot_join(parent_package,package,'specfun'),
@@ -63,6 +70,7 @@ def configuration(parent_package='',parent_path=None):
                 #'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
                 'libraries' : ['specfun']
                 }
+    dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1
     config['ext_modules'].append(ext)
@@ -93,7 +101,7 @@ if __name__ == '__main__':
     from scipy_distutils.misc_util import merge_config_dicts
     from special_version import special_version
 
-    config_dict = merge_config_dicts([configuration()] + \
+    config_dict = merge_config_dicts([configuration(parent_path='')] + \
                                      map(get_package_config,extra_packages))
 
     setup(version=special_version,

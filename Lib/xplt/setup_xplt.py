@@ -188,6 +188,7 @@ def configuration(parent_package='',parent_path=None):
        This will install *.gs and *.gp files to
        'site-packages/scipy/xplt/gistdata' 
     """
+    from scipy_distutils.system_info import get_info, dict_append
     from glob import glob
     local_path = get_path(__name__,parent_path)
     config_path = os.path.join(get_build_temp(),'config_pygist')
@@ -213,6 +214,8 @@ def configuration(parent_package='',parent_path=None):
     xplt_path = os.path.join(parent_package,'xplt')
     config = default_config_dict(package,parent_package)
 
+    numpy_info = get_info('numpy',notfound_action=2)
+
     all_playsource = glob(os.path.join(local_path,'src','play','*','*.c')) + \
       glob(os.path.join(local_path,'src','play','*.h'))
     playsource = SourceFilter(filter_playsource, all_playsource, local_path)
@@ -237,6 +240,8 @@ def configuration(parent_package='',parent_path=None):
                'extra_compile_args':extra_compile_args,
                'extra_link_args':extra_link_args,
                'depends':[os.path.join(local_path,'src')]}
+
+    dict_append(ext_arg,**numpy_info)
     ext = Extension (**ext_arg)
     config['ext_modules'].append(ext)
 

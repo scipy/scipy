@@ -12,6 +12,8 @@ def configuration(parent_package='',parent_path=None):
     from scipy_distutils.system_info import get_info,FFTWNotFoundError,\
          DJBFFTNotFoundError
 
+    numpy_info = get_info('numpy',notfound_action=2)
+
     package_name = 'fftpack'
     fftw_info = get_info('fftw') or get_info('dfftw')
     if not fftw_info:
@@ -33,11 +35,12 @@ def configuration(parent_package='',parent_path=None):
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {
-        'name': dot_join(parent_package,package_name,'_fftpack'),
-        'sources': sources,
-        'libraries': ['dfftpack'],
-        }
+    ext_args = {}
+    dict_append(ext_args,
+                name = dot_join(parent_package,package_name,'_fftpack'),
+                sources = sources,
+                libraries = ['dfftpack'])
+    dict_append(ext_args,**numpy_info)
     if fftw_info:
         dict_append(ext_args,**fftw_info)
     if djbfft_info:
@@ -47,11 +50,12 @@ def configuration(parent_package='',parent_path=None):
 
     sources = ['convolve.pyf','src/convolve.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {
-        'name': dot_join(parent_package,package_name,'convolve'),
-        'sources': sources,
-        'libraries': ['dfftpack'],
-        }
+    ext_args = {}
+    dict_append(ext_args,
+                name = dot_join(parent_package,package_name,'convolve'),
+                sources = sources,
+                libraries = ['dfftpack'])
+    dict_append(ext_args,**numpy_info)
     if fftw_info:
         dict_append(ext_args,**fftw_info)
     if djbfft_info:

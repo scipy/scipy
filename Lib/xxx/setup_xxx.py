@@ -3,7 +3,7 @@
 import os
 
 def configuration(parent_package='', parent_path=None):
-
+    from scipy_distutils.system_info import get_info, dict_append
     # The following three lines constitute minimal contents
     # of configuration(..) that is suitable for pure Python
     # packages.
@@ -23,6 +23,7 @@ def configuration(parent_package='', parent_path=None):
     # xxx has extension module ..
     from scipy_distutils.core import Extension
 
+    numpy_info = get_info('numpy',notfound_action=2)
     
     # xxx has f2py generated extension module ..
     # xxx has swig generated extension module ..
@@ -39,9 +40,13 @@ def configuration(parent_package='', parent_path=None):
     pyf_file = SourceGenerator(generate_spam_pyf,
                                target='spam.pyf',
                                sources=[os.path.join(local_path,'spam_src.pyf')])
-    ext = Extension(name=dot_join(parent_package,package,'spam'),
-                    sources=[pyf_file],
-                    depends = pyf_file.sources)
+    ext_args = {}
+    dict_append(ext_args,
+                name=dot_join(parent_package,package,'spam'),
+                sources=[pyf_file],
+                depends = pyf_file.sources)
+    dict_append(ext_args,**numpy_info)
+    ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
     return config

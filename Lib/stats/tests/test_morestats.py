@@ -5,10 +5,12 @@
 import unittest
 import sys
 from scipy_test.testing import *
+
 set_package_path()
 import scipy
-import scipy.stats as stats
-del sys.path[0]
+import stats
+restore_path()
+
 
 import Numeric
 N = Numeric

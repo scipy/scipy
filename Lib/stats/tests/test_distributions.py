@@ -8,8 +8,8 @@ from scipy_test.testing import *
 from scipy_test.testing import ScipyTestCase as TestCase
 set_package_path()
 import scipy
-from scipy import stats
-del sys.path[0]
+import stats
+restore_path()
 
 import types
 

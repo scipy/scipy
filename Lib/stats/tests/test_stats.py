@@ -9,15 +9,15 @@
 import unittest
 import sys
 from scipy_test.testing import *
-set_package_path()
-#XXX: fix scipy.stats to stats
+from scipy_base import *
+from scipy_test.testing import ScipyTestCase as TestCase
 import scipy
-import scipy_base.fastumath as math
-del sys.path[0]
-
-import Numeric
+import scipy_base as Numeric
 N = Numeric
 
+set_package_path()
+import stats
+restore_path()
 
 """ Numbers in docstrings begining with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -493,18 +493,6 @@ anovadata = ([[1,'A1','B1',2],
 def compare_results(res,desired):
     for i in range(len(desired)):
         assert_array_equal(res[i],desired[i])
-
-
-from Numeric import *
-import Numeric
-from scipy_base.fastumath import *
-import unittest
-from scipy_test.testing import assert_array_equal, assert_equal
-from scipy_test.testing import assert_almost_equal
-from scipy_test.testing import assert_array_almost_equal, rand
-from scipy_test.testing import ScipyTestCase as TestCase
-import scipy
-from scipy import stats
 
 
 ##################################################
