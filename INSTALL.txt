@@ -84,13 +84,36 @@ where the test level can vary from 1 to 10.
 KNOWN PROBLEMS
 ==============
 
-1) BLAS sources shipped with LAPACK are incomplete. Some distributions
-   (e.g. Redhat Linux 7.1) provide BLAS libraries that are built from such
-   incomplete sources and therefore cause import errors like 
+BLAS sources shipped with LAPACK are incomplete
+----------------------------------------------- 
+Some distributions (e.g. Redhat Linux 7.1) provide BLAS libraries that
+are built from such incomplete sources and therefore cause import
+errors like
 
-     ImportError: .../fblas.so: undefined symbol: srotmg_
+  ImportError: .../fblas.so: undefined symbol: srotmg_
 
-   Fix: Use ATLAS or the official release of BLAS libraries.
+Fix
+  Use ATLAS or the official release of BLAS libraries.
+
+LAPACK library provided by ATLAS is incomplete
+----------------------------------------------
+You will notice it when getting import errors like
+
+  ImportError: .../flapack.so : undefined symbol: sgesdd_
+
+To be sure that SciPy is built against a complete LAPACK, check the
+size of the file liblapack.a -- it should be about 6MB. The location
+of liblapack.a is shown by executing
+
+    python scipy_distutils/system.py
+
+Fix
+  Follow the instructions in
+
+    http://math-atlas.sourceforge.net/errata.html#completelp
+
+  to create a complete liblapack.a. Then copy liblapack.a to the same
+  location where libatlas.a is installed and retry with scipy build.
 
 
 TROUBLESHOOTING
