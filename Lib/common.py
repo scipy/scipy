@@ -199,6 +199,9 @@ def pade(an, m):
     an = asarray(an)
     N = len(an) - 1
     n = N-m
+    if (n < 0):
+        raise ValueError, \
+              "Order of q <m> must be smaller than len(an)-1."
     Akj = eye(N+1,n+1)
     Bkj = zeros((N+1,m),'d')
     for row in range(1,m+1):

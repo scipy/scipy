@@ -699,7 +699,7 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
 
 
 def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
-            color='black'):
+            color='black',colormap=None):
     """Plot an image on axes.
 
     z -- The data
@@ -743,6 +743,7 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
     cmax = float(cmax)
     cmin = float(cmin)
     byteimage = gist.bytscl(z,cmin=cmin,cmax=cmax)
+    if (colormap is not None): palette=colormap
     change_palette(palette)
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
     return

@@ -1,5 +1,5 @@
 """
-Plotting routines based on Gist (requires X server)
+Plotting routines based on Gist 
 ===================================================
 
   All Gist functions are also available as xplt.<command>

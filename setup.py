@@ -29,8 +29,9 @@ finally:
 standard_packages = ['io','linalg',
                      'special','signal','stats',
                      'interpolate','integrate','optimize',
-                     'cow','ga','fftpack']
-#                     'cluster','cow','ga','fftpack']
+                     'cluster','cow','ga','fftpack'
+#                    ,'sparse'
+                    ]
 
 standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 
@@ -56,8 +57,6 @@ scipy_packages += graphics_packages
 separate_packages = ['gui_thread','weave']
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 separate_packages += core_packages
-
-# enable building chaco here by uncommenting the following line:
 separate_packages += chaco_packages
 
 #-------------------------------
