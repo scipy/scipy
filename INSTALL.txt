@@ -73,6 +73,22 @@ __ http://www.wxpython.org/
 
    Debian packages: python-opengl libglut3 python-pmw
 
+IMPORTANT!
+----------
+
+Chaco won't work under non-Windows platforms (see KNOWN PROBLEMS
+section below). 
+
+
+So, it is better to disable building chaco (then you will not need
+swig, opengl, etc dependencies) in scipy/setup.py by adding 
+:: 
+
+  chaco kiva traits freetype
+
+to the list of ignore_packages at the end of the file.
+
+Or use setup_no_chaco.py script instead of setup.py.
 
 NOTES
 -----
@@ -260,6 +276,21 @@ these routines)::
 
 KNOWN PROBLEMS
 ==============
+
+Why Chaco is not working under non-Windows platforms?
+-----------------------------------------------------
+
+Although Chaco installs succesfully but importing chaco.wxplt gives
+::
+
+  ImportError: No module named image_transform
+
+This issue is explained in chaco mailing list thread starting at
+
+  http://www.scipy.org/site_content/mailman?fn=scipy-chaco/2003-November/000503.html
+
+In summary, you cannot use chaco under Linux, MacOSX, and other
+non-Windows platforms in short term, try next year again.
 
 BLAS sources shipped with LAPACK are incomplete
 -----------------------------------------------
