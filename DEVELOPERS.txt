@@ -147,6 +147,15 @@ determine the local directory name as follows::
 If ``parent_path`` is not ``None`` then the returned path is relative
 to parent path. This avoids longish paths.
 
+When ``setup_xxx.py`` script is going to use ``os.path.join`` a lot
+then defining the following functions can be handy::
+
+  def local_join(*names):
+        return os.path.join(*((local_path,)+names))
+  def local_glob(*names):
+      return glob.glob(os.path.join(*((local_path,)+names)))
+
+
 Building sources 
 ++++++++++++++++
 
