@@ -199,9 +199,13 @@ class spmatrix:
         res = csc.matvec(vec)
         return res
 
-    def todense(self, vec):
+    def todense(self):
         csc = self.tocsc()
         return csc.todense()
+
+    def tocoo(self):
+        csc = self.tocsc()
+        return csc.tocoo()
 
 # compressed sparse column matrix
 #  This can be instantiated in many ways
@@ -572,6 +576,14 @@ class csc_matrix(spmatrix):
         else:
             new = self
         return new
+
+    def tocoo(self,copy=0):
+        func = getattr(sparsetools,self.ftype+"csctocoo")
+        data,row,col = func(self.data, self.rowind,self.indptr)
+        return coo_matrix(data, (row, col), M=self.shape[0], N=self.shape[1])
+
+    def tocsr(self,copy=0):
+        return self.tocoo().tocsr()
 
     def todense(self):
         func = getattr(sparsetools, self.ftype+'csctofull')
@@ -954,13 +966,21 @@ class csr_matrix(spmatrix):
 
     def getdata(self, ind):
         return self.data[ind]
-    
-    def tocsc(self,copy=0):
+
+    def tocsr(self,copy=0):
         if copy:
             new = self.copy()
         else:
             new = self
         return new
+
+    def tocoo(self,copy=0):
+        func = getattr(sparsetools,self.ftype+"csctocoo")
+        data,col,row = func(self.data, self.colind,self.indptr)
+        return coo_matrix(data, (row, col), M=self.shape[0], N=self.shape[1])
+
+    def tocsc(self,copy=0):
+        return self.tocoo().tocsc()
 
     def todense(self):
         func = getattr(sparsetools, self.ftype+'csctofull')
@@ -1251,19 +1271,28 @@ class lnk_matrix(spmatrix):
 # 
 class coo_matrix(spmatrix):
     def __init__(self, obj, ij, M=None, N=None, nzmax=None, typecode=None):
+        spmatrix.__init__(self, 'coo')
+        if type(ij) is type(()) and len(ij)==2:
+            if M is None:
+                M = amax(ij[0])
+            if N is None:
+                N = amax(ij[1])
+            self.row = asarray(ij[0],'i')
+            self.col = asarray(ij[1],'i')
+        else:
+            aij = asarray(ij,'i')
+            if M is None:
+                M = amax(aij[:,0])
+            if N is None:
+                N = amax(aij[:,1])
+            self.row = aij[:,0]
+            self.col = aij[:,1]
         aobj = asarray(obj)
-        aij = asarray(ij)
-        if M is None:
-            M = amax(aij[:,0])
-        if N is None:
-            N = amax(aij[:,1])
         self.shape = (M,N)
         if nzmax is None:
             nzmax = len(aobj)
         self.nzmax = nzmax
         self.data = aobj
-        self.row = aij[:,0]
-        self.col = aij[:,1]
         self.typecode = aobj.typecode()
         self._check()
 
@@ -1274,15 +1303,56 @@ class coo_matrix(spmatrix):
                   "the same length."
         if (self.nzmax < nnz):
             raise ValueError, "nzmax must be >= nnz"
+        self.nnz = nnz
         self.ftype = _transtabl[self.typecode]
-        
+
+    def _normalize(self, rowfirst = 0):
+        if rowfirst:
+            import itertools
+            l = zip(self.row,self.col,self.data)
+            l.sort()
+            row,col,data = list(itertools.izip(*l))
+            return data, row, col
+        if getattr(self,'_is_normalized',None):
+            return self.data, self.row, self.col
+        import itertools
+        l = zip(self.col,self.row,self.data)
+        l.sort()
+        col,row,data = list(itertools.izip(*l))
+        self.col = asarray(col,'i')
+        self.row = asarray(row,'i')
+        self.data = array(data,self.typecode)
+        setattr(self,'_is_normalized',1)
+        return self.data, self.row, self.col
+
+    def rowcol(self, num):
+        return (self.row[num], self.col[num])
+
+    def getdata(self, num):
+        return self.data[num]
+
     def tocsc(self):
         func = getattr(sparsetools,self.ftype+"cootocsc")
-        a, rowa, ptra, ierr = func(self.data, self.row, self.col)
+        data, row, col = self._normalize()
+        a, rowa, ptra, ierr = func(self.shape[1], data, row, col)
         if ierr:
             raise RuntimeError, "Error in conversion."
-        return csc_matrix(a, (rowa, ptra))
-            
+        return csc_matrix(a, (rowa, ptra), M=self.shape[0], N=self.shape[1])
+
+    def tocsr(self):
+        func = getattr(sparsetools,self.ftype+"cootocsc")
+        data,row,col = self._normalize(rowfirst=1)
+        a, cola, ptra, ierr = func(self.shape[0], data, col, row)
+        if ierr:
+            raise RuntimeError, "Error in conversion."
+        return csr_matrix(a, (cola, ptra), M=self.shape[0],N=self.shape[1])
+
+    def tocoo(self,copy=0):
+        if copy:
+            new = self.copy()
+        else:
+            new = self
+        return new
         
 # symmetric sparse skyline
 # diagonal (banded) matrix

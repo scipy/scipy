@@ -103,7 +103,6 @@ c         column
       return
       end subroutine <_c>cscsetel
 
-
 c     assumes sorted by column and then row 
 
       subroutine <_c>cootocsc(n,vals,row,col,nnz,a,rowa,ptra,nnzamax,
@@ -153,6 +152,26 @@ c   successful completion (fix the ptr array)
       return
       end subroutine <_c>cootocsc
 
+      subroutine <_c>csctocoo(n, vals, row, col, a, rowa, ptra, nnzamax)
+      <_t> vals(0:nnzamax-1), a(0:nnzamax-1)
+      integer rowa(0:nnzamax-1), ptra(0:n)
+      integer row(0:nnzamax-1), col(0:nnzamax-1)
+      integer n, nnzamax
+
+      integer i, j, k
+
+      j = 0
+      do k = 0, n-1
+         do i = ptra(k), ptra(k+1)-1
+            row(j) = rowa(i)
+            col(j) = k
+            vals(j) = a(i)
+            j = j + 1
+         end do
+      end do
+
+      return
+      end subroutine <_c>csctocoo
 
 c     intended for re-entry in case a is too small
 
@@ -203,8 +222,8 @@ c   successful completion (fix the ptr array)
       integer rowa(0:nnzamax-1), ptra(0:n)
       integer m, n, nnzamax
 
-      integer ia, i, j, k
-      
+      integer ia, k
+c      integer i, j
 
 c      do j = 0, n-1
 c         do i = 0, m-1

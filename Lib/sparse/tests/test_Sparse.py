@@ -70,6 +70,18 @@ class _test_cs(ScipyTestCase):
         bsp = self.spmatrix(array([[0,1],[1,0],[0,2]],'d'))
         assert_array_almost_equal((asp*bsp).todense(),dot(asp.todense(),bsp.todense()))
 
+    def check_tocoo(self):
+        a = self.datsp.tocoo()
+        assert_array_almost_equal(a.todense(),self.dat)
+
+    def check_tocsc(self):
+        a = self.datsp.tocsc()
+        assert_array_almost_equal(a.todense(),self.dat)
+
+    def check_tocsr(self):
+        a = self.datsp.tocsr()
+        assert_array_almost_equal(a.todense(),self.dat)
+
 class test_csr(_test_cs):
 
     spmatrix = csr_matrix
