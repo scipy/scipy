@@ -191,7 +191,7 @@ subroutine <tchar=s,d,c,z>copy(n,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end subroutine <tchar=s,d,c,z>swap
+end subroutine <tchar=s,d,c,z>copy
 
 subroutine <tchar=s,d,c,z>axpy(n,a,x,offx,incx,y,offy,incy)
 

@@ -86,16 +86,21 @@ class base_axpy(unittest.TestCase):
         # should catch error and never get here                        
         assert(0)                
 
-    
-class test_saxpy(base_axpy):
-    blas_func = fblas.saxpy
-    typecode = Float32
+try:
+    class test_saxpy(base_axpy):
+        blas_func = fblas.saxpy
+        typecode = Float32
+except AttributeError:
+    class test_saxpy: pass
 class test_daxpy(base_axpy):
     blas_func = fblas.daxpy
     typecode = Float
-class test_caxpy(base_axpy):
-    blas_func = fblas.caxpy
-    typecode = Complex32
+try:
+    class test_caxpy(base_axpy):
+        blas_func = fblas.caxpy
+        typecode = Complex32
+except AttributeError:
+    class test_caxpy: pass
 class test_zaxpy(base_axpy):
     blas_func = fblas.zaxpy
     typecode = Complex
@@ -124,16 +129,21 @@ class base_scal(unittest.TestCase):
             return
         # should catch error and never get here                        
         assert(0)    
-    
-class test_sscal(base_scal):
-    blas_func = fblas.sscal
-    typecode = Float32
+try:
+    class test_sscal(base_scal):
+        blas_func = fblas.sscal
+        typecode = Float32
+except AttributeError:
+    class test_sscal: pass
 class test_dscal(base_scal):
     blas_func = fblas.dscal
     typecode = Float
-class test_cscal(base_scal):
-    blas_func = fblas.cscal
-    typecode = Complex32
+try:
+    class test_cscal(base_scal):
+        blas_func = fblas.cscal
+        typecode = Complex32
+except AttributeError:
+    class test_cscal: pass
 class test_zscal(base_scal):
     blas_func = fblas.zscal
     typecode = Complex
@@ -190,15 +200,21 @@ class base_copy(unittest.TestCase):
     #    self.blas_func(x,y)
     #    assert_array_equal(x,y)
 
-class test_scopy(base_copy):
-    blas_func = fblas.scopy
-    typecode = Float32
+try:
+    class test_scopy(base_copy):
+        blas_func = fblas.scopy
+        typecode = Float32
+except AttributeError:
+    class test_scopy: pass
 class test_dcopy(base_copy):
     blas_func = fblas.dcopy
     typecode = Float
-class test_ccopy(base_copy):
-    blas_func = fblas.ccopy
-    typecode = Complex32                
+try:
+    class test_ccopy(base_copy):
+        blas_func = fblas.ccopy
+        typecode = Complex32
+except AttributeError:
+    class test_ccopy: pass
 class test_zcopy(base_copy):
     blas_func = fblas.zcopy
     typecode = Complex                       
@@ -260,16 +276,21 @@ class base_swap(unittest.TestCase):
         # should catch error and never get here                        
         assert(0)                
 
-
-class test_sswap(base_swap):
-    blas_func = fblas.sswap
-    typecode = Float32
+try:
+    class test_sswap(base_swap):
+        blas_func = fblas.sswap
+        typecode = Float32
+except AttributeError:
+    class test_sswap: pass
 class test_dswap(base_swap):
     blas_func = fblas.dswap
     typecode = Float
-class test_cswap(base_swap):
-    blas_func = fblas.cswap
-    typecode = Complex32                
+try:
+    class test_cswap(base_swap):
+        blas_func = fblas.cswap
+        typecode = Complex32
+except AttributeError:
+    class test_cswap: pass
 class test_zswap(base_swap):
     blas_func = fblas.zswap
     typecode = Complex                       
@@ -359,15 +380,21 @@ class base_gemv(unittest.TestCase):
         except:
             pass
 
-class test_sgemv(base_gemv):
-    blas_func = fblas.sgemv
-    typecode = Float32
+try:
+    class test_sgemv(base_gemv):
+        blas_func = fblas.sgemv
+        typecode = Float32
+except AttributeError:
+    class test_sgemv: pass
 class test_dgemv(base_gemv):
     blas_func = fblas.dgemv
     typecode = Float
-class test_cgemv(base_gemv):
-    blas_func = fblas.cgemv
-    typecode = Complex32                
+try:
+    class test_cgemv(base_gemv):
+        blas_func = fblas.cgemv
+        typecode = Complex32
+except AttributeError:
+    class test_cgemv: pass
 class test_zgemv(base_gemv):
     blas_func = fblas.zgemv
     typecode = Complex                       

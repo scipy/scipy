@@ -157,6 +157,11 @@ class test_inv(ScipyTestCase):
         a_inv = inv(a)
         assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
                                   [[1,0],[0,1]])
+        a = [[1,2,3],[4,5,6],[7,8,10]]
+        a_inv = inv(a)
+        assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
+                                  [[1,0,0],[0,1,0],[0,0,1]])
+
     def check_random(self):
         n = 20
         for i in range(4):
@@ -179,7 +184,6 @@ class test_inv(ScipyTestCase):
             a_inv = inv(a)
             assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
                                       Numeric.identity(n))
-
 
     def bench_random(self):
         import LinearAlgebra

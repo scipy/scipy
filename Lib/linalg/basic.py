@@ -135,12 +135,17 @@ def inv(a, overwrite_a=0):
 ##         if info<0: raise ValueError,\
 ##            'illegal value in %-th argument of internal inv.getrf|getri'%(-info)
     getrf,getri = get_lapack_funcs(('getrf','getri'),(a1,))
-
     #XXX: C ATLAS versions of getrf/i have rowmajor=1, this could be
     #     exploited for further optimization. But it will be probably
     #     a mess. So, a good testing site is required before trying
-    #     to do that. 
-    lu,piv,info = getrf(a1,overwrite_a=overwrite_a)
+    #     to do that.
+    if getrf.module_name[:7]=='clapack'!=getri.module_name[:7]:
+        # ATLAS 3.2.1 has getrf but not getri.
+        lu,piv,info = getrf(scipy_base.transpose(a1),
+                            rowmajor=0,overwrite_a=overwrite_a)
+        lu = scipy_base.transpose(lu)
+    else:
+        lu,piv,info = getrf(a1,overwrite_a=overwrite_a)
     if info==0:
         if getri.module_name[:7] == 'flapack':
             lwork = calc_lwork.getri(getri.prefix,a1.shape[0])

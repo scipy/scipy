@@ -32,7 +32,7 @@ def convert_types(interface_in,converter):
         interface = string.replace(interface,sub.group(),converted)
     return interface
 
-def generic_expand(generic_interface):
+def generic_expand(generic_interface,skip_names=[]):
     generic_types ={'s' :('real',            'real', real_convert,
                           'real'), 
                     'd' :('double precision','double precision',real_convert,
@@ -64,6 +64,7 @@ def generic_expand(generic_interface):
     #loop through the subs
     type_exp = re.compile(r'<tchar=(.*?)>')
     TYPE_EXP = re.compile(r'<TCHAR=(.*?)>')
+    routine_name = re.compile(r'(subroutine|function)\s*(?P<name>\w+)\s*\(')
     interface = ''
     for sub in subs:
         #3. Find the typecodes to use:
@@ -101,6 +102,13 @@ def generic_expand(generic_interface):
             function_def = string.replace(function_def,'<type_out>',type_out)
             function_def = string.replace(function_def,'<type_out_c>',
                                           generic_c_types[type_out])
+            m = routine_name.match(function_def)
+            if m:
+                if m.group('name') in skip_names:
+                    print 'Skipping',m.group('name')
+                    continue
+            else:
+                print 'Possible bug: Failed to determine routines name'
             interface = interface + '\n\n' + function_def
 
     return interface
@@ -126,14 +134,14 @@ def process_includes(interface_in,sdir='.'):
         f.close()
     return interface_in
 
-def generate_interface(module_name,src_file,target_file):
+def generate_interface(module_name,src_file,target_file,skip_names=[]):
     print "generating",module_name,"interface"
     f = open(src_file)
     generic_interface = f.read()
     f.close()
     sdir = os.path.dirname(src_file)
     generic_interface = process_includes(generic_interface,sdir)
-    generic_interface = generic_expand(generic_interface)
+    generic_interface = generic_expand(generic_interface,skip_names)
     module_def = interface_to_module(generic_interface,module_name)
     f = open(target_file,'w')
     user_routines = os.path.join(sdir,module_name+"_user_routines.pyf")

@@ -5,6 +5,10 @@ from distutils import dep_util
 from glob import glob
 import warnings
 
+# XXX: system_info.py should set the following values
+atlas_version_pre_3_3 = 0
+skip_single_routines = 0
+
 if sys.platform == 'win32':
     # force g77 for now
     # XXX: g77 is forced already in scipy/setup.py
@@ -75,11 +79,34 @@ def configuration(parent_package=''):
         dict_append(atlas_info,**lapack_info)
         dict_append(atlas_info,**blas_info)
 
+    skip_names = {'clapack':[],'flapack':[],'cblas':[],'fblas':[]}
+    if skip_single_routines:
+        skip_names['clapack'].extend(\
+            'sgesv cgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
+            ' sposv cposv spotrf cpotrf spotrs cpotrs spotri cpotri'\
+            ' slauum clauum strtri ctrtri'.split())
+        skip_names['flapack'].extend(skip_names['clapack'])
+        skip_names['flapack'].extend(\
+            'sgesdd cgesdd sgelss cgelss sgeqrf cgeqrf sgeev cgeev'\
+            ' sgegv cgegv ssyev cheev slaswp claswp sgees cgees'
+            ' sggev cggev'.split())
+        skip_names['cblas'].extend('saxpy caxpy'.split())
+        skip_names['fblas'].extend(skip_names['cblas'])
+        skip_names['fblas'].extend(\
+            'srotg crotg srotmg srot csrot srotm sswap cswap sscal cscal'\
+            'csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
+            'samax camax sgemv cgemv chemv ssymv strmv ctrmv sgemm cgemm'.split())
+    if atlas_version_pre_3_3:
+        skip_names['clapack'].extend(\
+            'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
+            ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
+
     for mod_name,sources in mod_sources.items():
         sources = [os.path.join(local_path,s) for s in sources]
         mod_file = os.path.join(local_path,mod_name+'.pyf')
         if dep_util.newer_group(sources,mod_file):
-            generate_interface(mod_name,sources[0],mod_file)
+            generate_interface(mod_name,sources[0],mod_file,
+                               skip_names.get(mod_name,[]))
         sources = filter(lambda s:s[-4:]!='.pyf',sources)
         ext_args = {'name':dot_join(parent_package,package,mod_name),
                     'sources':[mod_file]+sources}
