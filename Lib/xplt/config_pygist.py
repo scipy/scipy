@@ -111,10 +111,7 @@ class config_pygist(config):
     def config_toplevel(self):
         print "  ============= begin top level configuration ============="
 
-        # check alternate libm for Alpha Linux (see play/unix/README.fpu)
-        if not os.environ.has_key('MATHLIB'):
-            self.mathlib = 'm'
-            testcode = """\
+        testcode = """\
 /* check whether libm is broken */
 #include <math.h>
 int main(int argc, char *argv[])
@@ -122,6 +119,13 @@ int main(int argc, char *argv[])
   return exp(-720.) > 1.0;  /* typically an IEEE denormal */
 }
 """
+        # First try without libm to workaround MSVC6.0 compiler.
+        if self.try_link(testcode) and self.try_run(testcode):
+            print "No libm needed."
+            self.mathlib = None
+        # check alternate libm for Alpha Linux (see play/unix/README.fpu)
+        elif not os.environ.has_key('MATHLIB'):
+            self.mathlib = 'm'
             if self.try_link(testcode,libraries=[self.mathlib]):
                 if not self.try_run(testcode,libraries=[self.mathlib]):
                     if self.try_link(testcode, libraries=['cpml']):
@@ -134,7 +138,10 @@ int main(int argc, char *argv[])
                 raise "math library missing; rerun setup.py after setting the MATHLIB env variable"
         else:
             self.mathlib=os.environ['MATHLIB']
-        self.configfile.write('MATHLIB=-l'+self.mathlib+'\n')
+        libraries = []
+        if self.mathlib:
+            self.configfile.write('MATHLIB=-l'+self.mathlib+'\n')
+            libraries.append(self.mathlib)
         # check exp10 presence, emulate otherwise
         testcode = """\
 int main(int argc, char *argv[])
@@ -143,7 +150,7 @@ int main(int argc, char *argv[])
   return (x<999.999)||(x>1000.001);
 }
 """
-        if self.try_link(testcode,libraries=[self.mathlib]):
+        if self.try_link(testcode,libraries=libraries):
             print "using exp10 found in libm"
             self.configfile.write("NO_EXP10=\n")
         else:
