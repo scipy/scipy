@@ -4,29 +4,29 @@ python module specfun ! in
         ! cpdsa
         ! cfs
         subroutine lqmn(mm,m,n,x,qm,qd) ! in :specfun:specfun.f
-            integer optional,check((shape(qm,0)-1)==mm),depend(qm) :: mm=(shape(qm,0)-1)
-            integer :: m
-            integer optional,check((shape(qm,1)-1)==n),depend(qm) :: n=(shape(qm,1)-1)
-            double precision :: x
-            double precision dimension(mm + 1,n + 1) :: qm
-            double precision dimension(mm + 1,n + 1),depend(mm,n) :: qd
+            integer intent(hide), depend(m) :: mm=m
+            integer intent(in) :: m
+            integer intent(in) :: n
+            double precision intent(in) :: x
+            double precision intent(out),dimension(m+1,n+1),depend(m,n) :: qm
+            double precision intent(out),dimension(m+1,n+1),depend(m,n) :: qd
         end subroutine lqmn
         subroutine clpmn(mm,m,n,x,y,cpm,cpd) ! in :specfun:specfun.f
-            integer optional,check((shape(cpm,0)-1)==mm),depend(cpm) :: mm=(shape(cpm,0)-1)
-            integer :: m
-            integer optional,check((shape(cpm,1)-1)==n),depend(cpm) :: n=(shape(cpm,1)-1)
-            double precision :: x
-            double precision :: y
-            complex*16 dimension(mm + 1,n + 1) :: cpm
-            complex*16 dimension(mm + 1,n + 1),depend(mm,n) :: cpd
+            integer intent(hide), depend(m) :: mm=m
+            integer intent(in), check(m>=0) :: m
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            double precision intent(in) :: y
+            complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cpm
+            complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cpd
         end subroutine clpmn
         ! vvsa
 
         subroutine jdzo(nt,n,m,pcode,zo) ! in :specfun:specfun.f
-            integer intent(in), check(nt<1400) :: nt
+            integer intent(in), check((nt>0)&&(nt<1400)) :: nt
             integer depend(nt), intent(out), dimension(nt) :: n
             integer depend(nt), intent(out), dimension(nt) :: m
-            integer depend(nt), intent(out), dimension(nt,4) :: pcode
+            integer depend(nt), intent(out), dimension(nt) :: pcode
             double precision intent(out), depend(nt), dimension(nt+1) :: zo
         end subroutine jdzo
 
@@ -34,25 +34,25 @@ python module specfun ! in
         ! cjy01
         ! rmn2sp
         subroutine bernob(n,bn) ! in :specfun:specfun.f
-            integer optional,check((len(bn)-1)>=n),depend(bn) :: n=(len(bn)-1)
-            double precision dimension(n + 1) :: bn
+            integer intent(in), check(n>=0) :: n
+            double precision intent(out),depend(n),dimension(n+1) :: bn
         end subroutine bernob
         subroutine bernoa(n,bn) ! in :specfun:specfun.f
-            integer optional,check((len(bn)-1)>=n),depend(bn) :: n=(len(bn)-1)
-            double precision dimension(n + 1) :: bn
+            integer intent(in), check(n>=0) :: n
+            double precision intent(out),depend(n),dimension(n+1) :: bn
         end subroutine bernoa
         ! qstar
         ! cv0
         ! cvqm
         ! cvql
         subroutine csphjy(n,z,nm,csj,cdj,csy,cdy) ! in :specfun:specfun.f
-            integer optional,check((len(csj)-1)>=n),depend(csj) :: n=(len(csj)-1)
-            complex*16 :: z
-            integer :: nm
-            complex*16 dimension(n + 1) :: csj
-            complex*16 dimension(n + 1),depend(n) :: cdj
-            complex*16 dimension(n + 1),depend(n) :: csy
-            complex*16 dimension(n + 1),depend(n) :: cdy
+            integer intent(in), check(n>=0) :: n
+            complex*16 intent(in) :: z
+            integer intent(out) :: nm
+            complex*16 intent(out), dimension(n + 1),depend(n) :: csj
+            complex*16 intent(out), dimension(n + 1),depend(n) :: cdj
+            complex*16 intent(out), dimension(n + 1),depend(n) :: csy
+            complex*16 intent(out), dimension(n + 1),depend(n) :: cdy
         end subroutine csphjy
 
         ! ittjyb
@@ -65,38 +65,26 @@ python module specfun ! in
         ! cjylv
         ! rmn2l
         ! psi (psi_spec)
-        subroutine cva2(kd,m,q,a) ! in :specfun:specfun.f
-            integer :: kd
-            integer :: m
-            double precision :: q
-            double precision :: a
-        end subroutine cva2
+        !subroutine cva2(kd,m,q,a) ! in :specfun:specfun.f
+        !    integer :: kd
+        !    integer :: m
+        !    double precision :: q
+        !    double precision :: a
+        !end subroutine cva2
         subroutine lpmns(m,n,x,pm,pd) ! in :specfun:specfun.f
-            integer :: m
-            integer optional,check((len(pm)-1)>=n),depend(pm) :: n=(len(pm)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: pm
-            double precision dimension(n + 1),depend(n) :: pd
+            integer intent(in), depend(n), check((m>=0) && (m<=n)):: m
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            double precision intent(out),depend(n),dimension(n+1) :: pm
+            double precision intent(out),depend(n),dimension(n+1) :: pd
         end subroutine lpmns
         ! rswfp
-        subroutine jyndd(n,x,bjn,djn,fjn,byn,dyn,fyn) ! in :specfun:specfun.f
-            integer :: n
-            double precision :: x
-            double precision :: bjn
-            double precision :: djn
-            double precision :: fjn
-            double precision :: byn
-            double precision :: dyn
-            double precision :: fyn
-        end subroutine jyndd
-        subroutine gam0(x,ga) ! in :specfun:specfun.f
-            double precision :: x
-            double precision :: ga
-        end subroutine gam0
+        ! jyndd
+        ! gam0
         ! cisib
         subroutine eulera(n,en) ! in :specfun:specfun.f
-            integer optional,check((len(en)-1)>=n),depend(en) :: n=(len(en)-1)
-            double precision dimension(n + 1) :: en
+            integer intent(in), check(n>=0) :: n
+            double precision intent(out),depend(n),dimension(n+1) :: en
         end subroutine eulera
         ! refine
         ! cisia
@@ -105,43 +93,43 @@ python module specfun ! in
         ! stvl0
         ! stvl1
 
-        subroutine clqn(n,x,y,cqn,cqd) ! in :specfun:specfun.f
-            integer optional,check((len(cqn)-1)>=n),depend(cqn) :: n=(len(cqn)-1)
-            double precision :: x
-            double precision :: y
-            complex*16 dimension(n + 1) :: cqn
-            complex*16 dimension(n + 1),depend(n) :: cqd
+        subroutine clqn(n,z,cqn,cqd) ! in :specfun:specfun.f
+            callstatement (*f2py_func)(&n,&(z.r),&(z.i),cqn,cqd)
+            integer intent(in) :: n
+            complex*16 intent(in) :: z
+            complex*16 intent(out),dimension(n+1),depend(n) :: cqn
+            complex*16 intent(out),dimension(n+1),depend(n) :: cqd
         end subroutine clqn
 
         ! stvl0
 
         subroutine airyzo(nt,kf,xa,xb,xc,xd) ! in :specfun:specfun.f
-            integer optional,check(len(xa)>=nt),depend(xa) :: nt=len(xa)
-            integer :: kf
-            double precision dimension(nt) :: xa
-            double precision dimension(nt),depend(nt) :: xb
-            double precision dimension(nt),depend(nt) :: xc
-            double precision dimension(nt),depend(nt) :: xd
+            integer intent(in),check(nt>0) :: nt
+            integer optional,intent(in) :: kf=1
+            double precision intent(out),depend(nt),dimension(nt) :: xa
+            double precision intent(out),depend(nt),dimension(nt) :: xb
+            double precision intent(out),depend(nt),dimension(nt) :: xc
+            double precision intent(out),depend(nt),dimension(nt) :: xd
         end subroutine airyzo
         ! error
         ! cerror
 
-        subroutine eulerb(n,en) ! in :specfun:specfun.f
-            integer optional,check((len(en)-1)>=n),depend(en) :: n=(len(en)-1)
-            double precision dimension(n + 1) :: en
+        subroutine eulerb(n,en) ! in :specfun:specfun.
+            integer intent(in), check(n>=0) :: n
+            double precision intent(out),depend(n),dimension(n+1) :: en
         end subroutine eulerb
         subroutine cva1(kd,m,q,cv) ! in :specfun:specfun.f
-            integer :: kd
-            integer :: m
-            double precision :: q
-            double precision dimension(200) :: cv
+            integer intent(in) :: kd
+            integer intent(in), check(m<=200) :: m
+            double precision intent(in), check(q>=0) :: q
+            double precision intent(out), depend(m), dimension(m) :: cv
         end subroutine cva1
         ! ittikb
         subroutine lqnb(n,x,qn,qd) ! in :specfun:specfun.f
-            integer optional,check((len(qn)-1)>=n),depend(qn) :: n=(len(qn)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: qn
-            double precision dimension(n + 1),depend(n) :: qd
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            double precision intent(out),depend(n),dimension(n+1) :: qn
+            double precision intent(out),depend(n),dimension(n+1) :: qd
         end subroutine lqnb
         ! cjk
 
@@ -151,15 +139,15 @@ python module specfun ! in
             double precision intent(in) :: v
             double precision intent(in) :: x
             double precision intent(out) :: vm
-            double precision intent(out), depend(v), dimension((int)floor(v)) :: vl
-            double precision intent(out), depend(v), dimension((int)floor(v)) :: dl
+            double precision intent(out),depend(v),dimension((int)floor(v)) :: vl
+            double precision intent(out),depend(v),dimension((int)floor(v)) :: dl
         end subroutine lamv
         ! chguit
         ! kmn
         subroutine lagzo(n,x,w) ! in :specfun:specfun.f
-            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
-            double precision dimension(n) :: x
-            double precision dimension(n),depend(n) :: w
+            integer intent(in),check(n>0) :: n
+            double precision intent(out),depend(n),dimension(n) :: x
+            double precision intent(out),dimension(n),depend(n) :: w
         end subroutine lagzo
         ! vvla
 
@@ -177,9 +165,9 @@ python module specfun ! in
         ! stvh1
 
         subroutine legzo(n,x,w) ! in :specfun:specfun.f
-            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
-            double precision dimension(n) :: x
-            double precision dimension(n),depend(n) :: w
+            integer intent(in),check(n>0) :: n
+            double precision intent(out),depend(n),dimension(n) :: x
+            double precision intent(out),dimension(n),depend(n) :: w
         end subroutine legzo
         ! aswfa
         ! jyna
@@ -196,19 +184,19 @@ python module specfun ! in
         ! itsh0
 
         subroutine cerzo(nt,zo) ! in :specfun:specfun.f
-            integer optional,check(len(zo)>=nt),depend(zo) :: nt=len(zo)
-            complex*16 dimension(nt) :: zo
+            integer intent(in), check(nt>0) :: nt
+            complex*16 intent(out), depend(nt), dimension(nt) :: zo
         end subroutine cerzo
 
         ! gamma2
 
         ! chgu
         subroutine lamn(n,x,nm,bl,dl) ! in :specfun:specfun.f
-            integer optional,check((len(bl)-1)>=n),depend(bl) :: n=(len(bl)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: bl
-            double precision dimension(n + 1),depend(n) :: dl
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            integer intent(out) :: nm
+            double precision intent(out),depend(n),dimension(n+1) :: bl
+            double precision intent(out),depend(n),dimension(n+1) :: dl
         end subroutine lamn
         ! comelp
         ! incob
@@ -220,19 +208,20 @@ python module specfun ! in
         !    integer :: mj
         !    double precision :: f
         !end subroutine cvf
-        subroutine clpn(n,x,y,cpn,cpd) ! in :specfun:specfun.f
-            integer optional,check((len(cpn)-1)>=n),depend(cpn) :: n=(len(cpn)-1)
-            double precision :: x
-            double precision :: y
-            complex*16 dimension(n + 1) :: cpn
-            complex*16 dimension(n + 1),depend(n) :: cpd
+        subroutine clpn(n,z,cpn,cpd) ! in :specfun:specfun.f
+            callstatement (*f2py_func)(&n,&(z.r),&(z.i),cpn,cpd)
+            integer intent(in), check(n>=0) :: n
+            complex*16 intent(in) :: z
+            complex*16 intent(out),depend(n),dimension(n+1) :: cpn
+            complex*16 intent(out),depend(n),dimension(n+1) :: cpd
         end subroutine clpn
+
         subroutine lqmns(m,n,x,qm,qd) ! in :specfun:specfun.f
-            integer :: m
-            integer optional,check((len(qm)-1)>=n),depend(qm) :: n=(len(qm)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: qm
-            double precision dimension(n + 1),depend(n) :: qd
+            integer intent(in), check(m>=0) :: m
+            integer intent(in), check(n>=0) :: n,
+            double precision intent(in) :: x
+            double precision intent(out),depend(n),dimension(n+1) :: qm
+            double precision intent(out),depend(n),dimension(n+1) :: qd
         end subroutine lqmns
         ! ciklv
         ! elit
@@ -257,12 +246,12 @@ python module specfun ! in
         ! cjynb
         ! iknb
         subroutine lpmn(mm,m,n,x,pm,pd) ! in :specfun:specfun.f
-            integer optional,check((shape(pm,0)-1)==mm),depend(pm) :: mm=(shape(pm,0)-1)
-            integer :: m
-            integer optional,check((shape(pm,1)-1)==n),depend(pm) :: n=(shape(pm,1)-1)
-            double precision :: x
-            double precision dimension(mm + 1,n + 1) :: pm
-            double precision dimension(mm + 1,n + 1),depend(mm,n) :: pd
+            integer intent(hide) :: mm=m
+            integer intent(in), depend(n), check((m>=0) && (m<=n)) :: m
+            integer intent(in), check((n>=0)) :: n
+            double precision intent(in) :: x
+            double precision intent(out),depend(m,n),dimension(m+1,n+1) :: pm
+            double precision intent(out),dimension(m+1,n+1),depend(m,n) :: pd
         end subroutine lpmn
         ! mtu0
         ! cy01
@@ -271,9 +260,9 @@ python module specfun ! in
         ! sckb
         ! cpdla
         subroutine fcszo(kf,nt,zo) ! in :specfun:specfun.f
-            integer :: kf
-            integer optional,check(len(zo)>=nt),depend(zo) :: nt=len(zo)
-            complex*16 dimension(nt) :: zo
+            integer intent(in), check((kf==1)||(kf==2)) :: kf
+            integer intent(in), check(nt>0) :: nt
+            complex*16 intent(out), depend(nt), dimension(nt) :: zo
         end subroutine fcszo
         ! e1xa
         ! lpmv
@@ -281,14 +270,14 @@ python module specfun ! in
         ! cgama
 
         subroutine aswfb(m,n,c,x,kd,cv,s1f,s1d) ! in :specfun:specfun.f
-            integer :: m
-            integer :: n
-            double precision :: c
-            double precision :: x
-            integer :: kd
-            double precision :: cv
-            double precision :: s1f
-            double precision :: s1d
+            integer intent(in), check(m>=0) :: m
+            integer intent(in), check(n>=m) :: n
+            double precision intent(in) :: c
+            double precision intent(in), check(fabs(x)<1) :: x
+            integer intent(in), check((kd==-1)||(kd=1)) :: kd
+            double precision intent(in) :: cv
+            double precision intent(out) :: s1f
+            double precision intent(out) :: s1d
         end subroutine aswfb
 
         ! chgu
@@ -298,15 +287,15 @@ python module specfun ! in
         ! lgama
 
         subroutine lqna(n,x,qn,qd) ! in :specfun:specfun.f
-            integer optional,check((len(qn)-1)>=n),depend(qn) :: n=(len(qn)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: qn
-            double precision dimension(n + 1),depend(n) :: qd
+            integer intent(in), check(n>=0)
+            double precision intent(in), check(fabs(x)<1) :: x
+            double precision intent(out),depend(n),dimension(n+1) :: qn
+            double precision intent(out),dimension(n+1),depend(n) :: qd
         end subroutine lqna
         ! dvla
         ! ik01a
         subroutine cpbdn(n,z,cpb,cpd) ! in :specfun:specfun.f
-            integer intent(in) :: n
+            integer intent(in),check(n>=0) :: n
             complex*16 intent(in) :: z
             complex*16 depend(n), intent(out), dimension(abs(n)) :: cpb
             complex*16 depend(n), intent(out), dimension(abs(n)) :: cpd
@@ -314,24 +303,24 @@ python module specfun ! in
         ! ik01b
         ! beta
         subroutine lpn(n,x,pn,pd) ! in :specfun:specfun.f
-            integer optional,check((len(pn)-1)>=n),depend(pn) :: n=(len(pn)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: pn
-            double precision dimension(n + 1),depend(n) :: pd
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            double precision intent(out),dimension(n+1),depend(n) :: pn
+            double precision intent(out),dimension(n+1),depend(n) :: pd
         end subroutine lpn
         subroutine fcoef(kd,m,q,a,fc) ! in :specfun:specfun.f
-            integer :: kd
-            integer :: m
-            double precision :: q
-            double precision :: a
-            double precision dimension(251) :: fc
+            integer intent(in), check((kd>0) && (kd<5)) :: kd
+            integer intent(in) :: m
+            double precision intent(in), check(q>=0) :: q
+            double precision intent(in) :: a
+            double precision intent(out),dimension(251) :: fc
         end subroutine fcoef
         subroutine sphi(n,x,nm,si,di) ! in :specfun:specfun.f
-            integer optional,check((len(si)-1)>=n),depend(si) :: n=(len(si)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: si
-            double precision dimension(n + 1),depend(n) :: di
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            integer intent(out) :: nm
+            double precision intent(out),dimension(n + 1),depend(n) :: si
+            double precision intent(out),dimension(n + 1),depend(n) :: di
         end subroutine sphi
         ! pbwa
         ! rmn1
@@ -346,61 +335,55 @@ python module specfun ! in
         ! stvlv
 
         subroutine rcty(n,x,nm,ry,dy) ! in :specfun:specfun.f
-            integer optional,check((len(ry)-1)>=n),depend(ry) :: n=(len(ry)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: ry
-            double precision dimension(n + 1),depend(n) :: dy
+            integer intent(in) :: n
+            double precision intent(in) :: x
+            integer intent(out) :: nm
+            double precision intent(out),dimension(n+1),depend(n) :: ry
+            double precision intent(out),dimension(n+1),depend(n) :: dy
         end subroutine rcty
         subroutine lpni(n,x,pn,pd,pl) ! in :specfun:specfun.f
-            integer optional,check((len(pn)-1)>=n),depend(pn) :: n=(len(pn)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: pn
-            double precision dimension(n + 1),depend(n) :: pd
-            double precision dimension(n + 1),depend(n) :: pl
+            integer intent(in),check(n>=0) :: n
+            double precision intent(in) :: x
+            double precision intent(out), depend(n), dimension(n+1) :: pn
+            double precision intent(out), depend(n), dimension(n+1) :: pd
+            double precision intent(out), depend(n), dimension(n+1) :: pl
         end subroutine lpni
 
         ! klvna
 
         ! chgubi
         subroutine cyzo(nt,kf,kc,zo,zv) ! in :specfun:specfun.f
-            integer optional,check(len(zo)>=nt),depend(zo) :: nt=len(zo)
-            integer :: kf
-            integer :: kc
-            complex*16 dimension(nt) :: zo
-            complex*16 dimension(nt),depend(nt) :: zv
+            integer intent(in), check(nt>0) :: nt
+            integer intent(in), check((kf>=0)&&(kf<=2)) :: kf
+            integer intent(in), check((kc==0)||(kc==1)) :: kc
+            complex*16 intent(out),depend(nt),dimension(nt) :: zo
+            complex*16 intent(out),dimension(nt),depend(nt) :: zv
         end subroutine cyzo
         ! klvnb
         ! rmn2so
         subroutine csphik(n,z,nm,csi,cdi,csk,cdk) ! in :specfun:specfun.f
-            integer optional,check((len(csi)-1)>=n),depend(csi) :: n=(len(csi)-1)
-            complex*16 :: z
-            integer :: nm
-            complex*16 dimension(n + 1) :: csi
-            complex*16 dimension(n + 1),depend(n) :: cdi
-            complex*16 dimension(n + 1),depend(n) :: csk
-            complex*16 dimension(n + 1),depend(n) :: cdk
+            integer intent(in), check(n>=0) :: n
+            complex*16 intent(in) :: z
+            integer intent(out) :: nm
+            complex*16 intent(out),dimension(n+1),depend(n) :: csi
+            complex*16 intent(out),dimension(n+1),depend(n) :: cdi
+            complex*16 intent(out),dimension(n+1),depend(n) :: csk
+            complex*16 intent(out),dimension(n+1),depend(n) :: cdk
         end subroutine csphik
-        subroutine bjndd(n,x,bj,dj,fj) ! in :specfun:specfun.f
-            integer :: n
-            double precision :: x
-            double precision dimension(101) :: bj
-            double precision dimension(101) :: dj
-            double precision dimension(101) :: fj
-        end subroutine bjndd
+        ! bjndd
         subroutine sphj(n,x,nm,sj,dj) ! in :specfun:specfun.f
-            integer optional,check((len(sj)-1)>=n),depend(sj) :: n=(len(sj)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: sj
-            double precision dimension(n + 1),depend(n) :: dj
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            integer intent(out) :: nm
+            double precision intent(out),dimension(n+1),depend(n) :: sj
+            double precision intent(out),dimension(n+1),depend(n) :: dj
         end subroutine sphj
         subroutine othpl(kf,n,x,pl,dpl) ! in :specfun:specfun.f
-            integer :: kf
-            integer optional,check((len(pl)-1)>=n),depend(pl) :: n=(len(pl)-1)
-            double precision :: x
-            double precision dimension(n + 1) :: pl
-            double precision dimension(n + 1),depend(n) :: dpl
+            integer intent(in), check((kf>0)&&(kf<5)) :: kf
+            integer intent(in) :: n
+            double precision intent(in) :: x
+            double precision intent(out),dimension(n+1),depend(n) :: pl
+            double precision intent(out),dimension(n+1),depend(n) :: dpl
         end subroutine othpl
         subroutine klvnzo(nt,kd,zo) ! in :specfun:specfun.f
             integer intent(in), check(nt>0) :: nt
@@ -410,12 +393,12 @@ python module specfun ! in
         ! rswfo
         ! ch12n
         subroutine jyzo(n,nt,rj0,rj1,ry0,ry1) ! in :specfun:specfun.f
-            integer :: n
-            integer optional,check(len(rj0)>=nt),depend(rj0) :: nt=len(rj0)
-            double precision dimension(nt) :: rj0
-            double precision dimension(nt),depend(nt) :: rj1
-            double precision dimension(nt),depend(nt) :: ry0
-            double precision dimension(nt),depend(nt) :: ry1
+            integer intent(in), check(abs(n)<=101) :: n
+            integer intent(in), check(nt>0) :: nt
+            double precision intent(out),dimension(nt),depend(nt) :: rj0
+            double precision intent(out),dimension(nt),depend(nt) :: rj1
+            double precision intent(out),dimension(nt),depend(nt) :: ry0
+            double precision intent(out),dimension(nt),depend(nt) :: ry1
         end subroutine jyzo
 
         ! ikv 
@@ -429,25 +412,25 @@ python module specfun ! in
 
         ! fcs
         subroutine rctj(n,x,nm,rj,dj) ! in :specfun:specfun.f
-            integer optional,check((len(rj)-1)>=n),depend(rj) :: n=(len(rj)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: rj
-            double precision dimension(n + 1),depend(n) :: dj
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in) :: x
+            integer intent(out) :: nm
+            double precision intent(out),dimension(n+1),depend(n) :: rj
+            double precision intent(out),dimension(n+1),depend(n) :: dj
         end subroutine rctj
         subroutine herzo(n,x,w) ! in :specfun:specfun.f
-            integer optional,check(len(x)>=n),depend(x) :: n=len(x)
-            double precision dimension(n) :: x
-            double precision dimension(n),depend(n) :: w
+            integer intent(in), check(n>0) :: n
+            double precision intent(out),dimension(n),depend(n) :: x
+            double precision intent(out),dimension(n),depend(n) :: w
         end subroutine herzo
         ! jy01b
         ! enxb
         subroutine sphk(n,x,nm,sk,dk) ! in :specfun:specfun.f
-            integer optional,check((len(sk)-1)>=n),depend(sk) :: n=(len(sk)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: sk
-            double precision dimension(n + 1),depend(n) :: dk
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in), check(x>=0) :: x
+            integer intent(out) :: nm
+            double precision intent(out), dimension(n+1),depend(n) :: sk
+            double precision intent(out), dimension(n+1),depend(n) :: dk
         end subroutine sphk
         ! enxa
         ! gaih
@@ -459,22 +442,22 @@ python module specfun ! in
             double precision intent(out) :: pvf
             double precision intent(out) :: pvd
         end subroutine pbvv
-        subroutine clqmn(mm,m,n,x,y,cqm,cqd) ! in :specfun:specfun.f
-            integer optional,check((shape(cqm,0)-1)==mm),depend(cqm) :: mm=(shape(cqm,0)-1)
-            integer :: m
-            integer optional,check((shape(cqm,1)-1)==n),depend(cqm) :: n=(shape(cqm,1)-1)
-            double precision :: x
-            double precision :: y
-            complex*16 dimension(mm + 1,n + 1) :: cqm
-            complex*16 dimension(mm + 1,n + 1),depend(mm,n) :: cqd
+        subroutine clqmn(mm,m,n,z,cqm,cqd) ! in :specfun:specfun.f
+            callstatement (*f2py_func)(&mm,&m,&n,&(z.r),&(z.i),cqm,cqd)
+            integer intent(hide) :: mm=m
+            integer intent(in), check(m>=0) :: m
+            integer intent(in), check(n>=0) :: n
+            complex*16 intent(in) :: z
+            complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cqm
+            complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cqd
         end subroutine clqmn
         subroutine segv(m,n,c,kd,cv,eg) ! in :specfun:specfun.f
-            integer :: m
-            integer :: n
-            double precision :: c
-            integer :: kd
-            double precision :: cv
-            double precision dimension(200) :: eg
+            integer intent(in) :: m
+            integer intent(in) :: n
+            double precision intent(in) :: c
+            integer intent(in), check((kd==-1) || (kd==1)) :: kd
+            double precision intent(in) :: cv
+            double precision intent(out) :: dimension(200) :: eg
         end subroutine segv
         ! ciknb
         ! cikna
@@ -484,11 +467,11 @@ python module specfun ! in
         ! cpsi
         
         subroutine sphy(n,x,nm,sy,dy) ! in :specfun:specfun.f
-            integer optional,check((len(sy)-1)>=n),depend(sy) :: n=(len(sy)-1)
-            double precision :: x
-            integer :: nm
-            double precision dimension(n + 1) :: sy
-            double precision dimension(n + 1),depend(n) :: dy
+            integer intent(in), check(n>=0) :: n
+            double precision intent(in), check(x>=0) :: x
+            integer intent(out) :: nm
+            double precision intent(out),dimension(n+1),depend(n) :: sy
+            double precision intent(out),dimension(n+1),depend(n) :: dy
         end subroutine sphy
         ! jelp
         
@@ -497,4 +480,5 @@ python module specfun ! in
 end python module specfun
 
 ! This file was auto-generated with f2py (version:2.13.175-1239).
+!  and then heavily modified.....
 ! See http://cens.ioc.ee/projects/f2py2e/

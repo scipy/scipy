@@ -54,23 +54,53 @@ class general_function:
         return squeeze(arraymap(self.thefunc,args,self.otypes))
 
 
-def jv_prime(v,z):
-    return (jv(v-1,z) - jv(v+1,z))/2.0
+def djv(v,z,n=1):
+    """Return the nth derivative of Jv(z) with respect to z.
+    """
+    if n == 0:
+        return jv(v,z)
+    else:
+        return (djv(v-1,z,n-1) - djv(v+1,z,n-1))/2.0
 
-def yv_prime(v,z):
-    return (yv(v-1,z) - yv(v+1,z))/2.0
+def dyv(v,z,n=1):
+    """Return the nth derivative of Yv(z) with respect to z.
+    """
+    if n == 0:
+        return yv(v,z)
+    else:
+        return (dyv(v-1,z,n-1) - dyv(v+1,z,n-1))/2.0
 
-def kv_prime(v,z):
-    return (kv(v-1,z) - yv(v+1,z))/2.0
+def dkv(v,z,n=1):
+    """Return the nth derivative of Kv(z) with respect to z.
+    """
+    if n == 0:
+        return kv(v,z)
+    else:
+        return (dkv(v-1,z,n-1) - dkv(v+1,z,n-1))/2.0
 
-def iv_prime(v,z):
-    return (iv(v-1,z) - iv(v+1,z))/2.0
+def div(v,z,n=1):
+    """Return the nth derivative of Iv(z) with respect to z.
+    """
+    if n <= 0:
+        return iv(v,z)
+    else:
+        return (div(v-1,z,n-1) - div(v+1,z,n-1))/2.0
 
-def H1v_prime(v,z):
-    return (hankel1(v-1,z)-hankel1(v+1,z))/2.0
+def dh1v(v,z,n=1):
+    """Return the nth derivative of H1v(z) with respect to z.
+    """
+    if n <= 0:
+        return hankel1(v,z)
+    else:
+        return (dh1v(v-1,z,n-1) - dh1v(v+1,z,n-1))/2.0
 
-def H2v_prime(v,z):
-    return (hankel2(v-1,z)-hankel2(v+1,z))/2.0
+def dh2v(v,z,n=1):
+    """Return the nth derivative of H2v(z) with respect to z.
+    """
+    if n <= 0:
+        return hankel2(v,z)
+    else:
+        return (dh2v(v-1,z,n-1) - dh2v(v+1,z,n-1))/2.0
 
 def erfinv(y):
     return ndtri((y+1)/2.0)/sqrt(2)

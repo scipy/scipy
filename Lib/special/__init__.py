@@ -166,6 +166,7 @@
 
  """
 from special import *
+import specfun
 
 
 
