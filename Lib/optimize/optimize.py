@@ -786,7 +786,6 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     else:
         return xf
 
-
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """ Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -795,7 +794,8 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     assumed to be a starting interval for a downhill bracket search
     (see bracket)
 
-    Uses inverse interpolation when possible to speed up convergence.
+    Uses inverse parabolic interpolation when possible to speed up convergence
+    of golden section method.
 
     """
     _mintol = 1.0e-11
