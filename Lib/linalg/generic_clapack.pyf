@@ -42,7 +42,7 @@ interface
    ! lu,piv,info = getrf(a,rowmajor=1,overwrite_a=0)
    ! Compute an LU factorization of a  general  M-by-N  matrix  A.
    ! A * P = L * U
-
+     threadsafe
      fortranname  clapack_<tchar=s,d,c,z>getrf
      integer intent(c,hide) ::  <tchar=s,d,c,z>getrf
      callstatement <tchar=s,d,c,z>getrf_return_value = info = (*f2py_func)(102-rowmajor,m,n,a,(rowmajor?n:m),piv)

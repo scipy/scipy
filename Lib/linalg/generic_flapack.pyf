@@ -43,7 +43,7 @@ interface
    ! lu,piv,info = getrf(a,overwrite_a=0)
    ! Compute an LU factorization of a  general  M-by-N  matrix  A.
    ! A = P * L * U
-
+     threadsafe
      callstatement {int i;(*f2py_func)(&m,&n,a,&m,piv,&info);for(i=0,n=MIN(m,n);i<n;--piv[i++]);}
      callprotoargument int*,int*,<type_in_c>*,int*,int*,int*
 
@@ -62,7 +62,7 @@ interface
    ! Solve A^T * X = B if trans=1
    ! Solve A^H * X = B if trans=2
    ! A = P * L * U
-
+     threadsafe
      callstatement {int i;for(i=0;i<n;++piv[i++]);(*f2py_func)((trans?(trans==2?"C":"T"):"N"),&n,&nrhs,lu,&n,piv,b,&n,&info);for(i=0;i<n;--piv[i++]);}
      callprotoargument char*,int*,int*,<type_in_c>*,int*,int*,<type_in_c>*,int*,int*
 
