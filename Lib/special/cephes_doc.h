@@ -23,7 +23,7 @@
 #define ellipj_doc "ellipj(u,m) calculates the Jacobian elliptic functions of\nparameter m between 0 and 1, and real u.  The returned functions are\noften written sn(u|m), cn(u|m), and dn(u|m).  The value of ph is such\nthat if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph)."
 #define ellipk_doc "ellipk(m) returns the complete integral of the first kind:\nintegral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)"
 #define ellipkinc_doc "ellipkinc(phi,m) returns the incomplete elliptic integral of the first\nkind: integral(1/sqrt(1-m*sin(t)**2),t=0..phi)"
-#define erf_doc "erf(x) returns the error function defined as\n2/sqrt(pi) * integral(exp(-t**2 / 2),t=0..x)"
+#define erf_doc "erf(x) returns the error function defined as\n2/sqrt(pi) * integral(exp(-t**2),t=0..x)"
 #define erfc_doc "erfc(x) returns 1 - erf(x)."
 #define exp10_doc "exp10(x) returns 10 raised to the x power."
 #define exp2_doc "exp2(x) returns 2 raised to the x power."

@@ -7,7 +7,21 @@
 
 #include "amos_wrappers.h"
 
-/* This must be linked with g77
+#if defined(NO_APPEND_FORTRAN)
+#if defined(UPPERCASE_FORTRAN)
+#define F_FUNC(f,F) F
+#else
+#define F_FUNC(f,F) f
+#endif
+#else
+#if defined(UPPERCASE_FORTRAN)
+#define F_FUNC(f,F) F##_
+#else
+#define F_FUNC(f,F) f##_
+#endif
+#endif
+
+/* This must be linked with fortran
  */
 
 int ierr_to_mtherr( int nz, int ierr) {
@@ -36,15 +50,15 @@ int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py
   int kode = 1;
   int nz;
 
-  zairy_(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
+  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_MTHERR("airy:");
-  zbiry_(CADDR(z), &id, &kode, F2C_CST(bi), &nz, &ierr);
+  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &nz, &ierr);
   DO_MTHERR("airy:");
   
   id = 1;
-  zairy_(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
+  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
   DO_MTHERR("airy:");
-  zbiry_(CADDR(z), &id, &kode, F2C_CST(bip), &nz, &ierr);
+  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &nz, &ierr);
   DO_MTHERR("airy:");
   return 0;
 }

@@ -8,7 +8,6 @@ import scipy
 import scipy.special as special
 from fastumath import *
 
-
 ## Special defines some of these distributions
 ##  using backwards argument order.  This
 ##  is because the underlying C-library uses this order.
@@ -19,6 +18,20 @@ from fastumath import *
 _quantstr = "Quantile must be in [0,1]."
 _posstr = "Parameter must be > 0."
 _nonnegstr = "Parameter must be >= 0."
+
+### Each distribution has up to 6 functions defined plus one function
+##    to return random variates following the distribution ---
+##    these functions are in (this is in rv2.py or rv.py).
+
+##  if <dist> is the name of the function to return random variates, then
+##  <dist>pdf --- PDF
+##  <dist>cdf --- CDF
+##  <dist>cdfc --- Complementary CDF
+##  <dist>q --- Inverse of CDF (quantiles)
+##  <dist>p --- Inverse of CDFC
+##  <dist>stats --- Return mean, variance and optionally skew and kurtosis
+##                      of the distribution.
+
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
@@ -587,13 +600,13 @@ def _ncfqfunc(x,q,dfn,dfd,nc):
 
 def _ncfq(q,dfn,dfd,nc,x0):
     import scipy.optimize as optimize
-    if x0 is None:
-        x0 = dfd * (dfn+nc)/(dfn*(dfd-2))
     return optimize.fsolve(_ncfqfunc,x0,args=(q,dfn,dfd,nc))
 _vec_ncfq = special.general_function(_ncfq,'d')
 
 def ncfq(q,dfn,dfd,nc,x0=None):
     assert all(0<=q<=1), _quanstr
+    if x0 is None:
+        x0 = dfd * (dfn+nc)/(dfn*(dfd-2))
     return _vec_ncfq(q, dfn, dfd, nc, x0)
 
 def ncfp(p,dfn,dfd,nc):
@@ -622,8 +635,21 @@ def nctcdf(x,df,nc):
 def nctcdfc(x,df,nc):
     return 1-nctcdf(x,df,nc)
 
-def nctq(q,df,nc):
-    pass
+def _nctqfunc(x,q,df,nc):
+    return _nctcdf(x,dfn,dfd,nc)-q
+
+def _ncft(q,df,nc,x0):
+    import scipy.optimize as optimize
+    return optimize.fsolve(_nctqfunc,x0,args=(q,dfn,dfd,nc))
+_vec_nctq = special.general_function(_nctq,'d')
+
+def nctq(q,df,nc,x0=None):
+    assert all(0<=q<=1), _quanstr
+    if x0 is None:
+        val1 = gam((df-1.0)/2.0)
+        val2 = gam(df/2.0)
+        x0 = nc*sqrt(df/2.0)*val1/val2
+    return _vec_ncfq(q, dfn, dfd, nc, x0)
 
 def nctp(p,df,nc):
     return nctq(1-p,df,nc)

@@ -1,9 +1,9 @@
 /* This file is a collection (more can be added) of wrappers around some
- *  ToMS Fortran algorithm, so that they can be called from
+ *  CDF Fortran algorithms, so that they can be called from
  *  cephesmodule.so
  */
 
-#include "toms_wrappers.h"
+#include "cdf_wrappers.h"
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F
@@ -17,8 +17,31 @@
 #define F_FUNC(f,F) f##_
 #endif
 #endif
+
 /* This must be linked with fortran
  */
+
+
+int status_to_mtherr( int status) {
+     /* Return mtherr equivalents for ierr values */
+  
+  if (nz != 0) return UNDERFLOW;
+
+  switch (ierr) {
+  case 1:
+    return DOMAIN;
+  case 2:
+    return OVERFLOW;
+  case 3:
+    return PLOSS;
+  case 4:
+    return TLOSS;
+  case 5:   /* Algorithm termination condition not met */
+    return TLOSS;    
+  }
+  return -1;
+}
+
 Py_complex cwofz_wrap( Py_complex z) {
   int errflag;
   Py_complex cy;
@@ -30,4 +53,5 @@ Py_complex cwofz_wrap( Py_complex z) {
                                         large abs(z)*/
   return cy;
 }
+
 
