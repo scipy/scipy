@@ -16,6 +16,8 @@ if sys.version_info[0] < 2 or sys.version_info[1] < 3:
     False = 0
     True = 1
 
+_unit_imag = {'f': array(1j,'F'), 'd': 1j}
+
 __all__ = ['fopen','loadmat','savemat']
 
 def getsize_type(mtype):
@@ -558,7 +560,10 @@ def _parse_mimatrix(fid,bytes):
         else:
             if cmplx:
                 imag, unused =_get_element(fid)
-                result = result + cast[imag.typecode()](1j) * imag
+                try:
+                    result = result + _unit_imag[imag.typecode()] * imag
+                except KeyError:
+                    result = result + 1j*imag
             result = squeeze(transpose(reshape(result,tupdims)))
 
     elif dclass == mxCELL_CLASS:
@@ -615,7 +620,10 @@ def _parse_mimatrix(fid,bytes):
         res, unused = _get_element(fid)
         if cmplx:
             imag, unused = _get_element(fid)
-            res = res + cast[imag.typecode()](1j)*imag
+            try:
+                res = res + _unit_imag[imag.typecode()] * imag
+            except KeyError:
+                res = res + 1j*imag
         if have_sparse:
             spmat = scipy.sparse.csc_matrix(res, (rowind[:len(res)], colind),
                                             M=dims[0],N=dims[1])
