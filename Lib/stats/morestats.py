@@ -825,11 +825,11 @@ Returns: t-statistic, two-tailed p-value
 ################## test functions #########################
 
 def test(level=1):
-    from scipy_base.testing import module_test
+    from scipy_test.testing import module_test
     module_test(__name__,__file__,level=level)
 
 def test_suite(level=1):
-    from scipy_base.testing import module_test_suite
+    from scipy_test.testing import module_test_suite
     return module_test_suite(__name__,__file__,level=level)
 
 

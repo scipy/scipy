@@ -213,7 +213,7 @@ def test(level=10):
     return runner
 
 def test_suite(level=1):
-    import scipy_base.testing
+    import scipy_test.testing
     import scipy.stats
     this_mod = scipy.stats
-    return scipy_base.testing.harvest_test_suites(this_mod,level=level)
+    return scipy_test.testing.harvest_test_suites(this_mod,level=level)

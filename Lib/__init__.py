@@ -93,11 +93,15 @@ except ImportError:
 #else:
 #    print "Plotting methods available: ", _plot
 
-_pkgs = ['cluster','cow','fftpack','fftw','ga','gplt','integrate',
+# removed gplt because it screws up imports on win32
+_pkgs = ['cluster','cow','fftpack','fftw','ga','integrate',
          'interpolate', 'io', 'linalg', 'optimize', 'plt',
          'signal', 'sparse', 'special', 'stats', 'weave',
-         'xplt']
+         'xplt'] #,'gplt']
 
+if sys.platform != 'win32':
+    _pkgs.append('gplt')
+    
 _pkg_doc = ['Vector Quantization / Kmeans',
             'Cluster of Workstations',
             'FFT algorithms',
@@ -148,10 +152,10 @@ def test_all(level=10):
     test(level)
     
 def test_suite(level = 1):
-    import scipy_base.testing
+    import scipy_test.testing
     import scipy
     ignore = ['xplt','plt','gplt','gui_thread','sparse','scipy_version']
-    suites = [scipy_base.testing.harvest_test_suites(scipy,ignore,level=level)]
-    suites += [scipy_base.testing.harvest_test_suites(weave,ignore,level=level)]
+    suites = [scipy_test.testing.harvest_test_suites(scipy,ignore,level=level)]
+    suites += [scipy_test.testing.harvest_test_suites(weave,ignore,level=level)]
     import unittest
     return unittest.TestSuite(suites)

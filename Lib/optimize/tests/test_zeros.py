@@ -48,7 +48,7 @@ mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
 
-from scipy_base.testing import ScipyTestCase
+from scipy_test.testing import ScipyTestCase
 import unittest
 
 class test_basic(ScipyTestCase) :
