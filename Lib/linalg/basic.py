@@ -197,10 +197,10 @@ def norm(x, ord=2):
        For matrices ord can only be + or - 1, 2, Inf.
          ord = 2 computes the largest singular value
          ord = -2 computes the smallest singular value
-         ord = 1 computes the largest row sum
-         ord = -1 computes the smallest row sum
-         ord = Inf computes the largest column sum
-         ord = -Inf computes the smallest column sum
+         ord = 1 computes the largest column sum of absolute values
+         ord = -1 computes the smallest column sum of absolute values
+         ord = Inf computes the largest row sum of absolute values
+         ord = -Inf computes the smallest row sum of absolute values
     """
     x = asarray(x)
     nd = len(x.shape)
