@@ -2,23 +2,42 @@
 
 import os
 from glob import glob
+import warnings
+
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 from scipy_distutils.misc_util import fortran_library_item
-from scipy_distutils.system_info import get_info
+from scipy_distutils.system_info import get_info,dict_append,\
+     AtlasNotFoundError,BlasNotFoundError,BlasSrcNotFoundError
 
 def configuration(parent_package='',parent_path=None):
     package = 'integrate'
     config = default_config_dict(package,parent_package)
-    atlas_info = get_info('atlas')
+
     local_path = get_path(__name__,parent_path)
+
+    atlas_info = get_info('atlas')
+
+    f_libs = []
+    if not atlas_info:
+        warnings.warn(AtlasNotFoundError.__doc__)
+        blas_info = get_info('blas')
+        #blas_info = {} # test building BLAS from sources.
+        if not blas_info:
+            warnings.warn(BlasNotFoundError.__doc__)
+            blas_src_info = get_info('blas_src')
+            if not blas_src_info:
+                raise BlasSrcNotFoundError,BlasSrcNotFoundError.__doc__
+            dict_append(blas_info,libraries=['blas_src'])
+        atlas_info = blas_info
+        f_libs.append(fortran_library_item(\
+                'blas_src',blas_src_info['sources']
+                ))
 
     atlas_library_dirs = atlas_info.get('library_dirs',[])
     atlas_libraries = atlas_info.get('libraries',[])
     blas_libraries = atlas_libraries
 
-    f_libs = []
-    
     quadpack = glob(os.path.join(local_path,'quadpack','*.f'))
     f_libs.append(fortran_library_item(\
         'quadpack',quadpack,libraries = ['linpack_lite','mach']))
