@@ -32,7 +32,7 @@ Continuous Statistical Distributions
 \layout Standard
 
 All distributions will have location (L) and Scale (S) parameters along
- with any shape parameters need, the names for the shape parameters will
+ with any shape parameters needed, the names for the shape parameters will
  vary.
  Standard form for the distributions will be given where 
 \begin_inset Formula \( L=0.0 \)
@@ -169,7 +169,7 @@ Percent Point Function (PPF)
 \layout Standard
 
 
-\begin_inset Formula \( G\left( \alpha \right) =F^{-1}\left( \alpha \right)  \)
+\begin_inset Formula \( G\left( q\right) =F^{-1}\left( q\right)  \)
 \end_inset 
 
 
@@ -181,7 +181,7 @@ Percent Point Function (PPF)
 \layout Standard
 
 
-\begin_inset Formula \( G\left( \alpha ;L,S\right) =L+SG\left( \alpha \right)  \)
+\begin_inset Formula \( G\left( q;L,S\right) =L+SG\left( q\right)  \)
 \end_inset 
 
 
@@ -516,7 +516,20 @@ k
 
 \end_inset 
 
+ Skewness is defined as 
+\begin_inset Formula \[
+\gamma _{1}=\sqrt{\beta _{1}}=\frac{\mu _{3}}{\mu _{2}^{3/2}}\]
 
+\end_inset 
+
+ while (Fisher) kurtosis is 
+\begin_inset Formula \[
+\gamma _{2}=\frac{\mu _{4}}{\mu _{2}^{2}}-3,\]
+
+\end_inset 
+
+ so that a normal distribution has a kurtosis of zero.
+ 
 \layout Section
 
 Alpha 

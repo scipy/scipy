@@ -3,9 +3,10 @@ from fastumath import *
 
 def myasarray(a):
     if type(a) in [type(1.0),type(1L),type(1),type(1j)]:
-        return asarray([a])
-    else:
-        return asarray(a)
+        a = asarray([a])
+    if len(a) == 0:
+        a = asarray([a])
+    return a
 
 def check_func(thefunc, x0, args, numinputs, output_shape=None):
     args = (x0[:numinputs],) + args

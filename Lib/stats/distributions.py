@@ -26,7 +26,6 @@ _quantstr = "Quantile must be in [0,1]."
 _posstr = "Parameter must be > 0."
 _nonnegstr = "Parameter must be >= 0."
 
-
 # A function to return nan on condition failure.
 def _wc(cond, val):
     return where (cond, val, scipy.nan)
@@ -43,6 +42,29 @@ def moment_ppf(m, ppffunc, *args):
         return apply(ppffunc, (q,)+args)**m
     return scipy.integrate.quad(_integrand2, 0, 1)[0]
 
+class general_cont_ppf:
+    def __init__(self, dist):
+        self.dist = dist
+        self.cdf = eval('%scdf'%dist)
+        try:    
+            self.stats = eval('%sstats'%dist)
+        except NameError:
+            self.stats = None
+        self.x0 = None
+        self.vecfunc = scipy.special.general_function(self._single_call)
+    def _tosolve(self, x, q, *args):
+        return apply(self.cdf, (x, )+args) - q
+    def _single_call(self, q, *args):
+        if self.x0 is None:
+            if self.stats is None:
+                self.stats = eval('%sstats'%self.dist)
+            self.x0 = self.stats(*args)[0]
+            if not isfinite(self.x0):
+                self.x0 = 1.0
+        return scipy.optimize.fsolve(self._tosolve, self.x0, args=(q,)+args)
+    def __call__(self, q, *args):
+        return self.vecfunc(q, *args)
+            
 ### Each distribution has up to 10 functions defined plus one function
 ##    to return random variates following the distribution ---
 ##    these functions are in (this is in rv2.py or rv.py).
@@ -97,7 +119,7 @@ def moment_ppf(m, ppffunc, *args):
 
 
 _EULER = 0.5772156649015328606   # -special.psi(1)
-_ZETA3 = special.zeta(3,1)
+_ZETA = special.zeta(3,1)
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
@@ -378,8 +400,9 @@ def betaprimecdf(x, a, b, loc=0.0, scale=1.0):
     sv = errp(sv)
     return select([(a<=0)|(b<=0)|(scale<=0),x>0],[scipy.nan, Cx])
 
+_betap_ppf = general_cont_ppf('betaprime')
 def betaprimeppf(q, a, b, loc=0.0, scale=1.0):
-    pass
+    return _betap_ppf(q, a, b, loc, scale)
 
 def betaprimesf(x, a, b, loc=0.0, scale=1.0):
     return 1.0-betaprimecdf(x,a,b,loc,scale)
@@ -674,11 +697,12 @@ def cosinecdf(x, loc=0.0, scale=1.0):
 def cosinesf(x, loc=0.0, scale=1.0):
     return 1.0-cosinecdf(x, loc, scale)
 
+_cosppf = general_cont_ppf('cosine')
 def cosineppf(q, loc=0.0, scale=1.0):
-    pass
+    return _cosppf(q, loc, scale)
 
-def cosineisf(p, loc=0.0, scale=1.0):
-    pass
+def cosineisf(q, loc=0.0, scale=1.0):
+    return cosineppf(1-q, loc, scale)
 
 def cosinestats(loc=0.0, scale=1.0, full=0):
     B = arr(scale)
@@ -922,6 +946,96 @@ def extreme3stats(c, loc=0.0, scale=1.0, full=0):
     sv = errp(sv)
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
+## Exponentiated Weibull
+
+def exponweibpdf(x, a, c, loc=0.0, scale=1.0):
+    x, a, c, loc, scale = map(arr, (x, a, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    exc = exp(-x**c)
+    Px = a*c*(1-exc)**arr(a-1) * exc * x**arr(c-1)
+    return select([(a<=0) | (c<=0) | (scale<=0), x>0],
+                  [scipy.nan, Px/scale])
+
+def exponweibcdf(x, a, c, loc=0.0, scale=1.0):
+    x, a, c, loc, scale = map(arr, (x, a, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    exc = exp(-x**c)
+    Cx = arr(1-exc)**a
+    return select([(a<=0) | (c<=0) | (scale<=0), x>0],[scipy.nan, Cx])
+
+def exponweibppf(q, a, c, loc=0.0, scale=1.0):
+    q, a, c, loc, scale = map(arr, (q, a, c, loc, scale))
+    vals = (-log(1-q**(1.0/a)))**arr(1.0/c)
+    cond = (q >= 0) & (q <=1) & (scale > 0) & (a > 0) & (c > 0)
+    return _wc(cond, vals*scale + loc)
+
+def exponweibsf(x, a, c, loc=0.0, scale=1.0):
+    return 1.0 - exponweibcdf(x, a, c, loc, scale)
+
+def exponweibisf(q, a, c, loc=0.0, scale=1.0):
+    return exponweibppf(1.0-q, a, c, loc, scale)
+
+def exponweibstats(a, c, loc=0.0, scale=1.0, full=0):
+    a, c, loc, scale = map(arr, (a, c, loc, scale))
+    cond = (a>0) & (c>0) & (scale > 0)
+    _vecfunc = special.general_function(generic_moment)
+    mu = _vecfunc(1, exponweibpdf, 0, scipy.inf, a, c)
+    mu2 = _vecfunc(2, exponweibpdf, 0, scipy.inf, a, c)
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    mu3 = _vecfunc(3, exponweibpdf, 0, scipy.inf, a, c)
+    mu4 = _vecfunc(4, exponweibpdf, 0, scipy.inf, a, c)
+    g1 = mu3 / mu2**1.5
+    g2 = mu4 / mu2**2.0 - 3.0
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+                   
+## Exponential Power
+
+def exponpowpdf(x, b, loc=0.0, scale=1.0):
+    x, b, loc, scale = map(arr, (x, b, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    xbm1 = arr(x**(b-1.0))
+    xb = xbm1 * x
+    Px = exp(1)*b*xbm1 * exp(xb - exp(xb))
+    return select([(b<=0) | (scale<=0), x>=0], [scipy.nan, Px/scale])
+
+def exponpowcdf(x, b, loc=0.0, scale=1.0):
+    x, b, loc, scale = map(arr, (x, b, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    xb = arr(x**b)
+    Cx = 1.0-exp(1-exp(xb))
+    return select([(b<=0) | (scale<=0), x>=0], [scipy.nan, Cx])
+
+def exponpowppf(q, b, loc=0.0, scale=1.0):
+    q, b, loc, scale = map(arr, (q, b, loc, scale))
+    cond = (q>=0) & (q<=1) & (b>0) & (scale > 0)
+    vals = pow(log(1.0-log(1.0-q)), 1.0/b)
+    return _wc(cond, vals*scale + loc)
+
+def exponpowsf(x, b, loc=0.0, scale=1.0):
+    return 1.0 - exponpowcdf(x, b, loc, scale)
+
+def exponpowisf(x, b, loc=0.0, scale=1.0):
+    return exponpowppf(1.0-q, b, loc, scale)
+
+def exponpowstats(b, loc=0.0, scale=1.0, full=0):
+    b, loc, scale = map(arr, (b, loc, scale))
+    cond = (b>0) & (scale > 0)
+    _vecfunc = special.general_function(generic_moment)
+    mu = _vecfunc(1, exponpowpdf, 0, scipy.inf, b)
+    mu2 = _vecfunc(2, exponpowpdf, 0, scipy.inf, b)
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    mu3 = _vecfunc(3, exponpowpdf, 0, scipy.inf, b)
+    mu4 = _vecfunc(4, exponpowpdf, 0, scipy.inf, b)
+    g1 = mu3 / mu2**1.5
+    g2 = mu4 / mu2**2.0 - 3.0
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+        
 
 ## Faigue-Life (Birnbaum-Sanders)
 
@@ -1102,8 +1216,9 @@ def foldnormcdf(x, c=0.0, loc=0.0, scale=1.0):
     Cx = special.ndtr(x-c) + special.ndtr(x+c) - 1.0
     return select([(c<0) | (scale <=0), x>0],[scipy.nan, Cx])
 
+_foldnormppf = general_cont_ppf('foldnorm')
 def foldnormppf(al, c=0.0, loc=0.0, scale=1.0):
-    pass
+    return _foldnormppf(al, c, loc, scale)
 
 def foldnormsf(x, c=0.0, loc=0.0, scale=1.0):
     return 1.0-foldnormcdf(x, c, loc, scale)
@@ -2067,19 +2182,20 @@ def rayleighstats(scale=1.0, full=0):
 # Semicircular
 
 def semicircularpdf(x, loc=0.0, scale=1.0):
-    x, loc, shape = map(arr, (loc, scale))
+    x, loc, shape = map(arr, (x, loc, scale))
     x = arr((x-1.0*loc)/scale)
     Px = 2.0/pi*sqrt(1-x*x)
     return select([scale <=0,(x>=-1)&(x<=1)],[scipy.nan,Px/scale])
 
 def semicircularcdf(x, loc=0.0, scale=1.0):
-    x, loc, shape = map(arr, (loc, scale))
+    x, loc, shape = map(arr, (x, loc, scale))
     x = arr((x-1.0*loc)/scale)
     Cx = 0.5 + 1.0/pi*(x*sqrt(1-x*x) + arcsin(x))
     return select([scale <=0,x>1,x>0],[scipy.nan,1,Cx])
 
+_semicircppf = general_cont_ppf('semicircular')
 def semicircularppf(q, loc=0.0, scale=1.0):
-    pass
+    return _semicircppf(q, loc, scale)
 
 def semicircularsf(x, loc=0.0, scale=1.0):
     return 1.0-semicircularcdf(x, loc, scale)

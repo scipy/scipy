@@ -547,7 +547,7 @@ def skew(a,axis=None):
 
 def kurtosis(a,axis=None,fisher=1):
     """Returns the kurtosis (fisher or pearson) of a distribution (normal ==> 3.0; >3 means
-    heavier in the tails, and usually more peaked).  Use akurtosistest()
+    heavier in the tails, and usually more peaked).  Use kurtosistest()
     to see if it's close enough.  Axis can equal None (ravel array
     first), an integer (the axis over which to operate), or a
     sequence (operate over multiple axes).

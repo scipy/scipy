@@ -250,6 +250,22 @@ def extreme3(c, loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return -pow(-log(u),1.0/c)*scale + loc
 
+def exponweib(a, c, loc=0.0, scale=1.0, size=None):
+    """Exponentiated Weibull
+    """
+    if (c <=0) or (scale <=0) or (a <=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return -pow(-log(1-pow(u,1.0/a)),1.0/c)*scale + loc
+
+def exponpow(b, loc=0.0, scale=1.0, size=None):
+    """Exponentiated Weibull
+    """
+    if (b <=0) or (scale <=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return pow(log(1.0-log(1-u)),1.0/b)*scale + loc
+
 def frechet(c, loc=0.0, scale=1.0, size=None):
     if (c <=0) or (scale <=0):
         raise ValueError, _parmerr
