@@ -8,7 +8,8 @@ SciPy requires the following software installed:
      http://www.python.org
 2) Numerical Python 20.x or 21.x
      http://www.numpy.org/
-3) ATLAS 3.3.14 or newer (see NOTES 2 and 3)
+3) ATLAS 3.3.14 or newer (see NOTES 2 and 3) or 
+   ATLAS 3.2.1 (see NOTES 2 and 4)
      http://math-atlas.sourceforge.net/
 4) f2py 2.13.175-1250 or newer
      http://cens.ioc.ee/projects/f2py2e/
@@ -39,6 +40,9 @@ NOTES
    LAPACK_SRC/BLAS_SRC environment variables to indicate the location
    of the corresponding source directories).
 
+4) If you are using ATLAS 3.2.1 then set
+     atlas_version_pre_3_3 = 1
+   in scipy/linalg/setup_linalg.py before building SciPy.
 
 GETTING SCIPY
 =============
