@@ -69,9 +69,9 @@ def fromimage(im):
         pal.shape = (int(N/3.0),3)
         return arr, pal
     if mode in ['RGB','YCbCr']:
-        shape = (3,) + shape
+        shape += [3]
     elif mode in ['CMYK','RGBA']:
-        shape = (4,) + shape
+        shape += [4]
     arr.shape = shape
     if adjust:
         arr = (arr != 0)
@@ -146,20 +146,20 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     else:
         ca = channel_axis
 
-    if shape[ca] not in [3,4]:
+    numch = shape[ca]
+    if numch not in [3,4]:
         raise ValueError, "Channel axis dimension is not valid."
 
-    numch = shape[ca]
     bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
-    if ca == 0:
+    if ca == 2:
         strdata = bytedata.tostring()
-        shape = (shape[2],shape[1])
-    elif ca == 1:
-        strdata = transpose(bytedata,(1,0,2)).tostring()
-        shape = (shape[2],shape[0])
-    elif ca == 2:
-        strdata = transpose(bytedata,(2,0,1)).tostring()
         shape = (shape[1],shape[0])
+    elif ca == 1:
+        strdata = transpose(bytedata,(0,2,1)).tostring()
+        shape = (shape[2],shape[0])
+    elif ca == 0:
+        strdata = transpose(bytedata,(1,2,0)).tostring()
+        shape = (shape[2],shape[1])
     if mode is None:
         if numch == 3: mode = 'RGB'
         else: mode = 'RGBA'

@@ -9,7 +9,7 @@ from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose
 import scipy_base.fastumath
 
-__all__ = ['factorial','comb','rand','randn','disp','who']
+__all__ = ['factorial','comb','rand','randn','disp','who','lena','lena','lena','lena','lena','lena','lena','lena']
     
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
