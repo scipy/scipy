@@ -23,7 +23,7 @@ else:
 
 def configuration(parent_package=''):
     if sys.platform == 'win32':
-        from scipy_distutils.mingw32_support import *
+        import scipy_distutils.mingw32_support
 
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import get_path, default_config_dict
