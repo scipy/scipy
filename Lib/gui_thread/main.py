@@ -224,10 +224,11 @@ def generate_method(method,wx_class):
         #pre_test = 'from gui_thread_guts import proxy_base;'\
         #           'proxy_base.__init__(self)'
         arguments = 'arg_list = args'
-        results  = 'self.wx_obj = ret_val;' \
+        results  = 'self.__dict__["wx_obj"] = ret_val;' \
                    'add_close_event_handler(self);' \
-                   'self.proxy_object_alive = 1;'
-    elif (method == '__getattr__') or (method == '__del__'):
+                   'self.__dict__["proxy_object_alive"] = 1;'
+    elif (method == '__getattr__') or (method == '__del__') \
+         or (method == '__setattr__'):
         return None
     else:
         pre_test =  "if not self.proxy_object_alive: proxy_error()"

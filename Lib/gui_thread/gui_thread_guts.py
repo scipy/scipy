@@ -120,10 +120,10 @@ class proxy_event(wxPyEvent):
         self.kw = kw            
         self.finished = finished
 
-
+	
 #################################
-# A proxied callable object
-#################################
+# Very useful utility functions.
+#################################    
 
 def is_immutable(x):
     """ Checks if object is completely immutable.  A tuple is not
@@ -172,6 +172,39 @@ def smart_return(ret):
     else:
         return proxy_attr(ret)
 
+    
+def smart_call(func, *args, **kw):    
+    """Performs a function call using the passed function/bound method
+    by dispatching the method to the secondary thread when necessary.
+    If the execution is already in the secondary thread then no
+    proxying is done.
+    
+      func -- A callable function, a bound method or function.
+
+      args -- Arguments to be passed to the function.
+
+      kw -- Keyword arguments.
+    """
+    ret_val = None
+    d_args = main.dereference_arglist(args)
+    d_kw = main.dereference_dict(kw)
+    if main.in_proxy_call:
+	ret_val = apply(func, d_args, d_kw)
+    else:
+	finished = threading.Event()
+	evt = proxy_event(func, d_args, d_kw, finished)
+	wxPostEvent(proxy_base.catcher, evt)
+	finished.wait()
+	if finished.exception_info:
+	    raise finished.exception_info[0], \
+	          finished.exception_info[1]
+	ret_val = finished._result
+    return smart_return(ret_val)
+
+
+#################################
+# A proxied callable object
+#################################
 
 class proxied_callable:
 
@@ -179,11 +212,6 @@ class proxied_callable:
     the threaded event_catcher using a proxy_event.  This makes it
     possible for the user to call methods of a proxy's attribute.  """
 
-    # all proxy objects share the same event catcher.  This is set to
-    # be a single instance of the event_catcher class when the second
-    # thread is started.  The same catcher is also in proxy_base
-    catcher = None
-    
     def __init__(self, call_obj):        
         """ Create the proxied callable object.
 
@@ -199,23 +227,11 @@ class proxied_callable:
             
     def __call__(self, *args, **kw):        
         """Performs the call to the proxied callable object by
-        dispatching the method to the secondary thread."""        
+        dispatching the method to the secondary thread."""
         obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
-        ret_val = None
-        d_args = main.dereference_arglist(args)
-        d_kw = main.dereference_dict(kw)
-        if main.in_proxy_call:
-            ret_val = apply(obj, d_args, d_kw)
-        else:
-            finished = threading.Event()
-            evt = proxy_event(obj, d_args, d_kw, finished)
-            wxPostEvent(self.catcher, evt)
-            finished.wait()
-            if finished.exception_info:
-                raise finished.exception_info[0], \
-                      finished.exception_info[1]
-            ret_val = finished._result
-        return smart_return(ret_val)
+	my_args = list(args)
+	my_args.insert(0, obj)
+	return apply(smart_call, my_args, kw)
 
 
 ################################################################
@@ -306,14 +322,14 @@ class proxy_attr:
       works but isn't perfect.
 
     """
-    __DONT_WRAP = ('__del__', '__init__', '__getattr__')
+    __DONT_WRAP = ('__del__', '__init__', '__getattr__', '__setattr__')
 
     def __init__(self, obj):
         """ Create the proxied attribute.
 
             obj -- the attribute that is being proxied.
         """
-        self.__dont_mess_with_me_unless_you_know_what_youre_doing = obj
+        self.__dict__['_proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing'] = obj
         if hasattr(obj, '__class__'):
             try:
                 doc = obj.__class__.__doc__
@@ -363,6 +379,11 @@ class proxy_attr:
         ret = getattr(obj, key)
         return smart_return(ret)
 
+    def __setattr__(self, key, val):
+        obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
+	return apply(smart_call, (setattr, obj, key, val))
+
+
 #################################
 # Base class for all automatically generated proxy classes
 #################################        
@@ -398,15 +419,11 @@ class proxy_base:
             ret = getattr(self.__dict__['wx_obj'],key)
         return smart_return(ret)
     
-    # This needs a little thought
-    #def __setattr__(self,key,val):        
-    #    finished = threading.Event()
-    #    evt = proxy_event(setattr,(self.wx_obj,key,val),finished)
-    #    self.post_event(evt)
-    #    finished.wait()
-    #    if finished.exception_info:
-    #        raise finished.exception_info[0], finished.exception_info[1]
-    #    return finished._result
+    def __setattr__(self,key,val):
+	#setattr(self.wx_obj, key, val)	
+        obj = self.wx_obj
+	return apply(smart_call, (setattr, obj, key, val))
+
 
 #################################
 # Receives/Dispatches all events requested from the main thread.
@@ -444,6 +461,7 @@ class event_catcher(wxFrame):
     def OnCloseWindow(self,evt):
         main.app.ExitMainLoop()
 
+
 #################################
 # The (very simple) wxApp that lives in secondary thread
 #################################        
@@ -458,6 +476,5 @@ class second_thread_app(wxApp):
         """
         catcher = event_catcher()
         proxy_base.catcher = catcher
-        proxied_callable.catcher = catcher
         return true
 
