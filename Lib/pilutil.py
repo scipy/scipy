@@ -37,6 +37,7 @@ def fromimage(im):
     """
     assert Image.isImageType(im), "Not a PIL image."
     mode = im.mode
+    adjust = 0
     if mode == '1':
         im = im.convert(mode='L')
         mode = 'L'
@@ -168,4 +169,9 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     image = Image.fromstring(mode, shape, strdata)
     return image
 
-
+def imrotate(arr,angle,interp='bilinear'):
+    func = {'nearest':0,'bilinear':2,'bicubic':3}
+    im = toimage(arr,mode='F')
+    im.rotate(angle,resample=func[interp])
+    return fromimage(im)
+    
