@@ -1,6 +1,6 @@
 """ Gist plotting routines (requires X-server)
 
-  All gist functions are available as xplt.gist.XXXXX
+  All gist functions are also available as xplt.XXXXX
 
     histogram -- Plot a histogram.
     barplot   -- Construct a barplot.
@@ -31,3 +31,4 @@ from write_style import *
 gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
                         'site-packages','scipy','xplt')
 os.environ['GISTPATH'] = gistpath
+from gist import *

@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from Ranf import *
+from MLab import rand
 from ezplot import *
 
 def paws ( ) :
@@ -23,10 +23,10 @@ def demo () :
  
    xr = multiply.outer ( arange (1, kmax + 1), ones (lmax))
    yr = multiply.outer ( ones (kmax), arange (1, lmax + 1))
-   zt = 5. + xr + .2 * random_sample (kmax, lmax)   # ranf (xr)
-   rt = 100. + yr + .2 * random_sample (kmax, lmax)   # ranf (yr)
+   zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
+   rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
    z = s * (rt + zt)
-   z = z + .02 * z * random_sample (kmax, lmax)   # ranf (z)
+   z = z + .02 * z * rand (kmax, lmax)   # ranf (z)
    ut = rt/sqrt (rt ** 2 + zt ** 2)
    vt = zt/sqrt (rt ** 2 + zt ** 2)
    ireg =  array(multiply.outer ( ones (kmax), ones (lmax)),'i')
@@ -35,7 +35,7 @@ def demo () :
    ireg [1:15, 7:12]=2
    ireg [1:15, 12:lmax]=3
    ireg [3:7, 3:7]=0
-   freg=ireg + .2 * (1. - random_sample (kmax, lmax))  # ranf (ireg))
+   freg=ireg + .2 * (1. - rand (kmax, lmax))  # ranf (ireg))
    freg=freg.astype (Float)
    #rt [4:6, 4:6] = -1.e8
    z [3:10, 3:12] = z [3:10, 3:12] * .9

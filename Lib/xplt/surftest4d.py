@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from Ranf import *
+from MLab import rand
 from surface import *
 from graph3d import *
 from mesh3d import *
@@ -48,10 +48,10 @@ def demo () :
       arange (1, kmax + 1, typecode = Float), ones (lmax, Float))
    yr = multiply.outer (
       ones (kmax, Float), arange (1, lmax + 1, typecode = Float))
-   zt = 5. + xr + .2 * random_sample (kmax, lmax)   # ranf (xr)
-   rt = 100. + yr + .2 * random_sample (kmax, lmax)   # ranf (yr)
+   zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
+   rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
    z = s * (rt + zt)
-   z = z + .02 * z * random_sample (kmax, lmax)   # ranf (z)
+   z = z + .02 * z * rand (kmax, lmax)   # ranf (z)
    ut = rt / sqrt (rt ** 2 + zt ** 2)
    vt = zt / sqrt (rt ** 2 + zt ** 2)
    ireg =  multiply.outer ( ones (kmax), ones (lmax))
@@ -60,7 +60,7 @@ def demo () :
    ireg [1:15, 7:12] = 2
    ireg [1:15, 12:lmax] = 3
    ireg [3:7, 3:7] = 0
-   freg = ireg + .2 * (1. - random_sample (kmax, lmax))  # ranf (ireg))
+   freg = ireg + .2 * (1. - rand (kmax, lmax))  # ranf (ireg))
    freg = array (freg, Float)
    #rt [4:6, 4:6] = -1.e8
    z [3:10, 3:12] = z [3:10, 3:12] * .9
@@ -133,12 +133,12 @@ def demo () :
    hz = zs / 1.6
    # Plot a sphere with a random distribution of colors
    s1.new (mask = "sort", opt_3d = "s4", x = hx, y = hy, z = zs,
-           c = random_sample (50, 25)) # ranf (zs))
+           c = rand (50, 25)) # ranf (zs))
    g1.replace ( 1, s1 )
    g1.change_plot (titles = "Randomly colored sphere", send = 1)
    paws ()
    s1 = Surface (mask = "sort", opt_3d = "s4", x = hx, y = hy,
-                 z = zs, c = random_sample (50, 25))
+                 z = zs, c = rand (50, 25))
    ##m1 = Mesh3d (color_card = "random", opt_3d = "f4", mask = "min",
    ##             x = array ( [0.5, 1.2, 1.4, 1.05], Float),
    ##             y = array ( [1.2, 0.5, 1.4, 1.05], Float),

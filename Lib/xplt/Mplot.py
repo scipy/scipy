@@ -32,7 +32,7 @@ except ImportError:
             h = SSH.histogram(data,numbins,range)
             plot(h[:,0],h[:,1])
             return h        
-    except ImportError:        
+    except ImportError:
         histogram = scipy.histogram
 
 def reverse_dict(dict):
@@ -338,7 +338,7 @@ def _parse_type_arg(thearg,nowplotting):
         thecolor = _find_and_set(_colors,thearg,_colors[_corder[indx]])
         themarker = _find_and_set(_markers,thearg,None)
         
-        if (themarker == None):
+        if (themarker is None):
             tomark = 0
             if thetype == 'none':
                 thetype = 'solid'        

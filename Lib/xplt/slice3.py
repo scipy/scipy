@@ -17,7 +17,10 @@ from shapetest import *
 from types import *
 from pl3d import *
 from arrayfns import *
-from gistC import *
+try:
+    from gistC import *
+except ImportError:
+    from scipy.xplt.gistC import *
 
  #
  # Caveats:
@@ -115,8 +118,8 @@ def mesh3 (x, y = None, z = None, ** kw) :
 #    which is the 2nd car of m3, it will work 
 
    dims = shape (x)
-   if len (dims) == 1 and y != None and len (x) == len (y) \
-      and z != None and len(x) == len (z) and kw.has_key ("verts") :
+   if len (dims) == 1 and y is not None and len (x) == len (y) \
+      and z is not None and len(x) == len (z) and kw.has_key ("verts") :
       virtuals = [xyz3_irreg, getv3_irreg,
                   getc3_irreg, iterator3_irreg]
       dims = kw ["verts"]
@@ -149,11 +152,11 @@ def mesh3 (x, y = None, z = None, ** kw) :
       xyz = x
       dims = dims [1:4]
    elif len (dims) == 1 and len (x) == 3 and type (x [0]) == IntType \
-      and y != None and z != None and len (y) == len (z) == 3 :
+      and y is not None and z is not None and len (y) == len (z) == 3 :
       xyz = array ([y, z])
       dims = (1 + x [0], 1 + x [1], 1 + x [2])
       virtuals [0] = xyz3_unif
-   elif len (dims) == 1 and y != None and z != None and len (y.shape) == 1 \
+   elif len (dims) == 1 and y is not None and z is not None and len (y.shape) == 1 \
       and len (z.shape) == 1 and x.typecode () == y.typecode () == \
       z.typecode () == Float : 
       # regular mesh with unequally spaced points
@@ -162,8 +165,8 @@ def mesh3 (x, y = None, z = None, ** kw) :
       virtuals [0] = xyz3_unif
    else :
       if len (dims) != 3 or min (dims) < 2 or \
-         y == None or len (shape (y)) != 3 or shape (y) != dims or \
-         z == None or len (shape (z)) != 3 or shape (z) != dims:
+         y is None or len (shape (y)) != 3 or shape (y) != dims or \
+         z is None or len (shape (z)) != 3 or shape (z) != dims:
          raise _Mesh3Error, "X,Y,Z are not viable 3D coordinate mesh arrays"
       xyz = array ( [x, y, z])
    dim_cell = (dims [0] - 1, dims [1] - 1, dims [2] - 1)
@@ -331,7 +334,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
 
    if need_clist :
       fcolor = args [0]
-      if fcolor == None :
+      if fcolor is None :
          need_clist = 0
    else :
       fcolor = None
@@ -365,7 +368,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
    results = []
    chunk = iterator3 (m3)
    cell_offsets = [0, 0, 0, 0]
-   while chunk != None :
+   while chunk is not None :
 
       # get the values of the slicing function at the vertices of
       # this chunk
@@ -391,7 +394,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          # front, and negative if in back.
       else :
          fs = fslice (m3, chunk)
-      if node == 1 and fcolor != None and fcolor != FunctionType :
+      if node == 1 and fcolor is not None and fcolor != FunctionType :
          # need vertex-centered data
          col = getv3 (fcolor, m3, chunk)
          if type (col) == ListType :
@@ -407,7 +410,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          cell_offset = fs [2]
 
       # will need cell list if fslice did not compute xyz
-      got_xyz = _xyz3 != None
+      got_xyz = _xyz3 is not None
       need_clist = need_clist or not got_xyz
 
       # If the m3 mesh is totally unstructured, the chunk should be
@@ -499,7 +502,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             clist = None
          i8.append (len (results)) # Treat regular case as hex
 
-      if clist != None :
+      if clist is not None :
          #  we need to save:
          # (1) the absolute cell indices of the cells in clist
          # (2) the corresponding ncells-by-2-by-2-by-2 (by-3-by-2,
@@ -529,7 +532,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                   indices), (no_cells, 2, 2, 2))
                _xyz3 = new_xyz3
                del new_xyz3
-            if col != None :
+            if col is not None :
                col = reshape (take (ravel (col), indices), (no_cells, 2, 2, 2))
                # NB: col represents node colors, and is only used
                # if those are requested.
@@ -540,12 +543,12 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          else :
             clist = None
          nchunk = nchunk + 1
-         need_vert_col = col != None
+         need_vert_col = col is not None
          results.append ( [clist, fs, _xyz3, col])
       else :
          results.append ( [None, None, None, None])
       chunk = iterator3 (m3, chunk)
-      # endwhile chunk != None
+      # endwhile chunk is not None
 
    # collect the results of the chunking loop
    if not ntotal and not (ntotal8 + ntotal6 + ntotal5 + ntotal4) :
@@ -581,10 +584,10 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          if need_clist :
             clist [l:k] = results [itot [i] [j]] [0]
          fs [l:k] = reshape (results [itot [i] [j]] [1], (k - l, _no_verts [i]))
-         if xyz != None :
+         if xyz is not None :
             xyz [l:k] = reshape (results [itot [i] [j]] [2],
                (k - l, 3, _no_verts [i]))
-         if col != None :
+         if col is not None :
             col [l:k] = reshape (results [itot [i] [j]] [3],
                (k - l, _no_verts [i]))
       if not got_xyz :
@@ -624,7 +627,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
          take (ravel (xyz [:, 2]), upper) * fsl), (len (lower),))
       xyz = new_xyz
       del new_xyz
-      if col != None :
+      if col is not None :
          # Extract subset of the data the same way
          col = take (ravel (col), lower) * fsu - \
             take (ravel (col), upper) * fsl
@@ -660,7 +663,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       xyz1 [:,1] = take (ravel (xyz [:,1]), order)
       xyz1 [:,2] = take (ravel (xyz [:,2]), order)
       xyz = xyz1
-      if col != None :
+      if col is not None :
          col = take (col, order)
       edges = take (edges, order)
       pattern = take (pattern, order)
@@ -694,15 +697,15 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       xyzverts = xyz
 
       # finally, deal with any fcolor function
-      if fcolor == None :
+      if fcolor is None :
          new_results.append ( [nverts, xyzverts, None])
          continue
 
       # if some polys have been split, need to split clist as well
       if len (list) > len (clist) :
          clist = take (clist, take (cells, list))
-      if col == None :
-         if nointerp == None :
+      if col is None :
+         if nointerp is None :
             if type (fcolor) == FunctionType :
                col = fcolor (m3, clist + cell_offsets [i], lower, upper, fsl,
                   fsu, pattern - 1)
@@ -722,7 +725,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
    for i in range (len (new_results)) :
       nv_n = nv_n + len (new_results [i] [0])
       xyzv_n = xyzv_n + shape (new_results [i] [1]) [0]
-      if new_results [i] [2] != None :
+      if new_results [i] [2] is not None :
          col_n = col_n + len (new_results [i] [2])
    nverts = zeros (nv_n, Int)
    xyzverts = zeros ( (xyzv_n, 3), Float )
@@ -738,7 +741,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       xyzv_n2 = shape (new_results [i] [1]) [0]
       nverts [nv_n1:nv_n1 + nv_n2] = new_results [i] [0]
       xyzverts [xyzv_n1:xyzv_n1 + xyzv_n2] = new_results [i] [1]
-      if new_results [i] [2] != None :
+      if new_results [i] [2] is not None :
          col_n2 = len (new_results [i] [2])
          col [col_n1:col_n1 + col_n2] = new_results [i] [2]
          col_n1 = col_n1 + col_n2
@@ -872,7 +875,7 @@ def slice3mesh (xyz, * args, ** kw) :
       color = kw ["color"]
    else :
       color = None
-   if color != None :
+   if color is not None :
 #     col = array (len (nverts), Float )
       if shape (color) == (ncx - 1, ncy - 1) :
          col = color
@@ -944,7 +947,7 @@ def iterator3_rect (m3, chunk, clist) :
 
    global _chunk3_limit
    
-   if chunk == None :
+   if chunk is None :
       dims = m3 [1] [0]      # [ni,nj,nk] cell dimensions
       [ni, nj, nk] = [dims [0], dims [1], dims [2]]
       njnk = nj * nk
@@ -970,7 +973,7 @@ def iterator3_rect (m3, chunk, clist) :
       nk = chunk [3,2]
       njnk = nj * nk
       offsets = array ( [njnk, nj, 1], Int)
-      if clist != None :
+      if clist is not None :
          # add offset for this chunk to clist and return
          return sum (offsets * ( chunk [0] - 1)) + clist
 
@@ -1037,14 +1040,14 @@ def iterator3_irreg (m3, chunk, clist) :
 
    global _chunk3_limit
 
-   if clist != None:
+   if clist is not None:
       return clist
 
    dims = m3 [1] [0]     # ncells by _no_verts array of subscripts
                          # (or a list of from one to four of same)
 
    if type (dims) != ListType :
-      if chunk == None:     # get the first chunk
+      if chunk is None:     # get the first chunk
          return [ [0, min (shape (dims) [0], _chunk3_limit)],
                   arange (0, min (shape (dims) [0], _chunk3_limit),
                   typecode = Int)]
@@ -1059,7 +1062,7 @@ def iterator3_irreg (m3, chunk, clist) :
                      typecode = Int)]
    else :
       totals = m3 [1] [3] # cumulative totals of numbers of cells
-      if chunk == None :
+      if chunk is None :
          return [ [0, min (totals [0], _chunk3_limit)],
                   arange (0, min (totals [0], _chunk3_limit),
                   typecode = Int)]
@@ -1260,7 +1263,7 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
          no_cells = shape (indices) [0]
          indices = ravel (indices)
          corners = take (ravel (fi [i - 1]), indices)
-         if l == None :
+         if l is None :
             return 0.125 * sum (transpose (reshape (corners, (no_cells, 8))))
          else :
             # interpolate corner values to get edge values
@@ -1344,7 +1347,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
    no_cells = shp [0]
    indices = ravel (indices)
    corners = take (fi [i - 1], indices)
-   if l == None :
+   if l is None :
       return (1. / shp [1]) * transpose ((sum (transpose (reshape (corners,
          (no_cells, shp [1]))) [0:shp [1]])))
    else :
@@ -1490,7 +1493,7 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
 #    If CLEAR = 1, clear the display list first.
 #    If EDGES = 1, plot the edges.
 #    The algorithm is to apply slice2x repeatedly to the surface.
-#    If color == None, then bytscl the palette into N + 1 colors
+#    If color is None, then bytscl the palette into N + 1 colors
 #    and send each of the slices to pl3tree with the appropriate color.
 #    If color == "bg", will plot only the edges.
 #    If CMIN is given, use it instead of the minimum z actually
@@ -1510,13 +1513,13 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
      # 1. Get contour colors
      if type (contours) == IntType :
         n = contours
-        if cmin != None :
+        if cmin is not None :
            vcmin = cmin
            minz = min (xyzverts [:, 2])
         else :
            vcmin = min (xyzverts [:, 2])
            minz = vcmin
-        if cmax != None :
+        if cmax is not None :
            vcmax = cmax
            maxz = max (xyzverts [:, 2])
         else :
@@ -1567,14 +1570,14 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
            imax = n
      # now make sure that the minimum and maximum contour levels computed
      # are not outside the axis limits.
-     if zaxis_min != None and zaxis_min > vc [imin] :
+     if zaxis_min is not None and zaxis_min > vc [imin] :
         for i in range (imin, imax) :
            if i + 1 < imax and zaxis_min > vc [i + 1] :
               imin = i + 1
            else :
               break
         vc [imin] = zaxis_min
-     if zaxis_max != None and zaxis_max < vc [imax - 1] :
+     if zaxis_max is not None and zaxis_max < vc [imax - 1] :
         for i in range (imax - imin) :
            if imax - 2 >= imin and zaxis_max < vc [imax - 2] :
               imax = imax - 1
@@ -1584,19 +1587,19 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
      for i in range (imin, imax) :
         [nv, xyzv, d1, nvb, xyzvb, d2] = \
            slice2x (array ( [0., 0., 1., vc [i]], Float) , nv, xyzv, None)
-        if i == imin and zaxis_min != None and zaxis_min == vc [i]:
+        if i == imin and zaxis_min is not None and zaxis_min == vc [i]:
            # Don't send the "back" surface if it's below zaxis_min.
            continue
         else:
-           if color == None :
+           if color is None :
               pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
                  split = 0, edges = edges)
            else :
               # N. B. Force edges to be on, otherwise the graph is empty.
               pl3tree (nvb, xyzvb, "bg", split = 0, edges = 1)
-     if zaxis_max == None or vc [imax - 1] < zaxis_max:
+     if zaxis_max is None or vc [imax - 1] < zaxis_max:
         # send "front" surface if it's not beyond zaxis_max
-        if color == None :
+        if color is None :
            pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
               split = 0, edges = edges)
         else :
@@ -1623,7 +1626,7 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
 #    If CLEAR == 1, clear the display list first.
 #    If EDGES == 1, plot the edges.
 #    The algorithm is to apply slice2x repeatedly to the surface.
-#    If color == None, then bytscl the palette into N + 1 colors
+#    If color is None, then bytscl the palette into N + 1 colors
 #    and send each of the slices to pl3tree with the appropriate color.
 #    If color == "bg", will plot only the edges.
 #    If CMIN is given, use it instead of the minimum c actually
@@ -1643,13 +1646,13 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
      # 1. Get contour colors
      if type (contours) == IntType :
         n = contours
-        if cmin != None :
+        if cmin is not None :
             vcmin = cmin
             minz = min (values)
         else :
             vcmin = min (values)
             minz = vcmin
-        if cmax != None :
+        if cmax is not None :
             vcmax = cmax
             maxz = max (values)
         else :
@@ -1701,14 +1704,14 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
            imax = n
      # now make sure that the minimum and maximum contour levels computed
      # are not outside the axis limits.
-     if caxis_min != None and caxis_min > vc [imin] :
+     if caxis_min is not None and caxis_min > vc [imin] :
         for i in range (imin, imax) :
            if i + 1 < imax and caxis_min > vc [i + 1] :
               imin = i + 1
            else :
               break
         vc [imin] = caxis_min
-     if caxis_max != None and caxis_max < vc [imax - 1] :
+     if caxis_max is not None and caxis_max < vc [imax - 1] :
         for i in range (imax - imin) :
            if imax - 2 >= imin and caxis_max < vc [imax - 2] :
               imax = imax - 1
@@ -1722,19 +1725,19 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
            break
         [nv, xyzv, vals, nvb, xyzvb, d2] = \
            slice2x (vc [i], nv, xyzv, vals)
-        if i == imin and caxis_min != None and caxis_min == vc [i]:
+        if i == imin and caxis_min is not None and caxis_min == vc [i]:
            # Don't send the "back" surface if it's below caxis_min.
            continue
         else:
-           if color == None :
+           if color is None :
               pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
                  split = 0, edges = edges)
            else :
               # N. B. Force edges to be on, otherwise the graph is empty.
               pl3tree (nvb, xyzvb, "bg", split = 0, edges = 1)
-     if caxis_max == None or vc [imax - 1] < caxis_max:
+     if caxis_max is None or vc [imax - 1] < caxis_max:
         # send "front" surface if it's not beyond caxis_max
-        if color == None :
+        if color is None :
            pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
               split = 0, edges = edges)
         else :
@@ -1802,7 +1805,7 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
       x = xyztmp [:, 0]
       y = xyztmp [:, 1]
       z = xyztmp [:, 2]
-      if values == None :
+      if values is None :
 #        xyzverts [:, 0] = x
 #        xyzverts [:, 1] = y
 #        xyzverts [:, 2] = z
@@ -1848,10 +1851,10 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) or \
       nverts.typecode () != Int :
       raise _Pl3surfError, "illegal or inconsistent polygon list"
-   if values != None and len (values) != len (nverts) :
+   if values is not None and len (values) != len (nverts) :
       raise _Pl3surfError, "illegal or inconsistent polygon color values"
 
-   if values != None :
+   if values is not None :
       values = array (values, Float )
 
    clear3 ( )
@@ -1937,9 +1940,9 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
    xyzverts = array (xyzverts, Float )
    if values == "background" :
       values = "bg"
-   elif values != None and values != "bg" :
+   elif values is not None and values != "bg" :
       values = array (values, values.typecode ())
-   if plane != None :
+   if plane is not None :
       plane = plane.astype (Float)
 
    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) > 0 or \
@@ -1958,7 +1961,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
       array_set (list, cumsum (nverts) [0:-1], ones (len (nverts), Int))
       tpc = values.typecode ()
       values = (histogram (cumsum (list), values) / nverts).astype (tpc)
-   if plane != None :
+   if plane is not None :
       if (len (shape (plane)) != 1 or shape (plane) [0] != 4) :
          raise _Pl3treeError, "illegal plane format, try plane3 function"
 
@@ -2436,9 +2439,9 @@ def _pl3tree (tree, minmax) :
    #   back_tree= tree [1]    is the part behind plane
    #   inplane_leaf= tree [2] is the part in the plane itself
    #   front_tree= tree [3]   is the part in front of plane
-   if tree == None or tree == [] :
+   if tree is None or tree == [] :
       return None
-   if tree [0] == None or tree [0] == [] :
+   if tree [0] is None or tree [0] == [] :
       # only the leaf is non-nil (but not a plane)
       return _pl3leaf ( tree [2], 1, minmax)
 
@@ -2457,33 +2460,33 @@ def _pl3tree (tree, minmax) :
       q1 = _pl3tree (tree [3], minmax)
       q2 = _pl3leaf (tree [2], 0, minmax)
       q3 = _pl3tree (tree [1], minmax)
-   if q1 != None :
-      if q2 != None and q3 == None :
+   if q1 is not None :
+      if q2 is not None and q3 is None :
          return [min (q2 [0], q1 [0]),
                  max (q2 [1], q1 [1]),
                  min (q2 [2], q1 [2]),
                  max (q2 [3], q1 [3])]
-      elif q2 == None and q3 != None :
+      elif q2 is None and q3 is not None :
          return [min (q3 [0], q1 [0]),
                  max (q3 [1], q1 [1]),
                  min (q3 [2], q1 [2]),
                  max (q3 [3], q1 [3])]
-      elif q2 != None and q3 != None :
+      elif q2 is not None and q3 is not None :
          return [min (q3 [0], q2 [0], q1 [0]),
                  max (q3 [1], q2 [1], q1 [1]),
                  min (q3 [2], q2 [2], q1 [2]),
                  max (q3 [3], q2 [3], q1 [3])]
       else :
          return q1
-   elif q2 != None :
-      if q3 == None :
+   elif q2 is not None :
+      if q3 is None :
          return q2
       else :
          return [min (q2 [0], q3 [0]),
                  max (q2 [1], q3 [1]),
                  min (q2 [2], q3 [2]),
                  max (q2 [3], q3 [3])]
-   elif q3 != None :
+   elif q3 is not None :
       return q3
    else :
       return None
@@ -2605,7 +2608,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
    # when one coordinate is insignificant with
    # respect to the others and doesn't have significant digits.
    # It is awfully hard to come up with a numerical criterion for this.)
-   if item [2] == None or not_plane or has_multiple_components ():
+   if item [2] is None or not_plane or has_multiple_components ():
       minx = minmax [0]
       maxx = minmax [1]
       miny = minmax [2]
@@ -2615,7 +2618,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
       _xyzverts [:, 0] = (_xyzverts [:, 0] - minx) / (maxx - minx)
       _xyzverts [:, 1] = (_xyzverts [:, 1] - miny) / (maxy - miny)
       _xyzverts [:, 2] = (_xyzverts [:, 2] - minz) / (maxz - minz)
-   if  item [2] == None :
+   if  item [2] is None :
       # this is an isosurface to be shaded (no values specified)
       _xyzverts = get3_xy (_xyzverts, 1)
       # accumulate nverts and values
@@ -2668,22 +2671,22 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
    return [_list, _vlist, item [6]]
 
 def _pl3tree_add (leaf, plane, tree) :
-   if tree != None and tree != [] and \
-      not is_scalar (tree) and tree [0] != None :
+   if tree is not None and tree != [] and \
+      not is_scalar (tree) and tree [0] is not None :
       # tree has slicing plane, slice new leaf or plane and descend
       [back, leaf1] = _pl3tree_slice (tree [0], leaf)
       if back :
-         if len (tree) >= 2 and tree [1] != None and tree [1] != [] :
+         if len (tree) >= 2 and tree [1] is not None and tree [1] != [] :
             _pl3tree_add (back, plane, tree [1])
          else :
             tree [1] = [None, [], back, []]
       if (leaf1) :
-         if len (tree) >= 4 and tree [3] != None and tree [3] != [] :
+         if len (tree) >= 4 and tree [3] is not None and tree [3] != [] :
             _pl3tree_add (leaf1, plane, tree [3])
          else :
             tree [3] = [None, [], leaf1, []]
 
-   elif plane != None :
+   elif plane is not None :
       # tree is just a leaf, but this leaf has slicing plane
       tree [0] = plane
       tmp = tree [2]
@@ -2704,17 +2707,17 @@ def _pl3tree_slice (plane, leaf) :
    for ll in leaf :
       # each item in the leaf list is itself a list
       nvf = ll [0]
-      if nvf != None :
+      if nvf is not None :
          nvb = array (nvf, copy = 1)
       else :
          nvb = None
       xyzf = ll [1]
-      if xyzf != None :
+      if xyzf is not None :
          xyzb = array (xyzf, copy = 1)
       else :
          xyzb = None
       valf = ll [2]
-      if valf != None :
+      if valf is not None :
          tpc = valf.typecode()
          valb = array (valf, copy = 1)
       else :
@@ -2733,17 +2736,17 @@ def _pl3tree_slice (plane, leaf) :
          ll6 = 0
       [nvf, xyzf, valf, nvb, xyzb, valb] = \
          slice2x (plane, nvf, xyzf, valf)
-      if valf != None:
+      if valf is not None:
          valf = valf.astype (tpc)
-      if valb != None:
+      if valb is not None:
          valb = valb.astype (tpc)
-      if nvf != None :
-         if frnt != None :
+      if nvf is not None :
+         if frnt is not None :
             frnt = [ [nvf, xyzf, valf, ll [3], ll4, ll5, ll6]] + frnt
          else :
             frnt = [ [nvf, xyzf, valf, ll [3], ll4, ll5, ll6]]
-      if nvb != None :
-         if back != None :
+      if nvb is not None :
+         if back is not None :
             back = [ [nvb, xyzb, valb, ll [3], ll4, ll5, ll6]] + back
          else :
             back = [ [nvb, xyzb, valb, ll [3], ll4, ll5, ll6]]
@@ -2756,7 +2759,7 @@ def pl3tree_prt () :
    _draw3_n = get_draw3_n_ ()
    if len (_draw3_list) >= _draw3_n :
       tree = _draw3_list [_draw3_n:]
-      if tree == None or tree == [] or tree [0] != pl3tree :
+      if tree is None or tree == [] or tree [0] != pl3tree :
          print "<current 3D display not a pl3tree>"
 #        raise _Pl3tree_prtError, "<current 3D display not a pl3tree>"
       else :
@@ -2764,16 +2767,16 @@ def pl3tree_prt () :
          _pl3tree_prt (tree, 0)
 
 def pl3_other_prt(tree = None):
-   if tree == None:
+   if tree is None:
       pl3tree_prt ()
    else :
-      if tree == None or tree == []:
+      if tree is None or tree == []:
          print "<current 3D display not a pl3tree>"
       else :
          _pl3tree_prt (tree, 0)
 
 def _pl3tree_prt (tree, depth) :
-   if tree == None or tree == [] :
+   if tree is None or tree == [] :
       return
    indent = (" " * (1 + 2 * depth)) [0:-1]
    print indent + "+DEPTH= " + `depth`
@@ -2783,7 +2786,7 @@ def _pl3tree_prt (tree, depth) :
    back = tree [1]
    list = tree [2]
    frnt = tree [3]
-   if back == None or back == [] :
+   if back is None or back == [] :
       print indent + "back = []"
    else :
       _pl3tree_prt (back, depth + 1)
@@ -2795,7 +2798,7 @@ def _pl3tree_prt (tree, depth) :
       print indent + "nverts= " + `shape (leaf [1]) [0]` + \
          ", nvals= " + `len (leaf [2])`
 
-   if frnt == None or frnt == [] :
+   if frnt is None or frnt == [] :
       print  indent + "frnt = []"
    else :
          _pl3tree_prt (frnt, depth + 1)

@@ -254,7 +254,7 @@ class Graph :
       self._graphics_list = [Graphics]
       if keywords.has_key ("filename") or keywords.has_key ("display") :
          if keywords.has_key ("graphics") :
-            if keywords ["graphics"] == "" or keywords ["graphics"] == None :
+            if keywords ["graphics"] == "" or keywords ["graphics"] is None :
                 self._graphics_list = [Graphics]
             elif keywords ["graphics"] == "Nar" or \
                  keywords ["graphics"] == "Narcisse" :

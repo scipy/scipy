@@ -363,7 +363,7 @@ class Slice :
        self.z_c_switch = 0
        self.z_contours_scale = scale
        self.c_contours_scale = scale
-       if type (self.contours) == IntType or self.contours == None :
+       if type (self.contours) == IntType or self.contours is None :
           self.number_of_z_contours = self.contours
           self.number_of_c_contours = self.contours
           self.z_contours_array = None
@@ -381,13 +381,13 @@ class Slice :
    def __del__ (self) :
        del self.nv
        del self.xyzv
-       if self.val != None : del self.val
-       if self.plane != None : del self.plane
+       if self.val is not None: del self.val
+       if self.plane is not None: del self.plane
        del self.mask
-       if self.iso != None : del self.iso
-       if self.smooth != None : del self.smooth
+       if self.iso is not None: del self.iso
+       if self.smooth is not None: del self.smooth
        del self.opt_3d
-       if self.contours != None : del self.contours
+       if self.contours is not None: del self.contours
        del self.scale
        del self.edges
 
@@ -460,8 +460,8 @@ def sslice ( v1, v2, varno = 1, nslices = 1, opt_3d = None) :
        else :
           plane = v2
           val = None
-       if opt_3d == None :
-          if plane != None :
+       if opt_3d is None :
+          if plane is not None:
              opt_3d = ["wm", "f4"]
           else :
              opt_3d = ["f4"]
@@ -487,7 +487,7 @@ def sslice ( v1, v2, varno = 1, nslices = 1, opt_3d = None) :
           raise _SliceError, \
              "Option not implemented."
        # A Yorick 'mesh3' object now exists, slice it as specified.
-       if plane == None : # An isosurface Slice
+       if plane is None : # An isosurface Slice
           [nv, xyzv, dum] = slice3 (v1.m3, varno, None, None, value = val)
           return Slice (nv, xyzv, iso = val, opt_3d = opt_3d)
        else :             # a plane Slice
@@ -504,13 +504,13 @@ def sslice ( v1, v2, varno = 1, nslices = 1, opt_3d = None) :
           c = v1.z
           if "s3" in v1.opt_3d :
              scale = v1.c_contours_scale
-             if v1.c_contours_array != None :
+             if v1.c_contours_array is not None:
                 contours = v1.c_contours_array
              else :
                 contours = v1.number_of_c_contours
           elif "s4" in v1.opt_3d :
              scale = v1.z_contours_scale
-             if v1.z_contours_array != None :
+             if v1.z_contours_array is not None:
                 contours = v1.z_contours_array
              else :
                 contours = v1.number_of_z_contours
@@ -519,13 +519,13 @@ def sslice ( v1, v2, varno = 1, nslices = 1, opt_3d = None) :
           c = v1.c
           if "s3" in v1.opt_3d :
              scale = v1.z_contours_scale
-             if v1.z_contours_array != None :
+             if v1.z_contours_array is not None:
                 contours = v1.z_contours_array
              else :
                 contours = v1.number_of_z_contours
           elif "s4" in v1.opt_3d :
              scale = v1.c_contours_scale
-             if v1.c_contours_array != None :
+             if v1.c_contours_array is not None:
                 contours = v1.c_contours_array
              else :
                 contours = v1.number_of_c_contours

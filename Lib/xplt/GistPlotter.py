@@ -109,7 +109,7 @@ class Plotter :
                "You need to exit python and set your DISPLAY variable,\n" + \
                "or else instantiate your Graph object using the 'display'\n" + \
                "keyword argument."
-      if (filename == "none" or filename == "" or filename == None) and \
+      if (filename == "none" or filename == "" or filename is None) and \
          hasattr ( self , "_hcp" ) :
          window ( self._n , display = "" , hcp = self._hcp ,  dpi = self._dpi ,
                   wait = self._wait , legends = self._legends ,
@@ -726,7 +726,7 @@ class Plotter :
              gridxy (self._gridtype)
              logxy ( self._xscale, self._yscale )
              self._plot_titles ( )
-          if (crv.marks == 0 or crv.marker == None) and crv.label != " " :
+          if (crv.marks == 0 or crv.marker is None) and crv.label != " " :
              marks = 1
              marker = crv.label [0]
           else :
@@ -736,7 +736,7 @@ class Plotter :
                 marker = crv.label [0]
              else :
                 marker = crv.marker
-          if marks != 0 and (marker == None or marker == " ") :
+          if marks != 0 and (marker is None or marker == " ") :
               # Give user default markers
               plg ( array (crv.y).astype (Float),
                 array (crv.x).astype (Float),
@@ -786,9 +786,9 @@ class Plotter :
           if _color_bar_ :
              self.set_style ("z_work.gs")
              color_bar (min (ravel (crv.z)), max (ravel (crv.z)), 0)
-          if crv.x0 == None and crv.x1 == None :
+          if crv.x0 is None and crv.x1 is None :
              pli (crv.z, hide = crv.hide )
-          elif crv.x0 == None :
+          elif crv.x0 is None :
              pli (crv.z, crv.x1, crv.y1,
                   hide = crv.hide )
           else :
@@ -886,7 +886,7 @@ class Plotter :
        from getting way too long.
        """
        global _color_bar_
-       if hasattr (crv, "regions") and crv.regions != None and \
+       if hasattr (crv, "regions") and crv.regions is not None and \
           crv.regions != [] and crv.regions != "all" :
              self._plot_by_regions ( crv )
              return
@@ -894,14 +894,14 @@ class Plotter :
           crv.regions != [] :
           raise self._QuadMeshError_, "<" + `crv.regions` + \
              "> is not a valid value for the regions keyword."
-       if crv.z != None and crv.filled == 0 and crv.contours == 1 :
+       if crv.z is not None and crv.filled == 0 and crv.contours == 1 :
           # Must be a contour plot
           if crv.boundary == 1 :
              plm ( boundary = 1, type = self._figure_type (crv.boundary_type) ,
                    color = self._figure_color (crv.boundary_color))
-          if crv.levels == None :
+          if crv.levels is None :
              # Accept 8 default levels
-             if crv.marks == 0 or crv.marker == None and crv.label != " " :
+             if crv.marks == 0 or crv.marker is None and crv.label != " " :
                 marks = 1
                 marker = crv.label [0]
              else :
@@ -914,7 +914,7 @@ class Plotter :
           else :
              # Accept user-specified levels
              self._compute_levels (crv, crv.z)
-             if crv.marks == 0 or crv.marker == None and crv.label != " " :
+             if crv.marks == 0 or crv.marker is None and crv.label != " " :
                 marks = 1
                 marker = crv.label [0]
              else :
@@ -930,8 +930,8 @@ class Plotter :
              self.set_style ("z_work.gs")
           if crv.contours == 0 :
              # Plot mesh filled with background color (wire frame)
-             # (crv.z == None) or colored by crv.z
-             if crv.levels == None :
+             # (crv.z is None) or colored by crv.z
+             if crv.levels is None :
                 if _color_bar_ :
                    color_bar (min (ravel (crv.z)), max (ravel (crv.z)), 0, ncol = 8)
                 plfc (crv.z, crv.y, crv.x, crv.ireg,
@@ -956,13 +956,13 @@ class Plotter :
              self.set_style ("z_work.gs")
           if crv.contours == 1 :
              # eventually this will plot filled contours
-             if crv.marks == 0 or crv.marker == None and crv.label != " " :
+             if crv.marks == 0 or crv.marker is None and crv.label != " " :
                 marks = 1
                 marker = crv.label [0]
              else :
                 marks = crv.marks
                 marker = crv.marker
-             if crv.levels == None :
+             if crv.levels is None :
                 if _color_bar_ :
                    color_bar (min (ravel (_z_)), max (ravel (_z_)), 0, ncol = 8)
                 plfc (_z_.astype (Float), crv.y.astype (Float),
@@ -1015,9 +1015,9 @@ class Plotter :
                      inhibit = 1,
                      hide = crv.hide, type = crv.ltype,
                      width = crv.width, color = crv.color)#, region = crv.region)
-       if crv.vx != None :
+       if crv.vx is not None :
           # Must be a vector field plot on top of everything else
-          if crv.scale != None :
+          if crv.scale is not None :
              plv (array (crv.vy).astype (Float), array (crv.vx).astype (Float),
                   hide = crv.hide,
                   width = crv.width, color = crv.color,
@@ -1038,15 +1038,15 @@ class Plotter :
                triangle = array (crv.tri).astype (Float))
        # Loop through the regions, plotting each as specified:
        for reg in crv.regions :
-          if crv.z != None and reg.filled == 0 and reg.contours == 1 :
+          if crv.z is not None and reg.filled == 0 and reg.contours == 1 :
              # Must be a contour plot
              if reg.boundary == 1 :
                 plm ( boundary = 1,
                       type = self._figure_type (reg.boundary_type) ,
                       color = self._figure_color (reg.boundary_color))
-             if reg.levels == None :
+             if reg.levels is None :
                 # Accept 8 default levels
-                if reg.marks == 0 or reg.marker == None and reg.label != " " :
+                if reg.marks == 0 or reg.marker is None and reg.label != " " :
                    marks = 1
                    marker = reg.label [0]
                 else :
@@ -1059,7 +1059,7 @@ class Plotter :
                      region = reg.number)
              else :
                 # Accept user-specified levels
-                if reg.marks == 0 or reg.marker == None and reg.label != " " :
+                if reg.marks == 0 or reg.marker is None and reg.label != " " :
                    marks = 1
                    marker = reg.label [0]
                 else :
@@ -1073,7 +1073,7 @@ class Plotter :
                      region = reg.number, levs = reg.levels)
           elif reg.filled == 1 :
              # Must be a filled mesh
-             if crv.z == None :
+             if crv.z is None :
                 # Plot mesh filled with background color (wire frame)
                 plf (crv.z, 
                    hide = reg.hide,region = reg.number,edges = reg.edges,
@@ -1123,9 +1123,9 @@ class Plotter :
                            width = reg.width,
                            color = self._figure_color (reg.color),
                            region = reg.number)
-          if crv.vx != None and reg.vectors != 0 :
+          if crv.vx is not None and reg.vectors != 0 :
              # Must be a vector field plot on top of anything else
-             if ( crv.scale != None ) :
+             if ( crv.scale is not None ) :
                 plv (array (crv.vy).astype (Float),
                      array (crv.vx).astype (Float),
                      scale = crv.scale,
@@ -1142,7 +1142,7 @@ class Plotter :
    def send_graph ( self, graf ) :
        if graf.type () == Graph3dType :
           lims = draw3 (1)
-          if lims != None:
+          if lims is not None:
              limits (lims [0], lims [1], lims [2], lims [3])
           if hasattr (self, "_hcp") and self._hcp != "" :
              hcp ()
@@ -1268,9 +1268,9 @@ class Plotter :
        if self._dims == 3 :
           phi = graf._theta
           theta = graf._phi
-          if phi != None:
+          if phi is not None:
              phi = pi / 2. - phi  * pi / 180.
-          if theta != None:
+          if theta is not None:
              theta = pi / 2. - theta * pi / 180.
           orient3 (phi = phi, theta = theta)
           light3 (ambient = graf.lighting_dict ["ambient"],
@@ -1279,7 +1279,7 @@ class Plotter :
                   spower = graf.lighting_dict ["spower"],
                   sdir = graf.lighting_dict ["sdir"])
           lims = draw3 (1)
-          if lims != None:
+          if lims is not None:
              limits (lims [0], lims [1], lims [2], lims [3])
           if hasattr (self, "_hcp") and self._hcp != "" :
              hcp ()
@@ -1355,12 +1355,12 @@ class Plotter :
        self.set_distance (graf._distance)
        phi = graf._theta
        theta = graf._phi
-       if phi != None:
+       if phi is not None:
           phi = - pi / 2. - phi  * pi / 180.
-       if theta != None:
+       if theta is not None:
           theta = pi / 2. - theta * pi / 180.
        orient3 (phi = phi, theta = theta)
-       if graf._gnomon != None :
+       if graf._gnomon is not None :
           gnomon (graf._gnomon, chr = [graf._axis_labels [0] [0],
                                        graf._axis_labels [1] [0],
                                        graf._axis_labels [2] [0]])
@@ -1390,7 +1390,7 @@ class Plotter :
           x = s.x
           c = s.c
           quad_mesh = 0
-          if x != None and y != None :
+          if x is not None and y is not None :
              if len (x.shape) == 2 and len (y.shape) == 2 :
                 # Two dimensional quadrilateral mesh (ZCM 7/2/97)
                 if x.shape [0] != y.shape [0] or x.shape [1] != y.shape [1] :
@@ -1422,10 +1422,10 @@ class Plotter :
              z = c
              c = dum
              scale = s.c_contours_scale
-             if s.c_contours_array != None :
+             if s.c_contours_array is not None :
                 contours = s.c_contours_array
                 ncol = len (contours + 1)
-             elif s.number_of_c_contours != None :
+             elif s.number_of_c_contours is not None :
                 contours = s.number_of_c_contours
                 ncol = contours + 1
              else :
@@ -1437,10 +1437,10 @@ class Plotter :
              c_axis_max = self._cmax
              c_axis_min = self._cmin
              scale = s.z_contours_scale
-             if s.z_contours_array != None :
+             if s.z_contours_array is not None :
                 contours = s.z_contours_array
                 ncol = len (contours + 1)
-             elif s.number_of_z_contours != None :
+             elif s.number_of_z_contours is not None :
                 contours = s.number_of_z_contours
                 ncol = contours + 1
              else :
@@ -1462,7 +1462,7 @@ class Plotter :
              color_bar (min (ravel (fill)), max (ravel (fill)), graf._split, ncol)
           if "s3" in opt or "i3" in opt :
              # Plot contours in z (or c) direction
-             if x == None and y == None :
+             if x is None and y is None :
                 x = arange (fill.shape [0], typecode = Float)
                 y = arange (fill.shape [1], typecode = Float)
              [nv, xyzv, dum] = slice3mesh (x, y, fill)
@@ -1475,7 +1475,7 @@ class Plotter :
                    zaxis_max = z_axis_max)
           elif "s4" in opt or "i4" in opt :
              # Plot contours in c (or z) direction
-             if x == None and y == None :
+             if x is None and y is None :
                 x = arange (fill.shape [0], typecode = Float)
                 y = arange (fill.shape [1], typecode = Float)
              [nv, xyzv, col] = slice3mesh (x, y, z, color = fill, smooth = 1)
@@ -1524,10 +1524,10 @@ class Plotter :
              if (hasattr (graf._s [i], "_color_card")) :
                 self.set_color_card (graf._s [i]._color_card)
              if s.type () == Slice3dType :
-                if s.plane == None :
+                if s.plane is None :
                    isosurfaces_present = 1
-                if s.val != None : # Get max and min of values
-                   if zmax == None :
+                if s.val is not None : # Get max and min of values
+                   if zmax is None :
                       zmax = max (s.val)
                       zmin = min (s.val)
                    else :
@@ -1537,7 +1537,7 @@ class Plotter :
                 isosurfaces_present = 1
           self.send_color_card ()
           if isosurfaces_present and graf._split != 0 :
-             if self._current_palette == None:
+             if self._current_palette is None:
                 split_palette ( )
              else:
                 split_palette (self._current_palette)
@@ -1569,9 +1569,9 @@ class Plotter :
                    z = c
                    c = dum
                    scale = s.c_contours_scale
-                   if s.c_contours_array != None :
+                   if s.c_contours_array is not None :
                       contours = s.c_contours_array
-                   elif s.number_of_c_contours != None :
+                   elif s.number_of_c_contours is not None :
                       contours = s.number_of_c_contours
                    else :
                       contours = 20
@@ -1581,9 +1581,9 @@ class Plotter :
                    c_axis_max = self._cmax
                    c_axis_min = self._cmin
                    scale = s.z_contours_scale
-                   if s.z_contours_array != None :
+                   if s.z_contours_array is not None :
                       contours = s.z_contours_array
-                   elif s.number_of_z_contours != None :
+                   elif s.number_of_z_contours is not None :
                       contours = s.number_of_z_contours
                    else :
                       contours = 20
@@ -1597,7 +1597,7 @@ class Plotter :
                    fill = None
                 if "s3" in opt or "i3" in opt :
                    # Plot contours in z (or c) direction
-                   if x == None and y == None :
+                   if x is None and y is None :
                       x = arange (fill.shape [0], typecode = Float)
                       y = arange (fill.shape [1], typecode = Float)
                    [nv, xyzv, dum] = slice3mesh (x, y, fill)
@@ -1613,7 +1613,7 @@ class Plotter :
                          zaxis_max = z_axis_max)
                 elif "s4" in opt or "i4" in opt :
                    # Plot contours in c (or z) direction
-                   if x == None and y == None :
+                   if x is None and y is None :
                       x = arange (fill.shape [0], typecode = Float)
                       y = arange (fill.shape [1], typecode = Float)
                    [nv, xyzv, col] = slice3mesh (x, y, z, color = fill,
@@ -1631,12 +1631,12 @@ class Plotter :
                        # Do not clear multiple curves
                 else :
                    if not hasattr (s, "s3") :
-                      if x == None :
+                      if x is None :
                          [nv, xyzv, val] = slice3mesh (z, color = c)
                       else :
                          [nv, xyzv, val] = slice3mesh (x, y, z, color = c)
                       setattr (s, "s3", Slice (nv, xyzv, val))
-                   if zmax == None :
+                   if zmax is None :
                       zmax = max (ravel (s.s3.val))
                       zmin = min (ravel (s.s3.val))
                    else :
@@ -1659,7 +1659,7 @@ class Plotter :
                 elif "f4" in opt :
                    fval = s.val
                 if "s3" in opt or "i3" in opt or "s4" in opt or "i4" in opt :
-                   if s.contours == None:
+                   if s.contours is None:
                       contours = 10
                       ncol = contours + 1
                    else :
@@ -1690,10 +1690,10 @@ class Plotter :
                          cmin = zmin, cmax = zmax,
                          color = "bg", caxis_min = self._cmin, caxis_max = self._cmax,
                          split = spl)
-                elif ("f3" in opt or "f4" in opt) and fval != None \
+                elif ("f3" in opt or "f4" in opt) and fval is not None \
                    and type (fval) == ArrayType :
                    if graf._split != 0 and isosurfaces_present :
-                      if s.plane != None :
+                      if s.plane is not None :
                          pl3tree (s.nv, s.xyzv,
                             split_bytscl (fval, upper = 0, cmin = zmin,
                                cmax = zmax).astype('b'), s.plane,
@@ -1718,7 +1718,7 @@ class Plotter :
                 raise self._GistError, \
                    "object for 3d plot must be a Surface, a Mesh3d, " + \
                    "or one or more Slices."
-          if zmax != None and graf._color_bar != 0 :
+          if zmax is not None and graf._color_bar != 0 :
              self.set_style ("z_nobox.gs")
           else :
              self.set_style (graf._style)
@@ -1727,10 +1727,10 @@ class Plotter :
           self.lims = draw3 (1)
           if hasattr (self, "_hcp") and self._hcp != "" :
              hcp ()
-          if self.lims != None :
+          if self.lims is not None :
              limits (self.lims [0], self.lims [1],
                 self.lims [2], self.lims [3])
-          if zmax != None and zmin != zmax and graf._color_bar != 0 :
+          if zmax is not None and zmin != zmax and graf._color_bar != 0 :
              color_bar (zmin, zmax, spl, ncol)
 
        # text must be done last or it might be obscured.

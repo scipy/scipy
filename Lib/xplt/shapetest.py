@@ -15,7 +15,7 @@ def is_scalar (x) :
 
 # This routine should be able to tell you the size of any object:
 def no_of_dims (x) :
-   if x == None : return 0
+   if x is None : return 0
    if (type (x) == ArrayType) : return len (x.shape)
    if (type (x) == ListType or type (x) == TupleType) : return 1
    # I don't know if there are any other possibilities.

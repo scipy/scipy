@@ -196,7 +196,7 @@ class Graph2d ( Graph ) :
        elif self._display != "" :
           self._filename_list = self._display
           self._plotter_list = [-1] * len (self._filename_list)
-       elif self._plotter != None :
+       elif self._plotter is not None :
           if is_scalar (self._plotter) :
              self._plotter_list = [self._plotter]
              self._filename_list = [" "]
@@ -391,7 +391,7 @@ class Graph2d ( Graph ) :
       Graphics routine.
       """
       self._init_plotter ( )
-      if plotter != None :
+      if plotter is not None :
          plotter.plot2d (self)
          return
       for ipl in range (len (self._plotter_list)) :

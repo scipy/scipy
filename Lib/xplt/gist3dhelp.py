@@ -956,7 +956,7 @@ def gist3dhelp ( routine ) :
          if len (k) > lenkey :
             key = k
             lenkey = len (k)
-   if key != None :
+   if key is not None:
       print helpdict [key]
    else :
       print "No help available for " + routine + "."

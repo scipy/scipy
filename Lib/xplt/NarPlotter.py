@@ -735,7 +735,7 @@ class Plotter :
        narcisse.narsetai ( "option_3d" , option )
        # check out whether a color bar is wanted :
        if c_color_bar :
-          if color_bar_pos != None :
+          if color_bar_pos is not None :
              c_color_bar = 1
              narcisse.narsetai ( "height_c_x_min", color_bar_pos [0, 0])
              narcisse.narsetai ( "height_c_y_min", color_bar_pos [0, 1])
@@ -745,7 +745,7 @@ class Plotter :
              c_color_bar = 2
           narcisse.narsetai ( "height_c_type", c_color_bar )
        elif z_color_bar :
-          if color_bar_pos != None :
+          if color_bar_pos is not None :
              z_color_bar = 1
              narcisse.narsetai ( "height_z_x_min", color_bar_pos [0, 0])
              narcisse.narsetai ( "height_z_y_min", color_bar_pos [0, 1])
@@ -906,7 +906,7 @@ class Plotter :
  
        if not self._file_open : raise self.ConnectException , \
           "You are not connected to Narcisse."
-       if len ( val ) == 0 or val [0] == None :
+       if len ( val ) == 0 or val [0] is None :
           narcisse.narsetar ( "height" , 30.0 )
        else :
           narcisse.narsetar ( "height" , 90.0 - val [0] )
@@ -920,7 +920,7 @@ class Plotter :
  
        if not self._file_open : raise self.ConnectException , \
           "You are not connected to Narcisse."
-       if len ( val ) == 0 or val [0] == None :
+       if len ( val ) == 0 or val [0] is None :
           narcisse.narsetar ( "theta" , -45.0 )
        else :
           narcisse.narsetar ( "theta" , val [0] )
@@ -934,7 +934,7 @@ class Plotter :
  
        if not self._file_open : raise self.ConnectException , \
           "You are not connected to Narcisse."
-       if len ( val ) == 0 or val [0] == None :
+       if len ( val ) == 0 or val [0] is None :
           narcisse.narsetar ( "roll" , 0.0 )
        else :
           narcisse.narsetar ( "roll" , val [0] )
@@ -1107,7 +1107,7 @@ class Plotter :
       """
       if crv.hide :
          return -1
-      if crv.marks and crv.marker == None :
+      if crv.marks and crv.marker is None :
          if (type (crv.line_type) == IntType and \
             crv.line_type == 0 or \
             type (crv.line_type) == StringType and \
@@ -1117,7 +1117,7 @@ class Plotter :
                crv.label = uppercase [self._next_letter]
                self._next_letter = (self._next_letter + 1) % 26
             return 0
-      if crv.marks and crv.marker != None :
+      if crv.marks and crv.marker is not None :
          # if a marker is specified but a curve is desired, set the
          # curve's label to the marker
          if type (crv.marker) == StringType and \
@@ -1346,7 +1346,7 @@ class Plotter :
        if len ( args2 ) == 0 :
           narcisse.narsurf ( self._file_descr , arg1.astype (NarFloat) )
           return
-       if len ( args2 ) == 2 or len ( args2 ) > 2 and args2 [2] == None :
+       if len ( args2 ) == 2 or len ( args2 ) > 2 and args2 [2] is None :
           x = arg1.astype (NarFloat)
           y = args2 [0].astype (NarFloat)
           z = args2 [1].astype (NarFloat)
@@ -1716,15 +1716,15 @@ class Plotter :
           self.set_z_c_switch ( graf._s[0].z_c_switch )
           self.set_z_contours ( graf._s[0].z_contours_scale )
           self.set_c_contours ( graf._s[0].c_contours_scale )
-          if graf._s[0].z_contours_array == None :
-             if graf._s[0].number_of_z_contours == None :
+          if graf._s[0].z_contours_array is None :
+             if graf._s[0].number_of_z_contours is None :
                 self.set_z_contours (20)
              else :
                 self.set_z_contours (graf._s[0].number_of_z_contours)
           else :
              self.set_z_contours ( graf._s[0].z_contours_array )
-          if graf._s[0].c_contours_array == None :
-             if graf._s[0].number_of_c_contours == None :
+          if graf._s[0].c_contours_array is None :
+             if graf._s[0].number_of_c_contours is None :
                 self.set_c_contours (20)
              else :
                 self.set_c_contours (graf._s[0].number_of_c_contours)
@@ -1735,7 +1735,7 @@ class Plotter :
           self._graph_type = 4
           for i in range (graf._s_ln) :
              if graf._s [i].type () == Slice3dType :
-                if graf._s [i].plane == None and graf._s [i].iso != None :
+                if graf._s [i].plane is None and graf._s [i].iso is not None :
                    isosurfaces_present = 1
              else :
                 raise self.NarError, \
@@ -1756,14 +1756,14 @@ class Plotter :
                    y [0: len(y)] = 0.
                 if (max (abs (z)) < 10.e-30) :
                    z [0: len(z)] = 0.
-                if not isosurfaces_present or s.iso == None and \
-                   s.plane == None :
+                if not isosurfaces_present or s.iso is None and \
+                   s.plane is None :
                    if "i3" in opt_3d or "s3" in opt_3d or \
                       "w3" in opt_3d or "f3" in opt_3d :
                       val = z
                    else :
                       val = s.val
-                elif s.plane != None :
+                elif s.plane is not None :
                    if len(s.val) == len (s.nv) :
                       val = to_corners (s.val, s.nv, sum (s.nv))
                    else :
@@ -1775,10 +1775,10 @@ class Plotter :
                 x = concatenate ( (x, s.xyzv [:, 0]))
                 y = concatenate ( (y, s.xyzv [:, 1]))
                 z = concatenate ( (z, s.xyzv [:, 2]))
-                if not isosurfaces_present or s.iso == None and \
-                   s.plane == None :
+                if not isosurfaces_present or s.iso is None and \
+                   s.plane is None :
                    val = concatenate ( (val, s.val))
-                elif s.plane != None :
+                elif s.plane is not None :
                    if len(s.val) == len (s.nv) :
                       val = concatenate ( (val,
                          to_corners (s.val, s.nv, sum (s.nv))))
@@ -1813,15 +1813,15 @@ class Plotter :
                 self.set_z_c_switch ( 0 )
              self.set_z_contours ( graf._s[i].z_contours_scale )
              self.set_c_contours ( graf._s[i].c_contours_scale )
-             if graf._s[i].z_contours_array == None :
-                if graf._s[i].number_of_z_contours == None :
+             if graf._s[i].z_contours_array is None :
+                if graf._s[i].number_of_z_contours is None :
                    self.set_z_contours (20)
                 else :
                    self.set_z_contours (graf._s[i].number_of_z_contours)
              else :
                 self.set_z_contours ( graf._s[i].z_contours_array )
-             if graf._s[i].c_contours_array == None :
-                if graf._s[i].number_of_c_contours == None :
+             if graf._s[i].c_contours_array is None :
+                if graf._s[i].number_of_c_contours is None :
                    self.set_c_contours (20)
                 else :
                    self.set_c_contours (graf._s[i].number_of_c_contours)
@@ -1829,10 +1829,10 @@ class Plotter :
                 self.set_c_contours ( graf._s[i].c_contours_array )
              # always send coordinates of linked surfaces
              if not hasattr (graf._s[i], "x") or \
-                graf._s[i].x == None : # just graphing z
+                graf._s[i].x is None : # just graphing z
                 self._graph_type = 3
                 self.plot_surface ( array ( graf._s[i].z, Float))
-             elif graf._s[i].c == None : #surface alone
+             elif graf._s[i].c is None : #surface alone
                 self._graph_type = 3
                 self.plot_surface ( array ( graf._s[i].x, Float),
                                  array ( graf._s[i].y, Float),
@@ -1871,15 +1871,15 @@ class Plotter :
           self.set_z_c_switch ( graf._s[n - 1].z_c_switch )
           self.set_z_contours ( graf._s[n - 1].z_contours_scale )
           self.set_c_contours ( graf._s[n - 1].c_contours_scale )
-          if graf._s[n - 1].z_contours_array == None :
-             if graf._s[n - 1].number_of_z_contours == None :
+          if graf._s[n - 1].z_contours_array is None :
+             if graf._s[n - 1].number_of_z_contours is None :
                 self.set_z_contours (20)
              else :
                 self.set_z_contours (graf._s[n - 1].number_of_z_contours)
           else :
              self.set_z_contours ( graf._s[n - 1].z_contours_array )
-          if graf._s[n - 1].c_contours_array == None :
-             if graf._s[n - 1].number_of_c_contours == None :
+          if graf._s[n - 1].c_contours_array is None :
+             if graf._s[n - 1].number_of_c_contours is None :
                 self.set_c_contours (20)
              else :
                 self.set_c_contours (graf._s[n - 1].number_of_c_contours)
@@ -1888,13 +1888,13 @@ class Plotter :
           if graf._send_coordinates :
              for i in range ( n ) : # now send out surfaces
                 if not hasattr (graf._s[i], "x") or \
-                   graf._s[i].x == None : # just graphing z
+                   graf._s[i].x is None : # just graphing z
                    self._graph_type = 3
                    if i == 0 :
                       self.plot_surface (array (graf._s[i].z, Float))
                    else :
                       self.add_surface (array (graf._s[i].z, Float))
-                elif graf._s[i].c == None : # 3d plot
+                elif graf._s[i].c is None : # 3d plot
                    self._graph_type = 3
                    if i == 0 :
                       self.plot_surface ( array ( graf._s[i].x, Float),

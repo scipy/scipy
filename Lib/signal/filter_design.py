@@ -4,7 +4,7 @@ Num = Numeric
 abs = absolute
 pi = Numeric.pi
 import scipy
-from scipy import asarray_1d
+from scipy import r1array
 
 
 def butter(N, Wn, bandtype='band', analog=0, output=''):
@@ -130,8 +130,8 @@ def buttord(wp, ws, gpass, gstop, analog=0):
 
     """
 
-    wp = asarray_1d(wp)
-    ws = asarray_1d(ws)
+    wp = r1array(wp)
+    ws = r1array(ws)
     filter_type = 2*(len(wp)-1)
     filter_type +=1 
     if wp[0] >= ws[0]:
@@ -235,8 +235,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
             use with scipy.signal.cheby1 to give filter results.
 
     """
-    wp = asarray_1d(wp)
-    ws = asarray_1d(ws)
+    wp = r1array(wp)
+    ws = r1array(ws)
     filter_type = 2*(len(wp)-1)
     if wp[0] < ws[0]:
         filter_type += 1
@@ -310,8 +310,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
             use with scipy.signal.cheby2 to give the filter.
 
     """
-    wp = asarray_1d(wp)
-    ws = asarray_1d(ws)
+    wp = r1array(wp)
+    ws = r1array(ws)
     filter_type = 2*(len(wp)-1)
     if wp[0] < ws[0]:
         filter_type += 1
@@ -409,8 +409,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
             use with scipy.signal.cheby2 to give the filter.
 
     """
-    wp = asarray_1d(wp)
-    ws = asarray_1d(ws)
+    wp = r1array(wp)
+    ws = r1array(ws)
     filter_type = 2*(len(wp)-1)
     filter_type += 1
     if wp[0] >= ws[0]:

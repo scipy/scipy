@@ -4,7 +4,7 @@
 from region import *
 from quadmesh import *
 from graph2d import *
-from Ranf import *
+from MLab import rand
 from Numeric import *
 from shapetest import *
 
@@ -19,10 +19,10 @@ kmax = 25
 lmax = 35
 xr = multiply.outer ( arange (1, kmax + 1, typecode = Float), ones (lmax))
 yr = multiply.outer ( ones (kmax), arange (1, lmax + 1, typecode = Float))
-zt = 5. + xr + .2 * random_sample (kmax, lmax)   # ranf (xr)
-rt = 100. + yr + .2 * random_sample (kmax, lmax)   # ranf (yr)
+zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
+rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
 z = s * (rt + zt)
-z = z + .02 * z * random_sample (kmax, lmax)   # ranf (z)
+z = z + .02 * z * rand (kmax, lmax)   # ranf (z)
 ut = rt/sqrt (rt ** 2 + zt ** 2)
 vt = zt/sqrt (rt ** 2 + zt ** 2)
 ireg =  multiply.outer ( ones (kmax), ones (lmax))
@@ -31,7 +31,7 @@ ireg [0:kmax, 0:1]=0
 ireg [1:15, 7:12]=2
 ireg [1:15, 12:lmax]=3
 ireg [3:7, 3:7]=0
-freg=ireg + .2 * (1. - random_sample (kmax, lmax))  # ranf (ireg))
+freg=ireg + .2 * (1. - rand (kmax, lmax))  # ranf (ireg))
 freg=array (freg, Float)
 #rt [4:6, 4:6] = -1.e8
 z [3:10, 3:12] = z [3:10, 3:12] * .9

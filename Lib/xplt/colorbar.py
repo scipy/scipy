@@ -51,7 +51,7 @@ def color_bar (minz, maxz, split = 0, ncol = None) :
 
    are typical usage
    """
-   if ncol == None:
+   if ncol is None:
       ncol = 100 + (1 - split) * 100
    plsys (0)
    ymax = 0.85

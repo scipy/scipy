@@ -253,7 +253,7 @@ def win (val , *n, **keywords) :
          _graphics_ [i] = ""
          _win_on_ [i] = 0
          _object_list_ [i] = []
-         if _win_plotters_ [i] != None :
+         if _win_plotters_ [i] is not None :
             _win_plotters_ [i].close ()
             _win_plotters_ [i] = None
          if i == _ps_plotter_ :
@@ -367,12 +367,12 @@ def _set_axis_limits_ (window = "all") :
             if i == 0 :
                for k in range (len (_object_list_ [j])) :
                   new_min = _min_ (_object_list_ [j] [k].x)
-                  if min_ == None or new_min < min_ :
+                  if min_ is None or new_min < min_ :
                      min_ = new_min
             elif i == 1 :
                for k in range (len (_object_list_ [j])) :
                   new_min = _min_ (_object_list_ [j] [k].y)
-                  if min_ == None or new_min < min_ :
+                  if min_ is None or new_min < min_ :
                      min_ = new_min
             elif i == 2 :
                min_ = 0.
@@ -381,12 +381,12 @@ def _set_axis_limits_ (window = "all") :
             if i == 0 :
                for k in range (len (_object_list_ [j])) :
                   new_max = _max_ (_object_list_ [j] [k].x)
-                  if max_ == None or new_max > max_ :
+                  if max_ is None or new_max > max_ :
                      max_ = new_max
             elif i == 1 :
                for k in range (len (_object_list_ [j])) :
                   new_max = _max_ (_object_list_ [j] [k].y)
-                  if max_ == None or new_max > max_ :
+                  if max_ is None or new_max > max_ :
                      max_ = new_max
             elif i == 2 :
                max_ = 0.
@@ -465,7 +465,7 @@ def cgm (val, *n, **kw) :
             else :
                # another cgm window was assigned. unassign it.
                _win_on_ [_cgm_plotter_] = 0
-               if _win_plotters_ [_cgm_plotter_] != None :
+               if _win_plotters_ [_cgm_plotter_] is not None :
                   _win_plotters_ [_cgm_plotter_].close ()
                   _win_plotters_ [_cgm_plotter_] = None
       _cgm_plotter_ = _window_number_
@@ -476,7 +476,7 @@ def cgm (val, *n, **kw) :
       if 0 <= _cgm_plotter_ <= 7 :
          print "Closing cgm file " + _cgm_file_ + "."
          _win_on_ [_cgm_plotter_] = 0
-         if _win_plotters_ [_cgm_plotter_] != None :
+         if _win_plotters_ [_cgm_plotter_] is not None :
             _win_plotters_ [_cgm_plotter_].close ()
             _win_plotters_ [_cgm_plotter_] = None
          _cgm_plotter_ = -1
@@ -501,7 +501,7 @@ def cgm (val, *n, **kw) :
          if _cgm_plotter_ < 0 :
             raise _CgmError_, "No window available for cgm use."
          _win_on_ [_cgm_plotter_] = 1
-      if _win_plotters_ [_cgm_plotter_] == None :
+      if _win_plotters_ [_cgm_plotter_] is None :
          _cgm_file_ = new_plot_file (_cgm_file_)
          print "Opening plot file " + _cgm_file_ + "."
          _win_plotters_ [_cgm_plotter_] = \
@@ -510,7 +510,7 @@ def cgm (val, *n, **kw) :
       _set_axis_limits_ ( )
       if _cgm_plotter_ != win_no :
          _object_list_ [_cgm_plotter_] = _object_list_ [win_no]
-      if _current_graph_ [_cgm_plotter_] == None :
+      if _current_graph_ [_cgm_plotter_] is None :
          _current_graph_ [_cgm_plotter_] = Graph2d (_object_list_ [win_no], \
             plotter = _win_plotters_ [_cgm_plotter_], \
             titles = _titles_, axis_limits = _axis_limits_, axis_labels = \
@@ -572,7 +572,7 @@ def ps (val, *n, **kw) :
             else :
                # another ps window was assigned. unassign it.
                _win_on_ [_ps_plotter_] = 0
-               if _win_plotters_ [_ps_plotter_] != None :
+               if _win_plotters_ [_ps_plotter_] is not None :
                   _win_plotters_ [_ps_plotter_].close ()
                   _win_plotters_ [_ps_plotter_] = None
       _ps_plotter_ = _window_number_
@@ -585,7 +585,7 @@ def ps (val, *n, **kw) :
       _ps_ = "no"
       if 0 <= _ps_plotter_ <= 7 :
          _win_on_ [_ps_plotter_] = 0
-         if _win_plotters_ [_ps_plotter_] != None :
+         if _win_plotters_ [_ps_plotter_] is not None :
             _win_plotters_ [_ps_plotter_].close ()
             _win_plotters_ [_ps_plotter_] = None
          _ps_plotter_ = -1
@@ -607,7 +607,7 @@ def ps (val, *n, **kw) :
          if _ps_plotter_ < 0 :
             raise _PsError_, "No window available for ps use."
          _win_on_ [_ps_plotter_] = 1
-      if _win_plotters_ [_ps_plotter_] == None :
+      if _win_plotters_ [_ps_plotter_] is None :
          _ps_file_ = new_plot_file (_ps_file_)
          print "Opening plot file " + _ps_file_ + "."
          _win_plotters_ [_ps_plotter_] = \
@@ -616,7 +616,7 @@ def ps (val, *n, **kw) :
       _set_axis_limits_ ( )
       if _ps_plotter_ != win_no :
          _object_list_ [_ps_plotter_] = _object_list_ [win_no]
-      if _current_graph_ [_ps_plotter_] == None :
+      if _current_graph_ [_ps_plotter_] is None :
          _current_graph_ [_ps_plotter_] = Graph2d (_object_list_ [win_no], \
             plotter = _win_plotters_ [_ps_plotter_], \
             titles = _titles_, axis_limits = _axis_limits_, axis_labels = \
@@ -650,7 +650,7 @@ def undo (item = None, window = "min") :
    global _object_list_
    win_no = _get_win_ (window, _UndoError_)
    lo = len (_object_list_ [win_no])
-   if item == None :
+   if item is None :
       n = lo
    if n > lo or n < 1:
       raise _UndoError_, "There aren't " + `n` + " objects in the list."
@@ -699,7 +699,7 @@ def nf ( new_frame = "yes" , window = "all" ) :
       elif i == _ps_plotter_ and (enable_ps or enablen [i]) and _ps_ :
          ps ("plot", new_frame = new_frame, window = _ps_plotter_)
       elif enablen [i] :
-         if _current_graph_ [i] == None :
+         if _current_graph_ [i] is None :
             _current_graph_ [i] = Graph2d (_object_list_ [i], titles = _titles_,
                text = _text_, text_pos = _text_pos_, text_size = \
                _text_size_, text_color = _text_color_, tosys = _tosys_, \
@@ -714,7 +714,7 @@ def nf ( new_frame = "yes" , window = "all" ) :
                axis_scales = _axis_scales_, grid_type = _grid_type_,
                color_bar = _color_bar_)
          if _win_on_ [i] == 1 :
-            if _win_plotters_ [i] == None :
+            if _win_plotters_ [i] is None :
                if _graphics_ [i] [0:3] == "Nar" :
                   gr = NarPlotter
                elif _graphics_ [i] == "Gist" :
@@ -869,7 +869,7 @@ def plot (y = None, x = None, ** keywords) :
    global _grid_type_, _axis_scales_, _style_, _label_list_, \
       _labels_enabled_, _default_label_, _object_list_, _style_dict_, \
       _mark_dict_, _color_, _thick_, _style_, _ezcshow_, _labels_temporarily_enabled_
-   if y == None :
+   if y is None :
       attr (keywords)
       return
    if keywords.has_key ("window") :
@@ -918,7 +918,7 @@ def plot (y = None, x = None, ** keywords) :
          lbl = lbl [0]
       if no_of_dims (col) == 1 :
          col = col [0]
-      if x != None and no_of_dims (x) == 2 :
+      if x is not None and no_of_dims (x) == 2 :
          x = x [0]
       no_of_coords = 1
    else :
@@ -931,7 +931,7 @@ def plot (y = None, x = None, ** keywords) :
          col = [col] * no_of_coords
       elif len (col) < no_of_coords :
          col = col + [_color_] * (no_of_coords - len (col))
-      if x == None or type (x) == ArrayType and len (shape (x)) == 1 :
+      if x is None or type (x) == ArrayType and len (shape (x)) == 1 :
          x = [x] * no_of_coords
       elif shape (x) [0] < no_of_coords :
          x = x + [None] * no_of_coords - shape (x) [0]
@@ -1161,13 +1161,13 @@ def plotm (*kwds, ** keywords) :
       __ireg_ = keywords ["ireg"]
    else :
       __ireg_ = _ireg_
-   if __zt_ == None and __rt_ != None and cp == 0 :
+   if __zt_ is None and __rt_ is not None and cp == 0 :
       raise _MeshDefError_, "zt is missing from the mesh.\n" + \
          "Use set_mesh command or zt keyword in plotm command."
-   elif __zt_ != None and __rt_ == None and cp == 0 :
+   elif __zt_ is not None and __rt_ is None and cp == 0 :
       raise _MeshDefError_, "rt is missing from the mesh.\n" + \
          "Use set_mesh command or rt keyword in plotm command."
-   elif __zt_ == None and __rt_ == None and cp == 0 :
+   elif __zt_ is None and __rt_ is None and cp == 0 :
       raise _MeshDefError_, "Both zt and rt are missing from the mesh.\n" + \
          "Use set_mesh command or rt and zt keywords in plotm command."
    if _fill_ == 0 and cp == 0 :
@@ -1183,15 +1183,15 @@ def plotm (*kwds, ** keywords) :
       else :
          __pvar_ = _pvar_
          __cindex_ = _cindex_
-      if __pvar_ != None :
+      if __pvar_ is not None :
          k = shape (__pvar_) [0]
          l = shape (__pvar_) [1]
-      elif __cindex_ != None :
+      elif __cindex_ is not None :
          k = shape (__cindex_) [0]
          l = shape (__cindex_) [1]
       else :
          raise _MeshDefError_, "Neither pvar nor cindex has been specified."
-   if __ireg_ == None and __zt_ != None : # Default to a single region
+   if __ireg_ is None and __zt_ is not None : # Default to a single region
       if _fill_ == 0 :
          k = shape (__zt_) [0]
          l = shape (__zt_) [1]
@@ -1242,12 +1242,12 @@ def plotm (*kwds, ** keywords) :
             lhi = shape (__ireg_) [1]
       else :
          raise _RangeError_, "<" + `__lrange_` + "> is an illegal range."
-   if __krange_ != None and __lrange_ == None :
+   if __krange_ is not None and __lrange_ is None :
       llo = 0
       lhi = shape (__ireg_) [1]
       lstr = 1
       __lrange_ = (llo, lhi, lstr)
-   elif __krange_ == None and __lrange_ != None :
+   elif __krange_ is None and __lrange_ is not None :
       klo = 0
       khi = shape (__ireg_) [0]
       kstr = 1
@@ -1256,19 +1256,19 @@ def plotm (*kwds, ** keywords) :
    _krange_ = __krange_
    _lrange_ = __lrange_
 
-   if __krange_ != None : 
+   if __krange_ is not None : 
       # All the data must be resized
       __ireg_ = __ireg_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
-      if __zt_ != None :
+      if __zt_ is not None :
          __zt_ = __zt_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
-      if __rt_ != None :
+      if __rt_ is not None :
          __rt_ = __rt_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
-      if __ut_ != None :
+      if __ut_ is not None :
          __ut_ = __ut_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
          __vt_ = __vt_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
-      if __pvar_ != None :
+      if __pvar_ is not None :
          __pvar_ = __pvar_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
-      elif __cindex_ != None:
+      elif __cindex_ is not None:
          __cindex_ = __cindex_ [klo:khi + 1:kstr, llo:lhi + 1:lstr]
 
    _cscale_ = None
@@ -1277,12 +1277,12 @@ def plotm (*kwds, ** keywords) :
          _cscale_ = keywords ["cscale"]
       else :
          _cscale_ = "lin"
-      if _cscale_ != "lin" and __pvar_ == None :
+      if _cscale_ != "lin" and __pvar_ is None :
          raise _PlotfError_, \
             "pvar keyword must be present if cscale is not 'lin.'"
-      if __pvar_ != None :
+      if __pvar_ is not None :
          _z_ = __pvar_
-      elif __cindex_ != None :
+      elif __cindex_ is not None :
          _z_ = __cindex_
       if keywords.has_key ("edges") :
          _edges_ = keywords ["edges"]
@@ -1514,16 +1514,16 @@ def plotv (*args, **keywords) :
          ut = keywords ["ut"]
       if keywords.has_key ("vt") :
          vt = keywords ["vt"]
-   if rt == None :
+   if rt is None :
       raise _PlotvError_, "rt has not been defined. Use set_mesh, or pass\n" + \
          "as second argument or keyword argument to plotv."
-   if zt == None :
+   if zt is None :
       raise _PlotvError_, "zt has not been defined. Use set_mesh, or pass\n" + \
          "as first argument or keyword argument to plotv."
-   if ut == None :
+   if ut is None :
       raise _PlotvError_, "ut has not been defined. Use set_mesh, or pass\n" + \
          "as fourth argument or keyword argument to plotv."
-   if vt == None :
+   if vt is None :
       raise _PlotvError_, "vt has not been defined. Use set_mesh, or pass\n" + \
          "as third argument or keyword argument to plotv."
    plotm ( keywords )
@@ -1545,7 +1545,7 @@ def plotc (** keywords) :
    global _lev_, _pvar_
    if keywords.has_key ("pvar") :
       (k, l) = shape (keywords ["pvar"])
-   elif _pvar_ != None :
+   elif _pvar_ is not None :
       (k, l) = shape (_pvar_)
    else :
       raise _PlotcError_ , "pvar keyword must be specified or " + \
@@ -1616,7 +1616,7 @@ def plotz (* args, **keywords) :
    else :
       x = None
       y = None
-   if x != None and y != None and \
+   if x is not None and y is not None and \
       len (x.shape) == len (y.shape) == len (z.shape) == 1 and \
       x.shape == y.shape == z.shape:
       # random data; turn into a regular mesh.
@@ -1646,19 +1646,19 @@ def plotz (* args, **keywords) :
       del xcplot, ycplot, nx, ny
    keywords ["pvar"] = z
    (k, l) = shape (z)
-   if x != None and len (shape (x)) == 1 :
+   if x is not None and len (shape (x)) == 1 :
       if len (x) != k :
          raise _PlotzError_, "length of x <" + `len (x)` + \
            "> does not match first dimension of z <" + `k` + ">."
       x = multiply.outer (x, ones (l, Float))
-   elif x == None :
+   elif x is None :
       x = multiply.outer (arange (1, k + 1, typecode = Float), ones (l, Float))
-   if y != None and len (shape (y)) == 1 :
+   if y is not None and len (shape (y)) == 1 :
       if len (y) != l :
          raise _PlotzError_, "length of y <" + `len (y)` + \
            "> does not match second dimension of z <" + `l` + ">."
       y = multiply.outer (ones (k, Float), y)
-   elif y == None :
+   elif y is None :
       y = multiply.outer (ones (k, Float), arange (1, l + 1, typecode = Float))
    keywords ["zt"] = y
    keywords ["rt"] = x
@@ -1690,7 +1690,7 @@ def ploti (* pvar, ** keywords) :
       pvar = pvar [0]
    elif keywords.has_key ("pvar") :
       pvar = keywords ["pvar"]
-   elif _pvar_ != None :
+   elif _pvar_ is not None :
       pvar = _pvar_
    else :
       pvar = _cindex_
@@ -1735,12 +1735,12 @@ def plotf (*args, ** keywords) :
             __rt_ = keywords ["rt"] = args [2]
          if n > 3 :
             keywords ["ireg"] = args [3]
-   elif keywords != None and not keywords.has_key ("cindex") \
-      and not keywords.has_key ("pvar") and _pvar_ == None :
+   elif keywords is not None and not keywords.has_key ("cindex") \
+      and not keywords.has_key ("pvar") and _pvar_ is None :
       raise _PlotfError_, "plotf requires at least one non-keyword " + \
          "argument\n or else one of the keywords 'cindex' or 'pvar.'"
    elif not keywords.has_key ("cindex") and not keywords.has_key ("pvar") \
-        and _pvar_ != None :
+        and _pvar_ is not None :
       plvar = keywords ["pvar"] = _pvar_
    elif keywords.has_key ("cindex") :
       plvar = keywords ["cindex"]
@@ -1750,7 +1750,7 @@ def plotf (*args, ** keywords) :
    # They must be 2d and match plvar in shape.
    (k, l) = shape (plvar)
    if shape (__zt_) != shape (plvar) :
-      if __zt_ == None:
+      if __zt_ is None:
          __zt_ = multiply.outer (arange (1, k + 1, typecode = Float), ones (l, Float))
       elif no_of_dims (__zt_) == 1 :
          if len (__zt_) != k :
@@ -1762,7 +1762,7 @@ def plotf (*args, ** keywords) :
             "."
       keywords ["zt"] = __zt_
    if shape (__rt_) != shape (plvar) :
-      if __rt_ == None:
+      if __rt_ is None:
          __rt_ = multiply.outer (ones (k, Float), arange (1, l + 1, typecode = Float))
       elif no_of_dims (__rt_) == 1 :
          if len (__rt_) != l :

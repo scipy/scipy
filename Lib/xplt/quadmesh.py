@@ -207,16 +207,16 @@ class QuadMesh :
           n1 = shape (self.x) [0]
           n2 = shape (self.x) [1]
           self.tri = zeros ( (n1, n2))
-       if keywords.has_key ("ireg") and keywords ["ireg"] != None :
+       if keywords.has_key ("ireg") and keywords ["ireg"] is not None :
           self.ireg = keywords ["ireg"]
           if self.dimsofx == 2 :
              if self.ireg.shape != self.x.shape :
                 raise self._QuadMeshSpecError , \
                    "ireg, x, and y must have the same shape."
           else: # dimsofx has to be 1
-             if self.nx == None :
+             if self.nx is None :
                 self.nx = self.ireg.shape [0]
-             if self.ny == None :
+             if self.ny is None :
                 self.ny = self.ireg.shape [1]
              if self.ireg.shape != (nx, ny) :
                 raise self._QuadMeshSpecError , \
@@ -225,9 +225,9 @@ class QuadMesh :
           if self.dimsofx == 2:
              self.ireg = array (self.x).astype (Int32)
           else :
-             if self.nx == None :
+             if self.nx is None :
                 self.nx = 50
-             if self.ny == None :
+             if self.ny is None :
                 self.ny = 50
              self.ireg = array ( (self.nx, self.ny), Int32)
           self.ireg [0:self.nx, 0] = 0
@@ -263,12 +263,12 @@ class QuadMesh :
           self.z = keywords ["z"]
        else :
           self.z = None
-       if keywords.has_key ("z_scale") and keywords ["z_scale"] != None :
+       if keywords.has_key ("z_scale") and keywords ["z_scale"] is not None :
           self.z_scale = keywords ["z_scale"]
        else :
           self.z_scale = "lin"
        if self.dimsofx == 1 :
-          if self.z == None or len (self.z.shape) != 1 \
+          if self.z is None or len (self.z.shape) != 1 \
              or len (self.z) != len (self.x) :
              raise self._QuadMeshSpecError , \
                 "If x and y are one-dimensional, " + \
@@ -292,7 +292,7 @@ class QuadMesh :
           self.x = multiply.outer (xcplot, ones (ny, Float))
           self.y = multiply.outer (ones (nx, Float), ycplot)
           del xcplot, ycplot, nx, ny
-       if self.dimsofx == 2 and self.z != None : # check for shape
+       if self.dimsofx == 2 and self.z is not None : # check for shape
           if self.filled == 0 :
              if self.z.shape != self.x.shape :
                 raise self._QuadMeshSpecError , \

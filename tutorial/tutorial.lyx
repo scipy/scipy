@@ -1267,8 +1267,12 @@ interpolate.linear_1d.
 Spline interpolation in 1-d (interpolate.splXXX)
 \layout Standard
 
-There are two different was to represent a curve and obtain (smoothing)
- spline coefficients: directly and parametrically.
+Spline interpolation requires two essential steps: (1) a spline representation
+ of the curve is computed, and (2) the spline is evaluated at the desired
+ points.
+ In order to find the spline representation, there are two different was
+ to represent a curve and obtain (smoothing) spline coefficients: directly
+ and parametrically.
  The direct method finds the spline representation of a curve in a two-dimension
 al plane using the function 
 \series bold 
@@ -1302,7 +1306,10 @@ The first two arguments are the only ones required, and these provide the
 \end_inset 
 
  of the spline.
- 
+ The default spline order is cubic, but this can be changed with the input
+ keyword, 
+\emph on 
+k.
 \layout Standard
 
 For curves in 
@@ -1343,5 +1350,255 @@ which defaults to an equally-spaced monotonic sequence between
 \end_inset 
 
 .
+ The default output consists of two objects: a 3-tuple, 
+\begin_inset Formula \( \left( t,c,k\right)  \)
+\end_inset 
+
+, containing the spline representation and the parameter variable 
+\begin_inset Formula \( u. \)
+\end_inset 
+
+ 
+\layout Standard
+
+The keyword argument, 
+\emph on 
+s
+\emph default 
+, is used to specify the amount of smoothing to perform during the spline
+ fit.
+ The default value of 
+\begin_inset Formula \( s \)
+\end_inset 
+
+ is 
+\begin_inset Formula \( s=m-\sqrt{2m} \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( m \)
+\end_inset 
+
+ is the number of data-points being fit.
+ Therefore, 
+\series bold 
+if no smoothing is desired a value of 
+\begin_inset Formula \( \mathbf{s}=0 \)
+\end_inset 
+
+ should be passed to the routines.
+ 
+\layout Standard
+
+Once the spline representation of the data has been determined, functions
+ are available for evaluating the spline (
+\series bold 
+interpolate.splev) 
+\series default 
+and its derivatives (
+\series bold 
+interpolate.splev, interpolate.splade
+\series default 
+) at any point and the integral of the spline between any two points (
+\series bold 
+interpolate.splint)
+\series default 
+.
+ In addition, for cubic splines (
+\begin_inset Formula \( k=3 \)
+\end_inset 
+
+) with 8 or more knots, the roots of the spline can be estimated (
+\series bold 
+interpolate.sproot)
+\series default 
+.
+ These functions are demonstrated in the example that follows (see also
+ Figure 
+\begin_inset LatexCommand \ref{fig:spline-1d}
+
+\end_inset 
+
+).
+\layout Standard
+
+\begin_float fig 
+\layout Standard
+\align center 
+
+\begin_inset Figure size 267 377
+file interp_cubic.pdf
+subcaption Cubic-spline (splrep)
+width 3 45
+flags 11
+subfigure
+
+\end_inset 
+
+
+\begin_inset Figure size 267 377
+file interp_cubic_der.pdf
+subcaption Derivative of spline (splev)
+width 3 45
+flags 11
+subfigure
+
+\end_inset 
+
+
+\layout Standard
+\align center 
+
+\begin_inset Figure size 267 377
+file interp_cubic_int.pdf
+subcaption Integral of spline (splint)
+width 3 45
+flags 11
+subfigure
+
+\end_inset 
+
+
+\begin_inset Figure size 267 377
+file interp_cubic_param.pdf
+subcaption Spline of parametric curve (splprep)
+width 3 45
+flags 11
+subfigure
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:spline-1d}
+
+\end_inset 
+
+Examples of using cubic-spline interpolation.
+\end_float 
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example6.2}
+
+\end_inset 
+
+
+\layout Subsection
+
+Two-dimensionsal spline representation (interpolate.bisplrep)
+\layout Standard
+
+For (smooth) spline-fitting to a two dimensional surface, the function 
+\series bold 
+interpolate.bisplrep 
+\series default 
+is available.
+ This function takes as required inputs the 
+\series bold 
+1-D
+\series default 
+ arrays 
+\emph on 
+x, y, 
+\emph default 
+and 
+\emph on 
+z
+\emph default 
+ which represent points on the surface 
+\begin_inset Formula \( z=f\left( x,y\right) . \)
+\end_inset 
+
+ The default output is a list 
+\begin_inset Formula \( \left[ tx,ty,c,kx,ky\right]  \)
+\end_inset 
+
+ whose entries represent respectively, the components of the knot positions,
+ the coefficients of the spline, and the order of the spline in each coordinate.
+ It is convenient to hold this list in a single object, 
+\emph on 
+tck, 
+\emph default 
+so that it can be passed easily to the function 
+\series bold 
+interpolate.bisplev.
+ 
+\series default 
+The keyword, 
+\emph on 
+s
+\emph default 
+,
+\emph on 
+ 
+\emph default 
+can be used to change the amount of smoothing performed on the data while
+ determining the appropriate spline.
+ The default value is 
+\begin_inset Formula \( s=m-\sqrt{2m} \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( m \)
+\end_inset 
+
+ is the number of data points in the 
+\emph on 
+x, y, 
+\emph default 
+and
+\emph on 
+ z 
+\emph default 
+vectors.
+ As a result, if no smoothing is desired, then 
+\begin_inset Formula \( s=0 \)
+\end_inset 
+
+ should be passed to 
+\series bold 
+interpolate.bisplrep.
+\layout Standard
+
+To evaluate the two-dimensional spline and it's partial derivatives (up
+ to the order of the spline), the function 
+\series bold 
+interpolate.bisplev
+\series default 
+ is required.
+ This function takes as the first two arguments two 1-D arrays which together
+ specify the points at which to evaluate the spline.
+ The third argument is the 
+\emph on 
+tck 
+\emph default 
+list returned from 
+\series bold 
+interpolate.bisplrep.
+ 
+\series default 
+If desired, the fourth and fifth arguments provide the orders of the partial
+ derivative in the 
+\begin_inset Formula \( x \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( y \)
+\end_inset 
+
+ direction respectively.
+ 
+\layout Standard
+
+It is important to note that two dimensional interpolation should not be
+ used to find the spline representation of images.
+ The algorithm used is not amenable to large numbers of input points.
+ The signal processing toolbox contains (soon) more appropriate algorithms
+ for finding the spline representation of an image.
+ The two dimensional interpolation commands are intended for use when interpolat
+ing a two dimensional function as shown in the example that follows.
  
 \the_end

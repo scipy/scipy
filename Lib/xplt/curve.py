@@ -73,7 +73,7 @@ class Curve :
           raise self._CurveSpecError , "No y array has been specified."
        if is_scalar (self.y) :
           raise self._CurveSpecError , "y must be an array."
-       if ( keywords.has_key ( "x" ) and keywords ["x"] != None) :
+       if ( keywords.has_key ( "x" ) and keywords ["x"] is not None) :
           self.x = keywords ["x"] 
        else :
           if len ( shape (self.y) ) == 1 :

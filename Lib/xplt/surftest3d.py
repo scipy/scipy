@@ -2,7 +2,6 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from Ranf import *
 
 GraphicsError = "GraphicsError"
 import os
@@ -35,6 +34,7 @@ from plane import *
 from surface import Surface
 from graph3d import Graph3d
 from mesh3d import *
+from MLab import rand
 
 def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")
@@ -51,10 +51,10 @@ def demo () :
       arange (1, kmax + 1, typecode = Float), ones (lmax, Float))
    yr = multiply.outer (
       ones (kmax, Float), arange (1, lmax + 1, typecode = Float))
-   zt = 5. + xr + .2 * random_sample (kmax, lmax)   # ranf (xr)
-   rt = 100. + yr + .2 * random_sample (kmax, lmax)   # ranf (yr)
+   zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
+   rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
    z = s * (rt + zt)
-   z = z + .02 * z * random_sample (kmax, lmax)   # ranf (z)
+   z = z + .02 * z * rand (kmax, lmax)   # ranf (z)
    ut = rt / sqrt (rt ** 2 + zt ** 2)
    vt = zt / sqrt (rt ** 2 + zt ** 2)
    ireg =  multiply.outer ( ones (kmax), ones (lmax))
@@ -63,7 +63,7 @@ def demo () :
    ireg [1:15, 7:12] = 2
    ireg [1:15, 12:lmax] = 3
    ireg [3:7, 3:7] = 0
-   freg = ireg + .2 * (1. - random_sample (kmax, lmax))  # ranf (ireg))
+   freg = ireg + .2 * (1. - rand (kmax, lmax))  # ranf (ireg))
    freg = array (freg, Float)
    #rt [4:6, 4:6] = -1.e8
    z [3:10, 3:12] = z [3:10, 3:12] * .9

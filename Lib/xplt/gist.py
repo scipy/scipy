@@ -2,7 +2,10 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 from Numeric import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path
-from gistC import *
+try:
+    from gistC import *
+except ImportError:
+    from scipy.xplt.gistC import *
 from helpmod import help
 from shapetest import *
 from arrayfns import *
@@ -41,15 +44,15 @@ def moush(*arg):
   narg = len(arg)
   if narg == 3: # (y, x, ireg)
     xy = mouse (-1, 0, "<Click mouse in mesh>")
-    if xy == None: return None
+    if xy is None: return None
     return mesh_loc (xy[1], xy[0], arg[0], arg[1], arg[2]);
   elif narg == 2: # (y, x)
     xy = mouse (-1, 0, "<Click mouse in mesh>")
-    if xy == None: return None
+    if xy is None: return None
     return mesh_loc (xy[1], xy[0], arg[0], arg[1]);
   elif narg == 0: # ()
     xy = mouse (-1, 0, "<Click mouse in mesh>")
-    if xy == None: return None
+    if xy is None: return None
     return mesh_loc (xy[1], xy[0]);
   else:
     print "Moush takes 0, 2, or 3 args: ( [ y, x [ , ireg ] ] )"
@@ -107,7 +110,7 @@ def plmk(y,x=None,marker=None,width=None,color=None,msize=None):
 
   z = None
 
-  if marker == None:
+  if marker is None:
     marker = _plmk_markers[(_plmk_count)%7]
     _plmk_count = _plmk_count + 1
   elif type(marker) == type(0):
@@ -213,7 +216,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
         vc = zeros (n + 2, Float)
         vc [0] = vcmin
         vc [n + 1] = vcmax
-        if scale == "lin" or scale == None :
+        if scale == "lin" or scale is None :
             #    This stuff is in lieu of the spann stuff in Yorick.
             vc [1:n + 1] = vcmin + arange (1, n + 1, typecode = Float) * \
                (vcmax - vcmin) / (n + 1)
@@ -240,7 +243,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
         vc [1:n + 1] = sort (contours)
      else :
         raise _ContourError, "Incorrect contour specification."
-     if colors == None :
+     if colors is None :
         colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
      else :
         colors = array (colors)
@@ -250,14 +253,14 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
         if colors.typecode != 'b' :
            colors = bytscl (colors)
 
-     if triangle == None :
+     if triangle is None :
         triangle = zeros (z.shape, Int16)
 
      # Set mesh first
      plmesh (y, x, ireg, triangle = triangle)
      for i in range (n + 1) :
         [nc, yc, xc] = contour (array ( [vc [i], vc [i + 1]]), z)
-        if (is_scalar(nc) and nc == 0 or nc == None) :
+        if (is_scalar(nc) and nc == 0 or nc is None) :
            continue
         plfp ( (ones (len (nc)) * colors [i]).astype ('b'),
            yc, xc, nc, edges = 0)
