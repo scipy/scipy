@@ -1,6 +1,9 @@
+# Author: Travis Oliphant
+# 1999 -- 2001
+
 import sigtools
 import scipy.special as special
-from scipy import iscomplex, fft, ifft
+from scipy import iscomplex, fft, ifft, ifftshift
 from scipy import polyadd, polymul, polydiv, polysub, \
                   roots, poly, polyval, polyder
 import types
@@ -444,54 +447,147 @@ def lfilter(b, a, x, axis=-1, zi=None):
     else:
         return sigtools._linear_filter(b, a, x, axis, zi)
 
-def blackman(M):
+def triang(M,sym=1):
+    """The M-point triangular window.
+    """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1        
+    n = grid[1:(M+1)/2+1]
+    if M % 2 == 0:
+        w = (2*n-1.0)/M
+        w = r_[w, w[::-1]]
+    else:
+        w = 2*n/(M+1.0)
+        w = r_[w, w[-2::-1]]
+
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
+def blackman(M,sym=1):
     """The M-point Blackman window.
     """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1
     n = arange(0,M)
-    return 0.42-0.5*cos(2.0*pi*n/(M-1)) + 0.08*cos(4.0*pi*n/(M-1))
+    w = 0.42-0.5*cos(2.0*pi*n/(M-1)) + 0.08*cos(4.0*pi*n/(M-1))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+        
 
-def bartlett(M):
+def bartlett(M,sym=1):
     """The M-point Bartlett window.
     """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1    
     n = arange(0,M)
-    return where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
+    w = where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
-def hanning(M):
+def hanning(M,sym=1):
     """The M-point Hanning window.
     """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1        
     n = arange(0,M)
-    return 0.5-0.5*cos(2.0*pi*n/(M-1))
+    w = 0.5-0.5*cos(2.0*pi*n/(M-1))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
-def hamming(M):
+def hamming(M,sym=1):
     """The M-point Hamming window.
     """
-    n = arange(0,M)
-    return 0.54-0.46*cos(2.0*pi*n/(M-1))
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1        
+    n = arange(0,M)    
+    w = 0.54-0.46*cos(2.0*pi*n/(M-1))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
-def kaiser(M,beta):
+def kaiser(M,beta,sym=1):
     """Returns a Kaiser window of length M with shape parameter beta.
     """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1    
     n = arange(0,M)
     alpha = (M-1)/2.0
-    return special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
+    w = special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
-def gaussian(M,std):
+def gaussian(M,std,sym=1):
     """Returns a Gaussian window of length M with standard-deviation std.
     """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2        
+    if not sym and not odd:
+        M = M + 1
     n = arange(0,M)-(M-1.0)/2.0
     sig2 = 2*std*std
-    return exp(-n**2 / sig2)
+    w = exp(-n**2 / sig2)
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
-def general_gaussian(M,p,sig):
+def general_gaussian(M,p,sig,sym=1):
     """Returns a window with a generalized Gaussian shape.
 
     exp(-0.5*(x/sig)**(2*p))
 
     half power point is at (2*log(2)))**(1/(2*p))*sig
     """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1        
     n = arange(0,M)-(M-1.0)/2.0
-    return exp(-0.5*(n/sig)**(2*p))
-    
+    w = exp(-0.5*(n/sig)**(2*p))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+        
 
 def hilbert(x, N=None):
     """Return the hilbert transform of x of length N.
@@ -580,7 +676,7 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
     
             b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1] 
     H(s) = ------ = ----------------------------------------------
-            a(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
+            a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
 
              r[0]       r[1]             r[-1]
          = -------- + -------- + ... + --------- + k(s)
@@ -629,9 +725,9 @@ def residue(b,a,tol=1e-3,rtype='avg'):
 
     If M = len(b) and N = len(a)
     
-            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1] 
+            b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1] 
     H(s) = ------ = ----------------------------------------------
-            a(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
+            a(s)     a[0] s**(N-1) + a[1] s**(N-2) + ... + a[N-1]
 
              r[0]       r[1]             r[-1]
          = -------- + -------- + ... + --------- + k(s)
@@ -680,11 +776,137 @@ def residue(b,a,tol=1e-3,rtype='avg'):
         indx += sig
     return r, p, k
 
-def residuez(b,a,tol=1e-3):
-    pass
+def residuez(b,a,tol=1e-3,rtype='avg'):
+    """Compute partial-fraction expansion of b(z) / a(z).
+
+    If M = len(b) and N = len(a)
+    
+            b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
+    H(z) = ------ = ----------------------------------------------
+            a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+
+                 r[0]                   r[-1]
+         = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+           (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+
+    If there are any repeated roots (closer than tol), then the partial
+    fraction expansion has terms like 
+
+               r[i]              r[i+1]                    r[i+n-1]
+          -------------- + ------------------ + ... + ------------------ 
+          (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+
+    See also:  invresz, poly, polyval, unique_roots
+    """
+    b,a = map(asarray,(b,a))
+    gain = a[0]
+    brev, arev = b[::-1],a[::-1]
+    krev,brev = polydiv(brev,arev)
+    k,b = krev[::-1],brev[::-1]
+    p = roots(a)
+    r = p*0.0
+    pout, mult = unique_roots(p,tol=tol,rtype=rtype)
+    p = []
+    for n in range(len(pout)):
+        p.extend([pout[n]]*mult[n])
+    p = asarray(p)
+    # Compute the residue from the general formula (for discrete-time)
+    #  the polynomial is in z**(-1) and the multiplication is by terms
+    #  like this (1-p[i] z**(-1))**mult[i].  After differentiation,
+    #  we must divide by (-p[i])**(m-k) as well as (m-k)!
+    indx = 0
+    for n in range(len(pout)):
+        bn = brev.copy()
+        pn = []
+        for l in range(len(pout)):
+            if l != n:
+                pn.extend([pout[l]]*mult[l])
+        an = r1array(poly(pn))[::-1]
+        # bn(z) / an(z) is (1-po[n] z**(-1))**Nn * b(z) / a(z) where Nn is
+        # multiplicity of pole at po[n] and b(z) and a(z) are polynomials.
+        sig = mult[n]
+        for m in range(sig,0,-1):
+            if sig > m:
+                # compute next derivative of bn(s) / an(s)
+                term1 = polymul(polyder(bn,1),an)
+                term2 = polymul(bn,polyder(an,1))
+                bn = polysub(term1,term2)
+                an = polymul(an,an)                
+            r[indx+m-1] = polyval(bn,1.0/pout[n]) / polyval(an,1.0/pout[n]) \
+                          / factorial(sig-m) / (-pout[n])**(sig-m)
+        indx += sig
+    return r/gain, p, k
+
+def invresz(r,p,k,tol=1e-3,rtype='avg'):
+    """Compute b(z) and a(z) from partial fraction expansion: r,p,k
+
+    If M = len(b) and N = len(a)
+    
+            b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
+    H(z) = ------ = ----------------------------------------------
+            a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+
+                 r[0]                   r[-1]
+         = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+           (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+
+    If there are any repeated roots (closer than tol), then the partial
+    fraction expansion has terms like 
+
+               r[i]              r[i+1]                    r[i+n-1]
+          -------------- + ------------------ + ... + ------------------ 
+          (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+
+    See also:  residuez, poly, polyval, unique_roots
+    """
+    extra = Numeric.asarray(k)
+    p, indx = cmplx_sort(p)
+    r = Numeric.take(r,indx)
+    pout, mult = unique_roots(p,tol=tol,rtype=rtype)
+    p = []
+    for k in range(len(pout)):
+        p.extend([pout[k]]*mult[k])
+    a = r1array(poly(p))
+    if len(extra) > 0:
+        b = polymul(extra,a)
+    else:
+        b = [0]
+    indx = 0
+    brev = asarray(b)[::-1]
+    for k in range(len(pout)):  
+        temp = []
+        # Construct polynomial which does not include any of this root
+        for l in range(len(pout)):
+            if l != k:
+                temp.extend([pout[l]]*mult[l])
+        for m in range(mult[k]):
+            t2 = temp[:]
+            t2.extend([pout[k]]*(mult[k]-m-1))
+            brev = polyadd(brev,(r[indx]*poly(t2))[::-1])
+            indx += 1
+    b = real_if_close(brev[::-1])
+    return b, a
 
 
-def _get_window(window,Nx):
+def get_window(window,Nx,fftbins=1):
+    """Return a window of length Nx and type window.
+
+    If fftbins is 1, create a "periodic" window ready to use with ifftshift and
+    be multiplied by the result of an fft (SEE ALSO fftfreq). 
+
+    Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
+                   kaiser (needs beta), gaussian (needs std),
+                   general_gaussian (needs power, width).
+
+    If the window requires no parameters, then it can be a string.
+    If the window requires parameters, the window argument should be a tuple
+        with the first argument the string name of the window, and the next arguments
+        the needed parameters.
+    If window is a floating point number, it is interpreted as the beta
+        parameter of the kaiser window.
+    """
+
+    sym = not fftbins
     try:
         beta = float(window)
     except (TypeError, ValueError):
@@ -700,9 +922,11 @@ def _get_window(window,Nx):
                 raise ValueError, "That window needs a parameter -- pass a tuple"
             else:
                 winstr = window
-
+                
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman
+        elif winstr in ['triangle', 'traing', 'tri']:
+            winfunc = triang
         elif winstr in ['hamming', 'hamm', 'ham']:
             winfunc = hamming
         elif winstr in ['bartlett', 'bart', 'brt']:
@@ -716,23 +940,29 @@ def _get_window(window,Nx):
         elif winstr in ['general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs']:
             winfunc = general_gaussian
+        elif winstr in ['boxcar', 'box', 'ones']:
+            return ones(Nx,Numeric.Float)
         else:
             raise ValueError, "Unknown window type."
 
-        params = (Nx,)+args
+        params = (Nx,)+args + (sym,)
     else:
         winfunc = kaiser
-        params = (Nx,beta)
+        params = (Nx,beta,sym)
 
     return winfunc(*params)
         
 
-def resample(x,num,axis=0,window=None):
+def resample(x,num,t=None,axis=0,window=None):
     """Resample to num samples using Fourier method along the given axis.
+
+    The resampled signal starts at the same value of x but is sampled
+    with a spacing of len(x) / num * (spacing of x).  Because a Fourier method
+    is used, the signal is assumed periodic.
 
     Window controls a Fourier-domain window that tapers the Fourier spectrum
     before zero-padding to aleviate ringing in the resampled values for
-    non, band-limited signals.
+    sampled signals you didn't intend to be interpreted as band-limited.
 
     If window is a string then use the named window.  If window is a float, then
     it represents a value of beta for a kaiser window.  If window is a tuple,
@@ -748,13 +978,22 @@ def resample(x,num,axis=0,window=None):
            'gaussian'       ('gauss',   'gss')  # requires parameter (std.)
            'general gauss'  ('general', 'ggs')  # requires two parameters
                                                       (power, width)
+
+    The first sample of the returned vector is the same as the first sample of the
+        input vector, the spacing between samples is changed from dx to
+        dx * len(x) / num
+
+    If t is not None, then it represents the old sample positions, and the new
+       sample positions will be returned as well as the new samples.
     """
     x = asarray(x)
-    from scipy import fft,ifft
     X = fft(x,axis=axis)
     Nx = x.shape[axis]
     if window is not None:
-        W = _get_window(window,Nx)
+        W = ifftshift(get_window(window,Nx))
+        newshape = ones(len(x.shape))
+        newshape[axis] = len(W)
+        W.shape = newshape
         X = X*W
     sl = [slice(None)]*len(x.shape)
     newshape = list(x.shape)
@@ -768,10 +1007,13 @@ def resample(x,num,axis=0,window=None):
     y = ifft(Y,axis=axis)*(float(num)/float(Nx))
 
     if x.typecode() not in ['F','D']:
-        return y.real
-    else:
-        return y
+        y = y.real
 
+    if t is None:
+        return y
+    else:
+        new_t = arange(0,num)*(t[1]-t[0])* Nx / float(num) + t[0]
+        return y, new_t
 
 def test():
     a = [3,4,5,6,5,4]
