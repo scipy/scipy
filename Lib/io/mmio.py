@@ -242,7 +242,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         if len(a.shape) != 2:
             raise ValueError, 'expected matrix'
         rows,cols = a.shape
-        entires = rows*cols        
+        entries = rows*cols        
         typecode = a.typecode()
         if field is not None:
             if field=='integer':
@@ -328,7 +328,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
             raise TypeError,'Unknown matrix type '+`field`
     else:
         format = '%i %i ' + format
-        target.write('%i %i %i\n' % (rows,cols,entires))
+        target.write('%i %i %i\n' % (rows,cols,entries))
         assert symm=='general',`symm`
         if field in ['real','integer']:
             for i in range(entries):
