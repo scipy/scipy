@@ -50,6 +50,25 @@ class general_function:
     def __call__(self,*args):
         return squeeze(arraymap(self.thefunc,args,self.otypes))
 
+
+def jv_prime(v,z):
+    return (jv(v-1,z) - jv(v+1,z))/2.0
+
+def yv_prime(v,z):
+    return (yv(v-1,z) - yv(v+1,z))/2.0
+
+def kv_prime(v,z):
+    return (kv(v-1,z) - yv(v+1,z))/2.0
+
+def iv_prime(v,z):
+    return (iv(v-1,z) - iv(v+1,z))/2.0
+
+def H1v_prime(v,z):
+    return (hankel1(v-1,z)-hankel1(v+1,z))/2.0
+
+def H2v_prime(v,z):
+    return (hankel2(v-1,z)-hankel2(v+1,z))/2.0
+
 def erfinv(y):
     return ndtri((y+1)/2.0)/sqrt(2)
 
@@ -58,7 +77,6 @@ def erfcinv(y):
 
 def hyp0f1(v,z):
     """Confluent hypergeometric limit function 0F1.
-
     Limit as q->infinity of 1F1(q;a;z/q)
     """
     z = asarray(z)
