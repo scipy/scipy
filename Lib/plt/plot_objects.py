@@ -748,7 +748,8 @@ class poly_points(property_object):
     def __init__(self, points, attr=None):
         property_object.__init__(self,attr)
         self.points = array(points)
-        self.scaled = map(tuple,self.points)
+        self.scaled = array(self.points,copy=1)
+        #self.scaled = map(tuple,self.points)
 
     def bounding_box(self):
         return minimum.reduce(self.points), \
@@ -756,7 +757,7 @@ class poly_points(property_object):
 
     def scale_and_shift(self, scale=1, shift=0):
         self.scaled = scale*self.points+shift
-        self.scaled = map(tuple,self.scaled)
+        #self.scaled = map(tuple,self.scaled)
        
 class poly_line(poly_points):
     _attributes = {'color': ['black',colors,"Color of line"],
@@ -772,7 +773,10 @@ class poly_line(poly_points):
             color = get_color(self.color)
             style = line_style_map[self.style]
             dc.SetPen(wx.wxPen(color, self.weight,style))
-            dc.DrawLines(self.scaled)           
+            try:
+                dc.DrawLines(self.scaled)           
+            except:
+                dc.DrawLines(map(tuple,self.scaled))
             dc.SetPen(wx.wxNullPen)
                     
 marker_styles = ['circle','square','dot','triangle','down_triangle',\
