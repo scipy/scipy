@@ -5,20 +5,41 @@
 """
 from Numeric import *
 
+# The following are cluges to fix brain-deadness of take and
+# sometrue when dealing with 0 dimensional arrays
+import Numeric
+def take(a,indices,axis=0):    
+    x = asarray(a); y = asarray(indices)
+    if shape(x) == (): x = x.flat
+    if shape(y) == (): y = y.flat
+    return Numeric.take(x,y,axis)
+
+def sometrue(a,axis=0):    
+    x = asarray(a)
+    if shape(x) == (): x = x.flat
+    return Numeric.sometrue(x)
+
+def reduce_sometrue(a):
+    all = a
+    while len(shape(all)) > 1:    
+        all = sometrue(all)
+    return all
+
+
 class linear_1d:
     interp_axis = -1 # used to set which is default interpolation
                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
                      
     def __init__(self,x,y,axis = -1, copy = 1,bounds_error=1):
-        """ initialize a 1d linear interpolation class
-            
-            x and y are arrays of values used to approximate
-            some function f:
-            
-                y = f(x)
-            
-            linear interpolation fits     
-            
+        """Initialize a 1d linear interpolation class
+
+        Description:
+          x and y are arrays of values used to approximate some function f:
+            y = f(x)
+          This class returns a function whose call method uses linear
+          interpolation to find the value of new points.
+
+        Inputs:
             x -- a 1d array of monotonically increasing real values.
                  x cannot include duplicate values. (otherwise f is
                  overspecified)
@@ -36,7 +57,7 @@ class linear_1d:
                             of x (where extrapolation is necessary).
                             If 0, out of bounds values are assigned the
                             NaN (#INF) value.  By default, an error is
-                            raised, although this is prown to change.
+                            raised, although this is prone to change.
                             (default: 1)
         """      
         self.axis = axis
@@ -65,11 +86,14 @@ class linear_1d:
         self.x = array(oriented_x,copy=self.copy)
         self.y = array(oriented_y,copy=self.copy)       
         
-    def interpolate(self,x_new):
-        """ linearly interpolates y_new = f(x_new).
-        
-            x_new -- 
-        
+    def __call__(self,x_new):
+        """Find linearly interpolated y_new = f(x_new).
+
+        Inputs:        
+          x_new -- New independent variables.
+
+        Outputs:
+          y_new -- Linearly interpolated values corresponding to x_new.
         """
         # 1. Handle values in x_new that are outside of x.  Throw error,
         #    or return a list of mask array indicating the outofbounds values.
@@ -137,31 +161,12 @@ class linear_1d:
         pass
 
 
-# The following are cluges to fix brain-deadness of take and
-# sometrue when dealing with 0 dimensional arrays
-import Numeric
-def take(a,indices,axis=0):    
-    x = asarray(a); y = asarray(indices)
-    if shape(x) == (): x = x.flat
-    if shape(y) == (): y = y.flat
-    return Numeric.take(x,y,axis)
-
-def sometrue(a,axis=0):    
-    x = asarray(a)
-    if shape(x) == (): x = x.flat
-    return Numeric.sometrue(x)
-
-def reduce_sometrue(a):
-    all = a
-    while len(shape(all)) > 1:    
-        all = sometrue(all)
-    return all
     
 #assumes module test_xxx is in python path
-def test():
-    test_module = 'test_' + __name__ # __name__ is name of this module
-    test_string = 'import %s;reload(%s);%s.test()' % ((test_module,)*3)
-    exec(test_string)
+#def test():
+#    test_module = 'test_' + __name__ # __name__ is name of this module
+#    test_string = 'import %s;reload(%s);%s.test()' % ((test_module,)*3)
+#    exec(test_string)
 
-if __name__ == '__main__':
-    test()
+#if __name__ == '__main__':
+#    test()
