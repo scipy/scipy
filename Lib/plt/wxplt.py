@@ -484,10 +484,10 @@ class plot_frame(wx.wxFrame):
         wx.EVT_MENU(self,Y_TEXT,self.OnTitle)
         self.mainmenu.Append(menu, '&Titles')
 
-        menu = wx.wxMenu()        
-        menu.Append(300, '&Profile', 'Check the hot spots in the program')
-        wx.EVT_MENU(self,300,self.OnProfile)
-        self.mainmenu.Append(menu, '&Utility')
+        #menu = wx.wxMenu()        
+        #menu.Append(300, '&Profile', 'Check the hot spots in the program')
+        #wx.EVT_MENU(self,300,self.OnProfile)
+        #self.mainmenu.Append(menu, '&Utility')
         
         self.SetMenuBar(self.mainmenu)
 
