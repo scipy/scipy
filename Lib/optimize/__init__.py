@@ -19,7 +19,7 @@
 _moddict = {'optimize' : ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',
                           'rosen','rosen_der', 'rosen_hess',
                           'rosen_hess_prod'],
-            'minpack' : ['fsolve', 'leastsq', 'newton', 'fixed_point']
+            'minpack' : ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
             }
 __all__ = []
 
