@@ -1,5 +1,5 @@
 from orthogonal import P_roots
-from scipy.numeric import sum
+from Numeric import sum
 
 def gauss_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.

@@ -12,7 +12,7 @@
 # assignments to it over there are not reflected in the copy here.
 # This has been fixed by creating an access function.
 
-from scipy.numeric import *
+from Numeric import *
 from shapetest import *
 from types import *
 from pl3d import *

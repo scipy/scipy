@@ -155,7 +155,7 @@ from graph2d import *
 from cellarray import *
 
 import shapetest
-from scipy.numeric import *
+from Numeric import *
 
 _ezdict_ = {'t': 'true' , 'T': 'true', 'y': 'true', 'Y': 'true',
             'f': 'false', 'F': 'false', 'n': 'false', 'N': 'false'}

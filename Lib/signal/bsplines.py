@@ -1,7 +1,7 @@
 import scipy.special
 from scipy.special import general_function
-from spline import *      # C-modules
-from scipy.numeric import *
+from Numeric import *
+from scipy.signal.spline import *      # C-modules
 
 def factorial(n):
     return scipy.special.gamma(n+1)

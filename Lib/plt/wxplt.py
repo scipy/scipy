@@ -1,6 +1,6 @@
 from wxPython import wx
 import string
-from scipy.numeric import *
+from Numeric import *
 import time
 
 from plot_utility import *

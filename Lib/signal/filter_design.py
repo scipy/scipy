@@ -1,6 +1,7 @@
-import scipy.numeric as Numeric
+import MLab
 import scipy
-Num = Numeric
+from scipy.fastumath import *
+Num = MLab
 abs = absolute
 pi = Numeric.pi
 import scipy

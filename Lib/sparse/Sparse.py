@@ -1,4 +1,4 @@
-from scipy.numeric import *
+from Numeric import *
 import types
 import _sparsekit
 import _superlu

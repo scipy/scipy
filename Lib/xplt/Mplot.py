@@ -1,8 +1,8 @@
 
 import gist
 import pl3d, plwf
-import scipy.numeric as Numeric
-from scipy.numeric import ravel, reshape, repeat, arange, transpose, compress
+import Numeric
+from Numeric import ravel, reshape, repeat, arange, transpose, compress
 import MLab
 from MLab import pi, cos, sin, arctan2, array
 import types

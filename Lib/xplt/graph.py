@@ -26,7 +26,7 @@ else :
          "environment variable."
  
 # The following is so I know about arrays:
-from scipy.numeric import *
+from Numeric import *
 from shapetest import *
 
 class Graph :

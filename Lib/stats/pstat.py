@@ -703,7 +703,7 @@ Returns: None\n"""
 
 
 try:                         # DEFINE THESE *ONLY* IF NUMERIC IS AVAILABLE
- import scipy.numeric as Numeric
+ import Numeric
  N = Numeric
 
  def aabut (source, *args):

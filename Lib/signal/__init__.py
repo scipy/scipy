@@ -34,6 +34,10 @@
     remez         --  Optimal FIR filter design.
  
 """
+__all__ = ["sigtools"]
+
+import sigtools
+
 from signaltools import *
 from bsplines import *
 from signaltools import convolve

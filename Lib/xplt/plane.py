@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from slice3 import plane3
-from scipy.numeric import *
+from Numeric import *
 from graftypes import *
 
 class Plane :

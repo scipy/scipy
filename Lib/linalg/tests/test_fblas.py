@@ -15,7 +15,7 @@
 # !! ever !replaced! by a blas call, we'll need to fill in a simple 
 # !! matrix multiply here to ensure integrity of tests.
 
-from scipy.numeric import *
+from Numeric import *
 #import scipy.linalg.fblas as fblas
 import fblas
 import unittest

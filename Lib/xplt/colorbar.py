@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 # ed williams' colorbar stuff
-from scipy.numeric import *
+from Numeric import *
 from arrayfns import *
 from gist import *
 from slice3 import *

@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 import narcisse
-from scipy.numeric import *
+from Numeric import *
 # We need types to check args to some routines
 from types import *
 from graftypes import *

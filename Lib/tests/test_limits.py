@@ -4,7 +4,7 @@
      and routines as they are machine dependent.  Suggestions?
 *"""
 
-from scipy.numeric import *
+from Numeric import *
 import unittest
 import scipy.limits
 

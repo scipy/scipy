@@ -33,7 +33,7 @@
 #----------------------------------------------------------
 #               General layout classes
 #----------------------------------------------------------
-from scipy.numeric import *
+from Numeric import *
 
 LEFT,RIGHT,TOP,BOTTOM = 0,1,2,3 # used by same_as() method
 

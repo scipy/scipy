@@ -3,7 +3,7 @@
 
 from gist import *
 from shapetest import *
-from scipy.numeric import *
+from Numeric import *
 from graftypes import *
 from movie import *
 from pl3d import *

@@ -9,7 +9,7 @@ storage is implemented.
 """
 
 import scriptall
-import scipy.numeric as Numeric
+import Numeric
 import types
 import numpyio
 import struct

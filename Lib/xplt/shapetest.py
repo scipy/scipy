@@ -3,7 +3,7 @@
 # I've felt the need for such a test for a long time;
 # this tells you whether an item is a scalar or not.
 from types import *
-from scipy.numeric import *
+from Numeric import *
 
 def is_scalar (x) :
    if type (x) == StringType : return 1

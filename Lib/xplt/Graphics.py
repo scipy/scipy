@@ -1,7 +1,7 @@
 #import Tkinter
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
-from scipy.numeric import *
+from Numeric import *
 #from _Graphics import *
 #import PIL.ImageTk,PIL.Image
 #ImageTk = PIL.ImageTk

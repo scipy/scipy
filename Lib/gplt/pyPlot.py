@@ -1,6 +1,6 @@
 import os, time, tempfile
 from types import *
-from scipy.numeric import *
+from Numeric import *
 
 try:
 	import win32pipe

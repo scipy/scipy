@@ -831,7 +831,7 @@ class machine_cluster:
                         global_vars=(name,))
     def row_gather(self,name):
         """experimental"""
-        from scipy.numeric import concatenate
+        from Numeric import concatenate
         return concatenate(self[name])
         
     def loop_send_recv(self,package,loop_data,loop_var):        

@@ -1,8 +1,7 @@
 #!/usb/bin/env python
 #
 import pickle
-import scipy.numeric as Numeric
-import cephes, RandomArray
+import Numeric, cephes, RandomArray
 import sys
 
 class Test:

@@ -5,7 +5,7 @@ from graph3d import *
 from mesh3d import *
 from surface import *
 
-from scipy.numeric import *
+from Numeric import *
 
 from arrayfns import *
 

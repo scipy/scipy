@@ -1,4 +1,4 @@
-from scipy.numeric import *
+from Numeric import *
 import vq_c as vq
   
 def python_vq(all_data,code_book):    
