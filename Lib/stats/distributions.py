@@ -399,9 +399,9 @@ class rv_continuous:
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond),value=self.a)
+        output = valarray(shape(cond),value=self.a*scale + loc)
         insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
-        insert(output,cond2,self.b)
+        insert(output,cond2,self.b*scale + loc)
         goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
         insert(output,cond,self._ppf(*goodargs)*scale + loc)
@@ -1931,11 +1931,20 @@ semicircular = semicircular_gen(a=-1.0,b=1.0)
 
 
 # Triangular
-# up-sloping line from loc to (loc + c) and then downsloping line from
-#    loc + c to loc + scale
+# up-sloping line from loc to (loc + c*scale) and then downsloping line from
+#    loc + c*scale to loc + scale
 
 # _trstr = "Left must be <= mode which must be <= right with left < right"
 class triang_gen(rv_continuous):
+    """Triangular Distribution
+
+    up-sloping line from loc to (loc + c*scale) and then downsloping
+    for (loc + c*scale) to (loc+scale).
+
+    standard form is in range [0,1] with c the mode
+    location parameter shifts the start to loc
+    scale changes the width from 1 to scale
+    """
     def _argcheck(self, c):
         return (c >= 0) & (c <= 1)
     def _pdf(self, x, c):
@@ -1945,7 +1954,7 @@ class triang_gen(rv_continuous):
     def _ppf(self, q, c):
         return where(q < c, sqrt(c*q), 1-sqrt((1-c)*(1-q)))
     def _stats(self, c):
-        return c/3.0, (1.0-c+c*c)/18, sqrt(2)*(2*c-1)*(c+1)*(c-2) / \
+        return (c+1.0)/3.0, (1.0-c+c*c)/18, sqrt(2)*(2*c-1)*(c+1)*(c-2) / \
                (5*(1.0-c+c*c)**1.5), -3.0/5.0
 triang = triang_gen(a=0.0, b=1.0)
 
