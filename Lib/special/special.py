@@ -95,6 +95,45 @@ def diric(x,n):
     insert(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
     return y
 
+def sawtooth(t,width=1):
+    """Returns a periodic sawtooth waveform with period 2*pi
+    which rises from -1 to 1 on the interval 0 to width*2*pi
+    and drops from 1 to -1 on the interval width*2*pi to 2*pi
+    width must be in the interval [0,1]
+    """
+    t,w = asarray(t), asarray(width)
+    w = asarray(w + (t-t))
+    t = asarray(t + (w-w))
+    if t.typecode() in ['fFdD']:
+        ytype = t.typecode()
+    else:
+        ytype = 'd'
+    y = zeros(t.shape,ytype)
+
+    # width must be between 0 and 1 inclusive
+    mask1 = (w > 1) | (w < 0)
+    insert(y,mask1,nan)
+
+    # take t modulo 2*pi
+    tmod = mod(t,2*pi)
+
+    # on the interval 0 to width*2*pi function is
+    #  tmod / (pi*w) - 1
+    mask2 = (1-mask1) & (tmod < w*2*pi)
+    tsub = extract(tmod,mask2)
+    wsub = extract(w,mask2)
+    insert(y,mask2,tsub / (pi*wsub) - 1)
+
+    # on the interval width*2*pi to 2*pi function is
+    #  (pi*(w+1)-tmod) / (pi*(1-w))
+
+    mask3 = (1-mask1) & (1-mask2)
+    tsub = extract(tmod,mask3)
+    wsub = extract(w,mask3)
+    insert(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
+    return y    
+       
+
 
 def jnjnp_zeros(nt):
     """Compute nt (<=1400) zeros of the bessel functions Jn and Jn'
