@@ -82,6 +82,7 @@ static PyObject *
   char      read_type;
   FILE     *fp;
   char      dobyteswap = 0;
+  int      swap_factor
   char     out_type = 124;    /* set to unused value */
 
   if (!PyArg_ParseTuple( args, "Oic|cb" , &file, &n, &read_type, &out_type, &dobyteswap ))
@@ -136,7 +137,8 @@ static PyObject *
   }
   
   if (dobyteswap) {
-    rbo(ibuff,myelsize,nread);
+    swap_factor = ((read_type=='F' || read_type=='D') ? 2 : 1);
+    rbo(ibuff,myelsize/swap_factor,nread*swap_factor);
   }
   
   if (out_type != read_type) {    /* We need to type_cast it */
@@ -224,6 +226,7 @@ static PyObject *
   FILE     *fp;
   char     *buffer = NULL;
   char     dobyteswap = 0;
+  int      swap_factor;
   char     ownalloc = 0;
   char     write_type = 124;
 
@@ -314,14 +317,15 @@ static PyObject *
     }      
     /* Write the data from the array to the file */
     if (dobyteswap) {
-      rbo((char *)obuff,myelsize,n); 
+      swap_factor = ((write_type=='F' || write_type=='D') ? 2 : 1);
+      rbo((char *)obuff,myelsize/swap_factor,n*swap_factor); 
     }
     
     nwrite = fwrite(obuff,myelsize,n,fp);
     
     if (dobyteswap) {       /* Swap data in memory back if allocated obuff */
       if (write_type == arr -> descr -> type)  /* otherwise we changed obuff only */
-	rbo(arr->data,arr->descr->elsize,PyArray_SIZE(arr));
+	rbo(arr->data,arr->descr->elsize/swap_factor,PyArray_SIZE(arr)*swap_factor);
     }
     
     if (ferror(fp)) {
