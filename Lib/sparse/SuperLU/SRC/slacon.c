@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -76,9 +76,11 @@ slacon_(int *n, float *v, float *x, int *isgn, float *est, int *kase)
 #ifdef _CRAY
     extern int ISAMAX(int *, float *, int *);
     extern float SASUM(int *, float *, int *);
+    extern int SCOPY(int *, float *, int *, float *, int *);
 #else
     extern int isamax_(int *, float *, int *);
     extern float sasum_(int *, float *, int *);
+    extern int scopy_(int *, float *, int *, float *, int *);
 #endif
 #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
 #define i_dnnt(a) \

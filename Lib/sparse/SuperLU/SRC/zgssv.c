@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -36,9 +36,9 @@ zgssv(SuperMatrix *A, int *perm_c, int *perm_r, SuperMatrix *L,
  *           form of A.
  *
  *   2. If A is stored row-wise (A->Stype = NR), apply the
- *      above algorithm to the tranpose of A:
+ *      above algorithm to the transpose of A:
  *
- *      2.1. Permute columns of tranpose(A) (rows of A),
+ *      2.1. Permute columns of transpose(A) (rows of A),
  *           forming transpose(A)*Pc, where Pc is a permutation matrix. 
  *           For more details of this step, see sp_preorder.c.
  *
@@ -71,7 +71,7 @@ zgssv(SuperMatrix *A, int *perm_c, int *perm_r, SuperMatrix *L,
  *         is already in postorder.
  *
  *         If A->Stype = NR, column permutation vector of size A->nrow
- *         which describes permutation of columns of tranpose(A) 
+ *         which describes permutation of columns of transpose(A) 
  *         (rows of A) as described above.
  * 
  * perm_r  (output) int*
@@ -156,7 +156,7 @@ zgssv(SuperMatrix *A, int *perm_c, int *perm_r, SuperMatrix *L,
     if ( A->Stype == NR ) {
 	NRformat *Astore = A->Store;
 	AA = (SuperMatrix *) SUPERLU_MALLOC( sizeof(SuperMatrix) );
-	dCreate_CompCol_Matrix(AA, A->ncol, A->nrow, Astore->nnz, 
+	zCreate_CompCol_Matrix(AA, A->ncol, A->nrow, Astore->nnz, 
 			       Astore->nzval, Astore->colind, Astore->rowptr,
 			       NC, A->Dtype, A->Mtype);
 	*trans = 'T';

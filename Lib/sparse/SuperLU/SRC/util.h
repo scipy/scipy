@@ -84,7 +84,31 @@ typedef struct {
 extern "C" {
 #endif
 
-extern void	PrintStat (SuperLUStat_t *);
+extern void    superlu_abort_and_exit(char*);
+extern void    *superlu_malloc (int);
+extern int     *intMalloc (int);
+extern int     *intCalloc (int);
+extern void    superlu_free (void*);
+extern void    SetIWork (int, int, int, int *, int **, int **, int **,
+                         int **, int **, int **, int **);
+extern void    StatInit(int, int);
+extern void    StatFree();
+extern int     sp_coletree (int *, int *, int *, int, int, int *);
+extern void    relax_snode (const int, int *, const int, int *, int *);
+extern void    resetrep_col (const int, const int *, int *);
+extern int     spcoletree (int *, int *, int *, int, int, int *);
+extern int     *TreePostorder (int, int *);
+extern double  SuperLU_timer_ ();
+extern int     sp_ienv (int);
+extern int     lsame_ (char *, char *);
+extern int     xerbla_ (char *, int *);
+extern void    ifill (int *, int, int);
+extern void    snode_profile (int, int *);
+extern void    super_stats (int, int *);
+extern void    PrintSumm (char *, int, int, int);
+extern void    PrintStat (SuperLUStat_t *);
+extern void    print_panel_seg(int, int, int, int, int *, int *);
+extern void    check_repfnz(int, int, int, int *);
 
 #ifdef __cplusplus
   }

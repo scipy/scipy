@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -48,7 +48,8 @@ sgstrf (char *refact, SuperMatrix *A, float diag_pivot_thresh,
  *
  * refact (input) char*
  *          Specifies whether we want to use perm_r from a previous factor.
- *          = 'Y': re-use perm_r; perm_r is input, unchanged on exit.
+ *          = 'Y': re-use perm_r; perm_r is input, and may be modified due to
+ *                 different pivoting determined by diagonal threshold.
  *          = 'N': perm_r is determined by partial pivoting, and output.
  *
  * A        (input) SuperMatrix*
@@ -215,7 +216,6 @@ sgstrf (char *refact, SuperMatrix *A, float diag_pivot_thresh,
     int       m, n, min_mn, jsupno, fsupc, nextlu, nextu;
     int       w_def;	/* upper bound on panel width */
     int       usepr;
-    double    stime;
     int       nnzL, nnzU;
     extern SuperLUStat_t SuperLUStat;
     int       *panel_histo = SuperLUStat.panel_histo;
@@ -399,11 +399,17 @@ sgstrf (char *refact, SuperMatrix *A, float diag_pivot_thresh,
 
     sLUWorkFree(iwork, swork, &Glu); /* Free work space and compress storage */
 
-    if ( !lsame_(refact, "Y") ) {
+    if ( lsame_(refact, "Y") ) {
+        /* L and U structures may have changed due to possibly different
+	   pivoting, although the storage is available. */
+        ((SCformat *)L->Store)->nnz = nnzL;
+	((SCformat *)L->Store)->nsuper = Glu.supno[n];
+	((NCformat *)U->Store)->nnz = nnzU;
+    } else {
         sCreate_SuperNode_Matrix(L, A->nrow, A->ncol, nnzL, Glu.lusup, 
 	                         Glu.xlusup, Glu.lsub, Glu.xlsub, Glu.supno,
 			         Glu.xsup, SC, _S, TRLU);
-    	sCreate_CompCol_Matrix(U, A->nrow, A->ncol, nnzU, Glu.ucol, 
+    	sCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU, Glu.ucol, 
 			       Glu.usub, Glu.xusub, NC, _S, TRU);
     }
     

@@ -22,7 +22,7 @@
 
 #include <setjmp.h>
 #include "Python.h"
-#include "arrayobject.h"
+#include "Numeric/arrayobject.h"
 #include "zsp_defs.h"
 #include "util.h"
 

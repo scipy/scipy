@@ -183,7 +183,7 @@ sp_coletree(
 	SUPERLU_FREE (root);
 	SUPERLU_FREE (firstcol);
 	finalize_disjoint_sets ();
-	
+	return 0;
 }
 
 /*

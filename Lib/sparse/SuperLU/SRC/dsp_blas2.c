@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -297,6 +297,7 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
     SuperLUStat.ops[SOLVE] += solve_ops;
     SUPERLU_FREE(work);
+    return 0;
 }
 
 
@@ -465,7 +466,7 @@ sp_dgemv(char *trans, double alpha, SuperMatrix *A, double *x,
 	    ABORT("Not implemented.");
 	}
     }
-    
+    return 0;
 } /* sp_dgemv */
 
 

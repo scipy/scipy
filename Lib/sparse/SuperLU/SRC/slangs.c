@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -12,8 +12,8 @@
  * History:     Modified from lapack routine SLANGE
  */
 #include <math.h>
-#include "util.h"
 #include "ssp_defs.h"
+#include "util.h"
 
 float slangs(char *norm, SuperMatrix *A)
 {

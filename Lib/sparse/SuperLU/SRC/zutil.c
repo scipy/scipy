@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -198,13 +198,13 @@ zPrint_CompCol_Matrix(char *what, SuperMatrix *A)
 {
     NCformat     *Astore;
     register int i,n;
-    doublecomplex       *dp;
+    double       *dp;
     
     printf("\nCompCol matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
     n = A->ncol;
     Astore = (NCformat *) A->Store;
-    dp = (doublecomplex *) Astore->nzval;
+    dp = (double *) Astore->nzval;
     printf("nrow %d, ncol %d, nnz %d\n", A->nrow,A->ncol,Astore->nnz);
     printf("nzval: ");
     for (i = 0; i < 2*Astore->colptr[n]; ++i) printf("%f  ", dp[i]);
@@ -220,18 +220,35 @@ void
 zPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
 {
     SCformat     *Astore;
-    register int i,n;
-    doublecomplex       *dp;
+    register int i, j, k, c, d, n, nsup;
+    double       *dp;
+    int *col_to_sup, *sup_to_col, *rowind, *rowind_colptr;
     
     printf("\nSuperNode matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
     n = A->ncol;
     Astore = (SCformat *) A->Store;
-    dp = (doublecomplex *) Astore->nzval;
+    dp = (double *) Astore->nzval;
+    col_to_sup = Astore->col_to_sup;
+    sup_to_col = Astore->sup_to_col;
+    rowind_colptr = Astore->rowind_colptr;
+    rowind = Astore->rowind;
     printf("nrow %d, ncol %d, nnz %d, nsuper %d\n", 
 	   A->nrow,A->ncol,Astore->nnz,Astore->nsuper);
-    printf("nzval: ");
+    printf("nzval:\n");
+    for (k = 0; k <= Astore->nsuper+1; ++k) {
+      c = sup_to_col[k];
+      nsup = sup_to_col[k+1] - c;
+      for (j = c; j < c + nsup; ++j) {
+	d = Astore->nzval_colptr[j];
+	for (i = rowind_colptr[c]; i < rowind_colptr[c+1]; ++i) {
+	  printf("%d\t%d\t%e\t%e\n", rowind[i], j, dp[d++], dp[d++]);
+	}
+      }
+    }
+#if 0
     for (i = 0; i < 2*Astore->nzval_colptr[n]; ++i) printf("%f  ", dp[i]);
+#endif
     printf("\nnzval_colptr: ");
     for (i = 0; i <= n; ++i) printf("%d  ", Astore->nzval_colptr[i]);
     printf("\nrowind: ");
@@ -240,10 +257,10 @@ zPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
     printf("\nrowind_colptr: ");
     for (i = 0; i <= n; ++i) printf("%d  ", Astore->rowind_colptr[i]);
     printf("\ncol_to_sup: ");
-    for (i = 0; i < n; ++i) printf("%d  ", Astore->col_to_sup[i]);
+    for (i = 0; i < n; ++i) printf("%d  ", col_to_sup[i]);
     printf("\nsup_to_col: ");
     for (i = 0; i <= Astore->nsuper+1; ++i) 
-        printf("%d  ", Astore->sup_to_col[i]);
+        printf("%d  ", sup_to_col[i]);
     printf("\n");
     fflush(stdout);
 }
@@ -253,12 +270,12 @@ zPrint_Dense_Matrix(char *what, SuperMatrix *A)
 {
     DNformat     *Astore;
     register int i;
-    doublecomplex       *dp;
+    double       *dp;
     
     printf("\nDense matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
     Astore = (DNformat *) A->Store;
-    dp = (doublecomplex *) Astore->nzval;
+    dp = (double *) Astore->nzval;
     printf("nrow %d, ncol %d, lda %d\n", A->nrow,A->ncol,Astore->lda);
     printf("\nnzval: ");
     for (i = 0; i < 2*A->nrow; ++i) printf("%f  ", dp[i]);
@@ -320,7 +337,7 @@ void zcheck_tempv(int n, doublecomplex *tempv)
     for (i = 0; i < n; i++) {
 	if ((tempv[i].r != 0.0) || (tempv[i].i != 0.0))
 	{
-	    fprintf(stderr,"tempv[%d] = %f\n", i,tempv[i]);
+	    fprintf(stderr,"tempv[%d] = {%f, %f}\n", i, tempv[i].r, tempv[i].i);
 	    ABORT("zcheck_tempv");
 	}
     }
@@ -408,8 +425,8 @@ void zinf_norm_error(int nrhs, SuperMatrix *X, doublecomplex *xtrue)
 /* Print performance of the code. */
 void
 zPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
-	       doublecomplex rpg, doublecomplex rcond, doublecomplex *ferr,
-	       doublecomplex *berr, char *equed)
+	       double rpg, double rcond, double *ferr,
+	       double *berr, char *equed)
 {
     SCformat *Lstore;
     NCformat *Ustore;

@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -220,18 +220,35 @@ void
 sPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
 {
     SCformat     *Astore;
-    register int i,n;
+    register int i, j, k, c, d, n, nsup;
     float       *dp;
+    int *col_to_sup, *sup_to_col, *rowind, *rowind_colptr;
     
     printf("\nSuperNode matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
     n = A->ncol;
     Astore = (SCformat *) A->Store;
     dp = (float *) Astore->nzval;
+    col_to_sup = Astore->col_to_sup;
+    sup_to_col = Astore->sup_to_col;
+    rowind_colptr = Astore->rowind_colptr;
+    rowind = Astore->rowind;
     printf("nrow %d, ncol %d, nnz %d, nsuper %d\n", 
 	   A->nrow,A->ncol,Astore->nnz,Astore->nsuper);
-    printf("nzval: ");
+    printf("nzval:\n");
+    for (k = 0; k <= Astore->nsuper+1; ++k) {
+      c = sup_to_col[k];
+      nsup = sup_to_col[k+1] - c;
+      for (j = c; j < c + nsup; ++j) {
+	d = Astore->nzval_colptr[j];
+	for (i = rowind_colptr[c]; i < rowind_colptr[c+1]; ++i) {
+	  printf("%d\t%d\t%e\n", rowind[i], j, dp[d++]);
+	}
+      }
+    }
+#if 0
     for (i = 0; i < Astore->nzval_colptr[n]; ++i) printf("%f  ", dp[i]);
+#endif
     printf("\nnzval_colptr: ");
     for (i = 0; i <= n; ++i) printf("%d  ", Astore->nzval_colptr[i]);
     printf("\nrowind: ");
@@ -240,10 +257,10 @@ sPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
     printf("\nrowind_colptr: ");
     for (i = 0; i <= n; ++i) printf("%d  ", Astore->rowind_colptr[i]);
     printf("\ncol_to_sup: ");
-    for (i = 0; i < n; ++i) printf("%d  ", Astore->col_to_sup[i]);
+    for (i = 0; i < n; ++i) printf("%d  ", col_to_sup[i]);
     printf("\nsup_to_col: ");
     for (i = 0; i <= Astore->nsuper+1; ++i) 
-        printf("%d  ", Astore->sup_to_col[i]);
+        printf("%d  ", sup_to_col[i]);
     printf("\n");
     fflush(stdout);
 }

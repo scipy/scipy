@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -117,5 +117,5 @@ sp_dgemm(char *transa, char *transb, int m, int n, int k,
     for (j = 0; j < n; ++j) {
 	sp_dgemv(transa, alpha, A, &b[ldb*j], incx, beta, &c[ldc*j], incy);
     }
-    
+    return 0;    
 }

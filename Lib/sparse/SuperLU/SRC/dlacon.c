@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -76,9 +76,11 @@ dlacon_(int *n, double *v, double *x, int *isgn, double *est, int *kase)
 #ifdef _CRAY
     extern int ISAMAX(int *, double *, int *);
     extern double SASUM(int *, double *, int *);
+    extern int SCOPY(int *, double *, int *, double *, int *);
 #else
     extern int idamax_(int *, double *, int *);
     extern double dasum_(int *, double *, int *);
+    extern int dcopy_(int *, double *, int *, double *, int *);
 #endif
 #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
 #define i_dnnt(a) \

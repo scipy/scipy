@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -44,7 +44,7 @@ dpruneL(
  */
     double     utemp;
     int        jsupno, irep, irep1, kmin, kmax, krow, movnum;
-    int        i, k, ktemp, minloc, maxloc;
+    int        i, ktemp, minloc, maxloc;
     int        do_prune; /* logical variable */
     int        *xsup, *supno;
     int        *lsub, *xlsub;

@@ -1,5 +1,5 @@
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -8,8 +8,6 @@
 /** Precision-independent memory-related routines.
     (Shared by [sdcz]memory.c) **/
 
-#include <stdio.h>
-#include <malloc.h>
 #include "util.h"
 
 /*
@@ -27,7 +25,7 @@ SetIWork(int m, int n, int panel_size, int *iworkptr, int **segrep,
     *panel_lsub = *repfnz + panel_size * m;
     *xprune = *panel_lsub + panel_size * m;
     *marker = *xprune + n;
-    ifill (*repfnz, n * panel_size, EMPTY);
+    ifill (*repfnz, m * panel_size, EMPTY);
     ifill (*panel_lsub, m * panel_size, EMPTY);
 }
 

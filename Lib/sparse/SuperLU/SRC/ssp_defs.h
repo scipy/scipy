@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -145,22 +145,20 @@ sCreate_SuperNode_Matrix(SuperMatrix *, int, int, int, float *,
 extern void
 sCopy_Dense_Matrix(int, int, float *, int, float *, int);
 
-extern void Destroy_SuperMatrix_Store(SuperMatrix *);
-extern void Destroy_CompCol_Matrix(SuperMatrix *);
-extern void Destroy_SuperNode_Matrix(SuperMatrix *);
-extern void Destroy_CompCol_Permuted(SuperMatrix *);
-extern void Destroy_Dense_Matrix(SuperMatrix *);
-
-extern void    sallocateA (int, int, float **, int **, int **);
-extern void    StatInit    (int, int);
-extern void    StatFree    ();
+extern void    Destroy_SuperMatrix_Store(SuperMatrix *);
+extern void    Destroy_CompCol_Matrix(SuperMatrix *);
+extern void    Destroy_SuperNode_Matrix(SuperMatrix *);
+extern void    Destroy_CompCol_Permuted(SuperMatrix *);
+extern void    Destroy_Dense_Matrix(SuperMatrix *);
 extern void    get_perm_c(int, SuperMatrix *, int *);
 extern void    sp_preorder (char*, SuperMatrix*, int*, int*, SuperMatrix*);
-extern int     sp_coletree (int *, int *, int *, int, int, int *);
+extern void    countnz (const int, int *, int *, int *, GlobalLU_t *);
+extern void    fixupL (const int, const int *, GlobalLU_t *);
+
+extern void    sallocateA (int, int, float **, int **, int **);
 extern void    sgstrf (char*, SuperMatrix*, float, float, int, int, int*,
 			void *, int, int *, int *, 
                         SuperMatrix *, SuperMatrix *, int *);
-extern void    relax_snode  (int, int *, int, int *, int *);
 extern int     ssnode_dfs (const int, const int, const int *, const int *,
 			     const int *, int *, int *, GlobalLU_t *);
 extern int     ssnode_bmod (const int, const int, const int, float *,
@@ -181,11 +179,6 @@ extern int     spivotL (const int, const float, int *, int *,
                               int *, int *, int *, GlobalLU_t *);
 extern void    spruneL (const int, const int *, const int, const int,
 			     const int *, const int *, int *, GlobalLU_t *);
-extern void    resetrep_col (const int, const int *, int *);
-extern void    countnz (const int, int *, int *, int *, GlobalLU_t *);
-extern void    fixupL (const int, const int *, GlobalLU_t *);
-extern int     spcoletree (int *, int *, int *, int, int, int *);
-extern int     *TreePostorder (int, int *);
 extern void    sreadmt (int *, int *, int *, float **, int **, int **);
 extern void    sGenXtrue (int, int, float *, int);
 extern void    sFillRHS (char *, int, float *, int, SuperMatrix *,
@@ -219,40 +212,25 @@ extern int     sp_sgemm (char *, char *, int, int, int, float,
 			float *, int);
 
 /* Memory-related */
-extern superlu_abort_and_exit(char*);
-extern void    *superlu_malloc (int);
-extern void    superlu_free (void*);
 extern int     sLUMemInit (char *, void *, int, int, int, int, int,
 			     SuperMatrix *, SuperMatrix *,
 			     GlobalLU_t *, int **, float **);
-extern void    SetIWork (int, int, int, int *, int **, int **, int **,
-                         int **, int **, int **, int **);
 extern void    sSetRWork (int, int, float *, float **, float **);
 extern void    sLUWorkFree (int *, float *, GlobalLU_t *);
 extern int     sLUMemXpand (int, int, MemType, int *, GlobalLU_t *);
 
-extern int     *intMalloc (int);
-extern int     *intCalloc (int);
 extern float  *floatMalloc(int);
 extern float  *floatCalloc(int);
-extern void    *superlu_malloc(int);
-extern int     memory_usage();
+extern int     smemory_usage(const int, const int, const int, const int);
 extern int     sQuerySpace (SuperMatrix *, SuperMatrix *, int,
 				mem_usage_t *);
 
 /* Auxiliary routines */
+extern void    sreadhb(int *, int *, int *, float **, int **, int **);
 extern void    sCompRow_to_CompCol(int, int, int, float*, int*, int*,
 		                   float **, int **, int **);
-extern double  SuperLU_timer_ ();
-extern int     sp_ienv (int);
-extern int     lsame_ (char *, char *);
-extern int     xerbla_ (char *, int *);
-extern void    ifill (int *, int, int);
 extern void    sfill (float *, int, float);
-extern void    inf_norm_error (int, SuperMatrix *, float *);
-extern void    snode_profile (int, int *);
-extern void    super_stats (int, int *);
-extern void    PrintSumm (char *, int, int, int);
+extern void    sinf_norm_error (int, SuperMatrix *, float *);
 extern void    PrintPerf (SuperMatrix *, SuperMatrix *, mem_usage_t *,
 			 float, float, float *, float *, char *);
 
@@ -261,9 +239,7 @@ extern void    sPrint_CompCol_Matrix(char *, SuperMatrix *);
 extern void    sPrint_SuperNode_Matrix(char *, SuperMatrix *);
 extern void    sPrint_Dense_Matrix(char *, SuperMatrix *);
 extern void    print_lu_col(char *, int, int, int *, GlobalLU_t *);
-extern void    print_panel_seg(int, int, int, int, int *, int *);
 extern void    check_tempv(int, float *);
-extern void    check_repfnz(int, int, int, int *);
 
 #ifdef __cplusplus
   }

@@ -1,5 +1,5 @@
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -27,7 +27,7 @@
  */
 SuperLUStat_t SuperLUStat;
 
-superlu_abort_and_exit(char* msg)
+void superlu_abort_and_exit(char* msg)
 {
     fprintf(stderr, msg);
     exit (-1);
@@ -371,23 +371,10 @@ PrintSumm(char *type, int nfail, int nrun, int nerrs)
 }
 
 
-print_int_vec(char *what, int n, int *vec)
+int print_int_vec(char *what, int n, int *vec)
 {
     int i;
     printf("%s\n", what);
     for (i = 0; i < n; ++i) printf("%d\t%d\n", i, vec[i]);
     return 0;
 }
-
-PrintInt10(char *name, int len, int *x)
-{
-    register int i;
-    
-    printf("%s:", name);
-    for (i = 0; i < len; ++i) {
-	if ( i % 10 == 0 ) printf("\n[%4d-%4d]", i, i+9);
-	printf("%6d", x[i]);
-    }
-    printf("\n");
-}
-

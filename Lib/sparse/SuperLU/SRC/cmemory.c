@@ -1,14 +1,12 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  *
  */
-#include <stdio.h>
-#include <malloc.h>
 #include "csp_defs.h"
 #include "util.h"
 
@@ -47,7 +45,7 @@ typedef struct {
 } LU_stack_t;
 
 /* Variables local to this file */
-static ExpHeader *expanders; /* Array of pointers to 4 types of memory */
+static ExpHeader *expanders = 0; /* Array of pointers to 4 types of memory */
 static LU_stack_t stack;
 static int no_expand;
 
@@ -55,8 +53,8 @@ static int no_expand;
 #define StackFull(x)         ( x + stack.used >= stack.size )
 #define NotDoubleAlign(addr) ( (long int)addr & 7 )
 #define DoubleAlign(addr)    ( ((long int)addr + 7) & ~7L )
-#define TempSpace(n, w)      ( (2*w + 4 + NO_MARKER)*m*sizeof(int) + \
-			      (w + 1)*n*sizeof(complex) )
+#define TempSpace(m, w)      ( (2*w + 4 + NO_MARKER) * m * sizeof(int) + \
+			      (w + 1) * m * sizeof(complex) )
 #define Reduce(alpha)        ((alpha + 1) / 2)  /* i.e. (alpha-1)/2 + 1 */
 
 
@@ -182,7 +180,8 @@ cLUMemInit(char *refact, void *work, int lwork, int m, int n, int annz,
     iword     = sizeof(int);
     dword     = sizeof(complex);
 
-    expanders = (ExpHeader *) SUPERLU_MALLOC( NO_MEMTYPE * sizeof(ExpHeader) );
+    if ( !expanders )	
+        expanders = (ExpHeader*)SUPERLU_MALLOC(NO_MEMTYPE * sizeof(ExpHeader));
     if ( !expanders ) ABORT("SUPERLU_MALLOC fails for expanders");
     
     if ( lsame_(refact, "N") ) {
@@ -380,7 +379,8 @@ void cLUWorkFree(int *iwork, complex *dwork, GlobalLU_t *Glu)
 /*	cStackCompress(Glu);  */
     }
     
-    SUPERLU_FREE (expanders);
+    SUPERLU_FREE (expanders);	
+    expanders = 0;
 }
 
 /* Expand the data structures for L and U during the factorization.

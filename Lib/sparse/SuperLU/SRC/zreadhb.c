@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -10,6 +10,100 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "zsp_defs.h"
+
+
+/* Eat up the rest of the current line */
+int zDumpLine(FILE *fp)
+{
+    register int c;
+    while ((c = fgetc(fp)) != '\n') ;
+    return 0;
+}
+
+int zParseIntFormat(char *buf, int *num, int *size)
+{
+    char *tmp;
+
+    tmp = buf;
+    while (*tmp++ != '(') ;
+    sscanf(tmp, "%d", num);
+    while (*tmp != 'I' && *tmp != 'i') ++tmp;
+    ++tmp;
+    sscanf(tmp, "%d", size);
+    return 0;
+}
+
+int zParseFloatFormat(char *buf, int *num, int *size)
+{
+    char *tmp, *period;
+    
+    tmp = buf;
+    while (*tmp++ != '(') ;
+    sscanf(tmp, "%d", num);
+    while (*tmp != 'E' && *tmp != 'e' && *tmp != 'D' && *tmp != 'd'
+	   && *tmp != 'F' && *tmp != 'f') ++tmp;
+    ++tmp;
+    period = tmp;
+    while (*period != '.' && *period != ')') ++period ;
+    *period = '\0';
+    sscanf(tmp, "%2d", size);
+
+    return 0;
+}
+
+int zReadVector(FILE *fp, int n, int *where, int perline, int persize)
+{
+    register int i, j, item;
+    char tmp, buf[100];
+    
+    i = 0;
+    while (i < n) {
+	fgets(buf, 100, fp);    /* read a line at a time */
+	for (j=0; j<perline && i<n; j++) {
+	    tmp = buf[(j+1)*persize];     /* save the char at that place */
+	    buf[(j+1)*persize] = 0;       /* null terminate */
+	    item = atoi(&buf[j*persize]); 
+	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
+	    where[i++] = item - 1;
+	}
+    }
+
+    return 0;
+}
+
+/* Read complex numbers as pairs of (real, imaginary) */
+int zReadValues(FILE *fp, int n, doublecomplex *destination, int perline, int persize)
+{
+    register int i, j, k, s, pair;
+    register double realpart;
+    char tmp, buf[100];
+    
+    i = pair = 0;
+    while (i < n) {
+	fgets(buf, 100, fp);    /* read a line at a time */
+	for (j=0; j<perline && i<n; j++) {
+	    tmp = buf[(j+1)*persize];     /* save the char at that place */
+	    buf[(j+1)*persize] = 0;       /* null terminate */
+	    s = j*persize;
+	    for (k = 0; k < persize; ++k) /* No D_ format in C */
+		if ( buf[s+k] == 'D' || buf[s+k] == 'd' ) buf[s+k] = 'E';
+	    if ( pair == 0 ) {
+	  	/* The value is real part */
+		realpart = atof(&buf[s]);
+		pair = 1;
+	    } else {
+		/* The value is imaginary part */
+	        destination[i].r = realpart;
+		destination[i++].i = atof(&buf[s]);
+		pair = 0;
+	    }
+	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
+	}
+    }
+
+    return 0;
+}
+
 
 void
 zreadhb(int *nrow, int *ncol, int *nonz,
@@ -82,7 +176,7 @@ zreadhb(int *nrow, int *ncol, int *nonz,
  *
  */
 
-    register int i, numer_lines, rhscrd = 0;
+    register int i, numer_lines = 0, rhscrd = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
     char buf[100], type[4], key[10];
     FILE *fp;
@@ -161,94 +255,3 @@ zreadhb(int *nrow, int *ncol, int *nonz,
 
 }
 
-/* Eat up the rest of the current line */
-zDumpLine(FILE *fp)
-{
-    register int c;
-    while ((c = fgetc(fp)) != '\n') ;
-    return 0;
-}
-
-zParseIntFormat(char *buf, int *num, int *size)
-{
-    char *tmp;
-
-    tmp = buf;
-    while (*tmp++ != '(') ;
-    sscanf(tmp, "%d", num);
-    while (*tmp != 'I' && *tmp != 'i') ++tmp;
-    ++tmp;
-    sscanf(tmp, "%d", size);
-    return 0;
-}
-
-zParseFloatFormat(char *buf, int *num, int *size)
-{
-    char *tmp, *period;
-    
-    tmp = buf;
-    while (*tmp++ != '(') ;
-    sscanf(tmp, "%d", num);
-    while (*tmp != 'E' && *tmp != 'e' && *tmp != 'D' && *tmp != 'd'
-	   && *tmp != 'F' && *tmp != 'f') ++tmp;
-    ++tmp;
-    period = tmp;
-    while (*period != '.' && *period != ')') ++period ;
-    *period = '\0';
-    sscanf(tmp, "%2d", size);
-
-    return 0;
-}
-
-zReadVector(FILE *fp, int n, int *where, int perline, int persize)
-{
-    register int i, j, item;
-    char tmp, buf[100];
-    
-    i = 0;
-    while (i < n) {
-	fgets(buf, 100, fp);    /* read a line at a time */
-	for (j=0; j<perline && i<n; j++) {
-	    tmp = buf[(j+1)*persize];     /* save the char at that place */
-	    buf[(j+1)*persize] = 0;       /* null terminate */
-	    item = atoi(&buf[j*persize]); 
-	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
-	    where[i++] = item - 1;
-	}
-    }
-
-    return 0;
-}
-
-/* Read complex numbers as pairs of (real, imaginary) */
-zReadValues(FILE *fp, int n, doublecomplex *destination, int perline, int persize)
-{
-    register int i, j, k, s, pair;
-    register double realpart;
-    char tmp, buf[100];
-    
-    i = pair = 0;
-    while (i < n) {
-	fgets(buf, 100, fp);    /* read a line at a time */
-	for (j=0; j<perline && i<n; j++) {
-	    tmp = buf[(j+1)*persize];     /* save the char at that place */
-	    buf[(j+1)*persize] = 0;       /* null terminate */
-	    s = j*persize;
-	    for (k = 0; k < persize; ++k) /* No D_ format in C */
-		if ( buf[s+k] == 'D' || buf[s+k] == 'd' ) buf[s+k] = 'E';
-	    if ( pair == 0 ) {
-	  	/* The value is real part */
-		realpart = atof(&buf[s]);
-		pair = 1;
-	    } else {
-		/* The value is imaginary part */
-	        destination[i].r = realpart;
-		destination[i++].i = atof(&buf[s]);
-		pair = 0;
-	    }
-	    buf[(j+1)*persize] = tmp;     /* recover the char at that place */
-	}
-    }
-
-    return 0;
-}

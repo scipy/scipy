@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -146,8 +146,14 @@ dgsrfs(char *trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     double   *rwork;
     int      *iwork;
     extern double dlamch_(char *);
-
     extern int dlacon_(int *, double *, double *, int *, double *, int *);
+#ifdef _CRAY
+    extern int SCOPY(int *, double *, int *, double *, int *);
+    extern int SSAXPY(int *, double *, double *, int *, double *, int *);
+#else
+    extern int dcopy_(int *, double *, int *, double *, int *);
+    extern int daxpy_(int *, double *, double *, int *, double *, int *);
+#endif
 
     Astore = A->Store;
     Aval   = Astore->nzval;

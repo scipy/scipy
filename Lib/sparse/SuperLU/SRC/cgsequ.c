@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -71,8 +71,8 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
             = 0:  successful exit   
             < 0:  if INFO = -i, the i-th argument had an illegal value   
             > 0:  if INFO = i,  and i is   
-                  <= M:  the i-th row of A is exactly zero   
-                  >  M:  the (i-M)-th column of A is exactly zero   
+                  <= A->nrow:  the i-th row of A is exactly zero   
+                  >  A->ncol:  the (i-M)-th column of A is exactly zero   
 
     ===================================================================== 
 */

@@ -1,7 +1,7 @@
 
 
 /*
- * -- SuperLU routine (version 1.1) --
+ * -- SuperLU routine (version 2.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
@@ -95,7 +95,6 @@ ccolumn_bmod (
     complex      none = {-1.0, 0.0};
     complex	 comp_temp, comp_temp1;
     int          mem_error;
-    flops_t      sflops;
     extern SuperLUStat_t SuperLUStat;
     flops_t  *ops = SuperLUStat.ops;
 
