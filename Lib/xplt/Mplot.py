@@ -5,7 +5,7 @@ import pl3d, plwf
 import Numeric
 from Numeric import ravel, reshape, repeat, arange, transpose, compress
 import MLab
-from MLab import pi, cos, sin, arctan2, array
+from MLab import pi, cos, sin, arctan2, array, angle
 import types
 import write_style
 from write_style import inches, points
@@ -545,7 +545,7 @@ def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=1
     fid.write(write_style.style2string(systems))
     fid.close()
     gist.winkill(win)
-    gist.window(win,style=_current_style,width=int(dpi*8.5),height=dpi*11,dpi=dpi)
+    gist.window(win,style=_current_style,width=int(8.5*dpi),height=int(11*dpi),dpi=dpi)
 
 _dwidth=6*inches
 _dheight=6*inches
@@ -790,6 +790,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
 
     if cb:
         colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04) 
+
 def plot3(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
           zscale=1.0,palette=None,gnomon=0):
     """Plot a three-dimensional wire-frame (surface): z=f(x,y)
@@ -811,21 +812,23 @@ def plot3(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
     gist.limits(xmin,xmax,ymin,ymax)
     pl3d.gnomon(gnomon)
     
+def bode(w,H,win=0):
+    """Plot a bode plot of the transfer function H as a function of w.
+    """
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    subplot(2,1,win,lm=0.2*inches)
+    gist.plsys(1)
+    gist.plg(abs(H),w,type='solid',color='blue',marks=0)
+    gist.logxy(1,1)
+    gist.gridxy(1,1)
+    xlabel('Frequency')
+    ylabel('Magnitude',deltax=-0.016)
+    title("Bode Plot")
+    gist.plsys(2)
+    gist.plg(MLab.angle(H),w,type='solid',color='blue',marks=0)
+    plot(w,angle(H))
+    gist.logxy(1,0)
+    gist.gridxy(1,1)
+    xlabel('Frequency')
+    ylabel('Phase')
+    

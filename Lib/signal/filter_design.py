@@ -6,15 +6,31 @@ from fastumath import *
 import Numeric
 from Numeric import concatenate
 Num = MLab
-abs = absolute
+abs = Numeric.absolute
 pi = Numeric.pi
 import scipy
-from scipy import r1array, poly, polyval, comb, roots
-from scipy import special, optimize, linalg, real, imag, sign
+from scipy import r1array, poly, polyval, comb, roots, imag, real
+from scipy import special, optimize, linalg
 import string, types
 
 
-def freqs(b,a,worN=None,factor=5):
+def findfreqs(num, den, N):
+    ep = r1array(roots(den))+0j
+    tz = r1array(roots(num))+0j
+
+    if len(ep) == 0:
+        ep = r1array(-1000)+0j
+
+    ez = scipy.c_[Num.compress(ep.imag >=0, ep), Num.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
+
+    integ = abs(ez) < 1e-10
+    hfreq = Num.around(Num.log10(Num.max(3*abs(ez.real + integ)+1.5*ez.imag))+0.5)
+    lfreq = Num.around(Num.log10(0.1*Num.min(abs(real(ez+integ))+2*ez.imag))-0.5)
+
+    w = scipy.logspace(lfreq, hfreq, N)
+    return w
+
+def freqs(b,a,worN=None,plot=None):
     """Compute frequency response of analog filter.
 
     Description:
@@ -39,47 +55,20 @@ def freqs(b,a,worN=None,factor=5):
        h -- The frequency response.
     """
     if worN is None:
-        z, p, k = tf2zpk(b,a)  # get poles and zeros
-        val = max(concatenate((real(p),imag(p))))
-        if len(z) != 0:
-            val = max(concatenate(([val],real(z),imag(z))))
-        val2 = min(concatenate((real(p),imag(p))))
-        if len(z) != 0:
-            va2 = min(concatenate(([val],real(z),imag(z))))
-        if val == 0:
-            val = -val2
-        if val2 == 0:
-            val2 = -val
-        if val2 == val:
-            if val < 0:
-                val = -val
-            val2 = -val
-        w = scipy.grid[val2*(1-sign(val2)*factor):val*(1+sign(val)*factor):200j]
+        w = findfreqs(b,a,200)
     elif isinstance(worN, types.IntType):
         N = worN
-        z, p, k = tf2zpk(b,a)  # get poles and zeros
-        val = max(concatenate((real(p),imag(p))))
-        if len(z) != 0:
-            val = max(concatenate(([val],real(z),imag(z))))
-        val2 = min(concatenate((real(p),imag(p))))
-        if val == 0:
-            val = -val2
-        if val2 == 0:
-            val2 = -val        
-        if len(z) != 0:
-            va2 = min(concatenate(([val],real(z),imag(z))))
-        if val2 == val:
-            if val < 0:
-                val = -val
-            val2 = -val
-        w = scipy.linspace(val2*(1-sign(val2)*factor),val*(1+sign(val)*factor),N)
+        w = findfreqs(b,a,N)
     else:
         w = worN
     w = r1array(w)
     s = 1j*w
-    return w, polyval(b, s) / polyval(a, s)
+    h = polyval(b, s) / polyval(a, s)
+    if not plot is None:
+        plot(w, h)
+    return w, h
 
-def freqz(b, a, worN=None, whole=0):
+def freqz(b, a, worN=None, whole=0, plot=None):
     """Compute frequency response of a digital filter.
 
     Description:
@@ -123,8 +112,10 @@ def freqz(b, a, worN=None, whole=0):
         w = worN
     w = r1array(w)
     zm1 = exp(-1j*w)
-    return w, polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
-            
+    h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
+    if not plot is None:
+        plot(w, h)
+    return w, h
     
 def tf2zpk(b,a):
     """Return zero, pole, gain (z,p,k) representation from a numerator,

@@ -2,6 +2,7 @@
 
 from Numeric import *
 from MLab import squeeze
+from scipy import r1array
 from fastumath import *
 import numpyio
 import struct, os, sys
@@ -372,7 +373,7 @@ def loadmat(name, dict=None, appendmat=1):
         defnames.append(varname)
         numels = header[1]*header[2]
         if T == 0:             # Text data
-            data = fid.fread(numels,storage)
+            data = r1array(fid.fread(numels,storage))
             if header[3]:  # imaginary data
                 data2 = fid.fread(numels,storage)
                 if data.typecode() == 'f' and data2.typecode() == 'f':
@@ -382,12 +383,18 @@ def loadmat(name, dict=None, appendmat=1):
                     data = new
                     del(new)
                     del(data2)
-            data.shape = (header[2], header[1])
-            thisdict[varname] = transpose(squeeze(data))
+            if len(data) > 1:
+                data.shape = (header[2], header[1])                
+                thisdict[varname] = transpose(squeeze(data))
+            else:
+                thisdict[varname] = data
         else:
-            data = fid.fread(numels,storage,'char')
-            data.shape = (header[2], header[1])
-            thisdict[varname] = transpose(squeeze(data))
+            data = r1array(fid.fread(numels,storage,'char'))
+            if len(data) > 1:
+                data.shape = (header[2], header[1])
+                thisdict[varname] = transpose(squeeze(data))
+            else:
+                thisdict[varname] = data
 
     fid.close()
     if dict is not None:
