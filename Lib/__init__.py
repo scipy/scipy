@@ -1,5 +1,5 @@
 __all__ = ["optimize", "integrate", "signal", "special", "io", "fft",
-           "interpolate", "stats",'fastumath']
+           "interpolate", "stats"]
            
 from Numeric import *
 import os,sys
@@ -24,7 +24,7 @@ except ImportError:
     pass
 
 import unittest
-   
+import fastumath   
 
     
 #---- testing ----#

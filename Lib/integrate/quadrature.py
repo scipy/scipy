@@ -16,14 +16,14 @@ def gauss_quad(func,a,b,args=(),n=5):
     args -- extra arguments to pass to function.
     n -- order of quadrature integration.
 
-  Outputs: (val,)
+  Outputs: (val, None)
 
     val -- Gaussian quadrature approximation to the integral.
     
     """
     [x,w] = P_roots(n)
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0*sum(w*func(y,*args))
+    return (b-a)/2.0*sum(w*func(y,*args)), None
 
 def gauss_quadtol(func,a,b,args=(),tol=1e-7,maxiter=50):
     """Compute a definite integral using fixed-tolerance Gaussian quadrature.
@@ -43,9 +43,10 @@ def gauss_quadtol(func,a,b,args=(),tol=1e-7,maxiter=50):
            tolerance.
     maxiter -- maximum number of iterations.
 
-  Outputs: (val, )
+  Outputs: (val, err)
 
     val -- Gaussian quadrature approximation (within tolerance) to integral.
+    err -- Difference between last two estimates of the integral.
 
     """
     err = 100.0
@@ -60,4 +61,4 @@ def gauss_quadtol(func,a,b,args=(),tol=1e-7,maxiter=50):
         print "maxiter (%d) exceeded. Latest difference = %e" % (n,err)
     else:
         print "Took %d points." % n
-    return val
+    return val, err

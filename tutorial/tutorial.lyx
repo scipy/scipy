@@ -1177,4 +1177,32 @@ x_{0}x_{1}-x_{1} & = & 5.
 \layout Section
 
 Interpolation (scipy.interpolate)
+\layout Standard
+
+There are two general interpolation facilities available in SciPy.
+ The first facility is an Interpolation class which performs linear 1-dimensiona
+l interpolation.
+ The second facility is based on the FORTRAN library FITPACK and provides
+ functions for 1- and 2-dimensional (smoothed) cubic-spline interpolation.
+ 
+\layout Subsection
+
+Linear 1-d interpolation (interpolate.linear_1d)
+\layout Standard
+
+The linear_1d class in scipy.interpolate is a convenient method to create
+ a function based on fixed data points which can be evaluated anywhere within
+ the domain defined by the given data using linear interpolation.
+ An instance of this class is instantiated by passing the 1-d vectors comprising
+ the data.
+ The instance of this class defines a 
+\emph on 
+__call__
+\emph default 
+ method and can therefore by treated like a function which interpolates
+ between known data values to obtain unknown values (it even has a docstring
+ for help).
+ Behavior at the boundary can be specified at instantiation time.
+ The following example demonstrates it's use.
+ 
 \the_end
