@@ -60,7 +60,7 @@ def test(test_set = 'fast'):
     runner.run(test_suite(test_set))
     return runner
 
-def test_long():
+def test_all():
     test('all')
     
 def test_suite(test_set = 'all'):
