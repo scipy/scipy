@@ -6,9 +6,9 @@
 
 void compute_root_from_lambda(double, double *, double *);
 
-
-
-
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */    
+#endif
 
 #define CONJ(a) ((a))
 #define ABSQ(a) ( (a*CONJ(a)))
