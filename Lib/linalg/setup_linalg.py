@@ -32,7 +32,7 @@ else:
     import commands
     run_command = commands.getstatusoutput
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import fortran_library_item, dot_join,\
          SourceGenerator, get_path, default_config_dict, get_build_temp
@@ -43,7 +43,7 @@ def configuration(parent_package=''):
     package = 'linalg'
     from interface_gen import generate_interface
     config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__)
+    local_path = get_path(__name__,parent_path)
 
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
