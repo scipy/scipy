@@ -3,7 +3,7 @@ __all__ = ["optimize", "integrate", "signal", "special", "io", "fft",
 
 from Numeric import *
 import os,sys
-from Help import help, source
+from helpmod import help, source
 from misc import *
 
 

@@ -13,5 +13,5 @@
      unpackbits -- Unpack an array packed by packbits.
 
 """
-from mIO import *
+from mio import *
 from numpyio import packbits, unpackbits, bswap, fread, fwrite
