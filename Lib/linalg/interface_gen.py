@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
-import string,os
-import pre as re
+import string,os,sys
+if sys.version[:3]>='2.3':
+    import re
+else:
+    import pre as re
 
 def all_subroutines(interface_in):
     # remove comments
