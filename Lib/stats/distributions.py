@@ -1,5 +1,5 @@
 # Functions to implement several important functions for 
-#   for various Continous and Discrete Probability Distributions
+#   various Continous and Discrete Probability Distributions
 #
 # Author:  Travis Oliphant  2002
 # 
@@ -106,6 +106,32 @@ class general_cont_ppf:
         return scipy.optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
     def __call__(self, q, *args):
         return self.vecfunc(q, *args)
+
+
+# Frozen RV class 
+class rv_frozen:
+    def __init__(self, dist, *args, **kwds):
+        self.args = args
+        self.kwds = kwds
+        self.dist = dist
+    def pdf(self,x):
+        return self.dist.pdf(x,*self.args,**self.kwds)
+    def cdf(self,x):
+        return self.dist.cdf(x,*self.args,**self.kwds)
+    def ppf(self,q):
+        return self.dist.ppf(q,*self.args,**self.kwds)
+    def isf(self,q):
+        return self.dist.isf(q,*self.args,**self.kwds)
+    def rvs(self, size=None):
+        kwds = self.kwds
+        kwds.update({'size':size})
+        return self.dist.rvs(*self.args,**kwds)
+    def sf(self,x):
+        return self.dist.sf(x,*self.args,**self.kwds)
+    def stats(self):
+        return self.dist.stats(*self.args,**self.kwds)
+
+    
             
 ##  NANs are returned for unsupported parameters.
 ##    location and scale parameters are optional for each distribution.
@@ -583,9 +609,13 @@ class rv_continuous:
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
         return Lhat, Shat
+
+    def freeze(self,*args,**kwds):
+        return rv_frozen(self,*args,**kwds)
                 
     def __call__(self, *args, **kwds):
         return self.rvs(*args, **kwds)
+
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
@@ -2571,6 +2601,9 @@ class rv_discrete:
                 else: return (g2+3.0)*(mu2**2.0)
         else:
             return self._munp(n,*args)
+
+    def freeze(self, *args, **kwds):
+        return rv_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.rvs(*args,**kwds)
