@@ -209,31 +209,7 @@ SequenceType = [ListType, TupleType, ArrayType]
 # These two functions replace letting axis be a sequence and the
 #  keepdims features used throughout.  These ideas
 #  did not match the rest of Scipy.
-
-def apply_over_axes(func, a, axes):
-    """Apply a function over multiple axes, keeping the same shape
-    for the resulting array.
-    """
-    val = asarray(a)
-    N = len(val.shape)
-    if not type(axes) in SequenceType:
-        axes = (axes,)
-    for axis in axes:
-        if axis < 0: axis = N + axis
-        args = (val, axis)
-        val = expand_dims(func(*args),axis)
-    return val
-
-def expand_dims(a, axis):
-    """Expand the shape of a to include a length 1 dimension before the given
-    axis.
-    """
-    a = asarray(a)
-    shape = a.shape
-    if axis < 0:
-        axis = axis + len(shape) + 1
-    a.shape = shape[:axis] + (1,) + shape[axis:]
-    return a
+from scipy_base import expand_dims, apply_over_axes
 
 def _chk_asarray(a, axis):
     if axis is None:

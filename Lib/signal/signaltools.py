@@ -1,5 +1,5 @@
 # Author: Travis Oliphant
-# 1999 -- 2001
+# 1999 -- 2002
 
 import sigtools
 import scipy.special as special
@@ -1065,6 +1065,56 @@ def resample(x,num,t=None,axis=0,window=None):
     else:
         new_t = arange(0,num)*(t[1]-t[0])* Nx / float(num) + t[0]
         return y, new_t
+
+from scipy_base import expand_dims, unique, prod, sort, zeros, ones, \
+     reshape, r_, any, c_, transpose, take, dot
+from scipy.stats import mean
+import scipy.linalg as linalg
+def detrend(data, axis=-1, type='linear', bp=0):
+    """Remove linear trend along axis from data.
+
+    If type is 'constant' then remove mean only.
+
+    If bp is given, then it is a sequence of points at which to
+       break a piecewise-linear fit to the data.
+    """
+    if type not in ['linear','l','constant','c']:
+        raise ValueError, "Trend type must be linear or constant"
+    data = asarray(data)
+    if type in ['constant','c']:
+        ret = data - expand_dims(mean(data,axis),axis)
+        return ret
+    else:
+        dshape = data.shape
+        N = dshape[axis]
+        bp = sort(unique(r_[0,bp,N]))
+        if any(bp > N):
+            raise ValueError, "Breakpoints must be less than length of data along given axis."
+        Nreg = len(bp) - 1
+        # Restructure data so that axis is along first dimension and
+        #  all other dimensions are collapsed into second dimension
+        rnk = len(dshape)
+        if axis < 0: axis = axis + rnk
+        newdims = r_[axis,0:axis,axis+1:rnk]
+        newdata = reshape(transpose(data,tuple(newdims)),(N,prod(dshape)/N))
+        newdata = newdata.copy()  # make sure we have a copy
+        # Find leastsq fit and remove it for each piece
+        for m in range(Nreg):
+            Npts = bp[m+1] - bp[m]
+            A = ones((Npts,2),'d')
+            A[:,0] = arange(1,Npts+1)*1.0/Npts
+            sl = slice(bp[m],bp[m+1])
+            coef,resids,rank,s = linalg.lstsq(A,newdata[sl])
+            newdata[sl] = newdata[sl] - dot(A,coef)
+        # Put data back in original shape.
+        tdshape = take(dshape,newdims)
+        ret = reshape(newdata,tdshape)
+        vals = range(1,rnk)
+        olddims = vals[:axis] + [0] + vals[axis:]
+        ret = transpose(ret,tuple(olddims))
+        return ret
+        
+        
 
 def test():
     a = [3,4,5,6,5,4]

@@ -53,6 +53,7 @@ to scipy-users@scipy.org or scipy-dev@scipy.org).
 
 from Numeric import asarray
 import scipy_base.fastumath
+from scipy_base import unique
 import string, sys, os, copy, math, stats
 from types import *
 
@@ -687,40 +688,3 @@ def sortrows(a,axis=0):
         y = swapaxes(y, axis, 0)
     return y
     
-def unique(inarray):
-    """\nReturns unique items in the FIRST dimension of the passed array. Only
-    works on arrays NOT including string items (e.g., type 'O' or 'c').
-    """    
-    inarray = asarray(inarray)
-    uniques = N.array([inarray[0]])
-    if len(uniques.shape) == 1:            # IF IT'S A 1D ARRAY
-        for item in inarray[1:]:
-            if N.add.reduce(N.equal(uniques,item).flat) == 0:
-                try:
-                    uniques = N.concatenate([uniques,N.array[N.NewAxis,:]])
-                except TypeError:
-                    uniques = N.concatenate([uniques,N.array([item])])
-    else:                                  # IT MUST BE A 2+D ARRAY
-        if inarray.typecode() != 'O':  # not an Object array
-            for item in inarray[1:]:
-                if not N.sum(N.alltrue(N.equal(uniques,item),1)):
-                    try:
-                        uniques = N.concatenate( [uniques,item[N.NewAxis,:]] )
-                    except TypeError:    # the item to add isn't a list
-                        uniques = N.concatenate([uniques,N.array([item])])
-                else:
-                    pass  # this item is already in the uniques array
-        else:   # must be an Object array, alltrue/equal functions don't work
-            for item in inarray[1:]:
-                newflag = 1
-                for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                    test = N.sum(abs(N.array(map(cmp,item,unq))))
-                    if test == 0:   # if item identical to any 1 row in uniques
-                        newflag = 0 # then not a novel item to add
-                        break
-                if newflag == 1:
-                    try:
-                        uniques = N.concatenate( [uniques,item[N.NewAxis,:]] )
-                    except TypeError:    # the item to add isn't a list
-                        uniques = N.concatenate([uniques,N.array([item])])
-    return uniques

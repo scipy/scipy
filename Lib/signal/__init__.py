@@ -32,6 +32,8 @@
     hilbert       --- Compute the analytic signal of a 1-d signal.
     get_window    --- Create FIR window.
 
+    detrend       --- Remove linear and/or constant trends from data.
+
  Filter design:
  
     remez         --  Optimal FIR filter design.
