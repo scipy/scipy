@@ -21,7 +21,7 @@ import sys
 from scipy_test.testing import *
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
-from linalg import lu_solve,lu_factor,solve
+from linalg import lu_solve,lu_factor,solve,diagsvd
 import scipy_base
 del sys.path[0]
 
@@ -233,6 +233,11 @@ class test_svdvals(ScipyTestCase):
         s = svdvals(a)
         assert len(s)==2
         assert s[0]>=s[1]
+
+class test_diagsvd(ScipyTestCase):
+
+    def check_simple(self):
+        assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
 
 class test_cholesky(ScipyTestCase):
 
