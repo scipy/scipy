@@ -10,7 +10,7 @@ def configuration(parent_package=''):
 
     config = default_config_dict()
     config['packages'].append(parent_package+'stats')
-    #config['packages'].append(parent_package+'stats.tests') 
+    config['packages'].append(parent_package+'stats.tests') 
 
     # Extension
     sources = ['randmodule.c','ranlib_all.c']

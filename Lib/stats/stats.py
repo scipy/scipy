@@ -2822,9 +2822,6 @@ column = measured values.
     return withinvec
 
 
-
-
-
 ################## test functions #########################
 
 def test(level=10):
