@@ -307,8 +307,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
                 p = p1 - q1*(p1-p0)/(q1-q0)
             except ZeroDivisionError:
                 if p1 != p0:
-                    print "Tolerance of %g reached" % (p-p0)
-                return p
+                    print "Tolerance of %g reached" % (p1-p0)
+                return (p1+p0)/2.0
             if abs(p-p0) < tol:
                 return p
             p0 = p1

@@ -24,8 +24,9 @@
 #include <math.h>
 #endif
 
-int print_error_messages = 1.0;
-
+/* Defined in mtherr in the cephes library */
+extern int print_error_messages;
+ 
 #include "cephes_doc.h"
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
@@ -794,7 +795,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         */
         
         /*  The Fortran code for this one seems not to be working properly.
-         */
 	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtridfn", "", 0);
 	PyDict_SetItemString(dictionary, "fdtridfn", f);
 	Py_DECREF(f);

@@ -6,8 +6,10 @@
 
 import scipy
 import scipy.special as special
+from Numeric import alltrue, where
 from fastumath import *
 
+all = alltrue
 ## Special defines some of these distributions
 ##  using backwards argument order.  This
 ##  is because the underlying C-library uses this order.
@@ -475,58 +477,68 @@ def ncx2pdf(x,df,nc):
     Px *= special.hyp0f1(a,z)/special.gamma(a)
     return where(x<=0,0,Px)
 
-def _ncx2cdf(x,df,nc):
-    from scipy.limits import double_epsilon as eps    
-    nc = nc/2.0
-    jmid = floor(nc)
-    val = 0
-    for j in range(jmid,-1,-1):
-        term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
-        val += term
-        if (term < val*eps):
-            print "Here", j
-            break
-    for j in range(jmid+1,2*jmid+2):
-        term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
-        val += term
-        if (term < val*eps):
-            break
-    if (j == 2*jmid+1):
-        for j in range(2*(jmid+1),2*(jmid+1)+1000):
-            term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
-            val += term
-            if (term < val*eps):
-                print "final break at ", j
-                break
-        if (j==(2*jmid+1002)):
-            print "Warning:  Did not converge."
-    return val
+##def _ncx2cdf(x,df,nc):
+##    from scipy.limits import double_epsilon as eps    
+##    nc = nc/2.0
+##    jmid = floor(nc)
+##    val = 0
+##    for j in range(jmid,-1,-1):
+##        term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
+##        val += term
+##        if (term < val*eps):
+##            print "Here", j
+##            break
+##    for j in range(jmid+1,2*jmid+2):
+##        term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
+##        val += term
+##        if (term < val*eps):
+##            break
+##    if (j == 2*jmid+1):
+##        for j in range(2*(jmid+1),2*(jmid+1)+1000):
+##            term = poissonpdf(j,nc)*chi2cdf(x,df+2*j)
+##            val += term
+##            if (term < val*eps):
+##                print "final break at ", j
+##                break
+##        if (j==(2*jmid+1002)):
+##            print "Warning:  Did not converge."
+##    return val
         
 #def _ncx2cdf(x,df,nc):
 #    import scipy.integrate as integrate
 #    return integrate.quad(ncx2pdf,0,x,args=(df,nc))[0]
-_vec_ncx2cdf = special.general_function(_ncx2cdf,'d')
+#_vec_ncx2cdf = special.general_function(_ncx2cdf,'d')
+
+#def ncx2cdf(x,df,nc):
+#    assert all(nc>=0), _nonnegstr
+#    assert all(df>0), _posstr
+#    x = where(x<0,0,x)
+#    return _vec_ncx2cdf(x,df,nc)
 
 def ncx2cdf(x,df,nc):
     assert all(nc>=0), _nonnegstr
     assert all(df>0), _posstr
     x = where(x<0,0,x)
-    return _vec_ncx2cdf(x,df,nc)
+    return special.chndtr(x,df,nc)
 
 def ncx2cdfc(x,df,nc):
     return 1-ncx2cdf(x,df,nc)
     
-def _ncx2qfunc(x,q,df,nc):
-    return _ncx2cdf(x,df,nc)-q
+##def _ncx2qfunc(x,q,df,nc):
+##    return _ncx2cdf(x,df,nc)-q
 
-def _ncx2q(q,df,nc):
-    import scipy.optimize as optimize
-    return optimize.fsolve(_ncx2qfunc,nc+df,args=(q,df,nc))
-_vec_ncx2q = special.general_function(_ncx2q,'d')
+##def _ncx2q(q,df,nc):
+##    import scipy.optimize as optimize
+##    return optimize.fsolve(_ncx2qfunc,nc+df,args=(q,df,nc))
+##_vec_ncx2q = special.general_function(_ncx2q,'d')
+
+##def ncx2q(q,df,nc):
+##    assert all(0<=q<=1), _quantstr
+##    return _vec_ncx2q(q, df, nc)
 
 def ncx2q(q,df,nc):
     assert all(0<=q<=1), _quantstr
-    return _vec_ncx2q(q, df, nc)
+    return special.chndtrix(q,df,nc)
     
 def ncx2p(p,df,nc):
     assert all(0<=p<=1), _quantstr
@@ -558,56 +570,66 @@ def ncfpdf(x,n1,n2,nc):
     Px /= special.beta(n1/2,n2/2)*special.gamma((n1+n2)/2.0)
     return where(x<0,0.0,Px)
 
-def _ncfcdf(x,n1,n2,nc):
-    from scipy.limits import double_epsilon as eps
-    eps2 = sqrt(eps)
-    eps4 = sqrt(eps2)
-    n1, n2, nc = n1/2.0, n2/2.0, nc/2.0
-    val = 0
-    j = 0
-    valm1 = 100
-    term = 80
-    gam = special.gamma
-    bI = special.betainc
-    bval =  n1*x/(n2+n1*x)
-    jmid = floor(nc)
-    for j in range(jmid,-1,-1):
-        term = poissonpdf(j,nc)*betacdf(bval,j+n1,n2)
-        val += term
-        if all(ravel(term / (val+eps4)) < eps2):
-            break
-    for j in range(jmid+1,jmid+2000):
-        term = poissonpdf(j,nc)*betacdf(bval,j+n1,n2)
-        val += term
-        if all(ravel(term / (val+eps4)) < eps2):
-            break
-    if (j == jmid+2000-1):
-        print "Warning: Series failed to converge."
-    return val
-_vec_ncfcdf = special.general_function(_ncfcdf,'d')
+##def _ncfcdf(x,n1,n2,nc):
+##    from scipy.limits import double_epsilon as eps
+##    eps2 = sqrt(eps)
+##    eps4 = sqrt(eps2)
+##    n1, n2, nc = n1/2.0, n2/2.0, nc/2.0
+##    val = 0
+##    j = 0
+##    valm1 = 100
+##    term = 80
+##    gam = special.gamma
+##    bI = special.betainc
+##    bval =  n1*x/(n2+n1*x)
+##    jmid = floor(nc)
+##    for j in range(jmid,-1,-1):
+##        term = poissonpdf(j,nc)*betacdf(bval,j+n1,n2)
+##        val += term
+##        if all(ravel(term / (val+eps4)) < eps2):
+##            break
+##    for j in range(jmid+1,jmid+2000):
+##        term = poissonpdf(j,nc)*betacdf(bval,j+n1,n2)
+##        val += term
+##        if all(ravel(term / (val+eps4)) < eps2):
+##            break
+##    if (j == jmid+2000-1):
+##        print "Warning: Series failed to converge."
+##    return val
+##_vec_ncfcdf = special.general_function(_ncfcdf,'d')
+
+##def ncfcdf(x,dfn,dfd,nc):
+##    assert all(nc>=0), _nonnegstr
+##    assert all((dfn>0) & (dfd>0)), _posstr
+##    x = where(x<0,0,x)
+##    return _vec_ncfcdf(x,dfn,dfd,nc)
 
 def ncfcdf(x,dfn,dfd,nc):
-    assert all(nc>=0), _nonnegstr
+    assert all(nc>=0), _nonnegstr    
     assert all((dfn>0) & (dfd>0)), _posstr
     x = where(x<0,0,x)
-    return _vec_ncfcdf(x,dfn,dfd,nc)
-
+    return special.ncfdtr(dfn,dfd,nc,x)
+    
 def ncfcdfc(x,dfn,dfd,nc):
     return 1-ncfcdf(x,dfn,dfd,nc)
 
-def _ncfqfunc(x,q,dfn,dfd,nc):
-    return _ncfcdf(x,dfn,dfd,nc)-q
+##def _ncfqfunc(x,q,dfn,dfd,nc):
+##    return _ncfcdf(x,dfn,dfd,nc)-q
 
-def _ncfq(q,dfn,dfd,nc,x0):
-    import scipy.optimize as optimize
-    return optimize.fsolve(_ncfqfunc,x0,args=(q,dfn,dfd,nc))
-_vec_ncfq = special.general_function(_ncfq,'d')
+##def _ncfq(q,dfn,dfd,nc,x0):
+##    import scipy.optimize as optimize
+##    return optimize.fsolve(_ncfqfunc,x0,args=(q,dfn,dfd,nc))
+##_vec_ncfq = special.general_function(_ncfq,'d')
 
-def ncfq(q,dfn,dfd,nc,x0=None):
-    assert all(0<=q<=1), _quanstr
-    if x0 is None:
-        x0 = dfd * (dfn+nc)/(dfn*(dfd-2))
-    return _vec_ncfq(q, dfn, dfd, nc, x0)
+##def ncfq(q,dfn,dfd,nc,x0=None):
+##    assert all(0<=q<=1), _quanstr
+##    if x0 is None:
+##        x0 = dfd * (dfn+nc)/(dfn*(dfd-2))
+##    return _vec_ncfq(q, dfn, dfd, nc, x0)
+
+def ncfq(q, dfn, dfd, nc):
+    assert (0<=q<=1)
+    return special.ncfdtri(dfn, dfd, nc, q)
 
 def ncfp(p,dfn,dfd,nc):
     return ncfq(1-p,dfn,dfd,nc)
@@ -630,26 +652,30 @@ def nctpdf(x, df, nc):
     pass
 
 def nctcdf(x,df,nc):
-    pass
+    return special.nctdtr(df, nc, x)
 
 def nctcdfc(x,df,nc):
     return 1-nctcdf(x,df,nc)
 
-def _nctqfunc(x,q,df,nc):
-    return _nctcdf(x,dfn,dfd,nc)-q
+##def _nctqfunc(x,q,df,nc):
+##    return _nctcdf(x,dfn,dfd,nc)-q
 
-def _ncft(q,df,nc,x0):
-    import scipy.optimize as optimize
-    return optimize.fsolve(_nctqfunc,x0,args=(q,dfn,dfd,nc))
-_vec_nctq = special.general_function(_nctq,'d')
+##def _nctq(q,df,nc,x0):
+##    import scipy.optimize as optimize
+##    return optimize.fsolve(_nctqfunc,x0,args=(q,dfn,dfd,nc))
+##_vec_nctq = special.general_function(_nctq,'d')
 
-def nctq(q,df,nc,x0=None):
+##def nctq(q,df,nc,x0=None):
+##    assert all(0<=q<=1), _quanstr
+##    if x0 is None:
+##        val1 = gam((df-1.0)/2.0)
+##        val2 = gam(df/2.0)
+##        x0 = nc*sqrt(df/2.0)*val1/val2
+##    return _vec_ncfq(q, dfn, dfd, nc, x0)
+
+def nctq(q,df,nc):
     assert all(0<=q<=1), _quanstr
-    if x0 is None:
-        val1 = gam((df-1.0)/2.0)
-        val2 = gam(df/2.0)
-        x0 = nc*sqrt(df/2.0)*val1/val2
-    return _vec_ncfq(q, dfn, dfd, nc, x0)
+    return special.nctdtrit(df, nc, q)
 
 def nctp(p,df,nc):
     return nctq(1-p,df,nc)

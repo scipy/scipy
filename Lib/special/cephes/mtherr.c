@@ -57,7 +57,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #include <stdio.h>
 #include "mconf.h"
 
-extern int print_error_messages;
+int print_error_messages = 1.0;
 
 int merror = 0;
 
