@@ -31,14 +31,11 @@ class _test_ev:
         for i in range(3):
             assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
 
-    def check_syevd(self):
-        self.check_syev(suffix='d')
+    def check_syevd(self): self.check_syev(suffix='d')
 
-    def check_heev(self):
-        self.check_syev(sym='he')
+    def check_heev(self): self.check_syev(sym='he')
 
-    def check_heevd(self):
-        self.check_syev(sym='he',suffix='d')
+    def check_heevd(self): self.check_syev(sym='he',suffix='d')
 
     def check_heev_complex(self,level=1,suffix=''):
         a= [[1,2-2j,3+7j],[2+2j,2,3],[3-7j,3,5]]
@@ -50,8 +47,7 @@ class _test_ev:
         for i in range(3):
             assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
 
-    def check_heevd_complex(self):
-        self.check_heev_complex(suffix='d')
+    def check_heevd_complex(self): self.check_heev_complex(suffix='d')
 
     def check_syevr(self,level=1,sym='sy'):
         a = [[1,2,3],[2,2,3],[3,3,6]]
@@ -73,8 +69,7 @@ class _test_ev:
         for i in range(3):
             assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
 
-    def check_heevr(self):
-        self.check_syevr(sym='he')
+    def check_heevr(self): self.check_syevr(sym='he')
 
     def check_syevr_irange(self,level=1,sym='sy',irange=[0,2]):
         a = [[1,2,3],[2,2,3],[3,3,6]]
@@ -89,23 +84,17 @@ class _test_ev:
         for i in range(m):
             assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
 
-    def check_syevr_irange_low(self):
-        self.check_syevr_irange(irange=[0,1])
+    def check_syevr_irange_low(self): self.check_syevr_irange(irange=[0,1])
 
-    def check_syevr_irange_mid(self):
-        self.check_syevr_irange(irange=[1,1])
+    def check_syevr_irange_mid(self): self.check_syevr_irange(irange=[1,1])
 
-    def check_syevr_irange_high(self):
-        self.check_syevr_irange(irange=[1,2])
+    def check_syevr_irange_high(self): self.check_syevr_irange(irange=[1,2])
 
-    def check_heevr_irange(self):
-        self.check_syevr_irange(sym='he')
+    def check_heevr_irange(self): self.check_syevr_irange(sym='he')
 
-    def check_heevr_irange_low(self):
-        self.check_syevr_irange(sym='he',irange=[0,1])
+    def check_heevr_irange_low(self): self.check_syevr_irange(sym='he',irange=[0,1])
 
-    def check_heevr_irange_high(self):
-        self.check_syevr_irange(sym='he',irange=[1,2])
+    def check_heevr_irange_high(self): self.check_syevr_irange(sym='he',irange=[1,2])
 
     def check_syevr_vrange(self,level=1,sym='sy',vrange=None):
         a = [[1,2,3],[2,2,3],[3,3,6]]
@@ -121,23 +110,17 @@ class _test_ev:
         for i in range(m):
             assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
 
-    def check_syevr_vrange_low(self):
-        self.check_syevr_vrange(vrange=[-1,1])
+    def check_syevr_vrange_low(self): self.check_syevr_vrange(vrange=[-1,1])
 
-    def check_syevr_vrange_mid(self):
-        self.check_syevr_vrange(vrange=[0,1])
+    def check_syevr_vrange_mid(self): self.check_syevr_vrange(vrange=[0,1])
 
-    def check_syevr_vrange_high(self):
-        self.check_syevr_vrange(vrange=[1,10])
+    def check_syevr_vrange_high(self): self.check_syevr_vrange(vrange=[1,10])
 
-    def check_heevr_vrange(self):
-        self.check_syevr_vrange(sym='he')
+    def check_heevr_vrange(self): self.check_syevr_vrange(sym='he')
 
-    def check_heevr_vrange_low(self):
-        self.check_syevr_vrange(sym='he',vrange=[-1,1])
+    def check_heevr_vrange_low(self): self.check_syevr_vrange(sym='he',vrange=[-1,1])
 
-    def check_heevr_vrange_high(self):
-        self.check_syevr_vrange(sym='he',vrange=[1,10])
+    def check_heevr_vrange_high(self): self.check_syevr_vrange(sym='he',vrange=[1,10])
 
 class _test_gev:
 
@@ -196,6 +179,12 @@ class _test_lapack_simple(ScipyTestCase,_test_ev,_test_gev):
         ht,tau,info = f(a)
         assert not info,`info`
 
+    def isrunnable(self,mthname):
+        l = mthname.split('_')
+        if len(l)>1 and l[0]=='check':
+            return hasattr(self.lapack,l[1])
+        return 2
+
 class PrefixWrapper:
     def __init__(self,module,prefix):
         self.module = module
@@ -206,7 +195,7 @@ class PrefixWrapper:
         class A: pass
         a = getattr(self.module,self.prefix+name,getattr(self.module,name,A()))
         if isinstance(a,A):
-            raise HideException,'%s has no attribute %r' % (self.module,name)
+            raise AttributeError,'%s has no attribute %r' % (self.module,name)
         return a
 
 if hasattr(flapack,'empty_module'):
