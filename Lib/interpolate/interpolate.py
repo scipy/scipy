@@ -87,7 +87,7 @@ class linear_1d:
         self.y = array(oriented_y,copy=self.copy)       
         
     def __call__(self,x_new):
-        """Find linearly interpolated y_new = f(x_new).
+        """Find linearly interpolated y_new = <name>(x_new).
 
         Inputs:        
           x_new -- New independent variables.

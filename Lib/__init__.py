@@ -34,6 +34,7 @@ sys.path.append(os.path.join(d,'gui_thread'))
 
 try:
     import scipy.fft
+    __all__.append('fft')
 except ImportError:
     pass
 

@@ -1,6 +1,5 @@
 >>> from __future__ import nested_scopes
->>> from scipy.integrate import quad, dblquad, Inf
->>> from fastumath import *   # get non-exception throwing exp function
+>>> from integrate import quad, dblquad, Inf
 >>> def I(n):
     return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf) 
 

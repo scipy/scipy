@@ -81,7 +81,7 @@ def help(object,maxwidth=76,output=sys.stdout):
             else:
                 arguments = "()"
 
-            name = "<instance>"
+            name = "<name>"
             if len(name+arguments) > maxwidth:
                 argstr = split_line(name, arguments, maxwidth)
             else:
