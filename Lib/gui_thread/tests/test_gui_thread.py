@@ -72,17 +72,22 @@ class TestClass:
     def test(self):
         return self.a
 
+class _TestHang:
+    def get_obj(self):
+        val = TestHang()
+        return val
+
+TestHang = gui_thread.register(_TestHang)
+
+
 dummy_instance = TestClass()
 
 class TestProxyAttr:
-    def __init__(self):
-        self.a = 1
-
     def test(self):
-        return self.a
+        return 1
 
     def get_int(self):
-        return self.a
+        return 1
 
     def get_float(self):
         return math.pi
@@ -145,6 +150,10 @@ class test_gui_thread(unittest.TestCase):
         # this checks for memory leaks
         self.assertEqual(is_alive(p), 0)
 
+    def check_proxy_proxy(self):
+        "Checking proxied function calling another proxied function"
+        a = TestHang()
+        a.get_obj()
 
 
 class test_proxy_attribute(unittest.TestCase):
