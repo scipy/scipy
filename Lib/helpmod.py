@@ -67,11 +67,11 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
     """
     global _namedict, _dictlist
 
-    if hasattr(object, '_ppimport_attr'):
-        object = object._ppimport_attr
-    elif hasattr(object,'_ppimport_importer') or \
-        hasattr(object, '_ppimport_module'):
+    if hasattr(object,'_ppimport_importer') or \
+       hasattr(object, '_ppimport_module'):
 	object = object._ppimport_module
+    elif hasattr(object, '_ppimport_attr'):
+        object = object._ppimport_attr
 
     if object is None:        
         info(info)
@@ -209,10 +209,10 @@ if _pydoc is not None:
         def __call__ (self, *args, **kwds):
             new_args = []
             for a in args:
-                if hasattr(a,'_ppimport_module') or \
-		   hasattr(a,'_ppimport_importer'):
+                if hasattr(a,'_ppimport_importer') or \
+		   hasattr(a,'_ppimport_module'):
                     a = a._ppimport_module
-		if hasattr(a,'_ppimport_attr'):
+                if hasattr(a,'_ppimport_attr'):
 		    a = a._ppimport_attr
                 new_args.append(a)
             return _pydoc.help(*new_args, **kwds)
@@ -225,8 +225,8 @@ if _pydoc is not None:
 	try:
 	    if hasattr(object,'_ppimport_importer') or \
 	       hasattr(object,'_ppimport_module'):
-		   object = object._ppimport_module
-	    if hasattr(object,'_ppimport_attr'):
+                object = object._ppimport_module
+            if hasattr(object,'_ppimport_attr'):
 		object = object._ppimport_attr
 	except ImportError:
 	    object = object.__class__
