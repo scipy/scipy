@@ -85,6 +85,7 @@ except ImportError:
 
 # Level 1a
 names2all(__all__, _level1a, globals())
+from scimath import *
 modules2all(__all__, _level1a, globals())
 modules2all(__all__, _level1a_importonly, globals())
 
