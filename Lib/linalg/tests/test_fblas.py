@@ -291,33 +291,33 @@ class base_gemv(unittest.TestCase):
         # tranpose takes care of Fortran vs. C(and Python) memory layout                
         desired_y = alpha*matrixmultiply(transpose(a),x)+beta*y
         self.blas_func(a,x,y, alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)    
+        assert(allclose(desired_y,y))
     def check_default_alpha_beta(self):
         alpha,beta,a,x,y = self.get_data()
         # tranpose takes care of Fortran vs. C(and Python) memory layout                
         desired_y = matrixmultiply(transpose(a),x)
         self.blas_func(a,x,y)
-        assert_array_almost_equal(desired_y,y,accuracy)
+        assert(allclose(desired_y,y))
     def check_simple_transpose(self):
         alpha,beta,a,x,y = self.get_data()
         desired_y = alpha*matrixmultiply(a,x)+beta*y
         self.blas_func(a,x,y,trans='T',alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)
+        assert(allclose(desired_y,y))
     def check_simple_transpose_conj(self):
         alpha,beta,a,x,y = self.get_data()
         desired_y = alpha*matrixmultiply(conjugate(a),x)+beta*y
         self.blas_func(a,x,y,trans='C',alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)
+        assert(allclose(desired_y,y))
     def check_x_stride(self):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
         desired_y = alpha*matrixmultiply(transpose(a),x[::2])+beta*y
         self.blas_func(a,x,y,incx=2,alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)        
+        assert(allclose(desired_y,y))
     def check_x_stride_transpose(self):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
         desired_y = alpha*matrixmultiply(a,x[::2])+beta*y
         self.blas_func(a,x,y,trans='T',incx=2,alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)        
+        assert(allclose(desired_y,y))
     def check_x_stride_assert(self):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
         try:
@@ -335,13 +335,13 @@ class base_gemv(unittest.TestCase):
         desired_y = y.copy()
         desired_y[::2] = alpha*matrixmultiply(transpose(a),x)+beta*y[::2]
         self.blas_func(a,x,y,incy=2,alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)        
+        assert(allclose(desired_y,y))
     def check_y_stride_transpose(self):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         desired_y = y.copy()        
         desired_y[::2] = alpha*matrixmultiply(a,x)+beta*y[::2]
         self.blas_func(a,x,y,trans='T',incy=2,alpha = alpha, beta = beta)
-        assert_array_almost_equal(desired_y,y,accuracy)        
+        assert(allclose(desired_y,y))
     def check_y_stride_assert(self):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         try:
@@ -385,12 +385,12 @@ class base_ger(unittest.TestCase):
         # tranpose takes care of Fortran vs. C(and Python) memory layout
         desired_a = alpha*transpose(x[:,NewAxis]*y) + a
         self.blas_func(x,y,a)
-        assert_array_almost_equal(desired_a,a,accuracy)
+        assert(allclose(desired_a,a))
     def check_x_stride(self):
         alpha,a,x,y = self.get_data(x_stride=2)
         desired_a = alpha*transpose(x[::2,NewAxis]*y) + a
         self.blas_func(x,y,a,incx=2)
-        assert_array_almost_equal(desired_a,a)
+        assert(allclose(desired_a,a))
     def check_x_stride_assert(self):
         alpha,a,x,y = self.get_data(x_stride=2)
         try:
@@ -402,7 +402,7 @@ class base_ger(unittest.TestCase):
         alpha,a,x,y = self.get_data(y_stride=2)
         desired_a = alpha*transpose(x[:,NewAxis]*y[::2]) + a
         self.blas_func(x,y,a,incy=2)
-        assert_array_almost_equal(desired_a,a,accuracy)
+        assert(allclose(desired_a,a))
 
     def check_y_stride_assert(self):
         alpha,a,x,y = self.get_data(y_stride=2)
@@ -446,18 +446,18 @@ class base_ger_complex(base_ger):
         print desired_a.typecode(),desired_a
         print
         print a.typecode(),a
-        assert_array_almost_equal(desired_a,a,accuracy)
+        assert(allclose(desired_a,a))
     """
     def check_x_stride(self):
         alpha,a,x,y = self.get_data(x_stride=2)
         desired_a = alpha*transpose(x[::2,NewAxis]*self.transform(y)) + a
         self.blas_func(x,y,a,incx=2)
-        assert_array_almost_equal(desired_a,a)
+        assert(allclose(desired_a,a))
     def check_y_stride(self):
         alpha,a,x,y = self.get_data(y_stride=2)
         desired_a = alpha*transpose(x[:,NewAxis]*self.transform(y[::2])) + a
         self.blas_func(x,y,a,incy=2)
-        assert_array_almost_equal(desired_a,a,accuracy)
+        assert(allclose(desired_a,a))
     """
 """*      
 class test_cgeru(base_ger_complex):

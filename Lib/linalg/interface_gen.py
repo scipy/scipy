@@ -8,16 +8,21 @@ def process_imports(interface_in):
     # !! lines can't contain comments, and a single import on each line
     #
     # !! expects interface to be named and live in same directory
-    
+
+    # insert <include_file=file> directly into interface
+
+    include_exp = re.compile(r'<include_file=(.*?)>')
     # get a list of the import statements
     comment_block_exp = re.compile(r'/\*(?:\s|.)*?\*/')
     import_exp = re.compile(r'from\s*(.*?)\s*import\s*(.+)')
     # remove comments
     commentless_interface = comment_block_exp.sub('',interface_in) 
 
+    include_files = include_exp.findall(commentless_interface)
     import_list = import_exp.findall(commentless_interface)
     # remove import statements
     interface = import_exp.sub('',commentless_interface)
+    interface = include_exp.sub('',commentless_interface)
 
     external_files = {}
     for file,routine in import_list:
@@ -40,7 +45,7 @@ def process_imports(interface_in):
                 break
         if not found:
             print '\twarning: %s not found in %s' % (routine,file)                
-    return interface
+    return interface, include_files
 
 def process_type(interface_in, format, reg_exp, fortran_decl, c_decl,
                  arg_count):
@@ -170,6 +175,7 @@ def process_return_info(interface_in,format):
                 #3. Remove ",<ws>var_name" from function definition.
         else:
             processed_sub = sub
+
         interface = interface + processed_sub + '\n\n'
     return interface
 
@@ -197,8 +203,8 @@ def process_ignore_info(interface_in,format):
 def all_subroutines(interface_in):
     # remove comments
     comment_block_exp = re.compile(r'/\*(?:\s|.)*?\*/')
-    subroutine_exp = re.compile(r'subroutine (?:\s|.)*?end subroutine')
-    function_exp = re.compile(r'function (?:\s|.)*?end function')
+    subroutine_exp = re.compile(r'subroutine (?:\s|.)*?end subroutine.*')
+    function_exp = re.compile(r'function (?:\s|.)*?end function.*')
     
     interface = comment_block_exp.sub('',interface_in)    
     subroutine_list = subroutine_exp.findall(interface)
@@ -238,15 +244,23 @@ def convert_matrix_order(interface_in,row_major=0):
     interface = order_exp.sub(second,interface)
     return interface
                 
-def lapack_expand(generic_interface,row_major = 0):
-    lapack_types ={'s' :('real',            'real', real_convert), 
-                   'd' :('double precision','double precision',real_convert),
-                   'c' :('complex',         'complex',complex_convert), 
-                   'z' :('double complex',  'double complex',complex_convert),
-                   'sc':('complex',         'real',real_convert),
-                   'dz':('double complex',  'double precision',real_convert),
-                   'cs':('real',            'complex',complex_convert),
-                   'zd':('double precision','double complex', complex_convert)}
+def lapack_expand(generic_interface,row_major = 0,cwrap=0):
+    lapack_types ={'s' :('real',            'real', real_convert,
+                         'real'), 
+                   'd' :('double precision','double precision',real_convert,
+                         'double precision'),
+                   'c' :('complex',         'complex',complex_convert,
+                         'real'), 
+                   'z' :('double complex',  'double complex',complex_convert,
+                         'double precision'),                   
+                   'sc':('complex',         'real',real_convert,
+                         'real'),
+                   'dz':('double complex',  'double precision',real_convert,
+                         'double precision'),
+                   'cs':('real',            'complex',complex_convert,
+                         'real'),
+                   'zd':('double precision','double complex', complex_convert,
+                         'double precision')}
     #1. Search and replace for matrix ordering (row or column).
     generic_interface = convert_matrix_order(generic_interface,row_major)
     #2. get all subroutines    
@@ -267,23 +281,29 @@ def lapack_expand(generic_interface,row_major = 0):
         sub = re.sub(type_exp,'<tchar>',sub)
         sub_generic = string.strip(sub)
         for char in type_chars:            
-            type_in,type_out,converter = lapack_types[char]
+            type_in,type_out,converter, rtype_in = lapack_types[char]
             sub = convert_types(sub_generic,converter)
             function_def = string.replace(sub,'<tchar>',char)    
-            function_def = string.replace(function_def,'<type_in>',type_in)        
+            function_def = string.replace(function_def,'<type_in>',type_in)
+            function_def = string.replace(function_def,'<rtype_in>',rtype_in) 
             function_def = string.replace(function_def,'<type_out>',type_out)
             interface = interface + '\n\n' + function_def
     
     return interface
 
-def interface_to_module(interface_in,module_name):
+def interface_to_module(interface_in,module_name,include_list):
+    pre_prefix = "!%f90 -*- f90 -*-\n"
+    includes = ''
+    for file in include_list:
+        f = open(file)
+        includes += f.read(-1)
+        f.close() 
     # heading and tail of the module definition.
-    file_prefix = "!%f90 -*- f90 -*-\n" \
-             "python module " + module_name +" ! in\n" \
+    file_prefix = "\npython module " + module_name +" ! in\n" \
              "    interface  \n"
     file_suffix = "\n    end interface\n" \
              "end module %s" % module_name
-    return  file_prefix + interface_in + file_suffix
+    return  pre_prefix + includes + file_prefix + interface_in + file_suffix
 
 
 def rename_module(interface_in,prefix,suffix=''):
@@ -332,38 +352,66 @@ def generate_flapack():
     f = open('generic_lapack.pyf')
     module_name = 'flapack'
     generic_interface = f.read(-1)
-    generic_interface = process_imports(generic_interface)    
+    generic_interface, include_files = process_imports(generic_interface)
     generic_interface = process_special_types(generic_interface,
                                               format='Fortran')
     interface = lapack_expand(generic_interface,row_major = 0)
     interface = process_ignore_info(interface,format='Fortran')    
     # must be last
     interface = process_return_info(interface,format='Fortran')
-    module_definition = interface_to_module(interface,module_name)
+    module_definition = interface_to_module(interface,module_name, include_files)
     
     f = open(module_name+'.pyf','w')
     f.write(module_definition)
     f.close()
+
+def f2py_hack(inter):
+    # This needs to replace subroutine xxxx(...
+    #   with subroutine f2pyCxxxx(
+    #   to get f2py to generate C-interface codes.
+    name_exp = re.compile(r'subroutine( .+?)\(')
+    pos = 0
+    while 1:
+        match = name_exp.search(inter,pos)
+        if match is None:
+            break
+        start,end = match.span(1)
+        inter = inter[:start+1] + 'f2pyC' + inter[start+1:]
+        pos = end + len('f2pyC')
+        
+    name_exp = re.compile(r'function( .+?)\(')
+    pos = 0
+    while 1:
+        match = name_exp.search(inter,pos)
+        if match is None:
+            break
+        start,end = match.span(1)
+        inter = inter[:start+1] + 'f2pyC' + inter[start+1:]
+        pos = end + len('f2pyC')
+    return inter
+
+    
     
 def generate_clapack():
     print "generating clapack interface"
     f = open('atlas_lapack.pyf')
     module_name = 'clapack'
     generic_interface = f.read(-1)
-    generic_interface = process_imports(generic_interface)
+    generic_interface, include_files = process_imports(generic_interface)
     generic_interface = insert_blas_order(generic_interface)
     generic_interface = process_special_types(generic_interface,format='C')
 
-    generic_interface = lapack_expand(generic_interface,row_major=1)
+    generic_interface = lapack_expand(generic_interface,row_major=1,cwrap=1)
     
     # for now must be after lapack_expand (don't know why)
     generic_interface = process_ignore_info(generic_interface,format='C')        
     # must be last
     generic_interface = process_return_info(generic_interface,format='C')
     
-    module_def = interface_to_module(generic_interface,module_name)
+    module_def = interface_to_module(generic_interface,module_name, include_files)
     
     module_def,module_py = rename_functions(module_def,'clapack_','')
+    module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
     f = open('_' + module_name+'.pyf','w')
@@ -376,21 +424,26 @@ def generate_clapack():
 def generate_cblas_level(level):
     f = open('generic_blas%d.pyf' % level)
     generic_interface = f.read(-1)
-    generic_interface = process_imports(generic_interface)
+    generic_interface, include_files = process_imports(generic_interface)
     if level > 1:
         generic_interface = insert_blas_order(generic_interface)
     generic_interface = process_special_types(generic_interface,format='C')    
     interface = lapack_expand(generic_interface,row_major=1)
-    return interface
+    return interface, include_files
     
 def generate_cblas():
     print "generating cblas interface"
     module_name = 'cblas'
-    interface = generate_cblas_level(1)
-    interface = interface + '\n' + generate_cblas_level(2)
-    interface = interface + '\n' + generate_cblas_level(3)
-    module_def = interface_to_module(interface,module_name)
+    interface, include_files = generate_cblas_level(1)
+    a, b = generate_cblas_level(2)
+    interface += '\n' + a
+    include_files += b
+    a, b = generate_cblas_level(3)
+    interface += '\n' + a
+    include_files += b
+    module_def = interface_to_module(interface,module_name,include_files)
     module_def,module_py = rename_functions(module_def,'cblas_','')
+    module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
     f = open('_' + module_name+'.pyf','w')
@@ -408,13 +461,13 @@ def generate_fblas():
         print '\tgenerating blas%d' % level
         f = open('generic_blas%d.pyf' % level)
         generic_interface = f.read(-1)
-        generic_interface = process_imports(generic_interface)
+        generic_interface, include_files = process_imports(generic_interface)
         generic_interface = process_special_types(generic_interface,
                                                   format='Fortran')
         generic_interface = lapack_expand(generic_interface,row_major=0)
         interface = interface + '\n' + generic_interface
 
-    module_definition = interface_to_module(interface,module_name)
+    module_definition = interface_to_module(interface,module_name, include_files)
     f = open(module_name+'.pyf','w')
     f.write(module_definition)
     f.close()
@@ -422,9 +475,9 @@ def generate_fblas():
 def process_all():
     # process the standard files.
     generate_flapack()
-    #generate_clapack()
-    #generate_fblas()
-    #generate_cblas()
+    generate_clapack()
+    generate_fblas()
+    generate_cblas()
     #generate_fscalapack()
     
 def usage():
@@ -446,11 +499,11 @@ if __name__ == '__main__':
         f = open(sys.argv[1])
         module_name = sys.argv[2]
         generic_interface = f.read(-1)
-        generic_interface = process_imports(generic_interface)
+        generic_interface, include_files = process_imports(generic_interface)
         all_subroutines(generic_interface)
         interface = lapack_expand(generic_interface)
         interface = rename_functions(interface,'AA','BB')
-        module_defintion = interface_to_module(interface,module_name)
+        module_defintion = interface_to_module(interface,module_name, include_files)
         f = open(module_name+'.pyf','w')
         f.write(module_definition)
         f.close()
