@@ -10,6 +10,7 @@ import re
 import types
 import pydoc
 import inspect
+import cStringIO
 
 subobj = re.compile("(\s+)(\w+)(\s+)--(\s+)([\w*])")
 subobj2 = re.compile("(\s+)(\w+)(\s+)---(\s+)([\w*])")
@@ -26,18 +27,18 @@ def makenewparent(name, parent):
     return new
 
 # name is child
-# mod is module
+# mod is module or Class
 # parent is old parent
 def toPage(obj, name, parent, mod):
     typ = type(obj)
     newparent = makenewparent(mod.__name__, parent)
     #print mod.__name__, parent, newparent, obj
     if typ is types.FunctionType:
-        return FuncPage(newparent, obj)
-    elif typ is types.BuiltinFunctionType: # maybe different later
-        return FuncPage(newparent, obj)
+        return BasePage(newparent, obj)
+    elif typ is types.BuiltinFunctionType: 
+        return BasePage(newparent, obj)
     elif typ is UfuncType:
-        return UFuncPage(name, newparent, obj)
+        return BasePage(newparent, obj, name=name)
     elif typ is types.ClassType:
         return ClassPage(newparent, obj)
     elif typ is types.TypeType:
@@ -45,31 +46,68 @@ def toPage(obj, name, parent, mod):
     elif typ is types.ModuleType:
         return ModulePage(newparent, obj)    
     elif typ is types.MethodType:
-        return FuncPage(newparent, obj)
+        return BasePage(newparent, obj)
     elif inspect.ismethoddescriptor(obj):
-        return FuncPage(newparent, obj)
+        return BasePage(newparent, obj)
     elif typ is types.InstanceType:
-        return UFuncPage(name, newparent, obj)
+        return BasePage(newparent, obj, name=name)
     elif typ is types.DictType:
-        return UFuncPage(name, newparent, obj)
+        return BasePage(newparent, obj, name=name)
     else:
         print "Err 3:", typ
         return None
 
-tohtml = pydoc.HTMLDoc()
+class BasePage(rend.Page):
+    docFactory = loaders.xmlfile("basepage.html")
 
-class ModulePage(rend.Page):
+    def __init__(self, parent, obj, **kw):
+        self.parent = parent
+        self.obj = obj
+        self.name = kw.pop('name',None)
+        if self.name is None:
+            self.name = self.obj.__name__
+        self.canedit = kw.pop('canedit',1)
+        rend.Page.__init__(self, **kw)
+
+    def render_title(self, context, data):
+        return makenewparent(self.name, self.parent)
+
+    def dochtml(self, str):
+        return str
+
+    def extrahtml(self, str):
+        return str
+
+    def getdoc_fromtree(self):
+        return None
+
+    def getextra_fromtree(self):
+        return None
+
+    def render_docstring(self, context, data):
+        # First look for docstring in filetree
+        doc = self.getdoc_fromtree()
+        if doc is None:
+            doc = cStringIO.StringIO()
+            scipy.info(self.obj, output=doc)
+            doc = doc.getvalue()
+        return T.xml(self.dochtml(doc))
+
+    def render_extra(self, context, data):
+        # First look for docstring in filetree
+        extra = self.getextra_fromtree() or inspect.getcomments(self.obj) or "Nothing"
+        return T.xml(self.extrahtml(extra))
+
+class ModulePage(BasePage):
 
     addSlash = True
-    docFactory = loaders.xmlfile("module.html")
     
     def __init__(self, parent, module, **kw):
-        self.parent = parent
-        self.mod = module
+        BasePage.__init__(self, parent, module, **kw)
 
         # Avoid postponed import modules
         if hasattr(module, '_ppimport_module'):
-            self.mod = module._ppimport_module
+            self.obj = module._ppimport_module
         
         # If the module.__all__ variable is not defined
         #  then parse the doc-string and pull out all names
@@ -87,101 +125,57 @@ class ModulePage(rend.Page):
                 self.all.extend([x[1] for x in subobj2.findall(doc)])
         if self.all is None:
             self.all = []
-        rend.Page.__init__(self, **kw)
 
     def childFactory(self, context, name):
         if name not in self.all:
             print "Err 1: ", name, self.all
             return None
-        child = getattr(self.mod,name,None)
+        child = getattr(self.obj,name,None)
 
         # special handle postponed import modules
         #  by causing it to import so that a new getattr
         #  returns the actual module
         if hasattr(child, '_ppimport_module'):
-            child = getattr(self.mod,name,None)
+            child = getattr(self.obj,name,None)
 
         if child is None:
-            print "Err 2: ", self.mod, name, getattr(self.mod, name, None)
+            print "Err 2: ", self.obj, name, getattr(self.obj, name, None)
             return None
                     
-        return toPage(child, name, self.parent, self.mod)
+        return toPage(child, name, self.parent, self.obj)
 
     def render_title(self, context, data):
-        return self.mod.__name__
+        return self.obj.__name__
 
-    def render_docstring(self, context, data):
-        doc = inspect.getdoc(self.mod) or "Nothing"
+    def dochtml(self, doc):
         # put links for names
         doc = subobj.sub("\\1<a href=\\2>\\2</a>\\3--\\4\\5",doc)
         doc = subobj2.sub("\\1<a href=\\2>\\2</a>\\3---\\4\\5",doc)
-        return T.xml(doc)
+        return doc
 
-    def render_extra(self, context, data):
-        comments = inspect.getcomments(self.mod) or "Nothing"
-        return T.xml(comments)
-
-import cStringIO
-
-    
-class FuncPage(rend.Page):
-
-    docFactory = loaders.xmlfile("function.html")    
-
-    def __init__(self, parent, func, **kw):
-        self.parent = parent
-        self.func = func
-        rend.Page.__init__(self, **kw)
-
-    def render_title(self, context, data):
-        return makenewparent(self.func.__name__, self.parent)
-
-    def render_docstring(self, context, data):
-        doc = cStringIO.StringIO()
-        scipy.info(self.func, output=doc)
-        return T.xml(doc.getvalue())
-
-    def render_extra(self, context, data):
-        comments = inspect.getcomments(self.func) or "Nothing"
-        return T.xml(comments)
-
-class UFuncPage(FuncPage):
-
-    def __init__(self, name, parent, func, **kw):
-        self.name = name
-        FuncPage.__init__(self, parent, func, **kw)
-
-    def render_title(self, context, data):
-        return makenewparent(self.name, self.parent)
-
-
-class ClassPage(FuncPage):
-    addSlash = True  
+class ClassPage(BasePage):
+    addSlash = True   # I have subchildren
     def __init__(self, parent, func, **kw):
         # need to look for methods and add them to all
-        FuncPage.__init__(self, parent, func, **kw)
+        BasePage.__init__(self, parent, func, **kw)
         self.all = []
-        for meth in pydoc.allmethods(self.func):
+        for meth in pydoc.allmethods(self.obj):
             if meth[0] != '_':
                 self.all.append(meth)
 
     def childFactory(self, context, name):
         if name in self.all:
-            child = getattr(self.func,name,None)
-            return toPage(child, name, self.parent, self.func)
+            child = getattr(self.obj,name,None)
+            return toPage(child, name, self.parent, self.obj)
         print "Err 4: ", name, self.all
         return None
-    
-    def render_docstring(self, context, data):
-        doc = cStringIO.StringIO()
-        scipy.info(self.func, output=doc)
+
+    def dochtml(self, str):
         # Now we want to make links in just the Methods: section
-        str = doc.getvalue()
         start = str.find("Methods:")
         substr = str[start:]
         substr = subobj.sub("\\1<a href=\\2>\\2</a>\\3--\\4\\5",substr)
-        #substr = subobj2.sub("\\1<a href=\\2>\\2</a>\\3---\\4\\5",substr)
-        return T.xml(str[:start]+substr)
+        return str[:start] + substr
 
 _packages = ['scipy', 'scipy_base', 'weave', 'scipy_distutils', 'scipy_test']
 
