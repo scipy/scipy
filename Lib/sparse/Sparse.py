@@ -152,40 +152,12 @@ class dictmatrix(dict):
             new[key[1],key[0]] = self[key]
         return new
 
-    def _firstkey(self, sorted, j, N):
-        cand = []        
-        k = 0
-        while (sorted[k][0] < j):
-            k+=1
-        while (k < N) and (j == sorted[k][0]):
-            cand.append(sorted[k])
-            k+=1
-            
-        return cand
-
-    # slow
     def matmat(self, other):
         res = dictmatrix()
-        akeys = self.keys()
-        akeys.sort()
-        bkeys = other.keys()
-        bkeys.sort()
-        B = len(bkeys)
-        for key in akeys:
-            i,j = key
-            aij = self[key]
-            cand = self._firstkey(bkeys,j,B)
-            if (aij != 0):
-                for bkey in cand:
-                    j,k = bkey
-                    bjk = other[bkey]
-                    if (bjk != 0):
-                        try:
-                            res[i,k] += aij*bjk
-                        except KeyError:
-                            res[i,k] = aij*bjk
-        return res
-                    
+        spself = spmatrix(self)
+        spother = spmatrix(other)
+        spres = spself * spother
+        return spres.todict()                            
 
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
@@ -589,6 +561,12 @@ class spmatrix:
         B = self.transp()
         return B.ftype, B.lastel+1, B.data, B.index[0]-1, B.index[1]-1
 
+    def todict(self):
+        res = dictmatrix()
+        for k in range(self.nzmax):
+            row,col = self.rowcol(k)
+            res[row,col] = self.data[k]
+        return res
             
 def isspmatrix(x):
     return hasattr(x,'__class__') and x.__class__ is spmatrix
