@@ -30,7 +30,7 @@ finally:
 
 #-------------------------------
 
-standard_packages = ['io','linalg',
+standard_packages = ['io',
                      'special','signal','stats',
                      'interpolate','integrate','optimize',
                      'cluster','cow','ga',
