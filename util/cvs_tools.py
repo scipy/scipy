@@ -26,15 +26,16 @@ def allowed_file_type(file):
             return 0
     return 1
 
-def adddir(dir,depth=0):
+def adddir(dir,depth=1):
     import os
-    path = os.path.abspath(dir)
+    #path = os.path.abspath(dir)
+    path = dir
     all_files = os.listdir(path)
     all_files = filter(allowed_file_type, all_files)
     indent = '   ' * depth
     
     if os.path.isdir(dir):
-        print indent, dir
+        print indent[:-3], dir
         cmd = 'cvs add ' + dir
         os.system(cmd)
 
