@@ -433,9 +433,9 @@ def plot(x,*args,**keywds):
     else:
         gist.fma()
     gist.animate(0)
-    winnum = xplt.window()
+    winnum = gist.window()
     if winnum < 0:
-        xplt.window(0)
+        gist.window(0)
     nargs = len(args)
     if nargs == 0:
         y = x
