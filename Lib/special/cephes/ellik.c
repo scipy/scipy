@@ -22,7 +22,7 @@
  *                 -
  *                | |
  *                |           dt
- * F(phi_\m)  =    |    ------------------
+ * F(phi | m) =   |    ------------------
  *                |                   2
  *              | |    sqrt( 1 - m sin t )
  *               -
@@ -83,7 +83,7 @@ if( npio2 & 1 )
 	npio2 += 1;
 if( npio2 )
 	{
-	K = ellpk( a );
+	K = ellpk( m );  /* Changed */
 	phi = phi - npio2 * PIO2;
 	}
 else
@@ -106,7 +106,7 @@ if( fabs(t) > 10.0 )
 		{
 		e = atan(e);
 		if( npio2 == 0 )
-			K = ellpk( a );
+		    K = ellpk( m ); /* Changed */
 		temp = K - ellik( e, m );
 		goto done;
 		}

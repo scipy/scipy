@@ -22,7 +22,7 @@
  *
  * These functions are periodic, with quarter-period on the
  * real axis equal to the complete elliptic integral
- * ellpk(1.0-m).
+ * ellpk(m).
  *
  * Relation to incomplete elliptic integral:
  * If u = ellik(phi,m), then sn(u|m) = sin(phi),

@@ -6,9 +6,9 @@
  *
  * SYNOPSIS:
  *
- * double m1, y, ellpe();
+ * double m, y, ellpe();
  *
- * y = ellpe( m1 );
+ * y = ellpe( m );
  *
  *
  *
@@ -30,7 +30,7 @@
  *      P(x)  -  x log x Q(x).
  *
  * Though there are no singularities, the argument m1 is used
- * rather than m for compatibility with ellpk().
+ * internally rather than m for compatibility with ellpk().
  *
  * E(1) = 1; E(0) = pi/2.
  *
@@ -60,8 +60,8 @@ Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 Feb, 2002:  altered by Travis Oliphant
-            so that it is called with argument m (which gets immediately converted 
-            to m1 = 1-m)
+            so that it is called with argument m 
+            (which gets immediately converted to m1 = 1-m)
 */
 
 #include "mconf.h"

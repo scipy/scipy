@@ -6,7 +6,7 @@
  *
  * SYNOPSIS:
  *
- * double m1, y, ellpk();
+ * double m, y, ellpk();
  *
  * y = ellpk( m ); 
  *
@@ -32,7 +32,7 @@
  *
  *     P(x)  -  log x Q(x).
  *
- * The argument m1 is used rather than m so that the logarithmic
+ * The argument m1 is used internally rather than m so that the logarithmic
  * singularity at m = 1 will be shifted to the origin; this
  * preserves maximum accuracy.
  *
@@ -61,8 +61,8 @@ Copyright 1984, 1987 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 Feb, 2002:  altered by Travis Oliphant 
-            so that it is called with argument m (which gets immediately converted 
-            to m1 = 1-m)
+            so that it is called with argument m 
+            (which gets immediately converted to m1 = 1-m)
 */
 
 #include "mconf.h"
@@ -210,7 +210,7 @@ double ellpk(x)    /* Changed to use m argument rather than m1 = 1-m */
 double x;
 {
 
-x = 1.0-x;
+x = 1.0-x;  
 if( (x < 0.0) || (x > 1.0) )
 	{
 	mtherr( "ellpk", DOMAIN );
