@@ -127,7 +127,10 @@ To test SciPy installation (highly recommended), execute in python
    >>> import scipy
    >>> scipy.test(level=1)
 
-where the test level can be varied from 1 to 10.
+where the test level can be varied from 1 to 10. To get detailed
+messages about what tests are being executed, use
+
+   >>> scipy.test(level=1, verbosity=2)
 
 COMPILER NOTES
 ==============
