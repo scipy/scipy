@@ -1163,7 +1163,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
             flag = 1
             fval = fx
             if disp > 0:
-                _endprint(x, flag, fval, maxfun, tol, disp)
+                _endprint(x, flag, fval, maxfun, xtol, disp)
             if full_output:
                 return xf, fval, flag, num
             else:
@@ -1207,7 +1207,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
         funcalls = 3
     else:
-        raise ValuError, "Bracketing interval must be length 2 or 3 sequence."
+        raise ValueError, "Bracketing interval must be length 2 or 3 sequence."
 
     x=w=v=xb
     fw=fv=fx=apply(func, (x,)+args)
@@ -1303,7 +1303,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
         funcalls = 3
     else:
-        raise ValuError, "Bracketing interval must be length 2 or 3 sequence."
+        raise ValueError, "Bracketing interval must be length 2 or 3 sequence."
 
     _gR = 0.61803399
     _gC = 1.0-_gR
@@ -1366,7 +1366,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
         w = xb - ((xb-xc)*tmp2-(xb-xa)*tmp1)/denom
         wlim = xb + grow_limit*(xc-xb)
         if iter > 1000:
-            raise RunTimeError, "Too many iterations."
+            raise RuntimeError, "Too many iterations."
         if (w-xc)*(xb-w) > 0.0:
             fw = apply(func, (w,)+args)
             funcalls += 1
