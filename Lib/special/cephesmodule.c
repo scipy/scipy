@@ -1382,7 +1382,6 @@ static int loop_over_arrays(PyObject *func, PyArrayObject **inarr, int nin, PyAr
 
   loop_index = PyArray_Size((PyObject *)in);  /* Total number of Python function calls */
 
-  printf("strides = %d\n", inarr[0]->strides[0] );
   while(loop_index--) { 
     /* Create input argument list with current element from the input
        arrays 
@@ -1391,7 +1390,6 @@ static int loop_over_arrays(PyObject *func, PyArrayObject **inarr, int nin, PyAr
       tmparr = inarr[i];
       /* Find linear index into this input array */
       CALCINDEX(indx_in,nd_index,tmparr->strides,in->nd);
-      printf("indx_in = %d\n", indx_in);
       /* Get object at this index */
       tmpobj = tmparr->descr->getitem((void *)(tmparr->data+indx_in));
       if (NULL == tmpobj) {
