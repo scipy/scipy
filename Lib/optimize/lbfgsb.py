@@ -140,7 +140,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             g = fprime(x, *args)
             return f, g
 
-    nbd = NA.zeros((n,), NA.Int)
+    nbd = NA.zeros((n,), NA.Int32)
     low_bnd = NA.zeros((n,), NA.Float)
     upper_bnd = NA.zeros((n,), NA.Float)
     bounds_map = {(None, None): 0,
@@ -161,11 +161,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     f = NA.array(0.0, NA.Float64)
     g = NA.zeros((n,), NA.Float64)
     wa = NA.zeros((2*m*n+4*n + 12*m**2 + 12*m,), NA.Float64)
-    iwa = NA.zeros((3*n,), NA.Int)
+    iwa = NA.zeros((3*n,), NA.Int32)
     task = NA.zeros((60,), NA.Character)
     csave = NA.zeros((60,), NA.Character)
-    lsave = NA.zeros((4,), NA.Int)
-    isave = NA.zeros((44,), NA.Int)
+    lsave = NA.zeros((4,), NA.Int32)
+    isave = NA.zeros((44,), NA.Int32)
     dsave = NA.zeros((29,), NA.Float64)
 
     task[:] = 'START'
