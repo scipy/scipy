@@ -233,10 +233,7 @@ if __name__ == '__main__':
     except ImportError: extra_packages.append('scipy_base')
     try: import scipy_test
     except ImportError: extra_packages.append('scipy_test')
-    try: import scipy_distutils
-    except ImportError:
-        extra_packages.append('scipy_distutils')
-        sys.argv.insert(0,'scipy_core')
+    sys.path.insert(0,'scipy_core')
 
     from scipy_distutils.core import setup
     from scipy_distutils.misc_util import merge_config_dicts
