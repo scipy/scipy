@@ -224,7 +224,7 @@ extern "C" {
     /*  Added for SciPy */
 extern void    superlu_python_module_abort(char *);
 extern void    *superlu_python_module_malloc (size_t);
-extern void    *superlu_python_module_free (void*);
+extern void    superlu_python_module_free (void *);
     /*  Added for SciPy */
 
 extern void    Destroy_SuperMatrix_Store(SuperMatrix *);

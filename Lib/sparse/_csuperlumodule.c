@@ -97,6 +97,21 @@ static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
   return 0;
 }
 
+static colperm_t superlu_module_getpermc(int permc_spec)
+{
+  switch(permc_spec) {
+  case 0:
+    return NATURAL;
+  case 1:
+    return MMD_ATA;
+  case 2:
+    return MMD_AT_PLUS_A;
+  case 3:
+    return COLAMD;
+  }
+  ABORT("Invalid input for permc_spec.");
+}
+
 
 static char doc_cgssv[] = "Direct inversion of sparse matrix.\n\nX = cgssv(A,B) solves A*X = B for X.";
 
@@ -107,19 +122,18 @@ static PyObject *Py_cgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   PyArrayObject *colind=NULL, *rowptr=NULL;
   int M, N, nnz;
   int info, dims[1], full_output=0;
-  int csc;
+  int csc=0, permc_spec=0;
   int *perm_r=NULL, *perm_c=NULL;
   SuperMatrix A, B, L, U;
   superlu_options_t options;
   SuperLUStat_t stat;
 
-  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc","full_output",NULL};
+  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "permc_spec", "full_output",NULL};
 
   /* Get input arguments */
-  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|iOi", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &full_output))
+  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|iii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec, &full_output))
     return NULL;
 
-  superlu_flag_new_keys();
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_CFLOAT,1,2);
@@ -140,7 +154,7 @@ static PyObject *Py_cgssv (PyObject *self, PyObject *args, PyObject *kwdict)
       perm_c = intMalloc(N);
       perm_r = intMalloc(M);
       set_default_options(&options);
-      options.ColPerm = NATURAL;
+      options.ColPerm=superlu_module_getpermc(permc_spec);
       StatInit(&stat);
 
   /* Compute direct inverse of sparse Matrix */
@@ -155,7 +169,6 @@ static PyObject *Py_cgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   Destroy_CompCol_Matrix(&U);
   StatFree(&stat);
 
-  superlu_end_new_keys();
 
   if (full_output)
       return Py_BuildValue("Ni", Py_X, info);
@@ -163,7 +176,14 @@ static PyObject *Py_cgssv (PyObject *self, PyObject *args, PyObject *kwdict)
       return Py_X;
     
  fail:
-  superlu_delete_newkeys();
+  SUPERLU_FREE(perm_r);
+  SUPERLU_FREE(perm_c);
+  Destroy_SuperMatrix_Store(&A);
+  Destroy_SuperMatrix_Store(&B);
+  Destroy_SuperNode_Matrix(&L);
+  Destroy_CompCol_Matrix(&U);
+  StatFree(&stat);
+
   Py_XDECREF(Py_X);
   return NULL;
 }

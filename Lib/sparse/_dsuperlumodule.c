@@ -60,12 +60,10 @@ static int NCFormat_from_spMatrix(SuperMatrix *A, int m, int n, int nnz, PyArray
     return retval;
   }
 
-  fprintf(stderr, "Inside One..\n");
-  fflush(stderr);
+
   if (setjmp(_superlu_py_jmpbuf)) return retval;
   else dCreate_CompCol_Matrix(A, m, n, nnz, (double *)nzvals->data, (int *)rowind->data, (int *)colptr->data, SLU_NC, SLU_D, SLU_GE);
-  fprintf(stderr, "Inside Two..\n");
-  fflush(stderr);
+
   retval = 0;
   return retval;
 }
@@ -100,6 +98,21 @@ static int Dense_from_Numeric(SuperMatrix *X, PyObject *PyX)
   return 0;
 }
 
+static colperm_t superlu_module_getpermc(int permc_spec)
+{
+  switch(permc_spec) {
+  case 0:
+    return NATURAL;
+  case 1:
+    return MMD_ATA;
+  case 2:
+    return MMD_AT_PLUS_A;
+  case 3:
+    return COLAMD;
+  }
+  ABORT("Invalid input for permc_spec.");
+}
+
 static char doc_dgssv[] = "Direct inversion of sparse matrix.\n\nX = dgssv(A,B) solves A*X = B for X.";
 
 static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
@@ -109,27 +122,22 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   PyArrayObject *colind=NULL, *rowptr=NULL;
   int M, N, nnz;
   int info, full_output=0;
-  int csc;
+  int csc=0, permc_spec=0;
   int *perm_r=NULL, *perm_c=NULL;
   SuperMatrix A, B, L, U;
   superlu_options_t options;
   SuperLUStat_t stat;
+  
 
-  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "full_output",NULL};
+  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "permc_spec", "full_output",NULL};
 
   /* Get input arguments */
-  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|ii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &full_output))
+  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|iii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec, &full_output))
     return NULL;
-
-  fprintf(stderr, "Begin..\n");
-  fflush(stderr);
-
-  superlu_flag_new_keys();
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_DOUBLE,1,2);
-  fprintf(stderr, "Two..\n");
-  fflush(stderr);
+
   if (Py_X == NULL) goto fail;
   if (csc) {
       if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail;
@@ -137,12 +145,8 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   else {
       if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr)) goto fail; 
   }
-  fprintf(stderr, "Three..\n");
-  fflush(stderr);
 
   if (Dense_from_Numeric(&B, Py_X)) goto fail;
-  fprintf(stderr, "Four..\n");
-  fflush(stderr);
 
 
   /* B and Py_X  share same data now but Py_X "owns" it */
@@ -154,18 +158,13 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
       perm_c = intMalloc(N);
       perm_r = intMalloc(M);
       set_default_options(&options);
-      options.ColPerm = NATURAL;
+      options.ColPerm=superlu_module_getpermc(permc_spec);
       StatInit(&stat);
 
-      fprintf(stderr,"Here...\n");
-      fflush(stderr);
   /* Compute direct inverse of sparse Matrix */
       dgssv(&options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
   }
   
-  fprintf(stderr,"Here...2\n");
-  fflush(stderr);
-
   SUPERLU_FREE(perm_r);
   SUPERLU_FREE(perm_c);
   Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
@@ -173,11 +172,6 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   Destroy_SuperNode_Matrix(&L);
   Destroy_CompCol_Matrix(&U);
   StatFree(&stat);
-
-  superlu_end_new_keys();
-
-  fprintf(stderr,"Here...3\n");
-  fflush(stderr);
  
   if (full_output)
       return Py_BuildValue("Ni", Py_X, info);
@@ -185,7 +179,13 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
       return Py_X;
 
  fail:
-  superlu_delete_newkeys();  /* in case ABORT called inside SuperLU routine */
+  SUPERLU_FREE(perm_r);
+  SUPERLU_FREE(perm_c);
+  Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
+  Destroy_SuperMatrix_Store(&B);
+  Destroy_SuperNode_Matrix(&L);
+  Destroy_CompCol_Matrix(&U);
+  StatFree(&stat);  
   Py_XDECREF(Py_X);
   return NULL;
 }

@@ -1,81 +1,32 @@
 
 #include "Python.h"
 #include <setjmp.h>
+#include "SuperLU/SRC/dsp_defs.h"
+#include "SuperLU/SRC/util.h"
 
 jmp_buf _superlu_py_jmpbuf;
 PyObject *_superlumodule_memory_dict=NULL;
-PyObject *_superlumodule_newmemory_list=NULL;
-int _superlumodule_flagnewmemory=0;
-
-void superlu_flag_new_keys()
-{
-  _superlumodule_flagnewmemory = 1;
-}
-
-void superlu_end_new_keys()
-{
-  _superlumodule_flagnewmemory = 0;
-  Py_XDECREF(_superlumodule_newmemory_list);
-}
-
-void superlu_delete_newkeys()
-{
-  PyObject *keys=NULL, *key=NULL;
-  void *mem_ptr;
-  int i, N;
- 
-  if (_superlumodule_memory_dict == NULL) {return;}
-  if (_superlumodule_newmemory_list == NULL) {return;}
-  keys = _superlumodule_newmemory_list;
-
-  N = PyList_Size(keys);
-  fprintf(stderr, "N = %d\n", N);
-  fflush(stderr);
-  for (i = 0; i < N; i++) {
-    key = PyList_GET_ITEM(keys, i);
-    mem_ptr = (void *)PyInt_AS_LONG((PyIntObject *)key);
-    /* Only free if key not already removed from dictionary */
-    if (!(PyDict_DelItem(_superlumodule_memory_dict, key))) {
-        free(mem_ptr);
-        fprintf(stderr, "Freeing %p\n", mem_ptr);
-        fflush(stderr);
-    }
-  }
-  
-  fprintf(stderr, "Here..5\n");
-  fflush(stderr);
-  Py_XDECREF(keys);
-  fprintf(stderr,"Here..7\n");
-  fflush(stderr);
- 
-  _superlumodule_flagnewmemory=0;
-}
-
-
-void superlu_delete_allkeys()
-{
-  PyObject *keys=NULL, *key=NULL;
-  void *mem_ptr;
-  int i;
- 
-  if (_superlumodule_memory_dict == NULL) {return;}
-  keys = PyDict_Keys(_superlumodule_memory_dict);
-  
-  for (i = 0; i < PyList_Size(keys); i++) {
-    key = PyList_GET_ITEM(keys, i);
-    mem_ptr = (void *)PyInt_AS_LONG((PyIntObject *)key);
-    free(mem_ptr);
-    PyDict_DelItem(_superlumodule_memory_dict, key);
-  }
-  
-  Py_XDECREF(keys);
-}
-
 
 /* Abort to be used inside the superlu module so that memory allocation 
    errors don't exit Python and memory allocated internal to SuperLU is freed.
-   Calling program should free all the pointers in the dictionary of allocated memory.
+   Calling program should deallocate (using SUPERLU_FREE) all memory that could have 
+   been allocated.  (It's ok to FREE unallocated memory)---will be ignored.
 */
+
+colperm_t superlu_module_getpermc(int permc_spec)
+{
+  switch(permc_spec) {
+  case 0:
+    return NATURAL;
+  case 1:
+    return MMD_ATA;
+  case 2:
+    return MMD_AT_PLUS_A;
+  case 3:
+    return COLAMD;
+  }
+  ABORT("Invalid input for permc_spec.");
+}
 
 void superlu_python_module_abort(char *msg)
 {
@@ -92,22 +43,12 @@ void *superlu_python_module_malloc(size_t size)
   if (_superlumodule_memory_dict == NULL) {
     _superlumodule_memory_dict = PyDict_New();
   }
-  if ((_superlumodule_newmemory_list == NULL) & (_superlumodule_flagnewmemory)) {
-    _superlumodule_newmemory_list = PyList_New(0);
-  }
-  fprintf(stderr, "Deep Inside One..\n");
-  fflush(stderr);
   mem_ptr = malloc(size);
-  keyval = (long) mem_ptr;
   if (mem_ptr == NULL) return NULL;
+  keyval = (long) mem_ptr;
   key = PyInt_FromLong(keyval);
   if (key == NULL) goto fail;
   if (PyDict_SetItem(_superlumodule_memory_dict, key, Py_None)) goto fail;
-  if (_superlumodule_flagnewmemory) {
-    if (PyList_Append(_superlumodule_newmemory_list, key)) goto fail;
-    fprintf(stderr, "Putting in %p\n", mem_ptr);
-    fflush(stderr);
-  }
   Py_DECREF(key);
   return mem_ptr;
 
@@ -123,14 +64,22 @@ void superlu_python_module_free(void *ptr)
 {
   PyObject *key;
   long keyval;
+  PyObject *ptype, *pvalue, *ptraceback;
 
+  if (ptr == NULL) return;
+  PyErr_Fetch(&ptype, &pvalue, &ptraceback);
   keyval = (long )ptr;
   key = PyInt_FromLong(keyval);
-  if (PyDict_DelItem(_superlumodule_memory_dict, key)) {fprintf(stderr,"Problem... "); fflush(stderr);}
-  fprintf(stderr, "Graceful Freeing %p\n", ptr);
-  fflush(stderr);
-  free(ptr);
+  /* This will only free the pointer if it could find it in the dictionary
+     of already allocated pointers --- thus after abort, the module can free all
+     the memory that "might" have been allocated to avoid memory leaks on abort 
+     calls.
+   */ 
+  if (!(PyDict_DelItem(_superlumodule_memory_dict, key))) {
+    free(ptr);
+  }
   Py_DECREF(key);
+  PyErr_Restore(ptype, pvalue, ptraceback);
   return; 
 }
 
