@@ -1,15 +1,29 @@
+# modules to import under the scipy namespace
 __all__ = ["optimize", "integrate", "signal", "special", "io", 
            "interpolate", "stats"]
-           
-from Numeric import *
+
+# namespaces to subsume into the scipy namespace itself
+_namespaces = ['MLab', 'misc', 'fastumath'] # MLab includes Numeric
+
 import os,sys
 from helpmod import help, source
-from misc import *
 
 for name in __all__:
     exec("import %s" % name)
 
 __all__.extend(['help', 'source'])
+
+
+for name in _namespaces:
+    exec("import %s" % name)
+    thelist = eval(name).__dict__.keys()
+    exec("del %s" % name) # clean namespace
+    exec("from %s import *" % name)
+    for key in thelist:
+        if key[0] == "_":
+            thelist.remove(key)
+
+    __all__.extend(thelist)
 
 # add some directories to the path so we can import their
 # modules.
@@ -28,8 +42,6 @@ try:
     __all__.append('xplt')
 except ImportError:
     pass
-
-import fastumath   
 
     
 #---- testing ----#
