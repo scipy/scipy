@@ -292,7 +292,8 @@ def bilinear(b,a,fs=1.0):
     """Return a digital filter from an analog filter using the bilinear transform.
 
     The bilinear transform substitutes (z-1) / (z+1) for s
-    """    
+    """
+    fs =float(fs)
     a,b = map(r1array,(a,b))
     D = len(a) - 1
     N = len(b) - 1
@@ -418,7 +419,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     
     #pre-warp frequencies for digital filter design
     if not analog:
-        fs = 2
+        fs = 2.0
         warped = 2*fs*tan(pi*Wn/fs)
     else:
         warped = Wn
