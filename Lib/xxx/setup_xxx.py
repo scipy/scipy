@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import os
 
@@ -25,20 +26,20 @@ def configuration(parent_package=''):
 
     # xxx generates source code
     from scipy_distutils.misc_util import SourceGenerator
-    def gen_spam(target, sources):
+    def generate_spam_pyf(target, sources):
         fin = open(sources[0])
         body = fin.read()
         fin.close()
         fout = open(target,'w')
         fout.write('python module spam\n%s\nend python module spam' % body)
         fout.close()
-
-    pyf_file = SourceGenerator(gen_spam,
+    pyf_file = SourceGenerator(generate_spam_pyf,
                                target='spam.pyf',
                                sources=[os.path.join(local_path,'spam_src.pyf')])
     ext = Extension(name=dot_join(parent_package,package,'spam'),
                     sources=[pyf_file])
     config['ext_modules'].append(ext)
+
     return config
 
 if __name__ == '__main__':

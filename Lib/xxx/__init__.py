@@ -11,3 +11,5 @@ from foo import *
 # Import sub-package:
 import yyy
 
+# Import extension module
+import spam
