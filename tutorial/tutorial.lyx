@@ -641,8 +641,7 @@ which transforms a complex-valued number with tiny imaginary part into a
 
 Occasionally the need to check whether or not a number is a scalar (Python
  (long)int, Python float, Python complex, or rank-0 array) occurs in coding.
- This functionality is provi>>> fpi = cast['f'](pi)ded in the convenient
- function 
+ This functionality is provided in the convenient function 
 \series bold 
 isscalar 
 \series default 
@@ -779,9 +778,8 @@ In the simplest case, this function can be used to construct 1d ranges as
 \layout Standard
 
 Having meshed arrays like this is sometimes very useful.
- However, it is not always needed due just to evaluate some N-dimensional
- function over a grid due to the array-broadcasting rules of Numeric and
- SciPy.
+ However, it is not always needed just to evaluate some N-dimensional function
+ over a grid due to the array-broadcasting rules of Numeric and SciPy.
  If this is the only purpose for generating a meshgrid, you should instead
  use the function 
 \series bold 
@@ -1128,7 +1126,7 @@ This particular function could have been written in vector form without
  the use of general_function.
  But, what if the function you have written is the result of some optimization
  or integration routine.
- Such functions can only be vectorized using 
+ Such functions can likely only be vectorized using 
 \family typewriter 
 special.general_function.
 

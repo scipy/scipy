@@ -163,9 +163,20 @@ ks_2samp
 meanwhitneyu
 tiecorrect
 ranksums
-wilcoxont
-kruskalwallish
+wilcoxon
+kruskal
 friedmanchisquare
+
+ansari
+bartlett
+levene
+shapiro
+anderson
+binom_test
+fligner
+mood
+oneway
+
 
 glm
 anova
@@ -175,6 +186,9 @@ Plot-tests
 probplot
 ppcc_max
 ppcc_plot
+
+For many more stat related functions install the software R and the 
+interface package rpy.
 """
 
 import pstats
@@ -183,6 +197,12 @@ from rv2 import *
 from distributions import *
 from rv import *
 from morestats import *
+
+try:  # use R functions if installed.
+    import rpy
+    from rfuncs import *
+except ImportError:
+    pass
 
 
 #---- testing ----#

@@ -785,6 +785,7 @@ Returns: t-statistic, two-tailed p-value
     return T, prob
 
 
+
         
 #Tests to include (from R) -- some of these already in stats.
 ########
@@ -812,9 +813,9 @@ Returns: t-statistic, two-tailed p-value
 # Equal or Given Proportions
 # Trend in Proportions
 # Quade Test
-# Student's T Test
-# F Test to compare two variances
-# Wilcoxon Rank Sum and Signed Rank Tests
+#Y Student's T Test
+#Y F Test to compare two variances
+#XY Wilcoxon Rank Sum and Signed Rank Tests
 
 
 

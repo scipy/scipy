@@ -163,8 +163,8 @@
   
     erf           -- Error function.
     erfc          -- Complemented error function (1- erf(x))
-    ervinv        -- Inverse of error function
-    ervcinv       -- Inverse of erfc
+    erfinv        -- Inverse of error function
+    erfcinv       -- Inverse of erfc
     erf_zeros     -- **Complex zeros of erf(z)
     fresnel       -- Fresnel sine and cosine integrals.
     fresnel_zeros -- Complex zeros of both Fresnel integrals
