@@ -1,43 +1,9 @@
-""" Linear algebra routines.
+#
+# linalg - Linear algebra routines
+#
 
- Linear Algebra Basics:
-
-   inv        --- Find the inverse of a square matrix
-   solve      --- Solve a linear system of equations
-   det        --- Find the determinant of a square matrix
-   norm       --- matrix and vector norm
-   lstsq      --- Solve linear least-squares problem
-   pinv       --- Pseudo-inverse (Moore-Penrose) using lstsq
-   pinv2      --- Pseudo-inverse using svd
-
- Eigenvalues and Decompositions:
-
-   eig        --- Find the eigenvalues and vectors of a square matrix
-   eigvals    --- Find the eigenvalues of a square matrix
-   lu         --- LU decomposition of a matrix
-   lu_factor  --- LU decomposition returning unordered matrix and pivots
-   lu_solve   --- solve Ax=b using back substitution with output of lu_factor
-   svd        --- Singular value decomposition of a matrix
-   svdvals    --- Singular values of a matrix
-   cholesky   --- Cholesky decomposition of a matrix
-   qr         --- QR decomposition of a matrix
-   schur      --- Schur decomposition of a matrix
-   rsf2csf    --- Real to complex schur form
-
- matrix Functions:
- 
-   expm       --- matrix exponential using Pade approx.
-   expm2      --- matrix exponential using Eigenvalue decomp.
-   expm3      --- matrix exponential using Taylor-series expansion
-   cosm       --- matrix cosine
-   sinm       --- matrix sine
-   tanm       --- matrix tangent
-   coshm      --- matrix hyperbolic cosine
-   sinhm      --- matrix hyperbolic sine
-   tanhm      --- matrix hyperbolic tangent
-   funm       --- Evaluating an arbitrary matrix function.
- 
-"""
+import os as _os
+execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
 
 from linalg_version import linalg_version as __version__
 

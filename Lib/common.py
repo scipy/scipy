@@ -2,14 +2,14 @@
 # (stats, special, linalg)
 
 # Needs eigenvalues
-import Numeric
-import types, sys
-import scipy
+import sys
+import types
 from scipy import special, stats, linalg
+import Numeric
+
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, hstack, product, array, typename, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
-import scipy_base.fastumath
 
 __all__ = ['factorial','factorial2','factorialk','comb','rand','randn','who',
            'lena','central_diff_weights', 'derivative', 'pade']
@@ -228,8 +228,7 @@ def randn(*args):
 
 def lena():
     import cPickle, os
-    d,junk = os.path.split(os.path.abspath(scipy.__file__))
-    fname = os.path.join(d,'plt','lena.dat')
+    fname = os.path.join(__path__[0],'plt','lena.dat')
     f = open(fname,'rb')
     lena = scipy.array(cPickle.load(f))
     f.close()

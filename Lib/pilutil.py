@@ -1,16 +1,17 @@
-
 # Functions which need the PIL
 
+from scipy_base import ppimport
+import types
 import Numeric
-import types, sys
-from scipy import special, stats
+
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, mgrid, iscomplexobj
-import scipy_base
-import scipy_base.fastumath
+     ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
+
+Image = ppimport('Image')
+ImageFilter = ppimport('ImageFilter')
 
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
-                'imrotate','imresize','imshow','imfilter','radon']
+           'imrotate','imresize','imshow','imfilter','radon']
 
 _UInt8 = Numeric.UnsignedInt8
 
@@ -27,7 +28,6 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
     return bytedata + cast[_UInt8](low)
             
-import Image
 
 def imread(name):
     """Read an image file.
@@ -213,6 +213,7 @@ def imshow(arr):
     im = toimage(arr)
     if (len(arr.shape) == 3) and (arr.shape[2] == 4):
         try:
+            import os
             im.save('/tmp/scipy_imshow.png')
             if os.system("(xv /tmp/scipy_imshow.png; rm -f /tmp/scipy_imshow.png)&"):
                 raise RuntimeError
@@ -241,18 +242,7 @@ def imresize(arr,size):
     imnew = im.resize(size)
     return fromimage(imnew)
 
-import ImageFilter
-_tdict = {'blur':ImageFilter.BLUR,
-          'contour':ImageFilter.CONTOUR,
-          'detail':ImageFilter.DETAIL,
-          'edge_enhance':ImageFilter.EDGE_ENHANCE,
-          'edge_enhance_more':ImageFilter.EDGE_ENHANCE_MORE,
-          'emboss':ImageFilter.EMBOSS,
-          'find_edges':ImageFilter.FIND_EDGES,
-          'smooth':ImageFilter.SMOOTH,
-          'smooth_more':ImageFilter.SMOOTH_MORE,
-          'sharpen':ImageFilter.SHARPEN
-          }
+
 def imfilter(arr,ftype):
     """Simple filtering of an image.
 
@@ -260,6 +250,18 @@ def imfilter(arr,ftype):
             'blur', 'contour', 'detail', 'edge_enhance', 'edge_enhance_more',
             'emboss', 'find_edges', 'smooth', 'smooth_more', 'sharpen'
     """
+    _tdict = {'blur':ImageFilter.BLUR,
+              'contour':ImageFilter.CONTOUR,
+              'detail':ImageFilter.DETAIL,
+              'edge_enhance':ImageFilter.EDGE_ENHANCE,
+              'edge_enhance_more':ImageFilter.EDGE_ENHANCE_MORE,
+              'emboss':ImageFilter.EMBOSS,
+              'find_edges':ImageFilter.FIND_EDGES,
+              'smooth':ImageFilter.SMOOTH,
+              'smooth_more':ImageFilter.SMOOTH_MORE,
+              'sharpen':ImageFilter.SHARPEN
+              }
+
     im = toimage(arr)
     if ftype not in _tdict.keys():
         raise ValueError, "Unknown filter type."
@@ -269,11 +271,11 @@ def imfilter(arr,ftype):
 def radon(arr,theta=None):
     if theta is None:
         theta = mgrid[0:180]
-    s = scipy_base.zeros((arr.shape[1],len(theta)),'d')
+    s = zeros((arr.shape[1],len(theta)),'d')
     k = 0
     for th in theta:
         im = imrotate(arr,-th)
-        s[:,k] = scipy_base.sum(im,axis=0)
+        s[:,k] = sum(im,axis=0)
         k += 1
     return s
         

@@ -1,10 +1,10 @@
-"""*
-    Clustering Algorithms are useful in Information Theory, target detection,
-    communications, compression, and other areas.  Currently only Vector
-    Quantization and the KMeans algorithm are supported by the vq module.
-    Self Organized Feature Maps (SOM) and other approaches are also scheduled
-    to appear at a theater near you.
-*"""
+#
+# cluster - Vector Quantization / Kmeans
+#
+
+import os as _os
+execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
+
 __all__ = ['vq']
 
 import vq

@@ -66,6 +66,10 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
                 p[0]*(x**N-1) + p[1]*(x**N-2) + ... + p[N-2]*x + p[N-1]
     """
     global _namedict, _dictlist
+
+    if hasattr(object, '_ppimport_attr'):
+        object = object._ppimport_attr
+
     if object is None:        
         info(info)
     elif isinstance(object, types.StringType):
@@ -173,7 +177,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
 
         print >> output, " " + argstr + "\n"
         print >> output, inspect.getdoc(object)
-                
+
     elif hasattr(object, '__doc__'):
         print >> output, inspect.getdoc(object)
         

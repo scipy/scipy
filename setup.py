@@ -31,6 +31,7 @@ standard_packages = ['io','linalg',
                      'interpolate','integrate','optimize',
                      'cow','ga','fftpack']
 #                     'cluster','cow','ga','fftpack']
+
 standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 
 graphics_packages = ['plt','gplt','xplt']
@@ -45,7 +46,9 @@ core_packages = [os.path.join('scipy_core',p) for p in core_packages]
 #---------------
 
 parent_package = 'scipy'
-scipy_packages = standard_packages + graphics_packages
+
+scipy_packages = standard_packages
+scipy_packages += graphics_packages
 #scipy_packages += chaco_packages
 
 #---------------
@@ -75,6 +78,7 @@ def setup_package():
     path = get_path(__name__)
     os.chdir(path)
     sys.path.insert(0,os.path.join(path,'Lib'))
+    # setup files of subpackages require scipy_core:
     sys.path.insert(0,os.path.join(path,'scipy_core'))
     try:
         from scipy_version import scipy_version
