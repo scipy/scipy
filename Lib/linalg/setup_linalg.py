@@ -10,17 +10,6 @@ import warnings
 # before rebuilding.
 skip_single_routines = 0
 
-if sys.platform == 'win32':
-    from scipy_distutils.mingw32_support import *
-
-from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
-from scipy_distutils.misc_util import fortran_library_item
-
-from scipy_distutils.system_info import get_info,dict_append,\
-     AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
-     LapackSrcNotFoundError,BlasSrcNotFoundError
-
 if os.name == 'nt':
     def run_command(command):
         """ not sure how to get exit status on nt. """
@@ -33,6 +22,16 @@ else:
     run_command = commands.getstatusoutput
 
 def configuration(parent_package=''):
+    if sys.platform == 'win32':
+        from scipy_distutils.mingw32_support import *
+
+    from scipy_distutils.core import Extension
+    from scipy_distutils.misc_util import get_path, default_config_dict
+    from scipy_distutils.misc_util import fortran_library_item, dot_join
+
+    from scipy_distutils.system_info import get_info,dict_append,\
+         AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
+         LapackSrcNotFoundError,BlasSrcNotFoundError
 
     package = 'linalg'
     from interface_gen import generate_interface
@@ -200,6 +199,29 @@ def configuration(parent_package=''):
     config['fortran_libraries'].extend(f_libs)
     return config
 
-if __name__ == '__main__':    
+def get_package_config(name):
+    sys.path.insert(0,os.path.join('scipy_core',name))
+    try:
+        mod = __import__('setup_'+name)
+        config = mod.configuration()
+    finally:
+        del sys.path[0]
+    return config
+
+if __name__ == '__main__':
+    extra_packages = []
+    try: import scipy_base
+    except ImportError: extra_packages.append('scipy_base')
+    try: import scipy_test
+    except ImportError: extra_packages.append('scipy_test')
+    try: import scipy_distutils
+    except ImportError:
+        extra_packages.append('scipy_distutils')
+        sys.args.insert(0,'scipy_core')
+
     from scipy_distutils.core import setup
-    setup(**configuration())
+    from scipy_distutils.misc_util import merge_config_dicts
+
+    config_dict = merge_config_dicts([configuration()] + \
+                                     map(get_package_config,extra_packages))
+    setup(**config_dict)
