@@ -42,6 +42,9 @@ def moment_ppf(m, ppffunc, *args):
         return apply(ppffunc, (q,)+args)**m
     return scipy.integrate.quad(_integrand2, 0, 1)[0]
 
+## Internal class to compute a ppf given a distribution.
+##  (needs cdf and stats function) and uses fsolve from scipy.optimize
+##  to compute ppf from cdf.
 class general_cont_ppf:
     def __init__(self, dist):
         self.dist = dist
@@ -1083,6 +1086,31 @@ def fatiguelifestats(c, loc=0.0, scale=1.0, full=0):
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
 
+## Folded Cauchy
+
+def foldcauchypdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 1.0/pi*(1.0/(1+(x-c)**2) + 1.0/(1+(x+c)**2))
+    return select([(c<0) |(scale<=0), x>=0], [scipy.nan, Px/scale])
+
+def foldcauchycdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = 1.0/pi*(arctan(x-c) + arctan(x+c))
+    return select([(c<0) |(scale<=0), x>=0], [scipy.nan, Cx])
+
+_foldcauchyppf = general_cont_ppf('foldcauchy')
+def foldcauchyppf(q, c, loc=0.0, scale=1.0):
+    return _foldcauchyppf(q, c, loc, scale)
+
+def foldcauchystats(c, loc=0.0, scale=1.0, full=0):
+    # no moments
+    if not full:
+        return (scipy.inf,)*2
+    else:
+        return (scipy.inf,)*4
+
 ## Extreme Value Type II or Frechet
 ## (defined in Regress+ documentation as Extreme LB) as
 ##   a limiting value distribution.
@@ -1287,6 +1315,59 @@ def genlogisticstats(c, loc=0.0, scale=1.0, full=0):
     g2 = pi**4/15.0 + 6*zeta(4,c)
     g2 /= mu2**2.0
     return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+## Generalized Pareto
+
+def genparetopdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = pow(1+c*x,arr(-1.0-1.0/c))
+    upper = 1.0 / arr(abs(c))
+    return select([(c==0)|(scale<=0), (x>=0) & ( ((c<0)&(x<upper)) | (c>0))],
+                  [scipy.nan, Px/scale])
+
+def genparetocdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = 1.0 - pow(1+c*x,arr(-1.0/c))
+    upper = 1.0 / arr(abs(c))
+    return select([(c==0)|(scale<=0),
+                   (x>=0)&( (c>0) | ((c<0) & (x<upper))),
+                   (c<0) & (x >= upper)],
+                  [scipy.nan, Cx, 1])
+
+def genparetoppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    vals = 1.0/c * (pow(1-q, -c)-1)
+    cond = (q>=0) & (q<=1) & (c!=0) & (scale > 0)
+    return _wc(cond, vals*scale + loc)
+
+def genparetosf(x, c, loc=0.0, scale=1.0):
+    return 1.0-genparetocdf(x, c, loc, scale)
+
+def genparetoisf(q, c, loc=0.0, scale=1.0):
+    return genparetoppf(1-q, c, loc, scale)
+
+def genparetostats(c, loc=0.0, scale=1.0, full=0):
+    mu = 1.0 / arr(1-c)
+    mu2 = 2.0/ arr((1-2*c)*(1-c)) - mu*mu
+    mn = select([(c==0) | (scale <=0), c<1],
+                [scipy.nan, mu*scale+loc], scipy.inf)
+    var = select([(c==0) | (scale <=0), c<0.5],
+                [scipy.nan, mu2*scale*scale], scipy.inf)
+    if not full:
+        return mn, var
+    mu3p = 6.0 / arr((1-c)*(1-2*c)*(1-3*c))
+    mu4p = 24.0 / arr((1-c)*(1-2*c)*(1-3*c)*(1-4*c))
+    mu3 = (mu3p - 3*mu*mu2 - mu**3)
+    g1 = mu3 / mu2**1.5
+    g2 = (mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4) / mu2**2.0 - 3.0
+    g1 = select([(c==0) | (scale <=0), c<1.0/3],
+                [scipy.nan, g1], scipy.inf)
+    g2 = select([(c==0) | (scale <=0), c<1.0/4],
+                [scipy.nan, g2], scipy.inf)    
+    return mn, var, g1, g2
+    
 
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 

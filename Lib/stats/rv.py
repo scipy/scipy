@@ -192,6 +192,11 @@ def halfcauchy(loc=0.0, scale=1.0, size=None):
         raise ValueError, _scalerr
     return abs(cauchy(size=size))*scale + loc
 
+def foldcauchy(c, loc=0.0, scale=1.0, size=None):
+    if (scale <=0) or (c<0):
+        raise ValueError, _parmerr
+    return abs(cauchy(loc=c,size=size))*scale + loc
+
 def stgamma(a, size=None):
     """returns array of random numbers with a standard gamma distribution with mean a"""
     return _build_random_array(rand.standard_gamma, (a,), size)
@@ -302,6 +307,14 @@ def nakagami(df, loc=0.0, scale=1.0, size=None):
     U = random(size=size)
     return loc + scale*sqrt(1.0/df*special.gammainccinv(df,1-U))
 
+def genpareto(c, loc=0.0, scale=1.0, size=None):
+    """Generalized Pareto
+    """
+    if (scale <=0) or (c==0):
+        raise ValueError, "Scale must be positive and parameter non-zero."
+    u = random(size=size)
+    return 1.0/c*(pow(1.0/(1-q),c)-1)
+
 def pareto(c, loc=0.0, scale=1.0, size=None):
     """Pareto First Kind.
     """
@@ -378,6 +391,7 @@ def genlogistic(shape, loc=0.0, scale=1.0, size=None):
         raise ValueError, "shape and scale must be positive."
     u = random(size=size)
     return -log(pow(u,-1.0/shape)-1.0)*scale + loc
+
 
 def logistic(loc=0.0, scale=1.0, size=None):
     """Logistic Random Numbers."""

@@ -201,6 +201,7 @@ N = Numeric
 import LinearAlgebra
 LA = LinearAlgebra
 import scipy.special as special
+from scipy import mean, std
 
 SequenceType = [ListType, TupleType, ArrayType]
 
@@ -243,46 +244,46 @@ def hmean(a,axis=-1):
     return size / add.reduce(1.0/a, axis)
 
 
-def mean (a,axis=None,keepdims=0):
-    """Calculates the arithmetic mean of the values in the passed array.
+##def mean (a,axis=None):
+##    """Calculates the arithmetic mean of the values in the passed array.
 
-    That is:  1/n * (x1 + x2 + ... + xn).  Defaults to ALL values in the
-    passed array.  Use axis=None to flatten array first.  REMEMBER: if
-    axis=0, it collapses over axis 0 ('rows' in a 2D array) only, and
-    if axis is a sequence, it collapses over all specified axes.  If
-    keepdims is set to 1, the resulting array will have as many dimensions as
-    a, with only 1 element per dim that was collapsed over.
+##    That is:  1/n * (x1 + x2 + ... + xn).  Defaults to ALL values in the
+##    passed array.  Use axis=None to flatten array first.  REMEMBER: if
+##    axis=0, it collapses over axis 0 ('rows' in a 2D array) only, and
+##    if axis is a sequence, it collapses over all specified axes.  If
+##    keepdims is set to 1, the resulting array will have as many dimensions as
+##    a, with only 1 element per dim that was collapsed over.
     
-    Returns: arithmetic mean calculated over dim(s) in axis
-    """
-    a = asarray(a)
-    if a.typecode() in ['l','s','b']:
-        a = a.astype(Float)
-    if axis is None:
-        a = ravel(a)
-        mysum = add.reduce(a)
-        denom = float(len(a))
-    elif type(axis) in [IntType,FloatType]:
-        mysum = sum(a,axis)
-        denom = float(a.shape[axis])
-        if keepdims == 1:
-            shp = list(a.shape)
-            shp[axis] = 1
-            mysum = reshape(mysum,shp)
-    else: # must be a TUPLE of dims to average over
-        dims = list(axis)
-        dims.sort()
-        dims.reverse()
-        mysum = a *1.0
-        for dim in dims:
-            mysum = add.reduce(mysum,dim)
-        denom = array(multiply.reduce(take(a.shape,dims)),Float)
-        if keepdims == 1:
-            shp = list(a.shape)
-            for dim in dims:
-                shp[dim] = 1
-            mysum = reshape(mysum,shp)
-    return mysum/denom
+##    Returns: arithmetic mean calculated over dim(s) in axis
+##    """
+##    a = asarray(a)
+##    if a.typecode() in ['l','s','b']:
+##        a = a.astype(Float)
+##    if axis is None:
+##        a = ravel(a)
+##        mysum = add.reduce(a)
+##        denom = float(len(a))
+##    elif type(axis) in [IntType,FloatType]:
+##        mysum = sum(a,axis)
+##        denom = float(a.shape[axis])
+##        if keepdims == 1:
+##            shp = list(a.shape)
+##            shp[axis] = 1
+##            mysum = reshape(mysum,shp)
+##    else: # must be a TUPLE of dims to average over
+##        dims = list(axis)
+##        dims.sort()
+##        dims.reverse()
+##        mysum = a *1.0
+##        for dim in dims:
+##            mysum = add.reduce(mysum,dim)
+##        denom = array(multiply.reduce(take(a.shape,dims)),Float)
+##        if keepdims == 1:
+##            shp = list(a.shape)
+##            for dim in dims:
+##                shp[dim] = 1
+##            mysum = reshape(mysum,shp)
+##    return mysum/denom
 
 
 def median (a,numbins=1000):
