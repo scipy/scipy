@@ -99,6 +99,7 @@ class dictmatrix(dict):
     def __add__(self, other):
         res = dictmatrix()
         res.update(self)
+        res.shape = self.shape
         for key in other.keys():
             try:
                 res[key] += other[key]
@@ -109,6 +110,7 @@ class dictmatrix(dict):
     def __sub__(self, other):
         res = dictmatrix()
         res.update(self)
+        res.shape = self.shape
         for key in other.keys():
             try:
                 res[key] -= other[key]
@@ -144,12 +146,52 @@ class dictmatrix(dict):
 
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
+        # assume cols_or_rows is sorted
         res = dictmatrix()
         indx = int((columns == 1))
-        for key in self.keys():
-            if key[indx] in cols_or_rows:
-                res[key] = self[key]
+        N = len(cols_or_rows)
+        if indx: # columns
+            for key in self.keys():
+                num = searchsorted(cols_or_rows,key[1])
+                if num < N:
+                    newkey = (key[0],num)
+                    res[newkey] = self[key]
+        else:
+            for key in self.keys():
+                num = searchsorted(cols_or_rows,key[0])
+                if num < N:
+                    newkey = (num,key[1])
+                    res[newkey] = self[key]            
         return res
+
+    def split(self, cols_or_rows, columns=1):
+        # similar to take but returns two array, the extracted
+        #  columns plus the resulting array
+        #  assumes cols_or_rows is sorted
+        base = dictmatrix()
+        ext = dictmatrix()
+        indx = int((columns == 1))
+        N = len(cols_or_rows)
+        if indx:
+            for key in self.keys():
+                num = searchsorted(cols_or_rows,key[1])
+                if cols_or_rows[num]==key[1]:
+                    newkey = (key[0],num)
+                    ext[newkey] = self[key]
+                else:
+                    newkey = (key[0],key[1]-num)
+                    base[newkey] = self[key]
+        else:
+            for key in self.keys():
+                num = searchsorted(cols_or_rows,key[0])
+                if cols_or_rows[num]==key[0]:
+                    newkey = (num,key[1])
+                    ext[newkey] = self[key]
+                else:
+                    newkey = (key[0]-num,key[1])
+                    base[newkey] = self[key]            
+        return base, ext
+
 
     def matvec(self, other):
         other = asarray(other)
