@@ -628,7 +628,7 @@ def exec_code(code,inputs,returns,global_vars,addendum=None):
     exec_code = build_globals(global_vars)
     exec_code = exec_code + build_inputs(inputs)
     exec_code = exec_code + code
-    exec exec_code in globals, globals
+    exec exec_code in globals(), globals()
     #perhaps do something here to catch errors
     if len(returns) == 1:
         results = eval(returns[0])
@@ -664,10 +664,13 @@ def loop_code(code,loop_var,inputs,returns,global_vars,addendum=None):
     if type(returns) == type(''):
         raise TypeError, 'returns must be a sequence object - not a string'
     if addendum: inputs.update(addendum)
-    _loop_data = inputs[loop_var]
+    globals()['_loop_data'] = inputs[loop_var]
+    globals()['_returns'] = returns 
+    #added to set all inputs in the global namespace
+    globals().update(inputs)
     del inputs[loop_var] #not strictly necessary
     exec_code = build_loop_code(code,loop_var,inputs,returns,global_vars)
-    exec exec_code in globals, globals
+    exec exec_code in globals(), globals()
     return _all_results
 
 #------------------------------------------------
@@ -735,11 +738,11 @@ _all_results = []
 for %(loop_var)s in _loop_data:
     %(code)s
     _result = []
-    if len(returns) == 1:
-        _result = eval(returns[0])
-    elif len(returns) > 1:
+    if len(_returns) == 1:
+        _result = eval(_returns[0])
+    elif len(_returns) > 1:
         _result = []
-        for _j in returns:
+        for _j in _returns:
             _result.append(eval(_j))
         _result = tuple(_result)
     else:
@@ -750,8 +753,8 @@ _all_results = tuple(_all_results)
 
 def build_loop_code(code,loop_var,inputs,returns,global_vars):
     code_entries ={}
-    code_entries['global_code'] = build_globals(global_vars)
-    code_entries['input_code'] = build_inputs(inputs)
+    code_entries['global_code'] = '' # build_globals(global_vars)
+    code_entries['input_code'] = '' # build_inputs(inputs)
     code_entries['loop_var'] = loop_var
     code_entries['code'] = indent(code)
     exec_code = loop_code_template % code_entries
@@ -785,6 +788,7 @@ def server(port):
     #the_server=SocketServer.TCPServer( (host, port), standard_sync_handler)
     #the_server=SocketServer.ForkingTCPServer( (host, port), standard_sync_handler)
     the_server=SocketServer.ThreadingTCPServer( (host, port), standard_sync_handler)
+    __name__ = '__main__'
     the_server.serve_forever()
 
 def client(host,port,length=1e5):
