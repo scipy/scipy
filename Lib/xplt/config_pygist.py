@@ -152,6 +152,9 @@ int main(int argc, char *argv[])
 #----------------------------------------------------------------------
     def config_unix(self):
         if sys.platform == 'win32':
+            configfile = open(self.config_h,'w')
+            configfile.write('\n')
+            configfile.close()
             return
         # begin play/unix configuration
         print
