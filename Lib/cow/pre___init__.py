@@ -1,5 +1,0 @@
-"""
-Cluster Of Workstations
-=======================
-
-"""

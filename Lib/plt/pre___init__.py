@@ -1,5 +1,0 @@
-"""
-Plotting with wxPython
-======================
-
-"""
