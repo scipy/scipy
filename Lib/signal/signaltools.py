@@ -9,7 +9,8 @@ from scipy import polyadd, polymul, polydiv, polysub, \
 import types
 import scipy
 import Numeric
-from Numeric import array, asarray, arange
+from Numeric import array, asarray, arange, where
+from umath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
@@ -447,6 +448,12 @@ def lfilter(b, a, x, axis=-1, zi=None):
     else:
         return sigtools._linear_filter(b, a, x, axis, zi)
 
+
+def boxcar(M,sym=1):
+    """The M-point boxcar window.
+    """
+    return Numeric.ones(M,Numeric.Float)
+
 def triang(M,sym=1):
     """The M-point triangular window.
     """
@@ -457,13 +464,13 @@ def triang(M,sym=1):
     odd = M % 2
     if not sym and not odd:
         M = M + 1        
-    n = grid[1:(M+1)/2+1]
+    n = arange(1,(M+1)/2+1)
     if M % 2 == 0:
         w = (2*n-1.0)/M
-        w = r_[w, w[::-1]]
+        w = scipy.r_[w, w[::-1]]
     else:
         w = 2*n/(M+1.0)
-        w = r_[w, w[-2::-1]]
+        w = scipy.r_[w, w[-2::-1]]
 
     if not sym and not odd:
         w = w[:-1]
@@ -497,7 +504,7 @@ def bartlett(M,sym=1):
     if not sym and not odd:
         M = M+1    
     n = arange(0,M)
-    w = where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
+    w = where(Numeric.less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -895,8 +902,8 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
 def get_window(window,Nx,fftbins=1):
     """Return a window of length Nx and type window.
 
-    If fftbins is 1, create a "periodic" window ready to use with ifftshift and
-    be multiplied by the result of an fft (SEE ALSO fftfreq). 
+    If fftbins is 1, create a "periodic" window ready to use with ifftshift
+    and be multiplied by the result of an fft (SEE ALSO fftfreq). 
 
     Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
                    kaiser (needs beta), gaussian (needs std),
@@ -904,8 +911,8 @@ def get_window(window,Nx,fftbins=1):
 
     If the window requires no parameters, then it can be a string.
     If the window requires parameters, the window argument should be a tuple
-        with the first argument the string name of the window, and the next arguments
-        the needed parameters.
+        with the first argument the string name of the window, and the next
+        arguments the needed parameters.
     If window is a floating point number, it is interpreted as the beta
         parameter of the kaiser window.
     """
@@ -945,7 +952,7 @@ def get_window(window,Nx,fftbins=1):
                         'general gauss', 'general_gauss', 'ggs']:
             winfunc = general_gaussian
         elif winstr in ['boxcar', 'box', 'ones']:
-            return ones(Nx,Numeric.Float)
+            winfunc = boxcar
         else:
             raise ValueError, "Unknown window type."
 

@@ -11,7 +11,7 @@ import scipy.integrate as integrate
 import scipy.linalg as linalg
 from scipy import r_, c_, eye, real
 from scipy import r1array, r2array
-from scipy import poly, squeeze, Mat
+from scipy import poly, squeeze, Mat, diag
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.
@@ -392,36 +392,37 @@ def lsim(system, U, T, X0=None, interp=1):
     if X0 is None:
         X0 = zeros(sys.B.shape[0],sys.A.typecode())
 
-    xout = Mat(zeros((len(T),sys.B.shape[0]),sys.A.typecode()))
+    xout = zeros((len(T),sys.B.shape[0]),sys.A.typecode())
     xout[0] = X0
-    A = Mat(sys.A)
-    B = Mat(sys.B)
+    A = sys.A
+    AT, BT = transpose(sys.A), transpose(sys.B)
     dt = T[1]-T[0]
-    G = Mat(linalg.expm(A*dt))
-    Am1 = A.I
-    Am2 = Am1*Am1
-    I = Mat(eye(A.shape[0],typecode=A.typecode()))
-    GmI = G-I
-    F1 = Am1*GmI*B
+    lam, vt = linalg.eig(A)
+    vti = linalg.inv(vt)
+    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt)
+    ATm1 = linalg.inv(AT)
+    ATm2 = dot(ATm1,ATm1)
+    I = eye(A.shape[0],typecode=A.typecode())
+    GTmI = GT-I
+    F1T = dot(dot(BT,GTmI),ATm1)
     if interp:
-        F2 = (Am2*GmI/dt- Am1) * B
+        F2T = dot(BT,dot(GTmI,ATm2)/dt - ATm1)
 
-    U = Mat(U)
     for k in xrange(1,len(T)):
         dt1 = T[k] - T[k-1]
         if dt1 != dt:
             dt = dt1
-            G = Mat(linalg.expm(A*dt))
-            GmI = G-I
-            F1 = Am1*GmI*B
+            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt)
+            GTmI = GT-I
+            F1T = dot(dot(BT,GTmI),ATm1)
             if interp:
-                F2 = (Am2*GmI/dt- Am1) * B
+                F2T = dot(BT,dot(GTmI,ATm2)/dt - ATm1)
 
-        xout[k] = xout[k-1]*G.T + U[k-1]*F1.T
+        xout[k] = dot(xout[k-1],GT) + dot(U[k-1],F1T)
         if interp:
-            xout[k] = xout[k] + (U[k]-U[k-1])*F2.T
+            xout[k] = xout[k] + dot((U[k]-U[k-1]),F2T)
 
-    yout = (sys.C * xout.T + sys.D * U.T).T
+    yout = squeeze(dot(U,transpose(sys.D))) + squeeze(dot(xout,transpose(sys.C)))
     return T, squeeze(yout), squeeze(xout)
 
 
@@ -455,12 +456,16 @@ def impulse(system, X0=None, T=None, N=None):
     if T is None:
         vals = linalg.eigvals(sys.A)
         tc = 1.0/min(abs(real(vals)))
-        T = arange(0,5*tc,5*tc / float(N))
+        T = arange(0,7*tc,7*tc / float(N))
     h = zeros(T.shape, sys.A.typecode())
+    s,vt = linalg.eig(sys.A)
+    v = Numeric.transpose(vt)
+    vi = linalg.inv(v)
+    C = sys.C
     for k in range(len(h)):
-        eA = Mat(linalg.expm(sys.A*T[k]))
-        B,C = map(Mat, (B,sys.C))
-        h[k] = squeeze(C*eA*B)
+        es = diag(Numeric.exp(s*T[k]))
+        eA = (dot(dot(v,es),vi)).astype(h.typecode())
+        h[k] = squeeze(dot(dot(C,eA),B))
     return T, h
 
 def step(system, X0=None, T=None, N=None):
@@ -489,7 +494,7 @@ def step(system, X0=None, T=None, N=None):
     if T is None:
         vals = linalg.eigvals(sys.A)
         tc = 1.0/min(abs(real(vals)))
-        T = arange(0,5*tc,5*tc / float(N))
+        T = arange(0,7*tc,7*tc / float(N))
     U = ones(T.shape, sys.A.typecode())
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]

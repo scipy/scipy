@@ -30,6 +30,7 @@
     lfilter       --  1-dimensional FIR and IIR digital linear filtering.
 
     hilbert       --- Compute the analytic signal of a 1-d signal.
+    get_window    --- Create FIR window.
 
  Filter design:
  
