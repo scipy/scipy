@@ -3,12 +3,9 @@
 import os
 import sys
 import re
-from distutils import dep_util,dir_util
 from distutils.dep_util import newer_group, newer
 from glob import glob
 from os.path import join
-import warnings
-import shutil
 
 #-------------------
 # To skip wrapping single precision atlas/lapack/blas routines, set
@@ -23,31 +20,18 @@ using_lapack_blas = 0
 
 #--------------------
 
-if os.name == 'nt':
-    def run_command(command):
-        """ not sure how to get exit status on nt. """
-        in_pipe,out_pipe = os.popen4(command)
-        in_pipe.close()
-        text = out_pipe.read()
-        return 0, text
-else:
-    import commands
-    run_command = commands.getstatusoutput
-
 def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import dot_join, get_path, default_config_dict
     from scipy_distutils.system_info import get_info, dict_append, NotFoundError
 
-    package = 'linalg'
     from interface_gen import generate_interface
+
+    package = 'linalg'
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__,parent_path)
     def local_join(*paths):
         return os.path.join(*((local_path,)+paths))
-
-    abs_local_path = os.path.abspath(local_path)
-    no_atlas = 0
 
     lapack_opt = get_info('lapack_opt')
 
