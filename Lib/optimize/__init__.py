@@ -9,9 +9,10 @@
                 function, gradient and hessian).
    leastsq --   Minimize the sum of squares of M equations in
                  N unknowns given a starting estimate.
+   fminbound -- Bounded minimization of a scalar function.
    fsolve --    Non-linear equation solver.                 
 """
 
-from optimize import fmin, fminBFGS, fminNCG
+from optimize import fmin, fminBFGS, fminNCG, fminbound
 from minpack import fsolve, leastsq
 

@@ -100,7 +100,7 @@ typedef struct
 
 /* Intel IEEE, low order words come first:
  */
-/* #define IBMPC 1 */
+#define IBMPC 1
 
 /* Motorola IEEE, high order words come first
  * (Sun 680x0 workstation):
@@ -113,10 +113,10 @@ typedef struct
  * roundoff problems in pow.c:
  * (Sun SPARCstation)
  */
-#define UNK 1 
+/* #define UNK 1 */
 
 /* If you define UNK, then be sure to set BIGENDIAN properly. */
-#define BIGENDIAN 1
+#define BIGENDIAN 0
 
 /* Define this `volatile' if your compiler thinks
  * that floating point arithmetic obeys the associative

@@ -24,11 +24,11 @@ fminbound   ---      Bounded minimization for scalar functions.
 
 import Numeric
 import MLab
+from fastumath import absolute, sqrt
 Num = Numeric
 max = MLab.max
 min = MLab.min
-abs = Num.absolute
-sqrt = Num.sqrt
+abs = absolute
 __version__="0.4.1"
 
 def rosen(x):  # The Rosenbrock function
@@ -606,8 +606,6 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     else:        
         return xk
 
-
-
 def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500, 
               full_output=0, disp=1):
     """Bounded minimization for scalar functions.
@@ -649,65 +647,65 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     header = ' Func-count     x          f(x)          Procedure'
     step='       initial'
 
-    seps = sqrt(2.2e-16)
-    c = 0.5*(3.0-sqrt(5.0))
+    sqrt_eps = sqrt(2.2e-16)
+    c0 = 0.5*(3.0-sqrt(5.0))
     a, b = x1, x2
-    v = a + c*(b-a)
-    w, xf = v, v
-    d = e = 0.0
+    fulc = a + c0*(b-a)
+    nfc, xf = fulc, fulc
+    rat = e = 0.0
     x = xf
     fx = func(x,*args)
     num = 1
     fmin_data = (1, xf, fx)
+
+    ffulc = fnfc = fx
+    xm = 0.5*(a+b)
+    tol1 = sqrt_eps*abs(xf) + xtol / 3.0
+    tol2 = 2.0*tol1
+
     if disp > 2:
         print (" ")
         print (header)
         print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
 
-    fv = fw = fx
-    xm = 0.5*(a+b)
-    tol1 = seps*abs(xf) + xtol / 3.0
-    tol2 = 2.0*tol1
-
-    maxcount = maxfun
     # Main loop
 
     while ( abs(xf-xm) > (tol2 - 0.5*(b-a)) ):
-        gs = 1
+        golden = 1
         # Check for parabolic fit
         if abs(e) > tol1:
-            gs = 0
-            r = (xf-w)*(fx-fv)
-            q = (xf-v)*(fx-fw)
-            p = (xf-v)*q - (xf-w)*r
+            golden = 0
+            r = (xf-nfc)*(fx-ffulc)
+            q = (xf-fulc)*(fx-fnfc)
+            p = (xf-fulc)*q - (xf-nfc)*r
             q = 2.0*(q-r)
             if q > 0.0: p = -p
             q = abs(q)
             r = e
-            e = d
+            e = rat
 
             # Check for acceptability of parabola
             if ( (abs(p) < abs(0.5*q*r)) and (p > q*(a-xf)) and (p < q*(b-xf))):
-                d = (p+0.0) / q;
-                x = xf + d
+                rat = (p+0.0) / q;
+                x = xf + rat
                 step = '       parabolic'
 
                 if ((x-a) < tol2) or ((b-x) < tol2):
                     si = Numeric.sign(xm-xf) + ((xm-xf)==0)
-                    d = tol1*si
+                    rat = tol1*si
             else:      # do a golden section step
-                gs = 1
+                golden = 1
 
-        if gs:  # Do a golden-section step
+        if golden:  # Do a golden-section step
             if xf >= xm:
                 e=a-xf
             else:
                 e=b-xf
-            d = c*e
+            rat = c0*e
             step = '       golden'
 
-        si = Numeric.sign(d) + (d == 0)
-        x = xf + si*max([abs(d), tol1])
+        si = Numeric.sign(rat) + (rat == 0)
+        x = xf + si*max([abs(rat), tol1])
         fu = func(x,*args)
         num += 1
         fmin_data = (num, x, fu)
@@ -719,25 +717,25 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                 a = xf
             else:
                 b = xf
-            v, fv = w, fw
-            w, fw = xf, fx
+            fulc, ffulc = nfc, fnfc
+            nfc, fnfc = xf, fx
             xf, fx = x, fu
         else:
             if x < xf:
                 a = x
             else:
                 b = x
-            if (fu <= fw) or (w == xf):
-                v, fv = w, fw
-                w, fw = x, fu
-            elif (fu <= fv) or (v == xf) or (v == w):
-                v, fv = x, fu
+            if (fu <= fnfc) or (nfc == xf):
+                fulc, ffulc = nfc, fnfc
+                nfc, fnfc = x, fu
+            elif (fu <= ffulc) or (fulc == xf) or (fulc == nfc):
+                fulc, ffulc = x, fu
 
         xm = 0.5*(a+b)
-        tol1 = seps*abs(xf) + xtol/3.0
+        tol1 = sqrt_eps*abs(xf) + xtol/3.0
         tol2 = 2.0*tol1
 
-        if num >= maxcount:
+        if num >= maxfun:
             flag = 0
             fval = fx
             if disp > 0:

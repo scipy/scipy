@@ -29,6 +29,7 @@ stats.py module
 A collection of basic statistical functions for python.  The function
 names appear below.
 
+
 IMPORTANT:  There are really *3* sets of functions.  The first set has an 'l'
 prefix, which can be used with list or tuple arguments.  The second set has
 an 'a' prefix, which can accept NumPy array arguments.  These latter
@@ -124,6 +125,8 @@ PROBABILITY CALCS:  chisqprob
                     betacf
                     gammln 
                     betai
+
+  *** SEE ALSO the scipy.special package for probability calculation functions. ***
 
 ANOVA FUNCTIONS:  anova (NumPy required)
                   F_oneway

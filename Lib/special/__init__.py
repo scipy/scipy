@@ -37,6 +37,9 @@
     hankel1e -- Exponentially scaled Hankel function of the first kind.
     hankel2  -- Hankel function of the second kind.
     hankel2e -- Exponentially scaled Hankel function of the second kind.
+
+  Faster versions of common Bessel Functions.
+    
     j0       -- Bessel function of order 0.
     j1       -- Bessel function of order 1.
     y0       -- Bessel function of second kind of order 0.
@@ -136,3 +139,8 @@
 
  """
 from special import *
+
+# sys.platform 
+#sunos
+#irix
+#hp-ux

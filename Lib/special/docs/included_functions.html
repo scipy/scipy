@@ -28,6 +28,7 @@ that if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph).
 <DT>y = ellpe(m1)
 <DD>ellpe(m1) returns the complete integral of the second kind:
 integral(sqrt(1-(1-m1)*sin(t)**2),t=0..pi/2)
+*** Notice that argument must be m1 = 1-m ***
 
 <DT>y = ellie(phi,m)
 <DD>ellie(phi,m) returns the incomplete elliptic integral of the
@@ -36,6 +37,7 @@ second kind: integral(sqrt(1-m*sin(t)**2),t=0..phi)
 <DT>y = ellpk(m1)
 <DD>ellpk(m1) returns the complete integral of the first kind:
 integral(1/sqrt(1-(1-m1)*sin(t)**2),t=0..pi/2)
+*** Notice that argument must be m1 = 1-m ***
 
 <DT>y = ellik(phi,m)
 <DD>ellik(phi,m) returns the incomplete elliptic integral of the first

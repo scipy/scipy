@@ -647,10 +647,13 @@ scipy.help
 
 \end_inset 
 
- The first four algorithms are minimization algorithms (fmin: Nelder-Mead
- simplex, fminBFGS: BFGS, fminNCG: Newton Conjugate Gradient, and leastsq:
- Levenburg-Marquardt) while the last algorithm actually finds the roots
- of a general function of possibly many variables.
+ The first four algorithms are unconstrained minimization algorithms (fmin:
+ Nelder-Mead simplex, fminBFGS: BFGS, fminNCG: Newton Conjugate Gradient,
+ and leastsq: Levenburg-Marquardt).
+ The fourth algorithm only works for functions of a single variable but
+ allows minimization over a specified interval.
+ The last algorithm actually finds the roots of a general function of possibly
+ many variables.
  It is included in the optimization package because at the (non-boundary)
  extreme points of a function, the gradient is equal to zero.
 \layout Subsection
@@ -691,5 +694,10 @@ fmin
 
 \end_inset 
 
+
+\layout Subsection
+
+Broyden-Fletcher-Goldfar-Shanno Quasi-Newton (scipy.optimize.fminBFGS)
+\layout Standard
 
 \the_end
