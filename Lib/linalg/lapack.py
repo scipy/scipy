@@ -4,6 +4,7 @@
 
 __all__ = ['get_lapack_funcs']
 
+import new
 import string
 import warnings
 
@@ -21,10 +22,14 @@ elif hasattr(flapack,'empty_module'):
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
-def get_lapack_funcs(names,arrays=(),debug=0):
+def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     """Return available LAPACK function objects with names.
     arrays are used to determine the optimal prefix of
-    LAPACK routines."""
+    LAPACK routines.
+    If force_clapack is True then available Atlas routine
+    is returned for column major storaged arrays with
+    rowmajor argument set to False.
+    """
     ordering = []
     for i in range(len(arrays)):
         t = arrays[i].typecode()
@@ -44,15 +49,32 @@ def get_lapack_funcs(names,arrays=(),debug=0):
         # in all other cases, C code is preferred
         m1,m2 = clapack,flapack
     funcs = []
+    m1_name = string.split(m1.__name__,'.')[-1]
+    m2_name = string.split(m2.__name__,'.')[-1]
     for name in names:
         func_name = required_prefix + name
         func = getattr(m1,func_name,None)
         if func is None:
             func = getattr(m2,func_name)
-            func.module_name = string.split(m2.__name__,'.')[-1]
+            func.module_name = m2_name
         else:
-            func.module_name = string.split(m1.__name__,'.')[-1]
+            func.module_name = m1_name
+            if force_clapack and m1 is flapack:
+                func2 = getattr(m2,func_name,None)
+                if func2 is not None:
+                    exec _colmajor_func_template % {'func_name':func_name}
+                    func = new.function(func_code,{'clapack_func':func2},func_name)
+                    func.module_name = m2_name
+                    func.__doc__ = func2.__doc__
         func.prefix = required_prefix
         func.typecode = typecode
         funcs.append(func)
     return tuple(funcs)
+
+_colmajor_func_template = '''\
+def %(func_name)s(*args,**kws):
+    if not kws.has_key("rowmajor"):
+        kws["rowmajor"] = 0
+    return clapack_func(*args,**kws)
+func_code = %(func_name)s.func_code
+'''
