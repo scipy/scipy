@@ -9098,7 +9098,7 @@ C
 C       ==========================================================
 C       Purpose: Integrate Bessel functions J0(t) & Y0(t) with
 C                respect to t from 0 to x
-C       Input :  x  --- Upper limit of the integral ( x ò 0 )
+C       Input :  x  --- Upper limit of the integral ( x >= 0 )
 C       Output:  TJ --- Integration of J0(t) from 0 to x
 C                TY --- Integration of Y0(t) from 0 to x
 C       =======================================================

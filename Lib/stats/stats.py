@@ -17,7 +17,7 @@
 # strang@nmr.mgh.harvard.edu).
 #
 
-# Adapted for use by SciPy 2002 by Travis Oliphant
+# Heavily adapted for use by SciPy 2002 by Travis Oliphant
 """
 stats.py module
 
@@ -42,8 +42,8 @@ few extra functions that don't appear in the list below can be found by
 interested treasure-hunters.  These functions don't necessarily have
 both list and array versions but were deemed useful
 
-CENTRAL TENDENCY:  geometricmean
-                   harmonicmean
+CENTRAL TENDENCY:  gmean    (geometric mean)
+                   hmean    (harmonic mean)
                    mean
                    median
                    medianscore
@@ -113,8 +113,8 @@ PROBABILITY CALCS:  chisqprob
 
 
 ANOVA FUNCTIONS:  anova (NumPy required)
-                  F_oneway
-                  F_value
+                  f_oneway
+                  f_value
 
 SUPPORT FUNCTIONS:  writecc
                     incr
@@ -188,10 +188,10 @@ SUPPORT FUNCTIONS:  writecc
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
 
-import math, string, sys, pstat, copy
+import math, string, sys, pstat
 from types import *
 
-__version__ = 0.5
+__version__ = 0.7
 
 from Numeric import *
 from fastumath import *
@@ -199,13 +199,35 @@ import Numeric
 N = Numeric
 import LinearAlgebra
 LA = LinearAlgebra
-import Matrix
 import scipy.special as special
 import scipy
 
 SequenceType = [ListType, TupleType, ArrayType]
 
 
+# These two functions replace letting axis be a sequence and the
+#  keepdims features used throughout.  These ideas
+#  did not match 
+
+def apply_over_axes(func, a, axes):
+    """Apply a function over multiple axes, keeping the same shape
+    for the resulting array.
+    """
+    val = asarray(a)
+    if not type(axes) in SequenceType:
+        axes = (axes,)
+    for axis in axes:
+        args = (val, axis)
+        val = expand_dims(func(*args),axis)
+    return val
+
+def expand_dims(a, axis):
+    """Expand the shape of a to include a length 1 dimension before the given axis.
+    """
+    a = asarray(a)
+    shape = a.shape
+    a.shape = shape[:axis] + (1,) + shape[axis:]
+    return a
 
 def _chk_asarray(a, axis):
     if axis is None:
@@ -282,61 +304,6 @@ def median(a, axis=-1):
         index=a.shape[0]/2
         return (sorted[index-1]+sorted[index])/2.0
 
-def std(a,axis=-1):
-    """Returns the standard deviation along the given axis.
-
-    The result is unbiased with division by N-1.  If m is of integer type
-    returns a floating point answer.
-    """
-    a, axis = _chk_asarray(a, axis)
-    n = float(a.shape[axis])
-    sx2 = add.reduce(a**2, axis)
-    sx = add.reduce(a,axis)
-    return sqrt((sx2 - sx**2/n)/(n-1.0))
-
-
-def mean_tmp (a,axis=None, keepdims=0):
-    """Calculates the arithmetic mean of the values in the passed array.
-
-    That is:  1/n * (x1 + x2 + ... + xn).  Defaults to ALL values in the
-    passed array.  Use axis=None to flatten array first.  REMEMBER: if
-    axis=0, it collapses over axis 0 ('rows' in a 2D array) only, and
-    if axis is a sequence, it collapses over all specified axes.  If
-    keepdims is set to 1, the resulting array will have as many dimensions as
-    a, with only 1 element per dim that was collapsed over.
-    
-    Returns: arithmetic mean calculated over dim(s) in axis
-    """
-    a = asarray(a)
-    if a.typecode() in ['l','s','b']:
-        a = a.astype(Float)
-    if axis is None:
-        a = ravel(a)
-        mysum = add.reduce(a)
-        denom = float(len(a))
-    elif type(axis) in [IntType,FloatType]:
-        mysum = sum(a,axis)
-        denom = float(a.shape[axis])
-        if keepdims == 1:
-            shp = list(a.shape)
-            shp[axis] = 1
-            mysum = reshape(mysum,shp)
-    else: # must be a TUPLE of dims to average over
-        dims = list(axis)
-        dims.sort()
-        dims.reverse()
-        mysum = a *1.0
-        for dim in dims:
-            mysum = add.reduce(mysum,dim)
-        denom = array(multiply.reduce(take(a.shape,dims)),Float)
-        if keepdims == 1:
-            shp = list(a.shape)
-            for dim in dims:
-                shp[dim] = 1
-            mysum = reshape(mysum,shp)
-    return mysum/denom
-
-
 def cmedian (a,numbins=1000):
     """Calculates the COMPUTED median value of an array of numbers, given the
     number of bins to use for the histogram (more bins approaches finding the
@@ -396,7 +363,7 @@ def mode(a, axis=-1):
     oldcounts = zeros(testshape)
     for score in scores:
         template = equal(a,score)
-        counts = sum(template,axis,1)
+        counts = expand_dims(sum(template,axis),axis)
         mostfrequent = where(greater(counts,oldcounts),score,oldmostfreq)
         oldcounts = where(greater(counts,oldcounts),counts,oldcounts)
         oldmostfreq = mostfrequent
@@ -530,7 +497,7 @@ def tsem(a,limits=None,inclusive=(1,1)):
         mask = lowerfcn(a,limits[0])
     elif limits[0] is not None and limits[1] is not None:
         mask = lowerfcn(a,limits[0])*upperfcn(a,limits[1])
-    term1 = add.reduce(ravel(a*a*mask))
+    #term1 = add.reduce(ravel(a*a*mask))
     n = float(add.reduce(ravel(mask)))
     return sd/math.sqrt(n)
 
@@ -551,7 +518,7 @@ def moment(a,moment=1,axis=-1):
     if moment == 1:
         return 0.0
     else:
-        mn = mean(a,axis)  
+        mn = expand_dims(mean(a,axis),axis)
         s = power((a-mn),moment)
         return mean(s,axis)
 
@@ -846,33 +813,26 @@ Returns: transformed data for use in an ANOVA
         return array(nargs)
 
 
-def samplevar (a,axis=-1,keepdims=0):
+def samplevar (a,axis=-1):
     """
 Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
-an integer (the axis over which to operate), or a sequence
-(operate over multiple axes).  Set keepdims=1 to return an array
-with the same number of axes as a.
+an integer (the axis over which to operate)
 """
-    a, axis = _chk_asarray(a)
-    if axis == 1:
-        mn = mean(a,axis)[:,NewAxis]
-    else:
-        mn = mean_tmp(a,axis,keepdims=1)
+    a, axis = _chk_asarray(a, axis)
+    mn = expand_dims(mean(a, axis), axis)
     deviations = a - mn 
     n = a.shape[axis]
-    svar = ss(deviations,axis,keepdims) / float(n)
+    svar = ss(deviations,axis) / float(n)
     return svar
 
 
-def samplestd (a, axis=-1, keepdims=0):
+def samplestd (a, axis=-1):
     """Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
-an integer (the axis over which to operate), or a sequence
-(operate over multiple axes).  Set keepdims=1 to return an array
-with the same number of axes as a.
+an integer (the axis over which to operate).
 """
-    return sqrt(samplevar(a,axis,keepdims))
+    return sqrt(samplevar(a,axis))
 
 
 def signaltonoise(instack,axis=-1):
@@ -888,59 +848,48 @@ Returns: array containing the value of (mean/stdev) along axis,
     return where(equal(sd,0),0,m/sd)
 
 
-def var(a, axis=-1,keepdims=0):
+def var(a, axis=-1):
     """
 Returns the estimated population variance of the values in the passed
-array (i.e., N-1).  Axis can equal None (ravel array first), an
-integer (the axis over which to operate), or a sequence (operate
-over multiple axes).  Set keepdims=1 to return an array with the
-same number of axes as a.
+array (i.e., N-1).  Axis can equal None (ravel array first), or an
+integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    mn = mean_tmp(a,axis,1)
+    mn = expand_dims(mean(a,axis),axis)
     deviations = a - mn
     n = a.shape[axis]
-    var = ss(deviations,axis,keepdims)/float(n-1)
+    var = ss(deviations,axis)/(n-1.0)
     return var
 
 
-def std_tmp (a, axis=-1, keepdims=0):
+def std (a, axis=-1):
     """
 Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
-first), an integer (the axis over which to operate), or a
-sequence (operate over multiple axes).  Set keepdims=1 to return
-an array with the same number of axes as a.
-
+first), or an integer (the axis over which to operate).
 """
-    return sqrt(var(a,axis,keepdims))
+    return sqrt(var(a,axis))
 
 
-def stderr (a, axis=-1, keepdims=0):
+def stderr (a, axis=-1):
     """
 Returns the estimated population standard error of the values in the
 passed array (i.e., N-1).  Axis can equal None (ravel array
-first), an integer (the axis over which to operate), or a
-sequence (operate over multiple axes).  Set keepdims=1 to return
-an array with the same number of axes as a.
-
+first), or an integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    return std_tmp(a,axis,keepdims) / float(sqrt(a.shape[axis]))
+    return std(a,axis) / float(sqrt(a.shape[axis]))
 
 
-def sem (a, axis=-1, keepdims=0):
+def sem (a, axis=-1):
     """
 Returns the standard error of the mean (i.e., using N) of the values
-in the passed array.  Axis can equal None (ravel array first), an
-integer (the axis over which to operate), or a sequence (operate
-over multiple axes).  Set keepdims=1 to return an array with the
-same number of axes as a.
-
+in the passed array.  Axis can equal None (ravel array first), or an
+integer (the axis over which to operate)
 """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = samplestd(a,axis,keepdims) / sqrt(n-1)
+    s = samplestd(a,axis) / sqrt(n-1)
     return s
 
 
@@ -975,7 +924,7 @@ of the compare array.
 
 """
     mns = mean(compare,axis)
-    sstd = samplestdev(compare,0)
+    sstd = samplestd(compare,0)
     return (scores - mns) / sstd
 
 
@@ -1092,8 +1041,40 @@ def corrcoef(x, y=None, rowvar=0, bias=0):
     observations in the columns.
     """
     c = cov(x, y, rowvar=rowvar, bias=bias)
-    d = diag(c)
+    d = scipy.diag(c)
     return c/sqrt(multiply.outer(d,d))
+
+
+
+def f_oneway(*args):
+    """
+Performs a 1-way ANOVA, returning an F-value and probability given
+any number of groups.  From Heiman, pp.394-7.
+
+Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
+                                  treatment group
+Returns: f-value, probability
+"""
+    na = len(args)            # ANOVA on 'na' groups, each in it's own array
+    tmp = map(N.array,args)
+    #means = map(mean,tmp)
+    #vars = map(var,tmp)
+    #ns = map(len,args)
+    alldata = N.concatenate(args)
+    bign = len(alldata)
+    sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
+    ssbn = 0
+    for a in args:
+        ssbn = ssbn + square_of_sums(N.array(a))/float(len(a))
+    ssbn = ssbn - (square_of_sums(alldata)/float(bign))
+    sswn = sstot-ssbn
+    dfbn = na-1
+    dfwn = bign - na
+    msb = ssbn/float(dfbn)
+    msw = sswn/float(dfwn)
+    f = msb/msw
+    prob = fprob(dfbn,dfwn,f)
+    return f, prob
 
 
 def paired(x,y):
@@ -1113,7 +1094,7 @@ Returns: appropriate statistic name, value, and probability
         print '\nComparing variances ...',
 # USE O'BRIEN'S TEST FOR HOMOGENEITY OF VARIANCE, Maxwell & delaney, p.112
         r = obrientransform(x,y)
-        f,p = F_oneway(pstat.colex(r,0),pstat.colex(r,1))
+        f,p = f_oneway(pstat.colex(r,0),pstat.colex(r,1))
         if p<0.05:
             vartype='unequal, p='+str(around(p,4))
         else:
@@ -1170,8 +1151,6 @@ Returns: Pearson's r, two-tailed p-value
     x,y = map(asarray, (x,y))
     TINY = 1.0e-20
     n = len(x)
-    xmean = mean(x,None)
-    ymean = mean(y,None)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
     r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = (r_num / r_den)
@@ -1188,7 +1167,6 @@ from Heiman's Basic Statistics for the Behav. Sci (1st), p.192.
 
 Returns: Spearman's r, two-tailed p-value
 """
-    TINY = 1e-30
     n = len(x)
     rankx = rankdata(x)
     ranky = rankdata(y)
@@ -1217,15 +1195,15 @@ Returns: Point-biserial r, two-tailed p-value
     if len(categories) <> 2:
         raise ValueError, "Exactly 2 categories required (in x) for pointbiserialr()."
     else:   # there are 2 categories, continue
-        codemap = pstat.abut(categories,arange(2))
-        recoded = pstat.recode(data,codemap,0)
+        #codemap = pstat.abut(categories,arange(2))
+        #recoded = pstat.recode(data,codemap,0)
         x = pstat.linexand(data,0,categories[0])
         y = pstat.linexand(data,0,categories[1])
         xmean = mean(pstat.colex(x,1),None)
         ymean = mean(pstat.colex(y,1),None)
         n = len(data)
         adjust = math.sqrt((len(x)/float(n))*(len(y)/float(n)))
-        rpb = (ymean - xmean)/samplestdev(pstat.colex(data,1))*adjust
+        rpb = (ymean - xmean)/samplestd(pstat.colex(data,1))*adjust
         df = n-2
         t = rpb*math.sqrt(df/((1.0-rpb+TINY)*(1.0+rpb+TINY)))
         prob = betai(0.5*df,0.5,df/(df+t*t))
@@ -1292,13 +1270,13 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
     r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = r_num / r_den
-    z = 0.5*math.log((1.0+r+TINY)/(1.0-r+TINY))
+    #z = 0.5*math.log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = betai(0.5*df,0.5,df/(df+t*t))
     slope = r_num / (float(n)*ss(x) - square_of_sums(x))
     intercept = ymean - slope*xmean
-    sterrest = math.sqrt(1-r*r)*samplestdev(y)
+    sterrest = math.sqrt(1-r*r)*samplestd(y)
     return slope, intercept, r, prob, sterrest
 
 
@@ -1498,7 +1476,7 @@ Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
     n2 = len(y)
     ranked = rankdata(concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
-    ranky = ranked[n1:]        # the rest are y-ranks
+    #ranky = ranked[n1:]        # the rest are y-ranks
     u1 = n1*n2 + (n1*(n1+1))/2.0 - sum(rankx)  # calc U for x
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
@@ -1520,7 +1498,7 @@ code.
 
 Returns: T correction factor for U or H
 """
-    sorted,posn = shellsort(asarray(rankvals))
+    sorted,posn = fastsort(asarray(rankvals))
     n = len(sorted)
     T = 0.0
     i = 0
@@ -1547,7 +1525,7 @@ Returns: z-statistic, two-tailed p-value
     n1 = len(x)
     n2 = len(y)
     alldata = concatenate((x,y))
-    ranked = arankdata(alldata)
+    ranked = rankdata(alldata)
     x = ranked[:n1]
     y = ranked[n1:]
     s = sum(x)
@@ -1571,7 +1549,7 @@ Returns: t-statistic, two-tailed p-value
     d = compress(not_equal(d,0),d) # Keep all non-zero differences
     count = len(d)
     absd = abs(d)
-    absranked = arankdata(absd)
+    absranked = rankdata(absd)
     r_plus = 0.0
     r_minus = 0.0
     for i in range(len(absd)):
@@ -1641,7 +1619,7 @@ Returns: chi-square statistic, associated p-value
     data = apply(pstat.abut,args)
     data = data.astype(Float)
     for i in range(len(data)):
-        data[i] = arankdata(data[i])
+        data[i] = rankdata(data[i])
     ssbn = sum(sum(args,1)**2)
     chisq = 12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)
     return chisq, chisqprob(chisq,k-1)
@@ -1679,9 +1657,6 @@ def betai(a,b,x):
 #####################################
 #######  AANOVA CALCULATIONS  #######
 #####################################
-
-import stats, LinearAlgebra, math, operator
-LA = LinearAlgebra
 
 def glm(data,para):
     """
@@ -1731,7 +1706,7 @@ Lindman, HR (1992) Analysis of Variance in Experimental Design,
 TO DO:  Increase Current Max Of 10 Levels Per W/I-Subject Factor
         Consolidate Between-Subj Analyses For Between And Within/Between
         Front-end for different input data-array shapes/organization
-        Axe mess of 'global' statements (particularly for Drestrict fcns)
+        Axe mess of 'global' statements (particularly for d_restrict fcns)
 
 Usage:   anova(data,                         data = |Stat format
                effects=['A','B','C','D','E','F','G','H','I','J','K'])
@@ -1745,13 +1720,13 @@ in the short / drugY / 2 condition, and subject 1 gave a measured value of
 lists-of-lists.
 """
     global alluniqueslist, Nlevels, Nfactors, Nsubjects, Nblevels, Nallsources
-    global Bscols, Bbetweens, SSlist, SSsources, DM, DN, Bwonly_sources, D
-    global Bwithins, alleffects, alleffsources
+    global Bscols, Bbetweens, SSlist, SSsources, Bwonly_sources, D
+    global alleffects, alleffsources
     outputlist = []
-    SSbtw = []
-    SSbtwsources = []
-    SSwb = []
-    SSwbsources = []
+    #SSbtw = []
+    #SSbtwsources = []
+    #SSwb = []
+    #SSwbsources = []
     alleffects = []
     alleffsources = []
     SSlist = []
@@ -1769,7 +1744,7 @@ lists-of-lists.
         alluniqueslist[column] = pstat.unique(pstat.colex(data,column))
         Nlevels[column] = len(alluniqueslist[column])
 
-    Ncells = multiply.reduce(Nlevels[1:]) # total num cells (w/i AND btw)
+    #Ncells = multiply.reduce(Nlevels[1:]) # total num cells (w/i AND btw)
     Nfactors = len(Nlevels[1:])             # total num factors
     Nallsources = 2**(Nfactors+1)  # total no. possible sources (factor-combos)
     Nsubjects = len(alluniqueslist[0])  # total # subj in study (# of diff. subj numbers in column 0)
@@ -1783,12 +1758,12 @@ lists-of-lists.
     Wscols = [0] + Wcolumns                   # w/i subj columns INCL col 0
     Bscols = makelist(Bbetweens+1,Nfactors+1) #list of btw-subj cols,INCL col 0
     Nwifactors = len(Wscols) - 1 # WAS len(Wcolumns)
-    Nwlevels = take(array(Nlevels),Wscols) # no.lvls for each w/i subj fact
-    Nbtwfactors = len(Bscols) - 1 # WASNfactors - Nwifactors + 1
+    #Nwlevels = take(array(Nlevels),Wscols) # no.lvls for each w/i subj fact
+    #Nbtwfactors = len(Bscols) - 1 # WASNfactors - Nwifactors + 1
     Nblevels = take(array(Nlevels),Bscols)
 
     Nwsources = 2**Nwifactors - 1 # num within-subject factor-combos
-    Nbsources = Nallsources - Nwsources
+    #Nbsources = Nallsources - Nwsources
 
     #
     # CALC M-VARIABLE (LIST) and Marray/Narray VARIABLES (ARRAY OF CELL MNS/NS)
@@ -1951,7 +1926,7 @@ lists-of-lists.
                 #
                 coeffmatrix = ones(mns.shape,Float) # fewer dims than DA (!!)
                 # Make a list of dim #s that are both in source AND w/i subj fact, incl subj
-                Wsourcecol = makelist(Bwscols&source,Nfactors+1)
+                #Wsourcecol = makelist(Bwscols&source,Nfactors+1)
                 # Fill coeffmatrix with a complete set of coeffs (1 per w/i-source factor)
                 for wfactor in range(len(Lwithinsourcecol[1:])):
                     #put correct coeff. axis as first axis, or "swap it up"
@@ -1979,7 +1954,7 @@ lists-of-lists.
                     scratch.shape = list(scratch.shape)+[1]
                 try:
                     # Tack this column onto existing ones
-                    tmp = D[dcount].shape
+                    #tmp = D[dcount].shape
                     D[dcount] = pstat.abut(D[dcount],scratch)
                 except AttributeError: # i.e., D[dcount]=integer/float
                     # If this is the first, plug it in
@@ -2021,7 +1996,7 @@ lists-of-lists.
             # BETWEEN-SUBJECTS VARIABLES ONLY, use M variable for analysis
             #
         if ((source-1) & Bwithins) == 0:  # btw-subjects vars only?
-            sourcecols = makelist(source-1,Nfactors+1)
+            #sourcecols = makelist(source-1,Nfactors+1)
 
             # Determine cols (from input list) required for n-way interaction
             Lsource = makelist((Nallsources-1)&Bbetweens,Nfactors+1)
@@ -2033,11 +2008,11 @@ lists-of-lists.
             # Obviously-needed loop to get cell means is embedded in the collapse fcn, -1
             # represents last (measured-variable) column, None=std, 1=retain Ns
 
-            hn = aharmonicmean(Narray,-1) # -1=unravel first
+            #hn = ahmean(Narray,-1) # -1=unravel first
 
             # CALCULATE SSw ... SUBTRACT APPROPRIATE CELL MEAN FROM EACH SUBJ SCORE
             SSw = 0.0
-            idxlist = pstat.unique(pstat.colex(M,btwcols))
+            #idxlist = pstat.unique(pstat.colex(M,btwcols))
             for row in M:
                 idx = []
                 for i in range(len(row[:-1])):
@@ -2052,7 +2027,7 @@ lists-of-lists.
             # AXES in M, since M has fewer dims than the original data array
             # (assuming within-subj vars exist); Bscols has list of between-subj cols
             # from input list, the indices of which correspond to that var's loc'n in M
-            btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
+            #btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
 
             # Average Marray and get harmonic means of Narray OVER NON-SOURCE DIMS
             Bbtwnonsourcedims = ~source & Bbetweens
@@ -2060,10 +2035,10 @@ lists-of-lists.
             btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
     ## Average Marray over non-source axes (1=keep squashed dims)
-            sourceMarray = mean_tmp(Marray,btwnonsourcedims,1)
+            sourceMarray = apply_over_axes(mean, Marray,btwnonsourcedims)
 
     ## Calculate harmonic means for each level in source
-            sourceNarray = harmonicmean(Narray,btwnonsourcedims,1)
+            sourceNarray = apply_over_axes(hmean, Narray,btwnonsourcedims)
 
     ## Calc grand average (ga), used for ALL effects
             ga = sum((sourceMarray*sourceNarray)/
@@ -2072,7 +2047,7 @@ lists-of-lists.
 
     ## If GRAND interaction, use harmonic mean of ALL cell Ns
             if source == Nallsources-1:
-                sourceNarray = harmonicmean(Narray)
+                sourceNarray = hmean(Narray, None)
 
     ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
             sub_effects = 1.0 * ga # start with grand mean
@@ -2097,14 +2072,14 @@ lists-of-lists.
 
             collapsed = pstat.collapse(M,btwcols,-1,0,1)
             # Obviously needed for-loop to get source cell-means embedded in collapse fcns
-            contrastmns = pstat.collapse(collapsed,btwsourcecols,-2,1,1)
+            #contrastmns = pstat.collapse(collapsed,btwsourcecols,-2,1,1)
             # Collapse again, this time SUMMING instead of averaging (to get cell Ns)
-            contrastns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
-                                        sum)
+            #contrastns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
+            #                            sum)
                 
-            # Collapse again, this time calculating harmonicmeans (for hns)
-            contrasthns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
-                                         harmonicmean)
+            # Collapse again, this time calculating hmeans (for hns)
+            #contrasthns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
+            #                             hmean)
             # CALCULATE *BTW-SUBJ* dfnum, dfden
             sourceNs = pstat.colex([Nlevels],makelist(source-1,Nfactors+1))
             dfnum = multiply.reduce(ravel(array(sourceNs)-1))
@@ -2133,29 +2108,29 @@ lists-of-lists.
             sourcewithins = (source-1) & Bwithins
             # Use D-var that was created for that w/i subj combo (the position of that
             # source within Bwsources determines the index of that D-var in D)
-            workD = D[Bwonly_sources.index(sourcewithins)]  
+            workd = asarray(D[Bwonly_sources.index(sourcewithins)])
 
             # CALCULATE Er, Ef
-    ## Set up workD and subjslots for upcoming calcs
-            if len(workD.shape)==1:
-                workD = workD[:,NewAxis]
+    ## Set up workd and subjslots for upcoming calcs
+            if len(workd.shape)==1:
+                workd = workd[:,NewAxis]
             if len(subjslots.shape)==1:
                 subjslots = subjslots[:,NewAxis]
 
     ## Calculate full-model sums of squares
-            ef = Dfull_model(workD,subjslots) # Uses cell-means model
+            ef = d_full_model(workd,subjslots) # Uses cell-means model
 
             #
             # **ONLY** WITHIN-SUBJECT VARIABLES TO CONSIDER
             #
             if subset((source-1),Bwithins):
                 # restrict grand mean, as per M&D p.680
-                er = Drestrict_mean(workD,subjslots) 
+                er = d_restrict_mean(workd,subjslots) 
         #
         # **BOTH** WITHIN- AND BETWEEN-SUBJECTS VARIABLES TO CONSIDER
         #
             else:
-                er = Drestrict_source(workD,subjslots,source) + ef
+                er = d_restrict_source(workd,subjslots,source) + ef
             SSw = LA.determinant(ef)
             SS = LA.determinant(er) - SSw
 
@@ -2182,7 +2157,7 @@ lists-of-lists.
             # from Tatsuoka, MM (1988) Multivariate Analysis (2nd Ed), MacMillan: NY p93
             else: # it's a within-between combo source
                 try:
-                    p = workD.shape[1]
+                    p = workd.shape[1]
                 except IndexError:
                     p = 1
                 k = multiply.reduce(ravel(BNs))
@@ -2296,7 +2271,7 @@ subj group, and then adds back each D-variable's grand mean.
      errors = subtr_cellmeans(workd,subjslots)
 
      # add back in appropriate grand mean from individual scores
-     grandDmeans = mean_tmp(workd,0,1)
+     grandDmeans = expand_dims(mean(workd,0),0)
      errors = errors + transpose(grandDmeans) # errors has reversed dims!!
      # SS for mean-restricted model is calculated below.  Note: already put
      # subj as last dim because later code expects this code here to leave
@@ -2321,13 +2296,14 @@ Returns: SS array for multivariate F calculation
 ### RESTRICT COLUMNS/AXES SPECIFIED IN source (BINARY)
 ### (i.e., is the value of source not equal to 0 or -1?)
 ###
+     global D
      if source > 0:
          sourcewithins = (source-1) & Bwithins
          sourcebetweens = (source-1) & Bbetweens
          dindex = Bwonly_sources.index(sourcewithins)
          all_cellmeans = transpose(DM[dindex],[-1]+range(0,len(DM[dindex].shape)-1))
          all_cellns = transpose(DN[dindex],[-1]+range(0,len(DN[dindex].shape)-1))
-         hn = aharmonicmean(all_cellns)
+         hn = hmean(all_cellns, None)
 
          levels = D[dindex].shape[1]  # GENERAL, 'cause each workd is always 2D
          SSm = zeros((levels,levels),'f') #called RCm=SCm in Lindman,p.317-8
@@ -2345,11 +2321,11 @@ Returns: SS array for multivariate F calculation
                  SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i],None) *
                                         mean(all_cellmeans[j],None) *
                                         len(all_cellmeans[i]) *hn)
-         SSw = RSw - RSinter
+         #SSw = RSw - RSinter
 
 ### HERE BEGINS THE MAXWELL & DELANEY APPROACH TO CALCULATING SS
          Lsource = makelist(sourcebetweens,Nfactors+1)
-         btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
+         #btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
          Bbtwnonsourcedims = ~source & Bbetweens
          Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
          btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
@@ -2359,28 +2335,28 @@ Returns: SS array for multivariate F calculation
          for dim in btwnonsourcedims: # collapse all non-source dims
              if dim == len(DM[dindex].shape)-1:
                  raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
-             sourceDMarray = mean_tmp(sourceDMarray,dim,1)
+             sourceDMarray = expand_dims(mean(sourceDMarray,dim),dim)
 
        ## Calculate harmonic means for each level in source
-         sourceDNarray = harmonicmean(DN[dindex],btwnonsourcedims,1)
+         sourceDNarray = apply_over_axes(hmean, DN[dindex],btwnonsourcedims)
 
        ## Calc grand average (ga), used for ALL effects
-         variableNs = sum(sourceDNarray,
-                           range(len(sourceDMarray.shape)-1))
-         ga = sum((sourceDMarray*sourceDNarray) /
-                   variableNs,
-                   range(len(sourceDMarray.shape)-1),1)
+         variableNs = apply_over_axes(sum, sourceDNarray,
+                                      range(len(sourceDMarray.shape)-1))
+         ga = apply_over_axes(sum, (sourceDMarray*sourceDNarray) / \
+                              variableNs,
+                              range(len(sourceDMarray.shape)-1))
 
        ## If GRAND interaction, use harmonic mean of ALL cell Ns
          if source == Nallsources-1:
-             sourceDNarray = harmonicmean(DN[dindex],
+             sourceDNarray = hmean(DN[dindex],
                                           range(len(sourceDMarray.shape)-1))
                 
        ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
          sub_effects = ga *1.0   # start with grand mean
          for subsource in range(3,source-2,2):
        ## Make a list of the non-subsource axes
-             subsourcebtw = (subsource-1) & Bbetweens
+             #subsourcebtw = (subsource-1) & Bbetweens
              if (propersubset(subsource-1,source-1) and
                  (subsource-1)&Bwithins == (source-1)&Bwithins and
                  (subsource-1) <> (source-1)&Bwithins):
@@ -2478,7 +2454,7 @@ Maxwell & Delaney p.657.
      else:
          q = math.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
      n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-     d_en = lmbda**(1.0/q) / (m*q - 0.5*(a-1)*(b-1) + 1)
+     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
      return n_um / d_en
 
 def member(factor,source):
@@ -2537,42 +2513,6 @@ def round4(num):
          return 'N/A'
 
 
-def f_oneway(*args):
-    """
-Performs a 1-way ANOVA, returning an F-value and probability given
-any number of groups.  From Heiman, pp.394-7.
-
-Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
-                                  treatment group
-
-Returns: f-value, probability
-"""
-    na = len(args)            # ANOVA on 'na' groups, each in it's own array
-    means = [0]*na
-    vars = [0]*na
-    ns = [0]*na
-    alldata = []
-    tmp = map(array,args)
-    means = map(mean,tmp)
-    vars = map(var,tmp)
-    ns = map(len,args)
-    alldata = concatenate(args)
-    bign = len(alldata)
-    sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
-    ssbn = 0
-    for a in args:
-        ssbn = ssbn + square_of_sums(array(a))/float(len(a))
-    ssbn = ssbn - (square_of_sums(alldata)/float(bign))
-    sswn = sstot-ssbn
-    dfbn = na-1
-    dfwn = bign - na
-    msb = ssbn/float(dfbn)
-    msw = sswn/float(dfwn)
-    f = msb/msw
-    prob = fprob(dfbn,dfwn,f)
-    return f, prob
-
-
 def f_value (ER,EF,dfR,dfF):
     """
 Returns an F-statistic given the following:
@@ -2625,139 +2565,75 @@ where ER and EF are matrices from a multivariate F calculation.
 #####################################
 
 # sign is in Numeric
+sum = scipy.sum
+cumsum = scipy.cumsum
 
-def sum (a, axis=None,keepdims=0):
-     """
-An alternative to the Numeric.add.reduce function, which allows one to
-(1) collapse over multiple axes at once, and/or (2) to retain
-all axes in the original array (squashing one down to size.
-Axis can equal None (ravel array first), an integer (the
-axis over which to operate), or a sequence (operate over multiple
-axes).  If keepdims=1, the resulting array will have as many
-axes as the input array.
-
-Returns: array summed along 'axis'(s), same _number_ of dims if keepdims=1
-"""
-     if type(a) == ArrayType and a.typecode() in ['l','s','b']:
-         a = a.astype(Float)
-     if axis is None:
-         s = N.sum(ravel(a))
-     elif type(axis) in [IntType,FloatType]:
-         s = add.reduce(a, axis)
-         if keepdims == 1:
-             shp = list(a.shape)
-             shp[axis] = 1
-             s = reshape(s,shp)
-     else: # must be a SEQUENCE of dims to sum over
-        dims = list(axis)
-        dims.sort()
-        dims.reverse()
-        s = a *1.0
-        for dim in dims:
-            s = add.reduce(s,dim)
-        if keepdims == 1:
-            shp = list(a.shape)
-            for dim in dims:
-                shp[dim] = 1
-            s = reshape(s,shp)
-     return s
-
-
-def cumsum (a,axis=None):
-    """
-Returns an array consisting of the cumulative sum of the items in the
-passed array.  Axis can equal None (ravel array first), an
-integer (the axis over which to operate), or a sequence (operate
-over multiple axes, but this last one just barely makes sense).
-
-"""
-    if axis is None:
-        a = ravel(a)
-        axis = 0
-    if type(axis) in SequenceType:
-        axis = list(axis)
-        axis.sort()
-        axis.reverse()
-        for d in axis:
-            a = add.accumulate(a,d)
-        return a
-    else:
-        return add.accumulate(a,axis)
-
-
-def ss(a, axis=None, keepdims=0):
+def ss(a, axis=-1):
     """
 Squares each value in the passed array, adds these squares & returns
-the result.  Unfortunate function name. :-) Defaults to ALL values in
-the array.  Axis can equal None (ravel array first), an integer
+the result.  Axis can equal None (ravel array first), an integer
 (the axis over which to operate), or a sequence (operate over
-multiple axes).  Set keepdims=1 to maintain the original number
-of axes.
+multiple axes).
 
 Returns: sum-along-'axis' for (a*a)
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
-    return sum(a*a,axis,keepdims)
+    a, axis = _chk_asarray(a, axis)
+    return sum(a*a,axis)
 
-
-def summult (array1,array2,axis=None,keepdims=0):
+def summult (array1,array2,axis=-1):
     """
 Multiplies elements in array1 and array2, element by element, and
 returns the sum (along 'axis') of all resulting multiplications.
-Axis can equal None (ravel array first), an integer (the
-axis over which to operate), or a sequence (operate over multiple
-axes).  A trivial function, but included for completeness.
+Axis can equal None (ravel array first), or an integer (the
+axis over which to operate),
 """
+    array1, array2 = map(asarray, (array1, array2))
     if axis is None:
         array1 = ravel(array1)
         array2 = ravel(array2)
         axis = 0
-    return sum(array1*array2,axis,keepdims)
+    return sum(array1*array2,axis)
 
 
-def square_of_sums(a, axis=None, keepdims=0):
-    """
-Adds the values in the passed array, squares that sum, and returns the
-result.  Axis can equal None (ravel array first), an integer (the
-axis over which to operate), or a sequence (operate over multiple
-axes).  If keepdims=1, the returned array will have the same
-NUMBER of axes as the original.
+def square_of_sums(a, axis=-1):    
+    """Adds the values in the passed array, squares that sum, and returns the
+result.
 
-Returns: the square of the sum over dim(s) in axis
+Returns: the square of the sum over axis.
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
-    s = sum(a,axis,keepdims)
+    a, axis = _chk_asarray(a, axis)
+    s = sum(a,axis)
     if type(s) == ArrayType:
         return s.astype(Float)*s
     else:
         return float(s)*s
 
 
-def sumdiffsquared(a,b, axis=None, keepdims=0):
+def sumdiffsquared(a, b, axis=-1):
     """
 Takes pairwise differences of the values in arrays a and b, squares
 these differences, and returns the sum of these squares.  Axis
 can equal None (ravel array first), an integer (the axis over
-which to operate), or a sequence (operate over multiple axes).
-keepdims=1 means the return shape = len(a.shape) = len(b.shape)
+which to operate).
 
-Returns: sum[ravel(a-b)**2]
+Returns: sum[(a-b)**2]
 """
-    if axis is None:
-        a = ravel(a)
-        axis = 0
-    return sum((a-b)**2,axis,keepdims)
 
+    a, b = _chk2_asarray(a, b, axis)
+    return sum((a-b)**2,axis)
+
+def fastsort(a):
+    it = argsort(a)
+    as = take(a, it)
+    return as, it
 
 def shellsort(a):
     """
 Shellsort algorithm.  Sorts a 1D-array.
 
 Returns: sorted-a, sorting-index-vector (for original array)
+
+Use fastsort for speed.
 """
     a = asarray(a)
     n = len(a)
@@ -2778,16 +2654,16 @@ Returns: sorted-a, sorting-index-vector (for original array)
 #    svec is now sorted input vector, ivec has the order svec[i] = vec[ivec[i]]
     return array(svec), array(ivec)
 
-
 def rankdata(a):
     """
-Ranks the data in a, dealing with ties appropritely.  Assumes
-a 1D a.  Adapted from Gary Perlman's |Stat ranksort.
+Ranks the data in a, dealing with ties appropritely.  First ravels 
+a.  Adapted from Gary Perlman's |Stat ranksort.
 
 Returns: array of length equal to a, containing rank scores
 """
+    a = ravel(a)
     n = len(a)
-    svec, ivec = ashellsort(a)
+    svec, ivec = fastsort(a)
     sumranks = 0
     dupcount = 0
     newarray = zeros(n,Float)
@@ -2801,6 +2677,103 @@ Returns: array of length equal to a, containing rank scores
             sumranks = 0
             dupcount = 0
     return newarray
+
+
+def writecc (listoflists,file,writetype='w',extra=2):
+    """
+Writes a list of lists to a file in columns, customized by the max
+size of items within the columns (max size of items in col, +2 characters)
+to specified file.  File-overwrite is the default.
+
+Usage:   writecc (listoflists,file,writetype='w',extra=2)
+Returns: None
+"""
+    if type(listoflists[0]) not in [ListType,TupleType]:
+        listoflists = [listoflists]
+    outfile = open(file,writetype)
+    rowstokill = []
+    list2print = copy.deepcopy(listoflists)
+    for i in range(len(listoflists)):
+        if listoflists[i] == ['\n'] or listoflists[i]=='\n' or listoflists[i]=='dashes':
+            rowstokill = rowstokill + [i]
+    rowstokill.reverse()
+    for row in rowstokill:
+        del list2print[row]
+    maxsize = [0]*len(list2print[0])
+    for col in range(len(list2print[0])):
+        items = pstat.colex(list2print,col)
+        items = map(pstat.makestr,items)
+        maxsize[col] = max(map(len,items)) + extra
+    for row in listoflists:
+        if row == ['\n'] or row == '\n':
+            outfile.write('\n')
+        elif row == ['dashes'] or row == 'dashes':
+            dashes = [0]*len(maxsize)
+            for j in range(len(maxsize)):
+                dashes[j] = '-'*(maxsize[j]-2)
+            outfile.write(pstat.lineincustcols(dashes,maxsize))
+        else:
+            outfile.write(pstat.lineincustcols(row,maxsize))
+        outfile.write('\n')
+    outfile.close()
+    return None
+
+
+def outputpairedstats(fname,writemode,name1,n1,m1,se1,min1,max1,name2,n2,m2,se2,min2,max2,statname,stat,prob):
+    """
+Prints or write to a file stats for two groups, using the name, n,
+mean, sterr, min and max for each group, as well as the statistic name,
+its value, and the associated p-value.
+
+Usage:   outputpairedstats(fname,writemode,
+                           name1,n1,mean1,stderr1,min1,max1,
+                           name2,n2,mean2,stderr2,min2,max2,
+                           statname,stat,prob)
+Returns: None
+"""
+    suffix = ''                       # for *s after the p-value
+    try:
+        x = prob.shape
+        prob = prob[0]
+    except:
+        pass
+    if  prob < 0.001:  suffix = '  ***'
+    elif prob < 0.01:  suffix = '  **'
+    elif prob < 0.05:  suffix = '  *'
+    title = [['Name','N','Mean','SD','Min','Max']]
+    lofl = title+[[name1,n1,round(m1,3),round(math.sqrt(se1),3),min1,max1],
+                  [name2,n2,round(m2,3),round(math.sqrt(se2),3),min2,max2]]
+    if type(fname)<>StringType or len(fname)==0:
+        print
+        print statname
+        print
+        pstat.printcc(lofl)
+        print
+        try:
+            if stat.shape == ():
+                stat = stat[0]
+            if prob.shape == ():
+                prob = prob[0]
+        except:
+            pass
+        print 'Test statistic = ',round(stat,3),'   p = ',round(prob,3),suffix
+        print
+    else:
+        file = open(fname,writemode)
+        file.write('\n'+statname+'\n\n')
+        file.close()
+        writecc(lofl,fname,'a')
+        file = open(fname,'a')
+        try:
+            if stat.shape == ():
+                stat = stat[0]
+            if prob.shape == ():
+                prob = prob[0]
+        except:
+            pass
+        file.write(pstat.list2string(['\nTest statistic = ',round(stat,4),'   p = ',round(prob,4),suffix,'\n\n']))
+        file.close()
+    return None
 
 
 def findwithin(data):
@@ -2817,6 +2790,9 @@ column = measured values.
         if len(pstat.unique(pstat.colex(rows,0))) < len(rows):   # if fewer subjects than scores on this factor
             withinvec[col-1] = 1
     return withinvec
+
+
+
 
 
 ################## test functions #########################
