@@ -37,7 +37,7 @@ NOTES
    LAPACK/BLAS libraries installed in your system or Fortran
    LAPACK/BLAS sources to be accessible by SciPy setup scripts (use
    LAPACK_SRC/BLAS_SRC environment variables to indicate the location
-   of the corresponding source directories). 
+   of the corresponding source directories).
 
 
 GETTING SCIPY
@@ -85,7 +85,7 @@ KNOWN PROBLEMS
 ==============
 
 BLAS sources shipped with LAPACK are incomplete
------------------------------------------------ 
+-----------------------------------------------
 Some distributions (e.g. Redhat Linux 7.1) provide BLAS libraries that
 are built from such incomplete sources and therefore cause import
 errors like
@@ -145,7 +145,7 @@ lists. Please include the following information to your message:
      python scipy_distutils/system_info.py
      python scipy_distutils/command/build_flib.py
 8) Feel free to add any other relevant information. For example, the
-   full output (both stdout and stderr) of the SciPy installation 
+   full output (both stdout and stderr) of the SciPy installation
    command can be very helpful.
 
 You may find the following notes useful:
