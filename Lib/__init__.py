@@ -98,17 +98,5 @@ def test_all(level=10):
 def test_suite(level = 1):
     import scipy_base.testing
     import scipy
-    ignore = ['xplt','plt','gplt','gui_thread','linalg','sparse','scipy_version']
+    ignore = ['xplt','plt','gplt','gui_thread','sparse','scipy_version']
     return scipy_base.testing.harvest_test_suites(scipy,ignore,level=level)
-
-
-
-
-
-
-
-
-
-
-
-
