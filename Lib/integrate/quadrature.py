@@ -348,7 +348,7 @@ def romberg(function, a, b, tol=1.48E-8, show=0, divmax=10):
     the triangular array of the intermediate results will be printed.
     """
     if scipy.isinf(a) or scipy.isinf(b):
-        raise ValueError: "Romberg integration only available for finite limits."
+        raise ValueError, "Romberg integration only available for finite limits."
     i = n = 1
     interval = [a,b]
     intrange = b-a
