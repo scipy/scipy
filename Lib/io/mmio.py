@@ -10,6 +10,7 @@
 #
 # TODO: support for sparse matrices, need spmatrix.tocoo().
 
+import os
 from types import ListType, TupleType
 from scipy_base import asarray, ArrayType, real,imag,conj,zeros
 
@@ -34,8 +35,9 @@ def mminfo(source):
     """
     close_it = 0
     if type(source) is type(''):
-        if source[-4:] != '.mtx':
-            source = source + '.mtx'
+        if not os.path.isfile(source):
+            if source[-4:] != '.mtx':
+                source = source + '.mtx'
         source = open(source,'r')
         close_it = 1
     line = source.readline().split()
@@ -85,8 +87,9 @@ def mmread(source):
     """
     close_it = 0
     if type(source) is type(''):
-        if source[-4:] != '.mtx':
-            source = source + '.mtx'
+        if not os.path.isfile(source):
+            if source[-4:] != '.mtx':
+                source = source + '.mtx'
         source = open(source,'r')
         close_it = 1
 
@@ -127,6 +130,44 @@ def mmread(source):
                     i = 0
                 else:
                     i = j
+        assert i in [0,j] and j==cols,`i,j,rows,cols`
+    elif rep=='coordinate':
+        # Temporary code:
+        # Read sparse matrix to dense until spmatrix could be used.
+        if field=='integer':
+            a = zeros((rows,cols),typecode='i')
+        elif field=='real':
+            a = zeros((rows,cols),typecode='d')
+        elif field=='complex':
+            a = zeros((rows,cols),typecode='D')
+        elif field=='pattern':
+            raise NotImplementedError,`field`
+        else:
+            raise ValueError,`field`
+        line = 1
+        k = 0
+        while line:
+            line = source.readline()
+            if not line or line.startswith('%'):
+                continue
+            l = line.strip().split()
+            i,j = map(eval,l[:2])
+            i,j = i-1,j-1
+            if field=='complex':
+                aij = complex(*map(eval,l[2:]))
+            else:
+                aij = eval(l[2])
+            a[i,j] = aij
+            if i!=j:
+                if symm=='symmetric':
+                    a[j,i] = aij
+                elif symm=='skew-symmetric':
+                    a[j,i] = -aij
+                elif symm=='hermitian':
+                    a[j,i] = conj(aij)
+            k = k + 1
+        assert k==entries,`k,entries`
+        entries = rows*cols
     else:
         raise NotImplementedError,`rep`
 

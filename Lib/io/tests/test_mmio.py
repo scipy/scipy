@@ -113,6 +113,57 @@ class test_mmio_array(ScipyTestCase):
         assert_equal((m,n,s),(20,15,300))
         assert_array_almost_equal(a,b)
 
+_exmpl_mtx = '''\
+%%MatrixMarket matrix coordinate real general
+%=================================================================================
+%
+% This ASCII file represents a sparse MxN matrix with L 
+% nonzeros in the following Matrix Market format:
+%
+% +----------------------------------------------+
+% |%%MatrixMarket matrix coordinate real general | <--- header line
+% |%                                             | <--+
+% |% comments                                    |    |-- 0 or more comment lines
+% |%                                             | <--+         
+% |    M  N  L                                   | <--- rows, columns, entries
+% |    I1  J1  A(I1, J1)                         | <--+
+% |    I2  J2  A(I2, J2)                         |    |
+% |    I3  J3  A(I3, J3)                         |    |-- L lines
+% |        . . .                                 |    |
+% |    IL JL  A(IL, JL)                          | <--+
+% +----------------------------------------------+   
+%
+% Indices are 1-based, i.e. A(1,1) is the first element.
+%
+%=================================================================================
+  5  5  8
+    1     1   1.000e+00
+    2     2   1.050e+01
+    3     3   1.500e-02
+    1     4   6.000e+00
+    4     2   2.505e+02
+    4     4  -2.800e+02
+    4     5   3.332e+01
+    5     5   1.200e+01
+'''
+
+class test_mmio_coordinate(ScipyTestCase):
+
+    def check_simple_todense(self):
+        fn = mktemp()
+        f = open(fn,'w')
+        f.write(_exmpl_mtx)
+        f.close()
+        assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
+        a = [[1,    0,      0,       6,      0],
+             [0,   10.5,    0,       0,      0],
+             [0,    0,    .015,      0,      0],
+             [0,  250.5,    0,     -280,    33.32],
+             [0,    0,      0,       0,     12]]
+        b,m,n,s = mmread(fn)
+        assert_equal((m,n,s),(5,5,25))
+        assert_array_almost_equal(a,b)
+        
 if __name__ == "__main__":
     ScipyTest('io.mmio').run()
 
