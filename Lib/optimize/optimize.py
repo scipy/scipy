@@ -24,7 +24,7 @@ fminbound   ---      Bounded minimization for scalar functions.
 
 import Numeric
 import MLab
-from scipy import absolute, sqrt
+from scipy import absolute, sqrt, r1array
 Num = Numeric
 max = MLab.max
 min = MLab.min
@@ -45,7 +45,7 @@ def rosen_der(x):
     return der
 
 def rosen_hess(x):
-    x = Num.asarray(x)
+    x = r1array(x)
     H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
     diagonal = Num.zeros(len(x),x.typecode())
     diagonal[0] = 1200*x[0]-400*x[1]+2
@@ -55,7 +55,7 @@ def rosen_hess(x):
     return H
 
 def rosen_hess_p(x,p):
-    x = Num.asarray(x)
+    x = r1array(x)
     Hp = Num.zeros(len(x),x.typecode())
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
@@ -98,7 +98,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       printmessg -- non-zero to print convergence messages.
       
       """
-    x0 = Num.asarray(x0)
+    x0 = r1array(x0)
     assert (len(x0.shape)==1)
     N = len(x0)
     if maxiter is None:
@@ -391,7 +391,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
     if fprime is None:
         app_fprime = 1
 
-    x0 = Num.asarray(x0)
+    x0 = r1array(x0)
     if maxiter is None:
         maxiter = len(x0)*200
     func_calls = 0
@@ -510,7 +510,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     """
 
-    x0 = Num.asarray(x0)
+    x0 = r1array(x0)
     fcalls = 0
     gcalls = 0
     hcalls = 0
