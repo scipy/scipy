@@ -375,8 +375,8 @@ class plot_canvas(wx.wxWindow,property_object):
         #needed to make sure images stay within bounds
         ##dc.SetClippingRegion(gb.left()-1,gb.top()-1,
         ##                     gb.width()+2,gb.height()+2)  # mod by GAP 26092003
-        dc.SetClippingRegion(int(gb.left()-1),int(gb.top()-1)),
-                             int(gb.width()+2),int(gb.height()+2)))
+        dc.SetClippingRegion(int(gb.left()-1),int(gb.top()-1),
+                             int(gb.width()+2),int(gb.height()+2))
         # draw images
         self.image_list.draw(dc)
         dc.DestroyClippingRegion()        
