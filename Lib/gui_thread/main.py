@@ -302,40 +302,36 @@ def is_proxy_attr(x):
 def get_proxy_attr_obj(x):
     return x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing
 
+def dereference_obj(arg):
+    """ Scan if object is proxied and convert to underlying object
+    """
+    if is_proxy(arg): 
+        return arg.wx_obj
+    elif is_proxy_attr(arg):
+        obj = get_proxy_attr_obj(arg)
+        if is_proxy(obj):
+            # it is possible that an attribute is a proxy instance.
+            return obj.wx_obj
+        else:
+            return obj
+    else:
+        return arg
+
 def dereference_arglist(lst):
-    """ Scan for proxy objects and convert to underlying object
+    """ Scans list for proxy objects and convert to underlying object
     """
     res = []
     for arg in lst:
-        if is_proxy(arg): 
-            res.append(arg.wx_obj)
-            #print 'dereferenced ', arg.wx_obj
-        elif is_proxy_attr(arg):
-            obj = get_proxy_attr_obj(arg)
-            if is_proxy(obj):
-                # it is possible that an attribute is a proxy instance.
-                res.append(obj.wx_obj)
-            else:
-                res.append(obj)
-        else: res.append(arg)
+        res.append(dereference_obj(arg))
     return res
        
 def dereference_dict(kw):
-    """ Scan for proxy objects and convert to underlying object
+    """ Scans dict for proxy objects and convert to underlying object
     """
     res = {}
     for key in kw.keys():
         arg = kw[key]
-        if is_proxy(arg): 
-            res[key] = arg.wx_obj
-        elif is_proxy_attr(arg):
-            obj = get_proxy_attr_obj(arg)
-            if is_proxy(obj):
-                # it is possible that an attribute is a proxy instance.
-                res[key] = obj.wx_obj
-            else:
-                res[key] = obj
-        else: res[key] = arg
+        res[key] = dereference_obj(arg)
     return res
 
 def proxy_error():
