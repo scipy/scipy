@@ -109,7 +109,7 @@ class test_basicstats(unittest.TestCase):
         y = scipy.stats.mean(X)
         assert_almost_equal(y,5.0)
     def check_stdX(self):
-        y = scipy.stats.stdev(X)
+        y = scipy.stats.std(X)
         assert_almost_equal(y,2.738612788)
 
     def check_meanZERO(self):
@@ -117,7 +117,7 @@ class test_basicstats(unittest.TestCase):
         assert_almost_equal(y,0.0)
 
     def check_stdZERO(self):
-        y = scipy.stats.stdev(ZERO)
+        y = scipy.stats.std(ZERO)
         assert_almost_equal(y,0.0)
 
 ##    Really need to write these tests to handle missing values properly
@@ -134,7 +134,7 @@ class test_basicstats(unittest.TestCase):
         assert_almost_equal(y,99999995.00)
 
     def check_stdBIG(self):
-        y = scipy.stats.stdev(BIG)
+        y = scipy.stats.std(BIG)
         assert_almost_equal(y,2.738612788)
 
     def check_meanLITTLE(self):
@@ -142,7 +142,7 @@ class test_basicstats(unittest.TestCase):
         assert_approx_equal(y,0.999999950)
 
     def check_stdLITTLE(self):
-        y = scipy.stats.stdev(LITTLE)
+        y = scipy.stats.std(LITTLE)
         assert_approx_equal(y,2.738612788e-8)
 
     def check_meanHUGE(self):
@@ -150,7 +150,7 @@ class test_basicstats(unittest.TestCase):
         assert_approx_equal(y,5.00000e+12)
 
     def check_stdHUGE(self):
-        y = scipy.stats.stdev(HUGE)
+        y = scipy.stats.std(HUGE)
         assert_approx_equal(y,2.738612788e12)
 
     def check_meanTINY(self):
@@ -158,7 +158,7 @@ class test_basicstats(unittest.TestCase):
         assert_almost_equal(y,0.0)
 
     def check_stdTINY(self):
-        y = scipy.stats.stdev(TINY)
+        y = scipy.stats.std(TINY)
         assert_almost_equal(y,0.0)
 
     def check_meanROUND(self):
@@ -166,7 +166,7 @@ class test_basicstats(unittest.TestCase):
         assert_approx_equal(y,4.500000000)
 
     def check_stdROUND(self):
-        y = scipy.stats.stdev(ROUND)
+        y = scipy.stats.std(ROUND)
         assert_approx_equal(y,2.738612788)
             
 class test_corr(unittest.TestCase):
