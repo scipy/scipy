@@ -18,6 +18,9 @@
 from Numeric import *
 from fastumath import *
 #import scipy.linalg.fblas as fblas
+
+import sys
+sys.path.append('..')
 import fblas
 import unittest
 from scipy.scipy_test import assert_array_equal, assert_array_almost_equal

@@ -2,6 +2,8 @@ import string, re, os
 
 import interface_gen
 
+sdir = '.'
+
 this_dir,junk = os.path.split(interface_gen.__file__)
 
 def process_imports(interface_in):
@@ -29,7 +31,7 @@ def process_imports(interface_in):
         if external_files.has_key(file):
             sub_list = external_files[file]
         else:
-            f = open(os.path.join('linalg',file))
+            f = open(os.path.join(sdir,file))
             sub_list = all_subroutines(f.read(-1))            
             f.close()
             external_files[file] = sub_list
@@ -116,7 +118,16 @@ def insert_blas_order(interface_in):
         blas_sub = string.replace(blas_sub, '\n' , '\n    ' + c_decl +'\n' ,1)
         interface = interface + blas_sub + '\n\n'
     return interface    
-      
+
+def insert_intent_c(interface_in):
+    sub_list = all_subroutines(interface_in)
+    c_decl = "intent(c)"
+    interface = ''
+    for sub in sub_list:
+        new_sub = string.replace(sub, '\n' , '\n    ' + c_decl +'\n' ,1)
+        interface = interface + new_sub + '\n\n'
+    return interface
+         
 #def process_creturn(interface_in,format):
 #    sub_list = all_subroutines(interface_in)
 #    interface = ''
@@ -327,12 +338,11 @@ def process_flip_dims(generic_interface, format):
         interface += newsub + "\n"
     return interface
 
-
 def interface_to_module(interface_in,module_name,include_list):
     pre_prefix = "!%f90 -*- f90 -*-\n"
     includes = ''
     for file in include_list:
-        f = open(os.path.join('linalg',file))
+        f = open(os.path.join(sdir,file))
         includes += f.read(-1)
         f.close() 
     # heading and tail of the module definition.
@@ -342,48 +352,28 @@ def interface_to_module(interface_in,module_name,include_list):
              "end module %s" % module_name
     return  pre_prefix + includes + file_prefix + interface_in + file_suffix
 
-
-def rename_module(interface_in,prefix,suffix=''):
-    start = 0
-    expr = re.compile(r'python\s*module\s*(\S*)')
-    new_names = []
-    interface = interface_in
-    while 1:
-        sub = expr.search(interface,start)
-        if sub is None: break
-        var_name = sub.group(1)
-        new_name = prefix + var_name + suffix
-        new_line = 'python module ' + new_name
-        interface = re.sub(r'python\s*module\s*\S*',new_line,interface)
-        start = sub.end()
-        new_names.append(new_name)
-
-    return interface,new_names
-    
-    
-def rename_functions(interface_in,prefix,suffix):
-    #add a prfix to the module name
-    #replace all function names with prefic and suffix.
+def function_name(function_interface):
     name_exp = re.compile(r'subroutine( .+?)\(')
-    names = name_exp.findall(interface_in)
+    names = name_exp.findall(function_interface)
     name_exp = re.compile(r'function( .+?)\(')
-    names = names + name_exp.findall(interface_in)
-    new_names = map(lambda x,p=prefix,s=suffix: ' '+p+x[1:]+s, names)
-    
-    #rename the module so that we preserve the correct names
-    
-    interface, new_module_names = rename_module(interface_in,'_')
-    #if we have more than one module, in the file, we're out of luck
-    assert(len(new_module_names) == 1)
-    
-    python_interface  = "import " + new_module_names[0] + '\n'
-    for i in range(len(names)):
-        interface = re.sub(names[i],new_names[i],interface)
-        python_interface = '%s%s = %s.%s\n' % (python_interface,names[i][1:],
-                                               new_module_names[0],
-                                               new_names[i])       
-    return interface , python_interface
+    names = names + name_exp.findall(function_interface)
+    assert(len(names)==1)
+    return string.strip(names[0])
 
+def rename_functions(interface_in,prefix,suffix):
+    sub_list = all_subroutines(interface_in)    
+    interface = ''
+    for sub in sub_list:
+        name = function_name(sub)
+        new_name = prefix+name+suffix        
+        c_decl = "fortranname(%s)" % new_name
+        #renamed_sub = string.replace(sub, name ,new_name ,1)
+        renamed_sub = sub
+        renamed_sub = string.replace(renamed_sub, '\n' , 
+                                                  '\n    ' + c_decl +'\n' ,1)
+        interface = interface + renamed_sub + '\n\n'
+    return interface    
+    
 def generate_flapack(sdir):
     print "generating flapack interface"
     f = open(os.path.join(sdir,'generic_lapack.pyf'))
@@ -402,34 +392,7 @@ def generate_flapack(sdir):
     f = open(os.path.join(sdir,module_name+'.pyf'),'w')
     f.write(module_definition)
     f.close()
-
-def f2py_hack(inter):
-    # This needs to replace subroutine xxxx(...
-    #   with subroutine f2pyCxxxx(
-    #   to get f2py to generate C-interface codes.
-    name_exp = re.compile(r'subroutine( .+?)\(')
-    pos = 0
-    while 1:
-        match = name_exp.search(inter,pos)
-        if match is None:
-            break
-        start,end = match.span(1)
-        inter = inter[:start+1] + 'f2pyC' + inter[start+1:]
-        pos = end + len('f2pyC')
-        
-    name_exp = re.compile(r'function( .+?)\(')
-    pos = 0
-    while 1:
-        match = name_exp.search(inter,pos)
-        if match is None:
-            break
-        start,end = match.span(1)
-        inter = inter[:start+1] + 'f2pyC' + inter[start+1:]
-        pos = end + len('f2pyC')
-    return inter
-
-    
-    
+   
 def generate_clapack(sdir):
     print "generating clapack interface"
     f = open(os.path.join(sdir,'atlas_lapack.pyf'))
@@ -437,6 +400,8 @@ def generate_clapack(sdir):
     generic_interface = f.read(-1)
     generic_interface, include_files = process_imports(generic_interface)
     generic_interface = insert_blas_order(generic_interface)
+    generic_interface = insert_intent_c(generic_interface)
+    generic_interface = rename_functions(generic_interface,'clapack_','')
     generic_interface = process_special_types(generic_interface,format='C')
 
     generic_interface = lapack_expand(generic_interface,row_major=1,cwrap=1)
@@ -447,27 +412,24 @@ def generate_clapack(sdir):
     generic_interface = process_flip_dims(generic_interface, format='C')
 
     # must be last
-    generic_interface = process_return_info(generic_interface,format='C')
+    generic_interface = process_return_info(generic_interface,format='C')    
+    module_def = interface_to_module(generic_interface,module_name, include_files)    
     
-    module_def = interface_to_module(generic_interface,module_name, include_files)
-    
-    module_def,module_py = rename_functions(module_def,'clapack_','')
     # module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
-    f = open(os.path.join(sdir,'_' + module_name+'.pyf'),'w')
+    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
     f.write(module_def)
     f.close()
-    f = open(os.path.join(sdir,module_name+'.py'),'w')
-    f.write(module_py)
-    f.close() 
 
 def generate_cblas_level(level):
-    f = open(os.path.join('linalg','generic_blas%d.pyf' % level))
+    f = open(os.path.join(sdir,'generic_blas%d.pyf' % level))
     generic_interface = f.read(-1)
     generic_interface, include_files = process_imports(generic_interface)
     if level > 1:
         generic_interface = insert_blas_order(generic_interface)
+    generic_interface = insert_intent_c(generic_interface)
+    generic_interface = rename_functions(generic_interface,'cblas_','')
     generic_interface = process_special_types(generic_interface,format='C')    
     interface = lapack_expand(generic_interface,row_major=1)
     return interface, include_files
@@ -483,15 +445,10 @@ def generate_cblas(sdir):
     interface += '\n' + a
     include_files += b
     module_def = interface_to_module(interface,module_name,include_files)
-    module_def,module_py = rename_functions(module_def,'cblas_','')
-    # module_def = f2py_hack(module_def)
-    # a bit of a cluge here on the naming - should get new name
-    # form rename_functions
-    f = open(os.path.join(sdir,'_' + module_name+'.pyf'),'w')
+
+    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
     f.write(module_def)
     f.close()
-    f = open(os.path.join(sdir,module_name+'.py'),'w')
-    f.write(module_py)
     f.close()
     
 def generate_fblas(sdir):
@@ -531,7 +488,8 @@ def usage():
 
 if __name__ == '__main__':
     import sys
-
+    generate_clapack('.')
+    """    
     if len(sys.argv) == 2 and sys.argv[1] == 'all':
         process_all()
     elif len(sys.argv) < 3:
@@ -548,3 +506,4 @@ if __name__ == '__main__':
         f = open(module_name+'.pyf','w')
         f.write(module_definition)
         f.close()
+    """
