@@ -20,7 +20,7 @@ airye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))
 <h1> Elliptic Functions and Integrals </h1>
 <DL>
 <DT>(sn,cn,dn,ph) = ellpj(u,m)
-<DD>ellpj calculates the Jacobian elliptic functions of
+<DD>ellpj(u,m) calculates the Jacobian elliptic functions of
 parameter m between 0 and 1, and real u.  The returned functions are
 often written sn(u|m), cn(u|m), and dn(u|m).  The value of ph is such
 that if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph).

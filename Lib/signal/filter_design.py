@@ -192,8 +192,8 @@ def lp2lp(b,a,wo=1.0):
     pwo = pow(wo,Num.arange(M-1,-1,-1))
     start1 = max((n-d,0))
     start2 = max((d-n,0))
-    b = b / pwo[start2:]
-    a = a / pwo[start1:]
+    b = b * pwo[start1]/pwo[start2:]
+    a = a * pwo[start1]/pwo[start1:]
     return normalize(b, a)
 
 def lp2hp(b,a,wo=1.0):
@@ -1023,7 +1023,7 @@ def kratio(m, k_ratio):
 def ellipap(N,rp,rs):
     """Return (z,p,k) zeros, poles, and gain of an Nth order normalized
     prototype elliptic analog lowpass filter with rp decibels of ripple
-    in the passband and a stopband rs decibels down.  Broken...
+    in the passband and a stopband rs decibels down. 
     """
     if N == 1:
         p = -sqrt(1.0/(10**(0.1*rp)-1.0))
@@ -1063,7 +1063,7 @@ def ellipap(N,rp,rs):
     z = 1j*z
     z = Num.concatenate((z,conjugate(z)))
 
-    r = optimize.fmin(vratio, special.ellpk(1-m), args=(1/eps, ck1p*ck1p),
+    r = optimize.fmin(vratio, special.ellpk(1-m), args=(1./eps, ck1p*ck1p),
                       maxfun=250, maxiter=250, disp=0)
     v0 = capk * r / (N*val[0])
 
