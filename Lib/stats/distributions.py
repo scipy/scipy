@@ -1739,6 +1739,7 @@ def gompertzstats(c, loc=0.0, scale=1.0, full=0):
 def gumbelpdf(x,left=0,loc=0.0,scale=1.0):
     x, a, b = map(arr, (x, loc, scale))
     x = (x-a*1.0)/b
+    left = left+x-x
     x = arr(where(left, -x,x))
     fac = x+exp(-x)
     return select([scale>0],[exp(-fac)/b],scipy.nan)
@@ -1754,6 +1755,7 @@ def gumbelsf(x,left=0,loc=0.0,scale=1.0):
 def gumbelppf(q,left=0,loc=0.0,scale=1.0):
     q = arr(q)
     cond = (arr(scale)>0) & (q >= 0) & (q <=1)
+    left = left+x-x
     q = arr(where(left, 1-q, q))
     vals = -log(-log(q))
     return select([1-cond,left==0],[scipy.nan, loc+scale*vals], loc-scale*vals)
@@ -3050,7 +3052,7 @@ def weibullsf(x, shape, left=0, loc=0.0, scale=1.0):
 def weibullppf(q, shape, left=0, loc=0.0, scale=1.0):
     a, b, loc, q, left = map(arr,(shape, scale, loc, q, left))
     cond1 = (a>0) & (b>0) & (0<=q) & (q<=1)
-    q = arr(where(left*(q==q), 1-q, q))
+    q = arr(where(left+q-q, 1-q, q))
     vals = pow(arr(log(1.0/arr(1-q))),1.0/a)
     return select([1-cond1,left==0], [scipy.nan, b*vals+loc], -b*vals+loc)
 
