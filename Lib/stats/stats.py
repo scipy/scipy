@@ -1119,6 +1119,9 @@ def corrcoef(x, y=None, rowvar=0, bias=0):
     If rowvar is zero, then each row is a variables with
     observations in the columns.
     """
+    if y is not None:
+        x = transpose([x,y])
+        y = None
     c = cov(x, y, rowvar=rowvar, bias=bias)
     d = scipy.diag(c)
     return c/sqrt(multiply.outer(d,d))
