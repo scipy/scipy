@@ -344,7 +344,7 @@ def u_roots(n,mu=0):
     """
     return j_roots(n,0.5,0.5,mu=mu)
 
-def chebyu(n):
+def chebyu(n,monic=0):
     """Return nth order Chebyshev polynomial of second kind, Un(x).  Orthogonal
     over [-1,1] with weight function (1-x**2)**(1/2).
     """

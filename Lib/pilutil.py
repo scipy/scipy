@@ -5,7 +5,7 @@ import Numeric
 import types, sys
 from scipy import special, stats
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, mgrid
+     ones, NewAxis, transpose, mgrid, iscomplexobj
 import scipy_base
 import scipy_base.fastumath
 

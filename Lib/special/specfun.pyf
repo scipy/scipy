@@ -5,11 +5,11 @@ python module specfun ! in
         ! cfs
         subroutine lqmn(mm,m,n,x,qm,qd) ! in :specfun:specfun.f
             integer intent(hide), depend(m) :: mm=m
-            integer intent(in) :: m
-            integer intent(in) :: n
+            integer intent(in), check(m>=0) :: m
+            integer intent(in), check(n>=0) :: n
             double precision intent(in) :: x
-            double precision intent(out),dimension(m+1,n+1),depend(m,n) :: qm
-            double precision intent(out),dimension(m+1,n+1),depend(m,n) :: qd
+            double precision intent(out),dimension(0:m,0:n),depend(m,n) :: qm
+            double precision intent(out),dimension(0:m,0:n),depend(m,n) :: qd
         end subroutine lqmn
         subroutine clpmn(mm,m,n,x,y,cpm,cpd) ! in :specfun:specfun.f
             integer intent(hide), depend(m) :: mm=m
@@ -17,8 +17,8 @@ python module specfun ! in
             integer intent(in), check(n>=0) :: n
             double precision intent(in) :: x
             double precision intent(in) :: y
-            complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cpm
-            complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cpd
+            complex*16 intent(out),dimension(0:m,0:n),depend(m,n) :: cpm
+            complex*16 intent(out),dimension(0:m,0:n),depend(m,n) :: cpd
         end subroutine clpmn
         ! vvsa
 

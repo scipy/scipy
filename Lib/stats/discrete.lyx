@@ -205,7 +205,8 @@ G\left(q\right)=F^{-1}\left(q\right)\]
 
 .
  This definition allows random variates to be defined in the same way as
- with continuous rv's.
+ with continuous rv's using the inverse cdf on a uniform distribution to
+ generate random variates.
  
 \layout Subsection
 
@@ -317,7 +318,12 @@ M_{X}\left(t\right)=E\left[e^{Xt}\right]=\sum _{x_{k}}e^{x_{k}t}p\left(x_{k}\rig
 
 \end_inset 
 
+ Moments are found as the derivatives of the moment generating function
+ evaluated at 
+\begin_inset Formula $0.$
+\end_inset 
 
+ 
 \layout Subsection
 
 Fitting data
@@ -1057,6 +1063,18 @@ M\left(t\right) & = & \tanh \left(\frac{a}{2}\right)\sum _{k=-\infty }^{\infty }
 \begin_inset Formula \[
 \mu _{n}^{\prime }=M^{\left(n\right)}\left(0\right)=\left[1+\left(-1\right)^{n}\right]\textrm{Li}_{-n}\left(e^{-a}\right)\]
 
+\end_inset 
+
+ where 
+\begin_inset Formula $\textrm{Li}_{-n}\left(z\right)$
+\end_inset 
+
+ is the polylogarithm function of order 
+\begin_inset Formula $-n$
+\end_inset 
+
+ evaluated at 
+\begin_inset Formula $z.$
 \end_inset 
 
 

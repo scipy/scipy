@@ -4,14 +4,15 @@
 # Needs eigenvalues
 import Numeric
 import types, sys
+import scipy
 from scipy import special, stats, linalg
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, hstack, product, array, typename, where, \
-     zeros, extract, insert, pi, sqrt
+     zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 import scipy_base.fastumath
 
 __all__ = ['factorial','factorial2','factorialk','comb','rand','randn','who',
-           'lena','central_diff_weights', 'derivative']
+           'lena','central_diff_weights', 'derivative', 'pade']
     
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
@@ -190,6 +191,26 @@ def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
     return val / product((dx,)*n)
+
+def pade(an, m):
+    """Given Taylor series coefficients in an, return a Pade approximation to
+    the function as the ratio of two polynomials p / q  where the order of q is m.
+    """
+    an = asarray(an)
+    N = len(an) - 1
+    n = N-m
+    Akj = eye(N+1,n+1)
+    Bkj = zeros((N+1,m),'d')
+    for row in range(1,m+1):
+        Bkj[row,:row] = -(an[:row])[::-1]
+    for row in range(m+1,N+1):
+        Bkj[row,:] = -(an[row-m:row])[::-1]
+    C = hstack((Akj,Bkj))
+    pq = dot(linalg.inv(C),an)
+    p = pq[:n+1]
+    q = r_[1.0,pq[n+1:]]
+    return poly1d(p[::-1]), poly1d(q[::-1])
+
 
 
 

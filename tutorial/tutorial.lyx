@@ -269,7 +269,7 @@ fftw*
 
 \layout Standard
 
-FFT based on fftw --- requires FFTW libraries
+FFT based on fftw --- requires FFTW libraries (is this still needed?)
 \end_inset 
 </cell>
 </row>
@@ -538,7 +538,17 @@ These changes are all made in a new module (fastumath) that is part of the
  and logical operations of complex numbers (only the real part is compared).
  Also, with the new universal functions in SciPy, the logical operations
  all return arrays of unsigned bytes (8-bits per element instead of the
- old 32-bits, or even 64-bits) per element.
+ old 32-bits, or even 64-bits) per element
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+Be careful when treating logical expressions as integers as the 8-bit integers
+ may silently overflow at 256.
+\end_inset 
+
+.
  
 \layout Standard
 
@@ -1166,6 +1176,7 @@ Each function also has it's own documentation accessible using help.
  If you don't see a function you need, consider writing it and contributing
  it to the library.
  You can write the function in either C, Fortran, or Python.
+ Look in the library for examples of each of these kind of functions.
  
 \layout Section
 
@@ -3115,6 +3126,23 @@ Linear Algebra
 \layout Section
 
 Statistics
+\layout Standard
+
+SciPy has a tremendous number of basic statistics routines with more easily
+ added by the end user (if you create one please contribute it).
+ All of the statistics functions are located in the sub-package 
+\series bold 
+stats 
+\series default 
+and a fairly complete listing of these functions can be had using 
+\family typewriter 
+info(stats)
+\family default 
+\emph on 
+.
+ 
+\emph default 
+kdf 
 \layout Section
 
 Plotting with xplt

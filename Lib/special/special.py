@@ -173,7 +173,7 @@ def kvp(v,z,n=1):
     if n == 0:
         return kv(v,z)
     else:
-        return (kvp(v-1,z,n-1) - dkvp(v+1,z,n-1))/2.0
+        return (kvp(v-1,z,n-1) - kvp(v+1,z,n-1))/2.0
 
 def ivp(v,z,n=1):
     """Return the nth derivative of Iv(z) with respect to z.
@@ -413,9 +413,9 @@ def mathieu_even_coef(m,q):
         raise ValueError, "m must be an integer >=0."
 
     if (q <= 1):
-        qm = 7.5+56.1*sqrt(Q)-134.7*Q+90.7*sqrt(Q)*Q
+        qm = 7.5+56.1*sqrt(q)-134.7*q+90.7*sqrt(q)*q
     else:
-        qm=17.0+3.1*sqrt(Q)-.126*Q+.0037*sqrt(Q)*Q
+        qm=17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
     km = int(qm+0.5*m)
     if km > 251:
         print "Warning, too many predicted coefficients."
@@ -425,7 +425,7 @@ def mathieu_even_coef(m,q):
         kd = 2
 
     a = mathieu_a(m,q)
-    fc = specfunc.fcoef(kd,m,q,a)
+    fc = specfun.fcoef(kd,m,q,a)
     return fc[:km]
 
 def mathieu_odd_coef(m,q):
@@ -440,9 +440,9 @@ def mathieu_odd_coef(m,q):
         raise ValueError, "m must be an integer > 0"
 
     if (q <= 1):
-        qm = 7.5+56.1*sqrt(Q)-134.7*Q+90.7*sqrt(Q)*Q
+        qm = 7.5+56.1*sqrt(q)-134.7*q+90.7*sqrt(q)*q
     else:
-        qm=17.0+3.1*sqrt(Q)-.126*Q+.0037*sqrt(Q)*Q
+        qm=17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
     km = int(qm+0.5*m)
     if km > 251:
         print "Warning, too many predicted coefficients."
@@ -717,4 +717,14 @@ def obl_cv_seq(m,n,c):
         raise ValueError, "Difference between n and m is too large."
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
+
+################## test functions #########################
     
+def test(level=1):
+    from scipy_test.testing import module_test
+    module_test(__name__,__file__,level=level)
+
+def test_suite(level=1):
+    from scipy_test.testing import module_test_suite
+    return module_test_suite(__name__,__file__,level=level)
+
