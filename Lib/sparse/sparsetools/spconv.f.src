@@ -282,3 +282,54 @@ c   successful completion (fix the ptr array)
       end subroutine <_c>cscextract
 
 
+      
+      subroutine <_c>diatocsc(m,n,diags,numdia,diasize,offsets,
+     $     a,rowa,ptra,nzmax, ierr)
+      
+      integer n, numdia, diasize, nzmax, ierr
+      <_t> diags(0:numdia-1, 0:diasize-1), a(0:nzmax-1)
+      <_t> val
+      integer offsets(0:numdia-1), rowa(0:nzmax-1)
+      integer ptra(0:n)
+
+      integer col, nnza, jj, row, idiag, ia
+
+      nnza = 0
+      ierr = 0
+      write (*,*) m, n, numdia, diasize, nzmax
+      do col = 0, n-1
+c   Loop through the offsets 
+         do jj = 0, numdia-1
+            row = col - offsets(jj)
+            if ((row.ge.0).and.(row.lt.m)) then
+               idiag = min(row, col)
+               val = diags(jj, idiag)
+               if (val.ne.0.0) then
+                  if (nnza.ge.nzmax) goto 999
+c   find place to insert this row (inserted in sorted order)
+                  ia = ptra(col)
+ 10               if ((ia.lt.ptra(col+1)).and.(rowa(ia).lt.row)) then
+                     ia = ia + 1
+                     goto 10
+                  end if
+                  do iia = nnza, ia+1, -1
+                     a(iia) = a(iia-1)
+                     rowa(iia) = rowa(iia-1)
+                  end do
+                  a(ia) = val
+                  rowa(ia) = row
+                  nnza = nnza + 1
+               end if
+            end if
+         end do
+         ptra(col+1) = nnza
+      end do
+
+      return 
+
+ 999  continue
+      ierr = 1
+      return
+      
+
+      end subroutine <_c>diatocsc

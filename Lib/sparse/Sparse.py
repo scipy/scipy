@@ -151,52 +151,54 @@ class spmatrix:
         return eval('%s_matrix' % format)(csc)
  
     # default operations use the CSC format as a base
-    # thus, a new sparse matrix format just needs to define
-    #  a tocsc method and then take a csc_matrix in its constructor
-    #  to get functionality (though not optimality)
+    #   and operations return in csc format
+    #  thus, a new sparse matrix format just needs to define
+    #  a tocsc method 
 
     def __add__(self, other):
-        format = self.getformat()
         csc = self.tocsc()
         res = csc + other
-        return eval('%s_matrix'%format)(res)
+        return res
 
     def __sub__(self, other):
-        format = self.getformat()
         csc = self.tocsc()
         res = csc - other
-        return eval('%s_matrix'%format)(res)
+        return res
 
     def __rsub__(self, other): # other - self
-        format = self.getformat()
         csc = self.tocsc()
         res = csc.__rsub__(other)
-        return eval('%s_matrix'%format)(res)
+        return res
 
 
     def __mul__(self, other):
-        format = self.getformat()
         csc = self.tocsc()
         res = csc * other
-        return eval('%s_matrix'%format)(res)
+        return res
 
     def __rmul__(self, other):
-        format = self.getformat()
         csc = self.tocsc()
         res = csc.__rmul__(other)
-        return eval('%s_matrix'%format)(res)
+        return res
         
     def __neg__(self):
-        format = self.getformat()
         csc = self.tocsc()
         res = -csc
-        return eval('%s_matrix'%format)(res)
+        return res
+
+    def matmat(self, other):
+        csc = self.tocsc()
+        res = csc.matmat(other)
+        return res
 
     def matvec(self, vec):
-        format = self.getformat()
         csc = self.tocsc()
         res = csc.matvec(vec)
         return res
+
+    def todense(self, vec):
+        csc = self.tocsc()
+        return csc.todense()
 
 # compressed sparse column matrix
 #  This can be instantiated in many ways
@@ -280,7 +282,7 @@ class csc_matrix(spmatrix):
                 self.rowind = ij[0]
                 self.indptr = ij[1]
                 if M is None:
-                    M = max(self.rowind)
+                    M = max(self.rowind) + 1
                 if N is None:
                     N = len(self.indptr) - 1
                 self.shape = (M,N)
@@ -294,22 +296,25 @@ class csc_matrix(spmatrix):
 
     def _check(self):
         M,N = self.shape
+        nnz = self.indptr[-1]
+        nzmax = len(self.rowind)
+
         if (rank(self.data) != 1) or (rank(self.rowind) != 1) or \
            (rank(self.indptr) != 1):
             raise ValueError, "Data, rowind, and indptr arrays "\
                   "should be rank 1."
-        if (len(self.data) != len(self.rowind)):
+        if (len(self.data) != nzmax):
             raise ValueError, "Data and row list should have same length"
         if (len(self.indptr) != N+1):
             raise ValueError, "Index pointer should be of of size N+1"
-        if (len(self.rowind)>0) and (max(self.rowind) >= M):
+        if (nzmax>0) and (max(self.rowind[:nnz]) >= M):
             raise ValueError, "Row-values must be < M."
         if (self.indptr[-1] > len(self.rowind)):
             raise ValueError, \
                   "Last value of index list should be less than "\
                   "the size of data list"
-        self.nnz = self.indptr[-1]
-        self.nzmax = len(self.rowind)
+        self.nnz = nnz
+        self.nzmax = nzmax
         self.typecode = self.data.typecode()
         if self.typecode not in 'fdFD':
             raise ValueError, "Only floating point sparse matrix types allowed"
@@ -481,6 +486,7 @@ class csc_matrix(spmatrix):
             c, rowc, ptrc, irow, kcol, ierr = func(M,a,rowa,ptra,b,rowb,ptrb,c,rowc,ptrc,irow,kcol, ierr)
             if (ierr==0): break
             # otherwise we were too small and must resize
+            #  calculations continue where they left off...
             percent_to_go = 1- (1.0*kcol) / N
             newnnzc = int(ceil((1+percent_to_go)*nnzc))
             c = resize1d(c,newnnzc)
@@ -511,8 +517,19 @@ class csc_matrix(spmatrix):
             col = key[1]
             func = getattr(sparsetools,self.ftype+'cscsetel')
             M, N = self.shape
-            if not (0<=row<M) or not (0<=col<N):
-                raise KeyError, "Index out of bounds."
+            if (row < 0):
+                row = M + row
+            if (col < 0):
+                col = N + col
+            if (row < 0) or (col < 0):
+                raise IndexError, "Index out of bounds."
+            if (col >= N):
+                self.indptr = resize1d(self.indptr, col+2)
+                self.indptr[N+1:] = self.indptr[N]
+                N = col+1
+            if (row >= M):
+                M = row+1
+            self.shape = (M,N)
             nzmax = self.nzmax
             if (nzmax < self.nnz+1):  # need more room 
                 alloc = max(1,self.allocsize)
@@ -859,8 +876,12 @@ class csr_matrix(spmatrix):
             col = key[1]
             func = getattr(sparsetools,self.ftype+'cscgetel')
             M, N = self.shape
-            if not (0<=row<M) or not (0<=col<N):
-                raise KeyError, "Index out of bounds."
+            if (row < 0):
+                row = M + row
+            if (col < 0):
+                col = N + col
+            if (row >= M ) or (col >= N) or (row < 0) or (col < 0):
+                raise IndexError, "Index out of bounds."
             ind, val = func(self.data, self.colind, self.indptr, col, row)
             return val
         elif isinstance(key,type(3)):
@@ -875,8 +896,23 @@ class csr_matrix(spmatrix):
             col = key[1]
             func = getattr(sparsetools,self.ftype+'cscsetel')
             M, N = self.shape
-            if not (0<=row<M) or not (0<=col<N):
+            if (row < 0):
+                row = M + row
+            if (col < 0):
+                col = N + col
+            if (row < 0) or (col < 0):
                 raise KeyError, "Index out of bounds."
+            if (row >= M):
+                self.indptr = resize1d(self.indptr, row+2)
+                self.indptr[M+1:] = self.indptr[M]
+                M = row+1
+            elif (row < 0):
+                row = M - row
+            if (col >= N):
+                N = col+1
+            elif (col < 0):
+                col = N - col
+            self.shape = (M,N)
             nzmax = self.nzmax
             if (nzmax < self.nnz+1):  # need more room 
                 alloc = max(1,self.allocsize)
@@ -940,7 +976,6 @@ class csr_matrix(spmatrix):
 #    defined to return integer
 #   should also define __cmp__ as well to compare the integer-based keys
 
-
 def csc_cmp(x,y):
     if (x == y): return 0
     elif (x[1] == y[1]):
@@ -949,15 +984,14 @@ def csc_cmp(x,y):
         else: return -1
     elif (x[1] > y[1]): return 1
     else: return -1
-        
-    
+            
 # dictionary of keys based matrix
 class dok_matrix(spmatrix, dict):
     def __init__(self,A=None):
         dict.__init__(self)
         spmatrix.__init__(self,'dok')
         self.shape = (0,0)
-        self.typecode = None
+        self.nnz = 0
         if A is not None:
             A = asarray(A)
             N,M = A.shape
@@ -965,6 +999,33 @@ class dok_matrix(spmatrix, dict):
                 for m in range(M):
                     if A[n,m] != 0:
                         self[n,m] = A[n,m]
+
+    def __str__(self):
+        val = ''
+        nnz = len(self.keys())
+        self.nnz = nnz
+        keys = self.keys()
+        keys.sort()
+        if nnz > self.maxprint:
+            for k in xrange(self.maxprint / 2):
+                key = keys[k]
+                val += "  %s\t%s\n" % (str(key),str(self[key]))
+            val = val + "   :    \t  :\n"
+            for k in xrange(nnz-self.maxprint/2,nnz):
+                key = keys[k]
+                val += "  %s\t%s\n" % (str(key),str(self[key]))
+        else:
+            for k in xrange(nnz):
+                key = keys[k]
+                val += "  %s\t%s\n" % (str(key),str(self[key]))
+        return val[:-1]
+
+    def __repr__(self):
+        nnz = self.getnnz()
+        format = self.getformat()
+        return "<%dx%d sparse matrix with %d stored "\
+               "elements in %s format>" % \
+               (self.shape + (nnz, _formats[format][1]))
 
     def __getitem__(self, key):
         return self.get(key,0)
@@ -974,13 +1035,17 @@ class dok_matrix(spmatrix, dict):
             return
         if not isinstance(key, tuple) or len(key) != 2:
             raise KeyError, "Key must be a 2-tuple"
+        if (self.get(key) == None): new = 1
+        else: new = 0
         dict.__setitem__(self, key, value)
         newrows = max(self.shape[0], int(key[0])+1)
         newcols = max(self.shape[1], int(key[1])+1)
         self.shape = (newrows, newcols)
+        if new:
+            self.nnz += 1
     
     def __add__(self, other):
-        res = dictmatrix()
+        res = dok_matrix()
         res.update(self)
         res.shape = self.shape
         for key in other.keys():
@@ -991,7 +1056,7 @@ class dok_matrix(spmatrix, dict):
         return res
 
     def __sub__(self, other):
-        res = dictmatrix()
+        res = dok_matrix()
         res.update(self)
         res.shape = self.shape
         for key in other.keys():
@@ -1002,43 +1067,36 @@ class dok_matrix(spmatrix, dict):
         return res
     
     def __neg__(self):
-        res = dictmatrix()
+        res = dok_matrix()
         for key in self.keys():
             res[key] = -self[key]
         return res
 
     def __mul__(self, other):
-        if isinstance(other, dictmatrix):
+        if isinstance(other, dok_matrix):
             return self.matmat(other)
         other = asarray(other)
         if rank(other) > 0:
             return self.matvec(other)
-        res = dictmatrix()
+        res = dok_matrix()
         for key in self.keys():
             res[key] = other * self[key]
         return res
 
     def __len__(self):
-        return len(self.keys())
+        return len(self.keys())    
 
     def transp(self):
         # Transpose (return the transposed)
-        new = dictmatrix()
+        new = dok_matrix()
         for key in self.keys():
             new[key[1],key[0]] = self[key]
         return new
 
-    def matmat(self, other):
-        res = dictmatrix()
-        spself = spmatrix(self)
-        spother = spmatrix(other)
-        spres = spself * spother
-        return spres.todict()                            
-
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
         # assume cols_or_rows is sorted
-        res = dictmatrix()
+        res = dok_matrix()
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx: # columns
@@ -1059,8 +1117,8 @@ class dok_matrix(spmatrix, dict):
         # similar to take but returns two array, the extracted
         #  columns plus the resulting array
         #  assumes cols_or_rows is sorted
-        base = dictmatrix()
-        ext = dictmatrix()
+        base = dok_matrix()
+        ext = dok_matrix()
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx:
@@ -1100,7 +1158,7 @@ class dok_matrix(spmatrix, dict):
             self[n,n+k] = values[n]
         return
 
-    def getCSR(self):
+    def tocsr(self):
         # Return Compressed Sparse Row format arrays for this matrix
         keys = self.keys()
         keys.sort()
@@ -1123,13 +1181,9 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
-        ptype = data.typecode()
-        if ptype not in ['d','D','f','F']:
-            data = data.astype('d')
-            ptype = 'd'
-        return _transtabl[ptype], nnz, data, colind, row_ptr
+        return csr_matrix(data,(colind, row_ptr))
 
-    def getCSC(self):
+    def tocsc(self):
         # Return Compressed Sparse Column format arrays for this matrix
         keys = self.keys()
         keys.sort(csc_cmp)
@@ -1152,15 +1206,9 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         colind = array(colind)
         col_ptr = array(col_ptr)
-        ptype = data.typecode()
-        if ptype not in ['d','D','f','F']:
-            data = data.astype('d')
-            ptype = 'd'
-        return _transtabl[ptype], nnz, data, colind, col_ptr
+        return csc_matrix(data, (colind, col_ptr))
 
-    def dense(self,typecode=None):
-        if typecode is None:
-            typecode = self.type
+    def todense(self,typecode=None):
         if typecode is None:
             typecode = 'd'
         new = zeros(self.shape,typecode)
@@ -1180,9 +1228,43 @@ class lnk_matrix(spmatrix):
     pass
 
 # coordinate lists format
+#   a[ij[k][0],ij[k][1]] = obj[k]
+# 
 class coo_matrix(spmatrix):
-    pass
+    def __init__(self, obj, ij, M=None, N=None, nzmax=None, typecode=None):
+        aobj = asarray(obj)
+        aij = asarray(ij)
+        if M is None:
+            M = amax(aij[:,0])
+        if N is None:
+            N = amax(aij[:,1])
+        self.shape = (M,N)
+        if nzmax is None:
+            nzmax = len(aobj)
+        self.nzmax = nzmax
+        self.data = aobj
+        self.row = aij[:,0]
+        self.col = aij[:,1]
+        self.typecode = aobj.typecode()
+        self._check()
 
+    def _check(self):
+        nnz = len(self.data)
+        if (nnz != len(self.row)) or (nnz != len(self.col)):
+            raise ValueError, "Row, column, and data array must all be "\
+                  "the same length."
+        if (self.nzmax < nnz):
+            raise ValueError, "nzmax must be >= nnz"
+        self.ftype = _transtabl[self.typecode]
+        
+    def tocsc(self):
+        func = getattr(sparsetools,self.ftype+"cootocsc")
+        a, rowa, ptra, ierr = func(self.data, self.row, self.col)
+        if ierr:
+            raise RuntimeError, "Error in conversion."
+        return csc_matrix(a, (rowa, ptra))
+            
+        
 # symmetric sparse skyline
 # diagonal (banded) matrix
 # ellpack-itpack generalized diagonal
@@ -1221,19 +1303,11 @@ def spdiags(diags,offsets,m,n):
     mtype = diags.typecode()
     assert(len(offsets) == diags.shape[1])
     # set correct diagonal to csr conversion routine for this type
-    diagfunc = eval('_sparsekit.'+_transtabl[mtype]+'diacsr')
-    # construct empty sparse matrix and pass it's main parameters to
-    #  the diagonal to csr conversion routine.
-    nzmax = diags.shape[0]*diags.shape[1]
-    s = spmatrix(m,n,nzmax,typecode=mtype)
-    diagfunc(array(m), array(n), array(0),  diags,
-             offsets, s.data, s.index[0], s.index[1],
-             array(diags.shape[1]),array(diags.shape[0]))
-
-    # compute how-many elements were actually filled
-    s.lastel = min([m,n])*len(offsets) - 1 - \
-               sum(_spdiags_tosub(offsets, a=min([n-m,0]), b=max([n-m,0])))
-    return s
+    diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsr')
+    a, rowa, ptra, ierr = diagfunc(m,n,diags,offsets)
+    if ierr:
+        raise ValueError, "Ran out of memory (shouldn't have happened)"
+    return csc_matrix(a,(rowa,ptra),M=m,N=n)
 
 def solve(A,b,permc_spec=2):
     if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
@@ -1247,12 +1321,12 @@ def solve(A,b,permc_spec=2):
     if hasattr(A, 'tocsc'):
         mat = A.tocsc()
         ftype, lastel, data, index0, index1 = \
-               A.ftype, A.nnz, A.data, A.rowind, A.indptr
+               mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
         csc = 1
     else:
         mat = A.tocsr()
         ftype, lastel, data, index0, index1 = \
-               A.ftype, A.nnz, A.data, A.colind, A.indptr
+               mat.ftype, mat.nnz, mat.data, mat.colind, mat.indptr
         csc = 0
     gssv = eval('_superlu.' + ftype + 'gssv')
     return gssv(N,lastel,data,index0,index1,b,csc,permc_spec)[0]

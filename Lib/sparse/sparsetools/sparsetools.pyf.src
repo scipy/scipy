@@ -209,6 +209,20 @@ python module sparsetools ! in
             integer intent(in,out) :: ierr
         end subroutine <_c>cscextract
 
+        subroutine <_c>diatocsc(m,n,diags,numdia,diasize,offsets,a,rowa,ptra,nzmax,ierr)
+            integer :: m
+            integer :: n
+            <_t> dimension(numdia, diasize) :: diags
+            integer intent(hide), depend(diags) :: numdia=shape(diags,0)
+            integer intent(hide), depend(diags) :: diasize=shape(diags,1)
+            integer dimension(numdia) :: offsets
+            <_t> intent(out), dimension(nzmax), depend(nzmax) :: a
+            integer intent(out), dimension(nzmax), depend(nzmax) :: rowa
+            integer intent(out), dimension(n+1), depend(n) :: ptra
+            integer intent(hide), depend(numdia,diasize,diags) :: nzmax=numdia*diasize
+            integer intent(out) :: ierr            
+        end subroutine <_c>diatocsc
+
     end interface 
 end python module sparsetools
 
