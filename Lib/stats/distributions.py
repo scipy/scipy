@@ -25,6 +25,8 @@ _quantstr = "Quantile must be in [0,1]."
 _posstr = "Parameter must be > 0."
 _nonnegstr = "Parameter must be >= 0."
 
+
+# A function to return nan on condition failure.
 def _wc(cond, val):
     return where (cond, val, scipy.nan)
 
@@ -165,6 +167,131 @@ def normstats(loc=0.0, scale=1.0, full=0):
     else:
         return loc, scale**2, 0, 0
 
+
+## Alpha distribution
+##
+
+def alphapdf(x, a, loc=0.0, scale=1.0):
+    x, a, loc, scale = map(arr,(x,a,loc,scale))
+    x = arr((x-loc)/scale)
+    sv = errp(0)
+    Px = 1.0/arr(x**2)/special.ndtr(a)*stnormpdf(a-1.0/x)
+    sv = errp(sv)
+    return select([(scale <=0)|(a<=0),x>0], [scipy.nan, Px/scale]) 
+
+def alphacdf(x, a, loc=0.0, scale=1.0):
+    x, a, loc, scale = map(arr,(x,a,loc,scale))
+    x = arr((x-loc)/scale)
+    sv = errp(0)
+    Cx = special.ndtr(a-1.0/x) / special.ndtr(a)
+    sv = errp(sv)
+    return select([(scale <=0)|(a<=0),x>0], [scipy.nan, Cx]) 
+
+def alphappf(q, a, loc=0.0, scale=1.0):
+    q, a, loc, scale = map(arr,(q,a,loc,scale))
+    sv = errp(0)
+    vals = 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
+    sv = errp(sv)
+    cond = (a>0) & (scale > 0) & (q>=0) & (q<=1)
+    return select([1-cond,q==0,q==1],[scipy.nan, 0, scipy.inf], vals*scale + loc)
+
+def alphasf(x, a, loc=0.0, scale=1.0):    
+    return 1.0 - alphacdf(x, a, loc, scale)
+
+def alphaisf(q, a, loc=0.0, scale=1.0):
+    return alphappf(1-q, a, loc, scale)
+
+def alphastats(a, loc=0.0, scale=1.0,full=0):
+    # No moments
+    ret = [scipy.inf]*2
+    if full:
+        ret += [scipy.nan]*2
+    return ret
+
+## Anglit distribution
+##
+
+def anglitpdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr,(x,loc,scale))
+    x = arr((x-loc)/scale)
+    Px = sin(2*x + pi/2)
+    return select([scale <=0,(x >= -pi/4) & (x <= pi/4)], [scipy.nan, Px/scale])
+
+def anglitcdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr,(x,loc,scale))
+    x = arr((x-loc)/scale)
+    Cx = sin(x+pi/4)**2
+    return select([scale<=0, x>=pi/4,x > -pi/4],[scipy.nan, 1, Cx])
+
+def anglitppf(q, loc=0.0, scale=1.0):
+    q, loc, scale = map(arr, (q, loc, scale))
+    return (arcsin(sqrt(q))-pi/4) * scale + loc
+
+def anglitsf(x, loc=0.0, scale=1.0):
+    1.0 - anglitcdf(x, loc, scale)
+
+def anglitisf(q, loc=0.0, scale=1.0):
+    return anglitppf(1.0-q, loc, scale)
+
+def anglitstats(loc=0.0, scale=1.0, full=0):
+    scale = arr(scale)
+    cond = (scale>0)
+    mu2 = pi*pi/16-0.5
+    mn = _wc(cond, loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    g1 = 0
+    g2 = -2*(pi**4 - 96) / (pi*pi-8)**2
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+
+## Arcsine distribution
+##
+    
+def arcsinepdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr,(x,loc,scale))
+    x = arr((x-loc)/scale)
+    Px = 1.0/pi/sqrt(x*(1-x))
+    return select([scale <=0,(x>0) & (x<1)], [scipy.nan, Px/scale])
+
+def arcsinecdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr,(x,loc,scale))
+    x = arr((x-loc)/scale)
+    Cx = 2.0/pi*arcsin(sqrt(x))
+    return select([scale <=0, x>=1,x>0],[scipy.nan, 1, Cx])
+
+def arcsineppf(q, loc=0.0, scale=1.0):
+    q, loc, scale = map(arr, (q, loc, scale))
+    return sin(pi/2.0*q)**2 * scale + loc
+
+def arcsinesf(x, loc=0.0, scale=1.0):
+    1.0 - arcsinecdf(x, loc, scale)
+
+def arcsineisf(q, loc=0.0, scale=1.0):
+    return arcsineppf(1.0-q, loc, scale)
+
+def arcsinestats(loc=0.0, scale=1.0, full=0):
+    scale = arr(scale)
+    cond = (scale>0)
+    mu = 0.5
+    mu2 = 3.0/8 - mu*mu
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    mu3 = 15.0/48 - 3*mu*mu2-mu**3
+    g1 = mu3 / mu2**1.5
+    mu4 = 35.0/128 - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+    g2 = mu4 / mu2**2 - 3
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+
+    
+    
+    
+    
+
 ## Beta distribution
 ## 
 
@@ -210,6 +337,56 @@ def betastats(a, b, loc=0.0, scale=1.0, full=0):
     g2 /= a*b*(a+b+2)*(a+b+3)
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
+
+## Beta Prime
+
+def betaprimepdf(x, a, b, loc=0.0, scale=1.0):
+    x, a, b, loc, scale = map(arr, (x,a,b,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Px = 1.0/special.beta(a,b)*x**(a-1.0)/(1+x)**(a+b)
+    sv = errp(sv)
+    return select([(a<=0)|(b<=0)|(scale<=0),x>0],[scipy.nan, Px/scale])
+
+def betaprimecdf(x, a, b, loc=0.0, scale=1.0):
+    x, a, b, loc, scale = map(arr, (x,a,b,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    x = where(x==1.0,1.0-1e-6,x)  # hyp2f1 doesn't work at -1.0
+    Cx = pow(x,a)*special.hyp2f1(a+b,a,1+a,-x)/a/special.beta(a,b)
+    sv = errp(sv)
+    return select([(a<=0)|(b<=0)|(scale<=0),x>0],[scipy.nan, Cx])
+
+def betaprimeppf(q, a, b, loc=0.0, scale=1.0):
+    pass
+
+def betaprimesf(x, a, b, loc=0.0, scale=1.0):
+    return 1.0-betaprimecdf(x,a,b,loc,scale)
+
+def betaprimeisf(q, a, b, loc=0.0, scale=1.0):
+    return betaprimeppf(1-q, a, b, loc, scale)
+
+def betaprimestats(a, b, loc=0.0, scale=1.0, full=0):
+    cond = (scale <= 0) | (a <= 0)
+    cond1 = (b > 1)
+    cond2 = (b > 2)
+    cond3 = (b > 3)
+    cond4 = (b > 4)
+    mu = a/(b-1.0)
+    mn = select([cond,cond1], [scipy.nan, mu*scale + loc], scipy.inf)
+    mu2p = mu*(a+1.0)/(b-2.0)
+    mu2 = mu2p - mu*mu
+    var = select([cond,cond2], [scipy.nan, mu2*scale*scale], scipy.inf)
+    if not full:
+        return mn, var
+
+    mu3p = mu2p*(a+2.0)/(b-3.0)
+    mu3 = mu3p - 3*mu*mu2 - mu**3
+    g1 = select([cond,cond3],[scipy.nan, mu3 / mu2**1.5], scipy.inf)
+    mu4 = mu3p*(a+3.0)/(b-4) -  4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+    g2 = select([cond,cond4],[scipy.nan, mu4 / mu2**2.0 - 3.0], scipy.inf)
+    return mn, var, g1, g2
+     
 ## Bradford
 ##
 
@@ -677,6 +854,54 @@ def exponstats(loc=0.0, scale=1.0, full=0):
         return mn, var
     return mn, var, _wc(cond, 2), _wc(cond, 6)
 
+
+## Extreme LB  (defined in Regress+ documentation) as
+##   a limiting value distribution.
+##
+
+def extremelbpdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = c*pow(x,-(c+1))*exp(-x**(-c))
+    return select([(scale <=0)|(c<=0),x>0],[scipy.nan, Px/scale])
+
+def extremelbcdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = exp(-x**(-c))
+    return select([(scale <=0)|(c<=0),x>0],[scipy.nan, Cx])
+
+def extremelbppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc,scale))
+    vals = pow(-log(q),-1.0/c)
+    cond = (q>=0)&(q<=1)&(scale >0)&(c >0)
+    return _wc(cond, vals*scale + loc)
+    
+def extremelbsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-extremelbcdf(x, c, loc, scale)
+
+def extremelbisf(q, c, loc=0.0, scale=1.0):
+    return extremelbppf(1-q, c, loc, scale)
+
+def extremelbstats(c, loc=0.0, scale=1.0, full=0):
+    c, loc, scale = map(arr, (c, loc, scale))
+    cond = (c > 0) & (scale > 0)
+    ic = 1.0/c
+    mu = special.gamma(1-ic)
+    g2c = special.gamma(1-2*ic)
+    mu2 = g2c - mu*mu
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+
+    g3c = special.gamma(1-3*ic)
+    g4c = special.gamma(1-4*ic)
+    g1 = (g3c - 3*mu*mu2 - mu**3) / mu2**1.5
+    g2 = (g4c - 4*g3c*g1c + 3*g2c*g2c) / mu2**2 - 6
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+    
+    
     
 ## F
 
@@ -1200,6 +1425,30 @@ def gilbratisf(x):
 def gilbratstats(full=0):
     return lognormstats(full=full)
 
+# LOMAX (Pareto of the second kind.)
+#  Special case of Pareto of the first kind.
+
+def lomaxpdf(x, c, scale=1.0):
+    return paretopdf(x, c, -1, scale)
+
+def lomaxcdf(x, c, scale=1.0):
+    return paretocdf(x, c, -1, scale)
+
+def lomaxppf(q, c, scale=1.0):
+    return paretoppf(q, c, -1, scale)
+
+
+def lomaxsf(x, c, scale=1.0):
+    return paretosf(x, c, -1, scale)
+
+
+def lomaxisf(x, c, scale=1.0):
+    return paretoisf(x, c, -1, scale)
+
+
+def lomaxstats(x, c, scale=1.0, full=0):
+    return paretostats(x, c, -1, scale, full)
+
 
 
 # MAXWELL
@@ -1250,8 +1499,44 @@ def maxwellstats(scale=1.0, full=0):
 def nakagamipdf(x, df, loc=0.0, scale=1.0):
     x, loc, scale = map(arr, (x, loc, scale))
     x = arr((x-loc*1.0)/scale)
-    Px = 2*df**df*x**(2*df-1.0)/special.gamma(df)*x**(2*df-1.0)*exp(-df*v*x)
+    sv = errp(0)
+    Px = 2*(df**df)*x**(2*df-1.0)/special.gamma(df)*exp(-df*x*x)
+    sv = errp(sv)
     return select([(df<=0)|(scale<=0),x>0],[scipy.nan,Px/scale])
+
+def nakagamicdf(x, df, loc=0.0, scale=1.0): 
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.gammainc(df, df*x*x)
+    sv = errp(sv)
+    return select([(df<=0)|(scale<=0),x>0],[scipy.nan, Cx])
+
+def nakagamippf(q, df, loc=0.0, scale=1.0):
+    sv = errp(0)
+    vals = sqrt(gammaincinv(df,q)/arr(df))
+    sv = errp(sv)
+    return vals*scale + loc
+
+def nakagamisf(x, df, loc=0.0, scale=1.0):
+    return 1.0-nakagamicdf(x, df, loc, scale)
+
+def nakagamiisf(q, df, loc=0.0, scale=1.0):
+    return nakagamippf(1-q, df, loc, scale)
+
+def nakagamistats(df, loc=0.0, scale=1.0, full=0):
+    df, scale = arr(df), arr(scale)
+    cond = (df > 0) & (scale > 0)
+    mu = special.gamma(df+0.5)/sqrt(df)/special.gamma(df)
+    mu2 = 1-mu*mu
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+
+    g1 = mu*(1-4*df*mu2)/(2*df*mu2**1.5)
+    g2 = (-6*mu**4 * df + (8*df-2)*mu*mu - 2*df + 1)/(df*mu2*mu2)
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
     
 
 # Non-central chi-squared
@@ -1442,51 +1727,43 @@ def ncfstats(dfn,dfd,nc, full=0):
 
 ## Student t distribution
 
-def tpdf(x, df):
-    assert all(df > 0), _posstr
-    r = df*1.0
+def tpdf(x, df, loc=0.0, scale=1.0):
+    x, df, loc, scale = map(arr (x, df, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    r = arr(df*1.0)
+    sv = errp(0)
     Px = exp(special.gammaln((r+1)/2)-special.gammaln(r/2))
     Px /= sqrt(r*pi)*(1+(x**2)/r)**((r+1)/2)
-    return Px
+    sv = errp(sv)
+    return select([scale <=0],[scipy.nan], Px/scale)
 
-def tcdf(x, df):
-    assert all(df > 0), _posstr
-    return special.stdtr(df, x)
+def tcdf(x, df, loc=0.0, scale=1.0):
+    x, df, loc, scale = map(arr (x, df, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.stdtr(df, x)
+    sv = errp(sv)
+    return select([scale <=0],[scipy.nan], Cx)
 
-def tsf(x, df):
-    return 1-tcdf(x,df)
+def tsf(x, df, loc=0.0, scale=1.0):
+    return 1-tcdf(x,df, loc, scale)
 
-def tppf(q, df):
-    assert all((0<=q) & (q<=1)), _quantstr
-    return special.stdtrit(df, q)
+def tppf(q, df, loc=0.0, scale=1.0):
+    q, df, loc, scale = map(arr (q, df, loc, scale))    
+    cond = (q<=1) & (q>=0) & (scale > 0)
+    return _wc(cond, special.stdtrit(df, q)*scale + loc)
 
-def tisf(p, df):
-    assert all((0<=p)&(p<=1)), _quantstr
-    return special.stdtrit(df, 1-p)
+def tisf(q, df, loc=0.0, scale=1.0):
+    return tppf(1-q,df,loc,scale)
 
-def tstats(df,full=0):
+def tstats(df, loc=0.0, scale=1.0, full=0):
+    df, loc, scale = map(arr, (df, loc, scale))
     r = df*1.0
-    if r <= 1:
-        mn = scipy.nan
-    else:
-        mn = 0.0
-    if r <= 2:
-        var = scipy.nan
-    else:
-        var = r/(r-2)
+    mn = _wc(r>1,loc)
+    var = _wc(r>2,r/(r-2)*scale*scale)
     if not full:
         return mn, var
-
-    if r <= 1:
-        g1 = scipy.nan
-    else:
-        g1 = 0.0
-    if r <= 4:
-        g2 = scipy.nan
-    else:
-        g2 = 6 / (r-4)
-        
-    return mn, var, g1, g2
+    return mn, var, _wc(r>3, 0.0), _wc(r>4,3*r/(r-4.0))
 
 ## Non-central T distribution
 
@@ -1563,47 +1840,47 @@ def nctstats(df,nc,full=0):
 
 # Pareto
 
-def paretopdf(x, mode=1.0, shape=4.0):
-    a, b = shape, mode
-    assert all((a > 0) & (b > 0)), _posstr
-    x = arr(x)
-    return where(x<b,0,1.0*a*b**a / x**(a+1.0))
+def paretopdf(x, b, loc=0.0, scale=1.0):
+    x, b, loc, scale = map(arr, (x,b,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = b * x**(-b-1)
+    select([(b<=0)&(scale<=0.0)],[scipy.nan, Px/scale])
 
-def paretocdf(x, mode=1.0, shape=4.0):
-    a, b = shape, mode
-    assert all((a > 0) & (b > 0)), _posstr
-    x = arr(x)
-    x = where(x<b,b,x)
-    return 1-(b*1.0/x)**a
+def paretocdf(x, b, loc=0.0, scale=1.0):
+    x, b, loc, scale = map(arr, (x,b,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = 1 -  x**(-b)
+    select([(b<=0)&(scale<=0.0)],[scipy.nan, Cx])
 
-def paretosf(x, mode=1.0, shape=4.0):
-    assert all((mode > 0) & (shape > 0)), _posstr
-    return 1-paretocdf(x,mode,shape)
+def paretosf(x, b, loc=0.0, scale=1.0):
+    return 1-paretocdf(x, b, loc, scale)
 
-def paretoppf(q, mode=1.0, shape=4.0):
-    a, b = shape, mode
-    assert all((a > 0) & (b > 0)), _posstr
-    assert all(0<=q<1), _quantstr
-    return b*pow(1-q,-1.0/a)
+def paretoppf(q, b, loc=0.0, scale=1.0):
+    q, b, loc, scale = map(arr, (q,b,loc,scale))
+    cond = (q>=0)&(q<=1)&(scale>0)&(b>0)
+    vals = (1-q, -1.0/b)
+    return _wc(cond, vals*scale + loc)
 
-def paretoisf(p, mode=1.0, shape=4.0):
-    a, b = shape, mode
-    assert all(0<=q<1), _quantstr
-    assert all((a > 0) & (b > 0)), _posstr
-    return b*pow(p,-1.0/a)
+def paretoisf(q, b, loc=0.0, scale=1.0):
+    q, b, loc, scale = map(arr, (q,b,loc,scale))
+    cond = (q>=0)&(q<=1)&(scale>0)&(b>0)
+    vals = (q, -1.0/b)
+    return _wc(cond, vals*scale + loc)
 
-def paretostats(mode=1.0, shape=4.0, full=0):
-    a, b = shape, mode
-    assert all((a > 0) & (b > 0)), _posstr
-    mn = a*b / (a-1.0)
-    var = a*b*b / (a-1.0)**2 / (a-2.0)
+def paretostats(b, loc=0.0, scale=1.0, full=0):
+    b, loc, scale = map(arr, (b,loc,scale))
+    cond (scale > 0) & (b>0)
+    mu = b / (b-1.0)
+    mn = select([cond, b<=1],[scipy.nan, scipy.inf], mu*scale + last)
+    mu2 = b / (b-1.0)**2 / (b-2.0)
+    var = select([cond, b<=2],[scipy.nan, scipy.inf], mu2*scale*scale)
     if not full:
         return mn, var
-
-    g1 = sqrt((a-2.0)/a)*2.0*(a+1.0)/(a-3.0)
-    g2 = 6*scipy.polyval([1,1,-6,-2],a)/(a*(a-3.0)*(a-4))
+    g1 = sqrt((b-2.0)/b)*2.0*(b+1.0)/(b-3.0)
+    g2 = 6*scipy.polyval([1,1,-6,-2],b)/(b*(b-3.0)*(b-4))
+    g1 = select([cond, b<=3],[scipy.nan, scipy.inf], g1)
+    g2 = select([cond, b<=4],[scipy.nan, scipy.inf], g2)
     return mn, var, g1, g2
-
 
 ## Power distribution
 ##   Special case of beta dist. with d =1.0
@@ -1642,6 +1919,55 @@ def powerstats(a, loc=0.0, scale=1.0, full=0):
     g1 = 2*(1.0-a)*sqrt((a+2.0)/a/(a+3.0))
     g2 = 6*polyval([1,-1,-6,2.],a)/(a*(a+3)*(a+4.0))
     return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+# Reciprocal Distribution
+
+def reciprocalpdf(x, a, b, loc=0.0, scale=1.0):
+    x, a, b, loc, scale = map(arr, (x, a, b, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 1.0/(x*log(b/a))
+    return select([(a<=0)|(b<=a)|(scale<=0),(x>=a)&(x<=b)],
+                  [scipy.nan, Px/scale])
+
+def reciprocalcdf(x, a, b, loc=0.0, scale=1.0):
+    x, a, b, loc, scale = map(arr, (x, a, b, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = log(a/x)/log(a/b)
+    return select([(a<=0)|(b<=a)|(scale<=0),x>b,x>=a],
+                  [scipy.nan, 1.0, Cx])
+
+def reciprocalppf(q, a, b, loc=0.0, scale=1.0):
+    q, a, b, loc, scale = map(arr, (q, a, b, loc, scale))
+    vals = a*(arr(b*1.0/a)**q)
+    cond = (a>0)&(b>a)&(scale>0)&(q>=0)&(q<=1.0)
+    return where(cond, vals*scale + loc, scipy.nan)
+
+def reciprocalsf(x, a, b, loc=0.0, scale=1.0):
+    return 1.0-reciprocalcdf(x, a, b, loc, scale)
+
+def reciprocalisf(q, a, b, loc=0.0, scale=1.0):
+    return reciprocalppf(1-q, a, b, loc, scale)
+
+def reciprocalstats(a, b, loc=0.0, scale=1.0, full=0):
+    a, b, loc, scale = map(arr, (a, b, loc, scale))
+    cond = (a>0) & (b>a) & (scale > 0)
+    b = arr(b*1.0)
+    d = log(a/b)
+    mu = (a-b)/d
+    mu2 = (a+b)*mu/2 - mu*mu
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    fac = 2*d*d*mu2/(a-b)
+    g1 = sqrt(2)*(12*d*(a-b)**2 + d*d*(a*a*(2*d-9) + 2*a*b*d + b*b*(2*d+9)))
+    g1 /= 3*d*sqrt((a-b)*fac)*fac
+    g2 = -36*(a-b)**3 + 36*d*(a-b)**2*(a+b) - 16*d*d*(a**3-b**3) + \
+         3*d**3*(a*a+b*b)*(a+b)
+    g2 /= 3*(a-b)*fac*fac
+    g2 -= 3
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+    
 
 # Rayleigh distribution (this is chi with df=2 and loc=0.0)
 # scale is the mode.
@@ -1684,42 +2010,73 @@ def rayleighstats(scale=1.0, full=0):
     g2 = (24*pi-6*pi*pi-16)/(pi-4)**2
     return mn, var, g1, g2
 
-# Uniform
+# Semicircular
 
-def uniformpdf(x, a=0.0, b=1.0):
-    assert all(b > a)
-    x = arr(x)
-    return where((x>a) & (x<b), 1.0/(maxi-mini), 0.0)
+def semicircularpdf(x, loc=0.0, scale=1.0):
+    x, loc, shape = map(arr, (loc, scale))
+    x = arr((x-1.0*loc)/scale)
+    Px = 2.0/pi*sqrt(1-x*x)
+    return select([scale <=0,(x>=-1)&(x<=1)],[scipy.nan,Px/scale])
 
-def uniformcdf(x, a=0.0, b=1.0):
-    assert all(b > a)
-    x = arr(x)
-    x = where(x<a,a,x)
-    x = where(x>b,b,x)*1.0
-    return (x-a)/(b-a)
+def semicircularcdf(x, loc=0.0, scale=1.0):
+    x, loc, shape = map(arr, (loc, scale))
+    x = arr((x-1.0*loc)/scale)
+    Cx = 0.5 + 1.0/pi*(x*sqrt(1-x*x) + arcsin(x))
+    return select([scale <=0,x>1,x>0],[scipy.nan,1,Cx])
 
-def uniformsf(x, a=0.0, b=1.0):
-    return 1-uniformcdf(x,a,b)
+def semicircularppf(q, loc=0.0, scale=1.0):
+    pass
 
-def uniformppf(q, a=0.0, b=1.0):
-    assert all(b > a)
-    assert all((0<=q) & (q<=1)), _quantstr
-    return q*(b-a) + a
+def semicircularsf(x, loc=0.0, scale=1.0):
+    return 1.0-semicircularcdf(x, loc, scale)
 
-def uniformisf(p, a=0.0, b=1.0):
-    assert all(b > a)
-    assert all((0<=p)&(p<=1)), _quantstr
-    return b - p*(b-a)
+def semicircularisf(q, loc=0.0, scale=1.0):
+    return semicircularppf(1-q, loc, scale)
 
-def uniformstats(a=0.0, b=1.0, full=0):
-    assert all(b > a)
-    mn = 0.5*(a+b)
-    var = (b-a)**2.0 / 12.0
+def semicircularstats(loc=0.0, scale=1.0, full=0):
+    loc, scale = arr(loc), arr(scale)
+    cond = (scale > 0)
+    mu = 0
+    mu2 = 0.25
+    mn = _wc(cond, loc)
+    var = _wc(cond, mu2*scale*scale)
     if not full:
         return mn, var
-    g1 = 0.0
-    g2 = -6.0/5
-    return mn, var, g1, g2
+    return mn, var, _wc(cond, 0.0), _wc(cond, -1.0)
+
+
+# Uniform
+
+# loc to loc + shape
+def uniformpdf(x, loc=0.0, shape=1.0):
+    x, loc, shape = map(arr, (x, loc, shape))
+    x = arr((x-loc*1.0)/shape)
+    return select([shape <= 0],[scipy.nan],1.0*shape*(x>0)*(x<1))
+
+def uniformcdf(x, loc=0.0, shape=1.0):
+    x, loc, shape = map(arr, (x, loc, shape))
+    x = arr((x-loc*1.0)/shape)
+    return select([shape<=0, x>=1, x>0],[scipy.nan, 1.0, x])
+    
+def uniformsf(x, loc=0.0, shape=1.0):
+    return 1-uniformcdf(x,loc,shape)
+
+def uniformppf(q, loc=0.0, shape=1.0):
+    q, loc, shape = map(arr, (q, loc, shape))
+    cond (shape > 0) & (q<=1) & (q>=0)
+    return _wc(cond, q*shape + loc)
+
+def uniformisf(q, loc=0.0, shape=1.0):
+    return uniformppf(1-q,loc,shape)
+
+def uniformstats(loc=0.0, shape=1.0, full=0):
+    loc, shape = arr(loc), arr(shape)
+    cond = (shape > 0)
+    mn = _wc(cond, 0.5*shape+loc)
+    var = _wc(cond, shape**2.0 / 12.0)
+    if not full:
+        return mn, var
+    return mn, var, _wc(cond, 0.0), _wc(cond, -6.0/5.0)
 
 
 # Triangular

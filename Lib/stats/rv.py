@@ -7,6 +7,7 @@ import math
 from types import *
 Num = Numeric
 import scipy.special
+special = scipy.special
 from fastumath import *
 
 ArgumentError = "ArgumentError"
@@ -195,7 +196,31 @@ def gamma(a, loc=0.0, scale=1.0, size=None):
     shape (alpha) and scale (beta) and location parameter as given."""
     # Note the different parameter definitions as the ones used in
     #  ranlib.
+    if (a <=0) or (scale <=0):
+        raise ValueError, _parmerr
     return _build_random_array(rand.gamma, (1.0/scale, a), size) + loc
+
+
+
+######
+#####
+
+def alpha(a, loc=0.0, scale=1.0, size=None):
+    """Alpha distributed random variables.
+    """
+    u = random(size=size)
+    return (1.0/(a-special.ndtri(u*special.ndtr(a))))*scale + loc
+
+def anglit(loc=0.0, scale=1.0, size=None):
+    """Anglit random variables
+    """
+    u = random(size=size)
+    return (arcsin(sqrt(u))-pi/4)*scale + loc
+
+def arcsine(loc=0.0, scale=1.0, size=None):
+    u = random(size=size)
+    return sin(pi*u/2.0)**2 * scale + loc
+
 
 def betaprime(a, b, loc=0.0, scale=1.0, size=None):
     u1 = gamma(a,size=size)
@@ -211,6 +236,14 @@ def erlang(n, loc=0.0, scale=1.0, size=None):
 def dgamma(a, loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return (gamma(a, 0.0, 1.0, size=size)*(Num.where(u>=0.5,1,-1)))*scale+loc
+
+
+def extremelb(c, loc=0.0, scale=1.0, size=None):
+    if (c <=0) or (scale <=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return pow(-log(u),-1.0/c)*scale + loc
+
 
 def gilbrat(size=None):
     """returns array of gilbert distributed random numbers (special case of
@@ -240,6 +273,21 @@ def nakagami(df, loc=0.0, scale=1.0, size=None):
         raise ValueError, _parmerr
     U = random(size=size)
     return loc + scale*sqrt(1.0/df*special.gammainccinv(df,1-U))
+
+def pareto(c, loc=0.0, scale=1.0, size=None):
+    """Pareto First Kind.
+    """
+    if (c<=0) or (scale <= 0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return (1-u)**(-1.0/c)
+
+# special case with no location parameter.  Use pareto if you need
+#   location parameter.
+def lomax(c, scale=1.0, size=None):
+    """Pareto of the second kind
+    """
+    return pareto(c, -1, scale, size)
 
 def halfnorm(loc=0.0, scale=1.0, size=None):
     """HalfNormal Random variates."""
@@ -310,6 +358,16 @@ def laplace(loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return (Num.where(u<=0.5,log(2*u),-log(2*(1-u))))*scale + loc
 
+def reciprocal(a, b, loc=0.0, scale=1.0, size=None):
+    if (a<=0) or (b<=0) or (scale<=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return a*pow(b/a,u)*scale + loc
+
+#####################################
+# General purpose continuous
+######################################
+
 def randwppf(ppf, args=(), size=None):
     """returns an array of randomly distributed integers of a distribution
     whose percent point function (inverse of the CDF) is given.
@@ -343,7 +401,9 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
     return apply(_vppf,(U,)+args)
 
 
+#################################################
 ## DISCRETE
+##################################################
 
 def bernoulli(pr=0.5, size=None):
     return binom(1, pr, size)
