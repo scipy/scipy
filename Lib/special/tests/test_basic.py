@@ -1368,6 +1368,17 @@ class test_zeros(unittest.TestCase):
         assert_array_equal(c,array([[0, 0],
                                     [0, 0]]))
 
+class test_general_function(unittest.TestCase):
+
+    def check_simple(self):
+        def addsubtract(a,b):
+            if a > b:
+                return a - b
+            else:
+                return a + b
+        f = general_function(addsubtract)
+        r = f([0,3,6,9],[1,3,5,7])
+        assert_array_equal(r,[1,6,1,2])
 
 ####### Testing ##############
 
@@ -1544,6 +1555,7 @@ def test_suite(level=1):
 	suites.append( unittest.makeSuite(test_yve,'check_') )
 	suites.append( unittest.makeSuite(test_yvp,'check_') )
 	suites.append( unittest.makeSuite(test_zeros,'check_') )
+        suites.append( unittest.makeSuite(test_general_function,'check_') )
     if level > 5:
 	pass
     total_suite = unittest.TestSuite(suites)
