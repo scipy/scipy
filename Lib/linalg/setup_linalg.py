@@ -94,8 +94,9 @@ def configuration(parent_package=''):
         skip_names['fblas'].extend(skip_names['cblas'])
         skip_names['fblas'].extend(\
             'srotg crotg srotmg srot csrot srotm sswap cswap sscal cscal'\
-            'csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
-            'samax camax sgemv cgemv chemv ssymv strmv ctrmv sgemm cgemm'.split())
+            ' csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
+            ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
+            ' sgemm cgemm'.split())
     if atlas_version_pre_3_3:
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
