@@ -1,9 +1,11 @@
-include */setup_*.py
-include fftpack/*.pyf
-include special/specfun.pyf
-include linalg/generic_*.pyf
-include linalg/flapack_user_routines.pyf
-include scipy_base/*.inc
-include sparse/SuperLU/*.inc
-include */*.cfg
-global-include *.txt
+include Lib/fftpack/*.pyf
+include Lib/special/specfun.pyf
+include Lib/linalg/generic_*.pyf
+include Lib/linalg/flapack_user_routines.pyf
+include scipy_core/scipy_base/*.inc
+include Lib/sparse/SuperLU/*.inc
+#include */*/*.cfg
+recursive-include Lib_chaco/freetype/freetype2 *.h *.c *.i
+recursive-include Lib/xplt/src *.h *.c
+recursive-include Lib/xplt/pygist *.h *.c *.py
+global-include *.txt .build_py_ignore
