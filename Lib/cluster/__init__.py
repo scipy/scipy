@@ -5,3 +5,6 @@
     Self Organized Feature Maps (SOM) and other approaches are also scheduled
     to appear at a theater near you.
 *"""
+__all__ = ['vq']
+
+import vq
