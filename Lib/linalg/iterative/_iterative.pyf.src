@@ -12,7 +12,7 @@ python module _iterative ! in
             integer, intent(hide), depend(b) :: n=len(b)
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
-            <_t> intent(inout), dimension(ldw,6) :: work
+            <_t> intent(inout), dimension(ldw*6) :: work
             integer, intent(hide), depend(n) :: ldw=max(1,n)
             integer, intent(in,out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid
@@ -27,7 +27,7 @@ python module _iterative ! in
             integer, intent(hide), depend(b) :: n=len(b)
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
-            <_t> intent(inout), dimension(ldw,7) :: work
+            <_t> intent(inout), dimension(ldw*7) :: work
             integer, intent(hide), depend(n) :: ldw=max(1,n)
             integer, intent(in,out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid
@@ -42,7 +42,7 @@ python module _iterative ! in
             integer, intent(hide), depend(b) :: n=len(b)
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
-            <_t> intent(inout), dimension(ldw,4) :: work
+            <_t> intent(inout), dimension(ldw*4) :: work
             integer, intent(hide), depend(n) :: ldw=max(1,n)
             integer, intent(in,out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid
@@ -57,7 +57,7 @@ python module _iterative ! in
             integer, intent(hide), depend(b) :: n=len(b)
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
-            <_t> intent(inout), dimension(ldw,7) :: work
+            <_t> intent(inout), dimension(ldw*7) :: work
             integer, intent(hide), depend(n) :: ldw=max(1,n)
             integer, intent(in,out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid
@@ -72,7 +72,7 @@ python module _iterative ! in
             integer, intent(hide), depend(b) :: n=len(b)
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
-            <_t> intent(inout), dimension(ldw,11) :: work
+            <_t> intent(inout), dimension(ldw*11) :: work
             integer, intent(hide), depend(n) :: ldw=max(1,n)
             integer, intent(in,out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid
@@ -88,9 +88,9 @@ python module _iterative ! in
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
             integer, intent(in), check((0<restrt) && (restrt<=n)) :: restrt
-            <_t> intent(inout), dimension(ldw,5) :: work
+            <_t> intent(inout), dimension(ldw*5) :: work
             integer intent(hide) :: ldw=max(1,n)
-            real intent(inout), dimension(ldw2,2*restrt+2) :: work2
+            real intent(inout), dimension(ldw2*(2*restrt+2)) :: work2
             integer intent(hide), depend(restrt) :: ldw2=max(1,restrt)
             integer intnt(in, out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid

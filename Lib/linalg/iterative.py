@@ -12,34 +12,45 @@ import _iterative
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
-def type1(self,x):
-    return dot(self.obj, x)
-
-def type2(self, x):
-    return self.obj(x,*self.args)
-
 class get_matvec:
+    methname = 'matvec'
     def __init__(self, obj, *args):
         self.obj = obj
         self.args = args
         if isinstance(obj, ArrayType):
-            self.callfunc = new.instancemethod(type1,self,get_matvec)
+            self.callfunc = self.type1
             return
-        try:
-            meth = obj.matvec
-        except AttributeError:
-            meth = obj
+        meth = getattr(obj,self.methname)
         if not callable(meth):
-            raise ValueError, "Object must be an array or a callable object"\
-                  "or have a callable matvec attribute."
+            raise ValueError, "Object must be an array "\
+                  "or have a callable %s attribute." % (self.methname,)
 
         self.obj = meth
-        self.callfunc = new.instancemethod(type2, self, get_matvec)
-        
+        self.callfunc = self.type2
+
     def __call__(self, x):
         return self.callfunc(self, x)
-        
 
+    def type1(self, x):
+        return dot(self.obj, x)
+
+    def type2(self, x):
+        return self.obj(x,*self.args)
+
+class get_rmatvec(get_matvec):
+    methname = 'rmatvec'
+    def type1(self, x):
+        return dot(x, self.obj)
+
+class get_psolve(get_matvec):
+    methname = 'psolve'
+    def type1(self, x):
+        return x
+
+class get_rpsolve(get_matvec):
+    methname = 'rpsolve'
+    def type1(self,x):
+        return x
 
 def bicg(A,b,tol=1e-5,maxiter=None):
     b = asarray(b)
@@ -48,7 +59,7 @@ def bicg(A,b,tol=1e-5,maxiter=None):
     if maxiter is None:
         maxiter = n*5
 
-    matvec, psolve, matvecT, psolveT = (None,)*4
+    matvec, psolve, rmatvec, rpsolve = (None,)*4
     ltr = _type_conf[typ]
     revcom = _iterative.__dict__[ltr+'bicgrevcom']
     stoptest = _iterative.__dict__[ltr+'stoptest2']
@@ -74,18 +85,18 @@ def bicg(A,b,tol=1e-5,maxiter=None):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
-            if matvectrans is None:
-                matvectrans = get_matvectrans(A)
+            if rmatvec is None:
+                rmatvec = get_rmatvec(A)
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvectrans(work[slice1])
+            work[slice2] += sclr1*rmatvec(work[slice1])
         elif (ijob == 3):
             if psolve is None:
                 psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 4):
-            if psolvetrans is None:
-                psolvetrans = get_psolvetrans(A)
-            work[slice1] = psolvetrans(work[slice2])
+            if rpsolve is None:
+                rpsolve = get_rpsolve(A)
+            work[slice1] = rpsolve(work[slice2])
         elif (ijob == 5):
             if matvec is None:
                 matvec = get_matvec(A)
