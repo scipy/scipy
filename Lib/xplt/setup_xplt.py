@@ -9,7 +9,7 @@ def configuration(parent_package=''):
     """
     # Check for X11 libraries
     try:
-        execfile('saved_values.py')
+        execfile('../saved_values.py')
         try:
             X11 = X11
         except NameError:
