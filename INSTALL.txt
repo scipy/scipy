@@ -101,12 +101,19 @@ Daily snapshots of SciPy CVS repository is available at
 INSTALLATION
 ============
 
-From a tar ball
----------------
-Unpack SciPy-<version>.tar.gz, change to SciPy-<version> directory,
-and run
+Make sure that all SciPy prerequisites are installed and working
+properly before continuing SciPy installation.
 
-  python setup.py install
+From tarballs
+-------------
+Unpack SciPy_core-<version>.tar.gz, change to SciPy_core-<version>
+directory, and run
+
+  python setup_scipy_core.py install
+
+Repeat the same procedure for SciPy-<version>.tar.gz but running
+
+  python setup_scipy.py install
 
 This can take several minutes to hours depending on the speed of your
 computer. 
@@ -123,6 +130,24 @@ Itanium, NAG, Compaq, Digital, Gnu, or VAST.
 Or use the following install command:
 
   python setup.py build build_flib --fcompiler=<Vendor> install
+
+IMPORTANT: It is highly recommended that all libraries that scipy uses
+(e.g. blas and atlas libraries) are built with the same Fortran
+compiler.
+
+Using non-Gnu Fortran compiler with gcc/g77 compiled Atlas/Lapack libraries
+---------------------------------------------------------------------------
+
+When Atlas/Lapack libraries are compiled with Gnu compilers but
+one wishes to build scipy with some non-gnu Fortran compiler then
+linking extension modules may require -lg2c. You can specify it
+in installation command line as follows:
+
+  python setup.py build build_ext -lg2c install
+
+If using non-Gnu C compiler or linker, the location of g2c library can
+be specified in a similar manner using -L/path/to/libg2c.a after
+build_ext command.
 
 Intel Fortran Compiler
 ----------------------
@@ -207,18 +232,21 @@ Fix:
   1) Remove scipy/linalg/clapack.pyf
   2) Rebuild/reinstall scipy.
 
-Using Intel Fortran Compiler
+Using non-Gnu Fortran Compiler
 ----------------------------
 If import scipy shows a message
 
   ImportError: undefined symbol: s_wsfe
 
-and you are using Intel Fortran compiler, then it means that any of
+and you are using non-Gnu Fortran compiler, then it means that any of
 the (may be system provided) Fortran libraries such as LAPACK or BLAS
 were compiled with g77. See also compilers notes above.
-Fix: Recompile all Fortran libraries with the Intel compiler and
-rebuild/reinstall scipy.
 
+Recommended fix: Recompile all Fortran libraries with the same Fortran
+compiler and rebuild/reinstall scipy.
+
+Another fix: See `Using non-gnu Fortran compiler with gcc/g77 compiled
+Atlas/Lapack libraries` section above.
 
 TROUBLESHOOTING
 ===============
