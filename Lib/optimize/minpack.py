@@ -324,7 +324,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
-def fixed_point(func, x0, args=(), tol=1e-10, maxiter=50):
+def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
     """Given a function of one variable and a starting point, find a
     fixed-point of the function: i.e. where func(x)=x.
     """
@@ -336,26 +336,26 @@ def fixed_point(func, x0, args=(), tol=1e-10, maxiter=50):
         try:
             p = p0 - (p1 - p0)*(p1-p0) / (p2-2.0*p1+p0)
         except ZeroDivisionError:
-            print "Difference in estimates is %g" % (abs(p2-p1))
+            print "Warning: Difference in estimates is %g" % (abs(p2-p1))
             return p2
-        if abs(p-p0) < tol:
+        if abs(p-p0) < xtol:
             return p
         p0 = p
     raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
 
         
-
-def bisection(func, a, b, args=(), tol=1e-10, maxiter=100):
+def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     """Bisection root-finding method.  Given a function and an interval with
     func(a) * func(b) < 0, find the root between a and b.
     """
     i = 1
     eva = func(a,*args)
+    evb = func(b,*args)
+    assert (eva*evb < 0), "Must start with interval with func(a) * func(b) <0"
     while i<=maxiter:
-        print i
         dist = (b-a)/2.0
         p = a + dist
-        if dist < tol:
+        if dist < xtol:
             return p
         ev = func(p,*args)
         if ev == 0:
