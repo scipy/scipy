@@ -37,10 +37,12 @@ def gui_thread(finished):
             global running_in_second_thread,app,gui_thread_finished   
             app = second_thread_app(0)
             running_in_second_thread = 1
-            app.MainLoop()
-            #when the main loop exits, we need to single the
-            # exit_gui_thread function that it is OK to shut down.
-            gui_thread_finished.set()
+            try:
+                app.MainLoop()
+                # when the main loop exits, we need to single the
+                # exit_gui_thread function that it is OK to shut down.
+            finally:
+                gui_thread_finished.set()
     finally: 
         finished.set()             
         
@@ -216,7 +218,7 @@ def remove_duplicates(lst):
     return res
 
 def is_proxy(x):
-    hasattr(x,'is_proxy')
+    return hasattr(x,'is_proxy')
     
 def dereference_arglist(lst):
     """ Scan for proxy objects and convert to underlying object
@@ -230,4 +232,4 @@ def dereference_arglist(lst):
     return res
        
 def proxy_error():
-    raise ValueError, 'This window has been destroyed'    
+    raise ValueError, 'This window has been destroyed'
