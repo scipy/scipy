@@ -572,11 +572,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
 
-    Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag}, <allvecs>)
+    Outputs: (xopt, {fopt, gopt, Hopt, func_calls, grad_calls, warnflag}, <allvecs>)
 
       xopt -- the minimizer of f.
 
       fopt -- the value of f(xopt).
+      gopt -- the value of f'(xopt).  (Should be near 0)
+      Bopt -- the value of 1/f''(xopt).  (inverse hessian matrix)
       func_calls -- the number of function_calls.
       grad_calls -- the number of gradient calls.
       warnflag -- an integer warning flag:
@@ -686,7 +688,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
             print "         Gradient evaluations: %d" % grad_calls
 
     if full_output:
-        retlist = xk, fval, func_calls, grad_calls, warnflag
+        retlist = xk, fval, gfk, Hk, func_calls, grad_calls, warnflag
         if retall:
             retlist += (allvecs,)
     else: 
