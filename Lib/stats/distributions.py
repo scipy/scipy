@@ -139,18 +139,18 @@ def ksoneppf(q,n):
     assert all((0<=q) & (q<=1)), _quantstr
     return _ksoneppf(q,n)
 
-def kstwosf_largen(y):
+def kstwobignsf(y):
     return special.kolmogorov(y)
 
-def kstwop_largen(p):
+def kstwobignisf(p):
     assert all((0<=p)&(p<=1)), _quantstr
     return special.kolmogi(p)
 
-def kstwocdf_largen(y):
+def kstwobigncdf(y):
     assert(y>=0)
     return 1-special.kolmogorov(y)
 
-def kstwoq_largen(q):
+def kstwobignppf(q):
     assert(all((0<=q) & (q<=1)))
     return special.kolmogi(1-q)
 
