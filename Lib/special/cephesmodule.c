@@ -143,7 +143,7 @@ static void * isfinite_data[] = {(void *)NULL, (void *)NULL, (void *)NULL, (void
 
 static PyUFuncGenericFunction cephes1_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1rc_functions[] = { NULL, NULL, NULL, NULL};
-static PyUFuncGenericFunction cephes1_2_functions[] = { NULL, NULL, };
+static PyUFuncGenericFunction cephes1_2_functions[] = { NULL, NULL, NULL, NULL,};
 static PyUFuncGenericFunction cephes1c_4_functions[] = { NULL, NULL, NULL, NULL };
 static PyUFuncGenericFunction cephes1cp_4_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes1cpb_4_functions[] = { NULL, NULL,};
@@ -156,6 +156,7 @@ static PyUFuncGenericFunction cephes2cp_functions[] = { NULL, NULL, NULL, NULL, 
 static PyUFuncGenericFunction cephes2cpp_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes3_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes3a_functions[] = { NULL, NULL, };
+static PyUFuncGenericFunction cephes3_2_functions[] = { NULL, NULL,};
 static PyUFuncGenericFunction cephes4_functions[] = { NULL, NULL, NULL, NULL,};
 static PyUFuncGenericFunction cephes4a_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes4_2_functions[] = { NULL, NULL, };
@@ -179,7 +180,8 @@ static void * pdtrc_data[] = { (void *)pdtrc, (void *)pdtrc, };
 static void * pdtr_data[] = { (void *)pdtr, (void *)pdtr, };
 static void * pdtri_data[] = { (void *)pdtri, (void *)pdtri, };
 
-static void * fresnl_data[] = { (void *)fresnl, (void *)fresnl };
+static void * fresnl_data[] = { (void *)fresnl, (void *)fresnl, 
+                                (void *)cfresnl_wrap, (void *)cfresnl_wrap };
 static void * shichi_data[] = { (void *)shichi, (void *)shichi, };
 static void * sici_data[] = { (void *)sici, (void *)sici, };
 
@@ -353,6 +355,16 @@ static void * cdftnc4_data[] = {(void *)cdftnc4_wrap, (void *)cdftnc4_wrap};
 
 static void * tklambda_data[] = {(void *)tukeylambdacdf, (void *)tukeylambdacdf};
 
+static void * mathieu_a_data[] = {(void *)cem_cva_wrap, (void *)cem_cva_wrap};
+static void * mathieu_b_data[] = {(void *)sem_cva_wrap, (void *)sem_cva_wrap};
+static void * mathieu_cem_data[] = {(void *)cem_wrap, (void *)cem_wrap};
+static void * mathieu_sem_data[] = {(void *)sem_wrap, (void *)sem_wrap};
+static void * mathieu_mcem1_data[] = {(void *)mcm1_wrap, (void *)mcm1_wrap};
+static void * mathieu_mcem2_data[] = {(void *)mcm2_wrap, (void *)mcm2_wrap};
+static void * mathieu_msem1_data[] = {(void *)msm1_wrap, (void *)msm1_wrap};
+static void * mathieu_msem2_data[] = {(void *)msm2_wrap, (void *)msm2_wrap};
+
+
 static char cephes_6_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
 static char cephes_5_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
 
@@ -367,6 +379,7 @@ static char cephes_4_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, 
 static char cephes_4c_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_FLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE};
 
 static char cephes_3_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT,   PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, };
+static char cephes_3_cmplx_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT,   PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CFLOAT,  PyArray_CFLOAT,  PyArray_CFLOAT,   PyArray_CDOUBLE,  PyArray_CDOUBLE, PyArray_CDOUBLE, };
 static char cephes_3c_types[] = { PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 static char cephes_3cp_types[] = { PyArray_FLOAT, PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 static char cephes_2_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,  PyArray_DOUBLE,  };
@@ -386,6 +399,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	cephes1rc_functions[3] = PyUFunc_D_D;
         cephes1_2_functions[0] = PyUFunc_f_ff_As_d_dd;
         cephes1_2_functions[1] = PyUFunc_d_dd;
+        cephes1_2_functions[2] = PyUFunc_F_FF_As_D_DD;
+        cephes1_2_functions[3] = PyUFunc_D_DD;
         cephes1c_4_functions[0] = PyUFunc_f_ffff_As_d_dddd;
         cephes1c_4_functions[1] = PyUFunc_d_dddd;
         cephes1c_4_functions[2] = PyUFunc_F_FFFF_As_D_DDDD;
@@ -418,6 +433,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes3_functions[3] = PyUFunc_ddD_D;
         cephes3a_functions[0] = PyUFunc_fff_f_As_iid_d;
         cephes3a_functions[1] = PyUFunc_ddd_d_As_iid_d;
+        cephes3_2_functions[0] = PyUFunc_fff_ff_As_ddd_dd;
+        cephes3_2_functions[1] = PyUFunc_ddd_dd;
         cephes4_functions[0] = PyUFunc_ffff_f_As_dddd_d;
         cephes4_functions[1] = PyUFunc_dddd_d;
         cephes4_functions[2] = PyUFunc_fffF_F_As_dddD_D;
@@ -644,8 +661,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "airye", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes1_2_functions, fresnl_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "fresnl", fresnl_doc, 0);
-	PyDict_SetItemString(dictionary, "fresnl", f);
+	f = PyUFunc_FromFuncAndData(cephes1_2_functions, fresnl_data, cephes_3_cmplx_types, 4, 1, 2, PyUFunc_None, "fresnel", fresnel_doc, 0);
+	PyDict_SetItemString(dictionary, "fresnel", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_2_functions, shichi_data, cephes_3_types, 2, 1, 2, PyUFunc_None, "shichi", shichi_doc, 0);
 	PyDict_SetItemString(dictionary, "shichi", f);
@@ -971,6 +988,37 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2_functions, tklambda_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "tklmbda", "", 0);
 	PyDict_SetItemString(dictionary, "tklmbda", f);
 	Py_DECREF(f);
+
+        
+	f = PyUFunc_FromFuncAndData(cephes2_functions, mathieu_a_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "mathieu_a", mathieu_a_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_a", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, mathieu_b_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "mathieu_b", mathieu_b_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_b", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_2_functions, mathieu_cem_data, cephes_5_types, 2, 3, 2, PyUFunc_None, "mathieu_cem", mathieu_cem_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_cem", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_2_functions, mathieu_sem_data, cephes_5_types, 2, 3, 2, PyUFunc_None, "mathieu_sem", mathieu_sem_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_sem", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_2_functions, mathieu_mcem1_data, cephes_5_types, 2, 3, 2, PyUFunc_None, "mathieu_modcem1", mathieu_modcem1_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_modcem1", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_2_functions, mathieu_mcem2_data, cephes_5_types, 2, 3, 2, PyUFunc_None, "mathieu_modcem2", mathieu_modcem2_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_modcem2", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_2_functions, mathieu_msem1_data, cephes_5_types, 2, 3, 2, PyUFunc_None, "mathieu_modsem1", mathieu_modsem1_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_modsem1", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_2_functions, mathieu_msem2_data, cephes_5_types, 2, 3, 2, PyUFunc_None, "mathieu_modsem2", mathieu_modsem2_doc, 0);
+	PyDict_SetItemString(dictionary, "mathieu_modsem2", f);
+	Py_DECREF(f);
+
+
+
+
+
 
 }
 

@@ -6,6 +6,7 @@
  */
 
 #include "specfun_wrappers.h"
+#include <stdio.h>
 
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
@@ -324,21 +325,19 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
 }
 
 
-/* Stopped here --- these need to be added to cephes */
+/* Fresnel integrals of complex numbers */
 
-int cfs_wrap(Py_complex z, Py_complex *zf, Py_complex *zd)
+int cfresnl_wrap(Py_complex z, Py_complex *zfs, Py_complex *zfc)
 {
-  F_FUNC(cfs,CFS)(CADDR(z),F2C_CST(zf),F2C_CST(zd));  
+  Py_complex zfd;
+  printf("z = %f + j%f\n",z.real,z.imag);
+  F_FUNC(cfs,CFS)(&z,zfs,&zfd);
+  F_FUNC(cfc,CFC)(&z,zfc,&zfd); 
   return 0;
 }
 
-int cfc_wrap(Py_complex z, Py_complex *zf, Py_complex *zd)
-{
-  F_FUNC(cfc,CFC)(CADDR(z),F2C_CST(zf),F2C_CST(zd));  
-  return 0;
-}
-
-
+/* Mathieu functions */
+/* Characteristic values */
 double cem_cva_wrap(double m, double q) {
   int int_m, kd=1;
   double out;
@@ -363,6 +362,7 @@ double sem_cva_wrap(double m, double q) {
   return out;               
 }
 
+/* Mathieu functions */
 int cem_wrap(double m, double q, double x, double *csf, double *csd)
 {
   int int_m, kf=1;
@@ -443,6 +443,9 @@ int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
   return 0;  
 }
+
+/* Stopped here --- below these need to be added to cephes */
+
 
 double pmv_wrap(double m, double v, double x){
   int int_m;

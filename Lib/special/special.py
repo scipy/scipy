@@ -1,8 +1,13 @@
+# 
+# Author:  Travis Oliphant, 2002
+#
+
 from cephes import *
 from Numeric import *
 import types
 from scipy_base.fastumath import *
-from scipy_base import squeeze
+from scipy_base import squeeze, isscalar
+import specfun
     
 class general_function:
     """
@@ -134,6 +139,8 @@ def assoc_laguerre(x,n,k=0.0):
     fac = gam(k+1+n)/gam(k+1)/gam(n+1)
     return fac*hyp1f1(-n,k+1,x)
 
+digamma = psi
+
 def polygamma(n, x):
     """Polygamma function which is the nth derivative of the digamma (psi)
     function."""
@@ -143,4 +150,58 @@ def polygamma(n, x):
     if sometrue(cond):
         return where(cond, psi(x), fac2)
     return fac2
+
+def mathieu_A(m,q):
+    """Compute expansion coefficients for even Mathieu functions and
+    modified Mathieu functions.
+    """
+    if not (isscalar(m) and isscalar(q)):
+        raise ValueError, "m and q must be scalars."
+    if (q < 0):
+        raise ValueError, "q >=0"
+    if (m != floor(m)) or (m<0):
+        raise ValueError, "m must be an integer >=0."
+
+    if (q <= 1):
+        qm = 7.5+56.1*sqrt(Q)-134.7*Q+90.7*sqrt(Q)*Q
+    else:
+        qm=17.0+3.1*sqrt(Q)-.126*Q+.0037*sqrt(Q)*Q
+    km = int(qm+0.5*m)
+    if km > 251:
+        print "Warning, too many predicted coefficients."
+    kd = 1
+    m = int(floor(m))
+    if m % 2:
+        kd = 2
+
+    a = mathieu_a(m,q)
+    fc = specfunc.fcoef(kd,m,q,a)
+    return fc[:km]
+
+def mathieu_B(m,q):
+    """Compute expansion coefficients for even Mathieu functions and
+    modified Mathieu functions.
+    """
+    if not (isscalar(m) and isscalar(q)):
+        raise ValueError, "m and q must be scalars."
+    if (q < 0):
+        raise ValueError, "q >=0"
+    if (m != floor(m)) or (m<=0):
+        raise ValueError, "m must be an integer > 0"
+
+    if (q <= 1):
+        qm = 7.5+56.1*sqrt(Q)-134.7*Q+90.7*sqrt(Q)*Q
+    else:
+        qm=17.0+3.1*sqrt(Q)-.126*Q+.0037*sqrt(Q)*Q
+    km = int(qm+0.5*m)
+    if km > 251:
+        print "Warning, too many predicted coefficients."
+    kd = 4
+    m = int(floor(m))
+    if m % 2:
+        kd = 3
+
+    b = mathieu_b(m,q)
+    fc = specfunc.fcoef(kd,m,q,b)
+    return fc[:km]
 

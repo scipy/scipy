@@ -412,10 +412,58 @@ can be either 1 or 2.
 <DD>hyp3f0(a,b,c,x) returns (y,err) with the hypergeometric function 3F0 in y and an error estimate in err.  
 </DL>
 
+<h1> Mathieu Functions </h1>
+
+<DL>
+<DT>lmbda = mathieu_a(m,q)
+<DD>mathieu_a(m,q) returns the characteristic value for the even solution, 
+ce_m(z,q), of Mathieu's equation
+
+<DL>
+<DT>lmbda = mathieu_b(m,q)
+<DD>mathieu_b(m,q) returns the characteristic value for the odd solution, 
+se_m(z,q), of Mathieu's equation
+
+<DL>
+<DT>lmbda = mathieu_b(m,q)
+<DD>mathieu_b(m,q) returns the characteristic value for the odd solution, 
+se_m(z,q), of Mathieu's equation
+<DL>
+<DT>(y,yp) = mathieu_cem(m,q,x)
+<DD>mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q), 
+of order m and parameter q evaluated at x.  Also returns the derivative
+with respect to x of ce_m(x,q)
+<DL>
+<DT>(y,yp) = mathieu_sem(m,q,x)
+<DD>mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q), 
+of order m and parameter q evaluated at x.  Also returns the derivative
+with respect to x of se_m(x,q)
+<DL>
+<DT>(y,yp) = mathieu_modcem1(m,q,x)
+<DD>mathieu_modcem1(m,q,x) evaluates the even modified Matheiu function 
+of the first  kind, Mc1m(x,q), and its derivative at x for order m and
+parameter q
+<DL>
+<DT>(y,yp) = mathieu_modcem2(m,q,x)
+<DD>mathieu_modcem2(m,q,x) evaluates the even modified Matheiu function 
+of the second kind, Mc2m(x,q), and its derivative at x for order m and 
+parameter q
+<DL>
+<DT>(y,yp) = mathieu_modsem1(m,q,x)
+<DD>mathieu_modsem1(m,q,x) evaluates the odd modified Matheiu function 
+of the first kind, Ms1m(x,q), and its derivative at x for order m and 
+parameter q
+<DL>
+<DT>(y,yp) = mathieu_modsem2(m,q,x)
+<DD>mathieu_modsem2(m,q,x) evaluates the odd modified Matheiu function
+of the second kind, Ms2m(x,q), and its derivative at x for order m and 
+parameter q
+
+
 <h1> Other Special Functions </h1>
 <DL>
 <DT>y = expn(n,x)
-<DD>expn(n,x) return the exponential integral for integer n and
+<DD>expn(n,x) returns the exponential integral for integer n and
 non-negative x and n: integral(exp(-x*t) / t**n, t=1..inf).
 
 <DL>
@@ -438,9 +486,10 @@ z: exp(-z**2)*erfc(-i*z)
 <DD>besselpoly(a,lam,nu) returns the value of the integral:
 integral(x**lam * jv(nu,2*a*x),x=0..1).
 
-<DT>(ssa,cca) = fresnl(x)
-<DD>fresnl(x) returns the fresnel sin and cos integrals: integral(sin(pi/2
-* t**2),t=0..x) and integral(cos(pi/2 * t**2),t=0..x).
+<DT>(ssa,cca) = fresnel(z)
+<DD>fresnel(z) returns the fresnel sin and cos integrals: integral(sin(pi/2
+* t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or 
+complex z.
 
 <DT>y = dawsn(x)
 <DD>dawsn(x) returns dawson's integral: exp(-x**2) *

@@ -53,6 +53,15 @@ int it2j0y0_wrap(double x, double *, double *);
 int it1i0k0_wrap(double x, double *, double *);
 int it2i0k0_wrap(double x, double *, double *);
 
+int cfresnl_wrap(Py_complex x, Py_complex *sf, Py_complex *cf);
+double cem_cva_wrap(double m, double q);
+double sem_cva_wrap(double m, double q);
+int cem_wrap(double m, double q, double x, double *csf, double *csd);
+int sem_wrap(double m, double q, double x, double *csf, double *csd);
+int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r);
+int msm1_wrap(double m, double q, double x, double *f1r, double *d1r);
+int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r);
+int msm2_wrap(double m, double q, double x, double *f2r, double *d2r);
 #endif
 
 

@@ -63,6 +63,15 @@
     iti0k0   -- Basic integrals of i0 and k0 from 0 to x.
     it2i0k0  -- Integrals of (i0(t)-1)/t from 0 to x and
                   k0(t)/t from x to inf.
+
+  Derivatives of Bessel Functions.
+
+    djv     -- Nth derivative of Jv(v,z)
+    dyv     -- Nth derivative of Yv(v,z)
+    dkv     -- Nth derivative of Kv(v,z)
+    div     -- Nth derivative of Iv(v,z)
+    dh1v    -- Nth derivative of H1v(v,z)
+    dh2v    -- Nth derivative of H2v(v,z)
                   
   Raw Statistical Functions (Friendly versions in scipy.stats)
 
@@ -90,22 +99,20 @@
     chdtri     -- Inverse of chdtrc.
     ndtr       -- Integral from -infinity to x of standard normal pdf
     ndtri      -- Inverse of ndtr (quantiles)
-    erf        -- Error function.
-    erfc       -- Complemented error function (1- erf(x))
-    ervinv     -- Inverse of error function
-    ervcinv    -- Inverse of erfc
     smirnov    -- Kolmogorov-Smirnov complementary CDF for one-sided
                     test statistic (Dn+ or Dn-)
     smirnovi   -- Inverse of smirnov.
     kolmogorov -- The complementary CDF of the (scaled) two-sided test
                           statistic (Kn*) valid for large n.
     kolmogi    -- Inverse of kolmogorov
+    tklmbda    -- Tukey-Lambda CDF
       
   Gamma and Related Functions
 
     gamma        -- Gamma function.
     gammaln      -- Log of the absolute value of the gamma function.
     gammainc     -- Incomplete gamma integral.
+    gammaincinv  -- Inverse of gammainc.
     gammaincc    -- Complemented incomplete gamma integral.
     gammainccinv -- Inverse of gammaincc.
     beta         -- Beta function.
@@ -114,8 +121,17 @@
     betaincinv   -- Inverse of betainc.
     betaincinva  -- Inverse (in first argument, a) of betainc
     betaincinvb  -- Inverse (in first argument, b) of betainc        
-    psi          -- Logarithmic derivative of the gamma function.
+    psi(digamma) -- Logarithmic derivative of the gamma function.
     rgamma       -- One divided by the gamma function.
+    polygamma    -- Nth derivative of psi function.
+
+  Error Function and Fresnel Integrals
+  
+    erf        -- Error function.
+    erfc       -- Complemented error function (1- erf(x))
+    ervinv     -- Inverse of error function
+    ervcinv    -- Inverse of erfc
+    fresnel      -- Fresnel sine and cosine integrals.
 
   HyperGeometric Functions
 
@@ -127,13 +143,26 @@
     hyp1f2   -- Hypergeometric function (1F2)
     hyp3f0   -- Hypergeometric function (3F0)
 
+  Mathieu and Related Functions (and derivatives)
+
+    mathieu_a       -- Characteristic values for even solution (ce_m)
+    mathieu_b       -- Characteristic values for odd solution (se_m)
+    mathieu_A       -- **sequence of expansion coefficients for even solution
+    mathieu_B       -- **sequence of expansion coefficients for odd solution
+       ** All the following return both function and first derivative **
+    mathieu_cem     -- Even Mathieu function
+    mathieu_sem     -- Odd Mathieu function
+    mathieu_modcem1 -- Even modified Mathieu function of the first kind
+    mathieu_modcem2 -- Even modified Mathieu function of the second kind
+    mathieu_modsem1 -- Odd modified Mathieu function of the first kind
+    mathieu_modsem2 -- Odd modified Mathieu function of the second kind
+
   Other Special Functions
 
     expn         -- Exponential integral.
     exp1         -- Exponential integral of order 1 (for complex argument)
     expi         -- Another exponential integral -- Ei(x)
     wofz         -- Fadeeva function.
-    fresnl       -- Fresnel sine and cosine integrals.
     dawsn        -- Dawson's integral.
     shichi       -- Hyperbolic sine and cosine integrals.
     sici         -- Integral of the sinc and "cosinc" functions.
@@ -164,6 +193,9 @@
     round    -- round the argument to the nearest integer. If argument
                  ends in 0.5 exactly, pick the nearest even integer.
 
+  ** by the description indicates a function whis is not a universal
+  function and does not follow broadcasting and automatic
+  array-looping rules.
  """
 from special import *
 import specfun

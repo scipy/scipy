@@ -114,11 +114,12 @@ C
            DO 20 K=1,20
               CR=-.25D0*CR*(4.0D0*K-1.0D0)*(4.0D0*K-3.0D0)/ZP2
 20            CF=CF+CR
-           CR=1.0D0/(PI*Z*Z)
+           CR=1.0D0
            CG=CR
            DO 25 K=1,12
               CR=-.25D0*CR*(4.0D0*K+1.0D0)*(4.0D0*K-1.0D0)/ZP2
 25            CG=CG+CR
+           CG = CG/(PI*Z*Z)
            S=.5D0-(CF*CDCOS(ZP)+CG*CDSIN(ZP))/(PI*Z)
         ENDIF
 30      ZF=S
