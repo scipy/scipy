@@ -13,6 +13,15 @@ void compute_root_from_lambda(double, double *, double *);
 #define CONJ(a) ((a))
 #define ABSQ(a) ( (a*CONJ(a)))
 
+void S_IIR_order1(float,float,float*,float*,int,int,int); 
+void S_IIR_order2(float,float,float,float*,float*,int,int,int);
+void S_IIR_order2_cascade(float,float,float,float,float*,float*,int,int,int);
+int S_IIR_forback1(float,float,float*,float*,int,int,int,float);
+void S_FIR_mirror_symmetric(float*,float*,int,float*,int,int,int);
+int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,int*,int*);
+int S_IIR_forback2(double,double,float*,float*,int,int,int,float); 
+int S_cubic_spline2D(float*,float*,int,int,double,int*,int*,float);
+int S_quadratic_spline2D(float*,float*,int,int,double,int*,int*,float);
 
 /* Implement the following difference equation */
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
@@ -256,7 +265,7 @@ S_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
 {
     int m, n;
     float *tmpmem;
-    float *inptr, *outptr;
+    float *inptr=NULL, *outptr=NULL;
     
     tmpmem = malloc(M*N*sizeof(float));
     if (tmpmem == NULL) return -1;
@@ -292,9 +301,8 @@ S_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
 }
 
 
-
-
-
+static float S_hc(int,float,double,double);
+static float S_hs(int,float,double,double);
 
 float
 S_hc(k, cs, r, omega)
@@ -502,7 +510,7 @@ S_cubic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
     float *coptr;
     float *tmpmem;
     float *tptr;
-    int m,n, retval;
+    int m,n, retval=0;
 
     tmpmem = malloc(N*M*sizeof(float));
     if (tmpmem == NULL) return -1;
@@ -595,7 +603,7 @@ S_quadratic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
     float *coptr;
     float *tmpmem;
     float *tptr;
-    int m,n, retval;
+    int m,n, retval=0;
 
     tmpmem = malloc(N*M*sizeof(float));
     if (tmpmem == NULL) return -1;

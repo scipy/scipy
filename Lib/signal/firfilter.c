@@ -84,7 +84,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   int m, n, j, k, ind0, ind1;
   int Os[2];
   char *sum=NULL, *value=NULL;
-  int new_m, new_n, ind0_memory;
+  int new_m, new_n, ind0_memory=0;
   int boundary, outsize, convolve, type_num, type_size;
   OneMultAddFunction *mult_and_add;
 
@@ -92,7 +92,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   outsize = flag & OUTSIZE_MASK;
   convolve = flag & FLIP_MASK;
   type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
-  type_size;
+  /*type_size;*/
 
   mult_and_add = OneMultAdd[type_num];
   if (mult_and_add == NULL) return -5;  /* Not available for this type */

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path
@@ -10,7 +12,8 @@ def configuration(parent_package=''):
     ext_modules = []
     
     from scipy_distutils.core import Extension
-    packages.append(parent_package+'io')
+    if parent_package:
+        packages.append(parent_package+'io')
     
     sources = ['numpyiomodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
@@ -21,3 +24,7 @@ def configuration(parent_package=''):
                'ext_modules': ext_modules,
               }
     return results          
+
+if __name__ == '__main__':    
+    from scipy_distutils.core import setup
+    setup(**configuration())

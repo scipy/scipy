@@ -24,6 +24,8 @@ is granted, under the terms of the LGPL provided this notification remain.
 
 jmp_buf MALLOC_FAIL;
 
+char *check_malloc (int);
+
 char *check_malloc (size)
 	int size;
 {
@@ -666,7 +668,7 @@ static void RawFilter(Generic_Vector Vb, Generic_Vector Va, Generic_Array X, Gen
   unsigned int len;
   int *loop_index, *loop_strides_X, *loop_strides_Y, *loop_strides_Vi;
   int *loop_strides_Vf, *max_index;
-  char *ptrX, *ptrY, *ptrVi, *ptrVf, *ptra, *ptrb;
+  char *ptrX, *ptrY, *ptrVi=NULL, *ptrVf, *ptra, *ptrb;
   char *pa1, *pa2, *pb1, *pb2;
 
   /* Make dimension array for the looping index that has 
@@ -909,13 +911,13 @@ static int remez(double *dev, double des[], double grid[], double edge[],
 		/* dev, iext, alpha                         are output types */
 		/* des, grid, edge, wt, ngrid, nbands, nfcns are input types */
 {
-    int i, k, k1, kkk, kn, knz, klow, kup, nz, nzz, nm1;
+    int k, k1, kkk, kn, knz, klow, kup, nz, nzz, nm1;
     int cn;
     int j, jchnge, jet, jm1, jp1;
-    int l, luck, nu, nut, nut1, niter;
+    int l, luck=0, nu, nut, nut1=0, niter;
 
-    double ynz, comp, devl, gtemp, fsh, y1, err, dtemp, delf, dnum, dden;
-    double aa, bb, ft, xe, xt, xt1, temp;
+    double ynz=0.0, comp=0.0, devl, gtemp, fsh, y1=0.0, err, dtemp, delf, dnum, dden;
+    double aa=0.0, bb=0.0, ft, xe, xt;
 
     static double *a, *p, *q;
     static double *ad, *x, *y;
@@ -1204,6 +1206,7 @@ L425:
     if (nfcns <= 3) {
 	  alpha[nfcns+1] = alpha[nfcns+2] = 0.0;
     }
+    return 0;
 }
 
 
@@ -1253,7 +1256,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands, doubl
   
   int jtype, nbands, nfilt, lgrid, nz;
   int neg, nodd, nm1;
-  int j, k, kup, l, lband, dimsize;
+  int j, k, l, lband, dimsize;
   double delf, change, fup, temp;
   double *tempstor, *edge, *h, *fx, *wtx;
   double *des, *grid, *wt, *alpha, *work;
@@ -1441,7 +1444,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands, doubl
 
 static void OBJECT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
   int i, k, first_time = 1, incr = 1; 
-  PyObject *tmp1, *tmp2, *tmp;
+  PyObject *tmp1=NULL, *tmp2=NULL, *tmp=NULL;
 
   i = nels2;
 
@@ -1887,6 +1890,8 @@ fail:
 
 static char doc_convolve2d[] = "out = _convolve2d(in1, in2, flip, mode, boundary, fillvalue)";
 
+extern int pylab_convolve_2d(char*,int*,char*,int*,char*,int*,int*,int*,int,char*);
+
 static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
@@ -2029,7 +2034,7 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	PyArrayObject *arY=NULL, *arb=NULL, *ara=NULL, *arX=NULL, *arVi=NULL, *arVf=NULL;
 	Generic_Array x, y, *vi=NULL, *vf=NULL;
 	Generic_Vector Vb, Va;
-	int dim = -1, typenum, k, thedim;
+	int dim = -1, typenum, thedim;
 	char *ara_ptr, input_flag = 0;
 	BasicFilterFunction *basic_filter;
 
@@ -2237,11 +2242,15 @@ static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
    
 static char doc_median2d[] = "filt = _median2d(data, size)";
 
+extern void f_medfilt2(float*,float*,int*,int*);
+extern void d_medfilt2(double*,double*,int*,int*);
+extern void b_medfilt2(unsigned char*,unsigned char*,int*,int*);
+
 static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 {
     PyObject *image=NULL, *size=NULL;
-    int flag=0, typenum;
-    PyArrayObject *a_image=NULL, *a_size;
+    int typenum;
+    PyArrayObject *a_image=NULL, *a_size=NULL;
     PyArrayObject *a_out=NULL;
     int Nwin[2] = {3,3};
 
@@ -2309,7 +2318,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
 
 /* Initialization function for the module (*must* be called initsigtools) */
 
-DL_EXPORT(void) initsigtools() {
+DL_EXPORT(void) initsigtools(void) {
         PyObject *m, *d;
 	
 	/* Create the module and add the functions */
@@ -2320,7 +2329,8 @@ DL_EXPORT(void) initsigtools() {
 
 	/* Make sure the multiarraymodule is loaded so that the zero
 	   and one objects are defined */
-	{ PyObject *multi = PyImport_ImportModule("multiarray"); }
+	PyImport_ImportModule("multiarray");
+	/* { PyObject *multi = PyImport_ImportModule("multiarray"); } */
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
@@ -2335,7 +2345,3 @@ DL_EXPORT(void) initsigtools() {
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module array");
 }
-
-
-
-

@@ -22,9 +22,12 @@ static double dminarg1,dminarg2;
 #define SIGNERR -1
 #define CONVERR -2
 
-double bisect(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
-double ridder(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
-double brenth(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
-double brentq(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
+extern double bisect(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
+extern double ridder(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
+extern double brenth(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
+extern double brentq(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params);
+
+extern double fabs(double);
+extern double sqrt(double);
 
 #endif

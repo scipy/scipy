@@ -49,9 +49,10 @@ typedef void (MultAddFunction) (char *, int, char *, int, char *, int *, int *, 
 
 typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, int, unsigned int, int, int);
 
+/*
 static int index_out_of_bounds(int *, int *, int );
 static long compute_offsets (unsigned long *, long *, int *, int *, int *, int *, int);
 static int increment(int *, int, int *);
-
 static void convolveND(Generic_Array *, Generic_Array *, Generic_Array *, MultAddFunction *, int);
 static void RawFilter(Generic_Vector, Generic_Vector, Generic_Array, Generic_Array, Generic_Array *, Generic_Array *, BasicFilterFunction *, int);
+*/

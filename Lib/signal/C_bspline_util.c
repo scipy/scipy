@@ -18,6 +18,13 @@ void compute_root_from_lambda(double, double *, double *);
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
 /* with a given starting value loaded into the array */
 
+void C_IIR_order1 (__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int);
+void C_IIR_order2 (__complex__ float,__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int);
+void C_IIR_order2_cascade (__complex__ float,__complex__ float,__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int);
+int C_IIR_forback1(__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int,float);
+void C_FIR_mirror_symmetric(__complex__ float*,__complex__ float*,int,__complex__ float*,int,int,int);
+int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,int*,int*);
+
 void 
 C_IIR_order1 (a1, a2, x, y, N, stridex, stridey) 
      __complex__ float a1; 
@@ -256,7 +263,7 @@ C_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
 {
     int m, n;
     __complex__ float *tmpmem;
-    __complex__ float *inptr, *outptr;
+    __complex__ float *inptr=NULL, *outptr=NULL;
     
     tmpmem = malloc(M*N*sizeof(__complex__ float));
     if (tmpmem == NULL) return -1;

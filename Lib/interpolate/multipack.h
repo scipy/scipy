@@ -102,12 +102,12 @@ int i,j;\
 for (j=0;j<(m);p3++,j++) \
   for (p2=p3,i=0;i<(n);p2+=(m),i++,p1++) \
     *p1 = *p2; }
-
+/*
 static PyObject *multipack_python_function=NULL;
 static PyObject *multipack_python_jacobian=NULL;
-static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
+static PyObject *multipack_extra_arguments=NULL;
 static int multipack_jac_transpose=1;
-
+*/
 
 static PyArrayObject * my_make_numpy_array(PyObject *y0, int type, int mindim, int maxdim)
      /* This is just like PyArray_ContiguousFromObject except it handles

@@ -44,7 +44,7 @@ get_continuous_random(int num_dist_params, PyObject* self, PyObject* args, void*
   for(i=0; i<n; i++) {
     switch(num_dist_params) {
     case 0:
-      *out_ptr = (double) ((float (*)()) fun)();
+      *out_ptr = (double) ((float (*)(void)) fun)();
       break;
     case 1:
       *out_ptr = (double) ((float (*)(float)) fun)(a);
@@ -454,7 +454,7 @@ static char random_module_documentation[] =
 ;
 
 DL_EXPORT(void)
-initrand()
+initrand(void)
 {
 	PyObject *m, *d;
 

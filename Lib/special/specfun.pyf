@@ -95,6 +95,7 @@ python module specfun ! in
 
         subroutine clqn(n,z,cqn,cqd) ! in :specfun:specfun.f
             callstatement (*f2py_func)(&n,&(z.r),&(z.i),cqn,cqd)
+            callprotoargument int*,double*,double*,complex_double*,complex_double*
             integer intent(in) :: n
             complex*16 intent(in) :: z
             complex*16 intent(out),dimension(n+1),depend(n) :: cqn
@@ -210,6 +211,7 @@ python module specfun ! in
         !end subroutine cvf
         subroutine clpn(n,z,cpn,cpd) ! in :specfun:specfun.f
             callstatement (*f2py_func)(&n,&(z.r),&(z.i),cpn,cpd)
+            callprotoargument int*,double*,double*,complex_double*,complex_double*
             integer intent(in), check(n>=0) :: n
             complex*16 intent(in) :: z
             complex*16 intent(out),depend(n),dimension(n+1) :: cpn
@@ -444,8 +446,9 @@ python module specfun ! in
         end subroutine pbvv
         subroutine clqmn(mm,m,n,z,cqm,cqd) ! in :specfun:specfun.f
             callstatement (*f2py_func)(&mm,&m,&n,&(z.r),&(z.i),cqm,cqd)
+            callprotoargument int*,int*,int*,double*,double*,complex_double*,complex_double*
             integer intent(hide) :: mm=m
-o            integer intent(in), check(m>=0) :: m
+            integer intent(in), check(m>=0) :: m
             integer intent(in), check(n>=0) :: n
             complex*16 intent(in) :: z
             complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cqm

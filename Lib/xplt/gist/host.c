@@ -34,6 +34,8 @@ without express or implied warranty.
 /*
  * _XGetHostname - similar to gethostname but allows special processing.
  */
+int _XGetHostname (char*, int);
+
 int _XGetHostname (buf, maxlen)
     char *buf;
     int maxlen;

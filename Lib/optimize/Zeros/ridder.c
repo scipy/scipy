@@ -11,7 +11,7 @@ double
 ridder(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
 {        
     int i;
-    double dm,dn,xm,xn,fn,fm,fa,fb,tol;
+    double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
 
     tol = xtol + rtol*(fabs(xa) + fabs(xb));
     fa = (*f)(xa,params);

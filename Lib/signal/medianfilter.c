@@ -7,6 +7,10 @@
  *  Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
  */
 
+void f_medfilt2(float*,float*,int*,int*);
+void d_medfilt2(double*,double*,int*,int*);
+void b_medfilt2(unsigned char*,unsigned char*,int*,int*);
+extern char *check_malloc (int);
 
 #define ELEM_SWAP(a,b) { register float t=(a);(a)=(b);(b)=t; }
 

@@ -21,10 +21,14 @@ typedef struct {
  * is initialized.
  */
 
+#include "Zeros/zeros.h"
+
+/*
 extern double brentq();
 extern double brenth();
 extern double ridder();
 extern double bisect();
+*/
 #define SIGNERR -1
 #define CONVERR -2
 

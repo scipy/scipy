@@ -84,6 +84,8 @@ extern "C" {
 /* #include <dmalloc.h> */
 
 /*#ifndef WANT_SIGFPE_HANDLER*/
+#undef PyFPE_START_PROTECT
+#undef PyFPE_END_PROTECT
 #define PyFPE_START_PROTECT(err_string, leave_stmt)
 #define PyFPE_END_PROTECT
 /*#endif*/
@@ -116,6 +118,8 @@ static double gxZoomFactor = 1.0;
 #ifndef DISPLAY_ZOOM_FACTOR
 #  define DISPLAY_ZOOM_FACTOR gxZoomFactor
 #endif
+
+extern int G_poll(long, unsigned long *, long);
 
 /* We add a component to the default Gist search path, for style and
    palette files in our Python distribution.
@@ -223,7 +227,7 @@ static PyObject *GistError;
 
 /* Routines needed from outside (but not declared in a header file). */
 extern int Py_AtExit (void (*func) (void));
-extern int (*PyOS_InputHook)();
+extern int (*PyOS_InputHook)(void);
 
 /********************M E M O R Y   M A N A G E M E N T*****************/
 typedef unsigned char Uchar;
@@ -264,8 +268,8 @@ static void * PyMemList [MEM_LIST_SIZE];
 static int mem_list_length = 0;
 
 static void clearFreeList (int n);
-static void clearArrayList ();
-static void clearMemList ();
+static void clearArrayList (void);
+static void clearMemList (void);
 
 /*****************************************************************/
 /*           ArrayObject creation                                */
@@ -494,7 +498,7 @@ static int addToArrayList (PyObject * obj) {
    return 1;
    }
 
-static void clearArrayList () {
+static void clearArrayList (void) {
    /* DECREF's everything on the ArrayList; needs to be done if there */
    /* is an error.                                                    */
    int i;
@@ -545,7 +549,7 @@ static int addToMemList (void * addr) {
    return 1;
    }
    
-static void clearMemList () {
+static void clearMemList (void) {
    int i;
    for (i = 0; i < mem_list_length; i++) {
       SAFE_FREE (PyMemList [i]);
@@ -705,14 +709,18 @@ static char *windowNames[8] = {
 };
 
 /* Next few variables are used by plq(), which does some fancy printing. */
+/*
 static long prop3sizes[10] = {0, 8, 2, 5, 5, 3, 3, 7, 0, 0};
 static long prop4sizes[10] = {0, 8, 1, 3, 1, 1, 3, 4, 4, 0};
 static long prop5sizes[10] = {0, 3, 5, 2, 5, 6, 7, 9, 3, 5};
+*/
 static int curIX = -1, curIXc = -1;
 static char specialMarkers[5] = ".+*ox";
 static int (*RawPrinter) (const char *s);
 static int printLength = 79;	/* maximum number of characters on a line */
+  /*
 static int lenPrintBuf = 79;
+  */
 static char printBuf[80];
 static long maxPrintLines = 5000;
 static int printNow, permitNow;
@@ -1237,18 +1245,18 @@ static int _slice2_part (ArrayObject * xyzc, ArrayObject * keep,
    int * nextd,
        * nvertcd,
        * prevd,
-       * list0d,
-       * list1d,
+       * list0d = NULL,
+       * list1d = NULL,
        * listd,
        * xoldd;
    /*#######*/int * ndxsd;
-   double * xyz0d,
+   double * xyz0d = NULL,
           * valcd = (double *) NULL,
           * valc0d = (double *) NULL,
           * valc1d = (double *) NULL,
           * dpd,
           * xyzcd,
-          * xyz1d,
+          * xyz1d = NULL,
           * xyzc_newd,
           * valc_newd = (double *) NULL;
    Uchar * valcc = (Uchar *) NULL,
@@ -1381,21 +1389,23 @@ static int _slice2_part (ArrayObject * xyzc, ArrayObject * keep,
       xyzc_newd [3 * i] = xyzcd [3 * xoldd [i]];
       xyzc_newd [3 * i + 1] = xyzcd [3 * xoldd [i] + 1];
       xyzc_newd [3 * i + 2] = xyzcd [3 * xoldd [i] + 2];
-      if (valc != (ArrayObject *)NULL)
+      if (valc != (ArrayObject *)NULL) {
          if (atype == 'd')
             valc_newd [i] = valcd [xoldd [i]];
          else if (atype == 'b')
             valc_newc [i] = valcc [xoldd [i]];
       }
+      }
    for (i = 0; i < nlist0; i ++) {
       xyzc_newd [3 * listd [list0d [i]] - 3] = xyz0d [3 * i];
       xyzc_newd [3 * listd [list0d [i]] - 2] = xyz0d [3 * i + 1];
       xyzc_newd [3 * listd [list0d [i]] - 1] = xyz0d [3 * i + 2];
-      if (valc != (ArrayObject *)NULL)
+      if (valc != (ArrayObject *)NULL) {
          if (atype == 'd')
             valc_newd [listd [list0d [i]] - 1] = valc0d [i];
          else if (atype == 'b')
             valc_newc [listd [list0d [i]] - 1] = valc0c [i];
+      }
       }
    freeArray (list0, 1);
    freeArray (xyz0, 1);
@@ -1408,11 +1418,12 @@ static int _slice2_part (ArrayObject * xyzc, ArrayObject * keep,
          xyz1d [3 * i + 1];
       xyzc_newd [3 * (listd [list1d [i]] - maskd [list1d [i]]) + 2] =
          xyz1d [3 * i + 2];
-      if (valc != (ArrayObject *)NULL)
+      if (valc != (ArrayObject *)NULL) {
          if (atype == 'd')
             valc_newd [listd [list1d [i]] - maskd [list1d [i]]] = valc1d [i];
          else if (atype == 'b')
             valc_newc [listd [list1d [i]] - maskd [list1d [i]]] = valc1c [i];
+      }
       }
    freeArray (mask, 1);
    freeArray (list1, 1);
@@ -1825,7 +1836,7 @@ static void GetPCrange (double *zmn, double *zmx, double *z, int *reg,
 			int region, long iMax, long jMax)
 {
   double zmin = 0.0, zmax = 0.0;
-  long i, j, k, len = iMax * jMax;
+  long i, j, k/* , len = iMax * jMax */;
   int have_min_max = 0;
   
   for (i = 0, k = 0; i < iMax; i ++)  {
@@ -2104,7 +2115,9 @@ static PyObject *contour (PyObject * self, PyObject * args, PyObject * kd)
      clearMemList ();
      return ERRSS ("contour: GcTrace has failed."); }
   /* For some reason, if PyList_SetItem fails, it returns -1. */
-  if (own_triangle) Py_DECREF (kwt [0]);
+  if (own_triangle) {
+    Py_DECREF (kwt [0]);
+  }
   if (PyList_SetItem (retval, 0, anp) < 0 ||
       PyList_SetItem (retval, 1, aycp) < 0 ||
       PyList_SetItem (retval, 2, axcp) < 0) {
@@ -2214,7 +2227,7 @@ static void PrintFunc (const char *s)
       permitNow = 0;
     } else {
       long nhere = printLength - printNow - 1;
-      char movec;
+      char movec = '\0';
       if (nhere > 0) {
 	strncpy (&printBuf[printNow], s, nhere);
 	s += nhere;
@@ -2426,7 +2439,7 @@ static void YGDispatch (void)
   DispatchEvents ();		/* use Gist dispatcher */
 }
 
-static int YGEventHandler() { YGDispatch(); }
+static int YGEventHandler(void) { YGDispatch(); return 0; }
 
 /* Used only by mouse() */
 static int YPrompt(const char *s)
@@ -2462,7 +2475,7 @@ static int build_kwt (PyObject *kd, char *kwlist[], PyObject * kwt[])
   PyObject *kob, *keylist;
   char *kword, errstr[256];
 
-  for (i = 0; kw = kwlist[i]; i++) kwt[i] = 0;
+  for (i = 0; (kw = kwlist[i]); i++) { kwt[i] = 0; }
   if (!PyMapping_Check (kd))
     return 0; /* No keywords were passed. */
 
@@ -2483,13 +2496,13 @@ static int build_kwt (PyObject *kd, char *kwlist[], PyObject * kwt[])
   /* Ok, all keywords were legal.  Now store pointers to their value.
    * Note that PyDict_GetItemString() puts 0 in kwt[i] if
      that key isn't found. */
-  for (i = 0; kw = kwlist[i]; i++)
-    if(kwt[i] = PyDict_GetItemString (kd, kw))
+  for (i = 0; (kw = kwlist[i]); i++) {
+    if((kwt[i] = PyDict_GetItemString (kd, kw)))
       ++nkw_set;
     /* I tried PyMapping_GetItemString() above, but kept getting
      * "KeyError: wait" messages back from Python.
      */
-
+  }
   return nkw_set;
 }
 
@@ -2571,14 +2584,14 @@ static PyObject *debug_array (PyObject * self, PyObject * args)
     printf ("maximum value is %d.\n", max); fflush (stdout);
     }
  else if (aarray->descr->type == 'l') {
-    printf ("%d ", ( (long *)(aarray->data)) [0]); fflush (stdout);
+    printf ("%ld ", ( (long *)(aarray->data)) [0]); fflush (stdout);
     for (i = 1, mmax = ( (long *)(aarray->data)) [0]; i < aarray->dimensions [0]; i ++){
        if ( ( (long *)(aarray->data)) [i] > mmax) mmax = ( (long *)(aarray->data)) [i];
-       printf ("%d ", ( (long *)(aarray->data)) [i]);
+       printf ("%ld ", ( (long *)(aarray->data)) [i]);
        if (i % 10 == 0) printf ("\n");
        fflush (stdout);
        }
-    printf ("maximum value is %d.\n", mmax); fflush (stdout);
+    printf ("maximum value is %ld.\n", mmax); fflush (stdout);
     }
  Py_INCREF (Py_None);
  return Py_None;
@@ -2892,16 +2905,18 @@ static PyObject *limits (PyObject * self, PyObject * args, PyObject * kd)
     SETKW(kwt[1], nice,     setkw_boolean, limKeys[1]);
     SETKW(kwt[2], g_restrict, setkw_boolean, limKeys[2]);
 
-    if (kwt[0])
+    if (kwt[0]) {
       if(square) gistD.flags |= D_SQUARE;
       else gistD.flags &= ~D_SQUARE;
-    if (kwt[1])
+    }
+    if (kwt[1]) {
       if(nice) gistD.flags |= D_NICE;
       else gistD.flags &= ~D_NICE;
-    if (kwt[2])
+    }
+    if (kwt[2]) {
       if(g_restrict) gistD.flags |= D_RESTRICT;
       else gistD.flags &= ~D_RESTRICT;
-
+    }
     ++changed;
 
   } else if (-1 == nkw) { /* Error unpacking keyword dictionary */
@@ -3061,8 +3076,8 @@ static PyObject *mfit (PyObject * self, PyObject * args)
           *ox,
           *oy,
           *oxcplot,
-          *oycplot,
-          *ozcplot;
+          *oycplot/* , */
+/*           *ozcplot */;
  PyArrayObject *aalpha,
                *ax,
                *ay,
@@ -3161,7 +3176,7 @@ static PyObject *palette (PyObject * self, PyObject * args, PyObject * kd)
   PyObject *rop, *gop, *bop, *grayop;
   PyArrayObject *rap = 0, *gap = 0, *bap = 0, *grayap = 0;
   int nred = 0, ngreen = 0, nblue = 0, ngray = 0;
-  int i, nColors, nDevice, query = 0, ntsc = 0, len_match;
+  int i, nColors=0, nDevice, query = 0, ntsc = 0, len_match;
   Engine *engine;
   int sourceDevice = -2;
   char *filename = 0;
@@ -5180,17 +5195,17 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
                * anverts,
                * axyzverts,
                * avalues = (PyArrayObject *) NULL;
- ArrayObject * plane = (ArrayObject *) NULL,
-             * nverts,
-             * xyzverts,
-             * values = (ArrayObject *) NULL,
+ ArrayObject /* * plane = (ArrayObject *) NULL, */
+/*              * nverts, */
+/*              * xyzverts, */
+/*              * values = (ArrayObject *) NULL, */
              * rnverts = (ArrayObject *) NULL,
              * rxyzverts = (ArrayObject *) NULL,
              * rvalues = (ArrayObject *) NULL,
              * rnvertb = (ArrayObject *) NULL,
              * rxyzvertb = (ArrayObject *) NULL,
              * rvalueb = (ArrayObject *) NULL,
-             * ndxs,
+/*              * ndxs, */
              * dp = (ArrayObject *) NULL,
              * ndp = (ArrayObject *) NULL,
              * nvertc = (ArrayObject *) NULL,
@@ -5209,17 +5224,17 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
              * last = (ArrayObject *) NULL,
              * nkeep,
              * nkeep2,
-             * mask0 = (ArrayObject *) NULL,
+   /*        * mask0 = (ArrayObject *) NULL, */
              * mask2,
              * list = (ArrayObject *) NULL,
              * listc = (ArrayObject *) NULL;
- double * planed,
+ double * planed = NULL,
         * xyzvertsd,
         * valuesd = (double *) NULL,
         * rxyzvertsd,
         * rvaluecd = (double *) NULL,
         * rvaluesd = (double *) NULL,
-        * rxyzvertbd,
+        * rxyzvertbd = NULL,
         * rvaluebd = (double *) NULL,
         * dpd = (double *) NULL,
         * ndpd,
@@ -5229,18 +5244,18 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
         * valuec0d = (double *) NULL;
  int * nvertsd,
      * rnvertsd,
-     * rnvertbd,
-     * ndxsd,
-     * nvertcd,
-     * nvertc0d,
+     * rnvertbd = NULL,
+   /*     * ndxsd, */
+     * nvertcd = NULL,
+     * nvertc0d = NULL,
      * nkeepd,
      * nkeep2d,
      * prevd,
      * nextd,
      * lastd,
-     * listd,
-     * listcd;
- Uchar * keepd,
+     * listd = NULL,
+     * listcd = NULL;
+ Uchar * keepd = NULL,
        * mask2d,
        * valuesc = (Uchar *) NULL,
        * rvaluecc = (Uchar *) NULL,
@@ -5264,7 +5279,7 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
      sumt,
      sumv,
      xdims [2];
- double dplane;
+ double dplane = 0.0;
  
  if (!PyArg_ParseTuple (args, "OOO|Oi", &oplane, &onverts, &oxyzverts,
     &ovalues, &_slice2x))
@@ -5388,29 +5403,32 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
    else if (avalues && node == 1) {
       TRY (valuec = allocateArray (list_length, atype, 0), PyErr_NoMemory());
       }
-   if (avalues)
+   if (avalues) {
       if (atype == 'd')
          valuecd = (double *) (valuec->data);
       else
          valuecc = (Uchar *) (valuec->data);
+   }
    for (i = 0, k = 0, sumv = 0, sumt = 0; i < nkeep->size; i++) {
       if (nkeepd [i] != 0 && nkeepd [i] != nvertsd [i]) {
          nvertcd [k] = nvertsd [i];
-         if (avalues && node == 0)
+         if (avalues && node == 0) {
             if (atype == 'd')
                valuecd [k] = valuesd [i];
             else
                valuecc [k] = valuesc [i];
+	 }
          for (j = 0; j < nvertsd [i]; j ++) {
             listd [sumv + j] = sumt + j;
             xyzcd [3 * (sumv + j)] = xyzvertsd [3 * (sumt + j)];
             xyzcd [3 * (sumv + j) + 1] = xyzvertsd [3 * (sumt + j) + 1];
             xyzcd [3 * (sumv + j) + 2] = xyzvertsd [3 * (sumt + j) + 2];
-            if (avalues && node == 1)
+            if (avalues && node == 1) {
                if (atype == 'd')
                   valuecd [sumv + j] = valuesd [sumt + j];
                else
                   valuecc [sumv + j] = valuesc [sumt + j];
+	    }
             }
          k ++;
          sumv += nvertsd [i];
@@ -5502,21 +5520,23 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
          for (i = 0, k = 0, sumv = 0; i < nkeep2->size; i++) {
             if (nkeep2d [i] != 0 && nkeep2d [i] != nvertsd [i]) {
                nvertc0d [k] = nvertsd [i];
-               if (avalues && node == 0)
+               if (avalues && node == 0) {
                   if (atype == 'd')
                      valuec0d [k] = valuesd [i];
                   else
                      valuec0c [k] = valuesc [i];
+	       }
                for (j = 0; j < nvertsd [i]; j ++) {
                   listcd [sumv + k] = i + j;
                   xyzc0d [3 * (sumv + j)] = xyzvertsd [3 * (i + j)];
                   xyzc0d [3 * (sumv + j) + 1] = xyzvertsd [3 * (i + j) + 1];
                   xyzc0d [3 * (sumv + j) + 2] = xyzvertsd [3 * (i + j) + 2];
-                  if (avalues && node == 1)
+                  if (avalues && node == 1) {
                      if (atype == 'd')
                         valuec0d [sumv + j] = valuesd [i + j];
                      else
                         valuec0c [sumv + j] = valuesc [i + j];
+		  }
                   }
                k ++;
                sumv += nvertsd [i];
@@ -5558,20 +5578,22 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
       for (i = 0, k = 0, sumv = 0, sumt = 0; i < A_SIZE (anverts); i ++) {
          if (mask2d [i] != 0) {
             rnvertbd [k] = nvertsd [i];
-            if (avalues && node == 0)
+            if (avalues && node == 0) {
                if (atype == 'd')
                   rvaluebd [k] = valuesd [i];
                else 
                   rvaluebc [k] = valuesc [i];
+	    }
             for (j = 0; j < nvertsd [i]; j ++) {
                rxyzvertbd [3 * (sumv + j)] = xyzvertsd [3 * (sumt + j)];
                rxyzvertbd [3 * (sumv + j) + 1] = xyzvertsd [3 * (sumt + j) + 1];
                rxyzvertbd [3 * (sumv + j) + 2] = xyzvertsd [3 * (sumt + j) + 2];
-               if (avalues && node != 0)
+               if (avalues && node != 0) {
                   if (atype == 'd')
                      rvaluebd [(sumv + j)] = valuesd [(sumt + j)];
                   else
                      rvaluebc [(sumv + j)] = valuesc [(sumt + j)];
+	       }
                }
             k ++;
             sumv += nvertsd [i];
@@ -5625,20 +5647,22 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
        for (i = 0, k = 0, sumv = 0, sumt = 0; i < nkeep->size; i++) {
           if (nkeepd [i] == nvertsd [i]) {
              rnvertsd [k] = nvertsd [i];
-             if (avalues && node == 0)
+             if (avalues && node == 0) {
                 if (atype == 'd')
                    rvaluesd [k] = valuesd [i];
                 else
                    rvaluesc [k] = valuesc [i];
+	     }
              for (j = 0; j < nvertsd [i]; j++) {
                 rxyzvertsd [3 * (sumv + j)] = xyzvertsd [3 * (sumt + j)];
                 rxyzvertsd [3 * (sumv + j) + 1] = xyzvertsd [3 * (sumt + j) + 1];
                 rxyzvertsd [3 * (sumv + j) + 2] = xyzvertsd [3 * (sumt + j) + 2];
-                if (avalues && node != 0)
+                if (avalues && node != 0) {
                    if (atype == 'd')
                       rvaluesd [(sumv + j)] = valuesd [(sumt + j)];
                    else
                       rvaluesc [(sumv + j)] = valuesc [(sumt + j)];
+		}
                 }
              k ++;
              sumv += nvertsd [i];

@@ -23,13 +23,13 @@ extern double sqrt(double);
 #ifdef STDC_HEADERS
 #include <string.h>
 #include <stdlib.h>
+void *(*GmMalloc)(size_t)= &malloc;
 #else
 extern void *malloc(unsigned long);
 extern void free(void *);
 extern char *strcpy(char *, const char *);
+void *(*GmMalloc)(unsigned long)= &malloc;
 #endif
-
-void *(*GmMalloc)(long)= &malloc;
 void (*GmFree)(void *)= &free;
 void (*GdFree)(void *)= 0;
 

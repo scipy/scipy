@@ -34,12 +34,12 @@
 #define LMSTR  lmstr_
 #endif
 
-void CHKDER();
-void HYBRD();
-void HYBRJ();
-void LMDIF();
-void LMDER();
-void LMSTR();
+extern void CHKDER(int*,int*,double*,double*,double*,int*,double*,double*,int*,double*);
+extern void HYBRD(void*,int*,double*,double*,double*,int*,int*,int*,double*,double*,int*,double*,int*,int*,int*,double*,int*,double*,int*,double*,double*,double*,double*,double*);
+extern void HYBRJ(void*,int*,double*,double*,double*,int*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,int*,double*,double*,double*,double*,double*);
+extern void LMDIF(void*,int*,int*,double*,double*,double*,double*,double*,int*,double*,double*,int*,double*,int*,int*,int*,double*,int*,int*,double*,double*,double*,double*,double*);
+extern void LMDER(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
+extern void LMSTR(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
 
 int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
 {
@@ -225,7 +225,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
 
   int      dims[2];
   int      allocated = 0;
-  double   *wa;
+  double   *wa = NULL;
 
   STORE_VARS();    /* Define storage variables for global variables. */
   
@@ -325,7 +325,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
 
   int      dims[2];
   int      allocated = 0;
-  double   *wa;
+  double   *wa = NULL;
 
   STORE_VARS();
 
@@ -426,7 +426,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
 
   int      dims[2];
   int      allocated = 0;
-  double   *wa;
+  double   *wa = NULL;
 
   STORE_VARS();
 
@@ -525,7 +525,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
   int      dims[2];
   int      allocated = 0;
-  double   *wa;
+  double   *wa = NULL;
 
   STORE_VARS();
 

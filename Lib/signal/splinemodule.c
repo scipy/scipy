@@ -15,6 +15,27 @@
 #define MIN(a,b) (((a) > (b)) ? (b) : (a))
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
+static void convert_strides(int*,int*,int,int);
+
+extern int S_cubic_spline2D(float*,float*,int,int,double,int*,int*,float);
+extern int S_quadratic_spline2D(float*,float*,int,int,double,int*,int*,float);
+extern int S_IIR_forback1(float,float,float*,float*,int,int,int,float);
+extern int S_IIR_forback2(double,double,float*,float*,int,int,int,float); 
+extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,int*,int*);
+
+extern int D_cubic_spline2D(double*,double*,int,int,double,int*,int*,double);
+extern int D_quadratic_spline2D(double*,double*,int,int,double,int*,int*,double);
+extern int D_IIR_forback1(double,double,double*,double*,int,int,int,double);
+extern int D_IIR_forback2(double,double,double*,double*,int,int,int,double); 
+extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,int*,int*);
+
+#ifdef __GNUC__
+extern int C_IIR_forback1(__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int,float);
+extern int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,int*,int*);
+extern int Z_IIR_forback1(__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int,double);
+extern int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,int*,int*);
+#endif
+
 static void
 convert_strides(instrides, convstrides, size, N)
      int *instrides;
@@ -52,7 +73,7 @@ static PyObject *cspline2d(PyObject *dummy, PyObject *args)
   PyArrayObject *a_image=NULL, *ck=NULL;
   double lambda = 0.0;
   double precision = -1.0;
-  int thetype, M, N, retval;
+  int thetype, M, N, retval=0;
   int outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
@@ -109,7 +130,7 @@ static PyObject *qspline2d(PyObject *dummy, PyObject *args)
   PyArrayObject *a_image=NULL, *ck=NULL;
   double lambda = 0.0;
   double precision = -1.0;
-  int thetype, M, N, retval;
+  int thetype, M, N, retval=0;
   int outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
@@ -447,7 +468,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
 
 /* Initialization function for the module (*must* be called initXXXXX) */
 
-DL_EXPORT(void) initspline() {
+DL_EXPORT(void) initspline(void) {
     PyObject *m, *d, *s;
 	
     /* Create the module and add the functions */

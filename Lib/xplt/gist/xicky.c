@@ -17,10 +17,13 @@
 
 #ifdef STDC_HEADERS
 #include <string.h>
+#include <stdlib.h>
+extern void *(*GmMalloc)(size_t);
 #else
 #ifndef SIZE_T_TYPE
 #define SIZE_T_TYPE unsigned long
 #endif
+extern void *(*GmMalloc)(unsigned long);
 extern int strcmp(const char *, const char *);
 extern int strncmp(const char *, const char *, SIZE_T_TYPE);
 extern SIZE_T_TYPE strlen(const char *);
@@ -29,7 +32,6 @@ extern char *strncpy(char *, const char *, SIZE_T_TYPE);
 extern char *strncat(char *, const char *, SIZE_T_TYPE);
 #endif
 
-extern void *(*GmMalloc)(long);
 extern void (*GmFree)(void *);
 extern long strtol(const char *, char **, int);
 

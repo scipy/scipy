@@ -37,7 +37,7 @@ double
 brentq(double (*f)(double, void*), double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
 {
     double xpre = xa, xcur = xb;
-    double xblk, fpre, fcur, fblk, spre, scur, sbis, tol;
+    double xblk = 0.0, fpre, fcur, fblk = 0.0, spre = 0.0, scur = 0.0, sbis, tol;
     double stry, dpre, dblk;
     int i;
     

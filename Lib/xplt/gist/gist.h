@@ -934,7 +934,12 @@ extern int GpSetXHandler(void (*ErrHandler)(char *errMsg));
    calling application.
    A third routine, GdFree, if non-0, will be called to free objects
    marked with the noCopy flag.  */
-extern void *(*GmMalloc)(long);
+#ifdef STDC_HEADERS
+#include <stdlib.h>
+extern void *(*GmMalloc)(size_t);
+#else
+extern void *(*GmMalloc)(unsigned long);
+#endif
 extern void (*GmFree)(void *);
 extern void (*GdFree)(void *);
 

@@ -50,26 +50,26 @@
 #define BISPEV bispev_
 #define PARDER parder_
 #endif
-void CURFIT();
-void PERCUR();
-void SPALDE();
-void SPLDER();
-void SPLEV();
-double SPLINT();
-void SPROOT();
-void PARCUR();
-void CLOCUR();
-void SURFIT();
-void BISPEV();
-void PARDER();
+void CURFIT(int*,int*,double*,double*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
+void PERCUR(int*,int*,double*,double*,double*,int*,double*,int*,int*,double*,double*,double*,double*,int*,int*,int*);
+void SPALDE(double*,int*,double*,int*,double*,double*,int*);
+void SPLDER(double*,int*,double*,int*,int*,double*,double*,int*,double*,int*);
+void SPLEV(double*,int*,double*,int*,double*,double*,int*,int*);
+double SPLINT(double*,int*,double*,int*,double*,double*,double*);
+void SPROOT(double*,int*,double*,double*,int*,int*,int*);
+void PARCUR(int*,int*,int*,int*,double*,int*,double*,double*,double*,double*,int*,double*,int*,int*,double*,int*,double*,double*,double*,int*,int*,int*);
+void CLOCUR(int*,int*,int*,int*,double*,int*,double*,double*,int*,double*,int*,int*,double*,int*,double*,double*,double*,int*,int*,int*);
+void SURFIT(int*,int*,double*,double*,double*,double*,double*,double*,double*,double*,int*,int*,double*,int*,int*,int*,double*,int*,double*,int*,double*,double*,double*,double*,int*,double*,int*,int*,int*,int*);
+void BISPEV(double*,int*,double*,int*,double*,int*,int*,double*,int*,double*,int*,double*,double*,int*,int*,int*,int*);
+void PARDER(double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,int*,double*,int*,double*,double*,int*,int*,int*,int*);
 
 /* Note that curev, cualde need no interface. */
 
 static char doc_bispev[] = " [z,ier] = _bispev(tx,ty,c,kx,ky,x,y,nux,nuy)";
 static PyObject *fitpack_bispev(PyObject *dummy, PyObject *args) {
   int nx,ny,kx,ky,mx,my,lwrk,*iwrk,kwrk,ier,lwa,mxy,nux,nuy;
-  double *tx,*ty,*c,*x,*y,*z,*wrk,*wa;
-  PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_z,*ap_tx = NULL,\
+  double *tx,*ty,*c,*x,*y,*z,*wrk,*wa = NULL;
+  PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_z = NULL,*ap_tx = NULL,\
     *ap_ty = NULL,*ap_c = NULL;
   PyObject *x_py = NULL,*y_py = NULL,*c_py = NULL,*tx_py = NULL,*ty_py = NULL;
   if (!PyArg_ParseTuple(args, "OOOiiOOii",&tx_py,&ty_py,&c_py,&kx,&ky,
@@ -136,10 +136,10 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   double *x,*y,*z,*w,xb,xe,yb,ye,s,*tx,*ty,*c,fp,*wrk1,*wrk2,*wa = NULL,eps;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_z,*ap_w = NULL,\
     *ap_tx = NULL,*ap_ty = NULL,*ap_c = NULL;
-  PyArrayObject *ap_wrk = NULL,*ap_iwrk = NULL;
+  PyArrayObject *ap_wrk = NULL;
   PyObject *x_py = NULL,*y_py = NULL,*z_py = NULL,*w_py = NULL,\
     *tx_py = NULL,*ty_py = NULL;
-  PyObject *wrk_py=NULL,*iwrk_py=NULL;
+  PyObject *wrk_py=NULL;
   nx=ny=ier=nxo=nyo=0;
   if (!PyArg_ParseTuple(args, "OOOOddddiiiddOOiiOii",\
 			&x_py,&y_py,&z_py,&w_py,&xb,&xe,\
@@ -239,7 +239,7 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
 
 static char doc_parcur[] = " [t,c,o] = _parcur(x,w,u,ub,ue,k,iopt,ipar,s,t,nest,wrk,iwrk,per)";
 static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
-  int k,iopt,ipar,nest,*iwrk,idim,m,mx,n,no,nc,ier,lc,lwa,lwrk,i,per;
+  int k,iopt,ipar,nest,*iwrk,idim,m,mx,n,no=0,nc,ier,lc,lwa,lwrk,i,per;
   double *x,*w,*u,*c,*t,*wrk,*wa=NULL,ub,ue,fp,s;
   PyObject *x_py = NULL,*u_py = NULL,*w_py = NULL,*t_py = NULL;
   PyObject *wrk_py=NULL,*iwrk_py=NULL;
@@ -321,7 +321,7 @@ static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
 
 static char doc_curfit[] = " [t,c,o] = _curfit(x,y,w,xb,xe,k,iopt,s,t,nest,wrk,iwrk,per)";
 static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
-  int iopt,m,k,nest,n,lwrk,*iwrk,ier,lwa,lc,no=0,i,per;
+  int iopt,m,k,nest,n,lwrk,*iwrk,ier,lwa,lc,no=0,per;
   double *x,*y,*w,xb,xe,s,*t,*c,fp,*wrk,*wa = NULL;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_w = NULL,*ap_t = NULL,*ap_c = NULL;
   PyArrayObject *ap_wrk = NULL,*ap_iwrk = NULL;
@@ -399,8 +399,7 @@ static PyObject *fitpack_spl_(PyObject *dummy, PyObject *args) {
   int n,nu,m,ier,k;
   double *x,*y,*t,*c,*wrk = NULL;
   PyArrayObject *ap_x = NULL,*ap_y = NULL,*ap_t = NULL,*ap_c = NULL;
-  PyArrayObject *ap_wrk = NULL;
-  PyObject *x_py = NULL,*y_py = NULL,*t_py = NULL,*c_py = NULL;
+  PyObject *x_py = NULL,*t_py = NULL,*c_py = NULL;
   if (!PyArg_ParseTuple(args, "OiOOi",&x_py,&nu,&t_py,&c_py,&k)) return NULL;
   ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, PyArray_DOUBLE, 0, 1);
   ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, PyArray_DOUBLE, 0, 1);

@@ -29,7 +29,7 @@
 void rbo(char *, int, int);
 void packbits(char *, int, char *, int, int);
 void unpackbits(char *, int, char *, int, int, int);
-int is_little_endian();
+int is_little_endian(void);
 
 static PyObject *ErrorObject;     /* locally-raised exception */
 
@@ -130,7 +130,7 @@ static PyObject *
   */
 
   if (nread < n) {
-    fprintf(stderr,"Warning: %d bytes requested, %d bytes read.\n", n, nread);
+    fprintf(stderr,"Warning: %ld bytes requested, %ld bytes read.\n", n, nread);
     arr->dimensions[0] = nread;
     arr->data = realloc(arr->data,arr->descr->elsize*nread);
   }
@@ -329,7 +329,7 @@ static PyObject *
       PYSETERROR("There was an error writing to the file");
     }
     if (nwrite < n) {
-      fprintf(stderr,"Warning: %d of %d specified bytes written.\n",nwrite,n);
+      fprintf(stderr,"Warning: %ld of %ld specified bytes written.\n",nwrite,n);
     }
   }
 
@@ -827,7 +827,7 @@ static struct PyMethodDef numpyio_methods[] = {
   {NULL,         NULL}
 };
 
-DL_EXPORT(void) initnumpyio()
+DL_EXPORT(void) initnumpyio(void)
 {
   PyObject *m, *d;
 

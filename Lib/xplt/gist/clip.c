@@ -604,7 +604,7 @@ int ClipPoints(const GpReal* xx, const GpReal* yy, int nn)
 int ClipFilled(const GpReal* xx, const GpReal* yy, int nn)
 {
   GpReal xe, ye;
-  int wind0, side0, sideWind, reentry;
+  int wind0=0, side0=0, sideWind, reentry;
 
   x= xx;
   y= yy;

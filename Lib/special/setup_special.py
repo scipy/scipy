@@ -42,7 +42,7 @@ def configuration(parent_package=''):
     ext_args = {'name':dot_join(parent_package,'special.specfun'),
                 'sources':[os.path.join(local_path,'specfun.pyf')],
                 'f2py_options':['--no-wrap-functions'],
-                'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
+                #'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
                 'libraries' : ['specfun']
                 }
     ext = Extension(**ext_args)
