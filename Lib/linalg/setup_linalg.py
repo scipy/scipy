@@ -4,6 +4,11 @@ import os
 from distutils import dep_util
 from glob import glob
 
+# force g77 for now
+from scipy_distutils.mingw32_support import *
+from scipy_distutils.command import build_flib
+build_flib.all_compilers = [build_flib.gnu_fortran_compiler]
+
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 
@@ -29,10 +34,11 @@ def configuration(parent_package=''):
                             'generic_fblas3.pyf',
                             os.path.join('src','fblaswrap.f'),
                             ],
-                   'cblas':['generic_cblas.pyf',
-                            'generic_cblas1.pyf'],
-                   'flapack':['generic_flapack.pyf'],
-                   'clapack':['generic_clapack.pyf']}
+                   }
+                   #'cblas':['generic_cblas.pyf',
+                   #         'generic_cblas1.pyf'],
+                   #'flapack':['generic_flapack.pyf'],
+                   #'clapack':['generic_clapack.pyf']}
     
     for mod_name,sources in mod_sources.items():
         sources = [os.path.join(local_path,s) for s in sources]

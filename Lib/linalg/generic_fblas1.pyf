@@ -177,7 +177,7 @@ subroutine <tchar=s,d,c,z>copy(n,x,offx,incx,y,offy,incy)
   callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
 
   <type_in> dimension(*),intent(in) :: x
-  <type_in> dimension(*),intent(in,copy,out) :: y
+  <type_in> dimension(*),intent(in,out) :: y
 
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
@@ -201,7 +201,7 @@ subroutine <tchar=s,d,c,z>axpy(n,a,x,offx,incx,y,offy,incy)
   callprotoargument int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*
 
   <type_in> dimension(*),intent(in) :: x
-  <type_in> dimension(*),intent(in,copy,out) :: y
+  <type_in> dimension(*),intent(in,out) :: y
 
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
@@ -215,7 +215,7 @@ subroutine <tchar=s,d,c,z>axpy(n,a,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-  <type_in> intent(in):: a
+  <type_in> intent(in):: a=<type_convert=1.>    
 
 end subroutine <tchar=s,d,c,z>axpy
 
