@@ -1,5 +1,5 @@
-#LyX 1.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 220
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
 \textclass article
 \language english
 \inputencoding auto
@@ -122,6 +122,7 @@ scipy.info
 
 
 \begin_inset Include \verbatiminput{example1.1}
+preview false
 
 \end_inset 
 
@@ -477,7 +478,7 @@ Statistical distributions and functions
 
 \layout Standard
 
-xplt*
+xplt
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -485,7 +486,7 @@ xplt*
 
 \layout Standard
 
-Plotting --- requires an X server
+Plotting with gist
 \end_inset 
 </cell>
 </row>
@@ -781,6 +782,7 @@ In the simplest case, this function can be used to construct 1d ranges as
  provide coordinate arrays for an N-dimensional volume.
  The easiest way to understand this is with an example of its usage: 
 \begin_inset Include \verbatiminput{example2.1}
+preview false
 
 \end_inset 
 
@@ -856,6 +858,7 @@ scipy_base
  integrated, differentiated, and evaluated.
  It even prints like a polynomial:
 \begin_inset Include \verbatiminput{example2.2}
+preview false
 
 \end_inset 
 
@@ -960,6 +963,7 @@ condlist
  that is true.
  For example 
 \begin_inset Include \verbatiminput{example2.3}
+preview false
 
 \end_inset 
 
@@ -1091,6 +1095,7 @@ addsubtract
 
 
 \begin_inset Include \verbatiminput{example3.1}
+preview false
 
 \end_inset 
 
@@ -1126,6 +1131,7 @@ returns a function which takes array arguments and returns an array result:
 
 
 \begin_inset Include \verbatiminput{example3.2}
+preview false
 
 \end_inset 
 
@@ -1195,6 +1201,7 @@ integrate
 
 
 \begin_inset Include \verbatiminput{example4.1}
+preview false
 
 \end_inset 
 
@@ -1210,11 +1217,11 @@ quad
 \series default 
  is provided to integrate a function of one variable between two points.
  The points can be 
-\begin_inset Formula $\pm \infty $
+\begin_inset Formula $\pm\infty$
 \end_inset 
 
  (
-\begin_inset Formula $\pm $
+\begin_inset Formula $\pm$
 \end_inset 
 
 
@@ -1232,7 +1239,7 @@ jv(2.5,x)
 
  
 \begin_inset Formula \[
-I=\int _{0}^{4.5}J_{2.5}\left(x\right)\, dx.\]
+I=\int_{0}^{4.5}J_{2.5}\left(x\right)\, dx.\]
 
 \end_inset 
 
@@ -1243,6 +1250,7 @@ quad:
 
 
 \begin_inset Include \verbatiminput{example4.2}
+preview false
 
 \end_inset 
 
@@ -1269,19 +1277,19 @@ a function, method, or class instance).
  the error.
  Notice, that in this case, the true value of this integral is 
 \begin_inset Formula \[
-I=\sqrt{\frac{2}{\pi }}\left(\frac{18}{27}\sqrt{2}\cos \left(4.5\right)-\frac{4}{27}\sqrt{2}\sin \left(4.5\right)+\sqrt{2\pi }\textrm{Si}\left(\frac{3}{\sqrt{\pi }}\right)\right),\]
+I=\sqrt{\frac{2}{\pi}}\left(\frac{18}{27}\sqrt{2}\cos\left(4.5\right)-\frac{4}{27}\sqrt{2}\sin\left(4.5\right)+\sqrt{2\pi}\textrm{Si}\left(\frac{3}{\sqrt{\pi}}\right)\right),\]
 
 \end_inset 
 
  where 
 \begin_inset Formula \[
-\textrm{Si}\left(x\right)=\int _{0}^{x}\sin \left(\frac{\pi }{2}t^{2}\right)\, dt.\]
+\textrm{Si}\left(x\right)=\int_{0}^{x}\sin\left(\frac{\pi}{2}t^{2}\right)\, dt.\]
 
 \end_inset 
 
  is the Fresnel sine integral.
  Note that the numerically-computed integral is within 
-\begin_inset Formula $1.04\times 10^{-11}$
+\begin_inset Formula $1.04\times10^{-11}$
 \end_inset 
 
  of the exact result --- well below the reported error bound.
@@ -1293,7 +1301,7 @@ Infinite inputs are also allowed in
 quad
 \series default 
  by using 
-\begin_inset Formula $\pm $
+\begin_inset Formula $\pm$
 \end_inset 
 
 
@@ -1307,7 +1315,7 @@ inf)
 as one of the arguments.
  For example, suppose that a numerical value for the exponential integral:
 \begin_inset Formula \[
-E_{n}\left(x\right)=\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt.\]
+E_{n}\left(x\right)=\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt.\]
 
 \end_inset 
 
@@ -1331,6 +1339,7 @@ quad:
 
 
 \begin_inset Include \verbatiminput{example4.3}
+preview false
 
 \end_inset 
 
@@ -1346,7 +1355,7 @@ quad
 ).
  The integral in this case is 
 \begin_inset Formula \[
-I_{n}=\int _{0}^{\infty }\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.\]
+I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.\]
 
 \end_inset 
 
@@ -1355,6 +1364,7 @@ I_{n}=\int _{0}^{\infty }\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt\, dx=\fra
 
 
 \begin_inset Include \verbatiminput{example4.4}
+preview false
 
 \end_inset 
 
@@ -1395,6 +1405,7 @@ performs double integration.
 
 
 \begin_inset Include \verbatiminput{example4.5}
+preview false
 
 \end_inset 
 
@@ -1533,11 +1544,11 @@ For example suppose it is desired to find the solution to the following
 \end_inset 
 
  with initial conditions 
-\begin_inset Formula $w\left(0\right)=\frac{1}{\sqrt[3]{3^{2}}\Gamma \left(\frac{2}{3}\right)}$
+\begin_inset Formula $w\left(0\right)=\frac{1}{\sqrt[3]{3^{2}}\Gamma\left(\frac{2}{3}\right)}$
 \end_inset 
 
  and 
-\begin_inset Formula $\left.\frac{dw}{dz}\right|_{z=0}=-\frac{1}{\sqrt[3]{3}\Gamma \left(\frac{1}{3}\right)}.$
+\begin_inset Formula $\left.\frac{dw}{dz}\right|_{z=0}=-\frac{1}{\sqrt[3]{3}\Gamma\left(\frac{1}{3}\right)}.$
 \end_inset 
 
  It is known that the solution to this differential equation with these
@@ -1564,18 +1575,14 @@ First, convert this ODE into standard form by setting
  Thus, the differential equation becomes
 \begin_inset Formula \[
 \frac{d\mathbf{y}}{dt}=\left[\begin{array}{c}
- ty_{1}\\
- y_{0}\end{array}
-\right]=\left[\begin{array}{cc}
- 0 & t\\
- 1 & 0\end{array}
-\right]\left[\begin{array}{c}
- y_{0}\\
- y_{1}\end{array}
-\right]=\left[\begin{array}{cc}
- 0 & t\\
- 1 & 0\end{array}
-\right]\mathbf{y}.\]
+ty_{1}\\
+y_{0}\end{array}\right]=\left[\begin{array}{cc}
+0 & t\\
+1 & 0\end{array}\right]\left[\begin{array}{c}
+y_{0}\\
+y_{1}\end{array}\right]=\left[\begin{array}{cc}
+0 & t\\
+1 & 0\end{array}\right]\mathbf{y}.\]
 
 \end_inset 
 
@@ -1593,13 +1600,13 @@ As an interesting reminder, if
 \end_inset 
 
  commutes with 
-\begin_inset Formula $\int _{0}^{t}\mathbf{A}\left(\tau \right)\, d\tau $
+\begin_inset Formula $\int_{0}^{t}\mathbf{A}\left(\tau\right)\, d\tau$
 \end_inset 
 
  under matrix multiplication, then this linear differential equation has
  an exact solution using the matrix exponential: 
 \begin_inset Formula \[
-\mathbf{y}\left(t\right)=\exp \left(\int _{0}^{t}\mathbf{A}\left(\tau \right)d\tau \right)\mathbf{y}\left(0\right),\]
+\mathbf{y}\left(t\right)=\exp\left(\int_{0}^{t}\mathbf{A}\left(\tau\right)d\tau\right)\mathbf{y}\left(0\right),\]
 
 \end_inset 
 
@@ -1657,6 +1664,7 @@ Dfun
 
 
 \begin_inset Include \verbatiminput{example4.6}
+preview false
 
 \end_inset 
 
@@ -1681,6 +1689,7 @@ help
 
 
 \begin_inset Include \verbatiminput{example5.1}
+preview false
 
 \end_inset 
 
@@ -1711,7 +1720,7 @@ The simplex algorithm is probably the simplest way to minimize a fairly
 
  variables:
 \begin_inset Formula \[
-f\left(\mathbf{x}\right)=\sum _{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.\]
+f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.\]
 
 \end_inset 
 
@@ -1728,6 +1737,7 @@ fmin
 
 
 \begin_inset Include \verbatiminput{example5.2}
+preview false
 
 \end_inset 
 
@@ -1757,9 +1767,8 @@ erences.
 To demonstrate this algorithm, the Rosenbrock function is again used.
  The gradient of the Rosenbrock function is the vector: 
 \begin_inset Formula \begin{eqnarray*}
-\frac{\partial f}{\partial x_{j}} & = & \sum _{i=1}^{N}200\left(x_{i}-x_{i-1}^{2}\right)\left(\delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right)-2\left(1-x_{i-1}\right)\delta _{i-1,j}.\\
- & = & 200\left(x_{j}-x_{j-1}^{2}\right)-400x_{j}\left(x_{j+1}-x_{j}^{2}\right)-2\left(1-x_{j}\right).
-\end{eqnarray*}
+\frac{\partial f}{\partial x_{j}} & = & \sum_{i=1}^{N}200\left(x_{i}-x_{i-1}^{2}\right)\left(\delta_{i,j}-2x_{i-1}\delta_{i-1,j}\right)-2\left(1-x_{i-1}\right)\delta_{i-1,j}.\\
+ & = & 200\left(x_{j}-x_{j-1}^{2}\right)-400x_{j}\left(x_{j+1}-x_{j}^{2}\right)-2\left(1-x_{j}\right).\end{eqnarray*}
 
 \end_inset 
 
@@ -1767,8 +1776,7 @@ This expression is valid for the interior derivatives.
  Special cases are
 \begin_inset Formula \begin{eqnarray*}
 \frac{\partial f}{\partial x_{0}} & = & -400x_{0}\left(x_{1}-x_{0}^{2}\right)-2\left(1-x_{0}\right),\\
-\frac{\partial f}{\partial x_{N-1}} & = & 200\left(x_{N-1}-x_{N-2}^{2}\right).
-\end{eqnarray*}
+\frac{\partial f}{\partial x_{N-1}} & = & 200\left(x_{N-1}-x_{N-2}^{2}\right).\end{eqnarray*}
 
 \end_inset 
 
@@ -1778,6 +1786,7 @@ nt:
 
 
 \begin_inset Include \verbatiminput{example5.3}
+preview false
 
 \end_inset 
 
@@ -1803,6 +1812,7 @@ fmin_bfgs
 
 
 \begin_inset Include \verbatiminput{example5.4}
+preview false
 
 \end_inset 
 
@@ -1823,7 +1833,7 @@ This method is a modified Newton's method and uses a conjugate gradient
  Newton's method is based on fitting the function locally to a quadratic
  form:
 \begin_inset Formula \[
-f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot \left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).\]
+f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).\]
 
 \end_inset 
 
@@ -1859,18 +1869,17 @@ Full Hessian example:
 
 The Hessian of the Rosenbrock function is 
 \begin_inset Formula \begin{eqnarray*}
-H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left(\delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right)-400x_{i}\left(\delta _{i+1,j}-2x_{i}\delta _{i,j}\right)-400\delta _{i,j}\left(x_{i+1}-x_{i}^{2}\right)+2\delta _{i,j},\\
- & = & \left(202+1200x_{i}^{2}-400x_{i+1}\right)\delta _{i,j}-400x_{i}\delta _{i+1,j}-400x_{i-1}\delta _{i-1,j},
-\end{eqnarray*}
+H_{ij}=\frac{\partial^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left(\delta_{i,j}-2x_{i-1}\delta_{i-1,j}\right)-400x_{i}\left(\delta_{i+1,j}-2x_{i}\delta_{i,j}\right)-400\delta_{i,j}\left(x_{i+1}-x_{i}^{2}\right)+2\delta_{i,j},\\
+ & = & \left(202+1200x_{i}^{2}-400x_{i+1}\right)\delta_{i,j}-400x_{i}\delta_{i+1,j}-400x_{i-1}\delta_{i-1,j},\end{eqnarray*}
 
 \end_inset 
 
  if 
-\begin_inset Formula $i,j\in \left[1,N-2\right]$
+\begin_inset Formula $i,j\in\left[1,N-2\right]$
 \end_inset 
 
  with 
-\begin_inset Formula $i,j\in \left[0,N-1\right]$
+\begin_inset Formula $i,j\in\left[0,N-1\right]$
 \end_inset 
 
  defining the 
@@ -1880,11 +1889,10 @@ H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left(\delta
  matrix.
  Other non-zero entries of the matrix are 
 \begin_inset Formula \begin{eqnarray*}
-\frac{\partial ^{2}f}{\partial x_{0}^{2}} & = & 1200x_{0}^{2}-400x_{1}+2,\\
-\frac{\partial ^{2}f}{\partial x_{0}\partial x_{1}}=\frac{\partial ^{2}f}{\partial x_{1}\partial x_{0}} & = & -400x_{0},\\
-\frac{\partial ^{2}f}{\partial x_{N-1}\partial x_{N-2}}=\frac{\partial ^{2}f}{\partial x_{N-2}\partial x_{N-1}} & = & -400x_{N-2},\\
-\frac{\partial ^{2}f}{\partial x_{N-1}^{2}} & = & 200.
-\end{eqnarray*}
+\frac{\partial^{2}f}{\partial x_{0}^{2}} & = & 1200x_{0}^{2}-400x_{1}+2,\\
+\frac{\partial^{2}f}{\partial x_{0}\partial x_{1}}=\frac{\partial^{2}f}{\partial x_{1}\partial x_{0}} & = & -400x_{0},\\
+\frac{\partial^{2}f}{\partial x_{N-1}\partial x_{N-2}}=\frac{\partial^{2}f}{\partial x_{N-2}\partial x_{N-1}} & = & -400x_{N-2},\\
+\frac{\partial^{2}f}{\partial x_{N-1}^{2}} & = & 200.\end{eqnarray*}
 
 \end_inset 
 
@@ -1895,12 +1903,11 @@ H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left(\delta
  is 
 \begin_inset Formula \[
 \mathbf{H}=\left[\begin{array}{ccccc}
- 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\
- -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\
- 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\
- 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\
- 0 & 0 & 0 & -400x_{3} & 200\end{array}
-\right].\]
+1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\
+-400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\
+0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\
+0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\
+0 & 0 & 0 & -400x_{3} & 200\end{array}\right].\]
 
 \end_inset 
 
@@ -1914,6 +1921,7 @@ is shown in the following example:
 
 
 \begin_inset Include \verbatiminput{example5.5}
+preview false
 
 \end_inset 
 
@@ -1959,12 +1967,11 @@ In this case, the product of the Rosenbrock Hessian with an arbitrary vector
  has elements: 
 \begin_inset Formula \[
 \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c}
- \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\
- \vdots \\
- -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\
- \vdots \\
- -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}
-\right].\]
+\left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\
+\vdots\\
+-400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\
+\vdots\\
+-400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].\]
 
 \end_inset 
 
@@ -1981,6 +1988,7 @@ fmin_ncg
 
 
 \begin_inset Include \verbatiminput{example5.6}
+preview false
 
 \end_inset 
 
@@ -2018,7 +2026,7 @@ e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}
  to obtain a least-squares fit is.
  
 \begin_inset Formula \[
-J\left(\mathbf{p}\right)=\sum _{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
+J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
 
 \end_inset 
 
@@ -2052,7 +2060,7 @@ algorithm performs this squaring and summing of the residuals automatically.
 An example should clarify the usage.
  Suppose it is believed some measured data follow a sinusoidal pattern
 \begin_inset Formula \[
-y_{i}=A\sin \left(2\pi kx_{i}+\theta \right)\]
+y_{i}=A\sin\left(2\pi kx_{i}+\theta\right)\]
 
 \end_inset 
 
@@ -2065,20 +2073,20 @@ y_{i}=A\sin \left(2\pi kx_{i}+\theta \right)\]
 \end_inset 
 
 , and 
-\begin_inset Formula $\theta $
+\begin_inset Formula $\theta$
 \end_inset 
 
  are unknown.
  The residual vector is 
 \begin_inset Formula \[
-e_{i}=\left|y_{i}-A\sin \left(2\pi kx_{i}+\theta \right)\right|.\]
+e_{i}=\left|y_{i}-A\sin\left(2\pi kx_{i}+\theta\right)\right|.\]
 
 \end_inset 
 
  By defining a function to compute the residuals and (selecting an appropriate
  starting position), the least-squares fit routine can be used to find the
  best-fit parameters 
-\begin_inset Formula $\hat{A},\, \hat{k},\, \hat{\theta }$
+\begin_inset Formula $\hat{A},\,\hat{k},\,\hat{\theta}$
 \end_inset 
 
 .
@@ -2093,6 +2101,7 @@ e_{i}=\left|y_{i}-A\sin \left(2\pi kx_{i}+\theta \right)\right|.\]
 
 
 \begin_inset Include \verbatiminput{example5.7}
+preview false
 
 \end_inset 
 
@@ -2108,15 +2117,12 @@ collapsed false
 \layout Standard
 \align center 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename leastsqfit.epsi
 	display color
-	size_type 1
 	width 50page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 297pt
-	lyxheight 306pt
+
 \end_inset 
 
 
@@ -2228,6 +2234,7 @@ can be called using the interval
 
 
 \begin_inset Include \verbatiminput{example5.8}
+preview false
 
 \end_inset 
 
@@ -2253,15 +2260,14 @@ optimize.fsolve
  For example, the following example finds the roots of the single-variable
  transcendental equation
 \begin_inset Formula \[
-x+2\cos \left(x\right)=0,\]
+x+2\cos\left(x\right)=0,\]
 
 \end_inset 
 
  and the set of non-linear equations
 \begin_inset Formula \begin{eqnarray*}
-x_{0}\cos \left(x_{1}\right) & = & 4,\\
-x_{0}x_{1}-x_{1} & = & 5.
-\end{eqnarray*}
+x_{0}\cos\left(x_{1}\right) & = & 4,\\
+x_{0}x_{1}-x_{1} & = & 5.\end{eqnarray*}
 
 \end_inset 
 
@@ -2278,6 +2284,7 @@ x_{0}x_{1}-x_{1} & = & 5.
 
 
 \begin_inset Include \verbatiminput{example5.9}
+preview false
 
 \end_inset 
 
@@ -2371,6 +2378,7 @@ __call__
 
 
 \begin_inset Include \verbatiminput{example6.1}
+preview false
 
 \end_inset 
 
@@ -2383,15 +2391,12 @@ collapsed false
 \layout Standard
 \align center 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename inter_1d.epsi
 	display color
-	size_type 1
 	width 50page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 297pt
-	lyxheight 290pt
+
 \end_inset 
 
 
@@ -2577,62 +2582,50 @@ collapsed false
 \layout Standard
 \align center 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename interp_cubic.epsi
 	display color
-	subcaption
-	subcaptionText "Cubic-spline (splrep)"
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 272pt
+	subcaption
+	subcaptionText "Cubic-spline (splrep)"
+
 \end_inset 
 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename interp_cubic_der.epsi
 	display color
-	subcaption
-	subcaptionText "Derivative of spline (splev)"
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 272pt
+	subcaption
+	subcaptionText "Derivative of spline (splev)"
+
 \end_inset 
 
 
 \layout Standard
 \align center 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename interp_cubic_int.epsi
 	display color
-	subcaption
-	subcaptionText "Integral of spline (splint)"
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 272pt
+	subcaption
+	subcaptionText "Integral of spline (splint)"
+
 \end_inset 
 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename interp_cubic_param.epsi
 	display color
-	subcaption
-	subcaptionText "Spline of parametric curve (splprep)"
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 272pt
+	subcaption
+	subcaptionText "Spline of parametric curve (splprep)"
+
 \end_inset 
 
 
@@ -2651,6 +2644,7 @@ Examples of using cubic-spline interpolation.
 
 
 \begin_inset Include \verbatiminput{example6.2}
+preview false
 
 \end_inset 
 
@@ -2799,6 +2793,7 @@ grid[].
 \series default 
  
 \begin_inset Include \verbatiminput{example6.3}
+preview false
 
 \end_inset 
 
@@ -2814,29 +2809,23 @@ collapsed false
 \layout Standard
 \align center 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename 2d_func.epsi
 	display color
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 186pt
+
 \end_inset 
 
 \SpecialChar ~
 \SpecialChar ~
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename 2d_interp.epsi
 	display color
-	size_type 1
 	width 45page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 186pt
+
 \end_inset 
 
 
@@ -2881,7 +2870,7 @@ A B-spline is an approximation of a continuous function over a finite-domain
 s expansion.
  
 \begin_inset Formula \[
-y\left(x\right)\approx \sum _{j}c_{j}\beta ^{o}\left(\frac{x}{\Delta x}-j\right).\]
+y\left(x\right)\approx\sum_{j}c_{j}\beta^{o}\left(\frac{x}{\Delta x}-j\right).\]
 
 \end_inset 
 
@@ -2895,12 +2884,12 @@ y\left(x\right)\approx \sum _{j}c_{j}\beta ^{o}\left(\frac{x}{\Delta x}-j\right)
 
 , the function representation is 
 \begin_inset Formula \[
-z\left(x,y\right)\approx \sum _{j}\sum _{k}c_{jk}\beta ^{o}\left(\frac{x}{\Delta x}-j\right)\beta ^{o}\left(\frac{y}{\Delta y}-k\right).\]
+z\left(x,y\right)\approx\sum_{j}\sum_{k}c_{jk}\beta^{o}\left(\frac{x}{\Delta x}-j\right)\beta^{o}\left(\frac{y}{\Delta y}-k\right).\]
 
 \end_inset 
 
  In these expressions, 
-\begin_inset Formula $\beta ^{o}\left(\cdot \right)$
+\begin_inset Formula $\beta^{o}\left(\cdot\right)$
 \end_inset 
 
  is the space-limited B-spline basis function of order, 
@@ -2930,19 +2919,19 @@ The advantage of representing a set of samples via B-spline basis functions
  function can be computed with relative ease from the spline coefficients.
  For example, the second-derivative of a spline is 
 \begin_inset Formula \[
-y\prime ^{\prime \prime }\left(x\right)=\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\beta ^{o\prime \prime }\left(\frac{x}{\Delta x}-j\right).\]
+y\prime^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\beta^{o\prime\prime}\left(\frac{x}{\Delta x}-j\right).\]
 
 \end_inset 
 
  Using the property of B-splines that 
 \begin_inset Formula \[
-\frac{d^{2}\beta ^{o}\left(w\right)}{dw^{2}}=\beta ^{o-2}\left(w+1\right)-2\beta ^{o-2}\left(w\right)+\beta ^{o-2}\left(w-1\right)\]
+\frac{d^{2}\beta^{o}\left(w\right)}{dw^{2}}=\beta^{o-2}\left(w+1\right)-2\beta^{o-2}\left(w\right)+\beta^{o-2}\left(w-1\right)\]
 
 \end_inset 
 
  it can be seen that 
 \begin_inset Formula \[
-y^{\prime \prime }\left(x\right)=\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\left[\beta ^{o-2}\left(\frac{x}{\Delta x}-j+1\right)-2\beta ^{o-2}\left(\frac{x}{\Delta x}-j\right)+\beta ^{o-2}\left(\frac{x}{\Delta x}-j-1\right)\right].\]
+y^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\left[\beta^{o-2}\left(\frac{x}{\Delta x}-j+1\right)-2\beta^{o-2}\left(\frac{x}{\Delta x}-j\right)+\beta^{o-2}\left(\frac{x}{\Delta x}-j-1\right)\right].\]
 
 \end_inset 
 
@@ -2952,9 +2941,8 @@ y^{\prime \prime }\left(x\right)=\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\left[\beta
 
 , then at the sample points, 
 \begin_inset Formula \begin{eqnarray*}
-\Delta x^{2}\left.y^{\prime }\left(x\right)\right|_{x=n\Delta x} & = & \sum _{j}c_{j}\delta _{n-j+1}-2c_{j}\delta _{n-j}+c_{j}\delta _{n-j-1},\\
- & = & c_{n+1}-2c_{n}+c_{n-1}.
-\end{eqnarray*}
+\Delta x^{2}\left.y^{\prime}\left(x\right)\right|_{x=n\Delta x} & = & \sum_{j}c_{j}\delta_{n-j+1}-2c_{j}\delta_{n-j}+c_{j}\delta_{n-j-1},\\
+ & = & c_{n+1}-2c_{n}+c_{n-1}.\end{eqnarray*}
 
 \end_inset 
 
@@ -2991,7 +2979,7 @@ signal.qspline1d, signal.qspline2d, signal.cspline1d, signal.cspline2d
 signal.bspline
 \series default 
 ) for evaluating the bspline basis function, 
-\begin_inset Formula $\beta ^{o}\left(x\right)$
+\begin_inset Formula $\beta^{o}\left(x\right)$
 \end_inset 
 
  for arbitrary order and 
@@ -3004,12 +2992,12 @@ signal.bspline
 
 , the B-spline basis function can be approximated well by a zero-mean Gaussian
  function with standard-deviation equal to 
-\begin_inset Formula $\sigma _{o}=\left(o+1\right)/12$
+\begin_inset Formula $\sigma_{o}=\left(o+1\right)/12$
 \end_inset 
 
 :
 \begin_inset Formula \[
-\beta ^{o}\left(x\right)\approx \frac{1}{\sqrt{2\pi \sigma _{o}^{2}}}\exp \left(-\frac{x^{2}}{2\sigma _{o}}\right).\]
+\beta^{o}\left(x\right)\approx\frac{1}{\sqrt{2\pi\sigma_{o}^{2}}}\exp\left(-\frac{x^{2}}{2\sigma_{o}}\right).\]
 
 \end_inset 
 
@@ -3051,6 +3039,7 @@ which convolves arbitrary two-dimensional filters and allows for choosing
 
 
 \begin_inset Include \verbatiminput{example6.4}
+preview false
 
 \end_inset 
 
@@ -3066,29 +3055,23 @@ collapsed false
 \layout Standard
 \align center 
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename lena_image.epsi
 	display color
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 272pt
+
 \end_inset 
 
 \SpecialChar ~
 \SpecialChar ~
 
-\begin_inset Graphics FormatVersion 1
+\begin_inset Graphics
 	filename lena_edge.epsi
 	display color
-	size_type 1
 	width 40page%
 	rotateOrigin center
-	lyxsize_type 1
-	lyxwidth 267pt
-	lyxheight 272pt
+
 \end_inset 
 
 
@@ -3119,7 +3102,7 @@ Filtering is a generic name for any system that modifies an input signal
  Of course, this is not usually the best way to compute the filter as the
  matrices and vectors involved may be huge.
  For example filtering a 
-\begin_inset Formula $512\times 512$
+\begin_inset Formula $512\times512$
 \end_inset 
 
  image with this method would require multiplication of a 
@@ -3132,7 +3115,7 @@ matrix with a
 
  vector.
  Just trying to store the 
-\begin_inset Formula $512^{2}\times 512^{2}$
+\begin_inset Formula $512^{2}\times512^{2}$
 \end_inset 
 
  matrix using a standard Numeric array would require 
@@ -3170,7 +3153,7 @@ Let
 
  Full, convolution of two one-dimensional signals can be expressed as 
 \begin_inset Formula \[
-y\left[n\right]=\sum _{k=-\infty }^{\infty }x\left[k\right]h\left[n-k\right].\]
+y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].\]
 
 \end_inset 
 
@@ -3205,7 +3188,7 @@ y\left[n\right]=\sum _{k=-\infty }^{\infty }x\left[k\right]h\left[n-k\right].\]
 
 , then the discrete convolution expression is 
 \begin_inset Formula \[
-y\left[n\right]=\sum _{k=\max \left(n-M,0\right)}^{\min \left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
+y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
 
 \end_inset 
 
@@ -3218,16 +3201,15 @@ y\left[n\right]=\sum _{k=\max \left(n-M,0\right)}^{\min \left(n,K\right)}x\left[
 y\left[0\right] & = & x\left[0\right]h\left[0\right]\\
 y\left[1\right] & = & x\left[0\right]h\left[1\right]+x\left[1\right]h\left[0\right]\\
 y\left[2\right] & = & x\left[0\right]h\left[2\right]+x\left[1\right]h\left[1\right]+x\left[2\right]h\left[0\right]\\
-\vdots  & \vdots  & \vdots \\
-y\left[M\right] & = & x\left[0\right]h\left[M\right]+x\left[1\right]h\left[M-1\right]+\cdots +x\left[M\right]h\left[0\right]\\
-y\left[M+1\right] & = & x\left[1\right]h\left[M\right]+x\left[2\right]h\left[M-1\right]+\cdots +x\left[M+1\right]h\left[0\right]\\
-\vdots  & \vdots  & \vdots \\
-y\left[K\right] & = & x\left[K-M\right]h\left[M\right]+\cdots +x\left[K\right]h\left[0\right]\\
-y\left[K+1\right] & = & x\left[K+1-M\right]h\left[M\right]+\cdots +x\left[K\right]h\left[1\right]\\
-\vdots  & \vdots  & \vdots \\
+\vdots & \vdots & \vdots\\
+y\left[M\right] & = & x\left[0\right]h\left[M\right]+x\left[1\right]h\left[M-1\right]+\cdots+x\left[M\right]h\left[0\right]\\
+y\left[M+1\right] & = & x\left[1\right]h\left[M\right]+x\left[2\right]h\left[M-1\right]+\cdots+x\left[M+1\right]h\left[0\right]\\
+\vdots & \vdots & \vdots\\
+y\left[K\right] & = & x\left[K-M\right]h\left[M\right]+\cdots+x\left[K\right]h\left[0\right]\\
+y\left[K+1\right] & = & x\left[K+1-M\right]h\left[M\right]+\cdots+x\left[K\right]h\left[1\right]\\
+\vdots & \vdots & \vdots\\
 y\left[K+M-1\right] & = & x\left[K-1\right]h\left[M\right]+x\left[K\right]h\left[M-1\right]\\
-y\left[K+M\right] & = & x\left[K\right]h\left[M\right].
-\end{eqnarray*}
+y\left[K+M\right] & = & x\left[K\right]h\left[M\right].\end{eqnarray*}
 
 \end_inset 
 
@@ -3324,7 +3306,7 @@ Correlation is very similar to convolution except for the minus sign becomes
  a plus sign.
  Thus 
 \begin_inset Formula \[
-w\left[n\right]=\sum _{k=-\infty }^{\infty }y\left[k\right]x\left[n+k\right]\]
+w\left[n\right]=\sum_{k=-\infty}^{\infty}y\left[k\right]x\left[n+k\right]\]
 
 \end_inset 
 
@@ -3354,7 +3336,7 @@ w\left[n\right]=\sum _{k=-\infty }^{\infty }y\left[k\right]x\left[n+k\right]\]
 
  the summation can simplify to 
 \begin_inset Formula \[
-w\left[n\right]=\sum _{k=\max \left(0,-n\right)}^{\min \left(K,M-n\right)}y\left[k\right]x\left[n+k\right].\]
+w\left[n\right]=\sum_{k=\max\left(0,-n\right)}^{\min\left(K,M-n\right)}y\left[k\right]x\left[n+k\right].\]
 
 \end_inset 
 
@@ -3366,18 +3348,17 @@ Assuming again that
 \begin_inset Formula \begin{eqnarray*}
 w\left[-K\right] & = & y\left[K\right]x\left[0\right]\\
 w\left[-K+1\right] & = & y\left[K-1\right]x\left[0\right]+y\left[K\right]x\left[1\right]\\
-\vdots  & \vdots  & \vdots \\
-w\left[M-K\right] & = & y\left[K-M\right]x\left[0\right]+y\left[K-M+1\right]x\left[1\right]+\cdots +y\left[K\right]x\left[M\right]\\
-w\left[M-K+1\right] & = & y\left[K-M-1\right]x\left[0\right]+\cdots +y\left[K-1\right]x\left[M\right]\\
-\vdots  & \vdots  & \vdots \\
-w\left[-1\right] & = & y\left[1\right]x\left[0\right]+y\left[2\right]x\left[1\right]+\cdots +y\left[M+1\right]x\left[M\right]\\
-w\left[0\right] & = & y\left[0\right]x\left[0\right]+y\left[1\right]x\left[1\right]+\cdots +y\left[M\right]x\left[M\right]\\
-w\left[1\right] & = & y\left[0\right]x\left[1\right]+y\left[1\right]x\left[2\right]+\cdots +y\left[M-1\right]x\left[M\right]\\
-w\left[2\right] & = & y\left[0\right]x\left[2\right]+y\left[1\right]x\left[3\right]+\cdots +y\left[M-2\right]x\left[M\right]\\
-\vdots  & \vdots  & \vdots \\
+\vdots & \vdots & \vdots\\
+w\left[M-K\right] & = & y\left[K-M\right]x\left[0\right]+y\left[K-M+1\right]x\left[1\right]+\cdots+y\left[K\right]x\left[M\right]\\
+w\left[M-K+1\right] & = & y\left[K-M-1\right]x\left[0\right]+\cdots+y\left[K-1\right]x\left[M\right]\\
+\vdots & \vdots & \vdots\\
+w\left[-1\right] & = & y\left[1\right]x\left[0\right]+y\left[2\right]x\left[1\right]+\cdots+y\left[M+1\right]x\left[M\right]\\
+w\left[0\right] & = & y\left[0\right]x\left[0\right]+y\left[1\right]x\left[1\right]+\cdots+y\left[M\right]x\left[M\right]\\
+w\left[1\right] & = & y\left[0\right]x\left[1\right]+y\left[1\right]x\left[2\right]+\cdots+y\left[M-1\right]x\left[M\right]\\
+w\left[2\right] & = & y\left[0\right]x\left[2\right]+y\left[1\right]x\left[3\right]+\cdots+y\left[M-2\right]x\left[M\right]\\
+\vdots & \vdots & \vdots\\
 w\left[M-1\right] & = & y\left[0\right]x\left[M-1\right]+y\left[1\right]x\left[M\right]\\
-w\left[M\right] & = & y\left[0\right]x\left[M\right].
-\end{eqnarray*}
+w\left[M\right] & = & y\left[0\right]x\left[M\right].\end{eqnarray*}
 
 \end_inset 
 
@@ -3417,9 +3398,9 @@ signal.correlate
 \layout Standard
 
 The function 
-\family typewriter 
+\series bold 
 signal.correlate
-\family default 
+\series default 
  can also take arbitrary 
 \begin_inset Formula $N$
 \end_inset 
@@ -3437,13 +3418,13 @@ When
 \end_inset 
 
  
-\family typewriter 
+\series bold 
 signal.correlate
-\family default 
+\series default 
  and/or 
-\family typewriter 
+\series bold 
 signal.convolve
-\family default 
+\series default 
  can be used to construct arbitrary image filters to perform actions such
  as blurring, enhancing, and edge-detection for an image.
  
@@ -3465,7 +3446,7 @@ Difference-equation filtering
 A general class of linear one-dimensional filters (that includes convolution
  filters) are filters described by the difference equation 
 \begin_inset Formula \[
-\sum _{k=0}^{N}a_{k}y\left[n-k\right]=\sum _{k=0}^{M}b_{k}x\left[n-k\right]\]
+\sum_{k=0}^{N}a_{k}y\left[n-k\right]=\sum_{k=0}^{M}b_{k}x\left[n-k\right]\]
 
 \end_inset 
 
@@ -3492,11 +3473,11 @@ A general class of linear one-dimensional filters (that includes convolution
 \end_inset 
 
  could be infinite if 
-\begin_inset Formula $a_{k}\neq 0$
+\begin_inset Formula $a_{k}\neq0$
 \end_inset 
 
  for 
-\begin_inset Formula $k\geq 1.$
+\begin_inset Formula $k\geq1.$
 \end_inset 
 
  In addition, this general class of linear filter allows initial conditions
@@ -3517,7 +3498,7 @@ The difference equation filter can be thought of as finding
 
  recursively in terms of it's previous values 
 \begin_inset Formula \[
-a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots -a_{N}y\left[n-N\right]+\cdots +b_{0}x\left[n\right]+\cdots +b_{M}x\left[n-M\right].\]
+a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots-a_{N}y\left[n-N\right]+\cdots+b_{0}x\left[n\right]+\cdots+b_{M}x\left[n-M\right].\]
 
 \end_inset 
 
@@ -3539,15 +3520,14 @@ Often
 y\left[n\right] & = & b_{0}x\left[n\right]+z_{0}\left[n-1\right]\\
 z_{0}\left[n\right] & = & b_{1}x\left[n\right]+z_{1}\left[n-1\right]-a_{1}y\left[n\right]\\
 z_{1}\left[n\right] & = & b_{2}x\left[n\right]+z_{2}\left[n-1\right]-a_{2}y\left[n\right]\\
-\vdots  & \vdots  & \vdots \\
+\vdots & \vdots & \vdots\\
 z_{K-2}\left[n\right] & = & b_{K-1}x\left[n\right]+z_{K-1}\left[n-1\right]-a_{K-1}y\left[n\right]\\
-z_{K-1}\left[n\right] & = & b_{K}x\left[n\right]-a_{K}y\left[n\right],
-\end{eqnarray*}
+z_{K-1}\left[n\right] & = & b_{K}x\left[n\right]-a_{K}y\left[n\right],\end{eqnarray*}
 
 \end_inset 
 
 where 
-\begin_inset Formula $K=\max \left(N,M\right).$
+\begin_inset Formula $K=\max\left(N,M\right).$
 \end_inset 
 
  Note that 
@@ -3592,9 +3572,9 @@ where
 \layout Standard
 
 The difference-equation filter is called using the command 
-\family typewriter 
+\series bold 
 signal.lfilter
-\family default 
+\series default 
  in SciPy.
  This command takes as inputs the vector 
 \begin_inset Formula $b,$
@@ -3677,7 +3657,7 @@ Sometimes it is more convenient to express the initial conditions in terms
 
 
 \begin_inset Formula \[
-z_{m}\left[n\right]=\sum _{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).\]
+z_{m}\left[n\right]=\sum_{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).\]
 
 \end_inset 
 
@@ -3699,25 +3679,78 @@ z_{m}\left[n\right]=\sum _{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1
 
 ).
  The command 
-\family typewriter 
+\series bold 
 signal.lfiltic
-\family default 
+\series default 
  performs this function.
 \layout Subsubsection
 
 Other filters
+\layout Standard
+
+The signal processing package affords many more filters as well.
+ 
 \layout Paragraph
 
 Median Filter
+\layout Standard
+
+A median filter is commonly applied when noise is markedly non-Gaussian
+ or when it is desired to preserve edges.
+ The median filter works by sorting all of the array pixel values in a rectangul
+ar region surrounding the point of interest.
+ The sample median of this list of neighborhood pixel values is used as
+ the value for the output array.
+ The sample median is the middle array value in a sorted list of neighborhood
+ values.
+ If there are an even number of elements in the neighborhood, then the average
+ of the middle two values is used as the median.
+ A general purpose median filter that works on N-dimensional arrays is 
+\series bold 
+signal.medfilt
+\series default 
+.
+ A specialized version that works only for two-dimensional arrays is available
+ as 
+\series bold 
+signal.medfilt2d
+\series default 
+.
+
+\family typewriter 
+ 
 \layout Paragraph
 
 Order Filter
+\layout Standard
+
+A median filter is a specific example of a more general class of filters
+ called order filters.
+ To compute the output at a particular pixel, all order filters use the
+ array values in a region surrounding that pixel.
+ These array values are sorted and then one of them is selected as the output
+ value.
+ For the median filter, the sample median of the list of array values is
+ used as the output.
+ A general order filter allows the user to select which of the sorted values
+ will be used as the output.
+ So, for example one could choose to pick the maximum in the list or the
+ minimum.
+ The order filter takes an additional argument besides the input array and
+ the region mask that specifies which of the elements in the sorted list
+ of neighbor array values should be used as the output.
+ The command to perform an order filter is 
+\series bold 
+signal.order_filter
+\series default 
+.
+ 
 \layout Paragraph
 
 Wiener filter
 \layout Paragraph
 
-Hilber filter
+Hilbert filter
 \layout Paragraph
 
 Detrend
@@ -3823,15 +3856,28 @@ Matrix Class
 
 The matrix class is initialized with the SciPy command 
 \family typewriter 
+\series bold 
 mat
 \family default 
+\series default 
  which is just convenient short-hand for 
 \family typewriter 
+\series bold 
 Matrix.Matrix
 \family default 
+\series default 
 .
  If you are going to be doing a lot of matrix-math, it is convenient to
  convert arrays into matrices using this command.
+ One convencience of using the mat command is that you can enter two-dimensional
+ matrices in using MATLAB-like syntax with commas or spaces separating columns
+ and semicolons separting rows as long as the matrix is placed in a string
+ passed to 
+\series bold 
+mat
+\series default 
+.
+ 
 \layout Subsection
 
 Basic routines
@@ -3866,27 +3912,106 @@ The inverse of a matrix
 \end_inset 
 
 .
- In SciPy, the matrix inverse of the Numeric array, 
+ In SciPy, the matrix inverse of the Numeric array, A, is obtained using
+ 
 \family typewriter 
-a
-\family default 
-, is obtained using 
-\family typewriter 
-linalg.inv(a)
+\series bold 
+linalg.inv
+\series default 
+(A)
 \family default 
 , or using 
 \family typewriter 
-a.I
+A.I
 \family default 
  if 
 \family typewriter 
-a
+A
 \family default 
  is a Matrix.
- 
+ For example, let 
+\begin_inset Formula \[
+\mathbf{A=}\left[\begin{array}{ccc}
+1 & 3 & 5\\
+2 & 5 & 1\\
+2 & 3 & 8\end{array}\right]\]
+
+\end_inset 
+
+then 
+\begin_inset Formula \[
+\mathbf{A^{-1}=\frac{1}{25}\left[\begin{array}{ccc}
+-37 & 9 & 22\\
+14 & 2 & -9\\
+4 & -3 & 1\end{array}\right]=\left[\begin{array}{ccc}
+-1.48 & 0.36 & 0.88\\
+0.56 & 0.08 & -0.36\\
+0.16 & -0.12 & 0.04\end{array}\right].}\]
+
+\end_inset 
+
+ The following example demonstrates this computation in SciPy
+\begin_inset Include \verbatiminput{example10.2.1}
+preview false
+
+\end_inset 
+
+
 \layout Subsubsection
 
 Solving linear system
+\layout Standard
+
+Solving linear systems of equations is straightforward using the scipy command
+ 
+\series bold 
+linalg.solve.
+ 
+\series default 
+This command expects an input matrix and a right-hand-side vector.
+ The solution vector is then computed.
+ An option for entering a symmetrix matrix is offered which can speed up
+ the processing when applicable.
+ As an example, suppose it is desired to solve the following simultaneous
+ equations: 
+\begin_inset Formula \begin{eqnarray*}
+x+3y+5z & = & 10\\
+2x+5y+z & = & 8\\
+2x+3y+8z & = & 3\end{eqnarray*}
+
+\end_inset 
+
+ We could find the solution vector using a matrix inverse: 
+\begin_inset Formula \[
+\left[\begin{array}{c}
+x\\
+y\\
+z\end{array}\right]=\left[\begin{array}{ccc}
+1 & 3 & 5\\
+2 & 5 & 1\\
+2 & 3 & 8\end{array}\right]^{-1}\left[\begin{array}{c}
+10\\
+8\\
+3\end{array}\right]=\frac{1}{25}\left[\begin{array}{c}
+-232\\
+129\\
+19\end{array}\right]=\left[\begin{array}{c}
+-9.28\\
+5.16\\
+0.76\end{array}\right].\]
+
+\end_inset 
+
+ However, it is better to use the linalg.solve command which can be faster
+ and more numerically stable.
+ In this case it gives the same answer as shown in the following example:
+ 
+\begin_inset Include \verbatiminput{example10.2.2}
+preview false
+
+\end_inset 
+
+
 \layout Subsubsection
 
 Finding Determinant
