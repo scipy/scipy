@@ -22,7 +22,7 @@
 /* This must be linked with fortran
  */
 
-extern int print_error_messages;
+extern int scipy_special_print_error_messages;
 #ifndef NAN
 extern double NAN;
 #endif
@@ -66,7 +66,7 @@ double cdfbet3_wrap(double p, double b, double x) {
   
   F_FUNC(cdfbet,CDFBET)(&which, &p, &q, &x, &y, &a, &b, &status, &bound);
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -80,7 +80,7 @@ double cdfbet4_wrap(double a, double p, double x) {
   
   F_FUNC(cdfbet,CDFBET)(&which, &p, &q, &x, &y, &a, &b, &status, &bound);
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -97,7 +97,7 @@ double cdfbin2_wrap(double p, double xn, double pr) {
   
   F_FUNC(cdfbin,CDFBIN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound);
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -111,7 +111,7 @@ double cdfbin3_wrap(double s, double p, double pr) {
 
   F_FUNC(cdfbin,CDFBIN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -126,7 +126,7 @@ double cdfchi3_wrap(double p, double x){
 
   F_FUNC(cdfchi,CDFCHI)(&which, &p, &q, &x, &df, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -141,7 +141,7 @@ double cdfchn1_wrap(double x, double df, double nc) {
 
   F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -155,7 +155,7 @@ double cdfchn2_wrap(double p, double df, double nc) {
 
   F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
   }
   return x;
@@ -168,7 +168,7 @@ double cdfchn3_wrap(double x, double p, double nc) {
 
   F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -182,7 +182,7 @@ double cdfchn4_wrap(double x, double df, double p) {
 
   F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -198,7 +198,7 @@ double cdff1_wrap(double dfn, double dfd, double f) {
 
   F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
   }
   return p;
@@ -211,7 +211,7 @@ double cdff2_wrap(double dfn, double dfd, double p) {
 
   F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
   }
   return f;
@@ -226,7 +226,7 @@ double cdff3_wrap(double p, double dfd, double f) {
 
   F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -240,7 +240,7 @@ double cdff4_wrap(double dfn, double p, double f) {
 
   F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -256,7 +256,7 @@ double cdffnc1_wrap(double dfn, double dfd, double nc, double f) {
 
   F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
   }
   return p;
@@ -269,7 +269,7 @@ double cdffnc2_wrap(double dfn, double dfd, double nc, double p) {
 
   F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -284,7 +284,7 @@ double cdffnc3_wrap(double p, double dfd, double nc, double f) {
 
   F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -297,7 +297,7 @@ double cdffnc4_wrap(double dfn, double p, double nc, double f) {
 
   F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -311,7 +311,7 @@ double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
 
   F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -329,7 +329,7 @@ double cdfgam1_wrap(double scl, double shp, double x) {
 
   F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
   }
   return p;
@@ -342,7 +342,7 @@ double cdfgam2_wrap(double scl, double shp, double p) {
 
   F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl,  &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -356,7 +356,7 @@ double cdfgam3_wrap(double scl, double p, double x) {
 
   F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -370,7 +370,7 @@ double cdfgam4_wrap(double p, double shp, double x) {
 
   F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -385,7 +385,7 @@ double cdfnbn2_wrap(double p, double xn, double pr) {
   
   F_FUNC(cdfnbn,CDFNBN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound);
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -399,7 +399,7 @@ double cdfnbn3_wrap(double s, double p, double pr) {
 
   F_FUNC(cdfnbn,CDFNBN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound);
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -414,7 +414,7 @@ double cdfnor3_wrap(double p, double std, double x) {
 
   F_FUNC(cdfnor,CDFNOR)(&which, &p, &q, &x, &mn, &std, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -428,7 +428,7 @@ double cdfnor4_wrap(double mn, double p, double x) {
 
   F_FUNC(cdfnor,CDFNOR)(&which, &p, &q, &x, &mn, &std, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -443,7 +443,7 @@ double cdfpoi2_wrap(double p, double xlam){
 
   F_FUNC(cdfpoi,CDFPOI)(&which, &p, &q, &s, &xlam, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -458,7 +458,7 @@ double cdft1_wrap(double df, double t){
 
   F_FUNC(cdft,CDFT)(&which, &p, &q, &t, &df, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
   }
   return p;
@@ -471,7 +471,7 @@ double cdft2_wrap(double df, double p){
 
   F_FUNC(cdft,CDFT)(&which, &p, &q, &t, &df, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -485,7 +485,7 @@ double cdft3_wrap(double p, double t){
 
   F_FUNC(cdft,CDFT)(&which, &p, &q, &t, &df, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -500,7 +500,7 @@ double cdftnc1_wrap(double df, double nc, double t) {
 
   F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -514,7 +514,7 @@ double cdftnc2_wrap(double df, double nc, double p) {
 
   F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -528,7 +528,7 @@ double cdftnc3_wrap(double p, double nc, double t) {
 
   F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
   }
@@ -542,7 +542,7 @@ double cdftnc4_wrap(double df, double p, double t) {
 
   F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
   if (status) {
-    if (print_error_messages) show_error(status, bound);
+    if (scipy_special_print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
     if ((status == 1) || (status == 2)) return bound;
 

@@ -26,7 +26,7 @@
 #endif
 
 /* Defined in mtherr in the cephes library */
-extern int print_error_messages;
+extern int scipy_special_print_error_messages;
  
 #include "cephes_doc.h"
 
@@ -1052,7 +1052,14 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 
 }
 
-static char errprint_doc[] = "errprint({flag}) sets or resets the error printing flag in cephesmodule\n  returning the previous state. If no argument is given the current state of\n  the flag is returned and no change occurs.";
+static char errprint_doc[] = \
+"errprint({flag}) sets the error printing flag for special functions\n" \
+"    (from the cephesmodule). The output is the previous state.\n" \
+"    With errprint(0) no error messages are shown;\n" \
+"    the default is errprint(1).\n" \
+"    If no argument is given the current state of\n" \
+"    the flag is returned and no change occurs.\n";
+
 
 static PyObject *errprint_func(PyObject *self, PyObject *args)
 {
@@ -1060,9 +1067,9 @@ static PyObject *errprint_func(PyObject *self, PyObject *args)
   int oldflag = 0;
   if (!PyArg_ParseTuple ( args, "|i;cephes.errprint", &inflag)) return NULL;
 
-  oldflag = print_error_messages;  
+  oldflag = scipy_special_print_error_messages;  
   if (inflag != -37) {
-    print_error_messages = (inflag != 0);
+    scipy_special_print_error_messages = (inflag != 0);
   }
   return PyInt_FromLong((long) oldflag);
 }
@@ -1091,7 +1098,8 @@ void initcephes(void) {
   PyDict_SetItemString(d, "__version__", s);
   Py_DECREF(s);
 
-  /* Add print_error_message global variable */
+  /* Add scipy_special_print_error_message global variable */
+  /*  No, instead acessible through errprint */
 
   /* Load the cephes operators into the array module's namespace */
   Cephes_InitOperators(d); 

@@ -320,4 +320,17 @@ Special Functions
   function and does not follow broadcasting and automatic
   array-looping rules.
 
+   Error handling:
+
+      Errors are handled by returning nans, or other appropriate values.
+      Some of the special function routines will print an error message
+      when an error occurs.  By default this printing
+      is disabled.  To enable such messages use errprint(1)
+      To disable such messages use errprint(0).
+
+      Example:
+      >>> print scipy.special.bdtr(-1,10,0.3)
+      >>> scipy.special.errprint(1)
+      >>> print scipy.special.bdtr(-1,10,0.3)
+ 
 """

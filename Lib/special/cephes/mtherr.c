@@ -57,7 +57,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #include <stdio.h>
 #include "mconf.h"
 
-int print_error_messages = 1.0;
+int scipy_special_print_error_messages = 0;
 
 int merror = 0;
 
@@ -95,7 +95,7 @@ merror = code;
  */
 if( (code <= 0) || (code >= 8) )
 	code = 0;
-if (print_error_messages) {
+if (scipy_special_print_error_messages) {
         printf( "\n%s ", name );
         printf( "%s error\n", ermsg[code] );
 }

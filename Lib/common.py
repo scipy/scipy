@@ -246,8 +246,8 @@ def who(vardict=None):
     """Print the Numeric arrays in the given dictionary (or globals() if None).
     """
     if vardict is None:
-        print "Pass in a dictionary:  who(globals())"
-        return
+        frame = sys._getframe().f_back
+        vardict = frame.f_globals
     sta = []
     cache = {}
     for name in vardict.keys():
