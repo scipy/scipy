@@ -48,6 +48,11 @@ from special import isinf, isfinite, isnan
 from common import *
 
 try:
+    from pilutil import *
+except ImportError:
+    pass
+
+try:
     import fftw
 except ImportError:
     pass  # Not default anymore
