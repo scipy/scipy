@@ -54,6 +54,7 @@ def setup_package(ignore_packages=[]):
     sys.path.insert(0,os.path.join(local_path,'scipy_core'))
     try:
         from scipy_version import scipy_version
+
         # Uncomment when making releases:
         if not command_sdist: scipy_version = '0.3'
 
@@ -74,10 +75,6 @@ def setup_package(ignore_packages=[]):
                                            parent = 'scipy',
                                            parent_path=local_path,
                                            ignore_packages = ignore_packages)
-            #config_list += get_packages(os.path.join(local_path,d),
-            #                            ignore_packages,
-            #                            parent_path=local_path)
-
         config_dict = merge_config_dicts(config_list)
 
         print 'SciPy Version %s' % scipy_version
