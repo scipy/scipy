@@ -25,21 +25,51 @@ gist.pldefault(dpi=_dpi,maxcolors=_maxcolors)
 
 # Get a directory that the user has write access to for
 #  storing temporary *.gp and *.gs files
-import weave
 import tempfile
 import os
 import sys
+
+# functions copied from weave.catalog
+
+def whoami():
+    """return a string identifying the user."""
+    return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
+
+def create_dir(p):
+    """ Create a directory and any necessary intermediate directories."""
+    if not os.path.exists(p):
+        try:
+            os.mkdir(p)
+        except OSError:
+            # perhaps one or more intermediate path components don't exist
+            # try to create them
+            base,dir = os.path.split(p)
+            create_dir(base)
+            # don't enclose this one in try/except - we want the user to
+            # get failure info
+            os.mkdir(p)
+
+def is_writable(dir):
+    dummy = os.path.join(dir, "dummy")
+    try:
+        open(dummy, 'w')
+    except IOError:
+        return 0
+    os.unlink(dummy)
+    return 1
+
+# end functions copied from weave.catalog
 
 def _getdir(name='scipy_xplt'):
     try:
         path = os.path.join(os.environ['HOME'],'.' + name)
     except KeyError:
-        path = os.path.join(tempfile.gettempdir(),"%s"%weave.catalog.whoami(),
+        path = os.path.join(tempfile.gettempdir(),"%s"%whoami(),
                             name)
     if not os.path.exists(path):
-        weave.catalog.create_dir(path)
+        create_dir(path)
         os.chmod(path,0700)
-    if not weave.catalog.is_writable(path):
+    if not is_writable(path):
         print "warning: default directory is not write accessible."
         print "default:", path
     return path
