@@ -192,11 +192,13 @@ class proxied_callable:
         dispatching the method to the secondary thread."""        
         obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
         ret_val = None
+        d_args = main.dereference_arglist(args)
+        d_kw = main.dereference_dict(kw)
         if main.in_proxy_call:
-            ret_val = apply(obj, args, kw)
+            ret_val = apply(obj, d_args, d_kw)
         else:
             finished = threading.Event()
-            evt = proxy_event(obj, args, kw, finished)
+            evt = proxy_event(obj, d_args, d_kw, finished)
             wxPostEvent(self.catcher, evt)
             finished.wait()
             if finished.exception_info:
