@@ -38,21 +38,21 @@ Abramowitz and Stegun p. 774, 782
 Functions:
 
   gen_roots_and_weights  -- Generic roots and weights.
-  J_roots                -- Jacobi 
-  Js_roots               -- Shifted Jacobi
-  La_roots               -- Generalized Laguerre
-  H_roots                -- Hermite
-  He_roots               -- Hermite (unit-variance)
-  Cg_roots               -- Ultraspherical (Gegenbauer)
-  T_roots                -- Chebyshev of the first kind
-  U_roots                -- Chebyshev of the second kind
-  C_roots                -- Chebyshev of the first kind ([-2,2] interval)
-  S_roots                -- Chebyshev of the second kind ([-2,2] interval)
-  Ts_roots               -- Shifted Chebyshev of the first kind.
-  Us_roots               -- Shifted Chebyshev of the second kind.
-  P_roots                -- Legendre
-  Ps_roots               -- Shifted Legendre
-  L_roots                -- Laguerre
+  j_roots                -- Jacobi 
+  js_roots               -- Shifted Jacobi
+  la_roots               -- Generalized Laguerre
+  h_roots                -- Hermite
+  he_roots               -- Hermite (unit-variance)
+  cg_roots               -- Ultraspherical (Gegenbauer)
+  t_roots                -- Chebyshev of the first kind
+  u_roots                -- Chebyshev of the second kind
+  c_roots                -- Chebyshev of the first kind ([-2,2] interval)
+  s_roots                -- Chebyshev of the second kind ([-2,2] interval)
+  ts_roots               -- Shifted Chebyshev of the first kind.
+  us_roots               -- Shifted Chebyshev of the second kind.
+  p_roots                -- Legendre
+  ps_roots               -- Shifted Legendre
+  l_roots                -- Laguerre
 """
 
 from __future__ import nested_scopes
@@ -100,8 +100,8 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     return answer    
 
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
-def J_roots(n,alpha,beta,mu=0):
-    """[x,w] = J_roots(n,alpha,beta)
+def j_roots(n,alpha,beta,mu=0):
+    """[x,w] = j_roots(n,alpha,beta)
 
     Returns the roots (x) of the nth order Jacobi polynomial, P^(alpha,beta)_n(x)
     and weights (w) to use in Gaussian Quadrature over [-1,1] with weighting
@@ -134,7 +134,7 @@ def jacobi(n,alpha,beta,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu = J_roots(n1,alpha,beta,mu=1)
+    x,w,mu = j_roots(n1,alpha,beta,mu=1)
     if n==0: x,w = [],[]
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
     ab1 = alpha+beta+1.0
@@ -145,8 +145,8 @@ def jacobi(n,alpha,beta,monic=0):
     return p
 
 # Jacobi Polynomials shifted         G_n(p,q,x)
-def Js_roots(n,p1,q1,mu=0):
-    """[x,w] = Js_roots(n,p,q)
+def js_roots(n,p1,q1,mu=0):
+    """[x,w] = js_roots(n,p,q)
 
     Returns the roots (x) of the nth order shifted Jacobi polynomial, G_n(p,q,x),
     and weights (w) to use in Gaussian Quadrature over [0,1] with weighting
@@ -184,7 +184,7 @@ def sh_jacobi(n, p, q, monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = Js_roots(n1,p,q,mu=1)
+    x,w,mu0 = js_roots(n1,p,q,mu=1)
     if n==0: x,w = [],[]
     wfunc = lambda x: (1.0-x)**(p-q) * (1+x)**(q-1.)
     hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
@@ -194,8 +194,8 @@ def sh_jacobi(n, p, q, monic=0):
     return p
 
 # Generalized Laguerre               L^(alpha)_n(x)
-def La_roots(n,alpha,mu=0):
-    """[x,w] = La_roots(n,alpha)
+def la_roots(n,alpha,mu=0):
+    """[x,w] = la_roots(n,alpha)
 
     Returns the roots (x) of the nth order generalized (associated) Laguerre
     polynomial, L^(alpha)_n(x), and weights (w) to use in Gaussian quadrature over
@@ -222,7 +222,7 @@ def genlaguerre(n,alpha,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = La_roots(n1,alpha,mu=1)
+    x,w,mu0 = la_roots(n1,alpha,mu=1)
     wfunc = lambda x: exp(-x) * x**alpha
     if n==0: x,w = [],[]
     hn = _gam(n+alpha+1)/_gam(n+1)
@@ -231,8 +231,8 @@ def genlaguerre(n,alpha,monic=0):
     return p
 
 # Hermite  1                         H_n(x)
-def H_roots(n,mu=0):
-    """[x,w] = H_roots(n)
+def h_roots(n,mu=0):
+    """[x,w] = h_roots(n)
 
     Returns the roots (x) of the nth order Hermite polynomial,
     H_n(x), and weights (w) to use in Gaussian Quadrature over
@@ -255,7 +255,7 @@ def hermite(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = H_roots(n1,mu=1)
+    x,w,mu0 = h_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x)
     if n==0: x,w = [],[]
     hn = 2**n * _gam(n+1)*sqrt(pi)
@@ -264,8 +264,8 @@ def hermite(n,monic=0):
     return p
     
 # Hermite  2                         He_n(x)
-def He_roots(n,mu=0):
-    """[x,w] = He_roots(n)
+def he_roots(n,mu=0):
+    """[x,w] = he_roots(n)
 
     Returns the roots (x) of the nth order Hermite polynomial,
     He_n(x), and weights (w) to use in Gaussian Quadrature over
@@ -288,7 +288,7 @@ def hermitenorm(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = He_roots(n1,mu=1)
+    x,w,mu0 = he_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x/4.0)
     if n==0: x,w = [],[]
     hn = sqrt(2*pi)*_gam(n+1)
@@ -299,14 +299,14 @@ def hermitenorm(n,monic=0):
 ## The remainder of the polynomials can be derived from the ones above.
 
 # Ultraspherical (Gegenbauer)        C^(alpha)_n(x)
-def Cg_roots(n,alpha,mu=0):
-    """[x,w] = Cg_roots(n,alpha)
+def cg_roots(n,alpha,mu=0):
+    """[x,w] = cg_roots(n,alpha)
 
     Returns the roots (x) of the nth order Ultraspherical (Gegenbauer)
     polynomial, C^(alpha)_n(x), and weights (w) to use in Gaussian Quadrature
     over [-1,1] with weighting function (1-x**2)**(alpha-1/2) with alpha>-1/2.
     """
-    return J_roots(n,alpha-0.5,alpha-0.5,mu=mu)
+    return j_roots(n,alpha-0.5,alpha-0.5,mu=mu)
 
 def gegenbauer(n,alpha,monic=0):
     """Return the nth order Gegenbauer (ultraspherical) polynomial,
@@ -316,14 +316,14 @@ def gegenbauer(n,alpha,monic=0):
     return jacobi(n,alpha-0.5,alpha-0.5,monic=monic)
 
 # Chebyshev of the first kind        T_n(x)
-def T_roots(n,mu=0):
-    """[x,w] = T_roots(n)
+def t_roots(n,mu=0):
+    """[x,w] = t_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the first kind)
     polynomial, T_n(x), and weights (w) to use in Gaussian Quadrature
     over [-1,1] with weighting function (1-x**2)**(-1/2).
     """
-    return J_roots(n,-0.5,-0.5,mu=mu)
+    return j_roots(n,-0.5,-0.5,mu=mu)
 
 def chebyt(n,monic=0):
     """Return nth order Chebyshev polynomial of first kind, Tn(x).  Orthogonal
@@ -332,14 +332,14 @@ def chebyt(n,monic=0):
     return jacobi(n,-0.5,-0.5,monic=monic)
 
 # Chebyshev of the second kind       U_n(x)
-def U_roots(n,mu=0):
-    """[x,w] = U_roots(n)
+def u_roots(n,mu=0):
+    """[x,w] = u_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the second kind)
     polynomial, U_n(x), and weights (w) to use in Gaussian Quadrature
     over [-1,1] with weighting function (1-x**2)**1/2.
     """
-    return J_roots(n,0.5,0.5,mu=mu)
+    return j_roots(n,0.5,0.5,mu=mu)
 
 def chebyu(n):
     """Return nth order Chebyshev polynomial of second kind, Un(x).  Orthogonal
@@ -348,18 +348,18 @@ def chebyu(n):
     return jacobi(n,0.5,0.5,monic=monic)
 
 # Chebyshev of the first kind        C_n(x)
-def C_roots(n,mu=0):
-    """[x,w] = C_roots(n)
+def c_roots(n,mu=0):
+    """[x,w] = c_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the first kind)
     polynomial, C_n(x), and weights (w) to use in Gaussian Quadrature
     over [-2,2] with weighting function (1-(x/2)**2)**(-1/2).
     """
     if mu:
-        [x,w,mu0] = J_roots(n,-0.5,-0.5,mu=1)
+        [x,w,mu0] = j_roots(n,-0.5,-0.5,mu=1)
         return [x*2,w,mu0]
     else:
-        [x,w] = J_roots(n,-0.5,-0.5,mu=0)
+        [x,w] = j_roots(n,-0.5,-0.5,mu=0)
         return [x*2,w]
 
 def chebyc(n,monic=0):
@@ -369,7 +369,7 @@ def chebyc(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = C_roots(n1,mu=1)
+    x,w,mu0 = c_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 4*pi * ((n==0)+1)
     An = 1.0
@@ -379,18 +379,18 @@ def chebyc(n,monic=0):
     return p
 
 # Chebyshev of the second kind       S_n(x)
-def S_roots(n,mu=0):
-    """[x,w] = S_roots(n)
+def s_roots(n,mu=0):
+    """[x,w] = s_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the second kind)
     polynomial, S_n(x), and weights (w) to use in Gaussian Quadrature
     over [-2,2] with weighting function (1-(x/2)**2)**1/2.
     """
     if mu:
-        [x,w,mu0] = J_roots(n,0.5,0.5,mu=1)
+        [x,w,mu0] = j_roots(n,0.5,0.5,mu=1)
         return [x*2,w,mu0]
     else:
-        [x,w] = J_roots(n,0.5,0.5,mu=0)
+        [x,w] = j_roots(n,0.5,0.5,mu=0)
         return [x*2,w]
 
 def chebys(n,monic=0):
@@ -400,7 +400,7 @@ def chebys(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = S_roots(n1,mu=1)
+    x,w,mu0 = s_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = pi
     An = 1.0
@@ -410,14 +410,14 @@ def chebys(n,monic=0):
     return p
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
-def Ts_roots(n,mu=0):
-    """[x,w] = Ts_roots(n)
+def ts_roots(n,mu=0):
+    """[x,w] = ts_roots(n)
 
     Returns the roots (x) of the nth order shifted Chebyshev (of the first kind)
     polynomial, T^*_n(x), and weights (w) to use in Gaussian Quadrature
     over [0,1] with weighting function (x-x**2)**(-1/2).
     """
-    return Js_roots(n,0.0,0.5,mu=mu)
+    return js_roots(n,0.0,0.5,mu=mu)
 
 def sh_chebyt(n,monic=0):
     """Return nth order shifted Chebyshev polynomial of first kind, Tn(x).
@@ -427,14 +427,14 @@ def sh_chebyt(n,monic=0):
 
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
-def Us_roots(n,mu=0):
-    """[x,w] = Us_roots(n)
+def us_roots(n,mu=0):
+    """[x,w] = us_roots(n)
 
     Returns the roots (x) of the nth order shifted Chebyshev (of the second kind)
     polynomial, U^*_n(x), and weights (w) to use in Gaussian Quadrature
     over [0,1] with weighting function (x-x**2)**1/2.
     """
-    return Js_roots(n,2.0,1.5,mu=mu)
+    return js_roots(n,2.0,1.5,mu=mu)
 
 def sh_chebyu(n,monic=0):
     """Return nth order shifted Chebyshev polynomial of second kind, Un(x).
@@ -443,14 +443,14 @@ def sh_chebyu(n,monic=0):
     return sh_jacobi(n,2.0,1.5,monic=monic)
 
 # Legendre 
-def P_roots(n,mu=0):
-    """[x,w] = P_roots(n)
+def p_roots(n,mu=0):
+    """[x,w] = p_roots(n)
 
     Returns the roots (x) of the nth order Legendre polynomial, P_n(x),
     and weights (w) to use in Gaussian Quadrature over [-1,1] with weighting
     function 1.
     """
-    return J_roots(n,0.0,0.0,mu=mu)
+    return j_roots(n,0.0,0.0,mu=mu)
 
 def legendre(n,monic=0):
     """Returns the nth order Legendre polynomial, P_n(x), orthogonal over
@@ -459,7 +459,7 @@ def legendre(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = P_roots(n1,mu=1)
+    x,w,mu0 = p_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 2.0/(2*n+1)
     An = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
@@ -467,14 +467,14 @@ def legendre(n,monic=0):
     return p
 
 # Shifted Legendre              P^*_n(x)
-def Ps_roots(n,mu=0):
-    """[x,w] = Ps_roots(n)
+def ps_roots(n,mu=0):
+    """[x,w] = ps_roots(n)
 
     Returns the roots (x) of the nth order shifted Legendre polynomial, P^*_n(x),
     and weights (w) to use in Gaussian Quadrature over [0,1] with weighting
     function 1.
     """
-    return Js_roots(n,1.0,1.0,mu=mu)
+    return js_roots(n,1.0,1.0,mu=mu)
 
 def sh_legendre(n,monic=0):
     """Returns the nth order shifted Legendre polynomial, P^*_n(x), orthogonal
@@ -483,7 +483,7 @@ def sh_legendre(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = Ps_roots(n1,mu=1)
+    x,w,mu0 = ps_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 1.0/(2*n+1.0)
     An = 1.0
@@ -491,14 +491,14 @@ def sh_legendre(n,monic=0):
     return p 
 
 # Laguerre                      L_n(x)
-def L_roots(n,mu=0):
-    """[x,w] = L_roots(n)
+def l_roots(n,mu=0):
+    """[x,w] = l_roots(n)
 
     Returns the roots (x) of the nth order Laguerre polynomial, L_n(x),
     and weights (w) to use in Gaussian Quadrature over [0,inf] with weighting
     function exp(-x).
     """
-    return La_roots(n,0.0,mu=mu)
+    return la_roots(n,0.0,mu=mu)
 
 def laguerre(n,monic=0):
     """Return the nth order Laguerre polynoimal, L_n(x), orthogonal over
@@ -507,7 +507,7 @@ def laguerre(n,monic=0):
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
-    x,w,mu0 = L_roots(n1,mu=1)
+    x,w,mu0 = l_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 1.0
     An = (-1)**n / _gam(n+1)
