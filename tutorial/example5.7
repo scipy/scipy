@@ -15,7 +15,7 @@
 >>> print array(p0)
 [  8.      43.4783   1.0472]
 
->>> from optimize import leastsq
+>>> from scipy.optimize import leastsq
 >>> plsq = leastsq(residuals, p0, args=(y_meas, x))
 >>> print plsq[0]
 [ 10.9437  33.3605   0.5834]

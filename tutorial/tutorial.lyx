@@ -542,7 +542,10 @@ These changes are all made in a new module (fastumath) that is part of the
 , instead NaN's and Inf's are returned in the arrays.
  To assist in detection of these events new universal functions (isnan,
  isfinite, isinf) have been added.
- In addition, the comparision operators have been changed to allow comparisons
+ 
+\layout Standard
+
+In addition, the comparision operators have been changed to allow comparisons
  and logical operations of complex numbers (only the real part is compared).
  Also, with the new universal functions in SciPy, the logical operations
  (except logical_XXX functions) all return arrays of unsigned bytes (8-bits
@@ -557,6 +560,12 @@ Be careful when treating logical expressions as integers as the 8-bit integers
 \end_inset 
 
 .
+ 
+\layout Standard
+
+In an effort to get a consistency for default arguments, some of the default
+ arguments have changed from Numeric.
+ The idea is for you to use scipy as a base package instead of Numeric anyway.
  
 \layout Standard
 
@@ -586,16 +595,18 @@ With the command
 scipy.alter_numeric() 
 \series default 
 you can now use index and mask arrays inside brackets and the coercion rules
- of Numeric are changed so that Python scalars will not upcast the results
- of operations.
- An example is shown below 
+ of Numeric will be changed so that Python scalars will not be used to determine
+ the type of the output of an expression.
+ 
 \layout Subsection
 
 Scipy_base routines 
 \layout Standard
 
 The purpose of scipy_base is to collect general-purpose routines that the
- other sub-packages can use.
+ other sub-packages can use and to provide a simple replacement for Numeric.
+ Anytime you might think to import Numeric, you can import scipy_base instead
+ and remove yourself from direct dependence on Numeric.
  These routines are divided into several files for organizational purposes,
  but they are all available under the scipy_base namespace (and the scipy
  namespace).
@@ -697,9 +708,9 @@ cast
  This function is also useful as an easy way to get a scalar of a certain
  type: 
 \family typewriter 
->>> fpi = cast['f'](pi)
+>>> fpi = cast['f'](pi) 
 \family default 
-.
+although this should not be needed if you use alter_numeric().
  
 \layout Subsubsection
 
@@ -750,7 +761,7 @@ r_
 \family typewriter 
  >>> r_[3,[0]*5,-1:1:10j] 
 \family default 
-which can ease typing in an interactive session.
+which can ease typing and make for more readable code.
  Notice how objects are concatenated, and the slicing syntax is (ab)used
  to construct ranges.
  The other term that deserves a little explanation is the use of the complex
@@ -3719,7 +3730,7 @@ signal.lfiltic
 Other filters
 \layout Standard
 
-The signal processing package affords many more filters as well.
+The signal processing package provides many more filters as well.
  
 \layout Paragraph
 
