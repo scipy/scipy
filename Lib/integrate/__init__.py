@@ -18,13 +18,18 @@
 
    See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
       quadrature roots and weights for other weighting factors and regions.
-      
+
+ Interface to numerical integrators of ODE systems.
+
+   ode           -- Integrate ODE using vode routine.
+
 """
 _moddict = {'quadrature': ['fixed_quad', 'quadrature','romberg', 'trapz',
                            'simps', 'romb'],
             'odepack': ['odeint'],
             'quadpack': ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf',
-                         'inf']
+                         'inf'],
+            'ode':['ode'],
             }
 
 __all__ = []

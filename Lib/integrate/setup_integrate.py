@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from glob import glob
 from scipy_distutils.core import Extension
@@ -7,10 +9,11 @@ from scipy_distutils.atlas_info import get_atlas_info
 def configuration(parent_package=''):
     if parent_package:
         parent_package += '.'
-    local_path = get_path(__name__)    
+    local_path = get_path(__name__)
     config = default_config_dict()
-    
-    config['packages'].append(parent_package+'integrate')
+
+    if parent_package:
+        config['packages'].append(parent_package+'integrate')
     #config['packages'].append(parent_package+'integrate.tests')
     
     quadpack = glob(os.path.join(local_path,'quadpack','*.f'))
@@ -21,7 +24,7 @@ def configuration(parent_package=''):
     
     # should we try to weed through files and replace with calls to
     # LAPACK routines?
-    linpack_lite = glob(os.path.join('integrate','linpack_lite','*.f'))
+    linpack_lite = glob(os.path.join(local_path,'linpack_lite','*.f'))
     config['fortran_libraries'].append(('linpack_lite',{'sources':linpack_lite}))
     
     mach = glob(os.path.join(local_path,'mach','*.f'))
@@ -43,7 +46,21 @@ def configuration(parent_package=''):
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(parent_package+'integrate._odepack',sources,
                     library_dirs=atlas_library_dirs,
-                    libraries=['odepack', 'linpack_lite',] + blas_libraries)                    
+                    libraries=['odepack','linpack_lite',] + blas_libraries)
+    config['ext_modules'].append(ext)
+
+    # vode
+    sources = [os.path.join(local_path,'vode.pyf')]
+    ext = Extension(parent_package+'integrate.vode',
+                    sources,
+                    library_dirs=atlas_library_dirs,
+                    libraries=['odepack','linpack_lite'] + blas_libraries,
+                    )                    
     config['ext_modules'].append(ext)
 
     return config
+
+
+if __name__ == '__main__':    
+    from scipy_distutils.core import setup
+    setup(**configuration())
