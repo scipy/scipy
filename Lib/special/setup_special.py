@@ -16,10 +16,10 @@ def configuration(parent_package='',parent_path=None):
     local_path = get_path(__name__,parent_path)
 
     define_macros = []
-    if sys.byteorder != "little":
-        define_macros.append(('USE_MCONF_BE',1))
+    if sys.byteorder == "little":
+        define_macros.append(('USE_MCONF_LE',None))
     else:
-        define_macros.append(('USE_MCONF_LE',1))
+        define_macros.append(('USE_MCONF_BE',None))
 
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
     cephes = glob(os.path.join(local_path,'cephes','*.c'))
