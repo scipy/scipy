@@ -9,9 +9,6 @@
 ! 
 ! Usage:
 !   f2py -c flapack.pyf -L/usr/local/lib/atlas -llapack -lf77blas -lcblas -latlas -lg2c
-!
-! TODO:
-! *** Need ??egv,?ggev
 
 python module generic_flapack
 interface
@@ -795,6 +792,8 @@ subroutine <tchar=c,z>ggev(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldv
     integer intent(out):: info
 
 end subroutine <tchar>ggev
+
+
 
 end interface
 

@@ -90,8 +90,8 @@ python module sparsetools ! in
             integer dimension(n + 1) :: ptrb
             integer intent(hide), depend(b) :: nnzbmax=len(b)
             <_t> intent(in,out),dimension(nnzcmax) :: c
-            integer intent(in, out) dimension(nnzcmax),depend(nnzcmax) :: rowc
-            integer intent(in, out) dimension(n + 1), depend(n) :: ptrc
+            integer intent(in, out), dimension(nnzcmax),depend(nnzcmax) :: rowc
+            integer intent(in, out), dimension(n + 1), depend(n) :: ptrc
             integer intent(hide), depend(c) :: nnzcmax=len(c)
             integer intent(in, out) :: irow
             integer intent(in, out) :: kcol

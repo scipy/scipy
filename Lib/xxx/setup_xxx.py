@@ -2,7 +2,7 @@
 
 import os
 
-def configuration(parent_package=''):
+def configuration(parent_package='', parent_path=None):
 
     # The following three lines constitute minimal contents
     # of configuration(..) that is suitable for pure Python
