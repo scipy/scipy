@@ -1,0 +1,13 @@
+usercode '''
+static char doc_spam_incr[] = "Return incremented argument";
+static PyObject *spam_incr(PyObject *self, PyObject *args)
+{
+  int input;
+  if (!PyArg_ParseTuple(args, "i", &input))
+    return NULL;
+  return Py_BuildValue("i", input+1);
+}
+'''
+pymethoddef '''
+{"incr",  spam_incr, METH_VARARGS, doc_spam_incr},
+'''
