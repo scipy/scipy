@@ -327,7 +327,7 @@
 
 from special_version import special_version as __version__
 
-from special import *
+from basic import *
 import specfun
 import orthogonal
 from orthogonal import legendre, chebyt, chebyu, chebyc, chebys, \

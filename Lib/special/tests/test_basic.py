@@ -1,12 +1,17 @@
 #this program corresponds to special.py
 import os
+import sys
 #import fpformat
 import unittest
 import scipy_base.limits as limits
 from scipy_test.testing import assert_array_equal, assert_equal
 from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
-from scipy import *
-from scipy.special import *
+from scipy_base import *
+
+from scipy_test.testing import set_package_path
+set_package_path()
+from special import *
+del sys.path[0]
 
 
 class test_airy(unittest.TestCase):
@@ -1551,9 +1556,3 @@ def test(level=10):
 
 if __name__ == "__main__":
     test()
-
-
-
-
-
-
