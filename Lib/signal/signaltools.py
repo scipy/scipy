@@ -2,12 +2,12 @@
 import sigtools
 import MLab
 
-modedict = {'valid':0, 'same':1, 'full':2}
-boundary = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
+_modedict = {'valid':0, 'same':1, 'full':2}
+_boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
                                                                             
 def _valfrommode(mode):
     try:
-        val = modedict[mode]
+        val = _modedict[mode]
     except KeyError:
         if val not in [0,1,2]:
             raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
@@ -16,7 +16,7 @@ def _valfrommode(mode):
 
 def _bvalfromboundary(boundary):
     try:
-        val = boundarydict[boundary]
+        val = _boundarydict[boundary]
     except KeyError:
         if val not in [0,1,2]:
             raise ValueError, "Acceptable boundary flags are 'fill', 'wrap' (or 'circular'), \n  and 'symm' (or 'symmetric')."
@@ -24,8 +24,8 @@ def _bvalfromboundary(boundary):
     return val
 
 
-def correlateND(volume, kernel, mode='full'):
-    """ correlateND(in1, in2, mode='full')  Filtering of in1 with in2.
+def correlate(volume, kernel, mode='full'):
+    """ correlate(in1, in2, mode='full')  Filtering of in1 with in2.
 
   Description:
 
@@ -62,8 +62,8 @@ def correlateND(volume, kernel, mode='full'):
 
     return sigtools._correlateND(volume, kernel, val)
 
-def convolveND(volume,kernel,mode='full'):
-    """ convolveND(in1, in2, mode='full')  Convolution of in1 with in2.
+def convolve(volume,kernel,mode='full'):
+    """ convolve(in1, in2, mode='full')  Convolution of in1 with in2.
 
   Description:
 
@@ -100,9 +100,9 @@ def convolveND(volume,kernel,mode='full'):
     
     return sigtools._correlateND(volume,kernel[slice_obj],val)
 
-def order_filterND(a, domain, order):
+def order_filter(a, domain, order):
     """
- order_filterND(in, domain, rank)  Perform an order filter on in.
+ order_filter(in, domain, rank)  Perform an order filter on in.
 
   Description:
 
@@ -135,9 +135,9 @@ def order_filterND(a, domain, order):
     return sigtools._orderfilterND(a, domain, rank)
    
 
-def medfiltND(volume,kernel_size=None):
+def medfilt(volume,kernel_size=None):
     """
- medfiltND(in, kernel_size=3)  Perform a median filter on input array.
+ medfilt(in, kernel_size=3)  Perform a median filter on input array.
 
   Description:
 
@@ -177,9 +177,9 @@ def medfiltND(volume,kernel_size=None):
     return sigtools._order_filterND(volume,domain,order)
 
 
-def wienerND(im,mysize=None,noise=None):
+def wiener(im,mysize=None,noise=None):
     """
- wienerND(in, kernel_size=3, noise_power=None)  Perform a wiener filter.
+ wiener(in, kernel_size=3, noise_power=None)  Perform a wiener filter.
 
   Description:
 
@@ -206,10 +206,10 @@ def wienerND(im,mysize=None,noise=None):
     mysize = MLab.asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlateND(im,ones(mysize),1) / MLab.prod(mysize)
+    lMean = correlate(im,ones(mysize),1) / MLab.prod(mysize)
 
     # Estimate the local variance
-    lVar = correlateND(im**2,ones(mysize),1) / MLab.prod(mysize) - lMean**2
+    lVar = correlate(im**2,ones(mysize),1) / MLab.prod(mysize) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
@@ -448,20 +448,20 @@ def lfilter(b, a, x, axis=-1, zi=None):
 def test():
     a = [3,4,5,6,5,4]
     b = [1,2,3]
-    c = convolveND(a,b)
+    c = convolve(a,b)
     if (MLab.product(equal(c,[3,10,22,28,32,32,23,12]))==0):
-        print "Error in convolveND."
+        print "Error in convolve."
 
     f = [[3,4,5],[2,3,4],[1,2,5]]
-    d = medfiltND(f)
+    d = medfilt(f)
     if (MLab.product(ravel(equal(d,[[0,3,0],[2,3,3],[0,2,0]])))==0):
-        print "Error in medfiltND."
+        print "Error in medfilt."
 
     g = MLab.array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
     correct = MLab.array([[2.16374269,3.2222222222, 2.8888888889, 1.6666666667],[2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],[2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],[1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
-    h = wienerND(g)
+    h = wiener(g)
     if (MLab.abs(MLab.product(MLab.ravel(h-correct)))> 1e-7):
-        print "Error in wienerND."
+        print "Error in wiener."
 
     return
 
