@@ -1,0 +1,29 @@
+This is Version 0.1 of a Sparse toolkit for Numeric Python.
+
+Currently it defines a Sparse matrix class in Python that uses underlying 
+Numeric Python arrays to store a compressed sparse row data structure.  It is
+desired to support more than one type of sparse structure, but exactly how
+this will work is not developed. 
+
+There are operations for setting up a sparse array using diagonals, performing 
+arithmetic on sparse arrays and mixtures of sparse arrays and vectors and 
+inverting a sparse linear system.
+
+The functionality is achieved using two Sparse matrix packages.  SuperLU is 
+written in C and used to perform direct inversion of a sparse matrix.  There is 
+a minimal C-wrapper around the SuperLU inversion routines.  There is also
+and auto-generated wrapper (thanks to Pearu Peterson's f2py code) of the entire
+FORTRAN library SPARSEKIT2 which contains routines for converting different
+storage structures to and from compressed sparse row format, multiplying 
+sparse matrices with dense vectors, and doing arithmetic on sparse matrices.
+
+I have taken the routines I needed from SPARSEKIT2 and extended them to four
+precisions.  The entire package can be obtained on the net.
+
+There is not much documentation, except the source itself.  Look at the 
+Sparse.py file for examples of how to initialize and use the sparse matrices.
+
+Improvements and suggestions are welcome.
+
+Travis Oliphant
+Oliphant.Travis@altavista.net

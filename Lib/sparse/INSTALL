@@ -1,0 +1,20 @@
+
+NOTE:  You must have the blas library installed somewhere on your
+system.  Set the variable BLASLOC in the makefile to the location of your
+BLAS.  (Or type make BLASLOC=<location of blas>).  Someday I will learn how
+to use autoconfig, etc.  Be patient with my crude compile scripts.
+
+Some simple installation instructions:
+
+Modify the following files to reflect your installation:
+
+Makefile
+SuperLU/make.inc
+sparsekit/Makefile
+
+Type:
+make libs    to make the needed libraries (not the BLAS though)
+make         to make the extensions modules
+
+Place the extension modules somewhere in your Python path:
+
