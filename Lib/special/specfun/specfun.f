@@ -3,13 +3,14 @@ C
 C          Shanjie Zhang and Jianming Jin
 C
 C       Copyrighted but permission granted to use code in programs. 
+C       Buy their book "Computation of Special Functions", 1996, John Wiley & Sons, Inc.
 C
 C
 C      Compiled into a single source file and changed REAL To DBLE throughout.
 C
 C      Changed according to ERRATA also.
 C      
-C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid conflicts.
+C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
 C
 
         SUBROUTINE CPDSA(N,Z,CDN)
@@ -333,7 +334,7 @@ C
 
         
 C       **********************************
-
+C       SciPy: Changed P from a character array to an integer array.
         SUBROUTINE JDZO(NT,N,M,P,ZO)
 C
 C       ===========================================================
@@ -349,7 +350,7 @@ C                M(L)  --- m, serial number of the zeros of Jn(x)
 C                          or Jn'(x) associated with the L-th zero
 C                          ( L is the serial number of all the
 C                            zeros of Jn(x) and Jn'(x) )
-C                P(L)  --- TM or TE, a code for designating the
+C                P(L)  --- 0 (TM) or 1 (TE), a code for designating the
 C                          zeros of Jn(x)  or Jn'(x).
 C                          In the waveguide applications, the zeros
 C                          of Jn(x) correspond to TM modes and 
@@ -359,7 +360,7 @@ C                          Jn''(x)
 C       =============================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        CHARACTER P(1400)*4,P1(70)*4
+        INTEGER P(1400), P1(70)
         DIMENSION N(1400),M(1400),ZO(0:1400),N1(70),M1(70),
      &            ZOC(0:70),BJ(101),DJ(101),FJ(101)
         IF (NT.LT.600) THEN
@@ -390,7 +391,7 @@ C
               N1(L1)=I-1
               M1(L1)=J
               IF (I.EQ.1) M1(L1)=J-1
-              P1(L1)='TE'
+              P1(L1)=1
               ZOC(L1)=X
               IF (I.LE.15) THEN
                  X1=X+3.057+.0122*(I-1)+(1.555+.41575*(I-1))/(J+1)**2
@@ -406,7 +407,7 @@ C
               L1=L1+1
               N1(L1)=I-1
               M1(L1)=J
-              P1(L1)='TM'
+              P1(L1)=0
               ZOC(L1)=X
               IF (I.LE.15) THEN
                  X2=X+3.11+.0138*(I-1)+(.04832+.2804*(I-1))/(J+1)**2

@@ -191,14 +191,14 @@ double modstruve_wrap(double v, double x) {
   if ((x < 0) & (floor(v)!=v)) return NAN;
   if (v==0.0) {
     if (x < 0) {x = -x; flag=1;}
-    F_FUNC(stvh0,STVH0)(&x,&out);
+    F_FUNC(stvl0,STVl0)(&x,&out);
     CONVINF(out);
     if (flag) out = -out;
     return out;
   }
   if (v==1.0) {
     if (x < 0) x=-x;
-    F_FUNC(stvh1,STVH1)(&x,&out);
+    F_FUNC(stvl1,STVl1)(&x,&out);
     CONVINF(out);
     return out;
   }
@@ -206,7 +206,7 @@ double modstruve_wrap(double v, double x) {
     x = -x;
     flag = 1;
   }
-  F_FUNC(stvhv,STVHV)(&v,&x,&out);
+  F_FUNC(stvlv,STVlV)(&v,&x,&out);
   CONVINF(out);
   if (flag && (!((int)floor(v) % 2))) out = -out;
   return out;  
@@ -238,7 +238,7 @@ double itmodstruve0_wrap(double x) {
   double out;
 
   if (x<0) x=-x;
-  F_FUNC(itsh0,ITSH0)(&x,&out);
+  F_FUNC(itsl0,ITSL0)(&x,&out);
   CONVINF(out);
   return out;
 }
@@ -320,7 +320,275 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
   if (flag) {
     *k0int = NAN;  /* domain error */
   }
+  return 0;
 }
 
 
+/* Stopped here --- these need to be added to cephes */
+
+int cfs_wrap(Py_complex z, Py_complex *zf, Py_complex *zd)
+{
+  F_FUNC(cfs,CFS)(CADDR(z),F2C_CST(zf),F2C_CST(zd));  
+  return 0;
+}
+
+int cfc_wrap(Py_complex z, Py_complex *zf, Py_complex *zd)
+{
+  F_FUNC(cfc,CFC)(CADDR(z),F2C_CST(zf),F2C_CST(zd));  
+  return 0;
+}
+
+
+double cem_cva_wrap(double m, double q) {
+  int int_m, kd=1;
+  double out;
+
+  if ((m < 0) || (m != floor(m))) 
+    return NAN;
+  int_m = (int )m;
+  if (int_m % 2) kd=2;
+  F_FUNC(cva2,CVA2)(&kd, &int_m, &q, &out);
+  return out;               
+}
+
+double sem_cva_wrap(double m, double q) {
+  int int_m, kd=4;
+  double out;
+
+  if ((m < 1) || (m != floor(m))) 
+    return NAN;
+  int_m = (int )m;
+  if (int_m % 2) kd=3;
+  F_FUNC(cva2,CVA2)(&kd, &int_m, &q, &out);
+  return out;               
+}
+
+int cem_wrap(double m, double q, double x, double *csf, double *csd)
+{
+  int int_m, kf=1;
+  if ((m < 1) || (m != floor(m)) || (q<0)) {
+    *csf = NAN;
+    *csd = NAN;
+  }
+  int_m = (int )m;
+  F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
+  return 0;  
+}
+
+int sem_wrap(double m, double q, double x, double *csf, double *csd)
+{
+  int int_m, kf=2;
+  if ((m < 1) || (m != floor(m)) || (q<0)) {
+    *csf = NAN;
+    *csd = NAN;
+  }
+  int_m = (int )m;
+  F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
+  return 0;  
+}
+
+
+int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r)
+{
+  int int_m, kf=1, kc=1;
+  double f2r, d2r;
+
+  if ((m < 1) || (m != floor(m)) || (q<0)) {
+    *f1r = NAN;
+    *d1r = NAN;
+  }
+  int_m = (int )m;
+  F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
+  return 0;  
+}
+
+int msm1_wrap(double m, double q, double x, double *f1r, double *d1r)
+{
+  int int_m, kf=2, kc=1;
+  double f2r, d2r;
+
+  if ((m < 1) || (m != floor(m)) || (q<0)) {
+    *f1r = NAN;
+    *d1r = NAN;
+  }
+  int_m = (int )m;
+  F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
+  return 0;  
+}
+
+int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
+{
+  int int_m, kf=1, kc=2;
+  double f1r, d1r;
+
+  if ((m < 1) || (m != floor(m)) || (q<0)) {
+    *f2r = NAN;
+    *d2r = NAN;
+  }
+  int_m = (int )m;
+  F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
+  return 0;  
+}
+
+int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
+{
+  int int_m, kf=2, kc=2;
+  double f1r, d1r;
+
+  if ((m < 1) || (m != floor(m)) || (q<0)) {
+    *f2r = NAN;
+    *d2r = NAN;
+  }
+  int_m = (int )m;
+  F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
+  return 0;  
+}
+
+double pmv_wrap(double m, double v, double x){
+  int int_m;
+  double out;
+
+  if (m != floor(m)) return NAN;
+  int_m = (int ) m;
+  F_FUNC(lpmv,LPMV)(&v, &int_m, &x, &out);
+  return out;
+}
+
+/* if x > 0 return w1f and w1d.
+    otherwise return w2f and w2d (after abs(x))
+*/
+int pbwa_wrap(double a, double x, double *wf, double *wd) {
+  int flag = 0;
+  double w1f, w1d, w2f, w2d;
+   
+  if (x < 0) {x=-x; flag=1;}
+  F_FUNC(pbwa,PBWA)(&a, &x, &w1f, &w1d, &w2f, &w2d);
+  if (flag) {
+    *wf = w2f;
+    *wd = w2d;
+  }
+  else {
+    *wf = w1f;
+    *wd = w1d;
+  }
+}
+
+
+int prolate_aswfa_wrap(double m, double n, double c, double x, double cv, double *s1f, double *s1d)
+{
+  int kd = 1;
+  int int_m, int_n;
+
+  if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
+      (m!=floor(m)) || (n!=floor(n))) {
+    *s1f = NAN;
+    *s1d = NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,s1f,s1d);
+  return 0;
+}
+
+int oblate_aswfa_wrap(double m, double n, double c, double x, double cv, double *s1f, double *s1d)
+{
+  int kd = -1;
+  int int_m, int_n;
+
+  if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
+      (m!=floor(m)) || (n!=floor(n))) {
+    *s1f = NAN;
+    *s1d = NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,s1f,s1d);
+  return 0;
+}
+
+int prolate_radial1_wrap(double m, double n, double c, double x, double cv, double *r1f, double *r1d)
+{
+  int kf=1;
+  double r2f, r2d;
+  int int_m, int_n;
+
+  if ((x <=1.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n))) {
+    *r1f = NAN;
+    *r1d = NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,r1f,r1d,&r2f,&r2d);
+  return 0;  
+}
+
+int prolate_radial2_wrap(double m, double n, double c, double x, double cv, double *r2f, double *r2d)
+{
+  int kf=2;
+  double r1f, r1d;
+  int int_m, int_n;
+
+  if ((x <=1.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n))) {
+    *r2f = NAN;
+    *r2d = NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,r2f,r2d);
+  return 0;  
+}
+
+int oblate_radial1_wrap(double m, double n, double c, double x, double cv, double *r1f, double *r1d)
+{
+  int kf=1;
+  double r2f, r2d;
+  int int_m, int_n;
+
+  if ((x <0.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n))) {
+    *r1f = NAN;
+    *r1d = NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,r1f,r1d,&r2f,&r2d);
+  return 0;  
+}
+
+int oblate_radial2_wrap(double m, double n, double c, double x, double cv, double *r2f, double *r2d)
+{
+  int kf=2;
+  double r1f, r1d;
+  int int_m, int_n;
+
+  if ((x <0.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n))) {
+    *r2f = NAN;
+    *r2d = NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,r2f,r2d);
+  return 0;  
+}
+
+int modified_fresnel_plus_wrap(double x, Py_complex *Fplus, Py_complex *Kplus)
+{
+  int ks=0;
+  double fm, fa, gm, ga;
+  
+  F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fplus),&fm,&fa,F2C_CST(Kplus),gm,ga);
+  return 0;
+}
+
+int modified_fresnel_minus_wrap(double x, Py_complex *Fminus, Py_complex *Kminus)
+{
+  int ks=1;
+  double fm, fa, gm, ga;
+  
+  F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fminus),&fm,&fa,F2C_CST(Kminus),gm,ga);
+  return 0;
+}
 

@@ -4,6 +4,7 @@ import os, sys
 from glob import glob
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy_distutils.system_info import dict_append
 
 def _copyfile(src, dest, paths):
     file_src = os.path.join(paths, src)
@@ -45,6 +46,16 @@ def configuration(parent_package=''):
     ext = Extension(dot_join(parent_package,'special.cephes'),sources,
                     libraries = ['amos','toms','c_misc','cephes','mach', 'cdf', 'specfun']
                     )
+    config['ext_modules'].append(ext)
+
+    ext_args = {'name':dot_join(parent_package,'special.specfun'),
+                'sources':[os.path.join(local_path,'specfun.pyf')],
+                'f2py_options':['--no-wrap-functions'],
+                'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
+                'libraries' : ['specfun']
+                }
+    ext = Extension(**ext_args)
+    ext.need_fcompiler_opts = 1
     config['ext_modules'].append(ext)
 
     # Test to see if big or little-endian machine and get correct default
