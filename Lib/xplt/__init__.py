@@ -33,4 +33,3 @@ from write_style import *
 gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
                         'site-packages','scipy','xplt')
 os.environ['GISTPATH'] = gistpath
-sys.path = [gistpath] + sys.path
