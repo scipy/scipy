@@ -709,7 +709,7 @@ Returns: percentile-position of score (0-100) relative to a
 
 
 def histogram2(a, bins):
-    """ histogram(a,bins) -- Compute histogram of a using divisions in bins
+    """ histogram2(a,bins) -- Compute histogram of a using divisions in bins
 
          Description:
             Count the number of times values from array a fall into

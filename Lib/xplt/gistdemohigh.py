@@ -87,6 +87,12 @@ print "what you see with the description, then hit <RETURN> to see"
 print "the next test, or ^C (ctrl-C) to escape.\n"
 print "Type 'demo()' to begin.\n"
 
+from quadmesh import *
+from cellarray import *
+from lines import *
+from animation2d import *
+
+
 def demo ( ) :
    c1 = Curve ( y = [0,1] , marks = 1 , marker = "A")
    pl = Plotter ( dpi = 75 )
@@ -184,7 +190,6 @@ def demo ( ) :
    zz=5.*zz/(5.+zz*zz)
    xx=zz.real
    yy=zz.imaginary
-   from quadmesh import *
    q1 = QuadMesh ( x=array(xx, copy = 1), y=array(yy, copy = 1) )
    g1.new(q1, plotter = pl, titles = "Round mesh with bites out of sides",
       axis_limits = [[min(ravel(xx)),max(ravel(xx))],
@@ -233,7 +238,6 @@ def demo ( ) :
    r=mag(y,x)
    theta=arctan2(y,x)
    funky=cos(r)**2*cos(3*theta)
-   from cellarray import *
    c1 = CellArray(z=funky)
    g1.replace (1,c1)
    g1.change (color_card = "earth.gp",
@@ -246,7 +250,6 @@ def demo ( ) :
    x = cos (theta)
    y = sin (theta)
 
-   from lines import *
    ln = Lines (x0 = x, y0 = y, x1 = transpose (x), y1 = transpose (y))
    g1 = Graph2d (ln, plotter = pl, xyequal = 1, titles = "Seventeen pointed star.")
    g1.plot ()
@@ -257,7 +260,6 @@ def demo ( ) :
    print "First run without animation mode."
    print "Second run with animation mode."
 
-   from animation2d import *
 
    anim = Animation2d ( initialize = init, calculations = [calc1, calc2],
                      update = incr, animation = 0, nsteps = 200 )

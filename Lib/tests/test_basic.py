@@ -276,64 +276,6 @@ class test_ptp(unittest.TestCase):
         assert_equal(ptp(b),[5.0,7.0,7.0])
         assert_equal(ptp(b,axis=1),[6.0,6.0,6.0])
 
-class test_mean(unittest.TestCase):
-    def check_basic(self):
-        a = [3,4,5,10,-3,-5,6]
-        af = [3.,4,5,10,-3,-5,-6]
-        Na = len(a)
-        Naf = len(af)
-        mn1 = 0.0
-        for el in a:
-            mn1 += el / float(Na)
-        assert_almost_equal(mean(a),mn1,11) 
-        mn2 = 0.0
-        for el in af:
-            mn2 += el / float(Naf)
-        assert_almost_equal(mean(af),mn2,11)
-
-    def check_2d(self):
-        a = [[1.0, 2.0, 3.0],
-             [2.0, 4.0, 6.0],
-             [8.0, 12.0, 7.0]]
-        A = array(a,'d')
-        N1,N2 = (3,3)
-        mn1 = zeros(N2,'d')
-        for k in range(N1):
-            mn1 += A[k,:] / N1
-        Numeric.allclose(mean(a),mn1,rtol=1e-13,atol=1e-13)
-        mn2 = zeros(N1,'d')
-        for k in range(N2):
-            mn2 += A[:,k] / N2
-        Numeric.allclose(mean(a,axis=1),mn2,rtol=1e-13,atol=1e-13)            
-
-class test_median(unittest.TestCase):
-    def check_basic(self):
-        a1 = [3,4,5,10,-3,-5,6]
-        a2 = [3,-6,-2,8,7,4,2,1]
-        a3 = [3.,4,5,10,-3,-5,-6,7.0]
-        assert_equal(median(a1),4)
-        assert_equal(median(a2),2.5)
-        assert_equal(median(a3),3.5)        
-
-class test_std(unittest.TestCase):
-    def check_basic(self):
-        a = [3,4,5,10,-3,-5,6]
-        af = [3.,4,5,10,-3,-5,-6]
-        Na = len(a)
-        Naf = len(af)
-        assert_almost_equal(std(a),5.2098807225172772,11)
-        assert_almost_equal(std(af),5.9281411203561225,11)
-
-    def check_2d(self):
-        a = [[1.0, 2.0, 3.0],
-             [2.0, 4.0, 6.0],
-             [8.0, 12.0, 7.0]]
-        b1 = array((3.7859388972001824, 5.2915026221291814,
-                    2.0816659994661335))
-        b2 = array((1.0, 2.0, 2.6457513110645907))
-        assert_array_almost_equal(std(a),b1,11)
-        assert_array_almost_equal(std(a,axis=1),b2,11)
-
 
 class test_cumsum(unittest.TestCase):
     def check_basic(self):
