@@ -1,7 +1,6 @@
 """
  Methods for Integrating Functions given function object.
 
-   odeint        -- Integrate ordinary differential equations.
    quad          -- General purpose integration.
    dblquad       -- General purpose double integration.
    tplquad       -- General purpose triple integration.
@@ -21,6 +20,7 @@
 
  Interface to numerical integrators of ODE systems.
 
+   odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using vode routine.
 
 """
