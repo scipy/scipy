@@ -249,7 +249,13 @@ def remove_duplicates(lst):
 
 def is_proxy(x):
     return hasattr(x,'is_proxy')
-    
+
+def is_proxy_attr(x):
+    return hasattr(x, '_proxy_attr__proxy')
+
+def get_proxy_attr_obj(x):
+    return x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing
+
 def dereference_arglist(lst):
     """ Scan for proxy objects and convert to underlying object
     """
@@ -258,7 +264,9 @@ def dereference_arglist(lst):
         if is_proxy(arg): 
             res.append(arg.wx_obj)
             #print 'dereferenced ', arg.wx_obj
-        else: res.append(arg)            
+        elif is_proxy_attr(arg):
+            res.append(get_proxy_attr_obj(arg))
+        else: res.append(arg)
     return res
        
 def proxy_error():
