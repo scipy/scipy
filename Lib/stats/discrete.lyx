@@ -483,11 +483,147 @@ sparsity
  The functions are 
 \begin_inset Formula \begin{eqnarray*}
 p\left(k\right) & = & e^{-\lambda }\frac{\lambda ^{k}}{k!}\quad k\geq 0,\\
-F\left(k\right) & = & \sum _{n=0}^{k}e^{-\lambda }\frac{\lambda ^{k}}{k!}=\frac{1}{\Gamma \left(k+1\right)}\int _{m}^{\infty }t^{k}e^{-t}dt,\\
+F\left(k\right) & = & \sum _{n=0}^{k}e^{-\lambda }\frac{\lambda ^{n}}{n!}=\frac{1}{\Gamma \left(k+1\right)}\int _{m}^{\infty }t^{k}e^{-t}dt,\\
 \mu  & = & \lambda \\
 \mu _{2} & = & \lambda \\
 \gamma _{1} & = & \frac{1}{\sqrt{\lambda }}\\
 \gamma _{2} & = & \frac{1}{\lambda }
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Geometric
+\layout Standard
+
+The geometric random variable with parameter 
+\begin_inset Formula $p\in \left(0,1\right)$
+\end_inset 
+
+ can be defined as the number of trials required to obtain a success where
+ the probability of success on each trial si 
+\begin_inset Formula $p$
+\end_inset 
+
+.
+ Thus, 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \left(1-p\right)^{k-1}p\quad k\geq 1\\
+F\left(k\right) & = & 1-\left(1-p\right)^{k}\quad k\geq 1\\
+G\left(q\right) & = & \left\lceil \frac{\log \left(1-q\right)}{\log \left(1-p\right)}\right\rceil \\
+\mu  & = & \frac{1}{p}\\
+\mu _{2} & = & \frac{1-p}{p^{2}}\\
+\gamma _{1} & = & \frac{2-p}{\sqrt{1-p}}\\
+\gamma _{2} & = & \frac{p^{2}-6p+6}{1-p}.
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Negative Binomial
+\layout Standard
+
+The negative binomial random variable with parameters 
+\begin_inset Formula $n$
+\end_inset 
+
+ and 
+\begin_inset Formula $p\in \left(0,1\right)$
+\end_inset 
+
+ can be defined as the number of independent trials required to accumulate
+ a total of 
+\begin_inset Formula $n$
+\end_inset 
+
+ successes where the probability of a success on each trial is 
+\begin_inset Formula $p.$
+\end_inset 
+
+ Thus 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \left(\begin{array}{c}
+ k-1\\
+ n-1\end{array}
+\right)p^{n}\left(1-p\right)^{k-n}\quad k\geq n\\
+F\left(k\right) & = & \sum _{i=n}^{k}\left(\begin{array}{c}
+ i-1\\
+ n-1\end{array}
+\right)p^{n}\left(1-p\right)^{i-n}\\
+ & = & I_{p}\left(n,k+1\right)\\
+\mu  & = & n\frac{1-p}{p}\\
+\mu _{2} & = & n\frac{1-p}{p^{2}}\\
+\gamma _{1} & = & \frac{2-p}{\sqrt{n\left(1-p\right)}}\\
+\gamma _{2} & = & \frac{p^{2}+6\left(1-p\right)}{n\left(1-p\right)}.
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Hypergeometric
+\layout Standard
+
+The hypergeometric random variable with parameters 
+\begin_inset Formula $\left(n,m,N\right)$
+\end_inset 
+
+ counts the number of 
+\begin_inset Quotes eld
+\end_inset 
+
+good
+\begin_inset Quotes erd
+\end_inset 
+
+ objects in a sample of size 
+\begin_inset Formula $n$
+\end_inset 
+
+ chosen without replacement from a population of 
+\begin_inset Formula $N$
+\end_inset 
+
+ objects where 
+\begin_inset Formula $m$
+\end_inset 
+
+ is the number of 
+\begin_inset Quotes eld
+\end_inset 
+
+good
+\begin_inset Quotes erd
+\end_inset 
+
+ objects in the total population.
+ 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \frac{\left(\begin{array}{c}
+ m\\
+ k\end{array}
+\right)\left(\begin{array}{c}
+ N-m\\
+ n-k\end{array}
+\right)}{\left(\begin{array}{c}
+ N\\
+ n\end{array}
+\right)}\quad k=0,1,2,\ldots ,n\\
+F\left(k\right) & = & \sum _{i\leq k}\frac{\left(\begin{array}{c}
+ m\\
+ k\end{array}
+\right)\left(\begin{array}{c}
+ N-m\\
+ n-k\end{array}
+\right)}{\left(\begin{array}{c}
+ N\\
+ n\end{array}
+\right)}
 \end{eqnarray*}
 
 \end_inset 

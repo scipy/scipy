@@ -12,7 +12,7 @@ from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum
 from scipy_base.fastumath import *
 
-from scipy_base import atleast_1d, polyval, angle
+from scipy_base import atleast_1d, polyval, angle, ceil
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
@@ -3108,7 +3108,7 @@ def binomsf(k, n, pr=0.5):
     return special.bdtrc(k,n,pr)
 
 def binomppf(q, n, pr=0.5):
-    vals = scipy.ceil(special.bdtrik(q,n,pr))
+    vals = ceil(special.bdtrik(q,n,pr))
     temp = special.bdtr(vals-1,n,pr)
     return where(temp >= q, vals-1, vals)
 
@@ -3148,19 +3148,34 @@ def bernoullistats(pr=0.5, full=0):
 # Negative binomial
 
 def nbinompdf(k, n, pr=0.5):
-    return scipy.comb(n+k-1,k)* pr**n * (1-pr)**k
+    k = arr(k)
+    cond2 = (pr >= 1) || (pr <=0)
+    cond1 = arr((k > n) & (k == floor(k)))
+    sv =errp(0)
+    temp = special.nbdtr(k,n,pr)
+    temp2 = special.nbdtr(k-1,n,pr)
+    sv = errp(sv)
+    return select([cond2,cond1,k==n], [scipy.nan,temp-temp2,temp],0.0)    
 
 def nbinomcdf(k, n, pr=0.5):
-    return special.nbdtr(k,n,pr)
+    sv = errp(0)
+    vals = special.nbdtr(k,n,pr)
+    sv = errp(sv)
+    return vals
 
 def nbinomsf(k, n, pr=0.5):
-    return special.nbdtrc(k,n,pr)
+    sv = errp(0)
+    vals = special.nbdtrc(k,n,pr)
+    sv = errp(sv)
+    return vals
 
 def nbinomppf(q, n, pr=0.5):
-    return special.nbdtrik(q,n,pr)
+    vals = ceil(special.nbdtrik(q,n,pr))
+    temp = special.nbdtr(vals-1,n,pr)
+    return where(temp >= q, vals-1, vals)
 
 def nbinomisf(p, n, pr=0.5):
-    return special.nbdtrik(1-p,n,pr)
+    return nbinomppf(1-p,n,pr)
 
 def nbinomstats(n, pr=0.5, full=0):
     Q = 1.0 / pr
@@ -3177,19 +3192,28 @@ def nbinomstats(n, pr=0.5, full=0):
 ## Geometric distribution
 
 def geompdf(k, pr=0.5):
-    return (1-pr)**k * pr
+    cond1 = (pr > 0) & (pr < 1)
+    cond2 = arr((k > 0) & (k == floor(k)))    
+    return select([cond,cond2],[(1-pr)**k * pr,0],scipy.nan)
 
 def geomcdf(k, pr=0.5):
-    return 1.0-(1.0-pr)**(k+1)
+    k = floor(k)
+    cond1 = arr((pr > 0) & (pr < 1))
+    return select([cond,k>0],[1.0-(1.0-pr)**k,0],scipy.nan)    
 
 def geomsf(k, pr=0.5):
-    return (1.0-pr)**(k+1)
+    k=floor(k)
+    cond1 = arr((pr > 0) & (pr < 1))
+    return select([cond,k>0],[(1.0-pr)**k,1.0],scipy.nan)
 
 def geomppf(q, pr=0.5):
-    return log(1.0-q)/log(1-pr)-1
+    vals = ceil(log(1.0-q)/log(1-pr))
+    temp = 1.0-(1.0-pr)**(vals-1)
+    vals = where(temp >= q, vals-1, vals)
+    return where((q >= 0) & (q<=1) & (pr > 0) & (pr < 1), vals, scipy.nan)
 
 def geomisf(p, pr=0.5):
-    return log(p)/log(1.0-pr)-1
+    return geomppf(1-p,pr)
 
 def geomstats(pr=0.5,full=0):
     mu = 1.0/pr
@@ -3309,8 +3333,10 @@ def poissonsf(k,mu):
 def poissonppf(q,mu):
     q, mu = arr(q), arr(mu)
     sv = errp(0)
-    vals = special.pdtrik(q,mu)
+    vals = ceil(special.pdtrik(q,mu))
+    temp = special.pdtr(vals-1,mu)
     sv = errp(sv)
+    vals = where(temp >= q, vals-1, vals)
     return where((mu<0) | (q<0) | (q>1),scipy.nan,vals)
 
 def poissonisf(p,mu):
