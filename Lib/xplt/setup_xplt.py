@@ -131,10 +131,7 @@ def filter_playsource(sources,local_path):
 
 def getallparams(gistpath,local_path,config_path):
     x11_info = get_info('x11')
-    if sys.platform=='win32':
-        extra_compile_args = ['-DGISTPATH="\\"' + gistpath + '\\""' ]
-    else:
-        extra_compile_args = ['-DGISTPATH="' + gistpath + '"' ]
+    extra_compile_args = ['-DGISTPATH="\\"' + gistpath + '\\""' ]
 
     extra_link_args = []
     if sys.platform in ['win32','cygwin']:

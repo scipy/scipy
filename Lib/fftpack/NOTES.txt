@@ -1,6 +1,13 @@
+.. -*- rest -*-
+
 ================================================
   fftpack - Discrete Fourier Transform package
 ================================================
+
+:Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Last changed: $Date$
+:Revision: $Revision$
+:Discussions to: scipy-dev@scipy.org
 
 Installation
 ============
@@ -8,7 +15,9 @@ Installation
 To build fftpack, you'll need F2PY version 2.23.190-1367 or higher.
 
 Run
-  
+
+::
+
   python setup_fftpack.py install
 
 Testing
@@ -18,6 +27,9 @@ To test fftpack, you'll need scipy_test package installed (this is
 provided by scipy_core package).
 
 Run
+
+::
+
   python tests/test_basic.py 10
   python tests/test_pseudo_diffs.py 10
   python tests/test_helper.py 10
@@ -36,21 +48,27 @@ jobs. Currently, Fortran FFTPACK, FFTW, and DJBFFT libraries are
 supported. The last two are optional and used only if
 scipy_core/scipy_distutils/system_info.py detects them. 
 If they are available, then the output of
+
+::
+
   python scipy_core/scipy_distutils/system_info.py
+
 should show, for example
 
-dfftw_info:
-  FOUND:
-    libraries = ['drfftw', 'dfftw']
-    library_dirs = ['/path/to/lib']
-    define_macros = [('SCIPY_DFFTW_H', None)]
-    include_dirs = ['/path/to/include']
+::
 
-djbfft_info:
-  FOUND:
-    extra_objects = ['/path/to/lib/djbfft.a']
-    define_macros = [('SCIPY_DJBFFT_H', None)]
-    include_dirs = ['/path/to/include']
+  dfftw_info:
+    FOUND:
+      libraries = ['drfftw', 'dfftw']
+      library_dirs = ['/path/to/lib']
+      define_macros = [('SCIPY_DFFTW_H', None)]
+      include_dirs = ['/path/to/include']
+
+  djbfft_info:
+    FOUND:
+      extra_objects = ['/path/to/lib/djbfft.a']
+      define_macros = [('SCIPY_DJBFFT_H', None)]
+      include_dirs = ['/path/to/include']
 
 Note that when using fftw libraries provided by a Linux distribution
 then fftw-dev (or fftw-devel or similar) must be installed as well, 
@@ -63,6 +81,7 @@ multi-dimensional transforms.
 Building notes for FFTW_
 ------------------------
 Follow the instructions in
+
   http://www.fftw.org/doc/fftw_6.html
 
 Note that fftpack uses double-precision FFTW. So, if you build
@@ -75,7 +94,9 @@ Building notes for DJBFFT_
 .. _DJBFFT: http://cr.yp.to/djbfft.html
 
 Follow the installation instructions in
+
   http://cr.yp.to/djbfft/install.html
+
 If djbfft is installed under these instructions then scipy_distutils
 picks up it for fftpack automatically.
 
@@ -105,6 +126,8 @@ Differences between fftpack and FFT from Numeric
   don't agree then please provide an example). Namely, one of the
   applications of the argument n would be to compose a new signal with
   a more dense or sparse grid than the original one by using
+
+  ::
 
     new_signal = ifft(fft(signal),n)
 
