@@ -431,6 +431,8 @@ def plot(x,*args,**keywds):
     except:
         override = 0
     global _hold
+    try: linewidth = float(keywds['width'])
+    except KeyError: linewidth = 1.0
     if "hold" in keywds.keys():
         _hold = keywds['hold']
     if _hold or override:
@@ -451,7 +453,7 @@ def plot(x,*args,**keywds):
             print "Warning: complex data plotting real part."
             y = y.real
         y = where(scipy.isfinite(y),y,0)
-        gist.plg(y,x,type='solid',color='blue',marks=0)
+        gist.plg(y,x,type='solid',color='blue',marks=0,width=linewidth)
         return
     y = args[0]
     argpos = 1
@@ -477,7 +479,7 @@ def plot(x,*args,**keywds):
             x = scipy.real(x)
             y = scipy.real(y)
 	y = where(scipy.isfinite(y),y,0)
-        gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark)
+        gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,width=linewidth)
 
         nowplotting = nowplotting + 1
 
