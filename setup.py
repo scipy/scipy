@@ -123,4 +123,5 @@ if __name__ == "__main__":
         # XXX: Fix xplt for windows! It is failing due
         # to missing m.lib file while running pygist_config.
         ignore_packages.append('xplt')
+        ignore_packages.append('sparse')
     setup_package(ignore_packages)
