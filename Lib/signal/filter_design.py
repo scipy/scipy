@@ -310,7 +310,7 @@ def bilinear(b,a,fs=1.0):
                 for l in range(M-i+1):
                     if k+l == j:
                         val += comb(i,k)*comb(M-i,l)*b[N-i]*pow(2*fs,i)*(-1)**k
-        bprime[j] = val
+	bprime[j] = real(val)
     for j in range(Dp+1):
         val = 0.0
         for i in range(D+1):
@@ -318,7 +318,7 @@ def bilinear(b,a,fs=1.0):
                 for l in range(M-i+1):
                     if k+l == j:
                         val += comb(i,k)*comb(M-i,l)*a[D-i]*pow(2*fs,i)*(-1)**k
-        aprime[j] = val
+	aprime[j] = real(val)
         
     return normalize(bprime, aprime)
 
