@@ -8,11 +8,11 @@ from __future__ import nested_scopes
 import scipy
 import scipy.special as special
 import Numeric
-from Numeric import alltrue, where, arange, put, putmask, nonzero, ravel
+from Numeric import alltrue, where, arange, put, putmask, nonzero, \
+     ravel, compress, angle, take, ones, sum
 from scipy_base.fastumath import *
 
-import scipy_base
-from scipy_base import atleast_1d
+from scipy_base import atleast_1d, polyval
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
@@ -28,8 +28,8 @@ all = alltrue
 ##   wrapper
 
 _quantstr = "Quantile must be in [0,1]."
-_posstr = "Parameter must be > 0."
-_nonnegstr = "Parameter must be >= 0."
+#_posstr = "Parameter must be > 0."
+#_nonnegstr = "Parameter must be >= 0."
 
 # A function to return nan on condition failure.
 def _wc(cond, val):
@@ -128,7 +128,7 @@ class general_cont_ppf:
 
 
 _EULER = 0.5772156649015328606   # -special.psi(1)
-_ZETA = special.zeta(3,1)
+_ZETA3 = special.zeta(3,1)
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
@@ -149,7 +149,7 @@ def kstwosf_largen(y):
     return special.kolmogorov(y)
 
 def kstwop_largen(p):
-    assert all((0<=p)&(p<=1)), _quanstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return special.kolmogi(p)
 
 def kstwocdf_largen(y):
@@ -326,7 +326,7 @@ def anglitppf(q, loc=0.0, scale=1.0):
     return (arcsin(sqrt(q))-pi/4) * scale + loc
 
 def anglitsf(x, loc=0.0, scale=1.0):
-    1.0 - anglitcdf(x, loc, scale)
+    return 1.0 - anglitcdf(x, loc, scale)
 
 def anglitisf(q, loc=0.0, scale=1.0):
     return anglitppf(1.0-q, loc, scale)
@@ -364,7 +364,7 @@ def arcsineppf(q, loc=0.0, scale=1.0):
     return sin(pi/2.0*q)**2 * scale + loc
 
 def arcsinesf(x, loc=0.0, scale=1.0):
-    1.0 - arcsinecdf(x, loc, scale)
+    return 1.0 - arcsinecdf(x, loc, scale)
 
 def arcsineisf(q, loc=0.0, scale=1.0):
     return arcsineppf(1.0-q, loc, scale)
@@ -571,8 +571,8 @@ def burrstats(c,d,loc=0.0,scale=1.0,full=0):
     g1c, g1cd = gam(1-1.0/c), gam(1.0/c+d)
     gd = gam(d)
     k = gd*g2c*g2cd - g1c**2 * g1cd**2
-    mu = where(cond, g1c*g1cd / gd, scipy.nan)
-    var = where(cond, k/gd**2, scipy.nan)
+    mu = where(cond, g1c*g1cd / gd*scale+loc, scipy.nan)
+    var = where(cond, k/gd**2*scale*scale, scipy.nan)
     if not full:
         return mu, var
     g3c, g3cd = gam(1-3.0/c), gam(3.0/c+d)
@@ -580,7 +580,7 @@ def burrstats(c,d,loc=0.0,scale=1.0,full=0):
     g1 = 2*g1c**3 * g1cd**3 + gd*gd*g3c*g3cd - 3*gd*g2c*g1c*g1cd*g2cd
     g1 /= sqrt(k**3)
     g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
-    g2 -= 3*g1c**4 * g1cd**4 -4*gd**2*g13c*g1c*g1cd*g3cd
+    g2 -= 3*g1c**4 * g1cd**4 -4*gd**2*g3c*g1c*g1cd*g3cd
     return mu, var, _wc(cond, g1), _wc(cond, g2)
 
 # Fisk distribution
@@ -883,7 +883,7 @@ def erlangpdf(x, n, loc=0.0, scale=1.0):
     x, loc, n, scale = arr(x), arr(loc), arr(n), arr(scale)
     x = arr((x-loc*1.0)/scale)
     sv = errp(0)
-    Px = (x)**(n-1.0)*exp(-x)/special.gamma(a)
+    Px = (x)**(n-1.0)*exp(-x)/special.gamma(n)
     sv = errp(sv)
     return select([(scale<=0) | (n<=0) | (floor(n)!=n), x>0],[scipy.nan, Px/scale])
 
@@ -944,7 +944,7 @@ def exponsf(x, loc=0.0, scale=1.0):
 def exponppf(q, loc=0.0, scale=1.0):
     q, loc, scale = map(arr, (q, loc, scale))
     assert all((0<=q) & (q<=1)), _quantstr
-    vals = -1.0/lam*log(1-q)
+    vals = -log(1.0-q)
     return select([(scale<=0)|(q>1)|(q<0)],[scipy.nan],vals*scale+loc)
 
 def exponisf(q, loc=0.0, scale=1.0):
@@ -975,7 +975,7 @@ def extreme3cdf(x, c, loc=0.0, scale=1.0):
     Cx = exp(-(-x)**c)
     return select([(c<=0) | (scale<=0), x<=0], [scipy.nan, Cx], 1)
 
-def extreme3isf(x, c, loc=0.0, scale=1.0):
+def extreme3sf(x, c, loc=0.0, scale=1.0):
     return 1.0-extreme3cdf(x, c, loc, scale)
 
 def extreme3ppf(q, c, loc=0.0, scale=1.0):
@@ -1080,7 +1080,7 @@ def exponpowppf(q, b, loc=0.0, scale=1.0):
 def exponpowsf(x, b, loc=0.0, scale=1.0):
     return 1.0 - exponpowcdf(x, b, loc, scale)
 
-def exponpowisf(x, b, loc=0.0, scale=1.0):
+def exponpowisf(q, b, loc=0.0, scale=1.0):
     return exponpowppf(1.0-q, b, loc, scale)
 
 def exponpowstats(b, loc=0.0, scale=1.0, full=0):
@@ -1230,7 +1230,7 @@ def fstats(dfn, dfd, loc=0.0, scale=1.0, full=0):
 #    g2 = 12*(-16+20*m-8*m*m + m**3 + 44*n \
 #             -32*m*n + 5*m*m*n-22*n*n + 5*m*n*n)
 #    g2 /= n*(m-6)*(m-8)*(n+m-2)
-    return mn, var, g1, g2
+    return mn, var, _wc(cond3,g1), _wc(cond4,g2)
 
 
 ## Folded Normal  
@@ -1322,6 +1322,7 @@ def frechetstats(c, left=0, loc=0.0, scale=1.0, full=0):
     cond = (c > 0) & (scale > 0)
     ic = 1.0/c
     mu = special.gamma(1-ic)
+    g1c = mu
     g2c = special.gamma(1-2*ic)
     mu2 = g2c - mu*mu
     mn = select([1-cond,left==0], [scipy.nan, mu*scale + loc], -mu*scale+loc)
@@ -1351,7 +1352,7 @@ def genlogisticcdf(x, c, loc=0.0, scale=1.0):
     return select([(scale<=0)|(c<=0)],[scipy.nan], Cx)
     
 def genlogisticsf(x, c, loc=0.0, scale=1.0):
-    return 1.0-genlogistcdf(x, c, loc, scale)
+    return 1.0-genlogisticcdf(x, c, loc, scale)
 
 def genlogisticppf(q, c, loc=0.0, scale=1.0):
     q, c, loc, scale = map(arr, (q, c, loc, scale))
@@ -1359,7 +1360,7 @@ def genlogisticppf(q, c, loc=0.0, scale=1.0):
     return where((c>0) & (scale>0) & (q>=0) & (q<=1), vals, scipy.nan)
 
 def genlogisticisf(q, c, loc=0.0, scale=1.0):
-    return genlogsistppf(1-arr(q), c, loc=0.0, scale=1.0)
+    return genlogsisticppf(1-arr(q), c, loc=0.0, scale=1.0)
 
 def genlogisticstats(c, loc=0.0, scale=1.0, full=0):
     cond = (arr(c) > 0) & (arr(scale) > 0)
@@ -1642,13 +1643,13 @@ def genhalflogisticppf(q, c, loc=0.0, scale=1.0):
     q, c, loc, scale = map(arr, (q, c, loc, scale))
     vals = 1.0/c*(1-((1.0-q)/(1.0+q))**c)
     cond = (q>=0) & (q<=1) & (c>0) & (scale > 0)
-    return vals*scale + loc
+    return _wc(cond,vals*scale + loc)
 
 def genhalflogisticsf(x, c, loc=0.0, scale=1.0):
     return 1.0-genhalflogisticcdf(x, c, loc, scale)
 
-def genhalflogisticsf(q, c, loc=0.0, scale=1.0):
-    return genhalflogistic(1.0-q, c, loc, scale)
+def genhalflogisticisf(q, c, loc=0.0, scale=1.0):
+    return genhalflogisticppf(1.0-q, c, loc, scale)
 
 def _genhalflogstats(c, loc=0.0, scale=1.0, full=0):
     if (c<=0) or (scale <=0):
@@ -1914,7 +1915,7 @@ def hypsecantcdf(x, loc=0.0, scale=1.0):
 def hypsecantppf(q, loc=0.0, scale=1.0):
     q = arr(q)
     cond = (q>=0) & (q<1) & (scale > 0)
-    return select([cond,q==1],[log(tan(pi*q/2.0)),scipy.inf],scipy.nan)
+    return select([cond,q==1],[log(tan(pi*q/2.0))*scale+loc,scipy.inf],scipy.nan)
 
 def hypsecantsf(x, loc=0.0, scale=1.0):
     return 1.0-hypsecantcdf(x, loc, scale)
@@ -1971,7 +1972,7 @@ def invnormcdf(x, mu, loc=0.0, scale=1.0):
     C1 = stnormcdf(fac*(x-mu)/mu)
     C1 += exp(2.0/mu)*stnormcdf(-fac*(x+mu)/mu)
     sv = special.errprint(sv)
-    return select([(mu<=0)|(scale<=0),x>0],[scipy.nan, Cx])
+    return select([(mu<=0)|(scale<=0),x>0],[scipy.nan, C1])
 
 def invnormsf(x, mu, loc=0.0, scale=1.0):
     return 1-invnormcdf(x, mu, loc, scale)
@@ -2016,7 +2017,7 @@ def invweibullpdf(x, c, loc=0.0, scale=1.0):
     xc2 = xc1*x
     Px = c*xc1*xc2
     return select([(c<=0) | (scale<=0), x>0],
-                  [Px/sample])
+                  [Px/scale])
 
 def invweibullcdf(x, c, loc=0.0,  scale=1.0):
     x, c, loc, scale = map(arr, (x, c, loc, scale))
@@ -2138,7 +2139,7 @@ def loggammacdf(x, c, loc=0.0, scale=1.0):
     x, c, loc, scale = map(arr, (x, c, loc, scale))
     x = arr((x-loc*1.0)/scale)
     sv = errp(0)
-    Px = special.gammainc(c, exp(x))/ special.gamma(c)
+    Cx = special.gammainc(c, exp(x))/ special.gamma(c)
     sv = errp(sv)
     return select([(scale <=0) | (c<=0)],[scipy.nan], Cx)
 
@@ -2256,8 +2257,8 @@ def lomaxisf(x, c, scale=1.0):
     return paretoisf(x, c, -1, scale)
 
 
-def lomaxstats(x, c, scale=1.0, full=0):
-    return paretostats(x, c, -1, scale, full)
+def lomaxstats(c, scale=1.0, full=0):
+    return paretostats(c, -1, scale, full)
 
 
 
@@ -2328,7 +2329,7 @@ def nakagamicdf(x, df, loc=0.0, scale=1.0):
 
 def nakagamippf(q, df, loc=0.0, scale=1.0):
     sv = errp(0)
-    vals = sqrt(gammaincinv(df,q)/arr(df))
+    vals = sqrt(special.gammaincinv(df,q)/arr(df))
     sv = errp(sv)
     return vals*scale + loc
 
@@ -2378,7 +2379,7 @@ def ncx2sf(x,df,nc, loc=0.0, scale=1.0):
     return 1-ncx2cdf(x,df,nc, loc, scale)
 
 def ncx2ppf(q,df,nc, loc=0.0, scale=1.0):
-    x, df, nc, loc, scale = map(arr, (x, df, nc, loc, scale))
+    q, df, nc, loc, scale = map(arr, (q, df, nc, loc, scale))
     cond = (0<=q) & (q<=1) & (scale > 0) & (df > 0) & (nc > 0)
     sv = errp(0)
     vals = special.chndtrix(q,df,nc)
@@ -2426,7 +2427,7 @@ def ncfcdf(x,dfn,dfd,nc, loc=0.0, scale=1.0):
     return select([badcond, x>=0],[scipy.nan, vals])
     
 def ncfsf(x,dfn,dfd,nc, loc=0.0, scale=1.0):
-    return 1-ncfcdf(x,dfn,dfd,nc, loc=0.0, scale=1.0)
+    return 1-ncfcdf(x,dfn,dfd,nc, loc=loc, scale=scale)
 
 def ncfppf(q, dfn, dfd, nc, loc=0.0, scale=1.0):
     q,dfn,dfd,nc,loc,scale = map(arr, (q, dfn, dfd, nc, loc, scale))    
@@ -2453,13 +2454,13 @@ def ncfstats(dfn,dfd,nc,loc=0.0,scale=1.0,full=0):
     mu4 = _vecfunc(4,  ncfpdf, 0, scipy.inf, dfn, dfd, nc, loc, scale)
     g1 = mu3 / var1**1.5
     g2 = mu4 / var1**2 - 3.0
-    return mn, var, _wc(cond & (df>6), g1), _wc(cond & (df>8), g2)
+    return mn, var, _wc(cond & (dfd>6), g1), _wc(cond & (dfd>8), g2)
 
 
 ## Student t distribution
 
 def tpdf(x, df, loc=0.0, scale=1.0):
-    x, df, loc, scale = map(arr (x, df, loc, scale))
+    x, df, loc, scale = map(arr,(x, df, loc, scale))
     x = arr((x-loc*1.0)/scale)
     r = arr(df*1.0)
     sv = errp(0)
@@ -2469,7 +2470,7 @@ def tpdf(x, df, loc=0.0, scale=1.0):
     return select([scale <=0],[scipy.nan], Px/scale)
 
 def tcdf(x, df, loc=0.0, scale=1.0):
-    x, df, loc, scale = map(arr (x, df, loc, scale))
+    x, df, loc, scale = map(arr,(x, df, loc, scale))
     x = arr((x-loc*1.0)/scale)
     sv = errp(0)
     Cx = special.stdtr(df, x)
@@ -2572,13 +2573,13 @@ def paretopdf(x, b, loc=0.0, scale=1.0):
     x, b, loc, scale = map(arr, (x,b,loc,scale))
     x = arr((x-loc*1.0)/scale)
     Px = b * x**(-b-1)
-    select([(b<=0)&(scale<=0.0)],[scipy.nan, Px/scale])
+    return select([(b<=0)&(scale<=0.0)],[scipy.nan],Px/scale)
 
 def paretocdf(x, b, loc=0.0, scale=1.0):
     x, b, loc, scale = map(arr, (x,b,loc,scale))
     x = arr((x-loc*1.0)/scale)
     Cx = 1 -  x**(-b)
-    select([(b<=0)&(scale<=0.0)],[scipy.nan, Cx])
+    return select([(b<=0)&(scale<=0.0)],[scipy.nan],Cx)
 
 def paretosf(x, b, loc=0.0, scale=1.0):
     return 1-paretocdf(x, b, loc, scale)
@@ -2599,7 +2600,7 @@ def paretostats(b, loc=0.0, scale=1.0, full=0):
     b, loc, scale = map(arr, (b,loc,scale))
     cond (scale > 0) & (b>0)
     mu = b / (b-1.0)
-    mn = select([cond, b<=1],[scipy.nan, scipy.inf], mu*scale + last)
+    mn = select([cond, b<=1],[scipy.nan, scipy.inf], mu*scale + loc)
     mu2 = b / (b-1.0)**2 / (b-2.0)
     var = select([cond, b<=2],[scipy.nan, scipy.inf], mu2*scale*scale)
     if not full:
@@ -2623,7 +2624,7 @@ def powercdf(x, a, loc=0.0, scale=1.0):
     x, a, loc, scale = map(arr, (x, a, loc, scale))
     x = arr((x-loc*1.0)/scale)
     Cx = x**a
-    return select([(a<=0)|(scale<=0),(x>1),(x>=0)],[scipy.nan, 1, Px/scale])
+    return select([(a<=0)|(scale<=0),(x>1),(x>=0)],[scipy.nan, 1, Cx])
 
 def powersf(x, a, loc=0.0, scale=1.0):
     return 1.0-powercdf(x, a, loc, scale)
@@ -2779,7 +2780,6 @@ def semicircularisf(q, loc=0.0, scale=1.0):
 def semicircularstats(loc=0.0, scale=1.0, full=0):
     loc, scale = arr(loc), arr(scale)
     cond = (scale > 0)
-    mu = 0
     mu2 = 0.25
     mn = _wc(cond, loc)
     var = _wc(cond, mu2*scale*scale)
@@ -2791,7 +2791,7 @@ def semicircularstats(loc=0.0, scale=1.0, full=0):
 # up-sloping line from loc to (loc + c) and then downsloping line from
 #    loc + c to loc + shape
 
-_trstr = "Left must be <= mode which must be <= right with left < right"
+# _trstr = "Left must be <= mode which must be <= right with left < right"
 
 def triangpdf(x, c, loc=0.0, scale=1.0):
     x, c, loc, scale = map(arr, (x, c, loc, scale))
@@ -2988,11 +2988,11 @@ _vec_vmppf = special.general_function(_vmppf,'d')
 def von_misesppf(q, b, loc=0.0, x0=None):
     if x0 is None:
         x0 = loc
-    assert all((0<=q) & (q<=1)), _quanstr
-    return _vec_vmppf(q, mode, shape,x0)
+    assert all((0<=q) & (q<=1)), _quantstr
+    return _vec_vmppf(q, b, loc,x0)
 
 def von_misesisf(p, b, loc=0.0, x0=None):
-    return von_misesppf(1-p, mode, shape, x0)
+    return von_misesppf(1-p, b, loc, x0)
 
 def von_misesstats(b, loc=0.0, full=0):
     b, loc = arr(b), arr(loc)
@@ -3101,7 +3101,7 @@ def binompdf(k, n, pr=0.5):
     k = arr(k)
     assert (0<pr<1)
     cond = arr((k > 0) & (k == floor(k)))
-    return scipy.comb(n,k)* pr**k * (1-pr)**(n-k)
+    return _wc(cond, scipy.comb(n,k)* pr**k * (1-pr)**(n-k))
 
 def binomcdf(k, n, pr=0.5):
     return special.bdtr(k,n,pr)
@@ -3140,7 +3140,7 @@ def bernoullisf(k, pr=0.5):
 def bernoullippf(k, pr=0.5):
     return binomppf(k, 1, pr)
 
-def bernoullip(k, pr=0.5):
+def bernoulliisf(k, pr=0.5):
     return binomp(k, 1, pr)
 
 def bernoullistats(pr=0.5, full=0):
@@ -3259,7 +3259,7 @@ def logsercdf(k, pr=0.5):
     return sum(logserpdf(j, pr),axis=-1)
 
 def logsersf(k, pr=0.5):
-    return 1.0-logseriescdf(k, pr=pr)
+    return 1.0-logsercdf(k, pr=pr)
 
 def logserppf(q, pr=0.5):
     pass
@@ -3366,7 +3366,6 @@ def randintstats(min, max=None, full=0):
         max = min
         min = 0
     m2, m1 = arr(max), arr(min)
-    N = arr(m2 - m1)
     cond = (m1 < m2)
     mu = (m2 + m1 - 1.0) / 2
     mu2p = (m2**3-m1**3)/(3.0*(m2-m1)) - (m2+m1)/2.0 + 1.0/6.0

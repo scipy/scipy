@@ -1,5 +1,5 @@
 from Numeric import *
-from scipy_base.fastumath import *
+from scipy_base.scipy_base.fastumath import *
 import vq_c as vq
   
 def python_vq(all_data,code_book):    
