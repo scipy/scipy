@@ -560,7 +560,7 @@ def hessenberg(a,calc_q=0,overwrite_a=0):
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     gehrd,gebal = get_lapack_funcs(('gehrd','gebal'),(a1,))
-    ba,lo,hi,pivscale,info = gebal(a,overwrite_a = overwrite_a)
+    ba,lo,hi,pivscale,info = gebal(a,permute=1,overwrite_a = overwrite_a)
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal gebal (hessenberg)'%(-info)
     n = len(a1)

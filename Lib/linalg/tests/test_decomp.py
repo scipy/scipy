@@ -354,6 +354,17 @@ class test_hessenberg(ScipyTestCase):
         h1 = dot(transp(conj(q)),dot(a,q))
         assert_array_almost_equal(h1,h)
 
+    def check_simple2(self):
+        a = [[1,2,3,4,5,6,7],
+             [0,2,3,4,6,7,2],
+             [0,2,2,3,0,3,2],
+             [0,0,2,8,0,0,2],
+             [0,3,1,2,0,1,2],
+             [0,1,2,3,0,1,0],
+             [0,0,0,0,0,1,2]]
+        h,q = hessenberg(a,calc_q=1)
+        assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
+
     def check_random(self):
         n = 20
         for k in range(2):
