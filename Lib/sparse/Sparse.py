@@ -54,12 +54,19 @@ def csc_cmp(x,y):
         
 
 class dictmatrix(dict):
-    def __init__(self):
+    def __init__(self,A=None):
         dict.__init__(self)
         self.shape = (0,0)
         self.storage = 'dict'
         self.type = None
         self.maxprint = MAXPRINT
+        if A is not None:
+            A = asarray(A)
+            N,M = A.shape
+            for n in range(N):
+                for m in range(M):
+                    if A[n,m] != 0:
+                        self[n,m] = A[n,m]
 
     def __repr__(self):
         return "<%dx%d dictmatrix of type '%s' with %d non-zero elements>" % (self.shape + (self.type, len(self.keys())))
@@ -125,9 +132,11 @@ class dictmatrix(dict):
         return res
 
     def __mul__(self, other):
+        if isinstance(other, dictmatrix):
+            return self.matmat(other)
         other = asarray(other)
         if rank(other) > 0:
-            return self.matvec(other)        
+            return self.matvec(other)
         res = dictmatrix()
         for key in self.keys():
             res[key] = other * self[key]
@@ -142,7 +151,41 @@ class dictmatrix(dict):
         for key in self.keys():
             new[key[1],key[0]] = self[key]
         return new
-        
+
+    def _firstkey(self, sorted, j, N):
+        cand = []        
+        k = 0
+        while (sorted[k][0] < j):
+            k+=1
+        while (k < N) and (j == sorted[k][0]):
+            cand.append(sorted[k])
+            k+=1
+            
+        return cand
+
+    # slow
+    def matmat(self, other):
+        res = dictmatrix()
+        akeys = self.keys()
+        akeys.sort()
+        bkeys = other.keys()
+        bkeys.sort()
+        B = len(bkeys)
+        for key in akeys:
+            i,j = key
+            aij = self[key]
+            cand = self._firstkey(bkeys,j,B)
+            if (aij != 0):
+                for bkey in cand:
+                    j,k = bkey
+                    bjk = other[bkey]
+                    if (bjk != 0):
+                        try:
+                            res[i,k] += aij*bjk
+                        except KeyError:
+                            res[i,k] = aij*bjk
+        return res
+                    
 
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
