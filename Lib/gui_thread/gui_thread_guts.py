@@ -7,7 +7,7 @@
     
     If someone comes up with a way to dump this into gui_thread
     that isn't ugly, we may consider doing that.  I'm sure
-    there is a way.  It's "isn't ugly" part that concerns me...
+    there is a way.  It's the 'isn't ugly' part that concerns me...
     
     The file has the following contents:
     
@@ -31,6 +31,7 @@
 from wxPython.wx import *
 print '<wxPython imported>\n>>> ',
 import thread, threading
+import types
 
 #################################
 # Window Close Event Handler 
@@ -92,6 +93,95 @@ class proxy_event(wxPyEvent):
         self.kw = kw            
         self.finished = finished
 
+
+#################################
+# A proxied callable object
+#################################
+
+class proxied_callable:
+
+    """This wraps any callable object so that the call is made via a
+    proxy using a proxy_event.  This makes it possible for the user to
+    call methods of a proxy's attribute."""
+    
+    def __init__(self, proxy, call_obj):
+        self.proxy = proxy
+        self.__dont_mess_with_me_unless_you_know_what_youre_doing = call_obj
+
+    def __call__(self, *args, **kw):
+        obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
+        finished = threading.Event()
+        evt = proxy_event(obj, args, kw, finished)
+        self.proxy.post(evt)
+        finished.wait()
+        if finished.exception_info:
+            raise finished.exception_info[0],finished.exception_info[1]
+        return finished._result
+
+
+################################################################
+# A proxied attribute that handles callable internal attributes
+# properly.
+################################################################
+
+def is_immutable(x):
+    imm = ()
+    try:
+        imm = (types.StringType, types.FloatType, types.IntType,
+               types.ComplexType, types.UnicodeType)
+    except AttributeError:
+        imm = (types.StringType, types.FloatType, types.IntType,
+               types.ComplexType)
+    if type(x) in imm:
+        return 1
+    else:
+        return 0
+
+class proxy_attr:
+
+    """
+    Description
+
+      This wraps a proxy's attribute such that any call to a callable
+      object returns a proxied_callable and any request for a data
+      attribute will return another proxy_attr.  This way a user can
+      call a method of a proxy's attribute.  Use the get_members and
+      get_methods member functions to get a list of the data and
+      functions of the proxied object.
+
+    Caveats
+
+      The user can always use
+      _proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing
+      and still get around proxying but atleast they were warned. :)
+
+    """
+    
+    def __init__(self, proxy, obj):
+        self.proxy = proxy
+        self.__dont_mess_with_me_unless_you_know_what_youre_doing = obj
+
+    def get_members(self):
+        obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
+        return dir(obj)
+
+    def get_methods(self):
+        obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
+        try:
+            return dir(obj.__class__)
+        except AttributeError:
+            return dir(obj)
+
+    def __getattr__(self, key):
+        obj = self.__dont_mess_with_me_unless_you_know_what_youre_doing
+        ret = getattr(obj, key)
+        if callable(ret):
+            return proxied_callable(self.proxy, ret)
+        elif is_immutable(ret):
+            return ret
+        else:
+            return proxy_attr(self.proxy, ret)
+
 #################################
 # Base class for all automatically generated proxy classes
 #################################        
@@ -123,9 +213,15 @@ class proxy_base:
 
     def __getattr__(self,key):        
         try:
-            return self.__dict__[key]            
+            ret = self.__dict__[key]
         except KeyError:
-            return getattr(self.__dict__['wx_obj'],key)
+            ret = getattr(self.__dict__['wx_obj'],key)
+        if callable(ret):
+            return proxied_callable(self, ret)
+        elif is_immutable(ret):
+            return ret
+        else:
+            return proxy_attr(self, ret)
 
     # This needs a little thought
     #def __setattr__(self,key,val):        

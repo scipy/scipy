@@ -128,7 +128,9 @@ def proxify(wx_class):
     class_dict = {}
     class_methods = get_all_methods(wx_class)    
     for method in class_methods:
-        class_dict[method] = generate_method(method,wx_class)
+        func = generate_method(method,wx_class)
+        if func:
+            class_dict[method] = func
     proxy_class = new.classobj(class_name,class_bases,class_dict)
     return proxy_class
 
@@ -174,7 +176,9 @@ def generate_method(method,wx_class):
         arguments = 'arg_list = args'
         results  = 'self.wx_obj = finished._result;' \
                    'add_close_event_handler(self);' \
-                   'self.proxy_object_alive = 1;' 
+                   'self.proxy_object_alive = 1;'
+    elif method == '__getattr__':
+        return None
     else:                 
         pre_test =  "if not self.proxy_object_alive: proxy_error()"
         call_method = '%s.%s' % (class_name,method)
