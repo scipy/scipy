@@ -515,20 +515,107 @@ def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
     gist.pldj([x0,x1,x1,x0],[y0,y0,y1,y1],[x1,x1,x0,x0],[y0,y1,y1,y0],
               color=color,type=wordtype,width=width)
 
-def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
-            palette=None):
+def write_palette(tofile,pal):
+    pal = Numeric.asarray(pal)
+    if pal.typecode() not in ['b','1','s','i','l']:
+        raise ValueError, "Palette data must be integer data."
+    palsize = pal.shape
+    if len(palsize) > 2:
+        raise TypeError, "Input must be a 1-d or 2-d array"
+    if len(palsize) == 2:
+        if palsize[0] == 1 and palsize[1] > 1:
+            pal = pal[0]
+        if palsize[1] == 1 and palsize[0] > 1:
+            pal = pal[:,0]
+        palsize = pal.shape
+    if len(palsize) == 1:
+        pal = multiply.outer(pal,ones((3,),pal.typecode()))
+        palsize = pal.shape
+    if not (palsize[1] == 3 or palsize[0] == 3):
+        raise TypeError, "If input is 2-d, the length of at least one dimension must be 3."
+
+    if palsize[0] == 3 and palsize[1] != 3:
+        pal = Numeric.transpose(pal)
+        palsize = pal.shape
+
+    if palsize[0] > 256:
+        raise ValueError, "Palettes should be no longer than 256."
+    fid = open(tofile,'w')
+    fid.write("ncolors=%d\n\n#  r   g   b\n" % palsize[0])
+    for k in range(palsize[0]):
+        fid.write("%4d%4d%4d\n" % tuple(pal[k]))
+    fid.close()
+
+def list_palettes():
+    import os, glob
+    direc = os.environ['GISTPATH']
+    files = glob.glob1(direc,"*.gp")
+    lengths = map(len,files)
+    maxlen = scipy.amax(lengths)
+    print "Available palettes..."
+    print "=====================\n"
+    for file in files:
+        print file[:-3] + ' '*(maxlen-len(file[:-3])-3) + ' --- ',
+        k = 0
+        fid = open(direc+"/"+file)        
+        while 1:
+            line = fid.readline()
+            if line[0] != '#':
+                fid.close()
+                if k == 0:
+                    print
+                break
+            if k > 0:
+                print ' '*(maxlen+3) + line[1:-1]
+            else:
+                print line[1:-1]
+            k = k + 1
+                         
+def change_palette(pal):
+    if pal is not None:
+        if isinstance(pal, types.StringType):
+            try:
+                gist.palette('%s.gp' % pal)
+            except IOError:
+                if len(pal) > 3 and pal[-2:] == 'gp':
+                    gist.palette(pal)
+                else:
+                    raise ValueError, "Palette %d not found."
+        else:
+            data = Numeric.asarray(pal)
+            write_palette('/tmp/_temp.gp',data)
+            gist.palette('/tmp/_temp.gp')    
+
+def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
+            color='black'):
+    """Plot an image on axes.
+
+    z -- The data
+    cmin -- Value to map to lowest color in palette (min(z) if None)
+    cmax -- Value to map to highest color in palette (max(z) if None)
+    xryr -- (xmin, ymin, xmax, ymax) coordinates to print
+            (0, 0, z.shape[1], z.shape[0]) if None
+    _style -- A 'style-sheet' to use if desired (a default one will be used
+              if 'default').  If None, then no style will be imposed.
+    palette -- A string for a palette previously saved in a file (see write_palette)
+               or an array specifying the red-green-blue values (2-d array N x 3) or
+               gray-scale values (2-d array N x 1 or 1-d array).
+    color -- The color to use for the axes.
+    """
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
     if not _hold:
         gist.fma()
     gist.animate(0)
-    if _style is None and mystyle==0:
-        _style='/tmp/image.gs'
-        system = write_style.getsys(hticpos='below',vticpos='left',frame=1)
-        fid = open(_style,'w')
-        fid.write(write_style.style2string(system))
-        fid.close()
-    gist.window(style=_style)
+    if _style is not None:
+        if _style == "default":
+            _style='/tmp/image.gs'
+            system = write_style.getsys(hticpos='below',vticpos='left',frame=1,
+                                        color=color)
+            fid = open(_style,'w')
+            fid.write(write_style.style2string(system))
+            fid.close()
+        gist.window(style=_style)
     if cmax is None:
         cmax = max(ravel(z))
     if cmin is None:
@@ -536,11 +623,7 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
     cmax = float(cmax)
     cmin = float(cmin)
     byteimage = gist.bytscl(z,cmin=cmin,cmax=cmax)
-    if palette is not None:
-        try:
-            gist.palette('%d.gp' % palette)
-        except IOError:
-            raise ValueError, "Palette %d not found."
+    change_palette(palette)
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
     return
 
@@ -598,22 +681,39 @@ _dwidth=6*inches
 _dheight=6*inches
 
 import colorbar
-def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
+def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
                zlabel=None,font='helvetica',fontsize=16,color='black',
                palette=None):
+    """Plot an image on axes with a colorbar on the side.
+
+    z -- The data
+    cmin -- Value to map to lowest color in palette (min(z) if None)
+    cmax -- Value to map to highest color in palette (max(z) if None)
+    xryr -- (xmin, ymin, xmax, ymax) coordinates to print
+            (0, 0, z.shape[1], z.shape[0]) if None
+    _style -- A 'style-sheet' to use if desired (a default one will be used
+              if 'default').  If None, then no style will be imposed.
+    palette -- A string for a palette previously saved in a file (see write_palette)
+               or an array specifying the red-green-blue values (2-d array N x 3) or
+               gray-scale values (2-d array N x 1 or 1-d array).
+    zlabel -- The label to attach to the colorbar (font, fontsize, and color
+              match this).
+    color -- The color to use for the ticks and frame.
+    """    
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
         
     if not _hold:
         gist.fma()
     gist.animate(0)
-    if _style is None and mystyle==0:
-        _style='/tmp/colorbar.gs'
-        system = write_style.getsys(hticpos='below',vticpos='left',frame=1,color=color)
-        fid = open(_style,'w')
-        fid.write(write_style.style2string(system))
-        fid.close()
-    gist.window(style=_style)
+    if _style is not None:
+        if _style == 'default':
+            _style='/tmp/colorbar.gs'
+            system = write_style.getsys(hticpos='below',vticpos='left',frame=1,color=color)
+            fid = open(_style,'w')
+            fid.write(write_style.style2string(system))
+            fid.close()
+        gist.window(style=_style)
     if cmax is None:
         cmax = max(ravel(z))
     if cmin is None:
@@ -621,11 +721,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
     cmax = float(cmax)
     cmin = float(cmin)
 
-    if palette is not None:
-        try:
-            gist.palette('%s.gp' % palette)
-        except:
-            raise ValueError, "%s palette not available." % palette
+    change_palette(palette)
 
     byteimage = gist.bytscl(z,cmin=cmin,cmax=cmax)
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
@@ -857,11 +953,7 @@ def surf(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
     pl3d.set_draw3_(0)
     pl3d.orient3(phi=phi*pi/180,theta=theta*pi/180)
     pl3d.light3()
-    if palette is not None:
-        try:
-            gist.palette('%s.gp' % palette)
-        except:
-            raise ValueError, "%s palette not available." % palette
+    change_palette()
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
     [xmin,xmax,ymin,ymax] = pl3d.draw3(1)
     gist.limits(xmin,xmax,ymin,ymax)

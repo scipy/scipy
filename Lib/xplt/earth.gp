@@ -1,6 +1,3 @@
-# Gist earth.gp palette
-# $Id$
-
 # dk blue - lt blue - dk green - yellow green - lt brown - white
 # sort of like mapmakers colors from deep ocean to snow capped peak
 

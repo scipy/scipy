@@ -49,8 +49,8 @@ class fopen:
 
     Methods:
 
-      fread -- read data from file and return Numeric array
-      fwrite -- write to file from Numeric array
+      read -- read data from file and return Numeric array
+      write -- write to file from Numeric array
       fort_read -- read Fortran-formatted binary data from the file.
       fort_write -- write Fortran-formatted binary data to the file.
       rewind -- rewind to beginning of file
@@ -75,15 +75,17 @@ class fopen:
             self.__dict__['fid'] = open(file_name,permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
             self.__dict__['fid'] = file_name 
-        if format in ['native','n']:
+        if format in ['native','n','default']:
             self.__dict__['bs'] = 0
             self.__dict__['format'] = 'native'
-        elif format in ['ieee-le','l']:
+        elif format in ['ieee-le','l','little-endian','le']:
             self.__dict__['bs'] = not LittleEndian
             self.__dict__['format'] = 'ieee-le'
-        elif format in ['ieee-be','b']:
+        elif format in ['ieee-be','b','big-endian','be']:
             self.__dict__['bs'] = LittleEndian
             self.__dict__['format'] = 'ieee-be'
+        else:
+            raise ValueError, "Unrecognized format: " + format
 
         self.__dict__['seek'] = self.fid.seek
         self.__dict__['tell']= self.fid.tell
@@ -101,8 +103,8 @@ class fopen:
             self.fid.close()
         except:
             pass
-    
-    def fwrite(self,data,mtype=None):
+
+    def write(self,data,mtype=None,bs=None):
         """Write to open file object the flattened Numeric array data.
 
         Inputs:
@@ -123,15 +125,21 @@ class fopen:
                    complex double : 'D', 'complex', 'complex double', 'complex*16',
                                     'complex128'
         """
+        if bs is None:
+            bs = self.bs
+        else:
+            bs = (bs == 1)
         data = asarray(data)
         if mtype is None:
             mtype = data.typecode()
         howmany,mtype = getsize_type(mtype)
         count = product(data.shape)
-        numpyio.fwrite(self.fid,count,data,mtype,self.bs)
+        numpyio.fwrite(self.fid,count,data,mtype,bs)
         return 
 
-    def fread(self,count,stype,rtype=None):
+    fwrite = write
+
+    def read(self,count,stype,rtype=None,bs=None):
         """Read data from file and return it in a Numeric array.
 
         Inputs:
@@ -140,11 +148,16 @@ class fopen:
                    a tuple indicating the shape of the output array.
           stype -- The data type of the stored data (see fwrite method).
           rtype -- The type of the output array.  Same as stype if None.
+          bs -- Whether or not to byteswap (or use self.bs if None)
 
         Outputs: (output,)
 
           output -- a Numeric array of type rtype.
         """
+        if bs is None:
+            bs = self.bs
+        else:
+            bs = (bs == 1)
         shape = None
         if type(count) in [types.TupleType, types.ListType]:
             shape = tuple(count)
@@ -154,12 +167,14 @@ class fopen:
             rtype = stype
         else:
             howmany,rtype = getsize_type(rtype)
-        retval = numpyio.fread(self.fid, count, stype, rtype, self.bs)
+        retval = numpyio.fread(self.fid, count, stype, rtype, bs)
         if len(retval) == 1:
             retval = retval[0]
         if shape is not None:
             retval = resize(retval, shape)
         return retval
+
+    fread = read
 
     def rewind(self,howmany=None):
         """Rewind a file to it's beginning or by a specified amount.

@@ -1,6 +1,3 @@
-# Gist rainbow.gp palette
-# $Id$
-
 # red - orange - yellow - green - blue - purple
 # colors in spectral order
 

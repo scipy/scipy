@@ -1,4 +1,4 @@
-#Aaasmo colormap for elastograms
+# Rainbow colormap from red (high) to dark purple (low)
 
 ncolors=240
 

@@ -1,6 +1,3 @@
-# Gist yarg.gp palette
-# $Id$
-
 # white - gray - black
 # linear gray scale from white to black
 

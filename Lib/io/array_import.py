@@ -227,7 +227,17 @@ def process_line(line, separator, collist, atype, missing):
     return vals
 
 def getcolumns(stream, columns, separator):
-    firstline = stream._buffer[0]
+    comment = stream.comment
+    lenc = stream.lencomment
+    k, K = 0, len(stream._buffer)
+    while k < K:
+        firstline = stream._buffer[k]
+        if firstline != '' and firstline[:lenc] != comment:
+            break
+        k = k + 1
+    if k == K:
+        raise ValueError, "No data found in file."
+    firsline = stream._buffer[k]
     N = len(columns)    
     collist = [None]*N
     colsize = [None]*N
@@ -281,7 +291,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
       missing -- value to insert in array when conversion to number fails.
       atype -- the typecode of the output array.  If multiple outputs are
                desired, then this should be a list of typecodes.  The columns
-               to fill the array represented by the given typcode is
+               to fill the array represented by the given typecode is
                determined from the columns argument.  If the length of atype
                does not match the length of the columns list, then, the
                smallest one is expanded to match the largest by repeatedly

@@ -1,6 +1,3 @@
-# Gist stern.gp palette
-# $Id$
-
 # red - dk blue - lt blue - gray green - white
 # "Stern special" color table from IDL (c) Research Systems, Inc.
 

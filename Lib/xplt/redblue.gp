@@ -1,4 +1,4 @@
-# Red-Blue wave-image colormap.
+# Red-Blue colormap
 
 ncolors=240
 

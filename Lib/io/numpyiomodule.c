@@ -184,7 +184,7 @@ static int write_buffered_output(FILE *fp, PyArrayObject *arr, PyArray_Descr* ou
 
       if (outdescr->type != arr->descr->type) {  /* Cast to new type before writing */
 	output_ptr = buffer + buffer_size_bytes;
-	(arr->descr->cast[outdescr->type_num])(buffer, 1, output_ptr, 1, buffer_size);	
+        (arr->descr->cast[outdescr->type_num])(buffer, 1, output_ptr, 1, buffer_size);
 	elsize = outdescr->elsize;
       }
       else {
@@ -243,6 +243,9 @@ static PyObject *
   maxN = PyArray_SIZE((PyArrayObject *)obj);
   if (n > maxN) 
     PYSETERROR("The NumPy array does not have that many elements.");
+
+  if (((PyArrayObject *)obj)->descr->type_num == PyArray_OBJECT)
+    PYSETERROR("Cannot write an object array.");
 
   if (!PyArray_ISCONTIGUOUS((PyArrayObject *)obj)) {
     arr = (PyArrayObject *)PyArray_CopyFromObject(obj,((PyArrayObject *)obj) -> descr -> type_num, 0, 0); 
@@ -307,7 +310,7 @@ static PyObject *
       if (obuff == NULL)
 	PYSETERROR("Could not allocate memory for type-casting");
       ownalloc = 1;
-      (arr->descr->cast[outdescr->type_num])(arr->data,1,obuff,1,n);
+      (arr->descr->cast[(int)outdescr->type_num])(arr->data,1,obuff,1,n);
     }      
     /* Write the data from the array to the file */
     if (dobyteswap) {
