@@ -18,7 +18,7 @@ def _bvalfromboundary(boundary):
     try:
         val = _boundarydict[boundary] << 2
     except KeyError:
-        if val not in [0,1,2]:
+        if val not in [0,1,2] :
             raise ValueError, "Acceptable boundary flags are 'fill', 'wrap' (or 'circular'), \n  and 'symm' (or 'symmetric')."
         val = boundary << 2
     return val
