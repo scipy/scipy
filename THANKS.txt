@@ -20,6 +20,7 @@ David M. Cooke  -- improvements to system_info
 
 Testing:
 
+David Morrill for getting the scoreboard test system up and running.
 Louis Luangkesom for providing multiple tests for the stats module.
 
 Website Development:
