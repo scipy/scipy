@@ -1,15 +1,3 @@
-""" Tools for manipulating 1- and 2-dimensional B-splines
-
-  cspline2d     --
-  qspline2d     --
-  sepfir2d      --
-  symiirorder1  --
-  symiirorder2  --
-  spline_filter --
-  bspline       --
-  
-
-"""
 import scipy.special
 from scipy.special import general_function
 from Numeric import *
@@ -19,6 +7,11 @@ def factorial(n):
     return scipy.special.gamma(n+1)
 
 def spline_filter(Iin, lmbda=5.0):
+    """Smoothing spline (cubic) filtering of a rank-2 array.
+
+    Filter an input data set, Iin, using a (cubic) smoothing spline of
+    fall-off lmbda.
+    """
     intype = Iin.typecode()
     hcol = sarray([1.0,4.0,1.0],'f')/6.0
     if intype in ['F','D']:
@@ -37,6 +30,8 @@ def spline_filter(Iin, lmbda=5.0):
     return out            
 
 def _bspline(x,n):
+    """bspline(x,n) -> y:  B-spline basis function of order n.
+    """
     jlist = arange(n+2)
     val = 0.0
     baseval = x + (n+1)/2.0
@@ -54,6 +49,8 @@ def _bspline(x,n):
 bspline = general_function(_bspline)
 
 def gauss_approx(x,n):
+    """Gaussian approximation to B-spline basis function of order n.
+    """
     signsq = (n+1) / 12.0
     return 1/sqrt(2*pi*signsq) * exp(-x**2 / 2 / signsq)
 
@@ -161,17 +158,29 @@ def _cubic_coeff(signal):
 
 
 def cspline1d(signal,lamb=0.0):
-    """Find the cubic spline coefficients for a 1-D signal assuming
-    mirror-symmetric boundary conditions.   To obtain the signal back from
-    the spline representation mirror-symmetric-convolve these coefficients
-    with a length 3 FIR window [1.0, 4.0, 1.0]/ 6.0 .
+    """Compute cubic spline coefficients for rank-1 array.
+
+    Description:
+
+      Find the cubic spline coefficients for a 1-D signal assuming
+      mirror-symmetric boundary conditions.   To obtain the signal back from
+      the spline representation mirror-symmetric-convolve these coefficients
+      with a length 3 FIR window [1.0, 4.0, 1.0]/ 6.0 .
+
+    Inputs:
+
+      signal -- a rank-1 array representing samples of a signal.
+      lamb -- smoothing coefficient (default = 0.0)
+
+    Output:
+
+      c -- cubic spline coefficients.
     """
     if lamb != 0.0:
         return _cubic_smooth_coeff(signal,lamb)
     else:
         return _cubic_coeff(signal)
     
-
 def hc(k,cs,rho,omega):
     return cs / sin(omega) * (rho**k)*sin(omega*(k+1))*(greater(k,-1))
 
@@ -181,10 +190,6 @@ def hs(k,cs,rho,omega):
     ak = abs(k)
     return c0 * rho**ak * (cos(omega*ak) + gamma*sin(omega*ak))
     
-
-
-def IIR_second(signal,coeff):
-    zi,zb = roots(coeff)
 
 
 

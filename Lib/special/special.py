@@ -35,6 +35,7 @@ class general_function:
         if not callable(pyfunc) or type(pyfunc) is types.ClassType:
             raise TypeError, "Object is not a callable Python object."
         self.thefunc = pyfunc
+        self.__doc__ = pyfunc.__doc__
 
     def __call__(self,*args):
         return arraymap(self.thefunc,args)
