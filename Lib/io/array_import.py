@@ -113,7 +113,10 @@ class ascii_stream:
             self.file = fileobject
         self._pos = self.file.tell()
         self._lineindex = 0
-        self._linetoget = -1
+        if self.linelist[-1] < 0:
+            self._linetoget = self.linelist[-1]
+        else:
+            self._linetoget = 0
         self._oldbuflines = 0
         self._linesplitter = linesep
         self._buffer = self.readlines(_READ_BUFFER_SIZE)
@@ -173,28 +176,6 @@ def move_past_spaces(firstline):
         ind += 1
     return firstline[ind:], ind
 
-def getcolumns(stream, columns, separator):
-    firstline = stream._buffer[0]
-    collist = build_numberlist(columns)
-    colsize = len(collist)
-    if collist[-1] < 0:
-        totalcolumns = 0
-        for mysep in separator[:-1]:
-            if mysep is None:
-                firstline, ignore = move_past_spaces(firstline)
-            else: 
-                firstline = firstline[firstline.find(mysep)+len(mysep):]
-            totalcolumns += 1
-        Numarray = Numeric.array(firstline.split(separator[-1]),'O')[::-collist[-1]]
-        totalcolumns += len(Numarray)
-        if len(collist) == 1:
-            colsize = totalcolumns
-        else:
-            colsize = totalcolumns - collist[-2] - 1 + len(collist[:-1])
-        return colsize, collist        
-    else:
-        return colsize, collist
-
 def process_line(line, separator, collist, atype, missing):
     strlist = []
     for mysep in separator[:-1]:
@@ -214,13 +195,19 @@ def process_line(line, separator, collist, atype, missing):
         else:
             toconvlist = take(arlist,collist[:-1])
             toconvlist = concatenate((toconvlist,
-                                              arlist[collist[-2]+1::-collist[-1]]))
+                                      arlist[(collist[-2]+1)::(-collist[-1])]))
     else:
         toconvlist = take(arlist, collist)
 
     return numpyio.convert_objectarray(toconvlist, atype, missing)
-    
-    
+
+def getcolumns(stream, columns, separator):
+    firstline = stream._buffer[0]
+    collist = build_numberlist(columns)
+    colsize = len(collist)
+    val = process_line(firstline, separator, collist, Float, 0)
+    return len(val), collist
+        
 def read_array(fileobject, separator=default, columns=default, comment="#",
                lines=default, atype=Numeric.Float, linesep='\n',
                rowsize=10000, missing=0):
