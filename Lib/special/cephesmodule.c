@@ -185,6 +185,7 @@ static void * bdtrc_data[] = { (void *)bdtrc, (void *)bdtrc, };
 static void * bdtr_data[] = { (void *)bdtr, (void *)bdtr, };
 static void * bdtri_data[] = { (void *)bdtri, (void *)bdtri, };
 static void * btdtr_data[] = { (void *)btdtr, (void *)btdtr, };
+static void * btdtri_data[] = { (void *)incbi, (void *)incbi, };
 
 static void * fdtrc_data[] = { (void *)fdtrc, (void *)fdtrc, };
 static void * fdtr_data[] = { (void *)fdtr, (void *)fdtr, };
@@ -192,6 +193,7 @@ static void * fdtri_data[] = { (void *)fdtri, (void *)fdtri, };
 
 static void * gdtrc_data[] = { (void *)gdtrc, (void *)gdtrc, };
 static void * gdtr_data[] = { (void *)gdtr, (void *)gdtr, };
+static void * gdtri_data[] = { (void *)gdtri, (void *)gdtri, };
 
 static void * hyp2f1_data[] = { (void *)hyp2f1, (void *)hyp2f1, };
 static void * hyperg_data[] = { (void *)hyperg, (void *)hyperg, };
@@ -337,34 +339,41 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	
 	/* Create function objects for each function call and insert
 	   them in the dictionary */
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "bdtrc", bdtrc_doc, 1);
-	PyDict_SetItemString(dictionary, "bdtrc", f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "binomcdfc", binomcdfc_doc, 1);
+	PyDict_SetItemString(dictionary, "binomcdfc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "bdtr", bdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "bdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "binomcdf", binomcdf_doc, 1);
+	PyDict_SetItemString(dictionary, "binomcdf", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "bdtri", bdtri_doc, 1);
-	PyDict_SetItemString(dictionary, "bdtri", f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, bdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "binomcdfinv", binomcdfinv_doc, 1);
+	PyDict_SetItemString(dictionary, "binomcdfinv", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3_functions, btdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "btdtr", btdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "btdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, btdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "betacdf", betacdf_doc, 1);
+	PyDict_SetItemString(dictionary, "betacdf", f);
 	Py_DECREF(f);
-
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtrc", fdtrc_doc, 1);
-	PyDict_SetItemString(dictionary, "fdtrc", f);
-	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtr", fdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "fdtr", f);
-	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtri", fdtri_doc, 1);
-	PyDict_SetItemString(dictionary, "fdtri", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, btdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "betaq", betaq_doc, 1);
+	PyDict_SetItemString(dictionary, "betaq", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtrc", gdtrc_doc, 1);
-	PyDict_SetItemString(dictionary, "gdtrc", f);
+
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fcdfc", fcdfc_doc, 1);
+	PyDict_SetItemString(dictionary, "fcdfc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtr", gdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "gdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fcdf", fcdf_doc, 1);
+	PyDict_SetItemString(dictionary, "fcdf", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fp", fp_doc, 1);
+	PyDict_SetItemString(dictionary, "fp", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gammacdfc", gammacdfc_doc, 1);
+	PyDict_SetItemString(dictionary, "gammacdfc", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gammacdf", gammacdf_doc, 1);
+	PyDict_SetItemString(dictionary, "gammacdf", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gammaq", gammaq_doc, 1);
+	PyDict_SetItemString(dictionary, "gammaq", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes4_functions, hyp2f1_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "hyp2f1", hyp2f1_doc, 1);
@@ -384,57 +393,56 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "hyp3f0", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes3_functions, incbet_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "incbet", incbet_doc, 1);
-	PyDict_SetItemString(dictionary, "incbet", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, incbet_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "betainc", betainc_doc, 1);
+	PyDict_SetItemString(dictionary, "betainc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3_functions, incbi_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "incbi", incbi_doc, 1);
-	PyDict_SetItemString(dictionary, "incbi", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, incbi_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "betaincinv", betaincinv_doc, 1);
+	PyDict_SetItemString(dictionary, "betaincinv", f);
 	Py_DECREF(f);
 
-
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, nbdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nbdtrc", nbdtrc_doc, 1);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, nbdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "negbinomcdfc", negbinomcdfc_doc, 1);
 	PyDict_SetItemString(dictionary, "nbdtrc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, nbdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nbdtr", nbdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "nbdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, nbdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "negbinomcdf", negbinomcdf_doc, 1);
+	PyDict_SetItemString(dictionary, "negbinomcdf", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, nbdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nbdtri", nbdtri_doc, 1);
-	PyDict_SetItemString(dictionary, "nbdtri", f);
+	f = PyUFunc_FromFuncAndData(cephes3a_functions, nbdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "negbinomcdfinv", negbinomcdfinv_doc, 1);
+	PyDict_SetItemString(dictionary, "negbinomcdfinv", f);
 	Py_DECREF(f);
 
 
 	f = PyUFunc_FromFuncAndData(cephes2_functions, beta_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "beta", beta_doc, 1);
 	PyDict_SetItemString(dictionary, "beta", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, lbeta_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "lbeta", lbeta_doc, 1);
-	PyDict_SetItemString(dictionary, "lbeta", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, lbeta_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "betaln", betaln_doc, 1);
+	PyDict_SetItemString(dictionary, "betaln", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, cbrt_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "cbrt", cbrt_doc, 1);
 	PyDict_SetItemString(dictionary, "cbrt", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtrc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chdtrc", chdtrc_doc, 1);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtrc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chi2cdfc", chi2cdfc_doc, 1);
 	PyDict_SetItemString(dictionary, "chdtrc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chdtr", chdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "chdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chi2cdf", chi2cdf_doc, 1);
+	PyDict_SetItemString(dictionary, "chi2cdf", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chdtri", chdtri_doc, 1);
-	PyDict_SetItemString(dictionary, "chdtri", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chi2p", chi2p_doc, 1);
+	PyDict_SetItemString(dictionary, "chi2p", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, dawsn_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "dawsn", dawsn_doc, 1);
 	PyDict_SetItemString(dictionary, "dawsn", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, ellie_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "ellie", ellie_doc, 1);
-	PyDict_SetItemString(dictionary, "ellie", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, ellie_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "ellipeinc", ellipeinc_doc, 1);
+	PyDict_SetItemString(dictionary, "ellipeinc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, ellik_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "ellik", ellik_doc, 1);
-	PyDict_SetItemString(dictionary, "ellik", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, ellik_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "ellipkinc", ellipkinc_doc, 1);
+	PyDict_SetItemString(dictionary, "ellipkinc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpe_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellpe", ellpe_doc, 1);
-	PyDict_SetItemString(dictionary, "ellpe", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpe_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellipe", ellipe_doc, 1);
+	PyDict_SetItemString(dictionary, "ellipe", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpk_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellpk", ellpk_doc, 1);
-	PyDict_SetItemString(dictionary, "ellpk", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ellpk_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ellipk", ellipk_doc, 1);
+	PyDict_SetItemString(dictionary, "ellipk", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, exp10_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "exp10", exp10_doc, 1);
 	PyDict_SetItemString(dictionary, "exp10", f);
@@ -446,8 +454,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, Gamma_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "gamma", gamma_doc, 1);
 	PyDict_SetItemString(dictionary, "gamma", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, lgam_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "lgam", lgam_doc, 1);
-	PyDict_SetItemString(dictionary, "lgam", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, lgam_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "gammaln", gammaln_doc, 1);
+	PyDict_SetItemString(dictionary, "gammaln", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, i0_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "i0", i0_doc, 1);
 	PyDict_SetItemString(dictionary, "i0", f);
@@ -462,14 +470,14 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "i1e", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes2_functions, igamc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "igamc", igamc_doc, 1);
-	PyDict_SetItemString(dictionary, "igamc", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, igamc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "gammaincc", gammaincc_doc, 1);
+	PyDict_SetItemString(dictionary, "gammaincc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, igam_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "igam", igam_doc, 1);
-	PyDict_SetItemString(dictionary, "igam", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, igam_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "gammainc", gammainc_doc, 1);
+	PyDict_SetItemString(dictionary, "gammainc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2_functions, igami_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "igami", igami_doc, 1);
-	PyDict_SetItemString(dictionary, "igami", f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, igami_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "gammainccinv", gammainccinv_doc, 1);
+	PyDict_SetItemString(dictionary, "gammainccinv", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2c_functions, iv_data, cephes_3c_types, 4, 2, 1, PyUFunc_None, "iv", iv_doc, 1);
 	PyDict_SetItemString(dictionary, "iv", f);
@@ -478,8 +486,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "ive", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes2_4_functions, ellpj_data, cephes_6_types, 2, 2, 4, PyUFunc_None, "ellpj", ellpj_doc, 1);
-	PyDict_SetItemString(dictionary, "ellpj", f);
+	f = PyUFunc_FromFuncAndData(cephes2_4_functions, ellpj_data, cephes_6_types, 2, 2, 4, PyUFunc_None, "ellipj", ellipj_doc, 1);
+	PyDict_SetItemString(dictionary, "ellipj", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, expn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "expn", expn_doc, 1);
@@ -491,29 +499,29 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, kn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "kn", kn_doc, 1);
 	PyDict_SetItemString(dictionary, "kn", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtrc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "pdtrc", pdtrc_doc, 1);
-	PyDict_SetItemString(dictionary, "pdtrc", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtrc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "poissoncdfc", poissoncdfc_doc, 1);
+	PyDict_SetItemString(dictionary, "poissoncdfc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "pdtr", pdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "pdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "poissoncdf", poissoncdf_doc, 1);
+	PyDict_SetItemString(dictionary, "poissoncdf", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "pdtri", pdtri_doc, 1);
-	PyDict_SetItemString(dictionary, "pdtri", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "poissoncdfinv", poissoncdfinv_doc, 1);
+	PyDict_SetItemString(dictionary, "poissoncdfinv", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtr", stdtr_doc, 1);
-	PyDict_SetItemString(dictionary, "stdtr", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "studentcdf", studentcdf_doc, 1);
+	PyDict_SetItemString(dictionary, "studentcdf", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtri", stdtri_doc, 1);
-	PyDict_SetItemString(dictionary, "stdtri", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "studentq", studentq_doc, 1);
+	PyDict_SetItemString(dictionary, "studentq", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, yn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "yn", yn_doc, 1);
 	PyDict_SetItemString(dictionary, "yn", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, smirnov_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "smirnov", smirnov_doc, 1);
-	PyDict_SetItemString(dictionary, "smirnov", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, smirnov_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "smirnovcdfc", smirnovcdfc_doc, 1);
+	PyDict_SetItemString(dictionary, "smirnovcdfc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes2a_functions, smirnovi_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "smirnovi", smirnovi_doc, 1);
-	PyDict_SetItemString(dictionary, "smirnovi", f);
+	f = PyUFunc_FromFuncAndData(cephes2a_functions, smirnovi_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "smirnovp", smirnovp_doc, 1);
+	PyDict_SetItemString(dictionary, "smirnovp", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes1c_4_functions, airy_data, cephes_5c_types, 4, 1, 4, PyUFunc_None, "airy", airy_doc, 1);
@@ -595,8 +603,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
 
 
-	f = PyUFunc_FromFuncAndData(cephes1_functions, ndtr_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ndtr", ndtr_doc, 1);
-	PyDict_SetItemString(dictionary, "ndtr", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ndtr_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "normalcdf", normalcdf_doc, 1);
+	PyDict_SetItemString(dictionary, "normalcdf", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes1_functions, erfc_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "erfc", erfc_doc, 1);
@@ -605,8 +613,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, erf_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "erf", erf_doc, 1);
 	PyDict_SetItemString(dictionary, "erf", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, ndtri_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ndtri", ndtri_doc, 1);
-	PyDict_SetItemString(dictionary, "ndtri", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ndtri_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "normalq", normalq_doc, 1);
+	PyDict_SetItemString(dictionary, "normalq", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, psi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "psi", psi_doc, 1);
 	PyDict_SetItemString(dictionary, "psi", f);
@@ -657,12 +665,12 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "zeta", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes1_functions, kolmogorov_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kolmogorov", kolmogorov_doc, 1);
-	PyDict_SetItemString(dictionary, "kolmogorov", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, kolmogorov_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kolmogorovcdfc", kolmogorovcdfc_doc, 1);
+	PyDict_SetItemString(dictionary, "kolmogorovcdfc", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes1_functions, kolmogi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kolmogorovi", kolmogorovi_doc, 1);
-	PyDict_SetItemString(dictionary, "kolmogorovi", f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, kolmogi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kolmogorovp", kolmogorovp_doc, 1);
+	PyDict_SetItemString(dictionary, "kolmogorovp", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes1c_functions, wofz_data, cephes_1c_types, 2, 1, 1, PyUFunc_None, "wofz", wofz_doc, 1); 

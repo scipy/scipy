@@ -8,7 +8,7 @@
  *
  * double m1, y, ellpk();
  *
- * y = ellpk( m1 );
+ * y = ellpk( m ); 
  *
  *
  *
@@ -51,7 +51,7 @@
  * ellpk domain       x<0, x>1           0.0
  *
  */
-
+
 /*							ellpk.c */
 
 
@@ -59,6 +59,10 @@
 Cephes Math Library, Release 2.0:  April, 1987
 Copyright 1984, 1987 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+
+Feb, 2002:  altered by Travis Oliphant 
+            so that it is called with argument m (which gets immediately converted 
+            to m1 = 1-m)
 */
 
 #include "mconf.h"
@@ -202,10 +206,11 @@ double polevl(), p1evl(), log();
 #endif
 extern double MACHEP, MAXNUM;
 
-double ellpk(x)
+double ellpk(x)    /* Changed to use m argument rather than m1 = 1-m */
 double x;
 {
 
+x = 1.0-x;
 if( (x < 0.0) || (x > 1.0) )
 	{
 	mtherr( "ellpk", DOMAIN );

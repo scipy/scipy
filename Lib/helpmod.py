@@ -27,7 +27,31 @@ def split_line(name, arguments, width):
             newstr = newstr + addstr + argument
     return newstr
 
-def help(object=None,maxwidth=76,output=sys.stdout):
+_namedict = None
+_dictlist = None
+
+# Traverse all module directories underneath globals to see if something is defined
+def makenamedict():
+    import scipy
+    thedict = {'scipy':scipy.__dict__}
+    dictlist = ['scipy']
+    totraverse = [scipy.__dict__]
+    while 1:
+        if len(totraverse) == 0:
+            break
+        thisdict = totraverse.pop(0)
+        for x in thisdict.keys():
+            if isinstance(thisdict[x],types.ModuleType):
+                modname = thisdict[x].__name__
+                if modname not in dictlist:
+                    moddict = thisdict[x].__dict__
+                    dictlist.append(modname)
+                    totraverse.append(moddict)
+                    thedict[modname] = moddict
+    return thedict, dictlist
+
+
+def help(object=None,maxwidth=76,output=sys.stdout,):
     """Get help information for a function, class, or module.
     
        Example:
@@ -41,8 +65,32 @@ def help(object=None,maxwidth=76,output=sys.stdout):
                 If p is of length N, this function returns the value:
                 p[0]*(x**N-1) + p[1]*(x**N-2) + ... + p[N-2]*x + p[N-1]
     """
-    if object is None:
+    global _namedict, _dictlist
+    if object is None:        
         help(help)
+    elif isinstance(object, types.StringType):
+        if _namedict is None:
+            _namedict, _dictlist = makenamedict()
+        numfound = 0
+        objlist = []
+        for namestr in _dictlist:
+            try:
+                obj = _namedict[namestr][object]
+                if id(obj) in objlist:
+                    print >> output, "\n     *** Repeat reference found in %s *** " % namestr
+                else:
+                    objlist.append(id(obj))
+                    print >> output, "     *** Found in %s ***" % namestr
+                    help(obj)
+                    print >> output, "-"*maxwidth
+                numfound += 1
+            except KeyError:
+                pass
+        if numfound == 0:
+            print >> output, "Help for %s not found." % object
+        else:
+            print >> output, "\n     *** Total of %d references found. ***" % numfound
+                    
     elif inspect.isfunction(object):
         name = object.func_name
         arguments = apply(inspect.formatargspec, inspect.getargspec(object))
@@ -132,6 +180,7 @@ def help(object=None,maxwidth=76,output=sys.stdout):
 
 def source(object, output=sys.stdout):
     if inspect.isroutine(object):
+        print >> output,  "In file: %s\n" % inspect.getsourcefile(object)
         print >> output,  inspect.getsource(object)
     else:
         print >> output,  "Not available for this object."

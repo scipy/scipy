@@ -15,7 +15,9 @@
 #
 # Comments and/or additions are welcome (send e-mail to:
 # strang@nmr.mgh.harvard.edu).
-# 
+#
+
+# Adapted for use by SciPy 2002
 """
 stats.py module
 
@@ -31,25 +33,6 @@ names appear below.
 
  *** Some scalar functions defined here are also available in the scipy.special 
      package where they work on arbitrary sized arrays. ****
-
-IMPORTANT:  There are really *3* sets of functions.  The first set has an 'l'
-prefix, which can be used with list or tuple arguments.  The second set has
-an 'a' prefix, which can accept NumPy array arguments.  These latter
-functions are defined only when NumPy is available on the system.  The third
-type has NO prefix (i.e., has the name that appears below).  Functions of
-this set are members of a "Dispatch" class, c/o David Ascher.  This class
-allows different functions to be called depending on the type of the passed
-arguments.  Thus, stats.mean is a member of the Dispatch class and
-stats.mean(range(20)) will call stats.lmean(range(20)) while
-stats.mean(Numeric.arange(20)) will call stats.amean(Numeric.arange(20)).
-This is a handy way to keep consistent function names when different
-argument types require different functions to be called.  Having
-implementated the Dispatch class, however, means that to get info on
-a given function, you must use the REAL function name ... that is
-"print stats.lmean.__doc__" or "print stats.amean.__doc__" work fine,
-while "print stats.mean.__doc__" will print the doc for the Dispatch
-class.  NUMPY FUNCTIONS ('a' prefix) generally have more argument options
-but should otherwise be consistent with the corresponding list functions.
 
 Disclaimers:  The function list is obviously incomplete and, worse, the
 functions are not optimized.  All functions have been tested (some more
@@ -149,6 +132,8 @@ SUPPORT FUNCTIONS:  writecc
 """
 ## CHANGE LOG:
 ## ===========
+## 02-02-10 ... require Numeric, eliminate "list-only" functions (only 1 set of functions now
+###             and no Dispatch class)
 ## 00-04-13 ... pulled all "global" statements, except from aanova()
 ##              added/fixed lots of documentation, removed io.py dependency
 ##              changed to version 0.5
@@ -220,96 +205,92 @@ LA = LinearAlgebra
 ########  ACENTRAL TENDENCY  ########
 #####################################
 
-def geometric_mean (a,dimension=-1):
-    """ Calculates the geometric mean of the values in the passed array.
-
-        That is:  n-th root of (x1 * x2 * ... * xn).
-        
-        If a is 1D, a single value is returned.  If a is multi-dimensional, 
-        the geometric mean along the dimension specified is calculated.  The
-        returned array has one less dimension than a.  dimension defaults
-        to the last dimension of the array.  This means that, for a two
-        dimensional array, the default is to calculate the geometric mean
-        of each row.       
+def gmean (a,axis=-1):
+    """Calculates the geometric mean of the values in the passed array.
+    
+    That is:  n-th root of (x1 * x2 * ... * xn).
+    
+    If a is 1D, a single value is returned.  If a is multi-dimensional, 
+    the geometric mean along the dimension specified is calculated.  The
+    returned array has one less dimension than a.  dimension defaults
+    to the last dimension of the array.  This means that, for a two
+    dimensional array, the default is to calculate the geometric mean
+    of each row.
     """
     a = asarray(a)
-    size = a.shape[dimension]
-    prod = product(a,dimension)
-    gmean = power(prod,1./size)
-    return gmean 
+    size = a.shape[axis]
+    prod = product(a,axis)
+    return power(prod,1./size)
 
 
-def harmonic_mean(a,dimension=-1):
-    """ Calculates the harmonic mean of the values in the passed array.
+def hmean(a,axis=-1):
+    """Calculates the harmonic mean of the values in the passed array.
 
-        That is:  n / (1/x1 + 1/x2 + ... + 1/xn).  Defaults to ALL values in 
-        the passed array.  REMEMBER: if dimension=0, it collapses over 
-        dimension 0 ('rows' in a 2D array) only, and if dimension is a 
-        sequence, it collapses over all specified dimensions.
-
-        Returns: harmonic mean computed over dim(s) in dimension     
+    That is:  n / (1/x1 + 1/x2 + ... + 1/xn).  Defaults to ALL values in 
+    the passed array.  REMEMBER: if axis=0, it collapses over 
+    axis 0 ('rows' in a 2D array) only, and if axis is a 
+    sequence, it collapses over all specified axes.
+    
+    Returns: harmonic mean computed over dim(s) in axis     
     """
     a = asarray(a)
-    size = a.shape[dimension]
-    s = add.reduce(1.0/a, dimension)
-    return size / s
+    size = a.shape[axis]
+    return size / add.reduce(1.0/a, axis)
 
 
-def mean (a,dimension=None,keepdims=0):
+def mean (a,axis=None,keepdims=0):
+    """Calculates the arithmetic mean of the values in the passed array.
+
+    That is:  1/n * (x1 + x2 + ... + xn).  Defaults to ALL values in the
+    passed array.  Use axis=None to flatten array first.  REMEMBER: if
+    axis=0, it collapses over axis 0 ('rows' in a 2D array) only, and
+    if axis is a sequence, it collapses over all specified axes.  If
+    keepdims is set to 1, the resulting array will have as many dimensions as
+    a, with only 1 element per dim that was collapsed over.
+    
+    Returns: arithmetic mean calculated over dim(s) in axis
     """
-Calculates the arithmatic mean of the values in the passed array.
-That is:  1/n * (x1 + x2 + ... + xn).  Defaults to ALL values in the
-passed array.  Use dimension=None to flatten array first.  REMEMBER: if
-dimension=0, it collapses over dimension 0 ('rows' in a 2D array) only, and
-if dimension is a sequence, it collapses over all specified dimensions.  If
-keepdims is set to 1, the resulting array will have as many dimensions as
-a, with only 1 'level' per dim that was collapsed over.
-
-Usage:   amean(a,dimension=None,keepdims=0)
-Returns: arithematic mean calculated over dim(s) in dimension
-"""
+    a = asarray(a)
     if a.typecode() in ['l','s','b']:
         a = a.astype(Float)
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        sum = add.reduce(a)
+        mysum = add.reduce(a)
         denom = float(len(a))
-    elif type(dimension) in [IntType,FloatType]:
-        sum = asum(a,dimension)
-        denom = float(a.shape[dimension])
+    elif type(axis) in [IntType,FloatType]:
+        mysum = sum(a,axis)
+        denom = float(a.shape[axis])
         if keepdims == 1:
             shp = list(a.shape)
-            shp[dimension] = 1
-            sum = reshape(sum,shp)
+            shp[axis] = 1
+            mysum = reshape(mysum,shp)
     else: # must be a TUPLE of dims to average over
-        dims = list(dimension)
+        dims = list(axis)
         dims.sort()
         dims.reverse()
-        sum = a *1.0
+        mysum = a *1.0
         for dim in dims:
-            sum = add.reduce(sum,dim)
+            mysum = add.reduce(mysum,dim)
         denom = array(multiply.reduce(take(a.shape,dims)),Float)
         if keepdims == 1:
             shp = list(a.shape)
             for dim in dims:
                 shp[dim] = 1
-            sum = reshape(sum,shp)
-    return sum/denom
+            mysum = reshape(mysum,shp)
+    return mysum/denom
 
 
 def median (a,numbins=1000):
-    """
-Calculates the COMPUTED median value of an array of numbers, given the
-number of bins to use for the histogram (more bins approaches finding the
-precise median value of the array; default number of bins = 1000).  From
-G.W. Heiman's Basic Stats, or CRC Probability & Statistics.
-NOTE:  THIS ROUTINE ALWAYS uses the entire passed array (flattens it first).
-
-Usage:   amedian(a,numbins=1000)
-Returns: median calculated over ALL values in a
+    """Calculates the COMPUTED median value of an array of numbers, given the
+    number of bins to use for the histogram (more bins approaches finding the
+    precise median value of the array; default number of bins = 1000).  From
+    G.W. Heiman's Basic Stats, or CRC Probability & Statistics.
+    NOTE:  THIS ROUTINE ALWAYS uses the entire passed array (flattens it first).
+    
+    Returns: median calculated over ALL values in the array
 """
     a = ravel(a)
-    (hist, smallest, binsize, extras) = ahistogram(a,numbins)
+    (hist, smallest, binsize, extras) = histogram(a,numbins)
     cumhist = cumsum(hist)            # make cumulative histogram
     otherbins = greater_equal(cumhist,len(a)/2.0)
     otherbins = list(otherbins)         # list of 0/1s, 1s start at median bin
@@ -321,53 +302,53 @@ Returns: median calculated over ALL values in a
     return median
 
 
-def medianscore (a,dimension=None):
+def medianscore (a,axis=None):
     """
 Returns the 'middle' score of the passed array.  If there is an even
 number of scores, the mean of the 2 middle scores is returned.  Can function
-with 1D arrays, or on the FIRST dimension of 2D arrays (i.e., dimension can
-be None, to pre-flatten the array, or else dimension must equal 0).
+with 1D arrays, or on the FIRST axis of 2D arrays (i.e., axis can
+be None, to pre-flatten the array, or else axis must equal 0).
 
-Usage:   amedianscore(a,dimension=None)
+Usage:   amedianscore(a,axis=None)
 Returns: 'middle' score of the array, or the mean of the 2 middle scores
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    a = sort(a,dimension)
-    if a.shape[dimension] % 2 == 0:   # if even number of elements
-        indx = a.shape[dimension]/2   # integer division correct
+        axis = 0
+    a = sort(a,axis)
+    if a.shape[axis] % 2 == 0:   # if even number of elements
+        indx = a.shape[axis]/2   # integer division correct
         median = asarray(a[indx]+a[indx-1]) / 2.0
     else:
-        indx = a.shape[dimension] / 2 # integer division correct
-        median = take(a,[indx],dimension)
+        indx = a.shape[axis] / 2 # integer division correct
+        median = take(a,[indx],axis)
         if median.shape == (1,):
             median = median[0]
     return median
 
 
-def mode(a, dimension=None):
+def mode(a, axis=None):
     """
 Returns an array of the modal (most common) score in the passed array.
 If there is more than one such score, ONLY THE FIRST is returned.
 The bin-count for the modal values is also returned.  Operates on whole
-array (dimension=None), or on a given dimension.
+array (axis=None), or on a given axis.
 
-Usage:   amode(a, dimension=None)
+Usage:   amode(a, axis=None)
 Returns: array of bin-counts for mode(s), array of corresponding modal values
 """
 
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
+        axis = 0
     scores = pstat.aunique(ravel(a))       # get ALL unique values
     testshape = list(a.shape)
-    testshape[dimension] = 1
+    testshape[axis] = 1
     oldmostfreq = zeros(testshape)
     oldcounts = zeros(testshape)
     for score in scores:
         template = equal(a,score)
-        counts = asum(template,dimension,1)
+        counts = sum(template,axis,1)
         mostfrequent = where(greater(counts,oldcounts),score,oldmostfreq)
         oldcounts = where(greater(counts,oldcounts),counts,oldcounts)
         oldmostfreq = mostfrequent
@@ -442,44 +423,44 @@ Usage:   atvar(a,limits=None,inclusive=(1,1))
      return (term1 - term2) / n
 
 
-def tmin(a,lowerlimit=None,dimension=None,inclusive=1):
+def tmin(a,lowerlimit=None,axis=None,inclusive=1):
      """
-Returns the minimum value of a, along dimension, including only values less
+Returns the minimum value of a, along axis, including only values less
 than (or equal to, if inclusive=1) lowerlimit.  If the limit is set to None,
 all values in the array are used.
 
-Usage:   atmin(a,lowerlimit=None,dimension=None,inclusive=1)
+Usage:   atmin(a,lowerlimit=None,axis=None,inclusive=1)
 """
      if inclusive:       lowerfcn = greater
      else:               lowerfcn = greater_equal
-     if dimension == None:
+     if axis is None:
          a = ravel(a)
-         dimension = 0
+         axis = 0
      if lowerlimit == None:
          lowerlimit = minimum.reduce(ravel(a))-11
      biggest = maximum.reduce(ravel(a))
      ta = where(lowerfcn(a,lowerlimit),a,biggest)
-     return minimum.reduce(ta,dimension)
+     return minimum.reduce(ta,axis)
 
 
-def tmax(a,upperlimit,dimension=None,inclusive=1):
+def tmax(a,upperlimit,axis=None,inclusive=1):
      """
-Returns the maximum value of a, along dimension, including only values greater
+Returns the maximum value of a, along axis, including only values greater
 than (or equal to, if inclusive=1) upperlimit.  If the limit is set to None,
 a limit larger than the max value in the array is used.
 
-Usage:   atmax(a,upperlimit,dimension=None,inclusive=1)
+Usage:   atmax(a,upperlimit,axis=None,inclusive=1)
 """
      if inclusive:       upperfcn = less
      else:               upperfcn = less_equal
-     if dimension == None:
+     if axis is None:
          a = ravel(a)
-         dimension = 0
+         axis = 0
      if upperlimit == None:
          upperlimit = maximum.reduce(ravel(a))+1
      smallest = minimum.reduce(ravel(a))
      ta = where(upperfcn(a,upperlimit),a,smallest)
-     return maximum.reduce(ta,dimension)
+     return maximum.reduce(ta,axis)
 
 
 def tstdev(a,limits=None,inclusive=(1,1)):
@@ -531,96 +512,96 @@ Usage:   atsem(a,limits=None,inclusive=(1,1))
 ############  AMOMENTS  #############
 #####################################
 
-def moment(a,moment=1,dimension=None):
+def moment(a,moment=1,axis=None):
     """
 Calculates the nth moment about the mean for a sample (defaults to the
 1st moment).  Generally used to calculate coefficients of skewness and
-kurtosis.  Dimension can equal None (ravel array first), an integer
-(the dimension over which to operate), or a sequence (operate over
-multiple dimensions).
+kurtosis.  Axis can equal None (ravel array first), an integer
+(the axis over which to operate), or a sequence (operate over
+multiple axes).
 
-Usage:   amoment(a,moment=1,dimension=None)
-Returns: appropriate moment along given dimension
+Usage:   amoment(a,moment=1,axis=None)
+Returns: appropriate moment along given axis
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
+        axis = 0
     if moment == 1:
         return 0.0
     else:
-        mn = amean(a,dimension,1)  # 1=keepdims
+        mn = amean(a,axis,1)  # 1=keepdims
         s = power((a-mn),moment)
-        return amean(s,dimension)
+        return amean(s,axis)
 
 
-def variation(a,dimension=None):
+def variation(a,axis=None):
     """
 Returns the coefficient of variation, as defined in CRC Standard
-Probability and Statistics, p.6. Dimension can equal None (ravel array
-first), an integer (the dimension over which to operate), or a
-sequence (operate over multiple dimensions).
+Probability and Statistics, p.6. Axis can equal None (ravel array
+first), an integer (the axis over which to operate), or a
+sequence (operate over multiple axes).
 
-Usage:   avariation(a,dimension=None)
+Usage:   avariation(a,axis=None)
 """
-    return 100.0*asamplestdev(a,dimension)/amean(a,dimension)
+    return 100.0*asamplestdev(a,axis)/amean(a,axis)
 
 
-def skew(a,dimension=None): 
+def skew(a,axis=None): 
     """ 
 Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
 weight in left tail).  Use askewtest() to see if it's close enough.
-Dimension can equal None (ravel array first), an integer (the
-dimension over which to operate), or a sequence (operate over multiple
-dimensions).
+Axis can equal None (ravel array first), an integer (the
+axis over which to operate), or a sequence (operate over multiple
+axes).
 
-Usage:   askew(a, dimension=None)
-Returns: skew of vals in a along dimension, returning ZERO where all vals equal
+Usage:   askew(a, axis=None)
+Returns: skew of vals in a along axis, returning ZERO where all vals equal
 """
-    denom = power(amoment(a,2,dimension),1.5)
+    denom = power(amoment(a,2,axis),1.5)
     zero = equal(denom,0)
-    if type(denom) == ArrayType and asum(zero) <> 0:
-        print "Number of zeros in askew: ",asum(zero)
+    if type(denom) == ArrayType and sum(zero) <> 0:
+        print "Number of zeros in askew: ",sum(zero)
     denom = denom + zero  # prevent divide-by-zero
-    return where(zero, 0, amoment(a,3,dimension)/denom)
+    return where(zero, 0, amoment(a,3,axis)/denom)
 
 
-def kurtosis(a,dimension=None):
+def kurtosis(a,axis=None):
     """
 Returns the kurtosis of a distribution (normal ==> 3.0; >3 means
 heavier in the tails, and usually more peaked).  Use akurtosistest()
-to see if it's close enough.  Dimension can equal None (ravel array
-first), an integer (the dimension over which to operate), or a
-sequence (operate over multiple dimensions).
+to see if it's close enough.  Axis can equal None (ravel array
+first), an integer (the axis over which to operate), or a
+sequence (operate over multiple axes).
 
-Usage:   akurtosis(a,dimension=None)
-Returns: kurtosis of values in a along dimension, and ZERO where all vals equal
+Usage:   akurtosis(a,axis=None)
+Returns: kurtosis of values in a along axis, and ZERO where all vals equal
 """
-    denom = power(amoment(a,2,dimension),2)
+    denom = power(amoment(a,2,axis),2)
     zero = equal(denom,0)
-    if type(denom) == ArrayType and asum(zero) <> 0:
-        print "Number of zeros in akurtosis: ",asum(zero)
+    if type(denom) == ArrayType and sum(zero) <> 0:
+        print "Number of zeros in akurtosis: ",sum(zero)
     denom = denom + zero  # prevent divide-by-zero
-    return where(zero,0,amoment(a,4,dimension)/denom)
+    return where(zero,0,amoment(a,4,axis)/denom)
 
 
-def describe(a,dimension=None):
+def describe(a,axis=None):
      """
-Returns several descriptive statistics of the passed array.  Dimension
-can equal None (ravel array first), an integer (the dimension over
-which to operate), or a sequence (operate over multiple dimensions).
+Returns several descriptive statistics of the passed array.  Axis
+can equal None (ravel array first), an integer (the axis over
+which to operate), or a sequence (operate over multiple axes).
 
-Usage:   adescribe(a,dimension=None)
+Usage:   adescribe(a,axis=None)
 Returns: n, (min,max), mean, standard deviation, skew, kurtosis
 """
-     if dimension == None:
+     if axis is None:
          a = ravel(a)
-         dimension = 0
-     n = a.shape[dimension]
+         axis = 0
+     n = a.shape[axis]
      mm = (minimum.reduce(a),maximum.reduce(a))
-     m = amean(a,dimension)
-     sd = astdev(a,dimension)
-     skew = askew(a,dimension)
-     kurt = akurtosis(a,dimension)
+     m = amean(a,axis)
+     sd = astdev(a,axis)
+     skew = askew(a,axis)
+     kurt = akurtosis(a,axis)
      return n, mm, m, sd, skew, kurt
 
 
@@ -628,21 +609,21 @@ Returns: n, (min,max), mean, standard deviation, skew, kurtosis
 ########  NORMALITY TESTS  ##########
 #####################################
 
-def skewtest(a,dimension=None):
+def skewtest(a,axis=None):
     """
 Tests whether the skew is significantly different from a normal
-distribution.  Dimension can equal None (ravel array first), an
-integer (the dimension over which to operate), or a sequence (operate
-over multiple dimensions).
+distribution.  Axis can equal None (ravel array first), an
+integer (the axis over which to operate), or a sequence (operate
+over multiple axes).
 
-Usage:   askewtest(a,dimension=None)
+Usage:   askewtest(a,axis=None)
 Returns: z-score and 2-tail z-probability
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    b2 = askew(a,dimension)
-    n = float(a.shape[dimension])
+        axis = 0
+    b2 = askew(a,axis)
+    n = float(a.shape[axis])
     y = b2 * sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
     beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
     W2 = -1 + sqrt(2*(beta2-1))
@@ -653,23 +634,23 @@ Returns: z-score and 2-tail z-probability
     return Z, (1.0-zprob(Z))*2
 
 
-def kurtosistest(a,dimension=None):
+def kurtosistest(a,axis=None):
     """
 Tests whether a dataset has normal kurtosis (i.e.,
-kurtosis=3(n-1)/(n+1)) Valid only for n>20.  Dimension can equal None
-(ravel array first), an integer (the dimension over which to operate),
-or a sequence (operate over multiple dimensions).
+kurtosis=3(n-1)/(n+1)) Valid only for n>20.  Axis can equal None
+(ravel array first), an integer (the axis over which to operate),
+or a sequence (operate over multiple axes).
 
-Usage:   akurtosistest(a,dimension=None)
+Usage:   akurtosistest(a,axis=None)
 Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    n = float(a.shape[dimension])
+        axis = 0
+    n = float(a.shape[axis])
     if n<20:
         print "akurtosistest only valid for n>=20 ... continuing anyway, n=",n
-    b2 = akurtosis(a,dimension)
+    b2 = akurtosis(a,axis)
     E = 3.0*(n-1) /(n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
     x = (b2-E)/sqrt(varb2)
@@ -685,21 +666,21 @@ Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
     return Z, (1.0-zprob(Z))*2
 
 
-def normaltest(a,dimension=None):
+def normaltest(a,axis=None):
     """
 Tests whether skew and/OR kurtosis of dataset differs from normal
-curve.  Can operate over multiple dimensions.  Dimension can equal
-None (ravel array first), an integer (the dimension over which to
-operate), or a sequence (operate over multiple dimensions).
+curve.  Can operate over multiple axes.  Axis can equal
+None (ravel array first), an integer (the axis over which to
+operate), or a sequence (operate over multiple axes).
 
-Usage:   anormaltest(a,dimension=None)
+Usage:   anormaltest(a,axis=None)
 Returns: z-score and 2-tail probability
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    s,p = askewtest(a,dimension)
-    k,p = akurtosistest(a,dimension)
+        axis = 0
+    s,p = askewtest(a,axis)
+    k,p = akurtosistest(a,axis)
     k2 = power(s,2) + power(k,2)
     return k2, achisqprob(k2,2)
 
@@ -864,136 +845,136 @@ Returns: transformed data for use in an ANOVA
         return array(nargs)
 
 
-def samplevar (a,dimension=None,keepdims=0):
+def samplevar (a,axis=None,keepdims=0):
     """
 Returns the sample standard deviation of the values in the passed
-array (i.e., using N).  Dimension can equal None (ravel array first),
-an integer (the dimension over which to operate), or a sequence
-(operate over multiple dimensions).  Set keepdims=1 to return an array
-with the same number of dimensions as a.
+array (i.e., using N).  Axis can equal None (ravel array first),
+an integer (the axis over which to operate), or a sequence
+(operate over multiple axes).  Set keepdims=1 to return an array
+with the same number of axes as a.
 
-Usage:   asamplevar(a,dimension=None,keepdims=0)
+Usage:   asamplevar(a,axis=None,keepdims=0)
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    if dimension == 1:
-        mn = amean(a,dimension)[:,NewAxis]
+        axis = 0
+    if axis == 1:
+        mn = amean(a,axis)[:,NewAxis]
     else:
-        mn = amean(a,dimension,keepdims=1)
+        mn = amean(a,axis,keepdims=1)
     deviations = a - mn 
-    if type(dimension) == ListType:
+    if type(axis) == ListType:
         n = 1
-        for d in dimension:
+        for d in axis:
             n = n*a.shape[d]
     else:
-        n = a.shape[dimension]
-    svar = ass(deviations,dimension,keepdims) / float(n)
+        n = a.shape[axis]
+    svar = ass(deviations,axis,keepdims) / float(n)
     return svar
 
 
-def samplestdev (a, dimension=None, keepdims=0):
+def samplestdev (a, axis=None, keepdims=0):
     """
 Returns the sample standard deviation of the values in the passed
-array (i.e., using N).  Dimension can equal None (ravel array first),
-an integer (the dimension over which to operate), or a sequence
-(operate over multiple dimensions).  Set keepdims=1 to return an array
-with the same number of dimensions as a.
+array (i.e., using N).  Axis can equal None (ravel array first),
+an integer (the axis over which to operate), or a sequence
+(operate over multiple axes).  Set keepdims=1 to return an array
+with the same number of axes as a.
 
-Usage:   asamplestdev(a,dimension=None,keepdims=0)
+Usage:   asamplestdev(a,axis=None,keepdims=0)
 """
-    return sqrt(asamplevar(a,dimension,keepdims))
+    return sqrt(asamplevar(a,axis,keepdims))
 
 
-def signaltonoise(instack,dimension=0):
+def signaltonoise(instack,axis=0):
     """
-Calculates signal-to-noise.  Dimension can equal None (ravel array
-first), an integer (the dimension over which to operate), or a
-sequence (operate over multiple dimensions).
+Calculates signal-to-noise.  Axis can equal None (ravel array
+first), an integer (the axis over which to operate), or a
+sequence (operate over multiple axes).
 
-Usage:   asignaltonoise(instack,dimension=0):
-Returns: array containing the value of (mean/stdev) along dimension,
+Usage:   asignaltonoise(instack,axis=0):
+Returns: array containing the value of (mean/stdev) along axis,
          or 0 when stdev=0
 """
-    m = mean(instack,dimension)
-    sd = stdev(instack,dimension)
+    m = mean(instack,axis)
+    sd = stdev(instack,axis)
     return where(equal(sd,0),0,m/sd)
 
 
-def var (a, dimension=None,keepdims=0):
+def var (a, axis=None,keepdims=0):
     """
 Returns the estimated population variance of the values in the passed
-array (i.e., N-1).  Dimension can equal None (ravel array first), an
-integer (the dimension over which to operate), or a sequence (operate
-over multiple dimensions).  Set keepdims=1 to return an array with the
-same number of dimensions as a.
+array (i.e., N-1).  Axis can equal None (ravel array first), an
+integer (the axis over which to operate), or a sequence (operate
+over multiple axes).  Set keepdims=1 to return an array with the
+same number of axes as a.
 
-Usage:   avar(a,dimension=None,keepdims=0)
+Usage:   avar(a,axis=None,keepdims=0)
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    mn = amean(a,dimension,1)
+        axis = 0
+    mn = amean(a,axis,1)
     deviations = a - mn
-    if type(dimension) == ListType:
+    if type(axis) == ListType:
         n = 1
-        for d in dimension:
+        for d in axis:
             n = n*a.shape[d]
     else:
-        n = a.shape[dimension]
-    var = ass(deviations,dimension,keepdims)/float(n-1)
+        n = a.shape[axis]
+    var = ass(deviations,axis,keepdims)/float(n-1)
     return var
 
 
-def stdev (a, dimension=None, keepdims=0):
+def stdev (a, axis=None, keepdims=0):
     """
 Returns the estimated population standard deviation of the values in
-the passed array (i.e., N-1).  Dimension can equal None (ravel array
-first), an integer (the dimension over which to operate), or a
-sequence (operate over multiple dimensions).  Set keepdims=1 to return
-an array with the same number of dimensions as a.
+the passed array (i.e., N-1).  Axis can equal None (ravel array
+first), an integer (the axis over which to operate), or a
+sequence (operate over multiple axes).  Set keepdims=1 to return
+an array with the same number of axes as a.
 
-Usage:   astdev(a,dimension=None,keepdims=0)
+Usage:   astdev(a,axis=None,keepdims=0)
 """
-    return sqrt(avar(a,dimension,keepdims))
+    return sqrt(avar(a,axis,keepdims))
 
 
-def sterr (a, dimension=None, keepdims=0):
+def sterr (a, axis=None, keepdims=0):
     """
 Returns the estimated population standard error of the values in the
-passed array (i.e., N-1).  Dimension can equal None (ravel array
-first), an integer (the dimension over which to operate), or a
-sequence (operate over multiple dimensions).  Set keepdims=1 to return
-an array with the same number of dimensions as a.
+passed array (i.e., N-1).  Axis can equal None (ravel array
+first), an integer (the axis over which to operate), or a
+sequence (operate over multiple axes).  Set keepdims=1 to return
+an array with the same number of axes as a.
 
-Usage:   asterr(a,dimension=None,keepdims=0)
+Usage:   asterr(a,axis=None,keepdims=0)
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    return astdev(a,dimension,keepdims) / float(sqrt(a.shape[dimension]))
+        axis = 0
+    return astdev(a,axis,keepdims) / float(sqrt(a.shape[axis]))
 
 
-def sem (a, dimension=None, keepdims=0):
+def sem (a, axis=None, keepdims=0):
     """
 Returns the standard error of the mean (i.e., using N) of the values
-in the passed array.  Dimension can equal None (ravel array first), an
-integer (the dimension over which to operate), or a sequence (operate
-over multiple dimensions).  Set keepdims=1 to return an array with the
-same number of dimensions as a.
+in the passed array.  Axis can equal None (ravel array first), an
+integer (the axis over which to operate), or a sequence (operate
+over multiple axes).  Set keepdims=1 to return an array with the
+same number of axes as a.
 
-Usage:   asem(a,dimension=None, keepdims=0)
+Usage:   asem(a,axis=None, keepdims=0)
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    if type(dimension) == ListType:
+        axis = 0
+    if type(axis) == ListType:
         n = 1
-        for d in dimension:
+        for d in axis:
             n = n*a.shape[d]
     else:
-        n = a.shape[dimension]
-    s = asamplestdev(a,dimension,keepdims) / sqrt(n-1)
+        n = a.shape[axis]
+    s = asamplestdev(a,axis,keepdims) / sqrt(n-1)
     return s
 
 
@@ -1022,15 +1003,15 @@ Usage:   azs(a)
     return array(zscores)
 
 
-def zmap (scores, compare, dimension=0):
+def zmap (scores, compare, axis=0):
     """
 Returns an array of z-scores the shape of scores (e.g., [x,y]), compared to
 array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
 of the compare array.
 
-Usage:   azs(scores, compare, dimension=0)
+Usage:   azs(scores, compare, axis=0)
 """
-    mns = amean(compare,dimension)
+    mns = amean(compare,axis)
     sstd = asamplestdev(compare,0)
     return (scores - mns) / sstd
 
@@ -1396,29 +1377,29 @@ Returns: t-value, two-tailed prob
     return t,prob
 
 
-def ttest_ind (a, b, dimension=None, printit=0, name1='Samp1', name2='Samp2',writemode='a'):
+def ttest_ind (a, b, axis=None, printit=0, name1='Samp1', name2='Samp2',writemode='a'):
     """
 Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
 a, and b.  From Numerical Recipies, p.483.  If printit=1, results are
 printed to the screen.  If printit='filename', the results are output
-to 'filename' using the given writemode (default=append).  Dimension
-can equal None (ravel array first), or an integer (the dimension over
+to 'filename' using the given writemode (default=append).  Axis
+can equal None (ravel array first), or an integer (the axis over
 which to operate on a and b).
 
-Usage:   attest_ind (a,b,dimension=None,printit=0,
+Usage:   attest_ind (a,b,axis=None,printit=0,
                      Name1='Samp1',Name2='Samp2',writemode='a')
 Returns: t-value, two-tailed p-value
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
         b = ravel(b)
-        dimension = 0
-    x1 = amean(a,dimension)
-    x2 = amean(b,dimension)
-    v1 = avar(a,dimension)
-    v2 = avar(b,dimension)
-    n1 = a.shape[dimension]
-    n2 = b.shape[dimension]
+        axis = 0
+    x1 = amean(a,axis)
+    x2 = amean(b,axis)
+    v1 = avar(a,axis)
+    v2 = avar(b,axis)
+    n1 = a.shape[axis]
+    n2 = b.shape[axis]
     df = n1+n2-2
     svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
     zerodivproblem = equal(svar,0)
@@ -1447,36 +1428,36 @@ Returns: t-value, two-tailed p-value
     return t, probs
 
 
-def ttest_rel (a,b,dimension=None,printit=0,name1='Samp1',name2='Samp2',writemode='a'):
+def ttest_rel (a,b,axis=None,printit=0,name1='Samp1',name2='Samp2',writemode='a'):
     """
 Calculates the t-obtained T-test on TWO RELATED samples of scores, a
 and b.  From Numerical Recipies, p.483.  If printit=1, results are
 printed to the screen.  If printit='filename', the results are output
-to 'filename' using the given writemode (default=append).  Dimension
-can equal None (ravel array first), or an integer (the dimension over
+to 'filename' using the given writemode (default=append).  Axis
+can equal None (ravel array first), or an integer (the axis over
 which to operate on a and b).
 
-Usage:   attest_rel(a,b,dimension=None,printit=0,
+Usage:   attest_rel(a,b,axis=None,printit=0,
                     name1='Samp1',name2='Samp2',writemode='a')
 Returns: t-value, two-tailed p-value
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
         b = ravel(b)
-        dimension = 0
+        axis = 0
     if len(a)<>len(b):
         raise ValueError, 'Unequal length arrays.'
-    x1 = amean(a,dimension)
-    x2 = amean(b,dimension)
-    v1 = avar(a,dimension)
-    v2 = avar(b,dimension)
-    n = a.shape[dimension]
+    x1 = amean(a,axis)
+    x2 = amean(b,axis)
+    v1 = avar(a,axis)
+    v2 = avar(b,axis)
+    n = a.shape[axis]
     df = float(n-1)
     d = (a-b).astype('d')
 
-    denom = sqrt((n*add.reduce(d*d,dimension) - add.reduce(d,dimension)**2) /df)
+    denom = sqrt((n*add.reduce(d*d,axis) - add.reduce(d,axis)**2) /df)
     zerodivproblem = equal(denom,0)
-    t = add.reduce(d,dimension) / denom      # N-D COMPUTATION HERE!!!!!!
+    t = add.reduce(d,axis) / denom      # N-D COMPUTATION HERE!!!!!!
     t = where(zerodivproblem,1.0,t)          # replace NaN t-values with 1.0
     t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
     probs = abetai(0.5*df,0.5,float(df)/(df+t*t))
@@ -1717,7 +1698,7 @@ Returns: chi-square statistic, associated p-value
     data = data.astype(Float)
     for i in range(len(data)):
         data[i] = arankdata(data[i])
-    ssbn = asum(asum(args,1)**2)
+    ssbn = sum(sum(args,1)**2)
     chisq = 12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)
     return chisq, chisqprob(chisq,k-1)
 
@@ -1730,7 +1711,7 @@ def chisqprob(chisq,df):
     """
 Returns the (1-tail) probability value associated with the provided chi-square
 value and df.  Heavily modified from chisq.c in Gary Perlman's |Stat.  Can
-handle multiple dimensions.
+handle multiple axes.
 
 Usage:   achisqprob(chisq,df)    chisq=chisquare stat., df=degrees of freedom
 """
@@ -1775,7 +1756,7 @@ Usage:   achisqprob(chisq,df)    chisq=chisquare stat., df=degrees of freedom
         a_big = greater(a,BIG)
         a_big_frozen = -1 *ones(probs.shape,Float)
         totalelements = multiply.reduce(array(probs.shape))
-        while asum(mask)<>totalelements:
+        while sum(mask)<>totalelements:
             e = log(z) + e
             s = s + ex(c*z-a-e)
             z = z + 1.0
@@ -1792,7 +1773,7 @@ Usage:   achisqprob(chisq,df)    chisq=chisquare stat., df=degrees of freedom
         c = 0.0
         mask = zeros(probs.shape)
         a_notbig_frozen = -1 *ones(probs.shape,Float)
-        while asum(mask)<>totalelements:
+        while sum(mask)<>totalelements:
             e = e * (a/z.astype(Float))
             c = c + e
             z = z + 1.0
@@ -1812,7 +1793,7 @@ def erfcc(x):
     """
 Returns the complementary error function erfc(x) with fractional error
 everywhere less than 1.2e-7.  Adapted from Numerical Recipies.  Can
-handle multiple dimensions.
+handle multiple axes.
 
 Usage:   aerfcc(x)
 """
@@ -1829,7 +1810,7 @@ Thus,
     for z<0, zprob(z) = 1-tail probability
     for z>0, 1.0-zprob(z) = 1-tail probability
     for any z, 2.0*(1.0-zprob(abs(z))) = 2-tail probability
-Adapted from z.c in Gary Perlman's |Stat.  Can handle multiple dimensions.
+Adapted from z.c in Gary Perlman's |Stat.  Can handle multiple axes.
 
 Usage:   azprob(z)    where z is a z-value
 """
@@ -1864,7 +1845,7 @@ Usage:   azprob(z)    where z is a z-value
 def ksprob(alam):
      """
 Returns the probability value for a K-S statistic computed via ks_2samp.
-Adapted from Numerical Recipies.  Can handle multiple dimensions.
+Adapted from Numerical Recipies.  Can handle multiple axes.
 
 Usage:   aksprob(alam)
 """
@@ -1882,7 +1863,7 @@ Usage:   aksprob(alam)
      a2 = array(-2.0*alam*alam,Float64)
      totalelements = multiply.reduce(array(mask.shape))
      for j in range(1,201):
-         if asum(mask) == totalelements:
+         if sum(mask) == totalelements:
              break
          exponents = (a2*j*j)
          overflowmask = less(exponents,-746)
@@ -1920,7 +1901,7 @@ def betacf(a,b,x):
     """
 Evaluates the continued fraction form of the incomplete Beta function,
 betai.  (Adapted from: Numerical Recipies in C.)  Can handle multiple
-dimensions for x.
+axes for x.
 
 Usage:   abetacf(a,b,x)
 """
@@ -1959,7 +1940,7 @@ Usage:   abetacf(a,b,x)
         newmask = less(abs(az-aold),EPS*abs(az))
         frozen = where(newmask*equal(mask,0), az, frozen)
         mask = clip(mask+newmask,0,1)
-    noconverge = asum(equal(frozen,-1))
+    noconverge = sum(equal(frozen,-1))
     if noconverge <> 0:
         print 'a or b too big, or ITMAX too small in Betacf for ',noconverge,' elements'
     if arrayflag:
@@ -1998,13 +1979,13 @@ Returns the incomplete beta function:
 where a,b>0 and B(a,b) = G(a)*G(b)/(G(a+b)) where G(a) is the gamma
 function of a.  The continued fraction formulation is implemented
 here, using the betacf function.  (Adapted from: Numerical Recipies in
-C.)  Can handle multiple dimensions.
+C.)  Can handle multiple axes.
 
 Usage:   abetai(a,b,x)
 """
     TINY = 1e-15
     if type(a) == ArrayType:
-        if asum(less(x,0)+greater(x,1)) <> 0:
+        if sum(less(x,0)+greater(x,1)) <> 0:
             raise ValueError, 'Bad x in abetai'
     x = where(equal(x,0),TINY,x)
     x = where(equal(x,1.0),1-TINY,x)
@@ -2062,7 +2043,7 @@ Returns: statistic, p-value ???
     if len(p) == 2:  # ttest_ind
         c = array([1,-1])
         df = n-2
-        fact = asum(1.0/asum(x,0))  # i.e., 1/n1 + 1/n2 + 1/n3 ...
+        fact = sum(1.0/sum(x,0))  # i.e., 1/n1 + 1/n2 + 1/n3 ...
         t = dot(c,b) / sqrt(s_sq*fact)
         probs = abetai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs
@@ -2257,15 +2238,15 @@ lists-of-lists.
             # source and also within-subj vars (excluding subjects col)
             Bwithinnonsource = Bnonsource & Bwscols 
 
-            # Next, make a list of the above.  The list is a list of dimensions in DA
-            # because DA has the same number of dimensions as there are factors
+            # Next, make a list of the above.  The list is a list of axes in DA
+            # because DA has the same number of axes as there are factors
             # (including subjects), but with extra dummyval='-1' values the original
             # data array (assuming between-subj vars exist)
             Lwithinnonsource = makelist(Bwithinnonsource,Nfactors+1)
 
             # Collapse all non-source, w/i subj dims, FROM THE END (otherwise the
             # dim-numbers change as you collapse).  THIS WORKS BECAUSE WE'RE
-            # COLLAPSING ACROSS W/I SUBJECT DIMENSIONS, WHICH WILL ALL HAVE THE
+            # COLLAPSING ACROSS W/I SUBJECT AXES, WHICH WILL ALL HAVE THE
             # SAME SUBJ IN THE SAME ARRAY LOCATIONS (i.e., dummyvals will still exist
             # but should remain the same value through the amean() function
             for i in range(len(Lwithinnonsource)-1,-1,-1):
@@ -2325,7 +2306,7 @@ lists-of-lists.
 
                 # CALCULATE D VARIABLE
                 scratch = coeffmatrix * mns
-                # Collapse all dimensions EXCEPT subjects dim (dim 0)
+                # Collapse all axes EXCEPT subjects dim (dim 0)
                 for j in range(len(coeffmatrix.shape[1:])):
                     scratch = add.reduce(scratch,1)
                 if len(scratch.shape) == 1:
@@ -2351,7 +2332,7 @@ lists-of-lists.
             idx[0] = -1
             loopcap = array(tsubjslots.shape[0:-1]) -1
             while incr(idx,loopcap) <> -1:
-                DNarray[idx] = float(asum(tsubjslots[idx]))
+                DNarray[idx] = float(sum(tsubjslots[idx]))
                 thismean =  (add.reduce(tsubjslots[idx] * # 1=subj dim
                                           transpose(D[dcount]),1) /
                              DNarray[idx])
@@ -2379,7 +2360,7 @@ lists-of-lists.
             # Determine cols (from input list) required for n-way interaction
             Lsource = makelist((Nallsources-1)&Bbetweens,Nfactors+1)
             # NOW convert this list of between-subject column numbers to a list of
-            # DIMENSIONS in M, since M has fewer dims than the original data array
+            # AXES in M, since M has fewer dims than the original data array
             # (assuming within-subj vars exist); Bscols has list of between-subj cols
             # from input list, the indices of which correspond to that var's loc'n in M
             btwcols = map(Bscols.index,Lsource)
@@ -2402,7 +2383,7 @@ lists-of-lists.
             # Determine which cols from input are required for this source
             Lsource = makelist(source-1,Nfactors+1)
             # NOW convert this list of between-subject column numbers to a list of
-            # DIMENSIONS in M, since M has fewer dims than the original data array
+            # AXES in M, since M has fewer dims than the original data array
             # (assuming within-subj vars exist); Bscols has list of between-subj cols
             # from input list, the indices of which correspond to that var's loc'n in M
             btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
@@ -2412,15 +2393,15 @@ lists-of-lists.
             Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
             btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
-    ## Average Marray over non-source dimensions (1=keep squashed dims)
+    ## Average Marray over non-source axes (1=keep squashed dims)
             sourceMarray = amean(Marray,btwnonsourcedims,1)
 
     ## Calculate harmonic means for each level in source
             sourceNarray = aharmonicmean(Narray,btwnonsourcedims,1)
 
     ## Calc grand average (ga), used for ALL effects
-            ga = asum((sourceMarray*sourceNarray)/
-                            asum(sourceNarray))
+            ga = sum((sourceMarray*sourceNarray)/
+                            sum(sourceNarray))
             ga = reshape(ga,ones(len(Marray.shape)))
 
     ## If GRAND interaction, use harmonic mean of ALL cell Ns
@@ -2430,7 +2411,7 @@ lists-of-lists.
     ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
             sub_effects = 1.0 * ga # start with grand mean
             for subsource in range(3,source,2):
-        ## Make a list of the non-subsource dimensions
+        ## Make a list of the non-subsource axes
                 if subset(subsource-1,source-1):
                     sub_effects = (sub_effects +
                                    alleffects[alleffsources.index(subsource)])
@@ -2442,7 +2423,7 @@ lists-of-lists.
             alleffsources.append(source)
 
     ## Calc and save sums of squares for this source
-            SS = asum((effect**2 *sourceNarray) *
+            SS = sum((effect**2 *sourceNarray) *
                       multiply.reduce(take(Marray.shape,btwnonsourcedims)))
         ## Save it so you don't have to calculate it again next time
             SSlist.append(SS)
@@ -2671,7 +2652,7 @@ Usage:   Derrorcalc(workd,subjslots,source)  source:-1=nothing, 0=mean
 Returns: SS array for multivariate F calculation
 """
 ###
-### RESTRICT COLUMNS/DIMENSIONS SPECIFIED IN source (BINARY)
+### RESTRICT COLUMNS/AXES SPECIFIED IN source (BINARY)
 ### (i.e., is the value of source not equal to 0 or -1?)
 ###
      if source > 0:
@@ -2693,7 +2674,7 @@ Returns: SS array for multivariate F calculation
              for j in range(i,levels):
                  RSw[i,j] = RSw[j,i] = sum(tworkd[i]*tworkd[j])
                  cross = all_cellmeans[i] * all_cellmeans[j]
-                 multfirst = asum(cross*all_cellns[i])
+                 multfirst = sum(cross*all_cellns[i])
                  RSinter[i,j] = RSinter[j,i] = asarray(multfirst)
                  SSm[i,j] = SSm[j,i] = (amean(all_cellmeans[i]) *
                                         amean(all_cellmeans[j]) *
@@ -2707,7 +2688,7 @@ Returns: SS array for multivariate F calculation
          Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
          btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
-       ## Average Marray over non-source dimensions
+       ## Average Marray over non-source axes
          sourceDMarray = DM[dindex] *1.0
          for dim in btwnonsourcedims: # collapse all non-source dims
              if dim == len(DM[dindex].shape)-1:
@@ -2718,9 +2699,9 @@ Returns: SS array for multivariate F calculation
          sourceDNarray = aharmonicmean(DN[dindex],btwnonsourcedims,1)
 
        ## Calc grand average (ga), used for ALL effects
-         variableNs = asum(sourceDNarray,
+         variableNs = sum(sourceDNarray,
                            range(len(sourceDMarray.shape)-1))
-         ga = asum((sourceDMarray*sourceDNarray) /
+         ga = sum((sourceDMarray*sourceDNarray) /
                    variableNs,
                    range(len(sourceDMarray.shape)-1),1)
 
@@ -2732,7 +2713,7 @@ Returns: SS array for multivariate F calculation
        ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
          sub_effects = ga *1.0   # start with grand mean
          for subsource in range(3,source-2,2):
-       ## Make a list of the non-subsource dimensions
+       ## Make a list of the non-subsource axes
              subsourcebtw = (subsource-1) & Bbetweens
              if (propersubset(subsource-1,source-1) and
                  (subsource-1)&Bwithins == (source-1)&Bwithins and
@@ -2749,7 +2730,7 @@ Returns: SS array for multivariate F calculation
 
        ## Calc and save sums of squares for this source
          SS = zeros((levels,levels),'f')
-         SS = asum((effect**2 *sourceDNarray) *
+         SS = sum((effect**2 *sourceDNarray) *
                    multiply.reduce(take(DM[dindex].shape,btwnonsourcedims)),
                          range(len(sourceDMarray.shape)-1))
        ## Save it so you don't have to calculate it again next time
@@ -2763,7 +2744,7 @@ def multivar_SScalc(workd):
 ###
 ### DO SS CALCS ON THE OUTPUT FROM THE SOURCE=0 AND SOURCE=-1 CASES
 ###
-     # this section expects workd to have subj. in LAST dimension!!!!!!
+     # this section expects workd to have subj. in LAST axis!!!!!!
      if len(workd.shape) == 1:
          levels = 1
      else:
@@ -2989,31 +2970,31 @@ Returns: array shape of a, with -1 where a<0 and +1 where a>=0
         return zeros(shape(a))-less(a,0)+greater(a,0)
 
 
-def sum (a, dimension=None,keepdims=0):
+def sum (a, axis=None,keepdims=0):
      """
 An alternative to the Numeric.add.reduce function, which allows one to
-(1) collapse over multiple dimensions at once, and/or (2) to retain
-all dimensions in the original array (squashing one down to size.
-Dimension can equal None (ravel array first), an integer (the
-dimension over which to operate), or a sequence (operate over multiple
-dimensions).  If keepdims=1, the resulting array will have as many
-dimensions as the input array.
+(1) collapse over multiple axes at once, and/or (2) to retain
+all axes in the original array (squashing one down to size.
+Axis can equal None (ravel array first), an integer (the
+axis over which to operate), or a sequence (operate over multiple
+axes).  If keepdims=1, the resulting array will have as many
+axes as the input array.
 
-Usage:   asum(a, dimension=None, keepdims=0)
-Returns: array summed along 'dimension'(s), same _number_ of dims if keepdims=1
+Usage:   sum(a, axis=None, keepdims=0)
+Returns: array summed along 'axis'(s), same _number_ of dims if keepdims=1
 """
      if type(a) == ArrayType and a.typecode() in ['l','s','b']:
          a = a.astype(Float)
-     if dimension == None:
+     if axis is None:
          s = sum(ravel(a))
-     elif type(dimension) in [IntType,FloatType]:
-         s = add.reduce(a, dimension)
+     elif type(axis) in [IntType,FloatType]:
+         s = add.reduce(a, axis)
          if keepdims == 1:
              shp = list(a.shape)
-             shp[dimension] = 1
+             shp[axis] = 1
              s = reshape(s,shp)
      else: # must be a SEQUENCE of dims to sum over
-        dims = list(dimension)
+        dims = list(axis)
         dims.sort()
         dims.reverse()
         s = a *1.0
@@ -3027,100 +3008,100 @@ Returns: array summed along 'dimension'(s), same _number_ of dims if keepdims=1
      return s
 
 
-def cumsum (a,dimension=None):
+def cumsum (a,axis=None):
     """
 Returns an array consisting of the cumulative sum of the items in the
-passed array.  Dimension can equal None (ravel array first), an
-integer (the dimension over which to operate), or a sequence (operate
-over multiple dimensions, but this last one just barely makes sense).
+passed array.  Axis can equal None (ravel array first), an
+integer (the axis over which to operate), or a sequence (operate
+over multiple axes, but this last one just barely makes sense).
 
-Usage:   acumsum(a,dimension=None)
+Usage:   acumsum(a,axis=None)
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    if type(dimension) in [ListType, TupleType, ArrayType]:
-        dimension = list(dimension)
-        dimension.sort()
-        dimension.reverse()
-        for d in dimension:
+        axis = 0
+    if type(axis) in [ListType, TupleType, ArrayType]:
+        axis = list(axis)
+        axis.sort()
+        axis.reverse()
+        for d in axis:
             a = add.accumulate(a,d)
         return a
     else:
-        return add.accumulate(a,dimension)
+        return add.accumulate(a,axis)
 
 
-def ss(a, dimension=None, keepdims=0):
+def ss(a, axis=None, keepdims=0):
     """
 Squares each value in the passed array, adds these squares & returns
 the result.  Unfortunate function name. :-) Defaults to ALL values in
-the array.  Dimension can equal None (ravel array first), an integer
-(the dimension over which to operate), or a sequence (operate over
-multiple dimensions).  Set keepdims=1 to maintain the original number
-of dimensions.
+the array.  Axis can equal None (ravel array first), an integer
+(the axis over which to operate), or a sequence (operate over
+multiple axes).  Set keepdims=1 to maintain the original number
+of axes.
 
-Usage:   ass(a, dimension=None, keepdims=0)
-Returns: sum-along-'dimension' for (a*a)
+Usage:   ass(a, axis=None, keepdims=0)
+Returns: sum-along-'axis' for (a*a)
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    return asum(a*a,dimension,keepdims)
+        axis = 0
+    return sum(a*a,axis,keepdims)
 
 
-def summult (array1,array2,dimension=None,keepdims=0):
+def summult (array1,array2,axis=None,keepdims=0):
     """
 Multiplies elements in array1 and array2, element by element, and
-returns the sum (along 'dimension') of all resulting multiplications.
-Dimension can equal None (ravel array first), an integer (the
-dimension over which to operate), or a sequence (operate over multiple
-dimensions).  A trivial function, but included for completeness.
+returns the sum (along 'axis') of all resulting multiplications.
+Axis can equal None (ravel array first), an integer (the
+axis over which to operate), or a sequence (operate over multiple
+axes).  A trivial function, but included for completeness.
 
-Usage:   asummult(array1,array2,dimension=None,keepdims=0)
+Usage:   summult(array1,array2,axis=None,keepdims=0)
 """
-    if dimension == None:
+    if axis is None:
         array1 = ravel(array1)
         array2 = ravel(array2)
-        dimension = 0
-    return asum(array1*array2,dimension,keepdims)
+        axis = 0
+    return sum(array1*array2,axis,keepdims)
 
 
-def square_of_sums(a, dimension=None, keepdims=0):
+def square_of_sums(a, axis=None, keepdims=0):
     """
 Adds the values in the passed array, squares that sum, and returns the
-result.  Dimension can equal None (ravel array first), an integer (the
-dimension over which to operate), or a sequence (operate over multiple
-dimensions).  If keepdims=1, the returned array will have the same
-NUMBER of dimensions as the original.
+result.  Axis can equal None (ravel array first), an integer (the
+axis over which to operate), or a sequence (operate over multiple
+axes).  If keepdims=1, the returned array will have the same
+NUMBER of axes as the original.
 
-Usage:   asquare_of_sums(a, dimension=None, keepdims=0)
-Returns: the square of the sum over dim(s) in dimension
+Usage:   asquare_of_sums(a, axis=None, keepdims=0)
+Returns: the square of the sum over dim(s) in axis
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    s = asum(a,dimension,keepdims)
+        axis = 0
+    s = sum(a,axis,keepdims)
     if type(s) == ArrayType:
         return s.astype(Float)*s
     else:
         return float(s)*s
 
 
-def sumdiffsquared(a,b, dimension=None, keepdims=0):
+def sumdiffsquared(a,b, axis=None, keepdims=0):
     """
 Takes pairwise differences of the values in arrays a and b, squares
-these differences, and returns the sum of these squares.  Dimension
-can equal None (ravel array first), an integer (the dimension over
-which to operate), or a sequence (operate over multiple dimensions).
+these differences, and returns the sum of these squares.  Axis
+can equal None (ravel array first), an integer (the axis over
+which to operate), or a sequence (operate over multiple axes).
 keepdims=1 means the return shape = len(a.shape) = len(b.shape)
 
-Usage:   asumdiffsquared(a,b)
+Usage:   sumdiffsquared(a,b)
 Returns: sum[ravel(a-b)**2]
 """
-    if dimension == None:
+    if axis is None:
         a = ravel(a)
-        dimension = 0
-    return asum((a-b)**2,dimension,keepdims)
+        axis = 0
+    return sum((a-b)**2,axis,keepdims)
 
 
 def shellsort(a):

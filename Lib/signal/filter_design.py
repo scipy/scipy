@@ -578,8 +578,8 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         GPASS = 10**(0.1*gpass)
         arg1 = sqrt( (GPASS-1.0) / (GSTOP-1.0) )
         arg0 = 1.0 / nat
-        d0 = scipy.special.ellpk([1-arg0**2, arg0**2])
-        d1 = scipy.special.ellpk([1-arg1**2, arg1**2])
+        d0 = scipy.special.ellipk([arg0**2, 1-arg0**2])
+        d1 = scipy.special.ellipk([arg1**2, 1-arg1**2])
         n = (d0[0]*d1[1] / (d0[1]*d1[0]))
     else:
         raise ValueError, "Incorrect type: ", type
@@ -938,8 +938,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
     GPASS = 10**(0.1*gpass)
     arg1 = sqrt( (GPASS-1.0) / (GSTOP-1.0) )
     arg0 = 1.0 / nat
-    d0 = scipy.special.ellpk([1-arg0**2, arg0**2])
-    d1 = scipy.special.ellpk([1-arg1**2, arg1**2])
+    d0 = scipy.special.ellipk([arg0**2, 1-arg0**2])
+    d1 = scipy.special.ellipk([arg1**2, 1-arg1**2])
     ord = int(ceil(d0[0]*d1[1] / (d0[1]*d1[0])))
 
     if not analog:
@@ -1003,7 +1003,7 @@ def cheb2ap(N,rs):
 EPSILON = 2e-16
 
 def vratio(u, ineps, mp):
-    [s,c,d,phi] = special.ellpj(u,mp)
+    [s,c,d,phi] = special.ellipj(u,mp)
     ret = abs(ineps - s/c)
     return ret
 
@@ -1013,7 +1013,7 @@ def kratio(m, k_ratio):
     if m > 1:
         m = 1.0
     if abs(m) > EPSILON and (abs(m) + EPSILON) < 1:
-        k = special.ellpk([1-m,m])
+        k = special.ellipk([m,1-m])
         r = k[0] / k[1] - k_ratio
     elif abs(m) > EPSILON:
         r = -k_ratio
@@ -1039,7 +1039,7 @@ def ellipap(N,rp,rs):
         raise ValueError, "Cannot design a filter with given rp and rs specifications."
 
     wp = 1
-    val = special.ellpk([1-ck1*ck1,1-ck1p*ck1p])
+    val = special.ellipk([ck1*ck1,ck1p*ck1p])
     if abs(1-ck1p*ck1p) < EPSILON:
         krat = 0
     else:
@@ -1051,24 +1051,24 @@ def ellipap(N,rp,rs):
         m = optimize.fminbound(kratio, 0, 1, args=(krat,), maxfun=250,
                                maxiter=250, disp=0)
     
-    capk = special.ellpk(1-m)
+    capk = special.ellipk(m)
     ws = wp / sqrt(m)
     m1 = 1-m
 
     j = Num.arange(1-N%2,N,2)
     jj = len(j)
 
-    [s,c,d,phi] = special.ellpj(j*capk/N,m*Num.ones(jj))
+    [s,c,d,phi] = special.ellipj(j*capk/N,m*Num.ones(jj))
     snew = Num.compress(abs(s) > EPSILON, s)
     z = 1.0 / (sqrt(m)*snew)
     z = 1j*z
     z = Num.concatenate((z,conjugate(z)))
 
-    r = optimize.fmin(vratio, special.ellpk(1-m), args=(1./eps, ck1p*ck1p),
+    r = optimize.fmin(vratio, special.ellipk(m), args=(1./eps, ck1p*ck1p),
                       maxfun=250, maxiter=250, disp=0)
     v0 = capk * r / (N*val[0])
 
-    [sv,cv,dv,phi] = special.ellpj(v0,1-m)
+    [sv,cv,dv,phi] = special.ellipj(v0,1-m)
     p = -(c*d*sv*cv + 1j*s*dv) / (1-(d*sv)**2.0)
 
     if N % 2:

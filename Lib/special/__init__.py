@@ -13,11 +13,11 @@
 
   Elliptic Functions and Integrals
 
-    ellpj    -- Jacobian elliptic functions
-    ellpk    -- Complete elliptic integral of the first kind.
-    ellik    -- Incomplete elliptic integral of the first kind.
-    ellpe    -- Complete elliptic integral of the second kind.
-    ellie    -- Incomplete elliptic integral of the second kind.
+    ellipj    -- Jacobian elliptic functions
+    ellipk    -- Complete elliptic integral of the first kind.
+    ellipkinc -- Incomplete elliptic integral of the first kind.
+    ellipe    -- Complete elliptic integral of the second kind.
+    ellipeinc -- Incomplete elliptic integral of the second kind.
 
   Bessel Functions
 
@@ -57,48 +57,50 @@
 
   Statistical Functions
 
-    bdtr     -- Sum of terms 0 through k of of the binomial pdf.
-    bdtrc    -- Sum of terms k+1 through n of the binomial pdf.
-    bdtri    -- Inverse of bdtr.
-    btdtr    -- Integral from 0 to x of beta pdf.
-    fdtr     -- Integral from 0 to x of F pdf.
-    fdtrc    -- Integral from x to infinity under F pdf.
-    fdtri    -- Inverse of fdtrc
-    gdtr     -- Integral from 0 to x of gamma pdf.
-    gdtrc    -- Integral from x to infinity under gamma pdf.
-    nbdtr    -- Sum of terms 0 through k of the negative binomial pdf.
-    nbdtrc   -- Sum of terms k+1 to infinity under negative binomial pdf.
-    nbdtri   -- Inverse of nbdtr.
-    pdtr     -- Sum of terms 0 through k of the Poisson pdf.
-    pdtrc    -- Sum of terms k+1 to infinity of the Poisson pdf.
-    pdtri    -- Inverse of pdtr.
-    stdtr    -- Integral from -infinity to t of the Student-t pdf.
-    stdtri   -- Inverse of stdtr.
-    chdtr    -- Integral from 0 to x of the Chi-square pdf.
-    chdtrc   -- Integral from x to infnity of Chi-square pdf.
-    chdtri   -- Inverse of chdtrc.
-    ndtr     -- Integral from -infinity to x of Gaussian pdf
-    ndtri    -- Inverse of ndtr.
-    erf      -- Error function.
-    erfc     -- Complemented error function (1- erf(x)) 
-    smirnov  -- Exact Smirnov statistic for one-sided test.
-    smirnovi -- Inverse of smirnov.
-    kolmogorov -- Kolmogorov's limiting distribution of a two-sided test.
-    kolmogorovi -- Inverse of kolmogorov.
+    binomcdf       -- Sum of terms 0 through k of of the binomial pdf.
+    binomcdfc      -- Sum of terms k+1 through n of the binomial pdf.
+    binomcdfinv    -- Inverse of binomcdf.
+    betacdf        -- Integral from 0 to x of beta pdf.
+    betaq          -- Quantiles of beta distribution
+    fcdf           -- Integral from 0 to x of F pdf.
+    fcdfc          -- Integral from x to infinity under F pdf.
+    fp             -- Inverse of fcdfc
+    gammacdf       -- Integral from 0 to x of gamma pdf.
+    gammacdfc      -- Integral from x to infinity under gamma pdf.
+    gammaq         -- Quantiles of gamma distribution
+    negbinomcdf    -- Sum of terms 0 through k of the negative binomial pdf.
+    negbinomcdfc   -- Sum of terms k+1 to infinity under negative binomial pdf.
+    negbinomcdfinv -- Inverse of negbinomcdf
+    poissoncdf     -- Sum of terms 0 through k of the Poisson pdf.
+    poissoncdfc    -- Sum of terms k+1 to infinity of the Poisson pdf.
+    poissoncdfinv  -- Inverse of poissoncdf
+    studentcdf     -- Integral from -infinity to t of the Student-t pdf.
+    studentq       -- Inverse of studentcdf (quantiles)
+    chi2cdf        -- Integral from 0 to x of the Chi-square pdf.
+    chi2cdfc       -- Integral from x to infnity of Chi-square pdf.
+    chi2p          -- Inverse of chi2cdfc.
+    normalcdf      -- Integral from -infinity to x of Gaussian pdf
+    normalq        -- Inverse of normalcdf (quantiles)
+    erf            -- Error function.
+    erfc           -- Complemented error function (1- erf(x)) 
+    smirnovcdfc    -- Exact Smirnov statistic for one-sided test.
+    smirnovp       -- Inverse of smirnov.
+    kolmogorovcdfc -- Kolmogorov's limiting distribution of a two-sided test.
+    kolmogorovp    -- Inverse of kolmogorov.
       
   Gamma and Related Functions
 
-    gamma    -- Gamma function.
-    lgam     -- Log of the absolute value of the gamma function.
-    igam     -- Incomplete gamma integral.
-    igamc    -- Complemented incomplete gamma integral.
-    igami    -- Inverse of igamc.
-    beta     -- Beta function.
-    lbeta    -- Log of the absolute value of the beta function.
-    incbet   -- Incomplete beta integral.
-    incbi    -- Inverse of incbet.
-    psi      -- Logarithmic derivative of the gamma function.
-    rgamma   -- One divided by the gamma function.
+    gamma        -- Gamma function.
+    gammaln      -- Log of the absolute value of the gamma function.
+    gammainc     -- Incomplete gamma integral.
+    gammaincc    -- Complemented incomplete gamma integral.
+    gammainccinv -- Inverse of gammaincc.
+    beta         -- Beta function.
+    betaln       -- Log of the absolute value of the beta function.
+    betainc      -- Incomplete beta integral.
+    betaincinv   -- Inverse of incbet.
+    psi          -- Logarithmic derivative of the gamma function.
+    rgamma       -- One divided by the gamma function.
 
   HyperGeometric Functions
 

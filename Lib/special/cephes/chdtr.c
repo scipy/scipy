@@ -157,7 +157,8 @@ double chdtrc(df,x)
 double df, x;
 {
 
-if( (x < 0.0) || (df < 1.0) )
+if (x < 0.0) return 1.0;   /* modified by T. Oliphant */
+if (df < 1.0) 
 	{
 	mtherr( "chdtrc", DOMAIN );
 	return(0.0);

@@ -113,7 +113,6 @@ return(  igam( b, a * x )  );
 }
 
 
-
 double gdtrc( a, b, x )
 double a, b, x;
 {
@@ -124,4 +123,18 @@ if( x < 0.0 )
 	return( 0.0 );
 	}
 return(  igamc( b, a * x )  );
+}
+
+
+double gdtri( a, b, y)
+double a, b, y;
+{
+
+if ((y < 0.0) || (y > 1.0) || (a <= 0.0) || (b < 0.0))
+  {
+    mtherr("gdtri", DOMAIN);
+    return( 0.0 );
+  }
+
+return ( igami (b, 1.0-y) / a);
 }

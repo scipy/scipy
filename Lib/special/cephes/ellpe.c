@@ -49,7 +49,7 @@
  * ellpe domain      x<0, x>1            0.0
  *
  */
-
+
 /*							ellpe.c		*/
 
 /* Elliptic integral of second kind */
@@ -58,6 +58,10 @@
 Cephes Math Library, Release 2.1:  February, 1989
 Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+
+Feb, 2002:  altered by Travis Oliphant
+            so that it is called with argument m (which gets immediately converted 
+            to m1 = 1-m)
 */
 
 #include "mconf.h"
@@ -181,7 +185,7 @@ double polevl(), log();
 double ellpe(x)
 double x;
 {
-
+x = 1.0-x;
 if( (x <= 0.0) || (x > 1.0) )
 	{
 	if( x == 0.0 )

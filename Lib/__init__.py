@@ -66,7 +66,6 @@ _level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
 # these modules will just be imported (not subsumed)                      
 _level1a_importonly = []
 
-_level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "cluster", "weave"]
 
 __all__=[]
 somenames2all(__all__, _partials0, globals())
@@ -91,7 +90,13 @@ names2all(__all__, _level1a, globals())
 modules2all(__all__, _level1a, globals())
 modules2all(__all__, _level1a_importonly, globals())
 
+
 # Level 2
+
+_level2 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "cluster", "weave"]
+modules2all(__all__, _level2, globals())
+
+# Level 3
 _plot = []
 #try:
 #    import xplt
@@ -115,9 +120,6 @@ except ImportError:
 #else:
 #    print "Plotting methods available: ", _plot
 
-# Level 3
-
-modules2all(__all__, _level3, globals())
 
 
 #---- testing ----#

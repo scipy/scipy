@@ -64,6 +64,7 @@ extern double lgam ( double x );
 
 extern double gdtr ( double a, double b, double x ); 
 extern double gdtrc ( double a, double b, double x ); 
+extern double gdtri ( double a, double b, double y ); 
 
 /*
 extern int gels ( double A[], double R[], int M, double EPS, double AUX[] );
