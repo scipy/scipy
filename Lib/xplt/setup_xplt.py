@@ -4,7 +4,6 @@ import os
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 from scipy_distutils.misc_util import dict_append
 from scipy_distutils.core import Extension
-#from scipy_distutils.x11_info import get_x11_info
 from scipy_distutils.system_info import x11_info
 
 
@@ -16,7 +15,7 @@ def configuration(parent_package=''):
     """
     x11 = x11_info().get_info()
     if not x11:
-        return
+        return {}
 
     config = default_config_dict('xplt',parent_package)
     local_path = get_path(__name__)
