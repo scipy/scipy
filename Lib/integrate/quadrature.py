@@ -2,8 +2,7 @@ from orthogonal import P_roots
 from Numeric import sum
 
 def gauss_quad(func,a,b,args=(),n=5):
-    """
- gauss_quad(func,a,b,args=(),n=5)  Gaussian quadrature integration.
+    """Compute a definite integral using fixed-order Gaussian quadrature.
 
   Description:
 
@@ -27,8 +26,7 @@ def gauss_quad(func,a,b,args=(),n=5):
     return (b-a)/2.0*sum(w*func(y,*args))
 
 def gauss_quadtol(func,a,b,args=(),tol=1e-7,maxiter=50):
-    """
- quadtol(func,a,b,args=(),tol=1e-7,maxiter=30)
+    """Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
   Description:
 

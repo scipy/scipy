@@ -1,6 +1,7 @@
 
 from Numeric import *
 import os,sys
+from Help import help, source
 
 # add some directories to the path so we can import their
 # modules.

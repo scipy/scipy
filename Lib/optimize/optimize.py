@@ -67,41 +67,39 @@ def rosen3_hess(x):
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
          full_output=0, printmessg=1):
-    """
- fmin(function, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=200*len(x0),
-      maxfun=200*len(x0), full_output=0, printmessg=1)
+    """Minimize a function using the simplex algorithm.
 
-  Description:
+    Description:
+    
+      Uses a Nelder-Mead simplex algorithm to find the minimum of function
+      of one or more variables.
 
-    Uses a Nelder-Mead simplex algorithm to find the minimum of function
-    of one or more variables.
+    Inputs:
 
-  Inputs:
+      func -- the Python function or method to be minimized.
+      x0 -- the initial guess.
+      args -- extra arguments for func.
+      xtol -- relative tolerance
 
-    func -- the Python function or method to be minimized.
-    x0 -- the initial guess.
-    args -- extra arguments for func.
-    xtol -- relative tol
+    Outputs: (xopt, {fopt, warnflag})
 
-  Outputs: (xopt, {fopt, warnflag})
+      xopt -- minimizer of function
 
-    xopt -- minimizer of function
+      fopt -- value of function at minimum: fopt = func(xopt)
+      warnflag -- Integer warning flag:
+                  1 : 'Maximum number of function evaluations.'
+                  2 : 'Maximum number of iterations.'
 
-    fopt -- value of function: fopt = func(xopt)
-    warnflag -- Integer warning flag:
-                1 : 'Maximum number of function evaluations.'
-                2 : 'Maximum number of iterations.'
+    Additional Inputs:
 
-  Additional Inputs:
-
-    xtol -- acceptable relative error in xopt for convergence.
-    ftol -- acceptable relative error in func(xopt) for convergence.
-    maxiter -- the maximum number of iterations to perform.
-    maxfun -- the maximum number of function evaluations.
-    full_output -- non-zero if fval and warnflag outputs are desired.
-    printmessg -- non-zero to print convergence messages.
-
-    """
+      xtol -- acceptable relative error in xopt for convergence.
+      ftol -- acceptable relative error in func(xopt) for convergence.
+      maxiter -- the maximum number of iterations to perform.
+      maxfun -- the maximum number of function evaluations.
+      full_output -- non-zero if fval and warnflag outputs are desired.
+      printmessg -- non-zero to print convergence messages.
+      
+      """
     x0 = Num.asarray(x0)
     assert (len(x0.shape)==1)
     N = len(x0)
@@ -230,12 +228,12 @@ def zoom(a_lo, a_hi):
     
 
 def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
-    """
- alpha, fc, gc = line_search(f, xk, pk, gfk, args=(), c1=1e-4,
-                             c2=0.9, amax=1)
+    """Minimize the function f(xk+alpha pk)
 
-    minimize the function f(xk+alpha pk) using the line search algorithm of
+    Uses the line search algorithm of
     Wright and Nocedal in 'Numerical Optimization', 1999, pg. 59-60
+
+    Outputs: (alpha0, gc, fc)
     """
 
     fc = 0
@@ -282,12 +280,12 @@ def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
     
 
 def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
-    """alpha, fc, gc = line_search(f, xk, pk, gfk,
-                                   args=(), c1=1e-4, alpha0=1)
+    """Minimize over alpha, the function f(xk+alpha pk)
 
-    minimize over alpha, the function f(xk+alpha pk) using the interpolation
-    algorithm (Armiijo backtracking) as suggested by
+    Uses the interpolation algorithm (Armiijo backtracking) as suggested by
     Wright and Nocedal in 'Numerical Optimization', 1999, pg. 56-57
+    
+    Outputs: (alpha, fc, gc)
     """
 
     fc = 0
@@ -357,45 +355,41 @@ def approx_fhess_p(x0,p,fprime,*args):
 
 def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
              full_output=0, printmessg=1):
-    """
- fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
-                 full_output=0, printmessg=1)
+    """Minimize a function using the BFGS algorithm.
 
-  Description:
+    Description:
 
-    Optimize the function, f, whose gradient is given by fprime using the
-    quasi-Newton method of Broyden, Fletcher, Goldfarb, and Shanno (BFGS)
-    See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
+      Optimize the function, f, whose gradient is given by fprime using the
+      quasi-Newton method of Broyden, Fletcher, Goldfarb, and Shanno (BFGS)
+      See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
 
-  Inputs:
+    Inputs:
 
-    f -- the Python function or method to be minimized.
-    x0 -- the initial guess for the minimizer.
-    fprime -- a function to compute the gradient of f.
-    args -- extra arguments to f and fprime.
+      f -- the Python function or method to be minimized.
+      x0 -- the initial guess for the minimizer.
+      fprime -- a function to compute the gradient of f.
+      args -- extra arguments to f and fprime.
 
-  Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag})
+    Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag})
 
-    xopt -- the minimizer of f.
+      xopt -- the minimizer of f.
 
-    fopt -- the value of f(xopt).
-    func_calls -- the number of function_calls.
-    grad_calls -- the number of gradient calls.
-    warnflag -- an integer warning flag:
-                1 : 'Maximum number of iterations exceeded.'
+      fopt -- the value of f(xopt).
+      func_calls -- the number of function_calls.
+      grad_calls -- the number of gradient calls.
+      warnflag -- an integer warning flag:
+                  1 : 'Maximum number of iterations exceeded.'
 
-  Additional Inputs:
+    Additional Inputs:
 
-    avegtol -- the minimum occurs when fprime(xopt)==0.  This specifies how
-               close to zero the average magnitude of fprime(xopt) needs
-               to be.
-    maxiter -- the maximum number of iterations.
-    full_output -- if non-zero then return fopt, func_calls, grad_calls,
-                   and warnflag in addition to xopt.
-    printmessg -- print convergence message if non-zero.
-                
-    """
-
+      avegtol -- the minimum occurs when fprime(xopt)==0.  This specifies how
+                 close to zero the average magnitude of fprime(xopt) needs
+                 to be.
+      maxiter -- the maximum number of iterations.
+      full_output -- if non-zero then return fopt, func_calls, grad_calls,
+                     and warnflag in addition to xopt.
+      printmessg -- print convergence message if non-zero.                
+      """
     app_fprime = 0
     if fprime is None:
         app_fprime = 1
@@ -471,10 +465,7 @@ def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
 
 def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             maxiter=None, full_output=0, printmessg=1):
-    """
- fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-         maxiter=None, full_output=0, printmessg=1)
-
+    """Minimze 
   Description:
 
     Optimize the function, f, whose gradient is given by fprime using the

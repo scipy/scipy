@@ -1,10 +1,11 @@
 
 """\npstat.py module
 
-#################################################
-#######  Written by:  Gary Strangman  ###########
-#######  Last modified:  July 25, 1998  #########
-#################################################
+############################################################
+#######  Written by:  Gary Strangman             ###########
+#######  Last modified:  July 9, 2001            ###########
+#######  (deleted unnecessary regex dependence)  ###########
+############################################################
 
 This module provides some useful list and array manipulation routines
 modeled after those found in the |Stat package by Gary Perlman, plus a
@@ -60,7 +61,7 @@ functions/methods.  Their inclusion here is for function name consistency.
 Additions, suggestions, or comments are welcome (strang@nmr.mgh.harvard.edu).
 """
 
-import string, sys, os, copy, math, stats, regex
+import string, sys, os, copy, math, stats
 from types import *
 
 
@@ -79,7 +80,8 @@ until it is as long as the longest list.
 
 Format:  abut(source, args)   where args=any # of lists
 Returns: a list of lists as long as the LONGEST list past, source on the
-         'left', lists in <args> attached on the 'right'.\n"""
+         'left', lists in <args> attached on the 'right'.\n
+         """
 
     if type(source) not in [ListType,TupleType]:
         source = [source]
@@ -124,7 +126,8 @@ SHORTEST list passed.
 
 Format:  simpleabut(source,addon)  where source, addon=list (or list-of-lists)
 Returns: a list of lists as long as the SHORTER of source and addon, with
-         source on the 'left' and addon on the 'right'.\n"""
+         source on the 'left' and addon on the 'right'.\n
+         """
 
     if type(source) not in [ListType,TupleType]:
         source = [source]
@@ -151,15 +154,15 @@ Returns: a list of lists as long as the SHORTER of source and addon, with
 
 
 def colex (listoflists,cnums):
-    """\nExtracts from listoflists the columns specified in the list 'cnums'
-(cnums can be an integer, a sequence of integers, or an expression that
+    """\nExtracts from listoflists the columns specified in the list
+    'cnums' (cnums can be an integer, a sequence of integers, or an expression that
 corresponds to a slice operation on the variable x ... e.g., x[3:] will colex
 columns 3 onward from the listoflists).
 
 Format:  colex (listoflists,cnums)
 Returns: a lists of lists corresponding to the columns from listoflists
-         specified by cnums, in the order the column numbers appear in cnums.\n"""
-
+         specified by cnums, in the order the column numbers appear in cnums.
+         """
     global index
     column = 0
     if type(cnums) in [ListType,TupleType]:   # if multiple columns to get
@@ -170,7 +173,7 @@ Returns: a lists of lists corresponding to the columns from listoflists
             column = abut(column,map(lambda x: x[index], listoflists))
     elif type(cnums) == StringType:           # if an 'x[3:]' type expr.
         execstring = 'column = map(lambda x: x'+cnums+', listoflists)'
-        exec(execstring)
+        exec execstring
     else:                                     # else it's just 1 col to get
         index = cnums
         column = map(lambda x: x[index], listoflists)
