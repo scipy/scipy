@@ -38,14 +38,14 @@ maxwidth=os.environ.get('XPLT_MAXWIDTH')
 maxheight=os.environ.get('XPLT_MAXHEIGHT')
 if maxwidth is None or maxheight is None:
     import commands
-    str = commands.getoutput('xwininfo -root')
-    ind1 = str.find('Width:')
-    ind2 = str.find('\n',ind1)
-    maxwidth=int(str[ind1+6:ind2])-8
-    ind1 = str.find('Height:')
-    ind2 = str.find('\n',ind1)
-    maxheight=int(str[ind1+7:ind2])-60
-    os.environ['XPLT_MAXWIDTH']=maxwidth
-    os.environ['XPLT_MAXHEIGHT']=maxheight
+    str1 = commands.getoutput('xwininfo -root')
+    ind1 = str1.find('Width:')
+    ind2 = str1.find('\n',ind1)
+    maxwidth=int(str1[ind1+6:ind2])-8
+    ind1 = str1.find('Height:')
+    ind2 = str1.find('\n',ind1)
+    maxheight=int(str1[ind1+7:ind2])-60
+    os.environ['XPLT_MAXWIDTH']=str(maxwidth)
+    os.environ['XPLT_MAXHEIGHT']=str(maxheight)
     
 

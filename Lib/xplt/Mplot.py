@@ -718,21 +718,33 @@ def full_page(win,dpi=75):
     gist.window(win,style=_current_style,width=int(dpi*8.5),height=dpi*11,dpi=dpi)
 
 def _add_color(system, color, frame=0):
-    system['ticks'] = { 
-        'horiz':{
-        'tickStyle':{'color':color},
-        'gridStyle':{'color':color},
-        'textStyle':{'color':color}
-        },
-        'vert':{
-        'tickStyle':{'color':color},
-        'gridStyle':{'color':color},
-        'textStyle':{'color':color}
-        },
-        'frame': frame,
-        'frameStyle':{'color':color}
-    }
-    return
+    try:
+        system['ticks']['horiz']['tickStyle'] = {'color':color},
+        system['ticks']['horiz']['gridStyle'] = {'color':color},
+    except KeyError:
+        system['ticks']['horiz'] = {}
+        system['ticks']['horiz']['tickStyle'] = {'color':color},
+        system['ticks']['horiz']['gridStyle'] = {'color':color},
+    try:
+        text = system['ticks']['horiz']['textStyle']
+    except KeyError:
+        system['ticks']['horiz']['textStyle'] = {}
+    text = system['ticks']['horiz']['textStyle']
+    text['color'] = color
+
+    try:
+        system['ticks']['vert']['tickStyle'] = {'color':color},
+        system['ticks']['vert']['gridStyle'] = {'color':color},
+    except KeyError:
+        system['ticks']['vert'] = {}
+        system['ticks']['vert']['tickStyle'] = {'color':color},
+        system['ticks']['vert']['gridStyle'] = {'color':color},        
+    try:
+        text = system['ticks']['vert']['textStyle']
+    except KeyError:
+        system['ticks']['vert']['textStyle'] = {}
+    text = system['ticks']['vert']['textStyle']
+    text['color'] = color
 
 def _chng_font(system, font, height):
     if height is None:
@@ -752,9 +764,19 @@ def _chng_font(system, font, height):
     }
     return
 
+def _remove_ticks(system):
+    system['ticks'] = {'horiz': {'flags':0},
+                       'vert': {'flags':0},
+                       }
+    return
+
 plotframe = gist.plsys
-def subplot(Numy,Numx,win=0,lm=0,rm=0,tm=0,bm=0,pw=None,ph=None,ls=50,rs=50,ts=50,bs=50,color='black',frame=0,fontsize=8,font=None,dpi=100):
-    # all inputs given as pixels, gist wants things in normalized device
+import os
+def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',frame=0,fontsize=8,font=None,dpi=100,ticks=1):
+    # Use gist.plsys to change coordinate systems
+
+    # all inputs (except fontsize) given as pixels, gist wants
+    #  things in normalized device
     #  coordinate.  Window is brought up with center of window at
     #  center of 8.5 x 11 inch page: in landscape mode (5.25, 4.25)
     #  or at position (4.25,6.75) for portrait mode
@@ -765,17 +787,21 @@ def subplot(Numy,Numx,win=0,lm=0,rm=0,tm=0,bm=0,pw=None,ph=None,ls=50,rs=50,ts=5
     if ph is None:
         ph = Numy*300
         msg = 0
-    maxwidth=os.environ.get('XPLT_MAXWIDTH')
-    maxheight=os.environ.get('XPLT_MAXHEIGHT')
-    # Use gist.plsys to change coordinate systems
-    if ph > maxheight or pw > maxwidth:
-        if msg:
-            print "Warning: Requested height and width too large."
-            print "Changing to %d x %d" % (maxwidth, maxheight)
+    maxwidth=int(os.environ.get('XPLT_MAXWIDTH'))
+    maxheight=int(os.environ.get('XPLT_MAXHEIGHT'))
+
+
+    printit = 0
+    if ph > maxheight:
         ph = maxheight
+        printit = 1
+    if pw > maxwidth:
         pw = maxwidth
+        printit = 1
+        
     if dpi != 100:
         dpi = 75
+        fontsize = 12
     conv = inches *1.0 / dpi  # multiply by this factor to convert pixels to
                               # NDC
 
@@ -787,35 +813,50 @@ def subplot(Numy,Numx,win=0,lm=0,rm=0,tm=0,bm=0,pw=None,ph=None,ls=50,rs=50,ts=5
         land = 0
         maxh = 11*dpi
         maxw = 8.5*dpi
-
+    
     if ph > maxh:
         ph = maxh
+        printit=1
     if pw > maxw:
         pw = maxw
+        printit=1
+
+    if printit and msg:
+        message = "Warning: Requested height and width too large.\n"
+        message +="Changing to %d x %d" % (pw,ph)
+        print message
 
     # Now we've got a suitable height and width
 
     if land:
-        _cntr = array([5.25,4.25])*dpi  # landscape
+        cntr = array([5.5,4.25])*dpi  # landscape
     else:
-        _cntr = array([4.25,6.75])*dpi  # portrait
-        
+        cntr = array([4.25,6.75])*dpi  # portrait
+
+    Yspace = ph/float(Numy)*conv
+    Xspace = pw/float(Numx)*conv 
+
+    hsep = hsep * conv
+    vsep = vsep * conv
+    ytop = (cntr[1]+ph/2.0)*conv
+    xleft = (cntr[0]-pw/2.0)*conv
+
     if type(color) is types.StringType:
         color = _colornum[color]
     systems=[]
     ind = -1
-    Yspace = (ph-bm-tm)/float(Numy)
-    Xspace = (pw-rm-lm)/float(Numx)
     for nY in range(Numy):
-        ystart = (ph-tm) - (nY+1)*Yspace + bs
+        ystart = ytop - (nY+1)*Yspace
         for nX in range(Numx):
-            xstart = lm + nX*Xspace + ls
+            xstart = xleft + nX*Xspace
             systems.append({})
-            systems[-1]['viewport'] = [xstart,xstart+Xspace-(ls+rs),ystart,ystart+Yspace-(ts+bs)]
+            systems[-1]['viewport'] = [xstart+hsep/2.0,xstart+Xspace-hsep/2.0,ystart+vsep/2.0,ystart+Yspace-vsep/2.0]
             if font is not None or fontsize is not None:
                 _chng_font(systems[-1],font,fontsize)
             if color != -3 or frame != 0:
                 _add_color(systems[-1],color,frame=frame)
+            if ticks != 1:
+                _remove_ticks(systems[-1])
     _current_style='/tmp/subplot%s.gs' % win
     fid = open(_current_style,'w')
     fid.write(write_style.style2string(systems,landscape=land))
@@ -1150,7 +1191,7 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
     """
     if freq == 'Hz':
         w = w /2.0 / pi
-    subplot(2,1,win,lm=0.2*inches,frame=frame,color=color)
+    subplot(2,1,win,hsep=120,frame=frame,color=color)
     gist.plsys(1)
     gist.plg(20*scipy.log10(abs(H)),w,type='solid',color=lcolor,marks=0)
     gist.logxy(1,0)
