@@ -1,0 +1,797 @@
+		       PLAY = Portability LAYer
+		       ------------------------
+
+The purpose of play is to provide a bare bones low-level interface to
+a variety of windowing environments.  The specific targets are UNIX
+plus the X Window System, MicroSoft Windows (95 or later), and MacOS
+(back to the mid 8's?).  Of course, play must be implemented
+differently in each case; the idea is that if higher levels are built
+on play, you only need to rewrite or repair play in order to maintain
+much more elaborate software across many different platforms.
+
+There is no leakage of OS-dependent structures or functions across the
+play interface.  That is, higher level software which includes, say,
+play.h, need never include any OS-dependent header files.  Even more
+strongly, the play.h header itself is absolutely identical across all
+platforms -- EVERYTHING which depends on a particular programming
+environment resides inside the play implementation.
+
+While play does not duplicate most ANSI C library functions, it does
+include a veneer over the ANSI/POSIX <stdio.h> functions.  There are
+several reasons for this: (1) The play "pstdio.h" functions convert
+all pathnames to UNIX /-delimited form (on non-UNIX systems).  (2) The
+play fread and fwrite functions provide access to the raw unbuffered
+I/O of the OS (where it exists) for binary files.  (3) The play
+interface provides directory listing functions (inexplicably missing
+from the ANSI standard).  Less crucial than "pstdio.h" and "pstdlib.h"
+(a memory management interface) and "phash.h" (a hash table
+interface).  These functions are necessary to any play implementation,
+and are exposed to a play-based program as a convenience.
+
+
+
+------------------------------------------------------------------------
+pstdlib.h interface
+-------------------
+
+  pstdlib.h supplements the ANSI C stdlib.h interface;
+  it includes <stdlib.h>, so you shouldn't include both
+  -- the size_t type is unfortunately system dependent
+
+extern void *(*p_malloc)(size_t);
+extern void  (*p_free)(void *);
+extern void *(*p_realloc)(void *, size_t);
+  replacements for malloc, free, realloc
+    p_malloc(<=0) allowed, returns non-zero address
+    p_realloc(0, n) allowed, same as p_malloc(n)
+    p_free(0) allowed, no-op
+  all are function pointers to allow code to be linked against another
+  memory manager without recompiling
+  these functions call p_mmfail immediately if
+    the play.h p_signalling semaphore is set
+
+extern void *(*p_mmfail)(unsigned long n);
+  set to function pointer to get control if memory manager fails
+  this function can longjmp or return 0 to signal the error to caller
+  n is the size of the requested block, or 0 if failed in p_free
+
+extern void p_mminit(void);
+  loads small-block memory manager into p_malloc, p_realloc, p_free
+  this is fast if you allocate and deallocate many small (<=256 bytes)
+  memory blocks, but never frees space used for small blocks (it
+  just reuses the small block space for new small blocks)
+
+extern long p_nallocs;      total calls to p_malloc or p_realloc(0,n)
+extern long p_nfrees;       total calls to p_free
+extern long p_nsmall;       current number of small blocks
+extern long p_asmall;       current bytes allocated for small blocks
+
+extern void *p_memcpy(const void *, size_t);
+extern char *p_strcpy(const char *);
+extern char *p_strncat(const char *, const char *, size_t);
+  versions of memcpy, strcpy, and strncat that allocate space for
+  their result using p_malloc
+  NULL source pointers allowed
+
+#define P_WKSIZ 2048
+typedef union {
+  char c[P_WKSIZ+8];
+  int i[P_WKSIZ/8];
+  long l[P_WKSIZ/8];
+  double d[P_WKSIZ/8];
+} p_twkspc;
+extern p_twkspc p_wkspc;
+  static global workspace, may be used by several play.h functions
+
+
+
+------------------------------------------------------------------------
+phash.h interface
+-----------------
+
+typedef unsigned long p_hashkey;
+#define P_IHASH(x)       macro to hash an integer (unsigned long)
+#define P_PHASH(x)       macro to hash an address (void *)
+  the low-level hash function macros produce a p_hashkey value
+  the p_hashkey values are integers whose low order 32 bits are
+  pseudo-randomized in a one-to-one fashion, so that
+  P_IHASH(x)==P_IHASH(y) or P_PHASH(x)==P_PHASH(y) if and only if x==y
+
+typedef struct p_hashtab p_hashtab;
+extern p_hashtab *p_halloc(p_hashkey size);
+  allocates a hash table which initially has space for size entries
+    each table entry is a (p_hashkey, void*) pair
+  the table may subsequently grow as you add elements or contract
+    as you remove them; the table size is always a power of two, so
+    the time to construct a table scales as n*log(n) for n>>size
+  routines that modify a hash table all fail immediately if the
+    play p_signalling semaphore is set
+extern void p_hfree(p_hashtab *tab, void (*func)(void *));
+  frees the hash table tab
+  if func is non-0, it is called once for each entry in the table
+
+extern int p_hinsert(p_hashtab *tab, p_hashkey hkey, void *value);
+  insert (hkey, value) into tab
+  any existing (hkey, oldvalue) is silently replaced
+  if value==0, any existing entry (hkey, oldvalue) is removed from tab
+  the returned value is 0 unless the memory manager fails to
+    expand the table, in which case 1 returns
+
+extern void *p_hfind(p_hashtab *tab, p_hashkey hkey);
+  return value if (hkey, value) is an entry in tab, else return 0
+
+extern void p_hiter(p_hashtab *tab,
+                    void (*func)(void *val, p_hashkey key, void *ctx),
+                    void *ctx);
+  for each entry (key,val) in tab, call func(val,key,ctx)
+  the order of the entries is random and changes when you add entries
+
+
+Two sets of higher level functions are not used in the impementation
+of play (shouldn't be part of play!):
+
+Higher level functions using a hidden (id,name) hash table:
+
+extern p_hashkey p_id(const char *name, int len);
+extern p_hashkey p_idmake(const char *name, int len);
+extern p_hashkey p_idstatic(char *name);
+  p_id returns the id corresponding to name, which has at most len
+    characters, unless len==0, in which case name must be 0-terminated
+    returns 0 if and only if name has never been seen before
+  p_idmake creates a new non-0 id if name has not been seen
+  p_idstatic is like p_idmake, except it writes the string pointer
+    name directly into the table, rather than making a copy
+
+extern char *p_idname(p_hashkey id);
+  returns the string corresponding to id
+
+extern void p_idfree(p_hashkey id);
+  dissociates the id from any string
+  the number of calls to p_idfree must equal the number of calls to
+  p_idmake (or p_idstatic) to actually remove (id,name) from the table
+
+
+Higher level functions using a hidden address hash table:
+
+extern void p_setctx(void *ptr, void *context);
+  set up a (ptr,context) association,
+  or, if context==0, delete any prior context for ptr
+
+extern void *p_getctx(void *ptr);
+  return the context associated with ptr, or 0 if there is none
+
+
+
+------------------------------------------------------------------------
+pstdio.h interface
+------------------
+
+Note: all filenames are "UNIX style" in which the directory delimiter
+is /.  (For MacOS, / and : are interchanged, so it is possible to
+access files whose names contain /, just weird.)
+
+typedef struct p_file p_file;
+typedef struct p_dir p_dir;
+
+extern p_file *p_fopen(const char *unix_name, const char *mode);
+extern p_file *p_popen(const char *command, const char *mode);
+  open a file or a pipe, where mode is as in the ANSI fopen or
+    POSIX popen functions, respectively
+  p_popen may fail if the platform does not support pipes
+  p_fopen may return raw non-buffered file if mode includes "b",
+    so that p_fread and p_fwrite are the POSIX read and write
+    instead of the ANSI fread and fwrite in that case
+
+extern int p_fclose(p_file *file);
+  close a p_file
+
+extern unsigned long p_fsize(p_file *file);
+  return the size of a file in bytes
+  0 length and non-existence are indistinguishable
+
+extern unsigned long p_ftell(p_file *file);
+extern int p_fseek(p_file *file, unsigned long addr);
+  seek and tell routines
+
+extern char *p_fgets(p_file *file, char *buf, int buflen);
+extern int p_fputs(p_file *file, const char *buf);
+extern unsigned long p_fread(p_file *file,
+                             void *buf, unsigned long nbytes);
+extern unsigned long p_fwrite(p_file *file,
+                              const void *buf, unsigned long nbytes);
+  read and write routines
+  p_fgets and p_fputs must not be called for a binary p_file
+
+extern int p_fflush(p_file *file);
+  flush any buffers
+
+extern int p_feof(p_file *file);
+extern int p_ferror(p_file *file);
+  end-of-file and error condition detection
+  p_ferror also does clearerr, so you only get one chance to call it
+
+extern int p_remove(const char *unix_name);
+extern int p_rename(const char *unix_old, const char *unix_new);
+  delete or rename files
+
+extern int p_chdir(const char *unix_name);
+  change working directory
+
+extern int p_mkdir(const char *unix_name);
+extern int p_rmdir(const char *unix_name);
+  create or remove a directory (rmdir fails if directory not empty)
+
+extern char *p_getcwd(void);
+  return the current working directory
+  result is in temporary space; copy it quickly and do not try to free
+
+extern p_dir *p_dopen(const char *unix_name);
+  open directory for listing
+extern char *p_dnext(p_dir *dir, int *is_dir);
+  return the next file or subdirectory (is_dir says which)
+    "." and ".." do not appear in the list
+  return 0 means no more files (order is unspecified)
+    there is no way to "rewind" the list
+  result is in temporary space; copy it quickly and do not try to free
+    in particular, the next call to p_dnext of p_dclose may clobber it
+extern int p_dclose(p_dir *dir);
+  close directory
+
+
+
+------------------------------------------------------------------------
+play.h interface
+----------------
+
+extern int on_launch(int argc, char *argv[]);
+  this must be supplied by the application; it is called in lieu of main
+  non-0 return means to abort without entering main event loop
+  0 return enters main event loop
+
+-------event callback setup
+
+extern void p_idler(int (*on_idle)(void));
+extern void p_stdinit(void (*on_stdin)(char *input_line));
+extern void p_quitter(int (*on_quit)(void));
+extern void p_handler(void (*on_exception)(int signal, char *errmsg));
+extern void p_gui(void (*on_expose)(void *c, int *xy),
+                  void (*on_destroy)(void *c),
+                  void (*on_resize)(void *c,int w,int h),
+                  void (*on_focus)(void *c,int in),
+                  void (*on_key)(void *c,int k,int md),
+                  void (*on_click)(void *c,int b,int md,int x,int y,
+                                   unsigned long ms),
+                  void (*on_motion)(void *c,int md,int x,int y),
+                  void (*on_deselect)(void *c),
+                  void (*on_panic)(p_scr *screen));
+  the on_launch function should call at least some of these
+  routines to set the callback procedures for all the events which
+  might drive the remainder of program execution
+  if on_launch returns non-0, the program enters an event loop, and
+  calls the specified function whenever such an event arrives, or
+  ignores it if no callback was set
+  each of these setup routines may be called only once, and should
+  be called from on_launch (or maybe the first call to on_idle?)
+
+extern void p_set_alarm(double secs, void (*on_alarm)(void *context),
+                        void *context);
+  the set_alarm function cal be called many times to schedule callbacks
+  the secs argument is the number of wall seconds (see p_wall_secs) from
+  now, and the context will be passed to the on_alarm function when it
+  is called
+extern void p_clr_alarm(void (*on_alarm)(void *c), void *context);
+  turns off one or more alarms set by p_set_alarm, so their callbacks
+  will never be called
+  if either on_alarm or context or both is non-zero, it is a wildcard
+    and all alarms (if both are 0) or all matching alarms are cleared
+
+-------event callbacks (application defined)
+
+int on_idle(void)
+  called whenever no other events are immediately available
+  return non-0 means to check if any events have arrived, but
+    immediately call on_idle again if not
+  return 0 means to block until the next event arrives
+
+void on_stdin(char *input_line)
+  input_line has arrived on "stdin" (which may not be the ANSI C stdin)
+
+void on_alarm(void *context)
+  an alarm set by p_set_alarm has rung
+
+int on_quit(void)
+  the p_quit function was called, or it is impossible for any more
+  events to arrive and on_idle() (if any) has returned 0
+  the return value is the value of the ANSI C main(), if applicable
+
+void on_exception(int signal, char *errmsg)
+  an exception has been raised; the previous callback may have been
+  asynchronously interrupted - signal will be one of the following:
+#define PSIG_SOFT  1     p_abort() was called
+#define PSIG_INT   2     SIGINT C-c or other user-generated interrupt
+#define PSIG_FPE   3     SIGFPE floating point exception
+#define PSIG_SEGV  4     SIGSEGV segmentation violation (bad memory access)
+#define PSIG_ILL   5     SIGILL illegal machine instruction
+#define PSIG_BUS   6     SIGBUS bad data alignment
+#define PSIG_IO    7     SIGIO I/O exception
+#define PSIG_OTHER 8
+  the errmsg may or may not contain any useful information
+
+extern void p_abort(void);
+  do not return to caller -- next "event" will be on_exception
+  normal event processing continues after on_exception returns
+  call p_abort() quickly if you check p_signalling and find it non-0
+extern volatile int p_signalling;
+  semaphore used to signal that p_abort() should be called as soon as
+  possible -- if p_signalling is not set, you may set it to indicate
+  an error condition
+
+The remaining events are all associated with a GUI window created
+using p_window or p_menu.  Their first argument is the context
+supplied to the p_window or p_menu call that created the window "where
+the event takes place".
+
+void on_expose(void *c, int *xy)
+  you need to draw or redraw this window
+    if xy!=0, you may elect to redraw only the rectangle with opposite
+    corners (xy[0],xy[1]) and (xy[2],xy[3])
+  you must not draw on a window before its first on_expose
+
+void on_destroy(void *c)
+  the window has been destroyed
+  p_destroy may or may not cause this callback
+
+void on_resize(void *c, int w, int h)
+  the window has been resized
+  p_resize may or may not cause this callback
+
+void on_focus(void *c, int in)
+  this window's "focus" has changed
+    (in&1)!=0 means the window now has "focus", else it has lost "focus"
+  if (in&2)!=0 then "focus" simply refers to whether the mouse is inside
+    the window or not -- this event will only be delivered when
+    mouse motion events cease to be delivered to a window when the
+    mouse leaves it (if the motion events are delivered elsewhere
+    when the mouse is not in the window, then there is no way to tell
+    when it has left)
+  if (in&2)==0 then "focus" refers to whether on_key events will be
+    delivered to this window
+
+void on_key(void *c, int k, int md)
+  the key k has been pressed, and the current modifier (shift key) state
+  is given by md (see on_click)
+  k is an ASCII character or one of these constants:
+     P_LEFT    0x0100     P_F0      0x0200     P_F9      0x0209
+     P_RIGHT   0x0101     P_F1      0x0201     P_F10     0x020a
+     P_UP      0x0102     P_F2      0x0202     P_F11     0x020b
+     P_DOWN    0x0103     P_F3      0x0203     P_F12     0x020c
+     P_PGUP    0x0104     P_F4      0x0204
+     P_PGDN    0x0105     P_F5      0x0205
+     P_HOME    0x0106     P_F6      0x0206
+     P_END     0x0107     P_F7      0x0207
+     P_INSERT  0x0108     P_F8      0x0208
+  play does not provide a "key released" event, and the precise time
+  the on_key event is delivered is unspecified -- pressing shift keys
+  alone does not generate on_key (should this be reversed to allow
+  for cursor changes when a shift key is pressed?)
+
+void on_click(void *c, int b, int md, int x, int y, unsigned long ms)
+  the mouse button number b (1, 2, 3, 4, or 5, where 1 2 3 are left
+  middle right respectively) has been pressed or released and the
+  modifier (shift key and mouse button) state just before this event
+  was given by oring the following bits:
+     P_BTN1      000010     P_SHIFT     000400
+     P_BTN2      000020     P_CONTROL   001000
+     P_BTN3      000040     P_META      002000
+     P_BTN4      000100     P_ALT       004000
+     P_BTN5      000200     P_COMPOSE   010000
+		            P_KEYPAD    020000
+  the click occurred at coordinates (x,y) in this window at time ms
+    (the time can only be used relative to other on_click events to
+    determine whether a double or triple click has occurred)
+  on_click events are always delivered in pairs (press and release)
+    to the same window, unless a call to p_qclear intervenes
+
+void on_motion(void *c,int md,int x,int y)
+  the mouse has moved to position (x,y) in this window, and the modifier
+  (shift key and mouse button) state is given by md (see on_click)
+
+void on_deselect(void *c)
+  this window was the selection/clipboard owner (called p_scopy) and
+  another window has taken the selection/clipboard
+
+void on_panic(p_scr *screen)
+  an I/O error occurred on this screen; you should call p_destroy for
+  every window on the screen
+
+-------general utility functions
+
+extern void p_quit(void);
+  the next and final callback will be on_quit
+
+extern void p_qclear(void);
+  clear any pending events off the event queue (most likely called
+  in on_exception)
+
+extern void p_stdout(char *output_line);
+extern void p_stderr(char *output_line);
+  print output_line on "stdout" or "stderr"
+  must have called p_stdinit first
+
+extern double p_wall_secs(void);
+  return number of seconds of wall time since this program started
+extern double p_cpu_secs(double *sys);
+  return number of seconds of cpu and system time used by this program
+  at least millisecond resolution if possible
+
+extern char *p_getenv(const char *name);
+extern char *p_getuser(void);
+  return named environment variable or current user "login" name
+  returned string is in temporary space, copy it quickly
+
+-------graphical user interface (GUI) utilities
+
+typedef struct p_scr p_scr;      a screen (+ keyboard and mouse)
+typedef struct p_win p_win;      a window, menu, pixmap, or metafile
+typedef unsigned long p_col_t;   a color
+  note that p_scr and p_win are opaque
+
+extern p_scr *p_connect(char *server_name);
+  connect to server_name (e.g.- an X DISPLAY),
+  or to the default screen if server_name==0
+extern void p_disconnect(p_scr *screen);
+  disconnect from the screen (destroy any windows there first)
+extern p_scr *p_multihead(p_scr *other_screen, int number);
+  connect to a second (or third or fourth) screen associated with the
+  same keyboard and mouse as other_screen
+
+extern int p_sshape(p_scr *s, int *width, int *height);
+  return the width and height of the screen in pixels,
+    return value is the depth in bits
+
+extern void p_winloc(p_win *w, int *x, int *y);
+  return the screen coordinates of the upper left corner of the window
+
+extern int p_txheight(p_scr *s, int font, int pixsize, int *baseline);
+  get the actual height of font in pixels on the screen (should be
+    close to the specified size pixsize)
+  also get the baseline -- number of pixels down from the capline to
+    the coordinate you specify to p_text
+extern int p_txwidth(p_scr *s, const char *text, int n, int font, int pixsize);
+  get the actual width in pixels of the first n characters of text
+  rendered on scr with font at specified size pixsize
+
+/* screen graphics window and pixmap management */
+extern p_win *p_window(p_scr *s, int width, int height, char *title,
+                       p_col_t bg, int hints, void *ctx);
+  create a new window with the specified dimensions, title, background
+    color, hints and context ctx
+  ctx will be passed back to the event handlers for events occurring in
+    this window
+  the hints may or may not do anything; they are gotten by oring:
+#define P_NOKEY    0x02    do not deliver on_click
+#define P_NOMOTION 0x04    do not deliver on_motion
+#define P_NORESIZE 0x08    do not allow resizing
+#define P_DIALOG   0x10    decorate this window as a dialog box
+#define P_MODAL    0x20    do not deliver events to any other window
+                           until this one is destroyed
+#define P_PRIVMAP  0x01    use a private colormap for this window
+#define P_RGBMODEL 0x40    use a 5x9x5 color cube for this window
+  P_PRIVMAP and P_RGBMODEL are no-ops unless the screen uses 8-bit color
+
+extern p_win *p_menu(p_scr *s, int width, int height, int x, int y,
+                     p_col_t bg, void *ctx);
+  create a new menu at screen coordinates (x,y)
+  mouse events should only be delivered to a menu if any menus
+    currently exist
+  p_destroy pops down the menu
+
+extern p_win *p_offscreen(p_win *parent, int width, int height);
+  create a new offscreen pixmap, which can p_bitblt onto the
+    ordinary window parent (made by p_window)
+
+extern p_win *p_metafile(p_win *parent, char *filename,
+                         int x0, int y0, int width, int height, int hints);
+  create a new metafile which can contain the contents of the
+    ordinary window parent (made by p_window)
+  after p_metafile is called, all graphics calls will be to
+    its p_win until p_destroy closes the metafile
+  p_metafile may return 0 if the system does not define metafiles
+
+extern void p_destroy(p_win *w);
+  destroy the window or pixmap, pop down the menu, or close the metafile
+
+extern int p_scopy(p_win *w, char *string, int n);
+extern char *p_spaste(p_win *w);
+  copy to the selection/clipboard or paste from it
+    (p_spaste needs the window to know which screen)
+
+extern void p_feep(p_win *w);
+  ding the keyboard's bell
+
+extern void p_flush(p_win *w);
+  flush any pending drawing calls so what the window shows reflects
+    all graphics commands to this point
+  this is automatic whenever the program goes idle (before on_idle)
+
+extern void p_clear(p_win *w);
+  erase the window to its background color
+
+extern void p_resize(p_win *w, int width, int height);
+  change the size of the window
+
+extern void p_raise(p_win *w);
+  raise the window to the top of the stacking order
+  (there is no lower function -- let the window manager do that)
+
+extern void p_cursor(p_win *w, int cursor);
+  change the cursor when the mouse is in this window
+  cursor can be one of:
+     P_SELECT    0     P_N         3
+     P_CROSSHAIR 1     P_S         4
+     P_TEXT      2     P_E         5
+     P_ROTATE   10     P_W         6
+     P_DEATH    11     P_NS        7
+     P_HAND     12     P_EW        8
+     P_NONE     13     P_NSEW      9
+
+extern void p_clip(p_win *w, int x0, int y0, int x1, int y1);
+  set the clipping to the rectangle from (x0,y0) to (x1,y1)
+  subsequent drawing commands will have no effect outside this rectangle
+
+extern void p_palette(p_win *w, p_col_t *colors, int n);
+  change the palette (see p_color) for the window
+
+-------graphical output functions
+
+/* screen graphics drawing functions */
+extern void p_text(p_win *w, int x0, int y0, const char *text, int n);
+  draw first n characters of text at (x0,y0) in current font and color
+  (x0,y0) is the point on the baseline at the beginning of the first
+    character
+
+extern void p_rect(p_win *w, int x0, int y0, int x1, int y1, int border);
+extern void p_ellipse(p_win *w, int x0, int y0, int x1, int y1, int border);
+  draw a rectangle (or an ellipse inscribed in the rectangle) with
+    opposite corners (x0,y0) and (x1,y1)
+  if border is non-0, draw a filled figure using the current color
+    else draw just the outline with the current color and pen
+  for a filled rectangle, the lower (y=y1) and right (x=x1) edges are
+    not drawn; for an outlined rectangle, all four edges are actually
+    drawn, and no points outside the specified rectangle are drawn
+    (that is, the pen width is all interior to the specified corners)
+
+extern void p_dots(p_win *w);
+  draw the current point list as dots in the current color
+
+extern void p_segments(p_win *w);
+  draw consecutive pairs of points in the current point list as
+    line segments using the current color and pen
+  the segment endcaps are square
+
+extern void p_lines(p_win *w);
+  draw the current point list as a connected polyline
+    using the current color and pen
+  line endpoints and joins are round
+
+extern void p_fill(p_win *w, int convexity);
+  fill the polygon defined by the current point list with the current color
+
+extern void p_ndx_cell(p_win *w, unsigned char *ndxs, int ncols, int nrows,
+                       int x0, int y0, int x1, int y1);
+extern void p_rgb_cell(p_win *w, unsigned char *rgbs, int ncols, int nrows,
+                       int x0, int y0, int x1, int y1);
+  draw the image ndxs or rgbs in the rectangle (x0,y0) to (x1,y1) in
+    the window, stretching or compressing it if ncols!=x1-x0 or
+    nrows!=y1-y0
+  the bottom y=y1 and right x=x1 edges are not part of the image
+
+extern void p_bitblt(p_win *w, int x, int y, p_win *offscreen,
+                     int x0, int y0, int x1, int y1);
+  copy the rectangle (x0,y0) to (x1,y1) in the offscreen pixmap onto
+    the window with the upper left corner at (x,y) in the window
+
+extern void p_pen(p_win *w, int width, int type);
+  set the current pen
+  this must be called not only when the pen changes, but also
+    after any graphics call to any other window has been made
+  possible pens are:
+     P_SOLID      0     P_DOT        2     P_DASHDOTDOT 4
+     P_DASH       1     P_DASHDOT    3     P_SQUARE     8
+
+extern void p_font(p_win *w, int font, int pixsize, int orient);
+  set the current font
+  this must be called not only when the font changes, but also
+    after any graphics call to any other window has been made
+  possible fonts are:
+     P_COURIER     0     P_HELVETICA   8     P_NEWCENTURY 16
+     P_TIMES       4     P_SYMBOL     12     P_GUI_FONT   20
+  these may be ored together with:
+     P_BOLD        1     P_ITALIC      2
+
+extern void p_color(p_win *w, p_col_t color);
+  set the current color
+  this must be called not only when the color changes, but also
+    after any graphics call to any other window has been made
+  there are two distinct types of colors: indexed (<=255) and
+    rgb (bit 0x01000000 set, r in lsb, then g, then b)
+  additionally, within the indexed colors, there are 16 reserved
+    colors; the p_palette function sets the rgb values for the
+    other 240 indexed colors (any colors not set by p_palette are
+    P_FG)
+  the following macros are useful:
+    P_IS_NDX(color)     true if color is indexed
+    P_IS_RGB(color)     true if color is rgb
+    P_R(color), P_G(color),  P_B(color)
+      r, g, and b components of an rgb color (0 black, 255 maximum)
+    P_RGB(r,g,b)        an rgb color
+  the reserved indexed colors are:
+     P_BG      255UL     P_RED     251UL     P_GUI_BG  245UL
+     P_FG      254UL     P_GREEN   250UL     P_GUI_FG  244UL
+     P_BLACK   253UL     P_BLUE    249UL     P_GUI_HI  243UL
+     P_WHITE   252UL     P_CYAN    248UL     P_GUI_LO  242UL
+		         P_MAGENTA 247UL     P_XOR     241UL
+		         P_YELLOW  246UL     P_EXTRA   240UL
+  (bg and fg are "background" and "foreground", which the user may be
+   able to define differently on different screens or workspaces)
+
+extern void p_i_pnts(p_win *w, const int *x, const int *y, int n);
+extern void p_d_pnts(p_win *w, const double *x, const double *y, int n);
+  set point list for p_dots, p_lines, p_fill, and p_segments
+    (p_segments uses consecutive pairs in the list)
+  if n>=0 creates a new list of points
+  if n<0 appends -n points to the current list
+  total number of points (after all appends) must be <=2048
+extern void p_d_map(p_win *w, double xt[], double yt[], int set);
+  sets the coordinate transform for p_d_pnts:
+    input          window pixel coordinates (int part)
+    (x,y)    -->     (xt[0]*x+xt[1], yt[0]*y+yt[1])
+
+extern void p_rgb_read(p_win *w, unsigned char *rgbs,
+                       int x0, int y0, int x1, int y1);
+  return 3-by-(x1-x0)-by-(y1-y0) rgb triples corresponding to the
+    current window contents in the specified rectangle
+  if the window is occluded or iconified, this may not work properly
+  always works properly if w is an offscreen pixmap
+  w may not be a menu or a metafile
+
+-------miscellaneous utilities
+
+extern unsigned char p_bit_rev[256];
+  0, 1, 2, 3, ..., 255 in bit-reversed order
+
+extern void p_lrot180(unsigned char *from, unsigned char *to,
+                      int fcols, int frows);
+extern void p_lrot090(unsigned char *from, unsigned char *to,
+                      int fcols, int frows);
+extern void p_lrot270(unsigned char *from, unsigned char *to,
+                      int fcols, int frows);
+  least significant bit first versions of bitmap rotation functions
+extern void p_mrot180(unsigned char *from, unsigned char *to,
+                      int fcols, int frows);
+extern void p_mrot090(unsigned char *from, unsigned char *to,
+                      int fcols, int frows);
+extern void p_mrot270(unsigned char *from, unsigned char *to,
+                      int fcols, int frows);
+  most significant bit first versions of bitmap rotation functions
+  all these assume the rows begin on even byte addresses
+
+extern p_col_t p_595[225];
+  a 225 color 5x9x5 color cube for p_palette(w,p_595,225)
+
+-------internal functions (for play implementation)
+
+/* idle and alarm "events" */
+extern void p_on_idle(void);
+extern double p_timeout(void);
+  the p_idler, p_set_alarm, and p_clr_alarm have generic implementations
+    the play implementation should call p_timeout just before it
+    might block waiting for events -- if p_timeout returns <0, then
+    the implementation should block forever waiting for the next event
+    otherwise, it should wait at most p_timeout() seconds for an event
+    to arrive -- if a timeout occurs before the next event, the
+    implementation should behave as if an event had arrived and had
+    been serviced
+    the p_timeout return value is computed using the p_wall_secs timer
+  after all pending events have been serviced (or a timeout has occurred),
+  the play implementation must call p_on_idle (which will take care of
+  calling the user's on_idle) -- the only thing that prevents an
+  infinte loop in this scheme is the fact that p_timeout() will
+  eventually return <0
+
+
+
+
+------------------------------------------------------------------------
+phash.h implementation notes
+----------------------------
+
+The hashing algorithm is as follows:
+
+unsigned long p_hmasks[64]= {
+  0xb88f7f5e,0x9a5f430b,0x9ffc4579,0xf24f8239,0xa3ee4362,0x11f23e15,
+  0x79b365f0,0xdaa01682,0xfc32732b,0x5002d914,0xb91f0ad5,0xf62c0bd1,
+  0x0586bd83,0x6186c8ef,0xa422d1d0,0x94acf08b,0xd1618ed2,0xaff8c327,
+  0x8c65192f,0xa0fc60d0,0xca45848b,0xdb8c5251,0x4aa83d9d,0x2ab5bc8d,
+  0x8ef3321a,0x0da260f8,0x68aef4ad,0x2ea75120,0x5b00c5ef,0x4180ea63,
+  0xd8a2dad6,0x00d0ee07,0xbe260469,0x3bf21367,0x94299569,0xf517d7e0,
+  0x7c3f07ec,0x41da712a,0x4e73cabb,0x6388ae9e,0x248d894b,0x389f2cb7,
+  0x8504641e,0xb53898a9,0x071d8a73,0xeba24361,0x0bd1fe87,0xda1ff034,
+  0x29f5f9e2,0x3ce61746,0x38ab5382,0x8117f9b2,0xa8256e6d,0x161674bd,
+  0xbe111537,0x6cce6b6a,0x290ecf4f,0x1c47b104,0x37bd96bc,0x80f39033,
+  0x0c1b6161,0x70a94f9d,0xb90e1369,0xcbc2f924 };
+
+   P_IHASH(x) or P_PHASH(x)  <==  x ^ p_hmasks[ (x>>4)&0x3f ]
+
+The p_hmasks have been checked to assure that none is a cyclic shift
+of the bits of any other (you can xor any one with any shifted version
+of itself or any other without getting 0).  This property may aid in
+combining several of the masks.
+
+The hash function works because the p_hmask have been cunningly chosen
+with the property that bits 2^4-2^9 are the 64 numbers:
+
+  53,48,23,35,54,33,31,40,50,17,45,61,24,14,29, 8,
+  45,50,18,13, 8,37,25, 8,33,15,10,18,30,38,45,32,
+   6,54,22,62,62,18,43,41,20,11, 1,10,39,54,40, 3,
+  30,52,56,27,38,11,19,54,52,16,43, 3,22,57,54,18
+
+which in turn have the propery that when they are xor'ed with the
+indices 0-63, they produce the following pseudo-random permutation of
+the numbers 0-63:
+
+  53,49,21,32,50,36,25,47,58,24,39,54,20, 3,19, 7,
+  61,35, 0,30,28,48,15,31,57,22,16, 9, 2,59,51,63,
+  38,23,52,29,26,55,13,14,60,34,43,33,11,27, 6,44,
+  46, 5,10,40,18,62,37, 1,12,41,17,56,42, 4, 8,45
+
+The inverse of this permutation is:
+
+  18,55,28,13,61,49,46,15,62,27,50,44,56,38,39,22,
+  26,58,52,14,12, 2,25,33, 9, 6,36,45,20,35,19,23,
+   3,43,41,17, 5,54,32,10,51,57,60,42,47,63,48, 7,
+  21, 1, 4,30,34, 0,11,37,59,24, 8,29,40,16,53,31
+
+If this last array is called inv_mask[64], then the inverse of the
+P_IHASH or P_PHASH function is:
+
+  x  <==  y ^ p_hmasks[ inv_mask[(y>>4)&0x3f] ]
+  where y==P_IHASH(x)
+
+The existence of this inverse proves that P_IHASH values can never
+collide.
+
+The basic hash table presumes that the hash function is perfect; that
+is, hash keys are unique.  This is exactly true for integers or
+pointers, so the basic hash functions can be used directly for that
+case.  For strings and other larger objects, it is impossible to
+produce a hash function with no collisions.  In those cases, you need
+to rehash, and you also need to "lock" any hashkeys which caused a
+rehash, so that you never remove them from the basic hash table (but
+you can free most of their value if they use significant space).
+
+The basic table contains a number of slots that is a power of two.
+The hash key is masked to that number of bits and used as an index
+into the slot array.  The hash entries are kept as (very short) linked
+lists starting from each element of the slot array; they are checked
+in turn for an exact match of the unmasked hashkey, which is saved
+along with the value when an item is inserted into the table.  When
+the number of items stored in the table becomes larger than half the
+number of slots, the number of slots is doubled.  That unmasks one
+more bit of every hashkey; items with that bit set are moved to the
+new upper half of the slot array, while items with that bit clear
+remain in the lower half.  Hence, the ideal hash function is one that
+produces a random sequence of bits as you increment through the items
+being hashed.
+
+The id routines provide a single global registry of name strings,
+which you can use the way X11 uses its Atom type, hugely speeding up
+subsequent string comparisons.  The id number 0 is reserved; it will
+never be returned, except to indicate that a name has not been seen.
+The hashtab holding the names is not directly visible.
+
+The ctx routines provide a context mechanism for associating opaque
+pointers with higher level data structures.  This is based on a
+single, hidden, hashtab as well.  It is useful for situations in which
+you can neither use backpointers nor derived classes (a form of
+backpointer).

@@ -1,0 +1,409 @@
+
+		GIST - A Scientific Graphics Package
+			For UNIX Workstations
+
+
+------------------------------------------------------------------------------
+   $Id$
+
+------------------------------------------------------------------------------
+Features:
+
+1) Three levels of graphics functions:
+	 P (primitives), A (advanced), and D (display list)
+   Routines are provided for creating and editing display list elements.
+   When a display list is rendered, calls to the advanced and primitive
+   graphics functions are generated.  `A' level functions call `P' level
+   functions.
+	A few functions are provided at a fourth level, H (high level),
+   which embodies the control functions described in the suggested
+   interactive interface below.
+
+2) The `P' level functions call virtual rendering functions for all
+   active graphics `engines'.  Three types of engines are provided:
+
+      X Window System engines- draw to an X Window.  If the `D' level
+         Gist routines have been used to construct a display list, then
+         a Gist X engine can redraw itself if it is damaged by X exposure
+         events.
+
+      PostScript engines- output to a PostScript file which can be sent
+         to many printers directly.
+
+      CGM engines- output to a binary CGM metafile to allow for archiving
+         large numbers of graphics frames for which PostScript output
+         is too disk-intensive.
+
+   Additional types of engines can be added by supplying virtual functions
+   for the six graphical primitives (DrawLines, DrawMarkers, DrawText,
+   DrawFill, DrawCells, and DrawDisjoint), and a half dozen additional
+   control functions to perform actions such as destroying the engine,
+   changing coordinate transformations, advancing to a new page, etc.
+   Input to the rendering functions is in floating point coordinates,
+   with a coordinate transformation.  Gist supplies most of the functions
+   you should need to convert these into device coordinates.  Input to
+   the primitives has already been clipped to the current viewport.
+
+   Care has been taken to assure that only those engines which your code
+   actually uses will be linked.
+
+3) The `D' and `A' level routines render the following types of objects:
+
+     Decorated lines:  Open or closed polylines in several linestyles,
+                       with any width or color, optionally including
+                       overstruck occasional marker characters or
+                       ray arrows.
+
+     Quadrilateral meshes:  May have arbitrary logical holes (missing
+                            zones), and you may optionally draw individual
+                            regions or region boundaries (instead of the
+                            full mesh).  In addition to mesh lines, there
+                            are three other display list elements which
+                            can be used to show information about
+                            quadrilateral meshes:
+
+        Contours:  Trace level curves.  Mesh triangulation may be specified.
+        Vectors:  Filled or hollow vector arrows at each mesh point.
+        Filled Mesh:  The color of each zone reflects the value of a
+                      function-- an alternative to contour plots.
+
+     Images:  Implemented as cell arrays, so the image cell size can be
+              easily changed.
+
+     Text:  Supports Courier, Times, Helvetica, Symbol, and New Century
+            Schoolbook fonts on all devices (the X versions of these are
+            supplied with the MIT R4 release).
+
+     Axis ticks and labels:  Linear and logarithmic "rulers" appropriately
+            labeled.  Ticks always at "nice" numbers (i.e.- numbers ending
+            with 0, 1, 2, or 5) of labeled ticks and minor ticks adjustable.
+            Tick lengths and number of tick levels in the ruler hierarchy
+            adjustable.  Optional grid lines.  Axes can be drawn on any
+            or all four sides of a plot, or at a "nice" intermediate
+            position (to get x and y axes interior to the plot).  Provision
+            for scales with extremely small fractional variation (and
+            therefore extremely long tick labels).
+
+4) Gist provides a browser, "gist", for its CGM metafiles (it is not
+   sufficiently general to handle any other metafiles, but, like the rest
+   of Gist, it is easy to port to any UNIX workstation).  The gist
+   browser can output pages in arbitrary order to an X window, a
+   PostScript file, another CGM file, or to an EPS file (for input to
+   FrameMaker).
+
+
+
+
+
+------------------------------------------------------------------------------
+Known problems:
+
+General note:
+The event-driven input dispatcher (dispat.c, dispas.c, dispax.c) is not
+very well designed.  The files events.[ch], osmem.c, ospoll.c, osterm.c,
+and ostime.c are a sketch of a better design; they are not currently
+used, but I'm working on it...
+
+   a) In Xlib.h, the style for declaring struct typedefs is an unhappy
+      one.  In particular, the HPUX 8.05 ANSI C compiler on HP 700
+      series machines issues a warning about the XImage data structure;
+      the complaint is that the declaration in Xlib.h reads:
+      typedef struct _XImage {
+        ...
+        (*VirtualFunction)(.., struct _XImage *, ..);
+      } XImage;
+      And when you pass this VirtualFunction an XImage*, the compiler
+      complains that an XImage* pointer shouldn't be cast to a
+      struct _XImage* pointer.  The correct thing to do is to get HP to
+      fix either Xlib.h, or to teach their compiler about this
+      programming style.
+
+   b) The HPUX 8.05 <stdio.h>, when _HPUX_SOURCE is defined, declares
+      and provides a prototype for the select function.  I therefore
+      removed my prototype (it returns an int, so it can be implicitly
+      declared).  However, there is a slight disagreement in argument
+      types which produces a warning message.
+
+   c) If you get a warning or error about the cuserid() function when
+      osys.c compiles, change the definition of D_CUSERID in the
+      Makefile and try again.
+
+   c) If you get a warning or error about the exp10() function when
+      the bench program loads, change the definition of D_HAS_EXP10
+      in the Makefile and try again.
+
+   e) A strict ANSI compiler will often produce reams of warnings from
+      subsidiary files included by Xlib.h.  Obviously, this is not my
+      problem.  If you have this problem, experiment with a simple code
+      which includes <X11/Xlib.h>, <X11/Xutil.h>, and <X11/Xos.h>, until
+      you have worked out a way to curb the warnings, or convinced
+      yourself that the warnings are harmless.
+
+
+
+
+------------------------------------------------------------------------------
+Suggested interactive interface (control functions are partially
+                                 implemented in hlevel.h, hlevel.c):
+
+1) Plotting functions:
+
+   plg, x, y
+   plg, y	Plot graph, with keywords to add markers, ray arrows, etc.
+     gistA.l=  ...linestyle...
+     gistA.dl= ...decorations...
+     gistA.m=  ...marker style...
+     gistD.hide= 0
+     gistD.legend= ...legend text...
+     GdLines(n, x, y)
+
+   plm, x, y, ireg
+   plm, x, y
+   plm		Plot mesh with optional zone region number array ireg
+     gistA.l=  ...linestyle...
+     gistA.mesh= ...(x, y, ireg)... (ireg can be NULL)
+     gistD.hide= 0
+     gistD.legend= ...legend text...
+     GdNewMesh(0)
+     GdMesh(region, boundary)
+
+   plc, z, x, y, ireg
+   plc, z	Plot contours of point-centered function z, with levs=
+                keyword to specify levels
+     gistA.l=  ...linestyle...
+     gistA.dl= ...decorations...
+     gistA.m=  ...marker style...
+     gistD.hide= 0
+     gistD.legend= ...legend text...
+     GdContours(z, triangulation, levels, nLevels)
+
+   plv, u, v, scale, x, y, ireg
+   plv, u, v, scale	Plot vector arrows
+     gistA.l=  ...linestyle (if hollow)...
+     gistA.f=  ...fill style (if filled)...
+     gistA.vect= ...vector style...
+     gistD.hide= 0
+     gistD.legend= ...legend text...
+     GdVectors(u, v, scale)
+
+   plf, colors, x, y, ireg
+   plf, colors	Plot filled mesh
+     gistD.hide= 0
+     gistD.legend= ...legend text...
+     GdFillMesh(colors)
+
+   pli, image, px, py, qx, qy
+   pli, image	Plot image (cell array)
+     gistD.hide= 0
+     gistD.legend= ...legend text...
+     GdCells(px, py, qx, qy, width, height, width, image)
+
+   plt, text, x0, y0	Plot text with keywords for font, size, alignment
+     gistD.hide= 0
+     gistD.legend= 0
+     gistA.t= ...text properties...
+     GdSetDrawing(current_drawing)  /* saves current coordinate system */
+     GdText(x0, y0, text)           /* (x0, y0) in NDC coordinates */
+     GdSetDrawing(0)                /* restore original coordinates */
+
+
+2) Coordinate systems:
+
+   {xmin, xmax, ymin, ymax, flags}= lquery()
+		Return the current limits and flags.  The actual values
+		of the limits after extreme value calculation and other
+		adjustments are returned.
+     GdGetLimits()
+
+   limits, xmin, ymin, xmax, ymax
+   limits, {xmin, xmax, ymin, ymax, flags}  /* returned by lquery */
+   limits, xmin, xmax
+   range, ymin, ymax
+		Set plot limits, can be numbers or "e" to get extreme
+		values.  Takes keywords nice=1 (to force ends of axes
+		to "nice" numbers), square=1 (to force dy=dx if any of
+		the limits are set to extreme values), and restrict=1
+		(to cause the extreme value search for x limits to
+		ignore any points outside of fixed y limits and vice
+		versa)
+     gistD.window= {xmin, xmax, ymin, ymax}
+     gistD.flags= {extreme, nice, square, restrict}
+     GdSetLimits()
+
+   logxy, xFlag, yFlag
+		Set or reset log axis scaling
+     gistD.flags= {xIsLog, yIsLog}
+     GdSetLimits()
+
+   coordsys, systemNumber
+		Set current coordinate system (for drawing styles with
+                multiple coordinate systems on the page)
+     GdGetSystem(systemNumber)
+
+
+3) Plot editing:
+
+   elementType= plquery(elementIndex, keywords=...)
+   elementType= plquery(keywords=...)
+		Get information about a display list element.  Keywords
+                can be any keyword legal in any of plotting commands, or
+                the name of any formal parameter name for those commands.
+                One additional keyword, level=levelIndex, allows selection
+                of individual contour levels.  Also takes default=1
+		keyword to retrieve current default styles.
+     GdGetElement(elementIndex)
+       maybe GdGetContour(levelIndex)
+
+   pledit, elementIndex_list, keywords=...
+   pledit, keywords=...
+		Edit values for one or more elements.  Keywords are same
+		as for plquery.  Some keywords do not make sense with
+		more than one elementIndex.
+     for (i=0 ; i<sizeof(elementIndex_list) ; i++)
+       GdGetElement(elementIndex_list[i])
+         maybe GdGetContour(levelIndex)
+       gistA.?= new value;  gistD.?= new value
+       GdEdit(0 or 1)
+
+
+4) Current window control functions:
+
+   about_to_wait_for_keyboard_input
+		Before pausing for keyboard input, the following Gist
+		sequence should be issued to assure that the current X
+		display is up-to-date:
+     GhBeforeWait()
+
+   fma		Frame advance.  Sends current drawing to all active
+		devices.  Optionally activates hardcopy device.
+		Optionally performs animation (see below).  If the
+		animation mode is not set, the Gist calls are:
+     GhFMA()
+
+   redraw	erase and redraw current X display
+     GhRedraw()
+
+   hcp		Send current X display to hardcopy file.  Takes optional
+		file= keyword to create a new output file.
+     GhHCP()
+
+   hcpon
+   hcpoff	Toggle whether fma activates/deactivates the
+		hardcopy engine.  There is no way to permanently activate
+		the hcp_engine interactively, avoiding problems with new
+		frames appearing for every interactive resetting of limits
+		or editing.  If no interactive pauses occur before the
+		fma, then full efficiency is attained; otherwise the
+		display list will be traversed once to send to the screen,
+		and a second time to send to hardcopy, just as for the
+		explicit hcp command.
+     GhFMAMode(1 or 0, 2)
+
+   animate, 0 or 1
+   animate	Toggle animation mode for the current coordinate system.
+		If all four limits are fixed, then only the viewport for
+		the system is animated, otherwise the viewport and its
+		ticks and labels are animated.  In this mode, the X engine
+		draws to an offscreen pixmap which "blits" to the screen
+		when the fma command is issued (see fma above).  Only one
+		coordinate system can be animated at a time (since there
+		usually IS only one, this is not much of a limitation).
+		When animate mode is turned on, the decision of whether
+		to animate the tick marks or just the viewport of the
+		current system is made depending on whether all four
+		limits are fixed.  When animation is turned on:
+     GhFMAMode(2, 0 or 1)
+
+   palette, r, g, b
+   palette, "standard_palette.gp"
+   palette, r, g, b, query=1
+		Set current color palette either from explicit (r, g, b)
+		arrays, or from a Gist palette file.  Takes ntsc=1
+		keyword if grays for monochrome output devices are to
+		be computed using NTSC TV standard rather than simple
+		intensity.  Takes query=1 keyword to output to (r, g, b).
+     GpSetPalette(x_display_engine, {r, g, b}, nColors)
+       GpGetPalette(x_display_engine, {r, g, b})
+       GpReadPalette(x_display_engine, "standard_palette.gp")
+
+   pllist, elementIndex_list
+   pllist	Prints list of legends at terminal.  Takes levels=1
+		keyword to print individual level legends.  This is
+		how you can determine the elementIndex for a given
+		display list element.
+     GdGetElement(elementIndex)    /* called in a loop */
+
+
+5) Multiple window control functions:
+
+   By default, you get one X window.  At the first use of the hcp command,
+   a metafile will be created.  By default, this is a CGM file with a
+   unique name, although both hcp and hcpon take a file= keyword to specify
+   the filename.  By default, hardcopy files are CGM files whose filename
+   will have ".cgm" appended (if not present).  You get a PostScript file
+   by explicitly specifying a filename ending with ".ps".  You can close
+   the existing file and not create a new one by specifying file="".
+
+   If you want, you can switch to a second or third X window.  The plotting
+   commands only deliver output to one X window at a time, but the other
+   windows remain visible, and you can reinstate them whenever you want.
+   Each X window has its own display list.  You can also have a display
+   list which is not associated with any X window-- only a hardcopy file.
+   Finally, each display list can have its own hardcopy file, which overrides
+   the default hardcopy file shared among all display lists.
+
+   All this is handled by two somewhat complicated functions:
+
+   pldevice, number     /* 0<= number < 8 */
+		Sets current display list to `number', if a display list
+		with this number already exists, or creates a new display
+		list with this number if there is none.  Takes keywords:
+      display= "host:server.screen"
+		Sets the display for X window.  Use "" to get no X window,
+		since if this keyword is omitted you get a window on
+		the display named by your DISPLAY environment variable.
+      file= "hcp_file"
+		Sets the name for the associated hardcopy file.  Use ""
+		to revert to the default hcp file.  If you don't specify
+		file= when creating a new display list, this is what you
+		get by default.
+      style= "standard_style"
+		Name of style file to use for specifying layout of drawing.
+		Default is "work.gs".  If you change this for an existing
+		display list (X window), its current contents are erased
+		as a side effect.
+      hcplegends= 0 or 1
+		Legends are not displayed in the X windows (use pllist);
+		this switch controls whether legends are written to the
+		hcp file.  Default is hcplegends=1.
+      dpi= 75 or 100
+		Resolution for the X window.  75 makes a small window; 100
+		is the default.
+
+   hcpdevice, file= "hcp_file"
+		Sets the default hardcopy device used by any display lists
+		which don't have their own hcp file as specified with
+		pldevice.  Use file="" to close the current file.  If there
+		is no default hcp file and an hcp command requires one,
+		a default CGM file with a unique name will be created
+		automatically.
+
+   If no explicit pldevice command is issued, the first plotting command
+   does an implicit "pldevice, 0", which brings up a local X window and
+   makes it the current output device.  The first hcp command then triggers
+   the creation of a hardcopy file as mentioned under the description
+   of hcpdevice.  To preempt this sequence, you must call pldevice
+   explicitly before plotting anything.  Use ` pldevice,0, display="" '
+   to plot without creating any X windows.
+
+
+6) Summary of interactive functions:
+     Plotting:     plg, plm, plc, plv, plf, pli, plt
+     Coordinates:  lquery, limits, range, logxy, coordsys
+     Editing:      plquery, pledit
+     Control:      fma, redraw, hcp, hcpon, hcpoff, animate, palette,
+		   pllist, plus implied screen update
+     Multiple:     pldevice, hcpdevice
+
+
+------------------------------------------------------------------------------

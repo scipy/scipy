@@ -1,0 +1,137 @@
+
+All interactive numerical programs benefit from prompt delivery of
+SIGFPE signals.  The processor should trap on zero divide, overflow,
+or invalid operations, and give the process a chance to abort the
+operation cleanly.  Testing for these conditions (which is supported
+in a portable fashion by the C9X standard) is at best a poor
+substitute for prompt interrupt, since it must be done in a very large
+number of places in the code.  Testing on an operation by operation
+basis (as would be necessary before C9X) will obviously ruin
+performance of any numerically demanding program (you'd need to take
+logarithms to check for overflow, for example).  Allowing huge arrays
+of numbers to slowly fill wil NaN and Inf wastes computer time, and
+makes debugging nearly impossible.
+
+Every UNIX operating system and machine requires a different procedure
+for setting up the hardware to trap and deliver this interrupt; the
+universal default is to ignore all floating point errors.  I know how
+to set up the FPU for the following platforms:
+
+FPU_DIGITAL     DEC Alpha / Digital UNIX (FPU_ALPHA_LINUX also works?)
+FPU_AIX         IBM RS6000 / AIX
+FPU_HPUX        HP PA-RISC / HPUX
+FPU_IRIX        SGI MIPS / IRIX
+FPU_SUN4        Sun SPARC / SunOS 4
+FPU_SOLARIS     Sun SPARC / Solaris (SunOS 5)
+FPU_UNICOS      Cray X/YMP, J90 / UNICOS
+FPU_ALPHA_LINUX DEC Alpha / Linux
+FPU_GCC_I86     Intel x86 / gcc (Linux)
+FPU_GCC_POWERPC IBM Power PC (RS6000?) / gcc (Linux)
+FPU_GCC_SPARC   Sun SPARC / gcc (Linux or SunOS)
+FPU_GCC_M68K    Motorola 680x0 / gcc (Linux or NextStep)
+FPU_GCC_ARM     ARM / gcc (Linux)
+FPU_IGNORE      dummy, for those few platforms with proper default
+                  (NetBSD?  FreeBSD?)
+
+If none of these works for your machine, and you can figure out what
+does, please contact me at munro@icf.llnl.gov.  (I've never been able
+to make Ultrix trap SIGFPE, for example.)  You can use the fputest.c
+program (and Make.fpu) to test your ideas.
+
+SIGFPE PROBLEMS
+---------------
+
+On SGI/IRIX machines, you must be extremely careful *not* to set the
+TRAP_FPE environment variable, which will override anything your code
+does.  The best policy there is to undefine TRAP_FPE before running
+your code (do this by starting with a shell script).
+
+If you are using gcc on a SunOS 4 machine, you may not have the
+required routines for FPU_SUN4 (look in /usr/lib/libm.a; otherwise,
+they are in /usr/lang/SC*/lib/libsunmath.a, which comes with Sun's
+compilers).  In that case, try FPU_GCC_SPARC.
+
+Pentium (and other x86) machines do not always deliver SIGFPE
+promptly, so the signal may be delivered on a (non-faulting)
+subsequent floating point instruction.  This is aggravating, but
+apparently not much can be done about it.
+
+
+SIGFPE on Linux (18/May/99)
+---------------
+
+The __setfpucw function used to be available for general use; here is
+its generic implementation.  Sometime in early 1999, GNU libc6
+switched to making __setfpucw only available internally, forcing the
+use of assembler macros in application code (see fpuset.c).
+
+#include <fpu_control.h>
+
+void
+__setfpucw (fpu_control_t set)
+{
+  fpu_control_t cw;
+
+  /* Fetch the current control word.  */
+  _FPU_GETCW (cw);
+
+  /* Preserve the reserved bits, and set the rest as the user
+     specified (or the default, if the user gave zero).  */
+  cw &= _FPU_RESERVED;
+  cw |= set & ~_FPU_RESERVED;
+
+  _FPU_SETCW (cw);
+}
+
+Note that the macros are not always defined -- the alpha has its own
+__setfpucw which translates i386 bits.  In all other cases, when they
+are defined, the bit macros are all different.
+
+Alpha Linux
+-----------
+
+Alpha Linux implements the Digital UNIX (now Tru64)
+ieee_set_fp_control() function, although it puts the fpu.h header in a
+different place than Digital (now Compaq).
+
+The alpha hardware cannot handle denormals, infinity, or other IEEE
+constructs.  In particular, denormals cause the hardware to trap.  You
+can let the Linux kernel (or Tru64 kernel) handle these exceptions and
+fill in the IEEE-compliant value by compiling every module with the
+-mieee option to GCC.  This is obviously slow if you have lots of
+underflows (as with many FFTs).  Furthermore, -mieee inhibits some
+types of optimizations which would interfere with the kernel math
+emulator's ability to compute the IEEE-compliant result.
+
+Unfortunately, the Linux libc and libm libraries produce denormals,
+for example exp(-720), which are not numbers unless you have compiled
+with -mieee.  Hence, by default, the C expressions exp(-700)+0.0 and
+exp(-800)+0.0 work fine, but exp(-720)+0.0 causes a SIGFPE.  The
+problem is that the alpha hardware does not support denormals, but
+exp() returns them.  The best workaround is to use the Compaq math
+library if you can get it.  The libc also contains routines like scanf
+which will return denormals (hence the yorick read() function can
+produce them).  These are rare enough that you probably don't care
+about trying to replace libc.
+
+If you don't have access to a correct libm, you can put
+       CC=gcc -mieee
+in the top level Make.cfg file.  This will cause a significant
+performance penalty, but at least exp() won't randomly trigger SIGFPE.
+If you do have a good libm, put it in the MATHLIB= line in Make.cfg.
+
+IRIX
+----
+
+Apparently handle_sigfpes (see manpage), as loaded from the libfpe
+library, is the preferred way to get control after SIGFPE.  The
+fpsetmask function can masquerade as a FPU_SOLARIS, but that code
+fails for some reason in full yorick, despite passing the fputest.c
+suite.  When floating point exceptions are masked, IRIX delivers
+SIGTRAP (causing a core dump) on integer divide by zero (gag me with a
+spoon).  When floating point exceptions are being delivered, integer
+divide by zero generates SIGFPE.
+
+An additional headache is that libm does not generate SIGFPE on
+overflow.  An alternative library libmx is available, but requires a
+matherr function.

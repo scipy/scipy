@@ -1,0 +1,121 @@
+
+dir.c (plib.h plibu.h pstdlib.h) <unistd.h sys/types.h sys/stat.h>
+  DIRENT_HEADER undef, <sys/dir.h>, <sys/ndir.h>, <ndir.h>
+    set only if <dirent.h> not present
+  USE_GETWD
+    set to use getwd instead of getcwd
+
+files.c (pstdio.h pstdlib.h plibu.h) <string.h unistd.h>
+
+fpuset.c (plibu.h)
+  see README.fpu for list of FPU_* macros
+
+fputest.c is related to fpuset.c
+
+getpath.c (plib.h pstdlib.h)
+
+handler.c (plib.h) <signal.h>
+
+main.c (plib.h pstdlib.h plibu.h) <setjmp.h>
+
+pathnm.c (plib.h pstdlib.h) <string.h>
+  NO_PASSWD -- define to skip ~user expansion, otherwise
+    <sys/types.h unistd.h pwd.h>
+
+pgrp.c
+  HDR_WITH_TIOCGPGRP -- if undef, <sgtty.h>
+  - pgrp.c only necessary for systems missing tcgetpgrp
+
+stdinit.c (plib.h pstdlib.h pstdio.h plibu.h) <string.h>
+
+timeu.c (plib.h)
+  USE_GETRUSAGE -- (preferred if present) <sys/time.h sys/resource.h>
+  USE_TIMES -- (POSIX standard) <time.h sys/times.h>
+  else      -- (ANSI C standard) <time.h>
+
+timew.c (plib.h)
+  USE_GETTIMEOFDAY -- (X11 uses this) <sys/time.h>
+  else             -- (ANSI C standard) <time.h>
+
+uevent.c (plibu.h pstdlib.h) <errno.h>
+  USE_SELECT -- use upoll.c implementation of poll (upoll.h)
+  else       -- use system poll (preferred)
+    USE_SYS_POLL_H <sys/poll.h>
+    else           <poll.h>
+
+ugetc.c (pstdio.h plibu.h ugetc.h)
+
+uinbg.c (plibu.h) <sys/types.h>
+
+upoll.c (upoll.h pstdlib.h)
+  HAVE_SYS_SELECT_H <sys/select.h>
+  else
+    NO_SYS_TIME_H <time.h> else <sys/time.h>
+    NEED_SELECT_PROTO <sys/types.h>
+
+usernm.c (plib.h pstdlib.h)
+  NO_PASSWD -- use cuserid function
+  else      -- <sys/types.h unistd.h pwd.h>
+
+waiter.c (plib.h plibu.h)
+
+
+
+
+
+Notes on UNIX variants
+----------------------
+
+Required headers not part of ANSI C standard:
+
+<unistd.h>      dir.c usernm.c
+  chdir rmdir getcwd (in dir.c)
+  getlogin getuid (to implement cuserid in usernm.c)
+<sys/types.h>   dir.c usernm.c
+<sys/stat.h>    
+  stat S_IFDIR (in dir.c)
+<dirent.h>      dir.c
+  or one of: <sys/dir.h>, <sys/ndir.h>, or <ndir.h>
+  opendir readdir closedir (in dir.c)
+<pwd.h>         usernm.c, pathnm.c (unused if NO_PASSWD set)
+  getpwnam (to expand ~user/* pathnames)
+  getpwuid (to implement cuserid in usernm.c)
+
+pathname expansion: (pathnm.c)
+-------------------
+  $ENVVAR $(ENVVAR) ${ENVVAR}
+  $ENVVAR/path $(ENVVAR)/path ${ENVVAR}/path
+  ~ ~/path
+  ~user ~user/path
+    are all expanded by u_pathname, which is used in every plib
+      function requiring a pathname
+    ~ is the same as $HOME, but if no such environment variable exists
+      and NO_PASSWD is not set, tries to get the home directory for
+      the current real user
+    ~user will not work if NO_PASSWD is set
+
+dirent.h (dir.c)
+--------
+   Old style is struct direct instead of struct dirent; directory
+     functions may be in <sys/dir.h>, <sys/ndir.h>, or <ndir.h>
+   Autoconf manual notes that d_namlen member may be missing from
+     struct dirent (present in struct direct); that raises the
+     possibility that d_name is not a 0-terminated string
+     -- xfig source assumes that it is, so I do too
+  DIRENT_HEADER - if no dirent.h, set to <sys/dir.h> etc
+
+getcwd (dir.c)
+------
+   SunOS deprecates use of getcwd in favor of getwd,
+     but apparently getcwd is more portable (getwd is non-POSIX)...
+   Comments in HPUX unistd.h indicate that original POSIX.1 1988
+     definition had second parameter of type int; POSIX now size_t
+   NextOS has no getwd, at least in some old versions
+  USE_GETWD - define to use getwd instead of getcwd
+
+cuserid (usernm.c)
+-------
+   cuserid was removed from POSIX due to a religious war over
+     whether it should return the real or effective username
+   I call getlogin(), then getpwuid(getuid())
+  NO_PASSWD - define to use cuserid (requires no headers)
