@@ -150,7 +150,7 @@ def tanhm(A):
 def funm(A,func,disp=1):
     """matrix function for arbitrary callable object func.
     """
-    # func should take a vector of arguments (see special.general_function if
+    # func should take a vector of arguments (see vectorize if
     #  it needs wrapping.
  
     # Perform Shur decomposition (lapack ?gees)

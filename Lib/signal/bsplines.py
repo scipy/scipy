@@ -1,11 +1,12 @@
 import scipy.special
-from scipy.special import general_function
+from scipy_base import vectorize
 from Numeric import sarray, arange, where, array, zeros
 from scipy_base.fastumath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 
+gamma = scipy.special.gamme 
 def factorial(n):
-    return scipy.special.gamma(n+1)
+    return gamma(n+1)
 
 def spline_filter(Iin, lmbda=5.0):
     """Smoothing spline (cubic) filtering of a rank-2 array.
@@ -47,7 +48,7 @@ def _bspline(x,n):
             val = val + term
     return val
 
-bspline = general_function(_bspline)
+bspline = vectorize(_bspline)
 
 def gauss_spline(x,n):
     """Gaussian approximation to B-spline basis function of order n.

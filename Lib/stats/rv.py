@@ -11,6 +11,7 @@ Num = Numeric
 import scipy.special
 special = scipy.special
 from scipy_base.fastumath import *
+from scipy_base import vectorize
 acos = arccos
 
 SequenceType = [types.TupleType, types.ListType, array.ArrayType, Num.ArrayType]
@@ -85,7 +86,7 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
     def _ppf(q, *nargs):
         return optimize.fsolve(_ppfopt, mean, args=(q,)+nargs)
 
-    _vppf = scipy.special.general_function(_ppf)
+    _vppf = vectorize(_ppf)
     U = random(size=size)
     return apply(_vppf,(U,)+args)
 

@@ -101,7 +101,14 @@ class test_binom_test(unittest.TestCase):
         assert_almost_equal(pval,0.92085205962670713,11)
         pval = stats.binom_test([682,243],p=3.0/4)
         assert_almost_equal(pval,0.38249155957481695,11)        
-                
+
+class test_find_repeats(unittest.TestCase):
+    def check_basic(self):
+        a = [1,2,3,4,1,2,3,4,1,2,5]
+        res,nums = scipy.stats.find_repeats(a)
+        assert_array_equal(res,[1,2,3,4])
+        assert_array_equal(nums,[3,3,2,2])
+
 def test_suite(level=1):
     suites = []
     if level > 0:
@@ -111,6 +118,7 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_bartlett,'check_') )
         suites.append( unittest.makeSuite(test_levene,'check_') )
         suites.append( unittest.makeSuite(test_binom_test,'check_') )
+        suites.append( unittest.makeSuite(test_find_repeats,'check_') )
                 
     total_suite = unittest.TestSuite(suites)
     return total_suite

@@ -15,7 +15,7 @@ from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      zeros
 from scipy_base.fastumath import *
 from scipy_base import atleast_1d, polyval, angle, ceil, insert, extract, \
-     any, argsort, argmax, argmin
+     any, argsort, argmax, argmin, vectorize
 import scipy_base
 
 errp = special.errprint
@@ -31,7 +31,7 @@ import rand
 import rv
 
 all = alltrue
-sgf = special.general_function
+sgf = vectorize
 import new
 
 

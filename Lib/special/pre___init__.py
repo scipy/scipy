@@ -2,11 +2,6 @@
 Special Functions
 =================
 
-  general_function -- a class that wraps a Python function taking scalar
-                         arguments into a generalized function which
-                         can handle arrays of arguments using the broadcast
-                         rules of Numeric Python.
-
   Airy Functions
 
     airy     -- Airy functions and their derivatives.

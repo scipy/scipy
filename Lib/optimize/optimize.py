@@ -1202,7 +1202,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         params = squeeze(asarray(params))
         return func(params,*args)
         
-    vecfunc = special.general_function(_scalarfunc)
+    vecfunc = vectorize(_scalarfunc)
     grid = mgrid[lrange]
     if (N==1):
         grid = (grid,)
