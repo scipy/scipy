@@ -49,7 +49,7 @@ parent_package = 'scipy'
 
 scipy_packages = standard_packages
 scipy_packages += graphics_packages
-#scipy_packages += chaco_packages
+scipy_packages += chaco_packages
 
 #---------------
 
@@ -59,7 +59,7 @@ separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 separate_packages += core_packages
 
 # enable building chaco here by uncommenting the following line:
-#separate_packages += chaco_packages
+separate_packages += chaco_packages
 
 #-------------------------------
 
