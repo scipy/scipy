@@ -173,7 +173,7 @@ def mmread(source):
 
     if close_it:
         source.close()
-    return [a,rows,cols,entries]
+    return a
 
 def mmwrite(target,a,comment='',field=None,precision=None):
     """ Writes the sparse or dense matrix A to a Matrix Market formatted file.
@@ -220,10 +220,9 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         from scipy.sparse import spmatrix
         if not isinstance(a,spmatrix):
             raise ValueError,'unknown matrix type ' + `type(a)`
-        rows,cols = a.rowcol()
-        entries = len(a)
-        typecode = a.typecode()
-        # XXX: transform a to coo_matrix
+        rows,cols = a.shape
+        entries = a.getnnz()
+        typecode = a.gettypecode()
 
     if precision is None:
         if typecode in 'fF':
@@ -240,26 +239,27 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         else:
             raise TypeError,'unexpected typecode '+typecode
 
-    # a,rep,precision,field,rows,cols,entries,symm
-
     if rep == 'array':
         symm = _get_symmetry(a)
     else:
-        raise NotImplementedError,`rep`
+        symm = 'general'
 
     target.write('%%%%MatrixMarket matrix %s %s %s\n' % (rep,field,symm))
 
     for line in comment.split('\n'):
         target.write('%%%s\n' % (line))
 
-    target.write('%i %i\n' % (rows,cols))
+    if field in ['real','integer']:
+        if field=='real':
+            format = '%%.%ie\n' % precision
+        else:
+            format = '%i\n'
+    elif field=='complex':
+        format = '%%.%ie %%.%ie\n' % (precision,precision)
 
     if rep == 'array':
+        target.write('%i %i\n' % (rows,cols))
         if field in ['real','integer']:
-            if field=='real':
-                format = '%%.%ie\n' % precision
-            else:
-                format = '%i\n'
             if symm=='general':
                 for j in range(cols):
                     for i in range(rows):
@@ -269,7 +269,6 @@ def mmwrite(target,a,comment='',field=None,precision=None):
                     for i in range(j,rows):
                         target.write(format % a[i,j])
         elif field=='complex':
-            format = '%%.%ie %%.%ie\n' % (precision,precision)
             if symm=='general':
                 for j in range(cols):
                     for i in range(rows):
@@ -283,9 +282,22 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         elif field=='pattern':
             raise ValueError,'Pattern type inconsisted with dense matrix'
         else:
-            raise TypeError,'Unknown matrix type'
+            raise TypeError,'Unknown matrix type '+`field`
     else:
-        raise NotImplementedError,`rep`
+        format = '%i %i ' + format
+        target.write('%i %i %i\n' % (rows,cols,entires))
+        assert symm=='general',`symm`
+        if field in ['real','integer']:
+            for i in range(entries):
+                target.write(format % (a.rowcol(i)+(a.getdata(i),)))
+        elif field=='complex':
+            for i in range(entries):
+                value = a.getdata(i)
+                target.write(format % ((a.rowcol(i))+(real(value),imag(value))))
+        elif field=='pattern':
+            raise NotImplementedError,`field`
+        else:
+            raise TypeError,'Unknown matrix type '+`field`
 
     if close_it:
         target.close()
