@@ -34,7 +34,16 @@
     remez         --  Optimal FIR filter design.
     iirdesign     --- IIR filter design given bands and gains
     iirfilter     --- IIR filter design given order and critical frequencies
-    
+    freqs         --- Analog filter frequency response
+    freqz         --- Digital filter frequency response
+
+ Matlab-style IIR filter design:
+ 
+    butter (buttord)  -- Butterworth
+    cheby1 (cheb1ord) -- Chebyshev Type I
+    cheby2 (cheb2ord) -- Chebyshev Type II
+    ellip (ellipord)  -- Elliptic (Cauer)
+    bessel            -- Bessel (no order selection available -- try butterod)
  
 """
 _modules = ['sigtools']
