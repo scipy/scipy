@@ -1,4 +1,4 @@
-#!/usr/local/lib/python
+#!/usr/bin/env python
 
 import sys
 from scipy_test.testing import *
