@@ -322,15 +322,15 @@ class Plot:
         else:
             cmd = 'set ' + axis + 'range ' + ' [%g:%g] ' % (rng[0],rng[1])      
         self._replot(cmd)   
-    def xrange(self,rng):
+    def xaxis(self,rng):
         self._set_range('x',rng)    
-    def yrange(self,rng):
+    def yaxis(self,rng):
         self._set_range('y',rng)    
-    def zrange(self,rng):
+    def zaxis(self,rng):
         self._set_range('z',rng)    #not sure that auto will work for z-range
-    def rrange(self,rng):
+    def raxis(self,rng):
         self._set_range('r',rng)    
-    def trange(self,rng):
+    def taxis(self,rng):
         self._set_range('t',rng)    
 
     def grid(self,st):
