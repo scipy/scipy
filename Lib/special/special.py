@@ -34,11 +34,14 @@ class general_function:
     array([3,4,1,2])
 
     """
-    def __init__(self,pyfunc,otypes=None):
+    def __init__(self,pyfunc,otypes=None,doc=None):
         if not callable(pyfunc) or type(pyfunc) is types.ClassType:
             raise TypeError, "Object is not a callable Python object."
         self.thefunc = pyfunc
-        self.__doc__ = pyfunc.__doc__
+        if doc is None:
+            self.__doc__ = pyfunc.__doc__
+        else:
+            self.__doc__ = doc
         if otypes is None:
             self.otypes=''
         else:

@@ -6,8 +6,12 @@
 
 import scipy
 import scipy.special as special
-from Numeric import alltrue, where
+import Numeric
+from Numeric import alltrue, where, arange
 from fastumath import *
+errp = special.errprint
+select = scipy.select
+arr = Numeric.asarray
 
 all = alltrue
 ## Special defines some of these distributions
@@ -60,14 +64,14 @@ def ksonecdf(x,n):
     return 1-special.smirnov(n,x)
 
 def ksoneq(q,n):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return special.smirnovi(n,1-q)
 
 def kstwocdfc_largen(y):
     return special.kolmogorov(y)
 
 def kstwop_largen(p):
-    assert all(0<=p<=1), _quanstr
+    assert all((0<=p)&(p<=1)), _quanstr
     return special.kolmogi(p)
 
 def kstwocdf_largen(y):
@@ -75,7 +79,7 @@ def kstwocdf_largen(y):
     return 1-special.kolmogorov(y)
 
 def kstwoq_largen(q):
-    assert(all(0<=q<=1))
+    assert(all((0<=q) & (q<=1)))
     return special.kolmogi(1-q)
 
 ## Normal distributions
@@ -90,19 +94,18 @@ def stnormcdfc(x):
     return 1-special.ndtr(x)
 
 def stnormq(q):
-    assert all(0<=q<=1), _quantstr
-    return special.ndtri(q)
+    q = arr(q)
+    sv = errp(0)
+    vals = where((0<=q) & (q<=1),special.ndtri(q),scipy.nan)
+    sv = errp(sv)
+    return vals
 
 def stnormp(p):
-    assert all(0<=p<=1), _quantstr
-    return special.ndtri(1-p)
-
-def stnormcdf(x):
-    return special.ndtr(x)
-
-def stnromalq(x):
-    assert(all(0<=q<=1))
-    return special.ndtri(q)
+    p = arr(p)
+    sv = errp(0)
+    vals = where((0<=p)&(p<=1),special.ndtri(1-p),scipy.nan)
+    sv = errp(sv)
+    return vals
 
 def stnormstats(full=0):
     if not full:
@@ -116,7 +119,11 @@ def normcdf(x, mu=0.0, std=1.0):
     return special.ndtr((x-mu)*1.0/std)
 
 def normq(q, mu=0.0, std=1.0):
-    return special.ndtri(q)*std + mu
+    q = arr(q)
+    sv = errp(0)
+    vals = where((0<=q) & (q<=1),special.ndtri(q)*std+mu,scipy.nan)
+    sv = errp(sv)    
+    return vals
 
 def normcdfc(x, mu=0.0, std=1.0):
     return 1-special.ndtr((x-mu)*1.0/std)
@@ -131,25 +138,28 @@ def normstats(mu=0.0, std=1.0, full=0):
     else:
         return mu, std**2, 0, 0
 
-
 ## Beta distribution
 
 def betapdf(x, a, b):
-    x = asarray(x)
+    x = arr(x)
+    sv = errp(0)
     Px = (1.0-x)**(b-1.0) * x**(a-1.0)
     Px /= special.beta(a,b)
-    choice1 = where(x>1,0,Px)
-    return where(x<0,0,choice1)
+    sv = errp(sv)
+    vals = where(0<=x<=1,Px,0)
+    return vals
     
 def betacdf(x, a, b):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0,0,x)
     x = where(x>1,1,x)
     return special.btdtr(a,b,x)
 
 def betaq(q, a, b):
-    assert all(0<=q<=1), _quantstr
-    return special.btdtri(a,b,q)
+    sv = errp(0)
+    vals = special.btdtri(a,b,q)
+    sv = errp(sv)    
+    return vals
 
 def betacdfc(x, a, b):
     return 1-betacdf(x,a,b)
@@ -158,86 +168,102 @@ def betap(p, a, b):
     return betaq(1-p,a,b)
 
 def betastats(a, b, full=0):
-    assert all((a>0) & (b>0)), _posstr
-    mn = a*1.0 / (a+b)
-    var = (a*b)*1.0 / ((a+b)**2 * (a+b+1))
+    cond = (arr(a)>0 & arr(b) > 0)
+    mn = where(cond,a*1.0 / (a+b),scipy.nan)
+    var = where(cond, (a*b)*1.0 / ((a+b)**2 * (a+b+1), scipy.nan))
     if not full:
         return mn, var
     g1 = 2.0*(b-a)*sqrt(1+a+b) / (sqrt(a*b)*(2+a+b))
     g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
     g2 /= a*b*(a+b+2)*(a+b+3)
-    return mn, var, g1, g2
+    return mn, var, where(cond, g1, scipy.nan), where(cond, g2, scipy.nan)
 
 ## Cauchy
 
 def cauchypdf(x, median=0.0, scale=1.0):
-    assert all(scale>0), _posstr
+    cond = scale>0
     Px = 1.0/pi*scale / ((x-median)**2 + scale**2)
-    return Px
+    return where(cond, Px, scipy.nan)
 
 def cauchycdf(x, median=0.0, scale=1.0):
-    assert all(scale>0), _posstr
-    return 0.5 + 1.0/pi*arctan((x-median)*1.0/scale)
+    cond = scale > 0
+    return where(cond, 0.5 + 1.0/pi*arctan((x-median)*1.0/scale), scipy.nan)
 
 def cauchycdfc(x, median=0.0, scale=1.0):
-    assert all(scale>0), _posstr
-    return 0.5 - 1.0/pi*arctan((x-median)*1.0/scale)
+    cond = scale > 0
+    return where(cond, 0.5 - 1.0/pi*arctan((x-median)*1.0/scale), scipy.nan)
 
 def cauchyq(q, median=0.0, scale=1.0):
-    assert all(0<=q<=1), _quantstr
-    assert all(scale>0), _posstr
-    return scale*tan(pi*(q-0.5))+median
+    cond = ((0<=q) & (q<=1)) & (scale > 0)
+    return where(cond, scale*tan(pi*(q-0.5))+median, scipy.nan)
 
 def cauchyp(p, median=0.0, scale=1.0):
     return cauchyq(1-p, median, scale)
     
-def cauchystats(median=0.0, scale=1.0):
-    raise ValueError, "No moments exist."
-
+def cauchystats(median=0.0, scale=1.0, full=0):
+    if not full:
+        return scipy.nan, scipy.nan
+    else:
+        return scipy.nan, scipy.nan, scipy.nan, scipy.nan
+        
 ## Chi-squared
 
 def chi2pdf(x, df):
-    x = asarray(x)
+    x = arr(x)
+    df = arr(df)
+    sv = errp(0)
     Px = x**(df/2.0-1)*exp(-x/2.0)
     Px /= special.gamma(df/2.0)* 2**(df/2.0)
-    return where(x>=0,Px,0)
+    sv = errp(sv)
+    return select([df<=0,x>0],[scipy.nan,Px])
 
 def chi2cdf(x, df):
-    x = asarray(x)
-    x = where(x<0,0,x)
-    return special.chdtr(df, x)
+    x = arr(x)
+    df = arr(df)
+    sv = errp(0)
+    vals = select([df<=0,x>0],[scipy.nan,special.chdtr(df, x)])
+    sv = errp(sv)
+    return vals
 
 def chi2cdfc(x, df):
-    x = asarray(x)
-    x = where(x<0,0,x)
-    return special.chdtrc(df, x)
+    x = arr(x)
+    df = arr(df)
+    sv = errp(0)
+    vals = select([df<=0, x>0],[scipy.nan,special.chdtrc(df,x)])
+    sv = errp(sv)
+    return vals
 
 def chi2p(p, df):
-    assert all(0<=p<=1), _quantstr
-    return special.chdtri(df, p)
+    sv = errp(0)
+    vals = where(((0<=p)&(p<=1)) & (df>0),special.chdtri(df, p),scipy.nan)
+    sv = errp(sv)
+    return vals
 
 def chi2q(q, df):
-    assert all(0<=q<=1), _quantstr
-    return special.chdtri(df, 1-q)
+    sv = errp(0)
+    vals = where(((0<=q) & (q<=1)) & (df>0), special.chdtri(df, 1-q), scipy.nan)
+    sv = errp(sv)
+    return vals
 
 def chi2stats(df, full=0):
-    mn = df
-    var = 2*df
+    cond = arr(df) > 0
+    mn = where(cond,df,scipy.nan)
+    var = where(cond,2*df,scipy.nan)
     if not full:
         return mn, var
-    g1 = 2*sqrt(2.0/df)
-    g2 = 12.0/df
+    g1 = where(cond,2*sqrt(2.0/df),scipy.nan)
+    g2 = where(cond, 12.0/df, scipy.nan)
     return mn, var, g1, g2
 
 
 ## Exponential
 
 def exponpdf(x, lam):
-    x = asarray(x)
+    x = arr(x)
     return where(x<0, 0, lam*exp(-lam*x))
 
 def exponcdf(x, lam):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0, 0, x)
     return 1.0-exp(-lam*x)
 
@@ -245,7 +271,7 @@ def exponcdfc(x, lam):
     return 1.0-exponcdf(x,lam)
 
 def exponq(q, lam):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return -1.0/lam*log(1-q)
 
 def exponp(p, lam):
@@ -275,7 +301,7 @@ def fisher_tippettcdfc(x,a,b):
     return 1.0-fisher_tippetcdf(x,a,b)
 
 def fisher_tippettq(q,a,b):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return a-b*log(-log(q))
 
 def fisher_tippettp(p,a,b):
@@ -295,7 +321,7 @@ def fisher_tippettstats(a,b,full=0):
 ## F
 
 def fpdf(x, dfn, dfd):
-    x = asarray(x)
+    x = arr(x)
     m = 1.0*dfd
     n = 1.0*dfn
     Px = m**(m/2) * n**(n/2) * x**(n/2-1)
@@ -303,21 +329,21 @@ def fpdf(x, dfn, dfd):
     return where(x>0,Px,0)
 
 def fcdf(x, dfn, dfd):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0, 0, x)
     return special.fdtr(dfn, dfd, x)
 
 def fcdfc(x, dfn, dfd):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0, 0, x)
     return special.fdtrc(dfn, dfd, x)
 
 def fp(p, dfn, dfd):
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return special.fdtri(dfn, dfd, p)
     
 def fq(q, dfn, dfd):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return special.fdtri(dfn, dfd, 1-p)
 
 def fstats(dfn, dfd, full=0):
@@ -356,27 +382,27 @@ def gumbelstats(mode=0.0,scale=1.0,full=0):
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta, a=alpha) definition)
 
 def gammapdf(x, a, b):
-    x = asarray(x)
+    x = arr(x)
     Px = x**(a-1.0)*exp(-x*1.0/b)
     Px /= special.gamma(a) * b**a
     return where(x<0,0,Px)
 
 def gammacdf(x, a, b):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0,0,x)
     return special.gdtr(1.0/b,a,x)
 
 def gammacdfc(x, a, b):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0,0,x)
     return special.gdtrc(1.0/b,a,x)
     
 def gammaq(q, a, b):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return special.gdtri(1.0/b,a,q)
 
 def gammap(p, a, b):
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return special.gdtri(1.0/b,a,1-p)
 
 def gammastats(a, b, full=0):
@@ -401,7 +427,7 @@ def laplacecdfc(x, mu=0.0, scale=1.0):
     return 0.5*(1-sign(x-mu)*(1-exp(-abs(x-mu)*1.0/scale)))
 
 def laplaceq(q, mu=0.0, scale=1.0):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     fac = 0.5+sign(q-0.5)*(0.5-q)
     return mu+sign(0.5-q)*scale*log(2*fac)
 
@@ -434,8 +460,8 @@ def logisticcdfc(x, mu=0.0, scale=1.0):
     return 1.0-logisticcdf(x,mu=mu,scale=scale)
 
 def logisticq(q, mu=0.0, scale=1.0):
-    q = asarray(q)
-    assert all(0<=q<=1), _quantstr    
+    q = arr(q)
+    assert all((0<=q) & (q<=1)), _quantstr    
     return mu - abs(scale)*log((1.0-q)/q)
 
 def logisticp(p, mu=0.0, scale=1.0):
@@ -453,13 +479,13 @@ def logisticstats(mu=0.0, scale=1.0, full=0):
 ## Lognorm
 
 def lognormpdf(x, mu=0.0, std=1.0):
-    x = asarray(x)
+    x = arr(x)
     Px = exp(-(log(x)-mu)**2 / (2*std**2))
     Px /= std*x*sqrt(2*pi)
     return where(x<=0,0,Px)
 
 def lognormcdf(x, mu=0.0, std=1.0):
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0,0.0,x)
     return 0.5*(1+special.erf((log(x)-mu)/(sqrt(2)*std)))
 
@@ -498,7 +524,7 @@ gilbratstats = lognormstats
 def ncx2pdf(x,df,nc):
     assert all(nc>=0), _nonnegstr
     assert all(df>0), _posstr
-    x = asarray(x)
+    x = arr(x)
     y = where(x<=0,1,x)
     a = df/2.0
     Px = 0.5**a*exp(-(nc+y)/2.0)*(y*1.0)**(a-1)
@@ -547,7 +573,7 @@ def ncx2pdf(x,df,nc):
 def ncx2cdf(x,df,nc):
     assert all(nc>=0), _nonnegstr
     assert all(df>0), _posstr
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0,0,x)
     return special.chndtr(x,df,nc)
 
@@ -563,15 +589,15 @@ def ncx2cdfc(x,df,nc):
 ##_vec_ncx2q = special.general_function(_ncx2q,'d')
 
 ##def ncx2q(q,df,nc):
-##    assert all(0<=q<=1), _quantstr
+##    assert all((0<=q) & (q<=1)), _quantstr
 ##    return _vec_ncx2q(q, df, nc)
 
 def ncx2q(q,df,nc):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return special.chndtrix(q,df,nc)
     
 def ncx2p(p,df,nc):
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return ncx2q(1-p,df,nc)
 
 def ncx2stats(df,nc,full=0):
@@ -588,7 +614,7 @@ def ncx2stats(df,nc,full=0):
 def ncfpdf(x,n1,n2,nc):
     assert all((n1>0) & (n2>0)), _posstr
     assert all(nc>=0), _nonnegstr
-    x = asarray(x)
+    x = arr(x)
     n1 = n1*1.0
     n2 = n2*1.0
     nc = nc*1.0
@@ -638,7 +664,7 @@ def ncfpdf(x,n1,n2,nc):
 def ncfcdf(x,dfn,dfd,nc):
     assert all(nc>=0), _nonnegstr    
     assert all((dfn>0) & (dfd>0)), _posstr
-    x = asarray(x)
+    x = arr(x)
     x = where(x<0,0,x)
     return special.ncfdtr(dfn,dfd,nc,x)
     
@@ -654,22 +680,22 @@ def ncfcdfc(x,dfn,dfd,nc):
 ##_vec_ncfq = special.general_function(_ncfq,'d')
 
 ##def ncfq(q,dfn,dfd,nc,x0=None):
-##    assert all(0<=q<=1), _quanstr
+##    assert all((0<=q) & (q<=1)), _quanstr
 ##    if x0 is None:
 ##        x0 = dfd * (dfn+nc)/(dfn*(dfd-2))
 ##    return _vec_ncfq(q, dfn, dfd, nc, x0)
 
 def ncfq(q, dfn, dfd, nc):
-    assert (0<=q<=1)
+    assert ((0<=q) & (q<=1))
     return special.ncfdtri(dfn, dfd, nc, q)
 
 def ncfp(p,dfn,dfd,nc):
     return ncfq(1-p,dfn,dfd,nc)
 
 def ncfstats(dfn,dfd,nc, full=0):
-    dfn = asarray(dfn)*1.0
-    dfd = asarray(dfd)*1.0
-    nc = asarray(nc)*1.0
+    dfn = arr(dfn)*1.0
+    dfd = arr(dfd)*1.0
+    nc = arr(nc)*1.0
     mn = where(dfd<=2,scipy.nan,dfd/(dfd-2)*(1+nc/dfn))
     var1 = 2*(dfd/dfn)**2 * ((dfn+nc/2)**2+(dfn+nc)*(dfd-2))
     var1 /= (dfd-2)**2 * (dfd-4)
@@ -696,11 +722,11 @@ def tcdfc(x, df):
     return 1-tcdf(x,df)
 
 def tq(q, df):
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return special.stdtrit(df, q)
 
 def tp(p, df):
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return special.stdtrit(df, 1-p)
 
 def tstats(df,full=0):
@@ -761,7 +787,7 @@ def nctcdfc(x,df,nc):
 ##_vec_nctq = special.general_function(_nctq,'d')
 
 ##def nctq(q,df,nc,x0=None):
-##    assert all(0<=q<=1), _quanstr
+##    assert all((0<=q) & (q<=1)), _quanstr
 ##    if x0 is None:
 ##        val1 = gam((df-1.0)/2.0)
 ##        val2 = gam(df/2.0)
@@ -769,7 +795,7 @@ def nctcdfc(x,df,nc):
 ##    return _vec_ncfq(q, dfn, dfd, nc, x0)
 
 def nctq(q,df,nc):
-    assert all(0<=q<=1), _quanstr
+    assert all((0<=q) & (q<=1)), _quanstr
     assert all((df > 0) & (nc > 0)), _posstr
     return special.nctdtrit(df, nc, q)
 
@@ -805,13 +831,13 @@ def nctstats(df,nc,full=0):
 def paretopdf(x, mode=1.0, shape=4.0):
     a, b = shape, mode
     assert all((a > 0) & (b > 0)), _posstr
-    x = asarray(x)
+    x = arr(x)
     return where(x<b,0,1.0*a*b**a / x**(a+1.0))
 
 def paretocdf(x, mode=1.0, shape=4.0):
     a, b = shape, mode
     assert all((a > 0) & (b > 0)), _posstr
-    x = asarray(x)
+    x = arr(x)
     x = where(x<b,b,x)
     return 1-(b*1.0/x)**a
 
@@ -848,29 +874,29 @@ def paretostats(mode=1.0, shape=4.0, full=0):
 
 def rayleighpdf(r, mode=1.0):
     assert all(mode>0.0), _posstr
-    r = asarray(r)    
+    r = arr(r)    
     return where(r<0,0,r*exp(-r*r/(2.0*mode**2))/mode**2)
 
 def rayleighcdf(r, mode=1.0):
     assert all(mode>0.0), _posstr
-    r = asarray(r)
+    r = arr(r)
     r = where(r<0,0,r)
     return 1-exp(-r*r/(2.0*mode*mode))
 
 def rayleighcdfc(r, mode=1.0):
     assert all(mode>0.0), _posstr
-    r = asarray(r)    
+    r = arr(r)    
     r = where(r<0,0,r)
     return exp(-r*r/(2.0*mode*mode))
 
 def rayleighq(q, mode=1.0):
     assert all(mode>0.0), _posstr
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return mode*sqrt(2*log(1.0/(1.0-q)))
 
 def rayleighp(p, mode=1.0):
     assert all(mode>0.0), _posstr
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return mode*sqrt(2.0*log(1.0/p))
 
 def rayleighstats(mode=1.0, full=0):
@@ -888,12 +914,12 @@ def rayleighstats(mode=1.0, full=0):
 
 def uniformpdf(x, a=0.0, b=1.0):
     assert all(b > a)
-    x = asarray(x)
+    x = arr(x)
     return where((x>a) & (x<b), 1.0/(maxi-mini), 0.0)
 
 def uniformcdf(x, a=0.0, b=1.0):
     assert all(b > a)
-    x = asarray(x)
+    x = arr(x)
     x = where(x<a,a,x)
     x = where(x>b,b,x)*1.0
     return (x-a)/(b-a)
@@ -903,12 +929,12 @@ def uniformcdfc(x, a=0.0, b=1.0):
 
 def uniformq(q, a=0.0, b=1.0):
     assert all(b > a)
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return q*(b-a) + a
 
 def uniformp(p, a=0.0, b=1.0):
     assert all(b > a)
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return b - p*(b-a)
 
 def uniformstats(a=0.0, b=1.0, full=0):
@@ -927,7 +953,7 @@ def uniformstats(a=0.0, b=1.0, full=0):
 _trstr = "Left must be <= mode which must be <= right with left < right"
 
 def triangpdf(x, left=0.0, mode=0.5, right=1.0):
-    x = asarray(x)
+    x = arr(x)
     a, b, c = left, right, mode
     assert all((a <= c <= b) & (a<b)), _trstr
     x = where(x<a,a,x)
@@ -937,7 +963,7 @@ def triangpdf(x, left=0.0, mode=0.5, right=1.0):
     return where(x<c,P1,P2)
     
 def triangcdf(x,left=0.0, mode=0.5, right=1.0):
-    x = asarray(x)
+    x = arr(x)
     a, b, c = left, right, mode
     assert all((a <= c <= b) & (a<b)), _trstr
     x = where(x<a,a,x)
@@ -952,8 +978,8 @@ def triangcdfc(x, left=0.0, mode=0.5, right=1.0):
 def triangq(q, left=0.0, mode=0.5, right=1.0):
     a, b, c = left, right, mode
     assert all((a <= c <= b) & (a<b)), _trstr
-    assert all(0<=q<=1), _quantstr
-    q = asarray(q)
+    assert all((0<=q) & (q<=1)), _quantstr
+    q = arr(q)
     Dc = (c-a)/(b-a)
     x1 = b - sqrt((1-q)*(b-a)*(b-c))
     x2 = a + sqrt(q*(b-a)*(c-a))
@@ -979,7 +1005,7 @@ def triangstats(left=0.0, mode=0.5, right=1.0, full=0):
 # Von-Mises
 
 def von_misespdf(x,mode=0.0, shape=1.0):
-    x = asarray(x)
+    x = arr(x)
     a, b = mode, shape
     assert (-pi<=a<=pi)
     assert (b>0), _posstr
@@ -989,7 +1015,7 @@ def von_misespdf(x,mode=0.0, shape=1.0):
     return Px*box
 
 def von_misescdf(x, mode=0.0, shape=1.0):
-    x = asarray(x)
+    x = arr(x)
     a, b = mode, shape
     assert (-pi<=a<=pi)
     assert (b>0), _posstr
@@ -1019,7 +1045,7 @@ def _vmq(q,mode,shape,x0):
 _vec_vmq = special.general_function(_vmq,'d')
 
 def von_misesq(q,mode=0.0, shape=1.0, x0=None):
-    assert all(0<=q<=1), _quanstr
+    assert all((0<=q) & (q<=1)), _quanstr
     if x0 is None:
         x0 = mode
     return _vec_vmq(q, mode, shape,x0)
@@ -1039,17 +1065,17 @@ def von_misesstats(mode=0.0, shape=1.0, full=0):
 ## Wald distribution (Inverse Normal)
 
 def waldpdf(x, mean=1.0, scale=1.0):
-    A, B = map(asarray,(mean, scale))
+    A, B = map(arr,(mean, scale))
     assert all((A > 0) & (B > 0)), _posstr
-    x = asarray(x)*1.0
+    x = arr(x)*1.0
     Px = sqrt(B/(2*pi*x**3.0))*exp(-B/(2*x)*((x-A)/A)**2)
     Px = where(x<=0,0,Px)
     return Px
 
 def waldcdf(x, mean=1.0, scale=1.0):
-    A, B = map(asarray,(mean, scale))    
+    A, B = map(arr,(mean, scale))    
     assert all((A > 0) & (B > 0)), _posstr
-    x = asarray(x)*1.0
+    x = arr(x)*1.0
     x = where(x<0,0,x)
     sv = special.errprint(0)
     fac = sqrt(B/x)
@@ -1070,9 +1096,9 @@ def _waldq(q,mean,scale,x0):
 _vec_waldq = special.general_function(_waldq,'d')
 
 def waldq(q, mean=1.0, scale=1.0, x0=None):
-    A, B, q = map(asarray,(mean, scale, q))
+    A, B, q = map(arr,(mean, scale, q))
     assert all((A > 0) & (B > 0)), _posstr
-    assert all(0<=q<=1), _quanstr
+    assert all((0<=q) & (q<=1)), _quanstr
     if x0 is None:
         x0 = mean
     qvals = _vec_waldq(q, mean, scale, x0)
@@ -1082,7 +1108,7 @@ def waldp(p, mean=1.0, scale=1.0):
     return waldq(1-p, mean, scale)
 
 def waldstats(mean=1.0, scale=1.0, full=0):
-    A, B = map(asarray,(mean, scale))    
+    A, B = map(arr,(mean, scale))    
     assert all((A > 0) & (B > 0)), _posstr
     iB = 1.0/B
     mn = A
@@ -1096,39 +1122,39 @@ def waldstats(mean=1.0, scale=1.0, full=0):
 ## Weibull
 
 def weibullpdf(x, scale=1.0, shape=0.5):
-    a, b, x = map(asarray,(shape, scale, x))
+    a, b, x = map(arr,(shape, scale, x))
     assert all((a>0) & (b>0)), _posstr
     ib = 1.0/ b
-    x = asarray(x * ib)
+    x = arr(x * ib)
     Px = a * ib * x**(a-1.0) * exp(-x**a)
     return where(x<=0,0,Px)
 
 def weibullcdf(x, scale=1.0, shape=0.5):
-    a, b, x = map(asarray,(shape, scale, x))
+    a, b, x = map(arr,(shape, scale, x))
     assert all((a>0) & (b>0)), _posstr
     x = where(x<0,0,x)
     return -special.expm1(-(x*1.0/b)**a)
 
 def weibullcdfc(x, scale=1.0, shape=0.5):
-    a, b, x = map(asarray,(shape, scale, x))
+    a, b, x = map(arr,(shape, scale, x))
     assert all((a>0) & (b>0)), _posstr
     x = where(x<0,0,x)
     return exp(-(x*1.0/b)**a)
 
 def weibullq(q, scale=1.0, shape=0.5):
-    a, b, q = map(asarray,(shape, scale, q))
+    a, b, q = map(arr,(shape, scale, q))
     assert all((a>0) & (b>0)), _posstr
-    assert all(0<=q<=1), _quantstr
+    assert all((0<=q) & (q<=1)), _quantstr
     return b*pow(log(1.0/(1-q)),1.0/a)
 
 def weibullp(p, scale=1.0, shape=0.5):
-    a, b, p = map(asarray,(shape, scale, p))
+    a, b, p = map(arr,(shape, scale, p))
     assert all((a>0) & (b>0)), _posstr
-    assert all(0<=p<=1), _quantstr
+    assert all((0<=p)&(p<=1)), _quantstr
     return b*pow(log(1.0/p),1.0/a)
 
 def weibullstats(scale=1.0, shape=0.5, full=0):
-    a, b = map(asarray,(shape, scale))
+    a, b = map(arr,(shape, scale))
     assert all((a>0) & (b>0)), _posstr
     gam = special.gamma
     ia = 1.0/a
@@ -1152,6 +1178,9 @@ def weibullstats(scale=1.0, shape=0.5, full=0):
 # Binomial 
     
 def binompdf(k, n, pr=0.5):
+    k = arr(k)
+    assert (0<pr<1)
+    cond = arr((k > 0) & (k == floor(k)))
     return scipy.comb(n,k)* pr**k * (1-pr)**(n-k)
 
 def binomcdf(k, n, pr=0.5):
@@ -1256,42 +1285,230 @@ def geomstats(pr=0.5,full=0):
 
 ## Hypergeometric distribution
 
-def hypergeompdf(k, bad=10, good=25, sample=10):
-    return scipy.comb(good,k) * scipy.comb(bad,sample-k) / scipy.comb(bad+good,sample)
+def hypergeompdf(k, tot=35, good=25, N=10):
+    bad = tot - good
+    return scipy.comb(good,k) * scipy.comb(bad,N-k) / scipy.comb(tot,N)
 
-def hypergeomcdf(k, bad=10, good=25, sample=10):
+def _hypergeomcdf(k, tot, good, N):
     j = arange(0,k+1)
-    return sum(hypergeompdf(j, bad, good, sample))
-    
+    return sum(hypergeompdf(j, tot, good, N),axis=-1)
+_vhypergeomcdf = special.general_function(hypergeomcdf,'d')
 
+def hypergeomcdf(k, tot=35, good=25, N=10):
+    return _vhypergeomcdf(k, tot, good, N)
+
+def hypergeomcdfc(k, tot=35, good=25, N=10):
+    return 1.0 - hypergeomcdf(k, tot, good, N)
+
+def hypergeomq(q, tot=35, good=25, N=10):
+    pass
+
+def hypergeomp(p, tot=35, good=25, N=10):
+    pass
+
+def hypergeomstats(tot=35, good=25, N=10, full=0):
+    n = good*1.0
+    m = (tot-good)*1.0
+    N = N*1.0
+    tot = m+n
+    p = n/tot
+    mu = N*p
+    var = m*n*N*(tot-N)*1.0/(tot*tot*(tot-1))
+    if not full:
+        return mu, var
+    g1 = (m - n)*(tot-2*N) / (tot-2.0)*sqrt((tot-1.0)/(m*n*N*(tot-N)))
+    m2, m3, m4, m5 = m**2, m**3, m**4, m**5
+    n2, n3, n4, n5 = n**2, n**2, n**4, n**5
+    g2 = m3 - m5 + n*(3*m2-6*m3+m4) + 3*m*n2 - 12*m2*n2 + 8*m3*n2 + n3 \
+         - 6*m*n3 + 8*m2*n3 + m*n4 - n5 - 6*m3*N + 6*m4*N + 18*m2*n*N \
+         - 6*m3*n*N + 18*m*n2*N - 24*m2*n2*N - 6*n3*N
+    return mu, var, g1, g2
+
+
+## Logarithmic (Log-Series), (Series) distribution
+
+def logserpdf(k,pr=0.5):
+    k = arr(k)
+    assert (0<pr<1)
+    cond = arr((k > 0) & (k == floor(k)))
+    return where(cond,-pr**k / k / log(1-pr),0)
+
+def logsercdf(k, pr=0.5):
+    j = arange(0,k+1)
+    pr = arr(pr)
+    return sum(logserpdf(j, pr),axis=-1)
+
+def logsercdfc(k, pr=0.5):
+    return 1.0-logseriescdf(k, pr=pr)
+
+def logserq(q, pr=0.5):
+    pass
+
+def logserp(p, pr=0.5):
+    pass
+
+def logserstats(pr=0.5, full=0):
+    r = log(1-pr)
+    mu = pr / (pr - 1.0) / r
+    mu2p = -pr / r / (pr-1.0)**2
+    var = mu2p - mu*mu
+    if not full:
+        return mu, var
+    mu3p = -pr / r * (1.0+pr) / (1.0-pr)**3
+    mu3 = mu3p - 3*mu*mu2p + 2*mu**3
+    g1 = mu3 / var**1.5
+
+    mu4p = -pr / r * (1.0/(pr-1)**2 - 6*pr/(pr-1)**3 + 6*pr*pr / (pr-1)**4)
+    mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
+    g2 = mu4 / var**2 - 3.0
+    return mu, var, g1, g2
 
 
 ## Poisson distribution
 
 def poissonpdf(k,mu):
-    return mu**k * exp(-mu) / special.gamma(k+1)
+    k, mu = arr(k)*1.0, arr(mu)*1.0
+    sv = errp(0)
+    Pk = mu**k * exp(-mu) / arr(special.gamma(k+1))
+    sv = errp(sv)
+    return select([mu<0,(k>=0) & (floor(k)==k)],[scipy.nan,Pk])
 
 def poissoncdf(k,mu):
-    return special.pdtr(k,mu)
+    k, mu = arr(k), arr(mu)
+    sv = errp(0)
+    vals = special.pdtr(k,mu)
+    sv = errp(sv)
+    return select([mu<0,k>=0],[scipy.nan, vals])
 
 def poissoncdfc(k,mu):
-    return special.pdtrc(k,mu)
+    k, mu = arr(k), arr(mu)
+    sv = errp(0)
+    vals = special.pdtrc(k,mu)
+    sv = errp(sv)
+    return select([mu<0,k>=0],[scipy.nan, vals])
 
 def poissonq(q,mu):
-    return special.pdtrik(q,mu)
+    q, mu = arr(q), arr(mu)
+    sv = errp(0)
+    vals = special.pdtrik(q,mu)
+    sv = errp(sv)
+    return where((mu<0) | (q<0) | (q>1),scipy.nan,vals)
 
 def poissonp(p,mu):
-    return special.pdtrik(1-p,mu)
+    return poissonq(1-p,mu)
 
 def poissonstats(mu,full=0):
+    cond = (arr(mu) < 0)
+    where(cond,scipy.nan,mu)
     var = mu
     if not full:
         return mu, var
-
-    g1 = 1.0/sqrt(mu)
-    g2 = 1.0 / mu
+    g1 = 1.0/arr(sqrt(mu))
+    g2 = 1.0 / arr(mu)
     return mu, var, g1, g2
 
 
+## Discrete Uniform
+
+def randintpdf(k, min, max=None):
+    if max is None:
+        max = min
+        min = 0
+    cond = (arr(max) <= arr(min))
+    fact = 1.0 / arr(max - min)
+    return select([cond,(min<=k) & (k < max) & (k==floor(k))],[scipy.nan, fact])
+
+def randintcdf(k, min, max=None):
+    if max is None:
+        max = min
+        min = 0
+    cond = (arr(max) <= arr(min))
+    k = arr(k)
+    Ck = (k-min)*1.0/(max-min)
+    return select([cond,k>max,k>min],[scipy.nan,1,Ck])
+    
+def randintcdfc(k, min, max=None):
+    return 1.0-randintcdf(k, min, max)
+
+def randintq(q, min, max=None):
+    if max is None:
+        max = min
+        min = 0
+    q = arr(q)
+    cond = (arr(min) < arr(max)) & (0<=q) & (q<=1)
+    return where(cond, (max-min)*q + min, scipy.nan)
+
+def randintp(p, min, max=None):
+    return randintq(1-p, min, max)
+
+def randintstats(min, max=None, full=0):
+    if max is None:
+        max = min
+        min = 0
+    m2, m1 = arr(max), arr(min)
+    N = arr(m2 - m1)
+    cond = (m1 < m2)
+    mu = (m2 + m1 - 1.0) / 2
+    mu2p = (m2**3-m1**3)/(3.0*(m2-m1)) - (m2+m1)/2.0 + 1.0/6.0
+    var = mu2p - mu*mu
+    if not full:
+        return mu, var
+    mu3p = (m2**4-m1**4)/(4.0*(m2-m1)) - (m2**3-m1**3)/(2.0*(m2-m1)) \
+           +(m2+m1)/4.0
+    mu3 = mu3p - 3*mu*mu2p + 2*mu**3
+    g1 = mu3 / var**1.5
+
+    mu4p = (m2**5-m1**5)/(5.0*(m2-m1)) - (m2**4-m1**4)/(2.0*(m2-m1)) \
+           + (m2**3-m1**3)/(3.0*(m2-m1)) - 1 / 30.0
+    mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
+    g2 = mu4 / var**2 - 3.0
+    return mu, var, g1, g2
+
+# Zipf distribution
+
+def zipfpdf(k, a=4.0):
+    k, a = arr(k)*1.0, arr(a)
+    sv = errp(0)
+    Pk = 1.0 / arr(special.zeta(a,1) * k**a)
+    sv = errp(sv)
+    return select([a<=1.0,(k>0) & (floor(k)==k)],[scipy.nan,Pk])
+
+def _zipfcdf(k, a):
+    if a<=1.0:
+        return scipy.nan
+    if k<1:
+        return 0.0
+    j = arange(1.0,k+1)
+    return sum(1.0/j**a)/special.zeta(a,1)
+_vzipfcdf = special.general_function(_zipfcdf,'d')
+
+def zipfcdf(k, a=4.0):
+    return _vzipfcdf(k, a)
+
+def zipfcdfc(k, a=4.0):
+    return 1.0-zipfcdf(k, a)
+
+def zipfq(q, a=4.0):
+    pass
+
+def zipfp(p, a=4.0):
+    pass
+
+def zipfstats(a=4.0, full=0):
+    sv = errp(0)
+    fac = arr(special.zeta(a,1))
+    mu = special.zeta(a-1.0,1)/fac
+    mu2p = special.zeta(a-2.0,1)/fac
+    var = mu2p - mu*mu
+    if not full:
+        return mu, var
+    mu3p = special.zeta(a-3.0,1)/fac
+    mu3 = mu3p - 3*mu*mu2p + 2*mu**3
+    g1 = mu3 / arr(var**1.5)
+
+    mu4p = special.zeta(a-4.0,1)/fac
+    mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
+    g2 = mu4 / arr(var**2) - 3.0
+    return mu, var, g1, g2
 
 

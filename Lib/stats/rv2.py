@@ -37,9 +37,9 @@ fratio(numdf=2.0, denomdf=10.0, size=None).....default mean 1.25, SD 1.60.
 gamma(mu=2.0, size=None).........................default mean 2.00, SD 1.40.
 geom(pr=0.5, size=None).............default mean 1.00, SD 1.40.
 gumbel(mode=0.0, scale=1.0, size=None)...........default mean 0.58, SD 1.30.
-hypergeom(bad=10, good=25, sample=10, size=None)deflt mn 2.86, SD 1.22
+hypergeom(tot=35, good=25, sample=10, size=None)deflt mn 2.86, SD 1.22
 laplace(mu=0.0, scale=1.0, size=None)............default mean 0.00, SD 1.40.
-logarithmic(p=0.5, size=None)....................default mean 1.44, SD 0.90
+logseries(p=0.5, size=None)....................default mean 1.44, SD 0.90
 logistic(mu=0.0, scale=1.0, size=None)...........default mean 0.00, SD 1.80.
 lognormal(mu=0.0, sigma=1.0, size=None)..........default mean 1.65, SD 2.20.
 negative_binomial(r=1.0, pr=0.5, size=None)  deflt mn 1.00, SD 1.40.
@@ -179,12 +179,12 @@ class _pranv:
 #                              size=None) integer     non-negative
 #     _Gumbel(mode=1.0, scale=1.0,
 #                              size=None) double      unbounded
-#     _hypergeom(bad=10, good=25,
+#     _hypergeom(tot=35, good=25,
 #                   sample=10, size=None) integer     >= max(0, sample-good)
 #                                                       <= min(sample, bad)
 #     _Laplace(mu=0.0, scale=1.0,
 #                              size=None) double      unbounded
-#     _logarithmic(p=0.5, size=None)      integer     positive
+#     _logser(p=0.5, size=None)      integer     positive
 #     _logistic(mu=0.0, scale=1.0,
 #                              size=None) double      unbounded
 #     _lognormal(mu=0.0, sigma=1.0,
@@ -1469,22 +1469,24 @@ class _pranv:
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
       return Num.reshape(buffer, size)
 
-   def _hypergeom(self, bad=10, good=25, sample=10, size=None):
+   def _hypergeom(self, tot=35, good=25, N=10, size=None):
       """Return hypergeometric pseudorandom variates: #"bad" in <sample>
 
-      hypergeom(bad=10, good=25, sample=10)
+      hypergeom(tot=35, good=25, N=10)
 
-      Z has a hypergeometric distribution if it is the number of "bad" items
-      in a sample of size <sample> from a population of size <bad> + <good>
-      items.  <bad>, <good> and <sample> must be positive integers.  Also,
-      <bad> + <good> >= <sample> >= 1.  The result  Z satisfies:
-      max(0, <sample> - <good>) <= Z <= min(<sample>, <bad>).  if shape is not None is
+      Z has a hypergeometric distribution if it is the number of "bad"
+      (tot-good) items in a sample of size <N> from a population of
+      size tot items.  <tot>, <good> and <N> must be positive integers.  Also,
+      <tot> >= <sample> >= 1.  The result  Z satisfies:
+      max(0, <sample> - <good>) <= Z <= min(<sample>, <tot>-<good>).
+      if size is not None is
       supplied, it must be a mutable sequence (list or array).  It is filled
       with hypergeometric pseudo-random integers and <None> is returned.
       Otherwise, a single hypergeometric pseudo-random integer is returned.
       See Fishman, "Monte Carlo," pp 218-221.  Algorithms HYP and HRUA* were
       used."""
-      alpha = int(bad); beta=int(good); n = int(sample)
+      bad = tot - good
+      alpha = int(bad); beta=int(good); n = int(N)
       if (alpha < 1) or (beta < 1) or (n < 1) or (alpha + beta) < n:
          raise ValueError, '<bad>, <good>, or <sample> out of range'
 
@@ -1633,17 +1635,19 @@ class _pranv:
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
       return Num.reshape(buffer, size)      
 
-   def _logarithmic(self, p=0.5, size=None):
-      """Return logarithmic (series) positive pseudo-random integers; 0<p<1.
+   def _logser(self, pr=0.5, size=None):
+      """Return logarithmic (log-series) positive pseudo-random integers;
+      0<p<1.
 
-      logarithmic(p=0.5, size=None)
+      logser(pr=0.5, size=None)
 
-      Z has the logarithmic (series) distribution if Pr{Z=i} = (a/i) * p ** i,
+      Z has the logseries(logarithmic)distribution if Pr{Z=i} = (a/i) * p ** i,
       for i = 1, 2, ... and a = -1.0 / log(1.0 - p). If <buffer> is specified,
       it must be a mutable sequence (list or array).  It is filled with
-      logarithmic (positive) pseudo-random integers and <None> is returned.
+      logseries (positive) pseudo-random integers and <None> is returned.
       Otherwise, a single logarithmic series pseudo-random is returned.
       The algorithm is by A.W. Kemp; see Devroye, 1986, pp 547-548."""
+      p = pr
       if not(0.0 < p < 1.0):
          raise ValueError, '<p> must be in (0.0, 1.0)'
 
@@ -2841,7 +2845,7 @@ geom         =  _inst._geom
 gumbel            =  _inst._Gumbel
 hypergeom    =  _inst._hypergeom
 laplace           =  _inst._Laplace
-logarithmic       =  _inst._logarithmic
+logser       =  _inst._logser
 logistic      =  _inst._logistic
 #lognormal         =  _inst._lognormal
 #negative_binomial =  _inst._negative_binomial

@@ -227,6 +227,8 @@ def multinom(trials, probs, size=None):
 
 def poisson(mu, size=None):
     """returns array of poisson distributed random integers with specifed mean."""
+    if (mu < 0):
+        raise ValueError, "mu must be > 0."
     return _build_random_array(rand.poisson, (mu,), size)
 
 

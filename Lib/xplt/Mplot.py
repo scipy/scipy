@@ -439,6 +439,7 @@ def plot(x,*args,**keywds):
         if scipy.array_iscomplex(y):
             print "Warning: complex data plotting real part."
             y = y.real
+        y = where(scipy.isfinite(y),y,0)
         gist.plg(y,x,type='solid',color='blue',marks=0)
         return
     y = args[0]
