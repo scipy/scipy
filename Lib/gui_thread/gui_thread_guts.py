@@ -141,7 +141,14 @@ def is_immutable(x):
     else:
         return 0
 
-
+def is_numeric_array(x):
+    try:
+        x.typecode() in ['c','b','l','d','f','D','F']
+        return 1
+    except AttributeError:
+        pass
+    return 0
+    
 def smart_return(ret):
     
     """ This intelligently returns an appropriately proxied object to
@@ -159,6 +166,8 @@ def smart_return(ret):
         return proxy_list(ret)
     elif type(ret) is types.DictType:
         return proxy_dict(ret)
+    elif is_numeric_array(ret):
+        return ret
     else:
         return proxy_attr(ret)
 
