@@ -407,14 +407,14 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             eps = myfprime[1]
             fprime = myfprime[0]
             newargs = (f,eps) + args
-            _ls_ingfk = fprime(xk+alpha*pk,*newargs)
+            _ls_ingfk = fprime(xk+alpha*pk,*newargs)  # store for later use
             return Num.dot(_ls_ingfk,pk)
     else:
         fprime = myfprime
         def phiprime(alpha):
             global _ls_gc, _ls_ingfk
             _ls_gc += 1
-            _ls_ingfk = fprime(xk+alpha*pk,*args)
+            _ls_ingfk = fprime(xk+alpha*pk,*args)  # store for later use
             return Num.dot(_ls_ingfk,pk)
 
     alpha0 = 0
@@ -469,6 +469,10 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             break
 
     if fprime_star is not None:
+        # fprime_star is a number (derphi) -- so use the most recently calculated gradient
+        #                                     used in computing it derphi = gfk*pk
+        #                                     this is the gradient at the next step
+        #                                     no need to compute it again in the outer loop.
         fprime_star = _ls_ingfk
         
     return alpha_star, _ls_fc, _ls_gc, fval_star, old_fval, fprime_star
