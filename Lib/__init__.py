@@ -1,3 +1,9 @@
+
+#get version
+import scipy_version
+__version__ = scipy_version.version
+del scipy_version
+
 # modules to import under the scipy namespace
 _modules = ["optimize", "integrate", "signal", "special", "io", 
             "interpolate", "stats"]
