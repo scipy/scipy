@@ -318,9 +318,9 @@ def _sph_harmonic(m,n,theta,phi):
     m,n (m<=n) and argument theta and phi:  Y^m_n(theta,phi)
     """
     x = cos(phi)
+    m,n = int(m), int(n)
     Pmn,Pmnd = lpmn(m,n,x)
     val = Pmn[m,n]
-    print m, n, val
     val *= sqrt((2*m+1)/4.0/pi)
     val *= exp(0.5*gammaln(n-m+1)-gammaln(n+m+1))
     val *= exp(1j*m*theta)

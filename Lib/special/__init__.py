@@ -179,7 +179,8 @@
     lqn      -- **Legendre Functions of the second kind.
     lpmn     -- **Associated Legendre Function of the first kind.
     lqmn     -- **Associated Legendre Function of the second kind.
-    lpmv     -- Associated Legendre Function of non-negative degree v.
+    lpmv     -- Associated Legendre Function of arbitrary non-negative
+                   degree v.
     sph_harm -- Spherical Harmonics (complex-valued) Y^m_n(theta,phi)
 
   Orthogonal polynomials
