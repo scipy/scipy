@@ -197,7 +197,17 @@ def imrotate(arr,angle,interp='bilinear'):
 def imshow(arr):
     """Simple showing of an image through an external viewer.
     """
-    toimage(arr).show()
+    im = toimage(arr)
+    if (len(arr.shape) == 3) and (arr.shape[2] == 4):
+        try:
+            im.save('/tmp/scipy_imshow.png')
+            if os.system("(xv /tmp/scipy_imshow.png; rm -f /tmp/scipy_imshow.png)&"):
+                raise RuntimeError
+            return
+        except:
+            print "Warning: Alpha channel may not be handled correctly."
+            
+    im.show()
     return
 
 def imresize(arr,size):

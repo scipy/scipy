@@ -217,9 +217,11 @@ def apply_over_axes(func, a, axes):
     for the resulting array.
     """
     val = asarray(a)
+    N = len(val.shape)
     if not type(axes) in SequenceType:
         axes = (axes,)
     for axis in axes:
+        if axis < 0: axis = N + axis
         args = (val, axis)
         val = expand_dims(func(*args),axis)
     return val
