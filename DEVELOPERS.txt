@@ -226,7 +226,11 @@ a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
   set_package_path()
   # make sure that all xxx symbols are imported before the del statement:
   from xxx.yyy import zzz
-  del sys.path[0]
+  restore_path()
+
+  set_local_path()
+  # import modules that are located in the same directory as this file.
+  restore_path()
 
   class test_zzz(ScipyTestCase):
       def check_simple(self, level=1):
