@@ -10,7 +10,7 @@ Text File
 import Numeric
 from Numeric import array, take, concatenate, Float
 import types, re, copy
-#import numpyio
+import numpyio
 default = None
 _READ_BUFFER_SIZE = 1024*1024
 #_READ_BUFFER_SIZE = 1000
@@ -21,7 +21,7 @@ _READ_BUFFER_SIZE = 1024*1024
 # Adapted from
 #    TextFile class Written by: Konrad Hinsen <hinsen@cnrs-orleans.fr>
 #
-# Written by Trent Oliphant and Travis Oliphant
+# Written by Travis Oliphant and Trent Oliphant
 #   with support from Agilent, Inc.
 # 
 
@@ -190,7 +190,7 @@ def move_past_spaces(firstline):
     return firstline[ind:], ind
 
 
-def extract_columns(objarray, collist, atype, missing):
+def extract_columns(arlist, collist, atype, missing):
     if collist[-1] < 0:
         if len(collist) == 1:
             toconvlist = arlist[::-collist[-1]]
@@ -204,8 +204,9 @@ def extract_columns(objarray, collist, atype, missing):
     return numpyio.convert_objectarray(toconvlist, atype, missing)
     
 
-# Given a string representing one line, a separator tuple, a list of columns
-#  to read, a type argument
+# Given a string representing one line, a separator tuple, a list of 
+#  columns to read for each element of the atype list and a missing
+#  value to insert when conversion fails.
 def process_line(line, separator, collist, atype, missing):
     strlist = []
     for mysep in separator[:-1]:
@@ -219,100 +220,35 @@ def process_line(line, separator, collist, atype, missing):
             line = line[ind+len(mysep):]
     strlist.extend(line.split(separator[-1]))
     arlist = array(strlist,'O')
-    return extract_columns(arlist, collist, atype, missing)
+    N = len(atype)
+    vals = [None]*N
+    for k in range(len(atype)):
+        vals[k] = extract_columns(arlist, collist[k], atype[k], missing)
+    return vals
 
 def getcolumns(stream, columns, separator):
     firstline = stream._buffer[0]
-    collist = build_numberlist(columns)
-    colsize = len(collist)
-    val = process_line(firstline, separator, collist, Float, 0)
-    return len(val), collist
+    N = len(columns)    
+    collist = [None]*N
+    colsize = [None]*N
+    for k in range(N):
+        collist[k] = build_numberlist(columns[k])
+    val = process_line(firstline, separator, collist, [Numeric.Float]*N, 0)
+    for k in range(N):
+        colsize[k] = len(val[k])
+    return colsize, collist
 
-
-def subset(A,B):
-    # true if A is a subset of B.  That is every element of A is also an element
-    # of B
-    res = 1
-    for a in A:
-        if not a in B:
-            res = 0
-            break
-    return res
-    
-def expand_numberlist(colsize, collist):
-    # Expand out the column list to full size. 
-    if collist[-1] < 0:
-        step = -collist[-1]
-        collist = collist[:-1]
-        n = len(collist)
-        if n > 0:
-            ind = collist[-1]
-        else:
-            ind = 0
-        while n < colsize:
-            ind += step
-            collist.append(ind)
-            n += 1         
-    return collist
-
-def check_and_sort_list(outinfo, colsize, collist):
-    # Expand out the column list to full size.
-    collist = expand_numberlist(colsize, collist)
-    if collist[-1] < 0:
-        step = -collist[-1]
-        collist = collist[:-1]
-        n = len(collist)
-        if n > 0:
-            ind = collist[-1]
-        else:
-            ind = 0
-        while n < colsize:
-            ind += step
-            collist.append(ind)
-            n += 1         
-    N = len(outinfo) 
-    if N % 2 != 0:
-        raise ValueError, "Array type argument is not valid (wrong number of items in sequence)."
-    # Check the elements of the information list.
-    # Find the smallest column each one represents.
-    alltypes = zeros(N >> 1,'c')
-    mincol = zeros(N >> 1)
-    for k in range(N >> 1):
-        typestr = outinfo[2*k]
-        if not typestr in "".join(Numeric.typecodes.values()):
-            raise ValueError, "Invalid typecode given for array type."
-        subcollist = outinfo[2*k+1]
-        if not isinstance(subcollist, types.TupleType):
-            raise ValueError, "Invalid tuple of columns given for arraytype %s" % typestr
-        sub1 = build_numberlist(subcollist)
-        subcollist = expand_numberlist(sub1)
-        if not subset(subcollist, collist):
-            raise ValueError, "Requested a column for one of the output arrays that is not in the overall requested column list."
-        outinfo[2*k+1] = sub1
-        alltypes[k] = typestr
-        mincol[k] = amin(subcollist)
-    ind = argsort(mincol)
-    alltypes = take(alltypes,ind)
-    newout = copy.copy(outinfo)
-    for k in range(N >> 1):
-        newout[2*k] = alltypes[k]
-        newout[2*k+1] = outinfo[2*ind[k]+1]
-    return newout    
-
-def init_output(rowsize, colsize, collist, atype):
-    if isinstance(atype, types.StringType):
-        outinfo = [atype,collist]
-    elif isinstance(atype, types.ListType) or \
-         isinstance(atype, types.TupleType):
-        outinfo = list(atype)
-    elif isinstance(atype, types.DictType):
-        outinfo = []
-        for key in atype.keys():
-            outinfo.extend([key,atype[key]])
-    outinfo = check_and_sort_list(outinfo, colsize, collist)
-    outarrs = create_arrays(rowsize, outinfo)
-    return outarrs
-
+def convert_to_equal_lists(cols, atype):
+    if not isinstance(cols, types.ListType):
+        cols = [cols]
+    if not isinstance(atype, types.ListType):
+        atype = [atype]
+    N = len(cols) - len(atype)
+    if N > 0:
+        atype.extend([atype[-1]]*N)
+    elif N < 0:
+        cols.extend([cols[-1]]*(-N))
+    return cols, atype
 
 
 def read_array(fileobject, separator=default, columns=default, comment="#",
@@ -334,21 +270,22 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
                  last column specifies the negative skip value to the end.
                  Example:  columns=(1, 4, (5, 9), (11, 15, 3), 17, -2)
                          will read [1,4,5,6,7,8,11,14,17,19,21,23,...]
+                 If multiple arrays are to be returned, then this argument
+                 should be an ordered list of such tuples.  There should be
+                 one entry in the list for each arraytype in the atype list.
       lines   -- a tuple with the same structure as columns which indicates
                  the lines to read. 
       comment -- the comment character (line will be ignored even if it is
                  specified by the lines tuple)
       linesep -- separator between rows.
       missing -- value to insert in array when conversion to number fails.
-      atype -- the typecode of the output array.  If multiple outputs of
-               different types are desired, then a dictionary or a sequence
-               can be used for this argument.  The dictionary should have
-               keys of typecodes, with entries a tuple specifying which
-               columns should be read with that typecode.  If this argument
-               is a sequence it must be of length 2N where N is the number of
-               output arrays.  For each output array there should be
-               a typecode entry in he sequence immediately followed by a
-               tuple representing the columns to read into that array.
+      atype -- the typecode of the output array.  If multiple outputs are
+               desired, then this should be a list of typecodes.  The columns
+               to fill the array represented by the given typcode is
+               determined from the columns argument.  If the length of atype
+               does not match the length of the columns list, then, the
+               smallest one is expanded to match the largest by repeatedly
+               copying the last entry.
       rowsize -- the allocation row size (array grows by this amount as
                data is read in).
 
@@ -365,27 +302,41 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
         sep = tuple(separator)
     # Create ascii_object from |fileobject| argument.
     ascii_object = ascii_stream(fileobject, lines=lines, comment=comment, linesep=linesep)
+    columns, atype = convert_to_equal_lists(columns, atype)
+    numout = len(atype)
     # Get the number of columns to read and expand the columns argument
     colsize, collist = getcolumns(ascii_object, columns, sep)
-    # Intialize the output arrays, and convert atype to a dictionary
-    outarr, outdict = init_output(rowsize, collist, atype)
+    # Intialize the output arrays
+    outrange = range(numout)
+    outarr = []
+    for k in outrange:
+        if not atype[k] in "".join(Numeric.typecodes.values()):
+            raise ValueError, "One of the array types is invalid, k=%d" % k
+        outarr.append(Numeric.zeros((rowsize, colsize[k]),atype[k]))
     row = 0
     block_row = 0
     for line in ascii_object:
         if line.strip() == '':
             continue
-        a[row] = process_line(line, sep, collist, atype, missing)
+        vals = process_line(line, sep, collist, atype, missing)
+        for k in outrange:
+            outarr[k][row] = vals[k]
         row += 1
         block_row += 1
         if block_row >= rowsize:
-            print a.shape[0], rowsize
-            a.resize((a.shape[0] + rowsize,colsize))
+            for k in outrange:
+                outarr[k].resize((outarr[k].shape[0] + rowsize,colsize))
             block_row = 0
-    if a.shape[0] != row:
-        a.resize((row,colsize))
-    if a.shape[0] == 1 or a.shape[1] == 1:
-        a = Numeric.ravel(a)
-    return a
+    for k in outrange:
+        if outarr[k].shape[0] != row:
+            outarr[k].resize((row,colsize[k]))
+        a = outarr[k]            
+        if a.shape[0] == 1 or a.shape[1] == 1:
+            outarr[k] = Numeric.ravel(a)
+    if len(outarr) == 1:
+        return outarr[0]
+    else:
+        return tuple(outarr)
 
 def write_array(fileobject, arr, separator=" ", linesep='\n',
                 precision=5, suppress_small=0):
