@@ -6,10 +6,12 @@ import Numeric
 import types, sys
 from scipy import special, stats, linalg
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, hstack, product, array, typename, where
+     ones, NewAxis, transpose, hstack, product, array, typename, where, \
+     zeros, extract, insert, pi, sqrt
 import scipy_base.fastumath
 
-__all__ = ['factorial','comb','rand','randn','who','lena','central_diff_weights', 'derivative']
+__all__ = ['factorial','factorial2','comb','rand','randn','who',
+           'lena','central_diff_weights', 'derivative']
     
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
@@ -37,6 +39,43 @@ def factorial(n,exact=0):
         vals = special.gamma(n+1)
         sv = special.errprint(sv)
         return where(n>=0,vals,0)
+
+
+def factorial2(n,exact=0):
+    """n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
+           = 2**(n) * n!                                 n even
+
+    If exact==0, then floating point precision is used, otherwise
+    exact long integer is computed.
+
+    Notes:    
+      - Array argument accepted only for exact=0 case.
+      - If n<0, the return value is 0.
+    """
+    if exact:
+        if n < -1:
+            return 0L
+        if n <= 0:
+            return 1L
+        n = long(n)
+        val = 1L
+        k = n
+        while (k > 0):
+            val = val*k
+            k -= 2
+        return val
+    else:
+        n = asarray(n)
+        vals = zeros(n.shape,'d')
+        cond1 = (n % 2) & (n >= -1)
+        cond2 = (1-(n % 2)) & (n >= -1)
+        oddn = extract(n,cond1)
+        evenn = extract(n,cond2)
+        nd2o = oddn / 2.0
+        nd2e = evenn / 2.0
+        insert(vals,cond1,special.gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
+        insert(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
+        return vals
 
 def comb(N,k,exact=0):
     """Combinations of N things taken k at a time.

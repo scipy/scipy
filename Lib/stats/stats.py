@@ -561,10 +561,10 @@ def skew(a,axis=-1,bias=1):
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
         if sb.any(can_correct):
-            m2 = sb.takemask(m2,can_correct)
-            m3 = sb.takemask(m3,can_correct)
+            m2 = sb.extract(m2,can_correct)
+            m3 = sb.extract(m3,can_correct)
             nval = sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
-            sb.putmask(vals, can_correct, nval)
+            sb.insert(vals, can_correct, nval)
     return vals
 
 def kurtosis(a,axis=-1,fisher=1,bias=1):
@@ -593,10 +593,10 @@ def kurtosis(a,axis=-1,fisher=1,bias=1):
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
         if sb.any(can_correct):
-            m2 = sb.takemask(m2,can_correct)
-            m4 = sb.takemask(m4,can_correct)
+            m2 = sb.extract(m2,can_correct)
+            m4 = sb.extract(m4,can_correct)
             nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
-            sb.putmask(vals, can_correct, nval+3.0)
+            sb.insert(vals, can_correct, nval+3.0)
     if fisher:
         return vals - 3
     else:

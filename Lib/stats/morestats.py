@@ -1,13 +1,15 @@
 # Author:  Travis Oliphant, 2002
 #
 
+from __future__ import nested_scopes
+
 import statlib
 import stats
 import distributions
 import inspect
 from scipy_base import isscalar, r_, log, sum, around, unique, asarray
 from scipy_base import zeros, arange, sort, amin, amax, any, where, \
-     array, atleast_1d, sqrt, ceil, floor, array
+     array, atleast_1d, sqrt, ceil, floor, array, poly1d
 import types
 import scipy.optimize as optimize
 
@@ -785,8 +787,94 @@ Returns: t-statistic, two-tailed p-value
     prob = 2*(1.0 -zprob(abs(z)))
     return T, prob
 
+def _hermnorm(N):
+    # return the negatively normalized hermite polynomials up to order N-1
+    #  (inclusive)
+    #  using the recursive relationship
+    #  p_n+1 = p_n(x)' - x*p_n(x)
+    #   and p_0(x) = 1
+    plist = [None]*N
+    plist[0] = poly1d(1)
+    for n in range(1,N):
+        plist[n] = plist[n-1].deriv() - poly1d([1,0])*plist[n-1]
+    return plist
 
+def pdf_moments(cnt):
+    """Return the Gaussian expanded pdf function given the list of central
+    moments (first one is mean).
+    """
+    N = len(cnt)
+    if N < 2:
+        raise ValueError, "At least two moments must be given to" + \
+              "approximate the pdf."
+    totp = poly1d(1)
+    sig = sqrt(cnt[1])
+    mu = cnt[0]
+    if N > 2:
+        Dvals = _hermnorm(N+1)
+    for k in range(3,N+1):
+        # Find Ck
+        Ck = 0.0
+        for n in range((k-3)/2):
+            m = k-2*n
+            if m % 2: # m is odd
+                momdiff = cnt[m-1]
+            else:
+                momdiff = cnt[m-1] - sig*sig*factorial2(m-1)
+            Ck += Dvals[k][m] / sig**m * momdiff
+        # Add to totp 
+        totp = totp +  Ck*Dvals[k]        
+        
+    def thisfunc(x):
+        xn = (x-mu)/sig
+        return totp(xn)*exp(-xn*xn/2.0)/sqrt(2*pi)/sig
+    return thisfunc
+           
 
+def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
+    if g4 is None:
+        g4 = 3*g2*g2
+    sigsq = 1.0/g2
+    sig = sqrt(sigsq)
+    mu = g1*sig**3.0
+    p12 = _hermnorm(13)
+    for k in range(13):
+        p12[k] = p12[k]/sig**k
+
+    # Add all of the terms to polynomial
+    totp = p12[0] - (g1/6.0*p12[3]) + \
+           (g2/24.0*p12[4] +g1*g1/72.0*p12[6]) - \
+           (g3/120.0*p12[5] + g1*g2/144.0*p12[7] + g1**3.0/1296.0*p12[9]) + \
+           (g4/720*p12[6] + (g2*g2/1152.0+g1*g3/720)*p12[8] +
+            g1*g1*g2/1728.0*p12[10] + g1**4.0/31104.0*p12[12])
+    # Final normalization
+    totp = totp / sqrt(2*pi)/sig
+    def thefunc(x):
+        xn = (x-mu)/sig
+        return totp(xn)*exp(-xn*xn/2.0)
+    return thefunc
+
+def pdfapprox(samples):
+    """Return a function that approximates the pdf of a set of samples
+    using a Gaussian expansion computed from the mean, variance, skewness
+    and Fisher's kurtosis.
+    """
+    # Estimate mean, variance, skewness and kurtosis
+    mu,sig,sk,kur = stats.describe(samples)[2:]
+    # Get central moments
+    cnt = [None]*4
+    cnt[0] = mu
+    cnt[1] = sig*sig
+    cnt[2] = sk * sig**1.5
+    cnt[3] = (kur+3.0) * sig**2.0
+    return pdf_moments(cnt)
+    #g2 = (1.0/sig)**2.0
+    #g1 = mu / sig**3.0
+    #g3 = sk / sig**3.5
+    #g4 = (kur+3.0) / sig**4.0
+    #return pdf_fromgamma(g1, g2, g3, g4)
+    
+    
         
 #Tests to include (from R) -- some of these already in stats.
 ########
