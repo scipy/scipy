@@ -20,8 +20,9 @@ import sys
 from scipy_test.testing import *
 set_package_path()
 import scipy_base
+from scipy_base import dot,sqrt
 import linalg
-from linalg import signm,logm
+from linalg import signm,logm,funm
 del sys.path[0]
 
 import unittest
@@ -79,6 +80,29 @@ class test_logm(ScipyTestCase):
                    [  0.,   0.,   0.,   0.,   0.,  -2.,  25.],
                    [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
         logm((identity(7)*3.1+0j)-a)
+
+def _sqrtm(a):
+    return funm(a,sqrt)
+
+class test_sqrtm(ScipyTestCase):
+    def check_bad(self):
+        # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
+        e = 2**-5
+        se = sqrt(e)
+        a = array([[1.0,0,0,1],
+                   [0,e,0,0],
+                   [0,0,e,0],
+                   [0,0,0,1]])
+        sa = array([[1,0,0,0.5],
+                    [0,se,0,0],
+                    [0,0,se,0],
+                    [0,0,0,1]])
+        assert_array_almost_equal(dot(sa,sa),a)
+        esa = _sqrtm(a)
+        assert_array_almost_equal(dot(esa,esa),a)
+        print sa
+        print _sqrtm(a)
+
 
 if __name__ == "__main__":
     ScipyTest('linalg.matfuncs').run()
