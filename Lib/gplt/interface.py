@@ -109,6 +109,12 @@ def polar(*data):
 def autoscale():
 	_validate_active()
 	_active.autoscale()
+def logx(st='on'):
+	_validate_active()
+	_active.logx(st)
+def logy(st='on'):
+	_validate_active()
+	_active.logy(st)	
 def xaxis(rng):
 	_validate_active()
 	_active.xaxis(rng)

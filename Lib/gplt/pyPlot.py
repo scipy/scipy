@@ -316,6 +316,24 @@ class Plot:
 
     def autoscale(self):
         self._replot('set autoscale xy')
+
+    def _log(self,axis,st='on'):
+        from string import upper
+        s = upper(st)
+        if(s == 'ON'):
+           self._replot('set logscale %s' % axis)
+        elif(s == 'OFF'):
+            self._replot('set nologscale %s' % axis)
+        else:
+            print 'Command ' + s + 'is invalid.\n use "on" or "off."'           
+            return
+
+    def logx(self,st='on'):
+        self._log('x',st)
+
+    def logy(self,st='on'):
+        self._log('y',st)
+         
     def _set_range(self,axis,rng):
         if(rng == 'auto'):
             cmd = 'set autoscale ' + axis       
