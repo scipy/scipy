@@ -16,7 +16,8 @@ def fixed_quad(func,a,b,args=(),n=5):
 
   Inputs:
 
-    func -- a Python function or method to integrate.
+    func -- a Python function or method to integrate
+            (must accept vector inputs)
     a -- lower limit of integration
     b -- upper limit of integration
     args -- extra arguments to pass to function.
@@ -34,6 +35,12 @@ def fixed_quad(func,a,b,args=(),n=5):
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args)), None
 
+def vec_func(x,func,*args):
+    try:
+        return asarray([func(xx,*args) for xx in x])
+    except TypeError:
+        return func(x,*args)
+    
 def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
     """Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
@@ -62,7 +69,7 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
     val = err
     n = 1
     while (err > tol) and (n < maxiter):
-        newval = fixed_quad(func,a,b,args,n)[0]
+        newval = fixed_quad(vec_func,a,b,(func,)+args,n)[0]
         err = abs(newval-val)
         val = newval
         n = n + 1
