@@ -7,7 +7,7 @@ from optimize import zeros as cc
 del sys.path[0]
 
 from math import sin,sqrt,log
-from whrandom import random
+from random import random
 
 def f1(x) :
     return x*(x-1.)
