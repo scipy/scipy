@@ -16,6 +16,7 @@ Prabhu Ramachandran -- improvements to gui_thread.
 Jochen Kupper -- the zoom feature in plt.
 Jeff Whitaker -- Mac OS X support.
 Travis Vaught -- initial work on stats module clean up.
+David M. Cooke  -- improvements to system_info
 
 Testing:
 
