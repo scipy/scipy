@@ -19,6 +19,7 @@ import scipy.signal as signal
 _dpi = 75
 _hold = 0
 _maxcolors=256
+_textcolor=None
 
 gist.pldefault(dpi=_dpi,maxcolors=_maxcolors)
 
@@ -111,7 +112,14 @@ except ImportError:
             else:
                 plot(darray[:,0],darray[:,1])
             return darray
-                        
+
+
+def textcolor(color=None):
+    global _textcolor
+    if color is not None:
+        _textcolor = color
+    return _textcolor
+    
 def reverse_dict(dict):
     newdict = {}
     for key in dict.keys():
@@ -162,7 +170,15 @@ def barplot(x,y,width=0.8,color=0):
     Y = Numeric.array((Ya,Yb,Yb,Ya))
     X = Numeric.reshape(Numeric.transpose(X),(4*len(N),))
     Y = Numeric.reshape(Numeric.transpose(Y),(4*len(N),))
-    if not _hold:
+    try:
+        override = 1
+        savesys = gist.plsys(2)
+        gist.plsys(savesys)
+    except:
+        override = 0
+    if _hold or override:
+        pass
+    else:
         gist.fma()
     Z = color * Numeric.ones(len(N))
     gist.plfp(Z.astype('b'),Y,X,N)
@@ -208,7 +224,13 @@ def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25
     # create line arrays
     yb = y - err
     ye = y + err
-    if _hold:
+    try:
+        override = 1
+        savesys = gist.plsys(2)
+        gist.plsys(savesys)
+    except:
+        override = 0
+    if _hold or override:
         pass
     else:
         gist.fma()
@@ -995,11 +1017,19 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
     colorbar.color_bar(cmin,cmax,ncol=240,zlabel=zlabel,font=font,fontsize=fontsize,color=color)
 
-def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
+def xlabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
     """To get symbol font for the next character precede by !.  To get
     superscript enclose with ^^
     To get subscript enclose with _<text>_
     """
+    global _textcolor
+    if color is None:
+        color = _textcolor
+    else: 
+        _textcolor = color
+    if color is None:
+        color = 'black'
+
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     y0 = vp[2] - 0.035 + deltay
@@ -1009,7 +1039,18 @@ def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0
     return xmidpt, y0
 
 
-def ylabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
+def ylabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
+    """To get symbol font for the next character precede by !.  To get
+    superscript enclose with ^^
+    To get subscript enclose with _<text>_
+    """
+    global _textcolor
+    if color is None:
+        color = _textcolor
+    else:
+        _textcolor = color
+    if color is None:
+        color = 'black'
     vp = gist.viewport()
     ymidpt = (vp[2] + vp[3])/2.0 + deltay
     x0 = vp[0] - 0.055 + deltax
@@ -1019,14 +1060,38 @@ def ylabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0
     return x0, ymidpt
 
 
-def title(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
+def title(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
+    """Set title for plot.
+
+    To get symbol font for the next character precede by !.  To get
+    superscript enclose with ^^
+    To get subscript enclose with _<text>_
+    """
+
+    global _textcolor
+    if color is None:
+        color = _textcolor
+    else:
+        _textcolor = color
+    if color is None:
+        color = 'black'
+        
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     if text != "":
         gist.plt(text,xmidpt,vp[3] + 0.02 + deltay, font=font, justify='CB',
                  height=fontsize, color=color)
 
-def title3(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
+def title3(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
+
+    global _textcolor
+    if color is None:
+        color = _textcolor
+    else:
+        _textcolor = color
+    if color is None:
+        color = 'black'
+
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     if text != "":

@@ -88,6 +88,7 @@ cow = ppimport('cow');                 _level_docs(cow)
 ga = ppimport('ga');                   _level_docs(ga)
 cluster = ppimport('cluster');         _level_docs(cluster)
 weave = ppimport('weave');             _level_docs(weave)
+sparse = ppimport('sparse');           _level_docs(sparse)
 
 # Level 3
 xplt = ppimport('xplt');               _level_docs(xplt)

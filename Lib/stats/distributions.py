@@ -15,7 +15,9 @@ from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      zeros
 from scipy_base.fastumath import *
 from scipy_base import atleast_1d, polyval, angle, ceil, insert, extract, \
-     any
+     any, argsort, argmax, argmin
+import scipy_base
+
 errp = special.errprint
 select = scipy.select
 arr = Num.asarray
@@ -1930,7 +1932,7 @@ semicircular = semicircular_gen(a=-1.0,b=1.0)
 
 # Triangular
 # up-sloping line from loc to (loc + c) and then downsloping line from
-#    loc + c to loc + shape
+#    loc + c to loc + scale
 
 # _trstr = "Left must be <= mode which must be <= right with left < right"
 class triang_gen(rv_continuous):
@@ -2226,6 +2228,7 @@ def make_dict(keys, values):
     d = {}
     for key, value in zip(keys, values):
         d[key] = value
+    return d
 
 # Must over-ride one of _pdf or _cdf or pass in
 #  x_k, p(x_k) lists in initialization
@@ -2251,12 +2254,12 @@ class rv_discrete:
             self.return_integers = 0
             indx = argsort(ravel(self.xk))
             self.xk = take(ravel(self.xk),indx)
-            self.pk = take(ravel(self,pk),indx)
+            self.pk = take(ravel(self.pk),indx)
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
             self.qvals = scipy_base.cumsum(self.pk)
-            self.F = make_dict(self,xk, self.qvals)
+            self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = new.instancemethod(sgf(_drv_ppf), self, rv_discrete)
             self._pdf = new.instancemethod(sgf(_drv_pdf), self, rv_discrete)
@@ -2266,16 +2269,17 @@ class rv_discrete:
                                                      self, rv_discrete)
             self.moment_gen = new.instancemethod(_drv_moment_gen,
                                                  self, rv_discrete)
+            self.numargs=0
         else:
             self._vecppf = new.instancemethod(sgf(_drv2_ppfsingle),
                                               self, rv_discrete)
             self.generic_moment = new.instancemethod(sgf(_drv2_moment),
                                                      self, rv_discrete)
-        cdf_signature = inspect.getargspec(self._cdf.im_func)
-        numargs1 = len(cdf_signature[0]) - 2
-        pdf_signature = inspect.getargspec(self._pdf.im_func)
-        numargs2 = len(pdf_signature[0]) - 2
-        self.numargs = max(numargs1, numargs2)
+            cdf_signature = inspect.getargspec(self._cdf.im_func)
+            numargs1 = len(cdf_signature[0]) - 2
+            pdf_signature = inspect.getargspec(self._pdf.im_func)
+            numargs2 = len(pdf_signature[0]) - 2
+            self.numargs = max(numargs1, numargs2)
 
     def _rvs(self, *args):
         return self._ppf(rand.sample(self._size),*args)

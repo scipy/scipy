@@ -1088,6 +1088,11 @@ static int setup_input_arrays(PyTupleObject *inputs, PyArrayObject **inputarrays
       cleanup_arrays(inputarrays,i);
       return -1;
     }
+    if (ain->nd == 0) {
+      cleanup_arrays(inputarrays,i);
+      PyErr_SetString(PyExc_ValueError,"arraymap: Input arrays of zero-dimensions not supported.");
+      return -1;
+    }
     if (ain->nd > maxrank) maxrank = ain->nd;
     inputarrays[i] = ain;
   }

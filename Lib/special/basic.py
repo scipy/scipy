@@ -7,7 +7,7 @@ from Numeric import *
 import types
 from scipy_base.fastumath import *
 from scipy_base import squeeze, isscalar, iscomplex, insert, extract, nan
-from scipy_base import polyval, polyint
+from scipy_base import polyval, polyint, atleast_1d
 import specfun
 from scipy import factorial
     
@@ -58,7 +58,32 @@ class general_function:
                 raise ValueError, "Output types must be a string."
 
     def __call__(self,*args):
+        for arg in args:
+            try:
+                n = len(arg)
+                if (n==0):
+                    return self.zerocall(args)
+            except AttributeError:
+                pass
         return squeeze(arraymap(self.thefunc,args,self.otypes))
+
+    def zerocall(self,args):
+        # one of the args was a zeros array
+        #  return zeros for each output
+        #  first --- find number of outputs
+        newargs = []
+        args = atleast_1d(*args)
+        for arg in args:
+            if arg.typecode() != 'O':
+                newargs.append(1.1)
+            else:
+                newargs.append(arg[0])
+        newargs = tuple(newargs)
+        res = self.thefunc(*newargs)
+        if isscalar(res):
+            return zeros((0,),'d')
+        else:
+            return (zeros((0,),'d'),)*len(res)
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
