@@ -118,6 +118,11 @@ def mmread(source):
     else:
         raise ValueError,`field`
 
+    has_symmetry = symm in ['symmetric','skew-symmetric','hermitian']
+    is_complex = field=='complex'
+    is_skew = symm=='skew-symmetric'
+    is_herm = symm=='hermitian'
+
     if rep == 'array':
         a = zeros((rows,cols),typecode=typecode)
         line = 1
@@ -126,23 +131,23 @@ def mmread(source):
             line = source.readline()
             if not line or line.startswith('%'):
                 continue
-            if field=='complex':
+            if is_complex:
                 aij = complex(*map(float,line.split()))
             else:
                 aij = float(line)
             a[i,j] = aij
-            if i!=j:
-                if symm=='symmetric':
-                    a[j,i] = aij
-                elif symm=='skew-symmetric':
+            if has_symmetry and i!=j:
+                if is_skew:
                     a[j,i] = -aij
-                elif symm=='hermitian':
+                elif is_herm:
                     a[j,i] = conj(aij)
+                else:
+                    a[j,i] = aij
             if i<rows-1:
                 i = i + 1
             else:
                 j = j + 1
-                if symm=='general':
+                if not has_symmetry:
                     i = 0
                 else:
                     i = j
@@ -160,49 +165,51 @@ def mmread(source):
             l = line.split()
             i,j = map(int,l[:2])
             i,j = i-1,j-1
-            if field=='complex':
+            if is_complex:
                 aij = complex(*map(float,l[2:]))
             else:
                 aij = float(l[2])
             a[i,j] = aij
-            if i!=j:
-                if symm=='symmetric':
-                    a[j,i] = aij
-                elif symm=='skew-symmetric':
+            if has_symmetry and i!=j:
+                if is_skew:
                     a[j,i] = -aij
-                elif symm=='hermitian':
+                elif is_herm:
                     a[j,i] = conj(aij)
+                else:
+                    a[j,i] = aij
             k = k + 1
         assert k==entries,`k,entries`
 
     elif rep=='coordinate':
-        line = 1
         k = 0
         data,row,col = [],[],[]
-        flag = symm in ['symmetric','skew-symmetric','hermitian']
+        row_append = row.append
+        col_append = col.append
+        data_append = data.append
+        line = '%'
         while line:
+            if not line.startswith('%'):
+                l = line.split()
+                i = int(l[0])-1
+                j = int(l[1])-1
+                if is_complex:
+                    aij = complex(*map(float,l[2:]))
+                else:
+                    aij = float(l[2])
+                row_append(i)
+                col_append(j)
+                data_append(aij)
+                if has_symmetry and i!=j:
+                    if is_skew:
+                        aij = -aij
+                    elif is_herm:
+                        aij = conj(aij)
+                    row_append(j)
+                    col_append(i)
+                    data_append(aij)
+                k += 1
             line = source.readline()
-            if not line or line.startswith('%'):
-                continue
-            l = line.split()
-            i,j = map(int,l[:2])
-            i,j = i-1,j-1
-            if field=='complex':
-                aij = complex(*map(float,l[2:]))
-            else:
-                aij = float(l[2])
-            row.append(i)
-            col.append(j)
-            data.append(aij)
-            if flag and i!=j:
-                if symm=='skew-symmetric':
-                    aij = -aij
-                elif symm=='hermitian':
-                    aij = conj(aij)
-                row.append(j)
-                col.append(i)
-                data.append(aij)
-            k = k + 1
+
         assert k==entries,`k,entries`
         a = coo_matrix(data,(row,col),M=rows,N=cols,typecode=typecode)
     else:
