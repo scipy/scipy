@@ -22,3 +22,4 @@ from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
 
 from array_import import *
 from data_store import *
+from pickler import *
