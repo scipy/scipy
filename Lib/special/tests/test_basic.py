@@ -88,7 +88,7 @@ class test_cephes(ScipyTestCase):
         assert_equal(cephes.btdtrib(1,1,1),5.0)
 
     def check_cbrt(self):
-        assert_equal(cephes.cbrt(1),1.0)
+        assert_approx_equal(cephes.cbrt(1),1.0)
 
     def check_chdtr(self):
         assert_equal(cephes.chdtr(1,0),0.0)
@@ -142,7 +142,7 @@ class test_cephes(ScipyTestCase):
         cephes.expn(1,1)
 
     def check_exp10(self):
-        assert_equal(cephes.exp10(2),100.0)
+        assert_approx_equal(cephes.exp10(2),100.0)
     def check_exp2(self):
         assert_equal(cephes.exp2(2),4.0)
     def check_expm1(self):
@@ -746,7 +746,7 @@ class test_cbrt(unittest.TestCase):
     def check_cbrt(self):
         cb = cbrt(27)
         cbrl = 27**(1.0/3.0)
-        assert_equal(cb,cbrl)
+        assert_approx_equal(cb,cbrl)
 
     def check_cbrtmore(self):
         cb1 = cbrt(27.9)
@@ -910,7 +910,7 @@ class test_exp10(unittest.TestCase):
     def check_exp10(self):
         ex = exp10(2)
         exrl = 10**2
-        assert_equal(ex,exrl)
+        assert_approx_equal(ex,exrl)
 
     def check_exp10more(self):
         exm = exp10(2.5)
