@@ -1,29 +1,36 @@
 """ Linear algebra routines.
 
- solve
- inv
- lu
- cholesky
- qr
- schur
- rsf2csf
- norm
- eig
- eigvals
- svd
- pinv
- pinv2
- det
- lstsq
- expm
- cosm
- sinm
- tanm
- coshm
- sinhm
- tanhm
- funm 
+ Solving Linear Systems:
+
+   inv        --- Find the inverse of a square matrix
+   solve      --- Solve a linear system of equations
+   det        --- determinant of a matrix
+   pinv       --- Moore-Penrose pseudo inverse (using least-squares)
+   pinv2      --- Moore-Penrose pseudo inverse (using SVD)
+   lstsq      --- Least-squares solve
+
+ Matrix Factorizations:
  
+   lu         --- LU decomposition
+   cholesky   --- Cholesky factorization
+   qr         --- QR factorization
+   schur      --- Schur decomposition
+   rsf2csf    --- Real to complex schur form.
+   norm       --- vector and matrix norm
+   eig        --- eigenvectors and eigenvalues
+   eigvals    --- only eigenvalues
+   svd        --- singular value decomposition
+
+ Matrix Functions
+ 
+   expm       --- exponential (using Pade approximation)
+   cosm       --- cosine
+   sinm       --- sine
+   tanm       --- tangent
+   coshm      --- hyperbolic cosine
+   sinhm      --- hyperbolic sine
+   tanhm      --- hyperbolic tangent
+   funm       --- arbitrary function 
 """
 
 _modules = ['fblas', 'flapack', 'cblas', 'clapack']

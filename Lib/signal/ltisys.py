@@ -362,8 +362,8 @@ def impulse(system, X0=None, T=None, N=None):
         N = 100
     if T is None:
         vals = linalg.eigvals(sys.A)
-        tc = 1.0/max(abs(real(vals)))
-        T = arange(0,10*tc,10*tc / float(N))
+        tc = 1.0/min(abs(real(vals)))
+        T = arange(0,5*tc,5*tc / float(N))
     h = zeros(T.shape, sys.A.typecode())
     for k in range(len(h)):
         eA = Mat(linalg.expm(sys.A*T[k]))
@@ -396,8 +396,8 @@ def step(system, X0=None, T=None, N=None):
         N = 100
     if T is None:
         vals = linalg.eigvals(sys.A)
-        tc = 1.0/max(abs(real(vals)))
-        T = arange(0,10*tc,10*tc / float(N))
+        tc = 1.0/min(abs(real(vals)))
+        T = arange(0,5*tc,5*tc / float(N))
     U = ones(T.shape, sys.A.typecode())
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]
