@@ -526,6 +526,43 @@ def triang(M,sym=1):
         w = w[:-1]
     return w
 
+def parzen(M,sym=1):
+    """The M-point Parzen window
+    """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1    
+    n = Numeric.arange(-(M-1)/2.0,(M-1)/2.0+0.5,1.0)
+    na = extract(n < -(M-1)/4.0, n)
+    nb = extract(abs(n) <= (M-1)/4.0, n)
+    wa = 2*(1-abs(na)/(M/2.0))**3.0
+    wb = 1-6*(abs(nb)/(M/2.0))**2.0 + 6*(abs(nb)/(M/2.0))**3.0
+    w = scipy.r_[wa,wb,wa[::-1]]
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
+def bohman(M,sym=1):
+    """The M-point Bohman window
+    """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1    
+    fac = abs(linspace(-1,1,M)[1:-1])
+    w = (1 - fac)* cos(pi*fac) + 1.0/pi*sin(pi*fac)
+    w = scipy.r_[0,w,0]    
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
 def blackman(M,sym=1):
     """The M-point Blackman window.
     """
@@ -541,8 +578,44 @@ def blackman(M,sym=1):
     if not sym and not odd:
         w = w[:-1]
     return w
-        
 
+def nuttall(M,sym=1):
+    """A minimum 4-term Blackman-Harris window according to Nuttall.
+    """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1    
+    a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
+    n = arange(0,M)
+    fac = n*2*pi/(M-1.0)
+    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac)
+    if not sym and not odd:
+        w = w[:-1]    
+    return w
+
+def blackmanharris(M,sym=1):
+    """The M-point minimum 4-term Blackman-Harris window.
+    """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1        
+    a = [0.35875, 0.48829, 0.14128, 0.01168];
+    n = arange(0,M)
+    fac = n*2*pi/(M-1.0)
+    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac)
+    if not sym and not odd:
+        w = w[:-1]    
+    return w
+
+    
 def bartlett(M,sym=1):
     """The M-point Bartlett window.
     """
@@ -574,6 +647,23 @@ def hanning(M,sym=1):
     if not sym and not odd:
         w = w[:-1]
     return w
+
+def barthann(M,sym=1):
+    """Return the M-point modified Bartlett-Hann window.
+    """
+    if M < 1:
+        return Numeric.array([])
+    if M == 1:
+        return Numeric.ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1            
+    n = arange(0,M)
+    fac = abs(n/(M-1.0)-0.5)
+    w = 0.62 - 0.48*fac + 0.38*cos(2*pi*fac)
+    if not sym and not odd:
+        w = w[:-1]
+    return w    
 
 def hamming(M,sym=1):
     """The M-point Hamming window.
@@ -996,6 +1086,7 @@ def get_window(window,Nx,fftbins=1):
     and be multiplied by the result of an fft (SEE ALSO fftfreq). 
 
     Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
+                   parzen, bohman, blackmanharris, nuttall, barthann,
                    kaiser (needs beta), gaussian (needs std),
                    general_gaussian (needs power, width).
 
@@ -1026,7 +1117,7 @@ def get_window(window,Nx,fftbins=1):
                 
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman
-        elif winstr in ['triangle', 'traing', 'tri']:
+        elif winstr in ['triangle', 'triang', 'tri']:
             winfunc = triang
         elif winstr in ['hamming', 'hamm', 'ham']:
             winfunc = hamming
@@ -1034,6 +1125,17 @@ def get_window(window,Nx,fftbins=1):
             winfunc = bartlett
         elif winstr in ['hanning', 'hann', 'han']:
             winfunc = hanning
+        elif winstr in ['blackmanharris', 'blackharr','bkh']:
+            winfun = blackmanharris
+        elif winstr in ['parzen', 'parz', 'par']:
+            winfun = parzen
+        elif winstr in ['bohman', 'bman', 'bmn']:
+            winfun = bohman
+        elif winstr in ['nuttall', 'nutl', 'nut']:
+            winfun = nuttall
+        elif winstr in ['barthann', 'brthan', 'bth']:
+            winfu = barthann
+            
         elif winstr in ['kaiser', 'ksr']:
             winfunc = kaiser
         elif winstr in ['gaussian', 'gauss', 'gss']:
