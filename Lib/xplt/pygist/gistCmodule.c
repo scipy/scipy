@@ -21,6 +21,19 @@
  *  VERSION:  Original version was based on graph.c in Yorick 1.3.
  *            This version has been mostly upgraded to Yorick 1.5.
  *
+ *  SCIPY_CHANGES:  
+ *  03/10/03 teo Fix Setting up of highlevel hook for deleting high-level display
+ *                 engines when the graphic windows are killed.  This was in
+ *                 part of the error handling for the old gist.  
+ *               Used pyg_jmpbuf in SETJMP0 as was likely desired.   
+ *               Setup routine for 
+ *                   XErrHandler to call in gist's g_on_panic routine as part of xbasic.c 
+ *                   This is an additional error handler but it should only be 
+ *                   called in very rare circumstances.  This could cause strange
+ *		     behavior when it is called, but previously the code would
+ *                   have been trying to run a NULL function. 
+ *
+ *
  *  CHANGES:
  *  02/25/03 llc Fix mouse command so data is returned.
  *  02/13/03 llc Disable initial pygist printout upon import (except 
@@ -250,7 +263,7 @@ static void clearMemList (void);
 
 #define ERRSS(s) ((PyObject *)(PyErr_SetString(GistError,s),0))
 #define ERRMSG(s) (PyErr_SetString(GistError,s))
-#define SETJMP0 if(setjmp(jmpbuf)){p_pending_events();return(0);}
+#define SETJMP0 if(setjmp(pyg_jmpbuf)){p_pending_events();return(0);}
 #define SETKW(ob, target, func, s) \
   if(ob && ob != Py_None && !func(ob, &target, s)) return 0
 #define BUILD_KWT(kd,K,kwt) if (-1 == build_kwt (kd, K, kwt)) return 0;
@@ -822,6 +835,9 @@ static void PrintTypeWidth (char *line, int suffix);
 static void clear_pyMsh(void);
 static void get_mesh(GaQuadMesh *m);
 
+/* Only called on g_on_panic */
+static void Xerror_longjmp (char *message);
+
 static int pyg_on_idle(void);
 static void pyg_on_connect(int dis, int fd);
 static void pyg_on_keyline(char *msg);
@@ -908,6 +924,14 @@ static void pyg_on_exception(int signal, char *errmsg)
     PyErr_SetString (GistError, errmsg);
   }
 }
+
+/* only called on g_on_panic by XErrHandler in xbasic.c */
+static void Xerror_longjmp (char *message)
+{
+  PyErr_SetString (GistError, message);
+  longjmp (jmpbuf, 1);
+}
+
 
 static char gist_module_documentation[] =
 "Gist Graphics Package, version1.5"
@@ -8237,6 +8261,9 @@ void initgistC (void)
     /* do not call p_handler -- would disturb python signal handling */
     p_xhandler(pyg_abort_hook, pyg_on_exception);
 
+    /* Setup GhHandler so that high-level windows are destroyed on X-events */
+    GhSetXHandler(Xerror_longjmp);
+
     /* note that g_on_keyline might be useful, especially for Windows */
     g_on_keyline = pyg_on_keyline;
 
@@ -8263,6 +8290,7 @@ void initgistC (void)
      p_pending_events();
      return;
   }
+  memcpy(&jmpbuf, &pyg_jmpbuf, sizeof(jmp_buf));
 }
 
 static int

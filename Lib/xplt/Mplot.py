@@ -473,7 +473,8 @@ def plot(x,*args,**keywds):
     winnum = gist.window()
     if winnum < 0:
         gist.window(0)
-    gist.plsys(savesys)
+    if savesys > 0:
+        gist.plsys(savesys)
     nargs = len(args)
     if nargs == 0:
         y = scipy.squeeze(x)
