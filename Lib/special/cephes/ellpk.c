@@ -214,7 +214,7 @@ x = 1.0-x;
 if( (x < 0.0) || (x > 1.0) )
 	{
 	mtherr( "ellpk", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 
 if( x > MACHEP )

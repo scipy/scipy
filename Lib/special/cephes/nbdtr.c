@@ -167,7 +167,7 @@ if( k < 0 )
 	{
 domerr:
 	mtherr( "nbdtr", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 
 dk = k+1;
@@ -189,7 +189,7 @@ if( k < 0 )
 	{
 domerr:
 	mtherr( "nbdtr", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 dk = k+1;
 dn = n;
@@ -210,7 +210,7 @@ if( k < 0 )
 	{
 domerr:
 	mtherr( "nbdtri", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 dk = k+1;
 dn = n;

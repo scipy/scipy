@@ -82,7 +82,7 @@ if( x < 0.0 )
 	if( t != v )
 		{
 		mtherr( "iv", DOMAIN );
-		return( 0.0 );
+		return( NAN );
 		}
 	if( v != 2.0 * floor(v/2.0) )
 		sign = -1;

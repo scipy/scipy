@@ -101,7 +101,7 @@ if( x < 1.0 )
 	{
 domerr:
 	mtherr( "zeta", DOMAIN );
-	return(0.0);
+	return(NAN);
 	}
 
 if( q <= 0.0 )

@@ -154,7 +154,7 @@ int flag;
 if( x < 0.0 )
 	{
 	mtherr( "spence", DOMAIN );
-	return(0.0);
+	return(NAN);
 	}
 
 if( x == 1.0 )

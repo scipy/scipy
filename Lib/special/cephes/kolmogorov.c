@@ -37,7 +37,8 @@ smirnov (n, e)
   double evn, omevn, p, t, c, lgamnp1;
 
   if (n <= 0 || e < 0.0 || e > 1.0)
-    return (-1.0);
+    return (0.0/0.0);
+  if (e == 0.0) return 1.0;
   nn = floor ((double) n * (1.0 - e));
   p = 0.0;
   if (n < 1013)
@@ -117,7 +118,7 @@ smirnovi (n, p)
   if (p <= 0.0 || p > 1.0)
     {
       mtherr ("smirnovi", DOMAIN);
-      return 0.0;
+      return (NAN);
     }
   /* Start with approximation p = exp(-2 n e^2).  */
   e = sqrt (-log (p) / (2.0 * n));
@@ -158,7 +159,7 @@ kolmogi (p)
   if (p <= 0.0 || p > 1.0)
     {
       mtherr ("kolmogi", DOMAIN);
-      return 0.0;
+      return (NAN);
     }
   if ( (1.0 - p ) < 1e-16) return 0.0;
   /* Start with approximation p = 2 exp(-2 y^2).  */

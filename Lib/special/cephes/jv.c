@@ -108,8 +108,7 @@ if( y == an )
 if( (x < 0.0) && (y != an) )
 	{
 	mtherr( "Jv", DOMAIN );
-	y = 0.0;
-	goto done;
+	return (NAN); 
  	}
 
 y = fabs(x);

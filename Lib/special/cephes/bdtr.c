@@ -166,7 +166,7 @@ if( n < k )
 	{
 domerr:
 	mtherr( "bdtrc", DOMAIN );
-	return( 0.0 );
+	return( NAN);
 	}
 
 if( k == n )
@@ -201,7 +201,7 @@ if( (k < 0) || (n < k) )
 	{
 domerr:
 	mtherr( "bdtr", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 
 if( k == n )
@@ -233,7 +233,7 @@ if( (k < 0) || (n <= k) )
 	{
 domerr:
 	mtherr( "bdtri", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 
 dn = n - k;

@@ -191,7 +191,7 @@ if( (x <= 0.0) || (x > 1.0) )
 	if( x == 0.0 )
 		return( 1.0 );
 	mtherr( "ellpe", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 return( polevl(x,P,10) - log(x) * (x * polevl(x,Q,9)) );
 }

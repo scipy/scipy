@@ -98,7 +98,7 @@ if( (xx <= 0.0) || ( xx >= 1.0) )
 		return( 1.0 );
 domerr:
 	mtherr( "incbet", DOMAIN );
-	return( 0.0 );
+	return( NAN );
 	}
 
 flag = 0;

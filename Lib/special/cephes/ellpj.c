@@ -83,10 +83,10 @@ int i;
 if( m < 0.0 || m > 1.0 )
 	{
 	mtherr( "ellpj", DOMAIN );
-	*sn = 0.0;
-	*cn = 0.0;
-	*ph = 0.0;
-	*dn = 0.0;
+	*sn = NAN;
+	*cn = NAN;
+	*ph = NAN;
+	*dn = NAN;
 	return(-1);
 	}
 if( m < 1.0e-9 )

@@ -101,7 +101,7 @@ int j;
 if( k <= 0 )
 	{
 	mtherr( "stdtr", DOMAIN );
-	return(0.0);
+	return(NAN);
 	}
 
 if( t == 0 )
@@ -188,7 +188,7 @@ int rflg;
 if( k <= 0 || p <= 0.0 || p >= 1.0 )
 	{
 	mtherr( "stdtri", DOMAIN );
-	return(0.0);
+	return(NAN);
 	}
 
 rk = k;
