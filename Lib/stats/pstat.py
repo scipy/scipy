@@ -452,7 +452,7 @@ def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
     by keepcols, abutted with the mean(s) of column(s) specified by
     collapsecols
     """
-    if cfcn = None:
+    if cfcn is None:
         cfcn = stats.mean
     a = asarray(a)
     if keepcols == []:
