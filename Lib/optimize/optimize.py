@@ -786,6 +786,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     else:
         return xf
 
+
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """ Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -822,7 +823,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         a = xa; b = xc
     else:
         a = xc; b = xa
-    e = 0.0
+    deltax= 0.0
     funcalls = 1
     iter = 0
     while (iter < maxiter):
@@ -832,40 +833,40 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         if abs(x-xmid) < (tol2-0.5*(b-a)):  # check for convergence
             xmin=x; fval=fx
             break
-        if (abs(e) <= tol1):            # do a parabolic fit
-            if (x>=xmid): e=a-x
-            else: e=b-x
-            d = _cg*e
-        else:
+        if (abs(deltax) <= tol1):           
+            if (x>=xmid): deltax=a-x       # do a golden section step
+            else: deltax=b-x
+            rat = _cg*deltax
+        else:                              # do a parabolic step
             tmp1 = (x-w)*(fx-fv)
             tmp2 = (x-v)*(fx-fw)
             p = (x-v)*tmp2 - (x-w)*tmp1;
             tmp2 = 2.0*(tmp2-tmp1)
             if (tmp2 > 0.0): p = -p
             tmp2 = abs(tmp2)
-            etemp = e
-            e = d
+            dx_temp = deltax
+            deltax= rat
             # check parabolic fit
-            if ((p > tmp2*(a-x)) and (p < tmp2*(b-x)) and (abs(p) < abs(0.5*tmp2*etemp))):
-                d = p*1.0/tmp2        # if it's good use it.
-                u = x + d
+            if ((p > tmp2*(a-x)) and (p < tmp2*(b-x)) and (abs(p) < abs(0.5*tmp2*dx_temp))):
+                rat = p*1.0/tmp2        # if parabolic step is useful.
+                u = x + rat
                 if ((u-a) < tol2 or (b-u) < tol2):
-                    if xmid-x >= 0: d = tol1
-                    else: d = -tol1
+                    if xmid-x >= 0: rat = tol1
+                    else: rat = -tol1
             else:
-                if (x>=xmid): e=a-x    # if it's bad do a golden section step
-                else: e=b-x
-                d = _cg*e
+                if (x>=xmid): deltax=a-x # if it's not do a golden section step
+                else: deltax=b-x
+                rat = _cg*deltax
 
-        if (abs(d) < tol1):
-            if d >= 0: u = x + tol1
+        if (abs(rat) < tol1):            # update by at least tol1
+            if rat >= 0: u = x + tol1
             else: u = x - tol1
         else:
-            u = x + d
-        fu = apply(func, (u,)+args)
+            u = x + rat
+        fu = apply(func, (u,)+args)      # calculate new output value
         funcalls += 1
 
-        if (fu > fx):
+        if (fu > fx):                 # if it's bigger than current
             if (u<x): a=u
             else: b=u
             if (fu<=fw) or (w==x):
