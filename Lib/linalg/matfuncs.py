@@ -7,7 +7,7 @@ __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
 
 from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
-     cast, log, ogrid, isfinite
+     cast, log, ogrid, isfinite, imag, real
 from Matrix import Matrix as mat
 import scipy_base
 from basic import solve, LinAlgError, inv, norm, triu
