@@ -22,6 +22,14 @@ void convolve(int n,double* inout,double* omega,int swap_real_imag);
 extern
 void convolve_z(int n,double* inout,double* omega_real,double* omega_imag);
 
+extern int ispow2le2e30(int n);
+extern int ispow2le2e13(int n);
+
+#ifdef SCIPY_FFTWORK_H
+#define WITH_FFTWORK
+#include "fftwork/fast_header.h"
+#endif
+
 #ifdef SCIPY_DJBFFT_H
 #define WITH_DJBFFT
 #define complex8 complex_double

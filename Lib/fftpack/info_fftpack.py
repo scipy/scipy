@@ -53,3 +53,8 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            ]
 
 __doc_title__ = __doc__.lstrip().split('\n',1)[0]
+
+postpone_import = 1
+
+global_symbols = ['fft','fftn','fft2','ifft','ifft2','ifftn',
+                  'fftshift','ifftshift','fftfreq']

@@ -10,6 +10,9 @@ def configuration(parent_package=''):
     package = 'xxx'
     from scipy_distutils.misc_util import default_config_dict, dot_join, get_path
     config = default_config_dict(package,parent_package)
+
+    # local_path should be joined with local source files
+    # when specifying sources below
     local_path = get_path(__name__)
 
     # xxx contains pure Python sub-package yyy

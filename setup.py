@@ -33,7 +33,7 @@ finally:
 standard_packages = ['io','linalg',
                      'special','signal','stats',
                      'interpolate','integrate','optimize',
-                     'cluster','cow','ga','fftpack'
+                     'cluster','cow','ga',
 #                    ,'sparse'
                     ]
 
@@ -128,6 +128,9 @@ def setup_package(ignore_packages=[]):
 
         #new style packages:
         for d in ['scipy_core','Lib','Lib_chaco']:
+            if sys.platform!='win32' and d=='Lib_chaco':
+                # Currently chaco is working only on win32.
+                continue
             config_list += get_packages(os.path.join(path,d),ignore_packages)
 
         #old style packages:

@@ -6,6 +6,18 @@
 
 #include "fftpack.h"
 
+/**************** FFTWORK *****************************/
+
+#ifdef WITH_FFTWORK
+GEN_CACHE(zfftwork,(int n)
+	  ,coef_dbl* coef;
+	  ,caches_zfftwork[i].n==n
+	  ,caches_zfftwork[id].coef = (coef_dbl*)malloc(sizeof(coef_dbl)*(n));
+	   fft_coef_dbl(caches_zfftwork[id].coef,n);
+	  ,free(caches_zfftwork[id].coef);
+	  ,10)
+#endif
+
 /**************** DJBFFT *****************************/
 #ifdef WITH_DJBFFT
 GEN_CACHE(zdjbfft,(int n)
@@ -50,6 +62,9 @@ GEN_CACHE(zfftpack,(int n)
 #endif
 
 extern void destroy_zfft_cache(void) {
+#ifdef WITH_FFTWORK
+  destroy_zfftwork_caches();
+#endif
 #ifdef WITH_DJBFFT
   destroy_zdjbfft_caches();
 #endif
@@ -70,12 +85,20 @@ extern void zfft(complex_double *inout,
 #else
   double* wsave = NULL;
 #endif
+#ifdef WITH_FFTWORK
+  coef_dbl* coef = NULL;
+#endif
 #ifdef WITH_DJBFFT
   int j;
   complex_double *ptrc = NULL;
   unsigned int *f = NULL;
 #endif
-
+#ifdef WITH_FFTWORK
+  if (ispow2le2e30(n)) {
+    i = get_cache_id_zfftwork(n);
+    coef = caches_zfftwork[i].coef;
+  } else
+#endif
 #ifdef WITH_DJBFFT
   switch (n) {
   case 2:;case 4:;case 8:;case 16:;case 32:;case 64:;case 128:;case 256:;
@@ -96,6 +119,11 @@ extern void zfft(complex_double *inout,
 
   case 1:
     for (i=0;i<howmany;++i,ptr+=n) {
+#ifdef WITH_FFTWORK
+      if (coef!=NULL) {
+	fft_for_cplx_flt((cplx_dbl*)ptr,coef,n);
+      } else
+#endif
 #ifdef WITH_DJBFFT
       if (f!=NULL) {
 	memcpy(ptrc,ptr,2*n*sizeof(double));
@@ -119,6 +147,11 @@ extern void zfft(complex_double *inout,
 
   case -1:
     for (i=0;i<howmany;++i,ptr+=n) {
+#ifdef WITH_FFTWORK
+      if (coef!=NULL) {
+	fft_bak_cplx_flt((cplx_dbl*)ptr,coef,n);
+      } else
+#endif
 #ifdef WITH_DJBFFT
       if (f!=NULL) {
 	for (j=0;j<n;++j) *(ptrc+j) = *(ptr+f[j]);

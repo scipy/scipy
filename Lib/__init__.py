@@ -64,11 +64,6 @@ special = ppimport('special');  _level_docs(special)
 io = ppimport('io');            _level_docs(io)
 linalg = ppimport('linalg');    _level_docs(linalg)
 stats = ppimport('stats');      _level_docs(stats)
-fftpack = ppimport('fftpack');  _level_docs(fftpack)
-
-for n in ['fft','fftn','fft2','ifft','ifft2','ifftn','fftshift',
-          'ifftshift','fftfreq']:
-    exec '%s = ppimport_attr(fftpack,%s)' % (n,`n`)
 
 for n in ['mean','median','std','cov','corrcoef','find_repeats']:
     exec '%s = ppimport_attr(stats,%s)' % (n,`n`)
