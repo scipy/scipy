@@ -231,6 +231,7 @@ def process_line(line, separator, collist, atype, missing):
                                      # and imaginary parts of complex numbers
 
     if _not_warned:
+        warn = 0
         if (_obj.search(line) is not None):
             warn = 1
             for k in range(len(atype)):
@@ -432,3 +433,16 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
         file.close()
     return
                  
+
+################## test functions #########################
+
+def test(level=1):
+    from scipy_test.testing import module_test
+    module_test(__name__,__file__,level=level)
+
+def test_suite(level=1):
+    from scipy_test.testing import module_test_suite
+    return module_test_suite(__name__,__file__,level=level)
+
+
+
