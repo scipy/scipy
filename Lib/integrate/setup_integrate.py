@@ -7,11 +7,11 @@ from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 from scipy_distutils.misc_util import fortran_library_item
 from scipy_distutils.system_info import get_info
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     package = 'integrate'
     config = default_config_dict(package,parent_package)
     atlas_info = get_info('atlas')
-    local_path = get_path(__name__)
+    local_path = get_path(__name__,parent_path)
 
     atlas_library_dirs = atlas_info.get('library_dirs',[])
     atlas_libraries = atlas_info.get('libraries',[])

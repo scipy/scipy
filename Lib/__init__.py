@@ -112,7 +112,7 @@ del _import_packages
 # Level 1
 # these modules will just be imported (not subsumed)
 #special = ppimport('special');  _level_docs(special)
-io = ppimport('io');            _level_docs(io)
+#io = ppimport('io');            _level_docs(io)
 #linalg = ppimport('linalg');    _level_docs(linalg)
 #stats = ppimport('stats');      _level_docs(stats)
 
@@ -128,7 +128,7 @@ from pilutil import *
 
 # Level 2
 #optimize = ppimport('optimize');       _level_docs(optimize)
-integrate = ppimport('integrate');     _level_docs(integrate)
+#integrate = ppimport('integrate');     _level_docs(integrate)
 signal = ppimport('signal');           _level_docs(signal)
 sparse = ppimport('sparse');           _level_docs(sparse)
 

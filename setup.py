@@ -30,12 +30,12 @@ finally:
 
 #-------------------------------
 
-standard_packages = ['io',
-                     'signal',
-                     'interpolate','integrate',
-                     'cluster','cow','ga',
-#                    ,'sparse'
-                    ]
+standard_packages = [
+    'signal',
+    'interpolate',
+    'cluster','cow','ga',
+    #                    ,'sparse'
+    ]
 
 standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 
@@ -139,8 +139,8 @@ def setup_package(ignore_packages=[]):
                                         parent_path=path)
 
         #old style packages:
-        config_list += map(get_separate_package_config,separate_packages)
-        config_list += map(get_package_config,scipy_packages)
+        #config_list += map(get_separate_package_config,separate_packages)
+        #config_list += map(get_package_config,scipy_packages)
 
         config_dict = merge_config_dicts(config_list)
 

@@ -28,3 +28,5 @@ Integration routines
    ode           -- Integrate ODE using vode routine.
 
 """
+
+postpone_import = 1

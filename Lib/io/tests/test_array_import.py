@@ -6,16 +6,12 @@
 import os,sys
 import unittest
 from unittest import TestCase
-
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 import io
 from io import numpyio
 del sys.path[0]
 
-from scipy_test.testing import rand
-from scipy_test.testing import assert_array_equal, assert_equal, assert_approx_equal
-from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
 
 import Numeric
 N = Numeric
@@ -65,20 +61,7 @@ class test_read_array(TestCase):
         assert_array_equal(a,b)
         os.remove(fname)
 
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_read_array, 'check_') )
-        suites.append( unittest.makeSuite(test_numpyio, 'check_') )
-        
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    test()
+    ScipyTest('io.array_import').run()
+
+
