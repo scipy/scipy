@@ -151,4 +151,7 @@ def test_suite(level = 1):
     import scipy_base.testing
     import scipy
     ignore = ['xplt','plt','gplt','gui_thread','sparse','scipy_version']
-    return scipy_base.testing.harvest_test_suites(scipy,ignore,level=level)
+    suites = [scipy_base.testing.harvest_test_suites(scipy,ignore,level=level)]
+    suites += [scipy_base.testing.harvest_test_suites(weave,ignore,level=level)]
+    import unittest
+    return unittest.TestSuite(suites)
