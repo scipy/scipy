@@ -3,13 +3,13 @@
 
 import sigtools
 import scipy.special as special
-from scipy import fft, ifft, ifftshift
+from scipy import fft, ifft, ifftshift, fft2d, ifft2d
 from scipy import polyadd, polymul, polydiv, polysub, \
                   roots, poly, polyval, polyder
 import types
 import scipy
 import Numeric
-from Numeric import array, asarray, arange, where
+from Numeric import array, asarray, arange, where, sqrt
 from umath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -606,7 +606,7 @@ def hilbert(x, N=None):
         raise ValueError, "N must be positive."
     if scipy.array_iscomplex(x):
         print "Warning: imaginary part of x ignored."
-        x = real(x)
+        x = scipy.real(x)
     Xf = fft(x,N,axis=0)
     h = Numeric.zeros(N)
     if N % 2 == 0:
@@ -620,6 +620,44 @@ def hilbert(x, N=None):
         h = h[:,Numeric.NewAxis]
     x = ifft(Xf*h)
     return x
+
+def hilbert2(x,N=None):
+    """Return the '2-D' hilbert transform of x of length N.
+    """
+    x = Numeric.asarray(x)
+    x = Numeric.asarray(x)
+    if N is None:
+        N = x.shape
+    if len(N) < 2:
+        if N <=0:
+            raise ValueError, "N must be positive."
+        N = (N,N)
+    if scipy.array_iscomplex(x):
+        print "Warning: imaginary part of x ignored."
+        x = scipy.real(x)
+    print N
+    Xf = fft2d(x,N,axes=(0,1))
+    h1 = Numeric.zeros(N[0],'d')
+    h2 = Numeric.zeros(N[1],'d')
+    for p in range(2):
+        h = eval("h%d"%(p+1))
+        N1 = N[p]
+        if N1 % 2 == 0:
+            h[0] = h[N1/2] = 1
+            h[1:N1/2] = 2
+        else:
+            h[0] = 1
+            h[1:(N1+1)/2] = 2
+        exec("h%d = h" % (p+1), globals(), locals())
+
+    h = h1[:,NewAxis] * h2[NewAxis,:]
+    k = len(x.shape)
+    while k > 2:
+        h = h[:,Numeric.NewAxis]
+        k -= 1
+    x = ifft2d(Xf*h,axes=(0,1))
+    return x
+    
 
 def cmplx_sort(p):
     "sort roots based on magnitude."

@@ -1024,7 +1024,10 @@ def kratio(m, k_ratio):
 def ellipap(N,rp,rs):
     """Return (z,p,k) zeros, poles, and gain of an Nth order normalized
     prototype elliptic analog lowpass filter with rp decibels of ripple
-    in the passband and a stopband rs decibels down. 
+    in the passband and a stopband rs decibels down.
+
+    See Chapter 12 and Chapter 5 of "Filter Design for Signal Processing",
+    by Lutova, Tosic, and Evans.  This is 
     """
     if N == 1:
         p = -sqrt(1.0/(10**(0.1*rp)-1.0))
@@ -1082,6 +1085,7 @@ def ellipap(N,rp,rs):
         k = k / Num.sqrt((1+eps*eps))
 
     return z, p, k
+
 
 def besselap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
