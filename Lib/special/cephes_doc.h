@@ -71,7 +71,7 @@
 #define nbdtrc_doc "nbdtrc(k,n,p) returns the sum of the terms k+1 to infinity of the\nnegative binomial distribution."
 #define nbdtri_doc "nbdtri(k,n,y) finds the argument p such that nbdtr(k,n,p) is equal\nto y."
 #define ndtr_doc "ndtr(x) returns the area under the Gaussian probability density\nfunction, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)"
-#define ndtri_doc "ndtri(x) returns the argument x for which the area udnder the\nGaussian probability density function (integrated from minus infinity\nto x) is equal to y."
+#define ndtri_doc "ndtri(y) returns the argument x for which the area udnder the\nGaussian probability density function (integrated from minus infinity\nto x) is equal to y."
 #define onef2_doc "onef2 returns the hypergeometric function 1F2 in y and an error\nestimate in err."
 #define pdtr_doc "pdtr(k,m) returns the sum of the first k terms of the Poisson\ndistribution: sum(exp(-m) * m**j / j!, j=0..k) = igamc( k+1, m).\nArguments must both be positive and k an integer."
 #define pdtrc_doc "pdtr(k,m) returns the sum of the terms from k+1 to infinity of the\nPoisson distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = igam( k+1, m).\nArguments must both be positive and k an integer."

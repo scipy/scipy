@@ -66,13 +66,41 @@ def rosen3_hess(x):
     
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
-         fulloutput=0, printmessg=1):
-    """xopt,{fval,warnflag} = fmin(function, x0, args=(), xtol=1e-4, ftol=1e-4,
-                                   maxiter=200*len(x0), maxfun=200*len(x0), 
-                                   fulloutput=0, printmessg=0)
+         full_output=0, printmessg=1):
+    """
+ fmin(function, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=200*len(x0),
+      maxfun=200*len(x0), full_output=0, printmessg=1)
 
-    Uses a Nelder-Mead Simplex algorithm to find the minimum of function
+  Description:
+
+    Uses a Nelder-Mead simplex algorithm to find the minimum of function
     of one or more variables.
+
+  Inputs:
+
+    func -- the Python function or method to be minimized.
+    x0 -- the initial guess.
+    args -- extra arguments for func.
+    xtol -- relative tol
+
+  Outputs: (xopt, {fopt, warnflag})
+
+    xopt -- minimizer of function
+
+    fopt -- value of function: fopt = func(xopt)
+    warnflag -- Integer warning flag:
+                1 : 'Maximum number of function evaluations.'
+                2 : 'Maximum number of iterations.'
+
+  Additional Inputs:
+
+    xtol -- acceptable relative error in xopt for convergence.
+    ftol -- acceptable relative error in func(xopt) for convergence.
+    maxiter -- the maximum number of iterations to perform.
+    maxfun -- the maximum number of function evaluations.
+    full_output -- non-zero if fval and warnflag outputs are desired.
+    printmessg -- non-zero to print convergence messages.
+
     """
     x0 = Num.asarray(x0)
     assert (len(x0.shape)==1)
@@ -190,7 +218,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             print "         Iterations: %d" % iterations
             print "         Function evaluations: %d" % funcalls
 
-    if fulloutput:
+    if full_output:
         return x, fval, warnflag
     else:        
         return x
@@ -202,8 +230,9 @@ def zoom(a_lo, a_hi):
     
 
 def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
-    """alpha, fc, gc = line_search(f, xk, pk, gfk,
-                                   args=(), c1=1e-4, c2=0.9, amax=1)
+    """
+ alpha, fc, gc = line_search(f, xk, pk, gfk, args=(), c1=1e-4,
+                             c2=0.9, amax=1)
 
     minimize the function f(xk+alpha pk) using the line search algorithm of
     Wright and Nocedal in 'Numerical Optimization', 1999, pg. 59-60
@@ -327,13 +356,44 @@ def approx_fhess_p(x0,p,fprime,*args):
 
 
 def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
-             fulloutput=0, printmessg=1):
-    """xopt = fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5,
-                       maxiter=None, fulloutput=0, printmessg=1)
+             full_output=0, printmessg=1):
+    """
+ fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
+                 full_output=0, printmessg=1)
+
+  Description:
 
     Optimize the function, f, whose gradient is given by fprime using the
     quasi-Newton method of Broyden, Fletcher, Goldfarb, and Shanno (BFGS)
     See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 198.
+
+  Inputs:
+
+    f -- the Python function or method to be minimized.
+    x0 -- the initial guess for the minimizer.
+    fprime -- a function to compute the gradient of f.
+    args -- extra arguments to f and fprime.
+
+  Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag})
+
+    xopt -- the minimizer of f.
+
+    fopt -- the value of f(xopt).
+    func_calls -- the number of function_calls.
+    grad_calls -- the number of gradient calls.
+    warnflag -- an integer warning flag:
+                1 : 'Maximum number of iterations exceeded.'
+
+  Additional Inputs:
+
+    avegtol -- the minimum occurs when fprime(xopt)==0.  This specifies how
+               close to zero the average magnitude of fprime(xopt) needs
+               to be.
+    maxiter -- the maximum number of iterations.
+    full_output -- if non-zero then return fopt, func_calls, grad_calls,
+                   and warnflag in addition to xopt.
+    printmessg -- print convergence message if non-zero.
+                
     """
 
     app_fprime = 0
@@ -384,7 +444,7 @@ def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
         gfk = gfkp1
 
 
-    if printmessg or fulloutput:
+    if printmessg or full_output:
         fval = apply(f,(xk,)+args)
     if k >= maxiter:
         warnflag = 1
@@ -403,31 +463,69 @@ def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
             print "         Function evaluations: %d" % func_calls
             print "         Gradient evaluations: %d" % grad_calls
 
-    if fulloutput:
+    if full_output:
         return xk, fval, func_calls, grad_calls, warnflag
     else:        
         return xk
 
 
 def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-            maxiter=None, fulloutput=0, printmessg=1):
-    """xopt = fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), 
-                      avextol=1e-5,maxiter=None, fulloutput=0, printmessg=1)
+            maxiter=None, full_output=0, printmessg=1):
+    """
+ fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
+         maxiter=None, full_output=0, printmessg=1)
+
+  Description:
 
     Optimize the function, f, whose gradient is given by fprime using the
     Newton-CG method.  fhess_p must compute the hessian times an arbitrary
     vector. If it is not given, finite-differences on fprime are used to
     compute it. See Wright, and Nocedal 'Numerical Optimization', 1999,
     pg. 140.
+
+  Inputs:
+
+    f -- the Python function or method to be minimized.
+    x0 -- the initial guess for the minimizer.
+    fprime -- a function to compute the gradient of f: fprime(x, *args)
+    fhess_p -- a function to compute the Hessian of f times an
+               arbitrary vector: fhess_p (x, p, *args)
+    fhess -- a function to compute the Hessian matrix of f.
+    args -- extra arguments for f, fprime, fhess_p, and fhess (the same
+            set of extra arguments is supplied to all of these functions).
+
+  Outputs: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag})
+
+    xopt -- the minimizer of f
+    
+    fopt -- the value of the function at xopt: fopt = f(xopt)
+    fcalls -- the number of function calls.
+    gcalls -- the number of gradient calls.
+    hcalls -- the number of hessian calls.
+    warnflag -- algorithm warnings:
+                1 : 'Maximum number of iterations exceeded.'
+
+  Additional Inputs:
+
+    avextol -- Convergence is assumed when the average relative error in
+               the minimizer falls below this amount.  
+    maxiter -- Maximum number of iterations to allow.
+    full_output -- If non-zero return the optional outputs.
+    printmessg -- If non-zero print convergence message.                
+    
+  Remarks:
+
+    Only one of fhess_p or fhess need be given.  If fhess is provided,
+    then fhess_p will be ignored.  If neither fhess nor fhess_p is
+    provided, then the hessian product will be approximated using finite
+    differences on fprime.
+
     """
 
     x0 = Num.asarray(x0)
     fcalls = 0
     gcalls = 0
     hcalls = 0
-    approx_hessp = 0
-    if fhess_p is None and fhess is None:    # Define hessian product
-        approx_hessp = 1
     
     xtol = len(x0)*avextol
     update = [2*xtol]
@@ -453,7 +551,7 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
         while Num.add.reduce(abs(ri)) > termcond:
             if fhess is None:
-                if approx_hessp:
+                if fhess_p is None:
                     Ap = apply(approx_fhess_p,(xk,psupi,fprime)+args)
                     gcalls = gcalls + 2
                 else:
@@ -488,7 +586,7 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         xk = xk + update
         k = k + 1
 
-    if printmessg or fulloutput:
+    if printmessg or full_output:
         fval = apply(f,(xk,)+args)
     if k >= maxiter:
         warnflag = 1
@@ -509,7 +607,7 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "         Gradient evaluations: %d" % gcalls
             print "         Hessian evaluations: %d" % hcalls
             
-    if fulloutput:
+    if full_output:
         return xk, fval, fcalls, gcalls, hcalls, warnflag
     else:        
         return xk
