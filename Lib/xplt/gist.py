@@ -160,17 +160,20 @@ def eps(name, epsi=0, pdf=0):
    """
    import os
    name,ignore = os.path.splitext(name)
-   totalname = name
-   apath, basename = os.path.split(name)
-   name = name + ".ps"   
+   if ignore == '.eps':
+      totalname = name
+   else:
+      totalname = name + ignore
+   apath, basename = os.path.split(totalname)
+   name = totalname + ".ps"
    window (hcp = name, dump = 1, legends = 0)
    hcp ()
    window (hcp="")
    res = 1
    if epsi:
-      res = os.system ("ps2epsi " + name)
+      res = os.system ("ps2epsi " + totalname)
    if not res:
-      os.remove(name)
+      os.remove(totalname)
       os.rename ("%s.epsi" % basename, "%s.eps" % totalname)
    else:
       os.rename("%s.ps" % totalname, "%s.eps" % totalname)
