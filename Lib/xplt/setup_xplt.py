@@ -71,6 +71,47 @@ class config_pygist (config):
         if x11: self.config_x11()
         self.configfile.close()
         print 'wrote pygist/Make.cfg'
+
+    if sys.version[:3]<'2.2':
+        def try_run (self, body,
+                     headers=None, include_dirs=None,
+                     libraries=None, library_dirs=None,
+                     lang="c"):
+            """Try to compile, link to an executable, and run a program
+            built from 'body' and 'headers'.  Return true on success, false
+            otherwise.
+            """
+            from distutils.ccompiler import CompileError, LinkError
+            self._check_compiler()
+            try:
+                src,obj,exe=self._link(body, headers, include_dirs,
+                                       libraries, library_dirs, lang)
+                self.spawn([os.path.join('.',exe)])
+                ok = 1
+            except (CompileError, LinkError):
+                ok = 0
+
+            self.announce(ok and "success!" or "failure.")
+            self._clean()
+            return ok
+
+        def try_compile (self, body, headers=None, include_dirs=None, lang="c"):
+            """Try to compile a source file built from 'body' and 'headers'.
+            Return true on success, false otherwise.
+            """
+            from distutils.ccompiler import CompileError
+            self._check_compiler()
+            try:
+                self._compile(body, headers, include_dirs, lang)
+                ok = 1
+            except CompileError:
+                ok = 0
+
+            self.announce(ok and "success!" or "failure.")
+            self._clean()
+            return ok
+
+
 #----------------------------------------------------------------------
     def config_toplevel(self):
         print "  ============= begin top level configuration ============="

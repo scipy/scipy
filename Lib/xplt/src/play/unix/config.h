@@ -1,5 +1,5 @@
-/* config.h from config.sh script Tue Mar 11 00:15:12 2003
- * Linux travis.local.net 2.4.19-16mdk #1 Fri Sep 20 18:15:05 CEST 2002 i686
+/* config.h from config.sh script Tue Mar 11 20:30:31 2003
+ * Linux localhost 2.4.14-6 #1 Wed Dec 26 13:13:03 EET 2001 i686
  */
 #define USE_GETRUSAGE
 #define USE_GETTIMEOFDAY
