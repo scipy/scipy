@@ -103,3 +103,13 @@ def assoc_laguerre(x,n,k=0.0):
     gam = gamma
     fac = gam(k+1+n)/gam(k+1)/gam(n+1)
     return fac*hyp1f1(-n,k+1,x)
+
+def polygamma(n, x):
+    """Polygamma function which is the nth derivative of the digamma (psi)
+    function."""
+    n, x = asarray(n), asarray(x)
+    cond = (n==0)
+    fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1,x)
+    if sometrue(cond):
+        return where(cond, psi(x), fac2)
+    return fac2

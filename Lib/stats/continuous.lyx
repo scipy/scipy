@@ -441,19 +441,82 @@ skewness, kurtosis
 
 \layout Section
 
-Alpha
-\layout Subsection
+Alpha 
+\layout Standard
 
-PDF
+One shape parameters 
+\begin_inset Formula \( \alpha >0 \)
+\end_inset 
+
+ (paramter 
+\begin_inset Formula \( \beta  \)
+\end_inset 
+
+ in DATAPLOT is a scale-parameter).
+ Standard form is 
+\begin_inset Formula \( x>0: \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\alpha \right)  & = & \frac{1}{x^{2}\Phi \left( \alpha \right) }\phi \left( \alpha -\frac{1}{x}\right) \\
+F\left( x;\alpha \right)  & = & \frac{\Phi \left( \alpha -\frac{1}{x}\right) }{\Phi \left( \alpha \right) }\\
+G\left( q;\alpha \right)  & = & \left[ \alpha -\Phi ^{-1}\left( q\Phi \left( \alpha \right) \right) \right] ^{-1}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Anglit
+\layout Standard
+
+Defined over 
+\begin_inset Formula \( x\in \left[ -\frac{\pi }{4},\frac{\pi }{4}\right]  \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \sin \left( 2x+\frac{\pi }{2}\right) \\
+F\left( x\right)  & = & \sin ^{2}\left( x+\frac{\pi }{4}\right) \\
+G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Arcsine
+\layout Standard
+
+Defined over 
+\begin_inset Formula \( x\in \left( 0,1\right)  \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{1}{\pi \sqrt{x\left( 1-x\right) }}\\
+F\left( x\right)  & = & \frac{2}{\pi }\arcsin \left( \sqrt{x}\right) \\
+G\left( q\right)  & = & \sin ^{2}\left( \frac{\pi }{2}q\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Beta 
+\layout Standard
+
+Two shape parameters
 \layout Standard
 
 
@@ -659,9 +722,6 @@ G\left( \alpha \right)  & = & F^{-1}\left( \alpha \right) \\
 
 \layout Section
 
-Double Exponential
-\layout Section
-
 Double Gamma
 \layout Standard
 
@@ -693,7 +753,7 @@ G\left( q;\alpha \right)  & = & \left\{ \begin{array}{ccc}
 \mu =m_{n} & = & 0\\
 \mu _{2} & = & \alpha \left( \alpha +1\right) \\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & \textrm{NA}\\
+\gamma _{2} & = & \frac{\left( \alpha +2\right) \left( \alpha +3\right) }{\alpha \left( \alpha +1\right) }-3\\
 m_{d} & = & \textrm{NA}
 \end{eqnarray*}
 
@@ -734,7 +794,7 @@ G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
 m_{d}=\mu  & = & 0\\
 \mu _{2} & = & \Gamma \left( \frac{c+2}{c}\right) \\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & \textrm{NA}\\
+\gamma _{2} & = & \\
 m_{d} & = & \textrm{NA bimodal}
 \end{eqnarray*}
 
@@ -808,7 +868,46 @@ Fatigue Life
 Fisher z
 \layout Section
 
-Fisk
+Fisk (Log Logistic)
+\layout Standard
+
+Special case of the Burr distribution with 
+\begin_inset Formula \( d=1 \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+c & > & 0\\
+k & = & \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( \frac{2}{c}+1\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+1\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c,d\right)  & = & \frac{cx^{c-1}}{\left( 1+x^{c}\right) ^{2}}I_{\left( 0,\infty \right) }\left( x\right) \\
+F\left( x;c,d\right)  & = & \left( 1+x^{-c}\right) ^{-1}\\
+G\left( \alpha ;c,d\right)  & = & \left( \alpha ^{-1}-1\right) ^{-1/c}\\
+\mu  & = & \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+1\right) \\
+\mu _{2} & = & k\\
+\gamma _{1} & = & \frac{1}{\sqrt{k^{3}}}\left[ 2\Gamma ^{3}\left( 1-\frac{1}{c}\right) \Gamma ^{3}\left( \frac{1}{c}+1\right) +\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( \frac{3}{c}+1\right) \right. \\
+ &  & \left. -3\Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+1\right) \Gamma \left( \frac{2}{c}+1\right) \right] \\
+\gamma _{2} & = & -3+\frac{1}{k^{2}}\left[ 6\Gamma \left( 1-\frac{2}{c}\right) \Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+1\right) \Gamma \left( \frac{2}{c}+1\right) \right. \\
+ &  & -3\Gamma ^{4}\left( 1-\frac{1}{c}\right) \Gamma ^{4}\left( \frac{1}{c}+1\right) +\Gamma \left( 1-\frac{4}{c}\right) \Gamma \left( \frac{4}{c}+1\right) \\
+ &  & \left. -4\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+1\right) \Gamma \left( \frac{3}{c}+1\right) \right] \\
+m_{d} & = & \left( \frac{c-1}{c+1}\right) ^{1/c}\, \textrm{if }c>1\, \textrm{otherwise }0\\
+m_{n} & = & 1
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Folded Cauchy
@@ -917,6 +1016,59 @@ Geometric Extreme Exponential
 \layout Section
 
 Genearlized Logistic
+\layout Standard
+
+Has been used in the analysis of extreme values.
+ Has one shape parameter 
+\begin_inset Formula \( c>0. \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{c\exp \left( -x\right) }{\left[ 1+\exp \left( -x\right) \right] ^{c+1}}\\
+F\left( x;c\right)  & = & \frac{1}{\left[ 1+\exp \left( -x\right) \right] ^{c}}\\
+G\left( q;c\right)  & = & -\log \left( q^{-1/c}-1\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \gamma +\psi _{0}\left( c\right) \\
+\mu _{2} & = & \frac{\pi ^{2}}{6}+\psi _{1}\left( c\right) \\
+\gamma _{1} & = & \frac{\psi _{2}\left( c\right) +2\zeta \left( 3\right) }{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\left( \frac{\pi ^{4}}{15}+\psi _{3}\left( c\right) \right) }{\mu _{2}^{2}}\\
+m_{d} & = & \log c\\
+m_{n} & = & -\log \left( 2^{1/c}-1\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ Note that the polygamma function is 
+\begin_inset Formula \begin{eqnarray*}
+\psi _{n}\left( z\right)  & = & \frac{d^{n+1}}{dz^{n+1}}\log \Gamma \left( z\right) \\
+ & = & \left( -1\right) ^{n+1}n!\sum _{k=0}^{\infty }\frac{1}{\left( z+k\right) ^{n+1}}\\
+ & = & \left( -1\right) ^{n+1}n!\zeta \left( n+1,z\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula \( \zeta \left( k,x\right)  \)
+\end_inset 
+
+ is a generalization of the Riemann zeta function called the Hurwitz zeta
+ function Note that 
+\begin_inset Formula \( \zeta \left( n\right) \equiv \zeta \left( n,1\right)  \)
+\end_inset 
+
+
 \layout Section
 
 Generalized Pareto
@@ -935,15 +1087,112 @@ Generalized Half-Logistic
 \layout Section
 
 Gilbrat
+\layout Standard
+
+Special case of the log-normal with 
+\begin_inset Formula \( \sigma =1 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=1.0 \)
+\end_inset 
+
+ (typically also 
+\begin_inset Formula \( L=0.0 \)
+\end_inset 
+
+) 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\sigma \right)  & = & \frac{1}{x\sqrt{2\pi }}\exp \left[ -\frac{1}{2}\left( \log x\right) ^{2}\right] \\
+F\left( x;\sigma \right)  & = & \Phi \left( \log x\right) =\frac{1}{2}\left[ 1+\textrm{erf}\left( \frac{\log x}{\sqrt{2}}\right) \right] \\
+G\left( q;\sigma \right)  & = & \exp \left\{ \Phi ^{-1}\left( q\right) \right\} 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \sqrt{e}\\
+\mu _{2} & = & e\left[ e-1\right] \\
+\gamma _{1} & = & \sqrt{e-1}\left( 2+e\right) \\
+\gamma _{2} & = & e^{4}+2e^{3}+3e^{2}-6
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
-Gompertz
-\layout Section
+Gumbel (Gompertz, LogWeibull, Fisher-Tippetts)
+\layout Standard
 
-Gumbel
+One of a clase of extreme value distributions (right-skewed).
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \exp \left( -\left( x+e^{-x}\right) \right) \\
+F\left( x\right)  & = & \exp \left( -e^{-x}\right) \\
+G\left( q\right)  & = & -\log \left( -\log \left( q\right) \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \gamma =\psi _{0}\left( 1\right) \\
+\mu _{2} & = & \frac{\pi ^{2}}{6}\\
+\gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left( 3\right) \\
+\gamma _{2} & = & \frac{12}{5}\\
+m_{d} & = & 0\\
+m_{n} & = & -\log \left( \log 2\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 HalfCauchy
+\layout Standard
+
+If 
+\begin_inset Formula \( Z \)
+\end_inset 
+
+ is Hyperbolic Secant distributed then 
+\begin_inset Formula \( e^{Z} \)
+\end_inset 
+
+ is Half-Cauchy distributed.
+ Also, if 
+\begin_inset Formula \( W \)
+\end_inset 
+
+ is (standard) Cauchy distributed, then 
+\begin_inset Formula \( \left| W\right|  \)
+\end_inset 
+
+ is Half-Cauchy distributed.
+ The standard form is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{2}{\pi \left( 1+x^{2}\right) }I_{[0,\infty )}\left( x\right) \\
+F\left( x\right)  & = & \frac{2}{\pi }\arctan \left( x\right) I_{\left[ 0,\infty \right] }\left( x\right) \\
+G\left( q\right)  & = & \tan \left( \frac{\pi }{2}q\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+m_{d} & = & 0\\
+m_{n} & = & \tan \left( \frac{\pi }{4}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ No moments, as the integrals diverge.
+ 
 \layout Section
 
 HalfNormal
@@ -969,6 +1218,15 @@ This is a special case of the chi distribution with
 \begin_inset Formula \( S=S. \)
 \end_inset 
 
+ If 
+\begin_inset Formula \( Z \)
+\end_inset 
+
+ is (standard) normally distributed then, 
+\begin_inset Formula \( \left| Z\right|  \)
+\end_inset 
+
+ is half-normal.
  The standard form is 
 \begin_inset Formula \begin{eqnarray*}
 f\left( x\right)  & = & \sqrt{\frac{2}{\pi }}e^{-x^{2}/2}I_{\left( 0,\infty \right) }\left( x\right) \\
@@ -1000,6 +1258,29 @@ HalfLogistic
 \layout Section
 
 Hyperbolic Secant
+\layout Standard
+
+Related to the logistic distribution and used in lifetime analysis.
+ Standard form is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{1}{\pi }\sech \left( x\right) \\
+F\left( x\right)  & = & \frac{2}{\pi }\arctan \left( e^{x}\right) \\
+G\left( q\right)  & = & \log \left( \tan \left( \frac{\pi }{2}q\right) \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+m_{d}=m_{n}=\mu  & = & 0\\
+\mu _{2} & = & \frac{\pi ^{2}}{4}\\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & 2
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Hypergeometric (Continous)
@@ -1008,7 +1289,55 @@ Hypergeometric (Continous)
 Inverted Gamma
 \layout Section
 
-Inverted Normal (Wald)
+Inverse Normal (Inverse Gaussian)
+\layout Standard
+
+The standard form involves the shape parameter 
+\begin_inset Formula \( \mu  \)
+\end_inset 
+
+ (in most definitions, 
+\begin_inset Formula \( L=0.0 \)
+\end_inset 
+
+ is used).
+ (In terms of the regress documentation 
+\begin_inset Formula \( \mu =A/B \)
+\end_inset 
+
+) and 
+\begin_inset Formula \( B=S \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( L \)
+\end_inset 
+
+ is not a parameter in that distribution.
+ The standard form is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x\mu ^{2}}\right) .\\
+F\left( x;\mu \right)  & = & \Phi \left( \frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right) +\exp \left( \frac{2}{\mu }\right) \Phi \left( -\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right) \\
+G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \mu \\
+\mu _{2} & = & \mu ^{3}\\
+\gamma _{1} & = & 3\sqrt{\mu }\\
+\gamma _{2} & = & 15\mu \\
+m_{d} & = & \frac{\mu }{2}\left( \sqrt{9\mu ^{2}+4}-3\mu \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Inverted Weibull
@@ -1026,7 +1355,35 @@ KSone
 KStwo
 \layout Section
 
-Laplace
+Laplace (Double Exponential, Bilateral Exponential)
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{1}{2}e^{-\left| x\right| }\\
+F\left( x\right)  & = & \left\{ \begin{array}{ccc}
+\frac{1}{2}e^{x} &  & x\leq 0\\
+1-\frac{1}{2}e^{-x} &  & x>0
+\end{array}\right. \\
+G\left( q\right)  & = & \left\{ \begin{array}{ccc}
+\log \left( 2q\right)  &  & q\leq \frac{1}{2}\\
+-\log \left( 2-2q\right)  &  & q>\frac{1}{2}
+\end{array}\right. 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+m_{d}=m_{n}=\mu  & = & 0\\
+\mu _{2} & = & 2\\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & 3
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Log-Series
@@ -1035,7 +1392,41 @@ Log-Series
 Logarithmic
 \layout Section
 
-Logistic
+Logistic (Sech-squared)
+\layout Standard
+
+A special case of the Generalized Logistic distribution with 
+\begin_inset Formula \( c=1. \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{\exp \left( -x\right) }{\left[ 1+\exp \left( -x\right) \right] ^{2}}\\
+F\left( x;c\right)  & = & \frac{1}{1+\exp \left( -x\right) }\\
+G\left( q;c\right)  & = & -\log \left( 1/q-1\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \gamma +\psi _{0}\left( 1\right) =0\\
+\mu _{2} & = & \frac{\pi ^{2}}{6}+\psi _{1}\left( 1\right) =\frac{\pi ^{2}}{3}\\
+\gamma _{1} & = & \frac{\psi _{2}\left( c\right) +2\zeta \left( 3\right) }{\mu _{2}^{3/2}}=0\\
+\gamma _{2} & = & \frac{\left( \frac{\pi ^{4}}{15}+\psi _{3}\left( c\right) \right) }{\mu _{2}^{2}}=\frac{6}{5}\\
+m_{d} & = & \log 1=0\\
+m_{n} & = & -\log \left( 2-1\right) =0
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Log Double Exponential
@@ -1044,13 +1435,81 @@ Log Double Exponential
 Log Gamma
 \layout Section
 
-Log Logistic
-\layout Section
+Log Normal (Cobb-Douglass)
+\layout Standard
 
-Log Normal
+Has one shape parameterx 
+\begin_inset Formula \( \sigma  \)
+\end_inset 
+
+.
+ (Notice that the Regress 
+\begin_inset Formula \( A=\log S \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( S \)
+\end_inset 
+
+ is the scale parameter and 
+\begin_inset Formula \( A \)
+\end_inset 
+
+ is the mean of the underlying normal distribution).
+ The standard form is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\sigma \right)  & = & \frac{1}{\sigma x\sqrt{2\pi }}\exp \left[ -\frac{1}{2}\left( \frac{\log x}{\sigma }\right) ^{2}\right] \\
+F\left( x;\sigma \right)  & = & \Phi \left( \frac{\log x}{\sigma }\right) \\
+G\left( q;\sigma \right)  & = & \exp \left\{ \sigma \Phi ^{-1}\left( q\right) \right\} 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \exp \left( \sigma ^{2}/2\right) \\
+\mu _{2} & = & \exp \left( \sigma ^{2}\right) \left[ \exp \left( \sigma ^{2}\right) -1\right] \\
+\gamma _{1} & = & \sqrt{e^{\sigma ^{2}}-1}\left( 2+e^{\sigma ^{2}}\right) \\
+\gamma _{2} & = & p^{4}+2p^{3}+3p^{2}-6\quad \quad p=e^{\sigma ^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
 \layout Section
 
 Nakagami
+\layout Standard
+
+Generalization of the chi distribution.
+ Shape parameter is 
+\begin_inset Formula \( \nu >0. \)
+\end_inset 
+
+ Defined for 
+\begin_inset Formula \( x>0. \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\nu \right)  & = & \frac{2\nu ^{\nu }}{\Gamma \left( \nu \right) }x^{2\nu -1}\exp \left( -\nu x\right) \\
+F\left( x;\nu \right)  & = & \Gamma \left( \nu ,\nu x^{2}\right) \\
+G\left( q;\nu \right)  & = & \sqrt{\frac{1}{\nu }\Gamma ^{-1}\left( v,q\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{\Gamma \left( \nu +\frac{1}{2}\right) }{\sqrt{\nu }\Gamma \left( \nu \right) }\\
+\mu _{2} & = & \left[ 1-\mu ^{2}\right] \\
+\gamma _{1} & = & \frac{\mu \left( 1-4v\mu _{2}\right) }{2\nu \mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{-6\mu ^{4}\nu +\left( 8\nu -2\right) \mu ^{2}-2\nu +1}{\nu \mu _{2}^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Noncentral beta
@@ -1528,7 +1987,44 @@ Power Log Normal
 Power Normal
 \layout Section
 
-Power (Special case of Beta?)
+Power-function 
+\layout Standard
+
+A special case of the beta distribution with 
+\begin_inset Formula \( b=1 \)
+\end_inset 
+
+: defined for 
+\begin_inset Formula \( x\in \left[ 0,1\right]  \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+a>0\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a\right)  & = & ax^{a-1}\\
+F\left( x;a\right)  & = & x^{a}\\
+G\left( q;a\right)  & = & q^{1/a}\\
+\mu  & = & \frac{a}{a+1}\\
+\mu _{2} & = & \frac{a\left( a+2\right) }{\left( a+1\right) ^{2}}\\
+\gamma _{1} & = & 2\left( 1-a\right) \sqrt{\frac{a+2}{a\left( a+3\right) }}\\
+\gamma _{2} & = & \frac{6\left( a^{3}-a^{2}-6a+2\right) }{a\left( a+3\right) \left( a+4\right) }\\
+m_{d} & = & 1
+\end{eqnarray*}
+
+\end_inset 
+
+ 
 \layout Section
 
 Reciprocal
@@ -1619,7 +2115,40 @@ Uniform
 Von Mises
 \layout Section
 
-Wald
+Wald 
+\layout Standard
+
+Special case of the Inverse Normal with shape parameter set to 
+\begin_inset Formula \( 1.0 \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-1\right) ^{2}}{2x}\right) .\\
+F\left( x\right)  & = & \Phi \left( \frac{x-1}{\sqrt{x}}\right) +\exp \left( 2\right) \Phi \left( -\frac{x+1}{\sqrt{x}}\right) \\
+G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & 1\\
+\mu _{2} & = & 1\\
+\gamma _{1} & = & 3\\
+\gamma _{2} & = & 15\\
+m_{d} & = & \frac{1}{2}\left( \sqrt{13}-3\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Waring

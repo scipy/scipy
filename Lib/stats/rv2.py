@@ -52,7 +52,8 @@ student_t(df=100.0, size=None)...................default mean 0.00, SD 1.01.
 triangular(left=0.0, mode=0.5, right=1.0, size=None) deflt mn 0.50, SD 0.20.
 uniform(lower=-0.5, upper=0.5, size=None)........default mean 0.00, SD 0.29.
 von_mises(mean=0.0, shape=1.0, size=None)........default mean 0.00, SD 1.30.
-wald(mean=1.0, scale=1.0, size=None).............default mean 1.00, SD 1.00.
+invnorm(mu, loc=0.0, scale=1.0, size=None).......
+wald(loc=0.0, scale=1.0, size=None).............default mean 1.00, SD 1.00.
 weibull(scale=1.0, shape=0.5, size=None).........default mean 2.00, SD 4.50.
 zipf(a=4.0, size=None)...........................default mean 1.11, SD 0.54
 ------------------------------------------------------------------------------
@@ -1591,16 +1592,17 @@ class _pranv:
          return Num.reshape(buffer, size)
          
 
-   def _Laplace(self, mu=0.0, scale=1.0, size=None):
+   def _Laplace(self, loc=0.0, scale=1.0, size=None):
       """Return Laplace (double exponential) pseudo-random variates.
 
-      Laplace(mu=0.0, scale=1.0, size=None)
+      laplace(loc=0.0, scale=1.0, size=None)
 
       The mean is <mu> and the (positive) scale factor is <scale>.  If
       <buffer> is specified, it must be a mutable sequence (list or array).
       <buffer> is filled with Laplace(mu, scale) pseudo-random variates and
       <None> is returned.  Otherwise, a single Laplace pseudo-random variate
       is returned."""
+      mu = loc
       if scale <= 0.0:
          raise ValueError, 'Scale must be positive.'
 
@@ -2305,15 +2307,18 @@ class _pranv:
          return Num.reshape(buffer, size)
          
       
-   def _Wald(self, mean=1.0, scale=1.0, size=None):
-      """Return Wald (inverse gaussian) pseudo-random variates.
+   def _Wald(self, mu, loc=0.0, scale=1.0, size=None):
+      """Return Inverse gaussian pseudo-random variates.
 
-      Wald(mean=1.0, scale=1.0, size=None)
+      invnorm(mu, loc=0.0, scale=1.0, size=None)
 
       Both <mean> and <scale> must be positive.  If <buffer> is specified, it
-      must be a mutable sequence (list or array).  It is filled with Wald
-      (inverse gaussian) pseudo-random variates, and <None> is returned.
+      must be a mutable sequence (list or array).  It is filled with inverse
+      gaussian (wald if mu=1.0) pseudo-random variates, and <None> is returned.
       Otherwise, a single Wald pseudo-random variate is returned."""
+      mean = mu
+      oscale = scale
+      scale = 1.0
       if (mean <= 0.0) or (scale <= 0.0):
          raise ValueError, 'both <mean> and <scale> must be positive'
 
@@ -2359,7 +2364,7 @@ class _pranv:
                   return meansq / x1
 
       self._index = i    # Restore _ranbuf index and return (buffer[] filled).
-      return Num.reshape(buffer, size)
+      return Num.reshape(buffer*oscale+loc, size)
       
    def _Weibull(self, scale=1.0, shape=0.5, size=None):
       """Return Weibull distribution pseudo-random variates.
@@ -2843,11 +2848,11 @@ choice            =  _inst._choice
 #fratio            =  _inst._Fisher_F
 #gamma             =  _inst._gamma
 geom         =  _inst._geom
-gumbel            =  _inst._Gumbel
+#gumbel            =  _inst._Gumbel
 hypergeom    =  _inst._hypergeom
-laplace           =  _inst._Laplace
+#laplace           =  _inst._Laplace
 logser       =  _inst._logser
-logistic      =  _inst._logistic
+#logistic      =  _inst._logistic
 #lognormal         =  _inst._lognormal
 #negative_binomial =  _inst._negative_binomial
 #normal            =  _inst._normal
@@ -2859,7 +2864,9 @@ pareto            =  _inst._Pareto
 triang            =  _inst._triangular
 #uniform           =  _inst._uniform
 von_mises         =  _inst._von_Mises
-wald             =  _inst._Wald
+invnorm             =  _inst._Wald
+def wald(loc=0.0, scale=1.0, size=None):
+   return invnorm(1.0, loc, scale, size=size)
 #weibull           =  _inst._Weibull
 zipf              =  _inst._Zipf
 

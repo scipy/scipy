@@ -358,8 +358,8 @@ arguments, evaluated from zero to x: gamma(a+b) / (gamma(a)*gamma(b))
 <DD>betaincinv(a,b,y) returns x such that betainc(a,b,x) = y.
 
 <DT>y = psi(x)
-<DD>psi(x) is the logarithmic derivative of the gamma function
-evaluated at x.
+<DD>psi(x) is the derivative of the logarithm of the gamma function
+evaluated at x (also called the digamma function). 
 
 <DT>y = rgamma(x)
 <DD>rgamma(x) returns one divided by the gamma function of x. 
@@ -431,7 +431,7 @@ must be positive unless v is an integer.
 sum((k+q)**(-x),k=0..inf)
 
 <DT>y = zetac(x)
-<DD>zetac(x) returns the Riemann zeta function: sum(k**(-x), k=2..inf)
+<DD>zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)
 </DL>
 
 <h1> Convenience Functions </h1>

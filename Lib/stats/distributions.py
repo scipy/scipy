@@ -73,6 +73,10 @@ def _wc(cond, val):
 ##
 ##  Johnson book on Univariate Distributions
 
+
+_EULER = 0.5772156649015328606   # -special.psi(1)
+_ZETA3 = special.zeta(3,1)
+
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
 def ksonesf(x,n):
@@ -196,12 +200,12 @@ def betaisf(q, a, b, loc=0.0, scale=1.0):
     return betappf(1-q,a,b,loc,scale)
 
 def betastats(a, b, loc=0.0, scale=1.0, full=0):
-    cond = (arr(a)>0 & arr(b) > 0 & arr(scale)>0)
+    cond = (arr(a)>0) & (arr(b) > 0) & (arr(scale)>0)
     mn = _wc(cond,loc + scale*a*1.0 / (a+b))
     var = _wc(cond, scale*scale*(a*b)*1.0 / ((a+b)**2 * (a+b+1)))
     if not full:
         return mn, var
-    g1 = 2.0*(b-a)*sqrt(1+a+b) / (sqrt(a*b)*(2+a+b))
+    g1 = 2.0*(b-a)*sqrt((1.0+a+b) / (a*b*(2+a+b)))
     g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
     g2 /= a*b*(a+b+2)*(a+b+3)
     return mn, var, _wc(cond, g1), _wc(cond, g2)
@@ -294,6 +298,27 @@ def burrstats(c,d,loc=0.0,scale=1.0,full=0):
     g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
     g2 -= 3*g1c**4 * g1cd**4 -4*gd**2*g13c*g1c*g1cd*g3cd
     return mu, var, _wc(cond, g1), _wc(cond, g2)
+
+# Fisk distribution
+# burr is a generalization
+
+def fiskpdf(x, c, loc=0.0, scale=1.0):
+    return burrpdf(x, c, d, loc, scale)
+
+def fiskcdf(x, c, loc=0.0, scale=1.0):
+    return burrcdf(x, c, d, loc, scale)
+
+def fisksf(x, c, loc=0.0, scale=1.0):
+    return burrsf(x, c, d, loc, scale)
+
+def fiskppf(x, c, loc=0.0, scale=1.0):
+    return burrppf(x, c, d, loc, scale)
+
+def fiskisf(x, c, loc=0.0, scale=1.0):
+    return burrisf(x, c, d, loc, scale)
+
+def fiskstats(x, c, loc=0.0, scale=1.0):
+    return burrstats(x, c, d, loc, scale)
 
 
 ## Cauchy
@@ -502,7 +527,7 @@ def dgammasf(x, a, loc=0.0, scale=1.0):
 def dgammappf(q, a, loc=0.0, scale=1.0):
     A, B, C, q = arr(loc), arr(scale), arr(a), arr(q)
     sv = errp(0)
-    fac = special.gammainccinv(C,abs(2*q-1))
+    fac = special.gammainccinv(C,1-abs(2*q-1))  # note the complementary inv.
     sv = errp(sv)
     return select([(B<=0) | (C<=0), q<=0.5], [scipy.nan, A-B*fac], A+B*fac)
 
@@ -517,8 +542,8 @@ def dgammastats(shape, loc=0.0, scale=1.0, full=0):
     if not full:
         return mu, var
     g1 = where(cond,0.0,scipy.nan)
-    g2 = scipy.nan
-    return mu, var, g1, g2
+    g2 = (C+2)*(C+3.0)/C/(C+1.0) - 3.0
+    return mu, var, g1, _wc(cond, g2)
 
 
 ## Double Weibull distribution
@@ -526,35 +551,23 @@ def dgammastats(shape, loc=0.0, scale=1.0, full=0):
 
 def dweibullpdf(x, a, loc=0.0, scale=1.0):
     A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
-    sv = errp(0)
-    y = arr((x-A*1.0)/B)
-    Px = 1.0/(2*B*special.gamma(C))*abs(y)**(C-1) * exp(-abs(y))
-    sv = errp(sv)
-    return select([(B>0) & (C>0)], [Px], scipy.nan)
+    x = arr((x-A*1.0)/B)
+    Px = C/2.0*abs(x)**(C-1.0)*exp(-abs(x)**C)
+    return select([(B>0) & (C>0)], [Px/B], scipy.nan)
 
 def dweibullcdf(x, a, loc=0.0, scale=1.0):
     A, B, C, x = arr(loc), arr(scale), arr(a), arr(x)
-    z = arr((x-A*1.0)/B)
-    sv = errp(0)
-    fac1 = special.gammainc(C,abs(z))
-    sv = errp(sv)
-    return select([(B<=0)|(C<=0),x<=A], [scipy.nan, 0.5-0.5*fac1],
-                  0.5+0.5*fac1)
+    x = arr((x-A*1.0)/B)
+    Cx1 = 0.5*exp(-abs(x)**C)
+    return select([(B<=0)|(C<=0),x<=0], [scipy.nan, Cx1],1-Cx1)
 
 def dweibullsf(x, a, loc=0.0, scale=1.0):
-    A, B, C, x = arr(loc), arr(scale), arr(shape), arr(x)
-    z = arr((x-A*1.0)/B)
-    sv = errp(0)
-    fac1 = special.gammainc(C,abs(z))
-    sv = errp(sv)
-    return select([(B<=0)|(C<=0),x<=A], [scipy.nan, 0.5+0.5*fac1],
-                  0.5-0.5*fac1)
+    return 1.0 - dweibullcdf(x, a, loc, scale)
     
 def dweibullppf(q, a, loc=0.0, scale=1.0):
-    A, B, C, q = arr(loc), arr(scale), arr(shape), arr(q)
-    sv = errp(0)
-    fac = special.gammainccinv(C,1-abs(2*q-1))
-    sv = errp(sv)
+    A, B, C, q = arr(loc), arr(scale), arr(a), arr(q)
+    fac = where(q<=0.5,2*q,2*q-1)
+    fac = pow(arr(log(1.0/fac)),1.0/C)
     return select([(B<=0) | (C<=0), q<=0.5], [scipy.nan, A-B*fac], A+B*fac)
 
 def dweibullisf(q, a, loc=0.0, scale=1.0):
@@ -568,10 +581,16 @@ def dweibullstats(a, loc=0.0, scale=1.0, full=0):
     if not full:
         return mu, var
     g1 = where(cond,0.0,scipy.nan)
-    g2 = scipy.nan
-    return mu, var, g1, g2
-
-
+    gam = special.gamma
+    ic = 1.0/C
+    u = gam(1+ic)
+    u2p = gam(1+2*ic)
+    u3 = 2*u**3 - 3*u*u2p + gam(1+3*ic)
+    u3p = u3 + 3*u2p*u-2*u**3
+    u4 = -3*u**4 + 6*u*u*u2p - 4*u*gam(1+3*ic) + gam(1+4*ic)
+    u4p = u4 + 4*u3p*u - 6*u2p*u*u + 3*u**4
+    g2 = u4p / u2p**2 - 3.0
+    return mu, var, _wc(cond,g1), _wc(cond,g2)
 
 
 ## ERLANG
@@ -658,38 +677,6 @@ def exponstats(loc=0.0, scale=1.0, full=0):
         return mn, var
     return mn, var, _wc(cond, 2), _wc(cond, 6)
 
-## (Fisher-Tippett)
-
-def fisher_tippettpdf(x,a,b):
-    fac1 = (a-x)*1.0/b
-    fac2 = exp(fac1)
-    return exp(fac1-fac2)/b
-
-def fisher_tippettcdf(x,a,b):
-    fac1 = (a-x)*1.0/b
-    fac2 = exp(fac1)
-    return exp(-fac2)
-
-def fisher_tippettsf(x,a,b):
-    return 1.0-fisher_tippetcdf(x,a,b)
-
-def fisher_tippettppf(q,a,b):
-    assert all((0<=q) & (q<=1)), _quantstr
-    return a-b*log(-log(q))
-
-def fisher_tippettisf(p,a,b):
-    return fisher_tippettppf(1-p,a,b)
-
-def fisher_tippettstats(a,b,full=0):
-    euler = 0.5772156649015328606
-    zeta3 = special.zeta(3,1)
-    mn = a + b*euler
-    var = pi*pi/6*b*b
-    if not full:
-        return mn, var
-    g1 = 12*sqrt(6)/pi**3 * zeta3
-    g2 = 12.0/5.0
-    return mn, var, g1, g2
     
 ## F
 
@@ -783,29 +770,46 @@ def foldnormstats(c=0.0, loc=0.0, scale=1.0, full=0):
     g2 /= mu2**2.0
     return mn, var, _wc(cond, g1), _wc(cond, g2-3.0)
                    
+
+## Generalized Logistic
+##
+def genlogisticpdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = c*exp(-x)/(1+exp(-x))**(c+1.0)
+    return select([(scale<=0)|(c<=0)],[scipy.nan], Px/scale)
+
+def genlogisticcdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = (1+exp(-x))**(-c)
+    return select([(scale<=0)|(c<=0)],[scipy.nan], Cx)
     
-    
-    
+def genlogisticsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-genlogistcdf(x, c, loc, scale)
 
-## Gumbel's
+def genlogisticppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    vals = -log(pow(q,-1.0/c)-1)
+    return where((c>0) & (scale>0) & (q>=0) & (q<=1), vals, scipy.nan)
 
-def gumbelpdf(x,mode=0.0,scale=1.0):
-    return fisher_tippettpdf(x,mode,scale)
+def genlogisticisf(q, c, loc=0.0, scale=1.0):
+    return genlogsistppf(1-q, c, loc=0.0, scale=1.0)
 
-def gumbelcdf(x,mode=0.0,scale=1.0):
-    return fisher_tippettcdf(x,mode,scale)
-
-def gumbelsf(x,mode=0.0,scale=1.0):
-    return fisher_tippettsf(x,mode,scale)
-
-def gumbelppf(q,mode=0.0,scale=1.0):
-    return fisher_tippettppf(q,mode,scale)
-
-def gumbelisf(p,mode=0.0,scale=1.0):
-    return fisher_tippettp(q,mode,scale)
-
-def gumbelstats(mode=0.0,scale=1.0,full=0):
-    return fisher_tippettstats(mode,scale,full=full)
+def genlogisticstats(c, loc=0.0, scale=1.0, full=0):
+    cond = (arr(c) > 0) & (arr(scale) > 0)
+    zeta = special.zeta
+    mu = _EULER + special.psi(c)
+    mu2 = pi*pi/6.0 + zeta(2,c)
+    mn = _wc(cond, mu*scale+loc)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    g1 = -2*zeta(3,c) + 2*_ZETA3
+    g1 /= mu2**1.5
+    g2 = pi**4/15.0 + 6*zeta(4,c)
+    g2 /= mu2**2.0
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
 
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 
@@ -858,6 +862,75 @@ def gammastats(a, loc=0.0, scale=1.0, full=0):
     g2 = 6.0/a
     return mn, var, where(cond, g1,scipy.nan), where(cond,g2,scipy.nan)
 
+
+## Gumbel, Log-Weibull, Fisher-Tippett, Gompertz
+
+def gumbelpdf(x,loc=0.0,scale=1.0):
+    x, a, b = map(arr, (x, loc, scale))
+    x = (x-a*1.0)/b
+    fac = x+exp(-x)
+    return select([scale>0],[exp(-fac)/b],scipy.nan)
+
+def gumbelcdf(x,loc=0.0,scale=1.0):
+    x, a, b = map(arr, (x, loc, scale))
+    x = (x-a*1.0)/b
+    return select([scale>0],[exp(-exp(-x))],scipy.nan)
+    
+def gumbelsf(x,loc=0.0,scale=1.0):
+    return 1.0-gumbelcdf(x,a,b)
+
+def gumbelppf(q,loc=0.0,scale=1.0):
+    q = arr(q)
+    cond = (arr(scale)>0) & (q >= 0) & (q <=1)
+    vals = -log(-log(q))
+    return _wc(cond, loc+scale*vals)
+
+def gumbelisf(p,loc=0.0,scale=1.0):
+    return gumbelppf(1-p,a,b)
+
+def gumbelstats(loc=0.0,scale=1.0,full=0):
+    a, b = map(arr, (loc, scale))
+    cond = (b > 0)
+    mn = _wc(cond, a + b*_EULER)
+    var = _wc(cond, pi*pi/6*b*b)
+    if not full:
+        return mn, var
+    g1 = 12*sqrt(6)/pi**3 * _ZETA3
+    g2 = 12.0/5.0
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+# Half-Cauchy
+
+def halfcauchypdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr,(x,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 2.0/pi/(1.0+x*x)
+    return select([scale<=0, x>=0], [scipy.nan, Px/scale])
+
+def halfcauchycdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr,(x,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    return select([scale<=0, x>=0], [scipy.nan, 2.0/pi*arctan(x)])
+
+def halfcauchysf(x, loc=0.0, scale=1.0):
+    return 1.0 - halfcauchycdf(x, loc, scale)
+
+def halfcauchyppf(al, loc=0.0, scale=1.0):
+    al, loc, scale = map(arr,(al,loc,scale))
+    cond = ((0<al) & (al<1)) & (scale > 0)
+    return select([cond,al==1,al==0], [scale*tan(pi/2*al)+loc,
+                                       scipy.inf,-scipy.inf], scipy.nan)
+
+def halfcauchyisf(al, loc=0.0, scale=1.0):
+    return halfcauchyppf(1-al, loc, scale)
+    
+def halfcauchystats(loc=0.0, scale=1.0, full=0):
+    if not full:
+        return scipy.nan, scipy.nan
+    else:
+        return scipy.nan, scipy.nan, scipy.nan, scipy.nan
+
+
 ## Half-normal = chi(1, loc, scale)
 
 def halfnormpdf(x, loc=0.0, scale=1.0):
@@ -899,61 +972,158 @@ def halfnormstats(loc=0.0, scale=1.0, full=0):
     return mu, var, _wc(cond, g1), _wc(cond, g2)
 
 
+## Hyperbolic Secant
+
+def hypsecantpdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    return select([scale>0],[1.0/(pi*cosh(x))/scale],scipy.nan)
+
+def hypsecantcdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = 2.0/pi * arctan(exp(x))
+    return select([scale>0],[Cx],scipy.nan)
+
+def hypsecantppf(q, loc=0.0, scale=1.0):
+    q = arr(q)
+    cond = (q>=0) & (q<1) & (scale > 0)
+    return select([cond,q==1],[log(tan(pi*q/2.0)),scipy.inf],scipy.nan)
+
+def hypsecantsf(x, loc=0.0, scale=1.0):
+    return 1.0-hypsecantcdf(x, loc, scale)
+
+def hypsecantisf(q, loc=0.0, scale=1.0):
+    return hypsecantppf(1-q, loc, scale)
+
+def hypsecantstats(loc=0.0, scale=1.0, full=0):
+    cond = (arr(scale)>0)
+    mn = _wc(cond, loc)
+    var = _wc(cond, pi*pi/4*scale*scale)
+    if not full:
+        return mn, var
+    g1, g2 = 0, 2
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+
+## Inverse Normal Distribution
+# scale is gamma from DATAPLOT and B from Regress
+
+def invnormpdf(x, mu, loc=0.0, scale=1.0):
+    x, mu, loc, scale = map(arr,(x, mu, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 1.0/sqrt(2*pi*x**3.0)*exp(-1.0/(2*x)*((x-mu)/mu)**2)
+    return select([(mu<=0)|(scale<=0),x>0],[scipy.nan,Px/scale])
+
+def invnormcdf(x, mu, loc=0.0, scale=1.0):
+    x, mu, loc, scale = map(arr,(x, mu, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = special.errprint(0)
+    fac = sqrt(1.0/x)
+    C1 = stnormcdf(fac*(x-mu)/mu)
+    C1 += exp(2.0/mu)*stnormcdf(-fac*(x+mu)/mu)
+    sv = special.errprint(sv)
+    return select([(mu<=0)|(scale<=0),x>0],[scipy.nan, Cx])
+
+def invnormsf(x, mu, loc=0.0, scale=1.0):
+    return 1-invnormcdf(x, mu, loc, scale)
+
+def _invnormqfunc(x,q,mu,loc,scale):
+    return invnormcdf(x,mu,loc,scale)-q
+
+def _invnormppf(q,mu,loc,scale,x0):
+    import scipy.optimize as optimize
+    return optimize.fsolve(_invnormqfunc,x0,args=(q,mu,loc,scale))
+_vec_invnormppf = special.general_function(_invnormppf,'d')
+
+def invnormppf(q, mu, loc=0.0, scale=1.0, x0=None):
+    mu, loc, scale, q = map(arr,(mu, loc, scale, q))
+    cond = (mu > 0) & (scale > 0) & (0<=q) & (q<=1)
+    if x0 is None:
+        x0 = mu
+    qvals = _vec_invnormppf(q, mu, loc, scale, x0)
+    qvals = where(qvals<0,0,qvals)
+    return where(cond, qvals, scipy.nan)
+
+def invnormisf(q, mu, loc=0.0, scale=1.0):
+    return invnormppf(1-q, mu, loc, scale)
+
+def invnormstats(mu, loc=0.0, scale=1.0, full=0):
+    cond = (arr(mu)>0) & (arr(scale) > 0)
+    mn = _wc(cond, mu*scale + loc)
+    var = _wc(cond, mu**3 * scale**2)
+    if not full:
+        return mn, var
+    g1 = 3*sqrt(mu)
+    g2 = 15*mu
+    return mn, var, _wc(cond,g1), _wc(cond,g2)
+
+    
+
 ## Laplace Distribution
 
-def laplacepdf(x, mu=0.0, scale=1.0):
-    iscale = 1.0/scale
-    return iscale/2.0*exp(-abs(x-mu)*iscale)
+def laplacepdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    return select([scale>0],[0.5*exp(-abs(x))/scale],scipy.nan)
     
-def laplacecdf(x, mu=0.0, scale=1.0):
-    return 0.5*(1+sign(x-mu)*(1-exp(-abs(x-mu)*1.0/scale)))
+def laplacecdf(x, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    return select([scale<=0,x<0],[scipy.nan, 0.5*exp(x)],1-0.5*exp(-x))
 
-def laplacesf(x, mu=0.0, scale=1.0):
-    return 0.5*(1-sign(x-mu)*(1-exp(-abs(x-mu)*1.0/scale)))
+def laplacesf(x, loc=0.0, scale=1.0):
+    return 1.0-laplacecdf(x, loc, scale)
 
-def laplaceppf(q, mu=0.0, scale=1.0):
-    assert all((0<=q) & (q<=1)), _quantstr
-    fac = 0.5+sign(q-0.5)*(0.5-q)
-    return mu+sign(0.5-q)*scale*log(2*fac)
+def laplaceppf(q, loc=0.0, scale=1.0):
+    q, loc, scale = map(arr, (q, loc, scale))
+    cond = (q<0) | (q>1) | (scale<=0)
+    vals1 = log(2*q)*scale + loc
+    vals2 = -log(2-2*q)*scale + loc
+    return select([cond,q<0.5],[scipy.nan,vals1],vals2)
 
-def laplaceisf(p, mu=0.0, scale=1.0):
-    return laplaceppf(1-p, mu, scale)
+def laplaceisf(q, loc=0.0, scale=1.0):
+    return laplaceppf(1-q, loc, scale)
 
-def laplacestats(mu=0.0, scale=1.0, full=0):
-    mn = mu*1.0
-    var = 2.0*scale**2
+def laplacestats(loc=0.0, scale=1.0, full=0):
+    loc, scale = arr(loc), arr(scale)
+    cond = (scale>0)
+    mn = _wc(cond, loc)
+    var = _wc(cond, 2.0*scale**2)
     if not full:
         return mn, var
     g1 = 0
     g2 = 3
-    return mn, var, g1, g2
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
 
 ## Logistic
 
-def logisticpdf(x, mu=0.0, scale=1.0):
+def logisticpdf(x, loc=0.0, scale=1.0):
     iscale = 1.0/scale
-    fac1 = exp((x-mu)*iscale)
-    Px = abs(iscale)*fac1
+    fac1 = exp((x-loc)*iscale)
+    Px = iscale*fac1
     Px /= (1+fac1)**2
-    return Px
+    return select([scale>0],[Px],scipy.nan)
 
-def logisticcdf(x, mu=0.0, scale=1.0):
-    fac1 = exp((mu-x)*1.0/abs(scale))
-    return 1.0/(1+fac1)
+def logisticcdf(x, loc=0.0, scale=1.0):
+    scale = arr(scale)
+    fac1 = exp((loc-x)*1.0/scale)
+    return select([scale>0],[1.0/(1+fac1)],scipy.nan)
 
-def logisticsf(x, mu=0.0, scale=1.0):
-    return 1.0-logisticcdf(x,mu=mu,scale=scale)
+def logisticsf(x, loc=0.0, scale=1.0):
+    return 1.0-logisticcdf(x,loc=loc,scale=scale)
 
-def logisticppf(q, mu=0.0, scale=1.0):
-    q = arr(q)
-    assert all((0<=q) & (q<=1)), _quantstr    
-    return mu - abs(scale)*log((1.0-q)/q)
+def logisticppf(q, loc=0.0, scale=1.0):
+    q, scale = arr(q), arr(scale)
+    cond = (0<=q) & (q<=1) & (scale > 0)
+    vals = loc - scale*log(1.0/q-1)
+    return where(cond, vals, scipy.nan)
 
-def logisticisf(p, mu=0.0, scale=1.0):
-    return logisticppf(1-p, mu, scale)
+def logisticisf(q, loc=0.0, scale=1.0):
+    return logisticppf(1-q, loc, scale)
 
-def logisticstats(mu=0.0, scale=1.0, full=0):
-    mn = mu
+def logisticstats(loc=0.0, scale=1.0, full=0):
+    mn = loc
     var = pi*pi/3.0*scale*scale
     if not full:
         return mn, var
@@ -962,47 +1132,74 @@ def logisticstats(mu=0.0, scale=1.0, full=0):
     return mn, var, g1, g2
 
 ## Lognorm
+## std is a shape parameter and is the variance of the underlying
+##    distribution.
+## the mean of the underlying distribution is log(scale)
 
-def lognormpdf(x, mu=0.0, std=1.0):
-    x = arr(x)
-    Px = exp(-(log(x)-mu)**2 / (2*std**2))
+def lognormpdf(x, std=1.0, loc=0.0, scale=1.0):
+    x, std, loc, scale = map(arr, (x, std, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = exp(-log(x)**2 / (2*std**2))
     Px /= std*x*sqrt(2*pi)
-    return where(x<=0,0,Px)
+    return select([(std<=0)|(scale<=0),x>0],[scipy.nan,Px/scale])
 
-def lognormcdf(x, mu=0.0, std=1.0):
-    x = arr(x)
-    x = where(x<0,0.0,x)
-    return 0.5*(1+special.erf((log(x)-mu)/(sqrt(2)*std)))
+def lognormcdf(x, std=1.0, loc=0.0, scale=1.0):
+    x, std, loc, scale = map(arr, (x, std, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    cond = (scale > 0) & (std > 0)
+    sv = errp(0)
+    Cx = normcdf(log(x)/std)
+    sv = errp(sv)
+    return select([cond],[Cx],scipy.nan)
 
-def lognormsf(x, mu=0.0, std=1.0):
-    return 1-lognormcdf(x, mu, std)
+def lognormsf(x, std=1.0, loc=0.0, scale=1.0):
+    return 1-lognormcdf(x, std, loc, scale)
 
-def lognormppf(q, mu=0.0, std=1.0):
-    return exp(normalppf(q,mu,std))
+def lognormppf(q, std=1.0, loc=0.0, scale=1.0):
+    sv = errp(0)
+    vals = exp(normppf(q)*std)*scale + loc
+    sv = errp(sv)
+    return vals
 
-def lognormisf(p, mu=0.0, std=1.0):
-    return exp(normalisf(p,mu,std))
+def lognormisf(p, std=1.0, loc=0.0, scale=1.0):
+    sv = errp(0)
+    vals = exp(normisf(p)*std)*scale + loc
+    sv = errp(sv)
+    return vals
 
-def lognormstats(mu=0.0, std=1.0, full=0):
+def lognormstats(std=1.0, loc=0.0, scale=1.0, full=0):
+    cond = (arr(std)>0) & (arr(scale)>0)
     s2 = std*std
-    mn = exp(mu+s2/2.0)
-    fac1 = exp(s2)-1
-    var = exp(s2+2*mu)*fac1
+    mn = _wc(cond, exp(s2/2.0)*scale + loc)
+    fac1 = exp(s2)
+    fac2 = fac1-1
+    var = _wc(cond, fac1*fac2*scale*scale)
     if not full:
         return mn, var
-    g1 = sqrt(fac1)*(2+exp(s2))
-    g2 = exp(4*s2) + 2*exp(3*s2)+3*exp(2*s2)-6.0
-    return mn, var, g1, g2
+    g1 = sqrt(fac2)*(2+fac1)
+    g2 = polyval([1,2,3,0,-6],fac1)
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
     
-# Gibrat's distribution is just default lognormal (think of it
-#   as a distribution with one argument).
+# Gibrat's distribution is just default lognormal
 
-gilbratpdf = lognormpdf
-gilbratcdf = lognormcdf
-gilbratsf = lognormsf
-gilbratppf = lognormppf
-gilbratisf = lognormisf
-gilbratstats = lognormstats
+def gilbratpdf(x):
+    return lognormpdf(x)
+
+def gilbratcdf(x):
+    return lognormcdf(x)
+
+def gilbratsf(x):
+    return lognormsf(x)
+
+def gilbratppf(x):
+    return lognormppf(x)
+
+def gilbratisf(x):
+    return lognormisf(x)
+
+def gilbratstats(full=0):
+    return lognormstats(full=full)
+
 
 
 # MAXWELL
@@ -1046,6 +1243,16 @@ def maxwellstats(scale=1.0, full=0):
     g1 = sqrt(2)*(32-10*pi)/(3*pi-8.0)**1.5
     g2 = (-12*pi*pi+160*pi-384)/(3*pi-8.0)**2
     return mu, var, _wc(cond, g1), _wc(cond, g2)
+
+
+# Nakagami (cf Chi)
+
+def nakagamipdf(x, df, loc=0.0, scale=1.0):
+    x, loc, scale = map(arr, (x, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = 2*df**df*x**(2*df-1.0)/special.gamma(df)*x**(2*df-1.0)*exp(-df*v*x)
+    return select([(df<=0)|(scale<=0),x>0],[scipy.nan,Px/scale])
+    
 
 # Non-central chi-squared
 
@@ -1398,6 +1605,44 @@ def paretostats(mode=1.0, shape=4.0, full=0):
     return mn, var, g1, g2
 
 
+## Power distribution
+##   Special case of beta dist. with d =1.0
+
+def powerpdf(x, a, loc=0.0, scale=1.0):
+    x, a, loc, scale = map(arr, (x, a, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = a*x**(a-1.0)
+    return select([(a<=0)|(scale<=0),(x>=0)&(x<=1)],[scipy.nan, Px/scale])
+
+def powercdf(x, a, loc=0.0, scale=1.0):
+    x, a, loc, scale = map(arr, (x, a, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = x**a
+    return select([(a<=0)|(scale<=0),(x>1),(x>=0)],[scipy.nan, 1, Px/scale])
+
+def powersf(x, a, loc=0.0, scale=1.0):
+    return 1.0-powercdf(x, a, loc, scale)
+
+def powerppf(q, a, loc=0.0, scale=1.0):
+    q, a, loc, scale = map(arr, (q, a, loc, scale))
+    vals = pow(q, 1.0/a)
+    cond = (q>=0)&(q<=1)&(a>0)&(scale>0)
+    return _wc(cond, vals)
+
+def powerisf(q, a, loc=0.0, scale=1.0):
+    return powerppf(1-q, a, loc, scale)
+
+def powerstats(a, loc=0.0, scale=1.0, full=0):
+    a, scale = arr(a), arr(scale)
+    cond = (a>0) & (scale>0)
+    mn = _wc(cond, a/(a+1.0)*scale + loc)
+    var = _wc(cond, a*(a+1.0)/(a+1.0)**2 * scale**2)
+    if not full:
+        return mn, var
+    g1 = 2*(1.0-a)*sqrt((a+2.0)/a/(a+3.0))
+    g2 = 6*polyval([1,-1,-6,2.],a)/(a*(a+3)*(a+4.0))
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
 # Rayleigh distribution (this is chi with df=2 and loc=0.0)
 # scale is the mode.
 def rayleighpdf(r, scale=1.0):
@@ -1591,62 +1836,25 @@ def von_misesstats(mode=0.0, shape=1.0, full=0):
     return mn, var, scipy.nan, scipy.nan
 
 
-## Wald distribution (Inverse Normal)
+## Wald distribution (Inverse Normal with shape parameter mu=1.0)
 
-def waldpdf(x, mean=1.0, scale=1.0):
-    A, B = map(arr,(mean, scale))
-    assert all((A > 0) & (B > 0)), _posstr
-    x = arr(x)*1.0
-    Px = sqrt(B/(2*pi*x**3.0))*exp(-B/(2*x)*((x-A)/A)**2)
-    Px = where(x<=0,0,Px)
-    return Px
+def waldpdf(x, loc=0.0, scale=1.0):
+    return invnormpdf(x, 1.0, loc, scale)
 
-def waldcdf(x, mean=1.0, scale=1.0):
-    A, B = map(arr,(mean, scale))    
-    assert all((A > 0) & (B > 0)), _posstr
-    x = arr(x)*1.0
-    x = where(x<0,0,x)
-    sv = special.errprint(0)
-    fac = sqrt(B/x)
-    C1 = stnormcdf(fac*(x-A)/A)
-    C1 += exp(2.0*B/A)*stnormcdf(-fac*(x+A)/A)
-    sv = special.errprint(sv)
-    return where(x==0,0.0,C1)
+def waldcdf(x, loc=0.0, scale=1.0):
+    return invnormcdf(x, 1.0, loc, scale)
 
-def waldsf(x, mean=1.0, scale=1.0):
-    return 1-waldcdf(x, mean, scale)
+def waldsf(x, loc=0.0, scale=1.0):
+    return invnormsf(x, 1.0, loc, scale)
 
-def _waldqfunc(x,q,mean,scale):
-    return waldcdf(x,mean,scale)-q
+def waldppf(q, loc=0.0, scale=1.0, x0=None):
+    return invnormppf(q, 1.0, loc, scale)
 
-def _waldppf(q,mean,scale,x0):
-    import scipy.optimize as optimize
-    return optimize.fsolve(_waldqfunc,x0,args=(q,mean,scale))
-_vec_waldppf = special.general_function(_waldppf,'d')
+def waldisf(q, loc=0.0, scale=1.0):
+    return invnormisf(q, 1.0, loc, scale)
 
-def waldppf(q, mean=1.0, scale=1.0, x0=None):
-    A, B, q = map(arr,(mean, scale, q))
-    assert all((A > 0) & (B > 0)), _posstr
-    assert all((0<=q) & (q<=1)), _quanstr
-    if x0 is None:
-        x0 = mean
-    qvals = _vec_waldppf(q, mean, scale, x0)
-    return where(qvals<0,0,qvals)
-
-def waldisf(p, mean=1.0, scale=1.0):
-    return waldppf(1-p, mean, scale)
-
-def waldstats(mean=1.0, scale=1.0, full=0):
-    A, B = map(arr,(mean, scale))    
-    assert all((A > 0) & (B > 0)), _posstr
-    iB = 1.0/B
-    mn = A
-    var = A**3 * iB
-    if not full:
-        return mn, var
-    g1 = 3*sqrt(A*iB)
-    g2 = 15*A*iB
-    return mn, var, g1, g2
+def waldstats(loc=0.0, scale=1.0, full=0):
+    return invnormstats(1.0, loc, scale, full=full)
 
 ## Weibull
 
