@@ -904,7 +904,7 @@ class image_object(property_object):
 
         axis_lengths = array((self.x_bounds[1]-self.x_bounds[0],
                               self.y_bounds[1]-self.y_bounds[0]))
-        self.image_pixels_per_axis_unit =array(matrix.shape,Float)/axis_lengths
+        self.image_pixels_per_axis_unit =array((matrix.shape[1], matrix.shape[0]),Float)/axis_lengths
         self.image_origin = array((self.x_bounds[0],self.y_bounds[0]))
         
     def scale_magnitude(self,image,colormap):
@@ -938,8 +938,9 @@ class image_object(property_object):
         
         pixels = take( cmap, scaled_mag)
         del scaled_mag
+        # need to transpose pixels in memory...
         bitmap = pixels.astype(UnsignedInt8).tostring()
-        image = wx.wxEmptyImage(self.matrix.shape[0],self.matrix.shape[1])
+        image = wx.wxEmptyImage(self.matrix.shape[1],self.matrix.shape[0])
         image.SetData(bitmap)
         return image
         
@@ -959,9 +960,9 @@ class image_object(property_object):
 
     def draw(self,dc):
         sz = array((self.the_image.GetWidth(),self.the_image.GetHeight()))
-        sz = sz* abs(self.scale)
-        sz = sz.astype(Int)
-        scaled_image = self.the_image.Scale(abs(sz[0]),abs(sz[1]))
+        sz = sz* self.scale
+        sz = abs(sz.astype(Int))
+        scaled_image = self.the_image.Scale(sz[0],sz[1])
         bitmap = scaled_image.ConvertToBitmap()
 
         dc.DrawBitmap(bitmap, self.origin[0]+1, 
