@@ -1634,11 +1634,11 @@ Returns: chi-square statistic, associated p-value
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
 
-from special import binomcdf, binomcdfc, binomcdfinv, betacdf, betaq, fcdf, \
-     fcdfc, fp, gammacdf, gammacdfc, gammaq, negbinomcdf, neginomcdfinv, \
-     possioncdf, poissioncdfc, possioncdfinv, studentcdf, studentq, \
-     chi2cdf, chi2cdfc, chi2p, normalcdf, normalq, smirnovcdfc, smirnovp, \
-     kolmogorovcdfc, kolmogorovp
+# from special import binomcdf, binomcdfc, binomcdfinv, betacdf, betaq, fcdf, \
+#      fcdfc, fp, gammacdf, gammacdfc, gammaq, negbinomcdf, neginomcdfinv, \
+#      possioncdf, poissioncdfc, possioncdfinv, studentcdf, studentq, \
+#      chi2cdf, chi2cdfc, chi2p, normalcdf, normalq, smirnovcdfc, smirnovp, \
+#      kolmogorovcdfc, kolmogorovp
 
 zprob = special.normalcdf
 erfc = special.erfc

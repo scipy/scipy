@@ -3,16 +3,11 @@
 import os
 from glob import glob
 from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path, default_config_dict
+from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 
 def configuration(parent_package=''):
-    if parent_package:
-        parent_package += '.'
+    config = default_config_dict('special',parent_package)
     local_path = get_path(__name__)
-    config = default_config_dict()
-
-    if parent_package:
-        config['packages'].append(parent_package+'special')
 
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
     cephes = glob(os.path.join(local_path,'cephes','*.c'))
@@ -32,8 +27,8 @@ def configuration(parent_package=''):
     sources = ['cephesmodule.c', 'amos_wrappers.c',
                'toms_wrappers.c','ufunc_extras.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(parent_package+'special.cephes',sources,
-                    libraries = ['amos','toms']
+    ext = Extension(dot_join(parent_package,'special.cephes'),sources,
+                    libraries = ['amos','toms','c_misc','cephes']
                     )
     config['ext_modules'].append(ext)
 

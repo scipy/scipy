@@ -7,23 +7,23 @@ import os, sys, string
 # this isn't in scipy_distutils -- need to figure out clean way to do that
 from distutils import dep_util
 from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path, default_config_dict
+from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 import interface_gen
 from scipy_distutils.atlas_info import get_atlas_info
 
 # needed now for pyf_extensions
-import f2py2e
 
 if os.name == 'nt':
     from scipy_distutils.mingw32_support import *
 
 def configuration(parent_package=''):
-    if parent_package:
-        parent_package = parent_package + '.'    
-    config = default_config_dict()
-    config['packages'].append(parent_package+'linalg')
-    config['packages'].append(parent_package+'linalg.tests')
-    config['ext_modules'].extend(extensions(parent_package+'linalg'))
+    config = default_config_dict('linalg',parent_package)
+    local_path = get_path(__name__)
+    test_path = os.path.join(local_path,'tests')
+
+    config['packages'].append(dot_join(parent_package,'linalg.tests'))
+    config['package_dir']['linalg.tests'] = test_path
+    config['ext_modules'].extend(extensions(dot_join(parent_package,'linalg')))
     return config
        
 def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
@@ -37,9 +37,9 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
     
     local_path = get_path(__name__)
     mod_file = mod_name + '.pyf'
-    
-    if parent_package and parent_package[-1] != '.':
-        parent_package = parent_package + '.'    
+
+    #if parent_package and parent_package[-1] != '.':
+    #    parent_package = parent_package + '.'    
     sources = [os.path.join(local_path,x) for x in sources]
 
     from distutils.dir_util import mkpath
@@ -57,14 +57,14 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
             
     if dep_util.newer_group(sources,mod_file):
         gen_function(local_path,output_path)
-    
+
     print 'file:', mod_file    
-    ext = Extension(parent_package+mod_name,[mod_file],
-                     library_dirs=atlas_library_dirs,
-                     libraries = lapack_libraries,
-                     define_macros=define_macros,
-                    # XXX --no-wrap-functions is only needed for clapack
-                     f2py_options=['--no-wrap-functions'],
+    ext = Extension(dot_join(parent_package,mod_name),[mod_file],
+                    library_dirs=atlas_library_dirs,
+                    libraries = lapack_libraries,
+                    define_macros=define_macros,
+                    #XXX --no-wrap-functions is only needed for clapack
+                    f2py_options=['--no-wrap-functions'],
                     )
 
     return ext                
@@ -98,3 +98,7 @@ def extensions(parent_package = ''):
     
     return ext_modules
 
+if __name__ == '__main__':    
+    from scipy_distutils.core import setup
+    #print configuration()
+    setup(**configuration())

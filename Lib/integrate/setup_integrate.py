@@ -3,7 +3,7 @@
 import os
 from glob import glob
 from scipy_distutils.core import Extension
-from scipy_distutils.misc_util import get_path, default_config_dict
+from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 from scipy_distutils.misc_util import fortran_library_item, update_version
 from scipy_distutils.atlas_info import get_atlas_info
 
@@ -38,20 +38,20 @@ def configuration(parent_package=''):
     # quadpack
     sources = ['_quadpackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(parent_package+'integrate._quadpack',sources,
+    ext = Extension(dot_join(parent_package,'integrate._quadpack'),sources,
                     libraries=['quadpack'])
     config['ext_modules'].append(ext)
 
     # odepack
     sources = ['_odepackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(parent_package+'integrate._odepack',sources,
+    ext = Extension(dot_join(parent_package,'integrate._odepack'),sources,
                     libraries=['odepack'])
     config['ext_modules'].append(ext)
 
     # vode
     sources = [os.path.join(local_path,'vode.pyf')]
-    ext = Extension(parent_package+'integrate.vode',
+    ext = Extension(dot_join(parent_package,'integrate.vode'),
                     sources,
                     library_dirs=atlas_library_dirs,
                     libraries=['odepack'])

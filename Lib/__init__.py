@@ -4,9 +4,10 @@
     #print "Warning:  wxPython not loaded"
 
 #get version
-import scipy_version
-__version__ = scipy_version.scipy_version
-del scipy_version
+#import scipy_version
+#__version__ = scipy_version.scipy_version
+#del scipy_version
+from __version__ import version as __version__
 
 # SciPy has levels
 # Level 0 -- Numeric and core routines in basic.py, misc.py, and handy.py
@@ -83,6 +84,7 @@ try:
     modules2all(__all__, _level1, globals())
     somenames2all(__all__, _partials1, globals())
 except ImportError:
+    print sys.exc_value
     print "Warning: FFT package not found. Some names will not be available"
 
 # Level 1a
