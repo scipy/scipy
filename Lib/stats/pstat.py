@@ -51,6 +51,8 @@ Additions, suggestions, or comments are welcome (strang@nmr.mgh.harvard.edu).
 to scipy-users@scipy.org or scipy-dev@scipy.org).
 """
 
+from Numeric import asarray
+import scipy_base.fastumath
 import string, sys, os, copy, math, stats
 from types import *
 

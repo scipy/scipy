@@ -294,17 +294,6 @@ def mean(a,axis=-1):
     a, axis = _chk_asarray(a, axis)
     return add.reduce(a,axis)/float(a.shape[axis])
 
-def median(a, axis=-1):
-    """Returns a median of m along the first dimension of m.
-    """
-    a, axis = _chk_asarray(a, axis)
-    sorted = sort(a,axis)
-    if a.shape[0] % 2 == 1:
-        return sorted[int(a.shape[0]/2)]
-    else:
-        index=a.shape[0]/2
-        return (sorted[index-1]+sorted[index])/2.0
-
 def cmedian (a,numbins=1000):
     """Calculates the COMPUTED median value of an array of numbers, given the
     number of bins to use for the histogram (more bins approaches finding the
@@ -326,34 +315,29 @@ def cmedian (a,numbins=1000):
     median = LRL + ((len(a)/2.0-cfbelow)/float(freq))*binsize # MEDIAN
     return median
 
+def median (a,axis=-1):
+    """ Returns the median of the passed array along the given axis.
+    If there is an even number of entires, the mean of the
+    2 middle values is returned.
 
-def medianscore (a,axis=-1):
-    """ Returns the 'middle' score of the passed array.  If there is an even
-    number of scores, the mean of the 2 middle scores is returned.  Can function
-    with 1D arrays, or on the FIRST axis of 2D arrays (i.e., axis can
-    be None, to pre-flatten the array, or else axis must equal 0).
-
-    Returns: 'middle' score of the array, or the mean of the 2 middle scores
+    Returns: median of the array, or the mean of the 2 middle values.
     """
     a, axis = _chk_asarray(a, axis)
     a = sort(a,axis)
+    indx = int(a.shape[axis]/2.0)
     if a.shape[axis] % 2 == 0:   # if even number of elements
-        indx = a.shape[axis]/2   # integer division correct
-        median = asarray(a[indx]+a[indx-1]) / 2.0
+        median = asarray(take(a,[indx],axis)+take(a,[indx-1],axis)) / 2.0
     else:
-        indx = a.shape[axis] / 2 # integer division correct
         median = take(a,[indx],axis)
-        if median.shape == (1,):
-            median = median[0]
-    return median
+    return scipy_base.squeeze(median)
 
 def mode(a, axis=-1):
-    """Returns an array of the modal (most common) score in the passed array.
-    If there is more than one such score, ONLY THE FIRST is returned.
-    The bin-count for the modal values is also returned.  Operates on whole
+    """Returns an array of the modal (most common) value in the passed array.
+    If there is more than one such value, ONLY THE FIRST is returned.
+    The bin-count for the modal bins is also returned.  Operates on whole
     array (axis=None), or on a given axis.
 
-    Returns: array of bin-counts for mode(s), array of corresponding modal values
+    Returns: array of bin-counts for mode(s), array of corresponding modal value
     """
 
     a, axis = _chk_asarray(a, axis)
@@ -368,7 +352,7 @@ def mode(a, axis=-1):
         mostfrequent = where(greater(counts,oldcounts),score,oldmostfreq)
         oldcounts = where(greater(counts,oldcounts),counts,oldcounts)
         oldmostfreq = mostfrequent
-    return oldcounts, mostfrequent
+    return mostfrequent, oldcounts
 
 def tmean(a,limits=None,inclusive=(1,1)):
      """Returns the arithmetic mean of all values in an array, ignoring values
