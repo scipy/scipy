@@ -2,19 +2,18 @@
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 #from _Graphics import *
 #import PIL.ImageTk,PIL.Image
 #ImageTk = PIL.ImageTk
 #Image = PIL.Image
 import gist, types, string, os
 import Mplot
-import FFT
-import mIO
+import scipy.io as io
 
 
 def read_act(filename):
-    fid = mIO.fopen('%s.act'%filename)
+    fid = io.fopen('%s.act'%filename)
     p = fid.fread(256*3,'byte')
     fid.close()
     p.shape = (256,3)

@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 from mesh3d import Mesh3d
 from graph3d import Graph3d
  

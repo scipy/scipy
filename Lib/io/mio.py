@@ -2,8 +2,8 @@
 
 from Numeric import *
 from MLab import squeeze
-from scipy import r1array
-from fastumath import *
+from scipy_base import r1array
+from scipy_base.fastumath import *
 import numpyio
 import struct, os, sys
 import types

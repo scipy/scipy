@@ -1,4 +1,4 @@
-from fastumath import *
+from scipy_base.fastumath import *
 from scipy import *
 import scipy.limits
 import sys

@@ -2,8 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from fastumath import *
-from MLab import rand
+from scipy_base.fastumath import *
 from ezplot import *
 
 def paws ( ) :
@@ -14,7 +13,9 @@ print "This program tests ezplot. Type demo () to begin the test."
 paws ()
 
 # ezcshow("false")
-def demo () :
+def demo ():
+   import scipy
+   rand = scipy.rand
    vsf = 0.
    c = 1
    s = 1000.

@@ -103,7 +103,7 @@ following conditions:
 import Numeric as Num
 import types
 import string, time, array
-from fastumath import sqrt, log, floor, arccos, fmod, cos, exp, tan, arctan2
+from scipy_base.fastumath import sqrt, log, floor, arccos, fmod, cos, exp, tan, arctan2
 acos = arccos
 
 

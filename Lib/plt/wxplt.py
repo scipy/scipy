@@ -1,7 +1,7 @@
 from wxPython import wx
 import string
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 import time
 
 from plot_utility import *

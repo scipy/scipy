@@ -9,7 +9,7 @@ import scipy
 import scipy.special as special
 import Numeric
 from Numeric import alltrue, where, arange, put, putmask, nonzero, ravel
-from fastumath import *
+from scipy_base.fastumath import *
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray

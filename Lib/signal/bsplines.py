@@ -1,7 +1,7 @@
 import scipy.special
 from scipy.special import general_function
 from Numeric import sarray, arange, where, array, zeros
-from fastumath import sqrt, exp, greater, equal, cos, add, sin
+from scipy_base.fastumath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 
 def factorial(n):

@@ -3,7 +3,7 @@
 *"""
 
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 import unittest
 from scipy_test import assert_array_equal, assert_equal
 from scipy_test import assert_almost_equal

@@ -4,7 +4,7 @@
 # this tells you whether an item is a scalar or not.
 from types import *
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 
 def is_scalar (x) :
    if type (x) == StringType : return 1

@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 import NarPlotter
 from MLab import rand
 from graph3d import *

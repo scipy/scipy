@@ -34,8 +34,9 @@
 #               General layout classes
 #----------------------------------------------------------
 from Numeric import *
-from fastumath import *
-import scipy.limits, scipy.misc
+from scipy_base.fastumath import *
+import scipy_base.limits as limits
+import scipy_base as misc
 
 LEFT,RIGHT,TOP,BOTTOM = 0,1,2,3 # used by same_as() method
 
@@ -394,7 +395,7 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
     
     # hmmm, all the nan stuff should have been handled before this 
     # point...
-    #from scipy.misc import nan_to_num, isinf
+    #from misc import nan_to_num, isinf
     #if is_number(bounds_info[0]): lower = nan_to_num(bounds_info[0])
     #else:                         lower = nan_to_num(data_bounds[0])
     #if is_number(bounds_info[1]): upper = nan_to_num(bounds_info[1])
@@ -568,5 +569,5 @@ def auto_interval(data_bounds):
     #print 'returned:',interval*magnitude
     result = interval*magnitude
     if result == 0.0:
-        result = scipy.limits.float_epsilon
+        result = limits.float_epsilon
     return result

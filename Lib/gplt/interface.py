@@ -1,7 +1,8 @@
 import new_plot
 pyPlot = new_plot
 from Numeric import *
-from fastumath import *
+from scipy_base.scimath import *
+
 
 def _intialize():
 	global _figure; global _active

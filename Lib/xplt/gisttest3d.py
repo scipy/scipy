@@ -6,7 +6,7 @@ from mesh3d import *
 from surface import *
 
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 
 from arrayfns import *
 

@@ -2,7 +2,7 @@
 """
 
 import MLab
-from fastumath import *
+from scipy_base.fastumath import *
 import Numeric
 from Numeric import concatenate
 Num = MLab

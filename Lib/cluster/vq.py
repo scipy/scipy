@@ -16,10 +16,10 @@
     
 """
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 import scipy
 from scipy.stats import randint
-from scipy.misc import x_common_type as _common_type
+from scipy_base import common_type as _common_type
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis

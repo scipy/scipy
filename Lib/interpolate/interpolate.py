@@ -7,8 +7,8 @@
 __all__ = ['linear1d']
 
 from Numeric import *
-from fastumath import *
-from scipy import r1array
+from scipy_base.fastumath import *
+from scipy_base import r1array
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays

@@ -49,7 +49,7 @@ class test_mean(unittest.TestCase):
     def check_default_rows(self):
         z = array(((1,2),(3,4)),Float)
         val = mean(z)
-        desired = array((1.5.,3.5))
+        desired = array((1.5,3.5))
         assert_array_equal(val,desired)
     def check_cols(self):
         z = array(((1,2),(3,4)),Float)

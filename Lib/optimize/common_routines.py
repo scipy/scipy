@@ -1,5 +1,5 @@
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 
 def myasarray(a):
     if type(a) in [type(1.0),type(1L),type(1),type(1j)]:

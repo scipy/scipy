@@ -1,7 +1,7 @@
 import os, sys,time, tempfile
 from types import *
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 
 try:
     import win32pipe

@@ -8,7 +8,7 @@ from types import *
 Num = Numeric
 import scipy.special
 special = scipy.special
-from fastumath import *
+from scipy_base.fastumath import *
 
 ArgumentError = "ArgumentError"
 

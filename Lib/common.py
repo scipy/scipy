@@ -5,6 +5,7 @@
 import Numeric
 import types
 from scipy import special, stats
+from scipy_base import fastumath
 
 __all__ = ['factorial','comb','rand','randn']
     

@@ -16,16 +16,16 @@
 # !! matrix multiply here to ensure integrity of tests.
 
 from Numeric import *
-from fastumath import *
+from scipy_base.fastumath import *
 #import scipy.linalg.fblas as fblas
 
 import sys
 sys.path.append('..')
 import fblas
 import unittest
-from scipy_test import assert_array_equal, assert_array_almost_equal
+from scipy_base.scipy_test import assert_array_equal, assert_array_almost_equal
 
-from scipy_test import assert_almost_equal,assert_equal
+from scipy_base.scipy_test import assert_almost_equal,assert_equal
 import scipy.misc
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
