@@ -44,9 +44,9 @@ smirnov (n, e)
   double evn, omevn, p, t, c, lgamnp1;
 
   if (n <= 0 || e < 0.0 || e > 1.0)
-    return (0.0/0.0);
+    return (NAN);
   if (e == 0.0) return 1.0;
-  nn = floor ((double) n * (1.0 - e));
+  nn = (int) (floor ((double) n * (1.0 - e)));
   p = 0.0;
   if (n < 1013)
     {
