@@ -1823,7 +1823,11 @@ The standard form for the gamma distribution is
 \begin_inset Formula $\left(\alpha>0\right)$
 \end_inset 
 
- 
+ valid for 
+\begin_inset Formula $x\geq0$
+\end_inset 
+
+.
 \begin_inset Formula \begin{eqnarray*}
 f\left(x;\alpha\right) & = & \frac{1}{\Gamma\left(\alpha\right)}x^{\alpha-1}e^{-x}\\
 F\left(x;\alpha\right) & = & \Gamma\left(\alpha,x\right)\\
@@ -3901,10 +3905,6 @@ A normal distribution restricted to lie within a certain range given by
 \end_inset 
 
 .
- Thus for 
-\begin_inset Formula $x\in\left[A,B\right]:$
-\end_inset 
-
  Notice that this 
 \begin_inset Formula $A$
 \end_inset 
@@ -3918,11 +3918,22 @@ A normal distribution restricted to lie within a certain range given by
 \end_inset 
 
  in standard form.
- 
+ For 
+\begin_inset Formula $x\in\left[A,B\right]$
+\end_inset 
+
+ we get 
 \begin_inset Formula \begin{eqnarray*}
 f\left(x;A,B\right) & = & \frac{\phi\left(x\right)}{\Phi\left(B\right)-\Phi\left(A\right)}\\
 F\left(x;A,B\right) & = & \frac{\Phi\left(x\right)-\Phi\left(A\right)}{\Phi\left(B\right)-\Phi\left(A\right)}\\
 G\left(q;A,B\right) & = & \Phi^{-1}\left[q\Phi\left(B\right)+\Phi\left(A\right)\left(1-q\right)\right]\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula \begin{eqnarray*}
+\phi\left(x\right) & = & \frac{1}{\sqrt{2\pi}}e^{-x^{2}/2}\\
+\Phi\left(x\right) & = & \int_{-\infty}^{x}\phi\left(u\right)du.\end{eqnarray*}
 
 \end_inset 
 

@@ -1257,7 +1257,7 @@ Exponential Power distribution
 ## Faigue-Life (Birnbaum-Sanders)
 class fatiguelife_gen(rv_continuous):
     def _rvs(self, c):
-        z = norm(size=self._size)
+        z = norm.rvs(size=self._size)
         U = random(size=self._size)
         fac = 2 + c*c*z*z
         det = sqrt(fac*fac - 4)
@@ -1353,7 +1353,7 @@ F distribution
 
 class foldnorm_gen(rv_continuous):
     def _rvs(self, c):
-        return abs(norm(mu=c,size=self._size))
+        return abs(norm.rvs(mu=c,size=self._size))
     def _pdf(self, x, c):
         return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
     def _cdf(self, x, c,):
@@ -1713,7 +1713,7 @@ Half-logistic distribution
 
 class halfnorm_gen(rv_continuous):
     def _rvs(self):
-        return abs(norm(size=self._size))
+        return abs(norm.rvs(size=self._size))
     def _pdf(self, x):
         return sqrt(2.0/pi)*exp(-x*x/2.0)
     def _cdf(self, x):
@@ -1957,7 +1957,7 @@ Log-Laplace distribution (Log Double Exponential)
 
 class lognorm_gen(rv_continuous):
     def _rvs(self, s):
-        return exp(s * norm(size=self._size))
+        return exp(s * norm.rvs(size=self._size))
     def _pdf(self, x, s):
         Px = exp(-log(x)**2 / (2*s**2))
         return Px / (s*x*sqrt(2*pi))
