@@ -78,7 +78,7 @@ brenth(double (*f)(double, void*), double xa, double xb, double xtol, double rto
                 stry = -fcur*(fblk - fpre)/(fblk*dpre - fpre*dblk);
             }
             
-            if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - tol)) {
+            if (2*fabs(stry) < DMIN(fabs(spre), 3*fabs(sbis) - tol)) {
                 /* accept step */
                 spre = scur; scur = stry;
             }

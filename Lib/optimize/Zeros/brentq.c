@@ -78,7 +78,7 @@ brentq(double (*f)(double, void*), double xa, double xb, double xtol, double rto
                     /(dblk*dpre*(fblk - fpre));
             }
             
-      if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - tol)) {
+      if (2*fabs(stry) < DMIN(fabs(spre), 3*fabs(sbis) - tol)) {
           /* good short step */
           spre = scur; scur = stry;
       }

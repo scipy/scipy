@@ -27,7 +27,7 @@ ridder(double (*f)(double, void*), double xa, double xb, double xtol, double rto
         xm = xa + dm;
         fm = (*f)(xm,params);
         dn = SIGN(fb - fa)*dm*fm/sqrt(fm*fm - fa*fb);
-        xn = xm - SIGN(dn)*MIN(fabs(dn),fabs(dm) - .5*tol);
+        xn = xm - SIGN(dn)*DMIN(fabs(dn),fabs(dm) - .5*tol);
         fn = (*f)(xn,params);
         params->funcalls++;
         if (fn*fm < 0.0) {
