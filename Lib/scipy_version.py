@@ -1,1 +1,1 @@
-version = '0.1.0'
+scipy_version = "0.2.0"
