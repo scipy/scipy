@@ -69,9 +69,9 @@ def setup_package(ignore_packages=[]):
 
         packages_path = ['Lib']
         if command_sdist:
-            name = 'SciPy'
+            name = 'Scipy'
         else:
-            name = 'SciPy_complete'
+            name = 'Scipy_complete'
             packages_path.append('scipy_core')
         config_list = [{'name': name,
                         'packages':['scipy','scipy.tests'],
