@@ -1,4 +1,4 @@
-"""Binary File input and output.
+"""Data input and output.
 
   Classes
 

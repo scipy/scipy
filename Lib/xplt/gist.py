@@ -61,7 +61,7 @@ def moush(*arg):
 
 # Create an encapsulated PostScript file.  Requires Ghostscript and its
 # associated ps2epsi utility.
-def eps(name):
+def eps(name, nops2epsi=0):
   import os
   totalname = name
   apath, basename = os.path.split(name)
@@ -69,9 +69,12 @@ def eps(name):
   window (hcp = name, dump = 1, legends = 0)
   hcp ()
   window (hcp="")
-  os.system ("ps2epsi " + name)
-  os.system ("rm " + name)
-  os.system ("mv %s.epsi %s.eps" % (basename, totalname))
+  if not nops2epsi:
+      os.system ("ps2epsi " + name)
+      os.system ("rm " + name)
+      os.system ("mv %s.epsi %s.eps" % (basename, totalname))
+  else:
+      os.system ("mv %s.ps %s.eps" % (totalname, totalname))
 
 def xytitles(xtitle = "", ytitle = "", delta = (0.,0.)):
   vp = viewport()

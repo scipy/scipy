@@ -958,6 +958,16 @@ def surf(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
     [xmin,xmax,ymin,ymax] = pl3d.draw3(1)
     gist.limits(xmin,xmax,ymin,ymax)
     pl3d.gnomon(gnomon)
+
+def expand_limits(percent):
+    """Expand the limits by a certain percentage.
+    """
+    if percent > 1:
+        percent = percent / 100.0
+    xmin, xmax, ymin, ymax, flag = gist.limits()
+    dx = (xmax-xmin)*percent /2.0
+    dy = (ymax-ymin)*percent/2.0
+    gist.limits(xmin-dx,xmax+dx,ymin-dy,ymax+dy)
     
 def bode(w,H,win=0):
     """Plot a bode plot of the transfer function H as a function of w.
@@ -978,4 +988,5 @@ def bode(w,H,win=0):
     gist.gridxy(1,1)
     xlabel('Frequency (rad/s)')
     ylabel('Phase (rad)',deltax=-0.016)
+
     
