@@ -1,0 +1,21 @@
+>>> from MLab import diag, asarray
+>>> from scipy.optimize import fminNCG
+>>> def rosen_hess_p(x,p):
+        x = asarray(x)
+        Hp = zeros(len(x),x.typecode())
+        Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
+        Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
+                   -400*x[1:-1]*p[2:]
+        Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
+        return Hp
+
+>>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+>>> xopt = fminNCG(rosen, x0, rosen_der, fhess_p=rosen_hess_p)
+Optimization terminated successfully.
+         Current function value: 0.000000
+         Iterations: 20
+         Function evaluations: 42
+         Gradient evaluations: 20
+         Hessian evaluations: 44
+>>> print xopt
+[ 1.      1.      1.      0.9999  0.9999]

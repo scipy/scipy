@@ -44,30 +44,25 @@ def rosen_der(x):
     der[-1] = 200*(x[-1]-x[-2]**2)
     return der
 
-def rosen3_hess_p(x,p):
-    assert(len(x)==3)
-    assert(len(p)==3)
-    hessp = Num.zeros((3,),x.typecode())
-    hessp[0] = (2 + 800*x[0]**2 - 400*(-x[0]**2 + x[1])) * p[0] \
-               - 400*x[0]*p[1] \
-               + 0
-    hessp[1] = - 400*x[0]*p[0] \
-               + (202 + 800*x[1]**2 - 400*(-x[1]**2 + x[2]))*p[1] \
-               - 400*x[1] * p[2]
-    hessp[2] = 0 \
-               - 400*x[1] * p[1] \
-               + 200 * p[2]
-    
-    return hessp
+def rosen_hess(x):
+        x = Num.asarray(x)
+        H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
+        diagonal = Num.zeros(len(x),x.typecode())
+        diagonal[0] = 1200*x[0]-400*x[1]+2
+        diagonal[-1] = 200
+        diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
+        H = H + MLab.diag(diagonal)
+        return H
 
-def rosen3_hess(x):
-    assert(len(x)==3)
-    hessp = Num.zeros((3,3),x.typecode())
-    hessp[0,:] = [2 + 800*x[0]**2 -400*(-x[0]**2 + x[1]), -400*x[0], 0]
-    hessp[1,:] = [-400*x[0], 202+800*x[1]**2 -400*(-x[1]**2 + x[2]), -400*x[1]]
-    hessp[2,:] = [0,-400*x[1], 200]
-    return hessp
-    
+def rosen_hess_p(x,p):
+        x = Num.asarray(x)
+        Hp = Num.zeros(len(x),x.typecode())
+        Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
+        Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
+                   -400*x[1:-1]*p[2:]
+        Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
+        return Hp
+
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
          full_output=0, printmessg=1):
@@ -520,6 +515,8 @@ def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     fcalls = 0
     gcalls = 0
     hcalls = 0
+    if maxiter is None:
+        maxiter = len(x0)*200
     
     xtol = len(x0)*avextol
     update = [2*xtol]
@@ -792,14 +789,14 @@ if __name__ == "__main__":
 
 
     start = time.time()
-    x = fminNCG(rosen, x0, rosen_der, fhess_p=rosen3_hess_p, maxiter=80)
+    x = fminNCG(rosen, x0, rosen_der, fhess_p=rosen_hess_p, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with hessian product')
     
 
     start = time.time()
-    x = fminNCG(rosen, x0, rosen_der, fhess=rosen3_hess, maxiter=80)
+    x = fminNCG(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with full hessian')

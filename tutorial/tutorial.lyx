@@ -740,7 +740,11 @@ nt:
 \layout Standard
 
 The calling signature for the BFGS minimization algorithm is similar to
- fmin with the addition of the 
+ 
+\series bold 
+fmin
+\series default 
+ with the addition of the 
 \emph on 
 fprime
 \emph default 
@@ -757,5 +761,422 @@ fminBFGS
 
 \end_inset 
 
+
+\layout Subsection
+
+Newton-Conjugate-Gradient (scipy.optimize.fminNCG)
+\layout Standard
+
+The method which requires the fewest function calls and is therefore often
+ the fastest method to minimize functions of many variables is 
+\series bold 
+fminNCG.
+ 
+\series default 
+This method is a modified Newton's method and uses a conjugate gradient
+ algorithm to (approximately) invert the local Hessian.
+ Newton's method is based on fitting the function locally to a quadratic
+ form:
+\begin_inset Formula \[
+f\left( \mathbf{x}\right) \approx f\left( \mathbf{x}_{0}\right) +\nabla f\left( \mathbf{x}_{0}\right) \cdot \left( \mathbf{x}-\mathbf{x}_{0}\right) +\frac{1}{2}\left( \mathbf{x}-\mathbf{x}_{0}\right) ^{T}\mathbf{H}\left( \mathbf{x}_{0}\right) \left( \mathbf{x}-\mathbf{x}_{0}\right) .\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \( \mathbf{H}\left( \mathbf{x}_{0}\right)  \)
+\end_inset 
+
+ is a matrix of second-derivatives (the Hessian).
+ If the Hessian is positive definite then the local minimum of this function
+ can be found by setting the gradient of the quadratic form to zero, resulting
+ in 
+\begin_inset Formula \[
+\mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.\]
+
+\end_inset 
+
+ The inverse of the Hessian is evaluted using the conjugate-gradient method.
+ An example of employing this method to minimizing the Rosenbrock function
+ is given below.
+ To take full advantage of the NewtonCG method, a function which computes
+ the Hessian must be provided.
+ The Hessian matrix itself does not need to be constructed, only a vector
+ which is the product of the Hessian with an arbitrary vector needs to be
+ available to the minimization routine.
+ As a result, the user can provide either a function to compute the Hessian
+ matrix, or a function to compute the product of the Hessian with an arbitrary
+ vector.
+ 
+\layout Subsubsection
+
+Full Hessian example:
+\layout Standard
+
+The Hessian of the Rosenbrock function is 
+\begin_inset Formula \begin{eqnarray*}
+H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left( \delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right) -400x_{i}\left( \delta _{i+1,j}-2x_{i}\delta _{i,j}\right) -400\delta _{i,j}\left( x_{i+1}-x_{i}^{2}\right) +2\delta _{i,j},\\
+ & = & \left( 202+1200x_{i}^{2}-400x_{i+1}\right) \delta _{i,j}-400x_{i}\delta _{i+1,j}-400x_{i-1}\delta _{i-1,j},
+\end{eqnarray*}
+
+\end_inset 
+
+ if 
+\begin_inset Formula \( i,j\in \left[ 1,N-2\right]  \)
+\end_inset 
+
+ with 
+\begin_inset Formula \( i,j\in \left[ 0,N-1\right]  \)
+\end_inset 
+
+ defining the 
+\begin_inset Formula \( N\times N \)
+\end_inset 
+
+ matrix.
+ Other non-zero entries of the matrix are 
+\begin_inset Formula \begin{eqnarray*}
+\frac{\partial ^{2}f}{\partial x_{0}^{2}} & = & 1200x_{0}^{2}-400x_{1}+2,\\
+\frac{\partial ^{2}f}{\partial x_{0}\partial x_{1}}=\frac{\partial ^{2}f}{\partial x_{1}\partial x_{0}} & = & -400x_{0},\\
+\frac{\partial ^{2}f}{\partial x_{N-1}\partial x_{N-2}}=\frac{\partial ^{2}f}{\partial x_{N-2}\partial x_{N-1}} & = & -400x_{N-2},\\
+\frac{\partial ^{2}f}{\partial x^{2}_{N-1}} & = & 200.
+\end{eqnarray*}
+
+\end_inset 
+
+ For example, the Hessian when 
+\begin_inset Formula \( N=5 \)
+\end_inset 
+
+ is 
+\begin_inset Formula \[
+\mathbf{H}=\left[ \begin{array}{ccccc}
+1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\
+-400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\
+0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\
+0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\
+0 & 0 & 0 & -400x_{3} & 200
+\end{array}\right] .\]
+
+\end_inset 
+
+ The code which computes this Hessian along with the code to minimize the
+ function using 
+\series bold 
+fminNCG 
+\series default 
+is shown in the following example:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.5}
+
+\end_inset 
+
+
+\layout Subsubsection
+
+Hessian product example:
+\layout Standard
+
+For larger minimization problems, storing the entire Hessian matrix can
+ consume considerable time and memory.
+ The Newton-CG algorithm only needs the product of the Hessian times an
+ arbitrary vector.
+ As a result, the user can supply code to compute this product rather than
+ the full Hessian by setting the 
+\emph on 
+fhess_p 
+\emph default 
+keyword to the desired function.
+ The fhess_p function should take
+\series bold 
+ 
+\series default 
+the minimization vector as the first argument and the arbitrary vector as
+ the second argument.
+ Any extra arguments passed to the function to be minimized will also be
+ passed to this function.
+ If possible, using Newton-CG with the hessian product option is probably
+ the fastest way to minimize the function.
+ 
+\layout Standard
+
+In this case, the product of the Rosenbrock Hessian with an arbitrary vector
+ is not difficult to compute.
+ If 
+\begin_inset Formula \( \mathbf{p} \)
+\end_inset 
+
+ is the arbitrary vector, then 
+\begin_inset Formula \( \mathbf{H}\left( \mathbf{x}\right) \mathbf{p} \)
+\end_inset 
+
+ has elements: 
+\begin_inset Formula \[
+\mathbf{H}\left( \mathbf{x}\right) \mathbf{p}=\left[ \begin{array}{c}
+\left( 1200x_{0}^{2}-400x_{1}+2\right) p_{0}-400x_{0}p_{1}\\
+\vdots \\
+-400x_{i-1}p_{i-1}+\left( 202+1200x_{i}^{2}-400x_{i+1}\right) p_{i}-400x_{i}p_{i+1}\\
+\vdots \\
+-400x_{N-2}p_{N-2}+200p_{N-1}
+\end{array}\right] .\]
+
+\end_inset 
+
+ Code which makes use of the 
+\emph on 
+fhess_p 
+\emph default 
+keyword to minimize the Rosenbrock function using 
+\series bold 
+fminNCG
+\series default 
+ follows:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.6}
+
+\end_inset 
+
+
+\layout Subsection
+
+Least-square fitting (scipy.minimize.leastsq)
+\layout Standard
+
+All of the previously-explained minimization procedures can be used to solve
+ a least-squares problem provided the appropriate objective function is
+ constructed.
+ For example, suppose it is desired to fit a set of data 
+\begin_inset Formula \( \left\{ \mathbf{x}_{i},\mathbf{y}_{i}\right\}  \)
+\end_inset 
+
+ to a known model, 
+\begin_inset Formula \( \mathbf{y}=\mathbf{f}\left( \mathbf{x},\mathbf{p}\right)  \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( \mathbf{p} \)
+\end_inset 
+
+ is a vector of parameters for the model that need to be found.
+ A common method for determining which parameter vector gives the best fit
+ to the data is to minimize the sum of squares of the residuals.
+ The residual is usually defined for each observed data-point as 
+\begin_inset Formula \[
+e_{i}\left( \mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right) =\left\Vert \mathbf{y}_{i}-\mathbf{f}\left( \mathbf{x}_{i},\mathbf{p}\right) \right\Vert .\]
+
+\end_inset 
+
+ An objective function to pass to any of the previous minization algorithms
+ to obtain a least-squares fit is.
+ 
+\begin_inset Formula \[
+J\left( \mathbf{p}\right) =\sum _{i=0}^{N-1}e_{i}^{2}\left( \mathbf{p}\right) .\]
+
+\end_inset 
+
+ 
+\layout Standard
+
+The 
+\series bold 
+leastsq 
+\series default 
+algorithm performs this squaring and summing of the residuals automatically.
+ It takes as an input argument the vector function 
+\begin_inset Formula \( \mathbf{e}\left( \mathbf{p}\right)  \)
+\end_inset 
+
+ and returns the value of 
+\begin_inset Formula \( \mathbf{p} \)
+\end_inset 
+
+ which minimizes 
+\begin_inset Formula \( J\left( \mathbf{p}\right) =\mathbf{e}^{T}\mathbf{e} \)
+\end_inset 
+
+ directly.
+ The user is also encouraged to provide the Jacobian matrix of the function
+ (with derivatives down the columns or across the rows).
+ If the Jacobian is not provided, it is estimated.
+ 
+\layout Standard
+
+An example should clarify the usage.
+ Suppose it is believed some measured data follow a sinusoidal pattern
+\begin_inset Formula \[
+y_{i}=A\sin \left( 2\pi kx_{i}+\theta \right) \]
+
+\end_inset 
+
+ where the parameters 
+\begin_inset Formula \( A, \)
+\end_inset 
+
+ 
+\begin_inset Formula \( k \)
+\end_inset 
+
+, and 
+\begin_inset Formula \( \theta  \)
+\end_inset 
+
+ are unknown.
+ The residual vector is 
+\begin_inset Formula \[
+e_{i}=\left| y_{i}-A\sin \left( 2\pi kx_{i}+\theta \right) \right| .\]
+
+\end_inset 
+
+ By defining a function to compute the residuals and (selecting an appropriate
+ starting position), the least-squares fit routine can be used to find the
+ best-fit parameters 
+\begin_inset Formula \( \hat{A},\, \hat{k},\, \hat{\theta } \)
+\end_inset 
+
+.
+ This is shown in the following example and a plot of the results is shown
+ in Figure 
+\begin_inset LatexCommand \ref{fig:least_squares_fit}
+
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.7}
+
+\end_inset 
+
+
+\layout Standard
+
+\begin_float fig 
+\layout Standard
+\align center 
+
+\begin_inset Figure size 297 420
+file leastsqfit.pdf
+width 3 50
+flags 11
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:least_squares_fit}
+
+\end_inset 
+
+Least-square fitting to noisy data using 
+\series bold 
+scipy.optimize.leastsq
+\end_float 
+\layout Subsection
+
+Bounded minimization (scipy.optimize.fminbound)
+\layout Standard
+
+Thus far all of the minimization routines described have been unconstrained
+ minimization routines.
+ Very often, however, there are constraints that can be placed on the solution
+ space before minimization occurs.
+ The 
+\series bold 
+fminbound 
+\series default 
+function is an example of a constrained minimization procedure that provides
+ a rudimentary interval constraint for scalar functions (functions which
+ take a scalar input and return a scalar output).
+ The interval constraint allows the minimization to occur only between two
+ fixed endpoints.
+\layout Standard
+
+For example, to find the minimum of 
+\begin_inset Formula \( J_{1}\left( x\right)  \)
+\end_inset 
+
+ near 
+\begin_inset Formula \( x=5 \)
+\end_inset 
+
+, 
+\series bold 
+fminbound 
+\series default 
+can be called using the interval 
+\begin_inset Formula \( \left[ 4,7\right]  \)
+\end_inset 
+
+ as a constraint.
+ The result is 
+\begin_inset Formula \( x_{\textrm{min}}=5.3314 \)
+\end_inset 
+
+:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.8}
+
+\end_inset 
+
+
+\layout Subsection
+
+Root finding (scipy.optimize.fsolve)
+\layout Standard
+
+To find the roots of a polynomial, the command from Numeric Python: 
+\series bold 
+MLab.roots 
+\series default 
+is useful.
+ To find a root of a set of non-linear equations, the command 
+\series bold 
+scipy.optimize.fsolve
+\series default 
+ is available.
+ For example, the following example finds the roots of the single-variable
+ transcendental equation
+\begin_inset Formula \[
+x+2\cos \left( x\right) =0,\]
+
+\end_inset 
+
+ and the set of non-linear equations
+\begin_inset Formula \begin{eqnarray*}
+x_{0}\cos \left( x_{1}\right)  & = & 4,\\
+x_{0}x_{1}-x_{1} & = & 5.
+\end{eqnarray*}
+
+\end_inset 
+
+ The results are 
+\begin_inset Formula \( x=-1.0299 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( x_{0}=6.5041,\, x_{1}=0.9084 \)
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.9}
+
+\end_inset 
+
+
+\layout Section
+
+Interpolation (scipy.interpolate)
+\layout Standard
 
 \the_end
