@@ -8,12 +8,14 @@ import sys
 import sync_cluster #yes I'm importing the current module
 
 bufsize = 1<<12 #4K buffer, for Linux
+shell = "ssh -n"
 
 RemoteError = 'RemoteError'
 RemoteCrashError = 'RemoteError'
 PackError = 'PackError'
 UnpackError = 'UnpackError'
 NotImplemented = 'NotImplemented'
+
 
 class pickle_packer:
     """* Pickle and unpickle an object for transfer over a socket.
@@ -331,8 +333,8 @@ class standard_sync_client:
         module_name = os.path.abspath(sync_cluster.__file__)
         #cmd = 'rsh -n %s "python %s server %d >&/dev/null </dev/null &"' % \
         #      (self.host, module_name, self.port)
-        cmd = 'rsh -n %s "python2.1 %s server %d >&/tmp/crud%d </dev/null &"' % \
-              (self.host, module_name, self.port, self.port)
+        cmd = '%s %s "python %s server %d >&/tmp/crud%d </dev/null &"' % \
+              (shell,self.host, module_name, self.port, self.port)
         self.log_msg(cmd)
 	print cmd
         os.system(cmd)

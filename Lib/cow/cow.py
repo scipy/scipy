@@ -11,6 +11,7 @@
 """
 
 import sync_cluster, socket
+import time
 import os # for getuid()
 
 ClusterError = 'ClusterError'
@@ -48,8 +49,27 @@ class machine_cluster:
         # start the worker processes.
         for worker in self.workers:
             worker.start_server()
-        if not self.is_running(timeout):
-            raise TimeoutError  
+
+        if not self.is_running():
+            print 'Waiting for servers:'
+            print ' |----|----|----15---|----|----30---|----|----45---|----|----60'
+            print '0.',
+            stop_watch = timer()
+            stop_watch.start()
+            minute = 0
+        import sys    
+        while not self.is_running():
+            if stop_watch.current_lap() > 1:
+                sys.stdout.write('.')
+                stop_watch.mark_lap()               
+            elapsed = stop_watch.elapsed()
+            if (elapsed - minute * 60) > 60:
+                minute = minute + 1
+                print
+                print minute,
+            if elapsed > timeout:
+                raise TimeoutError  
+        print 'servers runing!'                                   
             
     def stop(self):
         for worker in self.workers:
@@ -124,7 +144,7 @@ class machine_cluster:
                 results.append(None)
             else:    
                 try:
-                    print worker.id,
+                    #print worker.id,
                     sys.stdout.flush()
                     results.append(worker.recv())
                                         
@@ -147,7 +167,7 @@ class machine_cluster:
                             % worker.id
                     raise sync_cluster.RemoteCrashError,msg           
                 # else handle other errors    
-        print                
+        #print                
         return tuple(results)                
     
     def _send_recv(self,package,addendum=None):
@@ -478,7 +498,43 @@ def equal_balance(jobs,Nworkers):
 
 def t_func(i):
     return i    
+import operator
+class timer:
 
+    def __init__(self):
+        self.reset()
+    def reset(self):
+        self.total_t = 0
+        self.lap_start = 0
+        self.running = 0
+        self.lap_list = [0]        
+    def start(self):
+        if not self.running:
+            self.running = 1
+            self.start_t = time.time()                
+        else:
+            print 'already running: use reset() to start the timer back at 0.'
+                
+    def stop(self):
+        self.running = 0
+        elapsed_t = time.time() - self.start_t
+        self.total_t = self.total_t + elapsed_t
+        self.lap_list[-1] = self.lap_list[-1] + elapsed_t
+        return self.total_t
+    def elapsed(self):
+        if self.running:
+            return self.total_t + (time.time() - self.start_t)
+        else:
+            return self.total_t
+    def mark_lap(self):
+        self.lap_start = self.elapsed()
+        self.lap_list.append(self.lap_start-self.lap_list[-1])
+    def get_laps(self):
+        return self.lap_list[1:] +[self.elapsed()-self.lap_list[-1]]               
+    def current_lap(self):
+            return self.elapsed()-self.lap_start
+        
+                
 
 if __name__ == '__main__':
     borg = cluster(server_list)    
