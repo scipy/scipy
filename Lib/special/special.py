@@ -313,11 +313,20 @@ def riccati_yn(n,x):
     nm,jn,jnp = specfun.rcty(n,x)
     return jn,jnp
 
-def sph_harmonic(m,n,theta,phi):
+def _sph_harmonic(m,n,theta,phi):
+    """inputs of (m,n,theta,phi) returns spherical harmonic of order
+    m,n (m<=n) and argument theta and phi:  Y^m_n(theta,phi)
+    """
     x = cos(phi)
     Pmn,Pmnd = lpmn(m,n,x)
     val = Pmn[m,n]
-    return sqrt((2*m+1)/4.0/pi*gamma(m-n+1)/gamma(m+n+1))*val*exp(1j*m*theta)
+    print m, n, val
+    val *= sqrt((2*m+1)/4.0/pi)
+    val *= exp(0.5*gammaln(n-m+1)-gammaln(n+m+1))
+    val *= exp(1j*m*theta)
+    return val
+
+sph_harm = general_function(_sph_harmonic,'D')
 
 def erfinv(y):
     return ndtri((y+1)/2.0)/sqrt(2)
