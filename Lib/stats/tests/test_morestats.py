@@ -44,17 +44,17 @@ class test_anderson(unittest.TestCase):
         x1 = scipy.stats.expon.rvs(size=50)
         x2 = scipy.stats.norm.rvs(size=50)
         A,crit,sig = scipy.stats.anderson(x1)
-        assert(scipy.all(A > crit[:-1]))
+        assert_array_less(crit[:-1], A)
         A,crit,sig = scipy.stats.anderson(x2)
-        assert(scipy.all(A < crit[-2:]))
+        assert_array_less(A, crit[-2:])
 
     def check_expon(self):
         x1 = scipy.stats.expon.rvs(size=50)
         x2 = scipy.stats.norm.rvs(size=50)
         A,crit,sig = scipy.stats.anderson(x1,'expon')        
-        assert(scipy.all(A < crit[-2:]))
+        assert_array_less(A, crit[-2:])
         A,crit,sig = scipy.stats.anderson(x2,'expon')
-        assert(scipy.all(A > crit[:-1]))
+        assert_array_less(crit[:-1], A)
 
 class test_ansari(unittest.TestCase):
     def check_small(self):
