@@ -215,7 +215,7 @@ subroutine <tchar=s,d,c,z>axpy(n,a,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-  <type_in> intent(in):: a=<type_convert=1.>    
+  <type_in> optional, intent(in):: a=<type_convert=1.>    
 
 end subroutine <tchar=s,d,c,z>axpy
 

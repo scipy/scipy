@@ -34,11 +34,10 @@ def configuration(parent_package=''):
                             'generic_fblas3.pyf',
                             os.path.join('src','fblaswrap.f'),
                             ],
-                   }
-                   #'cblas':['generic_cblas.pyf',
-                   #         'generic_cblas1.pyf'],
-                   #'flapack':['generic_flapack.pyf'],
-                   #'clapack':['generic_clapack.pyf']}
+                   'cblas':['generic_cblas.pyf',
+                            'generic_cblas1.pyf'],
+                   'flapack':['generic_flapack.pyf'],
+                   'clapack':['generic_clapack.pyf']}
     
     for mod_name,sources in mod_sources.items():
         sources = [os.path.join(local_path,s) for s in sources]
