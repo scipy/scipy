@@ -3102,10 +3102,16 @@ def binompdf(k, n, pr=0.5):
     return select([cond,k==0], [temp-temp2,temp],0.0)
 
 def binomcdf(k, n, pr=0.5):
-    return special.bdtr(k,n,pr)
+    sv = errp(0)
+    vals = special.bdtr(k,n,pr)
+    sv = errp(sv)
+    return where(k>=0,vals,0.0)
 
 def binomsf(k, n, pr=0.5):
-    return special.bdtrc(k,n,pr)
+    sv = errp(0)
+    vals = special.bdtrc(k,n,pr)
+    sv = errp(sv)    
+    return where(k>=0,vals,1.0)
 
 def binomppf(q, n, pr=0.5):
     vals = ceil(special.bdtrik(q,n,pr))
@@ -3149,7 +3155,7 @@ def bernoullistats(pr=0.5, full=0):
 
 def nbinompdf(k, n, pr=0.5):
     k = arr(k)
-    cond2 = (pr >= 1) || (pr <=0)
+    cond2 = (pr >= 1) | (pr <=0)
     cond1 = arr((k > n) & (k == floor(k)))
     sv =errp(0)
     temp = special.nbdtr(k,n,pr)
