@@ -36,7 +36,7 @@ def validate_active():
     global _active
     if _active is None: figure()
     try:
-        if not _active.window_is_alive():
+        if not _active.proxy_object_alive:
             _active = None
             figure()
     except:
