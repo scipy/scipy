@@ -3,7 +3,7 @@ clll. optimize
       integer iwm
       integer lblox, lpb, lpc, mb, nb
       double precision wm, x, tem
-      dimension wm(1), iwm(1), x(1), tem(1)
+      dimension wm(*), iwm(*), x(1), tem(1)
 c-----------------------------------------------------------------------
 c this routine acts as an interface between the core integrator
 c routine and the solbt routine for the solution of the linear system

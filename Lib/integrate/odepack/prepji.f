@@ -12,8 +12,8 @@ clll. optimize
       double precision rowns,
      1   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
       double precision con, fac, hl0, r, srur, yi, yj, yjj
-      dimension neq(1), y(1), yh(nyh,1), ewt(1), rtem(1),
-     1   s(1), savr(1), wm(1), iwm(1)
+      dimension neq(1), y(1), yh(nyh,*), ewt(1), rtem(1),
+     1   s(1), savr(1), wm(*), iwm(*)
       common /ls0001/ rowns(209),
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround,
      3   iownd(14), iowns(6),

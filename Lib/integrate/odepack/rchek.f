@@ -3,7 +3,7 @@ clll. optimize
       external g
       integer job, neq, nyh, jroot, irt
       double precision y, yh, g0, g1, gx
-      dimension neq(1), y(1), yh(nyh,1), g0(1), g1(1), gx(1), jroot(1)
+      dimension neq(1), y(1), yh(nyh,*), g0(1), g1(1), gx(1), jroot(1)
       integer iownd, iowns,
      1   icf, ierpj, iersl, jcur, jstart, kflag, l, meth, miter,
      2   maxord, maxcor, msbp, mxncf, n, nq, nst, nfe, nje, nqu

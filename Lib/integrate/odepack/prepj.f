@@ -13,8 +13,8 @@ clll. optimize
      1   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
       double precision con, di, fac, hl0, r, r0, srur, yi, yj, yjj,
      1   vnorm
-      dimension neq(1), y(1), yh(nyh,1), ewt(1), ftem(1), savf(1),
-     1   wm(1), iwm(1)
+      dimension neq(1), y(1), yh(nyh,*), ewt(1), ftem(1), savf(1),
+     1   wm(*), iwm(*)
       common /ls0001/ rowns(209),
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround,
      3   iownd(14), iowns(6),

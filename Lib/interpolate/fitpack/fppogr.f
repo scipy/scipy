@@ -23,13 +23,13 @@ c  ..local arrays..
       integer idd(2)
       real*8 dzz(3)
 c  ..function references..
-      real*8 abs,atan2,fprati
+      real*8 abs,datan2,fprati
       integer max0,min0
 c  ..subroutine references..
 c    fpknot,fpopdi
 c  ..
 c   set constants
-      one = 1
+      one = 1d0
       con1 = 0.1e0
       con9 = 0.9e0
       con4 = 0.4e-01
@@ -42,7 +42,7 @@ c   initialization
       mumin = 4-iopt(3)
       if(ider(1).ge.0) mumin = mumin-1
       if(iopt(2).eq.1 .and. ider(2).eq.1) mumin = mumin-1
-      pi = atan2(0.,-one)
+      pi = datan2(0d0,-one)
       per = pi+pi
       vb = v(1)
 C      ve = vb+per

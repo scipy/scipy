@@ -18,8 +18,8 @@ clll. optimize
      1   r, rh, rhdn, rhsm, rhup, told, vmnorm
       double precision alpha, dm1, dm2, exm1, exm2, pdh, pnorm, rate,
      1   rh1, rh1it, rh2, rm, sm1
-      dimension neq(1), y(1), yh(nyh,1), yh1(1), ewt(1), savf(1),
-     1   acor(1), wm(1), iwm(1)
+      dimension neq(1), y(1), yh(nyh,*), yh1(1), ewt(1), savf(1),
+     1   acor(1), wm(*), iwm(*)
       dimension sm1(12)
       common /ls0001/ conit, crate, el(13), elco(13,12),
      1   hold, rmax, tesco(3,12),

@@ -12,8 +12,8 @@ clll. optimize
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
       double precision dcon, ddn, del, delp, dsm, dup, exdn, exsm, exup,
      1   r, rh, rhdn, rhsm, rhup, told, vnorm
-      dimension neq(1), y(1), yh(nyh,1), yh1(1), ewt(1), savf(1),
-     1   acor(1), wm(1), iwm(1)
+      dimension neq(1), y(1), yh(nyh,*), yh1(1), ewt(1), savf(1),
+     1   acor(1), wm(*), iwm(*)
       common /ls0001/ conit, crate, el(13), elco(13,12),
      1   hold, rmax, tesco(3,12),
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround, iownd(14),

@@ -336,15 +336,15 @@ c  ..local scalars..
       integer i,i1,i2,j,jwrk,j1,j2,kndu,kndv,knru,knrv,kwest,l,
      * ldr,lfpu,lfpv,lwest,lww,m,maxit,mumin,muu,nc
 c  ..function references..
-      real*8 atan2
+      real*8 datan2
       integer max0
 c  ..subroutine references..
 c    fpchec,fpchep,fpspgr
 c  ..
 c  set constants
-      one = 1
+      one = 1d0
       half = 0.5e0
-      pi = atan2(0.,-one)
+      pi = datan2(0d0,-one)
       per = pi+pi
       ve = v(1)+per
 c  we set up the parameters tol and maxit.

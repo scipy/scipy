@@ -353,13 +353,13 @@ c  ..local scalars..
      * lbv,lco,lf,lff,lfp,lh,lq,lsu,lsv,lwest,maxit,ncest,ncc,nuu,
      * nvv,nreg,nrint,nu4,nv4,iopt1,iopt2,iopt3,ipar,nvmin
 c  ..function references..
-      real*8 atan2,sqrt
+      real*8 datan2,sqrt
       external rad
 c  ..subroutine references..
 c    fppola
 c  ..
 c  set up constants
-      one = 1
+      one = 1d0
 c  we set up the parameters tol and maxit.
       maxit = 20
       tol = 0.1e-02
@@ -396,7 +396,7 @@ c  are invalid,control is immediately repassed to the calling program.
         u(i) = 0.
         v(i) = 0.
         if(dist.le.0.) go to 10
-        v(i) = atan2(y(i),x(i))
+        v(i) = datan2(y(i),x(i))
         r = rad(v(i))
         if(r.le.0.) go to 60
         u(i) = sqrt(dist)/r
@@ -413,7 +413,7 @@ c  are invalid,control is immediately repassed to the calling program.
       nvv = nv-8
       nvmin = 9+iopt2*(iopt2+1)
       if(nv.lt.nvmin .or. nv.gt.nvest) go to 60
-      pi = atan2(0.,-one)
+      pi = datan2(0d0,-one)
       tv(4) = -pi
       do 30 i=1,nvv
          j = i+4

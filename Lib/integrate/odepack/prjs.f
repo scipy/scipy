@@ -16,8 +16,8 @@ clll. optimize
       double precision con0, conmin, ccmxj, psmall, rbig, seth
       double precision con, di, fac, hl0, pij, r, r0, rcon, rcont,
      1   srur, vnorm
-      dimension neq(1), y(1), yh(nyh,1), ewt(1), ftem(1), savf(1),
-     1   wk(1), iwk(1)
+      dimension neq(1), y(1), yh(nyh,*), ewt(1), ftem(1), savf(1),
+     1   wk(*), iwk(*)
       common /ls0001/ rowns(209),
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround,
      3   iownd(14), iowns(6),
