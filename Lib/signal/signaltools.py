@@ -3,7 +3,7 @@
 
 import sigtools
 import scipy.special as special
-from scipy import fft, ifft, ifftshift, fft2d, ifft2d
+from scipy import fft, ifft, ifftshift, fft2, ifft2
 from scipy import polyadd, polymul, polydiv, polysub, \
                   roots, poly, polyval, polyder
 import types
@@ -636,7 +636,7 @@ def hilbert2(x,N=None):
         print "Warning: imaginary part of x ignored."
         x = scipy.real(x)
     print N
-    Xf = fft2d(x,N,axes=(0,1))
+    Xf = fft2(x,N,axes=(0,1))
     h1 = Numeric.zeros(N[0],'d')
     h2 = Numeric.zeros(N[1],'d')
     for p in range(2):
@@ -655,7 +655,7 @@ def hilbert2(x,N=None):
     while k > 2:
         h = h[:,Numeric.NewAxis]
         k -= 1
-    x = ifft2d(Xf*h,axes=(0,1))
+    x = ifft2(Xf*h,axes=(0,1))
     return x
     
 

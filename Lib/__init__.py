@@ -57,8 +57,10 @@ _partials0 = {'Matrix' : ['Matrix']}
 # these modules will just be imported (not subsumed)
 _level0_importonly = []
 
-_level1 = ["special", "io", "linalg", "stats"]  # fft is in this group.
-_partials1_a = {'stats' : ['mean','median','std','cov','corrcoef']}
+_level1 = ["special", "io", "linalg", "stats","fftpack"]  # fft is in this group.
+_partials1 = {'stats' : ['mean','median','std','cov','corrcoef'],
+              'fftpack' : ['fft', 'fftn', 'fft2',
+                            'ifft', 'ifft2', 'ifftn']}
 _level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
                       # require level 0 and level 1
 # these modules will just be imported (not subsumed)                      
@@ -74,18 +76,13 @@ objects2all(__all__, ['help', 'source', "Inf", "inf", "NaN", "nan", "Mat"])
 
 # Level 1
 modules2all(__all__, _level1, globals())
+somenames2all(__all__, _partials1, globals())
 
 try:
     import scipy.fftw
     __all__.append('fftw')
-    _partials1 = {'fftw' : ['fft', 'fftnd', 'fft2d', 'fft3d',
-                            'ifft', 'ifft2d', 'ifft3d', 'ifftnd']}
-    somenames2all(__all__, _partials1, globals())
 except ImportError:
-    print sys.exc_value
-    print "Warning: FFT package not found. Some names will not be available"
-
-somenames2all(__all__,_partials1_a, globals())
+    pass  # Not default anymore
 
 # Level 1a
 names2all(__all__, _level1a, globals())

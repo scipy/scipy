@@ -1042,8 +1042,8 @@ def trim1 (a,proportiontocut,tail='right'):
 #####  ACORRELATION FUNCTIONS  ######
 #####################################
 
-# Travis Oliphant Changes
-#  Cov is more flexible and computes an unbiased covariance matrix
+#  Cov is more flexible than the original
+#    covariance and computes an unbiased covariance matrix
 #    by default. 
 def cov(m,y=None, rowvar=0, bias=0):
     """Estimate the covariance matrix.
@@ -1095,7 +1095,6 @@ def corrcoef(x, y=None, rowvar=0, bias=0):
     d = diag(c)
     return c/sqrt(multiply.outer(d,d))
 
-### End of Travis O. Changes
 
 def paired(x,y):
     """
@@ -1521,7 +1520,7 @@ code.
 
 Returns: T correction factor for U or H
 """
-    sorted,posn = ashellsort(array(rankvals))
+    sorted,posn = shellsort(asarray(rankvals))
     n = len(sorted)
     T = 0.0
     i = 0
@@ -2625,16 +2624,7 @@ where ER and EF are matrices from a multivariate F calculation.
 #######  SUPPORT FUNCTIONS  ########
 #####################################
 
-def sign(a):
-    """
-Returns: array shape of a, with -1 where a<0 and +1 where a>=0
-"""
-    a = asarray(a)
-    if ((type(a) == type(1.4)) or (type(a) == type(1))):
-        return a-a-less(a,0)+greater(a,0)
-    else:
-        return zeros(shape(a))-less(a,0)+greater(a,0)
-
+# sign is in Numeric
 
 def sum (a, axis=None,keepdims=0):
      """
@@ -2769,8 +2759,9 @@ Shellsort algorithm.  Sorts a 1D-array.
 
 Returns: sorted-a, sorting-index-vector (for original array)
 """
+    a = asarray(a)
     n = len(a)
-    svec = a *1.0
+    svec = a*1.0
     ivec = range(n)
     gap = n/2   # integer division needed
     while gap >0:
@@ -2785,7 +2776,7 @@ Returns: sorted-a, sorting-index-vector (for original array)
                     ivec[j+gap] = itemp
         gap = gap / 2  # integer division needed
 #    svec is now sorted input vector, ivec has the order svec[i] = vec[ivec[i]]
-    return svec, ivec
+    return array(svec), array(ivec)
 
 
 def rankdata(a):
