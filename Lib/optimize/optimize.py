@@ -40,12 +40,14 @@ bracket     ---      Find a bracket containing the minimum.
 
 
 __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fminbound', 'brent',
-           'golden','bracket','rosen','rosen_der', 'rosen_hess','rosen_hess_prod']
+           'golden','bracket','rosen','rosen_der', 'rosen_hess','rosen_hess_prod',
+           'brute']
 
 from __future__ import nested_scopes
 import Numeric
 import MLab
-from scipy_base import atleast_1d, eye
+from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
+     squeeze
 from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
@@ -1189,7 +1191,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=1):
         return func(params,*args)
         
     vecfunc = special.general_function(_scalarfunc)
-    grid = scipy_base.mgrid[lrange]
+    grid = mgrid[lrange]
     if (N==1):
         grid = (grid,)
     Jout = vecfunc(*grid)
