@@ -34,11 +34,16 @@ def _wc(cond, val):
 # A moment computation function -- assumes
 #   parameters are valid.
 def generic_moment(m, pdfunc, a, b, *args):
-    def _integrand(x, m, *vals):
-        return x**m * apply(pdfunc, (x,)+vals)    
-    return scipy.integrate.quad(_integrand, a, b, args=(m,)+args)[0]
+    def _integrand1(x):
+        return x**m * apply(pdfunc, (x,)+args)    
+    return scipy.integrate.quad(_integrand1, a, b)[0]
 
-### Each distribution has up to 8 functions defined plus one function
+def moment_ppf(m, ppffunc, *args):
+    def _integrand2(q):
+        return apply(ppffunc, (q,)+args)**m
+    return scipy.integrate.quad(_integrand2, 0, 1)[0]
+
+### Each distribution has up to 10 functions defined plus one function
 ##    to return random variates following the distribution ---
 ##    these functions are in (this is in rv2.py or rv.py).
 
@@ -51,11 +56,14 @@ def generic_moment(m, pdfunc, a, b, *args):
 ##  <dist>stats --- Return mean, variance and optionally (Fisher's) skew
 ##                           and kurtosis of the distribution.
 
-##   Other things to think about supporting 
-##  <dist>hf -- Hazard function (PDF / SF)
-##  <dist>chf -- Cumulative hazard function (-log(1-CDF)) 
+##   Other things to think about supporting
+##  <dist>psf --- Probability sparsity function (reciprocal of the pdf) in
+##                units of percent-point-function.
+##                Also, the derivative of the percent-point function.
 ##  <dist>mle -- maximum-likelihood estimation of parameters of the
 ##                distribution.
+##  <dist>hf -- Hazard function (PDF / SF)
+##  <dist>chf -- Cumulative hazard function (-log(1-CDF)) 
 
 ##  NANs are returned for unsupported parameters.
 ##    location and scale parameters can be defined for each distribution.
@@ -83,8 +91,9 @@ def generic_moment(m, pdfunc, a, b, *args):
 ##  Documentation for DATAPLOT from NIST
 ##      http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
 ##
-##  Norman Johnson, Samuel Kotz, and N. Balakrishnan "Continuous Univariate Distributions",
-##      second edition, Volumes I and II, Wiley & Sons, 1994.
+##  Norman Johnson, Samuel Kotz, and N. Balakrishnan "Continuous
+##      Univariate Distributions", second edition,
+##      Volumes I and II, Wiley & Sons, 1994.
 
 
 _EULER = 0.5772156649015328606   # -special.psi(1)
@@ -155,7 +164,7 @@ def stnormstats(full=0):
 def normpdf(x, loc=0.0, scale=1.0):
     x, loc, scale = map(arr, (x, loc, scale))
     x = arr((x-loc*1.0)/scale)
-    Px = 1.0/sqrt(2*pi)*exp(-x*x/2.0)
+    Px = exp(-x*x/2.0)/sqrt(2*pi)
     return select([scale <= 0],[scipy.nan], Px/scale)
 
 def normcdf(x, loc=0.0, scale=1.0):
@@ -913,45 +922,93 @@ def extreme3stats(c, loc=0.0, scale=1.0, full=0):
     sv = errp(sv)
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
-    
+
+## Faigue-Life (Birnbaum-Sanders)
+
+def fatiguelifepdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = (x+1)/arr(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/arr((2.0*x*c**2)))
+    return select([(c<=0)|(scale<=0), x>0],[scipy.nan, Px/scale])
+
+def fatiguelifecdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x, c, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.ndtr(1.0/c*(sqrt(x)-1.0/arr(sqrt(x))))
+    sv = errp(sv)
+    return select([(c<=0) | (scale <=0), x>0], [scipy.nan, Cx])
+
+def fatiguelifeppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q, c, loc, scale))
+    cond = (q >=0) & (q<=1) & (c > 0) & (scale > 0)
+    sv = errp(0)
+    tmp = c*special.ndtri(q)
+    sv = errp(sv)
+    vals = 0.25*(tmp + sqrt(tmp**2 + 4))**2
+    return _wc(cond, vals*scale + loc)
+
+def fatiguelifesf(x, c, loc=0.0, scale=1.0):
+    return 1.0 - fatiguelifecdf(x, c, loc, scale)
+
+def fatiguelifeisf(q, c, loc=0.0, scale=1.0):
+    return fatiguelifeppf(1.0-q, c, loc, scale)
+
+def fatiguelifestats(c, loc=0.0, scale=1.0, full=0):
+    c, loc, scale = map(arr, (c, loc, scale))
+    cond = (c > 0) & (scale > 0)
+    mu = c*c/2 + 1
+    mn = _wc(cond, mu*scale + loc)
+    c2 = c*c
+    mu2 = c2*(5.0/4*c2+1)
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        return mn, var
+    g1 = 4*c*sqrt(11*c2+6) / (5*c2 + 4)**1.5
+    g2 = 6*c2*(93*c2+41.0) / (5*c2 + 4)**2.0
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
 
 ## Extreme Value Type II or Frechet
 ## (defined in Regress+ documentation as Extreme LB) as
 ##   a limiting value distribution.
 ##
 
-def frechetpdf(x, c, loc=0.0, scale=1.0):
-    x, c, loc, scale = map(arr, (x, c, loc,scale))
+def frechetpdf(x, c, left=0, loc=0.0, scale=1.0):
+    x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
     x = arr((x-loc*1.0)/scale)
+    x = arr(where(left, -x, x))
     Px = c*pow(x,-(c+1))*exp(-x**(-c))
-    return select([(scale <=0)|(c<=0),x>0],[scipy.nan, Px/scale])
+    return select([(scale <=0)|(c<=0),((x>0)&(left==0))|((x<0)&(left!=0))],[scipy.nan, Px/scale])
 
-def frechetcdf(x, c, loc=0.0, scale=1.0):
-    x, c, loc, scale = map(arr, (x, c, loc,scale))
+def frechetcdf(x, c, left=0, loc=0.0, scale=1.0):
+    x, c, loc, scale, left = map(arr, (x, c, loc,scale, left))
     x = arr((x-loc*1.0)/scale)
+    x = arr(where(left, -x, x))
     Cx = exp(-x**(-c))
-    return select([(scale <=0)|(c<=0),x>0],[scipy.nan, Cx])
+    return select([(scale <=0)|(c<=0),(x>0)&(left==0), (x<0)&(left!=0), left!=0],[scipy.nan, Cx, 1-Cx, 1])
 
-def frechetppf(q, c, loc=0.0, scale=1.0):
-    q, c, loc, scale = map(arr, (q, c, loc,scale))
+def frechetppf(q, c, left=0, loc=0.0, scale=1.0):
+    q, c, loc, scale, left = map(arr, (q, c, loc,scale, left))
+    q = arr(where(left,1-q,q))
     vals = pow(-log(q),-1.0/c)
     cond = (q>=0)&(q<=1)&(scale >0)&(c >0)
-    return _wc(cond, vals*scale + loc)
+    return select([1-cond, left==0], [scipy.nan, vals*scale + loc], -vals*scale + loc)
     
-def frechetsf(x, c, loc=0.0, scale=1.0):
-    return 1.0-frechetcdf(x, c, loc, scale)
+def frechetsf(x, c, left=0, loc=0.0, scale=1.0):
+    return 1.0-frechetcdf(x, c, left, loc, scale)
 
-def frechetisf(q, c, loc=0.0, scale=1.0):
-    return frechetppf(1-q, c, loc, scale)
+def frechetisf(q, c, left=0, loc=0.0, scale=1.0):
+    return frechetppf(1-q, c, left, loc, scale)
 
-def frechetstats(c, loc=0.0, scale=1.0, full=0):
-    c, loc, scale = map(arr, (c, loc, scale))
+def frechetstats(c, left=0, loc=0.0, scale=1.0, full=0):
+    c, loc, scale, left = map(arr, (c, loc, scale, left))
     cond = (c > 0) & (scale > 0)
     ic = 1.0/c
     mu = special.gamma(1-ic)
     g2c = special.gamma(1-2*ic)
     mu2 = g2c - mu*mu
-    mn = _wc(cond, mu*scale + loc)
+    mn = select([1-cond,left==0], [scipy.nan, mu*scale + loc], -mu*scale+loc)
     var = _wc(cond, mu2*scale*scale)
     if not full:
         return mn, var
@@ -1169,34 +1226,37 @@ def gammastats(a, loc=0.0, scale=1.0, full=0):
 
 
 ## Gumbel, Log-Weibull, Fisher-Tippett, Gompertz
+## if left is non-zero, reconstruct the left-skewed gumbel distribution. 
 
-def gumbelpdf(x,loc=0.0,scale=1.0):
+def gumbelpdf(x,left=0,loc=0.0,scale=1.0):
     x, a, b = map(arr, (x, loc, scale))
     x = (x-a*1.0)/b
+    x = arr(where(left, -x,x))
     fac = x+exp(-x)
     return select([scale>0],[exp(-fac)/b],scipy.nan)
 
-def gumbelcdf(x,loc=0.0,scale=1.0):
+def gumbelcdf(x,left=0,loc=0.0,scale=1.0):
     x, a, b = map(arr, (x, loc, scale))
     x = (x-a*1.0)/b
-    return select([scale>0],[exp(-exp(-x))],scipy.nan)
+    return select([scale<=0, left==0],[scipy.nan, exp(-exp(-x))],1-exp(-exp(x)))
     
-def gumbelsf(x,loc=0.0,scale=1.0):
-    return 1.0-gumbelcdf(x,a,b)
+def gumbelsf(x,left=0,loc=0.0,scale=1.0):
+    return 1.0-gumbelcdf(x,left,loc,scale)
 
-def gumbelppf(q,loc=0.0,scale=1.0):
+def gumbelppf(q,left=0,loc=0.0,scale=1.0):
     q = arr(q)
     cond = (arr(scale)>0) & (q >= 0) & (q <=1)
+    q = arr(where(left, 1-q, q))
     vals = -log(-log(q))
-    return _wc(cond, loc+scale*vals)
+    return select([1-cond,left==0],[scipy.nan, loc+scale*vals], loc-scale*vals)
 
-def gumbelisf(p,loc=0.0,scale=1.0):
-    return gumbelppf(1-p,a,b)
+def gumbelisf(p,left=0,loc=0.0,scale=1.0):
+    return gumbelppf(1-p,left,loc,scale)
 
-def gumbelstats(loc=0.0,scale=1.0,full=0):
-    a, b = map(arr, (loc, scale))
+def gumbelstats(left=0, loc=0.0,scale=1.0,full=0):
+    a, b, left = map(arr, (loc, scale, left))
     cond = (b > 0)
-    mn = _wc(cond, a + b*_EULER)
+    mn = select([1-cond,left==0],[scipy.nan, a + b*_EULER],a-b*_EULER)
     var = _wc(cond, pi*pi/6*b*b)
     if not full:
         return mn, var
@@ -2125,13 +2185,13 @@ def tukeylambdaisf(q, lam, loc=0.0, scale=1.0):
 def tukeylambdastats(lam, loc=0.0, scale=1.0, full=0):
     lam, loc, scale = arr(lam), arr(loc), arr(scale)
     mn = _wc(scale>0,loc)
-    _vecfunc = special.general_function(generic_moment)
-    mu2 = _vecfunc(2, tukeylambdapdf, -scipy.inf, scipy.inf, lam, loc, scale)
+    _vecfunc = special.general_function(moment_ppf)
+    mu2 = _vecfunc(2, tukeylambdappf, lam)
     var = _wc(scale>0, mu2*scale*scale)  
     if not full:
         return mn, var
     g1 = 0
-    g2 = _vecfunc(4, tukeylambdapdf, -scipy.inf, scipy.inf, lam, loc, scale) / mu2**2 - 3.0
+    g2 = _vecfunc(4, tukeylambdappf, lam) / mu2**2 - 3.0
     return mn, var, _wc(scale>0, g1), _wc(scale>0, g2)
 
 
@@ -2271,42 +2331,51 @@ def waldstats(loc=0.0, scale=1.0, full=0):
 
 ## Weibull
 
-def weibullpdf(x, shape, loc=0.0, scale=1.0):
-    c, b, A, x = map(arr,(shape, scale, loc, x))
+def weibullpdf(x, shape, left=0, loc=0.0, scale=1.0):
+    c, b, A, x, left = map(arr,(shape, scale, loc, x, left))
     x = arr((x-A*1.0)/b)
+    x = arr(where(left,-x,x))
     Px = c * x**(c-1.0) * exp(-x**c)
-    return select([(c<=0)|(b<=0),x>0],[scipy.nan,Px/b])
+    return select([(c<=0)|(b<=0),((x>0)&(left==0))|((x<0)&(left!=0))],[scipy.nan,Px/b])
 
-def weibullcdf(x, shape, loc=0.0, scale=1.0):
-    c, b, A, x = map(arr,(shape, scale, loc, x))
+def weibullcdf(x, shape, left=0, loc=0.0, scale=1.0):
+    c, b, A, x, left = map(arr,(shape, scale, loc, x, left))
     x = arr((x-A*1.0)/b)
+    sv =errp(0)
     Cx = -special.expm1(-x**c)
-    return select([(c<=0)|(b<=0),x>0],[scipy.nan,Cx])
+    Cx2 = exp(-(-x)**c)
+    sv = errp(sv)
+    return select([(c<=0)|(b<=0),(x>0)&(left==0), (x<0)&(left!=0), left!=0],[scipy.nan,Cx, Cx2,1])
 
-def weibullsf(x, shape, loc=0.0, scale=1.0):
-    c, b, A, x = map(arr,(shape, scale, loc, x))
+def weibullsf(x, shape, left=0, loc=0.0, scale=1.0):
+    c, b, A, x, left = map(arr,(shape, scale, loc, x, left))
     x = arr((x-A*1.0)/b)
+    sv = errp(0)
     Cx = exp(-x**c)
-    return select([(c<=0)|(b<=0),x>0],[scipy.nan,Cx],1)
+    Cx2 = -special.expm1(-(-x)**c)
+    sv = errp(sv)
+    return select([(c<=0)|(b<=0),(x>0)&(left==0),(x<0)&(left!=0), left==0],[scipy.nan,Cx,Cx2,1])
 
-def weibullppf(q, shape, loc=0.0, scale=1.0):
-    a, b, loc, q = map(arr,(shape, scale, loc, q))
+def weibullppf(q, shape, left=0, loc=0.0, scale=1.0):
+    a, b, loc, q, left = map(arr,(shape, scale, loc, q, left))
     cond1 = (a>0) & (b>0) & (0<=q) & (q<=1)
-    vals = b*pow(arr(log(1.0/(1-q))),1.0/a) + loc
-    return where(cond1, vals, scipy.nan)
+    q = arr(where(left, 1-q, q))
+    vals = pow(arr(log(1.0/arr(1-q))),1.0/a)
+    return select([1-cond1,left==0], [scipy.nan, b*vals+loc], -b*vals+loc)
 
-def weibullisf(q, shape, loc=0.0, scale=1.0):
-    a, b, loc, q = map(arr,(shape, scale, loc, q))
+def weibullisf(q, shape, left=0, loc=0.0, scale=1.0):
+    a, b, loc, q, left = map(arr,(shape, scale, loc, q, left))
     cond1 = (a>0) & (b>0) & (0<=q) & (q<=1)
-    vals = b*pow(arr(log(1.0/q)),1.0/a) + loc
-    return where(cond1, vals, scipy.nan)
+    q = arr(where(left, 1-q, q))
+    vals = pow(arr(log(1.0/q)),1.0/a)
+    return select([1-cond1,left==0], [scipy.nan, b*vals+loc], -b*vals+loc)
 
-def weibullstats(shape, loc=0.0, scale=1.0, full=0):
-    a, loc, b = map(arr,(shape, loc, scale))
+def weibullstats(shape, left=0, loc=0.0, scale=1.0, full=0):
+    a, loc, b, left = map(arr,(shape, loc, scale, left))
     cond = (a>0) & (b>0)
     gam = special.gamma
     ia = 1.0/a
-    mn = _wc(cond, b*gam(1+ia)+loc)
+    mn = select([1-cond, left==0], [scipy.nan, b*gam(1+ia)+loc], -b*gam(1+ia)+loc)
     var = _wc(cond, b*b*(gam(1+2*ia)-gam(1+ia)**2))
     if not full:
         return mn, var
@@ -2317,7 +2386,6 @@ def weibullstats(shape, loc=0.0, scale=1.0, full=0):
     g2 += gam(1+4*ia) - 4*gam(1+ia)*gam(1+3*ia) - 3*gam(1+2*ia)**2
     g2 /= den**2.0
     return mn, var, _wc(cond, g1), _wc(cond, g2)
-
 
         
 ### DISCRETE DISTRIBUTIONS

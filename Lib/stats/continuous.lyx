@@ -55,7 +55,7 @@ All distributions will have location (L) and Scale (S) parameters along
 \size small 
 
 \begin_inset  Tabular
-<lyxtabular version="2" rows="11" columns="3">
+<lyxtabular version="2" rows="12" columns="3">
 <features rotate="false" islongtable="false" endhead="0" endfirsthead="0" endfoot="0" endlastfoot="0">
 <column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
 <column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
@@ -135,7 +135,7 @@ Probability Density Function (PDF)
 \layout Standard
 
 
-\begin_inset Formula \( f\left( x\right)  \)
+\begin_inset Formula \( f\left( x\right) =F^{\prime }\left( x\right)  \)
 \end_inset 
 
 
@@ -182,6 +182,40 @@ Percent Point Function (PPF)
 
 
 \begin_inset Formula \( G\left( \alpha ;L,S\right) =L+SG\left( \alpha \right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Probability Sparsity Function (PSF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( g\left( q\right) =G^{\prime }\left( q\right)  \)
+\end_inset 
+
+ 
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( g\left( q;L,S\right) =Sg\left( q\right)  \)
 \end_inset 
 
 
@@ -435,6 +469,50 @@ skewness, kurtosis
 </cell>
 </row>
 </lyxtabular>
+
+\end_inset 
+
+
+\layout Standard
+
+\SpecialChar ~
+
+\layout Subsection
+
+Moments
+\layout Standard
+
+Non-central moments are defined using the PDF 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\int _{-\infty }^{\infty }x^{n}f\left( x\right) dx.\]
+
+\end_inset 
+
+ Note, that these can always be computed using the PPF.
+ Substitute 
+\begin_inset Formula \( x=G\left( q\right)  \)
+\end_inset 
+
+ in the above equation and get 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\int _{0}^{1}G^{n}\left( q\right) dq\]
+
+\end_inset 
+
+ which may be easier to compute numerically.
+ Central moments are computed similarly 
+\begin_inset Formula \( \mu =\mu _{1}^{\prime } \)
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu _{n} & = & \int _{-\infty }^{\infty }\left( x-\mu \right) ^{n}f\left( x\right) dx\\
+ & = & \int _{0}^{1}\left( G\left( q\right) -\mu \right) ^{n}dq\\
+ & = & \sum _{k=0}^{n}\left( \begin{array}{c}
+n\\
+k
+\end{array}\right) \left( -\mu \right) ^{k}\mu _{n-k}^{\prime }
+\end{eqnarray*}
 
 \end_inset 
 
@@ -1073,7 +1151,49 @@ This is just the Gamma distribution with shape parameter
  
 \layout Section
 
-Fatigue Life
+Fatigue Life (Birnbaum-Sanders)
+\layout Standard
+
+This distribution's pdf is the average of the inverse-Gaussian 
+\begin_inset Formula \( \left( \mu =1\right)  \)
+\end_inset 
+
+ and reciprocal inverse-Gaussian pdf 
+\begin_inset Formula \( \left( \mu =1\right)  \)
+\end_inset 
+
+.
+ We follow the notation of JKB here with 
+\begin_inset Formula \( \beta =S. \)
+\end_inset 
+
+ for 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{x+1}{2c\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-1\right) ^{2}}{2xc^{2}}\right) \\
+F\left( x;c\right)  & = & \Phi \left( \frac{1}{c}\left( \sqrt{x}-\frac{1}{\sqrt{x}}\right) \right) \\
+G\left( q;c\right)  & = & \frac{1}{4}\left[ c\Phi ^{-1}\left( q\right) +\sqrt{c^{2}\left( \Phi ^{-1}\left( q\right) \right) ^{2}+4}\right] ^{2}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{c^{2}}{2}+1\\
+\mu _{2} & = & c^{2}\left( \frac{5}{4}c^{2}+1\right) \\
+\gamma _{1} & = & \frac{4c\sqrt{11c^{2}+6}}{\left( 5c^{2}+4\right) ^{3/2}}\\
+\gamma _{2} & = & \frac{6c^{2}\left( 93c^{2}+41\right) }{\left( 5c^{2}+4\right) ^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Fisher z
@@ -1298,6 +1418,44 @@ m_{n} & = & G\left( \frac{1}{2};c\right)
  
 \layout Section
 
+Fréchet (left-skewed)
+\layout Standard
+
+Defined for 
+\begin_inset Formula \( x<0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & c\left( -x\right) ^{-c-1}\exp \left( -\left( -x\right) ^{-c}\right) \\
+F\left( x;c\right)  & = & 1-\exp \left( -\left( -x\right) ^{-c}\right) \\
+G\left( q;c\right)  & = & -\left( -\log \left( 1-q\right) \right) ^{-1/c}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+The mean is the negative of the right-skewed Frechet distribution given
+ above, but the other statistical parameters reported are the same.
+ 
+\layout Standard
+
+
+\begin_inset Formula \[
+\mu =-\Gamma \left( 1-\frac{1}{c}\right) .\]
+
+\end_inset 
+
+
+\layout Section
+
 Gamma
 \layout Standard
 
@@ -1410,7 +1568,7 @@ Shape parameter
 \begin_inset Formula \( c \)
 \end_inset 
 
- is positive.
+ is negative.
  
 \begin_inset Formula \begin{eqnarray*}
 f\left( x;c\right)  & = & \left( 1+cx\right) ^{-1-\frac{1}{c}}\\
@@ -1677,7 +1835,26 @@ m_{n} & = & -\log \left( \log 2\right)
 
 \layout Section
 
-Gumbel Left-skewed
+Gumbel Left-skewed (for minimum order statistic)
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \exp \left( x-e^{x}\right) \\
+F\left( x\right)  & = & 1-\exp \left( -e^{x}\right) \\
+G\left( q\right)  & = & \log \left( -\log \left( 1-q\right) \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ Note, that 
+\begin_inset Formula \( \mu  \)
+\end_inset 
+
+ is negative the mean for the right-skewed distribution.
+ Similar for median and mode.
+ All other moments are the same.
+ 
 \layout Section
 
 HalfCauchy
@@ -1926,6 +2103,10 @@ The standard form involves the shape parameter
 
  is not a parameter in that distribution.
  A standard form is 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ 
 \begin_inset Formula \begin{eqnarray*}
 f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x\mu ^{2}}\right) .\\
 F\left( x;\mu \right)  & = & \Phi \left( \frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right) +\exp \left( \frac{2}{\mu }\right) \Phi \left( -\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right) \\
@@ -2114,12 +2295,6 @@ e.g.
 
 .
  
-\layout Section
-
-Log-Series
-\layout Section
-
-Logarithmic
 \layout Section
 
 Logistic (Sech-squared)
@@ -2355,9 +2530,78 @@ G\left( q;\nu ,\lambda \right)  & = & F^{-1}\left( x;\nu ,\lambda \right)
 \layout Section
 
 Noncentral F
+\layout Standard
+
+Let 
+\begin_inset Formula \( \lambda >0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \nu _{1}>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \nu _{2}>0. \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\lambda ,v_{1},v_{2}\right)  & = & \exp \left[ \frac{\lambda }{2}+\frac{\left( \lambda \nu _{1}x\right) }{2\left( \nu _{1}x+\nu _{2}\right) }\right] \nu _{1}^{\nu _{1}/2}\nu _{2}^{\nu _{2}/2}x^{\nu _{1}/2-1}\\
+ &  & \times \left( \nu _{2}+\nu _{1}x\right) ^{-\left( \nu _{1}+\nu _{2}\right) /2}\frac{\Gamma \left( \frac{\nu _{1}}{2}\right) \Gamma \left( 1+\frac{\nu _{2}}{2}\right) L^{n_{1}/2-1}_{n_{2}/2}\left( -\frac{\lambda \nu _{1}x}{2\left( \nu _{1}x+\nu _{2}\right) }\right) }{B\left( \frac{\nu _{1}}{2},\frac{\nu _{2}}{2}\right) \Gamma \left( \frac{\nu _{1}+\nu _{2}}{2}\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Noncentral t
+\layout Standard
+
+The distribution of the ratio 
+\begin_inset Formula \[
+\frac{U+\lambda }{\chi _{\nu }/\sqrt{\nu }}\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \( U \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \chi _{\nu } \)
+\end_inset 
+
+ are independent and distributed as a standard normal and chi with 
+\begin_inset Formula \( \nu  \)
+\end_inset 
+
+ degrees of freedom.
+ Note 
+\begin_inset Formula \( \lambda >0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \nu >0 \)
+\end_inset 
+
+.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\lambda ,\nu \right)  & = & \frac{\nu ^{\nu /2}\Gamma \left( \nu +1\right) }{2^{\nu }e^{\lambda ^{2}/2}\left( \nu +x^{2}\right) ^{\nu /2}\Gamma \left( \nu /2\right) }\\
+ &  & \times \left\{ \frac{\sqrt{2}\lambda x\, _{1}F_{1}\left( \frac{\nu }{2}+1;\frac{3}{2};\frac{\lambda ^{2}x^{2}}{2\left( \nu +x^{2}\right) }\right) }{\left( \nu +x^{2}\right) \Gamma \left( \frac{\nu +1}{2}\right) }\right. \\
+ &  & -\left. \frac{\, _{1}F_{1}\left( \frac{\nu +1}{2};\frac{1}{2};\frac{\lambda ^{2}x^{2}}{2\left( \nu +x^{2}\right) }\right) }{\sqrt{\nu +x^{2}}\Gamma \left( \frac{\nu }{2}+1\right) }\right\} \\
+ & = & \frac{\Gamma \left( \nu +1\right) }{2^{\left( \nu -1\right) /2}\sqrt{\pi \nu }\Gamma \left( \nu /2\right) }\exp \left[ -\frac{\nu \lambda ^{2}}{\nu +x^{2}}\right] \\
+ &  & \times \left( \frac{\nu }{\nu +x^{2}}\right) ^{\left( \nu -1\right) /2}Hh_{\nu }\left( -\frac{\lambda x}{\sqrt{\nu +x^{2}}}\right) \\
+F\left( x;\lambda ,\nu \right)  & = & 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Normal
@@ -2386,9 +2630,6 @@ m_{d}=m_{n}=\mu  & = & 0\\
 \end_inset 
 
 
-\layout Section
-
-Map-Airy
 \layout Section
 
 Maxwell
@@ -2722,7 +2963,30 @@ m_{n} & = & \sqrt{2\log \left( 2\right) }
 
 \layout Section
 
-Rice
+Rice 
+\layout Standard
+
+Defined for 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( b>0 \)
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;b\right)  & = & x\exp \left( -x^{2}/2+b^{2}/2\right) I_{0}\left( xb\right) \\
+F\left( x;b\right)  & = & \\
+ &  & 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Reciprocal
@@ -2754,6 +3018,43 @@ d & = & \log \left( a/b\right) \\
 \gamma _{2} & = & \frac{-36\left( a-b\right) ^{3}+36d\left( a-b\right) ^{2}\left( a+b\right) -16d^{2}\left( a^{3}-b^{3}\right) +3d^{3}\left( a^{2}+b^{2}\right) \left( a+b\right) }{3\left( a-b\right) \left[ a\left( d-2\right) +b\left( d+2\right) \right] ^{2}}-3\\
 m_{d} & = & a\\
 m_{n} & = & \sqrt{ab}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Reciprocal Inverse Gaussian 
+\layout Standard
+
+The pdf is found from the inverse gaussian (IG), 
+\begin_inset Formula \( f_{RIG}\left( x;\mu \right) =f_{IG}\left( \frac{1}{x};\mu \right)  \)
+\end_inset 
+
+ defined for 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ as 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x\mu ^{2}}\right) .\\
+F\left( x;\mu \right)  & = & \Phi \left( \frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right) +\exp \left( \frac{2}{\mu }\right) \Phi \left( -\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right) \\
+G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x}\right) \\
+ &  & 
 \end{eqnarray*}
 
 \end_inset 
@@ -2845,9 +3146,6 @@ m_{n}=m_{d}=\mu  & = & 0\\
 
  this distribution approaches the standard normal distribution.
  
-\layout Section
-
-Student z
 \layout Section
 
 Symmetric Power
@@ -3168,7 +3466,7 @@ G\left( q;c\right)  & = & F^{-1}\left( x;c\right)
  
 \layout Section
 
-Weibull
+Weibull (minimum)
 \layout Standard
 
 A flexible distribution with a single shape parameter: 
@@ -3208,5 +3506,37 @@ m_{n} & = & \log ^{1/c}\left( 2\right)
 \end_inset 
 
  it is the standard Rayleigh distribution.
+ 
+\layout Section
+
+Weibull (maximum)
+\layout Standard
+
+Defined for negative values of 
+\begin_inset Formula \( x \)
+\end_inset 
+
+.
+ 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & c\left( -x\right) ^{c-1}\exp \left( -\left( -x\right) ^{c}\right) I_{\left( -\infty ,0\right) }\left( x\right) \\
+F\left( x;c\right)  & = & \exp \left( -\left( -x\right) ^{c}\right) I_{\left( -\infty ,0\right) }\left( x\right) \\
+G\left( q;c\right)  & = & -\log ^{1/c}\left( \frac{1}{q}\right) .
+\end{eqnarray*}
+
+\end_inset 
+
+ From symmetry we see that 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & -\Gamma \left( 1+\frac{1}{c}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ and the remaining stats are the same as for the (positive) Weibull distribution.
  
 \the_end

@@ -306,6 +306,16 @@ def halfnorm(loc=0.0, scale=1.0, size=None):
     # return chi(1, loc, scale, size)
     return abs(stnorm(size=size))*scale + loc
 
+def fatiguelife(c, loc=0.0, scale=1.0, size=None):
+    z = stnorm(size=size)
+    U = random(size=size)
+    fac = 2 + c*c*z*z
+    det = sqrt(fac*fac - 4)
+    t1 = fac + det
+    t2 = fac - det
+    vals = t1*(U>0.5) + t2*(U<0.5)
+    return vals*scale + loc
+
 def foldnorm(c=0.0, loc=0.0, scale=1.0, size=None):
     """Folded Normal Random Variates."""
     return abs(norm(c*scale, scale)) + loc
