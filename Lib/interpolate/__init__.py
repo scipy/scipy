@@ -8,7 +8,7 @@ Wrappers around FITPACK functions:
   splint    -- compute definite integral of a spline.
   sproot    -- find the roots of a cubic spline.
   spalde    -- compute all derivatives of a spline at given points.
-  bisplep   -- find bivariate smoothing spline representation.
+  bisplrep   -- find bivariate smoothing spline representation.
   bisplev   -- evaluate bivariate smoothing spline. 
 
 Interpolation Class
@@ -19,5 +19,5 @@ Interpolation Class
 
 from interpolate import linear_1d
 from fitpack import splrep, splprep, splev, splint, sproot, \
-                    spalde, bisplep, bisplev
+                    spalde, bisplrep, bisplev
 

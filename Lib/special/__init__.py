@@ -101,10 +101,10 @@
   HyperGeometric Functions
 
     hyp2f1   -- Gauss hypergeometric function (2F1)
-    hyperg   -- Confluent hypergeometric function (1F1)
+    hyp1f1   -- Confluent hypergeometric function (1F1)
     hyp2f0   -- Hypergeometric function (2F0) 
-    onef2    -- Hypergeometric function (1F2)
-    threef0  -- Hypergeometric function (3F0)
+    hyp1f2    -- Hypergeometric function (1F2)
+    hyp3f0  -- Hypergeometric function (3F0)
 
   Other Special Functions
 

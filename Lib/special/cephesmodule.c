@@ -259,18 +259,18 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes4_functions, hyp2f1_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "hyp2f1", hyp2f1_doc, 1);
 	PyDict_SetItemString(dictionary, "hyp2f1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3_functions, hyperg_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hyperg", hyperg_doc, 1);
-	PyDict_SetItemString(dictionary, "hyperg", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, hyperg_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hyp1f1", hyp1f1_doc, 1);
+	PyDict_SetItemString(dictionary, "hyp1f1", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes4a_2_functions, hyp2f0_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "hyp2f0", hyp2f0_doc, 1);
 	PyDict_SetItemString(dictionary, "hyp2f0", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes4_2_functions, onef2_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "onef2", onef2_doc, 1);
-	PyDict_SetItemString(dictionary, "onef2", f);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, onef2_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "hyp1f2", hyp1f2_doc, 1);
+	PyDict_SetItemString(dictionary, "hyp1f2", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes4_2_functions, threef0_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "threef0", threef0_doc, 1);
-	PyDict_SetItemString(dictionary, "threef0", f);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, threef0_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "hyp3f0", hyp3f0_doc, 1);
+	PyDict_SetItemString(dictionary, "hyp3f0", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes3_functions, incbet_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "incbet", incbet_doc, 1);

@@ -490,7 +490,7 @@ def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
             gist.pause(plen)
     gist.animate(0)
 
-def figure(n=None, style='currstyle.gs', color=-2, frame=1, labelsize=14, labelfont='helvetica'):
+def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=1, labelsize=14, labelfont='helvetica'):
     fid = open(style,'w')
     fid.write(write_style.style2string(write_style.getsys(color=color,frame=frame,labelsize=labelsize,font=labelfont)))
     fid.close()

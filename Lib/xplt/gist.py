@@ -3,7 +3,7 @@
 from Numeric import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path
 from gistC import *
-from help import help
+from helpmod import help
 from shapetest import *
 from arrayfns import *
 

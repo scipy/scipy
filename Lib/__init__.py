@@ -1,3 +1,5 @@
+__all__ = ["optimize", "integrate", "signal", "special", "io", "fft",
+           "interpolate", "stats"]
 
 from Numeric import *
 import os,sys
@@ -5,6 +7,8 @@ from Help import help, source
 from misc import *
 
 
+for name in __all__:
+    exec("import %s" % name)
 # add some directories to the path so we can import their
 # modules.
 
