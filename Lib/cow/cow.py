@@ -226,20 +226,28 @@ class machine_cluster:
         # Prepare main package for sending
         # almost verbatim from loop_apply_pack in sync_cluster
         #----------------------------------------------------
-        if type(loop_var) == type(1):
-            loop_var = function.func_code.co_varnames[loop_var]
+        #if type(loop_var) == type(1):
+        #    loop_var = function.func_code.co_varnames[loop_var]
         all_keywords = {}
         if keywords: all_keywords.update(keywords)
-        more_keywords = sync_cluster.args_to_keywords(function,args)
-        sync_cluster.catch_keyword_conflicts(more_keywords,all_keywords)
-        all_keywords.update(more_keywords)
+        #more_keywords = sync_cluster.args_to_keywords(function,args)
+        #sync_cluster.catch_keyword_conflicts(more_keywords,all_keywords)
+        #all_keywords.update(more_keywords)
 
         # pull out the loop variable.
-        loop_data = all_keywords[loop_var]
-        # no need to pack and send since it'll be in the "addendum"
-        del all_keywords[loop_var] 
+        if type(loop_var) != type(''):
+            loop_var = int(loop_var)
+            loop_data = args[loop_var]
+            # no need to pack and send since it'll be in the "addendum"
+            args = list(args)
+            args[loop_var] = None
+            args = tuple(args)
+        else:
+            loop_data = all_keywords[loop_var]    
+            # no need to pack and send since it'll be in the "addendum"
+            del all_keywords[loop_var]             
         contents={'_command':sync_cluster.loop_func,'function':function,
-                  'keywords':all_keywords,'loop_var':loop_var}
+                  'args':args,'keywords':all_keywords,'loop_var':loop_var}
         package = self.workers[0].packer.pack(contents) 
         return self.loop_send_recv(package,loop_data,loop_var)
 

@@ -116,7 +116,7 @@ class blocking_channel:
         *"""
         self.sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM)
         #print 'connecting: ', host, port
-        self.sock.connect(host, port)
+        self.sock.connect((host,port))
         self.host,self.port = host,port
         #print 'creating files'
         self.rfile = self.sock.makefile('rb', bufsize)
@@ -349,13 +349,14 @@ class standard_sync_client:
         return self.packer.pack(contents)
     def apply_pack(self,function,args,keywords=None):
         if not keywords: keywords = {}
-        more_keywords = args_to_keywords(function,args)
-        catch_keyword_conflicts(more_keywords,keywords)
-        keywords.update(more_keywords)
+        #more_keywords = args_to_keywords(function,args)
+        #catch_keyword_conflicts(more_keywords,keywords)
+        #keywords.update(more_keywords)
         contents={'_command':sync_cluster.apply_func,'function':function,
-                  'keywords':keywords}
+                  'args':args,'keywords':keywords}
         return self.packer.pack(contents)
     def loop_apply_pack(self,function,loop_var,args,keywords=None):
+        # NOT USED -- see cow.machine_cluster.loop_apply.
         all_keywords = {}
         if keywords: all_keywords.update(keywords)
         more_keywords = args_to_keywords(function,args)
@@ -369,17 +370,20 @@ class standard_sync_client:
         package = self.apply_pack(function,args,keywords)
         self.send(package)
         return self.recv()
+        
     def exec_code(self,code,inputs=None,returns=None,global_vars=None):
         package = self.exec_code_pack(code,inputs,returns,global_vars)
         self.send(package)
         return self.recv()
 
     def loop_apply(self,function,loop_var,args,keywords=None):
+        # NOT USED -- see cow.machine_cluster.loop_apply.
         package = self.loop_apply_pack(function,loop_var,args,keywords)
         self.send(package)
         return self.recv()
 
     def loop_code(self,code,loop_var,inputs=None,returns=None,global_vars=None):
+        # NOT USED -- see cow.machine_cluster.loop_code.
         package = self.loop_code_pack(code,loop_var,inputs,returns,global_vars)
         self.send(package)
         return self.recv()
@@ -610,10 +614,10 @@ class standard_sync_handler(SocketServer.StreamRequestHandler):
             self.log.write(pre_msg+msg+'\n')
 
 #there may be some issues with globals scope in these
-def apply_func(function, keywords,addendum=None):
+def apply_func(function, args, keywords=None,addendum=None):
     if not keywords: keywords = {}
     if addendum: keywords.update(addendum)
-    return apply(function,() ,keywords)
+    return apply(function,args ,keywords)
 
 def exec_code(code,inputs,returns,global_vars,addendum=None):
     if addendum: inputs.update(addendum)
@@ -636,15 +640,23 @@ def exec_code(code,inputs,returns,global_vars,addendum=None):
         results = None
     return results
 
-def loop_func(function,loop_var, keywords,addendum=None):
+def loop_func(function,loop_var,args,keywords,addendum=None):
     if not keywords: keywords = {}
-    if addendum: keywords.update(addendum)
+    if addendum: 
+        keywords.update(addendum)
     result = []
     _loop_data = keywords[loop_var]
     del keywords[loop_var] #not strictly necessary
-    for _i in _loop_data:
-        keywords[loop_var] = _i
-        result.append(apply(function,() ,keywords))
+    if type(loop_var) == type(''):                                
+        for _i in _loop_data:
+            keywords[loop_var] = _i
+            result.append(apply(function,args ,keywords))
+    elif type(loop_var) == type(1):
+        args_list = list(args)
+        for _i in _loop_data:
+            args_list[loop_var] = _i
+            args = tuple(args_list)
+            result.append(apply(function,args,keywords))
     return tuple(result)
 
 def loop_code(code,loop_var,inputs,returns,global_vars,addendum=None):
