@@ -2,8 +2,8 @@
 # Created by Pearu Peterson, August 2002
 
 import os
+import sys
 from glob import glob
-
 
 def configuration(parent_package=''):
     from scipy_distutils.core import Extension
