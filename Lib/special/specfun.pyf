@@ -276,7 +276,7 @@ python module specfun ! in
             integer intent(in), check(n>=m) :: n
             double precision intent(in) :: c
             double precision intent(in), check(fabs(x)<1) :: x
-            integer intent(in), check((kd==-1)||(kd=1)) :: kd
+            integer intent(in), check((kd==-1)||(kd==1)) :: kd
             double precision intent(in) :: cv
             double precision intent(out) :: s1f
             double precision intent(out) :: s1d
