@@ -30,9 +30,11 @@ from gist import *
 import os, sys
 from Mplot import *
 from write_style import *
-gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
-                        'site-packages','scipy','xplt')
+import scipy_base
+base_file = os.path.split(scipy_base.__file__)[0]
+gistpath = os.path.join(base_file[:-5],'xplt')
 os.environ['GISTPATH'] = gistpath
+
 display = os.environ.get('DISPLAY')
 
 maxwidth=os.environ.get('XPLT_MAXWIDTH')

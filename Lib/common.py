@@ -33,7 +33,10 @@ def factorial(n,exact=0):
         return val
     else:
         n = asarray(n)
-        return where(n>=0,special.gamma(n+1),0)
+        sv = special.errprint(0)
+        vals = special.gamma(n+1)
+        sv = special.errprint(sv)
+        return where(n>=0,vals,0)
 
 def comb(N,k,exact=0):
     """Combinations of N things taken k at a time.
@@ -63,7 +66,10 @@ def comb(N,k,exact=0):
         k,N = asarray(k), asarray(N)
         lgam = special.gammaln
         cond = (k <= N) & (N >= 0) & (k >= 0)
-        return where(cond, exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1)),0.0)
+        sv = special.errprint(0)
+        vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+        sv = special.errprint(sv)
+        return where(cond, vals, 0.0)
 
 def central_diff_weights(Np,ndiv=1):
     """Return weights for an Np-point central derivative of order ndiv

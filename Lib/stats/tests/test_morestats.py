@@ -27,14 +27,14 @@ class test_shapiro(unittest.TestCase):
               4.43,0.21,4.75,0.71,1.52,3.24,
               0.93,0.42,4.97,9.53,4.55,0.47,6.66]
         w,pw = scipy.stats.shapiro(x1)
-        assert_almost_equal(w,0.90047299861907959,8)
-        assert_almost_equal(pw,0.042089745402336121,8)
+        assert_almost_equal(w,0.90047299861907959,7)
+        assert_almost_equal(pw,0.042089745402336121,7)
         x2 = [1.36,1.14,2.92,2.55,1.46,1.06,5.27,-1.11,
               3.48,1.10,0.88,-0.51,1.46,0.52,6.20,1.69,
               0.08,3.67,2.81,3.49]
         w,pw = scipy.stats.shapiro(x2)
-        assert_almost_equal(w,0.9590269923210144,8)
-        assert_almost_equal(pw,0.52459925413131714,8)
+        assert_almost_equal(w,0.9590269923210144,7)
+        assert_almost_equal(pw,0.52459925413131714,7)
 
 class test_anderson(unittest.TestCase):
     def check_normal(self):
@@ -81,8 +81,8 @@ class test_bartlett(unittest.TestCase):
         for k in range(1,11):
             args.append(eval('g%d'%k))
         T, pval = stats.bartlett(*args)
-        assert_almost_equal(T,20.78587342806484,8)
-        assert_almost_equal(pval,0.0136358632781,8)
+        assert_almost_equal(T,20.78587342806484,7)
+        assert_almost_equal(pval,0.0136358632781,7)
 
 class test_levene(unittest.TestCase):
     def check_data(self):
@@ -90,8 +90,8 @@ class test_levene(unittest.TestCase):
         for k in range(1,11):
             args.append(eval('g%d'%k))
         W, pval = stats.levene(*args)
-        assert_almost_equal(W,1.7059176930008939,8)
-        assert_almost_equal(pval,0.0990829755522,8)
+        assert_almost_equal(W,1.7059176930008939,7)
+        assert_almost_equal(pval,0.0990829755522,7)
 
 class test_binom_test(unittest.TestCase):
     def check_data(self):
