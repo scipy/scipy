@@ -223,15 +223,18 @@ LA = LinearAlgebra
 def geometric_mean (a,dimension=-1):
     """ Calculates the geometric mean of the values in the passed array.
 
-        That is:  n-th root of (x1 * x2 * ... * xn).  Defaults to ALL values in 
-        the passed array.  REMEMBER: if dimension=0, it collapses over 
-        dimension 0 ('rows' in a 2D array) only.
-
-        Returns: geometric mean computed over the specified dimension
+        That is:  n-th root of (x1 * x2 * ... * xn).
+        
+        If a is 1D, a single value is returned.  If a is multi-dimensional, 
+        the geometric mean along the dimension specified is calculated.  The
+        returned array has one less dimension than a.  dimension defaults
+        to the last dimension of the array.  This means that, for a two
+        dimensional array, the default is to calculate the geometric mean
+        of each row.       
     """
     a = asarray(a)
     size = a.shape[dimension]
-    prod = multiply.reduce(a,dimension)
+    prod = product(a,dimension)
     gmean = power(prod,1./size)
     return gmean 
 
