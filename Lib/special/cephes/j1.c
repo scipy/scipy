@@ -457,7 +457,7 @@ double w, z, p, q, xn;
 
 w = x;
 if( x < 0 )
-	w = -x;
+	return -j1(-x);
 
 if( w <= 5.0 )
 	{
