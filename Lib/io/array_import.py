@@ -238,7 +238,7 @@ def getcolumns(stream, columns, separator):
         k = k + 1
     if k == K:
         raise ValueError, "No data found in file."
-    firsline = stream._buffer[k]
+    firstline = stream._buffer[k]
     N = len(columns)    
     collist = [None]*N
     colsize = [None]*N

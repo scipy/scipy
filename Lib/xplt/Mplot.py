@@ -727,12 +727,12 @@ def full_page(win,dpi=75):
 
 def _add_color(system, color, frame=0):
     try:
-        system['ticks']['horiz']['tickStyle'] = {'color':color},
-        system['ticks']['horiz']['gridStyle'] = {'color':color},
+        system['ticks']['horiz']['tickStyle'] = {'color':color}
+        system['ticks']['horiz']['gridStyle'] = {'color':color}
     except KeyError:
         system['ticks']['horiz'] = {}
-        system['ticks']['horiz']['tickStyle'] = {'color':color},
-        system['ticks']['horiz']['gridStyle'] = {'color':color},
+        system['ticks']['horiz']['tickStyle'] = {'color':color}
+        system['ticks']['horiz']['gridStyle'] = {'color':color}
     try:
         text = system['ticks']['horiz']['textStyle']
     except KeyError:
@@ -741,12 +741,12 @@ def _add_color(system, color, frame=0):
     text['color'] = color
 
     try:
-        system['ticks']['vert']['tickStyle'] = {'color':color},
-        system['ticks']['vert']['gridStyle'] = {'color':color},
+        system['ticks']['vert']['tickStyle'] = {'color':color}
+        system['ticks']['vert']['gridStyle'] = {'color':color}
     except KeyError:
         system['ticks']['vert'] = {}
-        system['ticks']['vert']['tickStyle'] = {'color':color},
-        system['ticks']['vert']['gridStyle'] = {'color':color},        
+        system['ticks']['vert']['tickStyle'] = {'color':color}
+        system['ticks']['vert']['gridStyle'] = {'color':color}
     try:
         text = system['ticks']['vert']['textStyle']
     except KeyError:
@@ -1017,7 +1017,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
              xlab="",ylab="",zlab="",clab="",titl="",
              totalheight=0.5,space=0.02, medfilt=5,
              font='helvetica',fontsize=16,color='black',lcolor='white',
-             cb=1, line=1):
+             fcolor='black',  cb=1, line=1, palette=None):
     """ Visualize a 3d volume as a two connected slices.  The slices are
     given in the 2-tuple slice1 and slice2.
 
@@ -1109,15 +1109,20 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     systems = []
     system = write_style.getsys(hticpos='', vticpos='left')
     system['viewport'] = [xpos[0],xpos[1],ypos2[0],ypos2[1]]
+    if fcolor not in ['black',None]:
+        _add_color(system, _colornum[color])
     systems.append(system)
     system = write_style.getsys(hticpos='below', vticpos='left')
     system['viewport'] = [xpos[0],xpos[1],ypos1[0],ypos1[1]]
+    if fcolor not in ['black',None]:
+        _add_color(system, _colornum[color])
     systems.append(system)
 
     write_style.writestyle("/tmp/two-plane.gs",systems)
 
     gist.window(style='/tmp/two-plane.gs')
     _current_style ='/tmp/two-plane.gs'
+    change_palette(palette)
     gist.plsys(1)
     if medfilt > 1:
         img1 = signal.medfilt(img1,[medfilt,medfilt])
