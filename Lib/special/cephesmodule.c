@@ -27,7 +27,7 @@
 
 #include "cephes_doc.h"
 
-#define ABS(x) (y=(x); y < 0 ? -y : y)
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 
 /* isnan and isinf and isfinite functions */
 static void FLOAT_isnan(char **args, int *dimensions, int *steps, void *func) {
