@@ -3,7 +3,6 @@
   Double complex FFT and IFFT, arbitrary dimensions.
   Author: Pearu Peterson, August 2002
  */
-
 #include "fftpack.h"
 
 /**************** FFTW *****************************/
@@ -55,7 +54,7 @@ extern void destroy_zfftnd_cache(void) {
 #ifdef WITH_FFTW
 #else
 static
-inline
+/*inline : disabled because MSVC6.0 fails to compile it. */
 int next_comb(int *ia,int *da,int m) {
   while (m>=0 && ia[m]==da[m]) ia[m--] = 0;
   if (m<0) return 0;
