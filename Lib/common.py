@@ -139,6 +139,7 @@ def who(vardict=None):
     return
     
 
+#-----------------------------------------------------------------------------
 
 def test(level=10):
     from scipy_base.testing import module_test
