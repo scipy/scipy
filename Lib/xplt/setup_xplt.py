@@ -24,8 +24,11 @@ for keyword in sys.argv:
 windows = (sys.platform == 'win32')
 
 x11 = not (windows or cygwin)
-if 'NO_XLIB' in os.environ:
-    x11 = 0
+try:
+    if 'NO_XLIB' in os.environ:
+        x11 = 0
+except:
+    pass
 
 run_config = ('config' in sys.argv)
 print '%%%%%%%%%%%%%%%%%%%%%%%'
