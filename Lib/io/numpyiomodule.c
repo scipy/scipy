@@ -101,7 +101,7 @@ static PyObject *
   }
   /* Make a 1-D NumPy array of type read_type with n elements */ 
 
-  if ((arr = (PyArrayObject *)PyArray_FromDims(1,&n,out_type)) == NULL)
+  if ((arr = (PyArrayObject *)PyArray_FromDims(1,(int*)&n,out_type)) == NULL)
     return NULL;
   
       /* Read the data into the array from the file */
@@ -456,15 +456,68 @@ static PyObject *
 }
 
 
-static char fread_doc[] = "g = numpyio.fread( fid, Num, read_type { mem_type, byteswap})\n\n     fid =       open file pointer object (i.e. from fid = open('filename') )\n     Num =       number of elements to read of type read_type\n     read_type = a character in 'cb1silfdFD' (PyArray types)\n                 describing how to interpret bytes on disk.\nOPTIONAL\n     mem_type =  a character (PyArray type) describing what kind of\n                 PyArray to return in g.   Default = read_type\n     byteswap =  0 for no byteswapping or a 1 to byteswap (to handle\n                 different endianness).    Default = 0.";
+static char fread_doc[] = 
+"g = numpyio.fread( fid, Num, read_type { mem_type, byteswap})\n\n"
+"     fid =       open file pointer object (i.e. from fid = open('filename') )\n"
+"     Num =       number of elements to read of type read_type\n"
+"     read_type = a character in 'cb1silfdFD' (PyArray types)\n"
+"                 describing how to interpret bytes on disk.\nOPTIONAL\n"
+"     mem_type =  a character (PyArray type) describing what kind of\n"
+"                 PyArray to return in g.   Default = read_type\n"
+"     byteswap =  0 for no byteswapping or a 1 to byteswap (to handle\n"
+"                 different endianness).    Default = 0.";
 
-static char fwrite_doc[] = "numpyio.fwrite( fid, Num, myarray { write_type, byteswap} )\n\n     fid =       open file stream\n     Num =       number of elements to write\n     myarray =   NumPy array holding the data to write (will be\n                 written as if ravel(myarray) was passed)\nOPTIONAL\n     write_type = character ('cb1silfdFD') describing how to write the\n                  data (what datatype to use)  Default = type of\n                  myarray.\n     byteswap =   0 or 1 to determine if byteswapping occurs on write.\n                  Default = 0.";
+static char fwrite_doc[] = 
+"numpyio.fwrite( fid, Num, myarray { write_type, byteswap} )\n\n"
+"     fid =       open file stream\n"
+"     Num =       number of elements to write\n"
+"     myarray =   NumPy array holding the data to write (will be\n"
+"                 written as if ravel(myarray) was passed)\nOPTIONAL\n"
+"     write_type = character ('cb1silfdFD') describing how to write the\n"
+"                  data (what datatype to use)  Default = type of\n"
+"                  myarray.\n"
+"     byteswap =   0 or 1 to determine if byteswapping occurs on write.\n"
+"                  Default = 0.";
 
-static char bswap_doc[] = "out = numpyio.bswap(myarray)\n\n     myarray = an array whose elements you want to byteswap.\n     out     = a reference to byteswapped myarray.\n\n     This does an inplace byte-swap so that myarray is changed in\n     memory.";
+static char bswap_doc[] = 
+"     out = numpyio.bswap(myarray)\n\n"
+"     myarray = an array whose elements you want to byteswap.\n"
+"     out     = a reference to byteswapped myarray.\n\n"
+"     This does an inplace byte-swap so that myarray is changed in\n"
+"     memory.";
 
-static char packbits_doc[] = "out = numpyio.packbits(myarray)\n\n   myarray = an array whose (assumed binary) elements you want to\n             pack into bits (must be of integer type, 'cb1sl')\n\n   This routine packs the elements of a binary-valued dataset into a\n   1-D NumPy array of type PyArray_UBYTE ('b') whose bits correspond to\n   the logical (0 or nonzero) value of the input elements. \n\n   If myarray has more dimensions than 2 it packs each slice (rows*columns)\n   separately.  The number of elements per slice (rows*columns) is\n   important to know to be able to unpack the data later.\n\n     Example:\n  >>> a = array([[[1,0,1],\n  ...             [0,1,0]],\n  ...            [[1,1,0],\n  ...             [0,0,1]]])\n  >>> b = numpyio.packbits(a)\n  >>> b\n  array([168, 196], 'b')\n\n      Note that 168 = 128 + 32 + 8\n                196 = 128 + 64 + 4";
+static char packbits_doc[] = 
+"out = numpyio.packbits(myarray)\n\n"
+"  myarray = an array whose (assumed binary) elements you want to\n"
+"             pack into bits (must be of integer type, 'cb1sl')\n\n"
+"   This routine packs the elements of a binary-valued dataset into a\n"
+"   1-D NumPy array of type PyArray_UBYTE ('b') whose bits correspond to\n"
+"   the logical (0 or nonzero) value of the input elements. \n\n"
+"   If myarray has more dimensions than 2 it packs each slice (rows*columns)\n"
+"   separately.  The number of elements per slice (rows*columns) is\n"
+"   important to know to be able to unpack the data later.\n\n"
+"     Example:\n"
+"     >>> a = array([[[1,0,1],\n"
+"     ...             [0,1,0]],\n"
+"     ...            [[1,1,0],\n"
+"     ...             [0,0,1]]])\n"
+"     >>> b = numpyio.packbits(a)\n"
+"     >>> b\n"
+"     array([168, 196], 'b')\n\n"
+"     Note that 168 = 128 + 32 + 8\n"
+"               196 = 128 + 64 + 4";
 
-static char unpackbits_doc[] = "out = numpyio.unpackbits(myarray, elements_per_slice {, out_type} )\n\n     myarray =        Array of integer type ('cb1sl') whose least\n                      significant byte is a bit-field for the\n                      resulting output array.\n\n     elements_per_slice = Necessary for interpretation of myarray.\n                          This is how many elements in the\n                          rows*columns of original packed structure.\n\nOPTIONAL\n     out_type =       The type of output array to populate with 1's\n                      and 0's.  Must be an integer type.\n\n\nThe output array will be a 1-D array of 1's and zero's";
+static char unpackbits_doc[] = 
+"out = numpyio.unpackbits(myarray, elements_per_slice {, out_type} )\n\n"
+"     myarray =        Array of integer type ('cb1sl') whose least\n"
+"                      significant byte is a bit-field for the\n"
+"                      resulting output array.\n\n"
+"     elements_per_slice = Necessary for interpretation of myarray.\n"
+"                          This is how many elements in the\n "
+"                         rows*columns of original packed structure.\n\nOPTIONAL\n"
+"     out_type =       The type of output array to populate with 1's\n"
+"                      and 0's.  Must be an integer type.\n\n\nThe output array\n"
+"                      will be a 1-D array of 1's and zero's";
 
 
 #define BUFSIZE 256
