@@ -4,7 +4,7 @@ from scipy_base import atleast_1d, dot, take
 
 error = _minpack.error
 
-__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point']
+__all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
 
 def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
     """Find the roots of a function.
@@ -251,27 +251,25 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
         import scipy.linalg as sl
         perm = take(eye(n),retval[1]['ipvt']-1)
         r = sl.triu(transpose(retval[1]['fjac'])[:n,:])
-        R = dot(r, transpose(perm))
+        R = dot(r, perm)
         cov_x = sl.inv(dot(transpose(R),R))
         return (retval[0], cov_x) + retval[1:] + (mesg,)
     else:
         return (retval[0], mesg)
 
 
-def check_gradient(fcn,Dfcn,x0,col_deriv=0):
+def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     """Perform a simple check on the gradient for correctness.
     """
 
     x = atleast_1d(x0)
     n = len(x)
     x.shape = (n,)
-    fvec = atleast_1d(fcn(x))
-    if 1 not in fvec.shape:
-        raise ValueError, "Function does not return a 1-D array."
+    fvec = atleast_1d(fcn(x,*args))
     m = len(fvec)
     fvec.shape = (m,)
     ldfjac = m
-    fjac = atleast_1d(Dfcn(x))
+    fjac = atleast_1d(Dfcn(x,*args))
     fjac.shape = (m,n)
     if col_deriv == 0:
         fjac = transpose(fjac)
@@ -281,7 +279,7 @@ def check_gradient(fcn,Dfcn,x0,col_deriv=0):
     fvecp = None
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,1,err)
     
-    fvecp = atleast_1d(fcn(xp))
+    fvecp = atleast_1d(fcn(xp,*args))
     fvecp.shape = (m,)
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,2,err)
     
