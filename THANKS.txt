@@ -1,22 +1,35 @@
-Many people have contributed to these codes
+SciPy is an open source library developed by Enthought, Inc. Many people have 
+contributed to SciPy, both in code development, suggestions, and financial 
+support.  Below is a partial list.  If you've been left of, please let me know, 
+and we'll add your name.
 
-In particular thank you to 
+Code Contributions:
 
-Individuals:
+The main developers on SciPy are Travis Oliphant, Pearu Peterson, and Eric 
+Jones.  Travis and Eric each contributed about half the orginal code.  Pearu 
+developed f2py which is the integral to wrapping the many Fortran libraries 
+used in SciPy.  All three continually work algorithm development and 
+improvements to the feature set, build process, and robustness of SciPy.
 
-Eric Jones for cow, compiler, cluster, gui_thread, gplt, ga, plt, linalg, and the 
-testing interface as well as designing the build process.
 
-Travis Oliphant for fft, integrate, interpolate (with Pearu Peterson), io, linalg, optimize, signal, sparse, special, xplt, many basic functions, and assisting with the build process
+Prabhu Ramachandran -- improvements to gui_thread.
+Jochen Kupper -- the zoom feature in plt.
+Jeff Whitaker -- Mac OS X support.
+Travis Vaught -- initial work on stats module clean up.
 
-Travis Vaught
-Prabhu ?
+Testing:
+
+
+
+Website Development:
+
+Travis Vaught, Tiffany Kamm, and Eric Jones for building th community web-site.
+Travis Vaught for maintaining the web-site.
 
 Institutions:
 
-Agilent has given a genereous donation for support of SciPy.
+Enthought for providing resources and finances to development SciPy.
 
 Brigham Young University has provided resources for students to work on SciPy.
 
-Enthought for providing resources and financing for the development of SciPy.
-
+Agilent has given a genereous donation for support of SciPy.
