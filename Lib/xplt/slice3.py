@@ -18,7 +18,7 @@ from shapetest import *
 from types import *
 from pl3d import *
 from arrayfns import *
-from gistC import *
+from scipy.xplt.gistC import *
 
  #
  # Caveats:
