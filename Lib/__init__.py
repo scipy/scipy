@@ -93,12 +93,12 @@ modules2all(__all__, _level1a_importonly, globals())
 
 # Level 2
 _plot = []
-try:
-    import xplt
-    __all__.append('xplt')
-    _plot.append('xplt')
-except ImportError:
-    pass
+#try:
+#    import xplt
+#    __all__.append('xplt')
+#    _plot.append('xplt')
+#except ImportError:
+#    pass
 
 try:
     import gplt
@@ -107,10 +107,10 @@ try:
 except ImportError:
     pass
 
-if _plot == []:
-    print "Warning: No plotting available."
-else:
-    print "Plotting methods available: ", _plot
+#if _plot == []:
+#    print "Warning: No plotting available."
+#else:
+#    print "Plotting methods available: ", _plot
 
 # Level 3
 
