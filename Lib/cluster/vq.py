@@ -69,6 +69,11 @@ def vq(obs,code_book,return_dist=0):
         deviation of all the features before being quantized.  The code book
         can be created using the kmeans algorithm or something similar.
 
+    Note: 
+       This currently forces 32 bit math precision for speed.  Anyone know
+       of a situation where this undermines the accuracy of the algorithm?
+        
+        
     Arguments:
         obs -- 2D array.
                 Each row of the array is an observation.  The
@@ -102,6 +107,33 @@ def vq(obs,code_book,return_dist=0):
     No,Nf = shape(obs) #No = observation count, Nf = feature count
     # code books and observations should have same number of features
     assert(Nf == code_book.shape[1])
+    code = [];min_dist = []
+    obs = obs.astype(Float32)
+    code_book = code_book.astype(Float32)
+    diff = zeros(shape(code_book),obs.typecode())
+    for o in obs:
+        #diff = code_book - o ### THe following line is faster.
+        subtract(code_book,o,diff)        
+        dist = sqrt(sum(diff*diff,-1))
+        code.append(argmin(dist))
+        dst = minimum.reduce(dist,0)
+        # the [0] is needed to make sure min_dist is 1D, although I don't think
+        # it should be...
+        min_dist.append(dst[0]) 
+    if return_dist:
+        return array(code), array(min_dist)
+    else:
+        return array(code)
+
+
+def vq2(obs,code_book,return_dist=0):
+    """* This could be faster when number of codebooks is small, but it becomes
+         a real memory hog when codebook is large.  It requires NxMxO storage
+         where N=number of obs, M = number of features, and O = number of codes.
+    *"""
+    No,Nf = shape(obs) #No = observation count, Nf = feature count
+    # code books and observations should have same number of features
+    assert(Nf == code_book.shape[1])
     diff = obs[NewAxis,:,:]-code_book[:,NewAxis,:]
     dist = sqrt(sum(diff*diff,-1))
     code = argmin(dist,0)
@@ -111,6 +143,15 @@ def vq(obs,code_book,return_dist=0):
         return code, min_dist
     else:
         return code
+"""*
+    A third approach that combines ideas from vq and vq2 could possibly be faster.
+    It would segment the obs into small chunks of obs (maybe 5 or 10 or even 
+    calculated for best memory usage...) and then reuse the memory allocated for
+    diff for every new chunk.  This moves as much of the loops to C without
+    having to allocate huge blocks of memory (as in vq2).
+    
+    A quick test showed this might gain 10-20% on windows, but thats it.
+*"""        
 
 def kmeans_(obs,guess,thresh=1e-5):
     """* See kmeans
@@ -138,7 +179,7 @@ def kmeans_(obs,guess,thresh=1e-5):
     avg_dist=[]
     diff = thresh+1.
     while diff>thresh:
-        #print diff
+        print diff
         #compute membership and distances between obs and code_book
         obs_code, distort = vq(obs,code_book,return_dist=1)
         avg_dist.append(scipy.mean(distort))
@@ -169,11 +210,6 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
                 columns are the "features" seen during each observation
                 The features must be whitened first using the 
                 whiten function or something equivalent.                                             
-    Outputs:
-        result -- 1D array.
-                If obs is a NxM array, then a length N array
-                is returned that holds the selected code book index for 
-                each observation.
         k_or_guess -- integer or 2D array.
             If integer, it is the number of code book elements.
             If a 2D array, the array is used as the intial guess for
@@ -186,6 +222,11 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
         thresh -- float
             Terminate each kmeans run when the distortion change from 
             one iteration to the next is less than this value.  
+    Outputs:
+        codesbook -- 2D array.
+            The codes that best fit the observation
+        distortion -- float
+            The distortion between the observations and the codes.                
     Reference:
     Test:
         ("Not checked carefully for accuracy..." he said sheepishly)
