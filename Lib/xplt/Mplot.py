@@ -832,7 +832,7 @@ def setdpi(num):
     else:
         raise ValueError, "DPI must be 75 or 100"
 
-def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618):
+def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,landscape=0):
     global _figures
     if (aspect < 0.1) or (aspect > 10):
         aspect = 1.618
@@ -841,11 +841,14 @@ def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame
     fid = open(style,'w')
     syst = write_style.getsys(color=color,frame=frame,
                              labelsize=labelsize,font=labelfont)
-    cntr = (5.5*inches,4.25*inches)  # horizontal, vertical
+    if landscape:
+        cntr = (5.5*inches,4.25*inches)  # horizontal, vertical
+    else:
+        cntr = (4.25*inches,5.5*inches)
     height = 4.25*inches
     width = aspect*height
     syst['viewport'] = [cntr[0]-width/2.0,cntr[0]+width/2.0,cntr[1]-height/2.0,cntr[1]+height/2.0]
-    fid.write(write_style.style2string(syst,landscape=1))
+    fid.write(write_style.style2string(syst,landscape=landscape))
     fid.close()
     if n is None:
         winnum = gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
@@ -918,7 +921,7 @@ def _remove_ticks(system):
 
 plotframe = gist.plsys
 import os
-def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',frame=0,fontsize=8,font=None,ticks=1):
+def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',frame=0,fontsize=8,font=None,ticks=1,land=0):
     # Use gist.plsys to change coordinate systems
 
     # all inputs (except fontsize) given as pixels, gist wants
@@ -933,9 +936,10 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     if ph is None:
         ph = Numy*300
         msg = 0
-    maxwidth=int(os.environ.get('XPLT_MAXWIDTH'))
-    maxheight=int(os.environ.get('XPLT_MAXHEIGHT'))
-
+    maxwidth=min(scipy.xplt.maxwidth,8.5*_dpi)
+    maxheight=min(scipy.xplt.minwidth,11*_dpi)
+    if landscape:
+        maxwidth, maxheight = maxheight, maxwidth
 
     printit = 0
     if ph > maxheight:
@@ -949,22 +953,6 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
         fontsize = 12
     conv = inches *1.0 / _dpi  # multiply by this factor to convert pixels to
                               # NDC
-
-    # Use landscape mode unless requested height is large
-    land = 1
-    maxw = 11*_dpi
-    maxh = 8.5*_dpi
-    if ph > (8.5*_dpi) and pw < (8.5*_dpi):
-        land = 0
-        maxh = 11*_dpi
-        maxw = 8.5*_dpi
-    
-    if ph > maxh:
-        ph = maxh
-        printit=1
-    if pw > maxw:
-        pw = maxw
-        printit=1
 
     if printit and msg:
         message = "Warning: Requested height and width too large.\n"

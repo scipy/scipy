@@ -144,11 +144,54 @@ def moush(*arg):
 
 #  ---------------------------------------------------------------------
 #  PURPOSE:  Create an encapsulated PostScript file.  
-#            Requires Ghostscript and its associated ps2epsi utility.
+#            To 1) convert bounding box and/or 2) include preview,
+#            this code requires 1) ghostscript and/or 2) its associated
+#            ps2epsi utility.
+#              uses the bbox device of ghostscript
+#            
 #  ---------------------------------------------------------------------
 
 import os
 import shutil
+import tempfile
+
+if sys.version[:3]>='2.3':
+    import re
+else:
+    import pre as re
+    False = 0
+    True = 1
+
+bbox_re = re.compile(r"%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")
+bbox2_re = re.compile(r"BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")
+    
+def convert_bounding_box(inname, outname):
+   fid = open(inname,'r')
+   oldfile = fid.read()
+   fid.close()
+   gsargs = '-dNOPAUSE -dBATCH -sDEVICE=bbox'
+   # use cygwin gs if present
+   cmd = 'gs %s %s' % (gsargs, inname)
+   w, r = os.popen4(cmd)
+   w.close()
+   result = r.read()
+   r.close()
+   if result[:11] == 'Bad command' and sys.platform == 'win32':
+      cmd = 'gswin32c %s %s' % (gsargs, inname)
+      w, r = os.popen4(cmd)
+      w.close()
+      result = r.read()
+      r.close()
+   if result[:11] == 'Bad command':
+      return False
+   res = bbox_re.search(result)
+   bbox = map(int,res.groups())
+   newstr = bbox2_re.sub("BoundingBox: %d %d %d %d" % tuple(bbox), oldfile)
+   fid = open(outname, 'wb')
+   fid.write(newstr)
+   fid.close()
+   return True
+
 def eps(name,epsi=0,pdf=0):
    """
       Write the picture in the current graphics window to the Encapsulated
@@ -156,8 +199,8 @@ def eps(name,epsi=0,pdf=0):
       The last extension of name is stripped (if it is .eps)
       to avoid .eps.eps files
 
-      Uses the command ps2epsi if available which comes with the project
-      GNU Ghostscript program.  Any hardcopy file associated
+      Optionally Uses the command ps2epsi if available to add a preview
+      Any hardcopy file associated
       with the current window is first closed, but the default hardcopy file is
       unaffected.  As a side effect, legends are turned off and color table
       dumping is turned on for the current window.
@@ -177,10 +220,13 @@ def eps(name,epsi=0,pdf=0):
    window (hcp = name, dump = 1, legends = 0)
    hcp ()
    window (hcp="")
-   command = os.environ.get('PS2EPSI_FORMAT') or 'ps2epsi'
-   os.system ("%s %s" % (command, name))
+   if epsi:
+      command = os.environ.get('PS2EPSI_FORMAT') or 'ps2epsi'
+      os.system ("%s %s" % (command, name))
+   else:
+      convert_bounding_box(name, "%s.epsi" % basename)
    # check for presence of epsi file to see if ps2epsi command
-   #   succeeded.
+   #   or convert_bounding box succeeded.
    if os.path.exists('%s.epsi' % basename):
       os.remove(name)
       shutil.copy("%s.epsi" % basename, "%s.eps" % totalname)

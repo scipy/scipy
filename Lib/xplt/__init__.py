@@ -37,9 +37,9 @@ if display and (maxwidth is None or maxheight is None):
         os.environ['XPLT_MAXWIDTH']=str(maxwidth)
         os.environ['XPLT_MAXHEIGHT']=str(maxheight)
     except ValueError:
-        if maxwidth is None: maxwidth = 800
-        if maxheight is None: maxheight = 600
-else:
+        pass
+
+if maxwidth is None or maxheight is None:
     maxwidth = 800
     maxheight = 600
 
