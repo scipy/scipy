@@ -2128,15 +2128,31 @@ wrapcauchy = wrapcauchy_gen(a=0.0,b=2*pi)
 ### DISCRETE DISTRIBUTIONS
 ###
 
-def entropy(pk):
-    """S = entropy(pk)
+def entropy(pk,qk=None):
+    """S = entropy(pk,qk=None)
 
     calculate the entropy of a distribution given the p_k values
-    S = sum(pk * log(pk))
+    S = -sum(pk * log(pk))
+
+    If qk is not None, then compute a relative entropy
+    S = -sum(pk * log(pk / qk))
+
+    Routine will normalize pk and qk if they don't sum to 1
     """
-    pk = asarray(pk)
+    pk = arr(pk)
     pk = 1.0* pk / sum(pk)
-    vec = where(pk == 0, 0, pk*log(pk))
+    if qk is None:
+        vec = where(pk == 0, 0.0, pk*log(pk))
+    else:
+        qk = arr(qk)
+        if len(qk) != len(pk):
+            raise ValueError, "qk and pk must have same length."
+        qk = 1.0*qk / sum(qk)
+        # If qk is zero anywhere, then unless pk is zero at those places
+        #   too, the relative entropy is infinite.
+        if any(take(pk,nonzero(qk==0.0))!=0.0):
+            return inf
+        vec = where (pk == 0, 0.0, pk*log(pk / qk))
     return -sum(vec)
     
 
