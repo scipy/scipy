@@ -282,7 +282,7 @@ some of the following information (items 1-5) in one command:
 6) ATLAS version, the locations of atlas and lapack libraries, building
    information if any. If you have ATLAS version 3.3.6 or newer, then
    give the output of the last command in
-     cd scipy/linalg
+     cd scipy/Lib/linalg
      python setup_atlas_version.py build_ext --inplace --force
      python -c 'import atlas_version'
 7) The output of the following commands
