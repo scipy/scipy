@@ -62,7 +62,7 @@ class general_function:
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
     """
-    w = asarray(x*pi)
+    w = asarray(x)*pi
     return where(x==0, 1.0, sin(w)/w)
 
 def diric(x,n):

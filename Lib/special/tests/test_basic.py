@@ -1190,6 +1190,7 @@ class test_sinc(unittest.TestCase):
         c = arange(-2,2,.1)
         y = sinc(c)
         yre = sin(pi*c)/(pi*c)
+	yre[20] = 1.0
         assert_array_almost_equal(y, yre,4)
 
 class test_sindg(unittest.TestCase):
