@@ -15,6 +15,7 @@ def configuration(parent_package=''):
     amos = glob(os.path.join(local_path,'amos','*.f'))
     toms = glob(os.path.join(local_path,'toms','*.f'))
     cdf = glob(os.path.join(local_path,'cdflib','*.f'))
+    specfun = glob(os.path.join(local_path, 'specfun','*.f'))
     
     # C libraries
     config['libraries'].append(('c_misc',{'sources':c_misc}))
@@ -25,13 +26,14 @@ def configuration(parent_package=''):
     config['fortran_libraries'].append(('amos',{'sources':amos}))
     config['fortran_libraries'].append(('toms',{'sources':toms}))
     config['fortran_libraries'].append(('cdf',{'sources':cdf}))
+    config['fortran_libraries'].append(('specfun',{'sources':specfun}))
     
     # Extension
-    sources = ['cephesmodule.c', 'amos_wrappers.c',
+    sources = ['cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
                'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(dot_join(parent_package,'special.cephes'),sources,
-                    libraries = ['amos','toms','c_misc','cephes','mach', 'cdf']
+                    libraries = ['amos','toms','c_misc','cephes','mach', 'cdf', 'specfun']
                     )
     config['ext_modules'].append(ext)
 

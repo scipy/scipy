@@ -17,6 +17,7 @@
 #include "amos_wrappers.h"
 #include "toms_wrappers.h"
 #include "cdf_wrappers.h"
+#include "specfun_wrappers.h"
 #include "c_misc/misc.h"
 #ifdef macintosh
 #include "mymath.h"
@@ -141,9 +142,11 @@ static void * isinf_data[] = {(void *)NULL, (void *)NULL, (void *)NULL, (void *)
 static void * isfinite_data[] = {(void *)NULL, (void *)NULL, (void *)NULL, (void *)NULL};
 
 static PyUFuncGenericFunction cephes1_functions[] = { NULL, NULL, };
+static PyUFuncGenericFunction cephes1rc_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes1_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1c_4_functions[] = { NULL, NULL, NULL, NULL };
 static PyUFuncGenericFunction cephes1cp_4_functions[] = { NULL, NULL, NULL, NULL};
+static PyUFuncGenericFunction cephes1cpb_4_functions[] = { NULL, NULL,};
 static PyUFuncGenericFunction cephes2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2_4_functions[] = { NULL, NULL, };
@@ -151,19 +154,23 @@ static PyUFuncGenericFunction cephes2a_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes2c_functions[] = { NULL, NULL, NULL, NULL };
 static PyUFuncGenericFunction cephes2cp_functions[] = { NULL, NULL, NULL, NULL, };
 static PyUFuncGenericFunction cephes2cpp_functions[] = { NULL, NULL, };
-static PyUFuncGenericFunction cephes3_functions[] = { NULL, NULL, };
+static PyUFuncGenericFunction cephes3_functions[] = { NULL, NULL, NULL, NULL};
 static PyUFuncGenericFunction cephes3a_functions[] = { NULL, NULL, };
-static PyUFuncGenericFunction cephes4_functions[] = { NULL, NULL, };
+static PyUFuncGenericFunction cephes4_functions[] = { NULL, NULL, NULL, NULL,};
 static PyUFuncGenericFunction cephes4a_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes4_2_functions[] = { NULL, NULL, };
 
 static PyUFuncGenericFunction cephes1c_functions[] = { NULL, };
 
 static void * airy_data[] = { (void *)airy, (void *)airy, (void *)cairy_wrap, (void *)cairy_wrap,};
+static void * kelvin_data[] = { (void *)kelvin_wrap, (void *)kelvin_wrap,};
 static void * airye_data[] = { (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
+static void * itairy_data[] = { (void *)itairy_wrap, (void *)itairy_wrap, };
 
 static void * ellpj_data[] = { (void *)ellpj, (void *)ellpj,};
 
+static void * exp1_data[] = { (void *)exp1_wrap, (void *)exp1_wrap, (void *)cexp1_wrap, (void *)cexp1_wrap,};
+static void * expi_data[] = { (void *)expi_wrap, (void *)expi_wrap,};
 static void * expn_data[] = { (void *)expn, (void *)expn, };
 static void * jn_data[] = { (void *)jn, (void *)jn, };
 static void * kn_data[] = { (void *)kn, (void *)kn, };
@@ -199,8 +206,9 @@ static void * gdtrc_data[] = { (void *)gdtrc, (void *)gdtrc, };
 static void * gdtr_data[] = { (void *)gdtr, (void *)gdtr, };
 static void * gdtri_data[] = { (void *)gdtri, (void *)gdtri, };
 
-static void * hyp2f1_data[] = { (void *)hyp2f1, (void *)hyp2f1, };
-static void * hyperg_data[] = { (void *)hyperg, (void *)hyperg, };
+static void * hyp2f1_data[] = { (void *)hyp2f1, (void *)hyp2f1, (void *)chyp2f1_wrap, (void *)chyp2f1_wrap};
+static void * hyperg_data[] = { (void *)hyperg, (void *)hyperg, (void *)chyp1f1_wrap, (void *)chyp1f1_wrap};
+static void * hypU_data[] = { (void *)hypU_wrap, (void *)hypU_wrap, };
 static void * hyp2f0_data[] = { (void *)hyp2f0, (void *)hyp2f0, };
 static void * threef0_data[] = { (void *)threef0, (void *)threef0, };
 static void * onef2_data[] = { (void *)onef2, (void *)onef2, };
@@ -225,8 +233,8 @@ static void * ellpe_data[] = { (void *)ellpe, (void *)ellpe, };
 static void * ellpk_data[] = { (void *)ellpk, (void *)ellpk, };
 static void * exp10_data[] = { (void *)exp10, (void *)exp10, };
 static void * exp2_data[] = { (void *)exp2, (void *)exp2, };
-static void * Gamma_data[] = { (void *)Gamma, (void *)Gamma, };
-static void * lgam_data[] = { (void *)lgam, (void *)lgam, };
+static void * Gamma_data[] = { (void *)Gamma, (void *)Gamma, (void *)cgamma_wrap, (void *)cgamma_wrap};
+static void * lgam_data[] = { (void *)lgam, (void *)lgam, (void *)clngamma_wrap, (void *)clngamma_wrap};
 static void * i0_data[] = { (void *)i0, (void *)i0, };
 static void * i0e_data[] = { (void *)i0e, (void *)i0e, };
 static void * i1_data[] = { (void *)i1, (void *)i1, };
@@ -259,11 +267,11 @@ static void * hankel2e_data[] = { (void *)cbesh_wrap2_e, (void *)cbesh_wrap2_e,}
 
 static void * ndtr_data[] = { (void *)ndtr, (void *)ndtr, };
 static void * erfc_data[] = { (void *)erfc, (void *)erfc, };
-static void * erf_data[] = { (void *)erf, (void *)erf, };
+static void * erf_data[] = { (void *)erf, (void *)erf, (void *)cerf_wrap, (void *)cerf_wrap};
 static void * ndtri_data[] = { (void *)ndtri, (void *)ndtri, };
 
-static void * psi_data[] = { (void *)psi, (void *)psi, };
-static void * rgamma_data[] = { (void *)rgamma, (void *)rgamma, };
+static void * psi_data[] = { (void *)psi, (void *)psi, (void *)cpsi_wrap, (void *)cpsi_wrap};
+static void * rgamma_data[] = { (void *)rgamma, (void *)rgamma, (void *)crgamma_wrap, (void *)crgamma_wrap};
 static void * round_data[] = { (void *)round, (void *)round, };
 static void * sindg_data[] = { (void *)sindg, (void *)sindg, };
 static void * cosdg_data[] = { (void *)cosdg, (void *)cosdg, };
@@ -275,7 +283,13 @@ static void * expm1_data[] = { (void *)expm1, (void *)expm1, };
 static void * cosm1_data[] = { (void *)cosm1, (void *)cosm1, };
 
 static void * spence_data[] = { (void *)spence, (void *)spence, };
-static void * struve_data[] = { (void *)struve, (void *)struve, };
+/* static void * struve_data[] = { (void *)struve, (void *)struve, };*/
+static void * struve_data[] = { (void *)struve_wrap, (void *)struve_wrap, };
+static void * modstruve_data[] = { (void *)modstruve_wrap, (void *)modstruve_wrap, };
+static void * itmodstruve0_data[] = { (void *)itmodstruve0_wrap, (void *)itmodstruve0_wrap, };
+static void * itstruve0_data[] = { (void *)itstruve0_wrap, (void *)itstruve0_wrap, };
+static void * it2struve0_data[] = { (void *)it2struve0_wrap, (void *)it2struve0_wrap, };
+
 
 static void * zeta_data[] = { (void *)zeta, (void *)zeta, };
 static void * zetac_data[] = { (void *)zetac, (void *)zetac, };
@@ -335,12 +349,22 @@ static void * tklambda_data[] = {(void *)tukeylambdacdf, (void *)tukeylambdacdf}
 
 static char cephes_6_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
 static char cephes_5_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
+
+static char cephes_5b2_types[] = { PyArray_FLOAT,  PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE,  PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE,};
+
 static char cephes_5c_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
+
+static char cephes_5c2_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
+
 static char cephes_4_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
+
+static char cephes_4c_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_FLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE};
+
 static char cephes_3_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT,   PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, };
 static char cephes_3c_types[] = { PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_FLOAT, PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 static char cephes_3cp_types[] = { PyArray_FLOAT, PyArray_CFLOAT,  PyArray_CFLOAT, PyArray_DOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 static char cephes_2_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,  PyArray_DOUBLE,  };
+static char cephes_1rc_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,  PyArray_DOUBLE,  PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE };
 static char cephes_1c_types[] = { PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 
 static void Cephes_InitOperators(PyObject *dictionary) {
@@ -350,6 +374,10 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes1_functions[1] = PyUFunc_d_d;
         cephes1c_functions[0] = PyUFunc_F_F_As_D_D;
 	cephes1c_functions[1] = PyUFunc_D_D;
+        cephes1rc_functions[0] = PyUFunc_f_f_As_d_d;
+        cephes1rc_functions[1] = PyUFunc_d_d;
+        cephes1rc_functions[2] = PyUFunc_F_F_As_D_D;
+	cephes1rc_functions[3] = PyUFunc_D_D;
         cephes1_2_functions[0] = PyUFunc_f_ff_As_d_dd;
         cephes1_2_functions[1] = PyUFunc_d_dd;
         cephes1c_4_functions[0] = PyUFunc_f_ffff_As_d_dddd;
@@ -360,6 +388,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes1cp_4_functions[1] = PyUFunc_d_dddd_As_D_DDDD;
         cephes1cp_4_functions[2] = PyUFunc_F_FFFF_As_D_DDDD;
         cephes1cp_4_functions[3] = PyUFunc_D_DDDD;
+        cephes1cpb_4_functions[0] = PyUFunc_f_FFFF_As_d_DDDD;
+        cephes1cpb_4_functions[1] = PyUFunc_d_DDDD;
         cephes2_functions[0] = PyUFunc_ff_f_As_dd_d;
         cephes2_functions[1] = PyUFunc_dd_d;
         cephes2a_functions[0] = PyUFunc_ff_f_As_id_d;
@@ -378,10 +408,14 @@ static void Cephes_InitOperators(PyObject *dictionary) {
         cephes2_4_functions[1] = PyUFunc_dd_dddd;
         cephes3_functions[0] = PyUFunc_fff_f_As_ddd_d;
         cephes3_functions[1] = PyUFunc_ddd_d;
+        cephes3_functions[2] = PyUFunc_ffF_F_As_ddD_D;
+        cephes3_functions[3] = PyUFunc_ddD_D;
         cephes3a_functions[0] = PyUFunc_fff_f_As_iid_d;
         cephes3a_functions[1] = PyUFunc_ddd_d_As_iid_d;
         cephes4_functions[0] = PyUFunc_ffff_f_As_dddd_d;
         cephes4_functions[1] = PyUFunc_dddd_d;
+        cephes4_functions[2] = PyUFunc_fffF_F_As_dddD_D;
+        cephes4_functions[3] = PyUFunc_dddD_D;
         cephes4_2_functions[0] = PyUFunc_ffff_ff_As_dddd_dd;
         cephes4_2_functions[1] = PyUFunc_dddd_dd;
         cephes4a_2_functions[0] = PyUFunc_ffff_ff_As_dddi_dd;
@@ -427,11 +461,15 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	Py_DECREF(f);
         */
 
-	f = PyUFunc_FromFuncAndData(cephes4_functions, hyp2f1_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "hyp2f1", hyp2f1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes4_functions, hyp2f1_data, cephes_5c2_types, 4, 4, 1, PyUFunc_None, "hyp2f1", hyp2f1_doc, 0);
 	PyDict_SetItemString(dictionary, "hyp2f1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3_functions, hyperg_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hyp1f1", hyp1f1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, hyperg_data, cephes_4c_types, 4, 3, 1, PyUFunc_None, "hyp1f1", hyp1f1_doc, 0);
 	PyDict_SetItemString(dictionary, "hyp1f1", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, hypU_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hypU", hypU_doc, 0);
+	PyDict_SetItemString(dictionary, "hypU", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes4a_2_functions, hyp2f0_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "hyp2f0", hyp2f0_doc, 0);
@@ -502,10 +540,10 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, exp2_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "exp2", exp2_doc, 0);
 	PyDict_SetItemString(dictionary, "exp2", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, Gamma_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "gamma", gamma_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, Gamma_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "gamma", gamma_doc, 0);
 	PyDict_SetItemString(dictionary, "gamma", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, lgam_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "gammaln", gammaln_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, lgam_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "gammaln", gammaln_doc, 0);
 	PyDict_SetItemString(dictionary, "gammaln", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, i0_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "i0", i0_doc, 0);
@@ -544,6 +582,15 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, expn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "expn", expn_doc, 0);
 	PyDict_SetItemString(dictionary, "expn", f);
 	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, exp1_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "exp1", exp1_doc, 0);
+	PyDict_SetItemString(dictionary, "exp1", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, expi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "expi", expi_doc, 0);
+	PyDict_SetItemString(dictionary, "expi", f);
+	Py_DECREF(f);
+
+
+
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, jn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "jn", jn_doc, 0);
 	PyDict_SetItemString(dictionary, "jn", f);
 	Py_DECREF(f);
@@ -581,6 +628,11 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1c_4_functions, airy_data, cephes_5c_types, 4, 1, 4, PyUFunc_None, "airy", airy_doc, 0);
 	PyDict_SetItemString(dictionary, "airy", f);
 	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes1c_4_functions, itairy_data, cephes_5_types, 2, 1, 4, PyUFunc_None, "itairy", itairy_doc, 0);
+	PyDict_SetItemString(dictionary, "itairy", f);
+	Py_DECREF(f);
+
 
 	f = PyUFunc_FromFuncAndData(cephes1cp_4_functions, airye_data, cephes_5c_types, 4, 1, 4, PyUFunc_None, "airye", airye_doc, 0);
 	PyDict_SetItemString(dictionary, "airye", f);
@@ -664,16 +716,17 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1_functions, erfc_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "erfc", erfc_doc, 0);
 	PyDict_SetItemString(dictionary, "erfc", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, erf_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "erf", erf_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, erf_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "erf", erf_doc, 0);
 	PyDict_SetItemString(dictionary, "erf", f);
 	Py_DECREF(f);
+
 	f = PyUFunc_FromFuncAndData(cephes1_functions, ndtri_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ndtri", ndtri_doc, 0);
 	PyDict_SetItemString(dictionary, "ndtri", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, psi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "psi", psi_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, psi_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "psi", psi_doc, 0);
 	PyDict_SetItemString(dictionary, "psi", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes1_functions, rgamma_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "rgamma", rgamma_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes1rc_functions, rgamma_data, cephes_1rc_types, 4, 1, 1, PyUFunc_None, "rgamma", rgamma_doc, 0);
 	PyDict_SetItemString(dictionary, "rgamma", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes1_functions, round_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "round", round_doc, 0);
@@ -715,6 +768,24 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2_functions, struve_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "struve", struve_doc, 0);
 	PyDict_SetItemString(dictionary, "struve", f);
 	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, modstruve_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "modstruve", modstruve_doc, 0);
+	PyDict_SetItemString(dictionary, "modstruve", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, itstruve0_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "itstruve0", itstruve0_doc, 0);
+	PyDict_SetItemString(dictionary, "itstruve0", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, it2struve0_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "it2struve0", it2struve0_doc, 0);
+	PyDict_SetItemString(dictionary, "it2struve0", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, itmodstruve0_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "itmodstruve0", itmodstruve0_doc, 0);
+	PyDict_SetItemString(dictionary, "itmodstruve0", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes1cpb_4_functions, kelvin_data, cephes_5b2_types, 2, 1, 4, PyUFunc_None, "kelvin", kelvin_doc, 0);
+	PyDict_SetItemString(dictionary, "kelvin", f);
+	Py_DECREF(f);
+
+
 	f = PyUFunc_FromFuncAndData(cephes2_functions, zeta_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "zeta", zeta_doc, 0);
 	PyDict_SetItemString(dictionary, "zeta", f);
 	Py_DECREF(f);
@@ -1367,7 +1438,7 @@ void initcephes() {
   /* Add some symbolic constants to the module */
   d = PyModule_GetDict(m);
 
-  s = PyString_FromString("1.3");
+  s = PyString_FromString("1.9");
   PyDict_SetItemString(d, "__version__", s);
   Py_DECREF(s);
 

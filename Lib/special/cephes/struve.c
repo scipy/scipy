@@ -42,7 +42,7 @@ double Gamma(), pow(), sqrt(), yn(), yv(), jv(), fabs(), floor();
 double sin(), cos();
 #endif
 static double stop = 1.37e-17;
-extern double MACHEP;
+extern double MACHEP, INFINITY;
 
 double onef2( a, b, c, x, err )
 double a, b, c, x;
@@ -206,6 +206,14 @@ double v, x;
 {
 double y, ya, f, g, h, t;
 double onef2err, threef0err;
+
+if (x == 0.0) {
+  if ((v>-1) || ((floor(v)-v)==0.5)) return 0.0;
+  if (v<-1) 
+    if ((int)(floor(0.5-v)-1) % 2) return -INFINITY;
+    else return INFINITY;
+  return 2.0/PI;
+}
 
 f = floor(v);
 if( (v < 0) && ( v-f == 0.5 ) )

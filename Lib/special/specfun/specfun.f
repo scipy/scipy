@@ -4,6 +4,7 @@ C          Shanjie Zhang and Jianming Jin
 C
 C       Copyrighted but permission granted to use code in programs. 
 C
+C
 C      Compiled into a single source file and changed REAL To DBLE throughout.
 C
 C      Changed according to ERRATA also.
@@ -5994,7 +5995,8 @@ C
         PI=3.141592653589793D0
         EL=.5772156649015329D0
         IF (L0.OR.L1) THEN
-           WRITE(*,*)'The hypergeometric series is divergent'
+C           WRITE(*,*)'The hypergeometric series is divergent'
+           ZHF = 1.0D300
            RETURN
         ENDIF
         IF (A0.EQ.0.0D0.OR.A.EQ.0.0D0.OR.B.EQ.0.0D0) THEN
@@ -12381,9 +12383,9 @@ C
            PSR=1.0D+300
            PSI=0.0D0
         ELSE
+           X1=X
+           Y1=Y
            IF (X.LT.0.0D0) THEN
-              X1=X
-              Y1=Y
               X=-X
               Y=-Y
            ENDIF

@@ -17,6 +17,10 @@ airye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))
 airye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))
 </DL>
 
+<DT>(Apt,Bpt,Ant,Bnt) = itairy(x)
+<DD>itairy(x) calculates the integral of Airy functions from 0 to x
+for positive (Apt, Bpt) and negative (Ant, Bnt) arguments.
+
 <h1> Elliptic Functions and Integrals </h1>
 <DL>
 <DT>(sn,cn,dn,ph) = ellipj(u,m)
@@ -151,6 +155,7 @@ of the third kind of order 1 at x.  k1e(x) = exp(x) * k1(x)
 <DD>besselpoly(a,lambda,nu) computes the integral of a bessel function
 times a power:  y = integral(x^lambda jv(2*a*x),x=0..1)
 </DL>
+
 
 <h1> Statistical Functions </h1>
 <DL>
@@ -290,9 +295,9 @@ density function, integrated from minus infinity to x:
 Gaussian probability density function (integrated from minus infinity
 to x) is equal to y.
 
-<DT>y = erf(x)
-<DD>erf(x) returns the error function defined as
-2/sqrt(pi) * integral(exp(-t**2),t=0..x)
+<DT>y = erf(z)
+<DD>erf(z) returns the error function of complex argument defined as
+as 2/sqrt(pi)*integral(exp(-t**2),t=0..z) 
 
 <DT>y = erfc(x)
 <DD>erfc(x) returns 1 - erf(x).
@@ -320,14 +325,14 @@ that sqrt(n) * max absolute deviation > y.
 
 <h1> Gamma and Related Functions </h1>
 <DL>
-<DT>y = gamma(x)
-<DD>gamma(x) returns the gamma function of the argument.  The gamma
-function is often referred to as the generalized factorial since
-x*gamma(x) = gamma(x+1) and gamma(n+1) = n! for nonnegative n.
+<DT>y = gamma(z)
+<DD>gamma(z) returns the gamma function of the argument.  The gamma
+function is often referred to as the generalized factorial since 
+z*gamma(z) = gamma(z+1) and gamma(n+1) = n! for natural number n.
 
-<DT>y = gammaln(x)
-<DD>gammaln(x) returns the base e logarithm of the absolute value of the
-gamma function of x: ln(|gamma(x)|)
+<DT>y = gammaln(z)
+<DD>gammaln(z) returns the base e logarithm of the absolute value of the
+gamma function of z: ln(|gamma(z)|)
 
 <DT>y = gammainc(a,x)
 <DD>gammainc(a,x) returns the incomplete gamma integral defined as
@@ -357,23 +362,28 @@ arguments, evaluated from zero to x: gamma(a+b) / (gamma(a)*gamma(b))
 <DT>x = betaincinv(a,b,y)
 <DD>betaincinv(a,b,y) returns x such that betainc(a,b,x) = y.
 
-<DT>y = psi(x)
-<DD>psi(x) is the derivative of the logarithm of the gamma function
-evaluated at x (also called the digamma function). 
+<DT>y = psi(z)
+<DD>psi(z) is the derivative of the logarithm of the gamma function
+evaluated at z (also called the digamma function). 
 
-<DT>y = rgamma(x)
-<DD>rgamma(x) returns one divided by the gamma function of x. 
+<DT>y = rgamma(z)
+<DD>rgamma(z) returns one divided by the gamma function of x. 
 </DL>
+
 
 <h1> HyperGeometric Functions </h1>
 <DL>
-<DT>y = hyp2f1(a,b,c,x)
-<DD>hyp2f1(a,b,c,x) returns the gauss hypergeometric function
-( 2F1(a,b;c;x) ).
+<DT>y = hyp2f1(a,b,c,z)
+<DD>hyp2f1(a,b,c,z) returns the gauss hypergeometric function
+( 2F1(a,b;c;z) ).
 
 <DT>y = hyp1f1(a,b,x)
 <DD>hyp1f1(a,b,x) returns the confluent hypergeometeric function
 ( 1F1(a,b;x) ) evaluated at the values a, b, and x.
+
+<DT>y = hypU(a,b,x)
+<DD>hypU(a,b,x) returns the confluent hypergeometric function of the
+second kind U(a,b,x). 
 
 <DT>(y,err) = hyp2f0(a,b,x,type)
 <DD>hyp2f0(a,b,x,type) returns (y,err) with the hypergeometric function 2F0 in y and an error estimate in err.  The input type determines a convergence factor and
@@ -391,6 +401,18 @@ can be either 1 or 2.
 <DT>y = expn(n,x)
 <DD>expn(n,x) return the exponential integral for integer n and
 non-negative x and n: integral(exp(-x*t) / t**n, t=1..inf).
+
+<DL>
+<DT>y = exp1(z)
+<DD>exp1(z) returns the exponential integral (n=1) of complex argument
+z: integral(exp(-z*t)/t,t=1..inf).
+
+<DL>
+<DT>y = expi(z)
+<DD>expi(x) returns an exponential integral of argument x defined as
+integral(exp(t)/t,t=-inf..x).  See expn for a different exponential
+integral.
+
 
 <DT>y = wofz(z) 
 <DD>wofz(z) returns the value of the fadeeva function for complex argument
@@ -425,6 +447,30 @@ integral((cos(t) - 1)/t,t=0..x).
 <DT>y = struve(v,x)
 <DD>struve(v,x) returns the Struve function Hv(x) of order v at x, x
 must be positive unless v is an integer.
+
+<DT>y = modstruve(v,x)
+<DD>modstruve(v,x) returns the modified Struve function Lv(x) of order
+v at x, x must be positive unless v is an integer and it is recommended
+that |v|<=20.
+
+<DT>y = itstruve0(x)
+<DD>itstruve0(x) returns the integral of the Struve function of order 0 
+from 0 to x:  integral(H0(t), t=0..x).
+
+<DT>y = it2struve0(x)
+<DD>it2struve0(x) returns the integral of the Struve function of order 0 
+divided by t from x to infinity:  integral(H0(t)/t, t=x..inf).
+
+<DT>y = itmodstruve0(x)
+<DD>itmodstruve0(x) returns the integral of the modified Struve function
+of order 0 from 0 to x:  integral(L0(t), t=0..x).
+
+<DT>(Be, Ke, Bep, Kep) = kelvin(x)
+<DD>kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes 
+complex numbers representing the real and imaginary Kelvin functions 
+and their derivatives evaluated at x.  For example, 
+kelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar 
+relationships for ker and kei.  
 
 <DT>y = zeta(x,q)
 <DD>zeta(x,q) returns the Riemann zeta function of two arguments:

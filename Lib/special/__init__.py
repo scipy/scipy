@@ -112,6 +112,7 @@
 
     hyp2f1   -- Gauss hypergeometric function (2F1)
     hyp1f1   -- Confluent hypergeometric function (1F1)
+    hypU     -- Confluent hypergeometric function (U)
     hyp0f1   -- Confluent hypergeometric limit function (0F1)
     hyp2f0   -- Hypergeometric function (2F0) 
     hyp1f2   -- Hypergeometric function (1F2)
@@ -120,13 +121,19 @@
   Other Special Functions
 
     expn     -- Exponential integral.
+    exp1     -- Exponential integral of order 1 (for complex argument)
+    expi     -- Another exponential integral -- Ei(x)
     wofz     -- Fadeeva function.
     fresnl   -- Fresnel sine and cosine integrals.
     dawsn    -- Dawson's integral.
     shichi   -- Hyperbolic sine and cosine integrals.
     sici     -- Integral of the sinc and "cosinc" functions.
     spence   -- Dilogarithm integral.
-    struve   -- Struve function.
+    struve   -- Struve function --- Hv(x)
+    modstruve -- Modified struve function --- Lv(x)
+    itstruve0 -- Integral of H0(t) from 0 to x
+    it2struve0 -- Integral of H0(t)/t from x to Inf.
+    itmodstruve0 -- Integral of L0(t) from 0 to x.
     zeta     -- Riemann zeta function of two arguments.
     zetac    -- Riemann zeta function.
     besselpoly -- Integral of a bessel function times x**lambda.

@@ -323,7 +323,7 @@ if( isnan(x) )
 if( x == INFINITY )
 	return(x);
 if( x == -INFINITY )
-	return(NAN);
+	return(x);
 #else
 if( !isfinite(x) )
 	return(x);
@@ -340,8 +340,8 @@ if( q > 33.0 )
 			{
 #ifdef NANS
 gamnan:
-			mtherr( "Gamma", DOMAIN );
-			return (NAN);
+			mtherr( "Gamma", OVERFLOW );
+			return (MAXNUM);
 #else
 			goto goverf;
 #endif
