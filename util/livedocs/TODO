@@ -1,0 +1,8 @@
+Add up link on every page
+Add edit link on appropriate page.
+For editing just use the filesystem to place edits in the $HOME/.scipy_docs directory
+    Later this can be integrated into the CVS docstrings if deemed appropriate
+
+Autogenerate module and package-level docstring using some amount of guided, over-rideable introspection.  Guided for dividing up into sections.  Over-rideable so that single-line docstring can be replaced by package-level docstring in description if needed.  This should be handled by info
+
+

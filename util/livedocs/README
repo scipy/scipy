@@ -1,0 +1,8 @@
+To run:
+
+   Be sure that twisted python and nevow (>0.3) (and scipy) are installed.
+
+   twistd -oy livedocs.tac
+
+   This will start a background daemon that serves the documentation.
+
