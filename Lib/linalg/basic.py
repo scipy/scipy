@@ -215,9 +215,9 @@ def norm(x, ord=2):
             return scipy_base.sum(abs(x)**ord)**(1.0/ord)
     elif nd == 2:
         if ord == 2:
-            return scipy_base.amax(decomp.svd(x)[1])
+            return scipy_base.amax(decomp.svd(x,compute_uv=0))
         elif ord == -2:
-            return scipy_base.amin(decomp.svd(x)[1])
+            return scipy_base.amin(decomp.svd(x,compute_uv=0))
         elif ord == 1:
             return scipy_base.amax(scipy_base.sum(abs(x)))
         elif ord == Inf:
