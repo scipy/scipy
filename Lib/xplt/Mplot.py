@@ -11,7 +11,8 @@ import MLab
 from MLab import pi, cos, sin, arctan2, array, angle
 import types
 import write_style
-from write_style import inches, points
+points = 0.0013000
+inches = 72.27*points
 import scipy
 import scipy_base
 import scipy.signal as signal

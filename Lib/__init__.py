@@ -2,7 +2,7 @@
 SciPy --- A scientific computing package for Python
 ===================================================
 
-Available subpackages
+Available subpackages 
 ---------------------
 
 """
@@ -25,15 +25,17 @@ def _level_docs(module=None,_cache=[]):
             title = module.__dict__['__doc__']
             title = title.lstrip().split('\n',1)[0]
         except KeyError:
-            title = ' N/A'
-    _cache.append((module.__name__,title))
+            title = '* Not Available *'
+    namestr = module.__name__
+    _cache.append((namestr,title))
 
 def _pkg_titles():
     level_docs = _level_docs()
-    lengths = [len(name) for (name,title) in level_docs]
+    lengths = [len(name)-name.find('.')-1 for (name,title) in level_docs]
     max_length = max(lengths)
     lines = []
     for (name,title) in level_docs:
+        name = name[name.find('.')+1:]
         w = max_length - len(name)
         lines.append('%s%s --- %s' % (name, w*' ', title))
     return '\n'.join(lines)
@@ -90,7 +92,7 @@ _import_packages()
 del _import_packages
 
 #Packages installed standalone:
-weave = ppimport('weave');             _level_docs(weave)
+weave = ppimport('weave');        
 wxPython_thread = ppimport_attr(ppimport('gui_thread'),'wxPython_thread')
 
 #----------------------------------#

@@ -763,3 +763,21 @@ def obl_cv_seq(m,n,c):
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
 
+def agm(a,b):
+    """Arithmetic, Geometric Mean
+
+    Start with a_0=a and b_0=b and iteratively compute
+
+    a_{n+1} = (a_n+b_n)/2
+    b_{n+1} = sqrt(a_n*b_n)
+
+    until a_n=b_n.   The result is agm(a,b)
+
+    agm(a,b)=agm(b,a)
+    agm(a,a) = a
+    min(a,b) < agm(a,b) < max(a,b)
+    """
+    res1 = a+b+0.0
+    res2 = a-b
+    k = res2 / res1
+    return res1*pi/4/ellipk(k**2)
