@@ -1,20 +1,25 @@
 #!/usr/bin/env python
 
-import os
+import os,sys
 from distutils import dep_util
 from glob import glob
 import warnings
 
-# force g77 for now
-from scipy_distutils.mingw32_support import *
-from scipy_distutils.command import build_flib
-build_flib.all_compilers = [build_flib.gnu_fortran_compiler]
+if sys.platform == 'win32':
+    # force g77 for now
+    # XXX: g77 is forced already in scipy/setup.py
+    #      So, is this redundant code in what follows?
+    from scipy_distutils.mingw32_support import *
+    from scipy_distutils.command import build_flib
+    build_flib.all_compilers = [build_flib.gnu_fortran_compiler]
 
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy_distutils.misc_util import fortran_library_item
 
 from scipy_distutils.system_info import get_info,dict_append,\
-     AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError
+     AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
+     LapackSrcNotFoundError
 
 def configuration(parent_package=''):
     from interface_gen import generate_interface
@@ -28,15 +33,25 @@ def configuration(parent_package=''):
     atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/ATLAS; useful for testing
-    blas_info,lapack_info = {},{}
+    f_libs = []
+    blas_info,lapack_info,lapack_src_info = {},{},{}
     if not atlas_info:
         warnings.warn(AtlasNotFoundError.__doc__)
         blas_info = get_info('blas')
         lapack_info = get_info('lapack')
+        #lapack_info = {} # test building LAPACK from sources.
         if not blas_info:
+            #TODO: build from blas sources (see lapack_src below)
             raise BlasNotFoundError,BlasNotFoundError.__doc__
         if not lapack_info:
-            raise LapackNotFoundError,LapackNotFoundError.__doc__
+            warnings.warn(LapackNotFoundError.__doc__)
+            lapack_src_info = get_info('lapack_src')
+            if not lapack_src_info:
+                raise LapackSrcNotFoundError,LapackSrcNotFoundError.__doc__
+            dict_append(lapack_info,libraries=['lapack_src'])
+            f_libs.append(fortran_library_item(\
+                'lapack_src',lapack_src_info['sources'],
+                ))
 
     mod_sources = {}
     if atlas_info or blas_info:
@@ -84,6 +99,7 @@ def configuration(parent_package=''):
     dict_append(ext_args,**atlas_info)
     config['ext_modules'].append(Extension(**ext_args))
 
+    config['fortran_libraries'].extend(f_libs)
     return config
 
 if __name__ == '__main__':    
