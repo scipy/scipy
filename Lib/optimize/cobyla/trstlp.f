@@ -67,6 +67,7 @@ C
           IACT(K)=K
    40     VMULTC(K)=RESMAX-B(K)
       END IF
+      if (resmax.le.-1d0) print*,STEP
       IF (RESMAX .EQ. 0.0d0) GOTO 480
       DO 50 I=1,N
    50 SDIRN(I)=0.0d0
