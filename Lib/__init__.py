@@ -28,15 +28,12 @@ import string
 # modules to import under the scipy namespace
 from scipy_base import *
 
-# needs fastumath
-Inf = inf = Numeric.array(1e308)**10
-NaN = nan = Numeric.array(0.0) / Numeric.array(0.0)
-
 # Level 1
 # these modules will just be imported (not subsumed)
 import special, io, linalg, stats, fftpack
 from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn
 from stats import mean, median, std, cov, corrcoef
+from special import isinf, isfinite, isnan
 
 # Functions to be subsumed that need Level 0 and Level 1
 from common import *

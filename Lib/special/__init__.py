@@ -10,6 +10,8 @@
 
     airy     -- Airy functions and their derivatives.
     airye    -- Exponentially scaled Airy functions
+    ai_zeros -- **Zeros of Airy functions Ai(x) and Ai'(x)
+    bi_zeros -- **Zeros of Airy functions Bi(x) and Bi'(x)
 
   Elliptic Functions and Integrals
 
@@ -38,6 +40,22 @@
     hankel2  -- Hankel function of the second kind.
     hankel2e -- Exponentially scaled Hankel function of the second kind.
 
+    lmbda       -- **Sequence of lambda functions with arbitrary order v.
+
+  Zeros of Bessel Functions
+
+    jnjnp_zeros -- **Zeros of integer-order Bessel functions and derivatives
+                       sorted in order.
+    jnyn_zeros  -- **Zeros of integer-order Bessel functions and derivatives
+                       as separate arrays.
+    jn_zeros    -- **Zeros of Jn(x)
+    jnp_zeros   -- **Zeros of Jn'(x)
+    yn_zeros    -- **Zeros of Yn(x)
+    ynp_zeros   -- **Zeros of Yn'(x)
+    y0_zeros    -- **Complex zeros: Y0(z0)=0 and values of Y0'(z0)
+    y1_zeros    -- **Complex zeros: Y1(z1)=0 and values of Y1'(z1)
+    y1p_zeros   -- **Complex zeros of Y1'(z1')=0 and values of Y1(z1')
+
   Faster versions of common Bessel Functions.
     
     j0       -- Bessel function of order 0.
@@ -57,22 +75,38 @@
 
   Integrals of Bessel Functions.
 
-    itj0y0   -- Basic integrals of j0 and y0 from 0 to x.
-    it2j0y0  -- Integrals of (1-j0(t))/t from 0 to x and
-                  y0(t)/t from x to inf.
-    iti0k0   -- Basic integrals of i0 and k0 from 0 to x.
-    it2i0k0  -- Integrals of (i0(t)-1)/t from 0 to x and
-                  k0(t)/t from x to inf.
+    itj0y0     -- Basic integrals of j0 and y0 from 0 to x.
+    it2j0y0    -- Integrals of (1-j0(t))/t from 0 to x and
+                    y0(t)/t from x to inf.
+    iti0k0     -- Basic integrals of i0 and k0 from 0 to x.
+    it2i0k0    -- Integrals of (i0(t)-1)/t from 0 to x and
+                    k0(t)/t from x to inf.
+    besselpoly -- Integral of a bessel function: Jv(2*a*x) * x**lambda
+                    from x=0 to 1.
 
   Derivatives of Bessel Functions.
 
-    djv     -- Nth derivative of Jv(v,z)
-    dyv     -- Nth derivative of Yv(v,z)
-    dkv     -- Nth derivative of Kv(v,z)
-    div     -- Nth derivative of Iv(v,z)
-    dh1v    -- Nth derivative of H1v(v,z)
-    dh2v    -- Nth derivative of H2v(v,z)
-                  
+    jvp     -- Nth derivative of Jv(v,z)
+    yvp     -- Nth derivative of Yv(v,z)
+    kvp     -- Nth derivative of Kv(v,z)
+    ivp     -- Nth derivative of Iv(v,z)
+    h1vp    -- Nth derivative of H1v(v,z)
+    h2vp    -- Nth derivative of H2v(v,z)
+
+  Spherical Bessel Functions
+
+    sph_jn   -- **Sequence of spherical Bessel functions, jn(z)
+    sph_yn   -- **Sequence of spherical Bessel functions, yn(z)
+    sph_jnyn -- **Sequence of spherical Bessel functions, jn(z) and yn(z)
+    sph_in   -- **Sequence of spherical Bessel functions, in(z)
+    sph_kn   -- **Sequence of spherical Bessel functions, kn(z)
+    sph_inkn -- **Sequence of spherical Bessel functions, in(z) and kn(z)
+
+  Ricatti-Bessel Functions
+
+    ricatti_jn -- **Sequence of Ricatti-Bessel functions of first kind.
+    ricatti_yn -- **Sequence of Ricatti-Bessel functions of second kind.
+        
   Raw Statistical Functions (Friendly versions in scipy.stats)
 
     bdtr       -- Sum of terms 0 through k of of the binomial pdf.
@@ -127,18 +161,48 @@
 
   Error Function and Fresnel Integrals
   
-    erf         -- Error function.
-    erfc        -- Complemented error function (1- erf(x))
-    ervinv      -- Inverse of error function
-    ervcinv     -- Inverse of erfc
-    fresnel     -- Fresnel sine and cosine integrals.
-    modfresnelp -- Modified Fresnel integrals F_+(x) and K_+(x)
-    modfresnelm -- Modified Fresnel integrals F_-(x) and K_-(x)
+    erf           -- Error function.
+    erfc          -- Complemented error function (1- erf(x))
+    ervinv        -- Inverse of error function
+    ervcinv       -- Inverse of erfc
+    erf_zeros     -- **Complex zeros of erf(z)
+    fresnel       -- Fresnel sine and cosine integrals.
+    fresnel_zeros -- Complex zeros of both Fresnel integrals
+    fresnelc_zeros -- **Complex zeros of fresnel cosine integrals
+    fresnels_zeros -- **Complex zeros of fresnel sine integrals
+    modfresnelp   -- Modified Fresnel integrals F_+(x) and K_+(x)
+    modfresnelm   -- Modified Fresnel integrals F_-(x) and K_-(x)
 
   Legendre Functions
 
-    lpmv     -- Associated Legendre Function    
+    lpn      -- **Legendre Functions (polynomials) of the first kind
+    lqn      -- **Legendre Functions of the second kind.
+    lpmn     -- **Associated Legendre Function of the first kind.
+    lqmn     -- **Associated Legendre Function of the second kind.
+    lpmv     -- Associated Legendre Function of non-negative degree v.
 
+  Orthogonal polynomials
+   ** These functions all return a polynomial class which can then be
+      evaluated:  vals = chebyt(n)(x)
+      This class also has an attribute 'weights' which
+      return the weights used for Gaussian quadrature.
+
+    legendre    -- **Legendre polynomial P_n(x) (lpn -- for function).
+    chebyt      -- **Chebyshev polynomial T_n(x)
+    chebyu      -- **Chebyshev polynomial U_n(x)
+    chebyc      -- **Chebyshev polynomial C_n(x)
+    chebys      -- **Chebyshev polynomial S_n(x)
+    jacobi      -- **Jacobi polynomial P^(alpha,beta)_n(x)
+    laguerre    -- **Laguerre polynomial, L_n(x)
+    genlaguerre -- **Generalized (Associated) Laguerre polynomial, L^k_n(x)
+    hermite     -- **Hermite polynomial H_n(x)
+    hermitenorm -- **Normalized Hermite polynomial, He_n(x)
+    gegenbauer  -- **Gegenbauer (Ultraspherical) polynomials, C^(alpha)_n(x)
+    sh_legendre -- **sifted Legendre polynomial, P*_n(x)
+    sh_chebyt   -- **shifted Chebyshev polynomial, T*_n(x)
+    sh_chebyu   -- **shifted Chebyshev polynomial, U*_n(x)
+    sh_jacobi   -- **shifted Jacobi polynomial, J*_n(x)
+      
   HyperGeometric Functions
 
     hyp2f1   -- Gauss hypergeometric function (2F1)
@@ -151,8 +215,12 @@
 
   Parabolic Cylinder Functions
 
-    pbwa     -- Parabolic cylinder function W(a,x)
-
+    pbdv     -- Parabolic cylinder function Dv(x) and derivative.
+    pbvv     -- Parabolic cylinder function Vv(x) and derivative. 
+    pbwa     -- Parabolic cylinder function W(a,x) and derivative.
+    pbdv_seq -- **Sequence of parabolic cylinder functions Dv(x)
+    pbvv_seq -- **Sequence of parabolic cylinder functions Vv(x)
+    pbdn_seq -- **Sequence of parabolic cylinder functions Dn(z), complex z
 
   Mathieu and Related Functions (and derivatives)
 
@@ -170,12 +238,23 @@
 
   Spheroidal Wave Functions
 
-    pro_ang1  -- Prolate spheroidal angular function of the first kind
-    pro_rad1  -- Prolate spheroidal radial function of the first kind
-    pro_rad2  -- Prolate spheroidal radial function of the second kind
-    obl_ang1  -- Oblate spheroidal angluar function of the first kind
-    obl_rad1  -- Oblate spheroidal radial function of the first kind
-    obl_rad2  -- Oblate spheroidal radial function of the second kind
+    pro_ang1   -- Prolate spheroidal angular function of the first kind
+    pro_rad1   -- Prolate spheroidal radial function of the first kind
+    pro_rad2   -- Prolate spheroidal radial function of the second kind
+    obl_ang1   -- Oblate spheroidal angluar function of the first kind
+    obl_rad1   -- Oblate spheroidal radial function of the first kind
+    obl_rad2   -- Oblate spheroidal radial function of the second kind
+    pro_cv     -- Compute characteristic value for prolate functions
+    obl_cv     -- Compute characteristic value for oblate functions
+    pro_cv_seq -- Compute sequence of prolate characteristic values
+    obl_cv_seq -- Compute sequence of oblate characteristic values    
+     ** The following functions require pre-computed characteristic values **
+    pro_ang1_cv -- Prolate spheroidal angular function of the first kind
+    pro_rad1_cv -- Prolate spheroidal radial function of the first kind
+    pro_rad2_cv -- Prolate spheroidal radial function of the second kind
+    obl_ang1_cv -- Oblate spheroidal angluar function of the first kind
+    obl_rad1_cv -- Oblate spheroidal radial function of the first kind
+    obl_rad2_cv -- Oblate spheroidal radial function of the second kind
 
   Struve Functions
 
@@ -184,6 +263,27 @@
     itstruve0    -- Integral of H0(t) from 0 to x
     it2struve0   -- Integral of H0(t)/t from x to Inf.
     itmodstruve0 -- Integral of L0(t) from 0 to x.
+
+  Kelvin Functions
+  
+    kelvin       -- All Kelvin functions (order 0) and derivatives.
+    kelvin_zeros -- **Zeros of All Kelvin functions (order 0) and derivatives
+    ber          -- Kelvin function ber x
+    bei          -- Kelvin function bei x
+    berp         -- Derivative of Kelvin function ber x
+    beip         -- Derivative of Kelvin function bei x
+    ker          -- Kelvin function ker x
+    kei          -- Kelvin function kei x
+    kerp         -- Derivative of Kelvin function ker x
+    keip         -- Derivative of Kelvin function kei x
+    ber_zeros    -- **Zeros of Kelvin function bei x
+    bei_zeros    -- **Zeros of Kelvin function ber x
+    berp_zeros   -- **Zeros of derivative of Kelvin function ber x
+    beip_zeros   -- **Zeros of derivative of Kelvin function bei x
+    ker_zeros    -- **Zeros of Kelvin function kei x
+    kei_zeros    -- **Zeros of Kelvin function ker x
+    kerp_zeros   -- **Zeros of derivative of Kelvin function ker x
+    keip_zeros   -- **Zeros of derivative of Kelvin function kei x
   
   Other Special Functions
 
@@ -195,10 +295,8 @@
     shichi       -- Hyperbolic sine and cosine integrals.
     sici         -- Integral of the sinc and "cosinc" functions.
     spence       -- Dilogarithm integral.
-    kelvin       -- Kelvin functions (order 0) and derivatives.
     zeta         -- Riemann zeta function of two arguments.
     zetac        -- 1.0 - standard Riemann zeta function.
-    besselpoly   -- Integral of a bessel function times x**lambda.
 
   Convenience Functions
 
@@ -222,6 +320,9 @@
  """
 from special import *
 import specfun
-
+import orthogonal
+from orthogonal import legendre, chebyt, chebyu, chebyc, chebys, \
+     jacobi, laguerre, genlaguerre, hermite, gegenbauer, sh_legendre, \
+     sh_chebyt, sh_chebyu, sh_jacobi
 
 

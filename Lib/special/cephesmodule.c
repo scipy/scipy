@@ -166,9 +166,18 @@ static PyUFuncGenericFunction cephes5_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1c_functions[] = { NULL, };
 
 static void * airy_data[] = { (void *)airy, (void *)airy, (void *)cairy_wrap, (void *)cairy_wrap,};
-static void * kelvin_data[] = { (void *)kelvin_wrap, (void *)kelvin_wrap,};
 static void * airye_data[] = { (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
 static void * itairy_data[] = { (void *)itairy_wrap, (void *)itairy_wrap, };
+
+static void * kelvin_data[] = { (void *)kelvin_wrap, (void *)kelvin_wrap,};
+static void * ber_data[] = { (void *)ber_wrap, (void *)ber_wrap,};
+static void * bei_data[] = { (void *)bei_wrap, (void *)bei_wrap,};
+static void * ker_data[] = { (void *)ker_wrap, (void *)ker_wrap,};
+static void * kei_data[] = { (void *)kei_wrap, (void *)kei_wrap,};
+static void * berp_data[] = { (void *)berp_wrap, (void *)berp_wrap,};
+static void * beip_data[] = { (void *)beip_wrap, (void *)beip_wrap,};
+static void * kerp_data[] = { (void *)kerp_wrap, (void *)kerp_wrap,};
+static void * keip_data[] = { (void *)keip_wrap, (void *)keip_wrap,};
 
 static void * ellpj_data[] = { (void *)ellpj, (void *)ellpj,};
 
@@ -368,12 +377,22 @@ static void * mathieu_msem2_data[] = {(void *)msm2_wrap, (void *)msm2_wrap};
 
 static void * lpmv_data[] = {(void *)pmv_wrap, (void *)pmv_wrap};
 static void * pbwa_data[] = {(void *)pbwa_wrap, (void *)pbwa_wrap};
+static void * pbdv_data[] = {(void *)pbdv_wrap, (void *)pbdv_wrap};
+static void * pbvv_data[] = {(void *)pbvv_wrap, (void *)pbvv_wrap};
 static void * prolate_aswfa_data[] = {(void *)prolate_aswfa_wrap, (void *)prolate_aswfa_wrap};
 static void * prolate_radial1_data[] = {(void *)prolate_radial1_wrap, (void *)prolate_radial1_wrap};
 static void * prolate_radial2_data[] = {(void *)prolate_radial2_wrap, (void *)prolate_radial2_wrap};
 static void * oblate_aswfa_data[] = {(void *)oblate_aswfa_wrap, (void *)oblate_aswfa_wrap};
 static void * oblate_radial1_data[] = {(void *)oblate_radial1_wrap, (void *)oblate_radial1_wrap};
 static void * oblate_radial2_data[] = {(void *)oblate_radial2_wrap, (void *)oblate_radial2_wrap};
+static void * prolate_aswfa_nocv_data[] = {(void *)prolate_aswfa_nocv_wrap, (void *)prolate_aswfa_nocv_wrap};
+static void * prolate_radial1_nocv_data[] = {(void *)prolate_radial1_nocv_wrap, (void *)prolate_radial1_nocv_wrap};
+static void * prolate_radial2_nocv_data[] = {(void *)prolate_radial2_nocv_wrap, (void *)prolate_radial2_nocv_wrap};
+static void * oblate_aswfa_nocv_data[] = {(void *)oblate_aswfa_nocv_wrap, (void *)oblate_aswfa_nocv_wrap};
+static void * oblate_radial1_nocv_data[] = {(void *)oblate_radial1_nocv_wrap, (void *)oblate_radial1_nocv_wrap};
+static void * oblate_radial2_nocv_data[] = {(void *)oblate_radial2_nocv_wrap, (void *)oblate_radial2_nocv_wrap};
+static void * prolate_segv_data[] = {(void *)prolate_segv_wrap, (void *)prolate_segv_wrap};
+static void * oblate_segv_data[] = {(void *)oblate_segv_wrap, (void *)oblate_segv_wrap};
 
 static void * modfresnelp_data[] = {(void *)modified_fresnel_plus_wrap, (void *)modified_fresnel_plus_wrap};
 static void * modfresnelm_data[] = {(void *)modified_fresnel_minus_wrap, (void *)modified_fresnel_minus_wrap};
@@ -842,6 +861,30 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes1cpb_4_functions, kelvin_data, cephes_5b2_types, 2, 1, 4, PyUFunc_None, "kelvin", kelvin_doc, 0);
 	PyDict_SetItemString(dictionary, "kelvin", f);
 	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ber_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ber", ber_doc, 0);
+	PyDict_SetItemString(dictionary, "ber", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, bei_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "bei", bei_doc, 0);
+	PyDict_SetItemString(dictionary, "bei", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, ker_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "ker", ker_doc, 0);
+	PyDict_SetItemString(dictionary, "ker", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, kei_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kei", kei_doc, 0);
+	PyDict_SetItemString(dictionary, "kei", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, berp_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "berp", berp_doc, 0);
+	PyDict_SetItemString(dictionary, "berp", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, beip_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "beip", beip_doc, 0);
+	PyDict_SetItemString(dictionary, "beip", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, kerp_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kerp", kerp_doc, 0);
+	PyDict_SetItemString(dictionary, "kerp", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes1_functions, keip_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "keip", keip_doc, 0);
+	PyDict_SetItemString(dictionary, "keip", f);
+	Py_DECREF(f);
 
 
 	f = PyUFunc_FromFuncAndData(cephes2_functions, zeta_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "zeta", zeta_doc, 0);
@@ -1043,25 +1086,57 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2_2_functions, pbwa_data, cephes_4_types, 2, 2, 2, PyUFunc_None, "pbwa", pbwa_doc, 0);
 	PyDict_SetItemString(dictionary, "pbwa", f);
 	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes2_2_functions, pbdv_data, cephes_4_types, 2, 2, 2, PyUFunc_None, "pbdv", pbdv_doc, 0);
+	PyDict_SetItemString(dictionary, "pbdv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes2_2_functions, pbvv_data, cephes_4_types, 2, 2, 2, PyUFunc_None, "pbvv", pbvv_doc, 0);
+	PyDict_SetItemString(dictionary, "pbvv", f);
+	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes5_2_functions, prolate_aswfa_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "pro_ang1", pro_ang1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, prolate_segv_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "pro_cv", pro_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "pro_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, oblate_segv_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "obl_cv", obl_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "obl_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes5_2_functions, prolate_aswfa_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "pro_ang1_cv", pro_ang1_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "pro_ang1_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes5_2_functions, prolate_radial1_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "pro_rad1_cv", pro_rad1_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "pro_rad1_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes5_2_functions, prolate_radial2_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "pro_rad2_cv", pro_rad2_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "pro_rad2_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes5_2_functions, oblate_aswfa_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "obl_ang1_cv", obl_ang1_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "obl_ang1_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes5_2_functions, oblate_radial1_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "obl_rad1_cv", obl_rad1_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "obl_rad1_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes5_2_functions, oblate_radial2_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "obl_rad2_cv", obl_rad2_cv_doc, 0);
+	PyDict_SetItemString(dictionary, "obl_rad2_cv", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, prolate_aswfa_nocv_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "pro_ang1", pro_ang1_doc, 0);
 	PyDict_SetItemString(dictionary, "pro_ang1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes5_2_functions, prolate_radial1_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "pro_rad1", pro_rad1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, prolate_radial1_nocv_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "pro_rad1", pro_rad1_doc, 0);
 	PyDict_SetItemString(dictionary, "pro_rad1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes5_2_functions, prolate_radial2_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "pro_rad2", pro_rad2_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, prolate_radial2_nocv_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "pro_rad2", pro_rad2_doc, 0);
 	PyDict_SetItemString(dictionary, "pro_rad2", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes5_2_functions, oblate_aswfa_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "obl_ang1", obl_ang1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, oblate_aswfa_nocv_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "obl_ang1", obl_ang1_doc, 0);
 	PyDict_SetItemString(dictionary, "obl_ang1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes5_2_functions, oblate_radial1_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "obl_rad1", obl_rad1_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, oblate_radial1_nocv_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "obl_rad1", obl_rad1_doc, 0);
 	PyDict_SetItemString(dictionary, "obl_rad1", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes5_2_functions, oblate_radial2_data, cephes_7_types, 2, 5, 2, PyUFunc_None, "obl_rad2", obl_rad2_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes4_2_functions, oblate_radial2_nocv_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "obl_rad2", obl_rad2_doc, 0);
 	PyDict_SetItemString(dictionary, "obl_rad2", f);
 	Py_DECREF(f);
+
+
 
 	f = PyUFunc_FromFuncAndData(cephes1_2c_functions, modfresnelp_data, cephes_3cp_types, 2, 1, 2, PyUFunc_None, "modfresnelp", modfresnelp_doc, 0);
 	PyDict_SetItemString(dictionary, "modfresnelp", f);

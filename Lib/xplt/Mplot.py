@@ -10,6 +10,7 @@ import types
 import write_style
 from write_style import inches, points
 import scipy
+import scipy_base
 from scipy.signal import medfilt
 
 _hold = 0

@@ -15,7 +15,7 @@
    romb          -- Use Romberg Integration to compute integral from
                     (2**k + 1) evenly-spaced samples.
 
-   See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
+   See the special module (special.orthogonal) for Gaussian
       quadrature roots and weights for other weighting factors and regions.
 
  Interface to numerical integrators of ODE systems.
@@ -29,4 +29,3 @@ from quadrature import *
 from odepack import *
 from quadpack import *
 from ode import *
-from orthogonal import *

@@ -136,11 +136,11 @@ python module specfun ! in
         ! ittika
 
         subroutine lamv(v,x,vm,vl,dl) ! in :specfun:specfun.f
-            double precision intent(in) :: v
+            double precision intent(in), check(v>=0) :: v
             double precision intent(in) :: x
             double precision intent(out) :: vm
-            double precision intent(out),depend(v),dimension((int)floor(v)) :: vl
-            double precision intent(out),depend(v),dimension((int)floor(v)) :: dl
+            double precision intent(out),depend(v),dimension((int)v+1) :: vl
+            double precision intent(out),depend(v),dimension((int)v+1) :: dl
         end subroutine lamv
         ! chguit
         ! kmn
@@ -175,8 +175,8 @@ python module specfun ! in
         subroutine pbdv(v,x,dv,dp,pdf,pdd) ! in :specfun:specfun.f
             double precision intent(in) :: v
             double precision intent(in) :: x
-            double precision intent(out),depend(v),dimension(abs( (int )v)) :: dv
-            double precision intent(out),depend(v),dimension(abs( (int )v)) :: dp
+            double precision intent(out),depend(v),dimension(abs((int)v)+1) :: dv
+            double precision intent(out),depend(v),dimension(abs((int)v)+1) :: dp
             double precision intent(out) :: pdf
             double precision intent(out) :: pdd
         end subroutine pbdv
@@ -295,10 +295,10 @@ python module specfun ! in
         ! dvla
         ! ik01a
         subroutine cpbdn(n,z,cpb,cpd) ! in :specfun:specfun.f
-            integer intent(in),check(n>=0) :: n
+            integer intent(in) :: n
             complex*16 intent(in) :: z
-            complex*16 depend(n), intent(out), dimension(abs(n)) :: cpb
-            complex*16 depend(n), intent(out), dimension(abs(n)) :: cpd
+            complex*16 depend(n), intent(out), dimension(abs(n)+1) :: cpb
+            complex*16 depend(n), intent(out), dimension(abs(n)+1) :: cpd
         end subroutine cpbdn
         ! ik01b
         ! beta
@@ -437,15 +437,15 @@ python module specfun ! in
         subroutine pbvv(v,x,vv,vp,pvf,pvd) ! in :specfun:specfun.f
             double precision intent(in) :: v
             double precision intent(in) :: x
-            double precision intent(out),depend(v),dimension((int )v) :: vv
-            double precision intent(out),depend(v),dimension((int )v) :: vp
+            double precision intent(out),depend(v),dimension(abs((int)v)+1) :: vv
+            double precision intent(out),depend(v),dimension(abs((int)v)+1) :: vp
             double precision intent(out) :: pvf
             double precision intent(out) :: pvd
         end subroutine pbvv
         subroutine clqmn(mm,m,n,z,cqm,cqd) ! in :specfun:specfun.f
             callstatement (*f2py_func)(&mm,&m,&n,&(z.r),&(z.i),cqm,cqd)
             integer intent(hide) :: mm=m
-            integer intent(in), check(m>=0) :: m
+o            integer intent(in), check(m>=0) :: m
             integer intent(in), check(n>=0) :: n
             complex*16 intent(in) :: z
             complex*16 intent(out),dimension(m+1,n+1),depend(m,n) :: cqm
@@ -453,11 +453,11 @@ python module specfun ! in
         end subroutine clqmn
         subroutine segv(m,n,c,kd,cv,eg) ! in :specfun:specfun.f
             integer intent(in) :: m
-            integer intent(in) :: n
+            integer intent(in),depend(m),check((n>=m) && ((n-m)<199)) :: n
             double precision intent(in) :: c
             integer intent(in), check((kd==-1) || (kd==1)) :: kd
-            double precision intent(in) :: cv
-            double precision intent(out) :: dimension(200) :: eg
+            double precision intent(out) :: cv
+            double precision intent(out),dimension(n-m+2) :: eg
         end subroutine segv
         ! ciknb
         ! cikna

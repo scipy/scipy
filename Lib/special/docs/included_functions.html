@@ -429,12 +429,19 @@ can be either 1 or 2.
 
 <h1> Parabolic Cylinder Functions </h1>
 <DL>
+<DT>(d,dp) = pbdv(v,x)
+<DD>pbdv(v,x) returns (d,dp) with the parabolic cylinder function Dv(x) in 
+d and the derivative, Dv'(x) in dp.
+
+<DT>(v,vp) = pbvv(v,x)
+<DD>pbvv(v,x) returns (v,vp) with the parabolic cylinder function Vv(x) in 
+v and the derivative, Vv'(x) in vp.
+
 <DT>(w,wp) = pbwa(a,x)
 <DD>pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in 
 w and the derivative, W'(a,x) in wp.  May not be accurate for large (>5) 
 arguments in a and/or x.
 
-<DT>
 
 <h1> Legendre Functions </h1>
 <DL>
@@ -491,41 +498,138 @@ parameter q
 
 <h1> Spheroidal Wave Functions </h1>
 
-<DT>(s,sp) = pro_ang1(m,n,c,cv,x)
-<DD>pro_ang1(m,n,c,cv,x) computes the prolate sheroidal angular function 
+<DT>(s,sp) = pro_ang1(m,n,c,x)
+<DD>pro_ang1(m,n,c,x) computes the prolate sheroidal angular function 
 of the first kind and its derivative (with respect to x) for mode paramters
-m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
-|x|<1.0
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. 
 
-<DT>(s,sp) = pro_rad1(m,n,c,cv,x)
-<DD>pro_rad1(m,n,c,cv,x) computes the prolate sheroidal radial function 
+<DT>(s,sp) = pro_rad1(m,n,c,x)
+<DD>pro_rad1(m,n,c,x) computes the prolate sheroidal radial function 
 of the first kind and its derivative (with respect to x) for mode paramters
-m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
-x>1.0
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. 
 
-<DT>(s,sp) = pro_rad2(m,n,c,cv,x)
-<DD>pro_rad2(m,n,c,cv,x) computes the prolate sheroidal radial function 
+<DT>(s,sp) = pro_rad2(m,n,c,x)
+<DD>pro_rad2(m,n,c,x) computes the prolate sheroidal radial function 
 of the second kind and its derivative (with respect to x) for mode paramters
-m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
-x>1.0
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. 
 
-<DT>(s,sp) = obl_ang1(m,n,c,cv,x)
-<DD>obl_ang1(m,n,c,cv,x) computes the oblate sheroidal angular function 
+<DT>(s,sp) = obl_ang1(m,n,c,x)
+<DD>obl_ang1(m,n,c,x) computes the oblate sheroidal angular function 
 of the first kind and its derivative (with respect to x) for mode paramters
-m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
-|x|<1.0
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. 
 
-<DT>(s,sp) = obl_rad1(m,n,c,cv,x)
-<DD>obl_rad1(m,n,c,cv,x) computes the oblate sheroidal radial function 
+<DT>(s,sp) = obl_rad1(m,n,c,x)
+<DD>obl_rad1(m,n,c,x) computes the oblate sheroidal radial function 
 of the first kind and its derivative (with respect to x) for mode paramters
-m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
-x>1.0
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. 
 
-<DT>(s,sp) = obl_rad2(m,n,c,cv,x)
-<DD>obl_rad2(m,n,c,cv,x) computes the oblate sheroidal radial function 
+<DT>(s,sp) = obl_rad2(m,n,c,x)
+<DD>obl_rad2(m,n,c,x) computes the oblate sheroidal radial function 
 of the second kind and its derivative (with respect to x) for mode paramters
-m>=0 and n>=m, spheroidal parameter c and characteristic value cv with 
-x>1.0
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. 
+
+<DT>cv = pro_cv(m,n,c)
+<DD>pro_cv(m,n,c) computes the characteristic value of prolate spheroidal 
+wave functions of order m,n (n>=m) and spheroidal parameter c.
+
+<DT>cv = obl_cv(m,n,c)
+<DD>obl_cv(m,n,c) computes the characteristic value of oblate spheroidal 
+wave functions of order m,n (n>=m) and spheroidal parameter c.
+
+
+<DT>(s,sp) = pro_ang1_cv(m,n,c,cv,x)
+<DD>pro_ang1_cv(m,n,c,cv,x) computes the prolate sheroidal angular function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. Requires pre-computed
+characteristic value.
+
+<DT>(s,sp) = pro_rad1_cv(m,n,c,cv,x)
+<DD>pro_rad1_cv(m,n,c,cv,x) computes the prolate sheroidal radial function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. Requires pre-computed
+characteristic value.
+
+<DT>(s,sp) = pro_rad2_cv(m,n,c,cv,x)
+<DD>pro_rad2_cv(m,n,c,cv,x) computes the prolate sheroidal radial function 
+of the second kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. Requires pre-computed
+characteristic value.
+
+<DT>(s,sp) = obl_ang1_cv(m,n,c,cv,x)
+<DD>obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. Requires pre-computed
+characteristic value.
+
+<DT>(s,sp) = obl_rad1_cv(m,n,c,cv,x)
+<DD>obl_rad1_cv(m,n,c,cv,x) computes the oblate sheroidal radial function 
+of the first kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. Requires pre-computed
+characteristic value.
+
+<DT>(s,sp) = obl_rad2_cv(m,n,c,cv,x)
+<DD>obl_rad2_cv(m,n,c,cv,x) computes the oblate sheroidal radial function 
+of the second kind and its derivative (with respect to x) for mode paramters
+m>=0 and n>=m, spheroidal parameter c and |x|<1.0. Requires pre-computed
+characteristic value.
+
+<h1> Struve Functions </h1>
+<DL>
+<DT>y = struve(v,x)
+<DD>struve(v,x) returns the Struve function Hv(x) of order v at x, x
+must be positive unless v is an integer.
+
+<DT>y = modstruve(v,x)
+<DD>modstruve(v,x) returns the modified Struve function Lv(x) of order
+v at x, x must be positive unless v is an integer and it is recommended
+that |v|<=20.
+
+<DT>y = itstruve0(x)
+<DD>itstruve0(x) returns the integral of the Struve function of order 0 
+from 0 to x:  integral(H0(t), t=0..x).
+
+<DT>y = it2struve0(x)
+<DD>it2struve0(x) returns the integral of the Struve function of order 0 
+divided by t from x to infinity:  integral(H0(t)/t, t=x..inf).
+
+<DT>y = itmodstruve0(x)
+<DD>itmodstruve0(x) returns the integral of the modified Struve function
+of order 0 from 0 to x:  integral(L0(t), t=0..x).
+</DL>
+
+<h1> Kelvin Functions </h1>
+<DL>
+<DT>(Be, Ke, Bep, Kep) = kelvin(x)
+<DD>kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes 
+complex numbers representing the real and imaginary Kelvin functions 
+and their derivatives evaluated at x.  For example, 
+kelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar 
+relationships for ker and kei.  
+
+<DT>y = ber(x)
+<DD>ber(x) returns the Kelvin function ber x
+
+<DT>y = bei(x)
+<DD>bei(x) returns the Kelvin function bei x
+
+<DT>y = ker(x)
+<DD>ker(x) returns the Kelvin function ker x
+
+<DT>y = kei(x)
+<DD>kei(x) returns the Kelvin function ker x
+
+<DT>y = berp(x)
+<DD>berp(x) returns the derivative of the Kelvin function ber x
+
+<DT>y = beip(x)
+<DD>beip(x) returns the derivative of the Kelvin function bei x
+
+<DT>y = kerp(x)
+<DD>kerp(x) returns the derivative of the Kelvin function ker x
+
+<DT>y = keip(x)
+<DD>keip(x) returns the derivative of the Kelvin function kei x
+</DL>
 
 
 <h1> Other Special Functions </h1>
@@ -569,33 +673,6 @@ integral((cos(t) - 1)/t,t=0..x).
 <DD>spence(x) returns the dilogarithm integral: -integral(log t /
 (t-1),t=1..x)
 
-<DT>y = struve(v,x)
-<DD>struve(v,x) returns the Struve function Hv(x) of order v at x, x
-must be positive unless v is an integer.
-
-<DT>y = modstruve(v,x)
-<DD>modstruve(v,x) returns the modified Struve function Lv(x) of order
-v at x, x must be positive unless v is an integer and it is recommended
-that |v|<=20.
-
-<DT>y = itstruve0(x)
-<DD>itstruve0(x) returns the integral of the Struve function of order 0 
-from 0 to x:  integral(H0(t), t=0..x).
-
-<DT>y = it2struve0(x)
-<DD>it2struve0(x) returns the integral of the Struve function of order 0 
-divided by t from x to infinity:  integral(H0(t)/t, t=x..inf).
-
-<DT>y = itmodstruve0(x)
-<DD>itmodstruve0(x) returns the integral of the modified Struve function
-of order 0 from 0 to x:  integral(L0(t), t=0..x).
-
-<DT>(Be, Ke, Bep, Kep) = kelvin(x)
-<DD>kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes 
-complex numbers representing the real and imaginary Kelvin functions 
-and their derivatives evaluated at x.  For example, 
-kelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar 
-relationships for ker and kei.  
 
 <DT>y = zeta(x,q)
 <DD>zeta(x,q) returns the Riemann zeta function of two arguments:

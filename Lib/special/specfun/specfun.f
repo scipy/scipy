@@ -11832,7 +11832,6 @@ C
         END
 
 
-
 C       **********************************
 
         SUBROUTINE SEGV(M,N,C,KD,CV,EG)
@@ -11854,7 +11853,7 @@ C
 	DIMENSION B(100),H(100),D(300),E(300),F(300),CV0(100),
      &            A(300),G(300),EG(200)
 	IF (C.LT.1.0D-10) THEN
-	   DO 5 I=1,N
+	   DO 5 I=1,N-M+1
 5             EG(I)=(I+M)*(I+M-1.0D0)
 	   GO TO 70
 	ENDIF                                           

@@ -1,8 +1,5 @@
 /* This file is a collection of wrappers around the
- *  Amos Fortran library of functions that take complex
- *  variables (see www.netlib.org) so that they can be called from
- *  the cephes library of corresponding name but work with complex
- *  arguments.
+ *  Specfun Fortran library of functions 
  */
 
 #include "specfun_wrappers.h"
@@ -244,6 +241,92 @@ double itmodstruve0_wrap(double x) {
   return out;
 }
 
+
+double ber_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+
+  if (x<0) x=-x;
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Be);
+  return REAL(Be);
+}
+
+double bei_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+
+  if (x<0) x=-x;
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Be);
+  return IMAG(Be);
+}
+
+double ker_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+
+  if (x<0) return NAN;
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Ke);
+  return REAL(Ke);  
+}
+
+double kei_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+
+  if (x<0) return NAN;
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Ke);
+  return IMAG(Ke);  
+}
+
+double berp_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+  int flag = 0;
+
+  if (x<0) {x=-x; flag=1;}
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Bep);
+  if (flag) return -REAL(Bep);
+  return REAL(Bep);
+}
+
+double beip_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+  int flag = 0;
+
+  if (x<0) {x=-x; flag=1;}
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Bep);
+  if (flag) return -IMAG(Bep);
+  return IMAG(Bep);
+}
+
+double kerp_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+
+  if (x<0) return NAN;
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Kep);
+  return REAL(Kep);  
+}
+
+double keip_wrap(double x)
+{
+  Py_complex Be, Ke, Bep, Kep;
+
+  if (x<0) return NAN;
+  F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
+  ZCONVINF(Kep);
+  return IMAG(Kep);  
+}
+
+
 int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_complex *Kep) {
   Py_complex outz;
   int flag = 0;
@@ -475,6 +558,138 @@ int pbwa_wrap(double a, double x, double *wf, double *wd) {
   }
 }
 
+int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
+
+  double *dv;
+  double *dp;
+  int num;
+
+  num = ABS((int) v)+1;    
+  dv = (double *)PyMem_Malloc(sizeof(double)*2*num);
+  if (dv==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *pdf = NAN;
+    *pdd = NAN;
+    return -1;
+  }
+  dp = dv + num;
+  F_FUNC(pbdv,PBDV)(&v, &x, dv, dp, pdf, pdd);
+  PyMem_Free(dv);
+  return 0;
+}
+
+int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
+  double *vv;
+  double *vp;
+  int num;
+
+  num = ABS((int) v)+1;    
+  vv = (double *)PyMem_Malloc(sizeof(double)*2*num);
+  if (vv==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *pvf = NAN;
+    *pvd = NAN;
+    return -1;
+  }
+  vp = vv + num;
+  F_FUNC(pbvv,PBVV)(&v, &x, vv, vp, pvf, pvd);
+  PyMem_Free(vv);
+}
+
+double prolate_segv_wrap(double m, double n, double c)
+{
+  int kd=1;
+  int int_m, int_n;
+  double cv, *eg;
+
+  if ((m<0) || (n<m) || (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    return NAN;
+  }
+  int_m = (int) m;
+  int_n = (int) n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  return cv;
+  PyMem_Free(eg);
+}
+
+double oblate_segv_wrap(double m, double n, double c)
+{
+  int kd=-1;
+  int int_m, int_n;
+  double cv, *eg;
+
+  if ((m<0) || (n<m) || (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    return NAN;
+  }
+  int_m = (int) m;
+  int_n = (int) n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  return cv;
+  PyMem_Free(eg);
+}
+
+
+double prolate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1d)
+{
+  int kd = 1;
+  int int_m, int_n;
+  double cv, s1f, *eg;
+
+  if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
+      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    *s1d = NAN;
+    return NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *s1d = NAN;
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,&s1f,s1d);
+  PyMem_Free(eg);
+  return s1f;
+}
+
+
+double oblate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1d)
+{
+  int kd = -1;
+  int int_m, int_n;
+  double cv, s1f, *eg;
+
+  if ((x >=1) || (x <=-1) || (m<0) || (n<m) || \
+      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    *s1d = NAN;
+    return NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *s1d = NAN;
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,&s1f,s1d);
+  PyMem_Free(eg);
+  return s1f;
+}
+
 
 int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d)
 {
@@ -485,12 +700,14 @@ int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double
       (m!=floor(m)) || (n!=floor(n))) {
     *s1f = NAN;
     *s1d = NAN;
+    return 0;
   }
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,s1f,s1d);
   return 0;
 }
+
 
 int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d)
 {
@@ -501,11 +718,63 @@ int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double 
       (m!=floor(m)) || (n!=floor(n))) {
     *s1f = NAN;
     *s1d = NAN;
+    return 0;
   }
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,s1f,s1d);
   return 0;
+}
+
+
+double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d)
+{
+  int kf=1, kd=1;
+  double r2f, r2d, r1f, cv, *eg;
+  int int_m, int_n;
+
+  if ((x <=1.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    *r1d = NAN;
+    return NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *r1d = NAN;
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,r1d,&r2f,&r2d);
+  PyMem_Free(eg);
+  return r1f;
+}
+
+double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double *r2d)
+{
+  int kf=2, kd=1;
+  double r1f, r1d, r2f, cv, *eg;
+  int int_m, int_n;
+
+  if ((x <=1.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    *r2d = NAN;
+    return NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *r2d = NAN;
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,&r2f,r2d);
+  PyMem_Free(eg);
+  return r2f;
 }
 
 int prolate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d)
@@ -518,6 +787,7 @@ int prolate_radial1_wrap(double m, double n, double c, double cv, double x, doub
      (m!=floor(m)) || (n!=floor(n))) {
     *r1f = NAN;
     *r1d = NAN;
+    return 0;
   }
   int_m = (int )m;
   int_n = (int )n;
@@ -535,11 +805,62 @@ int prolate_radial2_wrap(double m, double n, double c, double cv, double x, doub
      (m!=floor(m)) || (n!=floor(n))) {
     *r2f = NAN;
     *r2d = NAN;
+    return 0;
   }
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,r2f,r2d);
   return 0;  
+}
+
+double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d)
+{
+  int kf=1, kd=-1;
+  double r2f, r2d, r1f, cv, *eg;
+  int int_m, int_n;
+
+  if ((x <=1.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    *r1d = NAN;
+    return NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *r1d = NAN;
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,r1d,&r2f,&r2d);
+  PyMem_Free(eg);
+  return r1f;
+}
+
+double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *r2d)
+{
+  int kf=2, kd=-1;
+  double r1f, r1d, r2f, cv, *eg;
+  int int_m, int_n;
+
+  if ((x <=1.0) || (m<0) || (n<m) || \
+     (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
+    *r2d = NAN;
+    return NAN;
+  }
+  int_m = (int )m;
+  int_n = (int )n;
+  eg = (double *)PyMem_Malloc(sizeof(double)*(n-m+2));
+  if (eg==NULL) {
+    printf("Warning: Memory allocation error.\n"); 
+    *r2d = NAN;
+    return NAN;
+  }
+  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,&r2f,r2d);
+  PyMem_Free(eg);
+  return r2f;
 }
 
 int oblate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d)
@@ -552,6 +873,7 @@ int oblate_radial1_wrap(double m, double n, double c, double cv, double x, doubl
      (m!=floor(m)) || (n!=floor(n))) {
     *r1f = NAN;
     *r1d = NAN;
+    return 0;
   }
   int_m = (int )m;
   int_n = (int )n;
@@ -569,6 +891,7 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
      (m!=floor(m)) || (n!=floor(n))) {
     *r2f = NAN;
     *r2d = NAN;
+    return 0;
   }
   int_m = (int )m;
   int_n = (int )n;
