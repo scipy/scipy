@@ -2431,8 +2431,50 @@ def make_dict(keys, values):
 #  x_k, p(x_k) lists in initialization
 
 class rv_discrete:
+    """A generic discrete random variable object.
+
+    Discrete random variables are defined from a standard form.
+    The standard form may require some other parameters to complete
+    its specification.  The distribution methods also take an optional location
+    parameter using loc= keyword.  The default is loc=0.  The calling form of the
+    methods follow:
+
+    generic.rvs(<shape(s)>,loc=0)
+        - random variates 
+
+    generic.pdf(x,<shape(s)>,loc=0)
+        - probability density function
+
+    generic.cdf(x,<shape(s)>,loc=0)
+        - cumulative density function
+
+    generic.sf(x,<shape(s)>,loc=0)
+        - survival function (1-cdf --- sometimes more accurate)
+
+    generic.ppf(q,<shape(s)>,loc=0)
+        - percent point function (inverse of cdf --- percentiles)
+
+    generic.isf(q,<shape(s)>,loc=0)
+        - inverse survival function (inverse of sf)
+
+    generic.stats(<shape(s)>,loc=0,moments='mv')
+        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+
+    Alternatively, the object may be called (as a function) to fix
+       the shape and location parameters returning a
+       "frozen" discrete RV object:
+
+    myrv = generic(<shape(s)>,loc=0)
+        - frozen RV object with the same methods but holding the
+            given shape, location, and scale fixed
+
+    You can construct an aribtrary discrete rv where P{X=xk} = pk
+    by passing to the rv_discrete initialization method (through the values=
+    keyword) a tuple of sequences (xk,pk) which describes only those values of
+    X (xk) that occur with nonzero probability (pk).  
+    """
     def __init__(self, a=0, b=scipy.inf, name=None, badvalue=None,
-                 moment_tol=1e-8,values=None,inc=1):
+                 moment_tol=1e-8,values=None,inc=1,shapes=None,extradoc=None):
         if badvalue is None:
             badvalue = scipy.nan
         self.badvalue = badvalue
@@ -2477,6 +2519,20 @@ class rv_discrete:
             pdf_signature = inspect.getargspec(self._pdf.im_func)
             numargs2 = len(pdf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
+
+        if self.__doc__ is None:
+            self.__doc__ = rv_discrete.__doc__
+        if self.__doc__ is not None:
+            if name is not None:
+                self.__doc__ = self.__doc__.replace("generic",name)
+            if shapes is None:
+                self.__doc__ = self.__doc__.replace("<shape(s)>,","")
+            else:
+                self.__doc__ = self.__doc__.replace("<shape(s)>",shapes)
+            ind = self.__doc__.find("You can construct an arbitrary")
+            self.__doc__ = self.__doc__[:ind].strip()
+            if extradoc is not None:
+                self.__doc__ = self.__doc__ + extradoc
 
     def _rvs(self, *args):
         return self._ppf(rand.sample(self._size),*args)
@@ -2778,7 +2834,11 @@ class binom_gen(rv_discrete):
         g1 = (q-pr) / sqrt(n*pr*q)
         g2 = (1.0-6*pr*q)/(n*pr*q)
         return mu, var, g1, g2
-binom = binom_gen(a=0,name='binomial')
+binom = binom_gen(a=0,name='binom',shapes="n,pr",extradoc="""
+
+Binomial RV:  Counts the number of successes in *n* independent
+   trials when the probability of success each time is *pr*.
+""")
 # Bernoulli distribution
 
 class bernoulli_gen(binom_gen):
@@ -2794,7 +2854,12 @@ class bernoulli_gen(binom_gen):
         return binom_gen._ppf(self, q, 1, pr)
     def _stats(self, pr):
         return binom_gen._stats(self, 1, pr)
-bernoulli = bernoulli_gen(a=0,b=1,name='Bernoulli')
+bernoulli = bernoulli_gen(a=0,b=1,name='bernoulli',shapes="pr",extradoc="""
+
+Bernoulli RV: 1 if binary experiment succeeds, 0 otherwise.  Experiment
+   succeeds with probabilty *pr*.
+"""
+)
 
 # Negative binomial
 class nbinom_gen(rv_discrete):

@@ -108,18 +108,18 @@ p\left(x_{k}\right)=P\left[X=x_{k}\right]\]
  This is also sometimes called the probability density function, although
  technically 
 \begin_inset Formula \[
-p\left(x\right)=\sum_{k}p\left(x_{k}\right)\delta\left(x-x_{k}\right)\]
+f\left(x\right)=\sum_{k}p\left(x_{k}\right)\delta\left(x-x_{k}\right)\]
 
 \end_inset 
 
  is the probability density function for a discrete distribution
 \begin_inset Foot
-collapsed true
+collapsed false
 
 \layout Standard
 
-Note that we will be using $p$ to represent the probability mass function,
- the probability density function, and a parameter (a probability).
+Note that we will be using $p$ to represent the probability mass function
+ and a parameter (a probability).
  The usage should be obvious from context.
  
 \end_inset 
@@ -337,7 +337,7 @@ To fit data to a distribution, maximizing the likelihood function is common.
 \layout Standard
 
 If 
-\begin_inset Formula $p\left(k;\boldsymbol\theta\right)$
+\begin_inset Formula $f_{i}\left(k;\boldsymbol\theta\right)$
 \end_inset 
 
  is the PDF of a random-variable where 
@@ -368,7 +368,7 @@ and
 
  is 
 \begin_inset Formula \[
-p\left(\mathbf{k};\boldsymbol\theta\right)=\prod_{i=1}^{N}f\left(k_{i};\boldsymbol\theta\right).\]
+f\left(\mathbf{k};\boldsymbol\theta\right)=\prod_{i=1}^{N}f_{i}\left(k_{i};\boldsymbol\theta\right).\]
 
 \end_inset 
 
