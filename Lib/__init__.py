@@ -64,7 +64,7 @@ _level1 = ["special", "io", "linalg"]  # fft is in this group.
 _level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
                       # require level 0 and level 1
 # these modules will just be imported (not subsumed)                      
-_level1_importonly = []
+_level1a_importonly = []
 
 _level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "compiler", "cluster"]
 
