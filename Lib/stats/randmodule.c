@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "Numeric/arrayobject.h"
-#include "Numeric/ranlib.h"
+#include "ranlib.h"
 #include "stdio.h"
 
 static PyObject *ErrorObject;
