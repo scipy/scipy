@@ -13,6 +13,7 @@ def configuration(parent_package=''):
 
     if parent_package:
         config['packages'].append(parent_package+'special')
+
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
     cephes = glob(os.path.join(local_path,'cephes','*.c'))
     mach = glob(os.path.join(local_path,'mach','*.f'))
@@ -28,11 +29,12 @@ def configuration(parent_package=''):
     config['fortran_libraries'].append(('toms',{'sources':toms}))
     
     # Extension
-    # needs mach also
     sources = ['cephesmodule.c', 'amos_wrappers.c',
                'toms_wrappers.c','ufunc_extras.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(parent_package+'special.cephes',sources)
+    ext = Extension(parent_package+'special.cephes',sources,
+                    libraries = ['amos','toms']
+                    )
     config['ext_modules'].append(ext)
 
     return config
