@@ -22,11 +22,9 @@ from scipy_test.testing import ScipyTestCase
 import unittest
 from scipy_distutils.misc_util import PostponedException
 
-import sys,os
-from scipy_test.testing import get_package_path
-if __name__ == "__main__":
-    __file__ = sys.argv[0]
-sys.path.insert(0,get_package_path(__file__))
+import sys
+from scipy_test.testing import set_package_path
+set_package_path()
 try: from linalg import fblas
 except: fblas = PostponedException()
 try: from linalg import cblas
@@ -172,9 +170,7 @@ then scipy skips building cblas and uses fblas instead.
 """ %(cblas.__doc__)
 
     if not isinstance(fblas,PostponedException):
-        sys.path.insert(0,os.path.dirname(__file__))
         import test_fblas
-        del sys.path[0]
         suite = test_fblas.test_suite(level)
         suites.append(suite)
     total_suite = unittest.TestSuite(suites)

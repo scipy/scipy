@@ -18,11 +18,9 @@
 from Numeric import *
 from scipy_base.fastumath import *
 
-import sys,os
-from scipy_test.testing import get_package_path
-if __name__ == "__main__":
-    __file__ = sys.argv[0]
-sys.path.insert(0,get_package_path(__file__))
+import sys
+from scipy_test.testing import set_package_path
+set_package_path()
 from linalg import fblas
 del sys.path[0]
 
@@ -538,6 +536,9 @@ def test(level=10):
     runner.run(all_tests)
     return runner
 
-
 if __name__ == "__main__":
-    test()
+    if len(sys.argv)>1:
+        level = eval(sys.argv[1])
+    else:
+        level = 1
+    test(level)

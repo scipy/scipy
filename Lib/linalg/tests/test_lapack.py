@@ -16,11 +16,9 @@ from scipy_test.testing import ScipyTestCase
 import unittest
 from scipy_distutils.misc_util import PostponedException
 
-import sys,os
-from scipy_test.testing import get_package_path
-if __name__ == "__main__":
-    __file__ = sys.argv[0]
-sys.path.insert(0,get_package_path(__file__))
+import sys
+from scipy_test.testing import set_package_path
+set_package_path()
 try: from linalg import flapack
 except: flapack = PostponedException()
 try: from linalg import clapack

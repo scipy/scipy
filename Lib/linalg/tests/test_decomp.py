@@ -1,15 +1,18 @@
 #!/usr/bin/env python
-# Usage:
-#   In the parent directory run
-#     python setup_linalg.py build --build-platlib=.
-#     python -c 'import linalg;linalg.test(1)'
 #
 # Created by: Pearu Peterson, March 2002
 #
 """ Test functions for linalg.decomp module
 
 """
-
+__usage__ = """
+Build linalg:
+  python setup_linalg.py build
+Run tests if scipy is installed:
+  python -c 'import scipy;scipy.linalg.test(<level>)'
+Run tests if linalg is not installed:
+  python tests/test_decomp.py [<level>]
+"""
 
 import Numeric
 dot = Numeric.dot
@@ -18,10 +21,10 @@ from scipy_test.testing import rand
 def random(size):
     return rand(*size)
 
-import os,sys
-d = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0,d)
-from __init__ import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
+import sys
+from scipy_test.testing import set_package_path
+set_package_path()
+from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
 del sys.path[0]
 
 from scipy_test.testing import assert_array_almost_equal
@@ -344,5 +347,5 @@ if __name__ == "__main__":
     if len(sys.argv)>1:
         level = eval(sys.argv[1])
     else:
-        level = 10
+        level = 1
     test(level)

@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-# Usage:
-#   In the parent directory run
-#     python setup_linalg.py build --build-platlib=.
-#     python -c 'import linalg;linalg.test(1)'
 #
 # Created by: Pearu Peterson, March 2002
 #
@@ -14,24 +10,32 @@ Bugs:
 1) solve.check_random_sym_complex fails if a is complex
    and transpose(a) = conjugate(a) (a is Hermitian).
 """
+__usage__ = """
+Build linalg:
+  python setup_linalg.py build
+Run tests if scipy is installed:
+  python -c 'import scipy;scipy.linalg.test(<level>)'
+Run tests if linalg is not installed:
+  python tests/test_basic.py [<level>]
+"""
 
 import Numeric
 from Numeric import arange, add, array
 
-from scipy_test.testing import rand
-def random(size):
-    return rand(*size)
-
-import os,sys
-d = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0,d)
-from __init__ import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
+import sys
+from scipy_test.testing import set_package_path
+set_package_path()
+from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 del sys.path[0]
 
+from scipy_test.testing import rand
 from scipy_test.testing import assert_array_almost_equal, assert_equal
 from scipy_test.testing import assert_almost_equal, assert_array_equal
 from scipy_test.testing import ScipyTestCase
 import unittest
+
+def random(size):
+    return rand(*size)
 
 def get_mat(n):
     data = arange(n)
@@ -490,5 +494,5 @@ if __name__ == "__main__":
     if len(sys.argv)>1:
         level = eval(sys.argv[1])
     else:
-        level = 10
+        level = 1
     test(level)
