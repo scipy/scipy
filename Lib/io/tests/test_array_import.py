@@ -3,15 +3,20 @@
 # This python script tests the numpyio module.
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
-import os
+import os,sys
 import unittest
 from unittest import TestCase
-import scipy
-import scipy.io.numpyio as numpyio
-from scipy import io, stats
-from scipy import rand
+
+from scipy_test.testing import set_package_path
+set_package_path()
+import io
+from io import numpyio
+del sys.path[0]
+
+from scipy_test.testing import rand
 from scipy_test.testing import assert_array_equal, assert_equal, assert_approx_equal
 from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
+
 import Numeric
 N = Numeric
 import tempfile
@@ -39,7 +44,7 @@ class test_read_array(TestCase):
         a = rand(13,4) + 1j*rand(13,4)
         fname = tempfile.mktemp('.dat')
         io.write_array(fname,a)
-        b = io.read_array(fname,atype=scipy.Complex)
+        b = io.read_array(fname,atype=N.Complex)
         assert_array_almost_equal(a,b,decimal=4)
         os.remove(fname)
 
@@ -52,10 +57,11 @@ class test_read_array(TestCase):
         os.remove(fname)
 
     def check_integer(self):
+        from scipy import stats
         a = stats.randint(1,20,size=(3,4))
         fname = tempfile.mktemp('.dat')
         io.write_array(fname,a)
-        b = io.read_array(fname,atype=scipy.Int)
+        b = io.read_array(fname,atype=N.Int)
         assert_array_equal(a,b)
         os.remove(fname)
 

@@ -10,7 +10,7 @@ Text File
 __all__ = ['read_array', 'write_array']
 import Numeric
 import scipy_base
-from Numeric import array, take, concatenate, Float, asarray, real, imag
+from scipy_base import array, take, concatenate, Float, asarray, real, imag
 import types, re, copy
 import numpyio
 default = None
