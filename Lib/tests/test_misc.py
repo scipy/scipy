@@ -134,7 +134,6 @@ class test_nan_to_num(unittest.TestCase):
         vals = nan_to_num(v)
         # !! This is actually (unexpectedly) zero
         assert(vals.imag > 1e10 and isfinite(vals))
-        #assert(vals.imag ==0)
     def check_complex_bad2(self):
         v = 1+1j
         v += array(-1+1.j)/0.
