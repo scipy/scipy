@@ -2632,7 +2632,8 @@ Truncated Normal distribution.
 
   The standard form of this distribution is a standard normal truncated to the
   range [a,b] --- notice that a and b are defined over the domain
-  of the standard normal.
+  of the standard normal.  To convert clip values for a specific mean and
+  standard deviation use a,b = (myclip_a-my_mean)/my_std, (myclip_b-my_mean)/my_std
 """
                           )
 
