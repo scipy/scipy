@@ -1,0 +1,106 @@
+!    -*- f90 -*-
+!
+! Sparse Iterative Package for SciPy
+! Hongze Liu, Travis E. Oliphant,
+! Brigham Young University
+! 2004
+!
+
+python module bicg__user__routines 
+    interface bicg_user_interface 
+        subroutine <_c>matsplit(omega,b,work,ldw,method,flag) ! in :iterative:Jacobi.f:Jacobi:unknown_interface
+            <_t>, :: omega 
+            <_t>, dimension(1000) :: b
+            <_t> intent(hide), dimension(ldw,3), depend(ldw) :: work
+            integer, :: ldw
+            character*(5) :: which
+        end subroutine <_c>matsplit
+    end interface bicg_user_interface
+end python module bicg__user__routines
+python module iterative ! in 
+    interface  ! in :iterative
+        subroutine <_c>bicgrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:BiCG.f
+            use bicg__user__routines
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(hide), dimension(ldw,6), depend(ldw) :: work
+            integer, intent(hide), depend(n) :: ldw=n!MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>bicgrevcom
+        subroutine <_c>bicgstabrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:BiCGSTAB.f
+            use bicg__user__routines
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(hide), dimension(ldw*7), depend(ldw) :: work
+            integer, intent(hide), depend(n) :: ldw=n!MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>bicgstabrevcom
+        subroutine <_c>cgrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:CG.f
+            use bicg__user__routines
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(hide), dimension(ldw,4), depend(ldw) :: work
+            integer, intent(hide), depend(n) :: ldw=n!MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>cgrevcom
+        subroutine <_c>cgsrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:CGS.f
+            use bicg__user__routines
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(hide), dimension(ldw,7), depend(ldw) :: work
+            integer, intent(hide), depend(n) :: ldw=n!MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>cgsrevcom
+        subroutine <_c>qmrrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:QMR.f
+            use bicg__user__routines
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(hide), dimension(ldw,11), depend(ldw) :: work
+            integer, intent(hide), depend(n) :: ldw=n!MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>qmrrevcom
+    end interface 
+end python module iterative
+
+! This file was auto-generated with f2py (version:2.39.235_1703).
+! See http://cens.ioc.ee/projects/f2py2e/

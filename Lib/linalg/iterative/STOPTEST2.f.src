@@ -1,0 +1,21 @@
+C     STOPTEST2
+
+      SUBROUTINE <_c>STOPTEST2( N, R, B, BNRM2, RESID, TOL, INFO )
+      INTEGER            N, INFO
+      <rt=real,double precision,real,double precision> RESID, TOL, BNRM2
+      <_t>   R( * ), B( * )
+      <rt>   ZERO, ONE
+      PARAMETER        ( ZERO = 0.0D+0, ONE = 1.0D+0 )
+      <rt> <rc=s,d,sc,dz>NRM2
+      EXTERNAL         <rc>NRM2
+      IF( INFO.EQ.-1 ) THEN
+         BNRM2 = <rc>NRM2( N, B, 1 )
+         IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE
+      ENDIF
+      RESID = <rc>NRM2( N, R, 1 ) / BNRM2
+      INFO = 0
+      IF ( RESID.LE.TOL )
+     $     INFO = 1
+      RETURN
+      END SUBROUTINE <_c>STOPTEST2
+ 
