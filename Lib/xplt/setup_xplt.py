@@ -2,8 +2,11 @@
 
 import os
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy_distutils.misc_util import dict_append
 from scipy_distutils.core import Extension
-from scipy_distutils.x11_info import get_x11_info
+#from scipy_distutils.x11_info import get_x11_info
+from scipy_distutils.system_info import x11_info
+
 
 def configuration(parent_package=''):
     """
@@ -11,8 +14,8 @@ def configuration(parent_package=''):
        This will install *.gs and *.gp files to
        '%spython%s/site-packages/scipy/xplt' % (sys.prefix,sys.version[:3])
     """
-    x11_info = get_x11_info()
-    if not x11_info:
+    x11 = x11_info().get_info()
+    if not x11:
         return
 
     config = default_config_dict('xplt',parent_package)
@@ -20,12 +23,12 @@ def configuration(parent_package=''):
     
     sources = ['gistCmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-                                               
-    ext = Extension(dot_join(parent_package,'xplt.gistC'),
-                    sources,
-                    include_dirs = x11_info.get('include_dirs',[]),
-                    library_dirs = x11_info.get('library_dirs',[]),
-                    libraries = x11_info.get('libraries',[]) + ['m'])
+
+    ext_arg = {'name':dot_join(parent_package,'xplt.gistC'),
+               'sources':sources}
+    dict_append(ext_arg,**x11)
+    dict_append(ext_arg,libraries=['m'])
+    ext = Extension (**ext_arg)
     config['ext_modules'].append(ext)
         
     from glob import glob
