@@ -9,7 +9,6 @@ __all__ = ['wxPython_thread']
 
 import re
 import os
-import os.path
 import sys
 import new
 import types
@@ -104,29 +103,33 @@ func_code=%(func_name)s.func_code"""
 
 def _import_wx_core(wx_pth, pexec):
     """Imports the core modules for wx.  This is necessary for
-    wxPython-2.5.x. 
+    wxPython-2.5.x.
     """
     # Find the suffix.
     suffix = '.so'
+    flag = 0
     for x in [x[0] for x in imp.get_suffixes() if x[-1] is imp.C_EXTENSION]:
         if os.path.exists(os.path.join(wx_pth, '_core_' + x)):
             suffix = x
+            flag = 1
             break
+    if not flag:
+        return 0
     # Now import the modules manually.
     pexec('import imp, os.path')
     code="""\
-for i in ["_core_", "_controls_", "_misc_", "_windows_", "_gdi_"]:
+for i in [\"_core_\", \"_controls_\", \"_misc_\", \"_windows_\", \"_gdi_\"]:
     p = os.path.join('%s', i + '%s')
     imp.load_dynamic('wx.' + i, p)
 """%(wx_pth, suffix)
     pexec(code)
-    
+
     # Now create a dummy module in sys.modules to inhibit importing the
     # actual one.  We will reload(wx) to get it right later.
     m = new.module('wx')
     m.__file__ = os.path.join('wx_pth', '__init__.py')
     sys.modules['wx'] = m
-
+    return 1
     
 def wxPython_thread():
     class AttrHolder: pass
@@ -143,8 +146,8 @@ def wxPython_thread():
         if os.path.exists(os.path.join(wx_pth, '__init__.py')):
             assert not sys.modules.has_key('wx'), \
                    'wx is already imported, cannot proceed'
-            mod_name = 'wx'
-            _import_wx_core(wx_pth, pexec)
+            if _import_wx_core(wx_pth, pexec):
+                mod_name = 'wx'
             break
     
     # Create wrappers to wxPython extension modules:
@@ -159,7 +162,7 @@ def wxPython_thread():
         pexec('reload(wx)')
     else:
         import wxPython
-        pexec('reload(wxPython')
+        pexec('reload(wxPython)')
 
     pexec('from wxBackgroundApp import wxBackgroundApp')
     pexec('call_holder.call=wxBackgroundApp()',wait=1)
