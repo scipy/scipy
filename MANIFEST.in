@@ -2,4 +2,5 @@ include */setup_*.py
 include special/specfun.pyf
 include linalg/generic_*.pyf
 include linalg/flapack_user_routines.pyf
+include linalg/interface_gen.pyf
 include *.txt

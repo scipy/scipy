@@ -12,7 +12,6 @@ def all_subroutines(interface_in):
     interface = comment_block_exp.sub('',interface_in)
     subroutine_list = subroutine_exp.findall(interface)
     function_list = function_exp.findall(interface)
-    #function_list = []
     subroutine_list = subroutine_list + function_list 
     subroutine_list = map(lambda x: string.strip(x),subroutine_list)
     return subroutine_list
