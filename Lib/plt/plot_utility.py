@@ -396,18 +396,18 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
     interval = bounds_info[2]               
     #print 'raw interval:', interval       
     if interval in ['linear','auto']:
-        range = abs(upper - lower)
-        if range == 0.:
+        rng = abs(upper - lower)
+        if rng == 0.:
             # anything more intelligent to do here?
             interval = .5
             lower,upper = data_bounds + array((-.5,.5))
-        if is_base2(range) and is_base2(upper) and range > 4:
-            if range == 2: 
+        if is_base2(rng) and is_base2(upper) and rng > 4:
+            if rng == 2: 
                 interval = 1
-            elif range == 4: 
+            elif rng == 4: 
                 interval = 4
             else: 
-                interval = range / 4 # maybe we want it 8
+                interval = rng / 4 # maybe we want it 8
         else:
             interval = auto_interval((lower,upper))
     elif type(interval) in [type(0.0),type(0)]: 
@@ -421,19 +421,27 @@ def auto_ticks(data_bounds, bounds_info = default_bounds):
     # calculate them based on the newly chosen interval.
     #print 'interval:', interval
     auto_lower,auto_upper = auto_bounds(data_bounds,interval)
+    if bounds_info[0] == 'auto':
+        lower = auto_lower
+    if bounds_info[1] == 'auto':
+        upper = auto_upper
+        
     # if the lower and upper bound span 0, make sure ticks
     # will hit exactly on zero.
     if lower < 0 and upper > 0:
-        hi_ticks = arange(0,auto_upper+interval,interval)
-        low_ticks = - arange(interval,-auto_lower+interval,interval)        
+        hi_ticks = arange(0,upper+interval,interval)
+        low_ticks = - arange(interval,-lower+interval,interval)        
         ticks = concatenate((low_ticks[::-1],hi_ticks))
     else:
         # othersize the ticks start and end on the lower and 
         # upper values.
-        ticks = arange(auto_lower,auto_upper+interval,interval)
+        ticks = arange(lower,upper+interval,interval)
 
     if bounds_info[0] == 'fit': ticks[0] = lower
     if bounds_info[1] == 'fit': ticks[-1] = upper
+    print bounds_info
+    print data_bounds
+    print ticks
     return ticks
 
 
