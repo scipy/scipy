@@ -5,7 +5,7 @@
 
 #   where A must have A.matvec(x,*args) defined
 #    or be a numeric array
-#    or be a callable object matvec(x,*args)
+
 
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr'] 
 import _iterative
@@ -442,7 +442,8 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None):
 
     Optional Inputs:
 
-    restrt -- (n/2) When to restart
+    restrt -- (n) When to restart (change this to get faster performance -- but
+                   may not converge). 
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
@@ -463,7 +464,8 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None):
     revcom = _iterative.__dict__[ltr+'gmresrevcom']
     stoptest = _iterative.__dict__[ltr+'stoptest2']
 
-    restrt = n
+    if restrt is None:
+        restrt = n
     resid = tol
     ndx1 = 1
     ndx2 = -1

@@ -45,7 +45,17 @@ Linear algebra routines
    sinhm      --- matrix hyperbolic sine
    tanhm      --- matrix hyperbolic tangent
    signm      --- matrix sign
+   sqrtm      --- matrix square root
    funm       --- Evaluating an arbitrary matrix function.
+
+ Iterative linear systems solutions
+   
+   cg         --- Conjugate gradient (symmetric systems only)
+   cgs        --- Conjugate gradient squared
+   qmr        --- Quasi-minimal residual
+   gmres      --- Generalized minimal residual
+   bicg       --- Bi-conjugate gradient
+   bicgstab   --- Bi-conjugate gradient stabilized
  
 """
 
