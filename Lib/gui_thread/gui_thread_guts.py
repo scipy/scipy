@@ -65,6 +65,7 @@ class CloseEvtHandler(wxEvtHandler):
             self.proxy_obj.kill_proxy()
         except AttributeError:
             self.proxy_obj.proxy_object_alive = 0
+        del self.proxy_obj
         evt.Skip()
 
 #################################
@@ -168,9 +169,8 @@ class proxied_callable:
         self.proxy.post(evt)
         finished.wait()
         if finished.exception_info:
-            print_exception(finished.exception_info)
-            raise finished.exception_info['type'], \
-                  finished.exception_info['value']
+            raise finished.exception_info[0], \
+                  finished.exception_info[1]
 
         return smart_return(finished._result, self.proxy)
 
@@ -311,12 +311,6 @@ class proxy_base:
 # Receives/Dispatches all events requested from the main thread.
 #################################        
 
-def print_exception(info):
-    """Prints the exception given a dictionary containing the
-    exception information."""    
-    print "Exception: %(filename)s:%(lineno)d: %(typename)s: %(value)s"\
-          " (in %(function)s)" %info
-
 class event_catcher(wxFrame):
     """ The "catcher" frame in the second thread.
         It is invisible.  It's only job is to receive
@@ -332,18 +326,14 @@ class event_catcher(wxFrame):
             evt.finished._result = apply(evt.method,evt.args,evt.kw)
             evt.finished.exception_info = None
             evt.finished.set()
-        except:            
+        except:
             type, value, tb = sys.exc_info()
             info = traceback.extract_tb(tb)
             filename, lineno, function, text = info[-1] # last line only
-            try:
-                tp_name = type.__name__
-            except AttributeError:
-                tp_name = str(type)                
-            info = {'filename': filename, 'lineno': lineno,
-                    'type': type, 'typename': tp_name,
-                    'value': value, 'function': function}
-            evt.finished.exception_info = info
+            tmp = "\nFile \"%(filename)s\", line %(lineno)s, "\
+                  "in %(function)s\n%(text)s"%locals()
+            value = str(value) + tmp
+            evt.finished.exception_info = [type, value]
             type = value = tb = None # clean up
             evt.finished.set()
 
