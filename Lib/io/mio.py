@@ -1,8 +1,7 @@
 # Author: Travis Oliphant
 
-from Numeric import *
 from MLab import squeeze
-from scipy_base import atleast_1d, cast
+from scipy_base import *
 from scipy_base.fastumath import *
 import numpyio
 import struct, os, sys

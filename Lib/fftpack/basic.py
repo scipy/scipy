@@ -6,7 +6,7 @@ Discrete Fourier Transforms - basic.py
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
-import Numeric
+from scipy_base import asarray, zeros, swapaxes
 import _fftpack as fftpack
 
 import atexit
@@ -26,7 +26,7 @@ def _fix_shape(x, n, axis):
         index = [slice(None)]*len(s)
         index[axis] = slice(0,s[axis])
         s[axis] = n
-        z = Numeric.zeros(s,x.typecode())
+        z = zeros(s,x.typecode())
         z[index] = x
         x = z
     return x
@@ -42,9 +42,9 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     if axis == -1 or axis == len(x.shape)-1:
         r = work_function(x,n,direction,overwrite_x=overwrite_x)
     else:
-        x = Numeric.swapaxes(x, axis, -1)
+        x = swapaxes(x, axis, -1)
         r = work_function(x,n,direction,overwrite_x=overwrite_x)
-        r = Numeric.swapaxes(r, axis, -1)
+        r = swapaxes(r, axis, -1)
     return r
 
 
@@ -75,7 +75,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     Notes:
       y == fft(ifft(y)) within numerical accuracy.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     t = tmp.typecode()
     if t=='D':
         overwrite_x = overwrite_x or (tmp is not x and not \
@@ -97,9 +97,9 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,1,0,overwrite_x)
 
-    tmp = Numeric.swapaxes(tmp, axis, -1)
+    tmp = swapaxes(tmp, axis, -1)
     tmp = work_function(tmp,n,1,0,overwrite_x)
-    return Numeric.swapaxes(tmp, axis, -1)
+    return swapaxes(tmp, axis, -1)
 
 def ifft(x, n=None, axis=-1, overwrite_x=0):
     """ ifft(x, n=None, axis=-1, overwrite_x=0) -> y
@@ -114,7 +114,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
 
     Optional input: see fft.__doc__
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     t = tmp.typecode()
     if t=='D':
         overwrite_x = overwrite_x or (tmp is not x and not \
@@ -136,9 +136,9 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,-1,1,overwrite_x)
 
-    tmp = Numeric.swapaxes(tmp, axis, -1)
+    tmp = swapaxes(tmp, axis, -1)
     tmp = work_function(tmp,n,-1,1,overwrite_x)
-    return Numeric.swapaxes(tmp, axis, -1)
+    return swapaxes(tmp, axis, -1)
 
 
 def rfft(x, n=None, axis=-1, overwrite_x=0):
@@ -168,7 +168,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     Notes:
       y == rfft(irfft(y)) within numerical accuracy.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     t = tmp.typecode()
     if t in 'DF':
         raise TypeError,"1st argument must be real sequence"
@@ -197,7 +197,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
 
     Optional input: see rfft.__doc__
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     t = tmp.typecode()
     if t in 'DF':
         raise TypeError,"1st argument must be real sequence"
@@ -230,11 +230,11 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
         if i==j: continue
         state[i],state[j]=state[j],state[i]
         swaps.append((j,i))
-        x = Numeric.swapaxes(x, j,i)
+        x = swapaxes(x, j,i)
     r = work_function(x,s,direction,overwrite_x=overwrite_x)
     swaps.reverse()
     for i,j in swaps:
-        r = Numeric.swapaxes(r,i,j)
+        r = swapaxes(r,i,j)
     return r
 
 
@@ -269,7 +269,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     Notes:
       y == fftn(ifftn(y)) within numerical accuracy.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     t = tmp.typecode()
     if t=='D':
         overwrite_x = overwrite_x or (tmp is not x and not \
@@ -298,7 +298,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
 
     Optional input: see fftn.__doc__
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     t = tmp.typecode()
     if t=='D':
         overwrite_x = overwrite_x or (tmp is not x and not \

@@ -5,12 +5,12 @@ import sigtools
 import scipy.special as special
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from scipy_base import polyadd, polymul, polydiv, polysub, \
-                      roots, poly, polyval, polyder, cast
+     roots, poly, polyval, polyder, cast, asarray
 import types
 import scipy
 from scipy.stats import mean
 import Numeric
-from Numeric import array, asarray, arange, where, sqrt, rank, zeros
+from Numeric import array, arange, where, sqrt, rank, zeros
 from scipy_base.fastumath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -61,8 +61,8 @@ def correlate(in1, in2, mode='full'):
  
     """
     # Code is faster if kernel is smallest array.
-    volume = Numeric.asarray(in1)
-    kernel = Numeric.asarray(in2)
+    volume = asarray(in1)
+    kernel = asarray(in2)
     if rank(volume) == rank(kernel) == 0:
         return volume*kernel
     if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
@@ -101,8 +101,8 @@ def convolve(in1, in2, mode='full'):
            convolution of in1 with in2.
 
     """
-    volume = Numeric.asarray(in1)
-    kernel = Numeric.asarray(in2)
+    volume = asarray(in1)
+    kernel = asarray(in2)
     if rank(volume) == rank(kernel) == 0:
         return volume*kernel
     if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
@@ -142,7 +142,7 @@ def order_filter(a, domain, order):
            shape as in.
           
     """
-    domain = Numeric.asarray(domain)
+    domain = asarray(domain)
     size = domain.shape
     for k in range(len(size)):
         if (size[k] % 2) != 1:
@@ -172,13 +172,13 @@ def medfilt(volume,kernel_size=None):
            result.
   
     """
-    volume = Numeric.asarray(volume)
+    volume = asarray(volume)
     if kernel_size is None:
         kernel_size = [3] * len(volume.shape)
-    kernel_size = Numeric.asarray(kernel_size)
+    kernel_size = asarray(kernel_size)
     if len(kernel_size.shape) == 0:
         kernel_size = [kernel_size.toscalar()] * len(volume.shape)
-    kernel_size = Numeric.asarray(kernel_size)
+    kernel_size = asarray(kernel_size)
 
     for k in range(len(volume.shape)):
         if (kernel_size[k] % 2) != 1:
@@ -213,10 +213,10 @@ def wiener(im,mysize=None,noise=None):
     out -- Wiener filtered result with the same shape as in.
 
     """
-    im = Numeric.asarray(im)
+    im = asarray(im)
     if mysize is None:
         mysize = [3] * len(im.shape)
-    mysize = Numeric.asarray(mysize);
+    mysize = asarray(mysize);
 
     # Estimate the local mean
     lMean = correlate(im,Numeric.ones(mysize),1) / Numeric.product(mysize)
@@ -335,13 +335,13 @@ def medfilt2d(input, kernel_size=3):
     out -- An array the same size as input containing the median filtered
            result.
     """
-    image = Numeric.asarray(input)
+    image = asarray(input)
     if kernel_size is None:
         kernel_size = [3] * 2
-    kernel_size = Numeric.asarray(kernel_size)
+    kernel_size = asarray(kernel_size)
     if len(kernel_size.shape) == 0:
         kernel_size = [kernel_size.toscalar()] * 2
-    kernel_size = Numeric.asarray(kernel_size)
+    kernel_size = asarray(kernel_size)
 
     for size in kernel_size:
         if (size % 2) != 1:
@@ -477,12 +477,12 @@ def lfiltic(b,a,y,x=None):
     N = Numeric.size(a)-1
     M = Numeric.size(b)-1
     K = max(M,N)
-    y = Numeric.asarray(y)
+    y = asarray(y)
     zi = zeros(K,y.typecode())
     if x is None:
         x = zeros(M,y.typecode())
     else:
-        x = Numeric.asarray(x)
+        x = asarray(x)
         L = Numeric.size(x)
         if L < M:
             x = r_[x,zeros(M-L)]
@@ -739,7 +739,7 @@ def general_gaussian(M,p,sig,sym=1):
 def hilbert(x, N=None):
     """Return the hilbert transform of x of length N.
     """
-    x = Numeric.asarray(x)
+    x = asarray(x)
     if N is None:
         N = len(x)
     if N <=0:
@@ -764,8 +764,8 @@ def hilbert(x, N=None):
 def hilbert2(x,N=None):
     """Return the '2-D' hilbert transform of x of length N.
     """
-    x = Numeric.asarray(x)
-    x = Numeric.asarray(x)
+    x = asarray(x)
+    x = asarray(x)
     if N is None:
         N = x.shape
     if len(N) < 2:
@@ -1050,7 +1050,7 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
 
     See also:  residuez, poly, polyval, unique_roots
     """
-    extra = Numeric.asarray(k)
+    extra = asarray(k)
     p, indx = cmplx_sort(p)
     r = Numeric.take(r,indx)
     pout, mult = unique_roots(p,tol=tol,rtype=rtype)

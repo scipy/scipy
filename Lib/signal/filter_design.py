@@ -3,16 +3,13 @@
 
 import MLab
 from scipy_base.fastumath import *
-import Numeric
-from Numeric import concatenate
-Num = MLab
-abs = Numeric.absolute
-pi = Numeric.pi
-import scipy
-from scipy_base import atleast_1d, poly, polyval, roots, imag, real
+from scipy_base import atleast_1d, poly, polyval, roots, imag, real, asarray,\
+     allclose, Float, resize, pi, concatenate, absolute, logspace, c_
 from scipy import comb, special, optimize, linalg
 import string, types
 
+Num = MLab
+abs = absolute
 
 def findfreqs(num, den, N):
     ep = atleast_1d(roots(den))+0j
@@ -21,13 +18,13 @@ def findfreqs(num, den, N):
     if len(ep) == 0:
         ep = atleast_1d(-1000)+0j
 
-    ez = scipy.c_[Num.compress(ep.imag >=0, ep), Num.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
+    ez = c_[Num.compress(ep.imag >=0, ep), Num.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
 
     integ = abs(ez) < 1e-10
     hfreq = Num.around(Num.log10(Num.max(3*abs(ez.real + integ)+1.5*ez.imag))+0.5)
     lfreq = Num.around(Num.log10(0.1*Num.min(abs(real(ez+integ))+2*ez.imag))-0.5)
 
-    w = scipy.logspace(lfreq, hfreq, N)
+    w = logspace(lfreq, hfreq, N)
     return w
 
 def freqs(b,a,worN=None,plot=None):
@@ -166,10 +163,10 @@ def normalize(b,a):
     if len(b.shape) > 2:
         raise ValueError, "Numerator polynomial must be rank-1 or rank-2 array."
     if len(b.shape) == 1:
-        b = Numeric.asarray([b],b.typecode())
+        b = asarray([b],b.typecode())
     while a[0] == 0.0 and len(a) > 1:
         a = a[1:]
-    while Numeric.allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+    while allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
         b = b[:,1:]
     if b.shape[0] == 1:
         b = b[0]        
@@ -211,12 +208,12 @@ def lp2hp(b,a,wo=1.0):
         pwo = Num.ones(max((d,n)),b.typecode())
     if d >= n:
         outa = a[::-1] * pwo
-        outb = Numeric.resize(b,(d,))
+        outb = resize(b,(d,))
         outb[n:] = 0.0
         outb[:n] = b[::-1] * pwo[:n]        
     else:
         outb = b[::-1] * pwo
-        outa = Numeric.resize(a,(n,))
+        outa = resize(a,(n,))
         outa[d:] = 0.0
         outa[:d] = a[::-1] * pwo[:d]
 
@@ -403,7 +400,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     """
 
     ftype, btype, output = map(string.lower, (ftype, btype, output))
-    Wn = Num.asarray(Wn)
+    Wn = asarray(Wn)
     try:
         btype = band_dict[btype]
     except KeyError:
@@ -578,8 +575,8 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         GPASS = 10**(0.1*gpass)
         arg1 = sqrt( (GPASS-1.0) / (GSTOP-1.0) )
         arg0 = 1.0 / nat
-        d0 = scipy.special.ellipk([arg0**2, 1-arg0**2])
-        d1 = scipy.special.ellipk([arg1**2, 1-arg1**2])
+        d0 = special.ellipk([arg0**2, 1-arg0**2])
+        d1 = special.ellipk([arg1**2, 1-arg1**2])
         n = (d0[0]*d1[1] / (d0[1]*d1[0]))
     else:
         raise ValueError, "Incorrect type: ", type
@@ -635,13 +632,13 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:          # stop
-        wp0 = scipy.optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
-                                       args=(0,passb,stopb,gpass,gstop,'butter'),
-                                       disp=0)
+        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
+                                 args=(0,passb,stopb,gpass,gstop,'butter'),
+                                 disp=0)
         passb[0] = wp0
-        wp1 = scipy.optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
-                                       args=(1,passb,stopb,gpass,gstop,'butter'),
-                                       disp=0)
+        wp1 = optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
+                                 args=(1,passb,stopb,gpass,gstop,'butter'),
+                                 disp=0)
         passb[1] = wp1
         nat = (stopb * (passb[0]-passb[1])) / (stopb**2 - passb[0]*passb[1])
     elif filter_type == 4:          # pass
@@ -669,14 +666,14 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2: # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = Num.zeros(2,Numeric.Float)
+        WN = Num.zeros(2,Float)
         WN[0] = ((passb[1] - passb[0]) + sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN[1] = ((passb[1] - passb[0]) - sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN = Num.sort(abs(WN))
     elif filter_type == 4: # pass
-        W0 = Num.array([-W0, W0],Numeric.Float)
+        W0 = Num.array([-W0, W0],Float)
         WN = -W0 * (passb[1]-passb[0]) / 2.0 + sqrt(W0**2 / 4.0 * \
                                               (passb[1]-passb[0])**2 + \
                                               passb[0]*passb[1])
@@ -743,11 +740,11 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:     # stop
-        wp0 = scipy.optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
-                                       args=(0,passb,stopb,gpass,gstop,'cheby'), disp=0)
+        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
+                                 args=(0,passb,stopb,gpass,gstop,'cheby'), disp=0)
         passb[0] = wp0
-        wp1 = scipy.optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
-                                       args=(1,passb,stopb,gpass,gstop,'cheby'), disp=0)
+        wp1 = optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
+                                 args=(1,passb,stopb,gpass,gstop,'cheby'), disp=0)
         passb[1] = wp1
         nat = (stopb * (passb[0]-passb[1])) / (stopb**2 - passb[0]*passb[1])
     elif filter_type == 4:  # pass
@@ -820,13 +817,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:     # stop
-        wp0 = scipy.optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
-                                       args=(0,passb,stopb,gpass,gstop,'cheby'),
-                                       disp=0)
+        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
+                                 args=(0,passb,stopb,gpass,gstop,'cheby'),
+                                 disp=0)
         passb[0] = wp0
-        wp1 = scipy.optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
-                                       args=(1,passb,stopb,gpass,gstop,'cheby'),
-                                       disp=0)
+        wp1 = optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
+                                 args=(1,passb,stopb,gpass,gstop,'cheby'),
+                                 disp=0)
         passb[1] = wp1
         nat = (stopb * (passb[0]-passb[1])) / (stopb**2 - passb[0]*passb[1])
     elif filter_type == 4:  # pass
@@ -920,13 +917,13 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:     # stop
-        wp0 = scipy.optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
-                                       args=(0,passb,stopb,gpass,gstop,'ellip'),
-                                       disp=0)
+        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0]-1e-12,
+                                 args=(0,passb,stopb,gpass,gstop,'ellip'),
+                                 disp=0)
         passb[0] = wp0
-        wp1 = scipy.optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
-                                       args=(1,passb,stopb,gpass,gstop,'ellip'),
-                                       disp=0)
+        wp1 = optimize.fminbound(band_stop_obj, stopb[1]+1e-12, passb[1],
+                                 args=(1,passb,stopb,gpass,gstop,'ellip'),
+                                 disp=0)
         passb[1] = wp1
         nat = (stopb * (passb[0]-passb[1])) / (stopb**2 - passb[0]*passb[1])
     elif filter_type == 4:  # pass
@@ -938,8 +935,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
     GPASS = 10**(0.1*gpass)
     arg1 = sqrt( (GPASS-1.0) / (GSTOP-1.0) )
     arg0 = 1.0 / nat
-    d0 = scipy.special.ellipk([arg0**2, 1-arg0**2])
-    d1 = scipy.special.ellipk([arg1**2, 1-arg1**2])
+    d0 = special.ellipk([arg0**2, 1-arg0**2])
+    d1 = special.ellipk([arg1**2, 1-arg1**2])
     ord = int(ceil(d0[0]*d1[1] / (d0[1]*d1[0])))
 
     if not analog:

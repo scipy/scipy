@@ -15,15 +15,12 @@ from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      zeros
 from scipy_base.fastumath import *
 from scipy_base import atleast_1d, polyval, angle, ceil, insert, extract, \
-     any, argsort, argmax, argmin, vectorize, r_
+     any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select
 import scipy_base
 
 errp = special.errprint
-select = scipy.select
-arr = Num.asarray
+arr = asarray
 gam = special.gamma
-nan = scipy.nan
-inf = scipy.inf
 
 import types, math
 import stats as st
@@ -221,7 +218,7 @@ class rv_frozen:
 ##             --  then nth non-central moment of the distribution.
 ##       
 
-def valarray(shape,value=scipy.nan,typecode=None):
+def valarray(shape,value=nan,typecode=None):
     """Return an array of all value.
     """
     out = reshape(repeat([value],product(shape)),shape)
@@ -291,9 +288,9 @@ class rv_continuous:
         self.a = a
         self.b = b
         if a is None:
-            self.a = -scipy.inf
+            self.a = -inf
         if b is None:
-            self.b = scipy.inf
+            self.b = inf
         self.xa = xa
         self.xb = xb
         self.xtol = xtol
@@ -736,11 +733,11 @@ class rv_continuous:
         except IndexError:
             raise ValueError, "Not enough input arguments."
         if not self._argcheck(*args) or scale <= 0:
-            return scipy.inf
+            return inf
         x = arr((x-loc) / scale)
         cond0 = (x <= self.a) | (x >= self.b)
         if (any(cond0)):
-            return scipy.inf
+            return inf
         else:
             N = len(x)
             return self._nnlf(self, x, *args) + N*log(scale)
@@ -852,7 +849,7 @@ class alpha_gen(rv_continuous):
     def _ppf(self, q, a):
         return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
     def _stats(self):
-        return [scipy.inf]*2 + [scipy.nan]*2
+        return [inf]*2 + [nan]*2
 alpha = alpha_gen(a=0.0,name='alpha',shapes='a',extradoc="""
 
 Alpha distribution
@@ -940,16 +937,16 @@ class betaprime_gen(rv_continuous):
         return pow(x,a)*special.hyp2f1(a+b,a,1+a,-x)/a/special.beta(a,b)
     def _munp(self, n, a, b):
         if (n == 1.0):
-            return where(b > 1, a/(b-1.0), scipy.inf)
+            return where(b > 1, a/(b-1.0), inf)
         elif (n == 2.0):
-            return where(b > 2, a*(a+1.0)/((b-2.0)*(b-1.0)), scipy.inf)
+            return where(b > 2, a*(a+1.0)/((b-2.0)*(b-1.0)), inf)
         elif (n == 3.0):
             return where(b > 3, a*(a+1.0)*(a+2.0)/((b-3.0)*(b-2.0)*(b-1.0)),
-                         scipy.inf)
+                         inf)
         elif (n == 4.0):
             return where(b > 4,
                          a*(a+1.0)*(a+2.0)*(a+3.0)/((b-4.0)*(b-3.0) \
-                                                    *(b-2.0)*(b-1.0)), scipy.inf)
+                                                    *(b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
 betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime', shapes='a,b',
@@ -1067,7 +1064,7 @@ class cauchy_gen(rv_continuous):
     def _isf(self, q):
         return tan(pi/2.0-pi*q)
     def _stats(self):
-        return scipy.inf, scipy.inf, scipy.nan, scipy.nan
+        return inf, inf, nan, nan
     def _entropy(self):
         return log(4*pi)
 cauchy = cauchy_gen(name='cauchy',longname='Cauchy',extradoc="""
@@ -1337,7 +1334,7 @@ class foldcauchy_gen(rv_continuous):
     def _cdf(self, x, c):
         return 1.0/pi*(arctan(x-c) + arctan(x+c))
     def _stats(self, x, c):
-        return scipy.inf, scipy.inf, scipy.nan, scipy.nan
+        return inf, inf, nan, nan
 foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy',
                             longname = "A folded Cauchy",
                             shapes='c',extradoc="""
@@ -1366,13 +1363,13 @@ class f_gen(rv_continuous):
     def _stats(self, dfn, dfd):
         v2 = arr(dfd*1.0)
         v1 = arr(dfn*1.0)
-        mu = where (v2 > 2, v2 / arr(v2 - 2), scipy.inf)
+        mu = where (v2 > 2, v2 / arr(v2 - 2), inf)
         mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
-        mu2 = where(v2 > 4, mu2, scipy.inf)
+        mu2 = where(v2 > 4, mu2, inf)
         g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))
-        g1 = where(v2 > 6, g1, scipy.nan)
+        g1 = where(v2 > 6, g1, nan)
         g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
-        g2 = where(v2 > 8, g2, scipy.nan)
+        g2 = where(v2 > 8, g2, nan)
         return mu, mu2, g1, g2
 f = f_gen(a=0.0,name='f',longname='An F',shapes="dfn,dfd",
           extradoc="""
@@ -1508,7 +1505,7 @@ Generalized logistic distribution
 class genpareto_gen(rv_continuous):
     def _argcheck(self, c):
         c = arr(c)
-        self.b = where(c < 0, 1.0/abs(c), scipy.inf)
+        self.b = where(c < 0, 1.0/abs(c), inf)
         return where(c==0, 0, 1)
     def _pdf(self, x, c):
         Px = pow(1+c*x,arr(-1.0-1.0/c))
@@ -1521,7 +1518,7 @@ class genpareto_gen(rv_continuous):
     def _munp(self, n, c):
         k = arange(0,n+1)
         val = (-1.0/c)**n * sum(scipy.comb(n,k)*(-1)**k / (1.0-c*k))
-        return where(c*n < 1, val, scipy.inf)
+        return where(c*n < 1, val, inf)
     def _entropy(self, c):
         if (c > 0):
             return 1+c
@@ -1558,8 +1555,8 @@ Generalized exponential distribution
 
 class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
-        self.b = where(c > 0, 1.0 / c, scipy.inf)
-        self.a = where(c < 0, 1.0 / c, -scipy.inf)
+        self.b = where(c > 0, 1.0 / c, inf)
+        self.a = where(c < 0, 1.0 / c, -inf)
         return (c!=0)
     def _pdf(self, x, c):
         ex2 = 1-c*x
@@ -1573,7 +1570,7 @@ class genextreme_gen(rv_continuous):
     def _munp(self, n, c):
         k = arange(0,n+1)
         vals = 1.0/c**n * sum(scipy.comb(n,k) * (-1)**k * special.gamma(c*k + 1))
-        return where(c*n > -1, vals, scipy.inf)
+        return where(c*n > -1, vals, inf)
 genextreme = genextreme_gen(name='genextreme',
                             longname="A generalized extreme value",
                             shapes='c',extradoc="""
@@ -1735,7 +1732,7 @@ class halfcauchy_gen(rv_continuous):
     def _ppf(self, q):
         return tan(pi/2*q)
     def _stats(self):
-        return scipy.inf, scipy.inf, scipy.nan, scipy.nan
+        return inf, inf, nan, nan
     def _entropy(self):
         return log(2*pi)
 halfcauchy = halfcauchy_gen(a=0.0,name='halfcauchy',
@@ -2200,8 +2197,8 @@ class ncf_gen(rv_continuous):
         val *= special.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
         return val
     def _stats(self, dfn, dfd, nc):        
-        mu = where(dfd <= 2, scipy.inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = where(dfd <=4, scipy.inf, 2*(dfd*1.0/dfn)**2.0 * \
+        mu = where(dfd <= 2, inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
+        mu2 = where(dfd <=4, inf, 2*(dfd*1.0/dfn)**2.0 * \
                     ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) / \
                     ((dfd-2.0)**2.0 * (dfd-4.0)))
         return mu, mu2, None, None
@@ -2229,9 +2226,9 @@ class t_gen(rv_continuous):
     def _ppf(self, q, df):
         return special.stdtrit(df, q)
     def _stats(self, df):
-        mu2 = where(df > 2, df / (df-2.0), scipy.inf)
-        g1 = where(df > 3, 0.0, scipy.nan)
-        g2 = where(df > 4, 6.0/(df-4.0), scipy.nan)
+        mu2 = where(df > 2, df / (df-2.0), inf)
+        g1 = where(df > 3, 0.0, nan)
+        g2 = where(df > 4, 6.0/(df-4.0), nan)
         return 0, mu2, g1, g2
 t = t_gen(name='t',longname="Student's T",
           shapes="df", extradoc="""
@@ -2312,23 +2309,23 @@ class pareto_gen(rv_continuous):
         if 'm' in moments:
             mask = b > 1
             bt = extract(mask,b)
-            mu = valarray(shape(b),value=scipy.inf)
+            mu = valarray(shape(b),value=inf)
             insert(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
             bt = extract( mask,b)
-            mu2 = valarray(shape(b), value=scipy.inf)
+            mu2 = valarray(shape(b), value=inf)
             insert(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
             bt = extract( mask,b)
-            g1 = valarray(shape(b), value=scipy.nan)
+            g1 = valarray(shape(b), value=nan)
             vals = 2*(bt+1.0)*sqrt(b-2.0)/((b-3.0)*sqrt(b))
             insert(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
             bt = extract( mask,b)
-            g2 = valarray(shape(b), value=scipy.nan)
+            g2 = valarray(shape(b), value=nan)
             vals = 6.0*polyval([1.0,1.0,-6,-2],bt)/ \
                    polyval([1.0,-7.0,12.0,0.0],bt)
             insert(g2, mask, vals)
@@ -2745,7 +2742,7 @@ class vonmises_gen(rv_continuous):
         xiter = take(x, indxiter)
 
         vals = ones(len(c_xsimple),Num.Float)
-        putmask(vals, c_bad, scipy.nan)
+        putmask(vals, c_bad, nan)
         putmask(vals, c_xsimple, x / 2.0/pi)
         st = sqrt(b-0.5)
         st = where(isnan(st),0.0,st)
@@ -3012,11 +3009,11 @@ class rv_discrete:
     keyword) a tuple of sequences (xk,pk) which describes only those values of
     X (xk) that occur with nonzero probability (pk).  
     """
-    def __init__(self, a=0, b=scipy.inf, name=None, badvalue=None,
+    def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8,values=None,inc=1,longname=None,
                  shapes=None, extradoc=None):
         if badvalue is None:
-            badvalue = scipy.nan
+            badvalue = nan
         self.badvalue = badvalue
         self.a = a
         self.b = b
@@ -3814,7 +3811,7 @@ class dlaplace_gen(rv_discrete):
         return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
-dlaplace = dlaplace_gen(a=-scipy.inf,
+dlaplace = dlaplace_gen(a=-inf,
                         name='dlaplace', longname='A discrete Laplacian',
                         shapes="a", extradoc="""
                         

@@ -5,7 +5,7 @@ Discrete Fourier Transforms - helper.py
 
 __all__ = ['fftshift','ifftshift','fftfreq','rfftfreq']
 
-import Numeric
+from scipy_base import asarray, concatenate, arange, take, array
 import types
 
 def fftshift(x,axes=None):
@@ -18,7 +18,7 @@ def fftshift(x,axes=None):
     Notes:
       If len(x) is even then the Nyquist component is y[0].
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     ndim = len(tmp.shape)
     if axes is None:
         axes = range(ndim)
@@ -26,8 +26,8 @@ def fftshift(x,axes=None):
     for k in axes:
         n = tmp.shape[k]
         p2 = (n+1)/2
-        mylist = Numeric.concatenate((Numeric.arange(p2,n),Numeric.arange(p2)))
-        y = Numeric.take(y,mylist,k)
+        mylist = concatenate((arange(p2,n),arange(p2)))
+        y = take(y,mylist,k)
     return y
 
 
@@ -36,7 +36,7 @@ def ifftshift(x,axes=None):
 
     Inverse of fftshift.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     ndim = len(tmp.shape)
     if axes is None:
         axes = range(ndim)
@@ -44,8 +44,8 @@ def ifftshift(x,axes=None):
     for k in axes:
         n = tmp.shape[k]
         p2 = n-(n+1)/2
-        mylist = Numeric.concatenate((Numeric.arange(p2,n),Numeric.arange(p2)))
-        y = Numeric.take(y,mylist,k)
+        mylist = concatenate((arange(p2,n),arange(p2)))
+        y = take(y,mylist,k)
     return y
 
 def fftfreq(n,d=1.0):
@@ -62,7 +62,7 @@ def fftfreq(n,d=1.0):
     """
     assert isinstance(n,types.IntType)
     k = range(0,(n-1)/2+1)+range(-(n/2),0)
-    return Numeric.array(k,'d')/(n*d)
+    return array(k,'d')/(n*d)
 
 def rfftfreq(n,d=1.0):
     """ rfftfreq(n, d=1.0) -> f
@@ -77,5 +77,5 @@ def rfftfreq(n,d=1.0):
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
     """
     assert isinstance(n,types.IntType)
-    return Numeric.array(range(1,n+1),'i')/2/float(n*d)
+    return array(range(1,n+1),'i')/2/float(n*d)
 

@@ -192,7 +192,7 @@ from types import *
 
 __version__ = 0.8
 
-from Numeric import *
+from scipy_base import *
 import scipy_base as sb
 import scipy_base.fastumath as math
 from scipy_base.fastumath import *

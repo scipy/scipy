@@ -3,13 +3,14 @@
 #
 
 from filter_design import tf2zpk, zpk2tf, normalize
-from Numeric import product, zeros, asarray, concatenate, \
+from Numeric import product, zeros, concatenate, \
      array, dot, transpose, arange, ones, Float
 import Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy_base import r_, c_, eye, real, atleast_1d, atleast_2d, poly, squeeze, diag
+from scipy_base import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
+     squeeze, diag, asarray
 from Matrix import Matrix as Mat
 
 def tf2ss(num, den):

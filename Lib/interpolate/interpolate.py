@@ -6,24 +6,27 @@
 
 __all__ = ['interp1d','interp2d']
 
-from Numeric import *
+from scipy_base import *
 from scipy_base.fastumath import *
-from scipy_base import atleast_1d
+
 import fitpack
 
 # The following are cluges to fix brain-deadness of take and
-# sometrue when dealing with 0 dimensional arrays
-import Numeric
+# sometrue when dealing with 0 dimensional arrays.
+# Shouldn't they go to scipy_base??
+
+_take = take
 def take(a,indices,axis=0):    
     x = asarray(a); y = asarray(indices)
     if shape(x) == (): x = x.flat
     if shape(y) == (): y = y.flat
-    return Numeric.take(x,y,axis)
+    return _take(x,y,axis)
 
+_sometrue = sometrue
 def sometrue(a,axis=0):    
     x = asarray(a)
     if shape(x) == (): x = x.flat
-    return Numeric.sometrue(x)
+    return _sometrue(x)
 
 def reduce_sometrue(a):
     all = a

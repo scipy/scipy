@@ -8,7 +8,7 @@ __all__ = ['diff',
            'cs_diff','cc_diff','sc_diff','ss_diff',
            'shift']
 
-import Numeric
+from scipy_base import pi, asarray, sin, cos, sinh, cosh, tanh
 import convolve
 
 import atexit
@@ -42,13 +42,13 @@ def diff(x,order=1,period=None,
           diff(diff(x,k),-k)==x (within numerical accuracy)
       For odd order and even len(x), the Nyquist mode is taken zero.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if order==0:
         return tmp
     if tmp.typecode() in ['F','D']:
         return diff(tmp.real,order,period)+1j*diff(tmp.imag,order,period)
     if period is not None:
-        c = 2*Numeric.pi/period
+        c = 2*pi/period
     else:
         c = 1.0
     n = len(x)
@@ -96,19 +96,19 @@ def tilbert(x,h,period=None,
       (theoretically oo-Tilbert == Hilbert).
       For even len(x), the Nyquist mode of x is taken zero.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return tilbert(tmp.real,h,period)+\
                1j*tilbert(tmp.imag,h,period)
     if period is not None:
-        h = h*2*Numeric.pi/period
+        h = h*2*pi/period
     n = len(x)
     omega = _cache.get((n,h))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,h=h):
-            if k: return -1/Numeric.tanh(h*k)
+            if k: return -1/tanh(h*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
@@ -132,19 +132,19 @@ def itilbert(x,h,period=None,
 
     Optional input: see tilbert.__doc__
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return itilbert(tmp.real,h,period)+\
                1j*itilbert(tmp.imag,h,period)
     if period is not None:
-        h = h*2*Numeric.pi/period
+        h = h*2*pi/period
     n = len(x)
     omega = _cache.get((n,h))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,h=h):
-            if k: return Numeric.tanh(h*k)
+            if k: return tanh(h*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
@@ -171,7 +171,7 @@ def hilbert(x,
         hilbert(ihilbert(x)) == x
       For even len(x), the Nyquist mode of x is taken zero.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return hilbert(tmp.real,tol)+1j*hilbert(tmp.imag)
     n = len(x)
@@ -227,20 +227,20 @@ def cs_diff(x, a, b, period=None,
     Notes:
       For even len(x), the Nyquist mode of x is taken zero.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return cs_diff(tmp.real,a,b,period)+\
                1j*cs_diff(tmp.imag,a,b,period)
     if period is not None:
-        a = a*2*Numeric.pi/period
-        b = b*2*Numeric.pi/period
+        a = a*2*pi/period
+        b = b*2*pi/period
     n = len(x)
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,a=a,b=b):
-            if k: return -Numeric.cosh(a*k)/Numeric.sinh(b*k)
+            if k: return -cosh(a*k)/sinh(b*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
@@ -273,20 +273,20 @@ def sc_diff(x, a, b, period=None,
       sc_diff(cs_diff(x,a,b),b,a) == x
       For even len(x), the Nyquist mode of x is taken zero.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return sc_diff(tmp.real,a,b,period)+\
                1j*sc_diff(tmp.imag,a,b,period)
     if period is not None:
-        a = a*2*Numeric.pi/period
-        b = b*2*Numeric.pi/period
+        a = a*2*pi/period
+        b = b*2*pi/period
     n = len(x)
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,a=a,b=b):
-            if k: return Numeric.sinh(a*k)/Numeric.cosh(b*k)
+            if k: return sinh(a*k)/cosh(b*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
@@ -318,20 +318,20 @@ def ss_diff(x, a, b, period=None,
     Notes:
       ss_diff(ss_diff(x,a,b),b,a) == x
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return ss_diff(tmp.real,a,b,period)+\
                1j*ss_diff(tmp.imag,a,b,period)
     if period is not None:
-        a = a*2*Numeric.pi/period
-        b = b*2*Numeric.pi/period
+        a = a*2*pi/period
+        b = b*2*pi/period
     n = len(x)
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,a=a,b=b):
-            if k: return Numeric.sinh(a*k)/Numeric.sinh(b*k)
+            if k: return sinh(a*k)/sinh(b*k)
             return float(a)/b
         omega = convolve.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
@@ -364,20 +364,20 @@ def cc_diff(x, a, b, period=None,
     Notes:
       cc_diff(cc_diff(x,a,b),b,a) == x
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return cc_diff(tmp.real,a,b,period)+\
                1j*cc_diff(tmp.imag,a,b,period)
     if period is not None:
-        a = a*2*Numeric.pi/period
-        b = b*2*Numeric.pi/period
+        a = a*2*pi/period
+        b = b*2*pi/period
     n = len(x)
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,a=a,b=b):
-            return Numeric.cosh(a*k)/Numeric.cosh(b*k)
+            return cosh(a*k)/cosh(b*k)
         omega = convolve.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
@@ -400,18 +400,18 @@ def shift(x, a, period=None,
       period
         The period of the sequences x and y. Default period is 2*pi.
     """
-    tmp = Numeric.asarray(x)
+    tmp = asarray(x)
     if tmp.typecode() in ['F','D']:
         return shift(tmp.real,a,period)+1j*shift(tmp.imag,a,period)
     if period is not None:
-        a = a*2*Numeric.pi/period
+        a = a*2*pi/period
     n = len(x)
     omega = _cache.get((n,a))
     if omega is None:
         if len(_cache)>20:
             while _cache: _cache.popitem()
-        def kernel_real(k,a=a): return Numeric.cos(a*k)
-        def kernel_imag(k,a=a): return Numeric.sin(a*k)
+        def kernel_real(k,a=a): return cos(a*k)
+        def kernel_imag(k,a=a): return sin(a*k)
         omega_real = convolve.init_convolution_kernel(n,kernel_real,d=0,
                                                       zero_nyquist=0)
         omega_imag = convolve.init_convolution_kernel(n,kernel_imag,d=1,

@@ -3,14 +3,12 @@
 #
 
 from cephes import *
-from Numeric import *
+from scipy_base import *
 import types
 from scipy_base.fastumath import *
-from scipy_base import squeeze, isscalar, iscomplex, insert, extract, nan
-from scipy_base import polyval, polyint, atleast_1d, vectorize, mgrid
 import specfun
 from scipy import factorial
-    
+
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
     """

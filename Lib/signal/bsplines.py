@@ -1,6 +1,5 @@
 import scipy.special
-from scipy_base import vectorize
-from Numeric import sarray, arange, where, array, zeros
+from scipy_base import *
 from scipy_base.fastumath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 

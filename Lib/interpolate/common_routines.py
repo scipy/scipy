@@ -1,4 +1,5 @@
-from Numeric import *
+
+from scipy_base import *
 from scipy_base.fastumath import *
 
 def myasarray(a):

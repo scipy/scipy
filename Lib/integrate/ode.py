@@ -89,7 +89,7 @@ if myodeint.runner:
 __all__ = ['ode']
 __version__ = "$Id$"
 
-import Numeric
+from scipy_base import asarray, array, zeros, sin
 import re,types,sys
 
 class ode:
@@ -141,7 +141,7 @@ ode  - a generic interface class to numeric integrators. It has the
         if type(y) in [types.IntType,types.FloatType]:
             y = [y]
         n_prev = len(self.y)
-        self.y = Numeric.asarray(y,'d')
+        self.y = asarray(y,'d')
         self.t = t
         if not n_prev:
             self.set_integrator('') # find first available integrator
@@ -158,7 +158,7 @@ ode  - a generic interface class to numeric integrators. It has the
             self._integrator = integrator(**integrator_params)
             if not len(self.y):
                 self.t = 0.0
-                self.y = Numeric.array([0.0],'d')
+                self.y = array([0.0],'d')
             self._integrator.reset(len(self.y),self.jac is not None)
         return self
 
@@ -328,12 +328,12 @@ class vode(IntegratorBase):
             liw = 30
         else:
             liw = 30 + n
-        rwork = Numeric.zeros((lrw,),'d')
+        rwork = zeros((lrw,),'d')
         rwork[4] = self.first_step
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
-        iwork = Numeric.zeros((liw,),'i')
+        iwork = zeros((liw,),'i')
         iwork[4] = self.order
         iwork[5] = self.nsteps
         iwork[6] = 2           # mxhnil
@@ -370,7 +370,7 @@ if vode.runner:
 
 def test1():
     def f(t,y):
-        a = Numeric.sin(6*t)
+        a = sin(6*t)
         return y*y-a+y
 
     ode_runner = ode(f)
