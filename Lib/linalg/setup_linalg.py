@@ -9,6 +9,7 @@ from distutils import dep_util
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 import interface_gen
+reload(interface_gen)
 from scipy_distutils.atlas_info import get_atlas_info
 from scipy_distutils.system_info import dict_append,AtlasNotFoundError
 
