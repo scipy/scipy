@@ -144,8 +144,8 @@ for your computers CPU.
 When finishing LAPACK build, you must recompile ?lamch.f, xerbla.f
 with optimization disabled (otherwise infinite loops occur when using
 these routines):
-  make lapacklib
-  cd /path/to/src/LAPACK/SRC
+  make lapacklib   # in /path/to/src/LAPACK/
+  cd SRC
   ifc -FI -w90 -w95 -cm -O0 -c ?lamch.f xerbla.f
   cd ..
   make lapacklib
