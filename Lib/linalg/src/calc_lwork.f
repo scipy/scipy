@@ -9,7 +9,6 @@ cf2py intent(out,out=maxwrk) :: max_lwork
 cf2py intent(in) :: prefix
 cf2py intent(in) :: m,n,compute_uv
 
-
       INTEGER MINMN, MNTHR, MINWRK, MAXWRK, SMLSIZ, BDSPAC, BDSPAN
       INTEGER            ILAENV, WRKBL
       EXTERNAL           ILAENV
@@ -142,7 +141,7 @@ cf2py intent(in) :: m,n,compute_uv
          ENDIF
       ENDIF
       min_lwork = MINWRK
-      max_lwork = MAXWRK
+      max_lwork = MAX(MINWRK,MAXWRK)
       end
 
       subroutine gelss(min_lwork,max_lwork,prefix,m,n,nrhs)
