@@ -3095,7 +3095,11 @@ def binompdf(k, n, pr=0.5):
     k = arr(k)
     assert (0<pr<1)
     cond = arr((k > 0) & (k == floor(k)))
-    return where(cond, special.bdtr(k,n,pr)-special.bdtr(k-1,n,pr), 0.0)
+    sv =errp(0)
+    temp = special.bdtr(k,n,pr)
+    temp2 = special.bdtr(k-1,n,pr)
+    sv = errp(sv)
+    return select([cond,k==0], [temp-temp2,temp],0.0)
 
 def binomcdf(k, n, pr=0.5):
     return special.bdtr(k,n,pr)
