@@ -47,7 +47,7 @@ from __future__ import nested_scopes
 import Numeric
 import MLab
 from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze, isscalar
+     squeeze, isscalar, vectorize
 from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
