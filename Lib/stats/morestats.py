@@ -11,7 +11,7 @@ import inspect
 from scipy_base import isscalar, r_, log, sum, around, unique, asarray
 from scipy_base import zeros, arange, sort, amin, amax, any, where, \
      array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
-     pi, exp, ravel
+     pi, exp, ravel, find_repeats
 import scipy
 import types
 import scipy.optimize as optimize
@@ -435,8 +435,7 @@ def anderson(x,dist='norm'):
 
 
 def _find_repeats(arr):
-    """Find repeats in the array and return a list of the
-    repeats and how many there were.
+    """Find repeats in the array and return (repeats, repeat_count)
     """
     arr = sort(arr)
     lastval = arr[0]
@@ -852,7 +851,7 @@ Returns: t-statistic, two-tailed p-value
     mn = count*(count+1.0)*0.25
     se = math.sqrt(count*(count+1)*(2*count+1.0)/24)
     if (len(r) != len(unique(r))):  # handle ties in data
-        replist, repnum = _find_repeats(r)
+        replist, repnum = find_repeats(r)
         corr = 0.0
         for i in range(len(replist)):
             si = repnum[i]
