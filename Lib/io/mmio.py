@@ -209,7 +209,6 @@ def mmread(source):
                     data_append(aij)
                 k += 1
             line = source.readline()
-
         assert k==entries,`k,entries`
         a = coo_matrix(data,(row,col),M=rows,N=cols,typecode=typecode)
     else:
