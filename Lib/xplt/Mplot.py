@@ -248,7 +248,7 @@ def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25
     gist.pldj(x0,yb,x1,yb,color=_colors[linecolor],type=_types[linetype])
     return
 
-def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
+def legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=14,nobox=0):
     """Construct and place a legend.
 
     Description:
@@ -264,8 +264,16 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
                    drawn.  Otherwise, associate the text strings with the
                    corresponding curve types given.  See plot for description.
                    
-    """
+    """    
     global _hold
+    global _textcolor
+    if color is None:
+        color = _textcolor
+    else:
+        _textcolor = color
+    if color is None:
+        color = 'black'
+
     sys = gist.plsys()
     if sys == 0:
         gist.plsys(1)
@@ -1067,7 +1075,6 @@ def title(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
     superscript enclose with ^^
     To get subscript enclose with _<text>_
     """
-
     global _textcolor
     if color is None:
         color = _textcolor
