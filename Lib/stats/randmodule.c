@@ -78,7 +78,7 @@ get_discrete_scalar_random(int num_integer_args, PyObject* self, PyObject* args,
     }
     break;
   case 1:
-    if( !PyArg_ParseTuple(args, "if|i", &int_arg, &float_arg, &n) ) {
+    if( !PyArg_ParseTuple(args, "lf|i", &int_arg, &float_arg, &n) ) {
       return NULL;
     }
     break;
@@ -248,7 +248,7 @@ multinomial(PyObject* self, PyObject* args) {
   PyArrayObject* op;
   int out_dimensions[2];
 
-  if( !PyArg_ParseTuple(args, "iO|i", &num_trials, &priors_object, &n) ) {
+  if( !PyArg_ParseTuple(args, "lO|i", &num_trials, &priors_object, &n) ) {
     return NULL;
   }
   priors_array = (PyArrayObject*) PyArray_ContiguousFromObject(priors_object, PyArray_FLOAT, 1, 1);
