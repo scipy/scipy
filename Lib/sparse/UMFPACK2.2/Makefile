@@ -33,6 +33,7 @@ all:  $(ALL)
 
 libumfpack.a: $(UMFD) $(UMFS) $(UMFC) $(UMFZ) $(HARWELL)
 	ar -rv libumfpack.a $(UMFD) $(UMFS) $(UMFC) $(UMFZ) $(HARWELL)
+	ranlib libumfpack.a
 
 dmain.out: dmain in
 	dmain < in > dmain.out
