@@ -8,8 +8,8 @@ clll. optimize
      2   maxord, maxcor, msbp, mxncf, n, nq, nst, nfe, nje, nqu
       integer iownd2, icount, irflag, jtyp, mused, mxordn, mxords
       integer i, i1, iredo, iret, j, jb, m, ncf, newq
-      integer lm1, lm1p1, lm2, lm2p1, nqm1, nqm2
-      double precision y, yh, yh1, ewt, savf, acor, wm
+      integer lm1, lm1p1, lm2, lm2p1, nqm1, nqm2, isav
+      double precision y, yh, yh1, ewt, savf, acor, wm, rsav
       double precision conit, crate, el, elco, hold, rmax, tesco,
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
       double precision rownd2, pdest, pdlast, ratio, cm1, cm2,
@@ -19,7 +19,7 @@ clll. optimize
       double precision alpha, dm1, dm2, exm1, exm2, pdh, pnorm, rate,
      1   rh1, rh1it, rh2, rm, sm1
       dimension neq(1), y(1), yh(nyh,*), yh1(1), ewt(1), savf(1),
-     1   acor(1), wm(*), iwm(*)
+     1   acor(1), wm(*), iwm(*), rsav(240), isav(50)
       dimension sm1(12)
       common /ls0001/ conit, crate, el(13), elco(13,12),
      1   hold, rmax, tesco(3,12),
@@ -251,7 +251,9 @@ c-----------------------------------------------------------------------
       del = 0.0d0
       do 230 i = 1,n
  230    y(i) = yh(i,1)
+      call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+      call srcma (rsav, isav, 2)
       nfe = nfe + 1
       if (ipup .le. 0) go to 250
 c-----------------------------------------------------------------------
@@ -324,7 +326,9 @@ c-----------------------------------------------------------------------
       if (m .eq. maxcor) go to 410
       if (m .ge. 2 .and. del .gt. 2.0d0*delp) go to 410
       delp = del
+      call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+      call srcma (rsav, isav, 2)
       nfe = nfe + 1
       go to 270
 c-----------------------------------------------------------------------
@@ -599,7 +603,9 @@ c-----------------------------------------------------------------------
       h = h*rh
       do 645 i = 1,n
  645    y(i) = yh(i,1)
+      call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+      call srcma (rsav, isav, 2)
       nfe = nfe + 1
       do 650 i = 1,n
  650    yh(i,2) = h*savf(i)

@@ -67,7 +67,9 @@ c if miter = 1, call jac and multiply by scalar. -----------------------
  100  lenp = n*n
       do 110 i = 1,lenp
  110    wm(i+2) = 0.0d0
+      call srcma (rsav, isav, 1)
       call jac (neq, tn, y, 0, 0, wm(3), n)
+      call srcma (rsav, isav, 2)
       con = -hl0
       do 120 i = 1,lenp
  120    wm(i+2) = wm(i+2)*con
@@ -83,7 +85,9 @@ c if miter = 2, make n calls to f to approximate j. --------------------
         r = dmax1(srur*dabs(yj),r0/ewt(j))
         y(j) = y(j) + r
         fac = -hl0/r
+        call srcma (rsav, isav, 1)
         call f (neq, tn, y, ftem)
+        call srcma (rsav, isav, 2)
         do 220 i = 1,n
  220      wm(i+j1) = (ftem(i) - savf(i))*fac
         y(j) = yj
@@ -114,7 +118,9 @@ c if miter = 4, call jac and multiply by scalar. -----------------------
       lenp = meband*n
       do 410 i = 1,lenp
  410    wm(i+2) = 0.0d0
+      call srcma (rsav, isav, 1)
       call jac (neq, tn, y, ml, mu, wm(ml3), meband)
+      call srcma (rsav, isav, 2)
       con = -hl0
       do 420 i = 1,lenp
  420    wm(i+2) = wm(i+2)*con
@@ -135,7 +141,9 @@ c if miter = 5, make mband calls to f to approximate j. ----------------
           yi = y(i)
           r = dmax1(srur*dabs(yi),r0/ewt(i))
  530      y(i) = y(i) + r
+        call srcma (rsav, isav, 1)
         call f (neq, tn, y, ftem)
+        call srcma (rsav, isav, 2)
         do 550 jj = j,n,mband
           y(jj) = yh(jj,1)
           yjj = y(jj)

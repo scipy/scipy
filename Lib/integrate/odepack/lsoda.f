@@ -1,9 +1,10 @@
       subroutine lsoda (f, neq, y, t, tout, itol, rtol, atol, itask,
      1            istate, iopt, rwork, lrw, iwork, liw, jac, jt)
       external f, jac
-      integer neq, itol, itask, istate, iopt, lrw, iwork, liw, jt
-      double precision y, t, tout, rtol, atol, rwork
+      integer neq, itol, itask, istate, iopt, lrw, iwork, liw, jt, isav
+      double precision y, t, tout, rtol, atol, rwork, rsav
       dimension neq(1), y(1), rtol(1), atol(1), rwork(lrw), iwork(liw)
+      dimension rsav(240), isav(50)
 c-----------------------------------------------------------------------
 c this is the 24 feb 1997 version of
 c lsoda.. livermore solver for ordinary differential equations, with
@@ -1207,7 +1208,9 @@ c-----------------------------------------------------------------------
       mxncf = 10
 c initial call to f.  (lf0 points to yh(*,2).) -------------------------
       lf0 = lyh + nyh
+      call srcma(rsav, isav, 1)
       call f (neq, t, y, rwork(lf0))
+      call srcma(rsav, isav, 2)
       nfe = 1
 c load the initial value vector in yh. ---------------------------------
       do 115 i = 1,n

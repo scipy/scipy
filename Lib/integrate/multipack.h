@@ -1,7 +1,7 @@
 /* MULTIPACK module by Travis Oliphant
 
 Copyright (c) 2002 Travis Oliphant all rights reserved
-Oliphant.Travis@altavista.net
+oliphant.travis@ieee.org
 Permission to use, modify, and distribute this software is given under the 
 terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
 this distribution for specifics.
