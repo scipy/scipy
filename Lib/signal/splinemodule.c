@@ -35,16 +35,15 @@ convert_strides(instrides, convstrides, size, N)
 }
 
 
-static char doc_cspline2d[] = "cspline2d(input {, lambda, precision}) -> ck
-
-  Description:
-
-    Return the third-order B-spline coefficients over a regularly spaced 
-    input grid for the two-dimensional input image.  The lambda argument 
-    specifies the amount of smoothing.  The precision argument allows specifying
-    the precision used when computing the infinite sum needed to apply mirror-
-    symmetric boundary conditions.
-";
+static char doc_cspline2d[] = "cspline2d(input {, lambda, precision}) -> ck\n"
+"\n"
+"  Description:\n"
+"\n"
+"    Return the third-order B-spline coefficients over a regularly spacedi\n" 
+"    input grid for the two-dimensional input image.  The lambda argument\n" 
+"    specifies the amount of smoothing.  The precision argument allows specifying\n"
+"    the precision used when computing the infinite sum needed to apply mirror-\n"
+"    symmetric boundary conditions.\n";
 
  
 static PyObject *cspline2d(PyObject *dummy, PyObject *args)
@@ -94,16 +93,15 @@ static PyObject *cspline2d(PyObject *dummy, PyObject *args)
 
 }
 
-static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk
-
-  Description:
-
-    Return the second-order B-spline coefficients over a regularly spaced 
-    input grid for the two-dimensional input image.  The lambda argument 
-    specifies the amount of smoothing.  The precision argument allows specifying
-    the precision used when computing the infinite sum needed to apply mirror-
-    symmetric boundary conditions.
-";
+static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk\n"
+"\n"
+"  Description:\n"
+"\n"
+"    Return the second-order B-spline coefficients over a regularly spaced\n"
+"    input grid for the two-dimensional input image.  The lambda argument\n" 
+"    specifies the amount of smoothing.  The precision argument allows specifying\n"
+"    the precision used when computing the infinite sum needed to apply mirror-\n"
+"    symmetric boundary conditions.\n";
  
 static PyObject *qspline2d(PyObject *dummy, PyObject *args)
 {
@@ -154,16 +152,14 @@ static PyObject *qspline2d(PyObject *dummy, PyObject *args)
 
 }
 
-
-static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output
-
-  Description:
-
-    Convolve the rank-2 input array with the separable filter defined by the 
-    rank-1 arrays hrow, and hcol. Mirror symmetric boundary conditions are 
-    assumed.  This function can be used to find an image given its B-spline
-    representation.
-";
+static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output\n"
+"\n"
+"  Description:\n"
+"\n"
+"    Convolve the rank-2 input array with the separable filter defined by the\n"
+"    rank-1 arrays hrow, and hcol. Mirror symmetric boundary conditions are\n"
+"    assumed.  This function can be used to find an image given its B-spline\n"
+"    representation.";
  
 static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
 {
@@ -246,33 +242,32 @@ static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
 
 }
 
-static char doc_IIRsymorder1[] = " symiirorder1(input, c0, z1 {, precision}) -> output
+static char doc_IIRsymorder1[] = " symiirorder1(input, c0, z1 {, precision}) -> output\n"
+"\n"
+"  Description:\n"
+"\n"
+"    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
+"    using a cascade of first-order sections.  The second section uses a\n"
+"    reversed sequence.  This implements a system with the following\n"
+"    transfer function and mirror-symmetric boundary conditions.\n"
+"\n"
+"                           c0              \n"
+"           H(z) = ---------------------    \n"
+"                   (1-z1/z) (1 - z1 z)     \n"
+"\n"
+"    The resulting signal will have mirror symmetric boundary conditions as well.\n"
+"\n"
+"  Inputs:\n"
+"\n"
+"    input -- the input signal.\n"
+"    c0, z1 -- parameters in the transfer function.\n"
+"    precision -- specifies the precision for calculating initial conditions\n"
+"                 of the recursive filter based on mirror-symmetric input.\n"
+"\n"
+"  Output:\n"
+"\n"
+"    output -- filtered signal.";
 
-  Description: 
-
-    Implement a smoothing IIR filter with mirror-symmetric boundary conditions
-    using a cascade of first-order sections.  The second section uses a 
-    reversed sequence.  This implements a system with the following 
-    transfer function and mirror-symmetric boundary conditions.
-
-                           c0
-           H(z) = ---------------------
-                   (1-z1/z) (1 - z1 z)
-
-    The resulting signal will have mirror symmetric boundary conditions as well.
-
-  Inputs:
-
-    input -- the input signal.
-    c0, z1 -- parameters in the transfer function.
-    precision -- specifies the precision for calculating initial conditions 
-                 of the recursive filter based on mirror-symmetric input.
-   
-  Output:
-
-    output -- filtered signal.
-";
- 
 static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
 {
   PyObject *sig=NULL;
@@ -359,34 +354,32 @@ static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
 
 }
 
-
-static char doc_IIRsymorder2[] = " symiirorder2(input, r, omega {, precision}) -> output
-
-  Description:
-     
-    Implement a smoothing IIR filter with mirror-symmetric boundary conditions
-    using a cascade of second-order sections.  The second section uses a 
-    reversed sequence.  This implements the following transfer function:
-
-                                        cs^2  
-               H(z) = ---------------------------------------
-                      (1 - a2/z - a3/z^2) (1 - a2 z - a3 z^2 )
-
-    where a2 = (2 r cos omega)
-          a3 = - r^2 
-	  cs = 1 - 2 r cos omega + r^2 
-
-  Inputs:
-
-    input -- the input signal.
-    r, omega -- parameters in the transfer function.
-    precision -- specifies the precision for calculating initial conditions 
-                 of the recursive filter based on mirror-symmetric input.
-   
-  Output:
-
-    output -- filtered signal.
-";
+static char doc_IIRsymorder2[] = " symiirorder2(input, r, omega {, precision}) -> output\n"
+"\n"
+"  Description:\n"
+"\n"
+"    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
+"    using a cascade of second-order sections.  The second section uses a\n"
+"    reversed sequence.  This implements the following transfer function:\n"
+"\n"
+"                                        cs^2\n"
+"               H(z) = ---------------------------------------\n"
+"                      (1 - a2/z - a3/z^2) (1 - a2 z - a3 z^2 )\n"
+"\n"
+"    where a2 = (2 r cos omega)\n"
+"          a3 = - r^2\n"
+"          cs = 1 - 2 r cos omega + r^2\n"
+"\n"
+"  Inputs:\n"
+"\n"
+"    input -- the input signal.\n"
+"    r, omega -- parameters in the transfer function.\n"
+"    precision -- specifies the precision for calculating initial conditions\n"
+"                 of the recursive filter based on mirror-symmetric input.\n"
+"\n"
+"  Output:\n"
+"\n"
+"    output -- filtered signal.\n";
  
 static PyObject *IIRsymorder2(PyObject *dummy, PyObject *args)
 {
