@@ -96,10 +96,13 @@ class test_isinf(unittest.TestCase):
     def check_neginf(self): 
         assert(isinf(array((-1.,))/0.) == 1)
     def check_ind(self): 
+        # !! This is what these should be !!
+        #assert(isinf(array((0.,))/0.) == 0)
         assert(isinf(array((0.,))/0.) == 1)
     def check_qnan(self): 
+        # !! This is what these should be !!
+        #assert(isinf(log(-1.)) == 0)
         assert(isinf(log(-1.)) == 1)
-
 class test_isposinf(unittest.TestCase):
     def check_generic(self):
         vals = isposinf(array((-1.,0,1))/0.)

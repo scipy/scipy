@@ -14,7 +14,7 @@ def names2all(alist, spaces, gldict):
         exec("import %s" % name, gldict)
         thelist = eval(name,gldict).__dict__.keys()
         exec("from %s import *" % name, gldict)
-        exec("del %s" % name, gldict)
+        #exec("del %s" % name, gldict)
         for key in thelist:
             if key[0] == "_":
                 thelist.remove(key)
@@ -34,7 +34,7 @@ _modules = ["fastumath", "misc", "optimize", "integrate", "signal",
             "special", "io", "interpolate", "stats"]
 
 # namespaces to subsume into the scipy namespace itself
-_namespaces = ['handy', 'misc', 'MLab', 'fastumath'] # MLab includes Numeric
+_namespaces = ['MLab','handy', 'misc', 'fastumath'] # MLab includes Numeric
 #_namespaces = [] # MLab includes Numeric
 import os,sys
 from helpmod import help, source
@@ -83,7 +83,7 @@ def test_all():
 def test_suite(test_set = 'all'):
     import scipy_test
     import scipy
-    ignore = ['xplt','plt','gui_thread','linalg','sparse','numeric_version']
+    ignore = ['xplt','plt','gui_thread','linalg','sparse','scipy_version']
     if test_set != 'all':
         ignore += ['compiler']
     return scipy_test.harvest_test_suites(scipy,ignore)
