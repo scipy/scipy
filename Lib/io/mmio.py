@@ -75,11 +75,12 @@ def mminfo(source):
     return (rows,cols,entries,rep,field,symm)
 
 def mmread(source):
-    """ Reads the contents of the Matrix Market file 'filename' into the matrix 'A'.
+    """ Reads the contents of a Matrix Market file 'filename' into a matrix.
 
     Inputs:
 
-      source    - Matrix Market filename (extension .mtx) or open file object.
+      source    - Matrix Market filename (extensions .mtx, .mtz.gz)
+                  or open file object.
 
     Outputs:
 
@@ -88,9 +89,15 @@ def mmread(source):
     close_it = 0
     if type(source) is type(''):
         if not os.path.isfile(source):
-            if source[-4:] != '.mtx':
+            if os.path.isfile(source+'.mtx'):
                 source = source + '.mtx'
-        source = open(source,'r')
+            elif os.path.isfile(source+'.mtx.gz'):
+                source = source + '.mtx.gz'
+        if source[-3:] == '.gz':
+            import gzip
+            source = gzip.open(source)
+        else:
+            source = open(source,'r')
         close_it = 1
 
     rows,cols,entries,rep,field,symm = mminfo(source)
@@ -120,9 +127,9 @@ def mmread(source):
             if not line or line.startswith('%'):
                 continue
             if field=='complex':
-                aij = complex(*map(eval,line.strip().split()))
+                aij = complex(*map(float,line.split()))
             else:
-                aij = eval(line.strip())
+                aij = float(line)
             a[i,j] = aij
             if i!=j:
                 if symm=='symmetric':
@@ -150,13 +157,13 @@ def mmread(source):
             line = source.readline()
             if not line or line.startswith('%'):
                 continue
-            l = line.strip().split()
-            i,j = map(eval,l[:2])
+            l = line.split()
+            i,j = map(int,l[:2])
             i,j = i-1,j-1
             if field=='complex':
-                aij = complex(*map(eval,l[2:]))
+                aij = complex(*map(float,l[2:]))
             else:
-                aij = eval(l[2])
+                aij = float(l[2])
             a[i,j] = aij
             if i!=j:
                 if symm=='symmetric':
@@ -176,13 +183,13 @@ def mmread(source):
             line = source.readline()
             if not line or line.startswith('%'):
                 continue
-            l = line.strip().split()
-            i,j = map(eval,l[:2])
+            l = line.split()
+            i,j = map(int,l[:2])
             i,j = i-1,j-1
             if field=='complex':
-                aij = complex(*map(eval,l[2:]))
+                aij = complex(*map(float,l[2:]))
             else:
-                aij = eval(l[2])
+                aij = float(l[2])
             row.append(i)
             col.append(j)
             data.append(aij)
@@ -361,3 +368,13 @@ def _get_symmetry(a):
     if isskew: return 'skew-symmetric'
     if isherm: return 'hermitian'
     return 'general'
+
+if __name__ == '__main__':
+    import sys
+    import time
+    for filename in sys.argv[1:]:
+        print 'Reading',filename,'...',
+        sys.stdout.flush()
+        t = time.time()
+        mmread(filename)
+        print 'took %s seconds' % (time.time() - t)
