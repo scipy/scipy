@@ -79,6 +79,31 @@ class _TestHang:
 
 TestHang = gui_thread.register(_TestHang)
 
+class _A:
+    pass
+
+A = gui_thread.register(_A)
+
+class _TestDeref:
+    def __init__(self):
+        self.a = A()
+        
+    def test_proxy(self, arg1):
+        "Returns 0 if the test fails."
+        if (gui_thread.main.is_proxy(arg1) == 1) or \
+           (gui_thread.main.is_proxy_attr(arg1) == 1):
+            return 0
+        else:
+            return 1
+
+    def test_proxy_attr(self):
+        a = TestDeref()
+        return self.test_proxy(a.a)
+
+    def test_kw(self, arg1=None):
+        return self.test_proxy(arg1)
+
+TestDeref = gui_thread.register(_TestDeref)
 
 dummy_instance = TestClass()
 
@@ -154,6 +179,13 @@ class test_gui_thread(unittest.TestCase):
         "Checking proxied function calling another proxied function"
         a = TestHang()
         a.get_obj()
+
+    def check_dereference(self):
+        "Checking if dereferencing works."
+        a = TestDeref()
+        self.assertEqual(a.test_proxy(a), 1)
+        self.assertEqual(a.test_kw(arg1=a), 1)
+        self.assertEqual(a.test_proxy_attr(), 1)
 
 
 class test_proxy_attribute(unittest.TestCase):
