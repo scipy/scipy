@@ -5,6 +5,9 @@ from scipy_base.fastumath import *
 def myasarray(a):
     if type(a) in [type(1.0),type(1L),type(1),type(1j)]:
         return asarray([a])
+    elif type(a) is ArrayType and len(a)==1:
+        # Takes care of mapping array(number) to array([number])
+        return asarray([a[0]])
     else:
         return asarray(a)
 
