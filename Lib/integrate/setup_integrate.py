@@ -29,6 +29,9 @@ def configuration(parent_package=''):
     
     mach = glob(os.path.join(local_path,'mach','*.f'))
     config['fortran_libraries'].append(('mach',{'sources':mach}))
+
+    # need info about blas -- how to get this???
+    blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
    
     # Extension
     # flibraries.append(('blas',{'sources':blas}))
@@ -37,16 +40,16 @@ def configuration(parent_package=''):
     #  the dependencies in the section for each subpackage.
     sources = ['_quadpackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(parent_package+'integrate._quadpack',sources)
+    ext = Extension(parent_package+'integrate._quadpack',sources,
+                    library_dirs=atlas_library_dirs,
+                    libraries=['quadpack','linpack_lite'] + blas_libraries)
     config['ext_modules'].append(ext)
     
-    # need info about blas -- how to get this???
-    blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
     sources = ['_odepackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(parent_package+'integrate._odepack',sources,
                     library_dirs=atlas_library_dirs,
-                    libraries=['odepack','linpack_lite',] + blas_libraries)
+                    libraries=['odepack','linpack_lite'] + blas_libraries)
     config['ext_modules'].append(ext)
 
     # vode
@@ -55,7 +58,7 @@ def configuration(parent_package=''):
                     sources,
                     library_dirs=atlas_library_dirs,
                     libraries=['odepack','linpack_lite'] + blas_libraries,
-                    )                    
+                    )
     config['ext_modules'].append(ext)
 
     return config
