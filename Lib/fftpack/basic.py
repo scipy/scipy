@@ -36,15 +36,15 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     """ Internal auxiliary function for fft, ifft, rfft, irfft."""
     if n is None:
         n = x.shape[axis]
-    elif x.shape[axis] != n:
+    elif n != x.shape[axis]:
         x = _fix_shape(x,n,axis)
         overwrite_x = 1
-    if axis != -1 and axis != len(x.shape):
+    if axis == -1 or axis == len(x.shape)-1:
+        r = work_function(x,n,direction,overwrite_x=overwrite_x)
+    else:
         x = Numeric.swapaxes(x, axis, -1)
         r = work_function(x,n,direction,overwrite_x=overwrite_x)
         r = Numeric.swapaxes(r, axis, -1)
-    else:
-        r = work_function(x,n,direction,overwrite_x=overwrite_x)
     return r
 
 
@@ -86,8 +86,20 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     else:
         overwrite_x = 1
         work_function = fftpack.zrfft
-    return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
 
+    #return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
+    if n is None:
+        n = tmp.shape[axis]
+    elif n != tmp.shape[axis]:
+        tmp = _fix_shape(tmp,n,axis)
+        overwrite_x = 1
+
+    if axis == -1 or axis == len(tmp.shape) - 1:
+        return work_function(tmp,n,1,0,overwrite_x)
+
+    tmp = Numeric.swapaxes(tmp, axis, -1)
+    tmp = work_function(tmp,n,1,0,overwrite_x)
+    return Numeric.swapaxes(tmp, axis, -1)
 
 def ifft(x, n=None, axis=-1, overwrite_x=0):
     """ ifft(x, n=None, axis=-1, overwrite_x=0) -> y
@@ -113,7 +125,20 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     else:
         overwrite_x = 1
         work_function = fftpack.zrfft
-    return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
+
+    #return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
+    if n is None:
+        n = tmp.shape[axis]
+    elif n != tmp.shape[axis]:
+        tmp = _fix_shape(tmp,n,axis)
+        overwrite_x = 1
+
+    if axis == -1 or axis == len(tmp.shape) - 1:
+        return work_function(tmp,n,-1,1,overwrite_x)
+
+    tmp = Numeric.swapaxes(tmp, axis, -1)
+    tmp = work_function(tmp,n,-1,1,overwrite_x)
+    return Numeric.swapaxes(tmp, axis, -1)
 
 
 def rfft(x, n=None, axis=-1, overwrite_x=0):
