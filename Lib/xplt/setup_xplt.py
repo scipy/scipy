@@ -309,7 +309,7 @@ main(int argc, char *argv[])
             fpedef="-DFPU_UNICOS"
             fpelibm=self.mathlib
 
-        if "fpedef" in os.environ:
+        if os.environ.has_key('fpedef'):
             if self.try_link("#define FPU_IGNORE\n" + testcode, libraries=[self.mathlib]):
                 print "using FPU_IGNORE (SIGFPE delivery)"
                 configfile.write('#define FPU_IGNORE\n')
@@ -330,7 +330,7 @@ main(int argc, char *argv[])
 
         if fpedef:
             # on IRIX be sure that TRAP_FPE environment variable is turned off
-            if "TRAP_FPE" in os.environ: del os.environ["TRAP_FPE"]
+            if os.environ.has_key('TRAP_FPE'): del os.environ["TRAP_FPE"]
             testcode = "#define " + fpedef[2:] + "\n" + testcode
             libraries = []
             if fpelib: libraries.append(fpelib)
