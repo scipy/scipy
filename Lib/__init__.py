@@ -47,7 +47,8 @@ except NameError:
 # Level 1
 # these modules will just be imported (not subsumed)
 import special, io, linalg, stats, fftpack
-from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn, fftshift, ifftshift, cont_ft, fftfreq, zeropad
+from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn, fftshift,\
+     ifftshift, fftfreq #, zeropad, cont_ft
 from stats import mean, median, std, cov, corrcoef
 from special import isinf, isfinite, isnan
 
@@ -59,14 +60,9 @@ try:
 except ImportError:
     pass
 
-try:
-    import fftw
-except ImportError:
-    pass  # Not default anymore
-
-
 # Level 2
-import optimize, integrate, signal, special, interpolate, cow, ga, cluster, weave
+import optimize, integrate, signal, special, interpolate, cow, \
+       ga, cluster, weave
 
 # Level 3
 _plot = []
@@ -95,7 +91,7 @@ except ImportError:
 
 # removed gplt because it screws up imports on win32
 # removed plt cause it screws up unix when gtk isn't available.
-_pkgs = ['cluster','cow','fftpack','fftw','ga','integrate',
+_pkgs = ['cluster','cow','fftpack','ga','integrate',
          'interpolate', 'io', 'linalg', 'optimize', 
          'signal', 'sparse', 'special', 'stats', 'weave',
          'xplt'] #,'plt', 'gplt']
@@ -106,7 +102,6 @@ if sys.platform != 'win32':
 _pkg_doc = ['Vector Quantization / Kmeans',
             'Cluster of Workstations',
             'FFT algorithms',
-            'FFT algorithms using fftw',
             'Genetic Algorithms',
             'Integration',
             'Interpolation',
