@@ -87,7 +87,7 @@ def configuration(parent_package='',parent_path=None):
             target = os.path.join(build_dir,target_dir,'clapack.pyf')
             from distutils.dep_util import newer
             if newer(__file__,target):
-                f = open(source,'w')
+                f = open(target,'w')
                 f.write(tmpl_empty_clapack_pyf)
                 f.close()
         else:
