@@ -4,18 +4,12 @@ import os
 from glob import glob
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict
-from scipy_distutils.misc_util import fortran_library_item
+from scipy_distutils.misc_util import fortran_library_item, update_version
 from scipy_distutils.atlas_info import get_atlas_info
 
 def configuration(parent_package=''):
-    if parent_package:
-        parent_package += '.'
+    config = default_config_dict('integrate',parent_package)
     local_path = get_path(__name__)
-    config = default_config_dict()
-
-    if parent_package:
-        config['packages'].append(parent_package+'integrate')
-        #config['packages'].append(parent_package+'integrate.tests')
 
     # need info about blas -- how to get this???
     blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
@@ -32,7 +26,6 @@ def configuration(parent_package=''):
         libraries = ['linpack_lite']+blas_libraries,
         library_dirs = atlas_library_dirs))
 
-    
     # should we try to weed through files and replace with calls to
     # LAPACK routines?
     linpack_lite = glob(os.path.join(local_path,'linpack_lite','*.f'))
@@ -65,6 +58,7 @@ def configuration(parent_package=''):
     config['ext_modules'].append(ext)
 
     config['fortran_libraries'].extend(f_libs)
+
     return config
 
 if __name__ == '__main__':    
