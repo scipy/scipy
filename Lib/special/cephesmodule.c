@@ -468,8 +468,8 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "hyp1f1", f);
 	Py_DECREF(f);
 
-	f = PyUFunc_FromFuncAndData(cephes3_functions, hypU_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hypU", hypU_doc, 0);
-	PyDict_SetItemString(dictionary, "hypU", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, hypU_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "hyperu", hypU_doc, 0);
+	PyDict_SetItemString(dictionary, "hyperu", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes4a_2_functions, hyp2f0_data, cephes_6_types, 2, 4, 2, PyUFunc_None, "hyp2f0", hyp2f0_doc, 0);

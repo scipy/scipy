@@ -112,7 +112,7 @@
 
     hyp2f1   -- Gauss hypergeometric function (2F1)
     hyp1f1   -- Confluent hypergeometric function (1F1)
-    hypU     -- Confluent hypergeometric function (U)
+    hyperu   -- Confluent hypergeometric function (U)
     hyp0f1   -- Confluent hypergeometric limit function (0F1)
     hyp2f0   -- Hypergeometric function (2F0) 
     hyp1f2   -- Hypergeometric function (1F2)
