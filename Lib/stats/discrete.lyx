@@ -213,7 +213,7 @@ G\left(q\right)=F^{-1}\left(q\right)\]
 Inverse survival function
 \layout Standard
 
-The inverse source function is the inverse of the survival function 
+The inverse survival function is the inverse of the survival function 
 \begin_inset Formula \[
 Z\left(\alpha \right)=S^{-1}\left(\alpha \right)=G\left(1-\alpha \right)\]
 
