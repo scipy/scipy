@@ -169,7 +169,6 @@ class linear_1d:
         # Return an array of error values.
         pass
 
-
     
 #assumes module test_xxx is in python path
 #def test():

@@ -55,7 +55,7 @@ def rosen_hess(x):
     H = H + MLab.diag(diagonal)
     return H
 
-def rosen_hess_p(x,p):
+def rosen_hess_prod(x,p):
     x = r1array(x)
     Hp = Num.zeros(len(x),x.typecode())
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
@@ -416,6 +416,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
         grad_calls = grad_calls + 1
     xk = x0
     sk = [2*gtol]
+    warnflag = 0
     while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
         alpha_k, fc, gc = line_search_BFGS(f,xk,pk,gfk,args)
@@ -433,7 +434,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
         yk = gfkp1 - gfk
         k = k + 1
 
-        rhok = 1 / Num.dot(yk,sk)
+        try:            
+            rhok = 1 / Num.dot(yk,sk)
+        except ZeroDivisionError:
+            warnflag = 2
+            break
         A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
         A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
         Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
@@ -443,7 +448,15 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
 
     if disp or full_output:
         fval = apply(f,(xk,)+args)
-    if k >= maxiter:
+    if warnflag == 2:
+        if disp:
+            print "Warning: Desired error not necessarily achieved due to precision loss"
+            print "         Current function value: %f" % fval
+            print "         Iterations: %d" % k
+            print "         Function evaluations: %d" % func_calls
+            print "         Gradient evaluations: %d" % grad_calls
+        
+    elif k >= maxiter:
         warnflag = 1
         if disp:
             print "Warning: Maximum number of iterations has been exceeded"
@@ -452,7 +465,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
             print "         Function evaluations: %d" % func_calls
             print "         Gradient evaluations: %d" % grad_calls
     else:
-        warnflag = 0
         if disp:
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
@@ -794,7 +806,7 @@ if __name__ == "__main__":
 
 
     start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_p, maxiter=80)
+    x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_prod, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with hessian product')

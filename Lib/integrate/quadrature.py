@@ -2,7 +2,9 @@
 
 
 from orthogonal import P_roots
-from Numeric import sum
+from Numeric import sum, asarray
+import Numeric
+import scipy
 
 def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
@@ -25,10 +27,13 @@ def fixed_quad(func,a,b,args=(),n=5):
     
     """
     [x,w] = P_roots(n)
+    ainf, binf = map(scipy.isinf,(a,b))    
+    if ainf or binf:
+        raise ValueError, "Gaussian quadrature is only available for finite limits."
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args)), None
 
-def quadrature(func,a,b,args=(),tol=1e-7,maxiter=50):
+def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
     """Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
   Description:
@@ -76,13 +81,13 @@ def trapz(y, x=None, dx=1.0, axis=-1):
     if x is None:
         d = dx
     else:
-        d = diff(x,axis=axis)
+        d = scipy.diff(x,axis=axis)
     nd = len(y.shape)
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
     slice1[axis] = slice(1,None)
     slice2[axis] = slice(None,-1)
-    return add.reduce(d * (y[slice1]+y[slice2])/2.0,axis)
+    return Numeric.add.reduce(d * (y[slice1]+y[slice2])/2.0,axis)
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1):
     """Cumulatively integrate y(x) using samples along the given axis
@@ -93,13 +98,13 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1):
     if x is None:
         d = dx
     else:
-        d = diff(x,axis=axis)
+        d = scipy.diff(x,axis=axis)
     nd = len(y.shape)
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
     slice1[axis] = slice(1,None)
     slice2[axis] = slice(None,-1)
-    return add.accumulate(d * (y[slice1]+y[slice2])/2.0,axis)
+    return Numeric.add.accumulate(d * (y[slice1]+y[slice2])/2.0,axis)
 
 def _basic_simps(y,start,stop,x,dx,axis):
     nd = len(y.shape)
@@ -114,12 +119,12 @@ def _basic_simps(y,start,stop,x,dx,axis):
     slice2[axis] = slice(start+2,stop+2,step)
 
     if x is None:  # Even spaced Simpson's rule.
-        result = add.reduce(dx/3.0* (y[slice0]+4*y[slice1]+y[slice2]),
-                            axis)
+        result = Numeric.add.reduce(dx/3.0* (y[slice0]+4*y[slice1]+y[slice2]),
+                                    axis)
     else:
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
-        h = diff(x,axis=axis)
+        h = scipy.diff(x,axis=axis)
         sl0 = [slice(None)]*nd
         sl1 = [slice(None)]*nd
         sl0[axis] = slice(start,stop,step)
@@ -129,9 +134,9 @@ def _basic_simps(y,start,stop,x,dx,axis):
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = h0 / h1
-        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) + \
-                                      y[slice1]*hsum*hsum/hprod + \
-                                      y[slice2]*(2-h0divh1)),axis)
+        result = Numeric.add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) + \
+                                              y[slice1]*hsum*hsum/hprod + \
+                                              y[slice2]*(2-h0divh1)),axis)
     return result
 
 
@@ -168,7 +173,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     if not x is None:
         x = asarray(x)
         if len(x.shape) == 1:
-            shapex = ones(nd)
+            shapex = Numeric.ones(nd)
             shapex[axis] = x.shape[0]
             saveshape = x.shape
             returnshape = 1
@@ -242,14 +247,14 @@ def romb(y, dx=1.0, axis=-1, show=0):
         start >>= 1
         slice_R[axis] = slice(start,stop,step)
         step >>= 1
-        R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
+        R[(i,1)] = 0.5*(R[(i-1,1)] + h*Numeric.add.reduce(y[slice_R],axis))
         for j in range(2,i+1):
             R[(i,j)] = R[(i,j-1)] + \
                        (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*(j-1)))-1)
         h = h / 2.0
 
     if show:
-        if not isscalar(R[(1,1)]):
+        if not scipy.isscalar(R[(1,1)]):
             print "*** Printing table only supported for integrals" + \
                   " of a single data set."
         else:
@@ -333,7 +338,7 @@ def _printresmat(function, interval, resmat):
     print 'The final result is', resmat[i][j],
     print 'after', 2**(len(resmat)-1)+1, 'function evaluations.'
 
-def romberg(function, a, b, tol=1.0E-7, show=0, divmax=10):
+def romberg(function, a, b, tol=1.48E-8, show=0, divmax=10):
     """Romberg integration of a callable function or method.
 
     Returns the integral of |function| (a function of one variable)
@@ -342,6 +347,8 @@ def romberg(function, a, b, tol=1.0E-7, show=0, divmax=10):
     Romberg integration up to the specified |accuracy|. If |show| is 1,
     the triangular array of the intermediate results will be printed.
     """
+    if scipy.isinf(a) or scipy.isinf(b):
+        raise ValueError: "Romberg integration only available for finite limits."
     i = n = 1
     interval = [a,b]
     intrange = b-a

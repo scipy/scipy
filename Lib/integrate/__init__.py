@@ -13,8 +13,8 @@
 
    trapz         -- Use trapezoidal rule to compute integral of sampled function
    simps         -- Use Simpson's rule to compute integral from samples.
-   romb          -- Use Romberg Integration to compute integral from even number
-                    of evenly-spaced samples.
+   romb          -- Use Romberg Integration to compute integral from
+                    (2**k + 1) evenly-spaced samples.
 
    See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
       quadrature roots and weights for other weighting factors and regions.
