@@ -17,26 +17,63 @@ _hold = 0
 try:
     import Scientific.Statistics.Histogram
     SSH = Scientific.Statistics.Histogram
-    def histogram(data,numbins=80,range=None):
+    def histogram(data,nbins=80,range=None,bar=1,ntype=0):
         """Plot a histogram.
         """
 
-        h = SSH.Histogram(data,numbins,range)
-        plot(h[:,0],h[:,1])
+        h = SSH.Histogram(data,nbins,range)
+        if ntype == 1:
+            h.normalize()
+        elif ntype == 2:
+            h.normalizeArea()
+        if bar:
+            barplot(h[:,0],h[:,1])
+        else:
+            plot(h[:,0],h[:,1])
         return h
 except ImportError:
     try:
         import Statistics
         SSH = Statistics
-        def histogram(data,numbins=80,range=None):
+        def histogram(data,nbins=80,range=None,bar=1,ntype=0):
             """Plot a histogram.
             """
-            h = SSH.histogram(data,numbins,range)
-            plot(h[:,0],h[:,1])
+            h = SSH.histogram(data,nbins,range)
+            if ntype == 1:
+                h.normalize()
+            elif ntype == 2:
+                h.normalizeArea()
+            if bar:
+                barplot(h[:,0],h[:,1])
+            else:
+                plot(h[:,0],h[:,1])
             return h        
     except ImportError:
-        histogram = scipy.histogram
-
+        hist = scipy.histogram
+        def histogram(data, nbins=80, range=None,bar=1,ntype=0):
+            if range is None:
+                dmin = Numeric.minimum.reduce(data)
+                dmax = Numeric.maximum.reduce(data)
+            else:
+                dmin, dmax = range
+            dmin = dmin + 0.0
+            dmax = dmax + 0.0
+            bin_width = (dmax - dmin)/nbins
+            darray = Numeric.zeros((nbins,2),Numeric.Float)
+            darray[:,0] = dmin + bin_width*(Numeric.arange(nbins)+0.5)
+            bins = dmin + bin_width*(Numeric.arange(nbins))
+            darray[:,1] = hist(data,bins)
+            if ntype == 1:
+                darray[:,1] = 1.0*darray[:,1] / Numeric.add.reduce(darray[:,1])
+            elif ntype == 2:
+                darray[:,1] = 1.0/bin_width*darray[:,1] / \
+                              Numeric.add.reduce(darray[:,1])
+            if bar:
+                barplot(darray[:,0],darray[:,1])
+            else:
+                plot(darray[:,0],darray[:,1])
+            return darray
+                        
 def reverse_dict(dict):
     newdict = {}
     for key in dict.keys():

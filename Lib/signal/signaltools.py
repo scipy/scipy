@@ -1,5 +1,6 @@
 import sigtools
 import scipy.special as special
+from scipy import iscomplex, fft, ifft
 import Numeric
 
 _modedict = {'valid':0, 'same':1, 'full':2}
@@ -471,7 +472,7 @@ def kaiser(M,beta):
     return special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
 
 def hilbert(x, N=None):
-    x = asarray(x)
+    x = Numeric.asarray(x)
     if N is None:
         N = len(x)
     if N <=0:
@@ -480,16 +481,16 @@ def hilbert(x, N=None):
         print "Warning: imaginary part of x ignored."
         x = real(x)
     Xf = fft(x,N,axis=0)
-    h = zeros(N)
+    h = Numeric.zeros(N)
     if N % 2 == 0:
-        put(h,[0,N/2],1)
+        h[0] = h[N/2] = 1
         h[1:N/2] = 2
     else:
         h[0] = 1
         h[1:(N+1)/2] = 2
 
     if len(x.shape) > 1:
-        h = h[:,NewAxis]
+        h = h[:,Numeric.NewAxis]
     x = ifft(Xf*h)
     return x
 
