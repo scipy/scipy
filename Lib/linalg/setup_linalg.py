@@ -78,7 +78,7 @@ def extensions(parent_package = ''):
     sources = ['generic_lapack.pyf']
     ext = generic_extension(mod,sources,parent_package,use_underscore=1)
     ext_modules.append(ext)
-    """
+    
     # C lapack interface
     mod = 'clapack'
     sources = ['generic_lapack.pyf']
@@ -96,5 +96,5 @@ def extensions(parent_package = ''):
     sources = ['generic_blas1.pyf','generic_blas2.pyf','generic_blas3.pyf']
     ext = generic_extension(mod,sources,parent_package,use_underscore=0)
     ext_modules.append(ext)
-    """
+    
     return ext_modules
