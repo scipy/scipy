@@ -179,6 +179,7 @@ def mmread(source):
         line = 1
         k = 0
         data,row,col = [],[],[]
+        flag = symm in ['symmetric','skew-symmetric','hermitian']
         while line:
             line = source.readline()
             if not line or line.startswith('%'):
@@ -193,19 +194,14 @@ def mmread(source):
             row.append(i)
             col.append(j)
             data.append(aij)
-            if i!=j:
-                if symm=='symmetric':
-                    row.append(j)
-                    col.append(i)
-                    data.append(aij)
-                elif symm=='skew-symmetric':
-                    row.append(j)
-                    col.append(i)
-                    data.append(-aij)
+            if flag and i!=j:
+                if symm=='skew-symmetric':
+                    aij = -aij
                 elif symm=='hermitian':
-                    row.append(j)
-                    col.append(i)
-                    data.append(conj(aij))
+                    aij = conj(aij)
+                row.append(j)
+                col.append(i)
+                data.append(aij)
             k = k + 1
         assert k==entries,`k,entries`
         a = coo_matrix(data,(row,col),M=rows,N=cols,typecode=typecode)
