@@ -48,8 +48,13 @@ def configuration(parent_package='',parent_path=None):
     no_atlas = 0
 
     atlas_info = get_info('atlas_threads')
+    if ('ATLAS_WITHOUT_LAPACK',None) in atlas_info.get('define_macros',[]):
+        atlas_info = get_info('lapack_atlas_threads') or atlas_info
     if not atlas_info:
         atlas_info = get_info('atlas')
+        if atlas_info:
+            if ('ATLAS_WITHOUT_LAPACK',None) in atlas_info.get('define_macros',[]):
+                atlas_info = get_info('lapack_atlas') or atlas_info
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/BLAS; useful for testing
 
@@ -98,9 +103,20 @@ def configuration(parent_package='',parent_path=None):
             f = open(atlas_version_file,'w')
             f.write(atlas_version)
             f.close()
-
     if atlas_info:
-        if ('ATLAS_WITHOUT_LAPACK',None) in atlas_info.get('define_macros',[]):
+        if ('ATLAS_WITH_LAPACK_ATLAS',None) in atlas_info.get('define_macros',[]):
+            lapack_info = get_info('lapack')
+            if not lapack_info:
+                warnings.warn(LapackNotFoundError.__doc__)
+                lapack_src_info = get_info('lapack_src')
+                if not lapack_src_info:
+                    raise LapackSrcNotFoundError,LapackSrcNotFoundError.__doc__
+                dict_append(lapack_info,libraries=['lapack_src'])
+                f_libs.append(fortran_library_item(\
+                'lapack_src',lapack_src_info['sources'],
+                ))
+            dict_append(atlas_info,**lapack_info)
+        elif ('ATLAS_WITHOUT_LAPACK',None) in atlas_info.get('define_macros',[]):
             lapack_info = get_info('lapack')
             if not lapack_info:
                 warnings.warn(LapackNotFoundError.__doc__)
