@@ -225,10 +225,13 @@ def apply_over_axes(func, a, axes):
     return val
 
 def expand_dims(a, axis):
-    """Expand the shape of a to include a length 1 dimension before the given axis.
+    """Expand the shape of a to include a length 1 dimension before the given
+    axis.
     """
     a = asarray(a)
     shape = a.shape
+    if axis < 0:
+        axis = axis + len(shape) + 1
     a.shape = shape[:axis] + (1,) + shape[axis:]
     return a
 
@@ -513,56 +516,55 @@ def moment(a,moment=1,axis=-1):
 def variation(a,axis=-1):
     """Returns the coefficient of variation, as defined in CRC Standard
     Probability and Statistics, p.6. Axis can equal None (ravel array
-    first), an integer (the axis over which to operate), or a
-    sequence (operate over multiple axes).
+    first), or an integer (the axis over which to operate)
     """
     return 100.0*samplestd(a,axis)/mean(a,axis)
 
 
 def skew(a,axis=-1): 
     """Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
-    weight in left tail).  Use askewtest() to see if it's close enough.
-    Axis can equal None (ravel array first), an integer (the
-    axis over which to operate), or a sequence (operate over multiple
-    axes).
+    weight in left tail).  Use skewtest() to see if it's close enough.
+    Axis can equal None (ravel array first), or an integer (the
+    axis over which to operate).
     
     Returns: skew of vals in a along axis, returning ZERO where all vals equal
     """
-    denom = power(moment(a,2,axis),1.5)
-    zero = equal(denom,0)
+    denom = std(a,axis=axis)**3.0
+    zero = (denom == 0)
     tmp = sum(zero)
     if isinstance(denom, ArrayType) and tmp <> 0:
-        print "Number of zeros in askew: ", tmp
+        print "Number of zeros in skew: ", tmp
     denom = denom + zero  # prevent divide-by-zero
-    return where(zero, 0, moment(a,3,axis)/denom)
+    n = a.shape[axis]
+    return where(zero, 0, moment(a,3,axis)/denom*n/(n-1.0))
 
 def kurtosis(a,axis=-1,fisher=1):
-    """Returns the kurtosis (fisher or pearson) of a distribution (normal ==> 3.0; >3 means
+    """Returns the kurtosis (fisher or pearson) of a distribution
+    (normal for pearson ==> 3.0; >3 means
     heavier in the tails, and usually more peaked).  Use kurtosistest()
     to see if it's close enough.  Axis can equal None (ravel array
-    first), an integer (the axis over which to operate), or a
-    sequence (operate over multiple axes).
+    first), or an integer (the axis over which to operate)
     
     Returns: kurtosis of values in a along axis, and ZERO where all vals equal
     """
-    denom = power(moment(a,2,axis),2)
-    zero = equal(denom,0)
+    denom = var(a,axis=axis)**2.0
+    zero = (denom == 0)
     tmp = sum(zero)
-    if type(denom) == ArrayType and tmp <> 0:
-        print "Number of zeros in akurtosis: ",tmp
+    if isinstance(denom, ArrayType) and tmp <> 0:
+        print "Number of zeros in kurtosis: ", tmp
     denom = denom + zero  # prevent divide-by-zero
-    vals = where(zero,0,moment(a,4,axis)/denom)
+    n = a.shape[axis]
+    vals = where(zero, 0, moment(a,4,axis)/denom*n/(n-1.0))
     if fisher:
         return vals - 3
     else:
         return vals
 
-
 def describe(a,axis=-1):
      """Returns several descriptive statistics of the passed array.  Axis
-     can equal None (ravel array first), an integer (the axis over
-     which to operate), or a sequence (operate over multiple axes).
-
+     can equal None (ravel array first), or an integer (the axis over
+     which to operate)
+     
      Returns: n, (min,max), mean, standard deviation, skew, kurtosis
      """
      a, axis = _chk_asarray(a, axis)
@@ -592,11 +594,13 @@ def skewtest(a,axis=-1):
         axis = 0
     b2 = skew(a,axis)
     n = float(a.shape[axis])
+    if n<8:
+        print "kurtosistest only valid for n>=8 ... continuing anyway, n=",n
     y = b2 * sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
     beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
     W2 = -1 + sqrt(2*(beta2-1))
     delta = 1/sqrt(log(sqrt(W2)))
-    alpha = sqrt(2/(W2-1))
+    alpha = sqrt(2.0/(W2-1))
     y = where(equal(y,0),1,y)
     Z = delta*log(y/alpha + sqrt((y/alpha)**2+1))
     return Z, (1.0-zprob(Z))*2
@@ -614,7 +618,7 @@ Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
     a, axis = _chk_asarray(a, axis)
     n = float(a.shape[axis])
     if n<20:
-        print "akurtosistest only valid for n>=20 ... continuing anyway, n=",n
+        print "kurtosistest only valid for n>=20 ... continuing anyway, n=",n
     b2 = kurtosis(a,axis)
     E = 3.0*(n-1) /(n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
@@ -638,14 +642,20 @@ curve.  Can operate over multiple axes.  Axis can equal
 None (ravel array first), an integer (the axis over which to
 operate), or a sequence (operate over multiple axes).
 
-Returns: z-score and 2-tail probability
+Omnibus test of D'Agostino and Pearson, 1973
+
+Returns: Score and 2-tail probability
 """
     a, axis = _chk_asarray(a, axis)
     s,p = skewtest(a,axis)
     k,p = kurtosistest(a,axis)
-    k2 = power(s,2) + power(k,2)
+    k2 = s*s + k*k
     return k2, chisqprob(k2,2)
 
+# Shapiro-Wilk W test
+# Anderson-Darling Test
+# Martinez-Iglewicz test
+# K-S test
 
 #####################################
 ######  AFREQUENCY FUNCTIONS  #######
@@ -865,30 +875,29 @@ Returns: array containing the value of (mean/stdev) along axis,
     return where(equal(sd,0),0,m/sd)
 
 
-def var(a, axis=-1):
+def var(a, axis=-1, bias=0):
     """
 Returns the estimated population variance of the values in the passed
 array (i.e., N-1).  Axis can equal None (ravel array first), or an
 integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    #mn = expand_dims(mean(a,axis),axis+1)
-    mn = mean(a,axis)
-    mn_shape = list(shape(a))
-    mn_shape[axis] = 1
-    mn.shape = mn_shape
+    mn = expand_dims(mean(a,axis),axis)
     deviations = a - mn
     n = a.shape[axis]
     var = ss(deviations,axis)/(n-1.0)
-    return var
+    if bias:
+        return var * (n-1.0)/n
+    else:
+        return var
 
-def std (a, axis=-1):
+def std (a, axis=-1, bias=0):
     """
 Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
 first), or an integer (the axis over which to operate).
 """
-    return sqrt(var(a,axis))
+    return sqrt(var(a,axis,bias))
 
 
 def stderr (a, axis=-1):

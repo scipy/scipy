@@ -47,6 +47,7 @@ scipy_zeros_functions_func(double x, void *params)
     val = PyFloat_AsDouble(retval=PyObject_CallObject(f,args));
     Py_XDECREF(retval);
     if (PyErr_Occurred()) {
+        fprintf(stderr, "Internal Error occured.\n");
         longjmp(myparams->env, 1);
     }
     return val;    
@@ -65,7 +66,6 @@ call_solver(double (*solver)(), PyObject *self, PyObject *args)
     jmp_buf env;
     PyObject *f,*xargs,*item,*fargs=NULL;
 
-    
     if (!PyArg_ParseTuple(args,"OdddiOi|i",&f,&a,&b,&xtol,&iter,&xargs,&fulloutput,&disp)) 
         {
             PyErr_SetString(PyExc_RuntimeError,"Unable to parse arguments");
@@ -91,6 +91,7 @@ call_solver(double (*solver)(), PyObject *self, PyObject *args)
     for (i = 0; i < len; i++) {
         item = PyTuple_GetItem(xargs, i);
         if (item == NULL) { Py_DECREF(fargs); return NULL;}
+        Py_INCREF(item);
         PyTuple_SET_ITEM(fargs,i+1,item);
     }
 
