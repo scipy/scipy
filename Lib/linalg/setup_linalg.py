@@ -5,8 +5,16 @@ from distutils import dep_util
 from glob import glob
 import warnings
 
-# XXX: system_info.py should set the following values
+# XXX: system_info.py should set the following values.
+
+# Changing atlas_version_pre_3_3 value requires
+#  rm -f clapack.pyf
+# before rebuilding.
 atlas_version_pre_3_3 = 0
+
+# Changing skip_single_routines value requires
+#  rm -f {clapack,flapack,cblas,fblas}.pyf
+# before rebuilding.
 skip_single_routines = 0
 
 if sys.platform == 'win32':

@@ -96,7 +96,7 @@ errors like
 
   ImportError: .../fblas.so: undefined symbol: srotmg_
 
-Fix
+Fix:
   Use ATLAS or the official release of BLAS libraries.
 
 LAPACK library provided by ATLAS is incomplete
@@ -111,13 +111,25 @@ of liblapack.a is shown by executing
 
     python scipy_distutils/system.py
 
-Fix
+Fix:
   Follow the instructions in
 
     http://math-atlas.sourceforge.net/errata.html#completelp
 
   to create a complete liblapack.a. Then copy liblapack.a to the same
   location where libatlas.a is installed and retry with scipy build.
+
+Using ATLAS 3.2.1
+-----------------
+If import clapack fails with the following error
+  
+  ImportError: .../clapack.so : undefined symbol: clapack_sgetri
+
+then you most probably have ATLAS 3.2.1.
+Fix:
+  1) Set atlas_version_pre_3_3=1 in scipy/linalg/setup_linalg.py
+  2) Remove scipy/linalg/clapack.pyf
+  3) Rebuild/reinstall scipy.
 
 
 TROUBLESHOOTING
@@ -151,6 +163,9 @@ lists. Please include the following information to your message:
 8) Feel free to add any other relevant information. For example, the
    full output (both stdout and stderr) of the SciPy installation
    command can be very helpful.
+9) In case of failing to import extension modules, the output of
+     ldd /path/to/ext_module.so
+   can be informative.
 
 You may find the following notes useful:
   http://www.tuxedo.org/~esr/faqs/smart-questions.html

@@ -46,8 +46,13 @@ WARNING: Importing clapack failed with the following exception:
 %s
 -----------
 See scipy/INSTALL.txt for troubleshooting.
-Note that if atlas library is not found by scipy/system_info.py,
-then scipy skips building clapack and uses flapack instead.
+Notes:
+* If atlas library is not found by scipy/system_info.py,
+  then scipy skips building clapack and uses flapack instead.
+* If import clapack failed because of missing clapack_* symbols
+  then you probably have ATLAS 3.2.1. In that case, set
+  atlas_version_pre_3_3=1 in linalg/setup_linalg.py and rebuild
+  scipy.
 ****************************************************************
 """ %(clapack.__doc__)
 
