@@ -421,7 +421,7 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "cbrt", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtrc_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chi2cdfc", chi2cdfc_doc, 1);
-	PyDict_SetItemString(dictionary, "chdtrc", f);
+	PyDict_SetItemString(dictionary, "chi2cdfc", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2_functions, chdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chi2cdf", chi2cdf_doc, 1);
 	PyDict_SetItemString(dictionary, "chi2cdf", f);
