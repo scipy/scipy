@@ -1537,8 +1537,12 @@ static float ranf;
 /*
      4.656613057E-10 is 1/M1  M1 is set in a data statement in IGNLGI
       and is currently 2147483563. If M1 changes, change this also.
+
+     Previous number is to big for real return values if doubles are converted
+     to floats by rounding. Use 4.6566129186138838e-10 instead. Thank you, Chuck
+     Harris, for contributing this fix.
 */
-    ranf = ignlgi()*4.656613057E-10;
+    ranf = ignlgi()*4.6566129186138838e-10;
     return ranf;
 }
 void setgmn(float *meanv,float *covm,long p,float *parm)
