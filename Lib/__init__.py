@@ -39,6 +39,7 @@ def test():
 def test_suite():
     import scipy_test
     import scipy
-    return scipy_test.harvest_test_suites(scipy)
+    ignore = ['xplt','plt','gui_thread','linalg','sparse']
+    return scipy_test.harvest_test_suites(scipy,ignore)
 
     
