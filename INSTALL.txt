@@ -7,7 +7,7 @@ SciPy requires the following software installed:
 1) Python 2.1.x or 2.2.x
    http://www.python.org
 2) Numerical Python 20.x or 21.x
-   http://www.pfdubois.com/numpy/
+   http://www.numpy.org/
 3) ATLAS 3.3.xx
    http://math-atlas.sourceforge.net/
 XXX: Need notes to follow when building ATLAS
