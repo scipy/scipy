@@ -100,8 +100,9 @@ def register(wx_class):
         #print 'proxy generated'
         return proxify(wx_class)
     else:
-        wx_class.init2 = wx_class.__init__
-        wx_class.__init__ = plain_class__init__
+        if not hasattr(wx_class, 'init2'):
+            wx_class.init2 = wx_class.__init__
+            wx_class.__init__ = plain_class__init__
         return wx_class
 
 def plain_class__init__(self,*args,**kw):
@@ -197,7 +198,7 @@ def generate_method(method,wx_class):
     body = """def %(method)s(self,*args,**kw):
                 \"\"\"%(documentation)s\"\"\"
                 %(pre_test)s
-                from gui_thread_guts import proxy_event, print_exception, smart_return
+                from gui_thread_guts import proxy_event, smart_return
                 %(import_statement)s #import statement
                 finished = threading.Event()
                 # remove proxies if present
@@ -207,8 +208,7 @@ def generate_method(method,wx_class):
                 self.post(evt)
                 finished.wait()
                 if finished.exception_info:
-                    print_exception(finished.exception_info)
-                    raise finished.exception_info['type'],finished.exception_info['value']
+                    raise finished.exception_info[0],finished.exception_info[1]
                 %(results)s #results\n""" %locals()
     #if method == '__init__':
     #    print body
