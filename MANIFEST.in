@@ -1,3 +1,4 @@
 #prune scipy_core
 include setup.py
 include *.txt
+include scipy_core/scipy_base/_compiled_base.c
