@@ -381,7 +381,8 @@ class test_cephes(ScipyTestCase):
     def check_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
     def check_pro_ang1_cv(self):
-        assert_equal(cephes.pro_ang1_cv(1,1,1,1,0),(1.0,0.0))
+        assert_array_almost_equal(cephes.pro_ang1_cv(1,1,1,1,0),
+                                  array((1.0,0.0)))
     def _check_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
     def check_pro_rad1(self):
