@@ -22,7 +22,7 @@ set_package_path()
 import scipy_base
 from scipy_base import dot,sqrt
 import linalg
-from linalg import signm,logm,funm
+from linalg import signm,logm,funm, sqrtm
 del sys.path[0]
 
 import unittest
@@ -81,8 +81,6 @@ class test_logm(ScipyTestCase):
                    [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
         logm((identity(7)*3.1+0j)-a)
 
-def _sqrtm(a):
-    return funm(a,sqrt)
 
 class test_sqrtm(ScipyTestCase):
     def check_bad(self):
@@ -98,10 +96,8 @@ class test_sqrtm(ScipyTestCase):
                     [0,0,se,0],
                     [0,0,0,1]])
         assert_array_almost_equal(dot(sa,sa),a)
-        esa = _sqrtm(a)
+        esa = sqrtm(a)
         assert_array_almost_equal(dot(esa,esa),a)
-        print sa
-        print _sqrtm(a)
 
 
 if __name__ == "__main__":

@@ -3,19 +3,19 @@
 #
 
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm','signm']
+           'tanhm','logm','funm','signm','sqrtm']
 
 from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
-     isfinite
+     isfinite, sqrt
 from Matrix import Matrix as mat
-import scipy_base
-from basic import solve, LinAlgError, inv, norm, triu
+import scipy_base as sb
+from basic import solve, LinAlgError, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, eigvals, svd
 
-eps = scipy_base.limits.double_epsilon
-feps = scipy_base.limits.float_epsilon
+eps = sb.limits.double_epsilon
+feps = sb.limits.float_epsilon
 
 def expm(A,q=7):
     """Compute the matrix exponential using Pade approximation of order q.
@@ -89,7 +89,7 @@ def toreal(arr,tol=None):
     if tol is None:
         tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.typecode()]]
     if (arr.typecode() in ['F', 'D']) and \
-       scipy_base.allclose(arr.imag, 0.0, atol=tol):
+       sb.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
  
@@ -257,11 +257,11 @@ def signm(a,disp=1):
     # Shifting to avoid zero eigenvalues. How to ensure that shifting does
     # not change the spectrum too much?
     vals = svd(a,compute_uv=0)
-    max_sv = scipy_base.amax(vals)
+    max_sv = sb.amax(vals)
     #min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     #c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = a + c*scipy_base.identity(a.shape[0])
+    S0 = a + c*sb.identity(a.shape[0])
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)
@@ -277,3 +277,50 @@ def signm(a,disp=1):
         return S0
     else:
         return S0, errest
+
+def sqrtm(A,disp=1):
+    """Matrix square root
+
+    If disp is non-zero display warning if singular matrix.
+    If disp is zero then return residual ||A-X*X||_F / ||A||_F
+
+    Uses algorithm by Nicholas J. Higham
+    """
+    A = asarray(A)
+    if len(A.shape)!=2:
+        raise ValueError, "Non-matrix input to matrix function."    
+    if A.typecode() in ['F', 'D']:
+        cmplx_type = 1
+    else:
+        cmplx_type = 0
+    T, Z = schur(A)
+    T, Z = rsf2csf(T,Z)
+    n,n = T.shape
+
+    R = sb.zeros((n,n),T.typecode())
+    for j in range(n):
+        R[j,j] = sqrt(T[j,j])
+        for i in range(j-1,-1,-1):
+            s = 0
+            for k in range(i+1,j):
+                s = s + R[i,k]*R[k,j]
+            R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
+
+    R, Z = all_mat(R,Z)
+    X = (Z * R * Z.H)
+
+    if disp:
+        nzeig = sb.any(sb.diag(T)==0)
+        if nzeig:
+            print "Matrix is singular and may not have a square root."
+        return X.A
+    else:
+        arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
+        return X.A, arg2
+
+    
+
+
+
+
+

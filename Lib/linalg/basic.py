@@ -5,7 +5,8 @@
 
 __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
            'tri','tril','triu','toeplitz','hankel','lu_solve',
-           'cho_solve','solve_banded','LinAlgError']
+           'cho_solve','solve_banded','LinAlgError','kron',
+           'all_mat']
 
 #from blas import get_blas_funcs
 from lapack import get_lapack_funcs
@@ -487,6 +488,21 @@ def hankel(c,r=None):
            rows[NewAxis,:]*ones((cN,1)) - 1
     return take(vals, indx)
 
-def all_mat(args):
+def all_mat(*args):
     return map(Matrix.Matrix,args)
 
+def kron(a,b):
+    """kronecker product of a and b
+
+    Kronecker product of two matrices is block matrix
+    [[ a[ 0 ,0]*b, a[ 0 ,1]*b, ... , a[ 0 ,n-1]*b  ],
+     [ ...                                   ...   ],
+     [ a[m-1,0]*b, a[m-1,1]*b, ... , a[m-1,n-1]*b  ]]
+    """
+    if not a.iscontiguous():
+        a = reshape(a, a.shape)
+    if not b.iscontiguous():
+        b = reshape(b, b.shape)
+    o = outerproduct(a,b)
+    o.shape = a.shape + b.shape
+    return concatenate(concatenate(o, axis=1), axis=1)
