@@ -1,5 +1,5 @@
 
-from pre___init__ import __doc__
+from info_xplt import __doc__
 
 #try:
 #    import tkgist

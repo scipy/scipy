@@ -6,25 +6,7 @@ Available subpackages
 ---------------------
 
 """
-
-"""
-SciPy has levels
-Level 0 -- Numeric and core routines in scipy_base
-
-Level 1 -- Level 0 + fft, special, linalg, stats
-Level 1a -- Core routines which depend on Level 1.
-
-Level 2 -- plotting interface.
-
-Level 3
-Packages which define own functions plus depend on Levels 0-2.
-
-Level 0, 1, 2 should be imported in order and then other levels imported
-  as available.
-"""
-
-# Level 0
-# modules to import under the scipy namespace
+# Modules to import under the scipy namespace
 from scipy_version import scipy_version as __version__
 from scipy_base import *
 from helpmod import *
@@ -107,18 +89,14 @@ def _import_packages():
 _import_packages()
 del _import_packages
 
+#Packages installed standalone:
+weave = ppimport('weave');             _level_docs(weave)
+wxPython_thread = ppimport_attr(ppimport('gui_thread'),wxPython_thread)
+
 #----------------------------------#
 
 from common import *
 from pilutil import *
-
-#Packages installed standalone:
-weave = ppimport('weave');             _level_docs(weave)
-
-# Level 3
-xplt = ppimport('xplt');               _level_docs(xplt)
-gplt = ppimport('gplt');               _level_docs(gplt)
-plt = ppimport('plt');                 _level_docs(plt)
 
 #---- testing ----#
 

@@ -2,7 +2,7 @@
 # plt - Plotting with wxPython
 #
 
-from pre___init__ import __doc__
+from info_plt import __doc__
 
 from wxplt import *
 from plot_objects import *

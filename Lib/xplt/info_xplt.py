@@ -1,6 +1,6 @@
 """
 Plotting routines based on Gist 
-===================================================
+===============================
 
   All Gist functions are also available as xplt.<command>
   xplt.ghelp('plsys')
@@ -34,7 +34,11 @@ used with Yorick.  Simpler, higher-level commands are provided in this
 module, but all of the low-level commands of gist are still available under
 the xplt namespace.
 
-See http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist_html/pygist.html
+See
+
+  http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist_html/pygist.html
 
 for more information on the gist package and it's commands.
 """
+
+postpone_import = 1
