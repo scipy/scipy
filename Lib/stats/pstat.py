@@ -16,37 +16,39 @@ functions include:
 
       abut (source,*args):  
       simpleabut (source, addon):
-      colex (listoflists,cnums):
-      collapse (listoflists,keepcols,collapsecols,sterr=None,ns=None):
-      dm (listoflists,criterion):
+  **  colex (arr,cnums):
+  **  collapse (arr,keepcols,collapsecols,sterr=None,ns=None):
+      dm (arr,criterion):
       get (namepattern,verbose=1):
       getstrings (namepattern):
-      linexand (listoflists,columnlist,valuelist):
-      linexor (listoflists,columnlist,valuelist):
+      linexand (arr,columnlist,valuelist):
+      linexor (arr,columnlist,valuelist):
       linedelimited (inlist,delimiter):
       lineincols (inlist,colsize):
       lineincustcols (inlist,colsizes):
       list2string (inlist):
       printcc (lst,extra=2):
-      printincols (listoflists,colsize):
-      pl (listoflists):
-      printl(listoflists):
+      printincols (arr,colsize):
+      pl (arr):
+      printl(arr):
       put (outlist,fname,writetype='w'):
       replace (lst,oldval,newval):
-      recode (inlist,listmap,cols='all'):
-      remap (listoflists,criterion):
-      sortby(listoflists,sortcols):
+  **  recode (inlist,listmap,cols='all'):
+      remap (arr,criterion):
+      rowcompare (row1, row2)
+      rowsame (row1, row2)
+      sortby(arr,sortcols):
       unique (inlist):
-      writecc (listoflists,file,extra=2,writetype='w'):
-      writedelimited (listoflists, delimiter, file, writetype='w'):
-
+      writecc (arr,file,extra=2,writetype='w'):
+      writedelimited (arr, delimiter, file, writetype='w'):  
 
 Currently, the code is all but completely un-optimized.  In many cases, the
 array versions of functions amount simply to aliases to built-in array
 functions/methods.  Their inclusion here is for function name consistency.
 Additions, suggestions, or comments are welcome (strang@nmr.mgh.harvard.edu).
-(Note: this file has been modified, and therefore comments should be sent to scipy-users
-or scipy-dev mailing list).
+
+(Note: this file has been modified, and therefore comments should be sent
+to scipy-users@scipy.org or scipy-dev@scipy.org).
 """
 
 import string, sys, os, copy, math, stats
@@ -440,7 +442,7 @@ def colex (a,indices,axis=1):
     return cols
 
 
-def collapse (a,keepcols,collapsecols,sterr=0,ns=0):
+def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
     """Averages data in collapsecol, keeping all unique items in keepcols
     (using unique, which keeps unique LISTS of column numbers), retaining
     the unique sets of values in keepcols, the mean for each.  If the sterr or
@@ -450,10 +452,12 @@ def collapse (a,keepcols,collapsecols,sterr=0,ns=0):
     by keepcols, abutted with the mean(s) of column(s) specified by
     collapsecols
     """
+    if cfcn = None:
+        cfcn = stats.mean
     a = asarray(a)
     if keepcols == []:
-        avgcol = acolex(a,collapsecols)
-        means = N.sum(avgcol)/float(len(avgcol))
+        avgcol = colex(a,collapsecols)
+        means = cfcn(avgcol)
         return means
     else:
         if type(keepcols) not in [ListType,TupleType,N.ArrayType]:
@@ -465,10 +469,10 @@ def collapse (a,keepcols,collapsecols,sterr=0,ns=0):
         for item in uniques:
             if type(item) not in [ListType,TupleType,N.ArrayType]:
                 item =[item]
-            tmprows = alinexand(a,keepcols,item)
+            tmprows = linexand(a,keepcols,item)
             for col in collapsecols:
-                avgcol = acolex(tmprows,col)
-                item.append(stats.mean(avgcol))
+                avgcol = colex(tmprows,col)
+                item.append(cfcn(avgcol))
                 if sterr:
                     if len(avgcol)>1:
                         item.append(stats.sterr(avgcol))
@@ -637,7 +641,7 @@ def rowcompare(row1, row2):
     """Compares two rows from an array, regardless of whether it is an
     array of numbers or of python objects (which requires the cmp function).
     
-    Format:  arowcompare(row1,row2)
+    Format:  rowcompare(row1,row2)
     Returns: an array of equal length containing 1s where the two rows had
     identical elements and 0 otherwise.
     """
@@ -652,11 +656,11 @@ def rowsame(row1, row2):
     """Compares two rows from an array, regardless of whether it is an
     array of numbers or of python objects (which requires the cmp function).
     
-    Format:  arowsame(row1,row2)
+    Format:  rowsame(row1,row2)
     Returns: 1 if the two rows are identical, 0 otherwise.
     """
     
-    cmpval = N.alltrue(arowcompare(row1,row2))
+    cmpval = N.alltrue(rowcompare(row1,row2))
     return cmpval
 
 def sortrows(a,axis=0):

@@ -17,7 +17,7 @@
 # strang@nmr.mgh.harvard.edu).
 #
 
-# Adapted for use by SciPy 2002
+# Adapted for use by SciPy 2002 by Travis Oliphant
 """
 stats.py module
 
@@ -75,7 +75,7 @@ VARIABILITY:  obrientransform
               signaltonoise (for arrays only)
               var
               stdev
-              sterr
+              stderr
               sem
               z
               zs
@@ -111,7 +111,7 @@ PROBABILITY CALCS:  chisqprob
                     gammln 
                     betai
 
-  *** SEE ALSO: the scipy.special package also has statistical calculation functions. ***
+  *** SEE ALSO: the scipy.special package also has statistical calculation functions. which are imported here too.***
 
 ANOVA FUNCTIONS:  anova (NumPy required)
                   F_oneway
@@ -132,8 +132,9 @@ SUPPORT FUNCTIONS:  writecc
 """
 ## CHANGE LOG:
 ## ===========
-## 02-02-10 ... require Numeric, eliminate "list-only" functions (only 1 set of functions now
-###             and no Dispatch class), removed all references to aXXXX functions.
+## 02-02-10 ... require Numeric, eliminate "list-only" functions 
+##              (only 1 set of functions now and no Dispatch class),
+##              removed all references to aXXXX functions.
 ## 00-04-13 ... pulled all "global" statements, except from aanova()
 ##              added/fixed lots of documentation, removed io.py dependency
 ##              changed to version 0.5
@@ -896,7 +897,7 @@ an array with the same number of axes as a.
     return sqrt(avar(a,axis,keepdims))
 
 
-def sterr (a, axis=None, keepdims=0):
+def stderr (a, axis=None, keepdims=0):
     """
 Returns the estimated population standard error of the values in the
 passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -940,7 +941,7 @@ that score came.  Not appropriate for population calculations, nor for
 arrays > 1D.
 
 """
-    z = (score-amean(a)) / samplestd(a)
+    z = (score-mean(a)) / samplestd(a)
     return z
 
 
@@ -1253,7 +1254,7 @@ Calculates a regression line on two arrays, x and y, corresponding to x,y
 pairs.  If a single 2D array is passed, alinregress finds dim with 2 levels
 and splits data into x,y pairs along that dim.
 
-Returns: slope, intercept, r, two-tailed prob, sterr-of-the-estimate
+Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
 """
     TINY = 1.0e-20
     if len(args) == 1:  # more than 1D array?
@@ -1835,7 +1836,7 @@ lists-of-lists.
     #
     # Eliminate replications for the same subject in same condition as well as
     # within-subject repetitions, keep as list
-    M = pstat.collapse(data,Bscols,-1,None,None,mean)
+    M = pstat.collapse(data,Bscols,-1,0,0)
     # Create an arrays of Nblevels shape (excl. subj dim)
     Marray = zeros(Nblevels[1:],'f')
     Narray = zeros(Nblevels[1:],'f')
@@ -1890,7 +1891,7 @@ lists-of-lists.
             dindex = dindex + 1
 
     # Collapse multiple repetitions on the same subject and same condition
-    cdata = pstat.collapse(data,range(Nfactors+1),-1,None,None,mean)
+    cdata = pstat.collapse(data,range(Nfactors+1),-1,0,0)
 
     # Find a value that's not a data score with which to fill the array DA
     dummyval = -1
@@ -2135,14 +2136,15 @@ lists-of-lists.
             SSlist.append(SS)
             SSsources.append(source)
 
-            collapsed = pstat.collapse(M,btwcols,-1,None,len,mean)
+            collapsed = pstat.collapse(M,btwcols,-1,0,1)
             # Obviously needed for-loop to get source cell-means embedded in collapse fcns
-            contrastmns = pstat.collapse(collapsed,btwsourcecols,-2,sterr,len,mean)
+            contrastmns = pstat.collapse(collapsed,btwsourcecols,-2,1,1)
             # Collapse again, this time SUMMING instead of averaging (to get cell Ns)
-            contrastns = pstat.collapse(collapsed,btwsourcecols,-1,None,None,
+            contrastns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
                                         sum)
+                
             # Collapse again, this time calculating harmonicmeans (for hns)
-            contrasthns = pstat.collapse(collapsed,btwsourcecols,-1,None,None,
+            contrasthns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
                                          harmonicmean)
             # CALCULATE *BTW-SUBJ* dfnum, dfden
             sourceNs = pstat.colex([Nlevels],makelist(source-1,Nfactors+1))
@@ -2274,7 +2276,7 @@ lists-of-lists.
         # PRINT OUT ALL MEANS AND Ns FOR THIS SOURCE (i.e., this combo of factors)
         #
         Lsource = makelist(source-1,Nfactors+1)
-        collapsed = pstat.collapse(cdata,Lsource,-1,sterr,len,mean)
+        collapsed = pstat.collapse(cdata,Lsource,-1,1,1)
 
         # First, get the list of level-combos for source cells
         prefixcols = range(len(collapsed[0][:-3]))
@@ -2284,7 +2286,7 @@ lists-of-lists.
         for col in Lsource:
             eff.append(effects[col-1])
         # Add in the mean and N labels for printout
-        for item in ['MEAN','STERR','N']:
+        for item in ['MEAN','STDERR','N']:
             eff.append(item)
         # To the list of level-combos, abut the corresp. means and Ns
         outlist = pstat.abut(outlist,

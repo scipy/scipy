@@ -8,7 +8,7 @@ methods appear (alphabetically within groups) in the class <_pranv> source:
 
                             U t i l i t i e s
 ------------------------------------------------------------------------------
-initialize(file_string=None, algorithm='CMRG', seed=0L).....Restart generator.
+initialize(file_string=None, algorithm='cmrg', seed=0L).....Restart generator.
 initial_seed()........Return the seed used to start the current random series.
 random_algorithm()...........Return a 1-line description of current generator.
 random_count().......Return the number of randoms generated in current series.
@@ -17,7 +17,7 @@ save_state(file_string='prvstate.dat')......Save class <_pranv> state to disk.
 
        U n i f o r m   R a n d o m   N u m b e r   G e n e r a t o r
 ------------------------------------------------------------------------------
-random(buffer=None).....Return float from the chosen generator('CMRG', 'Flip',
+random(size=None).....Return float from the chosen generator('CMRG', 'Flip',
     'SMRG' or 'Twister'), or return <None> and fill <buffer> if it was
     supplied.  The expected mean and standard deviation from any of the
     uniform(0,1) generators in the test program below are 0.500 and 0.289,
@@ -27,34 +27,34 @@ random(buffer=None).....Return float from the chosen generator('CMRG', 'Flip',
 
    N o n  -  U n i f o r m   R a n d o m   N u m b e r   G e n e r a t o r s
 ------------------------------------------------------------------------------
-beta(mu=4.0, nu=2.0, buffer=None)..................default mean 0.67, SD 0.18.
-binomial(trials=25, pr_success=0.5, buffer=None)...default mean 12.5, SD 2.50.
-Cauchy(median=0.0, scale=1.0, buffer=None).................(no moments exist).
-chi_square(df=10.0, buffer=None)...................default mean 10.0, SD 4.50.
-choice(seq=(0,1), buffer=None).....................default mean 0.50, SD 0.50.
-exponential(scale=1.0, buffer=None)................default mean 1.00, SD 1.00.
-Fisher_F(numdf=2.0, denomdf=10.0, buffer=None).....default mean 1.25, SD 1.60.
-gamma(mu=2.0, buffer=None).........................default mean 2.00, SD 1.40.
-geometric(pr_failure=0.5, buffer=None).............default mean 1.00, SD 1.40.
-Gumbel(mode=0.0, scale=1.0, buffer=None)...........default mean 0.58, SD 1.30.
-hypergeometric(bad=10, good=25, sample=10, buffer=None)deflt mn 2.86, SD 1.22
-Laplace(mu=0.0, scale=1.0, buffer=None)............default mean 0.00, SD 1.40.
-logarithmic(p=0.5, buffer=None)....................default mean 1.44, SD 0.90
-logistic(mu=0.0, scale=1.0, buffer=None)...........default mean 0.00, SD 1.80.
-lognormal(mu=0.0, sigma=1.0, buffer=None)..........default mean 1.65, SD 2.20.
-negative_binomial(r=1.0, pr_failure=0.5, buffer=None)  deflt mn 1.00, SD 1.40.
-normal(mu=0.0, sigma=1.0, buffer=None).............default mean 0.00, SD 1.00.
-Pareto(mode=1.0, shape=4.0, buffer=None)...........default mean 1.33, SD 0.47.
-Poisson(rate=1.0, buffer=None).....................default mean 1.00, SD 1.00.
-randint(lowint=0, upint=1, buffer=None)............default mean 0.50, SD 0.50.
-Rayleigh(mode=1.0, buffer=None)....................default mean 1.25, SD 0.65.
-Student_t(df=100.0, buffer=None)...................default mean 0.00, SD 1.01.
-triangular(left=0.0, mode=0.5, right=1.0, buffer=None) deflt mn 0.50, SD 0.20.
-uniform(lower=-0.5, upper=0.5, buffer=None)........default mean 0.00, SD 0.29.
-von_Mises(mean=0.0, shape=1.0, buffer=None)........default mean 0.00, SD 1.30.
-Wald(mean=1.0, scale=1.0, buffer=None).............default mean 1.00, SD 1.00.
-Weibull(scale=1.0, shape=0.5, buffer=None).........default mean 2.00, SD 4.50.
-Zipf(a=4.0, buffer=None)...........................default mean 1.11, SD 0.54
+beta(mu=4.0, nu=2.0, size=None)..................default mean 0.67, SD 0.18.
+binomial(trials=25, pr_success=0.5, size=None)...default mean 12.5, SD 2.50.
+cauchy(median=0.0, scale=1.0, size=None).................(no moments exist).
+chi2(df=10.0, size=None)...................default mean 10.0, SD 4.50.
+choice(seq=(0,1), size=None).....................default mean 0.50, SD 0.50.
+exponential(scale=1.0, size=None)................default mean 1.00, SD 1.00.
+fisher_f(numdf=2.0, denomdf=10.0, size=None).....default mean 1.25, SD 1.60.
+gamma(mu=2.0, size=None).........................default mean 2.00, SD 1.40.
+geometric(pr_failure=0.5, size=None).............default mean 1.00, SD 1.40.
+gumbel(mode=0.0, scale=1.0, size=None)...........default mean 0.58, SD 1.30.
+hypergeometric(bad=10, good=25, sample=10, size=None)deflt mn 2.86, SD 1.22
+laplace(mu=0.0, scale=1.0, size=None)............default mean 0.00, SD 1.40.
+logarithmic(p=0.5, size=None)....................default mean 1.44, SD 0.90
+logistic(mu=0.0, scale=1.0, size=None)...........default mean 0.00, SD 1.80.
+lognormal(mu=0.0, sigma=1.0, size=None)..........default mean 1.65, SD 2.20.
+negative_binomial(r=1.0, pr_failure=0.5, size=None)  deflt mn 1.00, SD 1.40.
+normal(mu=0.0, sigma=1.0, size=None).............default mean 0.00, SD 1.00.
+pareto(mode=1.0, shape=4.0, size=None)...........default mean 1.33, SD 0.47.
+poisson(rate=1.0, size=None).....................default mean 1.00, SD 1.00.
+randint(lowint=0, upint=1, size=None)............default mean 0.50, SD 0.50.
+rayleigh(mode=1.0, size=None)....................default mean 1.25, SD 0.65.
+student_t(df=100.0, size=None)...................default mean 0.00, SD 1.01.
+triangular(left=0.0, mode=0.5, right=1.0, size=None) deflt mn 0.50, SD 0.20.
+uniform(lower=-0.5, upper=0.5, size=None)........default mean 0.00, SD 0.29.
+von_mises(mean=0.0, shape=1.0, size=None)........default mean 0.00, SD 1.30.
+wald(mean=1.0, scale=1.0, size=None).............default mean 1.00, SD 1.00.
+weibull(scale=1.0, shape=0.5, size=None).........default mean 2.00, SD 4.50.
+zipf(a=4.0, size=None)...........................default mean 1.11, SD 0.54
 ------------------------------------------------------------------------------
 
  Geometrical Point Generators, and Routines for Sampling and Permutations
@@ -88,14 +88,32 @@ following conditions:
 ------------------------------------------------------------------------------
 """
 
+# Changed Feb-2002  by Travis E. Oliphant  <oliphant.travis@ieee.org>
+#  Altered interface so that functions take size argument and return an
+#  array of that size.
+
+
 #  Changed  27-Nov-98       begun 19-Sep-98  (Release 1.1 changes)
 #  Author:  Ivan Frohne
 #           HC31 Box 5236E
 #           Wasilla, AK 99654-9802
 #           frohne@alaska.net
 
+import Numeric as Num
+import types
 import string, time, array
 from math import sqrt, log, floor, acos, fmod, cos, exp, tan
+
+SequenceType = [types.TupleType, types.ListType, array.ArrayType, Num.ArrayType]
+
+def _check_shape(sh):
+   if type(sh) not in SequenceType:
+      raise ValueError, "Shape parameter must be a sequence."
+   for val in sh:
+      if not isinstance(val,types.IntType):
+         raise ValueError, "Each element of the shape parameter must be an integer."
+   prod = Num.product(sh)
+   return tuple(sh), prod
 
 class _pranv:
    """Encapsulating class for all random number generator methods and data
@@ -126,73 +144,73 @@ class _pranv:
 
 #     __init__()            Initialize <_pranv> instance _inst; called once.
 #     _build_iterator()     Construct _iterator; allocate _series, _ranbuf.
-#     _cmrg(buffer=None)    Fill ranbuf with random #s from algorithm 'CMRG'.
+#     _cmrg(size=None)    Fill ranbuf with random #s from algorithm 'cmrg'.
 #     _fill_ln_fac()        Calculate and store ln(n!) for n = 0 through 129.
-#     _flip(buffer=None)    Fill ranbuf with randoms from algorithm 'Flip'.
+#     _flip(size=None)    Fill ranbuf with randoms from algorithm 'flip'.
 #     _ln_factorial(n)      Return ln(n!), from ln_fac[n] or by calculation.
-#     _smrg(buffer=None)    Fill ranbuf with random #s from algorithm 'SMRG'.
-#     _twister(buffer=None) Fill ranbuf with randoms from algorithm 'Twister'.
+#     _smrg(size=None)    Fill ranbuf with random #s from algorithm 'sMRG'.
+#     _twister(size=None) Fill ranbuf with randoms from algorithm 'twister'.
 
 #            External (private, but aliased public) utility methods:
 
 #     _initial_seed()        Return the seed used to start this random series.
-#     _initialize(file_string=None, algorithm='CMRG', seed=0L)        Restart.
+#     _initialize(file_string=None, algorithm='cmrg', seed=0L)        Restart.
 #     _random_algorithm()    Return a 1-line description of current generator.
 #     _random_count()    Return number of randoms generated in current series.
-#     _random(buffer=None)             Return next pseudo-random uniform(0,1).
+#     _random(size=None)             Return next pseudo-random uniform(0,1).
 #     _save_state(file_string='prvstate.dat')      Save <_inst> state to disk.
 
 #  External (private, but aliased public) non-uniform random variate methods:
 
 #                                           returns...  range...
 #     ------------------------------------  ----------  ----------------
-#     _beta(mu=4.0, nu=2.0, buffer=None)    double      > 0.0, < 1.0
+#     _beta(mu=4.0, nu=2.0, size=None)    double      > 0.0, < 1.0
 #     _binomial(trials=25, pr_success=0.5,
-#                              buffer=None) integer     >= 0, <= trials
+#                              size=None) integer     >= 0, <= trials
 #     _Cauchy(median=0.0, scale=1.0,
-#                              buffer=None) double      unbounded
-#     _chi_square(df=10.0, buffer=None)     double      positive
-#     _choice(seq=(0,1), buffer=None)       <seq> item
-#     _exponential(scale=1.0, buffer=None)  double      positive
+#                              size=None) double      unbounded
+#     _chi_square(df=10.0, size=None)     double      positive
+#     _choice(seq=(0,1), size=None)       <seq> item
+#     _exponential(scale=1.0, size=None)  double      positive
 #     _Fisher_F(numdf=2.0, denomdf=10.0,
-#                              buffer=None) double      positive
-#     _gamma(mu=2.0, buffer=None)           double      positive
+#                              size=None) double      positive
+#     _gamma(mu=2.0, size=None)           double      positive
 #     _geometric(pr_failure=0.5,
-#                              buffer=None) integer     non-negative
+#                              size=None) integer     non-negative
 #     _Gumbel(mode=1.0, scale=1.0,
-#                              buffer=None) double      unbounded
+#                              size=None) double      unbounded
 #     _hypergeometric(bad=10, good=25,
-#                   sample=10, buffer=None) integer     >= max(0, sample-good)
+#                   sample=10, size=None) integer     >= max(0, sample-good)
 #                                                       <= min(sample, bad)
 #     _Laplace(mu=0.0, scale=1.0,
-#                              buffer=None) double      unbounded
-#     _logarithmic(p=0.5, buffer=None)      integer     positive
+#                              size=None) double      unbounded
+#     _logarithmic(p=0.5, size=None)      integer     positive
 #     _logistic(mu=0.0, scale=1.0,
-#                              buffer=None) double      unbounded
+#                              size=None) double      unbounded
 #     _lognormal(mu=0.0, sigma=1.0,
-#                              buffer=None) double      positive
+#                              size=None) double      positive
 #     _negative_binomial(r=1.0,
-#              pr_failure=0.5, buffer=None) integer     non-negative
+#              pr_failure=0.5, size=None) integer     non-negative
 #     _normal(mu=0.0, sigma=1.0,
-#                              buffer=None) double      unbounded
+#                              size=None) double      unbounded
 #     _Pareto(mode=1.0, shape=4.0,
-#                              buffer=None) double      > mode
-#     _Poisson(rate=1.0, buffer=None)       integer     non-negative
+#                              size=None) double      > mode
+#     _Poisson(rate=1.0, size=None)       integer     non-negative
 #     _randint(lowint=0, upint=1,
-#                              buffer=None) integer     >= lowint, <= upint
-#     _Rayleigh(mode=1.0, buffer=None)      double      positive
-#     _Student_t(df=100.0, buffer=None)     double      unbounded
+#                              size=None) integer     >= lowint, <= upint
+#     _Rayleigh(mode=1.0, size=None)      double      positive
+#     _Student_t(df=100.0, size=None)     double      unbounded
 #     _triangular(left=0.0, mode=0.5,
-#                   right=1.0, buffer=None) double      > left, < right
+#                   right=1.0, size=None) double      > left, < right
 #     _uniform(lower=-0.5, upper=+0.5,
-#                              buffer=None) double      > lower, < upper
+#                              size=None) double      > lower, < upper
 #     _von_Mises(mode=0.0, shape=1.0,
-#                              buffer=None) double      > -pi, < +pi
+#                              size=None) double      > -pi, < +pi
 #     _Wald(mean=1.0, scale=1.0,
-#                              buffer=None) double      positive
+#                              size=None) double      positive
 #     _Weibull(scale=1.0, shape=0.5,
-#                              buffer=None) double      positive
-#     _Zipf(a=4.0, buffer=None)             integer     positive
+#                              size=None) double      positive
+#     _Zipf(a=4.0, size=None)             integer     positive
 
 #           External (private, but aliased public) geometrical,
 #                permutation, and subsampling routines:
@@ -216,7 +234,7 @@ class _pranv:
       self._algorithm_name = '' # one-line aLgorithm description
       self._count = 0L     #  number of pseudorandoms generated in this series
       self._index = 0      #  index to output buffer array ranbuf[]
-      self._iterator = ((),)  # tuple of tuples used by 'Flip' and 'Twister'.
+      self._iterator = ((),)  # tuple of tuples used by 'flip' and 'twister'.
       self._ln_fac = array.array('d', 130*[0.0])    # ln(n!); n = 0 to 129;
                            #  double array used by some discrete generators.
       self._ranbuf = []    #  uniform(0,1) output buffer array; allocated in
@@ -241,7 +259,7 @@ class _pranv:
 
       _build_iterator()
 
-      'Flip' and 'Twister', pseudo-random integer generators which manipulate
+      'flip' and 'twister', pseudo-random integer generators which manipulate
       long series of integers, utilize a tuple of tuples to simplify and speed
       up the logic.  This function constructs the (global) tuple of tuples,
       <_iterator>, if it's not already there.  The array <_ranbuf> is
@@ -251,7 +269,7 @@ class _pranv:
       uniform(0,1) pseudo-random generator changes, by <_initialize()>."""
 
       if self._fillbuf == self._cmrg:
-         if self._ranbuf_size != 660:    # 'CMRG' does not use _iterator[].
+         if self._ranbuf_size != 660:    # 'cmrg' does not use _iterator[].
             del self._ranbuf
             self._ranbuf = array.array('d', 660*[0.0])     # output buffer
             self._ranbuf_size = 660
@@ -265,7 +283,7 @@ class _pranv:
             self._series = array.array('l',56*[0])
             del self._iterator
             self._iterator = 55 * [()]
-            i = 1                  # The 'Flip' _iterator is:
+            i = 1                  # The 'flip' _iterator is:
             j = 32                 # ( (1,32), (2,33), ..., (24,55), (25,1),
             while j < 56:          #    (26,2), ..., (55,31) ).  Note that
                self._iterator[i-1] = (i, j) # _iterator is global.  A list
@@ -575,10 +593,8 @@ class _pranv:
 
 #            External (private; aliased public) utility methods:
 
-   def _initialize(self, file_string=None, algorithm='CMRG', seed=0L):
+   def _initialize(self, file_string=None, algorithm='cmrg', seed=0L):
       """Set uniform algorithm and seed, or restore state from disk.
-
-      initialize(file_string=None, algorithm="CMRG', seed=0L)
 
       Called by <__init__()> or by user, via the alias <initialize()>.
       if <file_string> is specified, it can be a null string, indicating
@@ -586,7 +602,7 @@ class _pranv:
       blank or the string 'default', indicating that _pranv state is to be
       restored from the file with the default file name ('prvstate.dat'); or
       the path/file name of a file containing a _pranv state.  <algorithm> may
-      be 'CMRG', 'Flip', 'SMRG', or 'Twister'; see the documentation for
+      be 'cmrg', 'flip', 'smrg', or 'twister'; see the documentation for
       guidance.  <seed> is by default 0, indicating the system clock is to
       be used to determine algorithm starting value(s), or a Python long
       integer.  For some of the algorithms, a negative seed has a special
@@ -607,7 +623,6 @@ class _pranv:
          self._index = eval(inlist[5])
 
          pos = string.find(self._algorithm_name, ":")
-         algorithm = string.lower(self._algorithm_name[1: pos - 1])
          if algorithm == 'cmrg':
             self._fillbuf = self._cmrg       # Set generator function pointer.
 
@@ -826,18 +841,21 @@ class _pranv:
 
 #             Uniform(0,1) Pseudo-random Variate Generator
 
-   def _random(self, buffer=None):
+   def _random(self, size=None):
       """Return a single random uniform(0,1), or <None> and fill buffer.
 
       """
       i = self._index                        # local alias
-      if buffer:
+      if size is not None:
+         size, Ns = _check_shape(size)
+         buffer = zeros(Ns,Num.Float)
          buf = self._ranbuf                  # local alias
          ranlim = self._ranbuf_size          # local alias
-         for j in xrange( len(buffer) ):
+         for j in xrange( Ns ):
             i = i + 1
             if i == ranlim: self._fillbuf(); i = 0
             buffer[j] = buf[i]
+         return Num.reshape(buffer, size)
 
       else:
          i = i + 1
@@ -849,10 +867,10 @@ class _pranv:
 
 #             Non-Uniform(0,1) Pseudo-random Variate Generators
 
-   def _beta(self, mu=4.0, nu=2.0, buffer=None):
+   def _beta(self, mu=4.0, nu=2.0, size=None):
       """Return incomplete beta function random variates; mean mu/(mu+nu).
 
-      beta(mu=4.0, nu=2.0, buffer=None)
+      beta(mu=4.0, nu=2.0, size=None)
 
       Both <mu> and <nu> must be positive.  <buffer>, if specified, must be a
       mutable sequence (list or array).  It is filled with beta(mu,nu)
@@ -865,8 +883,10 @@ class _pranv:
          raise ValueError, 'both <mu> and <nu> must be positive'
 
       else:
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns
             j = 0
 
          else:
@@ -1005,11 +1025,12 @@ class _pranv:
                   return x
 
          self._index = i    # Restore ranbuf index and return (buffer filled).
+         return Num.reshape(buffer,size)
 
-   def _binomial(self, trials=25, pr_success=0.5, buffer=None):
+   def _binomial(self, trials=25, pr_success=0.5, size=None):
       """Return integer pseudo-random variates from a binomial distribution.
 
-      binomial(trials=25, pr_success=0.5, buffer=None)
+      binomial(trials=25, pr_success=0.5, size=None)
 
       <trials> must be an integer >= 1, and <pr_success> must be in the closed
       interval [0.0, 1.0].  <buffer>, if specified, must be a mutable sequence
@@ -1036,8 +1057,10 @@ class _pranv:
 
       elif d4 <= 10.5:      # n*min(p, 1-p) small; use inverse transformation.
          initial_pr = (1.0 - d3) ** n
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)            
+            out_len = Ns
             j = 0
 
          else:
@@ -1056,7 +1079,7 @@ class _pranv:
                sum = sum + pk
 
             if pr_success > 0.5: successes = n - successes
-            if buffer:
+            if size is not None:
                buffer[j] = successes
                j = j + 1
 
@@ -1075,8 +1098,12 @@ class _pranv:
          d11 = min( np1, floor(d4 + 7 * d6) )     # 7 is a precision constant.
          lf = self._ln_factorial                  # local alias
          d12 = lf(d10) + lf(n - d10)
-         if buffer: out_len = len(buffer)
-         else: out_len = 1
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns
+         else:
+            out_len = 1
          for j in xrange(out_len):
             while 1:
                i = i + 1                          # Generate two pseudo-random
@@ -1101,7 +1128,7 @@ class _pranv:
                   elif t >= 2 * log(x):
                      break                        # acceptance
 
-            if buffer:
+            if size is not None:
                buffer[j] = int(successes)
 
             else:
@@ -1109,11 +1136,12 @@ class _pranv:
                return int(successes)
 
       self._index = i             # Restore updated _ranbuf index and return.
+      return Num.reshape(buffer, size)
 
-   def _Cauchy(self, median=0.0, scale=1.0, buffer=None):
+   def _Cauchy(self, median=0.0, scale=1.0, size=None):
       """Return Cauchy random variates; parameters <median> and <scale>.
 
-      Cauchy(median=0.0, scale=1.0, buffer=None)
+      Cauchy(median=0.0, scale=1.0, size=None)
 
       <scale> must be positive.  If <buffer> is specified, it must be a
       mutable sequence (list or array).  It is filled with
@@ -1124,10 +1152,12 @@ class _pranv:
 
       else:
          i = self._index                             # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buflim = self._ranbuf_size               # local alias
             buf = self._ranbuf                       # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                x = buf[i]
@@ -1141,11 +1171,12 @@ class _pranv:
             return median + scale / tan(3.1415926535897931 * x)
 
       self._index = i  # Restore _ranbuf index and return; buffer[] is filled.
+      return Num.reshape(buffer, size) 
 
-   def _chi_square(self, df=10.0, buffer=None):
+   def _chi_square(self, df=10.0, size=None):
       """Return chi-square pseudo-random variates; <df> degrees of freedom.
 
-      chi_square(df=10.0, buffer=None)
+      chi_square(df=10.0, size=None)
 
       <df> must be positive.  If <buffer> is specified, it must be a mutable
       sequence (list or array).  It is filled with chi-square(df) pseudo-
@@ -1155,17 +1186,13 @@ class _pranv:
          raise ValueError, '<df> (degrees of freedom) must be positive'
 
       else:
-         if buffer:
-            gamma = self._gamma                   # local alias
-            for j in xrange( len(buffer) ):
-               buffer[j] = 2.0 * gamma(0.5 * df)
+         gamma = self._gamma                   # local alias
+         return 2.0*gamma(0.5*df,size=size)
 
-         else: return 2.0 * self._gamma(0.5 * df)
-
-   def _choice(self, seq=(0,1), buffer=None):
+   def _choice(self, seq=(0,1), size=None):
       """Return element k with probability 1/len(seq) from non-empty sequence.
 
-      choice(seq=(0,1), buffer=None)
+      choice(seq=(0,1), size=None)
 
       Default is a 0, 1 coin flip.  <seq> must not be empty.  If <buffer> is
       specified, it must be a mutable sequence.  It is filled with random
@@ -1177,14 +1204,17 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buflim = self._ranbuf_size            # local alias
             buf = self._ranbuf                    # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                x = buf[i]
                buffer[j] = seq[int( floor(x * lenseq) )]
+            return Num.reshape(buffer, size)
 
          else:
             i = i + 1
@@ -1195,10 +1225,10 @@ class _pranv:
 
       self._index = i  # Update _ranbuf index and return (buffer[] is filled).
 
-   def _exponential(self, scale=1.0, buffer=None):
+   def _exponential(self, scale=1.0, size=None):
       """Return exponential pseudo-random variates; scale-factor <scale>.
 
-      exponential(scale=1.0, buffer=None)
+      exponential(scale=1.0, size=None)
 
       <scale> is positive;  the density function is (1/scale)*exp(-x/scale).
       If <buffer is specified, it must be a mutable sequence (list or array).
@@ -1210,10 +1240,12 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buflim = self._ranbuf_size            # local alias
             buf = self._ranbuf                    # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                x = buf[i]
@@ -1227,12 +1259,13 @@ class _pranv:
             return -scal * log(x)
 
       self._index = i  # Restore _ranbuf index and return (buffer is filled).
+      return Num.reshape(buffer, size)
+      
 
-
-   def _Fisher_F(self, numdf=2.0, denomdf=10.0, buffer=None):
+   def _Fisher_F(self, numdf=2.0, denomdf=10.0, size=None):
       """Return F(numdf, denomdf) distribution pseudo-random variates.
 
-      Fisher_F(numdf=2.0, denomdf=10.0, buffer=None)
+      Fisher_F(numdf=2.0, denomdf=10.0, size=None)
 
       Both <numdf> and <denomdf> must be positive.  if <buffer> is specified,
       it must be a mutable sequence (list or array).  <buffer> is filled with
@@ -1243,19 +1276,13 @@ class _pranv:
 
       else:
          beta = self._beta           # local alias
-         if buffer:
-            for j in xrange( len(buffer) ):
-               x = beta(0.5 * numdf, 0.5 * denomdf)
-               buffer[j] = denomdf * x / ( numdf * (1.0 - x) )
+         x = beta(0.5 * numdf, 0.5 * denomdf, size=size)
+         return denomdf * x / (numdf * (1.0-x))
 
-         else:
-            x = beta(0.5 * numdf, 0.5 * denomdf)
-            return denomdf * x / ( numdf * (1.0 - x) )
-
-   def _gamma(self, mu=2.0, buffer=None):
+   def _gamma(self, mu=2.0, size=None):
       """Return pseudo-random variates from gamma distribution; mean <mu>.
 
-       gamma(mu=2.0, buffer=None)
+       gamma(mu=2.0, size=None)
 
        The gamma distribution is also known as the incomplete gamma function.
        <mu> must be positive.  If <buffer> is specified, it must be a mutable
@@ -1269,8 +1296,10 @@ class _pranv:
          i = self._index                  # local alias
          buf = self._ranbuf               # local alias
          buflim = self._ranbuf_size       # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -1335,12 +1364,13 @@ class _pranv:
                   return x
 
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)        
 
 
-   def _geometric(self, pr_failure=0.5, buffer=None):
+   def _geometric(self, pr_failure=0.5, size=None):
       """Return non-negative random integers from a geometric distribution.
 
-      geometric(pr_failure=0.5, buffer=None)
+      geometric(pr_failure=0.5, size=None)
 
       Z has the geometric distribution if it is the number of successes
       before the first failure in a series of independent Bernouli trials
@@ -1357,8 +1387,10 @@ class _pranv:
          i = self._index                  # local alias
          buf = self._ranbuf               # local alias
          buflim = self._ranbuf_size       # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -1401,11 +1433,12 @@ class _pranv:
                   return successes
 
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)         
 
-   def _Gumbel(self, mode=0.0, scale=1.0, buffer=None):
+   def _Gumbel(self, mode=0.0, scale=1.0, size=None):
       """Return Gumbel (extreme value) distribution pseudo-random variates.
 
-      Gumbel(mode=0.0, scale=1.0, buffer=None)
+      Gumbel(mode=0.0, scale=1.0, size=None)
 
       <scale> must be positive.  If <buffer> is specified, it must be a
       mutable sequence.  <buffer> is filled with Gumbel(mode, scale) RVs and
@@ -1415,10 +1448,12 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buflim = self._ranbuf_size            # local alias
             buf = self._ranbuf                    # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                u = buf[i]
@@ -1432,8 +1467,9 @@ class _pranv:
             return mode - scale * log( -log(u) )
 
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
+      return Num.reshape(buffer, size)
 
-   def _hypergeometric(self, bad=10, good=25, sample=10, buffer=None):
+   def _hypergeometric(self, bad=10, good=25, sample=10, size=None):
       """Return hypergeometric pseudorandom variates: #"bad" in <sample>
 
       hypergeometric(bad=10, good=25, sample=10)
@@ -1442,7 +1478,7 @@ class _pranv:
       in a sample of size <sample> from a population of size <bad> + <good>
       items.  <bad>, <good> and <sample> must be positive integers.  Also,
       <bad> + <good> >= <sample> >= 1.  The result  Z satisfies:
-      max(0, <sample> - <good>) <= Z <= min(<sample>, <bad>).  If buffer is
+      max(0, <sample> - <good>) <= Z <= min(<sample>, <bad>).  if shape is not None is
       supplied, it must be a mutable sequence (list or array).  It is filled
       with hypergeometric pseudo-random integers and <None> is returned.
       Otherwise, a single hypergeometric pseudo-random integer is returned.
@@ -1456,8 +1492,10 @@ class _pranv:
          i = self._index                  # local alias
          buf = self._ranbuf               # local alias
          buflim = self._ranbuf_size       # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -1548,12 +1586,13 @@ class _pranv:
                   return z
 
          self._index = i # Restore ranbuf index and return (buffer is filled).
+         return Num.reshape(buffer, size)
+         
 
-
-   def _Laplace(self, mu=0.0, scale=1.0, buffer=None):
+   def _Laplace(self, mu=0.0, scale=1.0, size=None):
       """Return Laplace (double exponential) pseudo-random variates.
 
-      Laplace(mu=0.0, scale=1.0, buffer=None)
+      Laplace(mu=0.0, scale=1.0, size=None)
 
       The mean is <mu> and the (positive) scale factor is <scale>.  If
       <buffer> is specified, it must be a mutable sequence (list or array).
@@ -1565,10 +1604,12 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)            
             buf = self._ranbuf                    # local alias
             buflim = self._ranbuf_size            # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                x = buf[i]
@@ -1590,12 +1631,12 @@ class _pranv:
             return x
 
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
+      return Num.reshape(buffer, size)      
 
-
-   def _logarithmic(self, p=0.5, buffer=None):
+   def _logarithmic(self, p=0.5, size=None):
       """Return logarithmic (series) positive pseudo-random integers; 0<p<1.
 
-      logarithmic(p=0.5, buffer=None)
+      logarithmic(p=0.5, size=None)
 
       Z has the logarithmic (series) distribution if Pr{Z=i} = (a/i) * p ** i,
       for i = 1, 2, ... and a = -1.0 / log(1.0 - p). If <buffer> is specified,
@@ -1611,8 +1652,10 @@ class _pranv:
          i = self._index                  # local alias
          buf = self._ranbuf               # local alias
          buflim = self._ranbuf_size       # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -1670,11 +1713,12 @@ class _pranv:
                   return k
 
          self._index = i  # Restore ranbuf index and return (<buffer> filled).
+         return Num.reshape(buffer, size)         
 
-   def _logistic(self, mu=0.0, scale=1.0, buffer=None):
+   def _logistic(self, mu=0.0, scale=1.0, size=None):
       """Return logistic pseudo-random variates; mean <mu>.
 
-      logistic(mu=0.0, scale=1.0, buffer=None)
+      logistic(mu=0.0, scale=1.0, size=None)
 
       <scale> must be positive.  If <buffer> is specified, it must be a
       mutable sequence (list or array).  <buffer> is filled with
@@ -1685,10 +1729,12 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buf = self._ranbuf                    # local alias
             buflim = self._ranbuf_size            # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                x = buf[i]
@@ -1702,12 +1748,14 @@ class _pranv:
             return mu + scale * log( x / (1.0 - x) )
 
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
+      return Num.reshape(buffer, size)
+      
 
 
-   def _lognormal(self, mean=0.0, sigma=1.0, buffer=None):
+   def _lognormal(self, mean=0.0, sigma=1.0, size=None):
       """Return lognormal distribution pseudo-random variates.
 
-      lognormal(mean=0.0, sigma=1.0, buffer=None)
+      lognormal(mean=0.0, sigma=1.0, size=None)
 
       The parameters <mean> and <sigma> are the mean and standard deviation
       of the underlying normal distribution.  <sigma> must be positive. If
@@ -1719,18 +1767,13 @@ class _pranv:
          raise ValueError, '<sigma> must be positive'
 
       else:
-         if buffer:
-            normal = self._normal                    # local alias
-            for j in xrange( len(buffer) ):
-               buffer[j] = exp( mean + sigma * normal() )
+         normal = self._normal
+         return Num.exp( mean + sigma * normal(size=size))
 
-         else:
-            return exp( mean + sigma * self._normal() )
-
-   def _negative_binomial(self, r=1.0, pr_failure=0.5, buffer=None):
+   def _negative_binomial(self, r=1.0, pr_failure=0.5, size=None):
       """Return negative binomial random variates (non-negative integers).
 
-      negative_binomial(r=1.0, pr_failure=0.5, buffer=None)
+      negative_binomial(r=1.0, pr_failure=0.5, size=None)
 
       For <r> integral, the negative binomial distribution is also called the
       Pascal distribution.  If <r> = 1, it is the geometric distribution.
@@ -1745,20 +1788,14 @@ class _pranv:
       else:
          pr_success = 1.0 - pr_failure
          ratio = pr_success / pr_failure
-         if buffer:
-            Poisson = self._Poisson
-            gamma = self._gamma
-            for j in xrange( len(buffer) ):
-               buffer[j] = Poisson(gamma(r) / ratio)
+         Poisson = self._Poisson
+         gamma = self._gamma
+         return Poisson(gamma(r) / ratio, size=size)
 
-         else:
-            return self._Poisson(self._gamma(r) / ratio)
-
-
-   def _normal(self, mu=0.0, sigma=1.0, buffer=None):
+   def _normal(self, mu=0.0, sigma=1.0, size=None):
       """Return normal pseudo-random variates; mean <mu> & std. dev. <sigma>.
 
-      normal(mu=0.0, sigma=1.0, buffer=None)
+      normal(mu=0.0, sigma=1.0, size=None)
 
       Two random normal variates are generated on odd-numbered calls;
       the second is returned on even-numbered calls for single normals.
@@ -1771,8 +1808,10 @@ class _pranv:
          raise ValueError, '<sigma> must be positive'
 
       else:
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns
             j = 0
 
          else:
@@ -1817,11 +1856,12 @@ class _pranv:
 
          self._second_nrv = second           # Restore normal buffer.
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)         
 
-   def _Pareto(self, mode=1.0, shape=4.0, buffer=None):
+   def _Pareto(self, mode=1.0, shape=4.0, size=None):
       """Return Pareto distribution pseudo-random variates.
 
-      Pareto(mode=1.0, shape=4.0, buffer=None)
+      Pareto(mode=1.0, shape=4.0, size=None)
 
       Both <mode> and <shape> must be positive.  <buffer>, if specified, must
       be a mutable sequence (list or array).  It is filled with
@@ -1832,11 +1872,13 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buflim = self._ranbuf_size            # local alias
             buf = self._ranbuf                    # local alias
             exponent = -1.0 / shape
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                buffer[j] = mode * (1.0 - buf[i]) ** exponent
@@ -1848,12 +1890,14 @@ class _pranv:
             return mode * (1.0 - self._ranbuf[i]) ** (-1.0 / shape)
 
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
+      return Num.reshape(buffer, size)
+      
 
 
-   def _Poisson(self, rate=1.0, buffer=None):
+   def _Poisson(self, rate=1.0, size=None):
       """Return integer pseudo-random variates from a Poisson distribution.
 
-      Poisson(rate=1.0, buffer=None)
+      Poisson(rate=1.0, size=None)
 
       See Fishman, George S., "Monte Carlo Concepts, Algorithms and
       Applications," Springer-Verlag, New York, 1996.  Algorithms ITR
@@ -1870,8 +1914,10 @@ class _pranv:
          i = self._index                          # local alias
          buflim = self._ranbuf_size               # local alias
          buf = self._ranbuf                       # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -1942,11 +1988,12 @@ class _pranv:
                   return int(successes)
 
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)         
 
-   def _randint(self, lowint=0, upint=1, buffer=None):
+   def _randint(self, lowint=0, upint=1, size=None):
       """Return integers k with equal probability; lowint <= k <= upint.
 
-      randint(lowint=0, upint=1, buffer=None)
+      randint(lowint=0, upint=1, size=None)
 
       <lowint> must be <= <upint>.  If <buffer> is specified, it must be a
       mutable sequence (list or array).  It is filled with pseudo-random
@@ -1958,10 +2005,12 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buflim = self._ranbuf_size            # local alias
             buf = self._ranbuf                    # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                buffer[j] = lowint + int(floor(buf[i] * (upint - lowint + 1)))
@@ -1973,13 +2022,15 @@ class _pranv:
             return lowint + int(floor(self._ranbuf[i] * (upint - lowint + 1)))
 
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)         
 
-   def _Rayleigh(self, mode=1.0, buffer=None):
+
+   def _Rayleigh(self, mode=1.0, size=None):
       """Return Rayleigh distribution pseudo-random variates.
 
-      Rayleigh(mode=1.0, buffer=None)
+      Rayleigh(mode=1.0, size=None)
 
-      <mode> must be positive.  If buffer is specified, it must be a mutable
+      <mode> must be positive.  if shape is not None is specified, it must be a mutable
       sequence (list or array).  It is filled with Rayleigh(mode) pseudo-
       random variates and <None> is returned.  Otherwise, a single Rayleigh
       pseudo-random variate is returned."""
@@ -1988,10 +2039,12 @@ class _pranv:
 
       else:
          i = self._index
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buf = self._ranbuf                 # local alias
             buflim = self._ranbuf_size         # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                buffer[j] = mode * sqrt( -2.0 * log(buf[i]) )
@@ -2003,11 +2056,13 @@ class _pranv:
             return mode * sqrt( -2.0 * log(self._ranbuf[i]) )
 
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)
+         
 
-   def _Student_t(self, df=100.0, buffer=None):
+   def _Student_t(self, df=100.0, size=None):
       """Return Student's t pseudo-random variate; <df> degrees of freedom.
 
-      Student_t(df=100.0, buffer=None)
+      Student_t(df=100.0, size=None)
 
       <df> must be positive.  If <buffer> is specified, it must be a mutable
       sequence (list or array).  It is filled with Student-t(df) pseudo-random
@@ -2021,18 +2076,22 @@ class _pranv:
          if df <= 3.0:
             cdf = 0.5 * df
             con = 2.0 / df
-            if buffer:
+            if size is not None:
+               size, Ns = _check_shape(size)
+               buffer = zeros(Ns,Num.Float)
                normal = self._normal
                gamma = self._gamma
-               for j in xrange( len(buffer) ):
+               for j in xrange( Ns ):
                   buffer[j] = normal()/sqrt( con * gamma(cdf) )
-
+               return Num.reshape(buffer, size)
             else:
                return self._normal() / sqrt( con * self._gamma(cdf) )
-
+            
          else:
-            if buffer:
-               out_len = len(buffer)
+            if size is not None:
+               size, Ns = _check_shape(size)
+               buffer = zeros(Ns,Num.Float)
+               out_len = Ns
                j = 0
 
             else:
@@ -2084,11 +2143,13 @@ class _pranv:
                   return z
 
             self._index = i # Restore ranbuf index and return (buffer filled).
+            return Num.reshape(buffer, size)
+            
 
-   def _triangular(self, left=0.0, mode=0.5, right=1.0, buffer=None):
+   def _triangular(self, left=0.0, mode=0.5, right=1.0, size=None):
       """Return triangular pseudo-random variates; left <= mode <= right.
 
-      triangular(left=0.0, mode=0.5, right=1.0, buffer=None)
+      triangular(left=0.0, mode=0.5, right=1.0, size=None)
 
       The triangle is ABC; A and B ( <left> and <right> ) are on the
       horizontal axis, and a perpendicular dropped from C intersects the
@@ -2107,10 +2168,12 @@ class _pranv:
          ratio = leftbase / base
          leftprod = leftbase * base
          rightprod = (right - mode) * base
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)            
             buf = self._ranbuf                    # local alias
             buflim = self._ranbuf_size            # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                u = buf[i]
@@ -2132,11 +2195,12 @@ class _pranv:
                return right - sqrt( (1.0 - u) * rightprod )
 
          self._index = i  # Restore ranbuf index and return (buffer[] filled).
-
-   def _uniform(self, lower=-0.5, upper=+0.5, buffer=None):
+         return Num.reshape(buffer, size)
+         
+   def _uniform(self, lower=-0.5, upper=+0.5, size=None):
       """Return pseudo-randoms from uniform distribution on [lower, upper].
 
-      uniform(lower=-0.5, upper=+0.5, buffer=None)
+      uniform(lower=-0.5, upper=+0.5, size=None)
 
       If <buffer> is specified, it must be a mutable sequence.  It is filled
       with uniform(lower, upper) pseudo-randoms and <None> is returned.
@@ -2147,14 +2211,15 @@ class _pranv:
 
       else:
          i = self._index                          # local alias
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
             buf = self._ranbuf                    # local alias
             buflim = self._ranbuf_size            # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                buffer[j] = lower + length * buf[i]
-
          else:
             i = i + 1
             if i == self._ranbuf_size: self._fillbuf(); i = 0
@@ -2162,12 +2227,12 @@ class _pranv:
             return lower + length * self._ranbuf[i]
 
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
+      return Num.reshape(buffer, size)      
 
-
-   def _von_Mises(self, mean=0.0, shape=1.0, buffer=None):
+   def _von_Mises(self, mean=0.0, shape=1.0, size=None):
       """Return von Mises distribution pseudo-random variates on [-pi, +pi].
 
-      von_Mises(mean=0.0, shape=1.0, buffer=None)
+      von_Mises(mean=0.0, shape=1.0, size=None)
 
       <mean> must be in the open interval (-math.pi, +math.pi).  If <buffer>
       is specified, it must be a mutable sequence (list or array).  It is
@@ -2186,8 +2251,10 @@ class _pranv:
          i = self._index                          # local alias
          buf = self._ranbuf                       # local alias
          buflim = self._ranbuf_size               # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -2230,11 +2297,13 @@ class _pranv:
                else:            return -fmod(acos(f)+mean, 6.2831853071795862)
 
          self._index = i # Restore _ranbuf index and return (buffer[] filled).
-
-   def _Wald(self, mean=1.0, scale=1.0, buffer=None):
+         return Num.reshape(buffer, size)
+         
+      
+   def _Wald(self, mean=1.0, scale=1.0, size=None):
       """Return Wald (inverse gaussian) pseudo-random variates.
 
-      Wald(mean=1.0, scale=1.0, buffer=None)
+      Wald(mean=1.0, scale=1.0, size=None)
 
       Both <mean> and <scale> must be positive.  If <buffer> is specified, it
       must be a mutable sequence (list or array).  It is filled with Wald
@@ -2247,8 +2316,10 @@ class _pranv:
          i = self._index                          # local alias
          buf = self._ranbuf                       # local alias
          buflim = self._ranbuf_size               # local alias
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns            
             j = 0
 
          else:
@@ -2283,11 +2354,12 @@ class _pranv:
                   return meansq / x1
 
       self._index = i    # Restore _ranbuf index and return (buffer[] filled).
-
-   def _Weibull(self, scale=1.0, shape=0.5, buffer=None):
+      return Num.reshape(buffer, size)
+      
+   def _Weibull(self, scale=1.0, shape=0.5, size=None):
       """Return Weibull distribution pseudo-random variates.
 
-      Weibull(scale=1.0, shape=0.5, buffer=None)
+      Weibull(scale=1.0, shape=0.5, size=None)
 
       Both <scale> and <shape> must be positive.  If <buffer> is specified, it
       must be a mutable sequence.  It is filled with Weibull(scale, shape)
@@ -2299,10 +2371,12 @@ class _pranv:
       else:
          i = self._index                          # local alias
          exponent = 1.0 / shape
-         if buffer:
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)            
             buf = self._ranbuf                    # local alias
             buflim = self._ranbuf_size            # local alias
-            for j in xrange( len(buffer) ):
+            for j in xrange( Ns ):
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                buffer[j] = scale * pow(-log(buf[i]), exponent)
@@ -2314,11 +2388,12 @@ class _pranv:
             return scale * pow(-log(self._ranbuf[i]), exponent)
 
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
-
-   def _Zipf(self, a=4.0, buffer=None):
+      return Num.reshape(buffer, size)
+      
+   def _Zipf(self, a=4.0, size=None):
       """Return positive pseudo-random integers from the Zipf distribution
 
-      Zipf(a=4.0, buffer=None)
+      Zipf(a=4.0, size=None)
 
       Z has the Zipf ditribution with parameter a if
          Pr{Z=i} = 1.0 / (zeta(a) * i ** a) for i = 1, 2, ... and a > 1.0.
@@ -2336,8 +2411,10 @@ class _pranv:
          buflim = self._ranbuf_size       # local alias
          am1 = a - 1.0
          b = 2.0 ** am1
-         if buffer:
-            out_len = len(buffer)
+         if size is not None:
+            size, Ns = _check_shape(size)
+            buffer = zeros(Ns,Num.Float)
+            out_len = Ns
             j = 0
 
          else:
@@ -2364,6 +2441,7 @@ class _pranv:
                return int(x)
 
          self._index = i  # Restore ranbuf index and return (buffer[] filled).
+         return Num.reshape(buffer, size)         
 
 #               End of Non-uniform(0,1) Generators
 
@@ -2753,32 +2831,32 @@ save_state        =  _inst._save_state
 #     Non-Uniform(0,1) Random Number Generators
 beta              =  _inst._beta
 binomial          =  _inst._binomial
-Cauchy            =  _inst._Cauchy
-chi_square        =  _inst._chi_square
+cauchy            =  _inst._Cauchy
+chi2              =  _inst._chi_square
 choice            =  _inst._choice
 exponential       =  _inst._exponential
-Fisher_F          =  _inst._Fisher_F
+fisher_f          =  _inst._Fisher_F
 gamma             =  _inst._gamma
 geometric         =  _inst._geometric
-Gumbel            =  _inst._Gumbel
+gumbel            =  _inst._Gumbel
 hypergeometric    =  _inst._hypergeometric
-Laplace           =  _inst._Laplace
+laplace           =  _inst._Laplace
 logarithmic       =  _inst._logarithmic
 logistic          =  _inst._logistic
 lognormal         =  _inst._lognormal
 negative_binomial =  _inst._negative_binomial
 normal            =  _inst._normal
-Pareto            =  _inst._Pareto
-Poisson           =  _inst._Poisson
+pareto            =  _inst._Pareto
+poisson           =  _inst._Poisson
 randint           =  _inst._randint
-Rayleigh          =  _inst._Rayleigh
-Student_t         =  _inst._Student_t
+rayleigh          =  _inst._Rayleigh
+student_t         =  _inst._Student_t
 triangular        =  _inst._triangular
 uniform           =  _inst._uniform
-von_Mises         =  _inst._von_Mises
-Wald              =  _inst._Wald
-Weibull           =  _inst._Weibull
-Zipf              =  _inst._Zipf
+von_mises         =  _inst._von_Mises
+wald              =  _inst._Wald
+weibull           =  _inst._Weibull
+zipf              =  _inst._Zipf
 
 #     Geometrical Point Generators, Permutations and Subsampling Routines
 in_simplex        =  _inst._in_simplex
@@ -3155,27 +3233,27 @@ def _rvtest():
    print
    print "buf = array.array('d',%5d*[0.0])" %(_do._buffer_size,)
    print
-   initialize(file_string=None, algorithm='CMRG')
-   print "rv.initialize(file_string=None, algorithm='CMRG')"
+   initialize(file_string=None, algorithm='cmrg')
+   print "rv.initialize(file_string=None, algorithm='cmrg')"
    benchmark('random()', 0.5, 0.083333)
    benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
 
-   initialize(file_string=None, algorithm='Flip')
-   print "rv.initialize(file_string=None, algorithm='Flip')"
+   initialize(file_string=None, algorithm='flip')
+   print "rv.initialize(file_string=None, algorithm='flip')"
    benchmark('random()', 0.5, 0.083333)
    benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
 
-   initialize(file_string=None, algorithm='SMRG')
-   print "rv.initialize(file_string=None, algorithm='SMRG')"
+   initialize(file_string=None, algorithm='smrg')
+   print "rv.initialize(file_string=None, algorithm='smrg')"
    benchmark('random()', 0.5, 0.083333)
    benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
 
-   initialize(file_string=None, algorithm='Twister')
-   print "rv.initialize(file_string=None, algorithm='Twister')"
+   initialize(file_string=None, algorithm='twister')
+   print "rv.initialize(file_string=None, algorithm='twister')"
    benchmark('random()', 0.5, 0.083333)
    benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
 
-   initialize(file_string=None, algorithm='Flip')  # Use fastest uniform(0,1)
+   initialize(file_string=None, algorithm='flip')  # Use fastest uniform(0,1)
                                                    # generator.
    benchmark('beta(mu=4.0, nu=2.0)', 0.66667, 0.031746)
    benchmark('beta(mu=4.0, nu=2.0, buffer=buf)', 0.66667, 0.031746, buf)
@@ -3309,4 +3387,4 @@ def _rvtest():
    print
    print  "   End of Module rv Test"
 
-if __name__ == '__main__': _rvtest()
+#if __name__ == '__main__': _rvtest()
