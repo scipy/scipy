@@ -858,7 +858,7 @@ def bode(w,H,win=0):
     gist.plg(abs(H),w,type='solid',color='blue',marks=0)
     gist.logxy(1,1)
     gist.gridxy(1,1)
-    xlabel('Frequency')
+    xlabel('Frequency (rad/s)')
     ylabel('Magnitude',deltax=-0.016)
     title("Bode Plot")
     gist.plsys(2)
@@ -866,6 +866,6 @@ def bode(w,H,win=0):
     plot(w,angle(H))
     gist.logxy(1,0)
     gist.gridxy(1,1)
-    xlabel('Frequency')
-    ylabel('Phase')
+    xlabel('Frequency (rad/s)')
+    ylabel('Phase (rad)',deltax=-0.016)
     
