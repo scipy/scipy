@@ -963,7 +963,7 @@ def bracket(func, ax=0.0, bx=1.0, args=(), glimit=100.0):
     fb = apply(func, (bx,)+args)
     if (fb > fa):
         dum = ax; ax = bx; bx = dum
-        dum = fb; fb = fa; fa = dum
+        dum = fa; fa = fb; fb = dum
     cx = bx + _gold*(bx-ax)
     fc = apply(func, (cx,)+args)
     funcalls = 3
