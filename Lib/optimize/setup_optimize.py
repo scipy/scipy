@@ -33,12 +33,14 @@ def configuration(parent_package='',parent_path=None):
     lapack = system_info.lapack_opt_info().get_info()
     sources = ['lbfgsb.pyf','routines.f']
     sources = [os.path.join(local_path,'lbfgsb-0.9',x) for x in sources]
-    ext = Extension(name="_lbfgsb",sources=sources, **lapack)
+    ext = Extension(dot_join(parent_package,package,"_lbfgsb"),
+		    sources=sources, **lapack)
     config['ext_modules'].append(ext)
 
     sources = ['moduleTNC.c', 'tnc.c']
     sources = [os.path.join(local_path,'tnc',x) for x in sources]
-    ext = Extension(name="moduleTNC", sources=sources)
+    ext = Extension(dot_join(parent_package,package,'moduleTNC'), 
+		    sources=sources)
     config['ext_modules'].append(ext)
 
     return config
