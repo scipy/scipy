@@ -225,6 +225,8 @@ class lti:
             self.__dict__['num'], self.__dict__['den'] = ss2tf(*args)
             self.inputs = B.shape[-1]
             self.outputs = C.shape[0]
+        else:
+            raise ValueError, "Needs 2, 3, or 4 arguments."
 
     def __setattr__(self, attr, val):
         if attr in ['num','den']:
