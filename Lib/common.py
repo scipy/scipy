@@ -152,9 +152,10 @@ def central_diff_weights(Np,ndiv=1):
     return w
 
 def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
-    """Given a function, use an N-point central differenece
-       formula with spacing dx to compute the nth derivative at
-       x0, where N is the value of order and must be odd.
+    """Given a function, use a central difference formula with spacing dx to
+       compute the nth derivative at x0.
+       
+       order is the number of points to use and must be odd.
 
        Warning: Decreasing the step size too small can result in
        round-off error.
