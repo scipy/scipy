@@ -5,14 +5,15 @@ fitpack (dierckx in netlib) --- A Python-C wrapper to FITPACK (by P. Dierckx).
         FITTING with SPLINES and TENSOR PRODUCT SPLINES. 
 
 See
-   http://www.cs.kuleuven.ac.be/cwis/research/nalag/research/topics/fitpack.html
+ http://www.cs.kuleuven.ac.be/cwis/research/nalag/research/topics/fitpack.html
 or
-   http://www.netlib.org/dierckx/index.html
+ http://www.netlib.org/dierckx/index.html
 
-Copyright 1999 Pearu Peterson all rights reserved,
-Pearu Peterson <pearu@ioc.ee>          
-Permission to use, modify, and distribute this software is given under the
-terms of the LGPL.  See http://www.fsf.org
+Copyright 2002 Pearu Peterson all rights reserved,
+Pearu Peterson <pearu@cens.ioc.ee>          
+Permission to use, modify, and distribute this software is given under the 
+terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
+this distribution for specifics.
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 
