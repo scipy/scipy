@@ -28,7 +28,7 @@ class test_airy(unittest.TestCase):
 	assert_array_almost_equal(x,array([0.25238916,
 					  -.23480512,
 					  0.80686202,
-					  0.51053920]),8)
+					  0.51053919]),8)
 	x = airy(-.36)
 	assert_array_almost_equal(x,array([0.44508477,
 					   -0.23186773,
@@ -41,25 +41,27 @@ class test_airye(unittest.TestCase):
 	a = airye(0.01)
 	b = airy(0.01)
         b1 = [None]*4
-        for n in range(4):
+        for n in range(2):
             b1[n] = b[n]*exp(2.0/3.0*0.01*sqrt(0.01))
-        assert_array_almost_equal(a,b1,5)
+        for n in range(2,4):
+            b1[n] = b[n]*exp(-abs(real(2.0/3.0*0.01*sqrt(0.01))))
+        assert_array_almost_equal(a,b1,6)
 
 class test_arange(unittest.TestCase):
 
     def check_arange(self):
-        numstring = arange(0,2.2,.1)
+        numstring = arange(0,2.21,.1)
         assert_equal(numstring,array([0.,0.1,0.2,0.3,
                                       0.4,0.5,0.6,0.7,
                                       0.8,0.9,1.,1.1,
                                       1.2,1.3,1.4,1.5,
                                       1.6,1.7,1.8,1.9,
-                                      2.,2.1]))
+                                      2.,2.1,2.2]))
         numstringa = arange(3,4,.3)
         assert_array_equal(numstringa, array([3.,3.3,3.6,3.9]))
         numstringb = arange(3,27,3)
-        assert_array_equal(numstringb,array([3.,6.,9.,12.,
-                                             15.,18.,21.,24.,27.]))
+        assert_array_equal(numstringb,array([3,6,9,12,
+                                             15,18,21,24]))
         numstringc = arange(3.3,27,4)
         assert_array_equal(numstringc,array([3.3,7.3,11.3,15.3,
                                              19.3,23.3]))
@@ -81,7 +83,7 @@ class test_array(unittest.TestCase):
         z = x*y
         assert_array_equal(z,array([1,4,9,16]))
         a = arange(1,5,1)
-        assert_array_equal(a,z)
+        assert_array_equal(a,x)
 
 class test_assoc_laguerre(unittest.TestCase):
 
@@ -1381,11 +1383,11 @@ class test_zeros(unittest.TestCase):
 def test_suite(level=1):
     suites = []
     if level > 0:
-#F	suites.append( unittest.makeSuite(test_airy,'check_') )
-#F	suites.append( unittest.makeSuite(test_airye,'check_') )
-#F	suites.append( unittest.makeSuite(test_arange,'check_') )
+	suites.append( unittest.makeSuite(test_airy,'check_') )
+	suites.append( unittest.makeSuite(test_airye,'check_') )
+	suites.append( unittest.makeSuite(test_arange,'check_') )
 	suites.append( unittest.makeSuite(test_ai_zeros,'check_') )
-#F	suites.append( unittest.makeSuite(test_array,'check_') )
+	suites.append( unittest.makeSuite(test_array,'check_') )
 	suites.append( unittest.makeSuite(test_assoc_laguerre,'check_') )
 ###	suites.append( unittest.makeSuite(test_besselpoly,'check_') )
 	suites.append( unittest.makeSuite(test_bei,'check_') )
@@ -1496,7 +1498,7 @@ def test_suite(level=1):
 	suites.append( unittest.makeSuite(test_lpmn,'check_') )
 #E	suites.append( unittest.makeSuite(test_lpn,'check_') )
 	suites.append( unittest.makeSuite(test_lpmv,'check_') )
-#!	suites.append( unittest.makeSuite(test_lqmn,'check_') )
+#	suites.append( unittest.makeSuite(test_lqmn,'check_') )
 	suites.append( unittest.makeSuite(test_lqn,'check_') )
 ###	 suites.append( unittest.makeSuite(test_mathieu_a,'check_') )
 ###	 suites.append( unittest.makeSuite(test_mathieu_even_coef,'check_') )
