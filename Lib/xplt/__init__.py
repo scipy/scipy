@@ -25,5 +25,9 @@
                  three-dimensional array.
 """
 
+import os, sys
 from Mplot import *
 from write_style import *
+gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
+                        'site-packages','scipy','xplt')
+os.environ['GISTPATH'] = gistpath

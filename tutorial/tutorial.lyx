@@ -674,7 +674,7 @@ The simplex algorithm is probably the simplest way to minimize a fairly
 
  variables:
 \begin_inset Formula \[
-f\left( \mathbf{x}\right) =\sum _{i=1}^{N}100\left( x_{i}-x^{2}_{i-1}\right) ^{2}^{2}+\left( 1-x_{i-1}\right) ^{2}.\]
+f\left( \mathbf{x}\right) =\sum _{i=1}^{N-1}100\left( x_{i}-x_{i-1}^{2}\right) ^{2}+\left( 1-x_{i-1}\right) ^{2}.\]
 
 \end_inset 
 
@@ -697,7 +697,65 @@ fmin
 
 \layout Subsection
 
-Broyden-Fletcher-Goldfar-Shanno Quasi-Newton (scipy.optimize.fminBFGS)
+Broyden-Fletcher-Goldfarb-Shanno algorithm (scipy.optimize.fminBFGS)
 \layout Standard
+
+In order to converge more quickly to the solution, this routine uses the
+ gradient of the objective function.
+ If the gradient is not given by the user, then it is estimated using first-diff
+erences.
+ The Broyden-Fletcher-Goldfarb-Shanno (BFGS) method requires fewer function
+ calls than the simplex algorithm but unless the gradient is provided by
+ the user, the speed savings won't be significant.
+\layout Standard
+
+To demonstrate this algorithm, the Rosenbrock function is again used.
+ The gradient of the Rosenbrock function is the vector: 
+\begin_inset Formula \begin{eqnarray*}
+\frac{\partial f}{\partial x_{j}} & = & \sum _{i=1}^{N}200\left( x_{i}-x_{i-1}^{2}\right) \left( \delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right) -2\left( 1-x_{i-1}\right) \delta _{i-1,j}.\\
+ & = & 200\left( x_{j}-x^{2}_{j-1}\right) -400x_{j}\left( x_{j+1}-x_{j}^{2}\right) -2\left( 1-x_{j}\right) .
+\end{eqnarray*}
+
+\end_inset 
+
+This expression is valid for the interior derivatives.
+ Special cases are
+\begin_inset Formula \begin{eqnarray*}
+\frac{\partial f}{\partial x_{0}} & = & -400x_{0}\left( x_{1}-x_{0}^{2}\right) -2\left( 1-x_{0}\right) ,\\
+\frac{\partial f}{\partial x_{N-1}} & = & 200\left( x_{N-1}-x_{N-2}^{2}\right) .
+\end{eqnarray*}
+
+\end_inset 
+
+ A Python function which computes this gradient is constructed by the code-segme
+nt:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.3}
+
+\end_inset 
+
+
+\layout Standard
+
+The calling signature for the BFGS minimization algorithm is similar to
+ fmin with the addition of the 
+\emph on 
+fprime
+\emph default 
+ argument.
+ An example usage of 
+\series bold 
+fminBFGS
+\series default 
+ is shown in the following example which minimizes the Rosenbrock function.
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example5.4}
+
+\end_inset 
+
 
 \the_end

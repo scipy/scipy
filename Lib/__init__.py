@@ -20,7 +20,6 @@ sys.path.append(os.path.join(d,'pyunit-1.3.1'))
 
 try:
     import scipy.xplt
-    os.environ['GISTPATH'] = os.path.join('a','usr','local','scipy','xplt')[1:]    
 except ImportError:
     pass
 
