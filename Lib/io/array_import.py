@@ -394,7 +394,7 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
     nofloat = (thistype in '1silbwu') or (thistype in 'Oc')
     cmplx = thistype in 'FD'
     fmtstr = "%%.%de" % precision
-    cmpnum = pow(10,-precision)
+    cmpnum = pow(10.0,-precision)
     for n in xrange(N):
         theline = []
         for m in xrange(M):
