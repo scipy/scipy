@@ -2,11 +2,9 @@ import string, re, os
 
 import interface_gen
 
-sdir = '.'
-
 this_dir,junk = os.path.split(interface_gen.__file__)
 
-def process_imports(interface_in):
+def process_imports(interface_in,sdir='.'):
     # !! lines can't contain comments, and a single import on each line
     #
     # !! expects interface to be named and live in same directory
@@ -338,7 +336,7 @@ def process_flip_dims(generic_interface, format):
         interface += newsub + "\n"
     return interface
 
-def interface_to_module(interface_in,module_name,include_list):
+def interface_to_module(interface_in,module_name,include_list,sdir='.'):
     pre_prefix = "!%f90 -*- f90 -*-\n"
     includes = ''
     for file in include_list:
@@ -374,12 +372,12 @@ def rename_functions(interface_in,prefix,suffix):
         interface = interface + renamed_sub + '\n\n'
     return interface    
     
-def generate_flapack(sdir):
+def generate_flapack(sdir,output_path):
     print "generating flapack interface"
     f = open(os.path.join(sdir,'generic_lapack.pyf'))
     module_name = 'flapack'
     generic_interface = f.read(-1)
-    generic_interface, include_files = process_imports(generic_interface)
+    generic_interface, include_files = process_imports(generic_interface,sdir)
     generic_interface = process_special_types(generic_interface,
                                               format='Fortran')
     interface = lapack_expand(generic_interface,row_major = 0)
@@ -387,18 +385,18 @@ def generate_flapack(sdir):
     interface = process_flip_dims(interface, format='Fortran')
     # must be last
     interface = process_return_info(interface,format='Fortran')
-    module_definition = interface_to_module(interface,module_name, include_files)
+    module_definition = interface_to_module(interface,module_name, include_files,sdir)
     
-    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
+    f = open(os.path.join(output_path,module_name+'.pyf'),'w')
     f.write(module_definition)
     f.close()
    
-def generate_clapack(sdir):
+def generate_clapack(sdir,output_path):
     print "generating clapack interface"
     f = open(os.path.join(sdir,'atlas_lapack.pyf'))
     module_name = 'clapack'
     generic_interface = f.read(-1)
-    generic_interface, include_files = process_imports(generic_interface)
+    generic_interface, include_files = process_imports(generic_interface,sdir)
     generic_interface = insert_blas_order(generic_interface)
     generic_interface = insert_intent_c(generic_interface)
     generic_interface = rename_functions(generic_interface,'clapack_','')
@@ -413,19 +411,20 @@ def generate_clapack(sdir):
 
     # must be last
     generic_interface = process_return_info(generic_interface,format='C')    
-    module_def = interface_to_module(generic_interface,module_name, include_files)    
+    module_def = interface_to_module(generic_interface,module_name, 
+                                     include_files,sdir)    
     
     # module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
-    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
+    f = open(os.path.join(output_path,module_name+'.pyf'),'w')
     f.write(module_def)
     f.close()
 
-def generate_cblas_level(level):
+def generate_cblas_level(sdir,level):
     f = open(os.path.join(sdir,'generic_blas%d.pyf' % level))
     generic_interface = f.read(-1)
-    generic_interface, include_files = process_imports(generic_interface)
+    generic_interface, include_files = process_imports(generic_interface,sdir)
     if level > 1:
         generic_interface = insert_blas_order(generic_interface)
     generic_interface = insert_intent_c(generic_interface)
@@ -434,24 +433,24 @@ def generate_cblas_level(level):
     interface = lapack_expand(generic_interface,row_major=1)
     return interface, include_files
     
-def generate_cblas(sdir):
+def generate_cblas(sdir,output_path):
     print "generating cblas interface"
     module_name = 'cblas'
-    interface, include_files = generate_cblas_level(1)
-    a, b = generate_cblas_level(2)
+    interface, include_files = generate_cblas_level(sdir,1)
+    a, b = generate_cblas_level(sdir,2)
     interface += '\n' + a
     include_files += b
-    a, b = generate_cblas_level(3)
+    a, b = generate_cblas_level(sdir,3)
     interface += '\n' + a
     include_files += b
-    module_def = interface_to_module(interface,module_name,include_files)
+    module_def = interface_to_module(interface,module_name,include_files,sdir)
 
-    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
+    f = open(os.path.join(output_path,module_name+'.pyf'),'w')
     f.write(module_def)
     f.close()
     f.close()
     
-def generate_fblas(sdir):
+def generate_fblas(sdir,output_path):
     print "generating fblas interface"
     module_name = 'fblas'
     interface = ''
@@ -459,14 +458,16 @@ def generate_fblas(sdir):
         print '\tgenerating blas%d' % level
         f = open(os.path.join(sdir,'generic_blas%d.pyf' % level))
         generic_interface = f.read(-1)
-        generic_interface, include_files = process_imports(generic_interface)
+        generic_interface, include_files = process_imports(generic_interface,
+                                                           sdir)
         generic_interface = process_special_types(generic_interface,
                                                   format='Fortran')
         generic_interface = lapack_expand(generic_interface,row_major=0)
         interface = interface + '\n' + generic_interface
 
-    module_definition = interface_to_module(interface,module_name, include_files)
-    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
+    module_definition = interface_to_module(interface,module_name, 
+                                            include_files,sdir)
+    f = open(os.path.join(output_path,module_name+'.pyf'),'w')
     f.write(module_definition)
     f.close()
         

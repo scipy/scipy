@@ -11,6 +11,9 @@ from scipy_distutils.misc_util import get_path, default_config_dict
 import interface_gen
 from scipy_distutils.atlas_info import get_atlas_info
 
+# needed now for pyf_extensions
+import f2py2e
+
 if os.name == 'nt':
     from scipy_distutils.mingw32_support import *
 
@@ -38,7 +41,12 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
     if parent_package and parent_package[-1] != '.':
         parent_package = parent_package + '.'    
     sources = [os.path.join(local_path,x) for x in sources]
-    mod_file = os.path.join(local_path,mod_file)
+
+    from distutils.dir_util import mkpath
+    output_path = os.path.join('build','generated_pyfs')
+    mkpath(output_path)
+    mod_file = os.path.join(output_path,mod_file)
+
     # choose the
     gen_function = eval('interface_gen.generate_'+mod_name)
     
@@ -46,13 +54,20 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
         define_macros = []
     else:
         define_macros=[('NO_APPEND_FORTRAN',1)]
-
+            
     if dep_util.newer_group(sources,mod_file):
-        gen_function(local_path)
+        gen_function(local_path,output_path)
+    
+    print 'file:', mod_file    
     ext = Extension(parent_package+mod_name,[mod_file],
-                    library_dirs=atlas_library_dirs,
-                    libraries = lapack_libraries,
-                    define_macros=define_macros)
+                     library_dirs=atlas_library_dirs,
+                     libraries = lapack_libraries,
+                     define_macros=define_macros,
+                     f2py_options=['no-latex-doc',
+                                   'no-makefile',
+                                   'no-setup',
+                                   'no-wrap-functions'])
+
     return ext                
 
 def extensions(parent_package = ''):
@@ -63,7 +78,7 @@ def extensions(parent_package = ''):
     sources = ['generic_lapack.pyf']
     ext = generic_extension(mod,sources,parent_package,use_underscore=1)
     ext_modules.append(ext)
-
+    """
     # C lapack interface
     mod = 'clapack'
     sources = ['generic_lapack.pyf']
@@ -81,5 +96,5 @@ def extensions(parent_package = ''):
     sources = ['generic_blas1.pyf','generic_blas2.pyf','generic_blas3.pyf']
     ext = generic_extension(mod,sources,parent_package,use_underscore=0)
     ext_modules.append(ext)
-
+    """
     return ext_modules
