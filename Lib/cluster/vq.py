@@ -18,7 +18,7 @@ Vector Quantization Module
 from Numeric import *
 from RandomArray import randint
 import scipy
-
+from scipy.common.misc import _common_type
 
 def whiten(obs):
     """* Normalize a group of observations on a per feature basis
@@ -107,23 +107,22 @@ def vq(obs,code_book,return_dist=0):
     No,Nf = shape(obs) #No = observation count, Nf = feature count
     # code books and observations should have same number of features
     assert(Nf == code_book.shape[1])
-    code = [];min_dist = []
-    obs = obs.astype(Float32)
-    code_book = code_book.astype(Float32)
-    diff = zeros(shape(code_book),obs.typecode())
+    code = [];min_dist = []    
+    #create a memory block to use for the difference calculations    
+    diff = zeros(shape(code_book),_common_type(obs,code_book))
     for o in obs:
-        #diff = code_book - o ### THe following line is faster.
-        subtract(code_book,o,diff)        
+        subtract(code_book,o,diff) # faster version of --> diff = code_book - o       
         dist = sqrt(sum(diff*diff,-1))
         code.append(argmin(dist))
-        dst = minimum.reduce(dist,0)
-        # the [0] is needed to make sure min_dist is 1D, although I don't think
-        # it should be...
-        min_dist.append(dst[0]) 
-    if return_dist:
-        return array(code), array(min_dist)
-    else:
-        return array(code)
+        #something weird here dst does not work reliably because it sometime
+        # returns an array of goofy length. use min() until I figure it out.
+        if return_dist:
+            dst = minimum.reduce(dist,0)
+            try:    dst = dst[0]
+            except: pass
+            min_dist.append(dst) 
+    if return_dist: return array(code), array(min_dist)
+    else:           return array(code)
 
 
 def vq2(obs,code_book,return_dist=0):
@@ -174,6 +173,7 @@ def kmeans_(obs,guess,thresh=1e-5):
                [ 0.73333333,  1.13333333]]), 0.40563916697728591)
 
     *"""
+    
     code_book = array(guess,copy=1)
     Nc = code_book.shape[0]
     avg_dist=[]
@@ -186,13 +186,12 @@ def kmeans_(obs,guess,thresh=1e-5):
         #recalc code_book as centroids of associated obs
         if(diff > thresh):
             has_members = []
-            for i in arange(Nc):
+            for i in arange(Nc):                
                 cell_members = compress(equal(obs_code,i),obs,0)
                 if cell_members.shape[0] > 0:
                     code_book[i] = scipy.mean(cell_members,0)
                     has_members.append(i)
             #remove code_books that didn't have any members
-            #print has_members
             code_book = take(code_book,has_members,0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
