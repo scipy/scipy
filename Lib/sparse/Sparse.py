@@ -1,4 +1,5 @@
 from Numeric import *
+from fastumath import *
 import types
 import _sparsekit
 import _superlu

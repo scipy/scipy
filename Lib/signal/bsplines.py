@@ -1,6 +1,7 @@
 import scipy.special
 from scipy.special import general_function
 from Numeric import *
+from fastumath import *
 from scipy.signal.spline import *      # C-modules
 
 def factorial(n):

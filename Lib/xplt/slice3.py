@@ -13,6 +13,7 @@
 # This has been fixed by creating an access function.
 
 from Numeric import *
+from fastumath import *
 from shapetest import *
 from types import *
 from pl3d import *

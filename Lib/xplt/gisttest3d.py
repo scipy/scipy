@@ -6,6 +6,7 @@ from mesh3d import *
 from surface import *
 
 from Numeric import *
+from fastumath import *
 
 from arrayfns import *
 

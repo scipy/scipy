@@ -11,7 +11,7 @@ except:
     import os
     plot_popen = os.popen
     default_terminal = 'x11'
-    default_terminal = 'png color'
+    #default_terminal = 'png color'
 
 DEBUG = 0
 
@@ -63,7 +63,9 @@ class Plot:
         d,f = os.path.split(__file__)
         gnuhelper = os.path.join(d,'gnuplot_helper.exe')
         gnuplot = os.path.join(d,'wgnuplot.exe')
-        
+    else:
+        gnuhelper = ''
+        gnuplot = 'gnuplot'    
 ###Eric's configurations
 ###GUI gnuplot
 #   gnuhelper = 'c:\programs\gnuplot\gnuplot.exe'
@@ -94,7 +96,10 @@ class Plot:
 #       self.g = plot_popen(helper + self.gnuplot, 'w')
 #unix???    borrowed from Konrad Hinsen's gnuplot interface
 #        self.g = plot_popen(helper + self.gnuplot  + ' -persist 1> /dev/null 2>&1', 'w')
-        self.g = plot_popen(helper + ' ' + self.gnuplot , 'w')
+        if sys.platform == 'win32':
+            self.g = plot_popen(helper + ' ' + self.gnuplot , 'w')
+        else: 
+            self.g = plot_popen(helper + self.gnuplot  + ' -persist 1> /dev/null 2>&1', 'w')
         self._defaults()
         time.sleep(.2) # put a pause here because in windows, wgnuplot doesn't seem to get the first plot message
         if (len(cmd) > 0 and type(cmd[0]) != StringType):

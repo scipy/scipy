@@ -6,6 +6,7 @@ from quadmesh import *
 from graph2d import *
 from MLab import rand
 from Numeric import *
+from fastumath import *
 from shapetest import *
 
 def paws ( ) :

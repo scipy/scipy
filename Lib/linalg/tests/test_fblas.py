@@ -16,6 +16,7 @@
 # !! matrix multiply here to ensure integrity of tests.
 
 from Numeric import *
+from fastumath import *
 #import scipy.linalg.fblas as fblas
 import fblas
 import unittest

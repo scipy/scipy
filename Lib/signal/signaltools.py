@@ -1,4 +1,5 @@
-from Numeric import *# needed asarray
+from Numeric import *
+from fastumath import *# needed asarray
 
 import scipy.signal.sigtools
 import MLab

@@ -3,6 +3,7 @@
 
 # ed williams' colorbar stuff
 from Numeric import *
+from fastumath import *
 from arrayfns import *
 from gist import *
 from slice3 import *

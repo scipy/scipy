@@ -209,6 +209,7 @@ from types import *
 __version__ = 0.5
 
 from Numeric import *
+from fastumath import *
 import Numeric
 N = Numeric
 import LinearAlgebra

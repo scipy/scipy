@@ -2,6 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
+from fastumath import *
 from shapetest import *
 from yorick import *
 from arrayfns import *

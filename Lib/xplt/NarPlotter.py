@@ -3,6 +3,7 @@
 
 import narcisse
 from Numeric import *
+from fastumath import *
 # We need types to check args to some routines
 from types import *
 from graftypes import *

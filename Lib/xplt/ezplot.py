@@ -156,6 +156,7 @@ from cellarray import *
 
 import shapetest
 from Numeric import *
+from fastumath import *
 
 _ezdict_ = {'t': 'true' , 'T': 'true', 'y': 'true', 'Y': 'true',
             'f': 'false', 'F': 'false', 'n': 'false', 'N': 'false'}

@@ -1,4 +1,5 @@
 #from Numeric import *
+from fastumath import *
 #from fastumath import *
 from scipy import *
 import scipy.limits

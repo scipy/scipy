@@ -4,6 +4,7 @@
     !! found, get rid of it!
 """
 from Numeric import *
+from fastumath import *
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays

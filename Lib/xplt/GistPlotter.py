@@ -4,6 +4,7 @@
 from gist import *
 from shapetest import *
 from Numeric import *
+from fastumath import *
 from graftypes import *
 from movie import *
 from pl3d import *

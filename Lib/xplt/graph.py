@@ -27,6 +27,7 @@ else :
  
 # The following is so I know about arrays:
 from Numeric import *
+from fastumath import *
 from shapetest import *
 
 class Graph :

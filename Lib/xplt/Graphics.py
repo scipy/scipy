@@ -2,6 +2,7 @@
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
 from Numeric import *
+from fastumath import *
 #from _Graphics import *
 #import PIL.ImageTk,PIL.Image
 #ImageTk = PIL.ImageTk

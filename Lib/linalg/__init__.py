@@ -5,6 +5,7 @@
 """
 
 from Numeric import *
+from fastumath import *
 #import cblas
 #import clapack
 #import fblas

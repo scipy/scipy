@@ -3,6 +3,7 @@
 
 from slice3 import plane3
 from Numeric import *
+from fastumath import *
 from graftypes import *
 
 class Plane :
