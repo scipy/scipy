@@ -68,7 +68,8 @@ def configuration(parent_package='',parent_path=None):
                 'sources':[os.path.join(local_path,'specfun.pyf')],
                 'f2py_options':['--no-wrap-functions'],
                 #'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
-                'libraries' : ['specfun']
+                'libraries' : ['specfun'],
+                'depends':specfun
                 }
     dict_append(ext_args,**numpy_info)
     ext = Extension(**ext_args)

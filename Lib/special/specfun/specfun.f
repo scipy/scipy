@@ -6898,6 +6898,7 @@ C       =====================================================
 C
         IMPLICIT DOUBLE PRECISION (P,X)
         DIMENSION PM(0:MM,0:N),PD(0:MM,0:N)
+        INTRINSIC MIN
         DO 10 I=0,N
         DO 10 J=0,M
            PM(J,I)=0.0D0
@@ -6924,7 +6925,7 @@ C
         XS=LS*(1.0D0-X*X)
         DO 30 I=1,M
 30         PM(I,I)=-LS*(2.0D0*I-1.0D0)*XQ*PM(I-1,I-1)
-        DO 35 I=0,M
+        DO 35 I=0,MIN(M,N-1)
 35         PM(I,I+1)=(2.0D0*I+1.0D0)*X*PM(I,I)
         DO 40 I=0,M
         DO 40 J=I+2,N
