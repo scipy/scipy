@@ -21,7 +21,7 @@ import sys
 from scipy_test.testing import *
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
-from linalg import lu_solve,lu_factor,solve,diagsvd
+from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
 import scipy_base
 del sys.path[0]
 
@@ -332,6 +332,42 @@ class test_schur(ScipyTestCase):
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
+
+class test_hessenberg(ScipyTestCase):
+
+    def check_simple(self):
+        a = [[-149, -50,-154],
+             [ 537, 180, 546],
+             [ -27,  -9, -25]]
+        h1 = [[-149.0000,42.2037,-156.3165],
+              [-537.6783,152.5511,-554.9272],
+              [0,0.0728, 2.4489]]
+        h,q = hessenberg(a,calc_q=1)
+        assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
+        assert_array_almost_equal(h,h1,decimal=4)
+
+    def check_simple_complex(self):
+        a = [[-149, -50,-154],
+             [ 537, 180j, 546],
+             [ -27j,  -9, -25]]
+        h,q = hessenberg(a,calc_q=1)
+        h1 = dot(transp(conj(q)),dot(a,q))
+        assert_array_almost_equal(h1,h)
+
+    def check_random(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])
+            h,q = hessenberg(a,calc_q=1)
+            assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
+
+    def check_random_complex(self):
+        n = 20
+        for k in range(2):
+            a = random([n,n])+1j*random([n,n])
+            h,q = hessenberg(a,calc_q=1)
+            h1 = dot(transp(conj(q)),dot(a,q))
+            assert_array_almost_equal(h1,h)
 
 if __name__ == "__main__":
     ScipyTest('linalg.decomp').run()

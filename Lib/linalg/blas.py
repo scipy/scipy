@@ -44,6 +44,8 @@ def get_blas_funcs(names,arrays=(),debug=0):
         m1,m2 = cblas,fblas
     funcs = []
     for name in names:
+        if name=='ger' and typecode in 'FD':
+            name = 'gerc'
         func_name = required_prefix + name
         func = getattr(m1,func_name,None)
         if func is None:

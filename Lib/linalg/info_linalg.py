@@ -30,6 +30,7 @@ Linear algebra routines
    qr         --- QR decomposition of a matrix
    schur      --- Schur decomposition of a matrix
    rsf2csf    --- Real to complex schur form
+   hessenberg --- Hessenberg form of a matrix
 
  matrix Functions:
  

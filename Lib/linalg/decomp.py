@@ -5,7 +5,8 @@
 # additions by Eric Jones,      June 2002
 
 __all__ = ['eig','eigvals','lu','svd','svdvals','diagsvd','cholesky','qr',
-           'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth']
+           'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
+           'hessenberg']
 
 from basic import LinAlgError
 import basic
@@ -16,7 +17,8 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import scipy_base
-from scipy_base import asarray_chkfinite, asarray, diag, zeros
+from scipy_base import asarray_chkfinite, asarray, diag, zeros, ones, \
+     dot, transpose
 cast = scipy_base.cast
 r_ = scipy_base.r_
 c_ = scipy_base.c_
@@ -159,7 +161,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
 def eigvals(a,b=None,overwrite_a=0):
     """Return eigenvalues of square matrix."""
     return eig(a,b=b,left=0,right=0,overwrite_a=overwrite_a)
-
+    
 def lu_factor(a, overwrite_a=0):
     """Return raw LU decomposition of a matrix and pivots, for use in solving
     a system of linear equations.
@@ -536,3 +538,58 @@ def orth(A):
     Q = u[:,:num]
     return Q
 
+def hessenberg(a,calc_q=0,overwrite_a=0):
+    """ Compute Hessenberg form of a matrix.
+
+    Inputs:
+
+      a -- the matrix
+      calc_q -- if non-zero then calculate unitary similarity
+                transformation matrix q.
+      overwrite_a=0 -- if non-zero then discard the contents of a,
+                     i.e. a is used as a work array if possible.
+
+    Outputs:
+
+      h    -- Hessenberg form of a                [calc_q=0]
+      h, q -- matrices such that a = q * h * q^T  [calc_q=1]
+
+    """
+    a1 = asarray(a)
+    if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
+        raise ValueError, 'expected square matrix'
+    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    gehrd,gebal = get_lapack_funcs(('gehrd','gebal'),(a1,))
+    ba,lo,hi,pivscale,info = gebal(a,overwrite_a = overwrite_a)
+    if info<0: raise ValueError,\
+       'illegal value in %-th argument of internal gebal (hessenberg)'%(-info)
+    n = len(a1)
+    lwork = calc_lwork.gehrd(gehrd.prefix,n,lo,hi)
+    hq,tau,info = gehrd(ba,lo=lo,hi=hi,lwork=lwork,overwrite_a=1)
+    if info<0: raise ValueError,\
+       'illegal value in %-th argument of internal gehrd (hessenberg)'%(-info)
+
+    if not calc_q:
+        for i in range(lo,hi):
+            hq[i+2:hi+1,i] = 0.0
+        return hq
+
+    # XXX: Use ORGHR routines to compute q.
+    ger,gemm = get_blas_funcs(('ger','gemm'),(hq,))
+    typecode = hq.typecode()
+    q = None
+    for i in range(lo,hi):
+        if tau[i]==0.0:
+            continue
+        v = zeros(n,typecode=typecode)
+        v[i+1] = 1.0
+        v[i+2:hi+1] = hq[i+2:hi+1,i]
+        hq[i+2:hi+1,i] = 0.0
+        h = ger(-tau[i],v,v,a=diag(ones(n,typecode=typecode)),overwrite_a=1)
+        if q is None:
+            q = h
+        else:
+            q = gemm(1.0,q,h)
+    if q is None:
+        q = diag(ones(n,typecode=typecode))
+    return hq,q
