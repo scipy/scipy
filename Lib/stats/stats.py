@@ -13,10 +13,8 @@
 # out of the use of this software, even if advised of the possibility of
 # such damage.
 #
-# Comments and/or additions are welcome (send e-mail to:
-# strang@nmr.mgh.harvard.edu).
-#
 
+#
 # Heavily adapted for use by SciPy 2002 by Travis Oliphant
 """
 stats.py module
@@ -210,7 +208,7 @@ SequenceType = [ListType, TupleType, ArrayType]
 
 # These two functions replace letting axis be a sequence and the
 #  keepdims features used throughout.  These ideas
-#  did not match 
+#  did not match the rest of Scipy.
 
 def apply_over_axes(func, a, axes):
     """Apply a function over multiple axes, keeping the same shape

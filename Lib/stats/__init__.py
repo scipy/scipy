@@ -169,10 +169,17 @@ friedmanchisquare
 
 glm
 anova
+
+Plot-tests
+
+probplot
+ppcc_max
+ppcc_plot
 """
 
 import pstats
 from stats import *
+from morestats import *
 from rv2 import *
 from distributions import *
 from rv import *
