@@ -44,7 +44,22 @@
     cheby2 (cheb2ord) -- Chebyshev Type II
     ellip (ellipord)  -- Elliptic (Cauer)
     bessel            -- Bessel (no order selection available -- try butterod)
+
+ Linear Systems:
+
+    lti -- linear time invariant system object.
+    lsim -- continuous-time simulation of output to linear system.
+    impulse -- impulse response of linear, time-invariant (LTI) system.
+    step -- step response of continous-time LTI system.
+
+ LTI Reresentations:
  
+    tf2zpk -- transfer function to zero-pole-gain.
+    zpk2tf -- zero-pole-gain to transfer function.
+    tf2ss -- transfer function to state-space.
+    ss2tf -- state-pace to transfer function.
+    zpk2ss -- zero-pole-gain to state-space.
+    ss2zpk -- state-space to pole-zero-gain.    
 """
 _modules = ['sigtools']
 _namespaces = ['signaltools', 'bsplines', 'filter_design', 'ltisys']

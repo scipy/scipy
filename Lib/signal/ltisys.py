@@ -4,7 +4,7 @@
 
 from filter_design import tf2zpk, zpk2tf, normalize
 from Numeric import product, zeros, asarray, concatenate, \
-     array, dot, transpose, arange, ones
+     array, dot, transpose, arange, ones, Float
 import Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
@@ -14,6 +14,16 @@ from scipy import r1array, r2array
 from scipy import poly, squeeze, Mat
 
 def tf2ss(num, den):
+    """Transfer function to state-space representation.
+
+    Inputs:
+
+      num, den -- sequences representing the numerator and denominator polynomials.
+
+    Outputs:
+
+      A, B, C, D -- state space representation of the system.
+    """
     # Controller canonical state-space representation.
     #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K 
     #  states are found by asserting that X(s) = U(s) / D(s)
@@ -57,6 +67,8 @@ def none_to_empty(arg):
         return arg
 
 def abcd_normalize(A=None, B=None, C=None, D=None):
+    """Check state-space matrices and ensure they are rank-2.
+    """
     A, B, C, D = map(none_to_empty, (A, B, C, D))
     A, B, C, D = map(r2array, (A, B, C, D))
 
@@ -96,6 +108,18 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     return A, B, C, D
     
 def ss2tf(A, B, C, D, input=0):
+    """State-space to transfer function.
+
+    Inputs:
+
+      A, B, C, D -- state-space representation of linear system.
+      input -- For multiple-input systems, the input to use.
+
+    Outputs:
+
+      num, den -- Numerator and denominator polynomials (as sequences)
+                  respectively.
+    """
     # transfer function is C (sI - A)**(-1) B + D
     A, B, C, D = map(asarray, (A, B, C, D))
     # Check consistency and 
@@ -132,13 +156,41 @@ def ss2tf(A, B, C, D, input=0):
     return num, den
 
 def zpk2ss(z,p,k):
+    """Zero-pole-gain representation to state-space representation
+
+    Inputs:
+
+      z, p, k -- zeros, poles (sequences), and gain of system
+
+    Outputs:
+
+      A, B, C, D -- state-space matrices.
+    """
     return tf2ss(*zpk2tf(z,p,k))
 
 def ss2zpk(A,B,C,D,input=0):
+    """State-space representation to zero-pole-gain representation.
+
+    Inputs:
+
+      A, B, C, D -- state-space matrices.
+      input -- for multiple-input systems, the input to use.
+
+    Outputs:
+
+      z, p, k -- zeros and poles in sequences and gain constant.
+    """    
     return tf2zpk(*ss2tf(A,B,C,D,input=input))
 
 class lti:
+    """Linear Time Invariant class which simplifies representation.
+    """
     def __init__(self,*args,**kwords):
+        """Initialize the LTI system using either:
+           (numerator, denominator)
+           (zeros, poles, gain)
+           (A, B, C, D) -- state-space.
+        """
         N = len(args)
         if N == 2:  # Numerator denominator transfer function input
             self.__dict__['num'], self.__dict__['den'] = normalize(*args)
@@ -206,8 +258,41 @@ class lti:
         else:
             self.__dict__[attr] = val
 
+    def impulse(self, X0=None, T=None, N=None):
+        return impulse(self, X0=X0, T=T, N=N)
+
+    def step(self, X0=None, T=None, N=None):
+        return step(self, X0=X0, T=T, N=N)
+
+    def output(self, U, T, X0=None):
+        return lsim(self, U, T, X0=X0)
+
 
 def lsim(system, U, T, X0=None):
+    """Simulate output of a continuous-time linear system.
+
+    Inputs:
+
+      system -- an instance of the LTI class or a tuple describing the
+                system.  The following gives the number of elements in
+                the tuple and the interpretation.
+                  2 (num, den)
+                  3 (zeros, poles, gain)
+                  4 (A, B, C, D)
+      U -- an input array describing the input at each time T
+           (linear interpolation is assumed between given times).
+           If there are multiple inputs, then each column of the 
+           rank-2 array represents an input.
+      T -- the time steps at which the input is defined and at which
+           the output is desired.
+      X0 -- (optional, default=0) the initial conditions on the state vector.
+
+    Outputs: (T, yout, xout)
+
+      T -- the time values for the output.
+      yout -- the response of the system.
+      xout -- the time-evolution of the state-vector.
+    """
     # system is an lti system or a sequence
     #  with 2 (num, den)
     #       3 (zeros, poles, gain)
@@ -247,6 +332,22 @@ def lsim(system, U, T, X0=None):
 
 
 def impulse(system, X0=None, T=None, N=None):
+    """Impulse response of continuous-time system.
+
+    Inputs:
+
+      system -- an instance of the LTI class or a tuple with 2, 3, or 4
+                elements representing (num, den), (zero, pole, gain), or
+                (A, B, C, D) representation of the system.
+      X0 -- (optional, default = 0) inital state-vector.
+      T -- (optional) time points (autocomputed if not given).
+      N -- (optional) number of time points to autocompute (100 if not given).
+
+    Ouptuts: (T, yout)
+
+      T -- output time points,
+      yout -- impulse response of system.
+    """
     if isinstance(system, lti):
         sys = system
     else:
@@ -269,6 +370,22 @@ def impulse(system, X0=None, T=None, N=None):
     return T, h
 
 def step(system, X0=None, T=None, N=None):
+    """Step response of continuous-time system.
+
+    Inputs:
+
+      system -- an instance of the LTI class or a tuple with 2, 3, or 4
+                elements representing (num, den), (zero, pole, gain), or
+                (A, B, C, D) representation of the system.
+      X0 -- (optional, default = 0) inital state-vector.
+      T -- (optional) time points (autocomputed if not given).
+      N -- (optional) number of time points to autocompute (100 if not given).
+
+    Ouptuts: (T, yout)
+
+      T -- output time points,
+      yout -- step response of system.
+    """
     if isinstance(system, lti):
         sys = system
     else:
