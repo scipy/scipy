@@ -1,14 +1,14 @@
 SciPy is an open source library developed by Enthought, Inc. Many people have 
 contributed to SciPy, both in code development, suggestions, and financial 
-support.  Below is a partial list.  If you've been left of, please let me know, 
-and we'll add your name.
+support.  Below is a partial list.  If you've been left off, please let me know
+(eric@enthought.com), and I'll add your name.
 
 Code Contributions:
 
 The main developers on SciPy are Travis Oliphant, Pearu Peterson, and Eric 
 Jones.  Travis and Eric each contributed about half the orginal code.  Pearu 
 developed f2py which is the integral to wrapping the many Fortran libraries 
-used in SciPy.  All three continually work algorithm development and 
+used in SciPy.  All three continually work on both algorithm development and 
 improvements to the feature set, build process, and robustness of SciPy.
 
 
@@ -20,11 +20,11 @@ David M. Cooke  -- improvements to system_info
 
 Testing:
 
-
+Louis Luangkesom for providing multiple tests for the stats module.
 
 Website Development:
 
-Travis Vaught, Tiffany Kamm, and Eric Jones for building th community web-site.
+Travis Vaught, Tiffany Kamm, and Eric Jones for building the community web-site.
 Travis Vaught for maintaining the web-site.
 
 Institutions:
