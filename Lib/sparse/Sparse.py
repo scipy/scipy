@@ -58,6 +58,7 @@ class dictmatrix(dict):
         self.shape = (0,0)
         self.storage = 'dict'
         self.data = {}
+        self.type = None
 
     def __getitem__(self, key):
         return self.get(key,0)
@@ -192,6 +193,14 @@ class dictmatrix(dict):
             data = data*1.0
             ftype = 'd'
         return ftype, nnz, data, rowind, col_ptr
+
+    def dense(self,typecode='d'):
+        new = zeros(self.shape,typecode)
+        for key in self.keys():
+            ikey0 = int(key[0])
+            ikey1 = int(key[1])
+            new[ikey0,ikey1] = value
+        return new
 
                
 class spmatrix:
