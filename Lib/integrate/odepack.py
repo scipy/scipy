@@ -30,7 +30,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
       func -- func(y,t0,...) computes the derivative of y at t0.
       y0   -- initial condition on y (can be a vector).
-      t    -- a vector of time points for which to solve for y.
+      t    -- a sequence of time points for which to solve for y.  The intial 
+              value point should be the first element of this sequence.
       args -- extra arguments to pass to function.
       Dfun -- the gradient (Jacobian) of func (same input signature as func).
       col_deriv -- non-zero implies that Dfun defines derivatives down
@@ -119,7 +120,11 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     if full_output:
         output[1]['message'] = _msgs[output[-1]]
 
-    return output[:-1]
+    output = output[:-1]
+    if len(output) == 1:
+        return output[0]
+    else:
+        return output
 
 
 

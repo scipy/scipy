@@ -366,7 +366,7 @@ The function which is integrated can even use the quad argument (though
 \series bold 
 quad
 \series default 
-.
+).
  The integral in this case is 
 \begin_inset Formula \[
 I_{n}=\int _{0}^{\infty }\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.\]
@@ -425,4 +425,215 @@ performs double integration.
 \layout Subsection
 
 Ordinary differential equations (scipy.integrate.odeint)
+\layout Standard
+
+Integrating a set of ordinary differential equations (ODEs) given initial
+ conditions is another useful example.
+ The function 
+\series bold 
+odeint 
+\series default 
+is available in SciPy for integrating a first-order vector differential
+ equation:
+\begin_inset Formula \[
+\frac{d\mathbf{y}}{dt}=\mathbf{f}\left( \mathbf{y},t\right) ,\]
+
+\end_inset 
+
+ given initial conditions 
+\begin_inset Formula \( \mathbf{y}\left( 0\right) =y_{0}, \)
+\end_inset 
+
+ where 
+\begin_inset Formula \( \mathbf{y} \)
+\end_inset 
+
+ is a length 
+\begin_inset Formula \( N \)
+\end_inset 
+
+ vector and 
+\begin_inset Formula \( \mathbf{f} \)
+\end_inset 
+
+ is a mapping from 
+\begin_inset Formula \( {\cal R}^{N} \)
+\end_inset 
+
+ to 
+\begin_inset Formula \( {\cal R}^{N}. \)
+\end_inset 
+
+ A higher-order ordinary differential equation can always be reduced to
+ a differential equation of this type by introducing intermediate derivatives
+ into the 
+\begin_inset Formula \( \mathbf{y} \)
+\end_inset 
+
+ vector.
+ 
+\layout Standard
+
+For example suppose it is desired to find the solution to the following
+ second-order differential equation:
+\begin_inset Formula \[
+\frac{d^{2}w}{dz^{2}}-zw(z)=0\]
+
+\end_inset 
+
+ with initial conditions 
+\begin_inset Formula \( w\left( 0\right) =\frac{1}{\sqrt[3]{3^{2}}\Gamma \left( \frac{2}{3}\right) } \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \left. \frac{dw}{dz}\right| _{z=0}=-\frac{1}{\sqrt[3]{3}\Gamma \left( \frac{1}{3}\right) }. \)
+\end_inset 
+
+ It is known that the solution to this differential equation is the Airy
+ function 
+\begin_inset Formula \[
+w=\textrm{Ai}\left( z\right) ,\]
+
+\end_inset 
+
+ which gives a means to check the integrator using 
+\series bold 
+scipy.special.airy.
+ 
+\layout Standard
+
+First, convert this ODE into standard form by setting 
+\begin_inset Formula \( \mathbf{y}=\left[ \frac{dw}{dz},w\right]  \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( t=z. \)
+\end_inset 
+
+ Thus, the differential equation becomes
+\begin_inset Formula \[
+\frac{d\mathbf{y}}{dt}=\left[ \begin{array}{c}
+ty_{1}\\
+y_{0}
+\end{array}\right] =\left[ \begin{array}{cc}
+0 & t\\
+1 & 0
+\end{array}\right] \left[ \begin{array}{c}
+y_{0}\\
+y_{1}
+\end{array}\right] =\left[ \begin{array}{cc}
+0 & t\\
+1 & 0
+\end{array}\right] \mathbf{y}.\]
+
+\end_inset 
+
+ In other words, 
+\begin_inset Formula \[
+\mathbf{f}\left( \mathbf{y},t\right) =\mathbf{A}\left( t\right) \mathbf{y}.\]
+
+\end_inset 
+
+ 
+\layout Standard
+
+As an interesting reminder, if 
+\begin_inset Formula \( \mathbf{A}\left( t\right)  \)
+\end_inset 
+
+ commutes with 
+\begin_inset Formula \( \int _{0}^{t}\mathbf{A}\left( \tau \right) \, d\tau  \)
+\end_inset 
+
+ under matrix multiplication, then this linear differential equation has
+ exact solution using the matrix exponential: 
+\begin_inset Formula \[
+\mathbf{y}\left( t\right) =\exp \left( \int _{0}^{t}\mathbf{A}\left( \tau \right) d\tau \right) \mathbf{y}\left( 0\right) ,\]
+
+\end_inset 
+
+ However, in this case, 
+\begin_inset Formula \( \mathbf{A}\left( t\right)  \)
+\end_inset 
+
+ and its integral do not commute.
+\layout Standard
+
+There are many optional inputs and outputs available when using odeint which
+ can help tune the solver.
+ These additional inputs and outputs are not needed much of the time, however,
+ and the three required input arguments and the output solution suffice.
+ The required inputs are the function defining the derivative, the initial
+ output vector, and the time points to obtain a solution (with the initial
+ value point as the first element of this sequence).
+ The output to 
+\series bold 
+odeint
+\series default 
+ is a matrix where each row contains the solution vector at each requested
+ time point (thus, the initial conditions are given in the first output
+ row).
+ 
+\layout Standard
+
+The following example illustrates the use of odeint including the usage
+ of the 
+\series bold 
+Dfun
+\series default 
+ option which allows the user to specify a gradient (with respect to 
+\begin_inset Formula \( \mathbf{y} \)
+\end_inset 
+
+) of the function, 
+\series bold 
+
+\begin_inset Formula \( \mathbf{f}\left( \mathbf{y},t\right)  \)
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example4.6}
+
+\end_inset 
+
+
+\layout Subsection
+
+Gaussian quadrature (scipy.integrate.gauss_quadtol)
+\layout Standard
+
+A few functions are also provided in order to perform simple Gaussian quadrature
+ over a fixed interval.
+ The first is 
+\series bold 
+gauss_quad 
+\series default 
+which performs fixed-order Gaussian quadrature.
+ The second function is 
+\series bold 
+gauss_quadtol 
+\series default 
+which performs Gaussian quadrature of multiple orders until the difference
+ in the integral estimate is beneath some tolerance supplied by the user.
+ These functions both use the module 
+\series bold 
+scipy.integrate.orthogonal 
+\series default 
+which can calculate the roots and quadrature weights of a large variety
+ of orthogonal polynomials.
+\layout Section
+
+Optimization (scipy.optimize)
+\layout Standard
+
+There are several classical optimization algorithms provided by SciPy in
+ the 
+\series bold 
+scipy.optimize 
+\series default 
+package.
+ 
 \the_end
