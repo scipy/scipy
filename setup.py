@@ -53,7 +53,7 @@ def generate_config(extension, build_dir):
     f.write('__all__ = ["get_info","show"]\n\n')
     for k,i in system_info.saved_results.items():
         f.write('%s=%r\n' % (k,i))
-    f.write('\ndef get_info(name): return globals().get(name,{})\n')
+    f.write('\ndef get_info(name): g=globals(); return g.get(name,g.get(name+"_info",{}))\n')
     f.write('''
 def show():
     for name,info_dict in globals().items():
