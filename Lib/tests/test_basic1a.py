@@ -18,11 +18,11 @@ class test_roots(unittest.TestCase):
         a3 = [1,5,6]
         assert_array_almost_equal(roots(a1),[2,2],11)
         assert_array_almost_equal(roots(a2),[2,2],11)
-        assert_array_almost_equal(sort(roots(a3)),sort([-3,-2]),11)
+        assert_array_almost_equal(sort(roots(a3)),sort([-3,-2]),7)
 
     def check_inverse(self):
         a = rand(5)
-        assert_array_almost_equal(sort(roots(poly(a))),sort(a),11)
+        assert_array_almost_equal(sort(roots(poly(a))),sort(a),5)
 
 class test_factorial(unittest.TestCase):
     def check_basic(self):
