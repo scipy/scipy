@@ -249,7 +249,9 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
         gist.plsys(1)
     viewp = gist.viewport()
     gist.plsys(sys)
-    width = (viewp[1] - viewp[0]) / 10.0;
+    DX = viewp[1] - viewp[0]
+    DY = viewp[3] - viewp[2]
+    width = DY / 10.0;
     if lleft is None:
         lleft = gist.mouse(0,0,"Click on point for lower left coordinate.")
         llx = lleft[0]
@@ -261,9 +263,9 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
     dx = width / 3.0
     legarr = Numeric.arange(llx,llx+width,dx)
     legy = Numeric.ones(legarr.shape)
-    dy = fontsize*points*1.15
+    dy = fontsize*points*1.2
     deltay = fontsize*points / 2.8
-    deltax = fontsize*points / 2.8
+    deltax = fontsize*points / 2.8 * DX / DY
     ypos = lly + deltay;
     if linetypes is None:
         linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
@@ -284,7 +286,7 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
         gist.plsys(0)
         maxlen = MLab.max(map(len,text))
         c1 = (llx-deltax,lly-deltay)
-        c2 = (llx + width + deltax + fontsize*points* maxlen/2.1 + deltax,
+        c2 = (llx + width + deltax + fontsize*points* maxlen/1.8 + deltax,
               lly + len(text)*dy)
         linesx0 = [c1[0],c1[0],c2[0],c2[0]]
         linesy0 = [c1[1],c2[1],c2[1],c1[1]]
