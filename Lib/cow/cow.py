@@ -127,7 +127,7 @@ class machine_cluster:
                     self.workers[i].send(package,addendum[i])   
             except socket.error, msg:    
                 import sys
-                err_type, err_msg = sys.exc_info()[1]
+                err_type, err_msg = sys.exc_info()[:2]
                 self.had_send_error.append(self.workers[i])
                 try: self.send_exc[(err_type,err_msg)].append(self.workers[i].id)
                 except: self.send_exc[(err_type,err_msg)] = [self.workers[i].id]
