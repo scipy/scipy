@@ -4,7 +4,7 @@ from Numeric import sarray, arange, where, array, zeros
 from scipy_base.fastumath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 
-gamma = scipy.special.gamme 
+gamma = scipy.special.gamma
 def factorial(n):
     return gamma(n+1)
 
