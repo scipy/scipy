@@ -564,14 +564,13 @@ class plot_frame(wx.wxFrame):
 
     def OnFileSaveAs(self, event):
         import os
-        dlg = wx.wxFileDialog(self, "Save As", ".", "", "*.*", wx.wxSAVE)
         wildcard = "PNG files (*.png)|*.png|" \
                    "BMP files (*.bmp)|*.bmp|" \
                    "JPEG files (*.jpg)|*.jpg|" \
                    "PCX files (*.pcx)|*.pcx|" \
-                   "TIFF files (*.tif)|*.tif" 
-        dlg.SetWildcard(wildcard)                      
-        dlg.SetWildcard(wildcard)
+                   "TIFF files (*.tif)|*.tif|" \
+                   "All Files |*|"
+        dlg = wx.wxFileDialog(self, "Save As", ".", "", wildcard, wx.wxSAVE)
         if dlg.ShowModal() == wx.wxID_OK:
             f = dlg.GetPath()
             dummy, ftype = os.path.splitext(f)
@@ -588,6 +587,7 @@ class plot_frame(wx.wxFrame):
                 d.ShowModal()
                 d.Destroy()
         dlg.Destroy()    
+
     def OnFileExit(self, event):
         self.Close()
         
