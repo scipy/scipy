@@ -35,7 +35,9 @@ _modules = ["fastumath", "misc", "optimize", "integrate", "signal",
 
 # namespaces to subsume into the scipy namespace itself
 _namespaces = ['MLab','handy', 'misc', 'fastumath'] # MLab includes Numeric
-#_namespaces = [] # MLab includes Numeric
+
+# partial list of namespaces to get
+_partials = {'Matrix' : ['Matrix']}
 import os,sys
 from helpmod import help, source
 from handy import *
@@ -43,6 +45,7 @@ from misc import *
 
 __all__=[]
 
+somenames2all(__all__, _partials, globals())
 names2all(__all__, _namespaces, globals())
 modules2all(__all__, _modules, globals())
 objects2all(__all__, ['help', 'source'])

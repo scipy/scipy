@@ -1,8 +1,8 @@
 """This module allows for the loading of an array from an ASCII
 Text File
 
-
 """
+
 import Numeric
 from Numeric import array, take, concatenate, Float
 import types, re
@@ -16,7 +16,9 @@ _READ_BUFFER_SIZE = 1024*1024
 #
 # Adapted from
 #    TextFile class Written by: Konrad Hinsen <hinsen@cnrs-orleans.fr>
-#    Last revision: 2000-11-17
+#
+# Written by Trent Oliphant and Travis Oliphant
+#   with support from Agilent, Inc.
 # 
 
 import os, sys
@@ -70,6 +72,25 @@ def build_numberlist(lines):
             else:
                 raise ValueError, errstr
     return linelist
+
+def get_open_file(fileobject, mode='rb'):
+    if isinstance(fileobject, types.StringType):
+        fileobject = os.path.expanduser(fileobject)
+        if mode[0]=='r' and not os.path.exists(fileobject):
+            raise IOError, (2, 'No such file or directory: '
+                            + fileobject)
+        else:
+            try:
+                file = open(fileobject, mode)
+            except IOError, details:
+                file = None
+                if type(details) == type(()):
+                    details = details + (fileobject,)
+                raise IOError, details
+    else:
+        file = fileobject
+
+    return file
             
 
 class ascii_stream:
@@ -96,21 +117,7 @@ class ascii_stream:
         self.linelist = build_numberlist(lines)
         self.comment = comment
         self.lencomment = len(comment)
-        if isinstance(fileobject, types.StringType):          
-            fileobject = os.path.expanduser(fileobject)
-            if not os.path.exists(fileobject):
-                raise IOError, (2, 'No such file or directory: '
-                                + fileobject)
-            else:
-                try:
-                    self.file = open(fileobject)
-                except IOError, details:
-                    self.file = None
-                    if type(details) == type(()):
-                            details = details + (fileobject,)
-                    raise IOError, details
-        else:
-            self.file = fileobject
+        self.file = get_open_file(fileobject, mode='r')
         self._pos = self.file.tell()
         self._lineindex = 0
         if self.linelist[-1] < 0:
@@ -207,11 +214,39 @@ def getcolumns(stream, columns, separator):
     colsize = len(collist)
     val = process_line(firstline, separator, collist, Float, 0)
     return len(val), collist
-        
+
 def read_array(fileobject, separator=default, columns=default, comment="#",
                lines=default, atype=Numeric.Float, linesep='\n',
                rowsize=10000, missing=0):
-    "Return an array containing the data from file |fileobject|."
+    """Return an array represented ascii_formatted data in |fileobject|.
+
+    Inputs:
+
+      fileobject -- An open file object or a string for a valid filename.
+      separator -- a string or a tuple of strings to indicate the column
+                   separators.  If the length of the string tuple is less
+                   than the total number of columns, then the last separator
+                   is assumed to be the separator for the rest of the columns.
+      columns -- a tuple of integers and range-tuples which describe the
+                 columns to read from the file.  A negative entry in the
+                 last column specifies the negative skip value to the end.
+                 Example:  columns=(1, 4, (5, 9), (11, 15, 3), 17, -2)
+                         will read [1,4,5,6,7,8,11,14,17,18,20,22,...]
+      lines   -- a tuple with the same structure as columns which indicates
+                 the lines to read. 
+      comment -- the comment character (line will be ignored even if it is
+                 specified by the lines tuple)
+      linesep -- separator between rows.
+      missing -- value to insert in array when conversion to number fails.
+      atype -- the typecode of the output array.
+      rowsize -- the allocation row size (array grows by this amount as
+               data is read in).
+
+    Outputs:
+
+      file -- The open file.
+    """
+
     if type(separator) in [types.StringType, type(default)]:
         sep = (separator,)
     else:
@@ -234,3 +269,41 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
     if a.shape[0] == 1 or a.shape[1] == 1:
         a = Numeric.ravel(a)
     return a
+
+def write_array(fileobject, arr, separator=" ", linesep='\n',
+                precision=5, suppress_small=0):
+    """Write a rank-2 or less array to file represented by fileobject.
+
+    Inputs:
+
+      fileobject -- An open file object or a string to a valid filename.
+      arr -- The array to write.
+      separator -- separator to write between elements of the array.
+      linesep -- separator to write between rows of array
+      precision -- number of digits after the decimal place to write.
+      suppress_small -- non-zero to suppress small digits and not write
+                        them in scientific notation.
+
+    Outputs:
+
+      file -- The open file.
+    """
+      
+    file = get_open_file(fileobject, mode='wa')
+    rank = len(arr.shape)
+    if rank > 2:
+        raise ValueError, "Can-only write up to 2-D arrays."
+
+    if rank == 0:
+        file.write(str(a[0])+linesep)
+    for k in range(arr.shape[0]):
+        astr = Numeric.array2string(arr[k], max_line_width=sys.maxint,
+                                    precision=precision,
+                                    suppress_small=suppress_small,
+                                    separator=' '+separator,
+                                    array_output=0)
+        astr = astr[1:-1]
+        file.write(astr)
+        file.write(linesep)
+    return file
+                 
