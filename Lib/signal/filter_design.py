@@ -8,25 +8,64 @@ Num = MLab
 abs = absolute
 pi = Numeric.pi
 import scipy
-from scipy import r1array, poly
+from scipy import r1array, poly, polyval
+from scipy import special, optimize
+import string, types
 
 def factorial(n):
-    return scipy.special.gamma(n+1)
+    return special.gamma(n+1)
 
 def comb(N,k):
-    lgam = scipy.special.lgam
+    lgam = special.lgam
     return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
 
-def freqs(b,a,w=None,N=None):
-    pass
+def freqs(b,a,worN=None):
+    factor = 1.4
+    if worN is None:
+        z, p, k = tf2zpk(b,a)  # get poles and zeros
+        maximag = max(concatenate((z.imag,p.imag)))
+        minimag = min(concatenate((z.imag,p.imag)))
+        w = scipy.grid[minimag*factor:maximag*factor:200]
+    if isinstance(worN, types.IntType):
+        N = worN
+        z, p, k = tf2zpk(b,a)  # get poles and zeros
+        maximag = max(concatenate((z.imag,p.imag)))
+        minimag = min(concatenate((z.imag,p.imag)))
+        w = scipy.linspace(minimag*factor,maximag*factor,N)
+    else:
+        w = worN
+    w = r1array(w)
+    s = 1j*w
+    return polyval(b, s) / polyval(a, s), w
+
+def freqz(b, a, worN=None, whole=0):
+    b, a = map(r1array, (b,a))
+    if whole:
+        lastpoint = 2*pi
+    else:
+        lastpoint = pi
+    if worN is None:
+        N = 512
+        w = Num.arange(0,lastpoint,lastpoint/N)
+    elif isinstance(worN, types.IntType):
+        N = worN
+        w = Num.arange(0,lastpoint,lastpoint/N)
+    else:
+        w = worN
+    w = r1array(w)
+    zm1 = exp(-1j*w)
+    return polyval(b[::-1], zm1) / polyval(a[::-1], zm1), w
+    
+        
     
 def tf2zpk(b,a):
+    b,a = map(r1array,(b,a))
     b = (b+0.0) / a[0]
     a = (a+0.0) / a[0]
     k = b[0]
     b /= b[0]
-    z = roots(b)
-    p = roots(a)
+    z = MLab.roots(b)
+    p = MLab.roots(a)
     return z, p, k
     
 def zpk2tf(z,p,k):
@@ -46,10 +85,10 @@ def zpk2tf(z,p,k):
     return b, a
 
 def normalize(b,a):
-    b,a = map(MLab.asarray,(b,a))
-    while a[0] == 0.0:
+    b,a = map(r1array,(b,a))
+    while a[0] == 0.0 and len(a) > 1:
         a = a[1:]
-    while b[0] == 0.0:
+    while b[0] == 0.0 and len(b) > 1:
         b = b[1:]
     outb = b * (1.0) / a[0]
     outa = a * (1.0) / a[0]
@@ -67,14 +106,14 @@ def lp2lp(b,a,wo=1.0):
     d = len(a)
     n = len(b)
     M = max((d,n))
-    pwo = pow(wo,arange(M-1,-1,-1))
+    pwo = pow(wo,Num.arange(M-1,-1,-1))
     start1 = max((n-d,0))
     start2 = max((d-n,0))
     b = b / pwo[start2:]
     a = a / pwo[start1:]
     return normalize(b, a)
 
-def lp2hp(b,a,wo=1):
+def lp2hp(b,a,wo=1.0):
     """Return a high-pass filter with cuttoff frequency wo
     from a low-pass filter prototype with unity cutoff frequency.
     """
@@ -84,16 +123,18 @@ def lp2hp(b,a,wo=1):
     d = len(a)
     n = len(b)
     if wo != 1:
-        pwo = pow(wo,arange(max((d,n))))
+        pwo = pow(wo,Num.arange(max((d,n))))
     else:
-        pwo = ones(max((d,n)),b.typecode())
+        pwo = Num.ones(max((d,n)),b.typecode())
     if d >= n:
         outa = a[::-1] * pwo
-        outb = Numeric.resize(b,d)
-        outb[:n] = b[::-1] * pwo[:n]
+        outb = Numeric.resize(b,(d,))
+        outb[n:] = 0.0
+        outb[:n] = b[::-1] * pwo[:n]        
     else:
         outb = b[::-1] * pwo
-        outa = Numeric.resize(a,n)
+        outa = Numeric.resize(a,(n,))
+        outa[d:] = 0.0
         outa[:d] = a[::-1] * pwo[:d]
 
     return normalize(outb, outa)
@@ -107,12 +148,12 @@ def lp2bp(b,a,wo=1.0, bw=1.0):
     N = len(b) - 1
     artype = b.typecode()
     if artype not in ['F','D','f','d']:
-        artype = Float
+        artype = Num.Float
     ma = max([N,D])
     Np = N + ma
     Dp = D + ma
-    bprime = zeros(Np+1,artype)
-    aprime = zeros(Dp+1,artype)
+    bprime = Num.zeros(Np+1,artype)
+    aprime = Num.zeros(Dp+1,artype)
     wosq = wo*wo
     for j in range(Np+1):
         val = 0.0
@@ -140,12 +181,12 @@ def lp2bs(b,a,wo=1,bw=1):
     N = len(b) - 1
     artype = b.typecode()
     if artype not in ['F','D','f','d']:
-        artype = Float
+        artype = Num.Float
     M = max([N,D])
     Np = M + M
     Dp = M + M
-    bprime = zeros(Np+1,artype)
-    aprime = zeros(Dp+1,artype)
+    bprime = Num.zeros(Np+1,artype)
+    aprime = Num.zeros(Dp+1,artype)
     wosq = wo*wo
     for j in range(Np+1):
         val = 0.0
@@ -168,12 +209,12 @@ def bilinear(b,a,fs=1.0):
     a,b = map(r1array,(a,b))
     D = len(a) - 1
     N = len(b) - 1
-    artype = Float
+    artype = Num.Float
     M = max([N,D])
     Np = M
     Dp = M
-    bprime = zeros(Np+1,artype)
-    aprime = zeros(Dp+1,artype)
+    bprime = Num.zeros(Np+1,artype)
+    aprime = Num.zeros(Dp+1,artype)
     for j in range(Np+1):
         val = 0.0
         for i in range(N+1):
@@ -241,7 +282,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     """
 
     ftype, btype, output = map(string.lower, (ftype, btype, output))
-    Wn = asarray(Wn)
+    Wn = Num.asarray(Wn)
     try:
         btype = band_dict[btype]
     except KeyError:
@@ -507,14 +548,14 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2: # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = zeros(2,Numeric.Float)
+        WN = Num.zeros(2,Numeric.Float)
         WN[0] = ((passb[1] - passb[0]) + sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN[1] = ((passb[1] - passb[0]) - sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN = Num.sort(abs(WN))
     elif filter_type == 4: # pass
-        W0 = array([-W0, W0],Numeric.Float)
+        W0 = Num.array([-W0, W0],Numeric.Float)
         WN = -W0 * (passb[1]-passb[0]) / 2.0 + sqrt(W0**2 / 4.0 * \
                                               (passb[1]-passb[0])**2 + \
                                               passb[0]*passb[1])
@@ -687,13 +728,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = zeros(2,Num.Float)
+        nat = Num.zeros(2,Num.Float)
         nat[0] = new_freq / 2.0 * (passb[0]-passb[1]) + \
                  sqrt(new_freq**2 * (passb[1]-passb[0])**2 / 4.0 + \
                       passb[1] * passb[0])
         nat[1] = passb[1] * passb[0] / nat[0]
     elif filter_type == 4:
-        nat = zeros(2,Num.Float)
+        nat = Num.zeros(2,Num.Float)
         nat[0] = 1.0/(2.0*new_freq) * (passb[0] - passb[1]) + \
                  sqrt((passb[1]-passb[0])**2 / (4.0*new_freq**2) + \
                       passb[1] * passb[0])
@@ -825,13 +866,13 @@ def cheb2ap(N,rs):
 
     if N % 2:
         m = N - 1
-        n = Num.concatenate((arange(1,N-1,2),arange(N+2,2*N,2)))
+        n = Num.concatenate((Num.arange(1,N-1,2),Num.arange(N+2,2*N,2)))
     else:
         m = N
-        n = arange(1,2*N,2)
+        n = Num.arange(1,2*N,2)
         
     z = conjugate(1j / cos(n*pi/(2.0*N)))
-    p = exp(1j*(pi*arange(1,2*N,2)/(2.0*N) + pi/2.0))
+    p = exp(1j*(pi*Num.arange(1,2*N,2)/(2.0*N) + pi/2.0))
     p = sinh(mu) * p.real + 1j*cosh(mu)*p.imag
     p = 1.0 / p
     k = (MLab.prod(-p)/MLab.prod(-z)).real
@@ -893,10 +934,10 @@ def ellipap(N,rp,rs):
     ws = wp / sqrt(m)
     m1 = 1-m
 
-    j = arange(1-N%2,N,2)
+    j = Num.arange(1-N%2,N,2)
     jj = len(j)
 
-    [s,c,d,phi] = special.ellpj(j*capk/N,m*ones(jj))
+    [s,c,d,phi] = special.ellpj(j*capk/N,m*Num.ones(jj))
     snew = Num.compress(abs(s) > EPSILON, s)
     z = 1.0 / (sqrt(m)*snew)
     z = 1j*z
