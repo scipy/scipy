@@ -6,6 +6,7 @@ Discrete Fourier Transforms - helper.py
 __all__ = ['fftshift','ifftshift','fftfreq','rfftfreq']
 
 import Numeric
+import types
 
 def fftshift(x,axes=None):
     """ fftshift(x, axes=None) -> y
@@ -59,7 +60,7 @@ def fftfreq(n,d=1.0):
       f = [0,1,...,n/2-1,-n/2,...,-1]/(d*n)         if n is even
       f = [0,1,...,(n-1)/2,-(n-1)/2,...,-1]/(d*n)   if n is odd
     """
-    assert isinstance(n,int)
+    assert isinstance(n,types.IntType)
     k = range(0,(n-1)/2+1)+range(-(n/2),0)
     return Numeric.array(k,'d')/(n*d)
 
@@ -75,7 +76,7 @@ def rfftfreq(n,d=1.0):
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2]/(d*n)   if n is even
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
     """
-    assert isinstance(n,int)
+    assert isinstance(n,types.IntType)
     return Numeric.array(range(1,n+1),'i')/2/float(n*d)
 
 ##########################################################################

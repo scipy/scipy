@@ -278,8 +278,8 @@ class test_rfft(ScipyTestCase):
     def check_djbfft(self):
         try:
             from FFT import fft as fft2
-        except ImportError:
-            print 'Skipping check_djbfft (failed to import FFT)'
+        except ImportError,errmess:
+            print 'Skipping check_djbfft (failed to import FFT: %s)' % errmess
             return
         for i in range(2,14):
             n = 2**i
