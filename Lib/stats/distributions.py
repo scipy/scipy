@@ -2550,15 +2550,6 @@ Semicircular distribution
 
 # _trstr = "Left must be <= mode which must be <= right with left < right"
 class triang_gen(rv_continuous):
-    """Triangular Distribution
-
-    up-sloping line from loc to (loc + c*scale) and then downsloping
-    for (loc + c*scale) to (loc+scale).
-
-    standard form is in range [0,1] with c the mode
-    location parameter shifts the start to loc
-    scale changes the width from 1 to scale
-    """
     def _argcheck(self, c):
         return (c >= 0) & (c <= 1)
     def _pdf(self, x, c):
@@ -2613,30 +2604,34 @@ Truncated exponential distribution
 
 # Truncated Normal
 
-class truncnorm_gen(norm_gen):
+class truncnorm_gen(rv_continuous):
     def _argcheck(self, a, b):
         self.a = a
         self.b = b
-        self.nb = norm_gen._cdf(self,b)
-        self.na = norm_gen._cdf(self,a)
+        self.nb = norm._cdf(b)
+        self.na = norm._cdf(a)
         return (a != b)
     def _pdf(self, x, a, b):
-        return norm_gen._pdf(self, x) / (self.nb - self.na)
+        return norm._pdf(x) / (self.nb - self.na)
     def _cdf(self, x, a, b):
-        return (norm_gen._cdf(self, x) - self.na) / (self.nb - self.na)
+        return (norm._cdf(x) - self.na) / (self.nb - self.na)
     def _ppf(self, q, a, b):
-        return norm_gen._ppf(self, q*self.nb + self.na*(1.0-q))
+        return norm._ppf(q*self.nb + self.na*(1.0-q))
     def _stats(self, a, b):
         nA, nB = self.na, self.nb
         d = nB - nA
-        pA, pB = norm_gen._pdf(self, a), norm_gen._pdf(self, b)
+        pA, pB = norm._pdf(a), norm._pdf(b)
         mu = (pB - pA) / d
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
 truncnorm = truncnorm_gen(name='truncnorm', longname="A truncated normal",
                           shapes="a,b", extradoc="""
 
-Truncated Normal distribution
+Truncated Normal distribution.
+
+  The standard form of this distribution is a standard normal truncated to the
+  range [a,b] --- notice that a and b are defined over the domain
+  of the standard normal.
 """
                           )
 
@@ -2687,7 +2682,6 @@ Tukey-Lambda distribution
    to Uniform from -1 to 1 (lam = 1)
 """
                               )
-
 
 # Uniform
 # loc to loc + shape
