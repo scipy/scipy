@@ -110,7 +110,7 @@ as an argument to distutils setup function.
 For example, a minimal setup_xxx.py file for a pure Python Scipy
 module xxx is::
 
-  def configuration(parent_package=''):
+  def configuration(parent_package='',parent_path=None):
       package = 'xxx'
       from scipy_distutils.misc_util import default_config_dict
       config = default_config_dict(package,parent_package)
@@ -118,7 +118,20 @@ module xxx is::
 
   if __name__ == '__main__':
       from scipy_distutils.core import setup
-      setup(**configuration())
+      setup(**configuration(parent_path=''))
+
+get_path
+++++++++
+
+``scipy_distutils.misc_util`` provides function
+``get_path(modulename,parent_path=None)`` that returns the location of
+``modulename``. In ``setup_xxx.py`` file this can be used to determine
+the local directory name as follows::
+
+  local_path = get_path(__name__,parent_path)
+
+If ``parent_path`` is not ``None`` then the returned path is relative
+to parent path. This avoids longish paths.
 
 SourceGenerator
 +++++++++++++++
@@ -145,7 +158,24 @@ feature is useful when including non-standard dependencies to
 Extension instances, just put them to ``sources`` list.  See fastumath
 module in ``scipy_core/scipy_base/setup_scipy_base.py`` for example.
 
-File xxx/info_xxx.py
+
+SourceFilter
+++++++++++++
+
+On different platforms different sources may be required to build a
+module. When making such a difference in ``configuration()`` function
+by defining different sources for an Extension instance, then there
+might occur portability issues (e.g. missing files) when a source
+tar-ball was created on a different platform than the users platform.
+
+To overcome this difficulty, ``scipy_distutils.misc_util`` provides
+``SourceFilter(func,sources,*args)`` class that can be used to define
+a holder of all sources. Function ``func(sources,*args)`` should
+return a list of sources that is relevant for building the module on
+the particular platfrom. ``SourceFilter`` instance can be used in the
+list of ``sources`` argument of the Extension class.
+
+File xxx/info_xxx.py 
 --------------------
 
 Scipy setup.py and Lib/__init__.py files assume that each Scipy module
@@ -164,7 +194,7 @@ standalone
   as standalone or under scipy. Default value is False.
 
 dependencies
-  [Support not implemented yet, may be it is YAGNI]
+  [Support not implemented yet, may be it is YAGNI?]
   List of module names that the module depends on. The module will not
   be installed if any of the dependencies is missing. If the module
   depends on another Scipy module, say yyy, and that is not going to
@@ -178,7 +208,7 @@ global_symbols
 ignore
   Boolean variable indicating that the module should be ignored or
   not. Default value is False. Useful when the module is platform
-  dependent.
+  dependent or badly broken.
 
 postpone_import
   Boolean variable indicating that importing module should be
@@ -195,7 +225,7 @@ postponed modules, the documentation string of a module (that would
 usually reside in __init__.py file) should be copied also 
 to info_xxx.py file.
 
-So, the contents of a typical xxx/__init__.py file would be::
+So, the header a typical xxx/__init__.py file is::
 
   #
   # Module xxx - ...
@@ -224,7 +254,7 @@ a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
   from scipy_test.testing import *
 
   set_package_path()
-  # make sure that all xxx symbols are imported before the del statement:
+  # import xxx symbols
   from xxx.yyy import zzz
   restore_path()
 
@@ -272,3 +302,67 @@ To take the level and verbosity parameters for tests from
 ``sys.argv``, use ``ScipyTest.run`` method (this is supported only
 when ``optparse`` is installed).
 
+
+Open issues and discussion
+--------------------------
+
+Documentation
++++++++++++++
+
+That is an important feature that Scipy is currently missing. Few
+Scipy modules have some documentation but they use different formats
+and are mostly out-dated.
+
+Currently there are
+
+* Scipy tutorial by Travis E. Oliphant that is maintained using LyX. 
+  The main advantage of this approach is that one can use mathematical
+  formulas in documentation.
+
+* I (Pearu) have used reStructuredText formated .txt files to document
+  various bits of software. This is mainly because ``docutils`` might
+  become a standard tool to document Python modules. The disadvantage
+  is that it does not support mathematical formulas (though, we might
+  add this feature ourself using e.g. LaTeX syntax).
+
+* Various text files with almost no formatting and mostly badly out
+  dated.
+
+* Documentation strings of Python functions, classes, and modules.
+  Some Scipy modules are well-documented in this sense, other again
+  are very poorly documented. Other issue is that there is no
+  consensus on how to format documentation strings, mainly because
+  we haven't decided which tool to use to generate, for instance, HTML
+  pages of documentation strings.
+
+So, we need unique rules for documenting Scipy modules. Here are some
+requirements that documentation tools should satsify:
+
+* Easy to use. This is important to lower the threshold of developers
+  to use the same documentation utilities.
+
+* In general, all functions that are visible to Scipy end-users, must
+  have well-maintained documentation strings.
+
+* Support for mathematical formulas. Since Scipy is a tool for
+  scientific work, it is hard to avoid formulas to describe how its
+  modules are good for. So, documentation tools should support LaTeX.
+
+* Documentation of a feature should be closely related to its
+  interface and implementation. This is important for keeping
+  documentation up to date. One option would be to maintain
+  documentation in source files (and have a tool that extracts
+  documentation from sources). The main disadvantage with that is
+  the lack of convenience writing documentation as the editor would be
+  in different mode (e.g. Python mode) from the mode suitable for
+  documentation.
+
+* Differentiation of implementation (e.g. from scanning sources) and
+  concept (e.g. tutorial, users guide, manual) based docs.
+  
+
+Configuration
++++++++++++++
+
+[Discuss system_info.py limitations. Need a building step to determine
+certain system parameters.]
