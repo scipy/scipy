@@ -1,8 +1,15 @@
 
 # Functions which need the PIL
 
+import Numeric
+import types, sys
+from scipy import special, stats
+from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
+     ones, NewAxis, transpose
+import scipy_base.fastumath
 
-__all__.extend(['fromimage','toimage','imsave','imload'])
+__all__ = ['fromimage','toimage','imsave','imread','bytescale',
+                'imrotate','radon']
 
 _UInt8 = Numeric.UnsignedInt8
 
@@ -172,6 +179,17 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
 def imrotate(arr,angle,interp='bilinear'):
     func = {'nearest':0,'bilinear':2,'bicubic':3}
     im = toimage(arr,mode='F')
-    im.rotate(angle,resample=func[interp])
+    im = im.rotate(angle,resample=func[interp])
     return fromimage(im)
     
+def radon(arr,theta=None):
+    if theta is None:
+        theta = mgrid[0:180]
+    s = zeros((arr.shape[1],len(theta)),'d')
+    k = 0
+    for th in theta:
+        im = imrotate(arr,-th)
+        s[:,k] = sum(im,axis=0)
+        k += 1
+    return s
+        
