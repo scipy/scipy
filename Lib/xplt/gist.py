@@ -143,15 +143,15 @@ def moush(*arg):
 #            Requires Ghostscript and its associated ps2epsi utility.
 #  ---------------------------------------------------------------------
 
-def eps(name, noepsi=0, pdf=0):
+def eps(name, epsi=0, pdf=0):
    """
-   eps(name, noepsi=0, pdf=0)
       Write the picture in the current graphics window to the Encapsulated
       PostScript file NAME+".eps" (i.e.- the suffix .eps is added to NAME).
       The last extension of name is stripped to avoid .eps.eps files
       
-      Unles noepsi is 1, this function requires the ps2epsi utility which
-      comes with the project GNU Ghostscript program.
+      If epsi is 1, this function requires the ps2epsi utility which
+      comes with the project GNU Ghostscript program and will place a
+      bitmap image in the postscript file. 
       Any hardcopy file associated with the current window is first closed,
       but the default hardcopy file is unaffected.  As a side effect,
       legends are turned off and color table dumping is turned on for
@@ -167,7 +167,7 @@ def eps(name, noepsi=0, pdf=0):
    hcp ()
    window (hcp="")
    res = 1
-   if not noepsi:
+   if epsi:
       res = os.system ("ps2epsi " + name)
    if not res:
       os.remove(name)

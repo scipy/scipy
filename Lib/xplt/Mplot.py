@@ -643,10 +643,12 @@ def change_palette(pal):
                 else:
                     raise ValueError, "Palette %s not found." % pal
         else:
-            data = Numeric.asarray(pal)
-            filename = os.path.join(_user_path,'_temp.gp')
-            write_palette(filename,data)
-            gist.palette(filename)
+            data = Numeric.transpose(Numeric.asarray(pal))
+	    data = data.astype('b')
+	    gist.palette(*transpose(data))
+            #filename = os.path.join(_user_path,'_temp.gp')
+            #write_palette(filename,data)
+            #gist.palette(filename)
 
 chpal = change_palette
 
