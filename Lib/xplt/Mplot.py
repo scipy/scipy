@@ -475,6 +475,8 @@ def plot(x,*args,**keywds):
     except KeyError: pass
     try: linewidth=float(keywds['width'])
     except KeyError: linewidth=1.0
+    try: msize = float(keywds['msize'])
+    except KeyError: msize=1.0
     if _hold or override:
         pass
     else:
@@ -522,7 +524,7 @@ def plot(x,*args,**keywds):
 	y = where(scipy.isfinite(y),y,0)
         y = _minsqueeze(y) 
         x = _minsqueeze(x)
-        gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,width=linewidth)
+        gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,msize=msize,width=linewidth)
 
         nowplotting = nowplotting + 1
 
