@@ -268,7 +268,7 @@ def lapack_expand(generic_interface,row_major = 0,cwrap=0):
     #print len(subs)
     #loop through the subs
     type_exp = re.compile(r'<tchar=(.*?)>')    
-    interface = ''    
+    interface = ''
     for sub in subs:
         #3. Find the typecodes to use:
         type_chars = type_exp.search(sub).group(1)
@@ -290,6 +290,43 @@ def lapack_expand(generic_interface,row_major = 0,cwrap=0):
             interface = interface + '\n\n' + function_def
     
     return interface
+
+def process_flip_dims(generic_interface, format):
+    subs = all_subroutines(generic_interface)
+    #print len(subs)
+    #loop through the subs
+    flip_exp = re.compile(r'<Cflip (.*?)>')
+    interface = ''
+    for sub in subs:   # replace <Cflip xxxx> with appropriate value.
+        pos = 0
+        newsub = ''
+        while 1:
+            match = flip_exp.search(sub,pos)
+            if match is None:
+                newsub += sub[pos:]
+                break
+            start,end = match.span(1)
+            if format[0] in ['F','f']:
+                str = sub[start:end]
+                newsub += sub[pos:start-7] + str
+                pos = end + 1
+            elif format[0] in ['C', 'c']:
+                str = sub[start:end]
+                varbeg = str.find('(') + 1
+                varend = str.find(')')
+                if (varbeg == 0) or (varend == -1):
+                    raise RuntimeError, "<Cflip > used incorrectly."
+                vars = str[varbeg:varend].split(',')
+                newvars = map(string.strip,vars)
+                newvars.reverse()
+                newstr = 'dimension(%s)' % (",".join(newvars))
+                newsub += sub[pos:start-7] + newstr
+                pos = end + 1
+            else:
+                raise ValueError, "Format invalid."    
+        interface += newsub + "\n"
+    return interface
+
 
 def interface_to_module(interface_in,module_name,include_list):
     pre_prefix = "!%f90 -*- f90 -*-\n"
@@ -356,7 +393,8 @@ def generate_flapack():
     generic_interface = process_special_types(generic_interface,
                                               format='Fortran')
     interface = lapack_expand(generic_interface,row_major = 0)
-    interface = process_ignore_info(interface,format='Fortran')    
+    interface = process_ignore_info(interface,format='Fortran')
+    interface = process_flip_dims(interface, format='Fortran')
     # must be last
     interface = process_return_info(interface,format='Fortran')
     module_definition = interface_to_module(interface,module_name, include_files)
@@ -404,14 +442,17 @@ def generate_clapack():
     generic_interface = lapack_expand(generic_interface,row_major=1,cwrap=1)
     
     # for now must be after lapack_expand (don't know why)
-    generic_interface = process_ignore_info(generic_interface,format='C')        
+    generic_interface = process_ignore_info(generic_interface,format='C')
+
+    generic_interface = process_flip_dims(generic_interface, format='C')
+
     # must be last
     generic_interface = process_return_info(generic_interface,format='C')
     
     module_def = interface_to_module(generic_interface,module_name, include_files)
     
     module_def,module_py = rename_functions(module_def,'clapack_','')
-    module_def = f2py_hack(module_def)
+    # module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
     f = open('_' + module_name+'.pyf','w')
@@ -443,7 +484,7 @@ def generate_cblas():
     include_files += b
     module_def = interface_to_module(interface,module_name,include_files)
     module_def,module_py = rename_functions(module_def,'cblas_','')
-    module_def = f2py_hack(module_def)
+    # module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
     f = open('_' + module_name+'.pyf','w')
