@@ -1,0 +1,6 @@
+      SUBROUTINE RFFTI (N,WSAVE)
+      DIMENSION       WSAVE(*)
+      IF (N .EQ. 1) RETURN
+      CALL RFFTI1 (N,WSAVE(N+1),WSAVE(2*N+1))
+      RETURN
+      END
