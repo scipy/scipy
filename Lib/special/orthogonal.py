@@ -75,7 +75,25 @@ class orthopoly1d(poly1d):
         self.__dict__['normcoef'] = mu
         self.__dict__['coeffs'] *= An
 
-    
+
+def get_eig_func():
+    try:
+        import scipy.linalg
+        eig = scipy.linalg.eig
+    except ImportError:
+        try:
+            import linalg
+            eig = linalg.eig
+        except ImportError:
+            try:
+                import LinearAlgebra
+                eig = LinearAlgebra.eigenvectors
+            except:
+                raise ImportError, \
+                      "You must have scipy.linalg or LinearAlgebra to "\
+                      "use this function."
+    return eig
+
 def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)
 
@@ -90,8 +108,7 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     sqrt_bn_func(n)     should return sqrt(B_n)
     mu ( = h_0 )        is the integral of the weight over the orthogonal interval
     """
-    # XXX: shouldn't import linalg inside a function
-    from scipy.linalg import eig
+    eig = get_eig_func()
     nn = arange(1.0,n)
     sqrt_bn = sqrt_bn_func(nn)
     an = an_func(concatenate(([0],nn)))
