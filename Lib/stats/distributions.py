@@ -32,7 +32,6 @@ all = alltrue
 sgf = vectorize
 import new
 
-
 def seed(x=0,y=0):
     """seed(x, y), set the seed using the integers x, y; 
     Set a random one from clock if  y == 0
@@ -3799,7 +3798,6 @@ class planck_gen(rv_discrete):
         val = ceil(-1.0/lambda_ * log(1-q)-1)
         return val
     def _stats(self, lambda_):
-        m2, m1 = arr(lambda_)
         mu = 1/(exp(lambda_)-1)
         var = exp(-lambda_)/(1-exp(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
@@ -3816,6 +3814,40 @@ planck = planck_gen(name='planck',longname='A discrete exponential ',
 Planck (Discrete Exponential)
 
     pmf is p(k; b) = (1-exp(-b))*exp(-b*k) for kb >= 0
+"""
+                      )
+
+class boltzmann_gen(rv_discrete):
+    def _pmf(self, k, lambda_, N):
+        fact = (1-exp(-lambda_))/(1-exp(-lambda_*N))
+        return fact*exp(-lambda_(k))
+    def _cdf(self, x, lambda_, N):
+        k = floor(x)
+        return (1-exp(-lambda_*(k+1)))/(1-exp(-lambda_*N))
+    def _ppf(self, q, lambda_, N):
+        qnew = q*(1-exp(-lambda_*N))
+        val = ceil(-1.0/lambda_ * log(1-qnew)-1)
+        return val
+    def _stats(self, lambda_, N):
+        z = exp(-lambda_)
+        zN = exp(-lambda_*N)
+        mu = z/(1.0-z)-N*zN/(1-zN)
+        var = z/(1.0-z)**2 - N*N*zN/(1-zN)**2
+        trm = (1-zN)/(1-z)
+        trm2 = (z*trm**2 - N*N*zN)
+        g1 = z*(1+z)*trm**3 - N**3*zN*(1+zN)
+        g1 = g1 / trm2**(1.5)
+        g2 = z*(1+4*z+z*z)*trm**4 - N**4 * zN*(1+4*zN+zN*zN)
+        g2 = g2 / trm2 / trm2
+        return mu, var, g1, g2
+
+boltzmann = boltzmann_gen(name='boltzmann',longname='A truncated discrete exponential ',
+                    shapes="lambda_,N",
+                    extradoc="""
+
+Boltzmann (Truncated Discrete Exponential)
+
+    pmf is p(k; b, N) = (1-exp(-b))*exp(-b*k)/(1-exp(-b*N)) for k=0,..,N-1
 """
                       )
 

@@ -4032,7 +4032,7 @@ G\left(q\right) & = & \sqrt{-2\log\left(1-q\right)}\end{eqnarray*}
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu & = & \frac{\pi}{2}\\
+\mu & = & \sqrt{\frac{\pi}{2}}\\
 \mu_{2} & = & \frac{4-\pi}{2}\\
 \gamma_{1} & = & \frac{2\left(\pi-3\right)\sqrt{\pi}}{\left(4-\pi\right)^{3/2}}\\
 \gamma_{2} & = & \frac{24\pi-6\pi^{2}-16}{\left(4-\pi\right)^{2}}\\
@@ -4041,9 +4041,18 @@ m_{n} & = & \sqrt{2\log\left(2\right)}\end{eqnarray*}
 
 \end_inset 
 
-
+ 
 \begin_inset Formula \[
 h\left[X\right]=\frac{\gamma}{2}+\log\left(\frac{e}{\sqrt{2}}\right).\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+\mu_{n}^{\prime}=\sqrt{2^{n}}\Gamma\left(\frac{n}{2}+1\right)\]
 
 \end_inset 
 
@@ -4065,8 +4074,9 @@ Defined for
 \layout Standard
 
 
-\begin_inset Formula \[
-f\left(x;b\right)=x\exp\left(-\frac{x^{2}+b^{2}}{2}\right)I_{0}\left(xb\right)\]
+\begin_inset Formula \begin{eqnarray*}
+f\left(x;b\right) & = & x\exp\left(-\frac{x^{2}+b^{2}}{2}\right)I_{0}\left(xb\right)\\
+F\left(x;b\right) & = & \int_{0}^{x}\alpha\exp\left(-\frac{\alpha^{2}+b^{2}}{2}\right)I_{0}\left(\alpha b\right)d\alpha\end{eqnarray*}
 
 \end_inset 
 
@@ -4252,6 +4262,42 @@ h\left[X\right]=\frac{1}{4}\log\left(\frac{\pi c\Gamma^{2}\left(\frac{c}{2}\righ
 where 
 \begin_inset Formula \[
 Z\left(c\right)=\,_{3}F_{2}\left(1,1,1+\frac{c}{2};\frac{3}{2},2;1\right)=\sum_{k=0}^{\infty}\frac{k!}{k+1}\frac{\Gamma\left(\frac{c}{2}+1+k\right)}{\Gamma\left(\frac{c}{2}+1\right)}\frac{\Gamma\left(\frac{3}{2}\right)}{\Gamma\left(\frac{3}{2}+k\right)}\]
+
+\end_inset 
+
+
+\layout Section
+
+Student Z
+\layout Standard
+
+The student Z distriubtion is defined over all space with one shape parameter
+ 
+\begin_inset Formula $\nu>0$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left(x;\nu\right) & = & \frac{\Gamma\left(\frac{\nu}{2}\right)}{\sqrt{\pi}\Gamma\left(\frac{\nu-1}{2}\right)}\left(1+x^{2}\right)^{-\nu/2}\\
+F\left(x;\nu\right) & = & \left\{ \begin{array}{ccc}
+Q\left(x;\nu\right) &  & x\leq0\\
+1-Q\left(x;\nu\right) &  & x\geq0\end{array}\right.\\
+Q\left(x;\nu\right) & = & \frac{\left|x\right|^{1-n}\Gamma\left(\frac{n}{2}\right)\,_{2}F_{1}\left(\frac{n-1}{2},\frac{n}{2};\frac{n+1}{2};-\frac{1}{x^{2}}\right)}{2\sqrt{\pi}\Gamma\left(\frac{n+1}{2}\right)}\end{eqnarray*}
+
+\end_inset 
+
+Interesting moments are 
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & 0\\
+\sigma^{2} & = & \frac{1}{\nu-3}\\
+\gamma_{1} & = & 0\\
+\gamma_{2} & = & \frac{6}{\nu-5}.\end{eqnarray*}
+
+\end_inset 
+
+ The moment generating function is 
+\begin_inset Formula \[
+\theta\left(t\right)=2\sqrt{\left|\frac{t}{2}\right|^{\nu-1}}\frac{K_{\left(n-1\right)/2}\left(\left|t\right|\right)}{\Gamma\left(\frac{\nu-1}{2}\right)}.\]
 
 \end_inset 
 
