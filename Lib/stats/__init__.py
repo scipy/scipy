@@ -1,13 +1,10 @@
 """ Statistical Functions
 """
-_modules = ['pstat']
-_namespaces = ['rv','stats','rv2', 'distributions']
-
-__all__ = []
-import scipy
-scipy.modules2all(__all__, _modules, globals())
-scipy.names2all(__all__, _namespaces, globals())
-del scipy
+import pstats
+from rv import *
+from stats import *
+from rv2 import *
+from distributions import *
 
 #---- testing ----#
 def test(level=10):

@@ -22,6 +22,10 @@ fminbound   ---      Bounded minimization for scalar functions.
 
 """
 
+
+__all__ = ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',
+           'rosen','rosen_der', 'rosen_hess','rosen_hess_prod']
+
 import Numeric
 import MLab
 from scipy.handy import r1array

@@ -1,5 +1,7 @@
 # Author: Travis Oliphant
 
+__all__ = ['odeint']
+
 import _odepack
 
 _msgs = {2: "Integration successful.",

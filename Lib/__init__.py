@@ -19,98 +19,57 @@ from scipy_version import scipy_version as __version__
 
 import Numeric
 import os,sys
+import string
+
+# Level 0
+# modules to import under the scipy namespace
+import fastumath, basic, handy, misc
+from fastumath import *
+from basic import *
+from handy import *
+from misc import *
 from helpmod import help, source
 from Matrix import Matrix as Mat
-import fastumath
 
+# needs fastumath
 Inf = inf = Numeric.array(1e308)**10
 NaN = nan = Numeric.array(0.0) / Numeric.array(0.0)
 
-import string
-def somenames2all(alist, namedict, gldict):
-    for key in namedict.keys():
-        exec("from %s import %s" % (key, string.join(namedict[key],',')), gldict)
-        alist.extend(namedict[key])
-    
-def names2all(alist, spaces, gldict):
-    for name in spaces:
-        exec("import %s" % name, gldict)
-        thelist = eval(name,gldict).__dict__.keys()
-        exec("from %s import *" % name, gldict)
-        exec("del %s" % name, gldict)
-        for key in thelist:
-            if key[0] == "_":
-                thelist.remove(key)
-        alist.extend(thelist)
-
-def modules2all(alist, mods, gldict):
-    for name in mods:
-        exec("import %s" % name, gldict)
-        alist.append(name)
-    
-def objects2all(alist, objlist):
-    alist.extend(objlist)
-
-# modules to import under the scipy namespace
-_level0 = ["fastumath", "basic", "handy", "misc", "scimath"]
-_partials0 = {'Matrix' : ['Matrix']}
-# these modules will just be imported (not subsumed)
-_level0_importonly = []
-
-_level1 = ["special", "io", "linalg", "stats","fftpack"]  # fft is in this group.
-_partials1 = {'stats' : ['mean','median','std','cov','corrcoef'],
-              'fftpack' : ['fft', 'fftn', 'fft2',
-                            'ifft', 'ifft2', 'ifftn']}
-_level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
-                      # require level 0 and level 1
-# these modules will just be imported (not subsumed)                      
-_level1a_importonly = []
-
-
-__all__=[]
-somenames2all(__all__, _partials0, globals())
-names2all(__all__, _level0, globals())
-modules2all(__all__, _level0, globals())
-modules2all(__all__, _level0_importonly, globals())
-objects2all(__all__, ['help', 'source', "Inf", "inf", "NaN", "nan", "Mat"])
-
 # Level 1
-modules2all(__all__, _level1, globals())
-somenames2all(__all__, _partials1, globals())
+# these modules will just be imported (not subsumed)
+import special, io, linalg, stats, fftpack
+from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn
+from stats import mean, median, std, cov, corrcoef
+
+# Functions to be subsumed that need Level 0 and Level 1
+from basic1a import *
+from scimath import *
 
 try:
-    import scipy.fftw
-    __all__.append('fftw')
+    import fftw
 except ImportError:
     pass  # Not default anymore
 
-# Level 1a
-names2all(__all__, _level1a, globals())
-from scimath import *
-modules2all(__all__, _level1a, globals())
-modules2all(__all__, _level1a_importonly, globals())
-
 
 # Level 2
-
-_level2 = ["optimize", "integrate", "signal", "special", "interpolate", "cow", "ga", "cluster", "weave"]
-modules2all(__all__, _level2, globals())
+import optimize, integrate, signal, special, interpolate, cow, ga, cluster, weave
 
 # Level 3
 _plot = []
-#try:
-#    import xplt
-#    __all__.append('xplt')
-#    _plot.append('xplt')
-#except ImportError:
-#    pass
+try:
+    if sys.platform != 'win32':
+        import xplt
+        #__all__.append('xplt')
+        _plot.append('xplt')
+except ImportError:
+    pass
 
 try:
 #   gplt on win32 messes up focus and takes up 99%
 #   of processor -- works fine on *nix.
     if sys.platform != 'win32':
         import gplt
-        __all__.append('gplt')
+        #__all__.append('gplt')
         _plot.append('gplt')
 except ImportError:
     pass

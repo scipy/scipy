@@ -33,10 +33,5 @@
    funm       --- arbitrary function 
 """
 
-_modules = ['fblas', 'flapack', 'cblas', 'clapack']
-_namespaces = ['linear_algebra']
-
-__all__ = []
-import scipy
-scipy.modules2all(__all__, _modules, globals())
-scipy.names2all(__all__, _namespaces, globals())
+import fblas, flapack, cblas, clapack
+from linear_algebra import *

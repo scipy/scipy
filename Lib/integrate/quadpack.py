@@ -1,6 +1,6 @@
 # Author: Travis Oliphant 2001
 
-
+__all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']
 import _quadpack
 from common_routines import *
 import sys

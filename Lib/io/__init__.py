@@ -17,16 +17,8 @@
      packbits -- Pack a binary array of 1's and 0's into an array of bytes
      unpackbits -- Unpack an array packed by packbits.
 """
-__all__ = []
+from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
+     convert_objectarray 
 
-_moddict = {'numpyio' : ['packbits', 'unpackbits','bswap', 'fread',
-                         'fwrite', 'convert_objectarray'],
-            'array_import' : ['read_array',
-                              'write_array']
-            }
-
-
-import scipy
-scipy.names2all(__all__, ['mio'], globals())
-scipy.somenames2all(__all__, _moddict, globals())
-del scipy
+from array_import import *
+from data_store import *

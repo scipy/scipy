@@ -27,6 +27,8 @@ TODO: Make interfaces to the following fitpack functions:
     For bivariate splines: profil, regrid, parsur, surev
 """
 
+__all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
+                         'spalde', 'bisplrep', 'bisplev']
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from common_routines import *

@@ -1,5 +1,6 @@
 # Author: Travis Oliphant
 
+__all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb']
 
 from orthogonal import P_roots
 from Numeric import sum, asarray

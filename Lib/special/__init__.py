@@ -165,9 +165,7 @@
                  ends in 0.5 exactly, pick the nearest even integer.
 
  """
-__all__ = []
-import scipy
-scipy.names2all(__all__, ['special'], globals())
-del scipy
+from special import *
+
 
 

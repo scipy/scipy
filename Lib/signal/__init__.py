@@ -64,12 +64,8 @@
     zpk2ss -- zero-pole-gain to state-space.
     ss2zpk -- state-space to pole-zero-gain.    
 """
-_modules = ['sigtools']
-_namespaces = ['signaltools', 'bsplines', 'filter_design', 'ltisys']
-
-__all__ = []
-
-import scipy
-scipy.modules2all(__all__, _modules, globals())
-scipy.names2all(__all__, _namespaces, globals())
-del scipy
+import sigtools
+from signaltools import *
+from bsplines import *
+from filter_design import *
+from ltisys import *

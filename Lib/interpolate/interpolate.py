@@ -3,6 +3,9 @@
     !! Need to find argument for keeping initialize.  If it isn't
     !! found, get rid of it!
 """
+
+__all__ = ['linear1d']
+
 from Numeric import *
 from fastumath import *
 from scipy import r1array
@@ -28,7 +31,7 @@ def reduce_sometrue(a):
     return all
 
 
-class linear_1d:
+class linear1d:
     interp_axis = -1 # used to set which is default interpolation
                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
                      

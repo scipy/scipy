@@ -16,14 +16,7 @@
    bisection --  Single-variable function root finder using bisection method.
 """
 
-_moddict = {'optimize' : ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',
-                          'rosen','rosen_der', 'rosen_hess',
-                          'rosen_hess_prod'],
-            'minpack' : ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
-            }
-__all__ = []
+from optimize import *
+from minpack import *
 
-import scipy
-scipy.somenames2all(__all__, _moddict, globals())
-del scipy
 

@@ -24,16 +24,9 @@
    ode           -- Integrate ODE using vode routine.
 
 """
-_moddict = {'quadrature': ['fixed_quad', 'quadrature','romberg', 'trapz',
-                           'simps', 'romb'],
-            'odepack': ['odeint'],
-            'quadpack': ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf',
-                         'inf'],
-            'ode':['ode'],
-            }
 
-__all__ = []
-import scipy
-scipy.somenames2all(__all__, _moddict, globals())
-scipy.modules2all(__all__, ['orthogonal'], globals())
-del scipy
+from quadrature import *
+from odepack import *
+from quadpack import *
+from ode import *
+from orthogonal import *
