@@ -1,1 +1,3 @@
 prune scipy_core
+include setup.py
+include *.txt
