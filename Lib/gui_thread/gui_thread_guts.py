@@ -214,8 +214,13 @@ class proxied_callable:
 ################################################################
 
 class proxy_list(UserList.UserList):
-    def __init__(self, val):
-        UserList.UserList.__init__(self, val)
+    def __init__(self, val):        
+        # Do NOT use the UserList __init__ since it makes a copy of
+        # the data
+        if type(val) is types.TupleType:
+            self.data = list(val)
+        else:
+            self.data = val
 
     def __getitem__(self, i):
         val = self.data[i]
@@ -233,7 +238,9 @@ class proxy_list(UserList.UserList):
 
 class proxy_dict(UserDict.UserDict):
     def __init__(self, val):
-        UserDict.UserDict.__init__(self, val)
+        # Do NOT use the UserDict __init__ since it makes a copy of
+        # the data
+        self.data = val
 
     def __getitem__(self, key):
         val = self.data[key]
