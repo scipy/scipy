@@ -58,7 +58,8 @@ Currently Scipy consists of the following files and directories:
 
   Lib_chaco/
     Contains packages related to Chaco. [Can we move these packages
-    under Lib/?]
+    under Lib/? No need, new hooks in setup.py takes care of this; in
+    fact, we can introduce also contrib/ directory]
 
   tutorial/
     Scipy tutorial.
@@ -84,29 +85,25 @@ follow the following conventions:
 * Directory ``xxx/`` must contain 
 
   + a file ``setup_xxx.py`` that defines
-    ``configuration(parent_package='')`` function.  See ... for more
+    ``configuration(parent_package='')`` function.  See below for more
     details.
 
-  + a file ``info_xxx.py``. See .. more details.
+  + a file ``info_xxx.py``. See below more details.
 
 * Directory ``xxx/`` may contain 
 
   + a directory ``tests/`` that contains files ``test_<name>.py``
-    corresponding to modules ``xxx/<name>{.py,.so,/}``.  See ... for
+    corresponding to modules ``xxx/<name>{.py,.so,/}``.  See below for
     more details.
 
   + a file ``MANIFEST.in``.
-
-  + a file ``pre___init__.py`` that should contain the documentation
-    string of the module, usually found in ``__init__.py`` file. See
-    ... for more details.
 
 [Open issues: where we should put documentation?]
 
 File xxx/setup_xxx.py
 ---------------------
 
-Each Scipy module setup_xxx.py file must contain a function
+Each Scipy module setup_xxx.py file should contain a function
 ``configuration(..)`` that returns a dictionary which must be usable
 as an argument to distutils setup function.
 
@@ -123,36 +120,29 @@ module xxx is::
       from scipy_distutils.core import setup
       setup(**configuration())
 
-
-
-Files xxx/__init__.py and xxx/pre___init__.py
----------------------------------------------
+File xxx/__init__.py
+---------------------
 
 To speed up the import time as well as to minimize memory usage, scipy
 uses ppimport hooks to transparently postpone importing large modules
 that might not be used during a Scipy usage session. But in order to
 have an access to documentation of all Scipy modules, including of the
 postponed modules, the documentation string of a module (that would
-usually reside in __init__.py file) must be moved to pre___init__.py
-file.
+usually reside in __init__.py file) should be copied also 
+to info_xxx.py file.
 
-So, the contents of a typical xxx/__init__.py file is::
+So, the contents of a typical xxx/__init__.py file would be::
 
   #
   # Module xxx - ...
   #
 
-  from pre___init__ import __doc__
-  #from info_xxx import __doc__
+  from info_xxx import __doc__
   ...
 
-[xxx/pre___init__.py functionality will be replaced with more general
-hooks in xxx/info_xxx.py file]
 
 File xxx/info_xxx.py
 --------------------
-
-[info_xxx.py functionality is not implemented in Scipy yet.]
 
 Scipy setup.py and Lib/__init__.py files assume that each Scipy module
 contains a info_xxx.py file. The following information will be looked
@@ -170,13 +160,14 @@ standalone
   as standalone or under scipy. Default value is False.
 
 dependencies
+  [Support not implemented yet, may be it is YAGNI]
   List of module names that the module depends on. The module will not
   be installed if any of the dependencies is missing. If the module
   depends on another Scipy module, say yyy, and that is not going to
   be installed standalone, then use full name, that is, ``scipy.yyy``
   instead of ``yyy``.
 
-provides
+global_symbols
   List of names that should be imported to scipy name space.
 
 ignore
@@ -184,14 +175,21 @@ ignore
   not. Default value is False. Useful when the module is platform
   dependent.
 
+postpone_import
+  Boolean variable indicating that importing module should be
+  postponed until first attempt of its usage. Default value is False.
+
 File xxx/tests/test_yyy.py
 --------------------------
 
 Ideally, each Python code, extension module, or a subpackage in ``xxx/``
 directory should have the corresponding ``test_<name>.py`` file in
-``xxx/tests/`` directory. This file should define a function
-``test_suite_list`` that must return a list of 2-tuples
-``(<ScipyTestCase class>, <method name pattern>)``.
+``xxx/tests/`` directory. This file should define classes derived
+from ScipyTestCase class. Methods of such classes that names start
+with ``bench_`` or ``check_`` or ``test_`` are passed on to unittest
+machinery. These methods may have optional arguments, the default
+value of the first argument defines the testing level number. Default
+level is 1.
 
 A minimal example of a ``test_yyy.py`` file that implements tests for
 a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
@@ -205,25 +203,13 @@ a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
   del sys.path[0]
 
   class test_zzz(ScipyTestCase):
-      def check_simple(self):
+      def check_simple(self, level=1):
           assert zzz()=='Hello from zzz'
       #...
 
-  # defining test_suite_list function is obligatory
-  def test_suite_list(level=1):
-      suite_list = []
-      if level > 0:
-          suite_list += [
-              (test_zzz,'check_'),
-	      #...
-	      ]
-      if level > 5:
-          #...
-      return suite_list
-
   if __name__ == "__main__":
       from scipy_test.testing import ScipyTest
-      ScipyTest('xxx.yyy').test(level=1,verbosity=2)
+      ScipyTest('xxx.yyy').run()
 
 ``ScipyTestCase`` is derived from ``unittest.TestCase`` and it
 implements additional method ``measure(self, code_str, times=1)``.
@@ -237,3 +223,9 @@ functions::
   assert_array_equal(x,y,err_msg='')
   assert_array_almost_equal(x,y,decimal=6,err_msg='')
   rand(*shape) # returns random array with a given shape
+
+``ScipyTest`` managed running ``tests/test_*.py`` scripts. When using
+its ``.run()`` method then the level and verbosity parameters for
+tests are taken from ``sys.argv`` and the method
+``.test(level,verbosity)`` is called.
+
