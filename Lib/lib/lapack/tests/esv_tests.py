@@ -28,7 +28,7 @@ class _test_ev:
         assert not info,`info`
         assert_array_almost_equal(w,exact_w)
         for i in range(3):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i],self.decimal)
 
     def check_heevd_complex(self): self.check_heev_complex(suffix='d')
 
