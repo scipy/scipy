@@ -67,7 +67,6 @@ C
           IACT(K)=K
    40     VMULTC(K)=RESMAX-B(K)
       END IF
-      if (resmax.le.-1d0) print*,STEP
       IF (RESMAX .EQ. 0.0d0) GOTO 480
       DO 50 I=1,N
    50 SDIRN(I)=0.0d0
@@ -342,19 +341,9 @@ C     Set DXNEW to the new variables if STEP is the steplength, and reduce
 C     RESMAX to the corresponding maximum residual if stage one is being done.
 C     Because DXNEW will be changed during the calculation of some Lagrange
 C     multipliers, it will be restored to the following value later.
-      DO 360 I=1,N
-  360 DXNEW(I)=DX(I)+STEP*SDIRN(I)
-      IF (MCON .EQ. M) THEN
-          RESOLD=RESMAX
-          RESMAX=0.0d0
-          DO 380 K=1,NACT
-          KK=IACT(K)
-          TEMP=B(KK)
-          DO 370 I=1,N
-  370     TEMP=TEMP-A(I,KK)*DXNEW(I)
-          RESMAX=DMAX1(RESMAX,TEMP)
-  380     CONTINUE
-      END IF
+      call s360_380(DXNEW,DX,STEP,SDIRN,N,M,MCON,RESMAX,
+     1 NACT,IACT,B,A,RESOLD)
+
 C
 C     Set VMULTD to the VMULTC vector that would occur if DX became DXNEW. A
 C     device is included to force VMULTD(K)=0.0 if deviations from this value
@@ -443,3 +432,21 @@ C
   500 RETURN
       END
 
+      subroutine s360_380(DXNEW,DX,STEP,SDIRN,N,M,MCON,RESMAX,
+     1 NACT,IACT,B,A,RESOLD)
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      DIMENSION A(N,*),B(*),DX(*),IACT(*), SDIRN(*),DXNEW(*)
+      DO 360 I=1,N
+  360 DXNEW(I)=DX(I)+STEP*SDIRN(I)
+      IF (MCON .EQ. M) THEN
+          RESOLD=RESMAX
+          RESMAX=0.0d0
+          DO 380 K=1,NACT
+          KK=IACT(K)
+          TEMP=B(KK)
+          DO 370 I=1,N
+  370     TEMP=TEMP-A(I,KK)*DXNEW(I)
+          RESMAX=DMAX1(RESMAX,TEMP)
+  380     CONTINUE
+      END IF
+      end
