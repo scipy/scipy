@@ -135,6 +135,39 @@ class test_fblas2_simple(ScipyTestCase):
             assert_array_almost_equal(f(3j,[[3-4j]],[-4]),[-48-36j])
             assert_array_almost_equal(f(3j,[[3-4j]],[-4],3,[5j]),[-48-21j])
 
+    def check_ger(self):
+
+        for p in 'sd':
+            f = getattr(fblas,p+'ger',None)
+            if f is None: continue
+            assert_array_almost_equal(f(1,[1,
+                                           2],[3,4]),[[3,4],[6,8]])
+            assert_array_almost_equal(f(2,[1,
+                                           2,
+                                           3],[3,4]),[[6,8],[12,16],[18,24]])
+
+            assert_array_almost_equal(f(1,[1,
+                                           2],[3,4],
+                                        a=[[1,2],[3,4]]
+                                        ),[[4,6],[9,12]])
+
+        for p in 'cz':
+            f = getattr(fblas,p+'geru',None)
+            if f is None: continue
+            assert_array_almost_equal(f(1,[1j,
+                                           2],[3,4]),[[3j,4j],[6,8]])
+            assert_array_almost_equal(f(-2,[1j,
+                                           2j,
+                                           3j],[3j,4j]),[[6,8],[12,16],[18,24]])
+
+        for p in 'cz':
+            f = getattr(fblas,p+'gerc',None)
+            if f is None: continue
+            assert_array_almost_equal(f(1,[1j,
+                                           2],[3,4]),[[3j,4j],[6,8]])
+            assert_array_almost_equal(f(2,[1j,
+                                           2j,
+                                           3j],[3j,4j]),[[6,8],[12,16],[18,24]])
 
 class test_fblas3_simple(ScipyTestCase):
 
