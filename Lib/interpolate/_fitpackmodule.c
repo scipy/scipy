@@ -4,7 +4,7 @@
  */
 #include "multipack.h"
 static PyObject *fitpack_error;
-#include "__fitpack.c"
+#include "__fitpack.h"
 static struct PyMethodDef fitpack_module_methods[] = {
 {"_curfit", fitpack_curfit, METH_VARARGS, doc_curfit},
 {"_spl_", fitpack_spl_, METH_VARARGS, doc_spl_},

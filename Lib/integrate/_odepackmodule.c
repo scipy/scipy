@@ -3,7 +3,7 @@
  */
 #include "multipack.h"
 static PyObject *odepack_error;
-#include "__odepack.c"
+#include "__odepack.h"
 static struct PyMethodDef odepack_module_methods[] = {
 {"odeint", (PyCFunction) odepack_odeint, METH_VARARGS|METH_KEYWORDS, doc_odeint},
 {NULL,		NULL, 0, NULL}

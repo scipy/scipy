@@ -4,7 +4,7 @@
  */
 #include "minpack.h"
 static PyObject *minpack_error;
-#include "__minpack.c"
+#include "__minpack.h"
 static struct PyMethodDef minpack_module_methods[] = {
 {"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},
 {"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},

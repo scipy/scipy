@@ -7,7 +7,7 @@ import scipy
 from scipy import asarray_1d
 
 
-def butter(N, Wn, bandtype='band', analog=0, output='ba'):
+def butter(N, Wn, bandtype='band', analog=0, output=''):
     """Butterworth digital and analog filter design.
 
     Description:
@@ -16,9 +16,25 @@ def butter(N, Wn, bandtype='band', analog=0, output='ba'):
       filter coeeficients in (B,A), zero-pole, or state-space form.
 
     Inputs:
-
       
     """
+
+    # pre-warp frequencies for digital filter design
+    #  warped = 2*fs*tan(pi*Wn/fs)
+
+
+    # convert to low-pass prototype
+
+    # Get analog lowpass prototype
+
+    # transform to state-space
+
+    # transform to lowpass, bandpass, highpass, or bandstop
+
+    # Find discrete equivalent if necessary
+
+    # Transform to proper out type (pole-zero, state-space, numer-denom)
+    
     pass
 
 def cheby1():
