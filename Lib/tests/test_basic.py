@@ -394,29 +394,122 @@ class test_cumprod(unittest.TestCase):
 
 class test_trapz(unittest.TestCase):
     def check_basic(self):
-        pass
+        x = [1,4,6,7,12]
+        y = [11,15,6,3,9]
+        val = (11+15)/2.0*3 + (15+6)/2.0*2 + (6+3)/2.0 + (3+9)/2.0*5.0
+        assert_equal(trapz(y,x),val)
 
+    def check_nd(self):
+        x = sort(20*rand(10,20,30))
+        y = x**2 + 2*x + 1
+        dx = x[:,1:,:] - x[:,:-1,:]
+        val = add.reduce(dx*(y[:,1:,:] + y[:,:-1,:])/2.0,1)
+        assert_array_equal(trapz(y,x,1),val)        
 
 class test_diff(unittest.TestCase):
-    pass
+    def check_basic(self):
+        x = [1,4,6,7,12]
+        out = array([3,2,1,5])
+        out2 = array([-1,-1,4])
+        out3 = array([0,5])
+        assert_array_equal(diff(x),out)
+        assert_array_equal(diff(x,n=2),out2)
+        assert_array_equal(diff(x,n=3),out3)
 
-class test_corrcoef(unittest.TestCase):
-    pass
+    def check_nd(self):
+        x = 20*rand(10,20,30)
+        out1 = x[:,:,1:] - x[:,:,:-1]
+        out2 = out1[:,:,1:] - out1[:,:,:-1]
+        out3 = x[1:,:,:] - x[:-1,:,:]
+        out4 = out3[1:,:,:] - out3[:-1,:,:]
+        assert_array_equal(diff(x),out1)
+        assert_array_equal(diff(x,n=2),out2)
+        assert_array_equal(diff(x,axis=0),out3)
+        assert_array_equal(diff(x,n=2,axis=0),out4)
+
 
 class test_cov(unittest.TestCase):
-    pass
+    def check_basic(self):
+        x = [[1,1.3],
+             [1.1,1.5],
+             [0.9,1.8]]
+        c = cov(x)
+        tmp = [[0.0100, -0.0150],[-0.0150, 0.0633]]        
+        assert_array_almost_equal(c,tmp,4)
+
+    def check_twoargs(self):
+        x = [1,1.1,0.9]
+        y = [1.3,1.5,1.8]
+        c = cov(x,y)
+        z = [[1,1.3],
+             [1.1,1.5],
+             [0.9,1.8]]
+        d = cov(z)
+        e = cov([x,y],rowvar=1)
+        tmp = [[0.0100, -0.0150],[-0.0150, 0.0633]]
+        assert_array_almost_equal(c,tmp,4)
+        assert_array_almost_equal(c,d,11)
+        assert_array_almost_equal(e,d,11)
+
+    def check_bias(self):
+        z = [[1,1.3],
+             [1.1,1.5],
+             [0.9,1.8]]
+        d = cov(z,bias=1)
+        tmp = [[0.0067,-0.0100],[-0.0100, 0.0422]]
+        assert_array_almost_equal(d,tmp,4)
+
+class test_corrcoef(unittest.TestCase):
+    def check_basic(self):
+        x = [[1,1.3],
+             [1.1,1.5],
+             [0.9,1.8]]
+        c = corrcoef(x)
+        tmp = [[1.0000, -0.5960],[-0.5960, 1.0000]]
+        assert_array_almost_equal(c,tmp,4)
+
+    def check_twoargs(self):
+        x = [1,1.1,0.9]
+        y = [1.3,1.5,1.8]
+        c = corrcoef(x,y)
+        z = [[1,1.3],
+             [1.1,1.5],
+             [0.9,1.8]]
+        d = corrcoef(z)
+        e = corrcoef([x,y],rowvar=1)
+        tmp = [[1.0000, -0.5960],[-0.5960, 1.0000]]
+        assert_array_almost_equal(c,tmp,4)
+        assert_array_almost_equal(c,d,11)
+        assert_array_almost_equal(e,d,11)
 
 class test_squeeze(unittest.TestCase):
-    pass
+    def check_basic(self):
+        a = rand(20,10,10,1,1)
+        b = rand(20,1,10,1,20)
+        c = rand(1,1,20,10)
+        assert_array_equal(squeeze(a),reshape(a,(20,10,10)))
+        assert_array_equal(squeeze(b),reshape(b,(20,10,20)))
+        assert_array_equal(squeeze(c),reshape(c,(20,10)))
 
 class test_sinc(unittest.TestCase):
-    pass
-
+    def check_basic(self):
+        x = r_[grid[-10:0:50j],grid[0:10:50j]]
+        y = sinc(x)
+        tmp = x*pi
+        tmp = sin(tmp)/tmp
+        tmp[50] = 1.0
+        tmp[49] = 1.0
+        assert_array_almost_equal(y,tmp,11)
+        
 class test_angle(unittest.TestCase):
-    pass
-
-
-
+    def check_basic(self):
+        x = [1+3j,sqrt(2)/2.0+1j*sqrt(2)/2,1,1j,-1,-1j,1-3j,-1+3j]
+        y = angle(x)
+        yo = [arctan(3.0/1.0),arctan(1.0),0,pi/2,pi,-pi/2.0,-arctan(3.0/1.0),pi-arctan(3.0/1.0)]
+        z = angle(x,deg=1)
+        zo = array(yo)*180/pi
+        assert_array_almost_equal(y,yo,11)
+        assert_array_almost_equal(z,zo,11)
         
 ##################################################
 
@@ -441,8 +534,13 @@ def test_suite():
     suites.append( unittest.makeSuite(test_cumsum,'check_') )
     suites.append( unittest.makeSuite(test_prod,'check_') )
     suites.append( unittest.makeSuite(test_cumprod,'check_') )
-    
-    
+    suites.append( unittest.makeSuite(test_trapz,'check_') )
+    suites.append( unittest.makeSuite(test_diff,'check_') )
+    suites.append( unittest.makeSuite(test_cov,'check_') )
+    suites.append( unittest.makeSuite(test_corrcoef,'check_') )
+    suites.append( unittest.makeSuite(test_squeeze,'check_') )
+    suites.append( unittest.makeSuite(test_sinc,'check_') )
+    suites.append( unittest.makeSuite(test_angle,'check_') )
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
