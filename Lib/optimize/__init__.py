@@ -19,13 +19,13 @@
    golden    --  1-D function minimization using Golden Section method
    bracket   --  Bracket a minimum (given two starting points)
   
- Also a collection of root-finding routines.
+ Also a collection of general_purpose root-finding routines.
 
    fsolve ---   Non-linear multi-variable equation solver.
 
    Scalar function solvers
 
-   brent   ---  quadratic interpolation Brent method
+   brentq   ---  quadratic interpolation Brent method
    brenth  ---  Brent method (modified by Harris with hyperbolic extrapolation)
    ridder  ---  Ridder's method
    bisect  ---  Bisection method

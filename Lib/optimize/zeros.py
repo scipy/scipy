@@ -4,7 +4,7 @@ _iter = 100
 _xtol = 1e-12
 _args = ()
 
-__all__ = ['bisect','ridder','brent','brenth']
+__all__ = ['bisect','ridder','brentq','brenth']
     
 def bisect(f,a,b,xtol=_xtol,maxiter=_iter,args=_args, full_output=0, disp=1) :
     """ Find root of f in [a,b]
@@ -68,7 +68,7 @@ def ridder(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
 	    args = (args,)
     return _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
 
-def brent(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
+def brentq(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
     """ Find root of f in [a,b]
 
         The classic Brent routine to find a zero of the function
