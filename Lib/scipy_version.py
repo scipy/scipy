@@ -1,7 +1,8 @@
 major = 0
 minor = 2
 micro = 0
-release_level = 'alpha'
+#release_level = 'alpha'
+release_level=''
 
 from __cvs_version__ import cvs_version
 cvs_minor = cvs_version[-3]

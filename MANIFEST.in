@@ -3,6 +3,7 @@ include Lib/special/specfun.pyf
 include Lib/linalg/generic_*.pyf
 include Lib/linalg/flapack_user_routines.pyf
 include Lib/sparse/SuperLU/*.inc
+include scipy_core/scipy_base/*.inc
 #include */*/*.cfg
 recursive-include Lib_chaco/freetype/freetype2 *.h *.c *.i
 recursive-include Lib/xplt/src *.h *.c
