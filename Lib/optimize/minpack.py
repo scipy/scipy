@@ -316,7 +316,29 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
             q1 = apply(func,(p1,)+args)
     raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
 
+
+# Steffensen's Method using Aitken's Del^2 convergence acceleration.
+def fixed_point(func, x0, args=(), tol=1e-10, maxiter=50):
+    """Given a function of one variable and a starting point, find a
+    fixed-point of the function: i.e. where func(x)=x.
+    """
+
+    p0 = x0
+    for iter in range(maxiter):
+        p1 = apply(func,(p0,)+args)
+        p2 = apply(func,(p1,)+args)
+        try:
+            p = p0 - (p1 - p0)*(p1-p0) / (p2-2.0*p1+p0)
+        except ZeroDivisionError:
+            print "Difference in estimates is %g" % (abs(p2-p1))
+            return p2
+        if abs(p-p0) < tol:
+            return p
+        p0 = p
+    raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
+
         
+
 
 
 
