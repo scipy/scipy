@@ -1097,7 +1097,7 @@ f = f_gen(a=0.0)
 
 class foldnorm_gen(rv_continuous):
     def _rvs(self, c):
-        return abs(norm(loc=c,size=self._size))
+        return abs(norm(mu=c,size=self._size))
     def _pdf(self, x, c):
         return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
     def _cdf(self, x, c,):
@@ -1701,7 +1701,7 @@ t = t_gen()
 
 class nct_gen(rv_continuous):
     def _rvs(self, df, nc):
-        return norm(loc=nc,size=self._size)*sqrt(df) / sqrt(chi2(df,size=self._size))
+        return norm(mu=nc,size=self._size)*sqrt(df) / sqrt(chi2(df,size=self._size))
     def _pdf(self, x, df, nc):
         n = df*1.0
         nc = nc*1.0
