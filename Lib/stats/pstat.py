@@ -172,8 +172,8 @@ Returns: a lists of lists corresponding to the columns from listoflists
             index = col
             column = abut(column,map(lambda x: x[index], listoflists))
     elif type(cnums) == StringType:           # if an 'x[3:]' type expr.
-        execstring = 'column = map(lambda x: x'+cnums+', listoflists)'
-        exec execstring
+        evalstring = 'map(lambda x: x'+cnums+', listoflists)'
+        column = eval(evalstring)
     else:                                     # else it's just 1 col to get
         index = cnums
         column = map(lambda x: x[index], listoflists)
