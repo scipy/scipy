@@ -18,13 +18,19 @@ SciPy requires the following software installed:
 
 1) Python__ 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
 
+   Debian packages: python python-dev
+
 __ http://www.python.org
 
 2) `Numerical Python`__ 21.0 or newer but not Numarray (yet)
 
+   Debian packages: python-numeric
+
 __ http://www.numpy.org/
 
 3) ATLAS__ 3.2.1 or newer and complete LAPACK__ (see NOTES 2, 3, 4)
+
+   Debian packages: atlas2-headers atlas2-base atlas2-base-dev
 
 __ http://math-atlas.sourceforge.net/
 __ http://www.netlib.org/lapack/
@@ -38,6 +44,8 @@ __ http://cens.ioc.ee/projects/f2py2e/
    gcc__ 2.95.x, 3.x compilers are recommended.
    When building with Chaco, gcc 3.x is required.
   
+   Debian packages: gcc g++ g77
+
 __ http://gcc.gnu.org/
 
 
@@ -45,19 +53,25 @@ The following software is optional:
 
 6) FFTW__ 2.1.x (see Lib/fftpack/NOTES.txt) but not 2.2.x (yet)
 
+   Debian packages: fftw2 fftw-dev
+
 __ http://www.fftw.org/
 
 7) wxPython__
   
-   Debian packages: libwxgtk2.4-python libwxgtk2.4-dev wxwin2.4-headers
+   Debian packages: libwxgtk2.4-python libwxgtk2.4 libwxgtk2.4-dev 
+   wxwin2.4-headers
 
 __ http://www.wxpython.org/
 
 8) SWIG 1.3.x, required when building with chaco. See setup.py
    for how to disable chaco.
 
+   Debian packages: swig1.3 libswig1.3
+
 9) chaco.tkplt requires
-   Debian packages: python-opengl, python-pmw
+
+   Debian packages: python-opengl libglut3 python-pmw
 
 
 NOTES

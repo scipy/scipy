@@ -13,59 +13,23 @@ import os
 import sys
 from glob import glob
 
+# Note that when running bdist_rpm, scipy_core directory does
+# not exist. So, scipy_distutils must be installed before
+# running bdist_rpm.
 sys.path.insert(0,'scipy_core')
 try:
     import scipy_distutils
-    assert 'scipy_core'==os.path.basename(os.path.dirname(\
-        scipy_distutils.__path__[0])), scipy_distutils.__path__[0]
     # Declare all scipy_distutils related imports here.
     from scipy_distutils.misc_util import default_config_dict
     from scipy_distutils.misc_util import get_path, merge_config_dicts
     from scipy_distutils.core import setup
-    if sys.platform == 'win32':
-        # This forces g77 for windows platforms:
-        from scipy_distutils.mingw32_support import *
 finally:
     del sys.path[0]
-
-#-------------------------------
-
-standard_packages = []
-
-standard_packages = [os.path.join('Lib',p) for p in standard_packages]
-
-graphics_packages = []
-graphics_packages = [os.path.join('Lib',p) for p in graphics_packages]
-
-chaco_packages = ['chaco','kiva','traits','freetype']
-chaco_packages = [os.path.join('Lib_chaco',p) for p in chaco_packages]
-
-#core_packages = ['scipy_distutils','scipy_test','scipy_base']
-#core_packages = [os.path.join('scipy_core',p) for p in core_packages]
-
-#---------------
-
-parent_package = 'scipy'
-
-scipy_packages = standard_packages
-scipy_packages += graphics_packages
-
-#---------------
-
-# these packages aren't nested under scipy
-separate_packages = []
-separate_packages = [os.path.join('Lib',p) for p in separate_packages]
-#separate_packages += core_packages
-separate_packages += chaco_packages
-
-ignore_packages = [
-    #'sparse'
-    ]
 
 #------ drop-to-Lib packages --------
 
 def get_packages(path,ignore_packages=[],
-                 parent=parent_package,parent_path=None):
+                 parent='scipy',parent_path=None):
 
     config_list = []
 
@@ -100,52 +64,31 @@ def get_packages(path,ignore_packages=[],
     return config_list
 #-------------------------------
 
-def get_package_config(name, parent=parent_package):
-    sys.path.insert(0,name)
-    try:
-        mod = __import__('setup_'+os.path.basename(name))
-        config = mod.configuration(parent)
-    finally:
-        del sys.path[0]
-    return config
-
-def get_separate_package_config(name):
-    return get_package_config(name,'')
-
 def setup_package(ignore_packages=[]):
     old_path = os.getcwd()
-    path = get_path(__name__)
-    os.chdir(path)
-    sys.path.insert(0,os.path.join(path,'Lib'))
+    local_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+    os.chdir(local_path)
+    sys.path.insert(0,os.path.join(local_path,'Lib'))
     # setup files of subpackages require scipy_core:
-    sys.path.insert(0,os.path.join(path,'scipy_core'))
+    sys.path.insert(0,os.path.join(local_path,'scipy_core'))
     try:
-        #sys.path.insert(0,os.path.join(path,'Lib'))
         from scipy_version import scipy_version
-        #del sys.path[0]
 
-        config_list = [{'packages':['scipy','scipy.tests'],
+        config_list = [{'name': 'SciPy',
+                        'packages':['scipy','scipy.tests'],
                         'package_dir':
                         {'scipy':'Lib',
                          'scipy.tests':os.path.join('Lib','tests')}}]
 
-        #new style packages:
-        for d in ['scipy_core','Lib','Lib_chaco']:
-            if sys.platform!='win32' and d=='Lib_chaco':
-                # Currently chaco is working only on win32.
-                continue
-            config_list += get_packages(os.path.join(path,d),ignore_packages,
-                                        parent_path=path)
-
-        #old style packages:
-        config_list += map(get_separate_package_config,separate_packages)
-        config_list += map(get_package_config,scipy_packages)
+        for d in ['Lib','Lib_chaco']:
+            config_list += get_packages(os.path.join(local_path,d),
+                                        ignore_packages,
+                                        parent_path=local_path)
 
         config_dict = merge_config_dicts(config_list)
 
         print 'SciPy Version %s' % scipy_version
-        setup (name = "SciPy",
-               version = scipy_version,
+        setup( version = scipy_version,
                maintainer = "SciPy Developers",
                maintainer_email = "scipy-dev@scipy.org",
                description = "Scientific Algorithms Library for Python",
@@ -159,5 +102,19 @@ def setup_package(ignore_packages=[]):
         del sys.path[0]
         os.chdir(old_path)
 
+    if os.path.isdir('scipy_core'):
+        # Applying the same commands to scipy_core.
+        # Results can be found in scipy_core directory.
+        c = '%s %s %s' % (sys.executable,
+                          os.path.join('scipy_core','setup.py'),
+                          ' '.join(sys.argv[1:]))
+        print c
+        s = os.system(c)
+        assert not s,'failed on scipy_core'
+
 if __name__ == "__main__":
+    ignore_packages = [
+        #'sparse',
+        #'kiva','freetype','chaco','traits',
+        ]
     setup_package(ignore_packages)

@@ -1,7 +1,1 @@
-recursive-include Lib_chaco/freetype/freetype2 *.h *.c *.i
-recursive-include Lib_chaco/kiva/agg *.py *.h *.i *.cxx
-recursive-include Lib_chaco/kiva/agg/docs *
-recursive-include Lib_chaco/agg2 *
-recursive-include Lib_chaco/freetype *
-global-include *.txt setup*.py
 prune scipy_core
