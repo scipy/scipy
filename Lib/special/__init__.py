@@ -127,11 +127,17 @@
 
   Error Function and Fresnel Integrals
   
-    erf        -- Error function.
-    erfc       -- Complemented error function (1- erf(x))
-    ervinv     -- Inverse of error function
-    ervcinv    -- Inverse of erfc
-    fresnel    -- Fresnel sine and cosine integrals.
+    erf         -- Error function.
+    erfc        -- Complemented error function (1- erf(x))
+    ervinv      -- Inverse of error function
+    ervcinv     -- Inverse of erfc
+    fresnel     -- Fresnel sine and cosine integrals.
+    modfresnelp -- Modified Fresnel integrals F_+(x) and K_+(x)
+    modfresnelm -- Modified Fresnel integrals F_-(x) and K_-(x)
+
+  Legendre Functions
+
+    lpmv     -- Associated Legendre Function    
 
   HyperGeometric Functions
 
@@ -142,6 +148,11 @@
     hyp2f0   -- Hypergeometric function (2F0) 
     hyp1f2   -- Hypergeometric function (1F2)
     hyp3f0   -- Hypergeometric function (3F0)
+
+  Parabolic Cylinder Functions
+
+    pbwa     -- Parabolic cylinder function W(a,x)
+
 
   Mathieu and Related Functions (and derivatives)
 
@@ -157,6 +168,23 @@
     mathieu_modsem1 -- Odd modified Mathieu function of the first kind
     mathieu_modsem2 -- Odd modified Mathieu function of the second kind
 
+  Spheroidal Wave Functions
+
+    pro_ang1  -- Prolate spheroidal angular function of the first kind
+    pro_rad1  -- Prolate spheroidal radial function of the first kind
+    pro_rad2  -- Prolate spheroidal radial function of the second kind
+    obl_ang1  -- Oblate spheroidal angluar function of the first kind
+    obl_rad1  -- Oblate spheroidal radial function of the first kind
+    obl_rad2  -- Oblate spheroidal radial function of the second kind
+
+  Struve Functions
+
+    struve       -- Struve function --- Hv(x)
+    modstruve    -- Modified struve function --- Lv(x)
+    itstruve0    -- Integral of H0(t) from 0 to x
+    it2struve0   -- Integral of H0(t)/t from x to Inf.
+    itmodstruve0 -- Integral of L0(t) from 0 to x.
+  
   Other Special Functions
 
     expn         -- Exponential integral.
@@ -167,11 +195,6 @@
     shichi       -- Hyperbolic sine and cosine integrals.
     sici         -- Integral of the sinc and "cosinc" functions.
     spence       -- Dilogarithm integral.
-    struve       -- Struve function --- Hv(x)
-    modstruve    -- Modified struve function --- Lv(x)
-    itstruve0    -- Integral of H0(t) from 0 to x
-    it2struve0   -- Integral of H0(t)/t from x to Inf.
-    itmodstruve0 -- Integral of L0(t) from 0 to x.
     kelvin       -- Kelvin functions (order 0) and derivatives.
     zeta         -- Riemann zeta function of two arguments.
     zetac        -- 1.0 - standard Riemann zeta function.
@@ -193,7 +216,7 @@
     round    -- round the argument to the nearest integer. If argument
                  ends in 0.5 exactly, pick the nearest even integer.
 
-  ** by the description indicates a function whis is not a universal
+  ** in the description indicates a function which is not a universal
   function and does not follow broadcasting and automatic
   array-looping rules.
  """

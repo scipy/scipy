@@ -10,6 +10,7 @@ import scipy.special as special
 import Numeric
 from Numeric import alltrue, where, arange, put, putmask, nonzero, ravel
 from scipy_base.fastumath import *
+import scipy_base
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
@@ -2940,7 +2941,7 @@ def von_misescdf(x, b, loc=0.0):
         raise ValueError, "Only works for 1-d arrays."
     loc = arr(angle(exp(1j*loc)))
     x = r1array(angle(exp(1j*(x-loc))))*(b==b)
-    from scipy.limits import double_epsilon as eps
+    from scipy_base.limits import double_epsilon as eps
     eps2 = sqrt(eps)
 
     c_xsimple = r1array((b==0)&(x==x))

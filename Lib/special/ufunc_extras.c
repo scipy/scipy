@@ -58,6 +58,37 @@ extern void PyUFunc_D_DD(char **args, int *dimensions, int *steps, void *func) {
 
 }
 
+extern void PyUFunc_f_FF_As_d_DD(char **args, int *dimensions, int *steps, void *func) {
+	int i, is1=steps[0],os1=steps[1],os2=steps[2];
+	char *ip1=args[0], *op1=args[1], *op2=args[2];
+	int n=dimensions[0];
+	Py_complex to1, to2;
+	
+	for(i=0; i<n; i++, ip1+=is1, op1+=os1, op2+=os2) {
+		((IntFunc_d_DD *)func)((double)*(float *)ip1, &to1, &to2);
+		((float *)op1)[0] = (float)to1.real;
+		((float *)op1)[1] = (float)to1.imag;
+		((float *)op2)[0] = (float)to2.real;
+		((float *)op2)[1] = (float)to2.imag;
+	}
+}
+
+extern void PyUFunc_d_DD(char **args, int *dimensions, int *steps, void *func) {
+	int i, is1=steps[0],os1=steps[1],os2=steps[2];
+	char *ip1=args[0], *op1=args[1], *op2=args[2];
+	int n=dimensions[0];
+        Py_complex to1, to2;
+	
+	for(i=0; i<n; i++, ip1+=is1, op1+=os1, op2+=os2) {
+		((IntFunc_d_DD *)func)(*(double *)ip1, &to1, &to2);
+		((double *)op1)[0] = to1.real;
+		((double *)op1)[1] = to1.imag;
+		((double *)op2)[0] = to2.real;
+		((double *)op2)[1] = to2.imag;
+        }
+
+}
+
 
 
 extern void PyUFunc_f_ffff_As_d_dddd(char **args, int *dimensions, int *steps, void *func) {

@@ -576,15 +576,13 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
   return 0;  
 }
 
-/* Stopped here --- below these need to be added to cephes */
-
 
 int modified_fresnel_plus_wrap(double x, Py_complex *Fplus, Py_complex *Kplus)
 {
   int ks=0;
   double fm, fa, gm, ga;
   
-  F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fplus),&fm,&fa,F2C_CST(Kplus),gm,ga);
+  F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fplus),&fm,&fa,F2C_CST(Kplus),&gm,&ga);
   return 0;
 }
 
@@ -593,7 +591,7 @@ int modified_fresnel_minus_wrap(double x, Py_complex *Fminus, Py_complex *Kminus
   int ks=1;
   double fm, fa, gm, ga;
   
-  F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fminus),&fm,&fa,F2C_CST(Kminus),gm,ga);
+  F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fminus),&fm,&fa,F2C_CST(Kminus),&gm,&ga);
   return 0;
 }
 

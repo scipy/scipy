@@ -62,22 +62,28 @@ class general_function:
 def djv(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
+    if not isinstance(n,types.IntType) or (n<0):
+        raise ValueError, "n must be a non-negative integer."
     if n == 0:
         return jv(v,z)
     else:
         return (djv(v-1,z,n-1) - djv(v+1,z,n-1))/2.0
 
 def dyv(v,z,n=1):
-    """Return the nth derivative of Yv(z) with respect to z.
+    """Return the nth derivative of Yv(z) with respect to z. 
     """
+    if not isinstance(n,types.IntType) or (n<0):
+        raise ValueError, "n must be a non-negative integer."
     if n == 0:
         return yv(v,z)
     else:
         return (dyv(v-1,z,n-1) - dyv(v+1,z,n-1))/2.0
 
 def dkv(v,z,n=1):
-    """Return the nth derivative of Kv(z) with respect to z.
+    """Return the nth derivative of Kv(z) with respect to z. 
     """
+    if not isinstance(n,types.IntType) or (n<0):
+        raise ValueError, "n must be a non-negative integer."
     if n == 0:
         return kv(v,z)
     else:
@@ -86,7 +92,9 @@ def dkv(v,z,n=1):
 def div(v,z,n=1):
     """Return the nth derivative of Iv(z) with respect to z.
     """
-    if n <= 0:
+    if not isinstance(n,types.IntType) or (n<0):
+        raise ValueError, "n must be a non-negative integer."
+    if n == 0:
         return iv(v,z)
     else:
         return (div(v-1,z,n-1) - div(v+1,z,n-1))/2.0
@@ -94,7 +102,9 @@ def div(v,z,n=1):
 def dh1v(v,z,n=1):
     """Return the nth derivative of H1v(z) with respect to z.
     """
-    if n <= 0:
+    if not isinstance(n,types.IntType) or (n<0):
+        raise ValueError, "n must be a non-negative integer."
+    if n == 0:
         return hankel1(v,z)
     else:
         return (dh1v(v-1,z,n-1) - dh1v(v+1,z,n-1))/2.0
@@ -102,7 +112,9 @@ def dh1v(v,z,n=1):
 def dh2v(v,z,n=1):
     """Return the nth derivative of H2v(z) with respect to z.
     """
-    if n <= 0:
+    if not isinstance(n,types.IntType) or (n<0):
+        raise ValueError, "n must be a non-negative integer."
+    if n == 0:
         return hankel2(v,z)
     else:
         return (dh2v(v-1,z,n-1) - dh2v(v+1,z,n-1))/2.0
@@ -204,4 +216,5 @@ def mathieu_B(m,q):
     b = mathieu_b(m,q)
     fc = specfunc.fcoef(kd,m,q,b)
     return fc[:km]
+
 

@@ -9,6 +9,8 @@ typedef int    IntFunc_dd_dd(double a, double x, double *wf, double *wd);
 typedef int    IntFunc_D_DD(Py_complex z, Py_complex *out1, Py_complex *out2);
 typedef int    IntFunc_ddd_dd(double m, double q, double x, double *csf, double *csd);
 typedef int    IntFunc_ddddd_dd(double m, double n, double c, double x, double cv, double *s1f, double *s1d);
+typedef int    IntFunc_d_DD(double x, Py_complex *out1, Py_complex *out2);
+
 
 typedef double DoubleFunc_id_d(int n, double y);
 typedef Py_complex CmplxFunc_dD_D(double v, Py_complex z);
@@ -25,6 +27,9 @@ extern void PyUFunc_f_ff_As_d_dd(char **args, int *dimensions, int *steps, void 
 extern void PyUFunc_d_dd(char **args, int *dimensions, int *steps, void *func);
 extern void PyUFunc_F_FF_As_D_DD(char **args, int *dimensions, int *steps, void *func);
 extern void PyUFunc_D_DD(char **args, int *dimensions, int *steps, void *func);
+
+extern void PyUFunc_f_FF_As_d_DD(char **args, int *dimensions, int *steps, void *func);
+extern void PyUFunc_d_DD(char **args, int *dimensions, int *steps, void *func);
 
 extern void PyUFunc_ff_ff_As_dd_dd(char **args, int *dimensions, int *steps, void *func);
 extern void PyUFunc_dd_dd(char **args, int *dimensions, int *steps, void *func);

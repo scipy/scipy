@@ -2,3 +2,4 @@ include linalg/generic_*.pyf
 include linalg/lapack_user_routines.pyf
 include linalg/atlas_lapack.pyf
 include */setup_*.py
+include special/specfun.pyf

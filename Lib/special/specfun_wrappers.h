@@ -71,7 +71,8 @@ int oblate_aswfa_wrap(double, double, double, double, double, double *, double *
 int oblate_radial1_wrap(double, double, double, double, double, double *, double *);
 int oblate_radial2_wrap(double, double, double, double, double, double *, double *);
 
-
+int modified_fresnel_plus_wrap(double x, Py_complex *F, Py_complex *K);
+int modified_fresnel_minus_wrap(double x, Py_complex *F, Py_complex *K);
 #endif
 
 
