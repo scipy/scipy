@@ -188,7 +188,7 @@ Special Functions
                    degree v.
     sph_harm -- Spherical Harmonics (complex-valued) Y^m_n(theta,phi)
 
-  Orthogonal polynomials
+  Orthogonal polynomials  --- 15 types
    ** These functions all return a polynomial class which can then be
       evaluated:  vals = chebyt(n)(x)
       This class also has an attribute 'weights' which
@@ -204,14 +204,14 @@ Special Functions
     chebys      -- **Chebyshev polynomial S_n(x)
     jacobi      -- **Jacobi polynomial P^(alpha,beta)_n(x)
     laguerre    -- **Laguerre polynomial, L_n(x)
-    genlaguerre -- **Generalized (Associated) Laguerre polynomial, L^k_n(x)
+    genlaguerre -- **Generalized (Associated) Laguerre polynomial, L^alpha_n(x)
     hermite     -- **Hermite polynomial H_n(x)
     hermitenorm -- **Normalized Hermite polynomial, He_n(x)
     gegenbauer  -- **Gegenbauer (Ultraspherical) polynomials, C^(alpha)_n(x)
-    sh_legendre -- **sifted Legendre polynomial, P*_n(x)
+    sh_legendre -- **shifted Legendre polynomial, P*_n(x)
     sh_chebyt   -- **shifted Chebyshev polynomial, T*_n(x)
     sh_chebyu   -- **shifted Chebyshev polynomial, U*_n(x)
-    sh_jacobi   -- **shifted Jacobi polynomial, J*_n(x)
+    sh_jacobi   -- **shifted Jacobi polynomial, J*_n(x) = G^(p,q)_n(x)
       
   HyperGeometric Functions
 

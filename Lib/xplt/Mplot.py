@@ -1349,11 +1349,13 @@ def expand_limits(xpcnt,ypcnt=None):
 
 def axes(type='b|'):
     vals = gist.limits()
-    x0 = [vals[0],vals[1]]
-    y0 = [0,0]
-    x1 = [0,0]
-    y1 = [vals[2], vals[3]]
+    v0,v1,v2,v3 = vals[:4]
+    x0 = scipy_base.r_[v0:v1:5j]
+    y0 = 5*[0]
+    x1 = 5*[0]
+    y1 = scipy_base.r_[v2:v3:5j]
     plot(x0,y0,type,x1,y1,type,hold=1)
+    gist.limits(v0,v1,v2,v3)
     
 
 def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'):

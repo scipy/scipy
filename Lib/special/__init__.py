@@ -10,7 +10,7 @@ import specfun
 import orthogonal
 from orthogonal import legendre, chebyt, chebyu, chebyc, chebys, \
      jacobi, laguerre, genlaguerre, hermite, hermitenorm, gegenbauer, \
-     sh_legendre, sh_chebyt, sh_chebyu, sh_jacobi
+     sh_legendre, sh_chebyt, sh_chebyu, sh_jacobi, poch
 
 
 ################## test functions #########################

@@ -14,6 +14,7 @@ from scipy_test.testing import ScipyTestCase
 
 class test_cephes(ScipyTestCase):
     def check_airy(self):
+        print "***********Yes, this is testing******************"
         cephes.airy(0)
     def check_airye(self):
         cephes.airye(0)

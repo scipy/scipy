@@ -13,6 +13,419 @@ set_package_path()
 from special import *
 del sys.path[0]
 
+from scipy_test.testing import ScipyTestCase
+class test_cephes(ScipyTestCase):
+    def check_airy(self):
+        cephes.airy(0)
+    def check_airye(self):
+        cephes.airye(0)
+    def check_bdtr(self):
+        assert_equal(cephes.bdtr(1,1,0.5),1.0)
+    def check_bdtri(self):
+        assert_equal(cephes.bdtri(1,3,0.5),0.5)
+    def check_bdtrc(self):
+        assert_equal(cephes.bdtrc(1,3,0.5),0.5)
+    def check_bdtrin(self):
+        assert_equal(cephes.bdtrin(1,0,1),5.0)
+    def check_bdtrik(self):
+        cephes.bdtrik(1,3,0.5)
+
+    def check_bei(self):
+        assert_equal(cephes.bei(0),0.0)
+    def check_beip(self):
+        assert_equal(cephes.beip(0),0.0)
+    def check_ber(self):
+        assert_equal(cephes.ber(0),1.0)
+    def check_berp(self):
+        assert_equal(cephes.berp(0),0.0)
+
+    def check_besselpoly(self):
+        assert_equal(cephes.besselpoly(0,0,0),1.0)
+
+    def check_beta(self):
+        assert_equal(cephes.beta(1,1),1.0)
+    def check_betainc(self):
+        assert_equal(cephes.betainc(1,1,1),1.0)
+    def check_betaln(self):
+        assert_equal(cephes.betaln(1,1),0.0)
+    def check_betaincinv(self):
+        assert_equal(cephes.betaincinv(1,1,1),1.0)
+
+    def check_btdtr(self):
+        assert_equal(cephes.btdtr(1,1,1),1.0)
+    def check_btdtri(self):
+        assert_equal(cephes.btdtri(1,1,1),1.0)
+    def check_btdtria(self):
+        assert_equal(cephes.btdtria(1,1,1),5.0)
+    def check_btdtrib(self):
+        assert_equal(cephes.btdtrib(1,1,1),5.0)
+
+    def check_cbrt(self):
+        assert_equal(cephes.cbrt(1),1.0)
+
+    def check_chdtr(self):
+        assert_equal(cephes.chdtr(1,0),0.0)
+    def check_chdtrc(self):
+        assert_equal(cephes.chdtrc(1,0),1.0)
+    def check_chdtri(self):
+        assert_equal(cephes.chdtri(1,1),0.0)
+    def check_chdtriv(self):
+        assert_equal(cephes.chdtriv(0,0),5.0)
+
+    def check_chndtr(self):
+        assert_equal(cephes.chndtr(0,1,0),0.0)
+    def check_chndtridf(self):
+        assert_equal(cephes.chndtridf(0,0,1),5.0)
+    def check_chndtrinc(self):
+        assert_equal(cephes.chndtrinc(0,1,0),5.0)
+    def check_chndtrix(self):
+        assert_equal(cephes.chndtrix(0,1,0),0.0)
+
+    def check_cosdg(self):
+        assert_equal(cephes.cosdg(0),1.0)
+    def check_cosm1(self):
+        assert_equal(cephes.cosm1(0),0.0)
+    def check_cotdg(self):
+        assert_almost_equal(cephes.cotdg(45),1.0)
+
+    def check_dawsn(self):
+        assert_equal(cephes.dawsn(0),0.0)
+
+    def check_ellipe(self):
+        assert_equal(cephes.ellipe(1),1.0)
+    def check_ellipeinc(self):
+        assert_equal(cephes.ellipeinc(0,1),0.0)
+    def check_ellipj(self):
+        cephes.ellipj(0,1)
+    def check_ellipk(self):
+        cephes.ellipk(0)#==pi/2
+    def check_ellipkinc(self):
+        assert_equal(cephes.ellipkinc(0,0),0.0)
+
+    def check_erf(self):
+        assert_equal(cephes.erf(0),0.0)
+    def check_erfc(self):
+        assert_equal(cephes.erfc(0),1.0)
+
+    def check_exp1(self):
+        cephes.exp1(1)
+    def check_expi(self):
+        cephes.expi(1)
+    def check_expn(self):
+        cephes.expn(1,1)
+
+    def check_exp10(self):
+        assert_equal(cephes.exp10(2),100.0)
+    def check_exp2(self):
+        assert_equal(cephes.exp2(2),4.0)
+    def check_expm1(self):
+        assert_equal(cephes.expm1(0),0.0)
+
+    def check_fdtr(self):
+        assert_equal(cephes.fdtr(1,1,0),0.0)
+    def check_fdtrc(self):
+        assert_equal(cephes.fdtrc(1,1,0),1.0)
+    def check_fdtri(self):
+        cephes.fdtri(1,1,0.5)
+    def check_fdtridfd(self):
+        assert_equal(cephes.fdtridfd(1,0,0),5.0)
+
+    def check_fresnel(self):
+        assert_equal(cephes.fresnel(0),(0.0,0.0))
+        
+    def check_gamma(self):
+        assert_equal(cephes.gamma(5),24.0)
+    def check_gammainc(self):
+        assert_equal(cephes.gammainc(5,0),0.0)
+    def check_gammaincc(self):
+        assert_equal(cephes.gammaincc(5,0),1.0)
+    def check_gammainccinv(self):
+        assert_equal(cephes.gammainccinv(5,1),0.0)
+    def check_gammaln(self):
+        cephes.gammaln(10)
+
+    def check_gdtr(self):
+        assert_equal(cephes.gdtr(1,1,0),0.0)
+    def check_gdtrc(self):
+        assert_equal(cephes.gdtrc(1,1,0),1.0)
+    def check_gdtria(self):
+        assert_equal(cephes.gdtria(0,1,1),0.0)
+    def check_gdtrib(self):
+        cephes.gdtrib(1,0,1)
+        #assert_equal(cephes.gdtrib(1,0,1),5.0)
+    def check_gdtrix(self):
+        cephes.gdtrix(1,1,.1)
+
+    def check_hankel1(self):
+        cephes.hankel1(1,1)
+    def check_hankel1e(self):
+        cephes.hankel1e(1,1)
+    def check_hankel2(self):
+        cephes.hankel2(1,1)
+    def check_hankel2e(self):
+        cephes.hankel2e(1,1)
+
+    def check_hyp1f1(self):
+        cephes.hyp1f1(1,1,1)
+    def check_hyp1f2(self):
+        cephes.hyp1f2(1,1,1,1)
+    def check_hyp2f0(self):
+        cephes.hyp2f0(1,1,1,1)
+    def check_hyp2f1(self):
+        assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
+    def check_hyp3f0(self):
+        assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
+    def check_hyperu(self):
+        assert_equal(cephes.hyperu(0,1,1),1.0)
+
+    def check_i0(self):
+        assert_equal(cephes.i0(0),1.0)
+    def check_i0e(self):
+        assert_equal(cephes.i0e(0),1.0)
+    def check_i1(self):
+        assert_equal(cephes.i1(0),0.0)
+    def check_i1e(self):
+        assert_equal(cephes.i1e(0),0.0)
+
+    def check_it2i0k0(self):
+        cephes.it2i0k0(1)
+    def check_it2j0y0(self):
+        cephes.it2j0y0(1)
+    def check_it2struve0(self):
+        cephes.it2struve0(1)
+    def check_itairy(self):
+        cephes.itairy(1)
+    def check_iti0k0(self):
+        assert_equal(cephes.iti0k0(0),(0.0,0.0))
+    def check_itj0y0(self):
+        assert_equal(cephes.itj0y0(0),(0.0,0.0))
+    def check_itmodstruve0(self):
+        assert_equal(cephes.itmodstruve0(0),0.0)
+    def check_itstruve0(self):
+        assert_equal(cephes.itstruve0(0),0.0)
+    def check_iv(self):
+        assert_equal(cephes.iv(1,0),0.0)
+    def _check_ive(self):
+        assert_equal(cephes.ive(1,0),0.0)
+
+    def check_j0(self):
+        assert_equal(cephes.j0(0),1.0)
+    def check_j1(self):
+        assert_equal(cephes.j1(0),0.0)
+    def check_jn(self):
+        assert_equal(cephes.jn(0,0),1.0)
+    def check_jv(self):
+        assert_equal(cephes.jv(0,0),1.0)
+    def _check_jve(self):
+        assert_equal(cephes.jve(0,0),1.0)
+
+    def check_k0(self):
+        cephes.k0(2)
+    def check_k0e(self):
+        cephes.k0e(2)
+    def check_k1(self):
+        cephes.k1(2)
+    def check_k1e(self):
+        cephes.k1e(2)
+    def check_kei(self):
+        cephes.kei(2)
+    def check_keip(self):
+        assert_equal(cephes.keip(0),0.0)
+    def check_ker(self):
+        cephes.ker(2)
+    def check_kerp(self):
+        cephes.kerp(2)
+    def _check_kelvin(self):
+        cephes.kelvin(2)
+    def check_kn(self):
+        cephes.kn(1,1)
+
+    def check_kolmogi(self):
+        assert_equal(cephes.kolmogi(1),0.0)
+    def check_kolmogorov(self):
+        assert_equal(cephes.kolmogorov(0),1.0)
+
+    def _check_kv(self):
+        cephes.kv(1,1)
+    def _check_kve(self):
+        cephes.kve(1,1)
+    def check_log1p(self):
+        assert_equal(cephes.log1p(0),0.0)
+    def check_lpmv(self):
+        assert_equal(cephes.lpmv(0,0,1),1.0)
+
+    def check_mathieu_a(self):
+        assert_equal(cephes.mathieu_a(1,0),1.0)
+    def check_mathieu_b(self):
+        assert_equal(cephes.mathieu_b(1,0),1.0)
+    def check_mathieu_cem(self):
+        assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
+    def check_mathieu_modcem1(self):
+        assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
+    def check_mathieu_modcem2(self):
+        cephes.mathieu_modcem2(1,1,1)
+    def check_mathieu_sem(self):
+        assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
+    def check_mathieu_modsem1(self):
+        assert_equal(cephes.mathieu_modsem1(1,0,0),(0.0,0.0))
+    def check_mathieu_modsem2(self):
+        cephes.mathieu_modsem2(1,1,1)
+
+    def check_modfresnelm(self):
+        cephes.modfresnelm(0)
+    def check_modfresnelp(self):
+        cephes.modfresnelp(0)
+    def _check_modstruve(self):
+        assert_equal(cephes.modstruve(1,0),0.0)
+
+    def check_nbdtr(self):
+        assert_equal(cephes.nbdtr(1,1,1),1.0)
+    def check_nbdtrc(self):
+        assert_equal(cephes.nbdtrc(1,1,1),0.0)
+    def check_nbdtri(self):
+        assert_equal(cephes.nbdtri(1,1,1),1.0)
+    def __check_nbdtrik(self):
+        cephes.nbdtrik(1,.4,.5)
+    def check_nbdtrin(self):
+        assert_equal(cephes.nbdtrin(1,0,0),5.0)
+
+    def check_ncfdtr(self):
+        assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
+    def check_ncfdtri(self):
+        assert_equal(cephes.ncfdtri(1,1,1,0),0.0)
+    def check_ncfdtridfd(self):
+        cephes.ncfdtridfd(1,0.5,0,1)
+    def __check_ncfdtridfn(self):
+        cephes.ncfdtridfn(1,0.5,0,1)
+    def __check_ncfdtrinc(self):
+        cephes.ncfdtrinc(1,0.5,0,1)
+
+    def check_nctdtr(self):
+        assert_equal(cephes.nctdtr(1,0,0),0.5)
+    def __check_nctdtridf(self):
+        cephes.nctdtridf(1,0.5,0)
+    def check_nctdtrinc(self):
+        cephes.nctdtrinc(1,0,0)
+    def check_nctdtrit(self):
+        cephes.nctdtrit(.1,0.2,.5)
+
+    def check_ndtr(self):
+        assert_equal(cephes.ndtr(0),0.5)
+    def check_ndtri(self):
+        assert_equal(cephes.ndtri(0.5),0.0)
+    def check_nrdtrimn(self):
+        assert_equal(cephes.nrdtrimn(0.5,1,1),1.0)
+    def check_nrdtrisd(self):
+        assert_equal(cephes.nrdtrisd(0.5,0.5,0.5),0.0)
+
+    def check_obl_ang1(self):
+        cephes.obl_ang1(1,1,1,0)
+    def check_obl_ang1_cv(self):
+        result = cephes.obl_ang1_cv(1,1,1,1,0)
+        assert_almost_equal(result[0],1.0)
+        assert_almost_equal(result[1],0.0)
+
+    def _check_obl_cv(self):
+        assert_equal(cephes.obl_cv(1,1,0),2.0)
+    def check_obl_rad1(self):
+        cephes.obl_rad1(1,1,1,0)
+    def check_obl_rad1_cv(self):
+        cephes.obl_rad1_cv(1,1,1,1,0)
+    def check_obl_rad2(self):
+        cephes.obl_rad2(1,1,1,0)
+    def check_obl_rad2_cv(self):
+        cephes.obl_rad2_cv(1,1,1,1,0)
+
+    def check_pbdv(self):
+        assert_equal(cephes.pbdv(1,0),(0.0,0.0))
+    def check_pbvv(self):
+        cephes.pbvv(1,0)
+    def check_pbwa(self):
+        cephes.pbwa(1,0)
+    def check_pdtr(self):
+        cephes.pdtr(0,1)
+    def check_pdtrc(self):
+        cephes.pdtrc(0,1)
+    def check_pdtri(self):
+        cephes.pdtri(0.5,0.5)
+    def check_pdtrik(self):
+        cephes.pdtrik(0.5,1)
+
+    def check_pro_ang1(self):
+        cephes.pro_ang1(1,1,1,0)
+    def check_pro_ang1_cv(self):
+        assert_equal(cephes.pro_ang1_cv(1,1,1,1,0),(1.0,0.0))
+    def _check_pro_cv(self):
+        assert_equal(cephes.pro_cv(1,1,0),2.0)
+    def check_pro_rad1(self):
+        cephes.pro_rad1(1,1,1,0.1) 
+    def check_pro_rad1_cv(self):
+        cephes.pro_rad1_cv(1,1,1,1,0)
+    def check_pro_rad2(self):
+        cephes.pro_rad2(1,1,1,0)
+    def check_pro_rad2_cv(self):
+        cephes.pro_rad2_cv(1,1,1,1,0)
+
+    def check_psi(self):
+        cephes.psi(1)
+
+    def check_radian(self):
+        assert_equal(cephes.radian(0,0,0),0)
+    def check_rgamma(self):
+        assert_equal(cephes.rgamma(1),1.0)
+    def check_round(self):
+        assert_equal(cephes.round(3.4),3.0)
+        assert_equal(cephes.round(-3.4),-3.0)
+        assert_equal(cephes.round(3.6),4.0)
+        assert_equal(cephes.round(-3.6),-4.0)
+        assert_equal(cephes.round(3.5),4.0)
+        assert_equal(cephes.round(-3.5),-4.0)
+
+    def check_shichi(self):
+        cephes.shichi(1)
+    def check_sici(self):
+        cephes.sici(1)
+    def check_sindg(self):
+        assert_equal(cephes.sindg(90),1.0)
+    def check_smirnov(self):
+        assert_equal(cephes.smirnov(1,.1),0.9)
+    def check_smirnovi(self):
+        assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
+        assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
+
+    def check_spence(self):
+        assert_equal(cephes.spence(1),0.0)
+    def check_stdtr(self):
+        assert_equal(cephes.stdtr(1,0),0.5)
+    def check_stdtridf(self):
+        cephes.stdtridf(0.7,1)
+    def check_stdtrit(self):
+        cephes.stdtrit(1,0.7)
+    def check_struve(self):
+        assert_equal(cephes.struve(0,0),0.0)
+
+    def check_tandg(self):
+        assert_equal(cephes.tandg(45),1.0)
+    def check_tklmbda(self):
+        assert_almost_equal(cephes.tklmbda(1,1),1.0)
+
+    def check_y0(self):
+        cephes.y0(1)
+    def check_y1(self):
+        cephes.y1(1)
+    def check_yn(self):
+        cephes.yn(1,1)
+    def check_yv(self):
+        cephes.yv(1,1)
+    def _check_yve(self):
+        cephes.yve(1,1)
+
+    def check_zeta(self):
+        cephes.zeta(2,2)
+    def check_zetac(self):
+        assert_equal(cephes.zetac(0),-1.5)
+    def check_wofz(self):
+        cephes.wofz(0)
 
 class test_airy(unittest.TestCase):
 
@@ -231,26 +644,66 @@ class test_bi_zeros(unittest.TestCase):
 class test_chebyc(unittest.TestCase):
 
     def check_chebyc(self):
-        chebc = chebyc(1)(.2)
-        assert_almost_equal(chebc,.2000,4)
+        C0 = chebyc(0)
+        C1 = chebyc(1)        
+        C2 = chebyc(2)
+        C3 = chebyc(3)
+        C4 = chebyc(4)
+        C5 = chebyc(5)
+        assert_array_almost_equal(C0.c,[2],13)
+        assert_array_almost_equal(C1.c,[1,0],13)
+        assert_array_almost_equal(C2.c,[1,0,-2],13)
+        assert_array_almost_equal(C3.c,[1,0,-3,0],13)
+        assert_array_almost_equal(C4.c,[1,0,-4,0,2],13)
+        assert_array_almost_equal(C5.c,[1,0,-5,0,5,0],13)
 
 class test_chebys(unittest.TestCase):
 
     def check_chebys(self):
-        chebs = chebys(1)(.2)
-        assert_almost_equal(chebs,.2000,4)
+        S0 = chebys(0)
+        S1 = chebys(1)        
+        S2 = chebys(2)
+        S3 = chebys(3)
+        S4 = chebys(4)
+        S5 = chebys(5)
+        assert_array_almost_equal(S0.c,[1],13)
+        assert_array_almost_equal(S1.c,[1,0],13)
+        assert_array_almost_equal(S2.c,[1,0,-1],13)
+        assert_array_almost_equal(S3.c,[1,0,-2,0],13)
+        assert_array_almost_equal(S4.c,[1,0,-3,0,1],13)
+        assert_array_almost_equal(S5.c,[1,0,-4,0,3,0],13)
 
 class test_chebyt(unittest.TestCase):
 
     def check_chebyt(self):
-        cheb = chebyt(1)(.2)
-        assert_equal(cheb,0.2)
+        T0 = chebyt(0)
+        T1 = chebyt(1)        
+        T2 = chebyt(2)
+        T3 = chebyt(3)
+        T4 = chebyt(4)
+        T5 = chebyt(5)
+        assert_array_almost_equal(T0.c,[1],13)
+        assert_array_almost_equal(T1.c,[1,0],13)
+        assert_array_almost_equal(T2.c,[2,0,-1],13)
+        assert_array_almost_equal(T3.c,[4,0,-3,0],13)
+        assert_array_almost_equal(T4.c,[8,0,-8,0,1],13)
+        assert_array_almost_equal(T5.c,[16,0,-20,0,5,0],13)
 
 class test_chebyu(unittest.TestCase):
 
     def check_chebyu(self):
-        chebu = chebyu(1)(.2)
-        assert_equal(chebu,0.4)
+        U0 = chebyu(0)
+        U1 = chebyu(1)        
+        U2 = chebyu(2)
+        U3 = chebyu(3)
+        U4 = chebyu(4)
+        U5 = chebyu(5)
+        assert_array_almost_equal(U0.c,[1],13)
+        assert_array_almost_equal(U1.c,[2,0],13)
+        assert_array_almost_equal(U2.c,[4,0,-1],13)
+        assert_array_almost_equal(U3.c,[8,0,-4,0],13)
+        assert_array_almost_equal(U4.c,[16,0,-12,0,1],13)
+        assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 class test_choose(unittest.TestCase):
 
@@ -496,12 +949,6 @@ class test_gammaincinv(unittest.TestCase):
         x = gammainc(.4,y)
         assert_almost_equal(x,0.4,1)
 
-class test_genlaguerre(unittest.TestCase):
-
-    def check_genlaguerre(self):
-        gen = genlaguerre(1,0)(.5)
-        assert_equal(gen,0.5)
-
 class test_hankel1(unittest.TestCase):
 
     def check_hankel1(self):
@@ -533,9 +980,29 @@ class test_hankel2e(unittest.TestCase):
 class test_hermite(unittest.TestCase):
 
     def check_hermite(self):
+        H0 = hermite(0)
+        H1 = hermite(1)        
+        H2 = hermite(2)
+        H3 = hermite(3)
+        H4 = hermite(4)
+        H5 = hermite(5)
+        assert_array_almost_equal(H0.c,[1],13)
+        assert_array_almost_equal(H1.c,[2,0],13)
+        assert_array_almost_equal(H2.c,[4,0,-2],13)
+        assert_array_almost_equal(H3.c,[8,0,-12,0],13)
+        assert_array_almost_equal(H4.c,[16,0,-48,0,12],13)
+        assert_array_almost_equal(H5.c,[32,0,-160,0,120,0],13)
 
-        herm = hermite(3)(.5)
-        assert_almost_equal(herm,-5.0,8)
+    def check_hermitenorm(self):
+        # He_n(x) = 2**(-n/2) H_n(x/sqrt(2))
+        psub = poly1d([1.0/sqrt(2),0])
+        H0 = hermitenorm(0)
+        H1 = hermitenorm(1)        
+        H2 = hermitenorm(2)
+        H3 = hermitenorm(3)
+        H4 = hermitenorm(4)
+        H5 = hermitenorm(5)
+
 
 class test_gegenbauer(unittest.TestCase):
 
@@ -689,7 +1156,23 @@ class test_j1(unittest.TestCase):
 class test_jacobi(unittest.TestCase):
 
     def check_jacobi(self):
-        j = jacobi(1,1,1)(.2)
+        a = 5*rand() - 1
+        b = 5*rand() - 1
+        P0 = jacobi(0,a,b)
+        P1 = jacobi(1,a,b)
+        P2 = jacobi(2,a,b)
+        P3 = jacobi(3,a,b)
+        
+        assert_array_almost_equal(P0.c,[1],13)
+        assert_array_almost_equal(P1.c,array([a+b+2,a-b])/2.0,13)
+        cp = [(a+b+3)*(a+b+4), 4*(a+b+3)*(a+2), 4*(a+1)*(a+2)]
+        p2c = [cp[0],cp[1]-2*cp[0],cp[2]-cp[1]+cp[0]]
+        assert_array_almost_equal(P2.c,array(p2c)/8.0,13)
+        cp = [(a+b+4)*(a+b+5)*(a+b+6),6*(a+b+4)*(a+b+5)*(a+3),
+              12*(a+b+4)*(a+2)*(a+3),8*(a+1)*(a+2)*(a+3)]
+        p3c = [cp[0],cp[1]-3*cp[0],cp[2]-2*cp[1]+3*cp[0],cp[3]-cp[2]+cp[1]-cp[0]]
+        assert_array_almost_equal(P3.c,array(p3c)/48.0,13)        
+        
 
 class test_jn(unittest.TestCase):
 
@@ -961,14 +1444,48 @@ class test_kvp(unittest.TestCase):
 class test_laguerre(unittest.TestCase):
 
     def check_laguerre(self):
-        lag = laguerre(1)(.5)
-        assert_equal(lag,.5)
+        lag0 = laguerre(0)
+        lag1 = laguerre(1)
+        lag2 = laguerre(2)
+        lag3 = laguerre(3)
+        lag4 = laguerre(4)
+        lag5 = laguerre(5)
+        assert_array_almost_equal(lag0.c,[1],13)
+        assert_array_almost_equal(lag1.c,[-1,1],13)
+        assert_array_almost_equal(lag2.c,array([1,-4,2])/2.0,13)
+        assert_array_almost_equal(lag3.c,array([-1,9,-18,6])/6.0,13)
+        assert_array_almost_equal(lag4.c,array([1,-16,72,-96,24])/24.0,13)
+        assert_array_almost_equal(lag5.c,array([-1,25,-200,600,-600,120])/120.0,13)
 
+    def check_genlaguerre(self):
+        k = 5*rand()-0.9
+        lag0 = genlaguerre(0,k)
+        lag1 = genlaguerre(1,k)
+        lag2 = genlaguerre(2,k)
+        lag3 = genlaguerre(3,k)
+        assert_equal(lag0.c,[1])
+        assert_equal(lag1.c,[-1,k+1])
+        assert_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
+        assert_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
+        
+
+# Base polynomials come from Abrahmowitz and Stegan
 class test_legendre(unittest.TestCase):
 
     def check_legendre(self):
-        a = legendre(2)(2)
-        assert_equal(a,5.5)
+        leg0 = legendre(0)
+        leg1 = legendre(1)
+        leg2 = legendre(2)
+        leg3 = legendre(3)
+        leg4 = legendre(4)
+        leg5 = legendre(5)
+        assert_equal(leg0.c,[1])
+        assert_equal(leg1.c,[1,0])
+        assert_equal(leg2.c,array([3,0,-1])/2.0)
+        assert_equal(leg3.c,array([5,0,-3,0])/2.0)
+        assert_equal(leg4.c,array([35,0,-30,0,3])/8.0)
+        assert_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
+
 
 class test_lmbda(unittest.TestCase):
 
@@ -1400,6 +1917,7 @@ class test_zeros(unittest.TestCase):
 def test_suite(level=1):
     suites = []
     if level > 0:
+        suites.append( unittest.makeSuite(test_cephes,'check_'))
 	suites.append( unittest.makeSuite(test_airy,'check_') )
 	suites.append( unittest.makeSuite(test_airye,'check_') )
 	suites.append( unittest.makeSuite(test_arange,'check_') )
@@ -1423,8 +1941,8 @@ def test_suite(level=1):
 	suites.append( unittest.makeSuite(test_bi_zeros,'check_') )
 	suites.append( unittest.makeSuite(test_chebyc,'check_') )
 	suites.append( unittest.makeSuite(test_chebys,'check_') )
-#F	suites.append( unittest.makeSuite(test_chebyt,'check_') )
-#F	suites.append( unittest.makeSuite(test_chebyu,'check_') )
+	suites.append( unittest.makeSuite(test_chebyt,'check_') )
+	suites.append( unittest.makeSuite(test_chebyu,'check_') )
 	suites.append( unittest.makeSuite(test_choose,'check_') )
 #F	suites.append( unittest.makeSuite(test_cbrt,'check_') )
 	suites.append( unittest.makeSuite(test_cosdg,'check_') )
@@ -1453,7 +1971,6 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_gammaincc,'check_') )
 	suites.append( unittest.makeSuite(test_gammaincinv,'check_') )
         suites.append( unittest.makeSuite(test_gammainccinv,'check_') )	      
-	suites.append( unittest.makeSuite(test_genlaguerre,'check_') )
 	suites.append( unittest.makeSuite(test_hankel1,'check_') )
 #F	suites.append( unittest.makeSuite(test_hankel1e,'check_') )
 	suites.append( unittest.makeSuite(test_hankel2,'check_') )

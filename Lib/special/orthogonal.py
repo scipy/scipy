@@ -60,9 +60,12 @@ from scipy_base import *
 import cephes
 _gam = cephes.gamma
 
+def poch(z,m):
+    """Pochhammer symbol (z)_m = (z)(z+1)....(z+m-1) = gamma(z+m)/gamma(z)"""
+    return _gam(z+m) / _gam(z)
 
 class orthopoly1d(poly1d):
-    def __init__(self, roots, weights=None, hn=1.0, An=1.0, wfunc=None, limits=None, monic=0):
+    def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0):
         poly1d.__init__(self, roots, r=1)
 	equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
 	self.__dict__['weights'] = array(zip(roots,weights,equiv_weights)) 
@@ -70,13 +73,17 @@ class orthopoly1d(poly1d):
         self.__dict__['limits'] = limits
         mu = sqrt(hn)
         if monic:
-            mu = mu / abs(An)
-            An = 1.0
+            mu = mu / abs(kn)
+            kn = 1.0
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= An
+        self.__dict__['coeffs'] *= kn
 
 
+_eigfunc_cache = None
 def get_eig_func():
+    global _eigfunc_cache
+    if _eigfunc_cache is not None:
+        return _eigfunc_cache
     try:
         import scipy.linalg
         eig = scipy.linalg.eig
@@ -92,6 +99,7 @@ def get_eig_func():
                 raise ImportError, \
                       "You must have scipy.linalg or LinearAlgebra to "\
                       "use this function."
+    _eigfunc_cache = eig
     return eig
 
 def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
@@ -132,14 +140,15 @@ def j_roots(n,alpha,beta,mu=0):
     assert(n>0), "n must be positive."
 
     (p,q) = (alpha,beta)
-    # from recurrence relation
-    sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)*k*(k+p+q)/((2*k+p+q+1)*(2*k+p+q-1)))
+    # from recurrence relations
+    sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)/(2*k+q+p+1)) * \
+                (where(k==1,1.0,sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
     if (p == q):
         an_J = lambda k: 0.0*k
     else:
         an_J = lambda k: (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2))
     g = cephes.gamma
-    mu0 = 2**(p+q+1)*g(p+1)*g(q+1)/(g(p+q+2))
+    mu0 = 2.0**(p+q+1)*g(p+1)*g(q+1)/(g(p+q+2))
     val = gen_roots_and_weights(n,an_J,sbn_J,mu0)
     if mu:
         return val + [mu0]
@@ -154,13 +163,13 @@ def jacobi(n,alpha,beta,monic=0):
     assert(n>=0), "n must be nonnegative"
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
     if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
-    n1 = n
-    x,w,mu = j_roots(n1,alpha,beta,mu=1)
+    x,w,mu = j_roots(n,alpha,beta,mu=1)
     ab1 = alpha+beta+1.0
     hn = 2**ab1/(2*n+ab1)*_gam(n+alpha+1)
     hn *= _gam(n+beta+1.0) / _gam(n+1) / _gam(n+ab1)
-    An = _gam(2*n+ab1)/2.0**n / _gam(n+1) / _gam(n+ab1)
-    p = orthopoly1d(x,w,hn,An,wfunc,(-1,1),monic)
+    kn = _gam(2*n+ab1)/2.0**n / _gam(n+1) / _gam(n+ab1)
+    # here kn = coefficient on x^n term
+    p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic)
     return p
 
 # Jacobi Polynomials shifted         G_n(p,q,x)
@@ -174,41 +183,51 @@ def js_roots(n,p1,q1,mu=0):
     # from recurrence relation
     if not ( ( (p1 - q1) > -1 ) and ( q1 > 0 ) ):
         raise ValueError, "(p - q) > -1 and q > 0 please."
-    assert(n>0), "n must be positive."
+    if (n <= 0):
+        raise ValueError, "n must be positive."
     
-    (p,q) = (p1,q1)
-    if (p == 0):
-        sbn_Js = lambda k: sqrt((k+q-1)*(k-q))/((2*k-1)*2)
-    else:
-        sbn_Js = lambda k: sqrt((k*(k+q-1)*(k+p-1)*(k+p-q))/((2*k+p)*(2*k+p-2)))/(2*k+p-1)
-    if (p == 1):
-        an_Js = lambda k: 0*k + 0.5
-    else:
-        an_Js = lambda k: (2*k*(k+p)+q*(p-1))/((2*k+p+1)*(2*k+p-1))
+    p,q = p1,q1
 
+    sbn_Js = lambda k: sqrt(where(k==1,q*(p-q+1.0)/(p+2.0), \
+                                  k*(k+q-1.0)*(k+p-1.0)*(k+p-q) \
+                                  / ((2.0*k+p-2) * (2.0*k+p))))/(2*k+p-1.0)
+    an_Js = lambda k: (2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0))
+
+    # could also use definition
+    #  Gn(p,q,x) = constant_n * P^(p-q,q-1)_n(2x-1)
+    #  so roots of Gn(p,q,x) are (roots of P^(p-q,q-1)_n + 1) / 2.0
+    g = _gam
     # integral of weight over interval
-    g = cephes.gamma
     mu0 =  g(q)*g(p-q+1)/g(p+1)
     val = gen_roots_and_weights(n,an_Js,sbn_Js,mu0)
     if mu:
         return val + [mu0]
     else:
         return val
+    # What code would look like using jacobi polynomial roots
+    #if mu:
+    #    [x,w,mut] = j_roots(n,p-q,q-1,mu=1)
+    #    return [(x+1)/2.0,w,mu0]
+    #else:
+    #    [x,w] = j_roots(n,p-q,q-1,mu=0)
+    #    return [(x+1)/2.0,w]    
 
 def sh_jacobi(n, p, q, monic=0):
     """Returns the nth order Jacobi polynomial, G_n(p,q,x)
     orthogonal over [0,1] with weighting function
-    (1-x)**(p-q) (1+x)**(q-1) with p>q-1 and q > 0.
+    (1-x)**(p-q) (x)**(q-1) with p>q-1 and q > 0.
     """
-    assert(n>=0), "n must be nonnegative"
-    wfunc = lambda x: (1.0-x)**(p-q) * (1+x)**(q-1.)
+    if (n<0):
+        raise ValueError, "n must be nonnegative"
+    wfunc = lambda x: (1.0-x)**(p-q) * (x)**(q-1.)
     if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
-    n1 = n    
+    n1 = n  
     x,w,mu0 = js_roots(n1,p,q,mu=1)
     hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
     hn /= (2*n+p)*(_gam(2*n+p)**2)
-    An = 1.0
-    p = orthopoly1d(x,w,hn,An,wfunc=wfunc,limits=(0,1),monic=monic)
+    # kn = 1.0 in standard form so monic is redundant.  Kept for compatibility.
+    kn = 1.0
+    p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(0,1),monic=monic)
     return p
 
 # Generalized Laguerre               L^(alpha)_n(x)
@@ -237,6 +256,8 @@ def genlaguerre(n,alpha,monic=0):
     L^(alpha)_n(x), orthogonal over [0,inf) with weighting function
     exp(-x) x**alpha with alpha > -1
     """
+    if (alpha <= -1):
+        raise ValueError, "alpha must be > -1"
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
     else: n1 = n
@@ -244,9 +265,34 @@ def genlaguerre(n,alpha,monic=0):
     wfunc = lambda x: exp(-x) * x**alpha
     if n==0: x,w = [],[]
     hn = _gam(n+alpha+1)/_gam(n+1)
-    An = (-1)**n / _gam(n+1)
-    p = orthopoly1d(x,w,hn,An,wfunc,(0,inf),monic)
+    kn = (-1)**n / _gam(n+1)
+    p = orthopoly1d(x,w,hn,kn,wfunc,(0,inf),monic)
     return p
+
+# Laguerre                      L_n(x)
+def l_roots(n,mu=0):
+    """[x,w] = l_roots(n)
+
+    Returns the roots (x) of the nth order Laguerre polynomial, L_n(x),
+    and weights (w) to use in Gaussian Quadrature over [0,inf] with weighting
+    function exp(-x).
+    """
+    return la_roots(n,0.0,mu=mu)
+
+def laguerre(n,monic=0):
+    """Return the nth order Laguerre polynoimal, L_n(x), orthogonal over
+    [0,inf) with weighting function exp(-x)
+    """
+    assert(n>=0), "n must be nonnegative"
+    if n==0: n1 = n+1
+    else: n1 = n
+    x,w,mu0 = l_roots(n1,mu=1)
+    if n==0: x,w = [],[]
+    hn = 1.0
+    kn = (-1)**n / _gam(n+1)
+    p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic)
+    return p 
+
 
 # Hermite  1                         H_n(x)
 def h_roots(n,mu=0):
@@ -277,8 +323,8 @@ def hermite(n,monic=0):
     wfunc = lambda x: exp(-x*x)
     if n==0: x,w = [],[]
     hn = 2**n * _gam(n+1)*sqrt(pi)
-    An = 2**n
-    p = orthopoly1d(x,w,hn,An,wfunc,(-inf,inf),monic)
+    kn = 2**n
+    p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic)
     return p
     
 # Hermite  2                         He_n(x)
@@ -310,8 +356,8 @@ def hermitenorm(n,monic=0):
     wfunc = lambda x: exp(-x*x/4.0)
     if n==0: x,w = [],[]
     hn = sqrt(2*pi)*_gam(n+1)
-    An = 1.0
-    p = orthopoly1d(x,w,hn,An,wfunc=wfunc,limits=(-inf,inf),monic=monic)
+    kn = 1.0
+    p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic)
     return p
 
 ## The remainder of the polynomials can be derived from the ones above.
@@ -331,9 +377,15 @@ def gegenbauer(n,alpha,monic=0):
     C^(alpha)_n(x), orthogonal over [-1,1] with weighting function
     (1-x**2)**(alpha-1/2) with alpha > -1/2
     """
-    return jacobi(n,alpha-0.5,alpha-0.5,monic=monic)
+    base = jacobi(n,alpha-0.5,alpha-0.5,monic=monic)
+    if monic:
+        return base
+    #  Abrahmowitz and Stegan 22.5.20
+    factor = _gam(2*alpha+n)*_gam(alpha+0.5) / _gam(2*alpha) / _gam(alpha+0.5+n)
+    return factor * base
 
-# Chebyshev of the first kind        T_n(x)
+# Chebyshev of the first kind: T_n(x)  = n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
+#  Computed anew.
 def t_roots(n,mu=0):
     """[x,w] = t_roots(n)
 
@@ -341,15 +393,36 @@ def t_roots(n,mu=0):
     polynomial, T_n(x), and weights (w) to use in Gaussian Quadrature
     over [-1,1] with weighting function (1-x**2)**(-1/2).
     """
-    return j_roots(n,-0.5,-0.5,mu=mu)
+    assert(n>0), "n must be positive."
+    # from recurrence relation
+    sbn_J = lambda k: where(k==1,sqrt(2)/2.0,0.5)
+    an_J = lambda k: 0.0*k
+    g = cephes.gamma
+    mu0 = pi
+    val = gen_roots_and_weights(n,an_J,sbn_J,mu0)
+    if mu:
+        return val + [mu0]
+    else:
+        return val
 
 def chebyt(n,monic=0):
     """Return nth order Chebyshev polynomial of first kind, Tn(x).  Orthogonal
     over [-1,1] with weight function (1-x**2)**(-1/2).
     """
+    assert(n>=0), "n must be nonnegative"
+    wfunc = lambda x: 1.0/sqrt(1-x*x)
+    if n==0: return orthopoly1d([],[],pi,1.0,wfunc,(-1,1),monic)
+    n1 = n
+    x,w,mu = t_roots(n1,mu=1)
+    hn = pi/2
+    kn = 2**(n-1)
+    p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic)
+    return p
+    
     return jacobi(n,-0.5,-0.5,monic=monic)
 
-# Chebyshev of the second kind       U_n(x)
+# Chebyshev of the second kind
+#    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
 def u_roots(n,mu=0):
     """[x,w] = u_roots(n)
 
@@ -363,7 +436,11 @@ def chebyu(n,monic=0):
     """Return nth order Chebyshev polynomial of second kind, Un(x).  Orthogonal
     over [-1,1] with weight function (1-x**2)**(1/2).
     """
-    return jacobi(n,0.5,0.5,monic=monic)
+    base = jacobi(n,0.5,0.5,monic=monic)
+    if monic:
+        return base
+    factor = sqrt(pi)/2.0*_gam(n+2) / _gam(n+1.5)
+    return factor * base
 
 # Chebyshev of the first kind        C_n(x)
 def c_roots(n,mu=0):
@@ -390,8 +467,8 @@ def chebyc(n,monic=0):
     x,w,mu0 = c_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 4*pi * ((n==0)+1)
-    An = 1.0
-    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    kn = 1.0
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
         p = p * 2.0/p(2)
     return p
@@ -421,8 +498,8 @@ def chebys(n,monic=0):
     x,w,mu0 = s_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = pi
-    An = 1.0
-    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    kn = 1.0
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
         p = p * (n+1.0)/p(2)
     return p
@@ -480,8 +557,8 @@ def legendre(n,monic=0):
     x,w,mu0 = p_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 2.0/(2*n+1)
-    An = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
-    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic)
+    kn = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic)
     return p
 
 # Shifted Legendre              P^*_n(x)
@@ -504,33 +581,10 @@ def sh_legendre(n,monic=0):
     x,w,mu0 = ps_roots(n1,mu=1)
     if n==0: x,w = [],[]
     hn = 1.0/(2*n+1.0)
-    An = 1.0
-    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: 1.0,limits=(0,1),monic=monic)
+    kn = 1.0
+    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(0,1),monic=monic)
     return p 
 
-# Laguerre                      L_n(x)
-def l_roots(n,mu=0):
-    """[x,w] = l_roots(n)
-
-    Returns the roots (x) of the nth order Laguerre polynomial, L_n(x),
-    and weights (w) to use in Gaussian Quadrature over [0,inf] with weighting
-    function exp(-x).
-    """
-    return la_roots(n,0.0,mu=mu)
-
-def laguerre(n,monic=0):
-    """Return the nth order Laguerre polynoimal, L_n(x), orthogonal over
-    [0,inf) with weighting function exp(-x)
-    """
-    assert(n>=0), "n must be nonnegative"
-    if n==0: n1 = n+1
-    else: n1 = n
-    x,w,mu0 = l_roots(n1,mu=1)
-    if n==0: x,w = [],[]
-    hn = 1.0
-    An = (-1)**n / _gam(n+1)
-    p = orthopoly1d(x,w,hn,An,lambda x: exp(-x),(0,inf),monic)
-    return p 
     
 
 
