@@ -431,7 +431,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                                          phi0, derphi0, c1, c2)
             break
 
-        alpha2 = 2 * alpha1
+        alpha2 = 2 * alpha1   # increase by factor of two on each iteration
         i = i + 1
         alpha0 = alpha1
         alpha1 = alpha2
@@ -440,7 +440,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         derphi_a0 = derphi_a1
 
         # stopping test if lower function not found
-        if (i > maxiter):
+        if (i > maxiter):          
             alpha_star = alpha1
             fval_star = phi_a1
             break
@@ -522,7 +522,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
 
 
 def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
-              maxiter=None, full_output=0, disp=1):
+              maxiter=None, full_output=0, disp=1, retall=1):
     """Minimize a function using the BFGS algorithm.
 
     Description:
@@ -542,7 +542,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
 
-    Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag})
+    Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag}, <allvecs>)
 
       xopt -- the minimizer of f.
 
@@ -552,6 +552,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
       warnflag -- an integer warning flag:
                   1 : 'Maximum number of iterations exceeded.'
                   2 : 'Gradient and/or function calls not changing'
+      allvecs  --  a list of all iterates  (only returned if retall=1)
 
     Additional Inputs:
 
@@ -561,7 +562,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
       maxiter -- the maximum number of iterations.
       full_output -- if non-zero then return fopt, func_calls, grad_calls,
                      and warnflag in addition to xopt.
-      disp -- print convergence message if non-zero.                
+      disp -- print convergence message if non-zero.
+      retall ---  return a list of results at each iteration (starting with
+                  initial guess and ending with final result)
       """
     app_fprime = 0
     if fprime is None:
@@ -587,6 +590,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
         myfprime = fprime
         grad_calls = grad_calls + 1
     xk = x0
+    if retall:
+        allvecs = [x0]
     sk = [2*gtol]
     warnflag = 0
     old_fval = f(x0,*args)
@@ -598,6 +603,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
                  line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args)
         func_calls = func_calls + fc
         xkp1 = xk + alpha_k * pk
+        if retall:
+            allvecs.append(xkp1)
         sk = xkp1 - xk
         xk = xkp1
         if app_fprime:
@@ -649,10 +656,15 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
             print "         Gradient evaluations: %d" % grad_calls
 
     if full_output:
-        return xk, fval, func_calls, grad_calls, warnflag
-    else:        
-        return xk
+        retlist = xk, fval, func_calls, grad_calls, warnflag
+        if retall:
+            retlist += (allvecs,)
+    else: 
+        retlist = xk
+        if retall:
+            retlist = (xk, allvecs)
 
+    return retlist
 
 
 def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
