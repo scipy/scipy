@@ -1,6 +1,6 @@
-"""* Test functions for stats module
+""" Test functions for stats module
 
-*"""
+"""
 
 from Numeric import *
 import Numeric
@@ -9,9 +9,9 @@ import unittest
 from scipy_base.testing import assert_array_equal, assert_equal
 from scipy_base.testing import assert_almost_equal
 from scipy_base.testing import assert_array_almost_equal
+from scipy_base.testing import ScipyTestCase as TestCase
 import scipy
-import scipy.stats as stats
-TestCase = scipy_base.testing.ScipyTestCase
+from scipy import stats
 
 
 ##################################################
