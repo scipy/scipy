@@ -7,6 +7,7 @@ from nevow import loaders
 from nevow import static
 import nevow.tags as T
 import re
+import sys
 import types
 import pydoc
 import inspect
@@ -70,7 +71,7 @@ class BasePage(rend.Page):
 
     def __init__(self, parent, obj, **kw):
         self.parent = parent
-        self.obj = scipy.ppresolve(obj)
+        self.obj = obj
         self.name = kw.pop('name',None)
         if self.name is None:
             self.name = self.obj.__name__
@@ -142,9 +143,10 @@ class ModulePage(BasePage):
             self.all = []
 
     def childFactory(self, context, name):
-        if name not in self.all:
+        if name not in self.all and not hasattr(self.obj,name):
             print "Err 1: ", name, self.all
             return None
+
         child = getattr(self.obj,name,None)
 
         if child is None:
@@ -164,6 +166,7 @@ class ModulePage(BasePage):
 
 
 f2pysubobj = re.compile(r"  ([\w,]+) = (\w+)(.*)")
+f2pysubobj2 = re.compile(r"  (\w+)(\(.*)")
 class F2pyModulePage(ModulePage):
 
     def __init__(self, parent, module, **kw):
@@ -172,6 +175,7 @@ class F2pyModulePage(ModulePage):
 
     def dochtml(self, doc):
         doc = f2pysubobj.sub(r"  \1 = <a href=\2>\2</a>\3",doc)
+        doc = f2pysubobj2.sub(r"  <a href=\1>\1</a>\2",doc)
         return doc
 
 
@@ -198,6 +202,13 @@ class ClassPage(BasePage):
         substr = str[start:]
         substr = subobj.sub("\\1<a href=\\2>\\2</a>\\3--\\4\\5",substr)
         return str[:start] + substr
+
+try:
+    # Disable ppimport hooks.
+    # scipy_base has been imported by scipy import
+    sys.modules['scipy_base.ppimport'].disable()
+except:
+    pass
 
 _packages = ['scipy', 'scipy_base', 'weave', 'scipy_distutils', 'scipy_test']
 
