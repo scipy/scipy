@@ -26,7 +26,7 @@ import sys
 from scipy_test.testing import *
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
-from linalg import pinv, pinv2
+from linalg import pinv, pinv2, solve_banded
 del sys.path[0]
 
 import unittest
@@ -38,6 +38,21 @@ def get_mat(n):
     data = arange(n)
     data = add.outer(data,data)
     return data
+
+class test_solve_banded(ScipyTestCase):
+
+    def check_simple(self):
+
+        a = [[1,20,0,0],[-30,4,6,0],[2,1,20,2],[0,-1,7,14]]
+        ab = [[0,20,6,2],
+              [1,4,20,14],
+              [-30,1,7,0],
+              [2,-1,0,0]]
+        l,u = 2,1
+        for b in ([[1,0,0,0],[0,0,0,1],[0,1,0,0],[0,1,0,0]],
+                  [[2,1],[-30,4],[2,3],[1,3]]):
+            x = solve_banded((l,u),ab,b)
+            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
 
 class test_solve(ScipyTestCase):
 

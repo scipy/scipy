@@ -5,7 +5,7 @@
 
 __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
            'tri','tril','triu','toeplitz','hankel','lu_solve',
-           'cho_solve']
+           'cho_solve','solve_banded']
 
 #from blas import get_blas_funcs
 from lapack import get_lapack_funcs
@@ -74,7 +74,6 @@ def cho_solve((c, lower), b, overwrite_b=0):
     raise ValueError,\
           'illegal value in %-th argument of internal gesv|posv'%(-info)
 
-      
 # Linear equations
 def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
           debug = 0):
@@ -123,6 +122,49 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
         raise LinAlgError, "singular matrix"
     raise ValueError,\
           'illegal value in %-th argument of internal gesv|posv'%(-info)
+
+def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
+          debug = 0):
+    """ solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0) -> x
+
+    Solve a linear system of equations a * x = b for x where
+    a is a banded matrix stored in diagonal orded form
+
+     *   *     a1u
+     
+     *  a12 a23 ...
+    a11 a22 a33 ...
+    a21 a32 a43 ...
+    .
+    al1 ..         *
+
+    Inputs:
+
+      (l,u) -- number of non-zero lower and upper diagonals, respectively.
+      a -- An N x (l+u+1) matrix.
+      b -- An N x nrhs matrix or N vector.
+      overwrite_y - Discard data in y, where y is ab or b.
+
+    Outputs:
+
+      x -- The solution to the system a * x = b
+    """
+    a1, b1 = map(asarray_chkfinite,(ab,b))
+    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
+
+    gbsv, = get_lapack_funcs(('gbsv',),(a1,b1))
+    a2 = zeros((2*l+u+1,a1.shape[1]),gbsv.typecode)
+    a2[l:,:] = a1 
+    lu,piv,x,info = gbsv(l,u,a2,b1,
+                         overwrite_ab=1,
+                         overwrite_b=overwrite_b)
+    if info==0:
+        return x
+    if info>0:
+        raise LinAlgError, "singular matrix"
+    raise ValueError,\
+          'illegal value in %-th argument of internal gbsv'%(-info)
+
 
 # matrix inversion
 def inv(a, overwrite_a=0):

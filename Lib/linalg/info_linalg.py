@@ -6,6 +6,7 @@ Linear algebra routines
 
    inv        --- Find the inverse of a square matrix
    solve      --- Solve a linear system of equations
+   solve_banded --- Solve a linear system of equations with a banded matrix
    det        --- Find the determinant of a square matrix
    norm       --- matrix and vector norm
    lstsq      --- Solve linear least-squares problem
