@@ -160,9 +160,11 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                 'nfev' : the number of function calls
                 'njev' : the number of jacobian calls
                 'fvec' : the function evaluated at the output
-                'fjac' : the orthogonal matrix, q, produced by the
-                         QR facotrization of the final approximate
-                         Jacobi matrix, stored column wise.
+                'fjac' : A permutation of the R matrix of the QR
+                         factorization of the final approximate
+                         Jacobian matrix, stored column wise. 
+			 Together with ipvt, the covariance of the
+			 estimate can be approximated.
                 'ipvt' : an integer array of length N which defines
                          a permutation matrix, p, such that
                          fjac*p = q*r, where r is upper triangular
