@@ -125,7 +125,8 @@ def configuration(parent_package=''):
                 raise BlasSrcNotFoundError,BlasSrcNotFoundError.__doc__
             dict_append(blas_info,libraries=['blas_src'])
             f_libs.append(fortran_library_item(\
-                'blas_src',blas_src_info['sources'],
+                'blas_src',blas_src_info['sources'] + \
+                [os.path.join(local_path,'src','fblaswrap.f')],
                 ))
         lapack_info = get_info('lapack')
         #lapack_info = {} # test building LAPACK from sources.
@@ -235,7 +236,7 @@ if __name__ == '__main__':
     try: import scipy_distutils
     except ImportError:
         extra_packages.append('scipy_distutils')
-        sys.args.insert(0,'scipy_core')
+        sys.argv.insert(0,'scipy_core')
 
     from scipy_distutils.core import setup
     from scipy_distutils.misc_util import merge_config_dicts
