@@ -23,5 +23,9 @@ Data input and output
                that can then be imported and the data accessed as
                attributes of the module.
 
+     mminfo   -- query matrix info from Matrix Market formatted file
+     mmread   -- read matrix from Matrix Market formatted file
+     mmwrite  -- write matrix to Matrix Market formatted file
+
 """
 postpone_import = 1
