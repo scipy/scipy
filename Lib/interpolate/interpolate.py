@@ -124,10 +124,13 @@ class interp1d:
             self.fill_value = array(0.0) / array(0.0)
         else:
             self.fill_value = fill_value
-            
+
+        if kind != 'linear':
+            raise NotImplementedError, "Only linear supported for now. Use fitpack routines for other types."
+        
         # Check that both x and y are at least 1 dimensional.    
         if len(shape(x)) == 0 or len(shape(y)) == 0:
-            raise ValueError, "x and y arrays must have at least one dimension."                
+            raise ValueError, "x and y arrays must have at least one dimension."  
         # make a "view" of the y array that is rotated to the
         # interpolation axis.  
         oriented_x = x

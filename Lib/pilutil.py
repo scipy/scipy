@@ -24,7 +24,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
         cmin = amin(ravel(data))
     if cmax is None:
         cmax = amax(ravel(data))
-    scale = high *1.0 / (cmax-cmin)
+    scale = high *1.0 / (cmax-cmin or 1)
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
     return bytedata + cast[_UInt8](low)
             

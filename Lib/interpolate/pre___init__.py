@@ -15,6 +15,6 @@ Wrappers around FITPACK functions:
 
 Interpolation Class
 
-  linear_1d -- Create a class whose instances can linearly interpolate
+  interp1d -- Create a class whose instances can linearly interpolate
                to compute unknown values.
 """
