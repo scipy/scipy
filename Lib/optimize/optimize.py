@@ -43,17 +43,21 @@ golden      --       Use Golden Section method (does not need initial guess)
 
 bracket     ---      Find a bracket containing the minimum.
 
+
+
 """
 
 
 __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound','brent', 'golden','bracket','rosen','rosen_der',
-           'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime']
+           'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
+           'line_search', 'check_grad']
 
 import Numeric
 import MLab
 from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt
+import scipy_base
 Num = Numeric
 max = MLab.max
 min = MLab.min
@@ -61,12 +65,16 @@ abs = absolute
 import __builtin__
 pymin = __builtin__.min
 pymax = __builtin__.max
-__version__="0.5"
+__version__="0.7"
+_epsilon = sqrt(scipy_base.limits.double_epsilon)
 
+        
 def rosen(x):  # The Rosenbrock function
+    x = asarray(x)
     return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
 
 def rosen_der(x):
+    x = asarray(x)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
@@ -540,10 +548,13 @@ def approx_fprime(xk,f,epsilon,*args):
     grad = Num.zeros((len(xk),),'d')
     ei = Num.zeros((len(xk),),'d')
     for k in range(len(xk)):
-        ei[k] = 1.0
-        grad[k] = (apply(f,(xk+epsilon*ei,)+args) - f0)/epsilon
+        ei[k] = epsilon
+        grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
         ei[k] = 0.0
     return grad
+
+def check_grad(func, grad, x0, *args):
+    return sqrt(sum((grad(x0,*args)-approx_fprime(x0,func,_epsilon,*args))**2))
 
 def approx_fhess_p(x0,p,fprime,epsilon,*args):
     f2 = apply(fprime,(x0+epsilon*p,)+args)
@@ -551,7 +562,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
+def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0):
     """Minimize a function using the BFGS algorithm.
 
@@ -699,7 +710,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
     return retlist
 
 
-def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
+def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0):
     """Minimize a function with nonlinear conjugate gradient algorithm.
 
@@ -837,7 +848,7 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
     return retlist
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-             epsilon=1.49e-8, maxiter=None, full_output=0, disp=1, retall=0):
+             epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0):
     """Description:
 
     Minimize the function, f, whose gradient is given by fprime using the
@@ -1242,7 +1253,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     else:
         return xmin
     
-def golden(func, args=(), brack=None, tol=1.49e-8, full_output=0):
+def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
     tol. A bracketing interval is a triple (a,b,c) where (a<b<c) and

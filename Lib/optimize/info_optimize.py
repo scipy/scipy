@@ -8,6 +8,9 @@ Optimization Tools
                      (uses only function calls)
    fmin_powell --  Powell's (modified) level set method (uses only 
                      function calls)
+   fmin_cg     --  Non-linear (Polak-Rubiere) conjugate gradient algorithm
+                     (can use function and gradient).
+                     
    fmin_bfgs   --  Quasi-Newton method (can use function and gradient)
    fmin_ncg    --  Line-search Newton Conjugate Gradient (can use
                      function, gradient and hessian).
@@ -49,6 +52,11 @@ Optimization Tools
 
    fixed_point -- Single-variable fixed-point solver.
 
+ Utility Functions
+
+   line_search -- Return a step that satisfies the strong Wolfe conditions.
+   check_grad  -- Check the supplied derivative using finite difference
+                   techniques.
 """
 
 postpone_import = 1
