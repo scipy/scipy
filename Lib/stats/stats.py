@@ -81,7 +81,7 @@ VARIABILITY:  obrientransform
 TRIMMING FCNS:  threshold (for arrays only)
                 trimboth
                 trim1
-                around (round all vals to 'n' decimals; Numpy only)
+                around (round all vals to 'n' decimals)
 
 CORRELATION FCNS:  paired
                    pearsonr
@@ -187,7 +187,7 @@ SUPPORT FUNCTIONS:  writecc
 
 
 
-import string, sys, pstat
+import string, sys, _support
 from types import *
 
 __version__ = 0.8
@@ -708,12 +708,12 @@ column 2 contains their respective counts.  Assumes a 1D array is passed.
 
 Returns: a 2D frequency table (col [0:n-1]=scores, col n=frequencies)
 """
-    scores = pstat.unique(a)
+    scores = _support.unique(a)
     scores = sort(scores)
     freq = zeros(len(scores))
     for i in range(len(scores)):
         freq[i] = add.reduce(equal(a,scores[i]))
-    return array(pstat.abut(scores, freq))
+    return array(_support.abut(scores, freq))
 
 
 def scoreatpercentile (a, percent):
@@ -1173,7 +1173,7 @@ Returns: appropriate statistic name, value, and probability
         print '\nComparing variances ...',
 # USE O'BRIEN'S TEST FOR HOMOGENEITY OF VARIANCE, Maxwell & delaney, p.112
         r = obrientransform(x,y)
-        f,p = f_oneway(pstat.colex(r,0),pstat.colex(r,1))
+        f,p = f_oneway(_support.colex(r,0),_support.colex(r,1))
         if p<0.05:
             vartype='unequal, p='+str(around(p,4))
         else:
@@ -1207,7 +1207,7 @@ Returns: appropriate statistic name, value, and probability
             m,b,r,p,see = linregress(x,y)
             print '\nLinear regression for continuous variables ...'
             lol = [['Slope','Intercept','r','Prob','SEestimate'],[around(m,4),around(b,4),around(r,4),around(p,4),around(see,4)]]
-            pstat.printcc(lol)
+            _support.printcc(lol)
         elif corrtype in ['r','R']:
             r,p = spearmanr(x,y)
             print '\nCorrelation for ranked variables ...'
@@ -1278,20 +1278,20 @@ Returns: Point-biserial r, two-tailed p-value
 """
     x,y = map(asarray, (x,y))
     TINY = 1e-30
-    categories = pstat.unique(x)
-    data = pstat.abut(x,y)
+    categories = _support.unique(x)
+    data = _support.abut(x,y)
     if len(categories) <> 2:
         raise ValueError, "Exactly 2 categories required (in x) for pointbiserialr()."
     else:   # there are 2 categories, continue
-        #codemap = pstat.abut(categories,arange(2))
-        #recoded = pstat.recode(data,codemap,0)
-        x = pstat.linexand(data,0,categories[0])
-        y = pstat.linexand(data,0,categories[1])
-        xmean = mean(pstat.colex(x,1),None)
-        ymean = mean(pstat.colex(y,1),None)
+        #codemap = _support.abut(categories,arange(2))
+        #recoded = _support.recode(data,codemap,0)
+        x = _support.linexand(data,0,categories[0])
+        y = _support.linexand(data,0,categories[1])
+        xmean = mean(_support.colex(x,1),None)
+        ymean = mean(_support.colex(y,1),None)
         n = len(data)
         adjust = math.sqrt((len(x)/float(n))*(len(y)/float(n)))
-        rpb = (ymean - xmean)/samplestd(pstat.colex(data,1))*adjust
+        rpb = (ymean - xmean)/samplestd(_support.colex(data,1))*adjust
         df = n-2
         t = rpb*math.sqrt(df/((1.0-rpb+TINY)*(1.0+rpb+TINY)))
         prob = betai(0.5*df,0.5,df/(df+t*t))
@@ -1707,7 +1707,7 @@ Returns: chi-square statistic, associated p-value
     if k < 3:
         raise ValueError, '\nLess than 3 levels.  Friedman test not appropriate.\n'
     n = len(args[0])
-    data = apply(pstat.abut,args)
+    data = apply(_support.abut,args)
     data = data.astype(Float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
@@ -1763,7 +1763,7 @@ Returns: statistic, p-value ???
         print "data and para must be same length in aglm"
         return
     n = len(para)
-    p = pstat.unique(para)
+    p = _support.unique(para)
     x = zeros((n,len(p)))  # design matrix
     for l in range(len(p)):
         x[:,l] = equal(para,p[l])
@@ -1832,7 +1832,7 @@ lists-of-lists.
     alluniqueslist = [0]*(len(data[0])-variables) # all cols but data cols
     Nlevels = [0]*(len(data[0])-variables)        # (as above)
     for column in range(len(Nlevels)): 
-        alluniqueslist[column] = pstat.unique(pstat.colex(data,column))
+        alluniqueslist[column] = _support.unique(_support.colex(data,column))
         Nlevels[column] = len(alluniqueslist[column])
 
     #Ncells = multiply.reduce(Nlevels[1:]) # total num cells (w/i AND btw)
@@ -1861,7 +1861,7 @@ lists-of-lists.
     #
     # Eliminate replications for the same subject in same condition as well as
     # within-subject repetitions, keep as list
-    M = pstat.collapse(data,Bscols,-1,0,0)
+    M = _support.collapse(data,Bscols,-1,0,0)
     # Create an arrays of Nblevels shape (excl. subj dim)
     Marray = zeros(Nblevels[1:],'f')
     Narray = zeros(Nblevels[1:],'f')
@@ -1916,11 +1916,11 @@ lists-of-lists.
             dindex = dindex + 1
 
     # Collapse multiple repetitions on the same subject and same condition
-    cdata = pstat.collapse(data,range(Nfactors+1),-1,0,0)
+    cdata = _support.collapse(data,range(Nfactors+1),-1,0,0)
 
     # Find a value that's not a data score with which to fill the array DA
     dummyval = -1
-    datavals = pstat.colex(data,-1)
+    datavals = _support.colex(data,-1)
     while dummyval in datavals:  # find a value that's not a data score
         dummyval = dummyval - 1
     DA = ones(Nlevels,'f')*dummyval # create plenty of data-slots to fill
@@ -2046,7 +2046,7 @@ lists-of-lists.
                 try:
                     # Tack this column onto existing ones
                     #tmp = D[dcount].shape
-                    D[dcount] = pstat.abut(D[dcount],scratch)
+                    D[dcount] = _support.abut(D[dcount],scratch)
                 except AttributeError: # i.e., D[dcount]=integer/float
                     # If this is the first, plug it in
                     D[dcount] = scratch
@@ -2078,7 +2078,7 @@ lists-of-lists.
         # DONE CREATING M AND D VARIABLES ... TIME FOR SOME SS WORK
         #
         if Bscols[1:] <> []:
-            BNs = pstat.colex([Nlevels],Bscols[1:])
+            BNs = _support.colex([Nlevels],Bscols[1:])
         else:
             BNs = [1]
             #
@@ -2103,7 +2103,7 @@ lists-of-lists.
 
             # CALCULATE SSw ... SUBTRACT APPROPRIATE CELL MEAN FROM EACH SUBJ SCORE
             SSw = 0.0
-            #idxlist = pstat.unique(pstat.colex(M,btwcols))
+            #idxlist = _support.unique(_support.colex(M,btwcols))
             for row in M:
                 idx = []
                 for i in range(len(row[:-1])):
@@ -2161,18 +2161,18 @@ lists-of-lists.
             SSlist.append(SS)
             SSsources.append(source)
 
-            collapsed = pstat.collapse(M,btwcols,-1,0,1)
+            collapsed = _support.collapse(M,btwcols,-1,0,1)
             # Obviously needed for-loop to get source cell-means embedded in collapse fcns
-            #contrastmns = pstat.collapse(collapsed,btwsourcecols,-2,1,1)
+            #contrastmns = _support.collapse(collapsed,btwsourcecols,-2,1,1)
             # Collapse again, this time SUMMING instead of averaging (to get cell Ns)
-            #contrastns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
+            #contrastns = _support.collapse(collapsed,btwsourcecols,-1,0,0,
             #                            sum)
                 
             # Collapse again, this time calculating hmeans (for hns)
-            #contrasthns = pstat.collapse(collapsed,btwsourcecols,-1,0,0,
+            #contrasthns = _support.collapse(collapsed,btwsourcecols,-1,0,0,
             #                             hmean)
             # CALCULATE *BTW-SUBJ* dfnum, dfden
-            sourceNs = pstat.colex([Nlevels],makelist(source-1,Nfactors+1))
+            sourceNs = _support.colex([Nlevels],makelist(source-1,Nfactors+1))
             dfnum = multiply.reduce(ravel(array(sourceNs)-1))
             dfden = Nsubjects - multiply.reduce(ravel(BNs))
 
@@ -2226,7 +2226,7 @@ lists-of-lists.
             SS = LA.determinant(er) - SSw
 
         # CALCULATE *W/I-SUBJ* dfnum, dfden
-            sourceNs = pstat.colex([Nlevels],makelist(source,Nfactors+1))
+            sourceNs = _support.colex([Nlevels],makelist(source,Nfactors+1))
             # Calculation of dfnum is straightforward regardless
             dfnum = multiply.reduce(ravel(array(sourceNs)-1)[1:])
             # If only within-subject factors are involved, dfden is straightforward
@@ -2301,11 +2301,11 @@ lists-of-lists.
         # PRINT OUT ALL MEANS AND Ns FOR THIS SOURCE (i.e., this combo of factors)
         #
         Lsource = makelist(source-1,Nfactors+1)
-        collapsed = pstat.collapse(cdata,Lsource,-1,1,1)
+        collapsed = _support.collapse(cdata,Lsource,-1,1,1)
 
         # First, get the list of level-combos for source cells
         prefixcols = range(len(collapsed[0][:-3]))
-        outlist = pstat.colex(collapsed,prefixcols)
+        outlist = _support.colex(collapsed,prefixcols)
         # Start w/ factor names (A,B,C, or ones input to anova())
         eff = []
         for col in Lsource:
@@ -2314,12 +2314,12 @@ lists-of-lists.
         for item in ['MEAN','STDERR','N']:
             eff.append(item)
         # To the list of level-combos, abut the corresp. means and Ns
-        outlist = pstat.abut(outlist,
-                             map(round4,pstat.colex(collapsed,-3)),
-                             map(round4,pstat.colex(collapsed,-2)),
-                             map(round4,pstat.colex(collapsed,-1)))
+        outlist = _support.abut(outlist,
+                             map(round4,_support.colex(collapsed,-3)),
+                             map(round4,_support.colex(collapsed,-2)),
+                             map(round4,_support.colex(collapsed,-1)))
         outlist = [eff] + outlist # add titles to the top of the list
-        pstat.printcc(outlist)    # print it in customized columns
+        _support.printcc(outlist)    # print it in customized columns
         print
 
 
@@ -2334,12 +2334,12 @@ lists-of-lists.
     for i in range(len(Wscols[1:])):
         facttypes[Wscols[i+1]-1] = 'WITHIN'
     title = title + [['TYPE:    ','RANDOM']+facttypes]
-    pstat.printcc(title)
+    _support.printcc(title)
     print
 
     title = [['Effect','SS','DF','MS','F','p','sig']] + ['dashes']
     outputlist = title + outputlist
-    pstat.printcc(outputlist)
+    _support.printcc(outputlist)
     return
 
 
@@ -2629,7 +2629,7 @@ def outputfstats(Enum, Eden, dfnum, dfden, f, prob):
      title = [['EF/ER','DF','Mean Square','F-value','prob','']]
      lofl = title+[[Enum, dfnum, around(Enum/float(dfnum),3), f, prob, suffix],
                    [Eden, dfden, around(Eden/float(dfden),3),'','','']]
-     pstat.printcc(lofl)
+     _support.printcc(lofl)
      return
 
 
@@ -2792,8 +2792,8 @@ Returns: None
         del list2print[row]
     maxsize = [0]*len(list2print[0])
     for col in range(len(list2print[0])):
-        items = pstat.colex(list2print,col)
-        items = map(pstat.makestr,items)
+        items = _support.colex(list2print,col)
+        items = map(_support.makestr,items)
         maxsize[col] = max(map(len,items)) + extra
     for row in listoflists:
         if row == ['\n'] or row == '\n':
@@ -2802,9 +2802,9 @@ Returns: None
             dashes = [0]*len(maxsize)
             for j in range(len(maxsize)):
                 dashes[j] = '-'*(maxsize[j]-2)
-            outfile.write(pstat.lineincustcols(dashes,maxsize))
+            outfile.write(_support.lineincustcols(dashes,maxsize))
         else:
-            outfile.write(pstat.lineincustcols(row,maxsize))
+            outfile.write(_support.lineincustcols(row,maxsize))
         outfile.write('\n')
     outfile.close()
     return None
@@ -2838,7 +2838,7 @@ Returns: None
         print
         print statname
         print
-        pstat.printcc(lofl)
+        _support.printcc(lofl)
         print
         try:
             if stat.shape == ():
@@ -2862,7 +2862,7 @@ Returns: None
                 prob = prob[0]
         except:
             pass
-        file.write(pstat.list2string(['\nTest statistic = ',round(stat,4),'   p = ',round(prob,4),suffix,'\n\n']))
+        file.write(_support.list2string(['\nTest statistic = ',round(stat,4),'   p = ',round(prob,4),suffix,'\n\n']))
         file.close()
     return None
 
@@ -2877,7 +2877,7 @@ column = measured values.
     numfact = len(data[0])-2
     withinvec = [0]*numfact
     for col in range(1,numfact+1):
-        rows = pstat.linexand(data,col,pstat.unique(pstat.colex(data,1))[0])  # get 1 level of this factor
-        if len(pstat.unique(pstat.colex(rows,0))) < len(rows):   # if fewer subjects than scores on this factor
+        rows = _support.linexand(data,col,_support.unique(_support.colex(data,1))[0])  # get 1 level of this factor
+        if len(_support.unique(_support.colex(rows,0))) < len(rows):   # if fewer subjects than scores on this factor
             withinvec[col-1] = 1
     return withinvec
