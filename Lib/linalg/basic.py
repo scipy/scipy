@@ -38,7 +38,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
        x -- the solution to the system
     """
     b1 = asarray(b)
-    overwrite_b = overwrite_b or b1 is not b
+    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if lu.shape[0] != b1.shape[0]:
         raise ValuError, "incompatible dimensions."
     getrs, = get_lapack_funcs(('getrs',),(lu,b1))
@@ -63,7 +63,7 @@ def cho_solve((c, lower), b, overwrite_b=0):
        x -- the solution to the system a*x = b
     """
     b1 = asarray(b)
-    overwrite_b = overwrite_b or b1 is not b
+    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if c.shape[0] != b1.shape[0]:
         raise ValuError, "incompatible dimensions."
     potrs, = get_lapack_funcs(('potrs',),(c,b1))
@@ -99,8 +99,8 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
         raise ValueError, 'expected square matrix'
     if a1.shape[0] != b1.shape[0]:
         raise ValueError, 'incompatible dimensions'
-    overwrite_a = overwrite_a or a1 is not a
-    overwrite_b = overwrite_b or b1 is not b
+    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if debug:
         print 'solve:overwrite_a=',overwrite_a
         print 'solve:overwrite_b=',overwrite_b
@@ -132,7 +132,7 @@ def inv(a, overwrite_a=0):
     a1 = asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
-    overwrite_a = overwrite_a or a1 is not a
+    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     #XXX: I found no advantage or disadvantage of using finv.
 ##     finv, = get_flinalg_funcs(('inv',),(a1,))
 ##     if finv is not None:
@@ -240,7 +240,7 @@ def det(a, overwrite_a=0):
     a1 = asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
-    overwrite_a = overwrite_a or a1 is not a
+    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     fdet, = get_flinalg_funcs(('det',),(a1,))
     a_det,info = fdet(a1,overwrite_a=overwrite_a)
     if info<0: raise ValueError,\
@@ -286,8 +286,8 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
         if len(b1.shape)==2: b2[:m,:] = b1
         else: b2[:m,0] = b1
         b1 = b2
-    overwrite_a = overwrite_a or a1 is not a
-    overwrite_b = overwrite_b or b1 is not b
+    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if gelss.module_name[:7] == 'flapack':
         lwork = calc_lwork.gelss(gelss.prefix,m,n,nrhs)[1]
         v,x,s,rank,info = gelss(a1,b1,cond = cond,
