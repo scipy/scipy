@@ -27,10 +27,10 @@ class test_sum(unittest.TestCase):
         assert_equal(val,real_sum)
 
 class test_mean(unittest.TestCase):
-    def check_default_rows(self):
+    def check_default_cols(self):
         z = array(((1,2),(3,4)),Float)
         val = mean(z)
-        desired = array((1.5,3.5))
+        desired = array((2.,3.))
         assert_array_equal(val,desired)
     def check_rows(self):
         z = array(((1,2),(3,4)),Float)
@@ -61,10 +61,7 @@ class test_isnan(unittest.TestCase):
     def check_complex(self):
         assert(isnan(1+1j) == 0)
     def check_complex1(self):
-        # This is what I think it should be...
-        #assert(isnan(array(0+0j)/0.) == 1)
-        # But this is what it checks out to be
-        assert(isinf(array(0+0j)/0.) == 1)
+        assert(isnan(array(0+0j)/0.) == 0)
                 
 class test_isfinite(unittest.TestCase):
     def check_goodvalues(self):
@@ -100,12 +97,21 @@ class test_isinf(unittest.TestCase):
     def check_neginf_scalar(self): 
         assert(isinf(array(-1.)/0.) == 1)
     def check_ind(self): 
+<<<<<<< test_misc.py
+        assert(isinf(array((0.,))/0.) == 0)
+=======
         # !! This is what these should be !!
         assert(isinf(array(0.)/0.) == 0)
 
+>>>>>>> 1.12
     def check_qnan(self): 
+<<<<<<< test_misc.py
+        assert(isinf(log(-1.)) == 0)
+        assert(isnan(log(-1.)) == 1)
+=======
         # !! This is what these should be !!
         assert(isinf(log(-1.)) == 0)
+>>>>>>> 1.12
 
 class test_isposinf(unittest.TestCase):
     def check_generic(self):
@@ -137,9 +143,15 @@ class test_nan_to_num(unittest.TestCase):
         v = 1+1j
         v += array(0+1.j)/0.
         vals = nan_to_num(v)
+<<<<<<< test_misc.py
+        # !! This is actually (unexpectedly) zero
+        assert(vals.imag > 1e10 and isfinite(vals))
+        #assert(vals.imag ==0)
+=======
         # !! Not sure what this one really should be.
         assert(vals.imag > 1e10 and isfinite(vals))
         #assert(vals.imag ==0)
+>>>>>>> 1.12
     def check_complex_bad2(self):
         v = 1+1j
         v += array(-1+1.j)/0.

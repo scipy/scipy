@@ -62,7 +62,7 @@ def whiten(obs):
                    [ 1.43684242,  0.57469577,  5.88897275]])
 
     """
-    std_dev = scipy.stdev(obs,axis=0)
+    std_dev = scipy.std(obs,axis=0)
     return obs / std_dev
 
 def vq(obs,code_book):
@@ -212,7 +212,7 @@ def kmeans_(obs,guess,thresh=1e-5):
     while diff>thresh:
         #compute membership and distances between obs and code_book
         obs_code, distort = vq(obs,code_book)
-        avg_dist.append(scipy.mean(distort))
+        avg_dist.append(scipy.mean(distort,axis=-1))
         #recalc code_book as centroids of associated obs
         if(diff > thresh):
             has_members = []

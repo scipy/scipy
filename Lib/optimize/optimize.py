@@ -801,7 +801,7 @@ if __name__ == "__main__":
     
 
     start = time.time()
-    x = fminNCG(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
+    x = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with full hessian')
