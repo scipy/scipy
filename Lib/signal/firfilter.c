@@ -2,17 +2,26 @@
 #include <stdlib.h>
 #include "sigtools.h"
 
-static int elsize[] = {sizeof(char),
-		       sizeof(unsigned char),
-		       sizeof(signed char),
-		       sizeof(short),
-		       sizeof(int),
-		       sizeof(long),
-		       sizeof(float),
-		       sizeof(double),
-		       2*sizeof(float),
-		       2*sizeof(double),
-                       0};
+#include "Python.h"                 /* only needed for defining unsigned types or not */
+#include "Numeric/arrayobject.h"    
+
+static int elsizes[] = {sizeof(char),
+                        sizeof(unsigned char),
+                        sizeof(signed char),
+                        sizeof(short),
+#ifdef PyArray_UNSIGNED_TYPES
+                        sizeof(unsigned short),
+#endif
+                        sizeof(int),
+#ifdef PyArray_UNSIGNED_TYPES
+                        sizeof(unsigned int),
+#endif
+                        sizeof(long),
+                        sizeof(float),
+                        sizeof(double),
+                        2*sizeof(float),
+                        2*sizeof(double),
+                        0};
 
 typedef void (OneMultAddFunction) (char *, char *, char *);
 
@@ -92,13 +101,13 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   outsize = flag & OUTSIZE_MASK;
   convolve = flag & FLIP_MASK;
   type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
-  /*type_size;*/
+  /*type_size*/
 
   mult_and_add = OneMultAdd[type_num];
   if (mult_and_add == NULL) return -5;  /* Not available for this type */
 
   if (type_num < 0 || type_num > MAXTYPES) return -4;  /* Invalid type */
-  type_size = elsize[type_num];
+  type_size = elsizes[type_num];
 
   if ((sum = calloc(type_size,2))==NULL) return -3; /* No memory */
   value = sum + type_size;

@@ -1982,13 +1982,14 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 		             flag,            /* convolution parameters */
 		             DATA(newfill));  /* fill value */
 
+
     switch (ret) {
     case 0:
       Py_DECREF(ain1);
       Py_DECREF(ain2);
       Py_XDECREF(afill);
       Py_XDECREF(newfill);
-      return PyArray_Return(aout);
+      return (PyObject *)aout;
       break;
     case -5:
     case -4:
