@@ -496,16 +496,19 @@ def matplot(x,y=None,axis=-1):
     if y is None:   # no axis data
         y = x
         x = Numeric.arange(0,y.shape[axis])
+    x,y = Numeric.asarray(x), Numeric.asarray(y)
     assert(len(y.shape)==2)
     assert(len(x)==y.shape[axis])
     otheraxis = (1+axis) % 2
     sliceobj = [slice(None)]*2
     if not _hold:
         gist.fma()
+    clear_global_linetype()
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]] 
         sliceobj[otheraxis] = k
         gist.plg(y[sliceobj],x,type='solid',color=thiscolor,marks=0)
+        append_global_linetype(_rcolors[thiscolor]+'-')
 
 
 def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
