@@ -36,14 +36,16 @@ def find_repeats(arr):
 ##  Returns alpha confidence interval for the mean, variance,
 ##      and std.
 
-def bayes_mvs(data,alpha=0.95):
-    """Return bayesian confidence intervals for the mean, var, and std.
+def bayes_mvs(data,alpha=0.90):
+    """Return Bayesian confidence intervals for the mean, var, and std.
 
     Assumes 1-d data all has same mean and variance and uses Jeffrey's prior
     for variance and std.
 
-    alpha gives the probability that the returned interval contains the true parameter. 
+    alpha gives the probability that the returned interval contains
+    the true parameter.
 
+    Uses peak of conditional pdf as starting center.
     """
     x = ravel(data)
     n = len(x)
@@ -58,14 +60,32 @@ def bayes_mvs(data,alpha=0.95):
     ma = xbar - delta
     mb = xbar + delta
     #
-    q1 = (1-alpha)/2.0
-    q2 = (1+alpha)/2.0
-    a = (n-1)/2.0
     fac = n*C/2.0
-    va = fac*distributions.invgamma.ppf(q1,a)
+    peak = 2/(n+1.)
+    a = (n-1)/2.0    
+    F_peak = distributions.invgamma.cdf(peak,a)
+    q1 = F_peak - alpha/2.0
+    q2 = F_peak + alpha/2.0
+    if (q1 < 0):  # non-symmetric area
+        q2 = alpha
+        va = 0.0
+    else:
+        va = fac*distributions.invgamma.ppf(q1,a)
     vb = fac*distributions.invgamma.ppf(q2,a)
     #
-    return (ma,mb),(va,vb),(sqrt(va),sqrt(vb))
+    fac = sqrt(fac)
+    peak = sqrt(2./n)
+    F_peak = distributions.gengamma.cdf(peak,a,-2)
+    q1 = F_peak - alpha/2.0
+    q2 = F_peak + alpha/2.0
+    if (q1 < 0):
+        q2 = alpha
+        sta = 0.0
+    else:
+        sta = fac*distributions.gengamma.ppf(q1,a,-2)
+    stb = fac*distributions.gengamma.ppf(q2,a,-2)
+        
+    return (ma,mb),(va,vb),(sta,stb)
     
 
 
