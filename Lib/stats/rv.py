@@ -242,8 +242,15 @@ def dgamma(a, loc=0.0, scale=1.0, size=None):
     u = random(size=size)
     return (gamma(a, 0.0, 1.0, size=size)*(Num.where(u>=0.5,1,-1)))*scale+loc
 
+def extreme3(c, loc=0.0, scale=1.0, size=None):
+    """Extreme Value Type III
+    """
+    if (c <=0) or (scale <=0):
+        raise ValueError, _parmerr
+    u = random(size=size)
+    return -pow(-log(u),1.0/c)*scale + loc
 
-def extremelb(c, loc=0.0, scale=1.0, size=None):
+def frechet(c, loc=0.0, scale=1.0, size=None):
     if (c <=0) or (scale <=0):
         raise ValueError, _parmerr
     u = random(size=size)

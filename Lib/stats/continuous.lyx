@@ -734,6 +734,8 @@ m_{n} & = & 0
 \end_inset 
 
  No finite moments.
+ This is the t distribution with one degree of freedom.
+ 
 \layout Section
 
 Chi
@@ -965,52 +967,99 @@ m_{d} & = & 0
 
 \layout Section
 
-ExtremeLB
+Extreme Value III (Weibull-type)
 \layout Standard
 
-A type of extreme-value distribution with a lower bound.
- Defined for 
-\begin_inset Formula \( x>0 \)
-\end_inset 
-
- and 
+An extreme value distribution with 
 \begin_inset Formula \( c>0 \)
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & cx^{-c-1}\exp \left( -x^{-c}\right) \\
-F\left( x;c\right)  & = & \exp \left( -x^{-c}\right) \\
-G\left( q;c\right)  & = & \left( -\log q\right) ^{-1/c}
+f\left( x;c\right)  & = & c\left( -x\right) ^{c-1}\exp \left\{ -\left( -x\right) ^{c}\right\} I_{(-\infty ,0]}\left( x\right) \\
+F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+\exp \left\{ -\left( -x\right) ^{c}\right\}  &  & x\leq 0\\
+1 &  & x>0
+\end{array}\right. \\
+G\left( q;c\right)  & = & -\left( -\log q\right) ^{1/c}
 \end{eqnarray*}
 
+\end_inset 
+
+
+\layout Standard
+
+Moments are
+\layout Standard
+
+
+\begin_inset Formula \[
+\mu ^{\prime }_{n}=\left( -1\right) ^{n}\Gamma \left( \frac{n}{c}+1\right) .\]
+
+\end_inset 
+
+ So, 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & -\Gamma \left( 1+\frac{1}{c}\right) \\
+\mu _{2} & = & \Gamma \left( 1+\frac{2}{c}\right) -\mu ^{2}\\
+\gamma _{1} & = & \frac{-\Gamma \left( 1+\frac{3}{c}\right) -3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\Gamma \left( 1+\frac{4}{c}\right) -4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Exponentiated Weibull
+\layout Standard
+
+Two positive shape parameters 
+\begin_inset Formula \( a \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( x\in \left( 0,\infty \right)  \)
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \Gamma \left( 1-\frac{1}{c}\right) \\
-\mu _{2} & = & \Gamma \left( 1-\frac{2}{c}\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \\
-\gamma _{1} & = & \frac{\Gamma \left( 1-\frac{3}{c}\right) -3\Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) +2\Gamma ^{3}\left( 1-\frac{1}{c}\right) }{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{\Gamma \left( 1-\frac{4}{c}\right) -4\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) +3\Gamma ^{2}\left( 1-\frac{2}{c}\right) }{\mu _{2}^{2}}-6\\
-m_{d} & = & \left( \frac{c}{1+c}\right) ^{1/c}\\
-m_{n} & = & G\left( \frac{1}{2};c\right) 
+f\left( x;a,c\right)  & = & ac\left[ 1-\exp \left( -x^{c}\right) \right] ^{a-1}\exp \left( -x^{c}\right) x^{c-1}\\
+F\left( x;a,c\right)  & = & \left[ 1-\exp \left( -x^{c}\right) \right] ^{a}\\
+G\left( q;a,c\right)  & = & \left[ -\log \left( 1-q^{1/a}\right) \right] ^{1/c}
 \end{eqnarray*}
 
 \end_inset 
 
- 
-\layout Section
 
-Extreme Value I (Gumbel)
-\layout Section
-
-Extreme Value II (Frechet)
-\layout Section
-
-Exponentiated Weibull
 \layout Section
 
 Exponential Power
+\layout Standard
+
+One positive shape parameter 
+\begin_inset Formula \( b \)
+\end_inset 
+
+.
+ Defined for 
+\begin_inset Formula \( x\geq 0. \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;b\right)  & = & ebx^{b-1}\exp \left[ x^{b}-e^{x^{b}}\right] \\
+F\left( x;b\right)  & = & 1-\exp \left[ 1-e^{x^{b}}\right] \\
+G\left( q;b\right)  & = & \log ^{1/b}\left[ 1-\log \left( 1-q\right) \right] 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Erlang
@@ -1073,6 +1122,27 @@ m_{n} & = & 1
 \layout Section
 
 Folded Cauchy
+\layout Standard
+
+This formula can be expressed in terms of the standard formulas for the
+ Cauchy distribution (call the cdf 
+\begin_inset Formula \( C\left( x\right)  \)
+\end_inset 
+
+ and the pdf 
+\begin_inset Formula \( d\left( x\right)  \)
+\end_inset 
+
+) 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & d\left( x-c\right) +d\left( x+c\right) \\
+F\left( x;c\right)  & = & C\left( x-c\right) -C\left( -x-c\right) \\
+G\left( q;c\right)  & = & F^{-1}\left( x;c\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Folded Normal
@@ -1192,6 +1262,42 @@ G\left( q;\nu _{1},\nu _{2}\right)  & = & \left[ \frac{\nu _{2}}{I^{-1}\left( \n
  
 \layout Section
 
+Fréchet (ExtremeLB, Extreme Value II)
+\layout Standard
+
+A type of extreme-value distribution with a lower bound.
+ Defined for 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & cx^{-c-1}\exp \left( -x^{-c}\right) \\
+F\left( x;c\right)  & = & \exp \left( -x^{-c}\right) \\
+G\left( q;c\right)  & = & \left( -\log q\right) ^{-1/c}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \Gamma \left( 1-\frac{1}{c}\right) \\
+\mu _{2} & = & \Gamma \left( 1-\frac{2}{c}\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \\
+\gamma _{1} & = & \frac{\Gamma \left( 1-\frac{3}{c}\right) -3\Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) +2\Gamma ^{3}\left( 1-\frac{1}{c}\right) }{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\Gamma \left( 1-\frac{4}{c}\right) -4\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) +3\Gamma ^{2}\left( 1-\frac{2}{c}\right) }{\mu _{2}^{2}}-6\\
+m_{d} & = & \left( \frac{c}{1+c}\right) ^{1/c}\\
+m_{n} & = & G\left( \frac{1}{2};c\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
 Gamma
 \layout Standard
 
@@ -1282,18 +1388,193 @@ m_{n} & = & -\log \left( 2^{1/c}-1\right)
 \layout Section
 
 Generalized Pareto
-\layout Section
+\layout Standard
 
-Generalized Extreme Value
+Shape parameter 
+\begin_inset Formula \( c\neq 0 \)
+\end_inset 
+
+ and defined for 
+\begin_inset Formula \( x\geq 0 \)
+\end_inset 
+
+ if 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( x<\frac{1}{\left| c\right| } \)
+\end_inset 
+
+ if 
+\begin_inset Formula \( c \)
+\end_inset 
+
+ is positive.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \left( 1+cx\right) ^{-1-\frac{1}{c}}\\
+F\left( x;c\right)  & = & 1-\frac{1}{\left( 1+cx\right) ^{1/c}}\\
+G\left( q;c\right)  & = & \frac{1}{c}\left[ \left( \frac{1}{1-q}\right) ^{c}-1\right] 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Generalized Exponential
+\layout Standard
+
+Three positive shape parameters
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,b,c\right)  & = & \left( a+b\left( 1-e^{-sx}\right) \right) \exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
+F\left( x;a,b,c\right)  & = & 1-\exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
+G\left( q;a,b,c\right)  & = & F^{-1}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Generalized Extreme Value
+\layout Standard
+
+Extreme value distributions with shape parameter 
+\begin_inset Formula \( c \)
+\end_inset 
+
+.
+ 
+\layout Standard
+
+For 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ defined on 
+\begin_inset Formula \( -\infty <x<1/c. \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \exp \left[ -\left( 1-cx\right) ^{1/c}\right] \left( 1-cx\right) ^{1/c-1}\\
+F\left( x;c\right)  & = & \exp \left[ -\left( 1-cx\right) ^{1/c}\right] \\
+G\left( q;c\right)  & = & \frac{1}{c}\left[ 1-\left( -\log q\right) ^{c}\right] 
+\end{eqnarray*}
+
+\end_inset 
+
+ For 
+\begin_inset Formula \( c<0 \)
+\end_inset 
+
+ defined on 
+\begin_inset Formula \( \frac{1}{c}<x<\infty . \)
+\end_inset 
+
+ For 
+\begin_inset Formula \( c=0 \)
+\end_inset 
+
+ defined over all space 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;0\right)  & = & \exp \left[ -e^{-x}\right] e^{-x}\\
+F\left( x;0\right)  & = & \exp \left[ -e^{-x}\right] \\
+G\left( q;0\right)  & = & -\log \left( -\log q\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ This is just the Gumbel distribution.
+ 
 \layout Section
 
 Generalized Gamma
+\layout Standard
+
+A general probability form that reduces to many common distributions: 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \( a>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c\neq 0. \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,c\right)  & = & \frac{\left| c\right| x^{ca-1}}{\Gamma \left( a\right) }\exp \left( -x^{c}\right) \\
+F\left( x;a,c\right)  & = & \frac{\Gamma \left( a,x^{c}\right) }{\Gamma \left( a\right) }\\
+G\left( q;a,c\right)  & = & \left\{ \Gamma ^{-1}\left[ a,\Gamma \left( a\right) q\right] \right\} ^{1/c}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+\mu ^{\prime }_{n}=\frac{\Gamma \left( a+\frac{n}{c}\right) }{\Gamma \left( a\right) }\]
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{\Gamma \left( a+\frac{1}{c}\right) }{\Gamma \left( a\right) }\\
+\mu _{2} & = & \frac{\Gamma \left( a+\frac{2}{c}\right) }{\Gamma \left( a\right) }-\mu ^{2}\\
+\gamma _{1} & = & \frac{\Gamma \left( a+\frac{3}{c}\right) /\Gamma \left( a\right) -3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\Gamma \left( a+\frac{4}{c}\right) /\Gamma \left( a\right) -4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+ Special cases are Weibull 
+\begin_inset Formula \( \left( a=1\right)  \)
+\end_inset 
+
+, half-normal 
+\begin_inset Formula \( \left( a=1/2,c=2\right)  \)
+\end_inset 
+
+ and ordinary gamma distributions 
+\begin_inset Formula \( c=1. \)
+\end_inset 
+
+ If 
+\begin_inset Formula \( c=-1 \)
+\end_inset 
+
+ then it is the inverted gamma distribution.
+ 
 \layout Section
 
 Generalized Half-Logistic
+\layout Standard
+
+For 
+\begin_inset Formula \( x\in \left[ 0,1/c\right]  \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ we have 4
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{2\left( 1-cx^{\frac{1}{c}-1}\right) }{\left( 1+\left( 1-cx^{1/c}\right) \right) ^{2}}\\
+F\left( x;c\right)  & = & \frac{1-\left( 1-cx^{1/c}\right) }{1+\left( 1-cx^{1/c}\right) }\\
+G\left( q;c\right)  & = & \left( \frac{2q}{c\left( 1+q\right) }\right) ^{c}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Gilbrat
@@ -1333,10 +1614,40 @@ G\left( q;\sigma \right)  & = & \exp \left\{ \Phi ^{-1}\left( q\right) \right\}
 
 \layout Section
 
-Gompertz 
+Gompertz (Truncated Gumbel)
+\layout Standard
+
+For 
+\begin_inset Formula \( x\geq 0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( b>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( a\geq 0 \)
+\end_inset 
+
+ we have.
+ If 
+\begin_inset Formula \( c=1 \)
+\end_inset 
+
+ this is the exponential distribution.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,b\right)  & = & be^{ax}\exp \left[ -\frac{b}{a}\left( e^{ax}-1\right) \right] \\
+F\left( x;a,b\right)  & = & 1-\exp \left[ -\frac{b}{a}\left( e^{ax}-1\right) \right] \\
+G\left( q;a,b\right)  & = & \frac{1}{a}\log \left[ 1-\frac{a}{b}\log \left( 1-q\right) \right] 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
-Gumbel (LogWeibull, Fisher-Tippetts)
+Gumbel (LogWeibull, Fisher-Tippetts, Type I Extreme Value)
 \layout Standard
 
 One of a clase of extreme value distributions (right-skewed).
@@ -1470,7 +1781,27 @@ m_{n} & = & \Phi ^{-1}\left( \frac{3}{4}\right)
 
 \layout Section
 
-HalfLogistic
+HalfLogistic 
+\layout Standard
+
+In the limit as 
+\begin_inset Formula \( c\rightarrow \infty  \)
+\end_inset 
+
+ for the generalized logistic we have the half-logistic defined over 
+\begin_inset Formula \( x\geq 0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{2e^{-x}}{\left( 1+e^{-x}\right) ^{2}}\\
+F\left( x\right)  & = & \frac{1-e^{-x}}{1+e^{-x}}\\
+G\left( q\right)  & = & \log \left( \frac{1+q}{1-q}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Hyperbolic Secant
@@ -1528,6 +1859,45 @@ f\left( x;\alpha ,\beta ,\gamma ,z\right)  & = & Cx^{\alpha -1}\frac{\left( 1-x\
 \layout Section
 
 Inverted Gamma
+\layout Standard
+
+Special case of the generalized Gamma distribution with 
+\begin_inset Formula \( c=-1 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,c\right)  & = & \frac{x^{-a-1}}{\Gamma \left( a\right) }\exp \left( -\frac{1}{x}\right) \\
+F\left( x;a,c\right)  & = & \frac{\Gamma \left( a,\frac{1}{x}\right) }{\Gamma \left( a\right) }\\
+G\left( q;a,c\right)  & = & \left\{ \Gamma ^{-1}\left[ a,\Gamma \left( a\right) q\right] \right\} ^{-1}
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+\mu ^{\prime }_{n}=\frac{\Gamma \left( a-n\right) }{\Gamma \left( a\right) }\quad a>n\]
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{1}{a-1}\\
+\mu _{2} & = & \frac{1}{\left( a-2\right) \left( a-1\right) }-\mu ^{2}\\
+\gamma _{1} & = & \frac{\frac{1}{\left( a-3\right) \left( a-2\right) \left( a-1\right) }-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\frac{1}{\left( a-4\right) \left( a-3\right) \left( a-2\right) \left( a-1\right) }-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Inverse Normal (Inverse Gaussian)
@@ -1555,7 +1925,7 @@ The standard form involves the shape parameter
 \end_inset 
 
  is not a parameter in that distribution.
- The standard form is 
+ A standard form is 
 \begin_inset Formula \begin{eqnarray*}
 f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x\mu ^{2}}\right) .\\
 F\left( x;\mu \right)  & = & \Phi \left( \frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right) +\exp \left( \frac{2}{\mu }\right) \Phi \left( -\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right) \\
@@ -1579,6 +1949,65 @@ m_{d} & = & \frac{\mu }{2}\left( \sqrt{9\mu ^{2}+4}-3\mu \right)
 \end_inset 
 
 
+\layout Standard
+
+This is related to the canonical form or JKB 
+\begin_inset Quotes eld
+\end_inset 
+
+two-parameter
+\begin_inset Quotes erd
+\end_inset 
+
+ inverse Gaussian when written in it's full form with scale parameter 
+\begin_inset Formula \( S \)
+\end_inset 
+
+ and location parameter 
+\begin_inset Formula \( L \)
+\end_inset 
+
+ by taking 
+\begin_inset Formula \( L=0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S\equiv \lambda , \)
+\end_inset 
+
+ then 
+\begin_inset Formula \( \mu S \)
+\end_inset 
+
+ is equal to 
+\begin_inset Formula \( \mu _{2} \)
+\end_inset 
+
+ where
+\bar under 
+ 
+\bar default 
+
+\begin_inset Formula \( \mu _{2} \)
+\end_inset 
+
+ is the parameter used by JKB.
+ We prefer this form because of it's consistent use of the scale parameter.
+ Notice that in JKB the skew 
+\begin_inset Formula \( \left( \sqrt{\beta _{1}}\right)  \)
+\end_inset 
+
+ and the kurtosis (
+\begin_inset Formula \( \beta _{2}-3 \)
+\end_inset 
+
+) are both functions only of 
+\begin_inset Formula \( \mu _{2}/\lambda =\mu S/S=\mu  \)
+\end_inset 
+
+ as shown here, while the variance and mean of the standard form here are
+ transformed appropriately.
+ 
 \layout Section
 
 Inverted Weibull
@@ -1734,17 +2163,61 @@ Log Double Exponential
 \layout Section
 
 Log Gamma
+\layout Standard
+
+A single shape parameter 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ (Defined for all 
+\begin_inset Formula \( x \)
+\end_inset 
+
+) 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{\exp \left( cx-e^{x}\right) }{\Gamma \left( c\right) }\\
+F\left( x;c\right)  & = & \frac{\Gamma \left( c,e^{x}\right) }{\Gamma \left( c\right) }\\
+G\left( q;c\right)  & = & \log \left[ \Gamma ^{-1}\left[ c,q\Gamma \left( c\right) \right] \right] 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+\mu ^{\prime }_{n}=\int _{0}^{\infty }\left[ \log y\right] ^{n}y^{c-1}\exp \left( -y\right) dy.\]
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \mu _{1}^{\prime }\\
+\mu _{2} & = & \mu _{2}^{\prime }-\mu ^{2}\\
+\gamma _{1} & = & \frac{\mu _{3}^{\prime }-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\mu _{4}^{\prime }-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Log Normal (Cobb-Douglass)
 \layout Standard
 
-Has one shape parameterx 
+Has one shape parameter 
 \begin_inset Formula \( \sigma  \)
 \end_inset 
 
 .
- (Notice that the Regress 
+ (Notice that the 
+\begin_inset Quotes eld
+\end_inset 
+
+Regress
+\begin_inset Quotes erd
+\end_inset 
+
+ 
 \begin_inset Formula \( A=\log S \)
 \end_inset 
 
@@ -1770,12 +2243,26 @@ G\left( q;\sigma \right)  & = & \exp \left\{ \sigma \Phi ^{-1}\left( q\right) \r
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \exp \left( \sigma ^{2}/2\right) \\
 \mu _{2} & = & \exp \left( \sigma ^{2}\right) \left[ \exp \left( \sigma ^{2}\right) -1\right] \\
-\gamma _{1} & = & \sqrt{e^{\sigma ^{2}}-1}\left( 2+e^{\sigma ^{2}}\right) \\
+\gamma _{1} & = & \sqrt{p-1}\left( 2+p\right) \\
 \gamma _{2} & = & p^{4}+2p^{3}+3p^{2}-6\quad \quad p=e^{\sigma ^{2}}
 \end{eqnarray*}
 
 \end_inset 
 
+  
+\layout Standard
+
+Notice that using JKB notation we have 
+\begin_inset Formula \( \theta =L, \)
+\end_inset 
+
+ 
+\begin_inset Formula \( \zeta =\log S \)
+\end_inset 
+
+ and we have given the so-called antilognormal form of the distribution.
+ This is more consistent with the location, scale parameter description
+ of general probability distributions.
  
 \layout Section
 
@@ -1950,6 +2437,31 @@ m_{n} & = & \sqrt{2\Gamma ^{-1}\left( \frac{3}{2},\frac{1}{2}\right) }
 \layout Section
 
 Mielke's Beta-Kappa
+\layout Standard
+
+A generalized F distribution.
+ Two shape parameters 
+\begin_inset Formula \( \kappa  \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \theta  \)
+\end_inset 
+
+ 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\kappa ,\theta \right)  & = & \frac{\kappa x^{\kappa -1}}{\left( 1+x^{\theta }\right) ^{1+\frac{\kappa }{\theta }}}\\
+F\left( x;\kappa ,\theta \right)  & = & \frac{x^{\kappa }}{\left( 1+x^{\theta }\right) ^{\kappa /\theta }}\\
+G\left( q;\kappa ,\theta \right)  & = & F^{-1}\left( q;\kappa ,\theta \right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
 \layout Section
 
 Pareto
@@ -2019,9 +2531,90 @@ G\left( q;c\right)  & = & \left( 1-q\right) ^{-1/c}-1
 \layout Section
 
 Power Log Normal
+\layout Standard
+
+A generalization of the log-normal distribution 
+\begin_inset Formula \( \sigma >0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( x>0 \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\sigma ,c\right)  & = & \frac{c}{x\sigma }\phi \left( \frac{\log x}{\sigma }\right) \left( \Phi \left( -\frac{\log x}{\sigma }\right) \right) ^{c-1}\\
+F\left( x;\sigma ,c\right)  & = & 1-\left( \Phi \left( -\frac{\log x}{\sigma }\right) \right) ^{c}\\
+G\left( q;\sigma ,c\right)  & = & \exp \left[ -\sigma \Phi ^{-1}\left[ \left( 1-q\right) ^{1/c}\right] \right] 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\int _{0}^{1}\exp \left[ -n\sigma \Phi ^{-1}\left( y^{1/c}\right) \right] dy\]
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \mu _{1}^{\prime }\\
+\mu _{2} & = & \mu _{2}^{\prime }-\mu ^{2}\\
+\gamma _{1} & = & \frac{\mu _{3}^{\prime }-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\mu _{4}^{\prime }-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+ This distribution reduces to the log-normal distribution when 
+\begin_inset Formula \( c=1. \)
+\end_inset 
+
+ 
 \layout Section
 
 Power Normal
+\layout Standard
+
+A generalization of the normal distribution, 
+\begin_inset Formula \( c>0 \)
+\end_inset 
+
+ for 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & c\phi \left( x\right) \left( \Phi \left( -x\right) \right) ^{c-1}\\
+F\left( x;c\right)  & = & 1-\left( \Phi \left( -x\right) \right) ^{c}\\
+G\left( q;c\right)  & = & -\Phi ^{-1}\left[ \left( 1-q\right) ^{1/c}\right] 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\left( -1\right) ^{n}\int _{0}^{1}\left[ \Phi ^{-1}\left( y^{1/c}\right) \right] ^{n}dy\]
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \mu _{1}^{\prime }\\
+\mu _{2} & = & \mu _{2}^{\prime }-\mu ^{2}\\
+\gamma _{1} & = & \frac{\mu _{3}^{\prime }-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\mu _{4}^{\prime }-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\end{eqnarray*}
+
+\end_inset 
+
+For 
+\begin_inset Formula \( c=1 \)
+\end_inset 
+
+ this reduces to the normal distribution.
+ 
 \layout Section
 
 Power-function 
@@ -2057,6 +2650,28 @@ G\left( q;a\right)  & = & q^{1/a}\\
 \gamma _{1} & = & 2\left( 1-a\right) \sqrt{\frac{a+2}{a\left( a+3\right) }}\\
 \gamma _{2} & = & \frac{6\left( a^{3}-a^{2}-6a+2\right) }{a\left( a+3\right) \left( a+4\right) }\\
 m_{d} & = & 1
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+R-distribution
+\layout Standard
+
+A general-purpose distribution with a variety of shapes controlled by 
+\begin_inset Formula \( c>0. \)
+\end_inset 
+
+ Range of standard distribution is 
+\begin_inset Formula \( x\in \left[ -1,1\right]  \)
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{\left( 1-x^{2}\right) ^{c/2-1}}{B\left( \frac{1}{2},\frac{c}{2}\right) }\\
+F\left( x;c\right)  & = & 
 \end{eqnarray*}
 
 \end_inset 
@@ -2144,9 +2759,6 @@ m_{n} & = & \sqrt{ab}
 \end_inset 
 
 
-\layout Section
-
-Reciprocal Inverse Gaussian
 \layout Section
 
 Semicircular
@@ -2292,9 +2904,73 @@ G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
 \layout Section
 
 Truncated Exponential
+\layout Standard
+
+This is an exponential distribution defined only over a certain region 
+\begin_inset Formula \( 0<x<B \)
+\end_inset 
+
+.
+ In standard form this is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;B\right)  & = & \frac{e^{-x}}{1-e^{-B}}\\
+F\left( x;B\right)  & = & \frac{1-e^{-x}}{1-e^{-B}}\\
+G\left( q;B\right)  & = & -\log \left( 1-q+qe^{-B}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Truncated Normal
+\layout Standard
+
+A normal distribution restricted to lie within a certain range given by
+ two parameters 
+\begin_inset Formula \( A \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( B \)
+\end_inset 
+
+.
+ Thus for 
+\begin_inset Formula \( x\in \left[ A,B\right] : \)
+\end_inset 
+
+ Notice that this 
+\begin_inset Formula \( A \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( B \)
+\end_inset 
+
+ correspond to the bounds on 
+\begin_inset Formula \( x \)
+\end_inset 
+
+ in standard form.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;A,B\right)  & = & \frac{\phi \left( x\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\\
+F\left( x;A,B\right)  & = & \frac{\Phi \left( x\right) -\Phi \left( A\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\\
+G\left( q;A,B\right)  & = & \Phi ^{-1}\left[ q\Phi \left( B\right) +\Phi \left( A\right) \left( 1-q\right) \right] 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{\phi \left( A\right) -\phi \left( B\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\\
+\mu _{2} & = & 1+\frac{A\phi \left( A\right) -B\phi \left( B\right) }{\Phi \left( B\right) -\Phi \left( A\right) }-\left( \frac{\phi \left( A\right) -\phi \left( B\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\right) ^{2}
+\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Tukey-Lambda
@@ -2465,9 +3141,34 @@ Wishart
 \layout Section
 
 Wrapped Cauchy
+\layout Standard
+
+For 
+\begin_inset Formula \( x\in \left[ 0,2\pi \right]  \)
+\end_inset 
+
+ 
+\begin_inset Formula \( c\in \left( 0,1\right)  \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{1-c^{2}}{2\pi \left( 1+c^{2}-2c\cos x\right) }\\
+g_{c}\left( x\right)  & = & \frac{1}{2\pi }\arctan \left( \frac{-\sin \left( \frac{x}{2}\right) -c\sin \left( \frac{x}{2}\right) }{-\cos \left( \frac{x}{2}\right) +c\cos \left( \frac{x}{2}\right) }\right) \\
+ &  & -\frac{1}{2\pi }\arctan \left( \frac{\sin \left( \frac{x}{2}\right) +c\sin \left( \frac{x}{2}\right) }{-\cos \left( \frac{x}{2}\right) +c\cos \left( \frac{x}{2}\right) }\right) \\
+F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
+g_{c}\left( x\right)  &  & 0\leq x<\pi \\
+1-g_{c}\left( 2\pi -x\right)  &  & \pi \leq x\leq 2\pi 
+\end{array}\right. \\
+G\left( q;c\right)  & = & F^{-1}\left( x;c\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
 \layout Section
 
-Weibull (Frechet)
+Weibull
 \layout Standard
 
 A flexible distribution with a single shape parameter: 

@@ -58,12 +58,11 @@ def generic_moment(m, pdfunc, a, b, *args):
 ##                distribution.
 
 ##  NANs are returned for unsupported parameters.
-##    location, scale, and shape parameters are used as much as possible,
-##    except in certain well known cases, where the shape is calle something
-##    else (e.g. degrees of freedom).
+##    location and scale parameters can be defined for each distribution.
+##    The shape parameters are generally required
+##
 ##    The order is shape parameters (if needed), loc=0.0, scale=1.0
 ##    These are related to the common symbols in the docs.
-
 
 ##  skew is third central moment / variance**(1.5)
 ##  kurtosis is fourth central moment / variance**2 - 3
@@ -81,7 +80,11 @@ def generic_moment(m, pdfunc, a, b, *args):
 ##  Engineering and Statistics Handbook (NIST)
 ##      http://www.itl.nist.gov/div898/handbook/index.htm
 ##
-##  Johnson book on Univariate Distributions
+##  Documentation for DATAPLOT from NIST
+##      http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
+##
+##  Norman Johnson, Samuel Kotz, and N. Balakrishnan "Continuous Univariate Distributions",
+##      second edition, Volumes I and II, Wiley & Sons, 1994.
 
 
 _EULER = 0.5772156649015328606   # -special.psi(1)
@@ -860,35 +863,88 @@ def exponstats(loc=0.0, scale=1.0, full=0):
     return mn, var, _wc(cond, 2), _wc(cond, 6)
 
 
-## Extreme LB  (defined in Regress+ documentation) as
+## Extreme Value Type III  (Weibull-Type)
+#
+#  Type III as defined by JKB
+
+def extreme3pdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x,c,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Px = c*(-x)**(c-1)*exp(-(-x)**c)
+    return select([(c<=0) | (scale<=0), x<=0], [scipy.nan, Px/scale])
+
+def extreme3cdf(x, c, loc=0.0, scale=1.0):
+    x, c, loc, scale = map(arr, (x,c,loc,scale))
+    x = arr((x-loc*1.0)/scale)
+    Cx = exp(-(-x)**c)
+    return select([(c<=0) | (scale<=0), x<=0], [scipy.nan, Cx], 1)
+
+def extreme3isf(x, c, loc=0.0, scale=1.0):
+    return 1.0-extreme3cdf(x, c, loc, scale)
+
+def extreme3ppf(q, c, loc=0.0, scale=1.0):
+    q, c, loc, scale = map(arr, (q,c,loc,scale))
+    vals = -(arr(-log(q)))**(1.0/c)
+    cond = (q<=1) & (q>=0) & (scale>0) & (c>0)
+    return _wc(cond, vals*scale + loc)
+
+def extreme3isf(q, c, loc=0.0, scale=1.0):
+    return extreme3ppf(1-q, c, loc, scale)
+
+def extreme3stats(c, loc=0.0, scale=1.0, full=0):
+    c, loc, scale = map(arr, (c, loc, scale))
+    cond = (c>0) & (scale>0)
+    sv = errp(0)
+    gm1 = special.gamma(1+1.0/c)
+    gm2 = special.gamma(1+2.0/c)
+    mu = -gm1
+    mn = _wc(cond, mu*scale + loc)
+    mu2 = gm2-mu*mu
+    var = _wc(cond, mu2*scale*scale)
+    if not full:
+        sv = errp(sv)
+        return mn, var
+    gm3 = special.gamma(1+3.0/c)
+    gm4 = special.gamma(1+4.0/c)
+    mu3 = -gm3 - 3*mu*mu2 - mu**3
+    g1 = mu3 / mu2**1.5
+    mu4 = gm4 - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+    g2 = mu4 / mu2**2 - 3.0
+    sv = errp(sv)
+    return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+    
+
+## Extreme Value Type II or Frechet
+## (defined in Regress+ documentation as Extreme LB) as
 ##   a limiting value distribution.
 ##
 
-def extremelbpdf(x, c, loc=0.0, scale=1.0):
+def frechetpdf(x, c, loc=0.0, scale=1.0):
     x, c, loc, scale = map(arr, (x, c, loc,scale))
     x = arr((x-loc*1.0)/scale)
     Px = c*pow(x,-(c+1))*exp(-x**(-c))
     return select([(scale <=0)|(c<=0),x>0],[scipy.nan, Px/scale])
 
-def extremelbcdf(x, c, loc=0.0, scale=1.0):
+def frechetcdf(x, c, loc=0.0, scale=1.0):
     x, c, loc, scale = map(arr, (x, c, loc,scale))
     x = arr((x-loc*1.0)/scale)
     Cx = exp(-x**(-c))
     return select([(scale <=0)|(c<=0),x>0],[scipy.nan, Cx])
 
-def extremelbppf(q, c, loc=0.0, scale=1.0):
+def frechetppf(q, c, loc=0.0, scale=1.0):
     q, c, loc, scale = map(arr, (q, c, loc,scale))
     vals = pow(-log(q),-1.0/c)
     cond = (q>=0)&(q<=1)&(scale >0)&(c >0)
     return _wc(cond, vals*scale + loc)
     
-def extremelbsf(x, c, loc=0.0, scale=1.0):
-    return 1.0-extremelbcdf(x, c, loc, scale)
+def frechetsf(x, c, loc=0.0, scale=1.0):
+    return 1.0-frechetcdf(x, c, loc, scale)
 
-def extremelbisf(q, c, loc=0.0, scale=1.0):
-    return extremelbppf(1-q, c, loc, scale)
+def frechetisf(q, c, loc=0.0, scale=1.0):
+    return frechetppf(1-q, c, loc, scale)
 
-def extremelbstats(c, loc=0.0, scale=1.0, full=0):
+def frechetstats(c, loc=0.0, scale=1.0, full=0):
     c, loc, scale = map(arr, (c, loc, scale))
     cond = (c > 0) & (scale > 0)
     ic = 1.0/c
@@ -1611,98 +1667,59 @@ def ncx2stats(df,nc,loc=0.0, scale=1.0, full=0):
 
 # Non-central F
 
-def ncfpdf(x,n1,n2,nc):
-    assert all((n1>0) & (n2>0)), _posstr
-    assert all(nc>=0), _nonnegstr
-    x = arr(x)
-    n1 = n1*1.0
-    n2 = n2*1.0
-    nc = nc*1.0
+def ncfpdf(x,dfn,dfd,nc, loc=0.0, scale=1.0):
+    x,n1,n2,nc,loc,scale = map(arr, (x, dfn, dfd, nc, loc, scale))
+    x = arr((x-loc*1.0)/scale)
     y = where(x<0,1.0,x)
+    sv = errp(0)
     Px = exp(-nc/2+nc*n1*y/(2*(n2+n1*y)))
     Px *= n1**(n1/2) * n2**(n2/2) * y**(n1/2-1)
     Px *= (n2+n1*y)**(-(n1+n2)/2)
     Px *= special.gamma(n1/2)*special.gamma(1+n2/2)
     Px *= special.assoc_laguerre(-nc*n1*y/(2.0*(n2+n1*y)),n2/2,n1/2-1)
     Px /= special.beta(n1/2,n2/2)*special.gamma((n1+n2)/2.0)
-    return where(x<0,0.0,Px)
+    sv = errp(sv)
+    cond = (n1<=0) | (n2<=0) | (nc<0) | (scale<=0)
+    return select([cond, x>=0],[scipy.nan, Px])
 
-##def _ncfcdf(x,n1,n2,nc):
-##    from scipy.limits import double_epsilon as eps
-##    eps2 = sqrt(eps)
-##    eps4 = sqrt(eps2)
-##    n1, n2, nc = n1/2.0, n2/2.0, nc/2.0
-##    val = 0
-##    j = 0
-##    valm1 = 100
-##    term = 80
-##    gam = special.gamma
-##    bI = special.betainc
-##    bval =  n1*x/(n2+n1*x)
-##    jmid = floor(nc)
-##    for j in range(jmid,-1,-1):
-##        term = poissonpdf(j,nc)*betacdf(bval,j+n1,n2)
-##        val += term
-##        if all(ravel(term / (val+eps4)) < eps2):
-##            break
-##    for j in range(jmid+1,jmid+2000):
-##        term = poissonpdf(j,nc)*betacdf(bval,j+n1,n2)
-##        val += term
-##        if all(ravel(term / (val+eps4)) < eps2):
-##            break
-##    if (j == jmid+2000-1):
-##        print "Warning: Series failed to converge."
-##    return val
-##_vec_ncfcdf = special.general_function(_ncfcdf,'d')
-
-##def ncfcdf(x,dfn,dfd,nc):
-##    assert all(nc>=0), _nonnegstr
-##    assert all((dfn>0) & (dfd>0)), _posstr
-##    x = where(x<0,0,x)
-##    return _vec_ncfcdf(x,dfn,dfd,nc)
-
-def ncfcdf(x,dfn,dfd,nc):
-    assert all(nc>=0), _nonnegstr    
-    assert all((dfn>0) & (dfd>0)), _posstr
-    x = arr(x)
-    x = where(x<0,0,x)
-    return special.ncfdtr(dfn,dfd,nc,x)
+def ncfcdf(x,dfn,dfd,nc, loc=0.0, scale=1.0):
+    x,dfn,dfd,nc,loc,scale = map(arr, (x, dfn, dfd, nc, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    badcond = (dfn<=0) | (dfd<=0) | (nc<0) | (scale<=0)
+    sv = errp(0)
+    vals = special.ncfdtr(dfn,dfd,nc,x)
+    sv = errp(sv)
+    return select([badcond, x>=0],[scipy.nan, vals])
     
-def ncfsf(x,dfn,dfd,nc):
-    return 1-ncfcdf(x,dfn,dfd,nc)
+def ncfsf(x,dfn,dfd,nc, loc=0.0, scale=1.0):
+    return 1-ncfcdf(x,dfn,dfd,nc, loc=0.0, scale=1.0)
 
-##def _ncfqfunc(x,q,dfn,dfd,nc):
-##    return _ncfcdf(x,dfn,dfd,nc)-q
+def ncfppf(q, dfn, dfd, nc, loc=0.0, scale=1.0):
+    q,dfn,dfd,nc,loc,scale = map(arr, (q, dfn, dfd, nc, loc, scale))    
+    cond = ((0<=q) & (q<=1) & (dfn>0) & (dfd>0) & (nc>0) & (scale > 0))
+    vals = special.ncfdtri(dfn, dfd, nc, q)
+    return _wc(cond, vals*scale + loc)
 
-##def _ncfppf(q,dfn,dfd,nc,x0):
-##    import scipy.optimize as optimize
-##    return optimize.fsolve(_ncfqfunc,x0,args=(q,dfn,dfd,nc))
-##_vec_ncfq = special.general_function(_ncfq,'d')
+def ncfisf(p,dfn,dfd,nc, loc=0.0, scale=1.0):
+    return ncfppf(1-p,dfn,dfd,nc, loc, scale)
 
-##def ncfppf(q,dfn,dfd,nc,x0=None):
-##    assert all((0<=q) & (q<=1)), _quanstr
-##    if x0 is None:
-##        x0 = dfd * (dfn+nc)/(dfn*(dfd-2))
-##    return _vec_ncfppf(q, dfn, dfd, nc, x0)
-
-def ncfppf(q, dfn, dfd, nc):
-    assert ((0<=q) & (q<=1))
-    return special.ncfdtri(dfn, dfd, nc, q)
-
-def ncfisf(p,dfn,dfd,nc):
-    return ncfppf(1-p,dfn,dfd,nc)
-
-def ncfstats(dfn,dfd,nc, full=0):
+def ncfstats(dfn,dfd,nc,loc=0.0,scale=1.0,full=0):
     dfn = arr(dfn)*1.0
     dfd = arr(dfd)*1.0
     nc = arr(nc)*1.0
-    mn = where(dfd<=2,scipy.nan,dfd/(dfd-2)*(1+nc/dfn))
+    cond = (dfd > 0) & (nc > 0) & (scale > 0)
+    mn = where((1-cond) & (dfd<=2),scipy.nan,dfd/(dfd-2)*(1+nc/dfn)*scale + loc)
     var1 = 2*(dfd/dfn)**2 * ((dfn+nc/2)**2+(dfn+nc)*(dfd-2))
     var1 /= (dfd-2)**2 * (dfd-4)
-    var = where(dfd<=4,scipy.nan,var1)               
-    if full:
-        print "Skew and kurtosis unavailable for this distribution."
-    return mn, var
+    var = where((1-cond) & (dfd<=4),scipy.nan,var1*scale*scale)       
+    if not full:
+        return mn, var
+    _vecfunc = special.general_function(generic_moment)
+    mu3 = _vecfunc(3,  ncfpdf, 0, scipy.inf, dfn, dfd, nc, loc, scale)
+    mu4 = _vecfunc(4,  ncfpdf, 0, scipy.inf, dfn, dfd, nc, loc, scale)
+    g1 = mu3 / var1**1.5
+    g2 = mu4 / var1**2 - 3.0
+    return mn, var, _wc(cond & (df>6), g1), _wc(cond & (df>8), g2)
 
 
 ## Student t distribution
@@ -1747,63 +1764,60 @@ def tstats(df, loc=0.0, scale=1.0, full=0):
 
 ## Non-central T distribution
 
-def nctpdf(x, df, nc):
-    assert all((df > 0) & (nc > 0)), _posstr
+def nctpdf(x, df, nc, loc=0.0, scale=1.0):
+    x, df, nc, loc, scale = map(arr, (x, df, nc, loc, scale))
+    x = arr((x-loc*1.0)/scale)
     n = df*1.0
     nc = nc*1.0
     x2 = x*x
     ncx2 = nc*nc*x2
     fac1 = n + x2
+    sv = errp(0)
     Px = n**(n/2) * special.gamma(n+1)
-    Px /= 2.0**n*exp(nc*nc/2)*fac1**(n/2)*special.gamma(n/2)
+    Px /= arr(2.0**n*exp(nc*nc/2)*fac1**(n/2)*special.gamma(n/2))
     valF = ncx2 / (2*fac1)
     trm1 = sqrt(2)*nc*x*special.hyp1f1(n/2+1,1.5,valF)
-    trm1 /= fac1*special.gamma((n+1)/2)
+    trm1 /= arr(fac1*special.gamma((n+1)/2))
     trm2 = special.hyp1f1((n+1)/2,0.5,valF)
-    trm2 /= sqrt(fac1)*special.gamma(n/2+1)
+    trm2 /= arr(sqrt(fac1)*special.gamma(n/2+1))
     Px *= trm1+trm2
+    sv = errp(sv)
+    return select([(df<=0) | (nc<=0) | (scale<=0)],[scipy.nan],Px/scale)
+    
+def nctcdf(x,df,nc, loc=0.0, scale=1.0):
+    x, df, nc, loc, scale = map(arr, (x, df, nc, loc, scale))
+    x = arr((x-loc*1.0)/scale)
+    sv = errp(0)
+    Cx = special.nctdtr(df, nc, x)
+    sv = errp(sv)
+    return select([(df<=0) | (nc<=0) | (scale<=0)],[scipy.nan],Cx)
 
-def nctcdf(x,df,nc):
-    assert all((df > 0) & (nc > 0)), _posstr
-    return special.nctdtr(df, nc, x)
+def nctsf(x,df,nc, loc=0.0, scale=1.0):
+    return 1-nctcdf(x,df,nc, loc, scale)
 
-def nctsf(x,df,nc):
-    return 1-nctcdf(x,df,nc)
+def nctppf(q,df,nc, loc=0.0, scale=1.0):
+    q, df, nc, loc, scale = map(arr, (q, df, nc, loc, scale))
+    cond = (0<=q) & (q<=1) & (df > 0) & (nc > 0)
+    sv = errp(0)
+    vals = special.nctdtrit(df, nc, q)
+    sv = errp(sv)
+    return _wc(cond, vals*scale + loc)
 
-##def _nctqfunc(x,q,df,nc):
-##    return _nctcdf(x,dfn,dfd,nc)-q
+def nctisf(p,df,nc, loc=0.0, scale=1.0):
+    return nctppf(1-p,df,nc, loc, scale)
 
-##def _nctppf(q,df,nc,x0):
-##    import scipy.optimize as optimize
-##    return optimize.fsolve(_nctqfunc,x0,args=(q,dfn,dfd,nc))
-##_vec_nctq = special.general_function(_nctq,'d')
-
-##def nctppf(q,df,nc,x0=None):
-##    assert all((0<=q) & (q<=1)), _quanstr
-##    if x0 is None:
-##        val1 = gam((df-1.0)/2.0)
-##        val2 = gam(df/2.0)
-##        x0 = nc*sqrt(df/2.0)*val1/val2
-##    return _vec_ncfppf(q, dfn, dfd, nc, x0)
-
-def nctppf(q,df,nc):
-    assert all((0<=q) & (q<=1)), _quanstr
-    assert all((df > 0) & (nc > 0)), _posstr
-    return special.nctdtrit(df, nc, q)
-
-def nctisf(p,df,nc):
-    return nctppf(1-p,df,nc)
-
-def nctstats(df,nc,full=0):
-    assert all((df > 0) & (nc > 0)), _posstr
+def nctstats(df,nc,loc=0.0, scale=1.0, full=0):
+    df, nc, loc, scale = map(arr, (df, nc, loc, scale))
+    cond = (df > 0) & (nc > 0) & (scale > 0)
     nc = nc*1.0
     df = df*1.0
     gam = special.gamma
     val1 = gam((df-1.0)/2.0)
     val2 = gam(df/2.0)
-    mn = nc*sqrt(df/2.0)*val1/val2
+    mn = _wc(cond, nc*sqrt(df/2.0)*val1/val2*scale + loc)
     var = (nc*nc+1.0)*df/(df-2.0)
     var -= nc*nc*df* val1**2 / 2.0 / val2**2
+    var = _wc(cond, var*scale*scale)
     if not full:
         return mn, var
     g1n = 2*nc*sqrt(df)*val1*((nc*nc*(2*df-7)-3)*val2**2 \
@@ -1814,7 +1828,7 @@ def nctstats(df,nc,full=0):
              2**(6-2*df) * nc*nc*(df-2)*(df-4)*(nc*nc*(2*df-7)-3)*pi* \
              gam(df+1)**2 - 4*(nc**4*(df-5)-6*nc*nc-3)*(df-3)*val2**4)
     g2d = (df-3)*(df-4)*(nc*nc*(df-2)*val1**2 - 2*(nc*nc+1)*val2)**2
-    return mn, var, g1n/g1d, g2n/g2d
+    return mn, var, _wc(cond, g1n/g1d), _wc(cond, g2n/g2d)
 
 
 
@@ -2303,6 +2317,8 @@ def weibullstats(shape, loc=0.0, scale=1.0, full=0):
     g2 += gam(1+4*ia) - 4*gam(1+ia)*gam(1+3*ia) - 3*gam(1+2*ia)**2
     g2 /= den**2.0
     return mn, var, _wc(cond, g1), _wc(cond, g2)
+
+
         
 ### DISCRETE DISTRIBUTIONS
 ###
