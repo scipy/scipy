@@ -14,8 +14,10 @@ import warnings
 
 import flapack
 import clapack
+_use_force_clapack = 1
 if hasattr(clapack,'empty_module'):
     clapack = flapack
+    _use_force_clapack = 0
 elif hasattr(flapack,'empty_module'):
     flapack = clapack
 
@@ -48,6 +50,8 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     else:
         # in all other cases, C code is preferred
         m1,m2 = clapack,flapack
+    if not _use_force_clapack:
+        force_clapack = 0
     funcs = []
     m1_name = string.split(m1.__name__,'.')[-1]
     m2_name = string.split(m2.__name__,'.')[-1]

@@ -45,6 +45,7 @@ def configuration(parent_package='',parent_path=None):
     config = default_config_dict(package,parent_package)
     local_path = get_path(__name__,parent_path)
     abs_local_path = os.path.abspath(local_path)
+    no_atlas = 0
 
     atlas_info = get_info('atlas_threads')
     if not atlas_info:
@@ -117,6 +118,7 @@ def configuration(parent_package='',parent_path=None):
 
     if not atlas_info:
         warnings.warn(AtlasNotFoundError.__doc__)
+        no_atlas = 1
         blas_info = get_info('blas')
         #blas_info = {} # test building BLAS from sources.
         if not blas_info:
@@ -180,15 +182,16 @@ def configuration(parent_package='',parent_path=None):
     # atlas_version:
     ext_args = {'name':dot_join(parent_package,package,'atlas_version'),
                 'sources':[os.path.join(local_path,'atlas_version.c')]}
-    if atlas_info:
+    if no_atlas:
+        ext_args['define_macros'] = [('NO_ATLAS_INFO',1)]
+    else:
         ext_args['libraries'] = [atlas_info['libraries'][-1]]
         ext_args['library_dirs'] = atlas_info['library_dirs'][:]
         if atlas_version is None:
             ext_args['define_macros'] = [('NO_ATLAS_INFO',2)]
         else:
             ext_args['define_macros'] = [('ATLAS_INFO','"%s"' % atlas_version)]
-    else:
-        ext_args['define_macros'] = [('NO_ATLAS_INFO',1)]
+        
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
@@ -230,7 +233,7 @@ def configuration(parent_package='',parent_path=None):
     # cblas:
     def generate_cblas_pyf(target,sources,generator,skips):
         generator('cblas',sources[0],target,skips)
-    if not atlas_info:
+    if no_atlas:
         generate_cblas_pyf = generate_empty_pyf
     sources = ['generic_cblas.pyf',
                'generic_cblas1.pyf']
@@ -267,8 +270,8 @@ def configuration(parent_package='',parent_path=None):
     # clapack:
     def generate_clapack_pyf(target,sources,generator,skips):
         generator('clapack',sources[0],target,skips)
-    if not atlas_info:
-        generate_cblas_pyf = generate_empty_pyf
+    if no_atlas:
+        generate_clapack_pyf = generate_empty_pyf
     sources = ['generic_clapack.pyf']
     sources = [os.path.join(local_path,s) for s in sources]
     clapack_pyf = SourceGenerator(generate_clapack_pyf,
