@@ -418,7 +418,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
 
     alpha1 = pymin(1.0,1.01*2*(phi0-old_old_fval)/derphi0)
     phi_a1 = phi(alpha1)
-    derphi_a1 = phiprime(alpha1)
+    #derphi_a1 = phiprime(alpha1)  evaluated below
 
     phi_a0 = phi0
     derphi_a0 = derphi0
@@ -566,7 +566,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1.49e-8,
       warnflag -- an integer warning flag:
                   1 : 'Maximum number of iterations exceeded.'
                   2 : 'Gradient and/or function calls not changing'
-      allvecs  --  a list of all iterates  
+      allvecs  --  a list of all iterates  (only returned if retall==1)
 
     Additional Inputs:
 
