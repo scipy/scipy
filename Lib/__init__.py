@@ -16,14 +16,11 @@ d,f = os.path.split(__file__)
 sys.path.append(os.path.join(d,'gui_thread'))
 #import gui_thread
 
-sys.path.append(os.path.join(d,'pyunit-1.3.1'))
-
 try:
     import scipy.xplt
 except ImportError:
     pass
 
-import unittest
 import fastumath   
 
     

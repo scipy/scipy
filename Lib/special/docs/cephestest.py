@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import cephes
+import scipy.special.cephes as cephes
 
 val = 0.8
 val2 = 0.3

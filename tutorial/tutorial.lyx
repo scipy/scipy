@@ -117,7 +117,7 @@ Example:
 Special Functions (scipy.special)
 \layout Subsection
 
-Vectorizing functions (scipy.special.GeneralFunction)
+Vectorizing functions (scipy.special.general_function)
 \layout Standard
 
 One of the features that the 
@@ -126,7 +126,7 @@ special
 \series default 
  sub-package provides is a class 
 \series bold 
-GeneralFunction
+general_function
 \series default 
  to convert an ordinary Python function which accepts scalars and returns
  scalars into a 
@@ -156,7 +156,7 @@ addsubtract
 \end_inset 
 
 which defines a function of two scalar variables and returns a scalar result.
- The class GeneralFunction can be used to 
+ The class general_function can be used to 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -170,7 +170,7 @@ vectorize
 \backslash 
 begin{verbatim}
 \newline 
->>> vec_addsubstract = scipy.special.GeneralFunction(addsubtract) 
+>>> vec_addsubstract = scipy.special.general_function(addsubtract) 
 \backslash 
 end{verbatim} 
 \newline 
