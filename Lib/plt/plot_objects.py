@@ -803,6 +803,7 @@ class poly_marker(poly_points):
             f(dc, xc, yc, size)
 
     def _circle(self, dc, xc, yc, size=1):
+	print xc, yc, size
         dc.DrawEllipse(xc-3*size,yc-3*size,6*size,6*size)
 
     def _dot(self, dc, xc, yc, size=1):
