@@ -150,7 +150,7 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   ap_z = (PyArrayObject *)PyArray_ContiguousFromObject(z_py, PyArray_DOUBLE, 0, 1);
   ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, PyArray_DOUBLE, 0, 1);
   ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, PyArray_DOUBLE, 0, 1);
-  //ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, PyArray_INT, 0, 1);
+  /*ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, PyArray_INT, 0, 1);*/
   if (ap_x == NULL || ap_y == NULL || ap_z == NULL || ap_w == NULL \
       || ap_wrk == NULL) goto fail;
   x = (double *) ap_x->data;
@@ -185,7 +185,7 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   if (iopt==1) {
     lc = (nx-kx-1)*(ny-ky-1);
     memcpy(wrk1,ap_wrk->data,lc*sizeof(double));
-    //memcpy(iwrk,ap_iwrk->data,n*sizeof(int));
+    /*memcpy(iwrk,ap_iwrk->data,n*sizeof(int));*/
   }
   SURFIT(&iopt,&m,x,y,z,w,&xb,&xe,&yb,&ye,&kx,&ky,&s,&nxest,&nyest,&nmax,&eps,&nx,tx,&ny,ty,c,&fp,wrk1,&lwrk1,wrk2,&lwrk2,iwrk,&kwrk,&ier);
   i=0;
@@ -207,13 +207,13 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   if ((iopt==0)||(nx>nxo)||(ny>nyo)) {
     ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
     if (ap_wrk == NULL) goto fail;
-    //ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
+    /*ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);*/
   }
   memcpy(ap_tx->data,tx,nx*sizeof(double));
   memcpy(ap_ty->data,ty,ny*sizeof(double));
   memcpy(ap_c->data,c,lc*sizeof(double));
   memcpy(ap_wrk->data,wrk1,lc*sizeof(double));
-  //memcpy(ap_iwrk->data,iwrk,n*sizeof(int));
+  /*memcpy(ap_iwrk->data,iwrk,n*sizeof(int));*/
   if (wa) free(wa);
   Py_DECREF(ap_x);
   Py_DECREF(ap_y);
@@ -232,7 +232,7 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_tx);
   Py_XDECREF(ap_ty);
   Py_XDECREF(ap_wrk);
-  //Py_XDECREF(ap_iwrk);
+  /*Py_XDECREF(ap_iwrk);*/
   return NULL;
 }
 
