@@ -11,7 +11,7 @@ def configuration(parent_package=''):
     config['packages'].append(parent_package+'plt')
     #config['packages'].append(parent_package+'plt.tests') 
 
-    data = ['lena.dat', 'colormaps.dir','colormaps.dat' ]
+    data = ['lena.dat']
     data = [os.path.join(local_path,x) for x in data]               
     config['data_files'].extend( [(os.path.join(parent_path,'plt'),data)])
   

@@ -2,7 +2,8 @@
 """
 
 from plot_utility import *
-from wxPython import wx
+from wxPython     import wx
+from colormap     import colormap_map
 
 #-----------------------------------------------------------------------#
 #------- Attribute list/functions for objects in wxPython --------------#
@@ -39,21 +40,6 @@ image_type_map = { 'jpg': wx.wxBITMAP_TYPE_JPEG,
                    'pcx': wx.wxBITMAP_TYPE_PCX,
                    'tif': wx.wxBITMAP_TYPE_TIF,
                    'tiff': wx.wxBITMAP_TYPE_TIF, }
-
-gray = ones((256,3))*arange(256)[:,NewAxis]
-
-colormap_map= { 'grey': gray, 'gray': gray }
-
-try:
-    # try grabbing matlab-style colormaps
-    import dumb_shelve, os,plot_objects
-    d,junk = os.path.split(os.path.abspath(plot_objects.__file__))
-    fname = os.path.join(d,'colormaps')
-    f=dumb_shelve.open(fname)
-    for i in f.keys(): colormap_map[i] = array(f[i])
-    f.close()
-except KeyError:
-    print 'Warning: Most colormaps not available.'
     
 def get_color(in_color):
     """ Convert a color name or  rgb sequence to a wxColour
