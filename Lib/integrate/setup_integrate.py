@@ -12,9 +12,6 @@ def configuration(parent_package=''):
     atlas_info = get_info('atlas')
     local_path = get_path(__name__)
 
-    # need info about blas -- how to get this???
-    #blas_libraries, lapack_libraries, atlas_library_dirs = get_atlas_info()
-
     atlas_library_dirs = atlas_info.get('library_dirs',[])
     atlas_libraries = atlas_info.get('libraries',[])
     blas_libraries = atlas_libraries

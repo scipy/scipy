@@ -1,0 +1,37 @@
+python module cgees__user__routines 
+    interface cgees_user_interface 
+        function cselect(e_w__i__e) ! in :flapack:cgees.f:cgees:unknown_interface
+            complex :: e_w__i__e
+            logical :: cselect
+        end function cselect
+    end interface cgees_user_interface
+end python module cgees__user__routines
+
+python module dgees__user__routines 
+    interface dgees_user_interface 
+        function dselect(e_wr__i__e,e_wi__i__e) ! in :flapack:dgees.f:dgees:unknown_interface
+            double precision :: e_wr__i__e
+            double precision :: e_wi__i__e
+            logical :: dselect
+        end function dselect
+    end interface dgees_user_interface
+end python module dgees__user__routines
+
+python module sgees__user__routines 
+    interface sgees_user_interface 
+        function sselect(e_wr__i__e,e_wi__i__e) ! in :flapack:sgees.f:sgees:unknown_interface
+            real :: e_wr__i__e
+            real :: e_wi__i__e
+            logical :: sselect
+        end function sselect
+    end interface sgees_user_interface
+end python module sgees__user__routines
+
+python module zgees__user__routines 
+    interface zgees_user_interface 
+        function zselect(e_w__i__e) ! in :flapack:zgees.f:zgees:unknown_interface
+            complex*16 :: e_w__i__e
+            logical :: zselect
+        end function zselect
+    end interface zgees_user_interface
+end python module zgees__user__routines
