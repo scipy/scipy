@@ -84,15 +84,15 @@ python module _iterative ! in
             integer, intent(in, out) :: ijob
         end subroutine <_c>qmrrevcom
 
-        subroutine stoptest2(n,r,b,bnrm2,resid,tol,info) ! in STOPTEST2.f
+        subroutine <_c>stoptest2(n,r,b,bnrm2,resid,tol,info) ! in STOPTEST2.f
             integer, intent(hide), depend(b), n=len(b) :: n
             <_t> dimension(n), intent(in) :: r
             <_t> dimension(n), intent(in) :: b
-            <rt>, intent(in, out) :: bnrm2
+            <rt=real, double precision, real, double precision>, intent(in, out) :: bnrm2
             <rt>, intent(out) :: resid
             <rt>, intent(in) :: tol
             integer intent(out) :: info
-        end subroutine stoptest2
+        end subroutine <_c>stoptest2
     end interface 
 end python module _iterative
 
