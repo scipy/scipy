@@ -5,15 +5,15 @@
    quad          -- General purpose integration.
    dblquad       -- General purpose double integration.
    tplquad       -- General purpose triple integration.
-   gauss_quad    -- Integrate func(x) using Gaussian quadrature of order n.
-   gauss_quadtol -- Integrate with given tolerance using Gaussian quadrature.
+   fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n.
+   quadrature    -- Integrate with given tolerance using Gaussian quadrature.
    romberg       -- Integrate func using Romberg integration.
 
 
    See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
       quadrature roots and weights.
 """
-_moddict = {'quadrature': ['gauss_quad', 'gauss_quadtol','romberg'],
+_moddict = {'quadrature': ['fixed_quad', 'quadrature','romberg'],
             'odepack': ['odeint'],
             'quadpack': ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf',
                          'inf']

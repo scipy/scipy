@@ -4,7 +4,7 @@
 from orthogonal import P_roots
 from Numeric import sum
 
-def gauss_quad(func,a,b,args=(),n=5):
+def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
 
   Description:
@@ -28,7 +28,7 @@ def gauss_quad(func,a,b,args=(),n=5):
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args)), None
 
-def gauss_quadtol(func,a,b,args=(),tol=1e-7,maxiter=50):
+def quadrature(func,a,b,args=(),tol=1e-7,maxiter=50):
     """Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
   Description:
@@ -56,7 +56,7 @@ def gauss_quadtol(func,a,b,args=(),tol=1e-7,maxiter=50):
     val = err
     n = 1
     while (err > tol) and (n < maxiter):
-        newval = gauss_quad(func,a,b,args,n)
+        newval = fixed_quad(func,a,b,args,n)[0]
         err = abs(newval-val)
         val = newval
         n = n + 1
@@ -125,7 +125,7 @@ def _printresmat(function, interval, resmat):
     print 'The final result is', resmat[i][j],
     print 'after', 2**(len(resmat)-1)+1, 'function evaluations.'
 
-def romberg(function, a, b, tol=1.0E-7, show=0):
+def romberg(function, a, b, tol=1.0E-7, show=0, divmax=10):
     """Romberg integration of a callable function or method.
 
     Returns the integral of |function| (a function of one variable)
@@ -141,7 +141,7 @@ def romberg(function, a, b, tol=1.0E-7, show=0):
     result = intrange * ordsum
     resmat = [[result]]
     lastresult = result + tol * 2.0
-    while (abs(result - lastresult) > tol):
+    while (abs(result - lastresult) > tol) and (i <= divmax):
         n = n * 2
         ordsum = ordsum + _difftrap(function, interval, n)
         resmat.append([])

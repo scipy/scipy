@@ -9,7 +9,7 @@ Text File
 
 import Numeric
 from Numeric import array, take, concatenate, Float
-import types, re
+import types, re, copy
 #import numpyio
 default = None
 _READ_BUFFER_SIZE = 1024*1024
@@ -98,7 +98,6 @@ def get_open_file(fileobject, mode='rb'):
             
 
 class ascii_stream:
-
     """Text files with line iteration
 
     Ascii_stream instances can be used like normal read-only file objects
@@ -190,6 +189,23 @@ def move_past_spaces(firstline):
         ind += 1
     return firstline[ind:], ind
 
+
+def extract_columns(objarray, collist, atype, missing):
+    if collist[-1] < 0:
+        if len(collist) == 1:
+            toconvlist = arlist[::-collist[-1]]
+        else:
+            toconvlist = take(arlist,collist[:-1])
+            toconvlist = concatenate((toconvlist,
+                                      arlist[(collist[-2]-collist[-1])::(-collist[-1])]))
+    else:
+        toconvlist = take(arlist, collist)
+
+    return numpyio.convert_objectarray(toconvlist, atype, missing)
+    
+
+# Given a string representing one line, a separator tuple, a list of columns
+#  to read, a type argument
 def process_line(line, separator, collist, atype, missing):
     strlist = []
     for mysep in separator[:-1]:
@@ -203,17 +219,7 @@ def process_line(line, separator, collist, atype, missing):
             line = line[ind+len(mysep):]
     strlist.extend(line.split(separator[-1]))
     arlist = array(strlist,'O')
-    if collist[-1] < 0:
-        if len(collist) == 1:
-            toconvlist = arlist[::-collist[-1]]
-        else:
-            toconvlist = take(arlist,collist[:-1])
-            toconvlist = concatenate((toconvlist,
-                                      arlist[(collist[-2]-collist[-1])::(-collist[-1])]))
-    else:
-        toconvlist = take(arlist, collist)
-
-    return numpyio.convert_objectarray(toconvlist, atype, missing)
+    return extract_columns(arlist, collist, atype, missing)
 
 def getcolumns(stream, columns, separator):
     firstline = stream._buffer[0]
@@ -222,14 +228,90 @@ def getcolumns(stream, columns, separator):
     val = process_line(firstline, separator, collist, Float, 0)
     return len(val), collist
 
+
+def subset(A,B):
+    # true if A is a subset of B.  That is every element of A is also an element
+    # of B
+    res = 1
+    for a in A:
+        if not a in B:
+            res = 0
+            break
+    return res
+    
+def expand_numberlist(colsize, collist):
+    # Expand out the column list to full size. 
+    if collist[-1] < 0:
+        step = -collist[-1]
+        collist = collist[:-1]
+        n = len(collist)
+        if n > 0:
+            ind = collist[-1]
+        else:
+            ind = 0
+        while n < colsize:
+            ind += step
+            collist.append(ind)
+            n += 1         
+    return collist
+
+def check_and_sort_list(outinfo, colsize, collist):
+    # Expand out the column list to full size.
+    collist = expand_numberlist(colsize, collist)
+    if collist[-1] < 0:
+        step = -collist[-1]
+        collist = collist[:-1]
+        n = len(collist)
+        if n > 0:
+            ind = collist[-1]
+        else:
+            ind = 0
+        while n < colsize:
+            ind += step
+            collist.append(ind)
+            n += 1         
+    N = len(outinfo) 
+    if N % 2 != 0:
+        raise ValueError, "Array type argument is not valid (wrong number of items in sequence)."
+    # Check the elements of the information list.
+    # Find the smallest column each one represents.
+    alltypes = zeros(N >> 1,'c')
+    mincol = zeros(N >> 1)
+    for k in range(N >> 1):
+        typestr = outinfo[2*k]
+        if not typestr in "".join(Numeric.typecodes.values()):
+            raise ValueError, "Invalid typecode given for array type."
+        subcollist = outinfo[2*k+1]
+        if not isinstance(subcollist, types.TupleType):
+            raise ValueError, "Invalid tuple of columns given for arraytype %s" % typestr
+        sub1 = build_numberlist(subcollist)
+        subcollist = expand_numberlist(sub1)
+        if not subset(subcollist, collist):
+            raise ValueError, "Requested a column for one of the output arrays that is not in the overall requested column list."
+        outinfo[2*k+1] = sub1
+        alltypes[k] = typestr
+        mincol[k] = amin(subcollist)
+    ind = argsort(mincol)
+    alltypes = take(alltypes,ind)
+    newout = copy.copy(outinfo)
+    for k in range(N >> 1):
+        newout[2*k] = alltypes[k]
+        newout[2*k+1] = outinfo[2*ind[k]+1]
+    return newout    
+
 def init_output(rowsize, colsize, collist, atype):
     if isinstance(atype, types.StringType):
-        atype = {atype:collist}
+        outinfo = [atype,collist]
     elif isinstance(atype, types.ListType) or \
          isinstance(atype, types.TupleType):
-        pass
-    a = Numeric.zeros((rowsize, colsize),atype)
-    return
+        outinfo = list(atype)
+    elif isinstance(atype, types.DictType):
+        outinfo = []
+        for key in atype.keys():
+            outinfo.extend([key,atype[key]])
+    outinfo = check_and_sort_list(outinfo, colsize, collist)
+    outarrs = create_arrays(rowsize, outinfo)
+    return outarrs
 
 
 
@@ -286,7 +368,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
     # Get the number of columns to read and expand the columns argument
     colsize, collist = getcolumns(ascii_object, columns, sep)
     # Intialize the output arrays, and convert atype to a dictionary
-    outarr, outdict = init_output(rowsize, colsize, collist, atype)
+    outarr, outdict = init_output(rowsize, collist, atype)
     row = 0
     block_row = 0
     for line in ascii_object:
