@@ -603,7 +603,7 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     A = Numeric.asarray(A)
     if A.typecode() in ['D','F']:
         print "Warning: complex array given, plotting magnitude."
-        A = Numeric.abs(A)
+        A = abs(A)
     M,N = A.shape
     A = A[::-1,:]
     if cmax is None:
