@@ -196,20 +196,20 @@ def wiener(im,mysize=None,noise=None):
     out -- Wiener filtered result with the same shape as in.
 
     """
-    im = asarray(im)
+    im = MLab.asarray(im)
     if mysize == None:
         mysize = [3] * len(im.shape)
     mysize = MLab.asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlate(im,ones(mysize),1) / MLab.prod(mysize)
+    lMean = correlate(im,MLab.ones(mysize),1) / MLab.prod(mysize)
 
     # Estimate the local variance
-    lVar = correlate(im**2,ones(mysize),1) / MLab.prod(mysize) - lMean**2
+    lVar = correlate(im**2,MLab.ones(mysize),1) / MLab.prod(mysize) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
-        noise = MLab.mean(ravel(lVar))
+        noise = MLab.mean(MLab.ravel(lVar))
 
     # Compute result
     # f = lMean + (maximum(0, lVar - noise) ./
