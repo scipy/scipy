@@ -99,7 +99,7 @@ class general_cont_ppf:
         self.xa = xa
         self.xb = xb
         self.xtol = xtol
-        self.vecfunc = sgf(self._single_call)
+        self.vecfunc = sgf(self._single_call,otypes='d')
     def _tosolve(self, x, q, *args):
         return apply(self.cdf, (x, )+args) - q
     def _single_call(self, q, *args):
@@ -239,7 +239,6 @@ def argsreduce(cond, *args):
         newargs[k] = extract(cond,arr(args[k])*expand_arr)
     return newargs    
 
-
 class rv_continuous:
     """A Generic continuous random variable.
 
@@ -301,13 +300,14 @@ class rv_continuous:
         self._size = 1
         self.m = 0.0
         self.moment_type = momtype
-        self.vecfunc = sgf(self._ppf_single_call)
-        self.vecentropy = sgf(self._entropy)
+        self.vecfunc = sgf(self._ppf_single_call,otypes='d')
+        self.vecentropy = sgf(self._entropy,otypes='d')
+        self.veccdf = sgf(self._cdf_single_call,otypes='d')
         self.expandarr = 1
         if momtype == 0:
-            self.generic_moment = sgf(self._mom0_sc)
+            self.generic_moment = sgf(self._mom0_sc,otypes='d')
         else:
-            self.generic_moment = sgf(self._mom1_sc)
+            self.generic_moment = sgf(self._mom1_sc,otypes='d')
         cdf_signature = inspect.getargspec(self._cdf.im_func)
         numargs1 = len(cdf_signature[0]) - 2
         pdf_signature = inspect.getargspec(self._pdf.im_func)
@@ -368,9 +368,12 @@ class rv_continuous:
         U = rand.sample(self._size)
         Y = self._ppf(U,*args)
         return Y
-    
-    def _cdf(self, x, *args):
+
+    def _cdf_single_call(self, x, *args):
         return scipy.integrate.quad(self._pdf, self.a, x, args=args)[0]
+
+    def _cdf(self, x, *args):
+        return self.veccdf(x,*args)
 
     def _sf(self, x, *args):
         return 1.0-self._cdf(x,*args)
@@ -548,7 +551,7 @@ class rv_continuous:
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.a*scale + loc)
-        insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        insert(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
         insert(output,cond2,self.b*scale + loc)
         goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
@@ -3022,7 +3025,7 @@ class rv_discrete:
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = sgf(self._cdfsingle)
+        self._cdfvec = sgf(self._cdfsingle,otypes='d')
         self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
 
@@ -3038,9 +3041,12 @@ class rv_discrete:
             self.qvals = scipy_base.cumsum(self.pk)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
-            self._ppf = new.instancemethod(sgf(_drv_ppf), self, rv_discrete)
-            self._pmf = new.instancemethod(sgf(_drv_pmf), self, rv_discrete)
-            self._cdf = new.instancemethod(sgf(_drv_cdf), self, rv_discrete)
+            self._ppf = new.instancemethod(sgf(_drv_ppf,otypes='d'),
+                                           self, rv_discrete)
+            self._pmf = new.instancemethod(sgf(_drv_pmf,otypes='d'),
+                                           self, rv_discrete)
+            self._cdf = new.instancemethod(sgf(_drv_cdf,otypes='d'),
+                                           self, rv_discrete)
             self._nonzero = new.instancemethod(_drv_nonzero, self, rv_discrete)
             self.generic_moment = new.instancemethod(_drv_moment,
                                                      self, rv_discrete)
@@ -3048,9 +3054,10 @@ class rv_discrete:
                                                  self, rv_discrete)
             self.numargs=0
         else:
-            self._vecppf = new.instancemethod(sgf(_drv2_ppfsingle),
+            self._vecppf = new.instancemethod(sgf(_drv2_ppfsingle,otypes='d'),
                                               self, rv_discrete)
-            self.generic_moment = new.instancemethod(sgf(_drv2_moment),
+            self.generic_moment = new.instancemethod(sgf(_drv2_moment,
+                                                         otypes='d'),
                                                      self, rv_discrete)
             cdf_signature = inspect.getargspec(self._cdf.im_func)
             numargs1 = len(cdf_signature[0]) - 2
