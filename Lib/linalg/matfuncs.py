@@ -28,7 +28,7 @@ def expm(A,q=7):
  
     # Scale A so that norm is < 1/2
     val = log2(norm(A,Inf))
-    e = floor(val)
+    e = int(floor(val))
     j = max(0,e+1)
     A = A / 2.0**j
  
@@ -222,7 +222,7 @@ def logm(A,disp=1):
                 F = mat(real(F))
             E = mat(expm(F))
             temp = mat(solve(E.T,(E-A).T))
-            F -= temp.T
+            F = F - temp.T
             errest = norm(expm(F)-A,1) / norm(A,1)
     if disp:
         if not isfinite(errest) or errest >= errtol:

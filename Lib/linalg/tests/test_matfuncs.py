@@ -14,12 +14,12 @@ Run tests if linalg is not installed:
   python tests/test_matfuncs.py [<level>]
 """
 
-from Numeric import array
+from Numeric import array, identity
 
 import sys
 from scipy_test.testing import set_package_path
 set_package_path()
-from linalg import signm
+from linalg import signm,logm
 del sys.path[0]
 
 from scipy_test.testing import assert_array_almost_equal
@@ -43,12 +43,24 @@ class test_signm(ScipyTestCase):
         r = signm(a)
         assert_array_almost_equal(r,cr)
 
+class test_logm(ScipyTestCase):
+
+    def check_nils(self):
+        a = array([[ -2.,  25.,   0.,   0.,   0.,   0.,   0.],
+                   [  0.,  -3.,  10.,   3.,   3.,   3.,   0.],
+                   [  0.,   0.,   2.,  15.,   3.,   3.,   0.],
+                   [  0.,   0.,   0.,   0.,  15.,   3.,   0.],
+                   [  0.,   0.,   0.,   0.,   3.,  10.,   0.],
+                   [  0.,   0.,   0.,   0.,   0.,  -2.,  25.],
+                   [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
+        logm((identity(7)*3.1+0j)-a)
 
 #####################################
 def test_suite(level=1):
     suites = []
     if level > 0:
         suites.append( unittest.makeSuite(test_signm,'check_') )
+        suites.append( unittest.makeSuite(test_logm,'check_') )
     if level > 5:
         pass
 
