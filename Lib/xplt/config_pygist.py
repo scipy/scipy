@@ -378,7 +378,7 @@ main(int argc, char *argv[])
                 print "using FPU_GCC_SPARC (SIGFPE delivery)"
                 configfile.write('#define FPU_GCC_SPARC\n')
                 fpedef="-DFPU_GCC_SPARC"
-            elif self.try_link("#define FPU_GCC_M86K\n" + testcode,
+            elif self.try_link("#define FPU_GCC_M68K\n" + testcode,
                                include_dirs=self.unix_include_dirs):
                 print "using FPU_GCC_M68K (SIGFPE delivery)"
                 configfile.write('#define FPU_GCC_M68K\n')
