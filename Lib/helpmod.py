@@ -88,7 +88,10 @@ def help(object,maxwidth=76,output=sys.stdout):
                 argstr = name + arguments
 
             print >> output, " " + argstr + "\n"
-            print >> output, inspect.getdoc(object.__call__)
+            doc = inspect.getdoc(object.__call__)
+            if doc is not None:
+                print >> output, inspect.getdoc(object.__call__)
+            print >> output, inspect.getdoc(object)
             
         else:
             print >> output, inspect.getdoc(object)

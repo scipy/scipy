@@ -1872,19 +1872,22 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
     int *aout_dimens, *dims=NULL;
     char zeros[32];  /* Zeros */
     int n1, n2, i;
-    PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL, *afill=NULL, *newfill=NULL;
-    
+    PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL;
+    PyArrayObject *afill=NULL, *newfill=NULL;
+
     if (!PyArg_ParseTuple(args, "OO|iiiO", &in1, &in2, &flip, &mode, &boundary, &fill_value)) {
         return NULL;
     }
 
-    typenum = PyArray_ObjectType(in1, 0);  
+    typenum = PyArray_ObjectType(in1, 0);
     typenum = PyArray_ObjectType(in2, typenum);
     ain1 = (PyArrayObject *)PyArray_FromObject(in1, typenum, 2, 2);
     if (ain1 == NULL) goto fail;
     ain2 = (PyArrayObject *)PyArray_FromObject(in2, typenum, 2, 2);
     if (ain2 == NULL) goto fail;
 
+    if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR))
+      PYERR("Incorrect boundary value.");
     if (boundary == PAD) {
 	if (fill_value == NULL) {
 	    newfill = (PyArrayObject *)PyArray_FromDimsAndData(0, dims, typenum, zeros);
@@ -1896,8 +1899,11 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 	}
 	if (newfill == NULL) goto fail;
     }
+    else {
+	newfill = (PyArrayObject *)PyArray_FromDimsAndData(0, dims, typenum, zeros);
+	if (newfill == NULL) goto fail;
+    }
     
-
     n1 = PyArray_Size((PyObject *)ain1);
     n2 = PyArray_Size((PyObject *)ain2);
     
@@ -1932,25 +1938,24 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 
     flag = mode + boundary + (typenum << TYPE_SHIFT) + \
       (flip != 0) * FLIP_MASK;
-
-    ret = pylab_convolve_2d (ain1->data,       /* Input data Ns[0] x Ns[1] */
-		             ain1->strides,    /* Input strides */
-		             aout->data,       /* Output data */
-		             aout->strides,    /* Ouput strides */
-		             ain2->data,       /* coefficients in filter */
-		             ain2->strides,    /* coefficients strides */ 
-		             ain2->dimensions, /* Size of kernel Nwin[2] */
-			     ain1->dimensions, /* Size of image Ns[0] x Ns[1] */
-		             flag,             /* convolution parameters */
-		             newfill->data);   /* fill value */
-
-    Py_DECREF(ain1);
-    Py_DECREF(ain2);
-    Py_XDECREF(afill);
-    Py_XDECREF(newfill);
+    
+    ret = pylab_convolve_2d (DATA(ain1),      /* Input data Ns[0] x Ns[1] */
+		             STRIDES(ain1),   /* Input strides */
+		             DATA(aout),      /* Output data */
+		             STRIDES(aout),   /* Ouput strides */
+		             DATA(ain2),      /* coefficients in filter */
+		             STRIDES(ain2),   /* coefficients strides */ 
+		             DIMS(ain2),      /* Size of kernel Nwin[2] */
+			     DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
+		             flag,            /* convolution parameters */
+		             DATA(newfill));  /* fill value */
 
     switch (ret) {
     case 0:
+      Py_DECREF(ain1);
+      Py_DECREF(ain2);
+      Py_XDECREF(afill);
+      Py_XDECREF(newfill);
       return PyArray_Return(aout);
       break;
     case -5:

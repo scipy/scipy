@@ -57,6 +57,8 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
                                          NULL};
 
 
+/* This could definitely be more optimized... */
+
 int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       int   *instr,     /* Input strides */
 		       char  *out,       /* Output data */
@@ -73,13 +75,14 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   int Os[2];
   char *sum=NULL, *value=NULL;
   int new_m, new_n, ind0_memory;
-  
-  int boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
-  int outsize = flag & OUTSIZE_MASK;
-  int convolve = flag & FLIP_MASK;
-  int type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
-  int type_size;
+  int boundary, outsize, convolve, type_num, type_size;
   OneMultAddFunction *mult_and_add;
+
+  boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
+  outsize = flag & OUTSIZE_MASK;
+  convolve = flag & FLIP_MASK;
+  type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
+  type_size;
 
   mult_and_add = OneMultAdd[type_num];
   if (mult_and_add == NULL) return -5;  /* Not available for this type */
@@ -92,43 +95,39 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 
   if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[0]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
-  else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]+Nwin[1]+1;}
+  else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]-Nwin[1]+1;}
   else return -1;  /* Invalid output flag */  
   
-  if (boundary != PAD || boundary != REFLECT || boundary != CIRCULAR) 
+  if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR)) 
     return -2;   /* Invalid boundary flag */
 
   for (m=0; m < Os[0]; m++) {
     /* Reposition index into input image based on requested output size */
-    if (outsize == FULL) new_m = m-Nwin[0]+1;
-    else if (outsize == SAME) new_m = m-((Nwin[0]-1) >> 1);
-    else new_m = m; /* VALID */
+    if (outsize == FULL) new_m = convolve ? m : (m-Nwin[0]+1);
+    else if (outsize == SAME) new_m = convolve ? (m+((Nwin[0]-1)>>1)) : (m-((Nwin[0]-1) >> 1));
+    else new_m = convolve ? (m+Nwin[0]-1) : m; /* VALID */
 
     for (n=0; n < Os[1]; n++) {  /* loop over columns */
       memset(sum, 0, type_size); /* sum = 0.0; */
 
-      if (outsize == FULL) new_n = n-Nwin[1]+1;
-      else if (outsize == SAME) new_n = n-((Nwin[1]-1) >> 1);
-      else new_n = n;
+      if (outsize == FULL) new_n = convolve ? n : (n-Nwin[1]+1);
+      else if (outsize == SAME) new_n = convolve ? (n+((Nwin[1]-1)>>1)) : (n-((Nwin[1]-1) >> 1));
+      else new_n = convolve ? (n+Nwin[1]-1) : n;
 
       /* Sum over kernel, if index into image is out of bounds
 	 handle it according to boundary flag */
       for (j=0; j < Nwin[0]; j++) {
-	if (convolve) 
-	  ind0 = new_m-j;
-	else
-	  ind0 = new_m+j;
-
+	ind0 = convolve ? (new_m-j): (new_m+j);
 	bounds_pad_flag = 0;
 
 	if (ind0 < 0) {
 	  if (boundary == REFLECT) ind0 = -1-ind0;
-	  else if (boundary == CIRCULAR) ind0 = Ns[0] - ind0; 
+	  else if (boundary == CIRCULAR) ind0 = Ns[0] + ind0;
 	  else bounds_pad_flag = 1;
 	}
 	else if (ind0 >= Ns[0]) {
 	  if (boundary == REFLECT) ind0 = Ns[0]+Ns[0]-1-ind0;
-	  else if (boundary == CIRCULAR) ind0 = ind0 - Ns[0]; 
+	  else if (boundary == CIRCULAR) ind0 = ind0 - Ns[0];
 	  else bounds_pad_flag = 1;
 	}
 	
@@ -137,14 +136,10 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 	for (k=0; k < Nwin[1]; k++) {
 	  if (bounds_pad_flag) memcpy(value,fillvalue,type_size);
 	  else {
-	    if (convolve)
-	      ind1 = new_n-k;
-	    else
-	      ind1 = new_n+k;
-
+	    ind1 = convolve ? (new_n-k) : (new_n+k);
 	    if (ind1 < 0) {
 	      if (boundary == REFLECT) ind1 = -1-ind1;
-	      else if (boundary == CIRCULAR) ind1 = Ns[1] - ind1;
+	      else if (boundary == CIRCULAR) ind1 = Ns[1] + ind1;
 	      else bounds_pad_flag = 1;
 	    }
 	    else if (ind1 >= Ns[1]) {

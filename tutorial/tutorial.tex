@@ -619,7 +619,7 @@ Figure \ref{fig:2d_interp}). This example uses the \textbf{grid}
 command in SciPy which is useful for defining a {}``mesh-grid{}''
 in many dimensions. The number of output arguments and the number
 of dimensions of each argument is determined by the number of indexing
-objects passed in \textbf{grid}[]. \verbatiminput{example6.3}
+objects passed in \textbf{grid{[}{]}.} \verbatiminput{example6.3}
 
 \vspace{0.3cm}
 {
@@ -633,8 +633,118 @@ objects passed in \textbf{grid}[]. \verbatiminput{example6.3}
 \vspace{0.3cm}
 
 
-\section{Signal Processing}
+\section{Signal Processing (signal)}
 
-The signal processing toolbox currently contains some filtering functions
-and a limited set of filter design tools. This box should steadly 
+The signal processing toolbox currently contains some filtering functions,
+a limited set of filter design tools, and a few B-spline interpolation
+algorithms for one- and two-dimensional data. While the B-spline algorithms
+could technically be placed under the interpolation category, they
+are included here because they only work with equally-spaced data
+and make heavy use of filter-theory and transfer-function formalism
+to provide a fast B-spline transform.
+
+
+\subsection{B-splines}
+
+A B-spline is an approximation of a continuous function over a finite-domain
+in terms of B-spline coefficients and knot points. If the knot-points
+are equally spaced with spacing \( \Delta x \), then the B-spline
+approximation to a 1-dimensional function is the finite-basis expansion.
+\[
+y\left( x\right) \approx \sum _{j}c_{j}\beta ^{o}\left( \frac{x}{\Delta x}-j\right) .\]
+ In two dimensions with knot-spacing \( \Delta x \) and \( \Delta y \),
+the function representation is \[
+z\left( x,y\right) \approx \sum _{j}\sum _{k}c_{jk}\beta ^{o}\left( \frac{x}{\Delta x}-j\right) \beta ^{o}\left( \frac{y}{\Delta y}-k\right) .\]
+ In these expressions, \( \beta ^{o}\left( \cdot \right)  \) is the
+space-limited B-spline basis function of order, \( o \). The requirement
+of equally-spaced knot-points and equally-spaced data points, allows
+the development of fast (inverse-filtering) algorithms for determining
+the coefficients, \( c_{j} \), from sample-values, \( y_{n} \).
+Unlike the general spline interpolation algorithms, these algorithms
+can quickly find the spline coefficients for large images. 
+
+The advantage of representing a set of samples via B-spline basis
+functions is that continuous-domain operators (derivatives, re-sampling,
+integral, etc.) which assume that the data samples are drawn from
+an underlying continuous function can be computed with relative ease
+from the spline coefficients. For example, the second-derivative of
+a spline is \[
+y\prime ^{\prime \prime }\left( x\right) =\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\beta ^{o\prime \prime }\left( \frac{x}{\Delta x}-j\right) .\]
+ Using the property of B-splines that \[
+\frac{d^{2}\beta ^{o}\left( w\right) }{dw^{2}}=\beta ^{o-2}\left( w+1\right) -2\beta ^{o-2}\left( w\right) +\beta ^{o-2}\left( w-1\right) \]
+ it can be seen that \[
+y^{\prime \prime }\left( x\right) =\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\left[ \beta ^{o-2}\left( \frac{x}{\Delta x}-j+1\right) -2\beta ^{o-2}\left( \frac{x}{\Delta x}-j\right) +\beta ^{o-2}\left( \frac{x}{\Delta x}-j-1\right) \right] .\]
+ If \( o=3 \), then at the sample points, \begin{eqnarray*}
+\Delta x^{2}\left. y^{\prime }\left( x\right) \right| _{x=n\Delta x} & = & \sum _{j}c_{j}\delta _{n-j+1}-2c_{j}\delta _{n-j}+c_{j}\delta _{n-j-1},\\
+ & = & c_{n+1}-2c_{n}+c_{n-1}.
+\end{eqnarray*}
+ Thus, the second-derivative signal can be easily calculated from
+the spline fit. if desired, smoothing splines can be found to make
+the second-derivative less sensitive to random-errors. 
+
+The savvy reader will have already noticed that the data samples are
+related to the knot coefficients via a convolution operator, so that
+simple convolution with the sampled B-spline function recovers the
+original data from the spline coefficients. The output of convolutions
+can change depending on how boundaries are handled (this becomes increasingly
+more important as the number of dimensions in the data-set increases).
+The algorithms relating to B-splines in the signal-processing sub
+package assume mirror-symmetric boundary conditions. Thus, spline
+coefficients are computed based on that assumption, and data-samples
+can be recovered exactly from the spline coefficients by assuming
+them to be mirror-symmetric also.
+
+Currently the package provides functions for determining seond- and
+third-order cubic spline coefficients from equally spaced samples
+in one- and two-dimensions (\textbf{signal.qspline1d, signal.qspline2d,
+signal.cspline1d, signal.cspline2d}). The package also supplies a
+function (\textbf{signal.bspline}) for evaluating the bspline basis
+function, \( \beta ^{o}\left( x\right)  \) for arbitrary order and
+\( x. \) For large \( o \), the B-spline basis function can be approximated
+well by a zero-mean Gaussian function with standard-deviation equal
+to \( \sigma _{o}=\left( o+1\right) /12 \):\[
+\beta ^{o}\left( x\right) \approx \frac{1}{\sqrt{2\pi \sigma _{o}^{2}}}\exp \left( -\frac{x^{2}}{2\sigma _{o}}\right) .\]
+ A function to compute this Gaussian for arbitrary \( x \) and \( o \)
+is also available (\textbf{signal.gauss\_spline}). The following code
+and Figure uses spline-filtering to compute an edge-image (the second-derivative
+of a smoothed spline) of Lena's face which is an array returned by
+the command \textbf{lena().} The command \textbf{signal.sepfir2d}
+was used to apply a separable two-dimensional FIR filter with mirror-symmetric
+boundary conditions to the spline coefficients. This function is ideally
+suited for reconstructing samples from spline coefficients and is
+faster than \textbf{signal.convolve2d} which convolves arbitrary two-dimensional
+filters and allows for choosing mirror-symmetric boundary conditions. 
+
+\verbatiminput{example6.4}
+
+
+\begin{figure}
+{\centering \resizebox*{0.45\textwidth}{!}{\includegraphics{lena_image.epsi}} ~~\resizebox*{0.45\textwidth}{!}{\includegraphics{lena_edge.epsi}} \par}
+
+
+\caption{\label{fig:lena_edge_spline}Example of using smoothing splines to
+filter images.}
+\end{figure}
+
+
+
+\subsection{Filtering}
+
+
+\subsubsection{Convolution}
+
+
+\subsubsection{Other filters}
+
+
+\subsubsection{Filter design}
+
+
+\section{Input/Output}
+
+
+\section{FFT (FFTW)}
+
+
+\section{Plotting}
 \end{document}

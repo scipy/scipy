@@ -453,7 +453,8 @@ def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
     wordtype = _types[type]
     gist.pldj([x0,x1,x1,x0],[y0,y0,y1,y1],[x1,x1,x0,x0],[y0,y1,y1,y0],color=color,type=wordtype,width=width)
 
-def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0):
+def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
+            palette=None):
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
     if not _hold:
@@ -473,6 +474,11 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0):
     cmax = float(cmax)
     cmin = float(cmin)
     byteimage = gist.bytscl(z,cmin=cmin,cmax=cmax)
+    if palette is not None:
+        try:
+            gist.palette('%d.gp' % palette)
+        except IOError:
+            raise ValueError, "Palette %d not found."
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
     return
 

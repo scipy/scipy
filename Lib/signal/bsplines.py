@@ -48,7 +48,7 @@ def _bspline(x,n):
 
 bspline = general_function(_bspline)
 
-def gauss_approx(x,n):
+def gauss_spline(x,n):
     """Gaussian approximation to B-spline basis function of order n.
     """
     signsq = (n+1) / 12.0
@@ -147,7 +147,7 @@ def _cubic_coeff(signal):
     K = len(signal)
     yplus = zeros((K,),signal.typecode())
     powers = zi**arange(K)
-    yplus[0] = signal[0] + zi*add.reduce(powers*signal)    
+    yplus[0] = signal[0] + zi*add.reduce(powers*signal)
     for k in range(1,K):
         yplus[k] = signal[k] + zi*yplus[k-1]
     output = zeros((K,),signal.typecode())
@@ -156,6 +156,19 @@ def _cubic_coeff(signal):
         output[k] = zi*(output[k+1]-yplus[k])
     return output*6.0
 
+def _quadratic_coeff(signal):
+    zi = -3 + 2*sqrt(2.0)    
+    K = len(signal)
+    yplus = zeros((K,),signal.typecode())
+    powers = zi**arange(K)
+    yplus[0] = signal[0] + zi*add.reduce(powers*signal)    
+    for k in range(1,K):
+        yplus[k] = signal[k] + zi*yplus[k-1]
+    output = zeros((K,),signal.typecode())
+    output[K-1] = zi / (zi-1)*yplus[K-1]
+    for k in range(K-2,-1,-1):
+        output[k] = zi*(output[k+1]-yplus[k])
+    return output*8.0
 
 def cspline1d(signal,lamb=0.0):
     """Compute cubic spline coefficients for rank-1 array.
@@ -180,6 +193,32 @@ def cspline1d(signal,lamb=0.0):
         return _cubic_smooth_coeff(signal,lamb)
     else:
         return _cubic_coeff(signal)
+
+
+def qspline1d(signal,lamb=0.0):
+    """Compute quadratic spline coefficients for rank-1 array.
+
+    Description:
+
+      Find the quadratic spline coefficients for a 1-D signal assuming
+      mirror-symmetric boundary conditions.   To obtain the signal back from
+      the spline representation mirror-symmetric-convolve these coefficients
+      with a length 3 FIR window [1.0, 6.0, 1.0]/ 8.0 .
+
+    Inputs:
+
+      signal -- a rank-1 array representing samples of a signal.
+      lamb -- smoothing coefficient (must be zero for now.)
+
+    Output:
+
+      c -- cubic spline coefficients.
+    """
+    if lamb != 0.0:
+        raise ValueError, "Smoothing quadratic splines not supported yet."
+    else:
+        return _quadratic_coeff(signal)
+
     
 def hc(k,cs,rho,omega):
     return cs / sin(omega) * (rho**k)*sin(omega*(k+1))*(greater(k,-1))

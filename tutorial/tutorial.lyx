@@ -1080,8 +1080,8 @@ e_{i}=\left| y_{i}-A\sin \left( 2\pi kx_{i}+\theta \right) \right| .\]
 \layout Standard
 \align center 
 
-\begin_inset Figure size 297 420
-file leastsqfit.pdf
+\begin_inset Figure size 297 306
+file leastsqfit.epsi
 width 3 50
 flags 11
 
@@ -1243,8 +1243,8 @@ Figure shows the result:
 \layout Standard
 \align center 
 
-\begin_inset Figure size 297 420
-file inter_1d.pdf
+\begin_inset Figure size 297 290
+file inter_1d.epsi
 width 3 50
 flags 11
 
@@ -1426,8 +1426,8 @@ interpolate.sproot)
 \layout Standard
 \align center 
 
-\begin_inset Figure size 267 377
-file interp_cubic.pdf
+\begin_inset Figure size 267 272
+file interp_cubic.epsi
 subcaption Cubic-spline (splrep)
 width 3 45
 flags 11
@@ -1436,8 +1436,8 @@ subfigure
 \end_inset 
 
 
-\begin_inset Figure size 267 377
-file interp_cubic_der.pdf
+\begin_inset Figure size 267 272
+file interp_cubic_der.epsi
 subcaption Derivative of spline (splev)
 width 3 45
 flags 11
@@ -1449,8 +1449,8 @@ subfigure
 \layout Standard
 \align center 
 
-\begin_inset Figure size 267 377
-file interp_cubic_int.pdf
+\begin_inset Figure size 267 272
+file interp_cubic_int.epsi
 subcaption Integral of spline (splint)
 width 3 45
 flags 11
@@ -1459,8 +1459,8 @@ subfigure
 \end_inset 
 
 
-\begin_inset Figure size 267 377
-file interp_cubic_param.pdf
+\begin_inset Figure size 267 272
+file interp_cubic_param.epsi
 subcaption Spline of parametric curve (splprep)
 width 3 45
 flags 11
@@ -1640,8 +1640,8 @@ grid[].
 \layout Standard
 \align center 
 
-\begin_inset Figure size 267 377
-file 2d_func.pdf
+\begin_inset Figure size 267 186
+file 2d_func.epsi
 width 3 45
 flags 11
 
@@ -1650,8 +1650,8 @@ flags 11
 \SpecialChar ~
 \SpecialChar ~
 
-\begin_inset Figure size 267 377
-file 2d_interp.pdf
+\begin_inset Figure size 267 186
+file 2d_interp.epsi
 width 3 45
 flags 11
 
@@ -1669,13 +1669,257 @@ Example of two-dimensional spline interpolation.
 \end_float 
 \layout Section
 
-Signal Processing
+Signal Processing (signal)
 \layout Standard
 
 The signal processing toolbox currently contains some filtering functions,
  a limited set of filter design tools, and a few B-spline interpolation
  algorithms for one- and two-dimensional data.
  While the B-spline algorithms could technically be placed under the interpolati
-on category, they are included here due to there heavy use of filter-theory
- and transfer-function 
+on category, they are included here because they only work with equally-spaced
+ data and make heavy use of filter-theory and transfer-function formalism
+ to provide a fast B-spline transform.
+\layout Subsection
+
+B-splines
+\layout Standard
+
+A B-spline is an approximation of a continuous function over a finite-domain
+ in terms of B-spline coefficients and knot points.
+ If the knot-points are equally spaced with spacing 
+\begin_inset Formula \( \Delta x \)
+\end_inset 
+
+, then the B-spline approximation to a 1-dimensional function is the finite-basi
+s expansion.
+ 
+\begin_inset Formula \[
+y\left( x\right) \approx \sum _{j}c_{j}\beta ^{o}\left( \frac{x}{\Delta x}-j\right) .\]
+
+\end_inset 
+
+ In two dimensions with knot-spacing 
+\begin_inset Formula \( \Delta x \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \Delta y \)
+\end_inset 
+
+, the function representation is 
+\begin_inset Formula \[
+z\left( x,y\right) \approx \sum _{j}\sum _{k}c_{jk}\beta ^{o}\left( \frac{x}{\Delta x}-j\right) \beta ^{o}\left( \frac{y}{\Delta y}-k\right) .\]
+
+\end_inset 
+
+ In these expressions, 
+\begin_inset Formula \( \beta ^{o}\left( \cdot \right)  \)
+\end_inset 
+
+ is the space-limited B-spline basis function of order, 
+\begin_inset Formula \( o \)
+\end_inset 
+
+.
+ The requirement of equally-spaced knot-points and equally-spaced data points,
+ allows the development of fast (inverse-filtering) algorithms for determining
+ the coefficients, 
+\begin_inset Formula \( c_{j} \)
+\end_inset 
+
+, from sample-values, 
+\begin_inset Formula \( y_{n} \)
+\end_inset 
+
+.
+ Unlike the general spline interpolation algorithms, these algorithms can
+ quickly find the spline coefficients for large images.
+ 
+\layout Standard
+
+The advantage of representing a set of samples via B-spline basis functions
+ is that continuous-domain operators (derivatives, re-sampling, integral,
+ etc.) which assume that the data samples are drawn from an underlying continuous
+ function can be computed with relative ease from the spline coefficients.
+ For example, the second-derivative of a spline is 
+\begin_inset Formula \[
+y\prime ^{\prime \prime }\left( x\right) =\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\beta ^{o\prime \prime }\left( \frac{x}{\Delta x}-j\right) .\]
+
+\end_inset 
+
+ Using the property of B-splines that 
+\begin_inset Formula \[
+\frac{d^{2}\beta ^{o}\left( w\right) }{dw^{2}}=\beta ^{o-2}\left( w+1\right) -2\beta ^{o-2}\left( w\right) +\beta ^{o-2}\left( w-1\right) \]
+
+\end_inset 
+
+ it can be seen that 
+\begin_inset Formula \[
+y^{\prime \prime }\left( x\right) =\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\left[ \beta ^{o-2}\left( \frac{x}{\Delta x}-j+1\right) -2\beta ^{o-2}\left( \frac{x}{\Delta x}-j\right) +\beta ^{o-2}\left( \frac{x}{\Delta x}-j-1\right) \right] .\]
+
+\end_inset 
+
+ If 
+\begin_inset Formula \( o=3 \)
+\end_inset 
+
+, then at the sample points, 
+\begin_inset Formula \begin{eqnarray*}
+\Delta x^{2}\left. y^{\prime }\left( x\right) \right| _{x=n\Delta x} & = & \sum _{j}c_{j}\delta _{n-j+1}-2c_{j}\delta _{n-j}+c_{j}\delta _{n-j-1},\\
+ & = & c_{n+1}-2c_{n}+c_{n-1}.
+\end{eqnarray*}
+
+\end_inset 
+
+ Thus, the second-derivative signal can be easily calculated from the spline
+ fit.
+ if desired, smoothing splines can be found to make the second-derivative
+ less sensitive to random-errors.
+ 
+\layout Standard
+
+The savvy reader will have already noticed that the data samples are related
+ to the knot coefficients via a convolution operator, so that simple convolution
+ with the sampled B-spline function recovers the original data from the
+ spline coefficients.
+ The output of convolutions can change depending on how boundaries are handled
+ (this becomes increasingly more important as the number of dimensions in
+ the data-set increases).
+ The algorithms relating to B-splines in the signal-processing sub package
+ assume mirror-symmetric boundary conditions.
+ Thus, spline coefficients are computed based on that assumption, and data-sampl
+es can be recovered exactly from the spline coefficients by assuming them
+ to be mirror-symmetric also.
+\layout Standard
+
+Currently the package provides functions for determining seond- and third-order
+ cubic spline coefficients from equally spaced samples in one- and two-dimension
+s (
+\series bold 
+signal.qspline1d, signal.qspline2d, signal.cspline1d, signal.cspline2d
+\series default 
+).
+ The package also supplies a function (
+\series bold 
+signal.bspline
+\series default 
+) for evaluating the bspline basis function, 
+\begin_inset Formula \( \beta ^{o}\left( x\right)  \)
+\end_inset 
+
+ for arbitrary order and 
+\begin_inset Formula \( x. \)
+\end_inset 
+
+ For large 
+\begin_inset Formula \( o \)
+\end_inset 
+
+, the B-spline basis function can be approximated well by a zero-mean Gaussian
+ function with standard-deviation equal to 
+\begin_inset Formula \( \sigma _{o}=\left( o+1\right) /12 \)
+\end_inset 
+
+:
+\begin_inset Formula \[
+\beta ^{o}\left( x\right) \approx \frac{1}{\sqrt{2\pi \sigma _{o}^{2}}}\exp \left( -\frac{x^{2}}{2\sigma _{o}}\right) .\]
+
+\end_inset 
+
+ A function to compute this Gaussian for arbitrary 
+\begin_inset Formula \( x \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( o \)
+\end_inset 
+
+ is also available (
+\series bold 
+signal.gauss_spline
+\series default 
+).
+ The following code and Figure uses spline-filtering to compute an edge-image
+ (the second-derivative of a smoothed spline) of Lena's face which is an
+ array returned by the command 
+\series bold 
+lena().
+ 
+\series default 
+The command 
+\series bold 
+signal.sepfir2d
+\series default 
+ was used to apply a separable two-dimensional FIR filter with mirror-symmetric
+ boundary conditions to the spline coefficients.
+ This function is ideally suited for reconstructing samples from spline
+ coefficients and is faster than 
+\series bold 
+signal.convolve2d 
+\series default 
+which convolves arbitrary two-dimensional filters and allows for choosing
+ mirror-symmetric boundary conditions.
+ 
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example6.4}
+
+\end_inset 
+
+
+\layout Standard
+
+\begin_float fig 
+\layout Standard
+\align center 
+
+\begin_inset Figure size 267 272
+file lena_image.epsi
+width 3 45
+flags 10
+
+\end_inset 
+
+\SpecialChar ~
+\SpecialChar ~
+
+\begin_inset Figure size 267 272
+file lena_edge.epsi
+width 3 45
+flags 10
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{fig:lena_edge_spline}
+
+\end_inset 
+
+Example of using smoothing splines to filter images.
+\end_float 
+\layout Subsection
+
+Filtering
+\layout Subsubsection
+
+Convolution
+\layout Subsubsection
+
+Other filters
+\layout Subsubsection
+
+Filter design
+\layout Section
+
+Input/Output
+\layout Section
+
+FFT (FFTW)
+\layout Section
+
+Plotting
 \the_end

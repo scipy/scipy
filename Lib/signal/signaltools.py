@@ -1,4 +1,4 @@
-from Numeric import * # needed asarray
+from Numeric import *# needed asarray
 
 import sigtools
 import MLab
@@ -7,7 +7,6 @@ _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
                                                                             
 def _valfrommode(mode):
-    print mode
     try:
         val = _modedict[mode]
     except KeyError:
@@ -18,7 +17,7 @@ def _valfrommode(mode):
 
 def _bvalfromboundary(boundary):
     try:
-        val = _boundarydict[boundary]
+        val = _boundarydict[boundary] << 2
     except KeyError:
         if val not in [0,1,2]:
             raise ValueError, "Acceptable boundary flags are 'fill', 'wrap' (or 'circular'), \n  and 'symm' (or 'symmetric')."
@@ -26,7 +25,7 @@ def _bvalfromboundary(boundary):
     return val
 
 
-def correlate(volume, kernel, mode='full'):
+def correlate(in1, in2, mode='full'):
     """Cross-correlate two N-dimensional arrays.
 
   Description:
@@ -52,8 +51,8 @@ def correlate(volume, kernel, mode='full'):
  
     """
     # Code is faster if kernel is smallest array.
-    volume = MLab.asarray(volume)
-    kernel = MLab.asarray(kernel)
+    volume = MLab.asarray(in1)
+    kernel = MLab.asarray(in2)
     if (MLab.product(kernel.shape) > MLab.product(volume.shape)):
         temp = kernel
         kernel = volume
@@ -64,7 +63,7 @@ def correlate(volume, kernel, mode='full'):
 
     return sigtools._correlateND(volume, kernel, val)
 
-def convolve(volume,kernel,mode='full'):
+def convolve(in1, in2, mode='full'):
     """Convolve two N-dimensional arrays.
 
   Description:
@@ -89,8 +88,8 @@ def convolve(volume,kernel,mode='full'):
            convolution of in1 with in2.
 
     """
-    volume = MLab.asarray(volume)
-    kernel = MLab.asarray(kernel)
+    volume = MLab.asarray(in1)
+    kernel = MLab.asarray(in2)
     if (MLab.product(kernel.shape) > MLab.product(volume.shape)):
         temp = kernel
         kernel = volume
@@ -262,9 +261,9 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
         
-    return sigtools._convolve2d(volume,kernel,1,val,bval,fillvalue)
+    return sigtools._convolve2d(in1,in2,1,val,bval,fillvalue)
 
-def correlate2d():
+def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Cross-correlate two 2-dimensional arrays.
 
   Description:
@@ -298,7 +297,7 @@ def correlate2d():
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
         
-    return sigtools._convolve2d(volume,kernel,0,val,bval,fillvalue)    
+    return sigtools._convolve2d(in1, in2, 0,val,bval,fillvalue)
 
 def medfilt2d(input, kernel_size=3):
     """Median filter two 2-dimensional arrays.

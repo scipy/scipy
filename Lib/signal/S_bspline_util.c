@@ -9,6 +9,11 @@ void compute_root_from_lambda(double, double *, double *);
 
 
 
+
+#define CONJ(a) ((a))
+#define ABSQ(a) ( (a*CONJ(a)))
+
+
 /* Implement the following difference equation */
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
 /* with a given starting value loaded into the array */
@@ -135,11 +140,11 @@ S_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
     float *xptr = x;
     float yp0;
     float powz1;  
-    __complex__ float diff;
+    float diff;
     float err;
     int k;
 
-    if ((__real__ (z1 * ~((1.0+0.0i) * z1))) >= 1.0) return -2; /* z1 not less than 1 */
+    if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
 
     /* Initialize memory for loop */ 
     if ((yp = malloc(N*sizeof(float)))==NULL) return -1; 
@@ -154,7 +159,7 @@ S_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
 	powz1 *= z1;
 	yp0 += powz1 * (*xptr);
 	diff = powz1;
-	err = __real__ (diff * ~diff);
+	err = ABSQ(diff);
 	xptr += stridex;
 	k++;
     } while((err > precision) && (k < N));
@@ -163,7 +168,7 @@ S_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
 
     S_IIR_order1(1.0, z1, x, yp, N, stridex, 1); 
 
-    *(y + (N-1)*stridey) = z1 / (z1 - 1.0) * yp[N-1];
+    *(y + (N-1)*stridey) = -c0 / (z1 - 1.0) * yp[N-1];
 
     S_IIR_order1(c0, z1, yp+N-1, y+(N-1)*stridey, N, -1, -stridey);
 
