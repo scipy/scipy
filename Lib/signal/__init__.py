@@ -71,3 +71,4 @@ from signaltools import *
 from bsplines import *
 from filter_design import *
 from ltisys import *
+from waveforms import *
