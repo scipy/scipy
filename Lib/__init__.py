@@ -1,7 +1,7 @@
 import gui_thread
 #get version
 import scipy_version
-__version__ = scipy_version.version
+__version__ = scipy_version.scipy_version
 del scipy_version
 
 import string
