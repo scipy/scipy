@@ -223,13 +223,22 @@ _obj = re.compile(r"""
       |([iIjJ][0-9.eE]+))    # Imaginary part
       """, re.VERBOSE)
 
+_not_warned = 1
 def process_line(line, separator, collist, atype, missing):
+    global _not_warned
     strlist = []
     line = _obj.sub(r"\1\3\5",line)  # remove spaces between real
                                      # and imaginary parts of complex numbers
-    if (_obj.search(line) is not None):
-        if atype not in scipy_base.typecodes['Complex']:
-            scipy_base.disp("Warning: Complex data detected, but requested typecode was not complex.")
+
+    if _not_warned:
+        if (_obj.search(line) is not None):
+            warn = 1
+            for k in range(len(atype)):
+                if atype[k] in scipy_base.typecodes['Complex']:
+                    warn = 0
+        if warn:
+            scipy_base.disp("Warning: Complex data detected, but no requested typecode was complex.")
+            _not_warned = 0
     for mysep in separator[:-1]:
         if mysep is None:
             newline, ind = move_past_spaces(line)
@@ -248,6 +257,7 @@ def process_line(line, separator, collist, atype, missing):
     return vals
 
 def getcolumns(stream, columns, separator):
+    global _not_warned
     comment = stream.comment
     lenc = stream.lencomment
     k, K = stream.linelist[0], len(stream._buffer)
@@ -264,6 +274,7 @@ def getcolumns(stream, columns, separator):
     colsize = [None]*N
     for k in range(N):
         collist[k] = build_numberlist(columns[k])
+    _not_warned = 0
     val = process_line(firstline, separator, collist, [Numeric.Float]*N, 0)
     for k in range(N):
         colsize[k] = len(val[k])
@@ -326,6 +337,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
 
     """
 
+    global _not_warned
     # Make separator into a tuple of separators.
     if type(separator) in [types.StringType, type(default)]:
         sep = (separator,)
@@ -347,6 +359,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
         outarr.append(Numeric.zeros((rowsize, colsize[k]),atype[k]))
     row = 0
     block_row = 0
+    _not_warned = 1
     for line in ascii_object:
         if line.strip() == '':
             continue
