@@ -27,7 +27,7 @@ from scipy_test.testing import *
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 from linalg import pinv, pinv2, solve_banded
-del sys.path[0]
+restore_path()
 
 import unittest
 

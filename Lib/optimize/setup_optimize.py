@@ -64,7 +64,8 @@ def configuration(parent_package='',parent_path=None):
 
     sources = ['cobyla.pyf','cobyla2.f','trstlp.f']
     sources = [os.path.join(local_path,'cobyla',x) for x in sources]
-    ext = Extension(dot_join(parent_package, package, '_cobyla'), sources=sources)
+    ext = Extension(dot_join(parent_package, package, '_cobyla'), sources,
+                    **numpy_info)
     config['ext_modules'].append(ext)
 
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']

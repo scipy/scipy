@@ -5,15 +5,19 @@ from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path,default_config_dict,dot_join
 
 def configuration(parent_package='',parent_path=None):
+    from scipy_distutils.system_info import get_info
     package = 'cluster'
     local_path = get_path(__name__,parent_path)
     config = default_config_dict(package,parent_package)
-    
+
+    numpy_info = get_info('numpy',notfound_action=2)
+
     # This should really be fixed to use inline...
     sources = ['src/vq_wrap.cpp']
     sources = [os.path.join(local_path,x) for x in sources]
 
-    ext = Extension(dot_join(parent_package,'cluster._vq'),sources)
+    ext = Extension(dot_join(parent_package,'cluster._vq'),
+                    sources, **numpy_info)
     config['ext_modules'].append(ext)
 
     return config
