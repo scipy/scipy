@@ -27,6 +27,7 @@ def configuration(parent_package=''):
                             'generic_fblas1.pyf',
                             'generic_fblas2.pyf',
                             'generic_fblas3.pyf',
+                            os.path.join('src','fblaswrap.f'),
                             ],
                    'cblas':['generic_cblas.pyf',
                             'generic_cblas1.pyf'],
@@ -38,8 +39,9 @@ def configuration(parent_package=''):
         mod_file = os.path.join(local_path,mod_name+'.pyf')
         if dep_util.newer_group(sources,mod_file):
             generate_interface(mod_name,sources[0],mod_file)
+        sources = filter(lambda s:s[-4:]!='.pyf',sources)
         ext_args = {'name':dot_join(parent_package,'linalg',mod_name),
-                    'sources':[mod_file]}
+                    'sources':[mod_file]+sources}
         dict_append(ext_args,**atlas_info)
         ext = Extension(**ext_args)
         ext.need_fcompiler_opts = 1

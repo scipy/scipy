@@ -247,16 +247,19 @@ function <tchar=s,d>dot(n,x,offx,incx,y,offy,incy) result (xy)
 
 end function <tchar=s,d>dot
 
-
-function <tchar=c,z>dotu(n,x,offx,incx,y,offy,incy) result (xy)
-
+subroutine <tchar=c,z>dotu(xy,n,x,offx,incx,y,offy,incy)
+  !!!! faaaaunction <tchar=c,z>dotu(n,x,offx,incx,y,offy,incy) result (xy)
   ! This is to avoid Fortran wrappers.
-  <type_in> <tchar=c,z>dotu,xy
-  fortranname F_FUNC(<tchar=c,z>dotu,<TCHAR=S,D>DOTU)
-  intent(c) <tchar=c,z>dotu
+  !<type_in> <tchar=c,z>dotu,xy
+  <type_in> intent(out):: xy
+  !fortranname F_FUNC(<tchar=c,z>dotu,<TCHAR=S,D>DOTU)
+  fortranname w<tchar=c,z>dotu
+  !intent(c) <tchar=c,z>dotu
   
-  callstatement <tchar=c,z>dotu_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
+  !callstatement <tchar=c,z>dotu_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
+  !callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
+  callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument <type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*
 
   <type_in> dimension(*),intent(in) :: x
   <type_in> dimension(*),intent(in) :: y
@@ -273,17 +276,23 @@ function <tchar=c,z>dotu(n,x,offx,incx,y,offy,incy) result (xy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end function <tchar=c,z>dotu
+  !!!!!!!! end faaaaaunction <tchar=c,z>dotu
+end subroutine <tchar=c,z>dotu
 
-function <tchar=c,z>dotc(n,x,offx,incx,y,offy,incy) result(xy)
+subroutine <tchar=c,z>dotc(xy,n,x,offx,incx,y,offy,incy)
+!faaaunction <tchar=c,z>dotc(n,x,offx,incx,y,offy,incy) result(xy)
 
   ! This is to avoid Fortran wrappers.
-  <type_in> <tchar=c,z>dotc,xy
-  fortranname F_FUNC(<tchar=c,z>dotc,<TCHAR=S,D>DOTC)
-  intent(c) <tchar=c,z>dotc
+  !<type_in> <tchar=c,z>dotc
+  <type_in> intent (out) :: xy
+  !fortranname F_FUNC(<tchar=c,z>dotc,<TCHAR=S,D>DOTC)
+  fortranname w<tchar=c,z>dotc
+  !intent(c) <tchar=c,z>dotc
   
-  callstatement <tchar=c,z>dotc_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
+  !callstatement <tchar=c,z>dotc_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
+  !callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
+  callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument <type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*
 
   <type_in> dimension(*),intent(in) :: x
   <type_in> dimension(*),intent(in) :: y
@@ -300,7 +309,8 @@ function <tchar=c,z>dotc(n,x,offx,incx,y,offy,incy) result(xy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end function <tchar=c,z>dotc
+!end faaaaunction <tchar=c,z>dotc
+end subroutine <tchar=c,z>dotc
 
 function <tchar=s,d,sc,dz>nrm2(n,x,offx,incx) result (n2)
 
