@@ -10,7 +10,7 @@ import scipy_base
 import scipy_base.fastumath
 
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
-                'imrotate','radon']
+                'imrotate','imresize','imshow','imfilter','radon']
 
 _UInt8 = Numeric.UnsignedInt8
 
@@ -27,14 +27,17 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
     return bytedata + cast[_UInt8](low)
             
-
 import Image
 
 def imread(name):
+    """Read an image file.
+    """
     im = Image.open(name)
     return fromimage(im)
 
 def imsave(name, arr):
+    """Save an array to an image file.
+    """
     im = toimage(arr)
     im.save(name)
     return
@@ -178,11 +181,68 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     return image
 
 def imrotate(arr,angle,interp='bilinear'):
-    func = {'nearest':0,'bilinear':2,'bicubic':3}
-    im = toimage(arr,mode='F')
+    """Rotate an image counter-clockwise by angle degrees.
+
+    Interpolation methods can be:
+        'nearest' :  for nearest neighbor
+        'bilinear' : for bilinear
+        'cubic' or 'bicubic' : for bicubic 
+    """
+    arr = asarray(arr)
+    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+    im = toimage(arr)
     im = im.rotate(angle,resample=func[interp])
     return fromimage(im)
-    
+
+def imshow(arr):
+    """Simple showing of an image through an external viewer.
+    """
+    toimage(arr).show()
+    return
+
+def imresize(arr,size):
+    """Resize an image.
+
+    If size is an integer it is a percentage of current size.
+    If size is a float it is a fraction of current size.
+    If size is a tuple it is the size of the output image.
+    """
+    im = toimage(arr)
+    ts = type(size)
+    if ts is types.IntType:
+        size = size / 100.0
+    if type(size) is types.FloatType:
+        size = (im.size[0]*size,im.size[1]*size)
+    else:
+        size = (size[1],size[0])
+    imnew = im.resize(size)
+    return fromimage(imnew)
+
+import ImageFilter
+_tdict = {'blur':ImageFilter.BLUR,
+          'contour':ImageFilter.CONTOUR,
+          'detail':ImageFilter.DETAIL,
+          'edge_enhance':ImageFilter.EDGE_ENHANCE,
+          'edge_enhance_more':ImageFilter.EDGE_ENHANCE_MORE,
+          'emboss':ImageFilter.EMBOSS,
+          'find_edges':ImageFilter.FIND_EDGES,
+          'smooth':ImageFilter.SMOOTH,
+          'smooth_more':ImageFilter.SMOOTH_MORE,
+          'sharpen':ImageFilter.SHARPEN
+          }
+def imfilter(arr,ftype):
+    """Simple filtering of an image.
+
+    type can be:
+            'blur', 'contour', 'detail', 'edge_enhance', 'edge_enhance_more',
+            'emboss', 'find_edges', 'smooth', 'smooth_more', 'sharpen'
+    """
+    im = toimage(arr)
+    if ftype not in _tdict.keys():
+        raise ValueError, "Unknown filter type."
+    return fromimage(im.filter(_tdict[ftype]))
+           
+ 
 def radon(arr,theta=None):
     if theta is None:
         theta = mgrid[0:180]
