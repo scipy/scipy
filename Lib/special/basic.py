@@ -38,13 +38,13 @@ def diric(x,n):
 
     z = asarray(x / 2.0 / pi)
     mask2 = (1-mask1) & (z == floor(z))
-    zsub = extract(z,mask2)
-    nsub = extract(n,mask2)
+    zsub = extract(mask2,z)
+    nsub = extract(mask2,n)
     insert(y,mask2,pow(-1,zsub*(nsub-1)))
 
     mask = (1-mask1) & (1-mask2)
-    xsub = extract(x,mask)
-    nsub = extract(n,mask)
+    xsub = extract(mask,x)
+    nsub = extract(mask,n)
     insert(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
     return y
 
@@ -111,6 +111,7 @@ def y0_zeros(nt,complex=1):
     kf = 0
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
+
 def y1_zeros(nt,complex=1):
     """Returns nt (complex or real) zeros of Y1(z), z1, and the value
     of Y1'(z1) = Y0(z1) at each zero.
@@ -120,6 +121,7 @@ def y1_zeros(nt,complex=1):
     kf = 1
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
+
 def y1p_zeros(nt,complex=1):
     """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
     of Y1(z1') at each zero.

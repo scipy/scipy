@@ -70,8 +70,8 @@ def factorial2(n,exact=0):
         vals = zeros(n.shape,'d')
         cond1 = (n % 2) & (n >= -1)
         cond2 = (1-(n % 2)) & (n >= -1)
-        oddn = extract(n,cond1)
-        evenn = extract(n,cond2)
+        oddn = extract(cond1,n)
+        evenn = extract(cond2,n)
         nd2o = oddn / 2.0
         nd2e = evenn / 2.0
         insert(vals,cond1,special.gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))

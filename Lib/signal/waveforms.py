@@ -28,16 +28,16 @@ def sawtooth(t,width=1):
     # on the interval 0 to width*2*pi function is
     #  tmod / (pi*w) - 1
     mask2 = (1-mask1) & (tmod < w*2*pi)
-    tsub = extract(tmod,mask2)
-    wsub = extract(w,mask2)
+    tsub = extract(mask2,tmod)
+    wsub = extract(mask2,w)
     insert(y,mask2,tsub / (pi*wsub) - 1)
 
     # on the interval width*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
 
     mask3 = (1-mask1) & (1-mask2)
-    tsub = extract(tmod,mask3)
-    wsub = extract(w,mask3)
+    tsub = extract(mask3,tmod)
+    wsub = extract(mask3,w)
     insert(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
     return y    
 
@@ -66,16 +66,16 @@ def square(t,duty=0.5):
     # on the interval 0 to duty*2*pi function is
     #  1
     mask2 = (1-mask1) & (tmod < w*2*pi)
-    tsub = extract(tmod,mask2)
-    wsub = extract(w,mask2)
+    tsub = extract(mask2,tmod)
+    wsub = extract(mask2,w)
     insert(y,mask2,1)
 
     # on the interval duty*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
 
     mask3 = (1-mask1) & (1-mask2)
-    tsub = extract(tmod,mask3)
-    wsub = extract(w,mask3)
+    tsub = extract(mask3,tmod)
+    wsub = extract(mask3,w)
     insert(y,mask3,-1)
     return y    
 

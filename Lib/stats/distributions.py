@@ -210,7 +210,7 @@ def argsreduce(cond, *args):
     newargs = list(args)
     expand_arr = (cond==cond)
     for k in range(len(args)):
-        newargs[k] = extract(arr(args[k])*expand_arr,cond)
+        newargs[k] = extract(cond,arr(args[k])*expand_arr)
     return newargs    
 
 class rv_continuous:
@@ -1765,23 +1765,23 @@ class pareto_gen(rv_continuous):
         mu, mu2, g1, g2 = None, None, None, None
         if 'm' in moments:
             mask = b > 1
-            bt = extract(b, mask)
+            bt = extract(mask,b)
             mu = valarray(shape(b),value=scipy.inf)
             insert(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
-            bt = extract(b, mask)
+            bt = extract( mask,b)
             mu2 = valarray(shape(b), value=scipy.inf)
             insert(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
-            bt = extract(b, mask)
+            bt = extract( mask,b)
             g1 = valarray(shape(b), value=scipy.nan)
             vals = 2*(bt+1.0)*sqrt(b-2.0)/((b-3.0)*sqrt(b))
             insert(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
-            bt = extract(b, mask)
+            bt = extract( mask,b)
             g2 = valarray(shape(b), value=scipy.nan)
             vals = 6.0*polyval([1.0,1.0,-6,-2],bt)/ \
                    polyval([1.0,-7.0,12.0,0.0],bt)
@@ -2110,8 +2110,8 @@ class wrapcauchy_gen(rv_continuous):
     def _cdf(self, x, c):
         output = 0.0*x
         val = (1.0+c)/(1.0-c)
-        xp = extract(x, x<pi)
-        xn = extract(x, x>=pi)
+        xp = extract( x<pi,x)
+        xn = extract( x>=pi,x)
         if (any(xn)):
             xn = 2*pi - xn
             yn = tan(xn/2.0)
