@@ -1,3 +1,4 @@
+from __future__ import nested_scopes
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
@@ -48,7 +49,6 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fminbound', 'brent',
            'golden','bracket','rosen','rosen_der', 'rosen_hess',
            'rosen_hess_prod', 'brute']
 
-from __future__ import nested_scopes
 import Numeric
 import MLab
 from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
@@ -57,6 +57,9 @@ Num = Numeric
 max = MLab.max
 min = MLab.min
 abs = absolute
+import __builtin__
+pymin = __builtin__.min
+pymax = __builtin__.max
 __version__="0.5"
 
 def rosen(x):  # The Rosenbrock function
@@ -256,7 +259,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
          phi, derphi, phi0, derphi0, c1, c2):
-    fc = gc = 0
     maxiter = 10
     i = 0
     while 1:
@@ -265,22 +267,21 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         B = derphi_lo;
         dalpha = a_hi-a_lo;
         C = (phi_hi - phi_lo - dalpha*derphi_lo)/dalpha**2;
-        if (c<=0) or (i%3)==2):
+        if (C<=0) or ((i%3)==2):
             # Use bisection
             a_j = a_lo + 0.5*dalpha;
         else: 
             # Use min of quadratic
             a_j = a_lo - 0.5*B/C;
         phi_aj = phi(a_j)
-        fc += 1
         if (phi_aj > phi0 + c1*a_j*derphi0) or (phi_aj >= phi_lo):
             a_hi = a_j
             phi_hi = phi_aj
         else:
             derphi_aj = derphi(a_j)
-            gc += 1
             if abs(derphi_aj) <= -c2*derphi0:
                 a_star = a_j
+                val_star = phi_aj
                 break
             if derphi_aj*(a_hi - a_lo) >= 0:
                 a_hi = a_lo
@@ -291,10 +292,12 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         i += 1
         if (i > maxiter):
             a_star = a_j
+            val_star = phi_aj
             break    
-    return a_star, fc, gc
+    return a_star, val_star
 
-def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
+def line_search(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
+                args=(), c1=1e-4, c2=0.9, amax=50):
     """Find alpha that satisfies strong Wolfe conditions. 
     
     Uses the line search algorithm to enforce strong Wolfe conditions 
@@ -303,52 +306,52 @@ def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
     Outputs: (alpha0, gc, fc)
     """
 
+    global fc, gc
+    fc = 0
+    gc = 0    
     def phi(alpha):
+        global fc
+        fc += 1
         return f(xk+alpha*pk,*args)
     def phiprime(alpha):
+        global fc, gc 
+        if fprime is approx_fprime:
+            fc += len(xk)+1
+        else:
+            gc += 1
         return Num.dot(fprime(xk+alpha*pk,*args),pk)
-    fc = 0
-    gc = 0
-    alpha0 = 1.0
-    phi0 = f(xk,*args)
-    phi_a0 = phi(alpha0)
-    fc = fc + 2
-    derphi0 = Num.dot(gfk,pk)
-    derphi_a0 = phiprime(alpha)
-    gc = gc + 1
-
-    # check to see if alpha0 = 1 satisfies Strong Wolfe conditions.
-    if (phi_a0 <= phi0 + c1*alpha0*derphi0) \
-       and (abs(derphi_a0) <= c2*abs(derphi0)):
-        return alpha0, fc, gc
 
     alpha0 = 0
-    alpha1 = 1
-    phi_a1 = phi_a0
+    phi0 = old_fval
+    derphi0 = Num.dot(gfk,pk)
+
+    alpha1 = pymin(1.0,1.01*2*(phi0-old_old_fval)/derphi0)
+    phi_a1 = phi(alpha1)
+    derphi_a1 = phiprime(alpha1)
+
     phi_a0 = phi0
+    derphi_a0 = derphi0
 
     i = 1
     maxiter = 10
     while 1:         # bracketing phase 
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
-            alpha_star, ifc, igc = zoom(alpha0, alpha1, phi_a0, phi_a1, derphi_a0,
-                                        phi, phiprime, phi0, derphi0, c1, c2)
-            gc = gc + igc
-            fc = fc + ifc
+            alpha_star, fval_star = zoom(alpha0, alpha1, phi_a0, phi_a1,
+                                         derphi_a0, phi, phiprime, phi0,
+                                         derphi0, c1, c2)
             break
 
         derphi_a1 = phiprime(alpha1)
-        gc = gc + 1
         if (abs(derphi_a1) <= -c2*derphi0):
             alpha_star = alpha1
+            fval_star = phi_a1
             break
 
         if (derphi_a1 >= 0):
-            alpha_star, ifc, igc = zoom(alpha1, alpha0, phi_a1, phi_a0, derphi_a1,
-                                        phi, phiprime, phi0, derphi0, c1, c2)
-            gc = gc + igc
-            fc = fc + ifc
+            alpha_star, fval_star = zoom(alpha1, alpha0, phi_a1, phi_a0,
+                                         derphi_a1, phi, phiprime,
+                                         phi0, derphi0, c1, c2)
             break
 
         alpha2 = 2 * alpha1
@@ -356,19 +359,19 @@ def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
         alpha0 = alpha1
         alpha1 = alpha2
         phi_a0 = phi_a1
-        phi_a1 = f(xk+alpha1*pk,*args)
-        fc = fc + 1
+        phi_a1 = phi(alpha1)
         derphi_a0 = derphi_a1
 
         # stopping test if lower function not found
         if (i > maxiter):
             alpha_star = alpha1
+            fval_star = phi_a1
             break
 
-    return alpha_star, fc, gc
+    return alpha_star, fc, gc, fval_star, old_fval
     
 
-def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
+def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     """Minimize over alpha, the function f(xk+alpha pk)
 
     Uses the interpolation algorithm (Armiijo backtracking) as suggested by
@@ -378,13 +381,13 @@ def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
     """
 
     fc = 0
-    phi0 = apply(f,(xk,)+args)               # compute f(xk)
+    phi0 = old_fval                            # compute f(xk) -- done in past loop
     phi_a0 = apply(f,(xk+alpha0*pk,)+args)     # compute f
-    fc = fc + 2
+    fc = fc + 1
     derphi0 = Num.dot(gfk,pk)
 
     if (phi_a0 <= phi0 + c1*alpha0*derphi0):
-        return alpha0, fc, 0
+        return alpha0, fc, 0, phi_a0
 
     # Otherwise compute the minimizer of a quadratic interpolant:
 
@@ -393,7 +396,7 @@ def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
     fc = fc + 1
 
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
-        return alpha1, fc, 0
+        return alpha1, fc, 0, phi_a1
 
     # Otherwise loop with cubic interpolation until we find an alpha which 
     # satifies the first Wolfe condition (since we are backtracking, we will
@@ -414,7 +417,7 @@ def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
         fc = fc + 1
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
-            return alpha2, fc, 0
+            return alpha2, fc, 0, phi_a2
 
         if (alpha1 - alpha2) > alpha1 / 2.0 or (1 - alpha2/alpha1) < 0.96:
             alpha2 = alpha1 / 2.0
@@ -507,9 +510,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
     xk = x0
     sk = [2*gtol]
     warnflag = 0
+    old_fval = f(x0,*args)
+    func_calls += 1
     while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
-        alpha_k, fc, gc = line_search_BFGS(f,xk,pk,gfk,args)
+        alpha_k, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval,args)
         func_calls = func_calls + fc
         xkp1 = xk + alpha_k * pk
         sk = xkp1 - xk
@@ -537,7 +542,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
 
 
     if disp or full_output:
-        fval = apply(f,(xk,)+args)
+        fval = old_fval
     if warnflag == 2:
         if disp:
             print "Warning: Desired error not necessarily achieved due to precision loss"
@@ -626,32 +631,39 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
 
     if app_fprime:
         gfk = apply(approx_fprime,(x0,f,epsilon)+args)
+        myfprime = approx_fprime
         func_calls = func_calls + len(x0) + 1
     else:
         gfk = apply(fprime,(x0,)+args)
+        myfprime = fprime
         grad_calls = grad_calls + 1
     xk = x0
     sk = [2*gtol]
     warnflag = 0
     pk = -gfk
+
+    old_fval = f(xk,*args)
+    old_old_fval = old_fval + 5000
     while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
         deltak = Num.dot(gfk,gfk)
-        alpha_k, fc, gc = line_search_BFGS(f,xk,pk,gfk,args)
-        func_calls = func_calls + fc
-        xk = xk + alpha_k * pk
+        alpha_k, fc, gc, old_fval, old_old_fval = \
+                 line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args,c2=0.3)
+        func_calls += fc
+        grad_calls += gc
+        xk = xk + alpha_k*pk
         if app_fprime:
-            gfkp1 = apply(approx_fprime,(xkp1,f,epsilon)+args)
+            gfkp1 = apply(approx_fprime,(xk,f,epsilon)+args)
             func_calls = func_calls + gc + len(x0) + 1
         else:
-            gfkp1 = apply(fprime,(xkp1,)+args)
+            gfkp1 = apply(fprime,(xk,)+args)
             grad_calls = grad_calls + gc + 1
 
         yk = gfkp1 - gfk
-        beta_k = max(0,Num.dot(yk,gfkp1)/deltak)
+        beta_k = pymax(0,Num.dot(yk,gfkp1)/deltak)
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         k = k + 1
-                     
+        
     if disp or full_output:
         fval = apply(f,(xk,)+args)
     if warnflag == 2:
@@ -746,6 +758,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     update = [2*xtol]
     xk = x0
     k = 0
+    old_fval = f(x0,*args)
+    fcalls += 1
     while (Num.add.reduce(abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
@@ -793,7 +807,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
-        alphak, fc, gc = line_search_BFGS(f,xk,pk,gfk,args)
+        alphak, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval,args)
         fcalls = fcalls + fc
         gcalls = gcalls + gc
 
@@ -802,7 +816,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         k = k + 1
 
     if disp or full_output:
-        fval = apply(f,(xk,)+args)
+        fval = old_fval
     if k >= maxiter:
         warnflag = 1
         if disp:
@@ -1428,18 +1442,18 @@ if __name__ == "__main__":
     print x
     times.append(time.time() - start)
     algor.append('Powell Direction Set Method.')
+
+    start = time.time()
+    x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=200)
+    print x
+    times.append(time.time() - start)
+    algor.append('Nonlinear CG     \t')
     
     start = time.time()
     x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('BFGS Quasi-Newton\t')
-
-    start = time.time()
-    x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=80)
-    print x
-    times.append(time.time() - start)
-    algor.append('Nonlinear CG\t')
 
 
     start = time.time()
