@@ -2,11 +2,14 @@
 import os
 #import fpformat
 import unittest
+import sys
 from unittest import TestCase
 import scipy_base.limits as limits
-from scipy_test.testing import assert_array_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
+from scipy_test.testing import *
+set_package_path()
 import scipy.signal as signal
+del sys.path[0]
+
 from Numeric import array
 
 class test_convolve(TestCase):
@@ -29,26 +32,8 @@ class test_wiener(TestCase):
         h = signal.wiener(g)
         assert_array_almost_equal(h,correct,decimal=6)
 
-
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_convolve, 'check_') )
-        suites.append( unittest.makeSuite(test_wiener, 'check_') )
-        suites.append( unittest.makeSuite(test_medfilt, 'check_') )
-        
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
-
 if __name__ == "__main__":
-    test()
+    ScipyTest('signal.signaltools').run()
 
 
 

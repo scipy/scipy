@@ -129,15 +129,14 @@ from pilutil import *
 # Level 2
 #optimize = ppimport('optimize');       _level_docs(optimize)
 #integrate = ppimport('integrate');     _level_docs(integrate)
-signal = ppimport('signal');           _level_docs(signal)
+#signal = ppimport('signal');           _level_docs(signal)
 sparse = ppimport('sparse');           _level_docs(sparse)
 
-interpolate = ppimport('interpolate'); _level_docs(interpolate)
+#interpolate = ppimport('interpolate'); _level_docs(interpolate)
 cow = ppimport('cow');                 _level_docs(cow)
 ga = ppimport('ga');                   _level_docs(ga)
-cluster = ppimport('cluster');         _level_docs(cluster)
+#cluster = ppimport('cluster');         _level_docs(cluster)
 weave = ppimport('weave');             _level_docs(weave)
-sparse = ppimport('sparse');           _level_docs(sparse)
 
 # Level 3
 xplt = ppimport('xplt');               _level_docs(xplt)

@@ -2,7 +2,7 @@
 # cluster - Vector Quantization / Kmeans
 #
 
-from pre___init__ import __doc__
+from info_cluster import __doc__
 
 __all__ = ['vq']
 

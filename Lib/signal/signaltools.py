@@ -1169,19 +1169,3 @@ def detrend(data, axis=-1, type='linear', bp=0):
         ret = transpose(ret,tuple(olddims))
         return ret
 
-
-################## test functions #########################
-
-def test(level=1):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)
-
-
-if __name__ == "__main__":
-    test()
-
-

@@ -68,3 +68,5 @@ Signal Processing Tools
     zpk2ss -- zero-pole-gain to state-space.
     ss2zpk -- state-space to pole-zero-gain.    
 """
+
+postpone_import = 1

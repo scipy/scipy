@@ -13,15 +13,13 @@ Run tests if interpolate is not installed:
 #import libwadpy
 
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
      InterpolatedUnivariateSpline
 from interpolate.fitpack2 import LSQBivariateSpline, SmoothBivariateSpline
 del sys.path[0]
 
-from scipy_test.testing import assert_array_almost_equal,assert_almost_equal
-from scipy_test.testing import ScipyTestCase
 import unittest
 
 class test_UnivariateSpline(ScipyTestCase):
@@ -77,28 +75,5 @@ class test_SmoothBivariateSpline(ScipyTestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-
-#####################################
-
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_UnivariateSpline,'check_') )
-        suites.append( unittest.makeSuite(test_LSQBivariateSpline,'check_') )
-        suites.append( unittest.makeSuite(test_SmoothBivariateSpline,'check_') )
-
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('interpolate.fitpack').run()

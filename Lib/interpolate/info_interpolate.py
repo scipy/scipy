@@ -18,3 +18,5 @@ Interpolation Class
   interp1d -- Create a class whose instances can linearly interpolate
                to compute unknown values.
 """
+
+postpone_import = 1

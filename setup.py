@@ -31,9 +31,7 @@ finally:
 #-------------------------------
 
 standard_packages = [
-    'signal',
-    'interpolate',
-    'cluster','cow','ga',
+    'cow','ga',
     #                    ,'sparse'
     ]
 
