@@ -15,8 +15,6 @@ extern double INFINITY;
 #endif
 #ifndef ANSIPROT
 int isnan(), isfinite();
-#else
-extern int isnan ( double x );
 #endif
 /* log1p(x) = log(1 + x)  */
 
@@ -49,8 +47,7 @@ static double LQ[] = {
 double log(), polevl(), p1evl(), exp(), cos();
 #endif
 
-double log1p(x)
-double x;
+double log1p(double x)
 {
 double z;
 
@@ -82,8 +79,7 @@ static double EQ[4] = {
  2.0000000000000000000897E0,
 };
 
-double expm1(x)
-double x;
+double expm1(double x)
 {
 double r, xx;
 
@@ -121,8 +117,7 @@ static double coscof[7] = {
 
 extern double PIO4;
 
-double cosm1(x)
-double x;
+double cosm1(double x)
 {
 double xx;
 

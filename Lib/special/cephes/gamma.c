@@ -274,7 +274,6 @@ extern double MAXLOG, MAXNUM, PI;
 double pow(), log(), exp(), sin(), polevl(), p1evl(), floor(), fabs();
 int isnan(), isfinite();
 #else
-extern int isnan ( double x );
 extern int isfinite ( double x );
 static double stirf(double);
 #endif
@@ -288,8 +287,7 @@ extern double NAN;
 /* Gamma function computed by Stirling's formula.
  * The polynomial STIR is valid for 33 <= x <= 172.
  */
-static double stirf(x)
-double x;
+static double stirf(double x)
 {
 double y, w, v;
 
@@ -311,8 +309,7 @@ return( y );
 
 
 
-double Gamma(x)
-double x;
+double Gamma(double x)
 {
 double p, q, z;
 int i;
@@ -564,8 +561,7 @@ static unsigned short LS2P[] = {
 /* Logarithm of Gamma function */
 
 
-double lgam(x)
-double x;
+double lgam(double x)
 {
 double p, q, u, w, z;
 int i;

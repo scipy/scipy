@@ -53,12 +53,10 @@ static double CBRT4I = 0.62996052494743658238361;
 double frexp(), ldexp();
 int isnan(), isfinite();
 #else
-extern int isnan ( double x );
 extern int isfinite ( double x );
 #endif
 
-double cbrt(x)
-double x;
+double cbrt(double x)
 {
 int e, rem, sign;
 double z;

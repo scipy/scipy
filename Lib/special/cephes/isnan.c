@@ -73,7 +73,7 @@ Copyright 1984, 1995 by Stephen L. Moshier
 
 #ifdef ANSIPROT
 extern int signbit ( double x );
-extern int isnan ( double x );
+extern int cephes_isnan ( double x );
 extern int isfinite ( double x );
 #endif
 
@@ -120,8 +120,7 @@ else
 
 /* Return 1 if x is a number that is Not a Number, else return 0.  */
 
-int isnan(x)
-double x;
+int cephes_isnan(double x)
 {
 #ifdef NANS
 union

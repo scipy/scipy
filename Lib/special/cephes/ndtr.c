@@ -149,8 +149,6 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 extern double SQRTH, NAN;
 extern double MAXLOG;
-extern int isnan(double);
-
 
 #ifdef UNK
 static double P[] = {
@@ -387,8 +385,7 @@ double polevl(), p1evl(), exp(), log(), fabs();
 double erf(), erfc();
 #endif
 
-double ndtr(a)
-double a;
+double ndtr(double a)
 {
 double x, y, z;
 
@@ -415,8 +412,7 @@ return(y);
 }
 
 
-double erfc(a)
-double a;
+double erfc(double a)
 {
 double p,q,x,y,z;
 
@@ -470,8 +466,7 @@ return(y);
 
 
 
-double erf(x)
-double x;
+double erf(double x)
 {
 double y, z;
 

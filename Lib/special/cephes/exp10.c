@@ -158,16 +158,13 @@ static double MAXL10 = 308.2547155599167;
 #ifndef ANSIPROT
 double floor(), ldexp(), polevl(), p1evl();
 int isnan(), isfinite();
-#else
-extern int isnan ( double x );
 #endif
 extern double MAXNUM;
 #ifdef INFINITIES
 extern double INFINITY;
 #endif
 
-double exp10(x)
-double x;
+double exp10(double x)
 {
 double px, xx;
 short n;

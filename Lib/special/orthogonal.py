@@ -56,7 +56,6 @@ Functions:
 """
 
 from __future__ import nested_scopes
-from scipy.linalg import eig
 from scipy_base import *
 import cephes
 _gam = cephes.gamma
@@ -91,6 +90,8 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     sqrt_bn_func(n)     should return sqrt(B_n)
     mu ( = h_0 )        is the integral of the weight over the orthogonal interval
     """
+    # XXX: shouldn't import linalg inside a function
+    from scipy.linalg import eig
     nn = arange(1.0,n)
     sqrt_bn = sqrt_bn_func(nn)
     an = an_func(concatenate(([0],nn)))

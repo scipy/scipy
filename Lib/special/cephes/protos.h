@@ -70,6 +70,10 @@ extern double ldexp ( double x, int pw2 );
 extern int isnan ( double x );
 extern int isfinite ( double x );
 */
+#ifndef isnan
+extern int cephes_isnan ( double x );
+#define isnan cephes_isnan
+#endif
 extern int fresnl ( double xxa, double *ssa, double *cca );
 extern double Gamma ( double x );
 extern double lgam ( double x );
