@@ -9,7 +9,7 @@ Text File
 
 __all__ = ['read_array', 'write_array']
 import Numeric
-from Numeric import array, take, concatenate, Float
+from Numeric import array, take, concatenate, Float, asarray
 import types, re, copy
 import numpyio
 default = None
