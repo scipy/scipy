@@ -201,7 +201,7 @@ C     ..
           status = 0
           xscale = x*scale
           CALL cumgam(xscale,shape,p,q)
-          IF (porq.GT.1.5D0) status = 10
+          IF (p.GT.1.5D0) status = 10
 
       ELSE IF ((2).EQ. (which)) THEN
           CALL gaminv(shape,xx,-1.0D0,p,q,ierr)

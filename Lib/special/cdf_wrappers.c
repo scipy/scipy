@@ -4,6 +4,7 @@
  */
 
 #include "cdf_wrappers.h"
+
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F
@@ -21,37 +22,492 @@
 /* This must be linked with fortran
  */
 
+extern int print_error_messages;
+#ifndef NAN
+extern double NAN;
+#endif
 
-int status_to_mtherr( int status) {
-     /* Return mtherr equivalents for ierr values */
-  
-  if (nz != 0) return UNDERFLOW;
+/* Notice q and p are used in reverse from their meanings in distributions.py
+ */
 
-  switch (ierr) {
-  case 1:
-    return DOMAIN;
-  case 2:
-    return OVERFLOW;
-  case 3:
-    return PLOSS;
-  case 4:
-    return TLOSS;
-  case 5:   /* Algorithm termination condition not met */
-    return TLOSS;    
+static void show_error( int status, int bound) {
+  /* show_error message */
+
+  if (status < 0) {
+    printf("(Fortran) input parameter %d is out of range.\n", (-status));
   }
-  return -1;
+  else {
+    switch (status) {
+    case 1:
+      printf("Answer appears to be lower than lowest search bound (%g).\n", bound);
+      break;
+    case 2:
+      printf("Answer appears to be higher than highest search bound (%g).\n", bound);
+      break;
+    case 3:
+    case 4:
+      printf("Two parameters that should sum to 1.0 do not.\n");
+      break;
+    case 10:
+      printf("Computational error.\n");
+      break;
+    default:
+      printf("Unknown error.\n");
+    }
+  }
 }
 
-Py_complex cwofz_wrap( Py_complex z) {
-  int errflag;
-  Py_complex cy;
+double cdfbet3_wrap(double p, double b, double x) {
+  int which=3;
+  double q=1.0-p, y=1.0-x, a, bound;
+  int status;  
+  
+  F_FUNC(cdfbet,CDFBET)(&which, &p, &q, &x, &y, &a, &b, &status, &bound);
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return a;
+}
 
-  F_FUNC(wofz,WOFZ)(CADDR(z), CADDR(cy), &errflag);
-  if (errflag==1) mtherr("wofz:",3); /* wofz returns a single flag both
-                                        for real overflows and for domain
-                                        errors -- internal overflows from too
-                                        large abs(z)*/
-  return cy;
+double cdfbet4_wrap(double a, double p, double x) {
+  int which=4;
+  double q=1.0-p, y=1.0-x, b, bound;
+  int status;  
+  
+  F_FUNC(cdfbet,CDFBET)(&which, &p, &q, &x, &y, &a, &b, &status, &bound);
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return b;
+}
+
+
+double cdfbin2_wrap(double p, double xn, double pr) {
+  int which=2;
+  double q=1.0-p, s, ompr=1.0-pr, bound;
+  int status;  
+  
+  F_FUNC(cdfbin,CDFBIN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound);
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return s;
+}
+
+double cdfbin3_wrap(double s, double p, double pr) {
+  int which=3;
+  double q=1.0-p, xn, ompr=1.0-pr, bound;
+  int status;  
+
+  F_FUNC(cdfbin,CDFBIN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return xn;
+}
+
+double cdfchi3_wrap(double p, double x){
+  int which=3;
+  double q=1.0-p, df, bound;
+  int status;  
+
+  F_FUNC(cdfchi,CDFCHI)(&which, &p, &q, &x, &df, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return df;
+}
+
+double cdfchn1_wrap(double x, double df, double nc) {
+  int which=1;
+  double q, p, bound;
+  int status;  
+
+  F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return p;
+}
+
+double cdfchn2_wrap(double p, double df, double nc) {
+  int which=2;
+  double q=1.0-p, x, bound;
+  int status;  
+
+  F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return x;
+}
+
+double cdfchn3_wrap(double x, double p, double nc) {
+  int which=3;
+  double q=1.0-p, df, bound;
+  int status;  
+
+  F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return df;
+}
+
+double cdfchn4_wrap(double x, double df, double p) {
+  int which=4;
+  double q=1.0-p, nc, bound;
+  int status;  
+
+  F_FUNC(cdfchn,CDFCHN)(&which, &p, &q, &x, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return nc;
+}
+
+/*
+double cdff1_wrap(double dfn, double dfd, double f) {
+  int which=1;
+  double q, p, bound;
+  int status;
+
+  F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return p;
+}
+
+double cdff2_wrap(double dfn, double dfd, double p) {
+  int which=2;
+  double q=1.0-p, f, bound;
+  int status;
+
+  F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return f;
+}
+*/
+
+/* This seem to give some trouble.  No idea why... */
+double cdff3_wrap(double p, double dfd, double f) {
+  int which=3;
+  double q=1.0-p, dfn, bound;
+  int status;
+
+  F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return dfn;
+}
+
+double cdff4_wrap(double dfn, double p, double f) {
+  int which=4;
+  double q=1.0-p, dfd, bound;
+  int status;  
+
+  F_FUNC(cdff,CDFF)(&which, &p, &q, &f, &dfn, &dfd, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return dfd;
+}
+
+
+
+double cdffnc1_wrap(double dfn, double dfd, double nc, double f) {
+  int which=1;
+  double q, p, bound;
+  int status;
+
+  F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return p;
+}
+
+double cdffnc2_wrap(double dfn, double dfd, double nc, double p) {
+  int which=2;
+  double q=1.0-p, f, bound;
+  int status;
+
+  F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return f;
+}
+
+
+double cdffnc3_wrap(double p, double dfd, double nc, double f) {
+  int which=3;
+  double q=1.0-p, dfn, bound;
+  int status;
+
+  F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return dfn;
+}
+double cdffnc4_wrap(double dfn, double p, double nc, double f) {
+  int which=4;
+  double q=1.0-p, dfd, bound;
+  int status;
+
+  F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return dfd;
+}
+
+double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
+  int which=5;
+  double q=1.0-p, nc, bound;
+  int status;
+
+  F_FUNC(cdffnc,CDFFNC)(&which, &p, &q, &f, &dfn, &dfd, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return nc;
+}
+
+/* scl == a in gdtr
+   shp == b in gdtr
+*/ 
+double cdfgam1_wrap(double scl, double shp, double x) {
+  int which=1;
+  double q, p, bound;
+  int status;
+
+  F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return p;
+}
+
+double cdfgam2_wrap(double scl, double shp, double p) {
+  int which=2;
+  double q=1.0-p, x, bound;
+  int status;
+
+  F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl,  &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return x;
+}
+
+double cdfgam3_wrap(double scl, double p, double x) {
+  int which=3;
+  double q=1.0-p, shp, bound;
+  int status;
+
+  F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return shp;
+}
+
+double cdfgam4_wrap(double p, double shp, double x) {
+  int which=4;
+  double q=1.0-p, scl, bound;
+  int status;
+
+  F_FUNC(cdfgam,CDFGAM)(&which, &p, &q, &x, &shp, &scl, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return scl;
+}
+
+
+double cdfnbn2_wrap(double p, double xn, double pr) {
+  int which=2;
+  double q=1.0-p, s, ompr=1.0-pr, bound;
+  int status;  
+  
+  F_FUNC(cdfnbn,CDFNBN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound);
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return s;
+}
+
+double cdfnbn3_wrap(double s, double p, double pr) {
+  int which=3;
+  double q=1.0-p, xn, ompr=1.0-pr, bound;
+  int status;  
+
+  F_FUNC(cdfnbn,CDFNBN)(&which, &p, &q, &s, &xn, &pr, &ompr, &status, &bound);
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return xn;
+}
+
+double cdfnor3_wrap(double p, double std, double x) {
+  int which=3;
+  double q=1.0-p, mn, bound;
+  int status;  
+
+  F_FUNC(cdfnor,CDFNOR)(&which, &p, &q, &x, &mn, &std, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return mn;
+}
+
+double cdfnor4_wrap(double mn, double p, double x) {
+  int which=4;
+  double q=1.0-p, std, bound;
+  int status;  
+
+  F_FUNC(cdfnor,CDFNOR)(&which, &p, &q, &x, &mn, &std, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return std;
+}
+
+double cdfpoi2_wrap(double p, double xlam){
+  int which=2;
+  double q=1.0-p, s, bound;
+  int status;  
+
+  F_FUNC(cdfpoi,CDFPOI)(&which, &p, &q, &s, &xlam, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return s;
+}
+
+double cdft1_wrap(double df, double t){
+  int which=1;
+  double q, p, bound;
+  int status;  
+
+  F_FUNC(cdft,CDFT)(&which, &p, &q, &t, &df, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return p;
+}
+
+double cdft2_wrap(double df, double p){
+  int which=2;
+  double q=1.0-p, t, bound;
+  int status;  
+
+  F_FUNC(cdft,CDFT)(&which, &p, &q, &t, &df, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return t;
+}
+
+double cdft3_wrap(double p, double t){
+  int which=3;
+  double q=1.0-p, df, bound;
+  int status;  
+
+  F_FUNC(cdft,CDFT)(&which, &p, &q, &t, &df, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return df;
+}
+
+
+double cdftnc1_wrap(double df, double nc, double t) {
+  int which=1;
+  double q, p, bound;
+  int status;  
+
+  F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return p;
+}
+
+double cdftnc2_wrap(double df, double nc, double p) {
+  int which=2;
+  double q=1.0-p, t, bound;
+  int status;  
+
+  F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return t;
+}
+
+double cdftnc3_wrap(double p, double nc, double t) {
+  int which=3;
+  double q=1.0-p, df, bound;
+  int status;  
+
+  F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return df;
+}
+
+double cdftnc4_wrap(double df, double p, double t) {
+  int which=4;
+  double q=1.0-p, nc, bound;
+  int status;  
+
+  F_FUNC(cdftnc,CDFTNC)(&which, &p, &q, &t, &df, &nc, &status, &bound); 
+  if (status) {
+    if (print_error_messages) show_error(status, bound);
+    if ((status < 0) || (status==3) || (status==4)) return (NAN);
+  }
+  return nc;
 }
 
 

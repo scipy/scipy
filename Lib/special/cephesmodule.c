@@ -1,13 +1,11 @@
 
-/* Cephes module version 1.3
+/* Cephes module version 1.5
  *  This module defines the functions in the cephes and amos libraries as
  *   Numerical python ufunc objects so that they can operate on arbitrary 
  *   NumPy arrays with broadcasting and typecasting rules implemented.
  *  
  *  Copyright 1999  Travis E. Oliphant
- *  This program may be freely modified and distributed under the conditions of the 
- *  LGPL, provided this notification remain.  No warranty is implied.
- *  USE at your own risk.
+ * Revisions 2002 (added functions from cdflib)
  */
 
 #include "Python.h"
@@ -18,12 +16,15 @@
 #include "cephes.h"
 #include "amos_wrappers.h"
 #include "toms_wrappers.h"
+#include "cdf_wrappers.h"
 #include "c_misc/misc.h"
 #ifdef macintosh
 #include "mymath.h"
 #else
 #include <math.h>
 #endif
+
+int print_error_messages = 1.0;
 
 #include "cephes_doc.h"
 
@@ -174,8 +175,10 @@ static void * fresnl_data[] = { (void *)fresnl, (void *)fresnl };
 static void * shichi_data[] = { (void *)shichi, (void *)shichi, };
 static void * sici_data[] = { (void *)sici, (void *)sici, };
 
+/*
 static void * stdtr_data[] = { (void *)stdtr, (void *)stdtr, };
 static void * stdtri_data[] = { (void *)stdtri, (void *)stdtri, };
+*/
 
 static void * yn_data[] = { (void *)yn, (void *)yn, };
 static void * smirnov_data[] = { (void *)smirnov, (void *)smirnov, };
@@ -283,6 +286,51 @@ static void * wofz_data[] = { (void *)cwofz_wrap, (void *)cwofz_wrap, };
 
 static void * besselpoly_data[] = {(void *)besselpoly, (void *)besselpoly,};
 
+static void * cdfbet3_data[] = {(void *)cdfbet3_wrap, (void *)cdfbet3_wrap};
+static void * cdfbet4_data[] = {(void *)cdfbet4_wrap, (void *)cdfbet4_wrap};
+static void * cdfbin2_data[] = {(void *)cdfbin2_wrap, (void *)cdfbin2_wrap};
+static void * cdfbin3_data[] = {(void *)cdfbin3_wrap, (void *)cdfbin3_wrap};
+static void * cdfchi3_data[] = {(void *)cdfchi3_wrap, (void *)cdfchi3_wrap};
+static void * cdfchn1_data[] = {(void *)cdfchn1_wrap, (void *)cdfchn1_wrap};
+static void * cdfchn2_data[] = {(void *)cdfchn2_wrap, (void *)cdfchn2_wrap};
+static void * cdfchn3_data[] = {(void *)cdfchn3_wrap, (void *)cdfchn3_wrap};
+static void * cdfchn4_data[] = {(void *)cdfchn4_wrap, (void *)cdfchn4_wrap};
+/*
+static void * cdff1_data[] = {(void *)cdff1_wrap, (void *)cdff1_wrap};
+static void * cdff2_data[] = {(void *)cdff2_wrap, (void *)cdff2_wrap};
+*/
+static void * cdff3_data[] = {(void *)cdff3_wrap, (void *)cdff3_wrap};
+static void * cdff4_data[] = {(void *)cdff4_wrap, (void *)cdff4_wrap};
+
+static void * cdffnc1_data[] = {(void *)cdffnc1_wrap, (void *)cdffnc1_wrap};
+static void * cdffnc2_data[] = {(void *)cdffnc2_wrap, (void *)cdffnc2_wrap};
+static void * cdffnc3_data[] = {(void *)cdffnc3_wrap, (void *)cdffnc3_wrap};
+static void * cdffnc4_data[] = {(void *)cdffnc4_wrap, (void *)cdffnc4_wrap};
+static void * cdffnc5_data[] = {(void *)cdffnc5_wrap, (void *)cdffnc5_wrap};
+
+static void * cdfgam1_data[] = {(void *)cdfgam1_wrap, (void *)cdfgam1_wrap};
+static void * cdfgam2_data[] = {(void *)cdfgam2_wrap, (void *)cdfgam2_wrap};
+static void * cdfgam3_data[] = {(void *)cdfgam3_wrap, (void *)cdfgam3_wrap};
+static void * cdfgam4_data[] = {(void *)cdfgam4_wrap, (void *)cdfgam4_wrap};
+
+static void * cdfnbn2_data[] = {(void *)cdfnbn2_wrap, (void *)cdfnbn2_wrap};
+static void * cdfnbn3_data[] = {(void *)cdfnbn3_wrap, (void *)cdfnbn3_wrap};
+
+static void * cdfnor3_data[] = {(void *)cdfnor3_wrap, (void *)cdfnor3_wrap};
+static void * cdfnor4_data[] = {(void *)cdfnor4_wrap, (void *)cdfnor4_wrap};
+
+static void * cdfpoi2_data[] = {(void *)cdfpoi2_wrap, (void *)cdfpoi2_wrap};
+
+static void * cdft1_data[] = {(void *)cdft1_wrap, (void *)cdft1_wrap};
+static void * cdft2_data[] = {(void *)cdft2_wrap, (void *)cdft2_wrap};
+static void * cdft3_data[] = {(void *)cdft3_wrap, (void *)cdft3_wrap};
+
+static void * cdftnc1_data[] = {(void *)cdftnc1_wrap, (void *)cdftnc1_wrap};
+static void * cdftnc2_data[] = {(void *)cdftnc2_wrap, (void *)cdftnc2_wrap};
+static void * cdftnc3_data[] = {(void *)cdftnc3_wrap, (void *)cdftnc3_wrap};
+static void * cdftnc4_data[] = {(void *)cdftnc4_wrap, (void *)cdftnc4_wrap};
+
+
 static char cephes_6_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
 static char cephes_5_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE,};
 static char cephes_5c_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_FLOAT, PyArray_FLOAT, PyArray_FLOAT, PyArray_DOUBLE,  PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_DOUBLE, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, PyArray_CDOUBLE, };
@@ -355,16 +403,15 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	PyDict_SetItemString(dictionary, "btdtri", f);
 	Py_DECREF(f);
 
-
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtrc", fdtrc_doc, 0);
-	PyDict_SetItemString(dictionary, "fdtrc", f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, fdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtrc", fdtrc_doc, 0);
+        PyDict_SetItemString(dictionary, "fdtrc", f);
+        Py_DECREF(f);
+        f = PyUFunc_FromFuncAndData(cephes3_functions, fdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtr", fdtr_doc, 0);
+        PyDict_SetItemString(dictionary, "fdtr", f);
 	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtr", fdtr_doc, 0);
-	PyDict_SetItemString(dictionary, "fdtr", f);
-	Py_DECREF(f);
-	f = PyUFunc_FromFuncAndData(cephes3a_functions, fdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtri", fdtri_doc, 0);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, fdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtri", fdtri_doc, 0);
 	PyDict_SetItemString(dictionary, "fdtri", f);
-	Py_DECREF(f);
+ 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtrc_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtrc", gdtrc_doc, 0);
 	PyDict_SetItemString(dictionary, "gdtrc", f);
@@ -372,9 +419,11 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtr_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtr", gdtr_doc, 0);
 	PyDict_SetItemString(dictionary, "gdtr", f);
 	Py_DECREF(f);
+        /* Use inverse from cdflib (a little faster)
 	f = PyUFunc_FromFuncAndData(cephes3_functions, gdtri_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtri", gdtri_doc, 0);
 	PyDict_SetItemString(dictionary, "gdtri", f);
 	Py_DECREF(f);
+        */
 
 	f = PyUFunc_FromFuncAndData(cephes4_functions, hyp2f1_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "hyp2f1", hyp2f1_doc, 0);
 	PyDict_SetItemString(dictionary, "hyp2f1", f);
@@ -508,12 +557,15 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, pdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "pdtri", pdtri_doc, 0);
 	PyDict_SetItemString(dictionary, "pdtri", f);
 	Py_DECREF(f);
+        /*  Use the student t library from cdflib (it supports doubles for
+              degrees of freedom 
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtr_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtr", stdtr_doc, 0);
 	PyDict_SetItemString(dictionary, "stdtr", f);
 	Py_DECREF(f);
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, stdtri_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtri", stdtri_doc, 0);
 	PyDict_SetItemString(dictionary, "stdtri", f);
 	Py_DECREF(f);
+        */
 	f = PyUFunc_FromFuncAndData(cephes2a_functions, yn_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "yn", yn_doc, 0);
 	PyDict_SetItemString(dictionary, "yn", f);
 	Py_DECREF(f);
@@ -697,6 +749,131 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 				    4, 1, 1, PyUFunc_None, "isnan", 
 				    "isnan(x) returns non-zero if x is not a number.", 0);
 	PyDict_SetItemString(dictionary, "isnan", f);
+	Py_DECREF(f);
+
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfbet3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "btdtria", "", 0);
+	PyDict_SetItemString(dictionary, "btdtria", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfbet4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "btdtrib", "", 0);
+	PyDict_SetItemString(dictionary, "btdtrib", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfbin2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "bdtrik", "", 0);
+	PyDict_SetItemString(dictionary, "bdtrik", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfbin3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "bdtrin", "", 0);
+	PyDict_SetItemString(dictionary, "bdtrin", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes2_functions, cdfchi3_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "chdtriv", "", 0);
+	PyDict_SetItemString(dictionary, "chdtriv", f);
+	Py_DECREF(f);
+
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfchn1_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "chndtr", "", 0);
+	PyDict_SetItemString(dictionary, "chndtr", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfchn2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "chndtrix", "", 0);
+	PyDict_SetItemString(dictionary, "chndtrix", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfchn3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "chndtridf", "", 0);
+	PyDict_SetItemString(dictionary, "chndtridf", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfchn4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "chndtrinc", "", 0);
+	PyDict_SetItemString(dictionary, "chndtrinc", f);
+	Py_DECREF(f);
+
+        /*
+        f = PyUFunc_FromFuncAndData(cephes3_functions, cdff1_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtr", fdtr_doc, 0);
+        PyDict_SetItemString(dictionary, "fdtr", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtrix", fdtri_doc, 0);
+	PyDict_SetItemString(dictionary, "fdtrix", f);
+ 	Py_DECREF(f);
+        */
+        
+        /*  The Fortran code for this one seems not to be working properly.
+         */
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtridfn", "", 0);
+	PyDict_SetItemString(dictionary, "fdtridfn", f);
+	Py_DECREF(f);
+        */ 
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdff4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "fdtridfd", "", 0);
+	PyDict_SetItemString(dictionary, "fdtridfd", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes4_functions, cdffnc1_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "ncfdtr", "", 0);
+	PyDict_SetItemString(dictionary, "ncfdtr", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes4_functions, cdffnc2_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "ncfdtri", "", 0);
+	PyDict_SetItemString(dictionary, "ncfdtri", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes4_functions, cdffnc3_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "ncfdtridfn", "", 0);
+	PyDict_SetItemString(dictionary, "ncfdtridfn", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes4_functions, cdffnc4_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "ncfdtridfd", "", 0);
+	PyDict_SetItemString(dictionary, "ncfdtridfd", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes4_functions, cdffnc5_data, cephes_5_types, 2, 4, 1, PyUFunc_None, "ncfdtrinc", "", 0);
+	PyDict_SetItemString(dictionary, "ncfdtrinc", f);
+	Py_DECREF(f);
+
+        /*
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfgam1_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtr2", "", 0);
+	PyDict_SetItemString(dictionary, "gdtr2", f);
+	Py_DECREF(f);
+        */
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfgam2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtrix", "", 0);
+	PyDict_SetItemString(dictionary, "gdtrix", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfgam3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtrib", "", 0);
+	PyDict_SetItemString(dictionary, "gdtrib", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfgam4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "gdtria", "", 0);
+	PyDict_SetItemString(dictionary, "gdtria", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfnbn2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nbdtrik", "", 0);
+	PyDict_SetItemString(dictionary, "nbdtrik", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfnbn3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nbdtrin", "", 0);
+	PyDict_SetItemString(dictionary, "nbdtrin", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfnor3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nrdtrimn", "", 0);
+	PyDict_SetItemString(dictionary, "nrdtrimn", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdfnor4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nrdtrisd", "", 0);
+	PyDict_SetItemString(dictionary, "nrdtrisd", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes2_functions, cdfpoi2_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "pdtrik", "", 0);
+	PyDict_SetItemString(dictionary, "pdtrik", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes2_functions, cdft1_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtr", stdtr_doc, 0);
+	PyDict_SetItemString(dictionary, "stdtr", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, cdft2_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtrit", stdtrit_doc, 0);
+	PyDict_SetItemString(dictionary, "stdtrit", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes2_functions, cdft3_data, cephes_3_types, 2, 2, 1, PyUFunc_None, "stdtridf", stdtridf_doc, 0);
+	PyDict_SetItemString(dictionary, "stdtridf", f);
+	Py_DECREF(f);
+
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdftnc1_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nctdtr", "", 0);
+	PyDict_SetItemString(dictionary, "nctdtr", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdftnc2_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nctdtrit", "", 0);
+	PyDict_SetItemString(dictionary, "nctdtrit", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdftnc3_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nctdtridf", "", 0);
+	PyDict_SetItemString(dictionary, "nctdtridf", f);
+	Py_DECREF(f);
+	f = PyUFunc_FromFuncAndData(cephes3_functions, cdftnc4_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "nctdtrinc", "", 0);
+	PyDict_SetItemString(dictionary, "nctdtrinc", f);
 	Py_DECREF(f);
 
 }
@@ -1149,11 +1326,28 @@ static PyObject *map_PyFunc(PyObject *self, PyObject *args)
   free(outputarrays);
   return out;
 }
+
+static char errprint_doc[] = "errprint({flag}) sets or resets the error printing flag in cephesmodule\n  returning the previous state. If no argument is given the current state of\n  the flag is returned and no change occurs.";
+
+static PyObject *errprint_func(PyObject *self, PyObject *args)
+{
+  int inflag = -37;
+  int oldflag = 0;
+  if (!PyArg_ParseTuple ( args, "|i;cephes.errprint", &inflag)) return NULL;
+
+  oldflag = print_error_messages;  
+  if (inflag != -37) {
+    print_error_messages = (inflag != 0);
+  }
+  return PyInt_FromLong((long) oldflag);
+}
   
 static struct PyMethodDef methods[] = {
   {"arraymap", map_PyFunc, METH_VARARGS, arraymap_doc},
+  {"errprint", errprint_func, METH_VARARGS, errprint_doc},
   {NULL,		NULL, 0}		/* sentinel */
 };
+
 
 void initcephes() {
   PyObject *m, *d, *s;
@@ -1171,6 +1365,8 @@ void initcephes() {
   s = PyString_FromString("1.3");
   PyDict_SetItemString(d, "__version__", s);
   Py_DECREF(s);
+
+  /* Add print_error_message global variable */
 
   /* Load the cephes operators into the array module's namespace */
   Cephes_InitOperators(d); 

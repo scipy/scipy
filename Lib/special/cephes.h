@@ -46,9 +46,9 @@ extern double fabs ( double x );
 extern double fac ( int i );
 */
 
-extern double fdtrc ( int ia, int ib, double x ); 
-extern double fdtr ( int ia, int ib, double x ); 
-extern double fdtri ( int ia, int ib, double y ); 
+extern double fdtrc ( double a, double b, double x ); 
+extern double fdtr ( double a, double b, double x ); 
+extern double fdtri ( double a, double b, double y ); 
 
 /*
 extern int fftr ( double x[], int m0, double sine[] );

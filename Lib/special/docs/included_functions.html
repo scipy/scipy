@@ -177,21 +177,28 @@ density function: gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1)
 effectively the inverse of btdtr returning the value of x for which 
 btdtr(a,b,x) = p.   SEE ALSO betaincinv
 
-<DT>y = fdtr(dfnum,dfden,x) 
-<DD>fdtr(dfnum,dfden,x) returns the area from zero to x under the F density
+<DT>y = fdtr(dfn,dfd,x) 
+<DD>fdtr(dfn,dfd,x) returns the area from zero to x under the F density
 function (also known as Snedcor's density or the variance ratio
-density).  This is the density of X = (unum/dfnum)/(uden/dfden), where unum and
-uden are random variables having Chi square distributions with dfnum and
-dfden degrees of freedom, respectively.
+density).  This is the density of X = (unum/dfn)/(uden/dfd), where unum and
+uden are random variables having Chi square distributions with dfn and
+dfd degrees of freedom, respectively.
 
-<DT>y = fdtrc(dfnum,dfden,x)
-<DD>fdtrc(dfnum,dfden,x) returns the area from x to infinity under the F
-density function.
+<DT>y = fdtrc(dfn,dfd,x) 
+<DD>fdtrc(dfn,dfd,x) returns the complemented F distribution function. 
 
-<DT>x = fdtri(dfnum,dfden,p)
-<DD>fdtri(dfnum,dfden,p) finds the F density argument x such that the
-integral from x to infinity of the F density is equal to the given
-probability p.
+<DT>x = fdtri(dfn,dfd,p)
+<DD>fdtri(dfn,dfd,p) finds the F density argument x such that 
+fdtr(dfn,dfd,x)=p. 
+
+<DT>x = fdtridfn(dfn,dfd,p)
+<DD>fdtridfn(p,dfd,x) finds the F density argument dfn such that 
+fdtr(dfn,dfd,x)=p. 
+
+<DT>x = fdtridfd(dfn,p,x)
+<DD>fdtridfd(dfn,p,x) finds the F density argument dfd such that 
+fdtr(dfn,dfd,x)=p. 
+
 
 <DT>y = gdtr(a,b,x)
 <DD>gdtr(a,b,x) returns the integral from zero to x of the gamma
@@ -218,8 +225,13 @@ fewer failures precede the nth success.
 negative binomial distribution.
 
 <DT>p = nbdtri(k,n,y)
-<DD>nbdtri(k,n,y) finds the argument p such that negbinom(k,n,p) is equal
-to y.
+<DD>nbdtri(k,n,y) finds the argument p such that nbdtr(k,n,p)=y.
+
+<DT>k = nbdtrik(y,n,p)
+<DD>nbdtrik(y,n,p) finds the argument k such that nbdtr(k,n,p)=y.
+
+<DT>n = nbdtrin(k,y,p)
+<DD>nbdtrin(k,y,p) finds the argument n such that nbdtr(k,n,p)=y.
 
 <DT>y = pdtr(k,m)
 <DD>pdtr(k,m) returns the sum of the first k terms of the Poisson
@@ -237,14 +249,21 @@ from 0 to k of the Poisson density is equal to the given probability
 y:  calculated by gammaincinv( k+1, y).  k must be a nonnegative integer and
 y between 0 and 1.
 
-<DT>p = stdtr(k,t)
-<DD>stdtr(k,t) returns the integral from minus infinity to t of the Student t
-distribution with integer k > 0 degrees of freedom:
-gamma((k+1)/2)/(sqrt(k*pi)*gamma(k/2)) * integral((1+x**2/k)**(-k/2-1/2),
+<DT>k = pdtrik(p,m)
+<DD>pdtrik(p,m) returns the quantile k such that pdtr(k,m)=p
+
+<DT>p = stdtr(df,t)
+<DD>stdtr(df,t) returns the integral from minus infinity to t of the Student t
+distribution with df > 0 degrees of freedom:
+gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) * integral((1+x**2/df)**(-df/2-1/2),
 x=-inf..t) 
 
-<DT>t = stdtri(k,p)
-<DD>stdtri(k,p) returns the argument t such that stdtr(k,t) is equal to p.
+<DT>t = stdtrit(df,p)
+<DD>stdtrit(df,p) returns the argument t such that stdtr(df,t) is equal to p.
+
+<DT>t = stdtridf(p,t)
+<DD>stdtridf(p,t) returns the argument df such that stdtr(df,t) is equal to p.
+
 
 <DT>p = chdtr(v,x)
 <DD>chdtr(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi

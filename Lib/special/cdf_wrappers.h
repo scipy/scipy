@@ -9,7 +9,9 @@
 #define _CDF_WRAPPERS_H
 #ifndef _AMOS_WRAPPERS_H
 #include "Python.h"
-#endif _AMOS_WRAPPERS_H
+#include "cephes/mconf.h"
+#endif
+
 extern double cdfbet3_wrap(double p, double x, double b);
 extern double cdfbet4_wrap(double p, double x, double a);
 
@@ -32,9 +34,10 @@ extern double cdffnc3_wrap(double p, double f, double dfd, double nc);
 extern double cdffnc4_wrap(double p, double f, double dfn, double nc);
 extern double cdffnc5_wrap(double p, double f, double dfn, double dfd);
 
+extern double cdfgam1_wrap(double p, double x, double scl);
+extern double cdfgam2_wrap(double p, double x, double shp);
 extern double cdfgam3_wrap(double p, double x, double scl);
 extern double cdfgam4_wrap(double p, double x, double shp);
-
 
 extern double cdfnbn2_wrap(double p, double xn, double pr);
 extern double cdfnbn3_wrap(double p, double s, double pr);
@@ -44,11 +47,13 @@ extern double cdfnor4_wrap(double p, double x, double mn);
 
 extern double cdfpoi2_wrap(double p, double xlam);
 
+extern double cdft1_wrap(double p, double t);
+extern double cdft2_wrap(double p, double t);
 extern double cdft3_wrap(double p, double t);
 
-extern double cdftnc1_wrap(double t, double df, double nc);
-extern double cdftnc2_wrap(double p, double df, double nc);
-extern double cdftnc3_wrap(double p, double t, double nc);
-extern double cdftnc4_wrap(double p, double t, double df);
+extern double cdftnc1_wrap(double df, double nc, double t);
+extern double cdftnc2_wrap(double df, double nc, double p);
+extern double cdftnc3_wrap(double p, double nc, double t);
+extern double cdftnc4_wrap(double df, double p, double t);
 
 #endif

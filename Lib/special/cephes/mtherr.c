@@ -57,6 +57,8 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #include <stdio.h>
 #include "mconf.h"
 
+extern int print_error_messages;
+
 int merror = 0;
 
 /* Notice: the order of appearance of the following
@@ -92,7 +94,7 @@ merror = code;
  */
 if( (code <= 0) || (code >= 7) )
 	code = 0;
-if (code != UNDERFLOW) {
+if (print_error_messages) {
         printf( "\n%s ", name );
         printf( "%s error\n", ermsg[code] );
 }

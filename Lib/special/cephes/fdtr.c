@@ -6,7 +6,7 @@
  *
  * SYNOPSIS:
  *
- * int df1, df2;
+ * double df1, df2;
  * double x, y, fdtr();
  *
  * y = fdtr( df1, df2, x );
@@ -56,7 +56,7 @@
  *
  * SYNOPSIS:
  *
- * int df1, df2;
+ * double df1, df2;
  * double x, y, fdtrc();
  *
  * y = fdtrc( df1, df2, x );
@@ -102,13 +102,13 @@
  */
 /*							fdtri()
  *
- *	Inverse of complemented F distribution
+ *	Inverse of F distribution
  *
  *
  *
  * SYNOPSIS:
  *
- * int df1, df2;
+ * double df1, df2;
  * double x, p, fdtri();
  *
  * x = fdtri( df1, df2, p );
@@ -116,7 +116,7 @@
  * DESCRIPTION:
  *
  * Finds the F density argument x such that the integral
- * from x to infinity of the F density is equal to the
+ * from -infinity to x of the F density is equal to the
  * given probability p.
  *
  * This is accomplished using the inverse beta integral
@@ -148,7 +148,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- * fdtri domain   p <= 0 or p > 1       0.0
+ * fdtri domain   p <= 0 or p > 1       NaN
  *                     v < 1
  *
  */
@@ -167,57 +167,52 @@ double incbet(), incbi();
 
 extern double NAN;
 
-double fdtrc( ia, ib, x )
-int ia, ib;
+double fdtrc( a, b, x )
+double a, b;
 double x;
 {
-double a, b, w;
+double w;
 
-if( (ia < 1) || (ib < 1) || (x < 0.0) )
+if( (a < 1.0) || (b < 1.0) || (x < 0.0) )
 	{
 	mtherr( "fdtrc", DOMAIN );
 	return( NAN );
 	}
-a = ia;
-b = ib;
 w = b / (b + a * x);
 return( incbet( 0.5*b, 0.5*a, w ) );
 }
 
-
-
-double fdtr( ia, ib, x )
-int ia, ib;
+double fdtr( a, b, x )
+double a, b;
 double x;
 {
-double a, b, w;
+double w;
 
-if( (ia < 1) || (ib < 1) || (x < 0.0) )
+if( (a < 1.0) || (b < 1.0) || (x < 0.0) )
 	{
 	mtherr( "fdtr", DOMAIN );
 	return( NAN );
 	}
-a = ia;
-b = ib;
 w = a * x;
 w = w / (b + w);
 return( incbet(0.5*a, 0.5*b, w) );
 }
 
 
-double fdtri( ia, ib, y )
-int ia, ib;
+double fdtri( a, b, y )
+double a, b;
 double y;
 {
-double a, b, w, x;
+double w, x;
 
-if( (ia < 1) || (ib < 1) || (y <= 0.0) || (y > 1.0) )
+if( (a < 1.0) || (b < 1.0) || (y <= 0.0) || (y > 1.0) )
 	{
 	mtherr( "fdtri", DOMAIN );
 	return( NAN );
 	}
-a = ia;
-b = ib;
+y = 1.0-y;
+a = a;
+b = b;
 /* Compute probability for x = 0.5.  */
 w = incbet( 0.5*b, 0.5*a, 0.5 );
 /* If that is greater than y, then the solution w < .5.

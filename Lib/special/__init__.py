@@ -102,7 +102,9 @@
     beta         -- Beta function.
     betaln       -- Log of the absolute value of the beta function.
     betainc      -- Incomplete beta integral.
-    betaincinv   -- Inverse of incbet.
+    betaincinv   -- Inverse of betainc.
+    betaincinva  -- Inverse (in first argument, a) of betainc
+    betaincinvb  -- Inverse (in first argument, b) of betainc        
     psi          -- Logarithmic derivative of the gamma function.
     rgamma       -- One divided by the gamma function.
 
