@@ -17,7 +17,7 @@ def configuration(parent_package='',parent_path=None):
     # Extension
     sources = ['randmodule.c','ranlib_all.c']
     sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,'stats.rand'),sources)
+    ext = Extension(dot_join(parent_package,package,'rand'),sources)
     config['ext_modules'].append(ext)
 
     ext_args = {'name':dot_join(parent_package,package,'statlib'),

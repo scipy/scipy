@@ -24,4 +24,4 @@ def configuration(parent_package='',parent_path=None):
 
 if __name__ == '__main__':
     from scipy_distutils.core import setup
-    setup(**configuration())
+    setup(**configuration(parent_path=''))

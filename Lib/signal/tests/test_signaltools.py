@@ -33,8 +33,7 @@ class test_wiener(TestCase):
         assert_array_almost_equal(h,correct,decimal=6)
 
 if __name__ == "__main__":
-    ScipyTest('signal.signaltools').run()
-
+    ScipyTest(signal).run()
 
 
 
