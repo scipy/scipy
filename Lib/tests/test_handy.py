@@ -199,6 +199,23 @@ class test_hankel(unittest.TestCase):
         assert_array_equal(y,[[1,2,3],[2,3,0],[3,0,0]])
         y = hankel([1,2,3],[3,4,5])
         assert_array_equal(y,[[1,2,3],[2,3,4],[3,4,5]])
+
+
+class test_real_if_close(unittest.TestCase):
+    def check_basic(self):
+        a = randn(10)
+        b = real_if_close(a+1e-15j)
+        assert(array_isreal(b))
+        assert_array_equal(a,b)
+        b = real_if_close(a+1e-7j)
+        assert(array_iscomplex(b))
+        b = real_if_close(a+1e-7j,tol=1e-6)
+        assert(array_isreal(b))
+
+class test_polyint(unittest.TestCase):
+    def check_order1_noconstant(self):
+        a = rand(10)*4
+
         
 ##################################################
 
@@ -219,7 +236,8 @@ def test_suite():
     suites.append( unittest.makeSuite(test_r2array,'check_') )
     suites.append( unittest.makeSuite(test_isscalar,'check_') )
     suites.append( unittest.makeSuite(test_toeplitz,'check_') )
-    suites.append( unittest.makeSuite(test_hankel,'check_') )   
+    suites.append( unittest.makeSuite(test_hankel,'check_') )
+    suites.append( unittest.makeSuite(test_real_if_close,'check_') )    
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
