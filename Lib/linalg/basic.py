@@ -11,7 +11,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt
 import Matrix
 import scipy_base
 import calc_lwork
@@ -201,6 +201,7 @@ def norm(x, ord=2):
          ord = -1 computes the smallest column sum of absolute values
          ord = Inf computes the largest row sum of absolute values
          ord = -Inf computes the smallest row sum of absolute values
+         ord = 'fro' computes the frobenius norm sqrt(sum(diag(X.H * X)))
     """
     x = asarray(x)
     nd = len(x.shape)
@@ -225,6 +226,9 @@ def norm(x, ord=2):
             return scipy_base.amin(scipy_base.sum(abs(x)))
         elif ord == -Inf:
             return scipy_base.amin(scipy_base.sum(abs(x),axis=1))
+        elif ord in ['fro','f']:
+            X = scipy_base.mat(x)
+            return sqrt(sum(diag(X.H * X)))
         else:
             raise ValueError, "Invalid norm order for matrices."
     else:

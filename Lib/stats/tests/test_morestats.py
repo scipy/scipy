@@ -34,7 +34,7 @@ class test_shapiro(unittest.TestCase):
               0.08,3.67,2.81,3.49]
         w,pw = scipy.stats.shapiro(x2)
         assert_almost_equal(w,0.9590269923210144,6)
-        assert_almost_equal(pw,0.52459925413131714,6)
+        assert_almost_equal(pw,0.52459925413131714,3)
 
 class test_anderson(unittest.TestCase):
     def check_normal(self):

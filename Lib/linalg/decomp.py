@@ -5,7 +5,7 @@
 # additions by Eric Jones,      June 2002
 
 __all__ = ['eig','eigvals','lu','svd','svdvals','diagsvd','cholesky','qr',
-           'schur','rsf2csf','lu_factor','cho_factor']
+           'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth']
 
 from basic import LinAlgError
 import basic
@@ -182,9 +182,13 @@ def lu_factor(a, overwrite_a=0):
        'illegal value in %-th argument of internal getrf (lu_factor)'%(-info)
     if info>0: warn("Diagonal number %d is exactly zero. Singular matrix." % info,
                     RuntimeWarning)
-    return lu, piv    
+    return lu, piv
 
-def lu_solve(a_lu,pivots,b):
+def lu_solve(a_lu_pivots,b):
+    """Solve a previously factored system.  First input is a tuple (lu, pivots)
+    which is the output to lu_factor.  Second input is the right hand side.
+    """
+    a_lu, pivots = a_lu_pivots
     a_lu = asarray(a_lu)
     pivots = asarray(pivots)
     b = asarray(b)
@@ -192,11 +196,11 @@ def lu_solve(a_lu,pivots,b):
     
     getrs, = get_lapack_funcs(('getrs',),(a,))
     b, info = getrs(a_lu,pivots,b)    
-    if err < 0:
-        msg = "Argument %d to lapack's ?getrs() has an illegal value." % err
+    if info < 0:
+        msg = "Argument %d to lapack's ?getrs() has an illegal value." % info
         raise TypeError, msg
-    if err > 0:
-        msg = "Unknown error occured int ?getrs(): error code = %d" % err
+    if info > 0:
+        msg = "Unknown error occured int ?getrs(): error code = %d" % info
         raise TypeError, msg
     return b
     
@@ -334,6 +338,26 @@ def cho_factor(a, lower=0, overwrite_a=0):
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal potrf'%(-info)
     return c, lower
+
+def cho_solve(clow, b):
+    """Solve a previously factored symmetric system of equations.
+    First input is a tuple (LorU, lower) which is the output to cho_factor.
+    Second input is the right-hand side.
+    """
+    c, lower = clow
+    c = asarray(c)
+    _assert_squareness(c)
+    b = asarray(b)
+    potrs, = get_lapack_funcs(('potrs',),(c,))
+    b, info = potrs(c,b,lower)
+    if info < 0:
+        msg = "Argument %d to lapack's ?potrs() has an illegal value." % info
+        raise TypeError, msg
+    if info > 0:
+        msg = "Unknown error occured int ?potrs(): error code = %d" % info
+        raise TypeError, msg
+    return b
+
 
 def qr(a,overwrite_a=0,lwork=None):
     """QR decomposition of an M x N matrix a.
@@ -498,6 +522,18 @@ def rsf2csf(T, Z):
             Z[i,k] = dot(Z[i,k], Gc)
         T[m,m-1] = 0.0;
     return T, Z
+
+
+# Orthonormal decomposition
+
+def orth(A):
+    """Return an orthonormal basis for the range of A using svd"""
+    u,s,vh = svd(A)
+    M,N = A.shape
+    tol = max(M,N)*amax(s)*eps
+    num = sum(s > tol)
+    Q = u[:,:num]
+    return Q
 
 ################## test functions #########################
 

@@ -3,15 +3,15 @@
 #
 
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','funm']
+           'tanhm','logm','funm']
 
 from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
-     cast
+     cast, log, mgrid, isfinite
 from Matrix import Matrix as mat
 import scipy_base
 from basic import solve, LinAlgError, inv, norm, triu
-from decomp import eig, schur, rsf2csf
+from decomp import eig, schur, rsf2csf, orth
 
 eps = scipy_base.limits.double_epsilon
 feps = scipy_base.limits.float_epsilon
@@ -156,6 +156,8 @@ def funm(A,func,disp=1):
     # Perform Shur decomposition (lapack ?gees)
     import scipy.special as ss
     A = asarray(A)
+    if len(A.shape)!=2:
+        raise ValueError, "Non-matrix input to matrix function."    
     if A.typecode() in ['F', 'D']:
         cmplx_type = 1
     else:
@@ -197,7 +199,37 @@ def funm(A,func,disp=1):
     else:
         return F, err
 
+def logm(A,disp=1):
+    """Matrix logarithm, inverse of expm."""
+    # Compute using general funm but then use better error estimator and
+    #   make one step in improving estimate using a rotation matrix.
+    A = mat(asarray(A))
+    F, errest = funm(A,log,disp=0)
+    errtol = 1000*eps
+    # Only iterate if estimate of error is too large.
+    if errest >= errtol:
+        # Use better approximation of error
+        errest = norm(expm(F)-A,1) / norm(A,1)
+        if not isfinite(errest) or errest >= errtol:
+            N,N = A.shape
+            X,Y = ogrid[1:N+1,1:N+1]
+            R = mat(orth(eye(N,typecode='d')+X+Y))
+            F, dontcare = funm(R*A*R.H,log,disp=0)
+            F = R.H*F*R
+            if (norm(imag(F),1)<=1000*errtol*norm(F,1)):
+                F = mat(real(F))
+            E = mat(expm(F))
+            temp = mat(solve(E.T,(E-A).T))
+            F -= temp.T
+            errest = norm(expm(F)-A,1) / norm(A,1)
+    if disp:
+        if not isfinite(errest) or errest >= errtol:
+            print "Result may be inaccurate, approximate err =", errest
+        return F
+    else:
+        return F, errest
 
+ 
 
 ################## test functions #########################
 

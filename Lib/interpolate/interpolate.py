@@ -4,7 +4,7 @@
     !! found, get rid of it!
 """
 
-__all__ = ['linear1d','linear2d']
+__all__ = ['interp1d','interp2d']
 
 from Numeric import *
 from scipy_base.fastumath import *
@@ -32,22 +32,39 @@ def reduce_sometrue(a):
     return all
 
 class interp2d:
-    def __init__(self,x,y,z,kx=1,ky=1):
+    def __init__(self,x,y,z,kind='linear',
+                 copy=1,bounds_error=0,fill_value=None):
         """
         Input:
-          x,y  - 1-d arrays defining 2-d grid
+          x,y  - 1-d arrays defining 2-d grid (or 2-d meshgrid arrays)
           z    - 2-d array of grid values
-          kx,ky - degrees of interpolating splines in given axis
-                  1<=kx,ky<=5
+          kind - interpolation type ('nearest', 'linear', 'cubic', 'spline')
+          copy - if true then data is copied into class, otherwise only a
+                   reference is held.
+          bounds_error - if true, then when out_of_bounds occurs, an error is
+                          raised otherwise, the output is filled with
+                          fill_value.
+          fill_value - if None, then NaN, otherwise the value to fill in
+                        outside defined region.
         """
-        x,y=zip(*[(xx,yy) for yy in y for xx in x])
-        self.tck = fitpack.bisplrep(x,y,z,kx=kx,ky=ky,s=0)
+        self.x = atleast_1d(x).copy()
+        self.y = atleast_1d(y).copy()
+        if rank(self.x) > 2 or rank(self.y) > 2:
+            raise ValueError, "One of the input arrays is not 1-d or 2-d."
+        if rank(self.x) == 2:
+            self.x = self.x[:,0]
+        if rank(self.y) == 2:
+            self.y = self.y[0]
+        self.z = array(z,copy=1)
+        if rank(z) != 2:
+            raise ValueError, "Grid values is not a 2-d array."
+
+        
 
     def __call__(self,x,y,dx=0,dy=0):
         """
         Input:
-          x,y   - 1-d arrays defining 2-d grid of interpolated points,
-                  must be in increasing order
+          x,y   - 1-d arrays defining points to interpolate.
           dx,dy - order of partial derivatives in x and y, respectively.
                   0<=dx<kx, 0<=dy<ky
         Output:
@@ -63,24 +80,12 @@ class interp2d:
         if len(z)==1: z = z[0]
         return array(z)
 
-class linear2d(interp2d):
-    def __init__(self,x,y,z):
-        interp2d.__init__(self,x,y,z,1,1)
-
-class cubic2d(interp2d):
-    def __init__(self,x,y,z):
-        interp2d.__init__(self,x,y,z,3,3)
-
-class fifth2d(interp2d):
-    def __init__(self,x,y,z):
-        interp2d.__init__(self,x,y,z,5,5)
-
-
-class linear1d:
+class interp1d:
     interp_axis = -1 # used to set which is default interpolation
                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
                      
-    def __init__(self,x,y,axis = -1, copy = 1,bounds_error=1, fill_value=None):
+    def __init__(self,x,y,kind='linear',axis = -1,
+                 copy = 1,bounds_error=1, fill_value=None):
         """Initialize a 1d linear interpolation class
 
         Description:
@@ -96,6 +101,8 @@ class linear1d:
             y -- an nd array of real values.  y's length along the
                  interpolation axis must be equal to the length
                  of x.
+            kind -- specify the kind of interpolation: 'nearest', 'linear',
+                    'cubic', or 'spline'
             axis -- specifies the axis of y along which to 
                     interpolate. Interpolation defaults to the last
                     axis of y.  (default: -1)

@@ -21,7 +21,11 @@ Linear algebra routines
    lu_solve   --- solve Ax=b using back substitution with output of lu_factor
    svd        --- Singular value decomposition of a matrix
    svdvals    --- Singular values of a matrix
+   diagsvd    --- construct matrix of singular values from output of svd
+   orth       --- construct orthonormal basis for range of A using svd
    cholesky   --- Cholesky decomposition of a matrix
+   cho_factor --- Cholesky decomposition for use in solving linear system
+   cho_solve  --- Solve previously factored linear system
    qr         --- QR decomposition of a matrix
    schur      --- Schur decomposition of a matrix
    rsf2csf    --- Real to complex schur form
@@ -31,6 +35,7 @@ Linear algebra routines
    expm       --- matrix exponential using Pade approx.
    expm2      --- matrix exponential using Eigenvalue decomp.
    expm3      --- matrix exponential using Taylor-series expansion
+   logm       --- matrix logarithm
    cosm       --- matrix cosine
    sinm       --- matrix sine
    tanm       --- matrix tangent
