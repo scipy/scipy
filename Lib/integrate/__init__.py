@@ -1,5 +1,5 @@
 """
- Methods for Integrating Functions
+ Methods for Integrating Functions given function object.
 
    odeint        -- Integrate ordinary differential equations.
    quad          -- General purpose integration.
@@ -9,11 +9,19 @@
    quadrature    -- Integrate with given tolerance using Gaussian quadrature.
    romberg       -- Integrate func using Romberg integration.
 
+ Methods for Integrating Functions given fixed samples.
+
+   trapz         -- Use trapezoidal rule to compute integral of sampled function
+   simps         -- Use Simpson's rule to compute integral from samples.
+   romb          -- Use Romberg Integration to compute integral from even number
+                    of evenly-spaced samples.
 
    See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
-      quadrature roots and weights.
+      quadrature roots and weights for other weighting factors and regions.
+      
 """
-_moddict = {'quadrature': ['fixed_quad', 'quadrature','romberg'],
+_moddict = {'quadrature': ['fixed_quad', 'quadrature','romberg', 'trapz',
+                           'simps', 'romb'],
             'odepack': ['odeint'],
             'quadpack': ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf',
                          'inf']

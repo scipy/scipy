@@ -67,6 +67,214 @@ def quadrature(func,a,b,args=(),tol=1e-7,maxiter=50):
     return val, err
 
 
+
+def trapz(y, x=None, dx=1.0, axis=-1):
+    """Integrate y(x) using samples along the given axis and the composite
+    trapezoidal rule.  If x is None, spacing given by dx is assumed.
+    """
+    y = asarray(y)
+    if x is None:
+        d = dx
+    else:
+        d = diff(x,axis=axis)
+    nd = len(y.shape)
+    slice1 = [slice(None)]*nd
+    slice2 = [slice(None)]*nd
+    slice1[axis] = slice(1,None)
+    slice2[axis] = slice(None,-1)
+    return add.reduce(d * (y[slice1]+y[slice2])/2.0,axis)
+
+def cumtrapz(y, x=None, dx=1.0, axis=-1):
+    """Cumulatively integrate y(x) using samples along the given axis
+    and the composite trapezoidal rule.  If x is None, spacing given by dx
+    is assumed.
+    """
+    y = asarray(y)
+    if x is None:
+        d = dx
+    else:
+        d = diff(x,axis=axis)
+    nd = len(y.shape)
+    slice1 = [slice(None)]*nd
+    slice2 = [slice(None)]*nd
+    slice1[axis] = slice(1,None)
+    slice2[axis] = slice(None,-1)
+    return add.accumulate(d * (y[slice1]+y[slice2])/2.0,axis)
+
+def _basic_simps(y,start,stop,x,dx,axis):
+    nd = len(y.shape)
+    slice0 = [slice(None)]*nd
+    slice1 = [slice(None)]*nd
+    slice2 = [slice(None)]*nd
+    if start is None:
+        start = 0
+    step = 2
+    slice0[axis] = slice(start,stop,step)
+    slice1[axis] = slice(start+1,stop+1,step)
+    slice2[axis] = slice(start+2,stop+2,step)
+
+    if x is None:  # Even spaced Simpson's rule.
+        result = add.reduce(dx/3.0* (y[slice0]+4*y[slice1]+y[slice2]),
+                            axis)
+    else:
+        # Account for possibly different spacings.
+        #    Simpson's rule changes a bit.
+        h = diff(x,axis=axis)
+        sl0 = [slice(None)]*nd
+        sl1 = [slice(None)]*nd
+        sl0[axis] = slice(start,stop,step)
+        sl1[axis] = slice(start+1,stop+1,step)
+        h0 = h[sl0]
+        h1 = h[sl1]
+        hsum = h0 + h1
+        hprod = h0 * h1
+        h0divh1 = h0 / h1
+        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) + \
+                                      y[slice1]*hsum*hsum/hprod + \
+                                      y[slice2]*(2-h0divh1)),axis)
+    return result
+
+
+def simps(y, x=None, dx=1, axis=-1, even='avg'):
+    """Integrate y(x) using samples along the given axis and the composite
+    Simpson's rule.  If x is None, spacing of dx is assumed.
+    
+    If there are an even number of samples, N, then there are an odd
+    number of intervals (N-1), but Simpson's rule requires an even number
+    of intervals.  The parameter 'even' controls how this is handled as
+    follows:
+
+    even='avg': Average two results: 1) use the first N-2 intervals with
+                a trapezoidal rule on the last interval and 2) use the last
+                N-2 intervals with a trapezoidal rule on the first interval
+
+    even='first': Use Simpson's rule for the first N-2 intervals with
+                  a trapezoidal rule on the last interval.
+
+    even='last': Use Simpson's rule for the last N-2 intervals with a
+                 trapezoidal rule on the first interval.
+
+    For an odd number of samples that are equally spaced the result is
+        exact if the function is a polynomial of order 3 or less.  If
+        the samples are not equally spaced, then the result is exact only
+        if the function is a polynomial of order 2 or less.
+    """
+    y = asarray(y)
+    nd = len(y.shape)
+    N = y.shape[axis]
+    last_dx = dx
+    first_dx = dx
+    returnshape = 0
+    if not x is None:
+        x = asarray(x)
+        if len(x.shape) == 1:
+            shapex = ones(nd)
+            shapex[axis] = x.shape[0]
+            saveshape = x.shape
+            returnshape = 1
+            x.shape = tuple(shapex)
+        elif len(x.shape) != len(y.shape):
+            raise ValueError, "If given, shape of x must be 1-d or the same as y."
+        if x.shape[axis] != N:
+            raise ValueError, "If given, length of x along axis must be the same as y."
+    if N % 2 == 0:
+        val = 0.0
+        result = 0.0
+        slice1 = [slice(None)]*nd
+        slice2 = [slice(None)]*nd
+        if not even in ['avg', 'last', 'first']:
+            raise ValueError, \
+                  "Parameter 'even' must be 'avg', 'last', or 'first'."
+        # Compute using Simpson's rule on first intervals
+        if even in ['avg', 'first']:
+            slice1[axis] = -1
+            slice2[axis] = -2
+            if not x is None:
+                last_dx = x[slice1] - x[slice2]
+            val += 0.5*last_dx*(y[slice1]+y[slice2])
+            result = _basic_simps(y,0,N-3,x,dx,axis)
+        # Compute using Simpson's rule on last set of intervals
+        if even in ['avg', 'last']:
+            slice1[axis] = 0
+            slice2[axis] = 1
+            if not x is None:
+                first_dx = x[slice2] - x[slice1]
+            val += 0.5*first_dx*(y[slice2]+y[slice1])
+            result += _basic_simps(y,1,N-2,x,dx,axis)
+        if even == 'avg':
+            val /= 2.0
+            result /= 2.0
+        result = result + val
+    else:
+        result = _basic_simps(y,0,N-2,x,dx,axis)
+    if returnshape:
+        x.shape = saveshape
+    return result
+
+def romb(y, dx=1.0, axis=-1, show=0):
+    """Uses Romberg integration to integrate y(x) using N samples
+    along the given axis which are assumed equally spaced with distance dx.
+    The number of samples must be 1 + a non-negative power of two: N=2**k + 1
+    """
+    nd = len(y.shape)
+    y = asarray(y)
+    Nsamps = y.shape[axis]
+    Ninterv = Nsamps-1
+    n = 1
+    k = 0
+    while n < Ninterv:
+        n <<= 1
+        k += 1
+    if n != Ninterv:
+        raise ValueError, \
+              "Number of samples must be one plus a non-negative power of 2."
+
+    R = {}
+    slice0 = [slice(None)]*nd
+    slice0[axis] = 0
+    slicem1 = [slice(None)]*nd
+    slicem1[axis] = -1
+    h = Ninterv*asarray(dx)*1.0
+    R[(1,1)] = (y[slice0] + y[slicem1])/2.0*h
+    slice_R = [slice(None)]*nd
+    start = stop = step = Ninterv
+    for i in range(2,k+1):
+        start >>= 1
+        slice_R[axis] = slice(start,stop,step)
+        step >>= 1
+        R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
+        for j in range(2,i+1):
+            R[(i,j)] = R[(i,j-1)] + \
+                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*(j-1)))-1)
+        h = h / 2.0
+
+    if show:
+        if not isscalar(R[(1,1)]):
+            print "*** Printing table only supported for integrals" + \
+                  " of a single data set."
+        else:
+            try:
+                precis=show[0]
+            except (TypeError, IndexError):
+                precis=5
+            try:
+                width=show[1]
+            except (TypeError, IndexError):
+                width=8
+            formstr = "%" + str(width) + '.' + str(precis)+'f'
+            
+            print "\n       Richardson Extrapolation Table for Romberg Integration       "
+            print "===================================================================="
+            for i in range(1,k+1):
+                for j in range(1,i+1):
+                    print formstr % R[(i,j)],
+                print
+            print "====================================================================\n"
+
+    return R[(k,k)]
+
+
+
 # Romberg quadratures for numeric integration.
 #
 # Written by Scott M. Ransom <ransom@cfa.harvard.edu>
