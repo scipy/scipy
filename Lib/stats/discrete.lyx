@@ -542,6 +542,15 @@ M\left(t\right)=1-p\left(1-e^{t}\right)\]
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=p\log p+\left(1-p\right)\log\left(1-p\right)\]
+
+\end_inset 
+
+
 \layout Section
 
 Binomial
@@ -1060,6 +1069,12 @@ M\left(t\right) & = & \tanh\left(\frac{a}{2}\right)\sum_{k=-\infty}^{\infty}e^{t
 
  evaluated at 
 \begin_inset Formula $z.$
+\end_inset 
+
+
+\begin_inset Formula \[
+h\left[X\right]=-\log\left(\tanh\left(\frac{a}{2}\right)\right)+\frac{a}{\sinh a}\]
+
 \end_inset 
 
 

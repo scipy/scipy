@@ -57,7 +57,7 @@ All distributions will have location (L) and Scale (S) parameters along
 \size small 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="15" columns="3">
+<lyxtabular version="3" rows="16" columns="3">
 <features>
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -239,7 +239,7 @@ Hazard Function (HF)
 \layout Standard
 
 
-\begin_inset Formula $h\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}$
+\begin_inset Formula $h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}$
 \end_inset 
 
 
@@ -251,7 +251,7 @@ Hazard Function (HF)
 \layout Standard
 
 
-\begin_inset Formula $h\left(x;L,S\right)=\frac{1}{S}h\left(\frac{\left(x-L\right)}{S}\right)$
+\begin_inset Formula $h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
@@ -273,7 +273,7 @@ Cumulative Hazard Functon (CHF)
 \layout Standard
 
 
-\begin_inset Formula $H\left(x\right)=$
+\begin_inset Formula $H_{a}\left(x\right)=$
 \end_inset 
 
 
@@ -289,7 +289,7 @@ Cumulative Hazard Functon (CHF)
 \layout Standard
 
 
-\begin_inset Formula $H\left(x;L,S\right)=H\left(\frac{\left(x-L\right)}{S}\right)$
+\begin_inset Formula $H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
@@ -426,6 +426,40 @@ Random Variates
 
 
 \begin_inset Formula $X=L+SY$
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+(Differential) Entropy
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula $h\left[Y\right]=-\int f\left(y\right)\log f\left(y\right)dy$
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula $h\left[X\right]=h\left[Y\right]+\log S$
 \end_inset 
 
 
@@ -890,6 +924,13 @@ G\left(q\right) & = & \arcsin\left(\sqrt{q}\right)-\frac{\pi}{4}\end{eqnarray*}
 
 \end_inset 
 
+ 
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & 1-\log2\\
+ & \approx & 0.30685281944005469058\end{eqnarray*}
+
+\end_inset 
+
 
 \layout Standard
 
@@ -960,6 +1001,15 @@ M\left(t\right)=E^{t/2}I_{0}\left(\frac{t}{2}\right)\]
 \mu_{2} & = & \frac{1}{8}\\
 \gamma_{1} & = & 0\\
 \gamma_{2} & = & -\frac{3}{2}\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]\approx-0.24156447527049044468\]
 
 \end_inset 
 
@@ -1106,6 +1156,13 @@ m_{n} & = & \sqrt{1+c}-1\end{eqnarray*}
 \end_inset 
 
  is the exponential integral function.
+ Also 
+\begin_inset Formula \[
+h\left[X\right]=\frac{1}{2}\log\left(1+c\right)-\log\left(\frac{c}{\log\left(1+c\right)}\right)\]
+
+\end_inset 
+
+
 \layout Section
 
 Burr
@@ -1155,9 +1212,16 @@ m_{n} & = & 0\end{eqnarray*}
 
 \end_inset 
 
- No finite moments.
+No finite moments.
  This is the t distribution with one degree of freedom.
  
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(4\pi\right)\\
+ & \approx & 2.5310242469692907930.\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Chi
@@ -1285,6 +1349,16 @@ M\left(t\right) & = & \frac{\sinh\left(\pi t\right)}{\pi t\left(1+t^{2}\right)}\
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(4\pi\right)-1\\
+ & \approx & 1.5310242469692907930.\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Double Gamma
@@ -1400,8 +1474,11 @@ This is a special case of the Gamma (and Erlang) distributions with shape
 \end_inset 
 
  and the same location and scale parameters.
- The standard form is therefore.
- 
+ The standard form is therefore (
+\begin_inset Formula $x\geq0$
+\end_inset 
+
+) 
 \begin_inset Formula \begin{eqnarray*}
 f\left(x\right) & = & e^{-x}\\
 F\left(x\right) & = & \Gamma\left(1,x\right)=1-e^{-x}\\
@@ -1434,6 +1511,12 @@ M\left(t\right)=\frac{1}{1-t}\]
 \gamma_{1} & = & 2\\
 \gamma_{2} & = & 6\\
 m_{d} & = & 0\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+h\left[X\right]=1.\]
 
 \end_inset 
 
@@ -1575,6 +1658,15 @@ G\left(\alpha;c,d\right) & = & \left(\alpha^{-1}-1\right)^{-1/c}\\
  &  & \left.-4\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\Gamma\left(\frac{3}{c}+1\right)\right]\\
 m_{d} & = & \left(\frac{c-1}{c+1}\right)^{1/c}\,\textrm{if }c>1\,\textrm{otherwise }0\\
 m_{n} & = & 1\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=2-\log c.\]
 
 \end_inset 
 
@@ -1778,6 +1870,22 @@ m_{n} & = & G\left(\frac{1}{2};c\right)\end{eqnarray*}
 \end_inset 
 
  
+\begin_inset Formula \[
+h\left[X\right]=-\frac{\gamma}{c}-\log\left(c\right)+\gamma+1\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\gamma$
+\end_inset 
+
+ is Euler's constant and equal to 
+\begin_inset Formula \[
+\gamma\approx0.57721566490153286061.\]
+
+\end_inset 
+
+ 
 \layout Section
 
 Fréchet (left-skewed, Extreme Value Type III, Weibull maximum)
@@ -1810,6 +1918,25 @@ The mean is the negative of the right-skewed Frechet distribution given
 
 \begin_inset Formula \[
 \mu_{n}^{\prime}=\left(-1\right)^{n}\Gamma\left(1+\frac{n}{c}\right).\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=-\frac{\gamma}{c}-\log\left(c\right)+\gamma+1\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\gamma$
+\end_inset 
+
+ is Euler's constant and equal to 
+\begin_inset Formula \[
+\gamma\approx0.57721566490153286061.\]
 
 \end_inset 
 
@@ -1848,6 +1975,21 @@ M\left(t\right)=\frac{1}{\left(1-t\right)^{\alpha}}\]
 \gamma_{1} & = & \frac{2}{\sqrt{\alpha}}\\
 \gamma_{2} & = & \frac{6}{\alpha}\\
 m_{d} & = & \alpha-1\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=\Psi\left(a\right)\left[1-a\right]+a+\log\Gamma\left(a\right)\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \[
+\Psi\left(a\right)=\frac{\Gamma^{\prime}\left(a\right)}{\Gamma\left(a\right)}.\]
 
 \end_inset 
 
@@ -1992,7 +2134,16 @@ k\end{array}\right)\frac{\left(-1\right)^{k}}{1-ck}\quad cn<1\]
 
 \end_inset 
 
- 
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=1+c\quad c>0\]
+
+\end_inset 
+
+
 \layout Section
 
 Generalized Exponential
@@ -2161,6 +2312,15 @@ G\left(q;a,c\right) & = & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)q\right
 
  then it is the inverted gamma distribution.
  
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=a-a\Psi\left(a\right)+\frac{1}{c}\Psi\left(a\right)+\log\Gamma\left(a\right)-\log\left|c\right|.\]
+
+\end_inset 
+
+
 \layout Section
 
 Generalized Half-Logistic
@@ -2179,6 +2339,15 @@ For
 f\left(x;c\right) & = & \frac{2\left(1-cx\right)^{\frac{1}{c}-1}}{\left(1+\left(1-cx\right)^{1/c}\right)^{2}}\\
 F\left(x;c\right) & = & \frac{1-\left(1-cx\right)^{1/c}}{1+\left(1-cx\right)^{1/c}}\\
 G\left(q;c\right) & = & \frac{1}{c}\left[1-\left(\frac{1-q}{1+q}\right)^{c}\right]\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & 2-\left(2c+1\right)\log2.\end{eqnarray*}
 
 \end_inset 
 
@@ -2214,6 +2383,16 @@ G\left(q;\sigma\right) & = & \exp\left\{ \Phi^{-1}\left(q\right)\right\} \end{eq
 \mu_{2} & = & e\left[e-1\right]\\
 \gamma_{1} & = & \sqrt{e-1}\left(2+e\right)\\
 \gamma_{2} & = & e^{4}+2e^{3}+3e^{2}-6\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(\sqrt{2\pi e}\right)\\
+ & \approx & 1.4189385332046727418\end{eqnarray*}
 
 \end_inset 
 
@@ -2267,6 +2446,21 @@ G\left(q;c\right) & = & \log\left[1-\frac{1}{c}\log\left(1-q\right)\right]\end{e
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=1-\log\left(c\right)-e^{c}\textrm{Ei}\left(1,c\right),\]
+
+\end_inset 
+
+where 
+\begin_inset Formula \[
+\textrm{Ei}\left(n,x\right)=\int_{1}^{\infty}t^{-n}\exp\left(-xt\right)dt\]
+
+\end_inset 
+
+
 \layout Section
 
 Gumbel (LogWeibull, Fisher-Tippetts, Type I Extreme Value)
@@ -2301,6 +2495,15 @@ m_{n} & = & -\log\left(\log2\right)\end{eqnarray*}
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]\approx1.0608407169541684911\]
+
+\end_inset 
+
+
 \layout Section
 
 Gumbel Left-skewed (for minimum order statistic)
@@ -2328,6 +2531,15 @@ M\left(t\right)=\Gamma\left(1+t\right)\]
  Similar for median and mode.
  All other moments are the same.
  
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]\approx1.0608407169541684911.\]
+
+\end_inset 
+
+
 \layout Section
 
 HalfCauchy
@@ -2381,6 +2593,16 @@ m_{n} & = & \tan\left(\frac{\pi}{4}\right)\end{eqnarray*}
 
  No moments, as the integrals diverge.
  
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(2\pi\right)\\
+ & \approx & 1.8378770664093454836.\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 HalfNormal
@@ -2444,6 +2666,16 @@ m_{n} & = & \Phi^{-1}\left(\frac{3}{4}\right)\end{eqnarray*}
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(\sqrt{\frac{\pi e}{2}}\right)\\
+ & \approx & 0.72579135264472743239.\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Half-Logistic 
@@ -2496,6 +2728,16 @@ M\left(t\right)=1-t\psi_{0}\left(\frac{1}{2}-\frac{t}{2}\right)+t\psi_{0}\left(1
 \mu_{2}^{\prime} & = & 2\zeta\left(2\right)=\frac{\pi^{2}}{3}\\
 \mu_{3}^{\prime} & = & 9\zeta\left(3\right)\\
 \mu_{4}^{\prime} & = & 42\zeta\left(4\right)=\frac{7\pi^{4}}{15}\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & 2-\log\left(2\right)\\
+ & \approx & 1.3068528194400546906.\end{eqnarray*}
 
 \end_inset 
 
@@ -2577,6 +2819,15 @@ m_{d}=m_{n}=\mu & = & 0\\
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=\log\left(2\pi\right).\]
+
+\end_inset 
+
+
 \layout Section
 
 Gauss Hypergeometric 
@@ -2592,7 +2843,7 @@ Gauss Hypergeometric
 
 
 \begin_inset Formula \[
-C^{-1}=\frac{\Gamma\left(\alpha\right)\Gamma\left(\beta\right)}{\Gamma\left(\alpha+\beta\right)}\,_{2}F_{1}\left(\gamma,\alpha;\alpha+\beta;-z\right)\]
+C^{-1}=B\left(\alpha,\beta\right)\,_{2}F_{1}\left(\gamma,\alpha;\alpha+\beta;-z\right)\]
 
 \end_inset 
 
@@ -2614,6 +2865,10 @@ Special case of the generalized Gamma distribution with
 \end_inset 
 
  and 
+\begin_inset Formula $a>0$
+\end_inset 
+
+, 
 \begin_inset Formula $x>0$
 \end_inset 
 
@@ -2640,6 +2895,15 @@ G\left(q;a\right) & = & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)q\right]\
 \mu_{2} & = & \frac{1}{\left(a-2\right)\left(a-1\right)}-\mu^{2}\\
 \gamma_{1} & = & \frac{\frac{1}{\left(a-3\right)\left(a-2\right)\left(a-1\right)}-3\mu\mu_{2}-\mu^{3}}{\mu_{2}^{3/2}}\\
 \gamma_{2} & = & \frac{\frac{1}{\left(a-4\right)\left(a-3\right)\left(a-2\right)\left(a-1\right)}-4\mu\mu_{3}-6\mu^{2}\mu_{2}-\mu^{4}}{\mu_{2}^{2}}-3\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=a-\left(a+1\right)\Psi\left(a\right)+\log\Gamma\left(a\right).\]
 
 \end_inset 
 
@@ -2779,6 +3043,16 @@ G\left(q;c\right) & = & \left(-\log q\right)^{-1/c}\end{eqnarray*}
 \end_inset 
 
 
+\begin_inset Formula \[
+h\left[X\right]=1+\gamma+\frac{\gamma}{c}-\log\left(c\right)\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\gamma$
+\end_inset 
+
+ is Euler's constant.
 \layout Section
 
 Johnson SB
@@ -2840,7 +3114,7 @@ KSone
 KStwo
 \layout Section
 
-Laplace (Double Exponential, Bilateral Exponential)
+Laplace (Double Exponential, Bilateral Expoooonential)
 \layout Standard
 
 
@@ -2925,6 +3199,16 @@ e.g.
 
 .
  
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(2e\right)\\
+ & \approx & 1.6931471805599453094.\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Logistic (Sech-squared)
@@ -2964,6 +3248,15 @@ m_{n} & = & -\log\left(2-1\right)=0\end{eqnarray*}
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=1.\]
+
+\end_inset 
+
+
 \layout Section
 
 Log Double Exponential (Log-Laplace)
@@ -2988,6 +3281,15 @@ F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
 G\left(q;c\right) & = & \left\{ \begin{array}{ccc}
 \left(2q\right)^{1/c} &  & 0\leq q<\frac{1}{2}\\
 \left(2-2q\right)^{-1/c} &  & \frac{1}{2}\leq q\leq1\end{array}\right.\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=\log\left(\frac{2e}{c}\right)\]
 
 \end_inset 
 
@@ -3096,6 +3398,15 @@ Notice that using JKB notation we have
  This is more consistent with the location, scale parameter description
  of general probability distributions.
  
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=\frac{1}{2}\left[1+\log\left(2\pi\right)+2\log\left(\sigma\right)\right].\]
+
+\end_inset 
+
+
 \layout Section
 
 Nakagami
@@ -3307,6 +3618,16 @@ m_{d}=m_{n}=\mu & = & 0\\
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \log\left(\sqrt{2\pi e}\right)\\
+ & \approx & 1.4189385332046727418\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Maxwell
@@ -3350,6 +3671,12 @@ m_{n} & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\frac{1}{2}\right)}\end{eqnarray
 \end_inset 
 
 
+\begin_inset Formula \[
+h\left[X\right]=\log\left(\sqrt{\frac{2\pi}{e}}\right)+\gamma.\]
+
+\end_inset 
+
+
 \layout Section
 
 Mielke's Beta-Kappa
@@ -3381,7 +3708,7 @@ G\left(q;\kappa,\theta\right) & = & \left(\frac{q^{\theta/\kappa}}{1-q^{\theta/\
 
 \end_inset 
 
- 
+
 \layout Section
 
 Pareto
@@ -3420,6 +3747,15 @@ G\left(q;b\right) & = & \left(1-q\right)^{-1/b}\end{eqnarray*}
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left(X\right)=\frac{1}{c}+1-\log\left(c\right)\]
+
+\end_inset 
+
+
 \layout Section
 
 Pareto Second Kind (Lomax)
@@ -3448,7 +3784,13 @@ G\left(q;c\right) & = & \left(1-q\right)^{-1/c}-1\end{eqnarray*}
 
 \end_inset 
 
- 
+
+\begin_inset Formula \[
+h\left[X\right]=\frac{1}{c}+1-\log\left(c\right).\]
+
+\end_inset 
+
+
 \layout Section
 
 Power Log Normal
@@ -3571,6 +3913,12 @@ m_{d} & = & 1\end{eqnarray*}
 \end_inset 
 
 
+\begin_inset Formula \[
+h\left[X\right]=1-\frac{1}{a}-\log\left(a\right)\]
+
+\end_inset 
+
+
 \layout Section
 
 R-distribution
@@ -3636,6 +3984,12 @@ G\left(q\right) & = & \sqrt{-2\log\left(1-q\right)}\end{eqnarray*}
 \gamma_{2} & = & \frac{24\pi-6\pi^{2}-16}{\left(4-\pi\right)^{2}}\\
 m_{d} & = & 1\\
 m_{n} & = & \sqrt{2\log\left(2\right)}\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \[
+h\left[X\right]=\frac{\gamma}{2}+\log\left(\frac{e}{\sqrt{2}}\right).\]
 
 \end_inset 
 
@@ -3706,6 +4060,12 @@ m_{n} & = & \sqrt{ab}\end{eqnarray*}
 \end_inset 
 
 
+\begin_inset Formula \[
+h\left[X\right]=\frac{1}{2}\log\left(ab\right)+\log\left[\log\left(\frac{b}{a}\right)\right].\]
+
+\end_inset 
+
+
 \layout Section
 
 Reciprocal Inverse Gaussian 
@@ -3767,7 +4127,13 @@ m_{d}=m_{n}=\mu & = & 0\\
 
 \end_inset 
 
- 
+
+\begin_inset Formula \[
+h\left[X\right]=0.64472988584940017414.\]
+
+\end_inset 
+
+
 \layout Section
 
 Studentized Range*
@@ -3821,6 +4187,21 @@ m_{n}=m_{d}=\mu & = & 0\\
 
  this distribution approaches the standard normal distribution.
  
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=\frac{1}{4}\log\left(\frac{\pi c\Gamma^{2}\left(\frac{c}{2}\right)}{\Gamma^{2}\left(\frac{c+1}{2}\right)}\right)-\frac{\left(c+1\right)}{4}\left[\Psi\left(\frac{c}{2}\right)-cZ\left(c\right)+\pi\tan\left(\frac{\pi c}{2}\right)+\gamma+2\log2\right]\]
+
+\end_inset 
+
+where 
+\begin_inset Formula \[
+Z\left(c\right)=\,_{3}F_{2}\left(1,1,1+\frac{c}{2};\frac{3}{2},2;1\right)=\sum_{k=0}^{\infty}\frac{k!}{k+1}\frac{\Gamma\left(\frac{c}{2}+1+k\right)}{\Gamma\left(\frac{c}{2}+1\right)}\frac{\Gamma\left(\frac{3}{2}\right)}{\Gamma\left(\frac{3}{2}+k\right)}\]
+
+\end_inset 
+
+
 \layout Section
 
 Symmetric Power*
@@ -3865,6 +4246,13 @@ G\left(q;c\right) & = & \left\{ \begin{array}{ccc}
 \end_inset 
 
  
+\begin_inset Formula \begin{eqnarray*}
+h\left(X\right) & = & \log\left(\frac{1}{2}\sqrt{e}\right)\\
+ & \approx & -0.19314718055994530942.\end{eqnarray*}
+
+\end_inset 
+
+
 \layout Section
 
 Truncated Exponential
@@ -3886,6 +4274,15 @@ G\left(q;B\right) & = & -\log\left(1-q+qe^{-B}\right)\end{eqnarray*}
 
 \begin_inset Formula \[
 \mu_{n}^{\prime}=\Gamma\left(1+n\right)-\Gamma\left(1+n,B\right)\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=\log\left(e^{B}-1\right)+\frac{1+e^{B}\left(B-1\right)}{1-e^{B}}.\]
 
 \end_inset 
 
@@ -3961,14 +4358,27 @@ G\left(p;\lambda\right) & = & \frac{p^{\lambda}-\left(1-p\right)^{\lambda}}{\lam
  
 \begin_inset Formula \begin{eqnarray*}
 \mu & = & 0\\
-\mu_{2} & = & \int_{-\infty}^{\infty}x^{2}f\left(x;\lambda\right)dx\\
+\mu_{2} & = & \int_{0}^{1}G^{2}\left(p;\lambda\right)dp\\
+ & = & \frac{2\Gamma\left(\lambda+\frac{3}{2}\right)-\lambda4^{-\lambda}\sqrt{\pi}\Gamma\left(\lambda\right)\left(1-2\lambda\right)}{\lambda^{2}\left(1+2\lambda\right)\Gamma\left(\lambda+\frac{3}{2}\right)}\\
 \gamma_{1} & = & 0\\
-\gamma_{2} & = & \frac{\int_{-\infty}^{\infty}x^{4}f\left(x;\lambda\right)dx}{\mu_{2}^{2}}-3\end{eqnarray*}
+\gamma_{2} & = & \frac{\mu_{4}}{\mu_{2}^{2}}-3\\
+\mu_{4} & = & \frac{3\Gamma\left(\lambda\right)\Gamma\left(\lambda+\frac{1}{2}\right)2^{-2\lambda}}{\lambda^{3}\Gamma\left(2\lambda+\frac{3}{2}\right)}+\frac{2}{\lambda^{4}\left(1+4\lambda\right)}\\
+ &  & -\frac{2\sqrt{3}\Gamma\left(\lambda\right)2^{-6\lambda}3^{3\lambda}\Gamma\left(\lambda+\frac{1}{3}\right)\Gamma\left(\lambda+\frac{2}{3}\right)}{\lambda^{3}\Gamma\left(2\lambda+\frac{3}{2}\right)\Gamma\left(\lambda+\frac{1}{2}\right)}.\end{eqnarray*}
 
 \end_inset 
 
  Notice that the 
 \begin_inset Formula $\lim_{\lambda\rightarrow0}G\left(p;\lambda\right)=\log\left(p/\left(1-p\right)\right)$
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+h\left[X\right] & = & \int_{0}^{1}\log\left[G^{\prime}\left(p\right)\right]dp\\
+ & = & \int_{0}^{1}\log\left[p^{\lambda-1}+\left(1-p\right)^{\lambda-1}\right]dp.\end{eqnarray*}
+
 \end_inset 
 
 
@@ -4006,6 +4416,12 @@ G\left(q\right) & = & q\end{eqnarray*}
 \mu_{2} & = & \frac{1}{12}\\
 \gamma_{1} & = & 0\\
 \gamma_{2} & = & -\frac{6}{5}\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \[
+h\left[X\right]=0\]
 
 \end_inset 
 
@@ -4062,7 +4478,7 @@ G\left(q;b\right) & = & F^{-1}\left(x;b\right)\end{eqnarray*}
 
 \end_inset 
 
- This is circular variance.
+ This can be used for defining circular variance.
  
 \layout Section
 
@@ -4073,7 +4489,12 @@ Special case of the Inverse Normal with shape parameter set to
 \begin_inset Formula $1.0$
 \end_inset 
 
+.
+ Defined for 
+\begin_inset Formula $x>0$
+\end_inset 
 
+.
 \layout Standard
 
 
@@ -4117,13 +4538,26 @@ For
  
 \begin_inset Formula \begin{eqnarray*}
 f\left(x;c\right) & = & \frac{1-c^{2}}{2\pi\left(1+c^{2}-2c\cos x\right)}\\
-g_{c}\left(x\right) & = & \frac{1}{\pi}\arctan\left(\frac{\left(1+c\right)}{\left(1-c\right)}\tan\left(\frac{x}{2}\right)\right)\\
+g_{c}\left(x\right) & = & \frac{1}{\pi}\arctan\left[\frac{1+c}{1-c}\tan\left(\frac{x}{2}\right)\right]\\
+r_{c}\left(q\right) & = & 2\arctan\left[\frac{1-c}{1+c}\tan\left(\pi q\right)\right]\\
 F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
 g_{c}\left(x\right) &  & 0\leq x<\pi\\
 1-g_{c}\left(2\pi-x\right) &  & \pi\leq x\leq2\pi\end{array}\right.\\
 G\left(q;c\right) & = & \left\{ \begin{array}{ccc}
-g_{c}\left(x\right) &  & 0\leq q<\frac{1}{2}\\
-1-g_{c}\left(2\pi-x\right) &  & \frac{1}{2}\leq q\leq1\end{array}\right.\end{eqnarray*}
+r_{c}\left(q\right) &  & 0\leq q<\frac{1}{2}\\
+2\pi-r_{c}\left(1-q\right) &  & \frac{1}{2}\leq q\leq1\end{array}\right.\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+h\left[X\right]=\log\left(2\pi\left(1-c^{2}\right)\right).\]
 
 \end_inset 
 

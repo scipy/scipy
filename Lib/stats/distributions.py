@@ -15,7 +15,7 @@ from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      zeros
 from scipy_base.fastumath import *
 from scipy_base import atleast_1d, polyval, angle, ceil, insert, extract, \
-     any, argsort, argmax, argmin, vectorize
+     any, argsort, argmax, argmin, vectorize, r_
 import scipy_base
 
 errp = special.errprint
@@ -239,6 +239,7 @@ def argsreduce(cond, *args):
         newargs[k] = extract(cond,arr(args[k])*expand_arr)
     return newargs    
 
+
 class rv_continuous:
     """A Generic continuous random variable.
 
@@ -272,6 +273,9 @@ class rv_continuous:
     generic.stats(<shape(s)>,loc=0,scale=1,moments='mv')
         - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
 
+    generic.entropy(<shape(s)>,loc=0,scale=1)
+        - (differential) entropy of the RV.
+
     Alternatively, the object may be called (as a function) to fix
        the shape, location, and scale parameters returning a
        "frozen" continuous RV object:
@@ -297,15 +301,13 @@ class rv_continuous:
         self._size = 1
         self.m = 0.0
         self.moment_type = momtype
-        self.vecfunc = new.instancemethod(sgf(self._ppf_single_call),
-                                          self, rv_continuous)
+        self.vecfunc = sgf(self._ppf_single_call)
+        self.vecentropy = sgf(self._entropy)
         self.expandarr = 1
         if momtype == 0:
-            self.generic_moment = new.instancemethod(sgf(self._mom0_sc),
-                                                     self, rv_continuous)
+            self.generic_moment = sgf(self._mom0_sc)
         else:
-            self.generic_moment = new.instancemethod(sgf(self._mom1_sc),
-                                                     self, rv_continuous)
+            self.generic_moment = sgf(self._mom1_sc)
         cdf_signature = inspect.getargspec(self._cdf.im_func)
         numargs1 = len(cdf_signature[0]) - 2
         pdf_signature = inspect.getargspec(self._pdf.im_func)
@@ -328,11 +330,12 @@ class rv_continuous:
                 self.__doc__ = self.__doc__.replace("<shape(s)>",shapes)
             if extradoc is not None:
                 self.__doc__ = self.__doc__ + extradoc
+
+    def _ppf_to_solve(self, x, q,*args):
+        return apply(self.cdf, (x, )+args)-q
         
-    def _ppf_tosolve(self, x, q, *args):
-        return apply(self.cdf, (x, )+args) - q
     def _ppf_single_call(self, q, *args):
-        return scipy.optimize.brentq(self._ppf_tosolve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
+        return scipy.optimize.brentq(self._ppf_to_solve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
 
     # moment from definition
     def _mom_integ0(self, x,m,*args):
@@ -765,6 +768,22 @@ class rv_continuous:
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
 
+    def _entropy(self, *args):
+        def integ(x):
+            val = self._pdf(x, *args)
+            return val*log(val)
+        return -scipy.integrate.quad(integ,self.a,self.b)[0]
+
+    def entropy(self, *args, **kwds):
+        loc,scale=map(kwds.get,['loc','scale'])
+        args, loc, scale = self.__fix_loc_scale(args, loc, scale)
+        args = map(arr,args)
+        cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
+        output = zeros(shape(cond0),'d')
+        insert(output,(1-cond0),self.badvalue)
+        goodargs = argsreduce(cond0, *args)
+        insert(output,cond0,self.vecentropy(*goodargs)+log(scale))
+        return output                
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
 _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's constant
@@ -789,9 +808,9 @@ class kstwobign_gen(rv_continuous):
         return 1.0-special.kolmogorov(x)
     def _ppf(self,q):
         return special.kolmogi(1.0-q)
-kstwobign = kstwobign_gen(a=0.0,name='kstwobign', longname='Kolmogorov-Smirnov two-sided large N statistic', extradoc="""
+kstwobign = kstwobign_gen(a=0.0,name='kstwobign', longname='Kolmogorov-Smirnov two-sided (for large N)', extradoc="""
 
-Kolmogorov-Smirnov  two-sided large N stiatistics
+Kolmogorov-Smirnov two-sided test for large N
 """
                           )
 
@@ -810,6 +829,8 @@ class norm_gen(rv_continuous):
         return special.ndtri(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
+    def _entropy(self):
+        return 0.5*(log(2*pi)+1)
 norm = norm_gen(name='norm',longname='A normal',extradoc="""
 
 Normal distribution
@@ -845,6 +866,8 @@ class anglit_gen(rv_continuous):
         return (arcsin(sqrt(q))-pi/4)
     def _stats(self):
         return 0.0, pi*pi/16-0.5, 0.0, -2*(pi**4 - 96)/(pi*pi-8)**2
+    def _entropy(self):
+        return 1-log(2)
 anglit = anglit_gen(a=-pi/4,b=pi/4,name='anglit', extradoc="""
 
 Anglit distribution
@@ -868,6 +891,8 @@ class arcsine_gen(rv_continuous):
         g1 = 0
         g2 = -3.0/2.0
         return mu, mu2, g1, g2
+    def _entropy(self):
+        return -0.24156447527049044468
 arcsine = arcsine_gen(a=0.0,b=1.0,name='arcsine',extradoc="""
 
 Arcsine distribution
@@ -954,7 +979,9 @@ class bradford_gen(rv_continuous):
                  + 6*c*k*k*(3*k-14) + 12*k**3
             g2 /= 3*c*(c*(k-2)+2*k)**2
         return mu, mu2, g1, g2
-
+    def _entropy(self, c):
+        k = log(1+c)
+        return k/2.0 - log(c/k)
 bradford = bradford_gen(a=0.0, b=1.0, name='bradford', longname="A Bradford",
                         shapes='c', extradoc="""
 
@@ -1010,8 +1037,10 @@ class fisk_gen(burr_gen):
         return burr_gen._cdf(self, x, c, 1.0)
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
-    def _stats(self, x, c):
-        return burr_gen._stats(self, x, c, 1.0)
+    def _stats(self, c):
+        return burr_gen._stats(self, c, 1.0)
+    def _entropy(self, c):
+        return 2 - log(c)
 fisk = fisk_gen(a=0.0, name='fink', longname="A funk",
                 shapes='c', extradoc="""
 
@@ -1036,6 +1065,8 @@ class cauchy_gen(rv_continuous):
         return tan(pi/2.0-pi*q)
     def _stats(self):
         return scipy.inf, scipy.inf, scipy.nan, scipy.nan
+    def _entropy(self):
+        return log(4*pi)
 cauchy = cauchy_gen(name='cauchy',longname='Cauchy',extradoc="""
 
 Cauchy distribution
@@ -1108,6 +1139,8 @@ class cosine_gen(rv_continuous):
         return 1.0/2/pi*(pi + x + sin(x))
     def _stats(self):
         return 0.0, pi*pi/3.0-2.0, 0.0, -6.0*(pi**4-90)/(5.0*(pi*pi-6)**2)
+    def _entropy(self):
+        return log(4*pi)-1.0
 cosine = cosine_gen(a=-pi,b=pi,name='cosine',extradoc="""
 
 Cosine distribution (Approximation to the normal)
@@ -1188,6 +1221,8 @@ class erlang_gen(rv_continuous):
     def _stats(self, n):
         n = n*1.0
         return n, n, 2/sqrt(n), 6/n
+    def _entropy(self, n):
+        return special.psi(n)*(1-n) + 1 + special.gammaln(n)        
 erlang = erlang_gen(a=0.0,name='erlang',longname='An Erlang',
                     shapes='n',extradoc="""
 
@@ -1209,6 +1244,8 @@ class expon_gen(rv_continuous):
         return -log(1.0-q)
     def _stats(self):
         return 1.0, 1.0, 2.0, 6.0
+    def _entropy(self):
+        return 1.0
 expon = expon_gen(a=0.0,name='expon',longname="An exponential",
                   extradoc="""
 
@@ -1321,10 +1358,8 @@ class f_gen(rv_continuous):
         return special.fdtr(dfn, dfd, x)
     def _sf(self, x, dfn, dfd):
         return special.fdtrc(dfn, dfd, x)
-    def _isf(self, q, dfn, dfd):
-        return special.fdtri(dfn, dfd, q)
     def _ppf(self, q, dfn, dfd):
-        return self._isf(1.0-q, dfn, dfd)
+        return special.fdtri(dfn, dfd, q)        
     def _stats(self, dfn, dfd):
         v2 = arr(dfd*1.0)
         v1 = arr(dfn*1.0)
@@ -1392,6 +1427,8 @@ class frechet_r_gen(rv_continuous):
         return pow(-log(1-q),1.0/c)
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
+    def _entropy(self, c):
+        return -_EULER / c - log(c) + _EULER + 1
 frechet_r = frechet_r_gen(a=0.0,name='frechet_r',longname="A Frechet right",
                           shapes='c',extradoc="""
 
@@ -1418,6 +1455,8 @@ class frechet_l_gen(rv_continuous):
         if (int(n) % 2): sgn = -1
         else:            sgn = 1
         return sgn*val
+    def _entropy(self, c):
+        return -_EULER / c - log(c) + _EULER + 1    
 frechet_l = frechet_l_gen(b=0.0,name='frechet_l',longname="A Frechet left",
                           shapes='c',extradoc="""
 
@@ -1467,7 +1506,6 @@ class genpareto_gen(rv_continuous):
     def _argcheck(self, c):
         c = arr(c)
         self.b = where(c < 0, 1.0/abs(c), scipy.inf)
-        self.a = where(c > 0, 0.0, -scipy.inf)
         return where(c==0, 0, 1)
     def _pdf(self, x, c):
         Px = pow(1+c*x,arr(-1.0-1.0/c))
@@ -1481,7 +1519,13 @@ class genpareto_gen(rv_continuous):
         k = arange(0,n+1)
         val = (-1.0/c)**n * sum(scipy.comb(n,k)*(-1)**k / (1.0-c*k))
         return where(c*n < 1, val, scipy.inf)
-genpareto = genpareto_gen(name='genpareto',
+    def _entropy(self, c):
+        if (c > 0):
+            return 1+c
+        else:
+            self.b = -1.0 / c
+            return rv_continuous._entropy(self, c)
+genpareto = genpareto_gen(a=0.0,name='genpareto',
                           longname="A generalized Pareto",
                           shapes='c',extradoc="""
 
@@ -1552,6 +1596,8 @@ class gamma_gen(rv_continuous):
         return special.gammaincinv(a,q)
     def _stats(self, a):
         return a, a, 2.0/sqrt(a), 6.0/a
+    def _entropy(self, a):
+        return special.psi(a)*(1-a) + 1 + special.gammaln(a)
 gamma = gamma_gen(a=0.0,name='gamma',longname='A gamma',
                   shapes='a',extradoc="""
 
@@ -1571,6 +1617,9 @@ class gengamma_gen(rv_continuous):
         return pow(special.gammaincinv(a, special.gamma(a)*q),1.0/c)
     def _munp(self, n, a, c):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
+    def _entropy(a,c):
+        val = special.psi(a)
+        return a*(1-val) + 1.0/c*val + special.gammaln(a)-log(abs(c))
 gengamma = gengamma_gen(a=0.0, name='gengamma',
                         longname='A generalized gamma',
                         shapes="a,c", extradoc="""
@@ -1599,6 +1648,8 @@ class genhalflogistic_gen(rv_continuous):
         return (1.0-tmp2) / (1+tmp2)
     def _ppf(self, q, c):
         return 1.0/c*(1-((1.0-q)/(1.0+q))**c)
+    def _entropy(self,c):
+        return 2 - (2*c+1)*log(2)
 genhalflogistic = genhalflogistic_gen(a=0.0, name='genhalflogistic',
                                       longname="A generalized half-logistic",
                                       shapes='c',extradoc="""
@@ -1618,6 +1669,8 @@ class gompertz_gen(rv_continuous):
         return 1.0-exp(-c*(exp(x)-1))
     def _ppf(self, q, c):
         return log(1-1.0/c*log(1-q))
+    def _entropy(self, c):
+        return 1.0 - log(c) - exp(c)*special.expn(1,c)
 gompertz = gompertz_gen(a=0.0, name='gompertz',
                         longname="A Gompertz (truncated Gumbel) distribution",
                         shapes='c',extradoc="""
@@ -1641,6 +1694,8 @@ class gumbel_r_gen(rv_continuous):
     def _stats(self):
         return _EULER, pi*pi/6.0, \
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
+    def _entropy(self):
+        return 1.0608407169541684911
 gumbel_r = gumbel_r_gen(name='gumbel_r',longname="A (right-skewed) Gumbel",
                         extradoc="""
 
@@ -1658,6 +1713,8 @@ class gumbel_l_gen(rv_continuous):
     def _stats(self):
         return _EULER, pi*pi/6.0, \
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
+    def _entropy(self):
+        return 1.0608407169541684911
 gumbel_l = gumbel_l_gen(name='gumbel_l',longname="A left-skewed Gumbel",
                         extradoc="""
 
@@ -1676,6 +1733,8 @@ class halfcauchy_gen(rv_continuous):
         return tan(pi/2*q)
     def _stats(self):
         return scipy.inf, scipy.inf, scipy.nan, scipy.nan
+    def _entropy(self):
+        return log(2*pi)
 halfcauchy = halfcauchy_gen(a=0.0,name='halfcauchy',
                             longname="A Half-Cauchy",extradoc="""
 
@@ -1700,6 +1759,8 @@ class halflogistic_gen(rv_continuous):
         if n==3: return 9*_ZETA3
         if n==4: return 7*pi**4 / 15.0
         return 2*(1-pow(2.0,1-n))*special.gamma(n+1)*special.zeta(n,1)
+    def _entropy(self):
+        return 2-log(2)
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic',
                                 longname="A half-logistic",
                                 extradoc="""
@@ -1723,6 +1784,8 @@ class halfnorm_gen(rv_continuous):
     def _stats(self):
         return sqrt(2.0/pi), 1-2.0/pi, sqrt(2)*(4-pi)/(pi-2)**1.5, \
                8*(pi-3)/(pi-2)**2
+    def _entropy(self):
+        return 0.5*log(pi/2.0)+0.5
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm',
                         longname="A half-normal",
                         extradoc="""
@@ -1742,6 +1805,8 @@ class hypsecant_gen(rv_continuous):
         return log(tan(pi*q/2.0))
     def _stats(self):
         return 0, pi*pi/4, 0, 2
+    def _entropy(self):
+        return log(2*pi)
 hypsecant = hypsecant_gen(name='hypsecant',longname="A hyperbolic secant",
                           extradoc="""
 
@@ -1784,6 +1849,8 @@ class invgamma_gen(rv_continuous):
         return pow(special.gammaincinv(a, special.gamma(a)*q),-1.0)
     def _munp(self, n, a):
         return special.gamma(a-n) / special.gamma(a)
+    def _entropy(self, a):
+        return a - (a+1.0)*special.psi(a) + special.gammaln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma',longname="An inverted gamma",
                         shapes='a',extradoc="""
 
@@ -1826,7 +1893,9 @@ class invweibull_gen(rv_continuous):
         return exp(-xc1)
     def _ppf(self, q, c):
         return pow(-log(q),arr(-1.0/c))
-invweibull = invweibull_gen(name='invweibull',
+    def _entropy(self, c):
+        return 1+_EULER + _EULER / c - log(c)
+invweibull = invweibull_gen(a=0,name='invweibull',
                             longname="An inverted Weibull",
                             shapes='c',extradoc="""
 
@@ -1885,6 +1954,8 @@ class laplace_gen(rv_continuous):
         return where(q > 0.5, -log(2*(1-q)), log(2*q))
     def _stats(self):
         return 0, 2, 0, 3
+    def _entropy(self):
+        return log(2)+1
 laplace = laplace_gen(name='laplace', longname="A Laplace",
                       extradoc="""
 
@@ -1905,7 +1976,9 @@ class logistic_gen(rv_continuous):
     def _ppf(self, q):
         return -log(1.0/q-1)
     def _stats(self):
-        return 0, pi*pi/3.0, 0, 6.0/5.0    
+        return 0, pi*pi/3.0, 0, 6.0/5.0
+    def _entropy(self):
+        return 1.0
 logistic = logistic_gen(name='logistic', longname="A logistic",
                         extradoc="""
 
@@ -1942,6 +2015,8 @@ class loglaplace_gen(rv_continuous):
         return where(x < 1, 0.5*x**c, 1-0.5*x**(-c))
     def _ppf(self, q, c):
         return where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
+    def _entropy(self, c):
+        return log(2.0/c) + 1.0
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace',
                             longname="A log-Laplace",shapes='c',
                             extradoc="""
@@ -1972,6 +2047,8 @@ class lognorm_gen(rv_continuous):
         g1 = sqrt((p-1))*(2+p)
         g2 = scipy.polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
+    def _entropy(self, s):
+        return 0.5*(1+log(2*pi)+2*log(s))
 lognorm = lognorm_gen(a=0.0, name='lognorm',
                       longname='A lognormal', shapes='s',
                       extradoc="""
@@ -1993,6 +2070,8 @@ class gilbrat_gen(lognorm_gen):
         return lognorm_gen._ppf(self, q, 1.0)
     def _stats(self):
         return lognorm_gen._stats(self, 1.0)
+    def _entropy(self):
+        return 0.5*log(2*pi) + 0.5
 gilbrat = gilbrat_gen(a=0.0, name='gilbrat', longname='A Gilbrat',
                       extradoc="""
 
@@ -2018,6 +2097,8 @@ class maxwell_gen(rv_continuous):
         val = 3*pi-8
         return 2*sqrt(2.0/pi), 3-8/pi, sqrt(2)*(32-10*pi)/val**1.5, \
                (-12*pi*pi + 160*pi - 384) / val**2.0
+    def _entropy(self):
+        return _EULER + 0.5*log(2*pi)-0.5
 maxwell = maxwell_gen(a=0.0, name='maxwell', longname="A Maxwell",
                       extradoc="""
 
@@ -2249,6 +2330,8 @@ class pareto_gen(rv_continuous):
                    polyval([1.0,-7.0,12.0,0.0],bt)
             insert(g2, mask, vals)
         return mu, mu2, g1, g2
+    def _entropy(self, c):
+        return 1 + 1.0/c - log(c)
 pareto = pareto_gen(a=1.0, name="pareto", longname="A Pareto",
                     shapes="b", extradoc="""
 
@@ -2269,6 +2352,8 @@ class lomax_gen(rv_continuous):
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')
         return mu, mu2, g1, g2
+    def _entropy(self, c):
+        return 1+1.0/c-log(c)
 lomax = lomax_gen(a=0.0, name="lomax",
                   longname="A Lomax (Pareto of the second kind)",
                   shapes="c", extradoc="""
@@ -2290,6 +2375,8 @@ class powerlaw_gen(rv_continuous):
         return a/(a+1.0), a*(a+2.0)/(a+1.0)**2, \
                2*(1.0-a)*sqrt((a+2.0)/(a*(a+3.0))), \
                6*polyval([1,-1,-6,2],a)/(a*(a+3.0)*(a+4))
+    def _entropy(self, a):
+        return 1 - 1.0/a - log(a)
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw",
                         longname="A power-function",
                         shapes="a", extradoc="""
@@ -2366,6 +2453,8 @@ class rayleigh_gen(rv_continuous):
         val = 4-pi
         return pi/2, val/2, 2*(pi-3)*sqrt(pi)/val**1.5, \
                6*pi/val-16/val**2
+    def _entropy(self):
+        return _EULER/2.0 + 1 - 0.5*log(2)
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh",
                         longname="A Rayleigh",
                         extradoc="""
@@ -2390,6 +2479,8 @@ class reciprocal_gen(rv_continuous):
         return a*pow(b*1.0/a,q)
     def _munp(self, n, a, b):
         return 1.0/self.d / n * (pow(b*1.0,n) - pow(a*1.0,n))
+    def _entropy(self,a,b):
+        return 0.5*log(a*b)+log(log(b/a))
 reciprocal = reciprocal_gen(name="reciprocal",
                             longname="A reciprocal",
                             shapes="a,b", extradoc="""
@@ -2441,8 +2532,10 @@ class semicircular_gen(rv_continuous):
         return 2.0/pi*sqrt(1-x*x)
     def _cdf(self, x):
         return 0.5+1.0/pi*(x*sqrt(1-x*x) + arcsin(x))
-    def _stats(self, x):
+    def _stats(self):
         return 0, 0.25, 0, -1.0
+    def _entropy(self):
+        return 0.64472988584940017414        
 semicircular = semicircular_gen(a=-1.0,b=1.0, name="semicircular",
                                 longname="A semicircular",
                                 extradoc="""
@@ -2477,6 +2570,8 @@ class triang_gen(rv_continuous):
     def _stats(self, c):
         return (c+1.0)/3.0, (1.0-c+c*c)/18, sqrt(2)*(2*c-1)*(c+1)*(c-2) / \
                (5*(1.0-c+c*c)**1.5), -3.0/5.0
+    def _entropy(self,c):
+        return 0.5-log(2)
 triang = triang_gen(a=0.0, b=1.0, name="triang", longname="A Triangular",
                     shapes="c", extradoc="""
 
@@ -2505,6 +2600,9 @@ class truncexpon_gen(rv_continuous):
         return -log(1-q+q*exp(-b))
     def _munp(self, n, b):
         return gam(n+1)-special.gammainc(1+n,b)
+    def _entropy(self, b):
+        eB = exp(b)
+        return log(eB-1)+(1+eB*(b-1.0))/(1.0-eB)
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon',
                             longname="A truncated exponential",
                             shapes="b", extradoc="""
@@ -2563,7 +2661,20 @@ class tukeylambda_gen(rv_continuous):
         vals2 = log(q/(1-q))
         return where((lam == 0)&(q==q), vals2, vals1)
     def _stats(self, lam):
-        return 0, None, 0, None
+        mu2 = 2*gam(lam+1.5)-lam*pow(4,-lam)*sqrt(pi)*gam(lam)*(1-2*lam)
+        mu2 /= lam*lam*(1+2*lam)*gam(1+1.5)
+        mu4 = 3*gam(lam)*gam(lam+0.5)*pow(2,-2*lam) / lam**3 / gam(2*lam+1.5)
+        mu4 += 2.0/lam**4 / (1+4*lam)
+        mu4 -= 2*sqrt(3)*gam(lam)*pow(2,-6*lam)*pow(3,3*lam) * \
+               gam(lam+1.0/3)*gam(lam+2.0/3) / (lam**3.0 * gam(2*lam+1.5) * \
+                                                gam(lam+0.5))
+        g2 = mu4 / mu2 / mu2 - 3.0
+                                               
+        return 0, mu2, 0, g2
+    def _entropy(self, lam):
+        def integ(p):
+            return log(pow(p,lam-1)+pow(1-p,lam-1))
+        return scipy.integrate.quad(integ,0,1)[0]
 tukeylambda = tukeylambda_gen(name='tukeylambda', longname="A Tukey-Lambda",
                               shapes="lam", extradoc="""
 
@@ -2592,6 +2703,8 @@ class uniform_gen(rv_continuous):
         return q
     def _stats(self):
         return 0.5, 1.0/12, 0, -1.2
+    def _entropy(self):
+        return 0.0
 uniform = uniform_gen(a=0.0,b=1.0, name='uniform', longname="A uniform",
                       extradoc="""
 
@@ -2695,18 +2808,29 @@ class wrapcauchy_gen(rv_continuous):
     def _cdf(self, x, c):
         output = 0.0*x
         val = (1.0+c)/(1.0-c)
-        xp = extract( x<pi,x)
-        xn = extract( x>=pi,x)
+        c1 = x<pi
+        c2 = 1-c1
+        xp = extract( c1,x)
+        valp = extract(c1,val)
+        xn = extract( c2,x)
+        valn = extract(c2,val)
         if (any(xn)):
             xn = 2*pi - xn
             yn = tan(xn/2.0)
-            on = 1.0-1.0/pi*arctan(val*yn)
-            insert(output, x>=pi, on)
+            on = 1.0-1.0/pi*arctan(valn*yn)
+            insert(output, c2, on)
         if (any(xp)):
             yp = tan(xp/2.0)
-            op = 1.0/pi*arctan(val*yp)
-            insert(output, x<pi, op)
-        return output    
+            op = 1.0/pi*arctan(valp*yp)
+            insert(output, c1, op)
+        return output
+    def _ppf(self, q, c):
+        val = (1.0-c)/(1.0+c)
+        rcq = 2*arctan(val*tan(pi*q))
+        rcmq = 2*pi-2*arctan(val*tan(pi*(1-q)))
+        return where(q < 1.0/2, rcq, rcmq)
+    def _entropy(self, c):
+        return log(2*pi*(1-c*c))
 wrapcauchy = wrapcauchy_gen(a=0.0,b=2*pi, name='wrapcauchy',
                             longname="A wrapped Cauchy",
                             shapes="c", extradoc="""
@@ -2869,6 +2993,9 @@ class rv_discrete:
     generic.stats(<shape(s)>,loc=0,moments='mv')
         - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
 
+    generic.entropy(<shape(s)>,loc=0)
+        - entropy of the RV
+
     Alternatively, the object may be called (as a function) to fix
        the shape and location parameters returning a
        "frozen" discrete RV object:
@@ -2897,6 +3024,7 @@ class rv_discrete:
         self.inc = inc
         self._cdfvec = sgf(self._cdfsingle)
         self.return_integers = 1
+        self.vecentropy = vectorize(self._entropy)
 
         if values is not None:
             self.xk, self.pk = values
@@ -3291,8 +3419,39 @@ class rv_discrete:
     def freeze(self, *args, **kwds):
         return rv_frozen(self, *args, **kwds)
 
+    def _entropy(self, *args):
+        if hasattr(self,'pk'):
+            return entropy(self.pk)
+        else:
+            mu = int(self.stats(*args, **{'moments':'m'}))
+            val = self.pmf(mu,*args)
+            if (val==0.0): ent = 0.0
+            else: ent = -val*log(val)
+            k = 1
+            term = 1.0
+            while (abs(term) > eps):
+                val = self.pmf(mu+k,*args)
+                if val == 0.0: term = 0.0
+                else: term = -val * log(val)
+                val = self.pmf(mu-k,*args)
+                if val != 0.0: term -= val*log(val)
+                k += 1
+                ent += term
+            return ent
+
+    def entropy(self, *args, **kwds):
+        loc= kwds.get('loc')
+        args, loc = self.__fix_loc(args, loc)
+        loc = arr(loc)
+        args = map(arr,args)
+        cond0 = self._argcheck(*args) & (loc==loc)
+        output = zeros(shape(cond0),'d')
+        insert(output,(1-cond0),self.badvalue)
+        goodargs = argsreduce(cond0, *args)
+        insert(output,cond0,self.vecentropy(*goodargs))
+        return output
+
     def __call__(self, *args, **kwds):
-        raise ValueError
         return self.freeze(*args,**kwds)
     
 # Binomial
@@ -3322,7 +3481,12 @@ class binom_gen(rv_discrete):
         g1 = (q-pr) / sqrt(n*pr*q)
         g2 = (1.0-6*pr*q)/(n*pr*q)
         return mu, var, g1, g2
-binom = binom_gen(a=0,name='binom',shapes="n,pr",extradoc="""
+    def _entropy(self, n, pr):
+        k = r_[0:n+1]
+        vals = self._pmf(k,n,pr)
+        lvals = where(vals==0,0.0,log(vals))
+        return -sum(vals*lvals)
+binom = binom_gen(name='binom',shapes="n,pr",extradoc="""
 
 Binomial distribution
 
@@ -3345,7 +3509,9 @@ class bernoulli_gen(binom_gen):
         return binom_gen._ppf(self, q, 1, pr)
     def _stats(self, pr):
         return binom_gen._stats(self, 1, pr)
-bernoulli = bernoulli_gen(a=0,b=1,name='bernoulli',shapes="pr",extradoc="""
+    def _entropy(self, pr):
+        return -pr*log(pr)-(1-pr)*log(1-pr)
+bernoulli = bernoulli_gen(b=1,name='bernoulli',shapes="pr",extradoc="""
 
 Bernoulli distribution
 
@@ -3359,7 +3525,6 @@ class nbinom_gen(rv_discrete):
     def _rvs(self, n, pr):
         return rand.negative_binomial(n, pr, self._size)
     def _argcheck(self, n, pr):
-        self.a = n
         return (n >= 0) & (pr >= 0) & (pr <= 1)
     def _cdf(self, x, n, pr):
         k = floor(x)
@@ -3454,6 +3619,11 @@ class hypergeom_gen(rv_discrete):
              + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 + \
                              12*m*n2 - 6*n3)
         return mu, var, g1, g2
+    def _entropy(self, M, n, N):
+        k = r_[N-(M-n):min(n,N)+1]
+        vals = self.pmf(k,M,n,N)
+        lvals = where(vals==0.0,0.0,log(vals))
+        return -sum(vals*lvals)
 hypergeom = hypergeom_gen(name='hypergeom',longname="A hypergeometric",
                           shapes="M,n,N", extradoc="""
 
@@ -3519,7 +3689,7 @@ class poisson_gen(rv_discrete):
         g1 = 1.0/arr(sqrt(mu))
         g2 = 1.0 / arr(mu)
         return mu, var, g1, g2
-poisson = poisson_gen(a=0,name="poisson", longname='A Poisson',
+poisson = poisson_gen(name="poisson", longname='A Poisson',
                       shapes="mu", extradoc="""
 
 Poisson distribution
@@ -3564,6 +3734,8 @@ class randint_gen(rv_discrete):
         U = random(size=size)
         val = floor((max-min)*U + min)
         return arr(val).astype(Num.Int)
+    def _entropy(self, min, max):
+        return log(max-min)
 randint = randint_gen(name='randint',longname='A discrete uniform '\
                       '(random integer)', shapes="min,max",
                       extradoc="""
@@ -3633,7 +3805,10 @@ class dlaplace_gen(rv_discrete):
         mu2 = 2* (e2a + ea) / (1-ea)**3.0
         mu4 = 2* (e4a + 11*e3a + 11*e2a + ea) / (1-ea)**5.0
         return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
-dlaplace = dlaplace_gen(a=1,name='dlaplace', longname='A discrete Laplacian',
+    def _entropy(self, a):
+        return a / sinh(a) - log(tanh(a/2.0))
+dlaplace = dlaplace_gen(a=-scipy.inf,
+                        name='dlaplace', longname='A discrete Laplacian',
                         shapes="a", extradoc="""
                         
 Discrete Laplacian distribution. 
