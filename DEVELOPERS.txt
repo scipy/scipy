@@ -1,0 +1,168 @@
+.. --*-- rest --*--
+.. NB! Keep this document a valid restructured document.
+
+Developing Scipy
+================
+
+:Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Last changed: $Date$
+:Revision: $Revision$
+:Discussions to: scipy-dev@scipy.org
+
+Introduction
+------------
+
+Scipy aims at being a robust and efficient "super-package" of a number
+of its modules, each having a complexity and size to be a highly
+non-trivial package itself. In order to "Scipy integration" to work
+flawlessly, all Scipy modules must follow certain rules that are
+described in this document. Hopefully this document will be helpful to
+Scipy contributors as well as to developers as a basic reference about
+the structure of Scipy package.
+
+Scipy structure
+---------------
+
+Currently Scipy consists of the following files and directories:
+
+  INSTALL.txt
+    Scipy prerequisites, installation, testing, and troubleshooting.
+
+  PACKAGERS.txt
+    Information on how to package Scipy and related tools.
+
+  THANKS.txt
+    Scipy developers and contributors. Please keep it up to date!!
+
+  DEVELOPERS.txt
+    Scipy structure (this document).
+
+  setup.py
+    Script for building and installing Scipy.
+
+  MANIFEST.in
+    Additions to distutils generated Scipy tar-balls [Each Scipy
+    module may contain its own MANIFEST.in and the main setup.py
+    should merge them into MANIFEST.in].
+
+  scipy_core/
+    Contains three modules, scipy_base, scipy_distutils, and scipy_test,
+    that all Scipy modules may depend on. As a rule, scipy_distutils
+    is required only for building, scipy_test for running tests,
+    and scipy_base contains various tools for runtime usage.
+
+  Lib/
+    Contains Scipy __init__.py and the directories of Scipy modules.
+
+  Lib_chaco/
+    Contains packages related to Chaco. [Can we move these packages
+    under Lib/?]
+
+  tutorial/
+    Scipy tutorial.
+
+  util/
+    Various tools [Not useful in general. Could we get rid of this?].
+
+
+Scipy module
+------------
+
+In the following, a *Scipy module* is defined as a Python package, say
+xxx, that is located in the Lib/ directory.  All Scipy modules should
+follow the following conventions:
+
+* Ideally, each Scipy module should be self-contained as much as
+  possible, that is, it must be usable as standalone and have minimal
+  dependencies to other packagers or modules, even if they would be
+  also Scipy modules. The exception is ``scipy_base`` that is encouraged
+  to be used as a replacement of ``Numeric`` or ``numarray`` modules
+  to simplify the future transition Numeric->Numarray.
+
+* Directory ``xxx/`` must contain a file ``setup_xxx.py`` that
+  defines ``configuration(parent_package='')`` function.
+  See ... for more details.
+
+* Directory ``xxx/`` must contain a file ``info_xxx.py``. See ..
+  more details.
+
+* Directory ``xxx/`` may contain a directory ``tests/`` that
+  contains files ``test_<name>.py`` corresponding to files
+  ``xxx/<name>.py``.
+  See ... for more details.
+
+* Directory ``xxx/`` may contain a ``MANIFEST.in``.
+
+* Directory ``xxx/`` may contain a file ``pre___init__.py`` that
+  should contain the documentation string of the module, usually found
+  in ``__init__.py`` file. See ... for more details.
+
+[Open issues: where we should put documentation?]
+
+File xxx/setup_xxx.py
+---------------------
+
+...
+
+Files xxx/__init__.py and xxx/pre___init__.py
+---------------------------------------------
+
+To speed up the import time as well as minimize memory usage, scipy
+uses ppimport hooks to transparently postpone importing large modules
+that might not be used during a Scipy usage session. But in order to
+have an access to documentation of all Scipy modules, including of the
+postponed modules, the documentation string of a module (that would
+usually reside in __init__.py file) must be moved to pre___init__.py
+file.
+
+So, the contents of a typical xxx/__init__.py file is::
+
+  #
+  # Module xxx - ...
+  #
+
+  from pre___init__ import __doc__
+  ...
+
+[xxx/pre___init__.py functionality will be replaced with more general
+hooks in xxx/info_xxx.py file]
+
+File xxx/info_xxx.py
+--------------------
+
+[info_xxx.py functionality is not implemented in Scipy yet.]
+
+Scipy setup.py and Lib/__init__.py files assume that each Scipy module
+contains a info_xxx.py file. The following information will be looked
+from this file:
+
+__doc__
+  The documentation string of the module.
+
+__doc_title__
+  The title of the module. If not defined then the first non-empty 
+  line of __doc__ will be used.
+
+standalone
+  Boolean variable indicating whether the module should be installed
+  as standalone or under scipy. Default value is False.
+
+dependencies
+  List of module names that the module depends on. The module will not
+  be installed if any of the dependencies is missing. If the module
+  depends on another Scipy module, say yyy, and that is not going to
+  be installed standalone, then use full name, that is, ``scipy.yyy``
+  instead of ``yyy``.
+
+provides
+  List of names that should be imported to scipy name space.
+
+ignore
+  Boolean variable indicating that the module should be ignored or
+  not. Default value is False. Useful when the module is platform
+  dependent.
+
+File xxx/tests/test_yyy.py
+--------------------------
+
+...

@@ -1,93 +1,137 @@
+.. --*-- rest --*--
+.. NB! Keep this document a valid restructured document.
+
+Building and installing SciPy
++++++++++++++++++++++++++++++
+
+.. Contents::
 
 PREREQUISITES
 =============
 
 SciPy requires the following software installed:
 
-1) Python 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
-     http://www.python.org
-2) Numerical Python 21.0 or newer but not Numarray (yet)
-     http://www.numpy.org/
-3) ATLAS 3.2.1 or newer and complete LAPACK (see NOTES 2, 3, 4)
-     http://math-atlas.sourceforge.net/
-     http://www.netlib.org/lapack/
-4) f2py 2.35.229-1492 or newer
-     http://cens.ioc.ee/projects/f2py2e/
+1) Python__ 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
+
+__ http://www.python.org
+
+2) `Numerical Python`__ 21.0 or newer but not Numarray (yet)
+
+__ http://www.numpy.org/
+
+3) ATLAS__ 3.2.1 or newer and complete LAPACK__ (see NOTES 2, 3, 4)
+
+__ http://math-atlas.sourceforge.net/
+__ http://www.netlib.org/lapack/
+
+4) f2py__ 2.35.229-1492 or newer
+
+__ http://cens.ioc.ee/projects/f2py2e/
+
 5) C, C++, Fortran 77 compilers (see COMPILER NOTES)
-   gcc 2.95.x, 3.x compilers are recommended.
-   When building with chaco, gcc 3.x is required.
-     http://gcc.gnu.org/
+
+   gcc__ 2.95.x, 3.x compilers are recommended.
+   When building with Chaco, gcc 3.x is required.
+  
+__ http://gcc.gnu.org/
 
 
 The following software is optional:
 
-6) FFTW 2.1.x (see Lib/fftpack/NOTES.txt) but not 2.2.x (yet)
-     http://www.fftw.org/
-7) wxPython
-     http://www.wxpython.org/
+6) FFTW__ 2.1.x (see Lib/fftpack/NOTES.txt) but not 2.2.x (yet)
+
+__ http://www.fftw.org/
+
+7) wxPython__
+  
    Debian packages: libwxgtk2.4-python libwxgtk2.4-dev wxwin2.4-headers
+
+__ http://www.wxpython.org/
+
 8) SWIG 1.3.x, required when building with chaco. See setup.py
    for how to disable chaco.
 
+9) chaco.tkplt requires
+   Debian packages: python-opengl, python-pmw
+
+
 NOTES
 -----
+
 1) Python must be build with zlib module enabled.
 
 2) Complete lapack library is required when using ATLAS, see
+
      http://math-atlas.sourceforge.net/errata.html#completelp
+
    for instructions.
+
    Below follows basic steps for building ATLAS+LAPACK from scratch.
    In case of trouble, consult the documentation of the corresponding
    software.
-   * Get and unpack
-       http://www.netlib.org/lapack/lapack.tgz
-     to /path/to/src/
-   * Copy proper
-       /path/to/src/LAPACK/INSTALL/make.inc.?????
-     to
-       /path/to/src/LAPACK/make.inc
-   * Build LAPACK:
+
+   * Get and unpack http://www.netlib.org/lapack/lapack.tgz
+     to ``/path/to/src/``.
+
+   * Copy proper ``/path/to/src/LAPACK/INSTALL/make.inc.?????``
+     to ``/path/to/src/LAPACK/make.inc``.
+
+   * Build LAPACK::
+
        cd /path/to/src/LAPACK
        make lapacklib    # On 400MHz PII it takes about 15min. 
+
      that will create lapack_LINUX.a when using
      INSTALL/make.inc.LINUX, for example.
      If using Intel Fortran Compiler, see additional notes below.
+
    * Get the latest stable ATLAS sources from
-       http://math-atlas.sourceforge.net/
-     and unpack to /path/to/src/
-   * Build ATLAS:
+     http://math-atlas.sourceforge.net/
+     and unpack to ``/path/to/src/``.
+
+   * Build ATLAS::
+
        cd /path/to/src/ATLAS
        make                          # Number of questions will be asked
        make install arch=Linux_PII   # This takes about 45min.
+
      where arch may vary (see the output of the previous command).
-   * Make optimized LAPACK library:
+
+   * Make optimized LAPACK library::
+
        cd /path/to/src/ATLAS/lib/Linux_PII/
        mkdir tmp; cd tmp
        ar x ../liblapack.a
        cp /path/to/src/LAPACK/lapack_LINUX.a ../liblapack.a
        ar r ../liblapack.a *.o
        cd ..; rm -rf tmp
-   * Move all lib*.a files from /path/to/src/ATLAS/lib/Linux_PII/,
-     say, to /usr/local/lib/atlas.
+
+   * Move all ``lib*.a`` files from ``/path/to/src/ATLAS/lib/Linux_PII/``,
+     say, to ``/usr/local/lib/atlas/``.
 
 3) If you are willing to sacrifice the performance (by factor of 5 to
    15 for large problems) of the linalg module then it is possible to
    build SciPy without ATLAS. For that you'll need either Fortran
    LAPACK/BLAS libraries installed in your system or Fortran
    LAPACK/BLAS sources to be accessible by SciPy setup scripts (use
-   LAPACK_SRC/BLAS_SRC environment variables to indicate the location
+   ``LAPACK_SRC``/``BLAS_SRC`` environment variables to indicate the location
    of the corresponding source directories).
 
-4) Debian users can use the following deb packages:
+4) Debian users can use the following deb packages::
+
      atlas2-headers
+
    and
+   ::
+
      atlas2-base atlas2-base-dev
-   or
+     or
      atlas2-sse atlas2-sse-dev
-   or
+     or
      atlas2-sse2 atlas2-sse2-dev
-   or
+     or
      atlas2-3dnow atlas2-3dnow-dev
+
    It is not necessary to install blas or lapack libraries then.
 
 GETTING SCIPY
@@ -111,8 +155,9 @@ properly before continuing SciPy installation.
 
 From tarballs
 -------------
-Unpack SciPy-<version>.tar.gz, change to SciPy-<version>
+Unpack ``SciPy-<version>.tar.gz``, change to ``SciPy-<version>/``
 directory, and run
+::
 
   python setup.py install
 
@@ -136,12 +181,13 @@ COMPILER NOTES
 ==============
 
 You can specify which Fortran compiler to use by
+::
 
   export FC_VENDOR=<Vendor>
 
 before the install command. <Vendor> is Absoft, Sun, SGI, Intel, 
 Itanium, NAG, Compaq, Digital, Gnu, or VAST.
-Or use the following install command:
+Or use the following install command::
 
   python setup.py build build_flib --fcompiler=<Vendor> install
 
@@ -155,7 +201,7 @@ Using non-Gnu Fortran compiler with gcc/g77 compiled Atlas/Lapack libraries
 When Atlas/Lapack libraries are compiled with Gnu compilers but
 one wishes to build scipy with some non-gnu Fortran compiler then
 linking extension modules may require -lg2c. You can specify it
-in installation command line as follows:
+in installation command line as follows::
 
   python setup.py build build_ext -lg2c install
 
@@ -176,13 +222,17 @@ IFC version 5.0 is not supported (because its bugs cause segfaults in
 scipy tests).
 
 Minimum IFC flags for building LAPACK and ATLAS are
+::
+
   -FI -w90 -w95 -cm -O3 -unroll
+
 Also consult 'ifc -help' for additional optimization flags suitable
 for your computers CPU.
 
 When finishing LAPACK build, you must recompile ?lamch.f, xerbla.f
 with optimization disabled (otherwise infinite loops occur when using
-these routines):
+these routines)::
+
   make lapacklib   # in /path/to/src/LAPACK/
   cd SRC
   ifc -FI -w90 -w95 -cm -O0 -c ?lamch.f xerbla.f
@@ -197,6 +247,7 @@ BLAS sources shipped with LAPACK are incomplete
 Some distributions (e.g. Redhat Linux 7.1) provide BLAS libraries that
 are built from such incomplete sources and therefore cause import
 errors like
+::
 
   ImportError: .../fblas.so: undefined symbol: srotmg_
 
@@ -206,12 +257,14 @@ Fix:
 LAPACK library provided by ATLAS is incomplete
 ----------------------------------------------
 You will notice it when getting import errors like
+::
 
   ImportError: .../flapack.so : undefined symbol: sgesdd_
 
 To be sure that SciPy is built against a complete LAPACK, check the
 size of the file liblapack.a -- it should be about 6MB. The location
 of liblapack.a is shown by executing
+::
 
     python scipy_core/scipy_distutils/system_info.py
 
@@ -226,18 +279,22 @@ Fix:
 Using ATLAS 3.2.1
 -----------------
 If import clapack fails with the following error
+::
   
   ImportError: .../clapack.so : undefined symbol: clapack_sgetri
 
 then you most probably have ATLAS 3.2.1 but linalg module was built
 for newer versions of ATLAS.
 Fix:
+
   1) Remove Lib/linalg/clapack.pyf
+
   2) Rebuild/reinstall scipy.
 
 Using non-Gnu Fortran Compiler
-----------------------------
+------------------------------
 If import scipy shows a message
+::
 
   ImportError: undefined symbol: s_wsfe
 
@@ -259,44 +316,67 @@ can ask help from scipy-user@scipy.org or scipy-dev@scipy.org mailing
 lists. Please include the following information to your message:
 
 NOTE: With recent f2py version (>=2.33.xxx-xxxx) you can generate 
-some of the following information (items 1-5) in one command:
+some of the following information (items 1-5) in one command::
 
   python -c 'from f2py2e.diagnose import run;run()'
 
-1) Platform information:
+1) Platform information::
+
      python -c 'import os,sys;print os.name,sys.platform'
      uname -a
      OS, its distribution name and version information
      etc.
+
 2) Information about C,C++,Fortran compilers/linkers as reported by
    the compilers when requesting their version information, e.g.,
    the output of
+   ::
+
      gcc -v
      g77 --version
-3) Python version:
+
+3) Python version::
+
      python -c 'import sys;print sys.version'
-4) Python Numeric version:
+
+4) Python Numeric version::
+
      python -c 'import Numeric;print Numeric.__version__'
-5) f2py version:
+
+5) f2py version::
+
      f2py -v
+
 6) ATLAS version, the locations of atlas and lapack libraries, building
    information if any. If you have ATLAS version 3.3.6 or newer, then
    give the output of the last command in
+   ::
+
      cd scipy/Lib/linalg
      python setup_atlas_version.py build_ext --inplace --force
      python -c 'import atlas_version'
+
 7) The output of the following commands
+   ::
+
      python scipy_core/scipy_distutils/system_info.py
      python scipy_core/scipy_distutils/command/build_flib.py
+
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy
    installation command can be very helpful. Since this output can be
    rather large, ask before sending it into the mailing list (or
    better yet, to one of the developers, if asked).
+
 9) In case of failing to import extension modules, the output of
+   ::
+
      ldd /path/to/ext_module.so
+
    can be useful.
 
 You may find the following notes useful:
+
   http://www.tuxedo.org/~esr/faqs/smart-questions.html
+
   http://www.chiark.greenend.org.uk/~sgtatham/bugs.html
