@@ -20,12 +20,13 @@ Run tests if linalg is not installed:
 """
 
 import Numeric
-from Numeric import arange, add, array
+from Numeric import arange, add, array, dot
 
 import sys
 from scipy_test.testing import set_package_path
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
+from linalg import pinv, pinv2
 del sys.path[0]
 
 from scipy_test.testing import rand
@@ -464,6 +465,32 @@ class test_hankel(unittest.TestCase):
         y = hankel([1,2,3],[3,4,5])
         assert_array_equal(y,[[1,2,3],[2,3,4],[3,4,5]])
 
+class test_pinv(ScipyTestCase):
+
+    def check_simple(self):
+        a=array([[1,2,3],[4,5,6.],[7,8,10]])
+        a_pinv = pinv(a)
+        assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
+        a_pinv = pinv2(a)
+        assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
+
+    def check_simple_0det(self):
+        a=array([[1,2,3],[4,5,6.],[7,8,9]])
+        a_pinv = pinv(a)
+        a_pinv2 = pinv2(a)
+        assert_array_almost_equal(a_pinv,a_pinv2)
+
+    def check_simple_cols(self):
+        a=array([[1,2,3],[4,5,6.]])
+        a_pinv = pinv(a)
+        a_pinv2 = pinv2(a)
+        assert_array_almost_equal(a_pinv,a_pinv2)
+
+    def check_simple_rows(self):
+        a=array([[1,2],[3,4],[5,6]])
+        a_pinv = pinv(a)
+        a_pinv2 = pinv2(a)
+        assert_array_almost_equal(a_pinv,a_pinv2)
 
 #####################################
 def test_suite(level=1):
@@ -478,6 +505,7 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_tril,'check_') )
         suites.append( unittest.makeSuite(test_toeplitz,'check_') )
         suites.append( unittest.makeSuite(test_hankel,'check_') )
+        suites.append( unittest.makeSuite(test_pinv,'check_') )
 
     if level > 5:
         suites.append( unittest.makeSuite(test_det,'bench_') )

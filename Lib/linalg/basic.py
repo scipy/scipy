@@ -11,7 +11,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose
 import Matrix
 import scipy_base
 import calc_lwork
@@ -20,7 +20,9 @@ class LinAlgError(Exception):
     pass
 
 def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
-    """Solve a system of equations given a previously factored matrix
+    """ lu_solve((lu, piv), b, trans=0, overwrite_b=0) -> x
+
+    Solve a system of equations given a previously factored matrix
 
     Inputs:
 
@@ -47,7 +49,9 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
           'illegal value in %-th argument of internal gesv|posv'%(-info)
 
 def cho_solve((c, lower), b, overwrite_b=0):
-    """Solve a system of equations given a previously cholesky factored matrix
+    """ cho_solve((c, lower), b, overwrite_b=0) -> x
+
+    Solve a system of equations given a previously cholesky factored matrix
 
     Inputs:
 
@@ -73,7 +77,9 @@ def cho_solve((c, lower), b, overwrite_b=0):
 # Linear equations
 def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
           debug = 0):
-    """Solve a linear system of equations a * x = b for x.
+    """ solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0) -> x
+
+    Solve a linear system of equations a * x = b for x.
 
     Inputs:
 
@@ -119,7 +125,9 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
 
 # matrix inversion
 def inv(a, overwrite_a=0):
-    """Return inverse of square matrix a.
+    """ inv(a, overwrite_a=0) -> a_inv
+
+    Return inverse of square matrix a.
     """
     a1 = asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -141,9 +149,9 @@ def inv(a, overwrite_a=0):
     #     to do that.
     if getrf.module_name[:7]=='clapack'!=getri.module_name[:7]:
         # ATLAS 3.2.1 has getrf but not getri.
-        lu,piv,info = getrf(scipy_base.transpose(a1),
+        lu,piv,info = getrf(transpose(a1),
                             rowmajor=0,overwrite_a=overwrite_a)
-        lu = scipy_base.transpose(lu)
+        lu = transpose(lu)
     else:
         lu,piv,info = getrf(a1,overwrite_a=overwrite_a)
     if info==0:
@@ -170,7 +178,9 @@ def inv(a, overwrite_a=0):
 ## matrix and Vector norm
 import decomp
 def norm(x, ord=2):
-    """matrix and vector norm.
+    """ norm(x, ord=2) -> n
+
+    Matrix and vector norm.
 
     Inputs:
 
@@ -222,8 +232,10 @@ def norm(x, ord=2):
 
 ### Determinant
 
-def det(a, overwrite_a = 0):
-    """Return Determinant of a square matrix.
+def det(a, overwrite_a=0):
+    """ det(a, overwrite_a=0) -> d
+
+    Return determinant of a square matrix.
     """
     a1 = asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -237,14 +249,16 @@ def det(a, overwrite_a = 0):
 
 ### Linear Least Squares
 
-def lstsq(a, b, cond = -1.0, overwrite_a=0, overwrite_b=0):
-    """Return least-squares solution of a * x = b.
+def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
+    """ lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0) -> x,resids,rank,s
+
+    Return least-squares solution of a * x = b.
 
     Inputs:
 
       a -- An M x N matrix.
       b -- An M x nrhs matrix or M vector.
-      rcond -- Used to determine effective rank of a.
+      cond -- Used to determine effective rank of a.
 
     Outputs:
 
@@ -293,8 +307,10 @@ def lstsq(a, b, cond = -1.0, overwrite_a=0, overwrite_b=0):
     return x,resids,rank,s
 
 
-def pinv(a, cond=-1):
-    """Compute generalized inverse of A using least-squares solver.
+def pinv(a, cond=None):
+    """ pinv(a, cond=None) -> a_pinv
+
+    Compute generalized inverse of A using least-squares solver.
     """
     a = asarray(a)
     t = a.typecode()
@@ -305,27 +321,24 @@ def pinv(a, cond=-1):
 eps = scipy_base.limits.double_epsilon
 feps = scipy_base.limits.float_epsilon
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
-tran = scipy_base.transpose
-conj = scipy_base.conjugate
-dot = scipy_base.dot
-def pinv2(a, cond=-1):
-    """Compute the generalized inverse of A using svd.
+def pinv2(a, cond=None):
+    """ pinv2(a, cond=None) -> a_pinv
+
+    Compute the generalized inverse of A using svd.
     """
     a = asarray(a)
     u, s, vh = decomp.svd(a)
-    m = u.shape[1]
-    n = vh.shape[0]
     t = u.typecode()
-    if cond is -1 or cond is None:
+    if cond in [None,-1]:
         cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
+    m,n = a.shape
     cutoff = cond*scipy_base.maximum.reduce(s)
-    for i in range(min(n,m)):
+    psigma = zeros((m,n),t)
+    for i in range(len(s)):
         if s[i] > cutoff:
-            s[i] = 1.0/s[i]
-        else:
-            s[i] = 0.0
-    return dot(tran(conj(vh)),tran(conj(u))*s[:,NewAxis])
-
+            psigma[i,i] = 1.0/conjugate(s[i])
+    #XXX: use lapack/blas routines for dot
+    return transpose(conjugate(dot(dot(u,psigma),vh)))
 
 #-----------------------------------------------------------------------------
 # matrix construction functions
