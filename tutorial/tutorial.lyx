@@ -28,6 +28,13 @@
 \papersides 1
 \paperpagestyle default
 
+\layout Title
+
+SciPy Tutorial
+\layout Author
+
+Travis E.
+ Oliphant
 \layout Section
 
 Introduction
@@ -4015,9 +4022,174 @@ preview false
 \layout Subsubsection
 
 Finding Determinant
+\layout Standard
+
+The determinant of a square matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ is often denoted 
+\begin_inset Formula $\left|\mathbf{A}\right|$
+\end_inset 
+
+ and is a quantity often used in linear algebra.
+ Suppose 
+\begin_inset Formula $a_{ij}$
+\end_inset 
+
+ are the elements of the matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ and let 
+\begin_inset Formula $M_{ij}=\left|\mathbf{A}_{ij}\right|$
+\end_inset 
+
+ be the determinant of the matrix left by removing the 
+\begin_inset Formula $i^{\textrm{th}}$
+\end_inset 
+
+ row and 
+\begin_inset Formula $j^{\textrm{th}}$
+\end_inset 
+
+column from 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+.
+ Then for any row 
+\begin_inset Formula $i,$
+\end_inset 
+
+
+\begin_inset Formula \[
+\left|\mathbf{A}\right|=\sum_{j}\left(-1\right)^{i+j}a_{ij}M_{ij}.\]
+
+\end_inset 
+
+ This is a recursive way to define the determinant where the base case is
+ defined by accepting that the determinant of a 
+\begin_inset Formula $1\times1$
+\end_inset 
+
+ matrix is the only matrix element.
+ In SciPy the determinant can be calculated with 
+\series bold 
+linalg.det
+\series default 
+.
+ For example, the determinant of 
+\begin_inset Formula \[
+\mathbf{A=}\left[\begin{array}{ccc}
+1 & 3 & 5\\
+2 & 5 & 1\\
+2 & 3 & 8\end{array}\right]\]
+
+\end_inset 
+
+is 
+\begin_inset Formula \begin{eqnarray*}
+\left|\mathbf{A}\right| & = & 1\left|\begin{array}{cc}
+5 & 1\\
+3 & 8\end{array}\right|-3\left|\begin{array}{cc}
+2 & 1\\
+2 & 8\end{array}\right|+5\left|\begin{array}{cc}
+2 & 5\\
+2 & 3\end{array}\right|\\
+ & = & 1\left(5\cdot8-3\cdot1\right)-3\left(2\cdot8-2\cdot1\right)+5\left(2\cdot3-2\cdot5\right)=-25.\end{eqnarray*}
+
+\end_inset 
+
+ In SciPy this is computed as shown in this example:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example10.2.3}
+preview false
+
+\end_inset 
+
+
 \layout Subsubsection
 
 Computing norms
+\layout Standard
+
+Matrix and vector norms can be computed in SciPy.
+ A wide range of norm definitions are available using different parameters
+ to the order argument of 
+\series bold 
+linalg.norm
+\series default 
+.
+ This function takes a rank-1 (vectors) or a rank-2 (matrices) array and
+ an optional order argument (default is 2).
+ Based on these inputs a vector or matrix norm of the requested order is
+ computed.
+ 
+\layout Standard
+
+For vector 
+\series bold 
+x
+\series default 
+, the order parameter can be any real number including 
+\series bold 
+inf
+\series default 
+ or -
+\series bold 
+inf
+\series default 
+.
+ The computed norm is 
+\begin_inset Formula \[
+\left\Vert \mathbf{x}\right\Vert =\left\{ \begin{array}{cc}
+\max\left|x_{i}\right| & \textrm{ord}=\textrm{inf}\\
+\min\left|x_{i}\right| & \textrm{ord}=-\textrm{inf}\\
+\left(\sum_{i}\left|x_{i}\right|^{\textrm{ord}}\right)^{1/\textrm{ord}} & \left|\textrm{ord}\right|<\infty.\end{array}\right.\]
+
+\end_inset 
+
+
+\layout Standard
+
+For matrix 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+ the only valid values for norm are 
+\begin_inset Formula $\pm2,\pm1,$
+\end_inset 
+
+ and 
+\begin_inset Formula $\pm$
+\end_inset 
+
+inf.
+ Thus, 
+\begin_inset Formula \[
+\left\Vert \mathbf{A}\right\Vert =\left\{ \begin{array}{cc}
+\max_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=\textrm{inf}\\
+\min_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=-\textrm{inf}\\
+\max_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=1\\
+\min_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=-1\\
+\max\sigma_{i} & \textrm{ord}=2\\
+\min\sigma_{i} & \textrm{ord}=-2\end{array}\right.\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\sigma_{i}$
+\end_inset 
+
+ are the singular values of 
+\begin_inset Formula $\mathbf{A}$
+\end_inset 
+
+.
+ 
 \layout Subsubsection
 
 Solving least-squares problems
