@@ -23,12 +23,30 @@ class test_shapiro(unittest.TestCase):
         w,pw = scipy.stats.shapiro(x2)
         assert_almost_equal(w,0.9590269923210144,8)
         assert_almost_equal(pw,0.52459925413131714,8)
+
+class test_anderson(unittest.TestCase):
+    def check_normal(self):
+        x1 = scipy.stats.expon(size=50)
+        x2 = scipy.stats.norm(size=50)
+        A,crit,sig = scipy.stats.anderson(x1)
+        assert(scipy.all(A > crit[:-1]))
+        A,crit,sig = scipy.stats.anderson(x2)
+        assert(scipy.all(A < crit[-2:]))
+
+    def check_expon(self):
+        x1 = scipy.stats.expon(size=50)
+        x2 = scipy.stats.norm(size=50)
+        A,crit,sig = scipy.stats.anderson(x1,'expon')        
+        assert(scipy.all(A < crit[-2:]))
+        A,crit,sig = scipy.stats.anderson(x2,'expon')
+        assert(scipy.all(A > crit[:-1]))
         
         
 def test_suite(level=1):
     suites = []
     if level > 0:
         suites.append( unittest.makeSuite(test_shapiro,'check_') )
+        suites.append( unittest.makeSuite(test_anderson,'check_') )
         
     total_suite = unittest.TestSuite(suites)
     return total_suite

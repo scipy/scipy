@@ -1,5 +1,5 @@
-#LyX 1.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 218
+#LyX 1.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 220
 \textclass article
 \language english
 \inputencoding auto
@@ -11,6 +11,8 @@
 \paperpackage a4
 \use_geometry 1
 \use_amsmath 1
+\use_natbib 0
+\use_numerical_citations 0
 \paperorientation portrait
 \leftmargin 1in
 \topmargin 1in
@@ -35,16 +37,16 @@ All distributions will have location (L) and Scale (S) parameters along
  with any shape parameters needed, the names for the shape parameters will
  vary.
  Standard form for the distributions will be given where 
-\begin_inset Formula \( L=0.0 \)
+\begin_inset Formula $L=0.0$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=1.0. \)
+\begin_inset Formula $S=1.0.$
 \end_inset 
 
  The nonstandard forms can be obtained for the various functions using (note
  
-\begin_inset Formula \( U \)
+\begin_inset Formula $U$
 \end_inset 
 
  is a standard uniform random variate).
@@ -55,13 +57,13 @@ All distributions will have location (L) and Scale (S) parameters along
 \size small 
 
 \begin_inset  Tabular
-<lyxtabular version="2" rows="12" columns="3">
-<features rotate="false" islongtable="false" endhead="0" endfirsthead="0" endfoot="0" endlastfoot="0">
-<column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
-<column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="" special="">
-<row topline="true" bottomline="true" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<lyxtabular version="3" rows="12" columns="3">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -69,7 +71,7 @@ All distributions will have location (L) and Scale (S) parameters along
 Function Name
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -77,7 +79,7 @@ Function Name
 Standard Function
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -86,8 +88,8 @@ Transformation
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -95,33 +97,33 @@ Transformation
 Cumulative Distribution Function (CDF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( F\left( x\right)  \)
+\begin_inset Formula $F\left(x\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( F\left( x;L,S\right) =F\left( \frac{\left( x-L\right) }{S}\right)  \)
+\begin_inset Formula $F\left(x;L,S\right)=F\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -129,33 +131,33 @@ Cumulative Distribution Function (CDF)
 Probability Density Function (PDF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( f\left( x\right) =F^{\prime }\left( x\right)  \)
+\begin_inset Formula $f\left(x\right)=F^{\prime }\left(x\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 f
-\begin_inset Formula \( \left( x;L,S\right) =\frac{1}{S}f\left( \frac{\left( x-L\right) }{S}\right)  \)
+\begin_inset Formula $\left(x;L,S\right)=\frac{1}{S}f\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -163,33 +165,33 @@ f
 Percent Point Function (PPF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( G\left( q\right) =F^{-1}\left( q\right)  \)
+\begin_inset Formula $G\left(q\right)=F^{-1}\left(q\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( G\left( q;L,S\right) =L+SG\left( q\right)  \)
+\begin_inset Formula $G\left(q;L,S\right)=L+SG\left(q\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -197,33 +199,33 @@ Percent Point Function (PPF)
 Probability Sparsity Function (PSF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( g\left( q\right) =G^{\prime }\left( q\right)  \)
+\begin_inset Formula $g\left(q\right)=G^{\prime }\left(q\right)$
 \end_inset 
 
  
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( g\left( q;L,S\right) =Sg\left( q\right)  \)
+\begin_inset Formula $g\left(q;L,S\right)=Sg\left(q\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -231,33 +233,33 @@ Probability Sparsity Function (PSF)
 Hazard Function (HF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( h\left( x\right) =\frac{f\left( x\right) }{1-F\left( x\right) } \)
+\begin_inset Formula $h\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( h\left( x;L,S\right) =\frac{1}{S}h\left( \frac{\left( x-L\right) }{S}\right)  \)
+\begin_inset Formula $h\left(x;L,S\right)=\frac{1}{S}h\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -265,37 +267,37 @@ Hazard Function (HF)
 Cumulative Hazard Functon (CHF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( H\left( x\right) = \)
+\begin_inset Formula $H\left(x\right)=$
 \end_inset 
 
 
-\begin_inset Formula \( \log \frac{1}{1-F\left( x\right) } \)
+\begin_inset Formula $\log \frac{1}{1-F\left(x\right)}$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( H\left( x;L,S\right) =H\left( \frac{\left( x-L\right) }{S}\right)  \)
+\begin_inset Formula $H\left(x;L,S\right)=H\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -303,33 +305,33 @@ Cumulative Hazard Functon (CHF)
 Survival Function (SF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( S\left( x\right) =1-F\left( x\right)  \)
+\begin_inset Formula $S\left(x\right)=1-F\left(x\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( S\left( x;L,S\right) =S\left( \frac{\left( x-L\right) }{S}\right)  \)
+\begin_inset Formula $S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -337,33 +339,33 @@ Survival Function (SF)
 Inverse Survival Function (ISF)
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( Z\left( \alpha \right) =S^{-1}\left( \alpha \right) =G\left( 1-\alpha \right)  \)
+\begin_inset Formula $Z\left(\alpha \right)=S^{-1}\left(\alpha \right)=G\left(1-\alpha \right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( Z\left( \alpha ;L,S\right) =L+SZ\left( \alpha \right)  \)
+\begin_inset Formula $Z\left(\alpha ;L,S\right)=L+SZ\left(\alpha \right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -371,33 +373,33 @@ Inverse Survival Function (ISF)
 Random Variates
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( Y=G\left( U\right)  \)
+\begin_inset Formula $Y=G\left(U\right)$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( Y\left( L,S\right) =L+SY \)
+\begin_inset Formula $Y\left(L,S\right)=L+SY$
 \end_inset 
 
 
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="false" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -405,33 +407,33 @@ Random Variates
 mean (mode, median), var
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( \mu ,\, \mu _{2} \)
+\begin_inset Formula $\mu ,\, \mu _{2}$
 \end_inset 
 
 
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( L+S\mu ,\, S^{2}\mu _{2} \)
+\begin_inset Formula $L+S\mu ,\, S^{2}\mu _{2}$
 \end_inset 
 
   
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="true" newpage="false">
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -439,29 +441,29 @@ mean (mode, median), var
 skewness, kurtosis
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( \gamma _{1}=\frac{\mu _{3}}{\left( \mu _{2}\right) ^{3/2}},\,  \)
+\begin_inset Formula $\gamma _{1}=\frac{\mu _{3}}{\left(\mu _{2}\right)^{3/2}},\, $
 \end_inset 
 
 
-\begin_inset Formula \( \gamma _{2}=\frac{\mu _{4}}{\left( \mu _{2}\right) ^{2}}-3 \)
+\begin_inset Formula $\gamma _{2}=\frac{\mu _{4}}{\left(\mu _{2}\right)^{2}}-3$
 \end_inset 
 
  
 \end_inset 
 </cell>
-<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
 
-\begin_inset Formula \( \gamma _{1},\, \gamma _{2} \)
+\begin_inset Formula $\gamma _{1},\, \gamma _{2}$
 \end_inset 
 
 
@@ -484,34 +486,34 @@ Moments
 
 Non-central moments are defined using the PDF 
 \begin_inset Formula \[
-\mu _{n}^{\prime }=\int _{-\infty }^{\infty }x^{n}f\left( x\right) dx.\]
+\mu _{n}^{\prime }=\int _{-\infty }^{\infty }x^{n}f\left(x\right)dx.\]
 
 \end_inset 
 
  Note, that these can always be computed using the PPF.
  Substitute 
-\begin_inset Formula \( x=G\left( q\right)  \)
+\begin_inset Formula $x=G\left(q\right)$
 \end_inset 
 
  in the above equation and get 
 \begin_inset Formula \[
-\mu _{n}^{\prime }=\int _{0}^{1}G^{n}\left( q\right) dq\]
+\mu _{n}^{\prime }=\int _{0}^{1}G^{n}\left(q\right)dq\]
 
 \end_inset 
 
  which may be easier to compute numerically.
  Central moments are computed similarly 
-\begin_inset Formula \( \mu =\mu _{1}^{\prime } \)
+\begin_inset Formula $\mu =\mu _{1}^{\prime }$
 \end_inset 
 
 
 \begin_inset Formula \begin{eqnarray*}
-\mu _{n} & = & \int _{-\infty }^{\infty }\left( x-\mu \right) ^{n}f\left( x\right) dx\\
- & = & \int _{0}^{1}\left( G\left( q\right) -\mu \right) ^{n}dq\\
- & = & \sum _{k=0}^{n}\left( \begin{array}{c}
-n\\
-k
-\end{array}\right) \left( -\mu \right) ^{k}\mu _{n-k}^{\prime }
+\mu _{n} & = & \int _{-\infty }^{\infty }\left(x-\mu \right)^{n}f\left(x\right)dx\\
+ & = & \int _{0}^{1}\left(G\left(q\right)-\mu \right)^{n}dq\\
+ & = & \sum _{k=0}^{n}\left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)\left(-\mu \right)^{k}\mu _{n-k}^{\prime }
 \end{eqnarray*}
 
 \end_inset 
@@ -544,76 +546,76 @@ To fit data to a distribution, maximizing the likelihood function is common.
 \layout Standard
 
 If 
-\begin_inset Formula \( f\left( x;\boldsymbol {\theta }\right)  \)
+\begin_inset Formula $f\left(x;\boldsymbol \theta \right)$
 \end_inset 
 
  is the PDF of a random-variable where 
-\begin_inset Formula \( \boldsymbol {\theta } \)
+\begin_inset Formula $\boldsymbol \theta $
 \end_inset 
 
  is a vector of parameters (
 \emph on 
 e.g.
  
-\begin_inset Formula \( L \)
+\begin_inset Formula $L$
 \end_inset 
 
  
 \emph default 
 and 
-\begin_inset Formula \( S \)
+\begin_inset Formula $S$
 \end_inset 
 
 ), then for a collection of 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
  independent samples from this distribution, the joint distribution the
  random vector 
-\begin_inset Formula \( \mathbf{x} \)
+\begin_inset Formula $\mathbf{x}$
 \end_inset 
 
  is 
 \begin_inset Formula \[
-f\left( \mathbf{x};\boldsymbol {\theta }\right) =\prod _{i=1}^{N}f\left( x_{i};\boldsymbol {\theta }\right) .\]
+f\left(\mathbf{x};\boldsymbol \theta \right)=\prod _{i=1}^{N}f\left(x_{i};\boldsymbol \theta \right).\]
 
 \end_inset 
 
  The maximum likelihood estimate of the parameters 
-\begin_inset Formula \( \boldsymbol {\theta } \)
+\begin_inset Formula $\boldsymbol \theta $
 \end_inset 
 
  are the parameters which maximize this function with 
-\begin_inset Formula \( \mathbf{x} \)
+\begin_inset Formula $\mathbf{x}$
 \end_inset 
 
  fixed and given by the data: 
 \begin_inset Formula \begin{eqnarray*}
-\hat{\boldsymbol }{\theta } & = & \arg \max _{\boldsymbol {\theta }}f\left( \mathbf{x};\boldsymbol {\theta }\right) \\
- & = & \arg \min _{\boldsymbol {\theta }}l_{\mathbf{x}}\left( \boldsymbol {\theta }\right) .
+\hat{\boldsymbol }\theta  & = & \arg \max _{\boldsymbol \theta }f\left(\mathbf{x};\boldsymbol \theta \right)\\
+ & = & \arg \min _{\boldsymbol \theta }l_{\mathbf{x}}\left(\boldsymbol \theta \right).
 \end{eqnarray*}
 
 \end_inset 
 
  Where 
 \begin_inset Formula \begin{eqnarray*}
-l_{\mathbf{x}}\left( \boldsymbols {\theta }\right)  & = & -\sum _{i=1}^{N}\log f\left( x_{i};\boldsymbol {\theta }\right) \\
- & = & -N\overline{\log f\left( x_{i};\boldsymbol {\theta }\right) }
+l_{\mathbf{x}}\left(\boldsymbols \theta \right) & = & -\sum _{i=1}^{N}\log f\left(x_{i};\boldsymbol \theta \right)\\
+ & = & -N\overline{\log f\left(x_{i};\boldsymbol \theta \right)}
 \end{eqnarray*}
 
 \end_inset 
 
  Note that if 
-\begin_inset Formula \( \boldsymbol {\theta } \)
+\begin_inset Formula $\boldsymbol \theta $
 \end_inset 
 
  includes only shape parameters, the location and scale-parameters can be
  fit by replacing 
-\begin_inset Formula \( x_{i} \)
+\begin_inset Formula $x_{i}$
 \end_inset 
 
  with 
-\begin_inset Formula \( \left( x_{i}-L\right) /S \)
+\begin_inset Formula $\left(x_{i}-L\right)/S$
 \end_inset 
 
  in the log-likelihood function and minimizing.
@@ -624,12 +626,12 @@ Standard notation for mean
 
 We will use 
 \begin_inset Formula \[
-\overline{y\left( \mathbf{x}\right) }=\frac{1}{N}\sum _{i=1}^{N}y\left( x_{i}\right) \]
+\overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum _{i=1}^{N}y\left(x_{i}\right)\]
 
 \end_inset 
 
  where 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
  should be clear from context.
@@ -640,16 +642,16 @@ Alpha
 \layout Standard
 
 One shape parameters 
-\begin_inset Formula \( \alpha >0 \)
+\begin_inset Formula $\alpha >0$
 \end_inset 
 
  (paramter 
-\begin_inset Formula \( \beta  \)
+\begin_inset Formula $\beta $
 \end_inset 
 
  in DATAPLOT is a scale-parameter).
  Standard form is 
-\begin_inset Formula \( x>0: \)
+\begin_inset Formula $x>0:$
 \end_inset 
 
 
@@ -657,9 +659,9 @@ One shape parameters
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\alpha \right)  & = & \frac{1}{x^{2}\Phi \left( \alpha \right) \sqrt{2\pi }}\exp \left( -\frac{1}{2}\left( \alpha -\frac{1}{x}\right) ^{2}\right) \\
-F\left( x;\alpha \right)  & = & \frac{\Phi \left( \alpha -\frac{1}{x}\right) }{\Phi \left( \alpha \right) }\\
-G\left( q;\alpha \right)  & = & \left[ \alpha -\Phi ^{-1}\left( q\Phi \left( \alpha \right) \right) \right] ^{-1}
+f\left(x;\alpha \right) & = & \frac{1}{x^{2}\Phi \left(\alpha \right)\sqrt{2\pi }}\exp \left(-\frac{1}{2}\left(\alpha -\frac{1}{x}\right)^{2}\right)\\
+F\left(x;\alpha \right) & = & \frac{\Phi \left(\alpha -\frac{1}{x}\right)}{\Phi \left(\alpha \right)}\\
+G\left(q;\alpha \right) & = & \left[\alpha -\Phi ^{-1}\left(q\Phi \left(\alpha \right)\right)\right]^{-1}
 \end{eqnarray*}
 
 \end_inset 
@@ -669,7 +671,7 @@ G\left( q;\alpha \right)  & = & \left[ \alpha -\Phi ^{-1}\left( q\Phi \left( \al
 
 No moments?
 \begin_inset Formula \[
-l_{\mathbf{x}}\left( \alpha \right) =N\log \left[ \Phi \left( \alpha \right) \sqrt{2\pi }\right] +2N\overline{\log \mathbf{x}}+\frac{N}{2}\alpha ^{2}-\alpha \overline{\mathbf{x}^{-1}}+\frac{1}{2}\overline{\mathbf{x}^{-2}}\]
+l_{\mathbf{x}}\left(\alpha \right)=N\log \left[\Phi \left(\alpha \right)\sqrt{2\pi }\right]+2N\overline{\log \mathbf{x}}+\frac{N}{2}\alpha ^{2}-\alpha \overline{\mathbf{x}^{-1}}+\frac{1}{2}\overline{\mathbf{x}^{-2}}\]
 
 \end_inset 
 
@@ -680,7 +682,7 @@ Anglit
 \layout Standard
 
 Defined over 
-\begin_inset Formula \( x\in \left[ -\frac{\pi }{4},\frac{\pi }{4}\right]  \)
+\begin_inset Formula $x\in \left[-\frac{\pi }{4},\frac{\pi }{4}\right]$
 \end_inset 
 
 
@@ -688,9 +690,9 @@ Defined over
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \sin \left( 2x+\frac{\pi }{2}\right) =\cos \left( 2x\right) \\
-F\left( x\right)  & = & \sin ^{2}\left( x+\frac{\pi }{4}\right) \\
-G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
+f\left(x\right) & = & \sin \left(2x+\frac{\pi }{2}\right)=\cos \left(2x\right)\\
+F\left(x\right) & = & \sin ^{2}\left(x+\frac{\pi }{4}\right)\\
+G\left(q\right) & = & \arcsin \left(\sqrt{q}\right)-\frac{\pi }{4}
 \end{eqnarray*}
 
 \end_inset 
@@ -703,7 +705,7 @@ G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
 \mu  & = & 0\\
 \mu _{2} & = & \frac{\pi ^{2}}{16}-\frac{1}{2}\\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & -2\frac{\pi ^{4}-96}{\left( \pi ^{2}-8\right) ^{2}}
+\gamma _{2} & = & -2\frac{\pi ^{4}-96}{\left(\pi ^{2}-8\right)^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -713,7 +715,7 @@ G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
 
 
 \begin_inset Formula \[
-l_{\mathbf{x}}\left( \cdot \right) =-N\overline{\log \left[ \cos \left( 2\mathbf{x}\right) \right] }\]
+l_{\mathbf{x}}\left(\cdot \right)=-N\overline{\log \left[\cos \left(2\mathbf{x}\right)\right]}\]
 
 \end_inset 
 
@@ -724,36 +726,36 @@ Arcsine
 \layout Standard
 
 Defined over 
-\begin_inset Formula \( x\in \left( 0,1\right)  \)
+\begin_inset Formula $x\in \left(0,1\right)$
 \end_inset 
 
 .
  To get the JKB definition put 
-\begin_inset Formula \( x=\frac{u+1}{2}. \)
+\begin_inset Formula $x=\frac{u+1}{2}.$
 \end_inset 
 
  i.e.
  
-\begin_inset Formula \( L=-1 \)
+\begin_inset Formula $L=-1$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=2. \)
+\begin_inset Formula $S=2.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{\pi \sqrt{x\left( 1-x\right) }}\\
-F\left( x\right)  & = & \frac{2}{\pi }\arcsin \left( \sqrt{x}\right) \\
-G\left( q\right)  & = & \sin ^{2}\left( \frac{\pi }{2}q\right) 
+f\left(x\right) & = & \frac{1}{\pi \sqrt{x\left(1-x\right)}}\\
+F\left(x\right) & = & \frac{2}{\pi }\arcsin \left(\sqrt{x}\right)\\
+G\left(q\right) & = & \sin ^{2}\left(\frac{\pi }{2}q\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu _{n}^{\prime } & = & \frac{1}{\pi }\int _{0}^{1}dx\, x^{n-1/2}\left( 1-x\right) ^{-1/2}\\
- & = & \frac{1}{\pi }B\left( \frac{1}{2},n+\frac{1}{2}\right) =\frac{\left( 2n-1\right) !!}{2^{n}n!}
+\mu _{n}^{\prime } & = & \frac{1}{\pi }\int _{0}^{1}dx\, x^{n-1/2}\left(1-x\right)^{-1/2}\\
+ & = & \frac{1}{\pi }B\left(\frac{1}{2},n+\frac{1}{2}\right)=\frac{\left(2n-1\right)!!}{2^{n}n!}
 \end{eqnarray*}
 
 \end_inset 
@@ -775,7 +777,7 @@ G\left( q\right)  & = & \sin ^{2}\left( \frac{\pi }{2}q\right)
 
 
 \begin_inset Formula \[
-l_{\mathbf{x}}\left( \cdot \right) =N\log \pi +\frac{N}{2}\overline{\log \mathbf{x}}+\frac{N}{2}\overline{\log \left( 1-\mathbf{x}\right) }\]
+l_{\mathbf{x}}\left(\cdot \right)=N\log \pi +\frac{N}{2}\overline{\log \mathbf{x}}+\frac{N}{2}\overline{\log \left(1-\mathbf{x}\right)}\]
 
 \end_inset 
 
@@ -799,14 +801,14 @@ a,b>0\]
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b\right)  & = & \frac{\Gamma \left( a+b\right) }{\Gamma \left( a\right) \Gamma \left( b\right) }\left( x\right) ^{a-1}\left( 1-x\right) ^{b-1}I_{\left( 0,1\right) }\left( x\right) \\
-F\left( x;a,b\right)  & = & \int _{0}^{x}f\left( y;a,b\right) dy=I\left( x,a,b\right) \\
-G\left( \alpha ;a,b\right)  & = & I^{-1}\left( x;a,b\right) \\
+f\left(x;a,b\right) & = & \frac{\Gamma \left(a+b\right)}{\Gamma \left(a\right)\Gamma \left(b\right)}\left(x\right)^{a-1}\left(1-x\right)^{b-1}I_{\left(0,1\right)}\left(x\right)\\
+F\left(x;a,b\right) & = & \int _{0}^{x}f\left(y;a,b\right)dy=I\left(x,a,b\right)\\
+G\left(\alpha ;a,b\right) & = & I^{-1}\left(x;a,b\right)\\
 \mu  & = & \frac{a}{a+b}\\
-\mu _{2} & = & \frac{ab\left( a+b+1\right) }{\left( a+b\right) ^{2}}\\
+\mu _{2} & = & \frac{ab\left(a+b+1\right)}{\left(a+b\right)^{2}}\\
 \gamma _{1} & = & 2\frac{b-a}{a+b+2}\sqrt{\frac{a+b+1}{ab}}\\
-\gamma _{2} & = & \frac{6\left( a^{3}+a^{2}\left( 1-2b\right) +b^{2}\left( b+1\right) -2ab\left( b+2\right) \right) }{ab\left( a+b+2\right) \left( a+b+3\right) }\\
-m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
+\gamma _{2} & = & \frac{6\left(a^{3}+a^{2}\left(1-2b\right)+b^{2}\left(b+1\right)-2ab\left(b+2\right)\right)}{ab\left(a+b+2\right)\left(a+b+3\right)}\\
+m_{d} & = & \frac{\left(a-1\right)}{\left(a+b-2\right)}\, a+b\neq 2
 \end{eqnarray*}
 
 \end_inset 
@@ -815,7 +817,7 @@ m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
 \layout Standard
 
 
-\begin_inset Formula \( f\left( x;a,1\right)  \)
+\begin_inset Formula $f\left(x;a,1\right)$
 \end_inset 
 
  is also called the Power-function distribution.
@@ -823,12 +825,12 @@ m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
 
 
 \begin_inset Formula \[
-l_{\mathbf{x}}\left( a,b\right) =-N\log \Gamma \left( a+b\right) +N\log \Gamma \left( a\right) +N\log \Gamma \left( b\right) -N\left( a-1\right) \overline{\log \mathbf{x}}-N\left( b-1\right) \overline{\log \left( 1-\mathbf{x}\right) }\]
+l_{\mathbf{x}}\left(a,b\right)=-N\log \Gamma \left(a+b\right)+N\log \Gamma \left(a\right)+N\log \Gamma \left(b\right)-N\left(a-1\right)\overline{\log \mathbf{x}}-N\left(b-1\right)\overline{\log \left(1-\mathbf{x}\right)}\]
 
 \end_inset 
 
  All of the 
-\begin_inset Formula \( x_{i}\in \left[ 0,1\right]  \)
+\begin_inset Formula $x_{i}\in \left[0,1\right]$
 \end_inset 
 
 
@@ -838,11 +840,11 @@ Beta Prime
 \layout Standard
 
 Defined over 
-\begin_inset Formula \( 0<x<\infty . \)
+\begin_inset Formula $0<x<\infty .$
 \end_inset 
 
  
-\begin_inset Formula \( \alpha ,\beta >0. \)
+\begin_inset Formula $\alpha ,\beta >0.$
 \end_inset 
 
  (Note the CDF evaluation uses Eq.
@@ -853,9 +855,9 @@ Defined over
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\alpha ,\beta \right)  & = & \frac{\Gamma \left( \alpha +\beta \right) }{\Gamma \left( \alpha \right) \Gamma \left( \beta \right) }x^{\alpha -1}\left( 1+x\right) ^{-\alpha -\beta }\\
-F\left( x;\alpha ,\beta \right)  & = & \frac{\Gamma \left( \alpha +\beta \right) }{\alpha \Gamma \left( \alpha \right) \Gamma \left( \beta \right) }x^{\alpha }\, _{2}F_{1}\left( \alpha +\beta ,\alpha ;1+\alpha ;-x\right) \\
-G\left( q;\alpha ,\beta \right)  & = & F^{-1}\left( x;\alpha ,\beta \right) 
+f\left(x;\alpha ,\beta \right) & = & \frac{\Gamma \left(\alpha +\beta \right)}{\Gamma \left(\alpha \right)\Gamma \left(\beta \right)}x^{\alpha -1}\left(1+x\right)^{-\alpha -\beta }\\
+F\left(x;\alpha ,\beta \right) & = & \frac{\Gamma \left(\alpha +\beta \right)}{\alpha \Gamma \left(\alpha \right)\Gamma \left(\beta \right)}x^{\alpha }\, _{2}F_{1}\left(\alpha +\beta ,\alpha ;1+\alpha ;-x\right)\\
+G\left(q;\alpha ,\beta \right) & = & F^{-1}\left(x;\alpha ,\beta \right)
 \end{eqnarray*}
 
 \end_inset 
@@ -866,19 +868,19 @@ G\left( q;\alpha ,\beta \right)  & = & F^{-1}\left( x;\alpha ,\beta \right)
 
 \begin_inset Formula \[
 \mu _{n}^{\prime }=\left\{ \begin{array}{ccc}
-\frac{\Gamma \left( n+\alpha \right) \Gamma \left( \beta -n\right) }{\Gamma \left( \alpha \right) \Gamma \left( \beta \right) }=\frac{\left( \alpha \right) _{n}}{\left( \beta -n\right) _{n}} &  & \beta >n\\
-\infty  &  & \textrm{otherwise}
-\end{array}\right. \]
+ \frac{\Gamma \left(n+\alpha \right)\Gamma \left(\beta -n\right)}{\Gamma \left(\alpha \right)\Gamma \left(\beta \right)}=\frac{\left(\alpha \right)_{n}}{\left(\beta -n\right)_{n}} &  & \beta >n\\
+ \infty  &  & \textrm{otherwise}\end{array}
+\right.\]
 
 \end_inset 
 
  Therefore, 
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{\alpha }{\beta -1}\quad \beta >1\\
-\mu _{2} & = & \frac{\alpha \left( \alpha +1\right) }{\left( \beta -2\right) \left( \beta -1\right) }-\frac{\alpha ^{2}}{\left( \beta -1\right) ^{2}}\quad \beta >2\\
-\gamma _{1} & = & \frac{\frac{\alpha \left( \alpha +1\right) \left( \alpha +2\right) }{\left( \beta -3\right) \left( \beta -2\right) \left( \beta -1\right) }-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\quad \beta >3\\
+\mu _{2} & = & \frac{\alpha \left(\alpha +1\right)}{\left(\beta -2\right)\left(\beta -1\right)}-\frac{\alpha ^{2}}{\left(\beta -1\right)^{2}}\quad \beta >2\\
+\gamma _{1} & = & \frac{\frac{\alpha \left(\alpha +1\right)\left(\alpha +2\right)}{\left(\beta -3\right)\left(\beta -2\right)\left(\beta -1\right)}-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\quad \beta >3\\
 \gamma _{2} & = & \frac{\mu _{4}}{\mu _{2}^{2}}-3\\
-\mu _{4} & = & \frac{\alpha \left( \alpha +1\right) \left( \alpha +2\right) \left( \alpha +3\right) }{\left( \beta -4\right) \left( \beta -3\right) \left( \beta -2\right) \left( \beta -1\right) }-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}\quad \beta >4
+\mu _{4} & = & \frac{\alpha \left(\alpha +1\right)\left(\alpha +2\right)\left(\alpha +3\right)}{\left(\beta -4\right)\left(\beta -3\right)\left(\beta -2\right)\left(\beta -1\right)}-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}\quad \beta >4
 \end{eqnarray*}
 
 \end_inset 
@@ -892,20 +894,20 @@ Bradford
 
 \begin_inset Formula \begin{eqnarray*}
 c & > & 0\\
-k & = & \log \left( 1+c\right) 
+k & = & \log \left(1+c\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{c}{k\left( 1+cx\right) }I_{\left( 0,1\right) }\left( x\right) \\
-F\left( x;c\right)  & = & \frac{\log \left( 1+cx\right) }{k}\\
-G\left( \alpha \; c\right)  & = & \frac{\left( 1+c\right) ^{\alpha }-1}{c}\\
+f\left(x;c\right) & = & \frac{c}{k\left(1+cx\right)}I_{\left(0,1\right)}\left(x\right)\\
+F\left(x;c\right) & = & \frac{\log \left(1+cx\right)}{k}\\
+G\left(\alpha \; c\right) & = & \frac{\left(1+c\right)^{\alpha }-1}{c}\\
 \mu  & = & \frac{c-k}{ck}\\
-\mu _{2} & = & \frac{\left( c+2\right) k-2c}{2ck^{2}}\\
-\gamma _{1} & = & \frac{\sqrt{2}\left( 12c^{2}-9kc\left( c+2\right) +2k^{2}\left( c\left( c+3\right) +3\right) \right) }{\sqrt{c\left( c\left( k-2\right) +2k\right) }\left( 3c\left( k-2\right) +6k\right) }\\
-\gamma _{2} & = & \frac{c^{3}\left( k-3\right) \left( k\left( 3k-16\right) +24\right) +12kc^{2}\left( k-4\right) \left( k-3\right) +6ck^{2}\left( 3k-14\right) +12k^{3}}{3c\left( c\left( k-2\right) +2k\right) ^{2}}\\
+\mu _{2} & = & \frac{\left(c+2\right)k-2c}{2ck^{2}}\\
+\gamma _{1} & = & \frac{\sqrt{2}\left(12c^{2}-9kc\left(c+2\right)+2k^{2}\left(c\left(c+3\right)+3\right)\right)}{\sqrt{c\left(c\left(k-2\right)+2k\right)}\left(3c\left(k-2\right)+6k\right)}\\
+\gamma _{2} & = & \frac{c^{3}\left(k-3\right)\left(k\left(3k-16\right)+24\right)+12kc^{2}\left(k-4\right)\left(k-3\right)+6ck^{2}\left(3k-14\right)+12k^{3}}{3c\left(c\left(k-2\right)+2k\right)^{2}}\\
 m_{d} & = & 0\\
 m_{n} & = & \sqrt{1+c}-1
 \end{eqnarray*}
@@ -922,7 +924,7 @@ Burr
 \begin_inset Formula \begin{eqnarray*}
 c & > & 0\\
 d & > & 0\\
-k & = & \Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( \frac{2}{c}+d\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+d\right) 
+k & = & \Gamma \left(d\right)\Gamma \left(1-\frac{2}{c}\right)\Gamma \left(\frac{2}{c}+d\right)-\Gamma ^{2}\left(1-\frac{1}{c}\right)\Gamma ^{2}\left(\frac{1}{c}+d\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -932,18 +934,18 @@ k & = & \Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c,d\right)  & = & \frac{cd}{x^{c+1}\left( 1+x^{-c}\right) ^{d+1}}I_{\left( 0,\infty \right) }\left( x\right) \\
-F\left( x;c,d\right)  & = & \left( 1+x^{-c}\right) ^{-d}\\
-G\left( \alpha ;c,d\right)  & = & \left( \alpha ^{-1/d}-1\right) ^{-1/c}\\
-\mu  & = & \frac{\Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+d\right) }{\Gamma \left( d\right) }\\
-\mu _{2} & = & \frac{k}{\Gamma ^{2}\left( d\right) }\\
-\gamma _{1} & = & \frac{1}{\sqrt{k^{3}}}\left[ 2\Gamma ^{3}\left( 1-\frac{1}{c}\right) \Gamma ^{3}\left( \frac{1}{c}+d\right) +\Gamma ^{2}\left( d\right) \Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( \frac{3}{c}+d\right) \right. \\
- &  & \left. -3\Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+d\right) \Gamma \left( \frac{2}{c}+d\right) \right] \\
-\gamma _{2} & = & -3+\frac{1}{k^{2}}\left[ 6\Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+d\right) \Gamma \left( \frac{2}{c}+d\right) \right. \\
- &  & -3\Gamma ^{4}\left( 1-\frac{1}{c}\right) \Gamma ^{4}\left( \frac{1}{c}+d\right) +\Gamma ^{3}\left( d\right) \Gamma \left( 1-\frac{4}{c}\right) \Gamma \left( \frac{4}{c}+d\right) \\
- &  & \left. -4\Gamma ^{2}\left( d\right) \Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+d\right) \Gamma \left( \frac{3}{c}+d\right) \right] \\
-m_{d} & = & \left( \frac{cd-1}{c+1}\right) ^{1/c}\, \textrm{if }cd>1\, \textrm{otherwise }0\\
-m_{n} & = & \left( 2^{1/d}-1\right) ^{-1/c}
+f\left(x;c,d\right) & = & \frac{cd}{x^{c+1}\left(1+x^{-c}\right)^{d+1}}I_{\left(0,\infty \right)}\left(x\right)\\
+F\left(x;c,d\right) & = & \left(1+x^{-c}\right)^{-d}\\
+G\left(\alpha ;c,d\right) & = & \left(\alpha ^{-1/d}-1\right)^{-1/c}\\
+\mu  & = & \frac{\Gamma \left(1-\frac{1}{c}\right)\Gamma \left(\frac{1}{c}+d\right)}{\Gamma \left(d\right)}\\
+\mu _{2} & = & \frac{k}{\Gamma ^{2}\left(d\right)}\\
+\gamma _{1} & = & \frac{1}{\sqrt{k^{3}}}\left[2\Gamma ^{3}\left(1-\frac{1}{c}\right)\Gamma ^{3}\left(\frac{1}{c}+d\right)+\Gamma ^{2}\left(d\right)\Gamma \left(1-\frac{3}{c}\right)\Gamma \left(\frac{3}{c}+d\right)\right.\\
+ &  & \left.-3\Gamma \left(d\right)\Gamma \left(1-\frac{2}{c}\right)\Gamma \left(1-\frac{1}{c}\right)\Gamma \left(\frac{1}{c}+d\right)\Gamma \left(\frac{2}{c}+d\right)\right]\\
+\gamma _{2} & = & -3+\frac{1}{k^{2}}\left[6\Gamma \left(d\right)\Gamma \left(1-\frac{2}{c}\right)\Gamma ^{2}\left(1-\frac{1}{c}\right)\Gamma ^{2}\left(\frac{1}{c}+d\right)\Gamma \left(\frac{2}{c}+d\right)\right.\\
+ &  & -3\Gamma ^{4}\left(1-\frac{1}{c}\right)\Gamma ^{4}\left(\frac{1}{c}+d\right)+\Gamma ^{3}\left(d\right)\Gamma \left(1-\frac{4}{c}\right)\Gamma \left(\frac{4}{c}+d\right)\\
+ &  & \left.-4\Gamma ^{2}\left(d\right)\Gamma \left(1-\frac{3}{c}\right)\Gamma \left(1-\frac{1}{c}\right)\Gamma \left(\frac{1}{c}+d\right)\Gamma \left(\frac{3}{c}+d\right)\right]\\
+m_{d} & = & \left(\frac{cd-1}{c+1}\right)^{1/c}\, \textrm{if }cd>1\, \textrm{otherwise }0\\
+m_{n} & = & \left(2^{1/d}-1\right)^{-1/c}
 \end{eqnarray*}
 
 \end_inset 
@@ -956,9 +958,9 @@ Cauchy
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{\pi \left( 1+x^{2}\right) }\\
-F\left( x\right)  & = & \frac{1}{2}+\frac{1}{\pi }\tan ^{-1}x\\
-G\left( \alpha \right)  & = & \tan \left( \pi \alpha -\frac{\pi }{2}\right) \\
+f\left(x\right) & = & \frac{1}{\pi \left(1+x^{2}\right)}\\
+F\left(x\right) & = & \frac{1}{2}+\frac{1}{\pi }\tan ^{-1}x\\
+G\left(\alpha \right) & = & \tan \left(\pi \alpha -\frac{\pi }{2}\right)\\
 m_{d} & = & 0\\
 m_{n} & = & 0
 \end{eqnarray*}
@@ -978,9 +980,9 @@ Generated by taking the (positive) square-root of chi-squared variates.
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\nu \right)  & = & \frac{x^{\nu -1}e^{-x^{2}/2}}{2^{\nu /2-1}\Gamma \left( \frac{\nu }{2}\right) }I_{\left( 0,\infty \right) }\left( x\right) \\
-F\left( x;\nu \right)  & = & \Gamma \left( \frac{\nu }{2},\frac{x^{2}}{2}\right) \\
-G\left( \alpha ;\nu \right)  & = & \sqrt{2\Gamma ^{-1}\left( \frac{\nu }{2},\alpha \right) }
+f\left(x;\nu \right) & = & \frac{x^{\nu -1}e^{-x^{2}/2}}{2^{\nu /2-1}\Gamma \left(\frac{\nu }{2}\right)}I_{\left(0,\infty \right)}\left(x\right)\\
+F\left(x;\nu \right) & = & \Gamma \left(\frac{\nu }{2},\frac{x^{2}}{2}\right)\\
+G\left(\alpha ;\nu \right) & = & \sqrt{2\Gamma ^{-1}\left(\frac{\nu }{2},\alpha \right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -990,12 +992,12 @@ G\left( \alpha ;\nu \right)  & = & \sqrt{2\Gamma ^{-1}\left( \frac{\nu }{2},\alp
 
 
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \frac{\sqrt{2}\Gamma \left( \frac{\nu +1}{2}\right) }{\Gamma \left( \frac{\nu }{2}\right) }\\
+\mu  & = & \frac{\sqrt{2}\Gamma \left(\frac{\nu +1}{2}\right)}{\Gamma \left(\frac{\nu }{2}\right)}\\
 \mu _{2} & = & \nu -\mu ^{2}\\
-\gamma _{1} & = & \frac{2\mu ^{3}+\mu \left( 1-2\nu \right) }{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{2\nu \left( 1-\nu \right) -6\mu ^{4}+4\mu ^{2}\left( 2\nu -1\right) }{\mu _{2}^{2}}\\
+\gamma _{1} & = & \frac{2\mu ^{3}+\mu \left(1-2\nu \right)}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{2\nu \left(1-\nu \right)-6\mu ^{4}+4\mu ^{2}\left(2\nu -1\right)}{\mu _{2}^{2}}\\
 m_{d} & = & \sqrt{\nu -1}\quad \nu \geq 1\\
-m_{n} & = & \sqrt{2\Gamma ^{-1}\left( \frac{\nu }{2},\frac{1}{2}\right) }
+m_{n} & = & \sqrt{2\Gamma ^{-1}\left(\frac{\nu }{2},\frac{1}{2}\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -1007,32 +1009,32 @@ Chi-squared
 \layout Standard
 
 This is the gamma distribution with 
-\begin_inset Formula \( L=0.0 \)
+\begin_inset Formula $L=0.0$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=2.0 \)
+\begin_inset Formula $S=2.0$
 \end_inset 
 
  and 
-\begin_inset Formula \( \alpha =\nu /2 \)
+\begin_inset Formula $\alpha =\nu /2$
 \end_inset 
 
  where 
-\begin_inset Formula \( \nu  \)
+\begin_inset Formula $\nu $
 \end_inset 
 
  is called the degrees of freedom.
  If 
-\begin_inset Formula \( Z_{1}\ldots Z_{\nu } \)
+\begin_inset Formula $Z_{1}\ldots Z_{\nu }$
 \end_inset 
 
  are all standard normal distributions, then 
-\begin_inset Formula \( W=\sum _{k}Z_{k}^{2} \)
+\begin_inset Formula $W=\sum _{k}Z_{k}^{2}$
 \end_inset 
 
  has (standard) chi-square distribution with 
-\begin_inset Formula \( \nu  \)
+\begin_inset Formula $\nu $
 \end_inset 
 
  degrees of freedom.
@@ -1041,9 +1043,9 @@ This is the gamma distribution with
 
 The standard form (most often used in standard form only) is
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\alpha \right)  & = & \frac{1}{2\Gamma \left( \frac{\nu }{2}\right) }\left( \frac{x}{2}\right) ^{\nu /2-1}e^{-x/2}\\
-F\left( x;\alpha \right)  & = & \Gamma \left( \frac{\nu }{2},\frac{x}{2}\right) \\
-G\left( q;\alpha \right)  & = & 2\Gamma ^{-1}\left( \frac{\nu }{2},q\right) 
+f\left(x;\alpha \right) & = & \frac{1}{2\Gamma \left(\frac{\nu }{2}\right)}\left(\frac{x}{2}\right)^{\nu /2-1}e^{-x/2}\\
+F\left(x;\alpha \right) & = & \Gamma \left(\frac{\nu }{2},\frac{x}{2}\right)\\
+G\left(q;\alpha \right) & = & 2\Gamma ^{-1}\left(\frac{\nu }{2},q\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1071,13 +1073,13 @@ Approximation to the normal distribution.
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{2\pi }\left[ 1+\cos x\right] I_{\left[ -\pi ,\pi \right] }\left( x\right) \\
-F\left( x\right)  & = & \frac{1}{2\pi }\left[ \pi +x+\sin x\right] I_{\left[ -\pi ,\pi \right] }\left( x\right) +I_{\left( \pi ,\infty \right) }\left( x\right) \\
-G\left( \alpha \right)  & = & F^{-1}\left( \alpha \right) \\
+f\left(x\right) & = & \frac{1}{2\pi }\left[1+\cos x\right]I_{\left[-\pi ,\pi \right]}\left(x\right)\\
+F\left(x\right) & = & \frac{1}{2\pi }\left[\pi +x+\sin x\right]I_{\left[-\pi ,\pi \right]}\left(x\right)+I_{\left(\pi ,\infty \right)}\left(x\right)\\
+G\left(\alpha \right) & = & F^{-1}\left(\alpha \right)\\
 \mu =m_{d}=m_{n} & = & 0\\
 \mu _{2} & = & \frac{\pi ^{2}}{3}-2\\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & \frac{-6\left( \pi ^{4}-90\right) }{5\left( \pi ^{2}-6\right) ^{2}}
+\gamma _{2} & = & \frac{-6\left(\pi ^{4}-90\right)}{5\left(\pi ^{2}-6\right)^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -1090,7 +1092,7 @@ Double Gamma
 
 The double gamma is the signed version of the Gamma distribution.
  For 
-\begin_inset Formula \( \alpha >0: \)
+\begin_inset Formula $\alpha >0:$
 \end_inset 
 
 
@@ -1098,15 +1100,15 @@ The double gamma is the signed version of the Gamma distribution.
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\alpha \right)  & = & \frac{1}{2\Gamma \left( \alpha \right) }\left| x\right| ^{\alpha -1}e^{-\left| x\right| }\\
-F\left( x;\alpha \right)  & = & \left\{ \begin{array}{ccc}
-\frac{1}{2}-\frac{1}{2}\Gamma \left( \alpha ,\left| x\right| \right)  &  & x\leq 0\\
-\frac{1}{2}+\frac{1}{2}\Gamma \left( \alpha ,\left| x\right| \right)  &  & x>0
-\end{array}\right. \\
-G\left( q;\alpha \right)  & = & \left\{ \begin{array}{ccc}
--\Gamma ^{-1}\left( \alpha ,\left| 2q-1\right| \right)  &  & q\leq \frac{1}{2}\\
-\Gamma ^{-1}\left( \alpha ,\left| 2q-1\right| \right)  &  & q>\frac{1}{2}
-\end{array}\right. 
+f\left(x;\alpha \right) & = & \frac{1}{2\Gamma \left(\alpha \right)}\left|x\right|^{\alpha -1}e^{-\left|x\right|}\\
+F\left(x;\alpha \right) & = & \left\{ \begin{array}{ccc}
+ \frac{1}{2}-\frac{1}{2}\Gamma \left(\alpha ,\left|x\right|\right) &  & x\leq 0\\
+ \frac{1}{2}+\frac{1}{2}\Gamma \left(\alpha ,\left|x\right|\right) &  & x>0\end{array}
+\right.\\
+G\left(q;\alpha \right) & = & \left\{ \begin{array}{ccc}
+ -\Gamma ^{-1}\left(\alpha ,\left|2q-1\right|\right) &  & q\leq \frac{1}{2}\\
+ \Gamma ^{-1}\left(\alpha ,\left|2q-1\right|\right) &  & q>\frac{1}{2}\end{array}
+\right.
 \end{eqnarray*}
 
 \end_inset 
@@ -1114,9 +1116,9 @@ G\left( q;\alpha \right)  & = & \left\{ \begin{array}{ccc}
  
 \begin_inset Formula \begin{eqnarray*}
 \mu =m_{n} & = & 0\\
-\mu _{2} & = & \alpha \left( \alpha +1\right) \\
+\mu _{2} & = & \alpha \left(\alpha +1\right)\\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & \frac{\left( \alpha +2\right) \left( \alpha +3\right) }{\alpha \left( \alpha +1\right) }-3\\
+\gamma _{2} & = & \frac{\left(\alpha +2\right)\left(\alpha +3\right)}{\alpha \left(\alpha +1\right)}-3\\
 m_{d} & = & \textrm{NA}
 \end{eqnarray*}
 
@@ -1139,15 +1141,15 @@ This is a signed form of the Weibull distribution.
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{c}{2}\left| x\right| ^{c-1}\exp \left( -\left| x\right| ^{c}\right) \\
-F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-\frac{1}{2}\exp \left( -\left| x\right| ^{c}\right)  &  & x\leq 0\\
-1-\frac{1}{2}\exp \left( -\left| x\right| ^{c}\right)  &  & x>0
-\end{array}\right. \\
-G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
--\log ^{1/c}\left( \frac{1}{2q}\right)  &  & q\leq \frac{1}{2}\\
-\log ^{1/c}\left( \frac{1}{2q-1}\right)  &  & q>\frac{1}{2}
-\end{array}\right. 
+f\left(x;c\right) & = & \frac{c}{2}\left|x\right|^{c-1}\exp \left(-\left|x\right|^{c}\right)\\
+F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ \frac{1}{2}\exp \left(-\left|x\right|^{c}\right) &  & x\leq 0\\
+ 1-\frac{1}{2}\exp \left(-\left|x\right|^{c}\right) &  & x>0\end{array}
+\right.\\
+G\left(q;c\right) & = & \left\{ \begin{array}{ccc}
+ -\log ^{1/c}\left(\frac{1}{2q}\right) &  & q\leq \frac{1}{2}\\
+ \log ^{1/c}\left(\frac{1}{2q-1}\right) &  & q>\frac{1}{2}\end{array}
+\right.
 \end{eqnarray*}
 
 \end_inset 
@@ -1155,7 +1157,7 @@ G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
  
 \begin_inset Formula \begin{eqnarray*}
 m_{d}=\mu  & = & 0\\
-\mu _{2} & = & \Gamma \left( \frac{c+2}{c}\right) \\
+\mu _{2} & = & \Gamma \left(\frac{c+2}{c}\right)\\
 \gamma _{1} & = & 0\\
 \gamma _{2} & = & \\
 m_{d} & = & \textrm{NA bimodal}
@@ -1170,7 +1172,7 @@ Erlang
 \layout Standard
 
 This is just the Gamma distribution with shape parameter 
-\begin_inset Formula \( \alpha =n \)
+\begin_inset Formula $\alpha =n$
 \end_inset 
 
  an integer.
@@ -1182,16 +1184,16 @@ Exponential
 
 This is a special case of the Gamma (and Erlang) distributions with shape
  parameter 
-\begin_inset Formula \( \left( \alpha =1\right)  \)
+\begin_inset Formula $\left(\alpha =1\right)$
 \end_inset 
 
  and the same location and scale parameters.
  The standard form is therefore.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & e^{-x}\\
-F\left( x\right)  & = & \Gamma \left( 1,x\right) =1-e^{-x}\\
-G\left( q\right)  & = & \log \left( \frac{1}{1-q}\right) 
+f\left(x\right) & = & e^{-x}\\
+F\left(x\right) & = & \Gamma \left(1,x\right)=1-e^{-x}\\
+G\left(q\right) & = & \log \left(\frac{1}{1-q}\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1214,17 +1216,17 @@ Extreme Value III (Weibull-type)
 \layout Standard
 
 An extreme value distribution with 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & c\left( -x\right) ^{c-1}\exp \left\{ -\left( -x\right) ^{c}\right\} I_{(-\infty ,0]}\left( x\right) \\
-F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-\exp \left\{ -\left( -x\right) ^{c}\right\}  &  & x\leq 0\\
-1 &  & x>0
-\end{array}\right. \\
-G\left( q;c\right)  & = & -\left( -\log q\right) ^{1/c}
+f\left(x;c\right) & = & c\left(-x\right)^{c-1}\exp \left\{ -\left(-x\right)^{c}\right\} I_{(-\infty ,0]}\left(x\right)\\
+F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ \exp \left\{ -\left(-x\right)^{c}\right\}  &  & x\leq 0\\
+ 1 &  & x>0\end{array}
+\right.\\
+G\left(q;c\right) & = & -\left(-\log q\right)^{1/c}
 \end{eqnarray*}
 
 \end_inset 
@@ -1237,16 +1239,16 @@ Moments are
 
 
 \begin_inset Formula \[
-\mu ^{\prime }_{n}=\left( -1\right) ^{n}\Gamma \left( \frac{n}{c}+1\right) .\]
+\mu _{n}^{\prime }=\left(-1\right)^{n}\Gamma \left(\frac{n}{c}+1\right).\]
 
 \end_inset 
 
  So, 
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & -\Gamma \left( 1+\frac{1}{c}\right) \\
-\mu _{2} & = & \Gamma \left( 1+\frac{2}{c}\right) -\mu ^{2}\\
-\gamma _{1} & = & \frac{-\Gamma \left( 1+\frac{3}{c}\right) -3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{\Gamma \left( 1+\frac{4}{c}\right) -4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}
+\mu  & = & -\Gamma \left(1+\frac{1}{c}\right)\\
+\mu _{2} & = & \Gamma \left(1+\frac{2}{c}\right)-\mu ^{2}\\
+\gamma _{1} & = & \frac{-\Gamma \left(1+\frac{3}{c}\right)-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\Gamma \left(1+\frac{4}{c}\right)-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -1258,22 +1260,22 @@ Exponentiated Weibull
 \layout Standard
 
 Two positive shape parameters 
-\begin_inset Formula \( a \)
+\begin_inset Formula $a$
 \end_inset 
 
  and 
-\begin_inset Formula \( c \)
+\begin_inset Formula $c$
 \end_inset 
 
  and 
-\begin_inset Formula \( x\in \left( 0,\infty \right)  \)
+\begin_inset Formula $x\in \left(0,\infty \right)$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,c\right)  & = & ac\left[ 1-\exp \left( -x^{c}\right) \right] ^{a-1}\exp \left( -x^{c}\right) x^{c-1}\\
-F\left( x;a,c\right)  & = & \left[ 1-\exp \left( -x^{c}\right) \right] ^{a}\\
-G\left( q;a,c\right)  & = & \left[ -\log \left( 1-q^{1/a}\right) \right] ^{1/c}
+f\left(x;a,c\right) & = & ac\left[1-\exp \left(-x^{c}\right)\right]^{a-1}\exp \left(-x^{c}\right)x^{c-1}\\
+F\left(x;a,c\right) & = & \left[1-\exp \left(-x^{c}\right)\right]^{a}\\
+G\left(q;a,c\right) & = & \left[-\log \left(1-q^{1/a}\right)\right]^{1/c}
 \end{eqnarray*}
 
 \end_inset 
@@ -1285,19 +1287,19 @@ Exponential Power
 \layout Standard
 
 One positive shape parameter 
-\begin_inset Formula \( b \)
+\begin_inset Formula $b$
 \end_inset 
 
 .
  Defined for 
-\begin_inset Formula \( x\geq 0. \)
+\begin_inset Formula $x\geq 0.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;b\right)  & = & ebx^{b-1}\exp \left[ x^{b}-e^{x^{b}}\right] \\
-F\left( x;b\right)  & = & 1-\exp \left[ 1-e^{x^{b}}\right] \\
-G\left( q;b\right)  & = & \log ^{1/b}\left[ 1-\log \left( 1-q\right) \right] 
+f\left(x;b\right) & = & ebx^{b-1}\exp \left[x^{b}-e^{x^{b}}\right]\\
+F\left(x;b\right) & = & 1-\exp \left[1-e^{x^{b}}\right]\\
+G\left(q;b\right) & = & \log ^{1/b}\left[1-\log \left(1-q\right)\right]
 \end{eqnarray*}
 
 \end_inset 
@@ -1309,20 +1311,20 @@ Fatigue Life (Birnbaum-Sanders)
 \layout Standard
 
 This distribution's pdf is the average of the inverse-Gaussian 
-\begin_inset Formula \( \left( \mu =1\right)  \)
+\begin_inset Formula $\left(\mu =1\right)$
 \end_inset 
 
  and reciprocal inverse-Gaussian pdf 
-\begin_inset Formula \( \left( \mu =1\right)  \)
+\begin_inset Formula $\left(\mu =1\right)$
 \end_inset 
 
 .
  We follow the notation of JKB here with 
-\begin_inset Formula \( \beta =S. \)
+\begin_inset Formula $\beta =S.$
 \end_inset 
 
  for 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
 
@@ -1330,9 +1332,9 @@ This distribution's pdf is the average of the inverse-Gaussian
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{x+1}{2c\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-1\right) ^{2}}{2xc^{2}}\right) \\
-F\left( x;c\right)  & = & \Phi \left( \frac{1}{c}\left( \sqrt{x}-\frac{1}{\sqrt{x}}\right) \right) \\
-G\left( q;c\right)  & = & \frac{1}{4}\left[ c\Phi ^{-1}\left( q\right) +\sqrt{c^{2}\left( \Phi ^{-1}\left( q\right) \right) ^{2}+4}\right] ^{2}
+f\left(x;c\right) & = & \frac{x+1}{2c\sqrt{2\pi x^{3}}}\exp \left(-\frac{\left(x-1\right)^{2}}{2xc^{2}}\right)\\
+F\left(x;c\right) & = & \Phi \left(\frac{1}{c}\left(\sqrt{x}-\frac{1}{\sqrt{x}}\right)\right)\\
+G\left(q;c\right) & = & \frac{1}{4}\left[c\Phi ^{-1}\left(q\right)+\sqrt{c^{2}\left(\Phi ^{-1}\left(q\right)\right)^{2}+4}\right]^{2}
 \end{eqnarray*}
 
 \end_inset 
@@ -1340,9 +1342,9 @@ G\left( q;c\right)  & = & \frac{1}{4}\left[ c\Phi ^{-1}\left( q\right) +\sqrt{c^
  
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{c^{2}}{2}+1\\
-\mu _{2} & = & c^{2}\left( \frac{5}{4}c^{2}+1\right) \\
-\gamma _{1} & = & \frac{4c\sqrt{11c^{2}+6}}{\left( 5c^{2}+4\right) ^{3/2}}\\
-\gamma _{2} & = & \frac{6c^{2}\left( 93c^{2}+41\right) }{\left( 5c^{2}+4\right) ^{2}}
+\mu _{2} & = & c^{2}\left(\frac{5}{4}c^{2}+1\right)\\
+\gamma _{1} & = & \frac{4c\sqrt{11c^{2}+6}}{\left(5c^{2}+4\right)^{3/2}}\\
+\gamma _{2} & = & \frac{6c^{2}\left(93c^{2}+41\right)}{\left(5c^{2}+4\right)^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -1354,7 +1356,7 @@ Fisk (Log Logistic)
 \layout Standard
 
 Special case of the Burr distribution with 
-\begin_inset Formula \( d=1 \)
+\begin_inset Formula $d=1$
 \end_inset 
 
 
@@ -1363,7 +1365,7 @@ Special case of the Burr distribution with
 
 \begin_inset Formula \begin{eqnarray*}
 c & > & 0\\
-k & = & \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( \frac{2}{c}+1\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+1\right) 
+k & = & \Gamma \left(1-\frac{2}{c}\right)\Gamma \left(\frac{2}{c}+1\right)-\Gamma ^{2}\left(1-\frac{1}{c}\right)\Gamma ^{2}\left(\frac{1}{c}+1\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1373,17 +1375,17 @@ k & = & \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( \frac{2}{c}+1\right) -\
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c,d\right)  & = & \frac{cx^{c-1}}{\left( 1+x^{c}\right) ^{2}}I_{\left( 0,\infty \right) }\left( x\right) \\
-F\left( x;c,d\right)  & = & \left( 1+x^{-c}\right) ^{-1}\\
-G\left( \alpha ;c,d\right)  & = & \left( \alpha ^{-1}-1\right) ^{-1/c}\\
-\mu  & = & \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+1\right) \\
+f\left(x;c,d\right) & = & \frac{cx^{c-1}}{\left(1+x^{c}\right)^{2}}I_{\left(0,\infty \right)}\left(x\right)\\
+F\left(x;c,d\right) & = & \left(1+x^{-c}\right)^{-1}\\
+G\left(\alpha ;c,d\right) & = & \left(\alpha ^{-1}-1\right)^{-1/c}\\
+\mu  & = & \Gamma \left(1-\frac{1}{c}\right)\Gamma \left(\frac{1}{c}+1\right)\\
 \mu _{2} & = & k\\
-\gamma _{1} & = & \frac{1}{\sqrt{k^{3}}}\left[ 2\Gamma ^{3}\left( 1-\frac{1}{c}\right) \Gamma ^{3}\left( \frac{1}{c}+1\right) +\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( \frac{3}{c}+1\right) \right. \\
- &  & \left. -3\Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+1\right) \Gamma \left( \frac{2}{c}+1\right) \right] \\
-\gamma _{2} & = & -3+\frac{1}{k^{2}}\left[ 6\Gamma \left( 1-\frac{2}{c}\right) \Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+1\right) \Gamma \left( \frac{2}{c}+1\right) \right. \\
- &  & -3\Gamma ^{4}\left( 1-\frac{1}{c}\right) \Gamma ^{4}\left( \frac{1}{c}+1\right) +\Gamma \left( 1-\frac{4}{c}\right) \Gamma \left( \frac{4}{c}+1\right) \\
- &  & \left. -4\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+1\right) \Gamma \left( \frac{3}{c}+1\right) \right] \\
-m_{d} & = & \left( \frac{c-1}{c+1}\right) ^{1/c}\, \textrm{if }c>1\, \textrm{otherwise }0\\
+\gamma _{1} & = & \frac{1}{\sqrt{k^{3}}}\left[2\Gamma ^{3}\left(1-\frac{1}{c}\right)\Gamma ^{3}\left(\frac{1}{c}+1\right)+\Gamma \left(1-\frac{3}{c}\right)\Gamma \left(\frac{3}{c}+1\right)\right.\\
+ &  & \left.-3\Gamma \left(1-\frac{2}{c}\right)\Gamma \left(1-\frac{1}{c}\right)\Gamma \left(\frac{1}{c}+1\right)\Gamma \left(\frac{2}{c}+1\right)\right]\\
+\gamma _{2} & = & -3+\frac{1}{k^{2}}\left[6\Gamma \left(1-\frac{2}{c}\right)\Gamma ^{2}\left(1-\frac{1}{c}\right)\Gamma ^{2}\left(\frac{1}{c}+1\right)\Gamma \left(\frac{2}{c}+1\right)\right.\\
+ &  & -3\Gamma ^{4}\left(1-\frac{1}{c}\right)\Gamma ^{4}\left(\frac{1}{c}+1\right)+\Gamma \left(1-\frac{4}{c}\right)\Gamma \left(\frac{4}{c}+1\right)\\
+ &  & \left.-4\Gamma \left(1-\frac{3}{c}\right)\Gamma \left(1-\frac{1}{c}\right)\Gamma \left(\frac{1}{c}+1\right)\Gamma \left(\frac{3}{c}+1\right)\right]\\
+m_{d} & = & \left(\frac{c-1}{c+1}\right)^{1/c}\, \textrm{if }c>1\, \textrm{otherwise }0\\
 m_{n} & = & 1
 \end{eqnarray*}
 
@@ -1397,32 +1399,32 @@ Folded Cauchy
 
 This formula can be expressed in terms of the standard formulas for the
  Cauchy distribution (call the cdf 
-\begin_inset Formula \( C\left( x\right)  \)
+\begin_inset Formula $C\left(x\right)$
 \end_inset 
 
  and the pdf 
-\begin_inset Formula \( d\left( x\right)  \)
+\begin_inset Formula $d\left(x\right)$
 \end_inset 
 
 ).
  if 
-\begin_inset Formula \( Y \)
+\begin_inset Formula $Y$
 \end_inset 
 
  is cauchy then 
-\begin_inset Formula \( \left| Y\right|  \)
+\begin_inset Formula $\left|Y\right|$
 \end_inset 
 
  is folded cauchy.
  Note that 
-\begin_inset Formula \( x\geq 0. \)
+\begin_inset Formula $x\geq 0.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{1}{\pi \left( 1+\left( x-c\right) ^{2}\right) }+\frac{1}{\pi \left( 1+\left( x+c\right) ^{2}\right) }\\
-F\left( x;c\right)  & = & \frac{1}{\pi }\tan ^{-1}\left( x-c\right) +\frac{1}{\pi }\tan ^{-1}\left( x+c\right) \\
-G\left( q;c\right)  & = & F^{-1}\left( x;c\right) 
+f\left(x;c\right) & = & \frac{1}{\pi \left(1+\left(x-c\right)^{2}\right)}+\frac{1}{\pi \left(1+\left(x+c\right)^{2}\right)}\\
+F\left(x;c\right) & = & \frac{1}{\pi }\tan ^{-1}\left(x-c\right)+\frac{1}{\pi }\tan ^{-1}\left(x+c\right)\\
+G\left(q;c\right) & = & F^{-1}\left(x;c\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1437,61 +1439,61 @@ Folded Normal
 \layout Standard
 
 If 
-\begin_inset Formula \( Z \)
+\begin_inset Formula $Z$
 \end_inset 
 
  is Normal with mean 
-\begin_inset Formula \( L \)
+\begin_inset Formula $L$
 \end_inset 
 
  and 
-\begin_inset Formula \( \sigma =S \)
+\begin_inset Formula $\sigma =S$
 \end_inset 
 
 , then 
-\begin_inset Formula \( \left| Z\right|  \)
+\begin_inset Formula $\left|Z\right|$
 \end_inset 
 
  is a folded normal with shape parameter 
-\begin_inset Formula \( c=\left| L\right| /S \)
+\begin_inset Formula $c=\left|L\right|/S$
 \end_inset 
 
 , location parameter 
-\begin_inset Formula \( 0 \)
+\begin_inset Formula $0$
 \end_inset 
 
  and scale parameter 
-\begin_inset Formula \( S \)
+\begin_inset Formula $S$
 \end_inset 
 
 .
  This is a special case of the non-central chi distribution with one-degree
  of freedom and non-centrality parameter 
-\begin_inset Formula \( c^{2}. \)
+\begin_inset Formula $c^{2}.$
 \end_inset 
 
  Note that 
-\begin_inset Formula \( c\geq 0 \)
+\begin_inset Formula $c\geq 0$
 \end_inset 
 
 .
  The standard form of the folded normal is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \sqrt{\frac{2}{\pi }}\cosh \left( cx\right) \exp \left( -\frac{x^{2}+c^{2}}{2}\right) \\
-F\left( x;c\right)  & = & \Phi \left( x-c\right) -\Phi \left( -x-c\right) =\Phi \left( x-c\right) +\Phi \left( x+c\right) -1\\
-G\left( \alpha ;c\right)  & = & F^{-1}\left( x;c\right) 
+f\left(x;c\right) & = & \sqrt{\frac{2}{\pi }}\cosh \left(cx\right)\exp \left(-\frac{x^{2}+c^{2}}{2}\right)\\
+F\left(x;c\right) & = & \Phi \left(x-c\right)-\Phi \left(-x-c\right)=\Phi \left(x-c\right)+\Phi \left(x+c\right)-1\\
+G\left(\alpha ;c\right) & = & F^{-1}\left(x;c\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-k & = & \textrm{erf}\left( \frac{c}{\sqrt{2}}\right) \\
-p & = & \exp \left( -\frac{c^{2}}{2}\right) \\
+k & = & \textrm{erf}\left(\frac{c}{\sqrt{2}}\right)\\
+p & = & \exp \left(-\frac{c^{2}}{2}\right)\\
 \mu  & = & \sqrt{\frac{2}{\pi }}p+ck\\
 \mu _{2} & = & c^{2}+1-\mu ^{2}\\
-\gamma _{1} & = & \frac{\sqrt{\frac{2}{\pi }}p^{3}\left( 4-\frac{\pi }{p^{2}}\left( 2c^{2}+1\right) \right) +2ck\left( 6p^{2}+3cpk\sqrt{2\pi }+\pi c\left( k^{2}-1\right) \right) }{\pi \mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{c^{4}+6c^{2}+3+6\left( c^{2}+1\right) \mu ^{2}-3\mu ^{4}-4p\mu \left( \sqrt{\frac{2}{\pi }}\left( c^{2}+2\right) +\frac{ck}{p}\left( c^{2}+3\right) \right) }{\mu _{2}^{2}}
+\gamma _{1} & = & \frac{\sqrt{\frac{2}{\pi }}p^{3}\left(4-\frac{\pi }{p^{2}}\left(2c^{2}+1\right)\right)+2ck\left(6p^{2}+3cpk\sqrt{2\pi }+\pi c\left(k^{2}-1\right)\right)}{\pi \mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{c^{4}+6c^{2}+3+6\left(c^{2}+1\right)\mu ^{2}-3\mu ^{4}-4p\mu \left(\sqrt{\frac{2}{\pi }}\left(c^{2}+2\right)+\frac{ck}{p}\left(c^{2}+3\right)\right)}{\mu _{2}^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -1503,36 +1505,36 @@ Fratio (or F)
 \layout Standard
 
 Defined for 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
 .
  The distribution of 
-\begin_inset Formula \( \left( X_{1}/X_{2}\right) \left( \nu _{2}/\nu _{1}\right)  \)
+\begin_inset Formula $\left(X_{1}/X_{2}\right)\left(\nu _{2}/\nu _{1}\right)$
 \end_inset 
 
  if 
-\begin_inset Formula \( X_{1} \)
+\begin_inset Formula $X_{1}$
 \end_inset 
 
  is chi-squared with 
-\begin_inset Formula \( v_{1} \)
+\begin_inset Formula $v_{1}$
 \end_inset 
 
  degrees of freedom and 
-\begin_inset Formula \( X_{2} \)
+\begin_inset Formula $X_{2}$
 \end_inset 
 
  is chi-squared with 
-\begin_inset Formula \( v_{2} \)
+\begin_inset Formula $v_{2}$
 \end_inset 
 
  degrees of freedom.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\nu _{1},\nu _{2}\right)  & = & \frac{\nu _{2}^{\nu _{2}/2}\nu _{1}^{\nu _{1}/2}x^{\nu _{1}/2-1}}{\left( \nu _{2}+\nu _{1}x\right) ^{\left( \nu _{1}+\nu _{2}\right) /2}B\left( \frac{\nu _{1}}{2},\frac{\nu _{2}}{2}\right) }\\
-F\left( x;v_{1},v_{2}\right)  & = & I\left( \frac{\nu _{1}}{2},\frac{\nu _{2}}{2},\frac{\nu _{2}x}{\nu _{2}+\nu _{1}x}\right) \\
-G\left( q;\nu _{1},\nu _{2}\right)  & = & \left[ \frac{\nu _{2}}{I^{-1}\left( \nu _{1}/2,\nu _{2}/2,q\right) }-\frac{\nu _{1}}{\nu _{2}}\right] ^{-1}.
+f\left(x;\nu _{1},\nu _{2}\right) & = & \frac{\nu _{2}^{\nu _{2}/2}\nu _{1}^{\nu _{1}/2}x^{\nu _{1}/2-1}}{\left(\nu _{2}+\nu _{1}x\right)^{\left(\nu _{1}+\nu _{2}\right)/2}B\left(\frac{\nu _{1}}{2},\frac{\nu _{2}}{2}\right)}\\
+F\left(x;v_{1},v_{2}\right) & = & I\left(\frac{\nu _{1}}{2},\frac{\nu _{2}}{2},\frac{\nu _{2}x}{\nu _{2}+\nu _{1}x}\right)\\
+G\left(q;\nu _{1},\nu _{2}\right) & = & \left[\frac{\nu _{2}}{I^{-1}\left(\nu _{1}/2,\nu _{2}/2,q\right)}-\frac{\nu _{1}}{\nu _{2}}\right]^{-1}.
 \end{eqnarray*}
 
 \end_inset 
@@ -1540,9 +1542,9 @@ G\left( q;\nu _{1},\nu _{2}\right)  & = & \left[ \frac{\nu _{2}}{I^{-1}\left( \n
 
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{\nu _{2}}{\nu _{2}-2}\quad \nu _{2}>2\\
-\mu _{2} & = & \frac{2\nu _{2}^{2}\left( \nu _{1}+\nu _{2}-2\right) }{\nu _{1}\left( \nu _{2}-2\right) ^{2}\left( \nu _{2}-4\right) }\quad v_{2}>4\\
-\gamma _{1} & = & \frac{2\left( 2\nu _{1}+\nu _{2}-2\right) }{\nu _{2}-6}\sqrt{\frac{2\left( \nu _{2}-4\right) }{\nu _{1}\left( \nu _{1}+\nu _{2}-2\right) }}\quad \nu _{2}>6\\
-\gamma _{2} & = & \frac{3\left[ 8+\left( \nu _{2}-6\right) \gamma _{1}^{2}\right] }{2\nu -16}\quad \nu _{2}>8
+\mu _{2} & = & \frac{2\nu _{2}^{2}\left(\nu _{1}+\nu _{2}-2\right)}{\nu _{1}\left(\nu _{2}-2\right)^{2}\left(\nu _{2}-4\right)}\quad v_{2}>4\\
+\gamma _{1} & = & \frac{2\left(2\nu _{1}+\nu _{2}-2\right)}{\nu _{2}-6}\sqrt{\frac{2\left(\nu _{2}-4\right)}{\nu _{1}\left(\nu _{1}+\nu _{2}-2\right)}}\quad \nu _{2}>6\\
+\gamma _{2} & = & \frac{3\left[8+\left(\nu _{2}-6\right)\gamma _{1}^{2}\right]}{2\nu -16}\quad \nu _{2}>8
 \end{eqnarray*}
 
 \end_inset 
@@ -1555,30 +1557,30 @@ Fréchet (ExtremeLB, Extreme Value II)
 
 A type of extreme-value distribution with a lower bound.
  Defined for 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & cx^{-c-1}\exp \left( -x^{-c}\right) \\
-F\left( x;c\right)  & = & \exp \left( -x^{-c}\right) \\
-G\left( q;c\right)  & = & \left( -\log q\right) ^{-1/c}
+f\left(x;c\right) & = & cx^{-c-1}\exp \left(-x^{-c}\right)\\
+F\left(x;c\right) & = & \exp \left(-x^{-c}\right)\\
+G\left(q;c\right) & = & \left(-\log q\right)^{-1/c}
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \Gamma \left( 1-\frac{1}{c}\right) \\
-\mu _{2} & = & \Gamma \left( 1-\frac{2}{c}\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \\
-\gamma _{1} & = & \frac{\Gamma \left( 1-\frac{3}{c}\right) -3\Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) +2\Gamma ^{3}\left( 1-\frac{1}{c}\right) }{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{\Gamma \left( 1-\frac{4}{c}\right) -4\Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) +3\Gamma ^{2}\left( 1-\frac{2}{c}\right) }{\mu _{2}^{2}}-6\\
-m_{d} & = & \left( \frac{c}{1+c}\right) ^{1/c}\\
-m_{n} & = & G\left( \frac{1}{2};c\right) 
+\mu  & = & \Gamma \left(1-\frac{1}{c}\right)\\
+\mu _{2} & = & \Gamma \left(1-\frac{2}{c}\right)-\Gamma ^{2}\left(1-\frac{1}{c}\right)\\
+\gamma _{1} & = & \frac{\Gamma \left(1-\frac{3}{c}\right)-3\Gamma \left(1-\frac{2}{c}\right)\Gamma \left(1-\frac{1}{c}\right)+2\Gamma ^{3}\left(1-\frac{1}{c}\right)}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\Gamma \left(1-\frac{4}{c}\right)-4\Gamma \left(1-\frac{3}{c}\right)\Gamma \left(1-\frac{1}{c}\right)+3\Gamma ^{2}\left(1-\frac{2}{c}\right)}{\mu _{2}^{2}}-6\\
+m_{d} & = & \left(\frac{c}{1+c}\right)^{1/c}\\
+m_{n} & = & G\left(\frac{1}{2};c\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1590,19 +1592,19 @@ Fréchet (left-skewed)
 \layout Standard
 
 Defined for 
-\begin_inset Formula \( x<0 \)
+\begin_inset Formula $x<0$
 \end_inset 
 
  and 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
 .
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & c\left( -x\right) ^{-c-1}\exp \left( -\left( -x\right) ^{-c}\right) \\
-F\left( x;c\right)  & = & 1-\exp \left( -\left( -x\right) ^{-c}\right) \\
-G\left( q;c\right)  & = & -\left( -\log \left( 1-q\right) \right) ^{-1/c}
+f\left(x;c\right) & = & c\left(-x\right)^{-c-1}\exp \left(-\left(-x\right)^{-c}\right)\\
+F\left(x;c\right) & = & 1-\exp \left(-\left(-x\right)^{-c}\right)\\
+G\left(q;c\right) & = & -\left(-\log \left(1-q\right)\right)^{-1/c}
 \end{eqnarray*}
 
 \end_inset 
@@ -1617,7 +1619,7 @@ The mean is the negative of the right-skewed Frechet distribution given
 
 
 \begin_inset Formula \[
-\mu =-\Gamma \left( 1-\frac{1}{c}\right) .\]
+\mu =-\Gamma \left(1-\frac{1}{c}\right).\]
 
 \end_inset 
 
@@ -1628,14 +1630,14 @@ Gamma
 \layout Standard
 
 The standard form for the gamma distribution is 
-\begin_inset Formula \( \left( \alpha >0\right)  \)
+\begin_inset Formula $\left(\alpha >0\right)$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\alpha \right)  & = & \frac{1}{\Gamma \left( \alpha \right) }x^{\alpha -1}e^{-x}\\
-F\left( x;\alpha \right)  & = & \Gamma \left( \alpha ,x\right) \\
-G\left( q;\alpha \right)  & = & \Gamma ^{-1}\left( \alpha ,q\right) 
+f\left(x;\alpha \right) & = & \frac{1}{\Gamma \left(\alpha \right)}x^{\alpha -1}e^{-x}\\
+F\left(x;\alpha \right) & = & \Gamma \left(\alpha ,x\right)\\
+G\left(q;\alpha \right) & = & \Gamma ^{-1}\left(\alpha ,q\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1659,7 +1661,7 @@ Genearlized Logistic
 
 Has been used in the analysis of extreme values.
  Has one shape parameter 
-\begin_inset Formula \( c>0. \)
+\begin_inset Formula $c>0.$
 \end_inset 
 
  
@@ -1667,9 +1669,9 @@ Has been used in the analysis of extreme values.
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{c\exp \left( -x\right) }{\left[ 1+\exp \left( -x\right) \right] ^{c+1}}\\
-F\left( x;c\right)  & = & \frac{1}{\left[ 1+\exp \left( -x\right) \right] ^{c}}\\
-G\left( q;c\right)  & = & -\log \left( q^{-1/c}-1\right) 
+f\left(x;c\right) & = & \frac{c\exp \left(-x\right)}{\left[1+\exp \left(-x\right)\right]^{c+1}}\\
+F\left(x;c\right) & = & \frac{1}{\left[1+\exp \left(-x\right)\right]^{c}}\\
+G\left(q;c\right) & = & -\log \left(q^{-1/c}-1\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1679,32 +1681,32 @@ G\left( q;c\right)  & = & -\log \left( q^{-1/c}-1\right)
 
 
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \gamma +\psi _{0}\left( c\right) \\
-\mu _{2} & = & \frac{\pi ^{2}}{6}+\psi _{1}\left( c\right) \\
-\gamma _{1} & = & \frac{\psi _{2}\left( c\right) +2\zeta \left( 3\right) }{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{\left( \frac{\pi ^{4}}{15}+\psi _{3}\left( c\right) \right) }{\mu _{2}^{2}}\\
+\mu  & = & \gamma +\psi _{0}\left(c\right)\\
+\mu _{2} & = & \frac{\pi ^{2}}{6}+\psi _{1}\left(c\right)\\
+\gamma _{1} & = & \frac{\psi _{2}\left(c\right)+2\zeta \left(3\right)}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\left(\frac{\pi ^{4}}{15}+\psi _{3}\left(c\right)\right)}{\mu _{2}^{2}}\\
 m_{d} & = & \log c\\
-m_{n} & = & -\log \left( 2^{1/c}-1\right) 
+m_{n} & = & -\log \left(2^{1/c}-1\right)
 \end{eqnarray*}
 
 \end_inset 
 
  Note that the polygamma function is 
 \begin_inset Formula \begin{eqnarray*}
-\psi _{n}\left( z\right)  & = & \frac{d^{n+1}}{dz^{n+1}}\log \Gamma \left( z\right) \\
- & = & \left( -1\right) ^{n+1}n!\sum _{k=0}^{\infty }\frac{1}{\left( z+k\right) ^{n+1}}\\
- & = & \left( -1\right) ^{n+1}n!\zeta \left( n+1,z\right) 
+\psi _{n}\left(z\right) & = & \frac{d^{n+1}}{dz^{n+1}}\log \Gamma \left(z\right)\\
+ & = & \left(-1\right)^{n+1}n!\sum _{k=0}^{\infty }\frac{1}{\left(z+k\right)^{n+1}}\\
+ & = & \left(-1\right)^{n+1}n!\zeta \left(n+1,z\right)
 \end{eqnarray*}
 
 \end_inset 
 
  where 
-\begin_inset Formula \( \zeta \left( k,x\right)  \)
+\begin_inset Formula $\zeta \left(k,x\right)$
 \end_inset 
 
  is a generalization of the Riemann zeta function called the Hurwitz zeta
  function Note that 
-\begin_inset Formula \( \zeta \left( n\right) \equiv \zeta \left( n,1\right)  \)
+\begin_inset Formula $\zeta \left(n\right)\equiv \zeta \left(n,1\right)$
 \end_inset 
 
 
@@ -1714,27 +1716,27 @@ Generalized Pareto
 \layout Standard
 
 Shape parameter 
-\begin_inset Formula \( c\neq 0 \)
+\begin_inset Formula $c\neq 0$
 \end_inset 
 
  and defined for 
-\begin_inset Formula \( x\geq 0 \)
+\begin_inset Formula $x\geq 0$
 \end_inset 
 
  and 
-\begin_inset Formula \( x<\frac{1}{\left| c\right| } \)
+\begin_inset Formula $x<\frac{1}{\left|c\right|}$
 \end_inset 
 
  if 
-\begin_inset Formula \( c \)
+\begin_inset Formula $c$
 \end_inset 
 
  is negative.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \left( 1+cx\right) ^{-1-\frac{1}{c}}\\
-F\left( x;c\right)  & = & 1-\frac{1}{\left( 1+cx\right) ^{1/c}}\\
-G\left( q;c\right)  & = & \frac{1}{c}\left[ \left( \frac{1}{1-q}\right) ^{c}-1\right] 
+f\left(x;c\right) & = & \left(1+cx\right)^{-1-\frac{1}{c}}\\
+F\left(x;c\right) & = & 1-\frac{1}{\left(1+cx\right)^{1/c}}\\
+G\left(q;c\right) & = & \frac{1}{c}\left[\left(\frac{1}{1-q}\right)^{c}-1\right]
 \end{eqnarray*}
 
 \end_inset 
@@ -1744,19 +1746,19 @@ G\left( q;c\right)  & = & \frac{1}{c}\left[ \left( \frac{1}{1-q}\right) ^{c}-1\r
 
 
 \begin_inset Formula \[
-\mu ^{\prime }_{n}=\frac{\left( -1\right) ^{n}}{c^{n}}\sum _{k=0}^{n}\left( \begin{array}{c}
-n\\
-k
-\end{array}\right) \frac{\left( -1\right) ^{k}}{1-ck}\quad ck<1\]
+\mu _{n}^{\prime }=\frac{\left(-1\right)^{n}}{c^{n}}\sum _{k=0}^{n}\left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)\frac{\left(-1\right)^{k}}{1-ck}\quad ck<1\]
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
 \mu _{1}^{\prime } & = & \frac{1}{1-c}\quad c<1\\
-\mu ^{\prime }_{2} & = & \frac{2}{\left( 1-2c\right) \left( 1-c\right) }\quad c<\frac{1}{2}\\
-\mu ^{\prime }_{3} & = & \frac{6}{\left( 1-c\right) \left( 1-2c\right) \left( 1-3c\right) }\quad c<\frac{1}{3}\\
-\mu ^{\prime }_{4} & = & \frac{24}{\left( 1-c\right) \left( 1-2c\right) \left( 1-3c\right) \left( 1-4c\right) }\quad c<\frac{1}{4}
+\mu _{2}^{\prime } & = & \frac{2}{\left(1-2c\right)\left(1-c\right)}\quad c<\frac{1}{2}\\
+\mu _{3}^{\prime } & = & \frac{6}{\left(1-c\right)\left(1-2c\right)\left(1-3c\right)}\quad c<\frac{1}{3}\\
+\mu _{4}^{\prime } & = & \frac{24}{\left(1-c\right)\left(1-2c\right)\left(1-3c\right)\left(1-4c\right)}\quad c<\frac{1}{4}
 \end{eqnarray*}
 
 \end_inset 
@@ -1778,26 +1780,26 @@ Generalized Exponential
 \layout Standard
 
 Three positive shape parameters for 
-\begin_inset Formula \( x\geq 0. \)
+\begin_inset Formula $x\geq 0.$
 \end_inset 
 
  Note that 
-\begin_inset Formula \( a,b, \)
+\begin_inset Formula $a,b,$
 \end_inset 
 
  and 
-\begin_inset Formula \( c \)
+\begin_inset Formula $c$
 \end_inset 
 
  are all 
-\begin_inset Formula \( >0. \)
+\begin_inset Formula $>0.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b,c\right)  & = & \left( a+b\left( 1-e^{-cx}\right) \right) \exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
-F\left( x;a,b,c\right)  & = & 1-\exp \left[ ax-bx+\frac{b}{c}\left( 1-e^{-cx}\right) \right] \\
-G\left( q;a,b,c\right)  & = & F^{-1}
+f\left(x;a,b,c\right) & = & \left(a+b\left(1-e^{-cx}\right)\right)\exp \left[ax-bx+\frac{b}{c}\left(1-e^{-cx}\right)\right]\\
+F\left(x;a,b,c\right) & = & 1-\exp \left[ax-bx+\frac{b}{c}\left(1-e^{-cx}\right)\right]\\
+G\left(q;a,b,c\right) & = & F^{-1}
 \end{eqnarray*}
 
 \end_inset 
@@ -1809,7 +1811,7 @@ Generalized Extreme Value
 \layout Standard
 
 Extreme value distributions with shape parameter 
-\begin_inset Formula \( c \)
+\begin_inset Formula $c$
 \end_inset 
 
 .
@@ -1817,58 +1819,58 @@ Extreme value distributions with shape parameter
 \layout Standard
 
 For 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  defined on 
-\begin_inset Formula \( -\infty <x\leq 1/c. \)
+\begin_inset Formula $-\infty <x\leq 1/c.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \exp \left[ -\left( 1-cx\right) ^{1/c}\right] \left( 1-cx\right) ^{1/c-1}\\
-F\left( x;c\right)  & = & \exp \left[ -\left( 1-cx\right) ^{1/c}\right] \\
-G\left( q;c\right)  & = & \frac{1}{c}\left[ 1-\left( -\log q\right) ^{c}\right] 
+f\left(x;c\right) & = & \exp \left[-\left(1-cx\right)^{1/c}\right]\left(1-cx\right)^{1/c-1}\\
+F\left(x;c\right) & = & \exp \left[-\left(1-cx\right)^{1/c}\right]\\
+G\left(q;c\right) & = & \frac{1}{c}\left[1-\left(-\log q\right)^{c}\right]
 \end{eqnarray*}
 
 \end_inset 
 
 
 \begin_inset Formula \[
-\mu _{n}^{\prime }=\frac{1}{c^{n}}\sum _{k=0}^{n}\left( \begin{array}{c}
-n\\
-k
-\end{array}\right) \left( -1\right) ^{k}\Gamma \left( ck+1\right) \quad ck>-1\]
+\mu _{n}^{\prime }=\frac{1}{c^{n}}\sum _{k=0}^{n}\left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)\left(-1\right)^{k}\Gamma \left(ck+1\right)\quad ck>-1\]
 
 \end_inset 
 
  So,
 \begin_inset Formula \begin{eqnarray*}
-\mu _{1}^{\prime } & = & \frac{1}{c}\left( 1-\Gamma \left( 1+c\right) \right) \quad c>-1\\
-\mu _{2}^{\prime } & = & \frac{1}{c^{2}}\left( 1-2\Gamma \left( 1+c\right) +\Gamma \left( 1+2c\right) \right) \quad c>-\frac{1}{2}\\
-\mu _{3}^{\prime } & = & \frac{1}{c^{3}}\left( 1-3\Gamma \left( 1+c\right) +3\Gamma \left( 1+2c\right) -\Gamma \left( 1+3c\right) \right) \quad c>-\frac{1}{3}\\
-\mu _{4}^{\prime } & = & \frac{1}{c^{4}}\left( 1-4\Gamma \left( 1+c\right) +6\Gamma \left( 1+2c\right) -4\Gamma \left( 1+3c\right) +\Gamma \left( 1+4c\right) \right) \quad c>-\frac{1}{4}
+\mu _{1}^{\prime } & = & \frac{1}{c}\left(1-\Gamma \left(1+c\right)\right)\quad c>-1\\
+\mu _{2}^{\prime } & = & \frac{1}{c^{2}}\left(1-2\Gamma \left(1+c\right)+\Gamma \left(1+2c\right)\right)\quad c>-\frac{1}{2}\\
+\mu _{3}^{\prime } & = & \frac{1}{c^{3}}\left(1-3\Gamma \left(1+c\right)+3\Gamma \left(1+2c\right)-\Gamma \left(1+3c\right)\right)\quad c>-\frac{1}{3}\\
+\mu _{4}^{\prime } & = & \frac{1}{c^{4}}\left(1-4\Gamma \left(1+c\right)+6\Gamma \left(1+2c\right)-4\Gamma \left(1+3c\right)+\Gamma \left(1+4c\right)\right)\quad c>-\frac{1}{4}
 \end{eqnarray*}
 
 \end_inset 
 
  For 
-\begin_inset Formula \( c<0 \)
+\begin_inset Formula $c<0$
 \end_inset 
 
  defined on 
-\begin_inset Formula \( \frac{1}{c}\leq x<\infty . \)
+\begin_inset Formula $\frac{1}{c}\leq x<\infty .$
 \end_inset 
 
  For 
-\begin_inset Formula \( c=0 \)
+\begin_inset Formula $c=0$
 \end_inset 
 
  defined over all space 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;0\right)  & = & \exp \left[ -e^{-x}\right] e^{-x}\\
-F\left( x;0\right)  & = & \exp \left[ -e^{-x}\right] \\
-G\left( q;0\right)  & = & -\log \left( -\log q\right) 
+f\left(x;0\right) & = & \exp \left[-e^{-x}\right]e^{-x}\\
+F\left(x;0\right) & = & \exp \left[-e^{-x}\right]\\
+G\left(q;0\right) & = & -\log \left(-\log q\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -1876,9 +1878,9 @@ G\left( q;0\right)  & = & -\log \left( -\log q\right)
  This is just the Gumbel distribution for c=0.
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \gamma =-\psi _{0}\left( 1\right) \\
+\mu  & = & \gamma =-\psi _{0}\left(1\right)\\
 \mu _{2} & = & \frac{\pi ^{2}}{6}\\
-\gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left( 3\right) \\
+\gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left(3\right)\\
 \gamma _{2} & = & \frac{12}{5}
 \end{eqnarray*}
 
@@ -1891,15 +1893,15 @@ Generalized Gamma
 \layout Standard
 
 A general probability form that reduces to many common distributions: 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  
-\begin_inset Formula \( a>0 \)
+\begin_inset Formula $a>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( c\neq 0. \)
+\begin_inset Formula $c\neq 0.$
 \end_inset 
 
  
@@ -1907,43 +1909,43 @@ A general probability form that reduces to many common distributions:
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,c\right)  & = & \frac{\left| c\right| x^{ca-1}}{\Gamma \left( a\right) }\exp \left( -x^{c}\right) \\
-F\left( x;a,c\right)  & = & \frac{\Gamma \left( a,x^{c}\right) }{\Gamma \left( a\right) }\\
-G\left( q;a,c\right)  & = & \left\{ \Gamma ^{-1}\left[ a,\Gamma \left( a\right) q\right] \right\} ^{1/c}
+f\left(x;a,c\right) & = & \frac{\left|c\right|x^{ca-1}}{\Gamma \left(a\right)}\exp \left(-x^{c}\right)\\
+F\left(x;a,c\right) & = & \frac{\Gamma \left(a,x^{c}\right)}{\Gamma \left(a\right)}\\
+G\left(q;a,c\right) & = & \left\{ \Gamma ^{-1}\left[a,\Gamma \left(a\right)q\right]\right\} ^{1/c}
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \[
-\mu ^{\prime }_{n}=\frac{\Gamma \left( a+\frac{n}{c}\right) }{\Gamma \left( a\right) }\]
+\mu _{n}^{\prime }=\frac{\Gamma \left(a+\frac{n}{c}\right)}{\Gamma \left(a\right)}\]
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \frac{\Gamma \left( a+\frac{1}{c}\right) }{\Gamma \left( a\right) }\\
-\mu _{2} & = & \frac{\Gamma \left( a+\frac{2}{c}\right) }{\Gamma \left( a\right) }-\mu ^{2}\\
-\gamma _{1} & = & \frac{\Gamma \left( a+\frac{3}{c}\right) /\Gamma \left( a\right) -3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{\Gamma \left( a+\frac{4}{c}\right) /\Gamma \left( a\right) -4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\mu  & = & \frac{\Gamma \left(a+\frac{1}{c}\right)}{\Gamma \left(a\right)}\\
+\mu _{2} & = & \frac{\Gamma \left(a+\frac{2}{c}\right)}{\Gamma \left(a\right)}-\mu ^{2}\\
+\gamma _{1} & = & \frac{\Gamma \left(a+\frac{3}{c}\right)/\Gamma \left(a\right)-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\Gamma \left(a+\frac{4}{c}\right)/\Gamma \left(a\right)-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
 \end{eqnarray*}
 
 \end_inset 
 
  Special cases are Weibull 
-\begin_inset Formula \( \left( a=1\right)  \)
+\begin_inset Formula $\left(a=1\right)$
 \end_inset 
 
 , half-normal 
-\begin_inset Formula \( \left( a=1/2,c=2\right)  \)
+\begin_inset Formula $\left(a=1/2,c=2\right)$
 \end_inset 
 
  and ordinary gamma distributions 
-\begin_inset Formula \( c=1. \)
+\begin_inset Formula $c=1.$
 \end_inset 
 
  If 
-\begin_inset Formula \( c=-1 \)
+\begin_inset Formula $c=-1$
 \end_inset 
 
  then it is the inverted gamma distribution.
@@ -1954,18 +1956,18 @@ Generalized Half-Logistic
 \layout Standard
 
 For 
-\begin_inset Formula \( x\in \left[ 0,1/c\right]  \)
+\begin_inset Formula $x\in \left[0,1/c\right]$
 \end_inset 
 
  and 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  we have 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{2\left( 1-cx\right) ^{\frac{1}{c}-1}}{\left( 1+\left( 1-cx\right) ^{1/c}\right) ^{2}}\\
-F\left( x;c\right)  & = & \frac{1-\left( 1-cx\right) ^{1/c}}{1+\left( 1-cx\right) ^{1/c}}\\
-G\left( q;c\right)  & = & \frac{1}{c}\left[ 1-\left( \frac{1-q}{1+q}\right) ^{c}\right] 
+f\left(x;c\right) & = & \frac{2\left(1-cx\right)^{\frac{1}{c}-1}}{\left(1+\left(1-cx\right)^{1/c}\right)^{2}}\\
+F\left(x;c\right) & = & \frac{1-\left(1-cx\right)^{1/c}}{1+\left(1-cx\right)^{1/c}}\\
+G\left(q;c\right) & = & \frac{1}{c}\left[1-\left(\frac{1-q}{1+q}\right)^{c}\right]
 \end{eqnarray*}
 
 \end_inset 
@@ -1977,22 +1979,22 @@ Gilbrat
 \layout Standard
 
 Special case of the log-normal with 
-\begin_inset Formula \( \sigma =1 \)
+\begin_inset Formula $\sigma =1$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=1.0 \)
+\begin_inset Formula $S=1.0$
 \end_inset 
 
  (typically also 
-\begin_inset Formula \( L=0.0 \)
+\begin_inset Formula $L=0.0$
 \end_inset 
 
 ) 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\sigma \right)  & = & \frac{1}{x\sqrt{2\pi }}\exp \left[ -\frac{1}{2}\left( \log x\right) ^{2}\right] \\
-F\left( x;\sigma \right)  & = & \Phi \left( \log x\right) =\frac{1}{2}\left[ 1+\textrm{erf}\left( \frac{\log x}{\sqrt{2}}\right) \right] \\
-G\left( q;\sigma \right)  & = & \exp \left\{ \Phi ^{-1}\left( q\right) \right\} 
+f\left(x;\sigma \right) & = & \frac{1}{x\sqrt{2\pi }}\exp \left[-\frac{1}{2}\left(\log x\right)^{2}\right]\\
+F\left(x;\sigma \right) & = & \Phi \left(\log x\right)=\frac{1}{2}\left[1+\textrm{erf}\left(\frac{\log x}{\sqrt{2}}\right)\right]\\
+G\left(q;\sigma \right) & = & \exp \left\{ \Phi ^{-1}\left(q\right)\right\} 
 \end{eqnarray*}
 
 \end_inset 
@@ -2000,8 +2002,8 @@ G\left( q;\sigma \right)  & = & \exp \left\{ \Phi ^{-1}\left( q\right) \right\}
  
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \sqrt{e}\\
-\mu _{2} & = & e\left[ e-1\right] \\
-\gamma _{1} & = & \sqrt{e-1}\left( 2+e\right) \\
+\mu _{2} & = & e\left[e-1\right]\\
+\gamma _{1} & = & \sqrt{e-1}\left(2+e\right)\\
 \gamma _{2} & = & e^{4}+2e^{3}+3e^{2}-6
 \end{eqnarray*}
 
@@ -2014,45 +2016,45 @@ Gompertz (Truncated Gumbel)
 \layout Standard
 
 For 
-\begin_inset Formula \( x\geq 0 \)
+\begin_inset Formula $x\geq 0$
 \end_inset 
 
  and 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
 .
  In JKB the two shape parameters 
-\begin_inset Formula \( b,a \)
+\begin_inset Formula $b,a$
 \end_inset 
 
  are reduced to the single shape-parameter 
-\begin_inset Formula \( c=b/a \)
+\begin_inset Formula $c=b/a$
 \end_inset 
 
 .
  As 
-\begin_inset Formula \( a \)
+\begin_inset Formula $a$
 \end_inset 
 
  is just a scale parameter when 
-\begin_inset Formula \( a\neq 0 \)
+\begin_inset Formula $a\neq 0$
 \end_inset 
 
 .
  If 
-\begin_inset Formula \( a=0, \)
+\begin_inset Formula $a=0,$
 \end_inset 
 
  the distribution reduces to the exponential distribution scaled by 
-\begin_inset Formula \( 1/b. \)
+\begin_inset Formula $1/b.$
 \end_inset 
 
  Thus, the standard form is given as 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & ce^{x}\exp \left[ -c\left( e^{x}-1\right) \right] \\
-F\left( x;c\right)  & = & 1-\exp \left[ -c\left( e^{x}-1\right) \right] \\
-G\left( q;c\right)  & = & \log \left[ 1-\frac{1}{c}\log \left( 1-q\right) \right] 
+f\left(x;c\right) & = & ce^{x}\exp \left[-c\left(e^{x}-1\right)\right]\\
+F\left(x;c\right) & = & 1-\exp \left[-c\left(e^{x}-1\right)\right]\\
+G\left(q;c\right) & = & \log \left[1-\frac{1}{c}\log \left(1-q\right)\right]
 \end{eqnarray*}
 
 \end_inset 
@@ -2068,21 +2070,21 @@ One of a clase of extreme value distributions (right-skewed).
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \exp \left( -\left( x+e^{-x}\right) \right) \\
-F\left( x\right)  & = & \exp \left( -e^{-x}\right) \\
-G\left( q\right)  & = & -\log \left( -\log \left( q\right) \right) 
+f\left(x\right) & = & \exp \left(-\left(x+e^{-x}\right)\right)\\
+F\left(x\right) & = & \exp \left(-e^{-x}\right)\\
+G\left(q\right) & = & -\log \left(-\log \left(q\right)\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \gamma =-\psi _{0}\left( 1\right) \\
+\mu  & = & \gamma =-\psi _{0}\left(1\right)\\
 \mu _{2} & = & \frac{\pi ^{2}}{6}\\
-\gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left( 3\right) \\
+\gamma _{1} & = & \frac{12\sqrt{6}}{\pi ^{3}}\zeta \left(3\right)\\
 \gamma _{2} & = & \frac{12}{5}\\
 m_{d} & = & 0\\
-m_{n} & = & -\log \left( \log 2\right) 
+m_{n} & = & -\log \left(\log 2\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2095,15 +2097,15 @@ Gumbel Left-skewed (for minimum order statistic)
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \exp \left( x-e^{x}\right) \\
-F\left( x\right)  & = & 1-\exp \left( -e^{x}\right) \\
-G\left( q\right)  & = & \log \left( -\log \left( 1-q\right) \right) 
+f\left(x\right) & = & \exp \left(x-e^{x}\right)\\
+F\left(x\right) & = & 1-\exp \left(-e^{x}\right)\\
+G\left(q\right) & = & \log \left(-\log \left(1-q\right)\right)
 \end{eqnarray*}
 
 \end_inset 
 
  Note, that 
-\begin_inset Formula \( \mu  \)
+\begin_inset Formula $\mu $
 \end_inset 
 
  is negative the mean for the right-skewed distribution.
@@ -2116,32 +2118,32 @@ HalfCauchy
 \layout Standard
 
 If 
-\begin_inset Formula \( Z \)
+\begin_inset Formula $Z$
 \end_inset 
 
  is Hyperbolic Secant distributed then 
-\begin_inset Formula \( e^{Z} \)
+\begin_inset Formula $e^{Z}$
 \end_inset 
 
  is Half-Cauchy distributed.
  Also, if 
-\begin_inset Formula \( W \)
+\begin_inset Formula $W$
 \end_inset 
 
  is (standard) Cauchy distributed, then 
-\begin_inset Formula \( \left| W\right|  \)
+\begin_inset Formula $\left|W\right|$
 \end_inset 
 
  is Half-Cauchy distributed.
  Special case of the Folded Cauchy distribution with 
-\begin_inset Formula \( c=0. \)
+\begin_inset Formula $c=0.$
 \end_inset 
 
  The standard form is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{2}{\pi \left( 1+x^{2}\right) }I_{[0,\infty )}\left( x\right) \\
-F\left( x\right)  & = & \frac{2}{\pi }\arctan \left( x\right) I_{\left[ 0,\infty \right] }\left( x\right) \\
-G\left( q\right)  & = & \tan \left( \frac{\pi }{2}q\right) 
+f\left(x\right) & = & \frac{2}{\pi \left(1+x^{2}\right)}I_{[0,\infty )}\left(x\right)\\
+F\left(x\right) & = & \frac{2}{\pi }\arctan \left(x\right)I_{\left[0,\infty \right]}\left(x\right)\\
+G\left(q\right) & = & \tan \left(\frac{\pi }{2}q\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2149,7 +2151,7 @@ G\left( q\right)  & = & \tan \left( \frac{\pi }{2}q\right)
 
 \begin_inset Formula \begin{eqnarray*}
 m_{d} & = & 0\\
-m_{n} & = & \tan \left( \frac{\pi }{4}\right) 
+m_{n} & = & \tan \left(\frac{\pi }{4}\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2162,39 +2164,39 @@ HalfNormal
 \layout Standard
 
 This is a special case of the chi distribution with 
-\begin_inset Formula \( L=a \)
+\begin_inset Formula $L=a$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=b \)
+\begin_inset Formula $S=b$
 \end_inset 
 
  and 
-\begin_inset Formula \( \nu =1. \)
+\begin_inset Formula $\nu =1.$
 \end_inset 
 
  This is also a special case of the folded normal with shape parameter 
-\begin_inset Formula \( c=0 \)
+\begin_inset Formula $c=0$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=S. \)
+\begin_inset Formula $S=S.$
 \end_inset 
 
  If 
-\begin_inset Formula \( Z \)
+\begin_inset Formula $Z$
 \end_inset 
 
  is (standard) normally distributed then, 
-\begin_inset Formula \( \left| Z\right|  \)
+\begin_inset Formula $\left|Z\right|$
 \end_inset 
 
  is half-normal.
  The standard form is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \sqrt{\frac{2}{\pi }}e^{-x^{2}/2}I_{\left( 0,\infty \right) }\left( x\right) \\
-F\left( x\right)  & = & 2\Phi \left( x\right) -1\\
-G\left( \alpha \right)  & = & \Phi ^{-1}\left( \frac{1+\alpha }{2}\right) 
+f\left(x\right) & = & \sqrt{\frac{2}{\pi }}e^{-x^{2}/2}I_{\left(0,\infty \right)}\left(x\right)\\
+F\left(x\right) & = & 2\Phi \left(x\right)-1\\
+G\left(\alpha \right) & = & \Phi ^{-1}\left(\frac{1+\alpha }{2}\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2206,10 +2208,10 @@ G\left( \alpha \right)  & = & \Phi ^{-1}\left( \frac{1+\alpha }{2}\right)
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \sqrt{\frac{2}{\pi }}\\
 \mu _{2} & = & 1-\frac{2}{\pi }\\
-\gamma _{1} & = & \frac{\sqrt{2}\left( 4-\pi \right) }{\left( \pi -2\right) ^{3/2}}\\
-\gamma _{2} & = & \frac{8\left( \pi -3\right) }{\left( \pi -2\right) ^{2}}\\
+\gamma _{1} & = & \frac{\sqrt{2}\left(4-\pi \right)}{\left(\pi -2\right)^{3/2}}\\
+\gamma _{2} & = & \frac{8\left(\pi -3\right)}{\left(\pi -2\right)^{2}}\\
 m_{d} & = & 0\\
-m_{n} & = & \Phi ^{-1}\left( \frac{3}{4}\right) 
+m_{n} & = & \Phi ^{-1}\left(\frac{3}{4}\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2221,44 +2223,44 @@ Half-Logistic
 \layout Standard
 
 In the limit as 
-\begin_inset Formula \( c\rightarrow \infty  \)
+\begin_inset Formula $c\rightarrow \infty $
 \end_inset 
 
  for the generalized half-logistic we have the half-logistic defined over
  
-\begin_inset Formula \( x\geq 0. \)
+\begin_inset Formula $x\geq 0.$
 \end_inset 
 
  Also, the distribution of 
-\begin_inset Formula \( \left| X\right|  \)
+\begin_inset Formula $\left|X\right|$
 \end_inset 
 
  where 
-\begin_inset Formula \( X \)
+\begin_inset Formula $X$
 \end_inset 
 
  has logistic distribtution.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{2e^{-x}}{\left( 1+e^{-x}\right) ^{2}}\\
-F\left( x\right)  & = & \frac{1-e^{-x}}{1+e^{-x}}\\
-G\left( q\right)  & = & \log \left( \frac{1+q}{1-q}\right) 
+f\left(x\right) & = & \frac{2e^{-x}}{\left(1+e^{-x}\right)^{2}}\\
+F\left(x\right) & = & \frac{1-e^{-x}}{1+e^{-x}}\\
+G\left(q\right) & = & \log \left(\frac{1+q}{1-q}\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \[
-\mu _{n}^{\prime }=2^{n}\int _{0}^{\infty }\frac{y^{n}dy}{\cosh ^{2}\left( y\right) }=2\left( 1-2^{1-n}\right) n!\zeta \left( n\right) \quad n\neq 1\]
+\mu _{n}^{\prime }=2^{n}\int _{0}^{\infty }\frac{y^{n}dy}{\cosh ^{2}\left(y\right)}=2\left(1-2^{1-n}\right)n!\zeta \left(n\right)\quad n\neq 1\]
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu _{1}^{\prime } & = & 2\log \left( 2\right) \\
-\mu _{2}^{\prime } & = & 2\zeta \left( 2\right) =\frac{\pi ^{2}}{3}\\
-\mu _{3}^{\prime } & = & 9\zeta \left( 3\right) \\
-\mu _{4}^{\prime } & = & 42\zeta \left( 4\right) =\frac{7\pi ^{4}}{15}
+\mu _{1}^{\prime } & = & 2\log \left(2\right)\\
+\mu _{2}^{\prime } & = & 2\zeta \left(2\right)=\frac{\pi ^{2}}{3}\\
+\mu _{3}^{\prime } & = & 9\zeta \left(3\right)\\
+\mu _{4}^{\prime } & = & 42\zeta \left(4\right)=\frac{7\pi ^{4}}{15}
 \end{eqnarray*}
 
 \end_inset 
@@ -2272,9 +2274,9 @@ Hyperbolic Secant
 Related to the logistic distribution and used in lifetime analysis.
  Standard form is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{\pi }\textrm{sech}\left( x\right) \\
-F\left( x\right)  & = & \frac{2}{\pi }\arctan \left( e^{x}\right) \\
-G\left( q\right)  & = & \log \left( \tan \left( \frac{\pi }{2}q\right) \right) 
+f\left(x\right) & = & \frac{1}{\pi }\textrm{sech}\left(x\right)\\
+F\left(x\right) & = & \frac{2}{\pi }\arctan \left(e^{x}\right)\\
+G\left(q\right) & = & \log \left(\tan \left(\frac{\pi }{2}q\right)\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2296,23 +2298,23 @@ Gauss Hypergeometric (*)
 \layout Standard
 
 
-\begin_inset Formula \( x\in \left[ 0,1\right]  \)
+\begin_inset Formula $x\in \left[0,1\right]$
 \end_inset 
 
 , 
-\begin_inset Formula \( \alpha >0,\, \beta >0 \)
+\begin_inset Formula $\alpha >0,\, \beta >0$
 \end_inset 
 
 
 \begin_inset Formula \[
-C^{-1}=\frac{\Gamma \left( \alpha \right) \Gamma \left( \beta \right) }{\Gamma \left( \alpha +\beta \right) }\, _{2}F_{1}\left( \gamma ,\alpha ;\alpha +\beta ;-z\right) \]
+C^{-1}=\frac{\Gamma \left(\alpha \right)\Gamma \left(\beta \right)}{\Gamma \left(\alpha +\beta \right)}\, _{2}F_{1}\left(\gamma ,\alpha ;\alpha +\beta ;-z\right)\]
 
 \end_inset 
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\alpha ,\beta ,\gamma ,z\right)  & = & Cx^{\alpha -1}\frac{\left( 1-x\right) ^{\beta -1}}{\left( 1+zx\right) ^{\gamma }}\\
-\mu _{n}^{\prime } & = & \frac{B\left( k+\alpha ,\beta \right) }{B\left( \alpha ,\beta \right) }\frac{\, _{2}F_{1}\left( \gamma ,\alpha +k;\alpha +\beta +k;-z\right) }{\, _{2}F_{1}\left( \gamma ,\alpha ;\alpha +\beta ;-z\right) }
+f\left(x;\alpha ,\beta ,\gamma ,z\right) & = & Cx^{\alpha -1}\frac{\left(1-x\right)^{\beta -1}}{\left(1+zx\right)^{\gamma }}\\
+\mu _{n}^{\prime } & = & \frac{B\left(k+\alpha ,\beta \right)}{B\left(\alpha ,\beta \right)}\frac{\, _{2}F_{1}\left(\gamma ,\alpha +k;\alpha +\beta +k;-z\right)}{\, _{2}F_{1}\left(\gamma ,\alpha ;\alpha +\beta ;-z\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -2324,11 +2326,11 @@ Inverted Gamma
 \layout Standard
 
 Special case of the generalized Gamma distribution with 
-\begin_inset Formula \( c=-1 \)
+\begin_inset Formula $c=-1$
 \end_inset 
 
  and 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  
@@ -2336,25 +2338,25 @@ Special case of the generalized Gamma distribution with
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a\right)  & = & \frac{x^{-a-1}}{\Gamma \left( a\right) }\exp \left( -\frac{1}{x}\right) \\
-F\left( x;a\right)  & = & \frac{\Gamma \left( a,\frac{1}{x}\right) }{\Gamma \left( a\right) }\\
-G\left( q;a\right)  & = & \left\{ \Gamma ^{-1}\left[ a,\Gamma \left( a\right) q\right] \right\} ^{-1}
+f\left(x;a\right) & = & \frac{x^{-a-1}}{\Gamma \left(a\right)}\exp \left(-\frac{1}{x}\right)\\
+F\left(x;a\right) & = & \frac{\Gamma \left(a,\frac{1}{x}\right)}{\Gamma \left(a\right)}\\
+G\left(q;a\right) & = & \left\{ \Gamma ^{-1}\left[a,\Gamma \left(a\right)q\right]\right\} ^{-1}
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \[
-\mu ^{\prime }_{n}=\frac{\Gamma \left( a-n\right) }{\Gamma \left( a\right) }\quad a>n\]
+\mu _{n}^{\prime }=\frac{\Gamma \left(a-n\right)}{\Gamma \left(a\right)}\quad a>n\]
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{1}{a-1}\\
-\mu _{2} & = & \frac{1}{\left( a-2\right) \left( a-1\right) }-\mu ^{2}\\
-\gamma _{1} & = & \frac{\frac{1}{\left( a-3\right) \left( a-2\right) \left( a-1\right) }-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{\frac{1}{\left( a-4\right) \left( a-3\right) \left( a-2\right) \left( a-1\right) }-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
+\mu _{2} & = & \frac{1}{\left(a-2\right)\left(a-1\right)}-\mu ^{2}\\
+\gamma _{1} & = & \frac{\frac{1}{\left(a-3\right)\left(a-2\right)\left(a-1\right)}-3\mu \mu _{2}-\mu ^{3}}{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{\frac{1}{\left(a-4\right)\left(a-3\right)\left(a-2\right)\left(a-1\right)}-4\mu \mu _{3}-6\mu ^{2}\mu _{2}-\mu ^{4}}{\mu _{2}^{2}}-3
 \end{eqnarray*}
 
 \end_inset 
@@ -2366,36 +2368,36 @@ Inverse Normal (Inverse Gaussian)
 \layout Standard
 
 The standard form involves the shape parameter 
-\begin_inset Formula \( \mu  \)
+\begin_inset Formula $\mu $
 \end_inset 
 
  (in most definitions, 
-\begin_inset Formula \( L=0.0 \)
+\begin_inset Formula $L=0.0$
 \end_inset 
 
  is used).
  (In terms of the regress documentation 
-\begin_inset Formula \( \mu =A/B \)
+\begin_inset Formula $\mu =A/B$
 \end_inset 
 
 ) and 
-\begin_inset Formula \( B=S \)
+\begin_inset Formula $B=S$
 \end_inset 
 
  and 
-\begin_inset Formula \( L \)
+\begin_inset Formula $L$
 \end_inset 
 
  is not a parameter in that distribution.
  A standard form is 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x\mu ^{2}}\right) .\\
-F\left( x;\mu \right)  & = & \Phi \left( \frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right) +\exp \left( \frac{2}{\mu }\right) \Phi \left( -\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right) \\
-G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right) 
+f\left(x;\mu \right) & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left(-\frac{\left(x-\mu \right)^{2}}{2x\mu ^{2}}\right).\\
+F\left(x;\mu \right) & = & \Phi \left(\frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right)+\exp \left(\frac{2}{\mu }\right)\Phi \left(-\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right)\\
+G\left(q;\mu \right) & = & F^{-1}\left(q;\mu \right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2409,7 +2411,7 @@ G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right)
 \mu _{2} & = & \mu ^{3}\\
 \gamma _{1} & = & 3\sqrt{\mu }\\
 \gamma _{2} & = & 15\mu \\
-m_{d} & = & \frac{\mu }{2}\left( \sqrt{9\mu ^{2}+4}-3\mu \right) 
+m_{d} & = & \frac{\mu }{2}\left(\sqrt{9\mu ^{2}+4}-3\mu \right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2426,27 +2428,27 @@ two-parameter
 \end_inset 
 
  inverse Gaussian when written in it's full form with scale parameter 
-\begin_inset Formula \( S \)
+\begin_inset Formula $S$
 \end_inset 
 
  and location parameter 
-\begin_inset Formula \( L \)
+\begin_inset Formula $L$
 \end_inset 
 
  by taking 
-\begin_inset Formula \( L=0 \)
+\begin_inset Formula $L=0$
 \end_inset 
 
  and 
-\begin_inset Formula \( S\equiv \lambda , \)
+\begin_inset Formula $S\equiv \lambda ,$
 \end_inset 
 
  then 
-\begin_inset Formula \( \mu S \)
+\begin_inset Formula $\mu S$
 \end_inset 
 
  is equal to 
-\begin_inset Formula \( \mu _{2} \)
+\begin_inset Formula $\mu _{2}$
 \end_inset 
 
  where
@@ -2454,21 +2456,21 @@ two-parameter
  
 \bar default 
 
-\begin_inset Formula \( \mu _{2} \)
+\begin_inset Formula $\mu _{2}$
 \end_inset 
 
  is the parameter used by JKB.
  We prefer this form because of it's consistent use of the scale parameter.
  Notice that in JKB the skew 
-\begin_inset Formula \( \left( \sqrt{\beta _{1}}\right)  \)
+\begin_inset Formula $\left(\sqrt{\beta _{1}}\right)$
 \end_inset 
 
  and the kurtosis (
-\begin_inset Formula \( \beta _{2}-3 \)
+\begin_inset Formula $\beta _{2}-3$
 \end_inset 
 
 ) are both functions only of 
-\begin_inset Formula \( \mu _{2}/\lambda =\mu S/S=\mu  \)
+\begin_inset Formula $\mu _{2}/\lambda =\mu S/S=\mu $
 \end_inset 
 
  as shown here, while the variance and mean of the standard form here are
@@ -2480,19 +2482,19 @@ Inverted Weibull
 \layout Standard
 
 Shape paramter 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
 .
  Then 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & cx^{-c-1}\exp \left( -x^{-c}\right) \\
-F\left( x;c\right)  & = & \exp \left( -x^{-c}\right) \\
-G\left( q;c\right)  & = & \left( -\log q\right) ^{-1/c}
+f\left(x;c\right) & = & cx^{-c-1}\exp \left(-x^{-c}\right)\\
+F\left(x;c\right) & = & \exp \left(-x^{-c}\right)\\
+G\left(q;c\right) & = & \left(-\log q\right)^{-1/c}
 \end{eqnarray*}
 
 \end_inset 
@@ -2504,22 +2506,22 @@ Johnson SB
 \layout Standard
 
 Defined for 
-\begin_inset Formula \( x\in \left( 0,1\right)  \)
+\begin_inset Formula $x\in \left(0,1\right)$
 \end_inset 
 
  with two shape parameters 
-\begin_inset Formula \( a \)
+\begin_inset Formula $a$
 \end_inset 
 
  and 
-\begin_inset Formula \( b>0. \)
+\begin_inset Formula $b>0.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b\right)  & = & \frac{b}{x\left( 1-x\right) }\phi \left( a+b\log \frac{x}{1-x}\right) \\
-F\left( x;a,b\right)  & = & \Phi \left( a+b\log \frac{x}{1-x}\right) \\
-G\left( q;a,b\right)  & = & \frac{1}{1+\exp \left[ -\frac{1}{b}\left( \Phi ^{-1}\left( q\right) -a\right) \right] }
+f\left(x;a,b\right) & = & \frac{b}{x\left(1-x\right)}\phi \left(a+b\log \frac{x}{1-x}\right)\\
+F\left(x;a,b\right) & = & \Phi \left(a+b\log \frac{x}{1-x}\right)\\
+G\left(q;a,b\right) & = & \frac{1}{1+\exp \left[-\frac{1}{b}\left(\Phi ^{-1}\left(q\right)-a\right)\right]}
 \end{eqnarray*}
 
 \end_inset 
@@ -2531,23 +2533,23 @@ Johnson SU
 \layout Standard
 
 Defined for all 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
  with two shape parameters 
-\begin_inset Formula \( a \)
+\begin_inset Formula $a$
 \end_inset 
 
  and 
-\begin_inset Formula \( b>0 \)
+\begin_inset Formula $b>0$
 \end_inset 
 
 .
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b\right)  & = & \frac{b}{\sqrt{x^{2}+1}}\phi \left( a+b\log \left( x+\sqrt{x^{2}+1}\right) \right) \\
-F\left( x;a,b\right)  & = & \Phi \left( a+b\log \left( x+\sqrt{x^{2}+1}\right) \right) \\
-G\left( q;a,b\right)  & = & \sinh \left[ \frac{\Phi ^{-1}\left( q\right) -a}{b}\right] 
+f\left(x;a,b\right) & = & \frac{b}{\sqrt{x^{2}+1}}\phi \left(a+b\log \left(x+\sqrt{x^{2}+1}\right)\right)\\
+F\left(x;a,b\right) & = & \Phi \left(a+b\log \left(x+\sqrt{x^{2}+1}\right)\right)\\
+G\left(q;a,b\right) & = & \sinh \left[\frac{\Phi ^{-1}\left(q\right)-a}{b}\right]
 \end{eqnarray*}
 
 \end_inset 
@@ -2566,15 +2568,15 @@ Laplace (Double Exponential, Bilateral Exponential)
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{2}e^{-\left| x\right| }\\
-F\left( x\right)  & = & \left\{ \begin{array}{ccc}
-\frac{1}{2}e^{x} &  & x\leq 0\\
-1-\frac{1}{2}e^{-x} &  & x>0
-\end{array}\right. \\
-G\left( q\right)  & = & \left\{ \begin{array}{ccc}
-\log \left( 2q\right)  &  & q\leq \frac{1}{2}\\
--\log \left( 2-2q\right)  &  & q>\frac{1}{2}
-\end{array}\right. 
+f\left(x\right) & = & \frac{1}{2}e^{-\left|x\right|}\\
+F\left(x\right) & = & \left\{ \begin{array}{ccc}
+ \frac{1}{2}e^{x} &  & x\leq 0\\
+ 1-\frac{1}{2}e^{-x} &  & x>0\end{array}
+\right.\\
+G\left(q\right) & = & \left\{ \begin{array}{ccc}
+ \log \left(2q\right) &  & q\leq \frac{1}{2}\\
+ -\log \left(2-2q\right) &  & q>\frac{1}{2}\end{array}
+\right.
 \end{eqnarray*}
 
 \end_inset 
@@ -2594,25 +2596,25 @@ m_{d}=m_{n}=\mu  & = & 0\\
 
 The ML estimator of the location parameter is 
 \begin_inset Formula \[
-\hat{L}=\textrm{median}\left( X_{i}\right) \]
+\hat{L}=\textrm{median}\left(X_{i}\right)\]
 
 \end_inset 
 
  where 
-\begin_inset Formula \( X_{i} \)
+\begin_inset Formula $X_{i}$
 \end_inset 
 
  is a sequence of 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
  mutually independent Laplace RV's and the median is some number between
  the 
-\begin_inset Formula \( \frac{1}{2}N\textrm{th} \)
+\begin_inset Formula $\frac{1}{2}N\textrm{th}$
 \end_inset 
 
  and the 
-\begin_inset Formula \( (N/2+1)\textrm{th} \)
+\begin_inset Formula $(N/2+1)\textrm{th}$
 \end_inset 
 
  order statistic (
@@ -2621,31 +2623,31 @@ e.g.
 
 \emph default 
  take the average of these two) when 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
  is even.
  Also, 
 \begin_inset Formula \[
-\hat{S}=\frac{1}{N}\sum _{j=1}^{N}\left| X_{j}-\hat{L}\right| .\]
+\hat{S}=\frac{1}{N}\sum _{j=1}^{N}\left|X_{j}-\hat{L}\right|.\]
 
 \end_inset 
 
  Replace 
-\begin_inset Formula \( \hat{L} \)
+\begin_inset Formula $\hat{L}$
 \end_inset 
 
  with 
-\begin_inset Formula \( L \)
+\begin_inset Formula $L$
 \end_inset 
 
  if it is known.
  If 
-\begin_inset Formula \( L \)
+\begin_inset Formula $L$
 \end_inset 
 
  is known then this estimator is distributed as 
-\begin_inset Formula \( \left( 2N\right) ^{-1}S\cdot \chi ^{2}_{2N} \)
+\begin_inset Formula $\left(2N\right)^{-1}S\cdot \chi _{2N}^{2}$
 \end_inset 
 
 .
@@ -2656,7 +2658,7 @@ Logistic (Sech-squared)
 \layout Standard
 
 A special case of the Generalized Logistic distribution with 
-\begin_inset Formula \( c=1. \)
+\begin_inset Formula $c=1.$
 \end_inset 
 
  
@@ -2664,9 +2666,9 @@ A special case of the Generalized Logistic distribution with
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{\exp \left( -x\right) }{\left[ 1+\exp \left( -x\right) \right] ^{2}}\\
-F\left( x;c\right)  & = & \frac{1}{1+\exp \left( -x\right) }\\
-G\left( q;c\right)  & = & -\log \left( 1/q-1\right) 
+f\left(x\right) & = & \frac{\exp \left(-x\right)}{\left[1+\exp \left(-x\right)\right]^{2}}\\
+F\left(x\right) & = & \frac{1}{1+\exp \left(-x\right)}\\
+G\left(q\right) & = & -\log \left(1/q-1\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2676,12 +2678,12 @@ G\left( q;c\right)  & = & -\log \left( 1/q-1\right)
 
 
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \gamma +\psi _{0}\left( 1\right) =0\\
-\mu _{2} & = & \frac{\pi ^{2}}{6}+\psi _{1}\left( 1\right) =\frac{\pi ^{2}}{3}\\
-\gamma _{1} & = & \frac{\psi _{2}\left( c\right) +2\zeta \left( 3\right) }{\mu _{2}^{3/2}}=0\\
-\gamma _{2} & = & \frac{\left( \frac{\pi ^{4}}{15}+\psi _{3}\left( c\right) \right) }{\mu _{2}^{2}}=\frac{6}{5}\\
+\mu  & = & \gamma +\psi _{0}\left(1\right)=0\\
+\mu _{2} & = & \frac{\pi ^{2}}{6}+\psi _{1}\left(1\right)=\frac{\pi ^{2}}{3}\\
+\gamma _{1} & = & \frac{\psi _{2}\left(c\right)+2\zeta \left(3\right)}{\mu _{2}^{3/2}}=0\\
+\gamma _{2} & = & \frac{\left(\frac{\pi ^{4}}{15}+\psi _{3}\left(c\right)\right)}{\mu _{2}^{2}}=\frac{6}{5}\\
 m_{d} & = & \log 1=0\\
-m_{n} & = & -\log \left( 2-1\right) =0
+m_{n} & = & -\log \left(2-1\right)=0
 \end{eqnarray*}
 
 \end_inset 
@@ -2693,27 +2695,27 @@ Log Double Exponential (Log-Laplace)
 \layout Standard
 
 Defined over 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  with 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-\frac{c}{2}x^{c-1} &  & 0<x<1\\
-\frac{c}{2}x^{-c-1} &  & x\geq 1
-\end{array}\right. \\
-F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-\frac{1}{2}x^{c} &  & 0<x<1\\
-1-\frac{1}{2}x^{-c} &  & x\geq 1
-\end{array}\right. \\
-G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
-\left( 2q\right) ^{1/c} &  & 0\leq q<\frac{1}{2}\\
-\left( 2-2q\right) ^{-1/c} &  & \frac{1}{2}\leq q\leq 1
-\end{array}\right. 
+f\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ \frac{c}{2}x^{c-1} &  & 0<x<1\\
+ \frac{c}{2}x^{-c-1} &  & x\geq 1\end{array}
+\right.\\
+F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ \frac{1}{2}x^{c} &  & 0<x<1\\
+ 1-\frac{1}{2}x^{-c} &  & x\geq 1\end{array}
+\right.\\
+G\left(q;c\right) & = & \left\{ \begin{array}{ccc}
+ \left(2q\right)^{1/c} &  & 0\leq q<\frac{1}{2}\\
+ \left(2-2q\right)^{-1/c} &  & \frac{1}{2}\leq q\leq 1\end{array}
+\right.
 \end{eqnarray*}
 
 \end_inset 
@@ -2725,25 +2727,25 @@ Log Gamma
 \layout Standard
 
 A single shape parameter 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  (Defined for all 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
 ) 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{\exp \left( cx-e^{x}\right) }{\Gamma \left( c\right) }\\
-F\left( x;c\right)  & = & \frac{\Gamma \left( c,e^{x}\right) }{\Gamma \left( c\right) }\\
-G\left( q;c\right)  & = & \log \left[ \Gamma ^{-1}\left[ c,q\Gamma \left( c\right) \right] \right] 
+f\left(x;c\right) & = & \frac{\exp \left(cx-e^{x}\right)}{\Gamma \left(c\right)}\\
+F\left(x;c\right) & = & \frac{\Gamma \left(c,e^{x}\right)}{\Gamma \left(c\right)}\\
+G\left(q;c\right) & = & \log \left[\Gamma ^{-1}\left[c,q\Gamma \left(c\right)\right]\right]
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \[
-\mu ^{\prime }_{n}=\int _{0}^{\infty }\left[ \log y\right] ^{n}y^{c-1}\exp \left( -y\right) dy.\]
+\mu _{n}^{\prime }=\int _{0}^{\infty }\left[\log y\right]^{n}y^{c-1}\exp \left(-y\right)dy.\]
 
 \end_inset 
 
@@ -2764,7 +2766,7 @@ Log Normal (Cobb-Douglass)
 \layout Standard
 
 Has one shape parameter 
-\begin_inset Formula \( \sigma  \)
+\begin_inset Formula $\sigma $
 \end_inset 
 
 .
@@ -2777,32 +2779,32 @@ Regress
 \end_inset 
 
  
-\begin_inset Formula \( A=\log S \)
+\begin_inset Formula $A=\log S$
 \end_inset 
 
  where 
-\begin_inset Formula \( S \)
+\begin_inset Formula $S$
 \end_inset 
 
  is the scale parameter and 
-\begin_inset Formula \( A \)
+\begin_inset Formula $A$
 \end_inset 
 
  is the mean of the underlying normal distribution).
  The standard form is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\sigma \right)  & = & \frac{1}{\sigma x\sqrt{2\pi }}\exp \left[ -\frac{1}{2}\left( \frac{\log x}{\sigma }\right) ^{2}\right] \\
-F\left( x;\sigma \right)  & = & \Phi \left( \frac{\log x}{\sigma }\right) \\
-G\left( q;\sigma \right)  & = & \exp \left\{ \sigma \Phi ^{-1}\left( q\right) \right\} 
+f\left(x;\sigma \right) & = & \frac{1}{\sigma x\sqrt{2\pi }}\exp \left[-\frac{1}{2}\left(\frac{\log x}{\sigma }\right)^{2}\right]\\
+F\left(x;\sigma \right) & = & \Phi \left(\frac{\log x}{\sigma }\right)\\
+G\left(q;\sigma \right) & = & \exp \left\{ \sigma \Phi ^{-1}\left(q\right)\right\} 
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \exp \left( \sigma ^{2}/2\right) \\
-\mu _{2} & = & \exp \left( \sigma ^{2}\right) \left[ \exp \left( \sigma ^{2}\right) -1\right] \\
-\gamma _{1} & = & \sqrt{p-1}\left( 2+p\right) \\
+\mu  & = & \exp \left(\sigma ^{2}/2\right)\\
+\mu _{2} & = & \exp \left(\sigma ^{2}\right)\left[\exp \left(\sigma ^{2}\right)-1\right]\\
+\gamma _{1} & = & \sqrt{p-1}\left(2+p\right)\\
 \gamma _{2} & = & p^{4}+2p^{3}+3p^{2}-6\quad \quad p=e^{\sigma ^{2}}
 \end{eqnarray*}
 
@@ -2812,11 +2814,11 @@ G\left( q;\sigma \right)  & = & \exp \left\{ \sigma \Phi ^{-1}\left( q\right) \r
 \layout Standard
 
 Notice that using JKB notation we have 
-\begin_inset Formula \( \theta =L, \)
+\begin_inset Formula $\theta =L,$
 \end_inset 
 
  
-\begin_inset Formula \( \zeta =\log S \)
+\begin_inset Formula $\zeta =\log S$
 \end_inset 
 
  and we have given the so-called antilognormal form of the distribution.
@@ -2830,28 +2832,28 @@ Nakagami
 
 Generalization of the chi distribution.
  Shape parameter is 
-\begin_inset Formula \( \nu >0. \)
+\begin_inset Formula $\nu >0.$
 \end_inset 
 
  Defined for 
-\begin_inset Formula \( x>0. \)
+\begin_inset Formula $x>0.$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\nu \right)  & = & \frac{2\nu ^{\nu }}{\Gamma \left( \nu \right) }x^{2\nu -1}\exp \left( -\nu x^{2}\right) \\
-F\left( x;\nu \right)  & = & \Gamma \left( \nu ,\nu x^{2}\right) \\
-G\left( q;\nu \right)  & = & \sqrt{\frac{1}{\nu }\Gamma ^{-1}\left( v,q\right) }
+f\left(x;\nu \right) & = & \frac{2\nu ^{\nu }}{\Gamma \left(\nu \right)}x^{2\nu -1}\exp \left(-\nu x^{2}\right)\\
+F\left(x;\nu \right) & = & \Gamma \left(\nu ,\nu x^{2}\right)\\
+G\left(q;\nu \right) & = & \sqrt{\frac{1}{\nu }\Gamma ^{-1}\left(v,q\right)}
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \frac{\Gamma \left( \nu +\frac{1}{2}\right) }{\sqrt{\nu }\Gamma \left( \nu \right) }\\
-\mu _{2} & = & \left[ 1-\mu ^{2}\right] \\
-\gamma _{1} & = & \frac{\mu \left( 1-4v\mu _{2}\right) }{2\nu \mu _{2}^{3/2}}\\
-\gamma _{2} & = & \frac{-6\mu ^{4}\nu +\left( 8\nu -2\right) \mu ^{2}-2\nu +1}{\nu \mu _{2}^{2}}
+\mu  & = & \frac{\Gamma \left(\nu +\frac{1}{2}\right)}{\sqrt{\nu }\Gamma \left(\nu \right)}\\
+\mu _{2} & = & \left[1-\mu ^{2}\right]\\
+\gamma _{1} & = & \frac{\mu \left(1-4v\mu _{2}\right)}{2\nu \mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{-6\mu ^{4}\nu +\left(8\nu -2\right)\mu ^{2}-2\nu +1}{\nu \mu _{2}^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -2863,19 +2865,19 @@ Noncentral beta*
 \layout Standard
 
 Defined over 
-\begin_inset Formula \( x\in \left[ 0,1\right]  \)
+\begin_inset Formula $x\in \left[0,1\right]$
 \end_inset 
 
  with 
-\begin_inset Formula \( a>0 \)
+\begin_inset Formula $a>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( b>0 \)
+\begin_inset Formula $b>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( c\geq 0 \)
+\begin_inset Formula $c\geq 0$
 \end_inset 
 
 
@@ -2883,7 +2885,7 @@ Defined over
 
 
 \begin_inset Formula \[
-F\left( x;a,b,c\right) =\sum _{j=0}^{\infty }\frac{e^{-c/2}\left( \frac{c}{2}\right) ^{j}}{j!}I_{B}\left( a+j,b;0\right) \]
+F\left(x;a,b,c\right)=\sum _{j=0}^{\infty }\frac{e^{-c/2}\left(\frac{c}{2}\right)^{j}}{j!}I_{B}\left(a+j,b;0\right)\]
 
 \end_inset 
 
@@ -2897,33 +2899,33 @@ Noncentral chi-squared
 \layout Standard
 
 The distribution of 
-\begin_inset Formula \( \sum _{i=1}^{\nu }\left( U_{i}+\delta _{i}\right)  \)
+\begin_inset Formula $\sum _{i=1}^{\nu }\left(U_{i}+\delta _{i}\right)$
 \end_inset 
 
  where 
-\begin_inset Formula \( U_{i} \)
+\begin_inset Formula $U_{i}$
 \end_inset 
 
  are independent normal variables and 
-\begin_inset Formula \( \delta _{i} \)
+\begin_inset Formula $\delta _{i}$
 \end_inset 
 
  are constants.
  
-\begin_inset Formula \( \lambda =\sum _{i=1}^{\nu }\delta _{i}^{2}>0. \)
+\begin_inset Formula $\lambda =\sum _{i=1}^{\nu }\delta _{i}^{2}>0.$
 \end_inset 
 
  (In communications it is called the Marcum-Q function).
  Can be thought of as a Generalized Rayleigh-Rice distribution.
  For 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\nu ,\lambda \right)  & = & e^{-\left( \lambda +x\right) /2}\frac{1}{2}\left( \frac{x}{\lambda }\right) ^{\left( \nu -2\right) /4}I_{\left( \nu -2\right) /2}\left( \sqrt{\lambda x}\right) \\
-F\left( x;\nu ,\lambda \right)  & = & \sum _{j=0}^{\infty }\left\{ \frac{\left( \lambda /2\right) ^{j}}{j!}e^{-\lambda /2}\right\} \textrm{Pr}\left[ \chi ^{2}_{\nu +2j}\leq x\right] \\
-G\left( q;\nu ,\lambda \right)  & = & F^{-1}\left( x;\nu ,\lambda \right) 
+f\left(x;\nu ,\lambda \right) & = & e^{-\left(\lambda +x\right)/2}\frac{1}{2}\left(\frac{x}{\lambda }\right)^{\left(\nu -2\right)/4}I_{\left(\nu -2\right)/2}\left(\sqrt{\lambda x}\right)\\
+F\left(x;\nu ,\lambda \right) & = & \sum _{j=0}^{\infty }\left\{ \frac{\left(\lambda /2\right)^{j}}{j!}e^{-\lambda /2}\right\} \textrm{Pr}\left[\chi _{\nu +2j}^{2}\leq x\right]\\
+G\left(q;\nu ,\lambda \right) & = & F^{-1}\left(x;\nu ,\lambda \right)
 \end{eqnarray*}
 
 \end_inset 
@@ -2932,8 +2934,8 @@ G\left( q;\nu ,\lambda \right)  & = & F^{-1}\left( x;\nu ,\lambda \right)
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \nu +\lambda \\
 \mu _{2} & = & 2\nu +4\lambda \\
-\gamma _{1} & = & \frac{\sqrt{8}\left( \nu +3\lambda \right) }{\left( \nu +2\lambda \right) ^{3/2}}\\
-\gamma _{2} & = & \frac{12\left( \nu +4\lambda \right) }{\left( \nu +2\lambda \right) ^{2}}
+\gamma _{1} & = & \frac{\sqrt{8}\left(\nu +3\lambda \right)}{\left(\nu +2\lambda \right)^{3/2}}\\
+\gamma _{2} & = & \frac{12\left(\nu +4\lambda \right)}{\left(\nu +2\lambda \right)^{2}}
 \end{eqnarray*}
 
 \end_inset 
@@ -2945,15 +2947,15 @@ Noncentral F
 \layout Standard
 
 Let 
-\begin_inset Formula \( \lambda >0 \)
+\begin_inset Formula $\lambda >0$
 \end_inset 
 
  and 
-\begin_inset Formula \( \nu _{1}>0 \)
+\begin_inset Formula $\nu _{1}>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( \nu _{2}>0. \)
+\begin_inset Formula $\nu _{2}>0.$
 \end_inset 
 
  
@@ -2961,8 +2963,8 @@ Let
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\lambda ,v_{1},v_{2}\right)  & = & \exp \left[ \frac{\lambda }{2}+\frac{\left( \lambda \nu _{1}x\right) }{2\left( \nu _{1}x+\nu _{2}\right) }\right] \nu _{1}^{\nu _{1}/2}\nu _{2}^{\nu _{2}/2}x^{\nu _{1}/2-1}\\
- &  & \times \left( \nu _{2}+\nu _{1}x\right) ^{-\left( \nu _{1}+\nu _{2}\right) /2}\frac{\Gamma \left( \frac{\nu _{1}}{2}\right) \Gamma \left( 1+\frac{\nu _{2}}{2}\right) L^{n_{1}/2-1}_{n_{2}/2}\left( -\frac{\lambda \nu _{1}x}{2\left( \nu _{1}x+\nu _{2}\right) }\right) }{B\left( \frac{\nu _{1}}{2},\frac{\nu _{2}}{2}\right) \Gamma \left( \frac{\nu _{1}+\nu _{2}}{2}\right) }
+f\left(x;\lambda ,v_{1},v_{2}\right) & = & \exp \left[\frac{\lambda }{2}+\frac{\left(\lambda \nu _{1}x\right)}{2\left(\nu _{1}x+\nu _{2}\right)}\right]\nu _{1}^{\nu _{1}/2}\nu _{2}^{\nu _{2}/2}x^{\nu _{1}/2-1}\\
+ &  & \times \left(\nu _{2}+\nu _{1}x\right)^{-\left(\nu _{1}+\nu _{2}\right)/2}\frac{\Gamma \left(\frac{\nu _{1}}{2}\right)\Gamma \left(1+\frac{\nu _{2}}{2}\right)L_{n_{2}/2}^{n_{1}/2-1}\left(-\frac{\lambda \nu _{1}x}{2\left(\nu _{1}x+\nu _{2}\right)}\right)}{B\left(\frac{\nu _{1}}{2},\frac{\nu _{2}}{2}\right)\Gamma \left(\frac{\nu _{1}+\nu _{2}}{2}\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -2980,35 +2982,35 @@ The distribution of the ratio
 \end_inset 
 
  where 
-\begin_inset Formula \( U \)
+\begin_inset Formula $U$
 \end_inset 
 
  and 
-\begin_inset Formula \( \chi _{\nu } \)
+\begin_inset Formula $\chi _{\nu }$
 \end_inset 
 
  are independent and distributed as a standard normal and chi with 
-\begin_inset Formula \( \nu  \)
+\begin_inset Formula $\nu $
 \end_inset 
 
  degrees of freedom.
  Note 
-\begin_inset Formula \( \lambda >0 \)
+\begin_inset Formula $\lambda >0$
 \end_inset 
 
  and 
-\begin_inset Formula \( \nu >0 \)
+\begin_inset Formula $\nu >0$
 \end_inset 
 
 .
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\lambda ,\nu \right)  & = & \frac{\nu ^{\nu /2}\Gamma \left( \nu +1\right) }{2^{\nu }e^{\lambda ^{2}/2}\left( \nu +x^{2}\right) ^{\nu /2}\Gamma \left( \nu /2\right) }\\
- &  & \times \left\{ \frac{\sqrt{2}\lambda x\, _{1}F_{1}\left( \frac{\nu }{2}+1;\frac{3}{2};\frac{\lambda ^{2}x^{2}}{2\left( \nu +x^{2}\right) }\right) }{\left( \nu +x^{2}\right) \Gamma \left( \frac{\nu +1}{2}\right) }\right. \\
- &  & -\left. \frac{\, _{1}F_{1}\left( \frac{\nu +1}{2};\frac{1}{2};\frac{\lambda ^{2}x^{2}}{2\left( \nu +x^{2}\right) }\right) }{\sqrt{\nu +x^{2}}\Gamma \left( \frac{\nu }{2}+1\right) }\right\} \\
- & = & \frac{\Gamma \left( \nu +1\right) }{2^{\left( \nu -1\right) /2}\sqrt{\pi \nu }\Gamma \left( \nu /2\right) }\exp \left[ -\frac{\nu \lambda ^{2}}{\nu +x^{2}}\right] \\
- &  & \times \left( \frac{\nu }{\nu +x^{2}}\right) ^{\left( \nu -1\right) /2}Hh_{\nu }\left( -\frac{\lambda x}{\sqrt{\nu +x^{2}}}\right) \\
-F\left( x;\lambda ,\nu \right)  & = & 
+f\left(x;\lambda ,\nu \right) & = & \frac{\nu ^{\nu /2}\Gamma \left(\nu +1\right)}{2^{\nu }e^{\lambda ^{2}/2}\left(\nu +x^{2}\right)^{\nu /2}\Gamma \left(\nu /2\right)}\\
+ &  & \times \left\{ \frac{\sqrt{2}\lambda x\, _{1}F_{1}\left(\frac{\nu }{2}+1;\frac{3}{2};\frac{\lambda ^{2}x^{2}}{2\left(\nu +x^{2}\right)}\right)}{\left(\nu +x^{2}\right)\Gamma \left(\frac{\nu +1}{2}\right)}\right.\\
+ &  & -\left.\frac{\, _{1}F_{1}\left(\frac{\nu +1}{2};\frac{1}{2};\frac{\lambda ^{2}x^{2}}{2\left(\nu +x^{2}\right)}\right)}{\sqrt{\nu +x^{2}}\Gamma \left(\frac{\nu }{2}+1\right)}\right\} \\
+ & = & \frac{\Gamma \left(\nu +1\right)}{2^{\left(\nu -1\right)/2}\sqrt{\pi \nu }\Gamma \left(\nu /2\right)}\exp \left[-\frac{\nu \lambda ^{2}}{\nu +x^{2}}\right]\\
+ &  & \times \left(\frac{\nu }{\nu +x^{2}}\right)^{\left(\nu -1\right)/2}Hh_{\nu }\left(-\frac{\lambda x}{\sqrt{\nu +x^{2}}}\right)\\
+F\left(x;\lambda ,\nu \right) & = & 
 \end{eqnarray*}
 
 \end_inset 
@@ -3021,9 +3023,9 @@ Normal
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{e^{-x^{2}/2}}{\sqrt{2\pi }}\\
-F\left( x\right)  & = & \Phi \left( x\right) =\frac{1}{2}+\frac{1}{2}\textrm{erf}\left( \frac{\textrm{x}}{\sqrt{2}}\right) \\
-G\left( q\right)  & = & \Phi ^{-1}\left( q\right) 
+f\left(x\right) & = & \frac{e^{-x^{2}/2}}{\sqrt{2\pi }}\\
+F\left(x\right) & = & \Phi \left(x\right)=\frac{1}{2}+\frac{1}{2}\textrm{erf}\left(\frac{\textrm{x}}{\sqrt{2}}\right)\\
+G\left(q\right) & = & \Phi ^{-1}\left(q\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3048,15 +3050,15 @@ Maxwell
 \layout Standard
 
 This is a special case of the Chi distribution with 
-\begin_inset Formula \( L=0 \)
+\begin_inset Formula $L=0$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=S=\frac{1}{\sqrt{a}} \)
+\begin_inset Formula $S=S=\frac{1}{\sqrt{a}}$
 \end_inset 
 
  and 
-\begin_inset Formula \( \nu =3. \)
+\begin_inset Formula $\nu =3.$
 \end_inset 
 
  
@@ -3064,9 +3066,9 @@ This is a special case of the Chi distribution with
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\nu \right)  & = & \sqrt{\frac{2}{\pi }}x^{2}e^{-x^{2}/2}I_{\left( 0,\infty \right) }\left( x\right) \\
-F\left( x;\nu \right)  & = & \Gamma \left( \frac{3}{2},\frac{x^{2}}{2}\right) \\
-G\left( \alpha ;\nu \right)  & = & \sqrt{2\Gamma ^{-1}\left( \frac{3}{2},\alpha \right) }
+f\left(x;\nu \right) & = & \sqrt{\frac{2}{\pi }}x^{2}e^{-x^{2}/2}I_{\left(0,\infty \right)}\left(x\right)\\
+F\left(x;\nu \right) & = & \Gamma \left(\frac{3}{2},\frac{x^{2}}{2}\right)\\
+G\left(\alpha ;\nu \right) & = & \sqrt{2\Gamma ^{-1}\left(\frac{3}{2},\alpha \right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -3078,10 +3080,10 @@ G\left( \alpha ;\nu \right)  & = & \sqrt{2\Gamma ^{-1}\left( \frac{3}{2},\alpha 
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & 2\sqrt{\frac{2}{\pi }}\\
 \mu _{2} & = & 3-\frac{8}{\pi }\\
-\gamma _{1} & = & \sqrt{2}\frac{32-10\pi }{\left( 3\pi -8\right) ^{3/2}}\\
-\gamma _{2} & = & \frac{-12\pi ^{2}+160\pi -384}{\left( 3\pi -8\right) ^{2}}\\
+\gamma _{1} & = & \sqrt{2}\frac{32-10\pi }{\left(3\pi -8\right)^{3/2}}\\
+\gamma _{2} & = & \frac{-12\pi ^{2}+160\pi -384}{\left(3\pi -8\right)^{2}}\\
 m_{d} & = & \sqrt{2}\quad \\
-m_{n} & = & \sqrt{2\Gamma ^{-1}\left( \frac{3}{2},\frac{1}{2}\right) }
+m_{n} & = & \sqrt{2\Gamma ^{-1}\left(\frac{3}{2},\frac{1}{2}\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -3094,22 +3096,22 @@ Mielke's Beta-Kappa
 
 A generalized F distribution.
  Two shape parameters 
-\begin_inset Formula \( \kappa  \)
+\begin_inset Formula $\kappa $
 \end_inset 
 
  and 
-\begin_inset Formula \( \theta  \)
+\begin_inset Formula $\theta $
 \end_inset 
 
  
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\kappa ,\theta \right)  & = & \frac{\kappa x^{\kappa -1}}{\left( 1+x^{\theta }\right) ^{1+\frac{\kappa }{\theta }}}\\
-F\left( x;\kappa ,\theta \right)  & = & \frac{x^{\kappa }}{\left( 1+x^{\theta }\right) ^{\kappa /\theta }}\\
-G\left( q;\kappa ,\theta \right)  & = & \left( \frac{-p^{\theta /\kappa }}{p^{\theta /\kappa }-1}\right) ^{1/\theta }
+f\left(x;\kappa ,\theta \right) & = & \frac{\kappa x^{\kappa -1}}{\left(1+x^{\theta }\right)^{1+\frac{\kappa }{\theta }}}\\
+F\left(x;\kappa ,\theta \right) & = & \frac{x^{\kappa }}{\left(1+x^{\theta }\right)^{\kappa /\theta }}\\
+G\left(q;\kappa ,\theta \right) & = & \left(\frac{-p^{\theta /\kappa }}{p^{\theta /\kappa }-1}\right)^{1/\theta }
 \end{eqnarray*}
 
 \end_inset 
@@ -3121,11 +3123,11 @@ Pareto
 \layout Standard
 
 For 
-\begin_inset Formula \( x\geq 1 \)
+\begin_inset Formula $x\geq 1$
 \end_inset 
 
  and 
-\begin_inset Formula \( b>0 \)
+\begin_inset Formula $b>0$
 \end_inset 
 
 .
@@ -3134,9 +3136,9 @@ For
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;b\right)  & = & \frac{b}{x^{b+1}}\\
-F\left( x;b\right)  & = & 1-\frac{1}{x^{b}}\\
-G\left( q;b\right)  & = & \left( 1-q\right) ^{-1/b}
+f\left(x;b\right) & = & \frac{b}{x^{b+1}}\\
+F\left(x;b\right) & = & 1-\frac{1}{x^{b}}\\
+G\left(q;b\right) & = & \left(1-q\right)^{-1/b}
 \end{eqnarray*}
 
 \end_inset 
@@ -3147,9 +3149,9 @@ G\left( q;b\right)  & = & \left( 1-q\right) ^{-1/b}
 
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{b}{b-1}\quad b>1\\
-\mu _{2} & = & \frac{b}{\left( b-2\right) \left( b-1\right) ^{2}}\quad b>2\\
-\gamma _{1} & = & \frac{2\left( b+1\right) \sqrt{b-2}}{\left( b-3\right) \sqrt{b}}\quad b>3\\
-\gamma _{2} & = & \frac{6\left( b^{3}+b^{2}-6b-2\right) }{b\left( b^{2}-7b+12\right) }
+\mu _{2} & = & \frac{b}{\left(b-2\right)\left(b-1\right)^{2}}\quad b>2\\
+\gamma _{1} & = & \frac{2\left(b+1\right)\sqrt{b-2}}{\left(b-3\right)\sqrt{b}}\quad b>3\\
+\gamma _{2} & = & \frac{6\left(b^{3}+b^{2}-6b-2\right)}{b\left(b^{2}-7b+12\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -3161,11 +3163,11 @@ Pareto Second Kind (Lomax)
 \layout Standard
 
 
-\begin_inset Formula \( c>0. \)
+\begin_inset Formula $c>0.$
 \end_inset 
 
  This is Pareto of the first kind with 
-\begin_inset Formula \( L=-1.0 \)
+\begin_inset Formula $L=-1.0$
 \end_inset 
 
 
@@ -3173,9 +3175,9 @@ Pareto Second Kind (Lomax)
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{c}{\left( 1+x\right) ^{c+1}}\\
-F\left( x;c\right)  & = & 1-\frac{1}{\left( 1+x\right) ^{c}}\\
-G\left( q;c\right)  & = & \left( 1-q\right) ^{-1/c}-1
+f\left(x;c\right) & = & \frac{c}{\left(1+x\right)^{c+1}}\\
+F\left(x;c\right) & = & 1-\frac{1}{\left(1+x\right)^{c}}\\
+G\left(q;c\right) & = & \left(1-q\right)^{-1/c}-1
 \end{eqnarray*}
 
 \end_inset 
@@ -3187,29 +3189,29 @@ Power Log Normal
 \layout Standard
 
 A generalization of the log-normal distribution 
-\begin_inset Formula \( \sigma >0 \)
+\begin_inset Formula $\sigma >0$
 \end_inset 
 
  and 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\sigma ,c\right)  & = & \frac{c}{x\sigma }\phi \left( \frac{\log x}{\sigma }\right) \left( \Phi \left( -\frac{\log x}{\sigma }\right) \right) ^{c-1}\\
-F\left( x;\sigma ,c\right)  & = & 1-\left( \Phi \left( -\frac{\log x}{\sigma }\right) \right) ^{c}\\
-G\left( q;\sigma ,c\right)  & = & \exp \left[ -\sigma \Phi ^{-1}\left[ \left( 1-q\right) ^{1/c}\right] \right] 
+f\left(x;\sigma ,c\right) & = & \frac{c}{x\sigma }\phi \left(\frac{\log x}{\sigma }\right)\left(\Phi \left(-\frac{\log x}{\sigma }\right)\right)^{c-1}\\
+F\left(x;\sigma ,c\right) & = & 1-\left(\Phi \left(-\frac{\log x}{\sigma }\right)\right)^{c}\\
+G\left(q;\sigma ,c\right) & = & \exp \left[-\sigma \Phi ^{-1}\left[\left(1-q\right)^{1/c}\right]\right]
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \[
-\mu _{n}^{\prime }=\int _{0}^{1}\exp \left[ -n\sigma \Phi ^{-1}\left( y^{1/c}\right) \right] dy\]
+\mu _{n}^{\prime }=\int _{0}^{1}\exp \left[-n\sigma \Phi ^{-1}\left(y^{1/c}\right)\right]dy\]
 
 \end_inset 
 
@@ -3224,7 +3226,7 @@ G\left( q;\sigma ,c\right)  & = & \exp \left[ -\sigma \Phi ^{-1}\left[ \left( 1-
 \end_inset 
 
  This distribution reduces to the log-normal distribution when 
-\begin_inset Formula \( c=1. \)
+\begin_inset Formula $c=1.$
 \end_inset 
 
  
@@ -3234,21 +3236,21 @@ Power Normal
 \layout Standard
 
 A generalization of the normal distribution, 
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
  for 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & c\phi \left( x\right) \left( \Phi \left( -x\right) \right) ^{c-1}\\
-F\left( x;c\right)  & = & 1-\left( \Phi \left( -x\right) \right) ^{c}\\
-G\left( q;c\right)  & = & -\Phi ^{-1}\left[ \left( 1-q\right) ^{1/c}\right] 
+f\left(x;c\right) & = & c\phi \left(x\right)\left(\Phi \left(-x\right)\right)^{c-1}\\
+F\left(x;c\right) & = & 1-\left(\Phi \left(-x\right)\right)^{c}\\
+G\left(q;c\right) & = & -\Phi ^{-1}\left[\left(1-q\right)^{1/c}\right]
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \[
-\mu _{n}^{\prime }=\left( -1\right) ^{n}\int _{0}^{1}\left[ \Phi ^{-1}\left( y^{1/c}\right) \right] ^{n}dy\]
+\mu _{n}^{\prime }=\left(-1\right)^{n}\int _{0}^{1}\left[\Phi ^{-1}\left(y^{1/c}\right)\right]^{n}dy\]
 
 \end_inset 
 
@@ -3263,7 +3265,7 @@ G\left( q;c\right)  & = & -\Phi ^{-1}\left[ \left( 1-q\right) ^{1/c}\right]
 \end_inset 
 
 For 
-\begin_inset Formula \( c=1 \)
+\begin_inset Formula $c=1$
 \end_inset 
 
  this reduces to the normal distribution.
@@ -3274,11 +3276,11 @@ Power-function
 \layout Standard
 
 A special case of the beta distribution with 
-\begin_inset Formula \( b=1 \)
+\begin_inset Formula $b=1$
 \end_inset 
 
 : defined for 
-\begin_inset Formula \( x\in \left[ 0,1\right]  \)
+\begin_inset Formula $x\in \left[0,1\right]$
 \end_inset 
 
 
@@ -3295,13 +3297,13 @@ a>0\]
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a\right)  & = & ax^{a-1}\\
-F\left( x;a\right)  & = & x^{a}\\
-G\left( q;a\right)  & = & q^{1/a}\\
+f\left(x;a\right) & = & ax^{a-1}\\
+F\left(x;a\right) & = & x^{a}\\
+G\left(q;a\right) & = & q^{1/a}\\
 \mu  & = & \frac{a}{a+1}\\
-\mu _{2} & = & \frac{a\left( a+2\right) }{\left( a+1\right) ^{2}}\\
-\gamma _{1} & = & 2\left( 1-a\right) \sqrt{\frac{a+2}{a\left( a+3\right) }}\\
-\gamma _{2} & = & \frac{6\left( a^{3}-a^{2}-6a+2\right) }{a\left( a+3\right) \left( a+4\right) }\\
+\mu _{2} & = & \frac{a\left(a+2\right)}{\left(a+1\right)^{2}}\\
+\gamma _{1} & = & 2\left(1-a\right)\sqrt{\frac{a+2}{a\left(a+3\right)}}\\
+\gamma _{2} & = & \frac{6\left(a^{3}-a^{2}-6a+2\right)}{a\left(a+3\right)\left(a+4\right)}\\
 m_{d} & = & 1
 \end{eqnarray*}
 
@@ -3314,17 +3316,17 @@ R-distribution*
 \layout Standard
 
 A general-purpose distribution with a variety of shapes controlled by 
-\begin_inset Formula \( c>0. \)
+\begin_inset Formula $c>0.$
 \end_inset 
 
  Range of standard distribution is 
-\begin_inset Formula \( x\in \left[ -1,1\right]  \)
+\begin_inset Formula $x\in \left[-1,1\right]$
 \end_inset 
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{\left( 1-x^{2}\right) ^{c/2-1}}{B\left( \frac{1}{2},\frac{c}{2}\right) }\\
-F\left( x;c\right)  & = & 
+f\left(x;c\right) & = & \frac{\left(1-x^{2}\right)^{c/2-1}}{B\left(\frac{1}{2},\frac{c}{2}\right)}\\
+F\left(x;c\right) & = & 
 \end{eqnarray*}
 
 \end_inset 
@@ -3336,26 +3338,26 @@ Rayleigh
 \layout Standard
 
 This is Chi distribution with 
-\begin_inset Formula \( L=0.0 \)
+\begin_inset Formula $L=0.0$
 \end_inset 
 
  and 
-\begin_inset Formula \( \nu =2 \)
+\begin_inset Formula $\nu =2$
 \end_inset 
 
  and 
-\begin_inset Formula \( S=S \)
+\begin_inset Formula $S=S$
 \end_inset 
 
  (no location parameter used), the mode of the distribution is 
-\begin_inset Formula \( S. \)
+\begin_inset Formula $S.$
 \end_inset 
 
  It is also the weibull distribution scaled by 
 \begin_inset Formula \begin{eqnarray*}
-f\left( r\right)  & = & re^{-r^{2}/2}I_{[0,\infty )}\left( x\right) \\
-F\left( r\right)  & = & 1-e^{-r^{2}/2}I_{[0,\infty )}\left( x\right) \\
-G\left( q\right)  & = & \sqrt{2\log \left( \frac{1}{1-q}\right) }
+f\left(r\right) & = & re^{-r^{2}/2}I_{[0,\infty )}\left(x\right)\\
+F\left(r\right) & = & 1-e^{-r^{2}/2}I_{[0,\infty )}\left(x\right)\\
+G\left(q\right) & = & \sqrt{2\log \left(\frac{1}{1-q}\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -3364,10 +3366,10 @@ G\left( q\right)  & = & \sqrt{2\log \left( \frac{1}{1-q}\right) }
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{\pi }{2}\\
 \mu _{2} & = & \frac{4-\pi }{2}\\
-\gamma _{1} & = & \frac{2\left( \pi -3\right) \sqrt{\pi }}{\left( 4-\pi \right) ^{3/2}}\\
-\gamma _{2} & = & \frac{24\pi -6\pi ^{2}-16}{\left( 4-\pi \right) ^{2}}\\
+\gamma _{1} & = & \frac{2\left(\pi -3\right)\sqrt{\pi }}{\left(4-\pi \right)^{3/2}}\\
+\gamma _{2} & = & \frac{24\pi -6\pi ^{2}-16}{\left(4-\pi \right)^{2}}\\
 m_{d} & = & 1\\
-m_{n} & = & \sqrt{2\log \left( 2\right) }
+m_{n} & = & \sqrt{2\log \left(2\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -3379,11 +3381,11 @@ Rice*
 \layout Standard
 
 Defined for 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  and 
-\begin_inset Formula \( b>0 \)
+\begin_inset Formula $b>0$
 \end_inset 
 
 
@@ -3391,8 +3393,8 @@ Defined for
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;b\right)  & = & x\exp \left( -x^{2}/2+b^{2}/2\right) I_{0}\left( xb\right) \\
-F\left( x;b\right)  & = & \\
+f\left(x;b\right) & = & x\exp \left(-x^{2}/2+b^{2}/2\right)I_{0}\left(xb\right)\\
+F\left(x;b\right) & = & \\
  &  & 
 \end{eqnarray*}
 
@@ -3405,29 +3407,29 @@ Reciprocal
 \layout Standard
 
 Shape parameters 
-\begin_inset Formula \( a,b>0 \)
+\begin_inset Formula $a,b>0$
 \end_inset 
 
  
-\begin_inset Formula \( x\in \left[ a,b\right]  \)
+\begin_inset Formula $x\in \left[a,b\right]$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;a,b\right)  & = & \frac{1}{x\log \left( b/a\right) }\\
-F\left( x;a,b\right)  & = & \frac{\log \left( a/x\right) }{\log \left( a/b\right) }\\
-G\left( q;a,b\right)  & = & a\exp \left( -q\log \left( a/b\right) \right) =a\left( \frac{b}{a}\right) ^{q}
+f\left(x;a,b\right) & = & \frac{1}{x\log \left(b/a\right)}\\
+F\left(x;a,b\right) & = & \frac{\log \left(a/x\right)}{\log \left(a/b\right)}\\
+G\left(q;a,b\right) & = & a\exp \left(-q\log \left(a/b\right)\right)=a\left(\frac{b}{a}\right)^{q}
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-d & = & \log \left( a/b\right) \\
+d & = & \log \left(a/b\right)\\
 \mu  & = & \frac{a-b}{d}\\
-\mu _{2} & = & \mu \frac{a+b}{2}-\mu ^{2}=\frac{\left( a-b\right) \left[ a\left( d-2\right) +b\left( d+2\right) \right] }{2d^{2}}\\
-\gamma _{1} & = & \frac{\sqrt{2}\left[ 12d\left( a-b\right) ^{2}+d^{2}\left( a^{2}\left( 2d-9\right) +2abd+b^{2}\left( 2d+9\right) \right) \right] }{3d\sqrt{a-b}\left[ a\left( d-2\right) +b\left( d+2\right) \right] ^{3/2}}\\
-\gamma _{2} & = & \frac{-36\left( a-b\right) ^{3}+36d\left( a-b\right) ^{2}\left( a+b\right) -16d^{2}\left( a^{3}-b^{3}\right) +3d^{3}\left( a^{2}+b^{2}\right) \left( a+b\right) }{3\left( a-b\right) \left[ a\left( d-2\right) +b\left( d+2\right) \right] ^{2}}-3\\
+\mu _{2} & = & \mu \frac{a+b}{2}-\mu ^{2}=\frac{\left(a-b\right)\left[a\left(d-2\right)+b\left(d+2\right)\right]}{2d^{2}}\\
+\gamma _{1} & = & \frac{\sqrt{2}\left[12d\left(a-b\right)^{2}+d^{2}\left(a^{2}\left(2d-9\right)+2abd+b^{2}\left(2d+9\right)\right)\right]}{3d\sqrt{a-b}\left[a\left(d-2\right)+b\left(d+2\right)\right]^{3/2}}\\
+\gamma _{2} & = & \frac{-36\left(a-b\right)^{3}+36d\left(a-b\right)^{2}\left(a+b\right)-16d^{2}\left(a^{3}-b^{3}\right)+3d^{3}\left(a^{2}+b^{2}\right)\left(a+b\right)}{3\left(a-b\right)\left[a\left(d-2\right)+b\left(d+2\right)\right]^{2}}-3\\
 m_{d} & = & a\\
 m_{n} & = & \sqrt{ab}
 \end{eqnarray*}
@@ -3441,11 +3443,11 @@ Reciprocal Inverse Gaussian
 \layout Standard
 
 The pdf is found from the inverse gaussian (IG), 
-\begin_inset Formula \( f_{RIG}\left( x;\mu \right) =f_{IG}\left( \frac{1}{x};\mu \right)  \)
+\begin_inset Formula $f_{RIG}\left(x;\mu \right)=f_{IG}\left(\frac{1}{x};\mu \right)$
 \end_inset 
 
  defined for 
-\begin_inset Formula \( x>0 \)
+\begin_inset Formula $x>0$
 \end_inset 
 
  as 
@@ -3453,9 +3455,9 @@ The pdf is found from the inverse gaussian (IG),
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x\mu ^{2}}\right) .\\
-F\left( x;\mu \right)  & = & \Phi \left( \frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right) +\exp \left( \frac{2}{\mu }\right) \Phi \left( -\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right) \\
-G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right) 
+f\left(x;\mu \right) & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left(-\frac{\left(x-\mu \right)^{2}}{2x\mu ^{2}}\right).\\
+F\left(x;\mu \right) & = & \Phi \left(\frac{1}{\sqrt{x}}\frac{x-\mu }{\mu }\right)+\exp \left(\frac{2}{\mu }\right)\Phi \left(-\frac{1}{\sqrt{x}}\frac{x+\mu }{\mu }\right)\\
+G\left(q;\mu \right) & = & F^{-1}\left(q;\mu \right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3465,7 +3467,7 @@ G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right)
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\mu \right)  & = & \frac{1}{\sqrt{2\pi x}}\exp \left( -\frac{\left( x-\mu \right) ^{2}}{2x}\right) \\
+f\left(x;\mu \right) & = & \frac{1}{\sqrt{2\pi x}}\exp \left(-\frac{\left(x-\mu \right)^{2}}{2x}\right)\\
  &  & 
 \end{eqnarray*}
 
@@ -3478,14 +3480,14 @@ Semicircular
 \layout Standard
 
 Defined on 
-\begin_inset Formula \( x\in \left[ -1,1\right]  \)
+\begin_inset Formula $x\in \left[-1,1\right]$
 \end_inset 
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{2}{\pi }\sqrt{1-x^{2}}\\
-F\left( x\right)  & = & \frac{1}{2}+\frac{1}{\pi }\left[ x\sqrt{1-x^{2}}+\arcsin x\right] \\
-G\left( q\right)  & = & F^{-1}\left( q\right) 
+f\left(x\right) & = & \frac{2}{\pi }\sqrt{1-x^{2}}\\
+F\left(x\right) & = & \frac{1}{2}+\frac{1}{\pi }\left[x\sqrt{1-x^{2}}+\arcsin x\right]\\
+G\left(q\right) & = & F^{-1}\left(q\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3510,15 +3512,15 @@ Student t
 \layout Standard
 
 Shape parameter 
-\begin_inset Formula \( \nu >0. \)
+\begin_inset Formula $\nu >0.$
 \end_inset 
 
  
-\begin_inset Formula \( I\left( a,b,x\right)  \)
+\begin_inset Formula $I\left(a,b,x\right)$
 \end_inset 
 
  is the incomplete beta integral and 
-\begin_inset Formula \( I^{-1}\left( a,b,I\left( a,b,x\right) \right) =x \)
+\begin_inset Formula $I^{-1}\left(a,b,I\left(a,b,x\right)\right)=x$
 \end_inset 
 
  
@@ -3526,15 +3528,15 @@ Shape parameter
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\nu \right)  & = & \frac{\Gamma \left( \frac{\nu +1}{2}\right) }{\sqrt{\pi \nu }\Gamma \left( \frac{\nu }{2}\right) \left[ 1+\frac{x^{2}}{\nu }\right] ^{\frac{\nu +1}{2}}}\\
-F\left( x;\nu \right)  & = & \left\{ \begin{array}{ccc}
-\frac{1}{2}I\left( \frac{\nu }{2},\frac{1}{2},\frac{\nu }{\nu +x^{2}}\right)  &  & x\leq 0\\
-1-\frac{1}{2}I\left( \frac{\nu }{2},\frac{1}{2},\frac{\nu }{\nu +x^{2}}\right)  &  & x\geq 0
-\end{array}\right. \\
-G\left( q;\nu \right)  & = & \left\{ \begin{array}{ccc}
--\sqrt{\frac{\nu }{I^{-1}\left( \frac{\nu }{2},\frac{1}{2},2q\right) }-\nu } &  & q\leq \frac{1}{2}\\
-\sqrt{\frac{\nu }{I^{-1}\left( \frac{\nu }{2},\frac{1}{2},2-2q\right) }-\nu } &  & q\geq \frac{1}{2}
-\end{array}\right. 
+f\left(x;\nu \right) & = & \frac{\Gamma \left(\frac{\nu +1}{2}\right)}{\sqrt{\pi \nu }\Gamma \left(\frac{\nu }{2}\right)\left[1+\frac{x^{2}}{\nu }\right]^{\frac{\nu +1}{2}}}\\
+F\left(x;\nu \right) & = & \left\{ \begin{array}{ccc}
+ \frac{1}{2}I\left(\frac{\nu }{2},\frac{1}{2},\frac{\nu }{\nu +x^{2}}\right) &  & x\leq 0\\
+ 1-\frac{1}{2}I\left(\frac{\nu }{2},\frac{1}{2},\frac{\nu }{\nu +x^{2}}\right) &  & x\geq 0\end{array}
+\right.\\
+G\left(q;\nu \right) & = & \left\{ \begin{array}{ccc}
+ -\sqrt{\frac{\nu }{I^{-1}\left(\frac{\nu }{2},\frac{1}{2},2q\right)}-\nu } &  & q\leq \frac{1}{2}\\
+ \sqrt{\frac{\nu }{I^{-1}\left(\frac{\nu }{2},\frac{1}{2},2-2q\right)}-\nu } &  & q\geq \frac{1}{2}\end{array}
+\right.
 \end{eqnarray*}
 
 \end_inset 
@@ -3553,7 +3555,7 @@ m_{n}=m_{d}=\mu  & = & 0\\
 \end_inset 
 
  As 
-\begin_inset Formula \( \nu \rightarrow \infty , \)
+\begin_inset Formula $\nu \rightarrow \infty ,$
 \end_inset 
 
  this distribution approaches the standard normal distribution.
@@ -3567,35 +3569,35 @@ Triangular
 \layout Standard
 
 One shape parameter 
-\begin_inset Formula \( c\in [0,1] \)
+\begin_inset Formula $c\in [0,1]$
 \end_inset 
 
  giving the distance to the peak as a percentage of the total extent of
  the non-zero portion.
  The location parameter is the start of the non-zero portion, and the scale-para
 meter is the 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
 -length of the non-zero portion.
  In standard form we have 
-\begin_inset Formula \( x\in \left[ 0,1\right] . \)
+\begin_inset Formula $x\in \left[0,1\right].$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-2\frac{x}{c} &  & x<c\\
-2\frac{1-x}{1-c} &  & x\geq c
-\end{array}\right. \\
-F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-\frac{x^{2}}{c} &  & x<c\\
-\frac{x^{2}-2x+c}{c-1} &  & x\geq c
-\end{array}\right. \\
-G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
-\sqrt{cq} &  & q<c\\
-1-\sqrt{\left( 1-c\right) \left( 1-q\right) } &  & q\geq c
-\end{array}\right. 
+f\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ 2\frac{x}{c} &  & x<c\\
+ 2\frac{1-x}{1-c} &  & x\geq c\end{array}
+\right.\\
+F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ \frac{x^{2}}{c} &  & x<c\\
+ \frac{x^{2}-2x+c}{c-1} &  & x\geq c\end{array}
+\right.\\
+G\left(q;c\right) & = & \left\{ \begin{array}{ccc}
+ \sqrt{cq} &  & q<c\\
+ 1-\sqrt{\left(1-c\right)\left(1-q\right)} &  & q\geq c\end{array}
+\right.
 \end{eqnarray*}
 
 \end_inset 
@@ -3604,7 +3606,7 @@ G\left( q;c\right)  & = & \left\{ \begin{array}{ccc}
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \frac{c}{3}\\
 \mu _{2} & = & \frac{1-c+c^{2}}{18}\\
-\gamma _{1} & = & \frac{\sqrt{2}\left( 2c-1\right) \left( c+1\right) \left( c-2\right) }{5\left( 1-c+c^{2}\right) ^{3/2}}\\
+\gamma _{1} & = & \frac{\sqrt{2}\left(2c-1\right)\left(c+1\right)\left(c-2\right)}{5\left(1-c+c^{2}\right)^{3/2}}\\
 \gamma _{2} & = & -\frac{3}{5}
 \end{eqnarray*}
 
@@ -3617,15 +3619,15 @@ Truncated Exponential
 \layout Standard
 
 This is an exponential distribution defined only over a certain region 
-\begin_inset Formula \( 0<x<B \)
+\begin_inset Formula $0<x<B$
 \end_inset 
 
 .
  In standard form this is 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;B\right)  & = & \frac{e^{-x}}{1-e^{-B}}\\
-F\left( x;B\right)  & = & \frac{1-e^{-x}}{1-e^{-B}}\\
-G\left( q;B\right)  & = & -\log \left( 1-q+qe^{-B}\right) 
+f\left(x;B\right) & = & \frac{e^{-x}}{1-e^{-B}}\\
+F\left(x;B\right) & = & \frac{1-e^{-x}}{1-e^{-B}}\\
+G\left(q;B\right) & = & -\log \left(1-q+qe^{-B}\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3638,44 +3640,44 @@ Truncated Normal
 
 A normal distribution restricted to lie within a certain range given by
  two parameters 
-\begin_inset Formula \( A \)
+\begin_inset Formula $A$
 \end_inset 
 
  and 
-\begin_inset Formula \( B \)
+\begin_inset Formula $B$
 \end_inset 
 
 .
  Thus for 
-\begin_inset Formula \( x\in \left[ A,B\right] : \)
+\begin_inset Formula $x\in \left[A,B\right]:$
 \end_inset 
 
  Notice that this 
-\begin_inset Formula \( A \)
+\begin_inset Formula $A$
 \end_inset 
 
  and 
-\begin_inset Formula \( B \)
+\begin_inset Formula $B$
 \end_inset 
 
  correspond to the bounds on 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
  in standard form.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;A,B\right)  & = & \frac{\phi \left( x\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\\
-F\left( x;A,B\right)  & = & \frac{\Phi \left( x\right) -\Phi \left( A\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\\
-G\left( q;A,B\right)  & = & \Phi ^{-1}\left[ q\Phi \left( B\right) +\Phi \left( A\right) \left( 1-q\right) \right] 
+f\left(x;A,B\right) & = & \frac{\phi \left(x\right)}{\Phi \left(B\right)-\Phi \left(A\right)}\\
+F\left(x;A,B\right) & = & \frac{\Phi \left(x\right)-\Phi \left(A\right)}{\Phi \left(B\right)-\Phi \left(A\right)}\\
+G\left(q;A,B\right) & = & \Phi ^{-1}\left[q\Phi \left(B\right)+\Phi \left(A\right)\left(1-q\right)\right]
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \frac{\phi \left( A\right) -\phi \left( B\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\\
-\mu _{2} & = & 1+\frac{A\phi \left( A\right) -B\phi \left( B\right) }{\Phi \left( B\right) -\Phi \left( A\right) }-\left( \frac{\phi \left( A\right) -\phi \left( B\right) }{\Phi \left( B\right) -\Phi \left( A\right) }\right) ^{2}
+\mu  & = & \frac{\phi \left(A\right)-\phi \left(B\right)}{\Phi \left(B\right)-\Phi \left(A\right)}\\
+\mu _{2} & = & 1+\frac{A\phi \left(A\right)-B\phi \left(B\right)}{\Phi \left(B\right)-\Phi \left(A\right)}-\left(\frac{\phi \left(A\right)-\phi \left(B\right)}{\Phi \left(B\right)-\Phi \left(A\right)}\right)^{2}
 \end{eqnarray*}
 
 \end_inset 
@@ -3688,9 +3690,9 @@ Tukey-Lambda
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;\lambda \right)  & = & F^{\prime }\left( x;\lambda \right) =\frac{1}{G^{\prime }\left( F\left( x;\lambda \right) ;\lambda \right) }=\frac{1}{F^{\lambda -1}\left( x;\lambda \right) +\left[ 1-F\left( x;\lambda \right) \right] ^{\lambda -1}}\\
-F\left( x;\lambda \right)  & = & G^{-1}\left( x;\lambda \right) \\
-G\left( p;\lambda \right)  & = & \frac{p^{\lambda }-\left( 1-p\right) ^{\lambda }}{\lambda }
+f\left(x;\lambda \right) & = & F^{\prime }\left(x;\lambda \right)=\frac{1}{G^{\prime }\left(F\left(x;\lambda \right);\lambda \right)}=\frac{1}{F^{\lambda -1}\left(x;\lambda \right)+\left[1-F\left(x;\lambda \right)\right]^{\lambda -1}}\\
+F\left(x;\lambda \right) & = & G^{-1}\left(x;\lambda \right)\\
+G\left(p;\lambda \right) & = & \frac{p^{\lambda }-\left(1-p\right)^{\lambda }}{\lambda }
 \end{eqnarray*}
 
 \end_inset 
@@ -3698,15 +3700,15 @@ G\left( p;\lambda \right)  & = & \frac{p^{\lambda }-\left( 1-p\right) ^{\lambda 
  
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & 0\\
-\mu _{2} & = & \int _{-\infty }^{\infty }x^{2}f\left( x;\lambda \right) dx\\
+\mu _{2} & = & \int _{-\infty }^{\infty }x^{2}f\left(x;\lambda \right)dx\\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & \frac{\int _{-\infty }^{\infty }x^{4}f\left( x;\lambda \right) dx}{\mu _{2}^{2}}-3
+\gamma _{2} & = & \frac{\int _{-\infty }^{\infty }x^{4}f\left(x;\lambda \right)dx}{\mu _{2}^{2}}-3
 \end{eqnarray*}
 
 \end_inset 
 
  Notice that the 
-\begin_inset Formula \( \lim _{\lambda \rightarrow 0}G\left( p;\lambda \right) =\log \left( p/\left( 1-p\right) \right)  \)
+\begin_inset Formula $\lim _{\lambda \rightarrow 0}G\left(p;\lambda \right)=\log \left(p/\left(1-p\right)\right)$
 \end_inset 
 
 
@@ -3716,15 +3718,15 @@ Uniform
 \layout Standard
 
 Standard form 
-\begin_inset Formula \( x\in \left( 0,1\right) . \)
+\begin_inset Formula $x\in \left(0,1\right).$
 \end_inset 
 
  In general form, the lower limit is 
-\begin_inset Formula \( L, \)
+\begin_inset Formula $L,$
 \end_inset 
 
  the upper limit is 
-\begin_inset Formula \( S+L. \)
+\begin_inset Formula $S+L.$
 \end_inset 
 
 
@@ -3732,9 +3734,9 @@ Standard form
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & 1\\
-F\left( x\right)  & = & x\\
-G\left( q\right)  & = & q
+f\left(x\right) & = & 1\\
+F\left(x\right) & = & x\\
+G\left(q\right) & = & q
 \end{eqnarray*}
 
 \end_inset 
@@ -3756,37 +3758,37 @@ Von Mises
 \layout Standard
 
 Defined for 
-\begin_inset Formula \( x\in \left[ -\pi ,\pi \right]  \)
+\begin_inset Formula $x\in \left[-\pi ,\pi \right]$
 \end_inset 
 
  with shape parameter 
-\begin_inset Formula \( b>0 \)
+\begin_inset Formula $b>0$
 \end_inset 
 
 .
  Note, the PDF and CDF functions are periodic and are always defined over
  
-\begin_inset Formula \( x\in \left[ -\pi ,\pi \right]  \)
+\begin_inset Formula $x\in \left[-\pi ,\pi \right]$
 \end_inset 
 
  regardless of the location parameter.
  Thus, if an input beyond this range is given, it is converted to the equivalent
  angle in this range.
  For values of 
-\begin_inset Formula \( b<100 \)
+\begin_inset Formula $b<100$
 \end_inset 
 
  the PDF and CDF formulas below are used.
  Otherwise, a normal approximation with variance 
-\begin_inset Formula \( 1/b \)
+\begin_inset Formula $1/b$
 \end_inset 
 
  is used.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;b\right)  & = & \frac{e^{b\cos x}}{2\pi I_{0}\left( b\right) }\\
-F\left( x;b\right)  & = & \frac{1}{2}+\frac{x}{2\pi }+\sum _{k=1}^{\infty }\frac{I_{k}\left( b\right) \sin \left( kx\right) }{I_{0}\left( b\right) \pi k}\\
-G\left( q;b\right)  & = & F^{-1}\left( x;b\right) 
+f\left(x;b\right) & = & \frac{e^{b\cos x}}{2\pi I_{0}\left(b\right)}\\
+F\left(x;b\right) & = & \frac{1}{2}+\frac{x}{2\pi }+\sum _{k=1}^{\infty }\frac{I_{k}\left(b\right)\sin \left(kx\right)}{I_{0}\left(b\right)\pi k}\\
+G\left(q;b\right) & = & F^{-1}\left(x;b\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3797,9 +3799,9 @@ G\left( q;b\right)  & = & F^{-1}\left( x;b\right)
 
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & 0\\
-\mu _{2} & = & \int _{-\pi }^{\pi }x^{2}f\left( x;b\right) dx\\
+\mu _{2} & = & \int _{-\pi }^{\pi }x^{2}f\left(x;b\right)dx\\
 \gamma _{1} & = & 0\\
-\gamma _{2} & = & \frac{\int _{-\pi }^{\pi }x^{4}f\left( x;b\right) dx}{\mu _{2}^{2}}-3
+\gamma _{2} & = & \frac{\int _{-\pi }^{\pi }x^{4}f\left(x;b\right)dx}{\mu _{2}^{2}}-3
 \end{eqnarray*}
 
 \end_inset 
@@ -3812,7 +3814,7 @@ Wald
 \layout Standard
 
 Special case of the Inverse Normal with shape parameter set to 
-\begin_inset Formula \( 1.0 \)
+\begin_inset Formula $1.0$
 \end_inset 
 
 
@@ -3820,9 +3822,9 @@ Special case of the Inverse Normal with shape parameter set to
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left( -\frac{\left( x-1\right) ^{2}}{2x}\right) .\\
-F\left( x\right)  & = & \Phi \left( \frac{x-1}{\sqrt{x}}\right) +\exp \left( 2\right) \Phi \left( -\frac{x+1}{\sqrt{x}}\right) \\
-G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right) 
+f\left(x\right) & = & \frac{1}{\sqrt{2\pi x^{3}}}\exp \left(-\frac{\left(x-1\right)^{2}}{2x}\right).\\
+F\left(x\right) & = & \Phi \left(\frac{x-1}{\sqrt{x}}\right)+\exp \left(2\right)\Phi \left(-\frac{x+1}{\sqrt{x}}\right)\\
+G\left(q;\mu \right) & = & F^{-1}\left(q;\mu \right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3836,7 +3838,7 @@ G\left( q;\mu \right)  & = & F^{-1}\left( q;\mu \right)
 \mu _{2} & = & 1\\
 \gamma _{1} & = & 3\\
 \gamma _{2} & = & 15\\
-m_{d} & = & \frac{1}{2}\left( \sqrt{13}-3\right) 
+m_{d} & = & \frac{1}{2}\left(\sqrt{13}-3\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3851,23 +3853,23 @@ Wrapped Cauchy
 \layout Standard
 
 For 
-\begin_inset Formula \( x\in \left[ 0,2\pi \right]  \)
+\begin_inset Formula $x\in \left[0,2\pi \right]$
 \end_inset 
 
  
-\begin_inset Formula \( c\in \left( 0,1\right)  \)
+\begin_inset Formula $c\in \left(0,1\right)$
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & \frac{1-c^{2}}{2\pi \left( 1+c^{2}-2c\cos x\right) }\\
-g_{c}\left( x\right)  & = & \frac{1}{2\pi }\arctan \left( \frac{-\sin \left( \frac{x}{2}\right) -c\sin \left( \frac{x}{2}\right) }{-\cos \left( \frac{x}{2}\right) +c\cos \left( \frac{x}{2}\right) }\right) \\
- &  & -\frac{1}{2\pi }\arctan \left( \frac{\sin \left( \frac{x}{2}\right) +c\sin \left( \frac{x}{2}\right) }{-\cos \left( \frac{x}{2}\right) +c\cos \left( \frac{x}{2}\right) }\right) \\
-F\left( x;c\right)  & = & \left\{ \begin{array}{ccc}
-g_{c}\left( x\right)  &  & 0\leq x<\pi \\
-1-g_{c}\left( 2\pi -x\right)  &  & \pi \leq x\leq 2\pi 
-\end{array}\right. \\
-G\left( q;c\right)  & = & F^{-1}\left( x;c\right) 
+f\left(x;c\right) & = & \frac{1-c^{2}}{2\pi \left(1+c^{2}-2c\cos x\right)}\\
+g_{c}\left(x\right) & = & \frac{1}{2\pi }\arctan \left(\frac{-\sin \left(\frac{x}{2}\right)-c\sin \left(\frac{x}{2}\right)}{-\cos \left(\frac{x}{2}\right)+c\cos \left(\frac{x}{2}\right)}\right)\\
+ &  & -\frac{1}{2\pi }\arctan \left(\frac{\sin \left(\frac{x}{2}\right)+c\sin \left(\frac{x}{2}\right)}{-\cos \left(\frac{x}{2}\right)+c\cos \left(\frac{x}{2}\right)}\right)\\
+F\left(x;c\right) & = & \left\{ \begin{array}{ccc}
+ g_{c}\left(x\right) &  & 0\leq x<\pi \\
+ 1-g_{c}\left(2\pi -x\right) &  & \pi \leq x\leq 2\pi \end{array}
+\right.\\
+G\left(q;c\right) & = & F^{-1}\left(x;c\right)
 \end{eqnarray*}
 
 \end_inset 
@@ -3879,7 +3881,7 @@ Weibull (minimum)
 \layout Standard
 
 A flexible distribution with a single shape parameter: 
-\begin_inset Formula \( c>0. \)
+\begin_inset Formula $c>0.$
 \end_inset 
 
  
@@ -3887,31 +3889,31 @@ A flexible distribution with a single shape parameter:
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & cx^{c-1}\exp \left( -x^{c}\right) I_{\left( 0,\infty \right) }\left( x\right) \\
-F\left( x;c\right)  & = & 1-\exp \left( -x^{c}\right) I_{\left( 0,\infty \right) }\left( x\right) \\
-G\left( q;c\right)  & = & \log ^{1/c}\left( \frac{1}{1-q}\right) 
+f\left(x;c\right) & = & cx^{c-1}\exp \left(-x^{c}\right)I_{\left(0,\infty \right)}\left(x\right)\\
+F\left(x;c\right) & = & 1-\exp \left(-x^{c}\right)I_{\left(0,\infty \right)}\left(x\right)\\
+G\left(q;c\right) & = & \log ^{1/c}\left(\frac{1}{1-q}\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & \Gamma \left( \frac{c+1}{c}\right) \\
-\mu _{2} & = & \Gamma \left( \frac{c+2}{c}\right) -\Gamma ^{2}\left( \frac{c+1}{c}\right) \\
-\gamma _{1} & = & \frac{2\Gamma ^{3}\left( \frac{c+1}{c}\right) -3\Gamma \left( \frac{c+1}{c}\right) \Gamma \left( \frac{c+2}{c}\right) +\Gamma \left( \frac{c+3}{c}\right) }{\left[ \Gamma \left( \frac{c+2}{c}\right) -\Gamma ^{2}\left( \frac{c+1}{c}\right) \right] ^{3/2}}\\
-\gamma _{2} & = & \frac{-3\Gamma ^{4}\left( \frac{c+1}{c}\right) +6\Gamma ^{2}\left( \frac{c+1}{c}\right) \Gamma \left( \frac{c+2}{c}\right) -4\Gamma \left( \frac{c+1}{c}\right) \Gamma \left( \frac{c+3}{c}\right) +\Gamma \left( \frac{c+4}{c}\right) }{\left[ \Gamma \left( \frac{c+2}{c}\right) -\Gamma ^{2}\left( \frac{c+1}{c}\right) \right] ^{2}}-3\\
-m_{d} & = & \left( \frac{c-1}{c}\right) ^{1/c}\, c>1\quad 0\, c\leq 1.\\
-m_{n} & = & \log ^{1/c}\left( 2\right) 
+\mu  & = & \Gamma \left(\frac{c+1}{c}\right)\\
+\mu _{2} & = & \Gamma \left(\frac{c+2}{c}\right)-\Gamma ^{2}\left(\frac{c+1}{c}\right)\\
+\gamma _{1} & = & \frac{2\Gamma ^{3}\left(\frac{c+1}{c}\right)-3\Gamma \left(\frac{c+1}{c}\right)\Gamma \left(\frac{c+2}{c}\right)+\Gamma \left(\frac{c+3}{c}\right)}{\left[\Gamma \left(\frac{c+2}{c}\right)-\Gamma ^{2}\left(\frac{c+1}{c}\right)\right]^{3/2}}\\
+\gamma _{2} & = & \frac{-3\Gamma ^{4}\left(\frac{c+1}{c}\right)+6\Gamma ^{2}\left(\frac{c+1}{c}\right)\Gamma \left(\frac{c+2}{c}\right)-4\Gamma \left(\frac{c+1}{c}\right)\Gamma \left(\frac{c+3}{c}\right)+\Gamma \left(\frac{c+4}{c}\right)}{\left[\Gamma \left(\frac{c+2}{c}\right)-\Gamma ^{2}\left(\frac{c+1}{c}\right)\right]^{2}}-3\\
+m_{d} & = & \left(\frac{c-1}{c}\right)^{1/c}\, c>1\quad 0\, c\leq 1.\\
+m_{n} & = & \log ^{1/c}\left(2\right)
 \end{eqnarray*}
 
 \end_inset 
 
  The Weibull distribution with 
-\begin_inset Formula \( c=1 \)
+\begin_inset Formula $c=1$
 \end_inset 
 
  is the exponential distribution while with 
-\begin_inset Formula \( c=2 \)
+\begin_inset Formula $c=2$
 \end_inset 
 
  it is the standard Rayleigh distribution.
@@ -3922,26 +3924,26 @@ Weibull (maximum)
 \layout Standard
 
 Defined for negative values of 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
 .
  
-\begin_inset Formula \( c>0 \)
+\begin_inset Formula $c>0$
 \end_inset 
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x;c\right)  & = & c\left( -x\right) ^{c-1}\exp \left( -\left( -x\right) ^{c}\right) I_{\left( -\infty ,0\right) }\left( x\right) \\
-F\left( x;c\right)  & = & \exp \left( -\left( -x\right) ^{c}\right) I_{\left( -\infty ,0\right) }\left( x\right) \\
-G\left( q;c\right)  & = & -\log ^{1/c}\left( \frac{1}{q}\right) .
+f\left(x;c\right) & = & c\left(-x\right)^{c-1}\exp \left(-\left(-x\right)^{c}\right)I_{\left(-\infty ,0\right)}\left(x\right)\\
+F\left(x;c\right) & = & \exp \left(-\left(-x\right)^{c}\right)I_{\left(-\infty ,0\right)}\left(x\right)\\
+G\left(q;c\right) & = & -\log ^{1/c}\left(\frac{1}{q}\right).
 \end{eqnarray*}
 
 \end_inset 
 
  From symmetry we see that 
 \begin_inset Formula \begin{eqnarray*}
-\mu  & = & -\Gamma \left( 1+\frac{1}{c}\right) 
+\mu  & = & -\Gamma \left(1+\frac{1}{c}\right)
 \end{eqnarray*}
 
 \end_inset 

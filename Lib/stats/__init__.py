@@ -50,7 +50,7 @@ gamma           --  Gamma
 gengamma        --  Generalized gamma
 genhalflogistic --  Generalized Half Logistic
 gompertz        --  Gompertz (Truncated Gumbel)
-gumbel          --  Gumbel, Log-Weibull, Fisher-Tippett
+gumbel          --  Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
 halfcauchy      --  Half Cauchy
 halflogistic    --  Half Logistic
 halfnorm        --  Half Normal

@@ -5,8 +5,8 @@ import statlib
 import stats
 import distributions
 import inspect
-from scipy_base import isscalar, r_, log, sum
-from scipy_base import zeros, arange, sort, amin, amax, any, where
+from scipy_base import isscalar, r_, log, sum, around
+from scipy_base import zeros, arange, sort, amin, amax, any, where, array
 import types
 import scipy.optimize as optimize
 
@@ -247,7 +247,7 @@ def shapiro(x,a=None,reta=0):
 
     If p-value is high, one cannot reject the null hypothesis of normality
     with this test.  P-value is probability that the W statistic is
-    as large as it is if samples are actually from a normal distribution.
+    as low as it is if the samples are actually from a normal distribution.
 
     Output:  W statistic and its p-value
 
@@ -275,6 +275,84 @@ def shapiro(x,a=None,reta=0):
         return w, pw, a
     else:        
         return w, pw
+
+# Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
+#             Some Comparisons", Journal of he American Statistical
+#             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
+_Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
+_Avals_expon  = array([0.922, 1.078, 1.341, 1.606, 1.957])
+# From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
+#             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
+_Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
+# From Stephens, M A, "Tests of Fit for the Logistic Distribution Based
+#             on the Empirical Distribution Function.", Biometrika, 
+#             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
+_Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
+def anderson(x,dist='norm'):
+    """Anderson and Darling test for normal, exponential, or Gumbel
+    (Extreme Value Type I) distribution.
+
+    Given samples x, return A2, the Anderson-Darling statistic,
+    the significance levels in percentages, and the corresponding
+    critical values.
+
+    Critical values provided are for the following significance levels
+    norm/expon:   15%, 10%, 5%, 2.5%, 1%
+    Gumbel:       25%, 10%, 5%, 2.5%, 1%
+    logistic:     25%, 10%, 5%, 2.5%, 1%, 0.5%
+
+    If A2 is larger than these critical values then for that significance
+    level, the hypothesis that the data come from a normal (exponential)
+    can be rejected.
+    """
+    if not dist in ['norm','expon','gumbel','extreme1','logistic']:
+        raise ValueError, "Invalid distribution."
+    y = sort(x)
+    xbar = stats.mean(x)
+    N = len(y)
+    if dist == 'norm':
+        s = stats.std(x)
+        w = (y-xbar)/s
+        z = distributions.normcdf(w)
+        sig = array([15,10,5,2.5,1])
+        critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N),3)
+    elif dist == 'expon':
+        w = y / xbar
+        z = distributions.exponcdf(w)
+        sig = array([15,10,5,2.5,1])
+        critical = around(_Avals_expon / (1.0 + 0.6/N),3)
+    elif dist == 'logistic':
+        def rootfunc(ab,xj,N):
+            a,b = ab
+            tmp = (xj-a)/b
+            tmp2 = exp(tmp)
+            val = [sum(1.0/(1+tmp2))-0.5*N,
+                   sum(tmp*(1.0-tmp2)/(1+tmp2))+N]
+            return array(val)
+        sol0=array([xbar,stats.std(x)])
+        sol = optimize.fsolve(rootfunc,sol0,args=(x,N),xtol=1e-5)
+        w = (y-sol[0])/sol[1]
+        z = distributions.logisticcdf(w)
+        sig = array([25,10,5,2.5,1,0.5])
+        critical = around(_Avals_logistic / (1.0+0.25/N),3)
+    else:
+        def fixedsolve(th,xj,N):
+            val = stats.sum(xj)*1.0/N
+            tmp = exp(-xj/th)
+            term = sum(xj*tmp)
+            term /= sum(tmp)
+            return val - term
+        s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
+        xbar = -s*log(sum(exp(-x/s))*1.0/N)
+        w = (y-xbar)/s
+        z = distributions.gumbelcdf(w)
+        sig = array([25,10,5,2.5,1])
+        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)),3)
+    i = arange(1,N+1)
+    S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])))
+    A2 = -N-S
+    return A2, critical, sig
+    
 
 
 ################## test functions #########################
