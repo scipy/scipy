@@ -33,3 +33,19 @@ from write_style import *
 gistpath = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3],
                         'site-packages','scipy','xplt')
 os.environ['GISTPATH'] = gistpath
+
+maxwidth=os.environ.get('XPLT_MAXWIDTH')
+maxheight=os.environ.get('XPLT_MAXHEIGHT')
+if maxwidth is None or maxheight is None:
+    import commands
+    str = commands.getoutput('xwininfo -root')
+    ind1 = str.find('Width:')
+    ind2 = str.find('\n',ind1)
+    maxwidth=int(str[ind1+6:ind2])-8
+    ind1 = str.find('Height:')
+    ind2 = str.find('\n',ind1)
+    maxheight=int(str[ind1+7:ind2])-60
+    os.environ['XPLT_MAXWIDTH']=maxwidth
+    os.environ['XPLT_MAXHEIGHT']=maxheight
+    
+

@@ -615,6 +615,7 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     byteimage = gist.bytscl(A,cmin=cmin,cmax=cmax)
     change_palette(palette)
     gist.window(style='nobox.gs')
+    _current_style='nobox.gs'
     gist.pli(byteimage)
     old_vals = gist.limits(square=1)
     vals = gist.limits(square=1)
@@ -673,6 +674,7 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
             fid.write(write_style.style2string(system))
             fid.close()
         gist.window(style=_style)
+        _current_style=_style
     if cmax is None:
         cmax = max(ravel(z))
     if cmin is None:
@@ -709,6 +711,7 @@ def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, l
         gist.window(style=style)
     else:
         gist.window(n,style=style)
+    _current_style = style
     return
 
 def full_page(win,dpi=75):
@@ -731,10 +734,72 @@ def _add_color(system, color, frame=0):
     }
     return
 
+def _chng_font(system, font, height):
+    if height is None:
+        height=14
+    if font is None:
+        font = 'helvetica'        
+    num = write_style.tfont[font]
+    system['ticks'] = { 
+        'horiz':{
+        'textStyle':{'font':num,
+                     'height':height*points}
+        },
+        'vert':{
+        'textStyle':{'font':num,
+                     'height':height*points}
+        }
+    }
+    return
 
 plotframe = gist.plsys
-def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=11*inches,pw=8.5*inches,dpi=75,ls=0.75*inches,rs=0.75*inches,ts=0.75*inches,bs=0.75*inches,color='black',frame=0):
+def subplot(Numy,Numx,win=0,lm=0,rm=0,tm=0,bm=0,pw=None,ph=None,ls=50,rs=50,ts=50,bs=50,color='black',frame=0,fontsize=8,font=None,dpi=100):
+    # all inputs given as pixels, gist wants things in normalized device
+    #  coordinate.  Window is brought up with center of window at
+    #  center of 8.5 x 11 inch page: in landscape mode (5.25, 4.25)
+    #  or at position (4.25,6.75) for portrait mode
+    msg = 1
+    if pw is None:
+        pw = Numx*300
+        msg = 0
+    if ph is None:
+        ph = Numy*300
+        msg = 0
+    maxwidth=os.environ.get('XPLT_MAXWIDTH')
+    maxheight=os.environ.get('XPLT_MAXHEIGHT')
     # Use gist.plsys to change coordinate systems
+    if ph > maxheight or pw > maxwidth:
+        if msg:
+            print "Warning: Requested height and width too large."
+            print "Changing to %d x %d" % (maxwidth, maxheight)
+        ph = maxheight
+        pw = maxwidth
+    if dpi != 100:
+        dpi = 75
+    conv = inches *1.0 / dpi  # multiply by this factor to convert pixels to
+                              # NDC
+
+    # Use landscape mode unless requested height is large
+    land = 1
+    maxw = 11*dpi
+    maxh = 8.5*dpi
+    if ph > (8.5*dpi) and pw < (8.5*dpi):
+        land = 0
+        maxh = 11*dpi
+        maxw = 8.5*dpi
+
+    if ph > maxh:
+        ph = maxh
+    if pw > maxw:
+        pw = maxw
+
+    # Now we've got a suitable height and width
+
+    if land:
+        _cntr = array([5.25,4.25])*dpi  # landscape
+    else:
+        _cntr = array([4.25,6.75])*dpi  # portrait
+        
     if type(color) is types.StringType:
         color = _colornum[color]
     systems=[]
@@ -747,14 +812,16 @@ def subplot(Numy,Numx,win=0,lm=0*inches,rm=0*inches,tm=0*inches,bm=0*inches,ph=1
             xstart = lm + nX*Xspace + ls
             systems.append({})
             systems[-1]['viewport'] = [xstart,xstart+Xspace-(ls+rs),ystart,ystart+Yspace-(ts+bs)]
-            if color != -2:
+            if font is not None or fontsize is not None:
+                _chng_font(systems[-1],font,fontsize)
+            if color != -3 or frame != 0:
                 _add_color(systems[-1],color,frame=frame)
     _current_style='/tmp/subplot%s.gs' % win
     fid = open(_current_style,'w')
-    fid.write(write_style.style2string(systems))
+    fid.write(write_style.style2string(systems,landscape=land))
     fid.close()
     gist.winkill(win)
-    gist.window(win,style=_current_style,width=int(8.5*dpi),height=int(11*dpi),dpi=dpi)
+    gist.window(win,style=_current_style,width=int(pw),height=int(ph),dpi=100)
 
 _dwidth=6*inches
 _dheight=6*inches
@@ -793,6 +860,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
             fid.write(write_style.style2string(system))
             fid.close()
         gist.window(style=_style)
+        _current_style=_style
     if cmax is None:
         cmax = max(ravel(z))
     if cmin is None:
@@ -807,6 +875,10 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
     colorbar.color_bar(cmin,cmax,ncol=240,zlabel=zlabel,font=font,fontsize=fontsize,color=color)
 
 def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
+    """To get symbol font for the next character precede by !.  To get
+    superscript enclose with ^^
+    To get subscript enclose with _<text>_
+    """
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     y0 = vp[2] - 0.035 + deltay
@@ -839,7 +911,6 @@ def title3(text,color='black',font='helvetica',fontsize=18,deltax=0.0,deltay=0.0
     if text != "":
         gist.plt(text,xmidpt,vp[3]-0.05-deltay, font=font, justify='CB',
                  height=fontsize, color=color)
-
 
 def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
     y0 = Numeric.zeros(len(y),y.typecode())
@@ -997,6 +1068,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     write_style.writestyle("/tmp/two-plane.gs",systems)
 
     gist.window(style='/tmp/two-plane.gs')
+    _current_style ='/tmp/two-plane.gs'
     gist.plsys(1)
     if medfilt > 1:
         img1 = signal.medfilt(img1,[medfilt,medfilt])

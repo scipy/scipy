@@ -281,9 +281,9 @@ def style2string(systemslist, landscape=0):
 
     return retstr
 
-def writestyle(name, systemslist):
+def writestyle(name, systemslist, landscape=0):
     fid = open(name,'w')
-    fid.write(style2string(systemslist))
+    fid.write(style2string(systemslist,landscape))
     fid.close()
     return
 
