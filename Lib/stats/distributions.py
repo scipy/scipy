@@ -3801,7 +3801,7 @@ class planck_gen(rv_discrete):
     def _stats(self, lambda_):
         m2, m1 = arr(lambda_)
         mu = 1/(exp(lambda_)-1)
-        var = exp(-lambda_)/(1-exp(-lambda))**2
+        var = exp(-lambda_)/(1-exp(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2
