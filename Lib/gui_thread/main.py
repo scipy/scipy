@@ -97,16 +97,40 @@ sys.exitfunc = exit_gui_thread
 # Registering classes and generating proxies.
 ##############################################
 
+class smart_class:
+    
+    """This class that creates a functor that returns either a proxied
+    or non-proxied object depending on where it was 'called'.  If the
+    call is made inside a proxied call then a non-proxied instance is
+    returned, if not it returns a proxied instance.  This makes it
+    possible to instantiate gui_threaded classes inside other
+    gui_threaded objects without problems."""
+    
+    def __init__(self, orig_class, proxy_class):
+        self.orig_class = orig_class
+        self.proxy_class = proxy_class
+
+    def __call__(self, *args, **kw):
+        if in_proxy_call:
+            return apply(self.orig_class, args, kw)
+        else:
+            return apply(self.proxy_class, args, kw)
+
+
 def register(wx_class):
     """ Create a gui_thread compatible version of wx_class
     
         Test whether a proxy is necessary.  If so,
         generate and return the proxy class.  if not,
-        just return the wx_class unaltered.       
-    """    
+        just return the wx_class unaltered.   The proxied
+        class is wrapped by the smart_class that returns
+        a proxied or normal instance depending on where
+        the instantiation occurs.
+        
+    """
     if running_in_second_thread:
         #print 'proxy generated'
-        return proxify(wx_class)
+        return smart_class(wx_class, proxify(wx_class))
     else:
         if not hasattr(wx_class, '_iNiT2'):
             if hasattr(wx_class, '__init__'):
@@ -216,14 +240,15 @@ def generate_method(method,wx_class):
                 from gui_thread_guts import proxy_event, smart_return
                 %(import_statement)s
                 # remove proxies if present
-                args = dereference_arglist(args)                
+                args = dereference_arglist(args)
+                dkw = dereference_dict(kw)
                 %(arguments)s # inserts proxied object up front
                 ret_val = None
                 if in_proxy_call:
-                    ret_val = apply(%(call_method)s, arg_list, kw)
+                    ret_val = apply(%(call_method)s, arg_list, dkw)
                 else:
                     finished = threading.Event()
-                    evt = proxy_event(%(call_method)s,arg_list,kw,finished)
+                    evt = proxy_event(%(call_method)s,arg_list,dkw,finished)
                     self.post(evt)
                     finished.wait()
                     if finished.exception_info:
@@ -272,7 +297,7 @@ def is_proxy(x):
     return hasattr(x,'is_proxy')
 
 def is_proxy_attr(x):
-    hasattr(x, 'x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing')
+    return hasattr(x, 'x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing')
 
 def get_proxy_attr_obj(x):
     return x._proxy_attr__dont_mess_with_me_unless_you_know_what_youre_doing
@@ -286,9 +311,32 @@ def dereference_arglist(lst):
             res.append(arg.wx_obj)
             #print 'dereferenced ', arg.wx_obj
         elif is_proxy_attr(arg):
-            res.append(get_proxy_attr_obj(arg))
+            obj = get_proxy_attr_obj(arg)
+            if is_proxy(obj):
+                # it is possible that an attribute is a proxy instance.
+                res.append(obj.wx_obj)
+            else:
+                res.append(obj)
         else: res.append(arg)
     return res
        
+def dereference_dict(kw):
+    """ Scan for proxy objects and convert to underlying object
+    """
+    res = {}
+    for key in kw.keys():
+        arg = kw[key]
+        if is_proxy(arg): 
+            res[key] = arg.wx_obj
+        elif is_proxy_attr(arg):
+            obj = get_proxy_attr_obj(arg)
+            if is_proxy(obj):
+                # it is possible that an attribute is a proxy instance.
+                res[key] = obj.wx_obj
+            else:
+                res[key] = obj
+        else: res[key] = arg
+    return res
+
 def proxy_error():
     raise ValueError, 'This window has been destroyed'
