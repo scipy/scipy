@@ -6,7 +6,7 @@ import Numeric
 import types, sys
 from scipy import special, stats, linalg
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, hstack, product, array, typename
+     ones, NewAxis, transpose, hstack, product, array, typename, where
 import scipy_base.fastumath
 
 __all__ = ['factorial','comb','rand','randn','who','lena','central_diff_weights', 'derivative']
@@ -15,10 +15,15 @@ def factorial(n,exact=0):
     """n! = special.gamma(n+1)
 
     If exact==0, then floating point precision is used, otherwise
-    exact long integer is computed."""
-    if n < 0:
-        raise ValueError, "n must be >= 0"
+    exact long integer is computed.
+
+    Notes:    
+      - Array argument accepted only for exact=0 case.
+      - If n<0, the return value is 0.
+    """
     if exact:
+        if n < 0:
+            return 0L
         n = long(n)
         val = 1L
         k = 1L
@@ -27,18 +32,22 @@ def factorial(n,exact=0):
             k += 1
         return val
     else:
-        return special.gamma(n+1)
-
+        n = asarray(n)
+        return where(n>=0,special.gamma(n+1),0)
 
 def comb(N,k,exact=0):
     """Combinations of N things taken k at a time.
 
     If exact==0, then floating point precision is used, otherwise
     exact long integer is computed.
+
+    Notes:    
+      - Array arguments accepted only for exact=0 case.
+      - If k > N, N < 0, or k < 0, then a 0 is returned.
     """
-    if (k > N) or (N < 0) or (k < 0):
-        raise ValueError, "N and k must be non-negative and k <= N"
     if exact:
+        if (k > N) or (N < 0) or (k < 0):
+            return 0L
         N,k = map(long,(N,k))
         top = N
         val = 1L
@@ -51,8 +60,10 @@ def comb(N,k,exact=0):
             n += 1
         return val
     else:
+        k,N = asarray(k), asarray(N)
         lgam = special.gammaln
-        return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+        cond = (k <= N) & (N >= 0) & (k >= 0)
+        return where(cond, exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1)),0.0)
 
 def central_diff_weights(Np,ndiv=1):
     """Return weights for an Np-point central derivative of order ndiv

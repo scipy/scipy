@@ -3116,7 +3116,7 @@ def binomsf(k, n, pr=0.5):
 def binomppf(q, n, pr=0.5):
     vals = ceil(special.bdtrik(q,n,pr))
     temp = special.bdtr(vals-1,n,pr)
-    return where(temp >= q, vals-1, vals)
+    return where((temp >= q) & (vals > 0), vals-1, vals)
 
 def binomisf(p, n, pr=0.5):
     return binomppf(1-p,n,pr)
@@ -3178,7 +3178,7 @@ def nbinomsf(k, n, pr=0.5):
 def nbinomppf(q, n, pr=0.5):
     vals = ceil(special.nbdtrik(q,n,pr))
     temp = special.nbdtr(vals-1,n,pr)
-    return where(temp >= q, vals-1, vals)
+    return where((temp >= q) & (vals > 0), vals-1, vals)
 
 def nbinomisf(p, n, pr=0.5):
     return nbinomppf(1-p,n,pr)
@@ -3198,24 +3198,24 @@ def nbinomstats(n, pr=0.5, full=0):
 ## Geometric distribution
 
 def geompdf(k, pr=0.5):
-    cond1 = (pr > 0) & (pr < 1)
+    cond1 = 1-((pr > 0) & (pr < 1))
     cond2 = arr((k > 0) & (k == floor(k)))    
-    return select([cond,cond2],[(1-pr)**k * pr,0],scipy.nan)
+    return select([cond1,cond2],[scipy.nan,(1-pr)**k * pr])
 
 def geomcdf(k, pr=0.5):
     k = floor(k)
-    cond1 = arr((pr > 0) & (pr < 1))
-    return select([cond,k>0],[1.0-(1.0-pr)**k,0],scipy.nan)    
+    cond1 = 1-arr((pr > 0) & (pr < 1))
+    return select([cond1,k>0],[scipy.nan,1.0-(1.0-pr)**k])
 
 def geomsf(k, pr=0.5):
     k=floor(k)
     cond1 = arr((pr > 0) & (pr < 1))
-    return select([cond,k>0],[(1.0-pr)**k,1.0],scipy.nan)
+    return select([cond1,k>0],[(1.0-pr)**k,1.0],scipy.nan)
 
 def geomppf(q, pr=0.5):
     vals = ceil(log(1.0-q)/log(1-pr))
     temp = 1.0-(1.0-pr)**(vals-1)
-    vals = where(temp >= q, vals-1, vals)
+    vals = where((temp >= q) & (vals > 0), vals-1, vals)
     return where((q >= 0) & (q<=1) & (pr > 0) & (pr < 1), vals, scipy.nan)
 
 def geomisf(p, pr=0.5):
@@ -3235,25 +3235,30 @@ def geomstats(pr=0.5,full=0):
 ## Hypergeometric distribution
 
 def hypergeompdf(k, tot=35, good=25, N=10):
+    comb = scipy.comb
     bad = tot - good
-    return scipy.comb(good,k) * scipy.comb(bad,N-k) / scipy.comb(tot,N)
+    return comb(good,k) * comb(bad,N-k) / comb(tot,N)
 
 def _hypergeomcdf(k, tot, good, N):
     j = arange(0,k+1)
-    return sum(hypergeompdf(j, tot, good, N),axis=-1)
+    return sum(hypergeompdf(j, tot, good, N))
 _vhypergeomcdf = special.general_function(_hypergeomcdf,'d')
 
 def hypergeomcdf(k, tot=35, good=25, N=10):
+    k = floor(k)
     return _vhypergeomcdf(k, tot, good, N)
 
 def hypergeomsf(k, tot=35, good=25, N=10):
     return 1.0 - hypergeomcdf(k, tot, good, N)
 
+_hypergeomppf = general_cont_ppf('_vhypergeom',xa=0.0,xb=1000)
 def hypergeomppf(q, tot=35, good=25, N=10):
-    pass
+    vals = ceil(_hypergeomppf(q, tot, good, N))
+    temp = hypergeomcdf(vals-1,tot,good,N)
+    return where((temp >= q) & (vals > 0), vals-1, vals)    
 
 def hypergeomisf(p, tot=35, good=25, N=10):
-    pass
+    return hypergeomppf(1-p,tot,good,N)
 
 def hypergeomstats(tot=35, good=25, N=10, full=0):
     n = good*1.0
@@ -3270,7 +3275,8 @@ def hypergeomstats(tot=35, good=25, N=10, full=0):
     n2, n3, n4, n5 = n**2, n**2, n**4, n**5
     g2 = m3 - m5 + n*(3*m2-6*m3+m4) + 3*m*n2 - 12*m2*n2 + 8*m3*n2 + n3 \
          - 6*m*n3 + 8*m2*n3 + m*n4 - n5 - 6*m3*N + 6*m4*N + 18*m2*n*N \
-         - 6*m3*n*N + 18*m*n2*N - 24*m2*n2*N - 6*n3*N
+         - 6*m3*n*N + 18*m*n2*N - 24*m2*n2*N - 6*n3*N - 6*m*n3*N \
+         + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 + 12*m*n2 - 6*n3)
     return mu, var, g1, g2
 
 
@@ -3278,23 +3284,30 @@ def hypergeomstats(tot=35, good=25, N=10, full=0):
 
 def logserpdf(k,pr=0.5):
     k = arr(k)
-    assert (0<pr<1)
+    cond1 = (pr >=1) | (pr <=0)
     cond = arr((k > 0) & (k == floor(k)))
-    return where(cond,-pr**k / k / log(1-pr),0)
+    return select([cond1,cond],[scipy.nan,-pr**k / k / log(1-pr)],0)
+
+def _logsercdf(k, tot, good, N):
+    j = arange(0,k+1)
+    return sum(logserpdf(j, tot, good, N))
+_vlogsercdf = special.general_function(_logsercdf,'d')
 
 def logsercdf(k, pr=0.5):
-    j = arange(0,k+1)
-    pr = arr(pr)
-    return sum(logserpdf(j, pr),axis=-1)
+    k = floor(k)
+    return _vlogsercdf(k, pr)
 
 def logsersf(k, pr=0.5):
     return 1.0-logsercdf(k, pr=pr)
 
+_logserppf = general_cont_ppf('_vlogser',xa=0.0,xb=1000)
 def logserppf(q, pr=0.5):
-    pass
+    vals = ceil(_logserppf(q, pr))
+    temp = logsercdf(vals-1,pr)
+    return where((temp >= q) & (vals > 0), vals-1, vals)    
 
 def logserisf(p, pr=0.5):
-    pass
+    return logserppf(1-p,pr)
 
 def logserstats(pr=0.5, full=0):
     r = log(1-pr)
@@ -3334,7 +3347,7 @@ def poissonsf(k,mu):
     sv = errp(0)
     vals = special.pdtrc(k,mu)
     sv = errp(sv)
-    return select([mu<0,k>=0],[scipy.nan, vals])
+    return select([mu<0,k>=0],[scipy.nan, vals],1.0)
 
 def poissonppf(q,mu):
     q, mu = arr(q), arr(mu)
@@ -3342,7 +3355,7 @@ def poissonppf(q,mu):
     vals = ceil(special.pdtrik(q,mu))
     temp = special.pdtr(vals-1,mu)
     sv = errp(sv)
-    vals = where(temp >= q, vals-1, vals)
+    vals = where((temp >= q) & (vals > 0), vals-1, vals)
     return where((mu<0) | (q<0) | (q>1),scipy.nan,vals)
 
 def poissonisf(p,mu):
@@ -3350,7 +3363,7 @@ def poissonisf(p,mu):
 
 def poissonstats(mu,full=0):
     cond = (arr(mu) < 0)
-    where(cond,scipy.nan,mu)
+    mu = where(cond,scipy.nan,mu)
     var = mu
     if not full:
         return mu, var
@@ -3374,7 +3387,7 @@ def randintcdf(k, min, max=None):
         max = min
         min = 0
     cond = (arr(max) <= arr(min))
-    k = arr(k)
+    k = arr(floor(k))
     Ck = (k-min)*1.0/(max-min)
     return select([cond,k>max,k>min],[scipy.nan,1,Ck])
     
@@ -3387,7 +3400,10 @@ def randintppf(q, min, max=None):
         min = 0
     q = arr(q)
     cond = (arr(min) < arr(max)) & (0<=q) & (q<=1)
-    return where(cond, (max-min)*q + min, scipy.nan)
+    vals = ceil(q*(max-min)+min)
+    temp = randintcdf(vals-1,min,max)
+    vals = where((temp >= q) & (vals > 0), vals-1, vals)        
+    return where(cond, vals, scipy.nan)
 
 def randintisf(p, min, max=None):
     return randintppf(1-p, min, max)
@@ -3399,19 +3415,12 @@ def randintstats(min, max=None, full=0):
     m2, m1 = arr(max), arr(min)
     cond = (m1 < m2)
     mu = (m2 + m1 - 1.0) / 2
-    mu2p = (m2**3-m1**3)/(3.0*(m2-m1)) - (m2+m1)/2.0 + 1.0/6.0
-    var = mu2p - mu*mu
+    d = m2 - m1
+    var = (d-1)*(d+1.0)/12.0
     if not full:
         return mu, var
-    mu3p = (m2**4-m1**4)/(4.0*(m2-m1)) - (m2**3-m1**3)/(2.0*(m2-m1)) \
-           +(m2+m1)/4.0
-    mu3 = mu3p - 3*mu*mu2p + 2*mu**3
-    g1 = mu3 / var**1.5
-
-    mu4p = (m2**5-m1**5)/(5.0*(m2-m1)) - (m2**4-m1**4)/(2.0*(m2-m1)) \
-           + (m2**3-m1**3)/(3.0*(m2-m1)) - 1 / 30.0
-    mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
-    g2 = mu4 / var**2 - 3.0
+    g1 = 0.0
+    g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
     return mu, var, g1, g2
 
 # Zipf distribution
@@ -3438,11 +3447,14 @@ def zipfcdf(k, a=4.0):
 def zipfsf(k, a=4.0):
     return 1.0-zipfcdf(k, a)
 
+_zipfppf = general_cont_ppf('_vzipf',xa=0.0,xb=1000)
 def zipfppf(q, a=4.0):
-    pass
+    vals = ceil(_zipfppf(q, a))
+    temp = zipfcdf(vals-1,a)
+    return where((temp >= q) & (vals > 0), vals-1, vals)    
 
 def zipfisf(p, a=4.0):
-    pass
+    return zipfppf(1-p,a)
 
 def zipfstats(a=4.0, full=0):
     sv = errp(0)

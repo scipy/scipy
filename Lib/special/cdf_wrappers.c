@@ -68,6 +68,7 @@ double cdfbet3_wrap(double p, double b, double x) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return a;
 }
@@ -81,6 +82,7 @@ double cdfbet4_wrap(double a, double p, double x) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return b;
 }
@@ -97,6 +99,7 @@ double cdfbin2_wrap(double p, double xn, double pr) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return s;
 }
@@ -110,6 +113,7 @@ double cdfbin3_wrap(double s, double p, double pr) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return xn;
 }
@@ -124,6 +128,7 @@ double cdfchi3_wrap(double p, double x){
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return df;
 }
@@ -138,6 +143,7 @@ double cdfchn1_wrap(double x, double df, double nc) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return p;
 }
@@ -164,6 +170,7 @@ double cdfchn3_wrap(double x, double p, double nc) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return df;
 }
@@ -177,6 +184,7 @@ double cdfchn4_wrap(double x, double df, double p) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return nc;
 }
@@ -220,6 +228,7 @@ double cdff3_wrap(double p, double dfd, double f) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return dfn;
 }
@@ -233,6 +242,7 @@ double cdff4_wrap(double dfn, double p, double f) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return dfd;
 }
@@ -261,6 +271,7 @@ double cdffnc2_wrap(double dfn, double dfd, double nc, double p) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return f;
 }
@@ -275,6 +286,7 @@ double cdffnc3_wrap(double p, double dfd, double nc, double f) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return dfn;
 }
@@ -287,6 +299,7 @@ double cdffnc4_wrap(double dfn, double p, double nc, double f) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return dfd;
 }
@@ -300,6 +313,7 @@ double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return nc;
 }
@@ -330,6 +344,7 @@ double cdfgam2_wrap(double scl, double shp, double p) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return x;
 }
@@ -343,6 +358,7 @@ double cdfgam3_wrap(double scl, double p, double x) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return shp;
 }
@@ -356,6 +372,7 @@ double cdfgam4_wrap(double p, double shp, double x) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return scl;
 }
@@ -370,6 +387,7 @@ double cdfnbn2_wrap(double p, double xn, double pr) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return s;
 }
@@ -383,6 +401,7 @@ double cdfnbn3_wrap(double s, double p, double pr) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return xn;
 }
@@ -397,6 +416,7 @@ double cdfnor3_wrap(double p, double std, double x) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return mn;
 }
@@ -410,6 +430,7 @@ double cdfnor4_wrap(double mn, double p, double x) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return std;
 }
@@ -424,6 +445,7 @@ double cdfpoi2_wrap(double p, double xlam){
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return s;
 }
@@ -451,6 +473,7 @@ double cdft2_wrap(double df, double p){
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return t;
 }
@@ -464,6 +487,7 @@ double cdft3_wrap(double p, double t){
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return df;
 }
@@ -478,6 +502,7 @@ double cdftnc1_wrap(double df, double nc, double t) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return p;
 }
@@ -491,6 +516,7 @@ double cdftnc2_wrap(double df, double nc, double p) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return t;
 }
@@ -504,6 +530,7 @@ double cdftnc3_wrap(double p, double nc, double t) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
   }
   return df;
 }
@@ -517,6 +544,8 @@ double cdftnc4_wrap(double df, double p, double t) {
   if (status) {
     if (print_error_messages) show_error(status, bound);
     if ((status < 0) || (status==3) || (status==4)) return (NAN);
+    if ((status == 1) || (status == 2)) return bound;
+
   }
   return nc;
 }

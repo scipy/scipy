@@ -36,8 +36,13 @@ Discrete Statistical Distributions
 Discrete random variables take on only a countable number of values.
  The commonly used distributions are included in SciPy and described in
  this document.
- The probability mass function of a random variable X is defined as the
- probability that the random variable takes on a particular value.
+\layout Subsection
+
+Probability Mass Function (PMF)
+\layout Standard
+
+The probability mass function of a random variable X is defined as the probabili
+ty that the random variable takes on a particular value.
  
 \begin_inset Formula \[
 p\left(k\right)=P\left[X=k\right]\]
@@ -51,8 +56,23 @@ p\left(x\right)=\sum _{k}p\left(k\right)\delta \left(x-k\right)\]
 
 \end_inset 
 
- is the probability density function for a discrete distribution.
+ is the probability density function for a discrete distribution
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+Note that we will be using $p$ to represent the probability mass function,
+ the probability density function, and a parameter (a probability).
+ The usage should be obvious from context.
  
+\end_inset 
+
+.
+ 
+\layout Subsection
+
+Cumulative Distribution Function (CDF)
 \layout Standard
 
 The cumulative distribution function is 
@@ -69,6 +89,9 @@ F\left(k\right)-F\left(k-1\right)=p\left(k\right)\]
 \end_inset 
 
 
+\layout Subsection
+
+Survival Function
 \layout Standard
 
 The survival function is just 
@@ -77,12 +100,15 @@ S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]\]
 
 \end_inset 
 
- the probability that the random variable is larger than 
+ the probability that the random variable is strictly larger than 
 \begin_inset Formula $k$
 \end_inset 
 
 .
  
+\layout Subsection
+
+Percent Point Function (Inverse CDF)
 \layout Standard
 
 The percent point function is the inverse of the cumulative distribution
@@ -92,7 +118,7 @@ G\left(q\right)=F^{-1}\left(q\right)\]
 
 \end_inset 
 
-and is the smallest value of 
+and is the smallest non-negative integer 
 \begin_inset Formula $k$
 \end_inset 
 
@@ -101,6 +127,9 @@ and is the smallest value of
 \end_inset 
 
  
+\layout Subsection
+
+Inverse survival function
 \layout Standard
 
 The inverse source function is the inverse of the survival function 
@@ -109,7 +138,7 @@ Z\left(\alpha \right)=S^{-1}\left(\alpha \right)=G\left(1-\alpha \right)\]
 
 \end_inset 
 
- and is the smallest value of 
+ and is thus the smallest non-negative integer 
 \begin_inset Formula $k$
 \end_inset 
 
@@ -117,7 +146,7 @@ Z\left(\alpha \right)=S^{-1}\left(\alpha \right)=G\left(1-\alpha \right)\]
 \begin_inset Formula $F\left(k\right)\geq 1-\alpha $
 \end_inset 
 
- or the smallest value of 
+ or the smallest non-negative integer 
 \begin_inset Formula $k$
 \end_inset 
 
@@ -125,7 +154,13 @@ Z\left(\alpha \right)=S^{-1}\left(\alpha \right)=G\left(1-\alpha \right)\]
 \begin_inset Formula $S\left(k\right)\leq \alpha .$
 \end_inset 
 
- If desired, the hazard function and the cumulative hazard function could
+ 
+\layout Subsection
+
+Hazard functions
+\layout Standard
+
+If desired, the hazard function and the cumulative hazard function could
  be defined as 
 \begin_inset Formula \[
 h\left(k\right)=\frac{p\left(k\right)}{1-F\left(k\right)}\]
@@ -139,39 +174,6 @@ H\left(x\right)=\sum _{n\leq x}h\left(n\right)=\sum _{n\leq x}\frac{F\left(n\rig
 \end_inset 
 
 
-\layout Standard
-
-The mean is the first moment 
-\begin_inset Formula \[
-\mu =E\left[X\right]=\sum _{k}kp\left(k\right)\]
-
-\end_inset 
-
- the variance is the second central moment 
-\begin_inset Formula \[
-\mu _{2}=E\left[\left(X-\mu \right)^{2}\right]=\sum _{k}k^{2}p\left(k\right)-\mu ^{2}.\]
-
-\end_inset 
-
-The skewness and kurtosis are respectively still computed as 
-\begin_inset Formula \[
-\gamma _{1}=\frac{\mu _{3}}{\left(\mu _{2}\right)^{3/2}}\]
-
-\end_inset 
-
-and 
-\begin_inset Formula \[
-\gamma _{2}=\frac{\mu _{4}}{\left(\mu _{2}\right)^{2}}-3.\]
-
-\end_inset 
-
- where 
-\begin_inset Formula \[
-\mu _{n}=E\left[\left(X-\mu \right)^{n}\right]=\sum _{k}\left(k-\mu \right)^{n}p\left(k\right).\]
-
-\end_inset 
-
-
 \layout Subsection
 
 Moments
@@ -179,7 +181,7 @@ Moments
 
 Non-central moments are defined using the PDF 
 \begin_inset Formula \[
-\mu _{m}^{\prime }=\sum _{k}k^{m}p\left(k\right).\]
+\mu _{m}^{\prime }=E\left[X^{m}\right]=\sum _{k}k^{m}p\left(k\right).\]
 
 \end_inset 
 
@@ -189,7 +191,7 @@ Non-central moments are defined using the PDF
 
 
 \begin_inset Formula \begin{eqnarray*}
-\mu _{m} & = & \sum _{k}\left(k-\mu \right)^{m}p\left(k\right)\\
+\mu _{m}=E\left[\left(X-\mu \right)^{2}\right] & = & \sum _{k}\left(k-\mu \right)^{m}p\left(k\right)\\
  & = & \sum _{k=0}^{m}\left(\begin{array}{c}
  m\\
  k\end{array}
@@ -198,9 +200,21 @@ Non-central moments are defined using the PDF
 
 \end_inset 
 
- Skewness is defined as 
+ The mean is the first moment 
 \begin_inset Formula \[
-\gamma _{1}=\sqrt{\beta _{1}}=\frac{\mu _{3}}{\mu _{2}^{3/2}}\]
+\mu =\mu _{1}^{\prime }=E\left[X\right]=\sum _{k}kp\left(k\right)\]
+
+\end_inset 
+
+ the variance is the second central moment 
+\begin_inset Formula \[
+\mu _{2}=E\left[\left(X-\mu \right)^{2}\right]=\sum _{k}k^{2}p\left(k\right)-\mu ^{2}.\]
+
+\end_inset 
+
+Skewness is defined as 
+\begin_inset Formula \[
+\gamma _{1}=\frac{\mu _{3}}{\mu _{2}^{3/2}}\]
 
 \end_inset 
 
@@ -303,6 +317,54 @@ We will use
 
  should be clear from context.
  
+\layout Subsection
+
+Combinations 
+\layout Standard
+
+Note that 
+\begin_inset Formula \[
+k!=k\cdot \left(k-1\right)\cdot \left(k-2\right)\cdot \cdots \cdot 1=\Gamma \left(k+1\right)\]
+
+\end_inset 
+
+ and has special cases of 
+\begin_inset Formula \begin{eqnarray*}
+0! & \equiv  & 1\\
+k! & \equiv  & 0\quad k<0
+\end{eqnarray*}
+
+\end_inset 
+
+ and 
+\begin_inset Formula \[
+\left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)=\frac{n!}{\left(n-k\right)!k!}.\]
+
+\end_inset 
+
+ If 
+\begin_inset Formula $n<0$
+\end_inset 
+
+ or 
+\begin_inset Formula $k<0$
+\end_inset 
+
+ or 
+\begin_inset Formula $k>n$
+\end_inset 
+
+ we define 
+\begin_inset Formula $\left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)=0$
+\end_inset 
+
+
 \layout Section
 
 Bernoulli
@@ -352,14 +414,14 @@ A Bernoulli random variable of parameter
 
  and 
 \begin_inset Formula \begin{eqnarray*}
-p\left(k\right) & = & \begin{cases}
+p\left(k;p\right) & = & \begin{cases}
  1-p & k=0\\
  p & k=1\end{cases}\\
-F\left(k\right) & = & \begin{cases}
- 0 & k<0\\
- 1-p & 0\le k<1\\
- 1 & 1\leq k\end{cases}\\
-G\left(q\right) & = & \begin{cases}
+F\left(x;p\right) & = & \begin{cases}
+ 0 & x<0\\
+ 1-p & 0\le x<1\\
+ 1 & 1\leq x\end{cases}\\
+G\left(q;p\right) & = & \begin{cases}
  0 & 0\leq q<1-p\\
  1 & 1-p\leq q\leq 1\end{cases}\\
 \mu  & = & p\\
@@ -405,14 +467,14 @@ Y=\sum _{i=1}^{n}X_{i}.\]
 
  
 \begin_inset Formula \begin{eqnarray*}
-p\left(k\right) & = & \left(\begin{array}{c}
+p\left(k;n,p\right) & = & \left(\begin{array}{c}
  n\\
  k\end{array}
 \right)p^{k}\left(1-p\right)^{n-k}\, \, k\in \left\{ 0,1,\ldots n\right\} ,\\
-F\left(k\right) & = & \sum _{i\leq k}\left(\begin{array}{c}
+F\left(x;n,p\right) & = & \sum _{k\leq x}\left(\begin{array}{c}
  n\\
- i\end{array}
-\right)p^{i}\left(1-p\right)^{n-i}=I_{1-p}\left(n-k,k+1\right)
+ k\end{array}
+\right)p^{k}\left(1-p\right)^{n-k}=I_{1-p}\left(n-\left\lfloor x\right\rfloor ,\left\lfloor x\right\rfloor +1\right)\quad x\geq 0
 \end{eqnarray*}
 
 \end_inset 
@@ -420,12 +482,6 @@ F\left(k\right) & = & \sum _{i\leq k}\left(\begin{array}{c}
  where the incomplete beta integral is 
 \begin_inset Formula \[
 I_{x}\left(a,b\right)=\frac{\Gamma \left(a+b\right)}{\Gamma \left(a\right)\Gamma \left(b\right)}\int _{0}^{x}t^{a-1}\left(1-t\right)^{b-1}dt.\]
-
-\end_inset 
-
- Thus, 
-\begin_inset Formula \[
-G\left(q\right)=\left\lceil I_{q}^{-1}\left(n-k,k+1\right)\right\rceil .\]
 
 \end_inset 
 
@@ -462,7 +518,7 @@ The Poisson random variable counts the number of successes in
 \end_inset 
 
  and 
-\begin_inset Formula $np=\lambda $
+\begin_inset Formula $np=\lambda \geq 0$
 \end_inset 
 
  is a constant.
@@ -482,8 +538,8 @@ sparsity
  constraints.
  The functions are 
 \begin_inset Formula \begin{eqnarray*}
-p\left(k\right) & = & e^{-\lambda }\frac{\lambda ^{k}}{k!}\quad k\geq 0,\\
-F\left(k\right) & = & \sum _{n=0}^{k}e^{-\lambda }\frac{\lambda ^{n}}{n!}=\frac{1}{\Gamma \left(k+1\right)}\int _{m}^{\infty }t^{k}e^{-t}dt,\\
+p\left(k;\lambda \right) & = & e^{-\lambda }\frac{\lambda ^{k}}{k!}\quad k\geq 0,\\
+F\left(x;\lambda \right) & = & \sum _{n=0}^{\left\lfloor x\right\rfloor }e^{-\lambda }\frac{\lambda ^{n}}{n!}=\frac{1}{\Gamma \left(\left\lfloor x\right\rfloor +1\right)}\int _{m}^{\infty }t^{\left\lfloor x\right\rfloor }e^{-t}dt,\\
 \mu  & = & \lambda \\
 \mu _{2} & = & \lambda \\
 \gamma _{1} & = & \frac{1}{\sqrt{\lambda }}\\
@@ -510,9 +566,9 @@ The geometric random variable with parameter
 .
  Thus, 
 \begin_inset Formula \begin{eqnarray*}
-p\left(k\right) & = & \left(1-p\right)^{k-1}p\quad k\geq 1\\
-F\left(k\right) & = & 1-\left(1-p\right)^{k}\quad k\geq 1\\
-G\left(q\right) & = & \left\lceil \frac{\log \left(1-q\right)}{\log \left(1-p\right)}\right\rceil \\
+p\left(k;p\right) & = & \left(1-p\right)^{k-1}p\quad k\geq 1\\
+F\left(x;p\right) & = & 1-\left(1-p\right)^{\left\lfloor x\right\rfloor }\quad x\geq 1\\
+G\left(q;p\right) & = & \left\lceil \frac{\log \left(1-q\right)}{\log \left(1-p\right)}\right\rceil \\
 \mu  & = & \frac{1}{p}\\
 \mu _{2} & = & \frac{1-p}{p^{2}}\\
 \gamma _{1} & = & \frac{2-p}{\sqrt{1-p}}\\
@@ -546,15 +602,15 @@ The negative binomial random variable with parameters
 
  Thus 
 \begin_inset Formula \begin{eqnarray*}
-p\left(k\right) & = & \left(\begin{array}{c}
+p\left(k;n,p\right) & = & \left(\begin{array}{c}
  k-1\\
  n-1\end{array}
 \right)p^{n}\left(1-p\right)^{k-n}\quad k\geq n\\
-F\left(k\right) & = & \sum _{i=n}^{k}\left(\begin{array}{c}
+F\left(x;n,p\right) & = & \sum _{i=n}^{\left\lfloor x\right\rfloor }\left(\begin{array}{c}
  i-1\\
  n-1\end{array}
 \right)p^{n}\left(1-p\right)^{i-n}\\
- & = & I_{p}\left(n,k+1\right)\\
+ & = & I_{p}\left(n,\left\lfloor x\right\rfloor +1\right)\\
 \mu  & = & n\frac{1-p}{p}\\
 \mu _{2} & = & n\frac{1-p}{p^{2}}\\
 \gamma _{1} & = & \frac{2-p}{\sqrt{n\left(1-p\right)}}\\
@@ -570,7 +626,7 @@ Hypergeometric
 \layout Standard
 
 The hypergeometric random variable with parameters 
-\begin_inset Formula $\left(n,m,N\right)$
+\begin_inset Formula $\left(N,n,M\right)$
 \end_inset 
 
  counts the number of 
@@ -582,15 +638,15 @@ good
 \end_inset 
 
  objects in a sample of size 
-\begin_inset Formula $n$
-\end_inset 
-
- chosen without replacement from a population of 
 \begin_inset Formula $N$
 \end_inset 
 
+ is chosen without replacement from a population of 
+\begin_inset Formula $M$
+\end_inset 
+
  objects where 
-\begin_inset Formula $m$
+\begin_inset Formula $n$
 \end_inset 
 
  is the number of 
@@ -604,7 +660,17 @@ good
  objects in the total population.
  
 \begin_inset Formula \begin{eqnarray*}
-p\left(k\right) & = & \frac{\left(\begin{array}{c}
+p\left(k;N,n,M\right) & = & \frac{\left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)\left(\begin{array}{c}
+ M-n\\
+ N-k\end{array}
+\right)}{\left(\begin{array}{c}
+ M\\
+ N\end{array}
+\right)}\quad N-\left(M-n\right)\leq k\leq \min \left(n,N\right)\\
+F\left(x;N,n,M\right) & = & \sum _{k=0}^{\left\lfloor x\right\rfloor }\frac{\left(\begin{array}{c}
  m\\
  k\end{array}
 \right)\left(\begin{array}{c}
@@ -613,17 +679,143 @@ p\left(k\right) & = & \frac{\left(\begin{array}{c}
 \right)}{\left(\begin{array}{c}
  N\\
  n\end{array}
-\right)}\quad k=0,1,2,\ldots ,n\\
-F\left(k\right) & = & \sum _{i\leq k}\frac{\left(\begin{array}{c}
- m\\
- k\end{array}
-\right)\left(\begin{array}{c}
- N-m\\
- n-k\end{array}
-\right)}{\left(\begin{array}{c}
- N\\
- n\end{array}
-\right)}
+\right)},\\
+\mu  & = & \frac{nN}{M}\\
+\mu _{2} & = & \frac{nN\left(M-n\right)\left(M-N\right)}{M^{2}\left(M-1\right)}\\
+\gamma _{1} & = & \frac{\left(M-2n\right)\left(M-2N\right)}{M-2}\sqrt{\frac{M-1}{nN\left(M-m\right)\left(M-n\right)}}\\
+\gamma _{2} & = & \frac{g\left(N,n,M\right)}{nN\left(M-n\right)\left(M-3\right)\left(M-2\right)\left(N-M\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+ where (defining 
+\begin_inset Formula $m=M-n$
+\end_inset 
+
+)
+\begin_inset Formula \begin{eqnarray*}
+g\left(N,n,M\right) & = & m^{3}-m^{5}+3m^{2}n-6m^{3}n+m^{4}n+3mn^{2}\\
+ &  & -12m^{2}n^{2}+8m^{3}n^{2}+n^{3}-6mn^{3}+8m^{2}n^{3}\\
+ &  & +mn^{4}-n^{5}-6m^{3}N+6m^{4}N+18m^{2}nN\\
+ &  & -6m^{3}nN+18mn^{2}N-24m^{2}n^{2}N-6n^{3}N\\
+ &  & -6mn^{3}N+6n^{4}N+6m^{2}N^{2}-6m^{3}N^{2}-24mnN^{2}\\
+ &  & +12m^{2}nN^{2}+6n^{2}N^{2}+12mn^{2}N^{2}-6n^{3}N^{2}.
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Zipf (Zeta)
+\layout Standard
+
+A random variable has the zeta distribution (also called the zipf distribution)
+ with parameter 
+\begin_inset Formula $\alpha >1$
+\end_inset 
+
+ if it's probability mass function is given by
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;\alpha \right) & = & \frac{1}{\zeta \left(\alpha \right)k^{\alpha }}\quad k\geq 1
+\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula \[
+\zeta \left(\alpha \right)=\sum _{n=1}^{\infty }\frac{1}{n^{\alpha }}\]
+
+\end_inset 
+
+ is the Riemann zeta function.
+ Other functions of this distribution are 
+\begin_inset Formula \begin{eqnarray*}
+F\left(x;\alpha \right) & = & \frac{1}{\zeta \left(\alpha \right)}\sum _{k=1}^{\left\lfloor x\right\rfloor }\frac{1}{k^{\alpha }}\\
+\mu  & = & \frac{\zeta _{1}}{\zeta _{0}}\quad \alpha >2\\
+\mu _{2} & = & \frac{\zeta _{2}\zeta _{0}-\zeta _{1}^{2}}{\zeta _{0}^{2}}\quad \alpha >3\\
+\gamma _{1} & = & \frac{\zeta _{3}\zeta _{0}^{2}-3\zeta _{0}\zeta _{1}\zeta _{2}+2\zeta _{1}^{3}}{\left[\zeta _{2}\zeta _{0}-\zeta _{1}^{2}\right]^{3/2}}\quad \alpha >4\\
+\gamma _{2} & = & \frac{\zeta _{4}\zeta _{0}^{3}-4\zeta _{3}\zeta _{1}\zeta _{0}^{2}+12\zeta _{2}\zeta _{1}^{2}\zeta _{0}-6\zeta _{1}^{4}-3\zeta _{2}^{2}\zeta _{0}^{2}}{\left(\zeta _{2}\zeta _{0}-\zeta _{1}^{2}\right)^{2}}.
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Logarithmic (Log-Series, Series)
+\layout Standard
+
+The logarimthic distribution with parameter 
+\begin_inset Formula $p$
+\end_inset 
+
+ has a probability mass function with terms proportional to the Taylor series
+ expansion of 
+\begin_inset Formula $\log \left(1-p\right)$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;p\right) & = & -\frac{p^{k}}{k\log \left(1-p\right)}\quad k\geq 1\\
+F\left(x;p\right) & = & -\frac{1}{\log \left(1-p\right)}\sum _{k=1}^{\left\lfloor x\right\rfloor }\frac{p^{k}}{k}=1+\frac{p^{1+\left\lfloor x\right\rfloor }\Phi \left(p,1,1+\left\lfloor x\right\rfloor \right)}{\log \left(1-p\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula \[
+\Phi \left(z,s,a\right)=\sum _{k=0}^{\infty }\frac{z^{k}}{\left(a+k\right)^{s}}\]
+
+\end_inset 
+
+ is the Lerch Transcendent.
+ Also define 
+\begin_inset Formula $r=\log \left(1-p\right)$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & -\frac{p}{\left(1-p\right)r}\\
+\mu _{2} & = & -\frac{p\left[p+r\right]}{\left(1-p\right)^{2}r^{2}}\\
+\gamma _{1} & = & -\frac{2p^{2}+3pr+\left(1+p\right)r^{2}}{r\left(p+r\right)\sqrt{-p\left(p+r\right)}}r\\
+\gamma _{2} & = & -\frac{6p^{3}+12p^{2}r+p\left(4p+7\right)r^{2}+\left(p^{2}+4p+1\right)r^{3}}{p\left(p+r\right)^{2}}.
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Discrete Uniform (randint)
+\layout Standard
+
+The discrete uniform distribution with parameters
+\begin_inset Formula $\left(a,b\right)$
+\end_inset 
+
+ constructs a random variable that has an equal probability of being any
+ one of the integers in the half-open range 
+\begin_inset Formula $[a,b).$
+\end_inset 
+
+ If 
+\begin_inset Formula $a$
+\end_inset 
+
+ is not given it is assumed to be zero and the only parameter is 
+\begin_inset Formula $b.$
+\end_inset 
+
+ Therefore, 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;a,b\right) & = & \frac{1}{b-a}\quad a\leq k<b\\
+F\left(x;a,b\right) & = & \frac{\left\lfloor x\right\rfloor -a}{b-a}\quad a\leq x\leq b\\
+G\left(q;a,b\right) & = & \left\lceil q\left(b-a\right)+a\right\rceil \\
+\mu  & = & \frac{b+a-1}{2}\\
+\mu _{2} & = & \frac{\left(b-a-1\right)\left(b-a+1\right)}{12}\\
+\gamma _{1} & = & 0\\
+\gamma _{2} & = & -\frac{6}{5}\frac{\left(b-a\right)^{2}+1}{\left(b-a-1\right)\left(b-a+1\right)}.
 \end{eqnarray*}
 
 \end_inset 
