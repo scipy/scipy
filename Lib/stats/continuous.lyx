@@ -699,7 +699,7 @@ To fit data to a distribution, maximizing the likelihood function is common.
 \layout Standard
 
 If 
-\begin_inset Formula $f\left(x;\boldsymbol\theta\right)$
+\begin_inset Formula $f\left(x;\boldsymbol{\theta}\right)$
 \end_inset 
 
  is the PDF of a random-variable where 
@@ -757,7 +757,7 @@ l_{\mathbf{x}}\left(\boldsymbol{\theta}\right) & = & -\sum_{i=1}^{N}\log f\left(
 \end_inset 
 
  Note that if 
-\begin_inset Formula $\boldsymbol\theta$
+\begin_inset Formula $\boldsymbol{\theta}$
 \end_inset 
 
  includes only shape parameters, the location and scale-parameters can be
@@ -3025,7 +3025,7 @@ two-parameter
 Inverted Weibull
 \layout Standard
 
-Shape paramter 
+Shape parameter 
 \begin_inset Formula $c>0$
 \end_inset 
 
@@ -3209,6 +3209,33 @@ h\left[X\right] & = & \log\left(2e\right)\\
 \end_inset 
 
 
+\layout Section
+
+Lévy
+\layout Standard
+
+A special case of Lévy-stable distributions with 
+\begin_inset Formula $\alpha=\frac{1}{2}$
+\end_inset 
+
+ and 
+\begin_inset Formula $\beta=1$
+\end_inset 
+
+.
+ In standard form it is defined for 
+\begin_inset Formula $x>0$
+\end_inset 
+
+ as 
+\begin_inset Formula \begin{eqnarray*}
+f\left(x\right) & = & \frac{1}{x\sqrt{2\pi x}}\exp\left(-\frac{1}{2x}\right)\\
+F\left(x\right) & = & 2\left[1-\Phi\left(\frac{1}{\sqrt{x}}\right)\right]\\
+G\left(q\right) & = & \left[\Phi^{-1}\left(1-\frac{q}{2}\right)\right]^{-2}.\end{eqnarray*}
+
+\end_inset 
+
+ It has no finite moments.
 \layout Section
 
 Logistic (Sech-squared)

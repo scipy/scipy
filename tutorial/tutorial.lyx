@@ -3160,13 +3160,13 @@ Let
 \begin_inset Formula $n.$
 \end_inset 
 
- Full, convolution of two one-dimensional signals can be expressed as 
+ Full convolution of two one-dimensional signals can be expressed as 
 \begin_inset Formula \[
 y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].\]
 
 \end_inset 
 
- This equation can only be implemented directly, if we limit the sequences
+ This equation can only be implemented directly if we limit the sequences
  to finite support sequences that can be stored in a computer, choose 
 \begin_inset Formula $n=0$
 \end_inset 
@@ -3205,7 +3205,7 @@ y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\r
 \begin_inset Formula $K\geq M.$
 \end_inset 
 
- Then, the output of this operation is 
+ Then, more explicitly the output of this operation is 
 \begin_inset Formula \begin{eqnarray*}
 y\left[0\right] & = & x\left[0\right]h\left[0\right]\\
 y\left[1\right] & = & x\left[0\right]h\left[1\right]+x\left[1\right]h\left[0\right]\\
@@ -3757,9 +3757,88 @@ signal.order_filter
 \layout Paragraph
 
 Wiener filter
+\layout Standard
+
+The Wiener filter is a simple deblurring filter for denoising images.
+ This is not the Wiener filter commonly described in image reconstruction
+ problems but instead it is a simple, local-mean filter.
+ Let 
+\begin_inset Formula $x$
+\end_inset 
+
+ be the input signal, then the output is 
+\begin_inset Formula \[
+y=\left\{ \begin{array}{cc}
+m_{x} & \sigma_{x}\geq\sigma,\\
+x & \sigma_{x}<\sigma.\end{array}\right.\]
+
+\end_inset 
+
+ Where 
+\begin_inset Formula $m_{x}$
+\end_inset 
+
+ is the local estimate of the mean and 
+\begin_inset Formula $\sigma_{x}$
+\end_inset 
+
+ is the local estimate of the variance.
+ The window for these estimates is an optional input parameter (default
+ is 3).
+ The parameter 
+\begin_inset Formula $\sigma$
+\end_inset 
+
+ is a threshold variance parameter: if the variance in the signal is less
+ than the threshold parameter then the input signal is passed unchanged,
+ otherwise the local average is used in place of the input.
+ This threshold parameter could be considered the expected noise in the
+ signal and is also an optional input parameter.
+ If 
+\begin_inset Formula $\sigma$
+\end_inset 
+
+ is not given then it is estimated as the average of the local variances.
+ 
 \layout Paragraph
 
 Hilbert filter
+\layout Standard
+
+The Hilbert transform constructs the complex-valued analytic signal from
+ a real signal.
+ For example if 
+\begin_inset Formula $x=\cos\omega n$
+\end_inset 
+
+ then 
+\begin_inset Formula $y=\textrm{hilbert}\left(x\right)$
+\end_inset 
+
+ would return (except near the edges) 
+\begin_inset Formula $y=\exp\left(j\omega n\right).$
+\end_inset 
+
+ In the frequency domain, the hilbert transform performs
+\begin_inset Formula \[
+Y=X\cdot H\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $H$
+\end_inset 
+
+ is 2 for positive frequencies, 
+\begin_inset Formula $0$
+\end_inset 
+
+ for negative frequencies and 
+\begin_inset Formula $1$
+\end_inset 
+
+ for zero-frequencies.
+ 
 \layout Paragraph
 
 Detrend
@@ -3805,6 +3884,9 @@ Arbitrary binary input and output (fopen)
 \layout Subsubsection
 
 Read and write Matlab .mat files
+\layout Subsubsection
+
+Saving workspace
 \layout Subsection
 
 Text-file 
@@ -4613,7 +4695,7 @@ for square matrices
 
  as 
 \begin_inset Formula \[
-\mathbf{A}=\mathbf{BV}\boldsymbol\Lambda\mathbf{V}^{-1}\]
+\mathbf{A}=\mathbf{BV}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
 
 \end_inset 
 
@@ -4622,7 +4704,7 @@ for square matrices
 \end_inset 
 
  is the collection of eigenvectors into columns and 
-\begin_inset Formula $\boldsymbol\Lambda$
+\begin_inset Formula $\boldsymbol{\Lambda}$
 \end_inset 
 
  is a diagonal matrix of eigenvalues.
@@ -4806,13 +4888,13 @@ A unitary matrix
 \end_inset 
 
  zero matrix 
-\begin_inset Formula $\mathbf{\boldsymbol\Sigma}$
+\begin_inset Formula $\mathbf{\boldsymbol{\Sigma}}$
 \end_inset 
 
  with main diagonal entries set to the singular values.
  Then 
 \begin_inset Formula \[
-\mathbf{A=U}\boldsymbol\Sigma\mathbf{V}^{H}\]
+\mathbf{A=U}\boldsymbol{\Sigma}\mathbf{V}^{H}\]
 
 \end_inset 
 
@@ -5064,7 +5146,7 @@ The QR decomposition (sometimes called a polar decomposition) works for
 
  is known then the QR decomposition can be found 
 \begin_inset Formula \[
-\mathbf{A}=\mathbf{U}\boldsymbol\Sigma\mathbf{V}^{H}=\mathbf{QR}\]
+\mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{H}=\mathbf{QR}\]
 
 \end_inset 
 
@@ -5073,7 +5155,7 @@ The QR decomposition (sometimes called a polar decomposition) works for
 \end_inset 
 
  and 
-\begin_inset Formula $\mathbf{R}=\boldsymbol\Sigma\mathbf{V}^{H}.$
+\begin_inset Formula $\mathbf{R}=\boldsymbol{\Sigma}\mathbf{V}^{H}.$
 \end_inset 
 
  Note, however, that in SciPy independent algorithms are used to find QR
@@ -5233,18 +5315,18 @@ Another method to compute the matrix exponential is to find an eigenvalue
 
 : 
 \begin_inset Formula \[
-\mathbf{A}=\mathbf{V}\boldsymbol\Lambda\mathbf{V}^{-1}\]
+\mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
 
 \end_inset 
 
  and note that 
 \begin_inset Formula \[
-e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol\Lambda}\mathbf{V}^{-1}\]
+e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}\]
 
 \end_inset 
 
  where the matrix exponential of the diagonal matrix 
-\begin_inset Formula $\boldsymbol\Lambda$
+\begin_inset Formula $\boldsymbol{\Lambda}$
 \end_inset 
 
  is just the exponential of its elements.

@@ -6,7 +6,7 @@ import scipy.special as special
 import scipy.linalg as linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from scipy_base import polyadd, polymul, polydiv, polysub, \
-     roots, poly, polyval, polyder, cast, asarray
+     roots, poly, polyval, polyder, cast, asarray, isscalar
 import types
 import scipy
 from scipy.stats import mean
@@ -229,19 +229,10 @@ def wiener(im,mysize=None,noise=None):
     if noise==None:
         noise = mean(Numeric.ravel(lVar))
 
-    # Compute result
-    # f = lMean + (maximum(0, lVar - noise) ./
-    #               maximum(lVar, noise)) * (im - lMean) 
-    #
-    out = im - lMean
-    im = lVar - noise
-    im = Numeric.maximum(im,0)
-    lVar = Numeric.maximum(lVar,noise)
-    out = out / lVar
-    out = out * im
-    out = out + lMean
+    out = where(lVar > noise, lMean, im)
 
     return out
+    
 
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Conolve two 2-dimensional arrays.
@@ -390,6 +381,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
     if weight is None:
         weight = [1] * len(desired)
 
+    bands = bands.copy()
     return sigtools._remez(numtaps, bands, desired, weight, tnum, Hz,
                            maxiter, grid_density)
 
@@ -451,6 +443,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     a[0] + a[1]z  + ... + a[na] z
                     
     """
+    if isscalar(a):
+	a = [a]
     if zi is None:
         return sigtools._linear_filter(b, a, x, axis)
     else:

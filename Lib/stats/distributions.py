@@ -1968,6 +1968,25 @@ Laplacian distribution
                       )
 
 
+## Levy Distribution
+
+class levy_gen(rv_continuous):
+    def _pdf(self, x):
+        return 1/sqrt(2*x)/x*exp(-1/(2*x))
+    def _cdf(self, x):
+        return 2*(1-norm._cdf(1/sqrt(x)))
+    def _ppf(self, q):
+        val = norm._ppf(1-q/2.0)
+        return 1.0/(val*val)
+    def _stats(self):
+        return inf, inf, nan, nan
+levy = levy_gen(a=0.0,name="levy", longname = "A Levy", extradoc="""
+
+Levy distribution
+"""
+                )
+    
+
 ## Logistic (special case of generalized logistic with c=1)
 ## Sech-squared
 
