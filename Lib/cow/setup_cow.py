@@ -2,7 +2,7 @@
 
 from scipy_distutils.misc_util import default_config_dict
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     package = 'cow'
     config = default_config_dict(package,parent_package)
     return config

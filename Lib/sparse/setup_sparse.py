@@ -7,10 +7,10 @@ from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 from scipy_distutils.system_info import get_info,dict_append
 import shutil
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     package = 'sparse'
     config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__)
+    local_path = get_path(__name__,parent_path)
 
     atlas_info = get_info('atlas')
 

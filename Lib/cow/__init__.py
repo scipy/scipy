@@ -2,7 +2,7 @@
 # cow - Cluster Of Workstations
 #
 
-from pre___init__ import __doc__
+from info_cow import __doc__
 
 import sync_cluster
 from cow import *

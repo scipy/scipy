@@ -30,10 +30,7 @@ finally:
 
 #-------------------------------
 
-standard_packages = [
-    'cow','ga',
-    #                    ,'sparse'
-    ]
+standard_packages = []
 
 standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 
@@ -60,6 +57,10 @@ separate_packages = ['gui_thread','weave']
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 #separate_packages += core_packages
 separate_packages += chaco_packages
+
+ignore_packages = [
+    #'sparse'
+    ]
 
 #------ drop-to-Lib packages --------
 
@@ -159,4 +160,4 @@ def setup_package(ignore_packages=[]):
         os.chdir(old_path)
 
 if __name__ == "__main__":
-    setup_package()
+    setup_package(ignore_packages)
