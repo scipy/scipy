@@ -435,10 +435,10 @@ class csc_matrix(spmatrix):
         ocs = csc_matrix(other)
         if (ocs.shape != self.shape):
             raise ValueError, "Inconsistent shapes."
-        typecode = _coerce_rules[(self._typecode,other._typecode)]
-        data1, data2 = _convert_data(self.data, other.data, typecode)
+        typecode = _coerce_rules[(self._typecode,ocs._typecode)]
+        data1, data2 = _convert_data(self.data, ocs.data, typecode)
         func = getattr(sparsetools,_transtabl[typecode]+'cscadd')
-        c,rowc,ptrc,ierr = func(data1,self.rowind,self.indptr,-data2,other.rowind,other.indptr)
+        c,rowc,ptrc,ierr = func(data1,self.rowind,self.indptr,-data2,ocs.rowind,ocs.indptr)
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
@@ -449,10 +449,10 @@ class csc_matrix(spmatrix):
         ocs = csc_matrix(other)
         if (ocs.shape != self.shape):
             raise ValueError, "Inconsistent shapes."
-        typecode = _coerce_rules[(self._typecode,other._typecode)]
-        data1, data2 = _convert_data(self.data, other.data, typecode)
+        typecode = _coerce_rules[(self._typecode,ocs._typecode)]
+        data1, data2 = _convert_data(self.data, ocs.data, typecode)
         func = getattr(sparsetools,_transtabl[typecode]+'cscadd')
-        c,rowc,ptrc,ierr = func(-data1,self.rowind,self.indptr,data2,other.rowind,other.indptr)
+        c,rowc,ptrc,ierr = func(-data1,self.rowind,self.indptr,data2,ocs.rowind,ocs.indptr)
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
