@@ -24,7 +24,7 @@
  */
 
 static char const rcsid[] =
-  "@(#) $Jeannot: moduleTNC.c,v 1.7 2004/04/13 09:45:56 js Exp $";
+  "@(#) $Jeannot: moduleTNC.c,v 1.8 2004/04/14 18:16:03 js Exp $";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -136,7 +136,7 @@ PyObject *PyDoubleArray_AsList(int size, double *x)
 
 static int function(double x[], double *f, double g[], void *state)
 {
-  PyObject *py_list, *arglist, *py_grad, *result;
+  PyObject *py_list, *arglist, *py_grad, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
   py_list = PyDoubleArray_AsList(py_state->n, x);
@@ -146,8 +146,7 @@ static int function(double x[], double *f, double g[], void *state)
     goto failure;
   }
   
-  arglist = Py_BuildValue("(O)", py_list);
-  Py_DECREF(py_list);
+  arglist = Py_BuildValue("(N)", py_list);
   result = PyEval_CallObject(py_state->py_function, arglist);
   Py_DECREF(arglist);
 
@@ -176,7 +175,7 @@ static int function(double x[], double *f, double g[], void *state)
     
 failure:
   py_state->failed = 1;
-  Py_DECREF(result);
+  Py_XDECREF(result);
   return 1;
 }
 
@@ -289,10 +288,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  res = Py_BuildValue("(iiO)", rc, nfeval, py_list);
-  Py_DECREF(py_list);
-
-  return res;
+  return Py_BuildValue("(iiN)", rc, nfeval, py_list);;
 }
 
 static PyMethodDef moduleTNC_methods[] =

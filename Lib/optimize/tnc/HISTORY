@@ -1,7 +1,12 @@
 # TNC Release History
-# $Jeannot: HISTORY,v 1.8 2004/04/03 16:01:48 js Exp $
+# $Jeannot: HISTORY,v 1.12 2004/04/14 21:04:42 js Exp $
 
-08/04/2004          Included into SciPy
+04/14/2004, V1.2.4 : Fix a potential bug in the Python interface (infinity==0)
+04/14/2004, V1.2.3 : Fix a bug in the Python interface (reference counting)
+04/13/2004, V1.2.2 : Fix a bug in the Python interface (memory allocation)
+04/13/2004, V1.2.1 : Fix a bug in the Python interface (scaling ignored)
+
+04/08/2004          Included into SciPy
 
 04/03/2004, V1.2   : Memory allocation checks
 04/02/2004, V1.1   : Setup script for the python module
