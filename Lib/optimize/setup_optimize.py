@@ -44,7 +44,7 @@ def configuration(parent_package='',parent_path=None):
 		    sources=sources)
     config['ext_modules'].append(ext)
 
-    sources = ['cobyla.pyf','cobyla2.f']
+    sources = ['cobyla.pyf','cobyla2.f','trstlp.f']
     sources = [os.path.join(local_path,'cobyla',x) for x in sources]
     ext = Extension(dot_join(parent_package, package, '_cobyla'), sources=sources)
     config['ext_modules'].append(ext)
