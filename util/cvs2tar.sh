@@ -14,7 +14,7 @@ echo "Press ENTER and Ctrl-C to exit the script."
 echo
 echo "CVS password is blank. Just hit ENTER to carry on:"
 cvs -d $CVSROOT login || exit 0
-cvs -d $CVSROOT checkout scipy || exit 0
+cvs -z7 -d $CVSROOT checkout scipy || exit 0
 VERSION=`cd scipy && $PYTHON -c 'from scipy_version import *;print scipy_version' && cd -`
 TARFILE=SciPy-$VERSION.tar.gz
 echo "TARFILE=$TARFILE"
