@@ -20,7 +20,7 @@ from scipy_base import arange, zeros, array, dot
 import sys
 from scipy_test.testing import *
 set_package_path()
-from sparse import csc_matrix, csr_matrix
+from sparse import csc_matrix, csr_matrix, dok_matrix
 restore_path()
 
 class _test_cs(ScipyTestCase):
@@ -144,6 +144,17 @@ class test_csc(_test_cs):
         assert_array_almost_equal(bsp.data,[1,3,2])
         assert_array_equal(bsp.rowind,[0,2,1])
         assert_array_equal(bsp.indptr,[0,2,3])
+
+class test_dok(_test_cs):
+    spmatrix = dok_matrix
+    
+    def check_mult(self):
+        A = dok_matrix()
+        A[0,3] = 10
+        A[5,6] = 20
+        D = A*A.T
+        E = A*A.H
+        assert_array_equal(D.A, E.A)
     
 if __name__ == "__main__":
     ScipyTest('sparse.Sparse').run()

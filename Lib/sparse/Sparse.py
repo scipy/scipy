@@ -179,6 +179,10 @@ class spmatrix:
         res = csc * other
         return res
 
+    def __pow__(self, other):
+        csc = self.tocsc()
+        return csc ** other            
+
     def __rmul__(self, other):
         csc = self.tocsc()
         res = csc.__rmul__(other)
@@ -241,7 +245,10 @@ class spmatrix:
     def tocoo(self):
         csc = self.tocsc()
         return csc.tocoo()
-    
+
+    def copy(self):
+        csc = self.tocsc()
+        return csc.copy()
 
 # compressed sparse column matrix
 #  This can be instantiated in many ways
@@ -457,11 +464,11 @@ class csc_matrix(spmatrix):
             ocs = csc_matrix(other)
             if (ocs.shape != self.shape):
                 raise ValueError, "Inconsistent shapes."
-            typecode = _coerce_rules[(self.typecode,other.typecode)]
-            nnz1, nnz2 = self.nnz, other.nnz
-            data1, data2 = _convert_data(self.data[:nnz1], other.data[:nnz2], typecode)
+            typecode = _coerce_rules[(self.typecode,ocs.typecode)]
+            nnz1, nnz2 = self.nnz, ocs.nnz
+            data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], typecode)
             func = getattr(sparsetools,_transtabl[typecode]+'cscmul')
-            c,rowc,ptrc,ierr = func(data1,self.rowind[:nnz1],self.indptr,data2,other.rowind[:nnz2],other.indptr)
+            c,rowc,ptrc,ierr = func(data1,self.rowind[:nnz1],self.indptr,data2,ocs.rowind[:nnz2],ocs.indptr)
             if ierr:
                 raise ValueError, "Ran out of space (but shouldn't have happened)."
             M, N = self.shape
@@ -711,9 +718,13 @@ class csr_matrix(spmatrix):
                 self.colind = ij[0]
                 self.indptr = ij[1]
                 if N is None:
-                    N = max(self.colind)
+                    try:
+                        N = amax(self.colind) + 1
+                    except ValueError:
+                        N = 0
                 if M is None:
                     M = len(self.indptr) - 1
+                    if M == -1: M = 0
                 self.shape = (M,N)
             else:
                 raise ValueError, "Unrecognized form for csr_matrix constructor."
@@ -836,10 +847,10 @@ class csr_matrix(spmatrix):
             ocs = csr_matrix(other)
             if (ocs.shape != self.shape):
                 raise ValueError, "Inconsistent shapes."
-            typecode = _coerce_rules[(self.typecode,other.typecode)]
-            data1, data2 = _convert_data(self.data, other.data, typecode)
+            typecode = _coerce_rules[(self.typecode,ocs.typecode)]
+            data1, data2 = _convert_data(self.data, ocs.data, typecode)
             func = getattr(sparsetools,_transtabl[typecode]+'cscmul')
-            c,colc,ptrc,ierr = func(data1,self.colind,self.indptr,data2,other.colind,other.indptr)
+            c,colc,ptrc,ierr = func(data1,self.colind,self.indptr,data2,ocs.colind,ocs.indptr)
             if ierr:
                 raise ValueError, "Ran out of space (but shouldn't have happened)."
             M, N = self.shape
@@ -1107,6 +1118,8 @@ class dok_matrix(spmatrix, dict):
 
     def __setitem__(self, key, value):
         if (value == 0):
+            if self.get(key) is not None:  # get rid of it something already there
+                del self[key]              # otherwise do nothing.
             return
         if not isinstance(key, tuple) or len(key) != 2:
             raise KeyError, "Key must be a 2-tuple"
@@ -1120,25 +1133,29 @@ class dok_matrix(spmatrix, dict):
             self.nnz += 1
     
     def __add__(self, other):
-        res = dok_matrix()
-        res.update(self)
-        res.shape = self.shape
-        for key in other.keys():
-            try:
+        if isinstance(other, dok_matrix):
+            res = dok_matrix()
+            res.update(self)
+            res.shape = self.shape
+            res.nnz = self.nnz
+            for key in other.keys():
                 res[key] += other[key]
-            except KeyError:
-                res[key] = other[key]
+        else:
+            csc = self.tocsc()
+            res = csc + other
         return res
 
     def __sub__(self, other):
-        res = dok_matrix()
-        res.update(self)
-        res.shape = self.shape
-        for key in other.keys():
-            try:
+        if isinstance(other, dok_matrix):
+            res = dok_matrix()
+            res.update(self)
+            res.shape = self.shape
+            res.nnz = self.nnz
+            for key in other.keys():
                 res[key] -= other[key]
-            except KeyError:
-                res[key] = -other[key]
+        else:
+            csc = self.tocsc()
+            res = csc - other
         return res
     
     def __neg__(self):
@@ -1168,6 +1185,20 @@ class dok_matrix(spmatrix, dict):
             new[key[1],key[0]] = self[key]
         return new
 
+    def conjtransp(self):
+        # Transpose (return the transposed)
+        new = dok_matrix()
+        for key in self.keys():
+            new[key[1],key[0]] = conj(self[key])
+        return new
+
+    def copy(self):
+        new = dok_matrix()
+        new.update(self)
+        new.nnz = self.nnz
+        new.shape = self.shape
+        return new
+        
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
         # assume cols_or_rows is sorted
@@ -1241,15 +1272,15 @@ class dok_matrix(spmatrix, dict):
         data = [0]*nnz
         colind = [0]*nnz
         row_ptr = [0]*(self.shape[0]+1)
-        current_row = -1
+        current_row = 0
         k = 0
         for key in keys:
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             if ikey0 != current_row:
-                N = ikey1-current_col
+                N = ikey0-current_row
                 row_ptr[current_row+1:ikey0+1] = [k]*N
-                current_row = ikey0                
+                current_row = ikey0
             data[k] = self[key]
             colind[k] = ikey1
             k += 1
