@@ -187,8 +187,10 @@ def sh_jacobi(n, p, q, monic=0):
     x,w,mu0 = Js_roots(n1,p,q,mu=1)
     if n==0: x,w = [],[]
     wfunc = lambda x: (1.0-x)**(p-q) * (1+x)**(q-1.)
-    if not monic: raise NotImplemented
-    p = orthopoly1d(x,w,wfunc=wfunc,limits=(0,1),monic=monic)
+    hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
+    hn /= (2*n+p)*(_gam(2*n+p)**2)
+    An = 1.0
+    p = orthopoly1d(x,w,hn,An,wfunc=wfunc,limits=(0,1),monic=monic)
     return p
 
 # Generalized Laguerre               L^(alpha)_n(x)
@@ -289,8 +291,9 @@ def hermitenorm(n,monic=0):
     x,w,mu0 = He_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x/4.0)
     if n==0: x,w = [],[]
-    if not monic: raise NotImplemented
-    p = orthopoly1d(x,w,wfunc=wfunc,limits=(-inf,inf),monic=monic)
+    hn = sqrt(2*pi)*_gam(n+1)
+    An = 1.0
+    p = orthopoly1d(x,w,hn,An,wfunc=wfunc,limits=(-inf,inf),monic=monic)
     return p
 
 ## The remainder of the polynomials can be derived from the ones above.
@@ -368,8 +371,11 @@ def chebyc(n,monic=0):
     else: n1 = n
     x,w,mu0 = C_roots(n1,mu=1)
     if n==0: x,w = [],[]
-    if not monic: raise NotImplemented
-    p = orthopoly1d(x,w,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    hn = 4*pi * ((n==0)+1)
+    An = 1.0
+    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    if not monic:
+        p = p * 2.0/p(2)
     return p
 
 # Chebyshev of the second kind       S_n(x)
@@ -396,8 +402,11 @@ def chebys(n,monic=0):
     else: n1 = n
     x,w,mu0 = S_roots(n1,mu=1)
     if n==0: x,w = [],[]
-    if not monic: raise NotImplemented
-    p = orthopoly1d(x,w,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    hn = pi
+    An = 1.0
+    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
+    if not monic:
+        p = p * (n+1.0)/p(2)
     return p
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
@@ -476,8 +485,9 @@ def sh_legendre(n,monic=0):
     else: n1 = n
     x,w,mu0 = Ps_roots(n1,mu=1)
     if n==0: x,w = [],[]
-    if not monic: raise NotImplemented
-    p = orthopoly1d(x,w,wfunc=lambda x: 1.0,limits=(0,1),monic=monic)
+    hn = 1.0/(2*n+1.0)
+    An = 1.0
+    p = orthopoly1d(x,w,hn,An,wfunc=lambda x: 1.0,limits=(0,1),monic=monic)
     return p 
 
 # Laguerre                      L_n(x)

@@ -51,12 +51,12 @@ def makenamedict():
     return thedict, dictlist
 
 
-def help(object=None,maxwidth=76,output=sys.stdout,):
+def info(object=None,maxwidth=76,output=sys.stdout,):
     """Get help information for a function, class, or module.
     
        Example:
           >>> from scipy import * 
-          >>> help(polyval)
+          >>> info(polyval)
           polyval(p, x)
         
             Evaluate the polymnomial p at x.
@@ -67,7 +67,7 @@ def help(object=None,maxwidth=76,output=sys.stdout,):
     """
     global _namedict, _dictlist
     if object is None:        
-        help(help)
+        info(info)
     elif isinstance(object, types.StringType):
         if _namedict is None:
             _namedict, _dictlist = makenamedict()
@@ -81,7 +81,7 @@ def help(object=None,maxwidth=76,output=sys.stdout,):
                 else:
                     objlist.append(id(obj))
                     print >> output, "     *** Found in %s ***" % namestr
-                    help(obj)
+                    info(obj)
                     print >> output, "-"*maxwidth
                 numfound += 1
             except KeyError:

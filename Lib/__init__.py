@@ -30,6 +30,10 @@ from scipy_base import *
 import Matrix as mat
 
 from helpmod import *
+try:
+    id(help)
+except NameError:
+    help = info
 
 # Level 1
 # these modules will just be imported (not subsumed)

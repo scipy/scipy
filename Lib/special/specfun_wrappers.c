@@ -783,7 +783,7 @@ int prolate_radial1_wrap(double m, double n, double c, double cv, double x, doub
   double r2f, r2d;
   int int_m, int_n;
 
-  if ((x <=1.0) || (m<0) || (n<m) || \
+  if ((x <= 1.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n))) {
     *r1f = NAN;
     *r1d = NAN;
@@ -801,7 +801,7 @@ int prolate_radial2_wrap(double m, double n, double c, double cv, double x, doub
   double r1f, r1d;
   int int_m, int_n;
 
-  if ((x <=1.0) || (m<0) || (n<m) || \
+  if ((x <= 1.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n))) {
     *r2f = NAN;
     *r2d = NAN;
@@ -819,7 +819,7 @@ double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *
   double r2f, r2d, r1f, cv, *eg;
   int int_m, int_n;
 
-  if ((x <=1.0) || (m<0) || (n<m) || \
+  if ((x < 0.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
     *r1d = NAN;
     return NAN;
@@ -844,7 +844,7 @@ double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *
   double r1f, r1d, r2f, cv, *eg;
   int int_m, int_n;
 
-  if ((x <=1.0) || (m<0) || (n<m) || \
+  if ((x < 0.0) || (m<0) || (n<m) || \
      (m!=floor(m)) || (n!=floor(n)) || ((n-m)>198)) {
     *r2d = NAN;
     return NAN;
