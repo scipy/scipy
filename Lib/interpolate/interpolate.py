@@ -4,11 +4,12 @@
     !! found, get rid of it!
 """
 
-__all__ = ['linear1d']
+__all__ = ['linear1d','linear2d']
 
 from Numeric import *
 from scipy_base.fastumath import *
 from scipy_base import atleast_1d
+import fitpack
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays
@@ -29,6 +30,50 @@ def reduce_sometrue(a):
     while len(shape(all)) > 1:    
         all = sometrue(all)
     return all
+
+class interp2d:
+    def __init__(self,x,y,z,kx=1,ky=1):
+        """
+        Input:
+          x,y  - 1-d arrays defining 2-d grid
+          z    - 2-d array of grid values
+          kx,ky - degrees of interpolating splines in given axis
+                  1<=kx,ky<=5
+        """
+        x,y=zip(*[(xx,yy) for yy in y for xx in x])
+        self.tck = fitpack.bisplrep(x,y,z,kx=kx,ky=ky,s=0)
+
+    def __call__(self,x,y,dx=0,dy=0):
+        """
+        Input:
+          x,y   - 1-d arrays defining 2-d grid of interpolated points,
+                  must be in increasing order
+          dx,dy - order of partial derivatives in x and y, respectively.
+                  0<=dx<kx, 0<=dy<ky
+        Output:
+          z     - 2-d array of interpolated values
+        """
+        x = atleast_1d(x)
+        y = atleast_1d(y)
+        z,ier=fitpack._fitpack._bispev(*(self.tck+[x,y,dx,dy]))
+        if ier==10: raise ValueError,"Invalid input data"
+        if ier: raise TypeError,"An error occurred"
+        z.shape=len(x),len(y)
+        z = transpose(z)
+        if len(z)==1: z = z[0]
+        return array(z)
+
+class linear2d(interp2d):
+    def __init__(self,x,y,z):
+        interp2d.__init__(self,x,y,z,1,1)
+
+class cubic2d(interp2d):
+    def __init__(self,x,y,z):
+        interp2d.__init__(self,x,y,z,3,3)
+
+class fifth2d(interp2d):
+    def __init__(self,x,y,z):
+        interp2d.__init__(self,x,y,z,5,5)
 
 
 class linear1d:

@@ -588,7 +588,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
         raise TypeError, 'There must be at least 2*ky+2 knots_x for task=-1'
     if not ((1<=kx<=5) and (1<=ky<=5)): 
         raise TypeError, 'Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)'%(kx,ky)
-    if m<=(kx+1)*(ky+1): raise TypeError, 'm>(kx+1)(ky+1) must hold'
+    if m<(kx+1)*(ky+1): raise TypeError, 'm>=(kx+1)(ky+1) must hold'
     if nxest is None: nxest=kx+sqrt(m/2)
     if nyest is None: nyest=ky+sqrt(m/2)
     nxest,nyest=max(nxest,2*kx+3),max(nyest,2*ky+3)
@@ -606,7 +606,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
     b1,b2=bx,bx+v-ky
     if bx>by: b1,b2=by,by+u-kx
     lwrk1=u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1
-    lwrk2=1
+    lwrk2=u*v*(b2+1)+b2
     tx,ty,c,o = _fitpack._surfit(x,y,z,w,xb,xe,yb,ye,kx,ky,task,s,eps,
                                    tx,ty,nxest,nyest,wrk,lwrk1,lwrk2)
     _curfit_cache['tx']=tx
