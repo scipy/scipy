@@ -14,10 +14,9 @@ from warnings import warn
 from lapack import get_lapack_funcs
 from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
-from Numeric import asarray
 import calc_lwork
 import scipy_base
-nan_to_num = scipy_base.nan_to_num
+from scipy_base import asarray_chkfinite, asarray
 cast = scipy_base.cast
 r_ = scipy_base.r_
 c_ = scipy_base.c_
@@ -101,12 +100,12 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
 
     where a^H denotes transpose(conjugate(a)).
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
     if b is not None:
-        b = nan_to_num(b)
+        b = asarray_chkfinite(b)
         return _geneig(a1,b,left,right,overwrite_a,overwrite_b)
     geev, = get_lapack_funcs(('geev',),(a1,))
     compute_vl,compute_vr=left,right
@@ -191,9 +190,9 @@ def lu_solve(a_lu_pivots,b):
     which is the output to lu_factor.  Second input is the right hand side.
     """
     a_lu, pivots = a_lu_pivots
-    a_lu = nan_to_num(a_lu)
-    pivots = nan_to_num(pivots)
-    b = nan_to_num(b)
+    a_lu = asarray_chkfinite(a_lu)
+    pivots = asarray_chkfinite(pivots)
+    b = asarray_chkfinite(b)
     _assert_squareness(a_lu)
     
     getrs, = get_lapack_funcs(('getrs',),(a,))
@@ -231,7 +230,7 @@ def lu(a,permute_l=0,overwrite_a=0):
       u   -  An K x N upper triangular or trapezoidal matrix
              K = min(M,N)
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     m,n = a1.shape
@@ -269,7 +268,7 @@ def svd(a,compute_uv=1,overwrite_a=0):
       vh -- An N x N unitary matrix [compute_uv=1], vh = v^H.
 
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     m,n = a1.shape
@@ -315,7 +314,7 @@ def cholesky(a,lower=0,overwrite_a=0):
       u such that u^H * u = a (or l * l^H = a).
 
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
@@ -330,7 +329,7 @@ def cho_factor(a, lower=0, overwrite_a=0):
     """ Compute Cholesky decomposition of matrix and return an object
     to be used for solving a linear system using cho_solve.
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
@@ -347,9 +346,9 @@ def cho_solve(clow, b):
     Second input is the right-hand side.
     """
     c, lower = clow
-    c = nan_to_num(c)
+    c = asarray_chkfinite(c)
     _assert_squareness(c)
-    b = nan_to_num(b)
+    b = asarray_chkfinite(b)
     potrs, = get_lapack_funcs(('potrs',),(c,))
     b, info = potrs(c,b,lower)
     if info < 0:
@@ -383,7 +382,7 @@ def qr(a,overwrite_a=0,lwork=None):
       q, r -- matrices such that q * r = a
 
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     M,N = a1.shape
@@ -423,7 +422,7 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     """
     if not output in ['real','complex','r','c']:
         raise ValueError, "argument must be 'real', or 'complex'"
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError, 'expected square matrix'
     N = a1.shape[0]
@@ -492,7 +491,7 @@ def rsf2csf(T, Z):
       This function converts this real schur form to a complex schur form
       which is upper triangular.
     """
-    Z,T = map(nan_to_num, (Z,T))
+    Z,T = map(asarray_chkfinite, (Z,T))
     if len(Z.shape) !=2 or Z.shape[0] != Z.shape[1]:
         raise ValueError, "matrix must be square."
     if len(T.shape) !=2 or T.shape[0] != T.shape[1]:

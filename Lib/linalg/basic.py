@@ -11,9 +11,10 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt, nan_to_num
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt
 import Matrix
 import scipy_base
+from scipy_base import asarray_chkfinite
 import calc_lwork
 
 class LinAlgError(Exception):
@@ -37,7 +38,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
 
        x -- the solution to the system
     """
-    b1 = nan_to_num(b)
+    b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if lu.shape[0] != b1.shape[0]:
         raise ValuError, "incompatible dimensions."
@@ -62,7 +63,7 @@ def cho_solve((c, lower), b, overwrite_b=0):
 
        x -- the solution to the system a*x = b
     """
-    b1 = nan_to_num(b)
+    b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if c.shape[0] != b1.shape[0]:
         raise ValuError, "incompatible dimensions."
@@ -94,7 +95,7 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
 
       x -- The solution to the system a * x = b
     """
-    a1, b1 = map(nan_to_num,(a,b))
+    a1, b1 = map(asarray_chkfinite,(a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     if a1.shape[0] != b1.shape[0]:
@@ -129,7 +130,7 @@ def inv(a, overwrite_a=0):
 
     Return inverse of square matrix a.
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
@@ -203,7 +204,7 @@ def norm(x, ord=2):
          ord = -Inf computes the smallest row sum of absolute values
          ord = 'fro' computes the frobenius norm sqrt(sum(diag(X.H * X)))
     """
-    x = nan_to_num(x)
+    x = asarray_chkfinite(x)
     nd = len(x.shape)
     Inf = scipy_base.Inf
     if nd == 1:
@@ -241,7 +242,7 @@ def det(a, overwrite_a=0):
 
     Return determinant of a square matrix.
     """
-    a1 = nan_to_num(a)
+    a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
@@ -274,7 +275,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
       s -- Singular values of a in decreasing order. The condition number
            of a is abs(s[0]/s[-1]).
     """
-    a1, b1 = map(nan_to_num,(a,b))
+    a1, b1 = map(asarray_chkfinite,(a,b))
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     m,n = a1.shape
@@ -316,7 +317,7 @@ def pinv(a, cond=None):
 
     Compute generalized inverse of A using least-squares solver.
     """
-    a = nan_to_num(a)
+    a = asarray_chkfinite(a)
     t = a.typecode()
     b = scipy_base.identity(a.shape[0],t)
     return lstsq(a, b, cond=cond)[0]
@@ -330,7 +331,7 @@ def pinv2(a, cond=None):
 
     Compute the generalized inverse of A using svd.
     """
-    a = nan_to_num(a)
+    a = asarray_chkfinite(a)
     u, s, vh = decomp.svd(a)
     t = u.typecode()
     if cond in [None,-1]:
@@ -401,7 +402,7 @@ def toeplitz(c,r=None):
         r = c
         r[0] = conjugate(r[0])
         c = conjugate(c)
-    r,c = map(nan_to_num,(r,c))
+    r,c = map(asarray_chkfinite,(r,c))
     r,c = map(ravel,(r,c))
     rN,cN = map(len,(r,c))
     if r[0] != c[0]:
@@ -434,7 +435,7 @@ def hankel(c,r=None):
         r = zeros(len(c))
     elif r[0] != c[-1]:
         print "Warning: column and row values don't agree; column value used."
-    r,c = map(nan_to_num,(r,c))
+    r,c = map(asarray_chkfinite,(r,c))
     r,c = map(ravel,(r,c))
     rN,cN = map(len,(r,c))
     vals = r_[c, r[1:rN]]
