@@ -74,6 +74,7 @@ class orthopoly1d(poly1d):
             An = 1.0
         self.__dict__['normcoef'] = mu
         self.__dict__['coeffs'] *= An
+
     
 def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)

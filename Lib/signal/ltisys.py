@@ -396,7 +396,8 @@ def lsim(system, U, T, X0=None, interp=1):
     A = sys.A
     AT, BT = transpose(sys.A), transpose(sys.B)
     dt = T[1]-T[0]
-    lam, vt = linalg.eig(A)
+    lam, v = linalg.eig(A)
+    vt = transpose(v)
     vti = linalg.inv(vt)
     GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.typecode())
     ATm1 = linalg.inv(AT)
@@ -457,8 +458,7 @@ def impulse(system, X0=None, T=None, N=None):
         tc = 1.0/min(abs(real(vals)))
         T = arange(0,7*tc,7*tc / float(N))
     h = zeros(T.shape, sys.A.typecode())
-    s,vt = linalg.eig(sys.A)
-    v = Numeric.transpose(vt)
+    s,v = linalg.eig(sys.A)
     vi = linalg.inv(v)
     C = sys.C
     for k in range(len(h)):

@@ -362,11 +362,11 @@ def qr(a,overwrite_a=0,lwork=None):
 _double_precision = ['i','l','d']
 
 def schur(a,output='real',lwork=None,overwrite_a=0):
-    """Compute Schur decomposition of matrix a.
+    """Compute Schur decomposition of matrix a. 
 
     Description:
 
-      Return T, Z such that a = Z * T * (Z**T) where Z is a
+      Return T, Z such that a = Z * T * (Z**H) where Z is a
       unitary matrix and T is either upper-triangular or quasi-upper
       triangular for output='real'
     """
@@ -454,7 +454,7 @@ def rsf2csf(T, Z):
     for m in range(N-1,0,-1):
         if abs(T[m,m-1]) > eps*(abs(T[m-1,m-1]) + abs(T[m,m])):
             k = slice(m-1,m+1)
-            mu = eig(T[k,k])[0] - T[m,m]
+            mu = eigvals(T[k,k]) - T[m,m]
             r = basic.norm([mu[0], T[m,m-1]])
             c = mu[0] / r
             s = T[m,m-1] / r
