@@ -133,12 +133,10 @@ def _import_packages():
                 code += '\n%s = ppimport_attr(%s,%r)' % (name,package_name,name)
         else:
             code = 'import %s' % (package_name)
-
             # XXX: Should we check the existence of package.test? Warn?
             code += '\n%s.test = ScipyTest(%s).test' % (package_name,package_name)
-
-            for name in global_symbols:
-                code += '\n%s = %s.%s' % (name,package_name,name)
+            if global_symbols:
+                code += '\nfrom '+package_name+' import '+','.join(global_symbols)
         # XXX: Should we catch exceptions here??
         exec (code, frame.f_globals,frame.f_locals)
 

@@ -147,7 +147,8 @@ dependencies
   instead of ``yyy``.
 
 global_symbols
-  List of names that should be imported to scipy name space.
+  List of names that should be imported to scipy name space. To import
+  all symbols to scipy name space, define ``global_symbols=['*']``.
 
 ignore
   Boolean variable indicating that the module should be ignored or
