@@ -9,10 +9,10 @@ import scipy
 import scipy.special as special
 import Numeric
 from Numeric import alltrue, where, arange, put, putmask, nonzero, \
-     ravel, compress, angle, take, ones, sum
+     ravel, compress, take, ones, sum
 from scipy_base.fastumath import *
 
-from scipy_base import atleast_1d, polyval
+from scipy_base import atleast_1d, polyval, angle
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
