@@ -34,7 +34,7 @@ def is_alive(obj):
     else:
         return 1
 
-def yield():
+def Yield():
     if not threaded():
         # forces the event handlers to finish their work.
         # this also forces deletion of windows.
@@ -154,7 +154,7 @@ class test_gui_thread(unittest.TestCase):
             p = weakref.ref(a)
             a.Close(1)
             del a
-            yield()
+            Yield()
             # this checks for memory leaks
             self.assertEqual(is_alive(p), 0)
             
@@ -177,7 +177,7 @@ class test_gui_thread(unittest.TestCase):
         self.assertRaises(TypeError, a.Close, 1, 2, 3)
         a.Close()
         del a
-        yield()
+        Yield()
         # this checks for memory leaks
         self.assertEqual(is_alive(p), 0)
 
