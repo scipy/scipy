@@ -46,7 +46,7 @@ core_packages = [os.path.join('scipy_core',p) for p in core_packages]
 
 parent_package = 'scipy'
 scipy_packages = standard_packages + graphics_packages
-scipy_packages += chaco_packages
+#scipy_packages += chaco_packages
 
 #---------------
 
@@ -54,6 +54,7 @@ scipy_packages += chaco_packages
 separate_packages = ['gui_thread','weave']
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 separate_packages += core_packages
+separate_packages += chaco_packages
 
 #-------------------------------
 
