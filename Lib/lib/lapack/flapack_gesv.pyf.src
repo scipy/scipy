@@ -5,7 +5,7 @@
 !  Driver routines for generalized eigenvalue and singular value problems:
 !  
 !   sygv,hegv (GSEP, symmetric-definite eigenvalues/vectors)
-!   sygvd,hegvd (GSEP, symmetric-definite eigenvalues/vectors, D&C) - Not Implemented
+!   sygvd,hegvd (GSEP, symmetric-definite eigenvalues/vectors, D&C)
 !   sygvx,hegvx (GSEP, symmetric-definite eigenvalues/vectors, expert) - Not Implemented
 !   spgv, hpgv, spgvd, hpgvd, spgvx, hpgvx (..., packed storage) - Not Implemented
 !   sbgv, hbgv, sbgvd, hbgvd, sbgvx, hbgvx (..., band) - Not Implemented
