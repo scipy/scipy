@@ -1080,3 +1080,20 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
         xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)         
     ylabel('Phase (deg.)',color=tcolor,deltax=-0.005)
     
+
+def addtext(txt,xy=None,fontsize=16,font='helvetica',color='black',
+            orient=0,justify='LA',tosys=0):
+    if xy is None:
+        result = gist.mouse(0,0,"Click on point for lower left starting position")
+        if result is None:
+            raise ValueError, "Invalid point entered."        
+        x,y = result[4],result[5]
+        tosys = 0
+    else:
+        x,y = xy
+    if isinstance(txt, type('')) and txt != '':
+        gist.plt(txt, x, y, tosys=tosys, justify=justify,
+                 height=fontsize,font=font, color=color, orient=orient)
+    return
+
+    
