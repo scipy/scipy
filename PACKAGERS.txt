@@ -46,13 +46,7 @@ important files may be missing.
      export CVSROOT=:pserver:anonymous@cens.ioc.ee:/home/cvs
      cvs -z7 co f2py2e
 
-2. If you find building Chaco troublesome (e.g. it is known to fail
-   due to gcc-2.95.4 compiler bugs, and it is currently not working
-   on any non-Windows platform) then you can disable it by
-   adding chaco, freetype, kiva, traits packages to the ignore_packages 
-   list at the end of ``setup.py`` file.
-
-3. Create source tar-balls::
+2. Create source tar-balls::
 
      cd f2py2e
      python setup.py sdist
@@ -68,7 +62,7 @@ important files may be missing.
    The resulting gzipped tar-files do not contain software overlaps
    anymore and should be suitable for packaging.
 
-4. Install ``scipy_core``, ``f2py2e``, and ``scipy`` strictly in the
+3. Install ``scipy_core``, ``f2py2e``, and ``scipy`` strictly in the
    given order. Unpack all tar-ball sources and run::
 
      cd Scipy_core-*

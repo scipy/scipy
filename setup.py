@@ -92,7 +92,7 @@ def setup_package(ignore_packages=[]):
                         {'scipy':'Lib',
                          'scipy.tests':os.path.join('Lib','tests')}}]
 
-        for d in ['Lib','Lib_chaco']:
+        for d in ['Lib']:
             config_list += get_packages(os.path.join(local_path,d),
                                         ignore_packages,
                                         parent_path=local_path)

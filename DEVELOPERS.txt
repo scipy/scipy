@@ -51,16 +51,14 @@ Currently Scipy consists of the following files and directories:
     Its usage is depreciated, in general.
 
   scipy_core/
-    Contains three modules, scipy_base, scipy_distutils, and scipy_test,
-    that all Scipy modules may depend on. As a rule, scipy_distutils
-    is required only for building, scipy_test for running tests,
-    and scipy_base contains various tools for runtime usage.
+    Contains four modules, scipy_base, scipy_distutils, scipy_test,
+    and weave, that all Scipy modules may depend on. As a rule,
+    scipy_distutils is required only for building, scipy_test for
+    running tests, and scipy_base contains various tools for runtime
+    usage.
 
   Lib/
     Contains Scipy __init__.py and the directories of Scipy modules.
-
-  Lib_chaco/
-    Contains Scipy modules related to Chaco.
 
   tutorial/
     Scipy tutorial.
