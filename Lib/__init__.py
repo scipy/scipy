@@ -79,13 +79,12 @@ objects2all(__all__, ['help', 'source', "Inf", "inf", "NaN", "nan", "Mat"])
 try:
     import scipy.fftw
     __all__.append('fftw')
+    _partials1 = {'fftw' : ['fft', 'fftnd', 'fft2d', 'fft3d',
+                            'ifft', 'ifft2d', 'ifft3d', 'ifftnd']}
+    modules2all(__all__, _level1, globals())
+    somenames2all(__all__, _partials1, globals())
 except ImportError:
-    print "Warning: FFT package not found."
-
-_partials1 = {'fftw' : ['fft', 'fftnd', 'fft2d', 'fft3d',
-                        'ifft', 'ifft2d', 'ifft3d', 'ifftnd']}
-modules2all(__all__, _level1, globals())
-somenames2all(__all__, _partials1, globals())
+    print "Warning: FFT package not found. Some names will not be available"
 
 # Level 1a
 names2all(__all__, _level1a, globals())

@@ -282,8 +282,8 @@ def loadmat(name, dict=None, appendmat=1):
 
     Outputs:
 
-       If dict is None, then a dictionary of names and objects representing the
-       stored arrays is returned.
+      If dict is None, then a dictionary of names and objects representing the
+      stored arrays is returned.
     """
 
     if appendmat and name[-4:] == ".mat":
