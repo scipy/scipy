@@ -57,6 +57,8 @@ double quad_function(double *x) {
 
   double d_result;
   PyObject *arg1 = NULL, *arglist=NULL, *result=NULL;
+  PyNumberMethods *nb;
+  PyFloatObject *fo=NULL;
 
   /* Build argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) goto fail;
@@ -64,23 +66,37 @@ double quad_function(double *x) {
   PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*x)); 
                 /* arg1 now owns reference to Float object*/
   if ((arglist = PySequence_Concat( arg1, quadpack_extra_arguments)) == NULL) goto fail;
-  Py_DECREF(arg1);    /* arglist has the reference to Float object. */
     
   /* Call function object --- stored as a global variable.  Extra
           arguments are in another global variable.
    */
   if ((result = PyEval_CallObject(quadpack_python_function, arglist))==NULL) goto fail;
 
-  Py_DECREF(arglist);
-  d_result = PyFloat_AsDouble(result);
-  if (d_result == -1) 
-    PYERR(quadpack_error,"Supplied function does not return a valid float.")
+  /* Have to do own error checking because PyFloat_AsDouble returns -1 on 
+     error -- making that return value from the function unusable.
+  */
 
+  if (result && PyFloat_Check(result))
+    return PyFloat_AS_DOUBLE((PyFloatObject*) result);
+  
+  if ((nb = result->ob_type->tp_as_number) == NULL || nb->nb_float == NULL) 
+    PYERR(quadpack_error, "Supplied function does not return a valid float.");
+  fo = (PyFloatObject *) (*nb->nb_float) (result);
+  if (fo==NULL)
+    PYERR(quadpack_error, "Supplied function does not return a valid float.");
+  if (!PyFloat_Check(fo))
+    PYERR(quadpack_error, "Supplied function does not return a valid float.");
+
+  d_result = PyFloat_AS_DOUBLE(fo);
+  Py_DECREF(fo);
+  Py_DECREF(arg1);    /* arglist has the reference to Float object. */
+  Py_DECREF(arglist);
   Py_DECREF(result);
 
   return d_result;
 
  fail:
+  Py_XDECREF(fo);
   Py_XDECREF(arg1);
   Py_XDECREF(arglist);
   Py_XDECREF(result);
