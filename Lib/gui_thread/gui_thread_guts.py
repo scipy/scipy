@@ -43,7 +43,7 @@ if sys.platform != 'win32':
         sys.stdout.flush()
     from wxPython.wx import *
     if _in_thread:
-        print 'done.>\n>>> ',
+        print 'done.>\n>>>',
         sys.stdout.flush()
     del _in_thread
 else:
@@ -52,7 +52,7 @@ else:
         print_import = 1
     from wxPython.wx import *
     if print_import:
-        print "<wxPython imported>\n>>> ",
+        print "<wxPython imported>\n>>>",
 
 import thread, threading
 import types, traceback

@@ -39,6 +39,4 @@
 """
 
 import main
-from main import register
-
-main.start()
+from main import register, start, start_up

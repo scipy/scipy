@@ -27,7 +27,7 @@ in_proxy_call = 0
 
 gui_thread_finished = threading.Event()
 
-def gui_thread(finished):
+def gui_thread(finished,extra=None):
     """ Indirectly imports wxPython into the second thread
     """
     try:
@@ -36,12 +36,15 @@ def gui_thread(finished):
         if not sys.modules.has_key('wxPython'):
             #import must be done inside if statement!!!
             from gui_thread_guts import second_thread_app
+            if extra is not None:
+                exec( extra )
             # Variable used to see if the wxApp is
             # running in the main or secondary thread
             # Used to determine if proxies should be generated.            
             global running_in_second_thread,app,gui_thread_finished   
             app = second_thread_app(0)
             running_in_second_thread = 1
+            finished.set()
             try:
                 app.MainLoop()
                 # when the main loop exits, we need to single the
@@ -51,21 +54,29 @@ def gui_thread(finished):
     finally: 
         finished.set()             
         
-def start():                    
+def start(extra=None):                    
     finished = threading.Event()
     t1 = threading.Thread(target=gui_thread,args=(finished,))
     t1.setDaemon(1)
     t1.start()
-    #!  I'd like to block waiting until I'm sure wxPython
-    #!  has been initialized in the second thread.  Unfortunately,
-    #!  there is some strange relationship between "import"
-    #!  and thread synchronization.  Without this method call,
-    #!  the wxPython is import fine.  If you uncomment it,
-    #!  however, the import (actually any import) in the
-    #!  !second! thread blocks indefinitely.  Remove the
-    #!  import and the code executes as expected.
-    #!  This issue is documented in the thread_tests directory.
-    #finished.wait()
+    finished.wait()
+
+def _start_up(src_modname,dst_modname,extra=None):
+    start(extra)
+    src_module = __import__(src_modname)
+    for item in src_modname.split('.')[1:]:
+        src_module = getattr(src_module,item)
+    dst_module = sys.modules[dst_modname]
+    for name in dir(src_module):
+        if not hasattr(dst_module,name):
+            setattr(dst_module,name,getattr(src_module,name))
+    print '<Ready>\n>>> ',
+    sys.stdout.flush()
+
+def start_up(src_modname,dst_modname,extra=None):
+    threading.Thread(target=_start_up,
+                     args=(src_modname,dst_modname,extra)).start()
+    print 'Wait for the <Ready> message and prompt!'
    
 ###########################
 # Secondary Thread Clean-up
