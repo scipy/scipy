@@ -5,7 +5,7 @@
 import Numeric
 import types, sys
 from scipy import special, stats
-from scipy_base import fastumath
+from scipy_base import exp
 
 __all__ = ['factorial','comb','rand','randn','disp','who']
     
@@ -44,7 +44,7 @@ def comb(N,k,exact=0):
         return val
     else:
         lgam = special.gammaln
-        return scipy_base.fastumath.exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+        return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
 
 
 def rand(*args):
