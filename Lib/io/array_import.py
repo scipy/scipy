@@ -142,8 +142,6 @@ class ascii_stream:
                 raise IndexError
             if len(line) < self.lencomment or line[:self.lencomment] != self.comment:
                 break
-            else:
-                print len(line), self.lencomment, line[:self.lencomment], self.comment
         return line
         
     def readnextline(self):
@@ -220,8 +218,6 @@ def process_line(line, separator, collist, atype, missing):
     else:
         toconvlist = take(arlist, collist)
 
-    print toconvlist
-    #return toconvlist
     return numpyio.convert_objectarray(toconvlist, atype, missing)
     
     
@@ -247,8 +243,6 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
             a.resize((a.shape[0] + rowsize,colsize))
             block_row = 0
     if a.shape[0] != row:
-        print "Here I am"
-        print a.shape, row
         a.resize((row,colsize))
     if a.shape[0] == 1 or a.shape[1] == 1:
         a = Numeric.ravel(a)
