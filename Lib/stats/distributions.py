@@ -240,7 +240,7 @@ def argsreduce(cond, *args):
     return newargs    
 
 class rv_continuous:
-    """A continuous <generic> random variable object.
+    """A generic continuous random variable object.
 
     Continuous random variables are defined from a standard form chosen
     for simplicity of representation.  The standard form may require
@@ -251,36 +251,36 @@ class rv_continuous:
     These shape, scale, and location parameters can be passed to any of the
     methods of the RV object such as the following:
 
-    xxxxx.rvs(<shape(s)>,loc=0,scale=1)
+    generic.rvs(<shape(s)>,loc=0,scale=1)
         - random variates 
 
-    xxxxx.pdf(x,<shape(s)>,loc=0,scale=1)
+    generic.pdf(x,<shape(s)>,loc=0,scale=1)
         - probability density function
 
-    xxxxx.cdf(x,<shape(s)>,loc=0,scale=1)
+    generic.cdf(x,<shape(s)>,loc=0,scale=1)
         - cumulative density function
 
-    xxxxx.sf(x,<shape(s)>,loc=0,scale=1)
+    generic.sf(x,<shape(s)>,loc=0,scale=1)
         - survival function (1-cdf --- sometimes more accurate)
 
-    xxxxx.ppf(q,<shape(s)>,loc=0,scale=1)
+    generic.ppf(q,<shape(s)>,loc=0,scale=1)
         - percent point function (inverse of cdf --- percentiles)
 
-    xxxxx.isf(q,<shape(s)>,loc=0,scale=1)
+    generic.isf(q,<shape(s)>,loc=0,scale=1)
         - inverse survival function (inverse of sf)
 
-    xxxxx.stats(<shape(s)>,loc=0,scale=1,moments='mv')
+    generic.stats(<shape(s)>,loc=0,scale=1,moments='mv')
         - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
 
     Alternatively, the object may be called (as a function) to fix
        the shape, location, and scale parameters returning a
        "frozen" continuous RV object:
 
-    myrv = xxxxx(<shape(s)>,loc=0,scale=1)
+    myrv = generic(<shape(s)>,loc=0,scale=1)
         - frozen RV object with the same methods but holding the
             given shape, location, and scale fixed
     """
-    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None):
+    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None, shapes=None, extradoc=None):
         if badvalue is None:
             badvalue = nan
         self.badvalue = badvalue
@@ -311,6 +311,19 @@ class rv_continuous:
         pdf_signature = inspect.getargspec(self._pdf.im_func)
         numargs2 = len(pdf_signature[0]) - 2
         self.numargs = max(numargs1, numargs2)
+
+        if self.__doc__ is None:
+            self.__doc__ = rv_continuous.__doc__
+        if self.__doc__ is not None:
+            if name is not None:
+                self.__doc__ = self.__doc__.replace("generic",name)
+            if shapes is None:
+                self.__doc__ = self.__doc__.replace("<shape(s)>,","")
+            else:
+                self.__doc__ = self.__doc__.replace("<shape(s)>",shapes)
+            if extradoc is not None:
+                self.__doc__ = self.__doc__ + extradoc
+        
     def _ppf_tosolve(self, x, q, *args):
         return apply(self.cdf, (x, )+args) - q
     def _ppf_single_call(self, q, *args):
@@ -389,11 +402,12 @@ class rv_continuous:
     #  be overwritten if you want to keep
     #  the error checking. 
     def rvs(self,*args,**kwds):
-        """Random variates of <generic> type.
+        """Random variates of given type.
 
         *args
         =====
-        The shape parameter(s): <description of shape>
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
         
         **kwds
         ======
@@ -419,11 +433,12 @@ class rv_continuous:
         return vals * scale + loc
         
     def pdf(self,x,*args,**kwds):
-        """Probability density function at x of <generic> RV.
+        """Probability density function at x of the given RV.
 
         *args
         =====
-        The shape parameter(s): <description of shape>
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
         
         **kwds
         ======
@@ -446,12 +461,13 @@ class rv_continuous:
         return output
 
     def cdf(self,x,*args,**kwds):
-        """Cumulative distribution function at x of <generic> RV.
+        """Cumulative distribution function at x of the given RV.
 
         *args
         =====
-        The shape parameter(s): <description of shape>
-        
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+
         **kwds
         ======
         loc   - location parameter (default=0)
@@ -474,12 +490,13 @@ class rv_continuous:
         return output
 
     def sf(self,x,*args,**kwds):
-        """Survival function (1-cdf) at x of <generic> RV.
+        """Survival function (1-cdf) at x of the given RV.
 
         *args
         =====
-        The shape parameter(s): <description of shape>
-        
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+
         **kwds
         ======
         loc   - location parameter (default=0)
@@ -502,12 +519,13 @@ class rv_continuous:
         return output
 
     def ppf(self,q,*args,**kwds):
-        """Percent point function (inverse of cdf) at q of <generic> RV.
+        """Percent point function (inverse of cdf) at q of the given RV.
 
         *args
         =====
-        The shape parameter(s): <description of shape>
-        
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+
         **kwds
         ======
         loc   - location parameter (default=0)
@@ -530,12 +548,13 @@ class rv_continuous:
         return output
         
     def isf(self,q,*args,**kwds):
-        """Inverse survival function at q of <generic> RV.
+        """Inverse survival function at q of the given RV.
 
         *args
         =====
-        The shape parameter(s): <description of shape>
-        
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+
         **kwds
         ======
         loc   - location parameter (default=0)
@@ -558,12 +577,13 @@ class rv_continuous:
         return output
 
     def stats(self,*args,**kwds):
-        """Some statistics of the <generic> RV
+        """Some statistics of the given RV
 
         *args
         =====
-        The shape parameter(s): <description of shape>
-        
+        The shape parameter(s) for the distribution (see docstring of the
+           instance object for more information)
+
         **kwds
         ======
         loc     - location parameter (default=0)
@@ -752,7 +772,7 @@ class ksone_gen(rv_continuous):
         return 1.0-special.smirnov(n,x)
     def _ppf(self,q,n):
         return special.smirnovi(n,1.0-q)
-ksone = ksone_gen(a=0.0,name='Kolmogorov-Smirnov one-sided statistic')
+ksone = ksone_gen(a=0.0,name='ksone')
 
 class kstwobign_gen(rv_continuous):
     def _cdf(self,x):
@@ -766,8 +786,6 @@ kstwobign = kstwobign_gen(a=0.0,name='Kolmogorov-Smirnov two-sided large N stati
 
 # loc = mu, scale = std
 class norm_gen(rv_continuous):
-    """Normal (Gaussian) Distribution 
-    """
     def _rvs(self):
         return rand.standard_normal(self._size)
     def _pdf(self,x):
@@ -778,40 +796,13 @@ class norm_gen(rv_continuous):
         return special.ndtri(q)
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
-    def __call__(self,mu=0.0,std=1.0,size=1):
-        return rv_continuous.rvs(self,loc=mu,scale=std,size=size)
-    def rvs(self,mu=0.0,std=1.0,size=1):
-        """*size* normal random variates: mean=*mu*, st. dev.=*std*
-        """
-        return rv_continuous.rvs(self,loc=mu,scale=std,size=size)
-    def pdf(self,x,mu=0.0,std=1.0):
-        """pdf of normal random variable at x:  mean=*mu*, st. dev.=*std*
-        """
-        return rv_continuous.pdf(self,x,loc=mu,scale=std)
-    def cdf(self,x,mu=0.0,std=1.0):
-        """cdf of normal random variable at x:  mean=*mu*, st. dev.=*std*
-        """
-        return rv_continuous.cdf(self,x,loc=mu,scale=std)
-    def sf(self,x,mu=0.0,std=1.0):
-        """sf of normal random variable at x:  mean=*mu*, st. dev.=*std*
-        """
-        return rv_continuous.sf(self,x,loc=mu,scale=std)
-    def ppf(self,x,mu=0.0,std=1.0):
-        """ppf of normal random variable at x:  mean=*mu*, st. dev.=*std*
-        """
-        return rv_continuous.ppf(self,x,loc=mu,scale=std)
-    def isf(self,x,mu=0.0,std=1.0):
-        """isf of normal random variable at x:  mean=*mu*, st. dev.=*std*
-        """
-        return rv_continuous.isf(self,x,loc=mu,scale=std)
-    def stats(self,mu=0.0,std=1.0,moments='mv'):
-        """Statistics of the normal distribution: mean=*mu*, st. dev.=*std*
+norm = norm_gen(name='norm',extradoc="""
 
-             moments can contain 'm','v','s',or 'k' to return mean, variance, skew,
-             or kurtosis
-        """
-        return rv_continuous.isf(self,x,loc=mu,scale=std)
-norm = norm_gen(name='norm')
+Normal distribution
+
+The location (loc) keyword specifies the mean.
+The scale (scale) keyword specifies the standard deviation.
+""")
 
 ## Alpha distribution
 ##
@@ -824,7 +815,10 @@ class alpha_gen(rv_continuous):
         return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
     def _stats(self):
         return [scipy.inf]*2 + [scipy.nan]*2
-alpha = alpha_gen(a=0.0,name='alpha')#,d1='this',d2='is',d3='a test')
+alpha = alpha_gen(a=0.0,name='alpha',shapes='a',extradoc="""
+
+Alpha distribution
+""")
 
 ## Anglit distribution
 ##
@@ -837,7 +831,11 @@ class anglit_gen(rv_continuous):
         return (arcsin(sqrt(q))-pi/4)
     def _stats(self):
         return 0.0, pi*pi/16-0.5, 0.0, -2*(pi**4 - 96)/(pi*pi-8)**2
-anglit = anglit_gen(a=-pi/4,b=pi/4)
+anglit = anglit_gen(a=-pi/4,b=pi/4,name='anglit',extradoc="""
+
+Anglit distribution
+
+""")
 
 
 ## Arcsine distribution
@@ -856,7 +854,10 @@ class arcsine_gen(rv_continuous):
         g1 = 0
         g2 = -3.0/2.0
         return mu, mu2, g1, g2
-arcsine = arcsine_gen(a=0.0,b=1.0)
+arcsine = arcsine_gen(a=0.0,b=1.0,name='arcsine',extradoc="""
+
+Arcsine distribution
+""")
 
 
 ## Beta distribution
@@ -879,7 +880,10 @@ class beta_gen(rv_continuous):
         g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
         g2 /= a*b*(a+b+2)*(a+b+3)
         return mn, var, g1, g2  
-beta = beta_gen(a=0.0, b=1.0)
+beta = beta_gen(a=0.0, b=1.0, name='beta',shapes='a,b',extradoc="""
+
+Beta distribution
+""")
 
 ## Beta Prime
 class betaprime_gen(rv_continuous):
@@ -906,8 +910,12 @@ class betaprime_gen(rv_continuous):
                                                     *(b-2.0)*(b-1.0)), scipy.inf)
         else:
             raise NotImplementedError
-betaprime = betaprime_gen(a=0.0, b=500.0)
-     
+betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime', shapes='a,b',
+                          extradoc="""
+
+Beta prime distribution
+""")
+
 ## Bradford
 ##
 
@@ -933,7 +941,10 @@ class bradford_gen(rv_continuous):
             g2 /= 3*c*(c*(k-2)+2*k)**2
         return mu, mu2, g1, g2
 
-bradford = bradford_gen(a=0.0, b=1.0)
+bradford = bradford_gen(a=0.0, b=1.0, name='bradford', shapes='c', extradoc="""
+
+Bradford distribution
+""")
 
 
 ## Burr
@@ -968,7 +979,10 @@ class burr_gen(rv_continuous):
             g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
             g2 -= 3*g1c**4 * g1cd**4 -4*gd**2*g3c*g1c*g1cd*g3cd
         return mu, mu2, g1, g2
-burr = burr_gen(a=0.0)
+burr = burr_gen(a=0.0, name='burr', shapes="c,d", extradoc="""
+
+Burr distribution
+""")
     
 # Fisk distribution
 # burr is a generalization
@@ -982,7 +996,10 @@ class fisk_gen(burr_gen):
         return burr_gen._ppf(self, x, c, 1.0)
     def _stats(self, x, c):
         return burr_gen._stats(self, x, c, 1.0)
-fisk = fisk_gen(a=0.0)
+fisk = fisk_gen(a=0.0, name='fink', shapes='c', extradoc="""
+
+Fink distribution.
+""")
 
 ## Cauchy
 

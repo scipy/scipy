@@ -5,17 +5,20 @@ Statistical Functions
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of a class.  For each given
-name the following methods are available.  See doc for rv_continuous for
-more information
+Each included distribution is an instance of the class rv_continous.
+For each given name the following methods are available.  See docstring for
+rv_continuous for more information
 
-rvs   --  random variates with the distribution (also available by calling the instance)
+rvs   --  random variates with the distribution 
 pdf   --  probability density function
 cdf   --  cummulative distribution function
 sf    --  survival function (1.0 - cdf)
 ppf   --  percent-point function (inverse of cdf)
 isf   --  inverse survival function
 stats --  mean, variance, and optionally skew and kurtosis
+
+Calling the instance as a function returns a frozen pdf whose shape,
+location, and scale parameters are fixed. 
 
 The distributions available with the above methods are:
 
