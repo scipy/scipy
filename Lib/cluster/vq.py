@@ -9,7 +9,7 @@ Vector Quantization Module
 
     whiten(obs) -- 
         Normalize a group of observations on a per feature basis
-    vq(obs,code_book,return_dist=0) -- 
+    vq(obs,code_book) -- 
         Calculate code book membership of obs
     kmeans(obs,k_or_guess,iter=20,thresh=1e-5) -- 
         Train a codebook for mimimum distortion using the kmeans algorithm
@@ -57,7 +57,7 @@ def whiten(obs):
     std_dev = scipy.stdev(obs,axis=0)
     return obs / std_dev
 
-def vq(obs,code_book,return_dist=0):
+def vq(obs,code_book):
     """* Vector Quantization: assign features sets to codes in a code book.
 
     Description:
@@ -89,10 +89,13 @@ def vq(obs,code_book,return_dist=0):
                                  [  1.,   2.,   3.,   4.],  #f1
                                  [  1.,   2.,   3.,   4.]]) #f2
     Outputs:
-        result -- 1D array.
+        code -- 1D array.
                 If obs is a NxM array, then a length M array
                 is returned that holds the selected code book index for
                 each observation.
+        dist -- 1D array.
+        		The distortion (distance) between the observation and
+        		its nearest code        
     Reference:
     Test:
         >>> code_book = array([[1.,1.,1.],
@@ -100,7 +103,7 @@ def vq(obs,code_book,return_dist=0):
         >>> features  = array([[  1.9,2.3,1.7],
         ...                    [  1.5,2.5,2.2],
         ...                    [  0.8,0.6,1.7]])
-        >>> vq(features,code_book,return_dist=1)
+        >>> vq(features,code_book)
         (array([1, 1, 0]), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     *"""
@@ -115,17 +118,14 @@ def vq(obs,code_book,return_dist=0):
         dist = sqrt(sum(diff*diff,-1))
         code.append(argmin(dist))
         #something weird here dst does not work reliably because it sometime
-        # returns an array of goofy length. use min() until I figure it out.
-        if return_dist:
-            dst = minimum.reduce(dist,0)
-            try:    dst = dst[0]
-            except: pass
-            min_dist.append(dst) 
-    if return_dist: return array(code), array(min_dist)
-    else:           return array(code)
+        #returns an array of goofy length. Try except fixes it, but is ugly.
+        dst = minimum.reduce(dist,0)
+        try:    dst = dst[0]
+        except: pass
+        min_dist.append(dst) 
+    return array(code), array(min_dist)
 
-
-def vq2(obs,code_book,return_dist=0):
+def vq2(obs,code_book):
     """* This could be faster when number of codebooks is small, but it becomes
          a real memory hog when codebook is large.  It requires NxMxO storage
          where N=number of obs, M = number of features, and O = number of codes.
@@ -136,12 +136,10 @@ def vq2(obs,code_book,return_dist=0):
     diff = obs[NewAxis,:,:]-code_book[:,NewAxis,:]
     dist = sqrt(sum(diff*diff,-1))
     code = argmin(dist,0)
-    if return_dist:
-        min_dist = minimum.reduce(dist,0) #the next line I think is equivalent - and should be faster
-        #min_dist = choose(code,dist) # but in practice, didn't seem to make much difference.
-        return code, min_dist
-    else:
-        return code
+    min_dist = minimum.reduce(dist,0) #the next line I think is equivalent - and should be faster
+    #min_dist = choose(code,dist) # but in practice, didn't seem to make much difference.
+    return code, min_dist
+
 """*
     A third approach that combines ideas from vq and vq2 could possibly be faster.
     It would segment the obs into small chunks of obs (maybe 5 or 10 or even 
@@ -181,7 +179,7 @@ def kmeans_(obs,guess,thresh=1e-5):
     while diff>thresh:
         print diff
         #compute membership and distances between obs and code_book
-        obs_code, distort = vq(obs,code_book,return_dist=1)
+        obs_code, distort = vq(obs,code_book)
         avg_dist.append(scipy.mean(distort))
         #recalc code_book as centroids of associated obs
         if(diff > thresh):
