@@ -499,10 +499,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              maxiter=None, full_output=0, disp=1):
-    """Minimze 
-  Description:
+    """Description:
 
-    Optimize the function, f, whose gradient is given by fprime using the
+    Minimize the function, f, whose gradient is given by fprime using the
     Newton-CG method.  fhess_p must compute the hessian times an arbitrary
     vector. If it is not given, finite-differences on fprime are used to
     compute it. See Wright, and Nocedal 'Numerical Optimization', 1999,

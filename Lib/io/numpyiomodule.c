@@ -735,14 +735,16 @@ static PyObject *
   if (builtins == NULL) goto fail;
 
   dict = PyModule_GetDict(builtins);
-  get_complex = PyCFunction_GetFunction(PyDict_GetItemString(dict, "complex"));
-  get_float = PyCFunction_GetFunction(PyDict_GetItemString(dict, "float"));
-  get_int = PyCFunction_GetFunction(PyDict_GetItemString(dict, "int"));
+
+  get_complex = PyDict_GetItemString(dict, "complex");
+  get_float = PyDict_GetItemString(dict, "float");
+  get_int = PyDict_GetItemString(dict, "int");
   if ((get_complex == NULL) || (get_float == NULL) || (get_int == NULL) ) goto fail;
+  /* 
   get_complex_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "complex"));
   get_float_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "float"));
   get_int_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "int"));
-
+  */
 
   /* Loop through arr and convert each element and place in out */
   i = PyArray_Size((PyObject *)arr);
@@ -759,21 +761,21 @@ static PyObject *
     numc.imag = 0;
     argobj = Py_BuildValue("(O)", *arrptr);
     if (argobj == NULL) goto fail;
-    numobj = (*get_complex)(get_complex_self, argobj); 
+    numobj = PyEval_CallObject(get_complex, argobj);
     if (numobj != NULL) {
       numc = PyComplex_AsCComplex(numobj);
       Py_DECREF(numobj);
     }
     if (PyErr_Occurred()) {
       PyErr_Clear();
-      numobj = (*get_float)(get_float_self, argobj);
+      numobj = PyEval_CallObject(get_float, argobj);
       if (numobj != NULL) {
 	numc.real = PyFloat_AsDouble(numobj);
 	Py_DECREF(numobj);
       }      
       if (PyErr_Occurred()) {
 	PyErr_Clear();
-	numobj = (*get_int)(get_int_self, argobj);
+	numobj = numobj = PyEval_CallObject(get_int, argobj);
 	if (numobj != NULL) {
 	  numc.real = (double) PyInt_AsLong(numobj);
 	  Py_DECREF(numobj);
