@@ -521,7 +521,7 @@ def _parse_header(fid, dict):
         else: openstr = 'l'
     fid.setformat(openstr)  # change byte-order if necessary
     fid.rewind()    
-    dict['__header__'] = fid.fid.read(124).strip(' \t\n\000')
+    dict['__header__'] = fid.raw_read(124).strip(' \t\n\000')
     vers = fid.read(1,'int16')
     dict['__version__'] = '%d.%d' % (vers >> 8, vers & 255)
     fid.seek(2,1)  # move to start of data
@@ -633,7 +633,7 @@ def _parse_mimatrix(fid,bytes):
 # Return a Python object for the element
 def _get_element(fid):
 
-    test = fid.fid.read(1)
+    test = fid.raw_read(1)
     if len(test) == 0:  # nothing left
         raise EOFError
     else:
