@@ -212,7 +212,7 @@ def argsreduce(cond, *args):
     return newargs    
 
 class rv_continuous:
-    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None)
+    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None):
         if badvalue is None:
             badvalue = nan
         self.badvalue = badvalue
@@ -667,7 +667,7 @@ class alpha_gen(rv_continuous):
         return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
     def _stats(self):
         return [scipy.inf]*2 + [scipy.nan]*2
-alpha = alpha_gen(a=0.0,name='alpha',d1='this',d2='is',d3='a test')
+alpha = alpha_gen(a=0.0,name='alpha')#,d1='this',d2='is',d3='a test')
 
 ## Anglit distribution
 ##
