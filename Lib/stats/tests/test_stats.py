@@ -315,20 +315,21 @@ def compare_results(res,desired):
 ##################################################
 
 
-def test_suite():
+def test_suite(level=1):
     suites = []
-    suites.append( unittest.makeSuite(test_round, 'check_') )
-    suites.append( unittest.makeSuite(test_basicstats, 'check_') )
-    suites.append( unittest.makeSuite(test_corr, 'check_') )
-    suites.append( unittest.makeSuite(test_regression, 'check_') )
-##    suites.append( unittest.makeSuite(test_anova, 'check_') )
+    if level > 0:
+        suites.append( unittest.makeSuite(test_round, 'check_') )
+        suites.append( unittest.makeSuite(test_basicstats, 'check_') )
+        suites.append( unittest.makeSuite(test_corr, 'check_') )
+        suites.append( unittest.makeSuite(test_regression, 'check_') )
+    ##    suites.append( unittest.makeSuite(test_anova, 'check_') )
     
     
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
-def test():
-    all_tests = test_suite()
+def test(level=10):
+    all_tests = test_suite(level=level)
     runner = unittest.TextTestRunner()
     runner.run(all_tests)
     return runner

@@ -219,30 +219,31 @@ class test_polyint(unittest.TestCase):
         
 ##################################################
 
-def test_suite():
+def test_suite(level=1):
     suites = []
-    suites.append( unittest.makeSuite(test_grid,'check_') )
-    suites.append( unittest.makeSuite(test_concatenator,'check_') )
-    suites.append( unittest.makeSuite(test_logspace,'check_') )
-    suites.append( unittest.makeSuite(test_linspace,'check_') )
-    suites.append( unittest.makeSuite(test_any,'check_') )
-    suites.append( unittest.makeSuite(test_all,'check_') )
-    suites.append( unittest.makeSuite(test_fix,'check_') )
-    suites.append( unittest.makeSuite(test_fftshift,'check_') )
-    suites.append( unittest.makeSuite(test_ifftshift,'check_') )
-    suites.append( unittest.makeSuite(test_fftfreq,'check_') )
-    suites.append( unittest.makeSuite(test_cont_ft,'check_') )
-    suites.append( unittest.makeSuite(test_r1array,'check_') )
-    suites.append( unittest.makeSuite(test_r2array,'check_') )
-    suites.append( unittest.makeSuite(test_isscalar,'check_') )
-    suites.append( unittest.makeSuite(test_toeplitz,'check_') )
-    suites.append( unittest.makeSuite(test_hankel,'check_') )
-    suites.append( unittest.makeSuite(test_real_if_close,'check_') )    
+    if level > 0:
+        suites.append( unittest.makeSuite(test_grid,'check_') )
+        suites.append( unittest.makeSuite(test_concatenator,'check_') )
+        suites.append( unittest.makeSuite(test_logspace,'check_') )
+        suites.append( unittest.makeSuite(test_linspace,'check_') )
+        suites.append( unittest.makeSuite(test_any,'check_') )
+        suites.append( unittest.makeSuite(test_all,'check_') )
+        suites.append( unittest.makeSuite(test_fix,'check_') )
+        suites.append( unittest.makeSuite(test_fftshift,'check_') )
+        suites.append( unittest.makeSuite(test_ifftshift,'check_') )
+        suites.append( unittest.makeSuite(test_fftfreq,'check_') )
+        suites.append( unittest.makeSuite(test_cont_ft,'check_') )
+        suites.append( unittest.makeSuite(test_r1array,'check_') )
+        suites.append( unittest.makeSuite(test_r2array,'check_') )
+        suites.append( unittest.makeSuite(test_isscalar,'check_') )
+        suites.append( unittest.makeSuite(test_toeplitz,'check_') )
+        suites.append( unittest.makeSuite(test_hankel,'check_') )
+        suites.append( unittest.makeSuite(test_real_if_close,'check_') )    
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
-def test():
-    all_tests = test_suite()
+def test(level=10):
+    all_tests = test_suite(level)
     runner = unittest.TextTestRunner()
     runner.run(all_tests)
     return runner

@@ -301,15 +301,16 @@ class test_proxy_attribute(unittest.TestCase):
         a.dict['c'] = 'c'
         self.assertEqual(a.dict['c'], 'c')
 
-def test_suite():
+def test_suite(level=1):
     suites = []
-    suites.append(unittest.makeSuite(test_gui_thread, 'check_'))
-    suites.append(unittest.makeSuite(test_proxy_attribute, 'check_'))
+    if level > 0:
+        suites.append(unittest.makeSuite(test_gui_thread, 'check_'))
+        suites.append(unittest.makeSuite(test_proxy_attribute, 'check_'))
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
-def test():
-    all_tests = test_suite()
+def test(level=10):
+    all_tests = test_suite(level)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(all_tests)
 

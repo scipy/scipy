@@ -610,44 +610,44 @@ def compare_results(res,desired):
 
 ##################################################
 
-
-def test_suite():
+def test_suite(level=1):
     suites = []
-    suites.append( unittest.makeSuite(test_real,'check_') )
-    suites.append( unittest.makeSuite(test_imag,'check_') )
-    suites.append( unittest.makeSuite(test_sum,'check_') )
-    suites.append( unittest.makeSuite(test_mean,'check_') )
-    suites.append( unittest.makeSuite(test_array_iscomplex,'check_') )
-    suites.append( unittest.makeSuite(test_array_isreal,'check_') )        
-    suites.append( unittest.makeSuite(test_iscomplex,'check_') )
-    suites.append( unittest.makeSuite(test_isreal,'check_') )    
-    suites.append( unittest.makeSuite(test_isnan,'check_') )
-    suites.append( unittest.makeSuite(test_isfinite,'check_') )
-    suites.append( unittest.makeSuite(test_isinf,'check_') )
-    suites.append( unittest.makeSuite(test_isposinf,'check_') )    
-    suites.append( unittest.makeSuite(test_isneginf,'check_') )
-    suites.append( unittest.makeSuite(test_nan_to_num,'check_') )
-    suites.append( unittest.makeSuite(test_logn,'check_') )
-    suites.append( unittest.makeSuite(test_log2,'check_') )
-    suites.append( unittest.makeSuite(test_histogram,'check_') )
-    suites.append( unittest.makeSuite(test_array_split,'check_') )
-    suites.append( unittest.makeSuite(test_split,'check_') )
-    suites.append( unittest.makeSuite(test_atleast_1d,'check_') )
-    suites.append( unittest.makeSuite(test_atleast_2d,'check_') )
-    suites.append( unittest.makeSuite(test_atleast_3d,'check_') )
-    suites.append( unittest.makeSuite(test_hstack,'check_') )
-    suites.append( unittest.makeSuite(test_vstack,'check_') )
-    suites.append( unittest.makeSuite(test_dstack,'check_') )
-    suites.append( unittest.makeSuite(test_hsplit,'check_') )    
-    suites.append( unittest.makeSuite(test_vsplit,'check_') )
-    suites.append( unittest.makeSuite(test_dsplit,'check_') )
-    suites.append( unittest.makeSuite(test_trim_zeros,'check_') )
+    if level > 0:
+        suites.append( unittest.makeSuite(test_real,'check_') )
+        suites.append( unittest.makeSuite(test_imag,'check_') )
+        suites.append( unittest.makeSuite(test_sum,'check_') )
+        suites.append( unittest.makeSuite(test_mean,'check_') )
+        suites.append( unittest.makeSuite(test_array_iscomplex,'check_') )
+        suites.append( unittest.makeSuite(test_array_isreal,'check_') )        
+        suites.append( unittest.makeSuite(test_iscomplex,'check_') )
+        suites.append( unittest.makeSuite(test_isreal,'check_') )    
+        suites.append( unittest.makeSuite(test_isnan,'check_') )
+        suites.append( unittest.makeSuite(test_isfinite,'check_') )
+        suites.append( unittest.makeSuite(test_isinf,'check_') )
+        suites.append( unittest.makeSuite(test_isposinf,'check_') )    
+        suites.append( unittest.makeSuite(test_isneginf,'check_') )
+        suites.append( unittest.makeSuite(test_nan_to_num,'check_') )
+        suites.append( unittest.makeSuite(test_logn,'check_') )
+        suites.append( unittest.makeSuite(test_log2,'check_') )
+        suites.append( unittest.makeSuite(test_histogram,'check_') )
+        suites.append( unittest.makeSuite(test_array_split,'check_') )
+        suites.append( unittest.makeSuite(test_split,'check_') )
+        suites.append( unittest.makeSuite(test_atleast_1d,'check_') )
+        suites.append( unittest.makeSuite(test_atleast_2d,'check_') )
+        suites.append( unittest.makeSuite(test_atleast_3d,'check_') )
+        suites.append( unittest.makeSuite(test_hstack,'check_') )
+        suites.append( unittest.makeSuite(test_vstack,'check_') )
+        suites.append( unittest.makeSuite(test_dstack,'check_') )
+        suites.append( unittest.makeSuite(test_hsplit,'check_') )    
+        suites.append( unittest.makeSuite(test_vsplit,'check_') )
+        suites.append( unittest.makeSuite(test_dsplit,'check_') )
+        suites.append( unittest.makeSuite(test_trim_zeros,'check_') )
     
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
-def test():
-    all_tests = test_suite()
+def test(level=10):
+    all_tests = test_suite(level)
     runner = unittest.TextTestRunner()
     runner.run(all_tests)
     return runner

@@ -486,49 +486,49 @@ class test_zgerc(base_ger_complex):
     def transform(self,x):
         return conjugate(x)
 *"""        
-def test_suite():
+def test_suite(level=1):
     suites = []
-
-    suites.append( unittest.makeSuite(test_scopy,'check_') )
-    suites.append( unittest.makeSuite(test_dcopy,'check_') )
-    suites.append( unittest.makeSuite(test_ccopy,'check_') )
-    suites.append( unittest.makeSuite(test_zcopy,'check_') )
-
-    suites.append( unittest.makeSuite(test_saxpy,'check_') )
-    suites.append( unittest.makeSuite(test_daxpy,'check_') )
-    suites.append( unittest.makeSuite(test_caxpy,'check_') )
-    suites.append( unittest.makeSuite(test_zaxpy,'check_') )
-
-    suites.append( unittest.makeSuite(test_sscal,'check_') )
-    suites.append( unittest.makeSuite(test_dscal,'check_') )
-    suites.append( unittest.makeSuite(test_cscal,'check_') )
-    suites.append( unittest.makeSuite(test_zscal,'check_') )
-
-    suites.append( unittest.makeSuite(test_sswap,'check_') )
-    suites.append( unittest.makeSuite(test_dswap,'check_') )
-    suites.append( unittest.makeSuite(test_cswap,'check_') )
-    suites.append( unittest.makeSuite(test_zswap,'check_') )
-
-    suites.append( unittest.makeSuite(test_sgemv,'check_') )
-    suites.append( unittest.makeSuite(test_dgemv,'check_') )
-    suites.append( unittest.makeSuite(test_cgemv,'check_') )
-    suites.append( unittest.makeSuite(test_zgemv,'check_') )
+    if level > 0:
+        suites.append( unittest.makeSuite(test_scopy,'check_') )
+        suites.append( unittest.makeSuite(test_dcopy,'check_') )
+        suites.append( unittest.makeSuite(test_ccopy,'check_') )
+        suites.append( unittest.makeSuite(test_zcopy,'check_') )
     
-    suites.append( unittest.makeSuite(test_sger,'check_') )
-    suites.append( unittest.makeSuite(test_dger,'check_') )
-
-    # either the lapack functions are broken or my wrappers
-    # are broken.
-    #suites.append( unittest.makeSuite(test_cgeru,'check1_') )
-    #suites.append( unittest.makeSuite(test_zgeru,'check_') )
-    #suites.append( unittest.makeSuite(test_cgerc,'check_') )
-    #suites.append( unittest.makeSuite(test_zgerc,'check_') )
+        suites.append( unittest.makeSuite(test_saxpy,'check_') )
+        suites.append( unittest.makeSuite(test_daxpy,'check_') )
+        suites.append( unittest.makeSuite(test_caxpy,'check_') )
+        suites.append( unittest.makeSuite(test_zaxpy,'check_') )
+    
+        suites.append( unittest.makeSuite(test_sscal,'check_') )
+        suites.append( unittest.makeSuite(test_dscal,'check_') )
+        suites.append( unittest.makeSuite(test_cscal,'check_') )
+        suites.append( unittest.makeSuite(test_zscal,'check_') )
+    
+        suites.append( unittest.makeSuite(test_sswap,'check_') )
+        suites.append( unittest.makeSuite(test_dswap,'check_') )
+        suites.append( unittest.makeSuite(test_cswap,'check_') )
+        suites.append( unittest.makeSuite(test_zswap,'check_') )
+    
+        suites.append( unittest.makeSuite(test_sgemv,'check_') )
+        suites.append( unittest.makeSuite(test_dgemv,'check_') )
+        suites.append( unittest.makeSuite(test_cgemv,'check_') )
+        suites.append( unittest.makeSuite(test_zgemv,'check_') )
+        
+        suites.append( unittest.makeSuite(test_sger,'check_') )
+        suites.append( unittest.makeSuite(test_dger,'check_') )
+    
+        # either the lapack functions are broken or my wrappers
+        # are broken.
+        #suites.append( unittest.makeSuite(test_cgeru,'check1_') )
+        #suites.append( unittest.makeSuite(test_zgeru,'check_') )
+        #suites.append( unittest.makeSuite(test_cgerc,'check_') )
+        #suites.append( unittest.makeSuite(test_zgerc,'check_') )
    
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
-def test():
-    all_tests = test_suite()
+def test(level=10):
+    all_tests = test_suite(level)
     runner = unittest.TextTestRunner()
     runner.run(all_tests)
     return runner

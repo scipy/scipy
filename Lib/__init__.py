@@ -126,24 +126,23 @@ except ImportError:
 
 #---- testing ----#
 
-def test(test_set = 'fast'):
-    # The standard run test compiler which can take a while.
-    # Set test_set = 'fast' to just do the basic tests
+def test(level=1):
+    """ From this top level, there are possibly many many tests.
+        Test only the quick tests by default.
+    """
     import unittest
     runner = unittest.TextTestRunner()
-    runner.run(test_suite(test_set))
+    runner.run(test_suite(level))
     return runner
 
-def test_all():
-    test('all')
+def test_all(level=10):
+    test(level)
     
-def test_suite(test_set = 'all'):
+def test_suite(level = 1):
     import scipy_test
     import scipy
     ignore = ['xplt','plt','gplt','gui_thread','linalg','sparse','scipy_version']
-    if test_set != 'all':
-        ignore += ['compiler']
-    return scipy_test.harvest_test_suites(scipy,ignore)
+    return scipy_test.harvest_test_suites(scipy,ignore,level=level)
 
 
 
