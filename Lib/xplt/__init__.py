@@ -43,13 +43,18 @@ maxheight=os.environ.get('XPLT_MAXHEIGHT')
 if display and (maxwidth is None or maxheight is None):
     import commands
     str1 = commands.getoutput('xwininfo -root')
-    ind1 = str1.find('Width:')
-    ind2 = str1.find('\n',ind1)
-    maxwidth=int(str1[ind1+6:ind2])-8
-    ind1 = str1.find('Height:')
-    ind2 = str1.find('\n',ind1)
-    maxheight=int(str1[ind1+7:ind2])-60
-    os.environ['XPLT_MAXWIDTH']=str(maxwidth)
-    os.environ['XPLT_MAXHEIGHT']=str(maxheight)
-    
+    # Hmmm.  errors still seem to be occuring occasionally even
+    # with the display check.  Added try block to protect against
+    # this causing import scipy to fail.
+    try:
+        ind1 = str1.find('Width:')
+        ind2 = str1.find('\n',ind1)
+        maxwidth=int(str1[ind1+6:ind2])-8
+        ind1 = str1.find('Height:')
+        ind2 = str1.find('\n',ind1)
+        maxheight=int(str1[ind1+7:ind2])-60
+        os.environ['XPLT_MAXWIDTH']=str(maxwidth)
+        os.environ['XPLT_MAXHEIGHT']=str(maxheight)
+    except ValueError:
+        pass
 
