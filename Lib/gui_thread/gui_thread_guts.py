@@ -420,9 +420,11 @@ class proxy_base:
         return smart_return(ret)
     
     def __setattr__(self,key,val):
-	#setattr(self.wx_obj, key, val)	
-        obj = self.wx_obj
-	return apply(smart_call, (setattr, obj, key, val))
+        if self.__dict__.has_key(key):
+            self.__dict__[key] = val
+        else:        
+            obj = self.wx_obj
+            return apply(smart_call, (setattr, obj, key, val))
 
 
 #################################
