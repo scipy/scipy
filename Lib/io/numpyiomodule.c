@@ -33,6 +33,18 @@ int is_little_endian();
 
 static PyObject *ErrorObject;     /* locally-raised exception */
 
+#define PYERR(message) do {PyErr_SetString(PyExc_ValueError, message); goto fail;} while(0)
+#define DATA(arr) ((arr)->data)
+#define DIMS(arr) ((arr)->dimensions)
+#define STRIDES(arr) ((arr)->strides)
+#define ELSIZE(arr) ((arr)->descr->elsize)
+#define OBJECTTYPE(arr) ((arr)->descr->type_num)
+#define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
+#define RANK(arr) ((arr)->nd)
+#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+#define MIN(a,b) (((a) > (b)) ? (b) : (a))
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
 #define PYSETERROR(message) \
 { PyErr_SetString(ErrorObject, message); goto fail; }
 
@@ -62,8 +74,8 @@ static PyObject *
 {
   PyObject *file;
   PyArrayObject *arr=NULL;
-  PyArray_Descr *indescr;
-  void     *ibuff;
+  PyArray_Descr *indescr=NULL;
+  void     *ibuff=NULL;
   int      myelsize;
   int      ibuff_cleared = 1;
   int      n,nread;
@@ -136,8 +148,7 @@ static PyObject *
  fail:
   if (!ibuff_cleared) free(ibuff);
   Py_XDECREF(arr);
-  return;
-
+  return NULL;
 
 }
 
@@ -151,7 +162,7 @@ static int write_buffered_output(FILE *fp, PyArrayObject *arr, PyArray_Descr* ou
      write the buffer to disk and fill it again. */
 
   char  *buff_ptr, *output_ptr;
-  int nwrite, incr, *nd_index, indx;
+  int nwrite, *nd_index, indx;
   int buffer_size_bytes, elsize;
 
   buff_ptr = buffer;
@@ -397,7 +408,7 @@ static PyObject *
 static PyObject *
  numpyio_unpack(PyObject *self, PyObject *args)  /* args: in, out_type */
 {
-  PyArrayObject *arr = NULL, *out;
+  PyArrayObject *arr = NULL, *out=NULL;
   PyObject *obj;
   int      els_per_slice, arrsize;
   int      out_size, type;
@@ -455,6 +466,294 @@ static char packbits_doc[] = "out = numpyio.packbits(myarray)\n\n   myarray = an
 static char unpackbits_doc[] = "out = numpyio.unpackbits(myarray, elements_per_slice {, out_type} )\n\n     myarray =        Array of integer type ('cb1sl') whose least\n                      significant byte is a bit-field for the\n                      resulting output array.\n\n     elements_per_slice = Necessary for interpretation of myarray.\n                          This is how many elements in the\n                          rows*columns of original packed structure.\n\nOPTIONAL\n     out_type =       The type of output array to populate with 1's\n                      and 0's.  Must be an integer type.\n\n\nThe output array will be a 1-D array of 1's and zero's";
 
 
+#define BUFSIZE 256
+/* Convert a Python string object to a complex number */
+static int convert_from_object(PyObject *obj, Py_complex *cnum)
+{
+  PyObject *res=NULL, *elobj=NULL;
+  PyObject *newstr=NULL, *finalobj=NULL, *valobj=NULL;
+  char strbuffer[2*BUFSIZE];
+  char *xptr, *elptr;
+  char *newstrbuff, thischar;
+  char buffer[BUFSIZE];
+  char validnum[] = "0123456789.eE+-";
+  int validlen = 15;
+  int inegflag = 1;
+  int rnegflag = 1;
+  int n, k, m, i, elN, size, state, count;
+  double val;
+
+  if (!PyString_Check(obj)) return -1;
+
+  /* strip string */
+  newstr = PyObject_CallMethod(obj, "strip", NULL);
+  if (newstr == NULL) goto fail;
+
+  /* Replace any 'e+' or 'e-' */
+  size = PyString_GET_SIZE(newstr);
+  newstrbuff = PyString_AsString(newstr);
+  if (newstrbuff == NULL) goto fail;
+  if (size > 2*BUFSIZE) PYERR("String too large.");
+
+  state = 0;
+  count = 0;
+  for (k=0; k<size; k++) {
+    thischar = newstrbuff[k];
+    if (state == 1) {
+      if (thischar == '+') {
+	thischar = '\254';
+      }
+      else if (thischar == '-') {
+	thischar = '\253';
+      }
+    }
+    if ((thischar == 'e') || (thischar == 'E')) state = 1;
+    else state = 0;
+    strbuffer[count] = thischar;
+    count++;
+  }
+  Py_DECREF(newstr);
+  newstr = PyString_FromStringAndSize(strbuffer, count);
+  if (newstr == NULL) goto fail;
+  xptr = strbuffer;
+    
+  /* Split the string into two substrings first on a ',' then on a '+'
+     or '-' */
+  res = PyObject_CallMethod(newstr, "split", "s", ",");
+  if (res == NULL) goto fail;
+  if (PySequence_Size(res) < 2) {
+    Py_DECREF(res);
+    res = PyObject_CallMethod(newstr, "split", "s", "+");
+    if (res == NULL) goto fail;
+  }
+  if (PySequence_Size(res) < 2) {
+    if ((strbuffer[0] == '(') || (strbuffer[0] == '[') || 
+	(strbuffer[0] == '{')) {
+      xptr++;
+      count--;
+      /* strip leading whitespaces */
+      while isspace(*xptr) {xptr++; count--;}
+    }
+    if (xptr[0] == '-') {
+      rnegflag = -1;
+      xptr++;
+      count--;
+    }
+    Py_DECREF(newstr);
+    newstr = PyString_FromStringAndSize(xptr, count);
+    if (newstr == NULL) goto fail;
+    Py_DECREF(res);
+    res = PyObject_CallMethod(newstr, "split", "s", "-");
+    inegflag = -1;
+  }
+
+  size = PySequence_Size(res);
+  for (k=0; k < MIN(size,2); k++) {
+    elobj = PySequence_GetItem(res, k);
+    if (elobj == NULL) goto fail;
+    elN = PyString_Size(elobj);
+    if ((elN > BUFSIZE) || (elN < 1)) goto fail;
+
+    /* Replace back the + and - and strip away invalid characters */
+    elptr = PyString_AsString(elobj);
+    m = 0;
+    for (n=0; n < elN; n++) {
+      thischar = elptr[n];
+      if (thischar == '\254')
+	buffer[m++] = '+';
+      else if (thischar == '\253')
+	buffer[m++] = '-';
+      else {
+	for (i=0; i< validlen; i++) {
+	  if (thischar == validnum[i]) break;
+	}
+	if (i < validlen) buffer[m++] = thischar;
+      }
+    }
+    finalobj = PyString_FromStringAndSize(buffer, m);
+    if (finalobj == NULL) goto fail;
+    valobj = PyFloat_FromString(finalobj, NULL);  /* Try to make a float */
+    if (valobj == NULL) goto fail;
+    val = PyFloat_AsDouble(valobj);
+    if (PyErr_Occurred()) goto fail;
+    Py_DECREF(finalobj);
+    Py_DECREF(valobj);
+    Py_DECREF(elobj);
+    if (k==0) {
+      cnum->real = val;
+    }
+    else {
+      cnum->imag = val;
+    }
+    
+  }
+  Py_DECREF(newstr);
+  Py_DECREF(res);
+  Py_DECREF(valobj);
+  return 0;
+  
+ fail:
+  Py_XDECREF(res);  
+  Py_XDECREF(elobj);
+  Py_XDECREF(newstr);
+  Py_XDECREF(finalobj);
+  Py_XDECREF(valobj);
+  return -1;
+}
+
+
+
+static int PyTypeFromChar(char ctype)
+{
+  switch(ctype) {
+  case 'c': return PyArray_CHAR;
+  case 'b': return PyArray_UBYTE;
+  case '1': return PyArray_SBYTE;
+  case 's': return PyArray_SHORT;
+  case 'i': return PyArray_INT;
+  case 'l': return PyArray_LONG;
+  case 'f': return PyArray_FLOAT;
+  case 'd': return PyArray_DOUBLE;
+  case 'F': return PyArray_CFLOAT;
+  case 'D': return PyArray_CDOUBLE;
+  case 'O': return PyArray_OBJECT; 
+  }
+  return PyArray_NOTYPE;
+}
+
+
+static PyObject *
+ numpyio_convert_objects(PyObject *self, PyObject *args)
+{
+  PyObject *obj = NULL, *missing_val = NULL;
+  PyArrayObject *arr = NULL, *out=NULL;
+  PyArrayObject *missing_arr = NULL;
+  PyArray_Descr *descr;
+  PyObject *builtins, *dict;
+  char out_type;
+  int int_type, i, err;
+  char *outptr;
+  PyObject **arrptr;
+  PyObject *numobj=NULL, *argobj=NULL;
+  Py_complex numc;
+  PyArray_VectorUnaryFunc *funcptr;
+  PyCFunction get_complex, get_float, get_int;
+  PyObject *get_complex_self, *get_float_self, *get_int_self;
+
+  if (!PyArg_ParseTuple( args, "Oc|O" , &obj, &out_type, &missing_val))
+    return NULL;
+
+  if (missing_val == NULL) {
+    missing_val = PyInt_FromLong(0);
+  }
+  else {
+    Py_INCREF(missing_val);  /* Increment missing_val for later DECREF */
+  }
+
+  int_type = PyTypeFromChar(out_type);
+  if ((int_type == PyArray_NOTYPE) || (int_type == PyArray_OBJECT))
+    PYERR("Invalid output type.");
+
+  missing_arr = (PyArrayObject *)PyArray_ContiguousFromObject(missing_val, 
+							      int_type, 0, 0);
+  Py_DECREF(missing_val);
+  missing_val = NULL;  /* So later later failures don't decrement it */
+
+  if ((missing_arr == NULL)) goto fail;
+  if ((RANK(missing_arr) > 0)) PYERR("Missing value must be as scalar");
+
+  arr = (PyArrayObject *)PyArray_ContiguousFromObject(obj, PyArray_OBJECT, 
+						      0, 0);
+  if (arr == NULL) goto fail;
+
+  out = (PyArrayObject *)PyArray_FromDims(RANK(arr), DIMS(arr), int_type);
+  if (out == NULL) goto fail;
+
+  /* Get the builtin_functions from the builtin module */
+  builtins = PyImport_AddModule("__builtin__");
+  if (builtins == NULL) goto fail;
+
+  dict = PyModule_GetDict(builtins);
+  get_complex = PyCFunction_GetFunction(PyDict_GetItemString(dict, "complex"));
+  get_float = PyCFunction_GetFunction(PyDict_GetItemString(dict, "float"));
+  get_int = PyCFunction_GetFunction(PyDict_GetItemString(dict, "int"));
+  if ((get_complex == NULL) || (get_float == NULL) || (get_int == NULL) ) goto fail;
+  get_complex_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "complex"));
+  get_float_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "float"));
+  get_int_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "int"));
+
+
+  /* Loop through arr and convert each element and place in out */
+  i = PyArray_Size((PyObject *)arr);
+  arrptr = ((PyObject **)DATA(arr)) - 1;
+  outptr = (DATA(out)) - ELSIZE(out);
+
+  descr = PyArray_DescrFromType(PyArray_CDOUBLE);
+  funcptr = descr->cast[int_type];
+
+  while (i--) {
+    outptr += ELSIZE(out);
+    arrptr  += 1;
+    numc.real = 0;
+    numc.imag = 0;
+    argobj = Py_BuildValue("(O)", *arrptr);
+    if (argobj == NULL) goto fail;
+    numobj = (*get_complex)(get_complex_self, argobj); 
+    if (numobj != NULL) {
+      numc = PyComplex_AsCComplex(numobj);
+      Py_DECREF(numobj);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Clear();
+      numobj = (*get_float)(get_float_self, argobj);
+      if (numobj != NULL) {
+	numc.real = PyFloat_AsDouble(numobj);
+	Py_DECREF(numobj);
+      }      
+      if (PyErr_Occurred()) {
+	PyErr_Clear();
+	numobj = (*get_int)(get_int_self, argobj);
+	if (numobj != NULL) {
+	  numc.real = (double) PyInt_AsLong(numobj);
+	  Py_DECREF(numobj);
+	}
+	if (PyErr_Occurred()) {   /* Use our own homegrown converter... */
+	  PyErr_Clear();
+	  err = convert_from_object(*arrptr, &numc);
+	  if (PyErr_Occurred()) PyErr_Clear();
+	  if (err < 0) {     /* Nothing works fill with missing value... */
+	    memcpy(outptr, DATA(missing_arr), ELSIZE(out));
+	    Py_DECREF(argobj);
+	    continue;
+	  }
+	}
+      }
+    } 
+    Py_DECREF(argobj);
+    /* Place numc into the array */
+    funcptr((void *)&(numc.real), 1, (void *)outptr, 1, 1);
+  }
+
+  Py_DECREF(missing_arr);
+  Py_DECREF(arr);
+  return PyArray_Return(out);
+  
+ fail:
+  Py_XDECREF(out);
+  Py_XDECREF(arr); 
+  Py_XDECREF(missing_arr);
+  Py_XDECREF(missing_val);
+  return NULL;
+}
+
+
+static char convert_objects_doc[] = 
+"convert_objectarray(myarray, arraytype{, missing_value} ) -> out
+
+    myarray = Sequence of strings.
+    arraytype = Type of output array.
+    missing_value = Value to insert when conversion fails.
+";
 
 /* *************************************************************************** */
 /* Method registration table: name-string -> function-pointer */
@@ -465,10 +764,11 @@ static struct PyMethodDef numpyio_methods[] = {
   {"bswap",     numpyio_byteswap,   1, bswap_doc},
   {"packbits",  numpyio_pack,       1, packbits_doc},
   {"unpackbits", numpyio_unpack,     1, unpackbits_doc},
+  {"convert_objectarray", numpyio_convert_objects, 1, convert_objects_doc},
   {NULL,         NULL}
 };
 
-void initnumpyio()
+DL_EXPORT(void) initnumpyio()
 {
   PyObject *m, *d;
 
@@ -633,19 +933,5 @@ int is_little_endian()
   return (*(myptr) == 1);
   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
