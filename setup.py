@@ -13,6 +13,8 @@ import os
 import sys
 from glob import glob
 
+# With a setup.py command that does not include sdist, both scipy and
+# scipy_base are handled together.
 command_sdist = 'sdist' in sys.argv
 
 # Note that when running bdist_rpm, scipy_core directory does
@@ -52,6 +54,8 @@ def setup_package(ignore_packages=[]):
     sys.path.insert(0,os.path.join(local_path,'scipy_core'))
     try:
         from scipy_version import scipy_version
+        # Uncomment when making releases:
+        if not command_sdist: scipy_version = '0.3'
 
         packages_path = ['Lib']
         if command_sdist:
