@@ -558,8 +558,10 @@ def solve(A,b,permc_spec=2):
         ftype, lastel, data, index0, index1 = A.getCSR()
         csc = 0
     M,N = A.shape
+    if (M != N):
+        raise ValueError, "Matrix must be square."
     gssv = eval('_superlu.' + ftype + 'gssv')
-    return gssv(M,N,lastel,data,index0,index1,b,csc,permc_spec)[0]
+    return gssv(N,lastel,data,index0,index1,b,csc,permc_spec)[0]
     
 
 def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,

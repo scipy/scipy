@@ -41,7 +41,7 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   PyObject *Py_B=NULL, *Py_X=NULL;
   PyArrayObject *nzvals=NULL;
   PyArrayObject *colind=NULL, *rowptr=NULL;
-  int M, N, nnz;
+  int N, nnz;
   int csc=0, permc_spec=2;
   int info;
   int *perm_r=NULL, *perm_c=NULL;
@@ -49,10 +49,10 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   superlu_options_t options;
   SuperLUStat_t stat;
   
-  static char *kwlist[] = {"M","N","nnz","nzvals","colind","rowptr","B", "csc", "permc_spec",NULL};
+  static char *kwlist[] = {"N","nnz","nzvals","colind","rowptr","B", "csc", "permc_spec",NULL};
 
   /* Get input arguments */
-  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiiO!O!O!O|ii", kwlist, &M, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec))
+  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|ii", kwlist, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec))
       return NULL;
 
 
@@ -60,10 +60,10 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_CDOUBLE,1,2);
   if (Py_X == NULL) goto fail;
   if (csc) {
-      if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr, PyArray_CDOUBLE)) goto fail;
+      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CDOUBLE)) goto fail;
   }
   else {
-      if (NRFormat_from_spMatrix(&A, M, N, nnz, nzvals, colind, rowptr, PyArray_CDOUBLE)) goto fail; 
+      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CDOUBLE)) goto fail; 
   }
   if (DenseSuper_from_Numeric(&B, Py_X)) goto fail;  
 
@@ -74,7 +74,7 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   if (setjmp(_superlu_py_jmpbuf)) goto fail;
   else {
       perm_c = intMalloc(N);
-      perm_r = intMalloc(M);
+      perm_r = intMalloc(N);
       set_default_options(&options);
       options.ColPerm=superlu_module_getpermc(permc_spec);
       StatInit(&stat);
@@ -123,7 +123,7 @@ Py_zgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
   int relax = 1;
   int panel_size = 10;
   int permc_spec = 2;
-  int M, N, nnz;
+  int N, nnz;
   PyArrayObject *rowind, *colptr, *nzvals;
   SuperMatrix A;
   PyObject *result;
@@ -143,7 +143,7 @@ Py_zgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!res)
     return NULL;
 
-  if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, rowind, colptr, PyArray_CDOUBLE)) goto fail;
+  if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr, PyArray_CDOUBLE)) goto fail;
  
   result = newSciPyLUObject(&A, diag_pivot_thresh, drop_tol, relax, panel_size,\
                             permc_spec, PyArray_CDOUBLE);
