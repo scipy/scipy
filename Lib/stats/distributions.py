@@ -27,6 +27,7 @@ import stats as st
 import rand
 import rv
 
+
 all = alltrue
 sgf = vectorize
 import new
@@ -39,12 +40,17 @@ def seed(x=0,y=0):
     if type (x) != types.IntType or type (y) != types.IntType :
         raise ArgumentError, "seed requires integer arguments."
     if y == 0:
-        import time
-        t = time.time()
-        ndigits = int(math.log10(t))
-        base = 10**(ndigits/2)
-        x = int(t/base)
-        y = 1 + int(t%base)
+        import random
+        done = 0
+        sd = rv.initial_seed()
+        while not done:
+            try:
+                y = int(sd)
+                done = 1
+            except:
+                sd = sd / 2
+                done = 0
+        x = random.randint(1,2**30-1)        
     rand.set_seeds(x,y)
 
 seed()
