@@ -28,13 +28,8 @@ int S_quadratic_spline2D(float*,float*,int,int,double,int*,int*,float);
 /* with a given starting value loaded into the array */
 
 void 
-S_IIR_order1 (a1, a2, x, y, N, stridex, stridey) 
-     float a1; 
-     float a2; 
-     float *x; 
-     float *y; 
-     int N, stridex, stridey; 
-{ 
+S_IIR_order1 (float a1, float a2, float *x, float *y,
+	      int N, int stridex, int stridey) { 
     float *yvec = y+stridey; 
     float *xvec = x+stridex; 
     int n; 
@@ -51,14 +46,8 @@ S_IIR_order1 (a1, a2, x, y, N, stridex, stridey)
 /* y[n] = a1 * x[n] + a2 * y[n-1]  + a3 * y[n-2] */
 /* with two starting values loaded into the array */
 void 
-S_IIR_order2 (a1, a2, a3, x, y, N, stridex, stridey) 
-     float a1; 
-     float a2; 
-     float a3; 
-     float *x; 
-     float *y; 
-     int N, stridex, stridey; 
-{ 
+S_IIR_order2 (float a1, float a2, float a3, float *x, float *y, 
+	      int N, int stridex, int stridey) { 
     float *yvec = y+2*stridey; 
     float *xvec = x+2*stridex; 
     int n; 
@@ -86,15 +75,8 @@ S_IIR_order2 (a1, a2, a3, x, y, N, stridex, stridey)
 */
 
 void 
-S_IIR_order2_cascade (cs, z1, z2, y1_0, x, yp, N, stridex, stridey) 
-     float cs; 
-     float z1; 
-     float z2; 
-     float y1_0; 
-     float *x; 
-     float *yp; 
-     int N, stridex, stridey; 
-{ 
+S_IIR_order2_cascade (float cs, float z1, float z2, float y1_0, 
+		      float *x, float *yp, int N, int stridex, int stridey) { 
     float *yvec = yp+stridey; 
     float *xvec = x+stridex; 
     int n; 
@@ -137,14 +119,8 @@ S_IIR_order2_cascade (cs, z1, z2, y1_0, x, yp, N, stridex, stridey)
 */
 
 int 
-S_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
-     float c0; 
-     float z1; 
-     float *x; 
-     float *y; 
-     int N, stridex, stridey; 
-     float precision; 
-{ 
+S_IIR_forback1 (float c0, float z1, float *x, float *y, 
+		int N, int stridex, int stridey, float precision) { 
     float *yp = NULL; 
     float *xptr = x;
     float yp0;
@@ -188,14 +164,10 @@ S_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
 
 /* h must be odd length */
 /* strides in units of sizeof(float) bytes */
+
 void 
-S_FIR_mirror_symmetric (in, out, N, h, Nh, instride, outstride)
-     float *in;
-     float *out;
-     int N, Nh;
-     float *h;
-     int instride, outstride;
-{    
+S_FIR_mirror_symmetric (float *in, float *out, int N, float *h, int Nh, 
+			int instride, int outstride) {
     int n, k;
     int Nhdiv2 = Nh >> 1;
     float *outptr;
@@ -254,15 +226,9 @@ S_FIR_mirror_symmetric (in, out, N, h, Nh, instride, outstride)
 }
 
 int
-S_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr, 
-				   Nhc, instrides, outstrides)
-     float *in;
-     float *out;
-     int M, N;
-     float *hr, *hc;
-     int Nhr, Nhc;
-     int *instrides, *outstrides;
-{
+S_separable_2Dconvolve_mirror(float *in, float *out, int M, int N, 
+			      float *hr, float *hc, int Nhr, 
+			      int Nhc, int *instrides, int *outstrides) {
     int m, n;
     float *tmpmem;
     float *inptr=NULL, *outptr=NULL;
@@ -305,11 +271,7 @@ static float S_hc(int,float,double,double);
 static float S_hs(int,float,double,double);
 
 float
-S_hc(k, cs, r, omega)
-     int k;
-     float cs;
-     double r, omega;
-{
+S_hc(int k, float cs, double r, double omega) {
     if (k < 0) return 0.0;
     if (omega == 0.0) 
 	return cs * pow(r, (double )k) * (k+1); 
@@ -319,11 +281,7 @@ S_hc(k, cs, r, omega)
 }
 
 float
-S_hs(k, cs, rsq, omega)
-     int k;
-     float cs;
-     double rsq, omega;
-{
+S_hs(int k, float cs, double rsq, double omega) {
     float cssq;
     float c0;
     double gamma, rsupk;
@@ -383,13 +341,8 @@ S_hs(k, cs, rsq, omega)
 */
 
 int 
-S_IIR_forback2 (r, omega, x, y, N, stridex, stridey, precision) 
-     double r,omega;
-     float *x;
-     float *y; 
-     int N, stridex, stridey; 
-     float precision; 
-{ 
+S_IIR_forback2 (double r, double omega, float *x, float *y, 
+		int N, int stridex, int stridey, float precision) { 
     float cs;
     float *yp = NULL; 
     float *yptr;
@@ -497,14 +450,8 @@ S_IIR_forback2 (r, omega, x, y, N, stridex, stridey, precision)
 */
 
 int 
-S_cubic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
-     float *image;
-     float *coeffs;
-     int M, N;
-     double lambda;
-     int *strides, *cstrides; 
-     float precision;
-{    
+S_cubic_spline2D(float *image, float *coeffs, int M, int N, double lambda,
+		 int *strides, int *cstrides, float precision) {    
     double r, omega;
     float *inptr;
     float *coptr;
@@ -590,14 +537,8 @@ S_cubic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
 */
 
 int 
-S_quadratic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
-     float *image;
-     float *coeffs;
-     int M, N;
-     double lambda;
-     int *strides, *cstrides; 
-     float precision;
-{    
+S_quadratic_spline2D(float *image, float *coeffs, int M, int N, double lambda,
+		     int *strides, int *cstrides, float precision) {    
     double r;
     float *inptr;
     float *coptr;
