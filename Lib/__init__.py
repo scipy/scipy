@@ -14,7 +14,7 @@ def names2all(alist, spaces, gldict):
         exec("import %s" % name, gldict)
         thelist = eval(name,gldict).__dict__.keys()
         exec("from %s import *" % name, gldict)
-        #exec("del %s" % name, gldict)
+        exec("del %s" % name, gldict)
         for key in thelist:
             if key[0] == "_":
                 thelist.remove(key)
@@ -40,15 +40,14 @@ _namespaces = ['MLab','handy', 'misc', 'fastumath'] # MLab includes Numeric
 _partials = {'Matrix' : ['Matrix']}
 import os,sys
 from helpmod import help, source
-from handy import *
-from misc import *
+from handy import __
 
 __all__=[]
 
 somenames2all(__all__, _partials, globals())
 names2all(__all__, _namespaces, globals())
 modules2all(__all__, _modules, globals())
-objects2all(__all__, ['help', 'source'])
+objects2all(__all__, ['help', 'source','__'])
 
 # add some directories to the path so we can import their
 # modules.
@@ -56,7 +55,6 @@ objects2all(__all__, ['help', 'source'])
 d,f = os.path.split(__file__)
 sys.path.append(os.path.join(d,'gui_thread'))
 #import gui_thread
-
 try:
     import scipy.fft
     __all__.append('fft')
@@ -69,7 +67,6 @@ try:
 except ImportError:
     pass
 
-   
 #---- testing ----#
 
 def test(test_set = 'fast'):
@@ -90,3 +87,15 @@ def test_suite(test_set = 'all'):
     if test_set != 'all':
         ignore += ['compiler']
     return scipy_test.harvest_test_suites(scipy,ignore)
+
+
+
+
+
+
+
+
+
+
+
+
