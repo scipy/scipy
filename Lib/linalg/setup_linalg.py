@@ -206,7 +206,10 @@ def configuration(parent_package='',parent_path=None):
         if atlas_version is None:
             ext_args['define_macros'] = [('NO_ATLAS_INFO',2)]
         else:
-            ext_args['define_macros'] = [('ATLAS_INFO','"%s"' % atlas_version)]
+            if sys.platform=='win32':
+                ext_args['define_macros'] = [('ATLAS_INFO','"\\"%s\\""' % atlas_version)]
+            else:
+                ext_args['define_macros'] = [('ATLAS_INFO','"%s"' % atlas_version)]
         
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
