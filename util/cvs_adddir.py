@@ -4,4 +4,4 @@ import cvs_tools
 
     
 if __name__ == '__main__':
-    cvs_tools.rmdir(sys.argv[1])
+    cvs_tools.adddir(sys.argv[1])
