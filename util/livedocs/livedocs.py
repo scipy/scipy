@@ -106,14 +106,11 @@ class BasePage(rend.Page):
         # First look for docstring in filetree
         doc = self.getdoc_fromtree()
         if doc is None:
-            if isinstance(self.obj,SourceHolder):
-                doc = str(self.obj)
-            else:
-                doc = cStringIO.StringIO()
-                if type(self.obj) is types.ModuleType:
-                    reload(self.obj)
-                scipy.info(self.obj, output=doc)
-                doc = doc.getvalue()
+            doc = cStringIO.StringIO()
+            if type(self.obj) is types.ModuleType:
+                reload(self.obj)
+            scipy.info(self.obj, output=doc)
+            doc = doc.getvalue()
         if self.havesource and hasattr(self.obj,'__name__'):
             if type(self.obj) in [types.TypeType,types.InstanceType,
                                   types.ClassType]:
@@ -141,17 +138,19 @@ class BasePage(rend.Page):
 
     def childFactory(self, ctx, name):
         if name == '__source__':
-            child = SourceHolder(self.obj)
-            return toPage(child, name, self.parent, self.obj)
+            return SourcePage(self.parent, self.obj, name=name)
         return None
 
-class SourceHolder:
-    def __init__(self, obj):
-        self.obj = obj
-    def __str__(self):
+class SourcePage(BasePage):
+    docFactory = loaders.xmlfile("sourcepage.html")
+
+    def render_docstring(self, context, data):
+        from PySourceColor import str2html,lite
         doc = cStringIO.StringIO()
-        scipy.source(self.obj, output=doc)
-        return doc.getvalue()
+        scipy.source(self.obj, output=doc)            
+        doc = doc.getvalue()
+        doc = str2html(doc,colors=lite,form='code')
+        return T.xml(doc)
 
 class ModulePage(BasePage):
 
