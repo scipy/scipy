@@ -587,7 +587,46 @@ def change_palette(pal):
         else:
             data = Numeric.asarray(pal)
             write_palette('/tmp/_temp.gp',data)
-            gist.palette('/tmp/_temp.gp')    
+            gist.palette('/tmp/_temp.gp')
+
+def matview(A,cmax=None,cmin=None,palette=None,color='black'):
+    """Plot an image of a matrix.
+    """
+    A = Numeric.asarray(A)
+    if A.typecode() in ['D','F']:
+        print "Warning: complex array given, plotting magnitude."
+        A = Numeric.abs(A)
+    M,N = A.shape
+    A = A[::-1,:]
+    if cmax is None:
+        cmax = max(ravel(A))
+    if cmin is None:
+        cmin = min(ravel(A))
+    cmax = float(cmax)
+    cmin = float(cmin)
+    byteimage = gist.bytscl(A,cmin=cmin,cmax=cmax)
+    change_palette(palette)
+    gist.window(style='nobox.gs')
+    gist.pli(byteimage)
+    old_vals = gist.limits(square=1)
+    vals = gist.limits(square=1)
+    vp = gist.viewport()
+    axv,bxv,ayv,byv = vp
+    axs,bxs,ays,bys = vals[:4]
+    # bottom left corner column
+    posy = -ays*(byv-ayv)/(bys-ays) + ayv
+    posx = -axs*(bxv-axv)/(bxs-axs) + axv
+    gist.plt('1',posx,posy-0.005,justify='LT',color=color)
+    # bottom left corner row
+    gist.plt(str(M),posx-0.005,posy,justify='RB',color=color)
+    # top left corner row
+    posy = (M-ays)*(byv-ayv)/(bys-ays) + ayv
+    gist.plt('1',posx-0.005,posy,justify='RT',color=color)
+    # bottom right column
+    posy = -ays*(byv-ayv)/(bys-ays) + ayv
+    posx = (N-axs)*(bxv-axv)/(bxs-axs) + axv
+    gist.plt(str(N),posx,posy-0.005,justify='RT',color=color)
+
 
 def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
             color='black'):

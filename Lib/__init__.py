@@ -66,7 +66,7 @@ _level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
 # these modules will just be imported (not subsumed)                      
 _level1a_importonly = []
 
-_level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "cluster"]
+_level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "cluster", "weave"]
 
 __all__=[]
 somenames2all(__all__, _partials0, globals())
