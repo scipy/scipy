@@ -48,28 +48,19 @@ def moment_ppf(m, ppffunc, *args):
     return scipy.integrate.quad(_integrand2, 0, 1)[0]
 
 ## Internal class to compute a ppf given a distribution.
-##  (needs cdf and stats function) and uses fsolve from scipy.optimize
+##  (needs cdf function) and uses brentq from scipy.optimize
 ##  to compute ppf from cdf.
 class general_cont_ppf:
-    def __init__(self, dist):
+    def __init__(self, dist, xa=-10.0, xb=10.0):
         self.dist = dist
         self.cdf = eval('%scdf'%dist)
-        try:    
-            self.stats = eval('%sstats'%dist)
-        except NameError:
-            self.stats = None
-        self.x0 = None
+        self.xa = xa
+        self.xb = xb
         self.vecfunc = scipy.special.general_function(self._single_call)
     def _tosolve(self, x, q, *args):
         return apply(self.cdf, (x, )+args) - q
     def _single_call(self, q, *args):
-        if self.x0 is None:
-            if self.stats is None:
-                self.stats = eval('%sstats'%self.dist)
-            self.x0 = self.stats(*args)[0]
-            if not isfinite(self.x0):
-                self.x0 = 1.0
-        return scipy.optimize.fsolve(self._tosolve, self.x0, args=(q,)+args)
+        return scipy.optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args)
     def __call__(self, q, *args):
         return self.vecfunc(q, *args)
             
@@ -465,7 +456,7 @@ def betaprimecdf(x, a, b, loc=0.0, scale=1.0):
 
 _betap_ppf = general_cont_ppf('betaprime')
 def betaprimeppf(q, a, b, loc=0.0, scale=1.0):
-    return _betap_ppf(q, a, b, loc, scale)
+    return _betap_ppf(q, a, b)*scale + loc
 
 def betaprimesf(x, a, b, loc=0.0, scale=1.0):
     return 1.0-betaprimecdf(x,a,b,loc,scale)
@@ -762,7 +753,7 @@ def cosinesf(x, loc=0.0, scale=1.0):
 
 _cosppf = general_cont_ppf('cosine')
 def cosineppf(q, loc=0.0, scale=1.0):
-    return _cosppf(q, loc, scale)
+    return _cosppf(q)*scale + loc
 
 def cosineisf(q, loc=0.0, scale=1.0):
     return cosineppf(1-arr(q), loc, scale)
@@ -1162,7 +1153,7 @@ def foldcauchycdf(x, c, loc=0.0, scale=1.0):
 
 _foldcauchyppf = general_cont_ppf('foldcauchy')
 def foldcauchyppf(q, c, loc=0.0, scale=1.0):
-    return _foldcauchyppf(q, c, loc, scale)
+    return _foldcauchyppf(q, c)*scale + loc
 
 def foldcauchystats(c, loc=0.0, scale=1.0, full=0):
     # no moments
@@ -1255,7 +1246,7 @@ def foldnormcdf(x, c=0.0, loc=0.0, scale=1.0):
 
 _foldnormppf = general_cont_ppf('foldnorm')
 def foldnormppf(al, c=0.0, loc=0.0, scale=1.0):
-    return _foldnormppf(al, c, loc, scale)
+    return _foldnormppf(al, c)*scale + loc
 
 def foldnormsf(x, c=0.0, loc=0.0, scale=1.0):
     return 1.0-foldnormcdf(x, c, loc, scale)
@@ -2769,7 +2760,7 @@ def semicircularcdf(x, loc=0.0, scale=1.0):
 
 _semicircppf = general_cont_ppf('semicircular')
 def semicircularppf(q, loc=0.0, scale=1.0):
-    return _semicircppf(q, loc, scale)
+    return _semicircppf(q)*scale + loc
 
 def semicircularsf(x, loc=0.0, scale=1.0):
     return 1.0-semicircularcdf(x, loc, scale)
