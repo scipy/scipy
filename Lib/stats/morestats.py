@@ -5,8 +5,9 @@ import statlib
 import stats
 import distributions
 import inspect
-from scipy_base import isscalar, r_, log, sum, around
-from scipy_base import zeros, arange, sort, amin, amax, any, where, array
+from scipy_base import isscalar, r_, log, sum, around, unique, asarray
+from scipy_base import zeros, arange, sort, amin, amax, any, where, \
+     array, atleast_1d, sqrt, ceil, floor, array
 import types
 import scipy.optimize as optimize
 
@@ -355,15 +356,15 @@ def anderson(x,dist='norm'):
 
 
 def _find_repeats(arr):
-    """Find repeats in the sorted array and return a list of the
-    repeats, position of first one in the array and how many there were.
+    """Find repeats in the array and return a list of the
+    repeats and how many there were.
     """
+    arr = sort(arr)
     lastval = arr[0]
     howmany = 0
     ind = 1
     N = len(arr)
     repeat = 0
-    reppos = []
     replist = []
     repnum = []
     while ind < N:
@@ -376,73 +377,432 @@ def _find_repeats(arr):
             howmany += 1
             repeat = 1
             if (howmany == 1):
-                reppos.append(ind-1)
                 replist.append(arr[ind])
         lastval = arr[ind]
         ind += 1
     if repeat:
         repnum.append(howmany+1)
-    return replist, reppos, repnum
-            
+    return replist, repnum
+
 def ansari(x,y):
     """Determine if the scale parameter for two distributions with equal
-    medians is the same.
+    medians is the same using the Ansari-Bradley statistic.
 
-    Specifically, compute the AB statistic and critical values for rejection
-    of the null hypothesis that the ratio of variances is 1.
+    Specifically, compute the AB statistic and the probability of error
+    that the null hypothesis is true but rejected with the computed
+    statistic as the critical value.
+
+    One can reject the null hypothesis that the ratio of variances is 1 if
+    returned probability of error is small (say < 0.05)
     """
     x,y = asarray(x),asarray(y)
-    m = len(x)
-    n = len(y)
+    n = len(x)
+    m = len(y)
+    if (m < 1):
+        raise ValueError, "Not enough other observations."
+    if (n < 1):
+        raise ValueError, "Not enough test observations."
     N = m+n
     xy = r_[x,y]  # combine
-    sxy = sort(xy)
-    replist,reppos,repnum = _find_repeats(sxy)
-    if N % 2: # N odd
-        ranks = r_[1:(N+1)/2+1,(N-1)/2:0:-1]*1.0
-    else:
-        ranks = r_[1:N/2+1,N/2:0:-1]*1.0
-    repeats = 0
-    if replist != []:  # repeats
-        repeats = 1
-        for k in range(len(replist)):
-            pos = reppos[k]
-            num = repnum[k]
-            ranks[pos:pos+num] = sum(ranks[pos:pos+num])*1.0/num
-    # Now compute AB
-    AB = 0.0
-    for k in n:
-        # find the position in the xy array for this value
-        pos = nonzero(xy==y[k])[0]
-        AB += ranks[pos]
-    print AB
+    rank = stats.rankdata(xy)
+    symrank = amin(array((rank,N-rank+1)),0)
+    AB = sum(symrank[:n])
+    uxy = unique(xy)
+    repeats = (len(uxy) != len(xy))
+    exact = ((m<55) and (n<55) and not repeats)
+    if repeats and ((m < 55)  or (n < 55)):
+        print "Ties preclude use of exact statistic."
+    if exact:
+        astart, a1, ifault = statlib.gscale(n,m)
+        ind = AB-astart
+        total = sum(a1)
+        if ind < len(a1)/2.0:
+            cind = int(ceil(ind))
+            if (ind == cind):
+                pval = 2.0*sum(a1[:cind+1])/total
+            else:
+                pval = 2.0*sum(a1[:cind])/total
+        else:
+            find = int(floor(ind))
+            if (ind == floor(ind)):
+                pval = 2.0*sum(a1[find:])/total
+            else:
+                pval = 2.0*sum(a1[find+1:])/total
+        return AB, min(1.0,pval)
+    
+    # otherwise compute normal approximation
     if N % 2:  # N odd
-        mnAB = m*(N+1.0)**2 / 4.0 / N
-        varAB = m*n*(N+1.0)*(3+N**2)/(48.0*N**2)
+        mnAB = n*(N+1.0)**2 / 4.0 / N
+        varAB = n*m*(N+1.0)*(3+N**2)/(48.0*N**2)
     else:
-        mnAB = m*(N+2.0)/4.0
+        mnAB = n*(N+2.0)/4.0
         varAB = m*n*(N+2)*(N-2.0)/48/(N-1.0)
-    if repeats:
-        pass
-    return AB
+    if repeats:   # adjust variance estimates
+        # compute sum(tj * rj**2)
+        fac = sum(symrank**2)
+        if N % 2: # N odd
+            varAB = m*n*(16*N*fac-(N+1)**4)/(16.0 * N**2 * (N-1))
+        else:  # N even
+            varAB = m*n*(16*fac-N*(N+2)**2)/(16.0 * N * (N-1))
+    z = (AB - mnAB)/sqrt(varAB)
+    pval = (1-distributions.normcdf(abs(z)))*2.0
+    return AB, pval
+
+def bartlett(*args):
+    """Perform Bartlett test with the null hypothesis that all input samples
+    have equal variances.
+
+    Inputs are sample vectors:  bartlett(x,y,z,...) 
+
+    Outputs: (T, pval)
+
+         T    -- the Test statistic
+         pval -- significance level if null is rejected with this value of T
+                 (prob. that null is true but rejected with this p-value.)  
+
+    Sensitive to departures from normality.  The Levene test is
+    an alternative that is less sensitive to departures from
+    normality.
+
+    References:
+
+      http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
+
+      Snedecor, George W. and Cochran, William G. (1989), Statistical
+        Methods, Eighth Edition, Iowa State University Press.     
+    """
+    k = len(args)
+    if k < 2:
+        raise ValueError, "Must enter at least two input sample vectors."
+    Ni = zeros(k)
+    ssq = zeros(k,'d')
+    for j in range(k):
+        Ni[j] = len(args[j])
+        ssq[j] = stats.var(args[j])
+    Ntot = sum(Ni)
+    spsq = sum((Ni-1)*ssq)/(1.0*(Ntot-k))
+    numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq))
+    denom = 1.0 + (1.0/(3*(k-1)))*((sum(1.0/(Ni-1.0)))-1.0/(Ntot-k))
+    T = numer / denom
+    pval = distributions.chi2sf(T,k-1) # 1 - cdf
+    return T, pval
 
 
+def levene(*args,**kwds):
+    """Perform Levene test with the null hypothesis that all input samples
+    have equal variances.
+
+    Inputs are sample vectors:  bartlett(x,y,z,...)
+
+    One keyword input, center, can be used with values
+        center = 'mean', center='median' (default), center='trimmed'
+
+    center='median' is recommended for skewed (non-normal) distributions
+    center='mean' is recommended for symmetric, moderate-tailed, dist.
+    center='trimmed' is recommended for heavy-tailed distributions.
+
+    Outputs: (W, pval)
+
+         W    -- the Test statistic
+         pval -- significance level if null is rejected with this value of W
+                 (prob. that null is true but rejected with this p-value.)  
+
+    References:
+
+       http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+
+       Levene, H. (1960). In Contributions to Probability and Statistics:
+         Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
+         Stanford University Press, pp. 278-292. 
+       Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
+         Statistical Association, 69, 364-367         
+    """
+    k = len(args)
+    if k < 2:
+        raise ValueError, "Must enter at least two input sample vectors."
+    Ni = zeros(k)
+    Yci = zeros(k,'d')
+    if 'center' in kwds.keys():
+        center = kwds['center']
+    else:
+        center = 'median'
+    if not center in ['mean','median','trimmed']:
+        raise ValueError, "Keyword argument <center> must be 'mean', 'median'"\
+              + "or 'trimmed'."
+    if center == 'median':
+        func = stats.median
+    elif center == 'mean':
+        func = stats.mean
+    else:
+        func = stats.trim_mean
+    for j in range(k):
+        Ni[j] = len(args[j])
+        Yci[j] = func(args[j])    
+    Ntot = sum(Ni)
+
+    # compute Zij's
+    Zij = [None]*k
+    for i in range(k):
+        Zij[i] = abs(asarray(args[i])-Yci[i])
+    # compute Zbari
+    Zbari = zeros(k,'d')
+    Zbar = 0.0
+    for i in range(k):
+        Zbari[i] = stats.mean(Zij[i])
+        Zbar += Zbari[i]*Ni[i]
+    Zbar /= Ntot
+
+    numer = (Ntot-k)*sum(Ni*(Zbari-Zbar)**2)
+
+    # compute denom_variance
+    dvar = 0.0
+    for i in range(k):
+        dvar += sum((Zij[i]-Zbari[i])**2)
+
+    denom = (k-1.0)*dvar
+
+    W = numer / denom
+    pval = distributions.fsf(W,k-1,Ntot-k) # 1 - cdf
+    return W, pval
+
+def binom_test(x,n=None,p=0.5):
+    """An exact (two-sided) test of the null hypothesis that the
+    probability of success in a Bernoulli experiment is p.
+
+    Inputs:
+
+       x -- Number of successes (or a vector of length 2 giving the
+              number of successes and number of failures respectively)
+       n -- Number of trials (ignored if x has length 2)
+       p -- Hypothesized probability of success
+
+    Returns pval -- Probability that null test is rejected for this set
+                    of x and n even though it is true.
+    """
+    x = atleast_1d(x)
+    if len(x) == 2:
+        n = x[1]+x[0]
+        x = x[0]
+    elif len(x) == 1:
+        x = x[0]
+        if n is None or n < x:
+            raise ValuError, "n must be >= x"
+    else:
+        raise ValueError, "Incorrect length for x."
+
+    if (p > 1.0) or (p < 0.0):
+        raise ValueError, "p must be in range [0,1]"
+
+    d = distributions.binompdf(x,n,p)
+    rerr = 1+1e-7
+    if (x*1.0/n < p):
+        i = arange(x+1,n+1)
+        y = sum(distributions.binompdf(i,n,p) <= d*rerr)
+        pval = distributions.binomcdf(x,n,p) + distributions.binomsf(n-y,n,p)
+    else:
+        i = arange(0,x)
+        y = sum(distributions.binompdf(i,n,p) <= d*rerr)
+        pval = distributions.binomcdf(y-1,n,p) + distributions.binomsf(x-1,n,p)
+
+    return min(1.0,pval)
+
+def _apply_func(x,g,func):
+    # g is list of indices into x
+    #  separating x into different groups
+    #  func should be applied over the groups
+    g = unique(r_[0,g,len(x)])
+    output = []
+    for k in range(len(g)-1):
+        output.append(func(x[g[k]:g[k+1]]))
+    return asarray(output)
+
+def fligner(*args,**kwds):
+    """Perform Levene test with the null hypothesis that all input samples
+    have equal variances.
+
+    Inputs are sample vectors:  bartlett(x,y,z,...)
+
+    One keyword input, center, can be used with values
+        center = 'mean', center='median' (default), center='trimmed'
+
+    Outputs: (Xsq, pval)
+
+         Xsq  -- the Test statistic
+         pval -- significance level if null is rejected with this value of X
+                 (prob. that null is true but rejected with this p-value.)  
+
+    References:
+
+       http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
+
+       Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
+       tests for scale. 'Journal of the American Statistical Association.'
+       71(353), 210-213.
+    """
+    k = len(args)
+    if k < 2:
+        raise ValueError, "Must enter at least two input sample vectors."
+    if 'center' in kwds.keys():
+        center = kwds['center']
+    else:
+        center = 'median'
+    if not center in ['mean','median','trimmed']:
+        raise ValueError, "Keyword argument <center> must be 'mean', 'median'"\
+              + "or 'trimmed'."
+    if center == 'median':
+        func = stats.median
+    elif center == 'mean':
+        func = stats.mean
+    else:
+        func = stats.trim_mean
+
+    Ni = asarray([len(args[j]) for j in range(k)])
+    Yci = asarray([func(args[j]) for j in range(k)])
+    Ntot = sum(Ni)
+    # compute Zij's
+    Zij = [abs(asarray(args[i])-Yci[i]) for i in range(k)]
+    allZij = []
+    g = [0]
+    for i in range(k):
+        allZij.extend(list(Zij[i]))
+        g.append(len(allZij))
+
+    a = distributions.normppf(stats.rankdata(allZij)/(2*(Ntot+1.0)) + 0.5)
+
+    # compute Aibar
+    Aibar = _apply_func(a,g,sum) / Ni
+    anbar = stats.mean(a)
+    varsq = stats.var(a)
+
+    Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0)/varsq
+
+    pval = distributions.chi2sf(Xsq,k-1) # 1 - cdf
+    return Xsq, pval
+
+
+def mood(x,y):
+    """Determine if the scale parameter for two distributions with equal
+    medians is the same using a Mood test.
+
+    Specifically, compute the z statistic and the probability of error
+    that the null hypothesis is true but rejected with the computed
+    statistic as the critical value.
+
+    One can reject the null hypothesis that the ratio of scale parameters is
+    1 if the returned probability of error is small (say < 0.05)
+    """
+    n = len(x)
+    m = len(y)
+    xy = r_[x,y]
+    N = m+n
+    if (N < 3):
+        raise ValueError, "Not enough observations."
+    ranks = stats.rankdata(xy)
+    Ri = ranks[:n]
+    M = sum((Ri - (N+1.0)/2)**2)
+    # Approx stat.
+    mnM = n*(N*N-1.0)/12
+    varM = m*n*(N+1.0)*(N+2)*(N-2)/180
+    z = (M-mnM)/sqrt(varM)
+    p = distributions.normcdf(z)
+    pval = 2*min(p,1-p)
+    return z, pval
+
+
+def oneway(*args,**kwds):
+    """Test for equal means in two or more samples from the
+    normal distribution.
+
+    If the keyword parameter <equal_var> is true then the variances
+    are assumed to be equal, otherwise they are not assumed to
+    be equal (default).
+
+    Return test statistic and the p-value giving the probability
+    of error if the null hypothesis (equal means) is rejected at this value.
+    """
+    k = len(args)
+    if k < 2:
+        raise ValueError, "Must enter at least two input sample vectors."
+    if 'equal_var' in kwds.keys():
+        if kwds['equal_var']: evar = 1
+        else: evar = 0
+    else:
+        evar = 0
+
+    Ni = array([len(args[i]) for i in range(k)])
+    Mi = array([stats.mean(args[i]) for i in range(k)])
+    Vi = array([stats.var(args[i]) for i in range(k)])
+    Wi = Ni / Vi
+    swi = sum(Wi)
+    N = sum(Ni)
+    my = sum(Mi*Ni)*1.0/N
+    tmp = sum((1-Wi/swi)**2 / (Ni-1.0))/(k*k-1.0)
+    if evar:
+        F = ((sum(Ni*(Mi-my)**2) / (k-1.0)) / (sum((Ni-1.0)*Vi) / (N-k)))
+        pval = distributions.fsf(F,k-1,n-k)  # 1-cdf
+    else:
+        m = sum(Wi*Mi)*1.0/swi
+        F = sum(Wi*(Mi-m)**2) / ((k-1.0)*(1+2*(k-2)*tmp))
+        pval = distributions.fsf(F,k-1.0,1.0/(3*tmp))
+
+    return F, pval
+
+
+
+def wilcoxon(x,y=None):
+    """
+Calculates the Wilcoxon signed-rank test for the null hypothesis that two samples come from the same distribution. A non-parametric T-test. (need N > 20)
+
+Returns: t-statistic, two-tailed p-value
+"""
+    if y is None:
+        d = x
+    else:
+        x, y = map(asarray, (x, y))
+        if len(x) <> len(y):
+            raise ValueError, 'Unequal N in wilcoxon.  Aborting.'
+        d = x-y
+    d = compress(not_equal(d,0),d) # Keep all non-zero differences
+    count = len(d)
+    if (count < 10):
+        print "Warning: sample size too small for normal approximation."
+    r = rankdata(abs(d))
+    r_plus = sum((d > 0)*r)
+    r_minus = sum((d < 0)*r)
+    T = min(r_plus, r_minus)
+    mn = count*(count+1.0)*0.25
+    se = math.sqrt(count*(count+1)*(2*count+1.0)/24)
+    if (len(r) != len(unique(r))):  # handle ties in data
+        replist, repnum = _find_repeats(r)
+        corr = 0.0
+        for i in range(len(replist)):
+            si = repnum[i]
+            corr += 0.5*si*(si*si-1.0)
+        V = se*se - corr
+        se = sqrt((count*V - T*T)/(count-1.0))
+    z = (T - mn)/se
+    prob = 2*(1.0 -zprob(abs(z)))
+    return T, prob
+
+
+        
 #Tests to include (from R) -- some of these already in stats.
 ########
-# Ansari-Bradley
-# Bartlett
-# Binomial
-# Pearson's Chi-squared
-# Association Between Paired samples
+#X Ansari-Bradley
+#X Bartlett (and Levene)
+#X Binomial
+#Y Pearson's Chi-squared (stats.chisquare)
+#Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
+#                       stats.kendalltau) -- these need work though
 # Fisher's exact test
-# Fligner-Killeen Test
-# Friedman Rank Sum
-# Kruskal-Wallis
-# Kolmogorov-Smirnov
+#X Fligner-Killeen Test
+#Y Friedman Rank Sum (stats.friedmanchisquare?)
+#Y Kruskal-Wallis
+#Y Kolmogorov-Smirnov
 # Cochran-Mantel-Haenszel Chi-Squared for Count
 # McNemar's Chi-squared for Count
-# Mood Two-Sample
-# Test For Equal Means in One-Way Layout
+#X Mood Two-Sample
+#X Test For Equal Means in One-Way Layout (see stats.ttest also)
 # Pairwise Comparisons of proportions
 # Pairwise t tests
 # Tabulate p values for pairwise comparisons

@@ -97,8 +97,8 @@ INFERENTIAL STATS:  ttest_1samp
                     ks_2samp
                     mannwhitneyu
                     ranksums
-                    wilcoxont
-                    kruskalwallish
+                    wilcoxon
+                    kruskal
                     friedmanchisquare
 
 PROBABILITY CALCS:  chisqprob
@@ -322,7 +322,7 @@ def mode(a, axis=-1):
     """
 
     a, axis = _chk_asarray(a, axis)
-    scores = pstat.unique(ravel(a))       # get ALL unique values
+    scores = scipy_base.unique(ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
     oldmostfreq = zeros(testshape)
@@ -339,7 +339,7 @@ def tmean(a,limits=None,inclusive=(1,1)):
      """Returns the arithmetic mean of all values in an array, ignoring values
      strictly outside the sequence passed to 'limits'.   Note: either limit
      in the sequence, or the value of limits itself, can be set to None.  The
-     inclusive list/tuple determines whether the lower and upper lim iting bounds
+     inclusive list/tuple determines whether the lower and upper limiting bounds
      (respectively) are open/exclusive (0) or closed/inclusive (1).
 
      """
@@ -968,6 +968,8 @@ Returns: trimmed version of array a
     a = asarray(a)
     lowercut = int(proportiontocut*len(a))
     uppercut = len(a) - lowercut
+    if (lowercut >= uppercut):
+        raise ValueError, "Proportion too big."
     return a[lowercut:uppercut]
 
 
@@ -988,6 +990,14 @@ def trim1 (a,proportiontocut,tail='right'):
         lowercut = int(proportiontocut*len(a))
         uppercut = len(a)
     return a[lowercut:uppercut]
+
+def trim_mean(a,proportiontocut):
+    """Return mean with proportiontocut chopped from each of the lower and
+    upper tails.
+    """
+    newa = trimboth(N.sort(a),proportiontocut)
+    return mean(newa)
+        
 
 
 #####################################
@@ -1582,54 +1592,22 @@ Returns: z-statistic, two-tailed p-value
     return z, prob
 
 
-def wilcoxont(x,y):
+    
+def kruskal(*args):
     """
-Calculates the Wilcoxon T-test for related samples and returns the
-result.  A non-parametric T-test.
-
-Returns: t-statistic, two-tailed p-value
-"""
-    x, y = map(asarray, (x, y))
-    if len(x) <> len(y):
-        raise ValueError, 'Unequal N in awilcoxont.  Aborting.'
-    d = x-y
-    d = compress(not_equal(d,0),d) # Keep all non-zero differences
-    count = len(d)
-    absd = abs(d)
-    absranked = rankdata(absd)
-    r_plus = 0.0
-    r_minus = 0.0
-    for i in range(len(absd)):
-        if d[i] < 0:
-            r_minus = r_minus + absranked[i]
-        else:
-            r_plus = r_plus + absranked[i]
-    wt = min(r_plus, r_minus)
-    mn = count * (count+1) * 0.25
-    se =  math.sqrt(count*(count+1)*(2.0*count+1.0)/24.0)
-    z = math.fabs(wt-mn) / se
-    z = math.fabs(wt-mn) / se
-    prob = 2*(1.0 -zprob(abs(z)))
-    return wt, prob
-
-
-def kruskalwallish(*args):
-    """
-The Kruskal-Wallis H-test is a non-parametric ANOVA for 3 or more
+The Kruskal-Wallis H-test is a non-parametric ANOVA for 2 or more
 groups, requiring at least 5 subjects in each group.  This function
-calculates the Kruskal-Wallis H and associated p-value for 3 or more
+calculates the Kruskal-Wallis H and associated p-value for 2 or more
 independent samples.
 
 Returns: H-statistic (corrected for ties), associated p-value
 """
-    assert len(args) == 3, "Need at least 3 groups in stats.akruskalwallish()"
-    args = list(args)
-    n = [0]*len(args)
+    assert len(args) >= 2, "Need at least 2 groups in stats.kruskal()"
     n = map(len,args)
     all = []
     for i in range(len(args)):
-        all = all + args[i].tolist()
-    ranked = rankdata(all)
+        all.extend(args[i].tolist())
+    ranked = list(rankdata(all))
     T = tiecorrect(ranked)
     for i in range(len(args)):
         args[i] = ranked[0:n[i]]
@@ -1643,7 +1621,7 @@ Returns: H-statistic (corrected for ties), associated p-value
     h = 12.0 / (totaln*(totaln+1)) * ssbn - 3*(totaln+1)
     df = len(args) - 1
     if T == 0:
-        raise ValueError, 'All numbers are identical in akruskalwallish'
+        raise ValueError, 'All numbers are identical in kruskal'
     h = h / float(T)
     return h, chisqprob(h,df)
 

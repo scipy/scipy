@@ -19,14 +19,15 @@ def factorial(n,exact=0):
     if n < 0:
         raise ValueError, "n must be >= 0"
     if exact:
-        n = int(n)
+        n = long(n)
         val = 1L
-        for k in xrange(1,n+1):
+        k = 1L
+        while (k < n+1L):
             val = val*k
+            k += 1
         return val
     else:
         return special.gamma(n+1)
-
 
 
 def comb(N,k,exact=0):
@@ -38,17 +39,20 @@ def comb(N,k,exact=0):
     if (k > N) or (N < 0) or (k < 0):
         raise ValueError, "N and k must be non-negative and k <= N"
     if exact:
-        N,k = map(int,(N,k))
+        N,k = map(long,(N,k))
+        top = N
         val = 1L
-        for n in xrange(N-k+1,N+1):
-            val = val*n
-        for n in xrange(1,k+1):
-            val = val / n
+        while (top > (N-k)):
+            val *= top
+            top -= 1
+        n = 1L
+        while (n < k+1L):
+            val /= n
+            n += 1
         return val
     else:
         lgam = special.gammaln
         return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
-
 
 def central_diff_weights(Np,ndiv=1):
     """Return weights for an Np-point central derivative of order ndiv
