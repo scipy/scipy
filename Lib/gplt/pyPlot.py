@@ -358,14 +358,14 @@ class Plot:
         cmd = 'set title "' + t + '"'
         self._replot(cmd)
 
-    def xlabel(self,t):
+    def xtitle(self,t):
         cmd = 'set xlabel "' + t + '"'
         self._replot(cmd)
 
-    def ylabel(self,t):
+    def ytitle(self,t):
         cmd = 'set ylabel "' + t + '"'
         self._replot(cmd)
-    def zlabel(self,t):
+    def ztitle(self,t):
         cmd = 'set zlabel "' + t + '"'
         self._replot(cmd)
         
@@ -774,8 +774,8 @@ class Plot:
             # I think latter is better than former   
             tics = ceil(xnorm);
 
-            tic = tics * 10.0**fl;
-            results = [0,0,0]
+        tic = tics * 10.0**fl;
+        results = [0,0,0]
         results[0] = tic * floor(minval / tic); 
         results[1] = tic * ceil(maxval / tic);  
         results[2] = tic
