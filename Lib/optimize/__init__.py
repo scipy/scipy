@@ -10,3 +10,4 @@ from zeros import *
 from anneal import *
 from lbfgsb import fmin_l_bfgs_b
 from tnc import fmin_tnc
+from cobyla import fmin_cobyla
