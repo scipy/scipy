@@ -323,20 +323,20 @@ c  we set up the parameters tol and maxit.
 c  before starting computations a data check is made. if the input data
 c  are invalid,control is immediately repassed to the calling program.
       ier = 10
-      if(eps.le.0. .or. eps.ge.1.) go to 70
-      if(kx.le.0 .or. kx.gt.5) go to 70
+      if(eps.le.0. .or. eps.ge.1.) go to 71
+      if(kx.le.0 .or. kx.gt.5) go to 71
       kx1 = kx+1
-      if(ky.le.0 .or. ky.gt.5) go to 70
+      if(ky.le.0 .or. ky.gt.5) go to 71
       ky1 = ky+1
       kmax = max0(kx,ky)
       km1 = kmax+1
       km2 = km1+1
-      if(iopt.lt.(-1) .or. iopt.gt.1) go to 70
-      if(m.lt.(kx1*ky1)) go to 70
+      if(iopt.lt.(-1) .or. iopt.gt.1) go to 71
+      if(m.lt.(kx1*ky1)) go to 71
       nminx = 2*kx1
-      if(nxest.lt.nminx .or. nxest.gt.nmax) go to 70
+      if(nxest.lt.nminx .or. nxest.gt.nmax) go to 71
       nminy = 2*ky1
-      if(nyest.lt.nminy .or. nyest.gt.nmax) go to 70
+      if(nyest.lt.nminy .or. nyest.gt.nmax) go to 71
       nest = max0(nxest,nyest)
       nxk = nxest-kx1
       nyk = nyest-ky1
@@ -353,30 +353,30 @@ c  are invalid,control is immediately repassed to the calling program.
       ib3 = ky1*nxk+1
   10  lwest = ncest*(2+ib1+ib3)+2*(nrint+nest*km2+m*km1)+ib3
       kwest = m+nreg
-      if(lwrk1.lt.lwest .or. kwrk.lt.kwest) go to 70
-      if(xb.ge.xe .or. yb.ge.ye) go to 70
+      if(lwrk1.lt.lwest .or. kwrk.lt.kwest) go to 71
+      if(xb.ge.xe .or. yb.ge.ye) go to 71
       do 20 i=1,m
         if(w(i).le.0.) go to 70
-        if(x(i).lt.xb .or. x(i).gt.xe) go to 70
-        if(y(i).lt.yb .or. y(i).gt.ye) go to 70
+        if(x(i).lt.xb .or. x(i).gt.xe) go to 71
+        if(y(i).lt.yb .or. y(i).gt.ye) go to 71
   20  continue
       if(iopt.ge.0) go to 50
-      if(nx.lt.nminx .or. nx.gt.nxest) go to 70
+      if(nx.lt.nminx .or. nx.gt.nxest) go to 71
       nxk = nx-kx1
       tx(kx1) = xb
       tx(nxk+1) = xe
       do 30 i=kx1,nxk
-        if(tx(i+1).le.tx(i)) go to 70
+        if(tx(i+1).le.tx(i)) go to 72
   30  continue
-      if(ny.lt.nminy .or. ny.gt.nyest) go to 70
+      if(ny.lt.nminy .or. ny.gt.nyest) go to 71
       nyk = ny-ky1
       ty(ky1) = yb
       ty(nyk+1) = ye
       do 40 i=ky1,nyk
-        if(ty(i+1).le.ty(i)) go to 70
+        if(ty(i+1).le.ty(i)) go to 73
   40  continue
       go to 60
-  50  if(s.lt.0.) go to 70
+  50  if(s.lt.0.) go to 71
   60  ier = 0
 c  we partition the working space and determine the spline approximation
       kn = 1
@@ -398,5 +398,15 @@ c  we partition the working space and determine the spline approximation
      * ny,ty,c,fp,wrk1(1),wrk1(lfp),wrk1(lco),wrk1(lf),wrk1(lff),
      * wrk1(la),wrk1(lq),wrk1(lbx),wrk1(lby),wrk1(lsx),wrk1(lsy),
      * wrk1(lh),iwrk(ki),iwrk(kn),wrk2,lwrk2,ier)
-  70  return
+ 70   return
+ 71   print*,"iopt,kx,ky,m=",iopt,kx,ky,m
+      print*,"nxest,nyest,nmax=",nxest,nyest,nmax
+      print*,"lwrk1,lwrk2,kwrk=",lwrk1,lwrk2,kwrk
+      print*,"xb,xe,yb,ye=",xb,xe,yb,ye
+      print*,"eps,s",eps,s
+      return
+ 72   print*,"tx=",tx
+      return
+ 73   print*,"ty=",ty
+      return
       end
