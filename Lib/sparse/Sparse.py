@@ -61,8 +61,11 @@ def _convert_data(data1,data2,newtype):
 # This class provides a base class for all sparse matrices
 #   most of the work is provided by subclasses
 class spmatrix:
-    def __init__(self, format, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
-        self.format = format
+    def __init__(self, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
+        self.format = self.__class__.__name__[:3]
+        if self.format == 'spm':
+            raise ValueError, "This class is not intended" \
+                  " to be instantiated directly."
         self.maxprint = maxprint
         self.allocsize = allocsize
         
@@ -243,7 +246,7 @@ class spmatrix:
 
     # implements A.H * x or A.T * x depending on conj
     def rmatvec(self, vec, conj=1):
-	csc = self.tocsc()
+        csc = self.tocsc()
         res = csc.rmatvec(vec, conj=conj)
         return res
 
@@ -269,7 +272,7 @@ class spmatrix:
 # 
 class csc_matrix(spmatrix):
     def __init__(self,s,ij=None,M=None,N=None,nzmax=100,typecode=Float,copy=0):
-        spmatrix.__init__(self, 'csc')
+        spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csc_matrix):
                 # do nothing but copy information
@@ -668,7 +671,7 @@ class csc_matrix(spmatrix):
 # 
 class csr_matrix(spmatrix):
     def __init__(self,s,ij=None,M=None,N=None,nzmax=100,typecode=Float,copy=0):
-        spmatrix.__init__(self, 'csr')
+        spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csr_matrix):
                 # do nothing but copy information
@@ -1086,7 +1089,7 @@ def csc_cmp(x,y):
 class dok_matrix(spmatrix, dict):
     def __init__(self,A=None):
         dict.__init__(self)
-        spmatrix.__init__(self,'dok')
+        spmatrix.__init__(self)
         self.shape = (0,0)
         self.nnz = 0
         if A is not None:
@@ -1364,7 +1367,7 @@ class lnk_matrix(spmatrix):
 # 
 class coo_matrix(spmatrix):
     def __init__(self, obj, ij, M=None, N=None, nzmax=None, typecode=None):
-        spmatrix.__init__(self, 'coo')
+        spmatrix.__init__(self)
         if type(ij) is type(()) and len(ij)==2:
             if M is None:
                 M = amax(ij[0])
