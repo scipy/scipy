@@ -106,6 +106,9 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     assert valid, "Not a suitable array shape for any mode."
     if len(shape) == 2:
         shape = (shape[1],shape[0]) # columns show up first
+        if mode == 'F':
+            image = Image.fromstring(mode,shape,data.astype('f').tostring())
+            return image
         if mode in [None, 'L', 'P']:
             bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
             image = Image.fromstring('L',shape,bytedata.tostring())
@@ -127,9 +130,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
         if cmax is None:
             cmax = amax(ravel(data))
         data = (data*1.0 - cmin)*(high-low)/(cmax-cmin) + low
-        if mode == 'F':
-            image = Image.fromstring(mode,shape,data.astype('f').tostring())
-        elif mode == 'I':
+        if mode == 'I':
             image = Image.fromstring(mode,shape,data.astype('i').tostring())
         else:
             raise ValueError, _errstr
@@ -194,6 +195,16 @@ def imrotate(arr,angle,interp='bilinear'):
     im = im.rotate(angle,resample=func[interp])
     return fromimage(im)
 
+def imresize(arr,newsize,interp='bilinear',mode=None):
+    newsize=list(newsize)
+    newsize.reverse()
+    newsize = tuple(newsize)
+    arr = asarray(arr)
+    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+    im = toimage(arr,mode=mode)
+    im = im.resize(newsize,resample=func[interp])
+    return fromimage(im)
+    
 def imshow(arr):
     """Simple showing of an image through an external viewer.
     """
