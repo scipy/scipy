@@ -12,7 +12,7 @@ from scipy_base.testing import assert_array_equal, assert_equal, assert_approx_e
 from scipy_base.testing import assert_almost_equal, assert_array_almost_equal
 import Numeric
 N = Numeric
-import fastumath as math
+import scipy_base.fastumath as math
 
 """ Numbers in docstrings begining with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are

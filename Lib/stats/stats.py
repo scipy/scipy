@@ -188,13 +188,15 @@ SUPPORT FUNCTIONS:  writecc
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
 
-import math, string, sys, pstat
+
+import string, sys, pstat
 from types import *
 
 __version__ = 0.8
 
 from Numeric import *
 import scipy_base
+import scipy_base.fastumath as math
 from scipy_base.fastumath import *
 import Numeric
 N = Numeric
