@@ -11,7 +11,7 @@ from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
 from Matrix import Matrix as mat
 import scipy_base
 from basic import solve, LinAlgError, inv, norm, triu
-from decomp import eig, schur, rsf2csf, orth
+from decomp import eig, schur, rsf2csf, orth, eigvals, svd
 
 eps = scipy_base.limits.double_epsilon
 feps = scipy_base.limits.float_epsilon
@@ -231,17 +231,52 @@ def logm(A,disp=1):
     else:
         return F, errest
 
-def signm(a):
+def signm(a,disp=1):
     """matrix sign"""
     def rounded_sign(x):
         rx = real(x)
-        mx = amax(absolute(x)) # XXX: amax segfaults on complex input
         if rx.typecode()=='f':
-            c =  1e3*feps*mx
+            c =  1e3*feps*amax(x)
         else:
-            c =  1e3*eps*mx
+            c =  1e3*eps*amax(x)
         return sign( (absolute(rx) > c) * rx )
-    return funm(a, rounded_sign)
+    result,errest = funm(a, rounded_sign, disp=0)
+    errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.typecode()]]
+    if errest < errtol:
+        return result
+
+    # Handle signm of defective matrices:
+
+    # See "E.D.Denman and J.Leyva-Ramos, Appl.Math.Comp.,
+    # 8:237-250,1981" for how to improve the following (currently a
+    # rather naive) iteration process:
+
+    a = asarray(a)
+    #a = result # sometimes iteration converges faster but where??
+
+    # Shifting to avoid zero eigenvalues. How to ensure that shifting does
+    # not change the spectrum too much?
+    vals = svd(a,compute_uv=0)
+    max_sv = scipy_base.amax(vals)
+    #min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
+    #c = 0.5/min_nonzero_sv
+    c = 0.5/max_sv
+    S0 = a + c*scipy_base.identity(a.shape[0])
+    prev_errest = errest
+    for i in range(100):
+        iS0 = inv(S0)
+        S0 = 0.5*(S0 + iS0)
+        Pp=0.5*(dot(S0,S0)+S0)
+        errest = norm(dot(Pp,Pp)-Pp,1)
+        if errest < errtol or prev_errest==errest:
+            break
+        prev_errest = errest
+    if disp:
+        if not isfinite(errest) or errest >= errtol:
+            print "Result may be inaccurate, approximate err =", errest
+        return S0
+    else:
+        return S0, errest
 
 ################## test functions #########################
 

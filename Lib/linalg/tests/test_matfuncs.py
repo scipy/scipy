@@ -19,6 +19,8 @@ from Numeric import array, identity
 import sys
 from scipy_test.testing import set_package_path
 set_package_path()
+import scipy_base
+import linalg
 from linalg import signm,logm
 del sys.path[0]
 
@@ -42,6 +44,32 @@ class test_signm(ScipyTestCase):
                     [4.15733333,-0.50133333,4.90933333,7.81333333,-0.50133333]])
         r = signm(a)
         assert_array_almost_equal(r,cr)
+
+    def check_defective1(self):
+        a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
+        r = signm(a)
+        #XXX: what would be the correct result?
+
+    def check_defective2(self):
+        a = array((
+            [29.2,-24.2,69.5,49.8,7.0],
+            [-9.2,5.2,-18.0,-16.8,-2.0],
+            [-10.0,6.0,-20.0,-18.0,-2.0],
+            [-9.6,9.6,-25.5,-15.4,-2.0],
+            [9.8,-4.8,18.0,18.2,2.0]))
+        r = signm(a)
+        #XXX: what would be the correct result?
+
+    def check_defective3(self):
+        a = array([[ -2.,  25.,   0.,   0.,   0.,   0.,   0.],
+                   [  0.,  -3.,  10.,   3.,   3.,   3.,   0.],
+                   [  0.,   0.,   2.,  15.,   3.,   3.,   0.],
+                   [  0.,   0.,   0.,   0.,  15.,   3.,   0.],
+                   [  0.,   0.,   0.,   0.,   3.,  10.,   0.],
+                   [  0.,   0.,   0.,   0.,   0.,  -2.,  25.],
+                   [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
+        r = signm(a)
+        #XXX: what would be the correct result?
 
 class test_logm(ScipyTestCase):
 
