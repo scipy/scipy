@@ -31,6 +31,9 @@
 \layout Title
 
 Continuous Statistical Distributions
+\layout Section
+
+Overview
 \layout Standard
 
 All distributions will have location (L) and Scale (S) parameters along
@@ -2274,8 +2277,11 @@ A general probability form that reduces to many common distributions:
 
 \begin_inset Formula \begin{eqnarray*}
 f\left(x;a,c\right) & = & \frac{\left|c\right|x^{ca-1}}{\Gamma\left(a\right)}\exp\left(-x^{c}\right)\\
-F\left(x;a,c\right) & = & \frac{\Gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)}\\
-G\left(q;a,c\right) & = & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)q\right]\right\} ^{1/c}\end{eqnarray*}
+F\left(x;a,c\right) & = & \begin{array}{cc}
+\frac{\Gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)} & c>0\\
+1-\frac{\Gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)} & c<0\end{array}\\
+G\left(q;a,c\right) & = & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)q\right]\right\} ^{1/c}\quad c>0\\
+ &  & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)\left(1-q\right)\right]\right\} ^{1/c}\quad c<0\end{eqnarray*}
 
 \end_inset 
 

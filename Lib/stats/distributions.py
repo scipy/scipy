@@ -1615,9 +1615,13 @@ class gengamma_gen(rv_continuous):
     def _pdf(self, x, a, c):
         return abs(c)* x**(c*a-1) / special.gamma(a) * exp(-x**c)
     def _cdf(self, x, a, c):
-        return special.gammainc(a, x**c) / special.gamma(a)
+        val = special.gammainc(a,x**c)
+        return where(c>0,val,1-val)
     def _ppf(self, q, a, c):
-        return pow(special.gammaincinv(a, special.gamma(a)*q),1.0/c)
+        val1 = special.gammaincinv(a,q)
+        val2 = special.gammaincinv(a,1-q)
+        ic = 1.0/c
+        return where(c>0,pow(val1,ic),pow(val2,ic))
     def _munp(self, n, a, c):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
     def _entropy(a,c):
@@ -1847,9 +1851,9 @@ class invgamma_gen(rv_continuous):
     def _pdf(self, x, a):
         return x**(-a-1) / special.gamma(a) * exp(-1.0/x)
     def _cdf(self, x, a):
-        return special.gammainc(a, 1.0/x) / special.gamma(a)
+        return 1.0-special.gammainc(a, 1.0/x)
     def _ppf(self, q, a):
-        return pow(special.gammaincinv(a, special.gamma(a)*q),-1.0)
+        return 1.0/special.gammaincinv(a,1-q)
     def _munp(self, n, a):
         return special.gamma(a-n) / special.gamma(a)
     def _entropy(self, a):

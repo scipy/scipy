@@ -16,6 +16,7 @@ import scipy
 import types
 import scipy.optimize as optimize
 import futil
+import scipy_base as sb
 
 
 def find_repeats(arr):
@@ -23,6 +24,49 @@ def find_repeats(arr):
     """    
     v1,v2, n = futil.dfreps(arr)
     return v1[:n],v2[:n]
+
+
+##########################################################
+###  Bayesian confidence intervals for mean, variance, std
+##########################################################
+
+##  Assumes all is known is that mean, and std (variance) exist
+##   and are the same for all the data.  Uses Jeffrey's prior
+##
+##  Returns alpha confidence interval for the mean, variance,
+##      and std.
+
+def bayes_mvs(data,alpha=0.95):
+    """Return bayesian confidence intervals for the mean, var, and std.
+
+    Assumes 1-d data all has same mean and variance and uses Jeffrey's prior
+    for variance and std.
+
+    alpha gives the probability that the returned interval contains the true parameter. 
+
+    """
+    x = ravel(data)
+    n = len(x)
+    assert(n > 1)
+    n = float(n)
+    xbar = sb.add.reduce(x)/n
+    C = sb.add.reduce(x*x)/n - xbar*xbar
+    #
+    fac = sqrt(C/(n-1))
+    tval = distributions.t.ppf((1+alpha)/2.0,n-1)
+    delta = fac*tval
+    ma = xbar - delta
+    mb = xbar + delta
+    #
+    q1 = (1-alpha)/2.0
+    q2 = (1+alpha)/2.0
+    a = (n-1)/2.0
+    fac = n*C/2.0
+    va = fac*distributions.invgamma.ppf(q1,a)
+    vb = fac*distributions.invgamma.ppf(q2,a)
+    #
+    return (ma,mb),(va,vb),(sqrt(va),sqrt(vb))
+    
 
 
 ################################

@@ -888,6 +888,10 @@ def _add_color(system, color, frame=0):
     text = system['ticks']['vert']['textStyle']
     text['color'] = color
 
+    system['ticks']['frame'] = frame
+    system['ticks']['frameStyle'] = {'color':color}
+
+
 def _chng_font(system, font, height):
     if height is None:
         height=14
