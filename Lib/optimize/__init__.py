@@ -4,12 +4,18 @@
 
    fmin --       Nelder-Mead Simplex algorithm
                  (uses only function calls)
+   fmin_powell -- Powell's (modified) level set method (uses only 
+                  function calls)
    fmin_bfgs --  Quasi-Newton method (can use function and gradient)
    fmin_ncg --   Line-search Newton Conjugate Gradient (can use
                  function, gradient and hessian).
    leastsq --    Minimize the sum of squares of M equations in
                  N unknowns given a starting estimate.
    fminbound --  Bounded minimization of a scalar function.
+   brent     --  1-D function minimization using Brent method.
+   golden    --  1-D function minimization using Golden Section method
+   bracket   --  Bracket a minimum (given two starting points)
+  
    fsolve --     Non-linear multi-variable equation solver.   
    newton --     Single-variable function root finder.
    fixed_point -- Single-variable fixed-point solver.

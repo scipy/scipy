@@ -35,8 +35,8 @@ bracket     ---      Find a bracket containing the minimum.
 """
 
 
-__all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fminbound',
-           'rosen','rosen_der', 'rosen_hess','rosen_hess_prod']
+__all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fminbound', 'brent',
+           'golden','bracket','rosen','rosen_der', 'rosen_hess','rosen_hess_prod']
 
 from __future__ import nested_scopes
 import Numeric

@@ -11,7 +11,7 @@ import write_style
 from write_style import inches, points
 import scipy
 import scipy_base
-from scipy.signal import medfilt
+import scipy.signal as signal
 
 _hold = 0
 
@@ -891,6 +891,17 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
              totalheight=0.5,space=0.02, medfilt=5,
              font='helvetica',fontsize=16,color='black',lcolor='white',
              cb=1, line=1):
+    """ Visualize a 3d volume as a two connected slices.  The slices are
+    given in the 2-tuple slice1 and slice2.
+
+    These give the dimension and corresponding slice numbers to plot.
+    The unchosen slice is the common dimension in the images.
+
+    twoplane(img3d,(0,12),(2,60)) plots two images with a common "x"-axis
+    as the first dimension.  The lower plot is img3d[12,:,:] with a line
+    through row 60 corresponding to the slice transpose(img3d[:,:,60])
+    plotted above this first plot.
+    """
     if xb is None:
         xb = [0,0,0]
     if xe is None:
@@ -981,8 +992,8 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     gist.window(style='/tmp/two-plane.gs')
     gist.plsys(1)
     if medfilt > 1:
-        img1 = medfiltND(img1,[medfilt,medfilt])
-        img2 = medfiltND(img2,[medfilt,medfilt])
+        img1 = signal.medfilt(img1,[medfilt,medfilt])
+        img2 = signal.medfilt(img2,[medfilt,medfilt])
     if cmax is None:
         cmax = max(max(ravel(img1)),max(ravel(img2)))
     if cmin is None:
