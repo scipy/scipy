@@ -145,17 +145,14 @@ def add_close_event_handler(proxy_obj):
     """
         
     import gui_thread_guts
-    close_handler = gui_thread_guts.CloseEvtHandler(proxy_obj)
-    try:
-        proxy_obj.wx_obj.PushEventHandler(close_handler)
-    except AttributeError:
-        # its a standard class that just needs to let us
-        # know when it dies.
+    if hasattr(proxy_obj, 'PushEventHandler'):
+        close_handler = gui_thread_guts.CloseEvtHandler(proxy_obj)
         try:
-            proxy_obj.PushEventHandler(close_handler)
+            proxy_obj.wx_obj.PushEventHandler(close_handler)
         except AttributeError:
-            # Not a wx object at all - so don't bother.
-            pass
+            # its a standard class that just needs to let us
+            # know when it dies.
+            proxy_obj.PushEventHandler(close_handler)
         
 def generate_method(method,wx_class):
     """ Create a proxy method.

@@ -38,7 +38,7 @@ from wxPython.wx import *
 print '<wxPython imported>\n>>> ',
 import thread, threading
 import types, sys, traceback
-import main, weakref
+import main
 
 #################################
 # Window Close Event Handler 
@@ -54,7 +54,7 @@ class CloseEvtHandler(wxEvtHandler):
             the underlying wxPython window has been closed.
         """
         wxEvtHandler.__init__(self)
-        self.proxy_obj = weakref.proxy(proxy_obj)
+        self.proxy_obj = proxy_obj
         EVT_CLOSE(self,self.ProxyOnCloseWindow)
     def ProxyOnCloseWindow(self,evt):        
         """ Tell the proxy wrapper that the object is no longer
@@ -333,17 +333,19 @@ class event_catcher(wxFrame):
             evt.finished.exception_info = None
             evt.finished.set()
         except:            
+            type, value, tb = sys.exc_info()
+            info = traceback.extract_tb(tb)
+            filename, lineno, function, text = info[-1] # last line only
             try:
-                type, value, tb = sys.exc_info()
-                info = traceback.extract_tb(tb)
-                filename, lineno, function, text = info[-1] # last line only
-                info = {'filename': filename, 'lineno': lineno,
-                        'type':type, 'typename': type.__name__,
-                        'value': value, 'function': function}
-                evt.finished.exception_info = info
-            finally:
-                type = value = tb = None # clean up
-                evt.finished.set()
+                tp_name = type.__name__
+            except AttributeError:
+                tp_name = str(type)                
+            info = {'filename': filename, 'lineno': lineno,
+                    'type': type, 'typename': tp_name,
+                    'value': value, 'function': function}
+            evt.finished.exception_info = info
+            type = value = tb = None # clean up
+            evt.finished.set()
 
     def OnCloseWindow(self,evt):
         main.app.ExitMainLoop()
