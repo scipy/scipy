@@ -29,7 +29,8 @@ if os.environ.has_key('NO_XLIB'):
     x11 = 0
 
 
-run_config = ('config' in sys.argv)
+#run_config = ('config' in sys.argv)
+run_config = 1
 print '%%%%%%%%%%%%%%%%%%%%%%%'
 print run_config
 print '%%%%%%%%%%%%%%%%%%%%%%%'
@@ -38,7 +39,12 @@ print '%%%%%%%%%%%%%%%%%%%%%%%'
 # Configuration
 #------------------------------------------------------------------------
 
-class config_pygist (config):
+class config_pygist(config):
+
+    def __init__(self):
+        from distutils.dist import Distribution
+        config.__init__(self, Distribution())
+
     def _link (self, body,
                headers, include_dirs,
                libraries, library_dirs, lang):
@@ -58,7 +64,15 @@ class config_pygist (config):
         return (src, obj, prog)
     
     def run (self):
-        self.configfile = open(os.path.join(local_path, "pygist","Make.cfg"),'w')
+        fn = os.path.join(local_path, "pygist","Make.cfg")
+        if os.path.isfile(fn):
+            print '*'*70
+            print '%s exists.' % (fn)
+            print 'Skipping pygist configuration'\
+                  ' (remove Make.cfg to force reconfiguration).'
+            print '*'*70
+            return
+        self.configfile = open(fn,'w')
         self.configfile.write('# Make.cfg from setup.py script ' + time.ctime() + '\n')
         if not windows:
             self.configfile.write('#')
@@ -160,6 +174,7 @@ int main(int argc, char *argv[])
         print
         print "  ============= begin play/unix configuration ============="
         print
+        _olddir = os.getcwd()
         os.chdir(os.path.join(local_path, 'src','play','unix'))
         configfile = open('config.h','w')
         configfile.write('/* config.h used during config.sh script */\n')
@@ -193,7 +208,7 @@ int main(int argc, char *argv[])
             os.rename("config.0h","config.h")
             print "wrote src/play/unix/config.h"
 
-        os.chdir(os.path.join('..','..','..'))
+        os.chdir(_olddir)
         print
         print "  ============== end play/unix configuration =============="
         
@@ -809,7 +824,7 @@ def getallparams(gistpath,local):
     if windows or cygwin:
         libraries = []
     else:
-        libraries = x11_info.get('libraries','X11')
+        libraries = x11_info.get('libraries',['X11'])
 
     library_dirs = [os.path.join(local,x) for x in ['.','src']]
     library_dirs.extend(x11_info.get('library_dirs',[]))
@@ -853,6 +868,8 @@ def configuration(parent_package=''):
        'site-packages/scipy/xplt/gistdata' 
     """
 
+    config_pygist().run()
+
     package = 'xplt'
     print '***********************************************'
     print local_path,parent_package
@@ -888,7 +905,6 @@ def configuration(parent_package=''):
     ext = Extension (**ext_arg)
     config['ext_modules'].append(ext)
 
-
     from glob import glob
     file_ext = ['*.gs','*.gp', '*.ps', '*.help']
     xplt_files = [glob(os.path.join(local_path,'gistdata',x)) for x in file_ext]
@@ -897,7 +913,7 @@ def configuration(parent_package=''):
     data_path = os.path.join(xplt_path,'gistdata')
     config['data_files'].extend( [(data_path,xplt_files)])
 
-    config['cmdclass'] = {'config' : config_pygist}
+    #config['cmdclass'] = {'config' : config_pygist}
     
     return config
 

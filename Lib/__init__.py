@@ -61,8 +61,10 @@ except ImportError:
     pass
 
 # Level 2
-import optimize, integrate, signal, special, interpolate, cow, \
-       ga, cluster, weave
+import optimize, integrate, signal, special, interpolate, cow
+import ga
+#import cluster
+import weave
 
 # Level 3
 _plot = []

@@ -36,16 +36,6 @@ standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 graphics_packages = ['plt','gplt','xplt']
 graphics_packages = [os.path.join('Lib',p) for p in graphics_packages]
 
-# hack
-import copy
-saveargv = copy.copy(sys.argv)
-sys.argv = ['setup_xplt.py','config']
-os.chdir(os.path.join('Lib','xplt'))
-execfile('setup_xplt.py')
-os.chdir(os.path.join('..','..'))
-sys.argv = saveargv
-#
-
 chaco_packages = ['chaco','kiva','traits','freetype']
 chaco_packages = [os.path.join('Lib_chaco',p) for p in chaco_packages]
 
