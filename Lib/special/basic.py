@@ -102,7 +102,7 @@ def ynp_zeros(n,nt):
     """
     return jnyn_zeros(n,nt)[3]
 
-def y0_zeros(nt,complex=1):
+def y0_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y0(z), z0, and the value
     of Y0'(z0) = -Y1(z0) at each zero.
     """
@@ -112,7 +112,7 @@ def y0_zeros(nt,complex=1):
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
 
-def y1_zeros(nt,complex=1):
+def y1_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y1(z), z1, and the value
     of Y1'(z1) = Y0(z1) at each zero.
     """
@@ -122,7 +122,7 @@ def y1_zeros(nt,complex=1):
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
 
-def y1p_zeros(nt,complex=1):
+def y1p_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
     of Y1(z1') at each zero.
     """
@@ -286,8 +286,12 @@ def riccati_jn(n,x):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
-    nm,jn,jnp = specfun.rctj(n,x)
-    return jn,jnp
+    if (n == 0):
+        n1 = 1
+    else:
+        n1 = n
+    nm,jn,jnp = specfun.rctj(n1,x)
+    return jn[:(n+1)],jnp[:(n+1)]
 
 def riccati_yn(n,x):
     """Compute the Ricatti-Bessel function of the second kind and its
@@ -297,8 +301,12 @@ def riccati_yn(n,x):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
-    nm,jn,jnp = specfun.rcty(n,x)
-    return jn,jnp
+    if (n == 0):
+        n1 = 1
+    else:
+        n1 = n    
+    nm,jn,jnp = specfun.rcty(n1,x)
+    return jn[:(n+1)],jnp[:(n+1)]
 
 def _sph_harmonic(m,n,theta,phi):
     """inputs of (m,n,theta,phi) returns spherical harmonic of order
@@ -508,12 +516,14 @@ def bernoulli(n):
     return specfun.bernob(n)
 
 def euler(n):
-    """Return an array of the Euler numbers E0..En
+    """Return an array of the Euler numbers E0..En (inclusive)
     """
     if not isscalar(n) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     n = int(n)
-    return specfun.eulerb(n)
+    if (n < 2): n1 = 2
+    else:  n1 = n
+    return specfun.eulerb(n1)[:n+1]
     
 def lpn(n,z):
     """Compute sequence of Legendre functions of the first kind (polynomials),
@@ -528,6 +538,8 @@ def lpn(n,z):
     else:
         pn,pd = specfun.lpn(n,z)
     return pn,pd
+
+## lpni
     
 def lqn(n,z):
     """Compute sequence of Legendre functions of the second kind,
@@ -614,9 +626,13 @@ def pbdn_seq(n,z):
     if not (isscalar(n) and isscalar(z)):
         raise ValueError, "arguments must be scalars."
     if (floor(n)!=n):
-        raise ValueError, "n must be an integer."    
-    cpb,cpd = specfun.cpbdn(n,z)
-    return cpb,cpd
+        raise ValueError, "n must be an integer."
+    if (abs(n) <= 1):
+        n1 = 2
+    else:
+        n1 = n
+    cpb,cpd = specfun.cpbdn(n1,z)
+    return cpb[:n+1],cpd[:n+1]
 
 def ber_zeros(nt):
     """Compute nt zeros of the kelvin function ber x

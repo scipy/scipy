@@ -456,7 +456,6 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
 int cfresnl_wrap(Py_complex z, Py_complex *zfs, Py_complex *zfc)
 {
   Py_complex zfd;
-  printf("z = %f + j%f\n",z.real,z.imag);
   F_FUNC(cfs,CFS)(&z,zfs,&zfd);
   F_FUNC(cfc,CFC)(&z,zfc,&zfd); 
   return 0;

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #
 # Author:  Travis Oliphant 2000
+# Updated Sep. 2003 (fixed bugs --- tested to be accurate)
+
 """
 A collection of functions to find the weights and abscissas for
 Gaussian Quadrature.
