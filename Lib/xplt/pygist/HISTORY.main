@@ -1,0 +1,287 @@
+$Id$
+
+Change History for pygist
+-------------------------
+- See subdirectory HISTORY files (src and gist) for additional changes.
+
+*** Release 1.5.10 ***
+
+V030225 Chase
+
+        1.  Fix mouse problem reported by Dave Grote.
+
+V030113 Michiel de Hoon 
+
+*** Release 1.5.9 ***
+
+V030113 Michiel de Hoon 
+
+        1.  gistCmodule.c:  Add back a bug fix for windows (related to 
+            wait_on_expose).
+
+*** Release 1.5.8 ***
+
+V021227 Michiel de Hoon 
+
+        1.  Modifications for Windows/Cygwin.  Replaced use of WH_KEYBOARD hook.
+
+        *** Version works for all Windows/Cygwin/IDLE/Tkinter combinations
+            tried, including python started from the DOS prompt.
+
+        2.  Added "plh" (histogram drawing) function to gist.py.
+
+        3.  setup.py:  Another major change to add config step, so that 
+
+               python setup.py config
+
+            performs the configuration step on Cygwin, Windows, and Mac OSX.
+            Due to a bug in the current python distutils, it does not yet
+            work on Unix/Linux, where one still needs:
+
+               make config 
+
+        4.  Add PKG-INFO.
+
+V021206 Dave Munro 
+ 
+        1.  Further development to address issues raised in Michiel's 
+            Cygwin/Windows port.  Fixed bad dependencies.
+            Studied PyOSInputHook in Python and concluded that the hook
+            was made for exclusive use by _tkinter.  Concluded that there are
+            still a lot of problems getting gistC to interoperate with Tcl/Tk on
+            *any* platform, but there are some Windows-only quick and dirty
+            solutions to make it largely work.  There is one bit of 
+            functionality that I believe will never work properly,
+            which is timeout events (gistC pause or Tcl after). 
+            Everything else ought to be possible, at least in principle.
+            It would be cleaner to make it work with a PyOS_InputHook owned 
+            by gistC, but the current code attempts to use the _tkinter 
+            version, and would need to be heavily modified to handle idle 
+            events properly.
+
+            Changed gistCmodule.c, so that it only replaces PSOS_InputHook
+            if it is not already set, and provided a pyg_unhook function to
+            remove it if we want to import _tkinter after gistC. (Assumes
+            that normally that if _tkinter is loaded, it is done before gistC.)
+            
+        2.  Made p_on_idle and p_pending_events calls explicitly available
+            to python interpreter (see pyg_idler and pyg_pending). 
+            Idea: Tkinter should be capable of calling these routines at 
+            the appropriate times.  Under Windows, one should never need to
+            call pyg_pending(), because the OS calls gist winproc automatically.
+            Under Unix, one should be able to get the pending events delivered
+            by means of the _tkinter.createfilehandler function.  (See the
+            incomplete gist/tkgist.py for attempt at this that has partial 
+            success so far.)
+
+        3.  Added pyg_register function, a hook to set callback functions for
+            p_connect/p_disconnect and for the g_on_keyline routines.   
+
+        4.  Fixed plq function so that it will work properly under _tkinter.
+
+
+*** Release 1.5.7 ***
+
+V021125 Dave Munro 
+
+        1.  Reworked pygist sources (gistCmodule.c, gist, play).
+
+        This version tested ok on LC and local A-net machines
+        (OSF/1, AIX, Intel Linux, Solaris). There's a minor (?) problem on 
+        IRIX64 with the last test (animation); I did not notice it with
+        the previous test on IRIX64 because I did not test to completion.  
+        The problem exists with 1.5.6 as well.
+        The animation stops mid-stream with no further interaction possible;
+        cannot break out of execution and could only kill the python window.
+        With multiple tries, I could also get it to stop on test 21 (image).
+        The code is either hung or is somehow disconnected; top shows no
+        running process.  As our SGI has not been well-maintained and is
+        also going to be phased out, I am unsure it's worth pursuing this one.
+
+*** Release 1.5.6 ***
+
+V021119 Chase
+
+        1.  Upgrade to yorick 1.5.13 and use interface provided by Dave
+            Munro for PyOS_InputHook.
+
+*** Release 1.5.5 ***
+
+V021115 Michiel de Hoon
+
+        1.  A better approach to interfacing Python and Gist.
+            Give PyOS_InputHook a wrapper to u_getc(stdin), but change
+            u_getc so that only Python gets the characters from stdin 
+            (i.e. getc is not called). 
+            
+            For now, keep last approach in source; define USE_U_WAITER 
+            to useit. 
+
+*** Release 1.5.4 ***
+
+V021114 Chase
+
+        1.  Update STATUS section in README.
+
+V021113 Chase
+
+        1.  setup.py:  Build back in the option to use rl_getc_function
+            instead of PyOS_InputHook, but do not use it. (for testing only)
+
+V021111 Chase
+
+        1.  New setup.py file (rewritten by Michiel de Hoon) to solve the
+            problem of recognizing the gistCmodule.so dependency on libpyg.a. 
+
+V021108 Chase
+
+        1.  gistCmodule.c:  Fix some compiler warnings.
+
+V021107 Chase
+
+        1.  gistCmodule.c:  Fix some compiler warnings.
+
+V021106 Chase
+
+        1.  Add drawing function fix from Munro (see HISTORY in src).
+
+        2.  Add fixPygistPermissions for LLNL installation.
+
+*** Release 1.5.3 ***
+
+V021104 Chase
+
+        1.  Incorporate fix to input handling from Michiel de Hoon to 
+            enable plots to be displayed completely on cygwin and Linux
+            (alpha and Intel).  
+            (see src/HISTORY directory).
+
+            With this change: PYGIST works on Compaq OSF/1, alpha and PC
+            Linux, and IBM SP AIX 5.1 (frost),
+            but not IBM SP AIX 4.x (blue).
+
+        2.  Remove INSTALL, and expand capability of setup.py to handle
+            installation on all supported platforms.
+
+*** Release 1.5.2 ***
+
+V020913 Chase
+
+        1.  Add script setup.py.solaris_8_s64 (which needs a hand-installed
+            libreadline.so).  Able to compile and start demo, but it gives
+            the same blank screens and occasional lines as blue does.
+
+V020912 Chase
+
+        1.  INSTALL script for LLNL installations.
+
+V020911 Chase
+
+        1.  Add setup.py.redhat_7a_ia32_qsw for PC Linux (pengra).	
+        *** PYGIST works ok on Compaq, alpha Linux, and PC Linux.
+            Still have a problem with plots not showing up on IBM SP 
+            (blue,frost). Some lines show up.  When redraw requests are made,
+            sometimes more of the plot is displayed. 
+
+*** Release 1.5.1 ***
+
+V020904 Chase
+
+        1.  Port to Linux cluster (redhat_7_a) (fix problem in 
+            src/gistCmodule.c).
+
+        2.  Added INSTALL script for LLNL installation (uses environment
+            variable SYS_TYPE.  
+
+            INSTALL copies the appropriate setup.py.<SYS_TYPE> to setup.py
+            and also does the preliminary make of libpyg.a, so that now
+            to install pygist, one only needs to:
+
+            setenv PYTHONHOME /usr/gapps/python/redhat_7_a/opt  (for LX cluster)
+            INSTALL
+
+*** Release 1.5 ***
+
+V020221 Chase
+
+        1.  Also on AIX (blue), it does not pick up libreadline.a and
+            its dependent libcur.a automatically.  Add these two as
+            comments to setup.py, and instruct user to uncomment them
+            when doing an installation on AIX.
+
+V020215 Chase
+
+        1.  Add information to README on how to fix the compilation 
+            problem on AIX.  AIX handles shared files differently; 
+            additional tools were needed, but the links to these 
+            tools were incorrect in the Python installation.
+
+            For example:
+
+            cd /g/g16/chase/aix/lib/python2.1
+            rm makexp_aix
+            ln -s config/makexp_aix makexp_aix
+            rm python.exp
+            ln -s config/python.exp python.exp
+
+V020212 Chase
+
+        1.  Add RELEASE and release.msg (release notice and id).
+
+V011217 Chase
+
+        1.  Fix src/README comments for installation.
+
+V011206 Chase
+
+        1.  setup.py:  Replace hardwired path for Numeric include directory.
+
+V011029 Chase
+
+        1.  Get a new configure from Dave (to correct NO_EXP10 problem).
+
+V011028 Chase
+
+        1.  Replace makethis.py, installthis.py, compile.py, and 
+            installtool.py with setup.py, which uses the standard distutils 
+            installation process.
+
+            *** Still need to make libpyg.a with process set up by Dave
+                in the src directory.
+
+V011026 Chase
+
+        1.  Symptom:  exp10 missing.  
+
+            Configure:
+               configure /g/g16/chase/OSF1
+            Edit the Make.cfg file produced to add -DNO_EXP10,
+            needed in gist directory to indicate that exp10 does not
+            exist on this platform.
+
+V011024 Chase
+
+        1.  Got another version from Dave Munro.
+        2.  Makepyg:  Change include file to ${SYS_TYPE} or tru64_4 python 
+            include.  See log message below.
+
+r r ../libpyg.a gist.o tick.o tick60.o engine.o gtext.o draw.o draw0.o clip.o  gread.o gcntr.o hlevel.o ps.o cgm.o xfancy.o xbasic.o
+gcc  -O -DNO_EXP10 -I. -I../play -I. -I/usr/gapps/python/src/Python-2.1/Include -I/usr/gapps/python/src/Numeric-20.0.0/Include/Numeric -Igist -Iplay -c gistCmodule.c
+In file included from /usr/gapps/python/src/Python-2.1/Include/Python.h:54,
+                 from gistCmodule.c:75:
+/usr/gapps/python/src/Python-2.1/Include/pyport.h:422: #error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)."
+gistCmodule.c:91: warning: `PyFPE_END_PROTECT' redefined
+/usr/gapps/python/src/Python-2.1/Include/pyfpe.h:169: warning: this is the location of the previous definition
+
+V011019 Chase
+
+   This version of Graphics came from ftp-icf.llnl.gov:OLD 
+   public distribution LLNLDistribution11.
+   The package is is outdated, depending on Numerical instead of Numeric,
+   gist1.4 instead of 1.5, in fact the gistCmodule.c is actually circa 1.3
+   and needs to be upgraded to yorick 1.5's Graphics.c.
+
+   Focus just on getting Graphics/Gist up and operational for now.
+   There are other graphics packages (Gist3D, Narcisse, ...) under Graphics.
+
+

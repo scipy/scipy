@@ -1,9 +1,12 @@
+# 1998 - 2003
 # Author: Travis Oliphant
+# Copyright: SciPy
 
 import gist
 import pl3d, plwf
 import Numeric
-from Numeric import ravel, reshape, repeat, arange, transpose, compress, where
+from Numeric import ravel, reshape, repeat, arange, transpose, compress, \
+     where, ones, NewAxis
 import MLab
 from MLab import pi, cos, sin, arctan2, array, angle
 import types
@@ -16,7 +19,7 @@ import scipy.signal as signal
 _dpi = 75
 _hold = 0
 
-gist.set_default_dpi(_dpi)
+gist.pldefault(dpi=_dpi)
 
 try:
     import Scientific.Statistics.Histogram
@@ -1184,7 +1187,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     if cb:
         colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04) 
 
-def surf(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
+def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
           zscale=1.0,palette=None,gnomon=0):
     """Plot a three-dimensional wire-frame (surface): z=f(x,y)
     """
@@ -1196,6 +1199,18 @@ def surf(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
     pl3d.orient3(phi=phi*pi/180,theta=theta*pi/180)
     pl3d.light3()
     change_palette(palette)
+    sz = scipy_base.shape(z)
+    if len(sz) != 2:
+        raise ValueError, "Input must be a 2-d array --- a surface."
+    N,M = sz
+    if x is None:
+        x = arange(0,N)
+    if y is None:
+        y = arange(0,M)
+    if (len(scipy_base.shape(x)) == 1):
+        x = x[:,NewAxis]*ones((1,M))
+    if (len(scipy_base.shape(y)) == 1):
+        y = ones((N,1))*y[NewAxis,:]    
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
     [xmin,xmax,ymin,ymax] = pl3d.draw3(1)
     gist.limits(xmin,xmax,ymin,ymax)

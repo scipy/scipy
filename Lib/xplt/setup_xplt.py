@@ -13,6 +13,8 @@ from distutils.sysconfig         import get_python_lib
 
 # borrowed from setup.py for pygist
 
+local_path = get_path(__name__)
+
 cygwin = (sys.platform == 'cygwin')
 for keyword in sys.argv:
     if keyword == '--x11':
@@ -25,10 +27,10 @@ x11 = not (windows or cygwin)
 if 'NO_XLIB' in os.environ:
     x11 = 0
 
-run_config = 0
-#for keyword in sys.argv:
-#    if keyword=='config':
-#        run_config = 1
+run_config = ('config' in sys.argv)
+print '%%%%%%%%%%%%%%%%%%%%%%%'
+print run_config
+print '%%%%%%%%%%%%%%%%%%%%%%%'
 
 #------------------------------------------------------------------------
 # Configuration
@@ -54,7 +56,7 @@ class config_pygist (config):
         return (src, obj, prog)
     
     def run (self):
-        self.configfile = open(os.path.join("pygist","Make.cfg"),'w')
+        self.configfile = open(os.path.join(local_path, "pygist","Make.cfg"),'w')
         self.configfile.write('# Make.cfg from setup.py script ' + time.ctime() + '\n')
         if not windows:
             self.configfile.write('#')
@@ -115,7 +117,7 @@ int main(int argc, char *argv[])
         print
         print "  ============= begin play/unix configuration ============="
         print
-        os.chdir(os.path.join('src','play','unix'))
+        os.chdir(os.path.join(local_path, 'src','play','unix'))
         configfile = open('config.h','w')
         configfile.write('/* config.h used during config.sh script */\n')
         configfile.write('#ifndef CONFIG_SCRIPT\n')
@@ -788,14 +790,14 @@ def configuration(parent_package=''):
        This will install *.gs and *.gp files to
        'site-packages/scipy/xplt/gistdata' 
     """
+
     package = 'xplt'
-    if parent_package == '':
-        local_path = ''
-    else:
-        local_path = os.path.join(*(parent_package.split('.')[1:]+['xplt']))
+    print '***********************************************'
+    print local_path,parent_package
+    print '***********************************************'    
+        
     xplt_path = os.path.join(parent_package,'xplt')
     config = default_config_dict(package,parent_package)
-    #local_path = get_path(__name__)
 
     if windows:
         playsource = winsource + allsource
