@@ -29,6 +29,8 @@ from scipy_version import scipy_version as __version__
 from scipy_base import *
 from helpmod import *
 
+from scipy_test.testing import ScipyTest
+
 #-------- doc string hooks --------#
 
 def _level_docs(module=None,_cache=[]):
@@ -96,28 +98,85 @@ xplt = ppimport('xplt');               _level_docs(xplt)
 gplt = ppimport('gplt');               _level_docs(gplt)
 plt = ppimport('plt');                 _level_docs(plt)
 
+#----- Import dropped-into-Lib packages ----#
+
+def _import_packages():
+    """ Import packages in scipy directory that implement
+    info_<packagename>.py. See DEVELOPERS.txt for more info.
+    """
+    from glob import glob
+    import os
+    frame = sys._getframe(1)
+
+    for info_file in glob(os.path.join(__path__[0],'*','info_*.py')):
+
+        package_name = os.path.basename(os.path.dirname(info_file))
+        if package_name != os.path.splitext(os.path.basename(info_file))[0][5:]:
+            print '  !! Mismatch of package name %r and %s' \
+                  % (package_name, info_file)
+            continue
+
+        sys.path.insert(0,os.path.dirname(info_file))
+        # TODO: catch exceptions here:
+        exec 'import info_%s as info_module' % (package_name)
+        del sys.path[0]
+        
+        if getattr(info_module,'ignore',0):
+            continue
+
+        global_symbols = getattr(info_module,'global_symbols',[])
+        
+        if getattr(info_module,'postpone_import',1):
+            code = '%s = ppimport(%r)' % (package_name,package_name)
+
+            for name in global_symbols:
+                code += '\n%s = ppimport_attr(%s,%r)' % (name,package_name,name)
+        else:
+            code = 'import %s' % (package_name)
+
+            # XXX: Should we check the existence of package.test? Warn?
+            code += '\n%s.test = ScipyTest(%s).test' % (package_name,package_name)
+
+            for name in global_symbols:
+                code += '\n%s = %s.%s' % (name,package_name,name)
+        # XXX: Should we catch exceptions here??
+        exec (code, frame.f_globals,frame.f_locals)
+
+        _level_docs(info_module)
+        # XXX: Ugly hack to fix package name:
+        code = '_level_docs()[-1] = (%s.__name__,_level_docs()[-1][1])' \
+               % (package_name)
+        exec (code, frame.f_globals,frame.f_locals)
+
+_import_packages()
+del _import_packages
+
+#---- testing ----#
+
+test = ScipyTest('scipy').test
+
 #----- update doc string -------#
 
 __doc__ += _pkg_titles()
-            
+
 #---- testing ----#
 
-def test(level=1,verbosity=1):
-    """ From this top level, there are possibly many many tests.
-        Test only the quick tests by default.
-    """
-    import unittest
-    runner = unittest.TextTestRunner(verbosity=verbosity)
-    runner.run(test_suite(level))
-    return runner
+## def test(level=1,verbosity=1):
+##     """ From this top level, there are possibly many many tests.
+##         Test only the quick tests by default.
+##     """
+##     import unittest
+##     runner = unittest.TextTestRunner(verbosity=verbosity)
+##     runner.run(test_suite(level))
+##     return runner
 
-def test_all(level=10):
-    test(level)
+## def test_all(level=10):
+##     test(level)
     
-def test_suite(level = 1):
-    import scipy_test.testing
-    import scipy
-    ignore = ['xplt','plt','gplt','gui_thread','sparse','scipy_version']
-    suites = [scipy_test.testing.harvest_test_suites(scipy,ignore,level=level)]
-    import unittest
-    return unittest.TestSuite(suites)
+## def test_suite(level = 1):
+##     import scipy_test.testing
+##     import scipy
+##     ignore = ['xplt','plt','gplt','gui_thread','sparse','scipy_version']
+##     suites = [scipy_test.testing.harvest_test_suites(scipy,ignore,level=level)]
+##     import unittest
+##     return unittest.TestSuite(suites)

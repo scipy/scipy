@@ -11,9 +11,13 @@ Creating scipy distribution:
 
 import os
 import sys
+from glob import glob
 
 sys.path.insert(0,'scipy_core')
 try:
+    import scipy_distutils
+    assert 'scipy_core'==os.path.basename(os.path.dirname(\
+        scipy_distutils.__path__[0])), scipy_distutils.__path__[0]
     # Declare all scipy_distutils related imports here.
     from scipy_distutils.misc_util import default_config_dict
     from scipy_distutils.misc_util import get_path, merge_config_dicts
@@ -59,6 +63,35 @@ separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 separate_packages += core_packages
 separate_packages += chaco_packages
 
+#------ drop-to-Lib packages --------
+
+def get_packages(path,ignore_packages=[],parent=parent_package):
+
+    config_list = []
+
+    for info_file in glob(os.path.join(path,'*','info_*.py')):
+
+        package_name = os.path.basename(os.path.dirname(info_file))
+        if package_name != os.path.splitext(os.path.basename(info_file))[0][5:]:
+            print '  !! Mismatch of package name %r and %s' \
+                  % (package_name, info_file)
+            continue
+
+        sys.path.insert(0,os.path.dirname(info_file))
+        try:
+            exec 'import %s as info_module' \
+                 % (os.path.splitext(os.path.basename(info_file))[0])
+            if not getattr(info_module,'ignore',0):
+                exec 'import setup_%s as setup_module' % (package_name)
+                if getattr(info_module,'standalone',0):
+                    config = setup_module.configuration('')
+                else:
+                    config = setup_module.configuration(parent)
+                config_list.append(config)
+        finally:
+            del sys.path[0]
+
+    return config_list
 #-------------------------------
 
 def get_package_config(name, parent=parent_package):
@@ -73,7 +106,7 @@ def get_package_config(name, parent=parent_package):
 def get_separate_package_config(name):
     return get_package_config(name,'')
 
-def setup_package():
+def setup_package(ignore_packages=[]):
     old_path = os.getcwd()
     path = get_path(__name__)
     os.chdir(path)
@@ -81,14 +114,23 @@ def setup_package():
     # setup files of subpackages require scipy_core:
     sys.path.insert(0,os.path.join(path,'scipy_core'))
     try:
+        #sys.path.insert(0,os.path.join(path,'Lib'))
         from scipy_version import scipy_version
+        #del sys.path[0]
 
         config_list = [{'packages':['scipy','scipy.tests'],
                         'package_dir':
                         {'scipy':'Lib',
                          'scipy.tests':os.path.join('Lib','tests')}}]
+
+        #new style packages:
+        config_list += get_packages(os.path.join(path,'Lib'),ignore_packages)
+        #config_list += get_packages(os.path.join(path,'Lib_chaco'),ignore_packages)
+
+        #old style packages:
         config_list += map(get_separate_package_config,separate_packages)
         config_list += map(get_package_config,scipy_packages)
+
         config_dict = merge_config_dicts(config_list)
 
         print 'SciPy Version %s' % scipy_version
