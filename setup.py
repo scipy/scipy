@@ -65,8 +65,20 @@ def get_packages(path,ignore_packages=[],
 #-------------------------------
 
 def setup_package(ignore_packages=[]):
+
+    if os.path.isdir('scipy_core'):
+        # Applying the same commands to scipy_core.
+        # Results can be found in scipy_core directory.
+        c = '%s %s %s' % (sys.executable,
+                          os.path.join('scipy_core','setup.py'),
+                          ' '.join(sys.argv[1:]))
+        print c
+        s = os.system(c)
+        assert not s,'failed on scipy_core'
+
     old_path = os.getcwd()
     local_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+
     os.chdir(local_path)
     sys.path.insert(0,os.path.join(local_path,'Lib'))
     # setup files of subpackages require scipy_core:
@@ -101,16 +113,6 @@ def setup_package(ignore_packages=[]):
         del sys.path[0]
         del sys.path[0]
         os.chdir(old_path)
-
-    if os.path.isdir('scipy_core'):
-        # Applying the same commands to scipy_core.
-        # Results can be found in scipy_core directory.
-        c = '%s %s %s' % (sys.executable,
-                          os.path.join('scipy_core','setup.py'),
-                          ' '.join(sys.argv[1:]))
-        print c
-        s = os.system(c)
-        assert not s,'failed on scipy_core'
 
 if __name__ == "__main__":
     ignore_packages = [
