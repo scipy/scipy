@@ -785,7 +785,8 @@ def force_kill():
     else:
         os.kill(server_pid,15) # 15 = TERM 9 = ABRT
 
-def server(port):
+default_host = socket.gethostname()
+def server(host=default_host,port=10000):
     import os
     global server_pid
     server_pid = os.getpid()
@@ -827,19 +828,19 @@ host - client or test - machine to connect to
 length = client - length of message to send
 """
 
-
-host = socket.gethostname()
+host = default_host
 port = 10000
 
 if __name__ == '__main__':
     import sys
     import string
+    host = default_host
     if len(sys.argv) >= 5: length = string.atoi(sys.argv[4])
     if len(sys.argv) >= 4: host = sys.argv[3]
     if len(sys.argv) >= 3: port = string.atoi(sys.argv[2])
     if len(sys.argv) >= 2:
         if sys.argv[1] == 'server':
-            server(port)
+            server(host,port)
         elif sys.argv[1] == 'daemon':
             import os, sync_cluster
             pid = os.fork()
@@ -849,7 +850,7 @@ if __name__ == '__main__':
                 # This must never return, hence os._exit()!
                 try:
                     os.setsid()
-                    server(port)
+                    server(host,port)
                     print "yikes - shouldn't get here"
                 finally:
                     os._exit(1)

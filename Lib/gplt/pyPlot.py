@@ -10,6 +10,7 @@ except:
 	import os
 	plot_popen = os.popen
 	default_terminal = 'x11'
+	default_terminal = 'png color'
 
 DEBUG = 0
 
