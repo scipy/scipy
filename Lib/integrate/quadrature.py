@@ -3,7 +3,8 @@
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb','cumtrapz']
 
 from scipy.special.orthogonal import p_roots
-from scipy_base import sum, array, ones, add, diff, isinf, isscalar, asarray
+from scipy_base import sum, array, ones, add, diff, isinf, isscalar, \
+     asarray, real
 
 def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
@@ -27,6 +28,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     
     """
     [x,w] = p_roots(n)
+    x = real(x)
     ainf, binf = map(isinf,(a,b))    
     if ainf or binf:
         raise ValueError, "Gaussian quadrature is only available for finite limits."
