@@ -1,0 +1,496 @@
+#LyX 1.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 220
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 1
+\use_amsmath 1
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Discrete Statistical Distributions
+\layout Standard
+
+Discrete random variables take on only a countable number of values.
+ The commonly used distributions are included in SciPy and described in
+ this document.
+ The probability mass function of a random variable X is defined as the
+ probability that the random variable takes on a particular value.
+ 
+\begin_inset Formula \[
+p\left(k\right)=P\left[X=k\right]\]
+
+\end_inset 
+
+ This is also sometimes called the probability density function, although
+ technically 
+\begin_inset Formula \[
+p\left(x\right)=\sum _{k}p\left(k\right)\delta \left(x-k\right)\]
+
+\end_inset 
+
+ is the probability density function for a discrete distribution.
+ 
+\layout Standard
+
+The cumulative distribution function is 
+\begin_inset Formula \[
+F\left(x\right)=P\left[X\leq x\right]=\sum _{n\leq x}p\left(n\right)\]
+
+\end_inset 
+
+ and is also useful to be able to compute.
+ Note that 
+\begin_inset Formula \[
+F\left(k\right)-F\left(k-1\right)=p\left(k\right)\]
+
+\end_inset 
+
+
+\layout Standard
+
+The survival function is just 
+\begin_inset Formula \[
+S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]\]
+
+\end_inset 
+
+ the probability that the random variable is larger than 
+\begin_inset Formula $k$
+\end_inset 
+
+.
+ 
+\layout Standard
+
+The percent point function is the inverse of the cumulative distribution
+ function and is 
+\begin_inset Formula \[
+G\left(q\right)=F^{-1}\left(q\right)\]
+
+\end_inset 
+
+and is the smallest value of 
+\begin_inset Formula $k$
+\end_inset 
+
+ for which 
+\begin_inset Formula $q\leq F\left(k\right).$
+\end_inset 
+
+ 
+\layout Standard
+
+The inverse source function is the inverse of the survival function 
+\begin_inset Formula \[
+Z\left(\alpha \right)=S^{-1}\left(\alpha \right)=G\left(1-\alpha \right)\]
+
+\end_inset 
+
+ and is the smallest value of 
+\begin_inset Formula $k$
+\end_inset 
+
+ for which 
+\begin_inset Formula $F\left(k\right)\geq 1-\alpha $
+\end_inset 
+
+ or the smallest value of 
+\begin_inset Formula $k$
+\end_inset 
+
+ for which 
+\begin_inset Formula $S\left(k\right)\leq \alpha .$
+\end_inset 
+
+ If desired, the hazard function and the cumulative hazard function could
+ be defined as 
+\begin_inset Formula \[
+h\left(k\right)=\frac{p\left(k\right)}{1-F\left(k\right)}\]
+
+\end_inset 
+
+ and 
+\begin_inset Formula \[
+H\left(x\right)=\sum _{n\leq x}h\left(n\right)=\sum _{n\leq x}\frac{F\left(n\right)-F\left(n-1\right)}{1-F\left(n\right)}.\]
+
+\end_inset 
+
+
+\layout Standard
+
+The mean is the first moment 
+\begin_inset Formula \[
+\mu =E\left[X\right]=\sum _{k}kp\left(k\right)\]
+
+\end_inset 
+
+ the variance is the second central moment 
+\begin_inset Formula \[
+\mu _{2}=E\left[\left(X-\mu \right)^{2}\right]=\sum _{k}k^{2}p\left(k\right)-\mu ^{2}.\]
+
+\end_inset 
+
+The skewness and kurtosis are respectively still computed as 
+\begin_inset Formula \[
+\gamma _{1}=\frac{\mu _{3}}{\left(\mu _{2}\right)^{3/2}}\]
+
+\end_inset 
+
+and 
+\begin_inset Formula \[
+\gamma _{2}=\frac{\mu _{4}}{\left(\mu _{2}\right)^{2}}-3.\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \[
+\mu _{n}=E\left[\left(X-\mu \right)^{n}\right]=\sum _{k}\left(k-\mu \right)^{n}p\left(k\right).\]
+
+\end_inset 
+
+
+\layout Subsection
+
+Moments
+\layout Standard
+
+Non-central moments are defined using the PDF 
+\begin_inset Formula \[
+\mu _{m}^{\prime }=\sum _{k}k^{m}p\left(k\right).\]
+
+\end_inset 
+
+ Central moments are computed similarly 
+\begin_inset Formula $\mu =\mu _{1}^{\prime }$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu _{m} & = & \sum _{k}\left(k-\mu \right)^{m}p\left(k\right)\\
+ & = & \sum _{k=0}^{m}\left(\begin{array}{c}
+ m\\
+ k\end{array}
+\right)\left(-\mu \right)^{k}\mu _{m-k}^{\prime }
+\end{eqnarray*}
+
+\end_inset 
+
+ Skewness is defined as 
+\begin_inset Formula \[
+\gamma _{1}=\sqrt{\beta _{1}}=\frac{\mu _{3}}{\mu _{2}^{3/2}}\]
+
+\end_inset 
+
+ while (Fisher) kurtosis is 
+\begin_inset Formula \[
+\gamma _{2}=\frac{\mu _{4}}{\mu _{2}^{2}}-3,\]
+
+\end_inset 
+
+ so that a normal distribution has a kurtosis of zero.
+ 
+\layout Subsection
+
+Fitting data
+\layout Standard
+
+To fit data to a distribution, maximizing the likelihood function is common.
+ Alternatively, some distributions have well-known minimum variance unbiased
+ estimators.
+ These will be chosen by default, but the likelihood function will always
+ be available for minimizing.
+ 
+\layout Standard
+
+If 
+\begin_inset Formula $p\left(k;\boldsymbol \theta \right)$
+\end_inset 
+
+ is the PDF of a random-variable where 
+\begin_inset Formula $\boldsymbol \theta $
+\end_inset 
+
+ is a vector of parameters (
+\emph on 
+e.g.
+ 
+\begin_inset Formula $L$
+\end_inset 
+
+ 
+\emph default 
+and 
+\begin_inset Formula $S$
+\end_inset 
+
+), then for a collection of 
+\begin_inset Formula $N$
+\end_inset 
+
+ independent samples from this distribution, the joint distribution the
+ random vector 
+\begin_inset Formula $\mathbf{k}$
+\end_inset 
+
+ is 
+\begin_inset Formula \[
+p\left(\mathbf{k};\boldsymbol \theta \right)=\prod _{i=1}^{N}f\left(k_{i};\boldsymbol \theta \right).\]
+
+\end_inset 
+
+ The maximum likelihood estimate of the parameters 
+\begin_inset Formula $\boldsymbol \theta $
+\end_inset 
+
+ are the parameters which maximize this function with 
+\begin_inset Formula $\mathbf{x}$
+\end_inset 
+
+ fixed and given by the data: 
+\begin_inset Formula \begin{eqnarray*}
+\hat{\boldsymbol }\theta  & = & \arg \max _{\boldsymbol \theta }f\left(\mathbf{k};\boldsymbol \theta \right)\\
+ & = & \arg \min _{\boldsymbol \theta }l_{\mathbf{k}}\left(\boldsymbol \theta \right).
+\end{eqnarray*}
+
+\end_inset 
+
+ Where 
+\begin_inset Formula \begin{eqnarray*}
+l_{\mathbf{k}}\left(\boldsymbols \theta \right) & = & -\sum _{i=1}^{N}\log f\left(k_{i};\boldsymbol \theta \right)\\
+ & = & -N\overline{\log f\left(k_{i};\boldsymbol \theta \right)}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Subsection
+
+Standard notation for mean
+\layout Standard
+
+We will use 
+\begin_inset Formula \[
+\overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum _{i=1}^{N}y\left(x_{i}\right)\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $N$
+\end_inset 
+
+ should be clear from context.
+ 
+\layout Section
+
+Bernoulli
+\layout Standard
+
+A Bernoulli random variable of parameter 
+\begin_inset Formula $p$
+\end_inset 
+
+ takes one of only two values 
+\begin_inset Formula $X=0$
+\end_inset 
+
+ or 
+\begin_inset Formula $X=1$
+\end_inset 
+
+.
+ The probability of success (
+\begin_inset Formula $X=1$
+\end_inset 
+
+) is 
+\begin_inset Formula $p$
+\end_inset 
+
+, and the probability of failure (
+\begin_inset Formula $X=0$
+\end_inset 
+
+) is 
+\begin_inset Formula $1-p.$
+\end_inset 
+
+ It can be thought of as a binomial random variable with 
+\begin_inset Formula $n=1$
+\end_inset 
+
+.
+ The PMF is 
+\begin_inset Formula $p\left(k\right)=0$
+\end_inset 
+
+ for 
+\begin_inset Formula $k\neq 0,1$
+\end_inset 
+
+ and 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \begin{cases}
+ 1-p & k=0\\
+ p & k=1\end{cases}\\
+F\left(k\right) & = & \begin{cases}
+ 0 & k<0\\
+ 1-p & 0\le k<1\\
+ 1 & 1\leq k\end{cases}\\
+G\left(q\right) & = & \begin{cases}
+ 0 & 0\leq q<1-p\\
+ 1 & 1-p\leq q\leq 1\end{cases}\\
+\mu  & = & p\\
+\mu _{2} & = & p\left(1-p\right)\\
+\gamma _{3} & = & \frac{1-2p}{\sqrt{p\left(1-p\right)}}\\
+\gamma _{4} & = & \frac{1-6p\left(1-p\right)}{p\left(1-p\right)}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Binomial
+\layout Standard
+
+A binomial random variable with parameters 
+\begin_inset Formula $\left(n,p\right)$
+\end_inset 
+
+ can be described as the sum of 
+\begin_inset Formula $n$
+\end_inset 
+
+ independent Bernoulli random variables of parameter 
+\begin_inset Formula $p;$
+\end_inset 
+
+
+\begin_inset Formula \[
+Y=\sum _{i=1}^{n}X_{i}.\]
+
+\end_inset 
+
+ Therefore, this random variable counts the number of successes in 
+\begin_inset Formula $n$
+\end_inset 
+
+ independent trials of a random experiment where the probability of success
+ is 
+\begin_inset Formula $p.$
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \left(\begin{array}{c}
+ n\\
+ k\end{array}
+\right)p^{k}\left(1-p\right)^{n-k}\, \, k\in \left\{ 0,1,\ldots n\right\} ,\\
+F\left(k\right) & = & \sum _{i\leq k}\left(\begin{array}{c}
+ n\\
+ i\end{array}
+\right)p^{i}\left(1-p\right)^{n-i}=I_{1-p}\left(n-k,k+1\right)
+\end{eqnarray*}
+
+\end_inset 
+
+ where the incomplete beta integral is 
+\begin_inset Formula \[
+I_{x}\left(a,b\right)=\frac{\Gamma \left(a+b\right)}{\Gamma \left(a\right)\Gamma \left(b\right)}\int _{0}^{x}t^{a-1}\left(1-t\right)^{b-1}dt.\]
+
+\end_inset 
+
+ Thus, 
+\begin_inset Formula \[
+G\left(q\right)=\left\lceil I_{q}^{-1}\left(n-k,k+1\right)\right\rceil .\]
+
+\end_inset 
+
+ Now 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & np\\
+\mu _{2} & = & np\left(1-p\right)\\
+\gamma _{1} & = & \frac{1-2p}{\sqrt{np\left(1-p\right)}}\\
+\gamma _{2} & = & \frac{1-6p\left(1-p\right)}{np\left(1-p\right)}.
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Poisson
+\layout Standard
+
+The Poisson random variable counts the number of successes in 
+\begin_inset Formula $n$
+\end_inset 
+
+ independent Bernoulli trials in the limit as 
+\begin_inset Formula $n\rightarrow \infty $
+\end_inset 
+
+ and 
+\begin_inset Formula $p\rightarrow 0$
+\end_inset 
+
+ where the probability of success in each trial is 
+\begin_inset Formula $p$
+\end_inset 
+
+ and 
+\begin_inset Formula $np=\lambda $
+\end_inset 
+
+ is a constant.
+ It can be used to approximate the Binomial random variable or in it's own
+ right to count the number of events that occur in the interval 
+\begin_inset Formula $\left[0,t\right]$
+\end_inset 
+
+ for a process satisfying certain 
+\begin_inset Quotes eld
+\end_inset 
+
+sparsity
+\begin_inset Quotes erd
+\end_inset 
+
+ constraints.
+ The functions are 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & e^{-\lambda }\frac{\lambda ^{k}}{k!}\quad k\geq 0,\\
+F\left(k\right) & = & \sum _{n=0}^{k}e^{-\lambda }\frac{\lambda ^{k}}{k!}=\frac{1}{\Gamma \left(k+1\right)}\int _{m}^{\infty }t^{k}e^{-t}dt,\\
+\mu  & = & \lambda \\
+\mu _{2} & = & \lambda \\
+\gamma _{1} & = & \frac{1}{\sqrt{\lambda }}\\
+\gamma _{2} & = & \frac{1}{\lambda }
+\end{eqnarray*}
+
+\end_inset 
+
+
+\the_end

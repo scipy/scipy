@@ -3108,10 +3108,12 @@ def binomsf(k, n, pr=0.5):
     return special.bdtrc(k,n,pr)
 
 def binomppf(q, n, pr=0.5):
-    return special.bdtrik(q,n,pr)
+    vals = scipy.ceil(special.bdtrik(q,n,pr))
+    temp = special.bdtr(vals-1,n,pr)
+    return where(temp >= q, vals-1, vals)
 
 def binomisf(p, n, pr=0.5):
-    return special.bdtrik(1-p,n,pr)
+    return binomppf(1-p,n,pr)
 
 def binomstats(n, pr=0.5, full=0):
     q = 1.0-pr
@@ -3122,7 +3124,6 @@ def binomstats(n, pr=0.5, full=0):
     g1 = (q-pr) / sqrt(n*pr*q)
     g2 = (1.0-6*pr*q)/(n*pr*q)
     return mu, var, g1, g2
-
 
 # Bernoulli distribution
 
