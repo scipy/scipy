@@ -562,7 +562,7 @@ class test_hmean(TestCase):
         desired1 = scipy.stats.stats.hmean(array(a),axis=-1)
         assert_almost_equal(desired1,actual,decimal=14)
     def check_1D_array(self):
-        a = array((1,2,3,4),Float32)
+        a = array((1,2,3,4),Float64)
         actual= stats.hmean(a)
         desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(desired,actual,decimal=14)

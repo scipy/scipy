@@ -1159,4 +1159,60 @@ h\left[X\right]=-\log\left(\tanh\left(\frac{a}{2}\right)\right)+\frac{a}{\sinh a
 \end_inset 
 
 
+\layout Section
+
+Discrete Gaussian*
+\layout Standard
+
+Defined for all 
+\begin_inset Formula $\mu$
+\end_inset 
+
+ and 
+\begin_inset Formula $\lambda>0$
+\end_inset 
+
+ and 
+\begin_inset Formula $k$
+\end_inset 
+
+
+\begin_inset Formula \[
+p\left(k;\mu,\lambda\right)=\frac{1}{Z\left(\lambda\right)}\exp\left[-\lambda\left(k-\mu\right)^{2}\right]\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \[
+Z\left(\lambda\right)=\sum_{k=-\infty}^{\infty}\exp\left[-\lambda k^{2}\right]\]
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & \mu\\
+\mu_{2} & = & -\frac{\partial}{\partial\lambda}\log Z\left(\lambda\right)\\
+ & = & G\left(\lambda\right)e^{-\lambda}\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula $G\left(0\right)\rightarrow\infty$
+\end_inset 
+
+ and 
+\begin_inset Formula $G\left(\infty\right)\rightarrow2$
+\end_inset 
+
+ with a minimum less than 2 near 
+\begin_inset Formula $\lambda=1$
+\end_inset 
+
+ 
+\begin_inset Formula \[
+G\left(\lambda\right)=\frac{1}{Z\left(\lambda\right)}\sum_{k=-\infty}^{\infty}k^{2}\exp\left[-\lambda\left(k+1\right)\left(k-1\right)\right]\]
+
+\end_inset 
+
+
 \the_end
