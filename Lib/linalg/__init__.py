@@ -12,9 +12,9 @@ from blas import *
 
 ################## test functions #########################
 
-def test(level=10):
+def test(level=10,verbosity=1):
     import unittest
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=verbosity)
     runner.run(test_suite(level))
     return runner
 

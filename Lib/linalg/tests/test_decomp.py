@@ -121,6 +121,13 @@ class test_lu(ScipyTestCase):
         pl,u = lu(a,permute_l=1)
         assert_array_almost_equal(Numeric.dot(pl,u),a)
 
+    def check_simple_complex(self):
+        a = [[1,2,3],[1,2,3],[2,5j,6]]
+        p,l,u = lu(a)
+        assert_array_almost_equal(Numeric.dot(Numeric.dot(p,l),u),a)
+        pl,u = lu(a,permute_l=1)
+        assert_array_almost_equal(Numeric.dot(pl,u),a)
+
     #XXX: need more tests
 
 class test_lu_solve(unittest.TestCase):        
