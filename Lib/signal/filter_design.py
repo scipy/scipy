@@ -1,5 +1,5 @@
 import Numeric
-from fastumath import *
+from scipy.fastumath import *
 Num = Numeric
 abs = absolute
 pi = Numeric.pi

@@ -24,7 +24,7 @@ fminbound   ---      Bounded minimization for scalar functions.
 
 import Numeric
 import MLab
-from fastumath import absolute, sqrt
+from scipy.fastumath import absolute, sqrt
 Num = Numeric
 max = MLab.max
 min = MLab.min
