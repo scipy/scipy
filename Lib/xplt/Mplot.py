@@ -17,17 +17,18 @@ _hold = 0
 try:
     import Scientific.Statistics.Histogram
     SSH = Scientific.Statistics.Histogram
-    def histogram(data,nbins=80,range=None,bar=1,ntype=0):
-        """Plot a histogram.
-        """
+    def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
+        """Plot a histogram.  ntype is the normalization type.
 
+        Use ntype == 2 to compare with probability density function.
+        """
         h = SSH.Histogram(data,nbins,range)
         if ntype == 1:
             h.normalize()
         elif ntype == 2:
             h.normalizeArea()
         if bar:
-            barplot(h[:,0],h[:,1])
+            barplot(h[:,0],h[:,1],width=bwidth,color=bcolor)
         else:
             plot(h[:,0],h[:,1])
         return h
@@ -35,8 +36,10 @@ except ImportError:
     try:
         import Statistics
         SSH = Statistics
-        def histogram(data,nbins=80,range=None,bar=1,ntype=0):
-            """Plot a histogram.
+        def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
+            """Plot a histogram.  ntype is the normalization type.
+            
+            Use ntype == 2 to compare with probability density function.
             """
             h = SSH.histogram(data,nbins,range)
             if ntype == 1:
@@ -44,13 +47,17 @@ except ImportError:
             elif ntype == 2:
                 h.normalizeArea()
             if bar:
-                barplot(h[:,0],h[:,1])
+                barplot(h[:,0],h[:,1],width=bwidth,color=bcolor)                
             else:
                 plot(h[:,0],h[:,1])
             return h        
     except ImportError:
         hist = scipy.histogram
-        def histogram(data, nbins=80, range=None,bar=1,ntype=0):
+        def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
+            """Plot a histogram.  ntype is the normalization type.
+            
+            Use ntype == 2 to compare with probability density function.
+            """
             if range is None:
                 dmin = Numeric.minimum.reduce(data)
                 dmax = Numeric.maximum.reduce(data)
@@ -69,7 +76,7 @@ except ImportError:
                 darray[:,1] = 1.0/bin_width*darray[:,1] / \
                               Numeric.add.reduce(darray[:,1])
             if bar:
-                barplot(darray[:,0],darray[:,1])
+                barplot(darray[:,0],darray[:,1],width=bwidth,color=bcolor)
             else:
                 plot(darray[:,0],darray[:,1])
             return darray
@@ -551,7 +558,9 @@ def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
             gist.pause(plen)
     gist.animate(0)
 
-def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=1, labelsize=14, labelfont='helvetica'):
+def figure(n=None, style='/tmp/currstyle.gs', color=-2, frame=0, labelsize=14, labelfont='helvetica'):
+    if isinstance(color, types.StringType):
+        color = _colornum[color]
     fid = open(style,'w')
     fid.write(write_style.style2string(write_style.getsys(color=color,frame=frame,labelsize=labelsize,font=labelfont)))
     fid.close()
@@ -623,7 +632,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
 def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
-    y0 = vp[2] - 0.040 + deltay
+    y0 = vp[2] - 0.035 + deltay
     if text != "":
         gist.plt(text, xmidpt, y0, color=color,
                  font=font, justify="CT", height=fontsize)
@@ -633,7 +642,7 @@ def xlabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0
 def ylabel(text,color='black',font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
     vp = gist.viewport()
     ymidpt = (vp[2] + vp[3])/2.0 + deltay
-    x0 = vp[0] - 0.040 + deltax
+    x0 = vp[0] - 0.055 + deltax
     if text != "":
         gist.plt(text, x0, ymidpt, color=color,
                  font=font, justify="CB", height=fontsize, orient=1)

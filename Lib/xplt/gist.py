@@ -63,12 +63,15 @@ def moush(*arg):
 # associated ps2epsi utility.
 def eps(name):
   import os
+  totalname = name
+  apath, basename = os.path.split(name)
   name = name + ".ps"
   window (hcp = name, dump = 1, legends = 0)
   hcp ()
   window (hcp="")
   os.system ("ps2epsi " + name)
   os.system ("rm " + name)
+  os.system ("mv %s.epsi %s.eps" % (basename, totalname))
 
 def xytitles(xtitle = "", ytitle = "", delta = (0.,0.)):
   vp = viewport()

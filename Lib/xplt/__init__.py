@@ -1,6 +1,6 @@
-""" Gist plotting routines (requires X-server)
+""" Plotting routines based on Gist (requires X-server)
 
-  All gist functions are also available as xplt.XXXXX
+  All Gist functions are also available as xplt.<command>
 
     histogram -- Plot a histogram.
     barplot   -- Construct a barplot.
