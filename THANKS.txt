@@ -16,7 +16,10 @@ Prabhu Ramachandran -- improvements to gui_thread.
 Jochen Kupper -- the zoom feature in plt.
 Jeff Whitaker -- Mac OS X support.
 Travis Vaught -- initial work on stats module clean up.
-David M. Cooke  -- improvements to system_info
+David M. Cooke  -- improvements to system_info, and lbfgsb wrapper
+Chuck Harris -- Zeros package in optimize (1d root-finding algorithms)
+Jean-Sebastien Roy -- fmin_tnc code which he adapted from Stephen Nash's 
+                       original Fortran
 
 Testing:
 
