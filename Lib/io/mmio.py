@@ -100,15 +100,19 @@ def mmread(source):
     except ImportError:
         coo_matrix = None
 
+    if field=='integer':
+        typecode='i'
+    elif field=='real':
+        typecode='d'
+    elif field=='complex':
+        typecode='D'
+    elif field=='pattern':
+        raise NotImplementedError,`field`
+    else:
+        raise ValueError,`field`
+
     if rep == 'array':
-        if field=='integer':
-            a = zeros((rows,cols),typecode='i')
-        elif field=='real':
-            a = zeros((rows,cols),typecode='d')
-        elif field=='complex':
-            a = zeros((rows,cols),typecode='D')
-        else:
-            raise ValueError,`field`
+        a = zeros((rows,cols),typecode=typecode)
         line = 1
         i,j = 0,0
         while line:
@@ -139,16 +143,7 @@ def mmread(source):
 
     elif rep=='coordinate' and coo_matrix is None:
         # Read sparse matrix to dense when coo_matrix is not available.
-        if field=='integer':
-            a = zeros((rows,cols),typecode='i')
-        elif field=='real':
-            a = zeros((rows,cols),typecode='d')
-        elif field=='complex':
-            a = zeros((rows,cols),typecode='D')
-        elif field=='pattern':
-            raise NotImplementedError,`field`
-        else:
-            raise ValueError,`field`
+        a = zeros((rows,cols),typecode=typecode)
         line = 1
         k = 0
         while line:
@@ -172,6 +167,7 @@ def mmread(source):
                     a[j,i] = conj(aij)
             k = k + 1
         assert k==entries,`k,entries`
+
     elif rep=='coordinate':
         line = 1
         k = 0
@@ -205,7 +201,7 @@ def mmread(source):
                     data.append(conj(aij))
             k = k + 1
         assert k==entries,`k,entries`
-        a = coo_matrix(data,(row,col),M=rows,N=cols)
+        a = coo_matrix(data,(row,col),M=rows,N=cols,typecode=typecode)
     else:
         raise NotImplementedError,`rep`
 

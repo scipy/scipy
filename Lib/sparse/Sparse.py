@@ -1356,7 +1356,7 @@ class coo_matrix(spmatrix):
                 N = amax(aij[:,1])
             self.row = aij[:,0]
             self.col = aij[:,1]
-        aobj = asarray(obj)
+        aobj = asarray(obj,typecode=typecode)
         self.shape = (M,N)
         if nzmax is None:
             nzmax = len(aobj)
