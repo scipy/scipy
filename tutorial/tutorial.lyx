@@ -78,7 +78,11 @@ Python provides the facility of documentation strings.
  The functions and classes available in SciPy use this method for on-line
  documentation.
  There are two methods for reading these messages and getting help.
- Python provides the command help in the pydoc module.
+ Python provides the command 
+\series bold 
+help
+\series default 
+ in the pydoc module.
  Entering this command with no arguments (i.e.
  >>> help ) launches an interactive help session that allows searching through
  the keywords and modules available to all of Python.
@@ -89,7 +93,7 @@ Python provides the facility of documentation strings.
 The pydoc method of help is sophisticated but uses a pager to display the
  text.
  Sometimes this can interfere with the terminal you are running the interactive
- session within (like emacs).
+ session within.
  A scipy-specific help system is also available under the command scipy.help.
  The signature and documntation string for the object passed to the help
  command are printed to standard output (or to a writeable object passed
@@ -1257,4 +1261,6 @@ interpolate.linear_1d
 \layout Subsection
 
 Cubic-spline interpolation in 1-d
+\layout Standard
+
 \the_end
