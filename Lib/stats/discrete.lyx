@@ -382,14 +382,14 @@ p\left(\mathbf{k};\boldsymbol\theta\right)=\prod_{i=1}^{N}f\left(k_{i};\boldsymb
 
  fixed and given by the data: 
 \begin_inset Formula \begin{eqnarray*}
-\hat{\boldsymbol}\theta & = & \arg\max_{\boldsymbol\theta}f\left(\mathbf{k};\boldsymbol\theta\right)\\
+\hat{\boldsymbol\theta} & = & \arg\max_{\boldsymbol\theta}f\left(\mathbf{k};\boldsymbol\theta\right)\\
  & = & \arg\min_{\boldsymbol\theta}l_{\mathbf{k}}\left(\boldsymbol\theta\right).\end{eqnarray*}
 
 \end_inset 
 
  Where 
 \begin_inset Formula \begin{eqnarray*}
-l_{\mathbf{k}}\left(\boldsymbols\theta\right) & = & -\sum_{i=1}^{N}\log f\left(k_{i};\boldsymbol\theta\right)\\
+l_{\mathbf{k}}\left(\boldsymbol\theta\right) & = & -\sum_{i=1}^{N}\log f\left(k_{i};\boldsymbol\theta\right)\\
  & = & -N\overline{\log f\left(k_{i};\boldsymbol\theta\right)}\end{eqnarray*}
 
 \end_inset 
@@ -650,20 +650,20 @@ sparsity
  The functions are 
 \begin_inset Formula \begin{eqnarray*}
 p\left(k;\lambda\right) & = & e^{-\lambda}\frac{\lambda^{k}}{k!}\quad k\geq0,\\
-F\left(x;\lambda\right) & = & \sum_{n=0}^{\left\lfloor x\right\rfloor }e^{-\lambda}\frac{\lambda^{n}}{n!}=\frac{1}{\Gamma\left(\left\lfloor x\right\rfloor +1\right)}\int_{m}^{\infty}t^{\left\lfloor x\right\rfloor }e^{-t}dt,\\
+F\left(x;\lambda\right) & = & \sum_{n=0}^{\left\lfloor x\right\rfloor }e^{-\lambda}\frac{\lambda^{n}}{n!}=\frac{1}{\Gamma\left(\left\lfloor x\right\rfloor +1\right)}\int_{\lambda}^{\infty}t^{\left\lfloor x\right\rfloor }e^{-t}dt,\\
 \mu & = & \lambda\\
 \mu_{2} & = & \lambda\\
 \gamma_{1} & = & \frac{1}{\sqrt{\lambda}}\\
-\gamma_{2} & = & \frac{1}{\lambda}\end{eqnarray*}
+\gamma_{2} & = & \frac{1}{\lambda}.\end{eqnarray*}
 
 \end_inset 
 
 
-\layout Description
+\layout Standard
 
 
 \begin_inset Formula \[
-M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right]\]
+M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right].\]
 
 \end_inset 
 
@@ -678,7 +678,7 @@ The geometric random variable with parameter
 \end_inset 
 
  can be defined as the number of trials required to obtain a success where
- the probability of success on each trial si 
+ the probability of success on each trial is 
 \begin_inset Formula $p$
 \end_inset 
 
@@ -881,12 +881,12 @@ F\left(x;\alpha\right) & = & \frac{1}{\zeta\left(\alpha\right)}\sum_{k=1}^{\left
 
 
 \begin_inset Formula \begin{eqnarray*}
-M\left(t\right) & = & \frac{\textrm{Li}_{a}\left(e^{t}\right)}{\zeta\left(a\right)}\end{eqnarray*}
+M\left(t\right) & = & \frac{\textrm{Li}_{\alpha}\left(e^{t}\right)}{\zeta\left(\alpha\right)}\end{eqnarray*}
 
 \end_inset 
 
 where 
-\begin_inset Formula $\zeta_{i}=\zeta\left(a-i\right)$
+\begin_inset Formula $\zeta_{i}=\zeta\left(\alpha-i\right)$
 \end_inset 
 
  and 
@@ -909,7 +909,7 @@ where
 
 
 \begin_inset Formula \[
-\mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{a-n}\left(e^{t}\right)}{\zeta\left(a\right)}\right|_{t=0}=\frac{\zeta\left(a-n\right)}{\zeta\left(a\right)}\]
+\mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{\alpha-n}\left(e^{t}\right)}{\zeta\left(a\right)}\right|_{t=0}=\frac{\zeta\left(\alpha-n\right)}{\zeta\left(\alpha\right)}\]
 
 \end_inset 
 
