@@ -14,21 +14,34 @@
 
 A collection of general-purpose optimization routines using Numeric
 
+
+N-D Algorithms
+===============
 fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls).
+fmin_powell ---      Powell (direction set) method (uses only function calls).
 fmin_bfgs   ---      Quasi-Newton method (uses function and gradient).
 fmin_ncg    ---      Line-search Newton Conjugate Gradient (uses function, 
                      gradient and hessian (if it's provided)).
-fminbound   ---      Bounded minimization for scalar functions.
+
+1-D Algorithms
+===============
+brent       ---      Use Brent's method (does not need inital guess)
+fminbound   ---      Bounded minimization for scalar functions on an
+                     interval using Brent's parabolic/golden_mean method.
+golden      --       Use Golden Section method (does not need initial guess)
+
+bracket     ---      Find a bracket containing the minimum.
 
 """
 
 
-__all__ = ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',
+__all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fminbound',
            'rosen','rosen_der', 'rosen_hess','rosen_hess_prod']
 
+from __future__ import nested_scopes
 import Numeric
 import MLab
-from scipy_base import atleast_1d
+from scipy_base import atleast_1d, eye
 from Numeric import absolute, sqrt, asarray
 Num = Numeric
 max = MLab.max
@@ -71,7 +84,7 @@ def rosen_hess_prod(x,p):
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
          full_output=0, disp=1):
-    """Minimize a function using the simplex algorithm.
+    """Minimize a function using the downhill simplex algorithm.
 
     Description:
     
@@ -84,11 +97,13 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       x0 -- the initial guess.
       args -- extra arguments for func.
 
-    Outputs: (xopt, {fopt, warnflag})
+    Outputs: (xopt, {fopt, iter, funcalls, warnflag})
 
       xopt -- minimizer of function
 
       fopt -- value of function at minimum: fopt = func(xopt)
+      iter -- number of iterations
+      funcalls -- number of function calls
       warnflag -- Integer warning flag:
                   1 : 'Maximum number of function evaluations.'
                   2 : 'Maximum number of iterations.'
@@ -225,7 +240,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             print "         Function evaluations: %d" % funcalls
 
     if full_output:
-        return x, fval, warnflag
+        return x, fval, iterations, funcalls, warnflag
     else:        
         return x
 
@@ -631,7 +646,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     Description:
 
       Finds a local minimizer of the scalar function func in the interval
-      x1 < xopt < x2.
+      x1 < xopt < x2 using Brent's method.  (See brent for auto-bracketing).
 
     Inputs:
 
@@ -653,7 +668,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
       xopt -- The minimizer of the function over the interval.
       fval -- The function value at the minimum point.
-      ierr -- An error flag (1 if converged, 0 if maximum number of
+      ierr -- An error flag (0 if converged, 1 if maximum number of
               function calls reached).
       numfunc -- The number of function calls.
     """
@@ -661,14 +676,14 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     if x1 > x2:
         raise ValueError, "The lower bound exceeds the upper bound."
 
-    flag = 1
+    flag = 0
     header = ' Func-count     x          f(x)          Procedure'
     step='       initial'
 
     sqrt_eps = sqrt(2.2e-16)
-    c0 = 0.5*(3.0-sqrt(5.0))
+    golden_mean = 0.5*(3.0-sqrt(5.0))
     a, b = x1, x2
-    fulc = a + c0*(b-a)
+    fulc = a + golden_mean*(b-a)
     nfc, xf = fulc, fulc
     rat = e = 0.0
     x = xf
@@ -685,8 +700,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         print (" ")
         print (header)
         print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
-
-    # Main loop
+    
 
     while ( abs(xf-xm) > (tol2 - 0.5*(b-a)) ):
         golden = 1
@@ -719,7 +733,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                 e=a-xf
             else:
                 e=b-xf
-            rat = c0*e
+            rat = golden_mean*e
             step = '       golden'
 
         si = Numeric.sign(rat) + (rat == 0)
@@ -754,7 +768,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         tol2 = 2.0*tol1
 
         if num >= maxfun:
-            flag = 0
+            flag = 1
             fval = fx
             if disp > 0:
                 _endprint(x, flag, fval, maxfun, tol, disp)
@@ -772,15 +786,374 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     else:
         return xf
 
+def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
+    """ Given a function of one-variable and a possible bracketing interval,
+    return the minimum of the function isolated to a fractional precision of
+    tol. A bracketing interval is a triple (a,b,c) where (a<b<c) and
+    func(b) < func(a),func(c).  If bracket is two numbers then they are
+    assumed to be a starting interval for a downhill bracket search
+    (see bracket)
+
+    Uses inverse interpolation when possible to speed up convergence.
+
+    Reference:  Numerical Recipies in C pg. 402-405
+    """
+    _zeps = 1.0e-10
+    _cg = 0.3819660
+    if brack is None:
+        ax,bx,cx,fa,fb,fc,funcalls = bracket(func, args=args)
+    elif len(brack) == 2:
+        ax,bx,cx,fa,fb,fc,funcalls = bracket(func, ax=brack[0], bx=brack[1], args=args)
+    elif len(brack) == 3:
+        ax,bx,cx = brack
+        if (ax > cx):  # swap so ax < cx can be assumed
+            dum = ax; ax=cx; cx=dum
+        assert ((ax < bx) and (bx < cx)), "Not a bracketing interval."
+        fa = apply(func, (ax,)+args)
+        fb = apply(func, (bx,)+args)
+        fc = apply(func, (cx,)+args)
+        assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
+        funcalls = 3
+    else:
+        raise ValuError, "Bracketing interval must be length 2 or 3 sequence."
+
+    e = 0.0
+    if (ax < cx):
+        a = ax
+        b = cx
+    else:
+        a = cx
+        b = ax
+
+    x=w=v=bx
+    fw=fv=fx=apply(func, (x,)+args)
+    funcalls = 1
+    iter = 0
+    while (iter < maxiter):
+        xm = 0.5*(a+b)
+        tol1 = tol*abs(x) + _zeps
+        tol2 = 2.0*tol1
+        if abs(x-xm) < (tol2-0.5*(b-a)):
+            xmin=x
+            fval=fx
+            break
+        if abs(e) > tol1:
+            r = (x-w)*(fx-fv)
+            q = (x-v)*(fx-fw)
+            p = (x-v)*q - (x-w)*r;
+            q = 2.0*(q-r)
+            if (q > 0.0): p = -p
+            q = abs(q)
+            etemp = e
+            e = d
+            if (abs(p) >= abs(0.5*q*etemp)) or (p<= q*(a-x)) or (p>=q*(b-x)):
+                if (x>=xm): e=a-x
+                else: e=b-x
+                d = _cg*e
+            else:
+                d = p*1.0/q
+                u = x + d
+                if ((u-a) < tol2 or (b-u) < tol2):
+                    if xm-x > 0: d = tol1
+                    else: d = -tol1
+        else:
+            if (x>=xm): e=a-x
+            else: e=b-x
+            d = _cg*e
+        if (abs(d) >= tol1):
+            u = x + d
+        else:
+            if d > 0: u = x + tol1
+            else: u = x - tol1
+        fu = apply(func, (u,)+args)
+        funcalls += 1
+
+        if (fu <= fx):
+            if (u >= x): a = x
+            else: b = x
+            v=w; w=x; x=u
+            fv=fw; fw=fx; fx=fu
+        else:
+            if (u<x): a=u
+            else: b=u
+            if (fu<=fw) or (w==x):
+                v=w; w=u; fv=fw; fw=fu
+            elif (fu<=fv) or (v==x) or (v==w):
+                v=u; fv=fu
+        
+    xmin = x
+    fval = fx
+    if full_output:
+        return xmin, fval, iter, funcalls
+    else:
+        return xmin
+    
+
+def golden(func, args=(), brack=None, tol=1.49e-8, full_output=0):
+    """ Given a function of one-variable and a possible bracketing interval,
+    return the minimum of the function isolated to a fractional precision of
+    tol. A bracketing interval is a triple (a,b,c) where (a<b<c) and
+    func(b) < func(a),func(c).  If bracket is two numbers then they are
+    assumed to be a starting interval for a downhill bracket search
+    (see bracket)
+
+    Uses analog of bisection method to decrease the bracketed interval.
+
+    Reference:  Numerical Recipies in C pg. 400-401
+    """
+    if brack is None:
+        ax,bx,cx,fa,fb,fc,funcalls = bracket(func, args=args)
+    elif len(brack) == 2:
+        ax,bx,cx,fa,fb,fc,funcalls = bracket(func, ax=brack[0], bx=brack[1], args=args)
+    elif len(brack) == 3:
+        ax,bx,cx = brack
+        if (ax > cx):  # swap so ax < cx can be assumed
+            dum = ax; ax=cx; cx=dum
+        assert ((ax < bx) and (bx < cx)), "Not a bracketing interval."
+        fa = apply(func, (ax,)+args)
+        fb = apply(func, (bx,)+args)
+        fc = apply(func, (cx,)+args)
+        assert ((fb<fa) and (fb < fc)), "Not a bracketing interval."
+        funcalls = 3
+    else:
+        raise ValuError, "Bracketing interval must be length 2 or 3 sequence."
+
+    _gR = 0.61803399
+    _gC = 1.0-_gR
+    x0 = ax
+    x3 = cx
+    if (abs(cx-bx) > abs(bx-ax)):
+        x1 = bx
+        x2 = bx + _gC*(cx-bx)
+    else:
+        x2 = bx
+        x1 = bx - _gC*(bx-ax)
+    f1 = apply(func, (x1,)+args)
+    f2 = apply(func, (x2,)+args)
+    funcalls += 2
+    while (abs(x3-x0) > tol*(abs(x1)+abs(x2))):
+        if (f2 < f1):
+            x0 = x1; x1 = x2; x2 = _gR*x1 + _gC*x3
+            f1 = f2; f2 = apply(func, (x2,)+args)
+        else:
+            x3 = x2; x2 = x1; x1 = _gR*x2 + _gC*x0
+            f2 = f1; f1 = apply(func, (x1,)+args)
+        funcalls += 1
+    if (f1 < f2):
+        xmin = x1
+        fval = f1
+    else:
+        xmin = x2
+        fval = f2
+    if full_output:
+        return xmin, fval, funcalls
+    else:
+        return xmin    
+
+
+def bracket(func, ax=0.0, bx=1.0, args=(), glimit=100.0):
+    """Given a function and distinct initial points, search in the downhill
+    direction (as defined by the initital points) and return new points
+    ax, bx, cx that bracket the minimum of the function:
+    f(ax) > f(bx) < f(cx)
+    """
+    _gold = 1.618034
+    _tiny = 1e-20
+    fa = apply(func, (ax,)+args)
+    fb = apply(func, (bx,)+args)
+    if (fb > fa):
+        dum = ax; ax = bx; bx = dum
+        dum = fb; fb = fa; fa = dum
+    cx = bx + _gold*(bx-ax)
+    fc = apply(func, (cx,)+args)
+    funcalls = 3
+    iter = 0
+    while (fb > fc):
+        r = (bx - ax)*(fb-fc)
+        q = (bx - cx)*(fb-fa)
+        val = q-r
+        if abs(val) < _tiny:
+            denom = 2.0*_tiny
+        else:
+            denom = 2.0*val
+        u = bx - ((bx-cx)*q-(bx-ax)*r)/denom
+        ulim = bx +glimit*(cx-bx)
+
+        if iter > 1000:
+            raise RunTimeError, "Too many iterations."
+        if (bx-u)*(u-cx) > 0.0:
+            fu = apply(func, (u,)+args)
+            funcalls += 1
+            if (fu < fc):
+                ax = bx
+                bx = u
+                fa = fb
+                fb = fu
+                return ax, bx, cx, fa, fb, fc, funcalls
+            elif (fu > fb):
+                cx = u
+                fc = fu
+                return ax, bx, cx, fa, fb, fc, funcalls
+            u = cx + _gold*(cx-bx)
+            fu = apply(func, (u,)+args)
+            funcalls += 1
+        elif (cx-u)*(u-ulim) > 0.0:
+            fu = apply(func, (u,)+args)
+            funcalls += 1
+            if (fu < fc):
+                bx=cx; cx=u; u=cx+_gold*(cx-bx)
+                fb=fc; fc=fu; fu=apply(func, (u,)+args)
+                funcalls += 1
+        elif (u-ulim)*(ulim-cx) >= 0.0:
+            u = ulim
+            fu = apply(func, (u,)+args)
+            funcalls += 1
+        else:
+            u = cx + _gold*(cx-bx)
+            fu = apply(func, (u,)+args)
+            funcalls += 1
+        ax=bx; bx=cx; cx=u
+        fa=fb; fb=fc; fc=fu
+    return ax, bx, cx, fa, fb, fc, funcalls
+            
+            
+global _powell_funcalls
+
+def _myfunc(alpha, func, x0, direc, args=()):
+    funcargs = (x0 + alpha * direc,)+args
+    return func(*funcargs)
+    
+def _linesearch_powell(func, p, xi, args=(), tol=1e-4):
+    # line-search algorithm using fminbound
+    #  find the minimium of the function
+    #  func(x0+ alpha*direc)
+    global _powell_funcalls
+    extra_args = (func, p, xi) + args
+    alpha_min, fret, iter, num = brent(_myfunc, args=extra_args,
+                                           full_output=1, tol=tol)
+    xi = alpha_min*xi
+    _powell_funcalls += num
+    return squeeze(fret), p+xi, xi
+    
+
+def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
+         full_output=0, disp=1):
+    """Minimize a function using modified Powell's method.
+
+    Description:
+    
+      Uses a modification of Powell's method to find the minimum of a function
+      of N
+
+    Inputs:
+
+      func -- the Python function or method to be minimized.
+      x0 -- the initial guess.
+      args -- extra arguments for func.
+
+    Outputs: (xopt, {fopt, xi, iter, funcalls, warnflag})
+
+      xopt -- minimizer of function
+
+      fopt -- value of function at minimum: fopt = func(xopt)
+      xi   -- current direction set
+      iter -- number of iterations
+      funcalls -- number of function calls
+      warnflag -- Integer warning flag:
+                  1 : 'Maximum number of function evaluations.'
+                  2 : 'Maximum number of iterations.'
+
+    Additional Inputs:
+
+      xtol -- line-search error tolerance.
+      ftol -- acceptable relative error in func(xopt) for convergence.
+      maxiter -- the maximum number of iterations to perform.
+      maxfun -- the maximum number of function evaluations.
+      full_output -- non-zero if fval and warnflag outputs are desired.
+      disp -- non-zero to print convergence messages.
+
+      """
+    global _powell_funcalls
+    p = asarray(x0)
+    N = len(p)
+    rank = len(p.shape)
+    if not -1 < rank < 2:
+        raise ValueError, "Initial guess must be a scalar or rank-1 sequence."
+    if maxiter is None:
+        maxiter = N * 1000
+    if maxfun is None:
+        maxfun = N * 1000
+
+    xi = eye(N,typecode='d')
+    fret = squeeze(apply(func, (p,)+args))
+    _powell_funcalls = 1
+    pt = p.copy()
+    iter = 0;
+    while 1:
+        fp = fret
+        ibig = 0
+        dele = 0.0
+        for i in range(N):
+            xit = xi[i]
+            fptt = fret
+            fret, p, xit = _linesearch_powell(func, p, xit, args=args, tol=xtol)
+            if (fptt - fret) > dele:
+                dele = fptt - fret
+                ibig = i
+        iter += 1
+        if (2.0*(fp - fret) <= ftol*(abs(fp)+abs(fret))+1e-20): break
+        if iter >= maxiter: break
+        if _powell_funcalls >= maxfun: break
+
+        # Construct the extrapolated point
+        ptt = 2*p - pt
+        xit = p - pt
+        pt = p.copy()
+
+        fptt = squeeze(apply(func, (ptt,)+args))
+        _powell_funcalls +=1
+
+        if (fptt < fp):
+            t = 2.0*(fp-2.0*(fret)+fptt)*(fp-fret-dele)**2 -dele*(fp-fptt)**2
+            if t < 0.0:
+                fret, p, xit = _linesearch_powell(func, p, xit, args=args, tol=xtol)
+                xi[ibig] = xi[-1]
+                xi[-1] = xit            
+
+    warnflag = 0
+    if _powell_funcalls >= maxfun:
+        warnflag = 1
+        if disp:
+            print "Warning: Maximum number of function evaluations has "\
+                  "been exceeded."
+    elif iter >= maxiter:
+        warnflag = 2
+        if disp:
+            print "Warning: Maximum number of iterations has been exceeded"
+    else:
+        if disp:
+            print "Optimization terminated successfully."
+            print "         Current function value: %f" % fret
+            print "         Iterations: %d" % iter
+            print "         Function evaluations: %d" % _powell_funcalls
+
+    p = squeeze(p)
+    if full_output:
+        return p, fret, xi, iter, _powell_funcalls, warnflag
+    else:        
+        return p
+    
+
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):
-    if flag == 1:
+    if flag == 0:
         if disp > 1:
             print "\nOptimization terminated successfully;\n the returned value" + \
                   " satisfies the termination criteria\n (using xtol = ", xtol, ")"
-    if flag == 0:
+    if flag == 1:
         print "\nMaximum number of function evaluations exceeded --- increase maxfun argument.\n"
     return
+
             
 if __name__ == "__main__":
     import string
@@ -796,6 +1169,12 @@ if __name__ == "__main__":
     times.append(time.time() - start)
     algor.append('Nelder-Mead Simplex\t')
 
+    start = time.time()
+    x = fmin_powell(rosen,x0)
+    print x
+    times.append(time.time() - start)
+    algor.append('Powell Direction Set Method.')
+    
     start = time.time()
     x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
     print x
