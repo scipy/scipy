@@ -42,7 +42,8 @@ def seed(x=0,y=0):
     if y == 0:
         import random
         y = int(rv.initial_seed())
-        x = random.randint(1,2**31-1)
+        x = random.randint(1,2**31-2) # Python 2.1 and 2.2 require -2 instead
+                                      # of -1...bug in random.randint?
     rand.set_seeds(x,y)
 
 seed()
