@@ -5,7 +5,7 @@ import sys
 from glob import glob
 import shutil
 
-def configuration(parent_package=''):
+def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import get_path,\
          default_config_dict, dot_join
@@ -13,7 +13,13 @@ def configuration(parent_package=''):
 
     package = 'special'
     config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__)
+    local_path = get_path(__name__,parent_path)
+
+    define_macros = []
+    if sys.byteorder != "little":
+        define_macros.append(('USE_MCONF_BE',1))
+    else:
+        define_macros.append(('USE_MCONF_LE',1))
 
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
     cephes = glob(os.path.join(local_path,'cephes','*.c'))
@@ -25,8 +31,9 @@ def configuration(parent_package=''):
     
     # C libraries
     config['libraries'].append(('c_misc',{'sources':c_misc}))
-    config['libraries'].append(('cephes',{'sources':cephes}))
-    
+    config['libraries'].append(('cephes',{'sources':cephes,
+                                          'macros':define_macros}))
+
     # Fortran libraries
     config['fortran_libraries'].append(('mach',{'sources':mach}))
     config['fortran_libraries'].append(('amos',{'sources':amos}))
@@ -40,7 +47,8 @@ def configuration(parent_package=''):
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(dot_join(parent_package,package,'cephes'),sources,
                     libraries = ['amos','toms','c_misc','cephes','mach',
-                                 'cdf', 'specfun']
+                                 'cdf', 'specfun'],
+                    define_macros = define_macros
                     )
     config['ext_modules'].append(ext)
 
@@ -53,16 +61,6 @@ def configuration(parent_package=''):
     ext = Extension(**ext_args)
     ext.need_fcompiler_opts = 1
     config['ext_modules'].append(ext)
-
-    # Test to see if big or little-endian machine and get correct default
-    #   mconf.h module.
-    cephes_path = os.path.join(local_path, 'cephes')
-    if sys.byteorder == "little":
-        print "### Little Endian detected ####"
-        shutil.copy2(os.path.join(cephes_path,'mconf_LE.h'),os.path.join(cephes_path,'mconf.h'))
-    else:
-        print "### Big Endian detected ####"
-        shutil.copy2(os.path.join(cephes_path,'mconf_BE.h'),os.path.join(cephes_path,'mconf.h'))
 
     return config
 

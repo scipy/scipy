@@ -31,7 +31,7 @@ finally:
 #-------------------------------
 
 standard_packages = ['io',
-                     'special','signal','stats',
+                     'signal','stats',
                      'interpolate','integrate','optimize',
                      'cluster','cow','ga',
 #                    ,'sparse'

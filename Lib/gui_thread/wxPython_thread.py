@@ -109,7 +109,7 @@ def wxPython_thread():
     # Create wrappers to wxPython extension modules:
     for name in get_extmodules('wxPython',pexec):
         module = sys.modules[name]
-        if module is None:
+        if module is None: # happens with gui_thread.wxPython
             continue
         sys.modules[name] = wrap_extmodule(module,call_holder)
 

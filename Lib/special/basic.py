@@ -766,13 +766,3 @@ def obl_cv_seq(m,n,c):
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
 
-################## test functions #########################
-    
-def test(level=1):
-    from scipy_test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from scipy_test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)
-

@@ -1,19 +1,46 @@
 #this program corresponds to special.py
+
+### Means test is not done yet
+#E   Means test is giving error (E)
+#F   Means test is failing (F)
+#EF  Means test is giving error and Failing
+#!   Means test is segfaulting
+
+###  test_besselpoly
+###  test_jnjnp_zeros
+###  test_mathieu_a
+###  test_mathieu_even_coef
+###  test_mathieu_odd_coef
+###  test_modfresnelp
+###  test_modfresnelm
+#    test_pbdv_seq
+###  test_pbvv_seq
+###  test_sph_harm
+#    test_sph_in
+#    test_sph_jn
+#    test_sph_kn
+
+#With Py2.3:
+#!   test_sh_chebyt
+#!   test_pbdv_seq
+#F   test_sph_kn
+#F   test_sph_jn
+#F   test_sph_in
+#F   test_sph_jn
+
 import os
 import sys
 #import fpformat
 import unittest
 import scipy_base.limits as limits
-from scipy_test.testing import assert_array_equal, assert_equal, rand
-from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
 from scipy_base import *
 
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
 from special import *
 del sys.path[0]
 
-from scipy_test.testing import ScipyTestCase
+
 class test_cephes(ScipyTestCase):
     def check_airy(self):
         cephes.airy(0)
@@ -1683,7 +1710,7 @@ class test_pbdv(unittest.TestCase):
         pbv = pbdv(1,.2)
         derrl = 1/2*(.2)*pbdv(1,.2)[0] - pbdv(0,.2)[0]
 
-class test_pbdv_seq(unittest.TestCase):
+class _test_pbdv_seq(unittest.TestCase):
 
     def check_pbdv_seq(self):
         pbn = pbdn_seq(1,.1)
@@ -1793,7 +1820,7 @@ class test_sh_legendre(unittest.TestCase):
         assert_array_almost_equal(Ps4.c,pse4.c,12)
         assert_array_almost_equal(Ps5.c,pse5.c,12)
         
-class test_sh_chebyt(unittest.TestCase):
+class _test_sh_chebyt(unittest.TestCase):
 
     def check_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -2064,190 +2091,5 @@ class test_zeros(unittest.TestCase):
         assert_array_equal(c,array([[0, 0],
                                     [0, 0]]))
 
-
-####### Testing ##############
-
-
-### Means test is not done yet
-#E   Means test is giving error (E)
-#F   Means test is failing (F)
-#EF  Means test is giving error and Failing
-#!   Means test is segfaulting
-
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_cephes,'check_'))
-	suites.append( unittest.makeSuite(test_airy,'check_') )
-	suites.append( unittest.makeSuite(test_airye,'check_') )
-	suites.append( unittest.makeSuite(test_arange,'check_') )
-	suites.append( unittest.makeSuite(test_ai_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_array,'check_') )
-	suites.append( unittest.makeSuite(test_assoc_laguerre,'check_') )
-###	suites.append( unittest.makeSuite(test_besselpoly,'check_') )
-	suites.append( unittest.makeSuite(test_bei,'check_') )
-	suites.append( unittest.makeSuite(test_beip,'check_') )
-	suites.append( unittest.makeSuite(test_ber,'check_') )
-	suites.append( unittest.makeSuite(test_berp,'check_') )
-	suites.append( unittest.makeSuite(test_bei_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_beip_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_ber_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_berp_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_bernoulli,'check_') )
-	suites.append( unittest.makeSuite(test_beta,'check_') )
-	suites.append( unittest.makeSuite(test_betaln,'check_') )
-	suites.append( unittest.makeSuite(test_betainc,'check_') )
-	suites.append( unittest.makeSuite(test_betaincinv,'check_') )
-	suites.append( unittest.makeSuite(test_bi_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_chebyc,'check_') )
-	suites.append( unittest.makeSuite(test_chebys,'check_') )
-	suites.append( unittest.makeSuite(test_chebyt,'check_') )
-	suites.append( unittest.makeSuite(test_chebyu,'check_') )
-	suites.append( unittest.makeSuite(test_choose,'check_') )
-	suites.append( unittest.makeSuite(test_cbrt,'check_') )
-	suites.append( unittest.makeSuite(test_cosdg,'check_') )
-	suites.append( unittest.makeSuite(test_cosm1,'check_') )
-	suites.append( unittest.makeSuite(test_cotdg,'check_') )
-	suites.append( unittest.makeSuite(test_ellipj,'check_') )	 
-        suites.append( unittest.makeSuite(test_ellipk,'check_') )
-	suites.append( unittest.makeSuite(test_ellipkinc,'check_') )
-	suites.append( unittest.makeSuite(test_ellipe,'check_') )
-	suites.append( unittest.makeSuite(test_ellipeinc,'check_') )
-	suites.append( unittest.makeSuite(test_erf,'check_') )
-	suites.append( unittest.makeSuite(test_erf_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_erfcinv,'check_') )
-	suites.append( unittest.makeSuite(test_errprint,'check_') )
-	suites.append( unittest.makeSuite(test_euler,'check_') )
-	suites.append( unittest.makeSuite(test_exp2,'check_') )	       
-	suites.append( unittest.makeSuite(test_exp10,'check_') )
-	suites.append( unittest.makeSuite(test_expm1,'check_') )
-	suites.append( unittest.makeSuite(test_fresnel,'check_') )
-	suites.append( unittest.makeSuite(test_fresnel_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_gamma,'check_') )
-	suites.append( unittest.makeSuite(test_gammaln,'check_') )
-	suites.append( unittest.makeSuite(test_gammainc,'check_') )
-        suites.append( unittest.makeSuite(test_gammaincc,'check_') )
-	suites.append( unittest.makeSuite(test_gammaincinv,'check_') )
-        suites.append( unittest.makeSuite(test_gammainccinv,'check_') )	      
-	suites.append( unittest.makeSuite(test_hankel1,'check_') )
-	suites.append( unittest.makeSuite(test_hankel1e,'check_') )
-	suites.append( unittest.makeSuite(test_hankel2,'check_') )
-	suites.append( unittest.makeSuite(test_hankel2e,'check_') )
-	suites.append( unittest.makeSuite(test_hermite,'check_') )
-	suites.append( unittest.makeSuite(test_gegenbauer,'check_') )
-	suites.append( unittest.makeSuite(test_h1vp,'check_') )
-	suites.append( unittest.makeSuite(test_h2vp,'check_') )
-	suites.append( unittest.makeSuite(test_hyp0f1,'check_') )	 
-	suites.append( unittest.makeSuite(test_hyp1f2,'check_') )
-	suites.append( unittest.makeSuite(test_hyp2f0,'check_') )
-	suites.append( unittest.makeSuite(test_hyp2f1,'check_') )
-	suites.append( unittest.makeSuite(test_hyp3f0,'check_') )
-	suites.append( unittest.makeSuite(test_hyperu,'check_') )
-	suites.append( unittest.makeSuite(test_i0,'check_') )
-	suites.append( unittest.makeSuite(test_i0e,'check_') )
-	suites.append( unittest.makeSuite(test_i1,'check_') )
-	suites.append( unittest.makeSuite(test_i1e,'check_') )
-	suites.append( unittest.makeSuite(test_iti0k0,'check_') )
-	suites.append( unittest.makeSuite(test_it2i0k0,'check_') )	  
-	suites.append( unittest.makeSuite(test_itj0y0,'check_') )
-	suites.append( unittest.makeSuite(test_it2j0y0,'check_') )
-	suites.append( unittest.makeSuite(test_iv,'check_') )
-	suites.append( unittest.makeSuite(test_ive,'check_') )
-	suites.append( unittest.makeSuite(test_ivp,'check_') )
-	suites.append( unittest.makeSuite(test_j0,'check_') )
-	suites.append( unittest.makeSuite(test_j1,'check_') )
-	suites.append( unittest.makeSuite(test_jacobi,'check_') )
-	suites.append( unittest.makeSuite(test_jn,'check_') )
-	suites.append( unittest.makeSuite(test_jv,'check_') )	     
-	suites.append( unittest.makeSuite(test_jve,'check_') )
-	suites.append( unittest.makeSuite(test_jn_zeros,'check_') )
-###	 suites.append( unittest.makeSuite(test_jnjnp_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_jnp_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_jnyn_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_jvp,'check_') )
-	suites.append( unittest.makeSuite(test_k0,'check_') )
-	suites.append( unittest.makeSuite(test_k0e,'check_') )
-	suites.append( unittest.makeSuite(test_k1,'check_') )
-	suites.append( unittest.makeSuite(test_k1e,'check_') )	      
-	suites.append( unittest.makeSuite(test_kei,'check_') )
-	suites.append( unittest.makeSuite(test_kelvin,'check_') )
-	suites.append( unittest.makeSuite(test_keip,'check_') )
-	suites.append( unittest.makeSuite(test_ker,'check_') )
-	suites.append( unittest.makeSuite(test_kerp,'check_') )
-	suites.append( unittest.makeSuite(test_kei_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_keip_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_kelvin_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_ker_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_kerp_zeros,'check_') )	     
-	suites.append( unittest.makeSuite(test_kn,'check_') )
-	suites.append( unittest.makeSuite(test_kv,'check_') )
-	suites.append( unittest.makeSuite(test_kve,'check_') )
-	suites.append( unittest.makeSuite(test_kvp,'check_') )
-	suites.append( unittest.makeSuite(test_laguerre,'check_') )
-	suites.append( unittest.makeSuite(test_legendre,'check_') )
-	suites.append( unittest.makeSuite(test_lmbda,'check_') )
-	suites.append( unittest.makeSuite(test_log1p,'check_') )	
-	suites.append( unittest.makeSuite(test_lpmn,'check_') )
-	suites.append( unittest.makeSuite(test_lpn,'check_') )
-	suites.append( unittest.makeSuite(test_lpmv,'check_') )
-	suites.append( unittest.makeSuite(test_lqmn,'check_') )
-	suites.append( unittest.makeSuite(test_lqn,'check_') )
-###	 suites.append( unittest.makeSuite(test_mathieu_a,'check_') )
-###	 suites.append( unittest.makeSuite(test_mathieu_even_coef,'check_') )
-###	 suites.append( unittest.makeSuite(test_mathieu_odd_coef,'check_') )
-###	 suites.append( unittest.makeSuite(test_modfresnelp,'check_') )
-###	 suites.append( unittest.makeSuite(test_modfresnelm,'check_') )
-	suites.append( unittest.makeSuite(test_obl_cv_seq,'check_') )	     
-	suites.append( unittest.makeSuite(test_pbdn_seq,'check_') )
-	suites.append( unittest.makeSuite(test_pbdv,'check_') )
-#	suites.append( unittest.makeSuite(test_pbdv_seq,'check_') )
-###	suites.append( unittest.makeSuite(test_pbvv_seq,'check_') )
-	suites.append( unittest.makeSuite(test_polygamma,'check_') )
-	suites.append( unittest.makeSuite(test_pro_cv_seq,'check_') )
-	suites.append( unittest.makeSuite(test_psi,'check_') )
-	suites.append( unittest.makeSuite(test_radian,'check_') )	   
-	suites.append( unittest.makeSuite(test_reshape,'check_') )
-	suites.append( unittest.makeSuite(test_rgamma,'check_') )
-	suites.append( unittest.makeSuite(test_riccati_jn,'check_') )
-	suites.append( unittest.makeSuite(test_riccati_yn,'check_') )
-	suites.append( unittest.makeSuite(test_round,'check_') )
-	suites.append( unittest.makeSuite(test_sh_legendre,'check_') )
-	suites.append( unittest.makeSuite(test_sh_chebyt,'check_') )
-	suites.append( unittest.makeSuite(test_sh_chebyu,'check_') )
-	suites.append( unittest.makeSuite(test_sh_jacobi,'check_') )	   
-	suites.append( unittest.makeSuite(test_sinc,'check_') )
-	suites.append( unittest.makeSuite(test_sindg,'check_') )
-###	suites.append( unittest.makeSuite(test_sph_harm,'check_') )
-#	suites.append( unittest.makeSuite(test_sph_in,'check_') )
-	suites.append( unittest.makeSuite(test_sph_inkn,'check_') )
-#	suites.append( unittest.makeSuite(test_sph_jn,'check_') )
-	suites.append( unittest.makeSuite(test_sph_jnyn,'check_') )
-#	suites.append( unittest.makeSuite(test_sph_kn,'check_') )	   
-	suites.append( unittest.makeSuite(test_sph_yn,'check_') )
-	suites.append( unittest.makeSuite(test_take,'check_') )
-	suites.append( unittest.makeSuite(test_tandg,'check_') )
-	suites.append( unittest.makeSuite(test_y0,'check_') )
-	suites.append( unittest.makeSuite(test_y1,'check_') )
-	suites.append( unittest.makeSuite(test_y0_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_y1_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_y1p_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_yn_zeros,'check_') )
-	suites.append( unittest.makeSuite(test_ynp_zeros,'check_') )	   
-	suites.append( unittest.makeSuite(test_yn,'check_') )
-	suites.append( unittest.makeSuite(test_yv,'check_') )
-	suites.append( unittest.makeSuite(test_yve,'check_') )
-	suites.append( unittest.makeSuite(test_yvp,'check_') )
-	suites.append( unittest.makeSuite(test_zeros,'check_') )
-    if level > 5:
-	pass
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10,verbosity=1):
-    all_tests = test_suite(level=level)
-    runner = unittest.TextTestRunner(verbosity=verbosity)
-    runner.run(all_tests)
-    return runner
-
 if __name__ == "__main__":
-    test(1,2)
+    ScipyTest('special.basic').run()

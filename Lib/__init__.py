@@ -111,7 +111,7 @@ del _import_packages
 
 # Level 1
 # these modules will just be imported (not subsumed)
-special = ppimport('special');  _level_docs(special)
+#special = ppimport('special');  _level_docs(special)
 io = ppimport('io');            _level_docs(io)
 #linalg = ppimport('linalg');    _level_docs(linalg)
 stats = ppimport('stats');      _level_docs(stats)
@@ -119,8 +119,8 @@ stats = ppimport('stats');      _level_docs(stats)
 for n in ['mean','median','std','cov','corrcoef','find_repeats']:
     exec '%s = ppimport_attr(stats,%s)' % (n,`n`)
 
-for n in ['isinf','isfinite','isnan']:
-    exec '%s = ppimport_attr(special,%s)' % (n,`n`)
+#for n in ['isinf','isfinite','isnan']:
+#    exec '%s = ppimport_attr(special,%s)' % (n,`n`)
 
 # Functions to be subsumed that need Level 0 and Level 1
 from common import *
