@@ -49,7 +49,6 @@ parent_package = 'scipy'
 
 scipy_packages = standard_packages
 scipy_packages += graphics_packages
-scipy_packages += chaco_packages
 
 #---------------
 
