@@ -97,21 +97,10 @@ class test_isinf(unittest.TestCase):
     def check_neginf_scalar(self): 
         assert(isinf(array(-1.)/0.) == 1)
     def check_ind(self): 
-<<<<<<< test_misc.py
         assert(isinf(array((0.,))/0.) == 0)
-=======
-        # !! This is what these should be !!
-        assert(isinf(array(0.)/0.) == 0)
-
->>>>>>> 1.12
     def check_qnan(self): 
-<<<<<<< test_misc.py
         assert(isinf(log(-1.)) == 0)
         assert(isnan(log(-1.)) == 1)
-=======
-        # !! This is what these should be !!
-        assert(isinf(log(-1.)) == 0)
->>>>>>> 1.12
 
 class test_isposinf(unittest.TestCase):
     def check_generic(self):
@@ -143,15 +132,9 @@ class test_nan_to_num(unittest.TestCase):
         v = 1+1j
         v += array(0+1.j)/0.
         vals = nan_to_num(v)
-<<<<<<< test_misc.py
         # !! This is actually (unexpectedly) zero
         assert(vals.imag > 1e10 and isfinite(vals))
         #assert(vals.imag ==0)
-=======
-        # !! Not sure what this one really should be.
-        assert(vals.imag > 1e10 and isfinite(vals))
-        #assert(vals.imag ==0)
->>>>>>> 1.12
     def check_complex_bad2(self):
         v = 1+1j
         v += array(-1+1.j)/0.
