@@ -837,6 +837,7 @@ def getallparams(gistpath,local):
     library_dirs.extend(get_special_dirs(sys.platform))
 
     include_dirs = [os.path.join(local,x) for x in include_dirs]
+    include_dirs.extend(x11_info.get('include_dirs',[]))
 
     if not run_config:
         inputfile = open(os.path.join(local,"pygist","Make.cfg"))
