@@ -5,6 +5,7 @@
 __all__ = ['get_lapack_funcs']
 
 import string
+import warnings
 from scipy_distutils.misc_util import PostponedException
 
 # The following ensures that possibly missing flavor (C or Fortran) is
@@ -15,12 +16,12 @@ except: flapack = PostponedException()
 try:
     import clapack
     if isinstance(flapack,PostponedException):
-        print flapack.__doc__  # XXX: make it a warning
+        warnings.warn(flapack.__doc__)
         flapack = clapack
 except:
     clapack = PostponedException()
     if not isinstance(flapack,PostponedException):
-        print clapack.__doc__  # XXX: make it a warning
+        warnings.warn(clapack.__doc__)
         clapack = flapack
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
