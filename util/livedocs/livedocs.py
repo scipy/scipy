@@ -19,6 +19,13 @@ subobj2 = re.compile("(\s+)(\w+)(\s+)---(\s+)([\w*])")
 import scipy
 UfuncType = scipy.UfuncType
 
+try:
+    # Disable ppimport hooks.
+    # scipy_base has been imported by scipy import
+    sys.modules['scipy_base.ppimport'].disable()
+except:
+    pass
+
 def isfortrantype(obj):
     return repr(type(obj))=="<type 'fortran'>"
 
@@ -35,25 +42,26 @@ def makenewparent(name, parent):
 # parent is old parent
 def toPage(obj, name, parent, mod):
     typ = type(obj)
-    newparent = makenewparent(mod.__name__, parent)
+    modname = getattr(mod,'__name__',name)
+    newparent = makenewparent(modname, parent)
     #print mod.__name__, parent, newparent, obj
     if typ is types.FunctionType:
-        return BasePage(newparent, obj)
-    elif typ is types.BuiltinFunctionType: 
+        return BasePage(newparent, obj, havesource=1)
+    elif typ is types.BuiltinFunctionType:
         return BasePage(newparent, obj, canedit=0)
     elif typ is UfuncType:
         return BasePage(newparent, obj, name=name, canedit=0)
     elif typ is types.ClassType:
-        return ClassPage(newparent, obj)
+        return ClassPage(newparent, obj, havesource=1)
     elif typ is types.TypeType:
-        return ClassPage(newparent, obj)
+        return ClassPage(newparent, obj, havesource=1)
     elif typ is types.ModuleType:
         if re.match(r'This module \'\w+\' is auto-generated with f2py',
                     getattr(obj,'__doc__','')):
             return F2pyModulePage(newparent, obj, canedit=0)
         return ModulePage(newparent, obj, canedit=0)
     elif typ is types.MethodType:
-        return BasePage(newparent, obj)
+        return BasePage(newparent, obj, havesource=1)
     elif inspect.ismethoddescriptor(obj):
         return BasePage(newparent, obj, canedit=0)
     elif typ is types.InstanceType:
@@ -76,6 +84,7 @@ class BasePage(rend.Page):
         if self.name is None:
             self.name = self.obj.__name__
         self.canedit = kw.pop('canedit',1)
+        self.havesource = kw.pop('havesource',0)
         rend.Page.__init__(self, **kw)
 
     def render_title(self, context, data):
@@ -97,11 +106,23 @@ class BasePage(rend.Page):
         # First look for docstring in filetree
         doc = self.getdoc_fromtree()
         if doc is None:
-            doc = cStringIO.StringIO()
-            if type(self.obj) is types.ModuleType:
-                reload(self.obj)
-            scipy.info(self.obj, output=doc)
-            doc = doc.getvalue()
+            if isinstance(self.obj,SourceHolder):
+                doc = str(self.obj)
+            else:
+                doc = cStringIO.StringIO()
+                if type(self.obj) is types.ModuleType:
+                    reload(self.obj)
+                scipy.info(self.obj, output=doc)
+                doc = doc.getvalue()
+        if self.havesource and hasattr(self.obj,'__name__'):
+            if type(self.obj) in [types.TypeType,types.InstanceType,
+                                  types.ClassType]:
+                doc = re.sub(r'(\b'+self.obj.__name__+r'\b)',
+                             r'<a href="__source__">\1</a>',doc,count=1)
+            else:
+                doc = re.sub(r'(\b'+self.obj.__name__+r'\b)',
+                             r'<a href="\1/__source__">\1</a>',doc,count=1)
+
         return T.xml(self.dochtml(doc))
 
     def render_extra(self, context, data):
@@ -117,6 +138,20 @@ class BasePage(rend.Page):
 
     def render_extraedit(self, context, data):
         return T.xml("<a href=_extra_edit_%s>edit</a>" % self.name)
+
+    def childFactory(self, ctx, name):
+        if name == '__source__':
+            child = SourceHolder(self.obj)
+            return toPage(child, name, self.parent, self.obj)
+        return None
+
+class SourceHolder:
+    def __init__(self, obj):
+        self.obj = obj
+    def __str__(self):
+        doc = cStringIO.StringIO()
+        scipy.source(self.obj, output=doc)
+        return doc.getvalue()
 
 class ModulePage(BasePage):
 
@@ -190,6 +225,8 @@ class ClassPage(BasePage):
                 self.all.append(meth)
 
     def childFactory(self, context, name):
+        r = BasePage.childFactory(self,context, name)
+        if r is not None: return r
         if name in self.all:
             child = getattr(self.obj,name,None)
             return toPage(child, name, self.parent, self.obj)
@@ -202,13 +239,6 @@ class ClassPage(BasePage):
         substr = str[start:]
         substr = subobj.sub("\\1<a href=\\2>\\2</a>\\3--\\4\\5",substr)
         return str[:start] + substr
-
-try:
-    # Disable ppimport hooks.
-    # scipy_base has been imported by scipy import
-    sys.modules['scipy_base.ppimport'].disable()
-except:
-    pass
 
 _packages = ['scipy', 'scipy_base', 'weave', 'scipy_distutils', 'scipy_test']
 
