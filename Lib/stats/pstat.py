@@ -288,7 +288,7 @@ Format:  replace (lst,oldval,newval)"""
 def remap (listoflists,criterion):
 
     function = 'lines = map(lambda x: '+criterion+',listoflists)'
-    exec(function)
+    exec function in globals(), locals()
     return lines
 
 
