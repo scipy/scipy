@@ -108,19 +108,19 @@ _pkg_doc = ['Vector Quantization / Kmeans',
             'FFT algorithms',
             'FFT algorithms using fftw',
             'Genetic Algorithms',
-            'Plotting with gnuplot',
             'Integration',
             'Interpolation',
             'Input/Output',
             'Linear Algebra',
             'Optimization',
-            'Plotting with wxPython',
             'Signal Processing',
             'Sparse Matrices',
             'Special Functions',
             'Statistics',
             'C/C++ integration',
-            'Plotting with X']
+            'Plotting with X',
+	    'Plotting with gnuplot']
+	    #'Plotting with wxPython']
 
 def _extend_doc(st,p,pd):
     _lengths = [len(x) for x in p]
