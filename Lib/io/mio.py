@@ -1,9 +1,10 @@
 # Author: Travis Oliphant
 
 from Numeric import *
+from MLab import squeeze
 from fastumath import *
-import scipy.io.numpyio
-import struct
+import numpyio
+import struct, os, sys
 
 def getsize_type(mtype):
     if mtype in ['b','uchar','byte','unsigned char','integer*1', 'int8']:
@@ -120,18 +121,14 @@ class fopen:
                    complex float  : 'F', 'complex float', 'complex*8', 'complex64'
                    complex double : 'D', 'complex', 'complex double', 'complex*16',
                                     'complex128'
-
-        Outputs: (val,)
-
-          val -- The number of bytes written.
         """
         data = asarray(data)
         if mtype is None:
             mtype = data.typecode()
         howmany,mtype = getsize_type(mtype)
         count = product(data.shape)
-        val = numpyio.fwrite(self.fid,count,data,mtype,self.bs)
-        return val
+        numpyio.fwrite(self.fid,count,data,mtype,self.bs)
+        return 
 
     def fread(self,count,stype,rtype=None):
         """Read data from file and return it in a Numeric array.
@@ -148,7 +145,7 @@ class fopen:
           output -- a Numeric array of type rtype.
         """
         shape = None
-        if type(count) in [types.Tupletype, types.ListType]:
+        if type(count) in [types.TupleType, types.ListType]:
             shape = tuple(count)
             count = product(shape)
         howmany,stype = getsize_type(stype)
@@ -266,14 +263,185 @@ class fopen:
             self.fid.read(nn)
             return retval
                                       
+def loadmat(name, dict=None, appendmat=1):
+    """Load the MATLAB mat file saved in level 1.0 format.
+
+    If name is a full path name load it in.  Otherwise search for the file
+    on the sys.path list and load the first one found (the current directory
+    is searched first).
+
+    Only Level 1.0 MAT files are supported so far.
+
+    Inputs:
+
+      name -- name of the mat file (don't need .mat extension)
+      dict -- the dictionary to insert into.  If none the variables will be
+              returned in a dictionary.
+      appendmat -- non-zero to append the .mat extension to the end of the
+                   given filename.
+
+    Outputs:
+
+       If dict is None, then a dictionary of names and objects representing the
+       stored arrays is returned.
+    """
+
+    if appendmat and name[-4:] == ".mat":
+        name = name[:-4]
+    if os.sep in name:
+        full_name = name
+        if appendmat:
+            full_name = name + ".mat"
+    else:
+        full_name = None
+        junk,name = os.path.split(name)
+        for path in sys.path:
+            test_name = os.path.join(path,name)
+            if appendmat:
+                test_name += ".mat"
+            try:
+                fid = open(test_name,'r')
+                fid.close()
+                full_name = test_name
+            except IOError:
+                pass
+        if full_name is None:
+            raise IOError, "%s not found on the path." % name
+
+    fid = fopen(full_name,'r')
+    test_vals = fid.fread(4,'byte')
+    if not (0 in test_vals):
+        fid.close()
+        raise ValueError, "Version 5.0 file format not supported."
+
+    testtype = struct.unpack('i',test_vals.tostring())
+    # Check to see if the number is positive and less than 5000.
+    if testtype[0] < 0 or testtype[0] > 4999:
+        # wrong byte-order
+        if LittleEndian:
+            format = 'ieee-be'
+        else:
+            format = 'ieee-le'
+    else:  # otherwise we are O.K.
+        if LittleEndian:
+            format = 'ieee-le'
+        else:
+            format = 'ieee-be'
+
+    fid.close()
+    fid = fopen(full_name, 'r', format)
+
+    length = fid.size()
+    fid.rewind()  # back to the begining
+
+    defnames = []
+    thisdict = {}
+    while 1:
+        if (fid.tell() == length):
+            break        
+        header = fid.fread(5,'int')
+        if len(header) != 5:
+            fid.close()
+            print "Warning: Read error in file."
+            break
+
+        M,rest = divmod(header[0],1000)
+        O,rest = divmod(rest,100)
+        P,rest = divmod(rest,10)
+        T = rest
+
+        if (M > 1):
+            fid.close()
+            raise ValueError, "Unsupported binary format."
+        if (O != 0):
+            fid.close()
+            raise ValuError, "Hundreds digit of first integer should be zero."
+
+        if (P == 4):
+            fid.close()
+            raise ValueError, "No support for 16-bit unsigned integers."
+
+        if (T not in [0,1]):
+            fid.close()
+            raise ValueError, "Cannot handle sparse matrices, yet."
+
+        storage = {0:'d',1:'f',2:'i',3:'s',5:'b'}[P]
+
+        varname = fid.fread(header[-1],'char')[:-1]
+        varname = varname.tostring()
+        defnames.append(varname)
+        numels = header[1]*header[2]
+        if T == 0:             # Text data
+            data = fid.fread(numels,storage)
+            if header[3]:  # imaginary data
+                data2 = fid.fread(numels,storage)
+                if data.typecode() == 'f' and data2.typecode() == 'f':
+                    new = zeros(data.shape,'F')
+                    new.real = data
+                    new.imag = data2
+                    data = new
+                    del(new)
+                    del(data2)
+            data.shape = (header[2], header[1])
+            thisdict[varname] = transpose(squeeze(data))
+        else:
+            data = fid.fread(numels,storage,'char')
+            data.shape = (header[2], header[1])
+            thisdict[varname] = transpose(squeeze(data))
+
+    fid.close()
+    if dict is not None:
+        print "Names defined = ", defnames
+        dict.update(thisdict)
+    else:
+        return thisdict
 
 
+def savemat(filename, dict):
+    """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
+    This saves the arrayobjects in the given dictionary to a Matlab Version 4
+    style .mat file.
+    """
+    storage = {'D':0,'d':0,'F':1,'f':1,'l':2,'i':2,'s':3,'b':5}
+    if filename[-4:] != ".mat":
+        filename = filename + ".mat"
+    fid = fopen(filename,'w')
+    M = not LittleEndian
+    O = 0
+    for variable in dict.keys():
+        var = dict[variable]
+        if type(var) is not ArrayType:
+            continue
+        if var.typecode() == 'c':
+            T = 1
+        else:
+            T = 0
+        if var.typecode() == '1':
+            var = var.astype('s')
+        P = storage[var.typecode()]
+        fid.fwrite([M*1000+O*100+P*10+T],'int')
 
+        if len(var.shape) == 1:
+            var.shape = (len(var), 1)
+        var = transpose(var)
 
+        if len(var.shape) > 2:
+            var.shape = (product(var.shape[:-1]), var.shape[-1])
 
-
-
+        imagf = var.typecode() in ['F', 'D']
+        fid.fwrite([var.shape[1], var.shape[0], imagf, len(variable)+1],'int')
+        fid.fwrite(variable+'\x00','char')
+        if imagf:
+            fid.fwrite(var.real)
+            fid.fwrite(var.imag)
+        else:
+            fid.fwrite(var)
+    fid.close()
+    return
+        
+        
+            
 
 
 

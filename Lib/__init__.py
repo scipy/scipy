@@ -1,7 +1,7 @@
-try:
-    import gui_thread
-except:
-    print "Warning:  wxPython not loaded"
+#try:
+    #import gui_thread
+#except:
+    #print "Warning:  wxPython not loaded"
 
 #get version
 import scipy_version
