@@ -83,10 +83,22 @@ class test_isinf(unittest.TestCase):
     def check_ind(self): 
         assert(isinf(array((0.,))/0.) == 1)
     def check_qnan(self): 
-        assert(isinf(log(-1.)) == 1)        
-# Log tests need to be re-written when warnings are allowed
-# instead of errors for log values.
+        assert(isinf(log(-1.)) == 1)
 
+class test_isposinf(unittest.TestCase):
+    def check_generic(self):
+        vals = isposinf(array((-1.,0,1))/0.)
+        assert(vals[0] == 0)
+        assert(vals[1] == 0)
+        assert(vals[2] == 1)
+
+class test_isneginf(unittest.TestCase):
+    def check_generic(self):
+        vals = isneginf(array((-1.,0,1))/0.)
+        assert(vals[0] == 1)
+        assert(vals[1] == 0)
+        assert(vals[2] == 0)
+        
 class test_logn(unittest.TestCase):
     def check_log_3_4(self):
         val = logn(3,4)
@@ -505,6 +517,8 @@ def test_suite():
     suites.append( unittest.makeSuite(test_isnan,'check_') )
     suites.append( unittest.makeSuite(test_isfinite,'check_') )
     suites.append( unittest.makeSuite(test_isinf,'check_') )
+    suites.append( unittest.makeSuite(test_isposinf,'check_') )    
+    suites.append( unittest.makeSuite(test_isneginf,'check_') )        
     suites.append( unittest.makeSuite(test_logn,'check_') )
     suites.append( unittest.makeSuite(test_log2,'check_') )
     suites.append( unittest.makeSuite(test_histogram,'check_') )
