@@ -1161,9 +1161,9 @@ static int type_from_object(PyObject *obj)
 {
   if (PyArray_Check(obj))
     return ((PyArrayObject *)obj)->descr->type_num;
-  if (PyInt_Check(obj) || PyLong_Check(obj)) return PyArray_LONG;
-  if (PyFloat_Check(obj)) return PyArray_DOUBLE;
   if (PyComplex_Check(obj)) return PyArray_CDOUBLE;
+  if (PyFloat_Check(obj)) return PyArray_DOUBLE;
+  if (PyInt_Check(obj) || PyLong_Check(obj)) return PyArray_LONG;
   PyErr_SetString(PyExc_ValueError, "arraymap: Invalid type for output array.");
   return -1;
 }
@@ -1416,7 +1416,7 @@ static int loop_over_arrays(PyObject *func, PyArrayObject **inarr, int nin, PyAr
 	  free(nd_index);
 	  Py_DECREF(arglist);
 	  Py_DECREF(result);
-	  return -1;
+          return -1;
 	}
       }
     }

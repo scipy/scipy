@@ -1,5 +1,5 @@
-#LyX 1.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 218
+#LyX 1.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 220
 \textclass article
 \language english
 \inputencoding auto
@@ -11,6 +11,8 @@
 \paperpackage a4
 \use_geometry 1
 \use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
 \paperorientation portrait
 \leftmargin 1in
 \topmargin 1in
@@ -61,7 +63,10 @@ This document provides a tutorial for the first-time user of SciPy to help
  by working through the Tutorial in the Python distribution.
  Throughout this tutorial it is assumed that the user has imported all of
  the names defined in the SciPy namespace using the command 
-\latex latex 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
 
 \backslash 
 begin{verbatim}
@@ -69,9 +74,12 @@ begin{verbatim}
 >>> from scipy import *
 \backslash 
 end{verbatim} 
-\layout Section
+\end_inset 
 
-General help
+
+\layout Subsection
+
+General Help
 \layout Standard
 
 Python provides the facility of documentation strings.
@@ -94,7 +102,7 @@ The pydoc method of help is sophisticated but uses a pager to display the
  text.
  Sometimes this can interfere with the terminal you are running the interactive
  session within.
- A scipy-specific help system is also available under the command scipy.help.
+ A scipy-specific help system is also available under the command scipy.info.
  The signature and documntation string for the object passed to the help
  command are printed to standard output (or to a writeable object passed
  as the third argument).
@@ -102,27 +110,942 @@ The pydoc method of help is sophisticated but uses a pager to display the
 \begin_inset Quotes eld
 \end_inset 
 
-scipy.help
+scipy.info
 \begin_inset Quotes erd
 \end_inset 
 
  defines the maximum width of the line for printing.
-\layout Standard
-
-If a module is passed as the argument to help than a list of the functions
+ If a module is passed as the argument to help than a list of the functions
  and classes defined in that module is printed.
  For example:
 \layout Standard
 
 
+\begin_inset Include \verbatiminput{example1.1}
+
+\end_inset 
+
+ 
+\layout Standard
+
+Another useful command is 
+\series bold 
+source.
+
+\family typewriter 
+\series default 
+ 
+\family default 
+When given a function written in Python as an argument, it prints out a
+ listing of the source code for that function.
+ This can be helpful in learning about an algorithm or understanding exactly
+ what a function is doing with its arguments.
+ Also don't forget about the Python command 
+\family typewriter 
+dir 
+\family default 
+which can be used to look at the namespace of a module or package.
+\layout Subsection
+
+SciPy Organization
+\layout Standard
+
+SciPy is organized into subpackages covering different scientific computing
+ domains.
+ Some common functions which several subpackages rely on live under the
+ 
+\family typewriter 
+scipy_base
+\family default 
+ package which is installed at the same directory level as the scipy package
+ itself and could be installed separately.
+ This allows for the possibility of separately distributing the subpackages
+ of scipy as long as scipy_base package is provided as well.
+ 
+\layout Standard
+
+Two other packages are installed at the higher-level: scipy_distutils and
+ weave.
+ These two packages while distributed with main scipy package could see
+ use independently of scipy and so are treated as separate packages and
+ described elsewhere.
+\layout Standard
+
+The remaining subpackages are summarized in the following table (a * denotes
+ an optional sub-package that requires additional libraries to function
+ or is not available on all platforms).
+ 
+\layout Standard
+\align center 
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="17" columns="2">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Subpackage
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+cluster
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Clustering algorithms
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+cow
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Cluster of Workstations code for parallel programming
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+fftpack
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+FFT based on fftpack -- default
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+fftw*
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+FFT based on fftw --- requires FFTW libraries
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+ga
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Genetic algorithms
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+gplt*
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Plotting --- requires gnuplot
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+integrate
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Integration
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+interpolate
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Interpolation
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+io
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Input and Output
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+linalg
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Linear algebra
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+optimize
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Optimization and root-finding routines
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+plt*
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Plotting --- requires wxPython
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+signal
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Signal processing
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+special
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Special functions
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+stats
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Statistical distributions and functions
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+xplt*
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Plotting --- requires an X server
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Standard
+
+Because of their ubiquitousness, some of the functions in these subpackages
+ are also made available in the scipy namespace to ease their use in interactive
+ sessions and programs.
+ In addition, many convenience functions are located in the scipy_base package
+ and the in the top-level of the scipy package.
+ Before looking at the sub-packages individually, we will first look at
+ some of these common functions.
+ 
+\layout Section
+
+Basic functions in scipy_base and top-level scipy
+\layout Subsection
+
+Interaction with Numeric
+\layout Standard
+
+To begin with, all of the Numeric functions have been subsumed into the
+ scipy namespace so that all of those functions are available without additional
+ly importing Numeric.
+ In addition, the universal functions (addition, subtraction, division)
+ have been altered to not raise exceptions if floating-point errors are
+ encountered
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+These changes are all made in a new module (fastumath) that is part of the
+ scipy_base package.
+ The old functionality is still available in umath (part of Numeric) if
+ you need it (note: importing umath or fastumath resets the behavior of
+ the infix operators to use the umath or fastumath ufuncs respectively).
+ 
+\end_inset 
+
+, instead NaN's and Inf's are returned in the arrays.
+ To assist in detection of these events new universal functions (isnan,
+ isfinite, isinf) have been added.
+ In addition, the comparision operators have been changed to allow comparisons
+ and logical operations of complex numbers (only the real part is compared).
+ Also, with the new universal functions in SciPy, the logical operations
+ all return arrays of unsigned bytes (8-bits per element instead of the
+ old 32-bits, or even 64-bits) per element.
+ 
+\layout Standard
+
+Finally, some of the basic functions like log, sqrt, and inverse trig functions
+ have been modified to return complex numbers instead of NaN's where appropriate
+ (
+\emph on 
+i.e.
+ 
+\family typewriter 
+\emph default 
+scipy.sqrt(-1)
+\family default 
+ returns 
+\family typewriter 
+1j
+\family default 
+).
+ 
+\layout Subsection
+
+Scipy_base routines 
+\layout Standard
+
+The purpose of scipy_base is to collect general-purpose routines that the
+ other sub-packages can use.
+ These routines are divided into several files for organizational purposes,
+ but they are all available under the scipy_base namespace (and the scipy
+ namespace).
+ There are routines for type handling and type checking, shape and matrix
+ manipulation, polynomial processing, and other useful functions.
+ Rather than giving a detailed description of each of these functions (which
+ is available using the 
+\series bold 
+help
+\series default 
+, 
+\series bold 
+info
+\series default 
+ and 
+\series bold 
+source
+\series default 
+ commands), this tutorial will discuss some of the more useful commands
+ which require a little introduction to use to their full potential.
+ 
+\layout Subsubsection
+
+Type handling 
+\layout Standard
+
+Note the difference between 
+\series bold 
+iscomplex
+\series default 
+ (
+\series bold 
+isreal
+\series default 
+) and 
+\series bold 
+iscomplexobj
+\series default 
+ (
+\series bold 
+isrealobj
+\series default 
+).
+ The former command is array based and return byte arrays of ones and zeros
+ providing the result of the element-wise test.
+ The latter command is object based and returns a scalar describing the
+ result of the test on the entire object.
+ 
+\layout Standard
+
+Often it is required to get just the real and/or imaginary part of a complex
+ number.
+ While complex numbers and arrays have attributes that return those values,
+ if one is not sure whether or not the object will be complex-valued, it
+ is better to use the functional forms 
+\series bold 
+real
+\series default 
+ and 
+\series bold 
+imag
+\series default 
+.
+ These functions succeed for anything that can be turned into a Numeric
+ array.
+ Consider also the function 
+\series bold 
+real_if_close 
+\series default 
+which transforms a complex-valued number with tiny imaginary part into a
+ real number.
+ 
+\layout Standard
+
+Occasionally the need to check whether or not a number is a scalar (Python
+ (long)int, Python float, Python complex, or rank-0 array) occurs in coding.
+ This functionality is provi>>> fpi = cast['f'](pi)ded in the convenient
+ function 
+\series bold 
+isscalar 
+\series default 
+which returns a 1 or a 0.
+ 
+\layout Standard
+
+Finally, ensuring that objects are a certain Numeric type occurs often enough
+ that it has been given a convenient interface in SciPy through the use
+ of the 
+\series bold 
+cast
+\series default 
+ dictionary.
+ The dictionary is keyed by the type it is desired to cast to and the dictionary
+ stores functions to perform the casting.
+ Thus, 
+\family typewriter 
+>>> a = cast['f'](d)
+\family default 
+ returns an array of float32 from d.
+ This function is also useful as an easy way to get a scalar of a certain
+ type: 
+\family typewriter 
+>>> fpi = cast['f'](pi)
+\family default 
+.
+ 
+\layout Subsubsection
+
+Index Tricks
+\layout Standard
+
+Thre are some class instances that make special use of the slicing functionality
+ to provide efficient means for array construction.
+ This part will discuss the operation of 
+\series bold 
+mgrid
+\series default 
+,
+\series bold 
+ r_
+\series default 
+,
+\series bold 
+ 
+\series default 
+and
+\series bold 
+ c_ 
+\series default 
+for quickly constructing arrays.
+ 
+\layout Standard
+
+One familiar with Matlab may complain that it is difficult to construct
+ arrays from the interactive session with Python.
+ Suppose, for example that one wants to construct an array that begins with
+ 3 followed by 5 zeros and then contains 10 numbers spanning the range -1
+ to 1 (inclusive on both ends).
+ Before SciPy, I would need to enter something like the following 
+\family typewriter 
+>>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0))
+\family default 
+.
+ With the 
+\series bold 
+r_
+\series default 
+ command one can enter this as
+\family typewriter 
+ >>> r_[3,[0]*5,-1:1:10j] 
+\family default 
+which can ease typing in an interactive session.
+ Notice how objects are concatenated, and the slicing syntax is used (abused)
+ to construct ranges.
+ The other term that deserves a little explanation is the use of the complex
+ number 10j as the step size in the slicing syntax.
+ This non-standard use allows the number to be interpreted as the number
+ of points to produce in the range rather than as a step size (note we would
+ have used the long integer notation, 10L, but this notation may go away
+ in Python as the integers became unified).
+ This non-standard usage may be unsightly to some, but it gives the user
+ the ability to quickly construct complicated vectors in a very readable
+ fashion.
+ When the number of points is specified in this way, the end-point is inclusive.
+\layout Standard
+
+The 
+\begin_inset Quotes eld
+\end_inset 
+
+r
+\begin_inset Quotes erd
+\end_inset 
+
+ stands for row concatenation because if the objects between commas are
+ 2 dimensional arrays, they are stacked by rows (and thus must have commensurate
+ columns).
+ There is an equivalent command 
+\series bold 
+c_ 
+\series default 
+that stacks 2d arrays by columns but works identically to 
+\series bold 
+r_ 
+\series default 
+for 1d arrays.
+ 
+\layout Standard
+
+Another very useful class instance which makes use of extended slicing notation
+ is the function 
+\series bold 
+mgrid
+\series default 
+.
+
+\series bold 
+ 
+\series default 
+In the simplest case, this function can be used to construct 1d ranges as
+ a convenient substitute for arange.
+ It also allows the use of complex-numbers in the step-size to indicate
+ the number of points to place between the (inclusive) end-points.
+ The real purpose of this function however is to produce N, N-d arrays which
+ provide coordinate arrays for an N-dimensional volume.
+ The easiest way to understand this is with an example of its usage: 
 \begin_inset Include \verbatiminput{example2.1}
 
 \end_inset 
 
 
+\layout Standard
+
+Having meshed arrays like this is sometimes very useful.
+ However, it is not always needed due just to evaluate some N-dimensional
+ function over a grid due to the array-broadcasting rules of Numeric and
+ SciPy.
+ If this is the only purpose for generating a meshgrid, you should instead
+ use the function 
+\series bold 
+ogrid 
+\series default 
+which generates an 
+\begin_inset Quotes eld
+\end_inset 
+
+open
+\begin_inset Quotes erd
+\end_inset 
+
+ grid using NewAxis judiciously to create N, N-d arrays where only one-dimension
+ has length greater than 1.
+ This will save memory and create the same result if the only purpose for
+ the meshgrid is to generate sample points for evaluation of an N-d function.
+ 
+\layout Subsubsection
+
+Shape manipulation
+\layout Standard
+
+In this category of functions are routines for squeezing out length-one
+ dimensions from N-dimensional arrays, ensure that an array is at least
+ 1-, 2-, or 3-dimensional, and stacking (concatenating) arrays by rows,
+ columns, and 
+\begin_inset Quotes eld
+\end_inset 
+
+pages
+\begin_inset Quotes erd
+\end_inset 
+
+ (in the third dimension).
+ Routines for splitting arrays (roughly the opposite of stacking arrays).
+ 
+\layout Subsubsection
+
+Matrix manipulations
+\layout Standard
+
+These are functions specifically suited for 2-dimensional arrays that were
+ part of MLab in the Numeric distribution, but have been placed in scipy_base
+ for completeness.
+ 
+\layout Subsubsection
+
+Polynomials
+\layout Standard
+
+There are two (interchangeable) ways to deal with 1-d polynomials in SciPy.
+ The first is to use the 
+\series bold 
+poly1d
+\series default 
+ class in 
+\series bold 
+scipy_base
+\series default 
+.
+ This class accepts coefficients or polynomial roots to initialize a polynomial.
+ The polynomial object can then be manipulated in algebraic expressions,
+ integrated, differentiated, and evaluated.
+ It even prints like a polynomial:
+\begin_inset Include \verbatiminput{example2.2}
+
+\end_inset 
+
+
+\layout Standard
+
+The other way to handle polynomials is as an array of coefficients with
+ the first element of the array giving the coefficient of the highest power.
+ There are explicit functions to add, subtract, multiply, divide, integrate,
+ differentiate, and evaluate polynomials represented as sequences of coefficient
+s.
+ 
+\layout Subsubsection
+
+Other useful functions
+\layout Standard
+
+There are several other functions in the scipy_base package including most
+ of the other functions that are also in MLab that comes with the Numeric
+ package.
+ The reason for duplicating these functions is to allow SciPy to potentially
+ alter their original interface and make it easier for users to know how
+ to get access to functions 
+\family typewriter 
+>>> from scipy import *.
+ 
+\layout Standard
+
+New functions which should be mentioned are 
+\series bold 
+mod(x,y)
+\series default 
+ which can replace 
+\series bold 
+x%y
+\series default 
+ when it is desired that the result take the sign of 
+\series bold 
+y
+\series default 
+ instead of 
+\series bold 
+x
+\series default 
+.
+ Also included is 
+\series bold 
+fix 
+\series default 
+which always rounds to the nearest integer towards zero.
+ For doing phase processing, the functions 
+\series bold 
+angle, 
+\series default 
+and 
+\series bold 
+unwrap
+\series default 
+ are also useful.
+ Also, the 
+\series bold 
+linspace 
+\series default 
+and 
+\series bold 
+logspace 
+\series default 
+functions return equally spaced samples in a linear or log scale.
+ Finally, mention should be made of the new function 
+\series bold 
+select
+\series default 
+ which extends the functionality of 
+\series bold 
+where
+\series default 
+ to include multiple conditions and multiple choices.
+ The calling convention is 
+\family typewriter 
+select(condlist,choicelist,default=0).
+
+\family default 
+ 
+\series bold 
+Select 
+\series default 
+is
+\series bold 
+ 
+\series default 
+a vectorized form of the multiple if-statement.
+ It allows rapid construction of a function which returns an array of results
+ based on a list of conditions.
+ Each element of the return array is taken from the array in a 
+\family typewriter 
+choicelist
+\family default 
+ corresponding to the first condition in 
+\family typewriter 
+condlist
+\family default 
+ that is true.
+ For example 
+\begin_inset Include \verbatiminput{example2.3}
+
+\end_inset 
+
+
+\layout Subsection
+
+Common functions 
+\layout Standard
+
+Some functions depend on sub-packages of SciPy but should be available from
+ the top-level of SciPy due to their common use.
+ These are functions that might have been placed in scipy_base except for
+ their dependence on other sub-packages of SciPy.
+ For example the 
+\series bold 
+factorial
+\series default 
+ and 
+\series bold 
+comb 
+\series default 
+functions compute 
+\begin_inset Formula $n!$
+\end_inset 
+
+ and 
+\begin_inset Formula $n!/k!(n-k)!$
+\end_inset 
+
+ using either exact integer arithmetic (thanks to Python's Long integer
+ object), or by using floating-point precision and the gamma function.
+ The functions 
+\series bold 
+rand 
+\series default 
+and 
+\series bold 
+randn 
+\series default 
+are used so often that they warranted a place at the top level.
+ There are convenience functions for the interactive use: 
+\series bold 
+disp 
+\series default 
+(similar to print),
+\series bold 
+ 
+\series default 
+and 
+\series bold 
+who
+\series default 
+ (returns a list of defined variables and memory consumption--upper bounded).
+ Another function returns a common image used in signal processing: 
+\series bold 
+lena.
+
+\series default 
+ 
+\layout Standard
+
+Finally, two functions are provided that are useful for approximating derivative
+s of functions using discrete-differences.
+ The function 
+\series bold 
+central_diff_weights
+\series default 
+ returns weighting coefficients for an equally-spaced 
+\begin_inset Formula $N$
+\end_inset 
+
+-point approximation to the derivative of order 
+\begin_inset Formula $o.$
+\end_inset 
+
+ These weights must be multiplied by the function corresponding to these
+ points and the results added to obtain the derivative approximation.
+ This function is intended for use when only samples of the function are
+ avaiable.
+ When the function is an object that can be handed to a routine and evaluated,
+ the function 
+\series bold 
+derivative
+\series default 
+ can be used to automatically evaluate the object at the correct points
+ to obtain an N-point approximation to the 
+\begin_inset Formula $o^{\textrm{th}}$
+\end_inset 
+
+-derivative at a given point.
+ 
 \layout Section
 
-Special Functions (special)
+Special functions (special)
 \layout Subsection
 
 Vectorizing functions (special.general_function)
@@ -173,7 +1096,10 @@ vectorize
 \end_inset 
 
  this function so that 
-\latex latex 
+\begin_inset ERT
+status Collapsed
+
+\layout Standard
 
 \backslash 
 begin{verbatim}
@@ -185,7 +1111,8 @@ end{verbatim}
 
 \backslash 
 noindent 
-\latex default 
+\end_inset 
+
 returns a function which takes array arguments and returns an array result:
 \layout Standard
 
@@ -195,6 +1122,18 @@ returns a function which takes array arguments and returns an array result:
 \end_inset 
 
 
+\layout Standard
+
+This particular function could have been written in vector form without
+ the use of general_function.
+ But, what if the function you have written is the result of some optimization
+ or integration routine.
+ Such functions can only be vectorized using 
+\family typewriter 
+special.general_function.
+
+\family default 
+ 
 \layout Subsection
 
 Special Functions
@@ -206,18 +1145,30 @@ special
 \series default 
  package is the definition of numerous special functions of mathematical
  physics.
- Available are airy, elliptic, bessel, gamma, beta, hypergeometric, and
- several statistical functions.
- All of these functions behave can take array arguments and return array
- results following the same broadcasting rules as other math functions in
- Numerical Python.
- For a complete list of these functions with a one-line description type
+ Available functions include airy, elliptic, bessel, gamma, beta, hypergeometric
+, parabolic cylinder, mathieu, spheroidal wave, struve, and kelvin.
+ There are also some low-level stats functions that are not intended for
+ general use as an easier interface to these functions is provided by the
  
 \family typewriter 
->>>help(special).
+stats
+\family default 
+ module.
+ Most of these functions behave can take array arguments and return array
+ results following the same broadcasting rules as other math functions in
+ Numerical Python.
+ Many of these functions also accept complex-numbers as input.
+ For a complete list of the available functions with a one-line description
+ type 
+\family typewriter 
+>>>info(special).
  
 \family default 
 Each function also has it's own documentation accessible using help.
+ If you don't see a function you need, consider writing it and contributing
+ it to the library.
+ You can write the function in either C, Fortran, or Python.
+ 
 \layout Section
 
 Integration (integrate)
@@ -249,11 +1200,11 @@ quad
 \series default 
  is provided to integrate a function of one variable between two points.
  The points can be 
-\begin_inset Formula \( \pm \infty  \)
+\begin_inset Formula $\pm \infty $
 \end_inset 
 
  (
-\begin_inset Formula \( \pm  \)
+\begin_inset Formula $\pm $
 \end_inset 
 
 
@@ -266,12 +1217,12 @@ integrate.inf
 jv(2.5,x)
 \family default 
  along the interval 
-\begin_inset Formula \( [0,4.5]. \)
+\begin_inset Formula $[0,4.5].$
 \end_inset 
 
  
 \begin_inset Formula \[
-I=\int _{0}^{4.5}J_{2.5}\left( x\right) \, dx.\]
+I=\int _{0}^{4.5}J_{2.5}\left(x\right)\, dx.\]
 
 \end_inset 
 
@@ -308,19 +1259,19 @@ a function, method, or class instance).
  the error.
  Notice, that in this case, the true value of this integral is 
 \begin_inset Formula \[
-I=\sqrt{\frac{2}{\pi }}\left( \frac{18}{27}\sqrt{2}\cos \left( 4.5\right) -\frac{4}{27}\sqrt{2}\sin \left( 4.5\right) +\sqrt{2\pi }\textrm{Si}\left( \frac{3}{\sqrt{\pi }}\right) \right) ,\]
+I=\sqrt{\frac{2}{\pi }}\left(\frac{18}{27}\sqrt{2}\cos \left(4.5\right)-\frac{4}{27}\sqrt{2}\sin \left(4.5\right)+\sqrt{2\pi }\textrm{Si}\left(\frac{3}{\sqrt{\pi }}\right)\right),\]
 
 \end_inset 
 
  where 
 \begin_inset Formula \[
-\textrm{Si}\left( x\right) =\int _{0}^{x}\sin \left( \frac{\pi }{2}t^{2}\right) \, dt.\]
+\textrm{Si}\left(x\right)=\int _{0}^{x}\sin \left(\frac{\pi }{2}t^{2}\right)\, dt.\]
 
 \end_inset 
 
  is the Fresnel sine integral.
  Note that the numerically-computed integral is within 
-\begin_inset Formula \( 1.04\times 10^{-11} \)
+\begin_inset Formula $1.04\times 10^{-11}$
 \end_inset 
 
  of the exact result --- well below the reported error bound.
@@ -332,17 +1283,21 @@ Infinite inputs are also allowed in
 quad
 \series default 
  by using 
-\begin_inset Formula \( \pm  \)
+\begin_inset Formula $\pm $
 \end_inset 
 
 
 \series bold 
 integrate.inf
 \series default 
- as one of the arguments.
+ (or 
+\series bold 
+inf) 
+\series default 
+as one of the arguments.
  For example, suppose that a numerical value for the exponential integral:
 \begin_inset Formula \[
-E_{n}\left( x\right) =\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt.\]
+E_{n}\left(x\right)=\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt.\]
 
 \end_inset 
 
@@ -422,7 +1377,7 @@ performs double integration.
  In addition, the limits on all inner integrals are actually functions which
  can be constant functions.
  An example of using double integration to compute several values of 
-\begin_inset Formula \( I_{n} \)
+\begin_inset Formula $I_{n}$
 \end_inset 
 
  is shown below:
@@ -434,6 +1389,80 @@ performs double integration.
 \end_inset 
 
 
+\layout Subsection
+
+Gaussian quadrature (integrate.gauss_quadtol)
+\layout Standard
+
+A few functions are also provided in order to perform simple Gaussian quadrature
+ over a fixed interval.
+ The first is 
+\series bold 
+fixed_quad 
+\series default 
+which performs fixed-order Gaussian quadrature.
+ The second function is 
+\series bold 
+quadrature 
+\series default 
+which performs Gaussian quadrature of multiple orders until the difference
+ in the integral estimate is beneath some tolerance supplied by the user.
+ These functions both use the module 
+\series bold 
+special.orthogonal 
+\series default 
+which can calculate the roots and quadrature weights of a large variety
+ of orthogonal polynomials.
+\layout Subsection
+
+Integrating using samples
+\layout Standard
+
+There are three functions for computing integrals given only samples: 
+\series bold 
+trapz
+\series default 
+, 
+\series bold 
+simps
+\series default 
+, and 
+\series bold 
+romb
+\series default 
+.
+ The first two functions use Newton-Coates formulas of order 1 and 2 respectivel
+y to perform integration.
+ These two functions can handle, non-equally-spaced samples.
+ The trapezoidal rule approximates the function as a straight line between
+ adjacent points, while Simpson's rule approximates the function between
+ three adjacent points as a parabola.
+ 
+\layout Standard
+
+If the samples are equally-spaced and the number of samples available is
+ 
+\begin_inset Formula $2^{k}+1$
+\end_inset 
+
+ for some integer 
+\begin_inset Formula $k$
+\end_inset 
+
+, then Romberg integration can be used to obtain high-precision estimates
+ of the integral using the available samples.
+ Romberg integration uses the trapezoid rule at step-sizes related by a
+ power of two and then performs Richardson extrapolation on these estimates
+ to approximate the integral with a higher-degree of accuracy.
+ (A different interface to Romberg integration useful when the function
+ can be provided is also available as 
+\series bold 
+integrate.romberg)
+\series default 
+.
+
+\series bold 
+ 
 \layout Subsection
 
 Ordinary differential equations (integrate.odeint)
@@ -448,38 +1477,38 @@ odeint
 is available in SciPy for integrating a first-order vector differential
  equation:
 \begin_inset Formula \[
-\frac{d\mathbf{y}}{dt}=\mathbf{f}\left( \mathbf{y},t\right) ,\]
+\frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),\]
 
 \end_inset 
 
  given initial conditions 
-\begin_inset Formula \( \mathbf{y}\left( 0\right) =y_{0}, \)
+\begin_inset Formula $\mathbf{y}\left(0\right)=y_{0},$
 \end_inset 
 
  where 
-\begin_inset Formula \( \mathbf{y} \)
+\begin_inset Formula $\mathbf{y}$
 \end_inset 
 
  is a length 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
  vector and 
-\begin_inset Formula \( \mathbf{f} \)
+\begin_inset Formula $\mathbf{f}$
 \end_inset 
 
  is a mapping from 
-\begin_inset Formula \( {\cal R}^{N} \)
+\begin_inset Formula $\mathcal{R}^{N}$
 \end_inset 
 
  to 
-\begin_inset Formula \( {\cal R}^{N}. \)
+\begin_inset Formula $\mathcal{R}^{N}.$
 \end_inset 
 
  A higher-order ordinary differential equation can always be reduced to
  a differential equation of this type by introducing intermediate derivatives
  into the 
-\begin_inset Formula \( \mathbf{y} \)
+\begin_inset Formula $\mathbf{y}$
 \end_inset 
 
  vector.
@@ -494,17 +1523,17 @@ For example suppose it is desired to find the solution to the following
 \end_inset 
 
  with initial conditions 
-\begin_inset Formula \( w\left( 0\right) =\frac{1}{\sqrt[3]{3^{2}}\Gamma \left( \frac{2}{3}\right) } \)
+\begin_inset Formula $w\left(0\right)=\frac{1}{\sqrt[3]{3^{2}}\Gamma \left(\frac{2}{3}\right)}$
 \end_inset 
 
  and 
-\begin_inset Formula \( \left. \frac{dw}{dz}\right| _{z=0}=-\frac{1}{\sqrt[3]{3}\Gamma \left( \frac{1}{3}\right) }. \)
+\begin_inset Formula $\left.\frac{dw}{dz}\right|_{z=0}=-\frac{1}{\sqrt[3]{3}\Gamma \left(\frac{1}{3}\right)}.$
 \end_inset 
 
  It is known that the solution to this differential equation with these
  boundary conditions is the Airy function 
 \begin_inset Formula \[
-w=\textrm{Ai}\left( z\right) ,\]
+w=\textrm{Ai}\left(z\right),\]
 
 \end_inset 
 
@@ -515,34 +1544,34 @@ special.airy.
 \layout Standard
 
 First, convert this ODE into standard form by setting 
-\begin_inset Formula \( \mathbf{y}=\left[ \frac{dw}{dz},w\right]  \)
+\begin_inset Formula $\mathbf{y}=\left[\frac{dw}{dz},w\right]$
 \end_inset 
 
  and 
-\begin_inset Formula \( t=z. \)
+\begin_inset Formula $t=z.$
 \end_inset 
 
  Thus, the differential equation becomes
 \begin_inset Formula \[
-\frac{d\mathbf{y}}{dt}=\left[ \begin{array}{c}
-ty_{1}\\
-y_{0}
-\end{array}\right] =\left[ \begin{array}{cc}
-0 & t\\
-1 & 0
-\end{array}\right] \left[ \begin{array}{c}
-y_{0}\\
-y_{1}
-\end{array}\right] =\left[ \begin{array}{cc}
-0 & t\\
-1 & 0
-\end{array}\right] \mathbf{y}.\]
+\frac{d\mathbf{y}}{dt}=\left[\begin{array}{c}
+ ty_{1}\\
+ y_{0}\end{array}
+\right]=\left[\begin{array}{cc}
+ 0 & t\\
+ 1 & 0\end{array}
+\right]\left[\begin{array}{c}
+ y_{0}\\
+ y_{1}\end{array}
+\right]=\left[\begin{array}{cc}
+ 0 & t\\
+ 1 & 0\end{array}
+\right]\mathbf{y}.\]
 
 \end_inset 
 
  In other words, 
 \begin_inset Formula \[
-\mathbf{f}\left( \mathbf{y},t\right) =\mathbf{A}\left( t\right) \mathbf{y}.\]
+\mathbf{f}\left(\mathbf{y},t\right)=\mathbf{A}\left(t\right)\mathbf{y}.\]
 
 \end_inset 
 
@@ -550,22 +1579,22 @@ y_{1}
 \layout Standard
 
 As an interesting reminder, if 
-\begin_inset Formula \( \mathbf{A}\left( t\right)  \)
+\begin_inset Formula $\mathbf{A}\left(t\right)$
 \end_inset 
 
  commutes with 
-\begin_inset Formula \( \int _{0}^{t}\mathbf{A}\left( \tau \right) \, d\tau  \)
+\begin_inset Formula $\int _{0}^{t}\mathbf{A}\left(\tau \right)\, d\tau $
 \end_inset 
 
  under matrix multiplication, then this linear differential equation has
  an exact solution using the matrix exponential: 
 \begin_inset Formula \[
-\mathbf{y}\left( t\right) =\exp \left( \int _{0}^{t}\mathbf{A}\left( \tau \right) d\tau \right) \mathbf{y}\left( 0\right) ,\]
+\mathbf{y}\left(t\right)=\exp \left(\int _{0}^{t}\mathbf{A}\left(\tau \right)d\tau \right)\mathbf{y}\left(0\right),\]
 
 \end_inset 
 
  However, in this case, 
-\begin_inset Formula \( \mathbf{A}\left( t\right)  \)
+\begin_inset Formula $\mathbf{A}\left(t\right)$
 \end_inset 
 
  and its integral do not commute.
@@ -604,13 +1633,13 @@ The following example illustrates the use of odeint including the usage
 Dfun
 \series default 
  option which allows the user to specify a gradient (with respect to 
-\begin_inset Formula \( \mathbf{y} \)
+\begin_inset Formula $\mathbf{y}$
 \end_inset 
 
 ) of the function, 
 \series bold 
 
-\begin_inset Formula \( \mathbf{f}\left( \mathbf{y},t\right)  \)
+\begin_inset Formula $\mathbf{f}\left(\mathbf{y},t\right)$
 \end_inset 
 
 .
@@ -622,30 +1651,6 @@ Dfun
 \end_inset 
 
 
-\layout Subsection
-
-Gaussian quadrature (integrate.gauss_quadtol)
-\layout Standard
-
-A few functions are also provided in order to perform simple Gaussian quadrature
- over a fixed interval.
- The first is 
-\series bold 
-gauss_quad 
-\series default 
-which performs fixed-order Gaussian quadrature.
- The second function is 
-\series bold 
-gauss_quadtol 
-\series default 
-which performs Gaussian quadrature of multiple orders until the difference
- in the integral estimate is beneath some tolerance supplied by the user.
- These functions both use the module 
-\series bold 
-integrate.orthogonal 
-\series default 
-which can calculate the roots and quadrature weights of a large variety
- of orthogonal polynomials.
 \layout Section
 
 Optimization (optimize)
@@ -691,17 +1696,17 @@ The simplex algorithm is probably the simplest way to minimize a fairly
  longer to find the minimum.
  To demonstrate the minimization function consider the problem of minimizing
  the Rosenbrock function of 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
  variables:
 \begin_inset Formula \[
-f\left( \mathbf{x}\right) =\sum _{i=1}^{N-1}100\left( x_{i}-x_{i-1}^{2}\right) ^{2}+\left( 1-x_{i-1}\right) ^{2}.\]
+f\left(\mathbf{x}\right)=\sum _{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.\]
 
 \end_inset 
 
  The minimum value of this function is 0 which is achieved when 
-\begin_inset Formula \( x_{i}=1. \)
+\begin_inset Formula $x_{i}=1.$
 \end_inset 
 
  This minimum can be found using the 
@@ -717,6 +1722,14 @@ fmin
 \end_inset 
 
 
+\layout Standard
+
+Another optimization algorithm that needs only function calls to find the
+ minimum is Powell's method available as 
+\series bold 
+optimize.fmin_powell
+\series default 
+.
 \layout Subsection
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (optimize.fmin_bfgs)
@@ -734,8 +1747,8 @@ erences.
 To demonstrate this algorithm, the Rosenbrock function is again used.
  The gradient of the Rosenbrock function is the vector: 
 \begin_inset Formula \begin{eqnarray*}
-\frac{\partial f}{\partial x_{j}} & = & \sum _{i=1}^{N}200\left( x_{i}-x_{i-1}^{2}\right) \left( \delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right) -2\left( 1-x_{i-1}\right) \delta _{i-1,j}.\\
- & = & 200\left( x_{j}-x^{2}_{j-1}\right) -400x_{j}\left( x_{j+1}-x_{j}^{2}\right) -2\left( 1-x_{j}\right) .
+\frac{\partial f}{\partial x_{j}} & = & \sum _{i=1}^{N}200\left(x_{i}-x_{i-1}^{2}\right)\left(\delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right)-2\left(1-x_{i-1}\right)\delta _{i-1,j}.\\
+ & = & 200\left(x_{j}-x_{j-1}^{2}\right)-400x_{j}\left(x_{j+1}-x_{j}^{2}\right)-2\left(1-x_{j}\right).
 \end{eqnarray*}
 
 \end_inset 
@@ -743,8 +1756,8 @@ To demonstrate this algorithm, the Rosenbrock function is again used.
 This expression is valid for the interior derivatives.
  Special cases are
 \begin_inset Formula \begin{eqnarray*}
-\frac{\partial f}{\partial x_{0}} & = & -400x_{0}\left( x_{1}-x_{0}^{2}\right) -2\left( 1-x_{0}\right) ,\\
-\frac{\partial f}{\partial x_{N-1}} & = & 200\left( x_{N-1}-x_{N-2}^{2}\right) .
+\frac{\partial f}{\partial x_{0}} & = & -400x_{0}\left(x_{1}-x_{0}^{2}\right)-2\left(1-x_{0}\right),\\
+\frac{\partial f}{\partial x_{N-1}} & = & 200\left(x_{N-1}-x_{N-2}^{2}\right).
 \end{eqnarray*}
 
 \end_inset 
@@ -800,12 +1813,12 @@ This method is a modified Newton's method and uses a conjugate gradient
  Newton's method is based on fitting the function locally to a quadratic
  form:
 \begin_inset Formula \[
-f\left( \mathbf{x}\right) \approx f\left( \mathbf{x}_{0}\right) +\nabla f\left( \mathbf{x}_{0}\right) \cdot \left( \mathbf{x}-\mathbf{x}_{0}\right) +\frac{1}{2}\left( \mathbf{x}-\mathbf{x}_{0}\right) ^{T}\mathbf{H}\left( \mathbf{x}_{0}\right) \left( \mathbf{x}-\mathbf{x}_{0}\right) .\]
+f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot \left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).\]
 
 \end_inset 
 
  where 
-\begin_inset Formula \( \mathbf{H}\left( \mathbf{x}_{0}\right)  \)
+\begin_inset Formula $\mathbf{H}\left(\mathbf{x}_{0}\right)$
 \end_inset 
 
  is a matrix of second-derivatives (the Hessian).
@@ -836,22 +1849,22 @@ Full Hessian example:
 
 The Hessian of the Rosenbrock function is 
 \begin_inset Formula \begin{eqnarray*}
-H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left( \delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right) -400x_{i}\left( \delta _{i+1,j}-2x_{i}\delta _{i,j}\right) -400\delta _{i,j}\left( x_{i+1}-x_{i}^{2}\right) +2\delta _{i,j},\\
- & = & \left( 202+1200x_{i}^{2}-400x_{i+1}\right) \delta _{i,j}-400x_{i}\delta _{i+1,j}-400x_{i-1}\delta _{i-1,j},
+H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left(\delta _{i,j}-2x_{i-1}\delta _{i-1,j}\right)-400x_{i}\left(\delta _{i+1,j}-2x_{i}\delta _{i,j}\right)-400\delta _{i,j}\left(x_{i+1}-x_{i}^{2}\right)+2\delta _{i,j},\\
+ & = & \left(202+1200x_{i}^{2}-400x_{i+1}\right)\delta _{i,j}-400x_{i}\delta _{i+1,j}-400x_{i-1}\delta _{i-1,j},
 \end{eqnarray*}
 
 \end_inset 
 
  if 
-\begin_inset Formula \( i,j\in \left[ 1,N-2\right]  \)
+\begin_inset Formula $i,j\in \left[1,N-2\right]$
 \end_inset 
 
  with 
-\begin_inset Formula \( i,j\in \left[ 0,N-1\right]  \)
+\begin_inset Formula $i,j\in \left[0,N-1\right]$
 \end_inset 
 
  defining the 
-\begin_inset Formula \( N\times N \)
+\begin_inset Formula $N\times N$
 \end_inset 
 
  matrix.
@@ -860,24 +1873,24 @@ H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left( \delt
 \frac{\partial ^{2}f}{\partial x_{0}^{2}} & = & 1200x_{0}^{2}-400x_{1}+2,\\
 \frac{\partial ^{2}f}{\partial x_{0}\partial x_{1}}=\frac{\partial ^{2}f}{\partial x_{1}\partial x_{0}} & = & -400x_{0},\\
 \frac{\partial ^{2}f}{\partial x_{N-1}\partial x_{N-2}}=\frac{\partial ^{2}f}{\partial x_{N-2}\partial x_{N-1}} & = & -400x_{N-2},\\
-\frac{\partial ^{2}f}{\partial x^{2}_{N-1}} & = & 200.
+\frac{\partial ^{2}f}{\partial x_{N-1}^{2}} & = & 200.
 \end{eqnarray*}
 
 \end_inset 
 
  For example, the Hessian when 
-\begin_inset Formula \( N=5 \)
+\begin_inset Formula $N=5$
 \end_inset 
 
  is 
 \begin_inset Formula \[
-\mathbf{H}=\left[ \begin{array}{ccccc}
-1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\
--400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\
-0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\
-0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\
-0 & 0 & 0 & -400x_{3} & 200
-\end{array}\right] .\]
+\mathbf{H}=\left[\begin{array}{ccccc}
+ 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\
+ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\
+ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\
+ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\
+ 0 & 0 & 0 & -400x_{3} & 200\end{array}
+\right].\]
 
 \end_inset 
 
@@ -926,22 +1939,22 @@ the minimization vector as the first argument and the arbitrary vector as
 In this case, the product of the Rosenbrock Hessian with an arbitrary vector
  is not difficult to compute.
  If 
-\begin_inset Formula \( \mathbf{p} \)
+\begin_inset Formula $\mathbf{p}$
 \end_inset 
 
  is the arbitrary vector, then 
-\begin_inset Formula \( \mathbf{H}\left( \mathbf{x}\right) \mathbf{p} \)
+\begin_inset Formula $\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}$
 \end_inset 
 
  has elements: 
 \begin_inset Formula \[
-\mathbf{H}\left( \mathbf{x}\right) \mathbf{p}=\left[ \begin{array}{c}
-\left( 1200x_{0}^{2}-400x_{1}+2\right) p_{0}-400x_{0}p_{1}\\
-\vdots \\
--400x_{i-1}p_{i-1}+\left( 202+1200x_{i}^{2}-400x_{i+1}\right) p_{i}-400x_{i}p_{i+1}\\
-\vdots \\
--400x_{N-2}p_{N-2}+200p_{N-1}
-\end{array}\right] .\]
+\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c}
+ \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\
+ \vdots \\
+ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\
+ \vdots \\
+ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}
+\right].\]
 
 \end_inset 
 
@@ -971,15 +1984,15 @@ All of the previously-explained minimization procedures can be used to solve
  a least-squares problem provided the appropriate objective function is
  constructed.
  For example, suppose it is desired to fit a set of data 
-\begin_inset Formula \( \left\{ \mathbf{x}_{i},\mathbf{y}_{i}\right\}  \)
+\begin_inset Formula $\left\{ \mathbf{x}_{i},\mathbf{y}_{i}\right\} $
 \end_inset 
 
  to a known model, 
-\begin_inset Formula \( \mathbf{y}=\mathbf{f}\left( \mathbf{x},\mathbf{p}\right)  \)
+\begin_inset Formula $\mathbf{y}=\mathbf{f}\left(\mathbf{x},\mathbf{p}\right)$
 \end_inset 
 
  where 
-\begin_inset Formula \( \mathbf{p} \)
+\begin_inset Formula $\mathbf{p}$
 \end_inset 
 
  is a vector of parameters for the model that need to be found.
@@ -987,7 +2000,7 @@ All of the previously-explained minimization procedures can be used to solve
  to the data is to minimize the sum of squares of the residuals.
  The residual is usually defined for each observed data-point as 
 \begin_inset Formula \[
-e_{i}\left( \mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right) =\left\Vert \mathbf{y}_{i}-\mathbf{f}\left( \mathbf{x}_{i},\mathbf{p}\right) \right\Vert .\]
+e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert .\]
 
 \end_inset 
 
@@ -995,7 +2008,7 @@ e_{i}\left( \mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right) =\left\Vert \mathbf{
  to obtain a least-squares fit is.
  
 \begin_inset Formula \[
-J\left( \mathbf{p}\right) =\sum _{i=0}^{N-1}e_{i}^{2}\left( \mathbf{p}\right) .\]
+J\left(\mathbf{p}\right)=\sum _{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
 
 \end_inset 
 
@@ -1008,15 +2021,15 @@ leastsq
 \series default 
 algorithm performs this squaring and summing of the residuals automatically.
  It takes as an input argument the vector function 
-\begin_inset Formula \( \mathbf{e}\left( \mathbf{p}\right)  \)
+\begin_inset Formula $\mathbf{e}\left(\mathbf{p}\right)$
 \end_inset 
 
  and returns the value of 
-\begin_inset Formula \( \mathbf{p} \)
+\begin_inset Formula $\mathbf{p}$
 \end_inset 
 
  which minimizes 
-\begin_inset Formula \( J\left( \mathbf{p}\right) =\mathbf{e}^{T}\mathbf{e} \)
+\begin_inset Formula $J\left(\mathbf{p}\right)=\mathbf{e}^{T}\mathbf{e}$
 \end_inset 
 
  directly.
@@ -1029,33 +2042,33 @@ algorithm performs this squaring and summing of the residuals automatically.
 An example should clarify the usage.
  Suppose it is believed some measured data follow a sinusoidal pattern
 \begin_inset Formula \[
-y_{i}=A\sin \left( 2\pi kx_{i}+\theta \right) \]
+y_{i}=A\sin \left(2\pi kx_{i}+\theta \right)\]
 
 \end_inset 
 
  where the parameters 
-\begin_inset Formula \( A, \)
+\begin_inset Formula $A,$
 \end_inset 
 
  
-\begin_inset Formula \( k \)
+\begin_inset Formula $k$
 \end_inset 
 
 , and 
-\begin_inset Formula \( \theta  \)
+\begin_inset Formula $\theta $
 \end_inset 
 
  are unknown.
  The residual vector is 
 \begin_inset Formula \[
-e_{i}=\left| y_{i}-A\sin \left( 2\pi kx_{i}+\theta \right) \right| .\]
+e_{i}=\left|y_{i}-A\sin \left(2\pi kx_{i}+\theta \right)\right|.\]
 
 \end_inset 
 
  By defining a function to compute the residuals and (selecting an appropriate
  starting position), the least-squares fit routine can be used to find the
  best-fit parameters 
-\begin_inset Formula \( \hat{A},\, \hat{k},\, \hat{\theta } \)
+\begin_inset Formula $\hat{A},\, \hat{k},\, \hat{\theta }$
 \end_inset 
 
 .
@@ -1076,15 +2089,24 @@ e_{i}=\left| y_{i}-A\sin \left( 2\pi kx_{i}+\theta \right) \right| .\]
 
 \layout Standard
 
-\begin_float fig 
+
+\begin_inset Float figure
+placement htbp
+wide false
+collapsed false
+
 \layout Standard
 \align center 
 
-\begin_inset Figure size 297 306
-file leastsqfit.epsi
-width 3 50
-flags 11
-
+\begin_inset Graphics FormatVersion 1
+	filename leastsqfit.epsi
+	display color
+	size_type 1
+	width 50page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 297pt
+	lyxheight 306pt
 \end_inset 
 
 
@@ -1098,8 +2120,60 @@ flags 11
 Least-square fitting to noisy data using 
 \series bold 
 scipy.optimize.leastsq
-\end_float 
+\end_inset 
+
+
 \layout Subsection
+
+Scalar function minimizers
+\layout Standard
+
+Often only the minimum of a scalar function is needed (a scalar function
+ is one that takes a scalar as input and returns a scalar output).
+ In these circumstances, other optimization techniques have been developed
+ that can work faster.
+ 
+\layout Subsubsection
+
+Unconstrained minimization (optimize.brent)
+\layout Standard
+
+There are actually two methods that can be used to minimize a scalar function
+ (
+\series bold 
+brent 
+\series default 
+and 
+\series bold 
+golden)
+\series default 
+, but 
+\series bold 
+golden
+\series default 
+ is included only for academic purposes and should rarely be used.
+ The brent method uses Brent's algorithm for locating a minimum.
+ Optimally a bracket should be given which contains the minimum desired.
+ A bracket is a triple 
+\begin_inset Formula $\left(a,b,c\right)$
+\end_inset 
+
+ such that 
+\begin_inset Formula $f\left(a\right)>f\left(b\right)<f\left(c\right)$
+\end_inset 
+
+ and 
+\begin_inset Formula $a<b<c$
+\end_inset 
+
+.
+ If this is not given, then alternatively two starting points can be chosen
+ and a bracket will be found from these points using a simple marching algorithm.
+ If these two starting points are not provided 0 and 1 will be used (this
+ may not be the right choice for your function and result in an unexpected
+ minimum being returned).
+ 
+\layout Subsubsection
 
 Bounded minimization (optimize.fminbound)
 \layout Standard
@@ -1113,18 +2187,17 @@ Thus far all of the minimization routines described have been unconstrained
 fminbound 
 \series default 
 function is an example of a constrained minimization procedure that provides
- a rudimentary interval constraint for scalar functions (functions which
- take a scalar input and return a scalar output).
+ a rudimentary interval constraint for scalar functions.
  The interval constraint allows the minimization to occur only between two
  fixed endpoints.
 \layout Standard
 
 For example, to find the minimum of 
-\begin_inset Formula \( J_{1}\left( x\right)  \)
+\begin_inset Formula $J_{1}\left(x\right)$
 \end_inset 
 
  near 
-\begin_inset Formula \( x=5 \)
+\begin_inset Formula $x=5$
 \end_inset 
 
 , 
@@ -1132,12 +2205,12 @@ For example, to find the minimum of
 fminbound 
 \series default 
 can be called using the interval 
-\begin_inset Formula \( \left[ 4,7\right]  \)
+\begin_inset Formula $\left[4,7\right]$
 \end_inset 
 
  as a constraint.
  The result is 
-\begin_inset Formula \( x_{\textrm{min}}=5.3314 \)
+\begin_inset Formula $x_{\textrm{min}}=5.3314$
 \end_inset 
 
 :
@@ -1151,18 +2224,17 @@ can be called using the interval
 
 \layout Subsection
 
-Root finding (optimize.fsolve)
+Root finding 
+\layout Subsubsection
+
+Sets of equations
 \layout Standard
 
 To find the roots of a polynomial, the command 
 \series bold 
 roots 
 \series default 
-from Numeric Python is useful (this is also available as 
-\series bold 
-roots
-\series default 
-).
+is useful.
  To find a root of a set of non-linear equations, the command 
 \series bold 
 optimize.fsolve
@@ -1171,24 +2243,24 @@ optimize.fsolve
  For example, the following example finds the roots of the single-variable
  transcendental equation
 \begin_inset Formula \[
-x+2\cos \left( x\right) =0,\]
+x+2\cos \left(x\right)=0,\]
 
 \end_inset 
 
  and the set of non-linear equations
 \begin_inset Formula \begin{eqnarray*}
-x_{0}\cos \left( x_{1}\right)  & = & 4,\\
+x_{0}\cos \left(x_{1}\right) & = & 4,\\
 x_{0}x_{1}-x_{1} & = & 5.
 \end{eqnarray*}
 
 \end_inset 
 
  The results are 
-\begin_inset Formula \( x=-1.0299 \)
+\begin_inset Formula $x=-1.0299$
 \end_inset 
 
  and 
-\begin_inset Formula \( x_{0}=6.5041,\, x_{1}=0.9084 \)
+\begin_inset Formula $x_{0}=6.5041,\, x_{1}=0.9084$
 \end_inset 
 
 .
@@ -1200,6 +2272,60 @@ x_{0}x_{1}-x_{1} & = & 5.
 \end_inset 
 
 
+\layout Subsubsection
+
+Scalar function root finding
+\layout Standard
+
+If one has a single-variable equation, there are four different root finder
+ algorithms that can be tried.
+ Each of these root finding algorithms requires the endpoints of an interval
+ where a root is suspected (because the function changes signs).
+ In general 
+\series bold 
+brentq
+\series default 
+ is the best choice, but the other methods may be useful in certain circumstance
+s or for academic purposes.
+\layout Subsubsection
+
+Fixed-point solving
+\layout Standard
+
+A problem closely related to finding the zeros of a function is the problem
+ of finding a fixed-point of a function.
+ A fixed point of a function is the point at which evaluation of the function
+ returns the point: 
+\begin_inset Formula $g\left(x\right)=x.$
+\end_inset 
+
+ Clearly the fixed point of 
+\begin_inset Formula $g$
+\end_inset 
+
+ is the root of 
+\begin_inset Formula $f\left(x\right)=g\left(x\right)-x.$
+\end_inset 
+
+ Equivalently, the root of 
+\begin_inset Formula $f$
+\end_inset 
+
+ is the fixed_point of 
+\begin_inset Formula $g\left(x\right)=f\left(x\right)+x.$
+\end_inset 
+
+ The routine 
+\series bold 
+fixed_point
+\series default 
+ provides a simple iterative method using Aitkens sequence acceleration
+ to estimate the fixed point of 
+\begin_inset Formula $g$
+\end_inset 
+
+ given a starting point.
+ 
 \layout Section
 
 Interpolation (interpolate)
@@ -1239,15 +2365,23 @@ __call__
 \end_inset 
 
 Figure shows the result: 
-\begin_float fig 
+\begin_inset Float figure
+placement htbp
+wide false
+collapsed false
+
 \layout Standard
 \align center 
 
-\begin_inset Figure size 297 290
-file inter_1d.epsi
-width 3 50
-flags 11
-
+\begin_inset Graphics FormatVersion 1
+	filename inter_1d.epsi
+	display color
+	size_type 1
+	width 50page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 297pt
+	lyxheight 290pt
 \end_inset 
 
 
@@ -1261,7 +2395,9 @@ flags 11
 One-dimensional interpolation using the class 
 \series bold 
 interpolate.linear_1d.
-\end_float 
+\end_inset 
+
+
 \layout Subsection
 
 Spline interpolation in 1-d (interpolate.splXXX)
@@ -1281,28 +2417,28 @@ interpolate.splrep.
 \series default 
 The first two arguments are the only ones required, and these provide the
  
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
  and 
-\begin_inset Formula \( y \)
+\begin_inset Formula $y$
 \end_inset 
 
  components of the curve.
  The normal output is a 3-tuple, 
-\begin_inset Formula \( \left( t,c,k\right)  \)
+\begin_inset Formula $\left(t,c,k\right)$
 \end_inset 
 
 , containing the knot-points, 
-\begin_inset Formula \( t \)
+\begin_inset Formula $t$
 \end_inset 
 
 , the coefficients 
-\begin_inset Formula \( c \)
+\begin_inset Formula $c$
 \end_inset 
 
  and the order 
-\begin_inset Formula \( k \)
+\begin_inset Formula $k$
 \end_inset 
 
  of the spline.
@@ -1313,7 +2449,7 @@ k.
 \layout Standard
 
 For curves in 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
 -dimensional space the function 
@@ -1323,17 +2459,17 @@ interpolate.splprep
 allows defining the curve parametrically.
  For this function only 1 input argument is required.
  This input is a list of 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
 -arrays representing the curve in 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
 -dimensional space.
  The length of each array is the number of curve points, and each array
  provides one component of the 
-\begin_inset Formula \( N \)
+\begin_inset Formula $N$
 \end_inset 
 
 -dimensional data point.
@@ -1342,20 +2478,20 @@ allows defining the curve parametrically.
 u, 
 \emph default 
 which defaults to an equally-spaced monotonic sequence between 
-\begin_inset Formula \( 0 \)
+\begin_inset Formula $0$
 \end_inset 
 
  and 
-\begin_inset Formula \( 1 \)
+\begin_inset Formula $1$
 \end_inset 
 
 .
  The default output consists of two objects: a 3-tuple, 
-\begin_inset Formula \( \left( t,c,k\right)  \)
+\begin_inset Formula $\left(t,c,k\right)$
 \end_inset 
 
 , containing the spline representation and the parameter variable 
-\begin_inset Formula \( u. \)
+\begin_inset Formula $u.$
 \end_inset 
 
  
@@ -1368,22 +2504,22 @@ s
 , is used to specify the amount of smoothing to perform during the spline
  fit.
  The default value of 
-\begin_inset Formula \( s \)
+\begin_inset Formula $s$
 \end_inset 
 
  is 
-\begin_inset Formula \( s=m-\sqrt{2m} \)
+\begin_inset Formula $s=m-\sqrt{2m}$
 \end_inset 
 
  where 
-\begin_inset Formula \( m \)
+\begin_inset Formula $m$
 \end_inset 
 
  is the number of data-points being fit.
  Therefore, 
 \series bold 
 if no smoothing is desired a value of 
-\begin_inset Formula \( \mathbf{s}=0 \)
+\begin_inset Formula $\mathbf{s}=0$
 \end_inset 
 
  should be passed to the routines.
@@ -1405,7 +2541,7 @@ interpolate.splint)
 \series default 
 .
  In addition, for cubic splines (
-\begin_inset Formula \( k=3 \)
+\begin_inset Formula $k=3$
 \end_inset 
 
 ) with 8 or more knots, the roots of the spline can be estimated (
@@ -1422,50 +2558,71 @@ interpolate.sproot)
 ).
 \layout Standard
 
-\begin_float fig 
-\layout Standard
-\align center 
 
-\begin_inset Figure size 267 272
-file interp_cubic.epsi
-subcaption Cubic-spline (splrep)
-width 3 45
-flags 11
-subfigure
-
-\end_inset 
-
-
-\begin_inset Figure size 267 272
-file interp_cubic_der.epsi
-subcaption Derivative of spline (splev)
-width 3 45
-flags 11
-subfigure
-
-\end_inset 
-
+\begin_inset Float figure
+placement htbp
+wide false
+collapsed false
 
 \layout Standard
 \align center 
 
-\begin_inset Figure size 267 272
-file interp_cubic_int.epsi
-subcaption Integral of spline (splint)
-width 3 45
-flags 11
-subfigure
-
+\begin_inset Graphics FormatVersion 1
+	filename interp_cubic.epsi
+	display color
+	subcaption
+	subcaptionText "Cubic-spline (splrep)"
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 272pt
 \end_inset 
 
 
-\begin_inset Figure size 267 272
-file interp_cubic_param.epsi
-subcaption Spline of parametric curve (splprep)
-width 3 45
-flags 11
-subfigure
+\begin_inset Graphics FormatVersion 1
+	filename interp_cubic_der.epsi
+	display color
+	subcaption
+	subcaptionText "Derivative of spline (splev)"
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 272pt
+\end_inset 
 
+
+\layout Standard
+\align center 
+
+\begin_inset Graphics FormatVersion 1
+	filename interp_cubic_int.epsi
+	display color
+	subcaption
+	subcaptionText "Integral of spline (splint)"
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 272pt
+\end_inset 
+
+
+\begin_inset Graphics FormatVersion 1
+	filename interp_cubic_param.epsi
+	display color
+	subcaption
+	subcaptionText "Spline of parametric curve (splprep)"
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 272pt
 \end_inset 
 
 
@@ -1477,7 +2634,9 @@ subfigure
 \end_inset 
 
 Examples of using cubic-spline interpolation.
-\end_float 
+\end_inset 
+
+
 \layout Standard
 
 
@@ -1509,11 +2668,11 @@ and
 z
 \emph default 
  which represent points on the surface 
-\begin_inset Formula \( z=f\left( x,y\right) . \)
+\begin_inset Formula $z=f\left(x,y\right).$
 \end_inset 
 
  The default output is a list 
-\begin_inset Formula \( \left[ tx,ty,c,kx,ky\right]  \)
+\begin_inset Formula $\left[tx,ty,c,kx,ky\right]$
 \end_inset 
 
  whose entries represent respectively, the components of the knot positions,
@@ -1538,11 +2697,11 @@ s
 can be used to change the amount of smoothing performed on the data while
  determining the appropriate spline.
  The default value is 
-\begin_inset Formula \( s=m-\sqrt{2m} \)
+\begin_inset Formula $s=m-\sqrt{2m}$
 \end_inset 
 
  where 
-\begin_inset Formula \( m \)
+\begin_inset Formula $m$
 \end_inset 
 
  is the number of data points in the 
@@ -1555,7 +2714,7 @@ and
 \emph default 
 vectors.
  As a result, if no smoothing is desired, then 
-\begin_inset Formula \( s=0 \)
+\begin_inset Formula $s=0$
 \end_inset 
 
  should be passed to 
@@ -1585,11 +2744,11 @@ interpolate.bisplrep.
 \series default 
 If desired, the fourth and fifth arguments provide the orders of the partial
  derivative in the 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
  and 
-\begin_inset Formula \( y \)
+\begin_inset Formula $y$
 \end_inset 
 
  direction respectively.
@@ -1636,25 +2795,38 @@ grid[].
 
 \layout Standard
 \added_space_top 0.3cm \added_space_bottom 0.3cm \align center 
-\begin_float fig 
+
+\begin_inset Float figure
+placement htbp
+wide false
+collapsed false
+
 \layout Standard
 \align center 
 
-\begin_inset Figure size 267 186
-file 2d_func.epsi
-width 3 45
-flags 11
-
+\begin_inset Graphics FormatVersion 1
+	filename 2d_func.epsi
+	display color
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 186pt
 \end_inset 
 
 \SpecialChar ~
 \SpecialChar ~
 
-\begin_inset Figure size 267 186
-file 2d_interp.epsi
-width 3 45
-flags 11
-
+\begin_inset Graphics FormatVersion 1
+	filename 2d_interp.epsi
+	display color
+	size_type 1
+	width 45page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 186pt
 \end_inset 
 
 
@@ -1666,7 +2838,9 @@ flags 11
 \end_inset 
 
 Example of two-dimensional spline interpolation.
-\end_float 
+\end_inset 
+
+
 \layout Section
 
 Signal Processing (signal)
@@ -1687,48 +2861,48 @@ B-splines
 A B-spline is an approximation of a continuous function over a finite-domain
  in terms of B-spline coefficients and knot points.
  If the knot-points are equally spaced with spacing 
-\begin_inset Formula \( \Delta x \)
+\begin_inset Formula $\Delta x$
 \end_inset 
 
 , then the B-spline approximation to a 1-dimensional function is the finite-basi
 s expansion.
  
 \begin_inset Formula \[
-y\left( x\right) \approx \sum _{j}c_{j}\beta ^{o}\left( \frac{x}{\Delta x}-j\right) .\]
+y\left(x\right)\approx \sum _{j}c_{j}\beta ^{o}\left(\frac{x}{\Delta x}-j\right).\]
 
 \end_inset 
 
  In two dimensions with knot-spacing 
-\begin_inset Formula \( \Delta x \)
+\begin_inset Formula $\Delta x$
 \end_inset 
 
  and 
-\begin_inset Formula \( \Delta y \)
+\begin_inset Formula $\Delta y$
 \end_inset 
 
 , the function representation is 
 \begin_inset Formula \[
-z\left( x,y\right) \approx \sum _{j}\sum _{k}c_{jk}\beta ^{o}\left( \frac{x}{\Delta x}-j\right) \beta ^{o}\left( \frac{y}{\Delta y}-k\right) .\]
+z\left(x,y\right)\approx \sum _{j}\sum _{k}c_{jk}\beta ^{o}\left(\frac{x}{\Delta x}-j\right)\beta ^{o}\left(\frac{y}{\Delta y}-k\right).\]
 
 \end_inset 
 
  In these expressions, 
-\begin_inset Formula \( \beta ^{o}\left( \cdot \right)  \)
+\begin_inset Formula $\beta ^{o}\left(\cdot \right)$
 \end_inset 
 
  is the space-limited B-spline basis function of order, 
-\begin_inset Formula \( o \)
+\begin_inset Formula $o$
 \end_inset 
 
 .
  The requirement of equally-spaced knot-points and equally-spaced data points,
  allows the development of fast (inverse-filtering) algorithms for determining
  the coefficients, 
-\begin_inset Formula \( c_{j} \)
+\begin_inset Formula $c_{j}$
 \end_inset 
 
 , from sample-values, 
-\begin_inset Formula \( y_{n} \)
+\begin_inset Formula $y_{n}$
 \end_inset 
 
 .
@@ -1743,29 +2917,29 @@ The advantage of representing a set of samples via B-spline basis functions
  function can be computed with relative ease from the spline coefficients.
  For example, the second-derivative of a spline is 
 \begin_inset Formula \[
-y\prime ^{\prime \prime }\left( x\right) =\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\beta ^{o\prime \prime }\left( \frac{x}{\Delta x}-j\right) .\]
+y\prime ^{\prime \prime }\left(x\right)=\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\beta ^{o\prime \prime }\left(\frac{x}{\Delta x}-j\right).\]
 
 \end_inset 
 
  Using the property of B-splines that 
 \begin_inset Formula \[
-\frac{d^{2}\beta ^{o}\left( w\right) }{dw^{2}}=\beta ^{o-2}\left( w+1\right) -2\beta ^{o-2}\left( w\right) +\beta ^{o-2}\left( w-1\right) \]
+\frac{d^{2}\beta ^{o}\left(w\right)}{dw^{2}}=\beta ^{o-2}\left(w+1\right)-2\beta ^{o-2}\left(w\right)+\beta ^{o-2}\left(w-1\right)\]
 
 \end_inset 
 
  it can be seen that 
 \begin_inset Formula \[
-y^{\prime \prime }\left( x\right) =\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\left[ \beta ^{o-2}\left( \frac{x}{\Delta x}-j+1\right) -2\beta ^{o-2}\left( \frac{x}{\Delta x}-j\right) +\beta ^{o-2}\left( \frac{x}{\Delta x}-j-1\right) \right] .\]
+y^{\prime \prime }\left(x\right)=\frac{1}{\Delta x^{2}}\sum _{j}c_{j}\left[\beta ^{o-2}\left(\frac{x}{\Delta x}-j+1\right)-2\beta ^{o-2}\left(\frac{x}{\Delta x}-j\right)+\beta ^{o-2}\left(\frac{x}{\Delta x}-j-1\right)\right].\]
 
 \end_inset 
 
  If 
-\begin_inset Formula \( o=3 \)
+\begin_inset Formula $o=3$
 \end_inset 
 
 , then at the sample points, 
 \begin_inset Formula \begin{eqnarray*}
-\Delta x^{2}\left. y^{\prime }\left( x\right) \right| _{x=n\Delta x} & = & \sum _{j}c_{j}\delta _{n-j+1}-2c_{j}\delta _{n-j}+c_{j}\delta _{n-j-1},\\
+\Delta x^{2}\left.y^{\prime }\left(x\right)\right|_{x=n\Delta x} & = & \sum _{j}c_{j}\delta _{n-j+1}-2c_{j}\delta _{n-j}+c_{j}\delta _{n-j-1},\\
  & = & c_{n+1}-2c_{n}+c_{n-1}.
 \end{eqnarray*}
 
@@ -1804,34 +2978,34 @@ signal.qspline1d, signal.qspline2d, signal.cspline1d, signal.cspline2d
 signal.bspline
 \series default 
 ) for evaluating the bspline basis function, 
-\begin_inset Formula \( \beta ^{o}\left( x\right)  \)
+\begin_inset Formula $\beta ^{o}\left(x\right)$
 \end_inset 
 
  for arbitrary order and 
-\begin_inset Formula \( x. \)
+\begin_inset Formula $x.$
 \end_inset 
 
  For large 
-\begin_inset Formula \( o \)
+\begin_inset Formula $o$
 \end_inset 
 
 , the B-spline basis function can be approximated well by a zero-mean Gaussian
  function with standard-deviation equal to 
-\begin_inset Formula \( \sigma _{o}=\left( o+1\right) /12 \)
+\begin_inset Formula $\sigma _{o}=\left(o+1\right)/12$
 \end_inset 
 
 :
 \begin_inset Formula \[
-\beta ^{o}\left( x\right) \approx \frac{1}{\sqrt{2\pi \sigma _{o}^{2}}}\exp \left( -\frac{x^{2}}{2\sigma _{o}}\right) .\]
+\beta ^{o}\left(x\right)\approx \frac{1}{\sqrt{2\pi \sigma _{o}^{2}}}\exp \left(-\frac{x^{2}}{2\sigma _{o}}\right).\]
 
 \end_inset 
 
  A function to compute this Gaussian for arbitrary 
-\begin_inset Formula \( x \)
+\begin_inset Formula $x$
 \end_inset 
 
  and 
-\begin_inset Formula \( o \)
+\begin_inset Formula $o$
 \end_inset 
 
  is also available (
@@ -1870,25 +3044,38 @@ which convolves arbitrary two-dimensional filters and allows for choosing
 
 \layout Standard
 
-\begin_float fig 
+
+\begin_inset Float figure
+placement htbp
+wide false
+collapsed false
+
 \layout Standard
 \align center 
 
-\begin_inset Figure size 267 272
-file lena_image.epsi
-width 3 45
-flags 10
-
+\begin_inset Graphics FormatVersion 1
+	filename lena_image.epsi
+	display color
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 272pt
 \end_inset 
 
 \SpecialChar ~
 \SpecialChar ~
 
-\begin_inset Figure size 267 272
-file lena_edge.epsi
-width 3 45
-flags 10
-
+\begin_inset Graphics FormatVersion 1
+	filename lena_edge.epsi
+	display color
+	size_type 1
+	width 40page%
+	rotateOrigin center
+	lyxsize_type 1
+	lyxwidth 267pt
+	lyxheight 272pt
 \end_inset 
 
 
@@ -1900,7 +3087,9 @@ flags 10
 \end_inset 
 
 Example of using smoothing splines to filter images.
-\end_float 
+\end_inset 
+
+
 \layout Subsection
 
 Filtering
@@ -1913,13 +3102,22 @@ Other filters
 \layout Subsubsection
 
 Filter design
+\layout Subsection
+
+Linear Systems
 \layout Section
 
 Input/Output
 \layout Section
 
-FFT (FFTW)
+Fourier Transforms
 \layout Section
 
-Plotting
+Linear Algebra
+\layout Section
+
+Statistics
+\layout Section
+
+Plotting with xplt
 \the_end

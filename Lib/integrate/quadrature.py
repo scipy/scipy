@@ -222,8 +222,8 @@ def romb(y, dx=1.0, axis=-1, show=0):
     along the given axis which are assumed equally spaced with distance dx.
     The number of samples must be 1 + a non-negative power of two: N=2**k + 1
     """
-    nd = len(y.shape)
     y = asarray(y)
+    nd = len(y.shape)
     Nsamps = y.shape[axis]
     Ninterv = Nsamps-1
     n = 1

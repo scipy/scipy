@@ -1,37 +1,20 @@
->>> help(optimize.fmin)
- fmin(func, x0, args=(), xtol=0.0001, ftol=0.0001, maxiter=None, maxfun=None,
-      full_output=0, printmessg=1)
-
-Minimize a function using the simplex algorithm.
-
-Description:
-
-  Uses a Nelder-Mead simplex algorithm to find the minimum of function
-  of one or more variables.
-
-Inputs:
-
-  func -- the Python function or method to be minimized.
-  x0 -- the initial guess.
-  args -- extra arguments for func.
-  xtol -- relative tolerance
-
-Outputs: (xopt, {fopt, warnflag})
-
-  xopt -- minimizer of function
-
-  fopt -- value of function at minimum: fopt = func(xopt)
-  warnflag -- Integer warning flag:
-              1 : 'Maximum number of function evaluations.'
-              2 : 'Maximum number of iterations.'
-
-Additional Inputs:
-
-  xtol -- acceptable relative error in xopt for convergence.
-  ftol -- acceptable relative error in func(xopt) for convergence.
-  maxiter -- the maximum number of iterations to perform.
-  maxfun -- the maximum number of function evaluations.
-  full_output -- non-zero if fval and warnflag outputs are desired.
-  printmessg -- non-zero to print convergence messages.
-  
-  
+>>> mgrid[0:5,0:5]
+array([[[0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1],
+        [2, 2, 2, 2, 2],
+        [3, 3, 3, 3, 3],
+        [4, 4, 4, 4, 4]],
+       [[0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4]]])  
+>>> mgrid[0:5:4j,0:5:4j]
+array([[[ 0.    ,  0.    ,  0.    ,  0.    ],
+        [ 1.6667,  1.6667,  1.6667,  1.6667],
+        [ 3.3333,  3.3333,  3.3333,  3.3333],
+        [ 5.    ,  5.    ,  5.    ,  5.    ]],
+       [[ 0.    ,  1.6667,  3.3333,  5.    ],
+        [ 0.    ,  1.6667,  3.3333,  5.    ],
+        [ 0.    ,  1.6667,  3.3333,  5.    ],
+        [ 0.    ,  1.6667,  3.3333,  5.    ]]])

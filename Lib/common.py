@@ -4,12 +4,12 @@
 # Needs eigenvalues
 import Numeric
 import types, sys
-from scipy import special, stats
+from scipy import special, stats, linalg
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose
+     ones, NewAxis, transpose, hstack, product, array
 import scipy_base.fastumath
 
-__all__ = ['factorial','comb','rand','randn','disp','who','lena','lena','lena','lena','lena','lena','lena','lena']
+__all__ = ['factorial','comb','rand','randn','disp','who','lena','central_diff_weights', 'derivative']
     
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
@@ -26,6 +26,7 @@ def factorial(n,exact=0):
         return val
     else:
         return special.gamma(n+1)
+
 
 
 def comb(N,k,exact=0):
@@ -47,6 +48,69 @@ def comb(N,k,exact=0):
     else:
         lgam = special.gammaln
         return exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+
+
+def central_diff_weights(Np,ndiv=1):
+    """Return weights for an Np-point central derivative of order ndiv
+       assuming equally-spaced function points.
+
+       If weights are in the vector w, then 
+       derivative is w[0] * f(x-ho*dx) + ... + w[-1] * f(x+h0*dx)
+       
+       Can be inaccurate for large number of points.
+    """
+    assert (Np >= ndiv+1), "Number of points must be at least the derivative order + 1."
+    assert (Np % 2 == 1), "Odd-number of points only."
+    ho = Np >> 1
+    x = arange(-ho,ho+1.0)
+    x = x[:,NewAxis]
+    X = x**0.0
+    for k in range(1,Np):
+        X = hstack([X,x**k])
+    w = product(arange(1,ndiv+1))*linalg.inv(X)[ndiv]
+    return w
+
+def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
+    """Given a function, use an N-point central differenece
+       formula with spacing dx to compute the nth derivative at
+       x0, where N is the value of order and must be odd.
+
+       Warning: Decreasing the step size too small can result in
+       round-off error.
+    """
+    assert (order >= n+1), "Number of points must be at least the derivative order + 1."
+    assert (order % 2 == 1), "Odd number of points only."
+    # pre-computed for n=1 and 2 and low-order for speed.
+    if n==1:
+        if order == 3:
+            weights = array([-1,0,1])/2.0
+        elif order == 5:
+            weights = array([1,-8,0,8,-1])/12.0
+        elif order == 7:
+            weights = array([-1,9,-45,0,45,-9,1])/60.0
+        elif order == 9:
+            weights = array([3,-32,168,-672,0,672,-168,32,-3])/840.0
+        else:
+            weights = central_diff_weights(order,1)
+    elif n==2:
+        if order == 3:
+            weights = array([1,-2.0,1])
+        elif order == 5:
+            weights = array([-1,16,-30,16,-1])/12.0
+        elif order == 7:
+            weights = array([2,-27,270,-490,270,-27,2])/180.0
+        elif order == 9:
+            weights = array([-9,128,-1008,8064,-14350,8064,-1008,128,-9])/5040.0
+        else:
+            weights = central_diff_weights(order,2)
+    else:
+        weights = central_diff_weights(order, n)
+    val = 0.0
+    ho = order >> 1
+    for k in range(order):
+        val += weights[k]*func(x0+(k-ho)*dx,*args)
+    return val / product((dx,)*n)
+
 
 
 def rand(*args):
@@ -140,7 +204,8 @@ def who(vardict=None):
                                         val[3])
     print "\nUpper bound on total bytes  =       %d" % totalbytes
     return
-    
+
+
 
 #-----------------------------------------------------------------------------
 
