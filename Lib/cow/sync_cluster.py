@@ -331,9 +331,10 @@ class standard_sync_client:
         module_name = os.path.abspath(sync_cluster.__file__)
         #cmd = 'rsh -n %s "python %s server %d >&/dev/null </dev/null &"' % \
         #      (self.host, module_name, self.port)
-        cmd = 'rsh -n %s "python %s server %d >&/tmp/crud%d </dev/null &"' % \
+        cmd = 'rsh -n %s "python2.1 %s server %d >&/tmp/crud%d </dev/null &"' % \
               (self.host, module_name, self.port, self.port)
         self.log_msg(cmd)
+	print cmd
         os.system(cmd)
 
     def exec_code_pack(self,code,inputs=None,returns=None,global_vars=None):

@@ -47,8 +47,8 @@ import cow # cow stands for "Cluster Of Workstations"
 server_list = []
 for i in Mrange:
     server_list.append(('cow%d.ee.duke.edu' % i,10000))
-for i in Mrange:
-    server_list.append(('cow%d.ee.duke.edu' % i,10001))
+#for i in Mrange:
+#    server_list.append(('cow%d.ee.duke.edu' % i,10001))
 
 cluster = cow.machine_cluster(server_list)
 

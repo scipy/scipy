@@ -16,19 +16,26 @@ import os # for getuid()
 ClusterError = 'ClusterError'
 TimeoutError = 'TimeoutError'
       
-#server_list = (('152.16.10.1',10000),('152.16.10.1',10001),
-#               ('152.16.10.1',10002),('152.16.10.1',10003))
-#server_list = (('152.16.10.1',10000),)
-#server_list = (('cow15.ee.duke.edu',10000),('cow15.ee.duke.edu',10001),
-#               ('cow16.ee.duke.edu',10000),('cow16.ee.duke.edu',10001))
-server_list = []
-for i in range(1,17):
-    server_list.append(('cow%d.ee.duke.edu' % i,10000))               
-    #server_list.append(('cow%d.ee.duke.edu' % i,10001))
+import scipy.common.proc
+
+def proc_str(self):
+    s = "%-8s %-8s %5d %4.1f %4.1f %8.3f %8.3f %1s %s " % \
+        (self.machine, self.user,self.pid,self.cpu_percent,
+         self.memory_percent,self.total_memory, self.resident_memory, 
+         self.state,self.total_time2)
+    bytes_left = 80 - len(s) - 1
+    if len(self.cmdline) > bytes_left:
+        s = s +  self.cmdline[:6] + '...' + self.cmdline[-(bytes_left-9):]
+    else:
+        s = s +  self.cmdline
+    return s
+
+scipy.common.proc.process.__str__ = proc_str
 
 class machine_cluster:
     def __init__(self,server_list):        
         self.workers=[]
+        self.worker_by_name={}
         worker_id = 1
         for host,port in server_list:
             #add the uid of the person starting the job to the port to
@@ -37,7 +44,9 @@ class machine_cluster:
             port = port #+ 760 #+ os.getuid() #304 (balaji's id) 
             new_worker = sync_cluster.standard_sync_client(host,port,worker_id)
             self.workers.append(new_worker)
-            worker_id = worker_id + 1                       
+            self.worker_by_name[host] = new_worker
+            worker_id = worker_id + 1
+                                   
     def start(self,force_restart=0,timeout=60):
         """ Start all the worker processes on remote machines.
             The timeout value is specified in seconds and
@@ -209,15 +218,138 @@ class machine_cluster:
         raise ClusterError, msg
         
     def load(self):        
-        pass
-    # mirror all of sync_client functions
+        import scipy.common.proc
+        res = self.apply(scipy.common.proc.load_avg,())
+        return res
+
+    def info(self):
+        import scipy.common.proc
+        res = self.apply(scipy.common.proc.machine_info,())
+        return res
+
+    def load_summary(self):        
+        import string
+        import scipy.common.proc
+        results = self.load()
+        for i in range(len(self.workers)):            
+            name = string.split(self.workers[i].host,'.')[0]
+            res = results[i]
+            s = "%6s: %1.2f," % (name[-6:], res['load_1'])
+            print s,
+            if not ((i+1) % 5):
+                print
+    
+    def info_summary(self):
+        import string
+        results = self.info()
+        for i in range(len(self.workers)):            
+            name = string.split(self.workers[i].host,'.')[0]
+            res = results[i]
+#            s = "%6s: %2dx%s at %1.1f GHz, memory(tot,free): %4d MB %4d MB," \
+#                " current load: %1.2f" % (name[-6:], res['cpu_count'],      \
+#                res['cpu_type'][-8:],res['cpu_speed'],res['mem_total'],     \
+#                res['mem_free'], res['load_1'])
+            s = "%6s: %2dx%s %1.1f GHz, Memory(tot, free): %4d MB %4d MB," \
+                " current load: %1.2f" %  \
+                (name[-6:], res['cpu_count'],res['cpu_type'][-8:], \
+                 res['cpu_speed'],res['mem_total'],res['mem_free'],\
+                 res['load_1'])
+            print s
+    
+    def ps_list(self,sort_by='cpu',**filters):
+        import operator
+        res = self.apply(scipy.common.proc.ps_list,())
+        psl = reduce(operator.add,res)
+        psl = scipy.common.proc.ps_sort(psl,sort_by,**filters)        
+        return psl
+ 
+    def ps(self,sort_by='cpu',**filters):
+        psl = self.ps_list(sort_by,**filters)
+        for i in psl: print i.str_with_name()
+
+    def nice(self,increment=10):
+        """* increment the interpreter daemon on all remote machines.
+             hmmm. this doesn't seem to work. 
+         see os.nice()
+        *"""
+        res = self.apply(os.nice,(increment,))
+        return res
+
+    def renice(self,process_list,level):
+        """* change the nice level of multiple remote processes.
+             
+             Once niced down, a process cannot be reniced back up.
+             This is a Linux issue.
+        *"""    
+        res = []
+        pids = {}
+        for process in process_list:
+            if hasattr(process,'machine'):
+                try:
+                    worker = self.worker_by_name[process.machine] 
+                except KeyError:
+                    worker = self.worker_by_name[process.long_machine] 
+                pid = process.pid
+            else:
+                worker = self.workers[process[0]] 
+                pid = process[1]
+            try:
+                pids[worker] = pids[worker] + ' ' + str(pid)
+            except:
+                pids[worker] = str(pid)
+        for worker,value in pids.items():
+            arg = 'renice %d -p %s' % (level,value)
+            res.append(worker.apply(os.system,(arg,)))
+        return res
+
+    def kill(self,process_list,signal = 'TERM'):
+        """* change the nice level of multiple remote processes.
+             
+             Once niced down, a process cannot be reniced back up.
+             This is a Linux issue.
+        *"""    
+        res = []
+        pids = {}
+        for process in process_list:
+            if hasattr(process,'machine'):
+                try:
+                    worker = self.worker_by_name[process.machine] 
+                except KeyError:
+                    worker = self.worker_by_name[process.long_machine] 
+                pid = process.pid
+            else:
+                worker = self.workers[process[0]] 
+                pid = process[1]
+            try:
+                pids[worker] = pids[worker] + ' ' + str(pid)
+            except:
+                pids[worker] = str(pid)
+        for worker,value in pids.items():
+            arg = 'kill -s ' + signal + ' %s' % (level,value)
+            res.append(worker.apply(os.system,(arg,)))
+        return res
+    
+    #def system(self,cmd):
+    #    return self.workers.apply(os.system,(cmd,))
+    
+    def system(self,cmd):
+        return self.exec_code(('import os;f=os.popen("%s");res = f.read(-1);f.close();' \
+               % cmd),returns=['res'])
+    def reload(self,module):
+        try: 
+            cmd = 'import %s; reload(%s)' % ((module.__name__,)*2)
+        except AttributeError:
+            cmd = 'import %s; reload(%s)' % ((module,)*2)
+        self.workers.exec_code('cmd')    
+        
+# mirror all of sync_client functions
     # They assumes all clients have the same packing procedures.
     def exec_code(self,code,inputs=None,returns=None,global_vars=None):
         #use the first worker as a server
         package = self.workers[0].exec_code_pack(code,inputs,returns,global_vars)
         return self._send_recv(package)
 
-    def apply(self,function,args,keywords=None):        
+    def apply(self,function,args=(),keywords=None):        
         package = self.workers[0].apply_pack(function,args,keywords)
         return self._send_recv(package)
 
@@ -350,10 +482,6 @@ def equal_balance(jobs,Nworkers):
 def t_func(i):
     return i    
 
-# simple wrapper of string.upper to use in demo code.
-def upper(s):
-    import string
-    return string.upper(s)
 
 if __name__ == '__main__':
     borg = cluster(server_list)    
