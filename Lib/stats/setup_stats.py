@@ -30,6 +30,12 @@ def configuration(parent_package=''):
     ext.need_fcompiler_opts = 1
     config['ext_modules'].append(ext)
 
+    # add futil module
+    sources = ['futil.f']
+    sources = [os.path.join(local_path,x) for x in sources]
+    ext = Extension(dot_join(parent_package,package,'futil'),sources)
+    config['ext_modules'].append(ext)
+
     return config
 
 if __name__ == '__main__':    

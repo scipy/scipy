@@ -68,7 +68,7 @@ for n in ['fft','fftn','fft2','ifft','ifft2','ifftn','fftshift',
           'ifftshift','fftfreq']:
     exec '%s = ppimport_attr(fftpack,%s)' % (n,`n`)
 
-for n in ['mean','median','std','cov','corrcoef']:
+for n in ['mean','median','std','cov','corrcoef','find_repeats']:
     exec '%s = ppimport_attr(stats,%s)' % (n,`n`)
 
 for n in ['isinf','isfinite','isnan']:
@@ -82,6 +82,7 @@ from pilutil import *
 optimize = ppimport('optimize');       _level_docs(optimize)
 integrate = ppimport('integrate');     _level_docs(integrate)
 signal = ppimport('signal');           _level_docs(signal)
+sparse = ppimport('sparse');           _level_docs(sparse)
 
 interpolate = ppimport('interpolate'); _level_docs(interpolate)
 cow = ppimport('cow');                 _level_docs(cow)
