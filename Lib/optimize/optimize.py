@@ -56,7 +56,7 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 import Numeric
 import MLab
 from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze, isscalar, vectorize, asarray, absolute, sqrt
+     squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf
 import scipy_base
 Num = Numeric
 max = MLab.max
@@ -68,6 +68,14 @@ pymax = __builtin__.max
 __version__="0.7"
 _epsilon = sqrt(scipy_base.limits.double_epsilon)
 
+
+def vecnorm(x, ord=2):
+    if ord == Inf:
+        return scipy_base.amax(abs(x))
+    elif ord == -Inf:
+        return scipy_base.amin(abs(x))
+    else:
+        return scipy_base.sum(abs(x)**ord)**(1.0/ord)
         
 def rosen(x):  # The Rosenbrock function
     x = asarray(x)
@@ -562,7 +570,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
     return (f2 - f1)/epsilon
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
+def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0):
     """Minimize a function using the BFGS algorithm.
 
@@ -579,7 +587,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
 
       fprime -- a function to compute the gradient of f.
       args -- extra arguments to f and fprime.
-      maxgtol -- maximum allowable gradient magnitude for stopping
+      gtol -- gradient norm must be less than gtol before succesful termination
+      norm -- order of norm (Inf is max, -Inf is min)
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
 
@@ -632,10 +641,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
     xk = x0
     if retall:
         allvecs = [x0]
-    gtol = maxgtol
     sk = [2*gtol]
     warnflag = 0
-    while (Num.maximum.reduce(abs(gfk)) > gtol) and (k < maxiter):
+    gnorm = vecnorm(gfk,ord=norm)
+    while (gnorm > gtol) and (k < maxiter):
         pk = -Num.dot(Hk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                  line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args)
@@ -655,7 +664,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
                 grad_calls = grad_calls + 1
 
         yk = gfkp1 - gfk
+        gfk = gfkp1        
         k = k + 1
+        gnorm = vecnorm(gfk,ord=norm)
+        if (gnorm <= gtol):
+            break
 
         try:
             rhok = 1 / Num.dot(yk,sk)
@@ -669,9 +682,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
             A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
             Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
                  * sk[Num.NewAxis,:]
-
-        gfk = gfkp1
-
 
     if disp or full_output:
         fval = old_fval
@@ -711,7 +721,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), maxgtol=1e-5, epsilon=_epsilon,
     return retlist
 
 
-def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
+def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-4, norm=Inf, epsilon=_epsilon,
               maxiter=None, full_output=0, disp=1, retall=0):
     """Minimize a function with nonlinear conjugate gradient algorithm.
 
@@ -728,7 +738,8 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
       fprime -- a function to compute the gradient of f.
       args -- extra arguments to f and fprime.
-      avegtol -- minimum average value of gradient for stopping
+      gtol -- stop when norm of gradient is less than gtol
+      norm -- order of vector norm to use
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
 
@@ -746,9 +757,6 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
 
     Additional Inputs:
 
-      avegtol -- the minimum occurs when fprime(xopt)==0.  This specifies how
-                 close to zero the average magnitude of fprime(xopt) needs
-                 to be.
       maxiter -- the maximum number of iterations.
       full_output -- if non-zero then return fopt, func_calls, grad_calls,
                      and warnflag in addition to xopt.
@@ -766,8 +774,6 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     grad_calls = 0
     k = 0
     N = len(x0)
-    gtol = N*avegtol
-
     xk = x0
     old_fval = f(xk,*args)
     old_old_fval = old_fval + 5000
@@ -786,8 +792,8 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
     sk = [2*gtol]
     warnflag = 0
     pk = -gfk
-
-    while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
+    gnorm = vecnorm(gfk,ord=norm)
+    while (gnorm > gtol) and (k < maxiter):
         deltak = Num.dot(gfk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                  line_search(f,myfprime,xk,pk,gfk,old_fval,old_old_fval,args=args,c2=0.3)
@@ -808,7 +814,9 @@ def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=_epsilon,
         beta_k = pymax(0,Num.dot(yk,gfkp1)/deltak)
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
+        gnorm = vecnorm(gfk,ord=norm)
         k = k + 1
+        
         
     if disp or full_output:
         fval = old_fval
