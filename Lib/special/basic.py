@@ -9,6 +9,7 @@ from scipy_base.fastumath import *
 from scipy_base import squeeze, isscalar, iscomplex, insert, extract, nan
 from scipy_base import polyval, polyint
 import specfun
+from scipy import factorial
     
 class general_function:
     """
@@ -488,7 +489,6 @@ def mathieu_odd_coef(m,q):
     fc = specfunc.fcoef(kd,m,q,b)
     return fc[:km]
 
-
 def lpmn(m,n,z):
     """Associated Legendre functions of the second kind, Pmn(z) and its
     derivative, Pmn'(z) of order m and degree n.  Returns two
@@ -497,17 +497,29 @@ def lpmn(m,n,z):
 
     z can be complex.
     """
-    if not isscalar(m) or (m<0):
-        raise ValueError, "m must be a non-negative integer."    
+    if not isscalar(m) or (abs(m)>n):
+        raise ValueError, "m must be <= n."
     if not isscalar(n) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if not isscalar(z):
         raise ValueError, "z must be scalar."
+    if (m < 0):
+        mp = -m
+        mf,nf = mgrid[0:mp+1,0:n+1]
+        sv = errprint(0)
+        fixarr = where(mf>nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        sv = errprint(sv)
+    else:
+        mp = m
     if iscomplex(z):
-        p,pd = specfun.clpmn(m,n,z)
+        p,pd = specfun.clpmn(mp,n,real(z),imag(z))
     else:        
-        p,pd = specfun.lpmn(m,n,z)
+        p,pd = specfun.lpmn(mp,n,z)
+    if (m < 0):
+        p = p * fixarr
+        pd = pd * fixarr
     return p,pd
+
 
 
 def lqmn(m,n,z):
