@@ -2320,7 +2320,7 @@ class rv_discrete:
         return cond
 
     def _pdf(self, k, *args):
-        return self._cdf(k,*args) - self._cdf(k-1,*args)
+        return self.cdf(k,*args) - self.cdf(k-1,*args)
 
     def _cdfsingle(self, k, *args):
         m = arange(int(self.a),k+1)
@@ -2329,6 +2329,7 @@ class rv_discrete:
     def _cdf(self, x, *args):
         k = floor(x)
         return self._cdfvec(k,*args)
+    
     def _sf(self, x, *args):
         return 1.0-self._cdf(x,*args)
         
