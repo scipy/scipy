@@ -45,8 +45,8 @@ graphics_packages = [os.path.join('Lib',p) for p in graphics_packages]
 chaco_packages = ['chaco','kiva','traits','freetype']
 chaco_packages = [os.path.join('Lib_chaco',p) for p in chaco_packages]
 
-core_packages = ['scipy_distutils','scipy_test','scipy_base']
-core_packages = [os.path.join('scipy_core',p) for p in core_packages]
+#core_packages = ['scipy_distutils','scipy_test','scipy_base']
+#core_packages = [os.path.join('scipy_core',p) for p in core_packages]
 
 #---------------
 
@@ -60,7 +60,7 @@ scipy_packages += graphics_packages
 # these packages aren't nested under scipy
 separate_packages = ['gui_thread','weave']
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
-separate_packages += core_packages
+#separate_packages += core_packages
 separate_packages += chaco_packages
 
 #------ drop-to-Lib packages --------
@@ -75,6 +75,9 @@ def get_packages(path,ignore_packages=[],parent=parent_package):
         if package_name != os.path.splitext(os.path.basename(info_file))[0][5:]:
             print '  !! Mismatch of package name %r and %s' \
                   % (package_name, info_file)
+            continue
+
+        if package_name in ignore_packages:
             continue
 
         sys.path.insert(0,os.path.dirname(info_file))
@@ -124,8 +127,8 @@ def setup_package(ignore_packages=[]):
                          'scipy.tests':os.path.join('Lib','tests')}}]
 
         #new style packages:
-        config_list += get_packages(os.path.join(path,'Lib'),ignore_packages)
-        #config_list += get_packages(os.path.join(path,'Lib_chaco'),ignore_packages)
+        for d in ['scipy_core','Lib','Lib_chaco']:
+            config_list += get_packages(os.path.join(path,d),ignore_packages)
 
         #old style packages:
         config_list += map(get_separate_package_config,separate_packages)
