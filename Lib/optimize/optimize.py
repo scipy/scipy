@@ -56,7 +56,7 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 import Numeric
 import MLab
 from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf
+     squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
 import scipy_base
 import linesearch
 Num = Numeric
@@ -149,7 +149,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       retall -- non-zero to return list of solutions at each iteration
       
       """
-    x0 = asarray(x0)
+    x0 = asfarray(x0)
     N = len(x0)
     rank = len(x0.shape)
     if not -1 < rank < 2:
@@ -1410,7 +1410,7 @@ def _linesearch_powell(func, p, xi, args=(), tol=1e-3):
     #  find the minimium of the function
     #  func(x0+ alpha*direc)
     global _powell_funcalls
-    extra_args = (func, p, xi) + args
+    extra_args = (func, p, xi, args)
     alpha_min, fret, iter, num = brent(_myfunc, args=extra_args,
                                            full_output=1, tol=tol)
     xi = alpha_min*xi
