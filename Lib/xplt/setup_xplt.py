@@ -8,8 +8,12 @@ def configuration(parent_package=''):
        '%spython%s/site-packages/scipy/xplt' % (sys.prefix,sys.version[:3])
     """
     # Check for X11 libraries
+    save_file = './saved_values.py'
+    if not os.path.exists(save_file):
+	save_file = '../saved_values.py'
+
     try:
-        execfile('../saved_values.py')
+        exec(open(save_file).read())
         try:
             X11 = X11
         except NameError:
