@@ -1,6 +1,6 @@
 import _minpack
 from common_routines import *
-from scipy_base import atleast_1d
+from scipy_base import atleast_1d, dot, take
 
 error = _minpack.error
 
@@ -38,8 +38,8 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
                 'njev' : the number of jacobian calls
                 'fvec' : the function evaluated at the output
                 'fjac' : the orthogonal matrix, q, produced by the
-                         QR facotrization of the final approximate
-                         Jacobi matrix, stored column wise.
+                         QR factorization of the final approximate
+                         Jacobian matrix, stored column wise.
                 'r'    : upper triangular matrix produced by QR
                          factorization of same matrix.
                 'qtf'  : the vector (transpose(q) * fvec).
@@ -145,13 +145,13 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     Dfun -- A function or method to compute the Jacobian of func with
             derivatives across the rows. If this is None, the
             Jacobian will be estimated.
-    full_output -- non-zero to return the optional outputs.
+    full_output -- non-zero to return all optional outputs.
     col_deriv -- non-zero to specify that the Jacobian function
                  computes derivatives down the columns (faster, because
                  there is no transpose operation).
 
   
-  Outputs: (x, {infodict, ier, mesg})
+  Outputs: (x, {cov_x, infodict, ier}, mesg)
 
     x -- the solution (or the result of the last iteration for an
          unsuccessful call.
@@ -160,7 +160,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                 'nfev' : the number of function calls
                 'njev' : the number of jacobian calls
                 'fvec' : the function evaluated at the output
-                'fjac' : A permutation of the R matrix of the QR
+                'fjac' : A permutation of the R matrix of a QR
                          factorization of the final approximate
                          Jacobian matrix, stored column wise. 
 			 Together with ipvt, the covariance of the
@@ -177,6 +177,8 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
            found and the following message gives more information.
     mesg -- a string message giving information about the cause of
             failure.
+    cov_x -- uses the fjac and ipvt optional outputs to construct an
+             estimate of the covariance matrix of the solution. 
 
   Extended Inputs:
   
@@ -244,10 +246,16 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     if n == 1:
         retval = (retval[0][0],) + retval[1:]
 
+    mesg = errors[info][0]
     if full_output:
-        return retval + (errors[info][0],)
+        import scipy.linalg as sl
+        perm = take(eye(n),retval[1]['ipvt']-1)
+        r = sl.triu(transpose(retval[1]['fjac'])[:n,:])
+        R = dot(r, transpose(perm))
+        cov_x = sl.inv(dot(transpose(R),R))
+        return (retval[0], cov_x) + retval[1:] + (mesg,)
     else:
-        return retval[:-1] + (errors[info][0],)
+        return (retval[0], mesg)
 
 
 def check_gradient(fcn,Dfcn,x0,col_deriv=0):
