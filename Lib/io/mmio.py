@@ -1,13 +1,14 @@
 """
   Matrix Market I/O in Python.
-
-Author:
-  Pearu Peterson <pearu@cens.ioc.ee>
-References:
-  http://math.nist.gov/MatrixMarket/reports/MMformat.ps
 """
-
-
+#
+# Author: Pearu Peterson <pearu@cens.ioc.ee>
+# Created: October, 2004
+#
+# References:
+#  http://math.nist.gov/MatrixMarket/
+#
+# TODO: support for sparse matrices, need spmatrix.tocoo().
 
 from types import ListType, TupleType
 from scipy_base import asarray, ArrayType, real,imag,conj,zeros
