@@ -6,6 +6,7 @@ from scipy import r1array
 from fastumath import *
 import numpyio
 import struct, os, sys
+import types
 
 def getsize_type(mtype):
     if mtype in ['b','uchar','byte','unsigned char','integer*1', 'int8']:
@@ -70,12 +71,9 @@ class fopen:
       
     """
     
-    def __init__(self,file_name,permission='r',format='n'):
-        if type(file_name) == type(''):
-            if sys.platform=='win32' and 'b' not in permission:
-                print "Warning: Generally fopen is used for opening binary\n" + \
-                "files, which on this system requires attaching a 'b' \n" + \
-                "to the permission flag."
+    def __init__(self,file_name,permission='rb',format='n'):
+        if 'b' not in permission: permission += 'b'
+        if type(file_name) in (types.StringType, types.UnicodeType):
             self.__dict__['fid'] = open(file_name,permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
             self.__dict__['fid'] = file_name 
@@ -164,8 +162,28 @@ class fopen:
             bs = (bs == 1)
         shape = None
         if type(count) in [types.TupleType, types.ListType]:
-            shape = tuple(count)
-            count = product(shape)
+            shape = list(count)
+            # allow -1 to specify unknown dimension size as in reshape
+            minus_ones = shape.count(-1)
+            if minus_ones == 0:
+                count = product(shape)
+            elif minus_ones == 1:
+                now = self.fid.tell()
+                self.fid.seek(0,2)
+                end = self.fid.tell()
+                self.fid.seek(now)
+                remaining_bytes = end - now
+                know_dimensions_size = -product(count) * getsize_type(stype)[0]
+                unknown_dimension_size, illegal = divmod(remaining_bytes,
+                                                         know_dimensions_size)
+                if illegal:
+                    raise ValueError("unknown dimension doesn't match filesize")
+                shape[shape.index(-1)] = unknown_dimension_size
+                count = product(shape)
+            else:
+                raise ValueError(
+                    "illegal count; can only specify one unknown dimension")
+            shape = tuple(shape)
         howmany,stype = getsize_type(stype)
         if rtype is None:
             rtype = stype
@@ -221,7 +239,7 @@ class fopen:
             nfmt = ">i"
         else:
             nfmt = "i"
-        if type(fmt) == type(''):
+        if type(fmt) in (types.StringType, types.UnicodeType):
             if self.format == 'ieee-le':
                 fmt = "<"+fmt
             elif self.format == 'ieee-be':
@@ -336,7 +354,7 @@ def loadmat(name, dict=None, appendmat=1):
             if appendmat:
                 test_name += ".mat"
             try:
-                fid = open(test_name,'r')
+                fid = open(test_name,'rb')
                 fid.close()
                 full_name = test_name
             except IOError:
@@ -344,10 +362,7 @@ def loadmat(name, dict=None, appendmat=1):
         if full_name is None:
             raise IOError, "%s not found on the path." % name
 
-    permis = 'r'
-    if sys.platform=='win32':
-        permis = 'rb'
-    fid = fopen(full_name,permis)
+    fid = fopen(full_name,'rb')
     test_vals = fid.fread(4,'byte')
     if not (0 in test_vals):
         fid.close()
