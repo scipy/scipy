@@ -73,8 +73,8 @@ class fopen:
     def __init__(self,file_name,permission='r',format='n'):
         if type(file_name) == type(''):
             if sys.platform=='win32' and 'b' not in permission:
-                print "Warning: Generally fopen is used for opening binary\n" +
-                "files, which on this system requires attaching a 'b' \n" +
+                print "Warning: Generally fopen is used for opening binary\n" + \
+                "files, which on this system requires attaching a 'b' \n" + \
                 "to the permission flag."
             self.__dict__['fid'] = open(file_name,permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
