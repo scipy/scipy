@@ -13,6 +13,8 @@ import os
 import sys
 from glob import glob
 
+command_sdist = 'sdist' in sys.argv
+
 # Note that when running bdist_rpm, scipy_core directory does
 # not exist. So, scipy_distutils must be installed before
 # running bdist_rpm.
@@ -22,51 +24,16 @@ try:
     # Declare all scipy_distutils related imports here.
     from scipy_distutils.misc_util import default_config_dict
     from scipy_distutils.misc_util import get_path, merge_config_dicts
+    from scipy_distutils.misc_util import get_subpackages
     from scipy_distutils.core import setup
 finally:
     del sys.path[0]
 
-#------ drop-to-Lib packages --------
-
-def get_packages(path,ignore_packages=[],
-                 parent='scipy',parent_path=None):
-
-    config_list = []
-
-    for info_file in glob(os.path.join(path,'*','info_*.py')):
-
-        package_name = os.path.basename(os.path.dirname(info_file))
-        if package_name != os.path.splitext(os.path.basename(info_file))[0][5:]:
-            print '  !! Mismatch of package name %r and %s' \
-                  % (package_name, info_file)
-            continue
-
-        if package_name in ignore_packages:
-            continue
-
-        sys.path.insert(0,os.path.dirname(info_file))
-        try:
-            exec 'import %s as info_module' \
-                 % (os.path.splitext(os.path.basename(info_file))[0])
-            if not getattr(info_module,'ignore',0):
-                exec 'import setup_%s as setup_module' % (package_name)
-                if getattr(info_module,'standalone',0):
-                    args = ('',)
-                else:
-                    args = (parent,)
-                if setup_module.configuration.func_code.co_argcount>1:
-                    args = args + (parent_path,)
-                config = setup_module.configuration(*args)
-                config_list.append(config)
-        finally:
-            del sys.path[0]
-
-    return config_list
 #-------------------------------
 
 def setup_package(ignore_packages=[]):
 
-    if os.path.isdir('scipy_core'):
+    if command_sdist and os.path.isdir('scipy_core'):
         # Applying the same commands to scipy_core.
         # Results can be found in scipy_core directory.
         c = '%s %s %s' % (sys.executable,
@@ -86,16 +53,25 @@ def setup_package(ignore_packages=[]):
     try:
         from scipy_version import scipy_version
 
-        config_list = [{'name': 'SciPy',
+        packages_path = ['Lib']
+        if command_sdist:
+            name = 'SciPy'
+        else:
+            name = 'SciPy_complete'
+            packages_path.append('scipy_core')
+        config_list = [{'name': name,
                         'packages':['scipy','scipy.tests'],
                         'package_dir':
                         {'scipy':'Lib',
                          'scipy.tests':os.path.join('Lib','tests')}}]
 
-        for d in ['Lib']:
-            config_list += get_packages(os.path.join(local_path,d),
-                                        ignore_packages,
-                                        parent_path=local_path)
+        for d in packages_path:
+            config_list += get_subpackages(os.path.join(local_path,d),
+                                           parent_path=local_path,
+                                           ignore_packages = ignore_packages)
+            #config_list += get_packages(os.path.join(local_path,d),
+            #                            ignore_packages,
+            #                            parent_path=local_path)
 
         config_dict = merge_config_dicts(config_list)
 
@@ -119,7 +95,8 @@ if __name__ == "__main__":
         #'sparse',
         #'kiva','freetype','chaco','traits',
         ]
-    #if sys.platform in ['win32','cygwin']:
+    if sys.platform in ['win32','cygwin']:
         # Fix sparse on windows.
         #ignore_packages.append('sparse')
+	pass
     setup_package(ignore_packages)
