@@ -1088,7 +1088,7 @@ static int setup_input_arrays(PyTupleObject *inputs, PyArrayObject **inputarrays
       cleanup_arrays(inputarrays,i);
       return -1;
     }
-    if (ain->nd == 0) {
+    if (PyArray_SIZE(ain)==0) {
       cleanup_arrays(inputarrays,i);
       PyErr_SetString(PyExc_ValueError,"arraymap: Input arrays of zero-dimensions not supported.");
       return -1;
@@ -1097,12 +1097,13 @@ static int setup_input_arrays(PyTupleObject *inputs, PyArrayObject **inputarrays
     inputarrays[i] = ain;
   }
 
-  maxdims = (int*)malloc(sizeof(int)*maxrank);
+  maxdims = (int*)malloc(2*sizeof(int)*maxrank);
   if (NULL == maxdims) {
     PyErr_SetString(PyExc_MemoryError, "arraymap: can't allocate memory for input arrays");
     cleanup_arrays(inputarrays,nin);
     return -1;
   }
+
 
   /* Reshape all arrays so they have the same rank (pre-pend with length 1 dimensions) */
   /* We want to replace the header information without copying the data. 
@@ -1125,6 +1126,7 @@ static int setup_input_arrays(PyTupleObject *inputs, PyArrayObject **inputarrays
       cleanup_arrays(inputarrays,nin);
       return -1;
     }
+    memmove(tmparray->strides,ain->strides,sizeof(int)*tmparray->nd);
     tmparray->base = (PyObject *)ain;  /* When tmparray is deallocated ain will be too */
     inputarrays[i] = tmparray;  /* tmparray is new array */
   }
@@ -1354,7 +1356,7 @@ static int setup_output_arrays(PyObject *func, PyArrayObject **inarr, int nin, P
  \
   indx = 0; \
   for (i=0; i < (ndim); i++)  \
-    indx += nd_index[i]*strides[i]; \
+    indx += (nd_index)[i]*(strides)[i]; \
 } 
 
 static int loop_over_arrays(PyObject *func, PyArrayObject **inarr, int nin, PyArrayObject **outarr, int nout)
@@ -1380,6 +1382,7 @@ static int loop_over_arrays(PyObject *func, PyArrayObject **inarr, int nin, PyAr
 
   loop_index = PyArray_Size((PyObject *)in);  /* Total number of Python function calls */
 
+  printf("strides = %d\n", inarr[0]->strides[0] );
   while(loop_index--) { 
     /* Create input argument list with current element from the input
        arrays 
@@ -1388,6 +1391,7 @@ static int loop_over_arrays(PyObject *func, PyArrayObject **inarr, int nin, PyAr
       tmparr = inarr[i];
       /* Find linear index into this input array */
       CALCINDEX(indx_in,nd_index,tmparr->strides,in->nd);
+      printf("indx_in = %d\n", indx_in);
       /* Get object at this index */
       tmpobj = tmparr->descr->getitem((void *)(tmparr->data+indx_in));
       if (NULL == tmpobj) {

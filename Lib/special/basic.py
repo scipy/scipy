@@ -63,7 +63,7 @@ class general_function:
                 n = len(arg)
                 if (n==0):
                     return self.zerocall(args)
-            except AttributeError:
+            except (AttributeError, TypeError):
                 pass
         return squeeze(arraymap(self.thefunc,args,self.otypes))
 
