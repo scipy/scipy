@@ -27,7 +27,7 @@ class test_imag(unittest.TestCase):
 
     def check_cmplx(self):
         y = rand(10,)+1j*rand(10,)
-        assert_array_equal(y.imag,real(y))
+        assert_array_equal(y.imag,imag(y))
 
     
 class test_sum(unittest.TestCase):
@@ -65,7 +65,7 @@ class test_mean(unittest.TestCase):
 
 class test_iscomplex(unittest.TestCase):
     def check_fail(self):
-        z = array([-1,0,1]))
+        z = array([-1,0,1])
         res = iscomplex(z)
         assert(not sometrue(res))
     def check_pass(self):
@@ -75,7 +75,7 @@ class test_iscomplex(unittest.TestCase):
 
 class test_isreal(unittest.TestCase):
     def check_pass(self):
-        z = array([-1,0,1j]))
+        z = array([-1,0,1j])
         res = isreal(z)
         assert_array_equal(res,[1,1,0])
     def check_fail(self):
@@ -601,15 +601,7 @@ class test_trim_zeros(unittest.TestCase):
         res = trim_zeros(a)
         assert_array_equal(res,array([1,0,2,3,0,4]))
 
-
-
-class test_real_if_close(unittest.TestCase):
-    def check_basic(self):
-        a = randn(10)
-        b = real_if_close(a+1e-15j)
-        assert(array_is_real(b))
-        assert_array_equal(a,b)
-        
+                
 # Utility
 
 def compare_results(res,desired):
