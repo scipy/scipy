@@ -42,6 +42,7 @@ Linear algebra routines
    coshm      --- matrix hyperbolic cosine
    sinhm      --- matrix hyperbolic sine
    tanhm      --- matrix hyperbolic tangent
+   signm      --- matrix sign
    funm       --- Evaluating an arbitrary matrix function.
  
 """

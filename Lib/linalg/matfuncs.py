@@ -3,11 +3,11 @@
 #
 
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm']
+           'tanhm','logm','funm','signm']
 
 from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
-     cast, log, ogrid, isfinite, imag, real
+     cast, log, ogrid, isfinite, imag, real, absolute, amax, sign
 from Matrix import Matrix as mat
 import scipy_base
 from basic import solve, LinAlgError, inv, norm, triu
@@ -166,6 +166,8 @@ def funm(A,func,disp=1):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
+    F = F.astype(T.typecode()) # e.g. when F is real but T is complex
+
     minden = abs(T[0,0])
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
@@ -229,7 +231,17 @@ def logm(A,disp=1):
     else:
         return F, errest
 
- 
+def signm(a):
+    """matrix sign"""
+    def rounded_sign(x):
+        rx = real(x)
+        mx = amax(absolute(x)) # XXX: amax segfaults on complex input
+        if rx.typecode()=='f':
+            c =  1e3*feps*mx
+        else:
+            c =  1e3*eps*mx
+        return sign( (absolute(rx) > c) * rx )
+    return funm(a, rounded_sign)
 
 ################## test functions #########################
 
