@@ -6,7 +6,7 @@ import gist
 import pl3d, plwf
 import Numeric
 from Numeric import ravel, reshape, repeat, arange, transpose, compress, \
-     where, ones, NewAxis
+     where, ones, NewAxis, asarray
 import MLab
 from MLab import pi, cos, sin, arctan2, array, angle
 import types
@@ -438,6 +438,14 @@ def clear_global_linetype():
 def append_global_linetype(arg):
     _GLOBAL_LINE_TYPES.append(arg)
 
+def _minsqueeze(arr,min=1):
+    # eliminate extra dimensions above min
+    arr = asarray(arr)
+    arr = scipy.squeeze(arr)
+    n = len(arr.shape)
+    if n < min:
+        arr.shape = arr.shape + (1,)*(min-n)
+    return arr
 
 def plot(x,*args,**keywds):
     """Plot curves.
@@ -478,7 +486,7 @@ def plot(x,*args,**keywds):
         gist.plsys(savesys)
     nargs = len(args)
     if nargs == 0:
-        y = scipy.squeeze(x)
+        y = _minsqueeze(x)
         x = Numeric.arange(0,len(y))
         if scipy.iscomplexobj(y):
             print "Warning: complex data plotting real part."
@@ -510,8 +518,8 @@ def plot(x,*args,**keywds):
             x = scipy.real(x)
             y = scipy.real(y)
 	y = where(scipy.isfinite(y),y,0)
-        y = scipy.squeeze(y)
-        x = scipy.squeeze(x)
+        y = _minsqueeze(y) 
+        x = _minsqueeze(x)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,width=linewidth)
 
         nowplotting = nowplotting + 1
