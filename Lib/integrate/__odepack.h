@@ -131,9 +131,10 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
   else {
     *ap_rtol = (PyArrayObject *)PyArray_ContiguousFromObject(o_rtol,PyArray_DOUBLE,0,1);
     if (*ap_rtol == NULL) PYERR2(odepack_error,"Error converting relative tolerance.");
-    if ((*ap_rtol)->dimensions[0] == neq)
+    if ((*ap_rtol)->nd == 0); /* rtol is scalar */
+    else if ((*ap_rtol)->dimensions[0] == neq)
       itol |= 2;      /* Set rtol array flag */
-    else if ((*ap_rtol)->nd != 0)
+    else
       PYERR(odepack_error,"Tolerances must be an array of the same length as the\n     number of equations or a scalar.");
   }
 
@@ -145,9 +146,10 @@ int setup_extra_inputs(PyArrayObject **ap_rtol, PyObject *o_rtol, PyArrayObject 
   else {
     *ap_atol = (PyArrayObject *)PyArray_ContiguousFromObject(o_atol,PyArray_DOUBLE,0,1);
     if (*ap_atol == NULL) PYERR2(odepack_error,"Error converting absolute tolerance.");
-    if ((*ap_atol)->dimensions[0] == neq) 
+    if ((*ap_atol)->nd == 0); /* atol is scalar */
+    else if ((*ap_atol)->dimensions[0] == neq) 
       itol |= 1;        /* Set atol array flag */
-    else if ((*ap_atol)->nd != 0)
+    else
       PYERR(odepack_error,"Tolerances must be an array of the same length as the\n     number of equations or a scalar.");
   }
   itol++;             /* increment to get correct value */
