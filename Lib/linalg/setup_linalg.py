@@ -3,6 +3,7 @@
 import os
 from distutils import dep_util
 from glob import glob
+import warnings
 
 # force g77 for now
 from scipy_distutils.mingw32_support import *
@@ -12,8 +13,8 @@ build_flib.all_compilers = [build_flib.gnu_fortran_compiler]
 from scipy_distutils.core import Extension
 from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
 
-from scipy_distutils.system_info import get_info,dict_append,AtlasNotFoundError
-
+from scipy_distutils.system_info import get_info,dict_append,\
+     AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError
 
 def configuration(parent_package=''):
     from interface_gen import generate_interface
@@ -25,20 +26,36 @@ def configuration(parent_package=''):
     config['package_dir']['linalg.tests'] = test_path
 
     atlas_info = get_info('atlas')
+    #atlas_info = {} # uncomment if ATLAS is available but want to use
+                     # Fortran LAPACK/ATLAS; useful for testing
+    blas_info,lapack_info = {},{}
     if not atlas_info:
-        raise AtlasNotFoundError,AtlasNotFoundError.__doc__
+        warnings.warn(AtlasNotFoundError.__doc__)
+        blas_info = get_info('blas')
+        lapack_info = get_info('lapack')
+        if not blas_info:
+            raise BlasNotFoundError,BlasNotFoundError.__doc__
+        if not lapack_info:
+            raise LapackNotFoundError,LapackNotFoundError.__doc__
 
-    mod_sources = {'fblas':['generic_fblas.pyf',
-                            'generic_fblas1.pyf',
-                            'generic_fblas2.pyf',
-                            'generic_fblas3.pyf',
-                            os.path.join('src','fblaswrap.f'),
-                            ],
-                   'cblas':['generic_cblas.pyf',
-                            'generic_cblas1.pyf'],
-                   'flapack':['generic_flapack.pyf'],
-                   'clapack':['generic_clapack.pyf']}
-    
+    mod_sources = {}
+    if atlas_info or blas_info:
+        mod_sources['fblas'] = ['generic_fblas.pyf',
+                                'generic_fblas1.pyf',
+                                'generic_fblas2.pyf',
+                                'generic_fblas3.pyf',
+                                os.path.join('src','fblaswrap.f'),
+                                ]
+    if atlas_info or lapack_info:
+        mod_sources['flapack'] = ['generic_flapack.pyf']
+    if atlas_info:
+        mod_sources['cblas'] = ['generic_cblas.pyf',
+                                'generic_cblas1.pyf']
+        mod_sources['clapack'] = ['generic_clapack.pyf']
+    else:
+        dict_append(atlas_info,**lapack_info)
+        dict_append(atlas_info,**blas_info)
+
     for mod_name,sources in mod_sources.items():
         sources = [os.path.join(local_path,s) for s in sources]
         mod_file = os.path.join(local_path,mod_name+'.pyf')
@@ -61,7 +78,6 @@ def configuration(parent_package=''):
     dict_append(ext_args,**atlas_info)
     config['ext_modules'].append(Extension(**ext_args))
 
-    
     ext_args = {'name':dot_join(parent_package,'linalg','calc_lwork'),
                 'sources':[os.path.join(local_path,'src','calc_lwork.f')],
                 }
