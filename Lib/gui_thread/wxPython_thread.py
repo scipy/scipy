@@ -18,13 +18,16 @@ import atexit
 import imp
 from scipy_base import ParallelExec
 
-def get_extmodules(module,pexec):
+def get_extmodules(module,pexec,state0=None):
     # .. that need wrappers
-    if module != 'wx': # The wx module is a dummy that we create.
+    if module != 'wx':
         assert not sys.modules.has_key(module),\
-               module+' is already imported, cannot proceed'
-    state0 = sys.modules.keys()
-    pexec('import '+module,wait=1)
+        module+' is already imported, cannot proceed'
+    if state0 is None:
+        state0 = sys.modules.keys()
+    if module == 'wxPython':
+        pexec('import '+module,wait=1)
+        
     state1 = sys.modules.keys()
     return [k for k in state1 if k not in state0 \
             and (not hasattr(sys.modules[k],'__file__') \
@@ -84,22 +87,6 @@ func_code=%(func_name)s.func_code"""
              'call_holder':call_holder}
     return new.function(func_code,globs,func_name)
 
-## if sys.version[:3]>='2.3':
-##     from tempfile import mkstemp
-##     mktemp = lambda :mkstemp()[1]
-## else:
-##     from tempfile import mktemp
-## from cStringIO import StringIO
-## re_cvar_attr = re.compile(r'Global variables {(?P<attrs>[\s,\w\W]*)}')
-## cvar_attr_tmp_fn = mktemp()
-## def get_cvar_attrs(cvar):
-##     f = open(cvar_attr_tmp_fn,'w')
-##     print >>f,cvar
-##     f.close()
-##     s = open(cvar_attr_tmp_fn,'r').read()
-##     m = re_cvar_attr.match(s)
-##     assert m is not None,`(`s`,cvar)`
-##     return m.group('attrs').strip().split(', ')
 
 def _import_wx_core(wx_pth, pexec):
     """Imports the core modules for wx.  This is necessary for
@@ -115,20 +102,28 @@ def _import_wx_core(wx_pth, pexec):
             break
     if not flag:
         return 0
-    # Now import the modules manually.
-    pexec('import imp, os.path')
-    code="""\
-for i in [\"_core_\", \"_controls_\", \"_misc_\", \"_windows_\", \"_gdi_\"]:
-    p = os.path.join('%s', i + '%s')
-    imp.load_dynamic('wx.' + i, p)
-"""%(wx_pth, suffix)
-    pexec(code)
 
-    # Now create a dummy module in sys.modules to inhibit importing the
+    # Create a dummy module in sys.modules to inhibit importing the
     # actual one.  We will reload(wx) to get it right later.
     m = new.module('wx')
     m.__file__ = os.path.join('wx_pth', '__init__.py')
     sys.modules['wx'] = m
+
+    # Now import all the modules manually.
+    pexec('import os.path, imp, glob')
+    code = """\
+libs = glob.glob(os.path.join('%(wx_pth)s', '*' + '%(suffix)s'))
+done = []
+for i in ['_core_', '_controls_', '_misc_', '_windows_', '_gdi_']:
+    p = os.path.join('%(wx_pth)s', i + '%(suffix)s')
+    imp.load_dynamic('wx.' + i, p)
+    done.append(p)
+libs = [x for x in libs if x not in done]
+for i in libs:
+    p = os.path.splitext(os.path.basename(i))[0]
+    imp.load_dynamic('wx.' + p, i)
+"""%locals()
+    pexec(code, wait=1)
     return 1
     
 def wxPython_thread():
@@ -141,28 +136,35 @@ def wxPython_thread():
 
     # Check if 'wx' namespace based modules are used.
     mod_name = 'wxPython'
+    state0 = None
     for path in sys.path:
         wx_pth = os.path.join(path, 'wx')
         if os.path.exists(os.path.join(wx_pth, '__init__.py')):
             assert not sys.modules.has_key('wx'), \
                    'wx is already imported, cannot proceed'
+            state0 = sys.modules.keys()
             if _import_wx_core(wx_pth, pexec):
                 mod_name = 'wx'
+            else:
+                state0 = None
             break
+    #print [x for x in sys.modules.keys() if x.find('wx') > -1]
     
     # Create wrappers to wxPython extension modules:
-    for name in get_extmodules(mod_name,pexec):
+    for name in get_extmodules(mod_name,pexec,state0):
         module = sys.modules[name]
         if module is None: # happens with gui_thread.wxPython
             continue
         sys.modules[name] = wrap_extmodule(module,call_holder)
+        #print name
     
     if mod_name == 'wx':
+        pexec('import wx; reload(wx)', wait=1)
+        #print [x for x in sys.modules.keys() if x.find('wx') > -1]
         import wx
-        pexec('reload(wx)')
     else:
+        pexec('import wxPython; reload(wxPython)', wait=1)
         import wxPython
-        pexec('reload(wxPython)')
 
     pexec('from wxBackgroundApp import wxBackgroundApp')
     pexec('call_holder.call=wxBackgroundApp()',wait=1)

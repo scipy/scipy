@@ -82,15 +82,17 @@ class wxBackgroundApp(wx.wxPySimpleApp):
         """
         assert wxPython_thread_id!=thread.get_ident(),\
                'wrong thread (wxPython)'
+        
         if frame is None:
             frame = sys._getframe(1)
+
         self.run_is_ready.wait()
-        
-        finished = threading.Event()
+
+        finished = threading.Event(1)
         cmd = 'wx.wxPostEvent(self.event_catcher,'\
               'ProxyEvent((code, frame),finished))'
         ExecThread(cmd,globals(),locals())
-        finished.wait()
+        finished.wait(0.5)
 
         exc_info = getattr(finished,'exception_info',None)
         if exc_info is not None:
