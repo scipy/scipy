@@ -310,17 +310,46 @@ static char cephes_2_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,
 static char cephes_1rc_types[] = { PyArray_FLOAT,  PyArray_FLOAT,  PyArray_DOUBLE,  PyArray_DOUBLE,  PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE };
 static char cephes_1c_types[] = { PyArray_CFLOAT, PyArray_CFLOAT, PyArray_CDOUBLE, PyArray_CDOUBLE, };
 
+
+/* Some functions needed from ufunc object, so that Py_complex's aren't being returned 
+between code possibly compiled with different compilers.
+*/
+
+typedef Py_complex ComplexUnaryFunc(Py_complex x);
+
+static void cephes_F_F_As_D_D(char **args, int *dimensions, int *steps, void *func) {
+    int i; Py_complex x;
+    char *ip1=args[0], *op=args[1];
+    for(i=0; i<*dimensions; i++, ip1+=steps[0], op+=steps[1]) {
+	x.real = ((float *)ip1)[0]; x.imag = ((float *)ip1)[1];
+	x = ((ComplexUnaryFunc *)func)(x);
+	((float *)op)[0] = (float)x.real;
+	((float *)op)[1] = (float)x.imag;
+    }
+}
+
+static void cephes_D_D(char **args, int *dimensions, int *steps, void *func) {
+    int i; Py_complex x;
+    char *ip1=args[0], *op=args[1];
+    for(i=0; i<*dimensions; i++, ip1+=steps[0], op+=steps[1]) {
+	x.real = ((double *)ip1)[0]; x.imag = ((double *)ip1)[1];
+	x = ((ComplexUnaryFunc *)func)(x);
+	((double *)op)[0] = x.real;
+	((double *)op)[1] = x.imag;
+    }
+}
+
 static void Cephes_InitOperators(PyObject *dictionary) {
 	PyObject *f;
 
         cephes1_functions[0] = PyUFunc_f_f_As_d_d;
         cephes1_functions[1] = PyUFunc_d_d;
-        cephes1c_functions[0] = PyUFunc_F_F_As_D_D;
-	cephes1c_functions[1] = PyUFunc_D_D;
+        cephes1c_functions[0] = cephes_F_F_As_D_D;
+	cephes1c_functions[1] = cephes_D_D;
         cephes1rc_functions[0] = PyUFunc_f_f_As_d_d;
         cephes1rc_functions[1] = PyUFunc_d_d;
-        cephes1rc_functions[2] = PyUFunc_F_F_As_D_D;
-	cephes1rc_functions[3] = PyUFunc_D_D;
+        cephes1rc_functions[2] = cephes_F_F_As_D_D;
+	cephes1rc_functions[3] = cephes_D_D;
         cephes1_2_functions[0] = PyUFunc_f_ff_As_d_dd;
         cephes1_2_functions[1] = PyUFunc_d_dd;
         cephes1_2_functions[2] = PyUFunc_F_FF_As_D_DD;
