@@ -41,6 +41,7 @@ def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")
     return
 
+from PR import *
 def demo5 (*itest) :
    """demo5 () or demo5 (i)
      Run examples of use of pl3d.i, plwf.i, and slice3.i.  With
@@ -201,7 +202,6 @@ def demo5 (*itest) :
       palette ("gray.gp")
 
    if len (itest) == 0 or itest [0] == 4 :
-      from PR import *
       f = PR ('./bills_plot')
       n_nodes = f.NumNodes
       n_z = f.NodesOnZones
@@ -298,7 +298,6 @@ def demo5 (*itest) :
 
    if len (itest) == 0 or itest [0] == 5 :
       # Try bert's data
-      from PR import PR
       f = PR ('./berts_plot')
       nums = array ( [63, 63, 49], Int)
       dxs = array ( [2.5, 2.5, 10.], Float )
@@ -325,7 +324,6 @@ def demo5 (*itest) :
       paws ()
    if len (itest) == 0 or itest [0] == 6 :
       # Try Bill's irregular mesh
-      from PR import PR
       f = PR ("ball.s0001")
       ZLss = f.ZLstruct_shapesize
       ZLsc = f.ZLstruct_shapecnt
