@@ -154,7 +154,7 @@ class dictmatrix(dict):
             data[k] = self[key]
             colind[k] = ikey1
             k += 1
-        row_ptr[-1] = nnz+1
+        row_ptr[-1] = nnz
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
@@ -183,7 +183,7 @@ class dictmatrix(dict):
             data[k] = self[key]
             rowind[k] = ikey0
             k += 1
-        col_ptr[-1] = nnz+1
+        col_ptr[-1] = nnz
         data = array(data)
         rowind = array(rowind)
         col_ptr = array(col_ptr)
@@ -488,7 +488,7 @@ def spdiags(diags,offsets,m,n):
                sum(_spdiags_tosub(offsets, a=min([n-m,0]), b=max([n-m,0])))
     return s
 
-def sparse_linear_solve(A,b):
+def sparse_linear_solve(A,b,permc_spec=0):
     if not hasattr(A, 'getCSR') and not hasattr(A, 'getCSC'):
         raise ValueError, "Sparse matrix must be able to return CSC format--"\
               "A.getCSC()--or CSR format--A.getCSR()"
@@ -502,7 +502,7 @@ def sparse_linear_solve(A,b):
         csc = 0
     M,N = A.shape
     gssv = eval('_superlu.' + ftype + 'gssv')
-    return gssv(M,N,lastel,data,index0,index1,b,csc)
+    return gssv(M,N,lastel,data,index0,index1,b,csc,permc_spec)
     
 
 splinsolve = sparse_linear_solve

@@ -120,7 +120,7 @@ static PyObject *Py_sgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   PyArrayObject *colind=NULL, *rowptr=NULL;
   int M, N, nnz;
   int info, full_output=0;
-  int csc=0, permc_spec=0;
+  int csc=0, permc_spec=2;
   int *perm_r=NULL, *perm_c=NULL;
   SuperMatrix A, B, L, U;
   superlu_options_t options;

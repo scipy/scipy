@@ -127,7 +127,7 @@ static PyObject *Py_zgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   PyArrayObject *nzvals=NULL;
   PyArrayObject *colind=NULL, *rowptr=NULL;
   int M, N, nnz;
-  int csc=0, permc_spec=0;
+  int csc=0, permc_spec=2;
   int info, full_output=0;
   int *perm_r=NULL, *perm_c=NULL;
   SuperMatrix A, B, L, U;

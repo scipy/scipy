@@ -1,8 +1,6 @@
 
 #include "Python.h"
 #include <setjmp.h>
-#include "SuperLU/SRC/dsp_defs.h"
-#include "SuperLU/SRC/util.h"
 
 jmp_buf _superlu_py_jmpbuf;
 PyObject *_superlumodule_memory_dict=NULL;
@@ -12,21 +10,6 @@ PyObject *_superlumodule_memory_dict=NULL;
    Calling program should deallocate (using SUPERLU_FREE) all memory that could have 
    been allocated.  (It's ok to FREE unallocated memory)---will be ignored.
 */
-
-colperm_t superlu_module_getpermc(int permc_spec)
-{
-  switch(permc_spec) {
-  case 0:
-    return NATURAL;
-  case 1:
-    return MMD_ATA;
-  case 2:
-    return MMD_AT_PLUS_A;
-  case 3:
-    return COLAMD;
-  }
-  ABORT("Invalid input for permc_spec.");
-}
 
 void superlu_python_module_abort(char *msg)
 {
