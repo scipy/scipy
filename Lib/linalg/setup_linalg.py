@@ -49,8 +49,11 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
     gen_function = eval('interface_gen.generate_'+mod_name)
     
     if use_underscore:
+        define_macros = [('F2PY_REPORT_ATEXIT_DISBLE',None)]
         define_macros = [('F2PY_REPORT_ATEXIT_DISABLE',None)]
     else:
+        define_macros=[('NO_APPEND_FORTRAN',1),
+                       ('F2PY_REPORT_ATEXIT_DISBLE',None)]
 	define_macros=[('NO_APPEND_FORTRAN',1),
 	               ('F2PY_REPORT_ATEXIT_DISABLE',None)]
             
