@@ -114,7 +114,7 @@ returns a factored_lu object.\n\
 arguments\n\
 ---------\n\
 \n\
-Matrix to be factorized is represented as M,N,nnz,nzvals,rowind,colptr\n\
+Matrix to be factorized is represented as N,nnz,nzvals,rowind,colptr\n\
   as separate arguments.  This is compressed sparse column representation.\n\
 \n\
 N         number of rows and columns \n\
