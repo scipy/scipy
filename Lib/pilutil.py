@@ -100,6 +100,8 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     The Numeric array must be either 2 dimensional or 3 dimensional.
     """
     data = Numeric.asarray(arr)
+    if iscomplexobj(data):
+        raise ValueError, "Cannot convert a complex-valued array."
     shape = list(data.shape)
     valid = len(shape)==2 or ((len(shape)==3) and \
                               ((3 in shape) or (4 in shape)))
