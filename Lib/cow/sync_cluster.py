@@ -505,6 +505,20 @@ def catch_keyword_conflicts(kw1, kw2):
         if key in keys2:
             raise TypeError, ('keyword parameter "%s" redefined' % key)
 
+def read_log():
+    """ Read the results of the log file.  
+    
+        This assumes that stdout and the log file are the same.    
+    """
+    #global log_file
+    #sys.stdout.close()
+    #f = open(log_file,'r')
+    #results = f.read(-1)
+    #f.close()
+    #sys.stdout = open(log_file,'a+')
+    #return results
+    pass
+    
 import SocketServer
 class standard_sync_handler(SocketServer.StreamRequestHandler):
     verbose = 1
@@ -515,8 +529,17 @@ class standard_sync_handler(SocketServer.StreamRequestHandler):
              and this function can be removed
         *"""
         self.connection = self.request
+        print 'here:',self.connection
         self.rfile = self.connection.makefile('rb', bufsize)
         self.wfile = self.connection.makefile('wb', bufsize)
+        
+        #SocketServer.StreamRequestHandler.setup(self)
+        #import tempfile,os
+        #global log_file
+        #dr = tempfile.gettempdir()
+        #log_file = os.path.join(dr,'cow.log')
+        #f = open(log_file,'w')
+        #sys.stdout = f
         self.log = sys.stdout
 
     def handle(self):
@@ -785,6 +808,37 @@ def force_kill():
     else:
         os.kill(server_pid,15) # 15 = TERM 9 = ABRT
 
+class MyThreadingTCPServer(SocketServer.ThreadingTCPServer):
+    """ Threaded Server for handling request for python commands
+    
+        This class was added as of Python2.1 in response
+        to the bug reported at:
+           
+           http://sourceforge.net/tracker/index.php?
+              func=detail&aid=417845&group_id=5470&atid=105470
+        
+        Hopefully the issue will get fixed in the standard library
+        by 2.2, and this can go away.
+    """
+    def handle_request(self):
+        """Handle one request, possibly blocking."""
+        try:
+            request, client_address = self.get_request()
+        except socket.error:
+            return
+        if self.verify_request(request, client_address):
+            try:
+                self.process_request(request, client_address)
+            except:
+                self.handle_error(request, client_address)
+                self.close_request(request)
+
+    def finish_request(self, request, client_address):
+        """Finish one request by instantiating RequestHandlerClass."""
+        print 'finish request:', request
+        self.RequestHandlerClass(request, client_address, self)
+        self.close_request(request)
+
 default_host = socket.gethostname()
 def server(host=default_host,port=10000):
     import os
@@ -795,7 +849,7 @@ def server(host=default_host,port=10000):
     print server_pid
     #the_server=SocketServer.TCPServer( (host, port), standard_sync_handler)
     #the_server=SocketServer.ForkingTCPServer( (host, port), standard_sync_handler)
-    the_server=SocketServer.ThreadingTCPServer( (host, port), standard_sync_handler)
+    the_server=MyThreadingTCPServer( (host, port), standard_sync_handler)
     __name__ = '__main__'
     the_server.serve_forever()
 
