@@ -2044,7 +2044,7 @@ uniform = uniform_gen(a=0.0,b=1.0)
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
 
-eps = scipy.limits.epsilon('d')
+eps = scipy_base.limits.double_epsilon
 
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):
