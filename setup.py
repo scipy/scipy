@@ -32,7 +32,7 @@ standard_packages = ['io','linalg',
                      'cluster','cow','ga','fftpack']
 standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 
-graphics_packages = ['plt','gplt','xplt']
+graphics_packages = ['plt','gplt','xplt'][:-1]
 graphics_packages = [os.path.join('Lib',p) for p in graphics_packages]
 
 chaco_packages = ['chaco','kiva','traits','freetype']
