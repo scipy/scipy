@@ -12,6 +12,7 @@ del scipy_version
 # Level 0 -- Numeric and core routines in basic.py, misc.py, and handy.py
 #
 # Level 1 -- Level 0 + fft, special, linalg (these can depend on Level 0)
+# Level 1a -- Core routines which depend on Level 1.
 # Level 2 -- plotting interface.
 # Packages which define own functions plus depend on Levels 0-2.
 #
@@ -56,10 +57,14 @@ def objects2all(alist, objlist):
 # modules to import under the scipy namespace
 _level0 = ["handy", "misc", "basic", "fastumath"]
 _partials0 = {'Matrix' : ['Matrix']}
+# these modules will just be imported (not subsumed)
+_level0_importonly = []
 
-_level1 = ["special", "io", "linalg", "fastumath"]  # fft is in this group.
-_level1a = ["basic2"] # functions to be subsumed into scipy namespace which
+_level1 = ["special", "io", "linalg"]  # fft is in this group.
+_level1a = ["basic1a"] # functions to be subsumed into scipy namespace which
                       # require level 0 and level 1
+# these modules will just be imported (not subsumed)                      
+_level1_importonly = []
 
 _level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "compiler", "cluster"]
 
@@ -67,6 +72,7 @@ __all__=[]
 somenames2all(__all__, _partials0, globals())
 names2all(__all__, _level0, globals())
 modules2all(__all__, _level0, globals())
+modules2all(__all__, _level0_importonly, globals())
 objects2all(__all__, ['help', 'source', "Inf", "inf", "NaN", "nan", "Mat"])
 
 # Level 1
@@ -83,6 +89,8 @@ somenames2all(__all__, _partials1, globals())
 
 # Level 1a
 names2all(__all__, _level1a, globals())
+modules2all(__all__, _level1a, globals())
+modules2all(__all__, _level1a_importonly, globals())
 
 # Level 2
 _plot = []
