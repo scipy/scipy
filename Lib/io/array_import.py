@@ -10,7 +10,7 @@ Text File
 import Numeric
 from Numeric import array, take, concatenate, Float
 import types, re
-import numpyio
+#import numpyio
 default = None
 _READ_BUFFER_SIZE = 1024*1024
 #_READ_BUFFER_SIZE = 1000
@@ -137,7 +137,10 @@ class ascii_stream:
         buffer = self.file.read(sizehint)
         lines = buffer.split(self._linesplitter)
         if len(buffer) < sizehint:  # EOF
-            return lines
+            if buffer == '':
+                return []
+            else:
+                return lines
         else:
             if len(lines) < 2:
                 raise ValueError, "Buffer size too small."
@@ -152,7 +155,7 @@ class ascii_stream:
     def __getitem__(self, item):
         while 1:
             line = self.readnextline()
-            if not line:
+            if line is None:
                 raise IndexError
             if len(line) < self.lencomment or line[:self.lencomment] != self.comment:
                 break
@@ -206,7 +209,7 @@ def process_line(line, separator, collist, atype, missing):
         else:
             toconvlist = take(arlist,collist[:-1])
             toconvlist = concatenate((toconvlist,
-                                      arlist[(collist[-2]+1)::(-collist[-1])]))
+                                      arlist[(collist[-2]-collist[-1])::(-collist[-1])]))
     else:
         toconvlist = take(arlist, collist)
 
@@ -219,14 +222,29 @@ def getcolumns(stream, columns, separator):
     val = process_line(firstline, separator, collist, Float, 0)
     return len(val), collist
 
+
+def init_output(rowsize, colsize, collist, atype):
+    if isinstance(atype, types.StringType):
+        atype = {atype:collist}
+    elif isinstance(atype, types.ListType) or \
+         isinstance(atype, types.TupleType):
+        
+        
+    a = Numeric.zeros((rowsize, colsize),atype)
+    return
+
+
+
 def read_array(fileobject, separator=default, columns=default, comment="#",
                lines=default, atype=Numeric.Float, linesep='\n',
                rowsize=10000, missing=0):
-    """Return an array represented ascii_formatted data in |fileobject|.
+    """Return an array or arrays from ascii_formatted data in |fileobject|.
 
     Inputs:
 
       fileobject -- An open file object or a string for a valid filename.
+                    The string can be prepended by "~/" or "~<name>/" to
+                    read a file from the home directory.
       separator -- a string or a tuple of strings to indicate the column
                    separators.  If the length of the string tuple is less
                    than the total number of columns, then the last separator
@@ -235,32 +253,47 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
                  columns to read from the file.  A negative entry in the
                  last column specifies the negative skip value to the end.
                  Example:  columns=(1, 4, (5, 9), (11, 15, 3), 17, -2)
-                         will read [1,4,5,6,7,8,11,14,17,18,20,22,...]
+                         will read [1,4,5,6,7,8,11,14,17,19,21,23,...]
       lines   -- a tuple with the same structure as columns which indicates
                  the lines to read. 
       comment -- the comment character (line will be ignored even if it is
                  specified by the lines tuple)
       linesep -- separator between rows.
       missing -- value to insert in array when conversion to number fails.
-      atype -- the typecode of the output array.
+      atype -- the typecode of the output array.  If multiple outputs of
+               different types are desired, then a dictionary or a sequence
+               can be used for this argument.  The dictionary should have
+               keys of typecodes, with entries a tuple specifying which
+               columns should be read with that typecode.  If this argument
+               is a sequence it must be of length 2N where N is the number of
+               output arrays.  For each output array there should be
+               a typecode entry in he sequence immediately followed by a
+               tuple representing the columns to read into that array.
       rowsize -- the allocation row size (array grows by this amount as
                data is read in).
 
-    Outputs:
+    Output -- the 1 or 2d array, or a tuple of output arrays of different
+              types, sorted in order of the first column to be placed
+              in the output array. 
 
-      file -- The open file.
     """
 
+    # Make separator into a tuple of separators.
     if type(separator) in [types.StringType, type(default)]:
         sep = (separator,)
     else:
         sep = tuple(separator)
+    # Create ascii_object from |fileobject| argument.
     ascii_object = ascii_stream(fileobject, lines=lines, comment=comment, linesep=linesep)
+    # Get the number of columns to read and expand the columns argument
     colsize, collist = getcolumns(ascii_object, columns, sep)
-    a = Numeric.zeros((rowsize, colsize),atype)
+    # Intialize the output arrays, and convert atype to a dictionary
+    outarr, outdict = init_output(rowsize, colsize, collist, atype)
     row = 0
     block_row = 0
-    for line in ascii_object:        
+    for line in ascii_object:
+        if line.strip() == '':
+            continue
         a[row] = process_line(line, sep, collist, atype, missing)
         row += 1
         block_row += 1

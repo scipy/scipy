@@ -7,6 +7,7 @@
    tplquad       -- General purpose triple integration.
    gauss_quad    -- Integrate func(x) using Gaussian quadrature of order n.
    gauss_quadtol -- Integrate with given tolerance using Gaussian quadrature.
+   romberg       -- Integrate func using Romberg integration.
 
 
    See the orthogonal module (scipy.integrate.orthogonal) for Gaussian
