@@ -33,8 +33,12 @@ Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
+#define ANSIPROT 1
 #ifndef ANSIPROT
 double floor();
+#else
+extern double floor(double);
+double round(double);
 #endif
 
 double round(x)

@@ -5,6 +5,9 @@
 #include "specfun_wrappers.h"
 #include <stdio.h>
 
+#define CADDR(z) (double *)(&((z).real)), (double*)(&((z).imag))
+#define F2C_CST(z) (double *)&((z)->real), (double *)&((z)->imag)
+
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F
@@ -21,6 +24,46 @@
 
 extern double psi(double);
 extern double struve(double, double);
+
+extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
+extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
+extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,Py_complex*,Py_complex*);
+extern void F_FUNC(cchg,CCHG)(double*,double*,Py_complex*,Py_complex*);
+extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
+extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
+extern void F_FUNC(e1xb,E1XB)(double*,double*);
+extern void F_FUNC(e1z,E1Z)(Py_complex*,Py_complex*);
+extern void F_FUNC(eix,EIX)(double*,double*);
+extern void F_FUNC(cerror,CERROR)(Py_complex*,Py_complex*);
+extern void F_FUNC(stvh0,STVH0)(double*,double*);
+extern void F_FUNC(stvh1,STVH1)(double*,double*);
+extern void F_FUNC(stvhv,STVHV)(double*,double*,double*);
+extern void F_FUNC(stvl0,STVL0)(double*,double*);
+extern void F_FUNC(stvl1,STVL1)(double*,double*);
+extern void F_FUNC(stvlv,STVLV)(double*,double*,double*);
+extern void F_FUNC(itsh0,ITSH0)(double*,double*);
+extern void F_FUNC(itth0,ITTH0)(double*,double*);
+extern void F_FUNC(itsl0,ITSL0)(double*,double*);
+extern void F_FUNC(klvna,KLVNA)(double*,double*,double*,double*,double*,double*,double*,double*,double*);
+extern void F_FUNC(itjya,ITJYA)(double*,double*,double*);
+extern void F_FUNC(ittjya,ITTJYA)(double*,double*,double*);
+extern void F_FUNC(itika,ITIKA)(double*,double*,double*);
+extern void F_FUNC(ittika,ITTIKA)(double*,double*,double*);
+extern void F_FUNC(cfc,CFC)(Py_complex*,Py_complex*,Py_complex*);
+extern void F_FUNC(cfs,CFS)(Py_complex*,Py_complex*,Py_complex*);
+extern void F_FUNC(cva2,CVA2)(int*,int*,double*,double*);
+extern void F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
+extern void F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
+extern void F_FUNC(lpmv,LPMV)(double*,int*,double*,double*);
+extern void F_FUNC(pbwa,PBWA)(double*,double*,double*,double*,double*,double*);
+extern void F_FUNC(pbdv,PBDV)(double*,double*,double*,double*,double*,double*);
+extern void F_FUNC(pbvv,PBVV)(double*,double*,double*,double*,double*,double*);
+extern void F_FUNC(segv,SEGV)(int*,int*,double*,int*,double*,double*);
+extern void F_FUNC(aswfa,ASWFA)(int*,int*,double*,double*,int*,double*,double*,double*);
+extern void F_FUNC(rswfp,RSWFP)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
+extern void F_FUNC(rswfo,RSWFO)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
+extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*,double*,double*,double*);
+
 
 /* This must be linked with fortran
  */
@@ -328,7 +371,6 @@ double keip_wrap(double x)
 
 
 int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_complex *Kep) {
-  Py_complex outz;
   int flag = 0;
   
   if (x<0) {x=-x; flag=1;}
@@ -378,6 +420,7 @@ int it2j0y0_wrap(double x, double *j0int, double *y0int)
   if (flag) {
     *y0int = NAN;  /* domain error */
   }
+  return 0;
 }
 
 /* Integrals of modified bessel functions */
@@ -556,6 +599,7 @@ int pbwa_wrap(double a, double x, double *wf, double *wd) {
     *wf = w1f;
     *wd = w1d;
   }
+  return 0;
 }
 
 int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
@@ -594,6 +638,7 @@ int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
   vp = vv + num;
   F_FUNC(pbvv,PBVV)(&v, &x, vv, vp, pvf, pvd);
   PyMem_Free(vv);
+  return 0;
 }
 
 double prolate_segv_wrap(double m, double n, double c)
@@ -613,8 +658,8 @@ double prolate_segv_wrap(double m, double n, double c)
     return NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
-  return cv;
   PyMem_Free(eg);
+  return cv;
 }
 
 double oblate_segv_wrap(double m, double n, double c)
@@ -634,8 +679,8 @@ double oblate_segv_wrap(double m, double n, double c)
     return NAN;
   }
   F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
-  return cv;
   PyMem_Free(eg);
+  return cv;
 }
 
 

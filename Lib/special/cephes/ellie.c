@@ -53,10 +53,23 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 /*	Incomplete elliptic integral of second kind	*/
 
+#define ANSIPROT
+
 extern double PI, PIO2, MACHEP;
 #ifndef ANSIPROT
 double sqrt(), fabs(), log(), sin(), tan(), atan(), floor();
 double ellpe(), ellpk();
+#else
+double ellie(double,double);
+extern double sqrt(double);
+extern double fabs(double);
+extern double log(double);
+extern double sin(double);
+extern double tan(double);
+extern double atan(double);
+extern double floor(double);
+extern double ellpe(double);
+extern double ellpk(double);
 #endif
 
 double ellie( phi, m )

@@ -51,6 +51,9 @@ typedef struct
 	double i;
 	}cmplx;
 
+void cpmul( cmplx*, int, cmplx*, int, cmplx*, int* );
+
+void
 cpmul( a, da, b, db, c, dc )
 cmplx *a, *b, *c;
 int da, db;

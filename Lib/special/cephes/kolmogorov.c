@@ -24,7 +24,14 @@
 
 
 #include "mconf.h"
+#ifndef ANSIPROT
 double pow (), floor (), lgam (), exp (), sqrt (), log (), fabs ();
+#else
+double smirnov(int,double);
+double smirnovi(int,double);
+double kolmogorov (double);
+double kolmogi (double);
+#endif
 extern double MAXLOG, NAN;
 
 /* Exact Smirnov statistic, for one-sided test.  */

@@ -98,6 +98,8 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 #include "mconf.h"
 #ifndef ANSIPROT
 double igam(), igamc();
+#else
+double gdtri(double,double,double);
 #endif
 
 extern double NAN;

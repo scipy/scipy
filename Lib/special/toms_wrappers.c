@@ -19,6 +19,8 @@
 #endif
 /* This must be linked with fortran
  */
+extern void F_FUNC(wofz,WOFZ)(double*,double*,double*,double*,int*);
+
 Py_complex cwofz_wrap( Py_complex z) {
   int errflag;
   Py_complex cy;

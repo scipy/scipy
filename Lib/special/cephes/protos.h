@@ -115,8 +115,8 @@ extern int mmmpy ( int r, int c, double *A, double *B, double *Y );
 extern int mtherr ( char *name, int code );
 extern double polevl ( double x, void *P, int N );
 extern double p1evl ( double x, void *P, int N );
-extern int mtransp ( int n, double *A, double *T );
-extern int mvmpy ( int r, int c, double *A, double *V, double *Y );
+extern void mtransp ( int n, double *A, double *T );
+extern void mvmpy ( int r, int c, double *A, double *V, double *Y );
 extern double nbdtrc ( int k, int n, double p );
 extern double nbdtr ( int k, int n, double p );
 extern double nbdtri ( int k, int n, double p );
@@ -144,7 +144,7 @@ extern double sin ( double x );
 extern double cos ( double x );
 extern double radian ( double d, double m, double s );
 /*
-extern int sincos ( double x, double *s, double *c, int flg );
+extern void sincos ( double x, double *s, double *c, int flg );
 */
 extern double sindg ( double x );
 extern double cosdg ( double x );

@@ -39,10 +39,10 @@ static void show_error( int status, int bound) {
   else {
     switch (status) {
     case 1:
-      printf("Answer appears to be lower than lowest search bound (%g).\n", bound);
+      printf("Answer appears to be lower than lowest search bound (%d).\n", bound);
       break;
     case 2:
-      printf("Answer appears to be higher than highest search bound (%g).\n", bound);
+      printf("Answer appears to be higher than highest search bound (%d).\n", bound);
       break;
     case 3:
     case 4:
@@ -56,6 +56,8 @@ static void show_error( int status, int bound) {
     }
   }
 }
+
+extern void F_FUNC(cdfbet,CDFBET)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
 
 double cdfbet3_wrap(double p, double b, double x) {
   int which=3;
@@ -84,6 +86,8 @@ double cdfbet4_wrap(double a, double p, double x) {
 }
 
 
+extern void F_FUNC(cdfbin,CDFBIN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
+
 double cdfbin2_wrap(double p, double xn, double pr) {
   int which=2;
   double q=1.0-p, s, ompr=1.0-pr, bound;
@@ -110,6 +114,7 @@ double cdfbin3_wrap(double s, double p, double pr) {
   return xn;
 }
 
+extern void F_FUNC(cdfchi,CDFCHI)(int*,double*,double*,double*,double*,int*,double*);
 double cdfchi3_wrap(double p, double x){
   int which=3;
   double q=1.0-p, df, bound;
@@ -123,6 +128,7 @@ double cdfchi3_wrap(double p, double x){
   return df;
 }
 
+extern void F_FUNC(cdfchn,CDFCHN)(int*,double*,double*,double*,double*,double*,int*,double*);
 double cdfchn1_wrap(double x, double df, double nc) {
   int which=1;
   double q, p, bound;
@@ -175,6 +181,7 @@ double cdfchn4_wrap(double x, double df, double p) {
   return nc;
 }
 
+extern void F_FUNC(cdff,CDFF)(int*,double*,double*,double*,double*,double*,int*,double*);
 /*
 double cdff1_wrap(double dfn, double dfd, double f) {
   int which=1;
@@ -231,7 +238,7 @@ double cdff4_wrap(double dfn, double p, double f) {
 }
 
 
-
+extern void F_FUNC(cdffnc,CDFFNC)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
 double cdffnc1_wrap(double dfn, double dfd, double nc, double f) {
   int which=1;
   double q, p, bound;
@@ -300,6 +307,7 @@ double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
 /* scl == a in gdtr
    shp == b in gdtr
 */ 
+extern void F_FUNC(cdfgam,CDFGAM)(int*,double*,double*,double*,double*,double*,int*,double*);
 double cdfgam1_wrap(double scl, double shp, double x) {
   int which=1;
   double q, p, bound;
@@ -352,7 +360,7 @@ double cdfgam4_wrap(double p, double shp, double x) {
   return scl;
 }
 
-
+extern void F_FUNC(cdfnbn,CDFNBN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
 double cdfnbn2_wrap(double p, double xn, double pr) {
   int which=2;
   double q=1.0-p, s, ompr=1.0-pr, bound;
@@ -379,6 +387,7 @@ double cdfnbn3_wrap(double s, double p, double pr) {
   return xn;
 }
 
+extern void F_FUNC(cdfnor,CDFNOR)(int*,double*,double*,double*,double*,double*,int*,double*);
 double cdfnor3_wrap(double p, double std, double x) {
   int which=3;
   double q=1.0-p, mn, bound;
@@ -405,6 +414,7 @@ double cdfnor4_wrap(double mn, double p, double x) {
   return std;
 }
 
+extern void F_FUNC(cdfpoi,CDFPOI)(int*,double*,double*,double*,double*,int*,double*);
 double cdfpoi2_wrap(double p, double xlam){
   int which=2;
   double q=1.0-p, s, bound;
@@ -418,6 +428,7 @@ double cdfpoi2_wrap(double p, double xlam){
   return s;
 }
 
+extern void F_FUNC(cdft,CDFT)(int*,double*,double*,double*,double*,int*,double*);
 double cdft1_wrap(double df, double t){
   int which=1;
   double q, p, bound;
@@ -457,7 +468,7 @@ double cdft3_wrap(double p, double t){
   return df;
 }
 
-
+extern void F_FUNC(cdftnc,CDFTNC)(int*,double*,double*,double*,double*,double*,int*,double*);
 double cdftnc1_wrap(double df, double nc, double t) {
   int which=1;
   double q, p, bound;

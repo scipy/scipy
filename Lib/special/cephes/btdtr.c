@@ -50,8 +50,12 @@ Cephes Math Library Release 2.0:  April, 1987
 Copyright 1984, 1987, 1995 by Stephen L. Moshier
 */
 
+#define ANSIPROT
 #ifndef ANSIPROT
 double incbet();
+#else
+extern double incbet ( double aa, double bb, double xx );
+double btdtr( double,double,double );
 #endif
 
 double btdtr( a, b, x )

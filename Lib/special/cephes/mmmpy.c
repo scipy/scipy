@@ -30,6 +30,12 @@
  */
 
 
+#define ANSIPROT
+#ifdef ANSIPROT
+void mmmpy( int,int,double*,double*,double* );
+#endif
+
+void
 mmmpy( r, c, A, B, Y )
 int r, c;
 double *A, *B, *Y;

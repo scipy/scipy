@@ -113,8 +113,9 @@ static void * fdtri_data[] = { (void *)fdtri, (void *)fdtri, };
 
 static void * gdtrc_data[] = { (void *)gdtrc, (void *)gdtrc, };
 static void * gdtr_data[] = { (void *)gdtr, (void *)gdtr, };
+/*
 static void * gdtri_data[] = { (void *)gdtri, (void *)gdtri, };
-
+*/
 static void * hyp2f1_data[] = { (void *)hyp2f1, (void *)hyp2f1, (void *)chyp2f1_wrap, (void *)chyp2f1_wrap};
 static void * hyperg_data[] = { (void *)hyperg, (void *)hyperg, (void *)chyp1f1_wrap, (void *)chyp1f1_wrap};
 static void * hypU_data[] = { (void *)hypU_wrap, (void *)hypU_wrap, };
@@ -222,8 +223,8 @@ static void * cdfchn4_data[] = {(void *)cdfchn4_wrap, (void *)cdfchn4_wrap};
 /*
 static void * cdff1_data[] = {(void *)cdff1_wrap, (void *)cdff1_wrap};
 static void * cdff2_data[] = {(void *)cdff2_wrap, (void *)cdff2_wrap};
-*/
 static void * cdff3_data[] = {(void *)cdff3_wrap, (void *)cdff3_wrap};
+*/
 static void * cdff4_data[] = {(void *)cdff4_wrap, (void *)cdff4_wrap};
 
 static void * cdffnc1_data[] = {(void *)cdffnc1_wrap, (void *)cdffnc1_wrap};
@@ -231,8 +232,9 @@ static void * cdffnc2_data[] = {(void *)cdffnc2_wrap, (void *)cdffnc2_wrap};
 static void * cdffnc3_data[] = {(void *)cdffnc3_wrap, (void *)cdffnc3_wrap};
 static void * cdffnc4_data[] = {(void *)cdffnc4_wrap, (void *)cdffnc4_wrap};
 static void * cdffnc5_data[] = {(void *)cdffnc5_wrap, (void *)cdffnc5_wrap};
-
+/*
 static void * cdfgam1_data[] = {(void *)cdfgam1_wrap, (void *)cdfgam1_wrap};
+*/
 static void * cdfgam2_data[] = {(void *)cdfgam2_wrap, (void *)cdfgam2_wrap};
 static void * cdfgam3_data[] = {(void *)cdfgam3_wrap, (void *)cdfgam3_wrap};
 static void * cdfgam4_data[] = {(void *)cdfgam4_wrap, (void *)cdfgam4_wrap};
@@ -1525,7 +1527,7 @@ static struct PyMethodDef methods[] = {
 };
 
 
-void initcephes() {
+void initcephes(void) {
   PyObject *m, *d, *s;
   
   /* Create the module and add the functions */

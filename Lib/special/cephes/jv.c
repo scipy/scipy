@@ -61,17 +61,18 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 double fabs(), floor(), frexp(), polevl(), j0(), j1(), sqrt(), cbrt();
 double exp(), log(), sin(), cos(), acos(), pow(), Gamma(), lgam();
 static double recur(), jvs(), hankel(), jnx(), jnt();
+int airy();
 #else
 static double recur(double *, double, double *, int);
 static double jvs(double, double);
 static double hankel(double, double);
 static double jnx(double, double);
 static double jnt(double, double);
+extern int airy ( double x, double *ai, double *aip, double *bi, double *bip );
 #endif
 
 extern double MAXNUM, MACHEP, MINLOG, MAXLOG, NAN;
 #define BIG  1.44115188075855872E+17
-int airy();
 
 double jv( n, x )
 double n, x;

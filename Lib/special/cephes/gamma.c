@@ -273,6 +273,10 @@ extern double MAXLOG, MAXNUM, PI;
 #ifndef ANSIPROT
 double pow(), log(), exp(), sin(), polevl(), p1evl(), floor(), fabs();
 int isnan(), isfinite();
+#else
+extern int isnan ( double x );
+extern int isfinite ( double x );
+static double stirf(double);
 #endif
 #ifdef INFINITIES
 extern double INFINITY;

@@ -74,6 +74,7 @@ static double hy1f1a();
 #else
 static double hy1f1p(double, double, double, double *);
 static double hy1f1a(double, double, double, double *);
+double hyp2f0( double,double,double,int,double*);
 #endif
 extern double MAXNUM, MACHEP;
 
@@ -124,7 +125,9 @@ double a, b, x;
 double *err;
 {
 double n, a0, sum, t, u, temp;
+#ifndef ANSIPROT
 double fabs();
+#endif
 double an, bn, maxt, pcanc;
 
 
@@ -214,7 +217,9 @@ double a, b, x;
 double *err;
 {
 double h1, h2, t, u, temp, acanc, asum, err1, err2;
+#ifndef ANSIPROT
 double exp(), log(), Gamma(), lgam(), fabs(), hyp2f0();
+#endif
 
 if( x == 0 )
 	{
@@ -285,7 +290,9 @@ double a, b, x;
 int type;	/* determines what converging factor to use */
 double *err;
 {
+#ifndef ANSIPROT
 double fabs();
+#endif
 double a0, alast, t, tlast, maxt;
 double n, an, bn, u, sum, temp;
 

@@ -228,8 +228,11 @@ static double sintbl[92] = {
 
 #ifndef ANSIPROT
 double floor();
+#else
+extern void sincos ( double x, double *s, double *c, int flg );
 #endif
 
+void
 sincos(x, s, c, flg)
 double x;
 double *s, *c;

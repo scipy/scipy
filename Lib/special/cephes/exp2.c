@@ -121,6 +121,8 @@ static unsigned short Q[] = {
 #ifndef ANSIPROT
 double polevl(), p1evl(), floor(), ldexp();
 int isnan(), isfinite();
+#else
+extern int isnan ( double x );
 #endif
 #ifdef INFINITIES
 extern double INFINITY;

@@ -18,8 +18,6 @@ extern double NAN;
 extern double INFINITY;
 extern double PI;
 
-#define CADDR(z) (double *)(&((z).real)), (double*)(&((z).imag))
-#define F2C_CST(z) (double *)&((z)->real), (double *)&((z)->imag)
 #define REAL(z) (z).real
 #define IMAG(z) (z).imag
 #define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;

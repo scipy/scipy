@@ -11,9 +11,6 @@
 #include "cephes/mconf.h"
 
 #define DO_MTHERR(name) if (nz !=0 || ierr !=0) mtherr(name, ierr_to_mtherr(nz, ierr))
-#define CADDR(z) (double *)&z.real, (double*)&z.imag
-#define F2C_CST(z) (double *)&z->real, (double *)&z->imag
-
 int ierr_to_mtherr( int nz, int ierr); 
 int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip);
 int cairy_wrap_e(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip);

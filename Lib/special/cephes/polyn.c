@@ -60,7 +60,7 @@
  */
 
 #include <stdio.h>
-void exit();
+void exit(int);
 #ifndef NULL
 #define NULL 0
 #endif

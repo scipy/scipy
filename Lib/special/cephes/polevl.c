@@ -49,6 +49,11 @@ Copyright 1984, 1987, 1988 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
+#define ANSIPROT
+#ifdef ANSIPROT
+double polevl( double, double [], int);
+double p1evl( double, double [], int);
+#endif
 
 double polevl( x, coef, N )
 double x;

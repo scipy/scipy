@@ -15,6 +15,8 @@ extern double INFINITY;
 #endif
 #ifndef ANSIPROT
 int isnan(), isfinite();
+#else
+extern int isnan ( double x );
 #endif
 /* log1p(x) = log(1 + x)  */
 

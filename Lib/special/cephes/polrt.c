@@ -55,6 +55,8 @@ typedef struct
 */
 #ifndef ANSIPROT
 double fabs();
+#else
+int polrt( double [], double [], int, cmplx []);
 #endif
 
 int polrt( xcof, cof, m, root )

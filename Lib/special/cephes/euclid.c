@@ -40,9 +40,15 @@ typedef struct
 	{
 	double n; /* numerator */
 	double d; /* denominator */
-	}fract;
+	} fract;
 
 /* Add fractions. */
+#ifdef ANSIPROT
+static void radd(fract*,fract*,fract*);
+static void rsub(fract*,fract*,fract*);
+static void rmul(fract*,fract*,fract*);
+static void rdiv(fract*,fract*,fract*);
+#endif
 
 void radd( f1, f2, f3 )
 fract *f1, *f2, *f3;

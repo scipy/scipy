@@ -12,7 +12,6 @@
 #include "cephes/mconf.h"
 
 #define CADDR(z) (double *)&z.real, (double*)&z.imag
-
 #endif /*_AMOS */
 extern Py_complex cwofz_wrap(Py_complex z);
 

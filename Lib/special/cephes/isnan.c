@@ -71,6 +71,11 @@ Copyright 1984, 1995 by Stephen L. Moshier
 #endif
 #endif
 
+#ifdef ANSIPROT
+extern int signbit ( double x );
+extern int isnan ( double x );
+extern int isfinite ( double x );
+#endif
 
 /* Return 1 if the sign bit of x is 1, else 0.  */
 

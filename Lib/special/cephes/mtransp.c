@@ -27,13 +27,19 @@
  */
 
 
+#define ANSIPROT
+#ifdef ANSIPROT
+void mtransp( int,double*,double* );
+#endif
+
+void
 mtransp( n, A, T )
 int n;
 double *A, *T;
 {
 int i, j, np1;
 double *pAc, *pAr, *pTc, *pTr, *pA0, *pT0;
-double x, y;
+double x;
 
 np1 = n+1;
 pA0 = A;

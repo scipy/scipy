@@ -263,7 +263,9 @@ polcos( x, y, nn )
   double a, sc;
   double *w, *c;
   int i;
+#ifndef ANSIPROT
   double sin(), cos();
+#endif
 
   if (nn > N)
     {

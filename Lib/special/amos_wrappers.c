@@ -7,6 +7,9 @@
 
 #include "amos_wrappers.h"
 
+#define CADDR(z) (double *)(&((z).real)), (double*)(&((z).imag))
+#define F2C_CST(z) (double *)&((z)->real), (double *)&((z)->imag)
+
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
 #define F_FUNC(f,F) F
@@ -20,6 +23,21 @@
 #define F_FUNC(f,F) f##_
 #endif
 #endif
+
+extern int F_FUNC(zairy,ZAIRY)
+     (double*, double*, int*, int*, double*, double*, int*, int*);
+extern int F_FUNC(zbiry,ZBIRY)
+     (double*, double*, int*, int*, double*, double*, int*, int*);
+extern int F_FUNC(zbesi,ZBESI)
+     (double*, double*, double*, int*, int*, double*, double*, int*, int*);
+extern int F_FUNC(zbesj,ZBESJ)
+     (double*, double*, double*, int*, int*, double*, double*, int*, int*);
+extern int F_FUNC(zbesk,ZBESK)
+     (double*, double*, double*, int*, int*, double*, double*, int*, int*);
+extern int F_FUNC(zbesy,ZBESY)
+     (double*, double*, double*, int*, int*, double*, double*, int*, double*, double*, int*);
+extern int F_FUNC(zbesh,ZBESH)
+     (double*, double*, double*, int*, int*, int*, double*, double*, int*, int*);
 
 /* This must be linked with fortran
  */

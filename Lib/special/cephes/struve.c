@@ -36,10 +36,25 @@ Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
+#define ANSIPROT
 #define DEBUG 0
 #ifndef ANSIPROT
 double Gamma(), pow(), sqrt(), yn(), yv(), jv(), fabs(), floor();
 double sin(), cos();
+#else
+double onef2( double,double,double,double,double*);
+double threef0( double,double,double,double,double*);
+extern double fabs(double);
+extern double floor(double);
+extern double sqrt(double);
+extern double sin ( double x );
+extern double cos ( double x );
+extern double pow ( double x, double y );
+extern double Gamma ( double x );
+extern double jv ( double n, double x );
+extern double yn ( int n, double x );
+double struve(double, double);
+double yv(double, double);
 #endif
 static double stop = 1.37e-17;
 extern double MACHEP, INFINITY;
@@ -209,9 +224,10 @@ double onef2err, threef0err;
 
 if (x == 0.0) {
   if ((v>-1) || ((floor(v)-v)==0.5)) return 0.0;
-  if (v<-1) 
+  if (v<-1) {
     if ((int)(floor(0.5-v)-1) % 2) return -INFINITY;
     else return INFINITY;
+  }
   return 2.0/PI;
 }
 

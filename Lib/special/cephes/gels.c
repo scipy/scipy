@@ -63,18 +63,23 @@ C
 C     ..................................................................
 C
 */
+#define ANSIPROT
 #ifndef ANSIPROT
 double fabs();
+#else
+extern double fabs(double);
+int gels( double [], double [], int, double, double [] );
 #endif
 
+int
 gels( A, R, M, EPS, AUX )
 double A[],R[];
 int M;
 double EPS;
 double AUX[];
 {
-int I, J, K, L, IER;
-int II, LL, LLB, LLD, LR, LT, LST, LLST, LEND;
+int I = 0, J = 0, K, L, IER;
+int II, LL, LLD, LR, LT, LST, LLST, LEND;
 double tb, piv, tol, pivi;
 
 if( M <= 0 )

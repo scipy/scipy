@@ -59,6 +59,11 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 #include <stdio.h>
 
+#define ANSIPROT
+#ifdef ANSIPROT
+double chbevl( double, double [], int );
+#endif
+
 double chbevl( x, array, n )
 double x;
 double array[];
