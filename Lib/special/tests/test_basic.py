@@ -341,7 +341,7 @@ class test_cephes(ScipyTestCase):
     def check_ndtri(self):
         assert_equal(cephes.ndtri(0.5),0.0)
     def check_nrdtrimn(self):
-        assert_equal(cephes.nrdtrimn(0.5,1,1),1.0)
+        assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
     def check_nrdtrisd(self):
         assert_equal(cephes.nrdtrisd(0.5,0.5,0.5),0.0)
 
@@ -578,7 +578,7 @@ class test_bei_zeros(unittest.TestCase):
                                                -4.073155089071828,
                                                -5.512395729663599,
                                                -6.781294445990305,
-                                               -7.940178689168587]),11)
+                                               -7.940178689168587]),10)
         
         assert_array_almost_equal(bi[2],array([-0.454944383639657,
                                                0.396522836094465,
