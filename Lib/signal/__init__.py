@@ -29,6 +29,8 @@
     symiirorder2  --  4th-order IIR filter (cascade of second-order systems).
     lfilter       --  1-dimensional FIR and IIR digital linear filtering.
 
+    hilbert       --- Compute the analytic signal of a 1-d signal.
+
  Filter design:
  
     remez         --  Optimal FIR filter design.

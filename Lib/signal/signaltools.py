@@ -470,6 +470,29 @@ def kaiser(M,beta):
     alpha = (M-1)/2.0
     return special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
 
+def hilbert(x, N=None):
+    x = asarray(x)
+    if N is None:
+        N = len(x)
+    if N <=0:
+        raise ValueError, "N must be positive."
+    if iscomplex(x):
+        print "Warning: imaginary part of x ignored."
+        x = real(x)
+    Xf = fft(x,N,axis=0)
+    h = zeros(N)
+    if N % 2 == 0:
+        put(h,[0,N/2],1)
+        h[1:N/2] = 2
+    else:
+        h[0] = 1
+        h[1:(N+1)/2] = 2
+
+    if len(x.shape) > 1:
+        h = h[:,NewAxis]
+    x = ifft(Xf*h)
+    return x
+
 def test():
     a = [3,4,5,6,5,4]
     b = [1,2,3]
