@@ -65,7 +65,8 @@ separate_packages += chaco_packages
 
 #------ drop-to-Lib packages --------
 
-def get_packages(path,ignore_packages=[],parent=parent_package):
+def get_packages(path,ignore_packages=[],
+                 parent=parent_package,parent_path=None):
 
     config_list = []
 
@@ -87,9 +88,12 @@ def get_packages(path,ignore_packages=[],parent=parent_package):
             if not getattr(info_module,'ignore',0):
                 exec 'import setup_%s as setup_module' % (package_name)
                 if getattr(info_module,'standalone',0):
-                    config = setup_module.configuration('')
+                    args = ('',)
                 else:
-                    config = setup_module.configuration(parent)
+                    args = (parent,)
+                if setup_module.configuration.func_code.co_argcount>1:
+                    args = args + (parent_path,)
+                config = setup_module.configuration(*args)
                 config_list.append(config)
         finally:
             del sys.path[0]
@@ -131,7 +135,8 @@ def setup_package(ignore_packages=[]):
             if sys.platform!='win32' and d=='Lib_chaco':
                 # Currently chaco is working only on win32.
                 continue
-            config_list += get_packages(os.path.join(path,d),ignore_packages)
+            config_list += get_packages(os.path.join(path,d),ignore_packages,
+                                        parent_path=path)
 
         #old style packages:
         config_list += map(get_separate_package_config,separate_packages)
