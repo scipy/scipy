@@ -601,6 +601,7 @@ static int convert_from_object(PyObject *obj, Py_complex *cnum)
     if (newstr == NULL) goto fail;
     Py_DECREF(res);
     res = PyObject_CallMethod(newstr, "split", "s", "-");
+    if (res == NULL) goto fail;
     inegflag = -1;
   }
 
@@ -609,7 +610,8 @@ static int convert_from_object(PyObject *obj, Py_complex *cnum)
     elobj = PySequence_GetItem(res, k);
     if (elobj == NULL) goto fail;
     elN = PyString_Size(elobj);
-    if ((elN > BUFSIZE) || (elN < 1)) goto fail;
+    if ((elN > BUFSIZE))
+	PYSETERROR("String too large.");
 
     /* Replace back the + and - and strip away invalid characters */
     elptr = PyString_AsString(elobj);
@@ -646,7 +648,6 @@ static int convert_from_object(PyObject *obj, Py_complex *cnum)
   }
   Py_DECREF(newstr);
   Py_DECREF(res);
-  Py_DECREF(valobj);
   return 0;
   
  fail:
@@ -695,11 +696,9 @@ static PyObject *
   int int_type, i, err;
   char *outptr;
   PyObject **arrptr;
-  PyObject *numobj=NULL, *argobj=NULL;
+  PyObject *numobj=NULL;
   Py_complex numc;
   PyArray_VectorUnaryFunc *funcptr;
-  PyCFunction get_complex, get_float, get_int;
-  PyObject *get_complex_self, *get_float_self, *get_int_self;
 
   if (!PyArg_ParseTuple( args, "Oc|O" , &obj, &out_type, &missing_val))
     return NULL;
@@ -736,10 +735,11 @@ static PyObject *
 
   dict = PyModule_GetDict(builtins);
 
-  get_complex = PyDict_GetItemString(dict, "complex");
+  /*  get_complex = PyDict_GetItemString(dict, "complex");
   get_float = PyDict_GetItemString(dict, "float");
   get_int = PyDict_GetItemString(dict, "int");
   if ((get_complex == NULL) || (get_float == NULL) || (get_int == NULL) ) goto fail;
+  */
   /* 
   get_complex_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "complex"));
   get_float_self = PyCFunction_GetSelf(PyDict_GetItemString(dict, "float"));
@@ -759,40 +759,19 @@ static PyObject *
     arrptr  += 1;
     numc.real = 0;
     numc.imag = 0;
-    argobj = Py_BuildValue("(O)", *arrptr);
-    if (argobj == NULL) goto fail;
-    numobj = PyEval_CallObject(get_complex, argobj);
+    numobj = PyObject_CallMethod(dict, "complex", "O", *arrptr);
     if (numobj != NULL) {
       numc = PyComplex_AsCComplex(numobj);
       Py_DECREF(numobj);
     }
-    if (PyErr_Occurred()) {
-      PyErr_Clear();
-      numobj = PyEval_CallObject(get_float, argobj);
-      if (numobj != NULL) {
-	numc.real = PyFloat_AsDouble(numobj);
-	Py_DECREF(numobj);
-      }      
-      if (PyErr_Occurred()) {
+    if (PyErr_Occurred()) {   /* Use our own homegrown converter... */
 	PyErr_Clear();
-	numobj = numobj = PyEval_CallObject(get_int, argobj);
-	if (numobj != NULL) {
-	  numc.real = (double) PyInt_AsLong(numobj);
-	  Py_DECREF(numobj);
-	}
-	if (PyErr_Occurred()) {   /* Use our own homegrown converter... */
-	  PyErr_Clear();
-	  err = convert_from_object(*arrptr, &numc);
-	  if (PyErr_Occurred()) PyErr_Clear();
-	  if (err < 0) {     /* Nothing works fill with missing value... */
+	err = convert_from_object(*arrptr, &numc);
+	if (PyErr_Occurred()) PyErr_Clear();
+	if (err < 0) {     /* Nothing works fill with missing value... */
 	    memcpy(outptr, DATA(missing_arr), ELSIZE(out));
-	    Py_DECREF(argobj);
-	    continue;
-	  }
 	}
-      }
-    } 
-    Py_DECREF(argobj);
+    }
     /* Place numc into the array */
     funcptr((void *)&(numc.real), 1, (void *)outptr, 1, 1);
   }
