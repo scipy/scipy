@@ -36,23 +36,23 @@ def toPage(obj, name, parent, mod):
     if typ is types.FunctionType:
         return BasePage(newparent, obj)
     elif typ is types.BuiltinFunctionType: 
-        return BasePage(newparent, obj)
+        return BasePage(newparent, obj, canedit=0)
     elif typ is UfuncType:
-        return BasePage(newparent, obj, name=name)
+        return BasePage(newparent, obj, name=name, canedit=0)
     elif typ is types.ClassType:
         return ClassPage(newparent, obj)
     elif typ is types.TypeType:
         return ClassPage(newparent, obj)
     elif typ is types.ModuleType:
-        return ModulePage(newparent, obj)    
+        return ModulePage(newparent, obj, canedit=0)    
     elif typ is types.MethodType:
         return BasePage(newparent, obj)
     elif inspect.ismethoddescriptor(obj):
-        return BasePage(newparent, obj)
+        return BasePage(newparent, obj, canedit=0)
     elif typ is types.InstanceType:
-        return BasePage(newparent, obj, name=name)
+        return BasePage(newparent, obj, name=name, canedit=0)
     elif typ is types.DictType:
-        return BasePage(newparent, obj, name=name)
+        return BasePage(newparent, obj, name=name, canedit=0)
     else:
         print "Err 3:", typ
         return None
@@ -97,6 +97,15 @@ class BasePage(rend.Page):
         # First look for docstring in filetree
         extra = self.getextra_fromtree() or inspect.getcomments(self.obj) or "Nothing"
         return T.xml(self.extrahtml(extra))
+
+    def render_docedit(self, context, data):
+        if self.canedit:
+            return T.xml("<a href=_doc_edit_%s>edit</a>" % self.name)
+        else:
+            return ""
+
+    def render_extraedit(self, context, data):
+        return T.xml("<a href=_extra_edit_%s>edit</a>" % self.name)
 
 class ModulePage(BasePage):
 
@@ -185,6 +194,7 @@ class LiveDocs(rend.Page):
     docFactory = loaders.xmlfile("rootpage.html")
 
     child_styles = static.File('styles')
+    child_images = static.File('images')
     
     def childFactory(self, context, name):
         if name not in _packages:
