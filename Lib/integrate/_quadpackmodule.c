@@ -24,6 +24,7 @@ void init_quadpack() {
   PyDict_SetItemString(d, "__version__", s);
   quadpack_error = PyErr_NewException ("quadpack.error", NULL, NULL);
   Py_DECREF(s);
+  PyDict_SetItemString(d, "error", quadpack_error);
   if (PyErr_Occurred())
     Py_FatalError("can't initialize module quadpack");
 }

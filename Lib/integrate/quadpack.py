@@ -6,6 +6,8 @@ from common_routines import *
 import sys
 import MLab
 
+error = _quadpack.error
+
 
 def quad_explain(output=sys.stdout):
     output.write("""
