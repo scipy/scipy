@@ -53,7 +53,7 @@ scipy_packages += graphics_packages
 #---------------
 
 # these packages aren't nested under scipy
-separate_packages = ['gui_thread','weave']
+separate_packages = ['gui_thread']
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 #separate_packages += core_packages
 separate_packages += chaco_packages

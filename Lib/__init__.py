@@ -56,7 +56,7 @@ def _pkg_titles():
         lines.append('%s%s --- %s' % (name, w*' ', title))
     return '\n'.join(lines)
 
-#----- Import dropped-into-Lib packages ----#
+#----- Import packages ----#
 
 def _import_packages():
     """ Import packages in scipy directory that implement
@@ -109,40 +109,16 @@ del _import_packages
 
 #----------------------------------#
 
-# Level 1
-# these modules will just be imported (not subsumed)
-#special = ppimport('special');  _level_docs(special)
-#io = ppimport('io');            _level_docs(io)
-#linalg = ppimport('linalg');    _level_docs(linalg)
-#stats = ppimport('stats');      _level_docs(stats)
-
-#for n in ['mean','median','std','cov','corrcoef','find_repeats']:
-#    exec '%s = ppimport_attr(stats,%s)' % (n,`n`)
-
-#for n in ['isinf','isfinite','isnan']:
-#    exec '%s = ppimport_attr(special,%s)' % (n,`n`)
-
-# Functions to be subsumed that need Level 0 and Level 1
 from common import *
 from pilutil import *
 
-# Level 2
-#optimize = ppimport('optimize');       _level_docs(optimize)
-#integrate = ppimport('integrate');     _level_docs(integrate)
-#signal = ppimport('signal');           _level_docs(signal)
-#sparse = ppimport('sparse');           _level_docs(sparse)
-
-#interpolate = ppimport('interpolate'); _level_docs(interpolate)
-#cow = ppimport('cow');                 _level_docs(cow)
-#ga = ppimport('ga');                   _level_docs(ga)
-#cluster = ppimport('cluster');         _level_docs(cluster)
+#Packages installed standalone:
 weave = ppimport('weave');             _level_docs(weave)
 
 # Level 3
 xplt = ppimport('xplt');               _level_docs(xplt)
 gplt = ppimport('gplt');               _level_docs(gplt)
 plt = ppimport('plt');                 _level_docs(plt)
-
 
 #---- testing ----#
 
@@ -151,25 +127,3 @@ test = ScipyTest('scipy').test
 #----- update doc string -------#
 
 __doc__ += _pkg_titles()
-
-#---- testing ----#
-
-## def test(level=1,verbosity=1):
-##     """ From this top level, there are possibly many many tests.
-##         Test only the quick tests by default.
-##     """
-##     import unittest
-##     runner = unittest.TextTestRunner(verbosity=verbosity)
-##     runner.run(test_suite(level))
-##     return runner
-
-## def test_all(level=10):
-##     test(level)
-    
-## def test_suite(level = 1):
-##     import scipy_test.testing
-##     import scipy
-##     ignore = ['xplt','plt','gplt','gui_thread','sparse','scipy_version']
-##     suites = [scipy_test.testing.harvest_test_suites(scipy,ignore,level=level)]
-##     import unittest
-##     return unittest.TestSuite(suites)
