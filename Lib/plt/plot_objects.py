@@ -130,6 +130,7 @@ class text_object(box_object,property_object):
     def __init__(self,text=None,topleft=None,**attr):
 
         property_object.__init__(self,attr)
+        box_object.__init__(self, (0,0), (0,0))
         if text is None: self.text = ''
         else: self.text = text
         if not topleft: self.topleft = array((0,0),TYPE)
@@ -169,12 +170,15 @@ class text_object(box_object,property_object):
         if self.visible in ['yes','on',1] and self.text:
             if not hasattr(self,'dc'):
                 raise ValueError, "no device context to calculate text " \
-                                  "size. Call set_dc() first."                                      
+                                  "size. Call set_dc() first."            
             preset = (self.dc.GetFont() == self.font)
-            
             if not preset: self.dc.SetFont(self.font)
             sz= array(self.dc.GetTextExtent(self.text))
-            if not preset: self.dc.SetFont(wx.wxNullFont)
+            
+            # Commented the following line out since calling this
+            # seems to turn of plotting of any text            
+            #if not preset: self.dc.SetFont(wx.wxNullFont)
+            
             # should do something here to calculate real width
             # this only works for 90 degree rotations
             if self.rotate: sz = sz[::-1]
@@ -201,15 +205,15 @@ class text_object(box_object,property_object):
             # also need to think about origin for rotated text
             if self.rotate == 90:
                 dc.DrawRotatedText(self.text,self.left(),self.bottom(),
-                                   self.rotate)        
+                                   self.rotate)
             else:
-                dc.DrawText(self.text,self.left(),self.top())                    
+                dc.DrawText(self.text,self.left(),self.top()) 
 
             dc.SetPen(wx.wxNullPen)
             dc.SetFont(wx.wxNullFont)
             # hmmm. really should clear the dc...
             self.clear_dc()
-
+            
 
 class text_window(wx.wxWindow,text_object):
     """
