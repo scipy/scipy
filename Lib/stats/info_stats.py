@@ -5,8 +5,9 @@ Statistical Functions
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of a class.  The instance
-name is given each instance has the following methods:
+Each included distribution is an instance of a class.  For each given
+name the following methods are available.  See doc for rv_continuous for
+more information
 
 rvs   --  random variates with the distribution (also available by calling the instance)
 pdf   --  probability density function

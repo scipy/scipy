@@ -54,7 +54,7 @@ class test_read_array(TestCase):
 
     def check_integer(self):
         from scipy import stats
-        a = stats.randint(1,20,size=(3,4))
+        a = stats.randint.rvs(1,20,size=(3,4))
         fname = tempfile.mktemp('.dat')
         io.write_array(fname,a)
         b = io.read_array(fname,atype=N.Int)

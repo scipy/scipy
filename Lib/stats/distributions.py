@@ -78,8 +78,8 @@ def random(size=None):
     return _build_random_array(rand.sample, (), size)
 
 def random_integers(max, min=1, size=None):
-    """random_integers(max, min=1, size=None) = random integers in range min-max inclusive"""
-    return randint(min, max+1, size) 
+    """random integers in range min to max inclusive"""
+    return randint.rvs(min, max+1, size) 
      
 def permutation(arg):
     """If arg is an integer, a permutation of indices arange(n), otherwise
@@ -240,6 +240,46 @@ def argsreduce(cond, *args):
     return newargs    
 
 class rv_continuous:
+    """A continuous <generic> random variable object.
+
+    Continuous random variables are defined from a standard form chosen
+    for simplicity of representation.  The standard form may require
+    some shape parameters to complete its specification.  The distributions
+    also take optional location and scale parameters using loc= and scale=
+    keywords (defaults: loc=0, scale=1)
+
+    These shape, scale, and location parameters can be passed to any of the
+    methods of the RV object such as the following:
+
+    xxxxx.rvs(<shape(s)>,loc=0,scale=1)
+        - random variates 
+
+    xxxxx.pdf(x,<shape(s)>,loc=0,scale=1)
+        - probability density function
+
+    xxxxx.cdf(x,<shape(s)>,loc=0,scale=1)
+        - cumulative density function
+
+    xxxxx.sf(x,<shape(s)>,loc=0,scale=1)
+        - survival function (1-cdf --- sometimes more accurate)
+
+    xxxxx.ppf(q,<shape(s)>,loc=0,scale=1)
+        - percent point function (inverse of cdf --- percentiles)
+
+    xxxxx.isf(q,<shape(s)>,loc=0,scale=1)
+        - inverse survival function (inverse of sf)
+
+    xxxxx.stats(<shape(s)>,loc=0,scale=1,moments='mv')
+        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+
+    Alternatively, the object may be called (as a function) to fix
+       the shape, location, and scale parameters returning a
+       "frozen" continuous RV object:
+
+    myrv = xxxxx(<shape(s)>,loc=0,scale=1)
+        - frozen RV object with the same methods but holding the
+            given shape, location, and scale fixed
+    """
     def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0, xtol=1e-14, badvalue=None, name=None):
         if badvalue is None:
             badvalue = nan
@@ -345,10 +385,22 @@ class rv_continuous:
             loc = 0.0            
         return args, loc, scale
 
-    # These are actually called, but should probably not
+    # These are actually called, but should not
     #  be overwritten if you want to keep
     #  the error checking. 
     def rvs(self,*args,**kwds):
+        """Random variates of <generic> type.
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        size  - number of random variates (default=1)
+        loc   - location parameter (default=0)
+        scale - scale parameter (default=1)
+        """
         loc,scale,size=map(kwds.get,['loc','scale','size'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
         cond = logical_and(self._argcheck(*args),(scale > 0))
@@ -367,6 +419,17 @@ class rv_continuous:
         return vals * scale + loc
         
     def pdf(self,x,*args,**kwds):
+        """Probability density function at x of <generic> RV.
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        scale - scale parameter (default=1)
+        """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
         x,loc,scale = map(arr,(x,loc,scale))
@@ -383,6 +446,17 @@ class rv_continuous:
         return output
 
     def cdf(self,x,*args,**kwds):
+        """Cumulative distribution function at x of <generic> RV.
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        scale - scale parameter (default=1)
+        """        
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
         x,loc,scale = map(arr,(x,loc,scale))
@@ -400,6 +474,17 @@ class rv_continuous:
         return output
 
     def sf(self,x,*args,**kwds):
+        """Survival function (1-cdf) at x of <generic> RV.
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        scale - scale parameter (default=1)
+        """         
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
         x,loc,scale = map(arr,(x,loc,scale))
@@ -417,6 +502,17 @@ class rv_continuous:
         return output
 
     def ppf(self,q,*args,**kwds):
+        """Percent point function (inverse of cdf) at q of <generic> RV.
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        scale - scale parameter (default=1)
+        """                 
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
         q,loc,scale = map(arr,(q,loc,scale))
@@ -434,6 +530,17 @@ class rv_continuous:
         return output
         
     def isf(self,q,*args,**kwds):
+        """Inverse survival function at q of <generic> RV.
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        loc   - location parameter (default=0)
+        scale - scale parameter (default=1)
+        """                         
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self.__fix_loc_scale(args, loc, scale)
         q,loc,scale = map(arr,(q,loc,scale))
@@ -451,6 +558,23 @@ class rv_continuous:
         return output
 
     def stats(self,*args,**kwds):
+        """Some statistics of the <generic> RV
+
+        *args
+        =====
+        The shape parameter(s): <description of shape>
+        
+        **kwds
+        ======
+        loc     - location parameter (default=0)
+        scale   - scale parameter (default=1)
+        moments - a string composed of letters ['mvsk'] specifying
+                   which moments to compute (default='mv')
+                   'm' = mean,
+                   'v' = variance,
+                   's' = (Fisher's) skew,
+                   'k' = (Fisher's) kurtosis.
+        """                         
         loc,scale,moments=map(kwds.get,['loc','scale','moments'])
 
         N = len(args)
@@ -614,7 +738,8 @@ class rv_continuous:
         return rv_frozen(self,*args,**kwds)
                 
     def __call__(self, *args, **kwds):
-        return self.rvs(*args, **kwds)
+        raise ValueError
+        return self.freeze(*args, **kwds)
 
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
@@ -759,8 +884,8 @@ beta = beta_gen(a=0.0, b=1.0)
 ## Beta Prime
 class betaprime_gen(rv_continuous):
     def _rvs(self, a, b):
-        u1 = gamma(a,size=self._size)
-        u2 = gamma(b,size=self._size)
+        u1 = gamma.rvs(a,size=self._size)
+        u2 = gamma.rvs(b,size=self._size)
         return (u1 / u2)
     def _pdf(self, x, a, b):
         return 1.0/special.beta(a,b)*x**(a-1.0)/(1+x)**(a+b)
@@ -886,7 +1011,7 @@ cauchy = cauchy_gen()
 
 class chi_gen(rv_continuous):
     def _rvs(self, df):
-        return sqrt(chi2(df,size=self._size))
+        return sqrt(chi2.rvs(df,size=self._size))
     def _pdf(self, x, df):
         return x**(df-1.)*exp(-x*x*0.5)/(2.0)**(df*0.5-1)/gam(df*0.5)
     def _cdf(self, x, df):
@@ -941,7 +1066,7 @@ cosine = cosine_gen(a=-pi,b=pi)
 class dgamma_gen(rv_continuous):
     def _rvs(self, a):
         u = random(size=self._size)
-        return (gamma(a,size=self._size)*Num.where(u>=0.5,1,-1))
+        return (gamma.rvs(a,size=self._size)*Num.where(u>=0.5,1,-1))
     def _pdf(self, x, a):
         ax = abs(x)
         return 1.0/(2*special.gamma(a))*ax**(a-1.0) * exp(-ax)
@@ -964,7 +1089,7 @@ dgamma = dgamma_gen()
 class dweibull_gen(rv_continuous):
     def _rvs(self, c):
         u = random(size=self._size)
-        return weibull_min(c, size=self._size)*(Num.where(u>=0.5,1,-1))    
+        return weibull_min.rvs(c, size=self._size)*(Num.where(u>=0.5,1,-1))    
     def _pdf(self, x, c):
         ax = abs(x)
         Px = c/2.0*ax**(c-1.0)*exp(-ax**c)
@@ -987,7 +1112,7 @@ dweibull = dweibull_gen()
 ##
 class erlang_gen(rv_continuous):
     def _rvs(self, n):
-        return gamma(n,size=self._size)
+        return gamma.rvs(n,size=self._size)
     def _arg_check(self, n):
         return (n > 0) & (floor(n)==n)
     def _pdf(self, x, n):
@@ -1078,7 +1203,7 @@ fatiguelife = fatiguelife_gen(a=0.0)
 
 class foldcauchy_gen(rv_continuous):
     def _rvs(self, c):
-        return abs(cauchy(loc=c,size=self._size))
+        return abs(cauchy.rvs(loc=c,size=self._size))
     def _pdf(self, x, c):
         return 1.0/pi*(1.0/(1+(x-c)**2) + 1.0/(1+(x+c)**2))
     def _cdf(self, x, c):
@@ -1611,7 +1736,7 @@ gilbrat = gilbrat_gen(a=0.0)
 
 class maxwell_gen(rv_continuous):
     def _rvs(self):
-        return chi(3.0,size=self._size)
+        return chi.rvs(3.0,size=self._size)
     def _pdf(self, x):
         return sqrt(2.0/pi)*x*x*exp(-x*x/2.0)
     def _cdf(self, x):
@@ -1711,7 +1836,7 @@ ncf = ncf_gen(a=0.0)
 
 class t_gen(rv_continuous):
     def _rvs(self, df):
-        Y = f(df, df, size=self._size)
+        Y = f.rvs(df, df, size=self._size)
         sY = sqrt(Y)
         return 0.5*sqrt(df)*(sY-1.0/sY)
     def _pdf(self, x, df):
@@ -1733,7 +1858,7 @@ t = t_gen()
 
 class nct_gen(rv_continuous):
     def _rvs(self, df, nc):
-        return norm(mu=nc,size=self._size)*sqrt(df) / sqrt(chi2(df,size=self._size))
+        return norm.rvs(mu=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
     def _pdf(self, x, df, nc):
         n = df*1.0
         nc = nc*1.0
@@ -1890,7 +2015,7 @@ rdist = rdist_gen(a=-1.0,b=1.0)
 
 class rayleigh_gen(rv_continuous):
     def _rvs(self):
-        return chi(2,size=self._size)
+        return chi.rvs(2,size=self._size)
     def _pdf(self, r):
         return r*exp(-r*r/2.0)
     def _cdf(self, r):
@@ -2606,7 +2731,8 @@ class rv_discrete:
         return rv_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
-        return self.rvs(*args,**kwds)
+        raise ValueError
+        return self.freeze(*args,**kwds)
     
 # Binomial
 
@@ -2819,7 +2945,7 @@ class randint_gen(rv_discrete):
         return (k-min+1)*1.0/(max-min)
     def _ppf(self, q, min, max):
         vals = ceil(q*(max-min)+min)
-        temp = randintcdf(vals-1,min,max)
+        temp = randint.cdf(vals-1,min,max)
         vals = where((temp >= q) & (vals > 0), vals-1, vals)        
         return vals
     def _stats(self, min, max):
@@ -2830,8 +2956,7 @@ class randint_gen(rv_discrete):
         g1 = 0.0
         g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
         return mu, var, g1, g2
-    def __call__(self, min, max=None, size=None):
-        # Replacement for randint in old rv.py
+    def rvs(self, min, max=None, size=None):
         if max is None:
             max = min
             min = 0

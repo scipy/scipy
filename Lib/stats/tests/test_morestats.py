@@ -41,16 +41,16 @@ class test_shapiro(unittest.TestCase):
 
 class test_anderson(unittest.TestCase):
     def check_normal(self):
-        x1 = scipy.stats.expon(size=50)
-        x2 = scipy.stats.norm(size=50)
+        x1 = scipy.stats.expon.rvs(size=50)
+        x2 = scipy.stats.norm.rvs(size=50)
         A,crit,sig = scipy.stats.anderson(x1)
         assert(scipy.all(A > crit[:-1]))
         A,crit,sig = scipy.stats.anderson(x2)
         assert(scipy.all(A < crit[-2:]))
 
     def check_expon(self):
-        x1 = scipy.stats.expon(size=50)
-        x2 = scipy.stats.norm(size=50)
+        x1 = scipy.stats.expon.rvs(size=50)
+        x2 = scipy.stats.norm.rvs(size=50)
         A,crit,sig = scipy.stats.anderson(x1,'expon')        
         assert(scipy.all(A < crit[-2:]))
         A,crit,sig = scipy.stats.anderson(x2,'expon')

@@ -664,7 +664,7 @@ class test_cmedian(TestCase):
         data = [1,2,3,1,5,3,6,4,3,2,4,3,5,2.0]
         assert_almost_equal(stats.cmedian(data,5),2.7)
         assert_almost_equal(stats.cmedian(data,3),3.1296296296296298)
-        assert_almost_equal(stats.cmedian(data),2.9965)
+        assert_almost_equal(stats.cmedian(data),2.999665)
 
 class test_median(TestCase):
     def check_basic(self):
@@ -677,8 +677,8 @@ class test_mode(TestCase):
     def check_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
         vals = stats.mode(data1)
-        assert_almost_equal(vals[0],6)
-        assert_almost_equal(vals[1],3)
+        assert_almost_equal(vals[0][0],6)
+        assert_almost_equal(vals[1][0],3)
 
 
 class test_variability(TestCase):

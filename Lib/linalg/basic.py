@@ -5,7 +5,7 @@
 
 __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
            'tri','tril','triu','toeplitz','hankel','lu_solve',
-           'cho_solve','solve_banded']
+           'cho_solve','solve_banded','LinAlgError']
 
 #from blas import get_blas_funcs
 from lapack import get_lapack_funcs

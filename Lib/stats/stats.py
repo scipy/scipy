@@ -1513,7 +1513,7 @@ def kstest(rvs,cdf,args=(),N=20):
     """
     if type(rvs) is StringType:
         cdf = eval("scipy.stats."+rvs+".cdf")    
-        rvs = eval("scipy.stats."+rvs)
+        rvs = eval("scipy.stats."+rvs+".rvs")
     if type(cdf) is StringType:
         cdf = eval("scipy.stats."+cdf+".cdf")        
     if callable(rvs):
