@@ -314,6 +314,7 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_svd,'check_') )
         suites.append( unittest.makeSuite(test_svdvals,'check_') )
         suites.append( unittest.makeSuite(test_cholesky,'check_') )
+        suites.append( unittest.makeSuite(test_qr,'check_') )
     if level > 5:
         suites.append( unittest.makeSuite(test_eigvals,'bench_') )
         suites.append( unittest.makeSuite(test_eig,'bench_') )

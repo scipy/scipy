@@ -11,6 +11,7 @@ import basic
 
 from warnings import warn
 from lapack import get_lapack_funcs
+from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 from Numeric import asarray
 import calc_lwork
@@ -289,7 +290,7 @@ def cholesky(a,lower=0,overwrite_a=0):
     return c
 
 def cho_factor(a, lower=0, overwrite_a=0):
-    """Compute Cholesky decomposition of matrix and return an object
+    """ Compute Cholesky decomposition of matrix and return an object
     to be used for solving a linear system using cho_solve.
     """
     a1 = asarray(a)
@@ -314,17 +315,16 @@ def qr(a,overwrite_a=0,lwork=None):
     Inputs:
 
       a -- the matrix
-      overwrite_a -- if non-zero (and a is a Numeric array),
-                      overwrite a with result of LAPACK function and
-                      return single output of scalar factors (tau).
-      lwork -- >= shape(a)[1]. If None (or -1) compute optimal size. 
+      overwrite_a=0 -- if non-zero then discard the contents of a,
+                     i.e. a is used as a work array if possible.
+
+      lwork=None -- >= shape(a)[1]. If None (or -1) compute optimal
+                    work array size. 
 
     Outputs:
     
       q, r -- matrices such that q * r = a
 
-      tau (returned alone if overwrite_a = 1) -- vector of scalar factors for
-                                                 constructing Q
     """
     a1 = asarray(a)
     if len(a1.shape) != 2:
@@ -339,25 +339,19 @@ def qr(a,overwrite_a=0,lwork=None):
     qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)    
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geqrf'%(-info)
-    if overwrite_a:
-        return tau  # a contains qr 
-    else:
-        t = qr.typecode()
-        R = basic.triu(qr)
-        Q = scipy_base.identity(M,typecode=t)
-        dot = scipy_base.dot
-        ident = scipy_base.identity
-        arr = scipy_base.array
-        outer = scipy_base.multiply.outer
-        zeros = scipy_base.zeros
-        for i in range(min(M,N)):
-            v = zeros((M,),t)
-            v[i] = 1
-            v[i+1:M] = qr[i+1:M,i]
-            H = ident(M,typecode=t) - arr(tau[i],t)* outer(v,v)
-            Q = dot(Q,H)
-        return Q, R
-        
+    gemm, = get_blas_funcs(('gemm',),(qr,))
+    t = qr.typecode()
+    R = basic.triu(qr)
+    Q = scipy_base.identity(M,typecode=t)
+    ident = scipy_base.identity(M,typecode=t)
+    zeros = scipy_base.zeros
+    for i in range(min(M,N)):
+        v = zeros((M,),t)
+        v[i] = 1
+        v[i+1:M] = qr[i+1:M,i]
+        H = gemm(-tau[i],v,v,1+0j,ident,trans_b=2)
+        Q = gemm(1,Q,H)
+    return Q, R
 
 _double_precision = ['i','l','d']
 
