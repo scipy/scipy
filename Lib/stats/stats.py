@@ -193,7 +193,7 @@ from types import *
 __version__ = 0.8
 
 from Numeric import *
-import scipy_base
+import scipy_base as sb
 import scipy_base.fastumath as math
 from scipy_base.fastumath import *
 import Numeric
@@ -230,6 +230,53 @@ def _chk2_asarray(a, b,  axis):
         b = asarray(b)
         outaxis = axis
     return a, b, outaxis
+
+#######
+### NAN friendly functions
+########
+
+def nanmean(x,axis=-1):
+    """Compute the mean over the given axis ignoring nans.
+    """
+    x, axis = _chk_asarray(x,axis)
+    x = x.copy()
+    Norig = x.shape[axis]
+    factor = 1.0-sum(isnan(x),axis)*1.0/Norig
+    n = N-sum(isnan(x),axis)
+    N.putmask(x,isnan(x),0)
+    return stats.mean(x,axis)/factor
+    
+def nanstd(x,axis=-1,bias=0):
+    """Compute the standard deviation over the given axis ignoring nans
+    """
+    x, axis = _chk_asarray(x,axis)
+    x = x.copy()
+    Norig = x.shape[axis]
+    n = Norig - sum(isnan(x),axis)*1.0
+    factor = n/Norig
+    n = N-sum(isnan(x),axis)
+    N.putmask(x,isnan(x),0)
+    m1 = stats.mean(x,axis)
+    m1c = m1/factor
+    m2 = stats.mean((x-m1c)**2.0,axis)
+    if bias:
+        m2c = m2/factor
+    else:
+        m2c = m2*Norig/(n-1.0)
+    return m2c
+
+def _nanmedian(arr1d):  # This only works on 1d arrays
+   cond = 1-isnan(arr1d)
+   x = sb.sort(compress(cond,arr1d))
+   return median(x)
+   
+def nanmedian(x, axis=-1):
+    """ Compute the median along the given axis ignoring nan values
+    """
+    x, axis = _chk_asarray(x,axis)
+    x = x.copy()
+    return sb.apply_along_axis(_nanmedian,axis,x)
+
 
 #####################################
 ########  ACENTRAL TENDENCY  ########
@@ -310,7 +357,7 @@ def median (a,axis=-1):
         median = asarray(take(a,[indx],axis)+take(a,[indx-1],axis)) / 2.0
     else:
         median = take(a,[indx],axis)
-    return scipy_base.squeeze(median)
+    return sb.squeeze(median)
 
 def mode(a, axis=-1):
     """Returns an array of the modal (most common) value in the passed array.
@@ -322,7 +369,7 @@ def mode(a, axis=-1):
     """
 
     a, axis = _chk_asarray(a, axis)
-    scores = scipy_base.unique(ravel(a))       # get ALL unique values
+    scores = sb.unique(ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
     oldmostfreq = zeros(testshape)
@@ -497,7 +544,7 @@ def variation(a,axis=-1):
     return 100.0*samplestd(a,axis)/mean(a,axis)
 
 
-def skew(a,axis=-1): 
+def skew(a,axis=-1,bias=1):
     """Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
     weight in left tail).  Use skewtest() to see if it's close enough.
     Axis can equal None (ravel array first), or an integer (the
@@ -505,32 +552,51 @@ def skew(a,axis=-1):
     
     Returns: skew of vals in a along axis, returning ZERO where all vals equal
     """
-    denom = std(a,axis=axis)**3.0
-    zero = (denom == 0)
-    tmp = sum(zero)
-    if isinstance(denom, ArrayType) and tmp <> 0:
-        print "Number of zeros in skew: ", tmp
-    denom = denom + zero  # prevent divide-by-zero
+    a, axis = _chk_asarray(a,axis)
     n = a.shape[axis]
-    return where(zero, 0, moment(a,3,axis)/denom*n/(n-1.0))
+    m2 = moment(a,2,axis)
+    m3 = moment(a,3,axis)
+    zero = (m2 == 0)
+    vals = where(zero, 0, m3/ m2**1.5)
+    if not bias:
+        can_correct = (n > 2) & (m2 > 0)
+        if sb.any(can_correct):
+            m2 = sb.takemask(m2,can_correct)
+            m3 = sb.takemask(m3,can_correct)
+            nval = sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
+            sb.putmask(vals, can_correct, nval)
+    return vals
 
-def kurtosis(a,axis=-1,fisher=1):
+def kurtosis(a,axis=-1,fisher=1,bias=1):
     """Returns the kurtosis (fisher or pearson) of a distribution
-    (normal for pearson ==> 3.0; >3 means
-    heavier in the tails, and usually more peaked).  Use kurtosistest()
-    to see if it's close enough.  Axis can equal None (ravel array
-    first), or an integer (the axis over which to operate)
-    
+
+    Kurtosis is the fourth central moment divided by the square of the
+      variance.  If Fisher's definition is used, then 3.0 is subtracted
+      from the result to give 0.0 for a normal distribution. 
+
+    Axis can equal None (ravel arrayfirst), or an integer
+    (the axis over which to operate)
+
+    If bias is 0 then the kurtosis is calculated using k statistics to
+       eliminate bias comming from biased moment estimators
+
+    Use kurtosistest() to see if result is close enough to normal.
+
     Returns: kurtosis of values in a along axis, and ZERO where all vals equal
     """
-    denom = var(a,axis=axis)**2.0
-    zero = (denom == 0)
-    tmp = sum(zero)
-    if isinstance(denom, ArrayType) and tmp <> 0:
-        print "Number of zeros in kurtosis: ", tmp
-    denom = denom + zero  # prevent divide-by-zero
+    a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    vals = where(zero, 0, moment(a,4,axis)/denom*n/(n-1.0))
+    m2 = moment(a,2,axis)
+    m4 = moment(a,4,axis)
+    zero = (m2 == 0)
+    vals = where(zero, 0, m4/ m2**2.0)
+    if not bias:
+        can_correct = (n > 3) & (m2 > 0)
+        if sb.any(can_correct):
+            m2 = sb.takemask(m2,can_correct)
+            m4 = sb.takemask(m4,can_correct)
+            nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
+            sb.putmask(vals, can_correct, nval+3.0)
     if fisher:
         return vals - 3
     else:
@@ -1040,7 +1106,7 @@ def cov(m,y=None, rowvar=0, bias=0):
         fact = N*1.0
     else:
         fact = N-1.0
-    val = scipy_base.squeeze(dot(transpose(m),conjugate(y))) / fact
+    val = sb.squeeze(dot(transpose(m),conjugate(y))) / fact
     return val
 
 def corrcoef(x, y=None, rowvar=0, bias=0):
@@ -1452,12 +1518,12 @@ def kstest(rvs,cdf,args=(),N=20):
         cdf = eval("scipy.stats."+cdf+"cdf")        
     if type(rvs) in [FunctionType, MethodType]:
         kwds = {'size':N}
-        vals = scipy_base.sort(rvs(*args,**kwds))
+        vals = sb.sort(rvs(*args,**kwds))
     else:
-        vals = scipy_base.sort(rvs)
+        vals = sb.sort(rvs)
         N = len(vals)
     cdfvals = cdf(vals, *args)
-    D = max(abs(cdfvals - scipy_base.arange(1.0,N+1)/N))
+    D = max(abs(cdfvals - sb.arange(1.0,N+1)/N))
     return D, distributions.ksonesf(D,N)
 
 def chisquare(f_obs,f_exp=None):

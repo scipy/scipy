@@ -675,6 +675,148 @@ class test_mode(TestCase):
         assert_almost_equal(vals[0],6)
         assert_almost_equal(vals[1],3)
 
+
+class test_variability(TestCase):
+    """  Comparison numbers are found using R v.1.5.1
+         note that length(testcase) = 4
+    """
+    testcase = [1,2,3,4]
+    def check_std(self):
+        y = scipy.stats.std(self.testcase)
+        assert_approx_equal(y,1.290994449)
+
+    def check_var(self):
+        """
+        var(testcase) = 1.666666667 """
+        #y = scipy.stats.var(self.shoes[0])
+        #assert_approx_equal(y,6.009)
+        y = scipy.stats.var(self.testcase)
+        assert_approx_equal(y,1.666666667)
+
+    def check_samplevar(self):
+        """
+        R does not have 'samplevar' so the following was used
+        var(testcase)*(4-1)/4  where 4 = length(testcase)
+        """
+        #y = scipy.stats.samplevar(self.shoes[0])
+        #assert_approx_equal(y,5.4081)
+        y = scipy.stats.samplevar(self.testcase)
+        assert_approx_equal(y,1.25)
+        
+    def check_samplestd(self):
+        #y = scipy.stats.samplestd(self.shoes[0])
+        #assert_approx_equal(y,2.325532197)
+        y = scipy.stats.samplestd(self.testcase)
+        assert_approx_equal(y,1.118033989)
+
+    def check_signaltonoise(self):
+        """
+        this is not in R, so used
+        mean(testcase)/(sqrt(var(testcase)*3/4)) """
+        #y = scipy.stats.signaltonoise(self.shoes[0])
+        #assert_approx_equal(y,4.5709967)
+        y = scipy.stats.signaltonoise(self.testcase)
+        assert_approx_equal(y,2.236067977)
+
+    def check_stderr(self):
+        """
+        this is not in R, so used
+        sqrt(var(testcase))/sqrt(4)
+        """
+##        y = scipy.stats.stderr(self.shoes[0])
+##        assert_approx_equal(y,0.775177399)
+        y = scipy.stats.stderr(self.testcase)
+        assert_approx_equal(y,0.6454972244)
+    def check_sem(self):
+        """
+        this is not in R, so used
+        sqrt(var(testcase)*3/4)/sqrt(3)
+        """
+        #y = scipy.stats.sem(self.shoes[0])
+        #assert_approx_equal(y,0.775177399)
+        y = scipy.stats.sem(self.testcase)
+        assert_approx_equal(y,0.6454972244)
+        
+    def check_z(self):
+        """ 
+        not in R, so used
+        (10-mean(testcase))/sqrt(var(testcase)*3/4)
+        """
+        y = scipy.stats.z(self.testcase,scipy.stats.mean(self.testcase))
+        assert_almost_equal(y,0.0)
+
+    def check_zs(self):
+        """
+        not in R, so tested by using
+        (testcase[i]-mean(testcase))/sqrt(var(testcase)*3/4)
+        """
+        y = scipy.stats.zs(self.testcase)
+        desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
+        assert_array_almost_equal(desired,y,decimal=12)
+        
+
+
+class test_moments(TestCase):
+    """
+        Comparison numbers are found using R v.1.5.1
+        note that length(testcase) = 4
+        testmathworks comes from documentation for the
+        Statistics Toolbox for Matlab and can be found at both
+        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
+        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+        Note that both test cases came from here.
+    """
+    testcase = [1,2,3,4]
+    testmathworks = [1.165 , 0.6268, 0.0751, 0.3516, -0.6965]
+    def check_moment(self):
+        """
+        mean((testcase-mean(testcase))**power))"""
+        y = scipy.stats.moment(self.testcase,1)
+        assert_approx_equal(y,0.0,10)
+        y = scipy.stats.moment(self.testcase,2)
+        assert_approx_equal(y,1.25)
+        y = scipy.stats.moment(self.testcase,3)
+        assert_approx_equal(y,0.0)
+        y = scipy.stats.moment(self.testcase,4)
+        assert_approx_equal(y,2.5625)
+    def check_variation(self):
+        """
+        variation = samplestd/mean """
+##        y = scipy.stats.variation(self.shoes[0])
+##        assert_approx_equal(y,21.8770668)
+        y = scipy.stats.variation(self.testcase)
+        assert_approx_equal(y,0.44721359549996, 13)
+
+    def check_skewness(self):
+        """
+            sum((testmathworks-mean(testmathworks))**3)/((sqrt(var(testmathworks)*4/5))**3)/5
+        """
+        y = scipy.stats.skew(self.testmathworks)
+        assert_approx_equal(y,-0.29322304336607,10)
+        y = scipy.stats.skew(self.testmathworks,bias=0)
+        assert_approx_equal(y,-0.437111105023940,10)
+        y = scipy.stats.skew(self.testcase)
+        assert_approx_equal(y,0.0,10)
+    def check_kurtosis(self):
+        """
+            sum((testcase-mean(testcase))**4)/((sqrt(var(testcase)*3/4))**4)/4
+            sum((test2-mean(testmathworks))**4)/((sqrt(var(testmathworks)*4/5))**4)/5
+            Set flags for axis = 0 and
+            fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
+        """
+        y = scipy.stats.kurtosis(self.testmathworks,0,fisher=0,bias=1)
+        assert_approx_equal(y, 2.1658856802973,10)
+
+        # Note that MATLAB has confusing docs for the following case
+        #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
+        #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
+        #  The MATLAB docs imply that both should give Fisher's
+        y = scipy.stats.kurtosis(self.testmathworks,fisher=0,bias=0)
+        assert_approx_equal(y, 3.663542721189047,10)
+        y = scipy.stats.kurtosis(self.testcase,0,0)
+        assert_approx_equal(y,1.64)
+
+
 def test_suite(level=1):
     suites = []
     if level > 0:
@@ -687,6 +829,8 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_basicstats, 'check_') )
         suites.append( unittest.makeSuite(test_corr, 'check_') )
         suites.append( unittest.makeSuite(test_regression, 'check_') )
+        suites.append( unittest.makeSuite(test_variability, 'check_') )
+        suites.append( unittest.makeSuite(test_moments, 'check_') )
 ##    suites.append( unittest.makeSuite(test_anova, 'check_') )
         
     total_suite = unittest.TestSuite(suites)
