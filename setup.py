@@ -18,6 +18,8 @@ from glob import glob
 if 'sdist_packagers' in sys.argv:
     sys.argv[sys.argv.index('sdist_packagers')] = 'sdist'
     command_sdist = 1
+elif 'bdist_rpm' in sys.argv:
+    command_sdist = 1
 else:
     command_sdist = 0
 
