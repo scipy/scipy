@@ -5,6 +5,7 @@ import scipy_base
 from scipy_base.fastumath import *
 from scipy_base import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, Float, resize, pi, concatenate, absolute, logspace, c_
+from scipy_base import mintypecode
 from scipy import comb, special, optimize, linalg
 import string, types
 
@@ -228,9 +229,7 @@ def lp2bp(b,a,wo=1.0, bw=1.0):
     a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
-    artype = b.typecode()
-    if artype not in ['F','D','f','d']:
-        artype = Num.Float
+    artype = mintypecode((a,b))
     ma = max([N,D])
     Np = N + ma
     Dp = D + ma
@@ -261,9 +260,7 @@ def lp2bs(b,a,wo=1,bw=1):
     a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
-    artype = b.typecode()
-    if artype not in ['F','D','f','d']:
-        artype = Num.Float
+    artype = mintypecode((a,b))
     M = max([N,D])
     Np = M + M
     Dp = M + M
