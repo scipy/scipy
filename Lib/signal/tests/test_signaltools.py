@@ -7,6 +7,7 @@ import scipy_base.limits as limits
 from scipy_test.testing import assert_array_equal, assert_equal
 from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
 import scipy.signal as signal
+from Numeric import array
 
 class test_convolve(TestCase):
     def check_basic(self):
@@ -23,9 +24,9 @@ class test_medfilt(TestCase):
 
 class test_wiener(TestCase):
     def check_basic(self):
-        g = Numeric.array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
-        correct = Numeric.array([[2.16374269,3.2222222222, 2.8888888889, 1.6666666667],[2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],[2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],[1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
-        h = wiener(g)
+        g = array([[5,6,4,3],[3,5,6,2],[2,3,5,6],[1,6,9,7]],'d')
+        correct = array([[2.16374269,3.2222222222, 2.8888888889, 1.6666666667],[2.666666667, 4.33333333333, 4.44444444444, 2.8888888888],[2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],[1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
+        h = signal.wiener(g)
         assert_array_almost_equal(h,correct,decimal=6)
 
 
