@@ -91,7 +91,7 @@ del _import_packages
 
 #Packages installed standalone:
 weave = ppimport('weave');             _level_docs(weave)
-wxPython_thread = ppimport_attr(ppimport('gui_thread'),wxPython_thread)
+wxPython_thread = ppimport_attr(ppimport('gui_thread'),'wxPython_thread')
 
 #----------------------------------#
 
