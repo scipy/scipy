@@ -229,7 +229,7 @@ c      irow and jcol should initially be 0 and 0
 c   look through row indices in this column, copy all those that are
 c      in required range.
          iabeg = max(irow,ptra(j))
-         do ia = iabeg, ptr(j+1)-1
+         do ia = iabeg, ptra(j+1)-1
             ra = rowa(ia)
             if ((ra.le.iend).and.(ra.ge.ibeg)) then
                if (nnzc.ge.nnzcmax) goto 999
