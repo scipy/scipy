@@ -131,14 +131,14 @@ python module sparsetools ! in
             integer intent(out), dimension(m + 1) :: ptrb
         end subroutine <_c>transp
 
-        subroutine <_c>cscgetel(a,rowa,ptra,nnzamax,m,n,row,col,ind,val) ! in :sparsetools:dspconv.f
+        subroutine <_c>cscgetel(a,rowa,ptra,nnzamax,n,row,col,ind,val) ! in :sparsetools:dspconv.f
             <_t> dimension(nnzamax) :: a
             integer dimension(nnzamax),depend(nnzamax) :: rowa
             integer dimension(n + 1) :: ptra
             integer intent(hide), depend(a) :: nnzamax=len(a)
             integer intent(hide), depend(ptra) :: n=(len(ptra)-1)
-            integer :: row
-            integer :: col
+            integer check((row >=0)) :: row
+            integer check(((col >= 0) && (col < n))), depend(n) :: col
             integer intent(out) :: ind
             <_t> intent(out) :: val
         end subroutine <_c>cscgetel
@@ -154,39 +154,39 @@ python module sparsetools ! in
             <_t> :: val
         end subroutine <_c>cscsetel
 
-        subroutine <_c>cootocsc(n,vals,row,col,nnz,a,ptra,rowa,nnzamax,ierr) ! in :sparsetools:dspconv.f
+        subroutine <_c>cootocsc(n,vals,row,col,nnz,a,rowa,ptra,nnzamax,ierr) ! in :sparsetools:dspconv.f
             integer intent(hide),depend(ptra) :: n=(len(ptra)-1)
             <_t> dimension(nnz) :: vals
             integer dimension(nnz),depend(nnz) :: row
             integer dimension(nnz),depend(nnz) :: col
             integer intent(hide), depend(vals) :: nnz=len(vals)
             <_t> intent(out), dimension(nnzamax), depend(nnzmax) :: a
-            integer intent(out), dimension(n + 1) :: ptra
             integer intent(out), dimension(nnzamax),depend(nnzamax) :: rowa
+            integer intent(out), dimension(n + 1) :: ptra
             integer intent(hide), depend(nnz) :: nnzamax=nnz
             integer intent(out) :: ierr
         end subroutine <_c>cootocsc
 
-        subroutine <_c>fulltocsc(m,n,fulla,a,ptra,rowa,nnzamax,irow,jcol,ierr) ! in :sparsetools:dspconv.f
+        subroutine <_c>fulltocsc(m,n,fulla,a,rowa,ptra,nnzamax,irow,jcol,ierr) ! in :sparsetools:dspconv.f
             integer intent(hide), depend(fulla) :: m=shape(fulla,0)
             integer intent(hide), depend(fulla) :: n=shape(fulla,1)
             <_t> dimension(m,n) :: fulla
             <_t> intent(in,out),dimension(nnzamax) :: a
-            integer intent(in,out),dimension(n + 1),depend(n) :: ptra
             integer intent(in,out),dimension(nnzamax),depend(nnzamax) :: rowa
+            integer intent(in,out),dimension(n + 1),depend(n) :: ptra
             integer intent(hide),depend(a) :: nnzamax=len(a)
             integer intent(in,out) :: irow
             integer intent(in,out) :: jcol
             integer intent(out) :: ierr
         end subroutine <_c>fulltocsc
 
-        subroutine <_c>csctofull(m,n,fulla,a,ptra,rowa,nnzamax) ! in :sparsetools:dspconv.f
+        subroutine <_c>csctofull(m,n,fulla,a,rowa,ptra,nnzamax) ! in :sparsetools:dspconv.f
             integer intent(in) :: m
             integer intent(hide),depend(ptra) :: n = (len(ptra)-1)
             <_t> intent(out), dimension(m,n), depend(m,n) :: fulla
             <_t> dimension(nnzamax) :: a
-            integer dimension(n + 1) :: ptra
             integer dimension(nnzamax),depend(nnzamax) :: rowa
+            integer dimension(n + 1) :: ptra
             integer intent(hide), depend(a) :: nnzamax=len(a)
         end subroutine <_c>csctofull
 

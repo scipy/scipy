@@ -8,7 +8,7 @@ c        and indexes are 0-based
 
       subroutine <_c>cscadd(n,a,rowa,ptra,nnzamax,b,rowb,ptrb,nnzbmax,
      $     c,rowc,ptrc,nnzcmax,ierr)
-      <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1)
+      <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1), val
       integer n, rowa(0:nnzamax-1), rowb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:n), ptrb(0:n), ptrc(0:n), nnzamax, nnzbmax
       integer ia, ib, ra, rb, j, nnzcmax
@@ -37,10 +37,12 @@ c      end do
             if (nnzc.ge.nnzcmax) goto 999
             if (ra.eq.rb) then
 c     this is a common element
-               c(nnzc) = a(ia) + b(ib)
-               rowc(nnzc) = ra
+               val = a(ia) + b(ib)
                ia = ia + 1
                ib = ib + 1
+               if (val.eq.0.0) goto 10
+               c(nnzc) = a(ia) + b(ib)
+               rowc(nnzc) = ra
             else if (ra .lt. rb) then
 c     a has this but not b
                c(nnzc) = a(ia)
@@ -54,6 +56,7 @@ c     b has this but not a
             end if
             ptrc(j+1) = ptrc(j+1) + 1
             nnzc = nnzc + 1
+ 10         continue
          end do
          
          if (ia .eq. iamax) then
@@ -79,6 +82,14 @@ c     all finished with b for this column just copy the rest from a
          end if 
          
       end do
+
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do k = 1, n
+         cumsum = cumsum + ptrc(k)
+         ptrc(k) = cumsum         
+      end do
+      return
       
       return
       
@@ -96,7 +107,7 @@ c     can have at most the minimum of nnzamax and nnzbmax
       integer n, rowa(0:nnzamax-1), rowb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:n), ptrb(0:n), ptrc(0:n), nnzamax, nnzbmax
       integer ia, ib, ra, rb, j, nnzcmax
-      integer ierr
+      integer ierr, k, cumsum
       
       ierr=0
       nnzc=0
@@ -111,7 +122,7 @@ c     can have at most the minimum of nnzamax and nnzbmax
             if (nnzc.ge.nnzcmax) goto 999
             if (ra.eq.rb) then
 c     this is a common element
-               c(nnzc) = a(ia) + b(ib)
+               c(nnzc) = a(ia)*b(ib)
                rowc(nnzc) = ra
                ptrc(j+1) = ptrc(j+1) + 1
                nnzc = nnzc + 1
@@ -127,6 +138,13 @@ c     b has this but not a
          end do
       end do
       
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do k = 1, n
+         cumsum = cumsum + ptrc(k)
+         ptrc(k) = cumsum         
+      end do
+
       return
       
  999  continue

@@ -63,29 +63,36 @@ c
       integer rowa(0:nnzamax-1), ptra(0:n)
       integer nnza, n, row, col, nnzamax
 
-      integer ra
+      integer ra, newia
 
       nnza = ptra(n)
-      do ia = ptra(col), ptra(col+1)-1
+      newia = ptra(col)
+      do ia = newia, ptra(col+1)-1
          ra = rowa(ia)
-         if (row.ge.ra) then
-            if (ra.eq.row) then
+         if (ra.eq.row) then
 c     just replace and be done
-               a(ia) = val
-               goto 10
-            else 
-c     we are past it (assumes sorted) so make room for this new element
-               do iia = nnza, ia+1, -1
-                  a(iia) = a(iia-1)
-                  rowa(iia) = rowa(iia-1)
-               end do
-               a(ia) = val
-               rowa(ia) = row
-               do iia = col+1, n
-                  ptra(iia) = ptra(iia)+1
-               end do               
-            end if
+            a(ia) = val
+            goto 10
+         else if (ra.gt.row) then 
+            newia = ia
+            goto 5
          end if
+      end do
+
+c     we are past where it should be stored
+c         (assumes sorted) so make room for this new element
+c     here so that it will run if this is the first entry in the
+c         column
+ 5    continue
+      ia = newia
+      do iia = nnza, ia+1, -1
+         a(iia) = a(iia-1)
+         rowa(iia) = rowa(iia-1)
+      end do
+      a(ia) = val
+      rowa(ia) = row
+      do iia = col+1, n
+         ptra(iia) = ptra(iia)+1
       end do
 
       return
@@ -98,7 +105,7 @@ c     we are past it (assumes sorted) so make room for this new element
 
 c     assumes sorted by column and then row 
 
-      subroutine <_c>cootocsc(n,vals,row,col,nnz,a,ptra,rowa,nnzamax,
+      subroutine <_c>cootocsc(n,vals,row,col,nnz,a,rowa,ptra,nnzamax,
      $     ierr)
       
       <_t> vals(0:nnz-1), a(0:nnzamax-1)
@@ -107,7 +114,7 @@ c     assumes sorted by column and then row
       integer n, nnzamax, nnz, ierr
 
       <_t> val
-      integer j, k
+      integer j, k, cumsum
 
       if (nnz.gt.nnzamax) goto 999
       ierr=0
@@ -129,7 +136,15 @@ c     assumes sorted by column and then row
             nnza = nnza + 1
          end if
       end do
-      
+
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do k = 1, n
+         cumsum = cumsum + ptra(k)
+         ptra(k) = cumsum         
+      end do
+      return      
+
       return
 
  999  continue
@@ -140,7 +155,7 @@ c     assumes sorted by column and then row
 
 c     intended for re-entry in case a is too small
 
-      subroutine <_c>fulltocsc(m,n,fulla,a,ptra,rowa,nnzamax,
+      subroutine <_c>fulltocsc(m,n,fulla,a,rowa,ptra,nnzamax,
      $     irow,jcol,ierr)
       
       <_t> fulla(0:m-1,0:n-1), a(0:nnzamax-1)
@@ -148,7 +163,7 @@ c     intended for re-entry in case a is too small
       integer m, n, nnzamax, irow, jcol, ierr
 
       <_t> val
-      integer nnza, i, j, k
+      integer nnza, i, j, k, cumsum
 
       ierr=0
       nnza = ptra(n)
@@ -165,6 +180,12 @@ c     intended for re-entry in case a is too small
          end do
       end do      
 
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do k = 1, n
+         cumsum = cumsum + ptra(k)
+         ptra(k) = cumsum         
+      end do
       return
 
  999  continue
@@ -175,7 +196,7 @@ c     intended for re-entry in case a is too small
       end subroutine <_c>fulltocsc
 
 
-      subroutine <_c>csctofull(m, n, fulla, a, ptra, rowa, nnzamax)
+      subroutine <_c>csctofull(m, n, fulla, a, rowa, ptra, nnzamax)
 
       <_t> fulla(0:m-1, 0:n-1), a(0:nnzamax-1)
       integer rowa(0:nnzamax-1), ptra(0:n)
@@ -215,7 +236,7 @@ c      irow and jcol should initially be 0 and 0
       integer ibeg, iend, jbeg, jend
       integer nnzamax, nnzcmax, irow, jcol, ierr
 
-      integer nnza, nc, j, iabeg, ia
+      integer nnza, nc, j, iabeg, ia, k, cumsum
 
       nc = jend-jbeg+1
 
@@ -240,6 +261,15 @@ c      in required range.
             end if
          end do
       end do
+
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do k = 1, n
+         cumsum = cumsum + ptrc(k)
+         ptrc(k) = cumsum         
+      end do
+      return
+
 
       return
 
