@@ -29,8 +29,7 @@
 #endif
 #endif
 
-double fabs(x)
-double x;
+double fabs(double x)
 {
 union
   {
