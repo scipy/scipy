@@ -1160,8 +1160,6 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
     return
 
 
-import scipy.special as special
-
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     """Minimize a function over a given range by brute force.
 
