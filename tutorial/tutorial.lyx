@@ -3766,11 +3766,14 @@ The Wiener filter is a simple deblurring filter for denoising images.
 \begin_inset Formula $x$
 \end_inset 
 
- be the input signal, then the output is 
+ be the input signal, then the output is
+\layout Standard
+
+
 \begin_inset Formula \[
 y=\left\{ \begin{array}{cc}
-m_{x} & \sigma_{x}\geq\sigma,\\
-x & \sigma_{x}<\sigma.\end{array}\right.\]
+\frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\
+m_{x} & \sigma_{x}^{2}<\sigma^{2}.\end{array}\right.\]
 
 \end_inset 
 
@@ -3779,21 +3782,21 @@ x & \sigma_{x}<\sigma.\end{array}\right.\]
 \end_inset 
 
  is the local estimate of the mean and 
-\begin_inset Formula $\sigma_{x}$
+\begin_inset Formula $\sigma_{x}^{2}$
 \end_inset 
 
  is the local estimate of the variance.
  The window for these estimates is an optional input parameter (default
- is 3).
- The parameter 
-\begin_inset Formula $\sigma$
+ is 
+\begin_inset Formula $3\times3$
 \end_inset 
 
- is a threshold variance parameter: if the variance in the signal is less
- than the threshold parameter then the input signal is passed unchanged,
- otherwise the local average is used in place of the input.
- This threshold parameter could be considered the expected noise in the
- signal and is also an optional input parameter.
+).
+ The parameter 
+\begin_inset Formula $\sigma^{2}$
+\end_inset 
+
+ is a threshold noise parameter.
  If 
 \begin_inset Formula $\sigma$
 \end_inset 

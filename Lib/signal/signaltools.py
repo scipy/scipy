@@ -229,7 +229,10 @@ def wiener(im,mysize=None,noise=None):
     if noise==None:
         noise = mean(Numeric.ravel(lVar))
 
-    out = where(lVar > noise, lMean, im)
+    res = (im - lMean)
+    res *= (1-noise / lVar)
+    res += lMean
+    out = where(lVar < noise, lMean, res)
 
     return out
     
