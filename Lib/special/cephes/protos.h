@@ -59,7 +59,9 @@ extern double fac ( int i );
 extern double fdtrc ( double a, double b, double x );
 extern double fdtr ( double a, double b, double x );
 extern double fdtri ( double a, double b, double y );
+/*
 extern int fftr ( double x[], int m0, double sine[] );
+*/
 extern double ceil ( double x );
 extern double floor ( double x );
 extern double frexp ( double x, int *pw2 );
@@ -98,12 +100,14 @@ extern double k0e ( double x );
 extern double k1 ( double x );
 extern double k1e ( double x );
 extern double kn ( int nn, double x );
+/*
 extern int levnsn ( int n, double r[], double a[], double e[], double refl[] );
+*/
 extern double log ( double x );
 extern double log10 ( double x );
-#ifndef log2
+/*
 extern double log2 ( double x );
-#endif
+*/
 extern long lrand ( void );
 extern long lsqrt ( long x );
 extern int minv ( double A[], double X[], int n, double B[], int IPS[] );
