@@ -52,7 +52,7 @@ import misc
     
 #---- testing ----#
 
-def test(test_set = 'all'):
+def test(test_set = 'fast'):
     # The standard run test compiler which can take a while.
     # Set test_set = 'fast' to just do the basic tests
     import unittest
@@ -60,6 +60,9 @@ def test(test_set = 'all'):
     runner.run(test_suite(test_set))
     return runner
 
+def test_long():
+    test('all')
+    
 def test_suite(test_set = 'all'):
     import scipy_test
     import scipy
