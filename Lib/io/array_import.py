@@ -1,3 +1,7 @@
+# Authors:  Travis Oliphant, Trent Oliphant
+# with support from Lee Barford's group at Agilent, Inc.
+#
+
 """This module allows for the loading of an array from an ASCII
 Text File
 

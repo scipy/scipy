@@ -4,7 +4,7 @@
 
 from filter_design import tf2zpk, zpk2tf, normalize
 from Numeric import product, zeros, asarray, concatenate, \
-     array, dot, transpose
+     array, dot, transpose, arange, ones
 import Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
@@ -243,7 +243,7 @@ def lsim(system, U, T, X0=None):
 
     xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc))
     yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
-    return squeeze(transpose(yout)), T, xout
+    return T, squeeze(transpose(yout)), xout
 
 
 def impulse(system, X0=None, T=None, N=None):
@@ -258,15 +258,15 @@ def impulse(system, X0=None, T=None, N=None):
     if N is None:
         N = 100
     if T is None:
-        vals = linalg.eigvals(A)
-        tc = 1.0/max(vals)
-        T = arange(0,5*tc,5*tc / float(N))
+        vals = linalg.eigvals(sys.A)
+        tc = 1.0/max(abs(vals.real))
+        T = arange(0,8*tc,8*tc / float(N))
     h = zeros(T.shape, sys.A.typecode())
     for k in range(len(h)):
-        eA = Mat(linalg.expm(A*t))
+        eA = Mat(linalg.expm(sys.A*T[k]))
         B,C = map(Mat, (B,sys.C))
-        h[k] = (C*eA*B).A
-    return t, h
+        h[k] = squeeze(C*eA*B)
+    return T, h
 
 def step(system, X0=None, T=None, N=None):
     if isinstance(system, lti):
@@ -276,9 +276,10 @@ def step(system, X0=None, T=None, N=None):
     if N is None:
         N = 100
     if T is None:
-        vals = linalg.eigvals(A)
-        tc = 1.0/max(vals)
-        T = arange(0,5*tc,5*tc / float(N))
+        vals = linalg.eigvals(sys.A)
+        tc = 1.0/max(abs(vals.real))
+        T = arange(0,8*tc,8*tc / float(N))
     U = ones(T.shape, sys.A.typecode())
-    return lsim(sys, U, T, X0=X0)
+    vals = lsim(sys, U, T, X0=X0)
+    return vals[0], vals[1]
     

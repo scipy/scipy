@@ -1,3 +1,5 @@
+# Author: Travis Oliphant
+
 from Numeric import *
 from fastumath import *
 import scipy.io.numpyio

@@ -1,3 +1,6 @@
+# Author: Travis Oliphant
+
+
 from orthogonal import P_roots
 from Numeric import sum
 

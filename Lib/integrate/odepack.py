@@ -1,3 +1,5 @@
+# Author: Travis Oliphant
+
 import _odepack
 
 _msgs = {2: "Integration successful.",

@@ -1,3 +1,4 @@
+# Author: Travis Oliphant
 
 import gist
 import pl3d, plwf

@@ -1,3 +1,6 @@
+# Author: Travis Oliphant 2001
+
+
 import _quadpack
 from common_routines import *
 import sys
