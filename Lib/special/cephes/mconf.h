@@ -98,14 +98,24 @@ typedef struct
  */
 /* #define DEC 1 */
 
-/* Intel IEEE, low order words come first:
- */
-#define IBMPC 1
+#if defined(vax) || defined(ns32000) || defined(sun386) || defined(i386) || \
+    defined(MIPSEL) || defined(_MIPSEL) || defined(BIT_ZERO_ON_RIGHT) || \
+    defined(__alpha__) || defined(__alpha)
+#define BIGENDIAN 0
+#else
+#define BIGENDIAN 1
+#endif
 
-/* Motorola IEEE, high order words come first
+/* Intel IEEE, low order words come first:
+ * Motorola IEEE, high order words come first
  * (Sun 680x0 workstation):
  */
-/* #define MIEEE 1 */
+#ifndef BIGENDIAN
+#define IBMPC 1
+#else
+#define MIEEE 1 
+#endif
+
 
 /* UNKnown arithmetic, invokes coefficients given in
  * normal decimal format.  Beware of range boundary
@@ -114,9 +124,6 @@ typedef struct
  * (Sun SPARCstation)
  */
 /* #define UNK 1 */
-
-/* If you define UNK, then be sure to set BIGENDIAN properly. */
-#define BIGENDIAN 0
 
 /* Define this `volatile' if your compiler thinks
  * that floating point arithmetic obeys the associative

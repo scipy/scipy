@@ -30,6 +30,9 @@ class f90_compiler:
         cmd = 'ar -cr lib%s.a %s' % (library_name,objects)
         print cmd
         os.system(cmd)
+        cmd = 'ranlib lib%s.a' % library_name
+        print cmd
+        os.system(cmd)
     def build_library(self,library_name,source_list):
         
         object_list = map(lambda x: x[:-1] +'o',source_list)
