@@ -71,6 +71,7 @@ def setup_package(ignore_packages=[]):
 
         for d in packages_path:
             config_list += get_subpackages(os.path.join(local_path,d),
+                                           parent = 'scipy',
                                            parent_path=local_path,
                                            ignore_packages = ignore_packages)
             #config_list += get_packages(os.path.join(local_path,d),
