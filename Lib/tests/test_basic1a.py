@@ -43,10 +43,10 @@ class test_comb(unittest.TestCase):
             for k in range(0,N+1):
                 ans = product(grid[N-k+1:N+1]) / product(grid[1:k+1])
                 assert_almost_equal(comb(N,k),ans,9)
-        self.failUnlessRaises(ValueError, comb, (-10,1))
-        self.failUnlessRaises(ValueError, comb, (10,-1))
-        self.failUnlessRaises(ValueError, comb, (-10,-3))
-        self.failUnlessRaises(ValueError, comb, (10,11))
+        self.failUnlessRaises(ValueError, comb, -10,1)
+        self.failUnlessRaises(ValueError, comb, 10,-1)
+        self.failUnlessRaises(ValueError, comb, -10,-3)
+        self.failUnlessRaises(ValueError, comb, 10,11)
 
     def check_exact(self):
         resdict = {(10,2):45L, (10,5):252L,
@@ -58,6 +58,8 @@ class test_comb(unittest.TestCase):
 
 
 class test_resample(unittest.TestCase):
+    def check_basic(self):
+       pass 
     
                                         
 ##################################################

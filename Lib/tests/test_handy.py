@@ -118,7 +118,7 @@ class test_fftshift(unittest.TestCase):
         y1 = grid[:10]
         y2 = grid[:11]
         y1s = fftshift(y1)
-        y2s = fftshift(y2s)
+        y2s = fftshift(y2)
         assert_array_equal(y1s[:5],y1[5:])
         assert_array_equal(y1s[5:],y1[:5])
         assert_array_equal(y2s[:5],y2[6:])
@@ -127,7 +127,7 @@ class test_fftshift(unittest.TestCase):
     def check_nd(self):
         y1 = grid[0:10,0:11,0:13][0]
         y1s = fftshift(y1,(0,2))
-        assert_array_equal(y1s[0],5*ones((11,12),'d'))
+        assert_array_equal(y1s[0],5*ones((11,13),'d'))
         assert_array_equal(y1s[:,0,0],fftshift(grid[0:10]))
         assert_array_equal(y1,ifftshift(y1s,(0,2)))
         
