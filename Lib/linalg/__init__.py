@@ -2,9 +2,7 @@
 # linalg - Linear algebra routines
 #
 
-import os as _os
-execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
-
+from pre___init__ import __doc__
 from linalg_version import linalg_version as __version__
 
 from basic import *

@@ -35,8 +35,8 @@ Xplt is basically a wrapper around the lower-level gist plotting library
 used with Yorick.  Simpler commands are provided, but all of the low-level
 commands of gist are still available.
 """
-import os as _os
-execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
+
+from pre___init__ import __doc__
 
 #try:
 #    import tkgist

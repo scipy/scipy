@@ -2,8 +2,7 @@
 # cow - Cluster Of Workstations
 #
 
-import os as _os
-execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
+from pre___init__ import __doc__
 
 import sync_cluster
 from cow import *

@@ -1,9 +1,9 @@
+
 #
 # io - Data input and output
 #
 
-import os as _os
-execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
+from pre___init__ import __doc__
 
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray

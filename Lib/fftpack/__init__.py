@@ -3,8 +3,7 @@
 #
 # Created: Pearu Peterson, August,September 2002
 
-import os as _os
-execfile(_os.path.join(__path__[0],'pre___init__.py'),globals(),locals())
+from pre___init__ import __all__,__doc__
 
 from fftpack_version import fftpack_version as __version__
 
