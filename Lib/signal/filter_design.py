@@ -8,7 +8,7 @@ Num = MLab
 abs = absolute
 pi = Numeric.pi
 import scipy
-from scipy import r1array, poly, polyval, comb
+from scipy import r1array, poly, polyval, comb, roots
 from scipy import special, optimize, linalg
 import string, types
 
@@ -111,8 +111,8 @@ def tf2zpk(b,a):
     a = (a+0.0) / a[0]
     k = b[0]
     b /= b[0]
-    z = linalg.roots(b)
-    p = linalg.roots(a)
+    z = roots(b)
+    p = roots(a)
     return z, p, k
     
 def zpk2tf(z,p,k):
