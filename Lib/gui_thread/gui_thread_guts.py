@@ -33,11 +33,21 @@
     o The main wxApp that lives in the secondary thread (very simple)
       
 """
-
+import sys
+_in_thread = 0
+if not sys.modules.has_key('wxPython'):
+    _in_thread = 1
+    print '<Importing wxPython... ',
+    sys.stdout.flush()
 from wxPython.wx import *
-print '<wxPython imported>\n>>> ',
+if _in_thread:
+    print 'done.>\n>>> ',
+    sys.stdout.flush()
+del _in_thread
+
 import thread, threading
-import types, sys, traceback
+import types, traceback
+import UserList, UserDict
 import main
 
 #################################
@@ -133,6 +143,10 @@ def smart_return(ret, proxy):
         return proxied_callable(proxy, ret)
     elif is_immutable(ret):
         return ret
+    elif type(ret) in (types.ListType, types.TupleType):
+        return proxy_list(proxy, ret)
+    elif type(ret) is types.DictType:
+        return proxy_dict(proxy, ret)
     else:
         return proxy_attr(proxy, ret)
 
@@ -173,6 +187,61 @@ class proxied_callable:
                   finished.exception_info[1]
 
         return smart_return(finished._result, self.proxy)
+
+
+################################################################
+# A proxied list that proxies lists and tuples safely and yet
+# behaves very much like them.
+################################################################
+
+class proxy_list(UserList.UserList):
+    def __init__(self, proxy, val):
+        UserList.UserList.__init__(self, val)
+        self.proxy = proxy
+
+    def __getitem__(self, i):
+        val = self.data[i]
+        return smart_return(val, self.proxy)
+
+    def __getslice__(self, i, j):
+        i = max(i, 0); j = max(j, 0)
+        return self.__class__(self.proxy, self.data[i:j])
+
+
+################################################################
+# A proxied list that proxies dictionaries safely and yet behaves
+# very much like one.
+################################################################
+
+class proxy_dict(UserDict.UserDict):
+    def __init__(self, proxy, val):
+        UserDict.UserDict.__init__(self, val)
+        self.proxy = proxy
+
+    def __getitem__(self, key):
+        val = self.data[key]
+        return smart_return(val, self.proxy)
+
+    def keys(self):
+        return smart_return(self.data.keys(), self.proxy)
+
+    def items(self):
+        return smart_return(self.data.items(), self.proxy)
+
+    def values(self):
+        return smart_return(self.data.values(), self.proxy)
+
+    def get(self, key, failobj=None):
+        val = self.data.get(key, failobj)
+        return smart_return(val, self.proxy)
+
+    def setdefault(self, key, failobj=None):
+        if not self.data.has_key(key):
+            self.data[key] = failobj
+        return smart_return(self.data[key], self.proxy)
+
+    def popitem(self):
+        return smart_return(self.data.popitem(), self.proxy)
 
 
 ################################################################
@@ -223,6 +292,9 @@ class proxy_attr:
             except AttributeError:
                 pass
             self._set_attrs(obj, main.get_all_methods(obj.__class__))
+        else:
+            # this is most probably a built in type. but in any case
+            self._set_attrs(obj, dir(obj))
 
     def _get_meth (self, obj, name):
         if name in self.__DONT_WRAP:
