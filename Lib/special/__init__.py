@@ -1,7 +1,7 @@
 """
  Special Functions
 
-  GeneralizedFunction -- a class that wraps a Python function taking scalar
+  GeneralFunction -- a class that wraps a Python function taking scalar
                          arguments into a generalized function which
                          can handle arrays of arguments using the broadcast
                          rules of Numeric Python.

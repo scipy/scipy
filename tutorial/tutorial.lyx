@@ -1,0 +1,428 @@
+#LyX 1.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 218
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 1
+\use_amsmath 0
+\paperorientation portrait
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Section
+
+Introduction
+\layout Standard
+
+SciPy is a collection of mathematical algorithms and convenience functions
+ built on the Numeric extension for Python.
+ It adds significant power to the interactive Python session by exposing
+ the user to high-level commands and classes for the manipulation and visualizat
+ion of data.
+ With SciPy, an interactive Python session becomes a data-processing and
+ system-prototyping environment rivaling sytems such as Matlab, IDL, Octave,
+ R-Lab, and SciLab.
+ 
+\layout Standard
+
+The additional power of using SciPy within Python, however, is that a powerful
+ programming language is also available for use in developing sophisticated
+ programs and specialized applications.
+ Scientific applications written in SciPy benefit from the development of
+ additional modules in numerous niche's of the software landscape by developers
+ across the world.
+ Everything from parallel programming to web- and data-base subroutines
+ and classes have been made available to the Python programmer.
+ All of this power is available in addition to the more mathematical libraries
+ in SciPy.
+\layout Standard
+
+This document provides a tutorial for the first-time user of SciPy to help
+ get started with some of the features available in this powerful package.
+ It is assumed that the user has already installed the package.
+ Some general Python facility is also assumed such as could be acquired
+ by working through the Tutorial in the Python distribution.
+ 
+\layout Section
+
+General help
+\layout Standard
+
+Python provides the facility of documentation strings.
+ The functions and classes available in SciPy use this method for on-line
+ documentation.
+ There are two methods for reading these messages and getting help.
+ Python provides the command help in the pydoc module.
+ Entering this command with no arguments (i.e.
+ >>> help ) launches an interactive help session that allows searching through
+ the keywords and modules available to all of Python.
+ Running the command help with an object as the argument displays the calling
+ signature, and the documentation string of the object.
+\layout Standard
+
+The pydoc method of help is sophisticated but uses a pager to display the
+ text.
+ Sometimes this can interfere with the terminal you are running the interactive
+ session within (like emacs).
+ A scipy-specific help system is also available under the command scipy.help.
+ The signature and documntation string for the object passed to the help
+ command are printed to standard output (or to a writeable object passed
+ as the third argument).
+ The second keyword argument of 
+\begin_inset Quotes eld
+\end_inset 
+
+scipy.help
+\begin_inset Quotes erd
+\end_inset 
+
+ defines the maximum width of the line for printing.
+\layout Standard
+
+If a module is passed as the argument to help than a list of the functions
+ and classes defined in that module is printed.
+ 
+\layout Standard
+
+
+\series bold 
+Example:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example2.1}
+
+\end_inset 
+
+
+\layout Section
+
+Special Functions (scipy.special)
+\layout Subsection
+
+Vectorizing functions (scipy.special.GeneralFunction)
+\layout Standard
+
+One of the features that the 
+\series bold 
+special
+\series default 
+ sub-package provides is a class 
+\series bold 
+GeneralFunction
+\series default 
+ to convert an ordinary Python function which accepts scalars and returns
+ scalars into a 
+\begin_inset Quotes eld
+\end_inset 
+
+vectorized-function
+\begin_inset Quotes erd
+\end_inset 
+
+ with the same broadcasting rules as other Numeric functions (
+\emph on 
+i.e.
+
+\emph default 
+ the Universal functions, or ufuncs).
+ For example, suppose you have a Python function named 
+\series bold 
+addsubtract
+\series default 
+ defined as:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example3.1}
+
+\end_inset 
+
+which defines a function of two scalar variables and returns a scalar result.
+ The class GeneralFunction can be used to 
+\begin_inset Quotes eld
+\end_inset 
+
+vectorize
+\begin_inset Quotes erd
+\end_inset 
+
+ this function so that 
+\latex latex 
+
+\backslash 
+begin{verbatim}
+\newline 
+>>> vec_addsubstract = scipy.special.GeneralFunction(addsubtract) 
+\backslash 
+end{verbatim} 
+\newline 
+
+\backslash 
+noindent 
+\latex default 
+returns a function which takes array arguments and returns an array result:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example3.2}
+
+\end_inset 
+
+
+\layout Subsection
+
+Special Functions
+\layout Standard
+
+The main feature of the 
+\series bold 
+special
+\series default 
+ package is the definition of numerous special functions of mathematical
+ physics.
+ Available are airy, elliptic, bessel, gamma, beta, hypergeometric, and
+ several statistical functions.
+ All of these functions behave can take array arguments and return array
+ results following the same broadcasting rules as other math functions in
+ Numerical Python.
+ For a complete list of these functions with a one-line description type
+ 
+\family typewriter 
+>>>help(scipy.special).
+ 
+\family default 
+Each function also has it's own documentation accessible using help.
+\layout Section
+
+Integration (scipy.integrate)
+\layout Standard
+
+The 
+\series bold 
+integrate
+\series default 
+ sub-package provides several integration techniques including an ordinary
+ differential equation integrator.
+ An overview of the module is provided by the help command:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example4.1}
+
+\end_inset 
+
+
+\layout Subsection
+
+General integration (scipy.integrate.quad)
+\layout Standard
+
+The function 
+\series bold 
+quad
+\series default 
+ is provided to integrate a function of one variable between two points.
+ The points can be 
+\begin_inset Formula \( \pm \infty  \)
+\end_inset 
+
+ (
+\begin_inset Formula \( \pm  \)
+\end_inset 
+
+scipy.integrate.Inf) to indicate infinite limits.
+ For example, suppose you wish to integrate a bessel function 
+\family typewriter 
+jv(2.5,x)
+\family default 
+ along the interval 
+\begin_inset Formula \( [0,4.5]. \)
+\end_inset 
+
+ 
+\begin_inset Formula \[
+I=\int _{0}^{4.5}J_{2.5}\left( x\right) \, dx.\]
+
+\end_inset 
+
+ This could be computed using 
+\series bold 
+quad:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example4.2}
+
+\end_inset 
+
+
+\layout Standard
+
+The first argument to quad is a 
+\begin_inset Quotes eld
+\end_inset 
+
+callable
+\begin_inset Quotes erd
+\end_inset 
+
+ Python object (
+\emph on 
+i.e 
+\emph default 
+a function, method, or class instance).
+ Notice the use of a lambda-function in this case as the argument.
+ The next two arguments are the limits of integration.
+ The return value is a tuple, with the first element holding the estimated
+ value of the integral and the second element holding an upper bound on
+ the error.
+ Notice, that in this case, the true value of this integral is 
+\begin_inset Formula \[
+I=\sqrt{\frac{2}{\pi }}\left( \frac{18}{27}\sqrt{2}\cos \left( 4.5\right) -\frac{4}{27}\sqrt{2}\sin \left( 4.5\right) +\sqrt{2\pi }\textrm{Si}\left( \frac{3}{\sqrt{\pi }}\right) \right) ,\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \[
+\textrm{Si}\left( x\right) =\int _{0}^{x}\sin \left( \frac{\pi }{2}t^{2}\right) \, dt.\]
+
+\end_inset 
+
+ is the Fresnel sine integral.
+ Note that the numerically-computed integral is within 
+\begin_inset Formula \( 1.04\times 10^{-11} \)
+\end_inset 
+
+ of the exact result --- well below the reported error bound.
+ 
+\layout Standard
+
+Infinite inputs are also allowed in 
+\series bold 
+quad
+\series default 
+ by using 
+\begin_inset Formula \( \pm  \)
+\end_inset 
+
+
+\series bold 
+scipy.integrate.Inf
+\series default 
+ as one of the arguments.
+ For example, suppose that a numerical value for the exponential integral:
+\begin_inset Formula \[
+E_{n}\left( x\right) =\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt.\]
+
+\end_inset 
+
+ is desired (and the fact that this integral can be computed as 
+\family typewriter 
+scipy.special.expn(n,x)
+\family default 
+ is forgotten).
+ The functionality of the function 
+\series bold 
+scipy.special.expn
+\series default 
+ can be replicated by defining a new function 
+\series bold 
+vec_expint 
+\series default 
+based on the routine 
+\series bold 
+quad: 
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example4.3}
+
+\end_inset 
+
+ 
+\layout Standard
+
+The function which is integrated can even use the quad argument (though
+ the error bound may underestimate the error due to possible numerical error
+ in the integrand from the use of 
+\series bold 
+quad
+\series default 
+.
+ The integral in this case is 
+\begin_inset Formula \[
+I_{n}=\int _{0}^{\infty }\int _{1}^{\infty }\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example4.4}
+
+\end_inset 
+
+
+\layout Standard
+
+This last example shows that multiple integration can be handled using repeated
+ calls to
+\series bold 
+ quad.
+ 
+\series default 
+The mechanics of this for double and triple integration have been wrapped
+ up into the functions 
+\series bold 
+dblquad 
+\series default 
+and 
+\series bold 
+tplquad.
+ 
+\series default 
+The function, 
+\series bold 
+dblquad 
+\series default 
+performs double integration.
+ Use the help function to be sure that the arguments are defined in the
+ correct order.
+ In addition, the limits on all inner integrals are actually functions which
+ can be constant functions.
+ An example of using double integration to compute several values of 
+\begin_inset Formula \( I_{n} \)
+\end_inset 
+
+ is shown below:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example4.5}
+
+\end_inset 
+
+
+\layout Subsection
+
+Ordinary differential equations (scipy.integrate.odeint)
+\the_end
