@@ -781,7 +781,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         while Num.add.reduce(abs(ri)) > termcond:
             if fhess is None:
                 if fhess_p is None:
-                    Ap = apply(approx_fhess_p,(xk,psupi,fprime,espilon)+args)
+                    Ap = apply(approx_fhess_p,(xk,psupi,fprime,epsilon)+args)
                     gcalls = gcalls + 2
                 else:
                     Ap = apply(fhess_p,(xk,psupi)+args)
