@@ -146,7 +146,8 @@ def j_roots(n,alpha,beta,mu=0):
     if (p == q):
         an_J = lambda k: 0.0*k
     else:
-        an_J = lambda k: (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2))
+        an_J = lambda k: where(k==0,(q-p)/(p+q+2.0),
+                               (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2)))
     g = cephes.gamma
     mu0 = 2.0**(p+q+1)*g(p+1)*g(q+1)/(g(p+q+2))
     val = gen_roots_and_weights(n,an_J,sbn_J,mu0)
@@ -191,7 +192,7 @@ def js_roots(n,p1,q1,mu=0):
     sbn_Js = lambda k: sqrt(where(k==1,q*(p-q+1.0)/(p+2.0), \
                                   k*(k+q-1.0)*(k+p-1.0)*(k+p-q) \
                                   / ((2.0*k+p-2) * (2.0*k+p))))/(2*k+p-1.0)
-    an_Js = lambda k: (2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0))
+    an_Js = lambda k: where(k==0,q/(p+1.0),(2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
 
     # could also use definition
     #  Gn(p,q,x) = constant_n * P^(p-q,q-1)_n(2x-1)
@@ -518,8 +519,14 @@ def sh_chebyt(n,monic=0):
     """Return nth order shifted Chebyshev polynomial of first kind, Tn(x).
     Orthogonal over [0,1] with weight function (x-x**2)**(-1/2).
     """
-    return sh_jacobi(n,0.0,0.5,monic=monic)
-
+    base = sh_jacobi(n,0.0,0.5,monic=monic)
+    if monic: return base
+    if n > 0:
+        factor = 4**n / 2.0
+    else:
+        factor = 1.0
+    return factor * base
+    
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
 def us_roots(n,mu=0):
@@ -535,7 +542,10 @@ def sh_chebyu(n,monic=0):
     """Return nth order shifted Chebyshev polynomial of second kind, Un(x).
     Orthogonal over [0,1] with weight function (x-x**2)**(1/2).
     """
-    return sh_jacobi(n,2.0,1.5,monic=monic)
+    base = sh_jacobi(n,2.0,1.5,monic=monic)
+    if monic: return base
+    factor = 4**n
+    return factor * base
 
 # Legendre 
 def p_roots(n,mu=0):
@@ -576,20 +586,10 @@ def sh_legendre(n,monic=0):
     over [0,1] with weighting function 1.
     """
     assert(n>=0), "n must be nonnegative"
-    if n==0: n1 = n+1
-    else: n1 = n
-    x,w,mu0 = ps_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    wfunc = lambda x: 0.0*x + 1.0
+    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic)
+    x,w,mu0 = ps_roots(n,mu=1)
     hn = 1.0/(2*n+1.0)
-    kn = 1.0
-    p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(0,1),monic=monic)
+    kn = _gam(2*n+1)/_gam(n+1)**2
+    p = orthopoly1d(x,w,hn,kn,wfunc,limits=(0,1),monic=monic)
     return p 
-
-    
-
-
-
-
-
-
-

@@ -24,7 +24,7 @@ class test_rand(unittest.TestCase):
 
     def check_mean(self):
         mn = add.reduce(ravel(self.z)) / 200 / 100.0
-        assert_almost_equal(mn,0.5,2)
+        assert_almost_equal(mn,0.5,1)
 
     def check_std(self):
         std = add.reduce((ravel(self.z)-0.5)**2) / 200.0 / 100.0
