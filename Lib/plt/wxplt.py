@@ -105,6 +105,8 @@ class plot_canvas(wx.wxWindow,property_object):
         wx.EVT_LEFT_DOWN(self, self.on_mouse_event)
         wx.EVT_LEFT_UP(self, self.on_mouse_event)
         wx.EVT_MOTION(self, self.on_mouse_event)
+        wx.EVT_MOTION(self, self.on_mouse_event)
+        wx.EVT_SIZE(self, self.update)
 
     # event handler
 
@@ -405,10 +407,11 @@ class plot_canvas(wx.wxWindow,property_object):
         #    return
         # resize if necessary
         #print 'draw'
+        #print 'dc:',dc
         t1 = time.clock();self.reset_size(dc);t2 = time.clock()
         #print 'resize:',t2 - t1        
         if not dc: dc = wx.wxClientDC(self)
-	# draw titles and axes labels
+        # draw titles and axes labels
         t1 = time.clock()    
         for text in self.all_titles:
             text.draw(dc)        
@@ -418,7 +421,7 @@ class plot_canvas(wx.wxWindow,property_object):
         #print 'text:',t2 - t1
         self.draw_graph_area(dc)
             
-    def update(self):
+    def update(self,event=None):
         self.client_size = (0,0) # forces the layout
         self.Refresh()        
 
