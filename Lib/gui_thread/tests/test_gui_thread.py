@@ -108,6 +108,10 @@ TestDeref = gui_thread.register(_TestDeref)
 dummy_instance = TestClass()
 
 class TestProxyAttr:
+    def __init__(self):
+        self.lst = [1,2]
+        self.dict = {'a':'a', 'b':'b'}
+
     def test(self):
         return 1
 
@@ -266,7 +270,20 @@ class test_proxy_attribute(unittest.TestCase):
         a = f()
         no_proxy = TestProxyAttr()
         self.assertEqual(a.get_callable()(), no_proxy.get_callable()())
-                        
+
+    def check_attr_list(self):
+        "Checking if changing list attributes work"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        a.lst.append(3)
+        self.assertEqual(a.lst[-1], 3)
+        
+    def check_attr_dict(self):
+        "Checking if changing dictionary attributes work"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        a.dict['c'] = 'c'
+        self.assertEqual(a.dict['c'], 'c')
 
 def test_suite():
     suites = []
