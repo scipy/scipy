@@ -9,7 +9,6 @@ try:
     cvs_minor = cvs_version[-3]
     cvs_serial = cvs_version[-1]
 except ImportError,msg:
-    print msg
     cvs_minor = 0
     cvs_serial = 0
 

@@ -62,10 +62,9 @@ def setup_package(ignore_packages=[]):
     # setup files of subpackages require scipy_core:
     sys.path.insert(0,os.path.join(local_path,'scipy_core'))
     try:
-        from scipy_version import scipy_version
-
-        # Uncomment when making releases:
-        #if not command_sdist: scipy_version = '0.3.3'
+        
+        #from scipy_version import scipy_version
+        scipy_version = '0.3.2'
 
         packages_path = ['Lib']
         if command_sdist:
