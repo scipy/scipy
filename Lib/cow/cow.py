@@ -378,11 +378,14 @@ class machine_cluster:
                         the_inputs,returns,global_vars)    
         return self.loop_send_recv(package,loop_data,loop_var)
     
-    def array_split(self,name,sequence):
+    # array specific routines
+    def row_split(self,name,sequence):
         """experimental"""
         q=scipy.split(a,len(self.workers))
         herd.cluster.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),global_vars=(name,))
-    
+    def row_rather(self,name):
+        """experimental"""
+        concatenate(herd.cluster.[name])
         
     def loop_send_recv(self,package,loop_data,loop_var):        
         #----------------------------------------------------
