@@ -94,10 +94,11 @@ except ImportError:
 #    print "Plotting methods available: ", _plot
 
 # removed gplt because it screws up imports on win32
+# removed plt cause it screws up unix when gtk isn't available.
 _pkgs = ['cluster','cow','fftpack','fftw','ga','integrate',
-         'interpolate', 'io', 'linalg', 'optimize', 'plt',
+         'interpolate', 'io', 'linalg', 'optimize', 
          'signal', 'sparse', 'special', 'stats', 'weave',
-         'xplt'] #,'gplt']
+         'xplt'] #,'plt', 'gplt']
 
 if sys.platform != 'win32':
     _pkgs.append('gplt')
