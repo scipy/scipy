@@ -245,7 +245,7 @@ C
            CPM(J,I)=(0.0D0,0.0D0)
 10         CPD(J,I)=(0.0D0,0.0D0)
         CPM(0,0)=(1.0D0,0.0D0)
-        IF ((N.EQ.0).OR.(M.EQ.0)) RETURN
+        IF (N.EQ.0) RETURN
         IF (DABS(X).EQ.1.0D0.AND.Y.EQ.0.0D0) THEN
            DO 15 I=1,N
               CPM(0,I)=X**I
@@ -6903,7 +6903,7 @@ C
            PM(J,I)=0.0D0
 10         PD(J,I)=0.0D0
         PM(0,0)=1.0D0
-        IF ((N.EQ.0).OR.(M.EQ.0)) RETURN
+        IF (N.EQ.0) RETURN
         IF (DABS(X).EQ.1.0D0) THEN
            DO 15 I=1,N
               PM(0,I)=X**I
