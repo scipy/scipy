@@ -9,16 +9,16 @@ from scipy_distutils import system_info
 
 def configuration(parent_package='',parent_path=None):
     package = 'optimize'
-    config = default_config_dict(package,parent_package)
+    config = default_config_dict(package, parent_package)
     local_path = get_path(__name__,parent_path)    
-    
-    minpack = glob(os.path.join(local_path,'minpack','*.f'))
-    config['fortran_libraries'].append(('minpack',{'sources':minpack}))
-    
+
+    minpack = ('minpack',{'sources':
+                          glob(os.path.join(local_path,'minpack','*.f'))})
+
     sources = ['_minpackmodule.c']
     sources = [os.path.join(local_path,x) for x in sources]
     ext = Extension(dot_join(parent_package, package, '_minpack'),
-                    sources, libraries = ['minpack'])
+                    sources, libraries = [minpack])
     config['ext_modules'].append(ext)
 
     rootfind = glob(os.path.join(local_path,'Zeros','*.c'))
@@ -53,4 +53,4 @@ def configuration(parent_package='',parent_path=None):
 
 if __name__ == '__main__':    
     from scipy_distutils.core import setup
-    setup(**configuration())
+    setup(**configuration(parent_path=''))
