@@ -1,7 +1,8 @@
 #
 # Author: Pearu Peterson, March 2002
 #
-# w/ additions by Travis Oliphant, March 2002
+# additions by Travis Oliphant, March 2002
+# additions by Eric Jones,      June 2002
 
 __all__ = ['eig','eigvals','lu','svd','svdvals','cholesky','qr',
            'schur','rsf2csf','lu_factor','cho_factor']
@@ -181,7 +182,23 @@ def lu_factor(a, overwrite_a=0):
                     RuntimeWarning)
     return lu, piv    
 
-
+def lu_solve(a_lu,pivots,b):
+    a_lu = asarray(a_lu)
+    pivots = asarray(pivots)
+    b = asarray(b)
+    _assert_squareness(a_lu)
+    
+    getrs, = get_lapack_funcs(('getrs',),(a,))
+    b, info = getrs(a_lu,pivots,b)    
+    if err < 0:
+        msg = "Argument %d to lapack's ?getrs() has an illegal value." % err
+        raise TypeError, msg
+    if err > 0:
+        msg = "Unknown error occured int ?getrs(): error code = %d" % err
+        raise TypeError, msg
+    return b
+    
+    
 def lu(a,permute_l=0,overwrite_a=0):
     """Return LU decompostion of a matrix.
 
@@ -418,6 +435,11 @@ def _castCopy(type, *arrays):
     else:
         return cast_arrays
 
+def _assert_squareness(*arrays):
+    for a in arrays:
+        if max(a.shape) != min(a.shape):
+            raise LinAlgError, 'Array must be square'
+
 def rsf2csf(T, Z):
     """Convert real schur form to complex schur form.
 
@@ -466,10 +488,10 @@ def rsf2csf(T, Z):
 ################## test functions #########################
 
 def test(level=10):
-    from scipy_base.testing import module_test
+    from scipy_test.testing import module_test
     module_test(__name__,__file__,level=level)
 
 def test_suite(level=1):
-    from scipy_base.testing import module_test_suite
+    from scipy_test.testing import module_test_suite
     return module_test_suite(__name__,__file__,level=level)    
 

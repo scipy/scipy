@@ -15,6 +15,8 @@
    eig        --- Find the eigenvalues and vectors of a square matrix
    eigvals    --- Find the eigenvalues of a square matrix
    lu         --- LU decomposition of a matrix
+   lu_factor  --- LU decomposition returning unordered matrix and pivots
+   lu_solve   --- solve Ax=b using back substitution with output of lu_factor
    svd        --- Singular value decomposition of a matrix
    svdvals    --- Singular values of a matrix
    cholesky   --- Cholesky decomposition of a matrix
@@ -51,6 +53,6 @@ def test(level=10):
     return runner
 
 def test_suite(level=1):
-    import scipy_base.testing
+    import scipy_test.testing
     exec 'import %s as this_mod' % (__name__)
-    return scipy_base.testing.harvest_test_suites(this_mod,level=level)
+    return scipy_test.testing.harvest_test_suites(this_mod,level=level)
