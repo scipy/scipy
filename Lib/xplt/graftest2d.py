@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from Numeric import *
-from scipy_base.testing.fastumath import *
+from scipy_base.fastumath import *
 GraphicsError = "GraphicsError"
 import os
 try:
