@@ -530,8 +530,8 @@ def orth(A):
     """Return an orthonormal basis for the range of A using svd"""
     u,s,vh = svd(A)
     M,N = A.shape
-    tol = max(M,N)*amax(s)*eps
-    num = sum(s > tol)
+    tol = max(M,N)*scipy_base.amax(s)*eps
+    num = scipy_base.sum(s > tol)
     Q = u[:,:num]
     return Q
 
