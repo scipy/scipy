@@ -11,6 +11,18 @@ skip_single_routines = 0
 
 #--------------------
 
+tmpl_empty_clapack_pyf = '''
+python module clapack
+  usercode void empty_module(void) {}
+  interface
+    subroutine empty_module()
+      intent(c) empty_module
+    end subroutine empty_module
+  end interface
+end python module clapack
+'''
+
+
 def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
     from scipy_distutils.misc_util import dot_join, get_path, default_config_dict
@@ -28,7 +40,7 @@ def configuration(parent_package='',parent_path=None):
     lapack_opt = get_info('lapack_opt',notfound_action=2)
 
     atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[]) \
-                      if k=='ATLAS_INFO']+[None])[0] 
+                      if k=='ATLAS_INFO']+[None])[0]
     if atlas_version:
         print 'ATLAS version',atlas_version
 
@@ -59,7 +71,8 @@ def configuration(parent_package='',parent_path=None):
     dict_append(ext_args,
                 name = dot_join(parent_package,package,'flapack'),
                 sources = [local_join('flapack.pyf.src')],
-                depends = local_glob('flapack_*.pyf.src'))
+                depends = [__file__]+local_glob('flapack_*.pyf.src'),
+                f2py_options = ['skip:']+skip_names['flapack']+[':'])
     dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -67,11 +80,28 @@ def configuration(parent_package='',parent_path=None):
 
 
     # clapack:
+    def get_clapack_source(ext, build_dir):
+        name = ext.name.split('.')[-1]
+        assert name=='clapack',`name`
+        if atlas_version is None:
+            target = join(build_dir,target_dir,'clapack.pyf')
+            from distutils.dep_util import newer
+            if newer(__file__,target):
+                f = open(source,'w')
+                f.write(tmpl_empty_clapack_pyf)
+                f.close()
+        else:
+            target = ext.depends[0]
+            assert os.path.basename(target)=='clapack.pyf.src'
+        return target
+
     ext_args = {}
     dict_append(ext_args,
                 name = dot_join(parent_package,package,'clapack'),
-                sources = [local_join('clapack.pyf.src')],
-                depends = local_glob('clapack_*.pyf.src'))
+                sources = [get_clapack_source],
+                depends =  [local_join('clapack.pyf.src')] \
+                + local_glob('clapack_*.pyf.src'),
+                f2py_options = ['skip:']+skip_names['clapack']+[':'])
     dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)

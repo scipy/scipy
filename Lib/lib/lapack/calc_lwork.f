@@ -7,7 +7,8 @@ c
 cf2py intent(out,out=minwrk) :: min_lwork
 cf2py intent(out,out=maxwrk) :: max_lwork
 cf2py intent(in) :: prefix
-cf2py intent(in) :: n,lo,hi
+cf2py intent(in) :: n
+cf2py integer optional,intent(in),depend(n) :: lo=0, hi=n-1
 
       INTEGER NB
       EXTERNAL ILAENV
@@ -28,7 +29,8 @@ cf2py callprotoargument int*,int*,char*,int*,int*,int*
 cf2py intent(out,out=minwrk) :: min_lwork
 cf2py intent(out,out=maxwrk) :: max_lwork
 cf2py intent(in) :: prefix
-cf2py intent(in) :: m,n,compute_uv
+cf2py intent(in) :: m,n
+cf2py integer optional,intent(in):: compute_uv=1
 
       INTEGER MINMN, MNTHR, MINWRK, MAXWRK, SMLSIZ, BDSPAC, BDSPAN
       INTEGER            ILAENV, WRKBL

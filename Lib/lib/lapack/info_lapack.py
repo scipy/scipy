@@ -5,6 +5,7 @@ Wrappers to LAPACK library
   flapack - wrappers for Fortran LAPACK routines
   clapack - wrappers for ATLAS LAPACK routines
   calc_lwork - calculate optimal lwork parameters
+  get_lapack_funcs - query for wrapper functions.
 
 Module flapack
 ++++++++++++++
@@ -77,6 +78,51 @@ Auxiliary routines
 
   a,info = lauum(c,lower=0,overwrite_c=0)
   a = laswp(a,piv,k1=0,k2=len(piv)-1,off=0,inc=1,overwrite_a=0)
+
+Module clapack
+++++++++++++++
+
+Linear Equations
+----------------
+
+  Drivers::
+
+    lu,piv,x,info = gesv(a,b,rowmajor=1,overwrite_a=0,overwrite_b=0)
+    c,x,info = posv(a,b,lower=0,rowmajor=1,overwrite_a=0,overwrite_b=0)
+
+  Computational routines::
+
+    lu,piv,info = getrf(a,rowmajor=1,overwrite_a=0)
+    x,info = getrs(lu,piv,b,trans=0,rowmajor=1,overwrite_b=0)
+    inv_a,info = getri(lu,piv,rowmajor=1,overwrite_lu=0)
+
+    c,info = potrf(a,lower=0,clean=1,rowmajor=1,overwrite_a=0)
+    x,info = potrs(c,b,lower=0,rowmajor=1,overwrite_b=0)
+    inv_a,info = potri(c,lower=0,rowmajor=1,overwrite_c=0)
+
+    inv_c,info = trtri(c,lower=0,unitdiag=0,rowmajor=1,overwrite_c=0)
+
+Auxiliary routines
+------------------
+
+  a,info = lauum(c,lower=0,rowmajor=1,overwrite_c=0)
+
+Module calc_lwork
++++++++++++++++++
+
+Optimal lwork is maxwrk. Default is minwrk.
+
+  minwrk,maxwrk = gehrd(prefix,n,lo=0,hi=n-1)
+  minwrk,maxwrk = gesdd(prefix,m,n,compute_uv=1)
+  minwrk,maxwrk = gelss(prefix,m,n,nrhs)
+  minwrk,maxwrk = getri(prefix,n)
+  minwrk,maxwrk = geev(prefix,n,compute_vl=1,compute_vr=1)
+  minwrk,maxwrk = heev(prefix,n,lower=0)
+  minwrk,maxwrk = syev(prefix,n,lower=0)
+  minwrk,maxwrk = gees(prefix,n,compute_v=1)
+  minwrk,maxwrk = geqrf(prefix,m,n)
+  minwrk,maxwrk = gqr(prefix,m,n)
+
 
 """
 postpone_import = 1
