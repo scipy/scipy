@@ -24,6 +24,8 @@
 
 ## Modifications by Travis Oliphant and Enthought, Inc.  for inclusion in SciPy
 
+from __future__ import nested_scopes
+
 import scipy_base as NA
 import _lbfgsb
 import optimize
@@ -45,12 +47,14 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     x0      -- initial guess to minimum
 
     fprime  -- gradient of func. If None, then func returns the function
-               value and the gradient ( f, g = func(x, *args) ).
+               value and the gradient ( f, g = func(x, *args) ), unless
+               approx_grad is True then func returns only f. 
                Called as fprime(x, *args)
 
     args    -- arguments to pass to function
 
-    approx_grad -- if true, approximate the gradient numerically    
+    approx_grad -- if true, approximate the gradient numerically and func returns
+                   only function value.
 
     bounds  -- a list of (min, max) pairs for each element in x, defining
                the bounds on that parameter. Use None for one of min or max
@@ -176,7 +180,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         if task_str.startswith('FG'):
             # minimization routine wants f and g at the current x
             n_function_evals += 1
-            f[0], g = func_and_grad(x, *args)
+            f[0], g = func_and_grad(x)
         elif task_str.startswith('NEW_X'):
             # new iteration
             if n_function_evals > maxfun:
