@@ -31,12 +31,12 @@ class test_blas1_simple(ScipyTestCase):
             f = getattr(cblas,p+'axpy')
             assert_array_almost_equal(f(5,[1,2,3],[2,-1,3]),[7,9,18])
             f = getattr(fblas,p+'axpy')
-            assert_array_almost_equal(f(5,[1,2,3],[2,-1,3]),[7,9,18])
+            assert_array_almost_equal(f([1,2,3],[2,-1,3]),[7,9,18],a=5)
         for p in 'cz':
             f = getattr(cblas,p+'axpy')
             assert_array_almost_equal(f(5,[1,2j,3],[2,-1,3]),[7,10j-1,18])
             f = getattr(fblas,p+'axpy')
-            assert_array_almost_equal(f(5,[1,2j,3],[2,-1,3]),[7,10j-1,18])
+            assert_array_almost_equal(f([1,2j,3],[2,-1,3]),[7,10j-1,18],a=5)
     def check_copy(self):
         for p in 'sd':
             f = getattr(fblas,p+'copy')
@@ -130,6 +130,9 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_blas1_simple,'check_') )
         suites.append( unittest.makeSuite(test_blas2_simple,'check_') )
         suites.append( unittest.makeSuite(test_blas3_simple,'check_') )
+    import test_fblas
+    suite = test_fblas.test_suite(level)
+    suites.append(suite)
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
