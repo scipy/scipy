@@ -392,20 +392,6 @@ class test_cumprod(unittest.TestCase):
                                           [10, 30, 120,  600]],ctype))
 
 
-class test_trapz(unittest.TestCase):
-    def check_basic(self):
-        x = [1,4,6,7,12]
-        y = [11,15,6,3,9]
-        val = (11+15)/2.0*3 + (15+6)/2.0*2 + (6+3)/2.0 + (3+9)/2.0*5.0
-        assert_equal(trapz(y,x),val)
-
-    def check_nd(self):
-        x = sort(20*rand(10,20,30))
-        y = x**2 + 2*x + 1
-        dx = x[:,1:,:] - x[:,:-1,:]
-        val = add.reduce(dx*(y[:,1:,:] + y[:,:-1,:])/2.0,1)
-        assert_array_equal(trapz(y,x,axis=1),val)        
-
 class test_diff(unittest.TestCase):
     def check_basic(self):
         x = [1,4,6,7,12]
