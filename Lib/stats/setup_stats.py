@@ -42,6 +42,13 @@ def configuration(parent_package='',parent_path=None):
                     **numpy_info)
     config['ext_modules'].append(ext)
 
+    # add mvn module
+    sources = [os.path.join(local_path, x) for x in ['mvn.pyf', 'mvndst.f']]
+    ext = Extension(dot_join(parent_package, package, 'mvn'),
+                    sources,
+                    **numpy_info)
+    config['ext_modules'].append(ext)
+
     return config
 
 if __name__ == '__main__':    

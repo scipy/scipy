@@ -9,6 +9,7 @@ from stats import *
 from distributions import *
 from rv import *
 from morestats import *
+from kde import gaussian_kde
 
 try:  # use R functions if installed.
     import rpy
