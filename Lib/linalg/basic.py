@@ -11,7 +11,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add
 import Matrix
 import scipy_base
 from scipy_base import asarray_chkfinite
@@ -270,8 +270,8 @@ def norm(x, ord=2):
         elif ord == -Inf:
             return scipy_base.amin(scipy_base.sum(abs(x),axis=1))
         elif ord in ['fro','f']:
-            X = scipy_base.mat(x)
-            return sqrt(sum(diag(X.H * X)))
+            val = real((conjugate(x)*x).flat)
+            return sqrt(add.reduce(val))
         else:
             raise ValueError, "Invalid norm order for matrices."
     else:
@@ -442,7 +442,7 @@ def toeplitz(c,r=None):
         return c   
     if r is None:
         r = c
-        r[0] = conjugate(r[0])
+        r[0] = conjugoate(r[0])
         c = conjugate(c)
     r,c = map(asarray_chkfinite,(r,c))
     r,c = map(ravel,(r,c))

@@ -224,13 +224,13 @@ class QuadMesh :
                    "shape of ireg must be nx by ny."
        else :
           if self.dimsofx == 2:
-             self.ireg = array (self.x).astype (Int32)
+             self.ireg = array (self.x).astype (Int)
           else :
              if self.nx is None :
                 self.nx = 50
              if self.ny is None :
                 self.ny = 50
-             self.ireg = array ( (self.nx, self.ny), Int32)
+             self.ireg = array ( (self.nx, self.ny), Int)
           self.ireg [0:self.nx, 0] = 0
           self.ireg [0, 0:self.ny] = 0
           self.ireg [1:self.nx, 1:self.ny] = 1

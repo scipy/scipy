@@ -133,7 +133,7 @@ def demo ():
    y = zeros ( (10, 10), Float)
    vx = zeros ( (10, 10), Float)
    vy = zeros ( (10, 10), Float)
-   ireg = zeros ( (10, 10), Int32)
+   ireg = zeros ( (10, 10), Int)
    for i in range (10) :
       for j in range (10) :
          vy [i, j] = sin (i)

@@ -2231,7 +2231,7 @@ static PyObject *contour (PyObject * self, PyObject * args, PyObject * kd)
   /* create three arrays and their data, make sure DECREF'able */
   npt = (int) nparts;
   NEW_MEM (np, npt, long, PyObject *);
-  RET_ARR ( anp, 1, &npt, PyArray_INT, (char *) np, PyObject *);
+  RET_ARR ( anp, 1, &npt, PyArray_LONG, (char *) np, PyObject *);
   SET_OWN (anp);
   NEW_MEM (xcp, ntotal, double, PyObject *);
   RET_ARR ( axcp, 1, &ntotal, PyArray_DOUBLE, (char *) xcp, PyObject *);
@@ -6042,7 +6042,7 @@ static int set_def_reg (int nr, int nc)
 
   ne = nr * nc;
   newlen = ne + nc + 1;
-  TRY (ra1 = (PyArrayObject *) PyArray_FromDims (1, &newlen, PyArray_INT), 0);
+  TRY (ra1 = (PyArrayObject *) PyArray_FromDims (1, &newlen, PyArray_LONG), 0);
   p1 = (int *) A_DATA (ra1);
 
   /* Fill in the data part of the new region array. */
@@ -6126,7 +6126,7 @@ static int set_reg (PyObject *op)
   int i, ok, nr, nc, ne, newlen, *p2, *p1;
   PyArrayObject *ra2, *ra1;
 
-  ok = (isARRAY(op) && (A_NDIM(op) == 2) && ((A_TYPE(op) == PyArray_INT)
+  ok = (isARRAY(op) && (A_NDIM(op) == 2) && ((A_TYPE(op) == PyArray_LONG)
      || (A_TYPE(op) == PyArray_LONG)));
   if (!ok) {
      return (int) ERRSS ("(ireg) must be a 2-D int array");
@@ -6143,9 +6143,9 @@ static int set_reg (PyObject *op)
 
   ne = nr * nc;
   newlen = ne + nc + 1;
-  NEW_ARR (ra1, 1, &newlen, PyArray_INT, int);
+  NEW_ARR (ra1, 1, &newlen, PyArray_LONG, int);
   p1 = (int *) A_DATA (ra1);
-  GET_ARR (ra2, op, PyArray_INT, 2, int);
+  GET_ARR (ra2, op, PyArray_LONG, 2, int);
   p2 = (int *) A_DATA (ra2);
 
   /* Fill in the data part of the new region array. */
@@ -6770,7 +6770,7 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
     GET_ARR (aplane, oplane, PyArray_DOUBLE, 1, PyObject *);
     }
  /* convert arguments to arrays */
- GET_ARR (anverts, onverts, PyArray_INT, 1, PyObject *);
+ GET_ARR (anverts, onverts, PyArray_LONG, 1, PyObject *);
  GET_ARR (axyzverts, oxyzverts, PyArray_DOUBLE, 2, PyObject *);
  if (isARRAY (ovalues)) {
     if (A_TYPE (ovalues) == PyArray_DOUBLE) {
@@ -7182,7 +7182,7 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
  /* done if no partially clipped polys */
  if (list1_length == 0 && listc_length == 0) {
     if (rnverts) {
-       RET_ARR (ornverts, 1, & (rnverts->size), PyArray_INT, (char *) rnvertsd,
+       RET_ARR (ornverts, 1, & (rnverts->size), PyArray_LONG, (char *) rnvertsd,
           PyObject *);
        SET_OWN (ornverts);
        }
@@ -7256,7 +7256,7 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
        }
     else {
        /* Build the rest */
-       RET_ARR (ornvertb, 1, & (rnvertb->size), PyArray_INT, (char *) rnvertbd,
+       RET_ARR (ornvertb, 1, & (rnvertb->size), PyArray_LONG, (char *) rnvertbd,
           PyObject *);
        SET_OWN (ornvertb);
        xdims [0] = rxyzvertb->size / 3;
@@ -7503,7 +7503,7 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
   freeArray (keep, 0);
 
  /* All done, set up return values. */
- RET_ARR (ornverts, 1, & (rnverts->size), PyArray_INT, (char *) rnvertsd,
+ RET_ARR (ornverts, 1, & (rnverts->size), PyArray_LONG, (char *) rnvertsd,
     PyObject *);
  SET_OWN (ornverts);
  xdims [0] = rxyzverts->size / 3;
@@ -7550,7 +7550,7 @@ static PyObject * slice2 (PyObject * self, PyObject * args)
     }
  else {
     /* Build the rest */
-    RET_ARR (ornvertb, 1, & (rnvertb->size), PyArray_INT, (char *) rnvertbd,
+    RET_ARR (ornvertb, 1, & (rnvertb->size), PyArray_LONG, (char *) rnvertbd,
        PyObject *);
     SET_OWN (ornvertb);
     xdims [0] = rxyzvertb->size / 3;

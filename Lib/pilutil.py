@@ -28,12 +28,18 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
     return bytedata + cast[_UInt8](low)
             
+def imread(name,flatten=0):
+    """Read an image file from a filename.
 
-def imread(name):
-    """Read an image file.
+    Optional arguments:
+
+     - flatten (0): if true, the image is flattened by calling convert('F') on
+     the resulting image object.  This flattens the color layers into a single
+     grayscale layer.
     """
+
     im = Image.open(name)
-    return fromimage(im)
+    return fromimage(im,flatten=flatten)
 
 def imsave(name, arr):
     """Save an array to an image file.
@@ -42,11 +48,20 @@ def imsave(name, arr):
     im.save(name)
     return
 
-def fromimage(im):
-    """Takes a PIL image and returns a copy of the image in a Numeric container.
-    If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
+def fromimage(im, flatten=0):
+     """Takes a PIL image and returns a copy of the image in a Numeric container.
+     If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
+
+    Optional arguments:
+
+     - flatten (0): if true, the image is flattened by calling convert('F') on
+     the image object before extracting the numerical data.  This flattens the
+     color layers into a single grayscale layer.  Note that the supplied image
+     object is NOT modified.
     """
     assert Image.isImageType(im), "Not a PIL image."
+    if flatten:
+        im = im.convert('F')
     mode = im.mode
     adjust = 0
     if mode == '1':
