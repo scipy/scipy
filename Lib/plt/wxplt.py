@@ -253,17 +253,17 @@ class plot_canvas(wx.wxWindow,property_object):
         return pts * scale + zero_offset + graph_offset
         
     def layout_data(self):    
-            # get scale and offset
-            axis_range = array((self.x_axis.range(),self.y_axis.range()),Float)
-            # negative y to account for positve down in window coordinates
-            scale = self.graph_box.size() / axis_range * array((1.,-1.))
-            offset = self.graph_to_window(array((0.,0.)))
-            self.image_list.scale_and_shift(scale,offset)
-            self.line_list.scale_and_shift(scale,offset)
-            
-            #self.legend 
-            #self.text_list
-            #self.overlays
+        # get scale and offset
+        axis_range = array((self.x_axis.range(),self.y_axis.range()),Float)
+        # negative y to account for positve down in window coordinates
+        scale = self.graph_box.size() / axis_range * array((1.,-1.))
+        offset = self.graph_to_window(array((0.,0.)))
+        self.image_list.scale_and_shift(scale,offset)
+        self.line_list.scale_and_shift(scale,offset)
+        
+        #self.legend 
+        #self.text_list
+        #self.overlays
         
     def layout_all(self,dc=None):
         #settingbackgroundcolors
@@ -376,15 +376,13 @@ class plot_canvas(wx.wxWindow,property_object):
             axis.draw_labels(dc)            
         t2 = time.clock()
         #print 'text:',t2 - t1
-        self.draw_graph_area(dc)       
-
+        self.draw_graph_area(dc)
             
     def update(self):
         #print 'update' 
         #print 'plot_canvas.update:', self
         self.client_size = (0,0) # forces the layout
-        self.Refresh()
-        
+        self.Refresh()        
 
     def OnPaint(self, event):
         #print 'OnPaint', event
@@ -549,8 +547,10 @@ class plot_frame(wx.wxFrame):
         printout2 = graph_printout(self.client)
         self.preview = wx.wxPrintPreview(printout, printout2, self.print_data)
         if not self.preview.Ok():
-            self.log.WriteText("Print Preview failed." \
-                               "Check that default printer is configured\n")
+            #self.log.WriteText("Print Preview failed." \
+            #                   "Check that default printer is configured\n")
+            print "Print Preview failed." \
+                  "Check that default printer is configured\n"
             return
 
         frame = wx.wxPreviewFrame(self.preview, self, "Preview")
@@ -630,6 +630,9 @@ class plot_frame(wx.wxFrame):
         if dlg.ShowModal() == wx.wxID_OK:
             title.text = dlg.GetValue()
         dlg.Destroy()
+        self.client.update()
+
+    def update(self):
         self.client.update()
             
     def __getattr__(self,key):
