@@ -1,7 +1,11 @@
 import sigtools
 import scipy.special as special
 from scipy import iscomplex, fft, ifft
+from scipy import polyadd, polymul, polydiv, polysub, \
+                  roots, poly, polyval, polyder
+import scipy
 import Numeric
+from Numeric import array, asarray
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
@@ -464,14 +468,17 @@ def hamming(M):
     return 0.54-0.46*cos(2.0*pi*n/(M-1))
 
 def kaiser(M,beta):
-    """kaiser(M, beta) returns a Kaiser window of length M with shape parameter
-    beta. It depends on the cephes module for the modified bessel function i0.
+    """kaiser(M, beta) returns a Kaiser window of length M with shape
+    parameter beta. It depends on the cephes module for the modified bessel
+    function i0.
     """
     n = arange(0,M)
     alpha = (M-1)/2.0
     return special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
 
 def hilbert(x, N=None):
+    """Return the hilbert transform of x of length N.
+    """
     x = Numeric.asarray(x)
     if N is None:
         N = len(x)
@@ -493,6 +500,169 @@ def hilbert(x, N=None):
         h = h[:,Numeric.NewAxis]
     x = ifft(Xf*h)
     return x
+
+def cmplx_sort(p):
+    "sort roots based on magnitude."
+    p = asarray(p)
+    if scipy.iscomplex(p):
+        indx = Numeric.argsort(abs(p))
+    else:
+        indx = Numeric.argsort(p)
+    return Numeric.take(p,indx), indx
+
+def unique_roots(p,tol=1e-3,rtype='min'):
+    """Determine the unique roots and their multiplicities in two lists
+
+    Inputs:
+
+      p -- The list of roots
+      tol --- The tolerance for two roots to be considered equal.
+      rtype --- How to determine the returned root from the close 
+                  ones:  'max': pick the maximum
+                         'min': pick the minimum
+                         'avg': average roots
+    Outputs: (pout, mult)
+
+      pout -- The list of sorted roots
+      mult -- The multiplicity of each root
+    """
+    if rtype in ['max','maximum']:
+        comproot = scipy.max
+    elif rtype in ['min','minimum']:
+        comproot = scipy.min
+    elif rtype in ['avg','mean']:
+        comproot = scipy.mean
+    p = asarray(p)*1.0
+    tol = abs(tol)
+    p, indx = cmplx_sort(p)
+    pout = []
+    mult = []
+    indx = -1
+    curp = p[0] + 5*tol
+    sameroots = []
+    for k in range(len(p)):
+        tr = p[k]
+        if abs(tr-curp) < tol:
+            sameroots.append(tr)
+            curp = comproot(sameroots)
+            pout[indx] = curp
+            mult[indx] += 1
+        else:
+            pout.append(tr)
+            curp = tr
+            sameroots = [tr]            
+            indx += 1
+            mult.append(1)
+    return array(pout), array(mult)
+
+from scipy import real_if_close
+def invres(r,p,k,tol=1e-3):
+    """Compute b(s) and a(s) from partial fraction expansion: r,p,k
+
+    If M = len(b) and N = len(a)
+    
+            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1] 
+    H(s) = ------ = ----------------------------------------------
+            a(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
+
+             r[0]       r[1]             r[-1]
+         = -------- + -------- + ... + --------- + k(s)
+           (s-p[0])   (s-p[1])         (s-p[-1])
+
+    If there are any repeated roots (closer than tol), then the partial
+    fraction expansion has terms like
+
+            r[i]      r[i+1]              r[i+n-1]
+          -------- + ----------- + ... + ----------- 
+          (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    See also:  residue, poly, polyval
+    """
+    extra = k
+    p, indx = cmplx_sort(p)
+    r = Numeric.take(r,indx)
+    pout, mult = unique_roots(p,tol=tol,rtype='avg')
+    p = []
+    for k in range(len(pout)):
+        p.extend([pout[k]]*mult[k])
+    a = poly(p)
+    if len(extra) > 0:
+        b = polymul(extra,a)
+    else:
+        b = [0]
+    indx = 0
+    for k in range(len(pout)):
+        temp = []
+        for l in range(len(pout)):
+            if l != k:
+                temp.extend([pout[l]]*mult[l])
+        for m in range(mult[k]):
+            t2 = temp[:]
+            t2.extend([pout[k]]*(mult[k]-m-1))
+            b = polyadd(b,r[indx]*poly(t2))
+            indx += 1
+    b = real_if_close(b)
+    while Numeric.allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+        b = b[1:]
+    return b, a
+
+from scipy import factorial
+def residue(b,a,tol=1e-3):
+    """Compute partial-fraction expansion of b(s) / a(s).
+
+    If M = len(b) and N = len(a)
+    
+            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1] 
+    H(s) = ------ = ----------------------------------------------
+            a(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
+
+             r[0]       r[1]             r[-1]
+         = -------- + -------- + ... + --------- + k(s)
+           (s-p[0])   (s-p[1])         (s-p[-1])
+
+    If there are any repeated roots (closer than tol), then the partial
+    fraction expansion has terms like 
+
+            r[i]      r[i+1]              r[i+n-1]
+          -------- + ----------- + ... + ----------- 
+          (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    See also:  invres, poly, polyval
+    """
+
+    b,a = map(asarray,(b,a))
+    k,b = polydiv(b,a)
+    p = roots(a)
+    r = p*0.0
+    pout, mult = unique_roots(p,tol=tol,rtype='avg')
+    p = []
+    for n in range(len(pout)):
+        p.extend([pout[n]]*mult[n])
+    p = asarray(p)
+    # Compute the residue from the general formula
+    indx = 0
+    for n in range(len(pout)):
+        bn = b.copy()
+        pn = []
+        for l in range(len(pout)):
+            if l != n:
+                pn.extend([pout[l]]*mult[l])
+        an = poly(pn)
+        # bn(s) / an(s) is (s-po[n])**Nn * b(s) / a(s) where Nn is
+        # multiplicity of pole at po[n]
+        sig = mult[n]
+        for m in range(sig,0,-1):
+            if sig > m:
+                # compute next derivative of bn(s) / an(s)
+                term1 = polymul(polyder(bn,1),an)
+                term2 = polymul(bn,polyder(dn))
+                bn = polysub(term1,term2)
+                an = polymul(an,an)                
+            r[indx] = polyval(bn,pout[n]) / polyval(an,pout[n]) \
+                      / factorial(sig-m)
+            indx += 1
+    return r, p, k
+
 
 def test():
     a = [3,4,5,6,5,4]
@@ -516,13 +686,5 @@ def test():
 
 if __name__ == "__main__":
     test()
-
-
-        
-       
-
-    
-
-
 
 
