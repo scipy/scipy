@@ -6,17 +6,17 @@ clll. optimize
       integer iownd, iowns,
      1   icf, ierpj, iersl, jcur, jstart, kflag, l, meth, miter,
      2   maxord, maxcor, msbp, mxncf, n, nq, nst, nfe, nje, nqu
-      integer iownd2, iowns2, jtyp, mused, mxordn, mxords
+      integer iownd2, iowns2, jtyp, mused, mxordn, mxords, isav
       integer i, i1, i2, ier, ii, j, j1, jj, lenp,
      1   mba, mband, meb1, meband, ml, ml3, mu, np1
-      double precision y, yh, ewt, ftem, savf, wm
+      double precision y, yh, ewt, ftem, savf, wm, rsav
       double precision rowns,
      1   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
       double precision rownd2, rowns2, pdnorm
       double precision con, fac, hl0, r, r0, srur, yi, yj, yjj,
      1   vmnorm, fnorm, bnorm
       dimension neq(1), y(1), yh(nyh,*), ewt(1), ftem(1), savf(1),
-     1   wm(*), iwm(*)
+     1   wm(*), iwm(*), rsav(240), isav(50)
       common /ls0001/ rowns(209),
      2   ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround,
      3   iownd(14), iowns(6),
