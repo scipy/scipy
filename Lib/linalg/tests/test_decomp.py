@@ -14,18 +14,16 @@ Run tests if linalg is not installed:
   python tests/test_decomp.py [<level>]
 """
 
-import Numeric
-dot = Numeric.dot
-
 import sys
 from scipy_test.testing import *
+
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
 from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
-import scipy_base
-del sys.path[0]
+restore_path()
 
-import unittest
+from scipy_base import *
+
 def random(size):
     return rand(*size)
 
@@ -34,23 +32,23 @@ class test_eigvals(ScipyTestCase):
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         w = eigvals(a)
-        exact_w = [(9+Numeric.sqrt(93))/2,0,(9-Numeric.sqrt(93))/2]
+        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
         assert_array_almost_equal(w,exact_w)
 
     def check_simple_tr(self):
-        a = Numeric.array([[1,2,3],[1,2,3],[2,5,6]],'d')
-        a = Numeric.transpose(a).copy()
-        a = Numeric.transpose(a)
+        a = array([[1,2,3],[1,2,3],[2,5,6]],'d')
+        a = transpose(a).copy()
+        a = transpose(a)
         w = eigvals(a)
-        exact_w = [(9+Numeric.sqrt(93))/2,0,(9-Numeric.sqrt(93))/2]
+        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
         assert_array_almost_equal(w,exact_w)
 
     def check_simple_complex(self):
         a = [[1,2,3],[1,2,3],[2,5,6+1j]]
         w = eigvals(a)
-        exact_w = [(9+1j+Numeric.sqrt(92+6j))/2,
+        exact_w = [(9+1j+sqrt(92+6j))/2,
                    0,
-                   (9+1j-Numeric.sqrt(92+6j))/2]
+                   (9+1j-sqrt(92+6j))/2]
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
@@ -80,53 +78,53 @@ class test_eig(ScipyTestCase):
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         w,v = eig(a)
-        exact_w = [(9+Numeric.sqrt(93))/2,0,(9-Numeric.sqrt(93))/2]
-        v0 = Numeric.array([1,1,(1+Numeric.sqrt(93)/3)/2])
-        v1 = Numeric.array([3.,0,-1])
-        v2 = Numeric.array([1,1,(1-Numeric.sqrt(93)/3)/2])
-        v0 = v0 / Numeric.sqrt(Numeric.dot(v0,Numeric.transpose(v0)))
-        v1 = v1 / Numeric.sqrt(Numeric.dot(v1,Numeric.transpose(v1)))
-        v2 = v2 / Numeric.sqrt(Numeric.dot(v2,Numeric.transpose(v2)))
+        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
+        v0 = array([1,1,(1+sqrt(93)/3)/2])
+        v1 = array([3.,0,-1])
+        v2 = array([1,1,(1-sqrt(93)/3)/2])
+        v0 = v0 / sqrt(dot(v0,transpose(v0)))
+        v1 = v1 / sqrt(dot(v1,transpose(v1)))
+        v2 = v2 / sqrt(dot(v2,transpose(v2)))
         assert_array_almost_equal(w,exact_w)
-        assert_array_almost_equal(v0,v[:,0]*Numeric.sign(v[0,0]))
-        assert_array_almost_equal(v1,v[:,1]*Numeric.sign(v[0,1]))
-        assert_array_almost_equal(v2,v[:,2]*Numeric.sign(v[0,2]))
+        assert_array_almost_equal(v0,v[:,0]*sign(v[0,0]))
+        assert_array_almost_equal(v1,v[:,1]*sign(v[0,1]))
+        assert_array_almost_equal(v2,v[:,2]*sign(v[0,2]))
         for i in range(3):
-            assert_array_almost_equal(Numeric.dot(a,v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
         w,v = eig(a,left=1,right=0)
         for i in range(3):
-            assert_array_almost_equal(Numeric.matrixmultiply(\
-                Numeric.transpose(a),v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(matrixmultiply(\
+                transpose(a),v[:,i]),w[i]*v[:,i])
 
     def check_simple_complex(self):
         a = [[1,2,3],[1,2,3],[2,5,6+1j]]
         w,vl,vr = eig(a,left=1,right=1)
         for i in range(3):
-            assert_array_almost_equal(Numeric.dot(a,vr[:,i]),w[i]*vr[:,i])
+            assert_array_almost_equal(dot(a,vr[:,i]),w[i]*vr[:,i])
         for i in range(3):
-            assert_array_almost_equal(Numeric.matrixmultiply(\
-            Numeric.conjugate(Numeric.transpose(a)),vl[:,i]),
-                                      Numeric.conjugate(w[i])*vl[:,i])
+            assert_array_almost_equal(matrixmultiply(\
+            conjugate(transpose(a)),vl[:,i]),
+                                      conjugate(w[i])*vl[:,i])
 
 class test_lu(ScipyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         p,l,u = lu(a)
-        assert_array_almost_equal(Numeric.dot(Numeric.dot(p,l),u),a)
+        assert_array_almost_equal(dot(dot(p,l),u),a)
         pl,u = lu(a,permute_l=1)
-        assert_array_almost_equal(Numeric.dot(pl,u),a)
+        assert_array_almost_equal(dot(pl,u),a)
 
     def check_simple_complex(self):
         a = [[1,2,3],[1,2,3],[2,5j,6]]
         p,l,u = lu(a)
-        assert_array_almost_equal(Numeric.dot(Numeric.dot(p,l),u),a)
+        assert_array_almost_equal(dot(dot(p,l),u),a)
         pl,u = lu(a,permute_l=1)
-        assert_array_almost_equal(Numeric.dot(pl,u),a)
+        assert_array_almost_equal(dot(pl,u),a)
 
     #XXX: need more tests
 
-class test_lu_solve(unittest.TestCase):        
+class test_lu_solve(ScipyTestCase):        
     def check_lu(self):
         a = random((10,10))
         b = random((10,))
@@ -142,48 +140,60 @@ class test_svd(ScipyTestCase):
 
     def check_simple(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
-        u,s,v = svd(a)
-        sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+        u,s,vh = svd(a)
+        assert_array_almost_equal(dot(transpose(u),u),identity(3))
+        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
+        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
         for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),v),a)
+        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def check_simple_singular(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
-        u,s,v = svd(a)
-        sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+        u,s,vh = svd(a)
+        assert_array_almost_equal(dot(transpose(u),u),identity(3))
+        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
+        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
         for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),v),a)
+        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def check_simple_underdet(self):
         a = [[1,2,3],[4,5,6]]
-        u,s,v = svd(a)
-        sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+        u,s,vh = svd(a)
+        assert_array_almost_equal(dot(transpose(u),u),identity(2))
+        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
+        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
         for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),v),a)
+        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def check_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
-        u,s,v = svd(a)
-        sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+        u,s,vh = svd(a)
+        assert_array_almost_equal(dot(transpose(u),u),identity(3))
+        assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
+        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
         for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),v),a)
+        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def check_random(self):
         n = 20
         m = 15
         for i in range(3):
             for a in [random([n,m]),random([m,n])]:
-                u,s,v = svd(a)
-                sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+                u,s,vh = svd(a)
+                assert_array_almost_equal(dot(transpose(u),u),identity(len(u)))
+                assert_array_almost_equal(dot(transpose(vh),vh),identity(len(vh)))
+                sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
                 for i in range(len(s)): sigma[i,i] = s[i]
-                assert_array_almost_equal(dot(dot(u,sigma),v),a)
+                assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def check_simple_complex(self):
         a = [[1,2,3],[1,2j,3],[2,5,6]]
-        u,s,v = svd(a)
-        sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+        u,s,vh = svd(a)
+        assert_array_almost_equal(dot(conj(transpose(u)),u),identity(3))
+        assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(3))
+        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
         for i in range(len(s)): sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),v),a)
+        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def check_random_complex(self):
         n = 20
@@ -191,10 +201,13 @@ class test_svd(ScipyTestCase):
         for i in range(3):
             for a in [random([n,m]),random([m,n])]:
                 a = a + 1j*random(list(a.shape))
-                u,s,v = svd(a)
-                sigma = Numeric.zeros((u.shape[0],v.shape[0]),s.typecode())
+                u,s,vh = svd(a)
+                assert_array_almost_equal(dot(conj(transpose(u)),u),identity(len(u)))
+                # This fails when [m,n]
+                #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),typecode=vh.typecode()))
+                sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
                 for i in range(len(s)): sigma[i,i] = s[i]
-                assert_array_almost_equal(dot(dot(u,sigma),v),a)
+                assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
 class test_svdvals(ScipyTestCase):
 
@@ -244,19 +257,19 @@ class test_cholesky(ScipyTestCase):
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[3,3,6]]
         c = cholesky(a)
-        assert_array_almost_equal(Numeric.dot(Numeric.transpose(c),c),a)
-        c = Numeric.transpose(c)
-        a = Numeric.dot(c,Numeric.transpose(c))
+        assert_array_almost_equal(dot(transpose(c),c),a)
+        c = transpose(c)
+        a = dot(c,transpose(c))
         assert_array_almost_equal(cholesky(a,lower=1),c)
 
     def check_simple_complex(self):
-        m = Numeric.array([[3+1j,3+4j,5],[0,2+2j,2+7j],[0,0,7+4j]])
-        a = Numeric.dot(Numeric.transpose(Numeric.conjugate(m)),m)
+        m = array([[3+1j,3+4j,5],[0,2+2j,2+7j],[0,0,7+4j]])
+        a = dot(transpose(conjugate(m)),m)
         c = cholesky(a)
-        a1 = Numeric.dot(Numeric.transpose(Numeric.conjugate(c)),c)
+        a1 = dot(transpose(conjugate(c)),c)
         assert_array_almost_equal(a,a1)
-        c = Numeric.transpose(c)
-        a = Numeric.dot(c,Numeric.transpose(Numeric.conjugate(c)))
+        c = transpose(c)
+        a = dot(c,transpose(conjugate(c)))
         assert_array_almost_equal(cholesky(a,lower=1),c)
 
     def check_random(self):
@@ -265,12 +278,12 @@ class test_cholesky(ScipyTestCase):
             m = random([n,n])
             for i in range(n):
                 m[i,i] = 20*(.1+m[i,i])
-            a = Numeric.dot(Numeric.transpose(m),m)
+            a = dot(transpose(m),m)
             c = cholesky(a)
-            a1 = Numeric.dot(Numeric.transpose(c),c)
+            a1 = dot(transpose(c),c)
             assert_array_almost_equal(a,a1)
-            c = Numeric.transpose(c)
-            a = Numeric.dot(c,Numeric.transpose(c))
+            c = transpose(c)
+            a = dot(c,transpose(c))
             assert_array_almost_equal(cholesky(a,lower=1),c)
 
     def check_random_complex(self):
@@ -279,12 +292,12 @@ class test_cholesky(ScipyTestCase):
             m = random([n,n])+1j*random([n,n])
             for i in range(n):
                 m[i,i] = 20*(.1+abs(m[i,i]))
-            a = Numeric.dot(Numeric.transpose(Numeric.conjugate(m)),m)
+            a = dot(transpose(conjugate(m)),m)
             c = cholesky(a)
-            a1 = Numeric.dot(Numeric.transpose(Numeric.conjugate(c)),c)
+            a1 = dot(transpose(conjugate(c)),c)
             assert_array_almost_equal(a,a1)
-            c = Numeric.transpose(c)
-            a = Numeric.dot(c,Numeric.transpose(Numeric.conjugate(c)))
+            c = transpose(c)
+            a = dot(c,transpose(conjugate(c)))
             assert_array_almost_equal(cholesky(a,lower=1),c)
 
 
@@ -293,33 +306,33 @@ class test_qr(ScipyTestCase):
     def check_simple(self):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         q,r = qr(a)
-        assert_array_almost_equal(Numeric.dot(q,r),a)
+        assert_array_almost_equal(dot(transpose(q),q),identity(3))
+        assert_array_almost_equal(dot(q,r),a)
 
     def check_simple_complex(self):
         a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
         q,r = qr(a)
-        assert_array_almost_equal(Numeric.dot(q,r),a)
+        assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
+        assert_array_almost_equal(dot(q,r),a)
 
     def check_random(self):
         n = 20
         for k in range(2):
             a = random([n,n])
             q,r = qr(a)
-            assert_array_almost_equal(Numeric.dot(q,r),a)
+            assert_array_almost_equal(dot(transpose(q),q),identity(n))
+            assert_array_almost_equal(dot(q,r),a)
 
     def check_random_complex(self):
         n = 20
         for k in range(2):
             a = random([n,n])+1j*random([n,n])
             q,r = qr(a)
-            assert_array_almost_equal(Numeric.dot(q,r),a)
+            assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
+            assert_array_almost_equal(dot(q,r),a)
 
-dot = Numeric.dot
-transp = Numeric.transpose
-conj = Numeric.conjugate
-any = Numeric.sometrue
-ravel = Numeric.ravel
-iscomplex = scipy_base.iscomplex
+transp = transpose
+any = sometrue
 
 class test_schur(ScipyTestCase):
 
