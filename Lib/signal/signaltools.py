@@ -182,7 +182,7 @@ def medfilt(volume,kernel_size=None):
     domain = Numeric.ones(kernel_size)
 
     numels = Numeric.product(kernel_size)
-    order = numels/2
+    order = numels//2
     return sigtools._order_filterND(volume,domain,order)
 
 
@@ -465,7 +465,7 @@ def triang(M,sym=1):
     odd = M % 2
     if not sym and not odd:
         M = M + 1        
-    n = arange(1,(M+1)/2+1)
+    n = arange(1,(M+1)//2+1)
     if M % 2 == 0:
         w = (2*n-1.0)/M
         w = scipy.r_[w, w[::-1]]
@@ -1119,8 +1119,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         olddims = vals[:axis] + [0] + vals[axis:]
         ret = transpose(ret,tuple(olddims))
         return ret
-        
-        
+
 
 def test():
     a = [3,4,5,6,5,4]

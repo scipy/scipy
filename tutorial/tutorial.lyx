@@ -618,7 +618,7 @@ iscomplexobj
 isrealobj
 \series default 
 ).
- The former command is array based and return byte arrays of ones and zeros
+ The former command is array based and returns byte arrays of ones and zeros
  providing the result of the element-wise test.
  The latter command is object based and returns a scalar describing the
  result of the test on the entire object.
@@ -2862,6 +2862,9 @@ The signal processing toolbox currently contains some filtering functions,
 on category, they are included here because they only work with equally-spaced
  data and make heavy use of filter-theory and transfer-function formalism
  to provide a fast B-spline transform.
+ To understand this section you will need to understand that a signal in
+ SciPy is an array of real or complex numbers.
+ 
 \layout Subsection
 
 B-splines
@@ -3104,13 +3107,19 @@ Example of using smoothing splines to filter images.
 Filtering
 \layout Standard
 
-Filtering is a common signal processing application and 
+Filtering is a generic name for any system that modifies an input signal
+ in some way.
+ In SciPy a signal can be thought of as a Numeric array.
+ There are different kinds of filters for different kinds of operations.
+ There are two broad kinds of filtering operations: linear and non-linear.
+ Linear filters can always be reduced to multiplication of the flattened
+ Numeric array by 
 \layout Subsubsection
 
 Convolution
 \layout Subsubsection
 
-Other filters
+Non-linear filters
 \layout Subsubsection
 
 Filter design

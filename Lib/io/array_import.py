@@ -9,6 +9,7 @@ Text File
 
 __all__ = ['read_array', 'write_array']
 import Numeric
+import scipy_base
 from Numeric import array, take, concatenate, Float, asarray
 import types, re, copy
 import numpyio
@@ -208,8 +209,27 @@ def extract_columns(arlist, collist, atype, missing):
 # Given a string representing one line, a separator tuple, a list of 
 #  columns to read for each element of the atype list and a missing
 #  value to insert when conversion fails.
+
+# Regular expressions for detecting complex numbers and for dealing
+#  with spaces between the real and imaginary parts
+
+import re
+_obj = re.compile(r"""
+      ([0-9.eE]+)            # Real part
+      ([\t ]*)               # Space between real and imaginary part
+      ([+-])                 # +/- sign
+      ([\t ]*)               # 0 or more spaces
+      (([0-9.eE]+[iIjJ])
+      |([iIjJ][0-9.eE]+))    # Imaginary part
+      """, re.VERBOSE)
+
 def process_line(line, separator, collist, atype, missing):
     strlist = []
+    line = _obj.sub(r"\1\3\5",line)  # remove spaces between real
+                                     # and imaginary parts of complex numbers
+    if (_obj.search(line) is not None):
+        if atype not in scipy_base.typecodes['Complex']:
+            scipy_base.disp("Warning: Complex data detected, but requested typecode was not complex.")
     for mysep in separator[:-1]:
         if mysep is None:
             newline, ind = move_past_spaces(line)
@@ -351,7 +371,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
         return tuple(outarr)
 
 def write_array(fileobject, arr, separator=" ", linesep='\n',
-                precision=5, suppress_small=0):
+                precision=5, suppress_small=0, keep_open=0):
     """Write a rank-2 or less array to file represented by fileobject.
 
     Inputs:
@@ -363,10 +383,10 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
       precision -- number of digits after the decimal place to write.
       suppress_small -- non-zero to suppress small digits and not write
                         them in scientific notation.
-
+      keep_open = non-zero to return the open file, otherwise, the file is closed.
     Outputs:
 
-      file -- The open file.
+      file -- The open file (if keep_open is non-zero)
     """
 
     file = get_open_file(fileobject, mode='wa')
@@ -393,5 +413,9 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
         astr = astr[1:-1]
         file.write(astr)
         file.write(linesep)
-    return file
+    if keep_open:
+        return file
+    else:
+        file.close()
+    return
                  
