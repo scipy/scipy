@@ -110,7 +110,7 @@ The pydoc method of help is sophisticated but uses a pager to display the
  Sometimes this can interfere with the terminal you are running the interactive
  session within.
  A scipy-specific help system is also available under the command scipy.info.
- The signature and documntation string for the object passed to the help
+ The signature and documentation string for the object passed to the help
  command are printed to standard output (or to a writeable object passed
  as the third argument).
  The second keyword argument of 
@@ -133,7 +133,7 @@ preview false
 
 \end_inset 
 
- 
+
 \layout Standard
 
 Another useful command is 
@@ -545,8 +545,8 @@ These changes are all made in a new module (fastumath) that is part of the
  In addition, the comparision operators have been changed to allow comparisons
  and logical operations of complex numbers (only the real part is compared).
  Also, with the new universal functions in SciPy, the logical operations
- all return arrays of unsigned bytes (8-bits per element instead of the
- old 32-bits, or even 64-bits) per element
+ (execpt logical_XXX functions) all return arrays of unsigned bytes (8-bits
+ per element instead of the old 32-bits, or even 64-bits) per element
 \begin_inset Foot
 collapsed true
 
@@ -576,6 +576,19 @@ scipy.sqrt(-1)
 \family default 
 ).
  
+\layout Subsection
+
+Alter numeric
+\layout Standard
+
+With the command 
+\series bold 
+scipy.alter_numeric() 
+\series default 
+you can now use index and mask arrays inside brackets and the coercion rules
+ of Numeric are changed so that Python scalars will not upcast the results
+ of operations.
+ An example is shown below 
 \layout Subsection
 
 Scipy_base routines 
@@ -699,6 +712,10 @@ Thre are some class instances that make special use of the slicing functionality
 \series bold 
 mgrid
 \series default 
+, 
+\series bold 
+ogrid
+\series default 
 ,
 \series bold 
  r_
@@ -720,7 +737,7 @@ One familiar with Matlab may complain that it is difficult to construct
  Suppose, for example that one wants to construct an array that begins with
  3 followed by 5 zeros and then contains 10 numbers spanning the range -1
  to 1 (inclusive on both ends).
- Before SciPy, I would need to enter something like the following 
+ Before SciPy, you would need to enter something like the following 
 \family typewriter 
 >>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0))
 \family default 
@@ -734,14 +751,14 @@ r_
  >>> r_[3,[0]*5,-1:1:10j] 
 \family default 
 which can ease typing in an interactive session.
- Notice how objects are concatenated, and the slicing syntax is used (abused)
+ Notice how objects are concatenated, and the slicing syntax is (ab)used
  to construct ranges.
  The other term that deserves a little explanation is the use of the complex
  number 10j as the step size in the slicing syntax.
  This non-standard use allows the number to be interpreted as the number
  of points to produce in the range rather than as a step size (note we would
  have used the long integer notation, 10L, but this notation may go away
- in Python as the integers became unified).
+ in Python as the integers become unified).
  This non-standard usage may be unsightly to some, but it gives the user
  the ability to quickly construct complicated vectors in a very readable
  fashion.
@@ -813,7 +830,7 @@ open
 \end_inset 
 
  grid using NewAxis judiciously to create N, N-d arrays where only one-dimension
- has length greater than 1.
+ in each array has length greater than 1.
  This will save memory and create the same result if the only purpose for
  the meshgrid is to generate sample points for evaluation of an N-d function.
  
@@ -823,7 +840,7 @@ Shape manipulation
 \layout Standard
 
 In this category of functions are routines for squeezing out length-one
- dimensions from N-dimensional arrays, ensure that an array is at least
+ dimensions from N-dimensional arrays, ensuring that an array is at least
  1-, 2-, or 3-dimensional, and stacking (concatenating) arrays by rows,
  columns, and 
 \begin_inset Quotes eld
@@ -834,7 +851,8 @@ pages
 \end_inset 
 
  (in the third dimension).
- Routines for splitting arrays (roughly the opposite of stacking arrays).
+ Routines for splitting arrays (roughly the opposite of stacking arrays)
+ are also available.
  
 \layout Subsubsection
 
@@ -843,7 +861,7 @@ Matrix manipulations
 
 These are functions specifically suited for 2-dimensional arrays that were
  part of MLab in the Numeric distribution, but have been placed in scipy_base
- for completeness.
+ for completeness so that users are not importing Numeric.
  
 \layout Subsubsection
 
@@ -955,7 +973,11 @@ preview false
 \layout Standard
 
 This particular function could have been written in vector form without
- the use of general_function.
+ the use of 
+\series bold 
+vectorize
+\series default 
+.
  But, what if the function you have written is the result of some optimization
  or integration routine.
  Such functions can likely only be vectorized using 
@@ -974,7 +996,6 @@ There are several other functions in the scipy_base package including most
  to get access to functions 
 \family typewriter 
 >>> from scipy import *.
- 
 \layout Standard
 
 New functions which should be mentioned are 
@@ -1107,7 +1128,7 @@ and
 who
 \series default 
  (returns a list of defined variables and memory consumption--upper bounded).
- Another function returns a common image used in signal processing: 
+ Another function returns a common image used in image processing: 
 \series bold 
 lena.
 
@@ -1340,7 +1361,7 @@ preview false
 
 \end_inset 
 
- 
+
 \layout Standard
 
 The function which is integrated can even use the quad argument (though
@@ -1763,9 +1784,10 @@ In order to converge more quickly to the solution, this routine uses the
  gradient of the objective function.
  If the gradient is not given by the user, then it is estimated using first-diff
 erences.
- The Broyden-Fletcher-Goldfarb-Shanno (BFGS) method requires fewer function
- calls than the simplex algorithm but unless the gradient is provided by
- the user, the speed savings won't be significant.
+ The Broyden-Fletcher-Goldfarb-Shanno (BFGS) method typically requires fewer
+ function calls than the simplex algorithm even when the gradient must be
+ estimated.
+ 
 \layout Standard
 
 To demonstrate this algorithm, the Rosenbrock function is again used.
@@ -2022,7 +2044,7 @@ All of the previously-explained minimization procedures can be used to solve
  to the data is to minimize the sum of squares of the residuals.
  The residual is usually defined for each observed data-point as 
 \begin_inset Formula \[
-e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert .\]
+e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert ^{2}.\]
 
 \end_inset 
 
@@ -2034,7 +2056,7 @@ J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
 
 \end_inset 
 
- 
+
 \layout Standard
 
 The 
@@ -5587,6 +5609,8 @@ The underlying graphics library for xplt is the pygist library.
 \end_inset 
 
 .
+ It should be noted that xplt is available on Unix and Windows and should
+ work on MacOS X.
 \layout Subsection
 
 Basic commands 

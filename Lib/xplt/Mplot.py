@@ -968,7 +968,10 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     if land:
         cntr = array([5.5,4.25])*_dpi  # landscape
     else:
-        cntr = array([4.25,6.75])*_dpi  # portrait
+        if sys.platform == 'win32':
+            cntr = array([4.25,6.75])*_dpi  # portrait
+        else:
+            cntr = array([4.25,5.5])*_dpi
 
     Yspace = ph/float(Numy)*conv
     Xspace = pw/float(Numx)*conv 

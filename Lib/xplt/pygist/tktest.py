@@ -10,8 +10,8 @@
 import Tkinter
 import sys
 import tkgist
-from gist import *
-import gistdemolow
+from scipy.xplt.gist import *
+import scipy.xplt.gistdemolow as gistdemolow
 
 def DrawOval(Event):
     # Event.widget will be the main canvas:

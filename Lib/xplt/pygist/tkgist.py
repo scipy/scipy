@@ -27,7 +27,7 @@ __version__ = "$Id$"
 import sys
 import Tkinter
 import _tkinter
-import gist
+import scipy.xplt.gist as gist
 
 _root = None
 _refresh = 1
