@@ -39,13 +39,36 @@ def adddir(dir,depth=1):
         cmd = 'cvs add ' + dir
         os.system(cmd)
 
-    for i in all_files:        
+    #full_paths = [os.path.abspath(os.path.join(path,x)) for x in all_files]
+    #full_paths = [os.path.join(path,x) for x in all_files]
+    full_paths = [os.path.join(path,x) for x in all_files]
+    dir_paths = filter(lambda x,path=path: os.path.isdir(os.path.join(path,x)),
+                       all_files)
+    
+    just_files = filter(lambda x,path=path: not os.path.isdir(os.path.join(path,x)),
+                       all_files)
+    #print dir_paths
+    print indent, ' '.join(just_files)
+    old_path = os.getcwd()
+    os.chdir(abs_path)
+    if just_files:
+        cvs_cmd = 'cvs add ' + ' '.join(just_files)
+        print cvs_cmd
+        os.system(cvs_cmd)    
+    [adddir(dir_path,depth+1) for dir_path in dir_paths]
+    os.chdir(old_path)
+    """                            
+    for i in all_files:
+                
         if not i == 'CVS':
             print indent, i
             if os.path.isdir(os.path.join(path,i)):
                 adddir(os.path.join(path,i),depth+1)                            
             else:    
-                cmd = 'cd ' + abs_path + ';cvs add ' + i + ';cd ..'
+                old_path = os.getcwd()
+                os.chdir(abs_path)
+                cvs_cmd = 'cvs add ' + i
                 print cmd
                 os.system(cmd)
-    
+                os.chdir(old_path)
+    """
