@@ -304,7 +304,9 @@ def lsim2(system, U, T, X0=None):
     #   if system describes multiple outputs
     #   then U can be a rank-2 array with the number of columns
     #   being the number of inputs
-    if isinstance(system, lti):
+
+    # rather than use lsim, use direct integration and matrix-exponential.
+    if isinstance(system, lti):        
         sys = system
     else:
         sys = lti(*system)
@@ -322,6 +324,9 @@ def lsim2(system, U, T, X0=None):
 
     if X0 is None:
         X0 = zeros(sys.B.shape[0],sys.A.typecode())
+
+    # for each output point directly integrate assume zero-order hold
+    #   or linear interpolation.
 
     ufunc = interpolate.linear_1d(T, U, axis=0, bounds_error=0, fill_value=0)
 
@@ -435,7 +440,7 @@ def impulse(system, X0=None, T=None, N=None):
     Ouptuts: (T, yout)
 
       T -- output time points,
-      yout -- impulse response of system.
+      yout -- impulse response of system (except possible singularities at 0).
     """
     if isinstance(system, lti):
         sys = system
