@@ -1,7 +1,7 @@
 !%f90 -*- f90 -*-
 ! Author: Pearu Peterson, August 2002
 
-python module fftpack
+python module _fftpack
     interface
 
        subroutine zfft(x,n,direction,howmany,normalize)
@@ -65,7 +65,7 @@ python module fftpack
                 (*f2py_func)(x,r,s,direction,howmany,normalize); &
               else {&
                 f2py_success = 0; &
-                PyErr_SetString(fftpack_error, &
+                PyErr_SetString(_fftpack_error, &
                   "inconsistency in x.shape and s argument"); &
                 } &
               }
@@ -84,6 +84,6 @@ python module fftpack
        end subroutine destroy_drfft_cache
 
     end interface 
-end python module fftpack
+end python module _fftpack
 
 ! See http://cens.ioc.ee/projects/f2py2e/

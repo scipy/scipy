@@ -7,7 +7,7 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
 import Numeric
-import fftpack
+import _fftpack as fftpack
 
 import atexit
 atexit.register(fftpack.destroy_zfft_cache)

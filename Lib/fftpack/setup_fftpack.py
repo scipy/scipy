@@ -34,7 +34,7 @@ def configuration(parent_package=''):
                'src/zfftnd.c']
     sources = [os.path.join(local_path,x) for x in sources]
     ext_args = {
-        'name': dot_join(parent_package,package_name,'fftpack'),
+        'name': dot_join(parent_package,package_name,'_fftpack'),
         'sources': sources,
         'libraries': ['dfftpack'],
         }

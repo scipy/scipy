@@ -13,7 +13,8 @@ Run tests if fftpack is not installed:
 import sys
 from scipy_test.testing import set_package_path
 set_package_path()
-from fftpack import ifft,fft,fftn,ifftn,fftpack,rfft,irfft
+from fftpack import ifft,fft,fftn,ifftn,rfft,irfft
+from fftpack import _fftpack as fftpack
 del sys.path[0]
 
 
