@@ -34,7 +34,7 @@ from helpmod import *
 # Level 1
 # these modules will just be imported (not subsumed)
 import special, io, linalg, stats, fftpack
-from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn
+from fftpack import fft, fftn, fft2, ifft, ifft2, ifftn, fftshift, ifftshift, cont_ft, fftfreq
 from stats import mean, median, std, cov, corrcoef
 from special import isinf, isfinite, isnan
 
