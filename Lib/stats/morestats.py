@@ -882,6 +882,31 @@ def pdfapprox(samples):
     #g3 = sk / sig**3.5
     #g4 = (kur+3.0) / sig**4.0
     #return pdf_fromgamma(g1, g2, g3, g4)
+
+def circmean(samples, high=2*pi, low=0):
+    """Compute the circular mean for samples assumed to be in the range [low to high]
+    """
+    ang = (samples - low)*2*pi / (high-low)
+    res = angle(stats.mean(exp(1j*ang)))
+    if (res < 0):
+        res = res + 2*pi
+    return res*(high-low)/2.0/pi + low
+
+def circvar(samples, high=2*pi, low=0):
+    """Compute the circular variance for samples assumed to be in the range [low to high]
+    """
+    ang = (samples - low)*2*pi / (high-low)
+    res = stats.mean(exp(1j*ang))
+    V = 1-abs(res)
+    return ((high-low)/2.0/pi)**2 * V
+
+def circstd(samples, high=2*pi, low=0):
+    """Compute the circular standard deviation for samples assumed to be in the range [low to high]
+    """
+    ang = (samples - low)*2*pi / (high-low)
+    res = stats.mean(exp(1j*ang))
+    V = 1-abs(res)
+    return ((high-low)/2.0/pi) * sqrt(V)
     
     
         
