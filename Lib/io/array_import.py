@@ -10,7 +10,7 @@ Text File
 __all__ = ['read_array', 'write_array']
 import Numeric
 import scipy_base
-from Numeric import array, take, concatenate, Float, asarray
+from Numeric import array, take, concatenate, Float, asarray, real, imag
 import types, re, copy
 import numpyio
 default = None
@@ -384,8 +384,41 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
     else:
         return tuple(outarr)
 
+
+# takes 1-d array and returns a string
+def str_array(arr, precision=5,col_sep=' ',row_sep="\n"):
+    thestr = []
+    arr = asarray(arr)
+    N,M = arr.shape
+    thistype = arr.typecode()
+    nofloat = (thistype in '1silbwu') or (thistype in 'Oc')
+    cmplx = thistype in 'FD'
+    fmtstr = "%%.%de" % precision
+    for n in xrange(N):
+        theline = []
+        for m in xrange(M):
+            val = arr[n,m]
+            if nofloat:
+                thisval = str(val)
+            elif cmplx:
+                rval = real(val)
+                ival = imag(val)
+                thisval = eval('fmtstr % rval')
+                istr = eval('fmtstr % ival')
+                if (ival >= 0):                    
+                    thisval = '%s+j%s' % (thisval, istr) 
+                else:
+                    thisval = '%s-j%s' % (thisval, istr)
+            else:
+                thisval = eval('fmtstr % val')
+            theline.append(thisval)
+        strline = col_sep.join(theline)
+        thestr.append(strline)
+    return row_sep.join(thestr)
+        
+
 def write_array(fileobject, arr, separator=" ", linesep='\n',
-                precision=5, suppress_small=0, keep_open=0):
+                precision=5, keep_open=0):
     """Write a rank-2 or less array to file represented by fileobject.
 
     Inputs:
@@ -395,8 +428,6 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
       separator -- separator to write between elements of the array.
       linesep -- separator to write between rows of array
       precision -- number of digits after the decimal place to write.
-      suppress_small -- non-zero to suppress small digits and not write
-                        them in scientific notation.
       keep_open = non-zero to return the open file, otherwise, the file is closed.
     Outputs:
 
@@ -418,15 +449,14 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
         h = Numeric.shape(arr)[0]
         arr = asarray(arr)
 
-    for k in range(h):
-        astr = Numeric.array2string(arr[k], max_line_width=sys.maxint,
-                                    precision=precision,
-                                    suppress_small=suppress_small,
-                                    separator=' '+separator,
-                                    array_output=0)
-        astr = astr[1:-1]
-        file.write(astr)
-        file.write(linesep)
+    for ch in separator:
+        if ch in '0123456789-+FfeEgGjJIi.':
+            raise ValueError, "Bad string for separator"
+
+        
+    astr = str_array(arr, precision=precision,
+                     col_sep=separator, row_sep=linesep)
+    file.write(astr)
     if keep_open:
         return file
     else:

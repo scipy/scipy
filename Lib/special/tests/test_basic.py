@@ -1122,11 +1122,11 @@ class test_reshape(unittest.TestCase):
 
     def check_reshape(self):
         a = (array([1,2,3]),array([4,5,6]))
-        b = reshape(a,(3,2))
+        b = reshape(a,(2,3))
         assert_array_equal(b,array([[1, 2, 3],
                                     [4, 5, 6]]))
         c = reshape(a,(3,2))
-        assert_array_equal(b,array([[1, 2],
+        assert_array_equal(c,array([[1, 2],
                                     [3, 4],
                                     [5, 6]]))
 
@@ -1154,7 +1154,7 @@ class test_riccati_yn(unittest.TestCase):
 class test_round(unittest.TestCase):
 
     def check_round(self):
-        rnd = (round(10.1),round(10.4),round(10.5),round(10.6))
+        rnd = map(int,(round(10.1),round(10.4),round(10.5),round(10.6)))
         rndrl = (10,10,11,11)
         assert_array_equal(rnd,rndrl)
 
@@ -1514,11 +1514,11 @@ def test_suite(level=1):
 #F	suites.append( unittest.makeSuite(test_pro_cv_seq,'check_') )
 	suites.append( unittest.makeSuite(test_psi,'check_') )
 	suites.append( unittest.makeSuite(test_radian,'check_') )	   
-#F	suites.append( unittest.makeSuite(test_reshape,'check_') )
+	suites.append( unittest.makeSuite(test_reshape,'check_') )
 	suites.append( unittest.makeSuite(test_rgamma,'check_') )
 	suites.append( unittest.makeSuite(test_riccati_jn,'check_') )
 #F	suites.append( unittest.makeSuite(test_riccati_yn,'check_') )
-#F	suites.append( unittest.makeSuite(test_round,'check_') )
+	suites.append( unittest.makeSuite(test_round,'check_') )
 	suites.append( unittest.makeSuite(test_sh_legendre,'check_') )
 #F	suites.append( unittest.makeSuite(test_sh_chebyt,'check_') )
 #F	suites.append( unittest.makeSuite(test_sh_chebyu,'check_') )
