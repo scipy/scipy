@@ -4,7 +4,7 @@
 # additions by Travis Oliphant, March 2002
 # additions by Eric Jones,      June 2002
 
-__all__ = ['eig','eigvals','lu','svd','svdvals','cholesky','qr',
+__all__ = ['eig','eigvals','lu','svd','svdvals','diagsvd','cholesky','qr',
            'schur','rsf2csf','lu_factor','cho_factor']
 
 from basic import LinAlgError
@@ -18,6 +18,8 @@ from Numeric import asarray
 import calc_lwork
 import scipy_base
 cast = scipy_base.cast
+r_ = scipy_base.r_
+c_ = scipy_base.c_
 
 _I = cast['F'](1j)
 def _make_complex_eigvecs(w,vin,cmplx_tcode):
@@ -257,7 +259,7 @@ def svd(a,compute_uv=1,overwrite_a=0):
 
       u -- An M x M unitary matrix [compute_uv=1].
       s -- An min(M,N) vector of singular values in descending order,
-           sigma = diag(s).
+           sigma = diagsvd(s).
       vh -- An N x N unitary matrix [compute_uv=1], vh = v^H.
 
     """
@@ -284,6 +286,18 @@ def svd(a,compute_uv=1,overwrite_a=0):
 def svdvals(a,overwrite_a=0):
     """Return singular values of a matrix."""
     return svd(a,compute_uv=0,overwrite_a=overwrite_a)
+
+def diagsvd(s,M,N):
+    """Return sigma from singular values and original size M,N."""
+    part = diag(s)
+    typ = part.typecode()
+    MorN = len(s)
+    if MorN == M:
+        return c_[part,zeros((M,N-M),typ)]
+    elif MorN == N:
+        return r_[part,zeros((M-N,N),typ)]
+    else:
+        raise ValueError, "Length of s must be M or N."
 
 def cholesky(a,lower=0,overwrite_a=0):
     """Compute Cholesky decomposition of matrix.
