@@ -1,9 +1,9 @@
 from cephes import *
 import types
 
-class GeneralFunction:
+class general_function:
     """
- GeneralFunction(somefunction)  Genearlized Function class.
+ general_function(somefunction)  Genearlized Function class.
 
   Description:
  
@@ -25,7 +25,7 @@ class GeneralFunction:
         else
             return a+b
 
-    gfunc = GeneralFunction(myfunc)
+    gfunc = general_function(myfunc)
 
     >>> gfunc([1,2,3,4],2)
     array([3,4,1,2])

@@ -1,5 +1,5 @@
 #LyX 1.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 218
+\lyxformat 2.16
 \textclass article
 \language english
 \inputencoding auto
@@ -648,7 +648,7 @@ scipy.help
 \end_inset 
 
  The first four algorithms are unconstrained minimization algorithms (fmin:
- Nelder-Mead simplex, fminBFGS: BFGS, fminNCG: Newton Conjugate Gradient,
+ Nelder-Mead simplex, fmin_bfgs: BFGS, fmin_ncg: Newton Conjugate Gradient,
  and leastsq: Levenburg-Marquardt).
  The fourth algorithm only works for functions of a single variable but
  allows minimization over a specified interval.
@@ -697,7 +697,7 @@ fmin
 
 \layout Subsection
 
-Broyden-Fletcher-Goldfarb-Shanno algorithm (scipy.optimize.fminBFGS)
+Broyden-Fletcher-Goldfarb-Shanno algorithm (scipy.optimize.fmin_bfgs)
 \layout Standard
 
 In order to converge more quickly to the solution, this routine uses the
@@ -751,7 +751,7 @@ fprime
  argument.
  An example usage of 
 \series bold 
-fminBFGS
+fmin_bfgs
 \series default 
  is shown in the following example which minimizes the Rosenbrock function.
 \layout Standard
@@ -764,13 +764,13 @@ fminBFGS
 
 \layout Subsection
 
-Newton-Conjugate-Gradient (scipy.optimize.fminNCG)
+Newton-Conjugate-Gradient (scipy.optimize.fmin_ncg)
 \layout Standard
 
 The method which requires the fewest function calls and is therefore often
  the fastest method to minimize functions of many variables is 
 \series bold 
-fminNCG.
+fmin_ncg.
  
 \series default 
 This method is a modified Newton's method and uses a conjugate gradient
@@ -862,7 +862,7 @@ H_{ij}=\frac{\partial ^{2}f}{\partial x_{i}\partial x_{j}} & = & 200\left( \delt
  The code which computes this Hessian along with the code to minimize the
  function using 
 \series bold 
-fminNCG 
+fmin_ncg 
 \series default 
 is shown in the following example:
 \layout Standard
@@ -929,7 +929,7 @@ fhess_p
 \emph default 
 keyword to minimize the Rosenbrock function using 
 \series bold 
-fminNCG
+fmin_ncg
 \series default 
  follows:
 \layout Standard
@@ -1060,7 +1060,7 @@ e_{i}=\left| y_{i}-A\sin \left( 2\pi kx_{i}+\theta \right) \right| .\]
 
 \begin_inset Figure size 297 420
 file leastsqfit.pdf
-width 3 50
+width 3 50.00
 flags 11
 
 \end_inset 

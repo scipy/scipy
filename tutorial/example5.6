@@ -1,5 +1,5 @@
 >>> from MLab import diag, asarray
->>> from scipy.optimize import fminNCG
+>>> from scipy.optimize import fmin_ncg
 >>> def rosen_hess_p(x,p):
         x = asarray(x)
         Hp = zeros(len(x),x.typecode())
@@ -10,7 +10,7 @@
         return Hp
 
 >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
->>> xopt = fminNCG(rosen, x0, rosen_der, fhess_p=rosen_hess_p)
+>>> xopt = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_p)
 Optimization terminated successfully.
          Current function value: 0.000000
          Iterations: 20

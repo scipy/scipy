@@ -1,8 +1,8 @@
 >>> import MLab
->>> from scipy.optimize import fminBFGS
+>>> from scipy.optimize import fmin_bfgs
 
 >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
->>> xopt = fminBFGS(rosen, x0, fprime=rosen_der)
+>>> xopt = fmin_bfgs(rosen, x0, fprime=rosen_der)
 Optimization terminated successfully.
          Current function value: 0.000000
          Iterations: 109

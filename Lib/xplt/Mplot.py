@@ -7,8 +7,8 @@ from MLab import pi, cos, sin, arctan2, array
 import types
 import write_style
 from write_style import inches, points
-from signaltools import medfiltND
 import scipy
+from scipy.signal import medfilt
 
 _hold = 0
 

@@ -1,4 +1,4 @@
-__all__ = ["optimize", "integrate", "signal", "special", "io", "fft",
+__all__ = ["optimize", "integrate", "signal", "special", "io", 
            "interpolate", "stats"]
            
 from Numeric import *
@@ -6,9 +6,11 @@ import os,sys
 from helpmod import help, source
 from misc import *
 
-
 for name in __all__:
     exec("import %s" % name)
+
+__all__.extend(['help', 'source'])
+
 # add some directories to the path so we can import their
 # modules.
 
@@ -17,7 +19,13 @@ sys.path.append(os.path.join(d,'gui_thread'))
 #import gui_thread
 
 try:
-    import scipy.xplt
+    import scipy.fft
+except ImportError:
+    pass
+
+try:
+    import xplt
+    __all__.append('xplt')
 except ImportError:
     pass
 

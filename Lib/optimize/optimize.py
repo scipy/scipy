@@ -15,8 +15,8 @@
 A collection of general-purpose optimization routines using Numeric
 
 fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls).
-fminBFGS    ---      Quasi-Newton method (uses function and gradient).
-fminNCG     ---      Line-search Newton Conjugate Gradient (uses function, 
+fmin_bfgs   ---      Quasi-Newton method (uses function and gradient).
+fmin_ncg    ---      Line-search Newton Conjugate Gradient (uses function, 
                      gradient and hessian (if it's provided)).
 fminbound   ---      Bounded minimization for scalar functions.
 
@@ -26,7 +26,7 @@ import Numeric
 import MLab
 try:
     from fastumath import absolute, sqrt
-except ImporError:
+except ImportError:
     from scipy.fastumath import absolute, sqrt
 Num = Numeric
 max = MLab.max
@@ -354,8 +354,8 @@ def approx_fhess_p(x0,p,fprime,*args):
     return (f2 - f1)/epsilon
 
 
-def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
-             full_output=0, printmessg=1):
+def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None, 
+              full_output=0, printmessg=1):
     """Minimize a function using the BFGS algorithm.
 
     Description:
@@ -464,8 +464,8 @@ def fminBFGS(f, x0, fprime=None, args=(), avegtol=1e-5, maxiter=None,
         return xk
 
 
-def fminNCG(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-            maxiter=None, full_output=0, printmessg=1):
+def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
+             maxiter=None, full_output=0, printmessg=1):
     """Minimze 
   Description:
 
@@ -779,20 +779,20 @@ if __name__ == "__main__":
     algor.append('Nelder-Mead Simplex\t')
 
     start = time.time()
-    x = fminBFGS(rosen, x0, fprime=rosen_der, maxiter=80)
+    x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('BFGS Quasi-Newton\t')
 
     start = time.time()
-    x = fminBFGS(rosen, x0, avegtol=1e-4, maxiter=100)
+    x = fmin_bfgs(rosen, x0, avegtol=1e-4, maxiter=100)
     print x
     times.append(time.time() - start)
     algor.append('BFGS without gradient\t')
 
 
     start = time.time()
-    x = fminNCG(rosen, x0, rosen_der, fhess_p=rosen_hess_p, maxiter=80)
+    x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_p, maxiter=80)
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with hessian product')
