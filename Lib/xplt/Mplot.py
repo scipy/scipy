@@ -627,6 +627,8 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     gist.pli(byteimage)
     old_vals = gist.limits(square=1)
     vals = gist.limits(square=1)
+    if color is None:
+        return
     vp = gist.viewport()
     axv,bxv,ayv,byv = vp
     axs,bxs,ays,bys = vals[:4]
