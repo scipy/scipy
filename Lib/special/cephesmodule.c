@@ -27,12 +27,14 @@
 
 #include "cephes_doc.h"
 
+#define ABS(x) (y=(x); y < 0 ? -y : y)
+
 /* isnan and isinf and isfinite functions */
 static void FLOAT_isnan(char **args, int *dimensions, int *steps, void *func) {
     int i, is1=steps[0], os=steps[1], n=dimensions[0];
     char *i1=args[0], *op=args[1];
     for (i=0; i < n; i++, i1+=is1, op+=os) {
-	*((signed char *)op) = (signed char) isnan((double)(*((float *)i1)));
+	*((signed char *)op) = (signed char) ABS(isnan((double)(*((float *)i1))));
     }
 }
 
@@ -40,7 +42,7 @@ static void DOUBLE_isnan(char **args, int *dimensions, int *steps, void *func) {
     int i, is1=steps[0], os=steps[1], n=dimensions[0];
     char *i1=args[0], *op=args[1];
     for (i=0; i < n; i++, i1+=is1, op+=os) {
-	*((signed char *)op) = (signed char) isnan((double)(*((double *)i1)));
+	*((signed char *)op) = (signed char) ABS(isnan((double)(*((double *)i1))));
     }
 }
 

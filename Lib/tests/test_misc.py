@@ -61,7 +61,7 @@ class test_isnan(unittest.TestCase):
     def check_complex(self):
         assert(isnan(1+1j) == 0)
     def check_complex1(self):
-        assert(isnan(array(0+0j)/0.) == 0)
+        assert(isnan(array(0+0j)/0.) == 1)
                 
 class test_isfinite(unittest.TestCase):
     def check_goodvalues(self):
