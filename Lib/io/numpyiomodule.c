@@ -85,7 +85,7 @@ static PyObject *
   int      swap_factor;
   char     out_type = 124;    /* set to unused value */
 
-  if (!PyArg_ParseTuple( args, "Oic|cb" , &file, &n, &read_type, &out_type, &dobyteswap ))
+  if (!PyArg_ParseTuple( args, "Olc|cb" , &file, &n, &read_type, &out_type, &dobyteswap ))
     return NULL;
 
   if (out_type == 124)
@@ -230,7 +230,7 @@ static PyObject *
   char     ownalloc = 0;
   char     write_type = 124;
 
-  if (!PyArg_ParseTuple( args, "OiO|cb" , &file, &n, &obj, &write_type, &dobyteswap))
+  if (!PyArg_ParseTuple( args, "OlO|cb" , &file, &n, &obj, &write_type, &dobyteswap))
     return NULL;
   
   fp = PyFile_AsFile(file);
@@ -244,7 +244,7 @@ static PyObject *
   }
 
   maxN = PyArray_SIZE((PyArrayObject *)obj);
-  if (n > maxN) 
+  if (n > maxN)
     PYSETERROR("The NumPy array does not have that many elements.");
 
   if (((PyArrayObject *)obj)->descr->type_num == PyArray_OBJECT)
