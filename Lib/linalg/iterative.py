@@ -119,8 +119,10 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.matvec(x0) and b.  To save the extra computation,
-                 use 0 for the same type as b or one of 'fdFD'.
+                 from A.typecode() and b.  If A does not have a typecode method then it will
+                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 A does not have a typecode attribute use xtype=0 for the same type as b or
+                 use xtype='f','d','F',or 'D'
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -132,7 +134,13 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         x = sb.zeros(n)
 
     if xtype is None:
-        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+        try:
+            atyp = A.typecode()
+        except AttributeError:
+            atyp = None
+        if atyp is None:
+            atyp = A.matvec(x).typecode()
+        typ = _coerce_rules[b.typecode(),atyp]
     elif xtype == 0:
         typ = b.typecode()
     else:
@@ -221,8 +229,10 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.matvec(x0) and b.  To save the extra computation,
-                 use 0 for the same type as b or one of 'fdFD'.
+                 from A.typecode() and b.  If A does not have a typecode method then it will
+                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 A does not have a typecode attribute use xtype=0 for the same type as b or
+                 use xtype='f','d','F',or 'D'
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -234,7 +244,13 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         x = sb.zeros(n)
 
     if xtype is None:
-        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+        try:
+            atyp = A.typecode()
+        except AttributeError:
+            atyp = None
+        if atyp is None:
+            atyp = A.matvec(x).typecode()
+        typ = _coerce_rules[b.typecode(),atyp]
     elif xtype == 0:
         typ = b.typecode()
     else:
@@ -315,8 +331,10 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.matvec(x0) and b.  To save the extra computation,
-                 use 0 for the same type as b or one of 'fdFD'.
+                 from A.typecode() and b.  If A does not have a typecode method then it will
+                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 A does not have a typecode attribute use xtype=0 for the same type as b or
+                 use xtype='f','d','F',or 'D'
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -328,7 +346,13 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         x = sb.zeros(n)
 
     if xtype is None:
-        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+        try:
+            atyp = A.typecode()
+        except AttributeError:
+            atyp = None
+        if atyp is None:
+            atyp = A.matvec(x).typecode()
+        typ = _coerce_rules[b.typecode(),atyp]
     elif xtype == 0:
         typ = b.typecode()
     else:
@@ -410,9 +434,10 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.matvec(x0) and b.  To save the extra computation,
-                 use 0 for the same type as b or one of 'fdFD'.
-
+                 from A.typecode() and b.  If A does not have a typecode method then it will
+                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 A does not have a typecode attribute use xtype=0 for the same type as b or
+                 use xtype='f','d','F',or 'D'
     """
     b = sb.asarray(b) + 0.0
     n = len(b)
@@ -424,7 +449,13 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         x = sb.zeros(n)
 
     if xtype is None:
-        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+        try:
+            atyp = A.typecode()
+        except AttributeError:
+            atyp = None
+        if atyp is None:
+            atyp = A.matvec(x).typecode()
+        typ = _coerce_rules[b.typecode(),atyp]
     elif xtype == 0:
         typ = b.typecode()
     else:
@@ -507,9 +538,10 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.matvec(x0) and b.  To save the extra computation,
-                 use 0 for the same type as b or one of 'fdFD'.
-
+                 from A.typecode() and b.  If A does not have a typecode method then it will
+                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 A does not have a typecode attribute use xtype=0 for the same type as b or
+                 use xtype='f','d','F',or 'D'
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -521,7 +553,13 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
         x = sb.zeros(n)
 
     if xtype is None:
-        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+        try:
+            atyp = A.typecode()
+        except AttributeError:
+            atyp = None
+        if atyp is None:
+            atyp = A.matvec(x).typecode()
+        typ = _coerce_rules[b.typecode(),atyp]
     elif xtype == 0:
         typ = b.typecode()
     else:
@@ -607,9 +645,10 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.matvec(x0) and b.  To save the extra computation,
-                 use 0 for the same type as b or one of 'fdFD'.
-
+                 from A.typecode() and b.  If A does not have a typecode method then it will
+                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 A does not have a typecode attribute use xtype=0 for the same type as b or
+                 use xtype='f','d','F',or 'D'
     """
     b = sb.asarray(b)+0.0
     n = len(b)
@@ -621,7 +660,13 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         x = sb.zeros(n)
 
     if xtype is None:
-        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+        try:
+            atyp = A.typecode()
+        except AttributeError:
+            atyp = None
+        if atyp is None:
+            atyp = A.matvec(x).typecode()
+        typ = _coerce_rules[b.typecode(),atyp]
     elif xtype == 0:
         typ = b.typecode()
     else:
