@@ -20,7 +20,7 @@ Run tests if linalg is not installed:
 """
 
 import Numeric
-from Numeric import arange, add, array, dot
+from Numeric import arange, add, array, dot, zeros, identity
 
 import sys
 from scipy_test.testing import *
@@ -56,6 +56,16 @@ class test_solve_banded(ScipyTestCase):
 
 class test_solve(ScipyTestCase):
 
+    def check_20Feb04_bug(self):
+        a = [[1,1],[1.0,0]] # ok
+        x0 = solve(a,[1,0j])
+        assert_array_almost_equal(Numeric.matrixmultiply(a,x0),[1,0])
+
+        a = [[1,1],[1.2,0]] # gives failure with clapack.zgesv(..,rowmajor=0)
+        b = [1,0j]
+        x0 = solve(a,b)
+        assert_array_almost_equal(Numeric.matrixmultiply(a,x0),[1,0])
+
     def check_simple(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
@@ -78,6 +88,28 @@ class test_solve(ScipyTestCase):
                   ]:
             x = solve(a,b,sym_pos=1)
             assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+
+    def check_simple_complex(self):
+        a = array([[5,2],[2j,4]],'D')
+        for b in [[1j,0],
+                  [[1j,1j],
+                   [0,2]],
+                  [1,0j],
+                  array([1,0],'D'),
+                  ]:
+            x = solve(a,b)
+            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+
+    def check_nils_20Feb04(self):
+        n = 2
+        A = random([n,n])+random([n,n])*1j
+        X = zeros((n,n),'D')
+        Ainv = inv(A) 
+        R = identity(n)+identity(n)*0j
+        for i in arange(0,n):
+            r = R[:,i]
+            X[:,i] = solve(A,r)
+        assert_array_almost_equal(X,Ainv)
 
     def check_random(self):
 
@@ -160,7 +192,6 @@ class test_solve(ScipyTestCase):
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
-
 
 class test_inv(ScipyTestCase):
 
