@@ -420,7 +420,7 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None):
     return x, info
 
 # not working yet.
-def gmres(A,b,x0=None,tol=1e-5,maxiter=None):
+def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b 
 
     Inputs:
@@ -430,11 +430,10 @@ def gmres(A,b,x0=None,tol=1e-5,maxiter=None):
            representing solution to the preconditioning equation
            M * x = b.
     b --   An n-length vector
-    restrt -- A restart value
     
 
     Outputs:
-
+    
     x  --  The converged solution
     info -- output result
             0  : successful exit
@@ -443,6 +442,7 @@ def gmres(A,b,x0=None,tol=1e-5,maxiter=None):
 
     Optional Inputs:
 
+    restrt -- (n/2) When to restart
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
@@ -467,8 +467,8 @@ def gmres(A,b,x0=None,tol=1e-5,maxiter=None):
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work = sb.zeros(5*n,typ)
-    work2 = sb.zeros(restrt*(2*restrt+2),typ)
+    work = sb.zeros((6+restrt)*n,typ)
+    work2 = sb.zeros((restrt+1)*(2*restrt+2),typ)
     ijob = 1
     info = 0
     ftflag = True

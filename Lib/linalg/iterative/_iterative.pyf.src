@@ -88,10 +88,10 @@ python module _iterative ! in
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
             integer, intent(in), depend(n), check((0<restrt) && (restrt<=n)) :: restrt
-            <_t> intent(inout), dimension(ldw*5) :: work
+            <_t> intent(inout), dimension(ldw*(6+restrt)) :: work
             integer intent(hide) :: ldw=MAX(1,n)
             <_t> intent(inout), depend(restrt,ldw2), dimension(ldw2*(2*restrt+2)) :: work2
-            integer intent(hide), depend(restrt) :: ldw2=MAX(1,restrt)
+            integer intent(hide), depend(restrt) :: ldw2=MAX(2,restrt+1)
             integer intent(in, out) :: iter
             <rt=real, double precision, real, double precision>, intent(in,out) :: resid
             integer intent(in, out) :: info

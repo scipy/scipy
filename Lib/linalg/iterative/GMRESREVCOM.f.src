@@ -47,7 +47,7 @@
 *          Restart parameter, .ls. = N. This parameter controls the amount
 *          of memory required for matrix WORK2.
 *
-*  WORK    (workspace) DOUBLE PRECISION array, dimension (LDW,5).
+*  WORK    (workspace) DOUBLE PRECISION array, dimension (LDW,6+restrt).
 *          Note that if the initial guess is the zero vector, then 
 *          storing the initial residual is not necessary.
 *
@@ -61,7 +61,7 @@
 *
 *  LDW2    (input) INTEGER
 *          The leading dimension of the array WORK2.
-*          LDW2 .gt. = max(1,RESTRT).
+*          LDW2 .gt. = max(2,RESTRT+1).
 *
 *  ITER    (input/output) INTEGER
 *          On input, the maximum iterations to be performed.
