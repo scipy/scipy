@@ -2,8 +2,11 @@
 import os
 import sys
 import time
+
 from distutils.command.config    import config
 from scipy_distutils.system_info import get_info
+from distutils.spawn import _nt_quote_args
+from scipy_distutils.exec_command import exec_command
 
 #------------------------------------------------------------------------
 # Configuration
@@ -17,6 +20,7 @@ class config_pygist(config):
         self.local_path = local_path
         self.config_path = config_path
         self.config_h = os.path.join(self.config_path, "config.h")
+        self.dump_source = 0
 
     def _link (self, body,
                headers, include_dirs,
@@ -35,7 +39,16 @@ class config_pygist(config):
         self.temp_files.append(prog)
 
         return (src, obj, prog)
-    
+
+    def spawn(self, cmd, display=None):
+        if type(cmd) is type([]) and os.name == 'nt':
+            cmd = _nt_quote_args(cmd)
+        s,o = exec_command(cmd, use_tee=0)
+        if s:
+            from distutils.ccompiler import DistutilsExecError
+            raise DistutilsExecError,\
+              'Command "%s" failed with exit status %d' % (cmd, s)
+
     def run (self):
         fn = os.path.join(self.config_path, "Make.cfg")
         if os.path.isfile(fn) and os.path.isfile(self.config_h):
@@ -46,9 +59,13 @@ class config_pygist(config):
             print '*'*70
             return
 
-        from distutils.ccompiler import new_compiler
+        from scipy_distutils.log import set_verbosity
+        from scipy_distutils.ccompiler import new_compiler
+        save_verbosity = set_verbosity(-1)
         self.compiler = new_compiler(compiler=self.compiler,
-                                     verbose=1)
+                                     verbose=0)
+        old_spawn = self.compiler.spawn
+        self.compiler.spawn = self.spawn
         from distutils.sysconfig import customize_compiler
         customize_compiler(self.compiler)
 
@@ -63,8 +80,11 @@ class config_pygist(config):
         self.config_toplevel()
         self.config_unix()
         self.config_x11()
-        self.configfile.close()
         print 'wrote',fn
+        self.configfile.close()
+
+        set_verbosity(save_verbosity)
+        self.compiler.spawn = old_spawn
 
     if sys.version[:3]<'2.2':
         def try_run (self, body,
