@@ -18,8 +18,13 @@
 #include <X11/Xresource.h>
 
 /* Memory manager functions (use long instead of indeterminate size_t) */
-extern void *malloc(long);  /* required for image->data below */
+#ifdef STDC_HEADERS
+#include <string.h>
+#include <stdlib.h>
+#else
+extern void *malloc(unsigned long);  /* required for image->data below */
 extern char *strcpy(char *, const char *);
+#endif
 
 static char *xType= "X Window";
 
@@ -147,6 +152,8 @@ void GxSetColor(XEngine *xEngine, int color)
   XSetForeground(xscr->display, gc, pixel);
 }
 
+static Font current_font;
+
 XFontStruct *GxSetFont(GxScreen *xscr, int dpi, GC gc, int id)
 {
   GxDisplay *xdpy= xscr->owner;
@@ -158,7 +165,10 @@ XFontStruct *GxSetFont(GxScreen *xscr, int dpi, GC gc, int id)
   if (id==PERM_FONT_ID) {
     /* Check permanently loaded font */
     if (xdpy->permFont) {
-      if (gc) XSetFont(xscr->display, gc, xdpy->permFont->fid);
+      if (gc) {
+	XSetFont(xscr->display, gc, xdpy->permFont->fid);
+	current_font= xdpy->permFont->fid;
+      }
       return xdpy->permFont;
     }
   }
@@ -196,7 +206,10 @@ XFontStruct *GxSetFont(GxScreen *xscr, int dpi, GC gc, int id)
   /* Set this font in GC and cache list */
   loadedFonts[0]= font;
   loadedID[0]= id;
-  if (gc) XSetFont(xscr->display, gc, font->fid);
+  if (gc) {
+    XSetFont(xscr->display, gc, font->fid);
+    current_font= font->fid;
+  }
   return font;
 }
 
@@ -229,6 +242,7 @@ static XFontStruct *GxToggleFont(int symbol, int set_gc)
       font_engine->lastOp.fontID= xfontid;
     }
     XSetFont(font_engine->xscr->display, font_engine->gc, xfont->fid);
+    current_font= xfont->fid;
   }
   return xfont;
 }
@@ -406,7 +420,6 @@ int GxJustifyNext(XFontStruct *font, const char **text, int *ix, int *iy)
 {
   const char *txt= *text+nChunk;
   int xadj= 0, yadj= 0;
-  int count;
   char c;
 
   nChars-= nChunk;
@@ -808,6 +821,10 @@ static int SetupLine(XEngine *xEngine, Display *display, GC gc, int join,
     xEngine->lastOp.color= gistAl->color;
     GxSetColor(xEngine, gistAl->color);
   }
+  if (xEngine->stippling) {
+    XSetFillStyle(display, gc, FillSolid);
+    xEngine->stippling= 0;
+  }
 
   return 0;
 }
@@ -880,6 +897,10 @@ static int DrawMarkers(Engine *engine, long n, const GpReal *px,
       xEngine->lastOp.color= gistA.m.color;
       GxSetColor(xEngine, gistA.m.color);
     }
+    if (xEngine->stippling) {
+      XSetFillStyle(display, gc, FillSolid);
+      xEngine->stippling= 0;
+    }
 
     maxPoints= xscr->maxRequest-3;
     while ((nPoints=
@@ -898,6 +919,12 @@ static int DrawMarkers(Engine *engine, long n, const GpReal *px,
 /* ------------------------------------------------------------------------ */
 
 static XImage *nimage=0, *rimage=0;
+static void g_rot180(unsigned char *from, unsigned char *to,
+		     int fcols, int frows);
+static void g_rot090(unsigned char *from, unsigned char *to,
+		     int fcols, int frows);
+static void g_rot270(unsigned char *from, unsigned char *to,
+		     int fcols, int frows);
 
 static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
 {
@@ -906,6 +933,7 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
   Drawable window= xEngine->drawable;
   Display *display= xscr? xscr->display : 0;
   GC gc= xEngine->gc;
+  Font rot_font;
   int ix, iy, len;
   XFontStruct *font;
   Pixmap npixmap=None, rpixmap=None;
@@ -920,15 +948,13 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
      then install them on all servers...
      Therefore, we adopt the unreasonable technique of transposing
      an image of a text string one pixel at a time.  The idea is to
-     create a pixmap on the server, draw the string to it, read it back
-     from the server as an image, destroy the pixmap on the server,
+     create a bitmap on the server, draw the string to it, read it back
+     from the server as an image, destroy the bitmap on the server,
      create a second image, perform the rotation, destroy the first
      image, copy the rotated image to the final destination, destroy
-     the rotated image.  One drawback is that only opaque=1 text can
-     be correctly drawn by this algorithm -- it turns out that it is
-     possible for XGetImage to be unable to return the current contents
-     of the destination window (if it is obscured), so there is no way
-     to get opaque=0 rotated text.  */
+     the rotated image.  Opaque=1 text can be obtained by a simple
+     copy, opaque=0 requires drawing a rectangle with the bitmap as
+     a stipple pattern.  */
   /* cleanup after possible interrupt of a previous operation */
   if (nimage) {
     XImage *im= nimage;
@@ -955,6 +981,10 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
     xEngine->lastOp.color= gistA.t.color;
     GxSetColor(xEngine, gistA.t.color);
   }
+  if (xEngine->stippling) {
+    XSetFillStyle(display, gc, FillSolid);
+    xEngine->stippling= 0;
+  }
 
   /* handle multi-line strings */
   font_engine= xEngine;
@@ -962,23 +992,39 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
   font= GxToggleFont(0, 0);
   len= GxJustifyText(&xEngine->e.map, font, x0, y0, text, &ix, &iy);
 
-  if (gistA.t.orient!=TX_RIGHT) {
-    npixmap= XCreatePixmap(display, xscr->root, maxWidth, textHeight,
-			   DefaultDepth(display, xscr->screen));
+  if (gistA.t.orient!=TX_RIGHT && len>=0) {
+    npixmap= XCreatePixmap(display, xscr->root, maxWidth, textHeight, 1);
     xscr->rot_normal= npixmap;
+    nimage= XCreateImage(display, xscr->v->visual, 1, XYBitmap, 0,
+			 malloc(((maxWidth-1)/8+1)*textHeight),
+			 maxWidth, textHeight, 8, 0);
+    nimage->byte_order= nimage->bitmap_bit_order= MSBFirst;
     if (gistA.t.orient==TX_LEFT) {
-      rpixmap= XCreatePixmap(display, xscr->root, maxWidth, textHeight,
-			     DefaultDepth(display, xscr->screen));
+      rpixmap= XCreatePixmap(display, xscr->root, maxWidth, textHeight, 1);
       xscr->rot_rotated= rpixmap;
-      rimage= XGetImage(display, rpixmap, 0, 0, maxWidth, textHeight,
-			AllPlanes, XYPixmap);
+      rimage= XCreateImage(display, xscr->v->visual, 1, XYBitmap, 0,
+			   malloc(((maxWidth-1)/8+1)*textHeight),
+			   maxWidth, textHeight, 8, 0);
     } else {
-      rpixmap= XCreatePixmap(display, xscr->root, textHeight, maxWidth,
-			     DefaultDepth(display, xscr->screen));
+      rpixmap= XCreatePixmap(display, xscr->root, textHeight, maxWidth, 1);
       xscr->rot_rotated= rpixmap;
-      rimage= XGetImage(display, rpixmap, 0, 0, textHeight, maxWidth,
-			AllPlanes, XYPixmap);
+      rimage= XCreateImage(display, xscr->v->visual, 1, XYBitmap, 0,
+			   malloc(((textHeight-1)/8+1)*maxWidth),
+			   textHeight, maxWidth, 8, 0);
     }
+    rimage->byte_order= rimage->bitmap_bit_order= MSBFirst;
+    xEngine->stippling= 1;
+    XSetFillStyle(display, gc,
+		  gistA.t.opaque? FillOpaqueStippled : FillStippled);
+    if (!xscr->rot_gc) {
+      XGCValues xgc;
+      xgc.foreground= 1;
+      xgc.background= 0;
+      xscr->rot_gc= XCreateGC(display, npixmap,
+			      GCForeground|GCBackground, &xgc);
+    }
+    rot_font= current_font;
+    XSetFont(display, xscr->rot_gc, current_font);
   }
 
   while (len>=0) {
@@ -991,42 +1037,47 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
 	else
 	  XDrawString(display, window, gc, ix, iy, txt, len);
       } else if (chunkWidth>0) {
-	/* rotated text is a terrible mess
-	   -- this kludge does not support non-opaque rotated text */
-	XImage *im;
-	int i, j;
-	XDrawImageString(display, npixmap, gc, 0, font->ascent, txt, len);
-	nimage= XGetImage(display, npixmap, 0, 0, chunkWidth, textHeight,
-			  AllPlanes, XYPixmap);
-	if (gistA.t.orient==TX_LEFT) {
-	  for (j=0 ; j<textHeight ; ++j)
-	    for (i=0 ; i<chunkWidth ; ++i)
-	      XPutPixel(rimage, chunkWidth-1-i, textHeight-1-j,
-			XGetPixel(nimage,i,j));
-	  XPutImage(display, rpixmap, gc, rimage, 0,0,
-		    0,0,chunkWidth,textHeight);
-	  XCopyArea(display, rpixmap, window, gc, 0,0,chunkWidth,textHeight,
-		    ix-chunkWidth,iy-font->descent);
-	} else if (gistA.t.orient==TX_UP) {
-	  for (j=0 ; j<textHeight ; ++j)
-	    for (i=0 ; i<chunkWidth ; ++i)
-	      XPutPixel(rimage, j, chunkWidth-1-i, XGetPixel(nimage,i,j));
-	  XPutImage(display, rpixmap, gc, rimage, 0,0,
-		    0,0,textHeight,chunkWidth);
-	  XCopyArea(display, rpixmap, window, gc, 0,0,textHeight,chunkWidth,
-		    ix-font->ascent,iy-chunkWidth);
-	} else {
-	  for (j=0 ; j<textHeight ; ++j)
-	    for (i=0 ; i<chunkWidth ; ++i)
-	      XPutPixel(rimage, textHeight-1-j, i, XGetPixel(nimage,i,j));
-	  XPutImage(display, rpixmap, gc, rimage, 0,0,
-		    0,0,textHeight,chunkWidth);
-	  XCopyArea(display, rpixmap, window, gc, 0,0,textHeight,chunkWidth,
-		    ix-font->descent,iy);
+	/* rotated text is a terrible mess */
+	if (rot_font!=current_font) {
+	  XSetFont(display, xscr->rot_gc, current_font);
+	  rot_font= current_font;
 	}
-	im= nimage;
-	nimage= 0;
-	XDestroyImage(im);
+	XDrawImageString(display, npixmap, xscr->rot_gc, 0,
+			 font->ascent, txt, len);
+	nimage->width= chunkWidth;
+	nimage->bytes_per_line= (chunkWidth-1)/8+1;
+	XGetSubImage(display, npixmap, 0, 0, chunkWidth, textHeight,
+		     1, XYPixmap, nimage, 0, 0);
+	if (gistA.t.orient==TX_LEFT) {
+	  rimage->width= chunkWidth;
+	  rimage->bytes_per_line= (chunkWidth-1)/8+1;
+	  g_rot180((void *)nimage->data, (void *)rimage->data,
+		   chunkWidth, textHeight);
+	  XPutImage(display, rpixmap, xscr->rot_gc, rimage, 0,0,
+		    0,0, chunkWidth,textHeight);
+	  XSetStipple(display, gc, rpixmap);
+	  XSetTSOrigin(display, gc, ix-chunkWidth, iy-font->descent);
+	  XFillRectangle(display, window, gc, ix-chunkWidth,
+			 iy-font->descent, chunkWidth-1, textHeight-1);
+	} else if (gistA.t.orient==TX_UP) {
+	  g_rot090((void *)nimage->data, (void *)rimage->data,
+		   chunkWidth, textHeight);
+	  XPutImage(display, rpixmap, xscr->rot_gc, rimage, 0,0,
+		    0,0, textHeight,chunkWidth);
+	  XSetStipple(display, gc, rpixmap);
+	  XSetTSOrigin(display, gc, ix-font->ascent, iy-chunkWidth);
+	  XFillRectangle(display, window, gc, ix-font->ascent,
+			 iy-chunkWidth, textHeight-1, chunkWidth-1);
+	} else {
+	  g_rot270((void *)nimage->data, (void *)rimage->data,
+		   chunkWidth, textHeight);
+	  XPutImage(display, rpixmap, xscr->rot_gc, rimage, 0,0,
+		    0,0, textHeight,chunkWidth);
+	  XSetStipple(display, gc, rpixmap);
+	  XSetTSOrigin(display, gc, ix-font->descent, iy);
+	  XFillRectangle(display, window, gc, ix-font->descent,
+			 iy, textHeight-1, chunkWidth-1);
+	}
       }
     }
     len= GxJustifyNext(font, &text, &ix, &iy);
@@ -1040,10 +1091,102 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
     XFreePixmap(display, rpixmap);
     rimage= 0;
     XDestroyImage(im);
+    im= nimage;
+    nimage= 0;
+    XDestroyImage(im);
+    XSetFillStyle(display, gc, FillSolid);
+    xEngine->stippling= 1;
+    gc= xscr->rot_gc;
+    xscr->rot_gc= 0;
+    XFreeGC(display, gc);
   }
 
   xEngine->e.marked= 1;
   return 0;
+}
+
+/*
+ * bitrot.c -- $Id$
+ * routines to rotate bitmaps
+ *
+ * Copyright (c) 1998.  See accompanying LEGAL file for details.
+ */
+
+/* assume most significant bit first in raster */
+
+static void g_rot180(unsigned char *from, unsigned char *to,
+		     int fcols, int frows)
+{
+  int fbpl= (((unsigned int)(fcols-1)) >> 3) + 1;
+  int shft= (fbpl<<3) - fcols;
+  int i, b;
+  if (frows<0) return;
+  for (to+=frows*fbpl-fbpl,from+=fbpl-1 ; frows-- ; to-=fbpl,from+=fbpl) {
+    /* first flip each row and each byte "in place"... */
+    for (i=0 ; i<fbpl ; i++) {
+      b= from[-i];
+      to[i]= (b>>7) | ((b>>5)&2) | ((b>>3)&4) | ((b>>1)&8) |
+	((b<<1)&16) | ((b<<3)&32) | ((b<<5)&64) | (b<<7);
+    }
+    if (!shft) continue;
+    /* ...then shift bytes left pairwise to final position */
+    for (i=0 ; i<fbpl-1 ; i++) to[i]= (to[i]<<shft)|(to[i+1]>>(8-shft));
+    to[i]<<= shft;
+  }
+}
+
+static void g_rot090(unsigned char *from, unsigned char *to,
+		     int fcols, int frows)
+{
+  int fbpl= (((unsigned int)(fcols-1)) >> 3) + 1;
+  int shft= (fbpl<<3) - fcols;
+  int tbpl= (((unsigned int)(frows-1)) >> 3) + 1;
+  int j, ibyt, jbyt;
+  unsigned char ibit, jbit;
+  if (fcols<0) return;
+  frows*= fbpl;
+  shft= 1<<shft;
+  for (ibyt=fbpl-1,ibit=shft ; fcols-- ; ibit<<=1,to+=tbpl) {
+    if (!ibit) {
+      ibit= 1;
+      ibyt--;
+    }
+    for (j=0 ; j<tbpl ; j++) to[j]= 0;
+    for (j=jbyt=0,jbit=128 ; j<frows ; j+=fbpl,jbit>>=1) {
+      if (!jbit) {
+	jbit= 128;
+	jbyt++;
+      }
+      if (from[j+ibyt]&ibit) to[jbyt]|= jbit;
+    }
+  }
+}
+
+static void g_rot270(unsigned char *from, unsigned char *to,
+		     int fcols, int frows)
+{
+  int fbpl= (((unsigned int)(fcols-1)) >> 3) + 1;
+  int tbpl= (((unsigned int)(frows-1)) >> 3) + 1;
+  int shft= (tbpl<<3) - frows;
+  int j, ibyt, jbyt;
+  unsigned char ibit, jbit;
+  if (fcols<0) return;
+  frows*= fbpl;
+  shft= 1<<shft;
+  for (ibyt=0,ibit=128 ; fcols-- ; ibit>>=1,to+=tbpl) {
+    if (!ibit) {
+      ibit= 128;
+      ibyt++;
+    }
+    for (j=0 ; j<tbpl ; j++) to[j]= 0;
+    for (j=0,jbyt=tbpl-1,jbit=shft ; j<frows ; j+=fbpl,jbit<<=1) {
+      if (!jbit) {
+	jbit= 1;
+	jbyt--;
+      }
+      if (from[j+ibyt]&ibit) to[jbyt]|= jbit;
+    }
+  }
 }
 
 /* ------------------------------------------------------------------------ */
@@ -1068,6 +1211,10 @@ static int DrawFill(Engine *engine, long n, const GpReal *px,
   if (xEngine->lastOp.color!=gistA.f.color) {
     xEngine->lastOp.color= gistA.f.color;
     GxSetColor(xEngine, gistA.f.color);
+  }
+  if (xEngine->stippling) {
+    XSetFillStyle(display, gc, FillSolid);
+    xEngine->stippling= 0;
   }
 
   /* This give incorrect results if more than one pass through the loop,
@@ -1207,6 +1354,10 @@ static int DrawCells(Engine *engine, GpReal px, GpReal py, GpReal qx,
     if (image) XDestroyImage(image);
     if (x) GmFree(x);
     return 1;
+  }
+  if (xEngine->stippling) {
+    XSetFillStyle(display, gc, FillSolid);
+    xEngine->stippling= 0;
   }
 
   /* Find cell boundaries (clip if necessary) */

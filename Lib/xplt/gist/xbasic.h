@@ -51,6 +51,7 @@ struct XEngine {
 
   GC gc;
   GxLastOp lastOp;  /* reflects current gc settings */
+  int stippling;
 
   /* If drawable!=graphics, this is animation mode */
   Drawable drawable;

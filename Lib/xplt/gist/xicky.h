@@ -119,8 +119,9 @@ struct GxScreen {
        bg, fg, black, white, red, green, blue, cyan, magenta, yellow */
   Colormap colormap;
 
-  /* rotated text requires two pixmaps */
+  /* rotated text requires two pixmaps and a GC */
   Pixmap rot_normal, rot_rotated;
+  GC rot_gc;
 };
 
 extern GxDisplay *gistX;

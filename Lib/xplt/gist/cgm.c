@@ -1090,8 +1090,8 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
   GpReal width, height, lineHeight;
   GpXYMap *map= &engine->map;
   GpBox *wind= &engine->transform.window;
-  GpReal xmin, xmax, ymin, ymax, dx, dy;
-  int count, alignV, alignH;
+  GpReal xmin, xmax, ymin, ymax;
+  int count, alignV /*, alignH*/;
   short xyf[3];
   Octet *now;
   long len;
@@ -1100,7 +1100,7 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
   CheckClip(cgmEngine);
   if (SetupText(cgmEngine)) return 1;
   file= cgmEngine->file;
-  alignH= cgmEngine->curAlignH;
+  /*alignH= cgmEngine->curAlignH;*/
   alignV= cgmEngine->curAlignV;
 
   /* handle multi-line strings */

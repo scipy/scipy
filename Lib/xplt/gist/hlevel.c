@@ -358,7 +358,8 @@ int GhReadPalette(int n, const char *gpFile,
 			       &ghDevices[n].display->palette, maxColors);
     if (ghDevices[n].hcp)
       GpSetPalette(ghDevices[n].hcp,
-		   ghDevices[n].display->palette, paletteSize);
+		   ghDevices[n].display->palette,
+		   ghDevices[n].display->nColors);
     if (palette) *palette= ghDevices[n].display->palette;
     /* override the (possibly truncated) value returned by GpReadPalette */
     paletteSize= ghDevices[n].display->nColors;

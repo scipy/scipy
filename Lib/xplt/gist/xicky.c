@@ -659,6 +659,7 @@ GxScreen *GxConnect(char *displayName)
       screens[i].stdColors[9]= screens[i].stdColors[1];
 
     screens[i].rot_normal= screens[i].rot_rotated= None;
+    screens[i].rot_gc= 0;
   }
 
   /* Add this display to the list of all displays.  */
@@ -698,6 +699,8 @@ int GxDisconnect(GxScreen *xscr)
       XFreePixmap(owner->display, owner->screens[i].rot_normal);
     if (owner->screens[i].rot_rotated!=None)
       XFreePixmap(owner->display, owner->screens[i].rot_rotated);
+    if (owner->screens[i].rot_gc)
+      XFreeGC(owner->display, owner->screens[i].rot_gc);
   }
 
   /* Free storage associated with GxDisplay structure.  */
@@ -749,6 +752,9 @@ static XClassHint classHint;
 
 static char defaultName[]= "Gist Graphics";
 
+extern int gist_input_hint;
+int gist_input_hint= 1;
+
 void GxSetProperties(char *name, Display *display, Window window,
 		     unsigned int winx, unsigned int winy)
 {
@@ -761,7 +767,9 @@ void GxSetProperties(char *name, Display *display, Window window,
     if (XStringListToTextProperty(&pname, 1, &xName)==0) xxName= 0;
     else xxName= &xName;
 
-    if (!sizeHints) sizeHints= XAllocSizeHints();
+    /* if (!sizeHints) sizeHints= XAllocSizeHints();
+     * position hints confuse fvwm into placing window at (0,0)
+     * -- supposedly these are obsolete anyway */
     if (!wmHints) wmHints= XAllocWMHints();
     if (!classHint) classHint= XAllocClassHint();
     if (sizeHints) {
@@ -772,7 +780,7 @@ void GxSetProperties(char *name, Display *display, Window window,
     }
     if (wmHints) {
       wmHints->initial_state= NormalState;
-      wmHints->input= True;
+      wmHints->input= gist_input_hint? True : False;
       wmHints->flags= StateHint | InputHint;
     }
     if (classHint) {

@@ -109,6 +109,7 @@ int GxIDFont(GxDisplay *xdpy, int dpi, int font, GpReal height)
       if (is<0 || is>=FONT_SIZES) is= is0;
       if (altProps[font].foundry && altProps[font].masks[is]) {
 	dpi= dpi==75? 100 : 75;
+	fontProps= altProps;
 	break;
       }
       is= is0;

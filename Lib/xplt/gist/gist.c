@@ -20,9 +20,14 @@ extern double sqrt(double);
 #define SQRT_HALF 0.7071067811865
 
 /* Memory manager functions (for scratch space) */
-extern void *malloc(long);  /* really size_t which is unsigned */
+#ifdef STDC_HEADERS
+#include <string.h>
+#include <stdlib.h>
+#else
+extern void *malloc(unsigned long);
 extern void free(void *);
 extern char *strcpy(char *, const char *);
+#endif
 
 void *(*GmMalloc)(long)= &malloc;
 void (*GmFree)(void *)= &free;

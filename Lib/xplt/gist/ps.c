@@ -975,7 +975,8 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
 	    if (c==']') {
 	      *now++= '^';         /* !] means ^ (perp) in symbol font */
 	      nchars++;
-	      text++;
+	      text+= 2;
+	      count--;
 	      continue;
 	    }
 	    goto escape;
@@ -1037,7 +1038,7 @@ static int DrawText(Engine *engine, GpReal x0, GpReal y0, const char *text)
 	  nchars+= 2;
 	} else if (c<'\021' || c>'\024') {
 	  /* DC1 through DC4 have special meaning in ps.ps, skip them */
-	  sprintf(now, "\\%03o", (int)c);
+	  sprintf(now, "\\%03o", (int)((unsigned char)c));
 	  now+= 4;
 	  nchars+= 4;
 	}

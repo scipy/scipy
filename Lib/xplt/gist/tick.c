@@ -140,12 +140,9 @@ GpReal GpNiceUnit(GpReal finest, int *base, int *power)
 static void EvenlySpace(GpReal start, GpReal unit, GpReal stop)
 {
   if (start<=stop) {
-    GpReal v= start;
-    ticks[nTotal++]= v;
-    v+= unit;  /* avoid infinite loop if stop-start and unit  << start */
-    if (v > start) {
-      for ( ; v<=stop ; v+=unit) ticks[nTotal++]= v;
-    }
+    GpReal v, vo;  /* avoid infinite loop if stop-start and unit  << start */
+    ticks[nTotal++]= vo= v= start;
+    for (v+=unit ; v<=stop && v>vo ; v+=unit) ticks[nTotal++]= vo= v;
   }
 }
 
@@ -485,7 +482,7 @@ static void FindTicks(GpReal lo, GpReal hi, GaAxisStyle *style, int isLog)
 {
   GpReal finest, finest2, finest5, finest10;
   GpReal nUnit;
-  int nBase, nPower;
+  int /*nBase,*/ nPower;
   int reqdSpace;
 
   /* Swap limits if necessary to force lo<hi, and exponentiate if this
@@ -569,7 +566,7 @@ static void FindTicks(GpReal lo, GpReal hi, GaAxisStyle *style, int isLog)
   for (;;) {  /* Loop to finer and finer decades */
     /* nUnit is 1.0eNN */
     if (nUnit<finest2 || (useLog&&nPower==0) || nLevel>=TICK_LEVELS-1) {
-      nBase= 1;
+      /*nBase= 1;*/
       break;
     }
     nPower--;
@@ -578,7 +575,7 @@ static void FindTicks(GpReal lo, GpReal hi, GaAxisStyle *style, int isLog)
       /* Subdivide into 2.0eNN if and only if no further subdivisions */
       nUnit= Subdivide(nUnit, 5, lo, hi, &tick0);
       nChangeLevel[++nLevel]= nTotal;
-      nBase= 2;
+      /*nBase= 2;*/
       break;
     }
     nUnit= Subdivide(nUnit, 2, lo, hi, &tick0);
@@ -587,7 +584,7 @@ static void FindTicks(GpReal lo, GpReal hi, GaAxisStyle *style, int isLog)
   mid:
     /* nUnit is 5.0eNN */
     if (nUnit<finest5 || nLevel>=TICK_LEVELS-1) {
-      nBase= 5;
+      /*nBase= 5;*/
       break;
     }
     nUnit= Subdivide(nUnit, 5, lo, hi, &tick0);
@@ -1173,8 +1170,8 @@ int GaAltTick(GaTickStyle *ticks, int xIsLog, int yIsLog,
   gistClip= 0;
 
   if (ticks->horiz.flags & TICK_ANY) {
-    altticks= xtick;
-    altlabel= xlabel;
+    altticks= (ticks->horiz.flags & ALT_TICK)? xtick : 0;
+    altlabel= (ticks->horiz.flags & ALT_LABEL)? xlabel : 0;
     FindTicks(wxmin, wxmax, &ticks->horiz, xIsLog);
 
     if (ticks->horiz.flags & TICK_C) {
@@ -1194,7 +1191,7 @@ int GaAltTick(GaTickStyle *ticks, int xIsLog, int yIsLog,
 
     } else {
       /* Axis and ticks to be drawn around edges of viewport */
-      int ovfl;
+      int ovfl, jp, jb;
 
       if (ticks->horiz.flags & TICK_L)
 	DrawXTicks(ymin-ticks->horiz.tickOff, ticks->horiz.tickLen,
@@ -1204,9 +1201,11 @@ int GaAltTick(GaTickStyle *ticks, int xIsLog, int yIsLog,
 		   ticks->horiz.flags, 1, &ticks->horiz.tickStyle);
 
       omitX= -1;
+      jp= jPower;  jb= jBase;
       ovfl= ((ticks->horiz.flags & LABEL_L) &&
 	     DrawXLabels(xIsLog, ymin-ticks->horiz.labelOff, 0,
 			 ticks->horiz.nDigits, &ticks->horiz.textStyle));
+      jPower= jp;  jBase= jb;
       ovfl|= ((ticks->horiz.flags & LABEL_U) &&
 	      DrawXLabels(xIsLog, ymax+ticks->horiz.labelOff, 1,
 			  ticks->horiz.nDigits, &ticks->horiz.textStyle));
@@ -1230,8 +1229,8 @@ int GaAltTick(GaTickStyle *ticks, int xIsLog, int yIsLog,
   }
 
   if (ticks->vert.flags & TICK_ANY) {
-    altticks= ytick;
-    altlabel= ylabel;
+    altticks= (ticks->horiz.flags & ALT_TICK)? ytick : 0;
+    altlabel= (ticks->horiz.flags & ALT_LABEL)? ylabel : 0;
     FindTicks(wymin, wymax, &ticks->vert, yIsLog);
 
     if (ticks->vert.flags & TICK_C) {
@@ -1251,7 +1250,7 @@ int GaAltTick(GaTickStyle *ticks, int xIsLog, int yIsLog,
 
     } else {
       /* Axis and ticks to be drawn around edges of viewport */
-      int ovfl;
+      int ovfl, jp, jb;
 
       if (ticks->vert.flags & TICK_L)
 	DrawYTicks(xmin-ticks->vert.tickOff, ticks->vert.tickLen,
@@ -1261,9 +1260,11 @@ int GaAltTick(GaTickStyle *ticks, int xIsLog, int yIsLog,
 		   ticks->vert.flags, 1, &ticks->vert.tickStyle);
 
       omitY= -1;
+      jp= jPower;  jb= jBase;
       ovfl= ((ticks->vert.flags & LABEL_L) &&
 	     DrawYLabels(xIsLog, xmin-ticks->vert.labelOff, 0,
 			 ticks->vert.nDigits, &ticks->vert.textStyle));
+      jPower= jp;  jBase= jb;
       ovfl|= ((ticks->vert.flags & LABEL_U) &&
 	      DrawYLabels(xIsLog, xmax+ticks->vert.labelOff, 1,
 			  ticks->vert.nDigits, &ticks->vert.textStyle));

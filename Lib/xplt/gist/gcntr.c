@@ -753,7 +753,7 @@ static void data_init(Csite *site, Cdata *data, int region, long nchunk)
   int *reg= site->reg;
   long count= 0;
   int started= 0;
-  int ibndy, jbndy;
+  int ibndy, jbndy, i_was_chunk;
 
   long icsize= imax-1;
   long jcsize= jmax-1;
@@ -793,7 +793,7 @@ static void data_init(Csite *site, Cdata *data, int region, long nchunk)
   else data[0]= 0;
   jchunk= 0;
   for (j=ij=0 ; j<jmax ; j++) {
-    ichunk= 0;
+    ichunk= i_was_chunk= 0;
     for (i=0 ; i<imax ; i++,ij++) {
       /* transfer zonal existence from reg to data array
        * -- get these for next row so we can figure existence of
@@ -873,7 +873,7 @@ static void data_init(Csite *site, Cdata *data, int region, long nchunk)
 	  }
 	} else if (two_levels && v0==1) {
 	  if (data[ij+imax]&ZONE_EX) {
-	    if (i==ichunk || !(data[ij+imax-1]&ZONE_EX)) {
+	    if (i_was_chunk || !(data[ij+imax-1]&ZONE_EX)) {
 	      /* lower left is a drawn part of boundary */
 	      data[ij]|= J1_START;
 	      count++;
@@ -888,16 +888,11 @@ static void data_init(Csite *site, Cdata *data, int region, long nchunk)
 	}
       }
 
-      if (i==ichunk) {
-	if (ichunk>=irem) ichunk++;
-	ichunk+= icsize;
-      }
+      i_was_chunk= (i==ichunk);
+      if (i_was_chunk) ichunk+= icsize + (ichunk>=irem);
     }
 
-    if (j==jchunk) {
-      if (jchunk>=jrem) jchunk++;
-      jchunk+= jcsize;
-    }
+    if (j==jchunk) jchunk+= jcsize + (jchunk>=jrem);
 
     /* place first START_ROW marker */
     if (count && !started) {

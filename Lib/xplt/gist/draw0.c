@@ -1379,10 +1379,27 @@ static void TextMargin(void *el, GpBox *margin)
     y0= 0.0;
   }
 
-  margin->xmin= x0;
-  margin->xmax= x0 + dx;
-  margin->ymin= y0;
-  margin->ymax= y0 + dy;
+  if (gistA.t.orient==TX_RIGHT) {
+    margin->xmin= x0;
+    margin->xmax= x0 + dx;
+    margin->ymin= y0;
+    margin->ymax= y0 + dy;
+  } else if (gistA.t.orient==TX_LEFT) {
+    margin->xmin= x0 - dx;
+    margin->xmax= x0;
+    margin->ymin= y0 - dy;
+    margin->ymax= y0;
+  } else if (gistA.t.orient==TX_UP) {
+    margin->xmin= y0;
+    margin->xmax= y0 + dy;
+    margin->ymin= x0;
+    margin->ymax= x0 + dx;
+  } else {
+    margin->xmin= y0 - dy;
+    margin->xmax= y0;
+    margin->ymin= x0 - dx;
+    margin->ymax= x0;
+  }
 }
 
 static void MeshMargin(void *el, GpBox *margin)

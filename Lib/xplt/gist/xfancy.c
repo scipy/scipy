@@ -696,31 +696,60 @@ static void AltZoom(GpReal w0, GpReal w1, GpReal *wmin, GpReal *wmax)
 static int FindSystem(FXEngine *fxEngine, Drawing *drawing, int x, int y,
 		      GeSystem **system, GpReal *xr, GpReal *yr)
 {
-  GeSystem *sys= drawing->systems;
+  GeSystem *sys= drawing->systems, *thesys=sys;
   int nSystems= drawing->nSystems;
   GpXYMap *map= &fxEngine->xe.e.map;  /* NDC->VDC (x,y) mapping */
   GpReal xn= ((GpReal)x - map->x.offset)/map->x.scale;
   GpReal yn= ((GpReal)y - map->y.offset)/map->y.scale;
   GpBox *box;
-  int i;
+  int i, iSystem=0;
+  GpReal min=9., tmp; /* assume all viewports have area<9 */
   for (i=nSystems ; i>0 ; i--) {
     sys= (GeSystem *)sys->el.prev;
     if (!sys->elements ||
 	/* be sure system has been scanned if limits extreme */
 	((sys->rescan || sys->unscanned>=0) &&
 	 GdScan(sys))) continue;
-    box= &sys->el.box;
+    box= &sys->trans.viewport; 
     if (xn>=box->xmin && xn<=box->xmax && yn>=box->ymin && yn<=box->ymax)
-      break;
+      { 
+	tmp= (box->xmax-box->xmin)*(box->ymax-box->ymin);
+	if(tmp<0) tmp= -tmp;
+	if(tmp<min) { 
+	  min= tmp;
+	  iSystem= i;
+	  thesys= sys;
+	}
+      }
   }
-  if (i) {
+  if (!iSystem) { /* look for nearest axis */
+    min= 9.; /* now assume mouse is closer to an axis than 9 units */
+    for (i=nSystems ; i>0 ; i--) {
+      sys= (GeSystem *)sys->el.prev;
+      box= &sys->trans.viewport; 
+      if (yn>=box->ymin && yn<=box->ymax) {
+	tmp= xn-box->xmax;
+	if(tmp<min && tmp>0) { min= tmp; iSystem= i; thesys= sys; }
+	tmp= box->xmin-xn;
+	if(tmp<min && tmp>0) { min= tmp; iSystem= i; thesys= sys; }
+      }
+      if (xn>=box->xmin && xn<=box->xmax) {
+	tmp= yn-box->ymax;
+	if(tmp<min && tmp>0) { min= tmp; iSystem= i; thesys= sys; }
+	tmp= box->ymin-yn;
+	if(tmp<min && tmp>0) { min= tmp; iSystem= i; thesys= sys; }
+      }
+    }
+  }
+  if (iSystem) {
+    sys= thesys;
     *system= sys;
     FindCoordinates(sys, xn, yn, xr, yr);
   } else {
     *system= 0;
     *xr= xn;  *yr= yn;
   }
-  return i;
+  return iSystem;
 }
 
 static void Find1System(FXEngine *fxEngine, Drawing *drawing, int iSystem,
