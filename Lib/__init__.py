@@ -83,7 +83,7 @@ def test_all():
 def test_suite(test_set = 'all'):
     import scipy_test
     import scipy
-    ignore = ['xplt','plt','gui_thread','linalg','sparse','scipy_version']
+    ignore = ['xplt','plt','gplt','gui_thread','linalg','sparse','scipy_version']
     if test_set != 'all':
         ignore += ['compiler']
     return scipy_test.harvest_test_suites(scipy,ignore)
