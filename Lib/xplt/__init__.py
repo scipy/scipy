@@ -6,6 +6,8 @@ from pre___init__ import __doc__
 #except:
 #    pass
 from gist import *
+import pl3d
+import plwf
 import os, sys
 from Mplot import *
 from write_style import *

@@ -1304,8 +1304,8 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     if cb:
         colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04) 
 
-def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
-          zscale=1.0,palette=None,gnomon=0):
+def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
+         theta=30.0,zscale=1.0,palette=None,gnomon=0):
     """Plot a three-dimensional wire-frame (surface): z=f(x,y)
     """
     if win is None:
@@ -1313,7 +1313,9 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45,the
     else:
         pl3d.window3(win)
     pl3d.set_draw3_(0)
-    pl3d.orient3(phi=phi*pi/180,theta=theta*pi/180)
+    phi0 = phi*pi/180.0
+    theta0 = theta*pi/180.0
+    pl3d.orient3(phi=phi0,theta=theta0)
     pl3d.light3()
     change_palette(palette)
     sz = scipy_base.shape(z)
@@ -1324,13 +1326,15 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45,the
         x = arange(0,N)
     if y is None:
         y = arange(0,M)
+    x = scipy_base.squeeze(x)
+    y = scipy_base.squeeze(y)
     if (len(scipy_base.shape(x)) == 1):
         x = x[:,NewAxis]*ones((1,M))
     if (len(scipy_base.shape(y)) == 1):
-        y = ones((N,1))*y[NewAxis,:]    
+        y = ones((N,1))*y[NewAxis,:]
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
-    [xmin,xmax,ymin,ymax] = pl3d.draw3(1)
-    gist.limits(xmin,xmax,ymin,ymax)
+    lims = pl3d.draw3(1)
+    gist.limits(lims[0],lims[1],lims[2],lims[3])
     pl3d.gnomon(gnomon)
 
 def expand_limits(xpcnt,ypcnt=None):

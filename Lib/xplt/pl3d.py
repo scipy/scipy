@@ -188,9 +188,9 @@ def orient3 ( ** kw ) :
    except :
       _orient3_phi = - pi / 4.
 
-   if kw.has_key ("phi") and kw ["phi"] is None :
+   if kw.has_key ("phi") and kw ["phi"] == None :
       kw ["phi"] = _orient3_phi
-   if kw.has_key ("theta") and kw ["theta"] is None :
+   if kw.has_key ("theta") and kw ["theta"] == None :
       kw ["theta"] = _orient3_theta
    if not kw.has_key ("phi") and not kw.has_key ("theta") :
       phi = _orient3_phi
@@ -254,7 +254,7 @@ def restore3 ( view = None ) :
 
    global _draw3_list, _draw3_view, _light3_list, _draw3_n
 
-   if view is not None :
+   if view != None :
       view = view [0:len (view)] # Copies view
    else :
       view = _draw3_view + _light3_list
@@ -315,30 +315,30 @@ def light3 ( * kw, ** kwds ) :
    if len (kw) > 0 : kwds = kw [0]
    old = _draw3_list [_draw3_nv:] [0:5]
    flags = 0
-   if kwds.has_key ("ambient") and kwds ["ambient"] is not None :
+   if kwds.has_key ("ambient") and kwds ["ambient"] != None :
       ambient = kwds ["ambient"]
       if not is_scalar (ambient) :
          raise _AmbientError, "ambient light level must be scalar."
       flags = flags | 1
       _draw3_list [_draw3_nv] = ambient
-   if kwds.has_key ("diffuse") and kwds ["diffuse"] is not None :
+   if kwds.has_key ("diffuse") and kwds ["diffuse"] != None :
       diffuse = kwds ["diffuse"]
       if not is_scalar (diffuse) :
          raise _DiffuseError, "diffuse light level must be scalar."
       flags = flags | 2
       _draw3_list [_draw3_nv + 1 ] = diffuse
 
-   if kwds.has_key ("specular") and kwds ["specular"] is not None :
+   if kwds.has_key ("specular") and kwds ["specular"] != None :
       specular = kwds ["specular"]
       flags = flags | 4
    else :
       specular = _draw3_list [_draw3_nv + 2]
-   if kwds.has_key ("spower") and kwds ["spower"] is not None :
+   if kwds.has_key ("spower") and kwds ["spower"] != None :
       spower = kwds ["spower"]
       flags = flags | 8
    else :
       spower = _draw3_list [_draw3_nv + 3]
-   if kwds.has_key ("sdir") and kwds ["sdir"] is not None :
+   if kwds.has_key ("sdir") and kwds ["sdir"] != None :
       sdir = kwds ["sdir"]
       dims = shape (sdir)
       if dims == 0 or len (dims) == 2 and dims [1] != 3 :
@@ -592,7 +592,7 @@ def get3_xy (xyz, *flg) :
 
    # do optional perspective projection 
    zc = getzc3_ ()
-   if zc is not None :
+   if zc != None :
       if len (shp) == 2 :
          z = tmpxyz [:, 2]
          zc = maximum (zc - z, 1.e-35)     # protect behind camera, avoid zero divide
@@ -739,7 +739,7 @@ def _draw3_idler ( ) :
       window3 (current_window ())
    gnomon (_default_gnomon)
    lims = draw3 (1)
-   if lims is None :
+   if lims == None :
       return
    else :
       limits (lims [0], lims [1], lims [2], lims [3])
@@ -899,7 +899,7 @@ def draw3 (called_as_idler = 0, lims = None) :
       # calls rather than the interactive setup calls
       set_draw3_ (1)
       list = _draw3_list [_draw3_n:]
-      no_lims = lims is None
+      no_lims = lims == None
       first = 1
       # ZCM Feb. 1997: Because Gist command 'limits' seems to
       # misbehave and be timing dependent, I have added the kludge
@@ -912,12 +912,12 @@ def draw3 (called_as_idler = 0, lims = None) :
                first = 0
             else :
                fv = fnc (list [1])
-               if fv is not None and lims is not None:
+               if fv != None and lims != None :
                   lims = [min (fv [0], lims [0]),
                           max (fv [1], lims [1]),
                           min (fv [2], lims [2]),
                           max (fv [3], lims [3])]
-               elif fv is not None:
+               elif fv != None :
                   lims = fv
          else :
             fnc (list [1])

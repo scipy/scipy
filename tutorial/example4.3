@@ -5,7 +5,7 @@
 >>> def expint(n,x): 
         return quad(integrand, 1, Inf, args=(n, x))[0]
 
->>> vec_expint = special.general_function(expint)
+>>> vec_expint = vectorize(expint)
 
 >>> vec_expint(3,arange(1.0,4.0,0.5))
 array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])

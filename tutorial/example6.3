@@ -1,14 +1,14 @@
 >>> # Define function over sparse 20x20 grid
->>> x,y = grid[-1:1:20L,-1:1:20L]
+>>> x,y = mgrid[-1:1:20j,-1:1:20j]
 >>> z = (x+y)*exp(-6.0*(x*x+y*y))
->>> xplt.plot3(x,y,z,shade=1,palette='rainbow')
+>>> xplt.surf(z,x,y,shade=1,palette='rainbow')
 >>> xplt.title3("Sparsely sampled function.")
 >>> xplt.eps("2d_func")
 
 >>> # Interpolate function over new 70x70 grid
->>> xnew,ynew = grid[-1:1:70L,-1:1:70L]
+>>> xnew,ynew = mgrid[-1:1:70j,-1:1:70j]
 >>> tck = interpolate.bisplrep(x,y,z,s=0)
 >>> znew = interpolate.bisplev(xnew[:,0],ynew[0,:],tck)
->>> xplt.plot3(xnew,ynew,znew,shade=1,palette='rainbow')
+>>> xplt.surf(znew,xnew,ynew,shade=1,palette='rainbow')
 >>> xplt.title3("Interpolated function.")
 >>> xplt.eps("2d_interp")

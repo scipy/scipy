@@ -148,15 +148,16 @@ def moush(*arg):
 #  ---------------------------------------------------------------------
 
 import os
-def eps(name):
+import shutil
+def eps(name,epsi=0,pdf=0):
    """
-   eps(name)
       Write the picture in the current graphics window to the Encapsulated
-      PostScript file NAME+".epsi" (i.e.- the suffix .epsi is added to NAME).
-      The last extension of name is stripped to avoid .eps.eps files
+      PostScript file NAME+".eps" (i.e.- the suffix .eps is added to NAME).
+      The last extension of name is stripped (if it is .eps)
+      to avoid .eps.eps files
 
-      If epsi is 1, this function requires the ps2epsi utility which comes
-      with the project GNU Ghostscript program.  Any hardcopy file associated
+      Uses the command ps2epsi if available which comes with the project
+      GNU Ghostscript program.  Any hardcopy file associated
       with the current window is first closed, but the default hardcopy file is
       unaffected.  As a side effect, legends are turned off and color table
       dumping is turned on for the current window.
@@ -176,12 +177,14 @@ def eps(name):
    window (hcp = name, dump = 1, legends = 0)
    hcp ()
    window (hcp="")
-   res = 1
-   if epsi:
-      res = os.system ("ps2epsi " + totalname)
-   if not res:
-      os.remove(totalname)
-      os.rename ("%s.epsi" % basename, "%s.eps" % totalname)
+   command = os.environ.get('PS2EPSI_FORMAT') or 'ps2epsi'
+   os.system ("%s %s" % (command, name))
+   # check for presence of epsi file to see if ps2epsi command
+   #   succeeded.
+   if os.path.exists('%s.epsi' % basename):
+      os.remove(name)
+      shutil.copy("%s.epsi" % basename, "%s.eps" % totalname)
+      os.remove("%s.epsi" % basename)
    else:
       os.rename("%s.ps" % totalname, "%s.eps" % totalname)
    if pdf:

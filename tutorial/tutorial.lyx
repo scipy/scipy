@@ -880,6 +880,89 @@ s.
  
 \layout Subsubsection
 
+Vectorizing functions (vectorize)
+\layout Standard
+
+One of the features that SciPy provides is a class 
+\series bold 
+vectorize
+\series default 
+ to convert an ordinary Python function which accepts scalars and returns
+ scalars into a 
+\begin_inset Quotes eld
+\end_inset 
+
+vectorized-function
+\begin_inset Quotes erd
+\end_inset 
+
+ with the same broadcasting rules as other Numeric functions (
+\emph on 
+i.e.
+
+\emph default 
+ the Universal functions, or ufuncs).
+ For example, suppose you have a Python function named 
+\series bold 
+addsubtract
+\series default 
+ defined as:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example3.1}
+preview false
+
+\end_inset 
+
+which defines a function of two scalar variables and returns a scalar result.
+ The class vectorize can be used to 
+\begin_inset Quotes eld
+\end_inset 
+
+vectorize
+\begin_inset Quotes erd
+\end_inset 
+
+ this function so that 
+\begin_inset ERT
+status Open
+
+\layout Standard
+
+\backslash 
+begin{verbatim}
+\newline 
+>>> vec_addsubstract = vectorize(addsubtract) 
+\backslash 
+end{verbatim} 
+\newline 
+
+\backslash 
+noindent 
+\end_inset 
+
+returns a function which takes array arguments and returns an array result:
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{example3.2}
+preview false
+
+\end_inset 
+
+
+\layout Standard
+
+This particular function could have been written in vector form without
+ the use of general_function.
+ But, what if the function you have written is the result of some optimization
+ or integration routine.
+ Such functions can likely only be vectorized using 
+\family typewriter 
+vectorize.
+\layout Subsubsection
+
 Other useful functions
 \layout Standard
 
@@ -1065,99 +1148,6 @@ derivative
 \layout Section
 
 Special functions (special)
-\layout Subsection
-
-Vectorizing functions (special.general_function)
-\layout Standard
-
-One of the features that the 
-\series bold 
-special
-\series default 
- sub-package provides is a class 
-\series bold 
-general_function
-\series default 
- to convert an ordinary Python function which accepts scalars and returns
- scalars into a 
-\begin_inset Quotes eld
-\end_inset 
-
-vectorized-function
-\begin_inset Quotes erd
-\end_inset 
-
- with the same broadcasting rules as other Numeric functions (
-\emph on 
-i.e.
-
-\emph default 
- the Universal functions, or ufuncs).
- For example, suppose you have a Python function named 
-\series bold 
-addsubtract
-\series default 
- defined as:
-\layout Standard
-
-
-\begin_inset Include \verbatiminput{example3.1}
-preview false
-
-\end_inset 
-
-which defines a function of two scalar variables and returns a scalar result.
- The class general_function can be used to 
-\begin_inset Quotes eld
-\end_inset 
-
-vectorize
-\begin_inset Quotes erd
-\end_inset 
-
- this function so that 
-\begin_inset ERT
-status Collapsed
-
-\layout Standard
-
-\backslash 
-begin{verbatim}
-\newline 
->>> vec_addsubstract = special.general_function(addsubtract) 
-\backslash 
-end{verbatim} 
-\newline 
-
-\backslash 
-noindent 
-\end_inset 
-
-returns a function which takes array arguments and returns an array result:
-\layout Standard
-
-
-\begin_inset Include \verbatiminput{example3.2}
-preview false
-
-\end_inset 
-
-
-\layout Standard
-
-This particular function could have been written in vector form without
- the use of general_function.
- But, what if the function you have written is the result of some optimization
- or integration routine.
- Such functions can likely only be vectorized using 
-\family typewriter 
-special.general_function.
-
-\family default 
- 
-\layout Subsection
-
-Special Functions
 \layout Standard
 
 The main feature of the 
@@ -1175,9 +1165,9 @@ special
 stats
 \family default 
  module.
- Most of these functions behave can take array arguments and return array
- results following the same broadcasting rules as other math functions in
- Numerical Python.
+ Most of these functions can take array arguments and return array results
+ following the same broadcasting rules as other math functions in Numerical
+ Python.
  Many of these functions also accept complex-numbers as input.
  For a complete list of the available functions with a one-line description
  type 
@@ -1440,7 +1430,14 @@ which performs Gaussian quadrature of multiple orders until the difference
 special.orthogonal 
 \series default 
 which can calculate the roots and quadrature weights of a large variety
- of orthogonal polynomials.
+ of orthogonal polynomials (the polynomials themselves are available as
+ special functions returning instances of the polynomial class --- e.g.
+ 
+\family typewriter 
+special.legendre
+\family default 
+).
+ 
 \layout Subsection
 
 Integrating using samples
@@ -2781,7 +2778,7 @@ ing a two dimensional function as shown in the example that follows (See
 ).
  This example uses the 
 \series bold 
-grid 
+mgrid 
 \series default 
 command in SciPy which is useful for defining a 
 \begin_inset Quotes eld
@@ -2792,10 +2789,15 @@ mesh-grid
 \end_inset 
 
  in many dimensions.
+ (See also the 
+\series bold 
+ogrid
+\series default 
+ command if the full-mesh is not needed).
  The number of output arguments and the number of dimensions of each argument
  is determined by the number of indexing objects passed in 
 \series bold 
-grid[].
+mgrid[].
 
 \series default 
  
@@ -4406,7 +4408,7 @@ collapsed false
 
 
 \begin_inset Graphics
-	filename /home/travis/scipy/tutorial/lstsq_fit.eps
+	filename lstsq_fit.eps
 	lyxscale 75
 	width 95line%
 	keepAspectRatio
@@ -5467,6 +5469,25 @@ radon --- simple radon transform based on imrotate
 \layout Section
 
 Plotting with xplt
+\layout Subsection
+
+Gist
+\layout Standard
+
+The underlying graphics library for xplt is the pygist library.
+ All of the commands of pygist are available under xplt as well.
+ For more information on the pygist commands you can read the documentation
+ of that package in html 
+\begin_inset LatexCommand \htmlurl[here]{http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist_html/pygist.html}
+
+\end_inset 
+
+ or in pdf at 
+\begin_inset LatexCommand \htmlurl[this location]{http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist.pdf}
+
+\end_inset 
+
+.
 \layout Subsection
 
 Basic commands 
