@@ -426,7 +426,7 @@ class test_tri(unittest.TestCase):
     def check_diag(self):
         assert_equal(tri(4,k=1),array([[1,1,0,0],
                                        [1,1,1,0],
-                                       [0,1,1,1],
+                                       [1,1,1,1],
                                        [1,1,1,1]]))
         assert_equal(tri(4,k=-1),array([[0,0,0,0],
                                         [1,0,0,0],
@@ -491,7 +491,7 @@ class test_triu(unittest.TestCase):
         for k in range(5):
             for l in range(k+3,5):
                 b[l,k] = 0
-        assert_equal(tril(a,k=-2),b)
+        assert_equal(triu(a,k=-2),b)
 
 class test_toeplitz(unittest.TestCase):
     def check_basic(self):
