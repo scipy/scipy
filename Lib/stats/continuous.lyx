@@ -673,7 +673,7 @@ If
 \end_inset 
 
  is the PDF of a random-variable where 
-\begin_inset Formula $\boldsymbol \theta $
+\begin_inset Formula $\boldsymbol {\theta }$
 \end_inset 
 
  is a vector of parameters (
@@ -700,12 +700,12 @@ and
 
  is 
 \begin_inset Formula \[
-f\left(\mathbf{x};\boldsymbol \theta \right)=\prod _{i=1}^{N}f\left(x_{i};\boldsymbol \theta \right).\]
+f\left(\mathbf{x};\boldsymbol {\theta }\right)=\prod _{i=1}^{N}f\left(x_{i};\boldsymbol {\theta }\right).\]
 
 \end_inset 
 
  The maximum likelihood estimate of the parameters 
-\begin_inset Formula $\boldsymbol \theta $
+\begin_inset Formula $\boldsymbol {\theta }$
 \end_inset 
 
  are the parameters which maximize this function with 
@@ -714,16 +714,16 @@ f\left(\mathbf{x};\boldsymbol \theta \right)=\prod _{i=1}^{N}f\left(x_{i};\bolds
 
  fixed and given by the data: 
 \begin_inset Formula \begin{eqnarray*}
-\hat{\boldsymbol }\theta  & = & \arg \max _{\boldsymbol \theta }f\left(\mathbf{x};\boldsymbol \theta \right)\\
- & = & \arg \min _{\boldsymbol \theta }l_{\mathbf{x}}\left(\boldsymbol \theta \right).
+\boldsymbol {\theta }_{es} & = & \arg \max _{\boldsymbol {\theta }}f\left(\mathbf{x};\boldsymbol {\theta }\right)\\
+ & = & \arg \min _{\boldsymbol {\theta }}l_{\mathbf{x}}\left(\boldsymbol {\theta }\right).
 \end{eqnarray*}
 
 \end_inset 
 
  Where 
 \begin_inset Formula \begin{eqnarray*}
-l_{\mathbf{x}}\left(\boldsymbols \theta \right) & = & -\sum _{i=1}^{N}\log f\left(x_{i};\boldsymbol \theta \right)\\
- & = & -N\overline{\log f\left(x_{i};\boldsymbol \theta \right)}
+l_{\mathbf{x}}\left(\boldsymbol {\theta }\right) & = & -\sum _{i=1}^{N}\log f\left(x_{i};\boldsymbol {\theta }\right)\\
+ & = & -N\overline{\log f\left(x_{i};\boldsymbol {\theta }\right)}
 \end{eqnarray*}
 
 \end_inset 
@@ -747,7 +747,7 @@ l_{\mathbf{x}}\left(\boldsymbols \theta \right) & = & -\sum _{i=1}^{N}\log f\lef
 
  and minimizing, thus 
 \begin_inset Formula \begin{eqnarray*}
-l_{\mathbf{x}}\left(L,S;\boldsymbol {\theta }\right) & = & N\log S-\sum _{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol \theta \right)\\
+l_{\mathbf{x}}\left(L,S;\boldsymbol {\theta }\right) & = & N\log S-\sum _{i=1}^{N}\log f\left(\frac{x_{i}-L}{S};\boldsymbol {\theta }\right)\\
  & = & N\log S+l_{\frac{\mathbf{x}-S}{L}}\left(\boldsymbol {\theta }\right)
 \end{eqnarray*}
 
@@ -1886,6 +1886,12 @@ G\left(q;\alpha \right) & = & \Gamma ^{-1}\left(\alpha ,q\right)
 
 \end_inset 
 
+
+\begin_inset Formula \[
+M\left(t\right)=\frac{1}{\left(1-t\right)^{\alpha }}\]
+
+\end_inset 
+
  
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \alpha \\
@@ -1900,7 +1906,7 @@ m_{d} & = & \alpha -1
 
 \layout Section
 
-Genearlized Logistic
+Generalized Logistic
 \layout Standard
 
 Has been used in the analysis of extreme values.
@@ -1921,6 +1927,15 @@ f\left(x;c\right) & = & \frac{c\exp \left(-x\right)}{\left[1+\exp \left(-x\right
 F\left(x;c\right) & = & \frac{1}{\left[1+\exp \left(-x\right)\right]^{c}}\\
 G\left(q;c\right) & = & -\log \left(q^{-1/c}-1\right)
 \end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+M\left(t\right)=\frac{c}{1-t}\, _{2}F_{1}\left(1+c,\, 1-t\, ;\, 2-t\, ;-1\right)\]
 
 \end_inset 
 
@@ -1971,6 +1986,10 @@ Shape parameter
 \begin_inset Formula $x\geq 0$
 \end_inset 
 
+ for all 
+\begin_inset Formula $c$
+\end_inset 
+
  and 
 \begin_inset Formula $x<\frac{1}{\left|c\right|}$
 \end_inset 
@@ -1990,6 +2009,18 @@ G\left(q;c\right) & = & \frac{1}{c}\left[\left(\frac{1}{1-q}\right)^{c}-1\right]
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+M\left(t\right)=\left\{ \begin{array}{cc}
+ \left(-\frac{t}{c}\right)^{\frac{1}{c}}e^{-\frac{t}{c}}\left[\Gamma \left(1-\frac{1}{c}\right)+\Gamma \left(-\frac{1}{c},-\frac{t}{c}\right)-\pi \csc \left(\frac{\pi }{c}\right)/\Gamma \left(\frac{1}{c}\right)\right] & c>0\\
+ \left(\frac{\left|c\right|}{t}\right)^{1/\left|c\right|}\Gamma \left[\frac{1}{\left|c\right|},\frac{t}{\left|c\right|}\right] & c<0\end{array}
+\right.\]
+
+\end_inset 
+
+ 
 \layout Standard
 
 
@@ -2325,6 +2356,12 @@ G\left(q\right) & = & -\log \left(-\log \left(q\right)\right)
 
 \end_inset 
 
+
+\begin_inset Formula \[
+M\left(t\right)=\Gamma \left(1-t\right)\]
+
+\end_inset 
+
  
 \begin_inset Formula \begin{eqnarray*}
 \mu  & = & \gamma =-\psi _{0}\left(1\right)\\
@@ -2349,6 +2386,12 @@ f\left(x\right) & = & \exp \left(x-e^{x}\right)\\
 F\left(x\right) & = & 1-\exp \left(-e^{x}\right)\\
 G\left(q\right) & = & \log \left(-\log \left(1-q\right)\right)
 \end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \[
+M\left(t\right)=\Gamma \left(1+t\right)\]
 
 \end_inset 
 
@@ -2395,6 +2438,15 @@ G\left(q\right) & = & \tan \left(\frac{\pi }{2}q\right)
 \end{eqnarray*}
 
 \end_inset 
+
+
+\begin_inset Formula \[
+M\left(t\right)=\cos t+\frac{2}{\pi }\left[\textrm{Si}\left(t\right)\cos t-\textrm{Ci}\left(\textrm{-}t\right)\sin t\right]\]
+
+\end_inset 
+
+
+\layout Standard
 
 
 \begin_inset Formula \begin{eqnarray*}
@@ -2450,6 +2502,12 @@ G\left(q\right) & = & \Phi ^{-1}\left(\frac{1+q}{2}\right)
 \end_inset 
 
 
+\begin_inset Formula \[
+M\left(t\right)=\sqrt{2\pi }e^{t^{2}/2}\Phi \left(t\right)\]
+
+\end_inset 
+
+
 \layout Standard
 
 
@@ -2490,16 +2548,25 @@ In the limit as
  has logistic distribtution.
  
 \begin_inset Formula \begin{eqnarray*}
-f\left(x\right) & = & \frac{2e^{-x}}{\left(1+e^{-x}\right)^{2}}\\
-F\left(x\right) & = & \frac{1-e^{-x}}{1+e^{-x}}\\
-G\left(q\right) & = & \log \left(\frac{1+q}{1-q}\right)
+f\left(x\right) & = & \frac{2e^{-x}}{\left(1+e^{-x}\right)^{2}}=\frac{1}{2}\textrm{sech}^{2}\left(\frac{x}{2}\right)\\
+F\left(x\right) & = & \frac{1-e^{-x}}{1+e^{-x}}=\tanh \left(\frac{x}{2}\right)\\
+G\left(q\right) & = & \log \left(\frac{1+q}{1-q}\right)=2\textrm{arctanh}\left(q\right)
 \end{eqnarray*}
 
 \end_inset 
 
  
+\layout Standard
+
+
 \begin_inset Formula \[
-\mu _{n}^{\prime }=2^{n}\int _{0}^{\infty }\frac{y^{n}dy}{\cosh ^{2}\left(y\right)}=2\left(1-2^{1-n}\right)n!\zeta \left(n\right)\quad n\neq 1\]
+M\left(t\right)=1-t\psi _{0}\left(\frac{1}{2}-\frac{t}{2}\right)+t\psi _{0}\left(1-\frac{t}{2}\right)\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\mu _{n}^{\prime }=2\left(1-2^{1-n}\right)n!\zeta \left(n\right)\quad n\neq 1\]
 
 \end_inset 
 
@@ -2520,7 +2587,11 @@ Hyperbolic Secant
 \layout Standard
 
 Related to the logistic distribution and used in lifetime analysis.
- Standard form is 
+ Standard form is (defined over all 
+\begin_inset Formula $x$
+\end_inset 
+
+)
 \begin_inset Formula \begin{eqnarray*}
 f\left(x\right) & = & \frac{1}{\pi }\textrm{sech}\left(x\right)\\
 F\left(x\right) & = & \frac{2}{\pi }\arctan \left(e^{x}\right)\\
@@ -2530,6 +2601,59 @@ G\left(q\right) & = & \log \left(\tan \left(\frac{\pi }{2}q\right)\right)
 \end_inset 
 
  
+\begin_inset Formula \[
+M\left(t\right)=\sec \left(\frac{\pi }{2}t\right)\]
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu _{n}^{\prime } & = & \frac{1+\left(-1\right)^{n}}{2\pi 2^{2n}}n!\left[\zeta \left(n+1,\frac{1}{4}\right)-\zeta \left(n+1,\frac{3}{4}\right)\right]\\
+ & = & \left\{ \begin{array}{cc}
+ 0 & n\textrm{ odd}\\
+ C_{n/2}\frac{\pi ^{n}}{2^{n}} & n\textrm{ even}\end{array}
+\right.
+\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula $C_{m}$
+\end_inset 
+
+ is an integer given by 
+\begin_inset Formula \begin{eqnarray*}
+C_{m} & = & \frac{\left(2m\right)!\left[\zeta \left(2m+1,\frac{1}{4}\right)-\zeta \left(2m+1,\frac{3}{4}\right)\right]}{\pi ^{2m+1}2^{2m}}\\
+ & = & 4\left(-1\right)^{m-1}\frac{16^{m}}{2m+1}B_{2m+1}\left(\frac{1}{4}\right)
+\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula $B_{2m+1}\left(\frac{1}{4}\right)$
+\end_inset 
+
+ is the Bernoulli polynomial of order 
+\begin_inset Formula $2m+1$
+\end_inset 
+
+ evaluated at 
+\begin_inset Formula $1/4.$
+\end_inset 
+
+ Thus 
+\begin_inset Formula \[
+\mu _{n}^{\prime }=\left\{ \begin{array}{cc}
+ 0 & n\textrm{ odd}\\
+ 4\left(-1\right)^{n/2-1}\frac{\left(2\pi \right)^{n}}{n+1}B_{n+1}\left(\frac{1}{4}\right) & n\textrm{ even}\end{array}
+\right.\]
+
+\end_inset 
+
+
+\layout Standard
+
+
 \begin_inset Formula \begin{eqnarray*}
 m_{d}=m_{n}=\mu  & = & 0\\
 \mu _{2} & = & \frac{\pi ^{2}}{4}\\

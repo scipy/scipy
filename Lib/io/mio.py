@@ -386,7 +386,7 @@ def loadmat(name, dict=None, appendmat=1):
             format = 'ieee-be'
 
     fid.close()
-    fid = fopen(full_name, permis, format)
+    fid = fopen(full_name, 'rb', format)
 
     length = fid.size()
     fid.rewind()  # back to the begining

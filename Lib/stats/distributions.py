@@ -1315,19 +1315,17 @@ halfcauchy = halfcauchy_gen(a=0.0)
 
 class halflogistic_gen(rv_continuous):
     def _pdf(self, x):
-        ex = exp(-x)
-        return 2.0*ex / (1+ex)**2
+        return 0.5/(cosh(x/2.0))**2.0
     def _cdf(self, x):
-        ex = exp(-x)
-        return (1.0-ex)/(1.0+ex)
+        return tanh(x/2.0)
     def _ppf(self, q):
-        return log((1.0+q)/(1.0-q))
+        return 2*arctanh(q)
     def _munp(self, n):
         if n==1: return 2*log(2)
         if n==2: return pi*pi/3.0
         if n==3: return 9*_ZETA3
         if n==4: return 7*pi**4 / 15.0
-        return 2*(1-pow(2,1-n))*special.gamma(n+1)*special.zeta(n,1)
+        return 2*(1-pow(2.0,1-n))*special.gamma(n+1)*special.zeta(n,1)
 halflogistic = halflogistic_gen(a=0.0)
 
 
