@@ -1935,9 +1935,11 @@ class test_sph_in(unittest.TestCase):
 
     def check_sph_in(self):
         i1n = sph_in(1,.2)
-        inp = (sph_in(1,.2)[0][0]+2*sph_in(2,.2)[0][2])/3
-        assert_array_almost_equal(i1n[0],array([1.00668001,0.06693370]),8)
-        assert_almost_equal(i1n[1][1],inp)
+        inp0 = (i1n[0][1])
+        inp1 = (i1n[0][0] - 2.0/0.2 * i1n[0][1])
+        assert_array_almost_equal(i1n[0],array([1.0066800127054699381,
+                                                0.066933714568029540839]),12)
+        assert_array_almost_equal(i1n[1],[inp0,inp1],12)
 
 class test_sph_inkn(unittest.TestCase):
 
@@ -1949,13 +1951,14 @@ class test_sph_inkn(unittest.TestCase):
 class test_sph_jn(unittest.TestCase):
 
     def check_sph_jn(self):
-        s1 = sph_jn(2,.2)[0][2]
-        s2 = sph_jn(0,.2)[0][0]
-        sphp = (sph_jn(1,.2)[0][0]-2*sph_jn(2,.2)[0][2])/3
-        assert_almost_equal(s1,0.0059615249,8)
-        assert_almost_equal(s2,0.99334665,8)
-        s3 = sph_jn(1,.2)[1][1]
-        assert_almost_equal(s3,sphp,4)
+        s1 = sph_jn(2,.2)
+        s10 = -s1[0][1]
+        s11 = s1[0][0]-2.0/0.2*s1[0][1]
+        s12 = s1[0][1]-3.0/0.2*s1[0][2]
+        assert_array_almost_equal(s1[0],[0.99334665397530607731,
+                                      0.066400380670322230863,
+                                      0.0026590560795273856680],12)
+        assert_array_almost_equal(s1[1],[s10,s11,s12],12)
 
 class test_sph_jnyn(unittest.TestCase):
 
@@ -1967,10 +1970,14 @@ class test_sph_jnyn(unittest.TestCase):
 class test_sph_kn(unittest.TestCase):
 
     def check_sph_kn(self):
-        kn = sph_kn(1,.2)
-        knp = (sph_kn(1,.2)[0][0]+2*sph_kn(2,.2)[0][2])/3
-        assert_array_almost_equal(kn[0],array([	 6.43029630,  38.5817778]),8)
-        assert_almost_equal(kn[1][1],knp)
+        kn = sph_kn(2,.2)
+        kn0 = -kn[0][1]
+        kn1 = -kn[0][0]-2.0/0.2*kn[0][1]
+        kn2 = -kn[0][1]-3.0/0.2*kn[0][2]
+        assert_array_almost_equal(kn[0],[6.4302962978445670140,
+                                         38.581777787067402086,
+                                         585.15696310385559829],12)
+        assert_array_almost_equal(kn[1],[kn0,kn1,kn2],9)
 
 class test_sph_yn(unittest.TestCase):
 

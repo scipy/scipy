@@ -680,15 +680,15 @@ def binom_test(x,n=None,p=0.5):
     if (p > 1.0) or (p < 0.0):
         raise ValueError, "p must be in range [0,1]"
 
-    d = distributions.binom.pdf(x,n,p)
+    d = distributions.binom.pmf(x,n,p)
     rerr = 1+1e-7
     if (x*1.0/n < p):
         i = arange(x+1,n+1)
-        y = sum(distributions.binom.pdf(i,n,p) <= d*rerr)
+        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr)
         pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
     else:
         i = arange(0,x)
-        y = sum(distributions.binom.pdf(i,n,p) <= d*rerr)
+        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr)
         pval = distributions.binom.cdf(y-1,n,p) + distributions.binom.sf(x-1,n,p)
 
     return min(1.0,pval)

@@ -88,7 +88,7 @@ class test_randint(TestCase):
     def check_pdf(self):
         k = scipy.r_[0:36]
         out = scipy.where((k >= 5) & (k < 30), 1.0/(30-5), 0)
-        vals = stats.randint.pdf(k,5,30)
+        vals = stats.randint.pmf(k,5,30)
         assert(scipy.all(vals == out))
 
     def check_cdf(self):

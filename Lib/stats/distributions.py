@@ -1388,7 +1388,7 @@ F distribution
 
 class foldnorm_gen(rv_continuous):
     def _rvs(self, c):
-        return abs(norm.rvs(mu=c,size=self._size))
+        return abs(norm.rvs(loc=c,size=self._size))
     def _pdf(self, x, c):
         return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
     def _cdf(self, x, c,):
@@ -2241,7 +2241,7 @@ Student's T distribution
 
 class nct_gen(rv_continuous):
     def _rvs(self, df, nc):
-        return norm.rvs(mu=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
+        return norm.rvs(loc=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
     def _pdf(self, x, df, nc):
         n = df*1.0
         nc = nc*1.0
