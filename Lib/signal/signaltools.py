@@ -1,3 +1,4 @@
+from Numeric import * # needed asarray
 
 import sigtools
 import MLab
@@ -6,10 +7,11 @@ _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
                                                                             
 def _valfrommode(mode):
+    print mode
     try:
         val = _modedict[mode]
     except KeyError:
-        if val not in [0,1,2]:
+        if mode not in [0,1,2]:
             raise ValueError, "Acceptable mode flags are 'valid' (0), 'same' (1), or 'full' (2)."
         val = mode
     return val
