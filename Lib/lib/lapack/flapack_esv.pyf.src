@@ -6,7 +6,7 @@
 !   syev, heev (SEP symmetric/hermitian, eigenvalues/vectors)
 !   syevd, heevd (SEP symmetric/hermitian, eigenvalues/vectors, D&C)
 !   syevx, heevx (.., expert) - Not Implemented
-!   syevr, heevr (.., RRR) - Not Implemented
+!   syevr, heevr (.., RRR)
 !   spev, hpev, spevd, hpevd, spevx, hpevx (..., packed storage)  - Not Implemented
 !   sbev, hbev, sbevd, hbevd, sbevx, hbevx (..., band)  - Not Implemented
 !   stev, stevd, stevx, stevr (..., tridiagonal)  - Not Implemented
@@ -103,6 +103,60 @@
 
      integer intent(out) :: info
    end subroutine <prefix><sym>evd
+
+   subroutine <prefix><sym>evr(n,a,compute_v,lower,vrange,irange,atol,w,z,m,ldz,isuppz,work,lwork,<,,rwork\,lrwork\,,\2>iwork,liwork,info)
+
+   !  w,v,info = {sy|he}evr(a,compute_v=1,lower=0,vrange=None,irange=None,atol=-1,lwork=min_lwork,overwrite_a=0)
+   !
+   ! Compute range of eigenvalues and, optionally, eigenvectors of a
+   ! real symmetric matrix A using RRR.
+   !
+   ! Performance tip:
+   !   If compute_v=0 then set also overwrite_a=1.
+   ! Warning:
+   !   If compute_v=0 and overwrite_a=1, the contents of a is destroyed.
+
+   ! Is it safe to resize a contiguous Numeric array by simply resetting its dimensions?
+     callstatement if(irange_capi==Py_None);else{irange[0]++;irange[1]++;}(*f2py_func)((compute_v?"V":"N"),(vrange_capi==Py_None?(irange_capi==Py_None?"A":"I"):"V"),(lower?"L":"U"),&n,a,&n,vrange,vrange+1,irange,irange+1,&atol,&m,w,z,&ldz,isuppz,work,&lwork,<_2=,,rwork\,&lrwork\,,\2>iwork,&liwork,&info);if(irange_capi==Py_None);else{irange[0]--;irange[1]--;}if(vrange_capi==Py_None);else {capi_w_tmp-\>dimensions[0]=capi_z_tmp-\>dimensions[1]=m;}
+     callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,int*,int*,<ctypereal>*,int*,<ctypereal>*,<ctype>*,int*,int*,<ctype>*,int*,<_3=,,float*\,int*\,,double*\,int*\,>int*,int*,int*
+
+     integer optional,intent(in):: compute_v = 1
+     check(compute_v==1||compute_v==0) compute_v
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     integer intent(hide),depend(a):: n = shape(a,0)
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)) :: a
+     intent(in,copy) :: a
+
+     <ftypereal> optional,dimension(2),intent(in) :: vrange
+     integer optional,dimension(2),intent(in),depend(n) :: irange
+     check(irange_capi==Py_None || (irange[0]>=0 && irange[1]<n)) irange
+
+     <ftypereal> optional,intent(in) :: atol = -1.0
+
+     integer intent(hide),depend(vrange,irange,n) :: m = (irange_capi==Py_None?n:irange[1]-irange[0]+1)
+
+     <ftypereal> dimension(m),intent(out),depend(m) :: w
+
+     integer intent(hide),depend(compute_v,n) :: ldz = (compute_v?n:1)
+     <ftype> dimension(ldz,m),intent(out,out=v),depend(ldz,m) :: z
+
+     integer intent(hide),depend(m),dimension(2*m) :: isuppz
+
+     ! <_lwork=26*n,\0,18*n,\2>  Includes bug fix in `man zheevr`.
+     integer optional,intent(in),depend(n) :: lwork=<_lwork>
+     check(lwork>=<_lwork>) lwork
+     <ftype> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+
+     integer intent(hide),depend(n,compute_v) :: liwork = 10*n
+     integer dimension(liwork),intent(hide,cache),depend(liwork) :: iwork
+
+     ! <_lrwork=,,24*n,\2>
+     integer intent(hide),depend(n) :: lrwork = <_lrwork>
+     <ftypereal> dimension(lrwork),intent(hide,cache),depend(n,lrwork) :: rwork
+
+     integer intent(out) :: info
+   end subroutine <prefix><sym>evr
 
    subroutine <prefix>gees(compute_v,sort_t,<prefix>select,n,a,nrows,sdim,<wr\,wi,\0,w,\2>,vs,ldvs,work,lwork,<,,rwork\,,\2>bwork,info)
 
