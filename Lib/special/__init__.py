@@ -120,23 +120,24 @@
 
   Other Special Functions
 
-    expn     -- Exponential integral.
-    exp1     -- Exponential integral of order 1 (for complex argument)
-    expi     -- Another exponential integral -- Ei(x)
-    wofz     -- Fadeeva function.
-    fresnl   -- Fresnel sine and cosine integrals.
-    dawsn    -- Dawson's integral.
-    shichi   -- Hyperbolic sine and cosine integrals.
-    sici     -- Integral of the sinc and "cosinc" functions.
-    spence   -- Dilogarithm integral.
-    struve   -- Struve function --- Hv(x)
-    modstruve -- Modified struve function --- Lv(x)
-    itstruve0 -- Integral of H0(t) from 0 to x
-    it2struve0 -- Integral of H0(t)/t from x to Inf.
+    expn         -- Exponential integral.
+    exp1         -- Exponential integral of order 1 (for complex argument)
+    expi         -- Another exponential integral -- Ei(x)
+    wofz         -- Fadeeva function.
+    fresnl       -- Fresnel sine and cosine integrals.
+    dawsn        -- Dawson's integral.
+    shichi       -- Hyperbolic sine and cosine integrals.
+    sici         -- Integral of the sinc and "cosinc" functions.
+    spence       -- Dilogarithm integral.
+    struve       -- Struve function --- Hv(x)
+    modstruve    -- Modified struve function --- Lv(x)
+    itstruve0    -- Integral of H0(t) from 0 to x
+    it2struve0   -- Integral of H0(t)/t from x to Inf.
     itmodstruve0 -- Integral of L0(t) from 0 to x.
-    zeta     -- Riemann zeta function of two arguments.
-    zetac    -- Riemann zeta function.
-    besselpoly -- Integral of a bessel function times x**lambda.
+    kelvin       -- Kelvin functions (order 0) and derivatives.
+    zeta         -- Riemann zeta function of two arguments.
+    zetac        -- 1.0 - standard Riemann zeta function.
+    besselpoly   -- Integral of a bessel function times x**lambda.
 
   Convenience Functions
 

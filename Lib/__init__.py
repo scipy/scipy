@@ -52,7 +52,7 @@ def objects2all(alist, objlist):
     alist.extend(objlist)
 
 # modules to import under the scipy namespace
-_level0 = ["fastumath", "basic", "handy", "misc"]
+_level0 = ["fastumath", "basic", "handy", "misc", "scimath"]
 _partials0 = {'Matrix' : ['Matrix']}
 # these modules will just be imported (not subsumed)
 _level0_importonly = []
