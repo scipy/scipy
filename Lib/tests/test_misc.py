@@ -11,6 +11,25 @@ from scipy import *
 ##################################################
 ### Test for sum
 
+class test_real(unittest.TestCase):
+    def check_real(self):
+        y = rand(10,)
+        assert_array_equal(y,real(y))
+
+    def check_cmplx(self):
+        y = rand(10,)+1j*rand(10,)
+        assert_array_equal(y.real,real(y))
+
+class test_imag(unittest.TestCase):
+    def check_real(self):
+        y = rand(10,)
+        assert_array_equal(0,imag(y))
+
+    def check_cmplx(self):
+        y = rand(10,)+1j*rand(10,)
+        assert_array_equal(y.imag,real(y))
+
+    
 class test_sum(unittest.TestCase):
     def check_sum_1D_array(self):
         z = arange(10.)
@@ -42,6 +61,41 @@ class test_mean(unittest.TestCase):
         val = mean(z,axis=0)
         desired = array((2.,3.))
         assert_array_equal(val,desired)
+
+
+class test_iscomplex(unittest.TestCase):
+    def check_fail(self):
+        z = array([-1,0,1]))
+        res = iscomplex(z)
+        assert(not sometrue(res))
+    def check_pass(self):
+        z = array([-1j,1,0])
+        res = iscomplex(z)
+        assert_array_equal(res,[1,0,0])
+
+class test_isreal(unittest.TestCase):
+    def check_pass(self):
+        z = array([-1,0,1j]))
+        res = isreal(z)
+        assert_array_equal(res,[1,1,0])
+    def check_fail(self):
+        z = array([-1j,1,0])
+        res = isreal(z)
+        assert_array_equal(res,[0,1,1])
+
+class test_array_iscomplex(unittest.TestCase):
+    def check_basic(self):
+        z = array([-1,0,1])
+        assert(not array_iscomplex(z))
+        z = array([-1j,0,-1])
+        assert(array_iscomplex(z))
+
+class test_array_isreal(unittest.TestCase):
+    def check_basic(self):
+        z = array([-1,0,1])
+        assert(array_isreal(z))
+        z = array([-1j,0,-1])
+        assert(not array_isreal(z))
 
 class test_isnan(unittest.TestCase):
     def check_goodvalues(self):
@@ -546,7 +600,15 @@ class test_trim_zeros(unittest.TestCase):
         a= array([0,0,1,0,2,3,0,4,0])
         res = trim_zeros(a)
         assert_array_equal(res,array([1,0,2,3,0,4]))
-        
+
+
+
+class test_real_if_close(unittest.TestCase):
+    def check_basic(self):
+        a = randn(10)
+        b = real_if_close(a+1e-15j)
+        assert(array_is_real(b))
+        assert_array_equal(a,b)
         
 # Utility
 
@@ -559,8 +621,14 @@ def compare_results(res,desired):
 
 def test_suite():
     suites = []
+    suites.append( unittest.makeSuite(test_real,'check_') )
+    suites.append( unittest.makeSuite(test_imag,'check_') )
     suites.append( unittest.makeSuite(test_sum,'check_') )
     suites.append( unittest.makeSuite(test_mean,'check_') )
+    suites.append( unittest.makeSuite(test_array_iscomplex,'check_') )
+    suites.append( unittest.makeSuite(test_array_isreal,'check_') )        
+    suites.append( unittest.makeSuite(test_iscomplex,'check_') )
+    suites.append( unittest.makeSuite(test_isreal,'check_') )    
     suites.append( unittest.makeSuite(test_isnan,'check_') )
     suites.append( unittest.makeSuite(test_isfinite,'check_') )
     suites.append( unittest.makeSuite(test_isinf,'check_') )

@@ -411,6 +411,7 @@ def plot(x,*args,**keywds):
       only two plots are being compared, the x-axis does not have to be
       repeated.
     """
+    x = asarray(x)
     try:
         override = 1
         savesys = gist.plsys(2)
@@ -429,7 +430,7 @@ def plot(x,*args,**keywds):
     if nargs == 0:
         y = x
         x = Numeric.arange(0,len(y))
-        if scipy.iscomplex(y):
+        if y.typecode() in ['F','D']:
             print "Warning: complex data plotting real part."
             y = y.real
         gist.plg(y,x,type='solid',color='blue',marks=0)
@@ -453,7 +454,7 @@ def plot(x,*args,**keywds):
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor]+_rmarkers[themarker])
             else:
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
-        if scipy.iscomplex(x) or scipy.iscomplex(y):
+        if scipy.array_iscomplex(x) or scipy.array_iscomplex(y):
             print "Warning: complex data provided, using only real part."
             x = scipy.real(x)
             y = scipy.real(y)

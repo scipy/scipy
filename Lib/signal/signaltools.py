@@ -3,7 +3,7 @@
 
 import sigtools
 import scipy.special as special
-from scipy import iscomplex, fft, ifft, ifftshift
+from scipy import fft, ifft, ifftshift
 from scipy import polyadd, polymul, polydiv, polysub, \
                   roots, poly, polyval, polyder
 import types
@@ -597,7 +597,7 @@ def hilbert(x, N=None):
         N = len(x)
     if N <=0:
         raise ValueError, "N must be positive."
-    if iscomplex(x):
+    if scipy.array_iscomplex(x):
         print "Warning: imaginary part of x ignored."
         x = real(x)
     Xf = fft(x,N,axis=0)
@@ -617,7 +617,7 @@ def hilbert(x, N=None):
 def cmplx_sort(p):
     "sort roots based on magnitude."
     p = asarray(p)
-    if scipy.iscomplex(p):
+    if scipy.array_iscomplex(p):
         indx = Numeric.argsort(abs(p))
     else:
         indx = Numeric.argsort(p)

@@ -41,7 +41,7 @@ def help(object=None,maxwidth=76,output=sys.stdout):
                 If p is of length N, this function returns the value:
                 p[0]*(x**N-1) + p[1]*(x**N-2) + ... + p[N-2]*x + p[N-1]
     """
-    if object == None:
+    if object is None:
         help(help)
     elif inspect.isfunction(object):
         name = object.func_name
