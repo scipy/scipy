@@ -82,7 +82,7 @@ static PyObject *
   char      read_type;
   FILE     *fp;
   char      dobyteswap = 0;
-  int      swap_factor
+  int      swap_factor;
   char     out_type = 124;    /* set to unused value */
 
   if (!PyArg_ParseTuple( args, "Oic|cb" , &file, &n, &read_type, &out_type, &dobyteswap ))
