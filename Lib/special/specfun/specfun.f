@@ -1108,10 +1108,18 @@ C
               CSY(K)=-1.0D+300
 10            CDY(K)=1.0D+300
            CSJ(0)=(1.0D0,0.0D0)
-           CDJ(1)=(.333333333333333D0,0.0D0)
+           IF (N.GT.0) THEN
+              CDJ(1)=(.333333333333333D0,0.0D0)
+           ENDIF
            RETURN
         ENDIF
         CSJ(0)=CDSIN(Z)/Z
+        CDJ(0)=(CDCOS(Z)-CDSIN(Z)/Z)/Z
+        CSY(0)=-CDCOS(Z)/Z
+        CDY(0)=(CDSIN(Z)+CDCOS(Z)/Z)/Z
+        IF (N.LT.1) THEN
+           RETURN
+        ENDIF
         CSJ(1)=(CSJ(0)-CDCOS(Z))/Z
         IF (N.GE.2) THEN
            CSA=CSJ(0)
@@ -1134,12 +1142,9 @@ C
            DO 20 K=0,NM
 20            CSJ(K)=CS*CSJ(K)
         ENDIF
-        CDJ(0)=(CDCOS(Z)-CDSIN(Z)/Z)/Z
         DO 25 K=1,NM
 25         CDJ(K)=CSJ(K-1)-(K+1.0D0)*CSJ(K)/Z
-        CSY(0)=-CDCOS(Z)/Z
         CSY(1)=(CSY(0)-CDSIN(Z))/Z
-        CDY(0)=(CDSIN(Z)+CDCOS(Z)/Z)/Z
         CDY(1)=(2.0D0*CDY(0)-CDCOS(Z))/Z
         DO 30 K=2,NM
            IF (CDABS(CSJ(K-1)).GT.CDABS(CSJ(K-2))) THEN
@@ -9978,7 +9983,9 @@ C
 
 C       **********************************
 
+
         SUBROUTINE SPHJ(N,X,NM,SJ,DJ)
+C       MODIFIED to ALLOW N=0 CASE (ALSO IN CSPHJY, SPHY)
 C
 C       =======================================================
 C       Purpose: Compute spherical Bessel functions jn(x) and
@@ -9996,16 +10003,22 @@ C
 	IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 	DIMENSION SJ(0:N),DJ(0:N)
 	NM=N
-	IF (DABS(X).EQ.1.0D-100) THEN
+	IF (DABS(X).LT.1.0D-100) THEN
 	   DO 10 K=0,N
 	      SJ(K)=0.0D0
 10            DJ(K)=0.0D0
-	   SJ(0)=1.0D0
-	   DJ(1)=.3333333333333333D0
+           SJ(0)=1.0D0
+           IF (N.GT.0) THEN
+              DJ(1)=.3333333333333333D0
+           ENDIF
 	   RETURN
 	ENDIF
 	SJ(0)=DSIN(X)/X
-	SJ(1)=(SJ(0)-DCOS(X))/X
+	DJ(0)=(DCOS(X)-DSIN(X)/X)/X
+        IF (N.LT.1) THEN
+           RETURN
+        ENDIF
+        SJ(1)=(SJ(0)-DCOS(X))/X
 	IF (N.GE.2) THEN
 	   SA=SJ(0)
 	   SB=SJ(1)
@@ -10026,14 +10039,11 @@ C
 	   IF (DABS(SA).LE.DABS(SB)) CS=SB/F0
 	   DO 20 K=0,NM
 20            SJ(K)=CS*SJ(K)
-	ENDIF      
-	DJ(0)=(DCOS(X)-DSIN(X)/X)/X
+	ENDIF
 	DO 25 K=1,NM
 25         DJ(K)=SJ(K-1)-(K+1.0D0)*SJ(K)/X
 	RETURN
 	END
-
-
 
 
 	
@@ -12450,9 +12460,13 @@ C
 	   RETURN
 	ENDIF
 	SY(0)=-DCOS(X)/X
-	SY(1)=(SY(0)-DSIN(X))/X
 	F0=SY(0)
-	F1=SY(1)
+	DY(0)=(DSIN(X)+DCOS(X)/X)/X
+        IF (N.LT.1) THEN 
+           RETURN
+        ENDIF
+        SY(1)=(SY(0)-DSIN(X))/X
+        F1=SY(1)
 	DO 15 K=2,N
 	   F=(2.0D0*K-1.0D0)*F1/X-F0
 	   SY(K)=F
@@ -12460,7 +12474,6 @@ C
 	   F0=F1
 15         F1=F
 20      NM=K-1
-	DY(0)=(DSIN(X)+DCOS(X)/X)/X
 	DO 25 K=1,NM
 25         DY(K)=SY(K-1)-(K+1.0D0)*SY(K)/X
 	RETURN
