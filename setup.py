@@ -46,7 +46,7 @@ core_packages = [os.path.join('scipy_core',p) for p in core_packages]
 
 parent_package = 'scipy'
 scipy_packages = standard_packages + graphics_packages
-#scipy_packages += chaco_packages
+scipy_packages += chaco_packages
 
 #---------------
 
@@ -73,20 +73,18 @@ def setup_package():
     old_path = os.getcwd()
     path = get_path(__name__)
     os.chdir(path)
-    sys.path.insert(0,path)
+    sys.path.insert(0,os.path.join(path,'Lib'))
+    sys.path.insert(0,os.path.join(path,'scipy_core'))
     try:
+        from scipy_version import scipy_version
+
         config_list = [{'packages':['scipy','scipy.tests'],
                         'package_dir':
                         {'scipy':'Lib',
                          'scipy.tests':os.path.join('Lib','tests')}}]
-        config_list += map(get_package_config,scipy_packages)
         config_list += map(get_separate_package_config,separate_packages)
-
+        config_list += map(get_package_config,scipy_packages)
         config_dict = merge_config_dicts(config_list)
-
-        sys.path.insert(0,'Lib')
-        from scipy_version import scipy_version
-        del sys.path[0]
 
         print 'SciPy Version %s' % scipy_version
         setup (name = "SciPy",
@@ -100,6 +98,7 @@ def setup_package():
               )
 
     finally:
+        del sys.path[0]
         del sys.path[0]
         os.chdir(old_path)
 
