@@ -5,10 +5,11 @@
 # guarantee implied provided you keep this notice in all copies.
 # *****END NOTICE************
 
-# A collection of optimization algorithms.  Version 0.4.1
+# A collection of optimization algorithms.  Version 0.5
 # CHANGES
 #  Added fminbound (July 2001)
 #  Added brute (Aug. 2002)
+#  Finished line search satisfying strong Wolfe conditions (Mar. 2004)
 
 # Minimization routines
 """optimize.py
@@ -20,9 +21,13 @@ N-D Algorithms
 ===============
 fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls).
 fmin_powell ---      Powell (direction set) method (uses only function calls).
-fmin_bfgs   ---      Quasi-Newton method (uses function and gradient).
-fmin_ncg    ---      Line-search Newton Conjugate Gradient (uses function, 
-                     gradient and hessian (if it's provided)).
+fmin_cg     ---      Non-linear (Polak-Rubiere) conjugate gradient algorithm
+                       (can use function and gradient).
+fmin_bfgs   ---      Quasi-Newton method (Broyden-Fletcher-Goldfarb-Shanno
+                       (can use function and gradient).
+fmin_ncg    ---      Line-search Newton Conjugate Gradient (can use function, 
+                       gradient and hessian).
+                     
 
 brute       ---      Perform a brute force search for the minimum
                        with final optimization if desired.
@@ -52,7 +57,7 @@ Num = Numeric
 max = MLab.max
 min = MLab.min
 abs = absolute
-__version__="0.4.2"
+__version__="0.5"
 
 def rosen(x):  # The Rosenbrock function
     return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
@@ -249,27 +254,67 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         return x
 
 
-def zoom(a_lo, a_hi):
-    pass
+def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
+         phi, derphi, phi0, derphi0, c1, c2):
+    fc = gc = 0
+    maxiter = 10
+    i = 0
+    while 1:
+        # interpolate to find a trial step length between a_lo and a_hi
+        A = phi_lo;
+        B = derphi_lo;
+        dalpha = a_hi-a_lo;
+        C = (phi_hi - phi_lo - dalpha*derphi_lo)/dalpha**2;
+        if (c<=0) or (i%3)==2):
+            # Use bisection
+            a_j = a_lo + 0.5*dalpha;
+        else: 
+            # Use min of quadratic
+            a_j = a_lo - 0.5*B/C;
+        phi_aj = phi(a_j)
+        fc += 1
+        if (phi_aj > phi0 + c1*a_j*derphi0) or (phi_aj >= phi_lo):
+            a_hi = a_j
+            phi_hi = phi_aj
+        else:
+            derphi_aj = derphi(a_j)
+            gc += 1
+            if abs(derphi_aj) <= -c2*derphi0:
+                a_star = a_j
+                break
+            if derphi_aj*(a_hi - a_lo) >= 0:
+                a_hi = a_lo
+                phi_hi = phi_lo
+            a_lo = a_j
+            phi_lo = phi_aj
+            derphi_lo = derphi_aj
+        i += 1
+        if (i > maxiter):
+            a_star = a_j
+            break    
+    return a_star, fc, gc
 
-    
 def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
-    """Minimize the function f(xk+alpha pk)
-
-    Uses the line search algorithm of
-    Wright and Nocedal in 'Numerical Optimization', 1999, pg. 59-60
+    """Find alpha that satisfies strong Wolfe conditions. 
+    
+    Uses the line search algorithm to enforce strong Wolfe conditions 
+    Wright and Nocedal, 'Numerical Optimization', 1999, pg. 59-60
 
     Outputs: (alpha0, gc, fc)
     """
 
+    def phi(alpha):
+        return f(xk+alpha*pk,*args)
+    def phiprime(alpha):
+        return Num.dot(fprime(xk+alpha*pk,*args),pk)
     fc = 0
     gc = 0
     alpha0 = 1.0
-    phi0  = apply(f,(xk,)+args)
-    phi_a0 = apply(f,(xk+alpha0*pk,)+args)
+    phi0 = f(xk,*args)
+    phi_a0 = phi(alpha0)
     fc = fc + 2
     derphi0 = Num.dot(gfk,pk)
-    derphi_a0 = Num.dot(apply(fprime,(xk+alpha0*pk,)+args),pk)
+    derphi_a0 = phiprime(alpha)
     gc = gc + 1
 
     # check to see if alpha0 = 1 satisfies Strong Wolfe conditions.
@@ -283,26 +328,44 @@ def line_search(f, fprime, xk, pk, gfk, args=(), c1=1e-4, c2=0.9, amax=50):
     phi_a0 = phi0
 
     i = 1
-    while 1:
+    maxiter = 10
+    while 1:         # bracketing phase 
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
-            return zoom(alpha0, alpha1)
+            alpha_star, ifc, igc = zoom(alpha0, alpha1, phi_a0, phi_a1, derphi_a0,
+                                        phi, phiprime, phi0, derphi0, c1, c2)
+            gc = gc + igc
+            fc = fc + ifc
+            break
 
-        derphi_a1 = Num.dot(apply(fprime,(xk+alpha1*pk,)+args),pk)
+        derphi_a1 = phiprime(alpha1)
         gc = gc + 1
         if (abs(derphi_a1) <= -c2*derphi0):
-            return alpha1
+            alpha_star = alpha1
+            break
 
         if (derphi_a1 >= 0):
-            return zoom(alpha1, alpha0)
+            alpha_star, ifc, igc = zoom(alpha1, alpha0, phi_a1, phi_a0, derphi_a1,
+                                        phi, phiprime, phi0, derphi0, c1, c2)
+            gc = gc + igc
+            fc = fc + ifc
+            break
 
-        alpha2 = (amax-alpha1)*0.25 + alpha1
+        alpha2 = 2 * alpha1
         i = i + 1
         alpha0 = alpha1
         alpha1 = alpha2
         phi_a0 = phi_a1
-        phi_a1 = apply(f,(xk+alpha1*pk,)+args)
+        phi_a1 = f(xk+alpha1*pk,*args)
+        fc = fc + 1
+        derphi_a0 = derphi_a1
 
+        # stopping test if lower function not found
+        if (i > maxiter):
+            alpha_star = alpha1
+            break
+
+    return alpha_star, fc, gc
     
 
 def line_search_BFGS(f, xk, pk, gfk, args=(), c1=1e-4, alpha0=1):
@@ -504,6 +567,121 @@ def fmin_bfgs(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
     else:        
         return xk
 
+
+
+def fmin_cg(f, x0, fprime=None, args=(), avegtol=1e-5, epsilon=1e-8,
+              maxiter=None, full_output=0, disp=1):
+    """Minimize a function with nonlinear conjugate gradient algorithm.
+
+    Description:
+
+      Optimize the function, f, whose gradient is given by fprime using the
+      nonlinear conjugate gradient algorithm of Polak and Ribiere
+      See Wright, and Nocedal 'Numerical Optimization', 1999, pg. 120-122.
+
+    Inputs:
+
+      f -- the Python function or method to be minimized.
+      x0 -- the initial guess for the minimizer.
+
+      fprime -- a function to compute the gradient of f.
+      args -- extra arguments to f and fprime.
+      avegtol -- minimum average value of gradient for stopping
+      epsilon -- if fprime is approximated use this value for
+                 the step size (can be scalar or vector)
+
+    Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag})
+
+      xopt -- the minimizer of f.
+
+      fopt -- the value of f(xopt).
+      func_calls -- the number of function_calls.
+      grad_calls -- the number of gradient calls.
+      warnflag -- an integer warning flag:
+                  1 : 'Maximum number of iterations exceeded.'
+                  2 : 'Gradient and/or function calls not changing'
+
+    Additional Inputs:
+
+      avegtol -- the minimum occurs when fprime(xopt)==0.  This specifies how
+                 close to zero the average magnitude of fprime(xopt) needs
+                 to be.
+      maxiter -- the maximum number of iterations.
+      full_output -- if non-zero then return fopt, func_calls, grad_calls,
+                     and warnflag in addition to xopt.
+      disp -- print convergence message if non-zero.                
+      """
+    app_fprime = 0
+    if fprime is None:
+        app_fprime = 1
+
+    x0 = asarray(x0)
+    if maxiter is None:
+        maxiter = len(x0)*200
+    func_calls = 0
+    grad_calls = 0
+    k = 0
+    N = len(x0)
+    gtol = N*avegtol
+
+    if app_fprime:
+        gfk = apply(approx_fprime,(x0,f,epsilon)+args)
+        func_calls = func_calls + len(x0) + 1
+    else:
+        gfk = apply(fprime,(x0,)+args)
+        grad_calls = grad_calls + 1
+    xk = x0
+    sk = [2*gtol]
+    warnflag = 0
+    pk = -gfk
+    while (Num.add.reduce(abs(gfk)) > gtol) and (k < maxiter):
+        deltak = Num.dot(gfk,gfk)
+        alpha_k, fc, gc = line_search_BFGS(f,xk,pk,gfk,args)
+        func_calls = func_calls + fc
+        xk = xk + alpha_k * pk
+        if app_fprime:
+            gfkp1 = apply(approx_fprime,(xkp1,f,epsilon)+args)
+            func_calls = func_calls + gc + len(x0) + 1
+        else:
+            gfkp1 = apply(fprime,(xkp1,)+args)
+            grad_calls = grad_calls + gc + 1
+
+        yk = gfkp1 - gfk
+        beta_k = max(0,Num.dot(yk,gfkp1)/deltak)
+        pk = -gfkp1 + beta_k * pk
+        gfk = gfkp1
+        k = k + 1
+                     
+    if disp or full_output:
+        fval = apply(f,(xk,)+args)
+    if warnflag == 2:
+        if disp:
+            print "Warning: Desired error not necessarily achieved due to precision loss"
+            print "         Current function value: %f" % fval
+            print "         Iterations: %d" % k
+            print "         Function evaluations: %d" % func_calls
+            print "         Gradient evaluations: %d" % grad_calls
+        
+    elif k >= maxiter:
+        warnflag = 1
+        if disp:
+            print "Warning: Maximum number of iterations has been exceeded"
+            print "         Current function value: %f" % fval
+            print "         Iterations: %d" % k
+            print "         Function evaluations: %d" % func_calls
+            print "         Gradient evaluations: %d" % grad_calls
+    else:
+        if disp:
+            print "Optimization terminated successfully."
+            print "         Current function value: %f" % fval
+            print "         Iterations: %d" % k
+            print "         Function evaluations: %d" % func_calls
+            print "         Gradient evaluations: %d" % grad_calls
+
+    if full_output:
+        return xk, fval, func_calls, grad_calls, warnflag
+    else:        
+        return xk
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=1e-8, maxiter=None, full_output=0, disp=1):
@@ -1256,6 +1434,13 @@ if __name__ == "__main__":
     print x
     times.append(time.time() - start)
     algor.append('BFGS Quasi-Newton\t')
+
+    start = time.time()
+    x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=80)
+    print x
+    times.append(time.time() - start)
+    algor.append('Nonlinear CG\t')
+
 
     start = time.time()
     x = fmin_bfgs(rosen, x0, avegtol=1e-4, maxiter=100)
