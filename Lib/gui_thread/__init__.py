@@ -40,3 +40,6 @@
 
 import main
 from main import register, start, start_up
+
+# New hooks for importing wxPython to its own thread
+from wxPython_thread import wxPython_thread

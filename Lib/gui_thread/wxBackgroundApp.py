@@ -1,11 +1,9 @@
 #
-# Title: Imports wxPython and defines wxBackgroundApp.
+# Title: Defines wxBackgroundApp used by wxPython_thread.
+#
 # Author: Pearu Peterson <pearu@cens.ioc.ee>
 # Created: October, 2003
-# Usage: see chaco_wxplt.py for an example.
 #
-# This module must be imported from the same thread as
-# wxPython. How to check this?
 
 __all__ = ['wxBackgroundApp']
 
@@ -46,7 +44,7 @@ class EventCatcher(wx.wxFrame):
             filename, lineno, function, text = info[-1]
             tmp = "\nFile \"%(filename)s\", line %(lineno)s, "\
                   "in %(function)s\n%(text)s"% locals()
-            evt.exception_info = (type,str(value) + tmp)
+            evt.finished.exception_info = (type,str(value) + tmp)
             type = value = tb = None
         evt.finished.set()
 
@@ -55,17 +53,28 @@ class EventCatcher(wx.wxFrame):
         if evt is not None:
             evt.Skip()
 
+class ExecThread(threading.Thread):
+    """ Execute command in a new thread."""
+    def __init__(self,cmd,globs,locs):
+        threading.Thread.__init__(self)
+        self.cmd = cmd
+        self.globs = globs
+        self.locs = locs
+        self.start()
+    def run(self):
+        exec self.cmd in self.globs,self.locs
+
 class wxBackgroundApp(wx.wxPySimpleApp):
 
     def __init__(self):
         """ Construct wxPython application
-        Must call it from wxPython thread. See pexec module.
+        Must call it from wxPython thread.
         """
         assert wxPython_thread_id==thread.get_ident(),\
                'wrong thread (not wxPython)'
         wx.wxPySimpleApp.__init__(self)
         self.run_is_ready = threading.Event()
-        atexit.register(self.shutdown)
+        atexit.register(self._shutdown)
 
     def __call__(self, code, frame=None):
         """ Execute code in wxPython thread within a frame.
@@ -76,11 +85,14 @@ class wxBackgroundApp(wx.wxPySimpleApp):
         if frame is None:
             frame = sys._getframe(1)
         self.run_is_ready.wait()
+        
         finished = threading.Event()
-        evt = ProxyEvent((code, frame), finished)
-        wx.wxPostEvent(self.event_catcher, evt)
+        cmd = 'wx.wxPostEvent(self.event_catcher,'\
+              'ProxyEvent((code, frame),finished))'
+        ExecThread(cmd,globals(),locals())
         finished.wait()
-        exc_info = getattr(evt,'exception_info',None)
+
+        exc_info = getattr(finished,'exception_info',None)
         if exc_info is not None:
             raise exc_info[0],exc_info[1]
 
@@ -98,7 +110,7 @@ class wxBackgroundApp(wx.wxPySimpleApp):
         del self.event_catcher
         self.run_is_ready.clear()
 
-    def shutdown(self):
+    def _shutdown(self):
         # Note that __init__ registers shutdown in atexit.
         if hasattr(self,'event_catcher'):
             self('self.event_catcher.OnCloseWindow()')
