@@ -4,9 +4,12 @@ C          Shanjie Zhang and Jianming Jin
 C
 C       Copyrighted but permission granted to use code in programs. 
 C
-C      Compiled into a library and changed REAL To DBLE throughout.
+C      Compiled into a single source file and changed REAL To DBLE throughout.
 C
 C      Changed according to ERRATA also.
+C      
+C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid conflicts.
+C
 
         SUBROUTINE CPDSA(N,Z,CDN)
 C
@@ -14,7 +17,7 @@ C       ===========================================================
 C       Purpose: Compute complex parabolic cylinder function Dn(z)
 C                for small argument
 C       Input:   z   --- complex argument of D(z)
-C                n   --- Order of D(z) (n = 0,-1,-2,תתת)
+C                n   --- Order of D(z) (n = 0,-1,-2,...)
 C       Output:  CDN --- Dn(z)
 C       Routine called: GAIH for computing ג(x), x=n/2 (n=1,2,...)
 C       ===========================================================
@@ -285,7 +288,7 @@ C                for small argument
 C       Input:   x  --- Argument
 C                va --- Order
 C       Output:  PV --- Vv(x)
-C       Routine called : GAMMA for computing ג(x)
+C       Routine called : GAMMA2 for computing ג(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -299,7 +302,7 @@ C
            ELSE
               VB0=-0.5D0*VA
               SV0=DSIN(VA0*PI)
-              CALL GAMMA(VA0,GA0)
+              CALL GAMMA2(VA0,GA0)
               PV=2.0D0**VB0*SV0/GA0
            ENDIF
         ELSE
@@ -307,13 +310,13 @@ C
            A0=2.0D0**(-.5D0*VA)*EP/(2.0D0*PI)
            SV=DSIN(-(VA+.5D0)*PI)
            V1=-.5D0*VA
-           CALL GAMMA(V1,G1)
+           CALL GAMMA2(V1,G1)
            PV=(SV+1.0D0)*G1
            R=1.0D0
            FAC=1.0D0
            DO 10 M=1,250
               VM=.5D0*(M-VA)
-              CALL GAMMA(VM,GM)
+              CALL GAMMA2(VM,GM)
               R=R*SQ2*X/M
               FAC=-FAC
               GW=FAC*SV+1.0D0
@@ -1505,7 +1508,7 @@ C
 	
 C       **********************************
 
-        SUBROUTINE PSI(X,PS)
+        SUBROUTINE PSI_SPEC(X,PS)
 C
 C       ======================================
 C       Purpose: Compute Psi function
@@ -3003,7 +3006,7 @@ C                b  --- Parameter
 C                x  --- Argument ( x > 0 )
 C       Output:  HU --- U(a,b,z)
 C                ID --- Estimated number of significant digits
-C       Routine called: GAMMA for computing ג(x)
+C       Routine called: GAMMA2 for computing ג(x)
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3061,7 +3064,7 @@ C
            IF (DABS(1.0D0-HU0/HU1).LT.1.0D-7) GO TO 25
            HU0=HU1
 20      CONTINUE
-25      CALL GAMMA(A,GA)
+25      CALL GAMMA2(A,GA)
         HU1=HU1/GA
         DO 40 M=2,10,2
            HU2=0.0D0
@@ -3084,7 +3087,7 @@ C
            IF (DABS(1.0D0-HU0/HU2).LT.1.0D-7) GO TO 45
            HU0=HU2
 40      CONTINUE
-45      CALL GAMMA(A,GA)
+45      CALL GAMMA2(A,GA)
         HU2=HU2/GA
         HU=HU1+HU2
         RETURN
@@ -3242,7 +3245,7 @@ C                va --- Order
 C       Output:  PV --- Vv(x)
 C       Routines called:
 C             (1) DVLA for computing Dv(x) for large |x|
-C             (2) GAMMA for computing ג(x)
+C             (2) GAMMA2 for computing ג(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3261,7 +3264,7 @@ C
         IF (X.LT.0.0D0) THEN
            X1=-X
            CALL DVLA(VA,X1,PDL)
-           CALL GAMMA(-VA,GL)
+           CALL GAMMA2(-VA,GL)
            DSL=DSIN(PI*VA)*DSIN(PI*VA)
            PV=DSL*GL/PI*PDL-DCOS(PI*VA)*PV
         ENDIF
@@ -3286,7 +3289,7 @@ C                CBY(n) --- Yn+v0(z)
 C                CDY(n) --- Yn+v0'(z)
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) GAMMA for computing the gamma function
+C            (1) GAMMA2 for computing the gamma function
 C            (2) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       ===========================================================
@@ -3331,7 +3334,7 @@ C
                  IF (CDABS(CR).LT.CDABS(CJVL)*1.0D-15) GO TO 20
 15            CONTINUE
 20            VG=1.0D0+VL
-              CALL GAMMA(VG,GA)
+              CALL GAMMA2(VG,GA)
               CA=(0.5D0*Z1)**VL/GA
               IF (L.EQ.0) CJV0=CJVL*CA
               IF (L.EQ.1) CJV1=CJVL*CA
@@ -3380,7 +3383,7 @@ C
                     IF (CDABS(CR).LT.CDABS(CJVL)*1.0D-15) GO TO 50
 45               CONTINUE
 50               VG=1.0D0-VL
-                 CALL GAMMA(VG,GB)
+                 CALL GAMMA2(VG,GB)
                  CB=(2.0D0/Z1)**VL/GB
                  IF (L.EQ.0) CJU0=CJVL*CB
                  IF (L.EQ.1) CJU1=CJVL*CB
@@ -3541,7 +3544,7 @@ C                CBY(n) --- Yn+v0(z)
 C                CDY(n) --- Yn+v0'(z)
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) GAMMA for computing the gamma function
+C            (1) GAMMA2 for computing the gamma function
 C            (2) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       ===========================================================
@@ -3583,7 +3586,7 @@ C
               IF (CDABS(CR).LT.CDABS(CJV0)*1.0D-15) GO TO 20
 15         CONTINUE
 20         VG=1.0D0+V0
-           CALL GAMMA(VG,GA)
+           CALL GAMMA2(VG,GA)
            CA=(0.5D0*Z1)**V0/GA
            CJV0=CJV0*CA
         ELSE
@@ -3621,7 +3624,7 @@ C
                  IF (CDABS(CR).LT.CDABS(CJVN)*1.0D-15) GO TO 40
 35            CONTINUE
 40            VG=1.0D0-V0
-              CALL GAMMA(VG,GB)
+              CALL GAMMA2(VG,GB)
               CB=(2.0D0/Z1)**V0/GB
               CJU0=CJVN*CB
               CYV0=(CJV0*DCOS(PV0)-CJU0)/DSIN(PV0)
@@ -3826,7 +3829,7 @@ C                x   --- Argument
 C       Output:  GIN --- r(a,x)
 C                GIM --- ג(a,x)
 C                GIP --- P(a,x)
-C       Routine called: GAMMA for computing ג(x)
+C       Routine called: GAMMA2 for computing ג(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -3837,7 +3840,7 @@ C
         ENDIF
         IF (X.EQ.0.0) THEN
            GIN=0.0
-           CALL GAMMA(A,GA)
+           CALL GAMMA2(A,GA)
            GIM=GA
            GIP=0.0
         ELSE IF (X.LE.1.0+A) THEN
@@ -3849,7 +3852,7 @@ C
               IF (DABS(R/S).LT.1.0D-15) GO TO 15
 10         CONTINUE
 15         GIN=DEXP(XAM)*S
-           CALL GAMMA(A,GA)
+           CALL GAMMA2(A,GA)
            GIP=GIN/GA
            GIM=GA-GIN
         ELSE IF (X.GT.1.0+A) THEN
@@ -3858,7 +3861,7 @@ C
               T0=(K-A)/(1.0D0+K/(X+T0))
 20         CONTINUE
            GIM=DEXP(XAM)/(X+T0)
-           CALL GAMMA(A,GA)
+           CALL GAMMA2(A,GA)
            GIN=GA-GIM
            GIP=1.0D0-GIM/GA
         ENDIF
@@ -4018,7 +4021,7 @@ C                BY(n) --- Yn+v0(x)
 C                DY(n) --- Yn+v0'(x)
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) GAMMA for computing gamma function
+C            (1) GAMMA2 for computing gamma function
 C            (2) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       =======================================================
@@ -4057,7 +4060,7 @@ C
                  IF (DABS(R).LT.DABS(BJVL)*1.0D-15) GO TO 20
 15            CONTINUE
 20            VG=1.0D0+VL
-              CALL GAMMA(VG,GA)
+              CALL GAMMA2(VG,GA)
               A=(0.5D0*X)**VL/GA
               IF (L.EQ.0) BJV0=BJVL*A
               IF (L.EQ.1) BJV1=BJVL*A
@@ -4142,7 +4145,7 @@ C
                     IF (DABS(R).LT.DABS(BJVL)*1.0D-15) GO TO 70
 65               CONTINUE
 70               VG=1.0D0-VL
-                 CALL GAMMA(VG,GB)
+                 CALL GAMMA2(VG,GB)
                  B=(2.0D0/X)**VL/GB
                  IF (L.EQ.0) BJU0=BJVL*B
                  IF (L.EQ.1) BJU1=BJVL*B
@@ -4779,7 +4782,7 @@ C
         
 C       **********************************
 
-        SUBROUTINE GAMMA(X,GA)
+        SUBROUTINE GAMMA2(X,GA)
 C
 C       ==================================================
 C       Purpose: Compute gamma function ג(x)
@@ -5511,7 +5514,7 @@ C       Input  : a  --- Parameter
 C                b  --- Parameter ( b <> 0,-1,-2,... )
 C                x  --- Argument
 C       Output:  HG --- M(a,b,x)
-C       Routine called: GAMMA for computing ג(x)
+C       Routine called: GAMMA2 for computing ג(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -5563,10 +5566,10 @@ C
                  IF (DABS(RG/HG).LT.1.0D-15) GO TO 25
 15            CONTINUE
            ELSE
-              CALL GAMMA(A,TA)
-              CALL GAMMA(B,TB)
+              CALL GAMMA2(A,TA)
+              CALL GAMMA2(B,TB)
               XG=B-A
-              CALL GAMMA(XG,TBA)
+              CALL GAMMA2(XG,TBA)
               SUM1=1.0D0
               SUM2=1.0D0
               R1=1.0D0
@@ -5653,8 +5656,8 @@ C                c --- Parameter, c <> 0,-1,-2,...
 C                x --- Argument   ( x < 1 )
 C       Output:  HF --- F(a,b,c,x)
 C       Routines called:
-C            (1) GAMMA for computing gamma function
-C            (2) PSI for computing psi function
+C            (1) GAMMA2 for computing gamma function
+C            (2) PSI_SPEC for computing psi function
 C       ====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -5677,17 +5680,17 @@ C
            HF=1.0D0
            RETURN
         ELSE IF (1.0D0-X.EQ.EPS.AND.C-A-B.GT.0.0) THEN
-           CALL GAMMA(C,GC)
-           CALL GAMMA(C-A-B,GCAB)
-           CALL GAMMA(C-A,GCA)
-           CALL GAMMA(C-B,GCB)
+           CALL GAMMA2(C,GC)
+           CALL GAMMA2(C-A-B,GCAB)
+           CALL GAMMA2(C-A,GCA)
+           CALL GAMMA2(C-B,GCB)
            HF=GC*GCAB/(GCA*GCB)
            RETURN
         ELSE IF (1.0D0+X.LE.EPS.AND.DABS(C-A+B-1.0).LE.EPS) THEN
            G0=DSQRT(PI)*2.0D0**(-A)
-           CALL GAMMA(C,G1)
-           CALL GAMMA(1.0D0+A/2.0-B,G2)
-           CALL GAMMA(0.5D0+0.5*A,G3)
+           CALL GAMMA2(C,G1)
+           CALL GAMMA2(1.0D0+A/2.0-B,G2)
+           CALL GAMMA2(0.5D0+0.5*A,G3)
            HF=G0*G1/(G2*G3)
            RETURN
         ELSE IF (L2.OR.L3) THEN
@@ -5725,13 +5728,13 @@ C
            GM=0.0D0
            IF (DABS(C-A-B-INT(C-A-B)).LT.1.0D-15) THEN
               M=INT(C-A-B)
-              CALL GAMMA(A,GA)
-              CALL GAMMA(B,GB)
-              CALL GAMMA(C,GC)
-              CALL GAMMA(A+M,GAM)
-              CALL GAMMA(B+M,GBM)
-              CALL PSI(A,PA)
-              CALL PSI(B,PB)
+              CALL GAMMA2(A,GA)
+              CALL GAMMA2(B,GB)
+              CALL GAMMA2(C,GC)
+              CALL GAMMA2(A+M,GAM)
+              CALL GAMMA2(B+M,GBM)
+              CALL PSI_SPEC(A,PA)
+              CALL PSI_SPEC(B,PB)
               IF (M.NE.0) GM=1.0D0
               DO 30 J=1,ABS(M)-1
 30               GM=GM*J
@@ -5787,13 +5790,13 @@ C
 85               HF=F0*C0+F1*C1
               ENDIF
            ELSE
-              CALL GAMMA(A,GA)
-              CALL GAMMA(B,GB)
-              CALL GAMMA(C,GC)
-              CALL GAMMA(C-A,GCA)
-              CALL GAMMA(C-B,GCB)
-              CALL GAMMA(C-A-B,GCAB)
-              CALL GAMMA(A+B-C,GABC)
+              CALL GAMMA2(A,GA)
+              CALL GAMMA2(B,GB)
+              CALL GAMMA2(C,GC)
+              CALL GAMMA2(C-A,GCA)
+              CALL GAMMA2(C-B,GCB)
+              CALL GAMMA2(C-A-B,GCAB)
+              CALL GAMMA2(A+B-C,GABC)
               C0=GC*GCAB/(GCA*GCB)
               C1=GC*GABC/(GA*GB)*(1.0D0-X)**(C-A-B)
               HF=0.0D0
@@ -5851,7 +5854,7 @@ C       Input :  a --- Parameter
 C                b --- Parameter
 C                z --- Complex argument
 C       Output:  CHG --- M(a,b,z)
-C       Routine called: GAMMA for computing gamma function
+C       Routine called: GAMMA2 for computing gamma function
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
@@ -5905,10 +5908,10 @@ C
                     CHW=CHG
 15               CONTINUE
               ELSE
-                 CALL GAMMA(A,G1)
-                 CALL GAMMA(B,G2)
+                 CALL GAMMA2(A,G1)
+                 CALL GAMMA2(B,G2)
                  BA=B-A
-                 CALL GAMMA(BA,G3)
+                 CALL GAMMA2(BA,G3)
                  CS1=(1.0D0,0.0D0)
                  CS2=(1.0D0,0.0D0)
                  CR1=(1.0D0,0.0D0)
@@ -5967,8 +5970,8 @@ C                c --- Parameter,  c <> 0,-1,-2,...
 C                z --- Complex argument
 C       Output:  ZHF --- F(a,b,c,z)
 C       Routines called:
-C            (1) GAMMA for computing gamma function
-C            (2) PSI for computing psi function
+C            (1) GAMMA2 for computing gamma function
+C            (2) PSI_SPEC for computing psi function
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Y)
@@ -5997,16 +6000,16 @@ C
         IF (A0.EQ.0.0D0.OR.A.EQ.0.0D0.OR.B.EQ.0.0D0) THEN
            ZHF=(1.0D0,0.0D0)
         ELSE IF (Z.EQ.1.0D0.AND.C-A-B.GT.0.0D0) THEN
-           CALL GAMMA(C,GC)
-           CALL GAMMA(C-A-B,GCAB)
-           CALL GAMMA(C-A,GCA)
-           CALL GAMMA(C-B,GCB)
+           CALL GAMMA2(C,GC)
+           CALL GAMMA2(C-A-B,GCAB)
+           CALL GAMMA2(C-A,GCA)
+           CALL GAMMA2(C-B,GCB)
            ZHF=GC*GCAB/(GCA*GCB)
         ELSE IF (L2) THEN
            G0=DSQRT(PI)*2.0D0**(-A)
-           CALL GAMMA(C,G1)
-           CALL GAMMA(1.0D0+A/2.0D0-B,G2)
-           CALL GAMMA(0.5D0+0.5D0*A,G3)
+           CALL GAMMA2(C,G1)
+           CALL GAMMA2(1.0D0+A/2.0D0-B,G2)
+           CALL GAMMA2(0.5D0+0.5D0*A,G3)
            ZHF=G0*G1/(G2*G3)
         ELSE IF (L3.OR.L4) THEN
            IF (L3) NM=INT(ABS(A))
@@ -6046,13 +6049,13 @@ C
               MCAB=INT(C-A-B+EPS*DSIGN(1.0D0,C-A-B))
               IF (DABS(C-A-B-MCAB).LT.EPS) THEN
                  M=INT(C-A-B)
-                 CALL GAMMA(A,GA)
-                 CALL GAMMA(B,GB)
-                 CALL GAMMA(C,GC)
-                 CALL GAMMA(A+M,GAM)
-                 CALL GAMMA(B+M,GBM)
-                 CALL PSI(A,PA)
-                 CALL PSI(B,PB)
+                 CALL GAMMA2(A,GA)
+                 CALL GAMMA2(B,GB)
+                 CALL GAMMA2(C,GC)
+                 CALL GAMMA2(A+M,GAM)
+                 CALL GAMMA2(B+M,GBM)
+                 CALL PSI_SPEC(A,PA)
+                 CALL PSI_SPEC(B,PB)
                  IF (M.NE.0) GM=1.0D0
                  DO 30 J=1,ABS(M)-1
 30                  GM=GM*J
@@ -6113,13 +6116,13 @@ C
 85                  ZHF=ZF0*ZC0+ZF1*ZC1
                  ENDIF
               ELSE
-                 CALL GAMMA(A,GA)
-                 CALL GAMMA(B,GB)
-                 CALL GAMMA(C,GC)
-                 CALL GAMMA(C-A,GCA)
-                 CALL GAMMA(C-B,GCB)
-                 CALL GAMMA(C-A-B,GCAB)
-                 CALL GAMMA(A+B-C,GABC)
+                 CALL GAMMA2(A,GA)
+                 CALL GAMMA2(B,GB)
+                 CALL GAMMA2(C,GC)
+                 CALL GAMMA2(C-A,GCA)
+                 CALL GAMMA2(C-B,GCB)
+                 CALL GAMMA2(C-A-B,GCAB)
+                 CALL GAMMA2(A+B-C,GABC)
                  ZC0=GC*GCAB/(GCA*GCB)
                  ZC1=GC*GABC/(GA*GB)*(1.0D0-Z)**(C-A-B)
                  ZHF=(0.0D0,0.0D0)
@@ -6154,13 +6157,13 @@ C
            MAB=INT(A-B+EPS*DSIGN(1.0D0,A-B))
            IF (DABS(A-B-MAB).LT.EPS.AND.A0.LE.1.1D0) B=B+EPS
            IF (DABS(A-B-MAB).GT.EPS) THEN
-              CALL GAMMA(A,GA)
-              CALL GAMMA(B,GB)
-              CALL GAMMA(C,GC)
-              CALL GAMMA(A-B,GAB)
-              CALL GAMMA(B-A,GBA)
-              CALL GAMMA(C-A,GCA)
-              CALL GAMMA(C-B,GCB)
+              CALL GAMMA2(A,GA)
+              CALL GAMMA2(B,GB)
+              CALL GAMMA2(C,GC)
+              CALL GAMMA2(A-B,GAB)
+              CALL GAMMA2(B-A,GBA)
+              CALL GAMMA2(C-A,GCA)
+              CALL GAMMA2(C-B,GCB)
               ZC0=GC*GBA/(GCA*GB*(-Z)**A)
               ZC1=GC*GAB/(GCB*GA*(-Z)**B)
               ZR0=ZC0
@@ -6183,22 +6186,22 @@ C
               NCA=INT(CA+EPS*DSIGN(1.0D0,CA))
               NCB=INT(CB+EPS*DSIGN(1.0D0,CB))
               IF (DABS(CA-NCA).LT.EPS.OR.DABS(CB-NCB).LT.EPS) C=C+EPS
-              CALL GAMMA(A,GA)
-              CALL GAMMA(C,GC)
-              CALL GAMMA(C-B,GCB)
-              CALL PSI(A,PA)
-              CALL PSI(C-A,PCA)
-              CALL PSI(A-C,PAC)
+              CALL GAMMA2(A,GA)
+              CALL GAMMA2(C,GC)
+              CALL GAMMA2(C-B,GCB)
+              CALL PSI_SPEC(A,PA)
+              CALL PSI_SPEC(C-A,PCA)
+              CALL PSI_SPEC(A-C,PAC)
               MAB=INT(A-B+EPS)
               ZC0=GC/(GA*(-Z)**B)
-              CALL GAMMA(A-B,GM)
+              CALL GAMMA2(A-B,GM)
               ZF0=GM/GCB*ZC0
               ZR=ZC0
               DO 120 K=1,MAB-1
                  ZR=ZR*(B+K-1.0D0)/(K*Z)
                  T0=A-B-K
-                 CALL GAMMA(T0,G0)
-                 CALL GAMMA(C-B-K,GCBK)
+                 CALL GAMMA2(T0,G0)
+                 CALL GAMMA2(C-B-K,GCBK)
 120              ZF0=ZF0+ZR*G0/GCBK
               IF (MAB.EQ.0) ZF0=(0.0D0,0.0D0)
               ZC1=GC/(GA*GCB*(-Z)**A)
@@ -7651,7 +7654,7 @@ C       Input :  x   --- Argument of Pm(x)  ( -1 ף x ף 1 )
 C                m   --- Order of Pmv(x)
 C                v   --- Degree of Pmv(x)
 C       Output:  PMV --- Pmv(x)
-C       Routine called:  PSI for computing Psi function
+C       Routine called:  PSI_SPEC for computing Psi function
 C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -7709,7 +7712,7 @@ C
 40                  S0=S0+R1
                  PV0=-VS*R2/M*S0
               ENDIF
-              CALL PSI(V,PSV)
+              CALL PSI_SPEC(V,PSV)
               PA=2.0D0*(PSV+EL)+PI/DTAN(PI*V)+1.0D0/V
               S1=0.0D0
               DO 45 J=1,M
@@ -7878,18 +7881,18 @@ C                b  --- Parameter ( b <> 0,-1,-2,...)
 C                x  --- Argument
 C       Output:  HU --- U(a,b,x)
 C                ID --- Estimated number of significant digits
-C       Routine called: GAMMA for computing gamma function
+C       Routine called: GAMMA2 for computing gamma function
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         ID=-100
         PI=3.141592653589793D0
-        CALL GAMMA(A,GA)
-        CALL GAMMA(B,GB)
+        CALL GAMMA2(A,GA)
+        CALL GAMMA2(B,GB)
         XG1=1.0D0+A-B
-        CALL GAMMA(XG1,GAB)
+        CALL GAMMA2(XG1,GAB)
         XG2=2.0D0-B
-        CALL GAMMA(XG2,GB2)
+        CALL GAMMA2(XG2,GB2)
         HU0=PI/DSIN(PI*B)
         R1=HU0/(GAB*GB)
         R2=HU0*X**(1.0D0-B)/(GA*GB2)
@@ -8045,7 +8048,7 @@ C                va --- Order
 C       Output:  PD --- Dv(x)
 C       Routines called:
 C             (1) VVLA for computing Vv(x) for large |x|
-C             (2) GAMMA for computing ג(x)
+C             (2) GAMMA2 for computing ג(x)
 C       ====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8064,7 +8067,7 @@ C
         IF (X.LT.0.0D0) THEN
             X1=-X
             CALL VVLA(VA,X1,VL)
-            CALL GAMMA(-VA,GL)
+            CALL GAMMA2(-VA,GL)
             PD=PI*VL/GL+DCOS(PI*VA)*PD
         ENDIF
         RETURN
@@ -8357,14 +8360,14 @@ C       Purpose: Compute the beta function B(p,q)
 C       Input :  p  --- Parameter  ( p > 0 )
 C                q  --- Parameter  ( q > 0 )
 C       Output:  BT --- B(p,q)
-C       Routine called: GAMMA for computing ג(x)
+C       Routine called: GAMMA2 for computing ג(x)
 C       ==========================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        CALL GAMMA(P,GP)
-        CALL GAMMA(Q,GQ)
+        CALL GAMMA2(P,GP)
+        CALL GAMMA2(Q,GQ)
         PPQ=P+Q
-        CALL GAMMA(PPQ,GPQ)
+        CALL GAMMA2(PPQ,GPQ)
         BT=GP*GQ/GPQ
         RETURN
         END
@@ -8863,7 +8866,7 @@ C                for small argument
 C       Input:   x  --- Argument
 C                va --- Order
 C       Output:  PD --- Dv(x)
-C       Routine called: GAMMA for computing ג(x)
+C       Routine called: GAMMA2 for computing ג(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -8879,19 +8882,19 @@ C
               IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0)) THEN
                  PD=0.0D0
               ELSE
-                 CALL GAMMA(VA0,GA0)
+                 CALL GAMMA2(VA0,GA0)
                  PD=DSQRT(PI)/(2.0D0**(-.5D0*VA)*GA0)
               ENDIF
            ELSE
-              CALL GAMMA(-VA,G1)
+              CALL GAMMA2(-VA,G1)
               A0=2.0D0**(-0.5D0*VA-1.0D0)*EP/G1
               VT=-.5D0*VA
-              CALL GAMMA(VT,G0)
+              CALL GAMMA2(VT,G0)
               PD=G0
               R=1.0D0
               DO 10 M=1,250
                  VM=.5D0*(M-VA)
-                 CALL GAMMA(VM,GM)
+                 CALL GAMMA2(VM,GM)
                  R=-R*SQ2*X/M
                  R1=GM*R
                  PD=PD+R1
@@ -9165,7 +9168,7 @@ C                 an arbitrary order v
 C       Input :   v   --- Order of Lv(x)  ( |v| ף 20 )
 C                 x   --- Argument of Lv(x) ( x ע 0 )
 C       Output:   SLV --- Lv(x)
-C       Routine called: GAMMA to compute the gamma function
+C       Routine called: GAMMA2 to compute the gamma function
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -9182,14 +9185,14 @@ C
         ENDIF
         IF (X.LE.40.0D0) THEN
            V0=V+1.5D0
-           CALL GAMMA(V0,GA)
+           CALL GAMMA2(V0,GA)
            S=2.0D0/(DSQRT(PI)*GA)
            R1=1.0D0
            DO 10 K=1,100
               VA=K+1.5D0
-              CALL GAMMA(VA,GA)
+              CALL GAMMA2(VA,GA)
               VB=V+K+1.5D0
-              CALL GAMMA(VB,GB)
+              CALL GAMMA2(VB,GB)
               R1=R1*(0.5D0*X)**2
               R2=R1/(GA*GB)
               S=S+R2
@@ -9199,14 +9202,14 @@ C
         ELSE
            SA=-1.0D0/PI*(0.5D0*X)**(V-1.0)
            V0=V+0.5D0
-           CALL GAMMA(V0,GA)
+           CALL GAMMA2(V0,GA)
            S=-DSQRT(PI)/GA
            R1=-1.0D0
            DO 20 K=1,12
               VA=K+0.5D0
-              CALL GAMMA(VA,GA)
+              CALL GAMMA2(VA,GA)
               VB=-K+V+0.5D0
-              CALL GAMMA(VB,GB)
+              CALL GAMMA2(VB,GB)
               R1=-R1/(0.5D0*X)**2
               S=S+R1*GA/GB
 20         CONTINUE
@@ -9501,8 +9504,8 @@ C                x  --- Argument
 C       Output:  HU --- U(a,b,x)
 C                ID --- Estimated number of significant digits
 C       Routines called:
-C            (1) GAMMA for computing gamma function ג(x)
-C            (2) PSI for computing psi function
+C            (1) GAMMA2 for computing gamma function ג(x)
+C            (2) PSI_SPEC for computing psi function
 C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -9515,20 +9518,20 @@ C
            RN=RN*J
            IF (J.EQ.N-1) RN1=RN
 10      CONTINUE
-        CALL PSI(A,PS)
-        CALL GAMMA(A,GA)
+        CALL PSI_SPEC(A,PS)
+        CALL GAMMA2(A,GA)
         IF (B.GT.0.0) THEN
            A0=A
            A1=A-N
            A2=A1
-           CALL GAMMA(A1,GA1)
+           CALL GAMMA2(A1,GA1)
            UA=(-1)**(N-1)/(RN*GA1)
            UB=RN1/GA*X**(-N)
         ELSE
            A0=A+N
            A1=A0
            A2=A
-           CALL GAMMA(A1,GA1)
+           CALL GAMMA2(A1,GA1)
            UA=(-1)**(N-1)/(RN*GA)*X**N
            UB=RN1/GA1
         ENDIF
@@ -10369,7 +10372,7 @@ C                BK(n) --- Kn+v0(x)
 C                DK(n) --- Kn+v0'(x)
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) GAMMA for computing the gamma function
+C            (1) GAMMA2 for computing the gamma function
 C            (2) MSTA1 and MSTA2 to compute the starting
 C                point for backward recurrence
 C       =======================================================
@@ -10400,7 +10403,7 @@ C
            A1=1.0D0
         ELSE
            V0P=1.0D0+V0
-           CALL GAMMA(V0P,GAP)
+           CALL GAMMA2(V0P,GAP)
            A1=(0.5D0*X)**V0/GAP
         ENDIF
         K0=14
@@ -10459,7 +10462,7 @@ C
 50            BK0=CT+CS
            ELSE
               V0N=1.0D0-V0
-              CALL GAMMA(V0N,GAN)
+              CALL GAMMA2(V0N,GAN)
               A2=1.0D0/(GAN*(0.5D0*X)**V0)
               A1=(0.5D0*X)**V0/GAP
               SUM=A2-A1
@@ -10804,7 +10807,7 @@ C                CBK(n) --- Kn+v0(z)
 C                CDK(n) --- Kn+v0'(z)
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) GAMMA for computing the gamma function
+C            (1) GAMMA2 for computing the gamma function
 C            (2) MSTA1 and MSTA2 for computing the starting
 C                point for backward recurrence
 C       ===========================================================
@@ -10844,7 +10847,7 @@ C
               CA1=(1.0D0,0.0D0)
            ELSE
               V0P=1.0D0+V0
-              CALL GAMMA(V0P,GAP)
+              CALL GAMMA2(V0P,GAP)
               CA1=(0.5D0*Z1)**V0/GAP
            ENDIF
            CI0=(1.0D0,0.0D0)
@@ -10896,7 +10899,7 @@ C
 45            CBK0=CT+CS
            ELSE
               V0N=1.0D0-V0
-              CALL GAMMA(V0N,GAN)
+              CALL GAMMA2(V0N,GAN)
               CA2=1.0D0/(GAN*(0.5D0*Z1)**V0)
               CA1=(0.5D0*Z1)**V0/GAP
               CSU=CA2-CA1
@@ -10965,7 +10968,7 @@ C                CBK(n) --- Kn+v0(z)
 C                CDK(n) --- Kn+v0'(z)
 C                VM --- Highest order computed
 C       Routines called:
-C            (1) GAMMA for computing the gamma function
+C            (1) GAMMA2 for computing the gamma function
 C            (2) MSTA1 and MSTA2 for computing the starting 
 C                point for backward recurrence
 C       ============================================================
@@ -11005,7 +11008,7 @@ C
               CA1=(1.0D0,0.0D0)
            ELSE
               V0P=1.0D0+V0
-              CALL GAMMA(V0P,GAP)
+              CALL GAMMA2(V0P,GAP)
               CA1=(0.5D0*Z1)**V0/GAP
            ENDIF
            CI0=(1.0D0,0.0D0)
@@ -11057,7 +11060,7 @@ C
 45            CBK0=CT+CS
            ELSE
               V0N=1.0D0-V0
-              CALL GAMMA(V0N,GAN)
+              CALL GAMMA2(V0N,GAN)
               CA2=1.0D0/(GAN*(0.5D0*Z1)**V0)
               CA1=(0.5D0*Z1)**V0/GAP
               CSU=CA2-CA1
@@ -12513,7 +12516,7 @@ C                arbitrary order v
 C       Input :  v  --- Order of Hv(x)  ( -8.0 ף v ף 12.5 )
 C                x  --- Argument of Hv(x) ( x ע 0 )
 C       Output:  HV --- Hv(x)
-C       Routine called: GAMMA to compute the gamma function
+C       Routine called: GAMMA2 to compute the gamma function
 C       =====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -12530,14 +12533,14 @@ C
         ENDIF
         IF (X.LE.20.0D0) THEN
            V0=V+1.5D0
-           CALL GAMMA(V0,GA)
+           CALL GAMMA2(V0,GA)
            S=2.0D0/(DSQRT(PI)*GA)
            R1=1.0D0
            DO 10 K=1,100
               VA=K+1.5D0
-              CALL GAMMA(VA,GA)
+              CALL GAMMA2(VA,GA)
               VB=V+K+1.5D0
-              CALL GAMMA(VB,GB)
+              CALL GAMMA2(VB,GB)
               R1=-R1*(0.5D0*X)**2
               R2=R1/(GA*GB)
               S=S+R2
@@ -12547,14 +12550,14 @@ C
         ELSE
            SA=(0.5D0*X)**(V-1.0)/PI
            V0=V+0.5D0
-           CALL GAMMA(V0,GA)
+           CALL GAMMA2(V0,GA)
            S=DSQRT(PI)/GA
            R1=1.0D0
            DO 20 K=1,12
               VA=K+0.5D0
-              CALL GAMMA(VA,GA)
+              CALL GAMMA2(VA,GA)
               VB=-K+V+0.5D0
-              CALL GAMMA(VB,GB)
+              CALL GAMMA2(VB,GB)
               R1=R1/(0.5D0*X)**2
               S=S+R1*GA/GB
 20         CONTINUE
