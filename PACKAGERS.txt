@@ -33,24 +33,27 @@ important files may be missing.
 1) Get scipy,f2py and their dependencies from CVS:
 
   export CVSROOT=:pserver:anonymous@scipy.org:/home/cvsroot
-  cvs co scipy_core
-  cvs co -d scipy world/scipy
+  cvs -z7 co scipy_core
+  cvs -z7 co -d scipy world/scipy
+  cd scipy && cvs -z7 co Lib_chaco; cd -
+
 
   export CVSROOT=:pserver:anonymous@cens.ioc.ee:/home/cvs
-  cvs co f2py2e
+  cvs -z7 co f2py2e
 
 2) Disable scipy_core package in scipy/setup.py file by commenting out
 the following line:
 
   separate_packages += core_packages
 
-For simplicity, disable also chaco by commenting out the line in
-setup.py:
+If you find building chaco troublesome (e.g. it is known to fail due
+to gcc-2.95.4 compiler bugs) then you can disable chaco by commenting
+out the following line in  setup.py:
 
   separate_packages += chaco_packages
 
 3) Disable scipy_distutils checkout in f2py2e/setup.py file by replacing
-the line
+the following line
 
   if 'sdist' in sys.argv and not os.path.exists('other/scipy_distutils'):
 
@@ -66,18 +69,22 @@ with
   cd ..
 
   cd f2py2e
+  python setup.py sdist
   cp dist/F2PY-*.tar.gz ..
   cd ..
 
   cd scipy
-  python setup.py sdist
+  # note that this will call swig for agg module (in chaco build),
+  # also several tests are run for xplt module
+  PYTHONPATH=..:../scipy_core python setup.py sdist
   cp dist/SciPy-*.tar.gz ..
   cd ..
 
-5) Install scipy_core, f2py2e, and scipy strictly in the given order
-(now there are no overlaps in software installations):
+The resulting gzipped tar-files do not contain software overlaps
+anymore and should be suitable for packaging.
 
-  Unpack tar-ball sources.
+5) Install scipy_core, f2py2e, and scipy strictly in the given order.
+  Unpack all tar-ball sources and run:
 
   cd Scipy_core-*
   python setup.py install
