@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import cPickle, cStringIO
+import time
 pickle = cPickle
 #import zlib
 import socket
@@ -8,7 +9,7 @@ import sys
 import sync_cluster #yes I'm importing the current module
 
 bufsize = 1<<12 #4K buffer, for Linux
-shell = "ssh -n"
+shell = "ssh -X"
 
 RemoteError = 'RemoteError'
 RemoteCrashError = 'RemoteError'
@@ -336,7 +337,7 @@ class standard_sync_client:
         cmd = '%s %s "python %s server %d >&/tmp/crud%d </dev/null &"' % \
               (shell,self.host, module_name, self.port, self.port)
         self.log_msg(cmd)
-	print cmd
+        #print cmd
         os.system(cmd)
 
     def exec_code_pack(self,code,inputs=None,returns=None,global_vars=None):
@@ -405,6 +406,8 @@ class standard_sync_client:
         #print 'self.id, ',self.id, contents
         self.catch_exception(contents)
         #print 'after exception'
+        #try:    print  contents['_exec_time']
+        #except: pass    
         return contents['result']
     def get_load_info(contents):
         #use this to read execution time info from the package...
@@ -597,8 +600,10 @@ class standard_sync_handler(SocketServer.StreamRequestHandler):
         # remove the command from the task.  The task now
         # represents
         del task['_command']
+        t1 = time.time()
         result= apply(command,(),task)
-        result_dict = {'result':result}
+        t2 = time.time()
+        result_dict = {'result':result,'_exec_time':t2-t1}
         #add load info here
         return result_dict
     def pack_exception(self,err):

@@ -30,11 +30,16 @@ SizeMismatch = 'SizeMismatch'
 SizeError = 'SizeError'
 NotImplemented = 'NotImplemented'
 
-b = array((0.,0.,0.))
-b1= array((0.,1.,-1))
+#b = array((0.,0.,0.))
+#b1= array((0.,1.,-1))
+#bad = b1/b		
+#INF = bad[1]
+#NEG_INF = bad[2]
+b = array((0.,0.))
+b1= array((1.,-1))
 bad = b1/b		
-INF = bad[1]
-NEG_INF = bad[2]
+INF = bad[0]
+NEG_INF = bad[1]
 BIG = 1e20
 SMALL = 1e-20
 tmp_x=0
@@ -61,7 +66,7 @@ class Plot:
 #	gnuhelper = ''
 #	gnuplot = 'c:\programs\gnuplot\gnuplot2.exe'
 #unix???
-	gnuhelper = '' # doesn't need a hlper function
+	gnuhelper = 'ssh -X localhost' # doesn't need a hlper function
 	gnuplot = 'gnuplot'
 ###David's configurations
 # I think you have the console version

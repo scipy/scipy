@@ -124,10 +124,10 @@ class machine_cluster:
                 if not addendum:
                     self.workers[i].send(package)
                 else:
-                    self.workers[i].send(package,addendum[i])   
+                    self.workers[i].send(package,addendum[i])
             except socket.error, msg:    
                 import sys
-                err_type, err_msg = sys.exc_info()[:2]
+                err_type, err_msg = str,sys.exc_info()[:2]
                 self.had_send_error.append(self.workers[i])
                 try: self.send_exc[(err_type,err_msg)].append(self.workers[i].id)
                 except: self.send_exc[(err_type,err_msg)] = [self.workers[i].id]
@@ -147,7 +147,6 @@ class machine_cluster:
                     #print worker.id,
                     sys.stdout.flush()
                     results.append(worker.recv())
-                                        
                 except sync_cluster.RemoteError:    
                     import sys
                     err = sys.exc_info()[1]
