@@ -11,7 +11,7 @@ SciPy requires the following software installed:
 3) ATLAS 3.2.1 or newer and complete LAPACK (see NOTES 2, 3, 4)
      http://math-atlas.sourceforge.net/
      http://www.netlib.org/lapack/
-4) f2py 2.23.190-1367 or newer
+4) f2py 2.35.229-1492 or newer
      http://cens.ioc.ee/projects/f2py2e/
 5) C, C++, Fortran 77 compilers (see COMPILER NOTES)
    gcc 2.95.x, 3.1.x compilers are recommended
@@ -19,7 +19,7 @@ SciPy requires the following software installed:
 
 The following software is optional:
 
-6) FFTW 2.1.x (see Lib/fftpack/NOTES.txt)
+6) FFTW 2.1.x (see Lib/fftpack/NOTES.txt) but not 2.2.x (yet)
      http://www.fftw.org/
 7) wxPython
      http://www.wxpython.org/
