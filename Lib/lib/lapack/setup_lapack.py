@@ -59,7 +59,7 @@ def configuration(parent_package='',parent_path=None):
             ' sggev cggev'.split())
 
     if atlas_version=='3.2.1_pre3.3.6':
-        target_dir = join(target_dir,'atlas321')
+        target_dir = os.path.join(target_dir,'atlas321')
         skip_names['clapack'].extend(\
             'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
             ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
@@ -84,7 +84,7 @@ def configuration(parent_package='',parent_path=None):
         name = ext.name.split('.')[-1]
         assert name=='clapack',`name`
         if atlas_version is None:
-            target = join(build_dir,target_dir,'clapack.pyf')
+            target = os.path.join(build_dir,target_dir,'clapack.pyf')
             from distutils.dep_util import newer
             if newer(__file__,target):
                 f = open(source,'w')
