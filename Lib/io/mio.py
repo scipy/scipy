@@ -20,9 +20,9 @@ def getsize_type(mtype):
         mtype = 'i'
     elif mtype in ['l','long','int32','integer*4']:
         mtype = 'l'
-    elif mtype in ['f','float','float32','real*4']:
+    elif mtype in ['f','float','float32','real*4', 'real']:
         mtype = 'f'
-    elif mtype in ['d','double','float64','real*8']:
+    elif mtype in ['d','double','float64','real*8', 'double precision']:
         mtype = 'd'
     elif mtype in ['F','complex float','complex*8','complex64']:
         mtype = 'F'
@@ -213,7 +213,10 @@ class fopen:
             self.fid.write(str)
             self.fid.write(strlen)
         elif type(fmt) == type(array([0])):
-            sz,mtype = getsize_type(args[0])
+            if len(args) > 0:
+                sz,mtype = getsize_type(args[0])
+            else:
+                sz,mtype = getsize_type(fmt.typecode())
             count = product(fmt.shape)
             strlen = struct.pack(nfmt,count*sz)
             self.fid.write(strlen)
@@ -258,6 +261,10 @@ class fopen:
             if ncount*howmany != nbytes:
                 self.rewind(4)
                 raise ValueError, "A mismatch between the type requested and the data stored."
+            if ncount < 0:
+                raise ValueError, "Negative number of bytes to read:\n    file is probably not opened with correct endian-ness."
+            if ncount == 0:
+                raise ValueError, "End of file?  Zero-bytes to read."
             retval = numpyio.fread(self.fid, ncount, dtype, dtype, self.bs)
             if len(retval) == 1:
                 retval = retval[0]

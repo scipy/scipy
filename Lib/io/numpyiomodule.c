@@ -78,7 +78,7 @@ static PyObject *
   void     *ibuff=NULL;
   int      myelsize;
   int      ibuff_cleared = 1;
-  int      n,nread;
+  long      n,nread;
   char      read_type;
   FILE     *fp;
   char      dobyteswap = 0;
@@ -93,54 +93,56 @@ static PyObject *
   fp = PyFile_AsFile(file);
 
   if (fp == NULL) {
-    PYSETERROR("numpyio: First argument must be an open file");
+    PYSETERROR("First argument must be an open file");
   } 
 
+  if (n <= 0) {
+    PYSETERROR("Second argument (number of bytes to read) must be positive.");
+  }
   /* Make a 1-D NumPy array of type read_type with n elements */ 
-  if (n > 0) {
-    if ((arr = (PyArrayObject *)PyArray_FromDims(1,&n,out_type)) == NULL)
-       return NULL;
 
+  if ((arr = (PyArrayObject *)PyArray_FromDims(1,&n,out_type)) == NULL)
+    return NULL;
+  
       /* Read the data into the array from the file */
-    if (out_type == read_type) {
-       ibuff = arr -> data;
-       myelsize = arr -> descr -> elsize;
-    }
-    else {                    /* Alocate a storage buffer for data read in */
-       indescr = PyArray_DescrFromType((int ) read_type);
-       if (indescr == NULL) goto fail;
-       myelsize = indescr -> elsize;
-       ibuff = malloc(myelsize*n);
-       if (ibuff == NULL)
-         PYSETERROR("numpyio: Could not allocate memory for type casting")
-       ibuff_cleared = 0;
-    }
+  if (out_type == read_type) {
+    ibuff = arr -> data;
+    myelsize = arr -> descr -> elsize;
+  }
+  else {                    /* Alocate a storage buffer for data read in */
+    indescr = PyArray_DescrFromType((int ) read_type);
+    if (indescr == NULL) goto fail;
+    myelsize = indescr -> elsize;
+    ibuff = malloc(myelsize*n);
+    if (ibuff == NULL)
+      PYSETERROR("Could not allocate memory for type casting")
+	ibuff_cleared = 0;
+  }
+  
+  nread = fread(ibuff,myelsize,n,fp);
+  if (ferror(fp)) {
+    clearerr(fp);
+    PYSETERROR("There was an error reading from the file");
+  }
+  
+  /* Check to see correct number of bytes were read.  If not, then
+     resize the array to the number of bytes actually read in.
+  */
 
-    nread = fread(ibuff,myelsize,n,fp);
-    if (ferror(fp)) {
-      clearerr(fp);
-      PYSETERROR("numpyio: There was an error reading from the file");
-    }
-
-      /* Check to see correct number of bytes were read.  If not, then
-         resize the array to the number of bytes actually read in.
-       */
-
-    if (nread < n) {
-      fprintf(stderr,"numpyio: Warning: %d bytes requested, %d bytes read.\n", n, nread);
-      arr->dimensions[0] = nread;
-      arr->data = realloc(arr->data,arr->descr->elsize*nread);
-    }
-
-    if (dobyteswap) {
-      rbo(ibuff,myelsize,nread);
-    }
-    
-    if (out_type != read_type) {    /* We need to type_cast it */
-      (indescr->cast[arr->descr->type_num])(ibuff, 1, arr->data, 1, nread );
-      free(ibuff);
-      ibuff_cleared = 1;
-    }
+  if (nread < n) {
+    fprintf(stderr,"Warning: %d bytes requested, %d bytes read.\n", n, nread);
+    arr->dimensions[0] = nread;
+    arr->data = realloc(arr->data,arr->descr->elsize*nread);
+  }
+  
+  if (dobyteswap) {
+    rbo(ibuff,myelsize,nread);
+  }
+  
+  if (out_type != read_type) {    /* We need to type_cast it */
+    (indescr->cast[arr->descr->type_num])(ibuff, 1, arr->data, 1, nread );
+    free(ibuff);
+    ibuff_cleared = 1;
   }
 
   return PyArray_Return(arr);
@@ -168,7 +170,7 @@ static int write_buffered_output(FILE *fp, PyArrayObject *arr, PyArray_Descr* ou
   buff_ptr = buffer;
   nd_index = (int *)calloc(arr->nd,sizeof(int));
   if (NULL == nd_index) {
-     PyErr_SetString(ErrorObject,"numpyio: Could not allocate memory for index array.");
+     PyErr_SetString(ErrorObject,"Could not allocate memory for index array.");
      return -1;
   }
   buffer_size_bytes = buffer_size * arr->descr->elsize;
@@ -197,18 +199,17 @@ static int write_buffered_output(FILE *fp, PyArrayObject *arr, PyArray_Descr* ou
 
       if (ferror(fp)) {
 	clearerr(fp);
-	PyErr_SetString(ErrorObject,"numpyio: There was an error writing to the file");
+	PyErr_SetString(ErrorObject,"There was an error writing to the file");
 	return -1;
       }
       if (nwrite < buffer_size) {
-	fprintf(stderr,"numpyio: Warning: %d of %d specified bytes written.\n",nwrite, buffer_size);
+	fprintf(stderr,"Warning: %d of %d specified bytes written.\n",nwrite, buffer_size);
       }
     }    
 
   }
   return 0;
 }
-
 
 static PyObject *
  numpyio_tofile(PyObject *self, PyObject *args)  /* args: number of bytes and type */
@@ -218,7 +219,7 @@ static PyObject *
   PyObject *obj;
   PyArray_Descr *outdescr;
   void     *obuff = NULL;
-  int      n, k, nwrite, maxN, elsize_bytes;
+  long      n, k, nwrite, maxN, elsize_bytes;
   int      myelsize, buffer_size;
   FILE     *fp;
   char     *buffer = NULL;
@@ -232,16 +233,16 @@ static PyObject *
   fp = PyFile_AsFile(file);
 
   if (fp == NULL) {
-    PYSETERROR("numpyio: First argument must be an open file");
+    PYSETERROR("First argument must be an open file");
   }
 
   if (!PyArray_Check(obj)) {
-    PYSETERROR("numpyio: Third argument must be a NumPy array.");
+    PYSETERROR("Third argument must be a NumPy array.");
   }
 
   maxN = PyArray_SIZE((PyArrayObject *)obj);
   if (n > maxN) 
-    PYSETERROR("numpyio: The NumPy array does not have that many elements.");
+    PYSETERROR("The NumPy array does not have that many elements.");
 
   if (!PyArray_ISCONTIGUOUS((PyArrayObject *)obj)) {
     arr = (PyArrayObject *)PyArray_CopyFromObject(obj,((PyArrayObject *)obj) -> descr -> type_num, 0, 0); 
@@ -270,7 +271,7 @@ static PyObject *
       while ((NULL == buffer) && (k < arr->nd - 1));
 
       if (NULL == buffer)  /* Still NULL no size was small enough */
-	PYSETERROR("numpyio: Could not allocate memory for any attempted output buffer size.");
+	PYSETERROR("Could not allocate memory for any attempted output buffer size.");
 
       /* Write a buffered output */
 
@@ -304,7 +305,7 @@ static PyObject *
       myelsize = outdescr -> elsize;
       obuff = malloc(n*myelsize);
       if (obuff == NULL)
-	PYSETERROR("numpyio: Could not allocate memory for type-casting");
+	PYSETERROR("Could not allocate memory for type-casting");
       ownalloc = 1;
       (arr->descr->cast[outdescr->type_num])(arr->data,1,obuff,1,n);
     }      
@@ -322,7 +323,7 @@ static PyObject *
     
     if (ferror(fp)) {
       clearerr(fp);
-      PYSETERROR("numpyio: There was an error writing to the file");
+      PYSETERROR("There was an error writing to the file");
     }
     if (nwrite < n) {
       fprintf(stderr,"Warning: %d of %d specified bytes written.\n",nwrite,n);
@@ -380,7 +381,7 @@ static PyObject *
     return NULL;
 
   if (arr->descr->type_num > PyArray_LONG)
-    PYSETERROR("numpyio: Expecting an input array of integer type (no floats).");
+    PYSETERROR("Expecting an input array of integer type (no floats).");
 
   /* Get size information from input array and make a 1-D output array of bytes */
 
@@ -418,7 +419,7 @@ static PyObject *
     return NULL;
   
   if (els_per_slice < 1)
-    PYSETERROR("numpyio: Second argument is elements_per_slice and it must be >= 1.");
+    PYSETERROR("Second argument is elements_per_slice and it must be >= 1.");
 
   type = PyArray_ObjectType(obj,0);
   if ((arr = (PyArrayObject *)PyArray_ContiguousFromObject(obj,type,0,0)) == NULL)
@@ -427,10 +428,10 @@ static PyObject *
   arrsize = PyArray_SIZE(arr);
 
   if ((arrsize % (int) (ceil( (float) els_per_slice / 8))) != 0)
-    PYSETERROR("numpyio: That cannot be the number of elements per slice for this array size.");
+    PYSETERROR("That cannot be the number of elements per slice for this array size.");
 
   if (arr->descr->type_num > PyArray_LONG)
-    PYSETERROR("numpyio: Can only unpack arrays that are of integer type.");
+    PYSETERROR("Can only unpack arrays that are of integer type.");
 
   /* Make an 1-D output array of type out_type */
 
@@ -440,7 +441,7 @@ static PyObject *
       goto fail;
 
   if (out->descr->type_num > PyArray_LONG) {
-    PYSETERROR("numpyio: Can only unpack bits into integer type.");
+    PYSETERROR("Can only unpack bits into integer type.");
   }
   
   unpackbits(arr->data,arr->descr->elsize,out->data,out->descr->elsize,out_size,els_per_slice);
