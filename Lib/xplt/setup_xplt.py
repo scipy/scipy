@@ -76,7 +76,7 @@ class config_pygist (config):
         print "  ============= begin top level configuration ============="
 
         # check alternate libm for Alpha Linux (see play/unix/README.fpu)
-        if not 'MATHLIB' in os.environ:
+        if not os.environ.has_key('MATHLIB'):
             self.mathlib = 'm'
             testcode = """\
 /* check whether libm is broken */
