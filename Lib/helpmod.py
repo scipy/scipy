@@ -27,11 +27,23 @@ def split_line(name, arguments, width):
             newstr = newstr + addstr + argument
     return newstr
 
+def help(object=None,maxwidth=76,output=sys.stdout):
+    """Get help information for a function, class, or module.
     
-def help(object,maxwidth=76,output=sys.stdout):
-    """Print help for a Python object.
+       Example:
+          >>> from scipy import * 
+          >>> help(polyval)
+          polyval(p, x)
+        
+            Evaluate the polymnomial p at x.
+            
+            Description:        
+                If p is of length N, this function returns the value:
+                p[0]*(x**N-1) + p[1]*(x**N-2) + ... + p[N-2]*x + p[N-1]
     """
-    if inspect.isfunction(object):
+    if object == None:
+        help(help)
+    elif inspect.isfunction(object):
         name = object.func_name
         arguments = apply(inspect.formatargspec, inspect.getargspec(object))
 
