@@ -16,22 +16,6 @@ import os # for getuid()
 ClusterError = 'ClusterError'
 TimeoutError = 'TimeoutError'
       
-import scipy.common.proc
-
-def proc_str(self):
-    s = "%-8s %-8s %5d %4.1f %4.1f %8.3f %8.3f %1s %s " % \
-        (self.machine, self.user,self.pid,self.cpu_percent,
-         self.memory_percent,self.total_memory, self.resident_memory, 
-         self.state,self.total_time2)
-    bytes_left = 80 - len(s) - 1
-    if len(self.cmdline) > bytes_left:
-        s = s +  self.cmdline[:6] + '...' + self.cmdline[-(bytes_left-9):]
-    else:
-        s = s +  self.cmdline
-    return s
-
-scipy.common.proc.process.__str__ = proc_str
-
 class machine_cluster:
     def __init__(self,server_list):        
         self.workers=[]
