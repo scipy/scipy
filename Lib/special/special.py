@@ -6,7 +6,7 @@ from cephes import *
 from Numeric import *
 import types
 from scipy_base.fastumath import *
-from scipy_base import squeeze, isscalar, iscomplex
+from scipy_base import squeeze, isscalar, iscomplex, insert, extract, nan
 import specfun
     
 class general_function:
@@ -63,6 +63,37 @@ def sinc(x):
     """
     w = asarray(x*pi)
     return where(x==0, 1.0, sin(w)/w)
+
+def diric(x,n):
+    """Returns the periodic sinc function also called the dirichlet function:
+
+    diric(x) = sin(x *n / 2) / (n sin(x / 2))
+
+    where n is a positive integer.
+    """
+    x,n = asarray(x), asarray(n)
+    n = asarray(n + (x-x))
+    x = asarray(x + (n-n))
+    if x.typecode() in ['fFdD']:
+        ytype = x.typecode()
+    else:
+        ytype = 'd'
+    y = zeros(x.shape,ytype)
+
+    mask1 = (n <= 0) | (n <> floor(n))
+    insert(y,mask1,nan)
+
+    z = asarray(x / 2.0 / pi)
+    mask2 = (1-mask1) & (z == floor(z))
+    zsub = extract(z,mask2)
+    nsub = extract(n,mask2)
+    insert(y,mask2,pow(-1,zsub*(nsub-1)))
+
+    mask = (1-mask1) & (1-mask2)
+    xsub = extract(x,mask)
+    nsub = extract(n,mask)
+    insert(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
+    return y
 
 
 def jnjnp_zeros(nt):
