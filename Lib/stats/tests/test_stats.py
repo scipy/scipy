@@ -162,7 +162,7 @@ class test_std(TestCase):
 
 class test_cmedian(TestCase):
     def check_basic(self):
-        
+        pass
 
 def test_suite(level=1):
     suites = []
