@@ -19,7 +19,6 @@ def resize1d(arr, newlen):
 
 MAXPRINT=50
 ALLOCSIZE=1000
-# The formats that we might potentially understand.
 
 _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
@@ -29,12 +28,14 @@ _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('D','D'):'D'}
 _transtabl = {'f':'s','d':'d','F':'c','D':'z'}
 _itranstabl = {'s':'f','d':'d','c':'F','z':'D'}
+
+# The formats that we might potentially understand.
 _formats = {'csc':[0,"Compressed Sparse Column"],
             'csr':[1,"Compressed Sparse Row"],
             'dok':[2,"Dictionary Of Keys"],
             'lil':[3,"LInked List"],
             'dod':[4,"Dictionary of Dictionaries"],
-            'sss':[5,"Symmetric Sparse Skyline"],           
+            'sss':[5,"Symmetric Sparse Skyline"],
             'coo':[6,"COOrdinate"],
             'lba':[7,"Linpack BAnded"],
             'egd':[8,"Ellpack-itpack Generalized Diagonal"],
@@ -60,7 +61,6 @@ def _convert_data(data1,data2,newtype):
     
 # This class provides a base class for all sparse matrices
 #   most of the work is provided by subclasses
-
 class spmatrix:
     def __init__(self, format, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
         self.format = format
@@ -295,11 +295,10 @@ class csc_matrix(spmatrix):
         elif (isinstance(s,ArrayType) or \
               isinstance(s,type([]))):
             s = asarray(s)
+            if s.typecode() not in 'fdFD':
+                s = s*1.0            
             if (rank(s) == 2):  # converting from a full array
                 M, N = s.shape
-                s = asarray(s)
-                if s.typecode() not in 'fdFD':
-                    s = s*1.0
                 typecode = s.typecode()
                 func = getattr(sparsetools,_transtabl[typecode]+'fulltocsc')
                 ierr = irow = jcol = 0
@@ -1503,7 +1502,7 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
         
 
 if __name__ == "__main__":
-    a = spmatrix(arange(1,9),[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4])
+    a = csc_matrix(arange(1,9),ij=transpose([[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4]]))
     print "Representation of a matrix:"
     print repr(a)
     print "How a matrix prints."
