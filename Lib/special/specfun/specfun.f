@@ -90,6 +90,7 @@ C
         ELSE IF (W0.LE.2.5) THEN
            S=Z*ZP/3.0D0
            CR=S
+           WB0=0.0D0
            DO 10 K=1,80
               CR=-.5D0*CR*(4.0D0*K-1.0D0)/K/(2.0D0*K+1.0D0)
      &          /(4.0D0*K+3.0D0)*ZP2
@@ -180,6 +181,7 @@ C
            ENDIF
            QF2=0.0D0
            QF1=1.0D0
+           QF0=0.0D0
            DO 25 K=KM,0,-1
               QF0=((2*K+3.0D0)*X*QF1-(K+2.0D0)*QF2)/(K+1.0D0)
               IF (K.LE.N) QM(0,K)=QF0
@@ -487,6 +489,7 @@ C
 35            BK(K+1)=QT*S1
 40         CONTINUE
 	ELSE IF (IP.EQ.1) THEN
+           SW=0.0D0
 	   DO 60 K=0,N2-1
 	      S1=0.0D0
 	      I1=K-M+1
@@ -691,6 +694,7 @@ C
 	CALL LPMNS(M,NM2,X,PM,PD)
 	CALL LQMNS(M,NM2,X,QM,QD)
 	SU0=0.0D0
+        SW=0.0D0
 	DO 10 K=1,NM
 	  J=2*K-2+M+IP
 	  SU0=SU0+DF(K)*QM(J)
@@ -1056,6 +1060,7 @@ C       Output:  A0 --- Initial characteristic value
 C       ========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        W=0.0D0
         IF (KD.EQ.1.OR.KD.EQ.2) W=2.0D0*M+1.0D0
         IF (KD.EQ.3.OR.KD.EQ.4) W=2.0D0*M-1.0D0
         W2=W*W
@@ -1332,6 +1337,9 @@ C
 25         TTY=2.0D0/PI*(E0+.125D0*X*X*B1)
         ELSE
            A0=DSQRT(2.0D0/(PI*X))
+           BJ0=0.0D0
+           BY0=0.0D0
+           BJ1=0.0D0
            DO 50 L=0,1
               VT=4.0D0*L*L
               PX=1.0D0
@@ -1464,6 +1472,7 @@ C
 10         R0=R0*J
 	R=R0    
 	SUC=R*DF(1)
+        SW=0.0D0
 	DO 15 K=2,NM
 	   R=R*(M+K-1.0)*(M+K+IP-1.5D0)/(K-1.0D0)/(K+IP-1.5D0)
 	   SUC=SUC+R*DF(K)
@@ -1472,9 +1481,10 @@ C
 20      A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC
 	R2F=0.0D0
         EPS1=0.0D0
+        NP=0
 	DO 50 K=1,NM
 	   L=2*K+M-N-2+IP
-	   IF (L.EQ.4*INT(L/4)) LG=1
+           LG=1
 	   IF (L.NE.4*INT(L/4)) LG=-1
 	   IF (K.EQ.1) THEN
 	      R=R0
@@ -1497,7 +1507,7 @@ C
         EPS2=0.0D0
 	DO 60 K=1,NM
 	   L=2*K+M-N-2+IP
-	   IF (L.EQ.4*INT(L/4)) LG=1
+	   LG=1
 	   IF (L.NE.4*INT(L/4)) LG=-1
 	   IF (K.EQ.1) THEN
 	      R=R0
@@ -1739,6 +1749,7 @@ C       ==========================================================
         IF (X.LE.3.5D0) THEN
            ER=1.0D0
            R=1.0D0
+           W=0.0D0
            DO 10 K=1,100
               R=R*X2/(K+0.5D0)
               ER=ER+R
@@ -1764,6 +1775,7 @@ C       ==========================================================
            ER1=DEXP(-X2)*(1.0D0-CS)/(2.0D0*PI*X)
            EI1=DEXP(-X2)*SS/(2.0D0*PI*X)
            ER2=0.0D0
+           W1=0.0D0
            DO 25 N=1,100
               ER2=ER2+DEXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
      &            -2.0D0*X*DCOSH(N*Y)*CS+N*DSINH(N*Y)*SS)
@@ -1772,6 +1784,7 @@ C       ==========================================================
 30         C0=2.0D0*DEXP(-X2)/PI
            ERR=ER0+ER1+C0*ER2
            EI2=0.0D0
+           W2=0.0D0
            DO 35 N=1,100
               EI2=EI2+DEXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
      &            *DCOSH(N*Y)*SS+N*DSINH(N*Y)*CS)
@@ -1862,6 +1875,7 @@ C
         F0=0.0D0
         F1=1.0D-35
         SU=0.0D0
+        F=0.0D0
         DO 20 K=M,0,-1
            F=2.0D0*(K+1.0D0)*F1/X-F0
            IF (K.LE.N+1) BJ(K+1)=F
@@ -2343,6 +2357,8 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION XA(NT),XB(NT),XC(NT),XD(NT)
         PI=3.141592653589793D0
+        RT0=0.0D0
+        RT=0.0D0
         DO 15 I=1,NT
            IF (KF.EQ.1) THEN
               U=3.0*PI*(4.0*I-1)/8.0D0
@@ -2731,6 +2747,7 @@ C
               Q0=Q1
 15            Q1=QF
         ELSE
+           QC1=0.0D0
            QC2=1.0D0/X
            DO 20 J=1,N
               QC2=QC2*J/((2.0*J+1.0D0)*X)
@@ -2924,6 +2941,8 @@ C
 	K0=11
 	IF (X.GE.35.0D0) K0=10
 	IF (X.GE.50.0D0) K0=8
+        BJV0=0.0D0
+        BJV1=0.0D0
 	DO 40 J=0,1
 	   VV=4.0D0*(J+V0)*(J+V0)
 	   PX=1.0D0
@@ -2980,6 +2999,7 @@ C
 	   ELSE
 	      M=MSTA2(X,N,15)
 	   ENDIF
+           F=0.0D0
 	   F2=0.0D0
 	   F1=1.0D-100
 	   DO 50 K=M,0,-1
@@ -2987,8 +3007,9 @@ C
 	      IF (K.LE.N) VL(K)=F
 	      F2=F1
 50            F1=F
+           CS=0.0D0
 	   IF (DABS(BJV0).GT.DABS(BJV1)) CS=BJV0/F
-	   IF (DABS(BJV0).LE.DABS(BJV1)) CS=BJV1/F2
+	   ELSE CS=BJV1/F2
 	   DO 55 K=0,N
 55            VL(K)=CS*VL(K)
 	ENDIF
@@ -3055,7 +3076,8 @@ C
         ID=7
         A1=A-1.0D0
         B1=B-A-1.0D0
-        C=12.0/X
+        C=12.0D0/X
+        HU0=0.0D0
         DO 20 M=10,100,5
            HU1=0.0D0
            G=0.5D0*C/M
@@ -3124,6 +3146,7 @@ C
 	CS=C*C*KD
 	IP=1
 	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
+        K=0
 	DO 10 I=1,NN+3     
 	   IF (IP.EQ.0) K=-2*(I-1)
 	   IF (IP.EQ.1) K=-(2*I-3)
@@ -3210,8 +3233,10 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION X(N),W(N)
         HN=1.0D0/N
+        PF=0.0D0
+        PD=0.0D0
         DO 35 NR=1,N
-           IF (NR.EQ.1) Z=HN
+           Z=HN
            IF (NR.GT.1) Z=X(NR-1)+HN*NR**1.27
            IT=0
 10         IT=IT+1
@@ -3334,6 +3359,7 @@ C
            VM=V                     
            RETURN
         ENDIF
+        LB0=0.0D0
         IF (DBLE(Z).LT.0.0) Z1=-Z
         IF (A0.LE.12.0) THEN
            DO 25 L=0,1
@@ -3982,6 +4008,7 @@ C
 10         CONTINUE
 15         TI=TI*X
         ELSE
+           X2=0.0D0
            TI=1.0D0
            R=1.0D0
            DO 20 K=1,10
@@ -3996,6 +4023,7 @@ C
            B2=0.0D0
            RS=0.0D0
            R=1.0D0
+           TW=0.0D0
            DO 25 K=1,50
               R=.25D0*R*(2*K-1.0D0)/(2*K+1.0D0)/(K*K)*X2
               B1=B1+R*(1.0D0/(2*K+1)-E0)
@@ -4061,6 +4089,10 @@ C
            VM=V  
            RETURN
         ENDIF
+        BJV0=0.0D0
+        BJV1=0.0D0
+        BYV0=0.0D0
+        BYV1=0.0D0
         IF (X.LE.12.0) THEN
            DO 25 L=0,1
               VL=V0+L
@@ -4128,6 +4160,7 @@ C
            ELSE
               M=MSTA2(X,N,15)
            ENDIF
+           F=0.0D0
            F2=0.0D0
            F1=1.0D-100
            DO 50 K=M,0,-1
@@ -4147,6 +4180,8 @@ C
 60         DJ(K)=-(K+V0)/X*BJ(K)+BJ(K-1)
         IF (X.LE.12.0D0) THEN
            IF (V0.NE.0.0) THEN
+              BJU0=0.0D0
+              BJU1=0.0D0
               DO 75 L=0,1
                  VL=V0+L
                  BJVL=1.0D0
@@ -4250,6 +4285,7 @@ C
 	   SV=0.0D0
 	   F2=0.0D0
 	   F1=1.0D-100
+           F=0.0D0
 	   DO 15 K=M,0,-1
 	      F=2.0D0*(K+1.0D0)/X*F1-F2
 	      IF (K.LE.NM) BJ(K)=F
@@ -4381,6 +4417,8 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION X(N),W(N)
         N0=(N+1)/2
+        PF=0.0D0
+        PD=0.0D0
         DO 45 NR=1,N0
            Z=DCOS(3.1415926D0*(NR-0.25D0)/N)
 10         Z0=Z
@@ -4541,6 +4579,7 @@ C
            ENDIF
            F2=0.0D0
            F1=1.0D-100
+           F=0.0D0
            DO 30 K=M,0,-1
               F=2.0D0*(K+1.0D0)/X*F1-F2
               IF (K.LE.NM) BJ(K)=F
@@ -4599,6 +4638,7 @@ C
         V0=V-NV
         NA=ABS(NV)
         EP=DEXP(-.25D0*X*X)
+        JA=0
         IF (NA.GE.1) JA=1
         IF (V.GE.0.0) THEN
            IF (V0.EQ.0.0) THEN
@@ -4658,6 +4698,7 @@ C
               M=100+NA
               F1=0.0D0
               F0=1.0D-30
+              F=0.0D0
               DO 30 K=M,0,-1
                  F=X*F0+(K-V0+1.0D0)*F1
                  IF (K.LE.NA) DV(K)=F
@@ -4760,6 +4801,7 @@ C
         IMPLICIT COMPLEX *16 (C,Z)
         DIMENSION ZO(NT)
         PI=3.141592653589793D0
+        W=0.0D0
         DO 35 NR=1,NT
            PU=DSQRT(PI*(4.0D0*NR-0.5D0))
            PV=PI*DSQRT(2.0D0*NR-0.25D0)
@@ -4816,10 +4858,10 @@ C
               GA=1.0D+300
            ENDIF
         ELSE
+           R=1.0D0
            IF (DABS(X).GT.1.0D0) THEN
               Z=DABS(X)
               M=INT(Z)
-              R=1.0D0
               DO 15 K=1,M
 15               R=R*(Z-K)
               Z=Z-M
@@ -4880,6 +4922,7 @@ C
         BL3=X.GT.12.5.AND.A.GE.5.0.AND.B.GE.A+5.0
         BN=B.EQ.INT(B).AND.B.NE.0.0
         ID1=-100
+        HU1=0.0D0
         IF (B.NE.INT(B)) THEN
            CALL CHGUS(A,B,X,HU,ID1)
            MD=1
@@ -4983,6 +5026,7 @@ C
            M=MSTA2(X,NM,15)
         ENDIF
         BS=0.0D0
+        F=0.0D0
         F0=0.0D0
         F1=1.0D-100
         DO 40 K=M,0,-1
@@ -5117,6 +5161,7 @@ C
            IF (KD.EQ.2.AND.M.EQ.1) T1=T1+Q
            IF (KD.EQ.3.AND.M.EQ.1) T1=T1-Q
         ELSE
+           T0=0.0D0
            IF (KD.EQ.1) T0=4.0D0-B+2.0D0*Q*Q/B
            IF (KD.EQ.2) T0=1.0D0-B+Q
            IF (KD.EQ.3) T0=1.0D0-B-Q
@@ -5204,6 +5249,8 @@ C
         Q11=-LS*XQ*(Q0+X/(1.0D0-X*X))
         QF0=Q00
         QF1=Q10
+        QM0=0.0D0
+        QM1=0.0D0
         DO 20 K=2,M
            QM0=-2.0D0*(K-1.0)/XQ*X*QF1-LS*(K-1.0)*(2.0-K)*QF0
            QF0=QF1
@@ -5243,6 +5290,7 @@ C
               QG1=Q01
               QH0=Q10
               QH1=Q11
+              QMK=0.0D0
               DO 45 L=2,N
                  Q0L=((2.0D0*L-1.0D0)*X*QG1-(L-1.0D0)*QG0)/L
                  Q1L=((2.0*L-1.0D0)*X*QH1-L*QH0)/(L-1.0D0)
@@ -5369,6 +5417,7 @@ C
            EE=DSIN(D0)
         ELSE
            FAC=1.0D0
+           D=0.0D0
            DO 10 N=1,40
               A=(A0+B0)/2.0D0
               B=DSQRT(A0*B0)
@@ -5561,12 +5610,15 @@ C
            A0=A
            X=DABS(X)
         ENDIF
-        IF (A.LT.2.0D0) NL=0
+        NL=0
+        LA=0
         IF (A.GE.2.0D0) THEN
            NL=1
            LA=INT(A)
            A=A-LA-1.0D0
         ENDIF
+        Y0=0.0D0
+        Y1=0.0D0
         DO 30 N=0,NL
            IF (A0.GE.2.0D0) A=A+1.0D0
            IF (X.LE.30.0D0+DABS(B).OR.A.LT.0.0D0) THEN
@@ -5736,6 +5788,7 @@ C
            ENDIF
            B=C-B
         ENDIF
+        HW=0.0D0
         IF (X.GE.0.75D0) THEN
            GM=0.0D0
            IF (DABS(C-A-B-INT(C-A-B)).LT.1.0D-15) THEN
@@ -5902,12 +5955,14 @@ C
               A0=A
               Z=-Z
            ENDIF
-           IF (A.LT.2.0D0) NL=0
+           NL=0
+           LA=0
            IF (A.GE.2.0D0) THEN
               NL=1
               LA=INT(A)
               A=A-LA-1.0D0
            ENDIF
+           NS=0
            DO 30 N=0,NL
               IF (A0.GE.2.0D0) A=A+1.0D0
               IF (CDABS(Z).LT.20.0D0+ABS(B).OR.A.LT.0.0D0) THEN
@@ -6010,6 +6065,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
            ZHF = 1.0D300
            RETURN
         ENDIF
+        NM=0
         IF (A0.EQ.0.0D0.OR.A.EQ.0.0D0.OR.B.EQ.0.0D0) THEN
            ZHF=(1.0D0,0.0D0)
         ELSE IF (Z.EQ.1.0D0.AND.C-A-B.GT.0.0D0) THEN
@@ -6229,6 +6285,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
               ZR=ZC1
               RK1=1.0D0
               SJ1=0.0D0
+              W0=0.0D0
               DO 145 K=1,10000
                  ZR=ZR/Z
                  RK1=RK1*(B+K-1.0D0)*(B-C+K)/(K*K)
@@ -6422,6 +6479,7 @@ C
            ENDIF
            F0=0.0D0
            F1=1.0D-100
+           F=0.0D0
            DO 20 K=M,0,-1
               F=2.0D0*(K+1.0D0)*F1/X+F0
               IF (K.LE.NM) BI(K)=F
@@ -6526,6 +6584,7 @@ C
 85         CDJ(K)=CBJ(K-1)-K/Z*CBJ(K)
         YA0=CDABS(CBY0)
         LB=0
+        LB0=0
         CG0=CBY0
         CG1=CBY1
         DO 90 K=2,NM
@@ -6772,6 +6831,7 @@ C
         ENDIF
         BS=0.0D0
         SK0=0.0D0
+        F=0.0D0
         F0=0.0D0
         F1=1.0D-100
         DO 15 K=M,0,-1
@@ -7293,8 +7353,8 @@ C
         SR3=1.732050807568877D0
         XA=DABS(X)
         XQ=DSQRT(XA)
-        IF (X.GT.0.0D0) XM=5.0
-        IF (X.LE.0.0D0) XM=8.0
+        XM=8.0D0
+        IF (X.GT.0.0D0) XM=5.0D0
         IF (X.EQ.0.0D0) THEN
            AI=C1
            BI=SR3*C1
@@ -7427,6 +7487,7 @@ C
 	F0=1.0D-100
 	KB=0
 	CK(NM+1)=0.0D0
+        FL=0.0D0
 	DO 15 K=NM,1,-1
 	   F=(((2.0D0*K+M+IP)*(2.0D0*K+M+1.0D0+IP)-CV+CS)*F0
      &       -4.0D0*(K+1.0D0)*(K+M+1.0D0)*F1)/CS
@@ -7592,6 +7653,8 @@ C
         IMPLICIT COMPLEX *16 (C,Z)
         DIMENSION ZO(NT)
         PI=3.141592653589793D0
+        PSQ=0.0D0
+        W=0.0D0
         DO 35 NR=1,NT
            IF (KF.EQ.1) PSQ=DSQRT(4.0D0*NR-1.0D0)
            IF (KF.EQ.2) PSQ=2.0D0*NR**(0.5)
@@ -7789,9 +7852,11 @@ C
            X=-X
            Y=-Y
         ELSE
+           Y1=0.0D0
            X1=X
         ENDIF
         X0=X
+        NA=0
         IF (X.LE.7.0) THEN
            NA=INT(7-X)
            X0=X+NA
@@ -7916,6 +7981,7 @@ C
         HU=R1-R2
         HMAX=0.0D0
         HMIN=1.0D+300
+        H0=0.0D0
         DO 10 J=1,150
            R1=R1*(A+J-1.0D0)/(J*(B+J-1.0D0))*X
            R2=R2*(A-B+J)/(J*(1.0D0-B+J))*X
@@ -7926,6 +7992,7 @@ C
            IF (DABS(HU-H0).LT.DABS(HU)*1.0D-15) GO TO 15
 10         H0=HU
 15      D1=LOG10(HMAX)
+        D2=0.0D0
         IF (HMIN.NE.0.0) D2=LOG10(HMIN)
         ID=15-ABS(D1-D2)
         RETURN
@@ -7994,6 +8061,7 @@ C
      &         6.410256410256410D-03,-2.955065359477124D-02,
      &         1.796443723688307D-01,-1.39243221690590D+00/
         X0=X
+        N=0
         IF (X.EQ.1.0.OR.X.EQ.2.0) THEN
            GL=0.0D0
            GO TO 20
@@ -8168,6 +8236,7 @@ C
 40            BI1=BI1+B(K)*XR**K
            BI1=CA*BI1
         ENDIF
+        WW=0.0D0
         IF (X.LE.9.0D0) THEN
            CT=-(DLOG(X/2.0D0)+EL)
            BK0=0.0D0
@@ -8224,6 +8293,7 @@ C
 	A0=CDABS(Z)
 	C0=(0.0D0,0.0D0)
 	CA0=CDEXP(-0.25D0*Z*Z)
+        N0=0
 	IF (N.GE.0) THEN
 	   CF0=CA0
 	   CF1=Z*CA0
@@ -8478,6 +8548,7 @@ C
         F=1.0D-100
         U=0.0D0
         FC(KM)=0.0D0
+        F2=0.0D0
         IF (KD.EQ.1) THEN
            DO 25 K=KM,3,-1
               V=U
@@ -8656,6 +8727,7 @@ C
            ELSE
               M=MSTA2(X,N,15)
            ENDIF
+           F=0.0D0
            F0=0.0D0
            F1=1.0D0-100
            DO 15 K=M,0,-1
@@ -8841,6 +8913,7 @@ C
 	A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC  
 	R1F=0.0D0
         SW=0.0D0
+        LG=0
 	DO 50 K=1,NM
 	   L=2*K+M-N-2+IP
 	   IF (L.EQ.4*INT(L/4)) LG=1
@@ -9044,6 +9117,7 @@ C
         AA=A-B+1.0D0
         IL1=A.EQ.INT(A).AND.A.LE.0.0
         IL2=AA.EQ.INT(AA).AND.AA.LE.0.0
+        NM=0
         IF (IL1) NM=ABS(A)
         IF (IL2) NM=ABS(AA)
         IF (IL1.OR.IL2) THEN
@@ -9089,6 +9163,7 @@ C
 	NM=25+INT(0.5*(N-M)+C)
 	XM=(1.0D0+X*X)**(-0.5D0*M)
 	GF0=0.0D0
+        GW=0.0D0
 	DO 10 K=1,NM
 	   GF0=GF0+BK(K)*X**(2.0*K-2.0)
 	   IF (DABS((GF0-GW)/GF0).LT.EPS.AND.K.GE.10) GO TO 15
@@ -9238,6 +9313,7 @@ C
            U=DABS(V)
            N=INT(U)
            U0=U-N
+           BIV0=0.0D0
            DO 35 L=0,1
               VT=U0+L
               R=1.0D0
@@ -9249,6 +9325,7 @@ C
 25            CONTINUE
 30            IF (L.EQ.0) BIV0=BIV
 35         CONTINUE
+           BF=0.0D0
            BF0=BIV0
            BF1=BIV
            DO 40 K=2,N
@@ -9560,6 +9637,7 @@ C
         R=1.0D0
         HMAX=0.0D0
         HMIN=1.0D+300
+        H0=0D0
         DO 15 K=1,150
            R=R*(A0+K-1.0D0)*X/((N+K)*K)
            HM1=HM1+R
@@ -9569,6 +9647,7 @@ C
            IF (DABS(HM1-H0).LT.DABS(HM1)*1.0D-15) GO TO 20
 15         H0=HM1
 20      DA1=LOG10(HMAX)
+        DA2=0.0D0
         IF (HMIN.NE.0.0) DA2=LOG10(HMIN)
         ID=15-ABS(DA1-DA2)
         HM1=HM1*DLOG(X)
@@ -9603,6 +9682,7 @@ C
            IF (DABS((HM2-H0)/HM2).LT.1.0D-15) GO TO 55
 50         H0=HM2
 55      DB1=LOG10(HMAX)
+        DB2=0.0D0
         IF (HMIN.NE.0.0) DB2=LOG10(HMIN)
         ID1=15-ABS(DB1-DB2)
         IF (ID1.LT.ID) ID=ID1
@@ -9615,6 +9695,7 @@ C
         SA=UA*(HM1+HM2)
         SB=UB*HM3
         HU=SA+SB
+        ID2=0.0D0
         IF (SA.NE.0.0) ID1=INT(LOG10(ABS(SA)))
         IF (HU.NE.0.0) ID2=INT(LOG10(ABS(HU)))
         IF (SA*SB.LT.0.0) ID=ID-ABS(ID1-ID2)
@@ -9648,10 +9729,13 @@ C       ===========================================================
         IMPLICIT DOUBLE PRECISION (H,O-Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION ZO(NT),ZV(NT)
+        X=0.0D0
+        Y=0.0D0
+        H=0.0D0
         IF (KC.EQ.0) THEN
            X=-2.4D0
            Y=0.54D0
-           H=3.14
+           H=3.14D0
         ELSE IF (KC.EQ.1) THEN
            X=0.89
            Y=0.0
@@ -9661,6 +9745,7 @@ C       ===========================================================
         IF (KF.EQ.2) X=0.577
         ZERO=CMPLX(X,Y)
         Z=ZERO
+        W=0.0D0
         DO 35 NR=1,NT
 10         IF (NR.NE.1) Z=ZO(NR-1)-H
            IT=0
@@ -9765,6 +9850,8 @@ C
            HEI=HEI-DLOG(.5D0*X)*DEI-BEI/X-.25D0*PI*DER
         ELSE
            T=8.0D0/X
+           TNR=0.0D0
+           TNI=0.0D0
            DO 10 L=1,2
               V=(-1)**L*T
               TPR=((((.6D-6*V-.34D-5)*V-.252D-4)*V-.906D-4)
@@ -9791,6 +9878,8 @@ C
            FXI=YC1*YE1*SSP
            BER=FXR-GEI/PI
            BEI=FXI+GER/PI
+           PNR=0.0D0
+           PNI=0.0D0
            DO 15 L=1,2
               V=(-1)**L*T
               PPR=(((((.16D-5*V+.117D-4)*V+.346D-4)*V+.5D-6)
@@ -9976,6 +10065,7 @@ C
 10      CONTINUE
 15      M=NT
         BS=0.0D0
+        F=0.0D0
         F0=0.0D0
         F1=1.0D-35
         DO 20 K=M,0,-1
@@ -10041,6 +10131,7 @@ C
 	   ELSE
 	      M=MSTA2(X,N,15)
 	   ENDIF
+           F=0.0D0
 	   F0=0.0D0
 	   F1=1.0D0-100
 	   DO 15 K=M,0,-1
@@ -10048,6 +10139,7 @@ C
 	      IF (K.LE.NM) SJ(K)=F
 	      F0=F1
 15            F1=F
+           CS=0.0D0
 	   IF (DABS(SA).GT.DABS(SB)) CS=SA/F
 	   IF (DABS(SA).LE.DABS(SB)) CS=SB/F0
 	   DO 20 K=0,NM
@@ -10460,8 +10552,10 @@ C
         ELSE
            M=MSTA2(X,N,15)
         ENDIF
+        F=0.0D0
         F2=0.0D0
         F1=1.0D-100
+        WW=0.0D0
         DO 30 K=M,0,-1
            F=2.0D0*(V0+K+1.0D0)/X*F1+F2
            IF (K.LE.N) BI(K)=F
@@ -10560,6 +10654,7 @@ C
 	ENDIF   
 	CS=C*C*KD
 	IP=1
+        K=0
 	IF (N-M.EQ.2*INT((N-M)/2)) IP=0
 	DO 10 I=1,NM+2
 	   IF (IP.EQ.0) K=2*(I-1)
@@ -10740,6 +10835,8 @@ C
 40         CONTINUE
         ENDIF
         IF (X.LE.12.0D0) THEN
+           UJ1=0.0D0
+           UJ2=0.0D0
            DO 55 L=1,2
               VL=L/3.0D0
               VJL=1.0D0
@@ -10786,6 +10883,7 @@ C
 80         CONTINUE
         ENDIF
         IF (X.LE.9.0D0) THEN
+           GN=0.0D0
            DO 95 L=1,2
               VL=L/3.0D0
                IF (L.EQ.1) GN=GN1
@@ -11095,6 +11193,7 @@ C
               CSU=CA2-CA1
               CR1=(1.0D0,0.0D0)
               CR2=(1.0D0,0.0D0)
+              WS0=0.0D0
               DO 50 K=1,50
                  CR1=0.25D0*CR1*Z2/(K*(K-V0))
                  CR2=0.25D0*CR2*Z2/(K*(K+V0))
@@ -11171,6 +11270,7 @@ C
         ELSE IF (W0.LE.2.5) THEN
            CR=Z
            C=CR
+           WA0=0.0D0
            DO 10 K=1,80
               CR=-.5D0*CR*(4.0D0*K-3.0D0)/K/(2.0D0*K-1.0D0)
      &          /(4.0D0*K+1.0D0)*ZP2
@@ -11320,6 +11420,8 @@ C
         RJ(1)=RJ(0)/X-DCOS(X)
         RJ0=RJ(0)
         RJ1=RJ(1)
+        CS=0.0D0
+        F=0.0D0
         IF (N.GE.2) THEN
            M=MSTA1(X,200)
            IF (M.LT.N) THEN
@@ -11365,6 +11467,9 @@ C
         DIMENSION X(N),W(N)
         HN=1.0D0/N
         ZL=-1.1611D0+1.46D0*N**0.5
+        Z=0.0D0
+        HF=0.0D0
+        HD=0.0D0
         DO 40 NR=1,N/2
            IF (NR.EQ.1) Z=ZL
            IF (NR.NE.1) Z=Z-HN*(N/2+1-NR)
@@ -11513,6 +11618,7 @@ C
            RETURN
         ELSE IF (X.LE.1.0) THEN
            EN(0)=DEXP(-X)/X
+           S0=0.0D0
            DO 40 L=1,N
               RP=1.0D0
               DO 15 J=1,L-1
@@ -11669,7 +11775,9 @@ C
         NA=ABS(NV)
         QE=DEXP(0.25D0*X*X)
         Q2P=DSQRT(2.0D0/PI)
+        JA=0
         IF (NA.GE.1) JA=1
+        F=0.0D0
         IF (V.LE.0.0) THEN
            IF (V0.EQ.0.0) THEN
               IF (XA.LE.7.5) CALL VVSA(V0,X,PV0)
@@ -11790,6 +11898,7 @@ C
            RETURN
         ENDIF
         XC=CDABS(Z)
+        LS=0
         IF (DIMAG(Z).EQ.0.0D0.OR.XC.LT.1.0D0) LS=1
         IF (XC.GT.1.0D0) LS=-1
         ZQ=CDSQRT(LS*(1.0D0-Z*Z))
@@ -11885,6 +11994,7 @@ C
 	ICM=(N-M+2)/2
 	NM=10+INT(0.5*(N-M)+C)
 	CS=C*C*KD
+        K=0
 	DO 60 L=0,1
 	   DO 10 I=1,NM
 	      IF (L.EQ.0) K=2*(I-1)
@@ -12194,6 +12304,8 @@ C
 	U2=DSQRT(Q)*C2
 	CALL JYNB(KM,U1,NM,BJ1,DJ1,BY1,DY1)
 	CALL JYNB(KM,U2,NM,BJ2,DJ2,BY2,DY2)
+        W1=0.0D0
+        W2=0.0D0
 	IF (KC.EQ.2) GO TO 50
 	F1R=0.0D0
 	DO 30 K=1,KM
@@ -12416,10 +12528,12 @@ C
               Y=-Y
            ENDIF
            X0=X
+           N=0
            IF (X.LT.8.0D0) THEN
               N=8-INT(X)
               X0=X+N
            ENDIF
+           TH=0.0D0
            IF (X0.EQ.0.0D0.AND.Y.NE.0.0D0) TH=0.5D0*PI
            IF (X0.NE.0.0D0) TH=DATAN(Y/X0)
            Z2=X0*X0+Y*Y
@@ -12525,6 +12639,7 @@ C
            A0=A
 10         B0=B
 15      DN=2.0D0**N*A*U
+        D=0.0D0
         DO 20 J=N,1,-1
            T=R(J)*DSIN(DN)
            SA=DATAN(T/DSQRT(DABS(1.0D0-T*T)))
@@ -12562,6 +12677,10 @@ C
            ENDIF
            RETURN
         ENDIF
+        BYV=0.0D0
+        BF=0.0D0
+        QU0=0.0D0
+        PU0=0.0D0
         IF (X.LE.20.0D0) THEN
            V0=V+1.5D0
            CALL GAMMA2(V0,GA)
