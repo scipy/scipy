@@ -1,0 +1,1520 @@
+#LyX 1.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 218
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 1
+\use_amsmath 1
+\paperorientation portrait
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Continuous Statistical Distributions
+\layout Standard
+
+All distributions will have location (L) and Scale (S) parameters along
+ with any shape parameters need, the names for the shape parameters will
+ vary.
+ Standard form for the distributions will be given where 
+\begin_inset Formula \( L=0.0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=1.0. \)
+\end_inset 
+
+ The nonstandard forms can be obtained for the various functions using (note
+ 
+\begin_inset Formula \( U \)
+\end_inset 
+
+ is a standard uniform random variate).
+ 
+\layout Standard
+\align center 
+
+\size small 
+
+\begin_inset  Tabular
+<lyxtabular version="2" rows="11" columns="3">
+<features rotate="false" islongtable="false" endhead="0" endfirsthead="0" endfoot="0" endlastfoot="0">
+<column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
+<column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="" special="">
+<row topline="true" bottomline="true" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Function Name
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Standard Function
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Transformation
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Cumulative Distribution Function (CDF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( F\left( x\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( F\left( x;L,S\right) =F\left( \frac{\left( x-L\right) }{S}\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Probability Density Function (PDF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( f\left( x\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+f
+\begin_inset Formula \( \left( x;L,S\right) =\frac{1}{S}f\left( \frac{\left( x-L\right) }{S}\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Percent Point Function (PPF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( G\left( \alpha \right) =F^{-1}\left( \alpha \right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( G\left( \alpha ;L,S\right) =L+SG\left( \alpha \right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Hazard Function (HF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( h\left( x\right) =\frac{f\left( x\right) }{1-F\left( x\right) } \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( h\left( x;L,S\right) =\frac{1}{S}h\left( \frac{\left( x-L\right) }{S}\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Cumulative Hazard Functon (CHF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( H\left( x\right) = \)
+\end_inset 
+
+
+\begin_inset Formula \( \log \frac{1}{1-F\left( x\right) } \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( H\left( x;L,S\right) =H\left( \frac{\left( x-L\right) }{S}\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Survival Function (SF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( S\left( x\right) =1-F\left( x\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( S\left( x;L,S\right) =S\left( \frac{\left( x-L\right) }{S}\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Inverse Survival Function (ISF)
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( Z\left( \alpha \right) =S^{-1}\left( \alpha \right) =G\left( 1-\alpha \right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( Z\left( \alpha ;L,S\right) =L+SZ\left( \alpha \right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Random Variates
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( Y=G\left( U\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( Y\left( L,S\right) =L+SY \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+mean (mode, median), var
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \mu ,\, \mu _{2} \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( L+S\mu ,\, S^{2}\mu _{2} \)
+\end_inset 
+
+  
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+skewness, kurtosis
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \gamma _{1}=\frac{\mu _{3}}{\left( \mu _{2}\right) ^{3/2}},\,  \)
+\end_inset 
+
+
+\begin_inset Formula \( \gamma _{2}=\frac{\mu _{4}}{\left( \mu _{2}\right) ^{2}}-3 \)
+\end_inset 
+
+ 
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \gamma _{1},\, \gamma _{2} \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Section
+
+Alpha
+\layout Subsection
+
+PDF
+\layout Section
+
+Anglit
+\layout Section
+
+Arcsine
+\layout Section
+
+Beta 
+\layout Standard
+
+
+\begin_inset Formula \[
+a,b>0\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;a,b\right)  & = & \frac{\Gamma \left( a+b\right) }{\Gamma \left( a\right) \Gamma \left( b\right) }\left( x\right) ^{a-1}\left( 1-x\right) ^{b-1}I_{\left( 0,1\right) }\left( x\right) \\
+F\left( x;a,b\right)  & = & \int _{0}^{x}f\left( y;a,b\right) dy=I\left( x,a,b\right) \\
+G\left( \alpha ;a,b\right)  & = & I^{-1}\left( x;a,b\right) \\
+\mu  & = & \frac{a}{a+b}\\
+\mu _{2} & = & \frac{ab\left( a+b+1\right) }{\left( a+b\right) ^{2}}\\
+\gamma _{1} & = & 2\left( b-a\right) \sqrt{\frac{a+b+1}{ab\left( a+b+2\right) }}\\
+\gamma _{2} & = & \frac{6\left( a^{3}+a^{2}\left( 1-2b\right) +b^{2}\left( b+1\right) -2ab\left( b+2\right) \right) }{ab\left( a+b+2\right) \left( a+b+3\right) }\\
+m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \( f\left( x;a,1\right)  \)
+\end_inset 
+
+ is also called the Power-function distribution.
+\layout Section
+
+Beta Prime
+\layout Section
+
+Bradford
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+c & > & 0\\
+k & = & \log \left( 1+c\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \frac{c}{k\left( 1+cx\right) }I_{\left( 0,1\right) }\left( x\right) \\
+F\left( x;c\right)  & = & \frac{\log \left( 1+cx\right) }{k}\\
+G\left( \alpha \;c\right)  & = & \frac{\left( 1+c\right) ^{\alpha }-1}{c}\\
+\mu  & = & \frac{c-k}{ck}\\
+\mu _{2} & = & \frac{\left( c+2\right) k-2c}{2ck^{2}}\\
+\gamma _{1} & = & \frac{\sqrt{2}\left( 12c^{2}-9kc\left( c+2\right) +2k^{2}\left( c\left( c+3\right) +3\right) \right) }{\sqrt{c\left( c\left( k-2\right) +2k\right) }\left( 3c\left( k-2\right) +6k\right) }\\
+\gamma _{2} & = & \frac{c^{3}\left( k-3\right) \left( k\left( 3k-16\right) +24\right) +12kc^{2}\left( k-4\right) \left( k-3\right) +6ck^{2}\left( 3k-14\right) +12k^{3}}{3c\left( c\left( k-2\right) +2k\right) ^{2}}\\
+m_{d} & = & 0\\
+m_{n} & = & \sqrt{1+c}-1
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Burr
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+c & > & 0\\
+d & > & 0\\
+k & = & \Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( \frac{2}{c}+d\right) -\Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+d\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c,d\right)  & = & \frac{cd}{x^{c+1}\left( 1+x^{-c}\right) ^{d+1}}I_{\left( 0,\infty \right) }\left( x\right) \\
+F\left( x;c,d\right)  & = & \left( 1+x^{-c}\right) ^{-d}\\
+G\left( \alpha ;c,d\right)  & = & \left( \alpha ^{-1/d}-1\right) ^{-1/c}\\
+\mu  & = & \frac{\Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+d\right) }{\Gamma \left( d\right) }\\
+\mu _{2} & = & \frac{k}{\Gamma ^{2}\left( d\right) }\\
+\gamma _{1} & = & \frac{1}{\sqrt{k^{3}}}\left[ 2\Gamma ^{3}\left( 1-\frac{1}{c}\right) \Gamma ^{3}\left( \frac{1}{c}+d\right) +\Gamma ^{2}\left( d\right) \Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( \frac{3}{c}+d\right) \right. \\
+ &  & \left. -3\Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+d\right) \Gamma \left( \frac{2}{c}+d\right) \right] \\
+\gamma _{2} & = & -3+\frac{1}{k^{2}}\left[ 6\Gamma \left( d\right) \Gamma \left( 1-\frac{2}{c}\right) \Gamma ^{2}\left( 1-\frac{1}{c}\right) \Gamma ^{2}\left( \frac{1}{c}+d\right) \Gamma \left( \frac{2}{c}+d\right) \right. \\
+ &  & -3\Gamma ^{4}\left( 1-\frac{1}{c}\right) \Gamma ^{4}\left( \frac{1}{c}+d\right) +\Gamma ^{3}\left( d\right) \Gamma \left( 1-\frac{4}{c}\right) \Gamma \left( \frac{4}{c}+d\right) \\
+ &  & \left. -4\Gamma ^{2}\left( d\right) \Gamma \left( 1-\frac{3}{c}\right) \Gamma \left( 1-\frac{1}{c}\right) \Gamma \left( \frac{1}{c}+d\right) \Gamma \left( \frac{3}{c}+d\right) \right] \\
+m_{d} & = & \left( \frac{cd-1}{c+1}\right) ^{1/c}\, \textrm{if }cd>1\, \textrm{otherwise }0\\
+m_{n} & = & \left( 2^{1/d}-1\right) ^{-1/c}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Cauchy
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \frac{1}{\pi \left( 1+x^{2}\right) }\\
+F\left( x\right)  & = & \frac{1}{2}+\frac{1}{\pi }\tan ^{-1}x\\
+G\left( \alpha \right)  & = & \tan \left( \pi \alpha -\frac{\pi }{2}\right) \\
+m_{d} & = & 0\\
+m_{n} & = & 0
+\end{eqnarray*}
+
+\end_inset 
+
+ No finite moments.
+\layout Section
+
+Chi
+\layout Standard
+
+Generated by taking the (positive) square-root of chi-squared variates.
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\nu \right)  & = & \frac{x^{\nu -1}e^{-x^{2}/2}}{2^{\nu /2-1}\Gamma \left( \frac{\nu }{2}\right) }I_{\left( 0,\infty \right) }\left( x\right) \\
+F\left( x;\nu \right)  & = & \Gamma \left( \frac{\nu }{2},\frac{x^{2}}{2}\right) \\
+G\left( \alpha ;\nu \right)  & = & \sqrt{2\Gamma ^{-1}\left( \frac{\nu }{2},\alpha \right) }
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{\sqrt{2}\Gamma \left( \frac{\nu +1}{2}\right) }{\Gamma \left( \frac{\nu }{2}\right) }\\
+\mu _{2} & = & \nu -\mu ^{2}\\
+\gamma _{1} & = & \frac{2\mu ^{3}+\mu \left( 1-2\nu \right) }{\mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{2\nu \left( 1-\nu \right) -6\mu ^{4}+4\mu ^{2}\left( 2\nu -1\right) }{\mu _{2}^{2}}\\
+m_{d} & = & \sqrt{\nu -1}\quad \nu \geq 1\\
+m_{n} & = & \sqrt{2\Gamma ^{-1}\left( \frac{\nu }{2},\frac{1}{2}\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Chi-squared
+\layout Section
+
+Cosine
+\layout Section
+
+Double Exponential
+\layout Section
+
+Double Gamma
+\layout Section
+
+Doubly Non-central F
+\layout Section
+
+Doubly Non-central t
+\layout Section
+
+Double Weibull
+\layout Section
+
+Exponential
+\layout Standard
+
+This is a special case of the Gamma (and Erlang) distributions with shape
+ parameter 
+\begin_inset Formula \( \left( \alpha =1\right)  \)
+\end_inset 
+
+ and the same location and scale parameters.
+ The standard form is therefore.
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & e^{-x}\\
+F\left( x\right)  & = & \Gamma \left( 1,x\right) =1-e^{-x}\\
+G\left( q\right)  & = & \log \left( \frac{1}{1-q}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & 1\\
+\mu _{2} & = & 1\\
+\gamma _{1} & = & 2\\
+\gamma _{2} & = & 6\\
+m_{d} & = & 0
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+ExtremeLB
+\layout Section
+
+Extreme Value I
+\layout Section
+
+Extreme Value II
+\layout Section
+
+Exponentiated Weibull
+\layout Section
+
+Exponential Power
+\layout Section
+
+Erlang
+\layout Standard
+
+This is just the Gamma distribution with shape parameter 
+\begin_inset Formula \( \alpha =n \)
+\end_inset 
+
+ an integer.
+ 
+\layout Section
+
+Fatigue Life
+\layout Section
+
+Fisher z
+\layout Section
+
+Fisk
+\layout Section
+
+Folded Cauchy
+\layout Section
+
+Folded Normal
+\layout Standard
+
+If 
+\begin_inset Formula \( Z \)
+\end_inset 
+
+ is Normal with mean 
+\begin_inset Formula \( L \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \sigma =S \)
+\end_inset 
+
+, then 
+\begin_inset Formula \( \left| Z\right|  \)
+\end_inset 
+
+ is a folded normal with shape parameter 
+\begin_inset Formula \( c=\left| L\right| /S \)
+\end_inset 
+
+, location parameter 
+\begin_inset Formula \( 0 \)
+\end_inset 
+
+ and scale parameter 
+\begin_inset Formula \( S \)
+\end_inset 
+
+.
+ This is a special case of the non-central chi distribution with one-degree
+ of freedom and non-centrality parameter 
+\begin_inset Formula \( c^{2}. \)
+\end_inset 
+
+ Note that 
+\begin_inset Formula \( c\geq 0 \)
+\end_inset 
+
+.
+ The standard form of the folded normal is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;c\right)  & = & \sqrt{\frac{2}{\pi }}\cosh \left( cx\right) \exp \left( -\frac{x^{2}+c^{2}}{2}\right) \\
+F\left( x;c\right)  & = & \Phi \left( x-c\right) -\Phi \left( -x-c\right) =\Phi \left( x-c\right) +\Phi \left( x+c\right) -1\\
+G\left( \alpha ;c\right)  & = & F^{-1}\left( x;c\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+k & = & \textrm{erf}\left( \frac{c}{\sqrt{2}}\right) \\
+p & = & \exp \left( -\frac{c^{2}}{2}\right) \\
+\mu  & = & \sqrt{\frac{2}{\pi }}p+ck\\
+\mu _{2} & = & c^{2}+1-\mu ^{2}\\
+\gamma _{1} & = & \frac{\sqrt{\frac{2}{\pi }}p^{3}\left( 4-\frac{\pi }{p^{2}}\left( 2c^{2}+1\right) \right) +2ck\left( 6p^{2}+3cpk\sqrt{2\pi }+\pi c\left( k^{2}-1\right) \right) }{\pi \mu _{2}^{3/2}}\\
+\gamma _{2} & = & \frac{c^{4}+6c^{2}+3+6\left( c^{2}+1\right) \mu ^{2}-3\mu ^{4}-4p\mu \left( \sqrt{\frac{2}{\pi }}\left( c^{2}+2\right) +\frac{ck}{p}\left( c^{2}+3\right) \right) }{\mu _{2}^{2}}
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Fratio
+\layout Section
+
+Gamma
+\layout Standard
+
+The standard form for the gamma distribution is 
+\begin_inset Formula \( \left( \alpha >0\right)  \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\alpha \right)  & = & \frac{1}{\Gamma \left( \alpha \right) }x^{\alpha -1}e^{-x}\\
+F\left( x;\alpha \right)  & = & \Gamma \left( \alpha ,x\right) \\
+G\left( q;\alpha \right)  & = & \Gamma ^{-1}\left( \alpha ,q\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \alpha \\
+\mu _{2} & = & \alpha \\
+\gamma _{1} & = & \frac{2}{\sqrt{\alpha }}\\
+\gamma _{2} & = & \frac{6}{\alpha }\\
+m_{d} & = & \alpha -1
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Geometric Extreme Exponential
+\layout Section
+
+Genearlized Logistic
+\layout Section
+
+Generalized Pareto
+\layout Section
+
+Generalized Extreme Value
+\layout Section
+
+Generalized Exponential
+\layout Section
+
+Generalized Gamma
+\layout Section
+
+Generalized Half-Logistic
+\layout Section
+
+Gilbrat
+\layout Section
+
+Gompertz
+\layout Section
+
+Gumbel
+\layout Section
+
+HalfCauchy
+\layout Section
+
+HalfNormal
+\layout Standard
+
+This is a special case of the chi distribution with 
+\begin_inset Formula \( L=a \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=b \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \nu =1. \)
+\end_inset 
+
+ This is also a special case of the folded normal with shape parameter 
+\begin_inset Formula \( c=0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=S. \)
+\end_inset 
+
+ The standard form is 
+\begin_inset Formula \begin{eqnarray*}
+f\left( x\right)  & = & \sqrt{\frac{2}{\pi }}e^{-x^{2}/2}I_{\left( 0,\infty \right) }\left( x\right) \\
+F\left( x\right)  & = & 2\Phi \left( x\right) -1\\
+G\left( \alpha \right)  & = & \Phi ^{-1}\left( \frac{1+\alpha }{2}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \sqrt{\frac{2}{\pi }}\\
+\mu _{2} & = & 1-\frac{2}{\pi }\\
+\gamma _{1} & = & \frac{\sqrt{2}\left( 4-\pi \right) }{\left( \pi -2\right) ^{3/2}}\\
+\gamma _{2} & = & \frac{8\left( \pi -3\right) }{\left( \pi -2\right) ^{2}}\\
+m_{d} & = & 0\\
+m_{n} & = & \Phi ^{-1}\left( \frac{3}{4}\right) 
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+HalfLogistic
+\layout Section
+
+Hyperbolic Secant
+\layout Section
+
+Hypergeometric (Continous)
+\layout Section
+
+Inverted Gamma
+\layout Section
+
+Inverted Normal (Wald)
+\layout Section
+
+Inverted Weibull
+\layout Section
+
+Johnson SB
+\layout Section
+
+Johnson SU
+\layout Section
+
+KSone
+\layout Section
+
+KStwo
+\layout Section
+
+Laplace
+\layout Section
+
+Log-Series
+\layout Section
+
+Logarithmic
+\layout Section
+
+Logistic
+\layout Section
+
+Log Double Exponential
+\layout Section
+
+Log Gamma
+\layout Section
+
+Log Logistic
+\layout Section
+
+Log Normal
+\layout Section
+
+Nakagami
+\layout Section
+
+Noncentral beta
+\layout Section
+
+Noncentral chi
+\layout Section
+
+Noncentral chi-squared
+\layout Section
+
+Noncentral F
+\layout Section
+
+Noncentral t
+\layout Section
+
+Normal
+\layout Subsection
+
+Functions
+\layout Standard
+\align center 
+
+\begin_inset  Tabular
+<lyxtabular version="2" rows="8" columns="2">
+<features rotate="false" islongtable="false" endhead="0" endfirsthead="0" endfoot="0" endlastfoot="0">
+<column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="" special="">
+<row topline="true" bottomline="true" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+\align center 
+Function
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Formula
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+PDF
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( f\left( x\right) =\frac{e^{-x^{2}/2}}{\sqrt{2\pi }} \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+CDF
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \Phi \left( x\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+PPF
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \Phi ^{-1}\left( x\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+SF
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( 1-\Phi \left( x\right)  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Subsection
+
+Stats
+\layout Standard
+\align center 
+
+\begin_inset  Tabular
+<lyxtabular version="2" rows="10" columns="2">
+<features rotate="false" islongtable="false" endhead="0" endfirsthead="0" endfoot="0" endlastfoot="0">
+<column alignment="center" valignment="top" leftline="true" rightline="false" width="" special="">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="" special="">
+<row topline="true" bottomline="true" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+\align center 
+Stat
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Value
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Location
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \mu  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Scale
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \sigma  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Mean
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \mu  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Variance
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \sigma ^{2} \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Skewness
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+(Fishers) Kurtosis
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Median
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \mu  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="false" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Mode
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \mu  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true" newpage="false">
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="false" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+Coefficient of Variation
+\end_inset 
+</cell>
+<cell multicolumn="0" alignment="center" valignment="top" topline="true" bottomline="false" leftline="true" rightline="true" rotate="false" usebox="none" width="" special="">
+\begin_inset Text
+
+\layout Standard
+
+
+\begin_inset Formula \( \sigma /\mu  \)
+\end_inset 
+
+
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Section
+
+Map-Airy
+\layout Section
+
+Maxwell
+\layout Standard
+
+This is a special case of the Chi distribution with 
+\begin_inset Formula \( L=0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=S=\frac{1}{\sqrt{a}} \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \nu =3. \)
+\end_inset 
+
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+f\left( x;\nu \right)  & = & \sqrt{\frac{2}{\pi }}x^{2}e^{-x^{2}/2}I_{\left( 0,\infty \right) }\left( x\right) \\
+F\left( x;\nu \right)  & = & \Gamma \left( \frac{3}{2},\frac{x^{2}}{2}\right) \\
+G\left( \alpha ;\nu \right)  & = & \sqrt{2\Gamma ^{-1}\left( \frac{3}{2},\alpha \right) }
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & 2\sqrt{\frac{2}{\pi }}\\
+\mu _{2} & = & 3-\frac{8}{\pi }\\
+\gamma _{1} & = & \sqrt{2}\frac{32-10\pi }{\left( 3\pi -8\right) ^{3/2}}\\
+\gamma _{2} & = & \frac{-12\pi ^{2}+160\pi -384}{\left( 3\pi -8\right) ^{2}}\\
+m_{d} & = & \sqrt{2}\quad \\
+m_{n} & = & \sqrt{2\Gamma ^{-1}\left( \frac{3}{2},\frac{1}{2}\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Mielke's Beta-Kappa
+\layout Section
+
+Pareto
+\layout Section
+
+Pareto Second
+\layout Section
+
+Power Log Normal
+\layout Section
+
+Power Normal
+\layout Section
+
+Power (Special case of Beta?)
+\layout Section
+
+Reciprocal
+\layout Section
+
+Rayleigh 
+\layout Standard
+
+This is Chi distribution with 
+\begin_inset Formula \( L=0.0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( \nu =2 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( S=S \)
+\end_inset 
+
+ (no location parameter used), the mode of the distribution is 
+\begin_inset Formula \( S. \)
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+f\left( r\right)  & = & re^{-r^{2}/2}\\
+F\left( r\right)  & = & 1-e^{-r^{2}/2}\\
+G\left( \alpha \right)  & = & \sqrt{2\log \left( \frac{1}{1-\alpha }\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu  & = & \frac{\pi }{2}\\
+\mu _{2} & = & \frac{4-\pi }{2}\\
+\gamma _{1} & = & \frac{2\left( \pi -3\right) \sqrt{\pi }}{\left( 4-\pi \right) ^{3/2}}\\
+\gamma _{2} & = & \frac{24\pi -6\pi ^{2}-16}{\left( 4-\pi \right) ^{2}}\\
+m_{d} & = & 1\\
+m_{n} & = & \sqrt{2\log \left( 2\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Rice
+\layout Section
+
+Reciprocal
+\layout Section
+
+Reciprocal Inverse Gaussian
+\layout Section
+
+Semicircular
+\layout Section
+
+Studentized Range
+\layout Section
+
+Student t
+\layout Section
+
+Student z
+\layout Section
+
+Symmetric Power
+\layout Section
+
+Triangular
+\layout Section
+
+Truncated Exponential
+\layout Section
+
+Truncated Normal
+\layout Section
+
+Tukey-Lambda
+\layout Section
+
+Uniform
+\layout Section
+
+Von Mises
+\layout Section
+
+Wald
+\layout Section
+
+Waring
+\layout Section
+
+Wishart
+\layout Section
+
+Wrapped Cauchy
+\layout Section
+
+Weibull
+\the_end

@@ -78,6 +78,12 @@ def erfinv(y):
 def erfcinv(y):
     return ndtri((2-y)/2.0)/sqrt(2)
 
+def gammaincinv(a,y):
+    """returns the inverse of the incomplete gamma integral in that it
+    finds x such that gammainc(a,x)=y
+    """
+    return gammainccinv(a,1-y)
+
 def hyp0f1(v,z):
     """Confluent hypergeometric limit function 0F1.
     Limit as q->infinity of 1F1(q;a;z/q)

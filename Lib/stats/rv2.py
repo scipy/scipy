@@ -47,7 +47,7 @@ normal(mu=0.0, sigma=1.0, size=None).............default mean 0.00, SD 1.00.
 pareto(mode=1.0, shape=4.0, size=None)...........default mean 1.33, SD 0.47.
 poisson(rate=1.0, size=None).....................default mean 1.00, SD 1.00.
 randint(lowint=0, upint=1, size=None)............default mean 0.50, SD 0.50.
-rayleigh(mode=1.0, size=None)....................default mean 1.25, SD 0.65.
+rayleigh(scale=1.0, size=None)....................default mean 1.25, SD 0.65.
 student_t(df=100.0, size=None)...................default mean 0.00, SD 1.01.
 triangular(left=0.0, mode=0.5, right=1.0, size=None) deflt mn 0.50, SD 0.20.
 uniform(lower=-0.5, upper=0.5, size=None)........default mean 0.00, SD 0.29.
@@ -2029,15 +2029,16 @@ class _pranv:
          return Num.reshape(buffer, size)         
 
 
-   def _Rayleigh(self, mode=1.0, size=None):
+   def _Rayleigh(self, scale=1.0, size=None):
       """Return Rayleigh distribution pseudo-random variates.
 
-      Rayleigh(mode=1.0, size=None)
+      rayleigh(scale=1.0, size=None)
 
       <mode> must be positive.  if shape is not None is specified, it must be a mutable
       sequence (list or array).  It is filled with Rayleigh(mode) pseudo-
       random variates and <None> is returned.  Otherwise, a single Rayleigh
       pseudo-random variate is returned."""
+      mode = scale
       if mode <= 0.0:
          raise ValueError, '<mode> must be positive'
 
@@ -2835,7 +2836,7 @@ save_state        =  _inst._save_state
 #     Non-Uniform(0,1) Random Number Generators
 #beta              =  _inst._beta
 #binomial          =  _inst._binomial
-cauchy            =  _inst._Cauchy
+#cauchy            =  _inst._Cauchy
 #chi2              =  _inst._chi_square
 choice            =  _inst._choice
 #exponential       =  _inst._exponential
@@ -2853,7 +2854,7 @@ logistic      =  _inst._logistic
 pareto            =  _inst._Pareto
 #poisson           =  _inst._Poisson
 #randint           =  _inst._randint
-rayleigh          =  _inst._Rayleigh
+#rayleigh          =  _inst._Rayleigh
 #student_t         =  _inst._Student_t
 triang            =  _inst._triangular
 #uniform           =  _inst._uniform

@@ -1,9 +1,12 @@
+from __future__ import nested_scopes
+
 import rand
 import Numeric
 import sys
 import math
 from types import *
 Num = Numeric
+import scipy.special
 from fastumath import *
 
 ArgumentError = "ArgumentError"
@@ -44,16 +47,17 @@ def _build_random_array(fun, args, size=None):
     else:
         n = 1
         s = apply(fun, args + (n,))
-        return s[0]
+        return s[0]    
 
 def random(size=None):
     "Returns array of random numbers between 0 and 1"
     return _build_random_array(rand.sample, (), size)
 
-def uniform(a=0.0, b=1.0, size=None):
-    """Returns array of given shape of random reals in given range (exclusive of enpoints)
+def uniform(loc=0.0, scale=1.0, size=None):
+    """Returns array of given shape of uniformly distributed reals
+    in the range loc to scale+loc (exclusive of endpoints).
     """
-    return _build_random_array(rand.uniform, (a, b), size)
+    return _build_random_array(rand.uniform, (loc, scale+loc), size)
 
 def randint(min, max=None, size=None):
     """random integers >=min, < max.  If max not given, random integers >= 0, <min"""
@@ -82,19 +86,19 @@ def stnorm(size=None):
     and standard deviation 1"""
     return _build_random_array(rand.standard_normal, (), size)
 
-def norm(mean=0.0, std=0.0, size=None):
+def norm(loc=0.0, scale=1.0, size=None):
         """returns array of random numbers randomly distributed with
-        specified mean and standard deviation"""
-        return _build_random_array(rand.normal, (mean, std), size)
+        specified mean (location) and standard deviation (scale)"""
+        return _build_random_array(rand.normal, (loc, scale), size)
 
-def lognorm(mean=0.0, std=0.0, size=None):
+def lognorm(mu=0.0, std=0.0, loc=0.0, scale=1.0, size=None):
     """returns array of random numbers lognormally distributed where
     the underlying normal has the given mean and standard-deviation.
     """
-    if std <= 0.0:
-        raise ValueError, 'std must be positive'
+    if (std <= 0.0) or (scale <= 0.0):
+        raise ValueError, 'std and scale must be positive'
     else:
-        return exp( mean + sigma * normal(size=size))
+        return exp( mean + sigma * normal(size=size))*scale + loc
     return
 
 def multivariate_normal(mean, cov, size=None):
@@ -127,23 +131,57 @@ def stexpon(size=None):
     """returns array of random numbers with a standard exponential distribution (mean=1)"""
     return _build_random_array(rand.standard_exp, (), size)
 
-def expon(mean, size=None):
-    """returns array of random numbers exponentially distributed with specified mean"""
-    return _build_random_array(rand.exponential, (av,), size)
+def expon(loc=0.0, scale=1.0, size=None):
+    """returns array of random numbers exponentially distributed scale is equivalent to 1.0 / lambda"""
+    return _build_random_array(rand.exponential, (scale,), size) + loc
 
-def beta(a, b, size=None):
+def beta(a, b, loc=0.0, scale=1.0, size=None):
     """returns array of beta distributed random numbers."""
-    return _build_random_array(rand.beta, (a, b), size)
+    return _build_random_array(rand.beta, (a, b), size)*scale + loc
+
+def bradford(c, loc=0.0, scale=1.0, size=None):
+    """returns array of bradford distributed random numbers."""
+    if (c<=0) or (scale<=0):
+        raise ValueError, "The shape (first) and scale (third) parameters must be larger than 0." 
+    U = random(size=size) 
+    return 1.0/c*((1.0+c)**U - 1)*scale + loc
+
+
+# Generalization of Fisk (d=1)
+#
+def burr(c, d, loc=0.0, scale=1.0, size=None):
+    """returns array of Burr distributed random numbers."""
+    if (c<=0) or (d<=0) or (scale<=0):
+        raise ValueError, "The shape parameters (first and second arguments) and the scale must all be positive."
+    U = random(size=size)
+    return (U**(-1.0/d)-1)**(-1.0/c)*scale + loc
+
+## Sometimes called the Lorentz
+def cauchy(loc=0.0, scale=1.0, size=None):
+    if (scale <=0):
+        raise ValueError, "The scale (second) argument must be positive."
+    U = random(size=size)
+    return tan(pi*(U-0.5))*scale+loc
 
 def stgamma(a, size=None):
     """returns array of random numbers with a standard gamma distribution with mean a"""
     return _build_random_array(rand.standard_gamma, (a,), size)
 
-def gamma(a, b, size=None):
-    """returns array of gamma distributed random numbers."""
+def gamma(a, loc=0.0, scale=1.0, size=None):
+    """returns array of gamma distributed random numbers with
+    shape (alpha) and scale (beta) and location parameter as given."""
     # Note the different parameter definitions as the ones used in
     #  ranlib.
-    return _build_random_array(rand.gamma, (1.0/b, a), size)
+    return _build_random_array(rand.gamma, (1.0/scale, a), size) + loc
+
+def erlang(n, loc=0.0, scale=1.0, size=None):
+    """Erlang distributed random variables."""
+    if (n != floor(n)):
+        raise TypeError, "Erlang distribution only defined for integer n."
+    return gamma(n, loc=loc, scale=scale, size=size)
+
+def dgamma(shape=1.0, loc=0.0, scale=1.0, size=None):
+    return abs(gamma(scale, shape, mean, size=size))
 
 def gilbrat(size=None):
     """returns array of gilbert distributed random numbers (special case of
@@ -159,9 +197,22 @@ def ncf(dfn, dfd, nc, size=None):
     """returns array of noncentral F distributed random numbers with dfn degrees of freedom in the numerator and dfd degrees of freedom in the denominator, and noncentrality parameter nonc."""
     return _build_random_array(rand.noncentral_f, (dfn, dfd, nc), size)
 
-def chi2(df, size=None):
+def chi2(df, loc=0.0, scale=1.0, size=None):
     """returns array of chi squared distributed random numbers with df degrees of freedom."""
-    return _build_random_array(rand.chi2, (df,), size)
+    return _build_random_array(rand.chi2, (df,), size)*scale + loc
+
+def chi(df, loc=0.0, scale=1.0, size=None):
+    """returns array of chi distributed random numbers with df degrees of freedom."""
+    return sqrt(chi2(df,0,1.0,size=size))*scale + loc
+
+def halfnorm(loc=0.0, scale=1.0, size=None):
+    """HalfNormal Random variates."""
+    # return chi(1, loc, scale, size)
+    return abs(stnorm(size=size))*scale + loc
+
+def foldnorm(c=0.0, loc=0.0, scale=1.0, size=None):
+    """Folded Normal Random Variates."""
+    return abs(norm(c*scale, scale)) + loc
 
 def ncx2(df, nc, size=None):
     """returns array of noncentral chi squared distributed random numbers
@@ -225,11 +276,53 @@ def multinom(trials, probs, size=None):
     x.shape = final_shape
     return x
 
+def maxwell(scale=1.0, size=None):
+    """return array of Maxwell distributed random numbers"""
+    return chi(3, loc=0.0, scale=scale, size=size)
+    
+def rayleigh(scale=1.0, size=None):
+    """returns array of Rayleigh distributed random numbers with mode given
+    by the scale parameter."""
+    return chi(2,loc=0.0,scale=scale,size=size)
+
 def poisson(mu, size=None):
     """returns array of poisson distributed random integers with specifed mean."""
     if (mu < 0):
         raise ValueError, "mu must be > 0."
     return _build_random_array(rand.poisson, (mu,), size)
+
+def randwppf(ppf, args=(), size=None):
+    """returns an array of randomly distributed integers of a distribution
+    whose percent point function (inverse of the CDF) is given.
+
+    args is a tuple of extra arguments to the ppf function (i.e. shape,
+    location, scale), and size is the size of the output.  Note the ppf
+    function must accept an array of q values to compute over.
+    """
+    U = random(size=size)
+    return apply(ppf, (U,)+args)
+
+def randwcdf(cdf, mean=1.0, args=(), size=None):
+    """returns an array of randomly distributed integers of a distribution
+    whose cumulative distribution function (CDF) is given.
+
+    mean is the mean of the distribution (helps the solver).
+    args is a tuple of extra arguments to the cdf function (i.e. shape,
+    location, scale), and size is the size of the output.  Note the
+    cdf function needs to accept a single value to compute over.
+    """
+    import scipy.optimize as optimize
+    def _ppfopt(x, q, *nargs):
+        newargs = (x,)+nargs
+        return cdf(*newargs) - q
+
+    def _ppf(q, *nargs):
+        return optimize.fsolve(_ppfopt, mean, args=(q,)+nargs)
+
+    _vppf = scipy.special.general_function(_ppf)
+    U = random(size=size)
+    return apply(_vppf,(U,)+args)
+
 
 
 def mean_var_test(x, type, mean, var, skew=[]):

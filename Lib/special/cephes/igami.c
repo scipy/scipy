@@ -49,8 +49,9 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 */
 
 #include "mconf.h"
+#include <stdio.h>
 
-extern double MACHEP, MAXNUM, MAXLOG, MINLOG;
+extern double MACHEP, MAXNUM, MAXLOG, MINLOG, NAN;
 #ifndef ANSIPROT
 double igamc(), ndtri(), exp(), fabs(), log(), sqrt(), lgam();
 #endif
@@ -67,6 +68,19 @@ yl = 0;
 x1 = 0;
 yh = 1.0;
 dithresh = 5.0 * MACHEP;
+
+if ((y0<0.0) || (y0>1.0) || (a<=0)) {
+   mtherr("igami", DOMAIN);
+   return(NAN);
+}
+
+if (y0==0.0) {
+  return(MAXNUM);
+}
+
+if (y0==1.0){
+   return 0.0;
+}
 
 /* approximation to inverse function */
 d = 1.0/(9.0*a);
