@@ -89,10 +89,74 @@ _iermess2 = {0:["""\
     equations.""",ValueError],
             'unknown':["""\
     An error occured""",TypeError]}
+
 _parcur_cache = {'t': array([],'d'), 'wrk': array([],'d'), 'iwrk':array([],'i'),
                  'u': array([],'d'),'ub':0,'ue':1}
-def _parcur(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
-           full_output=0,nest=None,per=0,quite=1):
+
+def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
+            full_output=0,nest=None,per=0,quiet=1):
+    """Find the B-spline representation of an N-dimensional curve.
+
+    Description:
+
+      Given a list of N rank-1 arrays, x, which represent a curve in N-dimensional
+      space parametrized by u, find a smooth approximating spline curve g(u).
+      Uses the FORTRAN routine parcur from FITPACK
+
+    Inputs:
+
+      x -- A list of sample vector arrays representing the curve. 
+      u -- An array of parameter values.  If not given, these values are
+           calculated automatically as (M = len(x[0])):
+           v[0] = 0
+           v[i] = v[i-1] + distance(x[i],x[i-1])
+           u[i] = v[i] / v[M-1]
+      ub, ue -- The end-points of the parameters interval.  Defaults to
+                u[0] and u[-1].
+      k -- Degree of the spline.  Cubic splines are recommended.  Even values of
+           k should be avoided especially with a small s-value.
+           1 <= k <= 5.
+      task -- If task==0 find t and c for a given smoothing factor, s.
+              If task==1 find t and c for another value of the smoothing factor, s.
+                There must have been a previous call with task=0 or task=1 for the
+                same set of data.
+              If task=-1 find the weighted least square spline for a given set of
+                knots, t.
+      s -- A smoothing condition.  The amount of smoothness is determined by
+           satisfying the conditions: sum((w * (y - g))**2) <= s where
+           g(x) is the smoothed interpolation of (x,y).  The user can use s to
+           control the tradeoff between closeness and smoothness of fit.  Larger
+           s means more smoothing while smaller values of s indicate less smoothing.
+           Recommended values of s depend on the weights, w.  If the weights
+           represent the inverse of the standard-deviation of y, then a good s value
+           should be found in the range (m-sqrt(2*m),m+sqrt(2*m)) where m is the
+           number of datapoints in x, y, and w.
+      t -- The knots needed for task=-1.
+      full_output -- If non-zero, then return optional outputs.
+      nest -- An over-estimate of the total number of knots of the spline to
+              help in determining the storage space.  By default nest=m/2.
+              Always large enough is nest=m+k+1.
+      per -- If non-zero, data points are considered periodic with period
+             x[m-1] - x[0] and a smooth periodic spline approximation is returned.
+             Values of y[m-1] and w[m-1] are not used.
+      quiet -- Non-zero to suppress messages.
+
+    Outputs: (tck, u, {fp, ier, msg})
+
+      tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
+             coefficients, and the degree of the spline.
+      u -- An array of the values of the parameter.
+             
+      fp -- The weighted sum of squared residuals of the spline approximation.
+      ier -- An integer flag about splrep success.  Success is indicated if ier<=0.
+             If ier in [1,2,3] an error occurred but was not raised.  Otherwise,
+             and error is raised.
+      msg -- A message corresponding to the integer flag, ier.          
+ 
+    Remarks:
+
+      SEE splev for evaluation of the spline and its derivatives.      
+    """
     if task<=0:
         _parcur_cache = {'t': array([],'d'), 'wrk': array([],'d'),
                          'iwrk':array([],'i'),'u': array([],'d'),'ub':0,'ue':1}
@@ -101,7 +165,7 @@ def _parcur(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if per:
         for i in range(idim):
             if x[i][0]!=x[i][-1]:
-                if quite<2:print 'Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i)
+                if quiet<2:print 'Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i)
                 x[i][-1]=x[i][0]
     if not 0<idim<11: raise TypeError,'0<idim<11 must hold'
     if w is None: w=ones(m,'d')
@@ -150,7 +214,7 @@ def _parcur(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     u=o['u']
     c.shape=idim,n-k-1
     tcku = [t,list(c),k],u
-    if ier<=0 and not quite:
+    if ier<=0 and not quiet:
         print _iermess[ier][0]
         print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
     if ier>0 and not full_output:
@@ -168,11 +232,69 @@ def _parcur(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             return tcku,fp,ier,_iermess['unknown'][0]
     else:
         return tcku
+
 _curfit_cache = {'t': array([],'d'), 'wrk': array([],'d'), 'iwrk':array([],'i')}
-def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
-           full_output=0,nest=None,per=0,quite=1):
-    """
-    splrep --- See documentation.
+def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
+           full_output=0,nest=None,per=0,quiet=1):
+    """Find the B-spline representation of 1-D curve.
+
+    Description:
+
+      Given the set of data points (x[i], y[i]) determine a smooth spline
+      approximation of degree k on the interval xb <= x <= xe.  The coefficients,
+      c, and the knot points, t, are returned.  Uses the FORTRAN routine
+      curfit from FITPACK.
+
+    Inputs:
+
+      x, y -- The data points defining a curve y = f(x).
+      w -- Strictly positive rank-1 array of weights the same length as x and y.
+           The weights are used in computing the weighted least-squares spline fit.
+           If the errors in the y values have standard-deviation given by the
+           vector d, then w should be 1/d. Default is ones(len(x)).
+      xb, xe -- The interval to fit.  If None, these default to x[0] and x[-1]
+                respectively.
+      k -- The order of the spline fit.  It is recommended to use cubic splines.
+           Even order splines should be avoided especially with small s values.
+           1 <= k <= 5
+      task -- If task==0 find t and c for a given smoothing factor, s.
+              If task==1 find t and c for another value of the smoothing factor, s.
+                There must have been a previous call with task=0 or task=1 for the
+                same set of data.
+              If task=-1 find the weighted least square spline for a given set of
+                knots, t.
+      s -- A smoothing condition.  The amount of smoothness is determined by
+           satisfying the conditions: sum((w * (y - g))**2) <= s where
+           g(x) is the smoothed interpolation of (x,y).  The user can use s to
+           control the tradeoff between closeness and smoothness of fit.  Larger
+           s means more smoothing while smaller values of s indicate less smoothing.
+           Recommended values of s depend on the weights, w.  If the weights
+           represent the inverse of the standard-deviation of y, then a good s value
+           should be found in the range (m-sqrt(2*m),m+sqrt(2*m)) where m is the
+           number of datapoints in x, y, and w.
+      t -- The knots needed for task=-1.
+      full_output -- If non-zero, then return optional outputs.
+      nest -- An over-estimate of the total number of knots of the spline to
+              help in determining the storage space.  By default nest=m/2.
+      per -- If non-zero, data points are considered periodic with period
+             x[m-1] - x[0] and a smooth periodic spline approximation is returned.
+             Values of y[m-1] and w[m-1] are not used.
+      quiet -- Non-zero to suppress messages.
+
+    Outputs: (tck, {fp, ier, msg})
+
+      tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
+             coefficients, and the degree of the spline.
+             
+      fp -- The weighted sum of squared residuals of the spline approximation.
+      ier -- An integer flag about splrep success.  Success is indicated if ier<=0.
+             If ier in [1,2,3] an error occurred but was not raised.  Otherwise,
+             and error is raised.
+      msg -- A message corresponding to the integer flag, ier.
+
+    Remarks:
+
+      SEE splev for evaluation of the spline and its derivatives.      
     """
     if task<=0:
         _curfit_cache = {'t': array([],'d'), 'wrk': array([],'d'),
@@ -217,7 +339,7 @@ def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     _curfit_cache['iwrk']=o['iwrk']
     ier,fp=o['ier'],o['fp']
     tck = [t,c,k]
-    if ier<=0 and not quite:
+    if ier<=0 and not quiet:
         print _iermess[ier][0]
         print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
     if ier>0 and not full_output:
@@ -235,15 +357,36 @@ def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
             return tck,fp,ier,_iermess['unknown'][0]
     else:
         return tck
-splrep=_curfit
-splprep=_parcur
+
 def _ntlist(l): # return non-trivial list
     return l
     #if len(l)>1: return l
     #return l[0]
+    
 def splev(x,tck,der=0):
-    """
-    splev --- see documentation.
+    """Evaulate a B-spline and its derivatives.
+
+    Description:
+
+      Given the knots and coefficients of a B-spline representation, evaluate
+      the value of the smoothing polynomial and it's derivatives.
+      This is a wrapper around the FORTRAN routines splev and splder of FITPACK.
+
+    Inputs:
+
+      x (u) -- a 1-D array of points at which to return the value of the
+               smoothed spline or its derivatives.  If tck was returned from
+               splprep, then the parameter values, u should be given.
+      tck -- A sequence of length 3 returned by splrep or splprep containg the
+             knots, coefficients, and degree of the spline.
+      der -- The order of derivative of the spline to compute (must be less than
+             or equal to k).
+
+    Outputs: (y, )
+
+      y -- an array of values representing the spline function or curve.  If tck
+           was returned from splrep, then this is a list of arrays representing
+           the curve in N-dimensional space.
     """
     t,c,k=tck
     try:
@@ -258,14 +401,54 @@ def splev(x,tck,der=0):
     if ier: raise TypeError,"An error occurred"
     if len(y)>1: return y
     return y[0]
+
 def splint(a,b,tck,full_output=0):
+    """Evaluate the definite integral of a B-spline.
+
+    Description:
+
+      Given the knots and coefficients of a B-spline, evaluate the definite
+      integral of the smoothing polynomial between two given points.
+
+    Inputs:
+
+      a, b -- The end-points of the integration interval.
+      tck -- A length 3 sequence describing the given spline (See splev).
+      full_output -- Non-zero to return optional output.
+
+    Outputs: (integral, {wrk})
+
+      integral -- The resulting integral.
+      wrk -- An array containing the integrals of the normalized B-splines defined
+             on the set of knots.
+
+    """      
     t,c,k=tck
     try: c[0][0];return _ntlist(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c))
     except: pass
     aint,wrk=_fitpack._splint(t,c,k,a,b)
     if full_output: return aint,wrk
     else: return aint
+
 def sproot(tck,mest=10):
+    """Find the roots of a cubic B-spline.
+
+    Description:
+
+      Given the knots (>=8) and coefficients of a cubic B-spline return the
+      roots of the spline.
+
+    Inputs:
+
+      tck -- A length 3 sequence describing the given spline (See splev).
+             The number of knots must be >= 8.  The knots must be a montonically
+             increasing sequence.
+      mest -- An estimate of the number of zeros (Default is 10).
+
+    Outputs: (zeros, )
+
+      zeros -- An array giving the roots of the spline.
+    """
     t,c,k=tck
     if k==4: t=t[1:-1]
     if k==5: t=t[2:-2]
@@ -281,7 +464,26 @@ def sproot(tck,mest=10):
         print "Warning: the number of zeros exceeds mest"
         return z
     raise TypeError,"Unknown error"
+
 def spalde(x,tck):
+    """Evaluate all derivatives of a B-spline.
+
+    Description:
+
+      Given the knots and coefficients of a cubic B-spline compute all
+      derivatives up to order k at a point (or set of points).
+
+    Inputs:
+
+      tck -- A length 3 sequence describing the given spline (See splev).
+      x -- A point or a set of points at which to evaluate the derivatives.
+           Note that t(k) <= x <= t(n-k+1) must hold for each x.
+
+    Outputs: (results, )
+
+      results -- An array (or a list of arrays) containing all derivatives
+                 up to order k inclusive for each point x.
+    """    
     t,c,k=tck
     try:
         c[0][0]
@@ -298,12 +500,65 @@ def spalde(x,tck):
     if ier==10:
         raise TypeError,"Invalid input data. t(k)<=x<=t(n-k+1) must hold."
     raise TypeError,"Unknown error"
+
 #def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
-#           full_output=0,nest=None,per=0,quite=1):
+#           full_output=0,nest=None,per=0,quiet=1):
+
 _surfit_cache = {'tx': array([],'d'),'ty': array([],'d'),
                  'wrk': array([],'d'), 'iwrk':array([],'i')}
-def _surfit(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=None,
-           eps=1e-16,tx=None,ty=None,full_output=0,nxest=None,nyest=None,quite=1):
+def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=None,
+             eps=1e-16,tx=None,ty=None,full_output=0,nxest=None,nyest=None,quiet=1):
+    """Find a bivariate B-spline representation of a surface.
+
+    Description:
+
+      Given a set of data points (x[i], y[i], z[i]) representing a surface
+      z=f(x,y), compute a B-spline representation of the surface.
+
+    Inputs:
+
+      x, y, z -- Rank-1 arrays of data points.
+      w -- Rank-1 array of weights. By default w=ones(len(x)).
+      xb, xe -- End points of approximation interval in x. 
+      yb, ye -- End points of approximation interval in y.
+                By default xb, xe, yb, ye = x[0], x[-1], y[0], y[-1]
+      kx, ky -- The degrees of the spline (1 <= kx, ky <= 5).  Third order
+                (kx=ky=3) is recommended.
+      task -- If task=0, find knots in x and y and coefficients for a given
+                smoothing factor, s.
+              If task=1, find knots and coefficients for another value of the
+                smoothing factor, s.  bisplrep must have been previously called
+                with task=0 or task=1.
+              If task=-1, find coefficients for a given set of knots tx, ty.
+      s -- A non-negative smoothing factor.  If weights correspond to the inverse
+           of the standard-deviation of the errors in z, then a good s-value should
+           be found in the range (m-sqrt(2*m),m+sqrt(2*m)) where m=len(x)
+      eps -- A threshold for determining the effective rank of an over-determined
+             linear system of equations (0 < eps < 1) --- not likely to need
+             changing.
+      tx, ty -- Rank-1 arrays of the knots of the spline for task=-1
+      full_output -- Non-zero to return optional outputs.
+      nxest, nyest -- Over-estimates of the total number of knots.  If None then
+                      nxest,nyest=max(kx+sqrt(m/2),2*kx+3),max(ky+sqrt(m/2),2*ky+3)
+      quiet -- Non-zero to suppress printing of messages.
+
+    Outputs: (tck, {fp, ier, msg})
+
+      tck -- A list [tx, ty, c, kx, ky] containing the knots (tx, ty) and
+             coefficients (c) of the bivariate B-spline representation of the
+             surface along with the degree of the spline.
+
+      fp -- The weighted sum of squared residuals of the spline approximation.
+      ier -- An integer flag about splrep success.  Success is indicated if ier<=0.
+             If ier in [1,2,3] an error occurred but was not raised.  Otherwise,
+             and error is raised.
+      msg -- A message corresponding to the integer flag, ier.
+
+    Remarks:
+
+      SEE bisplev to evaluate the value of the B-spline given its tck
+      representation.           
+    """
     x,y,z=map(myasarray,[x,y,z])
     m=len(x)
     if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'
@@ -354,7 +609,7 @@ def _surfit(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=None
     _curfit_cache['wrk']=o['wrk']
     ier,fp=o['ier'],o['fp']
     tck=[tx,ty,c,kx,ky]
-    if ier<=0 and not quite:
+    if ier<=0 and not quiet:
         print _iermess2[ier][0]
         print "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
                                                            len(ty),m,fp,s)
@@ -376,9 +631,31 @@ def _surfit(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=None
             return tck,fp,ier,_iermess2['unknown'][0]
     else:
         return tck
-bisplrep=_surfit
 
 def bisplev(x,y,tck,dx=0,dy=0):
+    """Evaluate a bivariate B-spline and its derivatives.
+
+    Description:
+
+      Return a rank-2 array of spline function values (or spline derivative
+      values) at points given by the cross-product of the rank-1 arrays x and y.
+      In special cases, return an array or just a float if either x or y or
+      both are floats.
+
+    Inputs:
+
+      x, y -- Rank-1 arrays specifying the domain over which to evaluate the
+              spline or its derivative.
+      tck -- A sequence of length 5 returned by bisplrep containing the knot
+             locations, the coefficients, and the degree of the spline:
+             [tx, ty, c, kx, ky].
+      dx, dy -- The orders of the partial derivatives in x and y respectively.
+
+    Outputs: (vals, )
+
+      vals -- The B-pline or its derivative evaluated over the set formed by
+              the cross-product of x and y.
+    """
     tx,ty,c,kx,ky=tck
     if not (0<=dx<kx): raise ValueError,"0<=dx=%d<kx=%d must hold"%(dx,kx)
     if not (0<=dy<ky): raise ValueError,"0<=dy=%d<ky=%d must hold"%(dy,ky)

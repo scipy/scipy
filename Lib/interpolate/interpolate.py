@@ -5,8 +5,6 @@
 """
 from Numeric import *
 
-
-
 class linear_1d:
     interp_axis = -1 # used to set which is default interpolation
                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
