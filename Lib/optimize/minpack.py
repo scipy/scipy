@@ -314,7 +314,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
                 if p1 != p0:
                     print "Tolerance of %g reached" % (p1-p0)
                 return (p1+p0)/2.0
-            if abs(p-p0) < tol:
+            if abs(p-p1) < tol:
                 return p
             p0 = p1
             q0 = q1
