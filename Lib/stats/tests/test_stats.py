@@ -363,7 +363,7 @@ class test_regression(unittest.TestCase):
 
             The constant should be 99999990 and the regression coefficient should be 1.
         """
-        y = scipy.stats.linregress(BIG,X)
+        y = scipy.stats.linregress(X,BIG)
         intercept = y[1]
         r=y[2]
         assert_almost_equal(intercept,99999990)
