@@ -200,11 +200,13 @@ def sph_jn(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n    
     if iscomplex(z):
-        nm,jn,jnp,yn,ynp = specfun.csphjy(n,z)
+        nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
-        nm,jn,jnp = specfun.sphj(n,z)        
-    return jn, jnp
+        nm,jn,jnp = specfun.sphj(n1,z)        
+    return jn[:(n+1)], jnp[:(n+1)]
 
 def sph_yn(n,z):
     """Compute the spherical Bessel function yn(z) and its derivative for
@@ -214,11 +216,13 @@ def sph_yn(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n 
     if iscomplex(z) or (z<0):
-        nm,jn,jnp,yn,ynp = specfun.csphjy(n,z)
+        nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
-        nm,yn,ynp = specfun.sphy(n,z)
-    return yn, ynp
+        nm,yn,ynp = specfun.sphy(n1,z)
+    return yn[:(n+1)], ynp[:(n+1)]
 
 def sph_jnyn(n,z):
     """Compute the spherical Bessel functions, jn(z) and yn(z) and their
@@ -228,12 +232,14 @@ def sph_jnyn(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n    
     if iscomplex(z) or (z<0):
-        nm,jn,jnp,yn,ynp = specfun.csphjy(n,z)
+        nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
-        nm,yn,ynp = specfun.sphy(n,z)
-        nm,jn,jnp = specfun.sphj(n,z)
-    return jn,jnp,yn,ynp
+        nm,yn,ynp = specfun.sphy(n1,z)
+        nm,jn,jnp = specfun.sphj(n1,z)
+    return jn[:(n+1)],jnp[:(n+1)],yn[:(n+1)],ynp[:(n+1)]
 
 def sph_in(n,z):
     """Compute the spherical Bessel function in(z) and its derivative for
@@ -243,11 +249,13 @@ def sph_in(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n
     if iscomplex(z):
-        nm,In,Inp,kn,knp = specfun.csphik(n,z)
+        nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
-        nm,In,Inp = specfun.sphi(n,z)        
-    return In, Inp
+        nm,In,Inp = specfun.sphi(n1,z)        
+    return In[:(n+1)], Inp[:(n+1)]
 
 def sph_kn(n,z):
     """Compute the spherical Bessel function kn(z) and its derivative for
@@ -257,11 +265,13 @@ def sph_kn(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n    
     if iscomplex(z) or (z<0):
-        nm,In,Inp,kn,knp = specfun.csphik(n,z)
+        nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
-        nm,kn,knp = specfun.sphk(n,z)
-    return kn, knp
+        nm,kn,knp = specfun.sphk(n1,z)
+    return kn[:(n+1)], knp[:(n+1)]
 
 def sph_inkn(n,z):
     """Compute the spherical Bessel functions, in(z) and kn(z) and their
@@ -286,10 +296,8 @@ def riccati_jn(n,x):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
-    if (n == 0):
-        n1 = 1
-    else:
-        n1 = n
+    if (n == 0): n1 = 1
+    else: n1 = n
     nm,jn,jnp = specfun.rctj(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
 
@@ -301,10 +309,8 @@ def riccati_yn(n,x):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
-    if (n == 0):
-        n1 = 1
-    else:
-        n1 = n    
+    if (n == 0): n1 = 1
+    else: n1 = n 
     nm,jn,jnp = specfun.rcty(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
 
@@ -497,6 +503,8 @@ def lqmn(m,n,z):
         raise ValueError, "n must be a non-negative integer."
     if not isscalar(z):
         raise ValueError, "z must be scalar."
+    m = int(m)
+    n = int(n)
     if (m*n == 0):
         mm = max(1,m)
         nn = max(1,n)
@@ -513,7 +521,9 @@ def bernoulli(n):
     if not isscalar(n) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     n = int(n)
-    return specfun.bernob(n)
+    if (n < 2): n1 = 2
+    else: n1 = n
+    return specfun.bernob(int(n1))[:(n+1)]
 
 def euler(n):
     """Return an array of the Euler numbers E0..En (inclusive)
@@ -523,21 +533,25 @@ def euler(n):
     n = int(n)
     if (n < 2): n1 = 2
     else:  n1 = n
-    return specfun.eulerb(n1)[:n+1]
+    return specfun.eulerb(n1)[:(n+1)]
     
 def lpn(n,z):
     """Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
+
+    See also special.legendre  for polynomial class.
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n
     if iscomplex(z):
-        pn,pd = specfun.clpn(n,z)
+        pn,pd = specfun.clpn(n1,z)
     else:
-        pn,pd = specfun.lpn(n,z)
-    return pn,pd
+        pn,pd = specfun.lpn(n1,z)
+    return pn[:(n+1)],pd[:(n+1)]
 
 ## lpni
     
@@ -549,11 +563,13 @@ def lqn(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
+    if (n < 1): n1 = 1
+    else: n1 = n    
     if iscomplex(z):
-        qn,qd = specfun.clqn(n,z)
+        qn,qd = specfun.clqn(n1,z)
     else:
-        qn,qd = specfun.lqnb(n,z)
-    return qn,qd
+        qn,qd = specfun.lqnb(n1,z)
+    return qn[:(n+1)],qd[:(n+1)]
 
 def ai_zeros(nt):
     """Compute the zeros of Airy Functions Ai(x) and Ai'(x), a and a'
@@ -595,11 +611,16 @@ def lmbda(v,x):
         raise ValueError, "arguments must be scalars."
     if (v<0):
         raise ValueError, "argument must be > 0."
+    n = int(v)
+    v0 = v - n
+    if (n < 1): n1 = 1
+    else: n1 = n
+    v1 = n1 + v0
     if (v!=floor(v)):
-        vm, vl, dl = specfun.lamv(v,x)
+        vm, vl, dl = specfun.lamv(v1,x)
     else:
-        vm, vl, dl = specfun.lamn(v,x)
-    return vl, dl
+        vm, vl, dl = specfun.lamn(v1,x)
+    return vl[:(n+1)], dl[:(n+1)]
 
 def pbdv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
@@ -607,8 +628,13 @@ def pbdv_seq(v,x):
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError, "arguments must be scalars."
-    dv,dp,pdf,pdd = specfun.pbdv(v,x)
-    return dv,dp
+    n = int(v)
+    v0 = v-n
+    if (n < 2): n1=2
+    else: n1 = n
+    v1 = n1 + v0    
+    dv,dp,pdf,pdd = specfun.pbdv(v1,x)
+    return dv[:(n1+1)],dp[:(n1+1)]
 
 def pbvv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
@@ -616,8 +642,13 @@ def pbvv_seq(v,x):
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError, "arguments must be scalars."
-    dv,dp,pdf,pdd = specfun.pbvv(v,x)
-    return dv,dp
+    n = int(v)
+    v0 = v-n
+    if (n < 2): n1=2
+    else: n1 = n
+    v1 = n1 + v0
+    dv,dp,pdf,pdd = specfun.pbvv(v1,x)
+    return dv[:(n1+1)],dp[:(n1+1)]
 
 def pbdn_seq(n,z):
     """Compute sequence of parabolic cylinder functions Dn(z) and

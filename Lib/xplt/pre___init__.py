@@ -30,6 +30,11 @@ Plotting routines based on Gist
                  three-dimensional array.
 
 Xplt is basically a wrapper around the lower-level gist plotting library
-used with Yorick.  Simpler commands are provided, but all of the low-level
-commands of gist are still available.
+used with Yorick.  Simpler, higher-level commands are provided in this
+module, but all of the low-level commands of gist are still available under
+the xplt namespace.
+
+See http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist_html/pygist.html
+
+for more information on the gist package and it's commands.
 """
