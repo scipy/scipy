@@ -183,7 +183,7 @@ cf2py intent(in) :: m,n,nrhs
 *     
 *     Compute workspace neede for BDSQR
 *     
-         BDSPAC = MAX( 1, 5*N-4 )
+         BDSPAC = MAX( 1, 5*N )
          MAXWRK = MAX( MAXWRK, 3*N+( MM+N )*
      $        ILAENV( 1, prefix // 'GEBRD', ' ', MM, N, -1, -1 ) )
          MAXWRK = MAX( MAXWRK, 3*N+NRHS*
@@ -200,7 +200,7 @@ cf2py intent(in) :: m,n,nrhs
 *     
 *     Compute workspace neede for DBDSQR
 *
-         BDSPAC = MAX( 1, 5*M-4 )
+         BDSPAC = MAX( 1, 5*M )
          MINWRK = MAX( 3*M+NRHS, 3*M+N, BDSPAC )
          IF( N.GE.MNTHR ) THEN
 *     

@@ -288,6 +288,15 @@ def direct_lstsq(a,b):
 
 class test_lstsq(ScipyTestCase):
 
+    def check_random_overdet_large(self):
+        #bug report: Nils Wagner
+        n = 200
+        a = random([n,2])
+        for i in range(2): a[i,i] = 20*(.1+a[i,i])
+        b = random([n,3])
+        x = lstsq(a,b)[0]
+        assert_array_almost_equal(x,direct_lstsq(a,b))
+
     def check_simple_exact(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],

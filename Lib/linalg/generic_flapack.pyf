@@ -186,8 +186,9 @@ interface
      integer intent(out)::info
 
      integer optional,intent(in),depend(nrhs,minmn,maxmn), &
-          check(lwork>=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs))) &
+          check(lwork>=1) &
           :: lwork=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs))
+          !check(lwork>=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)))
      <type_in> dimension(lwork),intent(hide),depend(lwork) :: work
 
      <type_in> intent(in),optional :: cond = -1.0
