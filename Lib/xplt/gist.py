@@ -176,15 +176,17 @@ def convert_bounding_box(inname, outname):
    w.close()
    result = r.read()
    r.close()
-   if result[:11] == 'Bad command' and sys.platform == 'win32':
+   res = bbox_re.search(result)
+   if res is None and sys.platform=='win32':
       cmd = 'gswin32c %s %s' % (gsargs, inname)
       w, r = os.popen4(cmd)
       w.close()
       result = r.read()
       r.close()
-   if result[:11] == 'Bad command':
+      res = bbox_re.search(result)
+   if res is None:
+      sys.stderr.write('To fix bounding box install ghostscript in the PATH')
       return False
-   res = bbox_re.search(result)
    bbox = map(int,res.groups())
    newstr = bbox2_re.sub("BoundingBox: %d %d %d %d" % tuple(bbox), oldfile)
    fid = open(outname, 'wb')
