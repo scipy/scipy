@@ -63,10 +63,9 @@ def generic_extension(mod_name,sources,parent_package='',use_underscore = 1):
                      library_dirs=atlas_library_dirs,
                      libraries = lapack_libraries,
                      define_macros=define_macros,
-                     f2py_options=['no-latex-doc',
-                                   'no-makefile',
-                                   'no-setup',
-                                   'no-wrap-functions'])
+                    # XXX --no-wrap-functions is only needed for clapack
+                     f2py_options=['--no-wrap-functions'],
+                    )
 
     return ext                
 
