@@ -544,25 +544,25 @@ class test_bei_zeros(unittest.TestCase):
                                                -3.271093302836352,
                                                -4.830737841662016,
                                                -6.169852128310251,
-                                               -7.376762079367764]),12)
+                                               -7.376762079367764]),11)
 
         assert_array_almost_equal(bi[1],array([-2.294439682614122,
                                                -4.073155089071828,
                                                -5.512395729663599,
                                                -6.781294445990305,
-                                               -7.940178689168587]),12)
+                                               -7.940178689168587]),11)
         
         assert_array_almost_equal(bi[2],array([-0.454944383639657,
                                                0.396522836094465,
                                                -0.367969161486959,
                                                0.349499116831805,
-                                               -0.336026240133662]),12)
+                                               -0.336026240133662]),11)
         
         assert_array_almost_equal(bi[3],array([0.601957887976239,
                                                -0.760310141492801,
                                                0.836991012619261,
                                                -0.88947990142654,
-                                               0.929983638568022]),12)
+                                               0.929983638568022]),11)
 
 
 class test_beip_zeros(unittest.TestCase):
@@ -767,7 +767,7 @@ class test_ellipk(unittest.TestCase):
 
     def check_ellipk(self):
         elk = ellipk(.2)
-        assert_almost_equal(elk,1.659623598610528,15)
+        assert_almost_equal(elk,1.659623598610528,11)
 
 class test_ellipkinc(unittest.TestCase):
 

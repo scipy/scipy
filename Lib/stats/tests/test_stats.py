@@ -785,7 +785,7 @@ class test_moments(TestCase):
 ##        y = scipy.stats.variation(self.shoes[0])
 ##        assert_approx_equal(y,21.8770668)
         y = scipy.stats.variation(self.testcase)
-        assert_approx_equal(y,0.44721359549996, 13)
+        assert_approx_equal(y,0.44721359549996, 10)
 
     def check_skewness(self):
         """

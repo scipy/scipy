@@ -541,7 +541,7 @@ def variation(a,axis=-1):
     Probability and Statistics, p.6. Axis can equal None (ravel array
     first), or an integer (the axis over which to operate)
     """
-    return 100.0*samplestd(a,axis)/mean(a,axis)
+    return samplestd(a,axis)/mean(a,axis)
 
 
 def skew(a,axis=-1,bias=1):
