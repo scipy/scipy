@@ -10,7 +10,9 @@ def configuration (parent_package=''):
     config = default_config_dict(package,parent_package)
     del config['fortran_libraries']
     local_path = get_path(__name__)
-    atlas_info = get_info('atlas')
+    atlas_info = get_info('atlas_threads')
+    if not atlas_info:
+        atlas_info = get_info('atlas')
     if not atlas_info:
         raise AtlasNotFoundError,AtlasNotFoundError.__doc__
     ext = Extension('atlas_version',

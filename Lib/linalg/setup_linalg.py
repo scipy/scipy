@@ -46,7 +46,9 @@ def configuration(parent_package='',parent_path=None):
     local_path = get_path(__name__,parent_path)
     abs_local_path = os.path.abspath(local_path)
 
-    atlas_info = get_info('atlas')
+    atlas_info = get_info('atlas_threads')
+    if not atlas_info:
+        atlas_info = get_info('atlas')
     #atlas_info = {} # uncomment if ATLAS is available but want to use
                      # Fortran LAPACK/BLAS; useful for testing
 
@@ -66,7 +68,7 @@ def configuration(parent_package='',parent_path=None):
         shutil.copy(os.path.join(local_path,'atlas_version.c'),temp_path)
         cur_dir = os.getcwd()
         os.chdir(temp_path)
-        cmd = '%s %s build_ext --inplace --force'%\
+        cmd = '%s %s --verbose build_ext --inplace --force'%\
               (sys.executable,
                os.path.join(abs_local_path,'setup_atlas_version.py'))
         print cmd
@@ -181,7 +183,10 @@ def configuration(parent_package='',parent_path=None):
     if atlas_info:
         ext_args['libraries'] = [atlas_info['libraries'][-1]]
         ext_args['library_dirs'] = atlas_info['library_dirs'][:]
-        ext_args['define_macros'] = [('ATLAS_INFO','"%s"' % atlas_version)]
+        if atlas_version is None:
+            ext_args['define_macros'] = [('NO_ATLAS_INFO',2)]
+        else:
+            ext_args['define_macros'] = [('ATLAS_INFO','"%s"' % atlas_version)]
     else:
         ext_args['define_macros'] = [('NO_ATLAS_INFO',1)]
     ext = Extension(**ext_args)
