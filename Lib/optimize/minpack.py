@@ -343,6 +343,33 @@ def fixed_point(func, x0, args=(), tol=1e-10, maxiter=50):
 
         
 
+def bisection(func, a, b, args=(), tol=1e-10, maxiter=100):
+    """Bisection root-finding method.  Given a function and an interval with
+    func(a) * func(b) < 0, find the root between a and b.
+    """
+    i = 1
+    eva = func(a,*args)
+    while i<=maxiter:
+        print i
+        dist = (b-a)/2.0
+        p = a + dist
+        if dist < tol:
+            return p
+        ev = func(p,*args)
+        if ev == 0:
+            return p
+        i += 1
+        if ev*eva > 0:
+            a = p
+            eva = ev
+        else:
+            b = p
+    print "Warning: Method failed after %d iterations." % maxiter
+    return p
+        
+        
+
+
 
 
 

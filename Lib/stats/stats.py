@@ -201,7 +201,6 @@ N = Numeric
 import LinearAlgebra
 LA = LinearAlgebra
 import scipy.special as special
-from scipy import mean, std
 
 SequenceType = [ListType, TupleType, ArrayType]
 
@@ -243,8 +242,50 @@ def hmean(a,axis=-1):
     size = a.shape[axis]
     return size / add.reduce(1.0/a, axis)
 
+def mean(m,axis=-1):
+    """Returns the mean of m along the given dimension.
 
-def mean (a,axis=None, keepdims=0):
+       If m is of integer type, returns a floating point answer.
+    """
+    if axis is None:
+        m = ravel(m)
+        axis = 0
+    else:
+        m = asarray(m)
+    return add.reduce(m,axis)/float(m.shape[axis])
+
+def median(m, axis=-1):
+    """Returns a median of m along the first dimension of m.
+    """
+    if axis is None:
+        m = ravel(m)
+        axis = 0
+    else:
+        m = asarray(m)
+    sorted = sort(m,axis)
+    if m.shape[0] % 2 == 1:
+        return sorted[int(m.shape[0]/2)]
+    else:
+        index=m.shape[0]/2
+        return (sorted[index-1]+sorted[index])/2.0
+
+def std(m,axis=-1):
+    """Returns the standard deviation along the given axis.
+
+    The result is unbiased with division by N-1.  If m is of integer type
+    returns a floating point answer.
+    """
+    if axis is None:
+        x = ravel(m)
+        axis = 0
+    else:
+        x = asarray(m)
+    n = float(x.shape[axis])
+    sx2 = add.reduce(x**2, axis)
+    sx = add.reduce(x,axis)
+    return sqrt((sx2 - sx**2/n)/(n-1.0))
+
+def mean_tmp (a,axis=None, keepdims=0):
     """Calculates the arithmetic mean of the values in the passed array.
 
     That is:  1/n * (x1 + x2 + ... + xn).  Defaults to ALL values in the
@@ -286,7 +327,7 @@ def mean (a,axis=None, keepdims=0):
     return mysum/denom
 
 
-def median (a,numbins=1000):
+def cmedian (a,numbins=1000):
     """Calculates the COMPUTED median value of an array of numbers, given the
     number of bins to use for the histogram (more bins approaches finding the
     precise median value of the array; default number of bins = 1000).  From
@@ -369,7 +410,7 @@ def tmean(a,limits=None,inclusive=(1,1)):
      if a.typecode() in ['l','s','b']:
          a = a.astype(Float)
      if limits is None:
-         return mean(a)
+         return mean(a,None)
      assert type(limits) in SequenceType, "Wrong type for limits in tmean"
      if inclusive[0]:    lowerfcn = greater_equal
      else:               lowerfcn = greater
@@ -800,7 +841,7 @@ Returns: transformed data for use in an ANOVA
         nargs.append(args[i].astype(Float))
         n[i] = float(len(nargs[i]))
         v[i] = var(nargs[i])
-        m[i] = mean(nargs[i])
+        m[i] = mean(nargs[i],None)
     for j in range(k):
         for i in range(n[j]):
             t1 = (n[j]-1.5)*n[j]*(nargs[j][i]-m[j])**2
@@ -809,7 +850,7 @@ Returns: transformed data for use in an ANOVA
             nargs[j][i] = (t1-t2) / float(t3)
     check = 1
     for j in range(k):
-        if v[j] - mean(nargs[j]) > TINY:
+        if v[j] - mean(nargs[j],None) > TINY:
             check = 0
     if check <> 1:
         raise ValueError, 'Lack of convergence in obrientransform.'
@@ -831,7 +872,7 @@ with the same number of axes as a.
     if axis == 1:
         mn = mean(a,axis)[:,NewAxis]
     else:
-        mn = mean(a,axis,keepdims=1)
+        mn = mean_tmp(a,axis,keepdims=1)
     deviations = a - mn 
     if type(axis) == ListType:
         n = 1
@@ -863,7 +904,7 @@ Returns: array containing the value of (mean/stdev) along axis,
          or 0 when stdev=0
 """
     m = mean(instack,axis)
-    sd = std(instack,axis)
+    sd = samplestd(instack,axis)
     return where(equal(sd,0),0,m/sd)
 
 
@@ -878,7 +919,7 @@ same number of axes as a.
     if axis is None:
         a = ravel(a)
         axis = 0
-    mn = mean(a,axis,1)
+    mn = mean_tmp(a,axis,1)
     deviations = a - mn
     if type(axis) == ListType:
         n = 1
@@ -890,7 +931,7 @@ same number of axes as a.
     return var
 
 
-def std (a, axis=None, keepdims=0):
+def std_tmp (a, axis=None, keepdims=0):
     """
 Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -914,7 +955,7 @@ an array with the same number of axes as a.
     if axis is None:
         a = ravel(a)
         axis = 0
-    return std(a,axis,keepdims) / float(sqrt(a.shape[axis]))
+    return std_tmp(a,axis,keepdims) / float(sqrt(a.shape[axis]))
 
 
 def sem (a, axis=None, keepdims=0):
@@ -946,7 +987,7 @@ that score came.  Not appropriate for population calculations, nor for
 arrays > 1D.
 
 """
-    z = (score-mean(a)) / samplestd(a)
+    z = (score-mean(a,None)) / samplestd(a)
     return z
 
 
@@ -1158,8 +1199,8 @@ Returns: Pearson's r, two-tailed p-value
 """
     TINY = 1.0e-20
     n = len(x)
-    xmean = mean(x)
-    ymean = mean(y)
+    xmean = mean(x,None)
+    ymean = mean(y,None)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
     r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = (r_num / r_den)
@@ -1208,8 +1249,8 @@ Returns: Point-biserial r, two-tailed p-value
         recoded = pstat.recode(data,codemap,0)
         x = pstat.linexand(data,0,categories[0])
         y = pstat.linexand(data,0,categories[1])
-        xmean = mean(pstat.colex(x,1))
-        ymean = mean(pstat.colex(y,1))
+        xmean = mean(pstat.colex(x,1),None)
+        ymean = mean(pstat.colex(y,1),None)
         n = len(data)
         adjust = math.sqrt((len(x)/float(n))*(len(y)/float(n)))
         rpb = (ymean - xmean)/samplestdev(pstat.colex(data,1))*adjust
@@ -1274,8 +1315,8 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
         x = args[0]
         y = args[1]
     n = len(x)
-    xmean = mean(x)
-    ymean = mean(y)
+    xmean = mean(x,None)
+    ymean = mean(y,None)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
     r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = r_num / r_den
@@ -1304,7 +1345,7 @@ Returns: t-value, two-tailed prob
 """
     if type(a) != ArrayType:
         a = array(a)
-    x = mean(a)
+    x = mean(a,None)
     v = var(a)
     n = len(a)
     df = n-1
@@ -2106,7 +2147,7 @@ lists-of-lists.
             btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
     ## Average Marray over non-source axes (1=keep squashed dims)
-            sourceMarray = mean(Marray,btwnonsourcedims,1)
+            sourceMarray = mean_tmp(Marray,btwnonsourcedims,1)
 
     ## Calculate harmonic means for each level in source
             sourceNarray = harmonicmean(Narray,btwnonsourcedims,1)
@@ -2342,7 +2383,7 @@ subj group, and then adds back each D-variable's grand mean.
      errors = subtr_cellmeans(workd,subjslots)
 
      # add back in appropriate grand mean from individual scores
-     grandDmeans = mean(workd,0,1)
+     grandDmeans = mean_tmp(workd,0,1)
      errors = errors + transpose(grandDmeans) # errors has reversed dims!!
      # SS for mean-restricted model is calculated below.  Note: already put
      # subj as last dim because later code expects this code here to leave
@@ -2388,8 +2429,8 @@ Returns: SS array for multivariate F calculation
                  cross = all_cellmeans[i] * all_cellmeans[j]
                  multfirst = sum(cross*all_cellns[i])
                  RSinter[i,j] = RSinter[j,i] = asarray(multfirst)
-                 SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i]) *
-                                        mean(all_cellmeans[j]) *
+                 SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i],None) *
+                                        mean(all_cellmeans[j],None) *
                                         len(all_cellmeans[i]) *hn)
          SSw = RSw - RSinter
 
@@ -2405,7 +2446,7 @@ Returns: SS array for multivariate F calculation
          for dim in btwnonsourcedims: # collapse all non-source dims
              if dim == len(DM[dindex].shape)-1:
                  raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
-             sourceDMarray = mean(sourceDMarray,dim,1)
+             sourceDMarray = mean_tmp(sourceDMarray,dim,1)
 
        ## Calculate harmonic means for each level in source
          sourceDNarray = harmonicmean(DN[dindex],btwnonsourcedims,1)

@@ -13,6 +13,7 @@
    fsolve --     Non-linear multi-variable equation solver.   
    newton --     Single-variable function root finder.
    fixed_point -- Single-variable fixed-point solver.
+   bisection --  Single-variable function root finder using bisection method.
 """
 
 _moddict = {'optimize' : ['fmin', 'fmin_bfgs', 'fmin_ncg', 'fminbound',

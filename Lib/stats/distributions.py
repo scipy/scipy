@@ -8,12 +8,13 @@ from __future__ import nested_scopes
 import scipy
 import scipy.special as special
 import Numeric
-from Numeric import alltrue, where, arange, put, putmask, nonzero
+from Numeric import alltrue, where, arange, put, putmask, nonzero, ravel
 from fastumath import *
 errp = special.errprint
 select = scipy.select
 arr = Numeric.asarray
 import types
+import stats as st
 
 all = alltrue
 ## Special defines some of these distributions
@@ -84,10 +85,11 @@ class general_cont_ppf:
 
 ##   Other things to think about supporting
 ##  <dist>psf --- Probability sparsity function (reciprocal of the pdf) in
-##                units of percent-point-function.
+##                units of percent-point-function (as a function of q).
 ##                Also, the derivative of the percent-point function.
-##  <dist>mle -- maximum-likelihood estimation of parameters of the
-##                distribution.
+##  <dist>fit --- Model-fitting (with flag for method, maximum-likelihood,
+##                                  MVUB, least-squares, etc.)
+##  <dist>like --- negative log-likelihood function for use with ML estimation.
 ##  <dist>hf -- Hazard function (PDF / SF)
 ##  <dist>chf -- Cumulative hazard function (-log(1-CDF)) 
 
@@ -212,6 +214,47 @@ def normsf(x, loc=0.0, scale=1.0):
 def normisf(p, loc=0.0, scale=1.0):
     return normppf(1-p,loc,scale)
 
+# See Papoulis pg. 247--253
+def normfit(z, loc=None, scale=None, alpha=0.05, conf=1):
+    if loc is not None and scale is not None:
+        raise ValueError, "Must fit at least one of location and/or scale."
+
+    z = ravel(z)
+    z = compress(isfinite(z),z)
+
+    if loc is None and scale is None:
+        muhat = st.mean(z)
+        stdhat = st.std(z)
+        rettup = (muhat, stdhat)
+    elif loc is None:
+        muhat = st.mean(z)
+        rettup = (muhat,)
+    else: # scale is None
+        stdhat = sqrt(st.mean((z-loc)**2))
+        rettup = (stdhat,)
+
+    if conf:
+        N = len(z)*1.0
+        adiv2 = alpha/2.0
+        if (loc is None) and (scale is None):
+            critmu = tppf([adiv2, 1-adiv2], N-1)
+            muconf = muhat + critmu*stdhat/sqrt(N)
+            critstd = chi2ppf([1-adiv2,adiv2], N-1)
+            stdconf = stdhat*sqrt((N-1)/critstd)
+            rettup += (muconf, stdconf)
+
+        elif (loc is None):   # known variance
+            muconf = normppf([adiv2, 1-adiv2],loc=muhat, scale=scale/sqrt(N))
+            rettup += (muconf,)
+            
+        else:  # scale is None,  known mean
+            stdconf = stdhat*sqrt(N/chi2ppf([1-adiv2,adiv2],N))
+            rettup += (stdconf,)                       
+    return rettup
+        
+    
+    
+
 # full also returns skewness and kurtosis
 def normstats(loc=0.0, scale=1.0, full=0):
     if not full:
@@ -251,7 +294,7 @@ def alphasf(x, a, loc=0.0, scale=1.0):
     return 1.0 - alphacdf(x, a, loc, scale)
 
 def alphaisf(q, a, loc=0.0, scale=1.0):
-    return alphappf(1-q, a, loc, scale)
+    return alphappf(1-arr(q), a, loc, scale)
 
 def alphastats(a, loc=0.0, scale=1.0,full=0):
     # No moments
@@ -371,7 +414,7 @@ def betasf(x, a, b, loc=0.0, scale=1.0):
     return 1-betacdf(x,a,b,loc,scale)
 
 def betaisf(q, a, b, loc=0.0, scale=1.0):
-    return betappf(1-q,a,b,loc,scale)
+    return betappf(1-arr(q),a,b,loc,scale)
 
 def betastats(a, b, loc=0.0, scale=1.0, full=0):
     a, b, loc, scale = map(arr, (a, b, loc, scale))
@@ -385,6 +428,18 @@ def betastats(a, b, loc=0.0, scale=1.0, full=0):
     g2 /= a*b*(a+b+2)*(a+b+3)
     return mn, var, _wc(cond, g1), _wc(cond, g2)
 
+def betafit(z, alpha=0.05, conf=1):
+    z = ravel(z)
+    N = len(z)*1.0
+    adiv2 = alpha/2.0
+    z = compress(isfinite(z),z)
+    mini = Numeric.minimum.reduce(z)
+    maxi = Numeric.maximum.reduce(z)
+    if (mini <=0) or (maxi >=1):
+        raise ValueError, "All values must be in [0,1] range."
+    rettup = (None,)
+    return rettup
+    
 
 ## Beta Prime
 
@@ -413,7 +468,7 @@ def betaprimesf(x, a, b, loc=0.0, scale=1.0):
     return 1.0-betaprimecdf(x,a,b,loc,scale)
 
 def betaprimeisf(q, a, b, loc=0.0, scale=1.0):
-    return betaprimeppf(1-q, a, b, loc, scale)
+    return betaprimeppf(1-arr(q), a, b, loc, scale)
 
 def betaprimestats(a, b, loc=0.0, scale=1.0, full=0):
     cond = (scale <= 0) | (a <= 0)
@@ -674,7 +729,7 @@ def chi2isf(p, df, loc=0.0, scale=1.0):
     return vals*scale + loc
 
 def chi2ppf(q, df, loc=0.0, scale=1.0):
-    return chi2isf(1-q, df, loc, scale)
+    return chi2isf(1-arr(q), df, loc, scale)
 
 def chi2stats(df, loc=0.0, scale=1.0, full=0):
     cond = arr(df) > 0
@@ -707,7 +762,7 @@ def cosineppf(q, loc=0.0, scale=1.0):
     return _cosppf(q, loc, scale)
 
 def cosineisf(q, loc=0.0, scale=1.0):
-    return cosineppf(1-q, loc, scale)
+    return cosineppf(1-arr(q), loc, scale)
 
 def cosinestats(loc=0.0, scale=1.0, full=0):
     B = arr(scale)
@@ -890,7 +945,7 @@ def exponppf(q, loc=0.0, scale=1.0):
     return select([(scale<=0)|(q>1)|(q<0)],[scipy.nan],vals*scale+loc)
 
 def exponisf(q, loc=0.0, scale=1.0):
-    return exponppf(1-q, loc, scale)
+    return exponppf(1-arr(q), loc, scale)
 
 def exponstats(loc=0.0, scale=1.0, full=0):
     cond = (arr(scale) > 0)
@@ -927,7 +982,7 @@ def extreme3ppf(q, c, loc=0.0, scale=1.0):
     return _wc(cond, vals*scale + loc)
 
 def extreme3isf(q, c, loc=0.0, scale=1.0):
-    return extreme3ppf(1-q, c, loc, scale)
+    return extreme3ppf(1-arr(q), c, loc, scale)
 
 def extreme3stats(c, loc=0.0, scale=1.0, full=0):
     c, loc, scale = map(arr, (c, loc, scale))
@@ -1152,7 +1207,7 @@ def fisf(q, dfn, dfd, loc=0.0, scale=1.0):
     return _wc(cond, vals*scale + loc)
         
 def fppf(q, dfn, dfd, loc=0.0, scale=1.0):
-    return fisf(1-q, dfn, dfd, loc, scale)
+    return fisf(1-arr(q), dfn, dfd, loc, scale)
 
 def fstats(dfn, dfd, loc=0.0, scale=1.0, full=0):
     dfn, dfd, loc, scale = map(arr, (dfn, dfd, loc, scale))
@@ -1257,7 +1312,7 @@ def frechetsf(x, c, left=0, loc=0.0, scale=1.0):
     return 1.0-frechetcdf(x, c, left, loc, scale)
 
 def frechetisf(q, c, left=0, loc=0.0, scale=1.0):
-    return frechetppf(1-q, c, left, loc, scale)
+    return frechetppf(1-arr(q), c, left, loc, scale)
 
 def frechetstats(c, left=0, loc=0.0, scale=1.0, full=0):
     c, loc, scale, left = map(arr, (c, loc, scale, left))
@@ -1301,7 +1356,7 @@ def genlogisticppf(q, c, loc=0.0, scale=1.0):
     return where((c>0) & (scale>0) & (q>=0) & (q<=1), vals, scipy.nan)
 
 def genlogisticisf(q, c, loc=0.0, scale=1.0):
-    return genlogsistppf(1-q, c, loc=0.0, scale=1.0)
+    return genlogsistppf(1-arr(q), c, loc=0.0, scale=1.0)
 
 def genlogisticstats(c, loc=0.0, scale=1.0, full=0):
     cond = (arr(c) > 0) & (arr(scale) > 0)
@@ -1348,7 +1403,7 @@ def genparetosf(x, c, loc=0.0, scale=1.0):
     return 1.0-genparetocdf(x, c, loc, scale)
 
 def genparetoisf(q, c, loc=0.0, scale=1.0):
-    return genparetoppf(1-q, c, loc, scale)
+    return genparetoppf(1-arr(q), c, loc, scale)
 
 def genparetostats(c, loc=0.0, scale=1.0, full=0):
     mu = 1.0 / arr(1-c)
@@ -1421,7 +1476,7 @@ def genextremesf(x, c, loc=0.0, scale=1.0):
     return 1.0 - genextremecdf(x, c, loc, scale)
 
 def genextremeisf(q, c, loc=0.0, scale=1.0):
-    return genextremeppf(1-q, c, loc, scale)
+    return genextremeppf(1-arr(q), c, loc, scale)
 
 def genextremestats(c, loc=0.0, scale=1.0, full=0):
     c, loc, scale = map(arr, (c, loc, scale))
@@ -1862,7 +1917,7 @@ def hypsecantsf(x, loc=0.0, scale=1.0):
     return 1.0-hypsecantcdf(x, loc, scale)
 
 def hypsecantisf(q, loc=0.0, scale=1.0):
-    return hypsecantppf(1-q, loc, scale)
+    return hypsecantppf(1-arr(q), loc, scale)
 
 def hypsecantstats(loc=0.0, scale=1.0, full=0):
     cond = (arr(scale)>0)
@@ -1936,7 +1991,7 @@ def invnormppf(q, mu, loc=0.0, scale=1.0, x0=None):
     return where(cond, qvals, scipy.nan)
 
 def invnormisf(q, mu, loc=0.0, scale=1.0):
-    return invnormppf(1-q, mu, loc, scale)
+    return invnormppf(1-arr(q), mu, loc, scale)
 
 def invnormstats(mu, loc=0.0, scale=1.0, full=0):
     cond = (arr(mu)>0) & (arr(scale) > 0)
@@ -2017,7 +2072,7 @@ def laplaceppf(q, loc=0.0, scale=1.0):
     return select([cond,q<0.5],[scipy.nan,vals1],vals2)
 
 def laplaceisf(q, loc=0.0, scale=1.0):
-    return laplaceppf(1-q, loc, scale)
+    return laplaceppf(1-arr(q), loc, scale)
 
 def laplacestats(loc=0.0, scale=1.0, full=0):
     loc, scale = arr(loc), arr(scale)
@@ -2054,7 +2109,7 @@ def logisticppf(q, loc=0.0, scale=1.0):
     return where(cond, vals, scipy.nan)
 
 def logisticisf(q, loc=0.0, scale=1.0):
-    return logisticppf(1-q, loc, scale)
+    return logisticppf(1-arr(q), loc, scale)
 
 def logisticstats(loc=0.0, scale=1.0, full=0):
     mn = loc
@@ -2278,7 +2333,7 @@ def nakagamisf(x, df, loc=0.0, scale=1.0):
     return 1.0-nakagamicdf(x, df, loc, scale)
 
 def nakagamiisf(q, df, loc=0.0, scale=1.0):
-    return nakagamippf(1-q, df, loc, scale)
+    return nakagamippf(1-arr(q), df, loc, scale)
 
 def nakagamistats(df, loc=0.0, scale=1.0, full=0):
     df, scale = arr(df), arr(scale)
@@ -2422,12 +2477,12 @@ def tsf(x, df, loc=0.0, scale=1.0):
     return 1-tcdf(x,df, loc, scale)
 
 def tppf(q, df, loc=0.0, scale=1.0):
-    q, df, loc, scale = map(arr (q, df, loc, scale))    
+    q, df, loc, scale = map(arr, (q, df, loc, scale))    
     cond = (q<=1) & (q>=0) & (scale > 0)
     return _wc(cond, special.stdtrit(df, q)*scale + loc)
 
 def tisf(q, df, loc=0.0, scale=1.0):
-    return tppf(1-q,df,loc,scale)
+    return tppf(1-arr(q),df,loc,scale)
 
 def tstats(df, loc=0.0, scale=1.0, full=0):
     df, loc, scale = map(arr, (df, loc, scale))
@@ -2577,7 +2632,7 @@ def powerppf(q, a, loc=0.0, scale=1.0):
     return _wc(cond, vals)
 
 def powerisf(q, a, loc=0.0, scale=1.0):
-    return powerppf(1-q, a, loc, scale)
+    return powerppf(1-arr(q), a, loc, scale)
 
 def powerstats(a, loc=0.0, scale=1.0, full=0):
     a, scale = arr(a), arr(scale)
@@ -2626,7 +2681,7 @@ def reciprocalsf(x, a, b, loc=0.0, scale=1.0):
     return 1.0-reciprocalcdf(x, a, b, loc, scale)
 
 def reciprocalisf(q, a, b, loc=0.0, scale=1.0):
-    return reciprocalppf(1-q, a, b, loc, scale)
+    return reciprocalppf(1-arr(q), a, b, loc, scale)
 
 def reciprocalstats(a, b, loc=0.0, scale=1.0, full=0):
     a, b, loc, scale = map(arr, (a, b, loc, scale))
@@ -2716,7 +2771,7 @@ def semicircularsf(x, loc=0.0, scale=1.0):
     return 1.0-semicircularcdf(x, loc, scale)
 
 def semicircularisf(q, loc=0.0, scale=1.0):
-    return semicircularppf(1-q, loc, scale)
+    return semicircularppf(1-arr(q), loc, scale)
 
 def semicircularstats(loc=0.0, scale=1.0, full=0):
     loc, scale = arr(loc), arr(scale)
@@ -2856,7 +2911,7 @@ def uniformppf(q, loc=0.0, shape=1.0):
     return _wc(cond, q*shape + loc)
 
 def uniformisf(q, loc=0.0, shape=1.0):
-    return uniformppf(1-q,loc,shape)
+    return uniformppf(1-arr(q),loc,shape)
 
 def uniformstats(loc=0.0, shape=1.0, full=0):
     loc, shape = arr(loc), arr(shape)

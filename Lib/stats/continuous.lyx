@@ -530,6 +530,110 @@ k
 
  so that a normal distribution has a kurtosis of zero.
  
+\layout Subsection
+
+Fitting data
+\layout Standard
+
+To fit data to a distribution, maximizing the likelihood function is common.
+ Alternatively, some distributions have well-known minimum variance unbiased
+ estimators.
+ These will be chosen by default, but the likelihood function will always
+ be available for minimizing.
+ 
+\layout Standard
+
+If 
+\begin_inset Formula \( f\left( x;\boldsymbol {\theta }\right)  \)
+\end_inset 
+
+ is the PDF of a random-variable where 
+\begin_inset Formula \( \boldsymbol {\theta } \)
+\end_inset 
+
+ is a vector of parameters (
+\emph on 
+e.g.
+ 
+\begin_inset Formula \( L \)
+\end_inset 
+
+ 
+\emph default 
+and 
+\begin_inset Formula \( S \)
+\end_inset 
+
+), then for a collection of 
+\begin_inset Formula \( N \)
+\end_inset 
+
+ independent samples from this distribution, the joint distribution the
+ random vector 
+\begin_inset Formula \( \mathbf{x} \)
+\end_inset 
+
+ is 
+\begin_inset Formula \[
+f\left( \mathbf{x};\boldsymbol {\theta }\right) =\prod _{i=1}^{N}f\left( x_{i};\boldsymbol {\theta }\right) .\]
+
+\end_inset 
+
+ The maximum likelihood estimate of the parameters 
+\begin_inset Formula \( \boldsymbol {\theta } \)
+\end_inset 
+
+ are the parameters which maximize this function with 
+\begin_inset Formula \( \mathbf{x} \)
+\end_inset 
+
+ fixed and given by the data: 
+\begin_inset Formula \begin{eqnarray*}
+\hat{\boldsymbol }{\theta } & = & \arg \max _{\boldsymbol {\theta }}f\left( \mathbf{x};\boldsymbol {\theta }\right) \\
+ & = & \arg \min _{\boldsymbol {\theta }}l_{\mathbf{x}}\left( \boldsymbol {\theta }\right) .
+\end{eqnarray*}
+
+\end_inset 
+
+ Where 
+\begin_inset Formula \begin{eqnarray*}
+l_{\mathbf{x}}\left( \boldsymbols {\theta }\right)  & = & -\sum _{i=1}^{N}\log f\left( x_{i};\boldsymbol {\theta }\right) \\
+ & = & -N\overline{\log f\left( x_{i};\boldsymbol {\theta }\right) }
+\end{eqnarray*}
+
+\end_inset 
+
+ Note that if 
+\begin_inset Formula \( \boldsymbol {\theta } \)
+\end_inset 
+
+ includes only shape parameters, the location and scale-parameters can be
+ fit by replacing 
+\begin_inset Formula \( x_{i} \)
+\end_inset 
+
+ with 
+\begin_inset Formula \( \left( x_{i}-L\right) /S \)
+\end_inset 
+
+ in the log-likelihood function and minimizing.
+\layout Subsection
+
+Standard notation for mean
+\layout Standard
+
+We will use 
+\begin_inset Formula \[
+\overline{y\left( \mathbf{x}\right) }=\frac{1}{N}\sum _{i=1}^{N}y\left( x_{i}\right) \]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \( N \)
+\end_inset 
+
+ should be clear from context.
+ 
 \layout Section
 
 Alpha 
@@ -564,6 +668,12 @@ G\left( q;\alpha \right)  & = & \left[ \alpha -\Phi ^{-1}\left( q\Phi \left( \al
 \layout Standard
 
 No moments?
+\begin_inset Formula \[
+l_{\mathbf{x}}\left( \alpha \right) =N\log \left[ \Phi \left( \alpha \right) \sqrt{2\pi }\right] +2N\overline{\log \mathbf{x}}+\frac{N}{2}\alpha ^{2}-\alpha \overline{\mathbf{x}^{-1}}+\frac{1}{2}\overline{\mathbf{x}^{-2}}\]
+
+\end_inset 
+
+
 \layout Section
 
 Anglit
@@ -578,7 +688,7 @@ Defined over
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left( x\right)  & = & \sin \left( 2x+\frac{\pi }{2}\right) \\
+f\left( x\right)  & = & \sin \left( 2x+\frac{\pi }{2}\right) =\cos \left( 2x\right) \\
 F\left( x\right)  & = & \sin ^{2}\left( x+\frac{\pi }{4}\right) \\
 G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
 \end{eqnarray*}
@@ -595,6 +705,15 @@ G\left( q\right)  & = & \arcsin \left( \sqrt{q}\right) -\frac{\pi }{4}
 \gamma _{1} & = & 0\\
 \gamma _{2} & = & -2\frac{\pi ^{4}-96}{\left( \pi ^{2}-8\right) ^{2}}
 \end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+l_{\mathbf{x}}\left( \cdot \right) =-N\overline{\log \left[ \cos \left( 2\mathbf{x}\right) \right] }\]
 
 \end_inset 
 
@@ -652,6 +771,15 @@ G\left( q\right)  & = & \sin ^{2}\left( \frac{\pi }{2}q\right)
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset Formula \[
+l_{\mathbf{x}}\left( \cdot \right) =N\log \pi +\frac{N}{2}\overline{\log \mathbf{x}}+\frac{N}{2}\overline{\log \left( 1-\mathbf{x}\right) }\]
+
+\end_inset 
+
+
 \layout Section
 
 Beta 
@@ -691,6 +819,19 @@ m_{d} & = & \frac{\left( a-1\right) }{\left( a+b-2\right) }\, a+b\neq 2
 \end_inset 
 
  is also called the Power-function distribution.
+\layout Standard
+
+
+\begin_inset Formula \[
+l_{\mathbf{x}}\left( a,b\right) =-N\log \Gamma \left( a+b\right) +N\log \Gamma \left( a\right) +N\log \Gamma \left( b\right) -N\left( a-1\right) \overline{\log \mathbf{x}}-N\left( b-1\right) \overline{\log \left( 1-\mathbf{x}\right) }\]
+
+\end_inset 
+
+ All of the 
+\begin_inset Formula \( x_{i}\in \left[ 0,1\right]  \)
+\end_inset 
+
+
 \layout Section
 
 Beta Prime
