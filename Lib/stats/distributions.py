@@ -1622,7 +1622,7 @@ class gengamma_gen(rv_continuous):
         val1 = special.gammaincinv(a,q)
         val2 = special.gammaincinv(a,1.0-q)
         ic = 1.0/c
-        cond = c+0*val1+0*val2
+        cond = c+0*val1
         return where(cond > 0,val1**ic,val2**ic)
     def _munp(self, n, a, c):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
