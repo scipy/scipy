@@ -45,7 +45,7 @@ c   initialization
       pi = atan2(0.,-one)
       per = pi+pi
       vb = v(1)
-      ve = vb+per
+C      ve = vb+per
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c part 1: determination of the number of knots and their position.     c
 c ****************************************************************     c
