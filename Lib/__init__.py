@@ -3,11 +3,7 @@
 #except:
     #print "Warning:  wxPython not loaded"
 
-#get version
-#import scipy_version
-#__version__ = scipy_version.scipy_version
-#del scipy_version
-from __version__ import version as __version__
+from scipy_version import scipy_version as __version__
 
 # SciPy has levels
 # Level 0 -- Numeric and core routines in basic.py, misc.py, and handy.py

@@ -1,9 +1,11 @@
-#scipy_version = "0.2.0"
+major = 0
+minor = 2
+micro = 0
+release_level = 'alpha'
 
-from scipy_distutils.misc_util import update_version
-scipy_version = update_version(\
-    version_template = \
-    '%(major)d.%(minor)d.%(micro)d-%(release_level)s-%(serial)d',
-    release_level = 'alpha', # alpha, beta, canditate, or final
-                             # if final -> alpha then major = major + 1
-    )
+from __cvs_version__ import cvs_version
+cvs_minor = cvs_version[-3]
+cvs_serial = cvs_version[-1]
+
+scipy_version = '%(major)d.%(minor)d.%(micro)d-%(release_level)s'\
+                '-%(cvs_minor)d.%(cvs_serial)d' % (locals ())
