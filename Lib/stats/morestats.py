@@ -46,6 +46,8 @@ def bayes_mvs(data,alpha=0.90):
     the true parameter.
 
     Uses peak of conditional pdf as starting center.
+
+    Returns (peak, (a, b)) for each of mean, variance and standard deviation.
     """
     x = ravel(data)
     n = len(x)
@@ -59,6 +61,7 @@ def bayes_mvs(data,alpha=0.90):
     delta = fac*tval
     ma = xbar - delta
     mb = xbar + delta
+    mp = xbar
     #
     fac = n*C/2.0
     peak = 2/(n+1.)
@@ -72,6 +75,7 @@ def bayes_mvs(data,alpha=0.90):
     else:
         va = fac*distributions.invgamma.ppf(q1,a)
     vb = fac*distributions.invgamma.ppf(q2,a)
+    vp = peak*fac
     #
     fac = sqrt(fac)
     peak = sqrt(2./n)
@@ -84,8 +88,9 @@ def bayes_mvs(data,alpha=0.90):
     else:
         sta = fac*distributions.gengamma.ppf(q1,a,-2)
     stb = fac*distributions.gengamma.ppf(q2,a,-2)
+    stp = peak*fac
         
-    return (ma,mb),(va,vb),(sta,stb)
+    return (mp,(ma,mb)),(vp,(va,vb)),(stp,(sta,stb))
     
 
 
