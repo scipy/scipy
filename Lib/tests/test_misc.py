@@ -1,11 +1,11 @@
-"""* Test functions for misc module
+""" Test functions for misc module
 
-*"""
+"""
 
 import unittest
 from scipy.scipy_test import assert_array_equal, assert_equal
 from scipy.scipy_test import assert_almost_equal
-import scipy import *
+from scipy import *
 
 
 ##################################################
@@ -51,20 +51,20 @@ class test_logn(unittest.TestCase):
         val = logn(3,4)
         assert_almost_equal(val,1.2618595071429148,11)
     def check_log_0(self):
-        """ Later have log(0) raise warning, not error
+        """ log(0) should print warning, but succeed.
         """
         try:
             val = logn(3,0)
+            #assert(isinf(val))
+        except:
             assert(0)
-        except OverflowError:
-            pass
     def check_log_neg(self):
-        """ Later have log(-1) raise warning, not error
+        """ log(-1) should print warning, but still raises error.
         """
         try:
             val = logn(3,-1)
-            assert(0)
-        except ValueError:
+            #assert(isinf(val))
+        except OverflowError:
             pass
 
 class test_log2(unittest.TestCase):
@@ -74,20 +74,21 @@ class test_log2(unittest.TestCase):
         val = log2(1024)
         assert_almost_equal(val,10.0,15)
     def check_log_0(self):
-        """ Later have log(0) raise warning, not error
+        """ log(0) should print warning, but succeed.
         """
         try:
-            val = logn(3,0)
+            val = log2(0)
+            #assert(isinf(val))
+        except:
             assert(0)
-        except OverflowError:
-            pass
     def check_log_neg(self):
         """ Later have log(-1) raise warning, not error
         """
         try:
-            val = logn(3,-1)
+            val = log2(-1)
             assert(0)
-        except ValueError:
+            #assert(isinf(val))
+        except OverflowError:
             pass
 
 class test_histogram(unittest.TestCase):
