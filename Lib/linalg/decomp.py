@@ -16,7 +16,7 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import scipy_base
-from scipy_base import asarray_chkfinite, asarray
+from scipy_base import asarray_chkfinite, asarray, diag, zeros
 cast = scipy_base.cast
 r_ = scipy_base.r_
 c_ = scipy_base.c_
