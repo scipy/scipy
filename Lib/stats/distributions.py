@@ -3256,7 +3256,7 @@ class rv_discrete:
         output = valarray(shape(cond),value=self.a-1)
         insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
         insert(output,cond2,self.b)
-        goodargs = argsreduce(cond, *((q,)+args+(loc)))
+        goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
         insert(output,cond,self._ppf(*goodargs) + loc)
         return output
@@ -3285,7 +3285,7 @@ class rv_discrete:
         output = valarray(shape(cond),value=self.b)
         insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
         insert(output,cond2,self.a-1)
-        goodargs = argsreduce(cond, *((q,)+args+(loc)))
+        goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
         insert(output,cond,self._ppf(*goodargs) + loc)
         return output
