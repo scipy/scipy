@@ -1,8 +1,8 @@
 %% LyX 1.3 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
 \documentclass[english]{article}
-%\usepackage[T1]{fontenc}
-%\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
 \usepackage{geometry}
 \geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
 \usepackage{verbatim}
@@ -16,7 +16,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
 %% Bold symbol macro for standard LaTeX users
-\newcommand{\boldsymbol}[1]{\mbox{\boldmath $#1$}}
+\providecommand{\boldsymbol}[1]{\mbox{\boldmath $#1$}}
 
 %% Because html converters don't know tabularnewline
 \providecommand{\tabularnewline}{\\}
@@ -77,7 +77,7 @@ signature, and the documentation string of the object.
 The pydoc method of help is sophisticated but uses a pager to display
 the text. Sometimes this can interfere with the terminal you are running
 the interactive session within. A scipy-specific help system is also
-available under the command scipy.info. The signature and documntation
+available under the command scipy.info. The signature and documentation
 string for the object passed to the help command are printed to standard
 output (or to a writeable object passed as the third argument). The
 second keyword argument of {}``scipy.info'' defines the maximum
@@ -85,7 +85,7 @@ width of the line for printing. If a module is passed as the argument
 to help than a list of the functions and classes defined in that module
 is printed. For example:
 
-\verbatiminput{example1.1} 
+\verbatiminput{example1.1}
 
 Another useful command is \textbf{source.} When given a function written
 in Python as an argument, it prints out a listing of the source code
@@ -198,9 +198,9 @@ detection of these events new universal functions (isnan, isfinite,
 isinf) have been added. In addition, the comparision operators have
 been changed to allow comparisons and logical operations of complex
 numbers (only the real part is compared). Also, with the new universal
-functions in SciPy, the logical operations all return arrays of unsigned
-bytes (8-bits per element instead of the old 32-bits, or even 64-bits)
-per element%
+functions in SciPy, the logical operations (except logical\_XXX functions)
+all return arrays of unsigned bytes (8-bits per element instead of
+the old 32-bits, or even 64-bits) per element%
 \footnote{Be careful when treating logical expressions as integers as the 8-bit
 integers may silently overflow at 256.%
 }. 
@@ -209,6 +209,14 @@ Finally, some of the basic functions like log, sqrt, and inverse trig
 functions have been modified to return complex numbers instead of
 NaN's where appropriate (\emph{i.e.} \texttt{scipy.sqrt(-1)} returns
 \texttt{1j}). 
+
+
+\subsection{Alter numeric}
+
+With the command \textbf{scipy.alter\_numeric()} you can now use index
+and mask arrays inside brackets and the coercion rules of Numeric
+are changed so that Python scalars will not upcast the results of
+operations. An example is shown below 
 
 
 \subsection{Scipy\_base routines }
@@ -262,27 +270,27 @@ fpi = cast{[}'f'{]}(pi)}.
 
 Thre are some class instances that make special use of the slicing
 functionality to provide efficient means for array construction. This
-part will discuss the operation of \textbf{mgrid}, \textbf{r\_}, \textbf{}and
-\textbf{c\_} for quickly constructing arrays. 
+part will discuss the operation of \textbf{mgrid}, \textbf{ogrid},
+\textbf{r\_}, \textbf{}and \textbf{c\_} for quickly constructing arrays. 
 
 One familiar with Matlab may complain that it is difficult to construct
 arrays from the interactive session with Python. Suppose, for example
 that one wants to construct an array that begins with 3 followed by
 5 zeros and then contains 10 numbers spanning the range -1 to 1 (inclusive
-on both ends). Before SciPy, I would need to enter something like
+on both ends). Before SciPy, you would need to enter something like
 the following \texttt{>\,{}>\,{}> concatenate(({[}3{]},{[}0{]}{*}5,arange(-1,1.002,2/9.0))}.
 With the \textbf{r\_} command one can enter this as \texttt{>\,{}>\,{}>
 r\_{[}3,{[}0{]}{*}5,-1:1:10j{]}} which can ease typing in an interactive
 session. Notice how objects are concatenated, and the slicing syntax
-is used (abused) to construct ranges. The other term that deserves
-a little explanation is the use of the complex number 10j as the step
-size in the slicing syntax. This non-standard use allows the number
-to be interpreted as the number of points to produce in the range
-rather than as a step size (note we would have used the long integer
-notation, 10L, but this notation may go away in Python as the integers
-became unified). This non-standard usage may be unsightly to some,
-but it gives the user the ability to quickly construct complicated
-vectors in a very readable fashion. When the number of points is specified
+is (ab)used to construct ranges. The other term that deserves a little
+explanation is the use of the complex number 10j as the step size
+in the slicing syntax. This non-standard use allows the number to
+be interpreted as the number of points to produce in the range rather
+than as a step size (note we would have used the long integer notation,
+10L, but this notation may go away in Python as the integers become
+unified). This non-standard usage may be unsightly to some, but it
+gives the user the ability to quickly construct complicated vectors
+in a very readable fashion. When the number of points is specified
 in this way, the end-point is inclusive.
 
 The {}``r'' stands for row concatenation because if the objects
@@ -307,25 +315,26 @@ over a grid due to the array-broadcasting rules of Numeric and SciPy.
 If this is the only purpose for generating a meshgrid, you should
 instead use the function \textbf{ogrid} which generates an {}``open''
 grid using NewAxis judiciously to create N, N-d arrays where only
-one-dimension has length greater than 1. This will save memory and
-create the same result if the only purpose for the meshgrid is to
-generate sample points for evaluation of an N-d function. 
+one-dimension in each array has length greater than 1. This will save
+memory and create the same result if the only purpose for the meshgrid
+is to generate sample points for evaluation of an N-d function. 
 
 
 \subsubsection{Shape manipulation}
 
 In this category of functions are routines for squeezing out length-one
-dimensions from N-dimensional arrays, ensure that an array is at least
-1-, 2-, or 3-dimensional, and stacking (concatenating) arrays by rows,
-columns, and {}``pages'' (in the third dimension). Routines for
-splitting arrays (roughly the opposite of stacking arrays). 
+dimensions from N-dimensional arrays, ensuring that an array is at
+least 1-, 2-, or 3-dimensional, and stacking (concatenating) arrays
+by rows, columns, and {}``pages'' (in the third dimension). Routines
+for splitting arrays (roughly the opposite of stacking arrays) are
+also available. 
 
 
 \subsubsection{Matrix manipulations}
 
 These are functions specifically suited for 2-dimensional arrays that
 were part of MLab in the Numeric distribution, but have been placed
-in scipy\_base for completeness. 
+in scipy\_base for completeness so that users are not importing Numeric. 
 
 
 \subsubsection{Polynomials}
@@ -356,16 +365,16 @@ or ufuncs). For example, suppose you have a Python function named
 \verbatiminput{example3.1}which defines a function of two scalar
 variables and returns a scalar result. The class vectorize can be
 used to {}``vectorize'' this function so that \begin{verbatim}
->>> vec_addsubstract = vectorize(addsubtract) \end{verbatim} 
+>>> vec_addsubtract = vectorize(addsubtract) \end{verbatim} 
 \noindent returns a function which takes array arguments and returns an array
 result:
 
 \verbatiminput{example3.2}
 
 This particular function could have been written in vector form without
-the use of general\_function. But, what if the function you have written
-is the result of some optimization or integration routine. Such functions
-can likely only be vectorized using \texttt{vectorize.}
+the use of \textbf{vectorize}. But, what if the function you have
+written is the result of some optimization or integration routine.
+Such functions can likely only be vectorized using \texttt{vectorize.}
 
 
 \subsubsection{Other useful functions}
@@ -375,7 +384,7 @@ most of the other functions that are also in MLab that comes with
 the Numeric package. The reason for duplicating these functions is
 to allow SciPy to potentially alter their original interface and make
 it easier for users to know how to get access to functions \texttt{>\,{}>\,{}>
-from scipy import {*}. }
+from scipy import {*}.}
 
 New functions which should be mentioned are \textbf{mod(x,y)} which
 can replace \textbf{x\%y} when it is desired that the result take
@@ -408,7 +417,7 @@ or by using floating-point precision and the gamma function. The functions
 a place at the top level. There are convenience functions for the
 interactive use: \textbf{disp} (similar to print), \textbf{}and \textbf{who}
 (returns a list of defined variables and memory consumption--upper
-bounded). Another function returns a common image used in signal processing:
+bounded). Another function returns a common image used in image processing:
 \textbf{lena.} 
 
 Finally, two functions are provided that are useful for approximating
@@ -489,7 +498,7 @@ is forgotten). The functionality of the function \textbf{special.expn}
 can be replicated by defining a new function \textbf{vec\_expint}
 based on the routine \textbf{quad: }
 
-\verbatiminput{example4.3} 
+\verbatiminput{example4.3}
 
 The function which is integrated can even use the quad argument (though
 the error bound may underestimate the error due to possible numerical
@@ -653,9 +662,8 @@ the minimum is Powell's method available as \textbf{optimize.fmin\_powell}.
 In order to converge more quickly to the solution, this routine uses
 the gradient of the objective function. If the gradient is not given
 by the user, then it is estimated using first-differences. The Broyden-Fletcher-Goldfarb-Shanno
-(BFGS) method requires fewer function calls than the simplex algorithm
-but unless the gradient is provided by the user, the speed savings
-won't be significant.
+(BFGS) method typically requires fewer function calls than the simplex
+algorithm even when the gradient must be estimated. 
 
 To demonstrate this algorithm, the Rosenbrock function is again used.
 The gradient of the Rosenbrock function is the vector: \begin{eqnarray*}
@@ -770,11 +778,11 @@ to be found. A common method for determining which parameter vector
 gives the best fit to the data is to minimize the sum of squares of
 the residuals. The residual is usually defined for each observed data-point
 as \[
-e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert .\]
+e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert ^{2}.\]
  An objective function to pass to any of the previous minization algorithms
 to obtain a least-squares fit is. \[
 J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
- 
+
 
 The \textbf{leastsq} algorithm performs this squaring and summing
 of the residuals automatically. It takes as an input argument the
@@ -1165,18 +1173,18 @@ case, the matrix multiplication can be accomplished using Fourier
 transforms.
 
 Let $x\left[n\right]$ define a one-dimensional signal indexed by
-the integer $n.$ Full, convolution of two one-dimensional signals
+the integer $n.$ Full convolution of two one-dimensional signals
 can be expressed as \[
 y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].\]
- This equation can only be implemented directly, if we limit the sequences
+ This equation can only be implemented directly if we limit the sequences
 to finite support sequences that can be stored in a computer, choose
 $n=0$ to be the starting point of both sequences, let $K+1$ be that
 value for which $y\left[n\right]=0$ for all $n>K+1$ and $M+1$ be
 that value for which $x\left[n\right]=0$ for all $n>M+1$, then the
 discrete convolution expression is \[
 y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
- For convenience assume $K\geq M.$ Then, the output of this operation
-is \begin{eqnarray*}
+ For convenience assume $K\geq M.$ Then, more explicitly the output
+of this operation is \begin{eqnarray*}
 y\left[0\right] & = & x\left[0\right]h\left[0\right]\\
 y\left[1\right] & = & x\left[0\right]h\left[1\right]+x\left[1\right]h\left[0\right]\\
 y\left[2\right] & = & x\left[0\right]h\left[2\right]+x\left[1\right]h\left[1\right]+x\left[2\right]h\left[0\right]\\
@@ -1353,8 +1361,31 @@ used as the output. The command to perform an order filter is \textbf{signal.ord
 
 \paragraph{Wiener filter}
 
+The Wiener filter is a simple deblurring filter for denoising images.
+This is not the Wiener filter commonly described in image reconstruction
+problems but instead it is a simple, local-mean filter. Let $x$ be
+the input signal, then the output is
+
+\[
+y=\left\{ \begin{array}{cc}
+\frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\
+m_{x} & \sigma_{x}^{2}<\sigma^{2}.\end{array}\right.\]
+ Where $m_{x}$ is the local estimate of the mean and $\sigma_{x}^{2}$
+is the local estimate of the variance. The window for these estimates
+is an optional input parameter (default is $3\times3$). The parameter
+$\sigma^{2}$ is a threshold noise parameter. If $\sigma$ is not
+given then it is estimated as the average of the local variances. 
+
 
 \paragraph{Hilbert filter}
+
+The Hilbert transform constructs the complex-valued analytic signal
+from a real signal. For example if $x=\cos\omega n$ then $y=\textrm{hilbert}\left(x\right)$
+would return (except near the edges) $y=\exp\left(j\omega n\right).$
+In the frequency domain, the hilbert transform performs\[
+Y=X\cdot H\]
+ where $H$ is 2 for positive frequencies, $0$ for negative frequencies
+and $1$ for zero-frequencies. 
 
 
 \paragraph{Detrend}
@@ -1400,6 +1431,9 @@ used as the output. The command to perform an order filter is \textbf{signal.ord
 
 
 \subsubsection{Read and write Matlab .mat files}
+
+
+\subsubsection{Saving workspace}
 
 
 \subsection{Text-file }
@@ -1972,6 +2006,8 @@ of the commands of pygist are available under xplt as well. For more
 information on the pygist commands you can read the documentation
 of that package in html here \url{http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist_html/pygist.html}
 or in pdf at this location \url{http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist.pdf}.
+It should be noted that xplt is available on Unix and Windows and
+should work on MacOS X.
 
 
 \subsection{Basic commands }

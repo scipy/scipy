@@ -545,7 +545,7 @@ These changes are all made in a new module (fastumath) that is part of the
  In addition, the comparision operators have been changed to allow comparisons
  and logical operations of complex numbers (only the real part is compared).
  Also, with the new universal functions in SciPy, the logical operations
- (execpt logical_XXX functions) all return arrays of unsigned bytes (8-bits
+ (except logical_XXX functions) all return arrays of unsigned bytes (8-bits
  per element instead of the old 32-bits, or even 64-bits) per element
 \begin_inset Foot
 collapsed true
@@ -951,7 +951,7 @@ status Open
 \backslash 
 begin{verbatim}
 \newline 
->>> vec_addsubstract = vectorize(addsubtract) 
+>>> vec_addsubtract = vectorize(addsubtract) 
 \backslash 
 end{verbatim} 
 \newline 
