@@ -14,7 +14,15 @@ import plot_utility
 import interface
 
 from scipy_base import display_test
+_have_wx = 0
 if not display_test.have_x11() or display_test.try_XOpenDisplay():
+    try:
+        import wxPython
+        _have_wx = 1
+    except ImportError,msg:
+        print __file__,msg
+
+if _have_wx:
     from plot_objects import *
     from wxplt import *
     import wxplt

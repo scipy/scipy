@@ -3,9 +3,15 @@ from scipy import *
 from scipy_base import limits, display_test
 import sys
 
-
-
+_have_wx = 0
 if not display_test.have_x11() or display_test.try_XOpenDisplay():
+    try:
+        import wxPython
+        _have_wx = 1
+    except ImportError,msg:
+        print __file__,msg
+
+if _have_wx:
     import wxplt
     import plot_objects
     import gui_thread

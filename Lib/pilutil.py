@@ -7,8 +7,16 @@ import Numeric
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
 
-Image = ppimport('Image')
-ImageFilter = ppimport('ImageFilter')
+_have_PIL = 1
+try:
+    import PIL
+except ImportError,msg:
+    print __file__,msg
+    _have_PIL = 0
+
+if _have_PIL:
+    Image = ppimport('Image')
+    ImageFilter = ppimport('ImageFilter')
 
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
