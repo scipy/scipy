@@ -1,10 +1,13 @@
 """ Cow --- Cluster Of Workstations.
-    This modules facilitates the use of a cluster
+    These modules facilitate the use of a cluster
     of workstations as a single computational engine.
     It will hopefully simplify parallelizing 
     "embarrasingly parallel" task.  If your problem 
     requires closely coupled parallelism, take a 
     look at pyMPI.
+    
+    Note: we might want to move the server list out
+    of the module where it can be passed as an argument.
 """
 
 import sync_cluster, socket
