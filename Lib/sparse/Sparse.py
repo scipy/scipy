@@ -490,6 +490,11 @@ class spmatrix:
 
     def getCSR(self):
         return A.ftype, A.lastel+1, A.data, A.index[0]-1, A.index[1]-1
+
+    def getCSC(self):
+        B = A.transp()
+        return B.ftype, B.lastel+1, B.data, B.index[0]-1, B.index[1]-1
+
             
 def isspmatrix(x):
     return hasattr(x,'__class__') and x.__class__ is spmatrix

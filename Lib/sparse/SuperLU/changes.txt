@@ -16,7 +16,6 @@ Changes made to the SuperLU3.0 tree
 * Altered zsp_blas2.c, csp_blas2.c, zgstrs.c, cgstrs.c, dcomplex.h, scomplex.h to add support 
    for solving A**H * x = b after factoring. 
 
-
 * Tried to get rid of some compiler errors (added void to argument lists in headers of util.h).
 
 
