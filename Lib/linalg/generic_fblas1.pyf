@@ -111,7 +111,7 @@ subroutine <tchar=s,d,c,z>swap(n,x,offx,incx,y,offy,incy)
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
   callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
 
-  <type_in> dimension(*),intent(in,out,copy) :: x,y
+  <type_in> dimension(*),intent(in,out) :: x,y
 
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
@@ -136,7 +136,7 @@ subroutine <tchar=s,d,c,z>scal(n,a,x,offx,incx)
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
   callprotoargument int*,<type_in_c>*,<type_in_c>*,int*
 
-  <type_in> dimension(*),intent(in,out,copy) :: x
+  <type_in> dimension(*),intent(in,out) :: x
 
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
 
