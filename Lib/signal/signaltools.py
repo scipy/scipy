@@ -555,8 +555,8 @@ def unique_roots(p,tol=1e-3,rtype='min'):
             mult.append(1)
     return array(pout), array(mult)
 
-from scipy import real_if_close
-def invres(r,p,k,tol=1e-3):
+from scipy import real_if_close, r1array
+def invres(r,p,k,tol=1e-3,rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
     If M = len(b) and N = len(a)
@@ -576,16 +576,16 @@ def invres(r,p,k,tol=1e-3):
           -------- + ----------- + ... + ----------- 
           (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
-    See also:  residue, poly, polyval
+    See also:  residue, poly, polyval, unique_roots
     """
     extra = k
     p, indx = cmplx_sort(p)
     r = Numeric.take(r,indx)
-    pout, mult = unique_roots(p,tol=tol,rtype='avg')
+    pout, mult = unique_roots(p,tol=tol,rtype=rtype)
     p = []
     for k in range(len(pout)):
         p.extend([pout[k]]*mult[k])
-    a = poly(p)
+    a = r1array(poly(p))
     if len(extra) > 0:
         b = polymul(extra,a)
     else:
@@ -607,7 +607,7 @@ def invres(r,p,k,tol=1e-3):
     return b, a
 
 from scipy import factorial
-def residue(b,a,tol=1e-3):
+def residue(b,a,tol=1e-3,rtype='avg'):
     """Compute partial-fraction expansion of b(s) / a(s).
 
     If M = len(b) and N = len(a)
@@ -627,14 +627,14 @@ def residue(b,a,tol=1e-3):
           -------- + ----------- + ... + ----------- 
           (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
-    See also:  invres, poly, polyval
+    See also:  invres, poly, polyval, unique_roots
     """
 
     b,a = map(asarray,(b,a))
     k,b = polydiv(b,a)
     p = roots(a)
     r = p*0.0
-    pout, mult = unique_roots(p,tol=tol,rtype='avg')
+    pout, mult = unique_roots(p,tol=tol,rtype=rtype)
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]]*mult[n])
@@ -647,7 +647,7 @@ def residue(b,a,tol=1e-3):
         for l in range(len(pout)):
             if l != n:
                 pn.extend([pout[l]]*mult[l])
-        an = poly(pn)
+        an = r1array(poly(pn))
         # bn(s) / an(s) is (s-po[n])**Nn * b(s) / a(s) where Nn is
         # multiplicity of pole at po[n]
         sig = mult[n]
@@ -655,13 +655,16 @@ def residue(b,a,tol=1e-3):
             if sig > m:
                 # compute next derivative of bn(s) / an(s)
                 term1 = polymul(polyder(bn,1),an)
-                term2 = polymul(bn,polyder(dn))
+                term2 = polymul(bn,polyder(an,1))
                 bn = polysub(term1,term2)
                 an = polymul(an,an)                
-            r[indx] = polyval(bn,pout[n]) / polyval(an,pout[n]) \
-                      / factorial(sig-m)
-            indx += 1
+            r[indx+m-1] = polyval(bn,pout[n]) / polyval(an,pout[n]) \
+                          / factorial(sig-m)
+        indx += sig
     return r, p, k
+
+def residuez(b,a,tol=1e-3):
+    pass
 
 
 def test():
