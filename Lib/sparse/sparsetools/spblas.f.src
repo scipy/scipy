@@ -232,7 +232,7 @@ c     if memory ran-out at last attempt
       integer rowa(0:nnzamax-1), colb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:k), ptrb(0:k), ptrc(0:n)
       integer nnzamax, nnzbmax, nnzcmax
-      integer m, k, n, irow, kcol, ierr
+      integer m, k, n, irow, kcol, ierr, cumsum
 
       integer kk, ii, jjb, jb, cb, ia, nnzc
       <_t> val
@@ -268,6 +268,14 @@ c     there is a non-zero value for this value of i and k
          end do         
       end do
 
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do kk = 1, n
+         cumsum = cumsum + ptrc(kk)
+         ptrc(kk) = cumsum         
+      end do
+      return
+
       return
 
  999  continue
@@ -299,7 +307,7 @@ c
       integer cola(0:nnzamax-1), rowb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:m), ptrb(0:n), ptrc(0:n)
       integer nnzamax, nnzbmax, nnzcmax
-      integer m, n, irow, kcol, ierr
+      integer m, n, irow, kcol, ierr, cumsum
 
       integer kk, ii, jjb, jb, cb, ia, nnzc
       <_t> val
@@ -328,6 +336,15 @@ c     there is a non-zero value for this value of i and k
             end if
          end do
       end do
+
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do kk = 1, n
+         cumsum = cumsum + ptrc(kk)
+         ptrc(kk) = cumsum         
+      end do
+      return
+
 
       return
 

@@ -189,6 +189,41 @@ class spmatrix:
         res = -csc
         return res
 
+    def __getattr__(self,attr):
+        if attr == 'A':
+            return self.todense()
+        elif attr == 'T':
+            return self.transp()
+        elif attr == 'H':
+            return self.conjtransp()
+        elif attr == 'real':
+            return self.real()
+        elif attr == 'imag':
+            return self.imag()
+        else:
+            raise AttributeError, attr + " not found."
+        
+    def transp(self):
+        csc = self.tocsc()
+        res = csc.transp()
+        return res
+
+    def conjtransp(self):
+        csc = self.tocsc()
+        res = csc.transp()
+        res.data = conj(res.data)
+        return res
+
+    def real(self):
+        csc = self.tocsc()
+        csc.data = real(csc.data)
+        return csc
+
+    def imag(self):
+        csc = self.tocsc()
+        csc.data = imag(csc.data)
+        return csc
+        
     def matmat(self, other):
         csc = self.tocsc()
         res = csc.matmat(other)
@@ -206,6 +241,7 @@ class spmatrix:
     def tocoo(self):
         csc = self.tocsc()
         return csc.tocoo()
+    
 
 # compressed sparse column matrix
 #  This can be instantiated in many ways
@@ -1112,7 +1148,7 @@ class dok_matrix(spmatrix, dict):
         return res
 
     def __mul__(self, other):
-        if isinstance(other, dok_matrix):
+        if isinstance(other, spmatrix):
             return self.matmat(other)
         other = asarray(other)
         if rank(other) > 0:
@@ -1211,8 +1247,9 @@ class dok_matrix(spmatrix, dict):
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             if ikey0 != current_row:
-                current_row = ikey0
-                row_ptr[ikey0] = k
+                N = ikey1-current_col
+                row_ptr[current_row+1:ikey0+1] = [k]*N
+                current_row = ikey0                
             data[k] = self[key]
             colind[k] = ikey1
             k += 1
@@ -1225,27 +1262,29 @@ class dok_matrix(spmatrix, dict):
     def tocsc(self):
         # Return Compressed Sparse Column format arrays for this matrix
         keys = self.keys()
+        #  Sort based on columns
         keys.sort(csc_cmp)
         nnz = len(keys)
-        data = [None]*nnz
-        colind = [None]*nnz
-        col_ptr = [None]*(self.shape[1]+1)
-        current_col = -1
+        data = [0]*nnz
+        rowind = [0]*nnz
+        col_ptr = [0]*(self.shape[1]+1)
+        current_col = 0
         k = 0
         for key in keys:
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             if ikey1 != current_col:
+                N = ikey1-current_col
+                col_ptr[current_col+1:ikey1+1] = [k]*N
                 current_col = ikey1
-                col_ptr[ikey1] = k
             data[k] = self[key]
-            colind[k] = ikey0
+            rowind[k] = ikey0
             k += 1
         col_ptr[-1] = nnz
         data = array(data)
-        colind = array(colind)
+        rowind = array(rowind)
         col_ptr = array(col_ptr)
-        return csc_matrix(data, (colind, col_ptr))
+        return csc_matrix(data, (rowind, col_ptr))
 
     def todense(self,typecode=None):
         if typecode is None:
