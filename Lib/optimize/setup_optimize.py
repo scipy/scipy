@@ -10,7 +10,8 @@ def configuration(parent_package=''):
     local_path = get_path(__name__)    
 
     if parent_package:
-        config['packages'].append(parent_package+'.optimize')
+        parent_package += '.'
+        config['packages'].append(parent_package+'optimize')
  
     test_path = os.path.join(local_path,'tests')
     config['packages'].append(dot_join(parent_package,'optimize.tests'))

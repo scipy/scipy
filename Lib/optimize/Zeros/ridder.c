@@ -3,8 +3,8 @@
 
 #include "zeros.h"
 
-/* Sets zeros_error_num SIGNERR for sign_error;
-                        CONVERR for convergence_error;
+/* Sets params->error_num SIGNERR for sign_error;
+                         CONVERR for convergence_error;
 */
 
 double

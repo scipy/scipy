@@ -10,7 +10,7 @@
 typedef struct {
     int funcalls;
     int iterations;
-    int error_num;
+    int error_num; 
     PyObject *function;
     PyObject *args;
     jmp_buf env;
@@ -95,15 +95,15 @@ call_solver(double (*solver)(), PyObject *self, PyObject *args)
 
     if (!setjmp(env)) {  /* direct return */
         memcpy(params.env,env,sizeof(jmp_buf));
-        params->error_num = 0;
+        params.error_num = 0;
         zero = solver(scipy_zeros_functions_func,a,b,xtol,scipy_zeros_rtol,iter, &params);    
         Py_DECREF(fargs);
-        if (params->error_num != 0) {
-            if (params->error_num == SIGNERR) {
+        if (params.error_num != 0) {
+            if (params.error_num == SIGNERR) {
                 PyErr_SetString(PyExc_ValueError,"f(a) and f(b) must have different signs");
                 return NULL;
             }
-            if (params->error_num == CONVERR) {
+            if (params.error_num == CONVERR) {
                 if (disp) {
                     fprintf(stderr, "Warning: failed to converge after %d iterations.\n", params.iterations);
                     flag = 1;

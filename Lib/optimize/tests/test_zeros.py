@@ -43,8 +43,8 @@ bisection in such circumstance, while being faster for smooth
 monotone sorts of functions.
 """
 
-methods = [cc.bisect,cc.ridder,cc.brenth,cc.brent]
-mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brent']
+methods = [cc.bisect,cc.ridder,cc.brenth,cc.brentq]
+mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
 
