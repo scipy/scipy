@@ -13,6 +13,13 @@ import scipy_base as sb
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
+_coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
+                 ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
+                 ('d','F'):'D', ('d','D'):'D', ('F','f'):'F',
+                 ('F','d'):'D', ('F','F'):'F', ('F','D'):'D',
+                 ('D','f'):'D', ('D','d'):'d', ('D','F'):'D',
+                 ('D','D'):'D'}
+
 class get_matvec:
     methname = 'matvec'
     def __init__(self, obj, *args):
@@ -86,7 +93,7 @@ class get_psolveq(get_psolve):
 class get_rpsolveq(get_psolveq):
     methname = 'rpsolve'
     
-def bicg(A,b,x0=None,tol=1e-5,maxiter=None):
+def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     """Use BIConjugate Gradient iteration to solve A x = b
 
     Inputs:
@@ -111,17 +118,30 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-
+    xtype  --  The type of the result.  If None, then it will be determined
+                 from A.matvec(x0) and b.  To save the extra computation,
+                 use 0 for the same type as b or one of 'fdFD'.
     """
-    b = sb.asarray(b)
+    b = sb.asarray(b)+0.0
     n = len(b)
-    typ = b.typecode()
     if maxiter is None:
         maxiter = n*10
 
     x = x0
     if x is None:
-        x = sb.zeros(n,typ)
+        x = sb.zeros(n)
+
+    if xtype is None:
+        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+    elif xtype == 0:
+        typ = b.typecode()
+    else:
+        typ = xtype
+        if typ not in 'fdFD':
+            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    x = sb.asarray(x,typ)
+    b = sb.asarray(b,typ)
         
     matvec, psolve, rmatvec, rpsolve = (None,)*4
     ltr = _type_conv[typ]
@@ -176,7 +196,7 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None):
 
     return x, info
 
-def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None):
+def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     """Use BIConjugate Gradient STABilized iteration to solve A x = b
 
     Inputs:
@@ -200,17 +220,30 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-
+    xtype  --  The type of the result.  If None, then it will be determined
+                 from A.matvec(x0) and b.  To save the extra computation,
+                 use 0 for the same type as b or one of 'fdFD'.
     """
-    b = sb.asarray(b)
+    b = sb.asarray(b)+0.0
     n = len(b)
-    typ = b.typecode()
     if maxiter is None:
         maxiter = n*10
 
     x = x0
     if x is None:
-        x = sb.zeros(n,typ)
+        x = sb.zeros(n)
+
+    if xtype is None:
+        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+    elif xtype == 0:
+        typ = b.typecode()
+    else:
+        typ = xtype
+        if typ not in 'fdFD':
+            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    x = sb.asarray(x,typ)
+    b = sb.asarray(b,typ)
         
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
@@ -256,7 +289,7 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None):
 
     return x, info
 
-def cg(A,b,x0=None,tol=1e-5,maxiter=None):
+def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     """Use Conjugate Gradient iteration to solve A x = b (A^H = A)
 
     Inputs:
@@ -281,18 +314,31 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
-
+    xtype  --  The type of the result.  If None, then it will be determined
+                 from A.matvec(x0) and b.  To save the extra computation,
+                 use 0 for the same type as b or one of 'fdFD'.
     """
-    b = sb.asarray(b)
+    b = sb.asarray(b)+0.0
     n = len(b)
-    typ = b.typecode()
     if maxiter is None:
         maxiter = n*10
 
     x = x0
     if x is None:
-        x = sb.zeros(n,typ)
-        
+        x = sb.zeros(n)
+
+    if xtype is None:
+        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+    elif xtype == 0:
+        typ = b.typecode()
+    else:
+        typ = xtype
+        if typ not in 'fdFD':
+            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    x = sb.asarray(x,typ)
+    b = sb.asarray(b,typ)
+
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
     revcom = _iterative.__dict__[ltr+'cgrevcom']
@@ -338,8 +384,8 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None):
     return x, info
 
 
-def cgs(A,b,x0=None,tol=1e-5,maxiter=None):
-    """Use Conjugate Gradient Squared iteration to solve A x = b 
+def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
+    """Use Conjugate Gradient Squared iteration to solve A x = b
 
     Inputs:
 
@@ -363,17 +409,31 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
+    xtype  --  The type of the result.  If None, then it will be determined
+                 from A.matvec(x0) and b.  To save the extra computation,
+                 use 0 for the same type as b or one of 'fdFD'.
 
     """
-    b = sb.asarray(b)
+    b = sb.asarray(b) + 0.0
     n = len(b)
-    typ = b.typecode()
     if maxiter is None:
         maxiter = n*10
 
     x = x0
     if x is None:
-        x = sb.zeros(n,typ)
+        x = sb.zeros(n)
+
+    if xtype is None:
+        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+    elif xtype == 0:
+        typ = b.typecode()
+    else:
+        typ = xtype
+        if typ not in 'fdFD':
+            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    x = sb.asarray(x,typ)
+    b = sb.asarray(b,typ)
         
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
@@ -419,8 +479,7 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None):
 
     return x, info
 
-# not working yet.
-def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None):
+def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     """Use Generalized Minimal RESidual iteration to solve A x = b 
 
     Inputs:
@@ -447,17 +506,31 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
+    xtype  --  The type of the result.  If None, then it will be determined
+                 from A.matvec(x0) and b.  To save the extra computation,
+                 use 0 for the same type as b or one of 'fdFD'.
 
     """
-    b = sb.asarray(b)
+    b = sb.asarray(b)+0.0
     n = len(b)
-    typ = b.typecode()
     if maxiter is None:
         maxiter = n*10
 
     x = x0
     if x is None:
-        x = sb.zeros(n,typ)
+        x = sb.zeros(n)
+
+    if xtype is None:
+        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+    elif xtype == 0:
+        typ = b.typecode()
+    else:
+        typ = xtype
+        if typ not in 'fdFD':
+            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    x = sb.asarray(x,typ)
+    b = sb.asarray(b,typ)
         
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
@@ -507,7 +580,7 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None):
     return x, info
 
 
-def qmr(A,b,x0=None,tol=1e-5,maxiter=None):
+def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     """Use Quasi-Minimal Residucal iteration to solve A x = b
 
     Inputs:
@@ -533,17 +606,32 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None):
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
+    xtype  --  The type of the result.  If None, then it will be determined
+                 from A.matvec(x0) and b.  To save the extra computation,
+                 use 0 for the same type as b or one of 'fdFD'.
 
     """
-    b = sb.asarray(b)
+    b = sb.asarray(b)+0.0
     n = len(b)
-    typ = b.typecode()
     if maxiter is None:
         maxiter = n*10
 
     x = x0
     if x is None:
-        x = sb.zeros(n,typ)
+        x = sb.zeros(n)
+
+    if xtype is None:
+        typ = _coerce_rules[b.typecode(),A.matvec(x).typecode()]
+    elif xtype == 0:
+        typ = b.typecode()
+    else:
+        typ = xtype
+        if typ not in 'fdFD':
+            raise ValueError, "xtype must be 'f', 'd', 'F', or 'D'"
+
+    x = sb.asarray(x,typ)
+    b = sb.asarray(b,typ)
+
         
     matvec, psolve, rmatvec, rpsolve = (None,)*4
     ltr = _type_conv[typ]

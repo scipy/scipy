@@ -16,7 +16,6 @@ def resize1d(arr, newlen):
     new[:old] = arr
     return new
 
-
 MAXPRINT=50
 ALLOCSIZE=1000
 
@@ -201,9 +200,9 @@ class spmatrix:
         elif attr == 'H':
             return self.conjtransp()
         elif attr == 'real':
-            return self.real()
+            return self._real()
         elif attr == 'imag':
-            return self.imag()
+            return self._imag()
         else:
             raise AttributeError, attr + " not found."
         
@@ -218,14 +217,18 @@ class spmatrix:
         res.data = conj(res.data)
         return res
 
-    def real(self):
+    def _real(self):
         csc = self.tocsc()
         csc.data = real(csc.data)
+        csc.typecode = csc.data.typecode()
+        csc.ftype = _transtabl[csc.typecode]
         return csc
 
-    def imag(self):
+    def _imag(self):
         csc = self.tocsc()
         csc.data = imag(csc.data)
+        csc.typecode = csc.data.typecode()
+        csc.ftype = _transtabl[csc.typecode]        
         return csc
         
     def matmat(self, other):
@@ -238,9 +241,10 @@ class spmatrix:
         res = csc.matvec(vec)
         return res
 
-    def rmatvec(self, vec):
+    # implements A.H * x or A.T * x depending on conj
+    def rmatvec(self, vec, conj=1):
 	csc = self.tocsc()
-        res = csc.rmatvec(vec)
+        res = csc.rmatvec(vec, conj=conj)
         return res
 
     def todense(self):
@@ -263,7 +267,6 @@ class spmatrix:
 #           a[ij[k,0],ij[k,1]] = data[k]
 #    - with data, (row, ptr)
 # 
-
 class csc_matrix(spmatrix):
     def __init__(self,s,ij=None,M=None,N=None,nzmax=100,typecode=Float,copy=0):
         spmatrix.__init__(self, 'csc')
@@ -418,7 +421,7 @@ class csc_matrix(spmatrix):
             new.ftype = _transtabl[new.typecode]
             return new
         else:
-            return self.rmatvec(other)
+            return transpose(self.rmatvec(transpose(other),conj=0))
 
     def __neg__(self):
         new = self.copy()
@@ -500,12 +503,14 @@ class csc_matrix(spmatrix):
         y = func(self.data, self.rowind, self.indptr, x, self.shape[0])
         return y
 
-    def rmatvec(self, x):
+    def rmatvec(self, x, conj=1):
         if (rank(x) != 1) or (len(x) != self.shape[0]):
             raise ValueError, "Dimension mismatch"
         self._check()  # be sure everything is as it should be4
         func = getattr(sparsetools,self.ftype+'csrmux')
-        y = func(self.data, self.rowind, self.indptr, x)
+        if conj: cd = conj(self.data)
+        else: cd = self.data
+        y = func(cd, self.rowind, self.indptr, x)
         return y
 
     def matmat(self, bmat):
@@ -802,7 +807,7 @@ class csr_matrix(spmatrix):
             new.ftype = _transtabl[new.typecode]
             return new
         else:
-            return self.rmatvec(other)
+            return transpose(self.rmatvec(transpose(other),conj=0))
 
     def __neg__(self):
         new = self.copy()
@@ -882,12 +887,14 @@ class csr_matrix(spmatrix):
         y = func(self.data, self.colind, self.indptr, x)
         return y
 
-    def rmatvec(self, x):
+    def rmatvec(self, x, conj=1):
         if (rank(x) != 1) or (len(x) != self.shape[0]):
             raise ValueError, "Dimension mismatch"
         self._check()  # be sure everything is as it should be4
         func = getattr(sparsetools,self.ftype+'cscmux')
-        y = func(self.data, self.colind, self.indptr, x, self.shape[1])
+        if conj: cd = conj(self.data)
+        else: cd = self.data
+        y = func(cd, self.colind, self.indptr, x, self.shape[1])
         return y
 
     def matmat(self, bmat):
@@ -1269,7 +1276,7 @@ class dok_matrix(spmatrix, dict):
         keys = self.keys()
 	res = [0]*self.shape[1]
 	for key in keys:
-            res[int(key[1])] += other[..., int(key[0])] * self[key]
+            res[int(key[1])] += other[..., int(key[0])] * conj(self[key])
 	return array(res)
 
     def setdiag(self, values, k=0):
@@ -1333,12 +1340,14 @@ class dok_matrix(spmatrix, dict):
 
     def todense(self,typecode=None):
         if typecode is None:
-            typecode = 'd'
+            typecode = 'D'
         new = zeros(self.shape,typecode)
         for key in self.keys():
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             new[ikey0,ikey1] = self[key]
+        if (max(abs(new.imag))/max(abs(new.real))) <= machar_double.eps:
+            new = new.real
         return new
     
 
