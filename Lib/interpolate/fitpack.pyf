@@ -267,7 +267,7 @@ static int imax(int i1,int i2) {
             :: m=len(x)
        real*8 dimension(m) :: x
        real*8 dimension(m),depend(m),check(len(y)==m) :: y
-       real*8 dimension(m),depend(m),check(len(y)==m) :: z
+       real*8 dimension(m),depend(m),check(len(z)==m) :: z
        real*8 optional,dimension(m),depend(m),check(len(w)==m) :: w = 1.0
        real*8 optional,depend(x,m) :: xb=dmin(x,m)
        real*8 optional,depend(x,m) :: xe=dmax(x,m)
@@ -334,7 +334,7 @@ static int imax(int i1,int i2) {
             :: m=len(x)
        real*8 dimension(m) :: x
        real*8 dimension(m),depend(m),check(len(y)==m) :: y
-       real*8 dimension(m),depend(m),check(len(y)==m) :: z
+       real*8 dimension(m),depend(m),check(len(z)==m) :: z
        real*8 optional,dimension(m),depend(m),check(len(w)==m) :: w = 1.0
        real*8 optional,depend(x,tx,m,nx) :: xb=calc_b(x,m,tx,nx)
        real*8 optional,depend(x,tx,m,nx) :: xe=calc_e(x,m,tx,nx)
