@@ -1,0 +1,66 @@
+Building SciPy on Windows.
+
+First, if your interested in getting going as fast as possible with SciPy, I'd
+recommend you grab <this> nice clikc-installation package instead of trying to 
+build it from scracth.  You only need all these tools if your interested in mucking 
+around with SciPy's internals or rebuilding it.  That said, the scipy.compiler 
+module requires the gcc package discussed in (1), so you might want to grab this thing.
+
+What you need:
+
+1. Python
+3. <gcc -- mingw32=ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/mingw32/gcc-2.95.2/gcc-2.95.2-msvcrt.exe>
+
+   This is a click-install package from Mumit Khan's site that includes the 
+   entire tool set(gcc, make, g77, nm, ar, etc)  you'll need for building 
+   SciPy. It lives in my c:\gcc-2.95.2 directory, and you need to edit your 
+   environment to include this in your path.  For instructions on how to do 
+   this are here <w2k>, <w98>.  This is a pretty old version (1999), but it 
+   works fine for me.  Its been tested on Windows 2000 and windows 98 
+   successfully.
+   
+   There is a <newer version= http://prdownloads.sourceforge.net/mingw/mingw-1.0-20010608.tar.gz>
+   from sourceforge.  Please let us know if you try this out.  Also be aware 
+   that you need a patch if you use this on a win 9x machine.
+   
+   Why aren't we using MSVC++?  The main reason is it doesn't come with a 
+   fortran compiler, and scipy has *a lot* of fortran code in it.  It is 
+   possible that MSVC+Absoft or MSVC+Intel could get the job done, but we 
+   haven't checked this out.  For those of you who only build things if they 
+   come with a .dsw or .dsp file, I'm sorry.  I like working in the Visual 
+   Studio IDE to (outside of it, I'm reduced to printf for debugging).  Figure 
+   out a way to do it, and we'll put gladly give it a home.  For now, setup.py 
+   is the only way to go (but its pretty dang good if you ask me).
+   
+   By the way, this'll work with ActiveState Python or Python built with MSVC. 
+   The original Python *does not* have to be built using gcc (thanks to 
+   lib2def.py by <Robert Kern=mailto:kern@caltech.edu>).
+
+4. <fftw libraries=my library link> -- fastest fourier transform in the west librareis
+
+    Unpack this file in your C:\ directory, as this is where scipy's setup.py 
+    file expects to find it. <These guys=http://www.fftw.org> don't seem so 
+    fond of Mr. Gates, so the Windows build process isn't straight forward. The 
+    standard Unix build process works in cygwin, but the resulting library 
+    will be dependent on the cygwin.dll.  I couldn't get the -mno-cygwin flag 
+    to work, nor could I get things to behave when I set gcc to the mingw32 
+    compiler.  Instead, I've put together a simple makefile and config.h file 
+    that build all the libraries on windows using the mingw32 tool chain 
+    discussed in (3). A source distrobution for this is <here>.  
+
+5.  <atlas>  -- self-tuning version of blas and lapack routines
+
+    Actually, you don't really need these yet, but you soon will when the 
+    linalg module is finished. Be the first one on your block to own them! 
+    Again, I've made a zip file of these little <gems> that you can unpack in 
+    your C:\ directory.  That's where (a future version of) setup.py expects to 
+    find them.
+    
+Getting SciPy:
+
+4.  The source release of SciPy is <here>.  It is currently *very* alpha code, so please, 
+    <be patient=need depressing black-and-white picture of people standing in a bread line>,
+    <report bugs= bug page>, and don't use it in 
+    <air traffic control software=http://groups.google.com/groups?hl=en&lr=lang_en&safe=off&th=d3460cb8b82dc6d,129&start=0>.
+
+Installation:
