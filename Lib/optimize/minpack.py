@@ -79,8 +79,8 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
     if type(args) != type(()): args = (args,)
     check_func(func,x0,args,n,(n,))
     Dfun = fprime
-    if Dfun == None:
-        if band == None:
+    if Dfun is None:
+        if band is None:
             ml,mu = -10,-10
         else:
             ml,mu = band[:2]
@@ -204,7 +204,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     n = len(x0)
     if type(args) != type(()): args = (args,)
     m = check_func(func,x0,args,n)[0]
-    if Dfun == None:
+    if Dfun is None:
         if (maxfev == 0):
             maxfev = 200*(n+1)
         retval = _minpack._lmdif(func,x0,args,full_output,ftol,xtol,gtol,maxfev,epsfcn,factor,diag)

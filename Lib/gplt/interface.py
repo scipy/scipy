@@ -23,7 +23,7 @@ def _validate_active():
 	
 def figure(which_one = None):
 	global _figure; global _active
-	if which_one == None:
+	if which_one is None:
 		_figure.append(pyPlot.Plot())
 		_active = _figure[-1]
 	else:
@@ -37,7 +37,7 @@ def current():
 	
 def close(which_one = None):
 	global _figure; global _active
-	if which_one == None:
+	if which_one is None:
 		_active.close()
 		try: _active = _figure[-1]
 		except IndexError: _intialize()

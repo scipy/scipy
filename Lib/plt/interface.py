@@ -16,7 +16,7 @@ _active = None
 
 def figure(which_one = None):
     global _figure; global _active
-    if which_one == None:
+    if which_one is None:
         title ='Figure %d' % len(_figure)
         _figure.append(plot_class(title=title))
         _active = _figure[-1]
@@ -63,7 +63,7 @@ def redraw():
 
 def close(which_one = None):
     global _figure; global _active
-    if which_one == None:
+    if which_one is None:
         try:
             _active.Close()
             _figure.remove(_active)
@@ -150,7 +150,7 @@ on = 'on'
 off = 'off'
 def grid(state=None):
     validate_active()
-    if state == None:
+    if state is None:
         if _active.x_axis.grid_visible in ['on','yes']:
             _active.x_axis.grid_visible = 'off'
             _active.y_axis.grid_visible = 'off'

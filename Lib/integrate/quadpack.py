@@ -176,7 +176,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     """
     if type(args) != type(()): args = (args,)
-    if (weight == None):
+    if (weight is None):
         retval = _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points)
     else:
         retval = _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts)
@@ -239,7 +239,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
     else:
         raise RunTimeError, "Infinity comparisons don't work for you."
 
-    if points == None:
+    if points is None:
         if inf == 0:
             return _quadpack._qagse(func,a,b,args,full_output,epsabs,epsrel,limit)
         else:
@@ -264,7 +264,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
     if weight in ['cos','sin']:
         integr = strdict[weight]
         if (b != Inf and a != -Inf):  # finite limits
-            if wopts == None:         # no precomputed chebyshev moments
+            if wopts is None:         # no precomputed chebyshev moments
                 return _quadpack._qawoe(func,a,b,wvar,integr,args,full_output,epsabs,epsrel,limit,maxp1,1)
             else:                     # precomputed chebyshev moments
                 momcom = wopts[0]

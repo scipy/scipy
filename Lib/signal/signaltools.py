@@ -167,7 +167,7 @@ def medfilt(volume,kernel_size=None):
   
     """
     volume = Numeric.asarray(volume)
-    if kernel_size == None:
+    if kernel_size is None:
         kernel_size = [3] * len(volume.shape)
     kernel_size = Numeric.asarray(kernel_size)
     if len(kernel_size.shape) == 0:
@@ -208,7 +208,7 @@ def wiener(im,mysize=None,noise=None):
 
     """
     im = Numeric.asarray(im)
-    if mysize == None:
+    if mysize is None:
         mysize = [3] * len(im.shape)
     mysize = Numeric.asarray(mysize);
 
@@ -330,7 +330,7 @@ def medfilt2d(input, kernel_size=3):
            result.
     """
     image = Numeric.asarray(input)
-    if kernel_size == None:
+    if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = Numeric.asarray(kernel_size)
     if len(kernel_size.shape) == 0:
