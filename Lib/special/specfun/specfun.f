@@ -1470,7 +1470,8 @@ C
 	   IF (K.GT.NM1.AND.DABS(SUC-SW).LT.DABS(SUC)*EPS) GO TO 20
 15         SW=SUC
 20      A0=(1.0D0-KD/(X*X))**(0.5D0*M)/SUC
-	R2F=0.0
+	R2F=0.0D0
+        EPS1=0.0D0
 	DO 50 K=1,NM
 	   L=2*K+M-N-2+IP
 	   IF (L.EQ.4*INT(L/4)) LG=1
@@ -1493,6 +1494,7 @@ C
 	ENDIF
 	B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R2F                
 	SUD=0.0D0
+        EPS2=0.0D0
 	DO 60 K=1,NM
 	   L=2*K+M-N-2+IP
 	   IF (L.EQ.4*INT(L/4)) LG=1
