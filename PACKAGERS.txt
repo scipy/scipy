@@ -1,20 +1,28 @@
+.. --*-- rest --*--
+.. NB! Keep this document a valid restructured document.
 
 Packaging Scipy
 ===============
+
+:Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Last changed: $Date$
+:Revision: $Revision$
+:Discussions to: scipy-dev@scipy.org
 
 Introduction
 ------------
 
 People who have tried to create a distribution of a Scipy package have
-been faced with complex dependency issues between scipy and f2py2e
-modules. Namely, both Scipy and F2py tar-balls provide scipy_distutils
-module that may have different time stamps, for instance, not to
-mention that packaging tools (e.g. debian apt) don't like such cases
-at all. Scipy_distutils is part of the Scipy package while F2py ships
-scipy_distutils for the convenience of F2py users.  So, the issue of
-distributing Scipy and F2py have been brought up in Scipy and F2py
-mailing lists many times and the purpose of this document is to
-provide instructions for the packagers how to overcome this issue.
+been faced with complex dependency issues between ``scipy`` and
+``f2py2e`` modules. Namely, both Scipy and F2py tar-balls provide
+``scipy_distutils`` module that may have different time stamps, for
+instance, not to mention that packaging tools (e.g. debian apt) don't
+like such cases at all. Scipy_distutils is part of the Scipy package
+while F2py ships ``scipy_distutils`` for the convenience of F2py
+users.  So, the issue of distributing Scipy and F2py have been brought
+up in Scipy and F2py mailing lists many times and the purpose of this
+document is to provide instructions for the packagers how to overcome
+this issue.
 
 Any suggestions, especially from the packagers, to improve these
 instructions are most welcome. Please, send your comments or patches
@@ -30,72 +38,85 @@ repository. Usually CVS versions are more stable than tar-balls
 developers do not test tar-balls very frequently and occasionally some
 important files may be missing.
 
-1) Get scipy,f2py and their dependencies from CVS:
+1. Get Scipy, F2py and their dependencies from CVS::
 
-  export CVSROOT=:pserver:anonymous@scipy.org:/home/cvsroot
-  cvs -z7 co scipy_core
-  cvs -z7 co -d scipy world/scipy
-  cd scipy && cvs -z7 co Lib_chaco; cd -
+     export CVSROOT=:pserver:anonymous@scipy.org:/home/cvsroot
+     cvs -z7 co scipy_core
+     cvs -z7 co -d scipy world/scipy
+     cd scipy && cvs -z7 co Lib_chaco; cd -
 
+     export CVSROOT=:pserver:anonymous@cens.ioc.ee:/home/cvs
+     cvs -z7 co f2py2e
 
-  export CVSROOT=:pserver:anonymous@cens.ioc.ee:/home/cvs
-  cvs -z7 co f2py2e
+2. Disable ``scipy_core`` package in ``scipy/setup.py`` file by commenting
+   out the following line::
 
-2) Disable scipy_core package in scipy/setup.py file by commenting out
-the following line:
+     separate_packages += core_packages
 
-  separate_packages += core_packages
+   If you find building Chaco troublesome (e.g. it is known to fail
+   due to gcc-2.95.4 compiler bugs) then you can disable it by
+   commenting out the following line in ``setup.py``::
 
-If you find building chaco troublesome (e.g. it is known to fail due
-to gcc-2.95.4 compiler bugs) then you can disable chaco by commenting
-out the following line in  setup.py:
+     separate_packages += chaco_packages
 
-  separate_packages += chaco_packages
+3. Create source tar-balls::
 
-3) Disable scipy_distutils checkout in f2py2e/setup.py file by replacing
-the following line
+     cd scipy_core
+     python setup.py sdist
+     cp dist/Scipy_core-*.tar.gz ..
+     cd ..
 
-  if 'sdist' in sys.argv and not os.path.exists('other/scipy_distutils'):
+     cd f2py2e
+     python setup.py sdist
+     cp dist/F2PY-*.tar.gz ..
+     cd ..
 
-with
+     cd scipy
+     # note that this will call swig for agg module (in chaco build),
+     # also several tests are run for xplt module
+     PYTHONPATH=..:../scipy_core python setup.py sdist
+     cp dist/SciPy-*.tar.gz ..
+     cd ..
 
-  if 0:
+   The resulting gzipped tar-files do not contain software overlaps
+   anymore and should be suitable for packaging.
 
-4) Create source tar-balls
+4. Install ``scipy_core``, ``f2py2e``, and ``scipy`` strictly in the
+   given order. Unpack all tar-ball sources and run::
 
-  cd scipy_core
-  python setup.py sdist
-  cp dist/Scipy_core-*.tar.gz ..
-  cd ..
+     cd Scipy_core-*
+     python setup.py install
+     cd ..
 
-  cd f2py2e
-  python setup.py sdist
-  cp dist/F2PY-*.tar.gz ..
-  cd ..
+     cd F2PY-*
+     python setup.py install
+     cd ..
 
-  cd scipy
-  # note that this will call swig for agg module (in chaco build),
-  # also several tests are run for xplt module
-  PYTHONPATH=..:../scipy_core python setup.py sdist
-  cp dist/SciPy-*.tar.gz ..
-  cd ..
-
-The resulting gzipped tar-files do not contain software overlaps
-anymore and should be suitable for packaging.
-
-5) Install scipy_core, f2py2e, and scipy strictly in the given order.
-  Unpack all tar-ball sources and run:
-
-  cd Scipy_core-*
-  python setup.py install
-  cd ..
-
-  cd F2PY-*
-  python setup.py install
-  cd ..
-
-  cd SciPy-*
-  python setup.py install
-  cd ..
+     cd SciPy-*
+     python setup.py install
+     cd ..
 
 That's it!
+
+RPMs for Scipy and friends
+--------------------------
+
+Follow the items 1-2 above and then continue as follows:
+
+3. Create RPMs::
+
+     cd scipy_core  
+     python setup.py bdist_rpm
+     cp dist/Scipy_core-*.rpm ..
+     cd ..
+
+     cd f2py2e
+     # run buildhtml.py script provided by docutils to generate
+     # HTML documentation of f2py.
+     python setup.py bdist_rpm
+     cp dist/F2PY-*.rpm ..
+     cd ..
+
+     #XXX: Test bdist_rpm for Scipy
+
+4. Install RPMs in the usual way but keep the order as in item 4.
