@@ -173,7 +173,7 @@ def configuration(parent_package='',parent_path=None):
                'CGREVCOM.f.src',
                'CGSREVCOM.f.src',
 #               'ChebyREVCOM.f.src',
-#               'GMRESREVCOM.f.src',
+               'GMRESREVCOM.f.src',
 #               'JacobiREVCOM.f.src',
                'QMRREVCOM.f.src',
 #               'SORREVCOM.f.src'

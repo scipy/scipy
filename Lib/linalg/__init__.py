@@ -9,4 +9,5 @@ from basic import *
 from decomp import *
 from matfuncs import *
 from blas import *
+from iterative import *
 
