@@ -4,7 +4,7 @@ import sys
 #import fpformat
 import unittest
 import scipy_base.limits as limits
-from scipy_test.testing import assert_array_equal, assert_equal
+from scipy_test.testing import assert_array_equal, assert_equal, rand
 from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
 from scipy_base import *
 
@@ -645,11 +645,12 @@ class test_chebyc(unittest.TestCase):
 
     def check_chebyc(self):
         C0 = chebyc(0)
-        C1 = chebyc(1)        
+        C1 = chebyc(1)
         C2 = chebyc(2)
         C3 = chebyc(3)
         C4 = chebyc(4)
         C5 = chebyc(5)
+
         assert_array_almost_equal(C0.c,[2],13)
         assert_array_almost_equal(C1.c,[1,0],13)
         assert_array_almost_equal(C2.c,[1,0,-2],13)
@@ -1878,7 +1879,10 @@ class test_sinc(unittest.TestCase):
         y = sinc(c)
         yre = sin(pi*c)/(pi*c)
 	yre[20] = 1.0
-        assert_array_almost_equal(y, yre,4)
+        assert_array_almost_equal(y, yre, 4)
+    def check_0(self):
+        x = 0.0
+        assert_equal(sinc(x),1.0)
 
 class test_sindg(unittest.TestCase):
 
