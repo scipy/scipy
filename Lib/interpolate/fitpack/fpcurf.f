@@ -22,11 +22,11 @@ c  ..subroutine references..
 c    fpback,fpbspl,fpgivs,fpdisc,fpknot,fprota
 c  ..
 c  set constants
-      one = 0.1e+01
-      con1 = 0.1e0
-      con9 = 0.9e0
-      con4 = 0.4e-01
-      half = 0.5e0
+      one = 0.1d+01
+      con1 = 0.1d0
+      con9 = 0.9d0
+      con4 = 0.4d-01
+      half = 0.5d0
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c  part 1: determination of the number of knots and their position     c
 c  **************************************************************      c
@@ -54,7 +54,7 @@ c  calculation of acc, the absolute tolerance for the root of f(p)=s.
       acc = tol*s
 c  determine nmax, the number of knots for spline interpolation.
       nmax = m+k1
-      if(s.gt.0.) go to 45
+      if(s.gt.0.0d0) go to 45
 c  if s=0, s(x) is an interpolating spline.
 c  test whether the required storage space exceeds the available one.
       n = nmax
@@ -90,7 +90,7 @@ c  according to the set of knots found at the last call of the routine.
       nplus = nrdata(n)
       if(fp0.gt.s) go to 60
   50  n = nmin
-      fpold = 0.
+      fpold = 0.0d0
       nplus = 0
       nrdata(1) = m-2
 c  main loop for the different sets of knots. m is a save upper bound
@@ -112,12 +112,12 @@ c  compute the b-spline coefficients of the least-squares spline
 c  sinf(x). the observation matrix a is built up row by row and
 c  reduced to upper triangular form by givens transformations.
 c  at the same time fp=f(p=inf) is computed.
-        fp = 0.
+        fp = 0.0d0
 c  initialize the observation matrix a.
         do 80 i=1,nk1
-          z(i) = 0.
+          z(i) = 0.0d0
           do 80 j=1,k1
-            a(i,j) = 0.
+            a(i,j) = 0.0d0
   80    continue
         l = k1
         do 130 it=1,m
@@ -140,7 +140,7 @@ c  rotate the new row of the observation matrix into triangle.
           do 110 i=1,k1
             j = j+1
             piv = h(i)
-            if(piv.eq.0.) go to 110
+            if(piv.eq.0.0d0) go to 110
 c  calculate the parameters of the givens transformation.
             call fpgivs(piv,a(j,1),cos,sin)
 c  transformations to right hand side.
@@ -156,7 +156,7 @@ c  transformations to left hand side.
  110      continue
 c  add contribution of this row to the sum of squares of residual
 c  right hand sides.
- 120      fp = fp+yi**2
+ 120      fp = fp+yi*yi
  130    continue
         if(ier.eq.(-2)) fp0 = fp
         fpint(n) = fp0
@@ -169,7 +169,7 @@ c  test whether the approximation sinf(x) is an acceptable solution.
         fpms = fp-s
         if(abs(fpms).lt.acc) go to 440
 c  if f(p=inf) < s accept the choice of knots.
-        if(fpms.lt.0.) go to 250
+        if(fpms.lt.0.0d0) go to 250
 c  if n = nmax, sinf(x) is an interpolating spline.
         if(n.eq.nmax) go to 430
 c  increase the number of knots.
@@ -188,7 +188,7 @@ c  determine the number of knots nplus we are going to add.
  150    fpold = fp
 c  compute the sum((w(i)*(y(i)-s(x(i))))**2) for each knot interval
 c  t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
-        fpart = 0.
+        fpart = 0.0d0
         i = 1
         l = k2
         new = 0
@@ -196,7 +196,7 @@ c  t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
           if(x(it).lt.t(l) .or. l.gt.nk1) go to 160
           new = 1
           l = l+1
- 160      term = 0.
+ 160      term = 0.0d0
           l0 = l-k2
           do 170 j=1,k1
             l0 = l0+1
@@ -250,7 +250,7 @@ c  evaluate the discontinuity jump of the kth derivative of the
 c  b-splines at the knots t(l),l=k+2,...n-k-1 and store in b.
       call fpdisc(t,n,k2,b,nest)
 c  initial value for p.
-      p1 = 0.
+      p1 = 0.0d0
       f1 = fp0-s
       p3 = -one
       f3 = fpms
@@ -270,7 +270,7 @@ c  triangularised observation matrix a which is stored in g.
         pinv = one/p
         do 260 i=1,nk1
           c(i) = z(i)
-          g(i,k2) = 0.
+          g(i,k2) = 0.0d0
           do 260 j=1,k1
             g(i,j) = a(i,j)
  260    continue
@@ -279,7 +279,7 @@ c  the row of matrix b is rotated into triangle by givens transformation
           do 270 i=1,k2
             h(i) = b(it,i)*pinv
  270      continue
-          yi = 0.
+          yi = 0.0d0
           do 290 j=it,nk1
             piv = h(1)
 c  calculate the parameters of the givens transformation.
@@ -295,19 +295,19 @@ c  transformations to left hand side.
               call fprota(cos,sin,h(i1),g(j,i1))
               h(i) = h(i1)
  280        continue
-            h(i2+1) = 0.
+            h(i2+1) = 0.0d0
  290      continue
  300    continue
 c  backward substitution to obtain the b-spline coefficients.
         call fpback(g,c,nk1,k2,c,nest)
 c  computation of f(p).
-        fp = 0.
+        fp = 0.0d0
         l = k2
         do 330 it=1,m
           if(x(it).lt.t(l) .or. l.gt.nk1) go to 310
           l = l+1
  310      l0 = l-k2
-          term = 0.
+          term = 0.0d0
           do 320 j=1,k1
             l0 = l0+1
             term = term+c(l0)*q(it,j)
@@ -330,7 +330,7 @@ c  our initial choice of p is too large.
         p = p*con4
         if(p.le.p1) p=p1*con9 + p2*con1
         go to 360
- 335    if(f2.lt.0.) ich3=1
+ 335    if(f2.lt.0.0d0) ich3=1
  340    if(ich1.ne.0) go to 350
         if((f1-f2).gt.acc) go to 345
 c  our initial choice of p is too small
@@ -340,7 +340,7 @@ c  our initial choice of p is too small
         if(p3.lt.0.) go to 360
         if(p.ge.p3) p = p2*con1 + p3*con9
         go to 360
- 345    if(f2.gt.0.) ich1=1
+ 345    if(f2.gt.0.0d0) ich1=1
 c  test whether the iteration process proceeds as theoretically
 c  expected.
  350    if(f2.ge.f1 .or. f2.le.f3) go to 410

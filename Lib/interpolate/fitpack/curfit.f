@@ -218,7 +218,7 @@ c  ..local scalars..
 c  ..
 c  we set up the parameters tol and maxit
       maxit = 20
-      tol = 0.1e-02
+      tol = 0.1d-02
 c  before starting computations a data check is made. if the input data
 c  are invalid, control is immediately repassed to the calling program.
       ier = 10

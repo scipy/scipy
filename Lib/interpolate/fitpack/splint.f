@@ -50,7 +50,7 @@ c  calculate the integrals wrk(i) of the normalized b-splines
 c  ni,k+1(x), i=1,2,...nk1.
       call fpintb(t,n,wrk,nk1,a,b)
 c  calculate the integral of s(x).
-      splint = 0.
+      splint = 0.0d0
       do 10 i=1,nk1
         splint = splint+c(i)*wrk(i)
   10  continue

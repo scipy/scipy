@@ -48,6 +48,11 @@ c    e-mail : Paul.Dierckx@cs.kuleuven.ac.be
 c
 c  latest update : march 1987
 c
+c++ pearu: 13 aug 20003
+c++   - disabled cliping x values to interval [min(t),max(t)]
+c++   - removed the restriction of the orderness of x values
+c++   - fixed initialization of sp to double precision value
+c
 c  ..scalar arguments..
       integer n,k,nu,m,ier
 c  ..array arguments..
@@ -55,19 +60,26 @@ c  ..array arguments..
 c  ..local scalars..
       integer i,j,kk,k1,k2,l,ll,l1,l2,nk1,nk2,nn
       real*8 ak,arg,fac,sp,tb,te
+c++..
+      integer k3
+c..++
 c  ..local arrays ..
       real*8 h(6)
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.
       ier = 10
       if(nu.lt.0 .or. nu.gt.k) go to 200
-      if(m-1) 200,30,10
-  10  do 20 i=2,m
-        if(x(i).lt.x(i-1)) go to 200
-  20  continue
+c--      if(m-1) 200,30,10
+c++..
+      if(m.lt.1) go to 200
+c..++
+c--  10  do 20 i=2,m
+c--        if(x(i).lt.x(i-1)) go to 200
+c--  20  continue
   30  ier = 0
 c  fetch tb and te, the boundaries of the approximation interval.
       k1 = k+1
+      k3 = k1+1
       nk1 = n-k1
       tb = t(k1)
       te = t(nk1+1)
@@ -101,6 +113,13 @@ c  if nu=k the derivative is a piecewise constant function
       j = 1
       do 90 i=1,m
          arg = x(i)
+c++..
+ 65      if(arg.ge.t(l) .or. l+1.eq.k2) go to 70
+         l1 = l
+         l = l-1
+         j = j-1
+         go to 65
+c..++
   70     if(arg.lt.t(l+1) .or. l.eq.nk1) go to 80
          l = l+1
          j = j+1
@@ -115,9 +134,15 @@ c  main loop for the different points.
       do 180 i=1,m
 c  fetch a new x-value arg.
         arg = x(i)
-        if(arg.lt.tb) arg = tb
-        if(arg.gt.te) arg = te
+c--        if(arg.lt.tb) arg = tb
+c--        if(arg.gt.te) arg = te
 c  search for knot interval t(l) <= arg < t(l+1)
+c++..
+ 135    if(arg.ge.t(l) .or. l1.eq.k3) go to 140
+        l1 = l
+        l = l-1
+        go to 135
+c..++
  140    if(arg.lt.t(l1) .or. l.eq.nk1) go to 150
         l = l1
         l1 = l+1
@@ -125,7 +150,7 @@ c  search for knot interval t(l) <= arg < t(l+1)
 c  evaluate the non-zero b-splines of degree k-nu at arg.
  150    call fpbspl(t,n,kk,arg,l,h)
 c  find the value of the derivative at x=arg.
-        sp = 0.
+        sp = 0.0d0
         ll = l-k1
         do 160 j=1,k2
           ll = ll+1

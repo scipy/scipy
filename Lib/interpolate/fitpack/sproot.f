@@ -49,8 +49,8 @@ c  ..local array..
       real*8 y(3)
 c  ..
 c  set some constants
-      two = 0.2e+01
-      three = 0.3e+01
+      two = 0.2d+01
+      three = 0.3d+01
 c  before starting computations a data check is made. if the input data
 c  are invalid, control is immediately repassed to the calling program.
       n4 = n-4
@@ -94,7 +94,7 @@ c  calculate a0 = s(t(4)) and ah = s'(t(4)).
       a0 = (h2*d4+h1*d5)/t2
       ah = three*(h2*c4+h1*c5)/t2
       z1 = .true.
-      if(ah.lt.0.) z1 = .false.
+      if(ah.lt.0.0d0) z1 = .false.
       nz1 = .not.z1
       m = 0
 c  main loop for the different knot intervals.
@@ -126,17 +126,17 @@ c  pl(x) = ql(y) = a0+a1*y+a2*y**2+a3*y**3 ; y = (x-t(l))/(t(l+1)-t(l)).
 c  test whether or not pl(x) could have a zero in the range
 c  t(l) <= x <= t(l+1).
         z3 = .true.
-        if(b1.lt.0.) z3 = .false.
+        if(b1.lt.0.0d0) z3 = .false.
         nz3 = .not.z3
-        if(a0*b0.le.0.) go to 100
+        if(a0*b0.le.0.0d0) go to 100
         z0 = .true.
-        if(a0.lt.0.) z0 = .false.
+        if(a0.lt.0.0d0) z0 = .false.
         nz0 = .not.z0
         z2 = .true.
         if(a2.lt.0.) z2 = .false.
         nz2 = .not.z2
         z4 = .true.
-        if(3.0*a3+a2.lt.0.) z4 = .false.
+        if(3.0d0*a3+a2.lt.0.0d0) z4 = .false.
         nz4 = .not.z4
         if(.not.((z0.and.(nz1.and.(z3.or.z2.and.nz4).or.nz2.and.
      * z3.and.z4).or.nz0.and.(z1.and.(nz3.or.nz2.and.z4).or.z2.and.
@@ -146,7 +146,7 @@ c  find the zeros of ql(y).
         if(j.eq.0) go to 200
 c  find which zeros of pl(x) are zeros of s(x).
         do 150 i=1,j
-          if(y(i).lt.0. .or. y(i).gt.1.0) go to 150
+          if(y(i).lt.0.0d0 .or. y(i).gt.1.0d0) go to 150
 c  test whether the number of zeros of s(x) exceeds mest.
           if(m.ge.mest) go to 700
           m = m+1

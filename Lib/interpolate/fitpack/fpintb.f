@@ -28,12 +28,12 @@ c  ..local scalars..
 c  ..local arrays..
       real*8 aint(6),h(6),h1(6)
 c  initialization.
-      one = 0.1e+01
+      one = 0.1d+01
       k1 = n-nk1
       ak = k1
       k = k1-1
       do 10 i=1,nk1
-        bint(i) = 0.
+        bint(i) = 0.0d0
   10  continue
 c  the integration limits are arranged in increasing order.
       a = x
@@ -67,14 +67,14 @@ c  search for the knot interval t(l) <= arg < t(l+1).
 c  calculation of aint(j), j=1,2,...,k+1.
 c  initialization.
   50    do 55 j=1,k1
-          aint(j) = 0.
+          aint(j) = 0.0d0
   55    continue
         aint(1) = (arg-t(l))/(t(l+1)-t(l))
         h1(1) = one
         do 70 j=1,k
 c  evaluation of the non-zero b-splines of degree j at arg,i.e.
 c    h(i+1) = nl-j+i,j(arg), i=0,1,...,j.
-          h(1) = 0.
+          h(1) = 0.0d0
           do 60 i=1,j
             li = l+i
             lj = li-j

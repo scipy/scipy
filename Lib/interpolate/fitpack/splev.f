@@ -24,7 +24,7 @@ c      ier =10 : invalid input data (see restrictions)
 c
 c  restrictions:
 c    m >= 1
-c    t(k+1) <= x(i) <= x(i+1) <= t(n-k) , i=1,2,...,m-1.
+c--    t(k+1) <= x(i) <= x(i+1) <= t(n-k) , i=1,2,...,m-1.
 c
 c  other subroutines required: fpbspl.
 c
@@ -44,12 +44,20 @@ c    e-mail : Paul.Dierckx@cs.kuleuven.ac.be
 c
 c  latest update : march 1987
 c
+c++ pearu: 11 aug 2003
+c++   - disabled cliping x values to interval [min(t),max(t)]
+c++   - removed the restriction of the orderness of x values
+c++   - fixed initialization of sp to double precision value
+c
 c  ..scalar arguments..
       integer n,k,m,ier
 c  ..array arguments..
       real*8 t(n),c(n),x(m),y(m)
 c  ..local scalars..
       integer i,j,k1,l,ll,l1,nk1
+c++..
+      integer k2
+c..++
       real*8 arg,sp,tb,te
 c  ..local array..
       real*8 h(6)
@@ -57,13 +65,19 @@ c  ..
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.
       ier = 10
-      if(m-1) 100,30,10
-  10  do 20 i=2,m
-        if(x(i).lt.x(i-1)) go to 100
-  20  continue
+c--      if(m-1) 100,30,10
+c++..
+      if(m.lt.1) go to 100
+c..++
+c--  10  do 20 i=2,m
+c--        if(x(i).lt.x(i-1)) go to 100
+c--  20  continue
   30  ier = 0
 c  fetch tb and te, the boundaries of the approximation interval.
       k1 = k+1
+c++..
+      k2 = k1+1
+c..++
       nk1 = n-k1
       tb = t(k1)
       te = t(nk1+1)
@@ -73,9 +87,15 @@ c  main loop for the different points.
       do 80 i=1,m
 c  fetch a new x-value arg.
         arg = x(i)
-        if(arg.lt.tb) arg = tb
-        if(arg.gt.te) arg = te
+c--        if(arg.lt.tb) arg = tb
+c--        if(arg.gt.te) arg = te
 c  search for knot interval t(l) <= arg < t(l+1)
+c++..
+ 35     if(arg.ge.t(l) .or. l1.eq.k2) go to 40
+        l1 = l
+        l = l-1
+        go to 35
+c..++
   40    if(arg.lt.t(l1) .or. l.eq.nk1) go to 50
         l = l1
         l1 = l+1
@@ -83,7 +103,7 @@ c  search for knot interval t(l) <= arg < t(l+1)
 c  evaluate the non-zero b-splines at arg.
   50    call fpbspl(t,n,k,arg,l,h)
 c  find the value of s(x) at x=arg.
-        sp = 0.
+        sp = 0.0d0
         ll = l-k1
         do 60 j=1,k1
           ll = ll+1

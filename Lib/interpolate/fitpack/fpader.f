@@ -16,7 +16,7 @@ c  ..local scalars..
 c  ..local array..
       real*8 h(6)
 c  ..
-      one = 0.1e+01
+      one = 0.1d+01
       lk = l-k1
       do 100 i=1,k1
         ik = i+lk

@@ -14,13 +14,13 @@ c  ..local scalars..
 c  ..local arrays..
       real*8 hh(5)
 c  ..
-      one = 0.1e+01
+      one = 0.1d+01
       h(1) = one
       do 20 j=1,k
         do 10 i=1,j
           hh(i) = h(i)
   10    continue
-        h(1) = 0.
+        h(1) = 0.0d0
         do 20 i=1,j
           li = l+i
           lj = li-j
