@@ -5,7 +5,8 @@ import Numeric
 import types, sys
 from scipy import special, stats
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose
+     ones, NewAxis, transpose, mgrid
+import scipy_base
 import scipy_base.fastumath
 
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
@@ -185,11 +186,11 @@ def imrotate(arr,angle,interp='bilinear'):
 def radon(arr,theta=None):
     if theta is None:
         theta = mgrid[0:180]
-    s = zeros((arr.shape[1],len(theta)),'d')
+    s = scipy_base.zeros((arr.shape[1],len(theta)),'d')
     k = 0
     for th in theta:
         im = imrotate(arr,-th)
-        s[:,k] = sum(im,axis=0)
+        s[:,k] = scipy_base.sum(im,axis=0)
         k += 1
     return s
         

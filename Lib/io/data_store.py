@@ -49,7 +49,7 @@ def create_module(file_name):
     if not os.path.exists(file_name+'.py'): # don't clobber existing files
         module_name = os.path.split(file_name)[-1]
         f = open(file_name+'.py','w')   
-        f.write('import data_store\n')
+        f.write('import scipy.io.data_store as data_store\n')
         f.write('import %s\n' % module_name)
         f.write('data_store.load(%s)' % module_name)
         f.close()
