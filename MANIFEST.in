@@ -1,16 +1,7 @@
-include Lib/fftpack/*.pyf
-include Lib/special/specfun.pyf
-include Lib/linalg/interface_gen.py
-include Lib/linalg/generic_*.pyf
-include Lib/linalg/flapack_user_routines.pyf
-include Lib/sparse/SuperLU/*.inc
-#include */*/*.cfg
 recursive-include Lib_chaco/freetype/freetype2 *.h *.c *.i
-recursive-include Lib/xplt/src *.h *.c
-recursive-include Lib/xplt/pygist *.h *.c *.py
 recursive-include Lib_chaco/kiva/agg *.py *.h *.i *.cxx
 recursive-include Lib_chaco/kiva/agg/docs *
 recursive-include Lib_chaco/agg2 *
 recursive-include Lib_chaco/freetype *
-global-include *.txt .build_py_ignore setup*.py
+global-include *.txt setup*.py
 prune scipy_core

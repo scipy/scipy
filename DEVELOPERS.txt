@@ -1,3 +1,4 @@
+
 .. --*-- rest --*--
 .. NB! Keep this document a valid restructured document.
 
@@ -85,8 +86,8 @@ follow the following conventions:
 * Directory ``xxx/`` must contain 
 
   + a file ``setup_xxx.py`` that defines
-    ``configuration(parent_package='')`` function.  See below for more
-    details.
+    ``configuration(parent_package='',parent_path=None)`` function.  
+    See below for more details.
 
   + a file ``info_xxx.py``. See below more details.
 
@@ -119,6 +120,15 @@ module xxx is::
   if __name__ == '__main__':
       from scipy_distutils.core import setup
       setup(**configuration(parent_path=''))
+
+A Scipy module may have also a ``xxx/setup.py`` file that should contain
+a statement::
+
+  execfile('setup_xxx.py')
+
+Ideally there should be no need for this file but
+``distutils/command/bdist_rpm.py`` has ``setup.py`` hardcoded and
+therefore building .rpm files using ``setup_xxx.py`` would fail.
 
 get_path
 ++++++++
@@ -204,6 +214,7 @@ dependencies
 global_symbols
   List of names that should be imported to scipy name space. To import
   all symbols to scipy name space, define ``global_symbols=['*']``.
+  This option is effective only when ``standalone=False``.
 
 ignore
   Boolean variable indicating that the module should be ignored or
@@ -213,6 +224,7 @@ ignore
 postpone_import
   Boolean variable indicating that importing module should be
   postponed until first attempt of its usage. Default value is False.
+  This option is effective only when ``standalone=False``.
 
 File xxx/__init__.py
 ---------------------
