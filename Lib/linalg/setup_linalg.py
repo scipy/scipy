@@ -110,6 +110,7 @@ def configuration(parent_package='',parent_path=None):
                                            'generic_fblas3.pyf',
                                            'interface_gen.py'])
                 }
+    dict_append(ext_args,**numpy_info)
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
