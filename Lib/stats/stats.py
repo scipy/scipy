@@ -74,7 +74,7 @@ VARIABILITY:  obrientransform
               samplestd
               signaltonoise (for arrays only)
               var
-              stdev
+              std
               stderr
               sem
               z
@@ -143,7 +143,7 @@ SUPPORT FUNCTIONS:  writecc
 ## 99-10-25 ... added acovariance and acorrelation functions
 ## 99-10-10 ... fixed askew/akurtosis to avoid divide-by-zero errors
 ##              added aglm function (crude, but will be improved)
-## 99-10-04 ... upgraded acumsum, ass, asummult, asamplevar, avar, etc. to
+## 99-10-04 ... upgraded acumsum, ass, asummult, asamplevar, var, etc. to
 ##                   all handle lists of 'dimension's and keepdims
 ##              REMOVED ar0, ar2, ar3, ar4 and replaced them with around
 ##              reinserted fixes for abetai to avoid math overflows
@@ -545,8 +545,8 @@ def skew(a,axis=None):
     denom = denom + zero  # prevent divide-by-zero
     return where(zero, 0, moment(a,3,axis)/denom)
 
-def kurtosis(a,axis=None):
-    """Returns the kurtosis of a distribution (normal ==> 3.0; >3 means
+def kurtosis(a,axis=None,fisher=1):
+    """Returns the kurtosis (fisher or pearson) of a distribution (normal ==> 3.0; >3 means
     heavier in the tails, and usually more peaked).  Use akurtosistest()
     to see if it's close enough.  Axis can equal None (ravel array
     first), an integer (the axis over which to operate), or a
@@ -560,7 +560,11 @@ def kurtosis(a,axis=None):
     if type(denom) == ArrayType and tmp <> 0:
         print "Number of zeros in akurtosis: ",tmp
     denom = denom + zero  # prevent divide-by-zero
-    return where(zero,0,moment(a,4,axis)/denom)
+    vals = where(zero,0,moment(a,4,axis)/denom)
+    if fisher:
+        return vals - 3
+    else:
+        return vals
 
 
 def describe(a,axis=None):
@@ -577,10 +581,10 @@ def describe(a,axis=None):
      n = a.shape[axis]
      mm = (minimum.reduce(a),maximum.reduce(a))
      m = mean(a,axis)
-     sd = std(a,axis)
-     skew = skew(a,axis)
+     v = var(a,axis)
+     sk = skew(a,axis)
      kurt = kurtosis(a,axis)
-     return n, mm, m, sd, skew, kurt
+     return n, mm, m, v, sk, kurt
 
 #####################################
 ########  NORMALITY TESTS  ##########
@@ -625,7 +629,7 @@ Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
     n = float(a.shape[axis])
     if n<20:
         print "akurtosistest only valid for n>=20 ... continuing anyway, n=",n
-    b2 = akurtosis(a,axis)
+    b2 = kurtosis(a,axis)
     E = 3.0*(n-1) /(n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
     x = (b2-E)/sqrt(varb2)
@@ -653,10 +657,10 @@ Returns: z-score and 2-tail probability
     if axis is None:
         a = ravel(a)
         axis = 0
-    s,p = askewtest(a,axis)
-    k,p = akurtosistest(a,axis)
+    s,p = skewtest(a,axis)
+    k,p = kurtosistest(a,axis)
     k2 = power(s,2) + power(k,2)
-    return k2, achisqprob(k2,2)
+    return k2, chisqprob(k2,2)
 
 
 #####################################
@@ -824,9 +828,9 @@ with the same number of axes as a.
         a = ravel(a)
         axis = 0
     if axis == 1:
-        mn = amean(a,axis)[:,NewAxis]
+        mn = mean(a,axis)[:,NewAxis]
     else:
-        mn = amean(a,axis,keepdims=1)
+        mn = mean(a,axis,keepdims=1)
     deviations = a - mn 
     if type(axis) == ListType:
         n = 1
@@ -858,7 +862,7 @@ Returns: array containing the value of (mean/stdev) along axis,
          or 0 when stdev=0
 """
     m = mean(instack,axis)
-    sd = stdev(instack,axis)
+    sd = std(instack,axis)
     return where(equal(sd,0),0,m/sd)
 
 
@@ -873,7 +877,7 @@ same number of axes as a.
     if axis is None:
         a = ravel(a)
         axis = 0
-    mn = amean(a,axis,1)
+    mn = mean(a,axis,1)
     deviations = a - mn
     if type(axis) == ListType:
         n = 1
@@ -885,7 +889,7 @@ same number of axes as a.
     return var
 
 
-def stdev (a, axis=None, keepdims=0):
+def std (a, axis=None, keepdims=0):
     """
 Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -894,7 +898,7 @@ sequence (operate over multiple axes).  Set keepdims=1 to return
 an array with the same number of axes as a.
 
 """
-    return sqrt(avar(a,axis,keepdims))
+    return sqrt(var(a,axis,keepdims))
 
 
 def stderr (a, axis=None, keepdims=0):
@@ -909,7 +913,7 @@ an array with the same number of axes as a.
     if axis is None:
         a = ravel(a)
         axis = 0
-    return astdev(a,axis,keepdims) / float(sqrt(a.shape[axis]))
+    return std(a,axis,keepdims) / float(sqrt(a.shape[axis]))
 
 
 def sem (a, axis=None, keepdims=0):
@@ -964,8 +968,8 @@ array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
 of the compare array.
 
 """
-    mns = amean(compare,axis)
-    sstd = asamplestdev(compare,0)
+    mns = mean(compare,axis)
+    sstd = samplestdev(compare,0)
     return (scores - mns) / sstd
 
 
@@ -1066,7 +1070,7 @@ Returns: covariance matrix of X
     if len(X.shape) <> 2:
         raise TypeError, "acovariance requires 2D matrices"
     n = X.shape[0]
-    mX = amean(X,0)
+    mX = mean(X,0)
     return dot(transpose(X),X) / float(n) - multiply.outer(mX,mX)
 
 
@@ -1153,8 +1157,8 @@ Returns: Pearson's r, two-tailed p-value
 """
     TINY = 1.0e-20
     n = len(x)
-    xmean = amean(x)
-    ymean = amean(y)
+    xmean = mean(x)
+    ymean = mean(y)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
     r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = (r_num / r_den)
@@ -1203,11 +1207,11 @@ Returns: Point-biserial r, two-tailed p-value
         recoded = pstat.recode(data,codemap,0)
         x = pstat.linexand(data,0,categories[0])
         y = pstat.linexand(data,0,categories[1])
-        xmean = amean(pstat.colex(x,1))
-        ymean = amean(pstat.colex(y,1))
+        xmean = mean(pstat.colex(x,1))
+        ymean = mean(pstat.colex(y,1))
         n = len(data)
         adjust = math.sqrt((len(x)/float(n))*(len(y)/float(n)))
-        rpb = (ymean - xmean)/asamplestdev(pstat.colex(data,1))*adjust
+        rpb = (ymean - xmean)/samplestdev(pstat.colex(data,1))*adjust
         df = n-2
         t = rpb*math.sqrt(df/((1.0-rpb+TINY)*(1.0+rpb+TINY)))
         prob = betai(0.5*df,0.5,df/(df+t*t))
@@ -1269,8 +1273,8 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
         x = args[0]
         y = args[1]
     n = len(x)
-    xmean = amean(x)
-    ymean = amean(y)
+    xmean = mean(x)
+    ymean = mean(y)
     r_num = n*(add.reduce(x*y)) - add.reduce(x)*add.reduce(y)
     r_den = math.sqrt((n*ss(x) - square_of_sums(x))*(n*ss(y)-square_of_sums(y)))
     r = r_num / r_den
@@ -1280,7 +1284,7 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
     prob = betai(0.5*df,0.5,df/(df+t*t))
     slope = r_num / (float(n)*ss(x) - square_of_sums(x))
     intercept = ymean - slope*xmean
-    sterrest = math.sqrt(1-r*r)*asamplestdev(y)
+    sterrest = math.sqrt(1-r*r)*samplestdev(y)
     return slope, intercept, r, prob, sterrest
 
 
@@ -1299,8 +1303,8 @@ Returns: t-value, two-tailed prob
 """
     if type(a) != ArrayType:
         a = array(a)
-    x = amean(a)
-    v = avar(a)
+    x = mean(a)
+    v = var(a)
     n = len(a)
     df = n-1
     svar = ((n-1)*v) / float(df)
@@ -1332,10 +1336,10 @@ Returns: t-value, two-tailed p-value
         a = ravel(a)
         b = ravel(b)
         axis = 0
-    x1 = amean(a,axis)
-    x2 = amean(b,axis)
-    v1 = avar(a,axis)
-    v2 = avar(b,axis)
+    x1 = mean(a,axis)
+    x2 = mean(b,axis)
+    v1 = var(a,axis)
+    v2 = var(b,axis)
     n1 = a.shape[axis]
     n2 = b.shape[axis]
     df = n1+n2-2
@@ -1383,10 +1387,10 @@ Returns: t-value, two-tailed p-value
         axis = 0
     if len(a)<>len(b):
         raise ValueError, 'Unequal length arrays.'
-    x1 = amean(a,axis)
-    x2 = amean(b,axis)
-    v1 = avar(a,axis)
-    v2 = avar(b,axis)
+    x1 = mean(a,axis)
+    x2 = mean(b,axis)
+    v1 = var(a,axis)
+    v2 = var(b,axis)
     n = a.shape[axis]
     df = float(n-1)
     d = (a-b).astype('d')
@@ -1955,9 +1959,9 @@ lists-of-lists.
             # dim-numbers change as you collapse).  THIS WORKS BECAUSE WE'RE
             # COLLAPSING ACROSS W/I SUBJECT AXES, WHICH WILL ALL HAVE THE
             # SAME SUBJ IN THE SAME ARRAY LOCATIONS (i.e., dummyvals will still exist
-            # but should remain the same value through the amean() function
+            # but should remain the same value through the mean() function
             for i in range(len(Lwithinnonsource)-1,-1,-1):
-                dwsc = amean(dwsc,Lwithinnonsource[i])
+                dwsc = mean(dwsc,Lwithinnonsource[i])
             mns = dwsc
 
             # NOW, ACTUALLY COMPUTE THE D-VARIABLE ENTRIES FROM DA
@@ -2337,7 +2341,7 @@ subj group, and then adds back each D-variable's grand mean.
      errors = subtr_cellmeans(workd,subjslots)
 
      # add back in appropriate grand mean from individual scores
-     grandDmeans = amean(workd,0,1)
+     grandDmeans = mean(workd,0,1)
      errors = errors + transpose(grandDmeans) # errors has reversed dims!!
      # SS for mean-restricted model is calculated below.  Note: already put
      # subj as last dim because later code expects this code here to leave
@@ -2383,8 +2387,8 @@ Returns: SS array for multivariate F calculation
                  cross = all_cellmeans[i] * all_cellmeans[j]
                  multfirst = sum(cross*all_cellns[i])
                  RSinter[i,j] = RSinter[j,i] = asarray(multfirst)
-                 SSm[i,j] = SSm[j,i] = (amean(all_cellmeans[i]) *
-                                        amean(all_cellmeans[j]) *
+                 SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i]) *
+                                        mean(all_cellmeans[j]) *
                                         len(all_cellmeans[i]) *hn)
          SSw = RSw - RSinter
 

@@ -35,14 +35,14 @@ choice(seq=(0,1), size=None).....................default mean 0.50, SD 0.50.
 exponential(scale=1.0, size=None)................default mean 1.00, SD 1.00.
 fratio(numdf=2.0, denomdf=10.0, size=None).....default mean 1.25, SD 1.60.
 gamma(mu=2.0, size=None).........................default mean 2.00, SD 1.40.
-geometric(pr_failure=0.5, size=None).............default mean 1.00, SD 1.40.
+geom(pr=0.5, size=None).............default mean 1.00, SD 1.40.
 gumbel(mode=0.0, scale=1.0, size=None)...........default mean 0.58, SD 1.30.
-hypergeometric(bad=10, good=25, sample=10, size=None)deflt mn 2.86, SD 1.22
+hypergeom(bad=10, good=25, sample=10, size=None)deflt mn 2.86, SD 1.22
 laplace(mu=0.0, scale=1.0, size=None)............default mean 0.00, SD 1.40.
 logarithmic(p=0.5, size=None)....................default mean 1.44, SD 0.90
 logistic(mu=0.0, scale=1.0, size=None)...........default mean 0.00, SD 1.80.
 lognormal(mu=0.0, sigma=1.0, size=None)..........default mean 1.65, SD 2.20.
-negative_binomial(r=1.0, pr_failure=0.5, size=None)  deflt mn 1.00, SD 1.40.
+negative_binomial(r=1.0, pr=0.5, size=None)  deflt mn 1.00, SD 1.40.
 normal(mu=0.0, sigma=1.0, size=None).............default mean 0.00, SD 1.00.
 pareto(mode=1.0, shape=4.0, size=None)...........default mean 1.33, SD 0.47.
 poisson(rate=1.0, size=None).....................default mean 1.00, SD 1.00.
@@ -175,11 +175,11 @@ class _pranv:
 #     _Fisher_F(numdf=2.0, denomdf=10.0,
 #                              size=None) double      positive
 #     _gamma(mu=2.0, size=None)           double      positive
-#     _geometric(pr_failure=0.5,
+#     _geom(pr_failure=0.5,
 #                              size=None) integer     non-negative
 #     _Gumbel(mode=1.0, scale=1.0,
 #                              size=None) double      unbounded
-#     _hypergeometric(bad=10, good=25,
+#     _hypergeom(bad=10, good=25,
 #                   sample=10, size=None) integer     >= max(0, sample-good)
 #                                                       <= min(sample, bad)
 #     _Laplace(mu=0.0, scale=1.0,
@@ -1367,22 +1367,22 @@ class _pranv:
          return Num.reshape(buffer, size)        
 
 
-   def _geometric(self, pr_failure=0.5, size=None):
+   def _geom(self, pr=0.5, size=None):
       """Return non-negative random integers from a geometric distribution.
 
-      geometric(pr_failure=0.5, size=None)
+      geom(pr=0.5, size=None)
 
       Z has the geometric distribution if it is the number of successes
       before the first failure in a series of independent Bernouli trials
-      with probability of success 1 - <pr_failure>.  0 <= pr_failure < 1.
+      with probability of success 1 - <pr>.  0 <= pr < 1.
       The result is a non-negative integer less than or equal to 2**31 -1.
       If <buffer> is specified, it must be a mutable sequence.
-      <buffer> is filled with geometric(pr_failure) pseudo-randoms.
+      <buffer> is filled with geometric(pr) pseudo-randoms.
       Otherwise, a single geometric pseudo-random variate is returned."""
 
-      if not 0.0 <= pr_failure < 1.0:
-         raise ValueError, '0.0 <=  <pr_failure>  < 1.0'
-
+      pr = 1.0-pr    # Added to be consistent with distributions.py 
+      if not 0.0 <= pr < 1.0:
+         raise ValueError, '0.0 <=  <pr>  < 1.0'
       else:
          i = self._index                  # local alias
          buf = self._ranbuf               # local alias
@@ -1397,16 +1397,16 @@ class _pranv:
             out_len = 0
             j = -1
 
-         if pr_failure <= 0.9:            # <pr_failure> is small or moderate;
+         if pr <= 0.9:            # <pr> is small or moderate;
             while j < out_len:            # use inverse transformation.
-               pk = sum = 1.0 - pr_failure
+               pk = sum = 1.0 - pr
                successes = 0
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                u = buf[i]
                while sum < u:
                   successes = successes + 1
-                  pk = pk * pr_failure
+                  pk = pk * pr
                   sum = sum + pk
 
                if out_len:
@@ -1417,12 +1417,12 @@ class _pranv:
                   self._index = i    # Restore updated value of _ranbuf index.
                   return successes
 
-         else:                       # <pr_failure> larger than 0.9.
+         else:                       # <pr> larger than 0.9.
             while j < out_len:
                i = i + 1
                if i == buflim: self._fillbuf(); i = 0
                u = buf[i]
-               successes = floor( log(u) / log(pr_failure) )
+               successes = floor( log(u) / log(pr) )
                successes = int( min(successes, 2147483647.0) )     # 2**31 - 1
                if out_len:
                   buffer[j] = successes
@@ -1469,10 +1469,10 @@ class _pranv:
       self._index = i # Restore _ranbuf index and return (buffer[] is filled).
       return Num.reshape(buffer, size)
 
-   def _hypergeometric(self, bad=10, good=25, sample=10, size=None):
+   def _hypergeom(self, bad=10, good=25, sample=10, size=None):
       """Return hypergeometric pseudorandom variates: #"bad" in <sample>
 
-      hypergeometric(bad=10, good=25, sample=10)
+      hypergeom(bad=10, good=25, sample=10)
 
       Z has a hypergeometric distribution if it is the number of "bad" items
       in a sample of size <sample> from a population of size <bad> + <good>
@@ -1770,24 +1770,24 @@ class _pranv:
          normal = self._normal
          return Num.exp( mean + sigma * normal(size=size))
 
-   def _negative_binomial(self, r=1.0, pr_failure=0.5, size=None):
+   def _negative_binomial(self, r=1.0, pr=0.5, size=None):
       """Return negative binomial random variates (non-negative integers).
 
-      negative_binomial(r=1.0, pr_failure=0.5, size=None)
+      negative_binomial(r=1.0, pr=0.5, size=None)
 
       For <r> integral, the negative binomial distribution is also called the
       Pascal distribution.  If <r> = 1, it is the geometric distribution.
-      <r> must be positive, and 0 <= pr_failure < 1.  If <buffer> is speci-
+      <r> must be positive, and 0 <= pr < 1.  If <buffer> is speci-
       fied, it must be a mutable sequence (list or array).  <buffer> is filled
-      with negative binomial(r, pr_failure) pseudo-random variates, and <None>
+      with negative binomial(r, pr) pseudo-random variates, and <None>
       is returned.  Otherwise, a single negative binomial pseudo-random
       variate is returned."""
-      if ( not (0.0 < pr_failure < 1.0) ) or r <= 0.0:
-         raise ValueError, '<r> must be positive and 0.0 < pr_failure < 1.0'
+      if ( not (0.0 < pr < 1.0) ) or r <= 0.0:
+         raise ValueError, '<r> must be positive and 0.0 < pr < 1.0'
 
       else:
-         pr_success = 1.0 - pr_failure
-         ratio = pr_success / pr_failure
+         pr_success = 1.0 - pr
+         ratio = pr_success / pr
          Poisson = self._Poisson
          gamma = self._gamma
          return Poisson(gamma(r) / ratio, size=size)
@@ -2837,9 +2837,9 @@ choice            =  _inst._choice
 #exponential       =  _inst._exponential
 #fratio            =  _inst._Fisher_F
 #gamma             =  _inst._gamma
-geometric         =  _inst._geometric
+geom         =  _inst._geom
 gumbel            =  _inst._Gumbel
-hypergeometric    =  _inst._hypergeometric
+hypergeom    =  _inst._hypergeom
 laplace           =  _inst._Laplace
 logarithmic       =  _inst._logarithmic
 logistic      =  _inst._logistic
@@ -2851,7 +2851,7 @@ pareto            =  _inst._Pareto
 #randint           =  _inst._randint
 rayleigh          =  _inst._Rayleigh
 #student_t         =  _inst._Student_t
-triangle        =  _inst._triangular
+triang            =  _inst._triangular
 #uniform           =  _inst._uniform
 von_mises         =  _inst._von_Mises
 wald             =  _inst._Wald
@@ -3295,25 +3295,25 @@ def _rvtest():
    benchmark('gamma(mu=10.0)', 10.0, 10.0)
    benchmark('gamma(mu=10.0, size=sz)', 10.0, 10.0, buf)
 
-   benchmark('geometric(pr_failure=0.5)', 1.0, 2.0)
-   benchmark('geometric(pr_failure=0.5, size=sz)', 1.0, 2.0, buf)
-   benchmark('geometric(pr_failure=0.95)', 19.0, 380.0)
-   benchmark('geometric(pr_failure=0.95, size=sz)', 19.0, 380.0, buf)
+   benchmark('geom(pr=0.5)', 1.0, 2.0)
+   benchmark('geom(pr=0.5, size=sz)', 1.0, 2.0, buf)
+   benchmark('geom(pr=0.95)', 19.0, 380.0)
+   benchmark('geom(pr=0.95, size=sz)', 19.0, 380.0, buf)
 
    benchmark('Gumbel(mode=1.0,scale=1.0)', 1.57721, 1.644934)
    benchmark('Gumbel(mode=1.0,scale=1.0,size=sz)', 1.57721,1.644934, buf)
 
-   benchmark('hypergeometric(bad=10,good=25,sample=10)', 2.85714, 1.500600)
-   benchmark('hypergeometric(10,25,10,size=sz)', 2.85714, 1.500600, buf)
-   benchmark('hypergeometric(bad=10,good=25,sample=15)', 4.285714, 1.800720)
-   benchmark('hypergeometric(10,25,15,size=sz)', 4.285714, 1.800720, buf)
-   benchmark('hypergeometric(bad=10, good=25, sample=20)', 5.71429, 1.800720)
-   benchmark('hypergeometric(bad=25, good=10, sample=10)', 7.142857, 1.500600)
-   benchmark('hypergeometric(bad=10, good=25, sample=34)', 9.714286, 0.204082)
-   benchmark('hypergeometric(bad=10, good=25, sample=30)', 8.571429, 0.900360)
-   benchmark('hypergeometric(bad=10, good=25, sample=25)', 7.142857, 1.500600)
-   benchmark('hypergeometric(bad=25, good=10, sample=30)', 21.42857, 0.900360)
-   benchmark('hypergeometric(bad=25, good=475,sample=50)', 2.50, 2.14178)
+   benchmark('hypergeom(bad=10,good=25,sample=10)', 2.85714, 1.500600)
+   benchmark('hypergeom(10,25,10,size=sz)', 2.85714, 1.500600, buf)
+   benchmark('hypergeom(bad=10,good=25,sample=15)', 4.285714, 1.800720)
+   benchmark('hypergeom(10,25,15,size=sz)', 4.285714, 1.800720, buf)
+   benchmark('hypergeom(bad=10, good=25, sample=20)', 5.71429, 1.800720)
+   benchmark('hypergeom(bad=25, good=10, sample=10)', 7.142857, 1.500600)
+   benchmark('hypergeom(bad=10, good=25, sample=34)', 9.714286, 0.204082)
+   benchmark('hypergeom(bad=10, good=25, sample=30)', 8.571429, 0.900360)
+   benchmark('hypergeom(bad=10, good=25, sample=25)', 7.142857, 1.500600)
+   benchmark('hypergeom(bad=25, good=10, sample=30)', 21.42857, 0.900360)
+   benchmark('hypergeom(bad=25, good=475,sample=50)', 2.50, 2.14178)
 
    benchmark('Laplace(mu=0.0, scale=1.0)', 0.0, 2.0)
    benchmark('Laplace(mu=0.0, scale=1.0, size=sz)', 0.0, 2.0, buf)
@@ -3329,12 +3329,12 @@ def _rvtest():
    benchmark('lognormal(mean=0.0, sigma=1.0)', 1.64872, 4.670774)
    benchmark('lognormal(mean=0.0, sigma=1.0, size=sz)',1.6487, 4.6708, buf)
 
-   benchmark('negative_binomial(r=0.5, pr_failure=0.5)', 0.5, 1.0)
-   benchmark('negative_binomial(r=0.5,pr_failure=0.5,size=sz)',0.5,1.0,buf)
-   benchmark('negative_binomial(r=2.0, pr_failure=0.5)', 2.0, 4.0)
-   benchmark('negative_binomial(r=2.0,pr_failure=0.5,size=sz)',2.0,4.0,buf)
-   benchmark('negative_binomial(r=0.5, pr_failure=0.9)', 4.5, 45.0)
-   benchmark('negative_binomial(r=2.0, pr_failure=0.1)', 0.22222, 0.24691)
+   benchmark('negative_binomial(r=0.5, pr=0.5)', 0.5, 1.0)
+   benchmark('negative_binomial(r=0.5,pr=0.5,size=sz)',0.5,1.0,buf)
+   benchmark('negative_binomial(r=2.0, pr=0.5)', 2.0, 4.0)
+   benchmark('negative_binomial(r=2.0,pr=0.5,size=sz)',2.0,4.0,buf)
+   benchmark('negative_binomial(r=0.5, pr=0.9)', 4.5, 45.0)
+   benchmark('negative_binomial(r=2.0, pr=0.1)', 0.22222, 0.24691)
 
    benchmark('normal(mu=0.0, sigma=1.0)', 0.0, 1.0)
    benchmark('normal(mu=0.0, sigma=1.0, size=sz)', 0.0, 1.0, buf)

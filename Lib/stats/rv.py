@@ -50,25 +50,25 @@ def random(size=None):
     "Returns array of random numbers between 0 and 1"
     return _build_random_array(rand.sample, (), size)
 
-def uniform(minimum, maximum, size=None):
+def uniform(a=0.0, b=1.0, size=None):
     """Returns array of given shape of random reals in given range (exclusive of enpoints)
     """
-    return _build_random_array(rand.uniform, (minimum, maximum), size)
+    return _build_random_array(rand.uniform, (a, b), size)
 
-def unid(minimum, maximum=None, size=None):
+def randint(min, max=None, size=None):
     """random integers >=min, < max.  If max not given, random integers >= 0, <min"""
-    if maximum is None:
-        maximum = minimum
-        minimum = 0
-    a = Numeric.floor(uniform(minimum, maximum, size))
+    if max is None:
+        max = min
+        min = 0
+    a = Numeric.floor(uniform(min, max, size))
     if isinstance(a, Numeric.ArrayType):
         return a.astype(Numeric.Int)
     else:
         return int(a)
      
-def random_integers(maximum, minimum=1, size=None):
+def random_integers(max, min=1, size=None):
     """random_integers(max, min=1, size=None) = random integers in range min-max inclusive"""
-    return randint(minimum, maximum+1, size) 
+    return randint(min, max+1, size) 
      
 def permutation(arg):
     """If arg is an integer, a permutation of indices arange(n), otherwise
@@ -178,15 +178,17 @@ def nct(df, nc, size=None):
     with df degrees of freedom."""    
     return normal(nc)*Numeric.sqrt(df) / Numeric.sqrt(noncentral_chi2(df,nc,size))
 
+def bernoulli(pr=0.5, size=None):
+    return binom(1, pr, size)
 
-def binom(trials, p, size=None):
+def binom(trials, pr=0.5, size=None):
     """returns array of binomially distributed random integers.
 
            trials is the number of trials in the binomial distribution.
            p is the probability of an event in each trial of the binomial distribution."""
-    return _build_random_array(rand.binomial, (trials, p), size)
+    return _build_random_array(rand.binomial, (trials, pr), size)
 
-def nbinom(trials, p, size=None):
+def nbinom(trials, pr=0.5, size=None):
     """returns array of negative binomially distributed random integers.
     
            trials is the number of trials in the negative binomial
@@ -194,7 +196,7 @@ def nbinom(trials, p, size=None):
            p is the probability of an event in each trial of the
                   negative binomial distribution.
     """
-    return _build_random_array(rand.negative_binomial, (trials, p), size)
+    return _build_random_array(rand.negative_binomial, (trials, pr), size)
 
 def multinom(trials, probs, size=None):
     """returns array of multinomial distributed integer vectors.
@@ -225,7 +227,7 @@ def multinom(trials, probs, size=None):
 
 def poisson(mu, size=None):
     """returns array of poisson distributed random integers with specifed mean."""
-    return _build_random_array(rand.poisson, (mean,), size)
+    return _build_random_array(rand.poisson, (mu,), size)
 
 
 def mean_var_test(x, type, mean, var, skew=[]):
