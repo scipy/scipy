@@ -35,3 +35,4 @@ Enthought for providing resources and finances to development SciPy.
 Brigham Young University has provided resources for students to work on SciPy.
 
 Agilent has given a genereous donation for support of SciPy.
+
