@@ -2135,7 +2135,7 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	}
 	else {
 	  free(vi); free(vf);
-	  return Py_BuildValue("(OO)",arY,arVf);
+	  return Py_BuildValue("(NN)",arY,arVf);
  	}
 
  fail:
