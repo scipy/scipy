@@ -120,27 +120,6 @@ module xxx is::
       from scipy_distutils.core import setup
       setup(**configuration())
 
-File xxx/__init__.py
----------------------
-
-To speed up the import time as well as to minimize memory usage, scipy
-uses ppimport hooks to transparently postpone importing large modules
-that might not be used during a Scipy usage session. But in order to
-have an access to documentation of all Scipy modules, including of the
-postponed modules, the documentation string of a module (that would
-usually reside in __init__.py file) should be copied also 
-to info_xxx.py file.
-
-So, the contents of a typical xxx/__init__.py file would be::
-
-  #
-  # Module xxx - ...
-  #
-
-  from info_xxx import __doc__
-  ...
-
-
 File xxx/info_xxx.py
 --------------------
 
@@ -179,6 +158,26 @@ postpone_import
   Boolean variable indicating that importing module should be
   postponed until first attempt of its usage. Default value is False.
 
+File xxx/__init__.py
+---------------------
+
+To speed up the import time as well as to minimize memory usage, scipy
+uses ppimport hooks to transparently postpone importing large modules
+that might not be used during a Scipy usage session. But in order to
+have an access to documentation of all Scipy modules, including of the
+postponed modules, the documentation string of a module (that would
+usually reside in __init__.py file) should be copied also 
+to info_xxx.py file.
+
+So, the contents of a typical xxx/__init__.py file would be::
+
+  #
+  # Module xxx - ...
+  #
+
+  from info_xxx import __doc__
+  ...
+
 File xxx/tests/test_yyy.py
 --------------------------
 
@@ -194,8 +193,8 @@ level is 1.
 A minimal example of a ``test_yyy.py`` file that implements tests for
 a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
 
-  from scipy_test.testing import set_package_path, sys
-  from scipy_test.testing import ScipyTestCase
+  import sys
+  from scipy_test.testing import *
 
   set_package_path()
   # make sure that all xxx symbols are imported before the del statement:
@@ -208,7 +207,6 @@ a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
       #...
 
   if __name__ == "__main__":
-      from scipy_test.testing import ScipyTest
       ScipyTest('xxx.yyy').run()
 
 ``ScipyTestCase`` is derived from ``unittest.TestCase`` and it
