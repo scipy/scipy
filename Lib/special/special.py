@@ -132,6 +132,52 @@ def sawtooth(t,width=1):
     wsub = extract(w,mask3)
     insert(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
     return y    
+
+
+def square(t,duty=0.5):
+    """Returns a periodic square-wave waveform with period 2*pi
+    which is +1 from 0 to 2*pi*duty and -1 from 2*pi*duty to 2*pi
+    duty must be in the interval [0,1]
+    """
+    t,w = asarray(t), asarray(duty)
+    w = asarray(w + (t-t))
+    t = asarray(t + (w-w))
+    if t.typecode() in ['fFdD']:
+        ytype = t.typecode()
+    else:
+        ytype = 'd'
+    y = zeros(t.shape,ytype)
+
+    # width must be between 0 and 1 inclusive
+    mask1 = (w > 1) | (w < 0)
+    insert(y,mask1,nan)
+
+    # take t modulo 2*pi
+    tmod = mod(t,2*pi)
+
+    # on the interval 0 to duty*2*pi function is
+    #  1
+    mask2 = (1-mask1) & (tmod < w*2*pi)
+    tsub = extract(tmod,mask2)
+    wsub = extract(w,mask2)
+    insert(y,mask2,1)
+
+    # on the interval duty*2*pi to 2*pi function is
+    #  (pi*(w+1)-tmod) / (pi*(1-w))
+
+    mask3 = (1-mask1) & (1-mask2)
+    tsub = extract(tmod,mask3)
+    wsub = extract(w,mask3)
+    insert(y,mask3,-1)
+    return y    
+
+def gausspulse():
+    pass
+
+def chirp():
+    pass
+
+
        
 
 
