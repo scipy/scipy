@@ -3,3 +3,5 @@ include special/specfun.pyf
 include linalg/generic_*.pyf
 include linalg/flapack_user_routines.pyf
 include *.txt
+include *.inc
+include *.cfg
