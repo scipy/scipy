@@ -489,11 +489,14 @@ def lqmn(m,n,z):
         raise ValueError, "n must be a non-negative integer."
     if not isscalar(z):
         raise ValueError, "z must be scalar."
+    if (m*n == 0):
+        mm = max(1,m)
+        nn = max(1,n)
     if iscomplex(z):
-        q,qd = specfun.clqmn(m,n,z)
+        q,qd = specfun.clqmn(mm,nn,z)
     else:        
-        q,qd = specfun.lqmn(m,n,z)
-    return q,qd
+        q,qd = specfun.lqmn(mm,nn,z)
+    return q[:(m+1),:(n+1)],qd[:(m+1),:(n+1)]
 
 
 def bernoulli(n):

@@ -127,22 +127,40 @@ class test_bei_zeros(unittest.TestCase):
 
     def check_bei_zeros(self):
         bi = bi_zeros(5)
-        assert_array_almost_equal(bi,array([5.02622,
-                                            9.45541,
-                                            13.89349,
-                                            18.33398,
-                                            22.77544]),4)
+        assert_array_almost_equal(bi[0],array([-1.173713222709127,
+                                               -3.271093302836352,
+                                               -4.830737841662016,
+                                               -6.169852128310251,
+                                               -7.376762079367764]),12)
+
+        assert_array_almost_equal(bi[1],array([-2.294439682614122,
+                                               -4.073155089071828,
+                                               -5.512395729663599,
+                                               -6.781294445990305,
+                                               -7.940178689168587]),12)
+        
+        assert_array_almost_equal(bi[2],array([-0.454944383639657,
+                                               0.396522836094465,
+                                               -0.367969161486959,
+                                               0.349499116831805,
+                                               -0.336026240133662]),12)
+        
+        assert_array_almost_equal(bi[3],array([0.601957887976239,
+                                               -0.760310141492801,
+                                               0.836991012619261,
+                                               -0.88947990142654,
+                                               0.929983638568022]),12)
+
 
 class test_beip_zeros(unittest.TestCase):
 
     def check_beip_zeros(self):
         bip = beip_zeros(5)
-        assert_array_almost_equal(bip,array([3.77320,
-                                             8.28099,
-                                             12.74215,
-                                             17.19343,
-                                             21.64114]),4)
-
+        assert_array_almost_equal(bip,array([  3.772673304934953,
+                                               8.280987849760042,
+                                               12.742147523633703,
+                                               17.193431752512542,
+                                               21.641143941167325]),4)
 class test_ber_zeros(unittest.TestCase):
 
     def check_ber_zeros(self):
@@ -988,12 +1006,12 @@ class test_lpn(unittest.TestCase):
 
     def check_lpn(self):
         lpnf = lpn(2,.5)
-        assert_array_almost_equal(lpnf,(array([	      [ 1.00000 ,
+        assert_array_almost_equal(lpnf,(array(      [ 1.00000 ,
                                                         0.50000,
-                                                        -0.12500]]),
-                                      array([	    [ 0.00000 ,
+                                                        -0.12500]),
+                                      array(	    [ 0.00000 ,
                                                       1.00000 ,
-                                                      1.50000]])),4)
+                                                      1.50000])),4)
 
 class test_lpmv(unittest.TestCase):
 
@@ -1004,12 +1022,11 @@ class test_lpmv(unittest.TestCase):
 class test_lqmn(unittest.TestCase):
 
     def check_lqmn(self):
-        disp("here")        
         lqmnf = lqmn(0,2,.5)
         lqmnf = lqmn(0,2,.5)
         lqf = lqn(2,.5)
-        disp("done")
-        assert_array_almost_equal(lqmnf,lqf,4)
+        assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
+        assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
 
                 
 
@@ -1394,8 +1411,8 @@ def test_suite(level=1):
 	suites.append( unittest.makeSuite(test_beip,'check_') )
 	suites.append( unittest.makeSuite(test_ber,'check_') )
 	suites.append( unittest.makeSuite(test_berp,'check_') )
-#F	suites.append( unittest.makeSuite(test_bei_zeros,'check_') )
-#F	suites.append( unittest.makeSuite(test_beip_zeros,'check_') )
+	suites.append( unittest.makeSuite(test_bei_zeros,'check_') )
+	suites.append( unittest.makeSuite(test_beip_zeros,'check_') )
 	suites.append( unittest.makeSuite(test_ber_zeros,'check_') )
 	suites.append( unittest.makeSuite(test_berp_zeros,'check_') )
 	suites.append( unittest.makeSuite(test_bernoulli,'check_') )
@@ -1496,9 +1513,9 @@ def test_suite(level=1):
 	suites.append( unittest.makeSuite(test_lmbda,'check_') )
 	suites.append( unittest.makeSuite(test_log1p,'check_') )	
 	suites.append( unittest.makeSuite(test_lpmn,'check_') )
-#E	suites.append( unittest.makeSuite(test_lpn,'check_') )
+	suites.append( unittest.makeSuite(test_lpn,'check_') )
 	suites.append( unittest.makeSuite(test_lpmv,'check_') )
-#	suites.append( unittest.makeSuite(test_lqmn,'check_') )
+	suites.append( unittest.makeSuite(test_lqmn,'check_') )
 	suites.append( unittest.makeSuite(test_lqn,'check_') )
 ###	 suites.append( unittest.makeSuite(test_mathieu_a,'check_') )
 ###	 suites.append( unittest.makeSuite(test_mathieu_even_coef,'check_') )

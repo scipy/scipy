@@ -133,9 +133,9 @@ def j_roots(n,alpha,beta,mu=0):
 
     (p,q) = (alpha,beta)
     # from recurrence relation
-    sbn_J = lambda k: 2.0/(2*k+p+q)*sqrt((k+p)*(k+q)*k*(k+p+q)/((2*k+p+q+1)*(2*k+p+q-1)))
+    sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)*k*(k+p+q)/((2*k+p+q+1)*(2*k+p+q-1)))
     if (p == q):
-        an_J = lambda k: 0*k
+        an_J = lambda k: 0.0*k
     else:
         an_J = lambda k: (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2))
     g = cephes.gamma
@@ -152,11 +152,10 @@ def jacobi(n,alpha,beta,monic=0):
     (1-x)**alpha (1+x)**beta with alpha,beta > -1.
     """
     assert(n>=0), "n must be nonnegative"
-    if n==0: n1 = n+1
-    else: n1 = n
-    x,w,mu = j_roots(n1,alpha,beta,mu=1)
-    if n==0: x,w = [],[]
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
+    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
+    n1 = n
+    x,w,mu = j_roots(n1,alpha,beta,mu=1)
     ab1 = alpha+beta+1.0
     hn = 2**ab1/(2*n+ab1)*_gam(n+alpha+1)
     hn *= _gam(n+beta+1.0) / _gam(n+1) / _gam(n+ab1)
@@ -202,11 +201,10 @@ def sh_jacobi(n, p, q, monic=0):
     (1-x)**(p-q) (1+x)**(q-1) with p>q-1 and q > 0.
     """
     assert(n>=0), "n must be nonnegative"
-    if n==0: n1 = n+1
-    else: n1 = n
-    x,w,mu0 = js_roots(n1,p,q,mu=1)
-    if n==0: x,w = [],[]
     wfunc = lambda x: (1.0-x)**(p-q) * (1+x)**(q-1.)
+    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
+    n1 = n    
+    x,w,mu0 = js_roots(n1,p,q,mu=1)
     hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
     hn /= (2*n+p)*(_gam(2*n+p)**2)
     An = 1.0
