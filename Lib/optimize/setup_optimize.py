@@ -49,6 +49,11 @@ def configuration(parent_package='',parent_path=None):
     ext = Extension(dot_join(parent_package, package, '_cobyla'), sources=sources)
     config['ext_modules'].append(ext)
 
+    sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
+    sources = [os.path.join(local_path,'minpack2',x) for x in sources]    
+    ext = Extension(dot_join(parent_package, package, 'minpack2'), sources=sources)
+    config['ext_modules'].append(ext)
+    
     return config
 
 if __name__ == '__main__':    
