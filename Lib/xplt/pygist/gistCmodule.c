@@ -255,7 +255,7 @@ static void clearMemList (void);
 /* New definition of TRY: (second argument m = 1 for memerr) */
 
 #define TRY(e, m) do{if(!(e)){clearArrayList();clearFreeList(0);\
-               clearMemList();return m;}} while(0)
+               clearMemList();return (m);}} while(0)
 #define TRYS(e) {char * errstr; \
                  if( (errstr=(e)) != NULL ) { \
                        clearArrayList(); \
