@@ -34,7 +34,7 @@ standard_packages = []
 
 standard_packages = [os.path.join('Lib',p) for p in standard_packages]
 
-graphics_packages = ['plt','gplt','xplt']
+graphics_packages = []
 graphics_packages = [os.path.join('Lib',p) for p in graphics_packages]
 
 chaco_packages = ['chaco','kiva','traits','freetype']
@@ -53,7 +53,7 @@ scipy_packages += graphics_packages
 #---------------
 
 # these packages aren't nested under scipy
-separate_packages = ['gui_thread']
+separate_packages = []
 separate_packages = [os.path.join('Lib',p) for p in separate_packages]
 #separate_packages += core_packages
 separate_packages += chaco_packages
