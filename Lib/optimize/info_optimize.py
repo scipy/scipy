@@ -14,8 +14,13 @@ Optimization Tools
    leastsq     --  Minimize the sum of squares of M equations in
                      N unknowns given a starting estimate.
 
+  Constrained Optimizers (multivariate)
+
    fmin_l_bfgs_b -- Zhu, Byrd, and Nocedal's L-BFGS-B constrained optimizer
                       (if you use this please quote their papers -- see help)
+
+   fmin_tnc      -- Truncated Newton Code originally written by Stephen Nash and
+                      adapted to C by Jean-Sebastien Roy.
 
   Global Optimizers
 

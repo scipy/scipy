@@ -1,0 +1,18 @@
+# TNC Release History
+# $Jeannot: HISTORY,v 1.8 2004/04/03 16:01:48 js Exp $
+
+08/04/2004          Included into SciPy
+
+04/03/2004, V1.2   : Memory allocation checks
+04/02/2004, V1.1   : Setup script for the python module
+                     Ability to abort the minimization at any time
+                     Warning: API changes: the user supplied function must now
+                     return an int.
+03/22/2004, V1.0.5 : Python Module
+10/15/2003, V1.0.4 : Warning: API changes: TNC now returns the number of
+                     function evaluations.
+                     Return code messages strings. 
+01/25/2003, V1.0.3 : Default values to remove Visual C++ complaint.
+10/02/2002, V1.0.2 : Make g a facultative parameter.
+09/26/2002, V1.0.1 : Fix bug when |g| is exactly zero at the initial point.
+09/21/2002, V1.0   : First release.

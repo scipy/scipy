@@ -36,8 +36,11 @@ def configuration(parent_package='',parent_path=None):
     sources = [os.path.join(local_path,'lbfgsb-0.9',x) for x in sources]
     ext = Extension(name="_lbfgsb",sources=sources, **lapack)
     config['ext_modules'].append(ext)
-    
-    return config
+
+    sources = ['moduleTNC.c', 'tnc.c']
+    sources = [os.path.join(local_path,'tnc',x) for x in sources]
+    ext = Extension("moduleTNC", sources=sources)
+    config['ext_modules'].append(ext)
 
 if __name__ == '__main__':    
     from scipy_distutils.core import setup
