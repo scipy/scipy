@@ -26,6 +26,8 @@ def configuration(parent_package='',parent_path=None):
 
     c_misc = glob(os.path.join(local_path,'c_misc','*.c'))
     cephes = glob(os.path.join(local_path,'cephes','*.c'))
+    if sys.platform=='win32':
+        cephes = [f for f in cephes if os.path.basename(f)!='fabs.c']
     mach = glob(os.path.join(local_path,'mach','*.f'))
     amos = glob(os.path.join(local_path,'amos','*.f'))
     toms = glob(os.path.join(local_path,'toms','*.f'))
