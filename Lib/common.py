@@ -3,11 +3,11 @@
 
 # Needs eigenvalues
 import Numeric
-import types
+import types, sys
 from scipy import special, stats
 from scipy_base import fastumath
 
-__all__ = ['factorial','comb','rand','randn']
+__all__ = ['factorial','comb','rand','randn','disp','who']
     
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
@@ -67,6 +67,77 @@ def lena():
     lena = scipy.array(cPickle.load(f))
     f.close()
     return lena
+
+#-----------------------------------------------------------------------------
+# Matlab like functions for output and information on the variables used.
+#-----------------------------------------------------------------------------
+def disp(mesg, device=None, linefeed=1):
+    """Display a message to device (default is sys.stdout) with(out) linefeed.
+    """
+    if device is None:
+        device = sys.stdout
+    if linefeed:
+        device.write('%s\n' % mesg)
+    else:
+        device.write('%s' % mesg)
+    device.flush()
+    return
+
+def who(vardict=None):
+    """Print the Numeric arrays in the given dictionary (or globals() if None).
+    """
+    if vardict is None:
+        print "Pass in a dictionary:  who(globals())"
+        return
+    sta = []
+    cache = {}
+    for name in vardict.keys():
+        if isinstance(vardict[name],Numeric.ArrayType):
+            var = vardict[name]
+            idv = id(var)
+            if idv in cache.keys():
+                namestr = name + " (%s)" % cache[idv]
+                original=0
+            else:
+                cache[idv] = name
+                namestr = name
+                original=1
+            shapestr = " x ".join(map(str, var.shape))
+            bytestr = str(var.itemsize()*Numeric.product(var.shape))
+            sta.append([namestr, shapestr, bytestr, _namefromtype[var.typecode()], original])
+
+    maxname = 0
+    maxshape = 0
+    maxbyte = 0
+    totalbytes = 0
+    for k in range(len(sta)):
+        val = sta[k]
+        if maxname < len(val[0]):
+            maxname = len(val[0])
+        if maxshape < len(val[1]):
+            maxshape = len(val[1])
+        if maxbyte < len(val[2]):
+            maxbyte = len(val[2])
+        if val[4]:
+            totalbytes += int(val[2])
+
+    max = Numeric.maximum
+    if len(sta) > 0:
+        sp1 = max(10,maxname)
+        sp2 = max(10,maxshape)
+        sp3 = max(10,maxbyte)
+        prval = "Name %s Shape %s Bytes %s Type" % (sp1*' ', sp2*' ', sp3*' ')
+        print prval + "\n" + "="*(len(prval)+5) + "\n"
+        
+    for k in range(len(sta)):
+        val = sta[k]
+        print "%s %s %s %s %s %s %s" % (val[0], ' '*(sp1-len(val[0])+4),
+                                        val[1], ' '*(sp2-len(val[1])+5),
+                                        val[2], ' '*(sp3-len(val[2])+5),
+                                        val[3])
+    print "\nUpper bound on total bytes  =       %d" % totalbytes
+    return
+    
 
 
 def test(level=10):
