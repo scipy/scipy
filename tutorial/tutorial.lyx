@@ -256,7 +256,11 @@ quad
 \begin_inset Formula \( \pm  \)
 \end_inset 
 
-integrate.Inf) to indicate infinite limits.
+
+\series bold 
+integrate.inf
+\series default 
+) to indicate infinite limits.
  For example, suppose you wish to integrate a bessel function 
 \family typewriter 
 jv(2.5,x)
@@ -333,7 +337,7 @@ quad
 
 
 \series bold 
-integrate.Inf
+integrate.inf
 \series default 
  as one of the arguments.
  For example, suppose that a numerical value for the exponential integral:
@@ -1254,13 +1258,90 @@ flags 11
 
 \end_inset 
 
-One-dimensional interpolation using class 
+One-dimensional interpolation using the class 
 \series bold 
-interpolate.linear_1d
+interpolate.linear_1d.
 \end_float 
 \layout Subsection
 
-Cubic-spline interpolation in 1-d
+Spline interpolation in 1-d (interpolate.splXXX)
 \layout Standard
 
+There are two different was to represent a curve and obtain (smoothing)
+ spline coefficients: directly and parametrically.
+ The direct method finds the spline representation of a curve in a two-dimension
+al plane using the function 
+\series bold 
+interpolate.splrep.
+ 
+\series default 
+The first two arguments are the only ones required, and these provide the
+ 
+\begin_inset Formula \( x \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( y \)
+\end_inset 
+
+ components of the curve.
+ The normal output is a 3-tuple, 
+\begin_inset Formula \( \left( t,c,k\right)  \)
+\end_inset 
+
+, containing the knot-points, 
+\begin_inset Formula \( t \)
+\end_inset 
+
+, the coefficients 
+\begin_inset Formula \( c \)
+\end_inset 
+
+ and the order 
+\begin_inset Formula \( k \)
+\end_inset 
+
+ of the spline.
+ 
+\layout Standard
+
+For curves in 
+\begin_inset Formula \( N \)
+\end_inset 
+
+-dimensional space the function 
+\series bold 
+interpolate.splprep 
+\series default 
+allows defining the curve parametrically.
+ For this function only 1 input argument is required.
+ This input is a list of 
+\begin_inset Formula \( N \)
+\end_inset 
+
+-arrays representing the curve in 
+\begin_inset Formula \( N \)
+\end_inset 
+
+-dimensional space.
+ The length of each array is the number of curve points, and each array
+ provides one component of the 
+\begin_inset Formula \( N \)
+\end_inset 
+
+-dimensional data point.
+ The parameter variable is given with the keword argument, 
+\emph on 
+u, 
+\emph default 
+which defaults to an equally-spaced monotonic sequence between 
+\begin_inset Formula \( 0 \)
+\end_inset 
+
+ and 
+\begin_inset Formula \( 1 \)
+\end_inset 
+
+.
+ 
 \the_end
