@@ -75,7 +75,7 @@ python module sparsetools ! in
             integer intent(hide), depend(c) :: nnzcmax=len(c)
             integer intent(in, out) :: irow
             integer intent(in, out) :: kcol
-            integer intent(out) :: ierr
+            integer intent(in, out) :: ierr
         end subroutine <_c>cscmucsr
 
         subroutine <_c>csrmucsc(m,n,a,rowa,ptra,nnzamax,b,colb,ptrb,nnzbmax,c,rowc,ptrc,nnzcmax,irow,kcol,ierr) ! in :sparsetools:dspblas.f
@@ -92,31 +92,31 @@ python module sparsetools ! in
             <_t> intent(in,out),dimension(nnzcmax) :: c
             integer intent(in, out) dimension(nnzcmax),depend(nnzcmax) :: rowc
             integer intent(in, out) dimension(n + 1), depend(n) :: ptrc
-            integer intent(in, out) intent(hide), depend(c) :: nnzcmax=len(c)
+            integer intent(hide), depend(c) :: nnzcmax=len(c)
             integer intent(in, out) :: irow
             integer intent(in, out) :: kcol
-            integer intent(out) :: ierr
+            integer intent(in, out) :: ierr
         end subroutine <_c>csrmucsc
 
         subroutine <_c>cscmucsc(m,k,n,a,rowa,ptra,nnzamax,b,colb,ptrb,nnzbmax,c,rowc,ptrc,nnzcmax,irow,kcol,ierr) ! in :sparsetools:dspblas.f
             integer :: m
             integer intent(hide),depend(ptra) :: k=(len(ptra)-1)
-            integer intent(hide),depend(ptrc) :: n=(len(ptrb)-1)
+            integer intent(hide),depend(ptrb) :: n=(len(ptrb)-1)
             <_t> dimension(nnzamax) :: a
             integer dimension(nnzamax),depend(nnzamax) :: rowa
             integer dimension(k + 1) :: ptra
             integer intent(hide),depend(a) :: nnzamax=len(a)
             <_t> dimension(nnzbmax) :: b
-            integer dimension(nnzbmax),depend(nnzbmax) :: rowb
-            integer dimension(k + 1),depend(k) :: ptrb
+            integer dimension(nnzbmax),depend(nnzbmax) :: colb
+            integer dimension(n + 1) :: ptrb
             integer intent(hide), depend(b) :: nnzbmax=len(b)
             <_t> intent(in, out),dimension(nnzcmax) :: c
             integer intent(in, out), dimension(nnzcmax),depend(nnzcmax) :: rowc
-            integer intent(in, out), dimension(n + 1) :: ptrc
+            integer intent(in, out), dimension(n + 1), depend(n) :: ptrc
             integer intent(hide), depend(c) :: nnzcmax=len(c)
             integer intent(in, out) :: irow
             integer intent(in, out) :: kcol
-            integer intent(out) :: ierr
+            integer intent(in, out) :: ierr
         end subroutine <_c>cscmucsc
 
         subroutine <_c>transp(m,n,a,rowa,ptra,nnzamax,b,colb,ptrb) ! in :sparsetools:dspconv.f
@@ -177,7 +177,7 @@ python module sparsetools ! in
             integer intent(hide),depend(a) :: nnzamax=len(a)
             integer intent(in,out) :: irow
             integer intent(in,out) :: jcol
-            integer intent(out) :: ierr
+            integer intent(in,out) :: ierr
         end subroutine <_c>fulltocsc
 
         subroutine <_c>csctofull(m,n,fulla,a,rowa,ptra,nnzamax) ! in :sparsetools:dspconv.f
@@ -206,7 +206,7 @@ python module sparsetools ! in
             integer intent(hide),depend(c) :: nnzcmax=len(c)
             integer intent(in,out) :: irow
             integer intent(in,out) :: jcol
-            integer intent(out) :: ierr
+            integer intent(in,out) :: ierr
         end subroutine <_c>cscextract
 
     end interface 

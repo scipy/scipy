@@ -1,3 +1,4 @@
+c    -*- fortran -*-
 c    convert csc matrix a to csr matrix b
 c    convert csr matrix a to csc matrix b
 c    transpose csc matrix
@@ -166,7 +167,7 @@ c     intended for re-entry in case a is too small
       integer nnza, i, j, k, cumsum
 
       ierr=0
-      nnza = ptra(n)
+      nnza = ierr
       do j = jcol, n-1
          do i = irow, m-1
             val = fulla(i,j)
@@ -189,7 +190,7 @@ c   successful completion (fix the ptr array)
       return
 
  999  continue
-      ierr=1
+      ierr=nnza
       irow = i
       jcol = j
       return
@@ -241,7 +242,7 @@ c      irow and jcol should initially be 0 and 0
       nc = jend-jbeg+1
 
       nnza = ptra(n)
-      nnzc = ptrc(nc)
+      nnzc = ierr
 
       if (jcol .lt. jbeg) jcol = jbeg
 
@@ -274,7 +275,7 @@ c   successful completion (fix the ptr array)
       return
 
  999  continue
-      ierr = 1
+      ierr = nnzc
       irow = ia
       jcol = j
       return

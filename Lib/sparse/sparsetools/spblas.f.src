@@ -1,3 +1,4 @@
+c    -*- fortran -*-
 c    author:  travis e. oliphant, 2004
 c
 c    computational tools for sparse matrices in <_t>
@@ -34,25 +35,31 @@ c      end do
          do while ((ia.lt.iamax).and.(ib.lt.ibmax))
             ra = rowa(ia)
             rb = rowb(ib)
-            if (nnzc.ge.nnzcmax) goto 999
             if (ra.eq.rb) then
 c     this is a common element
                val = a(ia) + b(ib)
                ia = ia + 1
                ib = ib + 1
                if (val.eq.0.0) goto 10
-               c(nnzc) = a(ia) + b(ib)
+               if (nnzc.ge.nnzcmax) goto 999
+               c(nnzc) = val
                rowc(nnzc) = ra
             else if (ra .lt. rb) then
 c     a has this but not b
-               c(nnzc) = a(ia)
+               val = a(ia)
+               ia = ia + 1 
+               if (val.eq.0.0) goto 10 
+               if (nnzc.ge.nnzcmax) goto 999
+               c(nnzc) = val
                rowc(nnzc) = ra
-               ia = ia + 1                
             else
 c     b has this but not a
-               c(nnzc) = b(ib)
-               rowc(nnzc) = rb
+               val = b(ib)
                ib = ib + 1
+               if (val.eq.0.0) goto 10
+               if (nnzc.ge.nnzcmax) goto 999
+               c(nnzc) = val
+               rowc(nnzc) = rb
             end if
             ptrc(j+1) = ptrc(j+1) + 1
             nnzc = nnzc + 1
@@ -62,25 +69,32 @@ c     b has this but not a
          if (ia .eq. iamax) then
 c     all finished with a for this column just copy the rest from b
             do while (ib .lt. ibmax)
-               if (nnzc.ge.nnzcmax) goto 999
-               c(nnzc) = b(ib)
-               rowc(nnzc) = rowb(ib)
+               val = b(ib)
+               rb = rowb(ib)
                ib = ib+1
-               ptrc(j+1) = ptrc(j+1) + 1
-               nnzc = nnzc + 1
+               if (val.ne.0.0) then
+                  if (nnzc.ge.nnzcmax) goto 999
+                  c(nnzc) = val
+                  rowc(nnzc) = rb
+                  ptrc(j+1) = ptrc(j+1) + 1
+                  nnzc = nnzc + 1
+               end if
             end do
          else if (ib .eq. ibmax) then
 c     all finished with b for this column just copy the rest from a
             do while (ia .lt. iamax)
-               if (nnzc.ge.nnzcmax) goto 999
-               c(nnzc) = a(ia)
-               rowc(nnzc) = rowa(ia)
-               ia = ia+1
-               ptrc(j+1) = ptrc(j+1) + 1
-               nnzc = nnzc + 1
+               val = a(ia)
+               ra = rowa(ia)
+               ia = ia + 1
+               if (val.ne.0.0) then
+                  if (nnzc.ge.nnzcmax) goto 999
+                  c(nnzc) = val
+                  rowc(nnzc) = ra
+                  ptrc(j+1) = ptrc(j+1) + 1
+                  nnzc = nnzc + 1
+               end if
             end do
          end if 
-         
       end do
 
 c   successful completion (fix the ptr array)
@@ -91,7 +105,6 @@ c   successful completion (fix the ptr array)
       end do
       return
       
-      return
       
  999  continue
       ierr = 1
@@ -103,7 +116,7 @@ c     can have at most the minimum of nnzamax and nnzbmax
 
       subroutine <_c>cscmul(n,a,rowa,ptra,nnzamax,b,rowb,ptrb,nnzbmax,
      $     c,rowc,ptrc,nnzcmax,ierr)
-      <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1)
+      <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1), val
       integer n, rowa(0:nnzamax-1), rowb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:n), ptrb(0:n), ptrc(0:n), nnzamax, nnzbmax
       integer ia, ib, ra, rb, j, nnzcmax
@@ -119,22 +132,25 @@ c     can have at most the minimum of nnzamax and nnzbmax
          do while ((ia.lt.iamax).and.(ib.lt.ibmax))
             ra = rowa(ia)
             rb = rowb(ib)
-            if (nnzc.ge.nnzcmax) goto 999
             if (ra.eq.rb) then
 c     this is a common element
-               c(nnzc) = a(ia)*b(ib)
+               val = a(ia)*b(ib)
+               ia = ia + 1
+               ib = ib + 1
+               if (val.eq.0.0) goto 10
+               if (nnzc.ge.nnzcmax) goto 999
+               c(nnzc) = val
                rowc(nnzc) = ra
                ptrc(j+1) = ptrc(j+1) + 1
                nnzc = nnzc + 1
-               ia = ia + 1
-               ib = ib + 1
             else if (ra .lt. rb) then
 c     a has this but not b
-               ia = ia + 1                
+               ia = ia + 1
             else
 c     b has this but not a
                ib = ib + 1
             end if
+ 10         continue
          end do
       end do
       
@@ -336,7 +352,7 @@ c                       compressed sparse row matrices
 c   
 c     intentended for re-entry if nnzcmax is not big enough
 
-      subroutine <_c>cscmucsc(m,k,n,a,rowa,ptra,nnzamax,b,colb,ptrb,
+      subroutine <_c>cscmucsc(m,k,n,a,rowa,ptra,nnzamax,b,rowb,ptrb,
      $     nnzbmax,c,rowc,ptrc,nnzcmax,irow,kcol,ierr)
 
       <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1)
@@ -345,15 +361,13 @@ c     intentended for re-entry if nnzcmax is not big enough
       integer nnzamax, nnzbmax, nnzcmax
       integer m, k, n, irow, kcol, ierr
 
-      integer kk, ii, jjb, jb, cb, ia, nnzc
+      integer kk, ii, jjb, jb, cb, ia, nnzc, cumsum
       <_t> val
-
-
+      
       ierr = 0
-      nnzc = ptrc(n)
+      nnzc = ierr
       do kk = kcol, n-1
          do ii = irow, m-1
-            if (nnzc.ge.nnzcmax) goto 999
             val = 0.0
 c   loop through the row array of b for this column
             do jb = ptrb(kk), ptrb(kk+1)-1
@@ -367,6 +381,7 @@ c     see if aij is nonzero and if so add to val
             end do
             if (val.ne.0.0) then
 c     there is a non-zero value for this value of i and k
+               if (nnzc.ge.nnzcmax) goto 999
                c(nnzc) = val
                rowc(nnzc) = ii
                ptrc(kk+1) = ptrc(kk+1) + 1
@@ -375,12 +390,18 @@ c     there is a non-zero value for this value of i and k
          end do         
       end do
 
+c   successful completion (fix the ptr array)
+      cumsum = 0
+      do kk = 1, n
+         cumsum = cumsum + ptrc(kk)
+         ptrc(kk) = cumsum         
+      end do
       return
-
+      
  999  continue
       kcol = kk
       irow = ii
-      ierr = 1
+      ierr = nnzc
       
       return
       end subroutine <_c>cscmucsc

@@ -15,7 +15,7 @@ Run tests if linalg is not installed:
 """
 
 import scipy_base
-from scipy_base import arange, zeros, array
+from scipy_base import arange, zeros, array, dot
 
 import sys
 from scipy_test.testing import *
@@ -26,7 +26,7 @@ import unittest
 
 class test_csc(ScipyTestCase):
 
-    dat = array([[1,0,0],[3,0,1],[0,2,0]],'d')
+    dat = array([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
     datsp = csc_matrix(dat)
 
     def check_constructor1(self):
@@ -68,17 +68,31 @@ class test_csc(ScipyTestCase):
         a[1,2] = 4.0
         a[0,1] = 3
         a[2,0] = 2.0
-        assert_array_equal(a.todense(),[[0,3,0],[0,0,4],[2,0,0]])
+        assert_array_equal(a.todense(),[[0,3,0,0],[0,0,4,0],[2,0,0,0]])
 
     def check_add(self):
         a = self.datsp
         b = self.datsp.copy()
         b[0,2] = 2.0
         c = a + b
-        assert_array_equal(c.todense(),[[2,0,2],[6,0,2],[0,4,0]])
-        
-                      
-        
+        assert_array_equal(c.todense(),[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
 
+    def check_elmul(self):
+        a = self.datsp
+        b = self.datsp.copy()
+        b[0,2] = 2.0
+        c = a ** b
+        assert_array_equal(c.todense(),[[1,0,0,4],[9,0,1,0],[0,4,0,0]])
+
+    def check_matvec(self):
+        b = csc_matrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        assert_array_almost_equal(b*[1,2,3],dot(b.todense(),[1,2,3]))
+        assert_array_almost_equal([1,2,3,4]*b,dot([1,2,3,4],b.todense()))
+
+    def check_matmat(self):
+        asp = csc_matrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        bsp = csc_matrix(array([[0,1],[1,0],[0,2]],'d'))
+        assert_array_almost_equal((asp*bsp).todense(),dot(asp.todense(),bsp.todense()))
+    
 if __name__ == "__main__":
     ScipyTest('sparse.Sparse').run()
