@@ -38,7 +38,7 @@ from wxPython.wx import *
 print '<wxPython imported>\n>>> ',
 import thread, threading
 import types, sys, traceback
-import main
+import main, weakref
 
 #################################
 # Window Close Event Handler 
@@ -54,12 +54,12 @@ class CloseEvtHandler(wxEvtHandler):
             the underlying wxPython window has been closed.
         """
         wxEvtHandler.__init__(self)
-        self.proxy_obj = proxy_obj
+        self.proxy_obj = weakref.proxy(proxy_obj)
         EVT_CLOSE(self,self.ProxyOnCloseWindow)
     def ProxyOnCloseWindow(self,evt):        
         """ Tell the proxy wrapper that the object is no longer
              alive.  Logic in the wrapper methods use this info
-             to make sure they don't call a dead wxPython object.             
+             to make sure they don't call a dead wxPython object.   
         """
         try:
             self.proxy_obj.kill_proxy()

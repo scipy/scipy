@@ -190,7 +190,7 @@ def generate_method(method,wx_class):
         results  = 'self.wx_obj = finished._result;' \
                    'add_close_event_handler(self);' \
                    'self.proxy_object_alive = 1;'
-    elif method == '__getattr__':
+    elif (method == '__getattr__') or (method == '__del__'):
         return None
     else:
         pre_test =  "if not self.proxy_object_alive: proxy_error()"
