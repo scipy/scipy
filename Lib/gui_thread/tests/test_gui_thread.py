@@ -1,9 +1,29 @@
 """ Testing gui_thread.  Please run this under gui_thread and also
-without it.  Right now the testing is extremely rudimentary."""
+without it.  Right now the testing is extremely rudimentary.  The
+proxied return types are tested so are a few simple classes.
 
-import unittest, gui_thread, weakref, time, sys
+To test the code you should run the tests both without and with using
+gui_thread in another thread.  Like so:
+
+ $ python
+ >>> import test_gui_thread
+ >>> test_gui_thread.test()
+ # or
+ $ python test_gui_thread.py
+
+And then:
+ $ python
+ >>> import gui_thread
+ >>> <Importing wxPython...  done.>
+ >>> import test_gui_thread
+ 
+ >>> test_gui_thread.test()
+
+"""
 
 from wxPython.wx import *
+
+import unittest, gui_thread, weakref, time, sys, math
 
 def threaded():
     return gui_thread.main.running_in_second_thread
@@ -50,8 +70,44 @@ class TestClass:
         self.a = 1
 
     def test(self):
-        print self.a
+        return self.a
 
+dummy_instance = TestClass()
+
+class TestProxyAttr:
+    def __init__(self):
+        self.a = 1
+
+    def test(self):
+        return self.a
+
+    def get_int(self):
+        return self.a
+
+    def get_float(self):
+        return math.pi
+
+    def get_complex(self):
+        return 1.0 + 5j
+
+    def get_string(self):
+        return "This is a string"
+
+    def get_list(self):
+        return [[0,1,2, 'foo', dummy_instance], 1,2, "foo", dummy_instance]
+
+    def get_tuple(self):
+        return ((1,2,3), 1, 2, 'foo',  dummy_instance)
+
+    def get_dict(self):
+        dict = {'int': 1, 'string': "This is a string",
+                'list': [1,2,'foo'], 'tuple':(1,2, 'foo'),
+                'obj': dummy_instance,
+                'dict': {'int':1, 'string': 'This is a string'}}
+        return dict
+
+    def get_callable(self):
+        return self.test
 
 class test_gui_thread(unittest.TestCase):
     def check_wx_class(self):
@@ -89,9 +145,92 @@ class test_gui_thread(unittest.TestCase):
         # this checks for memory leaks
         self.assertEqual(is_alive(p), 0)
 
+
+
+class test_proxy_attribute(unittest.TestCase):
+    
+    """ This class tests the different types of smart returning used
+    by the proxy classes.  The aim is to make the proxy behave very
+    much like the un-proxied classes so checking the return types is
+    important especially because lists, tuples and dictionaries have
+    to be properly proxied."""
+    
+    def check_int(self):
+        "Checking proxying of function returning int"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        self.assertEqual(a.get_int(), 1)
+
+    def check_float(self):
+        "Checking proxying of function returning float"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        self.assertEqual(a.get_float(), math.pi)
+
+    def check_complex(self):
+        "Checking proxying of function returning complex"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        self.assertEqual(a.get_complex(), 1.0 + 5j)
+            
+    def check_string(self):
+        "Checking proxying of function returning string"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        self.assertEqual(a.get_string(), "This is a string")
+
+    def check_list(self):
+        "Checking proxying of function returning list"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        no_proxy = TestProxyAttr()
+        l = a.get_list()
+        l1 = no_proxy.get_list()
+        self.assertEqual(l1, l)
+
+    def check_tuple(self):
+        "Checking proxying of function returning tuple"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        no_proxy = TestProxyAttr()
+        t = a.get_tuple()
+        t1 = no_proxy.get_tuple()
+        for i in range(len(t1)):
+            if type(t1[i]) is types.TupleType:
+                self.assertEqual(list(t1[i]), list(t[i]))
+            elif isinstance(t1[i], TestClass):
+                self.assertEqual(t[i].test(), t1[i].test())
+            else:
+                self.assertEqual(t[i], t1[i])
+    
+    def check_dict(self):
+        "Checking proxying of function returning dictionary"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        no_proxy = TestProxyAttr()
+        d = a.get_dict()
+        d1 = no_proxy.get_dict()
+        self.assertEqual(d.keys(), d1.keys())
+        for i in d1.keys():
+            if i == 'tuple':
+                self.assertEqual(list(d[i]), list(d1[i]))
+            elif i == 'obj':
+                self.assertEqual(d[i].test(), d1[i].test())
+            else:
+                self.assertEqual(d[i], d1[i])
+
+    def check_callable(self):
+        "Checking proxying of function returning callable"
+        f = gui_thread.register(TestProxyAttr)
+        a = f()
+        no_proxy = TestProxyAttr()
+        self.assertEqual(a.get_callable()(), no_proxy.get_callable()())
+                        
+
 def test_suite():
     suites = []
     suites.append(unittest.makeSuite(test_gui_thread, 'check_'))
+    suites.append(unittest.makeSuite(test_proxy_attribute, 'check_'))
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
@@ -151,4 +290,3 @@ if __name__ == "__main__":
         app.MainLoop()
     else:
         test()
-
