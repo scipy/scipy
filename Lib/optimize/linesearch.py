@@ -29,7 +29,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         gradient = True
 
     xtol = 1e-14
-    amin = 1e-6
+    amin = 1e-8
     isave = scipy_base.zeros((2,),'i')
     dsave = scipy_base.zeros((13,),'d')
     task = 'START'
@@ -53,5 +53,5 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             break                
 
     if task[:5] == 'ERROR' or task[1:4] == 'WARN':
-        print "*** ", task
+        stp = None  # failed
     return stp, fc, gc, fval, old_fval, gval

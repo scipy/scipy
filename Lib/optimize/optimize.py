@@ -650,6 +650,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,
                                   old_fval,old_old_fval,args=args)
+        if alpha_k is None:  # line search failed try different one.
+            func_calls = func_calls + fc
+            grad_calls = grad_calls + gc            
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
+                     line_search(f,myfprime,xk,pk,gfk,
+                                 old_fval,old_old_fval,args=args)
+            
         func_calls = func_calls + fc
         grad_calls = grad_calls + gc
         xkp1 = xk + alpha_k * pk
@@ -800,8 +807,14 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,
                                   old_old_fval,args=args,c2=0.4)
+        if alpha_k is None:  # line search failed -- use different one.
+            func_calls += fc
+            grad_calls += gc                  
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
+                     line_search(f,myfprime,xk,pk,gfk,
+                                 old_fval,old_old_fval,args=args)
         func_calls += fc
-        grad_calls += gc
+        grad_calls += gc        
         xk = xk + alpha_k*pk
         if retall:
             allvecs.append(xk)
