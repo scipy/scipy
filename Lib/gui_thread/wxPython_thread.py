@@ -9,18 +9,21 @@ __all__ = ['wxPython_thread']
 
 import re
 import os
+import os.path
 import sys
 import new
 import types
 import thread
 import inspect
 import atexit
+import imp
 from scipy_base import ParallelExec
 
 def get_extmodules(module,pexec):
     # .. that need wrappers
-    assert not sys.modules.has_key(module),\
-           module+' is already imported, cannot proceed'
+    if module != 'wx': # The wx module is a dummy that we create.
+        assert not sys.modules.has_key(module),\
+               module+' is already imported, cannot proceed'
     state0 = sys.modules.keys()
     pexec('import '+module,wait=1)
     state1 = sys.modules.keys()
@@ -47,7 +50,7 @@ def wrap_extmodule(module, call_holder):
                 setattr(new_module,n,v)
             else:
                 raise NotImplementedError,`t`
-        elif n=='wxPyCoreAPI':
+        elif n in ('wxPyCoreAPI', '_wxPyCoreAPI'):
             # wxPyCoreAPI is not used by the python part of wx, so
             # no wrapper is necessary
             setattr(new_module,n,v)
@@ -64,7 +67,7 @@ def wrap_extmodule(module, call_holder):
 
 def wrap_builtinfunction(func, call_holder):
     func_name = func.__name__
-    if func_name=='wxApp_CleanUp':
+    if func_name in ('wxApp_CleanUp', 'App_CleanUp'):
         return func
     main_thread_id = call_holder.main_thread_id
     func_tmpl = """\
@@ -99,6 +102,32 @@ func_code=%(func_name)s.func_code"""
 ##     assert m is not None,`(`s`,cvar)`
 ##     return m.group('attrs').strip().split(', ')
 
+def _import_wx_core(wx_pth, pexec):
+    """Imports the core modules for wx.  This is necessary for
+    wxPython-2.5.x. 
+    """
+    # Find the suffix.
+    suffix = '.so'
+    for x in [x[0] for x in imp.get_suffixes() if x[-1] is imp.C_EXTENSION]:
+        if os.path.exists(os.path.join(wx_pth, '_core_' + x)):
+            suffix = x
+            break
+    # Now import the modules manually.
+    pexec('import imp, os.path')
+    code="""\
+for i in ["_core_", "_controls_", "_misc_", "_windows_", "_gdi_"]:
+    p = os.path.join('%s', i + '%s')
+    imp.load_dynamic('wx.' + i, p)
+"""%(wx_pth, suffix)
+    pexec(code)
+    
+    # Now create a dummy module in sys.modules to inhibit importing the
+    # actual one.  We will reload(wx) to get it right later.
+    m = new.module('wx')
+    m.__file__ = os.path.join('wx_pth', '__init__.py')
+    sys.modules['wx'] = m
+
+    
 def wxPython_thread():
     class AttrHolder: pass
 
@@ -107,16 +136,31 @@ def wxPython_thread():
     call_holder.main_thread_id = thread.get_ident()
     pexec = ParallelExec()
 
+    # Check if 'wx' namespace based modules are used.
+    mod_name = 'wxPython'
+    for path in sys.path:
+        wx_pth = os.path.join(path, 'wx')
+        if os.path.exists(os.path.join(wx_pth, '__init__.py')):
+            assert not sys.modules.has_key('wx'), \
+                   'wx is already imported, cannot proceed'
+            mod_name = 'wx'
+            _import_wx_core(wx_pth, pexec)
+            break
+    
     # Create wrappers to wxPython extension modules:
-    for name in get_extmodules('wxPython',pexec):
+    for name in get_extmodules(mod_name,pexec):
         module = sys.modules[name]
         if module is None: # happens with gui_thread.wxPython
             continue
         sys.modules[name] = wrap_extmodule(module,call_holder)
+    
+    if mod_name == 'wx':
+        import wx
+        pexec('reload(wx)')
+    else:
+        import wxPython
+        pexec('reload(wxPython')
 
-    import wxPython
-    # Reset wxPython.wxc to its wrapper:
-    pexec('reload(wxPython)')
     pexec('from wxBackgroundApp import wxBackgroundApp')
     pexec('call_holder.call=wxBackgroundApp()',wait=1)
     # Start wxPython application in background:
