@@ -274,6 +274,50 @@ def check_gradient(fcn,Dfcn,x0,col_deriv=0):
     return (good,err)
 
 
+# Netwon-Raphson method
+def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
+    """Given a function of a single variable and a starting point,
+    find a nearby zero using Newton-Raphson.
+
+    fprime is the derivative of the function.  If not given, the
+    Secant method is used.
+    """
+
+    if fprime is not None:
+        p0 = x0
+        for iter in range(maxiter):
+            myargs = (p0,)+args
+            fval = func(*myargs)
+            fpval = fprime(*myargs)
+            if fpval == 0:
+                print "Warning: zero-derivative encountered."
+                return p0
+            p = p0 - func(*myargs)/fprime(*myargs)
+            if abs(p-p0) < tol:
+                return p
+            p0 = p
+    else: # Secant method
+        p0 = x0
+        p1 = x0*(1+1e-4)
+        q0 = apply(func,(p0,)+args)
+        q1 = apply(func,(p1,)+args)
+        for iter in range(maxiter):
+            try:                
+                p = p1 - q1*(p1-p0)/(q1-q0)
+            except ZeroDivisionError:
+                if p1 != p0:
+                    print "Tolerance of %g reached" % (p-p0)
+                return p
+            if abs(p-p0) < tol:
+                return p
+            p0 = p1
+            q0 = q1
+            p1 = p
+            q1 = apply(func,(p1,)+args)
+    raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
+
+        
+
 
 
 

@@ -72,6 +72,10 @@ class fopen:
     
     def __init__(self,file_name,permission='r',format='n'):
         if type(file_name) == type(''):
+            if sys.platform=='win32' and 'b' not in permission:
+                print "Warning: Generally fopen is used for opening binary\n" +
+                "files, which on this system requires attaching a 'b' \n" +
+                "to the permission flag."
             self.__dict__['fid'] = open(file_name,permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
             self.__dict__['fid'] = file_name 
@@ -340,7 +344,10 @@ def loadmat(name, dict=None, appendmat=1):
         if full_name is None:
             raise IOError, "%s not found on the path." % name
 
-    fid = fopen(full_name,'r')
+    permis = 'r'
+    if sys.platform=='win32':
+        permis = 'rb'
+    fid = fopen(full_name,permis)
     test_vals = fid.fread(4,'byte')
     if not (0 in test_vals):
         fid.close()
@@ -361,7 +368,7 @@ def loadmat(name, dict=None, appendmat=1):
             format = 'ieee-be'
 
     fid.close()
-    fid = fopen(full_name, 'r', format)
+    fid = fopen(full_name, permis, format)
 
     length = fid.size()
     fid.rewind()  # back to the begining
@@ -444,7 +451,7 @@ def savemat(filename, dict):
     storage = {'D':0,'d':0,'F':1,'f':1,'l':2,'i':2,'s':3,'b':5}
     if filename[-4:] != ".mat":
         filename = filename + ".mat"
-    fid = fopen(filename,'w')
+    fid = fopen(filename,'wb')
     M = not LittleEndian
     O = 0
     for variable in dict.keys():
