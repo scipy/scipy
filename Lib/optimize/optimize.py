@@ -1309,14 +1309,14 @@ def _linesearch_powell(func, p, xi, args=(), tol=1e-3):
     return squeeze(fret), p+xi, xi
     
 
-def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
-         full_output=0, disp=1):
+def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
+                maxfun=None, full_output=0, disp=1):
     """Minimize a function using modified Powell's method.
 
     Description:
     
       Uses a modification of Powell's method to find the minimum of a function
-      of N
+      of N variables
 
     Inputs:
 
@@ -1370,7 +1370,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=No
         for i in ilist:
             direc1 = direc[i]
             fx2 = fval
-            fval, x, direc1 = _linesearch_powell(func, x, direc1, args=args, tol=xtol)
+            fval, x, direc1 = _linesearch_powell(func, x, direc1, args=args, tol=xtol*100)
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
@@ -1393,7 +1393,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=No
             temp = fx-fx2
             t -= delta*temp*temp
             if t < 0.0:
-                fval, x, direc1 = _linesearch_powell(func, x, direc1, args=args, tol=xtol)
+                fval, x, direc1 = _linesearch_powell(func, x, direc1, args=args, tol=xtol*100)
                 direc[bigind] = direc[-1]
                 direc[-1] = direc1            
 
