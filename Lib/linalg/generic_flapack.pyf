@@ -242,7 +242,7 @@ interface
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
      <type_in> dimension(m,n),intent(in,out,copy,out=qr) :: a
-     <type_in> dimension(min(m,n)),intent(out) :: tau
+     <type_in> dimension(MIN(m,n)),intent(out) :: tau
 
      integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
      <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
