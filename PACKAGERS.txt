@@ -106,14 +106,14 @@ Follow the items 1-2 above and then continue as follows:
 3. Create RPMs::
 
      cd scipy_core  
-     python setup.py bdist_rpm
+     python setup.py bdist_rpm --fix-python
      cp dist/Scipy_core-*.rpm ..
      cd ..
 
      cd f2py2e
      # run buildhtml.py script provided by docutils to generate
      # HTML documentation of f2py.
-     python setup.py bdist_rpm
+     python setup.py bdist_rpm --fix-python
      cp dist/F2PY-*.rpm ..
      cd ..
 
