@@ -64,14 +64,12 @@ _level1a = ["basic2"] # functions to be subsumed into scipy namespace which
 _level3 = ["optimize", "integrate", "signal", "special", "interpolate", "stats", "cow", "ga", "compiler", "cluster"]
 
 __all__=[]
-
 somenames2all(__all__, _partials0, globals())
 names2all(__all__, _level0, globals())
 modules2all(__all__, _level0, globals())
 objects2all(__all__, ['help', 'source', "Inf", "inf", "NaN", "nan", "Mat"])
 
 # Level 1
-
 try:
     import scipy.fftw
     __all__.append('fftw')
@@ -92,13 +90,6 @@ try:
     import xplt
     __all__.append('xplt')
     _plot.append('xplt')
-except ImportError:
-    pass
-
-try:
-    import plt
-    __all__.append('plt')
-    _plot.append('plt')
 except ImportError:
     pass
 
