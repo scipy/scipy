@@ -8,7 +8,7 @@ SciPy requires the following software installed:
      http://www.python.org
 2) Numerical Python 20.x or 21.x
      http://www.numpy.org/
-3) ATLAS 3.3.14 or newer (see NOTES 2)
+3) ATLAS 3.3.14 or newer (see NOTES 2 and 3)
      http://math-atlas.sourceforge.net/
 4) f2py 2.13.175-1250 or newer
      http://cens.ioc.ee/projects/f2py2e/
@@ -26,9 +26,19 @@ The following software is optional:
 NOTES
 -----
 1) Python must be build with zlib module enabled.
-2) Complete lapack library is required, see
+
+2) Complete lapack library is required when using ATLAS, see
      http://math-atlas.sourceforge.net/errata.html#completelp
    for instructions.
+
+3) If you are willing to sacrifice the performance (by factor of 5 to
+   15 for large problems) of the linalg module then it is possible to
+   build SciPy without ATLAS. For that you'll need either Fortran
+   LAPACK/BLAS libraries installed in your system or Fortran
+   LAPACK/BLAS sources to be accessible by SciPy setup scripts (use
+   LAPACK_SRC/BLAS_SRC environment variables to indicate the location
+   of the corresponding source directories). XXX: Building BLAS from
+   sources is not implemented yet.
 
 GETTING SCIPY
 =============
@@ -64,9 +74,21 @@ TESTING
 To test SciPy installation, run in python
 
    >>> import scipy
-   >>> scipy.test(level=0)
+   >>> scipy.test(level=1)
 
-where the test level can vary from 0 to 10.
+where the test level can vary from 1 to 10.
+
+KNOWN PROBLEMS
+==============
+
+1) BLAS sources shipped with LAPACK are incomplete. Some distributions
+   (e.g. Redhat Linux 7.1) provide BLAS libraries that are built from such
+   incomplete sources and therefore cause import errors like 
+
+     ImportError: .../fblas.so: undefined symbol: srotmg_
+
+   Fix: Use ATLAS or the official release of BLAS libraries.
+
 
 TROUBLESHOOTING
 ===============
@@ -99,3 +121,8 @@ lists. Please include the following information to your message:
 8) Feel free to add any other relevant information. For example, the
    full output (both stdout and stderr) of the SciPy installation 
    command can be very helpful.
+
+Before complaining problems with SciPy, you may find the following notes
+useful:
+  http://www.tuxedo.org/~esr/faqs/smart-questions.html
+  http://www.chiark.greenend.org.uk/~sgtatham/bugs.html
