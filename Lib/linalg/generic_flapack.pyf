@@ -648,7 +648,7 @@ interface
      !  triangular
 
      callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<tchar>select_in_<tchar>gees__user__routines,&n,a,&nrows,&sdim,w,vs,&ldvs,work,&lwork,rwork,bwork,&info,1,1)
-     !callprotoargument char*,char*,int*,int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,<rtype_in_c>*,int*,int*
+     callprotoargument char*,char*,int(*)(<type_in_c>*),int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,<rtype_in_c>*,int*,int*,int,int
 
      use <tchar>gees__user__routines
 
@@ -678,7 +678,7 @@ interface
      !  triangular with 1x1 and 2x2 blocks.
 
      callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<tchar>select_in_<tchar>gees__user__routines,&n,a,&nrows,&sdim,wr,wi,vs,&ldvs,work,&lwork,bwork,&info,1,1)
-     !callprotoargument char*,char*,int*,int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,<rtype_in_c>*,int*,int*
+     callprotoargument char*,char*,int(*)(<type_in_c>*,<type_in_c>*),int*,<type_in_c>*,int*,int*,<type_in_c>*,<type_in_c>*,<type_in_c>*,int*,<type_in_c>*,int*,int*,int*,int,int
 
     use <tchar>gees__user__routines
 
