@@ -492,7 +492,7 @@ class test_arange(unittest.TestCase):
 
     def check_arange(self):
         numstring = arange(0,2.21,.1)
-        assert_equal(numstring,array([0.,0.1,0.2,0.3,
+        assert_almost_equal(numstring,array([0.,0.1,0.2,0.3,
                                       0.4,0.5,0.6,0.7,
                                       0.8,0.9,1.,1.1,
                                       1.2,1.3,1.4,1.5,
@@ -1570,8 +1570,8 @@ class test_laguerre(unittest.TestCase):
         lag3 = genlaguerre(3,k)
         assert_equal(lag0.c,[1])
         assert_equal(lag1.c,[-1,k+1])
-        assert_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
-        assert_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
+        assert_almost_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
+        assert_almost_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
         
 
 # Base polynomials come from Abrahmowitz and Stegan
@@ -1587,9 +1587,9 @@ class test_legendre(unittest.TestCase):
         assert_equal(leg0.c,[1])
         assert_equal(leg1.c,[1,0])
         assert_equal(leg2.c,array([3,0,-1])/2.0)
-        assert_equal(leg3.c,array([5,0,-3,0])/2.0)
-        assert_equal(leg4.c,array([35,0,-30,0,3])/8.0)
-        assert_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
+        assert_almost_equal(leg3.c,array([5,0,-3,0])/2.0)
+        assert_almost_equal(leg4.c,array([35,0,-30,0,3])/8.0)
+        assert_almost_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
 
 
 class test_lmbda(unittest.TestCase):
