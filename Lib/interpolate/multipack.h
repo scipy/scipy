@@ -6,7 +6,6 @@ Permission to use, modify, and distribute this software is given under the
 terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
 this distribution for specifics.
 
-
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 */
 
