@@ -31,7 +31,7 @@ def objects2all(alist, objlist):
 
 # modules to import under the scipy namespace
 _modules = ["fastumath", "misc", "optimize", "integrate", "signal",
-            "special", "io", "interpolate", "stats", "handy"]
+            "special", "io", "interpolate", "stats", "handy", "linalg"]
 
 # namespaces to subsume into the scipy namespace itself
 _namespaces = ['MLab','handy', 'misc', 'fastumath']
@@ -42,17 +42,18 @@ _partials = {'Matrix' : ['Matrix']}
 import os,sys
 from helpmod import help, source
 from Matrix import Matrix as Mat
+import MLab
+import fastumath
 
 __all__=[]
 
+Inf = inf = 1e308**10
+NaN = nan = MLab.array(0.0) / MLab.array(0.0)
+objects2all(__all__, ['Inf','inf','NaN','nan', 'Mat'])
 somenames2all(__all__, _partials, globals())
 names2all(__all__, _namespaces, globals())
 modules2all(__all__, _modules, globals())
-objects2all(__all__, ['help', 'source', 'Mat'])
-
-Inf = inf = 1e308**10
-NaN = nan = array(0.0) / array(0.0)
-objects2all(__all__, ['Inf','inf','NaN','nan'])
+objects2all(__all__, ['help', 'source'])
 
 
 try:

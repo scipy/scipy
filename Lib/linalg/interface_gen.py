@@ -29,7 +29,7 @@ def process_imports(interface_in):
         if external_files.has_key(file):
             sub_list = external_files[file]
         else:
-            f = open(file)
+            f = open(os.path.join('linalg',file))
             sub_list = all_subroutines(f.read(-1))            
             f.close()
             external_files[file] = sub_list
@@ -332,7 +332,7 @@ def interface_to_module(interface_in,module_name,include_list):
     pre_prefix = "!%f90 -*- f90 -*-\n"
     includes = ''
     for file in include_list:
-        f = open(file)
+        f = open(os.path.join('linalg',file))
         includes += f.read(-1)
         f.close() 
     # heading and tail of the module definition.
@@ -384,9 +384,9 @@ def rename_functions(interface_in,prefix,suffix):
                                                new_names[i])       
     return interface , python_interface
 
-def generate_flapack():
+def generate_flapack(sdir):
     print "generating flapack interface"
-    f = open('generic_lapack.pyf')
+    f = open(os.path.join(sdir,'generic_lapack.pyf'))
     module_name = 'flapack'
     generic_interface = f.read(-1)
     generic_interface, include_files = process_imports(generic_interface)
@@ -399,7 +399,7 @@ def generate_flapack():
     interface = process_return_info(interface,format='Fortran')
     module_definition = interface_to_module(interface,module_name, include_files)
     
-    f = open(module_name+'.pyf','w')
+    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
     f.write(module_definition)
     f.close()
 
@@ -430,9 +430,9 @@ def f2py_hack(inter):
 
     
     
-def generate_clapack():
+def generate_clapack(sdir):
     print "generating clapack interface"
-    f = open('atlas_lapack.pyf')
+    f = open(os.path.join(sdir,'atlas_lapack.pyf'))
     module_name = 'clapack'
     generic_interface = f.read(-1)
     generic_interface, include_files = process_imports(generic_interface)
@@ -455,15 +455,15 @@ def generate_clapack():
     # module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
-    f = open('_' + module_name+'.pyf','w')
+    f = open(os.path.join(sdir,'_' + module_name+'.pyf'),'w')
     f.write(module_def)
     f.close()
-    f = open(module_name+'.py','w')
+    f = open(os.path.join(sdir,module_name+'.py'),'w')
     f.write(module_py)
     f.close() 
 
 def generate_cblas_level(level):
-    f = open('generic_blas%d.pyf' % level)
+    f = open(os.path.join('linalg','generic_blas%d.pyf' % level))
     generic_interface = f.read(-1)
     generic_interface, include_files = process_imports(generic_interface)
     if level > 1:
@@ -472,7 +472,7 @@ def generate_cblas_level(level):
     interface = lapack_expand(generic_interface,row_major=1)
     return interface, include_files
     
-def generate_cblas():
+def generate_cblas(sdir):
     print "generating cblas interface"
     module_name = 'cblas'
     interface, include_files = generate_cblas_level(1)
@@ -487,10 +487,10 @@ def generate_cblas():
     # module_def = f2py_hack(module_def)
     # a bit of a cluge here on the naming - should get new name
     # form rename_functions
-    f = open('_' + module_name+'.pyf','w')
+    f = open(os.path.join(sdir,'_' + module_name+'.pyf'),'w')
     f.write(module_def)
     f.close()
-    f = open(module_name+'.py','w')
+    f = open(os.path.join(sdir,module_name+'.py'),'w')
     f.write(module_py)
     f.close()
     
@@ -500,7 +500,7 @@ def generate_fblas():
     interface = ''
     for level in (1,2,3):
         print '\tgenerating blas%d' % level
-        f = open('generic_blas%d.pyf' % level)
+        f = open(os.path.join(sdir,'generic_blas%d.pyf' % level))
         generic_interface = f.read(-1)
         generic_interface, include_files = process_imports(generic_interface)
         generic_interface = process_special_types(generic_interface,
@@ -509,7 +509,7 @@ def generate_fblas():
         interface = interface + '\n' + generic_interface
 
     module_definition = interface_to_module(interface,module_name, include_files)
-    f = open(module_name+'.pyf','w')
+    f = open(os.path.join(sdir,module_name+'.pyf'),'w')
     f.write(module_definition)
     f.close()
         
