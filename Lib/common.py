@@ -10,7 +10,7 @@ from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      zeros, extract, insert, pi, sqrt
 import scipy_base.fastumath
 
-__all__ = ['factorial','factorial2','comb','rand','randn','who',
+__all__ = ['factorial','factorial2','factorialk','comb','rand','randn','who',
            'lena','central_diff_weights', 'derivative']
     
 def factorial(n,exact=0):
@@ -76,6 +76,26 @@ def factorial2(n,exact=0):
         insert(vals,cond1,special.gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
         insert(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
         return vals
+
+def factorialk(n,k,exact=1):
+    """n(!!...!)  = multifactorial of order k
+        k times
+    """
+    if exact:
+        if n < 1-k:
+            return 0L
+        if n<=0:
+            return 1L
+        n = long(n)
+        val = 1L
+        j = n
+        while (j > 0):
+            val = val*j
+            j -= k
+        return val
+    else:
+        raise NotImplementedError
+        
 
 def comb(N,k,exact=0):
     """Combinations of N things taken k at a time.
