@@ -198,9 +198,8 @@ import scipy_base.fastumath as math
 from scipy_base.fastumath import *
 import Numeric
 N = Numeric
-import LinearAlgebra
-LA = LinearAlgebra
 import scipy.special as special
+import scipy.linalg as linalg
 import scipy
 
 SequenceType = [ListType, TupleType, ArrayType]
@@ -1773,7 +1772,7 @@ Returns: statistic, p-value ???
     x = zeros((n,len(p)))  # design matrix
     for l in range(len(p)):
         x[:,l] = equal(para,p[l])
-    b = dot(dot(LA.inverse(dot(transpose(x),x)),  # i.e., b=inv(X'X)X'Y
+    b = dot(dot(linalg.inv(dot(transpose(x),x)),  # i.e., b=inv(X'X)X'Y
                     transpose(x)),data)
     diffs = (data - dot(x,b))
     s_sq = 1./(n-len(p)) * dot(transpose(diffs), diffs)
@@ -2228,8 +2227,8 @@ lists-of-lists.
         #
             else:
                 er = d_restrict_source(workd,subjslots,source) + ef
-            SSw = LA.determinant(ef)
-            SS = LA.determinant(er) - SSw
+            SSw = linalg.det(ef)
+            SS = linalg.det(er) - SSw
 
         # CALCULATE *W/I-SUBJ* dfnum, dfden
             sourceNs = _support.colex([Nlevels],makelist(source,Nfactors+1))
@@ -2267,8 +2266,8 @@ lists-of-lists.
                 dfden = m*s - dfnum/2.0 + 1
 
                 # Given a within-between combined source, Wilk's Lambda is appropriate
-                if LA.determinant(er) <> 0:
-                    lmbda = LA.determinant(ef) / LA.determinant(er)
+                if linalg.det(er) <> 0:
+                    lmbda = linalg.det(ef) / linalg.det(er)
                     W = math.pow(lmbda,(1.0/s))
                     f = ((1.0-W)/W) * (dfden/dfnum)
                 else:
@@ -2545,7 +2544,7 @@ Maxwell & Delaney p.657.
          ER = array([[ER]])
      if type(EF) in [IntType, FloatType]:
          EF = array([[EF]])
-     lmbda = LA.determinant(EF) / LA.determinant(ER)
+     lmbda = linalg.det(EF) / linalg.det(ER)
      if (a-1)**2 + (b-1)**2 == 5:
          q = 1
      else:
@@ -2652,8 +2651,8 @@ where ER and EF are matrices from a multivariate F calculation.
          ER = array([[ER]])
      if type(EF) in [IntType, FloatType]:
          EF = array([[EF]])
-     n_um = (LA.determinant(ER) - LA.determinant(EF)) / float(dfnum)
-     d_en = LA.determinant(EF) / float(dfden)
+     n_um = (linalg.det(ER) - linalg.det(EF)) / float(dfnum)
+     d_en = linalg.det(EF) / float(dfden)
      return n_um / d_en
 
 
