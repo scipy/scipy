@@ -36,11 +36,8 @@ else:
 
 def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension
-    from scipy_distutils.misc_util import fortran_library_item, dot_join,\
-         SourceGenerator, get_path, default_config_dict, get_build_temp
-    from scipy_distutils.system_info import get_info,dict_append,\
-         AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
-         LapackSrcNotFoundError,BlasSrcNotFoundError,NotFoundError
+    from scipy_distutils.misc_util import dot_join, get_path, default_config_dict
+    from scipy_distutils.system_info import get_info, dict_append, NotFoundError
 
     package = 'linalg'
     from interface_gen import generate_interface
@@ -124,7 +121,8 @@ def configuration(parent_package='',parent_path=None):
                 'depends': map(local_join,['generic_fblas.pyf',
                                            'generic_fblas1.pyf',
                                            'generic_fblas2.pyf',
-                                           'generic_fblas3.pyf'])
+                                           'generic_fblas3.pyf',
+                                           'interface_gen.py'])
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -134,7 +132,8 @@ def configuration(parent_package='',parent_path=None):
     ext_args = {'name': dot_join(parent_package,package,'cblas'),
                 'sources': [generate_pyf],
                 'depends': map(local_join,['generic_cblas.pyf',
-                                           'generic_cblas1.pyf'])
+                                           'generic_cblas1.pyf',
+                                           'interface_gen.py'])
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -144,7 +143,8 @@ def configuration(parent_package='',parent_path=None):
     ext_args = {'name': dot_join(parent_package,package,'flapack'),
                 'sources': [generate_pyf],
                 'depends': map(local_join,['generic_flapack.pyf',
-                                           'flapack_user_routines.pyf'])
+                                           'flapack_user_routines.pyf',
+                                           'interface_gen.py'])
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
@@ -153,7 +153,8 @@ def configuration(parent_package='',parent_path=None):
     # clapack:
     ext_args = {'name': dot_join(parent_package,package,'clapack'),
                 'sources': [generate_pyf],
-                'depends': map(local_join,['generic_clapack.pyf'])
+                'depends': map(local_join,['generic_clapack.pyf',
+                                           'interface_gen.py'])
                 }
     dict_append(ext_args,**lapack_opt)
     ext = Extension(**ext_args)
