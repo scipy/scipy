@@ -5,6 +5,9 @@
 ! Created: Jan-Feb 2002
 ! $Revision$ $Date$
 
+! NOTE: Avoiding wrappers hack does not work under 64-bit Gentoo system
+! with single precision routines, so they are removed.
+
 ! Level 1 BLAS
 
 subroutine <tchar=s,d,c,z>rotg(a,b,c,s)
@@ -221,14 +224,10 @@ end subroutine <tchar=s,d,c,z>axpy
 
 function <tchar=s,d>dot(n,x,offx,incx,y,offy,incy) result (xy)
 
-  ! This is to avoid Fortran wrappers.
   <type_in> <tchar=s,d>dot,xy
-  fortranname F_FUNC(<tchar=s,d>dot,<TCHAR=S,D>DOT)
-  intent(c) <tchar=s,d>dot
   
-  callstatement <tchar=s,d>dot_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
-
+  callstatement (*f2py_func)(&<tchar=s,d>dot,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument <type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*
 
   <type_in> dimension(*),intent(in) :: x
   <type_in> dimension(*),intent(in) :: y
@@ -248,16 +247,10 @@ function <tchar=s,d>dot(n,x,offx,incx,y,offy,incy) result (xy)
 end function <tchar=s,d>dot
 
 subroutine <tchar=c,z>dotu(xy,n,x,offx,incx,y,offy,incy)
-  !!!! faaaaunction <tchar=c,z>dotu(n,x,offx,incx,y,offy,incy) result (xy)
-  ! This is to avoid Fortran wrappers.
-  !<type_in> <tchar=c,z>dotu,xy
+
   <type_in> intent(out):: xy
-  !fortranname F_FUNC(<tchar=c,z>dotu,<TCHAR=S,D>DOTU)
   fortranname w<tchar=c,z>dotu
-  !intent(c) <tchar=c,z>dotu
   
-  !callstatement <tchar=c,z>dotu_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  !callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
   callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*
 
@@ -276,21 +269,13 @@ subroutine <tchar=c,z>dotu(xy,n,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-  !!!!!!!! end faaaaaunction <tchar=c,z>dotu
 end subroutine <tchar=c,z>dotu
 
 subroutine <tchar=c,z>dotc(xy,n,x,offx,incx,y,offy,incy)
-!faaaunction <tchar=c,z>dotc(n,x,offx,incx,y,offy,incy) result(xy)
 
-  ! This is to avoid Fortran wrappers.
-  !<type_in> <tchar=c,z>dotc
   <type_in> intent (out) :: xy
-  !fortranname F_FUNC(<tchar=c,z>dotc,<TCHAR=S,D>DOTC)
   fortranname w<tchar=c,z>dotc
-  !intent(c) <tchar=c,z>dotc
-  
-  !callstatement <tchar=c,z>dotc_return_value = (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  !callprotoargument int*,<type_in_c>*,int*,<type_in_c>*,int*
+
   callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <type_in_c>*,int*,<type_in_c>*,int*,<type_in_c>*,int*
 
@@ -309,18 +294,14 @@ subroutine <tchar=c,z>dotc(xy,n,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-!end faaaaunction <tchar=c,z>dotc
 end subroutine <tchar=c,z>dotc
 
-function <tchar=s,d,sc,dz>nrm2(n,x,offx,incx) result (n2)
+function <tchar=s,d,sc,dz>nrm2(n,x,offx,incx) result(n2)
 
-  ! This is to avoid Fortran wrappers.
-  <type_in> <tchar=s,d,sc,dz>nrm2,n2
-  fortranname F_FUNC(<tchar=s,d,sc,dz>nrm2,<TCHAR=S,D,SC,DZ>NRM2)
-  intent(c) <tchar=s,d,sc,dz>nrm2
+  <type_in> <tchar=s,d,sc,dz>nrm2, n2
 
-  callstatement <tchar=s,d,sc,dz>nrm2_return_value = (*f2py_func)(&n,x+offx,&incx)
-  callprotoargument int*,<type_out_c>*,int*
+  callstatement (*f2py_func)(&<tchar=s,d,sc,dz>nrm2, &n,x+offx,&incx)
+  callprotoargument <type_in_c>*,int*,<type_out_c>*,int*
 
   <type_out> dimension(*),intent(in) :: x
 
@@ -336,13 +317,10 @@ end function <tchar=s,d,sc,dz>nrm2
 
 function <tchar=s,d,sc,dz>asum(n,x,offx,incx) result (s)
 
-  ! This is to avoid Fortran wrappers.
   <type_in> <tchar=s,d,sc,dz>asum,s
-  fortranname F_FUNC(<tchar=s,d,sc,dz>asum,<TCHAR=S,D,SC,DZ>ASUM)
-  intent(c) <tchar=s,d,sc,dz>asum
 
-  callstatement <tchar=s,d,sc,dz>asum_return_value = (*f2py_func)(&n,x+offx,&incx)
-  callprotoargument int*,<type_out_c>*,int*
+  callstatement (*f2py_func)(&<tchar=s,d,sc,dz>asum,&n,x+offx,&incx)
+  callprotoargument <type_in_c>*,int*,<type_out_c>*,int*
 
   <type_out> dimension(*),intent(in) :: x
 
