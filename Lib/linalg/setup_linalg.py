@@ -167,6 +167,27 @@ def configuration(parent_package='',parent_path=None):
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
 
+    # iterative methods
+    methods = ['BiCGREVCOM.f.src',
+               'BiCGSTABREVCOM.f.src',
+               'CGREVCOM.f.src',
+               'CGSREVCOM.f.src',
+#               'ChebyREVCOM.f.src',
+#               'GMRESREVCOM.f.src',
+#               'JacobiREVCOM.f.src',
+               'QMRREVCOM.f.src',
+#               'SORREVCOM.f.src'
+               ]
+    Util = ['STOPTEST2.f.src','getbreak.f.src']
+    sources = Util + methods + ['_iterative.pyf.src']
+    ext_args = {
+        'name': dot_join(parent_package,package,'_iterative'),
+        'sources': [local_join('iterative',x) for x in sources]
+        }
+    dict_append(ext_args, **lapack_opt)
+    ext = Extension(**ext_args)
+    config['ext_modules'].append(ext)    
+
     return config
 
 if __name__ == '__main__':
