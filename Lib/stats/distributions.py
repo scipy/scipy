@@ -2116,11 +2116,11 @@ def _drv_nonzero(self, k, *args):
     return 1
 
 def _drv_moment(self, n, *args):
-    n = asarray(n)
+    n = arr(n)
     return sum(self.xk**n[NewAxis,...] * self.pk, axis=0)
 
 def _drv_moment_gen(self, t, *args):
-    t = asarray(t)
+    t = arr(t)
     return sum(exp(self.xk * t[NewAxis,...]) * self.pk, axis=0)
 
 def _drv2_moment(self, n, *args):
@@ -2300,7 +2300,8 @@ class rv_discrete:
             
         vals = reshape(self._rvs(*args),size)
         if self.return_integers:
-            if vals.typecode not in ['1silbuw']:
+            vals = arr(vals)
+            if vals.typecode() not in scipy.typecodes['AllInteger']:
                 vals = vals.astype(Num.Int)
         return vals + loc
 
@@ -2731,10 +2732,7 @@ class randint_gen(rv_discrete):
             min = 0
         U = random(size=size)
         val = floor((max-min)*U + min)
-        if isinstance(val, Num.ArrayType):
-            return val.astype(Num.Int)
-        else:
-            return int(val)
+        return arr(val).astype(Num.Int)
 randint = randint_gen(name='random integer')
 
 # Zipf distribution
@@ -2789,7 +2787,7 @@ class dlaplace_gen(rv_discrete):
         mu2 = 2* (e2a + ea) / (1-ea)**3.0
         mu4 = 2* (e4a + 11*e3a + 11*e2a + ea) / (1-ea)**5.0
         return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
-
+dlaplace = dlaplace_gen(a=1,name='discrete Laplacian')
 
 ################## test functions #########################
 

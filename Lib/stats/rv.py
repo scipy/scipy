@@ -13,6 +13,18 @@ special = scipy.special
 from scipy_base.fastumath import *
 acos = arccos
 
+SequenceType = [types.TupleType, types.ListType, array.ArrayType, Num.ArrayType]
+
+def _check_shape(sh):
+   if type(sh) not in SequenceType:
+      sh = [sh]
+   for val in sh:
+      if not isinstance(val,types.IntType):
+         raise ValueError, "Each element of the shape parameter must be an integer."
+   prod = Num.product(sh)
+   return tuple(sh), prod
+
+
 ArgumentError = "ArgumentError"
 
 def multivariate_normal(mean, cov, size=None):

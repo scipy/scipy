@@ -76,9 +76,13 @@ class test_randint(TestCase):
         vals = stats.randint(5,30,size=100)
         assert(scipy.all(vals < 30) & scipy.all(vals >= 5))
         assert(len(vals) == 100)
+        vals = stats.randint(5,30,size=(2,50))
+        assert(scipy.shape(vals) == (2,50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
         val = stats.randint(15,46)
         assert((val >= 15) & (val < 46))
-        assert(isinstance(val,types.IntType))
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
 
     def check_pdf(self):
         k = scipy.r_[0:36]
@@ -93,16 +97,114 @@ class test_randint(TestCase):
         vals = stats.randint.cdf(x,5,30)
         assert_array_almost_equal(vals, out, decimal=12)
 
-
-
-
+class test_binom(TestCase):
+    def check_rvs(self):
+        vals = stats.binom(10, 0.75, size=(2, 50))
+        assert(scipy.all(vals >= 0) & scipy.all(vals <= 10))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.binom(10, 0.75)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+        
+class test_bernoulli(TestCase):
+    def check_rvs(self):
+        vals = stats.bernoulli(0.75, size=(2, 50))
+        assert(scipy.all(vals >= 0) & scipy.all(vals <= 1))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.bernoulli(0.75)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_nbinom(TestCase):
+    def check_rvs(self):
+        vals = stats.nbinom(10, 0.75, size=(2, 50))
+        assert(scipy.all(vals >= 0))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.nbinom(10, 0.75)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_geom(TestCase):
+    def check_rvs(self):
+        vals = stats.geom(0.75, size=(2, 50))
+        assert(scipy.all(vals >= 0))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.geom(0.75)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_hypergeom(TestCase):
+    def check_rvs(self):
+        vals = stats.hypergeom(20, 10, 3, size=(2, 50))
+        assert(scipy.all(vals >= 0) &
+               scipy.all(vals <= 3))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.hypergeom(20, 3, 10)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_logser(TestCase):
+    def check_rvs(self):
+        vals = stats.logser(0.75, size=(2, 50))
+        assert(scipy.all(vals >= 1))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.logser(0.75)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_poisson(TestCase):
+    def check_rvs(self):
+        vals = stats.poisson(0.5, size=(2, 50))
+        assert(scipy.all(vals >= 0))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.poisson(0.5)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_zipf(TestCase):
+    def check_rvs(self):
+        vals = stats.zipf(1.5, size=(2, 50))
+        assert(scipy.all(vals >= 1))
+        assert(scipy.shape(vals) == (2, 50))
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.zipf(1.5)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+class test_dlaplace(TestCase):
+    def check_rvs(self):
+        vals = stats.dlaplace(1.5 , size=(2, 50))
+        assert(scipy.shape(vals) == (2, 50))        
+        assert(vals.typecode() in scipy.typecodes['AllInteger'])
+        val = stats.dlaplace(1.5)
+        assert(isinstance(val, scipy.ArrayType))
+        assert(val.typecode() in scipy.typecodes['AllInteger'])
+        
+                       
 def test_suite(level=1):
     suites = []
     if level > 0:
         for dist in dists:
             thistest = eval("test_%s"%dist)
             suites.append( unittest.makeSuite(thistest,'check_') )
+        suites.append( unittest.makeSuite(test_binom, 'check_') )
+        suites.append( unittest.makeSuite(test_bernoulli, 'check_') )
+        suites.append( unittest.makeSuite(test_nbinom, 'check_') )
+        suites.append( unittest.makeSuite(test_geom, 'check_') )
+        suites.append( unittest.makeSuite(test_hypergeom, 'check_') )
+        suites.append( unittest.makeSuite(test_logser, 'check_') )
         suites.append( unittest.makeSuite(test_randint,'check_') )
+        suites.append( unittest.makeSuite(test_poisson, 'check_') )
+        suites.append( unittest.makeSuite(test_zipf, 'check_') )
+        suites.append( unittest.makeSuite(test_dlaplace, 'check_') )
     total_suite = unittest.TestSuite(suites)
     return total_suite
 
