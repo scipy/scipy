@@ -328,3 +328,154 @@ cf2py intent(in) :: n
       min_lwork = MINWRK
       max_lwork = MAXWRK
       end
+
+      subroutine heev(min_lwork,max_lwork,prefix,n,lower)
+
+      integer min_lwork,max_lwork,n,lower
+      character prefix
+cf2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&lower)
+cf2py callprotoargument int*,int*,char*,int*,int*
+cf2py intent(out,out=minwrk) :: min_lwork
+cf2py intent(out,out=maxwrk) :: max_lwork
+cf2py integer optional,intent(in) :: lower = 0
+cf2py intent(in) :: prefix
+cf2py intent(in) :: n
+
+      CHARACTER UPLO
+      INTEGER ILAENV, NB
+      EXTERNAL ILAENV
+      INTRINSIC MAX
+
+      UPLO = 'L'
+      if (lower.eq.0) then
+        UPLO = 'U'
+      endif
+
+      NB = ILAENV( 1, prefix // 'HETRD', UPLO, N, -1, -1, -1 )
+
+      min_lwork = MAX(1,2*N-1)
+      max_lwork = MAX( 1, ( NB+1 )*N )
+
+      end
+
+      subroutine syev(min_lwork,max_lwork,prefix,n,lower)
+
+      integer min_lwork,max_lwork,n,lower
+      character prefix
+cf2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&lower)
+cf2py callprotoargument int*,int*,char*,int*,int*
+cf2py intent(out,out=minwrk) :: min_lwork
+cf2py intent(out,out=maxwrk) :: max_lwork
+cf2py integer optional,intent(in) :: lower = 0
+cf2py intent(in) :: prefix
+cf2py intent(in) :: n
+
+      CHARACTER UPLO
+      INTEGER ILAENV, NB
+      EXTERNAL ILAENV
+      INTRINSIC MAX
+
+      UPLO = 'L'
+      if (lower.eq.0) then
+        UPLO = 'U'
+      end if
+
+      NB = ILAENV( 1, prefix // 'SYTRD', UPLO, N, -1, -1, -1 )
+
+      min_lwork = MAX(1,3*N-1)
+      max_lwork = MAX( 1, ( NB+2 )*N )
+
+      end
+
+      subroutine gees(min_lwork,max_lwork,prefix,n,compute_v)
+
+      integer min_lwork,max_lwork,n,compute_v
+      character prefix
+
+cf2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&compute_v)
+cf2py callprotoargument int*,int*,char*,int*,int*
+cf2py intent(out,out=minwrk) :: min_lwork
+cf2py intent(out,out=maxwrk) :: max_lwork
+cf2py integer optional,intent(in) :: compute_v = 1
+cf2py intent(in) :: prefix
+cf2py intent(in) :: n
+
+      INTEGER            HSWORK, MAXWRK, MINWRK, MAXB, K
+      INTEGER            ILAENV
+      EXTERNAL           ILAENV
+      INTRINSIC          MAX, MIN
+
+      MAXWRK = N + N*ILAENV( 1, prefix // 'GEHRD', ' ', N, 1, N, 0 )
+      MINWRK = MAX( 1, 2*N )
+      IF( compute_v.eq.0 ) THEN
+         MAXB = MAX( ILAENV( 8, prefix // 'HSEQR',
+     $        'SN', N, 1, N, -1 ), 2 )
+         K = MIN( MAXB, N, MAX( 2, ILAENV( 4, prefix // 'HSEQR', 
+     $    'SN', N, 1, N, -1 ) ) )
+         HSWORK = MAX( K*( K+2 ), 2*N )
+         MAXWRK = MAX( MAXWRK, HSWORK, 1 )
+      ELSE
+         MAXWRK = MAX( MAXWRK, N+( N-1 )*
+     $        ILAENV( 1, prefix // 'UNGHR', ' ', N, 1, N, -1 ) )
+         MAXB = MAX( ILAENV( 8, prefix // 'HSEQR',
+     $        'EN', N, 1, N, -1 ), 2 )
+         K = MIN( MAXB, N, MAX( 2, ILAENV( 4, prefix // 'HSEQR',
+     $        'EN', N, 1, N, -1 ) ) )
+         HSWORK = MAX( K*( K+2 ), 2*N )
+         MAXWRK = MAX( MAXWRK, HSWORK, 1 )
+      END IF
+
+      min_lwork = MINWRK
+      max_lwork = MAXWRK
+
+      end
+
+      subroutine geqrf(min_lwork,max_lwork,prefix,m,n)
+
+      integer min_lwork,max_lwork,m,n
+      character prefix      
+
+cf2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&m,&n)
+cf2py callprotoargument int*,int*,char*,int*,int*
+cf2py intent(out,out=minwrk) :: min_lwork
+cf2py intent(out,out=maxwrk) :: max_lwork
+cf2py intent(in) :: prefix
+cf2py intent(in) :: m,n
+
+      INTEGER NB
+      INTEGER ILAENV
+      EXTERNAL ILAENV
+      INTRINSIC MAX
+
+      NB = ILAENV( 1, prefix // 'GEQRF', ' ', M, N, -1, -1 )
+
+      min_lwork = MAX(1,N)
+      max_lwork = MAX(1,N*NB)
+      end
+
+      subroutine gqr(min_lwork,max_lwork,prefix,m,n)
+
+      integer min_lwork,max_lwork,m,n
+      character prefix
+
+cf2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&m,&n)
+cf2py callprotoargument int*,int*,char*,int*,int*
+cf2py intent(out,out=minwrk) :: min_lwork
+cf2py intent(out,out=maxwrk) :: max_lwork
+cf2py intent(in) :: prefix
+cf2py intent(in) :: m,n
+
+      INTEGER NB
+      INTEGER ILAENV
+      EXTERNAL ILAENV
+      INTRINSIC MAX
+
+      if ((prefix.eq.'d').or.(prefix.eq.'s')
+     $     .or.(prefix.eq.'D').or.(prefix.eq.'S')) then
+         NB = ILAENV( 1, prefix // 'ORGQR', ' ', M, N, -1, -1 )
+      else
+         NB = ILAENV( 1, prefix // 'UNGQR', ' ', M, N, -1, -1 )
+      endif
+      min_lwork = MAX(1,N)
+      max_lwork = MAX(1,N*NB)
+      end
