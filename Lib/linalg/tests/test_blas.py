@@ -16,19 +16,11 @@ Run tests if linalg is not installed:
 from Numeric import arange, add, array
 import math
 
-from scipy_test.testing import assert_array_almost_equal, assert_equal
-from scipy_test.testing import assert_almost_equal, assert_array_equal
-from scipy_test.testing import ScipyTestCase
-import unittest
-from scipy_distutils.misc_util import PostponedException
-
 import sys
-from scipy_test.testing import set_package_path
+from scipy_test.testing import *
 set_package_path()
-try: from linalg import fblas
-except: fblas = PostponedException()
-try: from linalg import cblas
-except: cblas = PostponedException()
+from linalg import fblas
+from linalg import cblas
 del sys.path[0]
 
 class test_cblas1_simple(ScipyTestCase):
@@ -158,54 +150,29 @@ class test_fblas3_simple(ScipyTestCase):
             assert_array_almost_equal(f(3j,[3-4j],[-4]),[-48-36j])
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
 
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        if not isinstance(fblas,PostponedException):
-            suites.append( unittest.makeSuite(test_fblas1_simple,'check_') )
-            suites.append( unittest.makeSuite(test_fblas2_simple,'check_') )
-            suites.append( unittest.makeSuite(test_fblas3_simple,'check_') )
-        else:
+class test_blas(ScipyTestCase):
+
+    def check_fblas(self):
+        if hasattr(fblas,'empty_module'):
             print """
 ****************************************************************
-WARNING: Importing fblas failed with the following exception:
------------
-%s
+WARNING: fblas module is empty.
 -----------
 See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
-""" %(fblas.__doc__)
-        if not isinstance(cblas,PostponedException):
-            suites.append( unittest.makeSuite(test_cblas1_simple,'check_') )
-        else:
+"""
+    def check_cblas(self):
+        if hasattr(cblas,'empty_module'):
             print """
 ****************************************************************
-WARNING: Importing cblas failed with the following exception:
------------
-%s
+WARNING: cblas module is empty
 -----------
 See scipy/INSTALL.txt for troubleshooting.
-Note that if atlas library is not found by scipy/system_info.py,
-then scipy skips building cblas and uses fblas instead.
+Notes:
+* If atlas library is not found by scipy/system_info.py,
+  then scipy uses fblas instead of cblas.
 ****************************************************************
-""" %(cblas.__doc__)
-
-    if not isinstance(fblas,PostponedException):
-        import test_fblas
-        suite = test_fblas.test_suite(level)
-        suites.append(suite)
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
+"""
 
 if __name__ == "__main__":
-    if len(sys.argv)>1:
-        level = eval(sys.argv[1])
-    else:
-        level = 1
-    test(level)
+    ScipyTest('linalg.blas').run()

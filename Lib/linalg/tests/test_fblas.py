@@ -310,69 +310,69 @@ class base_gemv(unittest.TestCase):
         return alpha,beta,a,x,y
     def check_simple(self):
         alpha,beta,a,x,y = self.get_data()
-        # tranpose takes care of Fortran vs. C(and Python) memory layout                
-        desired_y = alpha*matrixmultiply(transpose(a),x)+beta*y
-        self.blas_func(a,x,y, alpha = alpha, beta = beta)
+        desired_y = alpha*matrixmultiply(a,x)+beta*y
+        y = self.blas_func(alpha,a,x,beta,y)
         assert(allclose(desired_y,y))
-    def check_default_alpha_beta(self):
+    def check_default_beta_y(self):
         alpha,beta,a,x,y = self.get_data()
-        # tranpose takes care of Fortran vs. C(and Python) memory layout                
-        desired_y = matrixmultiply(transpose(a),x)
-        self.blas_func(a,x,y)
+        desired_y = matrixmultiply(a,x)
+        y = self.blas_func(1,a,x)
         assert(allclose(desired_y,y))
     def check_simple_transpose(self):
         alpha,beta,a,x,y = self.get_data()
-        desired_y = alpha*matrixmultiply(a,x)+beta*y
-        self.blas_func(a,x,y,trans='T',alpha = alpha, beta = beta)
+        desired_y = alpha*matrixmultiply(transpose(a),x)+beta*y
+        y = self.blas_func(alpha,a,x,beta,y,trans=1)
         assert(allclose(desired_y,y))
     def check_simple_transpose_conj(self):
         alpha,beta,a,x,y = self.get_data()
-        desired_y = alpha*matrixmultiply(conjugate(a),x)+beta*y
-        self.blas_func(a,x,y,trans='C',alpha = alpha, beta = beta)
+        desired_y = alpha*matrixmultiply(transpose(conjugate(a)),x)+beta*y
+        y = self.blas_func(alpha,a,x,beta,y,trans=2)
         assert(allclose(desired_y,y))
     def check_x_stride(self):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
-        desired_y = alpha*matrixmultiply(transpose(a),x[::2])+beta*y
-        self.blas_func(a,x,y,incx=2,alpha = alpha, beta = beta)
+        desired_y = alpha*matrixmultiply(a,x[::2])+beta*y
+        y = self.blas_func(alpha,a,x,beta,y,incx=2)
         assert(allclose(desired_y,y))
     def check_x_stride_transpose(self):
         alpha,beta,a,x,y = self.get_data(x_stride=2)
-        desired_y = alpha*matrixmultiply(a,x[::2])+beta*y
-        self.blas_func(a,x,y,trans='T',incx=2,alpha = alpha, beta = beta)
+        desired_y = alpha*matrixmultiply(transpose(a),x[::2])+beta*y
+        y = self.blas_func(alpha,a,x,beta,y,trans=1,incx=2)
         assert(allclose(desired_y,y))
     def check_x_stride_assert(self):
+        # What is the use of this test?
         alpha,beta,a,x,y = self.get_data(x_stride=2)
         try:
-            self.blas_func(a,x,y,trans='N',incx=3)
+            y = self.blas_func(1,a,x,1,y,trans=0,incx=3)
             assert(0)
         except:
             pass                    
         try:
-            self.blas_func(a,x,y,trans='T',incx=3)
+            y = self.blas_func(1,a,x,1,y,trans=1,incx=3)
             assert(0)
         except:
             pass                    
     def check_y_stride(self):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         desired_y = y.copy()
-        desired_y[::2] = alpha*matrixmultiply(transpose(a),x)+beta*y[::2]
-        self.blas_func(a,x,y,incy=2,alpha = alpha, beta = beta)
+        desired_y[::2] = alpha*matrixmultiply(a,x)+beta*y[::2]
+        y = self.blas_func(alpha,a,x,beta,y,incy=2)
         assert(allclose(desired_y,y))
     def check_y_stride_transpose(self):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         desired_y = y.copy()        
-        desired_y[::2] = alpha*matrixmultiply(a,x)+beta*y[::2]
-        self.blas_func(a,x,y,trans='T',incy=2,alpha = alpha, beta = beta)
+        desired_y[::2] = alpha*matrixmultiply(transpose(a),x)+beta*y[::2]
+        y = self.blas_func(alpha,a,x,beta,y,trans=1,incy=2)
         assert(allclose(desired_y,y))
     def check_y_stride_assert(self):
+        # What is the use of this test?
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         try:
-            self.blas_func(a,x,y,trans='N',incy=3)
+            y = self.blas_func(1,a,x,1,y,trans=0,incy=3)
             assert(0)            
         except:
             pass
         try:
-            self.blas_func(a,x,y,trans='T',incy=3)
+            y = self.blas_func(1,a,x,1,y,trans=1,incy=3)
             assert(0)            
         except:
             pass
@@ -512,53 +512,6 @@ class test_zgerc(base_ger_complex):
     def transform(self,x):
         return conjugate(x)
 """        
-
-def test_suite(level=1):
-    suites = []
-    if level > 0:
-        suites.append( unittest.makeSuite(test_scopy,'check_') )
-        suites.append( unittest.makeSuite(test_dcopy,'check_') )
-        suites.append( unittest.makeSuite(test_ccopy,'check_') )
-        suites.append( unittest.makeSuite(test_zcopy,'check_') )
-    
-        suites.append( unittest.makeSuite(test_saxpy,'check_') )
-        suites.append( unittest.makeSuite(test_daxpy,'check_') )
-        suites.append( unittest.makeSuite(test_caxpy,'check_') )
-        suites.append( unittest.makeSuite(test_zaxpy,'check_') )
-
-        suites.append( unittest.makeSuite(test_sscal,'check_') )
-        suites.append( unittest.makeSuite(test_dscal,'check_') )
-        suites.append( unittest.makeSuite(test_cscal,'check_') )
-        suites.append( unittest.makeSuite(test_zscal,'check_') )
-    
-        suites.append( unittest.makeSuite(test_sswap,'check_') )
-        suites.append( unittest.makeSuite(test_dswap,'check_') )
-        suites.append( unittest.makeSuite(test_cswap,'check_') )
-        suites.append( unittest.makeSuite(test_zswap,'check_') )
-        """
-        suites.append( unittest.makeSuite(test_sgemv,'check_') )
-        suites.append( unittest.makeSuite(test_dgemv,'check_') )
-        suites.append( unittest.makeSuite(test_cgemv,'check_') )
-        suites.append( unittest.makeSuite(test_zgemv,'check_') )
-        """
-        #suites.append( unittest.makeSuite(test_sger,'check_') )
-        #suites.append( unittest.makeSuite(test_dger,'check_') )
-    
-        # either the lapack functions are broken or my wrappers
-        # are broken.
-        #suites.append( unittest.makeSuite(test_cgeru,'check1_') )
-        #suites.append( unittest.makeSuite(test_zgeru,'check_') )
-        #suites.append( unittest.makeSuite(test_cgerc,'check_') )
-        #suites.append( unittest.makeSuite(test_zgerc,'check_') )
-   
-    total_suite = unittest.TestSuite(suites)
-    return total_suite
-
-def test(level=10):
-    all_tests = test_suite(level)
-    runner = unittest.TextTestRunner()
-    runner.run(all_tests)
-    return runner
 
 if __name__ == "__main__":
     ScipyTest('linalg.fblas').run()
