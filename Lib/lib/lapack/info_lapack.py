@@ -60,6 +60,7 @@ Standard Eigenvalue and Singular Value Problems
   Drivers::
 
     w,v,info = syev|heev(a,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0)
+    w,v,info = syevd|heevd(a,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0)
     t,sdim,(wr,wi|w),vs,info = gees(select,a,compute_v=1,sort_t=0,lwork=min_lwork,select_extra_args=(),overwrite_a=0)
     wr,(wi,vl|w),vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=min_lwork,overwrite_a=0)
     u,s,vt,info = gesdd(a,compute_uv=1,lwork=min_lwork,overwrite_a=0)

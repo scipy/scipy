@@ -14,14 +14,42 @@ Run tests if lapack is not installed:
 
 import sys
 from scipy_test.testing import *
-from scipy_base import ones
+from scipy_base import ones,dot
 set_package_path()
-from lapack import flapack
-clapack = None
-#from lapack import clapack
+from lapack import flapack,clapack
 restore_path()
 
-class test_flapack_simple(ScipyTestCase):
+class _test_lapack_simple(ScipyTestCase):
+
+    def check_syev(self,level=1,suffix=''):
+        a = [[1,2,3],[2,2,3],[3,3,6]]
+        exact_w = [-0.6699243371851365,0.4876938861533345,9.182230451031804]
+        for p in 'sd':
+            f = getattr(self.lapack,p+'syev'+suffix,None)
+            if f is None: continue
+            w,v,info=f(a)
+            assert not info,`info`
+            assert_array_almost_equal(w,exact_w)
+            for i in range(3):
+                assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
+
+    def check_syevd(self):
+        self.check_syev(suffix='d')
+
+    def check_heev(self,level=1,suffix=''):
+        a = [[1,2,3],[2,2,3],[3,3,6]]
+        exact_w = [-0.6699243371851365,0.4876938861533345,9.182230451031804]
+        for p in 'cz':
+            f = getattr(self.lapack,p+'heev'+suffix,None)
+            if f is None: continue
+            w,v,info=f(a)
+            assert not info,`info`
+            assert_array_almost_equal(w,exact_w)
+            for i in range(3):
+                assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
+
+    def check_heevd(self):
+        self.check_heev(suffix='d')
 
     def check_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
@@ -30,7 +58,7 @@ class test_flapack_simple(ScipyTestCase):
               [7,1,0,0],
               [0,1,0,0]]
         for p in 'sdzc':
-            f = getattr(flapack,p+'gebal',None)
+            f = getattr(self.lapack,p+'gebal',None)
             if f is None: continue
             ba,lo,hi,pivscale,info = f(a)
             assert not info,`info`
@@ -46,25 +74,25 @@ class test_flapack_simple(ScipyTestCase):
              [ 537, 180, 546],
              [ -27,  -9, -25]]
         for p in 'sdzc':
-            f = getattr(flapack,p+'gehrd',None)
+            f = getattr(self.lapack,p+'gehrd',None)
             if f is None: continue
             ht,tau,info = f(a)
             assert not info,`info`
 
-class test_lapack(ScipyTestCase):
-
-    def check_flapack(self):
-        if hasattr(flapack,'empty_module'):
-            print """
+if hasattr(flapack,'empty_module'):
+    print """
 ****************************************************************
 WARNING: flapack module is empty
 -----------
 See scipy/INSTALL.txt for troubleshooting.
 ****************************************************************
 """
-    def check_clapack(self):
-        if hasattr(clapack,'empty_module'):
-            print """
+else:
+    class test_flapack_simple(_test_lapack_simple):
+        lapack = flapack
+
+if hasattr(clapack,'empty_module'):
+    print """
 ****************************************************************
 WARNING: clapack module is empty
 -----------
@@ -74,6 +102,9 @@ Notes:
   then scipy uses flapack instead of clapack.
 ****************************************************************
 """
+    class test_clapack_simple(_test_lapack_simple):
+        lapack = clapack
+
 
 if __name__ == "__main__":
     ScipyTest().run()
