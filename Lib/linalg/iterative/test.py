@@ -1,6 +1,5 @@
 from scipy import *
 from iterative import *
-#from sii3d import *
 
 
 
