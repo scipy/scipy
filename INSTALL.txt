@@ -4,6 +4,11 @@
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
+:Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Last changed: $Date$
+:Revision: $Revision$
+:Discussions to: scipy-dev@scipy.org
+
 .. Contents::
 
 PREREQUISITES
