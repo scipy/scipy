@@ -3479,14 +3479,14 @@ Noncentral chi-squared
 \layout Standard
 
 The distribution of 
-\begin_inset Formula $\sum_{i=1}^{\nu}\left(U_{i}+\delta_{i}\right)$
+\begin_inset Formula $\sum_{i=1}^{\nu}\left(Z_{i}+\delta_{i}\right)^{2}$
 \end_inset 
 
  where 
-\begin_inset Formula $U_{i}$
+\begin_inset Formula $Z_{i}$
 \end_inset 
 
- are independent normal variables and 
+ are independent standard normal variables and 
 \begin_inset Formula $\delta_{i}$
 \end_inset 
 
@@ -3512,7 +3512,7 @@ G\left(q;\nu,\lambda\right) & = & F^{-1}\left(x;\nu,\lambda\right)\end{eqnarray*
 
 \begin_inset Formula \begin{eqnarray*}
 \mu & = & \nu+\lambda\\
-\mu_{2} & = & 2\left(\nu+\lambda\right)\\
+\mu_{2} & = & 2\left(\nu+2\lambda\right)\\
 \gamma_{1} & = & \frac{\sqrt{8}\left(\nu+3\lambda\right)}{\left(\nu+2\lambda\right)^{3/2}}\\
 \gamma_{2} & = & \frac{12\left(\nu+4\lambda\right)}{\left(\nu+2\lambda\right)^{2}}\end{eqnarray*}
 
