@@ -1,6 +1,6 @@
 # modules to import under the scipy namespace
-__all__ = ["optimize", "integrate", "signal", "special", "io", 
-           "interpolate", "stats"]
+_modules = ["optimize", "integrate", "signal", "special", "io", 
+            "interpolate", "stats"]
 
 # namespaces to subsume into the scipy namespace itself
 _namespaces = ['MLab', 'misc', 'fastumath'] # MLab includes Numeric
@@ -8,11 +8,7 @@ _namespaces = ['MLab', 'misc', 'fastumath'] # MLab includes Numeric
 import os,sys
 from helpmod import help, source
 
-for name in __all__:
-    exec("import %s" % name)
-
-__all__.extend(['help', 'source'])
-
+__all__=[]
 
 for name in _namespaces:
     exec("import %s" % name)
@@ -24,6 +20,14 @@ for name in _namespaces:
             thelist.remove(key)
 
     __all__.extend(thelist)
+
+
+for name in _modules:
+    exec("import %s" % name)
+    __all__.append(name)
+
+__all__.extend(['help', 'source'])
+
 
 # add some directories to the path so we can import their
 # modules.
