@@ -162,8 +162,9 @@ def configuration(parent_package=''):
 
     for mod_name,sources in mod_sources.items():
         sources = [os.path.join(local_path,s) for s in sources]
+        pyf_sources = filter(lambda s:s[-4:]=='.pyf',sources)
         mod_file = os.path.join(local_path,mod_name+'.pyf')
-        if dep_util.newer_group(sources,mod_file):
+        if dep_util.newer_group(pyf_sources,mod_file):
             generate_interface(mod_name,sources[0],mod_file,
                                skip_names.get(mod_name,[]))
         sources = filter(lambda s:s[-4:]!='.pyf',sources)
