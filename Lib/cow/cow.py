@@ -1,13 +1,25 @@
 """ Cow --- Cluster Of Workstations.
-    These modules facilitate the use of a cluster
-    of workstations as a single computational engine.
-    It will hopefully simplify parallelizing 
-    "embarrasingly parallel" task.  If your problem 
-    requires closely coupled parallelism, take a 
-    look at pyMPI.
-    
-    Note: we might want to move the server list out
-    of the module where it can be passed as an argument.
+    Description
+
+        cow is a package that includes tools for interacting with a cluster
+        of workstations as a single computational engine.  It is well suited
+        for "embarassingly parallel" problems that fit comfortably into a 
+        master-slave paradigm.  For such problems, it is often possible to
+        convert them from parallel to serial execution by changing a few lines
+        of code.  Parallel Genetic Algorithms or Monte Carlo simulations are 
+        two classes of problems that can benefit significantly from using
+        cow.  If your problem requires closely coupled parallelism, take a 
+        look at pyMPI.
+
+        cow also includes a reasonably complete set of tools administering a 
+        cluster of machines from Python such as process control, gathering
+        system information and executing shell commands on remote processes
+        simultaneously.
+            
+        cow should graze happily in heterogeneous cluster environments, though
+        it hasn't tested extensively there.
+        
+        See scipy.cow.machine_cluster for more information and examples.
 """
 
 import sync_cluster, socket
@@ -18,31 +30,109 @@ ClusterError = 'ClusterError'
 TimeoutError = 'TimeoutError'
       
 class machine_cluster:
+    """ Treats a cluster of workstations as a single computational engine.
+    
+        Description
+        
+            machine_cluster simplifies interacting with a cluster of 
+            workstations.  machine_cluster starts a group of slave
+            interpreters.  Setting and retreiving global variables on these
+            machines is accomplished through its dictionary interface.  
+            You can also call functions or execute code blocks on the remote
+            machines.  A couple of routines provide automatic parallelization
+            of looping constructs.  It also provides routines for cluster
+            wide process control similar to ps and cluster wide machine
+            information on load, CPU, and memory information.
+            
+            
+        Caveats
+        
+            Some functionality is only available on Linux. Unix is better
+            supported in general than MSWindows.  See user manual for details.
+        
+            Cow assumes you have ssh access to all slave machines.  If not,
+            the start() method will fail and you'll need to start all slaves
+            by hand using::
+            
+                python sync_cluster.py server <port>
+    
+        Example Usage::
+        
+            # start two slave interpreters on the local machine at the
+            # specified ports
+            >>> slave_list = [ ('127.0.0.1',10000), ('127.0.0.1',10001)]
+            >>> cluster = scipy.cow.machine_cluster(slave_list)
+            >>> cluster.start()
+            # set and retreive a global variable on the slave interpreters
+            >>> cluster['a'] = 1 
+            >>> cluster['a']
+            (1, 1)
+            >>> import string
+            # process a list of strings in parallel converting them to
+            # upper case (illustrative example only -- dismal performance)
+            >>> string_list = ['aaa','bbb','ccc','ddd']
+            >>> cluster.loop_apply(string.upper,0,(string_list,))
+            ['AAA','BBB','CCC','DDD']
+            >>> cluster.info()
+            MACHINE   CPU        GHZ   MB TOTAL  MB FREE   LOAD
+            bull      2xP3       0.5     960.0     930.0   0.00
+            bull      2xP3       0.5     960.0     930.0   0.00
+    """
     def __init__(self,server_list):        
+        """ machine_cluster(slave_list) --> cluster_object
+        
+            Description
+            
+                Create a cluster object from a list of slave machines.
+                slave_list is a list of 2-tuples of the form (address, port)
+                that specify the network address and port where the slave
+                interpreters will live and listen.  The address is always
+                a string and can be either the machine name or its IP address.
+                The port should be an unused port on the slave machine.
+                Always use a port number higher than 1024.
+            
+            Example::
+                
+                # example 1 using IP addresses
+                >>> slave_list = [ ('127.0.0.1',10000), ('127.0.0.1',10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)                
+                # example 2 using machine names                
+                >>> slave_list = [ ('node0',11500), ('node1',11500)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+        """
         self.workers=[]
         self.worker_by_name={}
         worker_id = 1
         for host,port in server_list:
-            #add the uid of the person starting the job to the port to
-            #hopefully avoid port conflicts.  This is only guaranteed to
-            #work on a cluster that shares users.
-            port = port #+ 760 #+ os.getuid() #304 (balaji's id) 
+            # Add the uid here can help with port conflicts, but only works
+            # on Unix clusters.  We really need to work out a daemon service
+            # model that makes the port mess transparent.
+            port = port #+ os.getuid()
             new_worker = sync_cluster.standard_sync_client(host,port,worker_id)
             self.workers.append(new_worker)
             self.worker_by_name[host] = new_worker
             worker_id = worker_id + 1
                                    
     def start(self,force_restart=0,timeout=60):
-        """ Start all the worker processes on remote machines.
-            The timeout value is specified in seconds and
-            defaults to 60.  The timeout starts counting down
-            only after rsh has tried to start all the remote
-            processes.  This means the actual time in the
-            function could be much longer than 60 seconds - depending
-            on how long rsh takes.
+        """ start(force_restart=0, timeout=60) -- Start remote slave processes.
+        
+            Description
             
-            Its possible the 60 second time out will be
-            to short for large clusters - but I hope not!
+                Start the remote slave interpreters in the cluster.  The timeout
+                value is specified in seconds and defaults to 60.  The timeout
+                starts counting down only after ssh/rsh has tried to start
+                all the remote processes.  This means the actual time in the
+                function could be much longer than 60 seconds - depending
+                on how long rsh/ssh takes.
+                
+                Its possible the 60 second time out will be to short for large
+                clusters - but I hope not!
+                
+            Caveats                
+                
+                start() is not supported on MSWindows because of the lack of
+                standard/robust support for remote startup and background 
+                processing in the CMD shell.
         """    
         if not force_restart and self.is_running():
             return
@@ -51,8 +141,9 @@ class machine_cluster:
             worker.start_server()
 
         if not self.is_running():
-            print 'Waiting for servers:'
-            print ' |----|----|----15---|----|----30---|----|----45---|----|----60'
+            print '                      Starting Servers'
+            print ' |----|----|----15---|----|----30---|----|----45---' \
+                   '|----|----60'
             print '0.',
             stop_watch = timer()
             stop_watch.start()
@@ -69,9 +160,19 @@ class machine_cluster:
                 print minute,
             if elapsed > timeout:
                 raise TimeoutError  
-        print 'servers runing!'                                   
+        print 'servers running!'
             
     def stop(self):
+        """ stop() -- Tell all remote slaves to terminate.
+        
+            Description
+            
+                stop calls sys.exit(0) on all the slave processes so that 
+                they will terminate gracefully.  Note that if, for some
+                reason, you are unable to connect to a remote processes due
+                to some socket error, you'll have to kill the slave process
+                by hand.
+        """
         for worker in self.workers:
             import sys; sys.stdout.flush()
             try: worker.exec_code('import sys;sys.exit(0)')
@@ -80,10 +181,23 @@ class machine_cluster:
                 # trap non-SystemExit errors.  
                 pass
     def restart(self):
+        """ restart() -- terminate all remote slaves and restart them.
+        
+            restart is useful when you would like to reset all slave
+            interpreters to a known state.
+        """
         self.stop()
         self.start()
 
     def is_running(self,timeout=0):
+        """ is_running(timeout=0) --> 0 or 1
+        
+            check all the slave processes in the cluster are up and running.
+            if timeout is specified, is_running will continually check if the 
+            cluster is_running until it either gets a positive result or gives
+            up and returns 0 after the specified number of seconds.
+        """
+        
         # wait for them to start           
         import time
         st = time.time()            
@@ -107,11 +221,32 @@ class machine_cluster:
         return 1
         
     def _send(self,package,addendum=None):
-        """addendum is either None, or a list
-           of addendums <= in length to
-           the number of workers
-        """
+        """ _send(package, addendum=None) -- send a package to all slaves.
         
+            Description
+            
+                _send takes a package packed up by a packer object (see
+                sync_cluster) and sends it to each of the slave processes.
+                addendum is either None or a list with the same length as
+                there are slave processes.  Each entry is a small package
+                of additional information that is to be sent to a specific
+                slave process.  It contains data that is only needed by that
+                process.
+                
+            Implementation Notes
+            
+                The send is done synchronously to each worker in turn.  The
+                entire package is sent to slave0 before moving on and sending
+                the message to slave1.
+                
+                If a socket error occurs while trying to send data to a
+                given slave, the offending worker is pushed into the 
+                self.has_send_error list.  Also, self.send_exc is a dictionary
+                that stores the (err_type,err_msg) as the key and the offending
+                worker as the value.  This information is used in recv to 
+                skip receiving from slaves who failed on send and also for 
+                error reporting.
+        """        
         if addendum: 
             N = len(addendum)
             assert(N <= len(self.workers))
@@ -129,11 +264,31 @@ class machine_cluster:
                 import sys
                 err_type, err_msg = str,sys.exc_info()[:2]
                 self.had_send_error.append(self.workers[i])
-                try: self.send_exc[(err_type,err_msg)].append(self.workers[i].id)
-                except: self.send_exc[(err_type,err_msg)] = [self.workers[i].id]
+                key = (err_type,err_msg)
+                try:
+                    self.send_exc[key].append(self.workers[i].id)
+                except: 
+                    self.send_exc[key] = [self.workers[i].id]
             # else - handle other errors?               
-        self.Nsent = N            
-    def _recv(self):    
+        self.Nsent = N
+                    
+    def _recv(self):
+        """ _recv() -- retreive results from slave processes.
+        
+            Description
+            
+                Retreive results from all slave processes that were 
+                successfully sent a package.  If an error occurs while
+                receiving from one of the slaves, the error is noted and
+                the results from the other slaves are retreived.  A tuple
+                the results from all workers is returned by _recv.  An
+                entry of None is placed in the tuple for any worker that
+                had an error.      
+                
+                The recv is done synchronously, waiting for slave0 to return
+                its results before moving on to slave1 to recv its results.          
+        """
+
         self.had_recv_error = []
         self.recv_exc = {}        
         results = []
@@ -144,7 +299,6 @@ class machine_cluster:
                 results.append(None)
             else:    
                 try:
-                    #print worker.id,
                     sys.stdout.flush()
                     results.append(worker.recv())
                 except sync_cluster.RemoteError:    
@@ -152,8 +306,8 @@ class machine_cluster:
                     err = sys.exc_info()[1]
                     # Force the err msg (err[1]) to be a string.
                     # This dimishes info content, but makes sure
-                    # that the sames erros are hashed correctly
-                    # in the dictionary.  
+                    # that the sames errors are hashed correctly
+                    # in the dictionary. (does it?)   
                     err_type,err_msg, err_traceback = err
                     err = err_type,str(err_msg), err_traceback
                     self.had_recv_error.append(worker)                    
@@ -170,6 +324,23 @@ class machine_cluster:
         return tuple(results)                
     
     def _send_recv(self,package,addendum=None):
+        """ _send_recv(package,addendum=None) --> results
+        
+            Description
+            
+                send a message to each worker in turn and then immediately
+                began listening for the results.  All sends are done before
+                listening for results from any of the slave processes.  See
+                _send and _recv for more information.
+                
+                If an error occurs during either the send or recv phases,
+                the handle_error() method is called.  If know errors are found,
+                a tuple containing the results from each slave is returned.
+                
+                If an error does occur and an exception is raised, it is still
+                possible to retreive the set of results that executed correctly
+                from the last_results attribute.
+        """        
         self._send(package,addendum)
         self.last_results = self._recv()
         if(len(self.send_exc) or len(self.recv_exc)):
@@ -177,6 +348,22 @@ class machine_cluster:
         return self.last_results    
 
     def handle_error(self):
+        """ handle_error() -- make sense of send and recv errors
+        
+            Description
+            
+                Error handling attempts to examine the errors that occuer
+                during remote execution and report them in the least verbose
+                manner.  If the same error occurs on all slaves, it tries to
+                only report it once.  Otherwise it reports all the errors
+                that occur on slaves and prints the slaves traceback.
+                
+                Currently error handling is pretty simplistic.  It'd be nice
+                if socket errors were viewed as severe and the slave either
+                restarted or marked as dead and its work distributed among
+                the other workers.
+                
+        """
         # perhaps do some nifty stuff here to 
         # mark bad workers, try to restart, etc.
         msg = ''
@@ -220,7 +407,30 @@ class machine_cluster:
 
         raise ClusterError, msg
         
-    def load(self):        
+    ##############################################################
+    # slave processor info
+    ##############################################################
+    def load(self):
+        """ load() -- print human readable load information for slave hosts 
+            
+            Description
+            
+                The load value printed is the 1 minute load average that
+                is commonly printed by uptime on Unix machines.
+                
+                load depends on the implementation of scipy.proc on each
+                slave's host OS. It will not work for Windows slave processes.
+                However, if you are using a Windows master to control a Linux
+                cluster of slaves, it should work fine.                
+
+            Example::
+
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> cluster.load()
+                    n0: 0.00, n1: 0.00
+        """        
         import string
         import scipy.proc
         results = self.load_list()
@@ -233,6 +443,29 @@ class machine_cluster:
                 print
     
     def info(self):
+        """ info() -- print human readable info about the slave hosts 
+            
+            Description
+            
+                Print out the each slave interpreters host name, number
+                and type of processors, memory usage, and current load 
+                information in human readable form.
+                
+                info depends on the implementation of scipy.proc on each
+                slave's host OS. It will not work for Windows slave processes.
+                However, if you are using a Windows master to control a Linux
+                cluster of slaves, it should work fine.                
+
+            Example::
+
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> cluster.info()
+                MACHINE   CPU        GHZ   MB TOTAL  MB FREE   LOAD
+                n0        2xP3       0.4     192.0      13.0   0.00
+                n1        2xP3       0.4     192.0      22.0   0.00
+        """                
         import string
         results = self.info_list()
         labels = "%-8s  %-9s  %-4s  %-8s  %-8s  %-4s" % \
@@ -248,23 +481,128 @@ class machine_cluster:
                  res['load_1'])
             print s
 
-    def ps(self,sort_by='cpu',**filters):
-        psl = self.ps_list(sort_by,**filters)
-        if len(psl):
-            print psl[0].labels_with_name()
-        for i in psl: print i.str_with_name()
-
     def load_list(self):        
+        """ load_list() -- Return a list of slave load information dictionaries
+            
+            Description
+            
+                Retreive a dictionary with information about the load on each
+                host processor.  The dictionaries have three keys, load1, 
+                load5, and load15 indicating the 1, 5, and 15 minute load 
+                averages for the processor.  These could be useful for (as 
+                yet unimplemented) load balancing schemes.
+
+                load_list depends on the implementation of scipy.proc on each
+                slave's host OS. It will not work for Windows slave processes.
+                However, if you are using a Windows master to control a Linux
+                cluster of slaves, it should work fine.                
+
+            Example::
+
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> cluster.load_info()
+                ({'load_5': 0.0, 'load_1': 0.0, 'load_15': 0.0},
+                 {'load_5': 0.0, 'load_1': 0.0, 'load_15': 0.0})
+        """        
         import scipy.proc
         res = self.apply(scipy.proc.load_avg,())
         return res
 
     def info_list(self):
+        """ info() -- print human readable info about the slave hosts 
+            
+            Description
+            
+                Print out the each slave interpreters host name, number
+                and type of processors, memory usage, and current load 
+                information in human readable form.
+                
+                info depends on the implementation of scipy.proc on each
+                slave's host OS. It will not work for Windows slave processes.
+                However, if you are using a Windows master to control a Linux
+                cluster of slaves, it should work fine.                
+
+            Example::
+
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> cluster.info()
+                MACHINE   CPU        GHZ   MB TOTAL  MB FREE   LOAD
+                n0        2xP3       0.4     192.0      13.0   0.00
+                n1        2xP3       0.4     192.0      22.0   0.00
+    
+        """                
         import scipy.proc
         res = self.apply(scipy.proc.machine_info,())
         return res
+
+    ##############################################################
+    # slave process information and control
+    ##############################################################
+    def ps(self,sort_by='cpu',**filters):
+        """ ps(sort_by='cpu',**filters) -- list processes on slave machines.
+        
+            Description
+                
+                List all the processes on all remote slave machines.  This
+                is like a cluster-wide Unix ps command and is output in a
+                similar human readable form.  The sort_by argument allows
+                you to sore the process list by various fields including,
+                pid, cpu, user, machine, memory, state and command.  keyword
+                arguments are used as filters to limit the number of processes
+                displayed.  For example, the keyword, user='ej' will only list
+                processes for user ej and cpu='>10' will only list processes 
+                using more th 50% of the cpu cycles.
+                
+                ps depends on the implementation of scipy.proc on each
+                slave's host OS. It will not work for Windows slave processes.
+                However, if you are using a Windows master to control a Linux
+                cluster of slaves, it should work fine.                
+
+            Example::
+
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> cluster.ps(user='ej')
+                MACHINE USER       PID  %CPU  %MEM TOTAL MB   ...
+                n0     ej        22915  99.9   2.1    4.027   ...
+                n0     ej        22916  99.9   2.1    4.055   ...
+                n1     ej        22915  99.9   2.1    4.027   ...
+                n1     ej        22916  99.9   2.1    4.055   ...
+                ...
+                
+        """
+        psl = self.ps_list(sort_by,**filters)
+        if len(psl):
+            print psl[0].labels_with_name()
+        for i in psl: print i.str_with_name()
     
     def ps_list(self,sort_by='cpu',**filters):
+        """ ps_list(self,sort_by='cpu',**filters) -- get cluster processes
+        
+            Description
+            
+                Return a list containing one scipy.proc.process objects for 
+                each process running on the cluster host machines.  process 
+                objects contain a ton of information about cpu, memory, etc.
+                used by the process.
+                
+                See ps for more information.
+            
+            Example:
+                        
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> p = cluster.ps_list()
+                >>> for i in p: print p.pid
+                ...
+                22890 22889 22889 22890 1071 1071 ...
+        """
         import operator
         import scipy.proc
         res = self.apply(scipy.proc.ps_list,())
@@ -273,19 +611,28 @@ class machine_cluster:
         return psl
  
     def nice(self,increment=10):
-        """* increment the interpreter daemon on all remote machines.
-             hmmm. this doesn't seem to work. 
-         see os.nice()
-        *"""
+        """ nice(increment=10) --> success_list
+        
+            increment all slave interpreter's nice value by increment.            
+            hmmm. this doesn't seem to work. see os.nice()
+        """
         res = self.apply(os.nice,(increment,))
         return res
 
     def renice(self,process_list,level):
-        """* change the nice level of multiple remote processes.
+        """ renice(process_list,level) -- set nice value multiple processes 
+
+            Description
+            
+                Change the nice level of multiple remote processes. 
+                process_list is a list of scipy.proc.process objects. 
+                level is the new nice value for the listed processes.
              
-             Once niced down, a process cannot be reniced back up.
-             This is a Linux issue.
-        *"""    
+            Caveats
+
+                Once niced down, a process cannot be reniced back up.
+                This is a Linux issue.
+        """    
         res = []
         pids = {}
         for process in process_list:
@@ -308,11 +655,14 @@ class machine_cluster:
         return res
 
     def kill(self,process_list,signal = 'TERM'):
-        """* change the nice level of multiple remote processes.
-             
-             Once niced down, a process cannot be reniced back up.
-             This is a Linux issue.
-        *"""    
+        """ kill(self,process_list,signal = 'TERM') -- Signal process list.
+
+            Description
+            
+                Send a signal to all of the scipy.proc.process objects in
+                the process_list.  This is usually used to kill the processes.
+                The signal may be given as a signal name or number.
+        """    
         res = []
         pids = {}
         for process in process_list:
@@ -333,32 +683,90 @@ class machine_cluster:
             arg = 'kill -s ' + signal + ' %s' % (level,value)
             res.append(worker.apply(os.system,(arg,)))
         return res
-    
-    #def system(self,cmd):
-    #    return self.workers.apply(os.system,(cmd,))
-    
-    def system(self,cmd):
-        return self.exec_code(('import os;f=os.popen("%s");res = f.read(-1);f.close();' \
-               % cmd),returns=['res'])
-    def reload(self,module):
-        try: 
-            cmd = 'import %s; reload(%s)' % ((module.__name__,)*2)
-        except AttributeError:
-            cmd = 'import %s; reload(%s)' % ((module,)*2)
-        self.workers.exec_code('cmd')    
         
-# mirror all of sync_client functions
+    def system(self,cmd):
+        """ system(cmd) -- execute cmd on all remote machines
+
+            A list of all the remote responses is returned.  Unlike
+            os.system which returns the exit value of the cmd string,
+            this function returns the text output by the command.
+        """            
+        code = 'import os;f=os.popen("%s");res = f.read(-1);f.close();' % cmd
+        return self.exec_code(code,returns=['res'])
+
+    def reload(self,module):
+        """ reload(module) -- reload module on all remote interpreters
+        
+            module can either be the name of a module or the actual
+            module object.
+        """        
+        try: 
+            code = 'import %s; reload(%s)' % ((module.__name__,)*2)
+        except AttributeError:
+            code = 'import %s; reload(%s)' % ((module,)*2)
+        self.workers.exec_code(code)    
+        
+    ##############################################################
+    # remote code and function execution
+    ##############################################################
+    
+    # mirror all of sync_client functions
     # They assumes all clients have the same packing procedures.
-    def exec_code(self,code,inputs=None,returns=None,global_vars=None):
-        #use the first worker as a server
-        package = self.workers[0].exec_code_pack(code,inputs,returns,global_vars)
+    def exec_code(self,code,inputs=None,returns=None):
+        """ exec_code(code,inputs=None,returns=None)
+        
+            Similar to Python's exec statement. Execute the same code fragment
+            on all remote interpreter. inputs is a dictionary of variable 
+            values to use when executing the code. returns is a list of
+            variable names that should be returned after executing the code.  
+            If one value is specified, the value for that variable is returned.
+            If multiple values are specified, a tuple is returned.
+            
+            exec_code returns a list of the values requested variables,
+            one entry for each slave.
+        """
+        #use the first worker to package up the cmd.
+        package = self.workers[0].exec_code_pack(code,inputs,returns)
         return self._send_recv(package)
 
     def apply(self,function,args=(),keywords=None):        
+        """ apply(function,args=(),keywords=None)
+        
+            Similar to Python's builtin apply method.  Execute the given
+            function with the argument list, args, and keyword arguments,
+            keywords, on each of the slave processes.
+            
+            apply returns a list of the results from calling function,
+            one result for each slave.
+        """        
         package = self.workers[0].apply_pack(function,args,keywords)
         return self._send_recv(package)
 
     def loop_apply(self,function,loop_var,args=(),keywords=None):
+        """ loop_apply(function,loop_var, args=(),keywords=None)
+        
+            Description
+
+                Call function with the given args and keywords.  One of the
+                arguments or keywords is actually a sequence of arguments.  
+                This sequence is looped over, calling function once for each
+                value in the sequence. loop_var indicates which variable to
+                loop over.  If an integer, loop_var indexes the args list.
+                If a string, it specifies a keyword variable.  The loop sequence
+                is divided as evenly as possible between the worker nodes and
+                executed in parallel.
+
+            Example::
+                
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> import string
+                >>> string_list = ['aaa','bbb','ccc','ddd']
+                >>> cluster.loop_apply(string.upper,0,(string_list,))
+                ['AAA','BBB','CCC','DDD']
+            
+        """                
         #----------------------------------------------------
         # Prepare main package for sending
         # almost verbatim from loop_apply_pack in sync_cluster
@@ -388,21 +796,39 @@ class machine_cluster:
         package = self.workers[0].packer.pack(contents) 
         return self.loop_send_recv(package,loop_data,loop_var)
 
-    def loop_code(self,code,loop_var,inputs=None,returns=None,global_vars=None):
+    def loop_code(self,code,loop_var,inputs=None,returns=None):
+        """ loop_code(code,loop_var,inputs=None,returns=None)
+        
+            Description
+        
+                Similar to exec_code and loop_apply.  Here loop_var indicates 
+                the variable name in the inputs dictionary that is looped over.
+            
+            Example::
+                
+                >>> slave_list = [('n0',10000), ('n1', 10001)]
+                >>> cluster = scipy.cow.machine_cluster(slave_list)
+                >>> cluster.start()
+                >>> import string
+                >>> a = [1, 2, 3, 4]
+                >>> cluster.loop_code("b=a*2",'a',{'a':a},('b',))
+                (2, 4, 6, 8)
+        """
         the_inputs = {}
         the_inputs.update(inputs)    
         loop_data = the_inputs[loop_var]
         the_inputs[loop_var] = None #make it small for packing
         package = self.workers[0].loop_code_pack(code,loop_var,
-                        the_inputs,returns,global_vars)    
+                                                 the_inputs,returns)
         return self.loop_send_recv(package,loop_data,loop_var)
     
     # array specific routines
     def row_split(self,name,sequence):
         """experimental"""
         import scipy
-	q=scipy.split(sequence,len(self.workers))
-        self.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),global_vars=(name,))
+        q=scipy.split(sequence,len(self.workers))
+        self.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),
+                        global_vars=(name,))
     def row_gather(self,name):
         """experimental"""
         from Numeric import concatenate
@@ -427,6 +853,10 @@ class machine_cluster:
         for result_group in results:
             out = out + result_group
         return out
+
+    ##############################################################
+    # dictionary interface
+    ##############################################################
 
     def __getitem__(self, key):
         # currently allowing tuples also!
@@ -495,8 +925,6 @@ def equal_balance(jobs,Nworkers):
 #    assert(sum,Ntotal_jobs)           
     return tuple(job_groups)
 
-def t_func(i):
-    return i    
 import operator
 class timer:
 

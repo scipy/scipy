@@ -658,6 +658,7 @@ def exec_code(code,inputs,returns,global_vars,addendum=None):
     exec_code = build_globals(global_vars)
     exec_code = exec_code + build_inputs(inputs)
     exec_code = exec_code + code
+    globals()['_inputs'] = inputs
     exec exec_code in globals(), globals()
     #perhaps do something here to catch errors
     if len(returns) == 1:
@@ -751,7 +752,7 @@ def build_globals(global_vars):
 
 def build_inputs(inputs):
     if inputs:
-        asgn = map(lambda x: '%s = inputs["%s"];' % (x,x), inputs.keys())
+        asgn = map(lambda x: '%s = _inputs["%s"];' % (x,x), inputs.keys())
         return string.join(asgn,'')
     else:
         return ''
