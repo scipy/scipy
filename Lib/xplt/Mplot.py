@@ -450,7 +450,7 @@ def plot(x,*args,**keywds):
     gist.plsys(savesys)
     nargs = len(args)
     if nargs == 0:
-        y = x
+        y = scipy.squeeze(x)
         x = Numeric.arange(0,len(y))
         if scipy.iscomplexobj(y):
             print "Warning: complex data plotting real part."
