@@ -589,7 +589,8 @@ _dheight=6*inches
 
 import colorbar
 def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
-               zlabel=None,font='helvetica',fontsize=16,color='black'):
+               zlabel=None,font='helvetica',fontsize=16,color='black',
+               palette=None):
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
     if not _hold:
@@ -597,7 +598,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
     gist.animate(0)
     if _style is None and mystyle==0:
         _style='/tmp/colorbar.gs'
-        system = write_style.getsys(hticpos='left',frame=1)
+        system = write_style.getsys(hticpos='left',frame=1,color=color)
         fid = open(_style,'w')
         fid.write(write_style.style2string(system))
         fid.close()
@@ -608,6 +609,12 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
         cmin = min(ravel(z))        
     cmax = float(cmax)
     cmin = float(cmin)
+
+    if palette is not None:
+        try:
+            gist.palette('%s.gp' % palette)
+        except:
+            raise ValueError, "%s palette not available." % palette
 
     byteimage = gist.bytscl(z,cmin=cmin,cmax=cmax)
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
@@ -828,7 +835,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     if cb:
         colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04) 
 
-def plot3(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
+def surf(x,y,z,win=None,shade=0,edges=1,edge_color="black",phi=-45,theta=30,
           zscale=1.0,palette=None,gnomon=0):
     """Plot a three-dimensional wire-frame (surface): z=f(x,y)
     """

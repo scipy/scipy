@@ -8,7 +8,7 @@
     legend    -- Construct and place a legend.
     arrow     -- Draw an arrow.
     plot      -- Plot curves.
-    plot3     -- Plot surfaces (no axes currently plotted).
+    surf      -- Plot surfaces (no axes currently plotted).
     xlabel    -- Place a label on the x-axis.
     ylabel    -- Place a label on the y-axis.
     title     -- Place a title above the plot.

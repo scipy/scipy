@@ -34,6 +34,7 @@ _current_dir = ""
 # This function should be the only external object in this module.
 def help (subj = "help.help"):
   global _current_module, _current_dir
+  sys.path.append(os.environ['GISTPATH'])
 
   if string.find (subj,'.') == -1: # subject pattern has no dot:
 
@@ -51,6 +52,8 @@ def help (subj = "help.help"):
 
   if p != "" and _ispresent(rexp,p):
     _pageit (rexp, p)
+
+  del sys.path[-1]
 
 #*************
 # Look in all help files for a particular feature
