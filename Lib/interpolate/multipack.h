@@ -1,9 +1,11 @@
 /* MULTIPACK module by Travis Oliphant
 
-Copyright (c) 1999 Travis Oliphant all rights reserved
+Copyright (c) 2002 Travis Oliphant all rights reserved
 Oliphant.Travis@altavista.net
 Permission to use, modify, and distribute this software is given under the 
-terms of the LGPL.  See http://www.fsf.org
+terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
+this distribution for specifics.
+
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 */
