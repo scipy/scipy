@@ -401,7 +401,7 @@ def polygamma(n, x):
         return where(cond, psi(x), fac2)
     return fac2
 
-def mathieu_A(m,q):
+def mathieu_a(m,q):
     """Compute expansion coefficients for even mathieu functions and
     modified mathieu functions.
     """
@@ -428,7 +428,7 @@ def mathieu_A(m,q):
     fc = specfunc.fcoef(kd,m,q,a)
     return fc[:km]
 
-def mathieu_B(m,q):
+def mathieu_b(m,q):
     """Compute expansion coefficients for even mathieu functions and
     modified mathieu functions.
     """
