@@ -512,7 +512,8 @@ def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
     if not isinstance(color,types.IntType):
         color = _colornum[color]
     wordtype = _types[type]
-    gist.pldj([x0,x1,x1,x0],[y0,y0,y1,y1],[x1,x1,x0,x0],[y0,y1,y1,y0],color=color,type=wordtype,width=width)
+    gist.pldj([x0,x1,x1,x0],[y0,y0,y1,y1],[x1,x1,x0,x0],[y0,y1,y1,y0],
+              color=color,type=wordtype,width=width)
 
 def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
             palette=None):
@@ -523,7 +524,7 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
     gist.animate(0)
     if _style is None and mystyle==0:
         _style='/tmp/image.gs'
-        system = write_style.getsys(hticpos='left',frame=1)
+        system = write_style.getsys(hticpos='below',vticpos='left',frame=1)
         fid = open(_style,'w')
         fid.write(write_style.style2string(system))
         fid.close()
@@ -602,12 +603,13 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style=None,mystyle=0,
                palette=None):
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
+        
     if not _hold:
         gist.fma()
     gist.animate(0)
     if _style is None and mystyle==0:
         _style='/tmp/colorbar.gs'
-        system = write_style.getsys(hticpos='left',frame=1,color=color)
+        system = write_style.getsys(hticpos='below',vticpos='left',frame=1,color=color)
         fid = open(_style,'w')
         fid.write(write_style.style2string(system))
         fid.close()
