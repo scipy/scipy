@@ -3,7 +3,7 @@
 # This python script tests the numpyio module.
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
-import Numeric
+import scipy.numeric as Numeric
 import numpyio
 from MLab import rand
 import os

@@ -2,7 +2,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 # The following is so I know about arrays:
-from Numeric import *
+from scipy.numeric import *
 from shapetest import *
 from graftypes import *
 from arrayfns import *

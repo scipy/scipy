@@ -116,7 +116,7 @@ typedef struct
 /* #define UNK 1 */
 
 /* If you define UNK, then be sure to set BIGENDIAN properly. */
-/* #define BIGENDIAN 1 */
+#define BIGENDIAN 0
 
 /* Define this `volatile' if your compiler thinks
  * that floating point arithmetic obeys the associative

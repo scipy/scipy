@@ -1930,7 +1930,7 @@ findwithin = Dispatch ( (lfindwithin, (ListType, TupleType)), )
 #=============  THE ARRAY-VERSION OF THE STATS FUNCTIONS  ===============
 
 try:                         # DEFINE THESE *ONLY* IF NUMERIC IS AVAILABLE
- import Numeric
+ import scipy.numeric as Numeric
  N = Numeric
  import LinearAlgebra
  LA = LinearAlgebra

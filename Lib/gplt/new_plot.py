@@ -1,5 +1,5 @@
 #this just adds errorbar plotting capabilities
-from Numeric import *
+from scipy.numeric import *
 from types import StringType
 import pyPlot
 from pyPlot import *

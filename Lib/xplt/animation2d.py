@@ -1,7 +1,7 @@
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
-from Numeric import *
+from scipy.numeric import *
 from shapetest import *
 from graftypes import *
 

@@ -4,7 +4,7 @@
 !!   clapack is fixed, get rid of confusion.
 """
 
-from Numeric import *
+from scipy.numeric import *
 #import cblas
 #import clapack
 #import fblas

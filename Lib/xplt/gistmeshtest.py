@@ -5,7 +5,7 @@ from region import *
 from quadmesh import *
 from graph2d import *
 from MLab import rand
-from Numeric import *
+from scipy.numeric import *
 from shapetest import *
 
 def paws ( ) :

@@ -1,6 +1,7 @@
-from Numeric import *# needed asarray
 
 import sigtools
+
+from scipy.numeric import *# needed asarray
 import MLab
 
 _modedict = {'valid':0, 'same':1, 'full':2}

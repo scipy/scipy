@@ -3,11 +3,11 @@
     !! Need to find argument for keeping initialize.  If it isn't
     !! found, get rid of it!
 """
-from Numeric import *
+from scipy.numeric import *
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays
-import Numeric
+import scipy.numeric as Numeric
 def take(a,indices,axis=0):    
     x = asarray(a); y = asarray(indices)
     if shape(x) == (): x = x.flat

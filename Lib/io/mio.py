@@ -1,6 +1,6 @@
-from Numeric import *
 import numpyio
 import struct
+from scipy.numeric import *
 
 def getsize_type(mtype):
     if mtype in ['b','uchar','byte','unsigned char','integer*1', 'int8']:
@@ -45,7 +45,7 @@ class fopen:
     Methods:
 
       fread -- read data from file and return Numeric array
-      fwrite -- write to file from Numeric array
+      fwrite -- write to file from scipy.numeric array
       fort_read -- read Fortran-formatted binary data from the file.
       fort_write -- write Fortran-formatted binary data to the file.
       rewind -- rewind to beginning of file

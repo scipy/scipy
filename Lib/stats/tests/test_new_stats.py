@@ -2,7 +2,7 @@
 
 *"""
 
-from Numeric import *
+from scipy.numeric import *
 import unittest
 from scipy.scipy_test import assert_array_equal, assert_equal
 from scipy.scipy_test import assert_almost_equal

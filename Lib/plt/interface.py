@@ -1,4 +1,4 @@
-from Numeric import *
+from scipy.numeric import *
 import sys
 if sys.modules.has_key('scipy.gui_thread'):
     import scipy.gui_thread as gui_thread

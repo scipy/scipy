@@ -208,8 +208,8 @@ from types import *
 
 __version__ = 0.5
 
-from Numeric import *
-import Numeric
+from scipy.numeric import *
+import scipy.numeric as Numeric
 N = Numeric
 import LinearAlgebra
 LA = LinearAlgebra

@@ -22,7 +22,7 @@ fminbound   ---      Bounded minimization for scalar functions.
 
 """
 
-import Numeric
+import scipy.numeric as Numeric
 import MLab
 from scipy import absolute, sqrt, r1array
 Num = Numeric
