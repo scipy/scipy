@@ -165,6 +165,8 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 double incbet(), incbi();
 #endif
 
+extern double NAN;
+
 double fdtrc( ia, ib, x )
 int ia, ib;
 double x;

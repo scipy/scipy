@@ -67,7 +67,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 double sqrt(), fabs(), sin(), cos(), asin(), tanh();
 double sinh(), cosh(), atan(), exp();
 #endif
-extern double PIO2, MACHEP;
+extern double PIO2, MACHEP, NAN;
 
 int ellpj( u, m, sn, cn, dn, ph )
 double u, m;

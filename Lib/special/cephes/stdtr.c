@@ -86,7 +86,7 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 
 #include "mconf.h"
 
-extern double PI, MACHEP, MAXNUM;
+extern double PI, MACHEP, MAXNUM, NAN;
 #ifndef ANSIPROT
 double sqrt(), atan(), incbet(), incbi(), fabs();
 #endif

@@ -182,6 +182,8 @@ static unsigned short Q[] = {
 double polevl(), log();
 #endif
 
+extern double NAN;
+
 double ellpe(x)
 double x;
 {

@@ -439,8 +439,8 @@ static struct PyMethodDef random_methods[] = {
  {"permutation", permutation,           1,      permutation__doc__},
  {"poisson",    poisson,                1,      poisson__doc__},
  {"uniform",    uniform,                1,      uniform__doc__},
- {"standard_exp", standard_exp,         1,      standard_exp__doc__},
- {"standard_gamma", standard_gamma,     1,      standard_gamma__doc__},
+ {"standard_exp",      standard_exp,         1,      standard_exp__doc__},
+ {"standard_gamma",    standard_gamma,     1,      standard_gamma__doc__},
  {"set_seeds",  random_set_seeds,       1, },
  {"get_seeds",  random_get_seeds,       1, },
  {NULL,		NULL}		/* sentinel */

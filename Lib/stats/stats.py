@@ -1635,13 +1635,13 @@ Returns: chi-square statistic, associated p-value
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
 
-from scipy.special import binomcdf, binomcdfc, binomcdfinv, betacdf, betaq, fcdf, \
-     fcdfc, fp, gammacdf, gammacdfc, gammaq, negbinomcdf, negbinomcdfinv
-from scipy.special import poissoncdf, poissoncdfc, poissoncdfinv, studentcdf, \
-     studentq, chi2cdf, chi2cdfc, chi2p, normalcdf, normalq, smirnovcdfc
-from scipy.special import smirnovp, kolmogorovcdfc, kolmogorovp
+#from scipy.special import binomcdf, binomcdfc, binomcdfinv, betacdf, betaq, \
+#     fcdf, fcdfc, fp, gammacdf, gammacdfc, gammaq, negbinomcdf, \
+#     negbinomcdfinv, poissoncdf, poissoncdfc, poissoncdfinv, tcdf, tq, \
+#     chi2cdf, chi2cdfc, chi2p, stnormalcdf, stnormalq, ksonecdfc, ksonep, \
+#     kstwocdfc_largen, kstwop_largen
 
-zprob = special.normalcdf
+zprob = special.ndtr
 erfc = special.erfc
 
 def chisqprob(chisq,df):
@@ -1650,8 +1650,8 @@ def chisqprob(chisq,df):
     """
     return special.chdtrc(df,chisq)
 
-ksprob = special.kolmogorovcdfc
-fprob = special.fcdfc
+#ksprob = special.kolmogorovcdfc
+#fprob = special.fcdfc
 
 def betacf(a,b,x):
     """

@@ -154,144 +154,149 @@ times a power:  y = integral(x^lambda jv(2*a*x),x=0..1)
 
 <h1> Statistical Functions </h1>
 <DL>
-<DT>y = binomcdf(k,n,p)
-<DD>binomcdf(k,n,p) returns the sum of the terms 0 through k of the
+<DT>y = bdtr(k,n,p)
+<DD>bdtr(k,n,p) returns the sum of the terms 0 through k of the
 Binomial probability density:  sum(nCj p**j (1-p)**(n-j),j=0..k)
 
-<DT>y = binomcdfc(k,n,p)
-<DD>binomcdfc(k,n,p) returns the sum of the terms k+1 through n of the
+<DT>y = bdtrc(k,n,p)
+<DD>bdtrc(k,n,p) returns the sum of the terms k+1 through n of the
 Binomial probability density: sum(nCj p**j (1-p)**(n-j), j=k+1..n)
 
-<DT>p = binomcdfinv(k,n,y)
-<DD>binominv(k,n,y) finds the probability p such that the sum of the
+<DT>p = bdtri(k,n,y)
+<DD>bdtri(k,n,y) finds the probability p such that the sum of the
 terms 0 through k of the Binomial probability density is equal to the
 given cumulative probability y.
 
-<DT>y = betacdf(a,b,x)
-<DD>betacdf(a,b,x) returns the area from zero to x under the beta
+<DT>y = btdtr(a,b,x)
+<DD>btdtr(a,b,x) returns the area from zero to x under the beta
 density function: gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1)
 (1-t)**(b-1), t=0..x).  SEE ALSO betainc
 
-<DT>x = betaq(a,b,p)
-<DD>betaq(a,b,p) returns the pth quantile of the beta distribution.  It is
-effectively the inverse of betacdf returning the value of x for which 
-betacdf(a,b,x) = p.   SEE ALSO betaincinv
+<DT>x = btdtri(a,b,p)
+<DD>btdtri(a,b,p) returns the pth quantile of the beta distribution.  It is
+effectively the inverse of btdtr returning the value of x for which 
+btdtr(a,b,x) = p.   SEE ALSO betaincinv
 
-<DT>y = fcdf(dfnum,dfden,x) 
-<DD>fcdf(dfnum,dfden,x) returns the area from zero to x under the F density
+<DT>y = fdtr(dfnum,dfden,x) 
+<DD>fdtr(dfnum,dfden,x) returns the area from zero to x under the F density
 function (also known as Snedcor's density or the variance ratio
 density).  This is the density of X = (unum/dfnum)/(uden/dfden), where unum and
 uden are random variables having Chi square distributions with dfnum and
 dfden degrees of freedom, respectively.
 
-<DT>y = fcdfc(dfnum,dfden,x)
-<DD>fcdfc(dfnum,dfden,x) returns the area from x to infinity under the F
+<DT>y = fdtrc(dfnum,dfden,x)
+<DD>fdtrc(dfnum,dfden,x) returns the area from x to infinity under the F
 density function.
 
-<DT>x = fp(dfnum,dfden,p)
-<DD>fp(dfnum,dfden,p) finds the F density argument x such that the
+<DT>x = fdtri(dfnum,dfden,p)
+<DD>fdtri(dfnum,dfden,p) finds the F density argument x such that the
 integral from x to infinity of the F density is equal to the given
 probability p.
 
-<DT>y = gammacdf(a,b,x)
-<DD>gammacdf(a,b,x) returns the integral from zero to x of the gamma
+<DT>y = gdtr(a,b,x)
+<DD>gdtr(a,b,x) returns the integral from zero to x of the gamma
 probability density function: a**b / gamma(b) * integral(t**(b-1) exp(-at),t=0..x).
 The arguments a and b are used differently here than in other definitions. 
 
-<DT>y = gammacdfc(a,b,x)
-<DD>gammacdfc(a,b,x) returns the integral from x to infinity of the gamma
-probability density function.  SEE gammacdf, gammaq
+<DT>y = gdtrc(a,b,x)
+<DD>gdtrc(a,b,x) returns the integral from x to infinity of the gamma
+probability density function.  SEE gdtr, gdtri
 
-<DT>x = gammaq(a,b,p)
-<DD>gammaq(a,b,p) returns pth quantile of the gamma distribution.  It is 
+<DT>x = gdtri(a,b,p)
+<DD>gdtri(a,b,p) returns pth quantile of the gamma distribution.  It is 
 the inverse of the gamma cdf returning the value of x for which 
-gamcdf(b,a,x) = p. 
+gdtr(b,a,x) = p. 
 
-
-<DT>y = negbinomcdf(k,n,p)
-<DD>negbinomcdf(k,n,p) returns the sum of the terms 0 through k of the
+<DT>y = nbdtr(k,n,p)
+<DD>nbdtr(k,n,p) returns the sum of the terms 0 through k of the
 negative binomial distribution: sum((n+j-1)Cj p**n (1-p)**j,j=0..k).
 In a sequence of Bernoulli trials this is the probability that k or
 fewer failures precede the nth success. 
 
-<DT>y = negbinomcdfc(k,n,p)
-<DD>negbinomcdfc(k,n,p) returns the sum of the terms k+1 to infinity of the
+<DT>y = nbdtrc(k,n,p)
+<DD>nbdtrc(k,n,p) returns the sum of the terms k+1 to infinity of the
 negative binomial distribution.
 
-<DT>p = negbinomcdfinv(k,n,y)
-<DD>negbinomcdfinv(k,n,y) finds the argument p such that negbinom(k,n,p) is equal
+<DT>p = nbdtri(k,n,y)
+<DD>nbdtri(k,n,y) finds the argument p such that negbinom(k,n,p) is equal
 to y.
 
-<DT>y = poissoncdf(k,m)
-<DD>poissoncdf(k,m) returns the sum of the first k terms of the Poisson
+<DT>y = pdtr(k,m)
+<DD>pdtr(k,m) returns the sum of the first k terms of the Poisson
 distribution: sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).
 Arguments must both be positive and k an integer.
 
-<DT>y = poissoncdfc(k,m)
-<DD>poissoncdfc(k,m) returns the sum of the terms from k+1 to infinity of the
+<DT>y = pdtrc(k,m)
+<DD>pdtrc(k,m) returns the sum of the terms from k+1 to infinity of the
 Poisson distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc( k+1, m).
 Arguments must both be positive and k an integer.
 
-<DT>m = poissoncdfinv(k,y)
+<DT>m = pdtri(k,y)
 <DD>pdtri(k,y) returns the Poisson variable m such that the sum
 from 0 to k of the Poisson density is equal to the given probability
 y:  calculated by gammaincinv( k+1, y).  k must be a nonnegative integer and
 y between 0 and 1.
 
-<DT>p = studentcdf(k,t)
-<DD>studentcdf(k,t) returns the integral from minus infinity to t of the Student t
+<DT>p = stdtr(k,t)
+<DD>stdtr(k,t) returns the integral from minus infinity to t of the Student t
 distribution with integer k > 0 degrees of freedom:
-gamma((k+1)/2)/(sqrt(k*pi)*gamma(k/2)) * integral((1+x**2/k)**(-k/2-1/2),x=-inf..t) 
+gamma((k+1)/2)/(sqrt(k*pi)*gamma(k/2)) * integral((1+x**2/k)**(-k/2-1/2),
+x=-inf..t) 
 
-<DT>t = studentq(k,p)
-<DD>studentq(k,p) returns the argument t such that studentcdf(k,t) is equal to p.
+<DT>t = stdtri(k,p)
+<DD>stdtri(k,p) returns the argument t such that stdtr(k,t) is equal to p.
 
-<DT>p = chi2cdf(v,x)
-<DD>chi2cdf(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi
+<DT>p = chdtr(v,x)
+<DD>chdtr(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi
 square probability density function with v degrees of freedom:
 1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
 
-<DT>p = chi2cdfc(v,x)
+<DT>p = chdtrc(v,x)
 <DD>chdtrc(v,x) returns the area under the right hand tail (from x to
 infinity) of the Chi square probability density function with v
 degrees of freedom:
 1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)
 
-<DT>x = chi2p(v,p)
-<DD>chi2p(v,p) returns the argument x such that chi2cdfc(v,x) is equal
+<DT>x = chdtri(v,p)
+<DD>chdtri(v,p) returns the argument x such that chdtrc(v,x) is equal
 to p.
 
-<DT>y = normalcdf(x)
-<DD>normalcdf(x) returns the area under the Gaussian probability density
-function, integrated from minus infinity to x:
+<DT>y = ndtr(x)
+<DD>ndtr(x) returns the area under the standard Gaussian probability 
+density function, integrated from minus infinity to x:
 1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)
 
-<DT>x = normalq(y)
-<DD>normalq(y) returns the argument x for which the area udnder the
+<DT>x = ndtri(y)
+<DD>ndtri(y) returns the argument x for which the area udnder the
 Gaussian probability density function (integrated from minus infinity
 to x) is equal to y.
 
 <DT>y = erf(x)
 <DD>erf(x) returns the error function defined as
-2/sqrt(pi) * integral(exp(-t**2 / 2),t=0..x)
+2/sqrt(pi) * integral(exp(-t**2),t=0..x)
 
 <DT>y = erfc(x)
 <DD>erfc(x) returns 1 - erf(x).
 
-<DT>y = smirnovcdfc(n,e)
-<DD>smirnovcdfc(n,e) returns the exact Smirnov statistic for a one-sided
-test.  It is equal to the probability that the maximum absolute difference between a
-theoretical distribution and an empirical one based on n samples is greater than e.
+<DT>y = smirnov(n,e)
+<DD>smirnov(n,e) returns the exact Kolmogorov-Smirnov complementary 
+cumulative distribution function (Dn+ or Dn-) for a one-sided test of 
+equality between an empirical and a theoretical distribution. It is equal 
+to the probability that the maximum difference between a theoretical 
+distribution and an empirical one based on n samples is greater than e.
 
-<DT>e = smirnovp(n,y)
-<DD>smirnovp(n,y) returns e such that smirnovcdfc(n,e) = y.
+<DT>e = smirnovi(n,y)
+<DD>smirnovi(n,y) returns e such that smirnov(n,e) = y.
 
-<DT>p = kolmogorovcdfc(y)
-<DD>kolmogorovcdfc(y) returns Kolmogorov's limiting distribution of a
-two-sided test or probability that sqrt(n) * max deviation > y.
+<DT>p = kolmogorov(y)
+<DD>kolmogorov(y) returns the complementary cumulative distribution 
+function of Kolmogorov's limiting distribution (Kn* for large n) 
+of a two-sided test for equality between an empirical and a theoretical 
+distribution. It is equal to the (limit as n->infinity of the) probability 
+that sqrt(n) * max absolute deviation > y.
 
-<DT>y = kolmogorovp(p)
-<DD>kolmogorovp(p) returns y such that kolmogorovcdfc(y) = p
+<DT>y = kolmogi(p)
+<DD>kolmogi(p) returns y such that kolmogorov(y) = p
 </DL>
 
 <h1> Gamma and Related Functions </h1>

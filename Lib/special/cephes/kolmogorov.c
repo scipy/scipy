@@ -25,7 +25,7 @@
 
 #include "mconf.h"
 double pow (), floor (), lgam (), exp (), sqrt (), log (), fabs ();
-extern double MAXLOG;
+extern double MAXLOG, NAN;
 
 /* Exact Smirnov statistic, for one-sided test.  */
 double

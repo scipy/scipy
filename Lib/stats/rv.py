@@ -3,6 +3,8 @@ import Numeric
 import sys
 import math
 from types import *
+Num = Numeric
+from fastumath import *
 
 ArgumentError = "ArgumentError"
 
@@ -53,7 +55,7 @@ def uniform(minimum, maximum, size=None):
     """
     return _build_random_array(rand.uniform, (minimum, maximum), size)
 
-def randint(minimum, maximum=None, size=None):
+def unid(minimum, maximum=None, size=None):
     """random integers >=min, < max.  If max not given, random integers >= 0, <min"""
     if maximum is None:
         maximum = minimum
@@ -75,18 +77,26 @@ def permutation(arg):
         arg = Numeric.arange(arg)
     return rand.permutation(arg)
 
-def standard_normal(size=None):
-    """standard_normal(n) or standard_normal([n, m, ...]) returns array of
-           random numbers normally distributed with mean 0 and standard
-           deviation 1"""
+def stnorm(size=None):
+    """returns array of random numbers normally distributed with mean 0
+    and standard deviation 1"""
     return _build_random_array(rand.standard_normal, (), size)
 
-def normal(mean, std, size=None):
-        """normal(mean, std, n) or normal(mean, std, [n, m, ...]) returns
-           array of random numbers randomly distributed with specified mean and
-           standard deviation"""
+def norm(mean=0.0, std=0.0, size=None):
+        """returns array of random numbers randomly distributed with
+        specified mean and standard deviation"""
         return _build_random_array(rand.normal, (mean, std), size)
-    
+
+def lognorm(mean=0.0, std=0.0, size=None):
+    """returns array of random numbers lognormally distributed where
+    the underlying normal has the given mean and standard-deviation.
+    """
+    if std <= 0.0:
+        raise ValueError, 'std must be positive'
+    else:
+        return exp( mean + sigma * normal(size=size))
+    return
+
 def multivariate_normal(mean, cov, size=None):
        """returns an array containing multivariate normally distributed random
           numbers with specified mean and covariance.
@@ -113,11 +123,11 @@ def multivariate_normal(mean, cov, size=None):
            output.shape = final_shape
        return output       
 
-def standard_exp(size=None):
+def stexpon(size=None):
     """returns array of random numbers with a standard exponential distribution (mean=1)"""
     return _build_random_array(rand.standard_exp, (), size)
 
-def exponential(mean, size=None):
+def expon(mean, size=None):
     """returns array of random numbers exponentially distributed with specified mean"""
     return _build_random_array(rand.exponential, (av,), size)
 
@@ -125,52 +135,68 @@ def beta(a, b, size=None):
     """returns array of beta distributed random numbers."""
     return _build_random_array(rand.beta, (a, b), size)
 
-def standard_gamma(a, size=None):
+def stgamma(a, size=None):
     """returns array of random numbers with a standard gamma distribution with mean a"""
     return _build_random_array(rand.standard_gamma, (a,), size)
 
-def gamma(a, r, size=None):
+def gamma(a, b, size=None):
     """returns array of gamma distributed random numbers."""
-    return _build_random_array(rand.gamma, (a, r), size)
+    # Note the different parameter definitions as the ones used in
+    #  ranlib.
+    return _build_random_array(rand.gamma, (1.0/b, a), size)
+
+def gilbrat(size=None):
+    """returns array of gilbert distributed random numbers (special case of
+    lognormal distribution with mean=0.0 and std=1.0)
+    """
+    return lognormal(mean=0.0, std=1.0, size=size)
 
 def f(dfn, dfd, size=None):
     """returns array of F distributed random numbers with dfn degrees of freedom in the numerator and dfd degrees of freedom in the denominator."""
     return _build_random_array(rand.f, (dfn, dfd), size)
 
-def noncentral_f(dfn, dfd, nonc, size=None):
+def ncf(dfn, dfd, nc, size=None):
     """returns array of noncentral F distributed random numbers with dfn degrees of freedom in the numerator and dfd degrees of freedom in the denominator, and noncentrality parameter nonc."""
-    return _build_random_array(rand.noncentral_f, (dfn, dfd, nonc), size)
+    return _build_random_array(rand.noncentral_f, (dfn, dfd, nc), size)
 
 def chi2(df, size=None):
     """returns array of chi squared distributed random numbers with df degrees of freedom."""
     return _build_random_array(rand.chi2, (df,), size)
 
-def noncentral_chi2(df, nonc, size=None):
-    """returns array of noncentral chi squared distributed random numbers with df degrees of freedom and noncentrality parameter."""
-    return _build_random_array(rand.noncentral_chi2, (df, nonc), size)
+def ncx2(df, nc, size=None):
+    """returns array of noncentral chi squared distributed random numbers
+    with df degrees of freedom and noncentrality parameter."""
+    return _build_random_array(rand.noncentral_chi2, (df, nc), size)
 
 def t(df, size=None):
-    """returns array of noncentral student_t distributed random numbers with df degrees of freedom."""
-    return standard_normal(size)*Numeric.sqrt(df) / Numeric.sqrt(chi2(df,size))
+    """returns array of student_t distributed random numbers
+    with df degrees of freedom."""
+    return stnormal(size)*Numeric.sqrt(df) / Numeric.sqrt(chi2(df,size))
 
-def noncentral_t(df, nonc, size=None):
-    return normal(nonc)*Numeric.sqrt(df) / Numeric.sqrt(noncentral_chi2(df,nonc,size))
+def nct(df, nc, size=None):
+    """returns array of noncentral student_t distributed random numbers
+    with df degrees of freedom."""    
+    return normal(nc)*Numeric.sqrt(df) / Numeric.sqrt(noncentral_chi2(df,nc,size))
 
-def binomial(trials, p, size=None):
+
+def binom(trials, p, size=None):
     """returns array of binomially distributed random integers.
 
            trials is the number of trials in the binomial distribution.
            p is the probability of an event in each trial of the binomial distribution."""
     return _build_random_array(rand.binomial, (trials, p), size)
 
-def negative_binomial(trials, p, size=None):
+def nbinom(trials, p, size=None):
     """returns array of negative binomially distributed random integers.
-
-           trials is the number of trials in the negative binomial distribution.
-           p is the probability of an event in each trial of the negative binomial distribution."""
+    
+           trials is the number of trials in the negative binomial
+                  distribution.
+           p is the probability of an event in each trial of the
+                  negative binomial distribution.
+    """
     return _build_random_array(rand.negative_binomial, (trials, p), size)
 
-def multinomial(trials, probs, size=None):
+def multinom(trials, probs, size=None):
     """returns array of multinomial distributed integer vectors.
 
            trials is the number of trials in each multinomial distribution.
@@ -197,7 +223,7 @@ def multinomial(trials, probs, size=None):
     x.shape = final_shape
     return x
 
-def poisson(mean, size=None):
+def poisson(mu, size=None):
     """returns array of poisson distributed random integers with specifed mean."""
     return _build_random_array(rand.poisson, (mean,), size)
 

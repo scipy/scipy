@@ -69,7 +69,7 @@ static double jnx(double, double);
 static double jnt(double, double);
 #endif
 
-extern double MAXNUM, MACHEP, MINLOG, MAXLOG;
+extern double MAXNUM, MACHEP, MINLOG, MAXLOG, NAN;
 #define BIG  1.44115188075855872E+17
 int airy();
 

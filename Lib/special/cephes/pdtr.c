@@ -130,6 +130,8 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 double igam(), igamc(), igami();
 #endif
 
+extern double NAN;
+
 double pdtrc( k, m )
 int k;
 double m;

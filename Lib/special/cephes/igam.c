@@ -182,7 +182,7 @@ if( (x > 1.0) && (x > a ) )
 ax = a * log(x) - x - lgam(a);
 if( ax < -MAXLOG )
 	{
-	mtherr( "igam", UNDERFLOW );
+        mtherr( "igam", UNDERFLOW );
 	return( 0.0 );
 	}
 ax = exp(ax);

@@ -57,7 +57,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #ifndef ANSIPROT
 double hyperg(), exp(), Gamma(), log(), fabs(), floor();
 #endif
-extern double MACHEP, MAXNUM;
+extern double MACHEP, MAXNUM, NAN;
 
 double iv( v, x )
 double v, x;

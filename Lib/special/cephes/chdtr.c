@@ -153,6 +153,8 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 double igamc(), igam(), igami();
 #endif
 
+extern double NAN;
+
 double chdtrc(df,x)
 double df, x;
 {

@@ -1,5 +1,6 @@
 import _minpack
 from common_routines import *
+from scipy.handy import r1array
 
 def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
     """Find the roots of a function.
@@ -69,7 +70,7 @@ def fsolve(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,xtol=1.49012e-8,m
     "fsolve" is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
     """
-    x0 = myasarray(x0)
+    x0 = r1array(x0)
     n = len(x0)
     if type(args) != type(()): args = (args,)
     check_func(func,x0,args,n,(n,))
@@ -194,7 +195,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
 
     """
-    x0 = myasarray(x0)
+    x0 = r1array(x0)
     n = len(x0)
     if type(args) != type(()): args = (args,)
     m = check_func(func,x0,args,n)[0]
@@ -246,16 +247,16 @@ def check_gradient(fcn,Dfcn,x0,col_deriv=0):
     """Perform a simple check on the gradient for correctness.
     """
 
-    x = myasarray(x0)
+    x = r1array(x0)
     n = len(x)
     x.shape = (n,)
-    fvec = myasarray(fcn(x))
+    fvec = r1array(fcn(x))
     if 1 not in fvec.shape:
         raise ValueError, "Function does not return a 1-D array."
     m = len(fvec)
     fvec.shape = (m,)
     ldfjac = m
-    fjac = myasarray(Dfcn(x))
+    fjac = r1array(Dfcn(x))
     fjac.shape = (m,n)
     if col_deriv == 0:
         fjac = transpose(fjac)
@@ -265,7 +266,7 @@ def check_gradient(fcn,Dfcn,x0,col_deriv=0):
     fvecp = None
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,1,err)
     
-    fvecp = myasarray(fcn(xp))
+    fvecp = r1array(fcn(xp))
     fvecp.shape = (m,)
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,2,err)
     

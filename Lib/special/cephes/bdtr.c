@@ -151,6 +151,8 @@ Copyright 1984, 1987, 1995 by Stephen L. Moshier
 double incbet(), incbi(), pow(), log1p(), expm1();
 #endif
 
+extern double NAN;
+
 double bdtrc( k, n, p )
 int k, n;
 double p;

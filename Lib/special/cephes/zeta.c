@@ -64,7 +64,7 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #ifndef ANSIPROT
 double fabs(), pow(), floor();
 #endif
-extern double MAXNUM, MACHEP;
+extern double MAXNUM, MACHEP, NAN;
 
 /* Expansion coefficients
  * for Euler-Maclaurin summation formula

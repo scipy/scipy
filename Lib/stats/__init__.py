@@ -1,7 +1,7 @@
 """ Statistical Functions
 """
 _modules = ['pstat']
-_namespaces = ['rv','stats','rv2']
+_namespaces = ['rv','stats','rv2', 'distrbutions']
 
 __all__ = []
 import scipy

@@ -17,7 +17,7 @@ save_state(file_string='prvstate.dat')......Save class <_pranv> state to disk.
 
        U n i f o r m   R a n d o m   N u m b e r   G e n e r a t o r
 ------------------------------------------------------------------------------
-random(size=None).....Return float from the chosen generator('CMRG', 'Flip',
+random2(size=None).....Return float from the chosen generator('CMRG', 'Flip',
     'SMRG' or 'Twister'), or return <None> and fill <buffer> if it was
     supplied.  The expected mean and standard deviation from any of the
     uniform(0,1) generators in the test program below are 0.500 and 0.289,
@@ -108,7 +108,7 @@ SequenceType = [types.TupleType, types.ListType, array.ArrayType, Num.ArrayType]
 
 def _check_shape(sh):
    if type(sh) not in SequenceType:
-      raise ValueError, "Shape parameter must be a sequence."
+      sh = [sh]
    for val in sh:
       if not isinstance(val,types.IntType):
          raise ValueError, "Each element of the shape parameter must be an integer."
@@ -699,7 +699,7 @@ class _pranv:
             self._seed = long(seed)  # Save for possible user inquiry.
             seed = seed & 0x7fffffff # Need positive 4-byte integer here.
             s = self._series         # local alias
-            s[0] = -1                # <_series[0]> is a sentinel;unused here.
+            s[0] = -1                # <_series[0]> is a sentinel unused here.
             prev = seed              # <_series[]> contains signed integers.
             next = 1
             s[55] = prev
@@ -2819,7 +2819,7 @@ _inst = _pranv()   # Initialize uniform(0,1) generator to default; clock seed.
 #                  Shortcuts to <_inst> methods
 
 #     Uniform(0,1) Random Number Generator
-random            =  _inst._random
+random2            =  _inst._random
 
 #            Utilities
 initial_seed      =  _inst._initial_seed
@@ -2842,8 +2842,8 @@ gumbel            =  _inst._Gumbel
 hypergeometric    =  _inst._hypergeometric
 laplace           =  _inst._Laplace
 logarithmic       =  _inst._logarithmic
-logistic          =  _inst._logistic
-lognormal         =  _inst._lognormal
+logistic      =  _inst._logistic
+#lognormal         =  _inst._lognormal
 #negative_binomial =  _inst._negative_binomial
 #normal            =  _inst._normal
 pareto            =  _inst._Pareto
@@ -2851,10 +2851,10 @@ pareto            =  _inst._Pareto
 #randint           =  _inst._randint
 rayleigh          =  _inst._Rayleigh
 #student_t         =  _inst._Student_t
-triangular        =  _inst._triangular
+triangle        =  _inst._triangular
 #uniform           =  _inst._uniform
 von_mises         =  _inst._von_Mises
-wald              =  _inst._Wald
+wald             =  _inst._Wald
 weibull           =  _inst._Weibull
 zipf              =  _inst._Zipf
 
@@ -2929,7 +2929,7 @@ class _gen_timer:
       sum = sumsq = 0.0
       smallest = 1e300
       largest = -1e300
-      if buf:
+      if buf is not None:
          buffer_size = self._buffer_size
          groups = n / buffer_size
          t0 = clock()
@@ -2990,7 +2990,7 @@ def _vergen(gen_abbr, seed, u100):
    """
    initialize('', gen_abbr, seed)
    x = 105*[0.0]
-   random(x)
+   random2(x)
    temp = random_algorithm()
    print temp[0:string.find(temp, ':')],
    print ' 100th result is %12.10g' % (x[99],),
@@ -3011,12 +3011,12 @@ def _versave(gen_abbr):
    """
    print random_algorithm(),
    initialize(file_string = None, algorithm = gen_abbr)
-   for i in xrange(1000): x1000 = random()
+   for i in xrange(1000): x1000 = random2()
    initialize(file_string = None, algorithm=gen_abbr, seed=initial_seed())
-   for i in xrange(500): y1000 = random()
+   for i in xrange(500): y1000 = random2()
    save_state()
    initialize(file_string = 'default')
-   for i in xrange(500): y1000 = random()
+   for i in xrange(500): y1000 = random2()
    assert abs(round(x1000,8) - round(y1000,8)) < 1e-7,\
      "Uniform generator state not saved correctly: " + `x1000` + ' ' + `y1000`
    print "save_state() verified."
@@ -3030,7 +3030,7 @@ def _rvtest():
    print "The default pseudorandom generator is:"
    print '   ', random_algorithm()
    print "The first uniform(0,1) pseudorandom delivered is: %12.6g" \
-          %(random(),)
+          %(random2(),)
    print "The (epoch-time-generated) seed was: %19s" %(initial_seed(),)
    print "%3d uniform(s) generated from this seed." %(random_count(),)
    print
@@ -3221,7 +3221,8 @@ def _rvtest():
 
    _do = _gen_timer()            # Instance of _gen_timer class
    benchmark = _do._bench        # alias for _bench()
-   buf = array.array('d', _do._buffer_size*[0.0])
+   sz = _do._buffer_size
+   buf = array.array('d', sz*[0.0])
    print "        Benchmark Timing and Statistics for Module rv Pseudo-random"
    print "                 Generators, Sample Size: % 10d" \
          % (int(_do._repetitions),)
@@ -3235,77 +3236,77 @@ def _rvtest():
    print
    initialize(file_string=None, algorithm='cmrg')
    print "rv.initialize(file_string=None, algorithm='cmrg')"
-   benchmark('random()', 0.5, 0.083333)
-   benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
+   benchmark('random2()', 0.5, 0.083333)
+   benchmark('random2(size=sz)', 0.5, 0.083333, buf)
 
    initialize(file_string=None, algorithm='flip')
    print "rv.initialize(file_string=None, algorithm='flip')"
-   benchmark('random()', 0.5, 0.083333)
-   benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
+   benchmark('random2()', 0.5, 0.083333)
+   benchmark('random2(size=sz)', 0.5, 0.083333, buf)
 
    initialize(file_string=None, algorithm='smrg')
    print "rv.initialize(file_string=None, algorithm='smrg')"
-   benchmark('random()', 0.5, 0.083333)
-   benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
+   benchmark('random2()', 0.5, 0.083333)
+   benchmark('random2(size=sz)', 0.5, 0.083333, buf)
 
    initialize(file_string=None, algorithm='twister')
    print "rv.initialize(file_string=None, algorithm='twister')"
-   benchmark('random()', 0.5, 0.083333)
-   benchmark('random(buffer=buf)', 0.5, 0.083333, buf)
+   benchmark('random2()', 0.5, 0.083333)
+   benchmark('random2(size=sz)', 0.5, 0.083333, buf)
 
    initialize(file_string=None, algorithm='flip')  # Use fastest uniform(0,1)
                                                    # generator.
    benchmark('beta(mu=4.0, nu=2.0)', 0.66667, 0.031746)
-   benchmark('beta(mu=4.0, nu=2.0, buffer=buf)', 0.66667, 0.031746, buf)
+   benchmark('beta(mu=4.0, nu=2.0, size=sz)', 0.66667, 0.031746, buf)
    benchmark('beta(mu=0.4, nu=0.2)', 0.66667, 0.138889)
-   benchmark('beta(mu=0.4, nu=0.2, buffer=buf)', 0.66667, 0.138889, buf)
+   benchmark('beta(mu=0.4, nu=0.2, size=sz)', 0.66667, 0.138889, buf)
    benchmark('beta(mu=0.4, nu=2.0)', 0.16667, 0.040850)
-   benchmark('beta(mu=0.4, nu=2.0, buffer=buf)', 0.16667, 0.040850, buf)
+   benchmark('beta(mu=0.4, nu=2.0, size=sz)', 0.16667, 0.040850, buf)
 
    benchmark('binomial(trials=25, pr_success=0.5)', 12.5, 6.25)
-   benchmark('binomial(trials=25, pr_success=0.5, buffer=buf)',12.5,6.25,buf)
+   benchmark('binomial(trials=25, pr_success=0.5, size=sz)',12.5,6.25,buf)
    benchmark('binomial(trials=25, pr_success=0.2)', 5.0, 4.0)
-   benchmark('binomial(trials=25, pr_success=0.2, buffer=buf)',5.0,4.00,buf)
+   benchmark('binomial(trials=25, pr_success=0.2, size=sz)',5.0,4.00,buf)
    benchmark('binomial(trials=500, pr_success=0.5)', 250.0, 125.0)
 
    benchmark('Cauchy(median=0.0, scale=1.0)', 0.0, 1e100)
-   benchmark('Cauchy(median=0.0, scale=1.0, buffer=buf)', 0.0, 1e100, buf)
+   benchmark('Cauchy(median=0.0, scale=1.0, size=sz)', 0.0, 1e100, buf)
 
    benchmark('chi_square(df=1.0)', 1.0, 2.0)
-   benchmark('chi_square(df=1.0,  buffer=buf)',   1.0,  2.0, buf)
+   benchmark('chi_square(df=1.0,  size=sz)',   1.0,  2.0, buf)
    benchmark('chi_square(df=10.0)', 10.0, 20.0)
-   benchmark('chi_square(df=10.0, buffer=buf)', 10.0, 20.0, buf)
+   benchmark('chi_square(df=10.0, size=sz)', 10.0, 20.0, buf)
 
    benchmark('choice( seq=(0,1) )', 0.5, 0.25)
-   benchmark('choice(seq=(0,1), buffer=buf)', 0.5, 0.25,buf)
+   benchmark('choice(seq=(0,1), size=sz)', 0.5, 0.25,buf)
    benchmark('choice( seq=(2, 4, 6, 8) )', 5.0, 5.0)
-   benchmark('choice(seq=(2, 4, 6, 8), buffer=buf)', 5.0, 5.0, buf)
+   benchmark('choice(seq=(2, 4, 6, 8), size=sz)', 5.0, 5.0, buf)
    benchmark('choice(seq=[1, 2, 3])', 2.0, 0.66667)
-   benchmark('choice(seq=[1, 2, 3], buffer=buf)', 2.0, 0.66667, buf)
+   benchmark('choice(seq=[1, 2, 3], size=sz)', 2.0, 0.66667, buf)
 
    benchmark('exponential(scale=1.0)', 1.0, 1.0)
-   benchmark('exponential(scale=1.0, buffer=buf)', 1.0, 1.0, buf)
+   benchmark('exponential(scale=1.0, size=sz)', 1.0, 1.0, buf)
 
    benchmark('Fisher_F(numdf=2.0, denomdf=10.0)', 1.25, 2.60417)
-   benchmark('Fisher_F(numdf=2.0, denomdf=10.0, buffer=buf)',1.25,2.60417,buf)
+   benchmark('Fisher_F(numdf=2.0, denomdf=10.0, size=sz)',1.25,2.60417,buf)
 
    benchmark('gamma(mu=0.5)', 0.5, 0.5)
-   benchmark('gamma(mu=0.5, buffer=buf)', 0.5, 0.5, buf)
+   benchmark('gamma(mu=0.5, size=sz)', 0.5, 0.5, buf)
    benchmark('gamma(mu=10.0)', 10.0, 10.0)
-   benchmark('gamma(mu=10.0, buffer=buf)', 10.0, 10.0, buf)
+   benchmark('gamma(mu=10.0, size=sz)', 10.0, 10.0, buf)
 
    benchmark('geometric(pr_failure=0.5)', 1.0, 2.0)
-   benchmark('geometric(pr_failure=0.5, buffer=buf)', 1.0, 2.0, buf)
+   benchmark('geometric(pr_failure=0.5, size=sz)', 1.0, 2.0, buf)
    benchmark('geometric(pr_failure=0.95)', 19.0, 380.0)
-   benchmark('geometric(pr_failure=0.95, buffer=buf)', 19.0, 380.0, buf)
+   benchmark('geometric(pr_failure=0.95, size=sz)', 19.0, 380.0, buf)
 
    benchmark('Gumbel(mode=1.0,scale=1.0)', 1.57721, 1.644934)
-   benchmark('Gumbel(mode=1.0,scale=1.0,buffer=buf)', 1.57721,1.644934, buf)
+   benchmark('Gumbel(mode=1.0,scale=1.0,size=sz)', 1.57721,1.644934, buf)
 
    benchmark('hypergeometric(bad=10,good=25,sample=10)', 2.85714, 1.500600)
-   benchmark('hypergeometric(10,25,10,buffer=buf)', 2.85714, 1.500600, buf)
+   benchmark('hypergeometric(10,25,10,size=sz)', 2.85714, 1.500600, buf)
    benchmark('hypergeometric(bad=10,good=25,sample=15)', 4.285714, 1.800720)
-   benchmark('hypergeometric(10,25,15,buffer=buf)', 4.285714, 1.800720, buf)
+   benchmark('hypergeometric(10,25,15,size=sz)', 4.285714, 1.800720, buf)
    benchmark('hypergeometric(bad=10, good=25, sample=20)', 5.71429, 1.800720)
    benchmark('hypergeometric(bad=25, good=10, sample=10)', 7.142857, 1.500600)
    benchmark('hypergeometric(bad=10, good=25, sample=34)', 9.714286, 0.204082)
@@ -3315,50 +3316,50 @@ def _rvtest():
    benchmark('hypergeometric(bad=25, good=475,sample=50)', 2.50, 2.14178)
 
    benchmark('Laplace(mu=0.0, scale=1.0)', 0.0, 2.0)
-   benchmark('Laplace(mu=0.0, scale=1.0, buffer=buf)', 0.0, 2.0, buf)
+   benchmark('Laplace(mu=0.0, scale=1.0, size=sz)', 0.0, 2.0, buf)
 
    benchmark('logarithmic(p=0.5)', 1.442695, 0.804021)
-   benchmark('logarithmic(p=0.5, buffer=buf)', 1.442695, 0.804021, buf)
+   benchmark('logarithmic(p=0.5, size=sz)', 1.442695, 0.804021, buf)
    benchmark('logarithmic(p=0.975)',10.57232, 311.1188)
-   benchmark('logarithmic(p=0.975, buffer=buf)', 10.57232, 311.1188, buf)
+   benchmark('logarithmic(p=0.975, size=sz)', 10.57232, 311.1188, buf)
 
    benchmark('logistic(mu=0.0, scale=1.0)', 0.0, 3.289868)
-   benchmark('logistic(mu=0.0, scale=1.0, buffer=buf)', 0.0, 3.289868, buf)
+   benchmark('logistic(mu=0.0, scale=1.0, size=sz)', 0.0, 3.289868, buf)
 
    benchmark('lognormal(mean=0.0, sigma=1.0)', 1.64872, 4.670774)
-   benchmark('lognormal(mean=0.0, sigma=1.0, buffer=buf)',1.6487, 4.6708, buf)
+   benchmark('lognormal(mean=0.0, sigma=1.0, size=sz)',1.6487, 4.6708, buf)
 
    benchmark('negative_binomial(r=0.5, pr_failure=0.5)', 0.5, 1.0)
-   benchmark('negative_binomial(r=0.5,pr_failure=0.5,buffer=buf)',0.5,1.0,buf)
+   benchmark('negative_binomial(r=0.5,pr_failure=0.5,size=sz)',0.5,1.0,buf)
    benchmark('negative_binomial(r=2.0, pr_failure=0.5)', 2.0, 4.0)
-   benchmark('negative_binomial(r=2.0,pr_failure=0.5,buffer=buf)',2.0,4.0,buf)
+   benchmark('negative_binomial(r=2.0,pr_failure=0.5,size=sz)',2.0,4.0,buf)
    benchmark('negative_binomial(r=0.5, pr_failure=0.9)', 4.5, 45.0)
    benchmark('negative_binomial(r=2.0, pr_failure=0.1)', 0.22222, 0.24691)
 
    benchmark('normal(mu=0.0, sigma=1.0)', 0.0, 1.0)
-   benchmark('normal(mu=0.0, sigma=1.0, buffer=buf)', 0.0, 1.0, buf)
+   benchmark('normal(mu=0.0, sigma=1.0, size=sz)', 0.0, 1.0, buf)
 
    benchmark('Pareto(mode=1.0, shape=4.0)', 1.33333, 0.222222)
-   benchmark('Pareto(mode=1.0, shape=4.0, buffer=buf)',1.33333,0.222222,buf)
+   benchmark('Pareto(mode=1.0, shape=4.0, size=sz)',1.33333,0.222222,buf)
 
    benchmark('Poisson(rate=5.0)', 5.0, 5.0)
-   benchmark('Poisson(rate=5.0, buffer=buf)', 5.0, 5.0,buf)
+   benchmark('Poisson(rate=5.0, size=sz)', 5.0, 5.0,buf)
    benchmark('Poisson(rate=20.0)', 20.0, 20.0)
-   benchmark('Poisson(rate=20.0, buffer=buf)', 20.0, 20.0,buf)
+   benchmark('Poisson(rate=20.0, size=sz)', 20.0, 20.0,buf)
    benchmark('Poisson(rate=200.0)', 200.0, 200.0)
 
    benchmark('randint(lowint=-1, upint=+1)', 0.0, 0.66667)
-   benchmark('randint(lowint=-1, upint=+1, buffer=buf)', 0.0, 0.66667 ,buf)
+   benchmark('randint(lowint=-1, upint=+1, size=sz)', 0.0, 0.66667 ,buf)
    benchmark('randint(lowint=0, upint=1)', 0.5, 0.25)
-   benchmark('randint(lowint=0, upint=1, buffer=buf)', 0.5, 0.25,buf)
+   benchmark('randint(lowint=0, upint=1, size=sz)', 0.5, 0.25,buf)
 
    benchmark('Rayleigh(mode=1.0)', 1.253314, 0.429204)
-   benchmark('Rayleigh(mode=1.0, buffer=buf)', 1.253314, 0.429204,buf)
+   benchmark('Rayleigh(mode=1.0, size=sz)', 1.253314, 0.429204,buf)
 
    benchmark('Student_t(df=1.0)', 0.0, 1e100)
-   benchmark('Student_t(df=1.0, buffer=buf)', 0.0, 1e100, buf)
+   benchmark('Student_t(df=1.0, size=sz)', 0.0, 1e100, buf)
    benchmark('Student_t(df=100.0)', 0.0, 1.0204082)
-   benchmark('Student_t(df=100.0, buffer=buf)', 0.0, 1.0204082, buf)
+   benchmark('Student_t(df=100.0, size=sz)', 0.0, 1.0204082, buf)
    benchmark('Student_t(df=3.5)', 0.0, 2.333333)
 
    benchmark('triangular(left=0.0, mode=0.5, right=1.0)', 0.5, 0.04166667)
@@ -3369,19 +3370,19 @@ def _rvtest():
    benchmark('triangular(0.0, 1.0, 1.0, buf)', 0.66667, 0.055556, buf)
 
    benchmark('uniform(lower=-0.5, upper=+0.5)', 0.0, 0.0833333)
-   benchmark('uniform(lower=-0.5, upper=+0.5, buffer=buf)',0.0,0.0833333,buf)
+   benchmark('uniform(lower=-0.5, upper=+0.5, size=sz)',0.0,0.0833333,buf)
 
    benchmark('von_Mises(mean=0.0, shape=1.0)', 0.0, 1.61)
-   benchmark('von_Mises(mean=0.0, shape=1.0, buffer=buf)', 0.0, 1.61,buf)
+   benchmark('von_Mises(mean=0.0, shape=1.0, size=sz)', 0.0, 1.61,buf)
 
    benchmark('Wald(mean=1.0, scale=1.0)', 1.0, 1.0)
-   benchmark('Wald(mean=1.0, scale=1.0, buffer=buf)', 1.0, 1.0,buf)
+   benchmark('Wald(mean=1.0, scale=1.0, size=sz)', 1.0, 1.0,buf)
 
    benchmark('Weibull(scale=1.0, shape=0.5)', 2.01, 20.16)
-   benchmark('Weibull(scale=1.0, shape=0.5, buffer=buf)', 2.01, 20.16,buf)
+   benchmark('Weibull(scale=1.0, shape=0.5, size=sz)', 2.01, 20.16,buf)
 
    benchmark('Zipf(a=4.0)', 1.110630, 0.28632)
-   benchmark('Zipf(a=4.0, buffer=buf)', 1.110630, 0.28632, buf)
+   benchmark('Zipf(a=4.0, size=sz)', 1.110630, 0.28632, buf)
 
    save_state()
    print
