@@ -1,0 +1,1943 @@
+gist:
+
+      Copyright (c) 1996, 1997, The Regents of the University of
+      California.  All rights reserved.  See Legal.htm for full
+      text and disclaimer.
+
+     This is the help file for the Python Gist Graphics Module. Gist
+     is a portable graphics package for scientific applications. It
+     can produce interactive graphics in the X-window and Macintosh
+     environments (the Python module currently supports only X11), and
+     it can produce file output conforming to ANSI standard CGM or
+     standard Postscript.
+
+     Gist was developed by David H. Munro <munro@icf.llnl.gov> at
+     Lawrence Livermore National Laboratory, as part of his Yorick
+     scientific interpreter. Gist is distributed as part of Yorick, and
+     is available at the following sites:
+
+       wuarchive.wustl.edu: /languages/yorick/yorick-1.2.tar.gz
+       sunsite.unc.edu: /pub/languages/yorick/yorick-1.2.tar.gz
+       sunsite.unc.edu: /pub/Linux/apps/math/matrix/yorick-1.2.tar.gz
+       netlib.att.com: /netlib/env/yorick-1.2.tar.gz
+       netlib2.cs.utk.edu: /env/yorick-1.2.tar.gz
+
+     Much of the code in the Python Gist C extension module was
+     adapted from similar code in Yorick, and this help file also
+     originated there. I am greatly indebted to Dave for his prior work.
+     Questions about this module should be directed to me, Lee Busby,
+     <busby1@llnl.gov>.
+
+/*--------------------------------------------------------------------------*/
+/* Control functions */
+
+window:
+window( [n] [, display = "host:server.screen", dpi=100/75, wait=0/1,
+                       private=0/1, hcp="hcp_filename", dump=0/1,
+                       legends=1/0, style="style_sheet_filename" ] )
+     select window N as the current graphics output window.  N may
+     range from 0 to 7, inclusive.  Each graphics window corresponds to
+     an X window, and optionally has its own associated hardcopy file.
+     If N is omitted, it defaults to the current coordinate system.
+
+     The X window will appear on your default display at 75 dpi, unless
+     you specify the display and/or dpi keywords.  A dpi=100 X window
+     is larger than a dpi=75 X window; both represent the same thing
+     on paper.  Use display="" to create a graphics window which has
+     no associated X window (you should do this if you want to make
+     plots in a non-interactive batch mode).
+
+     By default, an X window will attempt to use shared colors, which
+     permits several Pygist graphics windows (including windows from
+     multiple instances of Python) to use a common palette.  You can
+     force an X window to post its own colormap (set its colormap
+     attribute) with the private=1 keyword.  You will most likely have
+     to fiddle with your window manager to understand how it handles
+     colormap focus if you do this.  Use private=0 to return to shared
+     colors.
+
+     By default, Python will not wait for the X window to become visible;
+     code which creates a new window, then plots a series of frames to
+     that window should use wait=1 to assure that all frames are actually
+     plotted.
+
+     By default, a graphics window does NOT have a hardcopy file
+     of its own -- any request for hardcopy are directed to the
+     default hardcopy file, so hardcopy output from any window goes
+     to a single file.  By specifying the hcp keyword, however, a
+     hardcopy file unique to this window will be created.  If the
+     "hcp_filename" ends in ".ps", the hardcopy file will be a PostScript
+     file; otherwise, hardcopy files are in binary CGM format.  Use
+     hcp="" to revert to the default hardcopy file (closing the window
+     specific file, if any).  The legends keyword, if present, controls
+     whether the curve legends are (legends=1, the default) or are not
+     (legends=0) dumped to the hardcopy file.  The dump keyword, if
+     present, controls whether all colors are converted to a gray scale
+     (dump=0, the default), or the current palette is dumped at the
+     beginning of each page of hardcopy output.  (The legends keyword
+     applies to all pictures dumped to hardcopy from this graphics
+     window.  The dump keyword applies only to the specific hardcopy
+     file defined using the hcp keyword -- use the dump keyword in the
+     hcp_file command to get the same effect in the default hardcopy
+     file.)
+
+     If both display="" and hcp="", the graphics window will be
+     entirely eliminated.
+
+     The style keyword, if present, specifies the name of a Gist style
+     sheet file; the default is "work.gs".  The style sheet determines
+     the number and location of coordinate systems, tick and label styles,
+     and the like.  Other choices include "axes.gs", "boxed.gs",
+     "work2.gs", and "boxed2.gs".
+
+     Window(...) returns the current window number.
+   SEE ALSO: plsys, hcp_file, fma, hcp, redraw, palette, animate, plg,
+             winkill, gridxy
+
+winkill:
+winkill( [n] )
+     Delete the current graphics window, or graphics window N (0-7).
+
+current_window:
+n = current_window()
+     Return the number of the current graphics window, or -1 if none.
+
+hcp_file:
+hcp_file( [filename] [, dump=0/1] )
+     Sets the default hardcopy file to FILENAME.  If FILENAME ends with
+     ".ps", the file will be a PostScript file, otherwise it will be a
+     binary CGM file.  By default, the hardcopy file name will be
+     "Aa00.cgm", or "Ab00.cgm" if that exists, or "Ac00.cgm" if both
+     exist, and so on.  The default hardcopy file gets hardcopy from all
+     graphics windows which do not have their own specific hardcopy file
+     (see the window command).  If the dump keyword is present and non-zero,
+     the current palette will be dumped at the beginning of each frame
+     of the default hardcopy file.  With dump=0, the default behavior of
+     converting all colors to a gray scale is restored.
+   SEE ALSO: window, fma, hcp, plg
+
+hcp_finish:
+filename = hcp_finish( [n] )
+     Close the current hardcopy file and return the filename.
+     If N is specified, close the hcp file associated with window N
+     and return its name; use hcp_finish(-1) to close the default
+     hardcopy file.
+   SEE ALSO: window, fma, hcp, hcp_out, plg
+
+hcp_out: **** NOT YET IMPLEMENTED ****
+hcp_out( [n] [,keep = 0/1] )
+     Finishes the current hardcopy file and sends it to the printer.
+     If N is specified, prints the hcp file associated with window N;
+     use hcp_out(-1) to print the default hardcopy file.
+     Unless the KEEP keyword is supplied and non-zero, the file will
+     be deleted after it is processed by gist and sent to lpr.
+   SEE ALSO: window, fma, hcp, hcp_finish, plg
+
+eps:
+eps(name)
+     Write the picture in the current graphics window to the Encapsulated
+     PostScript file NAME+".epsi" (i.e.- the suffix .epsi is added to NAME).
+     The eps function requires the ps2epsi utility which comes with the
+     project GNU Ghostscript program.  Any hardcopy file associated with
+     the current window is first closed, but the default hardcopy file is
+     unaffected.  As a side effect, legends are turned off and color table
+     dumping is turned on for the current window.
+     The environment variable PS2EPSI_FORMAT contains the format for the
+     command to start the ps2epsi program.
+   SEE ALSO: window, fma, hcp, hcp_finish, plg
+
+fma:
+fma()
+     Frame advance the current graphics window.  The current picture
+     remains displayed in the associated X window until the next element
+     is actually plotted.
+   SEE ALSO: window, hcp, animate, plg
+
+hcp:
+hcpon:
+hcpoff:
+hcp(), or hcpon(), or hcpoff()
+     The hcp command sends the picture displayed in the current graphics
+     window to the hardcopy file.  (The name of the default hardcopy file
+     can be specified using hcp_file; each individual graphics window may
+     have its own hardcopy file as specified by the window command.)
+     The hcpon command causes every fma (frame advance) command to do
+     and implicit hcp, so that every frame is sent to the hardcopy file.
+     The hcpoff command reverts to the default "demand only" mode.
+   SEE ALSO: window, fma, plg
+
+redraw:
+redraw()
+     Redraw the X window associated with the current graphics window.
+   SEE ALSO: window, fma, hcp, plg
+
+palette:
+palette( filename )
+or palette( source_window_number )
+or palette( red, green, blue, ntsc=1/0 )
+or palette( red, green, blue, gray )
+or palette( red, green, blue, query=1 )
+or palette( red, green, blue, gray, query=1 )
+     Set (or retrieve with query=1) the palette for the current
+     graphics window.  The FILENAME is the name of a Gist palette file;
+     the standard palettes are "earth.gp", "stern.gp", "rainbow.gp",
+     "heat.gp", "gray.gp", and "yarg.gp".  Use the maxcolors keyword
+     in the pldefault command to put an upper limit on the number of
+     colors which will be read from the palette in FILENAME.
+
+     In the second form, the palette for the current window is copied
+     from the SOURCE_WINDOW_NUMBER.  If the X colormap for the window is
+     private, there will still be two separate X colormaps for the two
+     windows, but they will have the same color values.
+
+     In the third form, RED, GREEN, and BLUE are 1-D arrays of the same
+     length specifying the palette you wish to install; the values
+     should vary between 0 and 255, and your palette should have no
+     more than 240 colors.  If ntsc=0, monochrome devices (such as most
+     laser printers) will use the average brightness to translate your
+     colors into gray; otherwise, the NTSC (television) averaging will
+     be used (.30*RED+.59*GREEN+.11*BLUE).  Alternatively, you can specify
+     GRAY explicitly.
+
+     Ordinarily, the palette is not dumped to a hardcopy file
+     (color hardcopy is still rare and expensive), but you can
+     force the palette to dump using the window() or hcp_file() commands.
+
+     See the dump= keyword for the hcp_file() and window() commands if you
+     are having trouble getting color in your hardcopy files.
+
+   SEE ALSO: window, fma, hcp, pldefault, plg
+
+animate:
+animate()
+or animate( 0/1 )
+     Without any arguments, toggle animation mode; with argument 0,
+     turn off animation mode; with argument 1 turn on animation mode.
+     In animation mode, the X window associated with a graphics window
+     is actually an offscreen pixmap which is bit-blitted onscreen
+     when an fma() command is issued.  This is confusing unless you are
+     actually trying to make a movie, but results in smoother animation
+     if you are.  Generally, you should turn animation on, run your movie,
+     then turn it off.
+   SEE ALSO: window, fma, plg
+
+plsys:
+plsys( n )
+     Set the current coordinate system to number N in the current
+     graphics window.  If N equals 0, subsequent elements will be
+     plotted in absolute NDC coordinates outside of any coordinate
+     system.  The default style sheet "work.gs" defines only a single
+     coordinate system, so the only other choice is N equal 1.  You
+     can make up your own style sheet (using a text editor) which
+     defines multiple coordinate systems.  You need to do this if
+     you want to display four plots side by side on a single page,
+     for example.  The standard style sheets "work2.gs" and "boxed2.gs"
+     define two overlayed coordinate systems with the first labeled
+     to the right of the plot and the second labeled to the left of
+     the plot.  When using overlayed coordinate systems, it is your
+     responsibility to ensure that the x-axis limits in the two
+     systems are identical.
+   SEE ALSO: window, limits, plg
+
+/*--------------------------------------------------------------------------*/
+/* Plotting functions (output primitives) */
+
+plg:
+plg( y [, x] )
+     Plot a graph of Y versus X.  Y and X must be 1-D arrays of equal
+     length; if X is omitted, it defaults to [1, 2, ..., 1+range(len(Y))].
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     type, width, color, closed, smooth
+             marks, marker, mspace, mphase
+	     rays, arrowl, arroww, rspace, rphase
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp
+             limits, logxy, ylimits, fma, hcp
+
+plm:
+plm( y, x, boundary=0/1, inhibit=0/1/2 )
+or plm( y, x, ireg, boundary=0/1, inhibit=0/1/2 )
+or plm( boundary=0/1, inhibit=0/1/2 )
+     Plot a mesh of Y versus X.  Y and X must be 2-D arrays with equal
+     dimensions.  If present, IREG must be a 2-D region number array
+     for the mesh, with the same dimensions as X and Y.  The values of
+     IREG should be positive region numbers, and zero for zones which do
+     not exist.  The first row and column of IREG never correspond to any
+     zone, and should always be zero.  The default IREG is 1 everywhere
+     else.  If present, the BOUNDARY keyword determines whether the
+     entire mesh is to be plotted (boundary=0, the default), or just the
+     boundary of the selected region (boundary=1).  If present, the
+     INHIBIT keyword causes the (X(,j),Y(,j)) lines to not be plotted
+     (inhibit=1), or the (X(i,),Y(i,)) lines to not be plotted (inhibit=2).
+     By default (inhibit=0), mesh lines in both logical directions are
+     plotted.
+     The Y, X, and IREG arguments may all be omitted to default to the
+     mesh set by the most recent plmesh call.
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     type, width, color
+	     region
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
+             limits, logxy, ylimits, fma, hcp
+
+plmesh:
+plmesh( y, x, ireg, triangle=tri_array )
+or plmesh()
+     Set the default mesh for subsequent plm, plc, plv, and plf calls.
+     In the second form, deletes the default mesh (until you do this,
+     or switch to a new default mesh, the default mesh arrays persist and
+     take up space in memory).  The Y, X, and IREG arrays should all be
+     the same shape; Y and X will be converted to double, and IREG will
+     be converted to int.  If IREG is omitted, it defaults to IREG(1,)=
+     IREG(,1)= 0, IREG(2:,2:)=1; that is, region number 1 is the whole
+     mesh.  The triangulation array TRI_ARRAY is used by plc; the
+     correspondence between TRI_ARRAY indices and zone indices is the
+     same as for IREG, and its default value is all zero.
+     The IREG or TRI_ARRAY arguments may be supplied without Y and X
+     to change the region numbering or triangulation for a given set of
+     mesh coordinates.  However, a default Y and X must already have been
+     defined if you do this.
+     If Y is supplied, X must be supplied, and vice-versa.
+   SEE ALSO: plm, plc, plv, plf, plfp
+
+plc:
+plc( z, y, x, levs=z_values )
+or plc( z, y, x, ireg, levs=z_values )
+or plc( z, levs=z_values )
+     Plot contours of Z on the mesh Y versus X.  Y, X, and IREG are
+     as for plm.  The Z array must have the same shape as Y and X.
+     The function being contoured takes the value Z at each point
+     (X,Y) -- that is, the Z array is presumed to be point-centered.
+     The Y, X, and IREG arguments may all be omitted to default to the
+     mesh set by the most recent plmesh call.
+     The LEVS keyword is a list of the values of Z at which you want
+     contour curves.  The default is eight contours spanning the
+     range of Z.
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     type, width, color, smooth
+             marks, marker, mspace, mphase
+	     smooth, triangle, region
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
+             limits, logxy, ylimits, fma, hcp
+
+plv:
+plv( vy, vx, y, x, scale=dt )
+or plv( vy, vx, y, x, ireg, scale=dt )
+or plv( vy, vx, scale=dt )
+     Plot a vector field (VX,VY) on the mesh (X,Y).  Y, X, and IREG are
+     as for plm.  The VY and VX arrays must have the same shape as Y and X.
+     The Y, X, and IREG arguments may all be omitted to default to the
+     mesh set by the most recent plmesh call.
+     The SCALE keyword is the conversion factor from the units of
+     (VX,VY) to the units of (X,Y) -- a time interval if (VX,VY) is a velocity
+     and (X,Y) is a position -- which determines the length of the
+     vector "darts" plotted at the (X,Y) points.  If omitted, SCALE is
+     chosen so that the longest ray arrows have a length comparable
+     to a "typical" zone size.
+     You can use the scalem keyword in pledit to make adjustments to the
+     SCALE factor computed by default.
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     type, width, color, smooth
+             marks, marker, mspace, mphase
+	     triangle, region
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh, pledit,
+             limits, logxy, ylimits, fma, hcp
+
+plf:
+plf( z, y, x )
+or plf( z, y, x, ireg )
+or plf( z )
+     Plot a filled mesh Y versus X.  Y, X, and IREG are as for plm.
+     The Z array must have the same shape as Y and X, or one smaller
+     in both dimensions.  If Z is of type char, it is used "as is",
+     otherwise it is linearly scaled to fill the current palette, as
+     with the bytscl function.
+     (See the bytscl function for explanation of top, cmin, cmax.)
+     The mesh is drawn with each zone in the color derived from the Z
+     function and the current palette; thus Z is interpreted as a
+     zone-centered array.
+     The Y, X, and IREG arguments may all be omitted to default to the
+     mesh set by the most recent plmesh call.
+     A solid edge can optionally be drawn around each zone by setting
+     the EDGES keyword non-zero.  ECOLOR and EWIDTH determine the edge
+     color and width.  The mesh is drawn zone by zone in order from
+     IREG(2+imax) to IREG(jmax*imax) (the latter is IREG(imax,jmax)),
+     so you can achieve 3D effects by arranging for this order to
+     coincide with back-to-front order.  If Z is nil, the mesh zones
+     are filled with the background color, which you can use to
+     produce 3D wire frames.
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     region, top, cmin, cmax, edges, ecolor, ewidth
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh,
+             limits, logxy, ylimits, fma, hcp, palette, bytscl, histeq_scale
+ */
+
+plfc:
+plfc (z, y, x, ireg, contours = 20, colors = None, region = 0,
+ triangle = None, scale = "lin")
+      fills contours of Z on the mesh Y versus X.  Y, X, and IREG are
+      as for plm.  The Z array must have the same shape as Y and X.
+      The function being contoured takes the value Z at each point
+      (X, Y) -- that is, the Z array is presumed to be point-centered.
+ 
+      The CONTOURS keyword can be an integer specifying the number of
+      contours desired, or a list of the values of Z at which you want
+      contour curves.  These curves divide the mesh into len(CONTOURS+1)
+      regions, each of which is filled with a solid color.  If CONTOURS is
+      None or not given, 20 "nice" equally spaced level values spanning the
+      range of Z are selected.
+ 
+      If you specify CONTOURS, you may also specify COLORS, an array of
+      color numbers (Python typecode 'b', integers between 0 and the
+      length of the current palette - 1, normally 199) of length
+      len(CONTOURS)+1. If you do not specify them, equally
+      spaced colors are chosen.
+
+      If CONTOURS is an integer, SCALE expresses how contour levels
+      are determined.  SCALE may be "lin", "log", or "normal"
+      specifying linearly, logarithmically, or normally spaced
+      contours. Note that unlike Yorick's plfc, this routine does
+      not use spann to compute its contours. Neither, apparently,
+      does plc, which uses a third algorithm which matches neither
+      the one we use nor the one spann uses. So if you plot filled
+      contours and then plot contour lines, the contours will in
+      general not coincide exactly.
+
+      Note that you may use spann to calculate your contour levels
+      if you wish.
+ 
+      The following keywords are legal (each has a separate help entry):
+    KEYWORDS: triangle, region
+    SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
+              color_bar, spann, contour, limits, logxy, range, fma, hcp
+
+plfp:
+plfp( z, y, x, n )
+     Plot a list of filled polygons Y versus X, with colors Z.
+     The N array is a 1D list of lengths (number of corners) of the
+     polygons; the 1D colors array Z has the same length as N.  The
+     X and Y arrays have length equal to the sum of all dimensions
+     of N.
+     The Z array must have the same shape as Y and X.  If Z is of
+     type char, it is used "as is", otherwise it is linearly scaled
+     to fill the current palette, as with the bytscl function.
+     (See the bytscl function for explanation of top, cmin, cmax.)
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide, top, cmin, cmax
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj
+             limits, logxy, ylimits, fma, hcp
+ */
+
+pli:
+pli( z )
+or pli( z, x1, y1 )
+or pli( z, x0, y0, x1, y1 )
+     Plot the image Z as a cell array -- an array of equal rectangular
+     cells colored according to the 2-D array Z.  The first dimension
+     of Z is plotted along x, the second dimension is along y.
+     If Z is of type char, it is used "as is", otherwise it is linearly
+     scaled to fill the current palette, as with the bytscl function.
+     (See the bytscl function for explanation of top, cmin, cmax.)
+     If X1 and Y1 are given, they represent the coordinates of the
+     upper right corner of the image.  If X0, and Y0 are given, they
+     represent the coordinates of the lower left corner, which is at
+     (0,0) by default.  If only the Z array is given, each cell will be
+     a 1x1 unit square, with the lower left corner of the image at (0,0).
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide, top, cmin, cmax
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp,
+             limits, logxy, ylimits, fma, hcp, palette, bytscl, histeq_scale
+
+pldj:
+pldj( x0, y0, x1, y1 )
+     Plot disjoint lines from (X0,Y0) to (X1,Y1).  X0, Y0, X1, and Y1
+     may have any dimensionality, but all must have the same number of
+     elements.
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     type, width, color
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp
+             limits, logxy, ylimits, fma, hcp
+
+plt:
+plt( text, x, y, tosys=0/1 )
+     Plot TEXT (a string) at the point (X,Y).  The exact relationship
+     between the point (X,Y) and the TEXT is determined by the
+     justify keyword.  TEXT may contain newline ("\n") characters
+     to output multiple lines of text with a single call.  The
+     coordinates (X,Y) are NDC coordinates (outside of any coordinate
+     system) unless the tosys keyword is present and non-zero, in
+     which case the TEXT will be placed in the current coordinate
+     system.  However, the character height is NEVER affected by the
+     scale of the coordinate system to which the text belongs.
+     Note that the pledit command takes dx and/or dy keywords to
+     adjust the position of existing text elements.
+     The following keywords are legal (each has a separate help entry):
+   KEYWORDS: legend, hide
+	     color, font, height, opaque, path, justify
+   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, pledit
+             limits, ylimits, fma, hcp, pltitle
+
+pltitle:
+pltitle( title )
+     Plot TITLE centered above the coordinate system for any of the
+     standard Gist styles.  You will need to customize this for other
+     plot styles.
+
+/*--------------------------------------------------------------------------*/
+/* Plot limits and log/linear scaling */
+
+limits:
+old_limits = limits()
+or old_limits = limits( xmin [, xmax, ymin, ymax,]
+     [ square=0/1, nice=0/1, restrict=0/1 ] )
+or limits( old_limits )
+
+     In the first form, restore all four plot limits to extreme values,
+     and save the previous limits in the tuple old_limits.
+
+     In the second form, set the plot limits in the current coordinate
+     system to XMIN, XMAX, YMIN, YMAX, which may each be a number to fix
+     the corresponding limit to a specified value, or the string "e"
+     to make the corresponding limit take on the extreme value of the
+     currently displayed data. Arguments may be omitted from the right
+     end only. (But see ``ylimits'' to set limits on the y-axis.)
+
+     If present, the square keyword determines whether limits marked as
+     extreme values will be adjusted to force the x and y scales to be
+     equal (square=1) or not (square=0, the default). If present, the
+     nice keyword determines whether limits will be adjusted to nice
+     values (nice=1) or not (nice=0, the default). There is a subtlety
+     in the meaning of "extreme value" when one or both of the limits
+     on the OPPOSITE axis have fixed values -- does the "extreme value"
+     of the data include points which will not be plotted because their
+     other coordinate lies outside the fixed limit on the opposite axis
+     (restrict=0, the default), or not (restrict=1)?
+
+     Limits() always returns a tuple of 4 doubles and an integer;
+     OLD_LIMITS[0:3] are the previous xmin, xmax, ymin, and ymax, and
+     OLD_LIMITS[4] is a set of flags indicating extreme values and the
+     square, nice, restrict, and log flags. This tuple can be saved and
+     passed back to limits() in a future call to restore the limits to a
+     previous state.
+
+     In an X window, the limits may also be adjusted interactively with
+     the mouse. Drag left to zoom in and pan (click left to zoom in on a
+     point without moving it), drag middle to pan, and click (and drag)
+     right to zoom out (and pan). If you click just above or below the
+     plot, these operations will be restricted to the x-axis; if you
+     click just to the left or right, the operations are restricted to
+     the y-axis. A shift-left click, drag, and release will expand the
+     box you dragged over to fill the plot (other popular software zooms
+     with this paradigm). If the rubber band box is not visible with
+     shift-left zooming, try shift-middle or shift-right for alternate
+     XOR masks. Such mouse-set limits are equivalent to a limits command
+     specifying all four limits EXCEPT that the unzoom command can
+     revert to the limits before a series of mouse zooms and pans.
+
+     The limits you set using the limits or ylimits functions carry over
+     to the next plot -- that is, an fma operation does NOT reset the
+     limits to extreme values.
+
+   SEE ALSO: plsys, ylimits, logxy, zoom_factor, unzoom, plg
+
+ylimits:
+ylimits(ymin, ymax)
+     Set the y-axis plot limits in the current coordinate system to
+     YMIN, YMAX, which may each be a number to fix the corresponding
+     limit to a specified value, or the string "e" to make the
+     corresponding limit take on the extreme value of the currently
+     displayed data. Arguments may be omitted only from the right. Use
+     limits( xmin, xmax ) to accomplish the same function for the x-axis
+     plot limits.  Note that the corresponding Yorick function for
+     ylimits is ``range'' - since this word is a Python built-in function,
+     I've changed the name to avoid the collision.
+   SEE ALSO: plsys, limits, logxy, plg
+
+logxy:
+logxy( xflag, yflag )
+     Sets the linear/log axis scaling flags for the current coordinate
+     system. XFLAG and YFLAG may be 0 to select linear scaling, or 1 to
+     select log scaling. YFLAG may be omitted (but not XFLAG).
+   SEE ALSO: plsys, limits, ylimits, plg, gridxy
+
+gridxy:
+gridxy( flag )
+or gridxy( xflag, yflag )
+     Turns on or off grid lines according to FLAG.  In the first form, both
+     the x and y axes are affected.  In the second form, XFLAG and YFLAG
+     may differ to have different grid options for the two axes.  In either
+     case, a FLAG value of 0 means no grid lines (the default), a value of
+     1 means grid lines at all major ticks (the level of ticks which get
+     grid lines can be set in the style sheet), and a FLAG value of 2 means
+     that the coordinate origin only will get a grid line.  In styles with
+     multiple coordinate systems, only the current coordinate system is
+     affected.  The keywords can be used to affect the style of the grid
+     lines.
+
+     You can also turn the ticks off entirely.  (You might want to do this
+     to plot your own custom set of tick marks when the automatic tick
+     generating machinery will never give the ticks you want.  For example
+     a latitude axis in degrees might reasonably be labeled "0, 30, 60,
+     90", but the automatic machinery considers 3 an "ugly" number - only
+     1, 2, and 5 are "pretty" - and cannot make the required scale.  In
+     this case, you can turn off the automatic ticks and labels, and use
+     plsys, pldj, and plt to generate your own.)
+     To fiddle with the tick flags in this general manner, set the
+     0x200 bit of FLAG (or XFLAG or YFLAG), and "or-in" the 0x1ff bits
+     however you wish.  The meaning of the various flags is described
+     in the ``work.gs'' Gist style sheet.  Additionally, you can use the
+     0x400 bit to turn on or off the frame drawn around the viewport.
+     Here are some examples:
+        gridxy(0x233)          work.gs default setting
+        gridxy(0, 0x200)       like work.gs, but no y-axis ticks or labels
+        gridxy(0, 0x231)       like work.gs, but no y-axis ticks on right
+        gridxy(0x62b)          boxed.gs default setting
+
+   KEYWORDS: color, type, width
+   SEE ALSO: window, plsys, limits, ylimits, logxy
+
+zoom_factor:
+zoom_factor( factor )
+     Set the zoom factor for mouse-click zoom in and zoom out operations.
+     The default FACTOR is 1.5; FACTOR should always be greater than 1.0.
+   SEE ALSO: limits, ylimits, unzoom, plg
+
+unzoom:
+unzoom()
+     Restore limits to their values before zoom and pan operations
+     performed interactively using the mouse.
+     Use    old_limits = limits()
+            ...
+	    limits( old_limits )
+     to save and restore plot limits generally.
+   SEE ALSO: limits, ylimits, zoom_factor, plg
+
+/*--------------------------------------------------------------------------*/
+/* Keywords for plotting functions */
+
+legend:
+legend = "text destined for the legend"
+     Set the legend for a plot. There are no default legends in Python
+     Gist. Legends are never plotted to the X window; use the plq
+     command to see them interactively. Legends will appear in hardcopy
+     output unless they have been explicitly turned off.
+   PLOTTING COMMANDS: plg, plm, plc, plv, plf, pli, plt, pldj
+   SEE ALSO: hide
+
+hide:
+hide = 0/1
+     Set the visibility of a plotted element.  The default is hide=0,
+     which means that the element will be visible.  Use hide=1 to remove
+     the element from the plot (but not from the display list).
+   PLOTTING COMMANDS: plg, plm, plc, plv, plf, pli, plt, pldj
+   SEE ALSO: legend
+
+type:
+type = <line type value>
+     Select line type. Valid values are the strings "solid", "dash",
+     "dot", "dashdot", "dashdotdot", and "none". The "none" value causes
+     the line to be plotted as a polymarker. The type value may also be
+     a number; 0 is "none", 1 is "solid", 2 is "dash", 3 is "dot", 4 is
+     "dashdot", and 5 is "dashdotdot".
+   PLOTTING COMMANDS: plg, plm, plc, pldj
+   SEE ALSO: width, color, marks, marker, rays, closed, smooth
+
+width:
+width = <floating point value>
+     Select line width.  Valid values are positive floating point numbers
+     giving the line thickness relative to the default line width of one
+     half point, which is width = 1.0.
+   PLOTTING COMMANDS: plg, plm, plc, pldj, plv (only if hollow=1)
+   SEE ALSO: type, color, marks, marker, rays, closed, smooth
+
+color:
+color = <color value>
+     Select line or text color.  Valid values are the strings "bg", "fg",
+     "black", "white", "red", "green", "blue", "cyan", "magenta", "yellow",
+     or a 0-origin index into the current palette.  The default is "fg".
+     Negative numbers may be used instead of the strings: -1 is bg
+     (background), -2 is fg (foreground), -3 is black, -4 is white,
+     -5 is red, -6 is green, -7 is blue, -8 is cyan, -9 is magenta, and
+     -10 is yellow.
+   PLOTTING COMMANDS: plg, plm, plc, pldj, plt
+   SEE ALSO: type, width, marks, marker, mcolor, rays, closed, smooth
+
+marks:
+marks = 0/1
+     Select unadorned lines (marks=0), or lines with occasional markers
+     (marks=1).  Ignored if type is "none" (indicating polymarkers instead
+     of occasional markers).  The spacing and phase of the occasional
+     markers can be altered using the mspace and mphase keywords; the
+     character used to make the mark can be altered using the marker
+     keyword.
+   PLOTTING COMMANDS: plg, plc
+   SEE ALSO: type, width, color, marker, rays, mspace, mphase, msize, mcolor
+
+marker:
+marker = <character or integer value>
+     Select the character used for occasional markers along a polyline,
+     or for the polymarker if type = "none".  The special values
+     '\1', '\2', '\3', '\4', and '\5' stand for point, plus, asterisk,
+     circle, and cross, which are prettier than text characters on output
+     to some devices.  The default marker is the next available capital
+     letter, 'A', 'B', ..., 'Z'.
+   PLOTTING COMMANDS: plg, plc
+   SEE ALSO: type, width, color, marks, rays, mspace, mphase, msize, mcolor
+
+mspace:
+mphase:
+msize:
+mcolor:
+mspace = <float value>
+or mphase = <float value>
+or msize =  <float value>
+or mcolor =  <color value>
+     Select the spacing, phase, and size of occasional markers placed
+     along polylines.  The msize also selects polymarker size if type
+     is "none".  The spacing and phase are in NDC units (0.0013 NDC
+     equals 1.0 point); the default mspace is 0.16, and the default
+     mphase is 0.14, but mphase is automatically incremented for
+     successive curves on a single plot.  The msize is in relative
+     units, with the default msize of 1.0 representing 10 points.
+     The mcolor keyword is the same as the color keyword, but controls
+     the marker color instead of the line color.  Setting the color
+     automatically sets the mcolor to the same value, so you only
+     need to use mcolor if you want the markers for a curve to be a
+     different color than the curve itself.
+   PLOTTING COMMANDS: plg, plc
+   SEE ALSO: type, width, color, marks, marker, rays
+
+rays:
+rays = 0/1
+     Select unadorned lines (rays=0), or lines with occasional ray
+     arrows (rays=1).  Ignored if type is "none".  The spacing and phase
+     of the occasional arrows can be altered using the rspace and rphase
+     keywords; the shape of the arrowhead can be modified using the
+     arroww and arrowl keywords.
+   PLOTTING COMMANDS: plg, plc
+   SEE ALSO: type, width, color, marker, marks, rspace, rphase
+             arroww, arrowl
+
+rspace:
+rphase:
+arroww:
+arrowl:
+rspace = <float value>
+or rphase = <float value>
+or arroww = <float value>
+or arrowl = <float value>
+     Select the spacing, phase, and size of occasional ray arrows
+     placed along polylines.  The spacing and phase are in NDC units
+     (0.0013 NDC equals 1.0 point); the default rspace is 0.13, and
+     the default rphase is 0.11375, but rphase is automatically
+     incremented for successive curves on a single plot.
+     The arrowhead width, arroww, and arrowhead length, arrowl are
+     in relative units, defaulting to 1.0, which translates to an
+     arrowhead 10 points long and 4 points in half-width.
+   PLOTTING COMMANDS: plg
+   SEE ALSO: type, width, color, marks, marker, rays
+
+closed:
+smooth:
+closed = 0/1
+or smooth = 0/1/2/3/4
+     Select closed curves (closed=1) or default open curves (closed=0),
+     or Bezier smoothing (smooth>0) or default piecewise linear curves
+     (smooth=0).  The value of smooth can be 1, 2, 3, or 4 to get
+     successively more smoothing.  Only the Bezier control points are
+     plotted to an X window; the actual Bezier curves will show up in
+     PostScript hardcopy files.  Closed curves join correctly, which
+     becomes more noticeable for wide lines; non-solid closed curves
+     may look bad because the dashing pattern may be incommensurate
+     with the length of the curve.
+   PLOTTING COMMANDS: plg, plc (smooth only)
+   SEE ALSO: type, width, color, marks, marker, rays
+
+font:
+height:
+opaque:
+path:
+justify:
+font = <font value>
+height = <float value>
+opaque = 0/1
+path = 0/1
+justify = (see text description)
+     Select text properties.  The font can be any of the strings
+     "courier", "times", "helvetica" (the default), "symbol", or
+     "schoolbook".  Append "B" for boldface and "I" for italic, so
+     "courierB" is boldface Courier, "timesI" is Times italic, and
+     "helveticaBI" is bold italic (oblique) Helvetica.  Your X server
+     should have the Adobe fonts (available free from the MIT X
+     distribution tapes) for all these fonts, preferably at both 75
+     and 100 dpi.  Occasionally, a PostScript printer will not be
+     equipped for some fonts; often New Century Schoolbook is missing.
+     The font keyword may also be an integer: 0 is Courier, 4 is Times,
+     8 is Helvetica, 12 is Symbol, 16 is New Century Schoolbook, and
+     you add 1 to get boldface and/or 2 to get italic (or oblique).
+
+     The height is the font size in points; 14.0 is the default.
+     X windows only has 8, 10, 12, 14, 18, and 24 point fonts, so
+     don't stray from these sizes if you want what you see on the
+     screen to be a reasonably close match to what will be printed.
+
+     By default, opaque=0 and text is transparent.  Set opaque=1 to
+     white-out a box before drawing the text.  The default path
+     (path=0) is left-to-right text; set path=1 for top-to-bottom text.
+
+     The default text justification, justify="NN" is normal is both
+     the horizontal and vertical directions.  Other possibilities
+     are "L", "C", or "R" for the first character, meaning left,
+     center, and right horizontal justification, and "T", "C", "H",
+     "A", or "B", meaning top, capline, half, baseline, and bottom
+     vertical justification.  The normal justification "NN" is equivalent
+     to "LA" if path=0, and to "CT" if path=1.  Common values are
+     "LA", "CA", and "RA" for garden variety left, center, and right
+     justified text, with the y coordinate at the baseline of the
+     last line in the string presented to plt.  The characters labeling
+     the right axis of a plot are "RH", so that the y value of the
+     text will match the y value of the corresponding tick.  Similarly,
+     the characters labeling the bottom axis of a plot are "CT".
+     The justification may also be a number, horizontal+vertical,
+     where horizontal is 0 for "N", 1 for "L", 2 for "C", or 3 for "R",
+     and vertical is 0 for "N", 4 for "T", 8 for "C", 12 for "H",
+     16 for "A", or 20 for "B".
+
+   PLOTTING COMMANDS: plt
+   SEE ALSO: color
+
+region:
+region = <region number>
+     Select the part of mesh to consider.  The region should match one
+     of the numbers in the IREG array.  Putting region=0 (the default)
+     means to plot the entire mesh, that is, everything EXCEPT region
+     zero (non-existent zones).  Any other number means to plot only
+     the specified region number; region=3 would plot region 3 only.
+   PLOTTING COMMANDS: plm, plc, plv, plf
+
+triangle:
+triangle = <triangulation array>
+     Set the triangulation array for a contour plot.  The triangulation
+     array must be the same shape as the IREG (region number) array, and
+     the correspondence between mesh zones and indices is the same as
+     for IREG.  The triangulation array is used to resolve the ambiguity
+     in saddle zones, in which the function Z being contoured has two
+     diagonally opposite corners high, and the other two corners low.
+     The triangulation array element for a zone is 0 if the algorithm is
+     to choose a triangulation, based on the curvature of the first
+     contour to enter the zone.  If zone (i,j) is to be triangulated
+     from point (i-1,j-1) to point (i,j), then TRIANGLE(i,j)=1,
+     while if it is to be triangulated from (i-1,j) to (i,j-1), then
+     TRIANGLE(i,j)=-1.  Contours will never cross this "triangulation
+     line".
+     You should rarely need to fiddle with the triangulation array;
+     it is a hedge for dealing with pathological cases.
+   PLOTTING COMMANDS: plc
+
+hollow:
+aspect:
+hollow = 0/1
+aspect = <float value>
+     Set the appearance of the "darts" of a vector field plot.  The
+     default darts, hollow=0, are filled; use hollow=1 to get just the
+     dart outlines.  The default is aspect=0.125; aspect is the ratio
+     of the half-width to the length of the darts.  Use the color
+     keyword to control the color of the darts.
+   PLOTTING COMMANDS: plv
+   SEE ALSO: color
+
+edges:
+ecolor:
+ewidth:
+edges = 0/1
+ecolor = <color value>
+ewidth = <float value>
+     set the appearance of the zone edges in a filled mesh plot (plf).
+     By default, edges=0, and the zone edges are not plotted.  If
+     edges=1, a solid line is drawn around each zone after it is
+     filled; the edge color and width are given by ecolor and ewidth,
+     which are "fg" and 1.0 by default.
+   PLOTTING COMMANDS: plf
+   SEE ALSO: color, width
+
+/*--------------------------------------------------------------------------*/
+/* Inquiry and editing functions */
+
+plq:
+plq()
+or plq( n_element )
+or plq( n_element, n_contour )
+or legend_list = plq() **** RETURN VALUE NOT YET IMPLEMENTED ****
+or properties = plq(n_element, n_contour)
+     Called as a subroutine, prints the list of legends for the current
+     coordinate system (with an "(H)" to mark hidden elements), or prints
+     a list of current properties of element N_ELEMENT (such as line type,
+     width, font, etc.), or of contour number N_CONTOUR of element number
+     N_ELEMENT (which must be contours generated using the plc command).
+     Elements and contours are both numbered starting with one; hidden
+     elements or contours are included in this numbering.
+
+     The plq function always operates on the current coordinate system
+     in the current graphics window; use window and plsys to change these.
+   SEE ALSO: window, plsys, pledit, pldefault, plg
+
+pledit:
+pledit( key1=value1, key2=value2, ... )
+or pledit( n_element, key1=value1, key2=value2, ... )
+or pledit( n_element, n_contour, key1=value1, key2=value2, ... )
+     Changes some property of element number N_ELEMENT (and contour
+     number N_CONTOUR of that element).  If N_ELEMENT and N_CONTOUR are
+     omitted, the default is the most recently added element, or the
+     element specified in the most recent plq query command.
+
+     The keywords can be any of the keywords that apply to the current
+     element.  These are:
+       plg:  color, type, width,
+             marks, mcolor, marker, msize, mspace, mphase,
+	     rays, rspace, rphase, arrowl, arroww,
+	     closed, smooth
+       pldj: color, type, width
+       plt:  color, font, height, path, justify, opaque
+       plm:  region, boundary, inhibit, color, type, width
+       plf:  region
+       plv:  region, color, hollow, width, aspect, scale
+       plc:  region, color, type, width,
+             marks, mcolor, marker, msize, mspace, mphase
+	     smooth, levs
+     (For contours, if you aren't talking about a particular N_CONTOUR,
+      any changes will affect ALL the contours.)
+
+     A plv (vector field) element can also take the scalem
+     keyword to multiply all vector lengths by a specified factor.
+
+     A plt (text) element can also take the dx and/or dy
+     keywords to adjust the text position by (dx,dy).
+
+   SEE ALSO: window, plsys, plq, pldefault, plg
+
+plwf:
+plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
+   ecolor =  None, ewidth = None, cull = None, scale = None, cmax = None,
+   clear = 1)
+     plots a 3-D wire frame of the given Z array, which must have the
+     same dimensions as the mesh (X, Y).  If X and Y are not given, they
+     default to the first and second indices of Z, respectively.
+     The drawing order of the zones is determined by a simple "painter's
+     algorithm", which works fairly well if the mesh is reasonably near
+     rectilinear, but can fail even then if the viewpoint is chosen to
+     produce extreme fisheye perspective effects.  Look at the resulting
+     plot carefully to be sure the algorithm has correctly rendered the
+     model in each case.
+
+   KEYWORDS: FILL   -- optional colors to use (default is to make zones
+                       have background color), same dimension options as
+                       for z argument to plf function
+             SHADE  -- set non-zero to compute shading from current
+                       3D lighting sources
+             EDGES  -- default is 1 (draw edges), but if you provide fill
+                       colors, you may set to 0 to supress the edges
+             ECOLOR, EWIDTH  -- color and width of edges
+             CULL   -- default is 1 (cull back surfaces), but if you want
+                       to see the "underside" of the model, set to 0
+             SCALE  -- by default, Z is scaled to "reasonable" maximum
+                       and minimum values related to the scale of (X,Y).
+                       This keyword alters the default scaling factor, in
+                       the sense that scale=2.0 will produce twice the
+                       Z-relief of the default scale=1.0.
+             CMAX   -- the AMBIENT keyword in light3 can be used to
+                       control how dark the darkest surface is; use this
+                       to control how light the lightest surface is
+                       the lightwf routine can change this parameter
+                       interactively
+
+   SEE ALSO: lightwf, plm, plf, orient3, light3, fma3, window3
+
+pldefault:
+pldefault( key1=value1, key2=value2, ... )
+     Set default values for the various properties of graphical elements.
+
+     The keywords can be most of the keywords that can be passed to the
+     plotting commands:
+       plg:  color, type, width,
+             marks, mcolor, msize, mspace, mphase,
+	     rays, rspace, rphase, arrowl, arroww
+       pldj: color, type, width
+       plt:  color, font, height, path, justify, opaque
+       plm:  color, type, width
+       plv:  color, hollow, width, aspect
+       plc:  color, type, width,
+             marks, mcolor, marker, msize, mspace, mphase
+       plf:  edges, ecolor, ewidth
+
+     The initial default values are:
+       color="fg", type="solid", width=1.0 (1/2 point),
+       marks=1, mcolor="fg", msize=1.0 (10 points),
+          mspace=0.16, mphase=0.14,
+       rays=0, arrowl=1.0 (10 points), arroww=1.0 (4 points),
+          rspace=0.13, rphase=0.11375,
+       font="helvetica", height=12.0, path=0, justify="NN", opaque=0,
+       hollow= 0, aspect=0.125,
+       edges=0, ecolor="fg", ewidth=1.0 (1/2 point)
+
+     Additional default keywords are:
+       dpi, style, legends  (see window command)
+       palette              (to set default filename as in palette command)
+       maxcolors            (default 200)
+
+   SEE ALSO: window, plsys, plq, pledit, plg
+
+/*--------------------------------------------------------------------------*/
+/* Miscellany */
+
+bytscl:
+bytscl(z)
+or bytscl(z, top=max_byte, cmin=lower_cutoff, cmax=upper_cutoff)
+     Returns a char array of the same shape as Z, with values linearly
+     scaled to the range 0 to one less than the current palette size.
+     If MAX_BYTE is specified, the scaled values will run from 0 to
+     MAX_BYTE instead.
+     If LOWER_CUTOFF and/or UPPER_CUTOFF are specified, Z values outside
+     this range are mapped to the cutoff value; otherwise the linear
+     scaling maps the extreme values of Z to 0 and MAX_BYTE.
+   SEE ALSO: plf, pli, histeq_scale
+
+contour:
+[nc, yc, xc] = contour (level, z, y, x [, ireg] [, triangle = <vals>]
+   [, region = num])
+     returns the points on the contour curve that would have been
+     plotted by plc.  Z, Y, X, and IREG are as for plc, and the
+     triangle= and region= keywords are accepted and have the same
+     meaning as for plc.  Unlike plc, the triangle array is an output
+     as well as an input to contour; if supplied it may be modified
+     to reflect any triangulations which were performed by contour.
+
+     either:
+     LEVEL is a scalar z value to return the points at that contour
+     level.  All such points lie on edges of the mesh.  If a contour
+     curve closes, the final point is the same as the initial point
+     (i.e.- that point is included twice in the returned list).
+
+     or:
+     LEVEL is a pair of z values [z0,z1] to return the points of
+     a set of polygons which outline the regions between the two
+     contour levels.  These will include points on the mesh boundary
+     which lie between the levels, in addition to the edge points
+     for both levels.  The polygons are closed, simply connected,
+     and will not contain more than about 4000 points (larger polygons
+     are split into pieces with a few points repeated where the pieces
+     join).
+
+     YC and XC are the output points on the curve(s), or None if there
+     are no points. The return value NC is a list of the lengths of
+     the polygons/polylines returned in (XC,YC), or None if there are
+     none.  len(XC) == len(YC) == sum(NC).  For the level pair
+     case, YC, XC, and NC are ready to be used as inputs to plfp.
+
+   KEYWORDS: triangle, region
+   SEE ALSO: plc, plfp
+
+mesh_loc:
+mesh_loc(y0, x0)
+or mesh_loc(y0, x0, y, x)
+or mesh_loc(y0, x0, y, x, ireg)
+     Returns the zone index (=i+imax*(j-1)) of the zone of the mesh
+     (X,Y) (with optional region number array IREG) containing the
+     point (X0,Y0).  If (X0,Y0) lies outside the mesh, returns 0.
+     Thus, eg- ireg(mesh_loc(x0, y0, y, x, ireg)) is the region number of
+     the region containing (x0,y0).  If no mesh specified, uses default.
+     X0 and Y0 may be arrays as long as they are conformable.
+   SEE ALSO: plmesh, moush, mouse
+
+mouse:
+result = mouse(system, style, prompt)
+     Displays a PROMPT, then waits for a mouse button to be pressed,
+     then released.  Returns tuple of length eleven:
+       result= [x_pressed, y_pressed, x_released, y_released,
+                xndc_pressed, yndc_pressed, xndc_released, yndc_released,
+	        system, button, modifiers]
+
+     If SYSTEM>=0, the first four coordinate values will be relative to
+     that coordinate system.
+     For SYSTEM<0, the first four coordinate values will be relative to
+     the coordinate system under the mouse when the button was pressed.
+     The second four coordinates are always normalized device coordinates,
+     which start at (0,0) in the lower left corner of the 8.5x11 sheet of
+     paper the picture will be printed on, with 0.0013 NDC unit being
+     1/72.27 inch (1.0 point).  Look in the style sheet for the location
+     of the viewport in NDC coordinates (see the style keyword).
+
+     If STYLE is 0, there will be no visual cues that the mouse
+     command has been called; this is intended for a simple click.
+     If STYLE is 1, a rubber band box will be drawn; if STYLE is 2,
+     a rubber band line will be drawn.  These disappear when the
+     button is released.
+
+     Clicking a second button before releasing the first cancels the
+     mouse function, which will then return nil.
+     Ordinary text input also cancels the mouse function, which again
+     returns nil.
+
+     The left button reverses forground for background (by XOR) in
+     order to draw the rubber band (if any).  The middle and right
+     buttons use other masks, in case the rubber band is not visible
+     with the left button.
+
+     result[8] is the coordinate system in which the first four
+     coordinates are to be interpreted.
+     result[9] is the button which was pressed, 1 for left, 2
+     for middle, and 3 for right (4 and 5 are also possible).
+     result[10] is a mask representing the modifier keys which
+     were pressed during the operation: 1 for shift, 2 for shift lock,
+     4 for control, 8 for mod1 (alt or meta), 16 for mod2, 32 for mod3,
+     64 for mod4, and 128 for mod5.
+
+   SEE ALSO: moush
+
+moush:
+moush(y, x, ireg)
+or moush(y, x)
+or moush()
+     Returns the 1-origin zone index for the point clicked in
+     for the default mesh, or for the mesh (X,Y) (region array IREG).
+
+pause:
+pause( milliseconds )
+     Pause for the specified number of milliseconds of wall clock
+     time, or until input arrives from the keyboard.
+     This is intended for use in creating animated sequences.
+
+/*--------------------------------------------------------------------------*/
+
+histeq_scale: **** NOT YET IMPLEMENTED ****
+histeq_scale(z, top=top_value, cmin=cmin, cmax=cmax)
+     Returns a byte-scaled version of the array Z having the property
+     that each byte occurs with equal frequency (Z is histogram
+     equalized).  The result bytes range from 0 to TOP_VALUE, which
+     defaults to one less than the size of the current palette (or
+     255 if no pli, plf, or palette command has yet been issued).
+
+     If non-nil CMIN and/or CMAX is supplied, values of Z beyond these
+     cutoffs are not included in the frequency counts.
+
+   SEE ALSO: bytscl, plf, pli
+
+spann:
+spann (zmin, zmax, n = 8, fudge = 0, force = 0)
+      return no more than N equally spaced "nice" numbers between
+      ZMIN and ZMAX.
+      Note that in general spann may not supply the number of
+      values that you asked for. To force it to do so, set
+      keyword FORCE to nonzero.
+    SEE ALSO: span, spanl, plc, plfc
+
+lightwf:
+lightwf (cmax) 
+     Sets the CMAX parameter interactively, assuming the current
+     3D display list contains the result of a previous plwf call.
+     This changes the color of the brightest surface in the picture.
+     The darkest surface color can be controlled using the AMBIENT
+     keyword to light3.
+
+   SEE ALSO: plwf, light3
+
+orient3:
+orient3 ( [phi = val1, theta = val2] )
+   Set the orientation of the object to (PHI, THETA). Orientations
+   are a subset of the possible rotation matrices in which the z axis
+   of the object appears vertical on the screen (that is, the object
+   z axis projects onto the viewer y axis). The THETA angle is the
+   angle from the viewer y axis to the object z axis, positive if
+   the object z axis is tilted towards you (toward viewer +z). PHI is
+   zero when the object x axis coincides with the viewer x axis. If
+   neither PHI nor THETA is specified, PHI defaults to - pi / 4 and
+   THETA defaults to pi / 6. If only PHI is specified, THETA remains
+   unchanged, unless the current THETA is near pi / 2, in which case
+   THETA returns to pi / 6, or unless the current orientation does
+   not have a vertical z axis, in which case THETA returns to its
+   default. If only THETA is specified, PHI retains its current value.
+   Unlike rot3, orient3 is not a cumulative operation.
+
+   SEE ALSO: rot3, mov3, aim3, save3, restore3, light3
+
+light3:
+light3 (ambient=a_level,
+                diffuse=d_level,
+                specular=s_level,
+                spower=n,
+                sdir=xyz)
+     Sets lighting properties for 3D shading effects.
+     A surface will be shaded according to its to its orientation
+     relative to the viewing direction.
+
+     The ambient level A_LEVEL is a light level (arbitrary units)
+     that is added to every surface independent of its orientation.
+
+     The diffuse level D_LEVEL is a light level which is proportional
+     to cos(theta), where theta is the angle between the surface
+     normal and the viewing direction, so that surfaces directly
+     facing the viewer are bright, while surfaces viewed edge on are
+     unlit (and surfaces facing away, if drawn, are shaded as if they
+     faced the viewer).
+
+     The specular level S_LEVEL is a light level proportional to a high
+     power spower=N of 1+cos(alpha), where alpha is the angle between
+     the specular reflection angle and the viewing direction.  The light
+     source for the calculation of alpha lies in the direction XYZ (a
+     3 element vector) in the viewer's coordinate system at infinite
+     distance.  You can have ns light sources by making S_LEVEL, N, and
+     XYZ (or any combination) be vectors of length ns (3-by-ns in the
+     case of XYZ).  (See source code for specular_hook function
+     definition if powers of 1+cos(alpha) aren't good enough for you.)
+
+     With no arguments, return to the default lighting.
+
+   EXAMPLES:
+     light3 ( diffuse=.1, specular=1., sdir=[0,0,-1])
+       (dramatic "tail lighting" effect)
+     light3 ( diffuse=.5, specular=1., sdir=[1,.5,1])
+       (classic "over your right shoulder" lighting)
+     light3 ( ambient=.1,diffuse=.1,specular=1.,
+             sdir=[[0,0,-1],[1,.5,1]],spower=[4,2])
+       (two light sources combining previous effects)
+
+   SEE ALSO: rot3, save3, restore3
+
+window3:
+window3 ( [n,] , dump = 0, hcp = None)
+   initialize style="nobox.gs" window for 3D graphics. dump = 1
+   to dump the palette to the hardcopy file (if any), for color
+   plots; use hcp to specify the filename for hardcopy.
+
+rot3:
+rot3 (xa = 0., ya = 0., za = 0.)
+   rotate the current 3D plot by XA about viewer's x-axis,
+   YA about viewer's y-axis, and ZA about viewer's z-axis.
+
+   SEE ALSO: orient3, mov3, aim3, setz3, undo3, save3, restore3, light3
+
+save3:
+view = save3 ( )
+     Save the current 3D viewing transformation and lighting.
+     Actually, this doesn't save anything; it returns a copy
+     of the current 3D viewing transformation and lighting, so
+     that the user can put it aside somewhere.
+
+   SEE ALSO: restore3, rot3, mov3, aim3, light3
+
+restore3:
+restore3 ( view )
+   Restore a previously saved 3D viewing transformation and lighting.
+   If view is missing, rotate object to viewer's coordinate system.
+
+   SEE ALSO: restore3, rot3, mov3, aim3, light3
+
+aim3:
+aim3 ( xa = 0., ya = 0., za = 0. )
+   move the current 3D plot to put the point (XA, YA, ZA) in object
+   coordinates at the point (0, 0, 0) -- the aim point -- in the
+   viewer's coordinates. If any of the XA, YA, or ZA is None or
+   missing, it defaults to zero.
+
+   SEE ALSO: mov3, rot3, orient3, setz3, undo3, save3, restore3, light3
+
+mov3:
+mov3 ( xa = 0., ya = 0., za = 0. )
+   move the current 3D plot by XA along the viewer's x axis,
+   YA along the viewer's y axis, and ZA along the viewer's z axis.
+
+   SEE ALSO: rot3, orient3, setz3, undo3, save3, restore3, light3
+
+setz3:
+setz3 ( zc = None )
+   Set the camera position to z = ZC (x = y = 0) in the viewer's coordinate
+   system. If zc is None, set the camera to infinity (default).
+
+   SEE ALSO: rot3, orient3, undo3, save3, restore3, light3
+
+undo3:
+undo3 (n = 1)
+     Undo the effects of the last N (default 1) rot3, orient3, mov3, aim3,
+     setz3, or light3 commands.
+
+get3_light:
+get3_light (xyz [, nxyz])
+     return 3D lighting for polygons with vertices XYZ.  If NXYZ is
+     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     list of numbers of vertices for each polygon (as for the plfp
+     function).  If NXYZ is not specified, XYZ should be a quadrilateral
+     mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
+     the return value is len (NXYZ) long; in the second case, the
+     return value is (ni-1)-by-(nj-1).
+
+     The parameters of the lighting calculation are set by the
+     light3 function.
+
+     SEE ALSO: light3, set3_object, get3_normal, get3_centroid
+
+set3_object:
+set3_object (fnc, arg)
+or set3_object (fnc, [arg1, arg2,...])
+     set up to trigger a call to draw3, adding a call to the
+     3D display list of the form:
+
+        DRAWING_FUNCTION ( [ARG1, ARG2, ...]))
+
+     When draw3 calls DRAWING_FUNCTION, the external variable _draw3
+     will be non-zero, so DRAWING_FUNCTION can be written like this:
+
+     def drawing_function(arg) :
+ 
+       if (_draw3) :
+          arg1= arg [0]
+          arg1= arg [1]
+          ...
+          ...<calls to get3_xy, sort3d, get3_light, etc.>...
+          ...<calls to graphics functions plfp, plf, etc.>...
+          return
+ 
+       ...<verify args>...
+       ...<do orientation and lighting independent calcs>...
+       set3_object (drawing_function, [arg1,arg2,...])
+ 
+   SEE ALSO: get3_xy, get3_light, sort3d
+
+sort3d:
+sort3d(z, npolys)
+     given Z and NPOLYS, with len(Z)==sum(npolys), return
+     a 2-element list [LIST, VLIST] such that Z[VLIST] and NPOLYS[LIST] are
+     sorted from smallest average Z to largest average Z, where
+     the averages are taken over the clusters of length NPOLYS.
+     Within each cluster (polygon), the cyclic order of Z[VLIST]
+     remains unchanged, but the absolute order may change.
+
+     This sorting order produces correct or nearly correct order
+     for a plfp command to make a plot involving hidden or partially
+     hidden surfaces in three dimensions.  It works best when the
+     polys form a set of disjoint closed, convex surfaces, and when
+     the surface normal changes only very little between neighboring
+     polys.  (If the latter condition holds, then even if sort3d
+     mis-orders two neighboring polys, their colors will be very
+     nearly the same, and the mistake won't be noticeable.)  A truly
+     correct 3D sorting routine is impossible, since there may be no
+     rendering order which produces correct surface hiding (some polys
+     may need to be split into pieces in order to do that).  There
+     are more nearly correct algorithms than this, but they are much
+     slower.
+   SEE ALSO: get3_xy, plfp
+
+draw3:
+def draw3 (called_as_idler = 0, lims = None)
+   Draw the current 3d display list.
+   (Ordinarily triggered automatically when the drawing changes.)
+
+get3_normal:
+get3_normal (xyz [, nxyz])
+     return 3D normals for polygons with vertices XYZ.  If NXYZ is
+     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     list of numbers of vertices for each polygon (as for the plfp
+     function).  If NXYZ is not specified, XYZ should be a quadrilateral
+     mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
+     the return value is len(NXYZ)-by-3; in the second case, the
+     return value is (ni-1)-by-(nj-1)-by-3.
+
+     The normals are constructed from the cross product of the lines
+     joining the midpoints of two edges which as nearly quarter the
+     polygon as possible (the medians for a quadrilateral).  No check
+     is made that these not be parallel; the returned "normal" is
+     [0,0,0] in that case.  Also, if the polygon vertices are not
+     coplanar, the "normal" has no precisely definable meaning.
+
+     SEE ALSO: get3_centroid, get3_light
+
+get3_centroid:
+get3_centroid (xyz [, nxyz])
+     return 3D centroids for polygons with vertices XYZ.  If NXYZ is
+     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     list of numbers of vertices for each polygon (as for the plfp
+     function).  If NXYZ is not specified, XYZ should be a quadrilateral
+     mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
+     the return value is len(NXYZ) in length; in the second case, the
+     return value is (ni-1)-by-(nj-1)-by-3.
+
+     The centroids are constructed as the mean value of all vertices
+     of each polygon.
+
+     SEE ALSO: get3_normal, get3_light
+
+get3_xy:
+get3_xy (xyz [, flg])
+     Given anything-by-3 coordinates XYZ, return X and Y in viewer's
+     coordinate system (set by rot3, mov3, orient3, etc.).  If the
+     second argument is present and non-zero, also return Z (for use
+     in sort3d or get3_light, for example).  If the camera position
+     has been set to a finite distance with setz3, the returned
+     coordinates will be tangents of angles for a perspective
+     drawing (and Z will be scaled by 1/zc).
+     Unlike the Yorick version, this function returns a 3-by-anything
+     array of coordinates.
+     Actually, what it returns is a 3-by-anything python array, whose
+     0th element is the x array, whose 1th element is the y array, and
+     whose 2th element is the z array if asked for.
+     I believe that x, y, and z can be either 1d or 2d, so this
+     routine is written in two cases.
+
+gnomon:
+gnomon ( [onoff] [, chr = ["X", "Y", "Z"]])
+     Toggle the gnomon display. If on is present and non-zero,
+     turn on the gnomon. If zero, turn it off.
+ 
+     The gnomon shows the X, Y, and Z axis directions in the
+     object coordinate system. The directions are labeled.
+     The gnomon is always infinitely far behind the object
+     (away from the camera).
+ 
+     There is a mirror-through-the-screen-plane ambiguity in the
+     display which is resolved in two ways: (1) the (X, Y, Z)
+     coordinate system is right-handed, and (2) If the tip of an
+     axis projects into the screen, its label is drawn in opposite
+     polarity to the other text in the screen.
+
+     CHR specifies the axis labels.
+
+spin3:
+spin3 (nframes = 30, axis = array ([-1, 1, 0],  Float), tlimit = 60.,
+   dtmin = 0.0, bracket_time = array ([2., 2.],  Float), lims = None,
+   timing = 0, angle = 2. * pi)
+     Spin the current 3D display list about AXIS over NFRAMES.  Keywords
+     TLIMIT the total time allowed for the movie in seconds (default 60),
+     DTMIN the minimum allowed interframe time in seconds (default 0.0),
+     BRACKET_TIME (as for movie function in movie.py), TIMING = 1 if
+     you want timing measured and printed out, 0 if not.
+
+   SEE ALSO: rot3
+
+color_bar:
+color_bar (minz, maxz, split = 0)
+   color_bar (minz, maxz) plots a color bar to the right of the plot square
+   labelled by the z values from minz to maxz.
+
+   plf (z, y, x)
+   color_bar (z (min, min), z (max, max))
+
+   or
+   plf (z, y, x, cmin = MINZ, cmax = MAXZ)
+   color_bar (MINZ, MAXZ)
+
+   are typical usage.
+
+   The SPLIT keyword should be nonzero for a split palette.
+
+movie:
+ movie (draw_frame, time_limit = 120., min_interframe = 0.0,
+   bracket_time = array ([2., 2.], Float ), lims = None, timing = 0)
+     runs a movie based on the given DRAW_FRAME function.  The movie
+     stops after a total elapsed time of TIME_LIMIT seconds, which
+     defaults to 60 (one minute), or when the DRAW_FRAME function
+     returns zero.
+
+     note: All but the first argument are keyword arguments, with
+     defaults as shown.
+
+     def draw_frame(i) :
+       # Input argument i is the frame number.
+       # draw_frame should return non-zero if there are more
+       # frames in this movie.  A zero return will stop the
+       # movie.
+       # draw_frame must NOT include any fma command if the
+       # making_movie variable is set (movie sets this variable
+       # before calling draw_frame)
+
+     If MIN_INTERFRAME is specified, a pause will be added as
+     necessary to slow down the movie.  MIN_INTERFRAME is a time
+     in seconds (default 0).
+
+     The keyword BRACKET_TIME (again a time in seconds) can be
+     used to adjust the duration of the pauses after the first
+     and last frames.  It may also be a two element array [beg, end].
+     If the pause at the end is greater than five seconds, you will
+     be prompted to explain that hitting <RETURN> will abort the final
+     pause. Well, the Python version does not have this capability.
+
+     TIMING = 1 enables a timing printout for your movie.
+
+     If every frame of your movie has the same limits, use the
+     limits function to fix the limits before you call movie.
+
+   BUG:  If you hit <RETURN> to start a movie early, it will not
+         pause at the end of the movie at all.  You probably should
+         not use long initial pauses.
+
+movie_stats:
+movie_stats ( [timing])
+     prints statistics from the last movie command, or from the
+     command which produced TIMING.  TIMING is the contents of the
+     movie_timing external variable after the movie command completes.
+
+plane3:
+plane3 (normal, point)
+     NORMAL and POINT are sequences of length 3.
+     returns [nx,ny,nz,pp] for the specified plane.
+
+mesh3:
+m = mesh3 (x, y, z)
+     or m = mesh3 (x, y, z, funcs = [f1, f2,...])
+     or m = mesh3 (xyz, funcs = [f1, f2,...])
+     or m = mesh3 (nxnynz, dxdydz, x0y0z0, funcs = [f1, f2,...])
+
+     make mesh3 argument for slice3, xyz3, getv3, etc., functions.
+     X, Y, and Z are each 3D coordinate arrays.  The optional F1, F2,
+     etc. are 3D arrays of function values (e.g. density, temperature)
+     which have one less value along each dimension than the coordinate
+     arrays.  The "index" of each zone in the returned mesh3 is
+     the index in these cell-centered Fi arrays, so every index from
+     one through the total number of cells indicates one real cell.
+     The Fi arrays can also have the same dimensions as X, Y, or Z
+     in order to represent point-centered quantities.
+
+     If X has four dimensions and the length of the first is 3, then
+     it is interpreted as XYZ (which is the quantity actually stored
+     in the returned cell list).
+
+     If X is a vector of 3 integers, it is interpreted as [nx,ny,nz]
+     of a uniform 3D mesh, and the second and third arguments are
+     [dx,dy,dz] and [x0,y0,z0] respectively.  (DXDYDZ represent the
+     size of the entire mesh, not the size of one cell, and NXNYNZ are
+     the number of cells, not the number of points.)
+
+     Added by ZCM 1/13/97: if x, y, and z are one-dimensional of
+     the same length and if the keyword verts exists and yields
+     an NCELLS by 8 integer array, then we have an unstructured
+     rectangular mesh, and the subscripts of cell i's vertices
+     are verts[i, 0:8].
+
+     other sorts of meshes are possible -- a mesh which lives
+     in a binary file is an obvious example -- which would need
+     different workers for xyz3, getv3, getc3, and iterator3
+     iterator3_rect may be more general than the other three.
+
+slice3:
+[NVERTS, XYZVERTS, color] = slice3 (m3, fslice, nverts, xyzverts)
+     or [NVERTS, XYZVERTS, color] =
+        slice3(m3, fslice, nverts, xyzverts, fcolor, node = 0)
+     or [NVERTS, XYZVERTS, color] =
+        slice3(m3, fslice, nverts, xyzverts, fcolor, 1, node = 0)
+
+     slice the 3D mesh M3 using the slicing function FSLICE, returning
+     the list [NVERTS, XYZVERTS, color].  Note that it is impossible to
+     pass arguments as addresses, as yorick does in this routine.
+     NVERTS is the number of vertices in each polygon of the slice, and
+     XYZVERTS is the 3-by-sum(NVERTS) list of polygon vertices.  If the
+     FCOLOR argument is present, the values of that coloring function on
+     the polygons are returned as the value of the slice3 function
+     (len (color_values) == len (NVERTS) == number of polygons).
+
+     If the slice function FSLICE is a function, it should be of the
+     form:
+        func fslice(m3, chunk)
+     returning a list of function values on the specified chunk of the
+     mesh m3.  The format of chunk depends on the type of m3 mesh, so
+     you should use only the other mesh functions xyz3 and getv3 which
+     take m3 and chunk as arguments.  The return value of fslice should
+     have the same dimensions as the return value of getv3; the return
+     value of xyz3 has an additional first dimension of length 3.
+     N. B. (ZCM 2/24/97) I have eliminated the globals iso_index
+     and _value, so for isosurface_slicer only, the call must be
+     of the form fslice (m3, chunk, iso_index, _value).
+        Likewise, I have eliminated normal and projection, so
+     for plane_slicer only, we do fslice (m3, chunk, normal, projection).
+
+     If FSLICE is a list of 4 numbers, it is taken as a slicing plane
+     of the form returned by plane3.
+
+     If FSLICE is a single integer, the slice will be an isosurface for
+     the FSLICEth variable associated with the mesh M3.  In this case,
+     the keyword VALUE must also be present, representing the value
+     of that variable on the isosurface.
+
+     If FCOLOR is None, slice3 returns None.  If you want to color the
+     polygons in a manner that depends only on their vertex coordinates
+     (e.g.- by a 3D shading calculation), use this mode.
+
+     If FCOLOR is a function, it should be of the form:
+        func fcolor(m3, cells, l, u, fsl, fsu, ihist)
+     returning a list of function values on the specified cells of the
+     mesh m3.  The cells argument will be the list of cell indices in
+     m3 at which values are to be returned.  l, u, fsl, fsu, and ihist
+     are interpolation coefficients which can be used to interpolate
+     from vertex centered values to the required cell centered values,
+     ignoring the cells argument.  See getc3 source code.
+     The return values should always have cells.shape.
+
+     If FCOLOR is a single integer, the slice will be an isosurface for
+     the FCOLORth variable associated with the mesh M3.
+
+     If the optional argument after FCOLOR is non-nil and non-zero,
+     then the FCOLOR function is called with only two arguments:
+        func fcolor(m3, cells)
+
+     The keyword argument NODE, if present and nonzero, is a signal
+        to return node-centered values rather than cell-centered
+        values. (ZCM 4/16/97)
+
+slice3mesh:
+     slice3mesh (z, color = None, smooth = 0)
+     slice3mesh (nxny, dxdy, x0y0, z, color = None, smooth = 0)
+     slice3mesh (x, y, z, color = None, smooth = 0)
+    
+     slice3mesh returns a triple [nverts, xyzverts, color]
+      nverts is no_cells long and the ith entry tells how many
+         vertices the ith cell has.
+      xyzverts is sum (nverts) by 3 and gives the vertex
+         coordinates of the cells in order.
+      color, if present, is len (nverts) long and contains
+         a color value for each cell in the mesh if smooth == 0;
+         sum (nverts) long and contains a color value for each
+         node in the mesh if smooth == 1.
+     There are a number of ways to call slice3mesh:
+        slice3mesh (z, color = None, smooth = 0)
+     z is a two dimensional array of function values, assumed
+     to be on a uniform mesh nx by ny nodes (assuming z is nx by ny)
+     nx being the number of nodes in the x direction, ny the number
+     in the y direction.
+     color, if specified, is either an nx - 1 by ny - 1 array
+     of cell-centered values by which the surface is to
+     be colored, or an nx by ny array of vertex-
+     centered values, which will be averaged over each
+     cell to give cell-centered values if smooth == 0, or
+     returned as a node-centered array sum (nverts) long if
+     smooth == 1.
+        slice3mesh (nxny, dxdy, x0y0, z, color = None, smooth = 0)
+     In this case, slice3mesh accepts the specification for
+     a regular 2d mesh: nxny is the number of cells in the
+     x direction and the y direction (i. e., its two components
+     are nx - 1 and ny - 1, nx by ny being the node size;
+     x0y0 are the initial values of x and y; and dxdy are the
+     increments in the two directions. z is the height of a
+     surface above the xy plane and must be dimensioned nx by ny. 
+     color, if specified, is as above.
+       slice3mesh (x, y, z, color = None, smooth = 0)
+     z is as above, an nx by ny array of function values
+     on a mesh of the same dimensions. There are two choices
+     for x and y: they can both be one-dimensional, dimensioned
+     nx and ny respectively, in which case they represent a
+     mesh whose edges are parallel to the axes; or else they
+     can both be nx by ny, in which case they represent a
+     general quadrilateral mesh.
+     color, if specified, is as above.
+
+iterator3:
+iterator3 (m3 , chunk = None, clist = None)
+   The iterator3 function combines three distinct operations:
+   (1) If only the M3 argument is given, return the initial
+       chunk of the mesh.  The chunk will be no more than
+       chunk3_limit cells of the mesh.
+   (2) If only M3 and CHUNK are given, return the next CHUNK,
+       or [] if there are no more chunks.
+   (3) If M3, CHUNK, and CLIST are all specified, return the
+       absolute cell index list corresponding to the index list
+       CLIST of the cells in the CHUNK.
+       Do not increment the chunk in this case.
+  
+   The form of the CHUNK argument and return value for cases (1)
+   and (2) is not specified, but it must be recognized by the
+   xyz3 and getv3 functions which go along with this iterator3.
+   (For case (3), CLIST and the return value are both ordinary
+    index lists.)
+   
+iterator3_rect:
+   This is the iterator3 function for a regular rectangular mesh.
+
+iterator3_irreg:
+   Does the same thing as iterator3_rect only for an irregular
+   rectangular mesh. It simply splits a large mesh into smaller
+   parts. Whether this is necessary I am not sure.
+   Certainly it makes it easier in the irregular case to handle
+   the four different types of cells separately.
+   if clist is present, in the irregular case it is already
+   the list of absolute cell indices, so it is simply returned.
+   This and other routines to do with irregular meshes return a
+   chunk which is a 2-list. The first item delimits the chunk;
+   the second gives a list of corresponding cell numbers.
+
+getv3:
+   getv3(i, m3, chunk)
+
+     return vertex values of the Ith function attached to 3D mesh M3
+     for cells in the specified CHUNK.  The CHUNK may be a list of
+     cell indices, in which case getv3 returns a 2x2x2x(CHUNK.shape)
+     list of vertex coordinates.  CHUNK may also be a mesh-specific data
+     structure used in the slice3 routine, in which case getv3 may
+     return a (ni)x(nj)x(nk) array of vertex values.  For meshes which
+     are logically rectangular or consist of several rectangular
+     patches, this is up to 8 times less data, with a concomitant
+     performance advantage.  Use getv3 when writing slicing functions
+     for slice3.
+
+getv3_rect:
+     the getv3 function for regular rectangular meshes.
+
+getv3_irreg:
+   for an irregular mesh, returns a 3-list whose elements are:
+   (1) the function values for the ith function on the vertices of the
+   given chunk. (The function values must have the same dimension
+   as the coordinates; there is no attempt to convert zone-centered
+   values to vertex-centered values.)
+   (2) an array of relative cell numbers within the list of cells
+   of this type.
+   (3) a number that can be added to these relative numbers to gives
+   the absolute cell numbers for correct access to their coordinates
+   and function values.
+
+getc3:
+getc3(i, m3, chunk)
+         or getc3(i, m3, clist, l, u, fsl, fsu, cells)
+
+     return cell values of the Ith function attached to 3D mesh M3
+     for cells in the specified CHUNK.  The CHUNK may be a list of
+     cell indices, in which case getc3 returns a (CHUNK.shape)
+     list of vertex coordinates.  CHUNK may also be a mesh-specific data
+     structure used in the slice3 routine, in which case getc3 may
+     return a (ni)x(nj)x(nk) array of vertex values.  There is no
+     savings in the amount of data for such a CHUNK, but the gather
+     operation is cheaper than a general list of cell indices.
+     Use getc3 when writing colorng functions for slice3.
+
+     If CHUNK is a CLIST, the additional arguments L, U, FSL, and FSU
+     are vertex index lists which override the CLIST if the Ith attached
+     function is defined on mesh vertices.  L and U are index lists into
+     the (CLIST.shape)x2x2x2 vertex value array, say vva, and FSL
+     and FSU are corresponding interpolation coefficients; the zone
+     centered value is computed as a weighted average of involving these
+     coefficients.  The CELLS argument is required by histogram to do
+     the averaging.  See the source code for details.
+     By default, this conversion (if necessary) is done by averaging
+     the eight vertex-centered values.
+
+getc3_rect:
+     The getc3 function for a regular rectangular mesh.
+
+getc3_irreg:
+     Returns the same type of data structure as getc3_rect,
+     but from an irregular rectangular mesh.
+      m3 [1] is a 2-list; m3[1] [0] is an array whose ith element
+         is an array of coordinate indices for the ith cell,
+         or a list of up to four such arrays.
+         m3 [1] [1] is the 3 by nverts array of coordinates.
+      m3 [2] is a list of arrays of vertex-centered or cell-centered
+         data.
+     chunk may be a list, in which case chunk [0] is a 2-sequence
+      representing a range of cell indices; or it may be a one-dimensional
+      array, in which case it is a nonconsecutive set of cell indices.
+      It is guaranteed that all cells indexed by the chunk are the
+      same type.
+
+plzcont:
+plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
+   edges = 0, color = None, cmin = None, cmax = None, split = 0)
+     Plot filled z contours on the specified surface. NVERTS and
+     XYZVERTS arrays specify the polygons for the surface being
+     drawn. CONTOURS can be one of the following:
+        N, an integer: Plot N contours (therefore, N+1 colored
+        components of the surface)
+        CVALS, a vector of floats: draw the contours at the
+        specified levels.
+     SCALE can be "lin", "log", or "normal" specifying the
+     contour scale. (Only applicable if contours = N, of course).
+     If CLEAR = 1, clear the display list first.
+     If EDGES = 1, plot the edges.
+     The algorithm is to apply slice2x repeatedly to the surface.
+     If color == None, then bytscl the palette into N + 1 colors
+     and send each of the slices to pl3tree with the appropriate color.
+     If color == "bg", will plot only the edges.
+     If CMIN is given, use it instead of the minimum z actually
+     being plotted. If CMAX is given, use it instead of the maximum
+     z actually being plotted.
+     If SPLIT is nonzero, then colors are computed based only on the
+     first half of the palette (i. e., a split palette is assumed).
+
+pl4cont:
+pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
+   edges = 0, color = None, cmin = None, cmax = None, split = 0)
+     Plot filled z contours on the specified surface. VALUES is
+     a cell-centered array the same length as SUM (NVERTS) whose
+     contours will be drawn. NVERTS and
+     XYZVERTS arrays specify the polygons for the surface being
+     drawn. CONTOURS can be one of the following:
+        N, an integer: Plot N contours (therefore, N+1 colored
+        components of the surface)
+        CVALS, a vector of floats: draw the contours at the
+        specified levels.
+     SCALE can be "lin", "log", or "normal" specifying the
+     contour scale. (Only applicable if contours = N, of course).
+     If CLEAR == 1, clear the display list first.
+     If EDGES == 1, plot the edges.
+     The algorithm is to apply slice2x repeatedly to the surface.
+     If color == None, then bytscl the palette into N + 1 colors
+     and send each of the slices to pl3tree with the appropriate color.
+     If color == "bg", will plot only the edges.
+     If CMIN is given, use it instead of the minimum z actually
+     being plotted. If CMAX is given, use it instead of the maximum
+     z actually being plotted.
+     If SPLIT is nonzero, then colors are computed based only on the
+     first half of the palette (i. e., a split palette is assumed).
+
+slice2x:
+[nvf, xyzvf, colorf, nvb, xyzvb, colorb] =
+   slice2x (plane, nverts, xyzverts, values = None)
+     Slice a polygon list, returning in nvf and xyzvf only those
+     polygons or parts of polygons on the positive side of PLANE,
+     and in nvb and xyzvb only those polygons or parts of polygons
+     on the negative side of PLANE.
+     If PLANE is a scalar real, then VALUES must be a function
+     defined on the vertices of the mesh, and the mesh will
+     be sliced where the function has that value.
+     The NVERTS, XYZVERTS, and VALUES arrays have the meanings
+     of the return values from the slice3 function. It is legal
+     to omit the VALUES argument (e.g.- if there is no fcolor
+     function).
+     In order to plot two intersecting slices, one could
+     slice (for example) the horizontal plane twice (slice2x) -
+     first with the plane of the vertical slice, then with minus
+     that same plane.  Then, plot first the back part of the
+     slice, then the vertical slice, then the front part of the
+     horizontal slice.  Of course, the vertical plane could
+     be the one to be sliced, and "back" and "front" vary
+     depending on the view point, but the general idea always
+     works.
+
+slice2:
+[nvf, xyzvf, colorf] = slice2 ((plane, nverts, xyzverts, values = None)
+     Slice a polygon list, returning in nvf and xyzvf only those
+     polygons or parts of polygons on the positive side of PLANE.
+     If PLANE is a scalar real, then VALUES must be a function
+     defined on the vertices of the mesh, and the mesh will
+     be sliced where the function has that value.
+     The NVERTS, XYZVERTS, and VALUES arrays have the meanings
+     of the return values from the slice3 function. It is legal
+     to omit the VALUES argument (e.g.- if there is no fcolor
+     function).
+     In order to plot two intersecting slices, one could
+     slice (for example) the horizontal plane twice (slice2x) -
+     first with the plane of the vertical slice, then with minus
+     that same plane.  Then, plot first the back part of the
+     slice, then the vertical slice, then the front part of the
+     horizontal slice.  Of course, the vertical plane could
+     be the one to be sliced, and "back" and "front" vary
+     depending on the view point, but the general idea always
+     works.
+
+pl3surf:
+pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
+        lim = None, edges = 0)
+     Perform simple 3D rendering of an object created by slice3
+     (possibly followed by slice2).  NVERTS and XYZVERTS are polygon
+     lists as returned by slice3, so XYZVERTS is sum(NVERTS)-by-3,
+     where NVERTS is a list of the number of vertices in each polygon.
+     If present, the VALUES should have the same length as NVERTS;
+     they are used to color the polygon.  If VALUES is not specified,
+     the 3D lighting calculation set up using the light3 function
+     will be carried out.  Keywords CMIN and CMAX as for plf, pli,
+     or plfp are also accepted.  (If you do not supply VALUES, you
+     probably want to use the AMBIENT keyword to light3 instead of
+     CMIN here, but CMAX may still be useful.)
+     EDGES should be set nonzero if you wish the mesh lines plotted
+     on the surface.
+
+pl3tree:
+pl3tree (nverts, xyzverts = None, values = None, plane = None,
+         cmin = None, cmax = None, split = 1, edges = 0)
+     Add the polygon list specified by NVERTS (number of vertices in
+     each polygon) and XYZVERTS (3-by-sum(NVERTS) vertex coordinates)
+     to the currently displayed b-tree.  If VALUES is specified, it
+     must have the same dimension as NVERTS, and represents the color
+     of each polygon.  (ZCM 7/18/97) Or, if VALUES == "bg" ("background")
+     Then each polygon will be filled with the background color,
+     giving just a wire frame. If VALUES is not specified, the polygons
+     are assumed to form an isosurface which will be shaded by the
+     current 3D lighting model; the isosurfaces are at the leaves of
+     the b-tree, sliced by all of the planes.  If PLANE is specified,
+     the XYZVERTS must all lie in that plane, and that plane becomes
+     a new slicing plane in the b-tree.
+
+     Each leaf of the b-tree consists of a set of sliced isosurfaces.
+     A node of the b-tree consists of some polygons in one of the
+     planes, a b-tree or leaf entirely on one side of that plane, and
+     a b-tree or leaf on the other side.  The first plane you add
+     becomes the root node, slicing any existing leaf in half.  When
+     you add an isosurface, it propagates down the tree, getting
+     sliced at each node, until its pieces reach the existing leaves,
+     to which they are added.  When you add a plane, it also propagates
+     down the tree, getting sliced at each node, until its pieces
+     reach the leaves, which it slices, becoming the nodes closest to
+     the leaves.
+
+     This structure is relatively easy to plot, since from any
+     viewpoint, a node can always be plotted in the order from one
+     side, then the plane, then the other side.
+     This routine assumes a "split palette"; the colors for the
+     VALUES will be scaled to fit from color 0 to color 99, while
+     the colors from the shading calculation will be scaled to fit
+     from color 100 to color 199.  (If VALUES is specified as an
+     unsigned char (Python typecode 'b') array, however, it will
+     be used without scaling.) You may specifiy a CMIN or CMAX
+     keyword to affect the scaling; CMIN is ignored if VALUES is
+     not specified (use the AMBIENT keyword from light3 for that
+     case).
+
+     (ZCM 4/23/97) Add the SPLIT keyword. This will determine
+     whether or not to split the palette (half to the isosurfaces
+     for shading and the other half to plane sections for contouring).
+
+split_palette:
+split_palette ( [ <string>])
+     split the current palette or the specified palette into two
+     parts; colors 0 to 99 will be a compressed version of the
+     original, while colors 100 to 199 will be a gray scale.
+
+split_bytscl:
+split_bytscl (x, upper, cmin = None, cmax = None)
+     as bytscl function, but scale to the lower half of a split
+     palette (0-99, normally the color scale) if the second parameter
+     is zero or nil, or the upper half (100-199, normally the gray
+     scale) if the second parameter is non-zero.
+
+xyz3:
+xyz3 (m3, chunk)
+     return vertex coordinates for CHUNK of 3D mesh M3.  The CHUNK
+     may be a list of cell indices, in which case xyz3 returns a
+     (CHUNK.shape)x3x2x2x2 list of vertex coordinates.  CHUNK may
+     also be a mesh-specific data structure used in the slice3
+     routine, in which case xyz3 may return a 3x(ni)x(nj)x(nk)
+     array of vertex coordinates.  For meshes which are logically
+     rectangular or consist of several rectangular patches, this
+     is up to 8 times less data, with a concomitant performance
+     advantage.  Use xyz3 when writing slicing functions or coloring
+     functions for slice3.
+
+xyz3_rect:
+     The xyz3 function for a regular, rectangular mesh.
+
+xyz3_irreg:
+     The xyz3 function for an irregular, unstructured mesh.
+
+xyz3_unif:
+     The xyz3 function for a uniform mesh.
+
+to_corners3:
+to_corners3(list, nj, nk)
+     convert an array of cell indices in an (ni-1)-by-(NJ-1)-by-(NK-1)
+     logically rectangular grid of cells into the list of
+     len(LIST)-by-2-by-2-by-2 cell corner indices in the
+     corresponding ni-by-NJ-by-NK array of vertices.
+     Note that this computation in Yorick gives an absolute offset
+     for each cell quantity in the grid. In Yorick it is legal to
+     index a multidimensional array with an absolute offset. In
+     Python it is not. However, an array can be flattened if
+     necessary.
+     Other changes from Yorick were necessitated by row-major
+     order and 0-origin indices, and of course the lack of
+     Yorick array facilities.
