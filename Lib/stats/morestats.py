@@ -2,8 +2,10 @@
 from __future__ import nested_scopes
 import distributions
 import inspect
-from scipy_base import isscalar
+from scipy_base import isscalar, r_
 from scipy_base import zeros, arange, sort, amin, amax
+import types
+import scipy.optimize as optimize
 import stats
 
 __all__ = ['probplot','ppcc_max','ppcc_plot']
@@ -65,7 +67,7 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     else:
         return osm, osr
 
-def ppcc_max(x, dist='tukeylambda'):
+def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     """Returns the shape parameter that maximizes the probability plot
     correlation coefficient for the given data to a one-parameter
     family of distributions.
@@ -95,7 +97,7 @@ def ppcc_max(x, dist='tukeylambda'):
         xvals = func(mi, shape)
         slope, intercept, r, prob, sterrest = stats.linregress(xvals, yvals)
         return 1-r
-    return optimize.brent(tempfunc, args=(Ui, osr, ppf_func))
+    return optimize.brent(tempfunc, brack=brack, args=(Ui, osr, ppf_func))
 
 def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     """Returns (shape, ppcc), and optionally plots shape vs. ppcc
