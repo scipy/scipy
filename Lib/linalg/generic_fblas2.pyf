@@ -21,7 +21,7 @@ subroutine <tchar=s,d,c,z>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,ro
 
   <type_in> dimension(*),intent(in) :: x
   <type_in> dimension(ly),intent(in,copy,out),depend(ly),optional :: y
-  integer intent(hide),depend(incy,rows,offy),ly = (y_capi==Py_None?1+offy+(rows-1)*abs(incy):-1)
+  integer intent(hide),depend(incy,rows,offy) :: ly = (y_capi==Py_None?1+offy+(rows-1)*abs(incy):-1)
   <type_in> dimension(m,n),intent(in) :: a
   integer depend(a),intent(hide):: m = shape(a,0)
   integer depend(a),intent(hide):: n = shape(a,1)
