@@ -5,6 +5,7 @@ if sys.version[:3]>='2.3':
     import re
 else:
     import pre as re
+from distutils.dir_util import mkpath
 
 def all_subroutines(interface_in):
     # remove comments
@@ -148,6 +149,7 @@ def generate_interface(module_name,src_file,target_file,skip_names=[]):
     generic_interface = process_includes(generic_interface,sdir)
     generic_interface = generic_expand(generic_interface,skip_names)
     module_def = interface_to_module(generic_interface,module_name)
+    mkpath(os.path.dirname(target_file))
     f = open(target_file,'w')
     user_routines = os.path.join(sdir,module_name+"_user_routines.pyf")
     if os.path.exists(user_routines):
