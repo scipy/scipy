@@ -284,7 +284,7 @@ def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsi
         gist.plsys(0)
         maxlen = MLab.max(map(len,text))
         c1 = (llx-deltax,lly-deltay)
-        c2 = (llx + width + deltax + fontsize*points* maxlen/1.8 + deltax,
+        c2 = (llx + width + deltax + fontsize*points* maxlen/2.1 + deltax,
               lly + len(text)*dy)
         linesx0 = [c1[0],c1[0],c2[0],c2[0]]
         linesy0 = [c1[1],c2[1],c2[1],c1[1]]
@@ -482,7 +482,7 @@ def plot(x,*args,**keywds):
     winnum = gist.window()
     if winnum < 0:
         gist.window(0)
-    if savesys > 0:
+    if savesys >= 0:
         gist.plsys(savesys)
     nargs = len(args)
     if nargs == 0:

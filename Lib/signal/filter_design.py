@@ -1008,6 +1008,7 @@ def vratio(u, ineps, mp):
     return ret
 
 def kratio(m, k_ratio):
+    m = float(m)
     if m < 0:
         m = 0.0
     if m > 1:
