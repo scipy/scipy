@@ -15,7 +15,7 @@ from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
 import Matrix
 import scipy_base
-from scipy_base import asarray_chkfinite
+from scipy_base import asarray_chkfinite, outerproduct, concatenate, reshape
 import calc_lwork
 
 class LinAlgError(Exception):
