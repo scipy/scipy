@@ -120,7 +120,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=False, bounds=None, eps
                     if maxCGit == 0, the direction chosen is -gradient
                     if maxCGit < 0, maxCGit is set to max(1,min(50,n/2))
                     defaults to -1
-        maxnfeval : max. number of function evaluation
+        maxfun    : max. number of function evaluation
                     if None, maxnfeval is set to max(1000, 100*len(x0))
                     defaults to None
         eta       : severity of the line search. if < 0 or > 1, set to 0.25
@@ -185,7 +185,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=False, bounds=None, eps
         if u is None:
             up[i] = HUGE_VAL
         else:
-            up[i] = l
+            up[i] = u
         
     if scale == None:
         scale = []
@@ -213,7 +213,7 @@ if __name__ == '__main__':
                         return f, g
 
                 # Optimizer call
-                rc, nf, x = minimize(function, [-7, 3], bounds=([-10, 10], [1, 10]))
+                rc, nf, x = fmin_tnc(function, [-7, 3], bounds=([-10, 10], [1, 10]))
 
                 print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
                 print "x =", x
@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
         def test(fg, x, bounds, xopt):
                 print "** Test", fg.__name__
-                rc, nf, x = minimize(fg, x, bounds=bounds,  messages = MSG_NONE, maxnfeval = 200)
+                rc, nf, x = fmin_tnc(fg, x, bounds=bounds,  messages = MSG_NONE, maxnfeval = 200)
                 print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
                 print "x =", x
                 print "exact value =", xopt
