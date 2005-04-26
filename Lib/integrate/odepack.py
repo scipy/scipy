@@ -3,6 +3,7 @@
 __all__ = ['odeint']
 
 import _odepack
+from copy import copy
 
 _msgs = {2: "Integration successful.",
          -1: "Excess work done on this call (perhaps wrong Dfun type).",
@@ -111,7 +112,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         ml = -1 # changed to zero inside function call
     if mu is None:
         mu = -1 # changed to zero inside function call
-    t = t.copy()
+    t = copy(t)
     output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
                              full_output, rtol, atol, tcrit, h0, hmax, hmin,
                              ixpr, mxstep, mxhnil, mxordn, mxords)
