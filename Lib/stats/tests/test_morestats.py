@@ -78,7 +78,7 @@ class test_ansari(unittest.TestCase):
     def check_exact(self):
         W,pval = stats.ansari([1,2,3,4],[15,5,20,8,10,12]) 
         assert_almost_equal(W,10.0,11)
-        assert_almost_equal(pval,0.533333333333333333,11)
+        assert_almost_equal(pval,0.533333333333333333,7)
 
 class test_bartlett(unittest.TestCase):
     def check_data(self):

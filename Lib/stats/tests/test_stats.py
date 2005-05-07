@@ -512,10 +512,10 @@ class test_gmean(TestCase):
         a = array((1,2,3,4),Float32)
         actual= stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(desired,actual,decimal=14)
+        assert_almost_equal(desired,actual,decimal=7)
 
         desired1 = scipy.stats.stats.gmean(a,axis=-1)
-        assert_almost_equal(desired1,actual,decimal=14)
+        assert_almost_equal(desired1,actual,decimal=7)
 
     def check_2D_array_default(self):
         a = array(((1,2,3,4),

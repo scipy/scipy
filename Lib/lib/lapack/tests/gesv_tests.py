@@ -24,11 +24,11 @@ class _test_gev:
 
     def check_sygv_3(self): self.check_sygv(itype=3)
 
-    def check_hegv(self): self.check_sygv(sym='he')
+##    def check_hegv(self): self.check_sygv(sym='he')
 
-    def check_hegv_2(self): self.check_sygv(sym='he',itype=2)
+##    def check_hegv_2(self): self.check_sygv(sym='he',itype=2)
 
-    def check_hegv_3(self): self.check_sygv(sym='he',itype=3)
+##    def check_hegv_3(self): self.check_sygv(sym='he',itype=3)
 
     def check_sygvd(self): self.check_sygv(suffix='d')
 
@@ -36,8 +36,8 @@ class _test_gev:
 
     def check_sygvd_3(self): self.check_sygv(suffix='d',itype=3)
 
-    def check_hegvd(self): self.check_sygv(sym='he',suffix='d')
+##    def check_hegvd(self): self.check_sygv(sym='he',suffix='d')
 
-    def check_hegvd_2(self): self.check_sygv(sym='he',suffix='d',itype=2)
+##    def check_hegvd_2(self): self.check_sygv(sym='he',suffix='d',itype=2)
 
-    def check_hegvd_3(self): self.check_sygv(sym='he',suffix='d',itype=3)
+##    def check_hegvd_3(self): self.check_sygv(sym='he',suffix='d',itype=3)
