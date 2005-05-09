@@ -2,10 +2,10 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from cephes import *
 from scipy_base import *
+from scipy_base.numerix import *
+from cephes import *
 import types
-from scipy_base.fastumath import *
 import specfun
 
 def sinc(x):
@@ -199,7 +199,7 @@ def sph_jn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n    
-    if iscomplex(z):
+    if any(iscomplex(z)):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
         nm,jn,jnp = specfun.sphj(n1,z)        
@@ -215,7 +215,7 @@ def sph_yn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n 
-    if iscomplex(z) or (z<0):
+    if any(iscomplex(z)) or any(z<0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
         nm,yn,ynp = specfun.sphy(n1,z)
@@ -231,7 +231,7 @@ def sph_jnyn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n    
-    if iscomplex(z) or (z<0):
+    if any(iscomplex(z)) or any(z<0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
         nm,yn,ynp = specfun.sphy(n1,z)
@@ -248,7 +248,7 @@ def sph_in(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n
-    if iscomplex(z):
+    if any(iscomplex(z)):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
         nm,In,Inp = specfun.sphi(n1,z)        
@@ -264,7 +264,7 @@ def sph_kn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n    
-    if iscomplex(z) or (z<0):
+    if any(iscomplex(z)) or any(z<0):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
         nm,kn,knp = specfun.sphk(n1,z)
@@ -278,7 +278,7 @@ def sph_inkn(n,z):
         raise ValueError, "arguments must be scalars."
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
-    if iscomplex(z) or (z<0):
+    if any(iscomplex(z)) or any(z<0):
         nm,In,Inp,kn,knp = specfun.csphik(n,z)
     else:
         nm,In,Inp = specfun.sphi(n,z)
@@ -475,7 +475,7 @@ def lpmn(m,n,z):
         sv = errprint(sv)
     else:
         mp = m
-    if iscomplex(z):
+    if any(iscomplex(z)):
         p,pd = specfun.clpmn(mp,n,real(z),imag(z))
     else:        
         p,pd = specfun.lpmn(mp,n,z)
@@ -505,7 +505,7 @@ def lqmn(m,n,z):
     if (m*n == 0):
         mm = max(1,m)
         nn = max(1,n)
-    if iscomplex(z):
+    if any(iscomplex(z)):
         q,qd = specfun.clqmn(mm,nn,z)
     else:        
         q,qd = specfun.lqmn(mm,nn,z)
@@ -544,7 +544,7 @@ def lpn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n
-    if iscomplex(z):
+    if any(iscomplex(z)):
         pn,pd = specfun.clpn(n1,z)
     else:
         pn,pd = specfun.lpn(n1,z)
@@ -562,7 +562,7 @@ def lqn(n,z):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
     else: n1 = n    
-    if iscomplex(z):
+    if any(iscomplex(z)):
         qn,qd = specfun.clqn(n1,z)
     else:
         qn,qd = specfun.lqnb(n1,z)

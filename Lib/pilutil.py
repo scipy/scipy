@@ -2,7 +2,7 @@
 
 from scipy_base import ppimport
 import types
-import Numeric
+import scipy_base.numerix as Numeric
 
 from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros

@@ -52,7 +52,7 @@ class test_eigvals(ScipyTestCase):
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
-        import LinearAlgebra
+        from scipy_base.numerix import LinearAlgebra
         Numeric_eigvals = LinearAlgebra.eigenvalues
         print
         print '           Finding matrix eigenvalues'

@@ -56,7 +56,7 @@ static PyUFuncGenericFunction cephes5_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes1c_functions[] = { NULL, };
 
 static void * airy_data[] = { (void *)airy, (void *)airy, (void *)cairy_wrap, (void *)cairy_wrap,};
-static void * airye_data[] = { (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
+static void * airye_data[] = { (void *)cairy_wrap_e, (void *)cairy_wrap_e, (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
 static void * itairy_data[] = { (void *)itairy_wrap, (void *)itairy_wrap, };
 
 static void * kelvin_data[] = { (void *)kelvin_wrap, (void *)kelvin_wrap,};
@@ -81,8 +81,7 @@ static void * pdtrc_data[] = { (void *)pdtrc, (void *)pdtrc, };
 static void * pdtr_data[] = { (void *)pdtr, (void *)pdtr, };
 static void * pdtri_data[] = { (void *)pdtri, (void *)pdtri, };
 
-static void * fresnl_data[] = { (void *)fresnl, (void *)fresnl, 
-                                (void *)cfresnl_wrap, (void *)cfresnl_wrap };
+static void * fresnl_data[] = { (void *)fresnl, (void *)fresnl, (void *)cfresnl_wrap, (void *)cfresnl_wrap };
 static void * shichi_data[] = { (void *)shichi, (void *)shichi, };
 static void * sici_data[] = { (void *)sici, (void *)sici, };
 
@@ -1081,11 +1080,11 @@ static struct PyMethodDef methods[] = {
 };
 
 
-void initcephes(void) {
+void initnc_cephes(void) {
   PyObject *m, *d, *s;
   
   /* Create the module and add the functions */
-  m = Py_InitModule("cephes", methods); 
+  m = Py_InitModule("nc_cephes", methods); 
 
   /* Import the ufunc objects */
   import_array();

@@ -13,9 +13,9 @@ from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
-import Matrix
 import scipy_base
-from scipy_base import asarray_chkfinite, outerproduct, concatenate, reshape
+from scipy_base import asarray_chkfinite, outerproduct, concatenate, reshape, \
+     Matrix
 import calc_lwork
 
 class LinAlgError(Exception):
@@ -491,7 +491,7 @@ def hankel(c,r=None):
     return take(vals, indx)
 
 def all_mat(*args):
-    return map(Matrix.Matrix,args)
+    return map(Matrix,args)
 
 def kron(a,b):
     """kronecker product of a and b

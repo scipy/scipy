@@ -95,11 +95,10 @@ def get_eig_func():
             eig = linalg.eig
         except ImportError:
             try:
-                import LinearAlgebra
-                eig = LinearAlgebra.eigenvectors
-            except:
+                from scipy_base.numerix import eigenvectors as eig
+            except ImportError:
                 raise ImportError, \
-                      "You must have scipy.linalg or LinearAlgebra to "\
+                      "You must have scipy.linalg or Numeric or numarray to" \
                       "use this function."
     _eigfunc_cache = eig
     return eig
@@ -137,7 +136,7 @@ def j_roots(n,alpha,beta,mu=0):
     and weights (w) to use in Gaussian Quadrature over [-1,1] with weighting
     function (1-x)**alpha (1+x)**beta with alpha,beta > -1.
     """
-    if (alpha <= -1) or (beta <= -1):
+    if any(alpha <= -1) or any(beta <= -1):
         raise ValueError, "alpha and beta must be greater than -1."
     assert(n>0), "n must be positive."
 
@@ -145,7 +144,7 @@ def j_roots(n,alpha,beta,mu=0):
     # from recurrence relations
     sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)/(2*k+q+p+1)) * \
                 (where(k==1,1.0,sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
-    if (p == q):
+    if any(p == q):  # XXX any or all???
         an_J = lambda k: 0.0*k
     else:
         an_J = lambda k: where(k==0,(q-p)/(p+q+2.0),
@@ -184,7 +183,7 @@ def js_roots(n,p1,q1,mu=0):
     function (1-x)**(p-q) x**(q-1) with p-q > -1 and q > 0.
     """
     # from recurrence relation
-    if not ( ( (p1 - q1) > -1 ) and ( q1 > 0 ) ):
+    if not ( any( (p1 - q1) > -1 ) and any( q1 > 0 ) ):
         raise ValueError, "(p - q) > -1 and q > 0 please."
     if (n <= 0):
         raise ValueError, "n must be positive."
@@ -241,7 +240,7 @@ def la_roots(n,alpha,mu=0):
     polynomial, L^(alpha)_n(x), and weights (w) to use in Gaussian quadrature over
     [0,inf] with weighting function exp(-x) x**alpha with alpha > -1.
     """
-    if not (alpha > -1):
+    if not all(alpha > -1):
         raise ValueError, "alpha > -1"
     assert(n>0), "n must be positive."
     (p,q) = (alpha,0.0)
@@ -259,7 +258,7 @@ def genlaguerre(n,alpha,monic=0):
     L^(alpha)_n(x), orthogonal over [0,inf) with weighting function
     exp(-x) x**alpha with alpha > -1
     """
-    if (alpha <= -1):
+    if any(alpha <= -1):
         raise ValueError, "alpha must be > -1"
     assert(n>=0), "n must be nonnegative"
     if n==0: n1 = n+1
@@ -385,7 +384,7 @@ def gegenbauer(n,alpha,monic=0):
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = _gam(2*alpha+n)*_gam(alpha+0.5) / _gam(2*alpha) / _gam(alpha+0.5+n)
-    return factor * base
+    return base * factor
 
 # Chebyshev of the first kind: T_n(x)  = n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
 #  Computed anew.
@@ -443,7 +442,7 @@ def chebyu(n,monic=0):
     if monic:
         return base
     factor = sqrt(pi)/2.0*_gam(n+2) / _gam(n+1.5)
-    return factor * base
+    return base * factor
 
 # Chebyshev of the first kind        C_n(x)
 def c_roots(n,mu=0):
@@ -527,7 +526,7 @@ def sh_chebyt(n,monic=0):
         factor = 4**n / 2.0
     else:
         factor = 1.0
-    return factor * base
+    return base * factor
     
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
@@ -547,7 +546,7 @@ def sh_chebyu(n,monic=0):
     base = sh_jacobi(n,2.0,1.5,monic=monic)
     if monic: return base
     factor = 4**n
-    return factor * base
+    return base * factor
 
 # Legendre 
 def p_roots(n,mu=0):

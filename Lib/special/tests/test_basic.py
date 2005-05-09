@@ -461,20 +461,11 @@ class test_airy(unittest.TestCase):
 	#This tests the airy function to ensure 8 place accuracy in computation
 
 	x = airy(.99)
-	assert_array_almost_equal(x,array([0.13689066,
-					   -0.16050153,
-					   1.19815925,
-					   0.92046818]),8)
+	assert_array_almost_equal(x,array([0.13689066,-0.16050153,1.19815925,0.92046818]),8)
 	x = airy(.41)
-	assert_array_almost_equal(x,array([0.25238916,
-					  -.23480512,
-					  0.80686202,
-					  0.51053919]),8)
+	assert_array_almost_equal(x,array([0.25238916,-.23480512,0.80686202,0.51053919]),8)
 	x = airy(-.36)
-	assert_array_almost_equal(x,array([0.44508477,
-					   -0.23186773,
-					   0.44939534,
-					   0.48105354]),8)
+	assert_array_almost_equal(x,array([0.44508477,-0.23186773,0.44939534,0.48105354]),8)
 
 class test_airye(unittest.TestCase):
 
@@ -499,7 +490,7 @@ class test_arange(unittest.TestCase):
                                       1.6,1.7,1.8,1.9,
                                       2.,2.1,2.2]))
         numstringa = arange(3,4,.3)
-        assert_array_equal(numstringa, array([3.,3.3,3.6,3.9]))
+        assert_array_almost_equal(numstringa, array([3.,3.3,3.6,3.9]))
         numstringb = arange(3,27,3)
         assert_array_equal(numstringb,array([3,6,9,12,
                                              15,18,21,24]))
@@ -1083,7 +1074,7 @@ class test_gegenbauer(unittest.TestCase):
 
     def check_gegenbauer(self):
         a = 5*rand()-0.5
-        if (a==0): a = -0.2
+        if any(a==0): a = -0.2
         print "Gegenbauer, a = ", a
         Ca0 = gegenbauer(0,a)
         Ca1 = gegenbauer(1,a)
