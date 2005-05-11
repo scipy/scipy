@@ -58,40 +58,20 @@ def configuration(parent_package='',parent_path=None):
     config['libraries'].append(('cdf',{'sources':cdf}))
     config['libraries'].append(('specfun',{'sources':specfun}))
     
-    if BUILD_FOR_NUMARRAY:
-        define_macros += [("NUMARRAY",1)]
-        import numarray.numinclude as numinc
-        # Extension _na_cephes  (na_cephes is python)
-        sources = ['_na_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
-                   'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
-        sources = [os.path.join(local_path,x) for x in sources]
-        ext_args = {}
-        dict_append(ext_args,
-                    name=dot_join(parent_package,package,"_numarray",'_na_cephes'),
-                    sources = sources,
-                    libraries = ['amos','toms','c_misc','cephes','mach',
-                                 'cdf', 'specfun'],
-                    define_macros = define_macros,
-                    include_dirs = [numinc.include_dir],
-                    )
-        ext = Extension(**ext_args)
-        config['ext_modules'].append(ext)
-
-    if BUILD_FOR_NUMERIC:
-        # Extension nc_cephes
-        sources = ['nc_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
-                   'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
-        sources = [os.path.join(local_path,x) for x in sources]
-        ext_args = {}
-        dict_append(ext_args,
-                    name=dot_join(parent_package,package,"_numeric",'nc_cephes'),
-                    sources = sources,
-                    libraries = ['amos','toms','c_misc','cephes','mach',
-                                 'cdf', 'specfun'],
-                    define_macros = define_macros
-                    )
-        ext = Extension(**ext_args)
-        config['ext_modules'].append(ext)
+    # Extension _cephes
+    sources = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
+               'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
+    sources = [os.path.join(local_path,x) for x in sources]
+    ext_args = {}
+    dict_append(ext_args,
+                name=dot_join(parent_package,package,'_cephes'),
+                sources = sources,
+                libraries = ['amos','toms','c_misc','cephes','mach',
+                             'cdf', 'specfun'],
+                define_macros = define_macros
+                )
+    ext = Extension(**ext_args)
+    config['ext_modules'].append(ext)
 
     # Extension nc_specfun
     ext_args = {'name':dot_join(parent_package,package,'specfun'),

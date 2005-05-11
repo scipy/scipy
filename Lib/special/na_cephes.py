@@ -4,10 +4,10 @@ functions from C-coded cfuncs contained in a sister extension module.
 ***************************** DO NOT EDIT **************************
 '''
 
-import _numarray._na_cephes
+import _cephes
 import numarray.ufunc as _uf
 
-globals().update(_uf.make_ufuncs(_numarray._na_cephes))
+globals().update(_uf.make_ufuncs(_cephes))
 
 
 

@@ -2,7 +2,7 @@
 #include <Python.h>
 #include <stdio.h>
 #include <math.h>
-#include "libnumarray.h"
+#include "numarray/libnumarray.h"
 
 #ifdef MS_WIN32
 #pragma warning(once : 4244)
@@ -9528,7 +9528,7 @@ static CfuncDescriptor zetac_dxd_vxf_descr =
 { "zetac_dxd_vxf", (void *) zetac_dxd_vxf, CFUNC_UFUNC, 0, CHECK_ALIGN, 1, 1,
   { sizeof(Float64), sizeof(Float64) }, { 0, 0, 0 } };
 
-static PyMethodDef _na_cephesMethods[] = {
+static PyMethodDef _cephesMethods[] = {
 
 	{NULL,      NULL}        /* Sentinel */
 };
@@ -11573,9 +11573,9 @@ static PyObject *init_funcDict(void) {
 #ifdef MS_WIN32
 __declspec(dllexport)
 #endif
-void init_na_cephes(void) {
+void init_cephes(void) {
     PyObject *m, *d;
-    m = Py_InitModule("_na_cephes", _na_cephesMethods);
+    m = Py_InitModule("_cephes", _cephesMethods);
     d = PyModule_GetDict(m);
     import_libnumarray();
     PyDict_SetItemString(d, "functionDict", init_funcDict());

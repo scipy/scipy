@@ -365,7 +365,7 @@ extern Complex64 cwofz_wrap(Complex64 z);
 
 
 def gencode():
-    m = UfuncModule('_na_cephes')
+    m = UfuncModule('_cephes')
 
     m.add_code( fake_header_code ) 
     
@@ -379,7 +379,8 @@ def gencode():
                           c_signature=c_sig)
         
     m.generate('_na_cephesmodule.c')
-    make_stub('na_cephes', '_numarray._na_cephes',
+
+    make_stub('na_cephes', '_cephes',
               add_code = python_code)  
 
 if __name__ == "__main__":

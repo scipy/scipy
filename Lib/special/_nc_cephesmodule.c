@@ -1080,11 +1080,11 @@ static struct PyMethodDef methods[] = {
 };
 
 
-void initnc_cephes(void) {
+void init_cephes(void) {
   PyObject *m, *d, *s;
   
   /* Create the module and add the functions */
-  m = Py_InitModule("nc_cephes", methods); 
+  m = Py_InitModule("_cephes", methods); 
 
   /* Import the ufunc objects */
   import_array();
@@ -1105,6 +1105,6 @@ void initnc_cephes(void) {
   
   /* Check for errors */
   if (PyErr_Occurred())
-    Py_FatalError("can't initialize module cephes");
+    Py_FatalError("can't initialize module _cephes");
 }
 
