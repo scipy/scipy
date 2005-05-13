@@ -1,4 +1,4 @@
 #prune scipy_core
 include setup.py
 include *.txt
-
+include Lib/special/_nc_cephesmodule.c  Lib/special/_na_cephesmodule.c
