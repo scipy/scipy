@@ -68,7 +68,9 @@ def configuration(parent_package='',parent_path=None):
                 sources = sources,
                 libraries = ['amos','toms','c_misc','cephes','mach',
                              'cdf', 'specfun'],
-                define_macros = define_macros
+                define_macros = define_macros,
+                depends = [os.path.join(local_path,x) \
+                           for x in ['_na_cephesmodule.c','_nc_cephesmodule.c']]
                 )
     ext = Extension(**ext_args)
     config['ext_modules'].append(ext)
