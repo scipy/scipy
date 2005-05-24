@@ -24,7 +24,7 @@ xyz_from_rgbcie = [[0.490, 0.310, 0.200],
                    [0.177, 0.813, 0.011],
                    [0.000, 0.010, 0.990]]
 
-rgbcie_from_xyz = scipy.linalg.inv(XYZ_from_RGBcie)
+rgbcie_from_xyz = scipy.linalg.inv(xyz_from_rgbcie)
 
 rgbntsc_from_xyz = [[1.910, -0.533, -0.288],
                     [-0.985, 2.000, -0.028],
@@ -44,7 +44,17 @@ xyz_from_rgb =  [[0.412453, 0.357580, 0.180423],
                  [0.212671, 0.715160, 0.072169],
                  [0.019334, 0.119193, 0.950227]]
 
-rgb_from_xyz = scipy.linalg.inv(XYZ_from_RGB)
+rgb_from_xyz = scipy.linalg.inv(xyz_from_rgb)
+
+# From http://www.mir.com/DMG/ycbcr.html
+
+
+ycbcr_from_rgbp = [[0.299, 0.587, 0.114],
+                   [-0.168736, -0.331264, 0.5],
+                   [0.5, -0.418688, -0.081312]]
+
+rgbp_from_ycbcr = scipy.linalg.inv(ycbcr_from_rgbp)
+
 
 # LMS color space spectral matching curves provide the
 #  spectral response curves of three types of cones.
@@ -251,30 +261,95 @@ def rgb2lab(rgb):
 def lab2rgb(lab):
     return xyz2rgb(lab2xyz(lab))
 
+#  RGB values that will be displayed on a screen are always
+#  R'G'B' values.  To get the XYZ value of the color that will be
+#  displayed you need a calibrated monitor with a profile 
+#  -- someday we should support reading and writing such profiles and
+#     doing color conversion with them.
+#  But, for quick-and-dirty calculation you can often assume the sR'G'B'
+#   coordinate system for your computer, and so the rgbp2rgb will
+#   put you in the linear coordinate system (assuming normalized to [0,1]
+#   sR'G'B' coordiates)
+#  
+
 # sRGB <-> sR'G'B'  equations from
 #   http://www.w3.org/Graphics/Color/sRGB
 #   http://www.srgb.com/basicsofsrgb.htm
 
-# rgb2rgbp gives the nonlinear (gamma corrected) sR'G'B' from
-#    linear sRGB values
-#   approximately the same as rgb**(1.0/2.2)
-def rgb2rgbp(rgb):
+
+# Macintosh displays are usually gamma = 1.8
+
+# These transformations are done with normalized [0,1.0] coordinates
+
+# when gamma is None:
+#    rgb2rgbp gives the nonlinear (gamma corrected) sR'G'B' from
+#       linear sRGB values
+#    approximately the same as rgb**(1.0/2.2)
+# otherwise do a simple gamma calculation
+#    rgbp = rgb**(1.0/gamma)
+
+def rgb2rgbp(rgb,gamma=None):
     rgb = asarray(rgb)
-    eps = 0.0031308
-    return where(rgb < eps, 12.92*rgb,
-                 1.055*rgb**(1.0/2.4) - 0.055)
+    if gamma is None:
+        eps = 0.0031308    
+        return where(rgb < eps, 12.92*rgb,
+                     1.055*rgb**(1.0/2.4) - 0.055)
+    else:
+        return rgb**(1.0/gamma)
 
-# rgbp2rgb gives linear sRGB values from nonlinear sR'G'B' values
+# when gamma is None:
+#     rgbp2rgb gives linear sRGB values from nonlinear sR'G'B' values
+#     approximately the same as rgbp**2.2
+# otherwise do a simple gamma coorection
+#     rgb = rgbp**gamma
 #
-#  approximately the same as rgbp**2.2
-def rgbp2rgb(rgbp,axis=None):
+def rgbp2rgb(rgbp,gamma=None):
     rgbp = asarray(rgbp)
-    eps = 0.04045
-    return where(rgbp <= eps, rgbp / 12.92,
-                 power((rgbp + 0.055)/1.055,2.4))
+    if gamma is None:
+        eps = 0.04045
+        return where(rgbp <= eps, rgbp / 12.92,
+                     power((rgbp + 0.055)/1.055,2.4))
+    else:
+        return rgbp**gamma
 
+# Y'CbCr information from here
+#  http://www.mir.com/DMG/ycbcr.html
+# This transforms from rgbp coordinates to normalized
+#  y' cb cr coordinates  y' in [0,1], cb and cr in [-0.5,0.5]
+#
+# To convert to 8-bit use (according to the web-page cited)
+#  Y' = y'*219 + 16   => [16,235]
+#  Cb = cb*224 + 128  => [16,240]
+#  Cr = cr*224 + 128  => [16,240]
 
+def rgbp2ycbcr(rgbp,axis=None):
+    return convert(ycbcr_from_rgbp, rgbp, axis)
+
+def ycbcr2rgbp(ycbcr,axis=None):
+    return convert(rgbp_from_ycbcr, ycbcr, axis)
+
+def rgb2ycbcr(rgb,gamma=None,axis=None):
+    return rgbp2ycbcr(rgb2rgbp(rgb,gamma),axis)
+
+def ycbcr2rgb(ycbcr,gamma=None,axis=None):
+    return rgbp2rgb(ycbcr2rgbp(ycbcr,axis),gamma)
+
+def ycbcr_8bit(ycbcr,axis=None):
+    y,cb,cr,axis = separate_colors(ycbcr,axis)
+    Y = asarray((y*219 + 16),sb.UInt8)
+    Cb = asarray((cb*224 + 128),sb.UInt8)
+    Cr = asarray((cr*224 + 128),sb.UInt8)
+    return join_colors(Y,Cb,Cr,axis)
+
+def ycbcr_norm(YCbCr,axis=None):
+    Y,Cb,Cr,axis = separate_colors(YCbCr,axis)
+    y = (Y-16.)/219
+    cb = (Cb-128.)/224
+    cr = (Cr-128.)/224
+    return join_colors(y,cb,cr,axis)
     
+
+
     
 
 
