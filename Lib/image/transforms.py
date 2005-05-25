@@ -282,3 +282,4 @@ def wht(data):
     x = x*1.0/N; # Delete this line for inverse wht
     return x
     
+del pi, scipy, sb

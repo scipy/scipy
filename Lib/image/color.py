@@ -1,9 +1,10 @@
 
 import scipy_base as sb
 import scipy
+import os
 
 # Various utilities and data for color processing
-#  See http://www.cvrl.org/ for much of the data
+#  See http://www.cvrl.org/ for text file of the data
 
 # RGB  the linear sRGB color space using D65 as a white-point
 #      (IEC 61966-2-1).  Represents standard monitor (w/o gamma correction).
@@ -47,7 +48,6 @@ xyz_from_rgb =  [[0.412453, 0.357580, 0.180423],
 rgb_from_xyz = scipy.linalg.inv(xyz_from_rgb)
 
 # From http://www.mir.com/DMG/ycbcr.html
-
 
 ycbcr_from_rgbp = [[0.299, 0.587, 0.114],
                    [-0.168736, -0.331264, 0.5],
@@ -94,6 +94,7 @@ thisdict = globals()
 for name in ['ciexyz31_1.txt','ciexyz64_1.txt','ciexyzjv.txt',
              'sbrgb2.txt','linss2_10e_1.txt']:
     k = k + 1
+    name = os.path.join(os.path.split(__file__)[0],'colordata',name)
     afile = open(name)
     lines = afile.readlines()
     afile.close()
@@ -119,7 +120,8 @@ for name in ['ciexyz31_1.txt','ciexyz64_1.txt','ciexyzjv.txt',
 
     thisdict[varnames[k]] = (wlen,xl,yl,zl)
 
-del thisdict, wlen, xl, yl, zl, afile, lines, this
+del thisdict, wlen, xl, yl, zl, afile, lines, this, line, k, msg, name
+del varnames, inst
 
 # XYZ white-point coordinates
 #  from http://www.aim-dtp.net/aim/technology/cie_xyz/cie_xyz.htm
@@ -312,6 +314,8 @@ def rgbp2rgb(rgbp,gamma=None):
     else:
         return rgbp**gamma
 
+# The Y'CbCr coordinate system is useful because
+#  
 # Y'CbCr information from here
 #  http://www.mir.com/DMG/ycbcr.html
 # This transforms from rgbp coordinates to normalized
@@ -348,8 +352,7 @@ def ycbcr_norm(YCbCr,axis=None):
     cr = (Cr-128.)/224
     return join_colors(y,cb,cr,axis)
     
-
-
+del os, scipy, sb
     
 
 
