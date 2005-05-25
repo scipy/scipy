@@ -6,12 +6,12 @@ import os
 # Various utilities and data for color processing
 #  See http://www.cvrl.org/ for text file of the data
 
-# RGB  the linear sRGB color space using D65 as a white-point
+# rgb  the linear sRGB color space using D65 as a white-point
 #      (IEC 61966-2-1).  Represents standard monitor (w/o gamma correction).
-# sRGB is the non-linear color-space (w/ gamma correction)
-# RGBntsc is the NTSC receiver primary color coordinate system
-# RGBcie is the CIE, monochromatic RGB primary system
-# RGBsb is the Stiles & Burch (1955) 2-deg color coordinate system
+# rgbp is the non-linear color-space (w/ gamma correction)
+# rgbntsc is the NTSC receiver primary color coordinate system
+# rgbcie is the CIE, monochromatic RGB primary system
+# rgbsb is the Stiles & Burch (1955) 2-deg color coordinate system
 
 # Primaries for the coordinate systems
 cie_primaries = [700, 546.1, 435.8]
@@ -152,7 +152,7 @@ del key
 
 def tri2chr(tri,axis=None):
     """Convert tristimulus values to chromoticity values"""
-    tri = asarray(tri)
+    tri = sb.asarray(tri)
     n = len(tri.shape)
     if axis is None:
         axis = coloraxis(tri.shape)
@@ -174,14 +174,14 @@ def coloraxis(shape):
     raise ValueError, "No Color axis found."
 
 def convert(matrix,TTT,axis=None):
-    TTT = asarray(TTT)
+    TTT = sb.asarray(TTT)
     if axis is None:
         axis = coloraxis(TTT.shape)
     if (axis != 0):
         TTT = sb.swapaxes(TTT,0,axis)
     oldshape = TTT.shape        
-    TTT = reshape(TTT,(3,-1))
-    OUT = dot(matrix, TTT)
+    TTT = sb.reshape(TTT,(3,-1))
+    OUT = scipy.dot(matrix, TTT)
     OUT.shape = oldshape
     if (axis != 0):
         OUT = sb.swapaxes(OUT,axis,0)
@@ -216,7 +216,7 @@ def separate_colors(xyz,axis=None):
     return x, y, z, axis
     
 def join_colors(c1,c2,c3,axis):
-    c1,c2,c3 = asarray(c1),asarray(c2),asarray(c3)
+    c1,c2,c3 = sb.asarray(c1),sb.asarray(c2),sb.asarray(c3)
     newshape = c1.shape[:axis] + (1,) + c1.shape[axis:]
     c1.shape = newshape
     c2.shape = newshape
@@ -243,7 +243,7 @@ def xyz2lab(xyz, axis=None, wp=whitepoints['D65'][-1], doclip=True):
     return join_colors(L,a,b,axis)
 
 def lab2xyz(lab, axis=None, wp=whitepoints['D65'][-1]):
-    lab = asarray(lab)
+    lab = sb.asarray(lab)
     L,a,b,axis = separate_colors(lab,axis)
     fy = (L+16)/116.0
     fz = fy - b / 200.
@@ -291,7 +291,7 @@ def lab2rgb(lab):
 #    rgbp = rgb**(1.0/gamma)
 
 def rgb2rgbp(rgb,gamma=None):
-    rgb = asarray(rgb)
+    rgb = sb.asarray(rgb)
     if gamma is None:
         eps = 0.0031308    
         return where(rgb < eps, 12.92*rgb,
@@ -306,7 +306,7 @@ def rgb2rgbp(rgb,gamma=None):
 #     rgb = rgbp**gamma
 #
 def rgbp2rgb(rgbp,gamma=None):
-    rgbp = asarray(rgbp)
+    rgbp = sb.asarray(rgbp)
     if gamma is None:
         eps = 0.04045
         return where(rgbp <= eps, rgbp / 12.92,
@@ -340,9 +340,9 @@ def ycbcr2rgb(ycbcr,gamma=None,axis=None):
 
 def ycbcr_8bit(ycbcr,axis=None):
     y,cb,cr,axis = separate_colors(ycbcr,axis)
-    Y = asarray((y*219 + 16),sb.UInt8)
-    Cb = asarray((cb*224 + 128),sb.UInt8)
-    Cr = asarray((cr*224 + 128),sb.UInt8)
+    Y = sb.asarray((y*219 + 16),sb.UInt8)
+    Cb = sb.asarray((cb*224 + 128),sb.UInt8)
+    Cr = sb.asarray((cr*224 + 128),sb.UInt8)
     return join_colors(Y,Cb,Cr,axis)
 
 def ycbcr_norm(YCbCr,axis=None):
@@ -351,9 +351,7 @@ def ycbcr_norm(YCbCr,axis=None):
     cb = (Cb-128.)/224
     cr = (Cr-128.)/224
     return join_colors(y,cb,cr,axis)
-    
-del os, scipy, sb
-    
+        
 
 
 
