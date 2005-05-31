@@ -10,4 +10,5 @@ from bsplines import *
 from filter_design import *
 from ltisys import *
 from signaltools import *
+from wavelets import *
 

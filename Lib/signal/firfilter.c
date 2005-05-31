@@ -120,6 +120,9 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR)) 
     return -2;   /* Invalid boundary flag */
 
+  /* Speed this up by not doing any if statements in the for loop.  Need 3*3*2=18 different
+     loops executed for different conditions */
+
   for (m=0; m < Os[0]; m++) {
     /* Reposition index into input image based on requested output size */
     if (outsize == FULL) new_m = convolve ? m : (m-Nwin[0]+1);

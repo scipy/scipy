@@ -77,6 +77,12 @@ Signal Processing Tools
     square -- Square wave
     gausspulse -- Gaussian modulated sinusoid
     chirp -- Frequency swept cosine signal
+
+ Wavelets:
+
+    daub -- return low-pass filter for daubechies wavelets
+    qmf  -- return quadrature mirror filter from low-pass
+    cascade -- compute scaling function and wavelet from coefficients
 """
 
 postpone_import = 1
