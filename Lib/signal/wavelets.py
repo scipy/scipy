@@ -102,47 +102,47 @@ def cascade(hk,J=7):
 
     # construct matrices needed
     nn,kk = sb.ogrid[:N,:N]
-    s2 = sqrt(2)    
+    s2 = sb.sqrt(2)    
     # append a zero so that take works
     thk = sb.r_[hk,0]
     gk = qmf(hk)
     tgk = sb.r_[gk,0]    
     
-    indx1 = clip(2*nn-kk,-1,N+1)
-    indx2 = clip(2*nn-kk+1,-1,N+1)
-    m = zeros((2,2,N,N),'d')
-    m[0,0] = take(thk,indx1)
-    m[0,1] = take(thk,indx2)
-    m[1,0] = take(tgk,indx1)
-    m[1,1] = take(tgk,indx2)        
+    indx1 = sb.clip(2*nn-kk,-1,N+1)
+    indx2 = sb.clip(2*nn-kk+1,-1,N+1)
+    m = sb.zeros((2,2,N,N),'d')
+    m[0,0] = sb.take(thk,indx1)
+    m[0,1] = sb.take(thk,indx2)
+    m[1,0] = sb.take(tgk,indx1)
+    m[1,1] = sb.take(tgk,indx2)        
     m *= s2
 
     # construct the grid of points
-    x = arange(0,N*(1<<J),typecode=sb.Float) / (1<<J)
+    x = sb.arange(0,N*(1<<J),typecode=sb.Float) / (1<<J)
     phi = 0*x
 
     psi = 0*x
 
     # find phi0, and phi1
     lam, v = s.linalg.eig(m[0,0])
-    ind = argmin(abs(lam-1))
+    ind = sb.argmin(sb.absolute(lam-1))
     # a dictionary with a binary representation of the
     #   evaluation points x < 1 -- i.e. position is 0.xxxx
     v = v[:,ind]
     # need scaling function to integrate to 1 so find
     #  eigenvector normalized to sum(v)=1
-    sm = sum(v)
+    sm = sb.sum(v)
     if sm < 0:  # need scaling function to integrate to 1 
         v = -v
         sm = -sm
     bitdic = {}    
     bitdic['0'] = v / sm
-    bitdic['1'] = dot(m[0,1],bitdic['0'])
+    bitdic['1'] = sb.dot(m[0,1],bitdic['0'])
     step = 1<<J
     phi[::step] = bitdic['0']
     phi[(1<<(J-1))::step] = bitdic['1']
-    psi[::step] = dot(m[1,0],bitdic['0'])
-    psi[(1<<(J-1))::step] = dot(m[1,1],bitdic['0'])
+    psi[::step] = sb.dot(m[1,0],bitdic['0'])
+    psi[(1<<(J-1))::step] = sb.dot(m[1,1],bitdic['0'])
     # descend down the levels inserting more and more values
     #  into bitdic -- store the values in the correct location once we
     #  have computed them -- stored in the dictionary
@@ -159,10 +159,10 @@ def cascade(hk,J=7):
                     num += (1<<(level-1-pos))
             pastphi = bitdic[key[1:]]
             ii = int(key[0])
-            temp = dot(m[0,ii],pastphi)
+            temp = sb.dot(m[0,ii],pastphi)
             bitdic[key] = temp
             phi[num*fac::step] = temp
-            psi[num*fac::step] = dot(m[1,ii],pastphi)
+            psi[num*fac::step] = sb.dot(m[1,ii],pastphi)
         prevkeys = newkeys
 
     return x, phi, psi
