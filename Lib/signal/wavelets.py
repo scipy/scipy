@@ -25,15 +25,13 @@ def daub(p):
         a0 = sb.real(z1*z1c)
         a1 = 2*sb.real(z1)
         return f/d0*sb.array([a0, 3*a0-a1, 3*a0-3*a1+1, a0-3*a1+3, 3-a1, 1])
-    elif p<81:
+    elif p<35:
         # construct polynomial and factor it
         if p<35:
             P = [s.comb(p-1+k,k,exact=1) for k in range(p)][::-1]
             yj = sb.roots(P)
-        else:
-            raise ValueError, "Cannot factor such large polynomial well."
-            k = sb.r_[0:p]
-            P = s.comb(p-1+k,k)/4.0**k
+        else:  # try different polynomial --- needs work
+            P = [s.comb(p-1+k,k,exact=1)/4.0**k for k in range(p)][::-1]
             yj = sb.roots(P) / 4
         # for each root, compute two z roots, select the one with |z|>1
         # Build up final polynomial
@@ -128,7 +126,7 @@ def cascade(hk,J=7):
     ind = sb.argmin(sb.absolute(lam-1))
     # a dictionary with a binary representation of the
     #   evaluation points x < 1 -- i.e. position is 0.xxxx
-    v = v[:,ind]
+    v = sb.real(v[:,ind])
     # need scaling function to integrate to 1 so find
     #  eigenvector normalized to sum(v)=1
     sm = sb.sum(v)
