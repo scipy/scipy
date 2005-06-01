@@ -68,6 +68,7 @@ This document provides a tutorial for the first-time user of SciPy to help
  It is assumed that the user has already installed the package.
  Some general Python facility is also assumed such as could be acquired
  by working through the Tutorial in the Python distribution.
+ For further introductory help the user is directed to the Numeric documentation.
  Throughout this tutorial it is assumed that the user has imported all of
  the names defined in the SciPy namespace using the command 
 \begin_inset ERT
@@ -2055,7 +2056,7 @@ All of the previously-explained minimization procedures can be used to solve
  to the data is to minimize the sum of squares of the residuals.
  The residual is usually defined for each observed data-point as 
 \begin_inset Formula \[
-e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert ^{2}.\]
+e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert .\]
 
 \end_inset 
 
@@ -2799,8 +2800,8 @@ If desired, the fourth and fifth arguments provide the orders of the partial
 It is important to note that two dimensional interpolation should not be
  used to find the spline representation of images.
  The algorithm used is not amenable to large numbers of input points.
- The signal processing toolbox contains (soon) more appropriate algorithms
- for finding the spline representation of an image.
+ The signal processing toolbox contains more appropriate algorithms for
+ finding the spline representation of an image.
  The two dimensional interpolation commands are intended for use when interpolat
 ing a two dimensional function as shown in the example that follows (See
  also Figure 
@@ -2961,7 +2962,7 @@ The advantage of representing a set of samples via B-spline basis functions
  function can be computed with relative ease from the spline coefficients.
  For example, the second-derivative of a spline is 
 \begin_inset Formula \[
-y\prime^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\beta^{o\prime\prime}\left(\frac{x}{\Delta x}-j\right).\]
+y{}^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\beta^{o\prime\prime}\left(\frac{x}{\Delta x}-j\right).\]
 
 \end_inset 
 
@@ -3009,7 +3010,7 @@ es can be recovered exactly from the spline coefficients by assuming them
  to be mirror-symmetric also.
 \layout Standard
 
-Currently the package provides functions for determining seond- and third-order
+Currently the package provides functions for determining second- and third-order
  cubic spline coefficients from equally spaced samples in one- and two-dimension
 s (
 \series bold 
@@ -3997,7 +3998,7 @@ Matrix.Matrix
  If you are going to be doing a lot of matrix-math, it is convenient to
  convert arrays into matrices using this command.
  One convencience of using the mat command is that you can enter two-dimensional
- matrices in using MATLAB-like syntax with commas or spaces separating columns
+ matrices using MATLAB-like syntax with commas or spaces separating columns
  and semicolons separting rows as long as the matrix is placed in a string
  passed to 
 \series bold 
@@ -4605,7 +4606,7 @@ Decompositions
 
 In many applications it is useful to decompose a matrix using other representati
 ons.
- There are several decompositions supported SciPy.
+ There are several decompositions supported by SciPy.
  
 \layout Subsubsection
 
