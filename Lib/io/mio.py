@@ -551,7 +551,7 @@ def _parse_array_flags(fid):
 def _parse_mimatrix(fid,bytes): 
     dclass, cmplx, nzmax =_parse_array_flags(fid)
     dims = _get_element(fid)[0]
-    name = ''.join(asarray(_get_element(fid)[0]).astype('c'))
+    name = asarray(_get_element(fid)[0]).tostring()
     tupdims = tuple(dims[::-1])
     if dclass in mxArrays:
         result, unused =_get_element(fid)
