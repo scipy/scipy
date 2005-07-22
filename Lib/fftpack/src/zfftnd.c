@@ -5,8 +5,13 @@
  */
 #include "fftpack.h"
 
+#ifdef WITH_FFTW3
+/* Don't worry about caching for fftw3 - plans take specific arrays and
+ * keeping around a lot of memory for such a small speed up isn't
+ * worth it.
+ */
+#elif defined WITH_FFTW
 /**************** FFTW *****************************/
-#ifdef WITH_FFTW
 static
 int equal_dims(int rank,int *dims1,int *dims2) {
   int i;
@@ -96,7 +101,9 @@ extern void zfftnd(complex_double *inout,int rank,
 		   int *dims,int direction,int howmany,int normalize) {
   int i,sz;
   complex_double *ptr = inout;
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+  fftw_plan plan = NULL;
+#elif defined WITH_FFTW
   fftwnd_plan plan = NULL;
 #else
   int axis;
@@ -107,7 +114,25 @@ extern void zfftnd(complex_double *inout,int rank,
   sz = 1;
   for(i=0;i<rank;++i)
     sz *= dims[i];
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+  for (i=0;i<howmany;++i,ptr+=sz) {
+    plan = fftw_plan_dft(rank,dims,(fftw_complex*)ptr,(fftw_complex*)ptr,
+                         direction,FFTW_ESTIMATE);
+    fftw_execute(plan);
+    fftw_destroy_plan(plan);
+    /* note that fftw_malloc of array *could* lead
+     * to faster fft here for processors with SIMD acceleration,
+     * but would require more memory and an array memcpy
+     */
+  }
+  if (normalize) {
+    ptr = inout;
+    for (i=sz*howmany-1;i>=0;--i) {
+      *((double*)(ptr)) /= sz;
+      *((double*)(ptr++)+1) /= sz;
+    }
+  }
+#elif defined WITH_FFTW
   i = get_cache_id_zfftwnd(rank,dims,direction,FFTW_IN_PLACE|FFTW_ESTIMATE);
   plan = caches_zfftwnd[i].plan;
   for (i=0;i<howmany;++i,ptr+=sz)

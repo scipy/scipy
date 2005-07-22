@@ -34,8 +34,12 @@ GEN_CACHE(zdjbfft,(int n)
 	  ,10)
 #endif
 
-/**************** FFTW *****************************/
-#ifdef WITH_FFTW
+#if defined WITH_FFTW3
+/*
+ *don't cache anything
+ */
+#elif defined WITH_FFTW
+/**************** FFTW2 *****************************/
 GEN_CACHE(zfftw,(int n,int d)
 	  ,int direction;
 	   fftw_plan plan;
@@ -68,7 +72,8 @@ extern void destroy_zfft_cache(void) {
 #ifdef WITH_DJBFFT
   destroy_zdjbfft_caches();
 #endif
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+#elif defined WITH_FFTW
   destroy_zfftw_caches();
 #else
   destroy_zfftpack_caches();
@@ -80,7 +85,10 @@ extern void zfft(complex_double *inout,
 		 int n,int direction,int howmany,int normalize) {
   int i;
   complex_double *ptr = inout;
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+  fftw_complex *ptrm = NULL;
+#endif
+#if defined(WITH_FFTW) || defined(WITH_FFTW3)
   fftw_plan plan = NULL;
 #else
   double* wsave = NULL;
@@ -109,7 +117,11 @@ extern void zfft(complex_double *inout,
   }
   if (f==0)
 #endif
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+    plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
+                            (direction>0?FFTW_FORWARD:FFTW_BACKWARD),
+                            FFTW_ESTIMATE);
+#elif defined WITH_FFTW
     plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
 #else
     wsave = caches_zfftpack[get_cache_id_zfftpack(n)].wsave;
@@ -121,7 +133,7 @@ extern void zfft(complex_double *inout,
     for (i=0;i<howmany;++i,ptr+=n) {
 #ifdef WITH_FFTWORK
       if (coef!=NULL) {
-	fft_for_cplx_flt((cplx_dbl*)ptr,coef,n);
+        fft_for_cplx_flt((cplx_dbl*)ptr,coef,n);
       } else
 #endif
 #ifdef WITH_DJBFFT
@@ -137,7 +149,9 @@ extern void zfft(complex_double *inout,
 	for (j=0;j<n;++j) *(ptr+f[j]) = *(ptrc+j);
       } else
 #endif
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+        fftw_execute(plan);
+#elif defined WITH_FFTW
         fftw_one(plan,(fftw_complex*)ptr,NULL);
 #else
 	F_FUNC(zfftf,ZFFTF)(&n,(double*)(ptr),wsave);
@@ -165,7 +179,9 @@ extern void zfft(complex_double *inout,
 	memcpy(ptr,ptrc,2*n*sizeof(double));
       } else
 #endif
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+        fftw_execute(plan);
+#elif defined WITH_FFTW
         fftw_one(plan,(fftw_complex*)ptr,NULL);
 #else
 	F_FUNC(zfftb,ZFFTB)(&n,(double*)(ptr),wsave);

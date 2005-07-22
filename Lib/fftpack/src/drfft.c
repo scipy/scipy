@@ -20,8 +20,26 @@ GEN_CACHE(ddjbfft,(int n)
 	  ,10)
 #endif
 
-/**************** FFTW *****************************/
-#ifdef WITH_FFTW
+#if defined WITH_FFTW3
+/**************** FFTW3 *****************************/
+GEN_CACHE(drfftw,(int n,int d,int flags)
+          ,int direction;
+          int flags;
+          fftw_plan plan;
+          double *ptr;
+          ,((caches_drfftw[i].n==n) && 
+            (caches_drfftw[i].direction==d) &&
+            (caches_drfftw[i].flags==flags))
+          ,caches_drfftw[id].direction = d;
+          caches_drfftw[id].flags = flags;
+          caches_drfftw[id].ptr = (double*)fftw_malloc(sizeof(double)*(n));
+          caches_drfftw[id].plan = fftw_plan_r2r_1d(n,caches_drfftw[id].ptr,
+                       caches_drfftw[id].ptr,(d>0?FFTW_R2HC:FFTW_HC2R),flags);
+          ,fftw_destroy_plan(caches_drfftw[id].plan);
+          fftw_free(caches_drfftw[id].ptr);
+          ,10)
+#elif defined WITH_FFTW
+/**************** FFTW2 *****************************/
 GEN_CACHE(drfftw,(int n,int d,int flags)
 	  ,int direction;
 	   int flags;
@@ -36,6 +54,7 @@ GEN_CACHE(drfftw,(int n,int d,int flags)
 		(d>0?FFTW_REAL_TO_COMPLEX:FFTW_COMPLEX_TO_REAL),flags);
 	   caches_drfftw[id].ptr = (double*)malloc(sizeof(double)*(n));
 	  ,rfftw_destroy_plan(caches_drfftw[id].plan);
+	   free(caches_drfftw[id].ptr);
 	  ,10)
 #else
 /**************** FFTPACK ZFFT **********************/
@@ -55,7 +74,7 @@ extern void destroy_drfft_cache(void) {
 #ifdef WITH_DJBFFT
   destroy_ddjbfft_caches();
 #endif
-#ifdef WITH_FFTW
+#if defined(WITH_FFTW3) || defined(WITH_FFTW)
   destroy_drfftw_caches();
 #else
   destroy_dfftpack_caches();
@@ -69,10 +88,12 @@ extern void drfft(double *inout,
 		  int n,int direction,int howmany,int normalize) {
   int i;
   double *ptr = inout;
-#if defined(WITH_FFTW) || defined(WITH_DJBFFT)
+#if defined(WITH_FFTW3) || defined(WITH_FFTW) || defined(WITH_DJBFFT)
   double *ptrc = NULL;
 #endif
-#ifdef WITH_FFTW
+#if defined WITH_FFTW3
+  fftw_plan plan = NULL;
+#elif defined WITH_FFTW
   rfftw_plan plan = NULL;
 #else
   double* wsave = NULL;
@@ -91,7 +112,13 @@ extern void drfft(double *inout,
   }
   if (f==NULL)
 #endif
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+    {
+      i = get_cache_id_drfftw(n,direction,FFTW_ESTIMATE);
+      plan = caches_drfftw[i].plan;
+      ptrc = caches_drfftw[i].ptr;
+    }
+#elif defined WITH_FFTW
     {
       i = get_cache_id_drfftw(n,direction,FFTW_IN_PLACE|FFTW_ESTIMATE);
       plan = caches_drfftw[i].plan;
@@ -118,7 +145,13 @@ extern void drfft(double *inout,
 	COPYDJB2STD(ptrc,ptr,f,n);
       } else
 #endif
-#ifdef WITH_FFTW
+#if defined WITH_FFTW3
+	{
+	  memcpy(ptrc,ptr,sizeof(double)*n);
+	  fftw_execute(plan);
+	  COPYRFFTW2STD(ptrc,ptr,n);
+	}
+#elif defined WITH_FFTW
 	{
 	  memcpy(ptrc,ptr,sizeof(double)*n);
 	  rfftw(plan,1,(fftw_real*)ptrc,1,1,NULL,1,1);
@@ -145,7 +178,13 @@ extern void drfft(double *inout,
 	COPYINVDJB2STD(ptrc,ptr,n);
       } else
 #endif
-#ifdef WITH_FFTW
+#if defined WITH_FFTW3
+	{
+	  COPYINVRFFTW2STD(ptr,ptrc,n);
+	  fftw_execute(plan);
+	  memcpy(ptr,ptrc,sizeof(double)*n);
+	}
+#elif defined WITH_FFTW
 	{
 	  COPYINVRFFTW2STD(ptr,ptrc,n);
 	  rfftw(plan,1,(fftw_real*)ptrc,1,1,NULL,1,1);
