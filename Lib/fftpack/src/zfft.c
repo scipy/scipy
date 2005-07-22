@@ -118,9 +118,6 @@ extern void zfft(complex_double *inout,
   if (f==0)
 #endif
 #ifdef WITH_FFTW3
-    plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
-                            (direction>0?FFTW_FORWARD:FFTW_BACKWARD),
-                            FFTW_ESTIMATE);
 #elif defined WITH_FFTW
     plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
 #else
@@ -150,7 +147,11 @@ extern void zfft(complex_double *inout,
       } else
 #endif
 #ifdef WITH_FFTW3
+	plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
+				(direction>0?FFTW_FORWARD:FFTW_BACKWARD),
+				FFTW_ESTIMATE);
         fftw_execute(plan);
+	fftw_destroy_plan(plan);
 #elif defined WITH_FFTW
         fftw_one(plan,(fftw_complex*)ptr,NULL);
 #else
@@ -180,7 +181,11 @@ extern void zfft(complex_double *inout,
       } else
 #endif
 #ifdef WITH_FFTW3
+	plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
+				(direction>0?FFTW_FORWARD:FFTW_BACKWARD),
+				FFTW_ESTIMATE);
         fftw_execute(plan);
+	fftw_destroy_plan(plan);
 #elif defined WITH_FFTW
         fftw_one(plan,(fftw_complex*)ptr,NULL);
 #else
