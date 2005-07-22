@@ -49,6 +49,7 @@ extern int ispow2le2e13(int n);
 #include <dfftw.h>
 #include <drfftw.h>
 #endif
+
 #ifdef SCIPY_FFTW_H
 #define WITH_FFTW
 #include <fftw.h>

@@ -56,7 +56,7 @@ extern void destroy_zfftnd_cache(void) {
 #else
 #endif
 }
-#ifdef WITH_FFTW
+#if defined WITH_FFTW || defined WITH_FFTW3
 #else
 static
 /*inline : disabled because MSVC6.0 fails to compile it. */
@@ -115,16 +115,17 @@ extern void zfftnd(complex_double *inout,int rank,
   for(i=0;i<rank;++i)
     sz *= dims[i];
 #ifdef WITH_FFTW3
-  for (i=0;i<howmany;++i,ptr+=sz) {
-    plan = fftw_plan_dft(rank,dims,(fftw_complex*)ptr,(fftw_complex*)ptr,
-                         direction,FFTW_ESTIMATE);
-    fftw_execute(plan);
-    fftw_destroy_plan(plan);
+  plan = fftw_plan_many_dft(rank,dims,howmany,
+			    (fftw_complex*)ptr,NULL,1,sz,
+			    (fftw_complex*)ptr,NULL,1,sz,
+			    (direction>0?FFTW_FORWARD:FFTW_BACKWARD),
+			    FFTW_ESTIMATE);
+  fftw_execute(plan);
+  fftw_destroy_plan(plan);
     /* note that fftw_malloc of array *could* lead
      * to faster fft here for processors with SIMD acceleration,
      * but would require more memory and an array memcpy
      */
-  }
   if (normalize) {
     ptr = inout;
     for (i=sz*howmany-1;i>=0;--i) {
