@@ -1337,7 +1337,7 @@ Returns: Kendall's tau, two-tailed p-value
 def linregress(*args):
     """
 Calculates a regression line on two arrays, x and y, corresponding to x,y
-pairs.  If a single 2D array is passed, alinregress finds dim with 2 levels
+pairs.  If a single 2D array is passed, linregress finds dim with 2 levels
 and splits data into x,y pairs along that dim.
 
 Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate

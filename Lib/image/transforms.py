@@ -141,6 +141,7 @@ def makeS(N):
     C = sin(pi*(k+1)*(n+1)/(N+1))
     return C
 
+# DST-I 
 def dst(x,axis=-1):
     """Discrete Sine Transform (DST-I)
 
