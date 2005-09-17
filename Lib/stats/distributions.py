@@ -731,15 +731,14 @@ class rv_continuous:
     def _nnlf(self, x, *args):
         return -sum(log(self._pdf(x, *args)))
 
-    def nnlf(self, *args):
+    def nnlf(self, theta, x):
         # - sum (log pdf(x, theta))
         #   where theta are the parameters (including loc and scale)
         #
         try:
-            x = args[-1]
-            loc = args[-2]
-            scale = args[-3]
-            args = args[:-3]
+            loc = theta[-2]
+            scale = theta[-1]
+            args = tuple(theta[:-2])
         except IndexError:
             raise ValueError, "Not enough input arguments."
         if not self._argcheck(*args) or scale <= 0:
@@ -750,7 +749,7 @@ class rv_continuous:
             return inf
         else:
             N = len(x)
-            return self._nnlf(self, x, *args) + N*log(scale)
+            return self._nnlf(x, *args) + N*log(scale)
 
     def fit(self, data, *args, **kwds):
         loc0, scale0 = map(kwds.get, ['loc', 'scale'],[0.0, 1.0])
