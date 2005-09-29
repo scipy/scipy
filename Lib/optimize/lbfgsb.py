@@ -33,7 +33,7 @@ import optimize
 approx_fprime = optimize.approx_fprime
 
 def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
-                  approx_grad = False,
+                  approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
                   iprint=-1, maxfun=15000):
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     print x
     print f
     print d
-    x, f, d = fmin_l_bfgs_b(func, x0, approx_grad=True,
+    x, f, d = fmin_l_bfgs_b(func, x0, approx_grad=1,
                             m=m, factr=factr, pgtol=pgtol)
     print x
     print f
