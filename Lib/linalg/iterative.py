@@ -11,6 +11,11 @@ __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 import _iterative
 import scipy_base as sb
 
+try:
+    False, True
+except NameError:
+    False, True = 0, 1
+
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
 _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',

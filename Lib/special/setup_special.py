@@ -7,15 +7,15 @@ import shutil
 
 try:
     import Numeric
-    BUILD_FOR_NUMERIC = True
+    BUILD_FOR_NUMERIC = 1
 except:
-    BUILD_FOR_NUMERIC = False
+    BUILD_FOR_NUMERIC = 0
 
 try:
     import numarray
-    BUILD_FOR_NUMARRAY = True
+    BUILD_FOR_NUMARRAY = 1
 except:
-    BUILD_FOR_NUMARRAY = False
+    BUILD_FOR_NUMARRAY = 0
 
 def configuration(parent_package='',parent_path=None):
     from scipy_distutils.core import Extension

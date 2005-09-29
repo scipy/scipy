@@ -83,7 +83,7 @@ import optimize
 approx_fprime = optimize.approx_fprime
 
 
-def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=False, bounds=None, epsilon=1e-8,
+def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon=1e-8,
              scale=None, messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=0, rescale=-1):
     """Minimize a function with variables subject to bounds, using gradient 

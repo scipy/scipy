@@ -223,7 +223,7 @@ def join_colors(c1,c2,c3,axis):
     c3.shape = newshape
     return sb.concatenate((c1,c2,c3),axis=axis)
 
-def xyz2lab(xyz, axis=None, wp=whitepoints['D65'][-1], doclip=True):
+def xyz2lab(xyz, axis=None, wp=whitepoints['D65'][-1], doclip=1):
     x,y,z,axis = separate_colors(xyz,axis)
     xn,yn,zn = x/wp[0], y/wp[1], z/wp[2]
     def f(t):
