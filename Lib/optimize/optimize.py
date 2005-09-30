@@ -949,7 +949,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         maggrad = Num.add.reduce(abs(b))
         eta = min([0.5,Num.sqrt(maggrad)])
         termcond = eta * maggrad
-        xsupi = 0
+        xsupi = zeros(len(x0), x0.typecode())
         ri = -b
         psupi = -ri
         i = 0
@@ -971,7 +971,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
                 Ap = Num.dot(A,psupi)
             # check curvature
             curv = Num.dot(psupi,Ap)
-            if (curv <= 0):
+            if curv == 0.0:
+                break
+            elif curv < 0:
                 if (i > 0):
                     break
                 else:
