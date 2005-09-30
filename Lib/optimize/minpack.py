@@ -316,12 +316,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
         q0 = apply(func,(p0,)+args)
         q1 = apply(func,(p1,)+args)
         for iter in range(maxiter):
-            try:                
-                p = p1 - q1*(p1-p0)/(q1-q0)
-            except ZeroDivisionError:
+            if q1 == q0:
                 if p1 != p0:
                     print "Tolerance of %g reached" % (p1-p0)
                 return (p1+p0)/2.0
+            else:
+                p = p1 - q1*(p1-p0)/(q1-q0)
             if abs(p-p1) < tol:
                 return p
             p0 = p1
@@ -341,11 +341,12 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
     for iter in range(maxiter):
         p1 = apply(func,(p0,)+args)
         p2 = apply(func,(p1,)+args)
-        try:
-            p = p0 - (p1 - p0)*(p1-p0) / (p2-2.0*p1+p0)
-        except ZeroDivisionError:
+        d = p2 - 2.0 * p1 + p0
+        if d == 0.0:
             print "Warning: Difference in estimates is %g" % (abs(p2-p1))
             return p2
+        else:
+            p = p0 - (p1 - p0)*(p1-p0) / d
         if abs(p-p0) < xtol:
             return p
         p0 = p
