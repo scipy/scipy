@@ -110,6 +110,13 @@ def rosen_hess_prod(x,p):
                -400*x[1:-1]*p[2:]
     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
     return Hp
+
+def wrap_function(function, args):
+    ncalls = [0]
+    def function_wrapper(x):
+        ncalls[0] += 1
+        return function(x, *args)
+    return ncalls, function_wrapper
         
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
          full_output=0, disp=1, retall=0):
@@ -149,6 +156,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       retall -- non-zero to return list of solutions at each iteration
       
       """
+    fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0)
     N = len(x0)
     rank = len(x0.shape)
@@ -170,7 +178,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     sim[0] = x0
     if retall:
         allvecs = [sim[0]]
-    fsim[0] = apply(func,(x0,)+args)
+    fsim[0] = func(x0)
     nonzdelt = 0.05
     zdelt = 0.00025
     for k in range(0,N):
@@ -181,7 +189,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             y[k] = zdelt
 
         sim[k+1] = y
-        f = apply(func,(y,)+args)
+        f = func(y)
         fsim[k+1] = f
 
     ind = Num.argsort(fsim)
@@ -189,23 +197,20 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     sim = Num.take(sim,ind,0)
     
     iterations = 1
-    funcalls = N+1
     
-    while (funcalls < maxfun and iterations < maxiter):
+    while (fcalls[0] < maxfun and iterations < maxiter):
         if (max(Num.ravel(abs(sim[1:]-sim[0]))) <= xtol \
             and max(abs(fsim[0]-fsim[1:])) <= ftol):
             break
 
         xbar = Num.add.reduce(sim[:-1],0) / N
         xr = (1+rho)*xbar - rho*sim[-1]
-        fxr = apply(func,(xr,)+args)
-        funcalls = funcalls + 1
+        fxr = func(xr)
         doshrink = 0
 
         if fxr < fsim[0]:
             xe = (1+rho*chi)*xbar - rho*chi*sim[-1]
-            fxe = apply(func,(xe,)+args)
-            funcalls = funcalls + 1
+            fxe = func(xe)
 
             if fxe < fxr:
                 sim[-1] = xe
@@ -221,8 +226,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
                 # Perform contraction
                 if fxr < fsim[-1]:
                     xc = (1+psi*rho)*xbar - psi*rho*sim[-1]
-                    fxc = apply(func,(xc,)+args)
-                    funcalls = funcalls + 1
+                    fxc = func(xc)
 
                     if fxc <= fxr:
                         sim[-1] = xc
@@ -232,8 +236,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
                 else:
                     # Perform an inside contraction
                     xcc = (1-psi)*xbar + psi*sim[-1]
-                    fxcc = apply(func,(xcc,)+args)
-                    funcalls = funcalls + 1
+                    fxcc = func(xcc)
 
                     if fxcc < fsim[-1]:
                         sim[-1] = xcc
@@ -244,8 +247,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
                 if doshrink:
                     for j in one2np1:
                         sim[j] = sim[0] + sigma*(sim[j] - sim[0])
-                        fsim[j] = apply(func,(sim[j],)+args)
-                    funcalls = funcalls + N
+                        fsim[j] = func(sim[j])
 
         ind = Num.argsort(fsim)
         sim = Num.take(sim,ind,0)
@@ -258,7 +260,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     fval = min(fsim)
     warnflag = 0
 
-    if funcalls >= maxfun:
+    if fcalls[0] >= maxfun:
         warnflag = 1
         if disp:
             print "Warning: Maximum number of function evaluations has "\
@@ -272,11 +274,11 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iterations
-            print "         Function evaluations: %d" % funcalls
+            print "         Function evaluations: %d" % fcalls[0]
 
 
     if full_output:
-        retlist = x, fval, iterations, funcalls, warnflag
+        retlist = x, fval, iterations, fcalls[0], warnflag
         if retall:
             retlist += (allvecs,)
     else: 
@@ -615,30 +617,21 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
       disp -- print convergence message if non-zero.
       retall -- return a list of results at each iteration if non-zero
       """
-    app_fprime = 0
-    if fprime is None:
-        app_fprime = 1
-
     x0 = asarray(x0)
     if maxiter is None:
         maxiter = len(x0)*200
-    func_calls = 0
-    grad_calls = 0
+    func_calls, f = wrap_function(f, args)
+    if fprime is None:
+        grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
+    else:
+        grad_calls, myfprime = wrap_function(fprime, args)
+    gfk = myfprime(x0)
     k = 0
     N = len(x0)
     I = MLab.eye(N)
     Hk = I
-    old_fval = f(x0,*args)
+    old_fval = f(x0)
     old_old_fval = old_fval + 5000
-    func_calls += 1
-    if app_fprime:
-        gfk = apply(approx_fprime,(x0,f,epsilon)+args)
-        myfprime = (approx_fprime,epsilon)
-        func_calls = func_calls + len(x0) + 1
-    else:
-        gfk = apply(fprime,(x0,)+args)
-        myfprime = fprime
-        grad_calls = grad_calls + 1
     xk = x0
     if retall:
         allvecs = [x0]
@@ -649,28 +642,19 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         pk = -Num.dot(Hk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,
-                                  old_fval,old_old_fval,args=args)
+                                  old_fval,old_old_fval)
         if alpha_k is None:  # line search failed try different one.
-            func_calls = func_calls + fc
-            grad_calls = grad_calls + gc            
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      line_search(f,myfprime,xk,pk,gfk,
-                                 old_fval,old_old_fval,args=args)
+                                 old_fval,old_old_fval)
             
-        func_calls = func_calls + fc
-        grad_calls = grad_calls + gc
         xkp1 = xk + alpha_k * pk
         if retall:
             allvecs.append(xkp1)
         sk = xkp1 - xk
         xk = xkp1
         if gfkp1 is None:
-            if app_fprime:
-                gfkp1 = apply(approx_fprime,(xkp1,f,epsilon)+args)
-                func_calls = func_calls + len(x0) + 1
-            else:
-                gfkp1 = apply(fprime,(xkp1,)+args)
-                grad_calls = grad_calls + 1
+            gfkp1 = myfprime(xkp1)
 
         yk = gfkp1 - gfk
         gfk = gfkp1        
@@ -699,8 +683,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             print "Warning: Desired error not necessarily achieved due to precision loss"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print "         Function evaluations: %d" % func_calls[0]
+            print "         Gradient evaluations: %d" % grad_calls[0]
         
     elif k >= maxiter:
         warnflag = 1
@@ -708,18 +692,18 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             print "Warning: Maximum number of iterations has been exceeded"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print "         Function evaluations: %d" % func_calls[0]
+            print "         Gradient evaluations: %d" % grad_calls[0]
     else:
         if disp:
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print "         Function evaluations: %d" % func_calls[0]
+            print "         Gradient evaluations: %d" % grad_calls[0]
 
     if full_output:
-        retlist = xk, fval, gfk, Hk, func_calls, grad_calls, warnflag
+        retlist = xk, fval, gfk, Hk, func_calls[0], grad_calls[0], warnflag
         if retall:
             retlist += (allvecs,)
     else: 
@@ -772,30 +756,21 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
       disp -- print convergence message if non-zero.
       retall -- return a list of results at each iteration if True
       """
-    app_fprime = 0
-    if fprime is None:
-        app_fprime = 1
-
     x0 = asarray(x0)
     if maxiter is None:
         maxiter = len(x0)*200
-    func_calls = 0
-    grad_calls = 0
+    func_calls, f = wrap_function(f, args)
+    if fprime is None:
+        grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
+    else:
+        grad_calls, myfprime = wrap_function(fprime, args)
+    gfk = myfprime(x0)
     k = 0
     N = len(x0)
     xk = x0
-    old_fval = f(xk,*args)
+    old_fval = f(xk)
     old_old_fval = old_fval + 5000
-    func_calls +=1 
 
-    if app_fprime:
-        gfk = apply(approx_fprime,(x0,f,epsilon)+args)
-        myfprime = (approx_fprime,epsilon)
-        func_calls = func_calls + len(x0) + 1
-    else:
-        gfk = apply(fprime,(x0,)+args)
-        myfprime = fprime
-        grad_calls = grad_calls + 1
     if retall:
         allvecs = [xk]
     sk = [2*gtol]
@@ -806,26 +781,16 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         deltak = Num.dot(gfk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,
-                                  old_old_fval,args=args,c2=0.4)
+                                  old_old_fval,c2=0.4)
         if alpha_k is None:  # line search failed -- use different one.
-            func_calls += fc
-            grad_calls += gc                  
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      line_search(f,myfprime,xk,pk,gfk,
-                                 old_fval,old_old_fval,args=args)
-        func_calls += fc
-        grad_calls += gc        
+                                 old_fval,old_old_fval)
         xk = xk + alpha_k*pk
         if retall:
             allvecs.append(xk)
         if gfkp1 is None:
-            if app_fprime:
-                gfkp1 = apply(approx_fprime,(xk,f,epsilon)+args)
-                func_calls = func_calls + len(x0) + 1
-            else:
-                gfkp1 = apply(fprime,(xk,)+args)
-                grad_calls = grad_calls + 1
-
+            gfkp1 = myfprime(xk)
         yk = gfkp1 - gfk
         beta_k = pymax(0,Num.dot(yk,gfkp1)/deltak)
         pk = -gfkp1 + beta_k * pk
@@ -841,8 +806,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             print "Warning: Desired error not necessarily achieved due to precision loss"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print "         Function evaluations: %d" % func_calls[0]
+            print "         Gradient evaluations: %d" % grad_calls[0]
         
     elif k >= maxiter:
         warnflag = 1
@@ -850,19 +815,19 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             print "Warning: Maximum number of iterations has been exceeded"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print "         Function evaluations: %d" % func_calls[0]
+            print "         Gradient evaluations: %d" % grad_calls[0]
     else:
         if disp:
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls
-            print "         Gradient evaluations: %d" % grad_calls
+            print "         Function evaluations: %d" % func_calls[0]
+            print "         Gradient evaluations: %d" % grad_calls[0]
 
 
     if full_output:
-        retlist = xk, fval, func_calls, grad_calls, warnflag
+        retlist = xk, fval, func_calls[0], grad_calls[0], warnflag
         if retall:
             retlist += (allvecs,)
     else: 
@@ -925,10 +890,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     differences on fprime.
 
     """
-
     x0 = asarray(x0)
-    fcalls = 0
-    gcalls = 0
+    fcalls, f = wrap_function(f, args)
+    gcalls, fprime = wrap_function(fprime, args)
     hcalls = 0
     if maxiter is None:
         maxiter = len(x0)*200
@@ -939,13 +903,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     if retall:
         allvecs = [xk]
     k = 0
-    old_fval = f(x0,*args)
-    fcalls += 1
+    old_fval = f(x0)
     while (Num.add.reduce(abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
-        b = -apply(fprime,(xk,)+args)
-        gcalls = gcalls + 1
+        b = -fprime(xk)
         maggrad = Num.add.reduce(abs(b))
         eta = min([0.5,Num.sqrt(maggrad)])
         termcond = eta * maggrad
@@ -962,10 +924,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         while Num.add.reduce(abs(ri)) > termcond:
             if fhess is None:
                 if fhess_p is None:
-                    Ap = apply(approx_fhess_p,(xk,psupi,fprime,epsilon)+args)
-                    gcalls = gcalls + 2
+                    Ap = approx_fhess_p(xk,psupi,fprime,epsilon)
                 else:
-                    Ap = apply(fhess_p,(xk,psupi)+args)
+                    Ap = fhess_p(xk,psupi, *args)
                     hcalls = hcalls + 1
             else:
                 Ap = Num.dot(A,psupi)
@@ -990,9 +951,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
-        alphak, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval,args)
-        fcalls = fcalls + fc
-        gcalls = gcalls + gc
+        alphak, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval)
 
         update = alphak * pk
         xk = xk + update
@@ -1008,8 +967,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "Warning: Maximum number of iterations has been exceeded"
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % fcalls
-            print "         Gradient evaluations: %d" % gcalls
+            print "         Function evaluations: %d" % fcalls[0]
+            print "         Gradient evaluations: %d" % gcalls[0]
             print "         Hessian evaluations: %d" % hcalls
     else:
         warnflag = 0
@@ -1017,12 +976,12 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % fcalls
-            print "         Gradient evaluations: %d" % gcalls
+            print "         Function evaluations: %d" % fcalls[0]
+            print "         Gradient evaluations: %d" % gcalls[0]
             print "         Hessian evaluations: %d" % hcalls
             
     if full_output:
-        retlist = xk, fval, fcalls, gcalls, hcalls, warnflag
+        retlist = xk, fval, fcalls[0], gcalls[0], hcalls, warnflag
         if retall:
             retlist += (allvecs,)
     else: 
@@ -1117,7 +1076,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                 step = '       parabolic'
 
                 if ((x-a) < tol2) or ((b-x) < tol2):
-                    si = Numeric.sign(xm-xf) + ((xm-xf)==0)
+                    si = Num.sign(xm-xf) + ((xm-xf)==0)
                     rat = tol1*si
             else:      # do a golden section step
                 golden = 1
@@ -1130,7 +1089,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
             rat = golden_mean*e
             step = '       golden'
 
-        si = Numeric.sign(rat) + (rat == 0)
+        si = Num.sign(rat) + (rat == 0)
         x = xf + si*max([abs(rat), tol1])
         fu = func(x,*args)
         num += 1
@@ -1401,22 +1360,15 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
     return xa, xb, xc, fa, fb, fc, funcalls
             
             
-global _powell_funcalls
-
-def _myfunc(alpha, func, x0, direc, args=()):
-    funcargs = (x0 + alpha * direc,)+args
-    return func(*funcargs)
     
-def _linesearch_powell(func, p, xi, args=(), tol=1e-3):
+def _linesearch_powell(func, p, xi, tol=1e-3):
     # line-search algorithm using fminbound
     #  find the minimium of the function
     #  func(x0+ alpha*direc)
-    global _powell_funcalls
-    extra_args = (func, p, xi, args)
-    alpha_min, fret, iter, num = brent(_myfunc, args=extra_args,
-                                           full_output=1, tol=tol)
+    def myfunc(alpha):
+        return func(p + alpha * xi)
+    alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
     xi = alpha_min*xi
-    _powell_funcalls += num
     return squeeze(fret), p+xi, xi
     
 
@@ -1459,7 +1411,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
       retall -- non-zero to return a list of the solution at each iteration
 
       """
-    global _powell_funcalls
+    # we need to use a mutable object here that we can update in the
+    # wrapper function
+    fcalls, func = wrap_function(func, args)
     x = asarray(x0)
     if retall:
         allvecs = [x]
@@ -1473,8 +1427,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         maxfun = N * 1000
 
     direc = eye(N,typecode='d')
-    fval = squeeze(apply(func, (x,)+args))
-    _powell_funcalls = 1
+    fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0;
     ilist = range(N)
@@ -1485,7 +1438,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         for i in ilist:
             direc1 = direc[i]
             fx2 = fval
-            fval, x, direc1 = _linesearch_powell(func, x, direc1, args=args, tol=xtol*100)
+            fval, x, direc1 = _linesearch_powell(func, x, direc1, tol=xtol*100)
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
@@ -1493,15 +1446,14 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         if retall:
             allvecs.append(x)
         if (2.0*(fx - fval) <= ftol*(abs(fx)+abs(fval))+1e-20): break
-        if _powell_funcalls >= maxfun: break
+        if fcalls[0] >= maxfun: break
         if iter >= maxiter: break
 
         # Construct the extrapolated point
         direc1 = x - x1
         x2 = 2*x - x1
         x1 = x.copy()
-        fx2 = squeeze(apply(func, (x2,)+args))
-        _powell_funcalls +=1
+        fx2 = squeeze(func(x2))
 
         if (fx > fx2):
             t = 2.0*(fx+fx2-2.0*fval)
@@ -1510,12 +1462,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             temp = fx-fx2
             t -= delta*temp*temp
             if t < 0.0:
-                fval, x, direc1 = _linesearch_powell(func, x, direc1, args=args, tol=xtol*100)
+                fval, x, direc1 = _linesearch_powell(func, x, direc1, tol=xtol*100)
                 direc[bigind] = direc[-1]
                 direc[-1] = direc1            
 
     warnflag = 0
-    if _powell_funcalls >= maxfun:
+    if fcalls[0] >= maxfun:
         warnflag = 1
         if disp:
             print "Warning: Maximum number of function evaluations has "\
@@ -1529,12 +1481,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             print "Optimization terminated successfully."
             print "         Current function value: %f" % fval
             print "         Iterations: %d" % iter
-            print "         Function evaluations: %d" % _powell_funcalls
+            print "         Function evaluations: %d" % fcalls[0]
 
     x = squeeze(x)
 
     if full_output:
-        retlist = x, fval, direc, iter, _powell_funcalls, warnflag
+        retlist = x, fval, direc, iter, fcalls[0], warnflag
         if retall:
             retlist += (allvecs,)
     else: 
@@ -1629,11 +1581,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         return xmin
 
             
-if __name__ == "__main__":
-    import string
+def main():
     import time
 
-    
     times = []
     algor = []
     x0 = [0.8,1.2,0.7]
@@ -1707,18 +1657,6 @@ if __name__ == "__main__":
     print "===========\t\t\t      ========="
     for k in range(len(algor)):
         print algor[k], "\t -- ", times[k]
-        
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    main()
