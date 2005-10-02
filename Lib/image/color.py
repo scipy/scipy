@@ -1,5 +1,5 @@
 
-import scipy_base as sb
+import scipy.base as sb
 import scipy
 import os
 

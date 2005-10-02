@@ -22,7 +22,7 @@
 import warnings
 
 from scipy import dot, linalg, special
-from scipy_base import *
+from scipy.base import *
 
 from distributions import randint
 import stats

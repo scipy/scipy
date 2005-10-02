@@ -3,12 +3,12 @@
 import os
 
 def configuration(parent_package='', parent_path=None):
-    from scipy_distutils.system_info import get_info, dict_append
+    from scipy.distutils.system_info import get_info, dict_append
     # The following three lines constitute minimal contents
     # of configuration(..) that is suitable for pure Python
     # packages.
     package = 'xxx'
-    from scipy_distutils.misc_util import default_config_dict, dot_join, get_path
+    from scipy.distutils.misc_util import default_config_dict, dot_join, get_path
     config = default_config_dict(package,parent_package)
 
     # local_path should be joined with local source files
@@ -21,13 +21,13 @@ def configuration(parent_package='', parent_path=None):
     config['packages'].append(dot_join(parent_package,package,'yyy.tests'))
 
     # xxx has extension module ..
-    from scipy_distutils.core import Extension
+    from scipy.distutils.core import Extension
 
     # xxx has f2py generated extension module ..
     # xxx has swig generated extension module ..
 
     # xxx generates source code
-    from scipy_distutils.misc_util import SourceGenerator
+    from scipy.distutils.misc_util import SourceGenerator
     def generate_spam_pyf(target, sources):
         fin = open(sources[0])
         body = fin.read()
@@ -49,5 +49,5 @@ def configuration(parent_package='', parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy_distutils.core import setup
+    from scipy.distutils.core import setup
     setup(**configuration())

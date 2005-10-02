@@ -1,8 +1,8 @@
 # Author: Travis Oliphant
 
 from MLab import squeeze
-from scipy_base import *
-from scipy_base.fastumath import *
+from scipy.base import *
+from scipy.base.fastumath import *
 import numpyio
 import struct, os, sys
 import types

@@ -4,7 +4,7 @@ import os
 import unittest
 import sys
 from unittest import TestCase
-import scipy_base.limits as limits
+import scipy.base.limits as limits
 from scipy_test.testing import *
 set_package_path()
 import scipy.signal as signal

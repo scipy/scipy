@@ -22,7 +22,7 @@ from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
 from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
 restore_path()
 
-from scipy_base import *
+from scipy.base import *
 
 def random(size):
     return rand(*size)
@@ -52,7 +52,7 @@ class test_eigvals(ScipyTestCase):
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
-        from scipy_base.numerix import LinearAlgebra
+        from scipy.base import LinearAlgebra
         Numeric_eigvals = LinearAlgebra.eigenvalues
         print
         print '           Finding matrix eigenvalues'

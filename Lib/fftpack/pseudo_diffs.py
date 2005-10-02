@@ -8,7 +8,7 @@ __all__ = ['diff',
            'cs_diff','cc_diff','sc_diff','ss_diff',
            'shift']
 
-from scipy_base import pi, asarray, sin, cos, sinh, cosh, tanh
+from scipy.base import pi, asarray, sin, cos, sinh, cosh, tanh
 import convolve
 
 import atexit

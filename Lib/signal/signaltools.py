@@ -5,14 +5,14 @@ import sigtools
 import scipy.special as special
 import scipy.linalg as linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
-from scipy_base import polyadd, polymul, polydiv, polysub, \
+from scipy.base import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar
 import types
 import scipy
 from scipy.stats import mean
-import scipy_base as Numeric
-from scipy_base import array, arange, where, sqrt, rank, zeros, NewAxis, argmax, product
-from scipy_base.fastumath import *
+import scipy.base as Numeric
+from scipy.base import array, arange, where, sqrt, rank, zeros, NewAxis, argmax, product
+from scipy.base.fastumath import *
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
@@ -915,7 +915,7 @@ def unique_roots(p,tol=1e-3,rtype='min'):
             mult.append(1)
     return array(pout), array(mult)
 
-from scipy_base import real_if_close, atleast_1d
+from scipy.base import real_if_close, atleast_1d
 
 
 def invres(r,p,k,tol=1e-3,rtype='avg'):
@@ -1283,7 +1283,7 @@ def resample(x,num,t=None,axis=0,window=None):
         new_t = arange(0,num)*(t[1]-t[0])* Nx / float(num) + t[0]
         return y, new_t
 
-from scipy_base import expand_dims, unique, prod, sort, zeros, ones, \
+from scipy.base import expand_dims, unique, prod, sort, zeros, ones, \
      reshape, r_, any, c_, transpose, take, dot
 
 import scipy.linalg as linalg

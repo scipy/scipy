@@ -9,10 +9,10 @@
 import unittest
 import sys
 from scipy_test.testing import *
-from scipy_base import *
+from scipy.base import *
 from scipy_test.testing import ScipyTestCase as TestCase
 import scipy
-import scipy_base as Numeric
+import scipy.base as Numeric
 N = Numeric
 
 set_package_path()

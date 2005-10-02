@@ -16,8 +16,8 @@ __all__ = [
     'SmoothBivariateSpline']
 
 import warnings
-from scipy_base import zeros, Float, concatenate, alltrue
-from scipy_distutils.misc_util import PostponedException
+from scipy.base import zeros, Float, concatenate, alltrue
+from scipy.distutils.misc_util import PostponedException
 
 try: import dfitpack
 except: dfitpack = PostponedException()

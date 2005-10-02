@@ -8,7 +8,7 @@ Available subpackages
 """
 # Modules to import under the scipy namespace
 from scipy_version import scipy_version as __version__
-from scipy_base import *
+from scipy.base import *
 from helpmod import *
 
 _pkg_func_docs = ""
@@ -121,7 +121,7 @@ __doc__ += """
 Useful top level commands
 ===========================
 
-All commands under scipy_base are also available under scipy itself for convenience
+All commands under scipy.base are also available under scipy itself for convenience
 
 info      --  Flexible help utility
 source    --  Print source for object

@@ -18,10 +18,10 @@ except:
     BUILD_FOR_NUMARRAY = 0
 
 def configuration(parent_package='',parent_path=None):
-    from scipy_distutils.core import Extension
-    from scipy_distutils.misc_util import get_path,\
+    from scipy.distutils.core import Extension
+    from scipy.distutils.misc_util import get_path,\
          default_config_dict, dot_join
-    from scipy_distutils.system_info import dict_append, get_info
+    from scipy.distutils.system_info import dict_append, get_info
 
     package = 'special'
     config = default_config_dict(package,parent_package)
@@ -101,17 +101,17 @@ def get_package_config(name):
 
 if __name__ == '__main__':
     extra_packages = []
-    try: import scipy_base
-    except ImportError: extra_packages.append('scipy_base')
+    try: import scipy.base
+    except ImportError: extra_packages.append('scipy.base')
     try: import scipy_test
     except ImportError: extra_packages.append('scipy_test')
-    try: import scipy_distutils
+    try: import scipy.distutils
     except ImportError:
-        extra_packages.append('scipy_distutils')
+        extra_packages.append('scipy.distutils')
         sys.path.insert(0,'scipy_core')
 
-    from scipy_distutils.core import setup
-    from scipy_distutils.misc_util import merge_config_dicts
+    from scipy.distutils.core import setup
+    from scipy.distutils.misc_util import merge_config_dicts
     from special_version import special_version
 
     config_dict = merge_config_dicts([configuration(parent_path='')] + \

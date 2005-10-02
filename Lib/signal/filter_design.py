@@ -1,16 +1,16 @@
 """Filter design.
 """
 
-import scipy_base
-from scipy_base.fastumath import *
-from scipy_base import atleast_1d, poly, polyval, roots, imag, real, asarray,\
+import scipy.base
+from scipy.base.fastumath import *
+from scipy.base import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, Float, resize, pi, concatenate, absolute, logspace, c_
-from scipy_base import mintypecode
+from scipy.base import mintypecode
 from scipy import comb, special, optimize, linalg
 import string, types
 
 
-MLab = scipy_base
+MLab = scipy.base
 Num = MLab
 abs = absolute
 

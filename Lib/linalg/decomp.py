@@ -16,22 +16,22 @@ from lapack import get_lapack_funcs
 from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
-import scipy_base
-from scipy_base import asarray_chkfinite, asarray, diag, zeros, ones, \
+import scipy.base
+from scipy.base import asarray_chkfinite, asarray, diag, zeros, ones, \
      dot, transpose
-cast = scipy_base.cast
-r_ = scipy_base.r_
-c_ = scipy_base.c_
+cast = scipy.base.cast
+r_ = scipy.base.r_
+c_ = scipy.base.c_
 
 _I = cast['F'](1j)
 def _make_complex_eigvecs(w,vin,cmplx_tcode):
-    v = scipy_base.array(vin,typecode=cmplx_tcode)
-    ind = scipy_base.nonzero(scipy_base.not_equal(w.imag,0.0))
-    vnew = scipy_base.zeros((v.shape[0],len(ind)>>1),cmplx_tcode)
-    vnew.real = scipy_base.take(vin,ind[::2],1)
-    vnew.imag = scipy_base.take(vin,ind[1::2],1)
+    v = scipy.base.array(vin,typecode=cmplx_tcode)
+    ind = scipy.base.nonzero(scipy.base.not_equal(w.imag,0.0))
+    vnew = scipy.base.zeros((v.shape[0],len(ind)>>1),cmplx_tcode)
+    vnew.real = scipy.base.take(vin,ind[::2],1)
+    vnew.imag = scipy.base.take(vin,ind[1::2],1)
     count = 0
-    conj = scipy_base.conjugate
+    conj = scipy.base.conjugate
     for i in range(len(ind)/2):
         v[:,ind[2*i]] = vnew[:,count]
         v[:,ind[2*i+1]] = conj(vnew[:,count])
@@ -61,7 +61,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
        'illegal value in %-th argument of internal ggev'%(-info)
     if info>0: raise LinAlgError,"generalized eig algorithm did not converge"
 
-    only_real = scipy_base.logical_and.reduce(scipy_base.equal(w.imag,0.0))
+    only_real = scipy.base.logical_and.reduce(scipy.base.equal(w.imag,0.0))
     if not (ggev.prefix in 'cz' or only_real):
         t = w.typecode()
         if left:
@@ -143,7 +143,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
        'illegal value in %-th argument of internal geev'%(-info)
     if info>0: raise LinAlgError,"eig algorithm did not converge"
 
-    only_real = scipy_base.logical_and.reduce(scipy_base.equal(w.imag,0.0))
+    only_real = scipy.base.logical_and.reduce(scipy.base.equal(w.imag,0.0))
     if not (geev.prefix in 'cz' or only_real):
         t = w.typecode()
         if left:
@@ -400,9 +400,9 @@ def qr(a,overwrite_a=0,lwork=None):
     gemm, = get_blas_funcs(('gemm',),(qr,))
     t = qr.typecode()
     R = basic.triu(qr)
-    Q = scipy_base.identity(M,typecode=t)
-    ident = scipy_base.identity(M,typecode=t)
-    zeros = scipy_base.zeros
+    Q = scipy.base.identity(M,typecode=t)
+    ident = scipy.base.identity(M,typecode=t)
+    zeros = scipy.base.zeros
     for i in range(min(M,N)):
         v = zeros((M,),t)
         v[i] = 1
@@ -449,8 +449,8 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     elif info>0: raise LinAlgError, "Schur form not found.  Possibly ill-conditioned."
     return result[0], result[-3]
 
-eps = scipy_base.limits.double_epsilon
-feps = scipy_base.limits.float_epsilon
+eps = scipy.base.limits.double_epsilon
+feps = scipy.base.limits.float_epsilon
 
 _array_kind = {'1':0, 's':0, 'b': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
@@ -501,13 +501,13 @@ def rsf2csf(T, Z):
     if T.shape[0] != Z.shape[0]:
         raise ValueError, "matrices must be same dimension."
     N = T.shape[0]
-    arr = scipy_base.array    
+    arr = scipy.base.array    
     t = _commonType(Z, T, arr([3.0],'F'))
     Z, T = _castCopy(t, Z, T)
-    conj = scipy_base.conj
-    dot = scipy_base.dot
-    r_ = scipy_base.r_
-    transp = scipy_base.transpose
+    conj = scipy.base.conj
+    dot = scipy.base.dot
+    r_ = scipy.base.r_
+    transp = scipy.base.transpose
     for m in range(N-1,0,-1):
         if abs(T[m,m-1]) > eps*(abs(T[m-1,m-1]) + abs(T[m,m])):
             k = slice(m-1,m+1)
@@ -533,8 +533,8 @@ def orth(A):
     """Return an orthonormal basis for the range of A using svd"""
     u,s,vh = svd(A)
     M,N = A.shape
-    tol = max(M,N)*scipy_base.amax(s)*eps
-    num = scipy_base.sum(s > tol)
+    tol = max(M,N)*scipy.base.amax(s)*eps
+    num = scipy.base.sum(s > tol)
     Q = u[:,:num]
     return Q
 

@@ -33,9 +33,9 @@ end python module cblas
 '''
 
 def configuration(parent_package='',parent_path=None):
-    from scipy_distutils.core import Extension
-    from scipy_distutils.misc_util import dot_join, get_path, default_config_dict
-    from scipy_distutils.system_info import get_info, dict_append
+    from scipy.distutils.core import Extension
+    from scipy.distutils.misc_util import dot_join, get_path, default_config_dict
+    from scipy.distutils.system_info import get_info, dict_append
 
     package = 'blas'
     config = default_config_dict(package,parent_package)
@@ -111,5 +111,5 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy_distutils.core import setup
+    from scipy.distutils.core import setup
     setup(**configuration(parent_path=''))

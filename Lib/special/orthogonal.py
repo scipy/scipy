@@ -58,7 +58,7 @@ Functions:
 """
 
 from __future__ import nested_scopes
-from scipy_base import *
+from scipy.base import *
 import cephes
 _gam = cephes.gamma
 
@@ -95,7 +95,7 @@ def get_eig_func():
             eig = linalg.eig
         except ImportError:
             try:
-                from scipy_base.numerix import eigenvectors as eig
+                from scipy.base import eigenvectors as eig
             except ImportError:
                 raise ImportError, \
                       "You must have scipy.linalg or Numeric or numarray to" \

@@ -5,12 +5,12 @@
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm']
 
-from scipy_base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
+from scipy.base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
      isfinite, sqrt, identity
 from Matrix import Matrix as mat
-import scipy_base as sb
+import scipy.base as sb
 from basic import solve, LinAlgError, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, eigvals, svd
 

@@ -8,15 +8,15 @@ import statlib
 import stats
 import distributions
 import inspect
-from scipy_base import isscalar, r_, log, sum, around, unique, asarray
-from scipy_base import zeros, arange, sort, amin, amax, any, where, \
+from scipy.base import isscalar, r_, log, sum, around, unique, asarray
+from scipy.base import zeros, arange, sort, amin, amax, any, where, \
      array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel
 import scipy
 import types
 import scipy.optimize as optimize
 import futil
-import scipy_base as sb
+import scipy.base as sb
 
 
 def find_repeats(arr):

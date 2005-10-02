@@ -2,8 +2,8 @@
 
 from __future__ import nested_scopes
 import copy
-import scipy_base
-from scipy_base import asarray, tan, exp, ones, squeeze, sign, \
+import scipy.base
+from scipy.base import asarray, tan, exp, ones, squeeze, sign, \
      all
 import random
 
@@ -25,10 +25,10 @@ class base_schedule:
 
     def init(self, **options):
         self.__dict__.update(options)
-        if self.lower == scipy_base.NINF:
-            self.lower = -scipy_base.limits.double_max
-        if self.upper == scipy_base.PINF:
-            self.upper = scipy_base.limits.double_max
+        if self.lower == scipy.base.NINF:
+            self.lower = -scipy.base.limits.double_max
+        if self.upper == scipy.base.PINF:
+            self.upper = scipy.base.limits.double_max
         self.k = 0
         self.accepted = 0
         self.feval = 0

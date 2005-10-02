@@ -55,9 +55,9 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 
 import Numeric
 import MLab
-from scipy_base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
+from scipy.base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
-import scipy_base
+import scipy.base
 import linesearch
 Num = Numeric
 max = MLab.max
@@ -67,15 +67,15 @@ import __builtin__
 pymin = __builtin__.min
 pymax = __builtin__.max
 __version__="0.7"
-_epsilon = sqrt(scipy_base.limits.double_epsilon)
+_epsilon = sqrt(scipy.base.limits.double_epsilon)
 
 def vecnorm(x, ord=2):
     if ord == Inf:
-        return scipy_base.amax(abs(x))
+        return scipy.base.amax(abs(x))
     elif ord == -Inf:
-        return scipy_base.amin(abs(x))
+        return scipy.base.amin(abs(x))
     else:
-        return scipy_base.sum(abs(x)**ord)**(1.0/ord)
+        return scipy.base.sum(abs(x)**ord)**(1.0/ord)
         
 def rosen(x):  # The Rosenbrock function
     x = asarray(x)

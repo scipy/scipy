@@ -1,6 +1,6 @@
 import _minpack
 from common_routines import *
-from scipy_base import atleast_1d, dot, take
+from scipy.base import atleast_1d, dot, take
 
 error = _minpack.error
 

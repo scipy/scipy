@@ -6,10 +6,10 @@ import sys
 from glob import glob
 
 def configuration(parent_package='',parent_path=None):
-    from scipy_distutils.core import Extension
-    from scipy_distutils.misc_util import get_path,dot_join,\
+    from scipy.distutils.core import Extension
+    from scipy.distutils.misc_util import get_path,dot_join,\
          default_config_dict,dict_append
-    from scipy_distutils.system_info import get_info,FFTWNotFoundError,\
+    from scipy.distutils.system_info import get_info,FFTWNotFoundError,\
          DJBFFTNotFoundError
 
     package_name = 'fftpack'
@@ -62,7 +62,7 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy_distutils.core import setup
+    from scipy.distutils.core import setup
     from fftpack_version import fftpack_version
 
     setup(version=fftpack_version,

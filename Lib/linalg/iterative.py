@@ -9,7 +9,7 @@
 
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr'] 
 import _iterative
-import scipy_base as sb
+import scipy.base as sb
 
 try:
     False, True

@@ -11,10 +11,10 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 #from blas import get_blas_funcs
 from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
-from scipy_base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
+from scipy.base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
-import scipy_base
-from scipy_base import asarray_chkfinite, outerproduct, concatenate, reshape, \
+import scipy.base
+from scipy.base import asarray_chkfinite, outerproduct, concatenate, reshape, \
      Matrix
 import calc_lwork
 
@@ -249,27 +249,27 @@ def norm(x, ord=2):
     """
     x = asarray_chkfinite(x)
     nd = len(x.shape)
-    Inf = scipy_base.Inf
+    Inf = scipy.base.Inf
     if nd == 1:
         if ord == Inf:
-            return scipy_base.amax(abs(x))
+            return scipy.base.amax(abs(x))
         elif ord == -Inf:
-            return scipy_base.amin(abs(x))
+            return scipy.base.amin(abs(x))
         else:
-            return scipy_base.sum(abs(x)**ord)**(1.0/ord)
+            return scipy.base.sum(abs(x)**ord)**(1.0/ord)
     elif nd == 2:
         if ord == 2:
-            return scipy_base.amax(decomp.svd(x,compute_uv=0))
+            return scipy.base.amax(decomp.svd(x,compute_uv=0))
         elif ord == -2:
-            return scipy_base.amin(decomp.svd(x,compute_uv=0))
+            return scipy.base.amin(decomp.svd(x,compute_uv=0))
         elif ord == 1:
-            return scipy_base.amax(scipy_base.sum(abs(x)))
+            return scipy.base.amax(scipy.base.sum(abs(x)))
         elif ord == Inf:
-            return scipy_base.amax(scipy_base.sum(abs(x),axis=1))
+            return scipy.base.amax(scipy.base.sum(abs(x),axis=1))
         elif ord == -1:
-            return scipy_base.amin(scipy_base.sum(abs(x)))
+            return scipy.base.amin(scipy.base.sum(abs(x)))
         elif ord == -Inf:
-            return scipy_base.amin(scipy_base.sum(abs(x),axis=1))
+            return scipy.base.amin(scipy.base.sum(abs(x),axis=1))
         elif ord in ['fro','f']:
             val = real((conjugate(x)*x).flat)
             return sqrt(add.reduce(val))
@@ -362,12 +362,12 @@ def pinv(a, cond=None):
     """
     a = asarray_chkfinite(a)
     t = a.typecode()
-    b = scipy_base.identity(a.shape[0],t)
+    b = scipy.base.identity(a.shape[0],t)
     return lstsq(a, b, cond=cond)[0]
 
 
-eps = scipy_base.limits.double_epsilon
-feps = scipy_base.limits.float_epsilon
+eps = scipy.base.limits.double_epsilon
+feps = scipy.base.limits.float_epsilon
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 def pinv2(a, cond=None):
     """ pinv2(a, cond=None) -> a_pinv
@@ -380,7 +380,7 @@ def pinv2(a, cond=None):
     if cond in [None,-1]:
         cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
     m,n = a.shape
-    cutoff = cond*scipy_base.maximum.reduce(s)
+    cutoff = cond*scipy.base.maximum.reduce(s)
     psigma = zeros((m,n),t)
     for i in range(len(s)):
         if s[i] > cutoff:
@@ -440,7 +440,7 @@ def toeplitz(c,r=None):
     
         See also: hankel
     """
-    isscalar = scipy_base.isscalar
+    isscalar = scipy.base.isscalar
     if isscalar(c) or isscalar(r):
         return c   
     if r is None:
@@ -473,7 +473,7 @@ def hankel(c,r=None):
     
         See also:  toeplitz
     """
-    isscalar = scipy_base.isscalar
+    isscalar = scipy.base.isscalar
     if isscalar(c) or isscalar(r):
         return c   
     if r is None:

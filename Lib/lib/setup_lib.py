@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 def configuration(parent_package='',parent_path=None):
-    from scipy_distutils.misc_util import dot_join, get_path,\
+    from scipy.distutils.misc_util import dot_join, get_path,\
          default_config_dict, merge_config_dicts, get_subpackages
 
     package = 'lib'
@@ -19,6 +19,6 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy_distutils.core import setup
+    from scipy.distutils.core import setup
 
     setup(**configuration(parent_path=''))

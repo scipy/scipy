@@ -5,9 +5,9 @@ import os
 import glob
 
 def configuration(parent_package='',parent_path=None):
-    from scipy_distutils.core import Extension
-    from scipy_distutils.misc_util import get_path, default_config_dict, dot_join
-    from scipy_distutils.system_info import get_info,dict_append,NotFoundError
+    from scipy.distutils.core import Extension
+    from scipy.distutils.misc_util import get_path, default_config_dict, dot_join
+    from scipy.distutils.system_info import get_info,dict_append,NotFoundError
 
     package = 'integrate'
     config = default_config_dict(package,parent_package)
@@ -66,5 +66,5 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':    
-    from scipy_distutils.core import setup
+    from scipy.distutils.core import setup
     setup(**configuration(parent_path=''))

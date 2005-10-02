@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "Numeric/arrayobject.h"
+#include "scipy/arrayobject.h"
 #include "ranlib.h"
 #include "stdio.h"
 

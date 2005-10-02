@@ -3,7 +3,7 @@
 #include "sigtools.h"
 
 #include "Python.h"                 /* only needed for defining unsigned types or not */
-#include "Numeric/arrayobject.h"    
+#include "scipy/arrayobject.h"    
 
 static int elsizes[] = {sizeof(char),
                         sizeof(unsigned char),

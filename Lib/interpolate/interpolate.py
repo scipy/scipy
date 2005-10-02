@@ -6,14 +6,14 @@
 
 __all__ = ['interp1d']
 
-from scipy_base import *
-from scipy_base.fastumath import *
+from scipy.base import *
+from scipy.base.fastumath import *
 
 import fitpack
 
 # The following are cluges to fix brain-deadness of take and
 # sometrue when dealing with 0 dimensional arrays.
-# Shouldn't they go to scipy_base??
+# Shouldn't they go to scipy.base??
 
 _take = take
 def take(a,indices,axis=0):    

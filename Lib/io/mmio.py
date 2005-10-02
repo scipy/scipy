@@ -12,7 +12,7 @@
 
 import os
 from types import ListType, TupleType
-from scipy_base import asarray, ArrayType, real,imag,conj,zeros
+from scipy.base import asarray, ArrayType, real,imag,conj,zeros
 
 __all__ = ['mminfo','mmread','mmwrite']
 

@@ -4,7 +4,7 @@
 
 __all__ = ['get_flinalg_funcs']
 
-from scipy_distutils.misc_util import PostponedException
+from scipy.distutils.misc_util import PostponedException
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception

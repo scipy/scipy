@@ -1,5 +1,5 @@
 
-import scipy_base as sb
+import scipy.base as sb
 import scipy as s
 
 def daub(p):

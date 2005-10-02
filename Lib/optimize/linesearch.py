@@ -1,5 +1,5 @@
 import minpack2
-import scipy_base
+import scipy.base
 import sys
 if sys.version[:3] < "2.3":
     True = 1
@@ -15,7 +15,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
     fc = 0
     gc = 0
     phi0 = old_fval
-    derphi0 = scipy_base.dot(gfk,pk)
+    derphi0 = scipy.base.dot(gfk,pk)
     alpha1 = pymin(1.0,1.01*2*(phi0-old_old_fval)/derphi0)
     
     if isinstance(myfprime,type(())):
@@ -30,8 +30,8 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
 
     xtol = 1e-14
     amin = 1e-8
-    isave = scipy_base.zeros((2,),'i')
-    dsave = scipy_base.zeros((13,),'d')
+    isave = scipy.base.zeros((2,),'i')
+    dsave = scipy.base.zeros((13,),'d')
     task = 'START'
     fval = old_fval
     gval = gfk
@@ -48,7 +48,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             if gradient: gc += 1
             else: fc += len(xk) + 1            
             phi0 = fval
-            derphi0 = scipy_base.dot(gval,pk)
+            derphi0 = scipy.base.dot(gval,pk)
         else:
             break                
 

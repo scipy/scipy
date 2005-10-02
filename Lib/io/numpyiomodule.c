@@ -22,7 +22,7 @@
  */
 
 #include "Python.h"             /* Python header files */
-#include "Numeric/arrayobject.h"
+#include "scipy/arrayobject.h"
 /* #include <math.h> */
 #include <stdio.h>
 

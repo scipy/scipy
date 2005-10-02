@@ -10,8 +10,8 @@ import types
 Num = Numeric
 import scipy.special
 special = scipy.special
-from scipy_base.fastumath import *
-from scipy_base import vectorize
+from scipy.base.fastumath import *
+from scipy.base import vectorize
 acos = arccos
 
 SequenceType = [types.TupleType, types.ListType, array.ArrayType, Num.ArrayType]

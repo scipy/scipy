@@ -9,8 +9,8 @@
  */
 
 #include "Python.h"
-#include "Numeric/arrayobject.h"
-#include "Numeric/ufuncobject.h" 
+#include "scipy/arrayobject.h"
+#include "scipy/ufuncobject.h" 
 #include "ufunc_extras.h"
 #include "abstract.h"
 #include "cephes.h"

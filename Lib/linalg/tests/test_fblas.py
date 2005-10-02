@@ -16,7 +16,7 @@
 # !! matrix multiply here to ensure integrity of tests.
 
 from Numeric import *
-from scipy_base.fastumath import *
+from scipy.base.fastumath import *
 
 import sys
 from scipy_test.testing import *

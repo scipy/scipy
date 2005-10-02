@@ -3,10 +3,10 @@
 """
 
 import unittest
-import scipy_base.limits as limits
+import scipy.base.limits as limits
 from scipy_test.testing import assert_array_equal, assert_equal
 from scipy_test.testing import assert_almost_equal, assert_array_almost_equal
-from scipy_base import sqrt, product, add,  ravel, mgrid
+from scipy.base import sqrt, product, add,  ravel, mgrid
 from scipy import rand,randn,comb,factorial
 
 

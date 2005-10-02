@@ -14,7 +14,7 @@ Run tests if lapack is not installed:
 
 import sys
 from scipy_test.testing import *
-from scipy_base import *
+from scipy.base import *
 
 set_package_path()
 from lapack import flapack,clapack

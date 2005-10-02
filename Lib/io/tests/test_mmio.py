@@ -3,7 +3,7 @@
 import sys
 from tempfile import mktemp
 from scipy_test.testing import *
-from scipy_base import array,transpose
+from scipy.base import array,transpose
 
 set_package_path()
 from io.mmio import mminfo,mmread,mmwrite

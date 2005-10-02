@@ -192,10 +192,10 @@ from types import *
 
 __version__ = 0.8
 
-from scipy_base import *
-import scipy_base as sb
-import scipy_base.fastumath as math
-from scipy_base.fastumath import *
+from scipy.base import *
+import scipy.base as sb
+import scipy.base.fastumath as math
+from scipy.base.fastumath import *
 import Numeric
 N = Numeric
 import scipy.special as special
@@ -208,7 +208,7 @@ SequenceType = [ListType, TupleType, ArrayType]
 # These two functions replace letting axis be a sequence and the
 #  keepdims features used throughout.  These ideas
 #  did not match the rest of Scipy.
-from scipy_base import expand_dims, apply_over_axes
+from scipy.base import expand_dims, apply_over_axes
 
 def _chk_asarray(a, axis):
     if axis is None:

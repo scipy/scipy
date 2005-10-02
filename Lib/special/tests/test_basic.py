@@ -32,8 +32,8 @@ import os
 import sys
 #import fpformat
 import unittest
-import scipy_base.limits as limits
-from scipy_base import *
+import scipy.base.limits as limits
+from scipy.base import *
 
 from scipy_test.testing import *
 set_package_path()

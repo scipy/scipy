@@ -1,10 +1,10 @@
 # Functions which need the PIL
 
-from scipy_base import ppimport
+from scipy.base import ppimport
 import types
-import scipy_base.numerix as Numeric
+import scipy.base as Numeric
 
-from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
+from scipy.base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
 
 Image = ppimport('Image')

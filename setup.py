@@ -30,10 +30,10 @@ else:
 # common case).  We do this by checking for a scipy_core subdir.  If this is
 # the case, we add the current dir+/scipy_core to sys.path and to the
 # environment's PYTHONPATH, so that bdist_rpm works without requiring
-# scipy_distutils to be previously installed. However, such a situation
+# scipy.distutils to be previously installed. However, such a situation
 # is abnormal because building scipy requires f2py, and f2py in turn
-# requires scipy_distutils (though, f2py can be installed without
-# scipy_distutils).
+# requires scipy.distutils (though, f2py can be installed without
+# scipy.distutils).
 
 scipy_core_dir = os.path.join(os.getcwd(),'scipy_core')
 if os.path.isdir(scipy_core_dir):
@@ -44,12 +44,12 @@ if os.path.isdir(scipy_core_dir):
 sys.path.insert(0,scipy_core_dir)
 
 try:
-    import scipy_distutils
-    # Declare all scipy_distutils related imports here.
-    from scipy_distutils.misc_util import default_config_dict
-    from scipy_distutils.misc_util import get_path, merge_config_dicts
-    from scipy_distutils.misc_util import get_subpackages, generate_config_py
-    from scipy_distutils.core import setup, Extension
+    import scipy.distutils
+    # Declare all scipy.distutils related imports here.
+    from scipy.distutils.misc_util import default_config_dict
+    from scipy.distutils.misc_util import get_path, merge_config_dicts
+    from scipy.distutils.misc_util import get_subpackages, generate_config_py
+    from scipy.distutils.core import setup, Extension
 finally:
     del sys.path[0]
 

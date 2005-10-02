@@ -2,8 +2,8 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from scipy_base import *
-from scipy_base.numerix import *
+from scipy.base import *
+from scipy.base import *
 from cephes import *
 import types
 import specfun

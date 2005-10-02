@@ -6,9 +6,9 @@ import sys
 import types
 from scipy import special, stats, linalg
 
-import scipy_base.numerix as Numeric
+import scipy.base as Numeric
 
-from scipy_base import exp, amin, amax, ravel, asarray, cast, arange, \
+from scipy.base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, hstack, product, array, typename, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 

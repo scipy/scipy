@@ -6,7 +6,7 @@ is granted, under the terms of the LGPL provided this notification remain.
 */
 
 #include "Python.h"
-#include "Numeric/arrayobject.h"
+#include "scipy/arrayobject.h"
 #include <setjmp.h>
 #include "sigtools.h"
 

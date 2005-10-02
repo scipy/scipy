@@ -26,7 +26,7 @@
 
 from __future__ import nested_scopes
 
-import scipy_base as NA
+import scipy.base as NA
 import _lbfgsb
 import optimize
 

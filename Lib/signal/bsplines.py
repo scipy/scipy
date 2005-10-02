@@ -1,6 +1,6 @@
 import scipy.special
-from scipy_base import *
-from scipy_base.fastumath import sqrt, exp, greater, equal, cos, add, sin
+from scipy.base import *
+from scipy.base.fastumath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 
 gamma = scipy.special.gamma

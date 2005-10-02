@@ -14,8 +14,8 @@ Run tests if sparse is not installed:
   python tests/test_Sparse.py [<level>]
 """
 
-import scipy_base
-from scipy_base import arange, zeros, array, dot
+import scipy.base
+from scipy.base import arange, zeros, array, dot
 
 import sys
 from scipy_test.testing import *

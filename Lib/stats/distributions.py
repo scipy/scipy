@@ -13,10 +13,10 @@ import inspect
 from Numeric import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
      zeros
-from scipy_base.fastumath import *
-from scipy_base import atleast_1d, polyval, angle, ceil, insert, extract, \
+from scipy.base.fastumath import *
+from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select
-import scipy_base
+import scipy.base
 
 errp = special.errprint
 arr = asarray
@@ -2812,7 +2812,7 @@ Uniform distribution
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
 
-eps = scipy_base.limits.double_epsilon
+eps = scipy.base.limits.double_epsilon
 
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):
@@ -3128,7 +3128,7 @@ class rv_discrete:
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = scipy_base.cumsum(self.pk)
+            self.qvals = scipy.base.cumsum(self.pk)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = new.instancemethod(sgf(_drv_ppf,otypes='d'),

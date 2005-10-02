@@ -1,6 +1,6 @@
-from scipy_base import *
-from scipy_base.fastumath import *
-#from scipy_base import isscalar, rank, shape, resize, ArrayType, transpose
+from scipy.base import *
+from scipy.base.fastumath import *
+#from scipy.base import isscalar, rank, shape, resize, ArrayType, transpose
 import types
 import sparsetools
 import _superlu

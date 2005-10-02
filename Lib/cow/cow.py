@@ -432,7 +432,7 @@ class machine_cluster:
                     n0: 0.00, n1: 0.00
         """        
         import string
-        import scipy_distutils.proc as scipy_proc
+        import scipy.distutils.proc as scipy_proc
         results = self.load_list()
         for i in range(len(self.workers)):            
             name = string.split(self.workers[i].host,'.')[0]
@@ -506,7 +506,7 @@ class machine_cluster:
                 ({'load_5': 0.0, 'load_1': 0.0, 'load_15': 0.0},
                  {'load_5': 0.0, 'load_1': 0.0, 'load_15': 0.0})
         """        
-        import scipy_distutils.proc as scipy_proc
+        import scipy.distutils.proc as scipy_proc
         res = self.apply(scipy_proc.load_avg,())
         return res
 
@@ -535,7 +535,7 @@ class machine_cluster:
                 n1        2xP3       0.4     192.0      22.0   0.00
     
         """                
-        import scipy_distutils.proc as scipy_proc
+        import scipy.distutils.proc as scipy_proc
         res = self.apply(scipy_proc.machine_info,())
         return res
 
@@ -604,7 +604,7 @@ class machine_cluster:
                 22890 22889 22889 22890 1071 1071 ...
         """
         import operator
-        import scipy_distutils.proc as scipy_proc
+        import scipy.distutils.proc as scipy_proc
         res = self.apply(scipy_proc.ps_list,())
         psl = reduce(operator.add,res)
         psl = scipy_proc.ps_sort(psl,sort_by,**filters)        

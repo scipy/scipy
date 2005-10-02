@@ -1,4 +1,4 @@
-import scipy_base as sb
+import scipy.base as sb
 import scipy
 pi = scipy.pi
 

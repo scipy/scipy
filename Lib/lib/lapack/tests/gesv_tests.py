@@ -1,6 +1,6 @@
 
 from scipy_test.testing import *
-from scipy_base import *
+from scipy.base import *
 
 class _test_gev:
 
