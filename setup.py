@@ -35,13 +35,13 @@ else:
 # requires scipy.distutils (though, f2py can be installed without
 # scipy.distutils).
 
-scipy_core_dir = os.path.join(os.getcwd(),'scipy_core')
-if os.path.isdir(scipy_core_dir):
-    ppath = os.environ.setdefault('PYTHONPATH',scipy_core_dir)
-    if ppath != scipy_core_dir:
-        ppath = '%s%s%s' % (scipy_core_dir,os.pathsep,ppath)
-    os.environ['PYTHONPATH'] = ppath
-sys.path.insert(0,scipy_core_dir)
+#scipy_core_dir = os.path.join(os.getcwd(),'scipy_core')
+#if os.path.isdir(scipy_core_dir):
+#    ppath = os.environ.setdefault('PYTHONPATH',scipy_core_dir)
+#    if ppath != scipy_core_dir:
+#        ppath = '%s%s%s' % (scipy_core_dir,os.pathsep,ppath)
+#    os.environ['PYTHONPATH'] = ppath
+#sys.path.insert(0,scipy_core_dir)
 
 try:
     import scipy.distutils
@@ -61,7 +61,7 @@ def setup_package(ignore_packages=[]):
         # Applying the same commands to scipy_core.
         # Results can be found in scipy_core directory.
         c = '%s %s %s' % (sys.executable,
-                          os.path.abspath(os.path.join('scipy_core','setup.py')),
+			             os.path.abspath(os.path.join('scipy_core','setup.py')),
                           ' '.join(sys.argv[1:]))
         print c
         s = os.system(c)
