@@ -4,6 +4,8 @@ done * scipy_distutils and scipy_base to scipy.disutils and scipy.base
 done * Numeric/arrayobject.h to scipy/arrayobject.h
 done * Numeric/ufuncobject.h to scipy/ufuncobject.h
 * Look for use of descr->zero and descr->ones --- need to be replaced
+* Change use of default_config_dict to Configuration
+
 
 
 Changes that should be made someday:

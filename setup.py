@@ -57,16 +57,6 @@ finally:
 
 def setup_package(ignore_packages=[]):
 
-    if command_sdist and os.path.isdir('scipy_core'):
-        # Applying the same commands to scipy_core.
-        # Results can be found in scipy_core directory.
-        c = '%s %s %s' % (sys.executable,
-			             os.path.abspath(os.path.join('scipy_core','setup.py')),
-                          ' '.join(sys.argv[1:]))
-        print c
-        s = os.system(c)
-        assert not s,'failed on scipy_core'
-
     old_path = os.getcwd()
     local_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 
