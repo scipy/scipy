@@ -1,0 +1,56 @@
+It's a sensible request. I'll create a tutorial on scipy.distutils as soon as possible. Until then here's a short overview of how setup.py files in scipy should look like:
+
+1) First, it must define a function configuration(parent_package,top_path) that returns a dictionary or a Configuration instance. Here's a simple
+example:
+
+def configuration(parent_package='',top_path=None):
+   config = Configuration('mypackage',parent_package,top_path)
+   return config  # or config.todict()
+
+that is suitable for a pure python package called 'mypackage'.
+
+2) If a package contains subpackages, then they can be specified using add_subpackage() method, for example,
+
+   config.add_subpackage('mysubpackage')
+
+Of course, mysubpackage setup.py should follow the same convention as any scipy setup.py file.
+
+3) If a package contains extensions, then they can be specified using add_extension() method, for example,
+
+  config.add_extension('myextension',sources,..)
+
+4) If a package contains data files, then they can be specified using add_data_files() method, for example,
+
+  config.add_data_files('datafile1','datafile2',..)
+
+or add_data_dir() method, for example,
+
+  config.add_data_dir('datadir')
+
+5) If a package needs to install header files, then header files should be specified using add_headers method, for example,
+
+  config.add_headers('headerfile1','headerfile2',..)
+
+6) If a package extension modules use local headers for compilation, then the location of header files can be specified using add_include_dirs method, for example,
+
+  config.add_include_dirs('includepath1','includepath2',..)
+
+7) If a package needs to install scripts, then scripts can be specified using add_scripts method, for example,
+
+  config.add_scripts('script1','script2',..)
+
+8) If a package has libraries, then they can be specified using add_library mehtod. The add_library is not fully tested as of yet.
+
+There are several helper methods in Configuration instance, for example,
+
+  paths, get_config_cmd, get_build_temp_dir, have_f77c, have_f90c, get_version, make_svn_version_py, get_subpackage, get_distribution, todict, etc
+
+but I'll describe them later. Also the usage of alreay mentioned methods needs some comments to deal with some special cases that may occur in practice, eg. howto define packages that directory names don't match with package names, etc.
+
+Configuration instance has also several useful attributes such as
+
+  name, local_path, top_path
+
+but in general it can have attributes that distutils.core.setup function can accept.
+
+Also, one of the coolest features in scipy.distutils is that files in sources or other similar arguments may be functions that are called during building steps to generate sources on fly. I'll need to explain the usage of such functions as well. 

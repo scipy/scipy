@@ -1,8 +1,9 @@
+## Automatically adapted for scipy Oct 05, 2005 by convertcode.py
+
 # Author: Travis Oliphant
 
-from MLab import squeeze
+from scipy.base import squeeze
 from scipy.base import *
-from scipy.base.fastumath import *
 import numpyio
 import struct, os, sys
 import types
@@ -21,20 +22,18 @@ _unit_imag = {'f': array(1j,'F'), 'd': 1j}
 __all__ = ['fopen','loadmat','savemat']
 
 def getsize_type(mtype):
-    if mtype in ['b','uchar','byte','unsigned char','integer*1', 'int8']:
-        mtype = 'b'
-    elif mtype in ['c', 'char','char*1']:
-        mtype = 'c'
-    elif mtype in ['1','schar', 'signed char']:
-        mtype = '1'
-    elif mtype in ['s','short','int16','integer*2']:
-        mtype = 's'
-    elif mtype in ['w','ushort','uint16','unsigned short']:
-        mtype = 'w'
+    if mtype in ['B','uchar','byte','unsigned char','integer*1', 'int8']:
+        mtype = 'B'
+    elif mtype in ['h','schar', 'signed char']:
+        mtype = 'B'
+    elif mtype in ['h','short','int16','integer*2']:
+        mtype = 'h'
+    elif mtype in ['H','ushort','uint16','unsigned short']:
+        mtype = 'H'
     elif mtype in ['i','int']:
         mtype = 'i'
-    elif mtype in ['u','uint','uint32','unsigned int']:
-        mtype = 'u'
+    elif mtype in ['i','uint','uint32','unsigned int']:
+        mtype = 'I'
     elif mtype in ['l','long','int32','integer*4']:
         mtype = 'l'
     elif mtype in ['f','float','float32','real*4', 'real']:
@@ -46,9 +45,9 @@ def getsize_type(mtype):
     elif mtype in ['D','complex*16','complex128','complex','complex double']:
         mtype = 'D'
     else:
-        raise TypeError, 'Bad datatype -- ' + mtype
+        mtype = obj2dtype(mtype)
 
-    argout = (array(0,mtype).itemsize(),mtype)
+    argout = (array(0,mtype).itemsize,mtype)
     return argout
 
 if sys.version[:3] < "2.2":
@@ -105,11 +104,11 @@ class fopen(file):
     Inputs:
 
       file_name -- The complete path name to the file to open.
-      permission -- Open the file with given permissions: ('r', 'w', 'a')
+      permission -- Open the file with given permissions: ('r', 'H', 'a')
                     for reading, writing, or appending.  This is the same
                     as the mode argument in the builtin open command.
       format -- The byte-ordering of the file:
-                (['native', 'n'], ['ieee-le', 'l'], ['ieee-be', 'b']) for
+                (['native', 'n'], ['ieee-le', 'l'], ['ieee-be', 'B']) for
                 native, little-endian, or big-endian respectively.
 
     Attributes (Read only):
@@ -137,7 +136,7 @@ class fopen(file):
 #
     
     def __init__(self,file_name,permission='rb',format='n'):
-        if 'b' not in permission: permission += 'b'
+        if 'B' not in permission: permission += 'B'
         if type(file_name) in (types.StringType, types.UnicodeType):
             file.__init__(self, file_name, permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
@@ -149,7 +148,7 @@ class fopen(file):
         elif format in ['ieee-le','l','little-endian','le']:
             self.__dict__['bs'] = not LittleEndian
             self.__dict__['format'] = 'ieee-le'
-        elif format in ['ieee-be','b','big-endian','be']:
+        elif format in ['ieee-be','B','big-endian','be']:
             self.__dict__['bs'] = LittleEndian
             self.__dict__['format'] = 'ieee-be'
         else:
@@ -180,7 +179,7 @@ class fopen(file):
         elif format in ['ieee-le','l','little-endian','le']:
             self.__dict__['bs'] = not LittleEndian
             self.__dict__['format'] = 'ieee-le'
-        elif format in ['ieee-be','b','big-endian','be']:
+        elif format in ['ieee-be','B','big-endian','be']:
             self.__dict__['bs'] = LittleEndian
             self.__dict__['format'] = 'ieee-be'
         else:
@@ -195,14 +194,14 @@ class fopen(file):
           data -- the Numeric array to write.
           mtype -- a string indicating the binary type to write.
                    The default is the type of data. If necessary a cast is made.
-                   unsigned byte  : 'b', 'uchar', 'byte' 'unsigned char', 'int8',
+                   unsigned byte  : 'B', 'uchar', 'byte' 'unsigned char', 'int8',
                                     'integer*1'
-                   character      : 'c', 'char', 'char*1'
-                   signed char    : '1', 'schar', 'signed char'
-                   short          : 's', 'short', 'int16', 'integer*2'
-                   unsigned short : 'w', 'ushort','uint16','unsigned short'
+                   character      : 'S1', 'char', 'char*1'
+                   signed char    : 'b', 'schar', 'signed char'
+                   short          : 'h', 'short', 'int16', 'integer*2'
+                   unsigned short : 'H', 'ushort','uint16','unsigned short'
                    int            : 'i', 'int'
-                   unsigned int   : 'u', 'uint32','uint','unsigned int'
+                   unsigned int   : 'I', 'uint32','uint','unsigned int'
                    long           : 'l', 'long', 'int32', 'integer*4'
                    float          : 'f', 'float', 'float32', 'real*4'
                    double         : 'd', 'double', 'float64', 'real*8'
@@ -216,7 +215,7 @@ class fopen(file):
             bs = (bs == 1)
         data = asarray(data)
         if mtype is None:
-            mtype = data.typecode()
+            mtype = data.dtypechar
         howmany,mtype = getsize_type(mtype)
         count = product(data.shape)
         numpyio.fwrite(self,count,data,mtype,bs)
@@ -347,7 +346,7 @@ class fopen(file):
             if len(args) > 0:
                 sz,mtype = getsize_type(args[0])
             else:
-                sz,mtype = getsize_type(fmt.typecode())
+                sz,mtype = getsize_type(fmt.dtypechar)
             count = product(fmt.shape)
             strlen = struct.pack(nfmt,count*sz)
             self.write(strlen)
@@ -472,16 +471,16 @@ miNumbers = (
     )
 
 miDataTypes = {
-    miINT8 : ('miINT8', 1,'1'),
-    miUINT8 : ('miUINT8', 1,'b'),
-    miINT16 : ('miINT16', 2,'s'),
-    miUINT16 :('miUINT16',2,'w'),
+    miINT8 : ('miINT8', 1,'b'),
+    miUINT8 : ('miUINT8', 1,'B'),
+    miINT16 : ('miINT16', 2,'h'),
+    miUINT16 :('miUINT16',2,'H'),
     miINT32 : ('miINT32',4,'l'),
-    miUINT32 : ('miUINT32',4,'u'),
+    miUINT32 : ('miUINT32',4,'I'),
     miSINGLE : ('miSINGLE',4,'f'),
     miDOUBLE : ('miDOUBLE',8,'d'),
-    miINT64 : ('miINT64',8,'c'),   # Handle 64 bit integers as string data.
-    miUINT64 : ('miUINT64',8,'c'),
+    miINT64 : ('miINT64',8,'q'),   
+    miUINT64 : ('miUINT64',8,'Q'),
     miMATRIX : ('miMATRIX',0,None),
     }
     
@@ -519,7 +518,7 @@ def _parse_header(fid, dict):
     if (endian_test == correct_endian): openstr = 'n'
     else:  # must byteswap
         if LittleEndian:
-            openstr = 'b'
+            openstr = 'B'
         else: openstr = 'l'
     fid.setformat(openstr)  # change byte-order if necessary
     fid.rewind()    
@@ -531,12 +530,12 @@ def _parse_header(fid, dict):
 
 def _parse_array_flags(fid):
     # first 8 bytes are always miUINT32 and 8 --- just a check
-    dtype, nbytes = fid.read(2,'u')
+    dtype, nbytes = fid.read(2,'I')
     if (dtype != miUINT32) or (nbytes != 8):
         raise IOError, "Invalid MAT file. Perhaps a byte-order problem."
 
     # read array flags.
-    rawflags = fid.read(2,'u')
+    rawflags = fid.read(2,'I')
     class_ = rawflags[0] & 255
     flags = (rawflags[0] & 65535) >> 8
     # Global and logical fields are currently ignored
@@ -556,12 +555,12 @@ def _parse_mimatrix(fid,bytes):
     if dclass in mxArrays:
         result, unused =_get_element(fid)
         if type == mxCHAR_CLASS:
-            result = ''.join(asarray(result).astype('c'))
+            result = ''.join(asarray(result).astype('S1'))
         else:
             if cmplx:
                 imag, unused =_get_element(fid)
                 try:
-                    result = result + _unit_imag[imag.typecode()] * imag
+                    result = result + _unit_imag[imag.dtypechar] * imag
                 except KeyError:
                     result = result + 1j*imag
             result = squeeze(transpose(reshape(result,tupdims)))
@@ -583,7 +582,7 @@ def _parse_mimatrix(fid,bytes):
         names = _get_element(fid)[0]
         splitnames = [names[i:i+namelength] for i in \
                       xrange(0,len(names),namelength)]
-        fieldnames = [''.join(asarray(x).astype('c')).strip('\x00')
+        fieldnames = [''.join(asarray(x).astype('S1')).strip('\x00')
                               for x in splitnames]
         for i in range(length):
             result[i] = mat_struct()
@@ -595,7 +594,7 @@ def _parse_mimatrix(fid,bytes):
 
         # object is like a structure with but with a class name
     elif dclass == mxOBJECT_CLASS:
-        class_name = ''.join(asarray(_get_element(fid)[0]).astype('c'))
+        class_name = ''.join(asarray(_get_element(fid)[0]).astype('S1'))
         length = product(dims)
         result = zeros(length, PyObject)
         namelength = _get_element(fid)[0]
@@ -603,7 +602,7 @@ def _parse_mimatrix(fid,bytes):
         names = _get_element(fid)[0]
         splitnames = [names[i:i+namelength] for i in \
                       xrange(0,len(names),namelength)]
-        fieldnames = [''.join(asarray(x).astype('c')).strip('\x00')
+        fieldnames = [''.join(asarray(x).astype('S1')).strip('\x00')
                               for x in splitnames]
         for i in range(length):
             result[i] = mat_obj()
@@ -621,7 +620,7 @@ def _parse_mimatrix(fid,bytes):
         if cmplx:
             imag, unused = _get_element(fid)
             try:
-                res = res + _unit_imag[imag.typecode()] * imag
+                res = res + _unit_imag[imag.dtypechar] * imag
             except KeyError:
                 res = res + 1j*imag
         if have_sparse:
@@ -642,7 +641,7 @@ def _get_element(fid):
     else:
         fid.rewind(1)
     # get the data tag
-    raw_tag = fid.read(1,'u')
+    raw_tag = fid.read(1,'I')
     
     # check for compressed
     numbytes = raw_tag >> 16
@@ -657,7 +656,7 @@ def _get_element(fid):
 
     # otherwise parse tag
     dtype = raw_tag
-    numbytes = fid.read(1,'u')
+    numbytes = fid.read(1,'I')
     if dtype != miMATRIX:  # basic data type 
         try:
             outarr = fid.read(numbytes,miDataTypes[dtype][2],c_is_b=1)
@@ -798,7 +797,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
             fid.close()
             raise ValueError, "Cannot handle sparse matrices, yet."
 
-        storage = {0:'d',1:'f',2:'i',3:'s',4:'w',5:'b'}[P]
+        storage = {0:'d',1:'f',2:'i',3:'h',4:'H',5:'B'}[P]
 
         varname = fid.fread(header[-1],'char')[:-1]
         varname = varname.tostring()
@@ -808,7 +807,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
             data = atleast_1d(fid.fread(numels,storage))
             if header[3]:  # imaginary data
                 data2 = fid.fread(numels,storage)
-                if data.typecode() == 'f' and data2.typecode() == 'f':
+                if data.dtypechar == 'f' and data2.dtypechar == 'f':
                     new = zeros(data.shape,'F')
                     new.real = data
                     new.imag = data2
@@ -816,14 +815,14 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
                     del(new)
                     del(data2)
             if len(data) > 1:
-                data.shape = (header[2], header[1])                
+                data=data.reshape((header[2], header[1])                )
                 thisdict[varname] = transpose(squeeze(data))
             else:
                 thisdict[varname] = data
         else:
             data = atleast_1d(fid.fread(numels,storage,'char'))
             if len(data) > 1:
-                data.shape = (header[2], header[1])
+                data=data.reshape((header[2], header[1]))
                 thisdict[varname] = transpose(squeeze(data))
             else:
                 thisdict[varname] = data
@@ -842,7 +841,7 @@ def savemat(filename, dict):
     This saves the arrayobjects in the given dictionary to a matlab Version 4
     style .mat file.
     """
-    storage = {'D':0,'d':0,'F':1,'f':1,'l':2,'i':2,'s':3,'b':5}
+    storage = {'D':0,'d':0,'F':1,'f':1,'l':2,'i':2,'h':3,'B':5}
     if filename[-4:] != ".mat":
         filename = filename + ".mat"
     fid = fopen(filename,'wb')
@@ -852,23 +851,23 @@ def savemat(filename, dict):
         var = dict[variable]
         if type(var) is not ArrayType:
             continue
-        if var.typecode() == 'c':
+        if var.dtypechar == 'S1':
             T = 1
         else:
             T = 0
-        if var.typecode() == '1':
-            var = var.astype('s')
-        P = storage[var.typecode()]
+        if var.dtypechar == 'b':
+            var = var.astype('h')
+        P = storage[var.dtypechar]
         fid.fwrite([M*1000+O*100+P*10+T],'int')
 
         if len(var.shape) == 1:
-            var.shape = (len(var), 1)
+            var=var.reshape((len(var), 1))
         var = transpose(var)
 
         if len(var.shape) > 2:
-            var.shape = (product(var.shape[:-1]), var.shape[-1])
+            var=var.reshape((product(var.shape[:-1]), var.shape[-1]))
 
-        imagf = var.typecode() in ['F', 'D']
+        imagf = var.dtypechar in ['F', 'D']
         fid.fwrite([var.shape[1], var.shape[0], imagf, len(variable)+1],'int')
         fid.fwrite(variable+'\x00','char')
         if imagf:
