@@ -3,7 +3,7 @@
 #
 
 from info_special import __doc__
-from special_version import special_version as __version__
+#from special_version import special_version as __version__
 
 from basic import *
 import specfun

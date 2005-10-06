@@ -1,10 +1,12 @@
+## Automatically adapted for scipy Oct 05, 2005 by convertcode.py
+
 # 
 # Author:  Travis Oliphant, 2002
 #
 
 from scipy.base import *
 from scipy.base import *
-from cephes import *
+from _cephes import *
 import types
 import specfun
 
@@ -24,8 +26,8 @@ def diric(x,n):
     x,n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
-    if x.typecode() in ['fFdD']:
-        ytype = x.typecode()
+    if x.dtypechar in ['fFdD']:
+        ytype = x.dtypechar
     else:
         ytype = 'd'
     y = zeros(x.shape,ytype)
@@ -372,7 +374,7 @@ def hyp0f1(v,z):
     Limit as q->infinity of 1F1(q;a;z/q)
     """
     z = asarray(z)
-    if z.typecode() in ['F', 'D']:
+    if z.dtypechar in ['F', 'D']:
         arg = 2*sqrt(abs(z))
         num = where(z>=0, iv(v-1,arg), jv(v-1,arg))
         den = abs(z)**((v-1.0)/2)

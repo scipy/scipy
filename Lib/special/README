@@ -29,30 +29,9 @@ library, and it includes an HTML page showing brief documentation for
 all included functions calls.
 
 INSTALLATION:
-=====================
-*** IMPORTANT ***  Unless you have an IBM_PC you must modify mconf.h before
-compiling these libraries.  If you have a SUN/SGI/HP-UX/AIX run 
 
-cd cephes; patch mconf.h <patchforSUN_SGI; cd ..
-
-This will set some defines that allow the library to work.
-
-A simple makefile is included.  Modify it to reflect your installation 
-directory and compiler.  Otherwise just type make.
-
-*** You must also modify amos/i1mach.f and amos/d1mach.f if you don't have
-an IPM_PC ********
-
-If you have a machine that follows the IEEE 754 64-bit double precision 
-standard then you may not need to modify i1mach.f but do modify r1mach.f. 
-If you do not know what to use for the values, check out the parameters for 
-the SGI IRIS machine.  It looks like IEEE 754 for an 8-byte word. 
-Also check the amos/diffs file for other examples.
-
-Send me any modifications so I can include them.
-
-Have fun.
-
+Part of SciPy
+ 
 
 CHANGES:
 ===========

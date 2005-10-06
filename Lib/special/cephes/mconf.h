@@ -128,10 +128,13 @@ typedef struct
 #else 
 #define UNK 1        /* Machine not IEEE or DEC, 
                         constants given in decimal format */
-#define BIGENDIAN 0   /* This is a LE file */
+#if WORDS_BIGENDIAN  /* Defined in pyconfig.h */
+#define BIGENDIAN 1
+#else
+#define BIGENDIAN 0
 #endif
 
-
+#endif
 /* UNKnown arithmetic, invokes coefficients given in
  * normal decimal format.  Beware of range boundary
  * problems (MACHEP, MAXLOG, etc. in const.c) and
@@ -165,7 +168,6 @@ typedef struct
 #define DENORMAL 1
 
 /* Define to ask for infinity support, else undefine. */
-
 #define INFINITIES 1
 #ifdef NOINFINITIES
 #undef INFINITIES
