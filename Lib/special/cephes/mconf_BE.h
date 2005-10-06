@@ -128,7 +128,10 @@ typedef struct
 #else 
 #define UNK 1        /* Machine not IEEE or DEC, 
                         constants given in decimal format */
-#define BIGENDIAN 1   /* This is a BE file */
+#if WORDS_BIGENDIAN  /* Defined in pyconfig.h */
+#define BIGENDIAN 1
+#else
+#define BIGENDIAN 0
 #endif
 
 
