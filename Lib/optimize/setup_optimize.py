@@ -35,7 +35,7 @@ def configuration(parent_package='',parent_path=None):
     config.add_extension('_cobyla',
                          sources=[join('cobyla',x) for x in ['cobyla.pyf',
                                                              'cobyla2.f',
-                                                             'trstlp,f']])
+                                                             'trstlp.f']])
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
     config.add_extension('minpack2',
                          sources=[join('minpack2',x) for x in sources])    
