@@ -7,6 +7,7 @@ from glob import glob
 from scipy.distutils.misc_util import Configuration
 from scipy.distutils.system_info import get_info,FFTWNotFoundError,\
      DJBFFTNotFoundError
+join = os.path.join
 
 def configuration(parent_package='',parent_path=None):
     config = Configuration('fftpack',parent_package, parent_path)
@@ -18,10 +19,7 @@ def configuration(parent_package='',parent_path=None):
         print DJBFFTNotFoundError.__doc__
     #djbfft_info = None
     #fftw_info = None
-    config = default_config_dict(package_name,parent_package)
-    local_path = get_path(__name__,parent_path)
-    test_path = os.path.join(local_path,'tests')
-
+    
     config.add_subpackage('tests')
 
     config.add_library('dfftpack',
@@ -46,7 +44,7 @@ def configuration(parent_package='',parent_path=None):
     if fftw_info:
         config.dict_append(**fftw_info)
     if djbfft_info:
-        config_dict_append(**djbfft_info)
+        config.dict_append(**djbfft_info)
 
     return config
 
