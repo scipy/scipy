@@ -11,10 +11,8 @@ def configuration(parent_package='',parent_path=None):
     local_path = get_path(__name__,parent_path)
     config = Configuration(package, parent_package)
 
-    statlib = glob(os.path.join(local_path, 'statlib','*.f'))
-
     config.add_library('statlib',
-                       sources=statlib)
+                       sources=[os.path.join('statlib', '*.f')])
     
     # add statlib module
     config.add_extension('statlib',
