@@ -1,0 +1,85 @@
+$Id$
+------------------------------------------------------------------------
+NOTES for Developers
+------------------------------------------------------------------------
+
+pygist depends on:
+- Python
+- Numeric extension to Python
+- Yorick's gist package
+
+Layout of pygist directory
+---------------------------
+
+gist:  Python scripts
+src:   gistCmodule.c
+   gist:  Yorick gist subdirectory 
+   play:  Yorick play subdirectory 
+
+Updating pygist's src to new version of Yorick:
+-----------------------------------------------
+
+Specifically, the gist and play directories are copied directly 
+from the Yorick distribution.  Diff Makefile.gist with gist/Makefile
+to so if Makefile.gist needs changes.  Then copy Makefile.gist over 
+the Makefile in the gist subdirectory.
+
+Building and installing pygist:
+-------------------------------
+
+The compilation directions are in README.
+
+It is possible to split the build from the install and make it a 
+two-step process:
+
+   python setup.py build
+   python setup.py install 
+
+The build command creates a subdirectory named "build".
+
+To package for a new pygist distribution:
+-----------------------------------------
+
+   python setup.py sdist
+
+------------------------------------------------------------------------
+Additional notes:
+------------------------------------------------------------------------
+
+For unaligned access warnings on DEC Alpha:
+------------------------------------------
+
+   uac p nofix noprint sigbus
+
+causes code to stop on unaligned accesses.
+
+To compile a debug version of the extension:
+--------------------------------------------
+
+   python setup.py build -g
+   python setup.py install
+
+NOTE:  On the DEC Alpha, I get a load error with build -g, but if I 
+       follow with an install (no -g), it load ok, and I get something
+       that I can use with the debugger.
+
+To run totalview on python:
+---------------------------
+   Be in the pygist directory for debugging, so src/gistCmodule.c is in
+   the directory.
+   Will need to respond to totalview questions for all shared modules
+   loaded; answer "no" for all except gistCmodule.so. 
+
+To run the test under yorick:
+----------------------------
+   yorick
+   #include "testg.i"
+   grtest
+   quit
+
+Be careful that netscape is not also running on X terminals.
+
+   xcmap &
+
+gives the colors available.
+
