@@ -4,15 +4,12 @@
 import os
 import sys
 from glob import glob
+from scipy.distutils.misc_util import Configuration
+from scipy.distutils.system_info import get_info,FFTWNotFoundError,\
+     DJBFFTNotFoundError
 
 def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.core import Extension
-    from scipy.distutils.misc_util import get_path,dot_join,\
-         default_config_dict,dict_append
-    from scipy.distutils.system_info import get_info,FFTWNotFoundError,\
-         DJBFFTNotFoundError
-
-    package_name = 'fftpack'
+    config = Configuration('fftpack',parent_package, parent_path)
     fftw_info = get_info('fftw') or get_info('dfftw')
     if not fftw_info:
         print FFTWNotFoundError.__doc__
@@ -24,47 +21,38 @@ def configuration(parent_package='',parent_path=None):
     config = default_config_dict(package_name,parent_package)
     local_path = get_path(__name__,parent_path)
     test_path = os.path.join(local_path,'tests')
-    config['packages'].append(dot_join(parent_package,package_name,'tests'))
-    config['package_dir'][package_name+'.tests'] = test_path
 
-    dfftpack = glob(os.path.join(local_path,'dfftpack','*.f'))
-    config['fortran_libraries'].append(('dfftpack',{'sources':dfftpack}))
-    
+    config.add_subpackage('tests')
+
+    config.add_library('dfftpack',
+                       sources=[join('dfftpack','*.f')])
+
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package,package_name,'_fftpack'),
-                sources = sources,
-                libraries = ['dfftpack'])
+    extra_append = {}
+    config.add_extension('_fftpack',
+                         sources=sources,
+                         libraries=['dfftpack'])
     if fftw_info:
-        dict_append(ext_args,**fftw_info)
+        config.dict_append(**fftw_info)
     if djbfft_info:
-        dict_append(ext_args,**djbfft_info)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+        config.dict_append(**djbfft_info)
 
-    sources = ['convolve.pyf','src/convolve.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package,package_name,'convolve'),
-                sources = sources,
-                libraries = ['dfftpack'])
+        
+    config.add_extension('convolve',
+                         sources = ['convolve.pyf','src/convolve.c'],
+                         libraries = ['dfftpack'])
+
     if fftw_info:
-        dict_append(ext_args,**fftw_info)
+        config.dict_append(**fftw_info)
     if djbfft_info:
-        dict_append(ext_args,**djbfft_info)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+        config_dict_append(**djbfft_info)
 
     return config
 
 if __name__ == '__main__':
     from scipy.distutils.core import setup
     from fftpack_version import fftpack_version
-
     setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',
           author='Pearu Peterson',

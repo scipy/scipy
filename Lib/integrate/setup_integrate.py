@@ -2,66 +2,49 @@
 
 from __future__ import nested_scopes
 import os
+from os.path import join
 import glob
 
-def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.core import Extension
-    from scipy.distutils.misc_util import get_path, default_config_dict, dot_join
-    from scipy.distutils.system_info import get_info,dict_append,NotFoundError
+from scipy.distutils.misc_util import Configuration
+from scipy.distutils.system_info import get_info
 
-    package = 'integrate'
-    config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__,parent_path)
-    def local_join(*paths):
-        return os.path.join(*((local_path,)+paths))
-    def local_glob(*names):
-        return glob.glob(os.path.join(*((local_path,)+names)))
+def configuration(parent_package='',parent_path=None):
+    config = Configuration('integrate', parent_package, parent_path)
 
     blas_opt = get_info('blas_opt')
     if not blas_opt:
         raise NotFoundError,'no blas resources found'
 
-    linpack_lite = ('linpack_lite_src',{'sources':local_glob('linpack_lite','*.f')})
-    mach = ('mach_src',{'sources':local_glob('mach','*.f')})
-    quadpack = ('quadpack_src',{'sources':local_glob('quadpack','*.f')})
-    odepack = ('odepack_src',{'sources':local_glob('odepack','*.f')})
-
+    config.add_library('linpack_lite',
+                       sources=[join('linpack_lite','*.f')])
+    config.add_library('mach',
+                       sources=[join('mach','*.f')])
+    config.add_library('quadpack',
+                       sources=[join('quadpack','*.f')])
+    config.add_library('odepack',
+                       sources=[join('odepack','*.f')])
     # should we try to weed through files and replace with calls to
     # LAPACK routines?
     # Yes, someday...
 
+    
+
     # Extensions
     # quadpack:
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package,package,'_quadpack'),
-                sources = [local_join('_quadpackmodule.c')],
-                libraries = [quadpack,linpack_lite,mach],
-                )
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
 
+    config.add_extension('_quadpack',
+                         sources=['_quadpackmodule.c'],
+                         libraries=['quadpack', 'linpack_lite', 'mach'])
     # odepack
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package,package,'_odepack'),
-                sources = [local_join('_odepackmodule.c')],
-                libraries = [odepack,linpack_lite,mach],
-                )
-    dict_append(ext_args,**blas_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
-
+    config.add_extension('_odepack',
+                         sources=['_odepackmodule.c'],
+                         libraries=['odepack','linpack_lite','mach'],
+                         **blas_opt)
+    
     # vode
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package,package,'vode'),
-                sources = [local_join('vode.pyf')],
-                libraries = [odepack,linpack_lite,mach],
-                )
-    dict_append(ext_args,**blas_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('vode',
+                         sources=['vode.pyf'],
+                         libraries=['odepack','linpack_lite','mach'])
 
     return config
 
