@@ -56,15 +56,28 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'line_search', 'check_grad']
 
 import scipy as Numeric
-import scipy.linalg as MLab
 from scipy.base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
 import scipy.base
 import scipy.utils
 import linesearch
 Num = Numeric
-max = MLab.max
-min = MLab.min
+MLab = Numeric
+
+# These have been copied from Numeric's MLab.py
+# I don't think they made the transition to scipy_core
+def max(m,axis=0):
+    """max(m,axis=0) returns the maximum of m along dimension axis.
+    """
+    m = asarray(m)
+    return Numeric.maximum.reduce(m,axis)
+
+def min(m,axis=0):
+    """min(m,axis=0) returns the minimum of m along dimension axis.
+    """
+    m = asarray(m)
+    return Numeric.minimum.reduce(m,axis)
+
 abs = absolute
 import __builtin__
 pymin = __builtin__.min
