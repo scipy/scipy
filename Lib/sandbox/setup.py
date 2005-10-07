@@ -1,7 +1,13 @@
 def configuration(parent_package='',top_path=None):
     from scipy.distutils.misc_util import Configuration
     config = Configuration('sandbox',parent_package,top_path)
-    config.add_subpackage('exmplpackage')
+
+    # An example package:
+    #config.add_subpackage('exmplpackage')
+
+    # Robert Kern's corner:
+    #config.add_subpackage('rkern')
+    
     return config
 
 if __name__ == '__main__':
