@@ -2,21 +2,17 @@
 
 import os
 from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path,default_config_dict,dot_join
+from scipy.distutils.misc_util import get_path,Configuration,dot_join
+join = os.path.join
 
 def configuration(parent_package='',parent_path=None):
     from scipy.distutils.system_info import get_info
     package = 'cluster'
     local_path = get_path(__name__,parent_path)
-    config = default_config_dict(package,parent_package)
+    config = Configuration(package,parent_package)
 
-    # This should really be fixed to use inline...
-    sources = ['src/vq_wrap.cpp']
-    sources = [os.path.join(local_path,x) for x in sources]
-
-    ext = Extension(dot_join(parent_package,'cluster._vq'),
-                    sources)
-    config['ext_modules'].append(ext)
+    config.add_extension('_vq',
+        sources=[join('src', 'vq_wrap.cpp')])
 
     return config
 

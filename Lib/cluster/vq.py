@@ -15,11 +15,11 @@
         Train a codebook for mimimum distortion using the kmeans algorithm
     
 """
-from Numeric import *
-from scipy.base.fastumath import *
 import scipy
-from scipy.stats import randint
+from scipy.random import randint
+from scipy.stats import std
 from scipy.base import common_type as _common_type
+from scipy import *
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis
@@ -62,7 +62,7 @@ def whiten(obs):
                    [ 1.43684242,  0.57469577,  5.88897275]])
 
     """
-    std_dev = scipy.std(obs,axis=0)
+    std_dev = std(obs,axis=0)
     return obs / std_dev
 
 def vq(obs,code_book):
@@ -120,8 +120,11 @@ def vq(obs,code_book):
     """
     try:
         import _vq
-        from scipy.misc import x_common_type
-        ct = x_common_type(obs,code_book)
+        
+        # XXX: huh? Bitrot!
+        #from scipy.misc import x_common_type
+        #ct = x_common_type(obs,code_book)
+        ct = _common_type(obs, code_book)
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
         if   ct == 'f':
@@ -132,7 +135,7 @@ def vq(obs,code_book):
             results = py_vq(obs,code_book)
     except ImportError:
         results = py_vq(obs,code_book)
-    return results        
+    return results
 
 def py_vq(obs,code_book):
     """ Python version of vq algorithm.
@@ -301,7 +304,7 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
         for i in range(iter):   
             #print i,
             #the intial code book is randomly selected from observations
-            guess = take(obs,randint.rvs(0,No,k),0) 
+            guess = take(obs,randint(0,No,k),0) 
             book,dist = kmeans_(obs,guess,thresh=thresh)
             if dist < best_dist: 
                 best_book = book
