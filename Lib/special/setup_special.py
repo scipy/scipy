@@ -33,8 +33,6 @@ def configuration(parent_package='',parent_path=None):
     # Extension _cephes
     sources = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
                'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
-    sources = [os.path.join(x) for x in sources]
-
     config.add_extension('_cephes', sources=sources,
                          libraries=['amos','toms','c_misc','cephes','mach',
                                     'cdf', 'specfun'],

@@ -1,76 +1,45 @@
 #!/usr/bin/env python
 
 import os
+from os.path import join
 from glob import glob
-from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy.distutils.misc_util import Configuration
+from scipy.distutils.system_info import get_info
 
 def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.system_info import get_info, dict_append
-    package = 'optimize'
-    config = default_config_dict(package, parent_package)
-    local_path = get_path(__name__,parent_path)    
+    config = Configuration('optimize',parent_package, parent_path)
 
-    minpack = ('minpack',{'sources':
-                          glob(os.path.join(local_path,'minpack','*.f'))})
+    config.add_library('minpack',sources=[join('minpack','*f')])
+    config.add_extension('_minpack',
+                         sources=['_minpackmodule.c'],
+                         libraries=['minpack'])
 
-    sources = ['_minpackmodule.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package, package, '_minpack'),
-                sources = sources, libraries = [minpack])
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_library('rootfind',
+                       sources=[join('Zeros','*.c')],
+                       headers=[join('Zeros','zeros.h')])
 
-    rootfind = glob(os.path.join(local_path,'Zeros','*.c'))
-    roothead = os.path.join(local_path,'zeros.h')
-    config['libraries'].append(('rootfind',{'sources':rootfind,
-                                            'headers':roothead}))
-    sources = ['zeros.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package, package, '_zeros'),
-                sources=sources, libraries=['rootfind'])
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('_zeros',
+                         sources=['zeros.c'],
+                         libraries=['rootfind'])
 
     lapack = get_info('lapack_opt')
-    sources = ['lbfgsb.pyf','routines.f']
-    sources = [os.path.join(local_path,'lbfgsb-0.9',x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package, package, "_lbfgsb"),
-                sources=sources)
-    dict_append(ext_args,**lapack)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    sources=['lbfgsb.pyf','routines.f']
+    config.add_extension('_lbfgsb',
+                         sources=[join('lbfgsb-0.9',x) for x in sources],
+                         **lapack)
 
-    sources = ['moduleTNC.c', 'tnc.c']
-    sources = [os.path.join(local_path,'tnc',x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package, package, "moduleTNC"),
-                sources=sources)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
-
-    sources = ['cobyla.pyf','cobyla2.f','trstlp.f']
-    sources = [os.path.join(local_path,'cobyla',x) for x in sources]
-    ext = Extension(dot_join(parent_package, package, '_cobyla'), sources)
-    config['ext_modules'].append(ext)
-
+    sources=['moduleTNC.c','tnc.c']
+    config.add_extension('moduleTNC',
+                         sources=[join('tnc',x) for x in sources])
+                         
+    config.add_extension('_cobyla',
+                         sources=[join('cobyla',x) for x in ['cobyla.pyf',
+                                                             'cobyla2.f',
+                                                             'trstlp,f']])
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
-    sources = [os.path.join(local_path,'minpack2',x) for x in sources]
+    config.add_extension('minpack2',
+                         sources=[join('minpack2',x) for x in sources])    
 
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package, package, "minpack2"),
-                sources=sources)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
-    
     return config
 
 if __name__ == '__main__':    

@@ -5,6 +5,7 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('sandbox')
     config.add_subpackage('io')
     config.add_subpackage('special')
+    config.add_subpackage('optimize')
     config.make_svn_version_py()  # installs __svn_version__.py
     return config
 
