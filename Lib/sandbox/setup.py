@@ -8,6 +8,9 @@ def configuration(parent_package='',top_path=None):
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
     
+    # ODRPACK
+    #config.add_subpackage('odr')
+    
     return config
 
 if __name__ == '__main__':
