@@ -3,37 +3,27 @@
 import os
 from glob import glob
 from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy.distutils.misc_util import get_path, Configuration, dot_join
 
 def configuration(parent_package='',parent_path=None):
     from scipy.distutils.system_info import get_info, dict_append
     package_name = 'interpolate'
     local_path = get_path(__name__,parent_path)
-    config = default_config_dict(package_name, parent_package)
+    config = Configuration(package_name, parent_package)
 
-    fitpack = glob(os.path.join(local_path,'fitpack','*.f'))
-    config['fortran_libraries'].append(('fitpack',{'sources':fitpack}))
-    
-    sources = ['_fitpackmodule.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {}
-    dict_append(ext_args,
-                name=dot_join(parent_package,package_name,'_fitpack'),
-                sources = sources,
-                libraries = ['fitpack'])
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_library('fitpack',
+                       sources=glob(os.path.join(local_path, 'fitpack', '*.f')),
+                      )
+                      
+    config.add_extension('_fitpack',
+                         sources=['_fitpackmodule.c'],
+                         libraries=['fitpack'],
+                        )
 
-    # New interface to fitpack, requires f2py with usercode support:
-    sources = ['fitpack.pyf']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext_args = {
-        'name': dot_join(parent_package,package_name,'dfitpack'),
-        'sources': sources,
-        'libraries': ['fitpack'],
-        }
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('dfitpack',
+                         sources=['fitpack.pyf'],
+                         libraries=['fitpack'],
+                        )
 
     return config
 

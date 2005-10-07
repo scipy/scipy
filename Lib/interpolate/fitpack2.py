@@ -17,10 +17,8 @@ __all__ = [
 
 import warnings
 from scipy.base import zeros, Float, concatenate, alltrue
-from scipy.distutils.misc_util import PostponedException
 
-try: import dfitpack
-except: dfitpack = PostponedException()
+import dfitpack
 
 ################ Univariate spline ####################
 
