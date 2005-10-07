@@ -11,11 +11,12 @@ from scipy.base import asarray, Inf, dot, floor, log2, eye, diag, exp, \
      isfinite, sqrt, identity
 from Matrix import Matrix as mat
 import scipy.base as sb
+import scipy.utils as su
 from basic import solve, LinAlgError, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, eigvals, svd
 
-eps = sb.limits.double_epsilon
-feps = sb.limits.float_epsilon
+eps = su.limits.double_epsilon
+feps = su.limits.float_epsilon
 
 def expm(A,q=7):
     """Compute the matrix exponential using Pade approximation of order q.

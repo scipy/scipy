@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
+
 # Author: Travis Oliphant 2002
 
 from __future__ import nested_scopes
@@ -26,9 +28,9 @@ class base_schedule:
     def init(self, **options):
         self.__dict__.update(options)
         if self.lower == scipy.base.NINF:
-            self.lower = -scipy.base.limits.double_max
+            self.lower = -scipy.utils.limits.double_max
         if self.upper == scipy.base.PINF:
-            self.upper = scipy.base.limits.double_max
+            self.upper = scipy.utils.limits.double_max
         self.k = 0
         self.accepted = 0
         self.feval = 0

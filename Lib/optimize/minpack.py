@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
+
 import _minpack
 from common_routines import *
 from scipy.base import atleast_1d, dot, take
@@ -264,13 +266,13 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
 
     x = atleast_1d(x0)
     n = len(x)
-    x.shape = (n,)
+    x=x.reshape((n,))
     fvec = atleast_1d(fcn(x,*args))
     m = len(fvec)
-    fvec.shape = (m,)
+    fvec=fvec.reshape((m,))
     ldfjac = m
     fjac = atleast_1d(Dfcn(x,*args))
-    fjac.shape = (m,n)
+    fjac=fjac.reshape((m,n))
     if col_deriv == 0:
         fjac = transpose(fjac)
 
@@ -280,7 +282,7 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,1,err)
     
     fvecp = atleast_1d(fcn(xp,*args))
-    fvecp.shape = (m,)
+    fvecp=fvecp.reshape((m,))
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,2,err)
     
     good = (product(greater(err,0.5)))

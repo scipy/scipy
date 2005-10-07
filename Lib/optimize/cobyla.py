@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
+
 # Interface to Constrained Optimization By Linear Approximation
 
 from __future__ import nested_scopes

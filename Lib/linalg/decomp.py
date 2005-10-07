@@ -449,8 +449,8 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     elif info>0: raise LinAlgError, "Schur form not found.  Possibly ill-conditioned."
     return result[0], result[-3]
 
-eps = scipy.base.limits.double_epsilon
-feps = scipy.base.limits.float_epsilon
+eps = scipy.utils.limits.double_epsilon
+feps = scipy.utils.limits.float_epsilon
 
 _array_kind = {'1':0, 's':0, 'b': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}

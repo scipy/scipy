@@ -366,8 +366,8 @@ def pinv(a, cond=None):
     return lstsq(a, b, cond=cond)[0]
 
 
-eps = scipy.base.limits.double_epsilon
-feps = scipy.base.limits.float_epsilon
+eps = scipy.utils.limits.double_epsilon
+feps = scipy.utils.limits.float_epsilon
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 def pinv2(a, cond=None):
     """ pinv2(a, cond=None) -> a_pinv

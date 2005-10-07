@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
+
 # TNC Python interface
 # @(#) $Jeannot: tnc.py,v 1.7 2004/04/02 20:40:21 js Exp $
 

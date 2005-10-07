@@ -2812,7 +2812,7 @@ Uniform distribution
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
 
-eps = scipy.base.limits.double_epsilon
+eps = scipy.utils.limits.double_epsilon
 
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):
