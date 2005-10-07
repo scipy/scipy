@@ -12,7 +12,7 @@ def configuration(parent_package='',parent_path=None):
     config = Configuration(package_name, parent_package)
 
     config.add_library('fitpack',
-                       sources=glob(os.path.join(local_path, 'fitpack', '*.f')),
+                       sources=[os.path.join('fitpack', '*.f')],
                       )
                       
     config.add_extension('_fitpack',
