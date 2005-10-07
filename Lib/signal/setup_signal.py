@@ -2,25 +2,23 @@
 
 import os
 from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy.distutils.misc_util import get_path, Configuration, dot_join
 
 def configuration(parent_package='',parent_path=None):
     from scipy.distutils.system_info import get_info
     package = 'signal'
     local_path = get_path(__name__,parent_path)    
-    config = default_config_dict(package, parent_package)
+    config = Configuration(package, parent_package)
 
-    sources = ['sigtoolsmodule.c','firfilter.c','medianfilter.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,package,'sigtools'), sources)
-    config['ext_modules'].append(ext)
+    config.add_extension('sigtools',
+        sources=['sigtoolsmodule.c','firfilter.c','medianfilter.c'],
+    )
     
-    sources = ['splinemodule.c','S_bspline_util.c','D_bspline_util.c',
-               'C_bspline_util.c','Z_bspline_util.c','bspline_util.c']
-    sources = [os.path.join(local_path,x) for x in sources]               
-    ext = Extension(dot_join(parent_package,package,'spline'),sources)
-    config['ext_modules'].append(ext)
-
+    config.add_extension('spline',
+        sources = ['splinemodule.c','S_bspline_util.c','D_bspline_util.c',
+                   'C_bspline_util.c','Z_bspline_util.c','bspline_util.c'],
+    )
+    
     return config
 
 if __name__ == '__main__':

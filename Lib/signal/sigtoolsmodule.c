@@ -2335,6 +2335,8 @@ DL_EXPORT(void) initsigtools(void) {
 
 	/* Make sure the multiarraymodule is loaded so that the zero
 	   and one objects are defined */
+	/* XXX: This should be updated for scipy. I think it's pulling in 
+	   Numeric's multiarray. */
 	PyImport_ImportModule("multiarray");
 	/* { PyObject *multi = PyImport_ImportModule("multiarray"); } */
 
