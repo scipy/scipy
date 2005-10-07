@@ -3,24 +3,25 @@
 import os
 from glob import glob
 from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path, default_config_dict, dot_join
+from scipy.distutils.misc_util import get_path, Configuration, dot_join
 
 def configuration(parent_package='',parent_path=None):
     from scipy.distutils.system_info import get_info, dict_append
     package = 'stats'
     local_path = get_path(__name__,parent_path)
-    config = default_config_dict(package, parent_package)
+    config = Configuration(package, parent_package)
 
     statlib = glob(os.path.join(local_path, 'statlib','*.f'))
 
     config['fortran_libraries'].append(('statlib',{'sources':statlib}))
     
-    # Extension
-    sources = ['randmodule.c','ranlib_all.c']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,package,'rand'),sources)
-    config['ext_modules'].append(ext)
+    # randmodule has been replaced by scipy.lib.mtrand
+    #sources = ['randmodule.c','ranlib_all.c']
+    #sources = [os.path.join(local_path,x) for x in sources]
+    #ext = Extension(dot_join(parent_package,package,'rand'),sources)
+    #config['ext_modules'].append(ext)
 
+    # add statlib module
     ext_args = {'name':dot_join(parent_package,package,'statlib'),
                 'sources':[os.path.join(local_path,'statlib.pyf')],
                 'f2py_options':['--no-wrap-functions'],

@@ -196,8 +196,7 @@ from scipy.base import *
 import scipy.base as sb
 import scipy.base.fastumath as math
 from scipy.base.fastumath import *
-import Numeric
-N = Numeric
+N = sb  # alias
 import scipy.special as special
 import scipy.linalg as linalg
 import scipy
@@ -241,6 +240,8 @@ def nanmean(x,axis=-1):
     x = x.copy()
     Norig = x.shape[axis]
     factor = 1.0-sum(isnan(x),axis)*1.0/Norig
+    
+    # XXX: this line is quite clearly wrong
     n = N-sum(isnan(x),axis)
     N.putmask(x,isnan(x),0)
     return stats.mean(x,axis)/factor
@@ -253,6 +254,8 @@ def nanstd(x,axis=-1,bias=0):
     Norig = x.shape[axis]
     n = Norig - sum(isnan(x),axis)*1.0
     factor = n/Norig
+    
+    # XXX: this line is quite clearly wrong
     n = N-sum(isnan(x),axis)
     N.putmask(x,isnan(x),0)
     m1 = stats.mean(x,axis)
@@ -1004,7 +1007,7 @@ of the compare array.
 
 def threshold(a,threshmin=None,threshmax=None,newval=0):
     """
-Like Numeric.clip() except that values <threshmid or >threshmax are replaced
+Like scipy.clip() except that values <threshmid or >threshmax are replaced
 by newval instead of by threshmin/threshmax (respectively).
 
 Returns: a, with values <threshmin or >threshmax replaced with newval
@@ -1514,10 +1517,10 @@ def kstest(rvs,cdf,args=(),N=20):
     distribution.
     """
     if type(rvs) is StringType:
-        cdf = eval("scipy.stats."+rvs+".cdf")    
-        rvs = eval("scipy.stats."+rvs+".rvs")
+        cdf = getattr(scipy.stats, rvs).cdf
+        rvs = getattr(scipy.stats, rvs).rvs
     if type(cdf) is StringType:
-        cdf = eval("scipy.stats."+cdf+".cdf")        
+        cdf = getattr(scipy.stats, cdf).cdf
     if callable(rvs):
         kwds = {'size':N}
         vals = sb.sort(rvs(*args,**kwds))

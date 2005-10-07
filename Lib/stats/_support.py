@@ -1,5 +1,5 @@
-import Numeric as N
 from scipy.base import *
+import scipy.base as N
 
 def abut (source, *args):
     """\nLike the |Stat abut command.  It concatenates two arrays column-wise

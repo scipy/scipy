@@ -9,7 +9,9 @@
 #  Date: 2004-08-09
 #
 #  Modified: 2005-02-10 by Robert Kern.
-#            Contributed to Scipy.
+#              Contributed to Scipy
+#            2005-10-07 by Robert Kern.
+#              Some fixes to match the new scipy_core
 #
 #  Copyright 2004-2005 by Enthought, Inc.
 #
@@ -23,11 +25,13 @@ import warnings
 
 from scipy import dot, linalg, special
 from scipy.base import *
+from scipy.lib.mtrand import randint, multivariate_normal
 
-from distributions import randint
 import stats
-from rv import multivariate_normal
 import mvn
+
+__all__ = ['gaussian_kde', 
+          ]
 
 #-------------------------------------------------------------------------------
 # 'gaussian_kde' class:
@@ -94,9 +98,9 @@ class gaussian_kde(object):
             else:
                 msg = "points have dimension %s, dataset has dimension %s" % (d,
                     self.d)
-                raise ValueError, msg
+                raise ValueError(msg)
 
-        result = zeros((m,), points.typecode())
+        result = zeros((m,), points.dtype)
     
         if m >= self.n:
             # there are more points than data, so loop over data
@@ -142,9 +146,9 @@ class gaussian_kde(object):
         cov = atleast_2d(cov)
         
         if mean.shape != (self.d,):
-            raise ValueError, "mean does not have dimension %s" % self.d
+            raise ValueError("mean does not have dimension %s" % self.d)
         if cov.shape != (self.d, self.d):
-            raise ValueError, "covariance does not have dimension %s" % self.d
+            raise ValueError("covariance does not have dimension %s" % self.d)
 
         # make mean a column vector
         mean = mean[:,NewAxis]
@@ -277,7 +281,7 @@ class gaussian_kde(object):
 
         norm = transpose(multivariate_normal(zeros((self.d,), Float),
             self.covariance, size=size))
-        indices = randint.rvs(0, self.n, size=size)
+        indices = randint(0, self.n, size=size)
         means = take(self.dataset, indices, axis=1)
 
         return means + norm
