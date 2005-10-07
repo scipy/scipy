@@ -13,35 +13,25 @@ def configuration(parent_package='',parent_path=None):
 
     statlib = glob(os.path.join(local_path, 'statlib','*.f'))
 
-    config['fortran_libraries'].append(('statlib',{'sources':statlib}))
+    config.add_library('statlib',
+                       sources=statlib)
     
-    # randmodule has been replaced by scipy.lib.mtrand
-    #sources = ['randmodule.c','ranlib_all.c']
-    #sources = [os.path.join(local_path,x) for x in sources]
-    #ext = Extension(dot_join(parent_package,package,'rand'),sources)
-    #config['ext_modules'].append(ext)
-
     # add statlib module
-    ext_args = {'name':dot_join(parent_package,package,'statlib'),
-                'sources':[os.path.join(local_path,'statlib.pyf')],
-                'f2py_options':['--no-wrap-functions'],
-                #'define_macros':[('F2PY_REPORT_ATEXIT_DISABLE',None)],
-                'libraries' : ['statlib']
-                }
-    ext = Extension(**ext_args)
-    ext.need_fcompiler_opts = 1
-    config['ext_modules'].append(ext)
-
+    config.add_extension('statlib',
+        sources=['statlib.pyf'],
+        f2py_options=['--no-wrap-functions'],
+        libraries=['statlib'],
+    )
+    
     # add futil module
-    sources = ['futil.f']
-    sources = [os.path.join(local_path,x) for x in sources]
-    ext = Extension(dot_join(parent_package,package,'futil'),sources)
-    config['ext_modules'].append(ext)
+    config.add_extension('futil',
+        sources=['futil.f'],
+    )
 
     # add mvn module
-    sources = [os.path.join(local_path, x) for x in ['mvn.pyf', 'mvndst.f']]
-    ext = Extension(dot_join(parent_package, package, 'mvn'), sources)
-    config['ext_modules'].append(ext)
+    config.add_extension('mvn',
+        sources=['mvn.pyf','mvndst.f'],
+    )
 
     return config
 

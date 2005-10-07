@@ -19,8 +19,6 @@
 """
 stats.py module
 
-(Requires pstat.py modules.)
-
 #################################################
 #######  Written by:  Gary Strangman  ###########
 #######  Last modified:  Apr 13, 2000 ###########
@@ -194,8 +192,8 @@ __version__ = 0.8
 
 from scipy.base import *
 import scipy.base as sb
-import scipy.base.fastumath as math
-from scipy.base.fastumath import *
+import scipy.base.umath as math
+from scipy.base.umath import *
 N = sb  # alias
 import scipy.special as special
 import scipy.linalg as linalg
