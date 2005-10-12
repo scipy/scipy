@@ -98,11 +98,17 @@ class gaussian_kde(object):
 
         result = zeros((m,), points.typecode())
     
+        try:
+            inv_cov = linalg.inv(self.covariance)
+        except linalg.LinAlgError:
+            warnings.warn('dataset is degenerate; cannot evaluate; returning zeros')
+            return zeros(m, Float)
+
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
                 diff = self.dataset[:,i,NewAxis] - points
-                tdiff = dot(self.inv_cov, diff)
+                tdiff = dot(inv_cov, diff)
                 energy = sum(diff*tdiff)/2.0
                 result += exp(-energy)
         else:
@@ -150,9 +156,10 @@ class gaussian_kde(object):
         mean = mean[:,NewAxis]
 
         sum_cov = self.covariance + cov
+        sum_cov_inv = linalg.inv(sum_cov)
 
         diff = self.dataset - mean
-        tdiff = dot(linalg.inv(sum_cov), diff)
+        tdiff = dot(sum_cov_inv, diff)
 
         energies = sum(diff*tdiff)/2.0
         result = sum(exp(-energies))/sqrt(linalg.det(2*pi*sum_cov))/self.n
@@ -298,4 +305,3 @@ class gaussian_kde(object):
         self.factor = self.covariance_factor()
         self.covariance = atleast_2d(stats.cov(self.dataset, rowvar=1) * 
             self.factor * self.factor)
-        self.inv_cov = linalg.inv(self.covariance)
