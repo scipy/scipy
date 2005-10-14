@@ -2,7 +2,7 @@
 # interpolate - Interpolation Tools
 #
 
-from info_interpolate import __doc__
+from info import __doc__
 
 from interpolate import *
 from fitpack import *
