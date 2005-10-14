@@ -13,7 +13,7 @@ Run tests if linalg is not installed:
 """
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 from scipy.base import ones
 set_package_path()
 from linalg import flapack

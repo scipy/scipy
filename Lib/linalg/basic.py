@@ -14,8 +14,8 @@ from flinalg import get_flinalg_funcs
 from scipy.base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
 import scipy.base
-from scipy.base import asarray_chkfinite, outerproduct, concatenate, reshape, \
-     Matrix
+from scipy.base import asarray_chkfinite, outerproduct, concatenate, reshape
+from scipy.base import matrix as Matrix
 import calc_lwork
 
 class LinAlgError(Exception):

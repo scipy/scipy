@@ -4,8 +4,6 @@
 
 __all__ = ['get_flinalg_funcs']
 
-from scipy.distutils.misc_util import PostponedException
-
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
@@ -13,6 +11,7 @@ try:
     import _flinalg
     has_column_major_storage = _flinalg.has_column_major_storage
 except ImportError:
+    from scipy.distutils.misc_util import PostponedException
     _flinalg = PostponedException()
     print _flinalg.__doc__
     has_column_major_storage = lambda a:0

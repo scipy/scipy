@@ -21,18 +21,14 @@ using_lapack_blas = 0
 
 #--------------------
 
-def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.core import Extension
-    from scipy.distutils.misc_util import dot_join, get_path, default_config_dict
-    from scipy.distutils.system_info import get_info, dict_append, NotFoundError
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.system_info import get_info, NotFoundError
+
+    from scipy.distutils.misc_util import Configuration
 
     from interface_gen import generate_interface
 
-    package = 'linalg'
-    config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__,parent_path)
-    def local_join(*paths):
-        return os.path.join(*((local_path,)+paths))
+    config = Configuration('linalg',parent_package,top_path)
 
     lapack_opt = get_info('lapack_opt')
 
@@ -100,72 +96,61 @@ def configuration(parent_package='',parent_path=None):
         return target
 
     # fblas:
-    ext_args = {'name': dot_join(parent_package,package,'fblas'),
-                'sources': [generate_pyf,
-                            local_join('src','fblaswrap.f')],
-                'depends': map(local_join,['generic_fblas.pyf',
-                                           'generic_fblas1.pyf',
-                                           'generic_fblas2.pyf',
-                                           'generic_fblas3.pyf',
-                                           'interface_gen.py'])
-                }
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('fblas',
+                         sources = [generate_pyf,
+                                    join('src','fblaswrap.f')],
+                         depends = ['generic_fblas.pyf',
+                                    'generic_fblas1.pyf',
+                                    'generic_fblas2.pyf',
+                                    'generic_fblas3.pyf',
+                                    'interface_gen.py'],
+                         extra_info = lapack_opt
+                         )
 
     # cblas:
-    ext_args = {'name': dot_join(parent_package,package,'cblas'),
-                'sources': [generate_pyf],
-                'depends': map(local_join,['generic_cblas.pyf',
-                                           'generic_cblas1.pyf',
-                                           'interface_gen.py'])
-                }
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('cblas',
+                         sources = [generate_pyf],
+                         depends = ['generic_cblas.pyf',
+                                    'generic_cblas1.pyf',
+                                    'interface_gen.py'],
+                         extra_info = lapack_opt
+                         )
 
     # flapack:
-    ext_args = {'name': dot_join(parent_package,package,'flapack'),
-                'sources': [generate_pyf],
-                'depends': map(local_join,['generic_flapack.pyf',
-                                           'flapack_user_routines.pyf',
-                                           'interface_gen.py'])
-                }
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
-
+    config.add_extension('flapack',
+                         sources = [generate_pyf],
+                         depends = ['generic_flapack.pyf',
+                                    'flapack_user_routines.pyf',
+                                    'interface_gen.py'],
+                         extra_info = lapack_opt
+                         )
+    
     # clapack:
-    ext_args = {'name': dot_join(parent_package,package,'clapack'),
-                'sources': [generate_pyf],
-                'depends': map(local_join,['generic_clapack.pyf',
-                                           'interface_gen.py'])
-                }
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('clapack',
+                         sources = [generate_pyf],
+                         depends = ['generic_clapack.pyf',
+                                    'interface_gen.py'],
+                         extra_info = lapack_opt
+                         )
 
     # _flinalg:
-    ext_args = {'name':dot_join(parent_package,package,'_flinalg'),
-                'sources':[local_join('src','det.f'),
-                           local_join('src','lu.f')]
-                }
-    dict_append(ext_args,**lapack_opt)
-    config['ext_modules'].append(Extension(**ext_args))
+    config.add_extension('_flinalg',
+                         sources = [join('src','det.f'),join('src','lu.f')],
+                         extra_info = lapack_opt
+                         )
 
     # calc_lwork:
-    ext_args = {'name':dot_join(parent_package,package,'calc_lwork'),
-                'sources':[local_join('src','calc_lwork.f')],
-                }
-    dict_append(ext_args,**lapack_opt)
-    config['ext_modules'].append(Extension(**ext_args))
+    config.add_extension('calc_lwork',
+                         [join('src','calc_lwork.f')],
+                         extra_info = lapack_opt
+                         )
 
     # atlas_version:
-    ext_args = {'name':dot_join(parent_package,package,'atlas_version'),
-                'sources':[os.path.join(local_path,'atlas_version.c')]}
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+
+    config.add_extension('atlas_version',
+                         ['atlas_version.c'],
+                         extra_info = lapack_opt
+                         )
 
     # iterative methods
     methods = ['BiCGREVCOM.f.src',
@@ -180,13 +165,12 @@ def configuration(parent_package='',parent_path=None):
                ]
     Util = ['STOPTEST2.f.src','getbreak.f.src']
     sources = Util + methods + ['_iterative.pyf.src']
-    ext_args = {
-        'name': dot_join(parent_package,package,'_iterative'),
-        'sources': [local_join('iterative',x) for x in sources]
-        }
-    dict_append(ext_args, **lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)    
+    config.add_extension('_iterative',
+                         sources = [join('iterative',x) for x in sources],
+                         extra_info = lapack_opt
+                         )
+
+    config.add_data_dir('tests')
 
     return config
 
@@ -195,4 +179,4 @@ if __name__ == '__main__':
     from linalg_version import linalg_version
 
     setup(version=linalg_version,
-          **configuration(parent_path=''))
+          **configuration(top_path='').todict())

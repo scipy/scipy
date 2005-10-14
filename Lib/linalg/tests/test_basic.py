@@ -19,11 +19,11 @@ Run tests if linalg is not installed:
   python tests/test_basic.py [<level>]
 """
 
-import Numeric
-from Numeric import arange, add, array, dot, zeros, identity
+import scipy.base as Numeric
+from scipy.base import arange, add, array, dot, zeros, identity
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 from linalg import pinv, pinv2, solve_banded

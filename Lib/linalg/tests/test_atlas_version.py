@@ -4,7 +4,7 @@
 #
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 import linalg.atlas_version
 del sys.path[0]

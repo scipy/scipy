@@ -15,11 +15,11 @@
 # !! ever !replaced! by a blas call, we'll need to fill in a simple 
 # !! matrix multiply here to ensure integrity of tests.
 
-from Numeric import *
-from scipy.base.fastumath import *
+from scipy.base import *
+from scipy.base.umath import *
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 from linalg import fblas
 del sys.path[0]
