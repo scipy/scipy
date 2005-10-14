@@ -2,6 +2,7 @@ import os
 import sys
 
 def setup_package():
+    os.environ['RUNNING_FROM_SCIPY_SOURCE']='1'
 
     from scipy.distutils.core import setup
     from scipy.distutils.misc_util import Configuration
@@ -20,6 +21,10 @@ def setup_package():
                                url = "http://www.scipy.org",
                                license = 'BSD',
                                )
+        # Force scipy to be a package (its __init__.py file comes from scipy_core)
+        config.packages.append('scipy')
+        config.package_dir['scipy'] = os.path.join(config.local_path,'Lib')
+        
         config.add_subpackage('Lib')
 
         from scipy_version import scipy_version as version
