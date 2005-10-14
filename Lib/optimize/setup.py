@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-import os
 from os.path import join
-from glob import glob
-from scipy.distutils.misc_util import Configuration
-from scipy.distutils.system_info import get_info
 
-def configuration(parent_package='',parent_path=None):
-    config = Configuration('optimize',parent_package, parent_path)
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
+    from scipy.distutils.system_info import get_info
+    config = Configuration('optimize',parent_package, top_path)
 
     config.add_library('minpack',sources=[join('minpack','*f')])
     config.add_extension('_minpack',
@@ -40,8 +38,9 @@ def configuration(parent_package='',parent_path=None):
     config.add_extension('minpack2',
                          sources=[join('minpack2',x) for x in sources])    
 
+    config.add_data_dir('tests')
     return config
 
 if __name__ == '__main__':    
     from scipy.distutils.core import setup
-    setup(**configuration(parent_path=''))
+    setup(**configuration(top_path='').todict())

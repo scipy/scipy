@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 from optimize import zeros as cc
 del sys.path[0]
@@ -52,7 +52,7 @@ mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
 
-from scipy_test.testing import ScipyTestCase
+from scipy.test.testing import ScipyTestCase
 import unittest
 
 
@@ -99,4 +99,4 @@ class test_basic(ScipyTestCase) :
             print '\n\n'
 
 if __name__ == '__main__' :
-    ScipyTest('optimize.zeros').run()
+    ScipyTest().run()

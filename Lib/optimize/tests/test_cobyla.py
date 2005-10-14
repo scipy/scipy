@@ -1,5 +1,5 @@
 
-from scipy_test.testing import *
+from scipy.test.testing import *
 
 set_package_path()
 from optimize import cobyla as co
