@@ -1,4 +1,4 @@
-.. --*-- rest --*--
+.. -*- rest -*-
 .. NB! Keep this document a valid restructured document.
 
 Packaging Scipy

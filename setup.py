@@ -20,18 +20,12 @@ def setup_package():
                                url = "http://www.scipy.org",
                                license = 'BSD',
                                )
-        # This is needed because we don't have __init__.py
-        #config.packages = [config.name]
-        #config.package_dir[config.name] = os.path.join(config.local_path,'Lib')
-        #config.name = 'scipy'
         config.add_subpackage('Lib')
 
         from scipy_version import scipy_version as version
         config.dict_append(version=version)
 
         print config.name,'version',config.version
-
-        print config
 
         setup( **config.todict() )
     finally:
