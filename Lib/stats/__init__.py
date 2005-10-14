@@ -2,7 +2,7 @@
 # stats - Statistical Functions
 #
 
-from info_stats import __doc__
+from info import __doc__
 
 from stats import *
 from distributions import *
