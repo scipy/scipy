@@ -1,4 +1,4 @@
-import Numeric
+import scipy.base as Numeric
 import cPickle
 
 def objsave(file, allglobals, *args):

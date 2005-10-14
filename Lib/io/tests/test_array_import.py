@@ -6,14 +6,14 @@
 import os,sys
 import unittest
 from unittest import TestCase
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 import io
 from io import numpyio
 del sys.path[0]
 
 
-import Numeric
+import scipy.base as Numeric
 N = Numeric
 import tempfile
 
@@ -62,6 +62,4 @@ class test_read_array(TestCase):
         os.remove(fname)
 
 if __name__ == "__main__":
-    ScipyTest('io.array_import').run()
-
-
+    ScipyTest().run()

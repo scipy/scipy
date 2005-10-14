@@ -8,7 +8,7 @@ Text File
 """
 
 __all__ = ['read_array', 'write_array']
-import Numeric
+import scipy.base as Numeric
 import scipy.base
 from scipy.base import array, take, concatenate, Float, asarray, real, imag
 import types, re, copy, sys
@@ -390,7 +390,7 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
     thestr = []
     arr = asarray(arr)
     N,M = arr.shape
-    thistype = arr.typecode()
+    thistype = arr.dtypechar
     nofloat = (thistype in '1silbwu') or (thistype in 'Oc')
     cmplx = thistype in 'FD'
     fmtstr = "%%.%de" % precision

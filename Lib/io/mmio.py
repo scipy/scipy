@@ -243,7 +243,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
             raise ValueError, 'expected matrix'
         rows,cols = a.shape
         entries = rows*cols        
-        typecode = a.typecode()
+        typecode = a.dtypechar
         if field is not None:
             if field=='integer':
                 a = a.astype('i')
@@ -257,7 +257,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
                 pass
             else:
                 raise ValueError,'unknown field '+field
-        typecode = a.typecode()
+        typecode = a.dtypechar
     else:
         rep = 'coordinate'
         from scipy.sparse import spmatrix
@@ -354,7 +354,7 @@ def _get_symmetry(a):
         return 'general'
     issymm = 1
     isskew = 1
-    isherm = a.typecode() in 'FD'
+    isherm = a.dtypechar in 'FD'
     for j in range(n):
         for i in range(j+1,n):
             aij,aji = a[i][j],a[j][i]

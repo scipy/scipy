@@ -3,7 +3,7 @@
 # io - Data input and output
 #
 
-from info_io import __doc__
+from info import __doc__
 
 from numpyio import packbits, unpackbits, bswap, fread, fwrite, \
      convert_objectarray
