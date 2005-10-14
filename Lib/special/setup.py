@@ -2,15 +2,10 @@
 
 import os
 from os.path import join
-import sys
-from glob import glob
-import shutil
 
-from scipy.distutils.misc_util import Configuration, get_path, dot_join
-
-
-def configuration(parent_package='',parent_path=None):
-    config = Configuration('special', parent_package, parent_path)
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
+    config = Configuration('special', parent_package, top_path)
     
     define_macros = []
 #    if sys.platform=='win32':
@@ -38,8 +33,7 @@ def configuration(parent_package='',parent_path=None):
                                     'cdf', 'specfun'],
                          define_macros = define_macros
                          )
-                         
-    # Extension nc_specfun
+    # Extension specfun
 
     config.add_extension('specfun',
                          sources=['specfun.pyf'],
@@ -50,4 +44,4 @@ def configuration(parent_package='',parent_path=None):
 
 if __name__ == '__main__':
     from scipy.distutils.core import setup    
-    setup(**configuration(parent_path=''))    
+    setup(**configuration(top_path='').todict())
