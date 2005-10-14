@@ -4,7 +4,7 @@
 
 import unittest
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 
 set_package_path()
 import scipy
@@ -12,7 +12,7 @@ import stats
 restore_path()
 
 
-import Numeric
+import scipy.base as Numeric
 N = Numeric
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]

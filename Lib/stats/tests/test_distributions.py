@@ -4,8 +4,8 @@
 
 
 import unittest,sys
-from scipy_test.testing import *
-from scipy_test.testing import ScipyTestCase as TestCase
+from scipy.test.testing import *
+from scipy.test.testing import ScipyTestCase as TestCase
 set_package_path()
 import scipy
 import stats

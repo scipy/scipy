@@ -8,9 +8,9 @@
 
 import unittest
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 from scipy.base import *
-from scipy_test.testing import ScipyTestCase as TestCase
+from scipy.test.testing import ScipyTestCase as TestCase
 import scipy
 import scipy.base as Numeric
 N = Numeric
