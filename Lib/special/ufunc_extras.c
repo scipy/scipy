@@ -1,3 +1,4 @@
+#define NO_IMPORT_ARRAY
 #include "ufunc_extras.h"
 
 extern void PyUFunc_f_ff_As_d_dd(char **args, intp *dimensions, intp *steps, void *func) {
