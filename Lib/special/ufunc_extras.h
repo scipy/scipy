@@ -1,3 +1,4 @@
+#include "Python.h"
 #include "scipy/arrayobject.h"
 
 typedef int    IntFunc_d_dd(double x, double *y, double *z);
