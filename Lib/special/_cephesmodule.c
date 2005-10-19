@@ -318,7 +318,7 @@ between code possibly compiled with different compilers.
 
 typedef Py_complex ComplexUnaryFunc(Py_complex x);
 
-static void cephes_F_F_As_D_D(char **args, int *dimensions, int *steps, void *func) {
+static void cephes_F_F_As_D_D(char **args, intp *dimensions, int *steps, void *func) {
     int i; Py_complex x;
     char *ip1=args[0], *op=args[1];
     for(i=0; i<*dimensions; i++, ip1+=steps[0], op+=steps[1]) {
@@ -329,7 +329,7 @@ static void cephes_F_F_As_D_D(char **args, int *dimensions, int *steps, void *fu
     }
 }
 
-static void cephes_D_D(char **args, int *dimensions, int *steps, void *func) {
+static void cephes_D_D(char **args, intp *dimensions, int *steps, void *func) {
     int i; Py_complex x;
     char *ip1=args[0], *op=args[1];
     for(i=0; i<*dimensions; i++, ip1+=steps[0], op+=steps[1]) {
