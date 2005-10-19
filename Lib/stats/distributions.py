@@ -11,7 +11,7 @@ import scipy.optimize as optimize
 import inspect
 from scipy.base import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
-     zeros
+     zeros, floor
 from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select, pi
 import scipy.base

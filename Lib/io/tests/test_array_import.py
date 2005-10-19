@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 19, 2005 by convertcode.py
+
 #!/usr/bin/env python
 
 # This python script tests the numpyio module.
