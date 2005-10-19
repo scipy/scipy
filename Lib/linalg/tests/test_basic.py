@@ -156,15 +156,15 @@ class test_solve(ScipyTestCase):
             assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
 
     def bench_random(self,level=5):
-        from scipy.base import LinearAlgebra
-        Numeric_solve = LinearAlgebra.solve_linear_equations
+        from scipy.basic import linalg
+        Numeric_solve = linalg.solve_linear_equations
         print
         print '      Solving system of linear equations'
         print '      =================================='
 
         print '      |    contiguous     |   non-contiguous '
         print '----------------------------------------------'
-        print ' size |  scipy  | Numeric |  scipy  | Numeric'
+        print ' size |  scipy  | basic   |  scipy  | basic '
         
         for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
             repeat *= 2
@@ -179,7 +179,7 @@ class test_solve(ScipyTestCase):
             print '| %6.2f ' % self.measure('solve(a,b)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('Numeric_solve(a,b)',repeat),
+            print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
                         
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
@@ -188,7 +188,7 @@ class test_solve(ScipyTestCase):
             print '| %6.2f ' % self.measure('solve(a,b)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('Numeric_solve(a,b)',repeat),
+            print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
@@ -229,14 +229,14 @@ class test_inv(ScipyTestCase):
                                       Numeric.identity(n))
 
     def bench_random(self,level=5):
-        from scipy.base import LinearAlgebra
-        Numeric_inv = LinearAlgebra.inverse
+        from scipy.basic import linalg
+        Numeric_inv = linalg.inverse
         print
         print '           Finding matrix inverse'
         print '      =================================='
         print '      |    contiguous     |   non-contiguous '
         print '----------------------------------------------'
-        print ' size |  scipy  | Numeric |  scipy  | Numeric'
+        print ' size |  scipy  | basic   |  scipy  | basic'
         
         for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
             repeat *= 2
@@ -250,7 +250,7 @@ class test_inv(ScipyTestCase):
             print '| %6.2f ' % self.measure('inv(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('Numeric_inv(a)',repeat),
+            print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
             sys.stdout.flush()
                         
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
@@ -259,7 +259,7 @@ class test_inv(ScipyTestCase):
             print '| %6.2f ' % self.measure('inv(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('Numeric_inv(a)',repeat),
+            print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
@@ -278,8 +278,8 @@ class test_det(ScipyTestCase):
         assert_almost_equal(a_det,-6+4j)
 
     def check_random(self):
-        from scipy.base import LinearAlgebra
-        Numeric_det = LinearAlgebra.determinant
+        from scipy.basic import linalg
+        Numeric_det = linalg.determinant
         n = 20
         for i in range(4):
             a = random([n,n])
@@ -288,8 +288,8 @@ class test_det(ScipyTestCase):
             assert_almost_equal(d1,d2)
 
     def check_random_complex(self):
-        from scipy.base import LinearAlgebra
-        Numeric_det = LinearAlgebra.determinant
+        from scipy.basic import linalg
+        Numeric_det = linalg.determinant
         n = 20
         for i in range(4):
             a = random([n,n]) + 2j*random([n,n])
@@ -298,14 +298,14 @@ class test_det(ScipyTestCase):
             assert_almost_equal(d1,d2)
 
     def bench_random(self,level=5):
-        from scipy.base import LinearAlgebra
-        Numeric_det = LinearAlgebra.determinant
+        from scipy.basic import linalg
+        Numeric_det = linalg.determinant
         print
         print '           Finding matrix determinant'
         print '      =================================='
         print '      |    contiguous     |   non-contiguous '
         print '----------------------------------------------'
-        print ' size |  scipy  | Numeric |  scipy  | Numeric'
+        print ' size |  scipy  | basic   |  scipy  | basic '
         
         for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
             repeat *= 2
@@ -317,7 +317,7 @@ class test_det(ScipyTestCase):
             print '| %6.2f ' % self.measure('det(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('Numeric_det(a)',repeat),
+            print '| %6.2f ' % self.measure('basic_det(a)',repeat),
             sys.stdout.flush()
                         
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
@@ -326,7 +326,7 @@ class test_det(ScipyTestCase):
             print '| %6.2f ' % self.measure('det(a)',repeat),
             sys.stdout.flush()
 
-            print '| %6.2f ' % self.measure('Numeric_det(a)',repeat),
+            print '| %6.2f ' % self.measure('basic_det(a)',repeat),
             sys.stdout.flush()
 
             print '   (secs for %s calls)' % (repeat)
@@ -419,7 +419,7 @@ class test_tri(unittest.TestCase):
                                    [1,1,0,0],
                                    [1,1,1,0],
                                    [1,1,1,1]]))
-        assert_equal(tri(4,typecode='f'),array([[1,0,0,0],
+        assert_equal(tri(4,dtype='f'),array([[1,0,0,0],
                                                 [1,1,0,0],
                                                 [1,1,1,0],
                                                 [1,1,1,1]],'f'))

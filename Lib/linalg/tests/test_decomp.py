@@ -52,14 +52,14 @@ class test_eigvals(ScipyTestCase):
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
-        from scipy.base import LinearAlgebra
-        Numeric_eigvals = LinearAlgebra.eigenvalues
+        from scipy.basic import linalg
+        Numeric_eigvals = linalg.eigenvalues
         print
         print '           Finding matrix eigenvalues'
         print '      =================================='
         print '      |    contiguous     '#'|   non-contiguous '
         print '----------------------------------------------'
-        print ' size |  scipy  '#'| Numeric |  scipy  | Numeric'
+        print ' size |  scipy  '#'| core |  scipy  | core '
         
         for size,repeat in [(20,150),(100,7),(200,2)]:
             repeat *= 1
@@ -143,7 +143,7 @@ class test_svd(ScipyTestCase):
         u,s,vh = svd(a)
         assert_array_almost_equal(dot(transpose(u),u),identity(3))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+        sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
         for i in range(len(s)): sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
@@ -152,7 +152,7 @@ class test_svd(ScipyTestCase):
         u,s,vh = svd(a)
         assert_array_almost_equal(dot(transpose(u),u),identity(3))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+        sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
         for i in range(len(s)): sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
@@ -161,7 +161,7 @@ class test_svd(ScipyTestCase):
         u,s,vh = svd(a)
         assert_array_almost_equal(dot(transpose(u),u),identity(2))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+        sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
         for i in range(len(s)): sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
@@ -170,7 +170,7 @@ class test_svd(ScipyTestCase):
         u,s,vh = svd(a)
         assert_array_almost_equal(dot(transpose(u),u),identity(3))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+        sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
         for i in range(len(s)): sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
@@ -182,7 +182,7 @@ class test_svd(ScipyTestCase):
                 u,s,vh = svd(a)
                 assert_array_almost_equal(dot(transpose(u),u),identity(len(u)))
                 assert_array_almost_equal(dot(transpose(vh),vh),identity(len(vh)))
-                sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+                sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
                 for i in range(len(s)): sigma[i,i] = s[i]
                 assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
@@ -191,7 +191,7 @@ class test_svd(ScipyTestCase):
         u,s,vh = svd(a)
         assert_array_almost_equal(dot(conj(transpose(u)),u),identity(3))
         assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+        sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
         for i in range(len(s)): sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
@@ -204,8 +204,8 @@ class test_svd(ScipyTestCase):
                 u,s,vh = svd(a)
                 assert_array_almost_equal(dot(conj(transpose(u)),u),identity(len(u)))
                 # This fails when [m,n]
-                #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),typecode=vh.typecode()))
-                sigma = zeros((u.shape[0],vh.shape[0]),s.typecode())
+                #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtypechar))
+                sigma = zeros((u.shape[0],vh.shape[0]),s.dtypechar)
                 for i in range(len(s)): sigma[i,i] = s[i]
                 assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 

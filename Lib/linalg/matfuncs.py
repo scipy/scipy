@@ -81,7 +81,7 @@ def expm3(A,q=20):
         A = A.astype('d')
         t = 'd'
     A = mat(A)
-    eA = eye(*A.shape,**{'typecode':t})
+    eA = eye(*A.shape,**{'dtype':t})
     trm = mat(eA)
     castfunc = cast[t]
     for k in range(1,q):

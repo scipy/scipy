@@ -7,7 +7,7 @@ import sys
 
 def resize1d(arr, newlen):
     old = len(arr)
-    new = zeros((newlen,),arr.typecode())
+    new = zeros((newlen,),arr.dtypechar)
     new[:old] = arr
     return new
 
@@ -47,9 +47,9 @@ _formats = {'csc':[0,"Compressed Sparse Column"],
             }
 
 def _convert_data(data1,data2,newtype):
-    if data1.typecode() != newtype:
+    if data1.dtypechar != newtype:
         data1 = data1.astype(newtype)
-    if data2.typecode() != newtype:
+    if data2.dtypechar != newtype:
         data2 = data2.astype(newtype)
     return data1, data2        
     
@@ -116,7 +116,7 @@ class spmatrix:
         return val
     
     def __repr__(self):
-        typ = self.typecode()
+        typ = self.dtypechar
         nnz = self.getnnz()
         format = self.getformat()
         nzmax = self.getnzmax()
@@ -218,14 +218,14 @@ class spmatrix:
     def _real(self):
         csc = self.tocsc()
         csc.data = real(csc.data)
-        csc._typecode = csc.data.typecode()
+        csc._typecode = csc.data.dtypechar
         csc.ftype = _transtabl[csc._typecode]
         return csc
 
     def _imag(self):
         csc = self.tocsc()
         csc.data = imag(csc.data)
-        csc._typecode = csc.data.typecode()
+        csc._typecode = csc.data.dtypechar
         csc.ftype = _transtabl[csc._typecode]        
         return csc
         
@@ -266,7 +266,7 @@ class spmatrix:
 #    - with data, (row, ptr)
 # 
 class csc_matrix(spmatrix):
-    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,typecode=Float,copy=0):
+    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=0):
         spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csc_matrix):
@@ -301,11 +301,11 @@ class csc_matrix(spmatrix):
         elif (isinstance(s,ArrayType) or \
               isinstance(s,type([]))):
             s = asarray(s)
-            if s.typecode() not in 'fdFD':
+            if s.dtypechar not in 'fdFD':
                 s = s*1.0            
             if (rank(s) == 2):  # converting from a full array
                 M, N = s.shape
-                typecode = s.typecode()
+                typecode = s.dtypechar
                 func = getattr(sparsetools,_transtabl[typecode]+'fulltocsc')
                 ierr = irow = jcol = 0
                 nnz = sum(ravel(s != 0.0))
@@ -325,7 +325,7 @@ class csc_matrix(spmatrix):
                 self.indptr = ptra
                 self.shape = (M,N)
             elif isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s),2)):
-                temp = coo_matrix(s,ij,M=M,N=N,nzmax=nzmax,typecode=typecode)
+                temp = coo_matrix(s,ij,M=M,N=N,nzmax=nzmax,dtype=dtype)
                 temp = temp.tocsc()
                 self.data = temp.data
                 self.rowind = temp.rowind
@@ -375,10 +375,10 @@ class csc_matrix(spmatrix):
                   "the size of data list"
         self.nnz = nnz
         self.nzmax = nzmax
-        self._typecode = self.data.typecode()
+        self._typecode = self.data.dtypechar
         if self._typecode not in 'fdFD':
             self.data = 1.0 * self.data
-            self._typecode = self.data.typecode()
+            self._typecode = self.data.dtypechar
         self.ftype = _transtabl[self._typecode]
         
 
@@ -402,7 +402,7 @@ class csc_matrix(spmatrix):
         elif isscalar(other):
             new = self.copy()
             new.data = new.data * other
-            new._typecode = new.data.typecode()
+            new._typecode = new.data.dtypechar
             new.ftype = _transtabl[new._typecode]
             return new
         else:
@@ -415,7 +415,7 @@ class csc_matrix(spmatrix):
         elif isscalar(other):
             new = self.copy()
             new.data = other * new.data
-            new._typecode = new.data.typecode()
+            new._typecode = new.data.dtypechar
             new.ftype = _transtabl[new._typecode]
             return new
         else:
@@ -462,7 +462,7 @@ class csc_matrix(spmatrix):
         elif isscalar(other):
             new = self.copy()
             new.data = new.data * other
-            new._typecode = new.data.typecode()
+            new._typecode = new.data.dtypechar
             new.ftype = _transtabl[new._typecode]
             return new
         else:
@@ -481,7 +481,7 @@ class csc_matrix(spmatrix):
 
     def transp(self, copy=0):
         M,N = self.shape
-        new = csr_matrix(N,M,nzmax=0,typecode=self._typecode)
+        new = csr_matrix(N,M,nzmax=0,dtype=self._typecode)
         if copy:
             new.data = self.data.copy()
             new.colind = self.rowind.copy()
@@ -655,7 +655,7 @@ class csc_matrix(spmatrix):
     def copy(self):
         M, N = self.shape
         typecode = self._typecode
-        new = csc_matrix(M, N, nzmax=0, typecode=typecode)
+        new = csc_matrix(M, N, nzmax=0, dtype=dtype)
         new.data = self.data.copy()
         new.rowind = self.rowind.copy()
         new.indptr = self.indptr.copy()
@@ -665,7 +665,7 @@ class csc_matrix(spmatrix):
 # compressed sparse row matrix
 # 
 class csr_matrix(spmatrix):
-    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,typecode=Float,copy=0):
+    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=0):
         spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csr_matrix):
@@ -714,7 +714,7 @@ class csr_matrix(spmatrix):
                 ijnew[:,0] = ij[:,1]
                 ijnew[:,1] = ij[:,0]
                 temp = coo_matrix(s,ijnew,M=M,N=N,nzmax=nzmax,
-                                  typecode=typecode)
+                                  dtype=dtype)
                 temp = temp.tocsc()
                 self.data = temp.data
                 self.colind = temp.colind
@@ -761,10 +761,10 @@ class csr_matrix(spmatrix):
                   "the size of data list"
         self.nnz = nnz
         self.nzmax = nzmax
-        self._typecode = self.data.typecode()
+        self._typecode = self.data.dtypechar
         if self._typecode not in 'fdFD':
             self.data = self.data + 0.0
-            self._typecode = self.data.typecode()
+            self._typecode = self.data.dtypechar
             
         self.ftype = _transtabl[self._typecode]
 
@@ -789,7 +789,7 @@ class csr_matrix(spmatrix):
         elif isscalar(other):
             new = self.copy()
             new.data = new.data * other
-            new._typecode = new.data.typecode()
+            new._typecode = new.data.dtypechar
             new.ftype = _transtabl[new._typecode]
             return new
         else:
@@ -802,7 +802,7 @@ class csr_matrix(spmatrix):
         elif isscalar(other):
             new = self.copy()
             new.data = other * new.data
-            new._typecode = new.data.typecode()
+            new._typecode = new.data.dtypechar
             new.ftype = _transtabl[new._typecode]
             return new
         else:
@@ -848,7 +848,7 @@ class csr_matrix(spmatrix):
         elif isscalar(other):
             new = self.copy()
             new.data = new.data * other
-            new._typecode = new.data.typecode()
+            new._typecode = new.data.dtypechar
             new.ftype = _transtabl[new._typecode]
             return new
         else:
@@ -866,7 +866,7 @@ class csr_matrix(spmatrix):
 
     def transp(self, copy=0):
         M,N = self.shape
-        new = csc_matrix(N,M,nzmax=0,typecode=self._typecode)
+        new = csc_matrix(N,M,nzmax=0,dtype=self._typecode)
         if copy:
             new.data = self.data.copy()
             new.rowind = self.colind.copy()
@@ -1060,7 +1060,7 @@ class csr_matrix(spmatrix):
     def copy(self):
         M, N = self.shape
         typecode = self._typecode
-        new = csr_matrix(M, N, nzmax=0, typecode=typecode)
+        new = csr_matrix(M, N, nzmax=0, dtype=dtype)
         new.data = self.data.copy()
         new.colind = self.colind.copy()
         new.indptr = self.indptr.copy()
@@ -1337,7 +1337,7 @@ class dok_matrix(spmatrix, dict):
         col_ptr = array(col_ptr)
         return csc_matrix(data, (rowind, col_ptr))
 
-    def todense(self,typecode=None):
+    def todense(self,dtype=None):
         if typecode is None:
             typecode = 'D'
         new = zeros(self.shape,typecode)
@@ -1362,7 +1362,7 @@ class lnk_matrix(spmatrix):
 #   a[ij[k][0],ij[k][1]] = obj[k]
 # 
 class coo_matrix(spmatrix):
-    def __init__(self, obj, ij, M=None, N=None, nzmax=None, typecode=None):
+    def __init__(self, obj, ij, M=None, N=None, nzmax=None, dtype=None):
         spmatrix.__init__(self)
         if type(ij) is type(()) and len(ij)==2:
             if M is None:
@@ -1379,13 +1379,13 @@ class coo_matrix(spmatrix):
                 N = amax(aij[:,1])
             self.row = aij[:,0]
             self.col = aij[:,1]
-        aobj = asarray(obj,typecode=typecode)
+        aobj = asarray(obj,dtype=dtype)
         self.shape = (M,N)
         if nzmax is None:
             nzmax = len(aobj)
         self.nzmax = nzmax
         self.data = aobj
-        self._typecode = aobj.typecode()
+        self._typecode = aobj.dtypechar
         self._check()
 
     def _check(self):
@@ -1478,10 +1478,10 @@ def spdiags(diags,offsets,m,n):
         M, N    -- sparse matrix returned is M X N
     """
     diags = array(transpose(diags),copy=1)
-    if diags.typecode() not in 'fdFD':
+    if diags.dtypechar not in 'fdFD':
         diags = diags.astype('d')
     offsets = array(offsets,copy=0)
-    mtype = diags.typecode()
+    mtype = diags.dtypechar
     assert(len(offsets) == diags.shape[1])
     # set correct diagonal to csr conversion routine for this type
     diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsr')

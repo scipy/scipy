@@ -48,7 +48,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
         required_prefix = _type_conv[ordering[0][0]]
     else:
         required_prefix = 'd'
-    typecode = _inv_type_conv[required_prefix]
+    dtypechar = _inv_type_conv[required_prefix]
     # Default lookup:
     if ordering and flapack.has_column_major_storage(arrays[ordering[0][1]]):
         # prefer Fortran code for leading array with column major order
@@ -77,7 +77,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
                     func.module_name = m2_name
                     func.__doc__ = func2.__doc__
         func.prefix = required_prefix
-        func.typecode = typecode
+        func.dtypechar = dtypechar
         funcs.append(func)
     return tuple(funcs)
 

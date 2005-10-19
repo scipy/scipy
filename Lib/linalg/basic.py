@@ -158,7 +158,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
 
     gbsv, = get_lapack_funcs(('gbsv',),(a1,b1))
-    a2 = zeros((2*l+u+1,a1.shape[1]),gbsv.typecode)
+    a2 = zeros((2*l+u+1,a1.shape[1]),gbsv.dtypechar)
     a2[l:,:] = a1 
     lu,piv,x,info = gbsv(l,u,a2,b1,
                          overwrite_ab=1,
@@ -334,7 +334,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     if n>m:
         # need to extend b matrix as it will be filled with
         # a larger solution matrix
-        b2 = zeros((n,nrhs),gelss.typecode)
+        b2 = zeros((n,nrhs),gelss.dtypechar)
         if len(b1.shape)==2: b2[:m,:] = b1
         else: b2[:m,0] = b1
         b1 = b2
@@ -404,13 +404,13 @@ def tri(N, M=None, k=0, dtype=None):
     if type(M) == type('d'):
         #pearu: any objections to remove this feature?
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
-        typecode = M
+        dtype = M
         M = N
     m = greater_equal(subtract.outer(arange(N), arange(M)),-k)
-    if typecode is None:
+    if dtype is None:
         return m
     else:
-        return m.astype(typecode)
+        return m.astype(dtype)
 
 def tril(m, k=0):
     """ returns the elements on and below the k-th diagonal of m.  k=0 is the
