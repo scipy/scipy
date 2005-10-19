@@ -53,7 +53,7 @@ static PyUFuncGenericFunction cephes4a_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes4_2_functions[] = { NULL, NULL, };
 static PyUFuncGenericFunction cephes5_2_functions[] = { NULL, NULL, };
 
-static PyUFuncGenericFunction cephes1c_functions[] = { NULL, };
+static PyUFuncGenericFunction cephes1c_functions[] = { NULL, NULL, };
 
 static void * airy_data[] = { (void *)airy, (void *)airy, (void *)cairy_wrap, (void *)cairy_wrap,};
 static void * airye_data[] = { (void *)cairy_wrap_e, (void *)cairy_wrap_e, (void *)cairy_wrap_e, (void *)cairy_wrap_e, };
