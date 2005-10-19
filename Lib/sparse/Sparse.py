@@ -1,14 +1,9 @@
 from scipy.base import *
-from scipy.base.fastumath import *
 #from scipy.base import isscalar, rank, shape, resize, ArrayType, transpose
 import types
 import sparsetools
 import _superlu
 import sys
-
-if sys.version[:3] < '2.3':
-    True = 1
-    False = 0
 
 def resize1d(arr, newlen):
     old = len(arr)

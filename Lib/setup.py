@@ -10,6 +10,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('optimize')
     config.add_subpackage('stats')
     config.add_subpackage('interpolate')
+    config.add_subpackage('sparse')
     config.make_svn_version_py()  # installs __svn_version__.py
     config.make_config_py('__scipy_config__')
     return config

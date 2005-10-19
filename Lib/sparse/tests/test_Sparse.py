@@ -7,7 +7,7 @@
 """
 __usage__ = """
 Build sparse:
-  python setup_sparse.py build
+  python setup.py build
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.sparse.test(<level>)'
 Run tests if sparse is not installed:
@@ -18,7 +18,7 @@ import scipy.base
 from scipy.base import arange, zeros, array, dot
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 from sparse import csc_matrix, csr_matrix, dok_matrix
 restore_path()
@@ -157,4 +157,4 @@ class test_dok(_test_cs):
         assert_array_equal(D.A, E.A)
     
 if __name__ == "__main__":
-    ScipyTest('sparse.Sparse').run()
+    ScipyTest().run()
