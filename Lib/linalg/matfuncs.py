@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 18, 2005 by 
+
 #
 # Author: Travis Oliphant, March 2002
 #
@@ -22,16 +24,16 @@ def expm(A,q=7):
     """Compute the matrix exponential using Pade approximation of order q.
     """
     A = asarray(A)
-    ss = A.spacesaver()
-    if A.typecode() in ['f', 'F']:
-        A.savespace(1)
+    ss = True
+    if A.dtypechar in ['f', 'F']:
+        pass  ## A.savespace(1)
     else:
-        A.savespace(0)
+        pass  ## A.savespace(0)
  
     # Scale A so that norm is < 1/2
     nA = norm(A,Inf)
     if nA==0:
-        return identity(len(A), A.typecode())
+        return identity(len(A), A.dtypechar)
     from scipy.base import log2
     val = log2(nA)
     e = int(floor(val))
@@ -55,14 +57,14 @@ def expm(A,q=7):
     F = solve(D,N)
     for k in range(1,j+1):
         F = dot(F,F)
-    A.savespace(ss)
+    pass  ## A.savespace(ss)
     return F
 
 def expm2(A):
     """Compute the matrix exponential using eigenvalue decomposition.
     """
     A = asarray(A)
-    t = A.typecode()
+    t = A.dtypechar
     if t not in ['f','F','d','D']:
         A = A.astype('d')
         t = 'd'    
@@ -74,7 +76,7 @@ def expm3(A,q=20):
     """Compute the matrix exponential using a Taylor series.of order q.
     """
     A = asarray(A)
-    t = A.typecode()
+    t = A.dtypechar
     if t not in ['f','F','d','D']:
         A = A.astype('d')
         t = 'd'
@@ -92,8 +94,8 @@ def toreal(arr,tol=None):
     """Return as real array if imaginary part is small.
     """
     if tol is None:
-        tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.typecode()]]
-    if (arr.typecode() in ['F', 'D']) and \
+        tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.dtypechar]]
+    if (arr.dtypechar in ['F', 'D']) and \
        sb.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
@@ -102,7 +104,7 @@ def cosm(A):
     """matrix cosine.
     """
     A = asarray(A)
-    if A.typecode() not in ['F','D']:
+    if A.dtypechar not in ['F','D']:
         return toreal(0.5*(expm(1j*A) + expm(-1j*A)))
     else:
         return 0.5*(expm(1j*A) + expm(-1j*A))
@@ -112,7 +114,7 @@ def sinm(A):
     """matrix sine.
     """
     A = asarray(A)
-    if A.typecode() not in ['F','D']:
+    if A.dtypechar not in ['F','D']:
         return toreal(-0.5j*(expm(1j*A) - expm(-1j*A)))
     else:
         return -0.5j*(expm(1j*A) - expm(-1j*A))
@@ -121,7 +123,7 @@ def tanm(A):
     """matrix tangent.
     """
     A = asarray(A)
-    if A.typecode() not in ['F','D']:
+    if A.dtypechar not in ['F','D']:
         return toreal(solve(cosm(A), sinm(A)))
     else:        
         return solve(cosm(A), sinm(A))
@@ -130,7 +132,7 @@ def coshm(A):
     """matrix hyperbolic cosine.
     """
     A = asarray(A)
-    if A.typecode() not in ['F','D']:
+    if A.dtypechar not in ['F','D']:
         return toreal(0.5*(expm(A) + expm(-A)))
     else:
         return 0.5*(expm(A) + expm(-A))
@@ -139,7 +141,7 @@ def sinhm(A):
     """matrix hyperbolic sine.
     """
     A = asarray(A)
-    if A.typecode() not in ['F','D']:
+    if A.dtypechar not in ['F','D']:
         return toreal(0.5*(expm(A) - expm(-A)))
     else:
         return 0.5*(expm(A) - expm(-A))
@@ -148,7 +150,7 @@ def tanhm(A):
     """matrix hyperbolic tangent.
     """
     A = asarray(A)
-    if A.typecode() not in ['F','D']:
+    if A.dtypechar not in ['F','D']:
         return toreal(solve(coshm(A), sinhm(A)))
     else:
         return solve(coshm(A), sinhm(A))
@@ -163,7 +165,7 @@ def funm(A,func,disp=1):
     A = asarray(A)
     if len(A.shape)!=2:
         raise ValueError, "Non-matrix input to matrix function."    
-    if A.typecode() in ['F', 'D']:
+    if A.dtypechar in ['F', 'D']:
         cmplx_type = 1
     else:
         cmplx_type = 0
@@ -171,7 +173,7 @@ def funm(A,func,disp=1):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
-    F = F.astype(T.typecode()) # e.g. when F is real but T is complex
+    F = F.astype(T.dtypechar) # e.g. when F is real but T is complex
 
     minden = abs(T[0,0])
 
@@ -193,7 +195,7 @@ def funm(A,func,disp=1):
     if not cmplx_type:
         F = toreal(F)
 
-    tol = {0:feps, 1:eps}[_array_precision[F.typecode()]]
+    tol = {0:feps, 1:eps}[_array_precision[F.dtypechar]]
     if minden == 0.0:
         minden = tol
     err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
@@ -220,7 +222,7 @@ def logm(A,disp=1):
         if not isfinite(errest) or errest >= errtol:
             N,N = A.shape
             X,Y = ogrid[1:N+1,1:N+1]
-            R = mat(orth(eye(N,typecode='d')+X+Y))
+            R = mat(orth(eye(N,dtype='d')+X+Y))
             F, dontcare = funm(R*A*R.H,log,disp=0)
             F = R.H*F*R
             if (norm(imag(F),1)<=1000*errtol*norm(F,1)):
@@ -240,13 +242,13 @@ def signm(a,disp=1):
     """matrix sign"""
     def rounded_sign(x):
         rx = real(x)
-        if rx.typecode()=='f':
+        if rx.dtypechar=='f':
             c =  1e3*feps*amax(x)
         else:
             c =  1e3*eps*amax(x)
         return sign( (absolute(rx) > c) * rx )
     result,errest = funm(a, rounded_sign, disp=0)
-    errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.typecode()]]
+    errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtypechar]]
     if errest < errtol:
         return result
 
@@ -294,7 +296,7 @@ def sqrtm(A,disp=1):
     A = asarray(A)
     if len(A.shape)!=2:
         raise ValueError, "Non-matrix input to matrix function."    
-    if A.typecode() in ['F', 'D']:
+    if A.dtypechar in ['F', 'D']:
         cmplx_type = 1
     else:
         cmplx_type = 0
@@ -302,7 +304,7 @@ def sqrtm(A,disp=1):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
 
-    R = sb.zeros((n,n),T.typecode())
+    R = sb.zeros((n,n),T.dtypechar)
     for j in range(n):
         R[j,j] = sqrt(T[j,j])
         for i in range(j-1,-1,-1):

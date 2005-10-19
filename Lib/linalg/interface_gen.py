@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 18, 2005 by 
+
 #!/usr/bin/env python
 
 import string,os,sys

@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 18, 2005 by 
+
 #
 # Author: Pearu Peterson, March 2002
 #
@@ -23,7 +25,7 @@ def get_flinalg_funcs(names,arrays=(),debug=0):
     names. arrays are used to determine optimal prefix."""
     ordering = []
     for i in range(len(arrays)):
-        t = arrays[i].typecode()
+        t = arrays[i].dtypechar
         if not _type_conv.has_key(t): t = 'd'
         ordering.append((t,i))
     if ordering:

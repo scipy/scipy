@@ -1,3 +1,7 @@
+## Automatically adapted for scipy Oct 18, 2005 by 
+
+## Automatically adapted for scipy Oct 18, 2005 by 
+
 #
 # Author: Pearu Peterson, March 2002
 #
@@ -271,7 +275,7 @@ def norm(x, ord=2):
         elif ord == -Inf:
             return scipy.base.amin(scipy.base.sum(abs(x),axis=1))
         elif ord in ['fro','f']:
-            val = real((conjugate(x)*x).flat)
+            val = real((conjugate(x)*x).ravel())
             return sqrt(add.reduce(val))
         else:
             raise ValueError, "Invalid norm order for matrices."
@@ -347,7 +351,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     if info>0: raise LinAlgError, "SVD did not converge in Linear Least Squares"
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal gelss'%(-info)
-    resids = asarray([],x.typecode())
+    resids = asarray([],x.dtypechar)
     if n<m:
         x1 = x[:n]
         if rank==n: resids = sum(x[n:]**2)
@@ -361,7 +365,7 @@ def pinv(a, cond=None):
     Compute generalized inverse of A using least-squares solver.
     """
     a = asarray_chkfinite(a)
-    t = a.typecode()
+    t = a.dtypechar
     b = scipy.base.identity(a.shape[0],t)
     return lstsq(a, b, cond=cond)[0]
 
@@ -376,7 +380,7 @@ def pinv2(a, cond=None):
     """
     a = asarray_chkfinite(a)
     u, s, vh = decomp.svd(a)
-    t = u.typecode()
+    t = u.dtypechar
     if cond in [None,-1]:
         cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
     m,n = a.shape
@@ -392,14 +396,14 @@ def pinv2(a, cond=None):
 # matrix construction functions
 #-----------------------------------------------------------------------------
 
-def tri(N, M=None, k=0, typecode=None):
+def tri(N, M=None, k=0, dtype=None):
     """ returns a N-by-M matrix where all the diagonals starting from 
         lower left corner up to the k-th are all ones.
     """
     if M is None: M = N
     if type(M) == type('d'):
         #pearu: any objections to remove this feature?
-        #       As tri(N,'d') is equivalent to tri(N,typecode='d')
+        #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         typecode = M
         M = N
     m = greater_equal(subtract.outer(arange(N), arange(M)),-k)
@@ -413,9 +417,9 @@ def tril(m, k=0):
         main diagonal, k > 0 is above and k < 0 is below the main diagonal.
     """
     svsp = getattr(m,'spacesaver',lambda:0)()
-    m = asarray(m,savespace=1)
-    out = tri(m.shape[0], m.shape[1], k=k, typecode=m.typecode())*m
-    out.savespace(svsp)
+    m = asarray(m)
+    out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtypechar)*m
+    pass  ## pass  ## out.savespace(svsp)
     return out
 
 def triu(m, k=0):
@@ -423,9 +427,9 @@ def triu(m, k=0):
         main diagonal, k > 0 is above and k < 0 is below the main diagonal.
     """
     svsp = getattr(m,'spacesaver',lambda:0)()
-    m = asarray(m,savespace=1)
-    out = (1-tri(m.shape[0], m.shape[1], k-1, m.typecode()))*m
-    out.savespace(svsp)
+    m = asarray(m)
+    out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtypechar))*m
+    pass  ## pass  ## out.savespace(svsp)
     return out
 
 def toeplitz(c,r=None):
@@ -501,10 +505,10 @@ def kron(a,b):
      [ ...                                   ...   ],
      [ a[m-1,0]*b, a[m-1,1]*b, ... , a[m-1,n-1]*b  ]]
     """
-    if not a.iscontiguous():
+    if not a.flags['CONTIGUOUS']:
         a = reshape(a, a.shape)
-    if not b.iscontiguous():
+    if not b.flags['CONTIGUOUS']:
         b = reshape(b, b.shape)
     o = outerproduct(a,b)
-    o.shape = a.shape + b.shape
+    o=o.reshape(a.shape + b.shape)
     return concatenate(concatenate(o, axis=1), axis=1)

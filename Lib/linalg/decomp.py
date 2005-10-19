@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 18, 2005 by 
+
 #
 # Author: Pearu Peterson, March 2002
 #
@@ -25,7 +27,7 @@ c_ = scipy.base.c_
 
 _I = cast['F'](1j)
 def _make_complex_eigvecs(w,vin,cmplx_tcode):
-    v = scipy.base.array(vin,typecode=cmplx_tcode)
+    v = scipy.base.array(vin,dtype=cmplx_tcode)
     ind = scipy.base.nonzero(scipy.base.not_equal(w.imag,0.0))
     vnew = scipy.base.zeros((v.shape[0],len(ind)>>1),cmplx_tcode)
     vnew.real = scipy.base.take(vin,ind[::2],1)
@@ -63,7 +65,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
 
     only_real = scipy.base.logical_and.reduce(scipy.base.equal(w.imag,0.0))
     if not (ggev.prefix in 'cz' or only_real):
-        t = w.typecode()
+        t = w.dtypechar
         if left:
             vl = _make_complex_eigvecs(w, vl, t)
         if right:
@@ -124,7 +126,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-            t = {'f':'F','d':'D'}[wr.typecode()]
+            t = {'f':'F','d':'D'}[wr.dtypechar]
             w = wr+_I*wi
     else: # 'clapack'
         if geev.prefix in 'cz':
@@ -137,7 +139,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-            t = {'f':'F','d':'D'}[wr.typecode()]
+            t = {'f':'F','d':'D'}[wr.dtypechar]
             w = wr+_I*wi
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geev'%(-info)
@@ -145,7 +147,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
 
     only_real = scipy.base.logical_and.reduce(scipy.base.equal(w.imag,0.0))
     if not (geev.prefix in 'cz' or only_real):
-        t = w.typecode()
+        t = w.dtypechar
         if left:
             vl = _make_complex_eigvecs(w, vl, t)
         if right:
@@ -297,7 +299,7 @@ def svdvals(a,overwrite_a=0):
 def diagsvd(s,M,N):
     """Return sigma from singular values and original size M,N."""
     part = diag(s)
-    typ = part.typecode()
+    typ = part.dtypechar
     MorN = len(s)
     if MorN == M:
         return c_[part,zeros((M,N-M),typ)]
@@ -398,10 +400,10 @@ def qr(a,overwrite_a=0,lwork=None):
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(qr,))
-    t = qr.typecode()
+    t = qr.dtypechar
     R = basic.triu(qr)
-    Q = scipy.base.identity(M,typecode=t)
-    ident = scipy.base.identity(M,typecode=t)
+    Q = scipy.base.identity(M,dtype=t)
+    ident = scipy.base.identity(M,dtype=t)
     zeros = scipy.base.zeros
     for i in range(min(M,N)):
         v = zeros((M,),t)
@@ -428,7 +430,7 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError, 'expected square matrix'
     N = a1.shape[0]
-    typ = a1.typecode()
+    typ = a1.dtypechar
     if output in ['complex','c'] and typ not in ['F','D']:
         if typ in _double_precision:
             a1 = a1.astype('D')
@@ -452,14 +454,14 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
 eps = scipy.utils.limits.double_epsilon
 feps = scipy.utils.limits.float_epsilon
 
-_array_kind = {'1':0, 's':0, 'b': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
+_array_kind = {'b':0, 'h':0, 'B': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 _array_type = [['f', 'd'], ['F', 'D']]
 def _commonType(*arrays):
     kind = 0
     precision = 0
     for a in arrays:
-        t = a.typecode()
+        t = a.dtypechar
         kind = max(kind, _array_kind[t])
         precision = max(precision, _array_precision[t])
     return _array_type[kind][precision]
@@ -467,7 +469,7 @@ def _commonType(*arrays):
 def _castCopy(type, *arrays):
     cast_arrays = ()
     for a in arrays:
-        if a.typecode() == type:
+        if a.dtypechar == type:
             cast_arrays = cast_arrays + (a.copy(),)
         else:
             cast_arrays = cast_arrays + (a.astype(type),)
@@ -515,7 +517,7 @@ def rsf2csf(T, Z):
             r = basic.norm([mu[0], T[m,m-1]])
             c = mu[0] / r
             s = T[m,m-1] / r
-            G = r_[arr([[conj(c),s]],typecode=t),arr([[-s,c]],typecode=t)]
+            G = r_[arr([[conj(c),s]],dtype=t),arr([[-s,c]],dtype=t)]
             Gc = conj(transp(G))
             j = slice(m-1,N)
             T[k,j] = dot(G,T[k,j])
@@ -576,20 +578,20 @@ def hessenberg(a,calc_q=0,overwrite_a=0):
 
     # XXX: Use ORGHR routines to compute q.
     ger,gemm = get_blas_funcs(('ger','gemm'),(hq,))
-    typecode = hq.typecode()
+    typecode = hq.dtypechar
     q = None
     for i in range(lo,hi):
         if tau[i]==0.0:
             continue
-        v = zeros(n,typecode=typecode)
+        v = zeros(n,dtype=typecode)
         v[i+1] = 1.0
         v[i+2:hi+1] = hq[i+2:hi+1,i]
         hq[i+2:hi+1,i] = 0.0
-        h = ger(-tau[i],v,v,a=diag(ones(n,typecode=typecode)),overwrite_a=1)
+        h = ger(-tau[i],v,v,a=diag(ones(n,dtype=typecode)),overwrite_a=1)
         if q is None:
             q = h
         else:
             q = gemm(1.0,q,h)
     if q is None:
-        q = diag(ones(n,typecode=typecode))
+        q = diag(ones(n,dtype=typecode))
     return hq,q
