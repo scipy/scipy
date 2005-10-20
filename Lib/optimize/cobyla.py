@@ -66,7 +66,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             k += 1
         return f
 
-    xopt = _cobyla.minimize(calcfc, m=m, x=x0,rhobeg=rhobeg,rhoend=rhoend,iprint=iprint,
-                            maxfun=maxfun)
+    xopt = _cobyla.minimize(calcfc, m=m, x=x0,rhobeg=rhobeg,rhoend=rhoend,
+                            iprint=iprint, maxfun=maxfun)
     
     return xopt

@@ -536,7 +536,7 @@ def orth(A):
     u,s,vh = svd(A)
     M,N = A.shape
     tol = max(M,N)*scipy.base.amax(s)*eps
-    num = scipy.base.sum(s > tol)
+    num = scipy.base.sum(s > tol,rtype=int)
     Q = u[:,:num]
     return Q
 
