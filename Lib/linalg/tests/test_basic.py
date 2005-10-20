@@ -157,7 +157,7 @@ class test_solve(ScipyTestCase):
 
     def bench_random(self,level=5):
         from scipy.basic import linalg
-        Numeric_solve = linalg.solve_linear_equations
+        basic_solve = linalg.solve_linear_equations
         print
         print '      Solving system of linear equations'
         print '      =================================='
@@ -183,7 +183,7 @@ class test_solve(ScipyTestCase):
             sys.stdout.flush()
                         
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.iscontiguous()
+            assert not a.flags['CONTIGUOUS']
 
             print '| %6.2f ' % self.measure('solve(a,b)',repeat),
             sys.stdout.flush()
@@ -230,7 +230,7 @@ class test_inv(ScipyTestCase):
 
     def bench_random(self,level=5):
         from scipy.basic import linalg
-        Numeric_inv = linalg.inverse
+        basic_inv = linalg.inverse
         print
         print '           Finding matrix inverse'
         print '      =================================='
@@ -254,7 +254,7 @@ class test_inv(ScipyTestCase):
             sys.stdout.flush()
                         
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.iscontiguous()
+            assert not a.flags['CONTIGUOUS']
 
             print '| %6.2f ' % self.measure('inv(a)',repeat),
             sys.stdout.flush()
@@ -279,27 +279,27 @@ class test_det(ScipyTestCase):
 
     def check_random(self):
         from scipy.basic import linalg
-        Numeric_det = linalg.determinant
+        basic_det = linalg.determinant
         n = 20
         for i in range(4):
             a = random([n,n])
             d1 = det(a)
-            d2 = Numeric_det(a)
+            d2 = basic_det(a)
             assert_almost_equal(d1,d2)
 
     def check_random_complex(self):
         from scipy.basic import linalg
-        Numeric_det = linalg.determinant
+        basic_det = linalg.determinant
         n = 20
         for i in range(4):
             a = random([n,n]) + 2j*random([n,n])
             d1 = det(a)
-            d2 = Numeric_det(a)
+            d2 = basic_det(a)
             assert_almost_equal(d1,d2)
 
     def bench_random(self,level=5):
         from scipy.basic import linalg
-        Numeric_det = linalg.determinant
+        basic_det = linalg.determinant
         print
         print '           Finding matrix determinant'
         print '      =================================='
@@ -321,7 +321,7 @@ class test_det(ScipyTestCase):
             sys.stdout.flush()
                         
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
-            assert not a.iscontiguous()
+            assert not a.flags['CONTIGUOUS']
 
             print '| %6.2f ' % self.measure('det(a)',repeat),
             sys.stdout.flush()
