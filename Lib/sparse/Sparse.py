@@ -116,7 +116,7 @@ class spmatrix:
         return val
     
     def __repr__(self):
-        typ = self.dtypechar
+        typ = self._typecode
         nnz = self.getnnz()
         format = self.getformat()
         nzmax = self.getnzmax()
@@ -294,7 +294,7 @@ class csc_matrix(spmatrix):
         elif isinstance(s,type(3)):
             M=s
             N=ij
-            self.data = zeros((nzmax,),typecode)
+            self.data = zeros((nzmax,),dtype)
             self.rowind = zeros((nzmax,),'i')
             self.indptr = zeros((N+1,),'i')
             self.shape = (M,N)
@@ -696,7 +696,7 @@ class csr_matrix(spmatrix):
         elif isinstance(s,type(3)):
             M=s
             N=ij
-            self.data = zeros((nzmax,),typecode)
+            self.data = zeros((nzmax,),dtype)
             self.colind = zeros((nzmax,),'i')
             self.indptr = zeros((M+1,),'i')
             self.shape = (M,N)
