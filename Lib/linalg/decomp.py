@@ -40,6 +40,15 @@ def _make_complex_eigvecs(w,vin,cmplx_tcode):
         count += 1
     return v
 
+def _frominterface(a):
+    if not hasattr(a, "__array__"):
+        return 1
+    if not hasattr(a, "__array_typestr__"):
+        return 1
+    if not hasattr(a, "__array_shape__"):
+        return 1
+    return 0
+
 def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
     b1 = asarray(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattry(b,'__array__'))
@@ -238,7 +247,7 @@ def lu(a,permute_l=0,overwrite_a=0):
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     m,n = a1.shape
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     flu, = get_flinalg_funcs(('lu',),(a1,))
     p,l,u,info = flu(a1,permute_l=permute_l,overwrite_a = overwrite_a)
     if info<0: raise ValueError,\
@@ -276,7 +285,7 @@ def svd(a,compute_uv=1,overwrite_a=0):
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     m,n = a1.shape
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     gesdd, = get_lapack_funcs(('gesdd',),(a1,))
     if gesdd.module_name[:7] == 'flapack':
         lwork = calc_lwork.gesdd(gesdd.prefix,m,n,compute_uv)[1]
@@ -321,7 +330,7 @@ def cholesky(a,lower=0,overwrite_a=0):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=1)
     if info>0: raise LinAlgError, "matrix not positive definite"
@@ -336,7 +345,7 @@ def cho_factor(a, lower=0, overwrite_a=0):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=0)
     if info>0: raise LinAlgError, "matrix not positive definite"
@@ -390,7 +399,7 @@ def qr(a,overwrite_a=0,lwork=None):
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
     M,N = a1.shape
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     geqrf, = get_lapack_funcs(('geqrf',),(a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
@@ -438,7 +447,7 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
         else:
             a1 = a1.astype('F')
             typ = 'F'
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     gees, = get_lapack_funcs(('gees',),(a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
@@ -560,7 +569,7 @@ def hessenberg(a,calc_q=0,overwrite_a=0):
     a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError, 'expected square matrix'
-    overwrite_a = overwrite_a or (a1 is not a and not hasattr(a,'__array__'))
+    overwrite_a = overwrite_a or (a1 is not a and not _frominterface(a))
     gehrd,gebal = get_lapack_funcs(('gehrd','gebal'),(a1,))
     ba,lo,hi,pivscale,info = gebal(a,permute=1,overwrite_a = overwrite_a)
     if info<0: raise ValueError,\
