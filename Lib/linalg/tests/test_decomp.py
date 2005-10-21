@@ -23,6 +23,7 @@ from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
 restore_path()
 
 from scipy.base import *
+from scipy.basic.random import rand
 
 def random(size):
     return rand(*size)

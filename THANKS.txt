@@ -24,7 +24,7 @@ Jean-Sebastien Roy -- fmin_tnc code which he adapted from Stephen Nash's
 Testing:
 
 David Morrill for getting the scoreboard test system up and running.
-Louis Luangkesom for providing multiple tests for the stats module.
+Louis Luangkesorn for providing multiple tests for the stats module.
 
 Website Development:
 
