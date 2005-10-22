@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by 
+
 #
 # integrate - Integration routines
 #

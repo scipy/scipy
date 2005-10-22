@@ -1,9 +1,11 @@
+## Automatically adapted for scipy Oct 21, 2005 by 
+
 
 from scipy.base import *
-from scipy.base.fastumath import *
+from scipy.base.umath import *
 
 def myasarray(a):
-    if type(a) in [type(1.0),type(1L),type(1),type(1j)]:
+    if isscalar(a):
         return asarray([a])
     else:
         return asarray(a)

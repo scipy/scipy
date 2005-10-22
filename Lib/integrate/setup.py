@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by 
+
 #!/usr/bin/env python
 
 from __future__ import nested_scopes
@@ -35,16 +37,25 @@ def configuration(parent_package='',parent_path=None):
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
                          libraries=['quadpack', 'linpack_lite', 'mach'])
-    # odepack
+    # odepack    
+    libs = ['odepack','linpack_lite','mach']
+    # remove libraries key from blas_opt
+    libs.extend(blas_opt['libraries'])
+    newblas = {}
+    for key in blas_opt.keys():
+        if key == 'libraries':
+            continue
+        newblas[key] = blas_opt[key]
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
-                         libraries=['odepack','linpack_lite','mach'],
-                         **blas_opt)
+                         libraries=libs,
+                         **newblas)
     
     # vode
     config.add_extension('vode',
                          sources=['vode.pyf'],
-                         libraries=['odepack','linpack_lite','mach'])
+                         libraries=libs,
+                         **newblas)
 
     return config
 

@@ -1,10 +1,12 @@
+## Automatically adapted for scipy Oct 21, 2005 by 
+
 # Author: Travis Oliphant 2001
 
 __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']
 import _quadpack
 from common_routines import *
 import sys
-import MLab
+from scipy.base import array
 
 error = _quadpack.error
 
@@ -116,8 +118,7 @@ Weighting the integrand:
     return
     
 
-Inf = MLab.array(1e308)**10
-inf = Inf
+from scipy import inf, Inf
 	
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,

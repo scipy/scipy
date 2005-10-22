@@ -7,7 +7,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('io')
     #config.add_subpackage('fftpack')
     #config.add_subpackage('signal')
-    #config.add_subpackage('integrate')
+    config.add_subpackage('integrate')
     config.add_subpackage('linalg')
     config.add_subpackage('special')
     config.add_subpackage('optimize')

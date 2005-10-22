@@ -329,7 +329,6 @@ def cholesky(a,lower=0,overwrite_a=0):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
     overwrite_a = overwrite_a or _datanotshared(a1,a)
-    print "overwrite_a is ", overwrite_a
     potrf, = get_lapack_funcs(('potrf',),(a1,))
     c,info = potrf(a1,lower=lower,overwrite_a=overwrite_a,clean=1)
     if info>0: raise LinAlgError, "matrix not positive definite"

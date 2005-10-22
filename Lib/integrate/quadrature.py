@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by 
+
 # Author: Travis Oliphant
 
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb','cumtrapz']
@@ -185,7 +187,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             shapex[axis] = x.shape[0]
             saveshape = x.shape
             returnshape = 1
-            x.shape = tuple(shapex)
+            x=x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
             raise ValueError, "If given, shape of x must be 1-d or the same as y."
         if x.shape[axis] != N:
@@ -221,7 +223,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     else:
         result = _basic_simps(y,0,N-2,x,dx,axis)
     if returnshape:
-        x.shape = saveshape
+        x=x.reshape(saveshape)
     return result
 
 def romb(y, dx=1.0, axis=-1, show=0):
