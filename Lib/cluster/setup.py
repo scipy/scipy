@@ -19,7 +19,7 @@ def configuration(parent_package='',parent_path=None):
 if __name__ == '__main__':
     from scipy.distutils.core import setup
     setup(maintainer = "SciPy Developers",
-          author = "eric jones",
+          author = "Eric Jones",
           maintainer_email = "scipy-dev@scipy.org",
           description = "Clustering Algorithms (Information Theory)",
           url = "http://www.scipy.org",

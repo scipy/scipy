@@ -18,7 +18,7 @@ from flinalg import get_flinalg_funcs
 from scipy.base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
 import scipy.base
-from scipy.base import asarray_chkfinite, outerproduct, concatenate, reshape
+from scipy.base import asarray_chkfinite, outerproduct, concatenate, reshape, single
 from scipy.base import matrix as Matrix
 import calc_lwork
 
@@ -370,8 +370,9 @@ def pinv(a, cond=None):
     return lstsq(a, b, cond=cond)[0]
 
 
-eps = scipy.utils.limits.double_epsilon
-feps = scipy.utils.limits.float_epsilon
+eps = scipy.base.finfo(float).eps.toscalar()
+feps = scipy.base.finfo(single).eps.toscalar()
+
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 def pinv2(a, cond=None):
     """ pinv2(a, cond=None) -> a_pinv

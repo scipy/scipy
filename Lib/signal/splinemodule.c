@@ -12,8 +12,6 @@
 #define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
 #define RANK(arr) ((arr)->nd)
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
-#define MIN(a,b) (((a) > (b)) ? (b) : (a))
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 static void convert_strides(int*,int*,int,int);
 

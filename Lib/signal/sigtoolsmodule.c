@@ -1560,9 +1560,10 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char 
   int is2 = ap2->strides[ndims-1];
   char *ip2 = ap2->data;
   int elsize = ap1->descr->elsize;
+  char *ptr;
 
   i = nels2;
-
+  ptr = PyArray_Zero(ap2);
   temp_ind[ndims-1]--;
   while (i--) { 
     /* Adjust index array and move ptr1 to right place */
@@ -1574,7 +1575,8 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char 
     ip1 += offset[k]*is1;               /* Precomputed offset array */
     temp_ind[k]++;
 
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims)) && memcmp(ip2, ap2->descr->zero, ap2->descr->elsize)) { 
+    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims)) && \
+	memcmp(ip2, ptr, ap2->itemsize)) { 
       memcpy(sort_buffer, ip1, elsize);
       sort_buffer += elsize;
     } 
@@ -1582,6 +1584,7 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char 
     ip2 += is2;
 
   }
+  PyDataMem_FREE(ptr);
   return;
 }
 
@@ -1634,6 +1637,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer;
 	int *ret_ind;
 	CompareFunction compare_func;
+	char *zptr=NULL;
 
 	/* Get Array objects from input */
 	typenum = PyArray_ObjectType(op1, 0);  
@@ -1655,8 +1659,10 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	/* Find out the number of non-zero entries in domain (allows for
 	 *  different shapped rank-filters to be used besides just rectangles)
 	 */
+	zptr = PyArray_Zero(ap2);
+	if (zptr == NULL) goto fail;
 	for (k=0; k < n2; k++) {
-	  n2_nonzero += (memcmp(ap2_ptr,ap2->descr->zero,ap2->descr->elsize) != 0);
+	  n2_nonzero += (memcmp(ap2_ptr,zptr,ap2->descr->elsize) != 0);
 	  ap2_ptr += ap2->descr->elsize;
 	}
 
@@ -1717,6 +1723,9 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	   if it is pointing outside dataspace)
 	*/
 	/* Calculate it once and the just move it around appropriately */
+	PyDataMem_FREE(zptr);
+	zptr = PyArray_Zero(ap1);
+	if (zptr == NULL) goto fail;
 	ap1_ptr = ap1->data + offset1*is1;
 	for (k=0; k < ap1->nd; k++) {a_ind[k] = mode_dep[k]; check_ind[k] = ap1->dimensions[k] - ap2->dimensions[k] - mode_dep[k] - 1;}
 	a_ind[ap1->nd-1]--;
@@ -1726,7 +1735,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	     on boundaries). Treat object arrays right.*/
 	  ap2_ptr = sort_buffer;
 	  for (k=0; k < n2_nonzero; k++) {
-	    memcpy(ap2_ptr,ap1->descr->zero,is1);
+  	    memcpy(ap2_ptr,zptr,is1);
 	    ap2_ptr += is1;
 	  }
 	    
@@ -1762,6 +1771,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	return PyArray_Return(ret);
 
 fail:
+	if (zptr) PyDataMem_FREE(zptr);
 	Py_XDECREF(ap1);
 	Py_XDECREF(ap2);
 	Py_XDECREF(ret);
@@ -1786,17 +1796,17 @@ static void Py_copy_info(Generic_Array *gen, PyArrayObject *py_arr) {
         gen->data = py_arr->data;
 	gen->nd = py_arr->nd;
 	gen->dimensions = py_arr->dimensions;
-	gen->elsize = py_arr->descr->elsize;
+	gen->elsize = py_arr->itemsize;
 	gen->strides = py_arr->strides;
-	gen->zero = py_arr->descr->zero;
+	gen->zero = PyArray_Zero(py_arr);
 	return;
 }
 
 static void Py_copy_info_vec(Generic_Vector *gen, PyArrayObject *py_arr) {
         gen->data = py_arr->data;
-	gen->elsize = py_arr->descr->elsize;
+	gen->elsize = py_arr->itemsize;
 	gen->numels = PyArray_Size((PyObject *)py_arr);
-	gen->zero = py_arr->descr->zero;
+	gen->zero = PyArray_Zero(py_arr);
 	return;
 }
 
@@ -1878,6 +1888,10 @@ static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
 	Py_copy_info(&out, ret);
        
 	correlateND(&in1, &in2, &out, multiply_and_add_ND, mode);
+
+	PyDataMem_FREE(in1.zero);
+	PyDataMem_FREE(in2.zero);
+	PyDataMem_FREE(out.zero);
 
 	Py_DECREF(ap1);
 	Py_DECREF(ap2);
@@ -2043,7 +2057,7 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	int dim = -1, typenum, thedim;
 	char *ara_ptr, input_flag = 0;
 	BasicFilterFunction *basic_filter;
-
+	
 	if (!PyArg_ParseTuple(args, "OOO|iO", &b, &a, &X, &dim, &Vi))
 	  return NULL;
 
@@ -2110,12 +2124,12 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	  if (arVi->dimensions[thedim] != (Va.numels > Vb.numels ? Va.numels : Vb.numels) - 1) {
 	    PyErr_SetString(PyExc_ValueError,
 			    "The number of initial conditions must be max([len(a),len(b)]) - 1");
-	    goto fail;
+	    goto fail2;
 	  }
-        vi = (Generic_Array *)malloc(sizeof(Generic_Array));
-	vf = (Generic_Array *)malloc(sizeof(Generic_Array));
-	Py_copy_info(vi, arVi);
-	Py_copy_info(vf, arVf);
+	  vi = (Generic_Array *)malloc(sizeof(Generic_Array));
+	  vf = (Generic_Array *)malloc(sizeof(Generic_Array));
+	  Py_copy_info(vi, arVi);
+	  Py_copy_info(vf, arVf);
 	}
 
 	/* If dimension to filter along is negative, make it the
@@ -2126,6 +2140,12 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	RawFilter(Vb, Va, x, y, vi, vf, basic_filter, thedim);
         /* fprintf(stderr, "Now, Here.\n");*/
 
+
+	PyDataMem_FREE(Va.zero);
+	PyDataMem_FREE(Vb.zero);
+	PyDataMem_FREE(x.zero);
+	PyDataMem_FREE(y.zero);
+	
 	Py_XDECREF(ara);
 	Py_XDECREF(arb);
 	Py_XDECREF(arX);
@@ -2135,10 +2155,19 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	  return PyArray_Return(arY);
 	}
 	else {
+	  PyDataMem_FREE(vi->zero);
+	  PyDataMem_FREE(vf->zero);
 	  free(vi); free(vf);
 	  return Py_BuildValue("(NN)",arY,arVf);
  	}
 
+
+ fail2:
+	PyDataMem_FREE(Va.zero);
+	PyDataMem_FREE(Vb.zero);
+	PyDataMem_FREE(x.zero);
+	PyDataMem_FREE(y.zero);
+	
  fail:
 	Py_XDECREF(ara);
 	Py_XDECREF(arb);

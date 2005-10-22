@@ -15,9 +15,9 @@
         Train a codebook for mimimum distortion using the kmeans algorithm
     
 """
-import scipy
-from scipy.random import randint
-from scipy.stats import std
+import scipy.utils
+from scipy.basic.random import randint
+from scipy.stats import std, mean
 from scipy.base import common_type as _common_type
 from scipy import *
 
@@ -214,14 +214,14 @@ def kmeans_(obs,guess,thresh=1e-5):
     while diff>thresh:
         #compute membership and distances between obs and code_book
         obs_code, distort = vq(obs,code_book)
-        avg_dist.append(scipy.mean(distort,axis=-1))
+        avg_dist.append(mean(distort,axis=-1))
         #recalc code_book as centroids of associated obs
         if(diff > thresh):
             has_members = []
             for i in arange(Nc):                
                 cell_members = compress(equal(obs_code,i),obs,0)
                 if cell_members.shape[0] > 0:
-                    code_book[i] = scipy.mean(cell_members,0)
+                    code_book[i] = mean(cell_members,0)
                     has_members.append(i)
             #remove code_books that didn't have any members
             code_book = take(code_book,has_members,0)

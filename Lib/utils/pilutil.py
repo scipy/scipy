@@ -1,6 +1,6 @@
 # Functions which need the PIL
 
-from scipy.base import ppimport
+from ppimport import ppimport
 import types
 import scipy.base as Numeric
 

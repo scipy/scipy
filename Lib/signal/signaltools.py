@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
+
 # Author: Travis Oliphant
 # 1999 -- 2002
 
@@ -90,7 +92,7 @@ def fftconvolve(in1, in2, mode="full"):
     """
     s1 = array(in1.shape)
     s2 = array(in2.shape)
-    if (s1.typecode() in ['D','F']) or (s2.typecode() in ['D', 'F']):
+    if (s1.dtypechar in ['D','F']) or (s2.dtypechar in ['D', 'F']):
         cmplx=1
     else: cmplx=0
     size = s1+s2-1
@@ -512,9 +514,9 @@ def lfiltic(b,a,y,x=None):
     M = Numeric.size(b)-1
     K = max(M,N)
     y = asarray(y)
-    zi = zeros(K,y.typecode())
+    zi = zeros(K,y.dtypechar)
     if x is None:
-        x = zeros(M,y.typecode())
+        x = zeros(M,y.dtypechar)
     else:
         x = asarray(x)
         L = Numeric.size(x)
@@ -1261,7 +1263,7 @@ def resample(x,num,t=None,axis=0,window=None):
         W = ifftshift(get_window(window,Nx))
         newshape = ones(len(x.shape))
         newshape[axis] = len(W)
-        W.shape = newshape
+        W=W.reshape(newshape)
         X = X*W
     sl = [slice(None)]*len(x.shape)
     newshape = list(x.shape)
@@ -1274,7 +1276,7 @@ def resample(x,num,t=None,axis=0,window=None):
     Y[sl] = X[sl]
     y = ifft(Y,axis=axis)*(float(num)/float(Nx))
 
-    if x.typecode() not in ['F','D']:
+    if x.dtypechar not in ['F','D']:
         y = y.real
 
     if t is None:
@@ -1298,7 +1300,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
     if type not in ['linear','l','constant','c']:
         raise ValueError, "Trend type must be linear or constant"
     data = asarray(data)
-    dtype = data.typecode()
+    dtype = data.dtypechar
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant','c']:
@@ -1318,7 +1320,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         newdims = r_[axis,0:axis,axis+1:rnk]
         newdata = reshape(transpose(data,tuple(newdims)),(N,prod(dshape)/N))
         newdata = newdata.copy()  # make sure we have a copy
-        if newdata.typecode() not in 'dfDF':
+        if newdata.dtypechar not in 'dfDF':
             newdata = newdata.astype(dtype)
         # Find leastsq fit and remove it for each piece
         for m in range(Nreg):

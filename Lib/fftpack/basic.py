@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by 
+
 """
 Discrete Fourier Transforms - basic.py 
 """
@@ -27,7 +29,7 @@ def _fix_shape(x, n, axis):
         index = [slice(None)]*len(s)
         index[axis] = slice(0,s[axis])
         s[axis] = n
-        z = zeros(s,x.typecode())
+        z = zeros(s,x.dtypechar)
         z[index] = x
         x = z
     return x

@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
+
 # Author: Travis Oliphant
 # 2003
 
@@ -12,8 +14,8 @@ def sawtooth(t,width=1):
     t,w = asarray(t), asarray(width)
     w = asarray(w + (t-t))
     t = asarray(t + (w-w))
-    if t.typecode() in ['fFdD']:
-        ytype = t.typecode()
+    if t.dtypechar in ['fFdD']:
+        ytype = t.dtypechar
     else:
         ytype = 'd'
     y = zeros(t.shape,ytype)
@@ -50,8 +52,8 @@ def square(t,duty=0.5):
     t,w = asarray(t), asarray(duty)
     w = asarray(w + (t-t))
     t = asarray(t + (w-w))
-    if t.typecode() in ['fFdD']:
-        ytype = t.typecode()
+    if t.dtypechar in ['fFdD']:
+        ytype = t.dtypechar
     else:
         ytype = 'd'
     y = zeros(t.shape,ytype)

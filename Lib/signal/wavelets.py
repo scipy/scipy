@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
+
 
 import scipy.base as sb
 import scipy as s
@@ -116,7 +118,7 @@ def cascade(hk,J=7):
     m *= s2
 
     # construct the grid of points
-    x = sb.arange(0,N*(1<<J),typecode=sb.Float) / (1<<J)
+    x = sb.arange(0,N*(1<<J),dtype=sb.Float) / (1<<J)
     phi = 0*x
 
     psi = 0*x

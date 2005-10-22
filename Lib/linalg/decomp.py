@@ -20,7 +20,7 @@ from flinalg import get_flinalg_funcs
 import calc_lwork
 import scipy.base
 from scipy.base import asarray_chkfinite, asarray, diag, zeros, ones, \
-     dot, transpose
+     dot, transpose, single
 cast = scipy.base.cast
 r_ = scipy.base.r_
 c_ = scipy.base.c_
@@ -458,8 +458,8 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     elif info>0: raise LinAlgError, "Schur form not found.  Possibly ill-conditioned."
     return result[0], result[-3]
 
-eps = scipy.utils.limits.double_epsilon
-feps = scipy.utils.limits.float_epsilon
+eps = scipy.base.finfo(float).eps.toscalar()
+feps = scipy.base.finfo(single).eps.toscalar()
 
 _array_kind = {'b':0, 'h':0, 'B': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}

@@ -59,7 +59,6 @@ import scipy as Numeric
 from scipy.base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
 import scipy.base
-import scipy.utils
 import linesearch
 Num = Numeric
 MLab = Numeric
@@ -83,7 +82,7 @@ import __builtin__
 pymin = __builtin__.min
 pymax = __builtin__.max
 __version__="0.7"
-_epsilon = sqrt(scipy.utils.limits.float_epsilon)
+_epsilon = sqrt(scipy.base.finfo(float).eps)
 
 def vecnorm(x, ord=2):
     if ord == Inf:

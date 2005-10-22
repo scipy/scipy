@@ -10,15 +10,14 @@ __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
 from scipy.base import asarray, Inf, dot, floor, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
-     isfinite, sqrt, identity
+     isfinite, sqrt, identity, single
 from scipy.base import matrix as mat
 import scipy.base as sb
-import scipy.utils as su
 from basic import solve, LinAlgError, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, eigvals, svd
 
-eps = su.limits.double_epsilon
-feps = su.limits.float_epsilon
+eps = sb.finfo(float).eps.toscalar()
+feps = sb.finfo(single).eps.toscalar()
 
 def expm(A,q=7):
     """Compute the matrix exponential using Pade approximation of order q.

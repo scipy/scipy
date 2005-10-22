@@ -48,8 +48,7 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'tilbert','itilbert','hilbert','ihilbert',
            'sc_diff','cs_diff','cc_diff','ss_diff',
            'shift',
-           'fftshift','ifftshift',
-           'fftfreq','rfftfreq'
+           'rfftfreq'
            ]
 
 __doc_title__ = __doc__.lstrip().split('\n',1)[0]
