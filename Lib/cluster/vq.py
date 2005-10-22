@@ -207,7 +207,7 @@ def kmeans_(obs,guess,thresh=1e-5):
 
     """
     
-    code_book = array(guess,copy=1)
+    code_book = array(guess,copy=True)
     Nc = code_book.shape[0]
     avg_dist=[]
     diff = thresh+1.

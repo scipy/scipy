@@ -197,7 +197,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     nonzdelt = 0.05
     zdelt = 0.00025
     for k in range(0,N):
-        y = Num.array(x0,copy=1)
+        y = Num.array(x0,copy=True)
         if y[k] != 0:
             y[k] = (1+nonzdelt)*y[k]
         else:

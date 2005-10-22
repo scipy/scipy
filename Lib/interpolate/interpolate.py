@@ -37,7 +37,7 @@ def reduce_sometrue(a):
 
 class interp2d:
     def __init__(self,x,y,z,kind='linear',
-                 copy=1,bounds_error=0,fill_value=None):
+                 copy=True,bounds_error=0,fill_value=None):
         """
         Input:
           x,y  - 1-d arrays defining 2-d grid (or 2-d meshgrid arrays)
@@ -59,7 +59,7 @@ class interp2d:
             self.x = self.x[:,0]
         if rank(self.y) == 2:
             self.y = self.y[0]
-        self.z = array(z,copy=1)
+        self.z = array(z,copy=True)
         if rank(z) != 2:
             raise ValueError, "Grid values is not a 2-d array."
 

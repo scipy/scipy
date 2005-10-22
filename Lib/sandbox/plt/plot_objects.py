@@ -737,7 +737,7 @@ class poly_points(property_object):
     def __init__(self, points, attr=None):
         property_object.__init__(self,attr)
         self.points = array(points)
-        self.scaled = array(self.points,copy=1)
+        self.scaled = array(self.points,copy=True)
         #self.scaled = map(tuple,self.points)
 
     def bounding_box(self):

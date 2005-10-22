@@ -266,7 +266,7 @@ class spmatrix:
 #    - with data, (row, ptr)
 # 
 class csc_matrix(spmatrix):
-    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=0):
+    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=False):
         spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csc_matrix):
@@ -479,7 +479,7 @@ class csc_matrix(spmatrix):
             M, N = self.shape
             return csc_matrix(c,(rowc,ptrc),M=M,N=N)
 
-    def transp(self, copy=0):
+    def transp(self, copy=False):
         M,N = self.shape
         new = csr_matrix(N,M,nzmax=0,dtype=self._typecode)
         if copy:
@@ -620,19 +620,19 @@ class csc_matrix(spmatrix):
     def getdata(self, ind):
         return self.data[ind]
     
-    def tocsc(self,copy=0):
+    def tocsc(self,copy=False):
         if copy:
             new = self.copy()
         else:
             new = self
         return new
 
-    def tocoo(self,copy=0):
+    def tocoo(self,copy=False):
         func = getattr(sparsetools,self.ftype+"csctocoo")
         data,row,col = func(self.data, self.rowind,self.indptr)
         return coo_matrix(data, (row, col), M=self.shape[0], N=self.shape[1])
 
-    def tocsr(self,copy=0):
+    def tocsr(self,copy=False):
         return self.tocoo().tocsr()
 
     def todense(self):
@@ -665,7 +665,7 @@ class csc_matrix(spmatrix):
 # compressed sparse row matrix
 # 
 class csr_matrix(spmatrix):
-    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=0):
+    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=False):
         spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csr_matrix):
@@ -864,7 +864,7 @@ class csr_matrix(spmatrix):
             M, N = self.shape
             return csr_matrix(c,(colc,ptrc),M=M,N=N)
 
-    def transp(self, copy=0):
+    def transp(self, copy=False):
         M,N = self.shape
         new = csc_matrix(N,M,nzmax=0,dtype=self._typecode)
         if copy:
@@ -1024,19 +1024,19 @@ class csr_matrix(spmatrix):
     def getdata(self, ind):
         return self.data[ind]
 
-    def tocsr(self,copy=0):
+    def tocsr(self,copy=False):
         if copy:
             new = self.copy()
         else:
             new = self
         return new
 
-    def tocoo(self,copy=0):
+    def tocoo(self,copy=False):
         func = getattr(sparsetools,self.ftype+"csctocoo")
         data,col,row = func(self.data, self.colind,self.indptr)
         return coo_matrix(data, (row, col), M=self.shape[0], N=self.shape[1])
 
-    def tocsc(self,copy=0):
+    def tocsc(self,copy=False):
         return self.tocoo().tocsc()
 
     def todense(self):
@@ -1439,7 +1439,7 @@ class coo_matrix(spmatrix):
             raise RuntimeError, "Error in conversion."
         return csr_matrix(a, (cola, ptra), M=self.shape[0],N=self.shape[1])
 
-    def tocoo(self,copy=0):
+    def tocoo(self,copy=False):
         if copy:
             new = self.copy()
         else:
@@ -1477,10 +1477,10 @@ def spdiags(diags,offsets,m,n):
         offsets -- diagonals to set (0 is main)
         M, N    -- sparse matrix returned is M X N
     """
-    diags = array(transpose(diags),copy=1)
+    diags = array(transpose(diags),copy=True)
     if diags.dtypechar not in 'fdFD':
         diags = diags.astype('d')
-    offsets = array(offsets,copy=0)
+    offsets = array(offsets,copy=False)
     mtype = diags.dtypechar
     assert(len(offsets) == diags.shape[1])
     # set correct diagonal to csr conversion routine for this type
