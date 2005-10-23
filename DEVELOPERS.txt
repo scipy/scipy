@@ -16,7 +16,7 @@ Introduction
 
 Scipy aims at being a robust and efficient "super-package" of a number
 of its modules, each having a complexity and size to be a highly
-non-trivial package itself. In order to "Scipy integration" to work
+non-trivial package itself. In order for "Scipy integration" to work
 flawlessly, all Scipy modules must follow certain rules that are
 described in this document. Hopefully this document will be helpful to
 Scipy contributors as well as to developers as a basic reference about

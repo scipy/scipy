@@ -7,9 +7,8 @@ import copy
 import scipy.base
 from scipy.base import asarray, tan, exp, ones, squeeze, sign, \
      all
-import random
+from scipy import random
 
-random.seed()
 __all__ = ['anneal']
 
 class base_schedule:
@@ -43,9 +42,8 @@ class base_schedule:
         urange = x0*self.upper
         fmax = -300e8
         fmin = 300e8
-        for n in range(self.Ninit):            
-            for k in range(self.dims):
-                x0[k] = random.uniform(lrange[k],urange[k])
+        for n in range(self.Ninit):
+            x0[:] = random.uniform(size=self.dims)*(urange-lrange) + lrange
             fval = self.func(x0,*self.args)
             self.feval += 1
             if fval > fmax:
@@ -53,7 +51,7 @@ class base_schedule:
             if fval < fmin:
                 fmin = fval
                 best_state.cost = fval
-                best_state.x = asarray(x0).copy()
+                best_state.x = array(x0)
         self.T0 = (fmax-fmin)*1.5
         return best_state.x
 
@@ -88,7 +86,7 @@ class fast_sa(base_schedule):
         
     def update_guess(self, x0):
         x0 = asarray(x0)
-        u = squeeze(asarray([random.uniform(0.0,1.0) for x in x0]))
+        u = squeeze(random.uniform(0.0,1.0, size=len(x0)))
         T = self.T
         y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
         xc = y*(self.upper - self.lower)
@@ -103,7 +101,7 @@ class fast_sa(base_schedule):
 class cauchy_sa(base_schedule):
     def update_guess(self, x0):
         x0 = asarray(x0)
-        numbers = squeeze(asarray([random.uniform(-pi/2,pi/2) for x in x0]))
+        numbers = squeeze(random.uniform(-pi/2,pi/2, size=len(x0)))
         xc = self.learn_rate * self.T * tan(numbers)
         xnew = x0 + xc
         return xnew
@@ -117,8 +115,7 @@ class boltzmann_sa(base_schedule):
     def update_guess(self, x0):
         std = min(sqrt(self.T), (self.upper-self.lower)/3.0/self.learn_rate)
         x0 = asarray(x0)
-        xc = squeeze(asarray([random.normalvariate(0,std*self.learn_rate) \
-                      for x in x0]))
+        xc = squeeze(random.normal(0,std*self.learn_rate, size=len(x0)))
         xnew = x0 + xc
         return xnew
 

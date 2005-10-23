@@ -1,10 +1,10 @@
 # Functions which are common and require SciPy Base and Level 1 SciPy
-# (stats, special, linalg)
+# (special, linalg)
 
 # Needs eigenvalues
 import sys
 import types
-from scipy import special, stats, linalg
+from scipy import special, linalg
 
 import scipy.base as Numeric
 
@@ -14,7 +14,10 @@ from scipy.base import exp, amin, amax, ravel, asarray, cast, arange, \
 
 __all__ = ['factorial','factorial2','factorialk','comb','who',
            'lena','central_diff_weights', 'derivative', 'pade']
-    
+
+# XXX: the factorial functions could move to scipy.special, and the others 
+# to scipy.base perhaps?
+
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
 
@@ -216,6 +219,7 @@ def pade(an, m):
     q = r_[1.0,pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
 
+# XXX: broken since plt is gone
 def lena():
     import cPickle, os
     fname = os.path.join(os.path.dirname(__file__),'plt','lena.dat')
@@ -230,7 +234,7 @@ def lena():
 #-----------------------------------------------------------------------------
 
 def who(vardict=None):
-    """Print the Numeric arrays in the given dictionary (or globals() if None).
+    """Print the scipy arrays in the given dictionary (or globals() if None).
     """
     if vardict is None:
         frame = sys._getframe().f_back

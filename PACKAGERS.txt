@@ -1,6 +1,8 @@
 .. -*- rest -*-
 .. NB! Keep this document a valid restructured document.
 
+.. WARNING: This file is out of date since the transition to scipy_core.
+
 Packaging Scipy
 ===============
 
