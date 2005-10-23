@@ -1,0 +1,8 @@
+Other stuff
+-----------
+
+support additional comment parameter in ll_mat.export_mtx
+
+transpose ll_mat matrix ??
+
+sort column indices in ll_mat.export_mtx (for unsorted list)

@@ -1,0 +1,52 @@
+Special installation instructions for various platforms
+=======================================================
+
+Win32 using MS VC++ 6.0 and Intel MKL
+-------------------------------------
+
+PySparse was sucessfully built with Microsoft Visual C++ 6.0 together
+with the Intel Math Kernel Library (MKL).
+
+When adjusting "setup.py" you can use the settings under "elif hostname
+== 'Rivendell':" and change the library_dirs_list according to your
+MKL installation.
+
+Before running the setup script please make sure that the VC++
+executables are in your PATH environment variable.
+
+It is also important that you include the directory containing the MKL
+DLLs in your PATH environment variable. Otherwise runtime errors will
+occur when PySparse is imported and called.
+
+
+Win32 using MinGW
+-----------------
+
+1. Follow the instructions at http://sebsauvage.net/python/mingw.html
+   to
+
+   - install MinGW
+
+   - build libpython22.a from python.dll
+
+2. Install the BLAS/LAPACK
+
+   - Download the LAPACK and BLAS sources from
+     http://www.netlib.org.
+
+   - Follow the included instructions to build the libraries using the
+     MinGW development tools.
+
+   - Install the libraries in your MinGW tree.
+
+3. Build pysparse
+
+   - Customise setup.py:
+
+     Your should use the following settings:
+	libraries_list = ['lapack', 'blas', 'g2c']
+    	superlu_defs = [("NO_TIMER",1), ('USE_VENDOR_BLAS',1)]
+
+   - Build build and install:
+
+     python.exe setup.py build --compiler mingw32 --install

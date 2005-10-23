@@ -1,0 +1,231 @@
+0.34.032
+---------------------------------------------------------------------------------
+Fixed a memory leak in ll_mat.keys(). (Reported by c chui)
+
+Improved the performance of ll_mat.scale(), ll_mat.values() and ll_mat.items().
+
+0.34.031
+---------------------------------------------------------------------------------
+Modules using the pysparse C API can now define NO_IMPORT_SPMATRIX
+together with SPMATRIX_UNIQUE_SYMBOL to avoid multiple definition of
+the SpMatrix_API pointer. This fix was suggested by Erica Madeleine Ligner.
+
+0.34.030
+---------------------------------------------------------------------------------
+Applied patches 1089844, 1089837, 1089831 (supplied by Daniel Wheeler
+& Jonathan Guyer): Added three new ll_mat methods:
+update_add_at(b,id1,id2), put(b,id1,id2), take(b,id1,id2), fixed OS X
+compatibility issues, Numpy compatibility fixes.
+
+Applied some additional fixes for 64-bit machines.
+
+PySparse now works with Numeric 23.7 (also on 64-bit machines).
+
+[1111727] Replaced #include <malloc.h> by #include <stdlib.h> to fix
+compatibility issue on OS X (reported by Jonathan Guyer).
+
+Removed reference to libm.a which broke compilation on Win32 (reported
+by Mark Dausch).
+
+0.33.029
+---------------------------------------------------------------------------------
+added new umfpack module. (by Nathaniel C. Domingo)
+
+added Umfpack library source files to distribution (by Nathaniel C. Domingo)
+
+added new module sparray, implementing a multidimensional sparse array
+(by Pascal Barbedor)
+
+fixed bug in SSOR preconditioner (precon module) for omega != 1.0 and
+steps > 1
+
+0.32.028
+---------------------------------------------------------------------------------
+added Xavier Vasseur's gmres solver to the itsolvers module. Thanks Xavier!
+
+0.31.027
+---------------------------------------------------------------------------------
+fixed: call to SpMatrix_MATVEC in Src/pcg.c
+
+0.31.026
+---------------------------------------------------------------------------------
+PySparse is placed under a BSD style license
+
+0.30.025
+---------------------------------------------------------------------------------
+fixed bug in "generalize" member function of ll_mat type. Reported by
+Xavier Vasseur.
+
+the result tuple returned by jdsym.jdsym now includes an additional
+value representing the avg. number of inner iterations. This change
+may be incompatble with existing code calling this module function.
+
+0.29.024
+---------------------------------------------------------------------------------
+
+PySparse can be build using MinGW on Win32 platforms. Check the
+instructions in INSTALL.
+
+0.29.023
+---------------------------------------------------------------------------------
+
+fixed memory leaks in SpMatrix_LLMatSetItem and
+SpMatrix_LLMatUpdateItemAdd that occur if PyMem_Resize would fail.
+
+More detailed installation instructions for Win32 platforms in INSTALL
+
+0.29.022
+---------------------------------------------------------------------------------
+new method for ll_mat objects: compress
+
+nicer output for ll_mat objects representing small matrices
+
+optimised matrix-matrix-multiplication routine included (unsym-unsym case)
+
+new version of bicgstab solver (uses less memory)
+
+0.28.021
+---------------------------------------------------------------------------------
+fixed error handling in ll_mat.generalize
+
+fixed name mismatched in solver kernels in itsolvers
+
+0.28.020
+---------------------------------------------------------------------------------
+new method itsolvers.bicgstab (implemented by Oliver Broeker)
+
+all solvers in the itsolvers module now check for exceptions after
+each precon or matvec call.
+
+solver kernels in itsolvers now have names that conflict less likely
+with other modules
+
+0.28.019
+---------------------------------------------------------------------------------
+uncommented call to PrintStat in superlu/dgssv.c and superlu/dgssvx.c
+to prevent unwanted output in ML package
+
+fixed memory leak in sss_mat.c: diag array was not freed
+
+new method for ll_mat objects: generalize
+
+0.27.018
+---------------------------------------------------------------------------------
+updated test modules to reflect earlier bug fix in poisson.poisson2d()
+
+new default precision in ll_mat.export_mtx(): 16 instead of 6
+
+fixed bug in Src/jdsymmodule.c: solution now copied correctly if not
+all requested eigenvectors converged.
+
+0.27.017
+---------------------------------------------------------------------------------
+fixed bug in SRC/cgs.c: now returns correct iteration count, if initial guess
+satisfies stopping criterion
+
+fixed bug in Src/superlumodule.c solve transposed system, since matrix was 
+passed row-wise
+
+new method for ll_mat matrices: norm(p)
+
+0.26.016
+---------------------------------------------------------------------------------
+changed interface of SpMatrix_Matvec(), now supports non-square matrices
+
+0.26.015
+---------------------------------------------------------------------------------
+reimplemented SpMatrix_LLMatBuildColIndex and SpMatrix_LLMatDestroyColIndex
+
+0.26.014
+---------------------------------------------------------------------------------
+new module itsolvers_util: encapsulation objects for all iterative solvers
+
+0.25.013
+---------------------------------------------------------------------------------
+fixed bug in poisson.poisson2d_sym_blk(): diagonal entries are now 4, not 2.
+
+changed superlu_superlu_timer.c to support Win32
+
+0.25.012
+---------------------------------------------------------------------------------
+test module for superlu
+
+poisson module for generating 1D and 2D Poisson matrices
+
+0.25.011
+---------------------------------------------------------------------------------
+incorporated a new version of SuperLU (date 2002/09/23)
+
+changed postorder tree traversal in sp_coletree.c to be more stack friendly
+(max stack size on Linux seems to be 6 MBytes)
+
+removed stdout in get_perm_c.c
+
+0.25.008
+---------------------------------------------------------------------------------
+fixed bug in matvec method of csr_mat, occuring if stride of vector y is not one
+
+ll_mat.shift now supports shift of a general matrix by a symmetric matrix
+
+new matvec and matvec:transp object methods for ll_mat type
+
+fixed bug when assigning a symmetric matrix to a block of a general matrix
+
+delete_cols method added for ll_mat objects
+
+0.24.007
+---------------------------------------------------------------------------------
+fixed bug occurring when the spmatrix C API is used in an extension 
+consisting of more than one file. Now SPMATRIX_UNIQUE_SYMBOL has
+to be defined. This broke the itsolvers.pcg function.
+
+0.24.006
+---------------------------------------------------------------------------------
+Bug fixed in spmatrix.h: LLMatType now exported properly
+
+Genereation of boiler plate code for C API is automated now
+
+More functions exported in C API
+
+spmatrix module no longer uses extern symbols
+
+delete_rows and delete_rowcols methods added for ll_mat objects
+
+matvec and matvec_transp methods of csr_mat and sss_mat objects now 
+accept strided arrays as input
+
+0.23.005
+---------------------------------------------------------------------------------
+Header files are now installed to python directory tree. External
+packages may now import pysparse.
+
+0.23.004
+---------------------------------------------------------------------------------
+new module Lib/pysparse_version.py defining pysparse version number
+
+0.23.003
+---------------------------------------------------------------------------------
+Updated README
+
+Removed some illegal characters from superlu/superlu_timer.c
+
+Removed SuperLU output from superlu/get_perm_c.c stating the matrix
+reordering used.
+
+
+0.23.002
+---------------------------------------------------------------------------------
+SuperLU is now incorporated into pysparse. No need to build the
+library separately from now on.
+
+Now compiles under Win32. Tested under WinXP with MS Visual Studio 6.0
+and the Inter Math Kernel Library for LAPACK and BLAS
+
+Removed some unused local variables
+
+Changed interface of LLMat_parse_index. Can now be safely used in sss_mat.c.
+
+
+0.22.001
+---------------------------------------------------------------------
+initial release
