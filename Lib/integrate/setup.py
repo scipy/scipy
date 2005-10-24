@@ -39,8 +39,10 @@ def configuration(parent_package='',parent_path=None):
                          libraries=['quadpack', 'linpack_lite', 'mach'])
     # odepack    
     libs = ['odepack','linpack_lite','mach']
-    # remove libraries key from blas_opt
-    libs.extend(blas_opt['libraries'])
+
+    # Remove libraries key from blas_opt
+    if blas_opt.has_key('libraries'):    # key doesn't exist on OS X ...
+        libs.extend(blas_opt['libraries'])
     newblas = {}
     for key in blas_opt.keys():
         if key == 'libraries':
