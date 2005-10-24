@@ -49,7 +49,7 @@ def _datanotshared(a1,a):
 
 def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
     b1 = asarray(b)
-    overwrite_b = overwrite_b or (b1 is not b and not hasattry(b,'__array__'))
+    overwrite_b = overwrite_b or _datanotshared(b1,b)
     if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
         raise ValueError, 'expected square matrix'
     ggev, = get_lapack_funcs(('ggev',),(a1,b1))

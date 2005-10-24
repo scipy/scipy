@@ -21,7 +21,7 @@ del sys.path[0]
 import scipy.base as Numeric
 from scipy.base import arange, add, array
 
-from scipy.test.testing import rand
+from scipy.basic.random import rand
 def random(size):
     return rand(*size)
 
