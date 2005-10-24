@@ -316,6 +316,7 @@ class csc_matrix(spmatrix):
                 self.shape = temp.shape
         if isinstance(s, tuple):
             try:
+                #assert len(s) == 2 and isinstance(s[0],type(3)) and isinstance(s[1], type(3))
                 assert len(s) == 2 and type(s[0]) == int and type(s[1]) == int
             except AssertionError:
                 raise TypeError, "matrix dimensions must be a tuple of two integers"
@@ -338,7 +339,7 @@ class csc_matrix(spmatrix):
         # function.  Otherwise we overload the __init__ method too much,
         # given Python's weak type checking.  This should also remove
         # some code duplication.
-
+        
         if (isinstance(s,ArrayType) or \
               isinstance(s,type([]))):
             s = asarray(s)
@@ -385,7 +386,8 @@ class csc_matrix(spmatrix):
                 new.indptr = ij[1]
                 if M is None:
                     try:                        
-                        M = amax(new.rowind) + 1
+                        # we cast this to an int so type checking works
+                        M = int(amax(new.rowind)) + 1
                     except ValueError:
                         M = 0
                 if N is None:
@@ -451,7 +453,7 @@ class csc_matrix(spmatrix):
             return self.matmat(other)
         elif isscalar(other):
             new = self.copy()
-            new.data = new.data * other
+            new.data *= other
             new._dtypechar = new.data.dtypechar
             new.ftype = _transtabl[new._dtypechar]
             return new
@@ -503,15 +505,13 @@ class csc_matrix(spmatrix):
         M, N = self.shape
         return csc_matrix.Construct(c,(rowc,ptrc),M=M,N=N)
         
-
-    # element-by-element multiplication (unless other is an
-    #    integer and then matrix power)
     def __pow__(self, other):  
-        if isinstance(other, type(3)):
-            raise NotImplementedError
-        elif isscalar(other):
+        """ Element-by-element power (unless other is a scalar, in which
+        case return the matrix power.)
+        """
+        if isscalar(other):
             new = self.copy()
-            new.data = new.data * other
+            new.data = new.data ** other
             new._dtypechar = new.data.dtypechar
             new.ftype = _transtabl[new._dtypechar]
             return new
@@ -531,7 +531,7 @@ class csc_matrix(spmatrix):
 
     def transpose(self, copy=False):
         M,N = self.shape
-        new = csr_matrix(N,M,nzmax=0,dtype=self._dtypechar)
+        new = csr_matrix((N,M), nzmax=0, dtype=self._dtypechar)
         if copy:
             new.data = self.data.copy()
             new.colind = self.rowind.copy()
@@ -634,7 +634,8 @@ class csc_matrix(spmatrix):
                 raise KeyError, "Index out of bounds."
             ind, val = func(self.data, self.rowind, self.indptr, row, col)
             return val
-        elif isinstance(key,type(3)):
+        #elif isinstance(key,type(3)):
+        elif type(key) == int:
             return self.data[key]
         else:
             raise NotImplementedError
@@ -714,9 +715,8 @@ class csc_matrix(spmatrix):
         self._check()
 
     def copy(self):
-        M, N = self.shape
         dtype = self._dtypechar
-        new = csc_matrix.Construct(M, N, nzmax=0, dtype=dtype)
+        new = csc_matrix(self.shape, nzmax=0, dtype=dtype)
         new.data = self.data.copy()
         new.rowind = self.rowind.copy()
         new.indptr = self.indptr.copy()
@@ -823,7 +823,8 @@ class csr_matrix(spmatrix):
                 new.indptr = ij[1]
                 if N is None:
                     try:
-                        N = amax(new.colind) + 1
+                        # we cast this to an int so type checking works
+                        N = int(amax(new.colind)) + 1
                     except ValueError:
                         N = 0
                 if M is None:
@@ -841,7 +842,7 @@ class csr_matrix(spmatrix):
 
 
     def _check(self):
-        M,N = self.shape
+        M, N = self.shape
         nnz = self.indptr[-1]
         nzmax = len(self.colind)
         if (rank(self.data) != 1) or (rank(self.colind) != 1) or \
@@ -896,7 +897,7 @@ class csr_matrix(spmatrix):
             return self.matmat(other)
         elif isscalar(other):
             new = self.copy()
-            new.data = new.data * other
+            new.data *= other
             new._dtypechar = new.data.dtypechar
             new.ftype = _transtabl[new._dtypechar]
             return new
@@ -948,14 +949,13 @@ class csr_matrix(spmatrix):
         M, N = self.shape
         return csr_matrix.Construct(c,(colc,ptrc),M=M,N=N)
         
-    # element-by-element multiplication (unless other is an
-    #    integer and then matrix power)
     def __pow__(self, other):  
-        if isinstance(other, type(3)):
-            raise NotImplementedError
-        elif isscalar(other):
+        """ Element-by-element power (unless other is a scalar, in which
+        case return the matrix power.)
+        """
+        if isscalar(other):
             new = self.copy()
-            new.data = new.data * other
+            new.data = new.data ** other
             new._dtypechar = new.data.dtypechar
             new.ftype = _transtabl[new._dtypechar]
             return new
@@ -1096,7 +1096,8 @@ class csr_matrix(spmatrix):
                 raise IndexError, "Index out of bounds."
             ind, val = func(self.data, self.colind, self.indptr, col, row)
             return val
-        elif isinstance(key,type(3)):
+        #elif isinstance(key,type(3)):
+        elif type(key) == int:
             return self.data[key]
         else:
             raise NotImplementedError
@@ -1182,8 +1183,7 @@ class csr_matrix(spmatrix):
         self._check()
 
     def copy(self):
-        M, N = self.shape
-        new = csr_matrix(M, N, nzmax=0, dtype=self._dtypechar)
+        new = csr_matrix(self.shape, nzmax=0, dtype=self._dtypechar)
         new.data = self.data.copy()
         new.colind = self.colind.copy()
         new.indptr = self.indptr.copy()
@@ -1406,9 +1406,8 @@ class dok_matrix(spmatrix, dict):
         other = asarray(other)
         if other.shape[0] != self.shape[1]:
             raise ValueError, "Dimensions do not match."
-        keys = self.keys()
         res = [0]*self.shape[0]
-        for key in keys:
+        for key in self.keys():
             res[int(key[0])] += self[key] * other[int(key[1]),...]
         return array(res)        
 
@@ -1416,9 +1415,8 @@ class dok_matrix(spmatrix, dict):
         other = asarray(other)
 	if other.shape[-1] != self.shape[0]:
 	    raise ValueError, "Dimensions do not match."
-        keys = self.keys()
 	res = [0]*self.shape[1]
-	for key in keys:
+	for key in self.keys():
             res[int(key[1])] += other[..., int(key[0])] * conj(self[key])
 	return array(res)
 
@@ -1514,17 +1512,18 @@ class coo_matrix(spmatrix):
         spmatrix.__init__(self)
         if type(ij) is type(()) and len(ij)==2:
             if M is None:
-                M = amax(ij[0])
+                # we cast this to an int so type checking works
+                M = int(amax(ij[0]))
             if N is None:
-                N = amax(ij[1])
+                N = int(amax(ij[1]))
             self.row = asarray(ij[0],'i')
             self.col = asarray(ij[1],'i')
         else:
             aij = asarray(ij,'i')
             if M is None:
-                M = amax(aij[:,0])
+                M = int(amax(aij[:,0]))
             if N is None:
-                N = amax(aij[:,1])
+                N = int(amax(aij[:,1]))
             self.row = aij[:,0]
             self.col = aij[:,1]
         aobj = asarray(obj,dtype=dtype)
@@ -1644,7 +1643,7 @@ def solve(A,b,permc_spec=2):
               "A.tocsc()--or CSR format--A.tocsr()"
     if not hasattr(A,'shape'):
         raise ValueError, "Sparse matrix must be able to return shape (rows,cols) = A.shape"
-    M,N = A.shape
+    M, N = A.shape
     if (M != N):
         raise ValueError, "Matrix must be square."    
     if hasattr(A, 'tocsc'):
@@ -1663,7 +1662,7 @@ def solve(A,b,permc_spec=2):
 
 def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
               drop_tol=0.0, relax=1, panel_size=10):
-    M,N = A.shape
+    M, N = A.shape
     if (M != N):
         raise ValueError, "Can only factor square matrices."
     csc = A.tocsc()
