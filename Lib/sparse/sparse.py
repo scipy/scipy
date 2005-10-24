@@ -1,9 +1,16 @@
+""" Scipy 2D sparse matrix module.
+
+Original code by Travis Oliphant.
+
+Modified by Ed Schofield and Robert Cimrman.
+"""
+
 from scipy.base import *
-#from scipy.base import isscalar, rank, shape, resize, ArrayType, transpose
 import types
 import sparsetools
 import _superlu
 import sys
+#import pdb
 
 def resize1d(arr, newlen):
     old = len(arr)
@@ -73,12 +80,12 @@ class spmatrix:
             maxprint = MAXPRINT
         return maxprint
         
-    def typecode(self):
-        try:
-            typ = self._dtypechar
-        except AttributeError:
-            typ = None
-        return typ
+    #def typecode(self):
+    #    try:
+    #        typ = self._dtypechar
+    #    except AttributeError:
+    #        typ = None
+    #    return typ
 
     def getnnz(self):
         try:
@@ -196,9 +203,9 @@ class spmatrix:
         if attr == 'A':
             return self.todense()
         elif attr == 'T':
-            return self.transp()
+            return self.transpose()
         elif attr == 'H':
-            return self.conjtransp()
+            return self.conjtranspose()
         elif attr == 'real':
             return self._real()
         elif attr == 'imag':
@@ -206,14 +213,14 @@ class spmatrix:
         else:
             raise AttributeError, attr + " not found."
         
-    def transp(self):
+    def transpose(self):
         csc = self.tocsc()
-        res = csc.transp()
+        res = csc.transpose()
         return res
 
-    def conjtransp(self):
+    def conjtranspose(self):
         csc = self.tocsc()
-        res = csc.transp()
+        res = csc.transpose()
         res.data = conj(res.data)
         return res
 
@@ -230,6 +237,14 @@ class spmatrix:
         csc._dtypechar = csc.data.dtypechar
         csc.ftype = _transtabl[csc._dtypechar]        
         return csc
+        
+    def matrixmultiply(self, other):
+        """ A generic interface for matrix-matrix or matrix-vector
+        multiplication.
+        """
+        csc = self.tocsc()
+        res = csc.matrixmultiply(other)
+        return res
         
     def matmat(self, other):
         csc = self.tocsc()
@@ -263,14 +278,18 @@ class spmatrix:
  
 class csc_matrix(spmatrix):
     """ Compressed sparse column matrix
-        This can be instantiated in many ways
-         - with another sparse matrix (sugar for .tocsc())
-         - with M,N,nzmax,dtypechar  to construct a container
-         - with data, ij, {M,N,nzmax}
+        This can be instantiated in two ways:
+          - with another sparse matrix (sugar for .tocsc())
+          - with (M,N), nzmax, dtype  to construct a container
+
+        Support for constructing a csc_matrix by passing 
+          - with data, ij, {M,N,nzmax}
                 a[ij[k,0],ij[k,1]] = data[k]
-         - with data, (row, ptr)
+          - with data, (row, ptr)
+        has been moved for now to Construct() to simplify the code and
+        allow more thorough testing.
     """
-    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=False):
+    def __init__(self, s, nzmax=100, dtype='d'):
         spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csc_matrix):
@@ -295,25 +314,43 @@ class csc_matrix(spmatrix):
                 self.rowind = temp.rowind
                 self.indptr = temp.indptr
                 self.shape = temp.shape
-        elif isinstance(s,type(3)):
-            M=s
-            N=ij
-            self.data = zeros((nzmax,),dtype)
+        if isinstance(s, tuple):
+            try:
+                assert len(s) == 2 and type(s[0]) == int and type(s[1]) == int
+            except AssertionError:
+                raise TypeError, "matrix dimensions must be a tuple of two integers"
+            (M, N) = s
+            self.data = zeros((nzmax,), dtype)
             self.rowind = zeros((nzmax,),'i')
             self.indptr = zeros((N+1,),'i')
             self.shape = (M,N)
-        elif (isinstance(s,ArrayType) or \
+        self._check()
+
+
+    def Construct(s, ij=None, M=None ,N=None, nzmax=100, dtype='d', copy=False):
+        """ Allows constructing a csc_matrix by passing:
+            - data, ij, {M,N,nzmax}
+                a[ij[k,0],ij[k,1]] = data[k]
+            - data, (row, ptr)
+        """
+        # Moved out of the __init__ function for now for simplicity.
+        # I think this should eventually be moved to be a module-level
+        # function.  Otherwise we overload the __init__ method too much,
+        # given Python's weak type checking.  This should also remove
+        # some code duplication.
+
+        if (isinstance(s,ArrayType) or \
               isinstance(s,type([]))):
             s = asarray(s)
             if s.dtypechar not in 'fdFD':
                 s = s*1.0            
             if (rank(s) == 2):  # converting from a full array
                 M, N = s.shape
-                dtypechar = s.dtypechar
-                func = getattr(sparsetools,_transtabl[dtypechar]+'fulltocsc')
+                dtype = s.dtypechar
+                func = getattr(sparsetools,_transtabl[dtype]+'fulltocsc')
                 ierr = irow = jcol = 0
                 nnz = sum(ravel(s != 0.0))
-                a = zeros((nnz,),dtypechar)
+                a = zeros((nnz,), dtype)
                 rowa = zeros((nnz,),'i')
                 ptra = zeros((N+1,),'i')
                 while 1:
@@ -324,38 +361,47 @@ class csc_matrix(spmatrix):
                     a = resize1d(a, nnz)
                     rowa = resize1d(rowa, nnz)
 
-                self.data = a
-                self.rowind = rowa
-                self.indptr = ptra
-                self.shape = (M,N)
+                dims = (M, N)
+                new = csc_matrix(dims)
+                new.data = a
+                new.rowind = rowa
+                new.indptr = ptra
+                new.shape = (M,N)
             elif isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s),2)):
-                temp = coo_matrix(s,ij,M=M,N=N,nzmax=nzmax,dtype=dtype)
+                temp = coo_matrix(s, ij, M=M, N=N, nzmax=nzmax, dtype=dtype)
                 temp = temp.tocsc()
-                self.data = temp.data
-                self.rowind = temp.rowind
-                self.indptr = temp.indptr
-                self.shape = temp.shape
+                dims = temp.shape
+                new = csc_matrix(dims)
+                new.data = temp.data
+                new.rowind = temp.rowind
+                new.indptr = temp.indptr
+                # new.shape = temp.shape
             elif isinstance(ij, types.TupleType) and (len(ij)==2):
-                self.data = asarray(s)
-                self.rowind = ij[0]
-                self.indptr = ij[1]
+                # What are the new dimensions? Do we need to know them now?
+                dims = (0,0)
+                new = csc_matrix(dims)
+                new.data = asarray(s)
+                new.rowind = ij[0]
+                new.indptr = ij[1]
                 if M is None:
                     try:                        
-                        M = amax(self.rowind) + 1
+                        M = amax(new.rowind) + 1
                     except ValueError:
                         M = 0
                 if N is None:
-                    N = len(self.indptr) - 1
+                    N = len(new.indptr) - 1
                     if N == -1: N = 0
-                self.shape = (M,N)
+                new.shape = (M,N)
             else:
                 raise ValueError, "Unrecognized form for csc_matrix constructor."
         else:
             raise ValueError, "Unrecognized form for csc_matrix constructor."
 
-        self._check()
-
-
+        new._check()
+        return new
+    Construct = staticmethod(Construct)
+        
+        
     def _check(self):
         M,N = self.shape
         nnz = self.indptr[-1]
@@ -398,7 +444,7 @@ class csc_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csc_matrix(c,(rowc,ptrc),M=M,N=N)
+        return csc_matrix.Construct(c,(rowc,ptrc),M=M,N=N)
 
     def __mul__(self, other):  # implement matrix multiplication and matrix-vector multiplication
         if isspmatrix(other):
@@ -441,7 +487,7 @@ class csc_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csc_matrix(c,(rowc,ptrc),M=M,N=N)
+        return csc_matrix.Construct(c,(rowc,ptrc),M=M,N=N)
 
 
     def __rsub__(self, other):  # implement other - self
@@ -455,7 +501,7 @@ class csc_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csc_matrix(c,(rowc,ptrc),M=M,N=N)
+        return csc_matrix.Construct(c,(rowc,ptrc),M=M,N=N)
         
 
     # element-by-element multiplication (unless other is an
@@ -481,9 +527,9 @@ class csc_matrix(spmatrix):
             if ierr:
                 raise ValueError, "Ran out of space (but shouldn't have happened)."
             M, N = self.shape
-            return csc_matrix(c,(rowc,ptrc),M=M,N=N)
+            return csc_matrix.Construct(c,(rowc,ptrc),M=M,N=N)
 
-    def transp(self, copy=False):
+    def transpose(self, copy=False):
         M,N = self.shape
         new = csr_matrix(N,M,nzmax=0,dtype=self._dtypechar)
         if copy:
@@ -514,6 +560,17 @@ class csc_matrix(spmatrix):
         else: cd = self.data
         y = func(cd, self.rowind, self.indptr, x)
         return y
+
+    def matrixmultiply(self, other):
+        """ A generic interface for matrix-matrix or matrix-vector
+        multiplication.
+        """
+        M, K1 = self.shape
+        K2, N = other.shape
+        if N == 1:
+            return self.matvec(other)
+        else:
+            return self.matmat(other)
 
     def matmat(self, bmat):
         self._check()
@@ -564,7 +621,7 @@ class csc_matrix(spmatrix):
             rowc = resize1d(rowc,newnnzc)
             nnzc = newnnzc
 
-        return csc_matrix(c, (rowc, ptrc), M=M, N=N)
+        return csc_matrix.Construct(c, (rowc, ptrc), M=M, N=N)
             
 
     def __getitem__(self, key):
@@ -658,8 +715,8 @@ class csc_matrix(spmatrix):
 
     def copy(self):
         M, N = self.shape
-        dtypechar = self._dtypechar
-        new = csc_matrix(M, N, nzmax=0, dtype=dtype)
+        dtype = self._dtypechar
+        new = csc_matrix.Construct(M, N, nzmax=0, dtype=dtype)
         new.data = self.data.copy()
         new.rowind = self.rowind.copy()
         new.indptr = self.indptr.copy()
@@ -670,8 +727,18 @@ class csc_matrix(spmatrix):
 # 
 class csr_matrix(spmatrix):
     """ Compressed sparse row matrix
+        This can be instantiated in two ways:
+          - with another sparse matrix (sugar for .tocsr())
+          - with (M,N), nzmax, dtype  to construct a container
+
+        Support for constructing a csr_matrix by passing 
+          - with data, ij, {M,N,nzmax}
+                a[ij[k,0],ij[k,1]] = data[k]
+          - with data, (row, ptr)
+        has been moved for now to Construct() to simplify the code and
+        allow more thorough testing.
     """
-    def __init__(self,s,ij=None,M=None,N=None,nzmax=100,dtype=Float,copy=False):
+    def __init__(self, s, nzmax=100, dtype='d'):
         spmatrix.__init__(self)
         if isinstance(s,spmatrix):
             if isinstance(s, csr_matrix):
@@ -696,25 +763,44 @@ class csr_matrix(spmatrix):
                 except AttributeError:
                     temp = csr_matrix(s.tocsc())                    
                 self.data = temp.data
-                self.rowind = temp.rowind
+                self.colind = temp.colind
                 self.indptr = temp.indptr
                 self.shape = temp.shape
-        elif isinstance(s,type(3)):
-            M=s
-            N=ij
-            self.data = zeros((nzmax,),dtype)
+        elif isinstance(s, tuple):
+            try:
+                assert len(s) == 2 and type(s[0]) == int and type(s[1]) == int
+            except AssertionError:
+                raise TypeError, "matrix dimensions must be a tuple of two integers"
+            (M, N) = s
+            self.data = zeros((nzmax,), dtype)
             self.colind = zeros((nzmax,),'i')
-            self.indptr = zeros((M+1,),'i')
+            self.indptr = zeros((N+1,),'i')
             self.shape = (M,N)
-        elif (isinstance(s,ArrayType) or \
-              isinstance(s,type([]))):
+        self._check()
+
+    def Construct(s, ij=None, M=None ,N=None, nzmax=100, dtype='d', copy=False):
+        """ Allows constructing a csr_matrix by passing:
+            - data, ij, {M,N,nzmax}
+                a[ij[k,0],ij[k,1]] = data[k]
+            - data, (row, ptr)
+        """
+        # Moved out of the __init__ function for now for simplicity.
+        # I think this should eventually be moved to be a module-level
+        # function.  Otherwise we overload the __init__ method too much,
+        # given Python's weak type checking.  This should also remove
+        # some code duplication.
+        
+        if (isinstance(s, ArrayType) or \
+              isinstance(s, type([]))):
             s = asarray(s)
             if (rank(s) == 2):  # converting from a full array
                 ocsc = csc_matrix(transpose(s))
-                self.shape = ocsc.shape[1], ocsc.shape[0]
-                self.colind = ocsc.rowind
-                self.indptr = ocsc.indptr
-                self.data = ocsc.data
+                dims = (ocsc.shape[1], ocsc.shape[0])
+                new = csr_matrix(dims)
+                new.shape = dims
+                new.colind = ocsc.rowind
+                new.indptr = ocsc.indptr
+                new.data = ocsc.data
             elif isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s),2)):
                 ijnew = ij.copy()
                 ijnew[:,0] = ij[:,1]
@@ -722,29 +808,36 @@ class csr_matrix(spmatrix):
                 temp = coo_matrix(s,ijnew,M=M,N=N,nzmax=nzmax,
                                   dtype=dtype)
                 temp = temp.tocsc()
-                self.data = temp.data
-                self.colind = temp.colind
-                self.indptr = temp.indptr
-                self.shape = temp.shape
+                dims = temp.shape
+                new = csr_matrix(dims)
+                new.data = temp.data
+                new.colind = temp.colind
+                new.indptr = temp.indptr
+                # new.shape = temp.shape
             elif isinstance(ij, types.TupleType) and (len(ij)==2):
-                self.data = asarray(s)
-                self.colind = ij[0]
-                self.indptr = ij[1]
+                # What are the new dimensions? Do we need to know them now?
+                dims = (0,0)
+                new = csr_matrix(dims)
+                new.data = asarray(s)
+                new.colind = ij[0]
+                new.indptr = ij[1]
                 if N is None:
                     try:
-                        N = amax(self.colind) + 1
+                        N = amax(new.colind) + 1
                     except ValueError:
                         N = 0
                 if M is None:
-                    M = len(self.indptr) - 1
+                    M = len(new.indptr) - 1
                     if M == -1: M = 0
-                self.shape = (M,N)
+                new.shape = (M,N)
             else:
                 raise ValueError, "Unrecognized form for csr_matrix constructor."
         else:
             raise ValueError, "Unrecognized form for csr_matrix constructor."
 
-        self._check()
+        new._check()
+        return new
+    Construct = staticmethod(Construct)
 
 
     def _check(self):
@@ -776,9 +869,18 @@ class csr_matrix(spmatrix):
 
         
     def __add__(self, other):
-        ocs = csr_matrix(other)
-        if (ocs.shape != self.shape):
-            raise ValueError, "Inconsistent shapes."
+        # First check if argument is a scalar
+        try:
+            m,n = other.shape
+        except AttributeError:
+            # Okay, assume it's scalar
+            # Now we would add this scalar to every element.
+            raise NotImplementedError('adding a scalar to a sparse matrix is not yet supported')
+        other_csr = other.tocsr()
+        #ocs = csr_matrix(other)
+        if (other_csr.shape != self.shape):
+            raise ValueError, "inconsistent shapes."
+
         dtypechar = _coerce_rules[(self._dtypechar,other._dtypechar)]
         data1, data2 = _convert_data(self.data, other.data, dtypechar)
         func = getattr(sparsetools,_transtabl[dtypechar]+'cscadd')
@@ -786,7 +888,7 @@ class csr_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csr_matrix(c,(colc,ptrc),M=M,N=N)
+        return csr_matrix.Construct(c,(colc,ptrc),M=M,N=N)
 
 
     def __mul__(self, other):  # implement matrix multiplication and matrix-vector multiplication
@@ -830,7 +932,7 @@ class csr_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csr_matrix(c,(colc,ptrc),M=M,N=N)
+        return csr_matrix.Construct(c,(colc,ptrc),M=M,N=N)
 
 
     def __rsub__(self, other):  # implement other - self
@@ -844,7 +946,7 @@ class csr_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csr_matrix(c,(colc,ptrc),M=M,N=N)
+        return csr_matrix.Construct(c,(colc,ptrc),M=M,N=N)
         
     # element-by-element multiplication (unless other is an
     #    integer and then matrix power)
@@ -868,11 +970,11 @@ class csr_matrix(spmatrix):
             if ierr:
                 raise ValueError, "Ran out of space (but shouldn't have happened)."
             M, N = self.shape
-            return csr_matrix(c,(colc,ptrc),M=M,N=N)
+            return csr_matrix.Construct(c,(colc,ptrc),M=M,N=N)
 
-    def transp(self, copy=False):
+    def transpose(self, copy=False):
         M,N = self.shape
-        new = csc_matrix(N,M,nzmax=0,dtype=self._dtypechar)
+        new = csc_matrix(N,M,nzmax=0,dtypechar=self._dtypechar)
         if copy:
             new.data = self.data.copy()
             new.rowind = self.colind.copy()
@@ -901,6 +1003,17 @@ class csr_matrix(spmatrix):
         else: cd = self.data
         y = func(cd, self.colind, self.indptr, x, self.shape[1])
         return y
+
+    def matrixmultiply(self, other):
+        """ A generic interface for matrix-matrix or matrix-vector
+        multiplication.
+        """
+        M, K1 = self.shape
+        K2, N = other.shape
+        if N == 1:
+            return self.matvec(other)
+        else:
+            return self.matmat(other)
 
     def matmat(self, bmat):
         self._check()
@@ -960,8 +1073,13 @@ class csr_matrix(spmatrix):
             rowc = resize1d(rowc,newnnzc)
             nnzc = newnnzc
 
-        outinit = eval('%s_matrix' % out)
-        return outinit(c, (rowc, ptrc), M=M, N=N)
+        if out == 'csr':
+            return csr_matrix.Construct(c, (rowc, ptrc), M=M, N=N)
+        else:
+            return csc_matrix.Construct(c, (rowc, ptrc), M=M, N=N)
+
+        #outinit = eval('%s_matrix' % out)
+        #return outinit(c, (rowc, ptrc), M=M, N=N)
 
 
     def __getitem__(self, key):
@@ -1065,8 +1183,7 @@ class csr_matrix(spmatrix):
 
     def copy(self):
         M, N = self.shape
-        dtypechar = self._dtypechar
-        new = csr_matrix(M, N, nzmax=0, dtype=dtype)
+        new = csr_matrix(M, N, nzmax=0, dtype=self._dtypechar)
         new.data = self.data.copy()
         new.colind = self.colind.copy()
         new.indptr = self.indptr.copy()
@@ -1101,7 +1218,10 @@ class dok_matrix(spmatrix, dict):
         spmatrix.__init__(self)
         self.shape = (0,0)
         self.nnz = 0
-        # This is unsafe and slow for sparse matrices -- disable for now.
+
+        # This is unsafe and, for sparse matrices, inefficient.
+        # Disabled for now:
+
         #if A is not None:
         #    A = asarray(A)
         #    N,M = A.shape
@@ -1138,6 +1258,12 @@ class dok_matrix(spmatrix, dict):
                (self.shape + (nnz, _formats[format][1]))
 
     def __getitem__(self, key):
+        # Sanity checks: key must be a pair of integers
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise TypeError, "key must be a tuple of two integers"
+        if type(key[0]) != int or type(key[1]) != int:
+            raise TypeError, "key must be a tuple of two integers"
+
         return self.get(key,0)
 
     def __setitem__(self, key, value):
@@ -1204,15 +1330,17 @@ class dok_matrix(spmatrix, dict):
     def __len__(self):
         return len(self.keys())    
 
-    def transp(self):
-        # Transpose (return the transposed)
+    def transpose(self):
+        """ Return the transpose
+        """
         new = dok_matrix()
         for key in self.keys():
             new[key[1],key[0]] = self[key]
         return new
 
     def conjtransp(self):
-        # Transpose (return the transposed)
+        """ Return the conjugate transpose
+        """
         new = dok_matrix()
         for key in self.keys():
             new[key[1],key[0]] = conj(self[key])
@@ -1305,7 +1433,8 @@ class dok_matrix(spmatrix, dict):
         """
         keys = self.keys()
         keys.sort()
-        nnz = len(keys)
+        nnz = self.nnz
+        assert nnz == len(keys)
         data = [0]*nnz
         colind = [0]*nnz
         row_ptr = [0]*(self.shape[0]+1)
@@ -1325,7 +1454,7 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
-        return csr_matrix(data,(colind, row_ptr))
+        return csr_matrix.Construct(data,(colind, row_ptr))
 
     def tocsc(self):
         """ Return Compressed Sparse Column format arrays for this matrix
@@ -1354,7 +1483,7 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         rowind = array(rowind)
         col_ptr = array(col_ptr)
-        return csc_matrix(data, (rowind, col_ptr))
+        return csc_matrix.Construct(data, (rowind, col_ptr))
 
     def todense(self,dtypechar=None):
         if dtypechar is None:
@@ -1448,7 +1577,7 @@ class coo_matrix(spmatrix):
         a, rowa, ptra, ierr = func(self.shape[1], data, row, col)
         if ierr:
             raise RuntimeError, "Error in conversion."
-        return csc_matrix(a, (rowa, ptra), M=self.shape[0], N=self.shape[1])
+        return csc_matrix.Construct(a, (rowa, ptra), M=self.shape[0], N=self.shape[1])
 
     def tocsr(self):
         func = getattr(sparsetools,self.ftype+"cootocsc")
@@ -1456,7 +1585,7 @@ class coo_matrix(spmatrix):
         a, cola, ptra, ierr = func(self.shape[0], data, col, row)
         if ierr:
             raise RuntimeError, "Error in conversion."
-        return csr_matrix(a, (cola, ptra), M=self.shape[0],N=self.shape[1])
+        return csr_matrix.Construct(a, (cola, ptra), M=self.shape[0],N=self.shape[1])
 
     def tocoo(self,copy=False):
         if copy:
@@ -1507,7 +1636,7 @@ def spdiags(diags,offsets,m,n):
     a, rowa, ptra, ierr = diagfunc(m,n,diags,offsets)
     if ierr:
         raise ValueError, "Ran out of memory (shouldn't have happened)"
-    return csc_matrix(a,(rowa,ptra),M=m,N=n)
+    return csc_matrix.Construct(a,(rowa,ptra),M=m,N=n)
 
 def solve(A,b,permc_spec=2):
     if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
@@ -1544,7 +1673,7 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
         
 
 if __name__ == "__main__":
-    a = csc_matrix(arange(1,9),ij=transpose([[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4]]))
+    a = csc_matrix.Construct(arange(1,9),ij=transpose([[0,1,1,2,2,3,3,4],[0,1,3,0,2,3,4,4]]))
     print "Representation of a matrix:"
     print repr(a)
     print "How a matrix prints."
@@ -1588,3 +1717,26 @@ if __name__ == "__main__":
     x = solve(a,b.astype('f'))
     print x
     print "Error: ",a*x-b
+
+    print "(Various small tests follow ...)\n"
+    print "Dictionary of keys matrix:"
+    a = dok_matrix()
+    a[1,1] = 1.
+    a[1,5] = 1.
+    print a
+    print "Adding it to itself:"
+    print a + a
+    
+    print "Multiplying by a scalar:"
+    print a * 100
+
+    print "Dense representation:"
+    print a.todense()
+
+    print "Converting to a CSR matrix:"
+    c = a.tocsr()
+    print c
+
+    print "Adding a constant:"
+    c += 5
+    print c

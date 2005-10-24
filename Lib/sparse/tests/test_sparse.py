@@ -2,7 +2,7 @@
 #
 # Created by: Travis Oliphant, April 2004
 #
-""" Test functions for Sparse matrices
+""" Test functions for sparse matrices
 
 """
 __usage__ = """
@@ -11,7 +11,7 @@ Build sparse:
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.sparse.test(<level>)'
 Run tests if sparse is not installed:
-  python tests/test_Sparse.py [<level>]
+  python tests/test_sparse.py [<level>]
 """
 
 import scipy.base
