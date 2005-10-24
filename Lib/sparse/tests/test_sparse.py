@@ -20,7 +20,7 @@ from scipy.base import arange, zeros, array, dot
 import sys
 from scipy.test.testing import *
 set_package_path()
-from sparse import csc_matrix, csr_matrix, dok_matrix
+from scipy.sparse import csc_matrix, csr_matrix, dok_matrix
 restore_path()
 
 class _test_cs(ScipyTestCase):
