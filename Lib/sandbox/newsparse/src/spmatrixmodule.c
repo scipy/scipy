@@ -1,10 +1,9 @@
 #include "Python.h"
 
 #define SPMATRIX_MODULE
-#include "newsparse/spmatrix.h"
+#include "pysparse/spmatrix.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL spmatrix
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 
 PyObject *SpMatrix_ErrorObject;
@@ -371,7 +370,7 @@ initspmatrix(void)
   /* initialise C API */
   init_c_api(d);
 
-  /* initialise Numeric array module */
+  /* initialise scipy array module */
   import_array();
 
   /* Check for errors */

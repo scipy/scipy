@@ -13,18 +13,18 @@ import glob
 
 def configuration(parent_package='',parent_path=None):
     from scipy.distutils.system_info import get_info
-    config = Configuration('newsparse', parent_package, parent_path)
+    config = Configuration('pysparse', parent_package, parent_path)
     #local_path = get_path(__name__,parent_path)
 
     config.add_data_dir('docs')
     config.add_data_dir('examples')
     config.add_data_dir('tests')
     #config.add_data_files(('include'))
-    headers = glob.glob(os.path.join ("include","newsparse","*.h"))
+    headers = glob.glob(os.path.join ("include","pysparse","*.h"))
     #header_dir = join(*(config.name.split('.')+['include','scipy']))
     #headers = ["csr_mat.h", "spmatrix.h", "spmatrix_api.h", "sss_mat.h", "ll_mat.h", "spmatrix.h"]
     #config.add_headers(headers)
-    config.add_extension('newsparse',
+    config.add_extension('pysparse',
         sources = ['src/spmatrixmodule.c'],
         include_dirs = ['include/']
         )
@@ -33,7 +33,7 @@ def configuration(parent_package='',parent_path=None):
 
 if __name__ == '__main__':
     from scipy.distutils.core import setup
-    setup(description="newsparse - A port of Roman Geus's PySparse to newscipy",
+    setup(description="pysparse - A port of Roman Geus's PySparse to newscipy",
           author="Ed Schofield, Robert Cimrman",
           author_email = "edschofield@scipy.org, cimrman3@ntc.zcu.cz",
           maintainer_email = "scipy-dev@scipy.org",

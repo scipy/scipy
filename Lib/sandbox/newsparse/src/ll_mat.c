@@ -1,15 +1,14 @@
 #include "Python.h"
 #include <math.h>
-#include "newsparse/mmio.h"
-#include "newsparse/ll_mat.h"
-#include "newsparse/csr_mat.h"
-#include "newsparse/sss_mat.h"
+#include "pysparse/mmio.h"
+#include "pysparse/ll_mat.h"
+#include "pysparse/csr_mat.h"
+#include "pysparse/sss_mat.h"
 
 #define SPMATRIX_MODULE
-#include "newsparse/spmatrix.h"
+#include "pysparse/spmatrix.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL spmatrix
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 
 #define INCREASE_FACTOR   1.5	/* increase rate for memory reallocation of ll_mat arrays */
@@ -749,7 +748,7 @@ static char LLMat_matvec_transp_doc[] = "a.matvec_transp(x, y)\n\
 \n\
 compute the sparse matrix-vector product y := a^T * x. \n\
 a^T is the transpose of a, which is a d1 by d2 sparse matrix.\n\
-x and y are two 1-dimensional Numeric arrays of appropriate size.";
+x and y are two 1-dimensional scipy arrays of appropriate size.";
 
 static PyObject *
 LLMat_matvec_transp(LLMatObject *self, PyObject *args)
@@ -786,7 +785,7 @@ static char LLMat_matvec_doc[] = "a.matvec(x, y)\n\
 \n\
 compute the sparse matrix-vector product y := a * x. \n\
 a is a d1 by d2 sparse matrix.\n\
-x and y are two 1-dimensional Numeric arrays of appropriate size.";
+x and y are two 1-dimensional scipy arrays of appropriate size.";
 
 static PyObject *
 LLMat_matvec(LLMatObject *self, PyObject *args)

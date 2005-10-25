@@ -60,7 +60,6 @@ Availability:
 #include <string.h>
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL umfpack
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 #include "umfpack.h"
 #include "pysparse/spmatrix.h"

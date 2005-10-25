@@ -12,7 +12,6 @@
 
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL jdsym_API
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 #include "pysparse/fortran.h"
 #include "pysparse/blas.h"
@@ -325,7 +324,7 @@ initjdsym(void) {
   
   m = Py_InitModule3("jdsym", jdsym_methods, module_doc);
 
-  /* initialize Numeric array module */
+  /* initialize scipy array module */
   import_array();
   /* initialize spmatrix module */
   import_spmatrix();

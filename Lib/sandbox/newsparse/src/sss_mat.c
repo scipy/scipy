@@ -1,10 +1,9 @@
 #include "Python.h"
 
 #define SPMATRIX_MODULE
-#include "newsparse/spmatrix.h"
+#include "pysparse/spmatrix.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL spmatrix
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 
 /** getitem
@@ -34,7 +33,7 @@ static char SSSMat_matvec_doc[] = "a.matvec(x, y)\n\
 \n\
 compute the sparse matrix-vector product y := a * x. \n\
 a is a d1 by d2 sparse matrix.\n\
-x and y are two 1-dimensional Numeric arrays of appropriate size.";
+x and y are two 1-dimensional scipy arrays of appropriate size.";
 
 void sss_matvec(int n, double *x, double *y,
 		double *va, double *da, int *ja, int *ia) {
@@ -98,7 +97,7 @@ static char SSSMat_matvec_transp_doc[] = "a.matvec_transp(x, y)\n\
 \n\
 compute the sparse matrix-vector product y := a^T * x. \n\
 a^T is the transpose of a, which is a d1 by d2 sparse matrix.\n\
-x and y are two 1-dimensional Numeric arrays of appropriate size.";
+x and y are two 1-dimensional scipy arrays of appropriate size.";
 
 /** table of object methods
  */

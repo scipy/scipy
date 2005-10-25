@@ -5,7 +5,6 @@
 #include "Python.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL itsolvers_pyarray
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 
 #define SPMATRIX_UNIQUE_SYMBOL itsolvers_spmatrix
@@ -645,7 +644,7 @@ inititsolvers(void)
   
   m = Py_InitModule3("itsolvers", itsolvers_methods, module_doc);
 
-  /* initialize Numeric array module */
+  /* initialize scipy array module */
   import_array();
   /* initialize spmatrix module */
   import_spmatrix();

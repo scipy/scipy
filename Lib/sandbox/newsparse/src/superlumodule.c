@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL superlu
-/* Was: #include "Numeric/arrayobject.h" */
 #include "scipy/arrayobject.h"
 #include "pysparse/dsp_defs.h"
 #include "pysparse/util.h"
@@ -352,7 +351,7 @@ initsuperlu(void)
 
   PyDict_SetItemString(d, "SuperLUType", (PyObject *)&SuperLUType);
 
-  /* initialize Numeric array module */
+  /* initialize scipy array module */
   import_array();
   /* initialize spmatrix module */
   import_spmatrix();

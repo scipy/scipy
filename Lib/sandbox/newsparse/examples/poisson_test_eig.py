@@ -1,4 +1,4 @@
-import Numeric
+import scipy
 import math
 import spmatrix
 import itsolvers

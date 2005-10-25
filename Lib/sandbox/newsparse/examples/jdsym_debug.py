@@ -1,5 +1,5 @@
 import math
-import Numeric
+import scipy
 import spmatrix, itsolvers, jdsym, precon, superlu
 
 test = 1
@@ -34,10 +34,10 @@ elif test == 2:
     Asigma.shift(-sigma, M)
     K = precon.jacobi(Asigma.to_sss())
     
-    b = Numeric.ones(n, 'd')
-    x = Numeric.zeros(n, 'd')
+    b = scipy.ones(n, 'd')
+    x = scipy.zeros(n, 'd')
     K.precon(b, x)
-    print 'norm(idiag) = %.16g' % (math.sqrt(Numeric.dot(x, x)), )
+    print 'norm(idiag) = %.16g' % (math.sqrt(scipy.dot(x, x)), )
 
     k_conv, lmbd, Q, it, it_inner  = jdsym.jdsym(A.to_sss(), M.to_sss(), K, 5, sigma, 1e-10, 150, itsolvers.qmrs,
                                        jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=200, clvl=1, strategy=1)

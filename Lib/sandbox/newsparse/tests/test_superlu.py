@@ -1,19 +1,19 @@
 import math, unittest
-import Numeric
+import scipy
 import spmatrix, superlu
 import poisson
 
 def residual(A, x, b):
     n = A.shape[0]
-    r = Numeric.zeros(n, 'd')
+    r = scipy.zeros(n, 'd')
     A.matvec(x, r)
     r -= b
-    return math.sqrt(Numeric.dot(r, r))
+    return math.sqrt(scipy.dot(r, r))
 
 def error(x, y):
     n = len(x)
     t = x.copy(); t -= y
-    return math.sqrt(Numeric.dot(t, t))
+    return math.sqrt(scipy.dot(t, t))
 
 def speye(n):
     A = spmatrix.ll_mat_sym(n, n)
@@ -32,8 +32,8 @@ class EyeTestCase(unittest.TestCase):
     def setUp(self):
         self.n = 10000
         self.A = speye(self.n).to_csr()
-        self.b = Numeric.ones(self.n, 'd')
-        self.x = Numeric.zeros(self.n, 'd')
+        self.b = scipy.ones(self.n, 'd')
+        self.x = scipy.zeros(self.n, 'd')
 
     def testTrivial(self):
         luA = superlu.factorize(self.A)
@@ -62,9 +62,9 @@ class Poisson1dTestCase(unittest.TestCase):
         self.n = 50000
         self.B = poisson.poisson1d(self.n).to_csr()
         
-        self.b = Numeric.zeros(self.n, 'd')
-        self.x = Numeric.zeros(self.n, 'd')
-        self.x_exact = Numeric.ones(self.n, 'd')
+        self.b = scipy.zeros(self.n, 'd')
+        self.x = scipy.zeros(self.n, 'd')
+        self.x_exact = scipy.ones(self.n, 'd')
         self.x_exact /= math.sqrt(self.n)
         self.B.matvec(self.x_exact, self.b)
         
@@ -126,9 +126,9 @@ class Poisson2dTestCase(unittest.TestCase):
         self.n = 200
         self.B = poisson.poisson2d(self.n).to_csr()
         
-        self.b = Numeric.zeros(self.n*self.n, 'd')
-        self.x = Numeric.zeros(self.n*self.n, 'd')
-        self.x_exact = Numeric.ones(self.n*self.n, 'd')
+        self.b = scipy.zeros(self.n*self.n, 'd')
+        self.x = scipy.zeros(self.n*self.n, 'd')
+        self.x_exact = scipy.ones(self.n*self.n, 'd')
         self.x_exact /= math.sqrt(self.n*self.n)
         self.B.matvec(self.x_exact, self.b)
 
