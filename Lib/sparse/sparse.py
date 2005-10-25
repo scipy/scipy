@@ -872,7 +872,7 @@ class csr_matrix(spmatrix):
         if ierr:
             raise ValueError, "Ran out of space (but shouldn't have happened)."
         M, N = self.shape
-        return csc_matrix(c, (colc, ptrc), (M, N))
+        return csr_matrix(c, (colc, ptrc), (M, N))
 
 
     def __mul__(self, other):  # implement matrix multiplication and matrix-vector multiplication
@@ -921,7 +921,7 @@ class csr_matrix(spmatrix):
             if ierr:
                 raise ValueError, "Ran out of space (but shouldn't have happened)."
             M, N = self.shape
-            return csc_matrix(c, (colc, ptrc), (M, N))
+            return csr_matrix(c, (colc, ptrc), (M, N))
 
 
     def __rsub__(self, other):  # implement other - self
@@ -958,7 +958,7 @@ class csr_matrix(spmatrix):
             if ierr:
                 raise ValueError, "Ran out of space (but shouldn't have happened)."
             M, N = self.shape
-            return csc_matrix(c, (colc, ptrc), (M, N))
+            return csr_matrix(c, (colc, ptrc), (M, N))
 
     def transpose(self, copy=False):
         M,N = self.shape
