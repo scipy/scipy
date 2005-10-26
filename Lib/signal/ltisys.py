@@ -7,13 +7,13 @@
 from filter_design import tf2zpk, zpk2tf, normalize
 from scipy import product, zeros, concatenate, \
      array, dot, transpose, arange, ones, Float
-import scipy as Numeric
+import scipy.base as Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
 from scipy.base import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
-from Matrix import Matrix as Mat
+from scipy.base import matrix as Mat
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.
