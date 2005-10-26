@@ -11,12 +11,14 @@ __all__ = ['get_flinalg_funcs']
 # is raised at the first attempt to use the resources.
 try:
     import _flinalg
-    has_column_major_storage = _flinalg.has_column_major_storage
 except ImportError:
     from scipy.distutils.misc_util import PostponedException
     _flinalg = PostponedException()
     print _flinalg.__doc__
     has_column_major_storage = lambda a:0
+
+def has_column_major_storage(arr):
+    return arr.flags['FORTRAN']
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 
