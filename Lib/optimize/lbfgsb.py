@@ -164,8 +164,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     g = NA.zeros((n,), NA.Float64)
     wa = NA.zeros((2*m*n+4*n + 12*m**2 + 12*m,), NA.Float64)
     iwa = NA.zeros((3*n,), NA.Int32)
-    task = NA.zeros((60,), NA.Character)
-    csave = NA.zeros((60,), NA.Character)
+    task = NA.zeros(1, 'S60')
+    csave = NA.zeros(1,'S60')
     lsave = NA.zeros((4,), NA.Int32)
     isave = NA.zeros((44,), NA.Int32)
     dsave = NA.zeros((29,), NA.Float64)
@@ -190,7 +190,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         else:
             break
 
-    task_str = task.tostring().strip()
+    task_str = task.tostring().strip('\x00').strip()
     if task_str.startswith('CONV'):
         warnflag = 0
     elif n_function_evals > maxfun:

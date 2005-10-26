@@ -1,7 +1,7 @@
 /* MULTIPACK module by Travis Oliphant
 
 Copyright (c) 1999 Travis Oliphant all rights reserved
-Oliphant.Travis@altavista.net
+oliphant.travis@ieee.org
 Permission to use, modify, and distribute this software is given under the 
 terms of the Scipy License
 
@@ -34,9 +34,6 @@ the result tuple when the full_output argument is non-zero.
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
-
-#define MAX(n1,n2) ((n1) > (n2))?(n1):(n2);
-#define MIN(n1,n2) ((n1) > (n2))?(n2):(n1);
 
 #define STORE_VARS() PyObject *store_quadpack_globals[2]; jmp_buf store_jmp;
 
