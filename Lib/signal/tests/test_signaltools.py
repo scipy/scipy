@@ -4,13 +4,12 @@ import os
 import unittest
 import sys
 from unittest import TestCase
-import scipy.base.limits as limits
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 import scipy.signal as signal
 del sys.path[0]
 
-from Numeric import array
+from scipy.base import array
 
 class test_convolve(TestCase):
     def check_basic(self):
@@ -33,9 +32,7 @@ class test_wiener(TestCase):
         assert_array_almost_equal(h,correct,decimal=6)
 
 if __name__ == "__main__":
-    ScipyTest(signal).run()
-
-
+    ScipyTest().run()
 
 
 
