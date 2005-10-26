@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
-import os
-from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path, Configuration, dot_join
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
 
-def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.system_info import get_info
-    package = 'signal'
-    local_path = get_path(__name__,parent_path)    
-    config = Configuration(package, parent_package)
+    config = Configuration('signal', parent_package, top_path)
+
+    config.add_data_dir('tests')
 
     config.add_extension('sigtools',
         sources=['sigtoolsmodule.c','firfilter.c','medianfilter.c'],
@@ -23,4 +20,4 @@ def configuration(parent_package='',parent_path=None):
 
 if __name__ == '__main__':
     from scipy.distutils.core import setup
-    setup(**configuration(parent_path=''))
+    setup(**configuration(top_path=''))

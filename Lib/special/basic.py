@@ -5,7 +5,6 @@
 #
 
 from scipy.base import *
-from scipy.base import *
 from _cephes import *
 import types
 import specfun

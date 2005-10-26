@@ -40,6 +40,9 @@ def configuration(parent_package='',top_path=None):
                          f2py_options=['--no-wrap-functions'],
                          define_macros=[],
                          libraries=['specfun'])
+
+    config.add_data_dir('tests')
+    
     return config
 
 if __name__ == '__main__':

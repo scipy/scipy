@@ -32,12 +32,12 @@ import os
 import sys
 #import fpformat
 import unittest
-import scipy.base.limits as limits
 from scipy.base import *
 
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 from special import *
+import special._cephes as cephes
 del sys.path[0]
 
 
@@ -2091,4 +2091,4 @@ class test_zeros(unittest.TestCase):
                                     [0, 0]]))
 
 if __name__ == "__main__":
-    ScipyTest('special.basic').run()
+    ScipyTest().run()
