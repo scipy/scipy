@@ -79,7 +79,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
       y == fft(ifft(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtype
+    t = tmp.dtypechar
     if t==scipy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
@@ -118,12 +118,12 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     Optional input: see fft.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtype
-    if t==scipy.Complex64:
+    t = tmp.dtypechar
+    if t == scipy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
-    elif t==scipy.Complex32:
+    elif t == scipy.Complex32:
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -172,7 +172,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
       y == rfft(irfft(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtype
+    t = tmp.dtypechar
     if t in (scipy.Complex32, scipy.Complex64):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
@@ -217,7 +217,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     Optional input: see rfft.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtype
+    t = tmp.dtypechar
     if t in (scipy.Complex32, scipy.Complex64):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
@@ -289,7 +289,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
       y == fftn(ifftn(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtype
+    t = tmp.dtypechar
     if t==scipy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
@@ -318,7 +318,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     Optional input: see fftn.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtype
+    t = tmp.dtypechar
     if t==scipy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))

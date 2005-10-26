@@ -10,4 +10,4 @@ from fftpack_version import fftpack_version as __version__
 from scipy.basic.fft import fftshift, ifftshift, fftfreq
 from basic import *
 from pseudo_diffs import *
-#from helper import *
+from helper import *

@@ -19,11 +19,22 @@ del sys.path[0]
 
 
 import scipy.base as Numeric
-from scipy.base import arange, add, array
+from scipy.base import arange, add, array, asarray, zeros, dot, exp, pi,\
+     swapaxes
 
 from scipy.basic.random import rand
 def random(size):
     return rand(*size)
+def Numeric_random(size):
+    import random
+    from Numeric import zeros, Float64
+    results = zeros(size,Float64)
+    f = results.flat
+    for i in range(len(f)):
+        f[i] = random.random()
+    return results
+
+
 
 import unittest
 
@@ -33,42 +44,42 @@ def get_mat(n):
     return data
 
 def direct_dft(x):
-    x = Numeric.asarray(x)
+    x = asarray(x)
     n = len(x)
-    y = Numeric.zeros(n,'D')
-    w = -Numeric.arange(n)*(2j*Numeric.pi/n)
+    y = zeros(n,'D')
+    w = -arange(n)*(2j*pi/n)
     for i in range(n):
-        y[i] = Numeric.dot(Numeric.exp(i*w),x)
+        y[i] = dot(exp(i*w),x)
     return y
 
 def direct_idft(x):
-    x = Numeric.asarray(x)
+    x = asarray(x)
     n = len(x)
-    y = Numeric.zeros(n,'D')
-    w = Numeric.arange(n)*(2j*Numeric.pi/n)
+    y = zeros(n,'D')
+    w = arange(n)*(2j*pi/n)
     for i in range(n):
-        y[i] = Numeric.dot(Numeric.exp(i*w),x)/n
+        y[i] = dot(exp(i*w),x)/n
     return y
 
 def direct_dftn(x):
-    x = Numeric.asarray(x)
+    x = asarray(x)
     for axis in range(len(x.shape)):
         x = fft(x,axis=axis)
     return x
 
 def direct_idftn(x):
-    x = Numeric.asarray(x)
+    x = asarray(x)
     for axis in range(len(x.shape)):
         x = ifft(x,axis=axis)
     return x
 
 def direct_rdft(x):
-    x = Numeric.asarray(x)
+    x = asarray(x)
     n = len(x)
-    w = -Numeric.arange(n)*(2j*Numeric.pi/n)
-    r = Numeric.zeros(n,'d')
+    w = -arange(n)*(2j*pi/n)
+    r = zeros(n,'d')
     for i in range(n/2+1):
-        y = Numeric.dot(Numeric.exp(i*w),x)
+        y = dot(exp(i*w),x)
         if i:
             r[2*i-1] = y.real
             if 2*i<n:
@@ -78,9 +89,9 @@ def direct_rdft(x):
     return r
 
 def direct_irdft(x):
-    x = Numeric.asarray(x)
+    x = asarray(x)
     n = len(x)
-    x1 = Numeric.zeros(n,'D')
+    x1 = zeros(n,'D')
     for i in range(n/2+1):
         if i:
             if 2*i<n:
@@ -110,7 +121,7 @@ class test_fft(ScipyTestCase):
         assert_array_almost_equal(y[0],direct_dft(x1))
         assert_array_almost_equal(y[1],direct_dft(x2))
 
-    def check_n_argument_complex(self):
+    def _check_n_argument_complex(self):
         x1 = [1,2,3,4+1j]
         x2 =  [1,2,3,4+1j]
         y = fft([x1,x2],n=4)
@@ -136,6 +147,7 @@ class test_fft(ScipyTestCase):
     def bench_random(self,level=5):
         try:
             from FFT import fft as FFT_fft
+            from Numeric import array
         except ImportError:
             FFT_fft = None
         print
@@ -166,6 +178,7 @@ class test_fft(ScipyTestCase):
                 sys.stdout.flush()
                 
                 if FFT_fft is not None:
+                    x = array(x.tolist())
                     assert_array_almost_equal(FFT_fft(x),y)
                     print '|%8.2f' % self.measure('FFT_fft(x)',repeat),
                 else:
@@ -221,6 +234,7 @@ class test_ifft(ScipyTestCase):
     def bench_random(self,level=5):
         try:
             from FFT import inverse_fft as FFT_ifft
+            from Numeric import array
         except ImportError:
             FFT_ifft = None
 
@@ -252,6 +266,7 @@ class test_ifft(ScipyTestCase):
                 sys.stdout.flush()
 
                 if FFT_ifft is not None:
+                    x = array(x.tolist())
                     assert_array_almost_equal(FFT_ifft(x),y)
                     print '|%8.2f' % self.measure('FFT_ifft(x)',repeat),
                 else:
@@ -283,7 +298,7 @@ class test_rfft(ScipyTestCase):
             n = 2**i
             x = range(n)
             y2 = fft2(x)
-            y1 = Numeric.zeros((n,),'d')
+            y1 = zeros((n,),'d')
             y1[0] = y2[0].real
             y1[-1] = y2[n/2].real
             for k in range(1,n/2):
@@ -295,6 +310,7 @@ class test_rfft(ScipyTestCase):
     def bench_random(self,level=5):
         try:
             from FFT import real_fft as FFT_rfft
+            from Numeric import array
         except ImportError:
             FFT_rfft = None
 
@@ -319,6 +335,7 @@ class test_rfft(ScipyTestCase):
             sys.stdout.flush()
             
             if FFT_rfft is not None:
+                x = array(x.tolist())
                 print '|%8.2f' % self.measure('FFT_rfft(x)',repeat),
             else:
                 print '|  N/A  ',
@@ -346,13 +363,14 @@ class test_irfft(ScipyTestCase):
     def check_djbfft(self):
         try:
             from FFT import inverse_fft as ifft2
+            from Numeric import zeros
         except ImportError:
             print 'Skipping check_djbfft (failed to import FFT)'
             return
         for i in range(2,14):
             n = 2**i
             x = range(n)
-            x1 = Numeric.zeros((n,),'D')
+            x1 = zeros((n,),'D')
             x1[0] = x[0]
             for k in range(1,n/2):
                 x1[k] = x[2*k-1]+1j*x[2*k]
@@ -371,6 +389,7 @@ class test_irfft(ScipyTestCase):
     def bench_random(self,level=5):
         try:
             from FFT import inverse_real_fft as FFT_irfft
+            from Numeric import zeros,array
         except ImportError:
             FFT_irfft = None
 
@@ -391,7 +410,7 @@ class test_irfft(ScipyTestCase):
             sys.stdout.flush()
 
             x = random([size]).astype('d')
-            x1 = Numeric.zeros(size/2+1,'D')
+            x1 = zeros(size/2+1,'D')
             x1[0] = x[0]
             for i in range(1,size/2):
                 x1[i] = x[2*i-1] + 1j * x[2*i]
@@ -447,24 +466,24 @@ class test_fftn(ScipyTestCase):
         jik_space = [ik_plane1,ik_plane2,ik_plane3]
         jki_space = [ki_plane1,ki_plane2,ki_plane3]
         kij_space = [ij_plane1,ij_plane2,ij_plane3]
-        x = Numeric.array([plane1,plane2,plane3])
+        x = array([plane1,plane2,plane3])
 
         assert_array_almost_equal(fftn(x),fftn(x,axes=(-3,-2,-1))) # kji_space
         assert_array_almost_equal(fftn(x),fftn(x,axes=(0,1,2)))
         y = fftn(x,axes=(2,1,0)) # ijk_space
-        assert_array_almost_equal(Numeric.swapaxes(y,-1,-3),fftn(ijk_space))
+        assert_array_almost_equal(swapaxes(y,-1,-3),fftn(ijk_space))
         y = fftn(x,axes=(2,0,1)) # ikj_space
-        assert_array_almost_equal(Numeric.swapaxes(Numeric.swapaxes(y,-1,-3),
+        assert_array_almost_equal(swapaxes(swapaxes(y,-1,-3),
                                                    -1,-2)
                                   ,fftn(ikj_space))
         y = fftn(x,axes=(1,2,0)) # jik_space
-        assert_array_almost_equal(Numeric.swapaxes(Numeric.swapaxes(y,-1,-3),
+        assert_array_almost_equal(swapaxes(swapaxes(y,-1,-3),
                                                    -3,-2)
                                   ,fftn(jik_space))
         y = fftn(x,axes=(1,0,2)) # jki_space
-        assert_array_almost_equal(Numeric.swapaxes(y,-2,-3),fftn(jki_space))
+        assert_array_almost_equal(swapaxes(y,-2,-3),fftn(jki_space))
         y = fftn(x,axes=(0,2,1)) # kij_space
-        assert_array_almost_equal(Numeric.swapaxes(y,-2,-1),
+        assert_array_almost_equal(swapaxes(y,-2,-1),
                                   fftn(kij_space))
         
         y = fftn(x,axes=(-2,-1)) # ji_plane
@@ -484,17 +503,17 @@ class test_fftn(ScipyTestCase):
         assert_array_almost_equal(fftn(x[:,1,:]),y[:,1,:])
         assert_array_almost_equal(fftn(x[:,2,:]),y[:,2,:])
         y = fftn(x,axes=(-1,-2)) # ij_plane
-        assert_array_almost_equal(fftn(ij_plane1),Numeric.swapaxes(y[0],-2,-1))
-        assert_array_almost_equal(fftn(ij_plane2),Numeric.swapaxes(y[1],-2,-1))
-        assert_array_almost_equal(fftn(ij_plane3),Numeric.swapaxes(y[2],-2,-1))
+        assert_array_almost_equal(fftn(ij_plane1),swapaxes(y[0],-2,-1))
+        assert_array_almost_equal(fftn(ij_plane2),swapaxes(y[1],-2,-1))
+        assert_array_almost_equal(fftn(ij_plane3),swapaxes(y[2],-2,-1))
         y = fftn(x,axes=(-1,-3)) # ik_plane
-        assert_array_almost_equal(fftn(ik_plane1),Numeric.swapaxes(y[:,0,:],-1,-2))
-        assert_array_almost_equal(fftn(ik_plane2),Numeric.swapaxes(y[:,1,:],-1,-2))
-        assert_array_almost_equal(fftn(ik_plane3),Numeric.swapaxes(y[:,2,:],-1,-2))
+        assert_array_almost_equal(fftn(ik_plane1),swapaxes(y[:,0,:],-1,-2))
+        assert_array_almost_equal(fftn(ik_plane2),swapaxes(y[:,1,:],-1,-2))
+        assert_array_almost_equal(fftn(ik_plane3),swapaxes(y[:,2,:],-1,-2))
         y = fftn(x,axes=(-2,-3)) # jk_plane
-        assert_array_almost_equal(fftn(jk_plane1),Numeric.swapaxes(y[:,:,0],-1,-2))
-        assert_array_almost_equal(fftn(jk_plane2),Numeric.swapaxes(y[:,:,1],-1,-2))
-        assert_array_almost_equal(fftn(jk_plane3),Numeric.swapaxes(y[:,:,2],-1,-2))
+        assert_array_almost_equal(fftn(jk_plane1),swapaxes(y[:,:,0],-1,-2))
+        assert_array_almost_equal(fftn(jk_plane2),swapaxes(y[:,:,1],-1,-2))
+        assert_array_almost_equal(fftn(jk_plane3),swapaxes(y[:,:,2],-1,-2))
 
         y = fftn(x,axes=(-1,)) # i_line
         for i in range(3):
@@ -522,7 +541,7 @@ class test_fftn(ScipyTestCase):
 
     def check_shape_axes_argument(self):
         small_x = [[1,2,3],[4,5,6],[7,8,9]]
-        large_x1 = Numeric.array([[1,2,3,0],
+        large_x1 = array([[1,2,3,0],
                                   [4,5,6,0],
                                   [7,8,9,0],
                                   [0,0,0,0]])
@@ -535,12 +554,13 @@ class test_fftn(ScipyTestCase):
         y = fftn(small_x,shape=(4,4),axes=(-2,-1))
         assert_array_almost_equal (y,fftn(large_x1))
         y = fftn(small_x,shape=(4,4),axes=(-1,-2))
-        assert_array_almost_equal (y,Numeric.swapaxes(\
-            fftn(Numeric.swapaxes(large_x1,-1,-2)),-1,-2))
+        assert_array_almost_equal (y,swapaxes(\
+            fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
     def bench_random(self,level=5):
         try:
             from FFT import fftnd as FFT_fftn
+            from Numeric import array
         except ImportError:
             FFT_fftn = None
 
@@ -569,7 +589,8 @@ class test_fftn(ScipyTestCase):
                 sys.stdout.flush()
                 
                 if FFT_fftn is not None:
-                    assert_array_almost_equal(FFT_fftn(x),y)
+                    x = array(x.tolist())
+                    assert_array_almost_equal(asarray(FFT_fftn(x).tolist()),y)
                     print '|%8.2f' % self.measure('FFT_fftn(x)',repeat),
                 else:
                     print '|  N/A  ',
@@ -596,4 +617,4 @@ class test_ifftn(ScipyTestCase):
             assert_array_almost_equal (fftn(ifftn(x)),x)
 
 if __name__ == "__main__":
-    ScipyTest('fftpack.basic').run()
+    ScipyTest().run()
