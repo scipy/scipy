@@ -9,6 +9,8 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('sparse',parent_package,top_path)
 
+    config.add_data_dir('tests')
+
     lapack_opt = get_info('lapack_opt',notfound_action=2)
     if sys.platform=='win32':
         superlu_defs = [('NO_TIMER',1)]
