@@ -22,6 +22,9 @@ elif hasattr(fblas,'empty_module'):
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
+def has_column_major_storage(arr):
+    return arr.flags['FORTRAN']
+
 def get_blas_funcs(names,arrays=(),debug=0):
     """Return available BLAS function objects with names.
     arrays are used to determine the optimal prefix of
@@ -38,7 +41,7 @@ def get_blas_funcs(names,arrays=(),debug=0):
         required_prefix = 'd'
     typecode = _inv_type_conv[required_prefix]
     # Default lookup:
-    if ordering and fblas.has_column_major_storage(arrays[ordering[0][1]]):
+    if ordering and has_column_major_storage(arrays[ordering[0][1]]):
         # prefer Fortran code for leading array with column major order
         m1,m2 = fblas,cblas
     else:
