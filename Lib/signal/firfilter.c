@@ -1,27 +1,24 @@
-#include <string.h>
-#include <stdlib.h>
 #include "sigtools.h"
 
-#include "Python.h"                 /* only needed for defining unsigned types or not */
-#include "scipy/arrayobject.h"    
-
-static int elsizes[] = {sizeof(char),
-                        sizeof(unsigned char),
-                        sizeof(signed char),
+static int elsizes[] = {sizeof(Bool),
+			sizeof(byte),
+                        sizeof(ubyte),
                         sizeof(short),
-#ifdef PyArray_UNSIGNED_TYPES
-                        sizeof(unsigned short),
-#endif
+                        sizeof(ushort),
                         sizeof(int),
-#ifdef PyArray_UNSIGNED_TYPES
-                        sizeof(unsigned int),
-#endif
-                        sizeof(long),
+			sizeof(uint),
+			sizeof(long),
+                        sizeof(ulong),
+                        sizeof(longlong),
+			sizeof(ulonglong),
                         sizeof(float),
                         sizeof(double),
-                        2*sizeof(float),
-                        2*sizeof(double),
-                        0};
+			sizeof(longdouble),
+                        sizeof(cfloat),
+                        sizeof(cdouble),
+			sizeof(clongdouble),
+                        sizeof(void *),
+			0,0,0,0};
 
 typedef void (OneMultAddFunction) (char *, char *, char *);
 
@@ -30,21 +27,26 @@ static void fname ## _onemultadd(char *sum, char *term1, char *term2) { \
   (*((type *) sum)) += (*((type *) term1)) * \
   (*((type *) term2)); return; }
 
-#ifdef PyArray_UNSIGNED_TYPES
-MAKE_ONEMULTADD(USHORT, unsigned short)
-MAKE_ONEMULTADD(UINT, unsigned int)
-#endif
-MAKE_ONEMULTADD(UCHAR, unsigned char)
-MAKE_ONEMULTADD(SCHAR, signed char)
+MAKE_ONEMULTADD(UBYTE, ubyte)
+MAKE_ONEMULTADD(USHORT, ushort)
+MAKE_ONEMULTADD(UINT, uint)
+MAKE_ONEMULTADD(ULONG, ulong)
+MAKE_ONEMULTADD(ULONGLONG, ulonglong)
+
+MAKE_ONEMULTADD(BYTE, byte)
 MAKE_ONEMULTADD(SHORT, short)
 MAKE_ONEMULTADD(INT, int)
 MAKE_ONEMULTADD(LONG, long)
+MAKE_ONEMULTADD(LONGLONG, longlong)
+
 MAKE_ONEMULTADD(FLOAT, float)
 MAKE_ONEMULTADD(DOUBLE, double)
+MAKE_ONEMULTADD(LONGDOUBLE, longdouble)
  
 #ifdef __GNUC__
 MAKE_ONEMULTADD(CFLOAT, __complex__ float)
 MAKE_ONEMULTADD(CDOUBLE, __complex__ double)
+MAKE_ONEMULTADD(CLONGDOUBLE, __complex__ long double)
 #else
 #define MAKE_C_ONEMULTADD(fname, type) \
 static void fname ## _onemultadd(char *sum, char *term1, char *term2) { \
@@ -55,37 +57,39 @@ static void fname ## _onemultadd(char *sum, char *term1, char *term2) { \
   return; }
 MAKE_C_ONEMULTADD(CFLOAT, float)
 MAKE_C_ONEMULTADD(CDOUBLE, double)
+MAKE_C_ONEMULTADD(CLONGDOUBLE, longdouble)
 #endif /* __GNUC__ */
 
 static OneMultAddFunction *OneMultAdd[]={NULL,
-					 UCHAR_onemultadd,
-					 SCHAR_onemultadd,
+					 BYTE_onemultadd,
+					 UBYTE_onemultadd,
 					 SHORT_onemultadd,
-#ifdef PyArray_UNSIGNED_TYPES
                                          USHORT_onemultadd,
-#endif
 					 INT_onemultadd,
-#ifdef PyArray_UNSIGNED_TYPES
                                          UINT_onemultadd,
-#endif
 					 LONG_onemultadd,
+					 ULONG_onemultadd,
+					 LONGLONG_onemultadd,
+					 ULONGLONG_onemultadd,
 					 FLOAT_onemultadd,
 					 DOUBLE_onemultadd,
+					 LONGDOUBLE_onemultadd,
 					 CFLOAT_onemultadd,
 					 CDOUBLE_onemultadd,
-                                         NULL};
+					 CLONGDOUBLE_onemultadd,
+                                         NULL, NULL, NULL, NULL};
 
 
 /* This could definitely be more optimized... */
 
 int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
-		       int   *instr,     /* Input strides */
+		       intp   *instr,     /* Input strides */
 		       char  *out,       /* Output data */
-		       int   *outstr,    /* Ouput strides */
+		       intp   *outstr,    /* Ouput strides */
 		       char  *hvals,     /* coefficients in filter */
-		       int   *hstr,      /* coefficients strides */ 
-		       int   *Nwin,      /* Size of kernel Nwin[0] x Nwin[1] */
-		       int   *Ns,        /* Size of image Ns[0] x Ns[1] */
+		       intp   *hstr,      /* coefficients strides */ 
+		       intp   *Nwin,     /* Size of kernel Nwin[0] x Nwin[1] */
+		       intp   *Ns,        /* Size of image Ns[0] x Ns[1] */
 		       int   flag,       /* convolution parameters */
 		       char  *fillvalue) /* fill value */
 {

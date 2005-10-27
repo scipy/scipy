@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
+#include "Python.h"
+#include "scipy/arrayobject.h"
 
 #define BOUNDARY_MASK 12
 #define OUTSIZE_MASK 3
@@ -16,7 +15,7 @@
 #define REFLECT  4
 #define PAD      0 
 
-#define MAXTYPES 10
+#define MAXTYPES 21
 
 
 /* Generally useful structures for passing data into and out of
@@ -31,7 +30,7 @@ typedef struct {
 
 typedef struct {
   char *data;
-  int numels;
+  intp numels;
   int elsize;
   char *zero;        /* Pointer to Representation of zero */
 } Generic_Vector;
@@ -39,9 +38,9 @@ typedef struct {
 typedef struct {
   char *data;
   int  nd;
-  int  *dimensions;
+  intp  *dimensions;
   int  elsize;
-  int  *strides;
+  intp  *strides;
   char *zero;         /* Pointer to Representation of zero */
 } Generic_Array;
 

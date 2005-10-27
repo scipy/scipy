@@ -5,8 +5,6 @@ Permission to use, copy, modify, and distribute this software without fee
 is granted, under the terms of the LGPL provided this notification remain.
 */
 
-#include "Python.h"
-#include "scipy/arrayobject.h"
 #include <setjmp.h>
 #include "sigtools.h"
 
@@ -15,7 +13,7 @@ is granted, under the terms of the LGPL provided this notification remain.
 #define DATA(arr) ((arr)->data)
 #define DIMS(arr) ((arr)->dimensions)
 #define STRIDES(arr) ((arr)->strides)
-#define ELSIZE(arr) ((arr)->descr->elsize)
+#define ELSIZE(arr) ((arr)->itemsize)
 #define OBJECTTYPE(arr) ((arr)->descr->type_num)
 #define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
 #define RANK(arr) ((arr)->nd)
@@ -41,7 +39,6 @@ char *check_malloc (size)
 }
 
 
-
 /************************************************************************
  * Start of portable, non-python specific routines.                     *
  ************************************************************************/
@@ -52,7 +49,7 @@ order filtering, however uses python-specific constructs in its guts
 and is therefore Python dependent.  This could be changed in a 
 straightforward way but I haven't done it for lack of time.*/
 
-static int index_out_of_bounds(int *indices, int *max_indices, int ndims) {
+static int index_out_of_bounds(intp *indices, intp *max_indices, int ndims) {
   int bad_index = 0, k = 0;
 
   while (!bad_index && (k++ < ndims)) {
@@ -69,9 +66,9 @@ static int index_out_of_bounds(int *indices, int *max_indices, int ndims) {
  * but probably with dim1 being the size of the "original, unsliced" array
  */
 
-static long compute_offsets (unsigned long *offsets, long *offsets2, int *dim1, int *dim2, int *dim3, int *mode_dep, int nd) {
+static intp compute_offsets (uintp *offsets, intp *offsets2, intp *dim1, intp *dim2, intp *dim3, intp *mode_dep, int nd) {
   int k,i;
-  long init_offset = 0;
+  intp init_offset = 0;
 
   for (k = 0; k < nd - 1; k++) 
     {
@@ -128,338 +125,177 @@ static int increment(int *ret_ind, int nd, int *max_ind) {
  to handle edges.
  */
 
-static void UBYTE_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  unsigned char tmp=(unsigned char)0.0;  int i, k, incr = 1;
-  unsigned char *ptr1 = (unsigned char *)ip1, *ptr2 = (unsigned char *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((unsigned char *)op) = tmp; 
+#define MAKE_MultAdd(NTYPE, ctype) \
+static void NTYPE ## _MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, \
+			  intp *dims1, intp *dims2, int ndims, intp nels2, int check, \
+			  intp *loop_ind, intp *temp_ind, uintp *offset) \
+{									\
+  ctype tmp=(ctype)0.0;  intp i;					\
+  int k, incr = 1;							\
+  ctype *ptr1 = (ctype *)ip1, *ptr2 = (ctype *)ip2;			\
+\  
+  i = nels2;					\
+\
+  temp_ind[ndims-1]--; \
+  while (i--) {  \
+    /* Adjust index array and move ptr1 to right place */ \
+    k = ndims - 1; \
+    while(--incr) { \
+      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */ \
+      k--; \
+    } \
+    ptr1 += offset[k];               /* Precomputed offset array */ \
+    temp_ind[k]++; \
+\
+    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) {  \
+      tmp += (*ptr1) * (*ptr2);  \
+    } \
+    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */ \
+    ptr2++; \
+    \
+  }						\
+*((ctype *)op) = tmp;				\
 }
 
-static void SBYTE_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  signed char tmp=(signed char)0.0;  int i, k, incr = 1;
-  signed char *ptr1 = (signed char *)ip1, *ptr2 = (signed char *)ip2;
+MAKE_MultAdd(UBYTE, ubyte)
+MAKE_MultAdd(BYTE, byte)
+MAKE_MultAdd(USHORT, ushort)
+MAKE_MultAdd(SHORT, short)
+MAKE_MultAdd(UINT, uint)
+MAKE_MultAdd(INT, int)
+MAKE_MultAdd(ULONG, ulong)
+MAKE_MultAdd(LONG, long)
+MAKE_MultAdd(ULONGLONG, ulonglong)
+MAKE_MultAdd(LONGLONG, longlong)
+MAKE_MultAdd(FLOAT, float)
+MAKE_MultAdd(DOUBLE, double)
+MAKE_MultAdd(LONGDOUBLE, longdouble)
 
-  i = nels2;
+#define MAKE_CMultAdd(NTYPE, ctype) \
+static void NTYPE ## _MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, \
+			      intp *dims1, intp *dims2, int ndims, intp nels2, int check, \
+			      intp *loop_ind, intp *temp_ind, uintp *offset) \
+{ \
+  ctype tmpr= 0.0, tmpi = 0.0; intp i; \
+  int k, incr = 1;				    \
+  ctype *ptr1 = (ctype *)ip1, *ptr2 = (ctype *)ip2; \
+ \
+  i = nels2; \
+\
+  temp_ind[ndims-1]--; \
+  while (i--) {  \
+    /* Adjust index array and move ptr1 to right place */ \
+    k = ndims - 1; \
+    while(--incr) { \
+      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */ \
+      k--; \
+    } \
+    ptr1 += 2*offset[k];               /* Precomputed offset array */ \
+    temp_ind[k]++; \
+\
+    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) {  \
+      tmpr += ptr1[0] * ptr2[0] - ptr1[1] * ptr2[1];  \
+      tmpi += ptr1[1] * ptr2[0] + ptr1[0] * ptr2[1];  \
+    }  \
+    incr = increment(loop_ind, ndims, dims2);  \
+    /* Returns number of N-D indices incremented. */	\ 
+    ptr2 += 2; \
+\
+  } \
+  ((ctype *)op)[0] = tmpr; ((ctype *)op)[1] = tmpi; \
+} 
 
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((signed char *)op) = tmp; 
-}
-
-static void SHORT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  short tmp=(short)0.0;  int i, k, incr = 1;
-  short *ptr1 = (short *)ip1, *ptr2 = (short *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((short *)op) = tmp; 
-}
-
-static void INT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  int tmp=(int)0.0;  int i, k, incr = 1;
-  int *ptr1 = (int *)ip1, *ptr2 = (int *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((int *)op) = tmp; 
-}
-
-static void LONG_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  long tmp=(long)0.0;  int i, k, incr = 1;
-  long *ptr1 = (long *)ip1, *ptr2 = (long *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((long *)op) = tmp; 
-}
-
-static void FLOAT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  float tmp=(float)0.0;  int i, k, incr = 1;
-  float *ptr1 = (float *)ip1, *ptr2 = (float *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((float *)op) = tmp; 
-}
-
-static void DOUBLE_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  double tmp=(double)0.0;  int i, k, incr = 1;
-  double *ptr1 = (double *)ip1, *ptr2 = (double *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmp += (*ptr1) * (*ptr2); 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2++;
-
-  }
-  *((double *)op) = tmp; 
-}
-
-static void CFLOAT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  float tmpr= 0.0, tmpi = 0.0; int i, k, incr = 1;
-  float *ptr1 = (float *)ip1, *ptr2 = (float *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += 2*offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmpr += ptr1[0] * ptr2[0] - ptr1[1] * ptr2[1]; 
-      tmpi += ptr1[1] * ptr2[0] + ptr1[0] * ptr2[1]; 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2 += 2;
-
-  }
-  ((float *)op)[0] = tmpr; ((float *)op)[1] = tmpi; 
-}
-
-static void CDOUBLE_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
-  double tmpr= 0.0, tmpi = 0.0; int i, k, incr = 1;
-  double *ptr1 = (double *)ip1, *ptr2 = (double *)ip2;
-
-  i = nels2;
-
-  temp_ind[ndims-1]--;
-  while (i--) { 
-    /* Adjust index array and move ptr1 to right place */
-    k = ndims - 1;
-    while(--incr) {
-      temp_ind[k] -= dims2[k] - 1;   /* Return to start for these dimensions */
-      k--;
-    }
-    ptr1 += 2*offset[k];               /* Precomputed offset array */
-    temp_ind[k]++;
-
-    if (!(check && index_out_of_bounds(temp_ind,dims1,ndims))) { 
-      tmpr += ptr1[0] * ptr2[0] - ptr1[1] * ptr2[1]; 
-      tmpi += ptr1[1] * ptr2[0] + ptr1[0] * ptr2[1]; 
-    } 
-    incr = increment(loop_ind, ndims, dims2);  /* Returns number of N-D indices incremented. */
-    ptr2 += 2;
-
-  }
-  ((double *)op)[0] = tmpr; ((double *)op)[1] = tmpi; 
-}
-
+MAKE_CMultAdd(CFLOAT, float)
+MAKE_CMultAdd(CDOUBLE, double)
+MAKE_CMultAdd(CLONGDOUBLE, longdouble)
 
 static void correlateND(Generic_Array *ap1, Generic_Array *ap2, Generic_Array *ret, MultAddFunction *multiply_and_add_ND, int mode) {
-	int *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
-	unsigned long *offsets, offset1;
-	long *offsets2;
-	int i, k, check, incr = 1;
-	int bytes_in_array, num_els_ret, num_els_ap2;
-	int is1, is2, os;
-	char *ip1, *ip2, *op, *ap1_ptr;
-	int *ret_ind;
+  intp *a_ind, *b_ind, *temp_ind, *check_ind, *mode_dep;
+  int *mode_dep;
+  uintp *offsets, offset1;
+  intp *offsets2;
+  int i, k, check, incr = 1;
+  int bytes_in_array, num_els_ret, num_els_ap2;
+  intp is1, is2, os;
+  char *ip1, *ip2, *op, *ap1_ptr;
+  intp *ret_ind;
 
-        num_els_ret = 1;
-	for (i = 0; i < ret->nd; i++) num_els_ret *= ret->dimensions[i];
-	num_els_ap2 = 1;
-	for (i = 0; i < ret->nd; i++) num_els_ap2 *= ap2->dimensions[i];
-	bytes_in_array = ap1->nd * sizeof(int);
-	mode_dep = (int *)malloc(bytes_in_array);
-	switch(mode) {
-	case 0:
-	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = 0;
-		break;
-	case 1:
-	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = -((ap2->dimensions[i]) >> 1);
-		break;
-	case 2:
-	        for (i = 0; i < ap1->nd; i++) mode_dep[i] = 1 - ap2->dimensions[i];
-	}
-
-	is1 = ap1->elsize; is2 = ap2->elsize;
-	op = ret->data; os = ret->elsize;
-	ip1 = ap1->data; ip2 = ap2->data;
-	op = ret->data;
-
-	b_ind = (int *)malloc(bytes_in_array);  /* loop variables */
-	memset(b_ind,0,bytes_in_array);
-	a_ind = (int *)malloc(bytes_in_array);
-	ret_ind = (int *)malloc(bytes_in_array);
-	memset(ret_ind,0,bytes_in_array);
-	temp_ind = (int *)malloc(bytes_in_array);
-	check_ind = (int*)malloc(bytes_in_array);
-	offsets = (unsigned long *)malloc(ap1->nd*sizeof(unsigned long));
-	offsets2 = (long *)malloc(ap1->nd*sizeof(long));
-	offset1 = compute_offsets(offsets,offsets2,ap1->dimensions,ap2->dimensions,ret->dimensions,mode_dep,ap1->nd);
-	/* The convolution proceeds by looping through the output array
-	   and for each value summing all contributions from the summed
-	   element-by-element product of the two input arrays.  Index
-	   counters are used for book-keeping in the area so that we 
-	   can tell where we are in all of the arrays and be sure that 
-	   we are not trying to access areas outside the arrays definition.
-
-	   The inner loop is implemented separately but equivalently for each
-	   datatype. The outer loop is similar in structure and form to
-	   to the inner loop.
-	*/
-	/* Need to keep track of a ptr to place in big (first) input
-	   array where we start the multiplication (we pass over it in the
-	   inner loop (and not dereferenced) 
-	   if it is pointing outside dataspace)
-	*/
-	/* Calculate it once and the just move it around appropriately */
-	ap1_ptr = ip1 + offset1*is1;
-	for (k=0; k < ap1->nd; k++) {a_ind[k] = mode_dep[k]; check_ind[k] = ap1->dimensions[k] - ap2->dimensions[k] - mode_dep[k] - 1;}
-	a_ind[ap1->nd-1]--;
-	i = num_els_ret;
-	while (i--) {
-	  k = ap1->nd - 1;
-	  while(--incr) {
-	    a_ind[k] -= ret->dimensions[k] - 1;   /* Return to start */
-	    k--;
-	  }
-	  ap1_ptr += offsets2[k]*is1;
-	  a_ind[k]++;
-	  memcpy(temp_ind, a_ind, bytes_in_array);
-
-	  check = 0; k = -1;
-	  while(!check && (++k < ap1->nd))
-	    check = check || (ret_ind[k] < -mode_dep[k]) || (ret_ind[k] > check_ind[k]);
-
-	  multiply_and_add_ND(ap1_ptr,is1,ip2,is2,op,ap1->dimensions,ap2->dimensions,ap1->nd,num_els_ap2,check,b_ind,temp_ind,offsets);
-
-	  incr = increment(ret_ind,ret->nd,ret->dimensions); /* increment index counter */
-	  op += os;   /* increment to next output index */
-
-	}
-	free(b_ind); free(a_ind); free(ret_ind);
-	free(offsets); free(offsets2); free(temp_ind);
-	free(check_ind); free(mode_dep);
+  num_els_ret = 1;
+  for (i = 0; i < ret->nd; i++) num_els_ret *= ret->dimensions[i];
+  num_els_ap2 = 1;
+  for (i = 0; i < ret->nd; i++) num_els_ap2 *= ap2->dimensions[i];
+  bytes_in_array = ap1->nd * sizeof(intp);
+  mode_dep = (intp *)malloc(bytes_in_array);
+  switch(mode) {
+  case 0:
+    for (i = 0; i < ap1->nd; i++) mode_dep[i] = 0;
+    break;
+  case 1:
+    for (i = 0; i < ap1->nd; i++) mode_dep[i] = -((ap2->dimensions[i]) >> 1);
+    break;
+  case 2:
+    for (i = 0; i < ap1->nd; i++) mode_dep[i] = 1 - ap2->dimensions[i];
+  }
+  
+  is1 = ap1->elsize; is2 = ap2->elsize;
+  op = ret->data; os = ret->elsize;
+  ip1 = ap1->data; ip2 = ap2->data;
+  op = ret->data;
+  
+  b_ind = (intp *)malloc(bytes_in_array);  /* loop variables */
+  memset(b_ind,0,bytes_in_array);
+  a_ind = (intp *)malloc(bytes_in_array);
+  ret_ind = (intp *)malloc(bytes_in_array);
+  memset(ret_ind,0,bytes_in_array);
+  temp_ind = (intp *)malloc(bytes_in_array);
+  check_ind = (intp *)malloc(bytes_in_array);
+  offsets = (uintp *)malloc(ap1->nd*sizeof(uintp));
+  offsets2 = (intp *)malloc(ap1->nd*sizeof(intp));
+  offset1 = compute_offsets(offsets,offsets2,ap1->dimensions,ap2->dimensions,ret->dimensions,mode_dep,ap1->nd);
+  /* The convolution proceeds by looping through the output array
+     and for each value summing all contributions from the summed
+     element-by-element product of the two input arrays.  Index
+     counters are used for book-keeping in the area so that we 
+     can tell where we are in all of the arrays and be sure that 
+     we are not trying to access areas outside the arrays definition.
+     
+     The inner loop is implemented separately but equivalently for each
+     datatype. The outer loop is similar in structure and form to
+     to the inner loop.
+  */
+  /* Need to keep track of a ptr to place in big (first) input
+     array where we start the multiplication (we pass over it in the
+     inner loop (and not dereferenced) 
+     if it is pointing outside dataspace)
+  */
+  /* Calculate it once and the just move it around appropriately */
+  ap1_ptr = ip1 + offset1*is1;
+  for (k=0; k < ap1->nd; k++) {a_ind[k] = mode_dep[k]; check_ind[k] = ap1->dimensions[k] - ap2->dimensions[k] - mode_dep[k] - 1;}
+  a_ind[ap1->nd-1]--;
+  i = num_els_ret;
+  while (i--) {
+    k = ap1->nd - 1;
+    while(--incr) {
+      a_ind[k] -= ret->dimensions[k] - 1;   /* Return to start */
+      k--;
+    }
+    ap1_ptr += offsets2[k]*is1;
+    a_ind[k]++;
+    memcpy(temp_ind, a_ind, bytes_in_array);
+    
+    check = 0; k = -1;
+    while(!check && (++k < ap1->nd))
+      check = check || (ret_ind[k] < -mode_dep[k]) || (ret_ind[k] > check_ind[k]);
+    
+    multiply_and_add_ND(ap1_ptr,is1,ip2,is2,op,ap1->dimensions,ap2->dimensions,ap1->nd,num_els_ap2,check,b_ind,temp_ind,offsets);
+    
+    incr = increment(ret_ind,ret->nd,ret->dimensions); /* increment index counter */
+    op += os;   /* increment to next output index */
+    
+  }
+  free(b_ind); free(a_ind); free(ret_ind);
+  free(offsets); free(offsets2); free(temp_ind);
+  free(check_ind); free(mode_dep);
 }
 
 /*****************************************************************
@@ -467,7 +303,7 @@ static void correlateND(Generic_Array *ap1, Generic_Array *ap2, Generic_Array *r
  *   dimension of an N-D array.                                  *
  *****************************************************************/
 
-static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
+static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z, intp len_b, uintp len_x, intp stride_X, intp stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
   float *ptr_Z, *ptr_b;
   float *ptr_a;
@@ -1478,16 +1314,13 @@ static void OBJECT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int
   *((PyObject **)op) = tmp; 
 }
 
-#ifdef PyArray_UNSIGNED_TYPES
-static MultAddFunction *MultiplyAddFunctions[] = {NULL,UBYTE_MultAdd,SBYTE_MultAdd,SHORT_MultAdd,NULL,INT_MultAdd,NULL,LONG_MultAdd,
-FLOAT_MultAdd, DOUBLE_MultAdd, 
-CFLOAT_MultAdd, CDOUBLE_MultAdd, OBJECT_MultAdd};
-#else
-static MultAddFunction *MultiplyAddFunctions[] = {NULL,UBYTE_MultAdd,SBYTE_MultAdd,SHORT_MultAdd,INT_MultAdd,LONG_MultAdd,
-FLOAT_MultAdd, DOUBLE_MultAdd, 
-CFLOAT_MultAdd, CDOUBLE_MultAdd, OBJECT_MultAdd};
-#endif
-
+static MultAddFunction *MultiplyAddFunctions[] = \
+	{NULL, BYTE_MultAdd, UBYTE_MultAdd, SHORT_MultAdd,\
+	 NULL,INT_MultAdd, NULL, LONG_MultAdd,   \
+	 NULL, NULL, NULL,					\
+	 FLOAT_MultAdd, DOUBLE_MultAdd, NULL,
+	 CFLOAT_MultAdd, CDOUBLE_MultAdd, NULL,
+	 OBJECT_MultAdd, NULL, NULL, NULL};
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
@@ -1593,16 +1426,17 @@ int fname(type *ip1, type *ip2) { return *ip1 < *ip2 ? -1 : *ip1 == *ip2 ? 0 : 1
 
 COMPARE(DOUBLE_compare, double)
 COMPARE(FLOAT_compare, float)
+COMPARE(LONGDOUBLE_compare, longdouble)
+COMPARE(BYTE_compare, byte)
 COMPARE(SHORT_compare, short)
 COMPARE(INT_compare, int)
 COMPARE(LONG_compare, long)
-COMPARE(BYTE_compare, char)
-COMPARE(UNSIGNEDBYTE_compare, unsigned char)
-
-#ifdef PyArray_UNSIGNED_TYPES
-COMPARE(USHORT_compare, unsigned short)
-COMPARE(UINT_compare, unsigned int)
-#endif
+COMPARE(LONGLONG_compare, longlong)
+COMPARE(UBYTE_compare, ubyte)
+COMPARE(USHORT_compare, ushort)
+COMPARE(UINT_compare, uint)
+COMPARE(ULONG_compare, ulong)
+COMPARE(ULONGLONG_compare, ulonglong)
 
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
@@ -1611,20 +1445,15 @@ int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
 
 typedef int (*CompareFunction) Py_FPROTO((const void *, const void *));
 
-
-CompareFunction compare_functions[] = {NULL,
-(CompareFunction)UNSIGNEDBYTE_compare,(CompareFunction)BYTE_compare,(CompareFunction)SHORT_compare,
-#ifdef PyArray_UNSIGNED_TYPES
-(CompareFunction)USHORT_compare,
-#endif
-(CompareFunction)INT_compare,
-#ifdef PyArray_UNSIGNED_TYPES
-(CompareFunction)UINT_compare,
-#endif
-(CompareFunction)LONG_compare,
-(CompareFunction)FLOAT_compare,(CompareFunction)DOUBLE_compare,
-NULL,NULL,(CompareFunction)OBJECT_compare};
-
+CompareFunction compare_functions[] = \
+	{NULL, (CompareFunction)BYTE_compare,(CompareFunction)UBYTE_compare,\
+	 (CompareFunction)SHORT_compare,(CompareFunction)USHORT_compare, \
+	 (CompareFunction)INT_compare,(CompareFunction)UINT_compare, \
+	 (CompareFunction)LONG_compare,(CompareFunction)ULONG_compare, \
+	 (CompareFunction)LONGLONG_compare,(CompareFunction)ULONGLONG_compare,
+	 (CompareFunction)FLOAT_compare,(CompareFunction)DOUBLE_compare,
+	 (CompareFunction)LONGDOUBLE_compare, NULL, NULL, NULL,
+	 (CompareFunction)OBJECT_compare, NULL, NULL, NULL};
 
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
@@ -1779,15 +1608,11 @@ fail:
 }
 
 
-
-
-static BasicFilterFunction *BasicFilterFunctions[] = {NULL,NULL,NULL,NULL,NULL,NULL,
-#ifdef PyArray_UNSIGNED_TYPES
-NULL,
-NULL,
-#endif
-FLOAT_filt, DOUBLE_filt, 
-CFLOAT_filt, CDOUBLE_filt, OBJECT_filt }; 
+static BasicFilterFunction *BasicFilterFunctions[] = \
+	{NULL, NULL,NULL,NULL,NULL,NULL,NULL, NULL, NULL, NULL, NULL, \
+	 FLOAT_filt, DOUBLE_filt, NULL,				      \
+	 CFLOAT_filt, CDOUBLE_filt, NULL, \
+	 OBJECT_filt, NULL, NULL, NULL}; 
 /* There is the start of an OBJECT_filt, but it may need work */
 
 
@@ -1909,7 +1734,7 @@ fail:
 
 static char doc_convolve2d[] = "out = _convolve2d(in1, in2, flip, mode, boundary, fillvalue)";
 
-extern int pylab_convolve_2d(char*,int*,char*,int*,char*,int*,int*,int*,int,char*);
+extern int pylab_convolve_2d(char*,intp*,char*,intp*,char*,intp*,intp*,intp*,int,char*);
 
 static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 
