@@ -11,11 +11,12 @@ import scipy.optimize as optimize
 import inspect
 from scipy.base import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
-     zeros, floor
+     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
+     arctan, tanh
 from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select, pi
 import scipy.base
-from scipy.lib import mtrand
+import scipy.basic.random as mtrand
 
 errp = special.errprint
 arr = asarray
@@ -1079,7 +1080,7 @@ Chi distribution
 ## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
 class chi2_gen(rv_continuous):
     def _rvs(self, df):
-        return mtrand.chi2(df,self._size)
+        return mtrand.chisquare(df,self._size)
     def _pdf(self, x, df):
         Px = x**(df/2.0-1)*exp(-x/2.0)
         Px /= special.gamma(df/2.0)* 2**(df/2.0)
@@ -1209,7 +1210,7 @@ Erlang distribution (Gamma with integer shape parameter)
 
 class expon_gen(rv_continuous):
     def _rvs(self):
-        return mtrand.standard_exp(self._size)
+        return mtrand.standard_exponential(self._size)
     def _pdf(self, x):
         return exp(-x)
     def _cdf(self, x):
@@ -2213,7 +2214,7 @@ Nakagami distribution
 
 class ncx2_gen(rv_continuous):
     def _rvs(self, df, nc):
-        return mtrand.noncentral_chi2(df,nc,self._size)        
+        return mtrand.noncentral_chisquare(df,nc,self._size)        
     def _pdf(self, x, df, nc):
         a = arr(df/2.0)
         Px = exp(-nc/2.0)*special.hyp0f1(a,nc*x/4.0)
@@ -3207,7 +3208,7 @@ class rv_discrete:
         vals = reshape(self._rvs(*args),size)
         if self.return_integers:
             vals = arr(vals)
-            if vals.typecode() not in scipy.typecodes['AllInteger']:
+            if vals.dtypechar not in scipy.typecodes['AllInteger']:
                 vals = vals.astype(Num.Int)
         return vals + loc
 

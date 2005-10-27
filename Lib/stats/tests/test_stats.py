@@ -84,7 +84,7 @@ class test_round(unittest.TestCase):
         """
  
         for i in range(0,9):
-            y = scipy.round(ROUND[i])
+            y = scipy.round_(ROUND[i])
             assert_equal(y,i+1)
         
     def check_rounding1(self):
