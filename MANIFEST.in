@@ -1,5 +1,6 @@
 #prune scipy_core
 include setup.py
 include *.txt
+include Lib/*.py
 # No more files here! They should be probably added
 # to Extension depend argument list.

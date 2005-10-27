@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 
 import os
-from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path,Configuration,dot_join
 join = os.path.join
 
-def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.system_info import get_info
-    package = 'cluster'
-    local_path = get_path(__name__,parent_path)
-    config = Configuration(package,parent_package)
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
+    config = Configuration('cluster',parent_package,top_path)
+
+    config.add_data_dir('tests')
 
     config.add_extension('_vq',
         sources=[join('src', 'vq_wrap.cpp')])
@@ -24,5 +22,5 @@ if __name__ == '__main__':
           description = "Clustering Algorithms (Information Theory)",
           url = "http://www.scipy.org",
           license = "SciPy License (BSD Style)",
-          **configuration()
+          **configuration(top_path='').todict()
           )
