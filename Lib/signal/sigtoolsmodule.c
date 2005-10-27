@@ -1277,7 +1277,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands, doubl
 /* End of python-independent routines               */
 /****************************************************/
 
-static void OBJECT_MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, intp *dims1, intp *dims2, int ndims, int nels2, int check, intp *loop_ind, intp *temp_ind, uintp *offset) { 
+static void OBJECT_MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, intp *dims1, intp *dims2, int ndims, intp nels2, int check, intp *loop_ind, intp *temp_ind, uintp *offset) { 
   int i, k, first_time = 1, incr = 1; 
   PyObject *tmp1=NULL, *tmp2=NULL, *tmp=NULL;
 
@@ -1456,14 +1456,14 @@ CompareFunction compare_functions[] = \
 
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
-	int *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
+	intp *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
 	uintp *offsets, offset1;
 	intp *offsets2;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
 	int is1, os;
 	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer;
-	int *ret_ind;
+	intp *ret_ind;
 	CompareFunction compare_func;
 	char *zptr=NULL;
 
@@ -1517,19 +1517,19 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	op = ret->data;
 
-	bytes_in_array = ap1->nd*sizeof(int);
+	bytes_in_array = ap1->nd*sizeof(intp);
 	mode_dep = malloc(bytes_in_array);
 	for (k = 0; k < ap1->nd; k++) { 
 	  mode_dep[k] = -((ap2->dimensions[k]-1) >> 1);
 	}	
 
-	b_ind = (int *)malloc(bytes_in_array);  /* loop variables */
+	b_ind = (intp *)malloc(bytes_in_array);  /* loop variables */
 	memset(b_ind,0,bytes_in_array);
-	a_ind = (int *)malloc(bytes_in_array);
-	ret_ind = (int *)malloc(bytes_in_array);
+	a_ind = (intp *)malloc(bytes_in_array);
+	ret_ind = (intp *)malloc(bytes_in_array);
 	memset(ret_ind,0,bytes_in_array);
-	temp_ind = (int *)malloc(bytes_in_array);
-	check_ind = (int*)malloc(bytes_in_array);
+	temp_ind = (intp *)malloc(bytes_in_array);
+	check_ind = (intp*)malloc(bytes_in_array);
 	offsets = (uintp *)malloc(ap1->nd*sizeof(uintp));
 	offsets2 = (intp *)malloc(ap1->nd*sizeof(intp));
 	offset1 = compute_offsets(offsets,offsets2,ap1->dimensions,ap2->dimensions,ret->dimensions,mode_dep,ap1->nd);
