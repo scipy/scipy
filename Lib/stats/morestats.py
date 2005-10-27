@@ -735,7 +735,7 @@ def binom_test(x,n=None,p=0.5):
     Returns pval -- Probability that null test is rejected for this set
                     of x and n even though it is true.
     """
-    x = atleast_1d(x)
+    x = atleast_1d(x).astype(scipy.integer)
     if len(x) == 2:
         n = x[1]+x[0]
         x = x[0]
@@ -743,6 +743,7 @@ def binom_test(x,n=None,p=0.5):
         x = x[0]
         if n is None or n < x:
             raise ValueError, "n must be >= x"
+        n = scipy.int_(n)
     else:
         raise ValueError, "Incorrect length for x."
 
@@ -751,7 +752,7 @@ def binom_test(x,n=None,p=0.5):
 
     d = distributions.binom.pmf(x,n,p)
     rerr = 1+1e-7
-    if (x*1.0/n < p):
+    if (x < p*n):
         i = arange(x+1,n+1)
         y = sum(distributions.binom.pmf(i,n,p) <= d*rerr)
         pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)

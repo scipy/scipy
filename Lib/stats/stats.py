@@ -199,7 +199,7 @@ import scipy.special as special
 import scipy.linalg as linalg
 import scipy
 
-SequenceType = [ListType, TupleType, ArrayType]
+SequenceType = (ListType, TupleType, ArrayType)
 
 
 # These two functions replace letting axis be a sequence and the
