@@ -501,8 +501,8 @@ static void RawFilter(Generic_Vector Vb, Generic_Vector Va, Generic_Array X, Gen
   int k, n, byte_len;
   int ndims, num_loops, count, stride_X, stride_Y, incr = 1, filt_size;
   unsigned int len;
-  int *loop_index, *loop_strides_X, *loop_strides_Y, *loop_strides_Vi;
-  int *loop_strides_Vf, *max_index;
+  intp *loop_index, *loop_strides_X, *loop_strides_Y, *loop_strides_Vi;
+  intp *loop_strides_Vf, *max_index;
   char *ptrX, *ptrY, *ptrVi=NULL, *ptrVf, *ptra, *ptrb;
   char *pa1, *pa2, *pb1, *pb2;
 
@@ -513,14 +513,14 @@ static void RawFilter(Generic_Vector Vb, Generic_Vector Va, Generic_Array X, Gen
   ndims = X.nd - 1; 
   if (ndims < 1)
     ndims = 1;                 /* make sure at least 1 for allocation */
-  byte_len = ndims*sizeof(int);
-  max_index = (int *)malloc(byte_len);
-  loop_index = (int *)malloc(byte_len);
+  byte_len = ndims*sizeof(intp);
+  max_index = (intp *)malloc(byte_len);
+  loop_index = (intp *)malloc(byte_len);
   memset(loop_index, 0, byte_len);
-  loop_strides_X = (int *)malloc(byte_len);
-  loop_strides_Y = (int *)malloc(byte_len);
-  loop_strides_Vi = (int *)malloc(byte_len);
-  loop_strides_Vf = (int *)malloc(byte_len);
+  loop_strides_X = (intp *)malloc(byte_len);
+  loop_strides_Y = (intp *)malloc(byte_len);
+  loop_strides_Vi = (intp *)malloc(byte_len);
+  loop_strides_Vf = (intp *)malloc(byte_len);
   num_loops = 1;
   count = 0;
   for (k=0; k < X.nd; k++) {
