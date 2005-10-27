@@ -133,7 +133,7 @@ static void NTYPE ## _MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op
   ctype tmp=(ctype)0.0;  intp i;					\
   int k, incr = 1;							\
   ctype *ptr1 = (ctype *)ip1, *ptr2 = (ctype *)ip2;			\
-\  
+\
   i = nels2;					\
 \
   temp_ind[ndims-1]--; \
@@ -198,7 +198,7 @@ static void NTYPE ## _MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op
       tmpi += ptr1[1] * ptr2[0] + ptr1[0] * ptr2[1];  \
     }  \
     incr = increment(loop_ind, ndims, dims2);  \
-    /* Returns number of N-D indices incremented. */	\ 
+    /* Returns number of N-D indices incremented. */	\
     ptr2 += 2; \
 \
   } \
@@ -211,7 +211,6 @@ MAKE_CMultAdd(CLONGDOUBLE, longdouble)
 
 static void correlateND(Generic_Array *ap1, Generic_Array *ap2, Generic_Array *ret, MultAddFunction *multiply_and_add_ND, int mode) {
   intp *a_ind, *b_ind, *temp_ind, *check_ind, *mode_dep;
-  int *mode_dep;
   uintp *offsets, offset1;
   intp *offsets2;
   int i, k, check, incr = 1;
@@ -1278,7 +1277,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands, doubl
 /* End of python-independent routines               */
 /****************************************************/
 
-static void OBJECT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int *dims1, int *dims2, int ndims, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset) { 
+static void OBJECT_MultAdd(char *ip1, intp is1, char *ip2, intp is2, char *op, intp *dims1, intp *dims2, int ndims, int nels2, int check, intp *loop_ind, intp *temp_ind, uintp *offset) { 
   int i, k, first_time = 1, incr = 1; 
   PyObject *tmp1=NULL, *tmp2=NULL, *tmp=NULL;
 
@@ -1314,13 +1313,13 @@ static void OBJECT_MultAdd(char *ip1, int is1, char *ip2, int is2, char *op, int
   *((PyObject **)op) = tmp; 
 }
 
-static MultAddFunction *MultiplyAddFunctions[] = \
-	{NULL, BYTE_MultAdd, UBYTE_MultAdd, SHORT_MultAdd,\
-	 NULL,INT_MultAdd, NULL, LONG_MultAdd,   \
-	 NULL, NULL, NULL,					\
-	 FLOAT_MultAdd, DOUBLE_MultAdd, NULL,
-	 CFLOAT_MultAdd, CDOUBLE_MultAdd, NULL,
-	 OBJECT_MultAdd, NULL, NULL, NULL};
+static MultAddFunction *MultiplyAddFunctions[] = 
+  {NULL, BYTE_MultAdd, UBYTE_MultAdd, SHORT_MultAdd,
+   USHORT_MultAdd,INT_MultAdd, UINT_MultAdd, LONG_MultAdd,
+   ULONG_MultAdd, LONGLONG_MultAdd, ULONGLONG_MultAdd,
+   FLOAT_MultAdd, DOUBLE_MultAdd, LONGDOUBLE_MultAdd,
+   CFLOAT_MultAdd, CDOUBLE_MultAdd, CLONGDOUBLE_MultAdd,
+   OBJECT_MultAdd, NULL, NULL, NULL};
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
@@ -1384,13 +1383,13 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, 
 /* N-D Order Filtering. */
 
 
-static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char *sort_buffer, int nels2, int check, int *loop_ind, int *temp_ind, unsigned long *offset){ 
+static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char *sort_buffer, int nels2, int check, int *loop_ind, int *temp_ind, uintp *offset){ 
   int i, k, incr = 1;
   int ndims = ap1->nd;
-  int *dims2 = ap2->dimensions;
-  int *dims1 = ap1->dimensions;
-  int is1 = ap1->strides[ndims-1];
-  int is2 = ap2->strides[ndims-1];
+  intp *dims2 = ap2->dimensions;
+  intp *dims1 = ap1->dimensions;
+  intp is1 = ap1->strides[ndims-1];
+  intp is2 = ap2->strides[ndims-1];
   char *ip2 = ap2->data;
   int elsize = ap1->descr->elsize;
   char *ptr;
@@ -1458,8 +1457,8 @@ CompareFunction compare_functions[] = \
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
 	int *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
-	unsigned long *offsets, offset1;
-	long *offsets2;
+	uintp *offsets, offset1;
+	intp *offsets2;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
 	int is1, os;
@@ -1531,8 +1530,8 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	memset(ret_ind,0,bytes_in_array);
 	temp_ind = (int *)malloc(bytes_in_array);
 	check_ind = (int*)malloc(bytes_in_array);
-	offsets = (unsigned long *)malloc(ap1->nd*sizeof(unsigned long));
-	offsets2 = (long *)malloc(ap1->nd*sizeof(long));
+	offsets = (uintp *)malloc(ap1->nd*sizeof(uintp));
+	offsets2 = (intp *)malloc(ap1->nd*sizeof(intp));
 	offset1 = compute_offsets(offsets,offsets2,ap1->dimensions,ap2->dimensions,ret->dimensions,mode_dep,ap1->nd);
 	/* The filtering proceeds by looping through the output array
 	   and for each value filling a buffer from the 

@@ -44,7 +44,7 @@ typedef struct {
   char *zero;         /* Pointer to Representation of zero */
 } Generic_Array;
 
-typedef void (MultAddFunction) (char *, int, char *, int, char *, int *, int *, int, int, int, int *, int *, unsigned long *);
+typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp *, int, int, int, intp *, intp *, uintp *);
 
 typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, int, unsigned int, int, int);
 
