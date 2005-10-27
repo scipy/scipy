@@ -7,9 +7,9 @@
  *  Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
  */
 
-void f_medfilt2(float*,float*,int*,int*);
-void d_medfilt2(double*,double*,int*,int*);
-void b_medfilt2(unsigned char*,unsigned char*,int*,int*);
+void f_medfilt2(float*,float*,intp*,intp*);
+void d_medfilt2(double*,double*,intp*,intp*);
+void b_medfilt2(unsigned char*,unsigned char*,intp*,intp*);
 extern char *check_malloc (int);
 
 #define ELEM_SWAP(a,b) { register float t=(a);(a)=(b);(b)=t; }
@@ -178,7 +178,7 @@ unsigned char b_quick_select(unsigned char arr[], int n)
 /* 2-D median filter with zero-padding on edges. */
 void d_medfilt2(in, out, Nwin, Ns)
 double *in, *out;
-int *Nwin, *Ns;
+intp *Nwin, *Ns;
 { 
   int nx, ny, hN[2];
   int pre_x, pre_y, pos_x, pos_y;
@@ -224,7 +224,7 @@ int *Nwin, *Ns;
 /* 2-D median filter with zero-padding on edges. */
 void f_medfilt2(in, out, Nwin, Ns)
 float *in, *out;
-int *Nwin, *Ns;
+intp *Nwin, *Ns;
 { 
   int nx, ny, hN[2];
   int pre_x, pre_y, pos_x, pos_y;
@@ -270,7 +270,7 @@ int *Nwin, *Ns;
 /* 2-D median filter with zero-padding on edges. */
 void b_medfilt2(in, out, Nwin, Ns)
 unsigned char *in, *out;
-int *Nwin, *Ns;
+intp *Nwin, *Ns;
 { 
   int nx, ny, hN[2];
   int pre_x, pre_y, pos_x, pos_y;

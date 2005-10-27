@@ -1642,7 +1642,7 @@ static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
 	PyObject *kernel, *a0;
 	PyArrayObject *ap1, *ap2, *ret;
 	Generic_Array in1, in2, out;
-	int *ret_dimens;
+	intp *ret_dimens;
 	int mode=2, n1, n2, i, typenum;
 	MultAddFunction *multiply_and_add_ND;
 	
@@ -1672,7 +1672,7 @@ static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
 
 	/* Swap if first argument is not the largest */
 	if (n1 < n2) { ret = ap1; ap1 = ap2; ap2 = ret; ret = NULL; }
-	ret_dimens = malloc(ap1->nd*sizeof(int));
+	ret_dimens = malloc(ap1->nd*sizeof(intp));
 	switch(mode) {
 	case 0:
 	        for (i = 0; i < ap1->nd; i++) { 
@@ -1739,7 +1739,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
     int mode=2, boundary=0, typenum, flag, flip=1, ret;
-    int *aout_dimens, *dims=NULL;
+    intp *aout_dimens, *dims=NULL;
     char zeros[32];  /* Zeros */
     int n1, n2, i;
     PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL;
@@ -1779,7 +1779,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
     
     /* Swap if first argument is not the largest */
     if (n1 < n2) { aout = ain1; ain1 = ain2; ain2 = aout; aout = NULL; }
-    aout_dimens = malloc(ain1->nd*sizeof(int));
+    aout_dimens = malloc(ain1->nd*sizeof(intp));
     switch(mode & OUTSIZE_MASK) {
     case VALID:
 	for (i = 0; i < ain1->nd; i++) { 
@@ -2010,7 +2010,7 @@ static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
         int k, numtaps, numbands, type = BANDPASS, err; 
 	PyArrayObject *a_bands=NULL, *a_des=NULL, *a_weight=NULL;
 	PyArrayObject *h=NULL;
-	int ret_dimens, maxiter = 25, grid_density = 16;
+	intp ret_dimens; int maxiter = 25, grid_density = 16;
 	double oldvalue, *dptr, Hz = 1.0;
         char mystr[255];
        
@@ -2101,9 +2101,9 @@ static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
    
 static char doc_median2d[] = "filt = _median2d(data, size)";
 
-extern void f_medfilt2(float*,float*,int*,int*);
-extern void d_medfilt2(double*,double*,int*,int*);
-extern void b_medfilt2(unsigned char*,unsigned char*,int*,int*);
+extern void f_medfilt2(float*,float*,intp*,intp*);
+extern void d_medfilt2(double*,double*,intp*,intp*);
+extern void b_medfilt2(unsigned char*,unsigned char*,intp*,intp*);
 
 static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 {

@@ -46,7 +46,7 @@ typedef struct {
 
 typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp *, int, intp, int, intp *, intp *, uintp *);
 
-typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, int, unsigned int, int, int);
+typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, intp, uintp, intp, intp);
 
 /*
 static int index_out_of_bounds(int *, int *, int );
