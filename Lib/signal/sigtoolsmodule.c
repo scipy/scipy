@@ -101,7 +101,7 @@ static intp compute_offsets (uintp *offsets, intp *offsets2, intp *dim1, intp *d
 
 /* increment by 1 the index into an N-D array, doing the necessary
    carrying when the index reaches the dimension along that axis */ 
-static int increment(int *ret_ind, int nd, int *max_ind) {    
+static int increment(intp *ret_ind, int nd, intp *max_ind) {    
     int k, incr = 1;
     
     k = nd - 1;
@@ -1383,7 +1383,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, 
 /* N-D Order Filtering. */
 
 
-static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char *sort_buffer, int nels2, int check, int *loop_ind, int *temp_ind, uintp *offset){ 
+static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char *sort_buffer, int nels2, int check, intp *loop_ind, intp *temp_ind, uintp *offset){ 
   int i, k, incr = 1;
   int ndims = ap1->nd;
   intp *dims2 = ap2->dimensions;
@@ -1499,7 +1499,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	  goto fail;
 	}
 	
-	ret = (PyArrayObject *)PyArray_FromDims(ap1->nd, ap1->dimensions, typenum);
+	ret = (PyArrayObject *)PyArray_SimpleNew(ap1->nd, ap1->dimensions, typenum);
 	if (ret == NULL) goto fail;
 	
 	compare_func = compare_functions[ap1->descr->type_num];
@@ -1695,7 +1695,7 @@ static PyObject *sigtools_correlateND(PyObject *dummy, PyObject *args) {
 		goto fail;
 	}
 	
-	ret = (PyArrayObject *)PyArray_FromDims(ap1->nd, ret_dimens, typenum);
+	ret = (PyArrayObject *)PyArray_SimpleNew(ap1->nd, ret_dimens, typenum);
 	free(ret_dimens);
 	if (ret == NULL) goto fail;
 	
@@ -1802,7 +1802,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 	goto fail;
     }
 	
-    aout = (PyArrayObject *)PyArray_FromDims(ain1->nd, aout_dimens, typenum);
+    aout = (PyArrayObject *)PyArray_SimpleNew(ain1->nd, aout_dimens, typenum);
     free(aout_dimens);
     if (aout == NULL) goto fail;
 
@@ -1915,11 +1915,11 @@ static PyObject *sigtools_linear_filter(PyObject *dummy, PyObject *args) {
 	  input_flag = (PyArray_Size((PyObject *)arVi) > 0);
 	}
 
-	arY = (PyArrayObject *)PyArray_FromDims(arX->nd, arX->dimensions, typenum);
+	arY = (PyArrayObject *)PyArray_SimpleNew(arX->nd, arX->dimensions, typenum);
 	if (arY == NULL) goto fail;
 
 	if (input_flag) {
-	  arVf = (PyArrayObject *)PyArray_FromDims(arVi->nd, arVi->dimensions, typenum);
+	  arVf = (PyArrayObject *)PyArray_SimpleNew(arVi->nd, arVi->dimensions, typenum);
 	}
 	
        	basic_filter = BasicFilterFunctions[(int)(arX->descr->type_num)];
@@ -2069,7 +2069,7 @@ static PyObject *sigtools_remez(PyObject *dummy, PyObject *args) {
 	}
 
 	ret_dimens = numtaps;
-	h = (PyArrayObject *)PyArray_FromDims(1, &ret_dimens, PyArray_DOUBLE);
+	h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, PyArray_DOUBLE);
 	if (h == NULL) goto fail;
 
 	err=pre_remez((double *)h->data, numtaps, numbands, (double *)a_bands->data, (double *)a_des->data, (double *)a_weight->data, type, maxiter, grid_density);
@@ -2128,7 +2128,7 @@ static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 	Nwin[1] = ((long *)DATA(a_size))[1];
     }  
 
-    a_out = (PyArrayObject *)PyArray_FromDims(2,DIMS(a_image),typenum);
+    a_out = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),typenum);
     if (a_out == NULL) goto fail;
 
     if (setjmp(MALLOC_FAIL)) {
