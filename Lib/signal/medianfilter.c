@@ -7,6 +7,10 @@
  *  Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
  */
 
+#include "Python.h"
+#define NO_IMPORT_ARRAY
+#include "scipy/arrayobject.h"
+
 void f_medfilt2(float*,float*,intp*,intp*);
 void d_medfilt2(double*,double*,intp*,intp*);
 void b_medfilt2(unsigned char*,unsigned char*,intp*,intp*);
@@ -176,9 +180,7 @@ unsigned char b_quick_select(unsigned char arr[], int n)
 #undef ELEM_SWAP
 
 /* 2-D median filter with zero-padding on edges. */
-void d_medfilt2(in, out, Nwin, Ns)
-double *in, *out;
-intp *Nwin, *Ns;
+void d_medfilt2(double* in, double* out, intp* Nwin, intp* Ns)
 { 
   int nx, ny, hN[2];
   int pre_x, pre_y, pos_x, pos_y;
@@ -222,9 +224,7 @@ intp *Nwin, *Ns;
 
 
 /* 2-D median filter with zero-padding on edges. */
-void f_medfilt2(in, out, Nwin, Ns)
-float *in, *out;
-intp *Nwin, *Ns;
+void f_medfilt2(float* in, float* out, intp* Nwin, intp* Ns)
 { 
   int nx, ny, hN[2];
   int pre_x, pre_y, pos_x, pos_y;
@@ -268,9 +268,7 @@ intp *Nwin, *Ns;
 
 
 /* 2-D median filter with zero-padding on edges. */
-void b_medfilt2(in, out, Nwin, Ns)
-unsigned char *in, *out;
-intp *Nwin, *Ns;
+void b_medfilt2(unsigned char *in, unsigned char *out, intp* Nwin, intp* Ns)
 { 
   int nx, ny, hN[2];
   int pre_x, pre_y, pos_x, pos_y;

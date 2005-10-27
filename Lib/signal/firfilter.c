@@ -1,3 +1,4 @@
+#define NO_IMPORT_ARRAY
 #include "sigtools.h"
 
 static int elsizes[] = {sizeof(Bool),
