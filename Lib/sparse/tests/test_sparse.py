@@ -18,6 +18,7 @@ import scipy.base
 from scipy.base import arange, zeros, array, dot
 
 import sys
+import random
 from scipy.test.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix
@@ -89,6 +90,51 @@ class _test_cs(ScipyTestCase):
     def check_tocsr(self):
         a = self.datsp.tocsr()
         assert_array_almost_equal(a.todense(),self.dat)
+
+    def check_transpose(self):
+        a = self.datsp.transpose()
+        b = self.dat.transpose()
+        assert_array_equal(a.todense(), b)
+        assert_array_equal(a.transpose().todense(), self.dat)
+        assert_array_equal(a.transpose().todense(), self.datsp.todense())
+
+    def check_large(self):
+        # Create a 100x100 matrix with 100 non-zero elements
+        # and play around with it
+        A = dok_matrix()
+        for k in range(100):
+            i = random.randrange(100)
+            j = random.randrange(100)
+            A[i,j] = 1.
+        csr = A.tocsr()
+        csc = A.tocsc()
+        csc2 = csr.tocsc()
+        coo = A.tocoo()
+        csr2 = coo.tocsr()
+        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
+        assert_array_equal(csc.todense(), csr.todense())
+        assert_array_equal(csr.todense(), csr2.todense())
+        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
+        assert_array_equal(csr2.todense(), csc2.todense())
+        csr_plus_csc = csr + csc
+        csc_plus_csr = csc + csr
+        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
+        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
+
+    def check_add_dense(self):
+        """ Check whether adding a dense matrix to a sparse matrix works
+        """
+        # Adding a dense matrix on the right side is not yet supported.
+        # Perhaps dense matrices need some extra hooks?
+        #sum1 = self.dat + self.datsp
+        #assert_array_equal(sum1, 2*self.dat)
+        sum2 = self.datsp + self.dat
+        assert_array_equal(sum2, 2*self.dat)
+
+    def check_copy(self):
+        """ Check whether the copy=True and copy=False keywords work
+        """
+        pass
 
     # Eventually we'd like to allow matrix products between dense
     # and sparse matrices using the normal dot() function:
