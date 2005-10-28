@@ -2111,7 +2111,7 @@ static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
     int typenum;
     PyArrayObject *a_image=NULL, *a_size=NULL;
     PyArrayObject *a_out=NULL;
-    int Nwin[2] = {3,3};
+    intp Nwin[2] = {3,3};
 
     if (!PyArg_ParseTuple(args, "O|O", &image, &size)) return NULL;
 
@@ -2124,8 +2124,8 @@ static PyObject *sigtools_median2d(PyObject *dummy, PyObject *args)
 	if (a_size == NULL) goto fail;
 	if ((RANK(a_size) != 1) || (DIMS(a_size)[0] < 2)) 
 	    PYERR("Size must be a length two sequence");
-	Nwin[0] = ((long *)DATA(a_size))[0];
-	Nwin[1] = ((long *)DATA(a_size))[1];
+	Nwin[0] = ((intp *)DATA(a_size))[0];
+	Nwin[1] = ((intp *)DATA(a_size))[1];
     }  
 
     a_out = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),typenum);

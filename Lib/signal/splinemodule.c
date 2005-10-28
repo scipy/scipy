@@ -13,7 +13,7 @@
 #define RANK(arr) ((arr)->nd)
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
 
-static void convert_strides(int*,int*,int,int);
+static void convert_strides(intp*,intp*,int,int);
 
 extern int S_cubic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
 extern int S_quadratic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
