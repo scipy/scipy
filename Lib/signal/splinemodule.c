@@ -15,32 +15,29 @@
 
 static void convert_strides(int*,int*,int,int);
 
-extern int S_cubic_spline2D(float*,float*,int,int,double,int*,int*,float);
-extern int S_quadratic_spline2D(float*,float*,int,int,double,int*,int*,float);
+extern int S_cubic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
+extern int S_quadratic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
 extern int S_IIR_forback1(float,float,float*,float*,int,int,int,float);
 extern int S_IIR_forback2(double,double,float*,float*,int,int,int,float); 
-extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,int*,int*);
+extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,intp*,intp*);
 
-extern int D_cubic_spline2D(double*,double*,int,int,double,int*,int*,double);
-extern int D_quadratic_spline2D(double*,double*,int,int,double,int*,int*,double);
+extern int D_cubic_spline2D(double*,double*,int,int,double,intp*,intp*,double);
+extern int D_quadratic_spline2D(double*,double*,int,int,double,intp*,intp*,double);
 extern int D_IIR_forback1(double,double,double*,double*,int,int,int,double);
 extern int D_IIR_forback2(double,double,double*,double*,int,int,int,double); 
-extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,int*,int*);
+extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,intp*,intp*);
 
 #ifdef __GNUC__
 extern int C_IIR_forback1(__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int,float);
-extern int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,int*,int*);
+extern int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,intp*,intp*);
 extern int Z_IIR_forback1(__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int,double);
-extern int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,int*,int*);
+extern int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,intp*,intp*);
 #endif
 
 static void
-convert_strides(instrides, convstrides, size, N)
-     int *instrides;
-     int *convstrides;
-     int size, N;
+convert_strides(intp* instrides,intp* convstrides,int size,int N)
 {
-  int n, bitshift;
+  int n; intp bitshift;
 
   bitshift = -1;
 
@@ -49,7 +46,7 @@ convert_strides(instrides, convstrides, size, N)
     bitshift++;
   }
   for (n = 0; n < N; n++) {
-    convstrides[n] = instrides[n] >> (int )bitshift;
+    convstrides[n] = instrides[n] >> bitshift;
   }
 }
 
@@ -72,7 +69,7 @@ static PyObject *cspline2d(PyObject *dummy, PyObject *args)
   double lambda = 0.0;
   double precision = -1.0;
   int thetype, M, N, retval=0;
-  int outstrides[2], instrides[2];
+  intp outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
@@ -81,7 +78,7 @@ static PyObject *cspline2d(PyObject *dummy, PyObject *args)
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
-  ck = (PyArrayObject *)PyArray_FromDims(2,DIMS(a_image),thetype);
+  ck = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),thetype);
   if (ck == NULL) goto fail;
   M = DIMS(a_image)[0];
   N = DIMS(a_image)[1];
@@ -129,7 +126,7 @@ static PyObject *qspline2d(PyObject *dummy, PyObject *args)
   double lambda = 0.0;
   double precision = -1.0;
   int thetype, M, N, retval=0;
-  int outstrides[2], instrides[2];
+  intp outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
@@ -140,7 +137,7 @@ static PyObject *qspline2d(PyObject *dummy, PyObject *args)
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
-  ck = (PyArrayObject *)PyArray_FromDims(2,DIMS(a_image),thetype);
+  ck = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),thetype);
   if (ck == NULL) goto fail;
   M = DIMS(a_image)[0];
   N = DIMS(a_image)[1];
@@ -185,7 +182,7 @@ static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
   PyObject *image=NULL, *hrow=NULL, *hcol=NULL;
   PyArrayObject *a_image=NULL, *a_hrow=NULL, *a_hcol=NULL, *out=NULL;
   int thetype, M, N, ret;
-  int outstrides[2], instrides[2];
+  intp outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "OOO", &image, &hrow, &hcol)) return NULL;
 
@@ -197,7 +194,7 @@ static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
   
   if ((a_image == NULL) || (a_hrow == NULL) || (a_hcol==NULL)) goto fail;
   
-  out = (PyArrayObject *)PyArray_FromDims(2,DIMS(a_image),thetype);
+  out = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),thetype);
   if (out == NULL) goto fail;
   M = DIMS(a_image)[0];
   N = DIMS(a_image)[1];
@@ -294,7 +291,7 @@ static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
   Py_complex c0, z1;
   double precision = -1.0;
   int thetype, N, ret;
-  int outstrides, instrides;
+  intp outstrides, instrides;
 
   if (!PyArg_ParseTuple(args, "ODD|d", &sig, &c0, &z1, &precision))
     return NULL;
@@ -305,7 +302,7 @@ static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
   
   if ((a_sig == NULL)) goto fail;
   
-  out = (PyArrayObject *)PyArray_FromDims(1,DIMS(a_sig),thetype);
+  out = (PyArrayObject *)PyArray_SimpleNew(1,DIMS(a_sig),thetype);
   if (out == NULL) goto fail;
   N = DIMS(a_sig)[0];
 
@@ -414,7 +411,7 @@ static PyObject *IIRsymorder2(PyObject *dummy, PyObject *args)
   double r, omega;
   double precision = -1.0;
   int thetype, N, ret;
-  int outstrides, instrides;
+  intp outstrides, instrides;
 
   if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
     return NULL;
@@ -425,7 +422,7 @@ static PyObject *IIRsymorder2(PyObject *dummy, PyObject *args)
   
   if ((a_sig == NULL)) goto fail;
   
-  out = (PyArrayObject *)PyArray_FromDims(1,DIMS(a_sig),thetype);
+  out = (PyArrayObject *)PyArray_SimpleNew(1,DIMS(a_sig),thetype);
   if (out == NULL) goto fail;
   N = DIMS(a_sig)[0];
 

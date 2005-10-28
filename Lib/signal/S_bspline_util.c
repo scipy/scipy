@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "Python.h"
+#define NO_IMPORT_ARRAY
+#include "scipy/arrayobject.h"
 
 void compute_root_from_lambda(double, double *, double *);
 
@@ -18,10 +21,10 @@ void S_IIR_order2(float,float,float,float*,float*,int,int,int);
 void S_IIR_order2_cascade(float,float,float,float,float*,float*,int,int,int);
 int S_IIR_forback1(float,float,float*,float*,int,int,int,float);
 void S_FIR_mirror_symmetric(float*,float*,int,float*,int,int,int);
-int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,int*,int*);
+int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,intp*,intp*);
 int S_IIR_forback2(double,double,float*,float*,int,int,int,float); 
-int S_cubic_spline2D(float*,float*,int,int,double,int*,int*,float);
-int S_quadratic_spline2D(float*,float*,int,int,double,int*,int*,float);
+int S_cubic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
+int S_quadratic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
 
 /* Implement the following difference equation */
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
@@ -228,7 +231,7 @@ S_FIR_mirror_symmetric (float *in, float *out, int N, float *h, int Nh,
 int
 S_separable_2Dconvolve_mirror(float *in, float *out, int M, int N, 
 			      float *hr, float *hc, int Nhr, 
-			      int Nhc, int *instrides, int *outstrides) {
+			      int Nhc, intp *instrides, intp *outstrides) {
     int m, n;
     float *tmpmem;
     float *inptr=NULL, *outptr=NULL;
@@ -451,7 +454,7 @@ S_IIR_forback2 (double r, double omega, float *x, float *y,
 
 int 
 S_cubic_spline2D(float *image, float *coeffs, int M, int N, double lambda,
-		 int *strides, int *cstrides, float precision) {    
+		 intp *strides, intp *cstrides, float precision) {    
     double r, omega;
     float *inptr;
     float *coptr;
@@ -538,7 +541,7 @@ S_cubic_spline2D(float *image, float *coeffs, int M, int N, double lambda,
 
 int 
 S_quadratic_spline2D(float *image, float *coeffs, int M, int N, double lambda,
-		     int *strides, int *cstrides, float precision) {    
+		     intp *strides, intp *cstrides, float precision) {    
     double r;
     float *inptr;
     float *coptr;

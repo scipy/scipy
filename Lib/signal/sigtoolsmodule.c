@@ -337,7 +337,7 @@ static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z, intp len_b, 
 }
 
 
-static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
+static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z, intp len_b, uintp len_x, intp stride_X, intp stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
   double *ptr_Z, *ptr_b;
   double *ptr_a;
@@ -373,7 +373,7 @@ static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, 
 }
 
  
-static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
+static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z, intp len_b, uintp len_x, intp stride_X, intp stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
   float *ptr_Z, *ptr_b;
   float *ptr_a;
@@ -434,7 +434,7 @@ static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, 
 }
 
 
-static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
+static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z, intp len_b, uintp len_x, intp stride_X, intp stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
   double *ptr_Z, *ptr_b;
   double *ptr_a;
@@ -1760,7 +1760,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
       PYERR("Incorrect boundary value.");
     if (boundary == PAD) {
 	if (fill_value == NULL) {
-	    newfill = (PyArrayObject *)PyArray_FromDimsAndData(0, dims, typenum, zeros);
+	    newfill = (PyArrayObject *)PyArray_SimpleNewFromData(0, dims, typenum, zeros);
 	}
 	else {
 	    afill = (PyArrayObject *)PyArray_FromObject(fill_value, PyArray_CDOUBLE, 0, 0);
@@ -1770,7 +1770,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 	if (newfill == NULL) goto fail;
     }
     else {
-	newfill = (PyArrayObject *)PyArray_FromDimsAndData(0, dims, typenum, zeros);
+	newfill = (PyArrayObject *)PyArray_SimpleNewFromData(0, dims, typenum, zeros);
 	if (newfill == NULL) goto fail;
     }
     

@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "Python.h"
+#define NO_IMPORT_ARRAY
+#include "scipy/arrayobject.h"
 
 void compute_root_from_lambda(double, double *, double *);
 
@@ -15,7 +18,7 @@ void Z_IIR_order2 (__complex__ double,__complex__ double,__complex__ double,__co
 void Z_IIR_order2_cascade (__complex__ double,__complex__ double,__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int);
 int Z_IIR_forback1(__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int,double);
 void Z_FIR_mirror_symmetric(__complex__ double*,__complex__ double*,int,__complex__ double*,int,int,int);
-int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,int*,int*);
+int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,intp*,intp*);
 
 /* Implement the following difference equation */
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
@@ -257,7 +260,7 @@ Z_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
      int M, N;
      __complex__ double *hr, *hc;
      int Nhr, Nhc;
-     int *instrides, *outstrides;
+     intp *instrides, *outstrides;
 {
     int m, n;
     __complex__ double *tmpmem;
