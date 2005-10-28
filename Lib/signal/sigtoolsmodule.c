@@ -1321,7 +1321,7 @@ static MultAddFunction *MultiplyAddFunctions[] =
    CFLOAT_MultAdd, CDOUBLE_MultAdd, CLONGDOUBLE_MultAdd,
    OBJECT_MultAdd, NULL, NULL, NULL};
 
-static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, int len_b, unsigned int len_x, int stride_X, int stride_Y ) {
+static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z, intp len_b, uintp len_x, intp stride_X, intp stride_Y ) {
   char *ptr_x = x, *ptr_y = y;
   PyObject  **ptr_Z, **ptr_b;
   PyObject  **ptr_a;
