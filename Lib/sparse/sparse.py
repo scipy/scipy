@@ -1521,22 +1521,21 @@ class lnk_matrix(spmatrix):
  
 class coo_matrix(spmatrix):
     """ A sparse matrix in coordinate list format.
-    Internally, uses three arrays:
+
+    COO matrices are instantiated as follows:
+        A = coo_matrix(obj, ij, [dims])
+    The dimensions are optional.  If supplied, we set (M, N) = dims.
+    If not supplied, we infer these from the index arrays
+    ij[:][0] and ij[:][1]
+
+    The arguments 'obj' and 'ij' represent three arrays:
         1. obj[:]: the entries of the matrix, in any order
         2. ij[:][0]: the row indices of the matrix entries
         3. ij[:][1]: the column indices of the matrix entries
 
-    So:
+    So the following holds:
         A[ij[k][0], ij[k][1]] = obj[k]
-
-    COO matrices can be instantiated in one of three ways:
-        1. coo_matrix(obj, ij, [dims])
-           The dimensions are optional.  If supplied, we set M, N = dims.
-           If not supplied, we infer these from the index arrays
-           ij[:][0] and ij[:][1]
-
     """
-    #def __init__(self, obj, ij, M=None, N=None, nzmax=None, dtype=None):
     def __init__(self, obj, ij, dims=None, nzmax=None, dtype=None):
         spmatrix.__init__(self)
         try:

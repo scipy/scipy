@@ -157,7 +157,7 @@ def mmread(source):
 
     elif rep=='coordinate' and coo_matrix is None:
         # Read sparse matrix to dense when coo_matrix is not available.
-        a = zeros((rows,cols),dtype=dtype)
+        a = zeros((rows,cols), dtype=dtype)
         line = 1
         k = 0
         while line:
@@ -212,7 +212,7 @@ def mmread(source):
                 k += 1
             line = source.readline()
         assert k==entries,`k,entries`
-        a = coo_matrix(data,(row,col),M=rows,N=cols,dtype=dtype)
+        a = coo_matrix(data, (row, col), dims=(rows, cols), dtype=dtype)
     else:
         raise NotImplementedError,`rep`
 
