@@ -25,16 +25,6 @@ from scipy.base import arange, add, array, asarray, zeros, dot, exp, pi,\
 from scipy.basic.random import rand
 def random(size):
     return rand(*size)
-def Numeric_random(size):
-    import random
-    from Numeric import zeros, Float64
-    results = zeros(size,Float64)
-    f = results.flat
-    for i in range(len(f)):
-        f[i] = random.random()
-    return results
-
-
 
 import unittest
 
@@ -392,6 +382,7 @@ class test_irfft(ScipyTestCase):
             from Numeric import zeros,array
         except ImportError:
             FFT_irfft = None
+            from scipy.base import zeros,array
 
         print
         print 'Inverse Fast Fourier Transform (real data)'
