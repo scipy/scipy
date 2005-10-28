@@ -1789,7 +1789,7 @@ class test_round(unittest.TestCase):
 
     def check_round(self):
         rnd = map(int,(round(10.1),round(10.4),round(10.5),round(10.6)))
-        rndrl = (10,10,10,11)
+        rndrl = (10,10,11,11)
         assert_array_equal(rnd,rndrl)
 
 class _test_sh_legendre(unittest.TestCase):

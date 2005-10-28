@@ -1,8 +1,8 @@
 /* SIGTOOLS module by Travis Oliphant
 
-Copyright 2001 Travis Oliphant
+Copyright 2005 Travis Oliphant
 Permission to use, copy, modify, and distribute this software without fee
-is granted, under the terms of the LGPL provided this notification remain.
+is granted under the SciPy License.
 */
 
 #include <setjmp.h>

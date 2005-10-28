@@ -194,13 +194,16 @@ def valarray(shape,value=nan,typecode=None):
     else:
         return out.astype(typecode)
 
+# This should be rewritten
 def argsreduce(cond, *args):
     """Return a sequence of arguments converted to the dimensions of cond
     """
     newargs = list(args)
     expand_arr = (cond==cond)
     for k in range(len(args)):
-        newargs[k] = extract(cond,arr(args[k])*expand_arr)
+        # make sure newarr is not a scalar
+        newarr = atleast_1d(args[k])
+        newargs[k] = extract(cond,newarr*expand_arr)
     return newargs    
 
 class rv_continuous:
