@@ -38,6 +38,14 @@ class _test_cs(ScipyTestCase):
     def check_todense(self):
         chk = self.datsp.todense()
         assert_array_equal(chk,self.dat)
+        a = array([1.,2.,3.])
+        dense_dot_dense = dot(a, self.dat)
+        check = dot(a, self.datsp.todense())
+        assert_array_equal(dense_dot_dense, check)
+        b = array([1.,2.,3.,4.])
+        dense_dot_dense = dot(self.dat, b)
+        check2 = dot(self.datsp.todense(), b)
+        assert_array_equal(dense_dot_dense, check2)
 
     def check_setelement(self):
         a = self.datsp - self.datsp
@@ -81,6 +89,20 @@ class _test_cs(ScipyTestCase):
     def check_tocsr(self):
         a = self.datsp.tocsr()
         assert_array_almost_equal(a.todense(),self.dat)
+
+    # Eventually we'd like to allow matrix products between dense
+    # and sparse matrices using the normal dot() function:
+    #def check_dense_dot_sparse(self):
+    #    a = array([1.,2.,3.])
+    #    dense_dot_dense = dot(a, self.dat)
+    #    dense_dot_sparse = dot(a, self.datsp)
+    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
+
+    #def check_sparse_dot_dense(self):
+    #    b = array([1.,2.,3.,4.])
+    #    dense_dot_dense = dot(self.dat, b)
+    #    dense_dot_sparse = dot(self.datsp, b)
+    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
 class test_csr(_test_cs):
 
@@ -156,5 +178,13 @@ class test_dok(_test_cs):
         E = A*A.H
         assert_array_equal(D.A, E.A)
     
+    def check_add(self):
+        A = dok_matrix()
+        A[0,1] = -10
+        A[2,0] = 20
+        A += 10
+        B = array([[10, 0], [10, 10], [30, 10]])
+        assert_array_equal(A.todense(), B)
+
 if __name__ == "__main__":
     ScipyTest().run()
