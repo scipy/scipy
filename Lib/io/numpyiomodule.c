@@ -230,7 +230,7 @@ static PyObject *
   FILE     *fp;
   char     *buffer = NULL;
   char     dobyteswap = 0;
-  int      swap_factor;
+  int      swap_factor = 1;
   char     ownalloc = 0;
   char     write_type = 124;
 
@@ -279,7 +279,7 @@ static PyObject *
       k = 0;
       do {
 	k++;
-	buffer_size = _PyArray_multiply_list(arr->dimensions + k, arr->nd - k);
+	buffer_size = PyArray_MultiplyList(arr->dimensions + k, arr->nd - k);
 	buffer = (char *)malloc(elsize_bytes*buffer_size);
       }
       while ((NULL == buffer) && (k < arr->nd - 1));
@@ -740,7 +740,7 @@ static PyObject *
 						      0, 0);
   if (arr == NULL) goto fail;
 
-  out = (PyArrayObject *)PyArray_FromDims(RANK(arr), DIMS(arr), int_type);
+  out = (PyArrayObject *)PyArray_SimpleNew(RANK(arr), DIMS(arr), int_type);
   if (out == NULL) goto fail;
 
   /* Get the builtin_functions from the builtin module */
