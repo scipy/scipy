@@ -320,7 +320,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
         for iter in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    print "Tolerance of %g reached" % (p1-p0)
+                    print "Tolerance of %s reached" % (p1-p0)
                 return (p1+p0)/2.0
             else:
                 p = p1 - q1*(p1-p0)/(q1-q0)
@@ -330,7 +330,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
             q0 = q1
             p1 = p
             q1 = apply(func,(p1,)+args)
-    raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
+    raise RuntimeError, "Failed to converge after %d iterations, value is %s" % (maxiter,p)
 
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
