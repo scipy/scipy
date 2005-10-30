@@ -2,7 +2,7 @@ import os
 import sys
 
 def setup_package():
-    os.environ['NO_SCIPY_IMPORT']='1'
+    os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
 
     from scipy.distutils.core import setup
     from scipy.distutils.misc_util import Configuration
