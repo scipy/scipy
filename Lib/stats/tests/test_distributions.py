@@ -61,7 +61,6 @@ for dist in dists:
     exstr = r"""
 class test_%s(TestCase):
     def check_cdf(self):
-        print "Testing %s"
         D,pval = stats.kstest('%s','',args=%s,N=30)
         if (pval < %f):
             D,pval = stats.kstest('%s','',args=%s,N=30)
