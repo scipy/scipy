@@ -15,6 +15,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('interpolate')
     config.add_subpackage('sparse')
     config.add_subpackage('cluster')
+    config.add_subpackage('lib')
     config.make_svn_version_py()  # installs __svn_version__.py
     config.make_config_py('__scipy_config__')
     return config

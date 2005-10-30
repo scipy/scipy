@@ -23,18 +23,11 @@ end python module clapack
 '''
 
 
-def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.core import Extension
-    from scipy.distutils.misc_util import dot_join, get_path, default_config_dict
-    from scipy.distutils.system_info import get_info, dict_append
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
+    from scipy.distutils.system_info import get_info
 
-    package = 'lapack'
-    config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__,parent_path)
-    def local_join(*paths):
-        return os.path.join(*((local_path,)+paths))
-    def local_glob(path):
-        return glob(os.path.join(local_path,path))
+    config = Configuration('lapack',parent_package,top_path)
 
     lapack_opt = get_info('lapack_opt',notfound_action=2)
 
@@ -66,16 +59,12 @@ def configuration(parent_package='',parent_path=None):
         skip_names['clapack'].extend('cpotrf zpotrf'.split())
 
     # flapack:
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package,package,'flapack'),
-                sources = [local_join('flapack.pyf.src')],
-                depends = [__file__]+local_glob('flapack_*.pyf.src'),
-                f2py_options = ['skip:']+skip_names['flapack']+[':'])
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
-
+    config.add_extension('flapack',
+                         sources = ['flapack.pyf.src'],
+                         depends = [__file__,'flapack_*.pyf.src'],
+                         f2py_options = ['skip:']+skip_names['flapack']+[':'],
+                         extra_info = lapack_opt
+                         )
 
     # clapack:
     def get_clapack_source(ext, build_dir):
@@ -93,34 +82,30 @@ def configuration(parent_package='',parent_path=None):
             assert os.path.basename(target)=='clapack.pyf.src'
         return target
 
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package,package,'clapack'),
-                sources = [get_clapack_source],
-                depends =  [local_join('clapack.pyf.src')] \
-                + local_glob('clapack_*.pyf.src'),
-                f2py_options = ['skip:']+skip_names['clapack']+[':'])
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('clapack',
+                         sources = [get_clapack_source],
+                         depends = ['clapack.pyf.src'],
+                         f2py_options = ['skip:']+skip_names['clapack']+[':'],
+                         extra_info = lapack_opt
+                         )
 
     # calc_lwork:
-    ext_args = {'name':dot_join(parent_package,package,'calc_lwork'),
-                'sources':[local_join('calc_lwork.f')],
-                }
-    dict_append(ext_args,**lapack_opt)
-    config['ext_modules'].append(Extension(**ext_args))
+    config.add_extension('calc_lwork',
+                         sources = ['calc_lwork.f'],
+                         extra_info = lapack_opt
+                         )
 
     # atlas_version:
-    ext_args = {'name':dot_join(parent_package,package,'atlas_version'),
-                'sources':[os.path.join(local_path,'atlas_version.c')]}
-    dict_append(ext_args,**lapack_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('atlas_version',
+                         sources = ['atlas_version.c'],
+                         extra_info = lapack_opt
+                         )
+
+    config.add_data_dir('tests')
 
     return config
 
 if __name__ == '__main__':
     from scipy.distutils.core import setup
 
-    setup(**configuration(parent_path=''))
+    setup(**configuration(top_path='').todict())

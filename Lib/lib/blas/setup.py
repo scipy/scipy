@@ -32,18 +32,11 @@ python module cblas
 end python module cblas
 '''
 
-def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.core import Extension
-    from scipy.distutils.misc_util import dot_join, get_path, default_config_dict
-    from scipy.distutils.system_info import get_info, dict_append
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
+    from scipy.distutils.system_info import get_info
 
-    package = 'blas'
-    config = default_config_dict(package,parent_package)
-    local_path = get_path(__name__,parent_path)
-    def local_join(*paths):
-        return os.path.join(*((local_path,)+paths))
-    def local_glob(path):
-        return glob(os.path.join(local_path,path))
+    config = Configuration('blas',parent_package,top_path)
 
     blas_opt = get_info('blas_opt',notfound_action=2)
 
@@ -70,16 +63,12 @@ def configuration(parent_package='',parent_path=None):
             'drotmg srotmg drotm srotm'.split())
 
     # fblas:
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package,package,'fblas'),
-                sources = [local_join('fblas.pyf.src'),
-                           local_join('fblaswrap.f.src')],
-                depends = [__file__]+local_glob('fblas_l?.pyf.src'),
-                f2py_options = ['skip:']+skip_names['fblas']+[':'])
-    dict_append(ext_args,**blas_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('fblas',
+                         sources = ['fblas.pyf.src','fblaswrap.f.src'],
+                         depends = [__file__,'fblas_l?.pyf.src'],
+                         f2py_options = ['skip:']+skip_names['fblas']+[':'],
+                         extra_info = blas_opt
+                         )
 
     # cblas:
     def get_cblas_source(ext, build_dir):
@@ -97,19 +86,17 @@ def configuration(parent_package='',parent_path=None):
             assert os.path.basename(target)=='cblas.pyf.src'
         return target
 
-    ext_args = {}
-    dict_append(ext_args,
-                name = dot_join(parent_package,package,'cblas'),
-                sources = [get_cblas_source],
-                depends =  [local_join('cblas.pyf.src')] \
-                + local_glob('cblas_l?.pyf.src'),
-                f2py_options = ['skip:']+skip_names['cblas']+[':'])
-    dict_append(ext_args,**blas_opt)
-    ext = Extension(**ext_args)
-    config['ext_modules'].append(ext)
+    config.add_extension('cblas',
+                         sources = [get_cblas_source],
+                         depends = ['cblas.pyf.src','cblas_l?.pyf.src'],
+                         f2py_options = ['skip:']+skip_names['cblas']+[':'],
+                         extra_info = blas_opt
+                         )
+
+    config.add_data_dir('tests')
 
     return config
 
 if __name__ == '__main__':
     from scipy.distutils.core import setup
-    setup(**configuration(parent_path=''))
+    setup(**configuration(top_path='').todict())

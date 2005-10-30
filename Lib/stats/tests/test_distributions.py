@@ -67,7 +67,7 @@ class test_%s(TestCase):
             #if (pval < %f):
             #    D,pval = stats.kstest('%s','',args=%s,N=30)
         assert (pval > %f), "D = " + str(D) + "; pval = " + str(pval) + "; alpha = " + str(alpha) + "\nargs = " + str(%s)
-""" % (dist,dist,dist,args,alpha,dist,args,alpha,dist,args,alpha,args)
+""" % (dist,dist,args,alpha,dist,args,alpha,dist,args,alpha,args)
     exec exstr
 
 

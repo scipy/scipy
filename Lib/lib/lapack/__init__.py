@@ -2,7 +2,7 @@
 # LAPACK wrappers
 #
 
-from info_lapack import __doc__
+from info import __doc__
 
 __all__ = ['get_lapack_funcs','calc_lwork','flapack','clapack']
 
@@ -39,7 +39,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
 
     ordering = []
     for i in range(len(arrays)):
-        t = arrays[i].typecode()
+        t = arrays[i].dtypechar
         if not _type_conv.has_key(t): t = 'd'
         ordering.append((t,i))
     if ordering:

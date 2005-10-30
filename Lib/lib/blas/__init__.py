@@ -2,7 +2,7 @@
 # BLAS wrappers
 #
 
-from info_blas import __doc__
+from info import __doc__
 
 __all__ = ['fblas','cblas','get_blas_funcs']
 
@@ -25,7 +25,7 @@ def get_blas_funcs(names,arrays=(),debug=0):
     BLAS routines."""
     ordering = []
     for i in range(len(arrays)):
-        t = arrays[i].typecode()
+        t = arrays[i].dtypechar
         if not _type_conv.has_key(t): t = 'd'
         ordering.append((t,i))
     if ordering:

@@ -13,11 +13,11 @@ Run tests if blas is not installed:
 """
 
 
-from Numeric import arange, add, array
+from scipy.base import arange, add, array
 import math
 
 import sys
-from scipy_test.testing import *
+from scipy.test.testing import *
 set_package_path()
 from blas import fblas
 from blas import cblas
