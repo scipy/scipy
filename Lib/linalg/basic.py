@@ -13,8 +13,9 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
            'all_mat']
 
 #from blas import get_blas_funcs
-from lapack import get_lapack_funcs
+#from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
+from scipy.lib.lapack import get_lapack_funcs
 from scipy.base import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
 import scipy.base

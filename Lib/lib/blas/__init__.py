@@ -33,9 +33,9 @@ def get_blas_funcs(names,arrays=(),debug=0):
         required_prefix = _type_conv[ordering[0][0]]
     else:
         required_prefix = 'd'
-    typecode = _inv_type_conv[required_prefix]
+    dtypechar = _inv_type_conv[required_prefix]
     # Default lookup:
-    if ordering and fblas.has_column_major_storage(arrays[ordering[0][1]]):
+    if ordering and arrays[ordering[0][1]].flags['FORTRAN']:
         # prefer Fortran code for leading array with column major order
         m1,m2 = fblas,cblas
     else:
@@ -43,7 +43,7 @@ def get_blas_funcs(names,arrays=(),debug=0):
         m1,m2 = cblas,fblas
     funcs = []
     for name in names:
-        if name=='ger' and typecode in 'FD':
+        if name=='ger' and dtypechar in 'FD':
             name = 'gerc'
         func_name = required_prefix + name
         func = getattr(m1,func_name,None)
@@ -53,6 +53,6 @@ def get_blas_funcs(names,arrays=(),debug=0):
         else:
             func.module_name = string.split(m1.__name__,'.')[-1]
         func.prefix = required_prefix
-        func.typecode = typecode
+        func.dtypechar = dtypechar
         funcs.append(func)
     return tuple(funcs)
