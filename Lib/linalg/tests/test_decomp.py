@@ -395,4 +395,4 @@ class test_hessenberg(ScipyTestCase):
             assert_array_almost_equal(h1,h)
 
 if __name__ == "__main__":
-    ScipyTest('linalg.decomp').run()
+    ScipyTest().run()

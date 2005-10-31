@@ -77,4 +77,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    ScipyTest('linalg.lapack').run()
+    ScipyTest().run()

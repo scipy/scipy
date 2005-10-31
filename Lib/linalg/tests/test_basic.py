@@ -535,4 +535,4 @@ class test_pinv(ScipyTestCase):
         assert_array_almost_equal(a_pinv,a_pinv2)
 
 if __name__ == "__main__":
-    ScipyTest('linalg.basic').run()
+    ScipyTest().run()

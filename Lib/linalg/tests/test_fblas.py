@@ -514,4 +514,4 @@ class test_zgerc(base_ger_complex):
 """        
 
 if __name__ == "__main__":
-    ScipyTest('linalg.fblas').run()
+    ScipyTest().run()

@@ -208,4 +208,4 @@ Notes:
 """
 
 if __name__ == "__main__":
-    ScipyTest('linalg.blas').run()
+    ScipyTest().run()
