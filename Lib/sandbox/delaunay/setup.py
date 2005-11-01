@@ -1,14 +1,14 @@
 from scipy.distutils.core import setup
-from scipy.distutils.misc_util import get_path, Configuration
+from scipy.distutils.misc_util import Configuration
 
-def configuration(parent_package='', parent_path=None):
-    local_path = get_path(__name__)
-    config = Configuration('delaunay', parent_package, parent_path)
+def configuration(parent_package='', top_path=None):
+
+    config = Configuration('delaunay', parent_package, top_path)
 
     config.add_extension("_delaunay", 
         sources=["_delaunay.cpp", "VoronoiDiagramGenerator.cpp", 
             "delaunay_utils.cpp", "natneighbors.cpp"],
-        include_dirs=[local_path],
+        include_dirs=['.'],
     )
 
     return config
