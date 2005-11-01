@@ -104,7 +104,6 @@ class LinearTester(object):
     def plot(self, func, interp=True, plotter='imshow', margin=0.4):
         import matplotlib as mpl
         from matplotlib import pylab as pl
-        import Numeric as N
         if interp:
             lpi = self.interpolator(func)
             z = lpi[self.yrange[0]+margin:self.yrange[1]-margin:complex(0,self.nrange),
@@ -120,15 +119,15 @@ class LinearTester(object):
         pl.clf()
         pl.hot() # Some like it hot
         if plotter == 'imshow':
-            pl.imshow(N.array(z), interpolation='nearest', extent=extent, origin='lower', aspect='preserve')
+            pl.imshow(z, interpolation='nearest', extent=extent, origin='lower', aspect='preserve')
         elif plotter == 'contour':
             Y, X = sp.ogrid[self.yrange[0]+margin:self.yrange[1]-margin:complex(0,self.nrange),
                 self.xrange[0]+margin:self.xrange[1]-margin:complex(0,self.nrange)]
-            pl.contour(N.array(X).flat, N.array(Y).flat, N.array(z), 20)
-        x = N.array(self.x)
-        y = N.array(self.y)
-        lc = mpl.collections.LineCollection([((x[i], y[i]), (x[j], y[j]))
-            for i, j in N.array(self.tri.edge_db)], colors=[(0,0,0,0.2)])
+            pl.contour(sp.ravel(X), sp.ravel(Y), z, 20)
+        x = self.x
+        y = self.y
+        lc = mpl.collections.LineCollection(sp.array([((x[i], y[i]), (x[j], y[j]))
+            for i, j in self.tri.edge_db]), colors=[(0,0,0,0.2)])
         pl.gca().add_collection(lc)
         if interp:
             title = '%s Interpolant' % self.name
