@@ -82,11 +82,11 @@ python module sparsetools ! in
             integer intent(hide), depend(ptra) :: m=(len(ptra)-1)
             integer intent(hide), depend(ptrb) :: n=(len(ptrb)-1)
             <_t> dimension(nnzamax) :: a
-            integer dimension(nnzamax), depend(nnzamax) :: cola
+            integer dimension(nnzamax), depend(nnzamax) :: rowa
             integer dimension(m + 1) :: ptra
             integer intent(hide), depend(a) :: nnzamax=len(a)
             <_t> dimension(nnzbmax) :: b
-            integer dimension(nnzbmax),depend(nnzbmax) :: rowb
+            integer dimension(nnzbmax),depend(nnzbmax) :: colb
             integer dimension(n + 1) :: ptrb
             integer intent(hide), depend(b) :: nnzbmax=len(b)
             <_t> intent(in,out),dimension(nnzcmax) :: c

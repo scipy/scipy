@@ -75,9 +75,30 @@ class _test_cs(ScipyTestCase):
         assert_array_almost_equal([1,2,3,4]*b,dot([1,2,3,4],b.todense()))
 
     def check_matmat(self):
-        asp = self.spmatrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
-        bsp = self.spmatrix(array([[0,1],[1,0],[0,2]],'d'))
-        assert_array_almost_equal((asp*bsp).todense(),dot(asp.todense(),bsp.todense()))
+        a = array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
+        b = array([[0,1],[1,0],[0,2]],'d')
+        asp = self.spmatrix(a)
+        bsp = self.spmatrix(b)
+        assert_array_almost_equal((asp*bsp).todense(), dot(a,b))
+        assert_array_almost_equal((asp*b).todense(), dot(a,b))
+        assert_array_almost_equal((a*bsp).todense(), dot(a,b))
+        # Now try performing cross-type multplication:
+        csp = bsp.tocsc()
+        c = b
+        assert_array_almost_equal((asp*csp).todense(), dot(a,c))
+        assert_array_almost_equal((asp.matmat(csp)).todense(), dot(a,c))
+        assert_array_almost_equal((asp*c).todense(), dot(a,c))
+        assert_array_almost_equal((a*csp).todense(), dot(a,c))
+        csp = bsp.tocsr()
+        assert_array_almost_equal((asp*csp).todense(), dot(a,c))
+        assert_array_almost_equal((asp.matmat(csp)).todense(), dot(a,c))
+        assert_array_almost_equal((asp*c).todense(), dot(a,c))
+        assert_array_almost_equal((a*csp).todense(), dot(a,c))
+        csp = bsp.tocoo()
+        assert_array_almost_equal((asp*csp).todense(), dot(a,c))
+        assert_array_almost_equal((asp.matmat(csp)).todense(), dot(a,c))
+        assert_array_almost_equal((asp*c).todense(), dot(a,c))
+        assert_array_almost_equal((a*csp).todense(), dot(a,c))
 
     def check_tocoo(self):
         a = self.datsp.tocoo()
@@ -124,10 +145,8 @@ class _test_cs(ScipyTestCase):
     def check_add_dense(self):
         """ Check whether adding a dense matrix to a sparse matrix works
         """
-        # Adding a dense matrix on the right side is not yet supported.
-        # Perhaps dense matrices need some extra hooks?
-        #sum1 = self.dat + self.datsp
-        #assert_array_equal(sum1, 2*self.dat)
+        sum1 = self.dat + self.datsp
+        assert_array_equal(sum1, 2*self.dat)
         sum2 = self.datsp + self.dat
         assert_array_equal(sum2, 2*self.dat)
 
