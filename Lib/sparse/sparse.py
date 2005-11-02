@@ -319,7 +319,7 @@ class spmatrix:
  
 class csc_matrix(spmatrix):
     """ Compressed sparse column matrix
-        This can be instantiated in two ways:
+        This can be instantiated in several ways:
           - csc_matrix(d)
             with a dense matrix d
 
@@ -335,11 +335,8 @@ class csc_matrix(spmatrix):
                 a[ij[k, 0], ij[k, 1]] = data[k]
 
           - csc_matrix((data, row, ptr), [(M, N)])
-            ??
+            standard CSC representation
     """
-    # Perhaps we should split up the different calling conventions to this
-    # __init__ function somehow.  This could improve robustness and remove
-    # some code duplication.
     def __init__(self, arg1, dims=(None,None), nzmax=100, dtype='d', copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
@@ -427,9 +424,14 @@ class csc_matrix(spmatrix):
                     try:
                         # Try interpreting it as (data, rowind, indptr)
                         (s, rowind, indptr) = arg1
-                        self.data = asarray(s)
-                        self.rowind = asarray(rowind)
-                        self.indptr = asarray(indptr)
+                        if copy:
+                            self.data = array(s)
+                            self.rowind = array(rowind)
+                            self.indptr = array(indptr)
+                        else:
+                            self.data = asarray(s)
+                            self.rowind = asarray(rowind)
+                            self.indptr = asarray(indptr)
                     except:
                         raise ValueError, "unrecognized form for csc_matrix constructor"
         else:
@@ -800,27 +802,37 @@ class csc_matrix(spmatrix):
  
 class csr_matrix(spmatrix):
     """ Compressed sparse row matrix
-        This can be instantiated in four ways:
-          1. csr_matrix(s)
+        This can be instantiated in several ways:
+          - csr_matrix(d)
+            with a dense matrix d
+
+          - csr_matrix(s)
              with another sparse matrix s (sugar for .tocsr())
 
-          2. csr_matrix((M, N), [nzmax, dtype])
+          - csr_matrix((M, N), [nzmax, dtype])
              to construct a container, where (M, N) are dimensions and
              nzmax, dtype are optional, defaulting to nzmax=100 and dtype='d'.
 
-          3. csr_matrix(data, ij, [(M, N), nzmax])
+          - csr_matrix((data, ij), [(M, N), nzmax])
              where data, ij satisfy:
                 a[ij[k, 0], ij[k, 1]] = data[k]
 
-          4. csr_matrix(data, (row, ptr), [(M, N)])
-             ??
+          - csr_matrix((data, row, ptr), [(M, N)])
+             standard CSR representation
     """
-    # Perhaps we should split up the different calling conventions to this
-    # __init__ function somehow.  This could improve robustness and remove
-    # some code duplication.
-    def __init__(self, arg1, arg2=None, arg3=None, nzmax=100, dtype='d', copy=False):
+    def __init__(self, arg1, dims=(None,None), nzmax=100, dtype='d', copy=False):
         spmatrix.__init__(self)
-        if isspmatrix(arg1):
+        if isdense(arg1):
+            # Convert the dense matrix arg1 to CSR format
+            if rank(arg1) == 2:
+                s = asarray(arg1)
+                ocsc = csc_matrix(transpose(s))
+                self.colind = ocsc.rowind
+                self.indptr = ocsc.indptr
+                self.data = ocsc.data
+                self.shape = (ocsc.shape[1], ocsc.shape[0])
+
+        elif isspmatrix(arg1):
             s = arg1
             if isinstance(s, csr_matrix):
                 # do nothing but copy information
@@ -842,67 +854,66 @@ class csr_matrix(spmatrix):
                 try:
                     temp = s.tocsr()
                 except AttributeError:
-                    temp = csr_matrix(s.tocsc())                    
+                    temp = csr_matrix(s.tocsc()) 
                 self.data = temp.data
                 self.colind = temp.colind
                 self.indptr = temp.indptr
                 self.shape = temp.shape
         elif type(arg1) == tuple:
             try:
-                assert len(arg1) == 2 and type(arg1[0]) == int and type(arg1[1]) == int
-            except AssertionError:
-                raise TypeError, "matrix dimensions must be a tuple of two integers"
-            (M, N) = arg1
-            self.data = zeros((nzmax,), dtype)
-            self.colind = zeros((nzmax,), 'i')
-            self.indptr = zeros((M+1,), 'i')
-            self.shape = (M, N)
-        elif isinstance(arg1, ArrayType) or type(arg1) == list:
-            s = asarray(arg1)
-            if (rank(s) == 2):  # converting from a full array
-                ocsc = csc_matrix(transpose(s))
-                self.colind = ocsc.rowind
-                self.indptr = ocsc.indptr
-                self.data = ocsc.data
-                self.shape = (ocsc.shape[1], ocsc.shape[0])
-
-            elif isinstance(arg2, ArrayType) and (rank(arg2) == 2) and (shape(arg2) == (len(s), 2)):
-                ij = arg2
-                ijnew = ij.copy()
-                ijnew[:, 0] = ij[:, 1]
-                ijnew[:, 1] = ij[:, 0]
-                temp = coo_matrix(s, ijnew, dims=(M, N), nzmax=nzmax,
-                                  dtype=dtype)
-                temp = temp.tocsr()
-                self.shape = temp.shape
-                self.data = temp.data
-                self.colind = temp.colind
-                self.indptr = temp.indptr
-            elif type(arg2) == tuple and len(arg2)==2:
-                self.data = asarray(s)
-                self.colind = arg2[0]
-                self.indptr = arg2[1]
-                if arg3 != None:
-                    try:
-                        M, N = arg3
-                    except TypeError:
-                        raise TypeError, "argument 3 must be a pair (M, N) of dimensions"
-                else:
-                    M = N = None
-                if N is None:
-                    try:
-                        # we cast this to an int so type checking works
-                        N = int(amax(self.colind)) + 1
-                    except ValueError:
-                        N = 0
-                if M is None:
-                    M = len(self.indptr) - 1
-                    if M == -1: M = 0
+                # Assume it's a tuple of matrix dimensions (M, N)
+                (M, N) = arg1
+                M = int(M)      # will raise TypeError if (data, ij)
+                N = int(N)
+                self.data = zeros((nzmax,), dtype)
+                self.colind = zeros((nzmax,), int)
+                self.indptr = zeros((M+1,), int)
                 self.shape = (M, N)
-            else:
-                raise ValueError, "unrecognized form for csr_matrix constructor"
+            except (ValueError, TypeError):
+                try:
+                    # Try interpreting it as (data, ij)
+                    (s, ij) = arg1
+                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s), 2))
+                    ijnew = ij.copy()
+                    ijnew[:, 0] = ij[:, 1]
+                    ijnew[:, 1] = ij[:, 0]
+                    temp = coo_matrix(s, ijnew, dims=(M, N), nzmax=nzmax,
+                                      dtype=dtype)
+                    temp = temp.tocsr()
+                    self.shape = temp.shape
+                    self.data = temp.data
+                    self.colind = temp.rowind
+                    self.indptr = temp.indptr
+                except:
+                    try:
+                        # Try interpreting it as (data, colind, indptr)
+                        (s, colind, indptr) = arg1
+                        if copy:
+                            self.data = array(s)
+                            self.colind = array(colind)
+                            self.indptr = array(indptr)
+                        else:
+                            self.data = asarray(s)
+                            self.colind = asarray(colind)
+                            self.indptr = asarray(indptr)
+                    except:
+                        raise ValueError, "unrecognized form for csr_matrix constructor"
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
+
+        # Read existing matrix dimensions
+        try:
+            (oldM, oldN) = self.shape
+        except:
+            oldM = oldN = None
+        # Read matrix dimensions given, if any
+        try:
+            (M, N) = dims
+        except TypeError:
+            M = N = None
+        M = max(0, oldM, M, len(self.indptr) - 1)
+        N = max(oldN, N, int(amax(self.colind)) + 1)
+        self.shape = (M, N)
 
         self._check()
 
@@ -952,7 +963,7 @@ class csr_matrix(spmatrix):
             if ierr:
                 raise ValueError, "ran out of space (but shouldn't have happened)"
             M, N = self.shape
-            return csr_matrix(c, (colc, ptrc), (M, N))
+            return csr_matrix((c, colc, ptrc), dims=(M, N))
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them.
             # This does not currently work.
@@ -1009,7 +1020,7 @@ class csr_matrix(spmatrix):
             if ierr:
                 raise ValueError, "ran out of space (but shouldn't have happened)"
             M, N = self.shape
-            return csr_matrix(c, (colc, ptrc), (M, N))
+            return csr_matrix((c, colc, ptrc), dims=(M, N))
         else:
             raise TypeError, "unsupported type for sparse matrix power"
 
@@ -1104,9 +1115,8 @@ class csr_matrix(spmatrix):
                 nnzc = newnnzc
 
             if out == 'csr':
-                # FIXME
-                # Is this correct??  Does rowc here mean colc?
-                return csr_matrix(c, (rowc, ptrc), (M, N))
+                # Note: 'rowc' is deliberate
+                return csr_matrix((c, rowc, ptrc), dims=(M, N))
             else:
                 return csc_matrix((c, rowc, ptrc), dims=(M, N))
         elif isdense(other):
@@ -1548,7 +1558,7 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
-        return csr_matrix(data, (colind, row_ptr))
+        return csr_matrix((data, colind, row_ptr), nzmax=nzmax)
 
     def tocsc(self, nzmax=None):
         """ Return Compressed Sparse Column format arrays for this matrix
@@ -1578,7 +1588,7 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         rowind = array(rowind)
         col_ptr = array(col_ptr)
-        return csc_matrix((data, rowind, col_ptr))
+        return csc_matrix((data, rowind, col_ptr), nzmax=nzmax)
 
     def todense(self, dtype=None):
         if dtype is None:
@@ -1693,7 +1703,7 @@ class coo_matrix(spmatrix):
         a, cola, ptra, ierr = func(self.shape[0], data, col, row)
         if ierr:
             raise RuntimeError, "error in conversion"
-        return csr_matrix(a, (cola, ptra), self.shape)
+        return csr_matrix((a, cola, ptra), dims=self.shape)
 
     def tocoo(self, copy=False):
         if copy:
