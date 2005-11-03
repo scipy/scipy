@@ -1258,7 +1258,8 @@ class dok_matrix(spmatrix, dict):
     def __init__(self, A=None):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
         argument A is accepted, which initializes the dok_matrix with it.
-        (For now this only supports dense matrices.)
+        This can be a tuple of dimensions (m, n) or a (dense) array
+        to copy.
         """
         dict.__init__(self)
         spmatrix.__init__(self)
@@ -1266,19 +1267,31 @@ class dok_matrix(spmatrix, dict):
         self.nnz = 0
 
         if A is not None:
+            if type(A) == tuple:
+                # Interpret as dimensions
+                try:
+                    dims = A
+                    (M, N) = dims
+                    self.shape = (M, N)
+                    return
+                except (TypeError, ValueError):
+                    pass
             if isspmatrix(A):
                 # For sparse matrices, this is too inefficient; we need 
                 # something else.
-                raise NotImplementedError, "initializing a dok_matrix with a sparse matrix is not supported yet"
+                raise NotImplementedError, "initializing a dok_matrix with " \
+                        "a sparse matrix is not yet supported"
             elif isdense(A):
                 A = asarray(A)
                 M, N = A.shape
+                self.shape = (M, N)
                 for i in range(M):
                     for j in range(N):
                         if A[i, j] != 0:
                             self[i, j] = A[i, j]
             else:
-                raise TypeError, "argument should be a sparse or dense matrix"
+                raise TypeError, "argument should be a tuple of dimensions " \
+                        "or a sparse or dense matrix"
 
     def __str__(self):
         val = ''
