@@ -35,15 +35,15 @@ def ediff1d( ar1, toEnd = None, toBegin = None ):
     dar1 = ar1[1:] - ar1[:-1]
     if toEnd and toBegin:
         shape = (ar1.shape[0] + 1,) + ar1.shape[1:]
-        ed = scipy.empty( shape, dtype = ar1.dtype() )
+        ed = scipy.empty( shape, dtype = ar1.dtype )
         ed[0], ed[-1] = toBegin, toEnd
         ed[1:-1] = dar1
     elif toEnd:
-        ed = scipy.empty( ar1.shape, dtype = ar1.dtype() )
+        ed = scipy.empty( ar1.shape, dtype = ar1.dtype )
         ed[-1] = toEnd
         ed[:-1] = dar1
     elif toBegin:
-        ed = scipy.empty( ar1.shape, dtype = ar1.dtype() )
+        ed = scipy.empty( ar1.shape, dtype = ar1.dtype )
         ed[0] = toBegin
         ed[1:] = dar1
     else:
@@ -91,7 +91,6 @@ def setxor1d( ar1, ar2 ):
     """Set exclusive-or of 1D arrays with unique elements."""
     aux = scipy.sort( scipy.concatenate( (ar1, ar2 ) ) )
     flag = ediff1d( aux, toEnd = 1, toBegin = 1 ) == 0
-    flag = scipy.array( flag, dtype = int ) # Scipy bug workaround...
     flag2 = ediff1d( flag, 0 ) == 0
     return scipy.compress( flag2, aux )
 
