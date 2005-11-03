@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 #!/usr/bin/env python
 #  $Id$
 #  --------------------------------------------------------------------

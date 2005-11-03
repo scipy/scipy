@@ -1,20 +1,22 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # 1998 - 2003
 # Author: Travis Oliphant
 # Copyright: SciPy
 
 import gist
 import pl3d, plwf
-import Numeric
-from Numeric import ravel, reshape, repeat, arange, transpose, compress, \
+import scipy as Numeric
+from scipy import ravel, reshape, repeat, arange, transpose, compress, \
      where, ones, NewAxis, asarray
-import MLab
-from MLab import pi, cos, sin, arctan2, array, angle
+import scipy.basic.linalg as MLab
+from scipy.basic.linalg import pi, cos, sin, arctan2, array, angle
 import types
 import write_style
 points = 0.0013000
 inches = 72.27*points
 import scipy
-import scipy_base
+import scipy.base as scipy_base
 import scipy.signal as signal
 from scipy.xplt import maxwidth as _maxwidth
 from scipy.xplt import maxheight as _maxheight
@@ -161,8 +163,8 @@ def reverse_dict(dict):
 
 _colornum = {'black':-3, 'white':-4,'red':-5,'green':-6,'blue':-7,'cyan':-8,'magenta':-9,'yellow':-10}
 _types = {'-':'solid','|':'dash',':':'dot','-.':'dashdot','-:':'dashdotdot'}
-_corder = ['b','r','m','g','c','k','y']
-_colors = {'k':'black','r':'red','b':'blue','m':'magenta','g':'green','y':'yellow','c':'cyan','w':'white'}
+_corder = ['B','r','m','g','c','k','y']
+_colors = {'k':'black','r':'red','B':'blue','m':'magenta','g':'green','y':'yellow','c':'cyan','w':'white'}
 _markers = { '+':'\2','.':'\1','*':'\3','o':'\4','x':'\5'}
 _current_style='work.gs'
 
@@ -214,7 +216,7 @@ def barplot(x,y,width=0.8,color=0):
     else:
         gist.fma()
     Z = color * Numeric.ones(len(N))
-    gist.plfp(Z.astype('b'),Y,X,N)
+    gist.plfp(Z.astype('B'),Y,X,N)
     return
 
 def hold(state):
@@ -236,7 +238,7 @@ def hold(state):
     return
           
 
-def errorbars(x,y,err,ptcolor='r',linecolor='b',pttype='o',linetype='-',fac=0.25):
+def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25):
     """Draw connected points with errorbars.
 
     Description:
@@ -474,7 +476,7 @@ def arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None):
     y1a = y1 + hypot*sin(tha) / conv_factory
     y1b = y1 + hypot*sin(thb) / conv_factory
     gist.pldj([x0],[y0],[x1],[y1],color=lc,width=width)
-    gist.plfp(array([color],'b'),[y1,y1a,y1b],[x1,x1a,x1b],[3])
+    gist.plfp(array([color],'B'),[y1,y1a,y1b],[x1,x1a,x1b],[3])
     return
 
 def _parse_type_arg(thearg,nowplotting):
@@ -645,7 +647,7 @@ def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
 
 def write_palette(tofile,pal):
     pal = Numeric.asarray(pal)
-    if pal.typecode() not in ['b','1','s','i','l']:
+    if pal.dtypechar not in ['B','b','s','i','l']:
         raise ValueError, "Palette data must be integer data."
     palsize = pal.shape
     if len(palsize) > 2:
@@ -657,7 +659,7 @@ def write_palette(tofile,pal):
             pal = pal[:,0]
         palsize = pal.shape
     if len(palsize) == 1:
-        pal = Numeric.multiply.outer(pal,ones((3,),pal.typecode()))
+        pal = Numeric.multiply.outer(pal,ones((3,),pal.dtypechar))
         palsize = pal.shape
     if not (palsize[1] == 3 or palsize[0] == 3):
         raise TypeError, "If input is 2-d, the length of at least one dimension must be 3."
@@ -712,7 +714,7 @@ def change_palette(pal):
                     raise ValueError, "Palette %s not found." % pal
         else:
             data = Numeric.transpose(Numeric.asarray(pal))
-	    data = data.astype('b')
+	    data = data.astype('B')
 	    gist.palette(*transpose(data))
             #filename = os.path.join(_user_path,'_temp.gp')
             #write_palette(filename,data)
@@ -724,7 +726,7 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     """Plot an image of a matrix.
     """
     A = Numeric.asarray(A)
-    if A.typecode() in ['D','F']:
+    if A.dtypechar in ['D','F']:
         print "Warning: complex array given, plotting magnitude."
         A = abs(A)
     M,N = A.shape
@@ -750,12 +752,12 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     # bottom left corner column
     posy = -ays*(byv-ayv)/(bys-ays) + ayv
     posx = -axs*(bxv-axv)/(bxs-axs) + axv
-    gist.plt('1',posx,posy-0.005,justify='LT',color=color)
+    gist.plt('b',posx,posy-0.005,justify='LT',color=color)
     # bottom left corner row
     gist.plt(str(M),posx-0.005,posy,justify='RB',color=color)
     # top left corner row
     posy = (M-ays)*(byv-ayv)/(bys-ays) + ayv
-    gist.plt('1',posx-0.005,posy,justify='RT',color=color)
+    gist.plt('b',posx-0.005,posy,justify='RT',color=color)
     # bottom right column
     posy = -ays*(byv-ayv)/(bys-ays) + ayv
     posx = (N-axs)*(bxv-axv)/(bxs-axs) + axv
@@ -1137,7 +1139,7 @@ def title3(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
                  height=fontsize, color=color)
 
 def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
-    y0 = Numeric.zeros(len(y),y.typecode())
+    y0 = Numeric.zeros(len(y),y.dtypechar)
     y1 = y
     x0 = m
     x1 = m

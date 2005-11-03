@@ -1,8 +1,10 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # $Id$
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
-from Numeric import *
+from scipy import *
 from shapetest import *
 from yorick import *
 from arrayfns import *

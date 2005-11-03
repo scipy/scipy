@@ -1,8 +1,10 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 # ed williams' colorbar stuff
-from Numeric import *
+from scipy import *
 from scipy_base.fastumath import *
 from arrayfns import *
 from gist import *
@@ -56,14 +58,14 @@ def color_bar (minz, maxz, split = 0, ncol = None, ymax=0.85, ymin=0.44, xmin0=0
       ncol = 100 + (1 - split) * 100
    plsys (0)
    if type (minz) == type (maxz) == type (1) : # Do not change!!!
-      plotval = reshape (arange (minz, maxz + 1, typecode = 'b'),
+      plotval = reshape (arange (minz, maxz + 1, typecode = 'B'),
          (maxz + 1 - minz, 1))
       pli (plotval, xmin0, ymin, xmax0, ymax) # draw bar
    elif not split :
       pli (reshape (span (0, 1, ncol), (ncol, 1)),
          xmin0, ymin, xmax0, ymax) # draw bar
    else :
-      pli (reshape (split_bytscl (span (0, 1, ncol), 0).astype ('b'), (ncol, 1)),
+      pli (reshape (split_bytscl (span (0, 1, ncol), 0).astype ('B'), (ncol, 1)),
          xmin0, ymin, xmax0, ymax) # draw bar
    pldj (array ( [xmin0, xmin0]), array ( [ymin, ymax]), array ( [xmax0, xmax0]),
          array ( [ymin, ymax]), color=color)

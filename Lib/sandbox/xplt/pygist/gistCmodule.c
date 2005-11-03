@@ -186,7 +186,7 @@ extern "C" {
 #include "Python.h"
 #include "pyfpe.h"
 
-#include "Numeric/arrayobject.h"
+#include "scipy/arrayobject.h"
 #include "hlevel.h"
 
 #include "pstdlib.h"

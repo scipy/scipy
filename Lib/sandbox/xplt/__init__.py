@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 
 from info_xplt import __doc__
 

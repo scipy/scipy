@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 """
 Plotting routines based on Gist 
 ===============================

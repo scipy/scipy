@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # $Id$
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
@@ -13,7 +15,7 @@
 # assignments to it over there are not reflected in the copy here.
 # This has been fixed by creating an access function.
 
-from Numeric import *
+from scipy import *
 from shapetest import *
 from types import *
 from pl3d import *
@@ -1667,9 +1669,9 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
    else :
       raise _ContourError, "Incorrect contour specification."
    if split == 0 :
-      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
+      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('B')
    else :
-      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('b')
+      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('B')
    # 2. Loop through slice2x calls
    nv = array (nverts, copy = 1)
    xyzv = array (xyzverts, copy = 1)
@@ -1710,7 +1712,7 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
          continue
       else:
          if color == None :
-            pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
+            pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('B'),
                split = 0, edges = edges)
          else :
             # N. B. Force edges to be on, otherwise the graph is empty.
@@ -1718,7 +1720,7 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
    if zaxis_max == None or vc [imax - 1] < zaxis_max:
       # send "front" surface if it's not beyond zaxis_max
       if color == None :
-         pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
+         pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('B'),
             split = 0, edges = edges)
       else :
          pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
@@ -1802,9 +1804,9 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
    else :
       raise _ContourError, "Incorrect contour specification."
    if split == 0 :
-      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
+      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('B')
    else :
-      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('b')
+      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('B')
    # 2. Loop through slice2x calls
    nv = array (nverts, copy = 1)
    xyzv = array (xyzverts, copy = 1)
@@ -1850,7 +1852,7 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
          continue
       else:
          if color == None :
-            pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('b'),
+            pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype ('B'),
                split = 0, edges = edges)
          else :
             # N. B. Force edges to be on, otherwise the graph is empty.
@@ -1858,7 +1860,7 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
    if caxis_max == None or vc [imax - 1] < caxis_max:
       # send "front" surface if it's not beyond caxis_max
       if color == None :
-         pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('b'),
+         pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype ('B'),
             split = 0, edges = edges)
       else :
          pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
@@ -2170,7 +2172,7 @@ palette_dict = {
                203, 204, 205, 207, 208, 209, 210, 211, 213, 214, 215, 216,
                217, 219, 220, 221, 222, 223, 225, 226, 227, 228, 229, 231,
                232, 233, 234, 235, 237, 238, 239, 240, 241, 243, 244, 245,
-               246, 247, 249, 250, 251, 252, 253, 255], 'b'),
+               246, 247, 249, 250, 251, 252, 253, 255], 'B'),
       array ( [0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 8, 11, 13, 16, 18, 21, 23, 26,
                28, 31, 33, 36, 38, 41, 43, 45, 48, 50, 52, 55, 57, 59, 61,
                64, 66, 68, 70, 72, 74, 77, 79, 81, 83, 85, 87, 89, 91, 93,
@@ -2190,7 +2192,7 @@ palette_dict = {
                176, 177, 178, 179, 181, 182, 184, 185, 187, 188, 190, 192,
                194, 196, 198, 200, 202, 204, 206, 208, 211, 213, 215, 218,
                221, 223, 226, 229, 232, 235, 238, 241, 244, 248, 251, 255],
-               'b'),
+               'B'),
       array ( [0, 46, 58, 69, 81, 92, 104, 116, 116, 116, 116, 116, 117,
                117, 117, 117, 117, 118, 118, 118, 118, 118, 119, 119, 119,
                119, 119, 120, 120, 120, 120, 120, 121, 121, 121, 121, 121,
@@ -2209,7 +2211,7 @@ palette_dict = {
                134, 137, 139, 142, 145, 148, 150, 153, 156, 159, 162, 165,
                168, 170, 173, 176, 179, 182, 185, 189, 192, 195, 198, 201,
                204, 207, 211, 214, 217, 220, 224, 227, 230, 234, 237, 241,
-               244, 248, 251, 255] , 'b')],
+               244, 248, 251, 255] , 'B')],
    "gray.gp" : [
       array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
@@ -2231,7 +2233,7 @@ palette_dict = {
                226, 227, 228, 229, 230, 231, 233, 234, 235, 236, 237, 238,
                239, 240, 241, 242, 243, 244, 245, 246, 247, 249, 250, 251,
                252, 253, 254, 255
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
                18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
@@ -2252,7 +2254,7 @@ palette_dict = {
                226, 227, 228, 229, 230, 231, 233, 234, 235, 236, 237, 238,
                239, 240, 241, 242, 243, 244, 245, 246, 247, 249, 250, 251,
                252, 253, 254, 255
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
                18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
@@ -2273,7 +2275,7 @@ palette_dict = {
                226, 227, 228, 229, 230, 231, 233, 234, 235, 236, 237, 238,
                239, 240, 241, 242, 243, 244, 245, 246, 247, 249, 250, 251,
                252, 253, 254, 255
-              ] , 'b')
+              ] , 'B')
       ],
    "heat.gp" : [
       array ( [
@@ -2296,7 +2298,7 @@ palette_dict = {
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255, 255, 255, 255, 255
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2314,7 +2316,7 @@ palette_dict = {
                200, 202, 204, 205, 207, 209, 211, 213, 215, 217, 219, 221,
                222, 224, 226, 228, 230, 232, 236, 238, 239, 241, 243, 245,
                247, 249, 251, 253
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2330,7 +2332,7 @@ palette_dict = {
                121, 125, 133, 137, 141, 145, 149, 153, 156, 160, 164, 168,
                172, 176, 180, 184, 188, 192, 196, 200, 204, 207, 215, 219,
                223, 227, 231, 235, 239, 243, 247, 251
-              ] , 'b')
+              ] , 'B')
       ],
    "rainbow.gp" : [
       array ( [
@@ -2351,7 +2353,7 @@ palette_dict = {
                147, 153, 158, 163, 169, 174, 180, 190, 196, 201, 206, 212,
                217, 223, 228, 233, 239, 244, 249, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 0, 0, 0, 0, 0, 0, 0, 5, 11, 16, 22, 27, 32, 38, 43, 48,
                54, 59, 65, 70, 75, 81, 91, 97, 102, 108, 113, 118, 124,
@@ -2371,7 +2373,7 @@ palette_dict = {
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                42, 36, 31, 26, 20, 15, 10, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2390,7 +2392,7 @@ palette_dict = {
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 249, 243,
                233, 227, 222, 217, 211, 206, 201
-              ] , 'b')
+              ] , 'B')
       ],
    "stern.gp" : [
       array ( [
@@ -2414,7 +2416,7 @@ palette_dict = {
                229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240,
                241, 242, 243, 245, 246, 247, 248, 249, 250, 251, 252, 253,
                254
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18,
                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34,
@@ -2435,7 +2437,7 @@ palette_dict = {
                227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238,
                239, 240, 241, 242, 243, 245, 246, 247, 248, 249, 250, 251,
                252, 253, 254
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 21, 23, 25, 27, 29, 31,
                33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 63,
@@ -2456,7 +2458,7 @@ palette_dict = {
                144, 148, 152, 156, 159, 163, 167, 171, 175, 178, 182, 186,
                190, 194, 197, 201, 205, 209, 216, 220, 224, 228, 232, 235,
                239, 243, 247, 251
-              ] , 'b')
+              ] , 'B')
       ],
    "yarg.gp" : [
       array ( [
@@ -2479,7 +2481,7 @@ palette_dict = {
                38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,
                22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6,
                5, 4, 3, 2, 1, 0
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                255, 254, 253, 252, 251, 250, 249, 248, 246, 245, 244, 243, 
                242, 241, 240, 239, 238, 237, 236, 235, 234, 233, 232, 230, 
@@ -2500,7 +2502,7 @@ palette_dict = {
                37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 22,
                21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5,
                4, 3, 2, 1, 0
-              ] , 'b'),
+              ] , 'B'),
       array ( [
                255, 254, 253, 252, 251, 250, 249, 248, 246, 245, 244, 243,
                242, 241, 240, 239, 238, 237, 236, 235, 234, 233, 232, 230,
@@ -2521,7 +2523,7 @@ palette_dict = {
                38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,
                22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8,
                6, 5, 4, 3, 2, 1, 0
-              ] , 'b')
+              ] , 'B')
       ]
    }
 
@@ -2538,9 +2540,9 @@ def split_palette ( * name) :
    if len (name) > 0 :
       dum = palette (name [0])
       del dum
-   r = zeros (240, 'b')
-   g = zeros (240, 'b')
-   b = zeros (240, 'b')
+   r = zeros (240, 'B')
+   g = zeros (240, 'B')
+   b = zeros (240, 'B')
    dum = palette (r, g, b, query = 1)
    del dum
    try : # r may be all zeros, in which case the following will fail:
@@ -2553,18 +2555,18 @@ def split_palette ( * name) :
       del dum
       n = max (max (nonzero (r)), max (nonzero (g)),
                max (nonzero (b))) + 1
-   newr = zeros (200, 'b')
-   newg = zeros (200, 'b')
-   newb = zeros (200, 'b')
+   newr = zeros (200, 'B')
+   newg = zeros (200, 'B')
+   newb = zeros (200, 'B')
    newr [0:100] = interp (r [0:n].astype (Float), arange (n, typecode = Float ),
-      arange (100, typecode = Float ) * n / 100).astype ('b')
+      arange (100, typecode = Float ) * n / 100).astype ('B')
    newg [0:100] = interp (g [0:n].astype (Float), arange (n, typecode = Float ),
-      arange (100, typecode = Float ) * n / 100).astype ('b')
+      arange (100, typecode = Float ) * n / 100).astype ('B')
    newb [0:100] = interp (b [0:n].astype (Float), arange (n, typecode = Float ),
-      arange (100, typecode = Float ) * n / 100).astype ('b')
-   newr [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('b')
-   newg [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('b')
-   newb [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('b')
+      arange (100, typecode = Float ) * n / 100).astype ('B')
+   newr [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('B')
+   newg [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('B')
+   newb [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('B')
    palette (newr, newg, newb)
 
 def split_bytscl (x, upper, cmin = None, cmax = None) :
@@ -2577,7 +2579,7 @@ def split_bytscl (x, upper, cmin = None, cmax = None) :
      scale) if the second parameter is non-zero.
    """
 
-   x = bytscl (x, cmin = cmin, cmax = cmax, top = 99).astype('b')
+   x = bytscl (x, cmin = cmin, cmax = cmax, top = 99).astype('B')
 
    if upper :
       x = x + 100
@@ -2658,8 +2660,8 @@ def _pl3leaf (leaf, not_plane, minmax) :
    # accumulate polys and vertices into a single polygon list
    # The type of array required for palettes is "Py_GpColor",
    # which translates to "PyArray_UBYTE", which is selected
-   # with a second argument of 'b' to the zeros() function.
-## _values = zeros (_nverts, 'b') # See below
+   # with a second argument of 'B' to the zeros() function.
+## _values = zeros (_nverts, 'B') # See below
    old_nverts = _nverts
    _nverts = zeros (_nverts, Int)
    _x = zeros (_xyzverts, Float )
@@ -2673,7 +2675,7 @@ def _pl3leaf (leaf, not_plane, minmax) :
    _vlist = 1
    if type (leaf) == ListType and type (leaf [0]) == ListType :
        if leaf [0] [2] != "bg" :
-          _values = zeros (old_nverts, 'b')
+          _values = zeros (old_nverts, 'B')
        else :
           _values = "bg"
        for i in range (len (leaf)) :
@@ -2681,7 +2683,7 @@ def _pl3leaf (leaf, not_plane, minmax) :
             _x, _y, _z, _list, _vlist, _values, _nverts, minmax)
    else :
       if leaf [2] != "bg" :
-         _values = zeros (old_nverts, 'b')
+         _values = zeros (old_nverts, 'B')
       else :
          _values = "bg"
       [_list, _vlist, _edges] = _pl3tree_accum ( leaf , not_plane,
@@ -2779,11 +2781,11 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
       if item [5] != 0 :
          _values [ _list - 1: _list - 1 + incr] = split_bytscl (
             get3_light (_xyzverts, item [0]), 1, cmin = 0.0,
-            cmax = item [4]).astype ('b')
+            cmax = item [4]).astype ('B')
       else : # no split
          _values [ _list - 1: _list - 1 + incr] = bytscl (
             get3_light (_xyzverts, item [0]), cmin = 0.0,
-            cmax = item [4]).astype ('b')
+            cmax = item [4]).astype ('B')
       _list = _list + incr
       # accumulate x, y, and z
       incr = shape (_xyzverts) [0]
@@ -2802,13 +2804,13 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
       incr = len (item [0])
       _nverts [ _list - 1: _list - 1 + incr] = item [0]
       if item [2] != "bg" :
-         if (item [2]).typecode () != 'b' :
+         if (item [2]).typecode () != 'B' :
             if item [5] != 0 :
                _values [ _list - 1: _list - 1 + incr] = split_bytscl (
-                  item [2], 0, cmin = item [3], cmax = item [4]).astype ('b')
+                  item [2], 0, cmin = item [3], cmax = item [4]).astype ('B')
             else :
                _values [ _list - 1: _list - 1 + incr] = bytscl (
-                  item [2], cmin = item [3], cmax = item [4]).astype ('b')
+                  item [2], cmin = item [3], cmax = item [4]).astype ('B')
          else :
             _values [ _list - 1: _list - 1 + incr] = item [2]
       _list = _list + incr
@@ -2870,7 +2872,7 @@ def _pl3tree_slice (plane, leaf) :
          xyzb = None
       valf = ll [2]
       if valf != None :
-         tpc = valf.typecode()
+         tpc = valf.dtypechar
          valb = array (valf, copy = 1)
       else :
          valb = None

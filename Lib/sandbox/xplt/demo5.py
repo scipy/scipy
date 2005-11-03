@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -8,7 +10,7 @@ from slice3 import *
 from yorick import *
 from gist import *
 from arrayfns import *
-from MLab import rand
+from scipy.basic.linalg import rand
 
 window3 (hcp = "talk.ps", dump = 1)
 

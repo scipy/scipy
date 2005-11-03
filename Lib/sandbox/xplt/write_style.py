@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 import types
 points = 0.0013000
 inches = 72.27*points

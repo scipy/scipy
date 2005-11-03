@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -155,7 +157,7 @@ from graph2d import *
 from cellarray import *
 
 import shapetest
-from Numeric import *
+from scipy import *
 from scipy_base.fastumath import *
 
 _ezdict_ = {'t': 'true' , 'T': 'true', 'y': 'true', 'Y': 'true',
@@ -1727,7 +1729,7 @@ def plotf (*args, ** keywords) :
    __rt_ = _rt_
    if n != 0 :
       if type (args[0][0][0]) == IntType :
-         plvar = keywords ["cindex"] = array(args [0],'b') # Gist knows chars
+         plvar = keywords ["cindex"] = array(args [0],'B') # Gist knows chars
       else :
          plvar = keywords ["pvar"] = args [0]
          if n > 1 :

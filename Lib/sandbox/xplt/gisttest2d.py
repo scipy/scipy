@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -38,7 +40,7 @@ def demo () :
    g0.change(titles = "Stained glass window")
    g0.plot ()
    paws ()
-   p1.set(z = array("AMZMmAzMmMZ",'b') )
+   p1.set(z = array("AMZMmAzMmMZ",'B') )
    g0.plot ()
    paws ()
    nx= 10
@@ -47,7 +49,7 @@ def demo () :
    # for jj in range (ny) :
    #    for ii in range (nx) :
    #        ndx [ii, jj] = ii + (jj - 1) * nx
-   ndx = reshape (arange (nx * ny, typecode = 'b'), (nx, ny))
+   ndx = reshape (arange (nx * ny, typecode = 'B'), (nx, ny))
    cla = CellArray ( z = ndx )
    gca = Graph2d ( cla , titles = "Cell Array", axis_scales = "linlin" )
    gca.plot ( )

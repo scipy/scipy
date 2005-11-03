@@ -1,7 +1,9 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 #import Tkinter
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
-from Numeric import *
+from scipy import *
 from scipy_base.fastumath import *
 #from _Graphics import *
 #import PIL.ImageTk,PIL.Image
@@ -22,26 +24,26 @@ def read_act(filename):
 Palette = {}
 
 def make_palettes():
-    p = arange(0,256,1,typecode='b')[:,NewAxis] * \
-        ones((3,),typecode='b')[NewAxis,:]
+    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
+        ones((3,),dtype='B')[NewAxis,:]
     Palette['gray'] = p
 
-    p = arange(0,256,1,typecode='b')[:,NewAxis] * \
-        array([0,0,1],typecode='b')[NewAxis,:]    
+    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
+        array([0,0,1],dtype='B')[NewAxis,:]    
     Palette['blue'] = p
 
-    p = arange(0,256,1,typecode='b')[:,NewAxis] * \
-        array([1,0,0],typecode='b')[NewAxis,:]        
+    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
+        array([1,0,0],dtype='B')[NewAxis,:]        
     Palette['red'] = p
 
-    p = arange(0,256,1,typecode='b')[:,NewAxis] * \
-        array([0,1,0],typecode='b')[NewAxis,:]        
+    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
+        array([0,1,0],dtype='B')[NewAxis,:]        
     Palette['green'] = p
 
-    p = zeros((256,3),'b')
+    p = zeros((256,3),'B')
     dp = (256-40)/128.0
-    p[:128,2] = arange(40,256,dp,typecode='b')[::-1]
-    p[128:,0] = arange(40,256,dp,typecode='b')
+    p[:128,2] = arange(40,256,dp,dtype='B')[::-1]
+    p[128:,0] = arange(40,256,dp,dtype='B')
     Palette['wave'] = p
 
     Palette['Aaasmo'] = read_act('%s/Research/Library/Python/Graphics/Aaasmo'% os.environ['HOME'])
@@ -52,7 +54,7 @@ def _interpolate_colormap(p,num):
     assert(p.shape[1]<=3)
     pf = p.astype('d')
     pfnew = signaltools.resample(pf,num,axis=0)
-    return pfnew.astype('b')
+    return pfnew.astype('B')
     
 def read_gist_palettes():
     import commands
@@ -94,7 +96,7 @@ def _makewavebytes(data,bot,top,cmin,cmax):
 
     bytelow = (mid-bot)/(0.0-cmin) * data + mid
     bytehigh = (top - mid)/(cmax-0.0) * data + mid
-    bytedata = where(greater(data,0),bytehigh,bytelow).astype('b')
+    bytedata = where(greater(data,0),bytehigh,bytelow).astype('B')
     
     return bytedata
 
@@ -114,7 +116,7 @@ def _makewavebytes(data,bot,top,cmin,cmax):
 ##        shape = (size[1],size[0])
 ##    image = Image.fromstring("L",shape,bytedata.tostring())
 ##    if p is not None:
-##        image.putpalette(asarray(p,typecode='b').tostring())
+##        image.putpalette(asarray(p,dtype='B').tostring())
 ##    return image
 
 def write_frames(data,filename,dim=0,expand=None,cmin=None,cmax=None,p=None):

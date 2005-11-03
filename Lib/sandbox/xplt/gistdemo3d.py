@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # $Id$
 #  ---------------------------------------------------------------------
 #
@@ -27,7 +29,7 @@ from slice3 import *
 from yorick import *
 from gist import *
 from arrayfns import *
-from RNG import * 
+from scipy.basic.random import * 
 
 print "Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3."
 print "Partway, plots are written to Postscript file; see talk.ps."

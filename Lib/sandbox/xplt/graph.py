@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -26,7 +28,7 @@ else :
          "environment variable."
  
 # The following is so I know about arrays:
-from Numeric import *
+from scipy import *
 from scipy_base.fastumath import *
 from shapetest import *
 

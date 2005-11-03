@@ -1,7 +1,9 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
-from Numeric import *
+from scipy import *
 from scipy_base.fastumath import *
 
 GraphicsError = "GraphicsError"
@@ -35,7 +37,7 @@ from plane import *
 from surface import Surface
 from graph3d import Graph3d
 from mesh3d import *
-from MLab import rand
+from scipy.basic.linalg import rand
 
 def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")

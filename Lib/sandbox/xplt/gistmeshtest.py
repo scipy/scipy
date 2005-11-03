@@ -1,11 +1,13 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from region import *
 from quadmesh import *
 from graph2d import *
-from MLab import rand
-from Numeric import *
+from scipy.basic.linalg import rand
+from scipy import *
 from scipy_base.fastumath import *
 from shapetest import *
 

@@ -1,3 +1,5 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 #  $Id$
 #  ---------------------------------------------------------------------
 #
@@ -64,7 +66,7 @@
 
 __version__ = "1.5.22"
 
-from Numeric import *
+from scipy import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path
 from scipy.xplt.gistC import *
 from pydoc import help
@@ -107,7 +109,7 @@ def pltitle(title):
 
 #  ---------------------------------------------------------------------
 
-def ylimits(ymin='u',ymax='u'): 
+def ylimits(ymin='I',ymax='I'): 
    """
    ylimits(ymin, ymax)
       Set the y-axis plot limits in the current coordinate system to
@@ -121,7 +123,7 @@ def ylimits(ymin='u',ymax='u'):
       I've changed the name to avoid the collision.
       SEE ALSO: plsys, limits, logxy, plg
    """
-   limits('u','u',ymin,ymax)
+   limits('I','I',ymin,ymax)
 
 #  ---------------------------------------------------------------------
 
@@ -448,7 +450,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       range of Z are selected.
 
       If you specify CONTOURS, you may also specify COLORS, an array of
-      color numbers (Python typecode 'b', integers between 0 and the
+      color numbers (Python typecode 'B', integers between 0 and the
       length of the current palette - 1, normally 199) of length
       len(CONTOURS)+1. If you do not specify them, equally
       spaced colors are chosen.
@@ -507,13 +509,13 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
    else :
       raise _ContourError, "Incorrect contour specification."
    if colors is None :
-      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('b')
+      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('B')
    else :
       colors = array (colors)
       if len (colors) != n + 1 :
          raise "PLFC_Error", \
             "colors must specify one more color than contours."
-      if colors.typecode != 'b' :
+      if colors.typecode != 'B' :
          colors = bytscl (colors)
 
    if triangle is None :
@@ -525,7 +527,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       [nc, yc, xc] = contour (array ( [vc [i], vc [i + 1]]), z)
       if (is_scalar(nc) and nc == 0 or nc is None) :
          continue
-      plfp ( (ones (len (nc)) * colors [i]).astype ('b'),
+      plfp ( (ones (len (nc)) * colors [i]).astype ('B'),
          yc, xc, nc, edges = 0)
 
 def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
@@ -613,7 +615,7 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
       for i in range(n):
          z = color[i]
          if type(z) == StringType: z = color_dict[z]
-         plfp(array([z],'b'),bary[i],barx[i],[4])
+         plfp(array([z],'B'),bary[i],barx[i],[4])
    for i in range(n):
       plg(bary[i],barx[i],width=width,hide=hide,marks=0)
    if labels:

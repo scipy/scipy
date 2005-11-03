@@ -1,9 +1,11 @@
+## Automatically adapted for scipy Oct 31, 2005 by 
+
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from gist import *
 from shapetest import *
-from Numeric import *
+from scipy import *
 from scipy_base.fastumath import *
 from graftypes import *
 from movie import *
@@ -950,7 +952,7 @@ class Plotter :
              # Use byte scale
              (k, l) = shape (crv.z)
              _z_ = reshape (bytscl (reshape (crv.z, (k * l,)),
-                cmin = self._cmin, cmax = self._cmax), (k, l)).astype('b')
+                cmin = self._cmin, cmax = self._cmax), (k, l)).astype('B')
           else : 
              _z_ = crv.z
           if _color_bar_ :
@@ -1087,7 +1089,7 @@ class Plotter :
                 # back to 2d.
                 (k, l) = shape (crv.z)
                 _z_ = reshape (bytscl (reshape (crv.z,  (k * l, )),
-                   cmin = self._cmin, cmax = self._cmax), (k, l)).astype('b')
+                   cmin = self._cmin, cmax = self._cmax), (k, l)).astype('B')
              else : 
                 _z_ = crv.z
              plf (array (_z_).astype (Float), 
@@ -1697,18 +1699,18 @@ class Plotter :
                       if s.plane is not None :
                          pl3tree (s.nv, s.xyzv,
                             split_bytscl (fval, upper = 0, cmin = zmin,
-                               cmax = zmax).astype('b'), s.plane,
+                               cmax = zmax).astype('B'), s.plane,
                                cmin = zmin, cmax = zmax, split = 0,
                                edges = edges)
                       else :
                          pl3tree (s.nv, s.xyzv,
                             split_bytscl (fval, upper = 1, cmin = zmin,
-                               cmax = zmax).astype('b'), s.plane,
+                               cmax = zmax).astype('B'), s.plane,
                                cmin = zmin, cmax = zmax, split = 0,
                                edges = edges)
                    else :
                       pl3tree (s.nv, s.xyzv, bytscl (fval, top = 199,
-                         cmin = zmin, cmax = zmax).astype('b'), s.plane,
+                         cmin = zmin, cmax = zmax).astype('B'), s.plane,
                                cmin = zmin, cmax = zmax, split = 0,
                          edges = edges)
                 else :
