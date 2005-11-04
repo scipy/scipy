@@ -1593,6 +1593,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	free(check_ind); free(mode_dep);
 	free(sort_buffer);
 	
+	PyDataMem_FREE(zptr);
 	Py_DECREF(ap1);
 	Py_DECREF(ap2);
 

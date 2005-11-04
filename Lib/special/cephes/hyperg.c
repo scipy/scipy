@@ -139,6 +139,8 @@ sum = 1.0;
 n = 1.0;
 t = 1.0;
 maxt = 0.0;
+pcanc = 1.0; /* estimate 100% error if problem */
+*err = pcanc;
 
 
 while( t > MACHEP )
@@ -158,7 +160,6 @@ while( t > MACHEP )
 	temp = fabs(u);
 	if( (temp > 1.0 ) && (maxt > (MAXNUM/temp)) )
 		{
-		pcanc = 1.0;	/* estimate 100% error */
 		goto blowup;
 		}
 

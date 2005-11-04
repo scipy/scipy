@@ -799,7 +799,7 @@ double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double 
 double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double *r2d)
 {
   int kf=2, kd=1;
-  double r1f, r1d, r2f, cv, *eg;
+  double r1f=0, r1d=0, r2f, cv, *eg;
   int int_m, int_n;
 
   if ((x <=1.0) || (m<0) || (n<m) || \
@@ -928,7 +928,7 @@ int oblate_radial1_wrap(double m, double n, double c, double cv, double x, doubl
 int oblate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d)
 {
   int kf=2;
-  double r1f, r1d;
+  double r1f=0, r1d=0;
   int int_m, int_n;
 
   if ((x <0.0) || (m<0) || (n<m) || \
