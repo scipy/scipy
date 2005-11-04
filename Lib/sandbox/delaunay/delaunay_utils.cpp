@@ -88,15 +88,24 @@ double signed_area(double x0, double y0,
               + x2 * (y0 - y1));
 }
 
-ConvexPolygon::ConvexPolygon(double x0c, double y0c) {
-    this->x0 = x0c;
-    this->y0 = y0c;
+ConvexPolygon::ConvexPolygon(){
+    seeded = false;
 }
 
 ConvexPolygon::~ConvexPolygon() {
 }
 
+void ConvexPolygon::seed(double x0c, double y0c) {
+    this->x0 = x0c;
+    this->y0 = y0c;
+}
+
 void ConvexPolygon::push(double x, double y) {
+    if (!seeded) {
+        seed(x, y);
+        seeded = true;
+        return;
+    }
     SeededPoint xy(this->x0, this->y0, x, y);
 
     this->points.push_back(xy);

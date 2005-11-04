@@ -23,9 +23,7 @@ private:
     int npoints, ntriangles;
     double *x, *y, *centers, *radii2;
     int *nodes, *neighbors;
-    long rng_seed;
 
-    double ranf();
     int find_containing_triangle(double targetx, double targety, int start_triangle);
 };
 

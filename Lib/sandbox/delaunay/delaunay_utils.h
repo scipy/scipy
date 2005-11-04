@@ -59,19 +59,18 @@ public:
 
 class ConvexPolygon {
 public:
-    ConvexPolygon(double x0c, double y0c);
+    ConvexPolygon();
     ~ConvexPolygon();
 
+    void seed(double x0c, double y0c);
     void push(double x, double y);
-
-    // comparator for sorting
-    //bool compare(const Point& p1, const Point& p2);
 
     double area();
 
 // private:  // I don't care much for data-hiding
     double x0, y0;
     vector<SeededPoint> points;
+    bool seeded;
 };
 
 

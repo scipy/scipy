@@ -198,8 +198,8 @@ static PyObject *linear_planes(int ntriangles, double *x, double *y, double *z,
                                       INDEX3(planes_ptr,i,0)*x[INDEX3(nodes,i,2)] - 
                                       INDEX3(planes_ptr,i,1)*y[INDEX3(nodes,i,2)]);
         } else {
-            xy0212 = x02/y12;
-            INDEX3(planes_ptr,i,1) = (z02 - z12 * xy0212) / (x02 - x12 * xy0212);
+            xy0212 = x02/x12;
+            INDEX3(planes_ptr,i,1) = (z02 - z12 * xy0212) / (y02 - y12 * xy0212);
             INDEX3(planes_ptr,i,0) = (z12 - INDEX3(planes_ptr,i,1)*y12) / x12;
             INDEX3(planes_ptr,i,2) = (z[INDEX3(nodes,i,2)] - 
                                       INDEX3(planes_ptr,i,0)*x[INDEX3(nodes,i,2)] - 

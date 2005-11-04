@@ -32,22 +32,11 @@ NaturalNeighbors::NaturalNeighbors(int npoints, int ntriangles, double *x, doubl
         this->radii2[i] = x2 + y2;
     }
 
-    this->rng_seed = 1234567890;
 }
 
 NaturalNeighbors::~NaturalNeighbors()
 {
     delete[] this->radii2;
-}
-
-// Dumb implementation of the Park-Miller minimal standard PRNG
-// I hate doing this, but I want complete control without > 5 lines of code.
-double NaturalNeighbors::ranf()
-{
-    const double a=16807;
-    const double m=2147483647.0;
-    this->rng_seed = (long)(fmod(this->rng_seed * a, m));
-    return this->rng_seed / m;
 }
 
 int NaturalNeighbors::find_containing_triangle(double targetx, double targety, int start_triangle)
@@ -61,7 +50,6 @@ int NaturalNeighbors::find_containing_triangle(double targetx, double targety, i
 double NaturalNeighbors::interpolate_one(double *z, double targetx, double targety,
     double defvalue, int &start_triangle)
 {
-    bool test = false; //((targetx == 1.0));
     int t = find_containing_triangle(targetx, targety, start_triangle);
     if (t == -1) return defvalue;
 
@@ -108,13 +96,13 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
 
     vector<int> edge;
     bool onedge = false;
+    bool onhull = false;
 
     for (it = circumtri.begin(); it != circumtri.end(); it++) {
         int t = *it;
         double vx = INDEX2(this->centers, t, 0);
         double vy = INDEX2(this->centers, t, 1);
         vector<double> c(6);
-        //vector<bool> onedge(3);
         for (int i=0; i<3; i++) {
             int j = EDGE0(i);
             int k = EDGE1(i);
@@ -139,6 +127,7 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
                     onedge = true;
                     edge.push_back(INDEX3(this->nodes, t, j));
                     edge.push_back(INDEX3(this->nodes, t, k));
+                    onhull = (INDEX3(neighbors, t, i) == -1);
                 }
             }
         }
@@ -169,7 +158,17 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
     // If we're on an edge, then the scheme of adding up triangles as above
     // doesn't work so well. We'll take care of these two nodes here.
     if (onedge) {
-        if (test) cout << "We're on an edge! "<< targetx<<" "<<targety << endl;
+
+        // If we're on the convex hull, then the other nodes don't actually 
+        // contribute anything, just the nodes for the edge we're on. The 
+        // Voronoi "polygons" are infinite in extent. I think.
+        // XXX: double-check this on paper
+        if (onhull) {
+            double a = (hypot(targetx-x[edge[0]], targety-y[edge[0]]) / 
+                        hypot(x[edge[1]]-x[edge[0]], y[edge[1]]-y[edge[0]]));
+            return (1-a) * z[edge[0]] + a*z[edge[1]];
+        }
+
         set<int> T(circumtri.begin(), circumtri.end());
         vector<int> newedges0; // the two nodes that edge[0] still connect to
         vector<int> newedges1; // the two nodes that edge[1] still connect to
@@ -196,54 +195,44 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
             }
         }
 
-        if (test) {
-        cout << "  newedges0 ";
-        copy(newedges0.begin(), newedges0.end(), ostream_iterator<int>(cout, " "));
-        cout << endl;
-        cout << "  newedges1 ";
-        copy(newedges1.begin(), newedges1.end(), ostream_iterator<int>(cout, " "));
-        cout << endl;
-        cout << "  alltri0 ";
-        copy(alltri0.begin(), alltri0.end(), ostream_iterator<int>(cout, " "));
-        cout << endl;
-        cout << "  alltri1 ";
-        copy(alltri1.begin(), alltri1.end(), ostream_iterator<int>(cout, " "));
-        cout << endl;
+        double cx, cy;
+        ConvexPolygon poly0;
+        ConvexPolygon poly1;
+
+        if (edge[1] != newedges0[0]) {
+            circumcenter(this->x[edge[0]], this->y[edge[0]],
+                         this->x[newedges0[0]], this->y[newedges0[0]],
+                         targetx, targety,
+                         cx, cy);
+            poly0.push(cx, cy);
+        }
+        if (edge[1] != newedges0[1]) {
+            circumcenter(this->x[edge[0]], this->y[edge[0]],
+                         this->x[newedges0[1]], this->y[newedges0[1]],
+                         targetx, targety,
+                         cx, cy);
+            poly0.push(cx, cy);
         }
 
-        double cx, cy;
-        circumcenter(this->x[edge[0]], this->y[edge[0]],
-                     this->x[newedges0[0]], this->y[newedges0[0]],
-                     targetx, targety,
-                     cx, cy);
-        if (test) cout << cx <<","<<cy<<endl;
-        ConvexPolygon poly0(cx, cy);
-        circumcenter(this->x[edge[0]], this->y[edge[0]],
-                     this->x[newedges0[1]], this->y[newedges0[1]],
-                     targetx, targety,
-                     cx, cy);
-        if (test) cout << cx <<","<<cy<<endl;
-        poly0.push(cx, cy);
-
-        circumcenter(this->x[edge[1]], this->y[edge[1]],
-                     this->x[newedges1[0]], this->y[newedges1[0]],
-                     targetx, targety,
-                     cx, cy);
-        //if (test) cout << cx <<","<<cy<<endl;
-        ConvexPolygon poly1(cx, cy);
-        circumcenter(this->x[edge[1]], this->y[edge[1]],
-                     this->x[newedges1[1]], this->y[newedges1[1]],
-                     targetx, targety,
-                     cx, cy);
-        //if (test) cout << cx <<","<<cy<<endl;
-        poly1.push(cx, cy);
+        if (edge[0] != newedges1[0]) {
+            circumcenter(this->x[edge[1]], this->y[edge[1]],
+                         this->x[newedges1[0]], this->y[newedges1[0]],
+                         targetx, targety,
+                         cx, cy);
+            poly1.push(cx, cy);
+        }
+        if (edge[0] != newedges1[1]) {
+            circumcenter(this->x[edge[1]], this->y[edge[1]],
+                         this->x[newedges1[1]], this->y[newedges1[1]],
+                         targetx, targety,
+                         cx, cy);
+            poly1.push(cx, cy);
+        }
 
         set<int>::iterator sit;
         for (sit = alltri0.begin(); sit != alltri0.end(); sit++) {
             poly0.push(INDEX2(this->centers, *sit, 0),
                        INDEX2(this->centers, *sit, 1)); 
-            if (test) cout <<*sit<<" "<<INDEX2(this->centers, *sit, 0)<<","<<
-                       INDEX2(this->centers, *sit, 1) <<endl;
         }
         for (sit = alltri1.begin(); sit != alltri1.end(); sit++) {
             poly1.push(INDEX2(this->centers, *sit, 0),
@@ -252,25 +241,6 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
 
         double a0 = poly0.area();
         double a1 = poly1.area();
-
-        if (test) {
-            cout << "Edge 0 "<<edge[0]<<" "<<x[edge[0]]<<","<<y[edge[0]]<<endl;
-            cout << "Edge 1 "<<edge[1]<<" "<<x[edge[1]]<<","<<y[edge[1]]<<endl;
-            cout << "  a0 = " << a0 <<endl;
-            cout << "  a1 = " << a1 <<endl;
-
-            vector<SeededPoint>::iterator spit;
-
-            for (spit=poly0.points.begin(); spit!=poly0.points.end(); spit++) {
-                cout << "  "<< spit->x <<","<<spit->y;
-            }
-            cout << "  " << poly0.x0<<","<<poly0.y0<<endl;
-
-            for (spit=poly1.points.begin(); spit!=poly1.points.end(); spit++) {
-                cout << "  "<<spit->x<<","<<spit->y;
-            }
-            cout << "  " << poly1.x0<<","<<poly1.y0<<endl;
-        }
 
         f += a0*z[edge[0]];
         A += a0;

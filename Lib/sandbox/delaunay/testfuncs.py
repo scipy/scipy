@@ -198,9 +198,13 @@ def constant(x, y):
     return sp.ones(x.shape, x.dtype)
 constant.title = 'Constant'
 
-def ramp(x, y):
+def xramp(x, y):
     return x
-ramp.title = 'Ramp'
+xramp.title = 'X Ramp'
+
+def yramp(x, y):
+    return y
+yramp.title = 'Y Ramp'
 
 def exponential(x, y):
     x = x*9
