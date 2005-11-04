@@ -1,4 +1,10 @@
 #include "delaunay_utils.h"
+#include <algorithm>
+#include <queue>
+#include <vector>
+#include <iostream>
+
+using namespace std;
 
 int walking_triangles(int start, double targetx, double targety, 
     double *x, double *y, int *nodes, int *neighbors)
@@ -63,7 +69,7 @@ bool circumcenter(double x0, double y0,
     y0p2 = y0 + y2;
 
     D = x0m2*y1m2 - x1m2*y0m2;
-    if (D == 0.0) return false;
+    if ((D < TOLERANCE_EPS) && (D > -TOLERANCE_EPS)) return false;
 
     centerx = (((x0m2*x0p2 + y0m2*y0p2)/2*y1m2) 
               - (x1m2*x1p2 + y1m2*y1p2)/2*y0m2) / D;
@@ -80,4 +86,40 @@ double signed_area(double x0, double y0,
     return 0.5*(x0 * (y1 - y2)
               + x1 * (y2 - y0)
               + x2 * (y0 - y1));
+}
+
+ConvexPolygon::ConvexPolygon(double x0c, double y0c) {
+    this->x0 = x0c;
+    this->y0 = y0c;
+}
+
+ConvexPolygon::~ConvexPolygon() {
+}
+
+void ConvexPolygon::push(double x, double y) {
+    SeededPoint xy(this->x0, this->y0, x, y);
+
+    this->points.push_back(xy);
+}
+
+double ConvexPolygon::area() {
+    double A=0.0;
+    int i;
+
+    sort(this->points.begin(), this->points.end());
+    
+    this->points.push_back(SeededPoint(x0, y0, x0, y0));
+    int n = (int)this->points.size();
+
+    for (i=0; i<n; i++) {
+        int j = i-1;
+        if (j<0) j = n-1;
+        int k = i+1;
+        if (k>=n) k = 0;
+
+        A += points[i].x*(points[k].y - points[j].y);
+    }
+
+    A *= 0.5;
+    return A;
 }

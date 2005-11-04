@@ -56,7 +56,7 @@ class Triangulation(object):
         self.circumcenters, self.edge_db, self.triangle_nodes, \
             self.triangle_neighbors = delaunay(self.x, self.y)
 
-    def linear_interpolator(self, z):
+    def linear_interpolator(self, z, default_value=sp.nan):
         """Get an object which can interpolate within the convex hull by 
         assigning a plane to each triangle.
 
@@ -67,9 +67,9 @@ class Triangulation(object):
         if z.shape != self.x.shape:
             raise ValueError("z must be the same shape as x and y")
 
-        return LinearInterpolator(self, z)
+        return LinearInterpolator(self, z, default_value)
 
-    def nn_interpolator(self, z):
+    def nn_interpolator(self, z, default_value=sp.nan):
         """Get an object which can interpolate within the convex hull by 
         the natural neighbors method.
 
@@ -80,5 +80,5 @@ class Triangulation(object):
         if z.shape != self.x.shape:
             raise ValueError("z must be the same shape as x and y")
 
-        return NNInterpolator(self, z)
+        return NNInterpolator(self, z, default_value)
 
