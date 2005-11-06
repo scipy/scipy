@@ -19,6 +19,9 @@ public:
         double y0, double y1, int ysteps,
         double *output, double defvalue, int start_triangle);
 
+    void interpolate_unstructured(double *z, int size, 
+        double *intx, double *inty, double *output, double defvalue);
+
 private:
     int npoints, ntriangles;
     double *x, *y, *centers, *radii2;

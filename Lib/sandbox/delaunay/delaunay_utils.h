@@ -16,7 +16,7 @@ using namespace std;
 #define INDEXN(arr,N,ix,jx) (arr[N*ix+jx])
 #define SQ(a) ((a)*(a))
 
-#define TOLERANCE_EPS (16e-16)
+#define TOLERANCE_EPS (4e-13)
 #define PERTURB_EPS (1e-3)
 #define GINORMOUS (1e100)
 

@@ -75,7 +75,7 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
         stackB.pop();
         double d2 = (SQ(targetx - INDEX2(this->centers,tnew,0))
                    + SQ(targety - INDEX2(this->centers,tnew,1)));
-        if (d2 < this->radii2[tnew]) {
+        if ((this->radii2[tnew]-d2) > TOLERANCE_EPS) {
             // tnew is a circumtriangle of the target
             circumtri.push_back(tnew);
             for (i=0; i<3; i++) {
@@ -117,13 +117,13 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
 
                 // bail out with the appropriate values if we're actually on a 
                 // node
-                if ((targetx == this->x[INDEX3(this->nodes, t, j)]) &&
-                    (targety == this->y[INDEX3(this->nodes, t, j)])) {
+                if ((fabs(targetx - this->x[INDEX3(this->nodes, t, j)]) < TOLERANCE_EPS)
+                 && (fabs(targety - this->y[INDEX3(this->nodes, t, j)]) < TOLERANCE_EPS)) {
                     return z[INDEX3(this->nodes, t, j)];
-                } else if ((targetx == this->x[INDEX3(this->nodes, t, k)]) &&
-                           (targety == this->y[INDEX3(this->nodes, t, k)])) {
+                } else if ((fabs(targetx - this->x[INDEX3(this->nodes, t, k)]) < TOLERANCE_EPS)
+                        && (fabs(targety - this->y[INDEX3(this->nodes, t, k)]) < TOLERANCE_EPS)) {
                     return z[INDEX3(this->nodes, t, k)];
-                } else {
+                } else if (!onedge) {
                     onedge = true;
                     edge.push_back(INDEX3(this->nodes, t, j));
                     edge.push_back(INDEX3(this->nodes, t, k));
@@ -141,6 +141,7 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
                 ati = signed_area(vx, vy, 
                                   INDEX2(c, j, 0), INDEX2(c, j, 1),
                                   INDEX2(c, k, 0), INDEX2(c, k, 1));
+
 
                 yA = ati - cA;
                 tA = A + yA;
@@ -161,8 +162,7 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
 
         // If we're on the convex hull, then the other nodes don't actually 
         // contribute anything, just the nodes for the edge we're on. The 
-        // Voronoi "polygons" are infinite in extent. I think.
-        // XXX: double-check this on paper
+        // Voronoi "polygons" are infinite in extent.
         if (onhull) {
             double a = (hypot(targetx-x[edge[0]], targety-y[edge[0]]) / 
                         hypot(x[edge[1]]-x[edge[0]], y[edge[1]]-y[edge[0]]));
@@ -194,6 +194,8 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
                 }
             }
         }
+
+        set<int>::iterator sit;
 
         double cx, cy;
         ConvexPolygon poly0;
@@ -229,7 +231,6 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
             poly1.push(cx, cy);
         }
 
-        set<int>::iterator sit;
         for (sit = alltri0.begin(); sit != alltri0.end(); sit++) {
             poly0.push(INDEX2(this->centers, *sit, 0),
                        INDEX2(this->centers, *sit, 1)); 
@@ -241,6 +242,7 @@ double NaturalNeighbors::interpolate_one(double *z, double targetx, double targe
 
         double a0 = poly0.area();
         double a1 = poly1.area();
+
 
         f += a0*z[edge[0]];
         A += a0;
@@ -279,5 +281,19 @@ void NaturalNeighbors::interpolate_grid(double *z,
                 defvalue, coltri);
             if (coltri != -1) tri = coltri;
         }
+    }
+}
+
+void NaturalNeighbors::interpolate_unstructured(double *z, int size, 
+    double *intx, double *inty, double *output, double defvalue)
+{
+    int i, tri1, tri2;
+
+    tri1 = 0;
+    tri2 = 0;
+    for (i=0; i<size; i++) {
+        tri2 = tri1;
+        output[i] = interpolate_one(z, intx[i], inty[i], defvalue, tri2);
+        if (tri2 != -1) tri1 = tri2;
     }
 }

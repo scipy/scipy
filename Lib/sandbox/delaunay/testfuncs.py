@@ -7,9 +7,10 @@ http://netlib.org/toms/792
 import scipy as sp
 from triangulate import Triangulation
 
-class TestData(object):
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
+class TestData(dict):
+    def __init__(self, *args, **kwds):
+        dict.__init__(self, *args, **kwds)
+        self.__dict__ = self
 
 class TestDataSet(object):
     def __init__(self, **kwds):
@@ -185,9 +186,6 @@ uniform9=TestDataSet(
                   0.00000000e+00,   1.25000000e-01,   2.50000000e-01,
                   3.75000000e-01,   5.00000000e-01,   6.25000000e-01,
                   7.50000000e-01,   8.75000000e-01,   1.00000000e+00])),
-tiny=TestDataSet(
-    x=sp.array([0.,0.,1.,1.]),
-    y=sp.array([0.,1.,0.,1.])),
 )
 
 
@@ -276,7 +274,7 @@ cloverleaf.title = 'Cloverleaf'
 
 def cosine_peak(x, y):
     circle = sp.hypot(80*x-40.0, 90*y-45.)
-    f = sp.exp(-0.4*circle) * sp.cos(0.15*circle)
+    f = sp.exp(-0.04*circle) * sp.cos(0.15*circle)
     return f
 cosine_peak.title = 'Cosine Peak'
 
@@ -285,7 +283,7 @@ allfuncs = [exponential, cliff, saddle, gentle, steep, sphere, trig, gauss, clov
 
 class LinearTester(object):
     name = 'Linear'
-    def __init__(self, xrange=(-0.5, 1.5), yrange=(-0.5, 1.5), nrange=101, npoints=250):
+    def __init__(self, xrange=(0.0, 1.0), yrange=(0.0, 1.0), nrange=101, npoints=250):
         self.xrange = xrange
         self.yrange = yrange
         self.nrange = nrange
@@ -303,32 +301,32 @@ class LinearTester(object):
 
     def interpolator(self, func):
         z = func(self.x, self.y)
-        return self.tri.linear_interpolator(z, default_value=0.0)
+        return self.tri.linear_extrapolator(z, bbox=self.xrange+self.yrange)
 
-    def plot(self, func, interp=True, plotter='imshow', margin=0.5):
+    def plot(self, func, interp=True, plotter='imshow'):
         import matplotlib as mpl
         from matplotlib import pylab as pl
         if interp:
             lpi = self.interpolator(func)
-            z = lpi[self.yrange[0]+margin:self.yrange[1]-margin:complex(0,self.nrange),
-                    self.xrange[0]+margin:self.xrange[1]-margin:complex(0,self.nrange)]
+            z = lpi[self.yrange[0]:self.yrange[1]:complex(0,self.nrange),
+                    self.xrange[0]:self.xrange[1]:complex(0,self.nrange)]
         else:
-            y, x = sp.mgrid[self.yrange[0]+margin:self.yrange[1]-margin:complex(0,self.nrange),
-                            self.xrange[0]+margin:self.xrange[1]-margin:complex(0,self.nrange)]
+            y, x = sp.mgrid[self.yrange[0]:self.yrange[1]:complex(0,self.nrange),
+                            self.xrange[0]:self.xrange[1]:complex(0,self.nrange)]
             z = func(x, y)
 
         z = sp.where(sp.isinf(z), 0.0, z)
 
-        extent = (self.xrange[0]+margin, self.xrange[1]-margin,
-            self.yrange[0]+margin, self.yrange[1]-margin)
+        extent = (self.xrange[0], self.xrange[1],
+            self.yrange[0], self.yrange[1])
         pl.ioff()
         pl.clf()
         pl.hot() # Some like it hot
         if plotter == 'imshow':
-            pl.imshow(z, interpolation='nearest', extent=extent, origin='lower')
+            pl.imshow(sp.nan_to_num(z), interpolation='nearest', extent=extent, origin='lower')
         elif plotter == 'contour':
-            Y, X = sp.ogrid[self.yrange[0]+margin:self.yrange[1]-margin:complex(0,self.nrange),
-                self.xrange[0]+margin:self.xrange[1]-margin:complex(0,self.nrange)]
+            Y, X = sp.ogrid[self.yrange[0]:self.yrange[1]:complex(0,self.nrange),
+                self.xrange[0]:self.xrange[1]:complex(0,self.nrange)]
             pl.contour(sp.ravel(X), sp.ravel(Y), z, 20)
         x = self.x
         y = self.y
@@ -353,7 +351,7 @@ class NNTester(LinearTester):
     name = 'Natural Neighbors'
     def interpolator(self, func):
         z = func(self.x, self.y)
-        return self.tri.nn_interpolator(z, default_value=0.0)
+        return self.tri.nn_extrapolator(z, bbox=self.xrange+self.yrange)
 
 def plotallfuncs(allfuncs=allfuncs):
     from matplotlib import pylab as pl
@@ -416,3 +414,50 @@ def plot_cc(tri, edgecolor=None):
         ax.add_patch(p)
     pl.draw_if_interactive()
 
+from interpolate import LinearInterpolator, NNInterpolator
+
+def quality(func, mesh, interpolator='nn', n=33):
+    """Compute a quality factor (the quantity r**2 from TOMS792).
+
+    interpolator must be in ('linear', 'nn').
+    """
+    fz = func(mesh.x, mesh.y)
+    tri = Triangulation(mesh.x, mesh.y)
+    intp = getattr(tri, interpolator+'_extrapolator')(fz, bbox=(0.,1.,0.,1.))
+    Y, X = sp.mgrid[0:1:complex(0,n),0:1:complex(0,n)]
+    Z = func(X, Y)
+    iz = intp[0:1:complex(0,n),0:1:complex(0,n)]
+    #nans = sp.isnan(iz)
+    #numgood = n*n - sp.sum(sp.array(nans.flat, sp.int32))
+    numgood = n*n
+
+    SE = (Z - iz)**2
+    SSE = sp.sum(SE.flat)
+    meanZ = sp.sum(Z.flat) / numgood
+    SM = (Z - meanZ)**2
+    SSM = sp.sum(SM.flat)
+
+
+    r2 = 1.0 - SSE/SSM
+    print func.func_name, r2, SSE, SSM, numgood
+    return r2
+
+def allquality(interpolator='nn', allfuncs=allfuncs, data=data, n=33):
+    results = {}
+    kv = data.items()
+    kv.sort()
+    for name, mesh in kv:
+        reslist = results.setdefault(name, [])
+        for func in allfuncs:
+            reslist.append(quality(func, mesh, interpolator, n))
+    return results
+        
+
+def funky():
+    x0 = sp.array([0.25, 0.3, 0.5, 0.6, 0.6])
+    y0 = sp.array([0.2, 0.35, 0.0, 0.25, 0.65])
+    tx = 0.46
+    ty = 0.23
+    t0 = Triangulation(x0, y0)
+    t1 = Triangulation(sp.hstack((x0, [tx])), sp.hstack((y0, [ty])))
+    return t0, t1

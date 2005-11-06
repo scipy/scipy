@@ -1,10 +1,13 @@
-#include <stdlib.h>
-
 #include "Python.h"
+#include <stdlib.h>
+#include <map>
+
 #include "VoronoiDiagramGenerator.h"
 #include "delaunay_utils.h"
 #include "natneighbors.h"
 #include "scipy/arrayobject.h"
+
+using namespace std;
 
 extern "C" {
 
@@ -62,6 +65,41 @@ static void reorder_edges(int npoints, int ntriangles,
             neighbors[1] = INDEX3(tri_nbrs, i, 0);
             neighbors[2] = INDEX3(tri_nbrs, i, 1);
         }
+
+        // Not trusting me? Okay, let's go through it:
+        // We have three edges to deal with and three nodes. Without loss
+        // of generality, let's label the nodes A, B, and C with (A, B) 
+        // forming the first edge in the order they arrive on input.
+        // Then there are eight possibilities as to how the other edge-tuples
+        // may be labeled, but only two variations that are going to affect the
+        // output:
+        //
+        // AB         AB
+        // BC (CB)    AC (CA)
+        // CA (AC)    BC (CB)
+        //
+        // The distinction is whether A is in the second edge or B is.
+        // This is the test "case1" above.
+        //
+        // The second test we need to perform is for counter-clockwiseness.
+        // Again, there are only two variations that will affect the outcome:
+        // either ABC is counter-clockwise, or it isn't. In the former case,
+        // we're done setting the node order, we just need to associate the 
+        // appropriate neighbor triangles with their opposite nodes, something
+        // which can be done by inspection. In the latter case, to order the
+        // nodes counter-clockwise, we only have to switch B and C to get
+        // nodes ACB. Then we simply set the neighbor list by inspection again.
+        //
+        //          CCW     CW
+        // AB
+        // BC       120     102 -+
+        // CA                    |
+        //                       +- neighbor order
+        // AB                    |
+        // AC       210     201 -+
+        // BC
+        //          ABC     ACB -+- node order
+
 
         INDEX3(tri_edges,i,0) = nodes[0];
         INDEX3(tri_edges,i,1) = nodes[1];
@@ -377,6 +415,110 @@ fail:
     return NULL;
 }
 
+#define CLEANUP \
+    Py_XDECREF(x);\
+    Py_XDECREF(y);\
+    Py_XDECREF(z);\
+    Py_XDECREF(intx);\
+    Py_XDECREF(inty);\
+    Py_XDECREF(centers);\
+    Py_XDECREF(nodes);\
+    Py_XDECREF(neighbors);\
+    Py_XDECREF(intz);\
+    return NULL;
+
+static PyObject *nn_interpolate_unstructured_method(PyObject *self, PyObject *args)
+{
+    PyObject *pyx, *pyy, *pyz, *pycenters, *pynodes, *pyneighbors, *pyintx, *pyinty;
+    PyArrayObject *x, *y, *z, *centers, *nodes, *neighbors, *intx, *inty, *intz;
+    double defvalue;
+    int size, npoints, ntriangles;
+
+    if (!PyArg_ParseTuple(args, "OOdOOOOOO", &pyintx, &pyinty, &defvalue,
+        &pyx, &pyy, &pyz, &pycenters, &pynodes, &pyneighbors)) {
+        return NULL;
+    }
+    x = (PyArrayObject*)PyArray_ContiguousFromObject(pyx, PyArray_DOUBLE, 1, 1);
+    y = (PyArrayObject*)PyArray_ContiguousFromObject(pyy, PyArray_DOUBLE, 1, 1);
+    z = (PyArrayObject*)PyArray_ContiguousFromObject(pyz, PyArray_DOUBLE, 1, 1);
+    if ((!x || !y) || !z) {
+        PyErr_SetString(PyExc_ValueError, "x,y must be 1-D arrays of floats");
+        //goto fail;
+        CLEANUP
+    }
+    npoints = PyArray_DIM(x, 0);
+    if ((PyArray_DIM(y, 0) != npoints) || (PyArray_DIM(z, 0) != npoints)) {
+        PyErr_SetString(PyExc_ValueError, "x,y,z arrays must be of equal length");
+        //goto fail;
+        CLEANUP
+    }
+    centers = (PyArrayObject*)PyArray_ContiguousFromObject(pycenters, PyArray_DOUBLE, 2, 2);
+    if (!centers) {
+        PyErr_SetString(PyExc_ValueError, "centers must be a 2-D array of ints");
+        //goto fail;
+        CLEANUP
+    }
+    nodes = (PyArrayObject*)PyArray_ContiguousFromObject(pynodes, PyArray_INT, 2, 2);
+    if (!nodes) {
+        PyErr_SetString(PyExc_ValueError, "nodes must be a 2-D array of ints");
+        //goto fail;
+        CLEANUP
+    }
+    neighbors = (PyArrayObject*)PyArray_ContiguousFromObject(pyneighbors, PyArray_INT, 2, 2);
+    if (!neighbors) {
+        PyErr_SetString(PyExc_ValueError, "neighbors must be a 2-D array of ints");
+        //goto fail;
+        CLEANUP
+    }
+    ntriangles = PyArray_DIM(neighbors, 0);
+    if ((PyArray_DIM(nodes, 0) != ntriangles)  || 
+        (PyArray_DIM(centers, 0) != ntriangles)) {
+        PyErr_SetString(PyExc_ValueError, "centers,nodes,neighbors must be of equal length");
+        //goto fail;
+        CLEANUP
+    }
+    intx = (PyArrayObject*)PyArray_ContiguousFromObject(pyintx, PyArray_DOUBLE, 0, 0);
+    inty = (PyArrayObject*)PyArray_ContiguousFromObject(pyinty, PyArray_DOUBLE, 0, 0);
+    if (!intx || !inty) {
+        PyErr_SetString(PyExc_ValueError, "intx,inty must be arrays of floats");
+        CLEANUP
+    }
+    if (intx->nd != inty->nd) {
+        PyErr_SetString(PyExc_ValueError, "intx,inty must have same shapes");
+        CLEANUP
+    }
+    for (int i=0; i<intx->nd; i++) {
+        if (intx->dimensions[i] != inty->dimensions[i]) {
+            PyErr_SetString(PyExc_ValueError, "intx,inty must have same shapes");
+            CLEANUP
+        }
+    }
+    intz = (PyArrayObject*)PyArray_SimpleNew(intx->nd, intx->dimensions, PyArray_DOUBLE);
+    if (!intz) {CLEANUP}
+
+    NaturalNeighbors nn(npoints, ntriangles, 
+        (double*)PyArray_DATA(x), (double*)PyArray_DATA(y),
+        (double*)PyArray_DATA(centers), (int*)PyArray_DATA(nodes), 
+        (int*)PyArray_DATA(neighbors));
+    size = PyArray_Size((PyObject*)intx);
+    nn.interpolate_unstructured((double*)PyArray_DATA(z), size, 
+        (double*)PyArray_DATA(intx), (double*)PyArray_DATA(inty), 
+        (double*)PyArray_DATA(intz), defvalue);
+
+    return (PyObject*)intz;
+}
+
+#undef CLEANUP
+
+#define CLEANUP \
+    Py_XDECREF(x);\
+    Py_XDECREF(y);\
+    Py_XDECREF(z);\
+    Py_XDECREF(centers);\
+    Py_XDECREF(nodes);\
+    Py_XDECREF(neighbors);\
+    return NULL;
+
 static PyObject *nn_interpolate_method(PyObject *self, PyObject *args)
 {
     PyObject *pyx, *pyy, *pyz, *pycenters, *pynodes, *pyneighbors, *grid;
@@ -397,50 +539,46 @@ static PyObject *nn_interpolate_method(PyObject *self, PyObject *args)
     z = (PyArrayObject*)PyArray_ContiguousFromObject(pyz, PyArray_DOUBLE, 1, 1);
     if ((!x || !y) || !z) {
         PyErr_SetString(PyExc_ValueError, "x,y must be 1-D arrays of floats");
-        goto fail;
+        //goto fail;
+        CLEANUP
     }
     npoints = PyArray_DIM(x, 0);
     if (PyArray_DIM(y, 0) != npoints) {
         PyErr_SetString(PyExc_ValueError, "x,y arrays must be of equal length");
-        goto fail;
+        //goto fail;
+        CLEANUP
     }
     centers = (PyArrayObject*)PyArray_ContiguousFromObject(pycenters, PyArray_DOUBLE, 2, 2);
     if (!centers) {
         PyErr_SetString(PyExc_ValueError, "centers must be a 2-D array of ints");
-        goto fail;
+        //goto fail;
+        CLEANUP
     }
     nodes = (PyArrayObject*)PyArray_ContiguousFromObject(pynodes, PyArray_INT, 2, 2);
     if (!nodes) {
         PyErr_SetString(PyExc_ValueError, "nodes must be a 2-D array of ints");
-        goto fail;
+        //goto fail;
+        CLEANUP
     }
     neighbors = (PyArrayObject*)PyArray_ContiguousFromObject(pyneighbors, PyArray_INT, 2, 2);
     if (!neighbors) {
         PyErr_SetString(PyExc_ValueError, "neighbors must be a 2-D array of ints");
-        goto fail;
+        //goto fail;
+        CLEANUP
     }
     ntriangles = PyArray_DIM(neighbors, 0);
     if ((PyArray_DIM(nodes, 0) != ntriangles)  || 
         (PyArray_DIM(centers, 0) != ntriangles)) {
         PyErr_SetString(PyExc_ValueError, "centers,nodes,neighbors must be of equal length");
-        goto fail;
+        //goto fail;
+        CLEANUP
     }
-    goto succeed; // XXX: Can't cross NaturalNeighbors instantiation with goto
+    //goto succeed; // XXX: Can't cross NaturalNeighbors instantiation with goto
 
-fail:
-    Py_XDECREF(x);
-    Py_XDECREF(y);
-    Py_XDECREF(z);
-    Py_XDECREF(centers);
-    Py_XDECREF(nodes);
-    Py_XDECREF(neighbors);
-    return NULL;
-
-succeed:
     dims[0] = ysteps;
     dims[1] = xsteps;
     grid = PyArray_SimpleNew(2, dims, PyArray_DOUBLE);
-    if (!grid) goto fail;
+    if (!grid) {CLEANUP} // goto fail;
     grid_ptr = (double*)PyArray_DATA(grid);
 
     NaturalNeighbors nn(npoints, ntriangles, 
@@ -463,6 +601,7 @@ succeed:
     return grid;
 
 }
+#undef CLEANUP
 
 static PyObject *delaunay_method(PyObject *self, PyObject *args)
 {
@@ -519,6 +658,8 @@ static PyMethodDef delaunay_methods[] = {
     {"linear_interpolate_grid", (PyCFunction)linear_interpolate_method, METH_VARARGS,
         ""},
     {"nn_interpolate_grid", (PyCFunction)nn_interpolate_method, METH_VARARGS,
+        ""},
+    {"nn_interpolate_unstructured", (PyCFunction)nn_interpolate_unstructured_method, METH_VARARGS,
         ""},
     {NULL, NULL, 0, NULL}
 };

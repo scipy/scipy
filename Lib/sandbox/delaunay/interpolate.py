@@ -1,6 +1,7 @@
 import scipy.base as sp
 
 from _delaunay import compute_planes, linear_interpolate_grid, nn_interpolate_grid
+from _delaunay import nn_interpolate_unstructured
 
 __all__ = ['LinearInterpolator', 'NNInterpolator']
 
@@ -146,7 +147,15 @@ class NNInterpolator(object):
         grid = nn_interpolate_grid(x0, x1, xstep, y0, y1, ystep, self.default_value,
             self.triangulation.x, self.triangulation.y, self.z, 
             self.triangulation.circumcenters,
-            self.triangulation.triangle_nodes, self.triangulation.triangle_neighbors)
+            self.triangulation.triangle_nodes, 
+            self.triangulation.triangle_neighbors)
         return grid
 
+    def __call__(self, intx, inty):
+        intz = nn_interpolate_unstructured(intx, inty, self.default_value,
+            self.triangulation.x, self.triangulation.y, self.z, 
+            self.triangulation.circumcenters,
+            self.triangulation.triangle_nodes, 
+            self.triangulation.triangle_neighbors)
+        return intz
 
