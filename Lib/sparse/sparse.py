@@ -66,7 +66,6 @@ class spmatrix:
     """
     
     def __init__(self, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
-        self.nnz = 0
         self.format = self.__class__.__name__[:3]
         if self.format == 'spm':
             raise ValueError, "This class is not intended" \
@@ -92,7 +91,7 @@ class spmatrix:
         try:
             return self.nnz
         except AttributeError:
-            raise AttributeError, "nnz not defined; sparse matrix corrupted"
+            raise AttributeError, "nnz not defined"
 
     def getnzmax(self):
         try:
@@ -128,11 +127,11 @@ class spmatrix:
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s' with %d stored "\
                "elements (space for %d) in\n\t%s format>" % \
-               (self.shape + (self.dtypechar, self.nnz, self.nzmax, \
+               (self.shape + (self.dtypechar, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
 
     def __str__(self):
-        nnz = self.nnz
+        nnz = self.getnnz()
         maxprint = self.getmaxprint()
         val = ''
         if nnz > maxprint:
@@ -147,14 +146,13 @@ class spmatrix:
         raise TypeError, "comparison of sparse matrices not implemented"
 
     def __nonzero__(self):  # Simple -- other ideas?
-        return self.nnz > 0
+        return self.getnnz() > 0
 
     # What should len(sparse) return? For consistency with dense matrices,
-    # perhaps it should be the number of rows?  We disable it for now.
-    # The number of non-zero elements can be returned with
-    # sparse.size or sparse.nnz.
-    #def __len__(self):
-    #    return self.nnz
+    # perhaps it should be the number of rows?  For now we return the number of
+    # non-zero elements.
+    def __len__(self):
+        return self.getnnz()
 
     def asformat(self, format):
         # default converter goes through the CSC format
@@ -210,7 +208,7 @@ class spmatrix:
         elif attr == 'imag':
             return self._imag()
         elif attr == 'size':
-            return self.nnz
+            return self.getnnz()
         else:
             raise AttributeError, attr + " not found"
         
@@ -373,7 +371,7 @@ class csc_matrix(spmatrix):
                 # self.rowind = s.rowind
                 # self.indptr = s.indptr
             else:
-                raise ValueError, "dense array does not have rank 2"
+                raise ValueError, "dense array does not have rank 1 or 2"
         
         elif isspmatrix(arg1):
             s = arg1
@@ -1221,7 +1219,6 @@ class csr_matrix(spmatrix):
             if self.nzmax < nnz:
                 raise RunTimeError, "should never have nnz > nzmax"
             return
-        self.nnz = nnz
         self.data = self.data[:nnz]
         self.colind = self.colind[:nnz]
         self.nzmax = nnz
@@ -1235,25 +1232,26 @@ class csr_matrix(spmatrix):
         new._check()
         return new
 
-#   A simple "dictionary-based" sparse matrix.
-#   keys must be 2-tuples of any object.  The object must have __int__
-#    defined to return integer
-#   should also define __cmp__ as well to compare the integer-based keys
-
-def csc_cmp(x, y):
-    if (x == y): return 0
-    elif (x[1] == y[1]):
-        if (x[0] > y[0]): return 1
-        elif (x[0] == y[0]): return 0
-        else: return -1
-    elif (x[1] > y[1]): return 1
-    else: return -1
+# This function was for sorting dictionary keys by the second tuple element.
+# (We now use the Schwartzian transform instead for efficiency.)
+# def csc_cmp(x, y):
+#     if (x == y): return 0
+#     elif (x[1] == y[1]):
+#         if (x[0] > y[0]): return 1
+#         elif (x[0] == y[0]): return 0
+#         else: return -1
+#     elif (x[1] > y[1]): return 1
+#     else: return -1
             
 # dictionary of keys based matrix
 class dok_matrix(spmatrix, dict):
-    """ A dictionary of keys based matrix.  This is slow: does type
-        checking on input and uses dicts, but it is efficient for constructing
-        sparse matrices for conversion to other sparse matrix types.
+    """ A dictionary of keys based matrix.  This is relatively efficient
+    for constructing sparse matrices for conversion to other sparse
+    matrix types.
+    
+    It does type checking on input by default.  To disable this type
+    checking and speed up element accesses slightly, set self._validate
+    to False.
     """
     def __init__(self, A=None):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
@@ -1264,8 +1262,8 @@ class dok_matrix(spmatrix, dict):
         dict.__init__(self)
         spmatrix.__init__(self)
         self.shape = (0, 0)
-        self.nnz = 0
-
+        # If _validate is True, ensure __setitem__ keys are integer tuples
+        self._validate = True
         if A is not None:
             if type(A) == tuple:
                 # Interpret as dimensions
@@ -1283,20 +1281,34 @@ class dok_matrix(spmatrix, dict):
                         "a sparse matrix is not yet supported"
             elif isdense(A):
                 A = asarray(A)
-                M, N = A.shape
-                self.shape = (M, N)
-                for i in range(M):
-                    for j in range(N):
-                        if A[i, j] != 0:
-                            self[i, j] = A[i, j]
+                if rank(A) == 2:
+                    M, N = A.shape
+                    self.shape = (M, N)
+                    for i in range(M):
+                        for j in range(N):
+                            if A[i, j] != 0:
+                                self[i, j] = A[i, j]
+                elif rank(A) == 1:
+                    M = A.shape[0]
+                    self.shape = (M, 1)
+                    for i in range(M):
+                        if A[i] != 0:
+                            self[i, 0] = A[i]
+                else:
+                    raise TypeError, "array for initialization must have rank 2"
             else:
                 raise TypeError, "argument should be a tuple of dimensions " \
                         "or a sparse or dense matrix"
 
+    def getnnz(self):
+        return dict.__len__(self)
+    
+    def __len__(self):
+        return dict.__len__(self)
+    
     def __str__(self):
         val = ''
-        nnz = len(self.keys())
-        self.nnz = nnz
+        nnz = len(self)
         keys = self.keys()
         keys.sort()
         if nnz > self.maxprint:
@@ -1314,41 +1326,48 @@ class dok_matrix(spmatrix, dict):
         return val[:-1]
 
     def __repr__(self):
-        nnz = self.nnz
+        nnz = len(self)
         format = self.getformat()
         return "<%dx%d sparse matrix with %d stored "\
                "elements in %s format>" % \
                (self.shape + (nnz, _formats[format][1]))
 
     def __getitem__(self, key):
-        # Sanity checks: key must be a pair of integers
-        if not isinstance(key, tuple) or len(key) != 2:
-            raise TypeError, "key must be a tuple of two integers"
-        if type(key[0]) != int or type(key[1]) != int:
-            raise TypeError, "key must be a tuple of two integers"
+        if self._validate:
+            # Sanity checks: key must be a pair of integers
+            if not isinstance(key, tuple) or len(key) != 2:
+                raise TypeError, "key must be a tuple of two integers"
+            if type(key[0]) != int or type(key[1]) != int:
+                raise TypeError, "key must be a tuple of two integers"
 
         return self.get(key, 0)
 
     def __setitem__(self, key, value):
-        # Sanity checks: key must be a pair of integers
-        try:
-            # Cast to integers and compare.  This way the key
-            # can be a pair of rank-0 arrays.
-            i, j = int(key[0]), int(key[1])
-            assert i == key[0] and j == key[1]
-        except:
-            raise TypeError, "key must be a tuple of two integers"
-
-        if (value == 0):
-            if self.has_key(key):  # get rid of it something already there
-                del self[key]              
-            return                 # otherwise do nothing
-        if not self.has_key(key):
-            self.nnz += 1
-        dict.__setitem__(self, key, value)
-        newrows = max(self.shape[0], int(key[0])+1)
-        newcols = max(self.shape[1], int(key[1])+1)
-        self.shape = (newrows, newcols)
+        if self._validate:
+            # Sanity checks: key must be a pair of integers
+            try:
+                # Cast to integers and compare.  This way the key
+                # can be a pair of rank-0 arrays.
+                i, j = int(key[0]), int(key[1])
+                assert i == key[0] and j == key[1]
+            except:
+                raise TypeError, "key must be a tuple of two integers"
+             
+            if (value == 0):
+                if self.has_key(key):  # get rid of it something already there
+                    del self[key]              
+                return                 # do nothing
+            dict.__setitem__(self, key, value)
+            newrows = max(self.shape[0], int(key[0])+1)
+            newcols = max(self.shape[1], int(key[1])+1)
+            self.shape = (newrows, newcols)
+        else:
+            # Faster version without sanity checks
+            if (value == 0):
+                if self.has_key(key):  # get rid of it something already there
+                    del self[key]              
+                return                 # do nothing
+            dict.__setitem__(self, key, value)
     
     def __add__(self, other):
         # First check if argument is a scalar
@@ -1361,14 +1380,11 @@ class dok_matrix(spmatrix, dict):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
-            # Update number of non-zeros
-            new.nnz = len(new)
             #new.dtypechar = self.dtypechar
         elif isinstance(other, dok_matrix):
             new = dok_matrix()
             new.update(self)
             new.shape = self.shape
-            new.nnz = self.nnz
             for key in other.keys():
                 new[key] += other[key]
         elif isspmatrix(other):
@@ -1390,14 +1406,11 @@ class dok_matrix(spmatrix, dict):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
-            # Update number of non-zeros
-            new.nnz = len(new)
             #new.dtypechar = self.dtypechar
         elif isinstance(other, dok_matrix):
             new = dok_matrix()
             new.update(self)
             new.shape = self.shape
-            new.nnz = self.nnz
             for key in other.keys():
                 new[key] += other[key]
         elif isspmatrix(other):
@@ -1420,8 +1433,6 @@ class dok_matrix(spmatrix, dict):
             # Multiply this scalar by every element.
             for (key, val) in self.items():
                 new[key] = val * other
-            # Update number of non-zeros
-            new.nnz = len(new)
             #new.dtypechar = self.dtypechar
             return new
         else:
@@ -1433,8 +1444,6 @@ class dok_matrix(spmatrix, dict):
             # Multiply this scalar by every element.
             for (key, val) in self.items():
                 new[key] = other * val
-            # Update number of non-zeros
-            new.nnz = len(new)
             #new.dtypechar = self.dtypechar
             return new
         else:
@@ -1442,11 +1451,8 @@ class dok_matrix(spmatrix, dict):
             return self.transpose().dot(other.transpose()).transpose()
 
     # What should len(sparse) return? For consistency with dense matrices,
-    # perhaps it should be the number of rows?  We disable it for now.
-    # The number of non-zero elements can be returned with
-    # sparse.size or sparse.nnz.
-    #def __len__(self):
-    #    return len(self.keys())    
+    # perhaps it should be the number of rows?  For now it returns the number
+    # of non-zeros.
 
     def transpose(self):
         """ Return the transpose
@@ -1467,7 +1473,6 @@ class dok_matrix(spmatrix, dict):
     def copy(self):
         new = dok_matrix()
         new.update(self)
-        new.nnz = self.nnz
         new.shape = self.shape
         return new
         
@@ -1549,8 +1554,7 @@ class dok_matrix(spmatrix, dict):
         """
         keys = self.keys()
         keys.sort()
-        nnz = self.nnz
-        assert nnz == len(keys)
+        nnz = len(keys)
         nzmax = max(nnz, nzmax)
         data = [0]*nzmax
         colind = [0]*nzmax
@@ -1564,23 +1568,29 @@ class dok_matrix(spmatrix, dict):
                 N = ikey0-current_row
                 row_ptr[current_row+1:ikey0+1] = [k]*N
                 current_row = ikey0
-            data[k] = self[key]
+            data[k] = dict.__getitem__(self, key)
             colind[k] = ikey1
             k += 1
         row_ptr[-1] = nnz
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
-        return csr_matrix((data, colind, row_ptr), nzmax=nzmax)
+        return csr_matrix((data, colind, row_ptr), dims=self.shape, nzmax=nzmax)
 
     def tocsc(self, nzmax=None):
         """ Return Compressed Sparse Column format arrays for this matrix
         """
-        keys = self.keys()
         #  Sort based on columns
-        keys.sort(csc_cmp)
-        nnz = self.nnz
-        assert nnz == len(keys)
+        # This works, but is very slow for matrices with many non-zero
+        # elements (requiring a function call for every element)
+        #keys.sort(csc_cmp)
+
+        # Faster sort: Schwartzian transform
+        keys = [(k[1], k[0]) for k in self.keys()]
+        keys.sort()
+        keys = [(k[1], k[0]) for k in keys]
+        
+        nnz = len(keys)
         nzmax = max(nnz, nzmax)
         data = [0]*nzmax
         rowind = [0]*nzmax
@@ -1601,7 +1611,7 @@ class dok_matrix(spmatrix, dict):
         data = array(data)
         rowind = array(rowind)
         col_ptr = array(col_ptr)
-        return csc_matrix((data, rowind, col_ptr), nzmax=nzmax)
+        return csc_matrix((data, rowind, col_ptr), dims=self.shape, nzmax=nzmax)
 
     def todense(self, dtype=None):
         if dtype is None:
@@ -1624,7 +1634,7 @@ class dod_matrix(spmatrix):
 class lnk_matrix(spmatrix):
     pass
 
- 
+
 class coo_matrix(spmatrix):
     """ A sparse matrix in coordinate list format.
 
