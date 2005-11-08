@@ -5,8 +5,8 @@ Permission to use, copy, modify, and distribute this software without fee
 is granted under the SciPy License.
 */
 
-#include <setjmp.h>
 #include "sigtools.h"
+#include <setjmp.h>
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
 
