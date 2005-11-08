@@ -49,9 +49,9 @@ def get_blas_funcs(names,arrays=(),debug=0):
         func = getattr(m1,func_name,None)
         if func is None:
             func = getattr(m2,func_name)
-            func.module_name = string.split(m2.__name__,'.')[-1]
+            func.module_name = m2.__name__.split('.')[-1]
         else:
-            func.module_name = string.split(m1.__name__,'.')[-1]
+            func.module_name = m1.__name__.split('.')[-1]
         func.prefix = required_prefix
         func.dtypechar = dtypechar
         funcs.append(func)
