@@ -28,7 +28,7 @@
 
 from __future__ import nested_scopes
 
-import scipy.base as NA
+from scipy.base import zeros, float64, array, int32
 import _lbfgsb
 import optimize
 
@@ -142,9 +142,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             g = fprime(x, *args)
             return f, g
 
-    nbd = NA.zeros((n,), NA.Int32)
-    low_bnd = NA.zeros((n,), NA.Float)
-    upper_bnd = NA.zeros((n,), NA.Float)
+    nbd = zeros((n,), int32)
+    low_bnd = zeros((n,), float64)
+    upper_bnd = zeros((n,), float64)
     bounds_map = {(None, None): 0,
               (1, None) : 1,
               (1, 1) : 2,
@@ -159,16 +159,16 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             u = 1
         nbd[i] = bounds_map[l, u]
 
-    x = NA.array(x0)
-    f = NA.array(0.0, NA.Float64)
-    g = NA.zeros((n,), NA.Float64)
-    wa = NA.zeros((2*m*n+4*n + 12*m**2 + 12*m,), NA.Float64)
-    iwa = NA.zeros((3*n,), NA.Int32)
-    task = NA.zeros(1, 'S60')
-    csave = NA.zeros(1,'S60')
-    lsave = NA.zeros((4,), NA.Int32)
-    isave = NA.zeros((44,), NA.Int32)
-    dsave = NA.zeros((29,), NA.Float64)
+    x = array(x0)
+    f = array(0.0, float64)
+    g = zeros((n,), float64)
+    wa = zeros((2*m*n+4*n + 12*m**2 + 12*m,), float64)
+    iwa = zeros((3*n,), int32)
+    task = zeros(1, 'S60')
+    csave = zeros(1,'S60')
+    lsave = zeros((4,), int32)
+    isave = zeros((44,), int32)
+    dsave = zeros((29,), float64)
 
     task[:] = 'START'
 
@@ -182,7 +182,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         if task_str.startswith('FG'):
             # minimization routine wants f and g at the current x
             n_function_evals += 1
-            f[0], g = func_and_grad(x)
+            # Overwrite f and g:
+            f, g = func_and_grad(x)
         elif task_str.startswith('NEW_X'):
             # new iteration
             if n_function_evals > maxfun:
@@ -204,7 +205,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
          'funcalls' : n_function_evals,
          'warnflag' : warnflag
         }
-    return x, f[0], d
+    return x, f, d
 
 if __name__ == '__main__':
     def func(x):
@@ -214,7 +215,7 @@ if __name__ == '__main__':
         f *= 4
         return f
     def grad(x):
-        g = NA.zeros(x.shape, NA.Float)
+        g = zeros(x.shape, float64)
         t1 = x[1] - x[0]**2
         g[0] = 2*(x[0]-1) - 16*x[0]*t1
         for i in range(1, g.shape[0]-1):
@@ -236,7 +237,7 @@ if __name__ == '__main__':
     for i in range(1, n, 2):
         bounds[i] = (-100, 100)
 
-    x0 = NA.zeros((n,), NA.Float)
+    x0 = zeros((n,), float64)
     x0[:] = 3
 
     x, f, d = fmin_l_bfgs_b(func, x0, fprime=grad, m=m,
