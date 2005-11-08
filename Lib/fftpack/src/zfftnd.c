@@ -51,9 +51,11 @@ GEN_CACHE(zfftnd,(int n,int rank)
 #endif
 
 extern void destroy_zfftnd_cache(void) {
-#ifdef WITH_FFTW
+#ifdef WITH_FFTW3
+#elif defined WITH_FFTW
   destroy_zfftwnd_caches();
 #else
+  destroy_zfftnd_caches();
 #endif
 }
 #if defined WITH_FFTW || defined WITH_FFTW3
