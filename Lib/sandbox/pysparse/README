@@ -1,10 +1,17 @@
 Overview
 --------
 
-This is the beginning of a merge of Roman Geus's PySparse into scipy.
-The goals are to make it more 'Pythonic', integrate sparse matrix types
-into scipy so they act similarly to dense arrays, and to support more
-a few more sparse data types, particularly CSC, in a nice OO hierarchy.
+This is a patched version of Roman Geus's PySparse that is compatible with
+the new scipy core.
+
+Currently manipulating the basic sparse matrix types seems to work but the
+linear solvers are untested.
+
+Current sparse matrix development in SciPy focuses on the sparse matrix module
+under Lib/sparse.  This code is in Python, with Fortran back-end for
+manipulation of CSC, CSR, and COO matrices.  The purpose of having PySparse
+in the tree is primarily to swipe some of its more useful features (perhaps
+like the ll_mat class?)
 
 Authors: Ed Schofield, Robert Cimrman.
 
