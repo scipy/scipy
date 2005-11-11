@@ -254,7 +254,7 @@ def who(vardict=None):
                 original=1
             shapestr = " x ".join(map(str, var.shape))
             bytestr = str(var.itemsize()*Numeric.product(var.shape))
-            sta.append([namestr, shapestr, bytestr, typename(var.typecode()), original])
+            sta.append([namestr, shapestr, bytestr, typename(var.dtypechar), original])
 
     maxname = 0
     maxshape = 0

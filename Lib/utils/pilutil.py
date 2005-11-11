@@ -17,7 +17,7 @@ _UInt8 = Numeric.UnsignedInt8
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
-    if data.typecode == _UInt8:
+    if data.dtypechar == _UInt8:
         return data
     high = high - low
     if cmin is None:
@@ -130,12 +130,12 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
             image = Image.fromstring('L',shape,bytedata.tostring())
             if pal is not None:
-                image.putpalette(asarray(pal,typecode=_UInt8).tostring())
+                image.putpalette(asarray(pal,dtype=_UInt8).tostring())
                 # Becomes a mode='P' automagically.
             elif mode == 'P':  # default gray-scale
-                pal = arange(0,256,1,typecode='b')[:,NewAxis] * \
-                      ones((3,),typecode='b')[NewAxis,:]
-                image.putpalette(asarray(pal,typecode=_UInt8).tostring())
+                pal = arange(0,256,1,dtype='b')[:,NewAxis] * \
+                      ones((3,),dtype='b')[NewAxis,:]
+                image.putpalette(asarray(pal,dtype=_UInt8).tostring())
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = ((data > high)*255).astype('b')
