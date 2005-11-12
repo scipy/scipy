@@ -6,9 +6,7 @@ Nov 2005
 from scipy.test.testing import *
 
 set_package_path()
-from scipy import *
-from scipy.linalg import norm
-# from scipy import optimize, array, zeros, float64
+from scipy import optimize, array, zeros, float64, dot, log, exp
 restore_path()
 
 
