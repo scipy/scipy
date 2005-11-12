@@ -26,7 +26,7 @@ def setup_package():
         config.package_dir['scipy'] = os.path.join(config.local_path,'Lib')
         
         config.add_subpackage('Lib')
-        config.name = 'SciPy'
+        config.name = 'scipy'
         from scipy_version import scipy_version as version
         config.dict_append(version=version)
 
