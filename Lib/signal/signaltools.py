@@ -15,6 +15,7 @@ from scipy.stats import mean
 import scipy.base as Numeric
 from scipy.base import array, arange, where, sqrt, rank, zeros, NewAxis, \
     argmax, product
+from scipy.utils import factorial
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
@@ -970,7 +971,6 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
         b = b[1:]
     return b, a
 
-from scipy import factorial
 def residue(b,a,tol=1e-3,rtype='avg'):
     """Compute partial-fraction expansion of b(s) / a(s).
 
