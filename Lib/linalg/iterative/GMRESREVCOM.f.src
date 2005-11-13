@@ -1,4 +1,4 @@
-*
+*  -*- fortran -*-
       SUBROUTINE <_c>GMRESREVCOM(N, B, X, RESTRT, WORK, LDW, WORK2,
      $                  LDW2, ITER, RESID, INFO, NDX1, NDX2, SCLR1, 
      $                  SCLR2, IJOB)
@@ -233,13 +233,13 @@
          RLBL = 2
          IJOB = 1
          RETURN
-*
-*****************
- 2       CONTINUE
-*****************
-*
-         IF ( <rc>NRM2( N, WORK(1,R), 1 ).LT.TOL ) GO TO 200
       ENDIF
+*
+*****************
+ 2    CONTINUE
+*****************
+*
+      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LT.TOL ) GO TO 200
       BNRM2 = <rc>NRM2( N, B, 1 )
       IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE
 *

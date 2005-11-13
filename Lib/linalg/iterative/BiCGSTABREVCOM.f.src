@@ -1,4 +1,4 @@
-*
+* -*- fortran -*-
       SUBROUTINE <_c>BICGSTABREVCOM(N, B, X, WORK, LDW, ITER, RESID, 
      $                    INFO,NDX1, NDX2, SCLR1, SCLR2, IJOB)
 *
@@ -244,13 +244,14 @@
          RLBL = 2
          IJOB = 3
          RETURN
-*
-*****************
- 2       CONTINUE
-*****************
-*
-         IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 30
       ENDIF
+*
+*****************
+ 2    CONTINUE
+*****************
+*
+      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 30
+
       CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,RTLD), 1 )
 *
       BNRM2 = <rc>NRM2( N, B, 1 )
@@ -262,127 +263,126 @@
 *
 *     Perform BiConjugate Gradient Stabilized iteration.
 *
-         ITER = ITER + 1
-*
-         RHO = <xdot>( N, WORK(1,RTLD), 1, WORK(1,R), 1 )
-         IF ( ABS( RHO ).LT.RHOTOL ) GO TO 25
-*
+      ITER = ITER + 1
+*     
+      RHO = <xdot>( N, WORK(1,RTLD), 1, WORK(1,R), 1 )
+      IF ( ABS( RHO ).LT.RHOTOL ) GO TO 25
+*     
 *        Compute vector P.
 *
-         IF ( ITER.GT.1 ) THEN
-            BETA = ( RHO / RHO1 ) * ( ALPHA / OMEGA )
-            CALL <_c>AXPY( N, -OMEGA, WORK(1,V), 1, WORK(1,P), 1 )
-            CALL <_c>SCAL( N, BETA, WORK(1,P), 1 )
-            CALL <_c>AXPY( N, ONE, WORK(1,R), 1, WORK(1,P), 1 )
-         ELSE
-            CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,P), 1 )
-         ENDIF
+      IF ( ITER.GT.1 ) THEN
+         BETA = ( RHO / RHO1 ) * ( ALPHA / OMEGA )
+         CALL <_c>AXPY( N, -OMEGA, WORK(1,V), 1, WORK(1,P), 1 )
+         CALL <_c>SCAL( N, BETA, WORK(1,P), 1 )
+         CALL <_c>AXPY( N, ONE, WORK(1,R), 1, WORK(1,P), 1 )
+      ELSE
+         CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,P), 1 )
+      ENDIF
 *
 *        Compute direction adjusting vector PHAT and scalar ALPHA.
 *
 *********CALL PSOLVE( WORK(1,PHAT), WORK(1,P) )
 *
-         NDX1 = ((PHAT - 1) * LDW) + 1
-         NDX2 = ((P    - 1) * LDW) + 1
-*        Prepare for return & return
-         RLBL = 3
-         IJOB = 2
-         RETURN
+      NDX1 = ((PHAT - 1) * LDW) + 1
+      NDX2 = ((P    - 1) * LDW) + 1
+*     Prepare for return & return
+      RLBL = 3
+      IJOB = 2
+      RETURN
 *
 *****************
- 3       CONTINUE
+ 3    CONTINUE
 *****************
 *
 *********CALL MATVEC( ONE, WORK(1,PHAT), ZERO, WORK(1,V) )
 *
-         NDX1 = ((PHAT - 1) * LDW) + 1
-         NDX2 = ((V    - 1) * LDW) + 1
+      NDX1 = ((PHAT - 1) * LDW) + 1
+      NDX2 = ((V    - 1) * LDW) + 1
 *        Prepare for return & return
-         SCLR1 = ONE
-         SCLR2 = ZERO
-         RLBL = 4
-         IJOB = 1
-         RETURN
+      SCLR1 = ONE
+      SCLR2 = ZERO
+      RLBL = 4
+      IJOB = 1
+      RETURN
 *
 *****************
- 4       CONTINUE
+ 4    CONTINUE
 *****************
 *
-         ALPHA = RHO / <xdot>( N, WORK(1,RTLD), 1, WORK(1,V), 1 )
+      ALPHA = RHO / <xdot>( N, WORK(1,RTLD), 1, WORK(1,V), 1 )
 *
 *        Early check for tolerance.
 *
-         CALL <_c>AXPY( N, -ALPHA, WORK(1,V), 1, WORK(1,R), 1 )
-         CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,S), 1 )
-         IF ( <rc>NRM2( N, WORK(1,S), 1 ).LE.TOL ) THEN
-            CALL <_c>AXPY( N, ALPHA, WORK(1,PHAT), 1, X, 1 )
-            RESID = <rc>NRM2( N, WORK(1,S), 1 ) / BNRM2
-            GO TO 30
-         ELSE
+      CALL <_c>AXPY( N, -ALPHA, WORK(1,V), 1, WORK(1,R), 1 )
+      CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,S), 1 )
+      IF ( <rc>NRM2( N, WORK(1,S), 1 ).LE.TOL ) THEN
+         CALL <_c>AXPY( N, ALPHA, WORK(1,PHAT), 1, X, 1 )
+         RESID = <rc>NRM2( N, WORK(1,S), 1 ) / BNRM2
+         GO TO 30
+      ELSE
 *
 *           Compute stabilizer vector SHAT and scalar OMEGA.
 *
 ************CALL PSOLVE( WORK(1,SHAT), WORK(1,S) )
 *
-            NDX1 = ((SHAT - 1) * LDW) + 1
-            NDX2 = ((S    - 1) * LDW) + 1
-*           Prepare for return & return
-            RLBL = 5
-            IJOB = 2
-            RETURN
+         NDX1 = ((SHAT - 1) * LDW) + 1
+         NDX2 = ((S    - 1) * LDW) + 1
+*     Prepare for return & return
+         RLBL = 5
+         IJOB = 2
+         RETURN
+      ENDIF
 *
 *****************
- 5          CONTINUE
+ 5    CONTINUE
 *****************
 *
 ************CALL MATVEC( ONE, WORK(1,SHAT), ZERO, WORK(1,T) )
 *
-            NDX1 = ((SHAT - 1) * LDW) + 1
-            NDX2 = ((T    - 1) * LDW) + 1
+      NDX1 = ((SHAT - 1) * LDW) + 1
+      NDX2 = ((T    - 1) * LDW) + 1
 *           Prepare for return & return
-            SCLR1 = ONE
-            SCLR2 = ZERO
-            RLBL = 6
-            IJOB = 1
-            RETURN
+      SCLR1 = ONE
+      SCLR2 = ZERO
+      RLBL = 6
+      IJOB = 1
+      RETURN
 *
 *****************
- 6          CONTINUE
+ 6    CONTINUE
 *****************
 *
-            OMEGA = <xdot>( N, WORK(1,T), 1, WORK(1,S), 1 ) / 
-     $              <xdot>( N, WORK(1,T), 1, WORK(1,T), 1 )
+      OMEGA = <xdot>( N, WORK(1,T), 1, WORK(1,S), 1 ) / 
+     $     <xdot>( N, WORK(1,T), 1, WORK(1,T), 1 )
 *
 *           Compute new solution approximation vector X.
 *
-            CALL <_c>AXPY( N, ALPHA, WORK(1,PHAT), 1, X, 1 )
-            CALL <_c>AXPY( N, OMEGA, WORK(1,SHAT), 1, X, 1 )
+      CALL <_c>AXPY( N, ALPHA, WORK(1,PHAT), 1, X, 1 )
+      CALL <_c>AXPY( N, OMEGA, WORK(1,SHAT), 1, X, 1 )
+*     
+*     Compute residual R, check for tolerance.
 *
-*           Compute residual R, check for tolerance.
-*
-            CALL <_c>AXPY( N, -OMEGA, WORK(1,T), 1, WORK(1,R), 1 )
+      CALL <_c>AXPY( N, -OMEGA, WORK(1,T), 1, WORK(1,R), 1 )
 *
 ************RESID = DNRM2( N, WORK(1,R), 1 ) / BNRM2 
 ************IF ( RESID.LE.TOL  ) GO TO 30
 *
-            NDX1 = NEED1
-            NDX2 = NEED2
-*           Prepare for resumption & return
-            RLBL = 7
-            IJOB = 4
-            RETURN
+      NDX1 = NEED1
+      NDX2 = NEED2
+*     Prepare for resumption & return
+      RLBL = 7
+      IJOB = 4
+      RETURN
 *
 *****************
- 7          CONTINUE
+ 7    CONTINUE
 *****************
-            IF( INFO.EQ.1 ) GO TO 30
-*
-            IF ( ITER.EQ.MAXIT ) THEN
-               INFO = 1
-               GO TO 20
-            ENDIF
-*
-         ENDIF
+      IF( INFO.EQ.1 ) GO TO 30
+*     
+      IF ( ITER.EQ.MAXIT ) THEN
+         INFO = 1
+         GO TO 20
+      ENDIF
 *
       IF ( ABS( OMEGA ).LT.OMEGATOL ) THEN
          GO TO 25

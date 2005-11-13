@@ -1,4 +1,4 @@
-*
+*  -*- fortran -*-
       SUBROUTINE <_c>CGSREVCOM(N, B, X, WORK, LDW, ITER, RESID, INFO,
      $                     NDX1, NDX2, SCLR1, SCLR2, IJOB)
 *
@@ -250,13 +250,13 @@
          RLBL = 2
          IJOB = 3
          RETURN
-*
-*****************
- 2       CONTINUE
-*****************
-*
-         IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 30
       ENDIF
+*
+*****************
+ 2    CONTINUE
+*****************
+*
+      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 30
 *
       BNRM2 = <rc>NRM2( N, B, 1 )
       IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE

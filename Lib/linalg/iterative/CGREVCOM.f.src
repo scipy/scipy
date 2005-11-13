@@ -1,4 +1,4 @@
-*
+*  -*- fortran -*-
       SUBROUTINE <_c>CGREVCOM( N, B, X, WORK, LDW, ITER, RESID, INFO,
      $                     NDX1, NDX2, SCLR1, SCLR2, IJOB)
 *
@@ -199,13 +199,13 @@
          RLBL = 2
          IJOB = 3
          RETURN
-*
-*****************
- 2       CONTINUE
-*****************
-*
-         IF ( <rc>NRM2( N, WORK(1,R), 1 ).LT.TOL ) GO TO 30
       ENDIF
+*
+*****************
+ 2    CONTINUE
+*****************
+*
+      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LT.TOL ) GO TO 30
 *
       ITER = 0
 *

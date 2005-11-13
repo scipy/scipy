@@ -1,3 +1,4 @@
+* -*- fortran -*-
 *     GetBreak
       <rt=real,double precision,real,double precision> 
      $     FUNCTION <_c>GETBREAK()
