@@ -59,6 +59,7 @@ def configuration(parent_package='',parent_path=None):
                          libraries=libs,
                          **newblas)
 
+    config.add_data_dir('tests')
     return config
 
 if __name__ == '__main__':    
