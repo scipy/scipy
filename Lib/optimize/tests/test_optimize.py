@@ -21,9 +21,14 @@ class test_optimize(ScipyTestCase):
         self.startparams = zeros(3, float64)
         self.solution = array([0., -0.524869316, 0.487525860])
         self.maxiter = 1000
+        self.funccalls = 0
     
 
     def func(self, x):
+        self.funccalls += 1
+        print "# of function calls:", self.funccalls
+        if self.funccalls > 6000:
+            raise RuntimeError, "too many iterations in optimization routine"
         log_pdot = dot(self.F, x)
         logZ = log(sum(exp(log_pdot)))
         f = logZ - dot(self.K, x)
