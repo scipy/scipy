@@ -26,7 +26,6 @@ class test_optimize(ScipyTestCase):
 
     def func(self, x):
         self.funccalls += 1
-        print "# of function calls:", self.funccalls
         if self.funccalls > 6000:
             raise RuntimeError, "too many iterations in optimization routine"
         log_pdot = dot(self.F, x)
