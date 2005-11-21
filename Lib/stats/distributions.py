@@ -2935,7 +2935,9 @@ def entropy(pk,qk=None):
 
 ## Handlers for generic case where xk and pk are given
 
-def _drv_pdf(self, xk, *args):
+
+
+def _drv_pmf(self, xk, *args):
     try:
         return self.P[xk]
     except KeyError:
