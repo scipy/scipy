@@ -1681,6 +1681,7 @@ Returns: H-statistic (corrected for ties), associated p-value
         all.extend(args[i].tolist())
     ranked = list(rankdata(all))
     T = tiecorrect(ranked)
+    args = list(args)
     for i in range(len(args)):
         args[i] = ranked[0:n[i]]
         del ranked[0:n[i]]
