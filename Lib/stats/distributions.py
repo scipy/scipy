@@ -12,7 +12,7 @@ import inspect
 from scipy.base import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh
+     arctan, tanh, ndarray
 from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select, pi
 import scipy.base
@@ -189,10 +189,11 @@ def valarray(shape,value=nan,typecode=None):
     """Return an array of all value.
     """
     out = reshape(repeat([value],product(shape)),shape)
-    if typecode is None:
-        return out
-    else:
-        return out.astype(typecode)
+    if typecode is not None:
+        out = out.astype(typecode)
+    if not isinstance(out, ndarray):
+        out = asarray(out)
+    return out
 
 # This should be rewritten
 def argsreduce(cond, *args):
