@@ -3601,8 +3601,8 @@ Let
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left(x;\lambda,v_{1},v_{2}\right) & = & \exp\left[\frac{\lambda}{2}+\frac{\left(\lambda\nu_{1}x\right)}{2\left(\nu_{1}x+\nu_{2}\right)}\right]\nu_{1}^{\nu_{1}/2}\nu_{2}^{\nu_{2}/2}x^{\nu_{1}/2-1}\\
- &  & \times\left(\nu_{2}+\nu_{1}x\right)^{-\left(\nu_{1}+\nu_{2}\right)/2}\frac{\Gamma\left(\frac{\nu_{1}}{2}\right)\Gamma\left(1+\frac{\nu_{2}}{2}\right)L_{n_{2}/2}^{n_{1}/2-1}\left(-\frac{\lambda\nu_{1}x}{2\left(\nu_{1}x+\nu_{2}\right)}\right)}{B\left(\frac{\nu_{1}}{2},\frac{\nu_{2}}{2}\right)\Gamma\left(\frac{\nu_{1}+\nu_{2}}{2}\right)}\end{eqnarray*}
+f\left(x;\lambda,\nu_{1},\nu_{2}\right) & = & \exp\left[\frac{\lambda}{2}+\frac{\left(\lambda\nu_{1}x\right)}{2\left(\nu_{1}x+\nu_{2}\right)}\right]\nu_{1}^{\nu_{1}/2}\nu_{2}^{\nu_{2}/2}x^{\nu_{1}/2-1}\\
+ &  & \times\left(\nu_{2}+\nu_{1}x\right)^{-\left(\nu_{1}+\nu_{2}\right)/2}\frac{\Gamma\left(\frac{\nu_{1}}{2}\right)\Gamma\left(1+\frac{\nu_{2}}{2}\right)L_{\nu_{2}/2}^{\nu_{1}/2-1}\left(-\frac{\lambda\nu_{1}x}{2\left(\nu_{1}x+\nu_{2}\right)}\right)}{B\left(\frac{\nu_{1}}{2},\frac{\nu_{2}}{2}\right)\Gamma\left(\frac{\nu_{1}+\nu_{2}}{2}\right)}\end{eqnarray*}
 
 \end_inset 
 
@@ -3710,9 +3710,9 @@ This is a special case of the Chi distribution with
 
 
 \begin_inset Formula \begin{eqnarray*}
-f\left(x;\nu\right) & = & \sqrt{\frac{2}{\pi}}x^{2}e^{-x^{2}/2}I_{\left(0,\infty\right)}\left(x\right)\\
-F\left(x;\nu\right) & = & \Gamma\left(\frac{3}{2},\frac{x^{2}}{2}\right)\\
-G\left(\alpha;\nu\right) & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\alpha\right)}\end{eqnarray*}
+f\left(x\right) & = & \sqrt{\frac{2}{\pi}}x^{2}e^{-x^{2}/2}I_{\left(0,\infty\right)}\left(x\right)\\
+F\left(x\right) & = & \Gamma\left(\frac{3}{2},\frac{x^{2}}{2}\right)\\
+G\left(\alpha\right) & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\alpha\right)}\end{eqnarray*}
 
 \end_inset 
 
@@ -3725,7 +3725,7 @@ G\left(\alpha;\nu\right) & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\alpha\right)
 \mu_{2} & = & 3-\frac{8}{\pi}\\
 \gamma_{1} & = & \sqrt{2}\frac{32-10\pi}{\left(3\pi-8\right)^{3/2}}\\
 \gamma_{2} & = & \frac{-12\pi^{2}+160\pi-384}{\left(3\pi-8\right)^{2}}\\
-m_{d} & = & \sqrt{2}\quad\\
+m_{d} & = & \sqrt{2}\\
 m_{n} & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\frac{1}{2}\right)}\end{eqnarray*}
 
 \end_inset 
@@ -3751,7 +3751,7 @@ A generalized F distribution.
 \begin_inset Formula $\theta$
 \end_inset 
 
- 
+, and 
 \begin_inset Formula $x>0$
 \end_inset 
 
@@ -3783,7 +3783,7 @@ For
 \end_inset 
 
 .
- Standard form is --- 
+ Standard form is 
 \layout Standard
 
 
