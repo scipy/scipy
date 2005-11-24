@@ -507,7 +507,7 @@ class csc_matrix(spmatrix):
             # This does not currently work.
             return self.todense() + other
         else:
-            raise TypeError, "unsupported type for adding to a sparse matrix"
+            raise TypeError, "unsupported type for sparse matrix addition"
 
     def __add__(self, other):
         if isscalar(other) or (isdense(other) and rank(other)==0):
@@ -530,7 +530,7 @@ class csc_matrix(spmatrix):
             # Convert this matrix to a dense matrix and add them
             return other + self.todense()
         else:
-            raise TypeError, "unknown type for sparse matrix addition"
+            raise TypeError, "unsupported type for sparse matrix addition"
 
     def __mul__(self, other):
         """ Scalar, vector, or matrix multiplication
@@ -967,7 +967,7 @@ class csr_matrix(spmatrix):
             # This does not currently work.
             return self.todense() + other
         else:
-            raise TypeError, "unsupported type for adding to a sparse matrix"
+            raise TypeError, "unsupported type for sparse matrix addition"
     
     def __mul__(self, other):
         """ Scalar, vector, or matrix multiplication
@@ -1270,10 +1270,13 @@ class dok_matrix(spmatrix, dict):
                 try:
                     dims = A
                     (M, N) = dims
-                    self.shape = (M, N)
+                    assert M == int(M) and M > 0
+                    assert N == int(N) and N > 0
+                    self.shape = (int(M), int(N))
                     return
-                except (TypeError, ValueError):
-                    pass
+                except (TypeError, ValueError, AssertionError):
+                    raise TypeError, "dimensions must be a 2-tuple of positive"\
+                            " integers"
             if isspmatrix(A):
                 # For sparse matrices, this is too inefficient; we need 
                 # something else.
@@ -1544,9 +1547,10 @@ class dok_matrix(spmatrix, dict):
 	return array(new)
 
     def setdiag(self, values, k=0):
-        N = len(values)
-        for n in range(N):
-            self[n, n+k] = values[n]
+        M, N = self.shape
+        m = len(values)
+        for i in range(min(M, N-k)):
+            self[i, i+k] = values[i]
         return
 
     def tocsr(self, nzmax=None):
@@ -1625,6 +1629,25 @@ class dok_matrix(spmatrix, dict):
             new = new.real
         return new
     
+    def resize(self, shape):
+        """ Resize the matrix to dimensions given by 'shape', removing any
+        non-zero elements that lie outside.
+        """
+        M, N = self.shape
+        try:
+            newM, newN = shape
+            assert newM == int(newM) and newM > 0
+            assert newN == int(newN) and newN > 0
+        except (TypeError, ValueError, AssertionError):
+            raise TypeError, "dimensions must be a 2-tuple of positive"\
+                             " integers"
+        if newM < M or newN < N:
+            # Remove all elements outside new dimensions
+            for (i,j) in self.keys():
+                if i >= newM or j >= newN:
+                    del self[i,j]
+        self.shape = (newM, newN)
+
 
 # dictionary of dictionaries based matrix
 class dod_matrix(spmatrix):
