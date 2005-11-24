@@ -412,7 +412,7 @@ class csc_matrix(spmatrix):
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
                     assert isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s), 2))
-                    temp = coo_matrix((s, ij), dims=dims, nzmax=nzmax, \
+                    temp = coo_matrix( s, ij, dims=dims, nzmax=nzmax, \
                             dtype=dtype).tocsc()
                     self.shape = temp.shape
                     self.data = temp.data
@@ -875,12 +875,11 @@ class csr_matrix(spmatrix):
                     ijnew = ij.copy()
                     ijnew[:, 0] = ij[:, 1]
                     ijnew[:, 1] = ij[:, 0]
-                    temp = coo_matrix(s, ijnew, dims=(M, N), nzmax=nzmax,
-                                      dtype=dtype)
-                    temp = temp.tocsr()
+                    temp = coo_matrix(s, ijnew, dims=dims, nzmax=nzmax,
+                                      dtype=dtype).tocsr()
                     self.shape = temp.shape
                     self.data = temp.data
-                    self.colind = temp.rowind
+                    self.colind = temp.colind
                     self.indptr = temp.indptr
                 except:
                     try:
@@ -914,7 +913,7 @@ class csr_matrix(spmatrix):
         self.shape = (M, N)
 
         self._check()
-
+        
     def _check(self):
         M, N = self.shape
         nnz = self.indptr[-1]
@@ -1675,11 +1674,18 @@ class coo_matrix(spmatrix):
     So the following holds:
         A[ij[k][0], ij[k][1]] = obj[k]
     """
-    def __init__(self, obj, ij, dims=None, nzmax=None, dtype=None):
+    def __init__(self, obj, ij_in, dims=None, nzmax=None, dtype=None):
         spmatrix.__init__(self)
         try:
             # Assume the first calling convention
-            assert len(ij) == 2
+            #            assert len(ij) == 2
+            if len(ij_in) != 2:
+                if isdense( ij_in ) and (ij_in.shape[1] == 2):
+                    ij = (ij_in[:,0], ij_in[:,1])
+                else:
+                    raise AssertionError
+            else:
+                ij = ij_in
             if dims is None:
                 M = int(amax(ij[0]))
                 N = int(amax(ij[1]))
@@ -1688,8 +1694,8 @@ class coo_matrix(spmatrix):
                 # Use 2 steps to ensure dims has length 2.
                 M, N = dims
                 self.shape = (M, N)
-            self.row = asarray(ij[0], 'i')
-            self.col = asarray(ij[1], 'i')
+            self.row = asarray(ij[0])
+            self.col = asarray(ij[1])
             self.data = asarray(obj, dtype=dtype)
             self.dtypechar = self.data.dtypechar
             if nzmax is None:
