@@ -125,8 +125,8 @@ class spmatrix:
     
     def __repr__(self):
         format = self.getformat()
-        return "<%dx%d sparse matrix of type '%s' with %d stored "\
-               "elements (space for %d) in\n\t%s format>" % \
+        return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
+               "elements (space for %d)\n\tin %s format>" % \
                (self.shape + (self.dtypechar, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
 
@@ -313,8 +313,20 @@ class spmatrix:
         csc = self.tocsc()
         return csc.copy()
 
-
- 
+    def save( self, file_name, format = '%d %d %f\n' ):
+        try:
+            fd = open( file_name, 'w' )
+        except Exception, e:
+            raise e, file_name
+        
+        fd.write( '%d %d\n' % self.shape )
+        fd.write( '%d\n' % self.size )
+        for ii in xrange( self.size ):
+            ir, ic = self.rowcol( ii )
+            data = self.getdata( ii )
+            fd.write( format % (ir, ic, data) )
+        fd.close()
+        
 class csc_matrix(spmatrix):
     """ Compressed sparse column matrix
         This can be instantiated in several ways:
@@ -466,7 +478,7 @@ class csc_matrix(spmatrix):
             raise ValueError, "index pointer should be of of size N+1"
         if (nzmax < nnz):
             raise ValueError, "nzmax must not be less than nnz"
-        if (nnz>0) and (max(self.rowind[:nnz]) >= M):
+        if (nnz>0) and (amax(self.rowind[:nnz]) >= M):
             raise ValueError, "row values must be < M"
         if (self.indptr[-1] > len(self.rowind)):
             raise ValueError, \
@@ -815,7 +827,7 @@ class csr_matrix(spmatrix):
              where data, ij satisfy:
                 a[ij[k, 0], ij[k, 1]] = data[k]
 
-          - csr_matrix((data, row, ptr), [(M, N)])
+          - csr_matrix((data, col, ptr), [(M, N)])
              standard CSR representation
     """
     def __init__(self, arg1, dims=(None,None), nzmax=100, dtype='d', copy=False):
@@ -911,10 +923,10 @@ class csr_matrix(spmatrix):
         M = max(0, oldM, M, len(self.indptr) - 1)
         N = max(oldN, N, int(amax(self.colind)) + 1)
         self.shape = (M, N)
-
         self._check()
         
     def _check(self):
+        
         M, N = self.shape
         nnz = self.indptr[-1]
         nzmax = len(self.colind)
@@ -926,7 +938,7 @@ class csr_matrix(spmatrix):
             raise ValueError, "data and row list should have same length"
         if (len(self.indptr) != M+1):
             raise ValueError, "index pointer should be of length #rows + 1"
-        if (nnz>0) and (max(self.colind[:nnz]) >= N):
+        if (nnz>0) and (amax(self.colind[:nnz]) >= N):
             raise ValueError, "column-values must be < N"
         if (nnz > nzmax):
             raise ValueError, \
@@ -1624,7 +1636,7 @@ class dok_matrix(spmatrix, dict):
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             new[ikey0, ikey1] = self[key]
-        if max(ravel(abs(new.imag))) == 0:
+        if amax(ravel(abs(new.imag))) == 0:
             new = new.real
         return new
     
@@ -1779,6 +1791,24 @@ class coo_matrix(spmatrix):
 def isspmatrix(x):
     return isinstance(x, spmatrix)
 
+def isspmatrix_csr( x ):
+    return isinstance(x, csr_matrix)
+
+def isspmatrix_csc( x ):
+    return isinstance(x, csc_matrix)
+
+def isspmatrix_dok( x ):
+    return isinstance(x, dok_matrix)
+
+def isspmatrix_dod( x ):
+    return isinstance(x, dod_matrix)
+
+def isspmatrix_lnk( x ):
+    return isinstance(x, lnk_matrix)
+
+def isspmatrix_coo( x ):
+    return isinstance(x, coo_matrix)
+
 def isdense(x):
     # What's the best way to check for this?  The following fails on import:
     # import numerictypes
@@ -1823,7 +1853,7 @@ def solve(A, b, permc_spec=2):
     M, N = A.shape
     if (M != N):
         raise ValueError, "matrix must be square"    
-    if hasattr(A, 'tocsc'):
+    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
         mat = A.tocsc()
         ftype, lastel, data, index0, index1 = \
                mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
