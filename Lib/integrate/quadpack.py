@@ -4,9 +4,8 @@
 
 __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']
 import _quadpack
-from common_routines import *
 import sys
-from scipy.base import array
+import scipy.base
 
 error = _quadpack.error
 
@@ -63,7 +62,7 @@ Weighting the integrand:
   a select list of functions.  Different integration methods are used
   to compute the integral with these weighting functions.  The possible values
   of weight and the corresponding weighting functions are.
-     
+
   'cos'     : cos(w*x)                            : wvar = w
   'sin'     : sin(w*x)                            : wvar = w
   'alg'     : g(x) = ((x-a)**alpha)*((b-x)**beta) : wvar = (alpha, beta)
@@ -114,19 +113,19 @@ Weighting the integrand:
               corresponding to the interval in the same position in
               infodict['rslist'].  See the explanation dictionary (last entry
               in the output tuple) for the meaning of the codes.
-  """)
+""")
     return
-    
+
 
 from scipy import inf, Inf
-	
+
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
          limlst=50):
     """Compute a definite integral.
 
   Description:
-  
+
     Integrate func from a to b (possibly infinite interval) using a technique
     from the Fortran library QUADPACK.  Run scipy.integrate.quad_explain()
     for more information on the more esoteric inputs and outputs.
@@ -145,13 +144,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     y -- the integral of func from a to b.
     abserr -- an estimate of the absolute error in the result.
-    
+
     infodict -- a dictionary containing additional information.
                 Run scipy.integrate.quad_explain() for more information.
-    message -- a convergence message.    
+    message -- a convergence message.
     explain -- appended only with 'cos' or 'sin' weighting and infinite
                integration limits, it contains an explanation of the codes in
-               infodict['ierlst']    
+               infodict['ierlst']
 
   Additional Inputs:
 
@@ -181,7 +180,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         retval = _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points)
     else:
         retval = _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts)
-        
+
     ier = retval[-1]
     if ier == 0:
         return retval[:-1]
@@ -225,32 +224,32 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
 
 def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
-    inf = 0
+    infbounds = 0
     if (b != Inf and a != -Inf):
         pass   # standard integration
     elif (b == Inf and a != -Inf):
-        inf = 1
+        infbounds = 1
         bound = a
     elif (b == Inf and a == -Inf):
-        inf = 2
+        infbounds = 2
         bound = 0     # ignored
     elif (b != Inf and a == -Inf):
-        inf = -1
+        infbounds = -1
         bound = b
     else:
         raise RunTimeError, "Infinity comparisons don't work for you."
 
     if points is None:
-        if inf == 0:
+        if infbounds == 0:
             return _quadpack._qagse(func,a,b,args,full_output,epsabs,epsrel,limit)
         else:
-            return _quadpack._qagie(func,bound,inf,args,full_output,epsabs,epsrel,limit)
+            return _quadpack._qagie(func,bound,infbounds,args,full_output,epsabs,epsrel,limit)
     else:
-        if inf !=0:
+        if infbounds !=0:
             raise ValueError, "Infinity inputs cannot be used with break points."
         else:
-            nl = len(myasarray(points))
-            the_points = zeros((nl+2,),'d')
+            nl = len(points)
+            the_points = scipy.base.zeros((nl+2,), float)
             the_points[:nl] = points
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
@@ -271,7 +270,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                 momcom = wopts[0]
                 chebcom = wopts[1]
                 return _quadpack._qawoe(func,a,b,wvar,integr,args,full_output,epsabs,epsrel,limit,maxp1,2,momcom,chebcom)
-            
+
         elif (b == Inf and a != -Inf):
             return _quadpack._qawfe(func,a,wvar,integr,args,full_output,epsabs,limlst,limit,maxp1)
         elif (b != Inf and a == -Inf):  # remap function and interval
@@ -341,11 +340,11 @@ def _infunc2(y,x,func,qfun,rfun,more_args):
     b2 = rfun(x,y)
     myargs = (y,x) + more_args
     return quad(func,a2,b2,args=myargs)[0]
-             
+
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             epsrel=1.49e-8):
     """Compute a triple (definite) integral.
-    
+
   Description:
 
     Return the triple integral of func3d(z, y,x) from x=a..b, y=gfun(x)..hfun(x),
@@ -375,120 +374,3 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     """
     return dblquad(_infunc2,a,b,gfun,hfun,(func,qfun,rfun,args),epsabs=epsabs,epsrel=epsrel)
-
-if __name__ == '__main__':
-    # Some test cases:  Note that the general purpose integrator performs
-    # rather well, you don't often have to resort to the special cases.
-    # I've done it here only for testing.
-
-    test_com, comp_res, tabl_res = [],[],[]
-
-    # 1) Typical function with two extra arguments:
-    def myfunc(x,n,z):       # Bessel function integrand
-        return cos(n*x-z*sin(x))/pi
-
-    test_com.append('Typical function with two extra arguments:')
-    comp_res.append(quad(myfunc,0,pi,(2,1.8)))
-    tabl_res.append(0.306143535325)
-
-    # 2) Infinite integration limits --- Euler's constant
-    def myfunc(x):           # Euler's constant integrand
-        return -exp(-x)*log(x)
-
-    test_com.append('Infinite integration limits:')
-    comp_res.append(quad(myfunc,0,Inf))
-    tabl_res.append(0.577215664901532860606512)
-
-    # 3) Singular points in region of integration.
-    def myfunc(x):
-        if x > 0 and x < 2.5:
-            return sin(x)
-        elif x>= 2.5 and x <= 5.0:
-            return exp(-x)
-        else:
-            return 0.0
-        
-    test_com.append('Singular points in region of integration:')
-    comp_res.append(quad(myfunc,0,10,points=[2.5,5.0]))
-    tabl_res.append(1 - cos(2.5) + exp(-2.5) - exp(-5.0)  )
-
-    # 4) Sine weighted integral (finite limits)
-    def myfunc(x,a):
-        return exp(a*(x-1))
-
-    ome = 2.0**3.4
-    comp_res.append(quad(myfunc,0,1,args=20,weight='sin',wvar=ome))
-    tabl_res.append((20*sin(ome)-ome*cos(ome)+ome*exp(-20))/(20**2 + ome**2))
-    test_com.append('Sine weighted integral (finite limits)')
-    
-    # 5) Sine weighted integral (infinite limits)
-    def myfunc(x,a):           
-        return exp(-x*a)
-
-    a = 4.0
-    ome = 3.0
-    comp_res.append(quad(myfunc,0,Inf,args=a,weight='sin',wvar=ome))
-    tabl_res.append(ome/(a**2 + ome**2))
-    test_com.append('Sine weighted integral (infinite limits):')
-
-    # 6) Cosine weighted integral (negative infinite limits)
-    def myfunc(x,a):
-        return exp(x*a)
-
-    a = 2.5
-    ome = 2.3
-    comp_res.append(quad(myfunc,-Inf,0,args=a,weight='cos',wvar=ome))
-    tabl_res.append(a/(a**2 + ome**2))
-    test_com.append('Sine weighted integral (negative infinite limits):')
-    
-    # 6) Algebraic-logarithmic weight.
-    def myfunc(x,a):
-        return 1/(1+x+2**(-a))
-
-    a = 1.5
-    comp_res.append(quad(myfunc,-1,1,args=a,weight='alg',wvar=(-0.5,-0.5)))
-    tabl_res.append(pi/sqrt((1+2**(-a))**2 - 1))
-    test_com.append('Algebraic-logarithmic weight:')
-
-    # 7) Cauchy prinicpal value weighting w(x) = 1/(x-c)
-    def myfunc(x,a):
-        return 2.0**(-a)/((x-1)**2+4.0**(-a))
-
-    comp_res.append(quad(myfunc,0,5,args=0.4,weight='cauchy',wvar=2.0) )
-    a= 0.4
-    tabl_res.append((2.0**(-0.4)*log(1.5)-2.0**(-1.4)*log((4.0**(-a)+16)/(4.0**(-a)+1)) - arctan(2.0**(a+2)) - arctan(2.0**a))/(4.0**(-a) + 1))
-    test_com.append('Cauchy prinicpal value with weighting w(x) = 1/(x-c):')
-
-    # 8) Double Integral test
-    def simpfunc(y,x):       # Note order of arguments.
-        return x+y
-
-    a, b = 1.0, 2.0
-    comp_res.append(dblquad(simpfunc,a,b,lambda x: x, lambda x: 2*x))
-    tabl_res.append(5/6.0 * (b**3.0-a**3.0))
-    test_com.append('Double integral:')
-
-    # 9) Triple Integral test
-    def simpfunc(z,y,x):      # Note order of arguments.
-        return x+y+z
-
-    a, b = 1.0, 2.0
-    comp_res.append(tplquad(simpfunc,a,b,lambda x: x, lambda x: 2*x, lambda x,y: x-y, lambda x,y: x+y))
-    tabl_res.append(8/3.0 * (b**4.0 - a**4.0))
-    test_com.append('Triple integral:')
-
-    for k in range(len(comp_res)):
-        print test_com[k]
-        print "   Computed:", comp_res[k][0], "\t\t Actual:", tabl_res[k]
-        print "   Error Estimate:", comp_res[k][1], "\t Actual Error:", abs(tabl_res[k]-comp_res[k][0])
-        print
-
-
-
-
-        
-
-
-
-
-
