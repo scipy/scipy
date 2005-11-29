@@ -5,11 +5,11 @@
 import os
 import sys
 from distutils import dir_util
-from scipy_distutils.misc_util   import get_path, default_config_dict, dot_join
-from scipy_distutils.misc_util   import dict_append, get_build_temp
-from scipy_distutils.misc_util   import SourceFilter
-from scipy_distutils.core        import Extension
-from scipy_distutils.system_info import get_info
+from scipy.distutils.misc_util   import get_path, default_config_dict, dot_join
+from scipy.distutils.misc_util   import dict_append, get_build_temp
+from scipy.distutils.misc_util   import SourceFilter
+from scipy.distutils.core        import Extension
+from scipy.distutils.system_info import get_info
 
 from distutils.sysconfig         import get_python_lib
 

@@ -64,7 +64,8 @@ class spmatrix:
     """ This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
-    
+   
+    __array_priority__ = 10.1
     def __init__(self, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
         self.format = self.__class__.__name__[:3]
         if self.format == 'spm':

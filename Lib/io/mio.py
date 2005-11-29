@@ -554,7 +554,7 @@ def _parse_mimatrix(fid,bytes):
     tupdims = tuple(dims[::-1])
     if dclass in mxArrays:
         result, unused =_get_element(fid)
-        if type == mxCHAR_CLASS:
+        if dclass == mxCHAR_CLASS:
             result = ''.join(asarray(result).astype('S1'))
         else:
             if cmplx:
@@ -621,7 +621,7 @@ def _parse_mimatrix(fid,bytes):
             imag, unused = _get_element(fid)
             try:
                 res = res + _unit_imag[imag.dtypechar] * imag
-            except KeyError:
+            except (KeyError,AttributeError):
                 res = res + 1j*imag
         if have_sparse:
             spmat = scipy.sparse.csc_matrix(res, (rowind[:len(res)], colind),
@@ -733,6 +733,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
                 fid = open(test_name,'rb')
                 fid.close()
                 full_name = test_name
+                break
             except IOError:
                 pass
         if full_name is None:
