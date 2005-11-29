@@ -127,6 +127,8 @@ SUPPORT FUNCTIONS:  writecc
 """
 ## CHANGE LOG:
 ## ===========
+## 29-11-05 ... fixed default axis to be 0 for consistency with scipy;
+##              cleanup of redundant imports, dead code, {0,1} -> booleans
 ## 02-02-10 ... require Numeric, eliminate "list-only" functions 
 ##              (only 1 set of functions now and no Dispatch class),
 ##              removed all references to aXXXX functions.
@@ -188,13 +190,9 @@ SUPPORT FUNCTIONS:  writecc
 import string, sys, _support
 from types import *
 
-__version__ = 0.8
-
 from scipy.base import *
-import scipy.base as sb
 import scipy.base.umath as math
 from scipy.base.umath import *
-N = sb  # alias
 import scipy.special as special
 import scipy.linalg as linalg
 import scipy
@@ -205,7 +203,7 @@ SequenceType = (ListType, TupleType, ArrayType)
 # These two functions replace letting axis be a sequence and the
 #  keepdims features used throughout.  These ideas
 #  did not match the rest of Scipy.
-from scipy.base import expand_dims, apply_over_axes
+#from scipy.base import expand_dims, apply_over_axes
 
 def _chk_asarray(a, axis):
     if axis is None:
@@ -216,7 +214,7 @@ def _chk_asarray(a, axis):
         outaxis = axis
     return a, outaxis
 
-def _chk2_asarray(a, b,  axis):
+def _chk2_asarray(a, b, axis):
     if axis is None:
         a = ravel(a)
         b = ravel(b)
@@ -231,7 +229,7 @@ def _chk2_asarray(a, b,  axis):
 ### NAN friendly functions
 ########
 
-def nanmean(x,axis=-1):
+def nanmean(x,axis=0):
     """Compute the mean over the given axis ignoring nans.
     """
     x, axis = _chk_asarray(x,axis)
@@ -241,10 +239,10 @@ def nanmean(x,axis=-1):
     
     # XXX: this line is quite clearly wrong
     n = N-sum(isnan(x),axis)
-    N.putmask(x,isnan(x),0)
+    putmask(x,isnan(x),0)
     return stats.mean(x,axis)/factor
     
-def nanstd(x,axis=-1,bias=0):
+def nanstd(x,axis=0,bias=False):
     """Compute the standard deviation over the given axis ignoring nans
     """
     x, axis = _chk_asarray(x,axis)
@@ -255,7 +253,7 @@ def nanstd(x,axis=-1,bias=0):
     
     # XXX: this line is quite clearly wrong
     n = N-sum(isnan(x),axis)
-    N.putmask(x,isnan(x),0)
+    putmask(x,isnan(x),0)
     m1 = stats.mean(x,axis)
     m1c = m1/factor
     m2 = stats.mean((x-m1c)**2.0,axis)
@@ -267,22 +265,22 @@ def nanstd(x,axis=-1,bias=0):
 
 def _nanmedian(arr1d):  # This only works on 1d arrays
    cond = 1-isnan(arr1d)
-   x = sb.sort(compress(cond,arr1d))
+   x = sort(compress(cond,arr1d))
    return median(x)
    
-def nanmedian(x, axis=-1):
+def nanmedian(x, axis=0):
     """ Compute the median along the given axis ignoring nan values
     """
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
-    return sb.apply_along_axis(_nanmedian,axis,x)
+    return apply_along_axis(_nanmedian,axis,x)
 
 
 #####################################
 ########  ACENTRAL TENDENCY  ########
 #####################################
 
-def gmean (a,axis=-1):
+def gmean(a,axis=0):
     """Calculates the geometric mean of the values in the passed array.
     
     That is:  n-th root of (x1 * x2 * ... * xn).
@@ -300,7 +298,7 @@ def gmean (a,axis=-1):
     return power(prod,1./size)
 
 
-def hmean(a,axis=-1):
+def hmean(a,axis=0):
     """Calculates the harmonic mean of the values in the passed array.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn).  Defaults to ALL values in 
@@ -314,7 +312,7 @@ def hmean(a,axis=-1):
     size = a.shape[axis]
     return size / add.reduce(1.0/a, axis)
 
-def mean(a,axis=-1):
+def mean(a,axis=0):
     """Returns the mean of m along the given dimension.
 
        If m is of integer type, returns a floating point answer.
@@ -322,7 +320,7 @@ def mean(a,axis=-1):
     a, axis = _chk_asarray(a, axis)
     return add.reduce(a,axis)/float(a.shape[axis])
 
-def cmedian (a,numbins=1000):
+def cmedian(a,numbins=1000):
     """Calculates the COMPUTED median value of an array of numbers, given the
     number of bins to use for the histogram (more bins approaches finding the
     precise median value of the array; default number of bins = 1000).  From
@@ -343,7 +341,7 @@ def cmedian (a,numbins=1000):
     median = LRL + ((len(a)/2.0-cfbelow)/float(freq))*binsize # MEDIAN
     return median
 
-def median (a,axis=-1):
+def median(a,axis=0):
     """ Returns the median of the passed array along the given axis.
     If there is an even number of entires, the mean of the
     2 middle values is returned.
@@ -357,9 +355,9 @@ def median (a,axis=-1):
         median = asarray(take(a,[indx],axis)+take(a,[indx-1],axis)) / 2.0
     else:
         median = take(a,[indx],axis)
-    return sb.squeeze(median)
+    return squeeze(median)
 
-def mode(a, axis=-1):
+def mode(a, axis=0):
     """Returns an array of the modal (most common) value in the passed array.
     If there is more than one such value, ONLY THE FIRST is returned.
     The bin-count for the modal bins is also returned.  Operates on whole
@@ -369,7 +367,7 @@ def mode(a, axis=-1):
     """
 
     a, axis = _chk_asarray(a, axis)
-    scores = sb.unique(ravel(a))       # get ALL unique values
+    scores = unique(ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
     oldmostfreq = zeros(testshape)
@@ -414,12 +412,12 @@ def tmean(a,limits=None,inclusive=(1,1)):
 
 
 def tvar(a,limits=None,inclusive=(1,1)):
-     """Returns the sample variance of values in an array, (i.e., using N-1),
-     ignoring values strictly outside the sequence passed to 'limits'.  
-     Note: either limit in the sequence, or the value of limits itself,
-     can be set to None.  The inclusive list/tuple determines whether the lower
-     and upper limiting bounds (respectively) are open/exclusive (0) or
-     closed/inclusive (1).
+     """Returns the sample variance of values in an array, (i.e., using
+     N-1), ignoring values strictly outside the sequence passed to
+     'limits'.  Note: either limit in the sequence, or the value of
+     limits itself, can be set to None.  The inclusive list/tuple
+     determines whether the lower and upper limiting bounds
+     (respectively) are open/exclusive (0) or closed/inclusive (1).
      """
      a = asarray(a)
      a = a.astype(Float)
@@ -446,24 +444,27 @@ def tvar(a,limits=None,inclusive=(1,1)):
      term2 = add.reduce(ravel(a*mask))**2 / n
      return (term1 - term2) / n
 
-def tmin(a,lowerlimit=None,axis=-1,inclusive=1):
-     """Returns the minimum value of a, along axis, including only values less
-     than (or equal to, if inclusive=1) lowerlimit.  If the limit is set to None,
-     all values in the array are used.
+def tmin(a,lowerlimit=None,axis=0,inclusive=True):
+     """Returns the minimum value of a, along axis, including only values
+     less than (or equal to, if inclusive is True) lowerlimit.  If the
+     limit is set to None, all values in the array are used.
      """
      a, axis = _chk_asarray(a, axis)
-     if inclusive:       lowerfcn = greater
-     else:               lowerfcn = greater_equal
+     if inclusive:
+         lowerfcn = greater
+     else:
+         lowerfcn = greater_equal
      if lowerlimit is None:
          lowerlimit = minimum.reduce(ravel(a))-11
      biggest = maximum.reduce(ravel(a))
      ta = where(lowerfcn(a,lowerlimit),a,biggest)
      return minimum.reduce(ta,axis)
 
-def tmax(a,upperlimit,axis=-1,inclusive=1):
-     """Returns the maximum value of a, along axis, including only values greater
-     than (or equal to, if inclusive=1) upperlimit.  If the limit is set to None,
-     a limit larger than the max value in the array is used.
+def tmax(a,upperlimit,axis=0,inclusive=True):
+     """Returns the maximum value of a, along axis, including only values
+     greater than (or equal to, if inclusive is True) upperlimit.  If the limit
+     is set to None, a limit larger than the max value in the array is
+     used.
      """
      a, axis = asarray(a, axis)
      if inclusive:       upperfcn = less
@@ -476,32 +477,37 @@ def tmax(a,upperlimit,axis=-1,inclusive=1):
 
 
 def tstd(a,limits=None,inclusive=(1,1)):
-     """Returns the standard deviation of all values in an array, ignoring values
-     strictly outside the sequence passed to 'limits'.   Note: either limit
-     in the sequence, or the value of limits itself, can be set to None.  The
-     inclusive list/tuple determines whether the lower and upper limiting bounds
-     (respectively) are open/exclusive (0) or closed/inclusive (1).     
+     """Returns the standard deviation of all values in an array,
+     ignoring values strictly outside the sequence passed to 'limits'.
+     Note: either limit in the sequence, or the value of limits itself,
+     can be set to None.  The inclusive list/tuple determines whether the
+     lower and upper limiting bounds (respectively) are open/exclusive
+     (0) or closed/inclusive (1).     
      """
      return sqrt(tvar(a,limits,inclusive))
 
 
-def tsem(a,limits=None,inclusive=(1,1)):
+def tsem(a,limits=None,inclusive=(True,True)):
     """Returns the standard error of the mean for the values in an array,
     (i.e., using N for the denominator), ignoring values strictly outside
-    the sequence passed to 'limits'.   Note: either limit in the sequence,
-    or the value of limits itself, can be set to None.  The inclusive list/tuple
-    determines whether the lower and upper limiting bounds (respectively) are
-    open/exclusive (0) or closed/inclusive (1).
+    the sequence passed to 'limits'.   Note: either limit in the
+    sequence, or the value of limits itself, can be set to None.  The
+    inclusive list/tuple determines whether the lower and upper limiting
+    bounds (respectively) are open/exclusive (0) or closed/inclusive (1).
     """
     a = asarray(a)
     sd = tstd(a,limits,inclusive)
     if limits is None or limits == [None,None]:
         n = float(len(ravel(a)))
     assert type(limits) in SequenceType, "Wrong type for limits in tsem"
-    if inclusive[0]:    lowerfcn = greater_equal
-    else:               lowerfcn = greater
-    if inclusive[1]:    upperfcn = less_equal
-    else:               upperfcn = less
+    if inclusive[0]:
+        lowerfcn = greater_equal
+    else:
+        lowerfcn = greater
+    if inclusive[1]:
+        upperfcn = less_equal
+    else:
+        upperfcn = less
     if limits[0] > maximum.reduce(ravel(a)) or limits[1] < minimum.reduce(ravel(a)):
         raise ValueError, "No array values within given limits (tsem)."
     elif limits[0] is None and limits[1] is not None:
@@ -519,7 +525,7 @@ def tsem(a,limits=None,inclusive=(1,1)):
 ############  AMOMENTS  #############
 #####################################
 
-def moment(a,moment=1,axis=-1):
+def moment(a,moment=1,axis=0):
     """Calculates the nth moment about the mean for a sample (defaults to the
     1st moment).  Generally used to calculate coefficients of skewness and
     kurtosis.  Axis can equal None (ravel array first), or an integer
@@ -536,7 +542,7 @@ def moment(a,moment=1,axis=-1):
         return mean(s,axis)
 
 
-def variation(a,axis=-1):
+def variation(a,axis=0):
     """Returns the coefficient of variation, as defined in CRC Standard
     Probability and Statistics, p.6. Axis can equal None (ravel array
     first), or an integer (the axis over which to operate)
@@ -544,7 +550,7 @@ def variation(a,axis=-1):
     return samplestd(a,axis)/mean(a,axis)
 
 
-def skew(a,axis=-1,bias=1):
+def skew(a,axis=0,bias=True):
     """Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
     weight in left tail).  Use skewtest() to see if it's close enough.
     Axis can equal None (ravel array first), or an integer (the
@@ -560,14 +566,14 @@ def skew(a,axis=-1,bias=1):
     vals = where(zero, 0, m3/ m2**1.5)
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
-        if sb.any(can_correct):
-            m2 = sb.extract(can_correct,m2)
-            m3 = sb.extract(can_correct,m3)
+        if any(can_correct):
+            m2 = extract(can_correct,m2)
+            m3 = extract(can_correct,m3)
             nval = sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
-            sb.insert(vals, can_correct, nval)
+            insert(vals, can_correct, nval)
     return vals
 
-def kurtosis(a,axis=-1,fisher=1,bias=1):
+def kurtosis(a,axis=0,fisher=True,bias=True):
     """Returns the kurtosis (fisher or pearson) of a distribution
 
     Kurtosis is the fourth central moment divided by the square of the
@@ -592,17 +598,17 @@ def kurtosis(a,axis=-1,fisher=1,bias=1):
     vals = where(zero, 0, m4/ m2**2.0)
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
-        if sb.any(can_correct):
-            m2 = sb.extract(can_correct,m2)
-            m4 = sb.extract(can_correct,m4)
+        if any(can_correct):
+            m2 = extract(can_correct,m2)
+            m4 = extract(can_correct,m4)
             nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
-            sb.insert(vals, can_correct, nval+3.0)
+            insert(vals, can_correct, nval+3.0)
     if fisher:
         return vals - 3
     else:
         return vals
 
-def describe(a,axis=-1):
+def describe(a,axis=0):
      """Returns several descriptive statistics of the passed array.  Axis
      can equal None (ravel array first), or an integer (the axis over
      which to operate)
@@ -622,7 +628,7 @@ def describe(a,axis=-1):
 ########  NORMALITY TESTS  ##########
 #####################################
 
-def skewtest(a,axis=-1):
+def skewtest(a,axis=0):
     """Tests whether the skew is significantly different from a normal
     distribution.  Axis can equal None (ravel array first), an integer
     (the axis over which to operate), or a sequence (operate over
@@ -648,7 +654,7 @@ def skewtest(a,axis=-1):
     return Z, (1.0-zprob(Z))*2
 
 
-def kurtosistest(a,axis=-1):
+def kurtosistest(a,axis=0):
     """
 Tests whether a dataset has normal kurtosis (i.e.,
 kurtosis=3(n-1)/(n+1)) Valid only for n>20.  Axis can equal None
@@ -677,7 +683,7 @@ Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
     return Z, (1.0-zprob(Z))*2
 
 
-def normaltest(a,axis=-1):
+def normaltest(a,axis=0):
     """
 Tests whether skew and/OR kurtosis of dataset differs from normal
 curve.  Can operate over multiple axes.  Axis can equal
@@ -716,7 +722,7 @@ Returns: a 2D frequency table (col [0:n-1]=scores, col n=frequencies)
     return array(_support.abut(scores, freq))
 
 
-def scoreatpercentile (a, percent):
+def scoreatpercentile(a, percent):
     """
 Returns: score at given percentile, relative to a distribution
 """
@@ -731,7 +737,7 @@ Returns: score at given percentile, relative to a distribution
     return score
 
 
-def percentileofscore (a,score,histbins=10,defaultlimits=None):
+def percentileofscore(a,score,histbins=10,defaultlimits=None):
     """
 Note: result of this function depends on the values used to histogram
 the data(!).
@@ -775,7 +781,7 @@ def histogram2(a, bins):
 
 
 
-def histogram (a,numbins=10,defaultlimits=None,printextras=1):
+def histogram(a,numbins=10,defaultlimits=None,printextras=True):
     """
 Returns (i) an array of histogram bin counts, (ii) the smallest value
 of the histogram binning, and (iii) the bin width (the last 2 are not
@@ -787,7 +793,7 @@ following: array of bin values, lowerreallimit, binsize, extrapoints.
 Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
 """
     a = ravel(a)               # flatten any >1D arrays
-    if (defaultlimits <> None):
+    if (defaultlimits != None):
         lowerreallimit = defaultlimits[0]
         upperreallimit = defaultlimits[1]
         binsize = (upperreallimit-lowerreallimit) / float(numbins)
@@ -802,13 +808,13 @@ Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
     for num in a:
         try:
             if (num-lowerreallimit) < 0:
-                extrapoints = extrapoints + 1
+                extrapoints += 1
             else:
                 bintoincrement = int((num-lowerreallimit) / float(binsize))
                 bins[bintoincrement] = bins[bintoincrement] + 1
         except:                           # point outside lower/upper limits
-            extrapoints = extrapoints + 1
-    if (extrapoints > 0 and printextras == 1):
+            extrapoints += 1
+    if extrapoints > 0 and printextras:
         print '\nPoints outside given histogram range =',extrapoints
     return (bins, lowerreallimit, binsize, extrapoints)
 
@@ -874,13 +880,13 @@ Returns: transformed data for use in an ANOVA
     for j in range(k):
         if v[j] - mean(nargs[j],None) > TINY:
             check = 0
-    if check <> 1:
+    if check != 1:
         raise ValueError, 'Lack of convergence in obrientransform.'
     else:
         return array(nargs)
 
 
-def samplevar (a,axis=-1):
+def samplevar (a,axis=0):
     """
 Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
@@ -894,7 +900,7 @@ an integer (the axis over which to operate)
     return svar
 
 
-def samplestd (a, axis=-1):
+def samplestd (a, axis=0):
     """Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate).
@@ -902,7 +908,7 @@ an integer (the axis over which to operate).
     return sqrt(samplevar(a,axis))
 
 
-def signaltonoise(instack,axis=-1):
+def signaltonoise(instack,axis=0):
     """
 Calculates signal-to-noise.  Axis can equal None (ravel array
 first), an integer (the axis over which to operate).
@@ -915,7 +921,7 @@ Returns: array containing the value of (mean/stdev) along axis,
     return where(equal(sd,0),0,m/sd)
 
 
-def var(a, axis=-1, bias=0):
+def var(a, axis=0, bias=False):
     """
 Returns the estimated population variance of the values in the passed
 array (i.e., N-1).  Axis can equal None (ravel array first), or an
@@ -931,7 +937,7 @@ integer (the axis over which to operate).
     else:
         return vals
 
-def std (a, axis=-1, bias=0):
+def std(a, axis=0, bias=False):
     """
 Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -940,7 +946,7 @@ first), or an integer (the axis over which to operate).
     return sqrt(var(a,axis,bias))
 
 
-def stderr (a, axis=-1):
+def stderr(a, axis=0):
     """
 Returns the estimated population standard error of the values in the
 passed array (i.e., N-1).  Axis can equal None (ravel array
@@ -950,7 +956,7 @@ first), or an integer (the axis over which to operate).
     return std(a,axis) / float(sqrt(a.shape[axis]))
 
 
-def sem (a, axis=-1):
+def sem (a, axis=0):
     """
 Returns the standard error of the mean (i.e., using N) of the values
 in the passed array.  Axis can equal None (ravel array first), or an
@@ -985,7 +991,7 @@ computed relative to the passed array.
     return array(zscores)
 
 
-def zmap (scores, compare, axis=-1):
+def zmap (scores, compare, axis=0):
     """
 Returns an array of z-scores the shape of scores (e.g., [x,y]), compared to
 array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
@@ -1012,9 +1018,9 @@ Returns: a, with values <threshmin or >threshmax replaced with newval
 """
     a = asarray(a)
     mask = zeros(a.shape)
-    if threshmin <> None:
+    if threshmin != None:
         mask = mask + where(less(a,threshmin),1,0)
-    if threshmax <> None:
+    if threshmax != None:
         mask = mask + where(greater(a,threshmax),1,0)
     mask = clip(mask,0,1)
     return where(mask,newval,a)
@@ -1061,7 +1067,7 @@ def trim_mean(a,proportiontocut):
     """Return mean with proportiontocut chopped from each of the lower and
     upper tails.
     """
-    newa = trimboth(N.sort(a),proportiontocut)
+    newa = trimboth(sort(a),proportiontocut)
     return mean(newa)
         
 
@@ -1073,7 +1079,7 @@ def trim_mean(a,proportiontocut):
 #  Cov is more flexible than the original
 #    covariance and computes an unbiased covariance matrix
 #    by default. 
-def cov(m,y=None, rowvar=0, bias=0):
+def cov(m,y=None, rowvar=False, bias=False):
     """Estimate the covariance matrix.
 
     If m is a vector, return the variance.  For matrices where each row
@@ -1084,9 +1090,9 @@ def cov(m,y=None, rowvar=0, bias=0):
     cov(m) is the same as cov(m, m)
 
     Normalization is by (N-1) where N is the number of observations
-    (unbiased estimate).  If bias is 1 then normalization is by N.
+    (unbiased estimate).  If bias is True then normalization is by N.
 
-    If rowvar is zero, then each row is a variables with
+    If rowvar is False, then each row is a variables with
     observations in the columns.
     """
     m = asarray(m)
@@ -1106,24 +1112,24 @@ def cov(m,y=None, rowvar=0, bias=0):
         fact = N*1.0
     else:
         fact = N-1.0
-    val = sb.squeeze(dot(transpose(m),conjugate(y))) / fact
+    val = squeeze(dot(transpose(m),conjugate(y))) / fact
     return val
 
-def corrcoef(x, y=None, rowvar=0, bias=0):
+def corrcoef(x, y=None, rowvar=False, bias=True):
     """The correlation coefficients formed from 2-d array x, where the
     rows are the observations, and the columns are variables.
 
     corrcoef(x,y) where x and y are 1d arrays is the same as
     corrcoef(transpose([x,y]))
     
-    If rowvar is zero, then each row is a variables with
+    If rowvar is True, then each row is a variables with
     observations in the columns.
     """
     if y is not None:
         x = transpose([x,y])
         y = None
     c = cov(x, y, rowvar=rowvar, bias=bias)
-    d = scipy.diag(c)
+    d = diag(c)
     return c/sqrt(multiply.outer(d,d))
 
 
@@ -1138,16 +1144,16 @@ Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
 Returns: f-value, probability
 """
     na = len(args)            # ANOVA on 'na' groups, each in it's own array
-    tmp = map(N.array,args)
+    tmp = map(array,args)
     #means = map(mean,tmp)
     #vars = map(var,tmp)
     #ns = map(len,args)
-    alldata = N.concatenate(args)
+    alldata = concatenate(args)
     bign = len(alldata)
     sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
     ssbn = 0
     for a in args:
-        ssbn = ssbn + square_of_sums(N.array(a))/float(len(a))
+        ssbn = ssbn + square_of_sums(array(a))/float(len(a))
     ssbn = ssbn - (square_of_sums(alldata)/float(bign))
     sswn = sstot-ssbn
     dfbn = na-1
@@ -1283,7 +1289,7 @@ Returns: Point-biserial r, two-tailed p-value
     TINY = 1e-30
     categories = _support.unique(x)
     data = _support.abut(x,y)
-    if len(categories) <> 2:
+    if len(categories) != 2:
         raise ValueError, "Exactly 2 categories required (in x) for pointbiserialr()."
     else:   # there are 2 categories, continue
         #codemap = _support.abut(categories,arange(2))
@@ -1380,10 +1386,10 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
 #####  AINFERENTIAL STATISTICS  #####
 #####################################
 
-def ttest_1samp(a,popmean,printit=0,name='Sample',writemode='a'):
+def ttest_1samp(a,popmean,printit=False,name='Sample',writemode='a'):
     """
 Calculates the t-obtained for the independent samples T-test on ONE group
-of scores a, given a population mean.  If printit=1, results are printed
+of scores a, given a population mean.  If printit is True, results are printed
 to the screen.  If printit='filename', the results are output to 'filename'
 using the given writemode (default=append).  Returns t-value, and prob.
 
@@ -1398,7 +1404,7 @@ Returns: t-value, two-tailed prob
     t = (x-popmean)/math.sqrt(svar*(1.0/n))
     prob = betai(0.5*df,0.5,df/(df+t*t))
 
-    if printit <> 0:
+    if printit:
         statname = 'Single-sample T-test.'
         outputpairedstats(printit,writemode,
                           'Population','--',popmean,0,0,0,
@@ -1408,10 +1414,10 @@ Returns: t-value, two-tailed prob
     return t,prob
 
 
-def ttest_ind (a, b, axis=-1, printit=0, name1='Samp1', name2='Samp2',writemode='a'):
+def ttest_ind (a, b, axis=0, printit=False, name1='Samp1', name2='Samp2',writemode='a'):
     """
 Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
-a, and b.  From Numerical Recipies, p.483.  If printit=1, results are
+a, and b.  From Numerical Recipies, p.483.  If printit is True, results are
 printed to the screen.  If printit='filename', the results are output
 to 'filename' using the given writemode (default=append).  Axis
 can equal None (ravel array first), or an integer (the axis over
@@ -1438,7 +1444,7 @@ Returns: t-value, two-tailed p-value
     if len(probs) == 1:
         probs = probs[0]
         
-    if printit <> 0:
+    if printit != 0:
         if type(t) == ArrayType:
             t = t[0]
         if type(probs) == ArrayType:
@@ -1454,10 +1460,10 @@ Returns: t-value, two-tailed p-value
     return t, probs
 
 
-def ttest_rel (a,b,axis=None,printit=0,name1='Samp1',name2='Samp2',writemode='a'):
+def ttest_rel (a,b,axis=None,printit=False,name1='Samp1',name2='Samp2',writemode='a'):
     """
 Calculates the t-obtained T-test on TWO RELATED samples of scores, a
-and b.  From Numerical Recipies, p.483.  If printit=1, results are
+and b.  From Numerical Recipies, p.483.  If printit, results are
 printed to the screen.  If printit='filename', the results are output
 to 'filename' using the given writemode (default=append).  Axis
 can equal None (ravel array first), or an integer (the axis over
@@ -1466,7 +1472,7 @@ which to operate on a and b).
 Returns: t-value, two-tailed p-value
 """
     a, b, axis = _chk2_asarray(a, b, axis)
-    if len(a)<>len(b):
+    if len(a)!=len(b):
         raise ValueError, 'Unequal length arrays.'
     x1 = mean(a,axis)
     x2 = mean(b,axis)
@@ -1487,7 +1493,7 @@ Returns: t-value, two-tailed p-value
     if len(probs) == 1:
         probs = probs[0]
 
-    if printit <> 0:
+    if printit != 0:
         statname = 'Related samples T-test.'
         outputpairedstats(printit,writemode,
                           name1,n,x1,v1,minimum.reduce(ravel(a)),
@@ -1521,13 +1527,13 @@ def kstest(rvs,cdf,args=(),N=20):
         cdf = getattr(scipy.stats, cdf).cdf
     if callable(rvs):
         kwds = {'size':N}
-        vals = sb.sort(rvs(*args,**kwds))
+        vals = sort(rvs(*args,**kwds))
     else:
-        vals = sb.sort(rvs)
+        vals = sort(rvs)
         N = len(vals)
     cdfvals = cdf(vals, *args)
-    D1 = sb.amax(abs(cdfvals - sb.arange(1.0,N+1)/N))
-#    D2 = sb.amax(abs(cdfvals - sb.arange(0.0,N)/N))
+    D1 = amax(abs(cdfvals - arange(1.0,N+1)/N))
+#    D2 = amax(abs(cdfvals - arange(0.0,N)/N))
 #    D = max(D1,D2)
     D = D1
     return D, distributions.ksone.sf(D,N)
@@ -1767,7 +1773,7 @@ from:
 
 Returns: statistic, p-value ???
 """
-    if len(para) <> len(data):
+    if len(para) != len(data):
         print "data and para must be same length in aglm"
         return
     n = len(para)
@@ -2002,7 +2008,7 @@ lists-of-lists.
             Lwithinsourcecol = makelist(Bwithinsource, Nfactors+1)
             # Make a list of cols that are source within-subj OR btw-subj 
             Lsourceandbtws = makelist(source | Bbetweens, Nfactors+1)
-            if Lwithinnonsource <> []:
+            if Lwithinnonsource != []:
                 Lwithinsourcecol = map(Lsourceandbtws.index,Lwithinsourcecol)
                 # Now indxlist should hold a list of indices into the list of possible
                 # coefficients, one row per combo of coefficient. Next line PRESERVES dummyval
@@ -2071,7 +2077,7 @@ lists-of-lists.
             idx = [0] *len(tsubjslots.shape[0:-1])
             idx[0] = -1
             loopcap = array(tsubjslots.shape[0:-1]) -1
-            while incr(idx,loopcap) <> -1:
+            while incr(idx,loopcap) != -1:
                 DNarray[idx] = float(sum(tsubjslots[idx]))
                 thismean =  (add.reduce(tsubjslots[idx] * # 1=subj dim
                                           transpose(D[dcount]),1) /
@@ -2085,7 +2091,7 @@ lists-of-lists.
         # DONE CREATING M AND D VARIABLES ... TIME FOR SOME SS WORK
         # DONE CREATING M AND D VARIABLES ... TIME FOR SOME SS WORK
         #
-        if Bscols[1:] <> []:
+        if Bscols[1:] != []:
             BNs = _support.colex([Nlevels],Bscols[1:])
         else:
             BNs = [1]
@@ -2187,7 +2193,7 @@ lists-of-lists.
             # CALCULATE MS, MSw, F AND PROB FOR ALL-BETWEEN-SUBJ SOURCES ONLY
             MS = SS / dfnum
             MSw = SSw / dfden
-            if MSw <> 0:
+            if MSw != 0:
                 f = MS / MSw
             else:
                 f = 0  # i.e., absolutely NO error in the full model
@@ -2242,7 +2248,7 @@ lists-of-lists.
                 dfden = Nsubjects -multiply.reduce(ravel(BNs))-dfnum +1
                 MS = SS / dfnum
                 MSw = SSw / dfden
-                if MSw <> 0:
+                if MSw != 0:
                     f = MS / MSw
                 else:
                     f = 0  # i.e., absolutely NO error in full model
@@ -2269,7 +2275,7 @@ lists-of-lists.
                 dfden = m*s - dfnum/2.0 + 1
 
                 # Given a within-between combined source, Wilk's Lambda is appropriate
-                if linalg.det(er) <> 0:
+                if linalg.det(er) != 0:
                     lmbda = linalg.det(ef) / linalg.det(er)
                     W = math.pow(lmbda,(1.0/s))
                     f = ((1.0-W)/W) * (dfden/dfnum)
@@ -2458,7 +2464,7 @@ Returns: SS array for multivariate F calculation
              #subsourcebtw = (subsource-1) & Bbetweens
              if (propersubset(subsource-1,source-1) and
                  (subsource-1)&Bwithins == (source-1)&Bwithins and
-                 (subsource-1) <> (source-1)&Bwithins):
+                 (subsource-1) != (source-1)&Bwithins):
                  sub_effects = (sub_effects +
                                 alleffects[alleffsources.index(subsource)])
 
@@ -2518,7 +2524,7 @@ i.e., calculate full-model using a D-variable.
      if len(sourcedims) == 0:
          idx = [-1]
          loopcap = [0]
-     if len(sourcedims) <> 0:
+     if len(sourcedims) != 0:
          btwsourcedims = map(Bscols.index,sourcedims)
          idx = [0] * len(btwsourcedims)
          idx[0] = -1 # compensate for pre-increment of 1st slot in incr()
@@ -2527,7 +2533,7 @@ i.e., calculate full-model using a D-variable.
          loopcap = take(array(Nlevels),sourcedims)-1
 
 ### WHILE STILL MORE GROUPS, CALCULATE GROUP MEAN FOR EACH D-VAR
-     while incr(idx,loopcap) <> -1:  # loop through source btw level-combos
+     while incr(idx,loopcap) != -1:  # loop through source btw level-combos
          mask = tsubjslots[idx]
          thisgroup = tworkd*mask[NewAxis,:]
          groupmns = mean(compress(mask,thisgroup),1)
@@ -2663,11 +2669,7 @@ where ER and EF are matrices from a multivariate F calculation.
 #######  SUPPORT FUNCTIONS  ########
 #####################################
 
-# sign is in Numeric
-sum = scipy.sum
-cumsum = scipy.cumsum
-
-def ss(a, axis=-1):
+def ss(a, axis=0):
     """
 Squares each value in the passed array, adds these squares & returns
 the result.  Axis can equal None (ravel array first), an integer
@@ -2679,7 +2681,7 @@ Returns: sum-along-'axis' for (a*a)
     a, axis = _chk_asarray(a, axis)
     return sum(a*a,axis)
 
-def summult (array1,array2,axis=-1):
+def summult (array1,array2,axis=0):
     """
 Multiplies elements in array1 and array2, element by element, and
 returns the sum (along 'axis') of all resulting multiplications.
@@ -2694,7 +2696,7 @@ axis over which to operate),
     return sum(array1*array2,axis)
 
 
-def square_of_sums(a, axis=-1):    
+def square_of_sums(a, axis=0):    
     """Adds the values in the passed array, squares that sum, and returns the
 result.
 
@@ -2708,7 +2710,7 @@ Returns: the square of the sum over axis.
         return float(s)*s
 
 
-def sumdiffsquared(a, b, axis=-1):
+def sumdiffsquared(a, b, axis=0):
     """
 Takes pairwise differences of the values in arrays a and b, squares
 these differences, and returns the sum of these squares.  Axis
@@ -2769,7 +2771,7 @@ Returns: array of length equal to a, containing rank scores
     for i in range(n):
         sumranks = sumranks + i
         dupcount = dupcount + 1
-        if i==n-1 or svec[i] <> svec[i+1]:
+        if i==n-1 or svec[i] != svec[i+1]:
             averank = sumranks / float(dupcount) + 1
             for j in range(i-dupcount+1,i+1):
                 newarray[ivec[j]] = averank
@@ -2842,7 +2844,7 @@ Returns: None
     title = [['Name','N','Mean','SD','Min','Max']]
     lofl = title+[[name1,n1,round(m1,3),round(math.sqrt(se1),3),min1,max1],
                   [name2,n2,round(m2,3),round(math.sqrt(se2),3),min2,max2]]
-    if type(fname)<>StringType or len(fname)==0:
+    if type(fname)!=StringType or len(fname)==0:
         print
         print statname
         print
