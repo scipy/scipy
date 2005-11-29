@@ -1600,7 +1600,8 @@ value of U.
 
 Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
 """
-    x,y = asarray(x, y)
+    x = asarray(x)
+    y = asarray(y)
     n1 = len(x)
     n2 = len(y)
     ranked = rankdata(concatenate((x,y)))
