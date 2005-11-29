@@ -23,9 +23,6 @@ Run
 Testing
 =======
 
-To test fftpack, you'll need scipy_test package installed (this is
-provided by scipy_core package).
-
 Run
 
 ::
