@@ -5,6 +5,9 @@ def configuration(parent_package='',top_path=None):
     # An example package:
     #config.add_subpackage('exmplpackage')
 
+    # Maximum entropy package
+    #config.add_subpackage('maxent')
+    
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
     
