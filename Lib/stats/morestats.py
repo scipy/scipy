@@ -191,6 +191,7 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
         sparams = (sparams,)
     if not isinstance(sparams,types.TupleType):
         sparams = tuple(sparams)
+    """
     res = inspect.getargspec(ppf_func)
     if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
             0.0==res[-1][-2] and 1.0==res[-1][-1]):
@@ -199,6 +200,7 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     if (len(sparams) < len(res[0])-len(res[-1])-1) or \
        (len(sparams) > len(res[0])-3):
         raise ValueError, "Incorrect number of shape parameters."
+    """
     osm = ppf_func(Ui,*sparams)
     osr = sort(x)
     if fit or (plot is not None):
@@ -236,6 +238,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
         ppf_func = eval('distributions.%s.ppf'%dist)
     except AttributError:
         raise dist, "is not a valid distribution with a ppf."
+    """
     res = inspect.getargspec(ppf_func)
     if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
             0.0==res[-1][-2] and 1.0==res[-1][-1]):
@@ -244,6 +247,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     if (1 < len(res[0])-len(res[-1])-1) or \
        (1 > len(res[0])-3):
         raise ValueError, "Must be a one-parameter family."
+    """
     N = len(x)
     # compute uniform median statistics
     Ui = zeros(N)*1.0

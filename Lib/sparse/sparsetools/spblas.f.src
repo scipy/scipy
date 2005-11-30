@@ -378,7 +378,7 @@ c     intentended for re-entry if nnzcmax is not big enough
       integer nnzamax, nnzbmax, nnzcmax
       integer m, k, n, irow, kcol, ierr
 
-      integer kk, ii, jjb, jb, cb, ia, nnzc, cumsum
+      integer kk, ii, jjb, jb, cb, ia, ra, nnzc, cumsum
       <_t> val
       
       ierr = 0
