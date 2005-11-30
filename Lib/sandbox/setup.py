@@ -13,6 +13,8 @@ def configuration(parent_package='',top_path=None):
     
     # ODRPACK
     #config.add_subpackage('odr')
+
+    config.add_subpackage('xplt')
     
     return config
 
