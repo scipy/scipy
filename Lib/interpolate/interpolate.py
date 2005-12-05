@@ -11,24 +11,6 @@ from scipy.base import *
 
 import fitpack
 
-# The following are cluges to fix brain-deadness of take and
-# sometrue when dealing with 0 dimensional arrays.
-# Shouldn't they go to scipy.base??
-# XXX: are these necessary in scipy_core?
-
-_take = take
-def take(a,indices,axis=0):    
-    x = asarray(a); y = asarray(indices)
-    if shape(x) == (): x = x.flat
-    if shape(y) == (): y = y.flat
-    return _take(x,y,axis)
-
-_sometrue = sometrue
-def sometrue(a,axis=0):    
-    x = asarray(a)
-    if shape(x) == (): x = x.flat
-    return _sometrue(x)
-
 def reduce_sometrue(a):
     all = a
     while len(shape(all)) > 1:    
@@ -188,14 +170,14 @@ class interp1d:
         # !! Need to think about how to do this efficiently for 
         # !! mutli-dimensional Cases.
         yshape = y_new.shape
-        y_new = y_new.flat
+        y_new = y_new.ravel()
         new_shape = list(yshape)
         new_shape[self.interp_axis] = 1
         sec_shape = [1]*len(new_shape)
         sec_shape[self.interp_axis] = len(out_of_bounds)
         out_of_bounds.shape = sec_shape
         new_out = ones(new_shape)*out_of_bounds
-        putmask(y_new, new_out.flat, self.fill_value)
+        putmask(y_new, new_out.ravel(), self.fill_value)
         y_new.shape = yshape      
         # Rotate the values of y_new back so that they coorespond to the
         # correct x_new values.
