@@ -442,7 +442,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
         z, p, k = typefunc(N, rs)
     else:  # Elliptic filters
         if rs is None or rp is None:
-            raise ValueErrro, "Both rp and rs must be provided to design an elliptic filter."
+            raise ValueError, "Both rp and rs must be provided to design an elliptic filter."
         z, p, k = typefunc(N, rp, rs)
     
     b, a = zpk2tf(z,p,k)
