@@ -1,0 +1,159 @@
+# Copyright (C) 2003-2005 Peter J. Verveer
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met: 
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#
+# 3. The name of the author may not be used to endorse or promote
+#    products derived from this software without specific prior
+#    written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+
+import types
+import math
+import numarray
+import _ni_support
+import _nd_image
+
+def _get_output_fourier(output, input):
+    if output == None:
+        if input.type() in [numarray.Complex32, numarray.Complex64,
+                            numarray.Float32]:
+            output = numarray.zeros(input.shape, type = input.type())
+        else:
+            output = numarray.zeros(input.shape, type = numarray.Float64)
+        return_value = output
+    elif isinstance(output, numarray.NumericType):
+        if output not in [numarray.Complex32, numarray.Complex64,
+                          numarray.Float32, numarray.Float64]:
+            raise RuntimeError, "output type not supported"
+        output = numarray.zeros(input.shape, type = output)
+        return_value = output        
+    else:
+        if output.shape != input.shape:
+            raise RuntimeError, "output shape not correct"
+        return_value = None
+    return output, return_value
+
+def _get_output_fourier_complex(output, input):
+    if output == None:
+        if input.type() in [numarray.Complex32, numarray.Complex64]:
+            output = numarray.zeros(input.shape, type = input.type())
+        else:
+            output = numarray.zeros(input.shape, type = numarray.Complex64)
+        return_value = output
+    elif isinstance(output, numarray.NumericType):
+        if output not in [numarray.Complex32, numarray.Complex64]:
+            raise RuntimeError, "output type not supported"
+        output = numarray.zeros(input.shape, type = output)
+        return_value = output        
+    else:
+        if output.shape != input.shape:
+            raise RuntimeError, "output shape not correct"
+        return_value = None
+    return output, return_value
+
+def fourier_gaussian(input, sigma, n = -1, axis = -1, output = None):
+    """Multi-dimensional Gaussian fourier filter.
+
+    The array is multiplied with the fourier transform of a Gaussian
+    kernel. If the parameter n is negative, then the input is assumed to be 
+    the result of a complex fft. If n is larger or equal to zero, the input 
+    is assumed to be the result of a real fft, and n gives the length of 
+    the of the array before transformation along the the real transform 
+    direction. The axis of the real transform is given by the axis 
+    parameter.
+    """
+    input = numarray.asarray(input)
+    output, return_value = _get_output_fourier(output, input)
+    axis = _ni_support._check_axis(axis, input.rank)
+    sigmas = _ni_support._normalize_sequence(sigma, input.rank)
+    sigmas = numarray.asarray(sigmas, type = numarray.Float64)
+    if not sigmas.iscontiguous():
+        sigmas = sigmas.copy()
+    _nd_image.fourier_filter(input, sigmas, n, axis, output, 0)
+    return return_value
+
+def fourier_uniform(input, size, n = -1, axis = -1, output = None):
+    """Multi-dimensional Uniform fourier filter.
+
+    The array is multiplied with the fourier transform of a box of given
+    sizes. If the parameter n is negative, then the input is assumed to be 
+    the result of a complex fft. If n is larger or equal to zero, the input 
+    is assumed to be the result of a real fft, and n gives the length of 
+    the of the array before transformation along the the real transform 
+    direction. The axis of the real transform is given by the axis 
+    parameter.
+    """
+    input = numarray.asarray(input)
+    output, return_value = _get_output_fourier(output, input)
+    axis = _ni_support._check_axis(axis, input.rank)
+    sizes = _ni_support._normalize_sequence(size, input.rank)
+    sizes = numarray.asarray(sizes, type = numarray.Float64)
+    if not sizes.iscontiguous():
+        sizes = sizes.copy()
+    _nd_image.fourier_filter(input, sizes, n, axis, output, 1)
+    return return_value
+
+def fourier_ellipsoid(input, size, n = -1, axis = -1, output = None):
+    """Multi-dimensional ellipsoid fourier filter.
+
+    The array is multiplied with the fourier transform of a ellipsoid of 
+    given sizes. If the parameter n is negative, then the input is assumed 
+    to be the result of a complex fft. If n is larger or equal to zero, the 
+    input is assumed to be the result of a real fft, and n gives the length 
+    of the of the array before transformation along the the real transform 
+    direction. The axis of the real transform is given by the axis 
+    parameter. This function is implemented for arrays of
+    rank 1, 2, or 3.
+    """
+    input = numarray.asarray(input)
+    output, return_value = _get_output_fourier(output, input)
+    axis = _ni_support._check_axis(axis, input.rank)
+    sizes = _ni_support._normalize_sequence(size, input.rank)
+    sizes = numarray.asarray(sizes, type = numarray.Float64)
+    if not sizes.iscontiguous():
+        sizes = sizes.copy()
+    _nd_image.fourier_filter(input, sizes, n, axis, output, 2)
+    return return_value
+
+def fourier_shift(input, shift, n = -1, axis = -1, output = None):
+    """Multi-dimensional fourier shift filter.
+
+    The array is multiplied with the fourier transform of a shift operation
+    If the parameter n is negative, then the input is assumed to be the 
+    result of a complex fft. If n is larger or equal to zero, the input is 
+    assumed to be the result of a real fft, and n gives the length of the 
+    of the array before transformation along the the real transform 
+    direction. The axis of the real transform is given by the axis 
+    parameter.
+     """
+    input = numarray.asarray(input)
+    output, return_value = _get_output_fourier_complex(output, input)
+    axis = _ni_support._check_axis(axis, input.rank)
+    shifts = _ni_support._normalize_sequence(shift, input.rank)
+    shifts = numarray.asarray(shifts, type = numarray.Float64)
+    if not shifts.iscontiguous():
+        shifts = shifts.copy()
+    _nd_image.fourier_shift(input, shifts, n, axis, output)
+    return return_value
+
