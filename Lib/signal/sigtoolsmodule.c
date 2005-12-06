@@ -13,7 +13,7 @@ is granted under the SciPy License.
 #define DATA(arr) ((arr)->data)
 #define DIMS(arr) ((arr)->dimensions)
 #define STRIDES(arr) ((arr)->strides)
-#define ELSIZE(arr) ((arr)->itemsize)
+#define ELSIZE(arr) ((arr)->descr->elsize)
 #define OBJECTTYPE(arr) ((arr)->descr->type_num)
 #define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
 #define RANK(arr) ((arr)->nd)
@@ -1408,7 +1408,7 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char 
     temp_ind[k]++;
 
     if (!(check && index_out_of_bounds(temp_ind,dims1,ndims)) && \
-	memcmp(ip2, ptr, ap2->itemsize)) { 
+	memcmp(ip2, ptr, ap2->descr->elsize)) { 
       memcpy(sort_buffer, ip1, elsize);
       sort_buffer += elsize;
     } 
@@ -1621,7 +1621,7 @@ static void Py_copy_info(Generic_Array *gen, PyArrayObject *py_arr) {
         gen->data = py_arr->data;
 	gen->nd = py_arr->nd;
 	gen->dimensions = py_arr->dimensions;
-	gen->elsize = py_arr->itemsize;
+	gen->elsize = py_arr->descr->elsize;
 	gen->strides = py_arr->strides;
 	gen->zero = PyArray_Zero(py_arr);
 	return;
@@ -1629,7 +1629,7 @@ static void Py_copy_info(Generic_Array *gen, PyArrayObject *py_arr) {
 
 static void Py_copy_info_vec(Generic_Vector *gen, PyArrayObject *py_arr) {
         gen->data = py_arr->data;
-	gen->elsize = py_arr->itemsize;
+	gen->elsize = py_arr->descr->elsize;
 	gen->numels = PyArray_Size((PyObject *)py_arr);
 	gen->zero = PyArray_Zero(py_arr);
 	return;
