@@ -233,8 +233,8 @@ class test_csc(_test_cs):
         assert_array_equal(bsp.indptr,[0,2,3])
 
 class test_dok(_test_cs):
-    spmatrix = dok_matrix
-    
+    spmatrix = csr_matrix
+
     def check_mult(self):
         A = dok_matrix()
         A[0,3] = 10
@@ -250,6 +250,39 @@ class test_dok(_test_cs):
         A += 10
         B = array([[10, 0], [10, 10], [30, 10]])
         assert_array_equal(A.todense(), B)
+
+    def check_convert(self):
+        """Test provided by Andrew Straw.  Fails in SciPy <= r1477.
+        """
+        (m, n) = (6, 7)
+        a=dok_matrix((m, n))
+        
+        # set a few elements, but none in the last column
+        a[2,1]=1
+        a[0,2]=2
+        a[3,1]=3
+        a[1,5]=4
+        a[4,3]=5
+        a[4,2]=6
+        
+        # assert that the last column is all zeros
+        assert_array_equal( a.todense()[:,n-1], zeros(m,) )
+        
+        # make sure it still works for CSC format
+        csc=a.tocsc()
+        assert_array_equal( csc.todense()[:,n-1], zeros(m,) )
+
+        # now test CSR
+        (m, n) = (n, m)
+        b = a.transpose()
+        assert b.shape == (m, n)
+        # assert that the last row is all zeros
+        assert_array_equal( b.todense()[m-1,:], zeros(n,) )
+
+        # make sure it still works for CSR format
+        csr=b.tocsr()
+        assert_array_equal( csr.todense()[m-1,:], zeros(n,))
+
 
 if __name__ == "__main__":
     ScipyTest().run()

@@ -1472,7 +1472,8 @@ class dok_matrix(spmatrix, dict):
     def transpose(self):
         """ Return the transpose
         """
-        new = dok_matrix()
+        newshape = (self.shape[1], self.shape[0])
+        new = dok_matrix(newshape)
         for key in self.keys():
             new[key[1], key[0]] = self[key]
         return new
@@ -1574,8 +1575,10 @@ class dok_matrix(spmatrix, dict):
         nzmax = max(nnz, nzmax)
         data = [0]*nzmax
         colind = [0]*nzmax
-        row_ptr = [0]*(self.shape[0]+1)
-        current_row = 0
+        # Empty rows will leave row_ptr dangling.  We assign row_ptr[i] 
+        # for each empty row i to point off the end.  Is this sufficient??
+        row_ptr = [nnz]*(self.shape[0]+1)
+        current_row = -1
         k = 0
         for key in keys:
             ikey0 = int(key[0])
@@ -1587,7 +1590,6 @@ class dok_matrix(spmatrix, dict):
             data[k] = dict.__getitem__(self, key)
             colind[k] = ikey1
             k += 1
-        row_ptr[-1] = nnz
         data = array(data)
         colind = array(colind)
         row_ptr = array(row_ptr)
@@ -1610,8 +1612,10 @@ class dok_matrix(spmatrix, dict):
         nzmax = max(nnz, nzmax)
         data = [0]*nzmax
         rowind = [0]*nzmax
-        col_ptr = [0]*(self.shape[1]+1)
-        current_col = 0
+        # Empty columns will leave col_ptr dangling.  We assign col_ptr[j] 
+        # for each empty column j to point off the end.  Is this sufficient??
+        col_ptr = [nnz]*(self.shape[1]+1)
+        current_col = -1
         k = 0
         for key in keys:
             ikey0 = int(key[0])
@@ -1623,7 +1627,6 @@ class dok_matrix(spmatrix, dict):
             data[k] = self[key]
             rowind[k] = ikey0
             k += 1
-        col_ptr[-1] = nnz
         data = array(data)
         rowind = array(rowind)
         col_ptr = array(col_ptr)
