@@ -42,7 +42,28 @@ static double calc_e(double* x,int m,double* tx,int nx) {
 static int imax(int i1,int i2) {
   return MAX(i1,i2);
 }
-  '''
+
+static int calc_surfit_lwrk1(int m, int kx, int ky, int nxest, int nyest) {
+ int u = nxest-kx-1;
+ int v = nyest-ky-1;
+ int km = MAX(kx,ky)+1;
+ int ne = MAX(nxest,nyest);
+ int bx = kx*v+ky+1;
+ int by = ky*u+kx+1;
+ int b1,b2;
+ if (bx<=by) {b1=bx;b2=bx+v-ky;}
+ else {b1=by;b2=by+u-kx;}
+ return u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1;
+}
+static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
+ int u = nxest-kx-1;
+ int v = nyest-ky-1;
+ int bx = kx*v+ky+1;
+ int by = ky*u+kx+1;
+ int b2 = (bx<=by?bx+v-ky:by+u-kx);
+ return u*v*(b2+1)+b2;
+}
+'''
 
   interface
 
@@ -237,31 +258,8 @@ static int imax(int i1,int i2) {
           iwrk,kwrk,ier)
        !  nx,tx,ny,ty,c,fp,ier = surfit_smth(x,y,z,[w,xb,xe,yb,ye,kx,ky,s,eps,lwrk2])
 
-       usercode '''
-       int calc_lwrk1(void) {
-         int u = nxest-kx-1;
-         int v = nyest-ky-1;
-         int km = MAX(kx,ky)+1;
-         int ne = MAX(nxest,nyest);
-         int bx = kx*v+ky+1;
-         int by = ky*u+kx+1;
-         int b1,b2;
-         if (bx<=by) {b1=bx;b2=bx+v-ky;}
-         else {b1=by;b2=by+u-kx;}
-         return u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1;
-       }
-       int calc_lwrk2(void) {
-         int u = nxest-kx-1;
-         int v = nyest-ky-1;
-         int bx = kx*v+ky+1;
-         int by = ky*u+kx+1;
-         int b2 = (bx<=by?bx+v-ky:by+u-kx);
-         return u*v*(b2+1)+b2;
-       }
-       '''
-
        fortranname surfit
-       
+
        integer intent(hide) :: iopt=0
        integer intent(hide),depend(x,kx,ky),check(m>=(kx+1)*(ky+1)) &
             :: m=len(x)
@@ -290,9 +288,11 @@ static int imax(int i1,int i2) {
             depend(kx,ky,nxest,nyest),intent(out) :: c
        real*8 intent(out) :: fp
        real*8 dimension(lwrk1),intent(cache,out),depend(lwrk1) :: wrk1
-       integer intent(hide),depend(m,kx,ky,nxest,nyest) :: lwrk1=calc_lwrk1()
+       integer intent(hide),depend(m,kx,ky,nxest,nyest) &
+            :: lwrk1=calc_surfit_lwrk1(m,kx,ky,nxest,nyest)
        real*8 dimension(lwrk2),intent(cache,hide),depend(lwrk2) :: wrk2
-       integer optional,intent(in),depend(kx,ky,nxest,nyest) :: lwrk2=calc_lwrk2()
+       integer optional,intent(in),depend(kx,ky,nxest,nyest) &
+            :: lwrk2=calc_surfit_lwrk2(m,kx,ky,nxest,nyest)
        integer dimension(kwrk),depend(kwrk),intent(cache,hide) :: iwrk
        integer intent(hide),depend(m,nxest,nyest,kx,ky) &
             :: kwrk=m+(nxest-2*kx-1)*(nyest-2*ky-1)
@@ -304,31 +304,8 @@ static int imax(int i1,int i2) {
           iwrk,kwrk,ier)
        ! tx,ty,c,fp,ier = surfit_lsq(x,y,z,tx,ty,[w,xb,xe,yb,ye,kx,ky,eps,lwrk2])
 
-       usercode '''
-       int calc_lwrk1(void) {
-         int u = nxest-kx-1;
-         int v = nyest-ky-1;
-         int km = MAX(kx,ky)+1;
-         int ne = MAX(nxest,nyest);
-         int bx = kx*v+ky+1;
-         int by = ky*u+kx+1;
-         int b1,b2;
-         if (bx<=by) {b1=bx;b2=bx+v-ky;}
-         else {b1=by;b2=by+u-kx;}
-         return u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1;
-       }
-       int calc_lwrk2(void) {
-         int u = nxest-kx-1;
-         int v = nyest-ky-1;
-         int bx = kx*v+ky+1;
-         int by = ky*u+kx+1;
-         int b2 = (bx<=by?bx+v-ky:by+u-kx);
-         return u*v*(b2+1)+b2;
-       }
-       '''
-
        fortranname surfit
-       
+
        integer intent(hide) :: iopt=-1
        integer intent(hide),depend(x,kx,ky),check(m>=(kx+1)*(ky+1)) &
             :: m=len(x)
@@ -354,9 +331,11 @@ static int imax(int i1,int i2) {
        real*8 dimension((nx-kx-1)*(ny-ky-1)),depend(kx,ky,nx,ny),intent(out) :: c
        real*8 intent(out) :: fp
        real*8 dimension(lwrk1),intent(cache,hide),depend(lwrk1) :: wrk1
-       integer intent(hide),depend(m,kx,ky,nxest,nyest) :: lwrk1=calc_lwrk1()
+       integer intent(hide),depend(m,kx,ky,nxest,nyest) &
+            :: lwrk1=calc_surfit_lwrk1(m,kx,ky,nxest,nyest)
        real*8 dimension(lwrk2),intent(cache,hide),depend(lwrk2) :: wrk2
-       integer optional,intent(in),depend(kx,ky,nxest,nyest) :: lwrk2=calc_lwrk2()
+       integer optional,intent(in),depend(kx,ky,nxest,nyest) &
+            :: lwrk2=calc_surfit_lwrk2(m,kx,ky,nxest,nyest)
        integer dimension(kwrk),depend(kwrk),intent(cache,hide) :: iwrk
        integer intent(hide),depend(m,nx,ny,kx,ky) &
             :: kwrk=m+(nx-2*kx-1)*(ny-2*ky-1)
