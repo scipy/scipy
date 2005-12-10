@@ -37,13 +37,13 @@
 #define DQAWCE dqawce_
 #endif
 
-void DQAGSE(void);
-void DQAGIE(void);
-void DQAGPE(void);
-void DQAWOE(void);
-void DQAWFE(void);
-void DQAWSE(void);
-void DQAWCE(void);
+void DQAGSE();
+void DQAGIE();
+void DQAGPE();
+void DQAWOE();
+void DQAWFE();
+void DQAWSE();
+void DQAWCE();
 
 
 static int already_printed_python_error = 0;

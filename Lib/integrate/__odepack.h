@@ -20,7 +20,7 @@
 #define LSODA  lsoda_
 #endif
 
-void LSODA(void);
+void LSODA();
 
 /*
 void ode_function(int *n, double *t, double *y, double *ydot)
