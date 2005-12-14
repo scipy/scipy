@@ -180,6 +180,7 @@ CONF_IN( UMFPACK_INFO )
 %include <umfpack_report_symbolic.h>
 %include <umfpack_report_numeric.h>
 %include <umfpack_report_info.h>
+%include <umfpack_report_control.h>
 
 /*
   The order is important below!

@@ -358,16 +358,17 @@ class UmfpackContext( Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
+    # 14.12.2005
     def _getIndx( self, mtx ):
 
         ##
         # Should check types of indices to correspond to familyTypes.
         if sp.isspmatrix_csc( mtx ):
             indx = mtx.rowind
-            self.isCSR = 1
+            self.isCSR = 0
         elif sp.isspmatrix_csr( mtx ):
             indx = mtx.colind
-            self.isCSR = 0
+            self.isCSR = 1
         else:
             raise TypeError, 'must be a CSC/CSR matrix'
 
@@ -452,8 +453,15 @@ class UmfpackContext( Struct ):
 
     ##
     # 14.12.2005, c
+    def report_control( self ):
+        """Print control values."""
+        self.funs.report_control( self.control )
+
+    ##
+    # 14.12.2005, c
     def report_info( self ):
-        """Print all status information."""
+        """Print all status information. Output depends on
+        self.control[UMFPACK_PRL]."""
         self.funs.report_info( self.control, self.info )
 
     ##
