@@ -51,16 +51,43 @@ sol2 = umfpack.solve( um.UMFPACK_A, mtx, rhs2, autoTranspose = True )
 
 # Make symbolic decomposition.
 umfpack.symbolic( mtx0 )
+# Print statistics.
+umfpack.report_symbolic()
+
 ...
+
 # Make LU decomposition of mtx1 which has same structure as mtx0.
 umfpack.numeric( mtx1 )
+# Print statistics.
+umfpack.report_numeric()
+
 # Use already LU-decomposed matrix.
 sol1 = umfpack( um.UMFPACK_A, mtx1, rhs1, autoTranspose = True )
+
 ...
+
 # Make LU decomposition of mtx2 which has same structure as mtx0.
 umfpack.numeric( mtx2 )
 sol2 = umfpack.solve( um.UMFPACK_A, mtx2, rhs2, autoTranspose = True )
 
+# Print all statistics.
+umfpack.report_info()
+
+Setting control parameters:
+===========================
+Assuming this module imported as um:
+
+List of control parameter names is accessible as 'um.umfControls' - their
+meaning and possible values are described in the UMFPACK documentation.
+To each name corresponds an attribute of the 'um' module, such as,
+for example 'um.UMFPACK_PRL' (controlling the verbosity of umfpack report
+functions).  These attributes are in fact indices into the control array
+- to set the corresponding control array value, just do the following:
+
+umfpack = um.UmfpackContext()
+umfpack.control[um.UMFPACK_PRL] = 4 # Let's be more verbose.
+
+--
 Author: Robert Cimrman
 """
 
@@ -349,15 +376,6 @@ class UmfpackContext( Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def free_symbolic( self ):
-        if self._symbolic is not None:
-            self.funs.free_symbolic( self._symbolic )
-            self._symbolic = None
-            self.mtx = None
-
-    ##
-    # 30.11.2005, c
-    # 01.12.2005
     def symbolic( self, mtx ):
         """Symbolic object (symbolic LU decomposition) computation for a given
         sparsity pattern."""
@@ -369,7 +387,6 @@ class UmfpackContext( Struct ):
                                       mtx.indptr, indx, mtx.data,
                                       self.control, self.info )
 ##         print status, self._symbolic
-##         self.funs.report_symbolic( self._symbolic, self.control )
 
         if status != UMFPACK_OK:
             raise RuntimeError, '%s failed with %s' % (self.funs.symbolic,
@@ -377,14 +394,6 @@ class UmfpackContext( Struct ):
             
         self.mtx = mtx
 
-    ##
-    # 30.11.2005, c
-    # 01.12.2005
-    def free_numeric( self ):
-        if self._numeric is not None:
-            self.funs.free_numeric( self._numeric )
-            self._numeric = None
-            self.free_symbolic()
     ##
     # 30.11.2005, c
     # 01.12.2005
@@ -408,7 +417,6 @@ class UmfpackContext( Struct ):
                                          self._symbolic,
                                          self.control, self.info )
 ##             print status, self._numeric
-##             self.funs.report_numeric( self._numeric, self.control )
 
             if status != UMFPACK_OK:
                 if status == UMFPACK_WARNING_singular_matrix:
@@ -427,6 +435,44 @@ class UmfpackContext( Struct ):
             if failCount >= 2:
                 raise RuntimeError, '%s failed with %s' % (self.funs.numeric,
                                                            umfStatus[status])
+
+    ##
+    # 14.12.2005, c
+    def report_symbolic( self ):
+        """Print information about the symbolic object. Output depends on
+        self.control[UMFPACK_PRL]."""
+        self.funs.report_symbolic( self._symbolic, self.control )
+
+    ##
+    # 14.12.2005, c
+    def report_numeric( self ):
+        """Print information about the numeric object. Output depends on
+        self.control[UMFPACK_PRL]."""
+        self.funs.report_numeric( self._numeric, self.control )
+
+    ##
+    # 14.12.2005, c
+    def report_info( self ):
+        """Print all status information."""
+        self.funs.report_info( self.control, self.info )
+
+    ##
+    # 30.11.2005, c
+    # 01.12.2005
+    def free_symbolic( self ):
+        if self._symbolic is not None:
+            self.funs.free_symbolic( self._symbolic )
+            self._symbolic = None
+            self.mtx = None
+
+    ##
+    # 30.11.2005, c
+    # 01.12.2005
+    def free_numeric( self ):
+        if self._numeric is not None:
+            self.funs.free_numeric( self._numeric )
+            self._numeric = None
+            self.free_symbolic()
 
     ##
     # 30.11.2005, c
