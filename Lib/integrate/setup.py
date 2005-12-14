@@ -1,21 +1,14 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
-
 #!/usr/bin/env python
 
 from __future__ import nested_scopes
-import os
 from os.path import join
-import glob
 
-from scipy.distutils.misc_util import Configuration
-from scipy.distutils.system_info import get_info
+def configuration(parent_package='',top_path=None):
+    from scipy.distutils.misc_util import Configuration
+    from scipy.distutils.system_info import get_info
+    config = Configuration('integrate', parent_package, top_path)
 
-def configuration(parent_package='',parent_path=None):
-    config = Configuration('integrate', parent_package, parent_path)
-
-    blas_opt = get_info('blas_opt')
-    if not blas_opt:
-        raise NotFoundError,'no blas resources found'
+    blas_opt = get_info('blas_opt',notfound_action=2)
 
     config.add_library('linpack_lite',
                        sources=[join('linpack_lite','*.f')])
@@ -64,4 +57,4 @@ def configuration(parent_package='',parent_path=None):
 
 if __name__ == '__main__':    
     from scipy.distutils.core import setup
-    setup(**configuration(parent_path=''))
+    setup(**configuration(top_path='').todict())
