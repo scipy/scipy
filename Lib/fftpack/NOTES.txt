@@ -18,7 +18,7 @@ Run
 
 ::
 
-  python setup_fftpack.py install
+  python setup.py install
 
 Testing
 =======
@@ -27,9 +27,9 @@ Run
 
 ::
 
-  python tests/test_basic.py 10
-  python tests/test_pseudo_diffs.py 10
-  python tests/test_helper.py 10
+  python tests/test_basic.py -l 10
+  python tests/test_pseudo_diffs.py -l 10
+  python tests/test_helper.py -l 10
 
 or from python
 
@@ -43,12 +43,12 @@ Building with high-performance FFT libraries
 fftpack uses optimal combination of FFT libraries for different
 jobs. Currently, Fortran FFTPACK, FFTW, and DJBFFT libraries are
 supported. The last two are optional and used only if
-scipy_core/scipy_distutils/system_info.py detects them. 
+scipy/distutils/system_info.py detects them. 
 If they are available, then the output of
 
 ::
 
-  python scipy_core/scipy_distutils/system_info.py
+  python scipy/distutils/system_info.py
 
 should show, for example
 

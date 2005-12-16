@@ -11,3 +11,6 @@ from scipy.basic.fft import fftshift, ifftshift, fftfreq
 from basic import *
 from pseudo_diffs import *
 from helper import *
+
+from scipy.test.testing import ScipyTest 
+test = ScipyTest().test
