@@ -14,7 +14,11 @@ def configuration(parent_package='',top_path=None):
     # ODRPACK
     #config.add_subpackage('odr')
 
-    config.add_subpackage('xplt')
+    # Delaunay triangulation and Natural Neighbor interpolation
+    #config.add_subpackage('delaunay')
+
+    # Gist-based plotting library for X11
+    #config.add_subpackage('xplt')
     
     return config
 
