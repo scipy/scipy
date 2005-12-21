@@ -1789,7 +1789,13 @@ class test_round(unittest.TestCase):
 
     def check_round(self):
         rnd = map(int,(round(10.1),round(10.4),round(10.5),round(10.6)))
-        rndrl = (10,10,11,11)
+
+        # Note: According to the documentation, scipy.special.round is 
+        # supposed to round to the nearest even number if the fractional
+        # part is exactly 0.5. On some platforms, this does not appear 
+        # to work and thus this test may fail. However, this unit test is
+        # correctly written.
+        rndrl = (10,10,10,11)
         assert_array_equal(rnd,rndrl)
 
 class _test_sh_legendre(unittest.TestCase):
