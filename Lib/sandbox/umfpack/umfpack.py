@@ -314,8 +314,18 @@ class UmfpackContext( Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
+    # 21.12.2005
     def __init__( self, family = 'di', **kwargs ):
-        """family .. family of UMFPACK functions ('di', 'dl', 'zi', 'zl')"""
+        """
+        Arguments:
+
+        family  .. family of UMFPACK functions ('di', 'dl', 'zi', 'zl')
+
+        Keyword arguments:
+        
+        maxCond .. if extimated condition number is greater than maxCond,
+                   a warning is printed (default: 1e12)"""
+        self.maxCond = 1e12
         Struct.__init__( self, **kwargs )
 
         if family not in umfFamilyTypes.keys():
@@ -327,7 +337,6 @@ class UmfpackContext( Struct ):
         self._symbolic = None
         self._numeric = None
         self.mtx = None
-         
         ##
         # Functions corresponding to <family> are stored in self.funs.
         pattern = 'umfpack_' + family + '_(.*)'
@@ -492,6 +501,7 @@ class UmfpackContext( Struct ):
     # 30.11.2005, c
     # 01.12.2005
     # 02.12.2005
+    # 21.12.2005
     def solve( self, sys, mtx, rhs, autoTranspose = False ):
         """Solution of system of linear equation using the Numeric object."""
         if sys not in umfSys:
@@ -527,6 +537,11 @@ class UmfpackContext( Struct ):
             else:
                 raise RuntimeError, '%s failed with %s' % (self.funs.solve,
                                                            umfStatus[status])
+        econd = 1.0 / self.info[UMFPACK_RCOND]
+        if econd > self.maxCond:
+            print 'warning: (almost) singular matrix! '\
+                  + '(estimated cond. number: %.2e)' % econd
+
         return sol
 
     ##
