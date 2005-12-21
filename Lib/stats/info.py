@@ -221,5 +221,5 @@ interface package rpy.
 postpone_import = 1
 global_symbols = ['mean','median','std','cov','corrcoef','find_repeats', 'rand', 'randn']
 
-depends  = ['scipy.linalg','scipy.special']
+depends  = ['linalg','special']
 ignore = False # importing stats causes a segfault

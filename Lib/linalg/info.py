@@ -62,4 +62,4 @@ Linear algebra routines
 """
 
 postpone_import = 1
-depends = ['scipy.utils']
+depends = ['utils']
