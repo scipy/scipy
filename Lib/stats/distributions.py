@@ -16,7 +16,7 @@ from scipy.base import alltrue, where, arange, put, putmask, nonzero, \
 from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select, pi
 import scipy.base
-import scipy.basic.random as mtrand
+import scipy.random as mtrand
 
 errp = special.errprint
 arr = asarray

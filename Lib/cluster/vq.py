@@ -16,7 +16,7 @@
     
 """
 import scipy.utils
-from scipy.basic.random import randint
+from scipy.random import randint
 from scipy.stats import std, mean
 from scipy.base import common_type as _common_type
 from scipy import *

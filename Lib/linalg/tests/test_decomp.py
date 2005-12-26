@@ -23,7 +23,7 @@ from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
 restore_path()
 
 from scipy.base import *
-from scipy.basic.random import rand
+from scipy.random import rand
 
 def random(size):
     return rand(*size)
@@ -53,8 +53,8 @@ class test_eigvals(ScipyTestCase):
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
-        from scipy.basic import linalg
-        Numeric_eigvals = linalg.eigenvalues
+        import scipy.corelinalg as linalg
+	Numeric_eigvals = linalg.eigenvalues
         print
         print '           Finding matrix eigenvalues'
         print '      =================================='

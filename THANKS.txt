@@ -20,6 +20,8 @@ David M. Cooke  -- improvements to system_info, and lbfgsb wrapper
 Chuck Harris -- Zeros package in optimize (1d root-finding algorithms)
 Jean-Sebastien Roy -- fmin_tnc code which he adapted from Stephen Nash's 
                        original Fortran
+Ed Schofield -- sparse adaptation and improvements
+Robert Cimrman -- umfpack wrapper for sparse
 
 Testing:
 
@@ -33,7 +35,7 @@ Travis Vaught for maintaining the web-site.
 
 Institutions:
 
-Enthought for providing resources and finances to development SciPy.
+Enthought for providing resources and finances for development of SciPy.
 
 Brigham Young University has provided resources for students to work on SciPy.
 

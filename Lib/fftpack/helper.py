@@ -1,7 +1,7 @@
 
 import types
 from scipy.base import array
-from scipy.basic.helper import fftshift, ifftshift, fftfreq
+from scipy.corefft.helper import fftshift, ifftshift, fftfreq
 
 def rfftfreq(n,d=1.0):
     """ rfftfreq(n, d=1.0) -> f

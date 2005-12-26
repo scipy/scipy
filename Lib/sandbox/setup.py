@@ -20,6 +20,8 @@ def configuration(parent_package='',top_path=None):
     # Gist-based plotting library for X11
     #config.add_subpackage('xplt')
     
+    #config.add_subpackage('nd_image')
+    
     return config
 
 if __name__ == '__main__':

@@ -301,7 +301,7 @@ class base_gemv(unittest.TestCase):
         mult = array(1, dtype = self.dtype)            
         if self.dtype in ['F', 'D']:
             mult = array(1+1j, dtype = self.dtype)
-        from scipy.basic.random import normal
+        from scipy.random import normal
         alpha = array(1., dtype = self.dtype) * mult
         beta = array(1.,dtype = self.dtype) * mult
         a = normal(0.,1.,(3,3)).astype(self.dtype) * mult
