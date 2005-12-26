@@ -1,6 +1,6 @@
 import scipy.base
 from scipy.base import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from scipy.integrate import quad, dblquad, tplquad
 restore_path()

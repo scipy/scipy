@@ -1,19 +1,14 @@
 # Author:  Travis Oliphant, 2002
 # 
 
-
-import unittest
-import sys
-from scipy.test.testing import *
+from scipy.testing import *
 
 set_package_path()
 import scipy
 import stats
 restore_path()
 
-
-import scipy.base as Numeric
-N = Numeric
+import scipy.base as N
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
 g2 = [0.998, 1.006, 1.000, 1.002, 0.997, 0.998, 0.996, 1.000, 1.006, 0.988]
@@ -26,7 +21,7 @@ g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10= [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
-class test_shapiro(unittest.TestCase):
+class test_shapiro(ScipyTestCase):
     def check_basic(self):
         x1 = [0.11,7.87,4.61,10.14,7.95,3.14,0.46,
               4.43,0.21,4.75,0.71,1.52,3.24,
@@ -41,7 +36,7 @@ class test_shapiro(unittest.TestCase):
         assert_almost_equal(w,0.9590270,6)
         assert_almost_equal(pw,0.52460,3)
 
-class test_anderson(unittest.TestCase):
+class test_anderson(ScipyTestCase):
     def check_normal(self):
         x1 = scipy.stats.expon.rvs(size=50)
         x2 = scipy.stats.norm.rvs(size=50)
@@ -58,7 +53,7 @@ class test_anderson(unittest.TestCase):
         A,crit,sig = scipy.stats.anderson(x2,'expon')
         assert_array_less(crit[:-1], A)
 
-class test_ansari(unittest.TestCase):
+class test_ansari(ScipyTestCase):
     def check_small(self):
         x = [1,2,3,3,4]
         y = [3,2,6,1,6,1,4,1]
@@ -80,7 +75,7 @@ class test_ansari(unittest.TestCase):
         assert_almost_equal(W,10.0,11)
         assert_almost_equal(pval,0.533333333333333333,7)
 
-class test_bartlett(unittest.TestCase):
+class test_bartlett(ScipyTestCase):
     def check_data(self):
         args = []
         for k in range(1,11):
@@ -89,7 +84,7 @@ class test_bartlett(unittest.TestCase):
         assert_almost_equal(T,20.78587342806484,7)
         assert_almost_equal(pval,0.0136358632781,7)
 
-class test_levene(unittest.TestCase):
+class test_levene(ScipyTestCase):
     def check_data(self):
         args = []
         for k in range(1,11):
@@ -98,7 +93,7 @@ class test_levene(unittest.TestCase):
         assert_almost_equal(W,1.7059176930008939,7)
         assert_almost_equal(pval,0.0990829755522,7)
 
-class test_binom_test(unittest.TestCase):
+class test_binom_test(ScipyTestCase):
     def check_data(self):
         pval = stats.binom_test(100,250)
         assert_almost_equal(pval,0.0018833009350757682,11)
@@ -107,7 +102,7 @@ class test_binom_test(unittest.TestCase):
         pval = stats.binom_test([682,243],p=3.0/4)
         assert_almost_equal(pval,0.38249155957481695,11)        
 
-class test_find_repeats(unittest.TestCase):
+class test_find_repeats(ScipyTestCase):
     def check_basic(self):
         a = [1,2,3,4,1,2,3,4,1,2,5]
         res,nums = scipy.stats.find_repeats(a)
@@ -115,9 +110,4 @@ class test_find_repeats(unittest.TestCase):
         assert_array_equal(nums,[3,3,2,2])
 
 if __name__ == "__main__":
-    ScipyTest('stats.morestats').run()
-
-
-
-        
-
+    ScipyTest().run()

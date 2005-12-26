@@ -12,5 +12,5 @@ from basic import *
 from pseudo_diffs import *
 from helper import *
 
-from scipy.test.testing import ScipyTest 
+from scipy.testing import ScipyTest 
 test = ScipyTest().test

@@ -12,19 +12,15 @@ Run tests if fftpack is not installed:
 """
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from fftpack import fftshift,ifftshift,fftfreq,rfftfreq
-del sys.path[0]
+restore_path()
 
-
-import scipy.base as Numeric
 from scipy import pi
 
 def random(size):
     return rand(*size)
-
-import unittest
 
 class test_fftshift(ScipyTestCase):
 
@@ -64,4 +60,4 @@ class test_rfftfreq(ScipyTestCase):
         assert_array_almost_equal(10*pi*rfftfreq(10,pi),x)
 
 if __name__ == "__main__":
-    ScipyTest('fftpack.helper').run()
+    ScipyTest().run()

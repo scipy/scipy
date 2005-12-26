@@ -5,21 +5,18 @@
 # This python script tests the numpyio module.
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
-import os,sys
-import unittest
-from unittest import TestCase
-from scipy.test.testing import *
+import os
+from scipy.testing import *
 set_package_path()
 import io
 from io import numpyio
-del sys.path[0]
+restore_path()
 
 
-import scipy.base as Numeric
-N = Numeric
+import scipy.base as N
 import tempfile
 
-class test_numpyio(TestCase):
+class test_numpyio(ScipyTestCase):
     def check_basic(self):
         # Generate some data
         a = 255*rand(20)
@@ -27,17 +24,17 @@ class test_numpyio(TestCase):
         fname = tempfile.mktemp('.dat')
         fid = open(fname,"wb")
         # Write the data as shorts
-        numpyio.fwrite(fid,20,a,Numeric.Int16)
+        numpyio.fwrite(fid,20,a,N.Int16)
         fid.close()
         # Reopen the file and read in data
         fid = open(fname,"rb")
         print "\nDon't worry about a warning regarding the number of bytes read."
-        b = numpyio.fread(fid,1000000,Numeric.Int16,Numeric.Int)
+        b = numpyio.fread(fid,1000000,N.Int16,N.Int)
         fid.close()
         assert(N.product(a.astype(N.Int16) == b))
         os.remove(fname)
 
-class test_read_array(TestCase):
+class test_read_array(ScipyTestCase):
     def check_complex(self):
         a = rand(13,4) + 1j*rand(13,4)
         fname = tempfile.mktemp('.dat')

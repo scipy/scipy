@@ -15,7 +15,7 @@ Run tests if linalg is not installed:
 """
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import sys
-from scipy.test.testing import *
+
+from scipy.testing import *
 set_package_path()
 from optimize import zeros as cc
-del sys.path[0]
+restore_path()
 
 from math import sin,sqrt,log
 from random import random
@@ -51,10 +51,6 @@ methods = [cc.bisect,cc.ridder,cc.brenth,cc.brentq]
 mstrings = ['cc.bisect','cc.ridder','cc.brenth','cc.brentq']
 functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
-
-from scipy.test.testing import ScipyTestCase
-import unittest
-
 
 class test_basic(ScipyTestCase) :
 

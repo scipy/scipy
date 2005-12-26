@@ -13,12 +13,12 @@ Run tests if linalg is not installed:
 """
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 from scipy.base import ones
 set_package_path()
 from linalg import flapack
 from linalg import clapack
-del sys.path[0]
+restore_path()
 
 class test_flapack_simple(ScipyTestCase):
 

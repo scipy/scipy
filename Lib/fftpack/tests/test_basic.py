@@ -11,22 +11,18 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py [<level>]
 """
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from fftpack import ifft,fft,fftn,ifftn,rfft,irfft
 from fftpack import _fftpack as fftpack
-del sys.path[0]
+restore_path()
 
-
-import scipy.base as Numeric
 from scipy.base import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes
 
 from scipy.random import rand
 def random(size):
     return rand(*size)
-
-import unittest
 
 def get_mat(n):
     data = arange(n)

@@ -17,15 +17,13 @@ Run tests if linalg is not installed:
 from scipy.base import array, identity
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 import scipy.base
 from scipy.base import dot,sqrt
 import linalg
 from linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
-del sys.path[0]
-
-import unittest
+restore_path()
 
 class test_signm(ScipyTestCase):
 

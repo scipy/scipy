@@ -1,5 +1,5 @@
 
-from scipy.test.testing import *
+from scipy.testing import *
 from scipy.base import *
 
 class _test_ev:

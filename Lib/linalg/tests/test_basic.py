@@ -23,7 +23,7 @@ import scipy.base as Numeric
 from scipy.base import arange, add, array, dot, zeros, identity
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 from linalg import pinv, pinv2, solve_banded

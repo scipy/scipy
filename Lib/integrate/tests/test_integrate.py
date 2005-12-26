@@ -9,7 +9,7 @@
 import scipy.base
 from scipy.base import arange, zeros, array, dot, sqrt, cos, sin
 from scipy.linalg import norm
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from scipy.integrate import odeint
 restore_path()

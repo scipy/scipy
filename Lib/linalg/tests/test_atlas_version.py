@@ -4,10 +4,10 @@
 #
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 import linalg.atlas_version
-del sys.path[0]
+restore_path()
 
-# No tests possible.
+# No futher tests possible.
 # Importing atlas_version will print out atlas version.

@@ -11,20 +11,17 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
 from fftpack import shift
 from fftpack import fftfreq
-del sys.path[0]
+restore_path()
 
-import scipy.base as Numeric
-from scipy.base import arange, add, array, sin, cos, pi,exp,tanh,sum
+from scipy.base import arange, add, array, sin, cos, pi,exp,tanh,sum,sign
 
 def random(size):
     return rand(*size)
-
-import unittest
 
 def direct_diff(x,k=1,period=None):
     fx = fft(x)
@@ -65,7 +62,7 @@ def direct_hilbert(x):
     fx = fft(x)
     n = len (fx)
     w = fftfreq(n)*n
-    w = -1j*Numeric.sign(w)
+    w = -1j*sign(w)
     return ifft(w*fx)
 
 def direct_ihilbert(x):
@@ -77,7 +74,7 @@ def direct_shift(x,a,period=None):
         k = fftfreq(n)*1j*n
     else:
         k = fftfreq(n)*2j*pi/period*n
-    return ifft(fft(x)*Numeric.exp(k*a)).real
+    return ifft(fft(x)*exp(k*a)).real
 
 
 class test_diff(ScipyTestCase):
@@ -159,11 +156,11 @@ class test_diff(ScipyTestCase):
         for k in [0,2,4,6]:
             for n in [60,32,64,56,55]:
                 f=random ((n,))
-                af=Numeric.sum(f)/n
+                af=sum(f)/n
                 f=f-af
                 # zeroing Nyquist mode:
                 f = diff(diff(f,1),-1)
-                assert_almost_equal(Numeric.sum(f),0.0)
+                assert_almost_equal(sum(f),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
@@ -171,9 +168,9 @@ class test_diff(ScipyTestCase):
         for k in [0,1,2,3,4,5,6]:
             for n in [33,65,55]:
                 f=random ((n,))
-                af=Numeric.sum(f)/n
+                af=sum(f)/n
                 f=f-af
-                assert_almost_equal(Numeric.sum(f),0.0)
+                assert_almost_equal(sum(f),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
@@ -181,11 +178,11 @@ class test_diff(ScipyTestCase):
         for k in [0,1,2,3,4,5,6]:
             for n in [32,33,64,56,55]:
                 f=random ((n,))
-                af=Numeric.sum(f)/n
+                af=sum(f)/n
                 f=f-af
                 # zeroing Nyquist mode:
                 f = diff(diff(f,1),-1)
-                assert_almost_equal(Numeric.sum(f),0.0)
+                assert_almost_equal(sum(f),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
@@ -237,18 +234,18 @@ class test_tilbert(ScipyTestCase):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [32,64,56]:
                 f=random ((n,))
-                af=Numeric.sum(f)/n
+                af=sum(f)/n
                 f=f-af
-                assert_almost_equal(Numeric.sum(f),0.0)
+                assert_almost_equal(sum(f),0.0)
                 assert_array_almost_equal(direct_tilbert(direct_itilbert(f,h),h),f)
 
     def check_random_odd(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [33,65,55]:
                 f=random ((n,))
-                af=Numeric.sum(f)/n
+                af=sum(f)/n
                 f=f-af
-                assert_almost_equal(Numeric.sum(f),0.0)
+                assert_almost_equal(sum(f),0.0)
                 assert_array_almost_equal(itilbert(tilbert(f,h),h),f)
                 assert_array_almost_equal(tilbert(itilbert(f,h),h),f)
 
@@ -318,20 +315,20 @@ class test_hilbert(ScipyTestCase):
     def check_random_odd(self):
         for n in [33,65,55]:
             f=random ((n,))
-            af=Numeric.sum(f)/n
+            af=sum(f)/n
             f=f-af
-            assert_almost_equal(Numeric.sum(f),0.0)
+            assert_almost_equal(sum(f),0.0)
             assert_array_almost_equal(ihilbert(hilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
     def check_random_even(self):
         for n in [32,64,56]:
             f=random ((n,))
-            af=Numeric.sum(f)/n
+            af=sum(f)/n
             f=f-af
             # zeroing Nyquist mode:
             f = diff(diff(f,1),-1)
-            assert_almost_equal(Numeric.sum(f),0.0)
+            assert_almost_equal(sum(f),0.0)
             assert_array_almost_equal(direct_hilbert(direct_ihilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 

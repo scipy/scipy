@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-import sys
 from tempfile import mktemp
-from scipy.test.testing import *
+from scipy.testing import *
 from scipy.base import array,transpose
 
 set_package_path()

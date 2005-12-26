@@ -17,9 +17,8 @@ Run tests if sparse is not installed:
 import scipy.base
 from scipy.base import arange, zeros, array, dot
 
-import sys
 import random
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix
 restore_path()
