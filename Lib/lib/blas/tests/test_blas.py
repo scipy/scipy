@@ -17,11 +17,11 @@ from scipy.base import arange, add, array
 import math
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from blas import fblas
 from blas import cblas
-del sys.path[0]
+restore_path()
 
 class test_cblas1_simple(ScipyTestCase):
 

@@ -18,12 +18,10 @@
 from scipy.base import *
 
 import sys
-from scipy.test.testing import *
+from scipy.testing import *
 set_package_path()
 from blas import fblas
-del sys.path[0]
-
-import unittest
+restore_path()
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5
@@ -31,7 +29,7 @@ accuracy = 5
 ##################################################
 ### Test blas ?axpy
 
-class base_axpy(unittest.TestCase):
+class base_axpy(ScipyTestCase):
     def check_default_a(self):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype)
@@ -105,7 +103,7 @@ class test_zaxpy(base_axpy):
 ##################################################
 ### Test blas ?scal
 
-class base_scal(unittest.TestCase):
+class base_scal(ScipyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         real_x = x*3.
@@ -150,7 +148,7 @@ class test_zscal(base_scal):
 ##################################################
 ### Test blas ?copy
 
-class base_copy(unittest.TestCase):
+class base_copy(ScipyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
@@ -219,7 +217,7 @@ class test_zcopy(base_copy):
 ##################################################
 ### Test blas ?swap
 
-class base_swap(unittest.TestCase):
+class base_swap(ScipyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
@@ -295,7 +293,7 @@ class test_zswap(base_swap):
 ### Test blas ?gemv
 ### This will be a mess to test all cases.
 
-class base_gemv(unittest.TestCase):
+class base_gemv(ScipyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         mult = array(1, dtype = self.dtype)            
         if self.dtype in ['F', 'D']:
@@ -400,7 +398,7 @@ class test_zgemv(base_gemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class base_ger(unittest.TestCase):
+class base_ger(ScipyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         from scipy.basic.random import normal
         alpha = array(1., dtype = self.dtype)
