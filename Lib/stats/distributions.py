@@ -3012,7 +3012,7 @@ Uniform distribution
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
 
-eps = scipy.base.finfo(float).eps.toscalar()
+eps = scipy.base.finfo(float).eps.item()
 
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):

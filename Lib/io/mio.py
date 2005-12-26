@@ -572,7 +572,7 @@ def _parse_mimatrix(fid,bytes):
             sa, unused = _get_element(fid)
             result[i]= sa
         result = squeeze(transpose(reshape(result,tupdims)))
-        if rank(result)==0: result = result.toscalar()
+        if rank(result)==0: result = result.item()
         
     elif dclass == mxSTRUCT_CLASS:
         length = product(dims)
@@ -590,7 +590,7 @@ def _parse_mimatrix(fid,bytes):
                 val,unused = _get_element(fid)
                 result[i].__dict__[element] = val
         result = squeeze(transpose(reshape(result,tupdims)))
-        if rank(result)==0: result = result.toscalar()        
+        if rank(result)==0: result = result.item()        
 
         # object is like a structure with but with a class name
     elif dclass == mxOBJECT_CLASS:
@@ -611,7 +611,7 @@ def _parse_mimatrix(fid,bytes):
                 val,unused = _get_element(fid)
                 result[i].__dict__[element] = val
         result = squeeze(transpose(reshape(result,tupdims)))
-        if rank(result)==0: result = result.toscalar()        
+        if rank(result)==0: result = result.item()        
          
     elif dclass == mxSPARSE_CLASS:
         rowind, unused = _get_element(fid)

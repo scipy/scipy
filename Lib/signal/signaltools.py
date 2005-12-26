@@ -217,7 +217,7 @@ def medfilt(volume,kernel_size=None):
         kernel_size = [3] * len(volume.shape)
     kernel_size = asarray(kernel_size)
     if len(kernel_size.shape) == 0:
-        kernel_size = [kernel_size.toscalar()] * len(volume.shape)
+        kernel_size = [kernel_size.item()] * len(volume.shape)
     kernel_size = asarray(kernel_size)
 
     for k in range(len(volume.shape)):
@@ -374,7 +374,7 @@ def medfilt2d(input, kernel_size=3):
         kernel_size = [3] * 2
     kernel_size = asarray(kernel_size)
     if len(kernel_size.shape) == 0:
-        kernel_size = [kernel_size.toscalar()] * 2
+        kernel_size = [kernel_size.item()] * 2
     kernel_size = asarray(kernel_size)
 
     for size in kernel_size:
