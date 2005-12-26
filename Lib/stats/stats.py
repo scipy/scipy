@@ -774,8 +774,8 @@ def histogram2(a, bins):
             along a specific axis (kinda like matlab)
 
     """
-    n = Numeric.searchsorted(Numeric.sort(a), bins)
-    n = Numeric.concatenate([ n, [len(a)]])
+    n = searchsorted(sort(a), bins)
+    n = concatenate([ n, [len(a)]])
     return n[ 1:]-n[:-1]
 
 
