@@ -22,7 +22,7 @@ import scipy.base as Numeric
 from scipy.base import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes
 
-from scipy.basic.random import rand
+from scipy.random import rand
 def random(size):
     return rand(*size)
 

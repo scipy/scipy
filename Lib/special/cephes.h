@@ -139,6 +139,7 @@ extern void revers ( double y[], double x[], int n );
  */
 extern double rgamma ( double x );
 extern double round ( double x );
+extern double cephes_round ( double x );
 
 /*
 extern int sprec ( void );

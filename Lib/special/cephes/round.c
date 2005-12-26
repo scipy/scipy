@@ -6,9 +6,9 @@
  *
  * SYNOPSIS:
  *
- * double x, y, round();
+ * double x, y, cephes_round();
  *
- * y = round(x);
+ * y = cephes_round(x);
  *
  *
  *
@@ -38,10 +38,10 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 double floor();
 #else
 extern double floor(double);
-double round(double);
+double cephes_round(double);
 #endif
 
-double round(x)
+double cephes_round(x)
 double x;
 {
 double y, r;
