@@ -285,8 +285,9 @@ class test_cumsum(unittest.TestCase):
             a = array(ba,ctype)
             a2 = array(ba2,ctype)
             assert_array_equal(cumsum(a), array([1,3,13,24,30,35,39],ctype))
-            assert_array_equal(cumsum(a2), array([[1,2,3,4],[6,8,10,13],
-                                                  [16,11,14,18]],ctype))
+            assert_array_equal(cumsum(a2),
+                               array([[1,2,3,4],[6,8,10,13],
+                                      [16,11,14,18]],ctype))
             assert_array_equal(cumsum(a2,axis=1),
                                array([[1,3,6,10],
                                       [5,11,18,27],

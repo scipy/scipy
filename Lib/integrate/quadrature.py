@@ -6,7 +6,7 @@ __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb','cumtrapz'
 
 from scipy.special.orthogonal import p_roots
 from scipy.base import sum, array, ones, add, diff, isinf, isscalar, \
-     asarray, real
+     asarray, real, trapz
 
 def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
@@ -81,23 +81,6 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
         print "Took %d points." % n
     return val, err
 
-
-
-def trapz(y, x=None, dx=1.0, axis=-1):
-    """Integrate y(x) using samples along the given axis and the composite
-    trapezoidal rule.  If x is None, spacing given by dx is assumed.
-    """
-    y = asarray(y)
-    if x is None:
-        d = dx
-    else:
-        d = diff(x,axis=axis)
-    nd = len(y.shape)
-    slice1 = [slice(None)]*nd
-    slice2 = [slice(None)]*nd
-    slice1[axis] = slice(1,None)
-    slice2[axis] = slice(None,-1)
-    return add.reduce(d * (y[slice1]+y[slice2])/2.0,axis)
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1):
     """Cumulatively integrate y(x) using samples along the given axis
