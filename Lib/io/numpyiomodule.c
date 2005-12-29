@@ -82,6 +82,7 @@ static PyObject *
   char      dobyteswap = 0;
   int      swap_factor;
   char     out_type = 124;    /* set to unused value */
+  PyArray_VectorUnaryFunc *castfunc;  
 
   if (!PyArg_ParseTuple( args, "Olc|cb" , &file, &n, &read_type, &out_type, &dobyteswap ))
     return NULL;
@@ -118,6 +119,9 @@ static PyObject *
     }
     myelsize = indescr -> elsize;
     ibuff = malloc(myelsize*n);
+    castfunc = indescr->f->cast[arr->descr->type_num];
+    Py_DECREF(indescr);
+    indescr=NULL;
     if (ibuff == NULL)
       PYSETERROR("Could not allocate memory for type casting")
 	ibuff_cleared = 0;
@@ -145,13 +149,11 @@ static PyObject *
   }
   
   if (out_type != read_type) {    /* We need to type_cast it */
-    (indescr->f->cast[arr->descr->type_num])(ibuff, arr->data, nread, 
-					  NULL, NULL);
+    castfunc(ibuff, arr->data, nread, NULL, NULL);
     free(ibuff);
     ibuff_cleared = 1;
   }
 
-  Py_DECREF(indescr);
   return PyArray_Return(arr);
 
  fail:
@@ -225,7 +227,7 @@ static PyObject *
   PyObject *file;
   PyArrayObject *arr = NULL;
   PyObject *obj;
-  PyArray_Descr *outdescr;
+  PyArray_Descr *outdescr=NULL;
   void     *obuff = NULL;
   long      n, k, nwrite, maxN, elsize_bytes;
   int      myelsize, buffer_size;
@@ -276,6 +278,7 @@ static PyObject *
       }
       else {
 	outdescr = arr->descr;
+	Py_INCREF(outdescr);
 	elsize_bytes = (arr->descr->elsize);
       }
       k = 0;
@@ -296,6 +299,7 @@ static PyObject *
 	goto fail;
       }
       free(buffer);
+      Py_DECREF(outdescr);
       Py_DECREF(arr);
       Py_INCREF(Py_None);
       return Py_None;
@@ -317,13 +321,16 @@ static PyObject *
       myelsize = arr -> descr -> elsize;
     }
     else {
-      if ((outdescr = PyArray_DescrFromType((int ) write_type)) == NULL) goto fail;
+      if ((outdescr = PyArray_DescrFromType((int ) write_type)) == NULL) 
+	      goto fail;
       myelsize = outdescr -> elsize;
       obuff = malloc(n*myelsize);
       if (obuff == NULL)
 	PYSETERROR("Could not allocate memory for type-casting");
       ownalloc = 1;
       (arr->descr->f->cast[(int)outdescr->type_num])(arr->data,obuff,n,NULL,NULL);
+      Py_DECREF(outdescr);
+      outdescr=NULL;
     }      
     /* Write the data from the array to the file */
     if (dobyteswap) {
@@ -356,6 +363,7 @@ static PyObject *
   return Py_None;
 
  fail:
+  Py_XDECREF(outdescr);
   if (ownalloc == 1) free(obuff);
   Py_XDECREF(arr);
   return NULL;
@@ -771,6 +779,7 @@ static PyObject *
 
   descr = PyArray_DescrFromType(PyArray_CDOUBLE);
   funcptr = descr->f->cast[int_type];
+  Py_DECREF(descr);
 
   while (i--) {
     outptr += ELSIZE(out);
