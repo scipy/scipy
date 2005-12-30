@@ -206,7 +206,7 @@ def lu_solve(a_lu_pivots,b):
     b = asarray_chkfinite(b)
     _assert_squareness(a_lu)
     
-    getrs, = get_lapack_funcs(('getrs',),(a,))
+    getrs, = get_lapack_funcs(('getrs',),(a_lu,))
     b, info = getrs(a_lu,pivots,b)    
     if info < 0:
         msg = "Argument %d to lapack's ?getrs() has an illegal value." % info

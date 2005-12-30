@@ -8,7 +8,7 @@ Discrete Fourier Transforms - basic.py
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2', 'rfftfreq']
 
-from scipy.base import asarray, zeros, swapaxes
+from scipy.base import asarray, zeros, swapaxes, integer, array
 import scipy
 import _fftpack as fftpack
 

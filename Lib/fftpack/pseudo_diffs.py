@@ -174,7 +174,7 @@ def hilbert(x,
     """
     tmp = asarray(x)
     if tmp.dtypechar in (scipy.Complex32, scipy.Complex64):
-        return hilbert(tmp.real,tol)+1j*hilbert(tmp.imag)
+        return hilbert(tmp.real)+1j*hilbert(tmp.imag)
     n = len(x)
     omega = _cache.get(n)
     if omega is None:

@@ -47,7 +47,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
     b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if lu.shape[0] != b1.shape[0]:
-        raise ValuError, "incompatible dimensions."
+        raise ValueError, "incompatible dimensions."
     getrs, = get_lapack_funcs(('getrs',),(lu,b1))
     x,info = getrs(lu,piv,b1,trans=trans,overwrite_b=overwrite_b)
     if info==0:
