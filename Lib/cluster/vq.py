@@ -15,7 +15,6 @@
         Train a codebook for mimimum distortion using the kmeans algorithm
     
 """
-import scipy.utils
 from scipy.random import randint
 from scipy.stats import std, mean
 from scipy.base import common_type as _common_type

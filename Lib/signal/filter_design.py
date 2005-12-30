@@ -9,7 +9,7 @@ from scipy.base import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, Float, resize, pi, concatenate, absolute, logspace, c_
 from scipy.base import mintypecode
 from scipy import special, optimize, linalg
-from scipy.utils import comb
+from scipy.misc import comb
 import string, types
 
 

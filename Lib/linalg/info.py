@@ -62,4 +62,4 @@ Linear algebra routines
 """
 
 postpone_import = 1
-depends = ['utils']
+depends = ['misc']
