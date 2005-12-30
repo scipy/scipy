@@ -1,6 +1,6 @@
 
 from scipy.base import vectorize
-from scipy.lib import mtrand
+from scipy.random import random_sample
 
 # XXX: Are these needed anymore?
 
@@ -16,7 +16,7 @@ def randwppf(ppf, args=(), size=None):
     location, scale), and size is the size of the output.  Note the ppf
     function must accept an array of q values to compute over.
     """
-    U = mtrand.random_sample(size=size)
+    U = random_sample(size=size)
     return apply(ppf, (U,)+args)
 
 def randwcdf(cdf, mean=1.0, args=(), size=None):
@@ -37,5 +37,5 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
         return optimize.fsolve(_ppfopt, mean, args=(q,)+nargs)
 
     _vppf = vectorize(_ppf)
-    U = mtrand.random_sample(size=size)
+    U = random_sample(size=size)
     return apply(_vppf,(U,)+args)

@@ -25,7 +25,7 @@ import warnings
 
 from scipy import dot, linalg, special
 from scipy.base import *
-from scipy.lib.mtrand import randint, multivariate_normal
+from scipy.random import randint, multivariate_normal
 
 import stats
 import mvn
