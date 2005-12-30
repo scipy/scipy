@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
-
 #
 # linalg - Linear algebra routines
 #
@@ -13,3 +11,7 @@ from matfuncs import *
 from blas import *
 from iterative import *
 
+__all__ = filter(lambda s:not s.startswith('_'),dir())
+
+from scipy.testing import ScipyTest 
+test = ScipyTest().test

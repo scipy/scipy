@@ -6,3 +6,5 @@ Python wrappers to external libraries
   blas -- wrappers for BLAS/ATLAS libraries
 
 """
+
+__all__ = ['lapack','blas']

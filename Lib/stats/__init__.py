@@ -10,3 +10,6 @@ from rv import *
 from morestats import *
 from kde import gaussian_kde
 
+__all__ = filter(lambda s:not s.startswith('_'),dir())
+from scipy.testing import ScipyTest 
+test = ScipyTest().test

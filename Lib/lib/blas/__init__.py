@@ -56,3 +56,6 @@ def get_blas_funcs(names,arrays=(),debug=0):
         func.dtypechar = dtypechar
         funcs.append(func)
     return tuple(funcs)
+
+from scipy.testing import ScipyTest 
+test = ScipyTest().test

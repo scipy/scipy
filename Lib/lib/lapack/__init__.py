@@ -89,3 +89,6 @@ def %(func_name)s(*args,**kws):
 func_code = %(func_name)s.func_code
 '''
 
+from scipy.testing import ScipyTest 
+test = ScipyTest().test
+

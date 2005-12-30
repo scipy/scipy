@@ -11,3 +11,7 @@ from anneal import *
 from lbfgsb import fmin_l_bfgs_b
 from tnc import fmin_tnc
 from cobyla import fmin_cobyla
+
+__all__ = filter(lambda s:not s.startswith('_'),dir())
+from scipy.testing import ScipyTest 
+test = ScipyTest().test

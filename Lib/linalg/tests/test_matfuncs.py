@@ -77,7 +77,8 @@ class test_logm(ScipyTestCase):
                    [  0.,   0.,   0.,   0.,   3.,  10.,   0.],
                    [  0.,   0.,   0.,   0.,   0.,  -2.,  25.],
                    [  0.,   0.,   0.,   0.,   0.,   0.,  -3.]])
-        logm((identity(7)*3.1+0j)-a)
+        m = (identity(7)*3.1+0j)-a
+        logm(m)
 
 
 class test_sqrtm(ScipyTestCase):

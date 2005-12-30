@@ -10,3 +10,7 @@ from quadrature import *
 from odepack import *
 from quadpack import *
 from ode import *
+
+__all__ = filter(lambda s:not s.startswith('_'),dir())
+from scipy.testing import ScipyTest 
+test = ScipyTest().test
