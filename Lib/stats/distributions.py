@@ -18,6 +18,7 @@ from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
 import scipy.base
 import scipy.random as mtrand
 
+
 errp = special.errprint
 arr = asarray
 gam = special.gamma
@@ -812,11 +813,6 @@ The scale (scale) keyword specifies the standard deviation.
 
 normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 """)
-
-def randn(*args):
-    """u = randn(d0,d1,...,dn) returns zero-mean, unit-variance Gaussian
-    random numbers in an array of size (d0,d1,...,dn)."""
-    return norm.rvs(size=args)
 
 
 ## Alpha distribution

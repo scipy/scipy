@@ -219,7 +219,7 @@ interface package rpy.
 """
 
 postpone_import = 1
-global_symbols = ['mean','median','std','cov','corrcoef','find_repeats', 'rand', 'randn']
+global_symbols = ['find_repeats']
 
 depends  = ['linalg','special']
 ignore = False # importing stats causes a segfault

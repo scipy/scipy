@@ -1,14 +1,13 @@
 # Functions which need the PIL
 
-from ppimport import ppimport
 import types
 import scipy.base as Numeric
 
 from scipy.base import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
 
-Image = ppimport('Image')
-ImageFilter = ppimport('ImageFilter')
+import Image
+import ImageFilter
 
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
