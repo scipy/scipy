@@ -41,7 +41,7 @@ public:
                 name);
         throw_error(PyExc_TypeError, msg);
         }
-        if (!PyArray_EquivalentTypenums(arr_type, numeric_type))
+        if (!PyArray_EquivTypenums(arr_type, numeric_type))
         {
         
         char* type_names[23] = {"bool", "byte", "ubyte","short", "ushort",
@@ -67,7 +67,7 @@ public:
                 name);
         throw_error(PyExc_TypeError, msg);
         }        
-        if (!PyArray_EquivalentTypenums(arr_type, numeric_type))
+        if (!PyArray_EquivTypenums(arr_type, numeric_type))
         {
             char* type_names[23] = {"bool", "byte", "ubyte","short", "ushort",
                                     "int", "uint", "long", "ulong", "longlong", "ulonglong",
