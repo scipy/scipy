@@ -1,6 +1,6 @@
 
-from scipy.base import vectorize
-from scipy.random import random_sample
+from numpy import vectorize
+from numpy.random import random_sample
 
 # XXX: Are these needed anymore?
 

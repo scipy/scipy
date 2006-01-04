@@ -11,14 +11,14 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from fftpack import diff,fft,ifft,tilbert,itilbert,hilbert,ihilbert,rfft
 from fftpack import shift
 from fftpack import fftfreq
 restore_path()
 
-from scipy.base import arange, add, array, sin, cos, pi,exp,tanh,sum,sign
+from numpy import arange, add, array, sin, cos, pi,exp,tanh,sum,sign
 
 def random(size):
     return rand(*size)

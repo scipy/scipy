@@ -3,7 +3,7 @@
 #define NUMCOMPAT_H
 
 #define PY_ARRAY_UNIQUE_SYMBOL NUMCOMPAT
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 #define SZ_BUF  79
 #define MAXDIM MAX_DIMS

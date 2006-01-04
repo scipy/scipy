@@ -4,7 +4,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 
 GraphicsError = "GraphicsError"
 import os
@@ -37,7 +37,7 @@ from plane import *
 from surface import Surface
 from graph3d import Graph3d
 from mesh3d import *
-from scipy.basic.linalg import rand
+from numpy.corelinalg import rand
 
 def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")

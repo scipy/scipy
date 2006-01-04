@@ -12,7 +12,7 @@ __all__ = ['get_flinalg_funcs']
 try:
     import _flinalg
 except ImportError:
-    from scipy.distutils.misc_util import PostponedException
+    from numpy.distutils.misc_util import PostponedException
     _flinalg = PostponedException()
     print _flinalg.__doc__
     has_column_major_storage = lambda a:0

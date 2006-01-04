@@ -25,8 +25,8 @@ for i in range(0, 10):
     L[i,i] = float(i+1)
 
 A = L.to_csr()
-x = scipy.ones([10], 'd')
-y = scipy.zeros([10], 'd')
+x = numpy.ones([10], 'd')
+y = numpy.zeros([10], 'd')
 print A, x, y
 A.matvec(x, y)
 print y
@@ -37,25 +37,25 @@ for i in range(0, 100, 5):
         ll[i,j] = 1.0/float(i+j+1)
 A = ll.to_csr()
 
-x = scipy.arange(100).astype(Numeric.Float)
-y = scipy.zeros(100, 'd')
-z = scipy.zeros(100, 'd')
+x = numpy.arange(100).astype(numpy.Float)
+y = numpy.zeros(100, 'd')
+z = numpy.zeros(100, 'd')
 
 A.matvec(x, y)
 print y
-print 'norm(y) = ', math.sqrt(scipy.add.reduce(y))
+print 'norm(y) = ', math.sqrt(numpy.add.reduce(y))
 
 ##A.matvec_transp(x, z)
 ##print z
-##print 'norm(z) = ', math.sqrt(scipy.add.reduce(z))
+##print 'norm(z) = ', math.sqrt(numpy.add.reduce(z))
 
 L = spmatrix.ll_mat(10,10)
 for i in range(10):
     L[i,i] = float(i+1)
 A = L.to_csr()
 print A
-x = scipy.zeros(10, 'd')
-b = scipy.ones(10, 'd')
+x = numpy.zeros(10, 'd')
+b = numpy.ones(10, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, 1e-8, 100)
 print info, iter, relres
 print x
@@ -63,7 +63,7 @@ if (info != 0):
     print >> sys.stderr, 'cg not converged'
 
 L2 = L.copy()
-x = scipy.zeros(10, 'd')
+x = numpy.zeros(10, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, 1e-8, 100)
 print info, iter, relres
 
@@ -144,17 +144,17 @@ class diag_prec:
     def __init__(self, A):
         self.shape = A.shape
         n = self.shape[0]
-        self.dinv = scipy.zeros(n, 'd')
+        self.dinv = numpy.zeros(n, 'd')
         for i in xrange(n):
             self.dinv[i] = 1.0 / A[i,i]
     def precon(self, x, y):
-        scipy.multiply(x, self.dinv, y)
+        numpy.multiply(x, self.dinv, y)
 
 def resid(A, b, x):
     r = x.copy()
     A.matvec(x, r)
     r = b - r
-    return math.sqrt(scipy.dot(r, r))
+    return math.sqrt(numpy.dot(r, r))
 
 K_diag = diag_prec(A)
 K_jac = precon.jacobi(A, 1.0, 1)
@@ -162,69 +162,69 @@ K_ssor = precon.ssor(A, 1.0, 1)
 # K_ilu = precon.ilutp(L)
 
 n = L.shape[0];
-b = scipy.arange(n).astype(Numeric.Float)
-x = scipy.zeros(n, 'd')
+b = numpy.arange(n).astype(numpy.Float)
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, 1e-6, 1000)
 print 'pcg, K_none: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, 1e-6, 1000, K_diag)
 print 'pcg, K_diag: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, 1e-6, 1000, K_jac)
 print 'pcg, K_jac: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, 1e-6, 1000, K_ssor)
 print 'pcg, K_ssor: ', info, iter, relres, resid(A, b, x)
 
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.minres(A, b, x, 1e-6, 1000)
 print 'minres, K_none: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.minres(A, b, x, 1e-6, 1000, K_diag)
 print 'minres, K_diag: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.minres(A, b, x, 1e-6, 1000, K_jac)
 print 'minres, K_jac: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.minres(A, b, x, 1e-6, 1000, K_ssor)
 print 'minres, K_ssor: ', info, iter, relres, resid(A, b, x)
 
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.qmrs(A, b, x, 1e-6, 1000)
 print 'qmrs, K_none: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.qmrs(A, b, x, 1e-6, 1000, K_diag)
 print 'qmrs, K_diag: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.qmrs(A, b, x, 1e-6, 1000, K_jac)
 print 'qmrs, K_jac: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.qmrs(A, b, x, 1e-6, 1000, K_ssor)
 print 'qmrs, K_ssor: ', info, iter, relres, resid(A, b, x)
 
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.cgs(A, b, x, 1e-6, 1000)
 print 'cgs, K_none: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.cgs(A, b, x, 1e-6, 1000, K_diag)
 print 'cgs, K_diag: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.cgs(A, b, x, 1e-6, 1000, K_jac)
 print 'cgs, K_jac: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.cgs(A, b, x, 1e-6, 1000, K_ssor)
 print 'cgs, K_ssor: ', info, iter, relres, resid(A, b, x)
 
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.bicgstab(A, b, x, 1e-6, 1000)
 print 'bicgstab, K_none: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.bicgstab(A, b, x, 1e-6, 1000, K_diag)
 print 'bicgstab, K_diag: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.bicgstab(A, b, x, 1e-6, 1000, K_jac)
 print 'bicgstab, K_jac: ', info, iter, relres, resid(A, b, x)
-x = scipy.zeros(n, 'd')
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.bicgstab(A, b, x, 1e-6, 1000, K_ssor)
 print 'bicgstab, K_ssor: ', info, iter, relres, resid(A, b, x)
 
@@ -249,16 +249,16 @@ n = L.shape[0]
 B = L.to_csr()
 su = superlu.factorize(B, diag_pivot_thresh=0.0)
 print su.nnz
-b = scipy.arange(n).astype(Numeric.Float) / n
-x = scipy.zeros(n, 'd')
+b = numpy.arange(n).astype(numpy.Float) / n
+x = numpy.zeros(n, 'd')
 su.solve(b, x)
-print 'norm(b) = %g' % math.sqrt(scipy.dot(b, b))
-print 'norm(x) = %g' % math.sqrt(scipy.dot(x, x))
+print 'norm(b) = %g' % math.sqrt(numpy.dot(b, b))
+print 'norm(x) = %g' % math.sqrt(numpy.dot(x, x))
 
-r = scipy.zeros(n, 'd')
+r = numpy.zeros(n, 'd')
 B.matvec(x, r)
 r = b - r
-print 'norm(b - A*x) = %g' % math.sqrt(scipy.dot(r, r))
+print 'norm(b - A*x) = %g' % math.sqrt(numpy.dot(r, r))
 
 if 1:
     for panel_size in [5, 10, 15]:

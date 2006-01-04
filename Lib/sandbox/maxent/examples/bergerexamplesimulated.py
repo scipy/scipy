@@ -74,7 +74,7 @@ SPARSEFORMAT = 'csc_matrix'
 # Could also specify 'csr_matrix', 'dok_matrix', or (PySparse's) 'll_mat'
 
 def sampleFgen(sampler,f):
-    logprobs = scipy.empty(n, float)
+    logprobs = numpy.empty(n, float)
     while True:
         xs = []
         for j in range(n):

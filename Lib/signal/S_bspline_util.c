@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "Python.h"
 #define NO_IMPORT_ARRAY
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 void compute_root_from_lambda(double, double *, double *);
 

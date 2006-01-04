@@ -7,14 +7,14 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;numpy.linalg.test(<level>)'
 Run tests if linalg is not installed:
   python tests/test_lapack.py [<level>]
 """
 
 import sys
-from scipy.testing import *
-from scipy.base import ones
+from numpy.testing import *
+from numpy import ones
 set_package_path()
 from linalg import flapack
 from linalg import clapack
@@ -71,7 +71,7 @@ WARNING: clapack module is empty
 -----------
 See scipy/INSTALL.txt for troubleshooting.
 Notes:
-* If atlas library is not found by scipy/system_info.py,
+* If atlas library is not found by numpy/distutils/system_info.py,
   then scipy uses flapack instead of clapack.
 ****************************************************************
 """

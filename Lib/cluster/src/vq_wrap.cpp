@@ -560,7 +560,7 @@ static PyObject* t_output_helper(PyObject* target, PyObject* o) {
 }
 
 
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 // hmmm. how do we prevent typedefs from conflicting
 // with users definition on complex numbers?

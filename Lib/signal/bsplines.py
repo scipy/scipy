@@ -1,8 +1,8 @@
 ## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
 
 import scipy.special
-from scipy.base import *
-from scipy.base.umath import sqrt, exp, greater, equal, cos, add, sin
+from numpy import *
+from numpy.umath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 
 gamma = scipy.special.gamma

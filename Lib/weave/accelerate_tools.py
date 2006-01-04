@@ -109,7 +109,7 @@ Integer = Integer()
 Double = Double()
 String = String()
 
-import scipy.base as nx
+import numpy as nx
 
 class Vector(Type_Descriptor):
     cxxtype = 'PyArrayObject*'
@@ -121,7 +121,7 @@ class Vector(Type_Descriptor):
     owned = 0 # Convertion is by casting!
 
     prerequisites = Type_Descriptor.prerequisites+\
-                   ['#include "scipy/arrayobject.h"']
+                   ['#include "numpy/arrayobject.h"']
     dims = 1
     def check(self,s):
         return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s"%(
@@ -260,7 +260,7 @@ def lookup_type(x):
     try:
         return typedefs[T]
     except:
-        import scipy.base as nx
+        import numpy as nx
         if isinstance(T,nx.ArrayType):
             return typedefs[(T,len(x.shape),x.dtypechar)]
         elif T == InstanceType:

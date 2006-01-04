@@ -34,9 +34,9 @@
 #               General layout classes
 #----------------------------------------------------------
 from Numeric import *
-from scipy_base.fastumath import *
-import scipy_base.limits as limits
-import scipy_base as misc
+from numpy.umath import *
+import numpy.limits as limits
+import numpy as misc
 
 LEFT,RIGHT,TOP,BOTTOM = 0,1,2,3 # used by same_as() method
 

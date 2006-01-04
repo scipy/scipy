@@ -14,12 +14,12 @@ Run tests if arraysetops is not installed:
   python tests/test_sparse.py [<level>]
 """
 
-import scipy.base
-from scipy.base import array, rand
+import numpy
+from numpy import array, rand
 
 import sys
 import random
-from scipy.test.testing import *
+from numpy.test.testing import *
 set_package_path()
 from scipy.arraysetops import *
 restore_path()

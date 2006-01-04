@@ -1,6 +1,6 @@
 from c_spec import common_base_converter
 from c_spec import num_to_c_types
-from scipy.base import *
+from numpy import *
 from types import *
 import os
 
@@ -140,7 +140,7 @@ class array_converter(common_base_converter):
         self.return_type = 'PyArrayObject*'
         self.to_c_return = '(PyArrayObject*) py_obj'
         self.matching_types = [ArrayType]
-        self.headers = ['"scipy/arrayobject.h"',
+        self.headers = ['"numpy/arrayobject.h"',
                         '<complex>','<math.h>']
         self.support_code = [size_check_code, type_check_code]
         self.module_init_code = [numeric_init_code]    

@@ -5,15 +5,15 @@
 #
 
 from filter_design import tf2zpk, zpk2tf, normalize
-from scipy import product, zeros, concatenate, \
+from numpy import product, zeros, concatenate, \
      array, dot, transpose, arange, ones, Float
-import scipy.base as Numeric
+import numpy as Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
-import scipy.linalg as linalg
-from scipy.base import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
+import numpy.linalg as linalg
+from numpy import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
-from scipy.base import matrix as Mat
+from numpy import matrix as Mat
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.

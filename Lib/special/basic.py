@@ -4,7 +4,7 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from scipy.base import *
+from numpy import *
 from _cephes import *
 import types
 import specfun

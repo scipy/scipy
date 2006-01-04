@@ -15,10 +15,10 @@
         Train a codebook for mimimum distortion using the kmeans algorithm
     
 """
-from scipy.random import randint
+from numpy.random import randint
 from scipy.stats import std, mean
-from scipy.base import common_type as _common_type
-from scipy.base import *
+from numpy import common_type as _common_type
+from numpy import *
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis

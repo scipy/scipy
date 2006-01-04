@@ -4,9 +4,9 @@
     and routines as they are machine dependent.  Suggestions?
 """
 
-from scipy.base import *
+from numpy import *
 import unittest
-import scipy.base.limits
+import numpy.limits
 
 
 

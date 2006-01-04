@@ -14,16 +14,16 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;numpy.linalg.test(<level>)'
 Run tests if linalg is not installed:
   python tests/test_basic.py [<level>]
 """
 
-import scipy.base as Numeric
-from scipy.base import arange, add, array, dot, zeros, identity
+import numpy as Numeric
+from numpy import arange, add, array, dot, zeros, identity
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from linalg import solve,inv,det,lstsq, toeplitz, hankel, tri, triu, tril
 from linalg import pinv, pinv2, solve_banded
@@ -156,7 +156,7 @@ class test_solve(ScipyTestCase):
             assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
 
     def bench_random(self,level=5):
-        import scipy.corelinalg as linalg
+        import numpy.corelinalg as linalg
         basic_solve = linalg.solve_linear_equations
         print
         print '      Solving system of linear equations'
@@ -229,7 +229,7 @@ class test_inv(ScipyTestCase):
                                       Numeric.identity(n))
 
     def bench_random(self,level=5):
-	import scipy.corelinalg as linalg
+	import numpy.corelinalg as linalg
         basic_inv = linalg.inverse
         print
         print '           Finding matrix inverse'
@@ -278,7 +278,7 @@ class test_det(ScipyTestCase):
         assert_almost_equal(a_det,-6+4j)
 
     def check_random(self):
-        import scipy.corelinalg as linalg 
+        import numpy.corelinalg as linalg 
         basic_det = linalg.determinant
         n = 20
         for i in range(4):
@@ -288,7 +288,7 @@ class test_det(ScipyTestCase):
             assert_almost_equal(d1,d2)
 
     def check_random_complex(self):
-        import scipy.corelinalg as linalg
+        import numpy.corelinalg as linalg
         basic_det = linalg.determinant
         n = 20
         for i in range(4):
@@ -298,7 +298,7 @@ class test_det(ScipyTestCase):
             assert_almost_equal(d1,d2)
 
     def bench_random(self,level=5):
-        import scipy.corelinalg as linalg
+        import numpy.corelinalg as linalg
         basic_det = linalg.determinant
         print
         print '           Finding matrix determinant'

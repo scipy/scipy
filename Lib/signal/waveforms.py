@@ -3,7 +3,7 @@
 # Author: Travis Oliphant
 # 2003
 
-from scipy.base import *
+from numpy import *
 
 def sawtooth(t,width=1):
     """Returns a periodic sawtooth waveform with period 2*pi

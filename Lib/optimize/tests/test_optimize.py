@@ -3,7 +3,7 @@ Author: Ed Schofield
 Nov 2005
 """
 
-from scipy.testing import *
+from numpy.testing import *
 
 set_package_path()
 from scipy import optimize, array, zeros, float64, dot, log, exp

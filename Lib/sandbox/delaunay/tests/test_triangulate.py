@@ -1,5 +1,5 @@
 from scipy.sandbox import delaunay as dlny
-from scipy import random
+from numpy import random
 import scipy as sp
 
 def onright(x0, y0, x1, y1, x, y):

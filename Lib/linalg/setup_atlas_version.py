@@ -4,8 +4,8 @@
 
 import os
 from distutils.core import Extension
-from scipy.distutils.misc_util import get_path, default_config_dict
-from scipy.distutils.system_info import get_info,AtlasNotFoundError
+from numpy.distutils.misc_util import get_path, default_config_dict
+from numpy.distutils.system_info import get_info,AtlasNotFoundError
 
 def configuration (parent_package=''):
     package = 'linalg'

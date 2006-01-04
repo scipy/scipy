@@ -29,7 +29,7 @@ from slice3 import *
 from yorick import *
 from gist import *
 from arrayfns import *
-from scipy.basic.random import * 
+from numpy.random import * 
 
 print "Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3."
 print "Partway, plots are written to Postscript file; see talk.ps."

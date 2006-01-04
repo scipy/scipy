@@ -12,7 +12,7 @@
 
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL jdsym_API
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include "pysparse/fortran.h"
 #include "pysparse/blas.h"
 #include "pysparse/lapack.h"

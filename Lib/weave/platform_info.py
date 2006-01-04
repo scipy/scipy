@@ -12,9 +12,9 @@ from distutils.sysconfig import customize_compiler
 
 
 try:
-    from scipy.distutils.ccompiler import new_compiler
-    from scipy.distutils.core import Extension, setup
-    from scipy.distutils.command.build_ext import build_ext
+    from numpy.distutils.ccompiler import new_compiler
+    from numpy.distutils.core import Extension, setup
+    from numpy.distutils.command.build_ext import build_ext
 except ImportError:
     from distutils.ccompiler import new_compiler
     from distutils.core import Extension, setup
@@ -22,7 +22,7 @@ except ImportError:
 
 import distutils.bcppcompiler
 
-#from scipy_distutils import mingw32_support
+#from numpy.distutils import mingw32_support
 
 def dummy_dist():
     # create a dummy distribution.  It will look at any site configuration files

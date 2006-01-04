@@ -8,9 +8,9 @@ Text File
 """
 
 __all__ = ['read_array', 'write_array']
-import scipy.base as Numeric
-import scipy.base
-from scipy.base import array, take, concatenate, Float, asarray, real, imag
+import numpy as Numeric
+import numpy
+from numpy import array, take, concatenate, Float, asarray, real, imag
 import types, re, copy, sys
 import numpyio
 default = None
@@ -235,10 +235,10 @@ def process_line(line, separator, collist, atype, missing):
         if (_obj.search(line) is not None):
             warn = 1
             for k in range(len(atype)):
-                if atype[k] in scipy.base.typecodes['Complex']:
+                if atype[k] in numpy.typecodes['Complex']:
                     warn = 0
         if warn:
-            scipy.base.disp("Warning: Complex data detected, but no requested typecode was complex.")
+            numpy.disp("Warning: Complex data detected, but no requested typecode was complex.")
             _not_warned = 0
     for mysep in separator[:-1]:
         if mysep is None:

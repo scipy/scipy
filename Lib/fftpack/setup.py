@@ -6,8 +6,8 @@ import sys
 join = os.path.join
 
 def configuration(parent_package='',top_path=None):
-    from scipy.distutils.misc_util import Configuration
-    from scipy.distutils.system_info import get_info,FFTWNotFoundError,\
+    from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.system_info import get_info,FFTWNotFoundError,\
          DJBFFTNotFoundError
     config = Configuration('fftpack',parent_package, top_path)
     fftw_info = get_info('fftw') or get_info('dfftw')
@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     from fftpack_version import fftpack_version
     setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',

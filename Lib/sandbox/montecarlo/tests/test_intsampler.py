@@ -16,13 +16,13 @@ Run tests if intsampler is not installed:
   python tests/test_intsampler.py [<level>]
 """
 
-import scipy.base as Numeric
-from scipy.base import arange, add, array, dot, zeros, identity
+import numpy as Numeric
+from numpy import arange, add, array, dot, zeros, identity
 
 import sys
-from scipy.test.testing import *
+from numpy.test.testing import *
 set_package_path()
-from scipy.base import *
+from numpy import *
 from scipy.montecarlo import *
 from scipy import stats
 restore_path()

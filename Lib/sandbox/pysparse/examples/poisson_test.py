@@ -68,24 +68,24 @@ S = L.to_sss()
 print L.nnz
 print S.nnz
 print A.nnz
-b = scipy.ones(n*n, 'd')
+b = numpy.ones(n*n, 'd')
 
 # ---------------------------------------------------------------------------------------
 
 t1 = time.clock()
 
-x = scipy.zeros(n*n, 'd')
+x = numpy.zeros(n*n, 'd')
 info, iter, relres = itsolvers.pcg(S, b, x, tol, 2000)
 print 'info=%d, iter=%d, relres=%e' % (info, iter, relres)
 
 print 'Time for solving the system using SSS matrix: %8.2f sec' % (time.clock() - t1, )
 
-print 'norm(x) = %g' % math.sqrt(scipy.dot(x, x))
+print 'norm(x) = %g' % math.sqrt(numpy.dot(x, x))
 
-r = scipy.zeros(n*n, 'd')
+r = numpy.zeros(n*n, 'd')
 S.matvec(x, r)
 r = b - r
-print 'norm(b - A*x) = %g' % math.sqrt(scipy.dot(r, r))
+print 'norm(b - A*x) = %g' % math.sqrt(numpy.dot(r, r))
 
 print x[0:10]
 
@@ -93,53 +93,53 @@ print x[0:10]
 
 t1 = time.clock()
 
-x = scipy.zeros(n*n, 'd')
+x = numpy.zeros(n*n, 'd')
 info, iter, relres = itsolvers.pcg(A, b, x, tol, 2000)
 print 'info=%d, iter=%d, relres=%e' % (info, iter, relres)
 
 print 'Time for solving the system using CSR matrix: %8.2f sec' % (time.clock() - t1, )
 
-print 'norm(x) = %g' % math.sqrt(scipy.dot(x, x))
+print 'norm(x) = %g' % math.sqrt(numpy.dot(x, x))
 
-r = scipy.zeros(n*n, 'd')
+r = numpy.zeros(n*n, 'd')
 A.matvec(x, r)
 r = b - r
-print 'norm(b - A*x) = %g' % math.sqrt(scipy.dot(r, r))
+print 'norm(b - A*x) = %g' % math.sqrt(numpy.dot(r, r))
 
 # ---------------------------------------------------------------------------------------
 
 t1 = time.clock()
 
-x = scipy.zeros(n*n, 'd')
+x = numpy.zeros(n*n, 'd')
 info, iter, relres = itsolvers.pcg(L, b, x, tol, 2000)
 print 'info=%d, iter=%d, relres=%e' % (info, iter, relres)
 
 print 'Time for solving the system using LL matrix: %8.2f sec' % (time.clock() - t1, )
 
-print 'norm(x) = %g' % math.sqrt(scipy.dot(x, x))
+print 'norm(x) = %g' % math.sqrt(numpy.dot(x, x))
 
-r = scipy.zeros(n*n, 'd')
+r = numpy.zeros(n*n, 'd')
 A.matvec(x, r)
 r = b - r
-print 'norm(b - A*x) = %g' % math.sqrt(scipy.dot(r, r))
+print 'norm(b - A*x) = %g' % math.sqrt(numpy.dot(r, r))
 
 # ---------------------------------------------------------------------------------------
 
 K_ssor = precon.ssor(S, 1.9)
 t1 = time.clock()
 
-x = scipy.zeros(n*n, 'd')
+x = numpy.zeros(n*n, 'd')
 info, iter, relres = itsolvers.pcg(S, b, x, tol, 2000, K_ssor)
 print 'info=%d, iter=%d, relres=%e' % (info, iter, relres)
 
 print 'Time for solving the system using SSS matrix and SSOR preconditioner: %8.2f sec' % (time.clock() - t1, )
 
-print 'norm(x) = %g' % math.sqrt(scipy.dot(x, x))
+print 'norm(x) = %g' % math.sqrt(numpy.dot(x, x))
 
-r = scipy.zeros(n*n, 'd')
+r = numpy.zeros(n*n, 'd')
 S.matvec(x, r)
 r = b - r
-print 'norm(b - A*x) = %g' % math.sqrt(scipy.dot(r, r))
+print 'norm(b - A*x) = %g' % math.sqrt(numpy.dot(r, r))
 
 # ---------------------------------------------------------------------------------------
 

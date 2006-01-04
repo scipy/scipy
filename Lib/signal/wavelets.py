@@ -1,7 +1,7 @@
 ## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
 
 
-import scipy.base as sb
+import numpy as sb
 import scipy as s
 
 def daub(p):

@@ -1,6 +1,6 @@
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL precon
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include "pysparse/blas.h"
 #include "pysparse/fortran.h"
 #include "pysparse/spmatrix.h"

@@ -418,7 +418,7 @@ class machine_cluster:
                 The load value printed is the 1 minute load average that
                 is commonly printed by uptime on Unix machines.
                 
-                load depends on the implementation of scipy_proc on each
+                load depends on the implementation of numpy_proc on each
                 slave's host OS. It will not work for Windows slave processes.
                 However, if you are using a Windows master to control a Linux
                 cluster of slaves, it should work fine.                
@@ -432,7 +432,7 @@ class machine_cluster:
                     n0: 0.00, n1: 0.00
         """        
         import string
-        import scipy.distutils.proc as scipy_proc
+        import numpy.distutils.proc as numpy_proc
         results = self.load_list()
         for i in range(len(self.workers)):            
             name = string.split(self.workers[i].host,'.')[0]
@@ -451,7 +451,7 @@ class machine_cluster:
                 and type of processors, memory usage, and current load 
                 information in human readable form.
                 
-                info depends on the implementation of scipy_proc on each
+                info depends on the implementation of numpy_proc on each
                 slave's host OS. It will not work for Windows slave processes.
                 However, if you are using a Windows master to control a Linux
                 cluster of slaves, it should work fine.                
@@ -492,7 +492,7 @@ class machine_cluster:
                 averages for the processor.  These could be useful for (as 
                 yet unimplemented) load balancing schemes.
 
-                load_list depends on the implementation of scipy_proc on each
+                load_list depends on the implementation of numpy_proc on each
                 slave's host OS. It will not work for Windows slave processes.
                 However, if you are using a Windows master to control a Linux
                 cluster of slaves, it should work fine.                
@@ -506,8 +506,8 @@ class machine_cluster:
                 ({'load_5': 0.0, 'load_1': 0.0, 'load_15': 0.0},
                  {'load_5': 0.0, 'load_1': 0.0, 'load_15': 0.0})
         """        
-        import scipy.distutils.proc as scipy_proc
-        res = self.apply(scipy_proc.load_avg,())
+        import numpy.distutils.proc as numpy_proc
+        res = self.apply(numpy_proc.load_avg,())
         return res
 
     def info_list(self):
@@ -519,7 +519,7 @@ class machine_cluster:
                 and type of processors, memory usage, and current load 
                 information in human readable form.
                 
-                info depends on the implementation of scipy_proc on each
+                info depends on the implementation of numpy_proc on each
                 slave's host OS. It will not work for Windows slave processes.
                 However, if you are using a Windows master to control a Linux
                 cluster of slaves, it should work fine.                
@@ -535,8 +535,8 @@ class machine_cluster:
                 n1        2xP3       0.4     192.0      22.0   0.00
     
         """                
-        import scipy.distutils.proc as scipy_proc
-        res = self.apply(scipy_proc.machine_info,())
+        import numpy.distutils.proc as numpy_proc
+        res = self.apply(numpy_proc.machine_info,())
         return res
 
     ##############################################################
@@ -557,7 +557,7 @@ class machine_cluster:
                 processes for user ej and cpu='>10' will only list processes 
                 using more th 50% of the cpu cycles.
                 
-                ps depends on the implementation of scipy_proc on each
+                ps depends on the implementation of numpy_proc on each
                 slave's host OS. It will not work for Windows slave processes.
                 However, if you are using a Windows master to control a Linux
                 cluster of slaves, it should work fine.                
@@ -586,7 +586,7 @@ class machine_cluster:
         
             Description
             
-                Return a list containing one scipy_proc.process objects for 
+                Return a list containing one numpy_proc.process objects for 
                 each process running on the cluster host machines.  process 
                 objects contain a ton of information about cpu, memory, etc.
                 used by the process.
@@ -604,10 +604,10 @@ class machine_cluster:
                 22890 22889 22889 22890 1071 1071 ...
         """
         import operator
-        import scipy.distutils.proc as scipy_proc
-        res = self.apply(scipy_proc.ps_list,())
+        import numpy.distutils.proc as numpy_proc
+        res = self.apply(numpy_proc.ps_list,())
         psl = reduce(operator.add,res)
-        psl = scipy_proc.ps_sort(psl,sort_by,**filters)        
+        psl = numpy_proc.ps_sort(psl,sort_by,**filters)        
         return psl
  
     def nice(self,increment=10):
@@ -625,7 +625,7 @@ class machine_cluster:
             Description
             
                 Change the nice level of multiple remote processes. 
-                process_list is a list of scipy_proc.process objects. 
+                process_list is a list of numpy_proc.process objects. 
                 level is the new nice value for the listed processes.
              
             Caveats
@@ -659,7 +659,7 @@ class machine_cluster:
 
             Description
             
-                Send a signal to all of the scipy_proc.process objects in
+                Send a signal to all of the numpy_proc.process objects in
                 the process_list.  This is usually used to kill the processes.
                 The signal may be given as a signal name or number.
         """    
@@ -826,7 +826,7 @@ class machine_cluster:
     def row_split(self,name,sequence):
         """experimental"""
         import scipy
-        q=scipy.split(sequence,len(self.workers))
+        q=numpy.split(sequence,len(self.workers))
         self.loop_code(name+'=_q_','_q_',inputs={'_q_':q},returns=(),
                         global_vars=(name,))
     def row_gather(self,name):

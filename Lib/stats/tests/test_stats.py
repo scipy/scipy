@@ -7,8 +7,8 @@
 """
 
 import sys
-from scipy.testing import *
-from scipy.base import *
+from numpy.testing import *
+from numpy import *
 import scipy
 
 set_package_path()
@@ -80,7 +80,7 @@ class test_round(ScipyTestCase):
         """
  
         for i in range(0,9):
-            y = scipy.round_(ROUND[i])
+            y = numpy.round_(ROUND[i])
             assert_equal(y,i+1)
         
     def check_rounding1(self):
@@ -90,12 +90,12 @@ class test_round(ScipyTestCase):
         
     def check_rounding2(self):
         """ W.II.A.2. Y = 2-INT(EXP(LOG(SQR(2)*SQR(2))))   (Y should be 0)"""
-        y=2-int(scipy.exp(scipy.log(scipy.sqrt(2.)*scipy.sqrt(2.))))
+        y=2-int(numpy.exp(numpy.log(numpy.sqrt(2.)*numpy.sqrt(2.))))
         assert_equal(y,0)
         
     def check_rounding3(self):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
-        y=(int(round((3-scipy.exp(scipy.log(scipy.sqrt(2.0)*scipy.sqrt(2.0)))))))
+        y=(int(round((3-numpy.exp(numpy.log(numpy.sqrt(2.0)*numpy.sqrt(2.0)))))))
         assert_equal(y,1)
 
 class test_basicstats(ScipyTestCase):

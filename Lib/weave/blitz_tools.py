@@ -9,7 +9,7 @@ import converters
 
 from ast_tools import *
 
-from scipy.base import *
+from numpy import *
 import copy
 from types import *
 

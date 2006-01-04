@@ -9,7 +9,7 @@ __all__ = ['float_epsilon','float_tiny','float_min',
            'double_precision','double_resolution']
 
 
-from scipy.base import finfo, single, float_
+from numpy import finfo, single, float_
 
 single_epsilon = finfo(single).eps
 single_tiny = finfo(single).tiny

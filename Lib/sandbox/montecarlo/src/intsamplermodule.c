@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include "sampler5tbl.h"
 
 // Function prototypes:

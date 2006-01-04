@@ -8,7 +8,7 @@ check_return -- test whether a variable is passed in, modified, and
                 then returned as a function return value correctly
 """
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from weave import ext_tools, wx_spec
 restore_path()

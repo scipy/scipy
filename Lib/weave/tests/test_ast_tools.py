@@ -1,5 +1,5 @@
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from weave import ast_tools
 restore_path()

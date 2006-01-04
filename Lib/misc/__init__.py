@@ -7,5 +7,5 @@ from helpmod import *
 from pilutil import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing import ScipyTest 
+from numpy.testing import ScipyTest 
 test = ScipyTest().test

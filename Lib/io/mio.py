@@ -2,8 +2,8 @@
 
 # Author: Travis Oliphant
 
-from scipy.base import squeeze
-from scipy.base import *
+from numpy import squeeze
+from numpy import *
 import numpyio
 import struct, os, sys
 import types

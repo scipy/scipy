@@ -5,7 +5,7 @@
 __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain', 'Inf','inf']
 import _quadpack
 import sys
-import scipy.base
+import numpy
 
 error = _quadpack.error
 
@@ -117,7 +117,7 @@ Weighting the integrand:
     return
 
 
-from scipy import inf, Inf
+from numpy import inf, Inf
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
@@ -249,7 +249,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
             raise ValueError, "Infinity inputs cannot be used with break points."
         else:
             nl = len(points)
-            the_points = scipy.base.zeros((nl+2,), float)
+            the_points = numpy.zeros((nl+2,), float)
             the_points[:nl] = points
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 

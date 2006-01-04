@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL superlu
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include "pysparse/dsp_defs.h"
 #include "pysparse/util.h"
 #include "pysparse/spmatrix.h"

@@ -10,7 +10,7 @@ Run demos (assumes that scipy is installed):
 """
 
 import sys
-from scipy.test.testing import set_package_path
+from numpy.test.testing import set_package_path
 set_package_path()
 from interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
      InterpolatedUnivariateSpline

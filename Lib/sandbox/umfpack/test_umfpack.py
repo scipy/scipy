@@ -5,10 +5,10 @@
 
 from optparse import OptionParser
 import umfpack as um
-import scipy.base as nm
+import numpy as nm
 #import scipy.io as io
 import scipy.sparse as sp
-import scipy.linalg as nla
+import numpy.linalg as nla
 import pylab
 import time
 import urllib

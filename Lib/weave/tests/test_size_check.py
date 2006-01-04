@@ -1,12 +1,12 @@
 import os
-from scipy.base import *
-from scipy.testing import *
+from numpy import *
+from numpy.testing import *
 set_package_path()
 from weave import size_check
 from weave.ast_tools import *
 restore_path()
 
-import scipy.base as nx
+import numpy as nx
 
 empty = array(())
  
@@ -202,7 +202,7 @@ class test_dummy_array_indexing(ScipyTestCase):
     def check_1d_2(self):            
         self.generic_1d('a[-1:]')
     def check_1d_3(self):
-        # dummy_array is "bug for bug" equiv to scipy_base.numerix.array
+        # dummy_array is "bug for bug" equiv to numpy.numerix.array
         # on wrapping of indices.
         if nx.which[0] != "numarray":
             self.generic_1d('a[-11:]')

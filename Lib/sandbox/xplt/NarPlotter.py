@@ -5,7 +5,7 @@
 
 import narcisse
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 # We need types to check args to some routines
 from types import *
 from graftypes import *

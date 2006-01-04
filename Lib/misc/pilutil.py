@@ -1,9 +1,9 @@
 # Functions which need the PIL
 
 import types
-import scipy.base as Numeric
+import numpy as Numeric
 
-from scipy.base import exp, amin, amax, ravel, asarray, cast, arange, \
+from numpy import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
 
 import Image

@@ -9,18 +9,18 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;numpy.linalg.test(<level>)'
 Run tests if linalg is not installed:
   python tests/test_matfuncs.py [<level>]
 """
 
-from scipy.base import array, identity
+from numpy import array, identity
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
-import scipy.base
-from scipy.base import dot,sqrt
+import numpy
+from numpy import dot,sqrt
 import linalg
 from linalg import signm,logm,funm, sqrtm, expm, expm2, expm3
 restore_path()

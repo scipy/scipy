@@ -7,17 +7,17 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;numpy.linalg.test(<level>)'
 Run tests if linalg is not installed:
   python tests/test_blas.py [<level>]
 """
 
 
-from scipy.base import arange, add, array
+from numpy import arange, add, array
 import math
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from linalg import fblas
 from linalg import cblas
@@ -202,7 +202,7 @@ WARNING: cblas module is empty
 -----------
 See scipy/INSTALL.txt for troubleshooting.
 Notes:
-* If atlas library is not found by scipy/system_info.py,
+* If atlas library is not found by numpy/distutils/system_info.py,
   then scipy uses fblas instead of cblas.
 ****************************************************************
 """

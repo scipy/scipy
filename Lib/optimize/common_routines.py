@@ -1,6 +1,6 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
-from scipy.base import *
+from numpy import *
 
 def myasarray(a):
     if type(a) in [type(1.0),type(1L),type(1),type(1j)]:

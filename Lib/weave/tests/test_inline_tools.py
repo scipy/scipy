@@ -1,7 +1,7 @@
 
-from scipy.base import *
+from numpy import *
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from weave import inline_tools
 restore_path()

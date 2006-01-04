@@ -1,11 +1,11 @@
 #this program corresponds to special.py
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 import scipy.signal as signal
 restore_path()
 
-from scipy.base import array
+from numpy import array
 
 class test_convolve(ScipyTestCase):
     def check_basic(self):

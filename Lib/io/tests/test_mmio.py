@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from tempfile import mktemp
-from scipy.testing import *
-from scipy.base import array,transpose
+from numpy.testing import *
+from numpy import array,transpose
 
 set_package_path()
 from io.mmio import mminfo,mmread,mmwrite

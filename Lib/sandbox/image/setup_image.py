@@ -4,8 +4,8 @@ from glob import glob
 import os
 
 def configuration(parent_package='', parent_path=None):
-    from scipy.distutils.system_info import get_info, dict_append
-    from scipy.distutils.misc_util import default_config_dict, \
+    from numpy.distutils.system_info import get_info, dict_append
+    from numpy.distutils.misc_util import default_config_dict, \
          dot_join, get_path    
 
     package = 'image'
@@ -21,5 +21,5 @@ def configuration(parent_package='', parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     setup(**configuration())

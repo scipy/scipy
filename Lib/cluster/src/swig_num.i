@@ -14,7 +14,7 @@
 /************************************************************************/
 %{
 
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 // hmmm. how do we prevent typedefs from conflicting
 // with users definition on complex numbers?

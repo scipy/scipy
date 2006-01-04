@@ -9,7 +9,7 @@
 
 import base_info
 import standard_array_spec
-from scipy.base import *
+from numpy import *
 from types import *
 import os
 
@@ -84,7 +84,7 @@ class array_converter(standard_array_spec.array_converter):
     def init_info(self):
         standard_array_spec.array_converter.init_info(self)
         blitz_headers = ['"blitz/array.h"',
-                         '"scipy/arrayobject.h"',
+                         '"numpy/arrayobject.h"',
                           '<complex>','<math.h>']
         self.headers.extend(blitz_headers)
         self.include_dirs = [blitz_dir]

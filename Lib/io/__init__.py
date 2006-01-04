@@ -15,5 +15,5 @@ from pickler import *
 from mmio import mminfo,mmread,mmwrite
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
-from scipy.testing import ScipyTest 
+from numpy.testing import ScipyTest 
 test = ScipyTest().test

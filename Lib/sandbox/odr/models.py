@@ -2,7 +2,7 @@
 """
 
 from scipy.sandbox.odr.odrpack import Model
-import scipy.base as sb
+import numpy as sb
 from types import *
 
 def _lin_fcn(B, x, sum=sb.sum):

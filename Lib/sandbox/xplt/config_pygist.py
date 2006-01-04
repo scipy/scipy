@@ -6,9 +6,9 @@ import sys
 import time
 
 from distutils.command.config    import config
-from scipy_distutils.system_info import get_info
+from numpy.distutils.system_info import get_info
 from distutils.spawn import _nt_quote_args
-from scipy_distutils.exec_command import exec_command
+from numpy.distutils.exec_command import exec_command
 
 #------------------------------------------------------------------------
 # Configuration
@@ -61,8 +61,8 @@ class config_pygist(config):
             print '*'*70
             return
 
-        from scipy_distutils.log import set_verbosity
-        from scipy_distutils.ccompiler import new_compiler
+        from numpy.distutils.log import set_verbosity
+        from numpy.distutils.ccompiler import new_compiler
         save_verbosity = set_verbosity(-1)
         self.compiler = new_compiler(compiler=self.compiler,
                                      verbose=0)

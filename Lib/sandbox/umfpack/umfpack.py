@@ -1,5 +1,5 @@
 #from base import Struct, pause
-import scipy.base as nm
+import numpy as nm
 import scipy.sparse as sp
 import _umfpack as _um
 import re

@@ -5,7 +5,7 @@
 
 # The following is so I know about arrays:
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 from shapetest import *
 from graftypes import *
 from yorick import *

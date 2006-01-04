@@ -1,6 +1,6 @@
-import scipy.base as sb
+import numpy as sb
 import scipy
-pi = scipy.pi
+pi = numpy.pi
 
 # fast discrete cosine transforms of real sequences (using the fft)
 #  These implement the DCT-II and inverse DCT-II (DCT-III)
@@ -38,7 +38,7 @@ def dct(x,axis=-1):
         slices[k] = tuple(slices[k])
     xtilde[slices[0]] = x[slices[1]]
     xtilde[slices[2]] = x[slices[3]]
-    Xt = scipy.fft(xtilde,axis=axis)
+    Xt = numpy.fft(xtilde,axis=axis)
     pk = sb.exp(-1j*pi*sb.arange(N)/(2*N))
     newshape = sb.ones(n)
     newshape[axis] = N
@@ -66,7 +66,7 @@ def idct(v,axis=-1):
         newshape = ones(n)
         newshape[axis] = N
         ak.shape = newshape
-        xhat = real(scipy.ifft(v*ak,axis=axis))
+        xhat = real(numpy.ifft(v*ak,axis=axis))
         x = 0.0*v
         slices[0][axis] = slice(None,None,2)
         slices[1][axis] = slice(None,N/2)
@@ -93,7 +93,7 @@ def idct(v,axis=-1):
         slices[3][axis] = slice((N-1),0,-1)
         Y[slices[0]] = ak*v
         Y[slices[2]] = conj(Y[slices[3]])
-        x = real(scipy.ifft(Y,axis=axis))[slices[0]]
+        x = real(numpy.ifft(Y,axis=axis))[slices[0]]
         return x               
 
 def dct2(x,axes=(-1,-2)):
@@ -168,7 +168,7 @@ def dst(x,axis=-1):
         slices[k] = tuple(slices[k])
     xtilde[slices[0]] = x
     xtilde[slices[1]] = -x[slices[2]]
-    Xt = scipy.fft(xtilde,axis=axis)
+    Xt = numpy.fft(xtilde,axis=axis)
     return (-sb.imag(Xt)/2)[slices[0]]
 
 def idst(v,axis=-1):
@@ -190,7 +190,7 @@ def idst(v,axis=-1):
         slices[k] = tuple(slices[k])
     Xt[slices[0]] = -val
     Xt[slices[1]] = val[slices[2]]
-    xhat = real(scipy.ifft(Xt,axis=axis))
+    xhat = real(numpy.ifft(Xt,axis=axis))
     return xhat[slices[0]]
 
 def dst2(x,axes=(-1,-2)):

@@ -4,7 +4,7 @@
 
 import os, sys, tempfile
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from weave import build_tools
 restore_path()

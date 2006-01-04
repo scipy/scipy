@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 def configuration(parent_package='',top_path=None):
-    from scipy.distutils.misc_util import Configuration
+    from numpy.distutils.misc_util import Configuration
     config = Configuration('weave',parent_package,top_path)
     config.add_data_dir('tests')
     config.add_data_dir('scxx')
@@ -11,7 +11,7 @@ def configuration(parent_package='',top_path=None):
     return config
 
 if __name__ == '__main__':    
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     from weave_version import weave_version
     setup(version = weave_version,
           description = "Tools for inlining C/C++ in Python",

@@ -5,7 +5,7 @@ import spmatrix_util
 
 def printMatrix(M):
     n, m = M.shape
-    Z = scipy.zeros((n,m), 'd')
+    Z = numpy.zeros((n,m), 'd')
     for i in range(n):
         for j in range(m):
             Z[i,j] = M[i,j]
@@ -102,9 +102,9 @@ print A[:4,:4].to_csr()
 print As[:4,:4].to_csr()
 
 print 'update_add_mask operations'
-ind = scipy.array([3, 4, 5, 6], 'i')
-mask = scipy.array([1, 1, 1, 1], 'i')
-B = scipy.ones((4,4), 'd')
+ind = numpy.array([3, 4, 5, 6], 'i')
+mask = numpy.array([1, 1, 1, 1], 'i')
+B = numpy.ones((4,4), 'd')
 Ac = A.copy()
 Ac.update_add_mask(B, ind, ind, mask, mask)
 A.update_add_mask_sym(B, ind, mask)
@@ -120,7 +120,7 @@ print 'original matrix:'
 printMatrix(Atemp)
 
 print 'Matrix with rows 7 and 8 and deleted:'
-mask = scipy.ones(n, 'l')
+mask = numpy.ones(n, 'l')
 mask[7:9] = 0
 Atemp.delete_rows(mask)
 printMatrix(Atemp)
@@ -133,7 +133,7 @@ print 'original matrix:'
 printMatrix(Atemp)
 
 print 'Matrix with rows/cols 7 and 8 and deleted:'
-mask = scipy.ones(n, 'l')
+mask = numpy.ones(n, 'l')
 mask[7:9] = 0
 Atemp.delete_rowcols(mask)
 printMatrix(Atemp)
@@ -142,7 +142,7 @@ nn = 100
 R = spmatrix_util.ll_mat_rand(nn, nn, 0.3)
 ##print R.nnz
 for i in range(nn-5):
-    mask = scipy.ones(nn, 'l')
+    mask = numpy.ones(nn, 'l')
     mask[0] = 0
     R.delete_rowcols(mask)
     nn -= 1

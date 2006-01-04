@@ -14,7 +14,7 @@
 
 import os
 from types import ListType, TupleType
-from scipy.base import asarray, ArrayType, real,imag,conj,zeros
+from numpy import asarray, ArrayType, real,imag,conj,zeros
 
 __all__ = ['mminfo','mmread','mmwrite']
 

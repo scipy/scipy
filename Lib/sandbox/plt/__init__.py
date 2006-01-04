@@ -13,7 +13,7 @@ from interface import *
 import plot_utility
 import interface
 
-from scipy_base import display_test
+from numpy import display_test
 _have_wx = 0
 if not display_test.have_x11() or display_test.try_XOpenDisplay():
     try:

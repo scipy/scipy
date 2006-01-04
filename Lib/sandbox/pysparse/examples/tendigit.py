@@ -4,7 +4,7 @@ import scipy
 import spmatrix, itsolvers, precon
 
 def get_primes(nofPrimes):
-    primes = scipy.zeros(nofPrimes, 'i')
+    primes = numpy.zeros(nofPrimes, 'i')
     primes[0] = 2
     nof = 1
     i = 3
@@ -35,8 +35,8 @@ for i in range(n):
 A = A.to_sss()
 K = precon.ssor(A)
 
-b = scipy.zeros(n, 'd'); b[0] = 1.0
-x = scipy.zeros(n, 'd')
+b = numpy.zeros(n, 'd'); b[0] = 1.0
+x = numpy.zeros(n, 'd')
 info, iter, relres = itsolvers.minres(A, b, x, 1e-16, n, K)
 
 print info, iter, relres

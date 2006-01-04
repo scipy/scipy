@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from optimize import zeros as cc
 restore_path()

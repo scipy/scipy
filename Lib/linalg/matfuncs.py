@@ -7,12 +7,12 @@
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm']
 
-from scipy.base import asarray, Inf, dot, floor, eye, diag, exp, \
+from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, isfinite, imag, real, absolute, amax, sign, \
      isfinite, sqrt, identity, single
-from scipy.base import matrix as mat
-import scipy.base as sb
+from numpy import matrix as mat
+import numpy as sb
 from basic import solve, LinAlgError, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, eigvals, svd
 
@@ -33,7 +33,7 @@ def expm(A,q=7):
     nA = norm(A,Inf)
     if nA==0:
         return identity(len(A), A.dtypechar)
-    from scipy.base import log2
+    from numpy import log2
     val = log2(nA)
     e = int(floor(val))
     j = max(0,e+1)

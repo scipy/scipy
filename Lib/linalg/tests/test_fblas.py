@@ -15,11 +15,11 @@
 # !! ever !replaced! by a blas call, we'll need to fill in a simple 
 # !! matrix multiply here to ensure integrity of tests.
 
-from scipy.base import *
-from scipy.base.umath import *
+from numpy import *
+from numpy.umath import *
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from linalg import fblas
 restore_path()
@@ -299,7 +299,7 @@ class base_gemv(ScipyTestCase):
         mult = array(1, dtype = self.dtype)            
         if self.dtype in ['F', 'D']:
             mult = array(1+1j, dtype = self.dtype)
-        from scipy.random import normal
+        from numpy.random import normal
         alpha = array(1., dtype = self.dtype) * mult
         beta = array(1.,dtype = self.dtype) * mult
         a = normal(0.,1.,(3,3)).astype(self.dtype) * mult

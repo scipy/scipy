@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from scipy.distutils.misc_util import default_config_dict
+from numpy.distutils.misc_util import default_config_dict
 
 def configuration(parent_package='',parent_path=None):
     package = 'cow'
@@ -8,5 +8,5 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     setup(**configuration())

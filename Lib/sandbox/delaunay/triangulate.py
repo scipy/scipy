@@ -5,7 +5,7 @@ except NameError:
     import sets
     set = sets.Set
 
-import scipy.base as sp
+import numpy as sp
 
 from _delaunay import delaunay
 from interpolate import LinearInterpolator, NNInterpolator

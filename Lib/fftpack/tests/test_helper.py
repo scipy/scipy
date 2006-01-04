@@ -12,12 +12,12 @@ Run tests if fftpack is not installed:
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 restore_path()
 
-from scipy import pi
+from numpy import pi
 
 def random(size):
     return rand(*size)

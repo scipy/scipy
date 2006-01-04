@@ -11,7 +11,7 @@
 
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr'] 
 import _iterative
-import scipy.base as sb
+import numpy as sb
 
 try:
     False, True

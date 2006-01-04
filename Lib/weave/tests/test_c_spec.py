@@ -8,7 +8,7 @@ import os,sys
 global test_dir 
 test_dir = ''
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from weave import inline_tools,ext_tools,c_spec
 from weave.build_tools import msvc_exists, gcc_exists

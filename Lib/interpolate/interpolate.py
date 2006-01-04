@@ -7,7 +7,7 @@
 __all__ = ['interp1d']
 # XXX: not interp2d?
 
-from scipy.base import *
+from numpy import *
 
 import fitpack
 

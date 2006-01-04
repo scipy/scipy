@@ -9,7 +9,7 @@
 #include "pysparse/spmatrix.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL spmatrix
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 #define INCREASE_FACTOR   1.5	/* increase rate for memory reallocation of ll_mat arrays */
 #define PPRINT_ROW_THRESH 500	/* row threshold for choosing between print formats */

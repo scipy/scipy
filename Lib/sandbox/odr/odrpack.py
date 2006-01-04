@@ -128,7 +128,7 @@ def _conv(obj):
         return obj
     else:
         # try to pass it through scipy's asarray
-        return scipy.asarray(obj)
+        return numpy.asarray(obj)
 
 def report_error(info):
     """Interprets the return code of the odr routine.
@@ -313,12 +313,12 @@ with __getattr__ trickery.
 sx and sy are standard deviations of x and y and are converted to weights by 
 dividing 1.0 by their squares. 
 
-  E.g.  wd = 1./scipy.power(sx, 2)
+  E.g.  wd = 1./numpy.power(sx, 2)
 
 covx and covy are arrays of covariance matrices and are converted to weights by
 performing a matrix inversion on each observation's covariance matrix.
 
-  E.g.  we[i] = scipy.linalg.inv(covy[i])  # i in range(len(covy))
+  E.g.  we[i] = numpy.linalg.inv(covy[i])  # i in range(len(covy))
                                            #   if covy.shape == (n,q,q)
 
 These arguments follow the same structured argument conventions as wd and we
@@ -365,7 +365,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
     def _sd2wt(self, sd):
         """Convert standard deviation to weights."""
         
-        return 1./scipy.power(sd, 2)
+        return 1./numpy.power(sd, 2)
 
     def _cov2wt(self, cov):
         """Convert covariance matrix(-ices) to weights."""
@@ -379,7 +379,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
         if len(cov.shape) == 2:
             return linalg.inverse(cov)
         else:
-            weights = scipy.zeros(cov.shape, Float)
+            weights = numpy.zeros(cov.shape, Float)
 
             for i in range(cov.shape[-1]):  # n
                 weights[:,:,i] = linalg.inv(cov[:,:,i])
@@ -741,7 +741,7 @@ checking things that the builtin function odr will check.
 
         x_s = list(self.data.x.shape)
 
-        if type(self.data.y) is scipy.ArrayType:
+        if type(self.data.y) is numpy.ArrayType:
             y_s = list(self.data.y.shape)
             if self.model.implicit:
                 raise odr_error, "an implicit model cannot use response data"
@@ -854,12 +854,12 @@ checking things that the builtin function odr will check.
             lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 2*n*m + 2*n*q*p + 
                      5*q + q*(p+m) + ldwe*ld2we*q)
 
-        if type(self.work) is scipy.ArrayType and self.work.shape == (lwork,)\
-           and self.work.dtype == scipy.Float:
+        if type(self.work) is numpy.ArrayType and self.work.shape == (lwork,)\
+           and self.work.dtype == numpy.Float:
             # the existing array is fine
             return
         else:
-            self.work = scipy.zeros((lwork,), scipy.Float)
+            self.work = numpy.zeros((lwork,), numpy.Float)
 
     def set_job(self, fit_type=None, deriv=None, var_calc=None, 
                 del_init=None, restart=None):
@@ -1024,7 +1024,7 @@ Returns an Output instance and assigns it to the member self.output .
             # delta0 provided and fit is not a restart
             self._gen_work()
 
-            d0 = scipy.ravel(self.delta0)
+            d0 = numpy.ravel(self.delta0)
 
             self.work[:len(d0)] = d0
         

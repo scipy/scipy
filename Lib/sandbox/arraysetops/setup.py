@@ -4,7 +4,7 @@ def configuration(parent_package='',top_path=None):
     # The following two lines with `return config` constitutes a
     # minimal contents of configuration(..) that is suitable for pure
     # Python packages.
-    from scipy.distutils.misc_util import Configuration
+    from numpy.distutils.misc_util import Configuration
     config = Configuration( 'arraysetops', parent_package, top_path )
 
     # include test scripts from tests
@@ -13,5 +13,5 @@ def configuration(parent_package='',top_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     setup( **configuration( top_path = '' ).todict() )

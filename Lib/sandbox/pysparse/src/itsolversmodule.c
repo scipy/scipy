@@ -5,7 +5,7 @@
 #include "Python.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL itsolvers_pyarray
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 #define SPMATRIX_UNIQUE_SYMBOL itsolvers_spmatrix
 #include "pysparse/spmatrix.h"

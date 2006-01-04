@@ -6,13 +6,13 @@
 
 
 import os
-from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path,Configuration,dot_join
+from numpy.distutils.core import Extension
+from numpy.distutils.misc_util import get_path,Configuration,dot_join
 join = os.path.join
 import glob
 
 def configuration(parent_package='',parent_path=None):
-    from scipy.distutils.system_info import get_info
+    from numpy.distutils.system_info import get_info
     config = Configuration('pysparse', parent_package, parent_path)
     #local_path = get_path(__name__,parent_path)
 
@@ -32,7 +32,7 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     setup(description="pysparse - A port of Roman Geus's PySparse to newscipy",
           author="Ed Schofield, Robert Cimrman",
           author_email = "edschofield@scipy.org, cimrman3@ntc.zcu.cz",

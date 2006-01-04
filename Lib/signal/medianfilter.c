@@ -9,7 +9,7 @@
 
 #include "Python.h"
 #define NO_IMPORT_ARRAY
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 void f_medfilt2(float*,float*,intp*,intp*);
 void d_medfilt2(double*,double*,intp*,intp*);

@@ -1,5 +1,5 @@
 import spmatrix, jdsym, itsolvers
-from scipy import zeros, dot, allclose, multiply
+from numpy import zeros, dot, allclose, multiply
 from math import sqrt
 import RandomArray
 

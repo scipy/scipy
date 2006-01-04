@@ -8,15 +8,15 @@ import statlib
 import stats
 import distributions
 import inspect
-from scipy.base import isscalar, r_, log, sum, around, unique, asarray
-from scipy.base import zeros, arange, sort, amin, amax, any, where, \
+from numpy import isscalar, r_, log, sum, around, unique, asarray
+from numpy import zeros, arange, sort, amin, amax, any, where, \
      array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel
 import scipy
 import types
 import scipy.optimize as optimize
 import futil
-import scipy.base as sb
+import numpy as sb
 
 
 def find_repeats(arr):
@@ -739,7 +739,7 @@ def binom_test(x,n=None,p=0.5):
     Returns pval -- Probability that null test is rejected for this set
                     of x and n even though it is true.
     """
-    x = atleast_1d(x).astype(scipy.integer)
+    x = atleast_1d(x).astype(numpy.integer)
     if len(x) == 2:
         n = x[1]+x[0]
         x = x[0]
@@ -747,7 +747,7 @@ def binom_test(x,n=None,p=0.5):
         x = x[0]
         if n is None or n < x:
             raise ValueError, "n must be >= x"
-        n = scipy.int_(n)
+        n = numpy.int_(n)
     else:
         raise ValueError, "Incorrect length for x."
 

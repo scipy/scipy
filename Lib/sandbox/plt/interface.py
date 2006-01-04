@@ -1,6 +1,6 @@
-from scipy_base.fastumath import *
+from numpy.umath import *
 from scipy import *
-from scipy_base import limits, display_test
+from numpy import limits, display_test
 import sys
 
 _have_wx = 0

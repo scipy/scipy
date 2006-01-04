@@ -1,13 +1,13 @@
 
 import time
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from weave import ext_tools, c_spec
 try:
     from weave.standard_array_spec import array_converter
 except ImportError:
-    pass # requires scipy_base.numerix    
+    pass # requires numpy.numerix    
 restore_path()
 
 set_local_path()
@@ -110,9 +110,9 @@ class test_ext_function(ScipyTestCase):
 class test_assign_variable_types(ScipyTestCase):            
     def check_assign_variable_types(self):
         try:
-            from scipy_base.numerix import arange, Float32, Float64
+            from numpy.numerix import arange, Float32, Float64
         except:
-            # skip this test if scipy_base.numerix not installed
+            # skip this test if numpy.numerix not installed
             return
             
         import types

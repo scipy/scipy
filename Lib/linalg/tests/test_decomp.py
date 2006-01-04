@@ -9,21 +9,21 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test(<level>)'
+  python -c 'import scipy;numpy.linalg.test(<level>)'
 Run tests if linalg is not installed:
   python tests/test_decomp.py [<level>]
 """
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
 from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
 restore_path()
 
-from scipy.base import *
-from scipy.random import rand
+from numpy import *
+from numpy.random import rand
 
 def random(size):
     return rand(*size)
@@ -53,7 +53,7 @@ class test_eigvals(ScipyTestCase):
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
-        import scipy.corelinalg as linalg
+        import numpy.corelinalg as linalg
 	Numeric_eigvals = linalg.eigenvalues
         print
         print '           Finding matrix eigenvalues'

@@ -190,11 +190,11 @@ SUPPORT FUNCTIONS:  writecc
 import string, sys, _support
 from types import *
 
-from scipy.base import *
-import scipy.base.umath as math
-from scipy.base.umath import *
+from numpy import *
+import numpy.umath as math
+from numpy.umath import *
 import scipy.special as special
-import scipy.linalg as linalg
+import numpy.linalg as linalg
 import scipy
 
 SequenceType = (ListType, TupleType, ArrayType)
@@ -203,7 +203,7 @@ SequenceType = (ListType, TupleType, ArrayType)
 # These two functions replace letting axis be a sequence and the
 #  keepdims features used throughout.  These ideas
 #  did not match the rest of Scipy.
-#from scipy.base import expand_dims, apply_over_axes
+#from numpy import expand_dims, apply_over_axes
 
 def _chk_asarray(a, axis):
     if axis is None:
@@ -1011,7 +1011,7 @@ of the compare array.
 
 def threshold(a,threshmin=None,threshmax=None,newval=0):
     """
-Like scipy.clip() except that values <threshmid or >threshmax are replaced
+Like numpy.clip() except that values <threshmid or >threshmax are replaced
 by newval instead of by threshmin/threshmax (respectively).
 
 Returns: a, with values <threshmin or >threshmax replaced with newval

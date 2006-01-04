@@ -8,7 +8,7 @@ Discrete Fourier Transforms - basic.py
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2', 'rfftfreq']
 
-from scipy.base import asarray, zeros, swapaxes, integer, array
+from numpy import asarray, zeros, swapaxes, integer, array
 import scipy
 import _fftpack as fftpack
 
@@ -80,11 +80,11 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     """
     tmp = asarray(x)
     t = tmp.dtypechar
-    if t==scipy.Complex64:
+    if t==numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
-    elif t==scipy.Complex32:
+    elif t==numpy.Complex32:
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -119,11 +119,11 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     """
     tmp = asarray(x)
     t = tmp.dtypechar
-    if t == scipy.Complex64:
+    if t == numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
-    elif t == scipy.Complex32:
+    elif t == numpy.Complex32:
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -173,7 +173,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     """
     tmp = asarray(x)
     t = tmp.dtypechar
-    if t in (scipy.Complex32, scipy.Complex64):
+    if t in (numpy.Complex32, numpy.Complex64):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
@@ -218,7 +218,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     """
     tmp = asarray(x)
     t = tmp.dtypechar
-    if t in (scipy.Complex32, scipy.Complex64):
+    if t in (numpy.Complex32, numpy.Complex64):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
@@ -290,11 +290,11 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     """
     tmp = asarray(x)
     t = tmp.dtypechar
-    if t==scipy.Complex64:
+    if t==numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
-    elif t==scipy.Complex32:
+    elif t==numpy.Complex32:
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -319,11 +319,11 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     """
     tmp = asarray(x)
     t = tmp.dtypechar
-    if t==scipy.Complex64:
+    if t==numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
-    elif t==scipy.Complex32:
+    elif t==numpy.Complex32:
         raise NotImplementedError
     else:
         overwrite_x = 1

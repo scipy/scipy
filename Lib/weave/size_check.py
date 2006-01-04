@@ -1,4 +1,4 @@
-from scipy.base import *
+from numpy import *
 
 from ast_tools import *
 from types import *

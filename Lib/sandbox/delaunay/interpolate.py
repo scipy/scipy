@@ -1,4 +1,4 @@
-import scipy.base as sp
+import numpy as sp
 
 from _delaunay import compute_planes, linear_interpolate_grid, nn_interpolate_grid
 from _delaunay import nn_interpolate_unstructured
@@ -11,7 +11,7 @@ def slice2gridspec(key):
     key -- (slice(ystart,ystop,ystep), slice(xtart, xstop, xstep))
 
     For now, the only accepted step values are imaginary integers (interpreted
-    in the same way scipy.mgrid, etc. do).
+    in the same way numpy.mgrid, etc. do).
     """
     if ((len(key) != 2) or 
         (not isinstance(key[0], slice)) or 
@@ -38,7 +38,7 @@ class LinearInterpolator(object):
     using the planes defined by the three function values at each corner of
     the triangles.
 
-    LinearInterpolator(triangulation, z, default_value=scipy.nan)
+    LinearInterpolator(triangulation, z, default_value=numpy.nan)
 
     triangulation -- Triangulation instance
     z -- the function values at each node of the triangulation
@@ -51,7 +51,7 @@ class LinearInterpolator(object):
         vals = interp[ystart:ystop:ysteps*1j, xstart:xstop:xsteps*1j]
 
     vals would then be a (ysteps, xsteps) array containing the interpolated 
-    values. These arguments are interpreted the same way as scipy.base.mgrid.
+    values. These arguments are interpreted the same way as numpy.mgrid.
 
     Attributes:
       planes -- (ntriangles, 3) array of floats specifying the plane for each
@@ -89,7 +89,7 @@ class NNInterpolator(object):
     """Interpolate a function defined on the nodes of a triangulation by 
     the natural neighbors method.
 
-    NNInterpolator(triangulation, z, default_value=scipy.nan)
+    NNInterpolator(triangulation, z, default_value=numpy.nan)
 
     triangulation -- Triangulation instance
     z -- the function values at each node of the triangulation
@@ -102,7 +102,7 @@ class NNInterpolator(object):
         vals = interp[ystart:ystop:ysteps*1j, xstart:xstop:xsteps*1j]
 
     vals would then be a (ysteps, xsteps) array containing the interpolated 
-    values. These arguments are interpreted the same way as scipy.base.mgrid.
+    values. These arguments are interpreted the same way as numpy.mgrid.
 
     Natural Neighbors Interpolation
     -------------------------------

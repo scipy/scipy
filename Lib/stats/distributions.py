@@ -9,14 +9,14 @@ import scipy
 import scipy.special as special
 import scipy.optimize as optimize
 import inspect
-from scipy.base import alltrue, where, arange, put, putmask, nonzero, \
+from numpy import alltrue, where, arange, put, putmask, nonzero, \
      ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray
-from scipy.base import atleast_1d, polyval, angle, ceil, insert, extract, \
+from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select, pi
-import scipy.base
-import scipy.random as mtrand
+import numpy
+import numpy.random as mtrand
 
 
 errp = special.errprint
@@ -39,7 +39,7 @@ def _build_random_array(fun, args, size=None):
     if isinstance(size, types.IntType):
         size = [size]
     if size is not None and len(size) != 0:
-        n = scipy.base.multiply.reduce(size)
+        n = numpy.multiply.reduce(size)
         s = apply(fun, args + (n,))
         s.shape = size
         return s
@@ -404,7 +404,7 @@ class rv_continuous:
             size = 1
         else:
             self._size = product(size)
-        if scipy.isscalar(size):
+        if numpy.isscalar(size):
             self._size = size
             size = (size,)
 
@@ -2264,7 +2264,7 @@ class lognorm_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p*(p-1)
         g1 = sqrt((p-1))*(2+p)
-        g2 = scipy.polyval([1,2,3,0,-6.0],p)
+        g2 = numpy.polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
     def _entropy(self, s):
         return 0.5*(1+log(2*pi)+2*log(s))
@@ -3008,7 +3008,7 @@ Uniform distribution
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
 
-eps = scipy.base.finfo(float).eps.item()
+eps = numpy.finfo(float).eps.item()
 
 class vonmises_gen(rv_continuous):
     def _rvs(self, b):
@@ -3335,7 +3335,7 @@ class rv_discrete:
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = scipy.base.cumsum(self.pk)
+            self.qvals = numpy.cumsum(self.pk)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = new.instancemethod(sgf(_drv_ppf,otypes='d'),
@@ -3441,14 +3441,14 @@ class rv_discrete:
             size = 1
         else:
             self._size = product(size)
-        if scipy.isscalar(size):
+        if numpy.isscalar(size):
             self._size = size
             size = (size,)
 
         vals = reshape(self._rvs(*args),size)
         if self.return_integers:
             vals = arr(vals)
-            if vals.dtypechar not in scipy.typecodes['AllInteger']:
+            if vals.dtypechar not in numpy.typecodes['AllInteger']:
                 vals = vals.astype(int)
         return vals + loc
 
@@ -3890,7 +3890,7 @@ class geom_gen(rv_discrete):
         qr = 1.0-pr
         var = qr / pr / pr
         g1 = (2.0-pr) / sqrt(qr)
-        g2 = scipy.polyval([1,-6,6],pr)/(1.0-pr)
+        g2 = numpy.polyval([1,-6,6],pr)/(1.0-pr)
         return mu, var, g1, g2
 geom = geom_gen(a=1,name='geom', longname="A geometric",
                 shapes="pr", extradoc="""

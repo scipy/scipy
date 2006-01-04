@@ -32,9 +32,9 @@
 #8   test_sh_jacobi
 #8   test_sh_legendre
 
-from scipy.base import *
+from numpy import *
 
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from special import *
 import special._cephes as cephes

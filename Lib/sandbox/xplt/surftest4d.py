@@ -4,8 +4,8 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from scipy import *
-from scipy_base.fastumath import *
-from scipy.basic.linalg import rand
+from numpy.umath import *
+from numpy.corelinalg import rand
 from surface import *
 from graph3d import *
 from mesh3d import *

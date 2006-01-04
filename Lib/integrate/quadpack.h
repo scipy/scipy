@@ -28,7 +28,7 @@ the result tuple when the full_output argument is non-zero.
 */
 
 #include "Python.h"
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include <setjmp.h>
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}

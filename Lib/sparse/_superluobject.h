@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #define PY_ARRAY_UNIQUE_SYMBOL scipy_superlu
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include "SuperLU/SRC/util.h"
 #include "SuperLU/SRC/scomplex.h"
 #include "SuperLU/SRC/dcomplex.h"

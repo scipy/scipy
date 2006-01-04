@@ -158,7 +158,7 @@ from cellarray import *
 
 import shapetest
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 
 _ezdict_ = {'t': 'true' , 'T': 'true', 'y': 'true', 'Y': 'true',
             'f': 'false', 'F': 'false', 'n': 'false', 'N': 'false'}

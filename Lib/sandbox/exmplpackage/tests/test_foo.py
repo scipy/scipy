@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Created by: Pearu Peterson, October 2003
-# Adjusted to scipy.distutils: Pearu Peterson, October 2005
+# Adjusted to numpy.distutils: Pearu Peterson, October 2005
 #
 __usage__ = """
 First ensure that scipy core modules are installed.
@@ -16,7 +16,7 @@ Run tests if scipy is installed:
 """
 
 import sys
-from scipy.test.testing import *
+from numpy.test.testing import *
 
 set_package_path()
 from exmplpackage.foo import *

@@ -1,8 +1,8 @@
 ## Automatically adapted for scipy Oct 21, 2005 by 
 
 
-from scipy.base import *
-from scipy.base.umath import *
+from numpy import *
+from numpy.umath import *
 
 def myasarray(a):
     if isscalar(a):

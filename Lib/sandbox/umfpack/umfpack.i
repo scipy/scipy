@@ -8,7 +8,7 @@
 
 %{
 #include <umfpack.h>
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 %}
 
 %feature("autodoc", "1");

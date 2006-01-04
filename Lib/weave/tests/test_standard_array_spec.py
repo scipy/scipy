@@ -1,6 +1,6 @@
 
-from scipy.base import *
-from scipy.testing import *
+from numpy import *
+from numpy.testing import *
 set_package_path()
 from weave import standard_array_spec
 restore_path()

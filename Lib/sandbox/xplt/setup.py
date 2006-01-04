@@ -5,11 +5,11 @@
 import os
 import sys
 from distutils import dir_util
-from scipy.distutils.misc_util   import get_path, default_config_dict, dot_join
-from scipy.distutils.misc_util   import dict_append, get_build_temp
-from scipy.distutils.misc_util   import SourceFilter
-from scipy.distutils.core        import Extension
-from scipy.distutils.system_info import get_info
+from numpy.distutils.misc_util   import get_path, default_config_dict, dot_join
+from numpy.distutils.misc_util   import dict_append, get_build_temp
+from numpy.distutils.misc_util   import SourceFilter
+from numpy.distutils.core        import Extension
+from numpy.distutils.system_info import get_info
 
 from distutils.sysconfig         import get_python_lib
 
@@ -251,7 +251,7 @@ def configuration(parent_package='',parent_path=None):
        This will install *.gs and *.gp files to
        'site-packages/scipy/xplt/gistdata' 
     """
-    from scipy_distutils.system_info import get_info, dict_append
+    from numpy.distutils.system_info import get_info, dict_append
     from glob import glob
     local_path = get_path(__name__,parent_path)
     config_path = os.path.join(get_build_temp(),'config_pygist')
@@ -315,5 +315,5 @@ def configuration(parent_package='',parent_path=None):
     return config
 
 if __name__ == '__main__':    
-    from scipy_distutils.core import setup
+    from numpy.distutils.core import setup
     setup(**configuration(parent_path=''))

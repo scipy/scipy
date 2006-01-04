@@ -132,13 +132,13 @@ class basemodel(object):
             assert type(grad) in (types.FunctionType, types.MethodType)
 
         # First convert K to a scipy array if necessary
-        K = scipy.asarray(K)
+        K = numpy.asarray(K)
             
         # Sanity checks
         assert len(K) == self.numconstraints()
         
         # Make a copy of the parameters
-        oldtheta = scipy.array(self.theta)
+        oldtheta = numpy.array(self.theta)
         
         if algorithm == 'CG':
             retval = optimize.fmin_cg(func, oldtheta, \
@@ -189,7 +189,7 @@ class basemodel(object):
             if algorithm != 'Powell' and algorithm != 'LBFGSB':
                 print "\tGradient calls: " + str(grad_calls)
         
-        if scipy.any(self.theta != newtheta):
+        if numpy.any(self.theta != newtheta):
             self.setparams(newtheta)
         self.func_calls = func_calls
     
@@ -222,7 +222,7 @@ class basemodel(object):
 
 
         # assert len(theta) == self.numconstraints()
-        self.theta = scipy.array(theta)        # make a copy
+        self.theta = numpy.array(theta)        # make a copy
         
         # Log the new params to disk
         self.logparams()
@@ -262,7 +262,7 @@ class basemodel(object):
         else:
             m = self.numconstraints()            
             
-        self.theta = scipy.zeros(m, 'd')
+        self.theta = numpy.zeros(m, 'd')
         
         # These bounds on the param values are only effective for the
         # L-BFGS-B optimizer:
@@ -322,7 +322,7 @@ class basemodel(object):
             return
         
         # Check whether the params are NaN
-        if not scipy.all(self.theta == self.theta):
+        if not numpy.all(self.theta == self.theta):
             raise FloatingPointError, "some of the parameters are NaN"
 
         if self.verbose:                    
@@ -555,10 +555,10 @@ class model(basemodel):
         
         f = self.f
         def p(x):
-            f_x = scipy.empty(len(f), float)
+            f_x = numpy.empty(len(f), float)
             for i in range(len(f)):
                 f_x[i] = f[i](x)
-            return math.exp(scipy.dot(self.theta, f_x) - logZ)
+            return math.exp(numpy.dot(self.theta, f_x) - logZ)
         
         return p
 
@@ -575,7 +575,7 @@ class model(basemodel):
         """
 
         oldtheta = self.theta
-        if scipy.any(oldtheta != theta):
+        if numpy.any(oldtheta != theta):
             self.setparams(theta)
 
         # If constraints E_q f(X) = K have been imposed, compute the entropy
@@ -585,7 +585,7 @@ class model(basemodel):
         # where K_i = empirical expectation E_p_tilde f_i (X) = sum_x {p(x)f_i(x)}.
         
         logZ = self.lognormconst()
-        H = logZ - scipy.dot(K, self.theta)
+        H = logZ - numpy.dot(K, self.theta)
         
         # (We don't reset theta to its prior value.)
         
@@ -608,7 +608,7 @@ class model(basemodel):
         """
         
         oldtheta = self.theta
-        if scipy.any(oldtheta != theta):
+        if numpy.any(oldtheta != theta):
             self.setparams(theta)
         
         negG = self.expectations() - K
@@ -831,7 +831,7 @@ class bigmodel(basemodel):
             #    num = innerprodtranspose(self.sampleF, w)
             #
             #    try:
-            #        Es.append(num / scipy.sum(w))
+            #        Es.append(num / numpy.sum(w))
             #        continue
             #    except OverflowError:
             #        # A slightly safer version
@@ -852,7 +852,7 @@ class bigmodel(basemodel):
             #    if self.verbose:
             #        print "Using complex logarithm routines ..."
             #        
-            #    lognum = emptyarray(m, scipy.Complex64)
+            #    lognum = emptyarray(m, numpy.Complex64)
 
             #    # Compute lognum_i as:
             #    #     logsumexp(log p_dot(x) - log aux_dist(x) + log f_i(x))
@@ -911,7 +911,7 @@ class bigmodel(basemodel):
             self.logZsapprox = logZs
             #logstdevZ = 0.5*(-math.log(n-1) + logsumexp([2.*logdiffexp(logZ_k, self.logZapprox) for logZ_k in logZs]))
             stdevlogZ = var(logZs)**0.5
-            Etemp = scipy.array(Es)
+            Etemp = numpy.array(Es)
             self.varE = columnvariances(Etemp)
             self.mu = columnmeans(Etemp)
             
@@ -935,7 +935,7 @@ class bigmodel(basemodel):
 
         # Has theta changed?  If so, set it anew, clearing the cache
         # variables that are functions of theta.
-        if scipy.any(self.theta != theta):
+        if numpy.any(self.theta != theta):
             self.setparams(theta, newiter)
         
         H = self.entropydualapprox(K)
@@ -981,7 +981,7 @@ class bigmodel(basemodel):
             self.estimate()
             # results are stored as self.logZapprox and self.mu
         
-        H = self.logZapprox - scipy.dot(K, self.theta)
+        H = self.logZapprox - numpy.dot(K, self.theta)
 
         return H    
     
@@ -1004,7 +1004,7 @@ class bigmodel(basemodel):
 
         # Has theta changed?  If so, clear the speed-enhancing temporary
         # variables that are functions of theta.
-        if scipy.any(self.theta != theta):
+        if numpy.any(self.theta != theta):
             self.setparams(theta, newiter)
         
         G = self.expectationsapprox() - K
@@ -1042,7 +1042,7 @@ class bigmodel(basemodel):
         
         # 1. First compute log(p_dot(x)) = theta . f(x)
         
-        T = scipy.asarray(self.theta)
+        T = numpy.asarray(self.theta)
         fx = sparsefeatures(self.f, x)
         log_p_dot = dotprod(fx, T)
         
@@ -1141,10 +1141,10 @@ class bigmodel(basemodel):
         
         f = self.f
         def p(x):
-            f_x = scipy.empty(len(f), float)
+            f_x = numpy.empty(len(f), float)
             for i in range(len(f)):
                 f_x[i] = f[i](x)
-            return math.exp(scipy.dot(self.theta, f_x) - logZ)
+            return math.exp(numpy.dot(self.theta, f_x) - logZ)
         
         return p
 
@@ -1191,8 +1191,8 @@ class bigmodel(basemodel):
                     # Use Kersten-Deylon accelerated SA, based on the rate of
                     # changes of sign of the gradient.  (If frequent swaps, the
                     # stepsize is too large.)
-                    #n += (scipy.dot(y_k, y_kminus1) < 0)   # an indicator fn
-                    if scipy.dot(y_k, y_kminus1) < 0:
+                    #n += (numpy.dot(y_k, y_kminus1) < 0)   # an indicator fn
+                    if numpy.dot(y_k, y_kminus1) < 0:
                         n += 1
                     else:
                         # Store iterations of sign switches (for plotting purposes)
@@ -1239,14 +1239,14 @@ class bigmodel(basemodel):
             if self.verbose:
                 print "SA: after iteration " + str(k)
                 print "  approx dual fn is: " + str(self.logZapprox \
-                            - scipy.dot(self.theta, K))
+                            - numpy.dot(self.theta, K))
                 if self.verbose >= 2:
                     print "  params[0:5] are: " + str(self.theta[0:5])
                     print "  norm(mu - k) = " + str(norm_y_k)
             #if self.storenormerrors:
             #    self.normerrors.append(norm_y_k)
             #if self.storeduals:
-            #    self.duals.append(self.logZapprox - scipy.dot(self.theta, K))
+            #    self.duals.append(self.logZapprox - numpy.dot(self.theta, K))
                
             # Update theta (after the convergence tests too ... don't waste the
             # computation.)

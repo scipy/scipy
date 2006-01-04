@@ -28,7 +28,7 @@
 
 from __future__ import nested_scopes
 
-from scipy.base import zeros, float64, array, int32
+from numpy import zeros, float64, array, int32
 import _lbfgsb
 import optimize
 

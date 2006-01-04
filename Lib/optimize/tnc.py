@@ -35,7 +35,7 @@ value of the function, and whose second argument is the gradient of the function
 """
 
 import moduleTNC
-from scipy.base import asarray
+from numpy import asarray
 
 MSG_NONE = 0 # No messages
 MSG_ITER = 1 # One line per iteration

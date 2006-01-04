@@ -14,8 +14,8 @@
 # [25 29] [ 2.49147272  3.83021021]
 #  speed up: 32.56
  
-import scipy_base.numerix
-from scipy_base.numerix import *
+import numpy.numerix
+from numpy.numerix import *
 import sys
 sys.path.insert(0,'..')
 import inline_tools

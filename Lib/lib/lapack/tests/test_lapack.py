@@ -13,8 +13,8 @@ Run tests if lapack is not installed:
 """
 
 import sys
-from scipy.testing import *
-from scipy.base import *
+from numpy.testing import *
+from numpy import *
 
 set_package_path()
 from lapack import flapack,clapack
@@ -104,7 +104,7 @@ WARNING: clapack module is empty
 -----------
 See scipy/INSTALL.txt for troubleshooting.
 Notes:
-* If atlas library is not found by scipy/system_info.py,
+* If atlas library is not found by numpy/distutils/system_info.py,
   then scipy uses flapack instead of clapack.
 ****************************************************************
 """

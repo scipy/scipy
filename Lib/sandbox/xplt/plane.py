@@ -5,7 +5,7 @@
 
 from slice3 import plane3
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 from graftypes import *
 
 class Plane :

@@ -1,6 +1,6 @@
 
 import sys
-from scipy.test.testing import *
+from numpy.test.testing import *
 
 set_package_path()
 # make sure that all yyy symbols are imported before the del statement:

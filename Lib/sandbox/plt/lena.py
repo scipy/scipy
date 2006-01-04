@@ -5,7 +5,7 @@ __all__ = ['lena']
 
 import os
 import cPickle as pickle
-from scipy_base import array
+from numpy import array
 
 def lena():
     """ Return Lena picture as an array."""

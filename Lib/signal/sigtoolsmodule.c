@@ -2191,7 +2191,7 @@ DL_EXPORT(void) initsigtools(void) {
 	   and one objects are defined */
 	/* XXX: This should be updated for scipy. I think it's pulling in 
 	   Numeric's multiarray. */
-	PyImport_ImportModule("scipy.base.multiarray");
+	PyImport_ImportModule("numpy.core.multiarray");
 	/* { PyObject *multi = PyImport_ImportModule("multiarray"); } */
 
 	/* Add some symbolic constants to the module */

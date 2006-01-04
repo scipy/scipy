@@ -5,10 +5,10 @@ from distutils import dep_util
 from glob import glob
 import warnings
 
-from scipy.distutils.core import Extension
-from scipy.distutils.misc_util import get_path, Configuration, dot_join
+from numpy.distutils.core import Extension
+from numpy.distutils.misc_util import get_path, Configuration, dot_join
 
-from scipy.distutils.system_info import get_info,dict_append,\
+from numpy.distutils.system_info import get_info,dict_append,\
      AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
      LapackSrcNotFoundError,BlasSrcNotFoundError
 
@@ -51,6 +51,6 @@ def configuration(parent_package=''):
     return config
 
 if __name__ == '__main__':
-    from scipy_distutils.core import setup
+    from numpy.distutils.core import setup
     setup(**configuration())
 

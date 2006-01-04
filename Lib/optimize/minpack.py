@@ -2,7 +2,7 @@
 
 import _minpack
 from common_routines import *
-from scipy.base import atleast_1d, dot, take, triu
+from numpy import atleast_1d, dot, take, triu
 
 error = _minpack.error
 
@@ -250,7 +250,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
 
     mesg = errors[info][0]
     if full_output:
-        import scipy.linalg as sl
+        import numpy.linalg as sl
         perm = take(eye(n),retval[1]['ipvt']-1)
         r = triu(transpose(retval[1]['fjac'])[:n,:])
         R = dot(r, perm)

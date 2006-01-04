@@ -4,7 +4,7 @@
 #include "pysparse/spmatrix.h"
 
 #define PY_ARRAY_UNIQUE_SYMBOL spmatrix
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 /** getitem
  *

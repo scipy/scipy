@@ -1,6 +1,6 @@
 #this just adds errorbar plotting capabilities
 from Numeric import *
-from scipy_base.scimath import *
+from numpy.scimath import *
 from types import StringType
 import pyPlot
 from pyPlot import *

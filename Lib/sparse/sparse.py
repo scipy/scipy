@@ -5,7 +5,7 @@ Original code by Travis Oliphant.
 Modified by Ed Schofield and Robert Cimrman.
 """
 
-from scipy.base import *
+from numpy import *
 import types
 import sparsetools
 import _superlu

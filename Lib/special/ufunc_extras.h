@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 typedef int    IntFunc_d_dd(double x, double *y, double *z);
 typedef int    IntFunc_d_dddd(double v, double *w, double *x, double *y, double *z);

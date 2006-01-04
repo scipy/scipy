@@ -56,9 +56,9 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'line_search', 'check_grad']
 
 import scipy as Numeric
-from scipy.base import atleast_1d, eye, mgrid, argmin, zeros, shape, \
+from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
-import scipy.base
+import numpy
 import linesearch
 Num = Numeric
 MLab = Numeric
@@ -82,15 +82,15 @@ import __builtin__
 pymin = __builtin__.min
 pymax = __builtin__.max
 __version__="0.7"
-_epsilon = sqrt(scipy.base.finfo(float).eps)
+_epsilon = sqrt(numpy.finfo(float).eps)
 
 def vecnorm(x, ord=2):
     if ord == Inf:
-        return scipy.base.amax(abs(x))
+        return numpy.amax(abs(x))
     elif ord == -Inf:
-        return scipy.base.amin(abs(x))
+        return numpy.amin(abs(x))
     else:
-        return scipy.base.sum(abs(x)**ord)**(1.0/ord)
+        return numpy.sum(abs(x)**ord)**(1.0/ord)
         
 def rosen(x):  # The Rosenbrock function
     x = asarray(x)
@@ -1534,7 +1534,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
 
     func        -- Function to be optimized
     ranges       -- Tuple where each element is a tuple of parameters
-                      or a slice object to be handed to scipy.mgrid
+                      or a slice object to be handed to numpy.mgrid
 
     args        -- Extra arguments to function.
     Ns          -- Default number of samples if not given

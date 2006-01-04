@@ -4,7 +4,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 from ezplot import *
 
 def paws ( ) :
@@ -17,7 +17,7 @@ paws ()
 # ezcshow("false")
 def demo ():
    import scipy
-   rand = scipy.rand
+   rand = numpy.rand
    vsf = 0.
    c = 1
    s = 1000.

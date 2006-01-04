@@ -91,7 +91,7 @@ if myodeint.runner:
 __all__ = ['ode']
 __version__ = "$Id$"
 
-from scipy.base import asarray, array, zeros, sin
+from numpy import asarray, array, zeros, sin
 import re,types,sys
 
 class ode:

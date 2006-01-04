@@ -6,9 +6,9 @@ import sys
 import types
 from scipy import special, linalg
 
-import scipy.base as Numeric
+import numpy as Numeric
 
-from scipy.base import exp, amin, amax, ravel, asarray, cast, arange, \
+from numpy import exp, amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, hstack, product, array, typename, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
@@ -16,7 +16,7 @@ __all__ = ['factorial','factorial2','factorialk','comb','who',
            'lena','central_diff_weights', 'derivative', 'pade']
 
 # XXX: the factorial functions could move to scipy.special, and the others 
-# to scipy.base perhaps?
+# to numpy perhaps?
 
 def factorial(n,exact=0):
     """n! = special.gamma(n+1)
@@ -293,10 +293,10 @@ def who(vardict=None):
 #-----------------------------------------------------------------------------
 
 def test(level=10):
-    from scipy.test.testing import module_test
+    from numpy.test.testing import module_test
     module_test(__name__,__file__,level=level)
 
 def test_suite(level=1):
-    from scipy.test.testing import module_test_suite
+    from numpy.test.testing import module_test_suite
     return module_test_suite(__name__,__file__,level=level)
 

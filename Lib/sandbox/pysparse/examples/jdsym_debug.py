@@ -34,10 +34,10 @@ elif test == 2:
     Asigma.shift(-sigma, M)
     K = precon.jacobi(Asigma.to_sss())
     
-    b = scipy.ones(n, 'd')
-    x = scipy.zeros(n, 'd')
+    b = numpy.ones(n, 'd')
+    x = numpy.zeros(n, 'd')
     K.precon(b, x)
-    print 'norm(idiag) = %.16g' % (math.sqrt(scipy.dot(x, x)), )
+    print 'norm(idiag) = %.16g' % (math.sqrt(numpy.dot(x, x)), )
 
     k_conv, lmbd, Q, it, it_inner  = jdsym.jdsym(A.to_sss(), M.to_sss(), K, 5, sigma, 1e-10, 150, itsolvers.qmrs,
                                        jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=200, clvl=1, strategy=1)

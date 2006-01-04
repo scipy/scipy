@@ -4,8 +4,8 @@ import sys
 def setup_package():
     os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
 
-    from scipy.distutils.core import setup
-    from scipy.distutils.misc_util import Configuration
+    from numpy.distutils.core import setup
+    from numpy.distutils.misc_util import Configuration
 
     old_path = os.getcwd()
     local_path = os.path.dirname(os.path.abspath(sys.argv[0]))

@@ -4,7 +4,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 from PR import *
 from mesh3d import *
 from graph3d import *

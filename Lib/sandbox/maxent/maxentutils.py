@@ -132,7 +132,7 @@ def robustlog(x):
 def _robustarraylog(x):
     """ An array version of robustlog.  Operates on a real array x.
     """
-    arraylog = emptyarray(len(x), scipy.Complex64)
+    arraylog = emptyarray(len(x), numpy.Complex64)
     for i in range(len(x)):
         xi = x[i]
         if xi > 0:
@@ -155,16 +155,16 @@ except:
 
 def arrayexp(x):
     """Returns the elementwise antilog of the vector x.  We try to
-    exponentiate with scipy.exp() and, if that fails, with python's
-    math.exp().  scipy.exp() is about 10 times faster but throws an
+    exponentiate with numpy.exp() and, if that fails, with python's
+    math.exp().  numpy.exp() is about 10 times faster but throws an
     OverflowError exception for numerical underflow (e.g. exp(-800),
     whereas python's math.exp() just returns zero, which is much more
     helpful.
     """
     try:
-        ex = scipy.exp(x).real
+        ex = numpy.exp(x).real
     except OverflowError:
-        ex = scipy.empty(len(x),scipy.Float64)
+        ex = numpy.empty(len(x),numpy.Float64)
         try:
             for j in range(len(x)):
                 ex[j] = math.exp(x[j])
@@ -190,7 +190,7 @@ def densefeatures(f, x):
     evaluations of the functions fi in the list f at the point x.
     """
     
-    return scipy.array([fi(x) for fi in f])
+    return numpy.array([fi(x) for fi in f])
 
 def densefeaturematrix(f, sample):
     """Returns an (n x m) dense matrix of non-zero evaluations of the
@@ -198,12 +198,12 @@ def densefeaturematrix(f, sample):
     list sample.
     """
     
-    # Was: return scipy.array([[fi(x) for fi in f] for x in sample])
+    # Was: return numpy.array([[fi(x) for fi in f] for x in sample])
 
     m = len(f)
     n = len(sample)
     
-    F = scipy.empty((n, m), scipy.Float64)
+    F = numpy.empty((n, m), numpy.Float64)
     for j in xrange(n):
         x = sample[j]
         for i in xrange(m):
@@ -269,12 +269,12 @@ def dotprod(u,v):
     #print "v = " + str(v)
     
     try:
-        dotprod = scipy.array([0.0])  # a 1x1 array.  Required by spmatrix.
+        dotprod = numpy.array([0.0])  # a 1x1 array.  Required by spmatrix.
         u.matvec(v, dotprod)
         return dotprod[0]		# extract the scalar
     except AttributeError:
         # Assume u is a dense array.
-        return scipy.dot(u,v)
+        return numpy.dot(u,v)
 
 
 
@@ -309,7 +309,7 @@ def innerprod(u,v):
             u.matvec
         except AttributeError:
             # It looks like u is dense
-            return scipy.dot(u,v)
+            return numpy.dot(u,v)
         else:
             # Assume u is sparse
             if scipy.sparse.isspmatrix(u):
@@ -317,7 +317,7 @@ def innerprod(u,v):
                 return innerprod
             else:
                 # Assume PySparse format
-                innerprod = scipy.empty(M, scipy.Float64)
+                innerprod = numpy.empty(M, numpy.Float64)
                 u.matvec(v, innerprod)
                 return innerprod
     else:
@@ -353,26 +353,26 @@ def innerprodtranspose(U,V):
             return innerprodtranspose
         else:
             # Assume U is a dense matrix
-            if isinstance(V, scipy.ndarray):
+            if isinstance(V, numpy.ndarray):
                 # V is also dense
                 if len(V.shape) == 1:
                     # We can't transpose a rank-1 matrix into a row vector, so
                     # we 'reshape' it.
                     Vm = V.shape[0]
-                    Vcolumn = scipy.reshape(V, (1, Vm))
-                    x = scipy.dot(Vcolumn, U)
-                    return scipy.reshape(x, (n,))
+                    Vcolumn = numpy.reshape(V, (1, Vm))
+                    x = numpy.dot(Vcolumn, U)
+                    return numpy.reshape(x, (n,))
                 else:
                     #(Vm, Vn) = V.shape
                     # Assume Vm == m
-                    x = scipy.dot(scipy.transpose(V), U)
-                    return scipy.transpose(x)
+                    x = numpy.dot(numpy.transpose(V), U)
+                    return numpy.transpose(x)
             else:
                 raise TypeError, "V must be a dense array"
     else:
         # U looks like a PySparse matrix
         if len(V.shape) == 1:
-            innerprod = scipy.empty(n, scipy.Float64)
+            innerprod = numpy.empty(n, numpy.Float64)
             U.matvec_transp(V, innerprod)
         else:
             raise TypeError, "innerprodtranspose(U,V) requires that V be " \
@@ -390,12 +390,12 @@ def columnmeans(A):
     be an MxN sparse or dense matrix or a list of M (1xN) sparse
     matrices.
     
-    >>> a = scipy.array([[1,2],[3,4]],'d')
+    >>> a = numpy.array([[1,2],[3,4]],'d')
     >>> columnmeans(a)
     array([ 2.,  3.])
     """
-    if type(A) is scipy.ndarray:
-        return scipy.average(A)
+    if type(A) is numpy.ndarray:
+        return numpy.average(A)
     else:
         # Assume it's sparse
         try:
@@ -403,7 +403,7 @@ def columnmeans(A):
         except AttributeError:
             raise TypeError, \
                     "columnmeans() only works with sparse and dense arrays"
-        columnsum = innerprodtranspose(A, scipy.ones(m))
+        columnsum = innerprodtranspose(A, numpy.ones(m))
         return columnsum / float(m)
 
 def columnvariances(A):
@@ -415,12 +415,12 @@ def columnvariances(A):
     variances for each column of the MxN sparse or dense matrix A.  (The
     normalization is by (M-1).)
     
-    >>> a = scipy.array([[1,2],[3,4]],'d')
+    >>> a = numpy.array([[1,2],[3,4]],'d')
     >>> columnvariances(a)
     array([ 2.,  2.])
     """
-    if type(A) is scipy.ndarray:
-        return scipy.std(A,0)**2
+    if type(A) is numpy.ndarray:
+        return numpy.std(A,0)**2
     else:
         try:
             m = A.shape[0]
@@ -435,16 +435,16 @@ def var(A):
     list.
 
     Examples:
-    >>> A = scipy.array([1.,1.])
+    >>> A = numpy.array([1.,1.])
     >>> var(A) == 0
     True
-    >>> B = scipy.array([1.])
+    >>> B = numpy.array([1.])
     >>> var(B) == 0
     True
-    >>> C = scipy.array([1.,2.,3.])
+    >>> C = numpy.array([1.,2.,3.])
     >>> var(C) == 1
     True
-    >>> D = scipy.array(range(100))
+    >>> D = numpy.array(range(100))
     >>> abs(var(D) - (841+2./3)) < 1e-10
     True
     >>> E = range(5)   # test with a list
@@ -452,14 +452,14 @@ def var(A):
     2.5
     """
     try:
-        mean = scipy.average(A)
+        mean = numpy.average(A)
         return sum((A-mean)**2) / (A.shape[0] - 1.0)
     except ZeroDivisionError:
         # A has only one element
         return 0.0
     except AttributeError:
         # Perhaps A is a list, not an array
-        return sum((scipy.array(A)-mean)**2) / (len(A) - 1.0)
+        return sum((numpy.array(A)-mean)**2) / (len(A) - 1.0)
 
 
 

@@ -4,7 +4,7 @@
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 #from _Graphics import *
 #import PIL.ImageTk,PIL.Image
 #ImageTk = PIL.ImageTk

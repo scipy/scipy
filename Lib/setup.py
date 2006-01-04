@@ -1,6 +1,6 @@
 
 def configuration(parent_package='',top_path=None):
-    from scipy.distutils.misc_util import Configuration
+    from numpy.distutils.misc_util import Configuration
     config = Configuration('scipy',parent_package,top_path)
     config.add_subpackage('sandbox')
     config.add_subpackage('misc')
@@ -18,9 +18,9 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('lib')
     config.add_subpackage('weave')
     config.make_svn_version_py()  # installs __svn_version__.py
-    config.make_config_py('__scipy_config__')
+    config.make_config_py('__numpy_config__')
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())

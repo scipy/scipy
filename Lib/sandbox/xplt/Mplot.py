@@ -7,16 +7,16 @@
 import gist
 import pl3d, plwf
 import scipy as Numeric
-from scipy import ravel, reshape, repeat, arange, transpose, compress, \
+from numpy import ravel, reshape, repeat, arange, transpose, compress, \
      where, ones, NewAxis, asarray
-import scipy.basic.linalg as MLab
-from scipy.basic.linalg import pi, cos, sin, arctan2, array, angle
+import numpy.corelinalg as MLab
+from numpy.corelinalg import pi, cos, sin, arctan2, array, angle
 import types
 import write_style
 points = 0.0013000
 inches = 72.27*points
 import scipy
-import scipy.base as scipy_base
+import numpy as numpy
 import scipy.signal as signal
 from scipy.xplt import maxwidth as _maxwidth
 from scipy.xplt import maxheight as _maxheight
@@ -269,7 +269,7 @@ def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25
         pass
     else:
         gist.fma()
-    y = where(scipy.isfinite(y),y,0)
+    y = where(numpy.isfinite(y),y,0)
     gist.plg(y,x,color=_colors[ptcolor],marker=_markers[pttype],type='none')
     gist.pldj(x,yb,x,ye,color=_colors[linecolor],type=_types[linetype])
     viewp = gist.viewport()
@@ -509,7 +509,7 @@ def append_global_linetype(arg):
 def _minsqueeze(arr,min=1):
     # eliminate extra dimensions above min
     arr = asarray(arr)
-    arr = scipy.squeeze(arr)
+    arr = numpy.squeeze(arr)
     n = len(arr.shape)
     if n < min:
         arr.shape = arr.shape + (1,)*(min-n)
@@ -558,10 +558,10 @@ def plot(x,*args,**keywds):
     if nargs == 0:
         y = _minsqueeze(x)
         x = Numeric.arange(0,len(y))
-        if scipy.iscomplexobj(y):
+        if numpy.iscomplexobj(y):
             print "Warning: complex data plotting real part."
             y = y.real
-        y = where(scipy.isfinite(y),y,0)
+        y = where(numpy.isfinite(y),y,0)
         gist.plg(y,x,type='solid',color='blue',marks=0,width=linewidth)
         return
     y = args[0]
@@ -583,11 +583,11 @@ def plot(x,*args,**keywds):
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor]+_rmarkers[themarker])
             else:
                 append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
-        if scipy.iscomplexobj(x) or scipy.iscomplexobj(y):
+        if numpy.iscomplexobj(x) or numpy.iscomplexobj(y):
             print "Warning: complex data provided, using only real part."
-            x = scipy.real(x)
-            y = scipy.real(y)
-	y = where(scipy.isfinite(y),y,0)
+            x = numpy.real(x)
+            y = numpy.real(y)
+	y = where(numpy.isfinite(y),y,0)
         y = _minsqueeze(y) 
         x = _minsqueeze(x)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,msize=msize,width=linewidth)
@@ -633,7 +633,7 @@ def matplot(x,y=None,axis=-1):
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]] 
         sliceobj[otheraxis] = k
-	ysl = where(scipy.isfinite(y[sliceobj]),y[sliceobj],0)
+	ysl = where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
         gist.plg(ysl,x,type='solid',color=thiscolor,marks=0)
         append_global_linetype(_rcolors[thiscolor]+'-')
 
@@ -681,7 +681,7 @@ def list_palettes():
     direc = os.environ['GISTPATH']
     files = glob.glob1(direc,"*.gp")
     lengths = map(len,files)
-    maxlen = scipy.amax(lengths)
+    maxlen = numpy.amax(lengths)
     print "Available palettes..."
     print "=====================\n"
     for file in files:
@@ -1157,7 +1157,7 @@ def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
     thetype,thecolor,themarker,tomark = _parse_type_arg(mtype,0)
     if themarker not in ['o','x','.','*']:
         themarker = 'o'
-    y = where(scipy.isfinite(y),y,0)
+    y = where(numpy.isfinite(y),y,0)
     gist.plg(y,m,color=thecolor,marker=themarker,type='none')
     gist.plg(Numeric.zeros(len(m)),m,color=lcolor,marks=0)
     gist.limits()
@@ -1351,7 +1351,7 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
     pl3d.orient3(phi=phi0,theta=theta0)
     pl3d.light3()
     change_palette(palette)
-    sz = scipy_base.shape(z)
+    sz = numpy.shape(z)
     if len(sz) != 2:
         raise ValueError, "Input must be a 2-d array --- a surface."
     N,M = sz
@@ -1359,11 +1359,11 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
         x = arange(0,N)
     if y is None:
         y = arange(0,M)
-    x = scipy_base.squeeze(x)
-    y = scipy_base.squeeze(y)
-    if (len(scipy_base.shape(x)) == 1):
+    x = numpy.squeeze(x)
+    y = numpy.squeeze(y)
+    if (len(numpy.shape(x)) == 1):
         x = x[:,NewAxis]*ones((1,M))
-    if (len(scipy_base.shape(y)) == 1):
+    if (len(numpy.shape(y)) == 1):
         y = ones((N,1))*y[NewAxis,:]
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
     lims = pl3d.draw3(1)
@@ -1387,10 +1387,10 @@ def expand_limits(xpcnt,ypcnt=None):
 def axes(type='b|'):
     vals = gist.limits()
     v0,v1,v2,v3 = vals[:4]
-    x0 = scipy_base.r_[v0:v1:5j]
+    x0 = numpy.r_[v0:v1:5j]
     y0 = 5*[0]
     x1 = 5*[0]
-    y1 = scipy_base.r_[v2:v3:5j]
+    y1 = numpy.r_[v2:v3:5j]
     plot(x0,y0,type,x1,y1,type,hold=1)
     gist.limits(v0,v1,v2,v3)
     
@@ -1402,7 +1402,7 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
         w = w /2.0 / pi
     subplot(2,1,win,hsep=120,frame=frame,color=color)
     gist.plsys(1)
-    gist.plg(20*scipy.log10(abs(H)),w,type='solid',color=lcolor,marks=0)
+    gist.plg(20*numpy.log10(abs(H)),w,type='solid',color=lcolor,marks=0)
     gist.logxy(1,0)
     gist.gridxy(1,1)
     if freq == 'Hz':
@@ -1412,7 +1412,7 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
     ylabel('Magnitude (dB)',color=tcolor,deltax=-0.005)
     title("Bode Plot",color=tcolor)
     gist.plsys(2)
-    gist.plg(180/pi*scipy.unwrap(MLab.angle(H)),w,type='solid',color=lcolor,marks=0)
+    gist.plg(180/pi*numpy.unwrap(MLab.angle(H)),w,type='solid',color=lcolor,marks=0)
     gist.logxy(1,0)
     gist.gridxy(1,1)
     if freq == 'Hz':

@@ -4,9 +4,9 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 import NarPlotter
-from scipy.basic.linalg import rand
+from numpy.corelinalg import rand
 from graph3d import *
 from surface import *
 

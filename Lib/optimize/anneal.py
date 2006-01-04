@@ -4,10 +4,10 @@
 
 from __future__ import nested_scopes
 import copy
-import scipy.base
-from scipy.base import asarray, tan, exp, ones, squeeze, sign, \
+import numpy
+from numpy import asarray, tan, exp, ones, squeeze, sign, \
      all
-from scipy import random
+from numpy import random
 
 __all__ = ['anneal']
 
@@ -26,10 +26,10 @@ class base_schedule:
 
     def init(self, **options):
         self.__dict__.update(options)
-        if self.lower == scipy.base.NINF:
-            self.lower = -scipy.utils.limits.double_max
-        if self.upper == scipy.base.PINF:
-            self.upper = scipy.utils.limits.double_max
+        if self.lower == numpy.NINF:
+            self.lower = -numpy.utils.limits.double_max
+        if self.upper == numpy.PINF:
+            self.upper = numpy.utils.limits.double_max
         self.k = 0
         self.accepted = 0
         self.feval = 0

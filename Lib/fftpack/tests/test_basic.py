@@ -11,16 +11,16 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py [<level>]
 """
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from fftpack import ifft,fft,fftn,ifftn,rfft,irfft
 from fftpack import _fftpack as fftpack
 restore_path()
 
-from scipy.base import arange, add, array, asarray, zeros, dot, exp, pi,\
+from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes
 
-from scipy.random import rand
+from numpy.random import rand
 def random(size):
     return rand(*size)
 
@@ -378,7 +378,7 @@ class test_irfft(ScipyTestCase):
             from Numeric import zeros,array
         except ImportError:
             FFT_irfft = None
-            from scipy.base import zeros,array
+            from numpy import zeros,array
 
         print
         print 'Inverse Fast Fourier Transform (real data)'

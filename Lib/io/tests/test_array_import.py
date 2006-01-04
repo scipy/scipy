@@ -6,14 +6,14 @@
 # also check out numpyio.fread.__doc__ and other method docstrings.
 
 import os
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 import io
 from io import numpyio
 restore_path()
 
 
-import scipy.base as N
+import numpy as N
 import tempfile
 
 class test_numpyio(ScipyTestCase):

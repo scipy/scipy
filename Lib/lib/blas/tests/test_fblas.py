@@ -15,10 +15,10 @@
 # !! ever !replaced! by a blas call, we'll need to fill in a simple 
 # !! matrix multiply here to ensure integrity of tests.
 
-from scipy.base import *
+from numpy import *
 
 import sys
-from scipy.testing import *
+from numpy.testing import *
 set_package_path()
 from blas import fblas
 restore_path()
@@ -298,7 +298,7 @@ class base_gemv(ScipyTestCase):
         mult = array(1, dtype = self.dtype)            
         if self.dtype in ['F', 'D']:
             mult = array(1+1j, dtype = self.dtype)
-        from scipy.random import normal
+        from numpy.random import normal
         alpha = array(1., dtype = self.dtype) * mult
         beta = array(1.,dtype = self.dtype) * mult
         a = normal(0.,1.,(3,3)).astype(self.dtype) * mult
@@ -400,7 +400,7 @@ class test_zgemv(base_gemv):
 
 class base_ger(ScipyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
-        from scipy.basic.random import normal
+        from numpy.random import normal
         alpha = array(1., dtype = self.dtype)
         a = normal(0.,1.,(3,3)).astype(self.dtype)
         x = arange(shape(a)[0]*x_stride,dtype=self.dtype)
@@ -452,7 +452,7 @@ class test_dger(base_ger):
 """
 class base_ger_complex(base_ger):
     def get_data(self,x_stride=1,y_stride=1):
-        from scipy.basic.random import normal
+        from numpy.random import normal
         alpha = array(1+1j, dtype = self.dtype)
         a = normal(0.,1.,(3,3)).astype(self.dtype)
         a = a + normal(0.,1.,(3,3)) * array(1j, dtype = self.dtype)

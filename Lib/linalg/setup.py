@@ -17,16 +17,16 @@ skip_single_routines = 0
 
 # Some OS distributions (e.g. Redhat, Suse) provide a blas library that
 # is built using incomplete blas sources that come with lapack tar-ball.
-# In order to use such a library in scipy.linalg, the following flag
+# In order to use such a library in numpy.linalg, the following flag
 # must be set to True:
 using_lapack_blas = 0
 
 #--------------------
 
 def configuration(parent_package='',top_path=None):
-    from scipy.distutils.system_info import get_info, NotFoundError
+    from numpy.distutils.system_info import get_info, NotFoundError
 
-    from scipy.distutils.misc_util import Configuration
+    from numpy.distutils.misc_util import Configuration
 
     from interface_gen import generate_interface
 
@@ -177,7 +177,7 @@ def configuration(parent_package='',top_path=None):
     return config
 
 if __name__ == '__main__':
-    from scipy.distutils.core import setup
+    from numpy.distutils.core import setup
     from linalg_version import linalg_version
 
     setup(version=linalg_version,

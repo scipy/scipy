@@ -1,6 +1,6 @@
 # Pink noise generator
 
-from scipy.base import *
+from numpy import *
 from scipy import stats
 
 def pink1d(n, rvs=stats.norm.rvs):

@@ -5,15 +5,15 @@
 
 import sigtools
 import scipy.special as special
-import scipy.linalg as linalg
+import numpy.linalg as linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
-from scipy.base import polyadd, polymul, polydiv, polysub, \
+from numpy import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar
 import types
 import scipy
 from scipy.stats import mean
-import scipy.base as Numeric
-from scipy.base import array, arange, where, sqrt, rank, zeros, NewAxis, \
+import numpy as Numeric
+from numpy import array, arange, where, sqrt, rank, zeros, NewAxis, \
     argmax, product, cos, pi
 from scipy.misc import factorial
 
@@ -554,10 +554,10 @@ def triang(M,sym=1):
     n = arange(1,int((M+1)/2)+1)
     if M % 2 == 0:
         w = (2*n-1.0)/M
-        w = scipy.r_[w, w[::-1]]
+        w = numpy.r_[w, w[::-1]]
     else:
         w = 2*n/(M+1.0)
-        w = scipy.r_[w, w[-2::-1]]
+        w = numpy.r_[w, w[-2::-1]]
 
     if not sym and not odd:
         w = w[:-1]
@@ -578,7 +578,7 @@ def parzen(M,sym=1):
     nb = extract(abs(n) <= (M-1)/4.0, n)
     wa = 2*(1-abs(na)/(M/2.0))**3.0
     wb = 1-6*(abs(nb)/(M/2.0))**2.0 + 6*(abs(nb)/(M/2.0))**3.0
-    w = scipy.r_[wa,wb,wa[::-1]]
+    w = numpy.r_[wa,wb,wa[::-1]]
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -595,7 +595,7 @@ def bohman(M,sym=1):
         M = M+1    
     fac = abs(linspace(-1,1,M)[1:-1])
     w = (1 - fac)* cos(pi*fac) + 1.0/pi*sin(pi*fac)
-    w = scipy.r_[0,w,0]    
+    w = numpy.r_[0,w,0]    
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -809,9 +809,9 @@ def hilbert(x, N=None):
         N = len(x)
     if N <=0:
         raise ValueError, "N must be positive."
-    if scipy.iscomplexobj(x):
+    if numpy.iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
-        x = scipy.real(x)
+        x = numpy.real(x)
     Xf = fft(x,N,axis=0)
     h = Numeric.zeros(N)
     if N % 2 == 0:
@@ -837,9 +837,9 @@ def hilbert2(x,N=None):
         if N <=0:
             raise ValueError, "N must be positive."
         N = (N,N)
-    if scipy.iscomplexobj(x):
+    if numpy.iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
-        x = scipy.real(x)
+        x = numpy.real(x)
     print N
     Xf = fft2(x,N,axes=(0,1))
     h1 = Numeric.zeros(N[0],'d')
@@ -867,7 +867,7 @@ def hilbert2(x,N=None):
 def cmplx_sort(p):
     "sort roots based on magnitude."
     p = asarray(p)
-    if scipy.iscomplexobj(p):
+    if numpy.iscomplexobj(p):
         indx = Numeric.argsort(abs(p))
     else:
         indx = Numeric.argsort(p)
@@ -890,11 +890,11 @@ def unique_roots(p,tol=1e-3,rtype='min'):
       mult -- The multiplicity of each root
     """
     if rtype in ['max','maximum']:
-        comproot = scipy.max
+        comproot = numpy.maximum
     elif rtype in ['min','minimum']:
-        comproot = scipy.min
+        comproot = numpy.minimum
     elif rtype in ['avg','mean']:
-        comproot = scipy.mean
+        comproot = numpy.mean
     p = asarray(p)*1.0
     tol = abs(tol)
     p, indx = cmplx_sort(p)
@@ -918,7 +918,7 @@ def unique_roots(p,tol=1e-3,rtype='min'):
             mult.append(1)
     return array(pout), array(mult)
 
-from scipy.base import real_if_close, atleast_1d
+from numpy import real_if_close, atleast_1d
 
 
 def invres(r,p,k,tol=1e-3,rtype='avg'):
@@ -1285,10 +1285,10 @@ def resample(x,num,t=None,axis=0,window=None):
         new_t = arange(0,num)*(t[1]-t[0])* Nx / float(num) + t[0]
         return y, new_t
 
-from scipy.base import expand_dims, unique, prod, sort, zeros, ones, \
+from numpy import expand_dims, unique, prod, sort, zeros, ones, \
      reshape, r_, any, c_, transpose, take, dot
 
-import scipy.linalg as linalg
+import numpy.linalg as linalg
 def detrend(data, axis=-1, type='linear', bp=0):
     """Remove linear trend along axis from data.
 

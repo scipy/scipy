@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 #define BOUNDARY_MASK 12
 #define OUTSIZE_MASK 3

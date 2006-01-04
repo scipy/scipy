@@ -31,7 +31,7 @@
 #define VORONOI_DIAGRAM_GENERATOR
 
 #include "Python.h"
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 
 #include <math.h>
 #include <stdlib.h>

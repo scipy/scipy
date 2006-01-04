@@ -6,9 +6,9 @@
 from region import *
 from quadmesh import *
 from graph2d import *
-from scipy.basic.linalg import rand
+from numpy.corelinalg import rand
 from scipy import *
-from scipy_base.fastumath import *
+from numpy.umath import *
 from shapetest import *
 
 def paws ( ) :
