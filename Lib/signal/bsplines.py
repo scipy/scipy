@@ -2,7 +2,7 @@
 
 import scipy.special
 from numpy import *
-from numpy.umath import sqrt, exp, greater, equal, cos, add, sin
+from numpy.core.umath import sqrt, exp, greater, equal, cos, add, sin
 from spline import *      # C-modules
 
 gamma = scipy.special.gamma

@@ -4,7 +4,7 @@
 """
 
 import numpy
-from numpy.umath import *
+from numpy.core.umath import *
 from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, Float, resize, pi, concatenate, absolute, logspace, c_
 from numpy import mintypecode
