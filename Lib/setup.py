@@ -18,7 +18,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('lib')
     config.add_subpackage('weave')
     config.make_svn_version_py()  # installs __svn_version__.py
-    config.make_config_py('__numpy_config__')
+    config.make_config_py()
     return config
 
 if __name__ == '__main__':

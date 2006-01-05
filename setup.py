@@ -27,7 +27,7 @@ def setup_package():
         
         config.add_subpackage('Lib')
         config.name = 'scipy'
-        from scipy_version import scipy_version as version
+        from version import version as version
         config.dict_append(version=version)
 
         print config.name,'version',config.version
