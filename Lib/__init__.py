@@ -28,12 +28,6 @@ import numpy._import_tools as _ni
 pkgload = _ni.PackageLoader()
 del _ni
 
-from numpy import *
-del fft, ifft, info
-import numpy
-__all__.extend(filter(lambda x: x not in ['fft','ifft','info'], numpy.__all__))
-del numpy
-
 from numpy.testing import ScipyTest
 test = ScipyTest('scipy').test
 __all__.append('test')
