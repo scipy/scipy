@@ -8,7 +8,7 @@ from mesh3d import *
 from surface import *
 
 from scipy import *
-from numpy.umath import *
+from numpy.core.umath import *
 
 from arrayfns import *
 

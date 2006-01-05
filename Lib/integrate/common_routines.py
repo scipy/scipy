@@ -2,7 +2,7 @@
 
 
 from numpy import *
-from numpy.umath import *
+from numpy.core.umath import *
 
 def myasarray(a):
     if isscalar(a):

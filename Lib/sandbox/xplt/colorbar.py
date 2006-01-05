@@ -5,7 +5,7 @@
 
 # ed williams' colorbar stuff
 from scipy import *
-from numpy.umath import *
+from numpy.core.umath import *
 from arrayfns import *
 from gist import *
 from slice3 import *

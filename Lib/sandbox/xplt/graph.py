@@ -29,7 +29,7 @@ else :
  
 # The following is so I know about arrays:
 from scipy import *
-from numpy.umath import *
+from numpy.core.umath import *
 from shapetest import *
 
 class Graph :

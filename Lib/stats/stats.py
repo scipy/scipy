@@ -191,8 +191,8 @@ import string, sys, _support
 from types import *
 
 from numpy import *
-import numpy.umath as math
-from numpy.umath import *
+import numpy.core.umath as math
+from numpy.core.umath import *
 import scipy.special as special
 import numpy.linalg as linalg
 import scipy

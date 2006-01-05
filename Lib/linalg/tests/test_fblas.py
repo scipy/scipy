@@ -16,7 +16,7 @@
 # !! matrix multiply here to ensure integrity of tests.
 
 from numpy import *
-from numpy.umath import *
+from numpy.core.umath import *
 
 import sys
 from numpy.testing import *

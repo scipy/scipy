@@ -1,7 +1,7 @@
 import os, sys,time, tempfile
 from types import *
 from Numeric import *
-from numpy.umath import *
+from numpy.core.umath import *
 
 try:
     import win32pipe

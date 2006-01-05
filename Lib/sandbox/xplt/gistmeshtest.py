@@ -8,7 +8,7 @@ from quadmesh import *
 from graph2d import *
 from numpy.corelinalg import rand
 from scipy import *
-from numpy.umath import *
+from numpy.core.umath import *
 from shapetest import *
 
 def paws ( ) :

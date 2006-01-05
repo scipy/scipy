@@ -1,4 +1,4 @@
-from numpy.umath import *
+from numpy.core.umath import *
 from scipy import *
 from numpy import limits, display_test
 import sys

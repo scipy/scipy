@@ -4,7 +4,7 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 from scipy import *
-from numpy.umath import *
+from numpy.core.umath import *
 GraphicsError = "GraphicsError"
 
 import os

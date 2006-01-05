@@ -34,7 +34,7 @@
 #               General layout classes
 #----------------------------------------------------------
 from Numeric import *
-from numpy.umath import *
+from numpy.core.umath import *
 import numpy.limits as limits
 import numpy as misc
 
