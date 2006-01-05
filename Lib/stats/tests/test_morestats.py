@@ -5,6 +5,7 @@ from numpy.testing import *
 
 set_package_path()
 import scipy
+import numpy
 import stats
 restore_path()
 

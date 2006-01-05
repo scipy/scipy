@@ -6,17 +6,17 @@
 
 import gist
 import pl3d, plwf
-import scipy as Numeric
+import numpy as Numeric
+numpy = Numeric
 from numpy import ravel, reshape, repeat, arange, transpose, compress, \
      where, ones, NewAxis, asarray
-import numpy.corelinalg as MLab
-from numpy.corelinalg import pi, cos, sin, arctan2, array, angle
+import numpy.lib.mlab as MLab
+from numpy.lib.mlab import pi, cos, sin, arctan2, array, angle
 import types
 import write_style
 points = 0.0013000
 inches = 72.27*points
 import scipy
-import numpy as numpy
 import scipy.signal as signal
 from scipy.xplt import maxwidth as _maxwidth
 from scipy.xplt import maxheight as _maxheight

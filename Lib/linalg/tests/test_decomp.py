@@ -53,7 +53,7 @@ class test_eigvals(ScipyTestCase):
         assert_array_almost_equal(w,exact_w)
 
     def bench_random(self,level=5):
-        import numpy.corelinalg as linalg
+        import numpy.linalg as linalg
 	Numeric_eigvals = linalg.eigenvalues
         print
         print '           Finding matrix eigenvalues'

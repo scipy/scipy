@@ -6,7 +6,7 @@
 from scipy import *
 from numpy.core.umath import *
 import NarPlotter
-from numpy.corelinalg import rand
+from numpy import rand
 from graph3d import *
 from surface import *
 

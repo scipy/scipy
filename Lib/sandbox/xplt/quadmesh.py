@@ -9,7 +9,7 @@ from numpy.core.umath import *
 from shapetest import *
 from graftypes import *
 from arrayfns import *
-from numpy.corelinalg import *
+from numpy import *
 from gist import *
 
 class QuadMesh :

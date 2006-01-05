@@ -3,9 +3,8 @@
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
-from scipy import *
+from numpy import *
 from numpy.core.umath import *
-from numpy.corelinalg import rand
 from surface import *
 from graph3d import *
 from mesh3d import *

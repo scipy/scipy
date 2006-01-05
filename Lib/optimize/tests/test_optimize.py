@@ -6,7 +6,8 @@ Nov 2005
 from numpy.testing import *
 
 set_package_path()
-from scipy import optimize, array, zeros, float64, dot, log, exp
+from scipy import optimize
+from numpy import array, zeros, float64, dot, log, exp
 restore_path()
 
 

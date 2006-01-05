@@ -13,6 +13,7 @@ from numpy import zeros, arange, sort, amin, amax, any, where, \
      array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel
 import scipy
+import numpy
 import types
 import scipy.optimize as optimize
 import futil

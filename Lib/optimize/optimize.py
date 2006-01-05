@@ -55,13 +55,13 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad']
 
-import scipy as Numeric
+import numpy as Numeric
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
-import numpy
 import linesearch
 Num = Numeric
 MLab = Numeric
+numpy = Numeric
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core

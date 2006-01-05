@@ -9,6 +9,7 @@
 import sys
 from numpy.testing import *
 from numpy import *
+import numpy
 import scipy
 
 set_package_path()

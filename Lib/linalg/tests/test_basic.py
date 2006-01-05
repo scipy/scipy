@@ -156,7 +156,7 @@ class test_solve(ScipyTestCase):
             assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
 
     def bench_random(self,level=5):
-        import numpy.corelinalg as linalg
+        import numpy.linalg as linalg
         basic_solve = linalg.solve_linear_equations
         print
         print '      Solving system of linear equations'
@@ -229,7 +229,7 @@ class test_inv(ScipyTestCase):
                                       Numeric.identity(n))
 
     def bench_random(self,level=5):
-	import numpy.corelinalg as linalg
+	import numpy.linalg as linalg
         basic_inv = linalg.inverse
         print
         print '           Finding matrix inverse'
@@ -278,7 +278,7 @@ class test_det(ScipyTestCase):
         assert_almost_equal(a_det,-6+4j)
 
     def check_random(self):
-        import numpy.corelinalg as linalg 
+        import numpy.linalg as linalg 
         basic_det = linalg.determinant
         n = 20
         for i in range(4):
@@ -288,7 +288,7 @@ class test_det(ScipyTestCase):
             assert_almost_equal(d1,d2)
 
     def check_random_complex(self):
-        import numpy.corelinalg as linalg
+        import numpy.linalg as linalg
         basic_det = linalg.determinant
         n = 20
         for i in range(4):
@@ -298,7 +298,7 @@ class test_det(ScipyTestCase):
             assert_almost_equal(d1,d2)
 
     def bench_random(self,level=5):
-        import numpy.corelinalg as linalg
+        import numpy.linalg as linalg
         basic_det = linalg.determinant
         print
         print '           Finding matrix determinant'

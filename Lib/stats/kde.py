@@ -23,7 +23,7 @@
 
 import warnings
 
-from scipy import dot, linalg, special
+from scipy import linalg, special
 from numpy import *
 from numpy.random import randint, multivariate_normal
 

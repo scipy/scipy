@@ -10,7 +10,8 @@ from slice3 import *
 from yorick import *
 from gist import *
 from arrayfns import *
-from numpy.corelinalg import rand
+from numpy import rand
+
 
 window3 (hcp = "talk.ps", dump = 1)
 
