@@ -96,15 +96,26 @@ def setxor1d( ar1, ar2 ):
 
 ##
 # 03.11.2005, c
+# 05.01.2006
 def setmember1d( ar1, ar2 ):
     """Return an array of shape of ar1 containing 1 where the elements of
     ar1 are in ar2 and 0 otherwise."""
     ar = numpy.concatenate( (ar1, ar2 ) )
+    tt = numpy.concatenate( (numpy.zeros_like( ar1 ),
+                             numpy.zeros_like( ar2 ) + 1) )
     perm = numpy.argsort( ar )
     aux = numpy.take( ar, perm )
+    aux2 = numpy.take( tt, perm )
     flag = ediff1d( aux, 1 ) == 0
-    indx = numpy.argsort( perm )
-    return numpy.take( flag, indx[:len( ar1 )] )
+
+    ii = numpy.where( flag * aux2 )
+    aux = perm[ii+1]
+    perm[ii+1] = perm[ii]
+    perm[ii] = aux
+
+    indx = numpy.argsort( perm )[:len( ar1 )]
+
+    return numpy.take( flag, indx )
 
 ##
 # 03.11.2005, c
