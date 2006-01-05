@@ -5,7 +5,7 @@
 
 import sigtools
 import scipy.special as special
-import numpy.linalg as linalg
+import scipy.linalg as linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from numpy import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar
@@ -1288,7 +1288,7 @@ def resample(x,num,t=None,axis=0,window=None):
 from numpy import expand_dims, unique, prod, sort, zeros, ones, \
      reshape, r_, any, c_, transpose, take, dot
 
-import numpy.linalg as linalg
+import scipy.linalg as linalg
 def detrend(data, axis=-1, type='linear', bp=0):
     """Remove linear trend along axis from data.
 

@@ -63,6 +63,7 @@ from __future__ import nested_scopes
 from numpy import *
 import _cephes as cephes
 _gam = cephes.gamma
+from scipy.linalg import eig
 
 def poch(z,m):
     """Pochhammer symbol (z)_m = (z)(z+1)....(z+m-1) = gamma(z+m)/gamma(z)"""
@@ -83,28 +84,6 @@ class orthopoly1d(poly1d):
         self.__dict__['coeffs'] *= kn
 
 
-_eigfunc_cache = None
-def get_eig_func():
-    global _eigfunc_cache
-    if _eigfunc_cache is not None:
-        return _eigfunc_cache
-    try:
-        import numpy.linalg
-        eig = numpy.linalg.eig
-    except ImportError:
-        try:
-            import linalg
-            eig = linalg.eig
-        except ImportError:
-            try:
-                from numpy import eigenvectors as eig
-            except ImportError:
-                raise ImportError, \
-                      "You must have numpy.linalg or Numeric or numarray to" \
-                      "use this function."
-    _eigfunc_cache = eig
-    return eig
-
 def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)
 
@@ -119,7 +98,6 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     sqrt_bn_func(n)     should return sqrt(B_n)
     mu ( = h_0 )        is the integral of the weight over the orthogonal interval
     """
-    eig = get_eig_func()
     nn = arange(1.0,n)
     sqrt_bn = sqrt_bn_func(nn)
     an = an_func(concatenate(([0],nn)))

@@ -318,7 +318,7 @@ dividing 1.0 by their squares.
 covx and covy are arrays of covariance matrices and are converted to weights by
 performing a matrix inversion on each observation's covariance matrix.
 
-  E.g.  we[i] = numpy.linalg.inv(covy[i])  # i in range(len(covy))
+  E.g.  we[i] = scipy.linalg.inv(covy[i])  # i in range(len(covy))
                                            #   if covy.shape == (n,q,q)
 
 These arguments follow the same structured argument conventions as wd and we

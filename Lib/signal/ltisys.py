@@ -10,7 +10,7 @@ from numpy import product, zeros, concatenate, \
 import numpy as Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
-import numpy.linalg as linalg
+import scipy.linalg as linalg
 from numpy import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 from numpy import matrix as Mat

@@ -9,7 +9,7 @@ __usage__ = """
 Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
-  python -c 'import scipy;numpy.linalg.test(<level>)'
+  python -c 'import scipy;scipy.linalg.test(<level>)'
 Run tests if linalg is not installed:
   python tests/test_matfuncs.py [<level>]
 """

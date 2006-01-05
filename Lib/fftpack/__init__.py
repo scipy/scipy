@@ -10,7 +10,6 @@ from fftpack_version import fftpack_version as __version__
 from basic import *
 from pseudo_diffs import *
 from helper import *
-from numpy.dft import fftshift, ifftshift, fftfreq
 
 from numpy.testing import ScipyTest 
 test = ScipyTest().test

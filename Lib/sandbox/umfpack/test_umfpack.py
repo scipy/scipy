@@ -8,7 +8,7 @@ import umfpack as um
 import numpy as nm
 #import scipy.io as io
 import scipy.sparse as sp
-import numpy.linalg as nla
+import scipy.linalg as nla
 import pylab
 import time
 import urllib

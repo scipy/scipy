@@ -17,7 +17,7 @@ skip_single_routines = 0
 
 # Some OS distributions (e.g. Redhat, Suse) provide a blas library that
 # is built using incomplete blas sources that come with lapack tar-ball.
-# In order to use such a library in numpy.linalg, the following flag
+# In order to use such a library in scipy.linalg, the following flag
 # must be set to True:
 using_lapack_blas = 0
 

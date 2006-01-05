@@ -8,7 +8,7 @@
 
 import numpy
 from numpy import arange, zeros, array, dot, sqrt, cos, sin
-from numpy.linalg import norm
+from scipy.linalg import norm
 from numpy.testing import *
 set_package_path()
 from scipy.integrate import odeint

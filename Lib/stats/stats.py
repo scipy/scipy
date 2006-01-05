@@ -194,8 +194,7 @@ from numpy import *
 import numpy.core.umath as math
 from numpy.core.umath import *
 import scipy.special as special
-import numpy.linalg as linalg
-import scipy
+import scipy.linalg as linalg
 
 SequenceType = (ListType, TupleType, ArrayType)
 

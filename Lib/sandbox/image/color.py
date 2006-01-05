@@ -25,7 +25,7 @@ xyz_from_rgbcie = [[0.490, 0.310, 0.200],
                    [0.177, 0.813, 0.011],
                    [0.000, 0.010, 0.990]]
 
-rgbcie_from_xyz = numpy.linalg.inv(xyz_from_rgbcie)
+rgbcie_from_xyz = scipy.linalg.inv(xyz_from_rgbcie)
 
 rgbntsc_from_xyz = [[1.910, -0.533, -0.288],
                     [-0.985, 2.000, -0.028],
@@ -45,7 +45,7 @@ xyz_from_rgb =  [[0.412453, 0.357580, 0.180423],
                  [0.212671, 0.715160, 0.072169],
                  [0.019334, 0.119193, 0.950227]]
 
-rgb_from_xyz = numpy.linalg.inv(xyz_from_rgb)
+rgb_from_xyz = scipy.linalg.inv(xyz_from_rgb)
 
 # From http://www.mir.com/DMG/ycbcr.html
 
@@ -53,7 +53,7 @@ ycbcr_from_rgbp = [[0.299, 0.587, 0.114],
                    [-0.168736, -0.331264, 0.5],
                    [0.5, -0.418688, -0.081312]]
 
-rgbp_from_ycbcr = numpy.linalg.inv(ycbcr_from_rgbp)
+rgbp_from_ycbcr = scipy.linalg.inv(ycbcr_from_rgbp)
 
 
 # LMS color space spectral matching curves provide the
