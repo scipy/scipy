@@ -679,16 +679,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             break
 
         try:
-            rhok = 1 / Num.dot(yk,sk)
+            rhok = 1 / (Num.dot(yk,sk))
         except ZeroDivisionError:
-            warnflag = 2
-            break
-            #print "Divide by zero encountered:  Hessian calculation reset."
-            #Hk = I
-        else:
-            A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
-            A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
-            Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
+            rhok = 1000.
+	    print "Divide-by-zero encountered: rhok assumed large"
+        A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
+        A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
+        Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
                  * sk[Num.NewAxis,:]
 
     if disp or full_output:

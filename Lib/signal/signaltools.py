@@ -8,7 +8,8 @@ import scipy.special as special
 import scipy.linalg as linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from numpy import polyadd, polymul, polydiv, polysub, \
-     roots, poly, polyval, polyder, cast, asarray, isscalar
+     roots, poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
+     ones
 import types
 import scipy
 from scipy.stats import mean
@@ -534,6 +535,23 @@ def lfiltic(b,a,y,x=None):
         zi[m] -= Numeric.sum(a[m+1:]*y[:N-m])
 
     return zi
+
+def deconvolve(signal, divisor):
+    """Deconvolves divisor out of signal. 
+    """
+    num = atleast_1d(signal)
+    den = atleast_1d(divisor)
+    N = len(num)
+    D = len(den)
+    if D > N:
+        quot = [];
+        rem = num;
+    else:
+        input = ones(N-D+1, float)
+        input[1:] = 0
+        quot = lfilter(num, den, input)
+        rem = num - convolve(den, quot, mode='full')
+    return quot, rem
     
 
 def boxcar(M,sym=1):

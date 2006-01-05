@@ -33,6 +33,8 @@ Signal Processing Tools
     symiirorder2  --  4th-order IIR filter (cascade of second-order systems).
     lfilter       --  1-dimensional FIR and IIR digital linear filtering.
 
+    deconvolve    --  1-d deconvolution using lfilter.
+
     hilbert       --- Compute the analytic signal of a 1-d signal.
     get_window    --- Create FIR window.
 
