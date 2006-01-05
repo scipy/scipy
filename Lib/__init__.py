@@ -28,9 +28,18 @@ import numpy._import_tools as ni
 pkgload = ni.PackageLoader()
 del ni
 
+from numpy import *
+del fft, ifft, info
+import numpy
+__all__.extend(filter(lambda x: x not in ['fft','ifft','info'], numpy.__all__))
+del numpy
+
 from numpy.testing import ScipyTest
 test = ScipyTest('scipy').test
 __all__.append('test')
+
+from scipy_version import scipy_version as __version__
+__all__.append('__version__')
 
 __numpy_doc__ = """
 
