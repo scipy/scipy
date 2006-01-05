@@ -16,11 +16,13 @@ Available subpackages
 ---------------------
 """
 
-import os, sys
-SCIPY_IMPORT_VERBOSE = int(os.environ.get('SCIPY_IMPORT_VERBOSE','0'))
+import os as _os
+import sys as _sys
+SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','0'))
 
 try:
-    import pkg_resources # activate namespace packages (manipulates __path__)
+    import pkg_resources as _pr # activate namespace packages (manipulates __path__)
+    del _pr
 except ImportError:
     pass
 
@@ -39,3 +41,5 @@ __all__.append('__numpy_version__')
 
 from __config__ import show as show_config
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
+
+del _os, _sys
