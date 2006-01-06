@@ -26,7 +26,7 @@ Author: Robert Cimrman
 """
 # 02.11.2005, c
 import time
-import scipy
+import numpy
 
 ##
 # 03.11.2005, c
