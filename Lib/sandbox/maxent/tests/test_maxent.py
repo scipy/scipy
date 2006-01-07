@@ -16,14 +16,13 @@ Run tests if maxent is not installed:
   python tests/test_maxent.py [<level>]
 """
 
-import numpy as Numeric
-from numpy import arange, add, array, dot, zeros, identity
-
 import sys
-from numpy.test.testing import *
+from numpy.testing import *
 set_package_path()
-from numpy import *
-from maxent import *
+from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
+import scipy
+#from scipy.maxent import *
+from scipy.sandbox.maxent import *
 restore_path()
 
 import unittest

@@ -22,7 +22,8 @@ __version__=  '2.0-alpha4'
 
 
 import math
-import maxent
+#from scipy import maxent
+from scipy.sandbox import maxent
 
 a_grave = u'\u00e0'
 

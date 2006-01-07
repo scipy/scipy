@@ -7,8 +7,8 @@ common interface.
 Perhaps the logsumexp() module (and its Fortran version) belongs under
 the utils/ branch where other modules can access it more easily.
 
-Author: Ed Schofield
-BSD license
+Copyright: Ed Schofield, 2003-2006
+License: BSD-style (see LICENSE.txt in main source directory)
 """
 
 __author__ = "Ed Schofield"
@@ -16,8 +16,8 @@ __version__ = '2.0-alpha3'
 
 from __future__ import division
 import random, math, bisect, cmath
-# For the new scipy core:
-import scipy
+import numpy
+from scipy import sparse
 
 
 def _logsumexp(values):
@@ -26,7 +26,7 @@ def _logsumexp(values):
     can be a list or any lazy iterator.
 
     The Fortran version of this function is much faster and should be
-    used whenever possible.  The Fortran version operates on scipy
+    used whenever possible.  The Fortran version operates on numpy
     arrays.  This version is slightly more general, operating on
     arbitrary Python iterators.
     
@@ -224,7 +224,7 @@ def sparsefeaturematrix(f, sample, format='ll_mat'):
         import spmatrix
         sparseF = spmatrix.ll_mat(N, M)
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
-        sparseF = scipy.sparse.dok_matrix((N,M))
+        sparseF = sparse.dok_matrix((N,M))
         sparseF._validate = False               # speed hack
     else:
         raise ValueError, "sparse matrix format not recognized"
@@ -259,10 +259,10 @@ def sparsefeaturematrix(f, sample, format='ll_mat'):
 def dotprod(u,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
-    ndarray, scipy spmatrix, or PySparse arrays.
+    ndarray, scipy spmatrix, and PySparse arrays.
     
     Returns the dot product of the (1xM) sparse array u with the (Mx1)
-    (dense) scipy array v.
+    (dense) numpy array v.
     """
     #print "Taking the dot product u.v, where"
     #print "u has shape " + str(u.shape)
@@ -281,7 +281,7 @@ def dotprod(u,v):
 def innerprod(u,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
-    ndarray, scipy spmatrix, or PySparse arrays.
+    ndarray, scipy spmatrix, and PySparse arrays.
     
     Returns the inner product of the (MxN) sparse matrix u with the
     (Nx1) (sparse or dense) vector v.  This is a wrapper for u.dot(v) for
@@ -312,7 +312,7 @@ def innerprod(u,v):
             return numpy.dot(u,v)
         else:
             # Assume u is sparse
-            if scipy.sparse.isspmatrix(u):
+            if sparse.isspmatrix(u):
                 innerprod = u.matvec(v)
                 return innerprod
             else:
@@ -332,9 +332,9 @@ def innerprod(u,v):
 def innerprodtranspose(U,V):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
-    ndarray, scipy spmatrix, or PySparse arrays.
+    ndarray, scipy spmatrix, and PySparse arrays.
     
-    Computes U^T V, where U is a dense or sparse matrix and V is a scipy
+    Computes U^T V, where U is a dense or sparse matrix and V is a numpy
     array.  If U is sparse, V must be a rank-1 array, not a matrix.  This
     function is efficient for large matrices U.  This is a wrapper for
     u.T.dot(v) for dense arrays and spmatrix objects, and for
@@ -348,7 +348,7 @@ def innerprodtranspose(U,V):
         U.matvec_transp
     except AttributeError:
         # See if U is a scipy.sparse.spmatrix
-        if scipy.sparse.isspmatrix(U):
+        if sparse.isspmatrix(U):
             innerprodtranspose = U.rmatvec(V)
             return innerprodtranspose
         else:
@@ -384,7 +384,7 @@ def innerprodtranspose(U,V):
 def columnmeans(A):
     """This is a wrapper for general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
-    ndarray, scipy spmatrix, or PySparse arrays.
+    ndarray, scipy spmatrix, and PySparse arrays.
 
     Returns a dense (1xN) vector with the column averages of A, which can
     be an MxN sparse or dense matrix or a list of M (1xN) sparse
@@ -409,7 +409,7 @@ def columnmeans(A):
 def columnvariances(A):
     """This is a wrapper for general dense or sparse dot products.  It
     is not necessary except as a common interface for supporting ndarray,
-    scipy spmatrix, or PySparse arrays.
+    scipy spmatrix, and PySparse arrays.
 
     Returns a dense (1xN) vector with unbiased estimators for the column
     variances for each column of the MxN sparse or dense matrix A.  (The

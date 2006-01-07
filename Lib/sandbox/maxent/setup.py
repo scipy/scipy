@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 from os.path import join

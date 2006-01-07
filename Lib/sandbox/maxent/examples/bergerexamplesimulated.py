@@ -27,9 +27,12 @@ __version__=  '2.0-alpha4'
 
 import math, sys
 import scipy
-import maxent
-import montecarlo
-from maxentutils import *
+#from scipy import maxent
+#from scipy.maxent.maxentutils import *
+#from scipy import montecarlo
+from scipy.sandbox import maxent
+from scipy.sandbox.maxent.maxentutils import *
+from scipy.sandbox import montecarlo
 
 try:
     algorithm = sys.argv[1]
@@ -65,7 +68,7 @@ for e in samplespace:
 
 sampler = montecarlo.dictsampler(samplefreq)
 
-n = 1 * 10**4
+n = 10**5
 m = 3
 
 # Now create a generator of features of random points
@@ -81,7 +84,7 @@ def sampleFgen(sampler,f):
             x, logprobx = sampler.next()
             xs.append(x)
             logprobs[j] = logprobx
-        F = newmaxent.sparsefeaturematrix(f, xs, SPARSEFORMAT)
+        F = maxent.sparsefeaturematrix(f, xs, SPARSEFORMAT)
         yield F, logprobs
 
 print "Generating an initial sample ..."
@@ -90,12 +93,12 @@ model.setsampleFgen(sampleFgen(sampler, f), sequential=False, matrixsize=n, spar
 model.verbose = True
 
 # Fit the model
-model.tol = 1e-3
+model.avegtol = 1e-4
 model.fit(K, algorithm=algorithm)
 
 # Output the true distribution
 print "\nFitted model parameters are:\n" + str(model.theta)
-smallmodel = newmaxent.model(f, samplespace)
+smallmodel = maxent.model(f, samplespace)
 smallmodel.setparams(model.theta)
 print "\nFitted distribution is:"
 p = smallmodel.probdistarray()
