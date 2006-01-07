@@ -1,24 +1,15 @@
-"""
-montecarlo.py:
+# montecarlo.py: Routines for Monte Carlo simulation
 
-Tools for Monte Carlo simulations.  Some of these routines need to be
-spun out into separate compiled code in C or Fortran.  Once they are
-complete they might belong under random/.
-
-They are currently used by the examples accompanying the maximum entropy
-module.
-
-Copyright: Ed Schofield, 2005
-License: BSD-style (see LICENSE.txt at root of scipy tree)
-"""
+# Copyright: Ed Schofield, 2005-2006
+# License: BSD-style (see LICENSE.txt at root of scipy tree)
 
 __author__ = "Ed Schofield"
-__version__ = '2.0-alpha3'
 
 from __future__ import division
 import random, math, bisect, string
 import scipy
-from intsampler import intsampler
+#from scipy.montecarlo.intsampler import intsampler
+from scipy.sandbox.montecarlo.intsampler import intsampler
 
 class sampler(object):
     """A generic base class for an iterator representing a generator of random
@@ -379,7 +370,7 @@ def dictsampler(table):
     """
     try:
         m,n = table.shape
-        # if this works we assume table is a 1-dim spmatrix or scipy array
+        # if this works we assume table is a 1-dim spmatrix or numpy array
         # and we need to iterate over it
         assert m == 1
         

@@ -7,7 +7,6 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('montecarlo', parent_package, top_path)
 
     config.add_extension('intsampler',
-                         # join('src','FIXME.c')]
                          sources = [join('src',f) for f in
                          ['intsamplermodule.c', 'sampler5tbl.c']] )
 
