@@ -34,6 +34,11 @@ import numpy._import_tools as _ni
 pkgload = _ni.PackageLoader()
 del _ni
 
+import numpy as _num
+from numpy import *
+__all__ += _num.__all__
+del _num
+
 import os as _os
 SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','0'))
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
@@ -42,10 +47,5 @@ del _os
 from numpy.testing import ScipyTest
 test = ScipyTest('scipy').test
 __all__.append('test')
-
-import numpy as _num
-from numpy import *
-__all__ += _num.__all__
-del _num
 
 __doc__ += pkgload.get_pkgdocs()
