@@ -1,4 +1,4 @@
-Changes needed to convert scipy to work with the new scipy core.
+Changes needed to convert SciPy to work with the new NumPy.
 
 done * scipy_distutils and scipy_base to scipy.disutils and scipy.base
 done * Numeric/arrayobject.h to scipy/arrayobject.h
@@ -12,7 +12,7 @@ done * Look for use of descr->zero and descr->ones --- need to be replaced
 Changes that should be made someday:
 
 * io rewritten to use internal writing capabilities of arrays
-* distributions heavy use of extract and insert (could use fancy indexing -- but we should wait until we learn how slow fancy indexing is....)
-* Use of old Numeric C-API.  Using it means an extra C-level function cal think that's a problem,  but...
-* Make use of type addition to extend certain ufuncs with cephes quad types.
+* distributions heavy use of extract and insert (could use fancy indexing?) -- but we should wait until we learn how slow fancy indexing is....)
+* Use of old Numeric C-API.  Using it means an extra C-level function call, but ...
+* Make use of type addition to extend certain ufuncs with cephes quad types
 * Use finfo(foo).bar instead of limits.foo_bar

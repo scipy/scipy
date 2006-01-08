@@ -1,10 +1,11 @@
 .. -*- rest -*-
 .. NB! Keep this document a valid restructured document.
 
-Developing Scipy
+Developing SciPy
 ================
 
 :Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Modified by: Ed Schofield <edschofield@gmail.com>
 :Last changed: $Date$
 :Revision: $Revision$
 :Discussions to: scipy-dev@scipy.org
@@ -14,79 +15,62 @@ Developing Scipy
 Introduction
 ------------
 
-Scipy aims at being a robust and efficient "super-package" of a number
-of its modules, each having a complexity and size to be a highly
-non-trivial package itself. In order for "Scipy integration" to work
-flawlessly, all Scipy modules must follow certain rules that are
-described in this document. Hopefully this document will be helpful to
-Scipy contributors as well as to developers as a basic reference about
-the structure of Scipy package.
+SciPy aims at being a robust and efficient "super-package" of a number
+of modules, each of a non-trivial size and complexity.  In order for
+"SciPy integration" to work flawlessly, all SciPy modules must follow
+certain rules that are described in this document. Hopefully this
+document will be helpful for SciPy contributors and developers as a
+basic reference about the structure of the SciPy package.
 
-Scipy structure
+SciPy structure
 ---------------
 
-Currently Scipy consists of the following files and directories:
+Currently SciPy consists of the following files and directories:
 
   INSTALL.txt
-    Scipy prerequisites, installation, testing, and troubleshooting.
+    SciPy prerequisites, installation, testing, and troubleshooting.
 
   PACKAGERS.txt
-    Information on how to package Scipy and related tools.
+    Information on how to package SciPy and related tools.
 
   THANKS.txt
-    Scipy developers and contributors. Please keep it up to date!!
+    SciPy developers and contributors. Please keep it up to date!!
 
   DEVELOPERS.txt
-    Scipy structure (this document).
+    SciPy structure (this document).
 
   setup.py
-    Script for building and installing Scipy. It calls also
-    scipy_core/setup.py with the same command line arguments
-    as specified for setup.py. You'll find scipy_core related
-    files in scipy_core/{dist,build}.
+    Script for building and installing SciPy.
 
   MANIFEST.in
-    Additions to distutils generated Scipy tar-balls.
-    Its usage is depreciated, in general.
-
-  scipy_core/
-    Contains four modules, scipy_base, scipy_distutils, scipy_test,
-    and weave, that all Scipy modules may depend on. As a rule,
-    scipy_distutils is required only for building, scipy_test for
-    running tests, and scipy_base contains various tools for runtime
-    usage.
+    Additions to distutils-generated SciPy tar-balls.  Its usage is
+    deprecated.
 
   Lib/
-    Contains Scipy __init__.py and the directories of Scipy modules.
-
-  tutorial/
-    Scipy tutorial.
-
-  util/
-    Various tools [Not useful in general. Could we get rid of this?].
+    Contains SciPy __init__.py and the directories of SciPy modules.
 
 
-Scipy module
+
+SciPy module
 ------------
 
-In the following, a *Scipy module* is defined as a Python package, say
-xxx, that is located in the Lib/ directory.  All Scipy modules should
+In the following, a *SciPy module* is defined as a Python package, say
+xxx, that is located in the Lib/ directory.  All SciPy modules should
 follow the following conventions:
 
-* Ideally, each Scipy module should be self-contained as much as
-  possible, that is, it must be usable as standalone and have minimal
-  dependencies to other packages or modules, even if they would be
-  also Scipy modules. The exception is ``scipy_base``, its usage is 
-  encouraged as a replacement of ``Numeric`` or ``numarray`` modules
-  to simplify the future transition Numeric->Numarray.
+* Ideally, each SciPy module should be as self-contained as
+  possible.  That is, it should have minimal
+  dependencies on other packages or modules.  Even dependencies on other
+  SciPy modules should be kept to a minimum.  A dependency on NumPy is
+  of course assumed.
 
 * Directory ``xxx/`` must contain 
 
-  + a file ``setup_xxx.py`` that defines
+  + a file ``setup.py`` that defines
     ``configuration(parent_package='',parent_path=None)`` function.  
     See below for more details.
 
-  + a file ``info_xxx.py``. See below more details.
+  + a file ``info.py``. See below more details.
 
 * Directory ``xxx/`` may contain 
 
@@ -96,49 +80,48 @@ follow the following conventions:
 
   + a file ``MANIFEST.in`` that may contain only ``include setup.py`` line.
     DO NOT specify sources in MANIFEST.in, you must specify all sources
-    in setup_xxx.py file. Otherwise Scipy tar-ball will miss these sources.
+    in setup.py file. Otherwise released SciPy tarballs will miss these sources.
 
-[Open issues: where we should put documentation?]
+  + a directory ``docs/`` for documentation.
 
-File xxx/setup_xxx.py
+File xxx/setup.py
 ---------------------
 
-Each Scipy module setup_xxx.py file should contain a function
+Each SciPy module setup.py file should contain a function
 ``configuration(..)`` that returns a dictionary which must be usable
 as an argument to distutils setup function.
 
-For example, a minimal setup_xxx.py file for a pure Python Scipy
+For example, a minimal setup.py file for a pure-Python SciPy
 module xxx would be::
 
-  def configuration(parent_package='',parent_path=None):
+  def configuration(parent_package='', parent_path=None):
       package = 'xxx'
-      from scipy_distutils.misc_util import default_config_dict
-      config = default_config_dict(package,parent_package)
+      from numpy.distutils.misc_util import default_config_dict
+      config = default_config_dict(package, parent_package)
       return config
 
   if __name__ == '__main__':
-      from scipy_distutils.core import setup
+      from numpy.distutils.core import setup
       setup(**configuration(parent_path=''))
 
-A Scipy module may have also a ``xxx/setup.py`` file that should contain
+A SciPy module may have also a ``xxx/setup.py`` file that should contain
 one statement::
 
-  execfile('setup_xxx.py')
+  execfile('setup.py')
 
-Ideally there should be no need for this file but
+Ideally there should be no need for this file, but
 ``distutils/command/bdist_rpm.py`` (Python versions <=2.3) has
-``setup.py`` hardcoded in and therefore building .rpm files without
-the above described ``setup.py`` file will fail.  This is only
-relevant when you wish to distribute Scipy module separately from
-scipy.
+``setup.py`` hardcoded, so building .rpm files without the above-
+described ``setup.py`` file will fail.  This is only relevant when you
+wish to distribute a SciPy module separately from SciPy.
 
 
 get_path
 ++++++++
 
-``scipy_distutils.misc_util`` provides function
+``numpy.distutils.misc_util`` provides function
 ``get_path(modulename,parent_path=None)`` that returns the directory
-of ``modulename``. In ``setup_xxx.py`` file this can be used to
+of ``modulename``. In the ``setup.py`` file this can be used to
 determine the local directory name as follows::
 
   local_path = get_path(__name__, parent_path)
@@ -146,7 +129,7 @@ determine the local directory name as follows::
 If ``parent_path`` is not ``None`` then the returned path is relative
 to parent path. This avoids longish paths.
 
-When ``setup_xxx.py`` script is going to use ``os.path.join`` a lot
+When the ``setup.py`` script is uses ``os.path.join`` heavily
 then defining the following functions can be handy::
 
   def local_join(*names):
@@ -163,21 +146,21 @@ generated by, for example, by SWIG or F2PY. However, such a step
 should be carried out only when building a module and, in general,
 should be skipped when creating a distribution, for instance.
 
-Scipy_distutils provides natural support for building sources from .i
+numpy.distutils provides native support for building sources from .i
 (SWIG) and .pyf (F2PY) files. These files should be listed in the
-``sources`` list to ``Extension`` constructor and Scipy_distutils
+``sources`` list to ``Extension`` constructor and numpy.distutils
 takes care of processing these files.
 
 For examples, see
 
 ::
 
-  scipy_distutils/tests/f2py_ext/
-  scipy_distutils/tests/swig_ext/
+  numpy.distutils/tests/f2py_ext/
+  numpy.distutils/tests/swig_ext/
 
-In addition, Scipy_distutils allows building sources from whatever
-means that is most suitable for you. All you need to do is to provide
-in the ``sources`` list auxiliary functions with the following
+In addition, numpy.distutils allows building sources from whatever
+means is most suitable for you. All you need to do is to provide
+the ``sources`` list auxiliary functions with the following
 signatures:
 
 ::
@@ -194,16 +177,16 @@ Here ``extension`` argument refers to the corresponding ``Extension``
 instance so that all its attributes are available to be used or to be
 changed in inside these functions. The ``build_dir`` argument is
 suggested (and highly recommended) location for saving generated
-source files. Btw, if you will use ``build_dir`` as a prefix to all
-generated source files then Scipy_distutils will be able to build
-source distributions that contain built sources and in users side they
-will be used instead of regenerating them.
+source files. By the way, if you use ``build_dir`` as a prefix for all
+generated source files then numpy.distutils will be able to build
+source distributions that contain built sources and users will not
+have to regenerate them.
 
 For an example, see
 
 ::
 
-  scipy_distutils/tests/swig_ext/gen_ext/
+  numpy.distutils/tests/swig_ext/gen_ext/
 
 Note that generated source files may be C or Fortran source files as
 well as Python files.
@@ -213,33 +196,31 @@ etc that are used to generated sources and should not be installed)
 should be specified in ``depends`` list of the ``Extension``
 constructor.
 
-SourceGenerator [depreciated]
+SourceGenerator [deprecated]
 +++++++++++++++++++++++++++++
 
 Often building a module envolves a step where sources are generated by
 whatever means. However, such a step should be carried out only when
-building modules and should be skipped when creating a distribution,
-for instance. To facilitate this, ``scipy_distutils.misc_util``
-provides a class ``SourceGenerator(func,target,sources=[],*args)``
-that can be used to hold the process of source generation.  Here
-``func`` is a function ``func(target,sources,*args)`` that is called
-whenever ``target`` should be generated. ``target`` is a name of
-source file that ``func`` must create. ``sources`` is a list of files
-that ``target`` depends on and ``target`` will be regenerated whenever
-these dependencies are changed. ``args`` can be used to pass on extra
-arguments to ``func``. The instance of ``SourceGenerator`` can be used
-in the ``sources`` list argument of an Extension class constructor.
-See ``Lib/xxx/setup_xxx.py`` for a typical example of
-``SourceGenerator`` usage.
+building modules and should be skipped when creating a distribution, for
+instance. To facilitate this, ``numpy.distutils.misc_util`` provides a
+class ``SourceGenerator(func,target,sources=[],*args)`` that can be used
+to hold the process of source generation.  Here ``func`` is a function
+``func(target,sources,*args)`` that is called whenever ``target`` should
+be generated. ``target`` is a name of source file that ``func`` must
+create. ``sources`` is a list of files that ``target`` depends on and
+``target`` will be regenerated whenever these dependencies are changed.
+``args`` can be used to pass on extra arguments to ``func``. The
+instance of ``SourceGenerator`` can be used in the ``sources`` list
+argument of an Extension class constructor.  See ``Lib/xxx/setup.py``
+for a typical example of ``SourceGenerator`` usage.
 
 If ``func`` is ``None`` then the ``target`` must exist and whenever
-``sources`` are modified, the ``target`` file is touched.  This
-feature is useful when including non-standard dependencies to
-Extension instances, just put them to ``sources`` list.  See fastumath
-module in ``scipy_core/scipy_base/setup_scipy_base.py`` for example.
+``sources`` are modified, the ``target`` file is touched.  This feature
+is useful when including non-standard dependencies for Extension
+instances---just put them in the ``sources`` list.
 
 
-SourceFilter [depreciated]
+SourceFilter [deprecated]
 ++++++++++++++++++++++++++
 
 On different platforms different sources may be required to build a
@@ -248,18 +229,18 @@ by defining different sources for an Extension instance, then there
 might occur portability issues (e.g. missing files) when a source
 tar-ball was created on a different platform than the users platform.
 
-To overcome this difficulty, ``scipy_distutils.misc_util`` provides
+To overcome this difficulty, ``numpy.distutils.misc_util`` provides
 ``SourceFilter(func,sources,*args)`` class that can be used to define
 a holder of all sources. Function ``func(sources,*args)`` should
 return a list of sources that is relevant for building the module on
 the particular platfrom. ``SourceFilter`` instance can be used in the
 list of ``sources`` argument of the Extension class.
 
-File xxx/info_xxx.py
+File xxx/info.py
 --------------------
 
-Scipy setup.py and Lib/__init__.py files assume that each Scipy module
-contains a info_xxx.py file. The following information will be looked
+SciPy setup.py and Lib/__init__.py files assume that each SciPy module
+contains a info.py file. The following information will be looked
 from this file:
 
 __doc__
@@ -277,7 +258,7 @@ dependencies
   [Support not implemented yet, may be it is YAGNI?]
   List of module names that the module depends on. The module will not
   be installed if any of the dependencies is missing. If the module
-  depends on another Scipy module, say yyy, and that is not going to
+  depends on another SciPy module, say yyy, and that is not going to
   be installed standalone, then use full name, that is, ``scipy.yyy``
   instead of ``yyy``.
 
@@ -301,11 +282,11 @@ File xxx/__init__.py
 
 To speed up the import time as well as to minimize memory usage, scipy
 uses ppimport hooks to transparently postpone importing large modules
-that might not be used during a Scipy usage session. But in order to
-have an access to documentation of all Scipy modules, including of the
+that might not be used during a SciPy usage session. But in order to
+have an access to documentation of all SciPy modules, including of the
 postponed modules, the documentation string of a module (that would
 usually reside in __init__.py file) should be copied also 
-to info_xxx.py file.
+to info.py file.
 
 So, the header a typical xxx/__init__.py file is::
 
@@ -313,7 +294,7 @@ So, the header a typical xxx/__init__.py file is::
   # Module xxx - ...
   #
 
-  from info_xxx import __doc__
+  from info import __doc__
   ...
 
 File xxx/tests/test_yyy.py
@@ -333,7 +314,7 @@ A minimal example of a ``test_yyy.py`` file that implements tests for
 a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
 
   import sys
-  from scipy_test.testing import *
+  from numpy.testing import *
 
   set_package_path()
   # import xxx symbols
@@ -355,7 +336,7 @@ a module ``xxx.yyy`` containing a function ``zzz()``, is shown below::
 ``ScipyTestCase`` is derived from ``unittest.TestCase`` and it
 implements additional method ``measure(self, code_str, times=1)``.
 
-``scipy_test.testing`` module provides also the following convenience
+The ``numpy.testing`` module provides also the following convenience
 functions::
 
   assert_equal(ctual,desired,err_msg='',verbose=1)
@@ -391,13 +372,13 @@ Open issues and discussion
 Documentation
 +++++++++++++
 
-That is an important feature that Scipy is currently missing. Few
-Scipy modules have some documentation but they use different formats
-and are mostly out-dated.
+This is an important feature where SciPy is currently lacking. A few
+SciPy modules have some documentation but they use different formats
+and are mostly out of date.  We could use some help with this.
 
 Currently there are
 
-* Scipy tutorial by Travis E. Oliphant that is maintained using LyX. 
+* A SciPy tutorial by Travis E. Oliphant.  This is maintained using LyX. 
   The main advantage of this approach is that one can use mathematical
   formulas in documentation.
 
@@ -411,22 +392,22 @@ Currently there are
   dated.
 
 * Documentation strings of Python functions, classes, and modules.
-  Some Scipy modules are well-documented in this sense, other again
-  are very poorly documented. Other issue is that there is no
-  consensus on how to format documentation strings, mainly because
-  we haven't decided which tool to use to generate, for instance, HTML
-  pages of documentation strings.
+  Some SciPy modules are well-documented in this sense, others are very
+  poorly documented. Another issue is that there is no consensus on how
+  to format documentation strings, mainly because we haven't decided
+  which tool to use to generate, for instance, HTML pages of
+  documentation strings.
 
-So, we need unique rules for documenting Scipy modules. Here are some
+So, we need unique rules for documenting SciPy modules. Here are some
 requirements that documentation tools should satsify:
 
 * Easy to use. This is important to lower the threshold of developers
   to use the same documentation utilities.
 
-* In general, all functions that are visible to Scipy end-users, must
+* In general, all functions that are visible to SciPy end-users, must
   have well-maintained documentation strings.
 
-* Support for mathematical formulas. Since Scipy is a tool for
+* Support for mathematical formulas. Since SciPy is a tool for
   scientific work, it is hard to avoid formulas to describe how its
   modules are good for. So, documentation tools should support LaTeX.
 
@@ -434,9 +415,9 @@ requirements that documentation tools should satsify:
   interface and implementation. This is important for keeping
   documentation up to date. One option would be to maintain
   documentation in source files (and have a tool that extracts
-  documentation from sources). The main disadvantage with that is
-  the lack of convenience writing documentation as the editor would be
-  in different mode (e.g. Python mode) from the mode suitable for
+  documentation from sources). The main disadvantage with that is the
+  lack of convenience writing documentation as the editor would be in
+  different mode (e.g. Python mode) from the mode suitable for
   documentation.
 
 * Differentiation of implementation (e.g. from scanning sources) and

@@ -4,7 +4,8 @@
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
-:Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Authors: Pearu Peterson <pearu@cens.ioc.ee>
+:Modified by: Ed Schofield <edschofield@gmail.com>
 :Last changed: $Date$
 :Revision: $Revision$
 :Discussions to: scipy-dev@scipy.org
@@ -19,65 +20,79 @@ PREREQUISITES
 
 SciPy requires the following software installed:
 
-1) Python__ 2.1.x, 2.2.x, or 2.3.x (see NOTES 1)
+1) Python__ 2.3.x or 2.4.x
 
    Debian packages: python python-dev
 
+   Make sure that the Python package distutils is installed before
+   continuing. For example, in Debian GNU/Linux, distutils is included
+   in the python-dev package.
+
+   Python must also be compiled with the zlib module enabled.
+
 __ http://www.python.org
 
-2) `Numerical Python`__ 21.0 or newer but not Numarray (yet)
-
-   Debian packages: python-numeric
+2) NumPy__ 0.9.2 or newer
 
 __ http://www.numpy.org/
 
-3) ATLAS__ 3.2.1 or newer and complete LAPACK__ (see NOTES 2, 3, 4)
+3) Complete LAPACK__ library (see NOTES 1, 2, 3)
 
    Debian packages: atlas2-headers atlas2-base atlas2-base-dev
 
-__ http://math-atlas.sourceforge.net/
+   Various SciPy packages do linear algebra computations using the LAPACK
+   routines. SciPy's setup.py scripts can use number of different LAPACK
+   library setups, including optimized LAPACK libraries such as ATLAS__ or
+   the Accelerate/vecLib framework on OS X. The notes below give
+   more information on how to prepare the build environment so that
+   SciPy's setup.py scripts can use whatever LAPACK library setup one has.
+
 __ http://www.netlib.org/lapack/
+__ http://math-atlas.sourceforge.net/
 
-4) f2py__ 2.35.229-1492 or newer
 
-__ http://cens.ioc.ee/projects/f2py2e/
 
-5) C, C++, Fortran 77 compilers (see COMPILER NOTES)
+OPTIONAL PACKAGES
+=================
 
-   gcc__ 2.95.x, 3.x compilers are recommended.
-   When building with Chaco, gcc 3.x is required.
-  
+The following software is optional, but SciPy can use these if present
+for extra functionality:
+
+1) C, C++, Fortran 77 compilers (see COMPILER NOTES)
+
+   To build SciPy or any other extension modules for Python, you'll need
+   a C compiler.
+   
+   Various SciPy modules use Fortran 77 libraries, so you'll need also
+   at least a Fortran 77 compiler installed. Currently the SciPy build
+   process does not use a C++ compiler, but the SciPy module Weave uses
+   a C++ compiler at run time, so it is good to have C++ compiler around
+   as well.
+   
+   gcc__ 3.x compilers are recommended.  gcc 2.95 and 4.0.x also work on
+   some platforms, but may be more problematic (see COMPILER NOTES).
+
    Debian packages: gcc g++ g77
 
 __ http://gcc.gnu.org/
 
 
-The following software is optional:
+2) FFTW__ 2.1.x (see Lib/fftpack/NOTES.txt)
 
-6) FFTW__ 2.1.x (see Lib/fftpack/NOTES.txt) but not 2.2.x (yet)
+   FFTW 3.0.x may also work, but SciPy currently has better performance
+   with FFTW 2.1.x.
 
    Debian packages: fftw2 fftw-dev
 
 __ http://www.fftw.org/
 
-7) wxPython__
-  
-   Debian packages: libwxgtk2.4-python libwxgtk2.4 libwxgtk2.4-dev 
-   wxwin2.4-headers
 
-__ http://www.wxpython.org/
-
-8) SWIG 1.3.x, required when building with chaco. See setup.py
-   for how to disable chaco.
-
-   Debian packages: swig1.3 libswig1.3
 
 NOTES
 -----
 
-1) Python must be build with zlib module enabled.
-
-2) Complete lapack library is required when using ATLAS, see
+1) To use ATLAS, version 3.2.1 or newer and a *complete* LAPACK library
+   are required.  See
 
      http://math-atlas.sourceforge.net/errata.html#completelp
 
@@ -133,20 +148,23 @@ NOTES
 
        export ATLAS=/usr/local/lib/atlas
 
-3) If you are willing to sacrifice the performance (by factor of 5 to
-   15 for large problems) of the linalg module then it is possible to
-   build SciPy without ATLAS. For that you'll need either Fortran
-   LAPACK/BLAS libraries installed in your system or Fortran
-   LAPACK/BLAS sources to be accessible by SciPy setup scripts (use
-   ``LAPACK_SRC``/``BLAS_SRC`` environment variables to indicate the location
-   of the corresponding source directories).
+2) If you are willing to sacrifice the performance (by factor of 5 to 15
+   for large problems) of the linalg module then it is possible to build
+   SciPy without ATLAS. For that you'll need either Fortran LAPACK/BLAS
+   libraries installed in your system or Fortran LAPACK/BLAS sources to be
+   accessible by SciPy setup scripts (use ``LAPACK_SRC``/``BLAS_SRC``
+   environment variables to indicate the location of the corresponding
+   source directories).  More details of how to do this are on the SciPy
+   Wiki, at:
 
-4) Debian users can use the following deb packages::
+     http://new.scipy.org/Wiki/Installing_SciPy/BuildingGeneral
+
+3) Users of Debian (and derivatives like Ubuntu) can use the following
+   deb packages::
 
      atlas2-headers
 
    and
-   ::
 
      atlas2-base atlas2-base-dev
      or
@@ -156,42 +174,69 @@ NOTES
      or
      atlas2-3dnow atlas2-3dnow-dev
 
-   It is not necessary to install blas or lapack libraries then.
+   It is not necessary to install blas or lapack libraries in addition.
+
 
 GETTING SCIPY
 =============
 
-See
-   http://scipy.org/
+For the latest information, see the Wiki site
 
-Development version from CVS
+   http://new.scipy.org/Wiki
+   
+The main website is:
+
+  http://www.scipy.org
+
+but this is currently out of date (as of January 2006).
+
+
+Development version from Subversion (SVN)
 ----------------------------
-See
-   http://www.scipy.org/site_content/tutorials/CVSInstruct
-Daily snapshots of SciPy CVS repository is available at
-   http://www.scipy.org/site_content/download_list
+Use the command:
+
+  svn co http://svn.scipy.org/svn/scipy/trunk scipy
+
+Before building and installing from SVN, remove the old installation
+(e.g. in /usr/lib/python2.4/site-packages/scipy or
+$HOME/lib/python2.4/site-packages/scipy).  Then type:
+
+  cd scipy
+  rm -rf build
+  python setup.py install
+ 
+ 
 
 INSTALLATION
 ============
 
-Make sure that all SciPy prerequisites are installed and working
-properly before continuing SciPy installation.
+First make sure that all SciPy prerequisites are installed and working
+properly.  Then be sure to remove any old SciPy installations (e.g.
+/usr/lib/python2.4/site-packages/scipy or $HOME/lib/python2.4/
+site-packages/scipy).
 
 From tarballs
 -------------
-Unpack ``SciPy-<version>.tar.gz``, change to ``SciPy-<version>/``
+Unpack ``SciPy-<version>.tar.gz``, change to the ``SciPy-<version>/``
 directory, and run
 ::
 
   python setup.py install
 
-This may take several minutes to hours depending on the speed of your
-computer. 
+This may take several minutes to an hour depending on the speed of your
+computer.  This may require root privileges.  To install to a
+user-specific location instead, run
+
+  python setup.py install --prefix=$MYDIR
+
+where $MYDIR is, for example, $HOME or $HOME/usr.
+
+
 
 TESTING
 =======
 
-To test SciPy installation (highly recommended), execute in python
+To test SciPy after installation (highly recommended), execute in Python
 
    >>> import scipy
    >>> scipy.test(level=1)
@@ -201,16 +246,28 @@ messages about what tests are being executed, use
 
    >>> scipy.test(level=1, verbosity=2)
 
+
 COMPILER NOTES
 ==============
 
-You can specify which Fortran compiler to use by
+Note that SciPy is developed mainly using GNU compilers. Compilers from
+other vendors such as Intel, Absoft, Sun, NAG, Compaq, Vast, Porland,
+Lahey, HP, IBM are supported in the form of community feedback.
+
+gcc__ 3.x compilers are recommended.  gcc 4.0.x also works on some
+platforms (e.g. Linux x86).  SciPy is not fully compatible with gcc
+4.0.x on OS X.  If building on OS X, we recommend you use gcc 3.3, by
+typing:
+    gcc_select 3.3
+ 
+You can specify which
+Fortran compiler to use by
 ::
 
   export FC_VENDOR=<Vendor>
 
 before the install command. <Vendor> is Absoft, Sun, SGI, Intel, 
-Itanium, NAG, Compaq, Digital, Gnu, or VAST.
+Itanium, NAG, Compaq, Digital, GNU, or VAST.
 Or use the following install command::
 
   python setup.py build build_flib --fcompiler=<Vendor> install
@@ -219,31 +276,29 @@ IMPORTANT: It is highly recommended that all libraries that scipy uses
 (e.g. blas and atlas libraries) are built with the same Fortran
 compiler.
 
-Using non-Gnu Fortran compiler with gcc/g77 compiled Atlas/Lapack libraries
+Using non-GNU Fortran compiler with gcc/g77 compiled Atlas/Lapack libraries
 ---------------------------------------------------------------------------
 
-When Atlas/Lapack libraries are compiled with Gnu compilers but
-one wishes to build scipy with some non-gnu Fortran compiler then
+When Atlas/Lapack libraries are compiled with GNU compilers but
+one wishes to build scipy with some non-GNU Fortran compiler then
 linking extension modules may require -lg2c. You can specify it
 in installation command line as follows::
 
   python setup.py build build_ext -lg2c install
 
-If using non-Gnu C compiler or linker, the location of g2c library can
+If using non-GNU C compiler or linker, the location of g2c library can
 be specified in a similar manner using -L/path/to/libg2c.a after
 build_ext command.
 
 Intel Fortran Compiler
 ----------------------
 
-Intel Fortran Compiler (IFC) compiled codes are not binary compatible
-with g77 compiled codes. Therefore, when using IFC, *all* Fortran
-codes used in SciPy must be compiled with IFC, this also includes
-LAPACK, BLAS, and ATLAS libraries. Usage of GCC for compiling C codes
-is OK.
-
-IFC version 5.0 is not supported (because its bugs cause segfaults in
-scipy tests).
+Note that code compiled by the Intel Fortran Compiler (IFC) is not
+binary compatible with code compiled by g77. Therefore, when using IFC,
+all Fortran codes used in SciPy must be compiled with IFC. This also
+includes the LAPACK, BLAS, and ATLAS libraries. Using GCC for compiling
+C code is OK. IFC version 5.0 is not supported (because it has bugs that
+cause SciPy's tests to segfault).
 
 Minimum IFC flags for building LAPACK and ATLAS are
 ::
@@ -263,8 +318,9 @@ these routines)::
   cd ..
   make lapacklib
 
-KNOWN PROBLEMS
-==============
+
+KNOWN INSTALLATION PROBLEMS
+===========================
 
 BLAS sources shipped with LAPACK are incomplete
 -----------------------------------------------
@@ -290,10 +346,11 @@ size of the file liblapack.a -- it should be about 6MB. The location
 of liblapack.a is shown by executing
 ::
 
-    python scipy_core/scipy_distutils/system_info.py
+    python /lib/python2.4/site-packages/numpy/distutils/system_info.py
 
-Fix:
-  Follow the instructions in
+(or the appropriate installation directory).
+
+To fix: follow the instructions in
 
     http://math-atlas.sourceforge.net/errata.html#completelp
 
@@ -315,29 +372,30 @@ Fix:
 
   2) Rebuild/reinstall scipy.
 
-Using non-Gnu Fortran Compiler
+Using non-GNU Fortran Compiler
 ------------------------------
 If import scipy shows a message
 ::
 
   ImportError: undefined symbol: s_wsfe
 
-and you are using non-Gnu Fortran compiler, then it means that any of
+and you are using non-GNU Fortran compiler, then it means that any of
 the (may be system provided) Fortran libraries such as LAPACK or BLAS
 were compiled with g77. See also compilers notes above.
 
 Recommended fix: Recompile all Fortran libraries with the same Fortran
 compiler and rebuild/reinstall scipy.
 
-Another fix: See `Using non-gnu Fortran compiler with gcc/g77 compiled
+Another fix: See `Using non-GNU Fortran compiler with gcc/g77 compiled
 Atlas/Lapack libraries` section above.
+
 
 TROUBLESHOOTING
 ===============
 
 If you experience problems when building/installing/testing SciPy, you
 can ask help from scipy-user@scipy.org or scipy-dev@scipy.org mailing
-lists. Please include the following information to your message:
+lists. Please include the following information in your message:
 
 NOTE: With recent f2py version (>=2.33.xxx-xxxx) you can generate 
 some of the following information (items 1-5) in one command::
@@ -363,15 +421,11 @@ some of the following information (items 1-5) in one command::
 
      python -c 'import sys;print sys.version'
 
-4) Python Numeric version::
+4) NumPy version::
 
-     python -c 'import Numeric;print Numeric.__version__'
+     python -c 'import numpy;print numpy.__version__'
 
-5) f2py version::
-
-     f2py -v
-
-6) ATLAS version, the locations of atlas and lapack libraries, building
+5) ATLAS version, the locations of atlas and lapack libraries, building
    information if any. If you have ATLAS version 3.3.6 or newer, then
    give the output of the last command in
    ::
@@ -383,8 +437,10 @@ some of the following information (items 1-5) in one command::
 7) The output of the following commands
    ::
 
-     python scipy_core/scipy_distutils/system_info.py
-     python scipy_core/scipy_distutils/command/build_flib.py
+     python INSTALLDIR/numpy/distutils/system_info.py
+     python INSTALLDIR/numpy/distutils/command/build_flib.py
+
+where INSTALLDIR is, for example, /usr/lib/python2.4/site-packages/.
 
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy
