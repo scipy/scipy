@@ -346,10 +346,11 @@ size of the file liblapack.a -- it should be about 6MB. The location
 of liblapack.a is shown by executing
 ::
 
-    python scipy_core/scipy_distutils/system_info.py
+    python /lib/python2.4/site-packages/numpy/distutils/system_info.py
 
-Fix:
-  Follow the instructions in
+(or the appropriate installation directory).
+
+To fix: follow the instructions in
 
     http://math-atlas.sourceforge.net/errata.html#completelp
 
@@ -436,8 +437,10 @@ some of the following information (items 1-5) in one command::
 7) The output of the following commands
    ::
 
-     python scipy_core/scipy_distutils/system_info.py
-     python scipy_core/scipy_distutils/command/build_flib.py
+     python INSTALLDIR/numpy/distutils/system_info.py
+     python INSTALLDIR/numpy/distutils/command/build_flib.py
+
+where INSTALLDIR is, for example, /usr/lib/python2.4/site-packages/.
 
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy

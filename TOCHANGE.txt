@@ -1,4 +1,4 @@
-Changes needed to convert scipy to work with the new scipy core.
+Changes needed to convert SciPy to work with the new NumPy.
 
 done * scipy_distutils and scipy_base to scipy.disutils and scipy.base
 done * Numeric/arrayobject.h to scipy/arrayobject.h
