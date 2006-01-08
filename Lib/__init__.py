@@ -43,4 +43,9 @@ from numpy.testing import ScipyTest
 test = ScipyTest('scipy').test
 __all__.append('test')
 
+import numpy as _num
+from numpy import *
+__all__ += _num.__all__
+del _num
+
 __doc__ += pkgload.get_pkgdocs()
