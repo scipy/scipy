@@ -1,7 +1,7 @@
 .. -*- rest -*-
 .. NB! Keep this document a valid restructured document.
 
-Developing Scipy
+Developing SciPy
 ================
 
 :Author: Pearu Peterson <pearu@cens.ioc.ee>
@@ -14,79 +14,62 @@ Developing Scipy
 Introduction
 ------------
 
-Scipy aims at being a robust and efficient "super-package" of a number
-of its modules, each having a complexity and size to be a highly
-non-trivial package itself. In order for "Scipy integration" to work
-flawlessly, all Scipy modules must follow certain rules that are
-described in this document. Hopefully this document will be helpful to
-Scipy contributors as well as to developers as a basic reference about
-the structure of Scipy package.
+SciPy aims at being a robust and efficient "super-package" of a number
+of modules, each of a non-trivial size and complexity.  In order for
+"SciPy integration" to work flawlessly, all SciPy modules must follow
+certain rules that are described in this document. Hopefully this
+document will be helpful for SciPy contributors and developers as a
+basic reference about the structure of the SciPy package.
 
-Scipy structure
+SciPy structure
 ---------------
 
-Currently Scipy consists of the following files and directories:
+Currently SciPy consists of the following files and directories:
 
   INSTALL.txt
-    Scipy prerequisites, installation, testing, and troubleshooting.
+    SciPy prerequisites, installation, testing, and troubleshooting.
 
   PACKAGERS.txt
-    Information on how to package Scipy and related tools.
+    Information on how to package SciPy and related tools.
 
   THANKS.txt
-    Scipy developers and contributors. Please keep it up to date!!
+    SciPy developers and contributors. Please keep it up to date!!
 
   DEVELOPERS.txt
-    Scipy structure (this document).
+    SciPy structure (this document).
 
   setup.py
-    Script for building and installing Scipy. It calls also
-    scipy_core/setup.py with the same command line arguments
-    as specified for setup.py. You'll find scipy_core related
-    files in scipy_core/{dist,build}.
+    Script for building and installing SciPy.
 
   MANIFEST.in
-    Additions to distutils generated Scipy tar-balls.
-    Its usage is depreciated, in general.
-
-  scipy_core/
-    Contains four modules, scipy_base, scipy_distutils, scipy_test,
-    and weave, that all Scipy modules may depend on. As a rule,
-    scipy_distutils is required only for building, scipy_test for
-    running tests, and scipy_base contains various tools for runtime
-    usage.
+    Additions to distutils-generated SciPy tar-balls.  Its usage is
+    deprecated.
 
   Lib/
-    Contains Scipy __init__.py and the directories of Scipy modules.
-
-  tutorial/
-    Scipy tutorial.
-
-  util/
-    Various tools [Not useful in general. Could we get rid of this?].
+    Contains SciPy __init__.py and the directories of SciPy modules.
 
 
-Scipy module
+
+SciPy module
 ------------
 
-In the following, a *Scipy module* is defined as a Python package, say
-xxx, that is located in the Lib/ directory.  All Scipy modules should
+In the following, a *SciPy module* is defined as a Python package, say
+xxx, that is located in the Lib/ directory.  All SciPy modules should
 follow the following conventions:
 
-* Ideally, each Scipy module should be self-contained as much as
-  possible, that is, it must be usable as standalone and have minimal
-  dependencies to other packages or modules, even if they would be
-  also Scipy modules. The exception is ``scipy_base``, its usage is 
-  encouraged as a replacement of ``Numeric`` or ``numarray`` modules
-  to simplify the future transition Numeric->Numarray.
+* Ideally, each SciPy module should be as self-contained as
+  possible.  That is, it should have minimal
+  dependencies on other packages or modules.  Even dependencies on other
+  SciPy modules should be kept to a minimum.  A dependency on NumPy is
+  of course assumed.
 
 * Directory ``xxx/`` must contain 
 
-  + a file ``setup_xxx.py`` that defines
+  + a file ``setup.py`` that defines
     ``configuration(parent_package='',parent_path=None)`` function.  
     See below for more details.
 
-  + a file ``info_xxx.py``. See below more details.
+  + a file ``info.py``. See below more details.
 
 * Directory ``xxx/`` may contain 
 
@@ -96,41 +79,40 @@ follow the following conventions:
 
   + a file ``MANIFEST.in`` that may contain only ``include setup.py`` line.
     DO NOT specify sources in MANIFEST.in, you must specify all sources
-    in setup_xxx.py file. Otherwise Scipy tar-ball will miss these sources.
+    in setup.py file. Otherwise released SciPy tarballs will miss these sources.
 
-[Open issues: where we should put documentation?]
+  + a directory ``docs/`` for documentation.
 
-File xxx/setup_xxx.py
+File xxx/setup.py
 ---------------------
 
-Each Scipy module setup_xxx.py file should contain a function
+Each SciPy module setup.py file should contain a function
 ``configuration(..)`` that returns a dictionary which must be usable
 as an argument to distutils setup function.
 
-For example, a minimal setup_xxx.py file for a pure Python Scipy
+For example, a minimal setup.py file for a pure-Python SciPy
 module xxx would be::
 
-  def configuration(parent_package='',parent_path=None):
+  def configuration(parent_package='', parent_path=None):
       package = 'xxx'
-      from scipy_distutils.misc_util import default_config_dict
-      config = default_config_dict(package,parent_package)
+      from numpy.distutils.misc_util import default_config_dict
+      config = default_config_dict(package, parent_package)
       return config
 
   if __name__ == '__main__':
-      from scipy_distutils.core import setup
+      from scipy.distutils.core import setup
       setup(**configuration(parent_path=''))
 
-A Scipy module may have also a ``xxx/setup.py`` file that should contain
+A SciPy module may have also a ``xxx/setup.py`` file that should contain
 one statement::
 
   execfile('setup_xxx.py')
 
 Ideally there should be no need for this file but
 ``distutils/command/bdist_rpm.py`` (Python versions <=2.3) has
-``setup.py`` hardcoded in and therefore building .rpm files without
-the above described ``setup.py`` file will fail.  This is only
-relevant when you wish to distribute Scipy module separately from
-scipy.
+``setup.py`` hardcoded, so building .rpm files without the above-
+described ``setup.py`` file will fail.  This is only relevant when you
+wish to distribute a SciPy module separately from SciPy.
 
 
 get_path
@@ -258,7 +240,7 @@ list of ``sources`` argument of the Extension class.
 File xxx/info_xxx.py
 --------------------
 
-Scipy setup.py and Lib/__init__.py files assume that each Scipy module
+SciPy setup.py and Lib/__init__.py files assume that each SciPy module
 contains a info_xxx.py file. The following information will be looked
 from this file:
 
@@ -277,7 +259,7 @@ dependencies
   [Support not implemented yet, may be it is YAGNI?]
   List of module names that the module depends on. The module will not
   be installed if any of the dependencies is missing. If the module
-  depends on another Scipy module, say yyy, and that is not going to
+  depends on another SciPy module, say yyy, and that is not going to
   be installed standalone, then use full name, that is, ``scipy.yyy``
   instead of ``yyy``.
 
@@ -301,8 +283,8 @@ File xxx/__init__.py
 
 To speed up the import time as well as to minimize memory usage, scipy
 uses ppimport hooks to transparently postpone importing large modules
-that might not be used during a Scipy usage session. But in order to
-have an access to documentation of all Scipy modules, including of the
+that might not be used during a SciPy usage session. But in order to
+have an access to documentation of all SciPy modules, including of the
 postponed modules, the documentation string of a module (that would
 usually reside in __init__.py file) should be copied also 
 to info_xxx.py file.
@@ -391,13 +373,13 @@ Open issues and discussion
 Documentation
 +++++++++++++
 
-That is an important feature that Scipy is currently missing. Few
-Scipy modules have some documentation but they use different formats
-and are mostly out-dated.
+This is an important feature where SciPy is currently lacking. A few
+SciPy modules have some documentation but they use different formats
+and are mostly out of date.  We could use some help with this.
 
 Currently there are
 
-* Scipy tutorial by Travis E. Oliphant that is maintained using LyX. 
+* SciPy tutorial by Travis E. Oliphant.  This is maintained using LyX. 
   The main advantage of this approach is that one can use mathematical
   formulas in documentation.
 
@@ -411,22 +393,22 @@ Currently there are
   dated.
 
 * Documentation strings of Python functions, classes, and modules.
-  Some Scipy modules are well-documented in this sense, other again
+  Some SciPy modules are well-documented in this sense, other again
   are very poorly documented. Other issue is that there is no
   consensus on how to format documentation strings, mainly because
   we haven't decided which tool to use to generate, for instance, HTML
   pages of documentation strings.
 
-So, we need unique rules for documenting Scipy modules. Here are some
+So, we need unique rules for documenting SciPy modules. Here are some
 requirements that documentation tools should satsify:
 
 * Easy to use. This is important to lower the threshold of developers
   to use the same documentation utilities.
 
-* In general, all functions that are visible to Scipy end-users, must
+* In general, all functions that are visible to SciPy end-users, must
   have well-maintained documentation strings.
 
-* Support for mathematical formulas. Since Scipy is a tool for
+* Support for mathematical formulas. Since SciPy is a tool for
   scientific work, it is hard to avoid formulas to describe how its
   modules are good for. So, documentation tools should support LaTeX.
 
