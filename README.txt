@@ -3,6 +3,7 @@ downloaded using the subversion client as
 
 svn co http://svn.scipy.org/svn/scipy/trunk scipy
 
-which will create a directory named scipy in your current directory and fill it with the current version of scipy.
+which will create a directory named scipy in your current directory
+and fill it with the current version of scipy.
 
 

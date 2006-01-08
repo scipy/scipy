@@ -10,7 +10,7 @@ Building and installing SciPy
 :Revision: $Revision$
 :Discussions to: scipy-dev@scipy.org
 
-See http://testing.scipy.org/documentation/buildscipy
+See http://new.scipy.org/Wiki/Installing_SciPy
 for updates of this document.
 
 .. Contents::
@@ -80,9 +80,9 @@ __ http://gcc.gnu.org/
 2) FFTW__ 2.1.x (see Lib/fftpack/NOTES.txt)
 
    FFTW 3.0.x may also work, but SciPy currently has better performance
-   with FFTW 2.1.x.
+   with FFTW 2.1.x on complex input.
 
-   Debian packages: fftw2 fftw-dev
+   Debian packages: fftw2 fftw-dev fftw3 fftw3-dev
 
 __ http://www.fftw.org/
 
@@ -260,17 +260,14 @@ platforms (e.g. Linux x86).  SciPy is not fully compatible with gcc
 typing:
     gcc_select 3.3
  
-You can specify which
-Fortran compiler to use by
-::
+You can specify which Fortran compiler to use by using the following
+install command::
 
-  export FC_VENDOR=<Vendor>
+  python setup.py config_fc --fcompiler=<Vendor> install
 
-before the install command. <Vendor> is Absoft, Sun, SGI, Intel, 
-Itanium, NAG, Compaq, Digital, GNU, or VAST.
-Or use the following install command::
+To see a valid list of <Vendor> names, run::
 
-  python setup.py build build_flib --fcompiler=<Vendor> install
+    python setup.py config_fc --help-fcompiler
 
 IMPORTANT: It is highly recommended that all libraries that scipy uses
 (e.g. blas and atlas libraries) are built with the same Fortran
@@ -397,10 +394,10 @@ If you experience problems when building/installing/testing SciPy, you
 can ask help from scipy-user@scipy.org or scipy-dev@scipy.org mailing
 lists. Please include the following information in your message:
 
-NOTE: With recent f2py version (>=2.33.xxx-xxxx) you can generate 
-some of the following information (items 1-5) in one command::
+NOTE: You can generate some of the following information (items 1-5,7)
+in one command:: 
 
-  python -c 'from f2py2e.diagnose import run;run()'
+  python -c 'from numpy.f2py.diagnose import run; run()'
 
 1) Platform information::
 
@@ -438,7 +435,6 @@ some of the following information (items 1-5) in one command::
    ::
 
      python INSTALLDIR/numpy/distutils/system_info.py
-     python INSTALLDIR/numpy/distutils/command/build_flib.py
 
 where INSTALLDIR is, for example, /usr/lib/python2.4/site-packages/.
 
