@@ -253,7 +253,7 @@ def who(vardict=None):
                 namestr = name
                 original=1
             shapestr = " x ".join(map(str, var.shape))
-            bytestr = str(var.itemsize()*Numeric.product(var.shape))
+            bytestr = str(var.itemsize*Numeric.product(var.shape))
             sta.append([namestr, shapestr, bytestr, typename(var.dtypechar), original])
 
     maxname = 0
@@ -288,15 +288,5 @@ def who(vardict=None):
     print "\nUpper bound on total bytes  =       %d" % totalbytes
     return
 
-
-
 #-----------------------------------------------------------------------------
-
-def test(level=10):
-    from numpy.test.testing import module_test
-    module_test(__name__,__file__,level=level)
-
-def test_suite(level=1):
-    from numpy.test.testing import module_test_suite
-    return module_test_suite(__name__,__file__,level=level)
 
