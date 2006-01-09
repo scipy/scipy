@@ -3,6 +3,8 @@ import types
 import sys
 import pydoc
 
+__all__ = ['info','source']
+
 # NOTE:  pydoc defines a help function which works simliarly to this
 #  except it uses a pager to take over the screen.
 

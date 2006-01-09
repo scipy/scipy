@@ -1,10 +1,8 @@
 # Functions which are common and require SciPy Base and Level 1 SciPy
 # (special, linalg)
 
-# Needs eigenvalues
 import sys
 import types
-from scipy import special, linalg
 
 import numpy as Numeric
 
@@ -13,7 +11,7 @@ from numpy import exp, amin, amax, ravel, asarray, cast, arange, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
 __all__ = ['factorial','factorial2','factorialk','comb','who',
-           'lena','central_diff_weights', 'derivative', 'pade']
+           'central_diff_weights', 'derivative', 'pade', 'lena']
 
 # XXX: the factorial functions could move to scipy.special, and the others 
 # to numpy perhaps?
@@ -39,6 +37,7 @@ def factorial(n,exact=0):
             k += 1
         return val
     else:
+        from scipy import special
         n = asarray(n)
         sv = special.errprint(0)
         vals = special.gamma(n+1)
@@ -70,6 +69,7 @@ def factorial2(n,exact=0):
             k -= 2
         return val
     else:
+        from scipy import special
         n = asarray(n)
         vals = zeros(n.shape,'d')
         cond1 = (n % 2) & (n >= -1)
@@ -127,6 +127,7 @@ def comb(N,k,exact=0):
             n += 1
         return val
     else:
+        from scipy import special
         k,N = asarray(k), asarray(N)
         lgam = special.gammaln
         cond = (k <= N) & (N >= 0) & (k >= 0)
@@ -146,6 +147,7 @@ def central_diff_weights(Np,ndiv=1):
     """
     assert (Np >= ndiv+1), "Number of points must be at least the derivative order + 1."
     assert (Np % 2 == 1), "Odd-number of points only."
+    from scipy import linalg
     ho = Np >> 1
     x = arange(-ho,ho+1.0)
     x = x[:,NewAxis]
@@ -201,6 +203,7 @@ def pade(an, m):
     """Given Taylor series coefficients in an, return a Pade approximation to
     the function as the ratio of two polynomials p / q  where the order of q is m.
     """
+    from scipy import linalg
     an = asarray(an)
     N = len(an) - 1
     n = N-m
@@ -222,7 +225,7 @@ def pade(an, m):
 # XXX: broken since plt is gone
 def lena():
     import cPickle, os
-    fname = os.path.join(os.path.dirname(__file__),'plt','lena.dat')
+    fname = os.path.join(os.path.dirname(__file__),'lena.dat')
     f = open(fname,'rb')
     lena = array(cPickle.load(f))
     f.close()
