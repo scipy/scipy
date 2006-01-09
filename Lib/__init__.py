@@ -12,8 +12,6 @@ money for development.
 
 Documentation is also available in the docstrings.
 
-Available subpackages
----------------------
 """
 
 try:
@@ -22,30 +20,54 @@ try:
 except ImportError:
     pass
 
+__all__ = ['pkgload','test']
+
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
     raise ImportError,"Cannot import scipy when running from numpy source directory."
 from numpy import __version__ as __numpy_version__
 
-from __config__ import show as show_config
-from version import version as __version__
-
-import numpy._import_tools as _ni
-pkgload = _ni.PackageLoader()
-del _ni
-
+# Import numpy symbols to scipy name space
 import numpy as _num
 from numpy import *
 __all__ += _num.__all__
+__doc__ += """
+Contents
+--------
+
+  numpy name space
+"""
 del _num
 
+from __config__ import show as show_config
+from version import version as __version__
+
+# Load scipy packages, their global_symbols, set up __doc__ string.
+import numpy._import_tools as _ni
 import os as _os
 SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','0'))
+pkgload = _ni.PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
-del _os
+__doc__ += """
 
-from numpy.testing import ScipyTest
-test = ScipyTest('scipy').test
-__all__.append('test')
-
+Available subpackages
+---------------------
+"""
 __doc__ += pkgload.get_pkgdocs()
+del _os, _ni
+
+def test(level=1, verbosity=1):
+    """ Run Scipy tests suite with level and verbosity."""
+    from numpy.testing import ScipyTest
+    import scipy
+    scipy.pkgload()
+    return ScipyTest(scipy).test(level, verbosity)
+
+__doc__ += """
+
+Utility functions:
+------------------
+
+  test    - run scipy unittests
+  pkgload - load scipy packages
+"""
