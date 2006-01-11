@@ -2010,6 +2010,19 @@ class test_tandg(ScipyTestCase):
         tnmrl1 = tan(pi/3.0)
         assert_almost_equal(tnm1,tnmrl1,8)
 
+    def check_specialpoints(self):
+        assert_equal(tandg(0), 0.0)
+        assert_equal(tandg(45), 1.0)
+        assert_equal(tandg(-45), -1.0)
+        assert_equal(tandg(135), -1.0)
+        assert_equal(tandg(-135), 1.0)
+        assert_equal(tandg(180), 0.0)
+        assert_equal(tandg(-180), 0.0)
+        assert_equal(tandg(225), 1.0)
+        assert_equal(tandg(-225), -1.0)
+        assert_equal(tandg(315), -1.0)
+        assert_equal(tandg(-315), 1.0)
+
 class test_y0(ScipyTestCase):
 
     def check_y0(self):

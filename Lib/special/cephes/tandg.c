@@ -173,92 +173,101 @@ return( tancot(x,1) );
 }
 
 
-static double tancot( xx, cotflg )
-double xx;
-int cotflg;
+static double
+tancot(double xx, int cotflg)
 {
-double x, y, z, zz;
-int j, sign;
+    double x, y, z, zz;
+    int j, sign;
 
-/* make argument positive but save the sign */
-if( xx < 0 )
-	{
-	x = -xx;
-	sign = -1;
-	}
-else
-	{
-	x = xx;
-	sign = 1;
-	}
+    /* make argument positive but save the sign */
+    if( xx < 0 ) {
+        x = -xx;
+        sign = -1;
+    } else {
+        x = xx;
+        sign = 1;
+    }
 
-if( x > lossth )
-	{
-	mtherr( "tandg", TLOSS );
-	return(0.0);
-	}
+    if( x > lossth ) {
+        mtherr("tandg", TLOSS);
+        return 0.0;
+    }
 
-/* compute x mod PIO4 */
-y = floor( x/45.0 );
+    /* x div 45 */
+    y = floor(x/45.0);
 
-/* strip high bits of integer part */
-z = ldexp( y, -3 );
-z = floor(z);		/* integer part of y/8 */
-z = y - ldexp( z, 3 );  /* y - 16 * (y/16) */
+    /* y mod 8 -> determines octant */
+    z = y - 8.0 * floor(y*0.125);
 
-/* integer and fractional part modulo one octant */
-j = z;
+    /* integer and fractional part modulo one octant */
+    j = z;
 
-/* map zeros and singularities to origin */
-if( j & 1 )
-	{
-	j += 1;
-	y += 1.0;
-	}
+    if (j == z) {
+        /* we can return an exact value: angle is a multiple of 45 degrees */
+        if ((j == 1) || (j == 5)) {
+            return 1.0;
+        } else if ((j == 3) || (j == 7)) {
+            return -1.0;
+        }
+        if (cotflg) {
+            if ((j == 0) || (j == 4)) {
+                mtherr( "cotdg", SING );
+                y = MAXNUM;
+            } else {
+                return 0.0;
+            }
+        } else {
+            if ((j == 0) || (j == 4)) {
+                return 0.0;
+            } else {
+                mtherr( "tandg", SING );
+                return MAXNUM;
+            }
+        }
+    }
 
-z = x - y * 45.0;
-z *= PI180;
+    /* map zeros and singularities to origin */
+    if (j & 1) {
+        j += 1;
+        y += 1.0;
+    }
 
-zz = z * z;
+    z = x - y * 45.0;
+    z *= PI180;
 
-if( zz > 1.0e-14 )
-	y = z  +  z * (zz * polevl( zz, P, 2 )/p1evl(zz, Q, 4));
-else
-	y = z;
-	
-if( j & 2 )
-	{
-	if( cotflg )
-		y = -y;
-	else
-		{
-		if( y != 0.0 )
-			{
-			y = -1.0/y;
-			}
-		else
-			{
-			mtherr( "tandg", SING );
-			y = MAXNUM;
-			}
-		}
-	}
-else
-	{
-	if( cotflg )
-		{
-		if( y != 0.0 )
-			y = 1.0/y;
-		else
-			{
-			mtherr( "cotdg", SING );
-			y = MAXNUM;
-			}
-		}
-	}
+    zz = z * z;
 
-if( sign < 0 )
-	y = -y;
+    if( zz > 1.0e-14 ) {
+        y = z  +  z * (zz * polevl( zz, P, 2 )/p1evl(zz, Q, 4));
+    } else {
+        y = z;
+    }
 
-return( y );
+    if (j & 2) {
+        if (cotflg) {
+            y = -y;
+        } else {
+            if (y != 0.0) {
+                y = -1.0/y;
+            } else {
+                mtherr( "tandg", SING );
+                y = MAXNUM;
+            }
+        }
+    } else {
+        if (cotflg) {
+            if (y != 0.0) {
+                y = 1.0/y;
+            } else {
+                mtherr( "cotdg", SING );
+                y = MAXNUM;
+            }
+        }
+    }
+
+    if (sign < 0) {
+        y = -y;
+    }
+
+    return y;
 }
