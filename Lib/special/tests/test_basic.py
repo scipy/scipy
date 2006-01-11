@@ -775,6 +775,21 @@ class test_cotdg(ScipyTestCase):
         ctrl1 = tan(pi/4.0)**(-1)
         assert_almost_equal(ct1,ctrl1,8)
 
+    def check_specialpoints(self):
+        assert_equal(cotdg(45), 1.0)
+        assert_equal(cotdg(-45), -1.0)
+        assert_equal(cotdg(90), 0.0)
+        assert_equal(cotdg(-90), 0.0)
+        assert_equal(cotdg(135), -1.0)
+        assert_equal(cotdg(-135), 1.0)
+        assert_equal(cotdg(225), 1.0)
+        assert_equal(cotdg(-225), -1.0)
+        assert_equal(cotdg(270), 0.0)
+        assert_equal(cotdg(-270), 0.0)
+        assert_equal(cotdg(315), -1.0)
+        assert_equal(cotdg(-315), 1.0)
+        assert_equal(cotdg(765), 1.0)
+
 class test_ellipj(ScipyTestCase):
 
     def check_ellipj(self):
