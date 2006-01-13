@@ -6,7 +6,7 @@ import time
 
 from plot_utility import *
 from plot_objects import *
-from lena import lena
+from scipy.misc.common import lena
 
 def loop():
     global bub
