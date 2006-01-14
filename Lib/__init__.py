@@ -43,10 +43,11 @@ from __config__ import show as show_config
 from version import version as __version__
 
 # Load scipy packages, their global_symbols, set up __doc__ string.
-import numpy._import_tools as _ni
+from numpy._import_tools import PackageLoader
 import os as _os
 SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','0'))
-pkgload = _ni.PackageLoader()
+del _os
+pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
 __doc__ += """
 
@@ -54,7 +55,7 @@ Available subpackages
 ---------------------
 """
 __doc__ += pkgload.get_pkgdocs()
-del _os, _ni
+
 
 def test(level=1, verbosity=1):
     """ Run Scipy tests suite with level and verbosity."""
@@ -65,9 +66,18 @@ def test(level=1, verbosity=1):
 
 __doc__ += """
 
-Utility functions:
-------------------
+Utility tools
+-------------
 
-  test    - run scipy unittests
-  pkgload - load scipy packages
+  test        --- Run scipy unittests
+  pkgload     --- Load scipy packages
+  show_config --- Show scipy build configuration
+  show_numpy_config --- Show numpy build configuration
+  __version__ --- Scipy version string
+  __numpy_version__ --- Numpy version string
+
+Environment variables
+---------------------
+
+  SCIPY_IMPORT_VERBOSE --- pkgload verbose flag, default is 0.
 """
