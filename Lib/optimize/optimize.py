@@ -455,6 +455,16 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
     derphi0 = Num.dot(gfk,pk)
 
     alpha1 = pymin(1.0,1.01*2*(phi0-old_old_fval)/derphi0)
+         
+    if alpha1 == 0:
+        # This shouldn't happen. Perhaps the increment has slipped below
+        # machine precision?  For now, set the return variables skip the
+        # useless while loop, and raise warnflag=2 due to possible imprecision.
+        alpha_star = None
+        fval_star = old_fval
+        old_fval = old_old_fval
+        fprime_star = None
+
     phi_a1 = phi(alpha1)
     #derphi_a1 = phiprime(alpha1)  evaluated below
 
@@ -464,6 +474,8 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
     i = 1
     maxiter = 10
     while 1:         # bracketing phase 
+        if alpha1 == 0:
+            break
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
             alpha_star, fval_star, fprime_star = \
@@ -791,13 +803,22 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     gnorm = vecnorm(gfk,ord=norm)
     while (gnorm > gtol) and (k < maxiter):
         deltak = Num.dot(gfk,gfk)
+
+        # These values are modified by the line search, even if it fails
+        old_fval_backup = old_fval
+        old_old_fval_backup = old_old_fval
+
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,
                                   old_old_fval,c2=0.4)
         if alpha_k is None:  # line search failed -- use different one.
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
+            alpha_k, fc, gc, old_fval_backup, old_old_fval_backup, gfkp1 = \
                      line_search(f,myfprime,xk,pk,gfk,
                                  old_fval,old_old_fval)
+            if alpha_k is None or alpha_k == 0:
+                # This line search also failed to find a better solution.
+                warnflag = 2
+                break
         xk = xk + alpha_k*pk
         if retall:
             allvecs.append(xk)
