@@ -193,7 +193,7 @@ def densefeatures(f, x):
     return numpy.array([fi(x) for fi in f])
 
 def densefeaturematrix(f, sample):
-    """Returns an (n x m) dense matrix of non-zero evaluations of the
+    """Returns an (m x n) dense matrix of non-zero evaluations of the
     scalar functions fi in the list f at the points x_1,...,x_n in the
     list sample.
     """
@@ -203,11 +203,17 @@ def densefeaturematrix(f, sample):
     m = len(f)
     n = len(sample)
     
-    F = numpy.empty((n, m), numpy.Float64)
-    for j in xrange(n):
-        x = sample[j]
+    F = numpy.empty((m, n), numpy.Float64)
+    for i in xrange(m):
+        f_i = f[i]
         for i in xrange(m):
-            F[j,i] = f[i](x)
+            x = sample[j]
+            F[i,j] = f_i(x)
+
+     #for j in xrange(n):
+     #   x = sample[j]
+     #   for i in xrange(m):
+     #       F[j,i] = f[i](x)
             
     return F
 
@@ -222,19 +228,27 @@ def sparsefeaturematrix(f, sample, format='ll_mat'):
     N = len(sample)
     if format == 'll_mat':
         import spmatrix
-        sparseF = spmatrix.ll_mat(N, M)
+        sparseF = spmatrix.ll_mat(M, N)
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
-        sparseF = sparse.dok_matrix((N,M))
+        sparseF = sparse.dok_matrix((M,N))
         sparseF._validate = False               # speed hack
     else:
         raise ValueError, "sparse matrix format not recognized"
 
-    for j in xrange(N):
-        x = sample[j]
-        for i in xrange(M):
-            f_i_x = f[i](x)
+    for i in xrange(M):
+        f_i = f[i]
+        for j in xrange(N):
+            x = sample[j]
+            f_i_x = f_i(x)
             if f_i_x != 0:
-                sparseF[j,i] = f_i_x
+                sparseF[i,j] = f_i_x
+
+     #for j in xrange(N):
+     #   x = sample[j]
+     #   for i in xrange(M):
+     #       f_i_x = f[i](x)
+     #       if f_i_x != 0:
+     #           sparseF[j,i] = f_i_x
                     
     #except TypeError:
     #    raise
@@ -313,7 +327,7 @@ def innerprod(u,v):
         else:
             # Assume u is sparse
             if sparse.isspmatrix(u):
-                innerprod = u.matvec(v)
+                innerprod = u.matvec(v)   # This returns a float32 type. Why???
                 return innerprod
             else:
                 # Assume PySparse format

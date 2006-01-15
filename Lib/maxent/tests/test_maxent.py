@@ -4,16 +4,6 @@
 
 Author: Ed Schofield, 2003-2005
 Copyright: Ed Schofield, 2003-2005
-
-"""
-
-__usage__ = """
-Build linalg:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.maxent.test(<level>)'
-Run tests if maxent is not installed:
-  python tests/test_maxent.py [<level>]
 """
 
 import sys
@@ -21,18 +11,18 @@ from numpy.testing import *
 set_package_path()
 from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
 import scipy
-#from scipy.maxent import *
-from scipy.sandbox.maxent import *
+from scipy.maxent import *
+#from scipy.sandbox.maxent import *
 restore_path()
 
 import unittest
 
 
-class test_logsumexp(ScipyTestCase):
+class test_maxent(ScipyTestCase):
     """Test whether logsumexp() function correctly and handles large
     inputs.
     """
-    def check_simple(self):
+    def check_logsumexp(self, level=1):
         a = arange(200)
         desired = log(sum(exp(a)))
         assert_almost_equal(logsumexp(a), desired)
@@ -47,9 +37,7 @@ class test_logsumexp(ScipyTestCase):
         desired = 10000.0 + log(n)
         assert_almost_equal(logsumexp(b), desired)
 
-
-class test_maxent(ScipyTestCase):
-    def check_simple(self):
+    def check_simple(self, level=1):
         # Write me!
         pass
 

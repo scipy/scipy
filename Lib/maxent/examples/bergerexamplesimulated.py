@@ -27,12 +27,12 @@ __version__=  '2.0-alpha4'
 
 import math, sys
 import scipy
-#from scipy import maxent
-#from scipy.maxent.maxentutils import *
-#from scipy import montecarlo
-from scipy.sandbox import maxent
-from scipy.sandbox.maxent.maxentutils import *
-from scipy.sandbox import montecarlo
+from scipy import maxent
+from scipy.maxent.maxentutils import *
+from scipy import montecarlo
+#from scipy.sandbox import maxent
+#from scipy.sandbox.maxent.maxentutils import *
+#from scipy.sandbox import montecarlo
 
 try:
     algorithm = sys.argv[1]

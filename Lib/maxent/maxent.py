@@ -74,7 +74,7 @@ class basemodel(object):
         self.maxgtol = 1e-5
         # Required tolerance of gradient on average (closeness to zero) for
         # CG optimization:
-        self.avegtol = 1e-4
+        self.avegtol = 1e-3
         # Stop stoch approx if ||theta_k - theta_{k-1}|| < thetatol:
         self.thetatol = 1e-5         
         # Number of CPUs to use in each computation of the dual and gradient:
@@ -121,7 +121,7 @@ class basemodel(object):
             assert type(grad) in (types.FunctionType, types.MethodType)
 
         # First convert K to a numpy array if necessary
-        K = numpy.asarray(K)
+        K = numpy.asarray(K, float)
             
         # Sanity checks
         try:
@@ -138,27 +138,35 @@ class basemodel(object):
             retval = optimize.fmin_cg(func, oldtheta, \
                                       grad, (K,), \
                                       self.avegtol, maxiter=self.maxiter, \
-                                      full_output=1, disp=0, retall=0)
+                                      full_output=1, disp=self.verbose, retall=0)
             
             (newtheta, fopt, func_calls, grad_calls, warnflag) = retval
+
         elif algorithm == 'LBFGSB':
             retval = optimize.fmin_l_bfgs_b(func, oldtheta, \
                         grad, args=(K,), bounds=self.bounds, pgtol=self.maxgtol,
                         maxfun=self.maxfun)
             (newtheta, fopt, d) = retval
             warnflag, func_calls = d['warnflag'], d['funcalls']
+            if self.verbose:
+                print algorithm + " optimization terminated successfully."
+                print "\tFunction calls: " + str(func_calls)
+                # We don't have info on how many gradient calls the LBFGSB
+                # algorithm makes
+
         elif algorithm == 'BFGS':
             retval = optimize.fmin_bfgs(func, oldtheta, \
                                         grad, (K,), self.tol, \
                                         maxiter=self.maxiter, full_output=1, \
-                                        disp=1, retall=0)
+                                        disp=self.verbose, retall=0)
             
             (newtheta, fopt, gopt, Lopt, func_calls, grad_calls, warnflag) = retval
+
         elif algorithm == 'Powell':
             retval = optimize.fmin_powell(func, oldtheta, args=(K,), \
                                    xtol=self.tol, ftol = self.tol, \
                                    maxiter=self.maxiter, full_output=1, \
-                                   disp=0, retall=0)
+                                   disp=self.verbose, retall=0)
             
             (newtheta, fopt, direc, numiter, func_calls, warnflag) = retval
         
@@ -166,7 +174,7 @@ class basemodel(object):
             retval = optimize.fmin(func, oldtheta, args=(K,), \
                                    xtol=self.tol, ftol = self.tol, \
                                    maxiter=self.maxiter, full_output=1, \
-                                   disp=0, retall=0)
+                                   disp=self.verbose, retall=0)
             
             (newtheta, fopt, numiter, func_calls, warnflag) = retval
 
@@ -174,14 +182,6 @@ class basemodel(object):
             raise AttributeError, "the specified algorithm '" + str(algorithm) \
                     + "' is unsupported.  Options are 'CG', 'LBFGSB', " \
                     "'Nelder-Mead', 'Powell', and 'BFGS'"
-        
-        if self.verbose:
-            print algorithm + " optimization terminated successfully."
-            print "\tFunction calls: " + str(func_calls)
-            # We don't have info on how many gradient calls the LBFGSB algorithm
-            # makes:
-            if algorithm != 'Powell' and algorithm != 'LBFGSB':
-                print "\tGradient calls: " + str(grad_calls)
         
         if numpy.any(self.theta != newtheta):
             self.setparams(newtheta)
@@ -196,27 +196,34 @@ class basemodel(object):
         parameters.  theta must be a list or numpy array of the same
         length as the model's feature vector f.
         """
-        # First call the callback function with the old parameters, if necessary
-        # This complex-looking sequence is necessary to prevent an AttributeError
-        # in the callback function from being caught.
+        # First call the callback function passing the old model, if necessary,
+        # before updating it with its new paramaeters.  
+        
+        # The complex-looking attribute-test sequence is necessary to prevent
+        # an AttributeError in the callback function from being caught and
+        # silenced inappropriately.
+
+        # If this is a new iteration, call the callbackiter function:
         if newiter:
             try:
                 self.callbackiter
             except AttributeError:
                 pass
             else:
-                self.callbackiter(self.theta)
+                self.callbackiter(self)
+
+        # Call the standard callback function, regardless of whether this is a
+        # new iteration or a line search:
+        try:
+            self.callback
+        except AttributeError:
+            pass
         else:
-            try:
-                self.callback
-            except AttributeError:
-                pass
-            else:
-                self.callback(self.theta)
+            self.callback(self)
 
 
         # assert len(theta) == self.numconstraints()
-        self.theta = numpy.array(theta)        # make a copy
+        self.theta = numpy.array(theta, float)        # make a copy
         
         # Log the new params to disk
         self.logparams()
@@ -260,7 +267,7 @@ class basemodel(object):
         else:
             m = self.numconstraints()            
             
-        self.theta = numpy.zeros(m, 'd')
+        self.theta = numpy.zeros(m, float)
         
         # These bounds on the param values are only effective for the
         # L-BFGS-B optimizer:
@@ -293,19 +300,19 @@ class basemodel(object):
         """Sets a callback function to be called each new iteration but
         NOT each function / gradient evaluation in line searches, which
         will be wilder.  The function is passed one argument, the current
-        parameters theta before being changed.
+        model before the parameters are changed for the next iteration.
         """
         self.callbackiter = callback
      
     def setcallback(self, callback):
         """Sets a callback function to be called before the parameters
         are changed with setparams(theta).  The function is passed one
-        argument, the current parameters theta before being changed.
+        argument, the current model before the parameters are changed for
+        the next fn/grad evaluation.
 
-        This should actually be called every ITERATION, not every fn/grad
-        evaluation, because line search algorithms in e.g. CG make
-        potentially several evals per iter, some of which we expect to be
-        poor ...
+        Note that line search algorithms in e.g. CG make potentially
+        several evals per iter, some of which we expect to be poor.  If
+        this is a problem, use callbackiter() instead.
         """
         self.callback = callback
     
@@ -432,7 +439,7 @@ class model(basemodel):
 
             # A pre-computed matrix of features exists
             q = self.probdistarray()
-            innerproduct = innerprodtranspose(self.F, q)
+            innerproduct = innerprod(self.F, q)
             
         except AttributeError:
             raise AttributeError, "need a pre-computed feature matrix F"
@@ -455,12 +462,12 @@ class model(basemodel):
         except AttributeError:
             pass
         
-        # Has F = {f_j(x_i)} been precomputed?
+        # Has F = {f_i(x_j)} been precomputed?
         try:
             self.F
             
             # Good, assume F has been precomputed
-            log_p_dot = innerprod(self.F, self.theta)
+            log_p_dot = innerprodtranspose(self.F, self.theta)
             self.logZ = logsumexp(log_p_dot)
             return self.logZ
         
@@ -492,7 +499,7 @@ class model(basemodel):
             # p(x) = exp(theta.f(x)) / sum_y[exp theta.f(y)]
             #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
             
-            log_p_dot = innerprod(self.F, self.theta)
+            log_p_dot = innerprodtranspose(self.F, self.theta)
             try:
                 self.logZ
             except AttributeError:
@@ -531,7 +538,7 @@ class model(basemodel):
             f = self.f
         
         def p(x):
-            f_x = numpy.array([f[i](x) for i in range(len(f))])
+            f_x = numpy.array([f[i](x) for i in range(len(f))], float)
             #f_x = numpy.empty(len(f), float)
             #for i in range(len(f)):
             #    f_x[i] = f[i](x)
@@ -741,7 +748,7 @@ class bigmodel(basemodel):
         # Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
         # j=1,...,n=|sample| using a precomputed matrix of sample
         # features.
-        thetadotF = innerprod(self.sampleF, self.theta)
+        thetadotF = innerprodtranspose(self.sampleF, self.theta)
         logw = thetadotF - self.samplelogprobs
         
         # Good, we have our logw.  Now:
@@ -774,14 +781,14 @@ class bigmodel(basemodel):
             self.theta
             m = self.numconstraints()
         except AttributeError:
-            (n, m) = self.sampleF.shape
+            (m, n) = self.sampleF.shape
             if self.numsamples:
                 assert n == self.numsamples
             else:
                 self.numsamples = n
             self.resetparams(m)
         else:
-            if (self.numsamples, m) != self.sampleF.shape:
+            if (m, self.numsamples) != self.sampleF.shape:
                 raise ValueError, "the sample feature generator returned" \
                         " a feature matrix of incorrect dimensions"
         if self.verbose >= 2:
@@ -874,7 +881,7 @@ class bigmodel(basemodel):
             # 1. Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
             #    j=1,...,n=|sample| using a precomputed matrix of sample
             #    features.
-            thetadotF = innerprod(self.sampleF, self.theta)
+            thetadotF = innerprodtranspose(self.sampleF, self.theta)
             logw = thetadotF - self.samplelogprobs
             
             # 2. Good, we have our logw.  Now:
@@ -951,7 +958,7 @@ class bigmodel(basemodel):
             # matrix sampleF.
             
             logwminuslogZ = logw - logZs[-1]
-            averages = innerprodtranspose(self.sampleF, arrayexp(logwminuslogZ)) 
+            averages = innerprod(self.sampleF, arrayexp(logwminuslogZ)) 
             averages /= n
             Es.append(averages)
                         
@@ -1067,6 +1074,10 @@ class bigmodel(basemodel):
             #if not newiter:
             #    print "(line search)"
 
+        if self.gradevals > 1000:
+            import pdb
+            pdb.set_trace()
+        
         # Has theta changed?  If so, clear the speed-enhancing temporary
         # variables that are functions of theta.
         if numpy.any(self.theta != theta):
@@ -1107,7 +1118,7 @@ class bigmodel(basemodel):
         
         We compute this as theta . f(x) - self.logZapprox
         """
-        n, m = self.sampleF.shape
+        m, n = self.sampleF.shape
         assert m == len(self.theta)
         
         # 1. First compute log(p_dot(x)) = theta . f(x)
