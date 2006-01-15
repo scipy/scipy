@@ -14,7 +14,7 @@ import itertools
 
 def resize1d(arr, newlen):
     old = len(arr)
-    new = zeros((newlen,), arr.dtype.char)
+    new = zeros((newlen,), arr.dtype)
     new[:old] = arr
     return new
 
@@ -128,7 +128,7 @@ class spmatrix:
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
                "elements (space for %d)\n\tin %s format>" % \
-               (self.shape + (self.dtype.char, self.getnnz(), self.nzmax, \
+               (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
 
     def __str__(self):
@@ -236,14 +236,14 @@ class spmatrix:
     def _real(self):
         csc = self.tocsc()
         csc.data = real(csc.data)
-        csc.dtype.char = csc.data.dtype.char
+        csc.dtype = csc.data.dtype
         csc.ftype = _transtabl[csc.dtype.char]
         return csc
 
     def _imag(self):
         csc = self.tocsc()
         csc.data = imag(csc.data)
-        csc.dtype.char = csc.data.dtype.char
+        csc.dtype = csc.data.dtype
         csc.ftype = _transtabl[csc.dtype.char]        
         return csc
         
@@ -487,10 +487,10 @@ class csc_matrix(spmatrix):
                   "the size of data list"
         self.nnz = nnz
         self.nzmax = nzmax
-        self.dtype.char = self.data.dtype.char
+        self.dtype = self.data.dtype
         if self.dtype.char not in 'fdFD':
             self.data = 1.0 * self.data
-            self.dtype.char = self.data.dtype.char
+            self.dtype = self.data.dtype
         self.ftype = _transtabl[self.dtype.char]
         
 
@@ -551,7 +551,7 @@ class csc_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data *= other
-            new.dtype.char = new.data.dtype.char
+            new.dtype = new.data.dtype
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
@@ -563,7 +563,7 @@ class csc_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = other * new.data
-            new.dtype.char = new.data.dtype.char
+            new.dtype = new.data.dtype
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
@@ -582,7 +582,7 @@ class csc_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = new.data ** other
-            new.dtype.char = new.data.dtype.char
+            new.dtype = new.data.dtype
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
@@ -601,7 +601,7 @@ class csc_matrix(spmatrix):
 
     def transpose(self, copy=False):
         M, N = self.shape
-        new = csr_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype.char)
+        new = csr_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype)
         if copy:
             new.data = self.data.copy()
             new.colind = self.rowind.copy()
@@ -614,7 +614,7 @@ class csc_matrix(spmatrix):
         return new
     
     def conj(self, copy=False):
-        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype.char)
+        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
         if copy:
             new.data = self.data.conj().copy()
             new.rowind = self.rowind.conj().copy()
@@ -803,7 +803,7 @@ class csc_matrix(spmatrix):
         self._check()
 
     def copy(self):
-        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype.char)
+        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
         new.data = self.data.copy()
         new.rowind = self.rowind.copy()
         new.indptr = self.indptr.copy()
@@ -947,10 +947,10 @@ class csr_matrix(spmatrix):
                   "the size of data list"
         self.nnz = nnz
         self.nzmax = nzmax
-        self.dtype.char = self.data.dtype.char
+        self.dtype = self.data.dtype
         if self.dtype.char not in 'fdFD':
             self.data = self.data + 0.0
-            self.dtype.char = self.data.dtype.char
+            self.dtype = self.data.dtype
             
         self.ftype = _transtabl[self.dtype.char]
 
@@ -987,7 +987,7 @@ class csr_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = other * new.data         # allows type conversion
-            new.dtype.char = new.data.dtype.char
+            new.dtype = new.data.dtype
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
@@ -997,7 +997,7 @@ class csr_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = other * new.data         # allows type conversion
-            new.dtype.char = new.data.dtype.char
+            new.dtype = new.data.dtype
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
@@ -1016,7 +1016,7 @@ class csr_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = new.data ** other
-            new.dtype.char = new.data.dtype.char
+            new.dtype = new.data.dtype
             new.ftype = _transtabl[new.dtype.char]
             return new
         elif isspmatrix(other):
@@ -1036,7 +1036,7 @@ class csr_matrix(spmatrix):
 
     def transpose(self, copy=False):
         M, N = self.shape
-        new = csc_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype.char)
+        new = csc_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype)
         if copy:
             new.data = self.data.copy()
             new.rowind = self.colind.copy()
@@ -1237,7 +1237,7 @@ class csr_matrix(spmatrix):
         self._check()
 
     def copy(self):
-        new = csr_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype.char)
+        new = csr_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype)
         new.data = self.data.copy()
         new.colind = self.colind.copy()
         new.indptr = self.indptr.copy()
@@ -1713,7 +1713,7 @@ class coo_matrix(spmatrix):
             self.row = asarray(ij[0])
             self.col = asarray(ij[1])
             self.data = asarray(obj, dtype=dtype)
-            self.dtype.char = self.data.dtype.char
+            self.dtype = self.data.dtype
             if nzmax is None:
                 nzmax = len(self.data)
             self.nzmax = nzmax
@@ -1747,7 +1747,7 @@ class coo_matrix(spmatrix):
         col, row, data = list(itertools.izip(*l))
         self.col = asarray(col, 'i')
         self.row = asarray(row, 'i')
-        self.data = array(data, self.dtype.char)
+        self.data = array(data, self.dtype)
         setattr(self, '_is_normalized', 1)
         return self.data, self.row, self.col
 
