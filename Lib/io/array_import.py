@@ -390,7 +390,7 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
     thestr = []
     arr = asarray(arr)
     N,M = arr.shape
-    thistype = arr.dtypechar
+    thistype = arr.dtype.char
     nofloat = (thistype in '1silbwu') or (thistype in 'Oc')
     cmplx = thistype in 'FD'
     fmtstr = "%%.%de" % precision

@@ -27,7 +27,7 @@ def get_flinalg_funcs(names,arrays=(),debug=0):
     names. arrays are used to determine optimal prefix."""
     ordering = []
     for i in range(len(arrays)):
-        t = arrays[i].dtypechar
+        t = arrays[i].dtype.char
         if not _type_conv.has_key(t): t = 'd'
         ordering.append((t,i))
     if ordering:

@@ -14,7 +14,7 @@ import itertools
 
 def resize1d(arr, newlen):
     old = len(arr)
-    new = zeros((newlen,), arr.dtypechar)
+    new = zeros((newlen,), arr.dtype.char)
     new[:old] = arr
     return new
 
@@ -54,9 +54,9 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
             }
 
 def _convert_data(data1, data2, newtype):
-    if data1.dtypechar != newtype:
+    if data1.dtype.char != newtype:
         data1 = data1.astype(newtype)
-    if data2.dtypechar != newtype:
+    if data2.dtype.char != newtype:
         data2 = data2.astype(newtype)
     return data1, data2        
     
@@ -83,7 +83,7 @@ class spmatrix:
         
     #def typecode(self):
     #    try:
-    #        typ = self.dtypechar
+    #        typ = self.dtype.char
     #    except AttributeError:
     #        typ = None
     #    return typ
@@ -128,7 +128,7 @@ class spmatrix:
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
                "elements (space for %d)\n\tin %s format>" % \
-               (self.shape + (self.dtypechar, self.getnnz(), self.nzmax, \
+               (self.shape + (self.dtype.char, self.getnnz(), self.nzmax, \
                    _formats[format][1]))
 
     def __str__(self):
@@ -236,15 +236,15 @@ class spmatrix:
     def _real(self):
         csc = self.tocsc()
         csc.data = real(csc.data)
-        csc.dtypechar = csc.data.dtypechar
-        csc.ftype = _transtabl[csc.dtypechar]
+        csc.dtype.char = csc.data.dtype.char
+        csc.ftype = _transtabl[csc.dtype.char]
         return csc
 
     def _imag(self):
         csc = self.tocsc()
         csc.data = imag(csc.data)
-        csc.dtypechar = csc.data.dtypechar
-        csc.ftype = _transtabl[csc.dtypechar]        
+        csc.dtype.char = csc.data.dtype.char
+        csc.ftype = _transtabl[csc.dtype.char]        
         return csc
         
     def dot(self, other):
@@ -354,12 +354,12 @@ class csc_matrix(spmatrix):
             # Convert the dense matrix arg1 to CSC format
             if rank(arg1) == 2:
                 s = asarray(arg1)
-                if s.dtypechar not in 'fdFD':
+                if s.dtype.char not in 'fdFD':
                     # Use a double array as the source (but leave it alone)
                     s = s*1.0            
                 if (rank(s) == 2):
                     M, N = s.shape
-                    dtype = s.dtypechar
+                    dtype = s.dtype.char
                     func = getattr(sparsetools, _transtabl[dtype]+'fulltocsc')
                     ierr = irow = jcol = 0
                     nnz = sum(ravel(s != 0.0))
@@ -487,11 +487,11 @@ class csc_matrix(spmatrix):
                   "the size of data list"
         self.nnz = nnz
         self.nzmax = nzmax
-        self.dtypechar = self.data.dtypechar
-        if self.dtypechar not in 'fdFD':
+        self.dtype.char = self.data.dtype.char
+        if self.dtype.char not in 'fdFD':
             self.data = 1.0 * self.data
-            self.dtypechar = self.data.dtypechar
-        self.ftype = _transtabl[self.dtypechar]
+            self.dtype.char = self.data.dtype.char
+        self.ftype = _transtabl[self.dtype.char]
         
 
     def __radd__(self, other):
@@ -506,7 +506,7 @@ class csc_matrix(spmatrix):
             ocs = other.tocsc()
             if (ocs.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            dtypechar = _coerce_rules[(self.dtypechar, ocs.dtypechar)]
+            dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             nnz1, nnz2 = self.nnz, ocs.nnz
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
@@ -530,7 +530,7 @@ class csc_matrix(spmatrix):
             ocs = other.tocsc()
             if (ocs.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            dtypechar = _coerce_rules[(self.dtypechar, ocs.dtypechar)]
+            dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             nnz1, nnz2 = self.nnz, ocs.nnz
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
@@ -551,8 +551,8 @@ class csc_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data *= other
-            new.dtypechar = new.data.dtypechar
-            new.ftype = _transtabl[new.dtypechar]
+            new.dtype.char = new.data.dtype.char
+            new.ftype = _transtabl[new.dtype.char]
             return new
         else:
             return self.dot(other)
@@ -563,8 +563,8 @@ class csc_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = other * new.data
-            new.dtypechar = new.data.dtypechar
-            new.ftype = _transtabl[new.dtypechar]
+            new.dtype.char = new.data.dtype.char
+            new.ftype = _transtabl[new.dtype.char]
             return new
         else:
             other = asarray(other)
@@ -582,14 +582,14 @@ class csc_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = new.data ** other
-            new.dtypechar = new.data.dtypechar
-            new.ftype = _transtabl[new.dtypechar]
+            new.dtype.char = new.data.dtype.char
+            new.ftype = _transtabl[new.dtype.char]
             return new
         else:
             ocs = other.tocsc()
             if (ocs.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            dtypechar = _coerce_rules[(self.dtypechar, ocs.dtypechar)]
+            dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             nnz1, nnz2 = self.nnz, ocs.nnz
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscmul')
@@ -601,7 +601,7 @@ class csc_matrix(spmatrix):
 
     def transpose(self, copy=False):
         M, N = self.shape
-        new = csr_matrix((N, M), nzmax=self.nzmax, dtype=self.dtypechar)
+        new = csr_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype.char)
         if copy:
             new.data = self.data.copy()
             new.colind = self.rowind.copy()
@@ -614,7 +614,7 @@ class csc_matrix(spmatrix):
         return new
     
     def conj(self, copy=False):
-        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtypechar)
+        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype.char)
         if copy:
             new.data = self.data.conj().copy()
             new.rowind = self.rowind.conj().copy()
@@ -663,7 +663,7 @@ class csc_matrix(spmatrix):
             a, rowa, ptra = self.data, self.rowind, self.indptr
             if isinstance(other, csr_matrix):
                 other._check()
-                dtypechar = _coerce_rules[(self.dtypechar, other.dtypechar)]
+                dtypechar = _coerce_rules[(self.dtype.char, other.dtype.char)]
                 ftype = _transtabl[dtypechar]            
                 func = getattr(sparsetools, ftype+'cscmucsr')
                 b = other.data
@@ -671,7 +671,7 @@ class csc_matrix(spmatrix):
                 ptrb = other.indptr
             elif isinstance(other, csc_matrix):
                 other._check()
-                dtypechar = _coerce_rules[(self.dtypechar, other.dtypechar)]
+                dtypechar = _coerce_rules[(self.dtype.char, other.dtype.char)]
                 ftype = _transtabl[dtypechar]                        
                 func = getattr(sparsetools, ftype+'cscmucsc')
                 b = other.data
@@ -679,7 +679,7 @@ class csc_matrix(spmatrix):
                 ptrb = other.indptr
             else:
                 other = other.tocsc()
-                dtypechar = _coerce_rules[(self.dtypechar, other.dtypechar)]
+                dtypechar = _coerce_rules[(self.dtype.char, other.dtype.char)]
                 ftype = _transtabl[dtypechar]                        
                 func = getattr(sparsetools, ftype+'cscmucsc')
                 b = other.data
@@ -803,7 +803,7 @@ class csc_matrix(spmatrix):
         self._check()
 
     def copy(self):
-        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtypechar)
+        new = csc_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype.char)
         new.data = self.data.copy()
         new.rowind = self.rowind.copy()
         new.indptr = self.indptr.copy()
@@ -947,12 +947,12 @@ class csr_matrix(spmatrix):
                   "the size of data list"
         self.nnz = nnz
         self.nzmax = nzmax
-        self.dtypechar = self.data.dtypechar
-        if self.dtypechar not in 'fdFD':
+        self.dtype.char = self.data.dtype.char
+        if self.dtype.char not in 'fdFD':
             self.data = self.data + 0.0
-            self.dtypechar = self.data.dtypechar
+            self.dtype.char = self.data.dtype.char
             
-        self.ftype = _transtabl[self.dtypechar]
+        self.ftype = _transtabl[self.dtype.char]
 
         
     def __add__(self, other):
@@ -966,7 +966,7 @@ class csr_matrix(spmatrix):
             if (ocs.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
 
-            dtypechar = _coerce_rules[(self.dtypechar, ocs.dtypechar)]
+            dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             data1, data2 = _convert_data(self.data, ocs.data, dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
             c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2, ocs.colind, ocs.indptr)
@@ -987,8 +987,8 @@ class csr_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = other * new.data         # allows type conversion
-            new.dtypechar = new.data.dtypechar
-            new.ftype = _transtabl[new.dtypechar]
+            new.dtype.char = new.data.dtype.char
+            new.ftype = _transtabl[new.dtype.char]
             return new
         else:
             return self.dot(other)
@@ -997,8 +997,8 @@ class csr_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = other * new.data         # allows type conversion
-            new.dtypechar = new.data.dtypechar
-            new.ftype = _transtabl[new.dtypechar]
+            new.dtype.char = new.data.dtype.char
+            new.ftype = _transtabl[new.dtype.char]
             return new
         else:
             other = asarray(other)
@@ -1016,14 +1016,14 @@ class csr_matrix(spmatrix):
         if isscalar(other) or (isdense(other) and rank(other)==0):
             new = self.copy()
             new.data = new.data ** other
-            new.dtypechar = new.data.dtypechar
-            new.ftype = _transtabl[new.dtypechar]
+            new.dtype.char = new.data.dtype.char
+            new.ftype = _transtabl[new.dtype.char]
             return new
         elif isspmatrix(other):
             ocs = other.tocsr()
             if (ocs.shape != self.shape):
                 raise ValueError, "inconsistent shapes"
-            dtypechar = _coerce_rules[(self.dtypechar, ocs.dtypechar)]
+            dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             data1, data2 = _convert_data(self.data, ocs.data, dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscmul')
             c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2, ocs.colind, ocs.indptr)
@@ -1036,7 +1036,7 @@ class csr_matrix(spmatrix):
 
     def transpose(self, copy=False):
         M, N = self.shape
-        new = csc_matrix((N, M), nzmax=self.nzmax, dtype=self.dtypechar)
+        new = csc_matrix((N, M), nzmax=self.nzmax, dtype=self.dtype.char)
         if copy:
             new.data = self.data.copy()
             new.rowind = self.colind.copy()
@@ -1075,7 +1075,7 @@ class csr_matrix(spmatrix):
                 raise ValueError, "shape mismatch error"
             if isinstance(other, csc_matrix):            
                 other._check()
-                dtypechar = _coerce_rules[(self.dtypechar, other.dtypechar)]
+                dtypechar = _coerce_rules[(self.dtype.char, other.dtype.char)]
                 ftype = _transtabl[dtypechar]            
                 func = getattr(sparsetools, ftype+'csrmucsc')
                 b = other.data
@@ -1085,7 +1085,7 @@ class csr_matrix(spmatrix):
                 firstarg = ()
             elif isinstance(other, csr_matrix):
                 other._check()
-                dtypechar = _coerce_rules[(self.dtypechar, other.dtypechar)]
+                dtypechar = _coerce_rules[(self.dtype.char, other.dtype.char)]
                 ftype = _transtabl[dtypechar]            
                 func = getattr(sparsetools, ftype+'cscmucsc')
                 b, colb, ptrb = a, rowa, ptra
@@ -1094,7 +1094,7 @@ class csr_matrix(spmatrix):
                 firstarg = (N,)
             else:
                 other = other.tocsc()
-                dtypechar = _coerce_rules[(self.dtypechar, other.dtypechar)]
+                dtypechar = _coerce_rules[(self.dtype.char, other.dtype.char)]
                 ftype = _transtabl[dtypechar]            
                 func = getattr(sparsetools, ftype+'csrmucsc')
                 b = other.data
@@ -1237,7 +1237,7 @@ class csr_matrix(spmatrix):
         self._check()
 
     def copy(self):
-        new = csr_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtypechar)
+        new = csr_matrix(self.shape, nzmax=self.nzmax, dtype=self.dtype.char)
         new.data = self.data.copy()
         new.colind = self.colind.copy()
         new.indptr = self.indptr.copy()
@@ -1395,7 +1395,7 @@ class dok_matrix(spmatrix, dict):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
-            #new.dtypechar = self.dtypechar
+            #new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
             new = dok_matrix()
             new.update(self)
@@ -1421,7 +1421,7 @@ class dok_matrix(spmatrix, dict):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
-            #new.dtypechar = self.dtypechar
+            #new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
             new = dok_matrix()
             new.update(self)
@@ -1448,7 +1448,7 @@ class dok_matrix(spmatrix, dict):
             # Multiply this scalar by every element.
             for (key, val) in self.items():
                 new[key] = val * other
-            #new.dtypechar = self.dtypechar
+            #new.dtype.char = self.dtype.char
             return new
         else:
             return self.dot(other)
@@ -1459,7 +1459,7 @@ class dok_matrix(spmatrix, dict):
             # Multiply this scalar by every element.
             for (key, val) in self.items():
                 new[key] = other * val
-            #new.dtypechar = self.dtypechar
+            #new.dtype.char = self.dtype.char
             return new
         else:
             other = asarray(other)
@@ -1713,7 +1713,7 @@ class coo_matrix(spmatrix):
             self.row = asarray(ij[0])
             self.col = asarray(ij[1])
             self.data = asarray(obj, dtype=dtype)
-            self.dtypechar = self.data.dtypechar
+            self.dtype.char = self.data.dtype.char
             if nzmax is None:
                 nzmax = len(self.data)
             self.nzmax = nzmax
@@ -1732,7 +1732,7 @@ class coo_matrix(spmatrix):
         if (self.nzmax < nnz):
             raise ValueError, "nzmax must be >= nnz"
         self.nnz = nnz
-        self.ftype = _transtabl[self.dtypechar]
+        self.ftype = _transtabl[self.dtype.char]
 
     def _normalize(self, rowfirst=False):
         if rowfirst:
@@ -1747,7 +1747,7 @@ class coo_matrix(spmatrix):
         col, row, data = list(itertools.izip(*l))
         self.col = asarray(col, 'i')
         self.row = asarray(row, 'i')
-        self.data = array(data, self.dtypechar)
+        self.data = array(data, self.dtype.char)
         setattr(self, '_is_normalized', 1)
         return self.data, self.row, self.col
 
@@ -1836,10 +1836,10 @@ def spdiags(diags, offsets, M, N):
         M, N    -- sparse matrix returned is M X N
     """
     diags = array(transpose(diags), copy=True)
-    if diags.dtypechar not in 'fdFD':
+    if diags.dtype.char not in 'fdFD':
         diags = diags.astype('d')
     offsets = array(offsets, copy=False)
-    mtype = diags.dtypechar
+    mtype = diags.dtype.char
     assert(len(offsets) == diags.shape[1])
     # set correct diagonal to csr conversion routine for this type
     diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsr')

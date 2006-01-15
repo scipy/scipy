@@ -29,7 +29,7 @@ def _fix_shape(x, n, axis):
         index = [slice(None)]*len(s)
         index[axis] = slice(0,s[axis])
         s[axis] = n
-        z = zeros(s,x.dtypechar)
+        z = zeros(s,x.dtype.char)
         z[index] = x
         x = z
     return x
@@ -79,7 +79,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
       y == fft(ifft(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtypechar
+    t = tmp.dtype.char
     if t==numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
@@ -118,7 +118,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     Optional input: see fft.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtypechar
+    t = tmp.dtype.char
     if t == numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
@@ -172,7 +172,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
       y == rfft(irfft(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtypechar
+    t = tmp.dtype.char
     if t in (numpy.Complex32, numpy.Complex64):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
@@ -217,7 +217,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     Optional input: see rfft.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtypechar
+    t = tmp.dtype.char
     if t in (numpy.Complex32, numpy.Complex64):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
@@ -289,7 +289,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
       y == fftn(ifftn(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtypechar
+    t = tmp.dtype.char
     if t==numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
@@ -318,7 +318,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     Optional input: see fftn.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtypechar
+    t = tmp.dtype.char
     if t==numpy.Complex64:
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))

@@ -101,7 +101,7 @@ def rosen_der(x):
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
-    der = MLab.zeros(x.shape,x.dtypechar)
+    der = MLab.zeros(x.shape,x.dtype.char)
     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
     der[-1] = 200*(x[-1]-x[-2]**2)
@@ -110,7 +110,7 @@ def rosen_der(x):
 def rosen_hess(x):
     x = atleast_1d(x)
     H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
-    diagonal = Num.zeros(len(x),x.dtypechar)
+    diagonal = Num.zeros(len(x),x.dtype.char)
     diagonal[0] = 1200*x[0]-400*x[1]+2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
@@ -119,7 +119,7 @@ def rosen_hess(x):
 
 def rosen_hess_prod(x,p):
     x = atleast_1d(x)
-    Hp = Num.zeros(len(x),x.dtypechar)
+    Hp = Num.zeros(len(x),x.dtype.char)
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
                -400*x[1:-1]*p[2:]
@@ -186,9 +186,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     one2np1 = range(1,N+1)
 
     if rank == 0:
-        sim = Num.zeros((N+1,),x0.dtypechar)
+        sim = Num.zeros((N+1,),x0.dtype.char)
     else:        
-        sim = Num.zeros((N+1,N),x0.dtypechar)
+        sim = Num.zeros((N+1,N),x0.dtype.char)
     fsim = Num.zeros((N+1,),'d')
     sim[0] = x0
     if retall:
@@ -923,7 +923,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         maggrad = Num.add.reduce(abs(b))
         eta = min([0.5,Num.sqrt(maggrad)])
         termcond = eta * maggrad
-        xsupi = zeros(len(x0), x0.dtypechar)
+        xsupi = zeros(len(x0), x0.dtype.char)
         ri = -b
         psupi = -ri
         i = 0

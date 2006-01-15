@@ -33,38 +33,38 @@ accuracy = 5
 class base_axpy(ScipyTestCase):
     def check_default_a(self):
         x = arange(3.,dtype=self.dtype)
-        y = arange(3.,dtype=x.dtypechar)
+        y = arange(3.,dtype=x.dtype.char)
         real_y = x*1.+y
         self.blas_func(x,y)        
         assert_array_equal(real_y,y)
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
-        y = arange(3.,dtype=x.dtypechar)
+        y = arange(3.,dtype=x.dtype.char)
         real_y = x*3.+y
         self.blas_func(x,y,a=3.)        
         assert_array_equal(real_y,y)
     def check_x_stride(self):
         x = arange(6.,dtype=self.dtype)
-        y = zeros(3,x.dtypechar)
-        y = arange(3.,dtype=x.dtypechar)
+        y = zeros(3,x.dtype.char)
+        y = arange(3.,dtype=x.dtype.char)
         real_y = x[::2]*3.+y
         self.blas_func(x,y,a=3.,n=3,incx=2)        
         assert_array_equal(real_y,y)
     def check_y_stride(self):
         x = arange(3.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         real_y = x*3.+y[::2]
         self.blas_func(x,y,a=3.,n=3,incy=2)
         assert_array_equal(real_y,y[::2])
     def check_x_and_y_stride(self):
         x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         real_y = x[::4]*3.+y[::2]
         self.blas_func(x,y,a=3.,n=3,incx=4,incy=2)
         assert_array_equal(real_y,y[::2])
     def check_x_bad_size(self):
         x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         try:
             self.blas_func(x,y,n=4,incx=5)
         except: # what kind of error should be caught?
@@ -73,7 +73,7 @@ class base_axpy(ScipyTestCase):
         assert(0)    
     def check_y_bad_size(self):
         x = arange(12.,dtype=Complex32)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         try:
             self.blas_func(x,y,n=3,incy=5)
         except: # what kind of error should be caught?
@@ -152,27 +152,27 @@ class test_zscal(base_scal):
 class base_copy(ScipyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
-        y = zeros(shape(x),x.dtypechar)
+        y = zeros(shape(x),x.dtype.char)
         self.blas_func(x,y)
         assert_array_equal(x,y)
     def check_x_stride(self):
         x = arange(6.,dtype=self.dtype)
-        y = zeros(3,x.dtypechar)
+        y = zeros(3,x.dtype.char)
         self.blas_func(x,y,n=3,incx=2)
         assert_array_equal(x[::2],y)
     def check_y_stride(self):
         x = arange(3.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         self.blas_func(x,y,n=3,incy=2)
         assert_array_equal(x,y[::2])
     def check_x_and_y_stride(self):
         x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         self.blas_func(x,y,n=3,incx=4,incy=2)
         assert_array_equal(x[::4],y[::2])
     def check_x_bad_size(self):
         x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         try:
             self.blas_func(x,y,n=4,incx=5)
         except: # what kind of error should be caught?
@@ -181,7 +181,7 @@ class base_copy(ScipyTestCase):
         assert(0)    
     def check_y_bad_size(self):
         x = arange(12.,dtype=Complex32)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         try:
             self.blas_func(x,y,n=3,incy=5)
         except: # what kind of error should be caught?
@@ -221,7 +221,7 @@ class test_zcopy(base_copy):
 class base_swap(ScipyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
-        y = zeros(shape(x),x.dtypechar)
+        y = zeros(shape(x),x.dtype.char)
         desired_x = y.copy()
         desired_y = x.copy()
         self.blas_func(x,y)
@@ -229,7 +229,7 @@ class base_swap(ScipyTestCase):
         assert_array_equal(desired_y,y)
     def check_x_stride(self):
         x = arange(6.,dtype=self.dtype)
-        y = zeros(3,x.dtypechar)
+        y = zeros(3,x.dtype.char)
         desired_x = y.copy()
         desired_y = x.copy()[::2]
         self.blas_func(x,y,n=3,incx=2)
@@ -237,7 +237,7 @@ class base_swap(ScipyTestCase):
         assert_array_equal(desired_y,y)
     def check_y_stride(self):
         x = arange(3.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         desired_x = y.copy()[::2]
         desired_y = x.copy()
         self.blas_func(x,y,n=3,incy=2)
@@ -246,7 +246,7 @@ class base_swap(ScipyTestCase):
     
     def check_x_and_y_stride(self):
         x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         desired_x = y.copy()[::2]
         desired_y = x.copy()[::4]
         self.blas_func(x,y,n=3,incx=4,incy=2)
@@ -254,7 +254,7 @@ class base_swap(ScipyTestCase):
         assert_array_equal(desired_y,y[::2])
     def check_x_bad_size(self):
         x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         try:
             self.blas_func(x,y,n=4,incx=5)
         except: # what kind of error should be caught?
@@ -263,7 +263,7 @@ class base_swap(ScipyTestCase):
         assert(0)    
     def check_y_bad_size(self):
         x = arange(12.,dtype=Complex32)
-        y = zeros(6,x.dtypechar)
+        y = zeros(6,x.dtype.char)
         try:
             self.blas_func(x,y,n=3,incy=5)
         except: # what kind of error should be caught?
@@ -471,9 +471,9 @@ class base_ger_complex(base_ger):
         #self.blas_func(x,y,a,alpha = alpha)
         fblas.cgeru(x,y,a,alpha = alpha)
         print x, y
-        print desired_a.dtypechar,desired_a
+        print desired_a.dtype.char,desired_a
         print
-        print a.dtypechar,a
+        print a.dtype.char,a
         assert(allclose(desired_a,a))
 
     #def check_x_stride(self):

@@ -647,7 +647,7 @@ def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
 
 def write_palette(tofile,pal):
     pal = Numeric.asarray(pal)
-    if pal.dtypechar not in ['B','b','s','i','l']:
+    if pal.dtype.char not in ['B','b','s','i','l']:
         raise ValueError, "Palette data must be integer data."
     palsize = pal.shape
     if len(palsize) > 2:
@@ -659,7 +659,7 @@ def write_palette(tofile,pal):
             pal = pal[:,0]
         palsize = pal.shape
     if len(palsize) == 1:
-        pal = Numeric.multiply.outer(pal,ones((3,),pal.dtypechar))
+        pal = Numeric.multiply.outer(pal,ones((3,),pal.dtype.char))
         palsize = pal.shape
     if not (palsize[1] == 3 or palsize[0] == 3):
         raise TypeError, "If input is 2-d, the length of at least one dimension must be 3."
@@ -726,7 +726,7 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     """Plot an image of a matrix.
     """
     A = Numeric.asarray(A)
-    if A.dtypechar in ['D','F']:
+    if A.dtype.char in ['D','F']:
         print "Warning: complex array given, plotting magnitude."
         A = abs(A)
     M,N = A.shape
@@ -1139,7 +1139,7 @@ def title3(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
                  height=fontsize, color=color)
 
 def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
-    y0 = Numeric.zeros(len(y),y.dtypechar)
+    y0 = Numeric.zeros(len(y),y.dtype.char)
     y1 = y
     x0 = m
     x1 = m

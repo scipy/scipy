@@ -3448,7 +3448,7 @@ class rv_discrete:
         vals = reshape(self._rvs(*args),size)
         if self.return_integers:
             vals = arr(vals)
-            if vals.dtypechar not in numpy.typecodes['AllInteger']:
+            if vals.dtype.char not in numpy.typecodes['AllInteger']:
                 vals = vals.astype(int)
         return vals + loc
 

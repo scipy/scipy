@@ -43,7 +43,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
 
     ordering = []
     for i in range(len(arrays)):
-        t = arrays[i].dtypechar
+        t = arrays[i].dtype.char
         if not _type_conv.has_key(t): t = 'd'
         ordering.append((t,i))
     if ordering:

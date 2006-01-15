@@ -215,7 +215,7 @@ class fopen(file):
             bs = (bs == 1)
         data = asarray(data)
         if mtype is None:
-            mtype = data.dtypechar
+            mtype = data.dtype.char
         howmany,mtype = getsize_type(mtype)
         count = product(data.shape)
         numpyio.fwrite(self,count,data,mtype,bs)
@@ -346,7 +346,7 @@ class fopen(file):
             if len(args) > 0:
                 sz,mtype = getsize_type(args[0])
             else:
-                sz,mtype = getsize_type(fmt.dtypechar)
+                sz,mtype = getsize_type(fmt.dtype.char)
             count = product(fmt.shape)
             strlen = struct.pack(nfmt,count*sz)
             self.write(strlen)
@@ -560,7 +560,7 @@ def _parse_mimatrix(fid,bytes):
             if cmplx:
                 imag, unused =_get_element(fid)
                 try:
-                    result = result + _unit_imag[imag.dtypechar] * imag
+                    result = result + _unit_imag[imag.dtype.char] * imag
                 except KeyError:
                     result = result + 1j*imag
             result = squeeze(transpose(reshape(result,tupdims)))
@@ -620,7 +620,7 @@ def _parse_mimatrix(fid,bytes):
         if cmplx:
             imag, unused = _get_element(fid)
             try:
-                res = res + _unit_imag[imag.dtypechar] * imag
+                res = res + _unit_imag[imag.dtype.char] * imag
             except (KeyError,AttributeError):
                 res = res + 1j*imag
         if have_sparse:
@@ -808,7 +808,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
             data = atleast_1d(fid.fread(numels,storage))
             if header[3]:  # imaginary data
                 data2 = fid.fread(numels,storage)
-                if data.dtypechar == 'f' and data2.dtypechar == 'f':
+                if data.dtype.char == 'f' and data2.dtype.char == 'f':
                     new = zeros(data.shape,'F')
                     new.real = data
                     new.imag = data2
@@ -852,13 +852,13 @@ def savemat(filename, dict):
         var = dict[variable]
         if type(var) is not ArrayType:
             continue
-        if var.dtypechar == 'S1':
+        if var.dtype.char == 'S1':
             T = 1
         else:
             T = 0
-        if var.dtypechar == 'b':
+        if var.dtype.char == 'b':
             var = var.astype('h')
-        P = storage[var.dtypechar]
+        P = storage[var.dtype.char]
         fid.fwrite([M*1000+O*100+P*10+T],'int')
 
         if len(var.shape) == 1:
@@ -868,7 +868,7 @@ def savemat(filename, dict):
         if len(var.shape) > 2:
             var=var.reshape((product(var.shape[:-1]), var.shape[-1]))
 
-        imagf = var.dtypechar in ['F', 'D']
+        imagf = var.dtype.char in ['F', 'D']
         fid.fwrite([var.shape[1], var.shape[0], imagf, len(variable)+1],'int')
         fid.fwrite(variable+'\x00','char')
         if imagf:

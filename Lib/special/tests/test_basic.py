@@ -776,19 +776,19 @@ class test_cotdg(ScipyTestCase):
         assert_almost_equal(ct1,ctrl1,8)
 
     def check_specialpoints(self):
-        assert_equal(cotdg(45), 1.0)
-        assert_equal(cotdg(-45), -1.0)
-        assert_equal(cotdg(90), 0.0)
-        assert_equal(cotdg(-90), 0.0)
-        assert_equal(cotdg(135), -1.0)
-        assert_equal(cotdg(-135), 1.0)
-        assert_equal(cotdg(225), 1.0)
-        assert_equal(cotdg(-225), -1.0)
-        assert_equal(cotdg(270), 0.0)
-        assert_equal(cotdg(-270), 0.0)
-        assert_equal(cotdg(315), -1.0)
-        assert_equal(cotdg(-315), 1.0)
-        assert_equal(cotdg(765), 1.0)
+        assert_almost_equal(cotdg(45), 1.0, 14)
+        assert_almost_equal(cotdg(-45), -1.0, 14)
+        assert_almost_equal(cotdg(90), 0.0, 14)
+        assert_almost_equal(cotdg(-90), 0.0, 14)
+        assert_almost_equal(cotdg(135), -1.0, 14)
+        assert_almost_equal(cotdg(-135), 1.0, 14)
+        assert_almost_equal(cotdg(225), 1.0, 14)
+        assert_almost_equal(cotdg(-225), -1.0, 14)
+        assert_almost_equal(cotdg(270), 0.0, 14)
+        assert_almost_equal(cotdg(-270), 0.0, 14)
+        assert_almost_equal(cotdg(315), -1.0, 14)
+        assert_almost_equal(cotdg(-315), 1.0, 14)
+        assert_almost_equal(cotdg(765), 1.0, 14)
 
 class test_ellipj(ScipyTestCase):
 
@@ -2026,17 +2026,17 @@ class test_tandg(ScipyTestCase):
         assert_almost_equal(tnm1,tnmrl1,8)
 
     def check_specialpoints(self):
-        assert_equal(tandg(0), 0.0)
-        assert_equal(tandg(45), 1.0)
-        assert_equal(tandg(-45), -1.0)
-        assert_equal(tandg(135), -1.0)
-        assert_equal(tandg(-135), 1.0)
-        assert_equal(tandg(180), 0.0)
-        assert_equal(tandg(-180), 0.0)
-        assert_equal(tandg(225), 1.0)
-        assert_equal(tandg(-225), -1.0)
-        assert_equal(tandg(315), -1.0)
-        assert_equal(tandg(-315), 1.0)
+        assert_almost_equal(tandg(0), 0.0, 14)
+        assert_almost_equal(tandg(45), 1.0, 14)
+        assert_almost_equal(tandg(-45), -1.0, 14)
+        assert_almost_equal(tandg(135), -1.0, 14)
+        assert_almost_equal(tandg(-135), 1.0, 14)
+        assert_almost_equal(tandg(180), 0.0, 14)
+        assert_almost_equal(tandg(-180), 0.0, 14)
+        assert_almost_equal(tandg(225), 1.0, 14)
+        assert_almost_equal(tandg(-225), -1.0, 14)
+        assert_almost_equal(tandg(315), -1.0, 14)
+        assert_almost_equal(tandg(-315), 1.0, 14)
 
 class test_y0(ScipyTestCase):
 

@@ -146,7 +146,7 @@ class array_converter(common_base_converter):
         self.module_init_code = [numeric_init_code]    
                
     def get_var_type(self,value):
-        return value.dtypechar
+        return value.dtype.char
     
     def template_vars(self,inline=0):
         res = common_base_converter.template_vars(self,inline)    

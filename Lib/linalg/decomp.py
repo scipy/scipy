@@ -72,7 +72,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag,0.0))
     if not (ggev.prefix in 'cz' or only_real):
-        t = w.dtypechar
+        t = w.dtype.char
         if left:
             vl = _make_complex_eigvecs(w, vl, t)
         if right:
@@ -133,7 +133,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-            t = {'f':'F','d':'D'}[wr.dtypechar]
+            t = {'f':'F','d':'D'}[wr.dtype.char]
             w = wr+_I*wi
     else: # 'clapack'
         if geev.prefix in 'cz':
@@ -146,7 +146,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-            t = {'f':'F','d':'D'}[wr.dtypechar]
+            t = {'f':'F','d':'D'}[wr.dtype.char]
             w = wr+_I*wi
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geev'%(-info)
@@ -154,7 +154,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag,0.0))
     if not (geev.prefix in 'cz' or only_real):
-        t = w.dtypechar
+        t = w.dtype.char
         if left:
             vl = _make_complex_eigvecs(w, vl, t)
         if right:
@@ -306,7 +306,7 @@ def svdvals(a,overwrite_a=0):
 def diagsvd(s,M,N):
     """Return sigma from singular values and original size M,N."""
     part = diag(s)
-    typ = part.dtypechar
+    typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
         return c_[part,zeros((M,N-M),typ)]
@@ -407,7 +407,7 @@ def qr(a,overwrite_a=0,lwork=None):
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(qr,))
-    t = qr.dtypechar
+    t = qr.dtype.char
     R = basic.triu(qr)
     Q = numpy.identity(M,dtype=t)
     ident = numpy.identity(M,dtype=t)
@@ -437,7 +437,7 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError, 'expected square matrix'
     N = a1.shape[0]
-    typ = a1.dtypechar
+    typ = a1.dtype.char
     if output in ['complex','c'] and typ not in ['F','D']:
         if typ in _double_precision:
             a1 = a1.astype('D')
@@ -468,7 +468,7 @@ def _commonType(*arrays):
     kind = 0
     precision = 0
     for a in arrays:
-        t = a.dtypechar
+        t = a.dtype.char
         kind = max(kind, _array_kind[t])
         precision = max(precision, _array_precision[t])
     return _array_type[kind][precision]
@@ -476,7 +476,7 @@ def _commonType(*arrays):
 def _castCopy(type, *arrays):
     cast_arrays = ()
     for a in arrays:
-        if a.dtypechar == type:
+        if a.dtype.char == type:
             cast_arrays = cast_arrays + (a.copy(),)
         else:
             cast_arrays = cast_arrays + (a.astype(type),)
@@ -585,7 +585,7 @@ def hessenberg(a,calc_q=0,overwrite_a=0):
 
     # XXX: Use ORGHR routines to compute q.
     ger,gemm = get_blas_funcs(('ger','gemm'),(hq,))
-    typecode = hq.dtypechar
+    typecode = hq.dtype.char
     q = None
     for i in range(lo,hi):
         if tau[i]==0.0:

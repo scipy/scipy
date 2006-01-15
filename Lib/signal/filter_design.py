@@ -150,7 +150,7 @@ def zpk2tf(z,p,k):
     k = atleast_1d(k)
     if len(z.shape) > 1:
         temp = poly(z[0])
-        b = zeros((z.shape[0], z.shape[1]+1), temp.dtypechar)
+        b = zeros((z.shape[0], z.shape[1]+1), temp.dtype.char)
         if len(k) == 1:
             k = [k[0]]*z.shape[0]
         for i in range(z.shape[0]):
@@ -169,7 +169,7 @@ def normalize(b,a):
     if len(b.shape) > 2:
         raise ValueError, "Numerator polynomial must be rank-1 or rank-2 array."
     if len(b.shape) == 1:
-        b = asarray([b],b.dtypechar)
+        b = asarray([b],b.dtype.char)
     while a[0] == 0.0 and len(a) > 1:
         a = a[1:]
     while allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
@@ -211,7 +211,7 @@ def lp2hp(b,a,wo=1.0):
     if wo != 1:
         pwo = pow(wo,Num.arange(max((d,n))))
     else:
-        pwo = Num.ones(max((d,n)),b.dtypechar)
+        pwo = Num.ones(max((d,n)),b.dtype.char)
     if d >= n:
         outa = a[::-1] * pwo
         outb = resize(b,(d,))

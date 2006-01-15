@@ -352,7 +352,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     if info>0: raise LinAlgError, "SVD did not converge in Linear Least Squares"
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal gelss'%(-info)
-    resids = asarray([],x.dtypechar)
+    resids = asarray([],x.dtype.char)
     if n<m:
         x1 = x[:n]
         if rank==n: resids = sum(x[n:]**2)
@@ -366,7 +366,7 @@ def pinv(a, cond=None):
     Compute generalized inverse of A using least-squares solver.
     """
     a = asarray_chkfinite(a)
-    t = a.dtypechar
+    t = a.dtype.char
     b = numpy.identity(a.shape[0],t)
     return lstsq(a, b, cond=cond)[0]
 
@@ -382,7 +382,7 @@ def pinv2(a, cond=None):
     """
     a = asarray_chkfinite(a)
     u, s, vh = decomp.svd(a)
-    t = u.dtypechar
+    t = u.dtype.char
     if cond in [None,-1]:
         cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
     m,n = a.shape
@@ -420,7 +420,7 @@ def tril(m, k=0):
     """
     svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
-    out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtypechar)*m
+    out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtype.char)*m
     pass  ## pass  ## out.savespace(svsp)
     return out
 
@@ -430,7 +430,7 @@ def triu(m, k=0):
     """
     svsp = getattr(m,'spacesaver',lambda:0)()
     m = asarray(m)
-    out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtypechar))*m
+    out = (1-tri(m.shape[0], m.shape[1], k-1, m.dtype.char))*m
     pass  ## pass  ## out.savespace(svsp)
     return out
 

@@ -56,7 +56,7 @@ class test_read_array(ScipyTestCase):
         a = stats.randint.rvs(1,20,size=(3,4))
         fname = tempfile.mktemp('.dat')
         io.write_array(fname,a)
-        b = io.read_array(fname,atype=a.dtypechar)
+        b = io.read_array(fname,atype=a.dtype.char)
         assert_array_equal(a,b)
         os.remove(fname)
 

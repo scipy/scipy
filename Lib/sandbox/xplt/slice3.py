@@ -2872,7 +2872,7 @@ def _pl3tree_slice (plane, leaf) :
          xyzb = None
       valf = ll [2]
       if valf != None :
-         tpc = valf.dtypechar
+         tpc = valf.dtype.char
          valb = array (valf, copy = 1)
       else :
          valb = None

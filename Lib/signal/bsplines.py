@@ -15,7 +15,7 @@ def spline_filter(Iin, lmbda=5.0):
     Filter an input data set, Iin, using a (cubic) smoothing spline of
     fall-off lmbda.
     """
-    intype = Iin.dtypechar
+    intype = Iin.dtype.char
     hcol = sarray([1.0,4.0,1.0],'f')/6.0
     if intype in ['F','D']:
         Iin = Iin.astype('F')
@@ -123,7 +123,7 @@ def _cubic_smooth_coeff(signal,lamb):
     rho, omega = _coeff_smooth(lamb)
     cs = 1-2*rho*cos(omega) + rho*rho
     K = len(signal)
-    yp = zeros((K,),signal.dtypechar)
+    yp = zeros((K,),signal.dtype.char)
     k = arange(K)
     yp[0] = hc(0,cs,rho,omega)*signal[0] + \
             add.reduce(hc(k+1,cs,rho,omega)*signal)
@@ -135,7 +135,7 @@ def _cubic_smooth_coeff(signal,lamb):
     for n in range(2,K):
         yp[n] = cs * signal[n] + 2*rho*cos(omega)*yp[n-1] - rho*rho*yp[n-2]
         
-    y = zeros((K,),signal.dtypechar)
+    y = zeros((K,),signal.dtype.char)
 
     y[K-1] = add.reduce((hs(k,cs,rho,omega) + hs(k+1,cs,rho,omega))*signal[::-1])
     y[K-2] = add.reduce((hs(k-1,cs,rho,omega) + hs(k+2,cs,rho,omega))*signal[::-1])
@@ -148,12 +148,12 @@ def _cubic_smooth_coeff(signal,lamb):
 def _cubic_coeff(signal):
     zi = -2 + sqrt(3)
     K = len(signal)
-    yplus = zeros((K,),signal.dtypechar)
+    yplus = zeros((K,),signal.dtype.char)
     powers = zi**arange(K)
     yplus[0] = signal[0] + zi*add.reduce(powers*signal)
     for k in range(1,K):
         yplus[k] = signal[k] + zi*yplus[k-1]
-    output = zeros((K,),signal.dtypechar)
+    output = zeros((K,),signal.dtype.char)
     output[K-1] = zi / (zi-1)*yplus[K-1]
     for k in range(K-2,-1,-1):
         output[k] = zi*(output[k+1]-yplus[k])
@@ -162,12 +162,12 @@ def _cubic_coeff(signal):
 def _quadratic_coeff(signal):
     zi = -3 + 2*sqrt(2.0)    
     K = len(signal)
-    yplus = zeros((K,),signal.dtypechar)
+    yplus = zeros((K,),signal.dtype.char)
     powers = zi**arange(K)
     yplus[0] = signal[0] + zi*add.reduce(powers*signal)    
     for k in range(1,K):
         yplus[k] = signal[k] + zi*yplus[k-1]
-    output = zeros((K,),signal.dtypechar)
+    output = zeros((K,),signal.dtype.char)
     output[K-1] = zi / (zi-1)*yplus[K-1]
     for k in range(K-2,-1,-1):
         output[k] = zi*(output[k+1]-yplus[k])

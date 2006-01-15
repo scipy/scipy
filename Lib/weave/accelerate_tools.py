@@ -262,7 +262,7 @@ def lookup_type(x):
     except:
         import numpy as nx
         if isinstance(T,nx.ArrayType):
-            return typedefs[(T,len(x.shape),x.dtypechar)]
+            return typedefs[(T,len(x.shape),x.dtype.char)]
         elif T == InstanceType:
             return Instance(x)
         else:

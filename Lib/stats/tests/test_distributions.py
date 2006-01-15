@@ -77,11 +77,11 @@ class test_randint(ScipyTestCase):
         assert(len(vals) == 100)
         vals = stats.randint.rvs(5,30,size=(2,50))
         assert(numpy.shape(vals) == (2,50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.randint.rvs(15,46)
         assert((val >= 15) & (val < 46))
         assert isinstance(val, numpy.ScalarType),`type(val)`
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
 
     def check_pdf(self):
         k = numpy.r_[0:36]
@@ -101,10 +101,10 @@ class test_binom(ScipyTestCase):
         vals = stats.binom.rvs(10, 0.75, size=(2, 50))
         assert(numpy.all(vals >= 0) & numpy.all(vals <= 10))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.binom.rvs(10, 0.75)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
         
 class test_bernoulli(ScipyTestCase):
@@ -112,30 +112,30 @@ class test_bernoulli(ScipyTestCase):
         vals = stats.bernoulli.rvs(0.75, size=(2, 50))
         assert(numpy.all(vals >= 0) & numpy.all(vals <= 1))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.bernoulli.rvs(0.75)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_nbinom(ScipyTestCase):
     def check_rvs(self):
         vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
         assert(numpy.all(vals >= 0))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.nbinom.rvs(10, 0.75)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_geom(ScipyTestCase):
     def check_rvs(self):
         vals = stats.geom.rvs(0.75, size=(2, 50))
         assert(numpy.all(vals >= 0))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.geom.rvs(0.75)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_hypergeom(ScipyTestCase):
     def check_rvs(self):
@@ -143,49 +143,49 @@ class test_hypergeom(ScipyTestCase):
         assert(numpy.all(vals >= 0) &
                numpy.all(vals <= 3))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.hypergeom.rvs(20, 3, 10)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_logser(ScipyTestCase):
     def check_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
         assert(numpy.all(vals >= 1))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.logser.rvs(0.75)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_poisson(ScipyTestCase):
     def check_rvs(self):
         vals = stats.poisson.rvs(0.5, size=(2, 50))
         assert(numpy.all(vals >= 0))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.poisson.rvs(0.5)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_zipf(ScipyTestCase):
     def check_rvs(self):
         vals = stats.zipf.rvs(1.5, size=(2, 50))
         assert(numpy.all(vals >= 1))
         assert(numpy.shape(vals) == (2, 50))
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.zipf.rvs(1.5)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 class test_dlaplace(ScipyTestCase):
     def check_rvs(self):
         vals = stats.dlaplace.rvs(1.5 , size=(2, 50))
         assert(numpy.shape(vals) == (2, 50))        
-        assert(vals.dtypechar in numpy.typecodes['AllInteger'])
+        assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.dlaplace.rvs(1.5)
         assert(isinstance(val, numpy.ArrayType))
-        assert(val.dtypechar in numpy.typecodes['AllInteger'])
+        assert(val.dtype.char in numpy.typecodes['AllInteger'])
         
 if __name__ == "__main__":
     ScipyTest('stats.distributions').run()

@@ -36,7 +36,7 @@ def tf2ss(num, den):
     num, den = normalize(num, den)   # Strips zeros, checks arrays
     nn = len(num.shape)
     if nn == 1:
-        num = asarray([num],num.dtypechar)
+        num = asarray([num],num.dtype.char)
     M = num.shape[1] 
     K = len(den) 
     if (M > K):
@@ -46,7 +46,7 @@ def tf2ss(num, den):
                array([], Float)
 
     # pad numerator to have same number of columns has denominator
-    num = c_[zeros((num.shape[0],K-M),num.dtypechar), num]
+    num = c_[zeros((num.shape[0],K-M),num.dtype.char), num]
 
     if num.shape[-1] > 0:
         D = num[:,0]
@@ -150,7 +150,7 @@ def ss2tf(A, B, C, D, input=0):
 
     num_states = A.shape[0] 
     type_test = A[:,0] + B[:,0] + C[0,:] + D
-    num = Numeric.zeros((nout, num_states+1),type_test.dtypechar)
+    num = Numeric.zeros((nout, num_states+1),type_test.dtype.char)
     for k in range(nout):
         Ck = atleast_2d(C[k,:])
         num[k] = poly(A - dot(B,Ck)) + (D[k]-1)*den
@@ -325,7 +325,7 @@ def lsim2(system, U, T, X0=None):
         raise ValueError, "System does not define that many inputs."
 
     if X0 is None:
-        X0 = zeros(sys.B.shape[0],sys.A.dtypechar)
+        X0 = zeros(sys.B.shape[0],sys.A.dtype.char)
 
     # for each output point directly integrate assume zero-order hold
     #   or linear interpolation.
@@ -392,9 +392,9 @@ def lsim(system, U, T, X0=None, interp=1):
         raise ValueError, "System does not define that many inputs."
 
     if X0 is None:
-        X0 = zeros(sys.B.shape[0],sys.A.dtypechar)
+        X0 = zeros(sys.B.shape[0],sys.A.dtype.char)
 
-    xout = zeros((len(T),sys.B.shape[0]),sys.A.dtypechar)
+    xout = zeros((len(T),sys.B.shape[0]),sys.A.dtype.char)
     xout[0] = X0
     A = sys.A
     AT, BT = transpose(sys.A), transpose(sys.B)
@@ -402,10 +402,10 @@ def lsim(system, U, T, X0=None, interp=1):
     lam, v = linalg.eig(A)
     vt = transpose(v)
     vti = linalg.inv(vt)
-    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtypechar)
+    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtype.char)
     ATm1 = linalg.inv(AT)
     ATm2 = dot(ATm1,ATm1)
-    I = eye(A.shape[0],dtype=A.dtypechar)
+    I = eye(A.shape[0],dtype=A.dtype.char)
     GTmI = GT-I
     F1T = dot(dot(BT,GTmI),ATm1)
     if interp:
@@ -415,7 +415,7 @@ def lsim(system, U, T, X0=None, interp=1):
         dt1 = T[k] - T[k-1]
         if dt1 != dt:
             dt = dt1
-            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtypechar)
+            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtype.char)
             GTmI = GT-I
             F1T = dot(dot(BT,GTmI),ATm1)
             if interp:
@@ -460,13 +460,13 @@ def impulse(system, X0=None, T=None, N=None):
         vals = linalg.eigvals(sys.A)
         tc = 1.0/min(abs(real(vals)))
         T = arange(0,7*tc,7*tc / float(N))
-    h = zeros(T.shape, sys.A.dtypechar)
+    h = zeros(T.shape, sys.A.dtype.char)
     s,v = linalg.eig(sys.A)
     vi = linalg.inv(v)
     C = sys.C
     for k in range(len(h)):
         es = diag(Numeric.exp(s*T[k]))
-        eA = (dot(dot(v,es),vi)).astype(h.dtypechar)
+        eA = (dot(dot(v,es),vi)).astype(h.dtype.char)
         h[k] = squeeze(dot(dot(C,eA),B))
     return T, h
 
@@ -497,7 +497,7 @@ def step(system, X0=None, T=None, N=None):
         vals = linalg.eigvals(sys.A)
         tc = 1.0/min(abs(real(vals)))
         T = arange(0,7*tc,7*tc / float(N))
-    U = ones(T.shape, sys.A.dtypechar)
+    U = ones(T.shape, sys.A.dtype.char)
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]
     

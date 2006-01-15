@@ -16,7 +16,7 @@ _UInt8 = Numeric.UnsignedInt8
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
-    if data.dtypechar == _UInt8:
+    if data.dtype.char == _UInt8:
         return data
     high = high - low
     if cmin is None:
