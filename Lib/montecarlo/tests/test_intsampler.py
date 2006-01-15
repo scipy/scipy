@@ -22,8 +22,8 @@ import sys
 from numpy.testing import *
 set_package_path()
 from numpy import *
-#from scipy.montecarlo import *
-from scipy.sandbox.montecarlo import *
+from scipy.montecarlo import *
+#from scipy.sandbox.montecarlo import *
 from scipy import stats
 restore_path()
 

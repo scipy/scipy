@@ -3,7 +3,7 @@
 #include "sampler5tbl.h"
 
 // Function prototypes:
-static PyArrayObject* PyArray_Intsample(Sampler* mysampler, intp length, int probs);
+static PyArrayObject* PyArray_Intsample(Sampler* mysampler, int size);
 static PyObject* sample(PyObject *self, PyObject *args, PyObject *keywords);
 
 
@@ -18,11 +18,11 @@ typedef struct {
 
 static void IntSampler_destroy(IntSampler* self)
 {
-    printf("[Started destroying sampler]\n");
+    // printf("[Started destroying sampler]\n");
     if (self->pSampler != NULL)
         destroy_sampler5tbl(self->pSampler);
     self->ob_type->tp_free((PyObject*)self);
-    printf("[Finished destroying sampler]\n");
+    // printf("[Finished destroying sampler]\n");
 }
 
 static PyObject *
@@ -30,11 +30,11 @@ IntSampler_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     IntSampler *self;
 
-    printf("[Started new() method]\n");
+    // printf("[Started new() method]\n");
     self = (IntSampler *)type->tp_alloc(type, 0);
     if (self != NULL)
         self->pSampler = NULL;
-    printf("[Finished new() method]\n");
+    // printf("[Finished new() method]\n");
     return (PyObject *) self;
 }
 
@@ -44,14 +44,14 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
     PyArrayObject *pmf_table;
     int k;  // size of the table
 
-    printf("[Started initializing sampler]\n");
+    // printf("[Started initializing sampler]\n");
 
     /* parse the arguments  */
     if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &pmf_table)) {
       return -1;  /* Error indicator */
     }
 
-    printf("[Parsed arguments]\n");
+    // printf("[Parsed arguments]\n");
 
     /* check that we have a one-dimensional array */
     if (pmf_table->nd != 1) {
@@ -61,7 +61,7 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
       return -1;
     }
 
-    printf("[Array is 1D]\n");
+    // printf("[Array is 1D]\n");
 
     /* check that the datatype is float64, (C double) */
     if (PyArray_DESCR(pmf_table)->type_num != PyArray_DOUBLE) {
@@ -70,7 +70,7 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
       return -1;
     }
 
-    printf("[Data type is float64]\n");
+    // printf("[Data type is float64]\n");
 
     k = pmf_table->dimensions[0];    /* length of the array */
 
@@ -97,7 +97,7 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     
-    printf("[Finished initializing sampler]\n");
+    // printf("[Finished initializing sampler]\n");
 
     // Eventually, we need to do this:
     // destroy(self->pSampler);
@@ -108,102 +108,67 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
 
 
 static char sample__doc__[] = \
-  "sample(size, [probs]): return an array with a random discrete sample\n"\
+  "sample(size): return an array with a random discrete sample\n"\
   "of the given size from the probability mass function specified when\n"\
-  "initializing the sampler.\n"\
-  "\n"\
-  "If the optional argument 'probs' is zero (the default), this function\n"\
-  "returns only the generated sample.\n"
-  "\n"\
-  "If 'probs' is 1, it returns a tuple (sample, prob), where prob is an\n"\
-  "array of length len(sample) for which probs[i] is the (normalized) pmf\n"\
-  "value of sample[i] in the table used to initialize the sampler.\n"\
-  "\n"\
-  "If 'probs' is 2, it returns a tuple (sample, logprob), where logprob\n"\
-  "contains the natural logarithms of the probabilities of the sample points.";
+  "initializing the sampler.\n";
+  // "\n"\
+  // "If the optional argument 'probs' is zero (the default), this function\n"\
+  // "returns only the generated sample.\n"
+  // "\n"\
+  // "If 'probs' is 1, it returns a tuple (sample, prob), where prob is an\n"\
+  // "array of length len(sample) for which probs[i] is the (normalized) pmf\n"\
+  // "value of sample[i] in the table used to initialize the sampler.\n"\
+  // "\n"\
+  // "If 'probs' is 2, it returns a tuple (sample, logprob), where logprob\n"\
+  // "contains the natural logarithms of the probabilities of the sample points.";
                                                       
 static PyObject*
 sample(PyObject *self, PyObject *args, PyObject *keywords)
 {
     PyArrayObject *samplearray;
 
-    static char *kwlist[] = {"size", "probs",NULL};
-    /* 0 (default): don't return probs;  1: return probs;  2: return logprobs */
-    int probs = 0;  
-    intp length;
+    static char *kwlist[] = {"size",NULL};
+    int size;
     
     /* parse the arguments  */
-    if (!PyArg_ParseTupleAndKeywords(args, keywords, "i|i", kwlist, &length, 
-                &probs))
-    {
-        // this raises the appropriate exception already
-        //PyErr_SetString(PyExc_TypeError, "sample size and 'probs' flag must be"\
-                                         " integers");
+    if (!PyArg_ParseTupleAndKeywords(args, keywords, "i", kwlist, &size))
         return NULL;
-    }
 
-    printf("[Parsed arguments]\n");
+    // printf("[Parsed arguments]\n");
 
-    // Check that length > 0
-    if (length <= 0)
+    // Check that size > 0
+    if (size <= 0)
     {
         PyErr_SetString(PyExc_ValueError, "sample size must be positive");
         return NULL;
     }
 
-    printf("[length is > 0]\n");
+    // printf("[size is > 0]\n");
 
-    // Check that probs is 0, 1, or 2
-    if (probs < 0 || probs > 2)
-    {
-        PyErr_SetString(PyExc_ValueError, "'probs' flag must be 0, 1, or 2");
-        return NULL;
-    }
+    samplearray = PyArray_Intsample(((IntSampler*)self)->pSampler, size);
 
-    printf("[probs is %d]\n", probs);
-
-    samplearray = PyArray_Intsample(((IntSampler*)self)->pSampler, length, probs);
-    if (probs == 0)
-    {
-        return (PyObject*) samplearray;
-    }
-    else
-    {
-        assert(0);
-        return (PyObject*) samplearray;
-        //UNFINISHED -- need to declare outputtuple and test the code
-        //return outputtuple;
-    }
+    return (PyObject*) samplearray;
 }
 
 
 
 static PyArrayObject*
-PyArray_Intsample(Sampler* mysampler, intp length, int probs)
+PyArray_Intsample(Sampler* mysampler, int size)
 {
     PyArrayObject* samplearray;
     long* ptr;
     
     int ndim = 1;
-    int dims[1] = {length};
+    int dims[1] = {size};
     int typenum = PyArray_LONG;
     samplearray = (PyArrayObject*) PyArray_SimpleNew(ndim, dims,
                                                      typenum);
     if (samplearray == NULL) return NULL;
 
     ptr = (long*) PyArray_DATA(samplearray);
-    Dran_array(mysampler, ptr, length);
-    if (probs == 0)
-    {
-        return samplearray;
-    }
-    else
-    {
-        assert(0);
-        //UNFINISHED -- need to declare outputtuple and test the code
-        //return outputtuple;
-    }
+    Dran_array(mysampler, ptr, size);
 
+    return samplearray;
 }
 
  
@@ -235,7 +200,7 @@ static PyMethodDef IntSampler_methods[] = {
 //        {"setup",    setup, METH_VARARGS, setup__doc__},
         {"sample", 
          (PyCFunction)sample,
-         METH_VARARGS|METH_KEYWORDS,
+         METH_VARARGS | METH_KEYWORDS,
          sample__doc__},
         //    "destroy" should be called automatically upon deletion
 //     "Free the memory and destroy an existing sample of sentences."},

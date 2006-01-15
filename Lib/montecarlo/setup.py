@@ -1,3 +1,4 @@
+import numpy
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 from os.path import join
@@ -7,6 +8,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('montecarlo', parent_package, top_path)
 
     config.add_extension('intsampler',
+                         include_dirs = [numpy.get_numpy_include()],
                          sources = [join('src',f) for f in
                          ['intsamplermodule.c', 'sampler5tbl.c']] )
 

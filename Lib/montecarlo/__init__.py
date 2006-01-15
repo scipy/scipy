@@ -1,7 +1,7 @@
 """Maximum entropy modelling tools
 
-Author: Ed Schofield <edschofield@scipy.org>
-Copyright: Copyright 2005 Ed Schofield
+Author: Ed Schofield <schofield@ftw.at>
+Copyright: 2005-2006
 License: BSD-style license. See LICENSE.txt in the scipy source directory.
 """
 

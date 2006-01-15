@@ -7,9 +7,10 @@ __author__ = "Ed Schofield"
 
 from __future__ import division
 import random, math, bisect, string
+import numpy
 import scipy
-#from scipy.montecarlo.intsampler import intsampler
-from scipy.sandbox.montecarlo.intsampler import intsampler
+from scipy.montecarlo.intsampler import intsampler
+#from scipy.sandbox.montecarlo.intsampler import intsampler
 
 class sampler(object):
     """A generic base class for an iterator representing a generator of random
@@ -93,11 +94,11 @@ class ordering(list):
     
     def __imul__(self, i):
         raise TypeError, \
-                "unsupported operand type(s) for *=: 'ordering' and 'int'"
+                "orderings do not support *="
 
     def __mul__(self, i):
         raise TypeError, \
-                "unsupported operand type(s) for *: 'ordering' and 'int'"
+                "orderings do not support *"
     
     def __init__(self, initList=None):
         list.__init__(self)
@@ -110,8 +111,8 @@ class ordering(list):
     def __delitem__(self, index):
         """Deletion of arbitrary elements is not yet supported.  It's not
         apparent to me how to implement this efficiently without
-        fragmenting the indices. But perhaps an O(n) operation would be
-        fine...
+        fragmenting the indices. But perhaps an O(n) operation would 
+        suffice ...
         """
 
         if index == len(self)-1 or index == -1:
@@ -142,10 +143,6 @@ class ordering(list):
         >>> a
         ['blah']
         
-        #Traceback (most recent call last):
-        #  ...
-        #ValueError: value blah already in ordering
-        
         This should extend it by the one unique element:
         
         >>> a.extend(['cheese','cheese'])
@@ -154,9 +151,6 @@ class ordering(list):
         >>> a.index('cheese')
         1
         
-        #Traceback (most recent call last):
-        #  ...
-        #ValueError: one or more duplicates in argument
         """
 
         for x in newlist:
@@ -312,7 +306,7 @@ def tablesampler(table):
         yield w, math.log(table[w]*1.0/total)
 
 
-def dictsampler(table):
+class dictsampler(object):
     """ A generator that samples objects from the distribution given in
     the table (a dict or sparse vector) and yields the index in the
     dictionary and its log probability under the model.
@@ -327,20 +321,15 @@ def dictsampler(table):
     The output will be something like:
     >>> sampler = dictsampler(table)
     
-    >> [sampler.next()[0] for i in range(10)]
+    >> sampler.sample(10)
     ['b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'c', 'b']
-    >> sampler.next()
-    ('a', -2.890371757896165)
-    >> sampler.next()
-    ('a', -2.890371757896165)
-    >> sampler.next()
-    ('b', -0.18232155679395459)
 
     etc., giving a sample from this distribution:
     x       'a'       'b'       'c'
     p(x)   10/180   150/180   20/180
 
     For a spmatrix object:
+    [ UNMAINTAINED! ]
     >>> import spmatrix
     >>> table2 = spmatrix.ll_mat(1,3000)
     >>> table2[0,0] = 10
@@ -350,53 +339,59 @@ def dictsampler(table):
     The output will be something like:
     >>> sampler2 = dictsampler(table2)
     
-    >> [sampler2.next()[0] for i in range(10)]
+    >> sampler2.sample(10)
     [1000, 1000, 1000, 0, 1000, 1000, 1000, 1000, 1000, 2000]
     
-    >> sampler2.next()
-    (1000, -0.18232155679395459)
-    >> sampler2.next()
-    (2000, -2.1972245773362196)
-    >> sampler2.next()
-    (1000, -0.18232155679395459)
-
     etc., giving a sample from this distribution:
     x       0       1000      2000
     p(x)   10/180   150/180   20/180
 
     
-    The fn uses a binary search and takes time proportional to 
-    n + klog(n) for a table of size n.
+    The fn uses the constant-time 'intsampler' class, and should be very fast.
     """
-    try:
-        m,n = table.shape
-        # if this works we assume table is a 1-dim spmatrix or numpy array
-        # and we need to iterate over it
-        assert m == 1
+    def __init__(self, mydict):
+        #try:
+        self.labels = numpy.array(mydict.keys(), object)
+        self.probs = numpy.array(mydict.values(), float)
+        s = self.probs.sum()
+        if s > 0:
+            self.probs /= s
+        else:
+            raise ValueError, "sum of table frequencies must be > 0"
+
+        self.sampler =  intsampler(self.probs)
         
-        keys = ordering(table.keys())
-        newtable = table.values()
-        
-        sampler =  tablesampler(newtable)
+        #except AttributeError:
+        #    raise TypeError, "unsupported table type"
+        #    # # First map the keys to natural numbers
+        #    # keys = ordering(table)
+        #    # newtable = [table[key] for key in keys]
+        #    # sampler = tablesampler(newtable)
 
-        while True:
-            sample, logprob = sampler.next()
-            yield keys[sample][1], logprob # the [1] selects the
-                                           # column index, since table
-                                           # will be a row vector with
-                                           # indices (0,j)
-    
-    except AttributeError:
-        # First map the keys to natural numbers
-        keys = ordering(table)
-        newtable = [table[key] for key in keys]
-        sampler = tablesampler(newtable)
+        #    # # Sample the next item from the dist.  This takes O(log n) time.
+        #    # while True:
+        #    #     sample, logprob = sampler.next()
+        #    #     yield keys[sample], logprob
 
-        # Sample the next item from the dist.  This takes O(log n) time.
-        while True:
-            sample, logprob = sampler.next()
-            yield keys[sample], logprob
-
+    def sample(self, size, return_probs=0):
+        """ return_probs=0: don't return pmf values at each sample point
+            return_probs=1: return pmf values at each sample point
+            return_probs=2: return log pmf values at each sample point
+        """
+        #sample, logprobs = sampler.sample(size)
+        sampleindices = self.sampler.sample(size)
+        # Fancy indexing with the object array of labels
+        sample = self.labels[sampleindices]
+        if return_probs == 0:
+            return sample
+        elif return_probs > 0:
+            # Fancy indexing:
+            sampleprobs = self.probs[sampleindices]
+            if return_probs == 1:
+                return (sample, sampleprobs)
+            elif return_probs == 2:
+                return (sample, scipy.log(sampleprobs))
+ 
 
 def independencesampler(psampler, log_q_dot):
     """ A generator of samples from q(x) = q_dot(x) / Z, where Z is some
