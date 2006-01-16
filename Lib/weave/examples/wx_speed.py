@@ -19,9 +19,9 @@
     a major issue, but remains an open issue.
 
 """
-import weave
-from RandomArray import *
-from numpy.numerix import *
+import scipy.weave as weave
+from numpy.random import *
+from numpy import *
 from wxPython.wx import *
 
 """
@@ -85,7 +85,7 @@ def polyline(dc,line,xoffset=0,yoffset=0):
 
 #-----------------------------------------------------------------------------
 # Define a new version of DrawLines that calls the optimized
-# version for numpy.numerix arrays when appropriate.
+# version for numpy arrays when appropriate.
 #-----------------------------------------------------------------------------
 def NewDrawLines(dc,line):
     """

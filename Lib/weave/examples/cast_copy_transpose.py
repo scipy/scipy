@@ -1,4 +1,4 @@
-""" Cast Copy Tranpose is used in numpy.numerix's LinearAlgebra.py to convert
+""" Cast Copy Tranpose is used in numpy LinearAlgebra.py to convert
     C ordered arrays to Fortran order arrays before calling Fortran
     functions.  A couple of C implementations are provided here that 
     show modest speed improvements.  One is an "inplace" transpose that
@@ -14,13 +14,13 @@
 #  inplace transpose c: 0.129999995232
 #  speed up: 6.70
 
-import numpy.numerix
-from numpy.numerix import *
+import numpy
+from numpy import *
 import sys
 sys.path.insert(0,'..')
-import inline_tools
-import c_spec
-from converters import blitz as cblitz
+import scipy.weave.inline_tools as inline_tools
+import scipy.weave.c_spec as c_spec
+from weave.converters import blitz as cblitz
 
 def _cast_copy_transpose(type,a_2d):
     assert(len(shape(a_2d)) == 2)
@@ -121,11 +121,11 @@ def inplace_cast_copy_transpose(*arrays):
 def _castCopyAndTranspose(type, *arrays):
     cast_arrays = ()
     for a in arrays:
-        if a.typecode() == type:
-            cast_arrays = cast_arrays + (copy.copy(numpy.numerix.transpose(a)),)
+        if a.dtype == numpy.dtype(type):
+            cast_arrays = cast_arrays + (copy.copy(numpy.transpose(a)),)
         else:
             cast_arrays = cast_arrays + (copy.copy(
-                                       numpy.numerix.transpose(a).astype(type)),)
+                                       numpy.transpose(a).astype(type)),)
     if len(cast_arrays) == 1:
             return cast_arrays[0]
     else:

@@ -14,14 +14,14 @@
 # [25 29] [ 2.49147272  3.83021021]
 #  speed up: 32.56
  
-import numpy.numerix
-from numpy.numerix import *
+import numpy
+from numpy import *
 import sys
 sys.path.insert(0,'..')
-import inline_tools
-import converters
+import scipy.weave.inline_tools as inline_tools
+import scipy.weave.converters as converters
 blitz_type_converters = converters.blitz
-import c_spec
+import scipy.weave.c_spec as c_spec
 
 def vq(obs,code_book):
     # make sure we're looking at arrays.

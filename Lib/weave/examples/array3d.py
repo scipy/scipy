@@ -1,21 +1,21 @@
-""" A simple example to show how to access a 3D numpy.numerix array.  One
-example shows how to access the numpy.numerix array using blitz type
+""" A simple example to show how to access a 3D numpy array.  One
+example shows how to access the numpy array using blitz type
 converters and the other shows how it can be done without using blitz
-by accessing the numpy.numerix array data directly.
+by accessing the numpy array data directly.
 
 """
 
-import weave
-from weave import converters
-import numpy.numerix
+import scipy.weave as weave
+from scipy.weave import converters
+import numpy
 
 def create_array():
-    """Creates a simple 3D numpy.numerix array with unique values at each
+    """Creates a simple 3D numpy array with unique values at each
     location in the matrix.
 
     """    
     rows, cols, depth = 2, 3, 4
-    arr = numpy.numerix.zeros((rows, cols, depth), 'i')
+    arr = numpy.zeros((rows, cols, depth), 'i')
     count = 0
     for i in range(rows):
         for j in range(cols):
@@ -26,7 +26,7 @@ def create_array():
 
 
 def pure_inline(arr):
-    """Prints the given 3D array by accessing the raw numpy.numerix data and
+    """Prints the given 3D array by accessing the raw numpy data and
     without using blitz converters.
 
     Notice the following:
@@ -59,7 +59,7 @@ def pure_inline(arr):
 
 def blitz_inline(arr):
     """Prints the given 3D array by using blitz converters which
-    provides a numpy.numerix-like syntax for accessing the numpy.numerix data.
+    provides a numpy-like syntax for accessing the numpy data.
 
     Notice the following:
       1. '\\n' to escape generating a newline in the C++ code.
@@ -91,7 +91,7 @@ def blitz_inline(arr):
 
 def main():
     arr = create_array()
-    print "numpy.numerix:"    
+    print "numpy:"    
     print arr
 
     print "Pure Inline:"

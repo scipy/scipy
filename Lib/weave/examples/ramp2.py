@@ -7,8 +7,8 @@
 #        arr[500]: 0.0500050005001
 
 import time
-from weave import ext_tools
-from numpy.numerix import *
+from scipy.weave import ext_tools
+from numpy import *
 
 def Ramp(result, size, start, end):
     step = (end-start)/(size-1)

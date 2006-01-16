@@ -18,7 +18,7 @@
 import sys
 sys.path.insert(0,'..')
 #from compiler import inline_tools
-import inline_tools
+import scipy.weave.inline_tools as inline_tools
 from bisect import bisect
 import types
 
@@ -93,7 +93,7 @@ def c_int_search_scxx(seq,t,chk=1):
     return inline_tools.inline(code,['seq','t'],verbose = 2)
 
 try:
-    from numpy.numerix import *
+    from numpy import *
     def c_array_int_search(seq,t):
         code = """     
                #line 62 "binary_search.py"
@@ -209,7 +209,7 @@ def search_compare(a,n):
             c_array_int_search(a,i)
         t2 = time.time()
         sp = (t2-t1)+1e-20 # protect against div by zero
-        print ' speed in c(numpy.numerix arrays):',sp    
+        print ' speed in c(numpy arrays):',sp    
         print ' speed up: %3.2f' % (py/sp)
     except:
         pass

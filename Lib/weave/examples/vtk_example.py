@@ -38,9 +38,9 @@ License: BSD Style.
 
 """
 
-import weave
+import scipy.weave as weave
 import vtk
-import numpy.numerix
+import numpy
 
 import sys
 import time
@@ -74,13 +74,13 @@ def simple_test():
     
 
 def array_test():
-    """Tests if a large numpy.numerix array can be copied into a
+    """Tests if a large numpy array can be copied into a
     vtkFloatArray rapidly by using weave.inline.
 
     """
 
-    # Create a large numpy.numerix array.
-    arr = numpy.numerix.arange(0, 10, 0.0001, 'f')
+    # Create a large numpy array.
+    arr = numpy.arange(0, 10, 0.0001, 'f')
     print "Number of elements in array = ", arr.shape[0]
 
     # Copy it into a vtkFloatArray and time the process.
