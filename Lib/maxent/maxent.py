@@ -57,8 +57,8 @@ from __future__ import division
 import math, types, cPickle
 import numpy
 from scipy import optimize
-#from scipy.maxent.maxentutils import *
-from maxentutils import *
+from scipy.maxent.maxentutils import logsumexp,sparsefeaturematrix
+from scipy.maxent.maxentutils import innerprod,innerprodtranspose,arrayexp
 
 
 class basemodel(object):
@@ -1074,10 +1074,6 @@ class bigmodel(basemodel):
             #if not newiter:
             #    print "(line search)"
 
-        if self.gradevals > 1000:
-            import pdb
-            pdb.set_trace()
-        
         # Has theta changed?  If so, clear the speed-enhancing temporary
         # variables that are functions of theta.
         if numpy.any(self.theta != theta):

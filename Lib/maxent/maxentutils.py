@@ -4,8 +4,8 @@ routines or wrappers around matrices to allow the maxent module to
 manipulate ndarrays, scipy sparse matrices, and PySparse matrices a
 common interface.
 
-Perhaps the logsumexp() module (and its Fortran version) belongs under
-the utils/ branch where other modules can access it more easily.
+Perhaps the logsumexp() function belongs under the utils/ branch where other
+modules can access it more easily.
 
 Copyright: Ed Schofield, 2003-2006
 License: BSD-style (see LICENSE.txt in main source directory)
@@ -17,53 +17,16 @@ __version__ = '2.0-alpha3'
 from __future__ import division
 import random, math, bisect, cmath
 import numpy
+from numpy import log, exp, asarray
 from scipy import sparse
 
-
-def _logsumexp(values):
-    """Compute log(e^x_1 + e^x_2 + ... + e^x_n), using an algorithm based
-    on the Jacobi logarithm to prevent numerical overflow.  The values
-    can be a list or any lazy iterator.
-
-    The Fortran version of this function is much faster and should be
-    used whenever possible.  The Fortran version operates on numpy
-    arrays.  This version is slightly more general, operating on
-    arbitrary Python iterators.
-    
-    Lemma:
-        log(e^a + e^b) = max(a,b) + log(1+exp(-|a-b|))
-    Note: The right side is bounded below by max(a,b) and above by
-        max(a,b)+log(2).
-
-    This gives rise to the following iterative algorithm for computing
-    Z = log(e^a_1 + e^a_2 + ... + e^a_n):
-    Set b_1 = a_1
-    For i = 2,...,n, compute:
-        b_i = max(b_{i-1},a_i) + log(1+exp(-|b_{i-1}-a_i|))
-    Then Z = b_n
+def logsumexp(a):
+    """Compute the log of the sum of exponentials log(e^{a_1}+...e^{a_n})
+    of the components of the array a, avoiding numerical overflow.
     """
-
-    if len(values) == 0:
-        return 0.0
-        
-    # Get the first element.  (Is there any easier way? The syntax b_i =
-    # values[0] doesn't work for general iterators (e.g.  imap))
-    iterator = iter(values)
-    while True:
-        # Loop until we have a value greater than -inf
-        try:
-            b_i = iterator.next()
-        except StopIteration:
-            # empty
-            return float('-inf')
-        if b_i > float('-inf'):
-            break
-
-    # Loop over all but the first element. (Here too the syntax 'for a_i
-    # in values[1:]'  doesn't work in general for iterators.)
-    for a_i in iterator:
-        b_i = max(b_i, a_i) + robustlog(1+math.exp(-abs(b_i-a_i)))
-    return b_i
+    a = asarray(a)
+    a_max = a.max()
+    return a_max + log((exp(a-a_max)).sum())
 
 
 def _logsumexpcomplex(values):
@@ -143,17 +106,35 @@ def _robustarraylog(x):
             arraylog[i] = cmath.log(xi)
     return arraylog
 
-try:
-    from logsumexp import logsumexp, logsumexpcomplex, robustarraylog
-except:
-    print "Warning: could not load the fast FORTRAN library for logsumexp()."
-    logsumexp = _logsumexp
-    logsumexpcomplex = _logsumexpcomplex
-    robustarraylog = _robustarraylog
-    pass
+#try:
+#    from logsumexp import logsumexp, logsumexpcomplex, robustarraylog
+#except:
+#    print "Warning: could not load the fast FORTRAN library for logsumexp()."
+#    logsumexp = _logsumexp
+#    logsumexpcomplex = _logsumexpcomplex
+#    robustarraylog = _robustarraylog
+#    pass
 
 
 def arrayexp(x):
+    """Returns the elementwise antilog of the real array x.  We try to
+    exponentiate with numpy.exp() and, if that fails, with python's
+    math.exp().  numpy.exp() is about 10 times faster but throws an
+    OverflowError exception for numerical underflow (e.g. exp(-800),
+    whereas python's math.exp() just returns zero, which is much more
+    helpful.
+    """
+    try:
+        ex = numpy.exp(x)
+    except OverflowError:
+        print "Warning: OverflowError using numpy.exp(). Using slower Python"\
+              " routines instead!"
+        ex = numpy.empty(len(x), float)
+        for j in range(len(x)):
+            ex[j] = math.exp(x[j])
+    return ex
+ 
+def arrayexpcomplex(x):
     """Returns the elementwise antilog of the vector x.  We try to
     exponentiate with numpy.exp() and, if that fails, with python's
     math.exp().  numpy.exp() is about 10 times faster but throws an

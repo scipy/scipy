@@ -8,11 +8,6 @@ def configuration(parent_package='', top_path=None):
 
     config = Configuration('maxent', parent_package, top_path)
 
-    # calc_lwork:
-    config.add_extension('logsumexp',
-                         [join('src','logsumexp.f')]
-                         )
-
     config.add_data_dir('tests')
     config.add_data_dir('examples')
     config.add_data_dir('doc')
