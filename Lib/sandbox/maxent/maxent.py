@@ -57,8 +57,10 @@ from __future__ import division
 import math, types, cPickle
 import numpy
 from scipy import optimize
-from scipy.maxent.maxentutils import logsumexp,sparsefeaturematrix
-from scipy.maxent.maxentutils import innerprod,innerprodtranspose,arrayexp
+#from scipy.maxent.maxentutils import logsumexp,sparsefeaturematrix
+#from scipy.maxent.maxentutils import innerprod,innerprodtranspose,arrayexp
+from scipy.sandbox.maxent.maxentutils import logsumexp,sparsefeaturematrix
+from scipy.sandbox.maxent.maxentutils import innerprod,innerprodtranspose,arrayexp
 
 
 class basemodel(object):

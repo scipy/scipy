@@ -11,15 +11,15 @@ from numpy.testing import *
 set_package_path()
 from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
 import scipy
-from scipy.maxent import *
-#from scipy.sandbox.maxent import *
+#from scipy.maxent import *
+from scipy.sandbox.maxent import *
 restore_path()
 
 import unittest
 
 
 class test_maxent(ScipyTestCase):
-    """Test whether logsumexp() function correctly and handles large
+    """Test whether logsumexp() function correctly handles large
     inputs.
     """
     def check_logsumexp(self, level=1):

@@ -6,7 +6,10 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('exmplpackage')
 
     # Maximum entropy package
-    #config.add_subpackage('maxent')
+    config.add_subpackage('maxent')
+    
+    # Monte Carlo package
+    config.add_subpackage('montecarlo')
     
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
