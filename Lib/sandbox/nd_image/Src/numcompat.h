@@ -73,10 +73,10 @@ typedef struct { Float64 r, i; } Complex64;
 
 #define NA_InputArray(obj, type, flags) \
 	(PyArrayObject *)\
-		PyArray_FromAny(obj, _NAtype_toDescr(type), 0, 0, flags)
+		PyArray_FromAny(obj, _NAtype_toDescr(type), 0, 0, flags, NULL)
 
-#define NA_OutputArray(obj, type, flags)			\
-	(PyArrayObject *) \
+#define NA_OutputArray(obj, type, flags)        \
+	(PyArrayObject *)                                               \
 		((PyArray_Check(obj) && PyArray_CHKFLAGS(obj, flags)) ? \
 		 PyArray_Empty(PyArray_NDIM(obj),			\
 			       PyArray_DIMS(obj),			\
@@ -84,12 +84,12 @@ typedef struct { Float64 r, i; } Complex64;
 				(Py_INCREF(PyArray_DESCR(obj)) || 1)) ? \
 			       PyArray_DESCR(obj) :			\
 			       PyArray_DescrFromType(type), 0) :	\
-		 PyArray_FromAny(obj, _NAtype_toDescr(type), 0, 0, flags))
+		 PyArray_FromAny(obj, _NAtype_toDescr(type), 0, 0, flags, NULL))
 
 #define NA_IoArray(obj, type, flags) \
 	(PyArrayObject *)						\
 		PyArray_FromAny(obj, _NAtype_toDescr(type), 0, 0, flags | \
-				UPDATEIFCOPY)
+				UPDATEIFCOPY, NULL)
 
 #define NA_vNewArray(buffer, type, ndim, shape) \
 	(PyArrayObject *)						\
