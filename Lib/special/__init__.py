@@ -13,5 +13,10 @@ from orthogonal import legendre, chebyt, chebyu, chebyc, chebys, \
      sh_legendre, sh_chebyt, sh_chebyu, sh_jacobi, poch
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
+
+from numpy.dual import register_func
+register_func('i0',i0)
+del register_func
+
 from numpy.testing import ScipyTest 
 test = ScipyTest().test

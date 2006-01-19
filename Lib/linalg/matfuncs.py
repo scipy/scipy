@@ -164,7 +164,7 @@ def funm(A,func,disp=1):
     A = asarray(A)
     if len(A.shape)!=2:
         raise ValueError, "Non-matrix input to matrix function."    
-    if A.dtype.char in ['F', 'D']:
+    if A.dtype.char in ['F', 'D', 'G']:
         cmplx_type = 1
     else:
         cmplx_type = 0
@@ -183,7 +183,8 @@ def funm(A,func,disp=1):
             j = i + p
             s = T[i-1,j-1] * (F[j-1,j-1] - F[i-1,i-1])
             ksl = slice(i,j-1)
-            s = s + dot(T[i-1,ksl],F[ksl,j-1]) - dot(F[i-1,ksl],T[ksl,j-1])
+            val = dot(T[i-1,ksl],F[ksl,j-1]) - dot(F[i-1,ksl],T[ksl,j-1])
+            s = s + val
             den = T[j-1,j-1] - T[i-1,i-1]
             if den != 0.0:
                 s = s / den

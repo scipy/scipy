@@ -1814,11 +1814,7 @@ def isspmatrix_coo( x ):
     return isinstance(x, coo_matrix)
 
 def isdense(x):
-    # What's the best way to check for this?  The following fails on import:
-    # import numerictypes
-    # return numerictypes.isdtype(x)
-    temp = zeros(1)
-    return type(x) == type(temp)
+    return isinstance(x, ndarray)
 
 def _spdiags_tosub(diag_num, a, b):
     part1 = where(less(diag_num, a), abs(diag_num-a), 0)

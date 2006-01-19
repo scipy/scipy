@@ -11,5 +11,11 @@ from basic import *
 from pseudo_diffs import *
 from helper import *
 
+from numpy.dual import register_func
+for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
+    register_func(k, eval(k))
+del k, register_func
+
+
 from numpy.testing import ScipyTest 
 test = ScipyTest().test
