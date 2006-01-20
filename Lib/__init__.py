@@ -30,6 +30,7 @@ from numpy import __version__ as __numpy_version__
 # Import numpy symbols to scipy name space
 import numpy as _num
 from numpy import *
+del lib
 __all__ += _num.__all__
 __doc__ += """
 Contents

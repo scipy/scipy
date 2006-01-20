@@ -611,7 +611,6 @@ class rv_continuous:
         # Use only entries that are valid in calculation
         goodargs = argsreduce(cond, *(args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-
         if 'm' in moments:
             if mu is None:
                 mu = self._munp(1.0,*goodargs)
