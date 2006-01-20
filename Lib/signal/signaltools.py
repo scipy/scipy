@@ -1350,7 +1350,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
             newdata[sl] = newdata[sl] - dot(A,coef)
         # Put data back in original shape.
         tdshape = take(dshape,newdims)
-        ret = reshape(newdata,tdshape)
+        ret = reshape(newdata,tuple(tdshape))
         vals = range(1,rnk)
         olddims = vals[:axis] + [0] + vals[axis:]
         ret = transpose(ret,tuple(olddims))
