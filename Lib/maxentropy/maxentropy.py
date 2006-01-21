@@ -1,19 +1,22 @@
-# maxent.py: Routines for fitting maximum entropy models.
+# maxentropy.py: Routines for fitting maximum entropy models.
 
 # Copyright: Ed Schofield, 2003-2006
 # License: BSD-style (see LICENSE.txt in main source directory)
 
 __author__ = "Ed Schofield"
-__version__ = '2.0-alpha4'
+__version__ = '2.0-beta1'
 __changelog__ = """ 
 This module is an adaptation of "ftwmaxent" by Ed Schofield, first posted
 on SourceForge as part of the "textmodeller" project in 2002.  The
-official repository is now SciPy (since Nov 2005); the SourceForge maxent
-code will not be developed further.
+official repository is now SciPy (since Nov 2005); the SourceForge
+ftwmaxent code will not be developed further.
 
 ------------
 
 Change log:
+
+Since 2.0-alpha4:
+    Name change maxent -> maxentropy
 
 Since v2.0-alpha3:
 (1) Name change ftwmaxent -> scipy/maxent
@@ -57,10 +60,9 @@ from __future__ import division
 import math, types, cPickle
 import numpy
 from scipy import optimize
-#from scipy.maxent.maxentutils import logsumexp,sparsefeaturematrix
-#from scipy.maxent.maxentutils import innerprod,innerprodtranspose,arrayexp
-from scipy.sandbox.maxent.maxentutils import logsumexp,sparsefeaturematrix
-from scipy.sandbox.maxent.maxentutils import innerprod,innerprodtranspose,arrayexp
+#from scipy.maxentropy.maxentutils import logsumexp,sparsefeaturematrix
+#from scipy.maxentropy.maxentutils import innerprod,innerprodtranspose,arrayexp
+from scipy.maxentropy.maxentutils import *
 
 
 class basemodel(object):
@@ -385,7 +387,6 @@ class model(basemodel):
             raise ValueError, "not supported: specify both features and" \
                     " sample space or neither"
         
-    
     def fit(self, K, algorithm='CG'):
         """Fit the maxent model q whose feature expectations are given
         by the vector K.
@@ -637,6 +638,7 @@ class bigmodel(basemodel):
     The tails should be fatter than the model.
     """
     
+
     def fit(self, K, algorithm='CG'):
         """Fit the maxent model q whose feature expectations are given
         by the vector K.
@@ -1026,6 +1028,10 @@ class bigmodel(basemodel):
         # (We don't reset theta to its prior value.)
         return L
     
+    
+    def dualapprox(self, K):
+        """An alias for entropydualapprox()
+        """
     
     def entropydualapprox(self, K):
         """This function approximates the entropy of the model p_theta

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Example use of the maxent module:
+""" Example use of the maximum entropy module:
 
     Machine translation example -- English to French -- from the paper 'A
     maximum entropy approach to natural language processing' by Berger et
@@ -22,8 +22,8 @@ __version__=  '2.0-alpha4'
 
 
 import math
-from scipy import maxent
-#from scipy.sandbox import maxent
+from scipy import maxentropy
+#from scipy.sandbox import maxentropy
 
 a_grave = u'\u00e0'
 
@@ -40,7 +40,7 @@ def f2(x):
 
 f = [f0, f1, f2]
 
-model = maxent.model(f, samplespace)
+model = maxentropy.model(f, samplespace)
 
 # Now set the desired feature expectations
 K = [1.0, 0.3, 0.5]

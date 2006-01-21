@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-""" Example use of the maxent module fit a model using simulation:
+""" Example use of the maximum entropy module fit a model using
+    simulation:
 
     Machine translation example -- English to French -- from the paper 'A
     maximum entropy approach to natural language processing' by Berger et
@@ -27,11 +28,11 @@ __version__=  '2.0-alpha4'
 
 import math, sys
 import scipy
-from scipy import maxent
-from scipy.maxent.maxentutils import *
+from scipy import maxentropy
+from scipy.maxentropy.maxentutils import *
 from scipy import montecarlo
-#from scipy.sandbox import maxent
-#from scipy.sandbox.maxent.maxentutils import *
+#from scipy.sandbox import maxentropy
+#from scipy.sandbox.maxentropy.maxentutils import *
 #from scipy.sandbox import montecarlo
 
 try:
@@ -56,7 +57,7 @@ def f2(x):
 
 f = [f0, f1, f2]
 
-model = maxent.bigmodel()
+model = maxentropy.bigmodel()
 
 # Now set the desired feature expectations
 K = [1.0, 0.3, 0.5]
@@ -84,7 +85,7 @@ def sampleFgen(sampler,f):
             x, logprobx = sampler.next()
             xs.append(x)
             logprobs[j] = logprobx
-        F = maxent.sparsefeaturematrix(f, xs, SPARSEFORMAT)
+        F = maxentropy.sparsefeaturematrix(f, xs, SPARSEFORMAT)
         yield F, logprobs
 
 print "Generating an initial sample ..."
@@ -98,7 +99,7 @@ model.fit(K, algorithm=algorithm)
 
 # Output the true distribution
 print "\nFitted model parameters are:\n" + str(model.theta)
-smallmodel = maxent.model(f, samplespace)
+smallmodel = maxentropy.model(f, samplespace)
 smallmodel.setparams(model.theta)
 print "\nFitted distribution is:"
 p = smallmodel.probdistarray()
