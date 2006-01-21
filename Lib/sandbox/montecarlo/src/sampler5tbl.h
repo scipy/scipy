@@ -1,4 +1,5 @@
-/* Include file for discrete random variable generation with Marsaglia's fast 5-table algorithm. 
+/* Include file for discrete random variable generation with Marsaglia's fast
+ * 5-table algorithm. 
  *
  * Copyright: Ed Schofield, 2005
  * License: BSD-style (see LICENSE.txt at root of scipy tree)
@@ -24,8 +25,8 @@ Sampler* init_sampler5tbl(double* weights, long n);
 /* Deallocate it */
 void destroy_sampler5tbl(Sampler*);
 
-/* Discrete random variable generating function */
-long Dran(Sampler*); /* Uses 5 compact tables */
+/* Discrete random variable generating functions using 5 compact tables */
+long Dran(Sampler*); /* for a single variate */
 void Dran_array(Sampler*, long* output, long samplesize); /* Array version */
 
 
