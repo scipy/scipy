@@ -12,7 +12,7 @@ License: BSD-style (see LICENSE.txt in main source directory)
 """
 
 __author__ = "Ed Schofield"
-__version__ = '2.0-alpha3'
+__version__ = '2.0-beta1'
 
 from __future__ import division
 import random, math, bisect, cmath

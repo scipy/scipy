@@ -892,71 +892,6 @@ class bigmodel(basemodel):
             n = len(logw)
             logZs.append(logsumexp(logw) - math.log(n))
 
-            # The following code is obsolete.  I'll leave it in until
-            # I've documented why the above is better:
-
-            # 3. Now compute the numerator self.num, a vector with ith component
-            #        num_i = sum_x {p_dot(x)/aux_dist(x) * f_i(x)}.
-            #    In matrix notation this is   w . F, where w_j = Q_dot_j / aux_dist_j
-            
-            # The following is unsafe -- sometimes leads to NaN instead of 
-            # an exception.
-            #try:
-            #    w = arrayexp(logw)
-            #    num = innerprodtranspose(self.sampleF, w)
-            #
-            #    try:
-            #        Es.append(num / numpy.sum(w))
-            #        continue
-            #    except OverflowError:
-            #        # A slightly safer version
-            #        lognum = robustarraylog(num)
-            #        Es.append(arrayexp(lognum - logsumexp(logw)))
-            #        continue
-                
-            #except OverflowError:
-            # For large values like x>=800, and for safety with smaller values
-            # close to the overflow limit, we'll use our logsumexp function
-            # again.  In the past I did this:
-            # num_i = exp[logsumexp[log p_dot(x) - log aux_dist(x) + log f_i(x)]]
-            # assuming f_i(x) is positive for all x, or using special handling
-            # otherwise (like the complex log if negative).
-                 
-            #if self.usecomplexlogs:   # a little flag to switch on the 
-            #                          # complex log routines
-            #    if self.verbose:
-            #        print "Using complex logarithm routines ..."
-            #        
-            #    lognum = emptyarray(m, numpy.Complex64)
-
-            #    # Compute lognum_i as:
-            #    #     logsumexp(log p_dot(x) - log aux_dist(x) + log f_i(x))
-            #    #   = logsumexp(logw(x) + log f_i(x))
-
-            #    for i in range(m):   # loop over features
-            #        # Let f_i be the ith column of the sparse matrix sampleF
-            #        # f_i = self.sampleF[:,i] works -- but we want to be able to iterate over this
-            #        f_i = column(self.sampleF, i)
-            #        
-            #        # Was:
-            #        # log_f_i = fftwutils.robustarraylog(f_i)
-            #        # lognum[i] = fftwutils.logsumexpcomplex(logw + log_f_i)
-            #        # Replaced by this SLOWER version to assist profiling:
-            #        log_f_i = robustarraylog(f_i)
-            #        lognum[i] = logsumexpcomplex_wrapper(logw + log_f_i)
-            #    # -----------
-            #    # We have computed lognum successfully.
-            #    
-            #    # Could do this:
-            #    #logsum_w = fftwutils.logsumexp(logw)
-            #    # But this is faster, since we've already computed logZ = logsumexp(logw) - log(n)
-            #    logsum_w = logZs[-1] + math.log(n)
-            #    logE = lognum - logsum_w
-            #    #Es[trial,:] = arrayexp(logE)
-            #    Es.append(arrayexp(logE))
-
-            #else:
-
             # We don't need to handle negative values separately,
             # because we don't need to take the log of the feature
             # matrix sampleF.
@@ -1105,8 +1040,8 @@ class bigmodel(basemodel):
         try:
             # See if already computed
             self.mu
-            #if self.verbose >= 3:
-            #    print "(returning pre-computed expectations)"
+            if self.verbose >= 3:
+                print "(returning pre-computed expectations)"
             return self.mu
         
         except AttributeError:
@@ -1138,7 +1073,8 @@ class bigmodel(basemodel):
             return log_p_dot - self.lognormconstapprox()
      
     
-    def setsampleFgen(self, sampler, sequential=False, matrixsize=None, sparse=True, staticsample=True):  
+    def setsampleFgen(self, sampler, sequential=False, matrixsize=None, \
+                      sparse=True, staticsample=True):  
         """Initializes the Monte Carlo sampler to use the supplied
         generator of samples' features and log probabilities.  This is an
         alternative to defining a sampler in terms of a (fixed size)
@@ -1194,19 +1130,10 @@ class bigmodel(basemodel):
         if not sequential:
             self.usesamplematrix = True
             self.numsamples = matrixsize
-           
             self.logZsapprox = []
             self.Esapprox = []
 
-        # First check whether we have a separate sampling dist for each feature
-        if type(sampler) is list:
-            raise NotImplementedError, "code for using multiple samplers is" \
-                " out of date"
-            # We require one sampler for each feature and one for the 
-            # normalization term Z:
-            #assert len(sampler) == 1+self.numconstraints()
-        else:
-            assert type(sampler) is types.GeneratorType
+        assert type(sampler) is types.GeneratorType
         self.sampleFgen = sampler
         self.staticsample = staticsample
         if staticsample:
@@ -1300,7 +1227,8 @@ class bigmodel(basemodel):
                         # interval (0.5, 1) for almost sure convergence.
                         a_k = 1.0 * self.a_0 / (n ** self.stepdecreaserate)
                 else:
-                    # I think we need a stepsize decreasing as n^-1 for almost sure convergence
+                    # I think we need a stepsize decreasing as n^-1 for almost
+                    # sure convergence
                     a_k = 1.0 * self.a_0 / (n ** self.stepdecreaserate)
             # otherwise leave unchanged
            

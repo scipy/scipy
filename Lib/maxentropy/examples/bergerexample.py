@@ -18,7 +18,7 @@
 """
 
 __author__ =  'Ed Schofield'
-__version__=  '2.0-alpha4'
+__version__=  '2.0-beta1'
 
 
 import math
