@@ -74,22 +74,6 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
 
     k = pmf_table->dimensions[0];    /* length of the array */
 
-    /* Init sampler */
-    unsigned t = (unsigned) time( NULL );
-    srand48(t);
-    // printf("Seeded C RNG with time %u\n",t);
-
-    // Check that a sample hasn't already been created but not destroyed
-    // if (sampler_global != NULL)
-    // {
-    //     PyErr_SetString(PyExc_ValueError, "a sample exists that must be destroyed first.");
-    //     return NULL;
-    // }
-    
-    // if (sampler_global != NULL)
-    //     destroy_sampler5tbl(sampler_global);
-
-
     self->pSampler = init_sampler5tbl((double*) pmf_table->data, k);
     if (self->pSampler == NULL)
     {
