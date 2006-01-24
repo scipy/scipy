@@ -7,7 +7,7 @@ import numpy
 from numpy.core.umath import *
 from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
      allclose, Float, resize, pi, concatenate, absolute, logspace, c_
-from numpy import mintypecode
+from numpy import mintypecode, select
 from scipy import special, optimize, linalg
 from scipy.misc import comb
 import string, types
@@ -1501,9 +1501,12 @@ def kaiserord(ripple, width):
     Oppenheim, Schafer, "Discrete-Time Signal Processing,", p.475-476.
     """
     A = abs(ripple)  # in case somebody is confused as to what's meant
-    beta = select([A>50, A>21],
-                  [0.1102*(A-8.7), 0.5842*(A-21)**(0.4) + 0.07866*(A-21)],
-                  0.0)
+    if (A>50):
+        beta = 0.1102*(A-8.7)
+    elif (A>21):
+	beta = 0.5842*(A-21)**0.4 + 0.07886*(A-21)
+    else:
+        beta = 0.0
     N = (A-8)/2.285/(pi*width)
     return ceil(N), beta 
 
