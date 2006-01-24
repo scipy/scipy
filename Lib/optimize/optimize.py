@@ -674,6 +674,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      line_search(f,myfprime,xk,pk,gfk,
                                  old_fval,old_old_fval)
+            if alpha_k is None:
+                raise ValueError, "Line-search failing..."
             
         xkp1 = xk + alpha_k * pk
         if retall:

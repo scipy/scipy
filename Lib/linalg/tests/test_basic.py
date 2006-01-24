@@ -366,8 +366,9 @@ class test_lstsq(ScipyTestCase):
         b = [1,2]
         x,res,r,s = lstsq(a,b)
         #XXX: need independent check
-        assert_array_almost_equal(x,[[-0.05555556],[0.11111111],[0.27777778]])
-
+        assert_array_almost_equal(x,[[-0.05555556],
+                                     [0.11111111],[0.27777778]])
+        
     def check_random_exact(self):
 
         n = 20

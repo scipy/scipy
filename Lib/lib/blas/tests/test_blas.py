@@ -21,6 +21,7 @@ from numpy.testing import *
 set_package_path()
 from blas import fblas
 from blas import cblas
+from blas import get_blas_funcs
 restore_path()
 
 class test_cblas1_simple(ScipyTestCase):
@@ -184,6 +185,12 @@ class test_fblas3_simple(ScipyTestCase):
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
 
 class test_blas(ScipyTestCase):
+
+    def check_blas(self):
+        a = array([[1,1,1]])
+	b = array([[1],[1],[1]])
+	gemm, = get_blas_funcs(('gemm',),(a,b))
+	assert_array_almost_equal(gemm(1,a,b),[[3]],15)
 
     def check_fblas(self):
         if hasattr(fblas,'empty_module'):
