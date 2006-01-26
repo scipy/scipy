@@ -53,6 +53,8 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 /*	Incomplete elliptic integral of second kind	*/
 
+#include "mconf.h"
+
 #define ANSIPROT
 
 extern double PI, PIO2, MACHEP;

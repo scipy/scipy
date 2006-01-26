@@ -36,6 +36,8 @@ Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
+#import "mconf.h"
+
 #define ANSIPROT
 #define DEBUG 0
 #ifndef ANSIPROT

@@ -7,6 +7,8 @@
  *   Created: Fri Mar 31 19:17:33 1995
  */
 
+#include "cephes/cephes_names.h"
+
 extern int airy ( double x, double *ai, double *aip, double *bi, double *bip );
 
 extern double bdtrc ( int k, int n, double p ); 
@@ -139,7 +141,6 @@ extern void revers ( double y[], double x[], int n );
  */
 extern double rgamma ( double x );
 extern double round ( double x );
-extern double cephes_round ( double x );
 
 /*
 extern int sprec ( void );

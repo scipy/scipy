@@ -6,9 +6,9 @@
  *
  * SYNOPSIS:
  *
- * double x, y, cephes_round();
+ * double x, y, round();
  *
- * y = cephes_round(x);
+ * y = round(x);
  *
  *
  *
@@ -33,16 +33,11 @@ Copyright 1984, 1987, 1989 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
-#define ANSIPROT 1
-#ifndef ANSIPROT
-double floor();
-#else
-extern double floor(double);
-double cephes_round(double);
-#endif
+#include "mconf.h"
 
-double cephes_round(x)
-double x;
+extern double floor(double);
+
+double round(double x)
 {
 double y, r;
 

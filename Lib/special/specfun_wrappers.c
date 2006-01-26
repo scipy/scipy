@@ -22,8 +22,8 @@
 #endif
 #endif
 
-extern double psi(double);
-extern double struve(double, double);
+extern double cephes_psi(double);
+extern double cephes_struve(double, double);
 
 extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
@@ -88,7 +88,7 @@ Py_complex cpsi_wrap( Py_complex z) {
   Py_complex cy;
   
   if (IMAG(z)==0.0) {
-    REAL(cy) = psi(REAL(z));
+    REAL(cy) = cephes_psi(REAL(z));
     IMAG(cy) = 0.0;
   }
   else {
@@ -205,7 +205,7 @@ double struve_wrap(double v, double x) {
   int flag=0;
 
   if ((v<-8.0) || (v>12.5)) {
-    return struve(v, x);  /* from cephes */
+    return cephes_struve(v, x);  /* from cephes */
   }
   if (v==0.0) {
     if (x < 0) {x = -x; flag=1;}

@@ -19,11 +19,6 @@
 #include "cdf_wrappers.h"
 #include "specfun_wrappers.h"
 #include "c_misc/misc.h"
-#ifdef macintosh
-#include "mymath.h"
-#else
-#include <math.h>
-#endif
 
 /* Defined in mtherr in the cephes library */
 extern int scipy_special_print_error_messages;
@@ -181,7 +176,7 @@ static void * ndtri_data[] = { (void *)ndtri, (void *)ndtri, };
 
 static void * psi_data[] = { (void *)psi, (void *)psi, (void *)cpsi_wrap, (void *)cpsi_wrap};
 static void * rgamma_data[] = { (void *)rgamma, (void *)rgamma, (void *)crgamma_wrap, (void *)crgamma_wrap};
-static void * round_data[] = { (void *)cephes_round, (void *)cephes_round, };
+static void * round_data[] = { (void *)round, (void *)round, };
 static void * sindg_data[] = { (void *)sindg, (void *)sindg, };
 static void * cosdg_data[] = { (void *)cosdg, (void *)cosdg, };
 static void * radian_data[] = { (void *)radian, (void *)radian, };

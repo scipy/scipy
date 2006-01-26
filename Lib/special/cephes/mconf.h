@@ -62,6 +62,7 @@ Cephes Math Library Release 2.3:  June, 1995
 Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 */
 
+#include "cephes_names.h"
 
 /* Constant definitions for math error conditions
  */
@@ -197,3 +198,4 @@ int mtherr();
 
 /* Variable for error reporting.  See mtherr.c.  */
 extern int merror;
+

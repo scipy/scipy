@@ -12,9 +12,6 @@ def configuration(parent_package='',top_path=None):
 #        define_macros.append(('NOINFINITIES',None))
 #        define_macros.append(('NONANS',None))
 
-    # Force using cephes round.
-    define_macros.append(('round','cephes_round'))
-
     # C libraries
     config.add_library('c_misc',sources=[join('c_misc','*.c')])
     config.add_library('cephes',sources=[join('cephes','*.c')],
