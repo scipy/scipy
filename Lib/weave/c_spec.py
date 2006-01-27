@@ -307,6 +307,7 @@ num_to_c_types['f'] = 'float'
 num_to_c_types['d'] = 'double'
 num_to_c_types['b'] = 'char'
 num_to_c_types['B'] = 'uchar'
+num_to_c_types['B'] = 'ubyte'  # numpy
 num_to_c_types['h'] = 'short'
 num_to_c_types['H'] = 'ushort'
 num_to_c_types['i'] = 'int'
