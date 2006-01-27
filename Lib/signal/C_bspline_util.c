@@ -1,9 +1,9 @@
+#include "Python.h"
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "Python.h"
 #define NO_IMPORT_ARRAY
 #include "numpy/arrayobject.h"
 

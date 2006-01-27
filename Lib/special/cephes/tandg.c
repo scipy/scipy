@@ -120,8 +120,8 @@ cotdg(double x)
 static double
 tancot(double xx, int cotflg)
 {
-    double x, y, z, zz;
-    int j, sign;
+    double x;
+    int sign;
 
     /* make argument positive but save the sign */
     if( xx < 0 ) {

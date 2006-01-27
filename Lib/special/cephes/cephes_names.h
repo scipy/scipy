@@ -75,6 +75,7 @@
 #define radian cephes_radian
 #define sindg cephes_sindg
 #define cosdg cephes_cosdg
+#define sincos cephes_sincos
 #define spence cephes_spence
 #define stdtr cephes_stdtr
 #define stdtri cephes_stdtri

@@ -4,8 +4,8 @@
 /* Modifications by Travis Oliphant to separate Python code from C
    routines */
 
-#include <setjmp.h>
 #include "Python.h"
+#include <setjmp.h>
 
 typedef struct {
     int funcalls;

@@ -27,9 +27,10 @@
      that will be released on errors)
 */
 
-#include <setjmp.h>
+#include "Python.h"
 #include "SuperLU/SRC/zsp_defs.h"
 #include "_superluobject.h"
+#include <setjmp.h>
 
 extern jmp_buf _superlu_py_jmpbuf;
 

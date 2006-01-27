@@ -26,10 +26,10 @@
 static char const rcsid[] =
   "@(#) $Jeannot: moduleTNC.c,v 1.8 2004/04/14 18:16:03 js Exp $";
 
+#include "Python.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "Python.h"
 
 #include "tnc.h"
 
@@ -181,7 +181,7 @@ failure:
 
 PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 {
-  PyObject *py_x0, *py_low, *py_up, *py_list, *py_scale, *res;
+  PyObject *py_x0, *py_low, *py_up, *py_list, *py_scale;
   PyObject *py_function = NULL;
   pytnc_state py_state;
   int n, n1, n2, n3;

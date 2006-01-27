@@ -1,8 +1,9 @@
 
-#include <setjmp.h>
+#include "Python.h"
 #include "SuperLU/SRC/zsp_defs.h"
 #define NO_IMPORT_ARRAY
 #include "_superluobject.h"
+#include <setjmp.h>
 
 extern jmp_buf _superlu_py_jmpbuf;
 
