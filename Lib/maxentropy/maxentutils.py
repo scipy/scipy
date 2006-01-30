@@ -145,7 +145,7 @@ def arrayexpcomplex(x):
     try:
         ex = numpy.exp(x).real
     except OverflowError:
-        ex = numpy.empty(len(x),numpy.Float64)
+        ex = numpy.empty(len(x), float)
         try:
             for j in range(len(x)):
                 ex[j] = math.exp(x[j])
@@ -167,8 +167,8 @@ def sample_wr(population, k):
 
 
 def densefeatures(f, x):
-    """Returns a 1xN dense matrix of 64-bit floats of non-zero
-    evaluations of the functions fi in the list f at the point x.
+    """Returns a 1xN dense matrix of non-zero evaluations of the
+    functions fi in the list f at the point x.
     """
     
     return numpy.array([fi(x) for fi in f])
@@ -184,7 +184,7 @@ def densefeaturematrix(f, sample):
     m = len(f)
     n = len(sample)
     
-    F = numpy.empty((m, n), numpy.Float64)
+    F = numpy.empty((m, n), float)
     for i in xrange(m):
         f_i = f[i]
         for i in xrange(m):
@@ -273,19 +273,19 @@ def dotprod(u,v):
 
 
 
-def innerprod(u,v):
+def innerprod(A,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
     
-    Returns the inner product of the (MxN) sparse matrix u with the
-    (Nx1) (sparse or dense) vector v.  This is a wrapper for u.dot(v) for
-    dense arrays and spmatrix objects, and for u.matvec(v, result) for
+    Returns the inner product of the (MxN) dense or sparse matrix A with the
+    (Nx1) (sparse or dense) vector v.  This is a wrapper for A.dot(v) for
+    dense arrays and spmatrix objects, and for A.matvec(v, result) for
     PySparse matrices.
     """
     
-    # We assume u is sparse.
-    (M, N) = u.shape
+    # We assume A is sparse.
+    (M, N) = A.shape
     vshape = v.shape
     try:
         (P,) = vshape
@@ -300,78 +300,78 @@ def innerprod(u,v):
     except AttributeError:
         # It looks like v is dense
         try:
-            # See if u is sparse
-            u.matvec
+            # See if A is sparse
+            A.matvec
         except AttributeError:
-            # It looks like u is dense
-            return numpy.dot(u,v)
+            # It looks like A is dense
+            return numpy.dot(A,v)
         else:
-            # Assume u is sparse
-            if sparse.isspmatrix(u):
-                innerprod = u.matvec(v)   # This returns a float32 type. Why???
+            # Assume A is sparse
+            if sparse.isspmatrix(A):
+                innerprod = A.matvec(v)   # This returns a float32 type. Why???
                 return innerprod
             else:
                 # Assume PySparse format
-                innerprod = numpy.empty(M, numpy.Float64)
-                u.matvec(v, innerprod)
+                innerprod = numpy.empty(M, float)
+                A.matvec(v, innerprod)
                 return innerprod
     else:
         # v looks like it's sparse, so we take the inner prod with
         # spmatrix.matrixmultiply().
         try:
-            return spmatrix.matrixmultiply(u,v)
+            return spmatrix.matrixmultiply(A,v)
         except:
             raise TypeError, "can't discern correct types for the inner product.  If you are trying to multiply a dense matrix by a sparse vector, this is unsupported."
 
 
-def innerprodtranspose(U,V):
+def innerprodtranspose(A,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
     
-    Computes U^T V, where U is a dense or sparse matrix and V is a numpy
-    array.  If U is sparse, V must be a rank-1 array, not a matrix.  This
-    function is efficient for large matrices U.  This is a wrapper for
+    Computes A^T V, where A is a dense or sparse matrix and V is a numpy
+    array.  If A is sparse, V must be a rank-1 array, not a matrix.  This
+    function is efficient for large matrices A.  This is a wrapper for
     u.T.dot(v) for dense arrays and spmatrix objects, and for
     u.matvec_transp(v, result) for pysparse matrices.
     """
 
-    (m, n) = U.shape
+    (m, n) = A.shape
     #pdb.set_trace()
     try:
-        # See if U is a PySparse matrix
-        U.matvec_transp
+        # See if A is a PySparse matrix
+        A.matvec_transp
     except AttributeError:
-        # See if U is a scipy.sparse.spmatrix
-        if sparse.isspmatrix(U):
-            innerprodtranspose = U.rmatvec(V)
+        # See if A is a scipy.sparse.spmatrix
+        if sparse.isspmatrix(A):
+            innerprodtranspose = A.rmatvec(v)
             return innerprodtranspose
         else:
-            # Assume U is a dense matrix
-            if isinstance(V, numpy.ndarray):
-                # V is also dense
-                if len(V.shape) == 1:
+            # Assume A is a dense matrix
+            if isinstance(v, numpy.ndarray):
+                # v is also dense
+                if len(v.shape) == 1:
                     # We can't transpose a rank-1 matrix into a row vector, so
-                    # we 'reshape' it.
-                    Vm = V.shape[0]
-                    Vcolumn = numpy.reshape(V, (1, Vm))
-                    x = numpy.dot(Vcolumn, U)
+                    # we reshape it.
+                    vm = v.shape[0]
+                    vcolumn = numpy.reshape(v, (1, vm))
+                    x = numpy.dot(vcolumn, A)
                     return numpy.reshape(x, (n,))
                 else:
-                    #(Vm, Vn) = V.shape
-                    # Assume Vm == m
-                    x = numpy.dot(numpy.transpose(V), U)
+                    #(vm, vn) = v.shape
+                    # Assume vm == m
+                    x = numpy.dot(numpy.transpose(v), A)
                     return numpy.transpose(x)
             else:
-                raise TypeError, "V must be a dense array"
+                raise TypeError, "v must be a dense array"
     else:
-        # U looks like a PySparse matrix
-        if len(V.shape) == 1:
-            innerprod = numpy.empty(n, numpy.Float64)
-            U.matvec_transp(V, innerprod)
+        # A looks like a PySparse matrix
+        if len(v.shape) == 1:
+            innerprod = numpy.empty(n, float)
+            A.matvec_transp(v, innerprod)
         else:
-            raise TypeError, "innerprodtranspose(U,V) requires that V be " \
-                    "a vector (rank-1 dense array) if U is sparse."
+            raise TypeError, "innerprodtranspose(A,v) requires that v be " \
+                    "a vector (rank-1 dense array) if A is sparse."
         return innerprod
 
 
@@ -398,7 +398,7 @@ def columnmeans(A):
         except AttributeError:
             raise TypeError, \
                     "columnmeans() only works with sparse and dense arrays"
-        columnsum = innerprodtranspose(A, numpy.ones(m))
+        columnsum = innerprodtranspose(A, numpy.ones(m, float))
         return columnsum / float(m)
 
 def columnvariances(A):

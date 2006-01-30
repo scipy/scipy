@@ -80,11 +80,7 @@ SPARSEFORMAT = 'csc_matrix'
 def sampleFgen(sampler,f):
     logprobs = numpy.empty(n, float)
     while True:
-        xs = []
-        for j in range(n):
-            x, logprobx = sampler.next()
-            xs.append(x)
-            logprobs[j] = logprobx
+        xs, logprobs = sampler.sample(n, return_probs=2)
         F = maxentropy.sparsefeaturematrix(f, xs, SPARSEFORMAT)
         yield F, logprobs
 
@@ -120,7 +116,7 @@ print ("\tp['dans'] + p['" + a_grave + "']  = " + \
         str(p[0]+p[2])).encode('utf-8')
 # (Or substitute "x.encode('latin-1')" if you have a primitive terminal.)
 
-print "\nEstimated error in constraint satisfaction (should be close to 0):\n" + str(model.expectationsapprox() - K)
+print "\nEstimated error in constraint satisfaction (should be close to 0):\n" + str(abs(model.expectationsapprox() - K))
 print "\nTrue error in constraint satisfaction (should be close to 0):\n" + str(abs(smallmodel.expectations() - K))
 
 
