@@ -21,6 +21,12 @@ def setup_package():
                                url = "http://www.scipy.org",
                                license = 'BSD',
                                )
+        if hasattr(config,'set_options'):
+            config.set_options(ignore_setup_xxx_py=True,
+                               assume_default_configuration=True,
+                               delegate_options_to_subpackages=True,
+                               quiet=True)
+
         # Force scipy to be a package (its __init__.py file comes from scipy_core)
         config.packages.append('scipy')
         config.package_dir['scipy'] = os.path.join(config.local_path,'Lib')
