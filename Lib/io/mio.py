@@ -45,7 +45,7 @@ def getsize_type(mtype):
     elif mtype in ['D','complex*16','complex128','complex','complex double']:
         mtype = 'D'
     else:
-        mtype = obj2arrtype(mtype)
+        mtype = obj2sctype(mtype)
 
     argout = (array(0,mtype).itemsize,mtype)
     return argout
