@@ -68,11 +68,11 @@ def fromimage(im, flatten=0):
         mode = 'L'
         adjust = 1
     str = im.tostring()
-    type = 'b'
+    type = 'B'
     if mode == 'F':
         type = 'f'
     if mode == 'I':
-        type = 'i'
+        type = 'I'
     arr = Numeric.fromstring(str,type)
     shape = list(im.size)
     shape.reverse()
@@ -132,14 +132,13 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
                 image.putpalette(asarray(pal,dtype=_UInt8).tostring())
                 # Becomes a mode='P' automagically.
             elif mode == 'P':  # default gray-scale
-                pal = arange(0,256,1,dtype='b')[:,NewAxis] * \
-                      ones((3,),dtype='b')[NewAxis,:]
+                pal = arange(0,256,1,dtype='B')[:,NewAxis] * \
+                      ones((3,),dtype='B')[NewAxis,:]
                 image.putpalette(asarray(pal,dtype=_UInt8).tostring())
             return image
         if mode == '1':  # high input gives threshold for 1
-            bytedata = ((data > high)*255).astype('b')
-            image = Image.fromstring('L',shape,bytedata.tostring())   
-            image = image.convert(mode='1')
+            bytedata = (data > high)
+            image = Image.fromstring('1',shape,bytedata.tostring())   
             return image
         if cmin is None:
             cmin = amin(ravel(data))
