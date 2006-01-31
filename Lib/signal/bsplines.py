@@ -307,8 +307,8 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     edges are handled using mirror-symmetric boundary conditions.
     """
-    newx = (asarray(newx)-x0)/dx
-    res = zeros_like(newx)    
+    newx = (asarray(newx)-x0)/float(dx)
+    res = zeros_like(newx)
     if (res.size == 0):
         return res
     N = len(cj)
