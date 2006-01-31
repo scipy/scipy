@@ -119,7 +119,7 @@ class test_fft(ScipyTestCase):
         try:
             from FFT import fft as fft2
         except ImportError:
-            print 'Skipping check_djbfft (failed to import FFT)'
+            self.warn('Skipping check_djbfft (failed to import FFT)')
             return
         for i in range(2,14):
             n = 2**i
@@ -172,7 +172,7 @@ class test_fft(ScipyTestCase):
                 sys.stdout.flush()
 
             print ' (secs for %s calls)' % (repeat)
-
+        sys.stdout.flush()
 
 class test_ifft(ScipyTestCase):
 
@@ -260,7 +260,7 @@ class test_ifft(ScipyTestCase):
                 sys.stdout.flush()
 
             print ' (secs for %s calls)' % (repeat)
-
+        sys.stdout.flush()
 
 class test_rfft(ScipyTestCase):
 
@@ -278,7 +278,7 @@ class test_rfft(ScipyTestCase):
         try:
             from FFT import fft as fft2
         except ImportError,errmess:
-            print 'Skipping check_djbfft (failed to import FFT: %s)' % errmess
+            self.warn('Skipping check_djbfft (failed to import FFT: %s)' % errmess)
             return
         for i in range(2,14):
             n = 2**i
@@ -328,7 +328,7 @@ class test_rfft(ScipyTestCase):
             sys.stdout.flush()
 
             print ' (secs for %s calls)' % (repeat)
-
+        sys.stdout.flush()
 
 class test_irfft(ScipyTestCase):
 
@@ -351,7 +351,7 @@ class test_irfft(ScipyTestCase):
             from FFT import inverse_fft as ifft2
             from Numeric import zeros
         except ImportError:
-            print 'Skipping check_djbfft (failed to import FFT)'
+            self.warn('Skipping check_djbfft (failed to import FFT)')
             return
         for i in range(2,14):
             n = 2**i
@@ -416,6 +416,8 @@ class test_irfft(ScipyTestCase):
             sys.stdout.flush()
 
             print ' (secs for %s calls)' % (repeat)
+
+        sys.stdout.flush()
 
 class test_fftn(ScipyTestCase):
 
@@ -585,6 +587,7 @@ class test_fftn(ScipyTestCase):
 
             print ' (secs for %s calls)' % (repeat)
 
+        sys.stdout.flush()
 
 class test_ifftn(ScipyTestCase):
 

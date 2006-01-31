@@ -8,11 +8,9 @@ Copyright: Ed Schofield, 2003-2005
 
 import sys
 from numpy.testing import *
-set_package_path()
 from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
-import scipy
-#from scipy.maxentropy import *
-from scipy.sandbox.maxentropy import *
+set_package_path()
+from maxentropy import *
 restore_path()
 
 import unittest
