@@ -327,7 +327,9 @@ def configuration(parent_package='',top_path=None):
     xplt_files = [os.path.join('gistdata',x) for x in file_ext]
     xplt_files += [os.path.join('src','g',x) for x in file_ext]
 
-    config.add_data_files(('gistdata',xplt_files))
+    config.add_data_dir('gistdata')
+    config.add_data_dir((os.path.join(config.path_in_package,'gistdata'),
+                         os.path.abspath(config.paths('src/g')[0])))
 
     return config
 
