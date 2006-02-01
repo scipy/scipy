@@ -47,8 +47,8 @@ def getsize_type(mtype):
     else:
         mtype = obj2sctype(mtype)
 
-    argout = (array(0,mtype).itemsize,mtype)
-    return argout
+    newarr = array(0,mtype)
+    return newarr.itemsize, newarr.dtype.char
 
 if sys.version[:3] < "2.2":
     class file:
