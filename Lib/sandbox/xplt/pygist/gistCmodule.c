@@ -9288,6 +9288,73 @@ static PyObject *set_style (PyObject * self, PyObject * args)
   return PyInt_FromLong(n);
 }
 
+
+#define Py_Try(BOOLEAN) {if (!(BOOLEAN)) return NULL;}
+#define GET_ARR2(ap,op,type,dim) \
+  Py_Try(ap=(PyArrayObject *)PyArray_ContiguousFromObject(op,type,dim,dim))
+#define SETERR(s) if(!PyErr_Occurred()) ERRSS(s)
+
+static char arr_find_mask__doc__ [] =
+""
+;
+
+static PyObject * arr_find_mask (PyObject * self, PyObject * args)
+{
+    /* find_mask (fs, node_edges): This function is used to calculate
+       a mask whose corresponding entry is 1 precisely if an edge
+       of a cell is cut by an isosurface, i. e., if the function
+       fs is one on one of the two vertices of an edge and zero
+       on the other (fs = 1 represents where some function on
+       the mesh was found to be negative by the calling routine).
+       fs is ntotal by nv, where nv is the number of vertices
+       of a cell (4 for a tetrahedren, 5 for a pyramid, 6 for a prism).
+       node_edges is a nv by ne array, where ne is the number of
+       edges on a cell (6 for a tet, 8 for a pyramid, 9 for a prism).
+       The entries in each row are 1 precisely if the corresponding edge
+       is incident on the vertex. The exclusive or of the rows
+       which correspond to nonzero entries in fs contains 1 in
+       entries corresponding to edges where fs has opposite values
+       on the vertices.                                            */
+
+    PyObject * fso, * node_edgeso ;
+    PyArrayObject * fsa, * node_edgesa, * maska ;
+    int * fs, * node_edges, * mask ;
+    int i, j, k, l, ll, ifs, imask, ntotal, ne, nv, ans_size ;
+
+    Py_Try (PyArg_ParseTuple ( args, "OO", & fso, & node_edgeso ) ) ;
+    GET_ARR2 (fsa, fso, PyArray_INT, 2) ;
+    GET_ARR2 (node_edgesa, node_edgeso, PyArray_INT, 2) ;
+    fs = (int *) A_DATA (fsa) ;
+    node_edges = (int *) A_DATA (node_edgesa) ;
+    ntotal = A_DIM (fsa, 0) ;
+    nv = A_DIM (fsa, 1) ;
+    if ( nv != A_DIM (node_edgesa, 0) ) {
+	SETERR ("2nd dimension of 1st arg and 1st dimension of 2nd not equal.");
+	Py_DECREF (fsa) ;
+	Py_DECREF (node_edgesa) ;
+	return (NULL) ;
+    }
+    ne = A_DIM (node_edgesa, 1) ;
+    ans_size = ntotal * ne ;
+    Py_Try (maska = (PyArrayObject *) PyArray_FromDims
+	    (1, & ans_size, PyArray_INT)) ;
+    mask = (int *) A_DATA (maska) ;
+
+    for (i = 0, ifs = 0, imask = 0 ; i < ntotal ;
+	 i ++, imask += ne, ifs += nv) {
+	for (j = ifs, k = 0; k < nv; j ++, k ++) {
+	    if ( fs [j] ) {
+		for ( l = imask , ll = 0; ll < ne ; l ++ , ll ++) {
+		    mask [l] ^= node_edges [j % nv * ne + ll] ;
+		}
+            }
+	}
+    }
+
+    return PyArray_Return (maska) ;
+
+}
+
 /*
  *  10/30/01 llc Moved PyMethodDef to end, after doc strings are defined.
  *               Also move initgistC, which uses gist_methods.
@@ -9300,6 +9367,7 @@ static struct PyMethodDef gist_methods[] =
   { "contour",        PYCFWK contour,        KWFLG, contour__doc__ },
   { "current_window", PYCF   current_window, 1,     current_window__doc__ },
   { "debug_array",    PYCF   debug_array,    1,     debug_array__doc__ },
+  { "find_mask",      PYCF   arr_find_mask,  1,     arr_find_mask__doc__},
   { "fma",            PYCF   pyg_fma,        1,     fma__doc__ },
   { "gridxy",         PYCFWK gridxy,         KWFLG, gridxy__doc__ },
   { "get_slice2_precision", PYCF get_slice2_precision, 1, get_slice2_precision__doc__ },

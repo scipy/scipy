@@ -322,6 +322,9 @@ def configuration(parent_package='',top_path=None):
                          #extra_link_args = extra_link_args,
                          depends = ['src']
                          )
+    config.add_extension('gistfuncs',
+		         [os.path.join('pygist','gistfuncsmodule.c')])
+		   
 
     file_ext = ['*.gs','*.gp', '*.ps', '*.help']
     xplt_files = [os.path.join('gistdata',x) for x in file_ext]

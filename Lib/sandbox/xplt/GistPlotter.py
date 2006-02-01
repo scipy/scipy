@@ -14,7 +14,7 @@ from plwf import *
 from slice3 import *
 from colorbar import *
 from mesh3d import *
-from arrayfns import *
+from gistfuncs import *
  
 def minmax ( x ) :
    """minmax (x) where x is a two-dimensional array computes the minimum and

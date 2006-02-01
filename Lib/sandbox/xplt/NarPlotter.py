@@ -10,7 +10,7 @@ from numpy.core.umath import *
 from types import *
 from graftypes import *
 from shapetest import *
-from arrayfns import *
+from gistfuncs import *
 from string import uppercase
 import os
 

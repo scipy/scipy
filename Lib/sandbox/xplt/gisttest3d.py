@@ -10,7 +10,7 @@ from surface import *
 from scipy import *
 from numpy.core.umath import *
 
-from arrayfns import *
+from gistfuncs import *
 
 def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")

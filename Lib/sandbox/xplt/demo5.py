@@ -9,7 +9,7 @@ from movie import *
 from slice3 import *
 from yorick import *
 from gist import *
-from arrayfns import *
+from gistfuncs import *
 from numpy import rand
 
 
