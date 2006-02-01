@@ -19,10 +19,18 @@ import scipy.optimize as optimize
 import futil
 import numpy as sb
 
+__all__ = ['find_repeats',
+           'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
+           'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
+           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
+           'fligner', 'mood', 'oneway', 'wilcoxon',
+           'pdf_moments', 'pdf_fromgamma', 'pdfapprox',
+           'circmean', 'circvar', 'circstd',
+          ]
 
 def find_repeats(arr):
     """Find repeats in arr and return (repeats, repeat_count)
-    """    
+    """
     v1,v2, n = futil.dfreps(arr)
     return v1[:n],v2[:n]
 
@@ -66,7 +74,7 @@ def bayes_mvs(data,alpha=0.90):
     #
     fac = n*C/2.0
     peak = 2/(n+1.)
-    a = (n-1)/2.0    
+    a = (n-1)/2.0
     F_peak = distributions.invgamma.cdf(peak,a)
     q1 = F_peak - alpha/2.0
     q2 = F_peak + alpha/2.0
@@ -90,9 +98,9 @@ def bayes_mvs(data,alpha=0.90):
         sta = fac*distributions.gengamma.ppf(q1,a,-2)
     stb = fac*distributions.gengamma.ppf(q2,a,-2)
     stp = peak*fac
-        
+
     return (mp,(ma,mb)),(vp,(va,vb)),(stp,(sta,stb))
-    
+
 
 
 ################################
@@ -173,7 +181,7 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     slope (scale), intercept (loc), and correlation coefficient (r), of the
     best straight line through the points.  If fit==0, only (osm, osr) is
     returned.
-    
+
     sparams is a tuple of shape parameter arguments for the distribution.
     """
     N = len(x)
@@ -330,7 +338,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
         raise RuntimeError, "Could not find endpoint."
     lmminus = optimize.brentq(rootfunc,newlm,lmax,args=(x,target))
     return lmminus,lmplus
-       
+
 def boxcox(x,lmbda=None,alpha=None):
     """Return a positive dataset tranformed by a Box-Cox power transformation.
 
@@ -340,7 +348,7 @@ def boxcox(x,lmbda=None,alpha=None):
     function and return it as the second output argument.
 
     If alpha is not None, return the 100(1-alpha)% confidence interval for
-    lambda as the third output argument. 
+    lambda as the third output argument.
     """
     if any(x < 0):
         raise ValueError, "Data must be positive."
@@ -359,7 +367,7 @@ def boxcox(x,lmbda=None,alpha=None):
     interval = _boxcox_conf_interval(x, lmax, alpha)
     return y, lmax, interval
 
-    
+
 def boxcox_normmax(x,brack=(-1.0,1.0)):
     N = len(x)
     # compute uniform median statistics
@@ -379,7 +387,7 @@ def boxcox_normmax(x,brack=(-1.0,1.0)):
         r, prob  = stats.pearsonr(xvals, yvals)
         return 1-r
     return optimize.brent(tempfunc, brack=brack, args=(xvals, x))
-        
+
 
 def boxcox_normplot(x,la,lb,plot=None,N=80):
     svals = r_[la:lb:complex(N)]
@@ -416,8 +424,8 @@ def shapiro(x,a=None,reta=0):
 
               if reta is nonzero then also return the computed "a" values
                  as the third output.  If these are known for a given size
-                 they can be given as input instead of computed internally. 
-    
+                 they can be given as input instead of computed internally.
+
     """
     N = len(x)
     if N < 3:
@@ -436,7 +444,7 @@ def shapiro(x,a=None,reta=0):
         print "p-value may not be accurate for N > 5000."
     if reta:
         return w, pw, a
-    else:        
+    else:
         return w, pw
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
@@ -448,7 +456,7 @@ _Avals_expon  = array([0.922, 1.078, 1.341, 1.606, 1.957])
 #             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
 _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 # From Stephens, M A, "Tests of Fit for the Logistic Distribution Based
-#             on the Empirical Distribution Function.", Biometrika, 
+#             on the Empirical Distribution Function.", Biometrika,
 #             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 def anderson(x,dist='norm'):
@@ -590,7 +598,7 @@ def ansari(x,y):
             else:
                 pval = 2.0*sum(a1[find+1:])/total
         return AB, min(1.0,pval)
-    
+
     # otherwise compute normal approximation
     if N % 2:  # N odd
         mnAB = n*(N+1.0)**2 / 4.0 / N
@@ -613,13 +621,13 @@ def bartlett(*args):
     """Perform Bartlett test with the null hypothesis that all input samples
     have equal variances.
 
-    Inputs are sample vectors:  bartlett(x,y,z,...) 
+    Inputs are sample vectors:  bartlett(x,y,z,...)
 
     Outputs: (T, pval)
 
          T    -- the Test statistic
          pval -- significance level if null is rejected with this value of T
-                 (prob. that null is true but rejected with this p-value.)  
+                 (prob. that null is true but rejected with this p-value.)
 
     Sensitive to departures from normality.  The Levene test is
     an alternative that is less sensitive to departures from
@@ -630,7 +638,7 @@ def bartlett(*args):
       http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
       Snedecor, George W. and Cochran, William G. (1989), Statistical
-        Methods, Eighth Edition, Iowa State University Press.     
+        Methods, Eighth Edition, Iowa State University Press.
     """
     k = len(args)
     if k < 2:
@@ -666,7 +674,7 @@ def levene(*args,**kwds):
 
          W    -- the Test statistic
          pval -- significance level if null is rejected with this value of W
-                 (prob. that null is true but rejected with this p-value.)  
+                 (prob. that null is true but rejected with this p-value.)
 
     References:
 
@@ -674,9 +682,9 @@ def levene(*args,**kwds):
 
        Levene, H. (1960). In Contributions to Probability and Statistics:
          Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
-         Stanford University Press, pp. 278-292. 
+         Stanford University Press, pp. 278-292.
        Brown, M. B. and Forsythe, A. B. (1974), Journal of the American
-         Statistical Association, 69, 364-367         
+         Statistical Association, 69, 364-367
     """
     k = len(args)
     if k < 2:
@@ -698,7 +706,7 @@ def levene(*args,**kwds):
         func = stats.trim_mean
     for j in range(k):
         Ni[j] = len(args[j])
-        Yci[j] = func(args[j])    
+        Yci[j] = func(args[j])
     Ntot = sum(Ni)
 
     # compute Zij's
@@ -791,7 +799,7 @@ def fligner(*args,**kwds):
 
          Xsq  -- the Test statistic
          pval -- significance level if null is rejected with this value of X
-                 (prob. that null is true but rejected with this p-value.)  
+                 (prob. that null is true but rejected with this p-value.)
 
     References:
 
@@ -981,14 +989,14 @@ def pdf_moments(cnt):
             else:
                 momdiff = cnt[m-1] - sig*sig*scipy.factorial2(m-1)
             Ck += Dvals[k][m] / sig**m * momdiff
-        # Add to totp 
-        totp = totp +  Ck*Dvals[k]        
-        
+        # Add to totp
+        totp = totp +  Ck*Dvals[k]
+
     def thisfunc(x):
         xn = (x-mu)/sig
         return totp(xn)*exp(-xn*xn/2.0)/sqrt(2*pi)/sig
     return thisfunc
-           
+
 
 def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
     if g4 is None:
@@ -1057,9 +1065,9 @@ def circstd(samples, high=2*pi, low=0):
     res = stats.mean(exp(1j*ang))
     V = 1-abs(res)
     return ((high-low)/2.0/pi) * sqrt(V)
-    
-    
-        
+
+
+
 #Tests to include (from R) -- some of these already in stats.
 ########
 #X Ansari-Bradley

@@ -18,6 +18,28 @@ from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
 import numpy
 import numpy.random as mtrand
 
+__all__ = [
+           'rv_continuous',
+           'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
+           'beta', 'betaprime', 'bradford', 'burr', 'fisk', 'cauchy',
+           'chi', 'chi2', 'cosine', 'dgamma', 'dweibull', 'erlang',
+           'expon', 'exponweib', 'exponpow', 'fatiguelife', 'foldcauchy',
+           'f', 'foldnorm', 'frechet_r', 'weibull_min', 'frechet_l',
+           'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
+           'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
+           'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
+           'gausshyper', 'invgamma', 'invnorm', 'invweibull', 'johnsonsb',
+           'johnsonsu', 'laplace', 'levy', 'levy_l', 'levy_stable',
+           'logistic', 'loggamma', 'loglaplace', 'lognorm', 'gilbrat',
+           'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
+           'nct', 'pareto', 'lomax', 'powerlaw', 'powerlognorm', 'powernorm',
+           'rdist', 'rayleigh', 'reciprocal', 'rice', 'recipinvgauss',
+           'semicircular', 'triang', 'truncexpon', 'truncnorm',
+           'tukeylambda', 'uniform', 'vonmises', 'wald', 'wrapcauchy',
+           'entropy', 'rv_discrete',
+           'binom', 'bernoulli', 'nbinom', 'geom', 'hypergeom', 'logser',
+           'poisson', 'planck', 'boltzmann', 'randint', 'zipf', 'dlaplace',
+          ]
 
 errp = special.errprint
 arr = asarray
@@ -4226,4 +4248,3 @@ dlapacle.pmf(k,a) = tanh(a/2) * exp(-a*abs(k))
 for a > 0.
 """
                         )
-

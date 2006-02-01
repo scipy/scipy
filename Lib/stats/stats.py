@@ -185,8 +185,6 @@ SUPPORT FUNCTIONS:  writecc
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
-
-
 import string, sys, _support
 from types import *
 
@@ -195,6 +193,28 @@ import numpy.core.umath as math
 from numpy.core.umath import *
 import scipy.special as special
 import scipy.linalg as linalg
+
+__all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
+           'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
+           'moment', 'variation', 'skew', 'kurtosis', 'describe',
+           'skewtest', 'kurtosistest', 'normaltest',
+           'itemfreq', 'scoreatpercentile', 'percentileofscore',
+           'histogram', 'histogram2', 'cumfreq', 'relfreq',
+           'obrientransform', 'samplevar', 'samplestd', 'signaltonoise',
+           'var', 'std', 'stderr', 'sem', 'z', 'zs', 'zmap',
+           'threshold', 'trimboth', 'trim1', 'trim_mean',
+           'cov', 'corrcoef', 'f_oneway', 'paired', 'pearsonr', 'spearmanr',
+           'pointbiserialr', 'kendalltau', 'linregress',
+           'ttest_1samp', 'ttest_ind', 'ttest_rel',
+           'kstest', 'chisquare', 'ks_2samp', 'mannwhitneyu',
+           'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
+           'zprob', 'erfc', 'chisqprob', 'ksprob', 'fprob', 'betai',
+           'glm', 'anova', 'f_value_wilks_lambda',
+           'f_value', 'outputfstats', 'f_value_multivariate',
+           'ss', 'summult', 'square_of_sums', 'sumdiffsquared',
+           'fastsort', 'shellsort', 'rankdata', 'writecc',
+           'outputpairedstats', 'findwithin',
+          ]
 
 SequenceType = (ListType, TupleType, ArrayType)
 

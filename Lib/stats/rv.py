@@ -2,6 +2,8 @@
 from numpy import vectorize
 from numpy.random import random_sample
 
+__all__ = ['randwppf', 'randwcdf']
+
 # XXX: Are these needed anymore?
 
 #####################################
