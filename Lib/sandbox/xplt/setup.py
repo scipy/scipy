@@ -5,14 +5,8 @@
 import os
 import sys
 from distutils import dir_util
-from numpy.distutils.misc_util   import get_path, Configuration, dot_join
-from numpy.distutils.misc_util   import dict_append
-from numpy.distutils.core        import Extension
-from numpy.distutils.system_info import get_info
+from distutils.sysconfig import get_python_lib
 
-from distutils.sysconfig         import get_python_lib
-
-from config_pygist import config_pygist
 
 def get_special_dirs(plat):
     if plat in ['aix4', 'aix5','sunos5']:
@@ -177,6 +171,7 @@ allsource = ["src/play/all/hash.c",
 
 
 def getallparams(gistpath,local_path,config_path):
+    from numpy.distutils.system_info import get_info
     x11_info = get_info('x11')
     extra_compile_args = ['-DGISTPATH="\\"' + gistpath + '\\""' ]
 
@@ -240,18 +235,10 @@ def configuration(parent_package='',top_path=None):
        This will install *.gs and *.gp files to
        'site-packages/scipy/xplt/gistdata' 
     """
-    from numpy.distutils.system_info import get_info, dict_append
-    from glob import glob
+    from numpy.distutils.misc_util   import Configuration
+    from config_pygist import config_pygist
     config = Configuration('xplt',parent_package, top_path)
     local_path = config.local_path
-    get_build_temp = config.get_build_temp_dir
-
-    #config_path = os.path.join(get_build_temp(),'config_pygist')
-    #dir_util.mkpath(config_path,verbose=1)
-
-    #conf = config_pygist(local_path,config_path)
-
-    #conf.run()
 
     all_playsource = [os.path.join('src','play','*','*.c'),
                       os.path.join('src','play','*.h')
@@ -308,18 +295,8 @@ def configuration(parent_package='',top_path=None):
     sources = gistsource
     sources = [gistC] + sources + [get_playsource]
 
-    #include_dirs, library_dirs, libraries, \
-    #              extra_compile_args, extra_link_args \
-    #              = getallparams(gistpath,local_path,config_path)
-    #include_dirs.insert(0,os.path.dirname(conf.config_h))
-
     config.add_extension('gistC',
                          sources,
-                         #include_dirs = include_dirs,
-                         #library_dirs = library_dirs,
-                         #libraries = libraries,
-                         #extra_compile_args = extra_compile_args,
-                         #extra_link_args = extra_link_args,
                          depends = ['src']
                          )
     config.add_extension('gistfuncs',
