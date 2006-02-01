@@ -7,7 +7,7 @@
 from scipy import *
 from shapetest import *
 from yorick import *
-from arrayfns import *
+from numpy import *
 
 
 #  PL3D.PY

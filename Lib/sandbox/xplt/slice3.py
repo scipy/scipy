@@ -19,8 +19,8 @@ from scipy import *
 from shapetest import *
 from types import *
 from pl3d import *
-from arrayfns import *
-from scipy.xplt.gistC import *
+from numpy import *
+from gistC import *
 
  #
  # Caveats:
@@ -163,8 +163,8 @@ def mesh3 (x, y = None, z = None, ** kw) :
       dims = (1 + x [0], 1 + x [1], 1 + x [2])
       virtuals [0] = xyz3_unif
    elif len (dims) == 1 and y != None and z != None and len (y.shape) == 1 \
-      and len (z.shape) == 1 and x.typecode () == y.typecode () == \
-      z.typecode () == Float : 
+      and len (z.shape) == 1 and x.typed  == y.typed == \
+      z.typed == Float : 
       # regular mesh with unequally spaced points
       dims = array ( [len (x), len (y), len (z)], Int)
       xyz = [x, y, z] # has to be a list since could be different lengths
@@ -833,14 +833,14 @@ def slice3mesh (xyz, * args, ** kw) :
          z = xyz
          ncx = shape (xyz) [0]
          ncy = shape (xyz) [1]
-         x = arange (ncx, typecode = Float )
-         y = arange (ncy, typecode = Float )
+         x = arange (ncx, dtype = Float )
+         y = arange (ncy, dtype = Float )
    elif len (args) == 3 :
       # must be the (nxny, dxdy, x0y0, z...) form
       ncx = xyz [0] + 1
       ncy = xyz [1] + 1
-      x = arange (ncx, typecode = Float ) * args [0] [0] + args [1] [0]
-      y = arange (ncy, typecode = Float ) * args [0] [1] + args [1] [1]
+      x = arange (ncx, dtype = Float ) * args [0] [0] + args [1] [0]
+      y = arange (ncy, dtype = Float ) * args [0] [1] + args [1] [1]
       z = args [2]
       if (ncx, ncy) != shape (z) :
          raise _Slice3MeshError, \
@@ -873,8 +873,8 @@ def slice3mesh (xyz, * args, ** kw) :
 
    nverts = ones ( (ncx - 1) *  (ncy - 1), Int) * 4
 
-   ncxx = arange (ncx - 1, typecode = Int) * (ncy)
-   ncyy = arange (ncy - 1, typecode = Int)
+   ncxx = arange (ncx - 1, dtype = Int) * (ncy)
+   ncyy = arange (ncy - 1, dtype = Int)
 
    if kw.has_key ("color") :
       color = kw ["color"]
@@ -1144,7 +1144,7 @@ def iterator3_irreg (m3, chunk, clist) :
       if chunk == None:     # get the first chunk
          return [ [0, min (shape (dims) [0], _chunk3_limit)],
                   arange (0, min (shape (dims) [0], _chunk3_limit),
-                  typecode = Int)]
+                  dtype = Int)]
       else :                # iterate to next chunk
          start = chunk [0] [1]
          if start >= shape(dims) [0] :
@@ -1153,13 +1153,13 @@ def iterator3_irreg (m3, chunk, clist) :
             return [ [start, min (shape (dims) [0], start + _chunk3_limit)],
                      arange (start, min (shape (dims) [0],
                                                start + _chunk3_limit),
-                     typecode = Int)]
+                     dtype = Int)]
    else :
       totals = m3 [1] [3] # cumulative totals of numbers of cells
       if chunk == None :
          return [ [0, min (totals [0], _chunk3_limit)],
                   arange (0, min (totals [0], _chunk3_limit),
-                  typecode = Int)]
+                  dtype = Int)]
       else :                # iterate to next chunk
          start = chunk [0] [1]
          if start >= totals [-1] :
@@ -1171,7 +1171,7 @@ def iterator3_irreg (m3, chunk, clist) :
             return [ [start, min (totals [i], start + _chunk3_limit)],
                      arange (start,
                         min (totals [i], start + _chunk3_limit), 
-                        typecode = Int)]
+                        dtype = Int)]
 
 
 def getv3 (i, m3, chunk) :
@@ -1281,13 +1281,13 @@ def getv3_irreg (i, m3, chunk) :
    # ZCM 2/4/97 the array of cell numbers must be relative
    if tc == 8 : # hex cells
       return [ reshape (take (fi [i], indices), (no_cells, 2, 2, 2)),
-              arange (0, no_cells, typecode = Int), oldstart]
+              arange (0, no_cells, dtype = Int), oldstart]
    elif tc == 6 : # pyramids
       return [ reshape (take (fi [i], indices), (no_cells, 3, 2)),
-              arange (0, no_cells, typecode = Int), oldstart]
+              arange (0, no_cells, dtype = Int), oldstart]
    else : # tetrahedron or pyramid
       return [ reshape (take (fi [i], indices), (no_cells, tc)),
-              arange (0, no_cells, typecode = Int), oldstart]
+              arange (0, no_cells, dtype = Int), oldstart]
 
 _Getc3Error = "Getc3Error"
 
@@ -1544,7 +1544,7 @@ def _construct3 (itype) :
    global _node_edges
    global _no_verts
    global _no_edges
-   i = arange (1, 2**_no_verts [itype] - 1, typecode = Int)
+   i = arange (1, 2**_no_verts [itype] - 1, dtype = Int)
    if itype == 0 :
       below = transpose (not_equal (array ( [bitwise_and (i, 8),
                                              bitwise_and (i, 4),
@@ -1646,10 +1646,10 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
          vcmax = max (xyzverts [:, 2])
          maxz = vcmax
       if scale == "lin" :
-          vc = vcmin + arange (1, n + 1, typecode = Float) * \
+          vc = vcmin + arange (1, n + 1, dtype = Float) * \
              (vcmax - vcmin) / (n + 1)
       elif scale == "log" :
-          vc = vcmin + exp (arange (1, n + 1, typecode = Float) * \
+          vc = vcmin + exp (arange (1, n + 1, dtype = Float) * \
              log (vcmax - vcmin) / (n + 1))
       elif scale == "normal" :
           zlin = xyzverts [:, 2]
@@ -1663,15 +1663,15 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
           vc = z1 + arange (n) * diff
       else :
           raise _ContourError, "Incomprehensible scale parameter."
-   elif type (contours) == ArrayType and contours.typecode () == Float :
+   elif type (contours) == ArrayType and contours.dtype == Float :
       n = len (contours)
       vc = sort (contours)
    else :
       raise _ContourError, "Incorrect contour specification."
    if split == 0 :
-      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('B')
+      colors = (arange (n + 1, dtype = Float) * (199. / n)).astype ('B')
    else :
-      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('B')
+      colors = (arange (n + 1, dtype = Float) * (99. / n)).astype ('B')
    # 2. Loop through slice2x calls
    nv = array (nverts, copy = 1)
    xyzv = array (xyzverts, copy = 1)
@@ -1782,11 +1782,11 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
           maxz = vcmax
       if scale == "lin" :
           vc = vcmin + arange (1, n + 1, \
-             typecode = Float) * \
+             dtype = Float) * \
              (vcmax - vcmin) / (n + 1)
       elif scale == "log" :
           vc = vcmin + exp (arange (1, n + 1, \
-             typecode = Float) * \
+             dtype = Float) * \
              log (vcmax - vcmin) / (n + 1))
       elif scale == "normal" :
           zbar = add.reduce (values) / lzlin
@@ -1798,15 +1798,15 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
           vc = z1 + arange (n) * diff
       else :
           raise _ContourError, "Incomprehensible scale parameter."
-   elif type (contours) == ArrayType and contours.typecode () == Float :
+   elif type (contours) == ArrayType and contours.dtype == Float :
       n = len (contours)
       vc = sort (contours)
    else :
       raise _ContourError, "Incorrect contour specification."
    if split == 0 :
-      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('B')
+      colors = (arange (n + 1, dtype = Float) * (199. / n)).astype ('B')
    else :
-      colors = (arange (n + 1, typecode = Float) * (99. / n)).astype ('B')
+      colors = (arange (n + 1, dtype = Float) * (99. / n)).astype ('B')
    # 2. Loop through slice2x calls
    nv = array (nverts, copy = 1)
    xyzv = array (xyzverts, copy = 1)
@@ -1989,7 +1989,7 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
    xyzverts = array (xyzverts, Float )
 
    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) or \
-      nverts.typecode () != Int :
+      nverts.dtype != Int :
       raise _Pl3surfError, "illegal or inconsistent polygon list"
    if values != None and len (values) != len (nverts) :
       raise _Pl3surfError, "illegal or inconsistent polygon color values"
@@ -2090,7 +2090,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
    if values == "background" :
       values = "bg"
    elif values != None and values != "bg" :
-      values = array (values, values.typecode ())
+      values = array (values, values.dtype)
    if plane != None :
       plane = plane.astype (Float)
 
@@ -2108,7 +2108,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
       # averaged over each cell
       list = zeros (sum (nverts), Int)
       array_set (list, cumsum (nverts) [0:-1], ones (len (nverts), Int))
-      tpc = values.typecode ()
+      tpc = values.dtype
       values = (histogram (cumsum (list), values) / nverts).astype (tpc)
    if plane != None :
       if (len (shape (plane)) != 1 or shape (plane) [0] != 4) :
@@ -2558,15 +2558,15 @@ def split_palette ( * name) :
    newr = zeros (200, 'B')
    newg = zeros (200, 'B')
    newb = zeros (200, 'B')
-   newr [0:100] = interp (r [0:n].astype (Float), arange (n, typecode = Float ),
-      arange (100, typecode = Float ) * n / 100).astype ('B')
-   newg [0:100] = interp (g [0:n].astype (Float), arange (n, typecode = Float ),
-      arange (100, typecode = Float ) * n / 100).astype ('B')
-   newb [0:100] = interp (b [0:n].astype (Float), arange (n, typecode = Float ),
-      arange (100, typecode = Float ) * n / 100).astype ('B')
-   newr [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('B')
-   newg [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('B')
-   newb [100:200] = (arange (100, typecode = Int) * 255 / 99).astype ('B')
+   newr [0:100] = interp (r [0:n].astype (Float), arange (n, dtype = Float ),
+      arange (100, dtype = Float ) * n / 100).astype ('B')
+   newg [0:100] = interp (g [0:n].astype (Float), arange (n, dtype = Float ),
+      arange (100, dtype = Float ) * n / 100).astype ('B')
+   newb [0:100] = interp (b [0:n].astype (Float), arange (n, dtype = Float ),
+      arange (100, dtype = Float ) * n / 100).astype ('B')
+   newr [100:200] = (arange (100, dtype = Int) * 255 / 99).astype ('B')
+   newg [100:200] = (arange (100, dtype = Int) * 255 / 99).astype ('B')
+   newb [100:200] = (arange (100, dtype = Int) * 255 / 99).astype ('B')
    palette (newr, newg, newb)
 
 def split_bytscl (x, upper, cmin = None, cmax = None) :
@@ -2804,7 +2804,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
       incr = len (item [0])
       _nverts [ _list - 1: _list - 1 + incr] = item [0]
       if item [2] != "bg" :
-         if (item [2]).typecode () != 'B' :
+         if (item [2]).dtype.char != 'B' :
             if item [5] != 0 :
                _values [ _list - 1: _list - 1 + incr] = split_bytscl (
                   item [2], 0, cmin = item [3], cmax = item [4]).astype ('B')
@@ -3000,7 +3000,7 @@ def _plane_slicer (m3, chunk, normal, projection) :
          if j > 0 :
             cell_offset = totals [j - 1]
       if type (chunk) == ListType :
-         clist = arange (0, chunk [0] [1] - chunk [0] [0], typecode = Int)
+         clist = arange (0, chunk [0] [1] - chunk [0] [0], dtype = Int)
       else :
          clist = chunk - cell_offset
       # In the irregular case we know x is ncells by 3 by something
@@ -3173,9 +3173,9 @@ def xyz3_unif (m3, chunk) :
       if len (shape (chunk)) != 1:
          # Convert the increment and size into array coordinates
          # -- consecutive values
-         xx = arange (dn [0], typecode = Float ) * dxdydz [0] / (dn [0] - 1)
-         yy = arange (dn [1], typecode = Float ) * dxdydz [1] / (dn [1] - 1)
-         zz = arange (dn [2], typecode = Float ) * dxdydz [2] / (dn [2] - 1)
+         xx = arange (dn [0], dtype = Float ) * dxdydz [0] / (dn [0] - 1)
+         yy = arange (dn [1], dtype = Float ) * dxdydz [1] / (dn [1] - 1)
+         zz = arange (dn [2], dtype = Float ) * dxdydz [2] / (dn [2] - 1)
          xyz [0] = x0y0z0 [0] + i [0] * dxdydz [0] + multiply.outer (
             multiply.outer ( xx, ones (dn [1], Float )),
             ones (dn [2], Float ))

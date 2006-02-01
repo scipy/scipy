@@ -18,8 +18,8 @@ points = 0.0013000
 inches = 72.27*points
 import scipy
 import scipy.signal as signal
-from scipy.xplt import maxwidth as _maxwidth
-from scipy.xplt import maxheight as _maxheight
+from __init__ import maxwidth as _maxwidth
+from __init__ import maxheight as _maxheight
 
 _dpi = 75
 _hold = 0

@@ -14,7 +14,6 @@
 
 ## execfile ("pl3d.py")
 from types import *
-from arrayfns import *
 from pl3d import *
 
 def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,

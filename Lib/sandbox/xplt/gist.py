@@ -68,10 +68,10 @@ __version__ = "1.5.22"
 
 from scipy import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path
-from scipy.xplt.gistC import *
+from gistC import *
 from pydoc import help
 from shapetest import *
-from arrayfns import *
+from numpy import *
 
 # Parameters used by pltitle and xytitles
 pltitle_height= 18;
@@ -372,7 +372,6 @@ def plmk_default(color=None, msize=None, width=None):
    if not (color or width or msize):
       _plmk_msize = _plmk_color = _plmk_width = None
 
-from arrayfns import *
 from types import *
 
 #  ---------------------------------------------------------------------
