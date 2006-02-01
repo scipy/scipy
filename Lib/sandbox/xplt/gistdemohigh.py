@@ -48,7 +48,7 @@ def spanz (lb, ub, n) :
    return map (lambda x, A = a, B = b: A * x + B, range (n - 1))
 
 def init ( self ) :
-    self.t = 2*pi*arange (400, typecode = Float) / 399.0
+    self.t = 2*pi*arange (400, dtype = Float) / 399.0
     self.na1 = 1
     self.nb1 = 5
     self.na2 = 2
@@ -140,7 +140,7 @@ def demo ( ) :
    g1.plot ( )
    print "\nLimits now back to extreme values."
    paws ( )
-   x=10*pi*arange(200, typecode = Float)/199.0
+   x=10*pi*arange(200, dtype = Float)/199.0
    c1 = Curve ( x = x , y = sin(x),marks = 1, marker= "A")
    g1.delete (2)
    g1.delete (1)
@@ -154,7 +154,7 @@ def demo ( ) :
    g1.plot ( )
    print "\nTurn off A marker, plot curve as bold dashed."
    paws ( )
-   x=2*pi*arange(200, typecode = Float)/199.0
+   x=2*pi*arange(200, dtype = Float)/199.0
    crvs = []
    for i in range (1,7) :
       r = 0.5*i -(5-0.5*i)*cos(x)

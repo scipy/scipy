@@ -456,7 +456,7 @@ helpdict = {
         nj= shape(z)[2];
         list = ravel (add.outer (
            ravel(add.outer (adders,zeros(nj-1, Int))) +
-           arange((ni-1)*(nj-1), typecode = Int),
+           arange((ni-1)*(nj-1), dtype = Int),
            array ( [[0, 1], [nj + 1, nj]])))
         xyz=array([take(ravel(xyz[0]),list),
            take(ravel(xyz[1]),list),

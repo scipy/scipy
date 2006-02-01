@@ -441,8 +441,8 @@ def demo5 (*itest) :
    if len (itest) == 0 or itest [0] == 7 :
       # test plwf on the sombrero function
       # compute sombrero function
-      x = arange (-20, 21, typecode = Float)
-      y = arange (-20, 21, typecode = Float)
+      x = arange (-20, 21, dtype = Float)
+      y = arange (-20, 21, dtype = Float)
       z = zeros ( (41, 41), Float)
       r = sqrt (add.outer ( x ** 2, y **2)) + 1e-6
       z = sin (r) / r
@@ -500,8 +500,8 @@ def demo5 (*itest) :
       nv1 = nc1 + 1
       br = - (nc1 / 2)
       tr = nc1 / 2 + 1
-      x = arange (br, tr, typecode = Float) * 40. / nc1
-      y = arange (br, tr, typecode = Float) * 40. / nc1
+      x = arange (br, tr, dtype = Float) * 40. / nc1
+      y = arange (br, tr, dtype = Float) * 40. / nc1
       z = zeros ( (nv1, nv1), Float)
       r = sqrt (add.outer ( x ** 2, y **2)) + 1e-6
       z = sin (r) / r
@@ -567,9 +567,9 @@ def demo5 (*itest) :
       # The following computations define an interesting 3d surface.
 
       xr = multiply.outer (
-         arange (1, kmax + 1, typecode = Float), ones (lmax, Float))
+         arange (1, kmax + 1, dtype = Float), ones (lmax, Float))
       yr = multiply.outer (
-         ones (kmax, Float), arange (1, lmax + 1, typecode = Float))
+         ones (kmax, Float), arange (1, lmax + 1, dtype = Float))
       zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
       rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
       z = s * (rt + zt)

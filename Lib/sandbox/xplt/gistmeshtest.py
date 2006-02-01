@@ -20,8 +20,8 @@ c = 1
 s = 1000.
 kmax = 25
 lmax = 35
-xr = multiply.outer ( arange (1, kmax + 1, typecode = Float), ones (lmax))
-yr = multiply.outer ( ones (kmax), arange (1, lmax + 1, typecode = Float))
+xr = multiply.outer ( arange (1, kmax + 1, dtype = Float), ones (lmax))
+yr = multiply.outer ( ones (kmax), arange (1, lmax + 1, dtype = Float))
 zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
 rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
 z = s * (rt + zt)
@@ -44,8 +44,8 @@ z [16, 16] = z [16, 16] * 1.1
 sh = shape (z)
 sh1 = sh[0]
 sh2 = sh[1]
-x = multiply.outer (arange (25, typecode = Float), ones (35, Float))
-y = multiply.outer (ones (25, Float), arange (35, typecode = Float))
+x = multiply.outer (arange (25, dtype = Float), ones (35, Float))
+y = multiply.outer (ones (25, Float), arange (35, dtype = Float))
 
 def demo () :
    qm = QuadMesh (x = zt, y = rt, ireg = ireg, width = 1., color = "blue")

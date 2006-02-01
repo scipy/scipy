@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
-
 #import Tkinter
 #from Tkinter import *
 #from Scientific.TkWidgets.TkPlotCanvas import *
@@ -69,7 +67,7 @@ read_gist_palettes()
 ##    return ImageTk.PhotoImage(Image.fromstring("L",shape,data.tostring()))
 
 def _makebytes(data,top,cmin,cmax):
-    if data.typecode == UnsignedInt8:
+    if data.dtype == UnsignedInt8:
         return data
     if cmin is None:
         if cmax is None:

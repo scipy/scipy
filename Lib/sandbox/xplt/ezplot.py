@@ -1655,14 +1655,14 @@ def plotz (* args, **keywords) :
            "> does not match first dimension of z <" + `k` + ">."
       x = multiply.outer (x, ones (l, Float))
    elif x is None :
-      x = multiply.outer (arange (1, k + 1, typecode = Float), ones (l, Float))
+      x = multiply.outer (arange (1, k + 1, dtype = Float), ones (l, Float))
    if y is not None and len (shape (y)) == 1 :
       if len (y) != l :
          raise _PlotzError_, "length of y <" + `len (y)` + \
            "> does not match second dimension of z <" + `l` + ">."
       y = multiply.outer (ones (k, Float), y)
    elif y is None :
-      y = multiply.outer (ones (k, Float), arange (1, l + 1, typecode = Float))
+      y = multiply.outer (ones (k, Float), arange (1, l + 1, dtype = Float))
    keywords ["zt"] = y
    keywords ["rt"] = x
    if keywords.has_key ("lev") :
@@ -1754,7 +1754,7 @@ def plotf (*args, ** keywords) :
    (k, l) = shape (plvar)
    if shape (__zt_) != shape (plvar) :
       if __zt_ is None:
-         __zt_ = multiply.outer (arange (1, k + 1, typecode = Float), ones (l, Float))
+         __zt_ = multiply.outer (arange (1, k + 1, dtype = Float), ones (l, Float))
       elif no_of_dims (__zt_) == 1 :
          if len (__zt_) != k :
             raise _PlotfError_, "Length of zt <" + `len (__zt_)` + \
@@ -1766,7 +1766,7 @@ def plotf (*args, ** keywords) :
       keywords ["zt"] = __zt_
    if shape (__rt_) != shape (plvar) :
       if __rt_ is None:
-         __rt_ = multiply.outer (ones (k, Float), arange (1, l + 1, typecode = Float))
+         __rt_ = multiply.outer (ones (k, Float), arange (1, l + 1, dtype = Float))
       elif no_of_dims (__rt_) == 1 :
          if len (__rt_) != l :
             raise _PlotfError_, "Length of rt <" + `len (__rt_)` + \

@@ -449,7 +449,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       range of Z are selected.
 
       If you specify CONTOURS, you may also specify COLORS, an array of
-      color numbers (Python typecode 'B', integers between 0 and the
+      color numbers (Python dtype.char 'B', integers between 0 and the
       length of the current palette - 1, normally 199) of length
       len(CONTOURS)+1. If you do not specify them, equally
       spaced colors are chosen.
@@ -482,10 +482,10 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       vc [n + 1] = vcmax
       if scale == "lin" or scale is None :
           #    This stuff is in lieu of the spann stuff in Yorick.
-          vc [1:n + 1] = vcmin + arange (1, n + 1, typecode = Float) * \
+          vc [1:n + 1] = vcmin + arange (1, n + 1, dtype = Float) * \
              (vcmax - vcmin) / (n + 1)
       elif scale == "log" :
-          vc [1:n + 1] = vcmin + exp (arange (1, n + 1, typecode = Float) * \
+          vc [1:n + 1] = vcmin + exp (arange (1, n + 1, dtype = Float) * \
              log (vcmax - vcmin) / (n + 1))
       elif scale == "normal" :
           zlin = ravel (z)
@@ -499,7 +499,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
           vc [1:n + 1] = z1 + arange (n) * diff
       else :
           raise _ContourError, "Incomprehensible scale parameter."
-   elif type (contours) == ArrayType and contours.typecode () == Float :
+   elif type (contours) == ArrayType and contours.dtype == Float :
       n = len (contours)
       vc = zeros (n + 2, Float)
       vc [0] = vcmin
@@ -508,13 +508,13 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
    else :
       raise _ContourError, "Incorrect contour specification."
    if colors is None :
-      colors = (arange (n + 1, typecode = Float) * (199. / n)).astype ('B')
+      colors = (arange (n + 1, dtype = Float) * (199. / n)).astype ('B')
    else :
       colors = array (colors)
       if len (colors) != n + 1 :
          raise "PLFC_Error", \
             "colors must specify one more color than contours."
-      if colors.typecode != 'B' :
+      if colors.dtype.char != 'B' :
          colors = bytscl (colors)
 
    if triangle is None :

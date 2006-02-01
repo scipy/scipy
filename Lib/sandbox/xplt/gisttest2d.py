@@ -13,10 +13,10 @@ def paws ( ) :
     return
 
 def demo () :
-   x0 = arange(50, typecode = Float)
+   x0 = arange(50, dtype = Float)
    y0 = zeros(50, Float)
    x1 = 49 * ones(50, Float)
-   y1 = arange(50, typecode = Float)
+   y1 = arange(50, dtype = Float)
    ly = Lines (x0 = x0,y0 = y0,x1 = x1,y1 = y1)
    g0 = Graph2d ( ly , titles = "Just Lines")
    g0.plot ()
@@ -49,14 +49,14 @@ def demo () :
    # for jj in range (ny) :
    #    for ii in range (nx) :
    #        ndx [ii, jj] = ii + (jj - 1) * nx
-   ndx = reshape (arange (nx * ny, typecode = 'B'), (nx, ny))
+   ndx = reshape (arange (nx * ny, dtype = 'B'), (nx, ny))
    cla = CellArray ( z = ndx )
    gca = Graph2d ( cla , titles = "Cell Array", axis_scales = "linlin" )
    gca.plot ( )
    paws ( )
    # -------------------- generate sombrero function
    nz = 20
-   x = arange (-nz, nz+1, typecode = Float )
+   x = arange (-nz, nz+1, dtype = Float )
    y = x
    z = zeros ((2*nz + 2, 2*nz + 2), Float)
    for i in range ( len (x) ) :

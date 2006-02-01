@@ -873,10 +873,10 @@ class Plotter :
              raise self._BadZScale , \
                 `crv.z_scale` + " is an invalid z scale specifier."
           if crv.z_scale == "lin" :
-             levs = z1 + arange (1, crv.levels, typecode = Float) * \
+             levs = z1 + arange (1, crv.levels, dtype = Float) * \
                 (z2 - z1) / (crv.levels + 1)
           elif crv.z_scale == "log" :
-             levs = z1 + exp (arange (1, crv.levels, typecode = Float) * \
+             levs = z1 + exp (arange (1, crv.levels, dtype = Float) * \
                 log (z2 - z1) / (crv.levels + 1))
           crv.levels = levs
 
@@ -1466,8 +1466,8 @@ class Plotter :
           if "s3" in opt or "i3" in opt :
              # Plot contours in z (or c) direction
              if x is None and y is None :
-                x = arange (fill.shape [0], typecode = Float)
-                y = arange (fill.shape [1], typecode = Float)
+                x = arange (fill.shape [0], dtype = Float)
+                y = arange (fill.shape [1], dtype = Float)
              [nv, xyzv, dum] = slice3mesh (x, y, fill)
              if "s3" in opt :
                 plzcont (nv, xyzv, contours = contours, scale = scale,
@@ -1479,8 +1479,8 @@ class Plotter :
           elif "s4" in opt or "i4" in opt :
              # Plot contours in c (or z) direction
              if x is None and y is None :
-                x = arange (fill.shape [0], typecode = Float)
-                y = arange (fill.shape [1], typecode = Float)
+                x = arange (fill.shape [0], dtype = Float)
+                y = arange (fill.shape [1], dtype = Float)
              [nv, xyzv, col] = slice3mesh (x, y, z, color = fill, smooth = 1)
              if "s4" in opt :
                 pl4cont (nv, xyzv, col, contours = contours, scale = scale,
@@ -1601,8 +1601,8 @@ class Plotter :
                 if "s3" in opt or "i3" in opt :
                    # Plot contours in z (or c) direction
                    if x is None and y is None :
-                      x = arange (fill.shape [0], typecode = Float)
-                      y = arange (fill.shape [1], typecode = Float)
+                      x = arange (fill.shape [0], dtype = Float)
+                      y = arange (fill.shape [1], dtype = Float)
                    [nv, xyzv, dum] = slice3mesh (x, y, fill)
                    if "s3" in opt :
                       plzcont (nv, xyzv, contours = contours, scale = scale,
@@ -1617,8 +1617,8 @@ class Plotter :
                 elif "s4" in opt or "i4" in opt :
                    # Plot contours in c (or z) direction
                    if x is None and y is None :
-                      x = arange (fill.shape [0], typecode = Float)
-                      y = arange (fill.shape [1], typecode = Float)
+                      x = arange (fill.shape [0], dtype = Float)
+                      y = arange (fill.shape [1], dtype = Float)
                    [nv, xyzv, col] = slice3mesh (x, y, z, color = fill,
                        smooth = 1)
                    if "s4" in opt :

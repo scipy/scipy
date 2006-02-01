@@ -80,9 +80,9 @@ class Curve :
           self.x = keywords ["x"] 
        else :
           if len ( shape (self.y) ) == 1 :
-             self.x = arange (len (self.y), typecode = Float)
+             self.x = arange (len (self.y), dtype = Float)
           else :
-             self.x = arange (self.y.shape [1], typecode = Float)
+             self.x = arange (self.y.shape [1], dtype = Float)
        if abs (len (self.x) - len (self.y)) == 1 :
           # average the longer one
           if len (self.x) > len (self.y) :

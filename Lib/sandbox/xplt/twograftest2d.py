@@ -49,12 +49,12 @@ def demo () :
    lmax = 35
     
    pl1 = gr.Plotter (" ")
-   c1 = Curve ( y = arange (1, kmax+1, typecode = Float) , color = "yellow" )
+   c1 = Curve ( y = arange (1, kmax+1, dtype = Float) , color = "yellow" )
    g2 = Graph2d ( c1 , plotter = [pl1], titles = ["Bottom of the Barrel", "Top Dog",
                                  "Leftist", "Reaganist"] )
    g2.plot ( )
    paws ( )
-   c2 = Curve ( y = sqrt (arange (1, kmax+1, typecode = Float)**3) , color = "blue")
+   c2 = Curve ( y = sqrt (arange (1, kmax+1, dtype = Float)**3) , color = "blue")
    g2.add ( c2 )
    g2.plot ( )
    paws ( )
@@ -93,10 +93,10 @@ def demo () :
    g2.quick_plot ( grid_type = "wide" )
    paws ( )
    part1 = abs (array ( [-5, -4, -3, -2, -1, .0000000001] ) )
-   c1.new (  y = part1, x = arange (-5, 1, typecode = Float) ,
+   c1.new (  y = part1, x = arange (-5, 1, dtype = Float) ,
             type="line" , color = "blue" )
    part2 = array ( [.0000000001, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] )
-   c2.new ( y = part2 , x = arange (0, 11, typecode = Float) ,
+   c2.new ( y = part2 , x = arange (0, 11, dtype = Float) ,
             type = "line" , color = "blue" )
    g2.new ( [c1, c2] , text = " " , axis_scales = "linlog" , titles = " " ,
              old_plotter = 1,
@@ -104,7 +104,7 @@ def demo () :
    g2.plot ( )
    paws ( )
    c1.new ( y = array (exp (multiply (log (10.0), range (-50, 1)))) ,
-            x = arange (1, 52, typecode = Float) )
+            x = arange (1, 52, dtype = Float) )
    g2.new ( c1 , axis_scales = "loglog" ,
              old_plotter = 1,
                  axis_limits = array ( [[1., 100.], [1.e-8, 1.]]))

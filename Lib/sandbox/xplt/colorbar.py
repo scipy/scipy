@@ -58,7 +58,7 @@ def color_bar (minz, maxz, split = 0, ncol = None, ymax=0.85, ymin=0.44, xmin0=0
       ncol = 100 + (1 - split) * 100
    plsys (0)
    if type (minz) == type (maxz) == type (1) : # Do not change!!!
-      plotval = reshape (arange (minz, maxz + 1, typecode = 'B'),
+      plotval = reshape (arange (minz, maxz + 1, dtype = 'B'),
          (maxz + 1 - minz, 1))
       pli (plotval, xmin0, ymin, xmax0, ymax) # draw bar
    elif not split :

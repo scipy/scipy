@@ -47,9 +47,9 @@ def demo () :
    lmax = 35
    # The following computations define an interesting 3d surface.
    xr = multiply.outer (
-      arange (1, kmax + 1, typecode = Float), ones (lmax, Float))
+      arange (1, kmax + 1, dtype = Float), ones (lmax, Float))
    yr = multiply.outer (
-      ones (kmax, Float), arange (1, lmax + 1, typecode = Float))
+      ones (kmax, Float), arange (1, lmax + 1, dtype = Float))
    zt = 5. + xr + .2 * rand (kmax, lmax)   # ranf (xr)
    rt = 100. + yr + .2 * rand (kmax, lmax)   # ranf (yr)
    z = s * (rt + zt)
@@ -71,8 +71,8 @@ def demo () :
    z [16, 16] = z [16, 16] * 1.1
     
    # Sombrero function
-   x = arange (-20, 21, typecode = Float)
-   y = arange (-20, 21, typecode = Float)
+   x = arange (-20, 21, dtype = Float)
+   y = arange (-20, 21, dtype = Float)
    z = zeros ( (41, 41), Float)
    for i in range (0, 41):
        for j in range (0, 41):
@@ -88,7 +88,7 @@ def demo () :
    paws ( )
    foo = zeros ( (kmax, lmax), Float)
    for k in range (kmax) :
-      foo [k, 0:lmax] = log (arange (1, lmax + 1, typecode = Float))
+      foo [k, 0:lmax] = log (arange (1, lmax + 1, dtype = Float))
       xxx = exp (k / 5.)
       for l in range (lmax) :
          foo [k, l] = xxx * foo [k, l]

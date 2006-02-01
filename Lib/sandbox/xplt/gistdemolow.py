@@ -81,10 +81,10 @@ def grtest():
   unzoom()
 
   fma()
-  x = 10*pi*arange(200, typecode = Float)/199.0
+  x = 10*pi*arange(200, dtype = Float)/199.0
   plg(sin(x), x)
   print "Test 9:  Commands: fma(); plg(sin(x), x)"
-  print "where x = 10*pi*arange(200, typecode = Float)/199.0"
+  print "where x = 10*pi*arange(200, dtype = Float)/199.0"
   print "Five cycles of a sine wave on a new frame."
   print "Before you continue, try clicking with the mouse buttons:"
   print "Left button zooms in, right button zooms out, middle no zoom"
@@ -102,7 +102,7 @@ def grtest():
   unzoom()
 
   fma()
-  x = 2*pi*arange(200, typecode = Float)/199.0
+  x = 2*pi*arange(200, dtype = Float)/199.0
   for i in range(1,7):
     r = 0.5*i - (5-0.5*i)*cos(x)
     s = "curve [" + `i` + "]"
@@ -365,7 +365,7 @@ def lissajous(animation):
 #  -- the centers describe semi-circular arcs of radius rc. 
 
    import os
-   t= 2*pi*arange(400, typecode = Float)/399.0
+   t= 2*pi*arange(400, dtype = Float)/399.0
    na1= 1
    nb1= 5
    na2= 2

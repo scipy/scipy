@@ -843,7 +843,7 @@ def sort3d (z, npolys) :
    # next, find the list which sorts the polygon vertices
    # first, find a list vlist such that sort(vlist) is above list
    vlist = zeros (len (list), Int)
-   array_set (vlist, list, arange (len (list), typecode = Int))
+   array_set (vlist, list, arange (len (list), dtype = Int))
    # then reset the nlist values to that pre-sorted order, so that
    # sort(nlist) will be the required vertex sorting list
    nlist = take(vlist, nlist)
@@ -860,7 +860,7 @@ def sort3d (z, npolys) :
                            # numberof(npolys)*nmax > 2e9  
    nmax = n1max * ones (len (nlist), Int)
    vlist = index_sort (nmax * nlist +
-      arange (len (nlist), typecode = Int) % n1max)
+      arange (len (nlist), dtype = Int) % n1max)
    #         primary sort key ^            secondary key  ^
    return [list, vlist]
 

@@ -105,8 +105,8 @@ class Surface :
        if keywords.has_key ( "c" ) :
           self.c = keywords ["c"]
           if self.x is None : # got to dummy up x and y
-             self.x = arange (self.z.shape [0], typecode = Float)
-             self.y = arange (self.z.shape [1], typecode = Float)
+             self.x = arange (self.z.shape [0], dtype = Float)
+             self.y = arange (self.z.shape [1], dtype = Float)
        else :
           self.c = None
        self.generic_init ( keywords )

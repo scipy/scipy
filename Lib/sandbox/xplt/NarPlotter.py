@@ -991,7 +991,7 @@ class Plotter :
        if type (val1) == IntType and type (val2) == IntType :
            narcisse.narsetaii ( "curve_type" , val2 , val1 )
            narcisse.narsetvals ( self._file_descr )
-       elif type (val1) == ArrayType and val1.typecode () == Int \
+       elif type (val1) == ArrayType and val1.dtype == Int \
                                    and type (val2) == IntType :
            for i in range (len (val2)) :
                narcisse.narsetaii ( "curve_type" , val2 , val1 [i] )
@@ -1078,7 +1078,7 @@ class Plotter :
           "You are not connected to Narcisse."
        if type (val1) == IntType and type (val2) == StringType :
            narcisse.narsetaci ( "curve_label" , val2 , val1 )
-       elif type (val1) == ArrayType and val1.typecode () == Int and \
+       elif type (val1) == ArrayType and val1.dtype == Int and \
             type (val2) == ListType and type (val2 [0]) == StringType :
            r = range (len (val1))
            if len (val2) < len (val1) :
@@ -1230,7 +1230,7 @@ class Plotter :
           arg2c = self._colors [0]
           arg2l = self._labels [0]
        else :
-          arg1 = arange (n, typecode = Int)
+          arg1 = arange (n, dtype = Int)
           arg2t = self._types
           arg2c = self._colors
           arg2l = self._labels
