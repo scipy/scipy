@@ -5,9 +5,8 @@
 import os
 import sys
 from distutils import dir_util
-from numpy.distutils.misc_util   import get_path, default_config_dict, dot_join
-from numpy.distutils.misc_util   import dict_append, get_build_temp
-from numpy.distutils.misc_util   import SourceFilter
+from numpy.distutils.misc_util   import get_path, Configuration, dot_join
+from numpy.distutils.misc_util   import dict_append
 from numpy.distutils.core        import Extension
 from numpy.distutils.system_info import get_info
 
@@ -176,16 +175,6 @@ allsource = ["src/play/all/hash.c",
              "src/play/all/bitmrot.c"]
 
 
-def filter_playsource(sources,local_path):
-    if windows:
-        playsource = winsource + allsource
-    elif cygwin:
-        playsource = unixsource + winsource + allsource
-    elif macosx:
-        playsource = unixsource + macsource + allsource
-    else:
-        playsource = unixsource + x11source + allsource
-    return [os.path.join(local_path,n) for n in playsource]
 
 def getallparams(gistpath,local_path,config_path):
     x11_info = get_info('x11')
@@ -246,74 +235,102 @@ def getallparams(gistpath,local_path,config_path):
                extra_compile_args, extra_link_args
     
 
-def configuration(parent_package='',parent_path=None):
+def configuration(parent_package='',top_path=None):
     """
        This will install *.gs and *.gp files to
        'site-packages/scipy/xplt/gistdata' 
     """
     from numpy.distutils.system_info import get_info, dict_append
     from glob import glob
-    local_path = get_path(__name__,parent_path)
-    config_path = os.path.join(get_build_temp(),'config_pygist')
-    dir_util.mkpath(config_path,verbose=1)
+    config = Configuration('xplt',parent_package, top_path)
+    local_path = config.local_path
+    get_build_temp = config.get_build_temp_dir
 
-    conf = config_pygist(local_path,config_path)
-    # Look to see if compiler is set on command line and add it 
-    #    This is repeating code, but I'm not sure how to avoid it
-    #    As this gets run before overall setup does.
-    #    This is needed so that compiler can be over-ridden from the
-    #    platform default in the configuration section of xplt.
-    for arg in sys.argv[1:]:
-        if arg[:11] == '--compiler=':
-            conf.compiler = arg[11:]
-            break
-        if arg[:2] == '-c':
-            conf.compiler = arg[2:]
-            break
-    # Generate Make.cfg and config.h:
-    conf.run()
+    #config_path = os.path.join(get_build_temp(),'config_pygist')
+    #dir_util.mkpath(config_path,verbose=1)
 
-    package = 'xplt'        
-    xplt_path = os.path.join(parent_package,'xplt')
-    config = default_config_dict(package,parent_package)
+    #conf = config_pygist(local_path,config_path)
 
-    all_playsource = glob(os.path.join(local_path,'src','play','*','*.c')) + \
-      glob(os.path.join(local_path,'src','play','*.h'))
-    playsource = SourceFilter(filter_playsource, all_playsource, local_path)
+    #conf.run()
 
-    gistpath = os.path.join(get_python_lib(1),xplt_path,"gistdata")
+    all_playsource = [os.path.join('src','play','*','*.c'),
+                      os.path.join('src','play','*.h')
+                      ]
+
+    gistpath = os.path.join(get_python_lib(1),config.path_in_package,"gistdata")
     gistpath = gistpath.replace("\\",r"\\\\")
 
-    gistC = os.path.join(local_path,'pygist','gistCmodule.c')
-    sources = [os.path.join(local_path,x) for x in gistsource]
-    sources = [gistC] + sources + [playsource]
+    def get_playsource(extension,build_dir):
+        if windows:
+            playsource = winsource + allsource
+        elif cygwin:
+            playsource = unixsource + winsource + allsource
+        elif macosx:
+            playsource = unixsource + macsource + allsource
+        else:
+            playsource = unixsource + x11source + allsource
+        sources = [os.path.join(local_path,n) for n in playsource]
 
-    include_dirs, library_dirs, libraries, \
-                  extra_compile_args, extra_link_args \
-                  = getallparams(gistpath,local_path,config_path)
-    include_dirs.insert(0,os.path.dirname(conf.config_h))
+        config_path = os.path.join(build_dir,'config_pygist')
+        dir_util.mkpath(config_path)
+        conf = config_pygist(local_path,config_path)
+        # Look to see if compiler is set on command line and add it 
+        #    This is repeating code, but I'm not sure how to avoid it
+        #    As this gets run before overall setup does.
+        #    This is needed so that compiler can be over-ridden from the
+        #    platform default in the configuration section of xplt.
+        for arg in sys.argv[1:]:
+            if arg[:11] == '--compiler=':
+                conf.compiler = arg[11:]
+                break
+            if arg[:2] == '-c':
+                conf.compiler = arg[2:]
+                break
+        # Generate Make.cfg and config.h:
+        conf.run()
 
-    ext_arg = {'name':dot_join(parent_package,package,'gistC'),
-               'sources':sources,
-               'include_dirs':include_dirs,
-               'library_dirs':library_dirs,
-               'libraries':libraries,
-               'extra_compile_args':extra_compile_args,
-               'extra_link_args':extra_link_args,
-               'depends':[os.path.join(local_path,'src')]}
+        include_dirs, library_dirs, libraries, \
+                      extra_compile_args, extra_link_args \
+                      = getallparams(gistpath,local_path,config_path)
+        include_dirs.insert(0,os.path.dirname(conf.config_h))
 
-    ext = Extension (**ext_arg)
-    config['ext_modules'].append(ext)
+        extension.include_dirs.extend(include_dirs)
+        extension.library_dirs.extend(library_dirs)
+        extension.libraries.extend(libraries)
+        extension.extra_compile_args.extend(extra_compile_args)
+        extension.extra_link_args.extend(extra_link_args)
+        return sources
+    
+
+
+
+    gistC = os.path.join('pygist','gistCmodule.c')
+    sources = gistsource
+    sources = [gistC] + sources + [get_playsource]
+
+    #include_dirs, library_dirs, libraries, \
+    #              extra_compile_args, extra_link_args \
+    #              = getallparams(gistpath,local_path,config_path)
+    #include_dirs.insert(0,os.path.dirname(conf.config_h))
+
+    config.add_extension('gistC',
+                         sources,
+                         #include_dirs = include_dirs,
+                         #library_dirs = library_dirs,
+                         #libraries = libraries,
+                         #extra_compile_args = extra_compile_args,
+                         #extra_link_args = extra_link_args,
+                         depends = ['src']
+                         )
 
     file_ext = ['*.gs','*.gp', '*.ps', '*.help']
-    xplt_files = [glob(os.path.join(local_path,'gistdata',x)) for x in file_ext]
-    xplt_files += [glob(os.path.join(local_path,'src','g',x)) for x in file_ext]
-    xplt_files = reduce(lambda x,y:x+y,xplt_files,[])
-    data_path = os.path.join(xplt_path,'gistdata')
-    config['data_files'].extend( [(data_path,xplt_files)])
+    xplt_files = [os.path.join('gistdata',x) for x in file_ext]
+    xplt_files += [os.path.join('src','g',x) for x in file_ext]
+
+    config.add_data_files(('gistdata',xplt_files))
 
     return config
 
 if __name__ == '__main__':    
     from numpy.distutils.core import setup
-    setup(**configuration(parent_path=''))
+    setup(**configuration(top_path='').todict())

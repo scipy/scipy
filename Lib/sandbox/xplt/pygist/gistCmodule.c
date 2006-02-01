@@ -186,7 +186,7 @@ extern "C" {
 #include "Python.h"
 #include "pyfpe.h"
 
-#include "scipy/arrayobject.h"
+#include "numpy/arrayobject.h"
 #include "hlevel.h"
 
 #include "pstdlib.h"
@@ -9366,9 +9366,7 @@ void initgistC (void)
     Py_FatalError ("Cannot initialize module gist");
   }
 
-#ifdef import_array
   import_array();
-#endif
 
   {
     /* DHM: in principal, gist might use argv[0] to try to figure out
