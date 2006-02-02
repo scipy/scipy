@@ -72,6 +72,7 @@ from gistC import *
 from pydoc import help
 from shapetest import *
 from numpy import *
+from gistfuncs import *
 
 # Parameters used by pltitle and xytitles
 pltitle_height= 18;
@@ -109,7 +110,7 @@ def pltitle(title):
 
 #  ---------------------------------------------------------------------
 
-def ylimits(ymin='I',ymax='I'): 
+def ylimits(ymin='u',ymax='u'): 
    """
    ylimits(ymin, ymax)
       Set the y-axis plot limits in the current coordinate system to
@@ -123,7 +124,7 @@ def ylimits(ymin='I',ymax='I'):
       I've changed the name to avoid the collision.
       SEE ALSO: plsys, limits, logxy, plg
    """
-   limits('I','I',ymin,ymax)
+   limits('u','u',ymin,ymax)
 
 #  ---------------------------------------------------------------------
 
@@ -499,7 +500,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
           vc [1:n + 1] = z1 + arange (n) * diff
       else :
           raise _ContourError, "Incomprehensible scale parameter."
-   elif type (contours) == ArrayType and contours.dtype == Float :
+   elif type (contours) == ArrayType and contours.dtype.char == Float :
       n = len (contours)
       vc = zeros (n + 2, Float)
       vc [0] = vcmin
@@ -608,7 +609,7 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
          flags = flags & ( ~ 99) # Switch off horizontal tick marks, labels
          style['systems'][0]['ticks']['horizontal']['flags'] = flags
          set_style(style)
-   if color:
+   if color is not None:
       if type(color) != ListType and type(color) != ArrayType:
          color = [color] * n
       for i in range(n):

@@ -29,7 +29,7 @@ def span (lb, ub, n) :
    return map(lambda x, A=a, B=b: A*x+B,range(n))
 
 def a3 (lb, ub, n) :
-   return reshape (array(n*span(lb,ub,n), Float), (n,n))
+   return resize (array(n*span(lb,ub,n), Float), (n,n))
 
 def mag ( *args ) :
    r = 0
@@ -191,7 +191,7 @@ def demo ( ) :
    zz=x+1j*y
    zz=5.*zz/(5.+zz*zz)
    xx=zz.real
-   yy=zz.imaginary
+   yy=zz.imag
    q1 = QuadMesh ( x=array(xx, copy = 1), y=array(yy, copy = 1) )
    g1.new(q1, plotter = pl, titles = "Round mesh with bites out of sides",
       axis_limits = [[min(ravel(xx)),max(ravel(xx))],

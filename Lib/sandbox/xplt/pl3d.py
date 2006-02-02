@@ -8,6 +8,7 @@ from scipy import *
 from shapetest import *
 from yorick import *
 from numpy import *
+from gistfuncs import *
 
 
 #  PL3D.PY

@@ -146,7 +146,7 @@ def grtest():
   z = x+1j*y
   z = 5.*z/(5.+z*z)
   xx = z.real
-  yy = z.imaginary
+  yy = z.imag
   print "Test 15:  Commands: plm(y, x)"
   print "Quadrilateral mesh -- round with bites out of its sides."
   plm (yy, xx)

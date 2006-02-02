@@ -32,13 +32,14 @@ else :
          "environment variable."
 
 print "Test of 2D plotting routine. Type demo () to see the test."
-paws ()
 
 from curve import Curve
 from graph2d import *
 def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")
     return
+
+paws()
  
 def demo () :
     
