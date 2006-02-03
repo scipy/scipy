@@ -485,7 +485,7 @@ def tmax(a,upperlimit,axis=0,inclusive=True):
      is set to None, a limit larger than the max value in the array is
      used.
      """
-     a, axis = asarray(a, axis)
+     a, axis = _chk_asarray(a, axis)
      if inclusive:       upperfcn = less
      else:               upperfcn = less_equal
      if upperlimit is None:
