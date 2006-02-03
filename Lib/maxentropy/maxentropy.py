@@ -16,14 +16,17 @@ ftwmaxent code will not be developed further.
 Change log:
 
 Since 2.0-alpha4:
-    Name change maxent -> maxentropy
+* Name change maxent -> maxentropy
+* Removed online (sequential) estimation of feature expectations and
+  variances.
 
 Since v2.0-alpha3:
 (1) Name change ftwmaxent -> scipy/maxent
 (2) Modification for inclusion in scipy tree.  Broke one big class into
-two smaller classes, one for small models, one for large models.  Here a
-'small' sample space is defined as finite and small enough to iterate
-over in practice, and a 'large' model is one that requires simulation.
+    two smaller classes, one for small models, one for large models.
+    Here a 'small' sample space is defined as finite and small enough to
+    iterate over in practice, and a 'large' model is one that requires
+    simulation.
 (3) Refactoring:
     self.Eapprox -> self.mu
     p_0 -> aux_dist
@@ -60,8 +63,7 @@ from __future__ import division
 import math, types, cPickle
 import numpy
 from scipy import optimize
-#from scipy.maxentropy.maxentutils import logsumexp,sparsefeaturematrix
-#from scipy.maxentropy.maxentutils import innerprod,innerprodtranspose,arrayexp
+from scipy.linalg import norm
 from scipy.maxentropy.maxentutils import *
 
 
@@ -75,20 +77,23 @@ class basemodel(object):
         if self.format == 'base':
             raise ValueError, "this class cannot be instantiated directly"
         self.verbose = False
+        
         self.maxgtol = 1e-5
         # Required tolerance of gradient on average (closeness to zero) for
         # CG optimization:
         self.avegtol = 1e-3
-        # Stop stoch approx if ||theta_k - theta_{k-1}|| < thetatol:
+        # Default tolerance for the other optimization algorithms:
+        self.tol = 1e-4       
+        # Default tolerance for stochastic approximation: stop if
+        # ||theta_k - theta_{k-1}|| < thetatol:
         self.thetatol = 1e-5         
-        # Number of CPUs to use in each computation of the dual and gradient:
-        #self.numprocs = numprocs      
-        # Number of this cpu (from 0 to numprocs-1)
-        #self.myid = myid
         
         self.maxiter = 800
         self.maxfun = 1500
-        self.minL = -100
+        self.mindual = 0        # was -100.  But the entropy dual must be
+                                # non-negative, and it seems any negative
+                                # estimates indicate over-fitting to a
+                                # particular sample
         #self.usecomplexlogs = False
         self.fnevals = 0
         self.gradevals = 0
@@ -233,31 +238,30 @@ class basemodel(object):
         self.logparams()
             
         # Delete theta-specific stuff
-        try:
-            del self.mu
-        except:
-            pass
-        #try:
-        #    del self.logw
-        #except:
-        #    pass
-        #try:
-        #    del self.log_num
-        #except:
-        #    pass
-        try:
-            del self.logZ
-        except:
-            pass
-        try:
-            del self.logZapprox
-        except:
-            pass
+        self.clearcache()
         
         # Reset the sampler cache, so we begin drawing samples from the
         # stored matrix
         # self.resetsampler = True
         
+    def clearcache(self):
+        """Clears the interim results of computations depending on the
+        parameters and the sample.
+        """
+        try:
+            del self.mu
+        except:
+            pass
+        try:
+            del self.logZ               # 'model' objects use this
+        except:
+            pass
+        try:
+            del self.logZapprox         # 'bigmodel' objects use this
+        except:
+            pass
+        
+
     def resetparams(self, numfeatures=None):
         """Resets the parameters theta to zero, clearing variables
         dependent on them.
@@ -277,28 +281,6 @@ class basemodel(object):
         # L-BFGS-B optimizer:
         self.bounds = [(-10., 10.)]*len(self.theta)  
         
-        # Delete theta-specific stuff
-        try:
-            del self.mu
-        except:
-            pass
-        #try:
-        #    del self.logw
-        #except:
-        #    pass
-        #try:
-        #    del self.log_num
-        #except:
-        #    pass
-        try:
-            del self.logZ
-        except:
-            pass
-        try:
-            del self.logZapprox
-        except:
-            pass
-
    
     def setcallbackiter(self, callback):
         """Sets a callback function to be called each new iteration but
@@ -353,11 +335,8 @@ class basemodel(object):
         'filename.freq.pickle', 'filename.(2*freq).pickle', ... each
         'freq' iterations.
         """
-        try:
-            if self.verbose:
-                print "Logging to files " + filename + "*"
-        except AttributeError:
-            pass
+        if self.verbose:
+            print "Logging to files " + filename + "*"
         self.thetalogcounter = 0
         self.thetalogfilename = filename
         self.thetalogfreq = freq
@@ -439,15 +418,12 @@ class model(basemodel):
         # If discrete, use the representation E_q[f(X)] = q . F
         try:
             self.F
-
-            # A pre-computed matrix of features exists
-            q = self.probdistarray()
-            innerproduct = innerprod(self.F, q)
-            
         except AttributeError:
             raise AttributeError, "need a pre-computed feature matrix F"
-            
-        return innerproduct
+ 
+        # A pre-computed matrix of features exists
+        q = self.probdist()
+        return innerprod(self.F, q)
     
 
     def lognormconst(self):
@@ -486,11 +462,11 @@ class model(basemodel):
         """
         return math.exp(self.lognormconst())
 
-    def probdistarray(self):
-        """Like the probdist function but returns an array indexed
-        by integers instead of a sparse vector indexed by hashable
-        objects.  Faster and more robust.  Requires that samplespace
-        be stored as a list or an array.
+    def probdist(self):
+        """Returns an array indexed by integers representing the pmf
+        values of each point in the (finite, discrete) sample space under
+        the current model (with the current parameter vector self.theta).
+        Requires that the samplespace be stored as a list or an array.
         """
         samplespace = self.samplespace
         
@@ -508,8 +484,6 @@ class model(basemodel):
             except AttributeError:
                 # Compute the norm constant (quickly!)
                 self.logZ = logsumexp(log_p_dot)
-            else:
-                logsumexp_p_dot = self.logZ
             
             p = arrayexp(log_p_dot - self.logZ)
             
@@ -537,8 +511,12 @@ class model(basemodel):
         except AttributeError:
             logZ = self.lognormconst()
         
-        if f==None:
-            f = self.f
+        if f is None:
+            try:
+                f = self.f
+            except AttributeError:
+                raise AttributeError, "either pass a list f of feature" \
+                           " functions or set this as a member variable self.f"
         
         def p(x):
             f_x = numpy.array([f[i](x) for i in range(len(f))], float)
@@ -558,7 +536,7 @@ class model(basemodel):
         """
         
         logZ = self.lognormconst()
-        return logZ - numpy.dot(K, self.theta)
+        return logZ - numpy.dot(self.theta, K)
 
 
     def _entropydual(self, theta, K):
@@ -572,6 +550,11 @@ class model(basemodel):
         constraints.
         """
 
+        self.fnevals += 1
+        
+        if self.verbose:
+            print "Function eval #" + str(self.fnevals)
+        
         oldtheta = self.theta
         if numpy.any(oldtheta != theta):
             self.setparams(theta)
@@ -583,15 +566,15 @@ class model(basemodel):
         # where K_i = empirical expectation E_p_tilde f_i (X) = sum_x {p(x)f_i(x)}.
         
         logZ = self.lognormconst()
-        L = logZ - numpy.dot(K, self.theta)
+        L = logZ - numpy.dot(self.theta, K)
         
         # (We don't reset theta to its prior value.)
         
         if self.verbose:
             print "Entropy dual is: " + str(L)
         
-        if L < self.minL:
-            raise ValueError, "the dual is below the threshold minL and may " \
+        if L < self.mindual:
+            raise ValueError, "the dual is below the threshold mindual and may " \
                     "be diverging to -inf.  Fix the constraints or lower the "\
                     "threshold."
 
@@ -605,6 +588,11 @@ class model(basemodel):
         This function is called by the optimization routines.
         """
         
+        self.gradevals += 1
+        
+        if self.verbose:
+            print "Grad eval #" + str(self.gradevals)
+        
         oldtheta = self.theta
         if numpy.any(oldtheta != theta):
             self.setparams(theta)
@@ -612,9 +600,6 @@ class model(basemodel):
         negG = self.expectations() - K
         
         # (We don't reset theta to its prior value.)
-        
-        if self.verbose:
-            print "Computed the gradient."
         
         return negG
  
@@ -666,10 +651,8 @@ class bigmodel(basemodel):
         super(bigmodel, self).__init__()
         
         # Number of sample matrices to generate and use to estimate E and logZ
-        self.matrixtrials = 1      
-        
-        self.tol = 1e-4
-        
+        self.matrixtrials = 1 
+
         # Most of the attributes below affect only the stochastic 
         # approximation procedure.  They should perhaps be removed, and made
         # arguments of stochapprox() instead.
@@ -777,36 +760,28 @@ class bigmodel(basemodel):
         """
 
         if self.verbose >= 2:
-            print "(sampling " + str(n) + " observations ...)"
+            print "(sampling)"
 
         (self.sampleF, self.samplelogprobs) = self.sampleFgen.next()
 
+        # Check whether the number m of features is correct
         try:
+            # The number of features is defined as the length of
+            # self.theta, so first check if it exists:
             self.theta
             m = self.numconstraints()
         except AttributeError:
             (m, n) = self.sampleF.shape
-            if self.numsamples:
-                assert n == self.numsamples
-            else:
-                self.numsamples = n
             self.resetparams(m)
         else:
-            if (m, self.numsamples) != self.sampleF.shape:
+            if self.sampleF.shape[0] != m:
                 raise ValueError, "the sample feature generator returned" \
-                        " a feature matrix of incorrect dimensions"
+                                  " a feature matrix of incorrect dimensions"
         if self.verbose >= 2:
-            print "(done.)"
+            print "(done)"
 
         # Now clear the temporary variables that are no longer correct for this sample
-        try:
-            del self.mu
-        except:
-            pass
-        try:
-            del self.logZapprox
-        except:
-            pass
+        self.clearcache()
 
     
     def estimate(self):
@@ -863,11 +838,9 @@ class bigmodel(basemodel):
             print "(estimating dual and gradient ...)"
 
         if not self.usesamplematrix:
-            if self.verbose >= 2:
-                print "(estimating sequentially ...)"
-            (self.mu, self.varapprox, self.logZapprox, n) = \
-                    self.onlineestimates()
-            return
+            raise NotImplementedError, "sequential estimation is not" \
+                    " supported. Either use sample path optimization (set" \
+                    " usesamplematrix=True) or stochastic approximation"
     
         # Hereafter is the matrix code
 
@@ -920,7 +893,7 @@ class bigmodel(basemodel):
             self.logZapprox = logsumexp(logZs) - math.log(ttrials)
             self.logZsapprox = logZs
             #logstdevZ = 0.5*(-math.log(n-1) + logsumexp([2.*logdiffexp(logZ_k, self.logZapprox) for logZ_k in logZs]))
-            stdevlogZ = var(logZs)**0.5
+            stdevlogZ = numpy.array(logZs).std()
             Etemp = numpy.array(Es)
             self.varE = columnvariances(Etemp)
             self.mu = columnmeans(Etemp)
@@ -951,9 +924,9 @@ class bigmodel(basemodel):
         
         L = self.entropydualapprox(K)
         
-        if L < self.minL:
+        if L < self.mindual:
             raise DivergenceError, \
-              "the dual is below the threshold minL and may be diverging" \
+              "the dual is below the threshold mindual and may be diverging" \
               " to -inf.  Fix the constraints or lower the"\
               " threshold."
         
@@ -967,6 +940,7 @@ class bigmodel(basemodel):
     def dualapprox(self, K):
         """An alias for entropydualapprox()
         """
+        return self.entropydualapprox(K)
     
     def entropydualapprox(self, K):
         """This function approximates the entropy of the model p_theta
@@ -994,7 +968,7 @@ class bigmodel(basemodel):
         expectation E_p_tilde f_i (X) = sum_x {p(x) f_i(x)}.
         """
         
-        L = self.lognormconstapprox() - numpy.dot(K, self.theta)
+        L = self.lognormconstapprox() - numpy.dot(self.theta, K)
 
         return L    
     
@@ -1063,18 +1037,20 @@ class bigmodel(basemodel):
         # 1. First compute log(p_dot(x)) = theta . f(x)
         
         T = numpy.asarray(self.theta)
-        fx = sparsefeatures(self.f, x)
+        try:
+            f = self.f
+        except AttributeError:
+            raise AttributeError, "first set the member variable" \
+                    " self.f to a list of feature functions"
+        
+        fx = sparsefeatures(f, x, 'csr_matrix')
         log_p_dot = dotprod(fx, T)
         
         # 2. Now compute log q(x) = log(p_dot(x)/Z) = log p_dot(x) - log(Z)
-        try:
-            return log_p_dot - self.logZapprox
-        except AttributeError:
-            return log_p_dot - self.lognormconstapprox()
+        return log_p_dot - self.lognormconstapprox()
      
     
-    def setsampleFgen(self, sampler, sequential=False, matrixsize=None, \
-                      sparse=True, staticsample=True):  
+    def setsampleFgen(self, sampler, staticsample=True):
         """Initializes the Monte Carlo sampler to use the supplied
         generator of samples' features and log probabilities.  This is an
         alternative to defining a sampler in terms of a (fixed size)
@@ -1093,9 +1069,9 @@ class bigmodel(basemodel):
         of feature matrices, each of which stays constant over all
         iterations.
                
-        We now insist that sampleFgen.next() return batches of size
-        matrixsize to avoid overhead in extra function calls and memory
-        copying (and extra code).
+        We now insist that sampleFgen.next() return the entire sample
+        feature matrix to be used each iteration to avoid overhead in
+        extra function calls and memory copying (and extra code).
         
         An alternative was to supply a list of samplers,
         sampler=[sampler0, sampler1, ..., sampler_{m-1}, samplerZ], one
@@ -1127,11 +1103,10 @@ class bigmodel(basemodel):
         size.)
         """
         
-        if not sequential:
-            self.usesamplematrix = True
-            self.numsamples = matrixsize
-            self.logZsapprox = []
-            self.Esapprox = []
+        # if not sequential:
+        self.usesamplematrix = True
+        self.logZsapprox = []
+        self.Esapprox = []
 
         assert type(sampler) is types.GeneratorType
         self.sampleFgen = sampler
@@ -1146,18 +1121,40 @@ class bigmodel(basemodel):
             p_theta(x) = exp(theta.f(x) - log Z)
         """
         
-        try:
-            logZ = self.logZapprox
-        except AttributeError:
-            logZ = self.lognormconstapprox()
+        logZ = self.lognormconstapprox()
         
         f = self.f
         def p(x):
-            f_x = numpy.empty(len(f), float)
-            for i in range(len(f)):
-                f_x[i] = f[i](x)
-            return math.exp(numpy.dot(self.theta, f_x) - logZ)
+            try:
+                len_x = len(x)
+            except TypeError:
+                len_x = 1
+            f_x = numpy.empty((len(f),len(x)), float)
+            for i, f_i in enumerate(f):
+                f_x[i] = f_i(x)
+            return numpy.exp(numpy.dot(self.theta, f_x) - logZ)
+        return p
+
+
+    def logpdfapprox(self):
+        """Returns the log of the approximate density p_theta(x) as a
+        function on the model's sample space.  The returned function logp
+        is defined as:
+            logp(x) = theta.f(x) - log Z
+        """
         
+        logZ = self.lognormconstapprox()
+        
+        f = self.f
+        def p(x):
+            try:
+                len_x = len(x)
+            except TypeError:
+                len_x = 1
+            f_x = numpy.empty((len(f),len(x)), float)
+            for i, f_i in enumerate(f):
+                f_x[i] = f_i(x)
+            return numpy.exp(numpy.dot(self.theta, f_x) - logZ)
         return p
 
 

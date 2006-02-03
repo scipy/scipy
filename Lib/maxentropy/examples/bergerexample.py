@@ -53,7 +53,7 @@ model.fit(K)
 # Output the distribution
 print "\nFitted model parameters are:\n" + str(model.theta)
 print "\nFitted distribution is:"
-p = model.probdistarray()
+p = model.probdist()
 for j in range(len(model.samplespace)):
     x = model.samplespace[j]
     print ("\tx = %-15s" %(x + ":",) + " p(x) = "+str(p[j])).encode('utf-8')

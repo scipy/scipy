@@ -22,18 +22,14 @@
     large discrete sample space.
 """
 
-__author__ =  'Ed Schofield'
-__version__=  '2.0-beta1'
+__author__  =  'Ed Schofield'
+__version__ =  '2.0-beta1'
 
 
-import math, sys
-import scipy
+import sys
 from scipy import maxentropy
-from scipy.maxentropy.maxentutils import *
-from scipy import montecarlo
-#from scipy.sandbox import maxentropy
-#from scipy.sandbox.maxentropy.maxentutils import *
-#from scipy.sandbox import montecarlo
+#from scipy import montecarlo
+from scipy.sandbox import montecarlo
 
 try:
     algorithm = sys.argv[1]
@@ -50,10 +46,10 @@ def f0(x):
     return x in samplespace
 
 def f1(x):
-    return x=='dans' or x=='en'
+    return x == 'dans' or x == 'en'
 
 def f2(x):
-    return x=='dans' or x==a_grave
+    return x == 'dans' or x == a_grave
 
 f = [f0, f1, f2]
 
@@ -69,7 +65,7 @@ for e in samplespace:
 
 sampler = montecarlo.dictsampler(samplefreq)
 
-n = 10**5
+n = 10**4
 m = 3
 
 # Now create a generator of features of random points
@@ -77,15 +73,14 @@ m = 3
 SPARSEFORMAT = 'csc_matrix'
 # Could also specify 'csr_matrix', 'dok_matrix', or (PySparse's) 'll_mat'
 
-def sampleFgen(sampler,f):
-    logprobs = numpy.empty(n, float)
+def sampleFgen(sampler, f, n):
     while True:
         xs, logprobs = sampler.sample(n, return_probs=2)
         F = maxentropy.sparsefeaturematrix(f, xs, SPARSEFORMAT)
         yield F, logprobs
 
 print "Generating an initial sample ..."
-model.setsampleFgen(sampleFgen(sampler, f), sequential=False, matrixsize=n, sparse=False)
+model.setsampleFgen(sampleFgen(sampler, f, n))
 
 model.verbose = True
 
@@ -98,7 +93,7 @@ print "\nFitted model parameters are:\n" + str(model.theta)
 smallmodel = maxentropy.model(f, samplespace)
 smallmodel.setparams(model.theta)
 print "\nFitted distribution is:"
-p = smallmodel.probdistarray()
+p = smallmodel.probdist()
 for j in range(len(smallmodel.samplespace)):
     x = smallmodel.samplespace[j]
     print ("\tx = %-15s" %(x + ":",) + " p(x) = "+str(p[j])).encode('utf-8')
@@ -116,7 +111,9 @@ print ("\tp['dans'] + p['" + a_grave + "']  = " + \
         str(p[0]+p[2])).encode('utf-8')
 # (Or substitute "x.encode('latin-1')" if you have a primitive terminal.)
 
-print "\nEstimated error in constraint satisfaction (should be close to 0):\n" + str(abs(model.expectationsapprox() - K))
-print "\nTrue error in constraint satisfaction (should be close to 0):\n" + str(abs(smallmodel.expectations() - K))
+print "\nEstimated error in constraint satisfaction (should be close to 0):\n" \
+        + str(abs(model.expectationsapprox() - K))
+print "\nTrue error in constraint satisfaction (should be close to 0):\n" + \
+        str(abs(smallmodel.expectations() - K))
 
 

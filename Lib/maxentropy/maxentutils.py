@@ -199,10 +199,34 @@ def densefeaturematrix(f, sample):
     return F
 
 
-def sparsefeaturematrix(f, sample, format='ll_mat'):
+def sparsefeatures(f, x, format='csc_matrix'):
+    """ Returns an Mx1 sparse matrix of non-zero evaluations of the
+    scalar functions f_1,...,f_M in the list f at the point x.
+    """
+    M = len(f)
+    if format == 'll_mat':
+        sparsef = spmatrix.ll_mat(M, 1)
+    elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
+        sparsef = scipy.sparse.dok_matrix((M, 1))
+    
+    for i in xrange(M):
+        f_i_x = f[i](x)
+        if f_i_x != 0:
+            sparsef[i, 0] = f_i_x
+    
+    if format == 'csc_matrix':
+        print "Converting to CSC matrix ..."
+        return sparsef.tocsc()
+    elif format == 'csr_matrix':
+        print "Converting to CSR matrix ..."
+        return sparsef.tocsr()
+    else:
+        return sparsef
+
+def sparsefeaturematrix(f, sample, format='csc_matrix'):
     """Returns an MxN sparse matrix of non-zero evaluations of the scalar
-    or vector functions fi in the list f at the points x_1,...,x_N in the
-    sequence 'sample'.
+    or vector functions f_1,...,f_M in the list f at the points
+    x_1,...,x_N in the sequence 'sample'.
     """
 
     M = len(f)
@@ -212,10 +236,9 @@ def sparsefeaturematrix(f, sample, format='ll_mat'):
         sparseF = spmatrix.ll_mat(M, N)
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
         sparseF = sparse.dok_matrix((M,N))
-        sparseF._validate = False               # speed hack
     else:
         raise ValueError, "sparse matrix format not recognized"
-
+    
     for i in xrange(M):
         f_i = f[i]
         for j in xrange(N):
@@ -223,25 +246,7 @@ def sparsefeaturematrix(f, sample, format='ll_mat'):
             f_i_x = f_i(x)
             if f_i_x != 0:
                 sparseF[i,j] = f_i_x
-
-     #for j in xrange(N):
-     #   x = sample[j]
-     #   for i in xrange(M):
-     #       f_i_x = f[i](x)
-     #       if f_i_x != 0:
-     #           sparseF[j,i] = f_i_x
-                    
-    #except TypeError:
-    #    raise
-    #    # The error was (probably) because some fi are not scalar functions
-    #    # but vectors.
-    #    
-    #    for i in xrange(M):
-    #        sparseF_i = f[i](sample)
-    #        for j in range(len(sparseF_i)):
-    #            if sparseF_i[j]:
-    #                sparseF[j, i] = sparseF_i[j]
-        
+    
     if format == 'csc_matrix':
         return sparseF.tocsc()
     elif format == 'csr_matrix':
@@ -376,21 +381,44 @@ def innerprodtranspose(A,v):
 
 
 
+def rowmeans(A):
+    """This is a wrapper for general dense or sparse dot products.  It is
+    only necessary as a common interface for supporting ndarray,
+    scipy spmatrix, and PySparse arrays.
+
+    Returns a dense (Mx1) vector representing the mean of the rows of A,
+    which be an MxN sparse or dense matrix.
+    
+    >>> a = numpy.array([[1,2],[3,4]], float)
+    >>> rowmeans(a)
+    array([ 1.5,  3.5])
+    """
+    if type(A) is numpy.ndarray:
+        return A.mean(1)
+    else:
+        # Assume it's sparse
+        try:
+            n = A.shape[1]
+        except AttributeError:
+            raise TypeError, \
+                    "rowmeans() only works with sparse and dense arrays"
+        rowsum = innerprod(A, numpy.ones(n, float))
+        return rowsum / float(n)
+
 def columnmeans(A):
-    """This is a wrapper for general dense or sparse dot products.
-    It is not necessary except as a common interface for supporting
-    ndarray, scipy spmatrix, and PySparse arrays.
+    """This is a wrapper for general dense or sparse dot products.  It is
+    only necessary as a common interface for supporting ndarray,
+    scipy spmatrix, and PySparse arrays.
 
     Returns a dense (1xN) vector with the column averages of A, which can
-    be an MxN sparse or dense matrix or a list of M (1xN) sparse
-    matrices.
+    be an MxN sparse or dense matrix.
     
     >>> a = numpy.array([[1,2],[3,4]],'d')
     >>> columnmeans(a)
     array([ 2.,  3.])
     """
     if type(A) is numpy.ndarray:
-        return numpy.average(A)
+        return A.mean(0)
     else:
         # Assume it's sparse
         try:
@@ -424,39 +452,6 @@ def columnvariances(A):
                     "columnvariances() only works with sparse and dense arrays"
         means = columnmeans(A)
         return columnmeans((A-means)**2) * (m/(m-1.0))
-
-def var(A):
-    """Returns an unbiased estimator of the variance of a (1xN) vector or
-    list.
-
-    Examples:
-    >>> A = numpy.array([1.,1.])
-    >>> var(A) == 0
-    True
-    >>> B = numpy.array([1.])
-    >>> var(B) == 0
-    True
-    >>> C = numpy.array([1.,2.,3.])
-    >>> var(C) == 1
-    True
-    >>> D = numpy.array(range(100))
-    >>> abs(var(D) - (841+2./3)) < 1e-10
-    True
-    >>> E = range(5)   # test with a list
-    >>> var(E)
-    2.5
-    """
-    try:
-        mean = numpy.average(A)
-        return sum((A-mean)**2) / (A.shape[0] - 1.0)
-    except ZeroDivisionError:
-        # A has only one element
-        return 0.0
-    except AttributeError:
-        # Perhaps A is a list, not an array
-        return sum((numpy.array(A)-mean)**2) / (len(A) - 1.0)
-
-
 
 class Error(Exception):
     """Base class for exceptions in this module."""
