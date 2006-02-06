@@ -103,6 +103,10 @@ static PyObject *
 
   if ((arr = (PyArrayObject *)PyArray_FromDims(1,(int*)&n,out_type)) == NULL)
     return NULL;
+
+  if (arr->descr->elsize == 0) {
+	  PYSETERROR("Does not support variable types.");
+  }
   
       /* Read the data into the array from the file */
   if (out_type == read_type) {
@@ -112,6 +116,9 @@ static PyObject *
   else {                    /* Alocate a storage buffer for data read in */
     indescr = PyArray_DescrFromType((int ) read_type);
     if (indescr == NULL) goto fail;
+    if (indescr->elsize == 0) {
+	    PYSETERROR("Does not support variable types.");
+    }
     if (PyTypeNum_ISEXTENDED(indescr->type_num)) {
 	    PyErr_SetString(PyExc_ValueError, 
 			    "Does not support extended types.");

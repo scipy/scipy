@@ -24,8 +24,10 @@ __all__ = ['fopen','loadmat','savemat']
 def getsize_type(mtype):
     if mtype in ['B','uchar','byte','unsigned char','integer*1', 'int8']:
         mtype = 'B'
-    elif mtype in ['h','schar', 'signed char']:
+    elif mtype in ['S1', 'char', 'char*1']:
         mtype = 'B'
+    elif mtype in ['h','schar', 'signed char']:
+        mtype = 'b'
     elif mtype in ['h','short','int16','integer*2']:
         mtype = 'h'
     elif mtype in ['H','ushort','uint16','unsigned short']:
