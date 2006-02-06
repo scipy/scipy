@@ -15,7 +15,7 @@ import scipy
 from scipy.stats import mean
 import numpy as Numeric
 from numpy import array, arange, where, sqrt, rank, zeros, NewAxis, \
-    argmax, product, cos, pi
+    argmax, product, cos, pi, exp
 from scipy.misc import factorial
 
 _modedict = {'valid':0, 'same':1, 'full':2}
