@@ -187,7 +187,7 @@ static PyObject* getMesh(int npoints, double *x, double *y)
     reorder_edges(npoints, numtri, x, y, edge_db_ptr, tri_edges_ptr, 
         tri_nbrs_ptr);
 
-    temp = PyTuple_Pack(4, vertices, edge_db, tri_edges, tri_nbrs);
+    temp = Py_BuildValue("(OOOO)", vertices, edge_db, tri_edges, tri_nbrs);
     if (!temp) goto fail;
 
     Py_DECREF(vertices);
