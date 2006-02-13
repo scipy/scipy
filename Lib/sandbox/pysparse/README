@@ -2,13 +2,13 @@ Overview
 --------
 
 This is a patched version of Roman Geus's PySparse that is compatible with
-the new scipy core.
+numpy.
 
 Currently manipulating the basic sparse matrix types seems to work but the
 linear solvers are untested.
 
 Current sparse matrix development in SciPy focuses on the sparse matrix module
-under Lib/sparse.  This code is in Python, with Fortran back-end for
+under Lib/sparse.  This code is in Python, with a Fortran back-end for
 manipulation of CSC, CSR, and COO matrices.  The purpose of having PySparse
 in the tree is primarily to swipe some of its more useful features (perhaps
 like the ll_mat class?)

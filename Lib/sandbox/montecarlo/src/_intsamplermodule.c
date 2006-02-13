@@ -163,7 +163,7 @@ static char intsampler__doc__[] = \
   "A module allowing fast sampling from a given discrete distribution.\n"\
   "\n"\
   "Use the syntax:\n"\
-  ">>> s = intsampler(table)\n"\
+  ">>> s = _intsampler(table)\n"\
   "to create an object for sampling from a distribution with probability\n"\
   "mass function given by 'table', where:\n"\
   "\n"\
@@ -196,7 +196,7 @@ static PyMethodDef IntSampler_methods[] = {
 static PyTypeObject IntSamplerType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "intsampler.intsampler",             /*tp_name*/
+    "_intsampler._intsampler",             /*tp_name*/
     sizeof(IntSampler), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)IntSampler_destroy,  /*tp_dealloc*/
@@ -241,7 +241,7 @@ static PyTypeObject IntSamplerType = {
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
-initintsampler(void)
+init_intsampler(void)
 {
     PyObject *m, *d, *s;
     
@@ -255,7 +255,7 @@ initintsampler(void)
         return;
 
     /* Create the module and add the functions */
-    m = Py_InitModule3("intsampler", module_methods, intsampler__doc__); 
+    m = Py_InitModule3("_intsampler", module_methods, intsampler__doc__); 
     
     if (m == NULL)
         return;
@@ -263,7 +263,7 @@ initintsampler(void)
     // /* Add our class */
     // PyStructSequence_InitType(&SamplerType, &sampler_type_desc);
     Py_INCREF(&IntSamplerType);
-    PyModule_AddObject(m, "intsampler", (PyObject*) &IntSamplerType);
+    PyModule_AddObject(m, "_intsampler", (PyObject*) &IntSamplerType);
 
 
     /* Add some symbolic constants to the module */
@@ -275,7 +275,7 @@ initintsampler(void)
 
   /* Check for errors */
   if (PyErr_Occurred())
-    Py_FatalError("can't initialize module intsampler");
+    Py_FatalError("can't initialize module _intsampler");
 }
 
 

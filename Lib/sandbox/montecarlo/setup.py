@@ -7,10 +7,10 @@ def configuration(parent_package='', top_path=None):
 
     config = Configuration('montecarlo', parent_package, top_path)
 
-    config.add_extension('intsampler',
+    config.add_extension('_intsampler',
                          include_dirs = [numpy.get_numpy_include()],
                          sources = [join('src',f) for f in
-                         ['intsamplermodule.c', 'sampler5tbl.c']] )
+                         ['_intsamplermodule.c', 'sampler5tbl.c']] )
 
     config.add_data_dir('tests')
     config.add_data_dir('examples')
