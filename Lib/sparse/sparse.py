@@ -1703,8 +1703,8 @@ class coo_matrix(spmatrix):
             else:
                 ij = ij_in
             if dims is None:
-                M = int(amax(ij[0]))
-                N = int(amax(ij[1]))
+                M = int(amax(ij[0])) + 1
+                N = int(amax(ij[1])) + 1
                 self.shape = (M, N)
             else:
                 # Use 2 steps to ensure dims has length 2.
@@ -1718,8 +1718,9 @@ class coo_matrix(spmatrix):
                 nzmax = len(self.data)
             self.nzmax = nzmax
             self._check()
-        except Exception, e:
-            raise e, "invalid input format"
+        except Exception:
+            print "invalid input format"
+            raise
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
