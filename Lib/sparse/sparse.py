@@ -6,11 +6,10 @@ Modified by Ed Schofield and Robert Cimrman.
 """
 
 from numpy import *
-import types
+import numpy
+import types, itertools, operator
 import sparsetools
 import _superlu
-import sys
-import itertools
 
 def resize1d(arr, newlen):
     old = len(arr)
@@ -185,6 +184,11 @@ class spmatrix:
         csc = self.tocsc()
         return csc * other
 
+    def __div__(self, other):
+        if isscalar(other):
+            return self * (1./other)
+        else:
+            raise NotImplementedError, "sparse matrix division not yet supported"
     def __pow__(self, other):
         csc = self.tocsc()
         return csc ** other            
@@ -228,10 +232,6 @@ class spmatrix:
     # Renamed conjtranspose() -> getH() for compatibility with dense matrices
     def getH(self):
         return self.transpose().conj()
-        # csc = self.tocsc()
-        # new = csc.transpose()
-        # new.data = conj(new.data)
-        # return new
  
     def _real(self):
         csc = self.tocsc()
@@ -253,25 +253,26 @@ class spmatrix:
         A.transpose() * other.
         """
         M, K1 = self.shape
+        #other = asarray(other)
         try:
+            other.shape
+        except AttributeError:
+            other = asarray(other)
+        if len(other.shape) == 2:
             K2, N = other.shape
-        except (AttributeError, TypeError):
-            # Not sparse or dense.  Interpret it as a sequence.
-            try:
-                return self.matvec(asarray(other))
-            except:
-                raise TypeError, "x.dot(y): y must be matrix, vector, or seq"
-        except ValueError:
-            # Assume it's a rank-1 array
-            K2 = other.shape[0]
-            N = 1
-        
-        if N == 1:
+        elif len(other.shape) == 1:
+            K2, N = other.shape[0], 1
+        else:
+            raise ValueError, "could not interpret dimensions"
+                
+        # Special case for vectors for efficiency
+        if N == 1 or K2 == 1:
             return self.matvec(other)
         else:
             if K1 != K2:
                 raise ValueError, "dimension mismatch"
             return self.matmat(other)
+
 
     def matmat(self, other):
         csc = self.tocsc()
@@ -314,25 +315,25 @@ class spmatrix:
         csc = self.tocsc()
         return csc.copy()
 
-    def save( self, file_name, format = '%d %d %f\n' ):
+    def save(self, file_name, format = '%d %d %f\n'):
         try:
-            fd = open( file_name, 'w' )
+            fd = open(file_name, 'w')
         except Exception, e:
             raise e, file_name
         
-        fd.write( '%d %d\n' % self.shape )
-        fd.write( '%d\n' % self.size )
-        for ii in xrange( self.size ):
-            ir, ic = self.rowcol( ii )
-            data = self.getdata( ii )
-            fd.write( format % (ir, ic, data) )
+        fd.write('%d %d\n' % self.shape)
+        fd.write('%d\n' % self.size)
+        for ii in xrange(self.size):
+            ir, ic = self.rowcol(ii)
+            data = self.getdata(ii)
+            fd.write(format % (ir, ic, data))
         fd.close()
         
 class csc_matrix(spmatrix):
     """ Compressed sparse column matrix
         This can be instantiated in several ways:
           - csc_matrix(d)
-            with a dense matrix d
+            with a dense array or matrix d
 
           - csc_matrix(s)
             with another sparse matrix s (sugar for .tocsc())
@@ -348,19 +349,19 @@ class csc_matrix(spmatrix):
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
     """
-    def __init__(self, arg1, dims=(None,None), nzmax=100, dtype='d', copy=False):
+    def __init__(self, arg1, dims=None, nzmax=100, dtype='d', copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
-            # Convert the dense matrix arg1 to CSC format
+            # Convert the dense array or matrix arg1 to CSC format
             if rank(arg1) == 2:
-                s = asarray(arg1)
+                s = arg1
                 if s.dtype.char not in 'fdFD':
                     # Use a double array as the source (but leave it alone)
                     s = s*1.0            
                 if (rank(s) == 2):
                     M, N = s.shape
-                    dtype = s.dtype.char
-                    func = getattr(sparsetools, _transtabl[dtype]+'fulltocsc')
+                    dtype = s.dtype
+                    func = getattr(sparsetools, _transtabl[dtype.char]+'fulltocsc')
                     ierr = irow = jcol = 0
                     nnz = sum(ravel(s != 0.0))
                     a = zeros((nnz,), dtype)
@@ -425,13 +426,7 @@ class csc_matrix(spmatrix):
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
                     assert isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s), 2))
-                    temp = coo_matrix( s, ij, dims=dims, nzmax=nzmax, \
-                            dtype=dtype).tocsc()
-                    self.shape = temp.shape
-                    self.data = temp.data
-                    self.rowind = temp.rowind
-                    self.indptr = temp.indptr
-                except:
+                except (AssertionError, TypeError, ValueError):
                     try:
                         # Try interpreting it as (data, rowind, indptr)
                         (s, rowind, indptr) = arg1
@@ -445,6 +440,14 @@ class csc_matrix(spmatrix):
                             self.indptr = asarray(indptr)
                     except:
                         raise ValueError, "unrecognized form for csc_matrix constructor"
+                else:
+                    # (data, ij) format
+                    temp = coo_matrix(s, ij, dims=dims, nzmax=nzmax, \
+                            dtype=dtype).tocsc()
+                    self.shape = temp.shape
+                    self.data = temp.data
+                    self.rowind = temp.rowind
+                    self.indptr = temp.indptr
         else:
             raise ValueError, "unrecognized form for csc_matrix constructor"
 
@@ -567,8 +570,12 @@ class csc_matrix(spmatrix):
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
-            other = asarray(other)
-            return self.transpose().dot(other.transpose()).transpose()
+            # Don't use asarray unless we have to -- it might be sparse!
+            try:
+                tr = other.transpose()
+            except AttributeError:
+                tr = asarray(other).transpose()
+            return self.transpose().dot(tr).transpose()
 
     def __neg__(self):
         new = self.copy()
@@ -628,8 +635,10 @@ class csc_matrix(spmatrix):
 
     def matvec(self, other):
         if isdense(other):
-            if (rank(other) != 1) or (len(other) != self.shape[1]):
-                raise ValueError, "dimension mismatch"
+            # The following check is too harsh -- it prevents a column vector
+            # from being created on-the-fly like dense matrix objects can.
+            #if (rank(other) != 1) or (len(other) != self.shape[1]):
+            #    raise ValueError, "dimension mismatch"
             func = getattr(sparsetools, self.ftype+'cscmux')
             y = func(self.data, self.rowind, self.indptr, other, self.shape[0])
             return y
@@ -640,8 +649,6 @@ class csc_matrix(spmatrix):
 
     def rmatvec(self, other, conjugate=True):
         if isdense(other):
-            if (rank(other) != 1) or (len(other) != self.shape[0]):
-                raise ValueError, "dimension mismatch"
             func = getattr(sparsetools, self.ftype+'csrmux')
             if conjugate:
                 cd = conj(self.data)
@@ -705,7 +712,7 @@ class csc_matrix(spmatrix):
             return csc_matrix((c, rowc, ptrc), dims=(M, N))
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
-            # of sparse * dense matrix multiplication!
+            # of sparse * dense multiplication!
             return self.matmat(csc_matrix(other))
         else:
             raise TypeError, "need a dense or sparse matrix"
@@ -718,7 +725,7 @@ class csc_matrix(spmatrix):
             func = getattr(sparsetools, self.ftype+'cscgetel')
             M, N = self.shape
             if not (0<=row<M) or not (0<=col<N):
-                raise KeyError, "index out of bounds"
+                raise IndexError, "index out of bounds"
             ind, val = func(self.data, self.rowind, self.indptr, row, col)
             return val
         #elif isinstance(key, type(3)):
@@ -757,7 +764,7 @@ class csc_matrix(spmatrix):
             if (key < self.nnz):
                 self.data[key] = val
             else:
-                raise KeyError, "key out of bounds"
+                raise IndexError, "index out of bounds"
         else:
             raise NotImplementedError
             
@@ -815,7 +822,7 @@ class csr_matrix(spmatrix):
     """ Compressed sparse row matrix
         This can be instantiated in several ways:
           - csr_matrix(d)
-            with a dense matrix d
+            with a dense array or matrix d
 
           - csr_matrix(s)
              with another sparse matrix s (sugar for .tocsr())
@@ -831,12 +838,12 @@ class csr_matrix(spmatrix):
           - csr_matrix((data, col, ptr), [(M, N)])
              standard CSR representation
     """
-    def __init__(self, arg1, dims=(None,None), nzmax=100, dtype='d', copy=False):
+    def __init__(self, arg1, dims=None, nzmax=100, dtype='d', copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
-            # Convert the dense matrix arg1 to CSR format
+            # Convert the dense array or matrix arg1 to CSR format
             if rank(arg1) == 2:
-                s = asarray(arg1)
+                s = arg1
                 ocsc = csc_matrix(transpose(s))
                 self.colind = ocsc.rowind
                 self.indptr = ocsc.indptr
@@ -885,16 +892,7 @@ class csr_matrix(spmatrix):
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
                     assert isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s), 2))
-                    ijnew = ij.copy()
-                    ijnew[:, 0] = ij[:, 1]
-                    ijnew[:, 1] = ij[:, 0]
-                    temp = coo_matrix(s, ijnew, dims=dims, nzmax=nzmax,
-                                      dtype=dtype).tocsr()
-                    self.shape = temp.shape
-                    self.data = temp.data
-                    self.colind = temp.colind
-                    self.indptr = temp.indptr
-                except:
+                except (AssertionError, TypeError, ValueError, AttributeError):
                     try:
                         # Try interpreting it as (data, colind, indptr)
                         (s, colind, indptr) = arg1
@@ -908,6 +906,17 @@ class csr_matrix(spmatrix):
                             self.indptr = asarray(indptr)
                     except:
                         raise ValueError, "unrecognized form for csr_matrix constructor"
+                else:
+                    # (data, ij) format
+                    ijnew = ij.copy()
+                    ijnew[:, 0] = ij[:, 1]
+                    ijnew[:, 1] = ij[:, 0]
+                    temp = coo_matrix(s, ijnew, dims=dims, nzmax=nzmax,
+                                      dtype=dtype).tocsr()
+                    self.shape = temp.shape
+                    self.data = temp.data
+                    self.colind = temp.colind
+                    self.indptr = temp.indptr
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
@@ -959,7 +968,7 @@ class csr_matrix(spmatrix):
         # First check if argument is a scalar
         if isscalar(other) or (isdense(other) and rank(other)==0):
             # Now we would add this scalar to every element.
-            raise NotImplementedError, 'adding a scalar to a sparse matrix ' \
+            raise NotImplementedError, 'adding a scalar to a CSR matrix ' \
                     'is not yet supported'
         elif isspmatrix(other):
             ocs = other.tocsr()
@@ -1001,8 +1010,12 @@ class csr_matrix(spmatrix):
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
-            other = asarray(other)
-            return self.transpose().dot(other.transpose()).transpose()
+            # Don't use asarray unless we have to -- it might be sparse!
+            try:
+                tr = other.transpose()
+            except AttributeError:
+                tr = asarray(other).transpose()
+            return self.transpose().dot(tr).transpose()
     
     def __neg__(self):
         new = self.copy()
@@ -1049,15 +1062,20 @@ class csr_matrix(spmatrix):
         return new
 
     def matvec(self, other):
-        if (rank(other) != 1) or (len(other) != self.shape[1]):
-            raise ValueError, "dimension mismatch"
-        func = getattr(sparsetools, self.ftype+'csrmux')
-        y = func(self.data, self.colind, self.indptr, other)
-        return y
+        # This check is too harsh
+        #if (rank(other) != 1) or (len(other) != self.shape[1]):
+        #    raise ValueError, "dimension mismatch"
+        if isdense(other):
+            func = getattr(sparsetools, self.ftype+'csrmux')
+            y = func(self.data, self.colind, self.indptr, other)
+            return y
+        else:
+            raise TypeError, "need a dense vector"
 
     def rmatvec(self, other, conjugate=True):
-        if (rank(other) != 1) or (len(other) != self.shape[0]):
-            raise ValueError, "dimension mismatch"
+        # This check is too harsh
+        #if (rank(other) != 1) or (len(other) != self.shape[0]):
+        #    raise ValueError, "dimension mismatch"
         func = getattr(sparsetools, self.ftype+'cscmux')
         if conjugate:
             cd = conj(self.data)
@@ -1168,7 +1186,7 @@ class csr_matrix(spmatrix):
             if (col < 0):
                 col = N + col
             if (row < 0) or (col < 0):
-                raise KeyError, "index out of bounds"
+                raise IndexError, "index out of bounds"
             if (row >= M):
                 self.indptr = resize1d(self.indptr, row+2)
                 self.indptr[M+1:] = self.indptr[M]
@@ -1191,7 +1209,7 @@ class csr_matrix(spmatrix):
             if (key < self.nnz):
                 self.data[key] = val
             else:
-                raise KeyError, "key out of bounds"
+                raise IndexError, "index out of bounds"
         else:
             raise NotImplementedError
             
@@ -1257,15 +1275,11 @@ class csr_matrix(spmatrix):
             
 # dictionary of keys based matrix
 class dok_matrix(spmatrix, dict):
-    """ A dictionary of keys based matrix.  This is relatively efficient
-    for constructing sparse matrices for conversion to other sparse
-    matrix types.
-    
-    It does type checking on input by default.  To disable this type
-    checking and speed up element accesses slightly, set self._validate
-    to False.
+    """ A dictionary of keys based matrix.  This is an efficient
+    structure for constructing sparse matrices for conversion to other
+    sparse matrix types.
     """
-    def __init__(self, A=None):
+    def __init__(self, A=None, dtype='d'):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
         argument A is accepted, which initializes the dok_matrix with it.
         This can be a tuple of dimensions (m, n) or a (dense) array
@@ -1276,6 +1290,7 @@ class dok_matrix(spmatrix, dict):
         self.shape = (0, 0)
         # If _validate is True, ensure __setitem__ keys are integer tuples
         self._validate = True
+        self.dtype = numpy.dtype(dtype)
         if A is not None:
             if type(A) == tuple:
                 # Interpret as dimensions
@@ -1295,7 +1310,6 @@ class dok_matrix(spmatrix, dict):
                 raise NotImplementedError, "initializing a dok_matrix with " \
                         "a sparse matrix is not yet supported"
             elif isdense(A):
-                A = asarray(A)
                 if rank(A) == 2:
                     M, N = A.shape
                     self.shape = (M, N)
@@ -1387,7 +1401,7 @@ class dok_matrix(spmatrix, dict):
     def __add__(self, other):
         # First check if argument is a scalar
         if isscalar(other) or (isdense(other) and rank(other)==0):
-            new = dok_matrix()
+            new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
             for i in range(M):
@@ -1397,10 +1411,9 @@ class dok_matrix(spmatrix, dict):
                         new[i, j] = aij
             #new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
-            new = dok_matrix()
+            new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
-            new.shape = self.shape
-            for key in other.keys():
+            for key in other:
                 new[key] += other[key]
         elif isspmatrix(other):
             csc = self.tocsc()
@@ -1413,7 +1426,7 @@ class dok_matrix(spmatrix, dict):
     def __radd__(self, other):
         # First check if argument is a scalar
         if isscalar(other) or (isdense(other) and rank(other)==0):
-            new = dok_matrix()
+            new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
             for i in range(M):
@@ -1421,32 +1434,32 @@ class dok_matrix(spmatrix, dict):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
-            #new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
-            new = dok_matrix()
+            new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
             new.shape = self.shape
-            for key in other.keys():
+            for key in other:
                 new[key] += other[key]
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other
-        else:
-            # Perhaps it's a dense matrix?
+        elif isdense(other):
             new = other + self.todense()
+        else:
+            raise TypeError, "data type not understood"
         return new
 
     def __neg__(self):
-        new = dok_matrix()
-        for key in self.keys():
+        new = dok_matrix(self.shape, dtype=self.dtype)
+        for key in self:
             new[key] = -self[key]
         return new
 
     def __mul__(self, other):           # self * other
         if isscalar(other) or (isdense(other) and rank(other)==0):
-            new = dok_matrix()
+            new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
-            for (key, val) in self.items():
+            for (key, val) in self.iteritems():
                 new[key] = val * other
             #new.dtype.char = self.dtype.char
             return new
@@ -1455,15 +1468,19 @@ class dok_matrix(spmatrix, dict):
 
     def __rmul__(self, other):          # other * self
         if isscalar(other) or (isdense(other) and rank(other)==0):
-            new = dok_matrix()
+            new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
-            for (key, val) in self.items():
+            for (key, val) in self.iteritems():
                 new[key] = other * val
             #new.dtype.char = self.dtype.char
             return new
         else:
-            other = asarray(other)
-            return self.transpose().dot(other.transpose()).transpose()
+            # Don't use asarray unless we have to -- it might be sparse!
+            try:
+                tr = other.transpose()
+            except AttributeError:
+                tr = asarray(other).transpose()
+            return self.transpose().dot(tr).transpose()
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  For now it returns the number
@@ -1472,22 +1489,23 @@ class dok_matrix(spmatrix, dict):
     def transpose(self):
         """ Return the transpose
         """
-        newshape = (self.shape[1], self.shape[0])
-        new = dok_matrix(newshape)
-        for key in self.keys():
-            new[key[1], key[0]] = self[key]
+        m, n = self.shape
+        new = dok_matrix((n, m), dtype=self.dtype)
+        for key, value in self.iteritems():
+            new[key[1], key[0]] = value
         return new
 
     def conjtransp(self):
         """ Return the conjugate transpose
         """
-        new = dok_matrix()
-        for key in self.keys():
-            new[key[1], key[0]] = conj(self[key])
+        m, n = self.shape
+        new = dok_matrix((n, m), dtype=self.dtype)
+        for key, value in self.iteritems():
+            new[key[1], key[0]] = conj(value)
         return new
 
     def copy(self):
-        new = dok_matrix()
+        new = dok_matrix(self.shape, dtype=self.dtype)
         new.update(self)
         new.shape = self.shape
         return new
@@ -1495,17 +1513,17 @@ class dok_matrix(spmatrix, dict):
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
         # assume cols_or_rows is sorted
-        new = dok_matrix()
+        new = dok_matrix(self.shape, dtype=self.dtype)
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx: # columns
-            for key in self.keys():
+            for key in self:
                 num = searchsorted(cols_or_rows, key[1])
                 if num < N:
                     newkey = (key[0], num)
                     new[newkey] = self[key]
         else:
-            for key in self.keys():
+            for key in self:
                 num = searchsorted(cols_or_rows, key[0])
                 if num < N:
                     newkey = (num, key[1])
@@ -1521,7 +1539,7 @@ class dok_matrix(spmatrix, dict):
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx:
-            for key in self.keys():
+            for key in self:
                 num = searchsorted(cols_or_rows, key[1])
                 if cols_or_rows[num]==key[1]:
                     newkey = (key[0], num)
@@ -1530,7 +1548,7 @@ class dok_matrix(spmatrix, dict):
                     newkey = (key[0], key[1]-num)
                     base[newkey] = self[key]
         else:
-            for key in self.keys():
+            for key in self:
                 num = searchsorted(cols_or_rows, key[0])
                 if cols_or_rows[num]==key[0]:
                     newkey = (num, key[1])
@@ -1546,18 +1564,18 @@ class dok_matrix(spmatrix, dict):
         if other.shape[0] != self.shape[1]:
             raise ValueError, "dimensions do not match"
         new = [0]*self.shape[0]
-        for key in self.keys():
+        for key in self:
             new[int(key[0])] += self[key] * other[int(key[1]), ...]
         return array(new)        
 
     def rmatvec(self, other, conjugate=True):
         other = asarray(other)
-	if other.shape[-1] != self.shape[0]:
-	    raise ValueError, "dimensions do not match"
-	new = [0]*self.shape[1]
-	for key in self.keys():
-            new[int(key[1])] += other[..., int(key[0])] * conj(self[key])
-	return array(new)
+        if other.shape[-1] != self.shape[0]:
+            raise ValueError, "dimensions do not match"
+        new = [0]*self.shape[1]
+        for key in self:
+                new[int(key[1])] += other[..., int(key[0])] * conj(self[key])
+        return array(new)
 
     def setdiag(self, values, k=0):
         M, N = self.shape
@@ -1571,13 +1589,15 @@ class dok_matrix(spmatrix, dict):
         """
         keys = self.keys()
         keys.sort()
+
         nnz = len(keys)
         nzmax = max(nnz, nzmax)
-        data = [0]*nzmax
-        colind = [0]*nzmax
+        data = zeros(nzmax, dtype=self.dtype)
+        colind = zeros(nzmax, dtype=self.dtype)
         # Empty rows will leave row_ptr dangling.  We assign row_ptr[i] 
         # for each empty row i to point off the end.  Is this sufficient??
-        row_ptr = [nnz]*(self.shape[0]+1)
+        row_ptr = empty(self.shape[0]+1, dtype=int)
+        row_ptr[:] = nnz
         current_row = -1
         k = 0
         for key in keys:
@@ -1585,7 +1605,7 @@ class dok_matrix(spmatrix, dict):
             ikey1 = int(key[1])
             if ikey0 != current_row:
                 N = ikey0-current_row
-                row_ptr[current_row+1:ikey0+1] = [k]*N
+                row_ptr[current_row+1:ikey0+1] = k
                 current_row = ikey0
             data[k] = dict.__getitem__(self, key)
             colind[k] = ikey1
@@ -1598,23 +1618,19 @@ class dok_matrix(spmatrix, dict):
     def tocsc(self, nzmax=None):
         """ Return Compressed Sparse Column format arrays for this matrix
         """
-        #  Sort based on columns
-        # This works, but is very slow for matrices with many non-zero
-        # elements (requiring a function call for every element)
-        #keys.sort(csc_cmp)
-
-        # Faster sort: Schwartzian transform
-        keys = [(k[1], k[0]) for k in self.keys()]
+        # Fast sort on columns using the Schwartzian transform
+        keys = [(k[1], k[0]) for k in self]
         keys.sort()
         keys = [(k[1], k[0]) for k in keys]
         
         nnz = len(keys)
         nzmax = max(nnz, nzmax)
-        data = [0]*nzmax
-        rowind = [0]*nzmax
+        data = zeros(nzmax, dtype=self.dtype)
+        rowind = zeros(nzmax, dtype=self.dtype)
         # Empty columns will leave col_ptr dangling.  We assign col_ptr[j] 
         # for each empty column j to point off the end.  Is this sufficient??
-        col_ptr = [nnz]*(self.shape[1]+1)
+        col_ptr = empty(self.shape[1]+1)
+        col_ptr[:] = nnz
         current_col = -1
         k = 0
         for key in keys:
@@ -1622,21 +1638,18 @@ class dok_matrix(spmatrix, dict):
             ikey1 = int(key[1])
             if ikey1 != current_col:
                 N = ikey1-current_col
-                col_ptr[current_col+1:ikey1+1] = [k]*N
+                col_ptr[current_col+1:ikey1+1] = k
                 current_col = ikey1
             data[k] = self[key]
             rowind[k] = ikey0
             k += 1
-        data = array(data)
-        rowind = array(rowind)
-        col_ptr = array(col_ptr)
         return csc_matrix((data, rowind, col_ptr), dims=self.shape, nzmax=nzmax)
 
     def todense(self, dtype=None):
         if dtype is None:
             dtype = 'd'
         new = zeros(self.shape, dtype=dtype)
-        for key in self.keys():
+        for key in self:
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             new[ikey0, ikey1] = self[key]
@@ -1696,7 +1709,7 @@ class coo_matrix(spmatrix):
             # Assume the first calling convention
             #            assert len(ij) == 2
             if len(ij_in) != 2:
-                if isdense( ij_in ) and (ij_in.shape[1] == 2):
+                if isdense(ij_in) and (ij_in.shape[1] == 2):
                     ij = (ij_in[:,0], ij_in[:,1])
                 else:
                     raise AssertionError
@@ -1796,22 +1809,22 @@ class coo_matrix(spmatrix):
 def isspmatrix(x):
     return isinstance(x, spmatrix)
 
-def isspmatrix_csr( x ):
+def isspmatrix_csr(x):
     return isinstance(x, csr_matrix)
 
-def isspmatrix_csc( x ):
+def isspmatrix_csc(x):
     return isinstance(x, csc_matrix)
 
-def isspmatrix_dok( x ):
+def isspmatrix_dok(x):
     return isinstance(x, dok_matrix)
 
-def isspmatrix_dod( x ):
+def isspmatrix_dod(x):
     return isinstance(x, dod_matrix)
 
-def isspmatrix_lnk( x ):
+def isspmatrix_lnk(x):
     return isinstance(x, lnk_matrix)
 
-def isspmatrix_coo( x ):
+def isspmatrix_coo(x):
     return isinstance(x, coo_matrix)
 
 def isdense(x):
@@ -1822,8 +1835,10 @@ def _spdiags_tosub(diag_num, a, b):
     part2 = where(greater(diag_num, b), abs(diag_num-b), 0)
     return part1+part2
                       
+# Note: sparsetools only offers diagonal -> CSC matrix conversion functions,
+# not to CSR
 def spdiags(diags, offsets, M, N):
-    """Return a sparse matrix in CSR format given its diagonals.
+    """Return a sparse matrix in CSC format given its diagonals.
     
     B = spdiags(diags, offsets, M, N)
 
@@ -1839,7 +1854,7 @@ def spdiags(diags, offsets, M, N):
     mtype = diags.dtype.char
     assert(len(offsets) == diags.shape[1])
     # set correct diagonal to csr conversion routine for this type
-    diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsr')
+    diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsc')
     a, rowa, ptra, ierr = diagfunc(M, N, diags, offsets)
     if ierr:
         raise ValueError, "ran out of memory (shouldn't have happened)"
@@ -1854,7 +1869,7 @@ def solve(A, b, permc_spec=2):
     M, N = A.shape
     if (M != N):
         raise ValueError, "matrix must be square"    
-    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
+    if hasattr(A, 'tocsc') and not isspmatrix_csr(A):
         mat = A.tocsc()
         ftype, lastel, data, index0, index1 = \
                mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
