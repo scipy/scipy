@@ -8,7 +8,7 @@ Building and installing SciPy
 :Modified by: Ed Schofield <edschofield@gmail.com>
 :Last changed: $Date$
 :Revision: $Revision$
-:Discussions to: scipy-dev@scipy.org
+:Discussions to: scipy-user@scipy.org
 
 See http://new.scipy.org/Wiki/Installing_SciPy
 for updates of this document.
@@ -32,7 +32,7 @@ SciPy requires the following software installed:
 
 __ http://www.python.org
 
-2) NumPy__ 0.9.4 or newer
+2) NumPy__ 0.9.5 or newer
 
 __ http://www.numpy.org/
 
@@ -180,20 +180,14 @@ NOTES
 GETTING SCIPY
 =============
 
-For the latest information, see the Wiki site
-
-   http://new.scipy.org/Wiki
-   
-The main website is:
+For the latest information, see the web site:
 
   http://www.scipy.org
 
-but this is currently out of date (as of January 2006).
-
 
 Development version from Subversion (SVN)
-----------------------------
-Use the command:
+-----------------------------------------
+Use the command::
 
   svn co http://svn.scipy.org/svn/scipy/trunk scipy
 
@@ -258,7 +252,8 @@ gcc__ 3.x compilers are recommended.  gcc 4.0.x also works on some
 platforms (e.g. Linux x86).  SciPy is not fully compatible with gcc
 4.0.x on OS X.  If building on OS X, we recommend you use gcc 3.3, by
 typing:
-    gcc_select 3.3
+
+  gcc_select 3.3
  
 You can specify which Fortran compiler to use by using the following
 install command::
@@ -267,11 +262,13 @@ install command::
 
 To see a valid list of <Vendor> names, run::
 
-    python setup.py config_fc --help-fcompiler
+  python setup.py config_fc --help-fcompiler
 
 IMPORTANT: It is highly recommended that all libraries that scipy uses
 (e.g. blas and atlas libraries) are built with the same Fortran
 compiler.
+
+__ http://gcc.gnu.org/
 
 Using non-GNU Fortran compiler with gcc/g77 compiled Atlas/Lapack libraries
 ---------------------------------------------------------------------------
