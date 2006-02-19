@@ -12,7 +12,7 @@ License: BSD-style (see LICENSE.txt in main source directory)
 """
 
 __author__ = "Ed Schofield"
-__version__ = '2.0-beta1'
+__version__ = '2.0'
 
 from __future__ import division
 import random, math, bisect, cmath
@@ -167,14 +167,14 @@ def sample_wr(population, k):
 
 
 def densefeatures(f, x):
-    """Returns a 1xN dense matrix of non-zero evaluations of the
-    functions fi in the list f at the point x.
+    """Returns a dense array of non-zero evaluations of the functions fi
+    in the list f at the point x.
     """
     
     return numpy.array([fi(x) for fi in f])
 
 def densefeaturematrix(f, sample):
-    """Returns an (m x n) dense matrix of non-zero evaluations of the
+    """Returns an (m x n) dense array of non-zero evaluations of the
     scalar functions fi in the list f at the points x_1,...,x_n in the
     list sample.
     """
@@ -187,7 +187,7 @@ def densefeaturematrix(f, sample):
     F = numpy.empty((m, n), float)
     for i in xrange(m):
         f_i = f[i]
-        for i in xrange(m):
+        for j in xrange(n):
             x = sample[j]
             F[i,j] = f_i(x)
 
@@ -201,15 +201,21 @@ def densefeaturematrix(f, sample):
 
 def sparsefeatures(f, x, format='csc_matrix'):
     """ Returns an Mx1 sparse matrix of non-zero evaluations of the
-    scalar functions f_1,...,f_M in the list f at the point x.
+    scalar functions f_1,...,f_m in the list f at the point x.
+
+    If format='ll_mat', the PySparse module (or a symlink to it) must be
+    available in the Python site-packages/ directory.  A trimmed-down
+    version, patched for NumPy compatibility, is available in the SciPy
+    sandbox/pysparse directory.
     """
-    M = len(f)
+    m = len(f)
     if format == 'll_mat':
-        sparsef = spmatrix.ll_mat(M, 1)
+        import spmatrix
+        sparsef = spmatrix.ll_mat(m, 1)
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
-        sparsef = scipy.sparse.dok_matrix((M, 1))
+        sparsef = sparse.dok_matrix((m, 1))
     
-    for i in xrange(M):
+    for i in xrange(m):
         f_i_x = f[i](x)
         if f_i_x != 0:
             sparsef[i, 0] = f_i_x
@@ -224,24 +230,29 @@ def sparsefeatures(f, x, format='csc_matrix'):
         return sparsef
 
 def sparsefeaturematrix(f, sample, format='csc_matrix'):
-    """Returns an MxN sparse matrix of non-zero evaluations of the scalar
-    or vector functions f_1,...,f_M in the list f at the points
-    x_1,...,x_N in the sequence 'sample'.
+    """Returns an (m x n) sparse matrix of non-zero evaluations of the scalar
+    or vector functions f_1,...,f_m in the list f at the points
+    x_1,...,x_n in the sequence 'sample'.
+    
+    If format='ll_mat', the PySparse module (or a symlink to it) must be
+    available in the Python site-packages/ directory.  A trimmed-down
+    version, patched for NumPy compatibility, is available in the SciPy
+    sandbox/pysparse directory.
     """
 
-    M = len(f)
-    N = len(sample)
+    m = len(f)
+    n = len(sample)
     if format == 'll_mat':
         import spmatrix
-        sparseF = spmatrix.ll_mat(M, N)
+        sparseF = spmatrix.ll_mat(m, n)
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
-        sparseF = sparse.dok_matrix((M,N))
+        sparseF = sparse.dok_matrix((m, n))
     else:
         raise ValueError, "sparse matrix format not recognized"
     
-    for i in xrange(M):
+    for i in xrange(m):
         f_i = f[i]
-        for j in xrange(N):
+        for j in xrange(n):
             x = sample[j]
             f_i_x = f_i(x)
             if f_i_x != 0:
@@ -261,8 +272,8 @@ def dotprod(u,v):
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
     
-    Returns the dot product of the (1xM) sparse array u with the (Mx1)
-    (dense) numpy array v.
+    Returns the dot product of the (1 x m) sparse array u with the 
+    (m x 1) (dense) numpy array v.
     """
     #print "Taking the dot product u.v, where"
     #print "u has shape " + str(u.shape)
@@ -283,22 +294,20 @@ def innerprod(A,v):
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
     
-    Returns the inner product of the (MxN) dense or sparse matrix A with the
-    (Nx1) (sparse or dense) vector v.  This is a wrapper for A.dot(v) for
+    Returns the inner product of the (m x n) dense or sparse matrix A
+    with the n-element dense array v.  This is a wrapper for A.dot(v) for
     dense arrays and spmatrix objects, and for A.matvec(v, result) for
     PySparse matrices.
     """
     
     # We assume A is sparse.
-    (M, N) = A.shape
+    (m, n) = A.shape
     vshape = v.shape
     try:
-        (P,) = vshape
+        (p,) = vshape
     except ValueError:
-        (P,Q) = vshape
-        # if Q != 1:
-        #     raise TypeError, "second argument must have shape (N,) rather than (N,P)"
-    if N != P:
+        (p, q) = vshape
+    if n != p:
         raise TypeError, "matrix dimensions are incompatible"
     try:
         v.matvec
@@ -309,7 +318,7 @@ def innerprod(A,v):
             A.matvec
         except AttributeError:
             # It looks like A is dense
-            return numpy.dot(A,v)
+            return numpy.dot(A, v)
         else:
             # Assume A is sparse
             if sparse.isspmatrix(A):
@@ -317,16 +326,13 @@ def innerprod(A,v):
                 return innerprod
             else:
                 # Assume PySparse format
-                innerprod = numpy.empty(M, float)
+                innerprod = numpy.empty(m, float)
                 A.matvec(v, innerprod)
                 return innerprod
     else:
-        # v looks like it's sparse, so we take the inner prod with
-        # spmatrix.matrixmultiply().
-        try:
-            return spmatrix.matrixmultiply(A,v)
-        except:
-            raise TypeError, "can't discern correct types for the inner product.  If you are trying to multiply a dense matrix by a sparse vector, this is unsupported."
+        raise TypeError, "can't discern correct types for the inner" \
+              " product.  If you are trying to multiply a dense matrix by a" \
+              " sparse vector, this is unsupported."
 
 
 def innerprodtranspose(A,v):
@@ -386,8 +392,8 @@ def rowmeans(A):
     only necessary as a common interface for supporting ndarray,
     scipy spmatrix, and PySparse arrays.
 
-    Returns a dense (Mx1) vector representing the mean of the rows of A,
-    which be an MxN sparse or dense matrix.
+    Returns a dense (m x 1) vector representing the mean of the rows of A,
+    which be an (m x n) sparse or dense matrix.
     
     >>> a = numpy.array([[1,2],[3,4]], float)
     >>> rowmeans(a)
@@ -410,8 +416,8 @@ def columnmeans(A):
     only necessary as a common interface for supporting ndarray,
     scipy spmatrix, and PySparse arrays.
 
-    Returns a dense (1xN) vector with the column averages of A, which can
-    be an MxN sparse or dense matrix.
+    Returns a dense (1 x n) vector with the column averages of A, which can
+    be an (m x n) sparse or dense matrix.
     
     >>> a = numpy.array([[1,2],[3,4]],'d')
     >>> columnmeans(a)
@@ -434,11 +440,11 @@ def columnvariances(A):
     is not necessary except as a common interface for supporting ndarray,
     scipy spmatrix, and PySparse arrays.
 
-    Returns a dense (1xN) vector with unbiased estimators for the column
-    variances for each column of the MxN sparse or dense matrix A.  (The
-    normalization is by (M-1).)
+    Returns a dense (1 x n) vector with unbiased estimators for the column
+    variances for each column of the (m x n) sparse or dense matrix A.  (The
+    normalization is by (m - 1).)
     
-    >>> a = numpy.array([[1,2],[3,4]],'d')
+    >>> a = numpy.array([[1,2], [3,4]], 'd')
     >>> columnvariances(a)
     array([ 2.,  2.])
     """

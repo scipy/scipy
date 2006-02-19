@@ -303,7 +303,7 @@ def kmeans(obs,k_or_guess,iter=20,thresh=1e-5):
         for i in range(iter):   
             #print i,
             #the intial code book is randomly selected from observations
-            guess = take(obs,randint.rvs(0,No,k),0) 
+            guess = take(obs,randint(0,No,k),0) 
             book,dist = kmeans_(obs,guess,thresh=thresh)
             if dist < best_dist: 
                 best_book = book
