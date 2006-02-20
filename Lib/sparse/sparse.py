@@ -1847,12 +1847,14 @@ def spdiags(diags, offsets, M, N):
         offsets -- diagonals to set (0 is main)
         M, N    -- sparse matrix returned is M X N
     """
-    diags = array(transpose(diags), copy=True)
+#    diags = array(transpose(diags), copy=True)
     if diags.dtype.char not in 'fdFD':
         diags = diags.astype('d')
+    if not hasattr( offsets, '__len__' ):
+        offsets = (offsets,)
     offsets = array(offsets, copy=False)
     mtype = diags.dtype.char
-    assert(len(offsets) == diags.shape[1])
+    assert(len(offsets) == diags.shape[0])
     # set correct diagonal to csr conversion routine for this type
     diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsc')
     a, rowa, ptra, ierr = diagfunc(M, N, diags, offsets)
@@ -1892,7 +1894,25 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
     gstrf = eval('_superlu.' + csc.ftype + 'gstrf')
     return gstrf(N, csc.nnz, csc.data, csc.rowind, csc.indptr, permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
-        
+
+def spidentity( n, dtype = 'd' ):
+    """
+    spidentity( n ) returns the identity matrix of shape (n, n) stored
+    in CSC sparse matrix format.
+    """
+    diags = ones( (1, n), dtype = dtype )
+    return spdiags( diags, 0, n, n )
+    
+
+def speye( n, m = None, k = 0, dtype = 'd' ):
+    """
+    speye( n, m ) returns a (n, m) matrix tored
+    in CSC sparse matrix format, where the  k-th diagonal is all ones,
+    and everything else is zeros.
+    """
+    diags = ones( (1, n), dtype = dtype )
+    return spdiags( diags, k, n, m )
+
 
 if __name__ == "__main__":
     a = csc_matrix((arange(1, 9), transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))

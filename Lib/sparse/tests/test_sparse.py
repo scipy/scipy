@@ -20,7 +20,7 @@ from numpy import arange, zeros, array, dot
 import random
 from numpy.testing import *
 set_package_path()
-from scipy.sparse import csc_matrix, csr_matrix, dok_matrix
+from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, spidentity, speye
 restore_path()
 
 class _test_cs(ScipyTestCase):
@@ -282,6 +282,28 @@ class test_dok(_test_cs):
         csr=b.tocsr()
         assert_array_equal( csr.todense()[m-1,:], zeros(n,))
 
+class test_construct_utils( ScipyTestCase ):
+
+    def check_identity( self ):
+        a = spidentity( 3 )
+        b = array( [[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d' )
+        assert_array_equal( a.todense(), b )
+
+    def check_eye( self ):
+        a = speye( 2, 3 )
+#        print a, a.__repr__
+        b = array( [[1, 0, 0], [0, 1, 0]], dtype='d' )
+        assert_array_equal( a.todense(), b )
+
+        a = speye( 3, 2 )
+#        print a, a.__repr__
+        b = array( [[1, 0], [0, 1], [0, 0]], dtype='d' )
+        assert_array_equal( a.todense(), b )
+
+        a = speye( 3, 3 )
+#        print a, a.__repr__
+        b = array( [[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d' )
+        assert_array_equal( a.todense(), b )
 
 if __name__ == "__main__":
     ScipyTest().run()
