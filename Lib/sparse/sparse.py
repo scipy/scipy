@@ -1906,7 +1906,7 @@ def spidentity( n, dtype = 'd' ):
 
 def speye( n, m = None, k = 0, dtype = 'd' ):
     """
-    speye( n, m ) returns a (n, m) matrix tored
+    speye( n, m ) returns a (n, m) matrix stored
     in CSC sparse matrix format, where the  k-th diagonal is all ones,
     and everything else is zeros.
     """
