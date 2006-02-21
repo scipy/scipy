@@ -31,6 +31,7 @@ from numpy import __version__ as __numpy_version__
 import numpy as _num
 from numpy import *
 del lib
+del linalg
 __all__ += _num.__all__
 __doc__ += """
 Contents
