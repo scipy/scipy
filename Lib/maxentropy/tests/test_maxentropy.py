@@ -10,7 +10,7 @@ import sys
 from numpy.testing import *
 from numpy import arange, add, array, dot, zeros, identity, log, exp, ones
 set_package_path()
-from maxentropy import *
+from scipy.maxentropy.maxentropy import *
 restore_path()
 
 import unittest
