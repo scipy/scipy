@@ -14,6 +14,7 @@ import types
 import scipy
 from scipy.stats import mean
 import numpy as Numeric
+import numpy
 from numpy import array, arange, where, sqrt, rank, zeros, NewAxis, \
     argmax, product, cos, pi, exp
 from scipy.misc import factorial

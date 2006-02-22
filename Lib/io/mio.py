@@ -49,7 +49,7 @@ def getsize_type(mtype):
     else:
         mtype = obj2sctype(mtype)
 
-    newarr = array(0,mtype)
+    newarr = empty((1,),mtype)
     return newarr.itemsize, newarr.dtype.char
 
 if sys.version[:3] < "2.2":
@@ -215,7 +215,11 @@ class fopen(file):
             bs = self.bs
         else:
             bs = (bs == 1)
-        data = asarray(data)
+        if isinstance(data, str):
+            N, buf = len(data), buffer(data)
+            data = ndarray(shape=(N,),dtype='B',buffer=buf)
+        else:
+            data = asarray(data)
         if mtype is None:
             mtype = data.dtype.char
         howmany,mtype = getsize_type(mtype)
