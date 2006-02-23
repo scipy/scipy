@@ -353,6 +353,9 @@ class csc_matrix(spmatrix):
         spmatrix.__init__(self)
         if isdense(arg1):
             # Convert the dense array or matrix arg1 to CSC format
+            if rank(arg1) == 1:
+                # Convert to a row vector
+                arg1 = arg1.reshape(1, arg1.shape[0])
             if rank(arg1) == 2:
                 s = arg1
                 if s.dtype.char not in 'fdFD':
@@ -378,15 +381,8 @@ class csc_matrix(spmatrix):
                     self.rowind = rowa
                     self.indptr = ptra
                     self.shape = (M, N)
-                
-                # s = dok_matrix(arg1).tocsc(nzmax)
-                # self.shape = s.shape
-                # self.data = s.data
-                # self.rowind = s.rowind
-                # self.indptr = s.indptr
             else:
-                raise ValueError, "dense array does not have rank 1 or 2"
-        
+                raise ValueError, "dense array must have rank 1 or 2"
         elif isspmatrix(arg1):
             s = arg1
             if isinstance(s, csc_matrix):
@@ -842,6 +838,9 @@ class csr_matrix(spmatrix):
         spmatrix.__init__(self)
         if isdense(arg1):
             # Convert the dense array or matrix arg1 to CSR format
+            if rank(arg1) == 1:
+                # Convert to a row vector
+                arg1 = arg1.reshape(1, arg1.shape[0])
             if rank(arg1) == 2:
                 s = arg1
                 ocsc = csc_matrix(transpose(s))
@@ -849,7 +848,8 @@ class csr_matrix(spmatrix):
                 self.indptr = ocsc.indptr
                 self.data = ocsc.data
                 self.shape = (ocsc.shape[1], ocsc.shape[0])
-
+            else:
+                raise ValueError, "dense array must have rank 1 or 2"
         elif isspmatrix(arg1):
             s = arg1
             if isinstance(s, csr_matrix):
@@ -1361,14 +1361,30 @@ class dok_matrix(spmatrix, dict):
                "elements in %s format>" % \
                (self.shape + (nnz, _formats[format][1]))
 
-    def __getitem__(self, key):
+    def get(self, key, default=0.):
+        """This overrides the dict.get method, providing type checking
+        but otherwise equivalent functionality.
+        """
+        try:
+            i, j = key
+            assert isinstance(i, int) and isinstance(j, int)
+        except (AssertionError, TypeError, ValueError):
+            raise IndexError, "index must be a pair of integers"
+        try:
+            assert not (i < 0 or i >= self.shape[0] or j < 0 or
+                     j >= self.shape[1])
+        except AssertionError:
+            raise IndexError, "index out of bounds"
+        return dict.get(self, key, default)
+ 
+    def  __getitem__(self, key):
         if self._validate:
             # Sanity checks: key must be a pair of integers
             if not isinstance(key, tuple) or len(key) != 2:
                 raise TypeError, "key must be a tuple of two integers"
             if type(key[0]) != int or type(key[1]) != int:
                 raise TypeError, "key must be a tuple of two integers"
-
+        
         return self.get(key, 0)
 
     def __setitem__(self, key, value):
