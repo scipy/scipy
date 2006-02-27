@@ -464,16 +464,12 @@ def flatten(a):
     """
     return numpy.asarray(a).flatten()
 
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-class DivergenceError(Error):
+class DivergenceError(Exception):
     """Exception raised if the entropy dual has no finite minimum.
     """
     def __init__(self, message):
         self.message = message
-        Error.__init__(self)
+        Exception.__init__(self)
         
     def __str__(self):
         return repr(self.message)
