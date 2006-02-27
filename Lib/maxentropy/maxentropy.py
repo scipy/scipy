@@ -63,7 +63,7 @@ variances.
 from __future__ import division
 import math, types, cPickle
 import numpy
-from scipy import optimize, sparse
+from scipy import optimize
 from scipy.linalg import norm
 from scipy.maxentropy.maxentutils import *
 
@@ -89,7 +89,7 @@ class basemodel(object):
         # ||theta_k - theta_{k-1}|| < thetatol:
         self.thetatol = 1e-5         
         
-        self.maxiter = 1000
+        self.maxiter = 800
         self.maxfun = 1500
         self.mindual = 0        # was -100.  But the entropy dual must be
                                 # non-negative, and it seems any negative
@@ -99,17 +99,8 @@ class basemodel(object):
         self.fnevals = 0
         self.gradevals = 0
         self.debug = 0
-        
-        # Variances for a Gaussian prior for smoothing
-        self.sigma2 = None
 
-        # Store the duals for each fn evaluation during fitting?
-        self.storeduals = False
-        self.duals = {}
-        self.storegradnorms = False
-        self.gradnorms = {}
-
-    def fit(self, K, algorithm='CG'):
+    def _fit(self, K, func, grad=None, algorithm='CG'):
         """Fit the maxent model p whose feature expectations are given
         by the vector K.
 
@@ -117,68 +108,27 @@ class basemodel(object):
         Carlo simulation, depending on the 'func' and 'grad' parameters
         passed to this function.
         
-        For 'model' instances, expectations are computed exactly, by summing
-        over the given sample space.  If the sample space is continuous or too
-        large to iterate over, use the 'bigmodel' class instead.
- 
-        For 'bigmodel' instances, the model expectations are not computed
-        exactly (by summing or integrating over a sample space) but
-        approximately (by Monte Carlo simulation).  Simulation is necessary
-        when the sample space is too large to sum or integrate over in
-        practice, like a continuous sample space in more than about 4
-        dimensions or a large discrete space like all possible sentences in a
-        natural language.
-
-        Approximating the expectations by sampling requires an instrumental
-        distribution that should be close to the model for fast convergence.
-        The tails should be fatter than the model.  This instrumental
-        distribution is specified by calling setsampleFgen() with a
-        user-supplied generator function that yields a matrix of features of a
-        random sample and its log pdf values.
-
         The algorithm can be 'CG', 'BFGS', 'LBFGSB', 'Powell', or
         'Nelder-Mead'.
         
-        The CG (conjugate gradients) method is the default; it is quite fast
-        and requires only linear space in the number of parameters, (not
-        quadratic, like Newton-based methods).
+        The CG (conjugate gradients) method is the default; it is quite
+        fast and requires only O(N) memory in the number of parameters.
         
         The BFGS (Broyden-Fletcher-Goldfarb-Shanno) algorithm is a
         variable metric Newton method.  It is perhaps faster than the CG
         method but requires O(N^2) instead of O(N) memory, so it is
         infeasible for more than about 10^3 parameters.
-        
+
         The Powell algorithm doesn't require gradients.  For small models
         it is slow but robust.  For big models (where func and grad are
         simulated) with large variance in the function estimates, this
         may be less robust than the gradient-based algorithms.
         """
-        dual = self.dual
-        grad = self.grad
-        
-        if isinstance(self, bigmodel):
-            # Ensure the sample matrix has been set
-            try:
-                self.sampleF
-                self.samplelogprobs
-            except AttributeError:
-                raise AttributeError, "first specify a feature matrix" \
-                                      " using sampleFgen()"
-        else:
-            # Ensure the feature matrix for the sample space has been set
-            try:
-                self.F
-            except AttributeError:
-                raise AttributeError, "first specify a feature matrix" \
-                                      " using setfeaturesandsamplespace()"
-        
-        # First convert K to a numpy array if necessary
-        K = numpy.asarray(K, float)
-            
-        # Store the desired feature expectations as a member variable
-        self.K = K
         
         # Sanity checks
+        assert type(func) in (types.FunctionType, types.MethodType)
+        if grad != None:
+            assert type(grad) in (types.FunctionType, types.MethodType)
         try:
             self.theta
         except AttributeError:
@@ -188,20 +138,26 @@ class basemodel(object):
         self.fnevals = 0
         self.gradevals = 0
         
+        # First convert K to a numpy array if necessary
+        K = numpy.asarray(K, float)
+            
+        # Store K as a member variable (currently used only by test())
+        self.K = K
+        
         # Make a copy of the parameters
         oldtheta = numpy.array(self.theta)
             
         assert len(K) == self.numconstraints()
         
         if algorithm == 'CG':
-            retval = optimize.fmin_cg(dual, oldtheta, grad, (), self.avegtol, \
+            retval = optimize.fmin_cg(func, oldtheta, grad, (), self.avegtol, \
                                       maxiter=self.maxiter, full_output=1, \
                                       disp=self.verbose, retall=0)
             
             (newtheta, fopt, func_calls, grad_calls, warnflag) = retval
 
         elif algorithm == 'LBFGSB':
-            retval = optimize.fmin_l_bfgs_b(dual, oldtheta, \
+            retval = optimize.fmin_l_bfgs_b(func, oldtheta, \
                         grad, args=(), bounds=self.bounds, pgtol=self.maxgtol,
                         maxfun=self.maxfun)
             (newtheta, fopt, d) = retval
@@ -213,7 +169,7 @@ class basemodel(object):
                 # algorithm makes
 
         elif algorithm == 'BFGS':
-            retval = optimize.fmin_bfgs(dual, oldtheta, \
+            retval = optimize.fmin_bfgs(func, oldtheta, \
                                         grad, (), self.tol, \
                                         maxiter=self.maxiter, full_output=1, \
                                         disp=self.verbose, retall=0)
@@ -221,7 +177,7 @@ class basemodel(object):
             (newtheta, fopt, gopt, Lopt, func_calls, grad_calls, warnflag) = retval
 
         elif algorithm == 'Powell':
-            retval = optimize.fmin_powell(dual, oldtheta, args=(), \
+            retval = optimize.fmin_powell(func, oldtheta, args=(), \
                                    xtol=self.tol, ftol = self.tol, \
                                    maxiter=self.maxiter, full_output=1, \
                                    disp=self.verbose, retall=0)
@@ -229,7 +185,7 @@ class basemodel(object):
             (newtheta, fopt, direc, numiter, func_calls, warnflag) = retval
         
         elif algorithm == 'Nelder-Mead':
-            retval = optimize.fmin(dual, oldtheta, args=(), \
+            retval = optimize.fmin(func, oldtheta, args=(), \
                                    xtol=self.tol, ftol = self.tol, \
                                    maxiter=self.maxiter, full_output=1, \
                                    disp=self.verbose, retall=0)
@@ -246,148 +202,33 @@ class basemodel(object):
         self.func_calls = func_calls
     
   
-    def fit_GIS(self, K=None, theta0=None, gtol=1e-6, maxiter=None):
-        r"""A version of Darroch and Ratcliff's Generalized Iterative Scaling
-        (GIS) algorithm, by default with the step-size approximation of
-        Rosenfeld et al.  in "Whole-sentence exponential language models",
-        Comp. Ling., 2002.
-        
-        Pass in 'K' as the desired (target) expectations of the features f(X),
-        or set 'K' as a member variable of the model.
-    
-        By default the step sizes a_i used are those suggested by Rosenfeld et
-        al., whose reciprocals are:
-        
-            F_i = \sum_s [p(s) f_i(s) \sum_k f_k(s)] / Ef_i
-        
-        The update rule is:
-            x_{i+1} = x_i - a_i \bullet d_i,
-        where \bullet is the Hadamard (componentwise) vector product, and
-        where d_i is a difference of logs:
-            d_i = log( E f_i(X) / K_i ) = log E f_i(X) - log K_i.
-        Wherever K_i is 0, we define d_i as +inf.
-        
-        Note that the gradient is
-            g_i = E f_i(X) - K_i
-        so this differs from a gradient descent algorithm.
-        """
-        if maxiter is None:
-            maxiter = self.maxiter 
-        else:
-            self.maxiter = maxiter
-        if theta0 is None:
-            # Initialize parameters with the zero vector by default
-            theta = numpy.zeros(self.sampleF.shape[0], dtype=float)
-        else:
-            theta = theta0
-        
-        if K is None:
-            try:
-                K = self.K
-            except AttributeError:
-                raise AttributeError, "first set the member variable 'K' to" \
-                        " the target feature expectations or pass them as an"\
-                        " argument"
-        assert len(K) == len(theta)
-        iteration = 0
-        # Cache variables
-        (verbose, stepsizes) = (self.verbose, self._GISstepsizes)
-        while True:
-            self.setparams(theta)
-            Ef = expectations()
-            err = norm(Ef-K)
-            if verbose:
-                print "Iteration =", iteration
-                print "Error =", err
-                print "Entropy dual =", self.dual()
-            if err < gtol:
-                if verbose:
-                    print "Desired tolerance reached"
-                break
-            # Compute a_i as the reciprocal of F, where
-            #     F = \sum_s [p(s) f_i(s) \sum_k f_k(s)] / Ef_i
-            a = stepsizes()
-            if verbose >= 2:
-                print "Step sizes =", a
-                print "Elementwise product a * g =", a * g
-            theta -= a * numpy.nan_to_num(log(Ef / K))   # elementwise product,
-                                                    # replacing NaNs with zeros
-            iteration += 1
-            self.fnevals += 1   # actually, gradevals, but callback functions
-                                # are only trigged after function evals
-            if iteration >= self.maxiter:
-                print "Warning: maximum number of iterations exceeded"
-                break
-        return theta
-    
-    
-    def entropydual(self):
-        """An alias for dual()
-        """
-        return self.dual()
-    
-    
-    def dual(self, theta=None, ignorepenalty=False, ignoretest=False):
-        """Computes the Lagrangian dual L(theta) of the entropy of the
-        model.  Minimizing this function (without constraints) should
-        fit the constrained model, where the desired (target) feature
-        expectations need to be available as self.K.
-                
-        This function is computed as:
-            L(theta) = log(Z) - theta^T . K
+    def numconstraints(self):
+        return len(self.theta)
 
-        This function approximates the entropy of the model p_theta
-        with exponential form exp(theta^T . f_vec(x)) / Z(theta).
-        
-        For 'bigmodel' objects, it does this without actually computing
-        p_theta.  This is important if the event space is practically
-        innumerable.  We approximate the norm constant Z using importance
-        sampling as in [Rosenfeld02whole].  Note that the gradient of
-        this estimator is equal to the importance-sampling *ratio
-        estimator* of the gradient of the entropy dual [see my paper,
-        ICSLP 2004], so using this estimator in conjunction with the
-        function gradapprox() in gradient-based optimization methods
-        should be stable.  Also note that this estimator is deterministic
-        for any given sample.
+    def setparams(self, theta, newiter=True):
+        """Set the parameter vector theta, replacing the existing
+        parameters.  theta must be a list or numpy array of the same
+        length as the model's feature vector f.
         """
+
+        # First call the callback function passing the old model, if necessary,
+        # before updating it with its new paramaeters.  
         
-        if self.external is None:
-            if self.verbose:
-                print "Function eval #", self.fnevals
-            
-            if theta is not None:
-                self.setparams(theta)
-        
-        # Subsumes both small and large cases:
-        L = self.lognormconst() - numpy.dot(self.theta, self.K)
-            
-        if self.verbose and self.external is None:
-            print "  dual is ", L
-        
-        # Use a Gaussian prior for smoothing if requested.
-        # This adds the penalty term \sum_{i=1}^m \theta_i^2 / {2 \sigma_i^2}
-        if self.sigma2 is not None and ignorepenalty==False:
-            penalty = 0.5 * (self.theta**2 / self.sigma2).sum()
-            L += penalty
-            if self.verbose and self.external is None:
-                print "  regularized dual is ", L
-        
-        # Store new dual
-        if self.external is None:
-            if self.storeduals:
-                self.duals[self.fnevals] = L
-            
-        # Test the new parameters with the test samples if they exist.
-        if not ignoretest and isinstance(self, bigmodel) and \
-                self.testevery is not None:
-            M = self.testevery
-            if self.fnevals % M == M - 1:
-                self.test()
-        
-        # Call the callback function.  The complex-looking attribute-test
-        # sequence is necessary to prevent an AttributeError in the
-        # callback function from being caught and silenced
-        # inappropriately.
+        # The complex-looking attribute-test sequence is necessary to prevent
+        # an AttributeError in the callback function from being caught and
+        # silenced inappropriately.
+
+        # If this is a new iteration, call the callbackiter function:
+        if newiter:
+            try:
+                self.callbackiter
+            except AttributeError:
+                pass
+            else:
+                self.callbackiter(self)
+
+        # Call the standard callback function, regardless of whether this is a
+        # new iteration or a line search:
         try:
             self.callback
         except AttributeError:
@@ -395,234 +236,6 @@ class basemodel(object):
         else:
             self.callback(self)
 
-        if self.external is None:
-            if L < self.mindual:
-                raise DivergenceError, \
-                  "the dual is below the threshold 'mindual' and may be diverging" \
-                  " to -inf.  Fix the constraints or lower the"\
-                  " threshold."
-            self.fnevals += 1
-        
-        # (We don't reset theta to its prior value.)
-        return L
- 
-   
-    def grad(self, theta=None, ignorepenalty=False):
-        """Computes or estimates the gradient of the entropy dual.
-        """
-        
-        if self.verbose:
-            print "Grad eval #" + str(self.gradevals)
-
-        # Has theta changed?  If so, use the new one, clearing the
-        # speed-enhancing temporary variables that are functions of theta.
-        #if numpy.any(self.theta != theta):
-        # ** Always recompute
-        if theta is not None:
-            self.setparams(theta)
-        
-        G = self.expectations() - self.K
-        
-        if self.verbose and self.external is None:
-            print "  norm of gradient =",  norm(G)
-
-        # (We don't reset theta to its prior value.)
-        
-        # Use a Gaussian prior for smoothing if requested.
-        # The ith partial derivative of the penalty term is 
-        # \theta_i / \sigma_i^2
-        if self.sigma2 is not None:
-            penalty = self.theta / self.sigma2
-            G += penalty
-            if self.verbose and self.external is None:
-                normG = norm(G)
-                print "  norm of regularized gradient =", normG
-        
-        # Store gradient norm
-        if self.external is None:
-            if self.storegradnorms:
-                # Re-use normG if it's already been computed
-                try:
-                    normG
-                except UnboundLocalError:
-                    self.gradnorms[self.gradevals] = norm(G)
-                else:
-                    self.gradnorms[self.gradevals] = normG
-        
-        if self.external is None:
-            self.gradevals += 1
-        
-        return G
-            
-        
-    def expectations(self):
-        """For a 'model' object, the vector E_p[f(X)] under the model
-        p_theta of the vector of feature functions f_i over the sample
-        space.
-        
-        For a 'bigmodel' object, estimates of the feature expectations
-        E_p[f(X)] under the current model p = p_theta using the given
-        sample feature matrix.  If self.staticsample is True, use the
-        current feature matrix F.  If self.staticsample is False or
-        self.matrixtrials is > 1, draw one or more sample feature
-        matrices F afresh using the supplied sampleFgen() generator
-        function.
-        """
-        if isinstance(self, model):
-            # If discrete, use the representation E_p[f(X)] = p . F
-            try:
-                self.F
-            except AttributeError:
-                raise AttributeError, "need a pre-computed feature matrix F"
- 
-            # A pre-computed matrix of features exists
-            p = self.pmf()
-            return innerprod(self.F, p)
-        elif isinstance(self, bigmodel):
-            try:
-                # See if already computed
-                self.mu
-                if self.verbose >= 3:
-                    print "(returning pre-computed expectations)"
-                return self.mu
-            except AttributeError:
-                self.estimate()
-                return self.mu
-    
-    
-    def lognormconst(self):
-        """Compute the log of the normalization constant (partition
-        function) Z=sum_{x \in samplespace} exp(theta . f(x)).  The
-        sample space must be discrete and finite.
-
-        For 'bigmodel' instances, this function estimates the
-        normalization constant using the current sample matrix F.
-        """
-        
-        if isinstance(self, model):
-            # See if it's been precomputed
-            try:
-                return self.logZ
-            except AttributeError:
-                pass
-            
-            # Has F = {f_i(x_j)} been precomputed?
-            try:
-                self.F
-                
-                # Good, assume F has been precomputed
-                log_p_dot = innerprodtranspose(self.F, self.theta)
-                self.logZ = logsumexp(log_p_dot)
-                return self.logZ
-            
-            except AttributeError:
-                raise AttributeError, "first create a feature matrix F"
-        
-        elif isinstance(self, bigmodel):
-            # First see whether logZ has been precomputed
-            try:
-                return self.logZapprox
-            except AttributeError:
-                pass
- 
-            # Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
-            # j=1,...,n=|sample| using a precomputed matrix of sample
-            # features.
-            logw = self._logw()
-            
-            # Good, we have our logw.  Now:
-            n = len(logw)
-            self.logZapprox = logsumexp(logw) - math.log(n)
-            return self.logZapprox
-    
-    
-    def normconst(self):
-        """Returns the normalization constant, or partition function, for
-        the current model.  Warning -- this may be too large to represent,
-        resulting in numerical overflow!  In this case use lognormconst()
-        instead.
-        """
-        return math.exp(self.lognormconst())
-    
-    
-    def _GISstepsizes(self):
-        """A function that computes step sizes for the GIS iterative scaling
-        algorithm.  This choice of step sizes was proposed by
-        Rosenfeld et al., "Whole-sentence exponential language models", Comp.
-        Ling. (2002).
-
-        It returns a vector a of step sizes, one for each parameter params[i].
-        These are given by:
-            a_i = 1 / {\sum_x [p(x) f_i(x) \sum_k f_k(x)] /
-                       [\sum_x [p(x) f_i(x)]]}
-        """
-        if isinstance(self, bigmodel):
-            F = self.sampleF
-        elif isinstance(self, model):
-            F = self.F
-        
-        ## Overwrite the parameters
-        #oldtheta = self.theta
-        #if numpy.any(oldtheta != theta):
-        #    self.setparams(theta)
-
-        # Store the matrix S with elements s_ij = f_i(x_j) \sum_k f_k(x_j)
-        try:
-            self.S
-        except AttributeError:
-            F_column_sum = F.sum(axis=0).A.squeeze()
-            if isinstance(F, numpy.ndarray):
-                F = numpy.asarray(F)    # convert to array if it's a matrix
-                                        # to get the elementwise product
-                self.S = F * F_column_sum
-            else:
-                # Assume it's a sparse matrix
-                n = F.shape[1]
-                # Construct a sparse matrix D whose diagonals are F_column_sum
-                # D = sparse.spdiags(F_column_sum, 0, n, n)
-                D = sparse.dok_matrix((n, n))
-                D.setdiag(F_column_sum)
-                D = D.tocsc()
-                # Now S is given by the matrix product F D.
-                self.S = F * D
-
-        # Compute b as the vector with components
-        # b_j = \sum_k f_k(x_j) * p_dot(x_j)} = F_column_sum_j * p_dot(x_j)
-        p_dot = flatten(arrayexp(innerprodtranspose(F, self.theta)))
-        
-        # Now the step sizes are given as follows:
-        a = innerprod(F, p_dot) / innerprod(self.S, p_dot)     # elementwise division
-        a = numpy.nan_to_num(a) # zero out all NaNs -- stepsize zero.
-                                # This should be sufficient, since this occurs
-                                # only when both num and denom are zero (so the
-                                # expectation is correct already)
-        return a 
-    
-    
-    def numconstraints(self):
-        return len(self.theta)
-
-
-    def setsmooth(sigma):
-        """Speficies that the entropy dual and gradient should be
-        computed with a quadratic penalty term on magnitude of the
-        parameters.  This 'smooths' the model to account for noise in the
-        target expectation values or to improve robustness when using
-        simulation to fit models and when the sampling distribution has
-        high variance.  The smoothing mechanism is described in Chen and
-        Rosenfeld, 'A Gaussian prior for smoothing maximum entropy
-        models' (1999).
-        
-        The parameter 'sigma' will be squared and stored as self.sigma2.
-        """
-        self.sigma2 = sigma**2
-    
-    
-    def setparams(self, theta):
-        """Set the parameter vector theta, replacing the existing
-        parameters.  theta must be a list or numpy array of the same
-        length as the model's feature vector f.
-        """
 
         # assert len(theta) == self.numconstraints()
         self.theta = numpy.array(theta, float)        # make a copy
@@ -633,7 +246,16 @@ class basemodel(object):
         # Delete theta-specific stuff
         self.clearcache()
         
-       
+        # Test the new parameters with the test samples if they exist.
+        if isinstance(self, bigmodel) and self.testevery is not None:
+            M = self.testevery
+            if self.fnevals % M == M - 1:
+                self.test()
+        
+        # Reset the sampler cache, so we begin drawing samples from the
+        # stored matrix
+        # self.resetsampler = True
+        
     def clearcache(self):
         """Clears the interim results of computations depending on the
         parameters and the sample.
@@ -665,14 +287,21 @@ class basemodel(object):
         else:
             m = self.numconstraints()            
             
-        # Set parameters, clearing cache variables
-        self.setparams(numpy.zeros(m, float))  
+        self.theta = numpy.zeros(m, float)
         
         # These bounds on the param values are only effective for the
         # L-BFGS-B optimizer:
-        self.bounds = [(-100., 100.)]*len(self.theta)  
+        self.bounds = [(-10., 10.)]*len(self.theta)  
         
    
+    def setcallbackiter(self, callback):
+        """Sets a callback function to be called each new iteration but
+        NOT each function / gradient evaluation in line searches, which
+        will be wilder.  The function is passed one argument, the current
+        model before the parameters are changed for the next iteration.
+        """
+        self.callbackiter = callback
+     
     def setcallback(self, callback):
         """Sets a callback function to be called before the parameters
         are changed with setparams(theta).  The function is passed one
@@ -680,7 +309,8 @@ class basemodel(object):
         the next fn/grad evaluation.
 
         Note that line search algorithms in e.g. CG make potentially
-        several evals per iteration, some of which we expect to be poor.
+        several evals per iter, some of which we expect to be poor.  If
+        this is a problem, use callbackiter() instead.
         """
         self.callback = callback
     
@@ -749,6 +379,33 @@ class model(basemodel):
             raise ValueError, "not supported: specify both features and" \
                     " sample space or neither"
         
+    def fit(self, K, algorithm='CG'):
+        """Fit the maxent model p whose feature expectations are given
+        by the vector K.
+
+        Model expectations are computed exactly, by summing over the
+        given sample space.  If the sample space is continuous or too
+        large to iterate over, use the 'bigmodel' class instead.
+        
+        The algorithm can be 'CG', 'BFGS', 'LBFGSB', 'Powell', or
+        'Nelder-Mead'.
+        
+        The CG (conjugate gradients) method is the default; it is quite
+        fast and requires only O(N) memory in the number of parameters.
+        
+        The BFGS (Broyden-Fletcher-Goldfarb-Shanno) algorithm is a
+        variable metric Newton method.  It is perhaps faster than the CG
+        method but requires O(N^2) instead of O(N) memory, so it is
+        infeasible for more than about 10^3 parameters.
+
+        The Powell algorithm doesn't require gradients.  It is slow but
+        robust.
+        """
+        
+        func = self._dual
+        grad = self._grad
+        self._fit(K, func, grad, algorithm=algorithm)
+
     def setfeaturesandsamplespace(self, f, samplespace):
         """Creates a new exponential model, where f is a list of feature
         functions f_i mapping the sample space to real values.  The
@@ -766,6 +423,55 @@ class model(basemodel):
         self.F = sparsefeaturematrix(f, samplespace, 'csr_matrix')
     
     
+    def expectations(self):
+        """The vector E_p[f(X)] under the model p_theta of the vector of
+        feature functions f_i over the sample space.
+        """
+        
+        # If discrete, use the representation E_p[f(X)] = p . F
+        try:
+            self.F
+        except AttributeError:
+            raise AttributeError, "need a pre-computed feature matrix F"
+ 
+        # A pre-computed matrix of features exists
+        p = self.pmf()
+        return innerprod(self.F, p)
+    
+
+    def lognormconst(self):
+        """Compute the log of the normalization constant Z=sum_{x \in
+        samplespace} exp(theta . f(x)).  The sample space must be
+        discrete and finite.
+        """
+        
+        # See if it's been precomputed
+        try:
+            return self.logZ
+        except AttributeError:
+            pass
+        
+        # Has F = {f_i(x_j)} been precomputed?
+        try:
+            self.F
+            
+            # Good, assume F has been precomputed
+            log_p_dot = innerprodtranspose(self.F, self.theta)
+            self.logZ = logsumexp(log_p_dot)
+            return self.logZ
+        
+        except AttributeError:
+            raise AttributeError, "first create a feature matrix F"
+        
+
+    def normconst(self):
+        """Returns the normalization constant, or partition function, for
+        the current model.  Warning -- this may be too large to represent,
+        resulting in numerical overflow!  In this case use lognormconst()
+        instead.
+        """
+        return math.exp(self.lognormconst())
+
     def logpmf(self):
         """Returns an array indexed by integers representing the
         logarithms of the probability mass function (pmf) at each point
@@ -844,7 +550,88 @@ class model(basemodel):
         
         return p
     
-  
+    def entropydual(self, K):
+        """An alias for dual()
+        """
+        return self.dual(K)
+     
+    def dual(self, K):
+        """Computes the Lagrangian dual L(theta) of the entropy of the
+        model.  Minimising this function (without constraints) should
+        fit the constrained model.  Given by:
+            L(theta) = log(Z) - theta^T . K
+        """
+        
+        logZ = self.lognormconst()
+        return logZ - numpy.dot(self.theta, K)
+    
+    
+    def _dual(self, theta):
+        """Computes the Lagrangian dual of the entropy function L(p)
+        with specified Lagriangian multipliers (parameters theta) and
+        constraints E_p(f(X)) = self.K.  
+        
+        Minimize this to maximize the entropy among all constrained
+        models.  The minimum value equals the model entropy and the model
+        with the corresponding parameters satisfies the given
+        constraints.
+        """
+
+        self.fnevals += 1
+        
+        if self.verbose:
+            print "Function eval #" + str(self.fnevals)
+        
+        oldtheta = self.theta
+        if numpy.any(oldtheta != theta):
+            self.setparams(theta)
+
+        # If constraints E_p f(X) = K have been imposed, compute the entropy
+        # of the model p_theta with exponential form
+        # exp(theta^T . f_vec(x)) / Z(theta) as:
+        #        L(p) = log Z(theta) - sum_i { theta_i K_i }
+        # where K_i = empirical expectation E_p_tilde f_i (X) = sum_x {p(x)f_i(x)}.
+        
+        logZ = self.lognormconst()
+        L = logZ - numpy.dot(self.theta, self.K)
+        
+        # (We don't reset theta to its prior value.)
+        
+        if self.verbose:
+            print "Entropy dual is: " + str(L)
+        
+        if L < self.mindual:
+            raise ValueError, "the dual is below the threshold mindual and " \
+                    "may be diverging to -inf.  Fix the constraints or lower "\
+                    "the threshold."
+
+        return L
+     
+    def _grad(self, theta):
+        """Returns the gradient vector of the dual of the entropy
+        function:
+            G(theta) = E_p_theta[f(X)] - K,
+        
+        where the feature expectations K are stored as self.K.  This
+        function is called by the optimization routines, not by the user.
+        """
+        
+        self.gradevals += 1
+        
+        if self.verbose:
+            print "Grad eval #" + str(self.gradevals)
+        
+        oldtheta = self.theta
+        if numpy.any(oldtheta != theta):
+            self.setparams(theta)
+        
+        negG = self.expectations() - self.K
+        
+        # (We don't reset theta to its prior value.)
+        
+        return negG
+ 
+
 class bigmodel(basemodel):
     """A maximum-entropy (exponential-form) model on a large sample
     space.
@@ -861,6 +648,38 @@ class bigmodel(basemodel):
     The tails should be fatter than the model.
     """
     
+
+    def fit(self, K, algorithm='CG'):
+        """Fit the maxent model p whose feature expectations are given
+        by the vector K.
+       
+        The algorithm can be 'CG', 'BFGS', 'LBFGSB', 'Powell', or
+        'Nelder-Mead'.
+        
+        The CG (conjugate gradients) method is the default; it is quite
+        fast and requires only O(N) memory in the number of parameters.
+        
+        The BFGS (Broyden-Fletcher-Goldfarb-Shanno) algorithm is a
+        variable metric Newton method.  It is perhaps faster than the CG
+        method but requires O(N^2) instead of O(N) memory, so it is
+        infeasible for more than about 10^3 parameters.
+
+        The Powell algorithm doesn't require gradients.  It is slow but
+        robust.
+        """
+        
+        # First see if the sample matrix has been set
+        try:
+            self.sampleF
+            self.samplelogprobs
+        except AttributeError:
+            raise AttributeError, "first specify a feature matrix" \
+                                  " using sampleFgen()"
+        
+        func = self._dualapprox
+        grad = self._gradapprox
+        self._fit(K, func, grad, algorithm=algorithm)
+
     def __init__(self):
         super(bigmodel, self).__init__()
         
@@ -947,7 +766,22 @@ class bigmodel(basemodel):
         """Estimates the normalization constant (partition function)
         using the current sample matrix F.
         """
-        return self.lognormconst()
+
+        # First see whether logZ has been precomputed
+        try:
+            return self.logZapprox
+        except AttributeError:
+            pass
+ 
+        # Compute log w = log [p_dot(s_j)/aux_dist(s_j)]   for
+        # j=1,...,n=|sample| using a precomputed matrix of sample
+        # features.
+        logw = self._logw()
+        
+        # Good, we have our logw.  Now:
+        n = len(logw)
+        self.logZapprox = logsumexp(logw) - math.log(n)
+        return self.logZapprox
     
     
     def normconstapprox(self):
@@ -959,25 +793,16 @@ class bigmodel(basemodel):
         to represent. In this case use lognormconstapprox() instead!
         """
         
-        return math.exp(self.lognormconst())
-        
+        return math.exp(self.lognormconstapprox())
+    
         
     def resample(self):
         """(Re)samples the matrix F of sample features.  
         """
 
-        if self.verbose >= 3:
+        if self.verbose >= 2:
             print "(sampling)"
         
-        # First delete the existing sample matrix to save memory
-        # This matters, since these can be very large
-        try:
-            del self.sampleF
-            del self.samplelogprobs
-            del self.sample
-        except AttributeError:
-            pass
-        # Now generate a new sample
         output = self.sampleFgen.next()
         try:
             len(output)
@@ -1005,14 +830,45 @@ class bigmodel(basemodel):
             if self.sampleF.shape[0] != m:
                 raise ValueError, "the sample feature generator returned" \
                                   " a feature matrix of incorrect dimensions"
-        if self.verbose >= 3:
+        if self.verbose >= 2:
             print "(done)"
 
         # Now clear the temporary variables that are no longer correct for this
         # sample
         self.clearcache()
 
-       
+    def _GISstepsizes(self, theta):
+        """A function that computes step sizes for an iterative scaling
+        algorithm like GIS.  The step sizes were proposed by Rosenfeld et al
+        (2002), "Whole-sentence exponential language models", Comp Ling 2002.
+
+        It takes parameters as an argument and returns
+        a vector of step sizes 1/F, one for each parameter params[i].  These are
+        given by:
+            F_i = \sum_x [p(x) f_i(x) \sum_k f_k(x)] / {\sum_x [p(x) f_i(x)]}
+        """
+        # Overwrite the parameters
+        oldtheta = self.theta
+        if numpy.any(oldtheta != theta):
+            self.setparams(theta)
+
+        # Store column sums \sum_k f_k(x) of the sampleF matrix:
+        try:
+            self.sampleF_column_sum
+        except AttributeError:
+            self.sampleF_column_sum = self.sampleF.sum(axis=0)
+
+        # Compute b as the vector with components
+        # b_j = \sum_k f_k(x_j) * p_dot(x_j)
+        p_dot = innerprodtranspose(self.sampleF, self.theta)
+        b = self.sampleF_column_sum * p_dot     # elementwise product
+
+        # Now the step sizes are given by the reciprocal of F, where
+        F = innerprod(self.sampleF, b) /   \
+            innerprod(self.sampleF, p_dot)     # elementwise division
+        return 1./F
+    
+        
     def _logw(self):
         """This function helps with caching of interim computational
         results.  It is designed to be called internally, not by a user.
@@ -1096,7 +952,7 @@ class bigmodel(basemodel):
           = exp(logsumexp(theta.f(s_j) - log aux_dist(s_j)))
         """
         
-        if self.verbose >= 3:
+        if self.verbose >= 2:
             print "(estimating dual and gradient ...)"
 
         if not self.usesamplematrix:
@@ -1167,13 +1023,51 @@ class bigmodel(basemodel):
             return
   
     
-    def entropydualapprox(self):
+    def _dualapprox(self, theta, newiter=True):
+        """The Lagrangian dual of the entropy, as a function of the model
+        parameters theta.  This function is not designed to be called by
+        a user, but by an optimization routine.  (The parameters theta
+        are stored in the model object anyway.)
+
+        The desired (target) feature expectations are stored as self.K.
+
+        If newiter is False, this evaluation corresponds to a line search
+        routine, so we should exclude the resulting dual evaluation from
+        plots.
+        """
+        self.fnevals += 1
+        
+        if self.verbose:
+            print "Function eval #" + str(self.fnevals)
+            if self.verbose >= 2 and not newiter:
+                print "(line search)"
+
+        # Has theta changed?  If so, set it anew, clearing the cache
+        # variables that are functions of theta.
+        if numpy.any(self.theta != theta):
+            self.setparams(theta, newiter)
+        
+        L = self.dualapprox(self.K)
+        
+        if L < self.mindual:
+            raise DivergenceError, \
+              "the dual is below the threshold mindual and may be diverging" \
+              " to -inf.  Fix the constraints or lower the"\
+              " threshold."
+        
+        if self.verbose:
+            print "Approx dual is " + str(L)
+
+        # (We don't reset theta to its prior value.)
+        return L
+    
+    
+    def entropydualapprox(self, K):
         """An alias for dualapprox()
         """
-        return self.dualapprox()
-   
+        return self.dualapprox(K)
     
-    def dualapprox(self):
+    def dualapprox(self, K):
         """This function approximates the entropy of the model p_theta
         with exponential form exp(theta^T . f_vec(x)) / Z(theta) without
         actually computing p_theta.  This is important if the event space
@@ -1196,9 +1090,11 @@ class bigmodel(basemodel):
         Z_est(theta) = 1/m sum_{x in sample S_0} p_dot(x) / aux_dist(x),
         
         and m = # observations in sample S_0, and K_i = the empirical
-        expectation E_p_tilde f_i (X) = sum_x {p(x) f_i(x)}.
-        """
-        return self.dual()
+        expectation E_p_tilde f_i (X) = sum_x {p(x) f_i(x)}.  """
+        
+        L = self.lognormconstapprox() - numpy.dot(self.theta, K)
+
+        return L    
     
     
     #def _entropydualapproxgradient(self, theta, K):
@@ -1208,16 +1104,48 @@ class bigmodel(basemodel):
     #    return self._gradapprox(theta, K)
    
     
-       
+    def _gradapprox(self, theta, newiter=True):
+        """Estimate the gradient of the entropy dual.
+        """
+        
+        self.gradevals += 1
+        
+        if self.verbose:
+            print "Grad eval #" + str(self.gradevals)
+            #if not newiter:
+            #    print "(line search)"
+
+        # Has theta changed?  If so, clear the speed-enhancing temporary
+        # variables that are functions of theta.
+        if numpy.any(self.theta != theta):
+            self.setparams(theta, newiter)
+        
+        G = self.expectationsapprox() - self.K
+        
+        # (We don't reset theta to its prior value.)
+        
+        return G
+        
+        
     def expectationsapprox(self):
         """Estimates the feature expectations E_p f(X) under the current
-        model p = p_theta.  If self.staticsample is True, use the current
-        feature matrix F.  If self.staticsample is False or
-        self.matrixtrials is > 1, draw one or more sample feature
-        matrices F afresh using the supplied sampleFgen() generator
-        function.
+        model p = p_theta.  If 'staticsample' is True, use the current
+        feature matrix F.  If 'staticsample' is False or 'matrixtrials'
+        is > 1, draw one or more sample feature matrices F afresh using
+        the supplied sampleFgen() generator function.
         """
-        return self.expectations()        
+        
+        try:
+            # See if already computed
+            self.mu
+            if self.verbose >= 3:
+                print "(returning pre-computed expectations)"
+            return self.mu
+        
+        except AttributeError:
+            self.estimate()
+            return self.mu
+     
    
     
     def setsampleFgen(self, sampler, staticsample=True):
@@ -1403,9 +1331,7 @@ class bigmodel(basemodel):
                     # I think we need a stepsize decreasing as n^-1 for almost
                     # sure convergence
                     a_k = 1.0 * self.a_0 / (n ** self.stepdecreaserate)
-            # otherwise leave step size unchanged
-            if self.verbose:
-                print "  step size is: " + str(a_k)
+            # otherwise leave unchanged
            
             self.matrixtrials = 1
             self.staticsample = False
@@ -1418,8 +1344,7 @@ class bigmodel(basemodel):
                       y_k_2 / max(1.0, norm(y_k_1))
             else:
                 # Standard Robbins-Monro estimator
-                if not self.staticsample:
-                    self.estimate()   # resample and reestimate
+                self.estimate()   # resample and reestimate
                 try:
                     y_kminus1 = y_k    # store this for the Deylon acceleration
                 except NameError:
@@ -1430,8 +1355,14 @@ class bigmodel(basemodel):
                 print "SA: after iteration " + str(k)
                 print "  approx dual fn is: " + str(self.logZapprox \
                             - numpy.dot(self.theta, K))
-                print "  norm(mu_est - k) = " + str(norm_y_k)
-            
+                if self.verbose >= 2:
+                    print "  params[0:5] are: " + str(self.theta[0:5])
+                    print "  norm(mu - k) = " + str(norm_y_k)
+            #if self.storenormerrors:
+            #    self.normerrors.append(norm_y_k)
+            #if self.storeduals:
+            #    self.duals.append(self.logZapprox - numpy.dot(self.theta, K))
+               
             # Update theta (after the convergence tests too ... don't waste the
             # computation.)
             if self.ruppertaverage:
@@ -1439,7 +1370,7 @@ class bigmodel(basemodel):
                 # Ruppert and Polyak show can converge more rapidly
                 newtheta = self.theta - a_k*y_k
                 avgtheta = (k-1.0)/k*avgtheta + 1.0/k * newtheta
-                if self.verbose:
+                if self.verbose >= 2:
                     print "  new params[0:5] are: " + str(avgtheta[0:5])
                 self.setparams(avgtheta)
             else:
@@ -1447,8 +1378,9 @@ class bigmodel(basemodel):
                 self.setparams(self.theta - a_k*y_k)
             
             if k >= self.maxiter:
-                print "Reached maximum # iterations during stochastic" \
-                        " approximation without convergence."
+                if self.verbose:
+                    print "Reached maximum # iterations during stochastic" \
+                            " approximation without convergence."
                 break
 
                       
@@ -1474,14 +1406,15 @@ class bigmodel(basemodel):
         # external (test) samples.  (The internal sample is used
         # statically for sample path optimization; the test samples are
         # used as a control for the process.)  The hash keys are the
-        # number of function or gradient evaluations that have been made
-        # before now.
+        # number of function evaluations that have been made before now.
+        self.all_duals = {}
+        self.all_mu_MSEs = {}
         
         # The mean entropy dual and mean square error estimates among the
         # t external (test) samples, where t = len(F_list) =
         # len(logprob_list).  
-        self.external_duals = {}
-        self.external_gradnorms = {}
+        self.external_mean_duals = {}
+        self.external_mean_mu_MSEs = {}
     
     
     def test(self):
@@ -1499,50 +1432,46 @@ class bigmodel(basemodel):
         # Reduce clutter
         fnevals, K = self.fnevals, self.K
         
+        # Store this dual and MSE of feature expectation estimates \hat{mu}
+        self.all_duals[fnevals] = self.dualapprox(K)
+        self.all_mu_MSEs[fnevals] = norm(self.expectationsapprox() - K)
+        
         if self.verbose:
-            print "  max(theta**2)    = " + str((self.theta**2).max())
+            print "argmax(theta**2) = " + str((self.theta**2).argmax())
+            print "max(theta**2)    = " + str((self.theta**2).max())
             print "Now testing model on external samples ..."
 
         # Estimate the entropy dual and gradient for each sample
         dualapprox = []
-        dualapproxpenalty = []
-        mu_ests = []
+        mu_est = []
         for e in xrange(len(self.externalFs)):
             self.external = e
             self.clearcache()
-            if self.verbose >= 2:
-                print "(testing with sample %d)" % e
-            dualapprox.append(self.dual(ignorepenalty=True, ignoretest=True))
-            dualapproxpenalty.append(self.dual(ignoretest=True))
-            mu_ests.append(self.expectations())
+            dualapprox.append(self.dualapprox(K))
+            mu_est.append(self.expectationsapprox())
         
         # Reset to using the normal sample matrix sampleF
         self.external = None
-        self.clearcache()
         
         meandual = numpy.average(dualapprox)
-        meandualpenalty = numpy.average(dualapproxpenalty)
-        self.external_duals[fnevals] = dualapprox
-        MSEs = [norm(mu - K) for mu in mu_ests]
-        self.external_gradnorms[fnevals] = MSEs
+        self.external_mean_duals[fnevals] = meandual
+        MSEs = [norm(mu_est[i] - K) for i in range(10)]
+        self.external_mean_mu_MSEs[fnevals] = MSEs
                 
         if self.verbose:
-            print "** Mean dual estimate from the %d external samples"\
-                  " is %f" % \
+            print "** Mean dual estimate from the %d external samples is %f" % \
                  (len(self.externalFs), meandual)
-            print "** Mean regularized dual estimate from the %d external" \
-                  " samples is %f" % \
-                 (len(self.externalFs), meandualpenalty)
             print "** Mean mean square error of the feature expectation" \
-                    " estimates from the external samples =" \
-                    " mean(|| \hat{\mu_e} - k ||) =", numpy.average(MSEs)
+                    " estimates from the external samples"
+            print "** = mean(|| \hat{\mu_e} - k ||) =", numpy.average(MSEs)
         # Track the parameter vector theta with the lowest mean dual estimate so
         # far:
         if meandual < self.bestdual:
             self.bestdual = meandual
             self.bestparams = self.theta
             if self.verbose:
-                print "\n\t\t\tStored new minimum entropy dual: %f\n" % meandual
+                print "Stored new minimum entropy dual:", meandual
+
 
 
 def _test():

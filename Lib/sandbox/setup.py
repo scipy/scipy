@@ -14,10 +14,7 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('maxent')
     
     # Monte Carlo package
-    config.add_subpackage('montecarlo')
-    
-    # Monte Carlo package
-    config.add_subpackage('pysparse')
+    #config.add_subpackage('montecarlo')
     
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
