@@ -1999,8 +1999,7 @@ class coo_matrix(spmatrix):
             self.nzmax = nzmax
             self._check()
         except Exception:
-            print "invalid input format"
-            raise
+            raise TypeError, "invalid input format"
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
@@ -2243,7 +2242,6 @@ class lil_matrix(spmatrix):
                     row[:] = nonzeros
                     self.vals[i] = x
                 else:
-                    print "Warning: adding %d elements slowly to lil_matrix" % len(seq)
                     # add elements the slow way
                     for k, col in enumerate(seq):
                         self[i, col] = x[k]
