@@ -2116,7 +2116,7 @@ class lil_matrix(spmatrix):
     # row
 
     def getnnz(self):
-        return sum(len(rowvals) for rowvals in self.vals)
+        return sum([len(rowvals) for rowvals in self.vals])
     
     def __str__(self):
         val = ''
