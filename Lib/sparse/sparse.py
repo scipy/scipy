@@ -1,15 +1,19 @@
 """ Scipy 2D sparse matrix module.
 
 Original code by Travis Oliphant.
-
-Modified by Ed Schofield and Robert Cimrman.
+Modified and extended by Ed Schofield and Robert Cimrman.
 """
 
-from numpy import *
+#from numpy import *         # get rid of this!
+from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, dot,\
+                  ArrayType, ceil, amax, rank, conj, searchsorted, ndarray,   \
+                  less, where, greater, array, transpose, ravel, empty, ones, \
+                  arange, shape
 import numpy
-import types, itertools, operator
+import itertools, operator
 import sparsetools
 import _superlu
+from bisect import bisect_left
 
 def resize1d(arr, newlen):
     old = len(arr)
@@ -189,6 +193,7 @@ class spmatrix:
             return self * (1./other)
         else:
             raise NotImplementedError, "sparse matrix division not yet supported"
+    
     def __pow__(self, other):
         csc = self.tocsc()
         return csc ** other            
@@ -203,7 +208,7 @@ class spmatrix:
 
     def __getattr__(self, attr):
         if attr == 'A':
-            return self.todense()
+            return self.toarray()
         elif attr == 'T':
             return self.transpose()
         elif attr == 'H':
@@ -252,38 +257,46 @@ class spmatrix:
         multiplication.  Returns A.transpose().conj() * other or
         A.transpose() * other.
         """
-        M, K1 = self.shape
-        #other = asarray(other)
+                
         try:
             other.shape
         except AttributeError:
-            other = asarray(other)
-        if len(other.shape) == 2:
-            K2, N = other.shape
-        elif len(other.shape) == 1:
-            K2, N = other.shape[0], 1
+            # If it's a list or whatever, treat it like a matrix
+            other = asmatrix(other)
+        
+        if len(other.shape) == 1:
+            result = self.matvec(other)
+        elif isdense(other) and asarray(other).squeeze().ndim == 1:
+            # If it's a row or column vector, return a DENSE result
+            result = self.matvec(other)
+        elif len(other.shape) == 2:
+            # Return a sparse result
+            result = self.matmat(other)
         else:
             raise ValueError, "could not interpret dimensions"
-                
-        # Special case for vectors for efficiency
-        if N == 1 or K2 == 1:
-            return self.matvec(other)
+        
+        if isinstance(other, matrix) and isdense(result):
+            return asmatrix(result)
         else:
-            if K1 != K2:
-                raise ValueError, "dimension mismatch"
-            return self.matmat(other)
-
+            # if the result is sparse or 'other' is an array:
+            return result
 
     def matmat(self, other):
         csc = self.tocsc()
         return csc.matmat(other)
 
     def matvec(self, other):
+        """Multiplies the sparse matrix by the vector 'other', returning a
+        dense vector as a result.
+        """
         csc = self.tocsc()
         return csc.matvec(other)
 
     def rmatvec(self, other, conjugate=True):
-        """ If 'conjugate' is True:
+        """Multiplies the vector 'other' by the sparse matrix, returning a
+        dense vector as a result.
+        
+        If 'conjugate' is True:
             returns A.transpose().conj() * other
         Otherwise:
             returns A.transpose() * other.
@@ -302,11 +315,14 @@ class spmatrix:
     #        return other.matmat(self.transpose()).conj()
     #    else:
     #        return other.matmat(self.transpose())
-
+    
     def todense(self):
+        return asmatrix(self.toarray())
+
+    def toarray(self):
         csc = self.tocsc()
         return csc.todense()
-
+    
     def tocoo(self):
         csc = self.tocsc()
         return csc.tocoo()
@@ -314,6 +330,41 @@ class spmatrix:
     def copy(self):
         csc = self.tocsc()
         return csc.copy()
+
+    def sum(self, axis=None):
+        """Sum the matrix over the given axis.  If the axis is None, sum
+        over both rows and columns, returning a scalar.
+        """
+        # We use multiplication by an array of ones to achieve this.
+        # For some sparse matrix formats more efficient methods are
+        # possible -- these should override this function.
+        m, n = self.shape
+        if axis==0:
+            # sum over columns
+            # The following doesn't currently work, since NumPy matrices
+            # redefine multiplication:
+            #     o = asmatrix(ones((1, m), dtype=self.dtype))
+            #     return o * self
+            o = ones(m, dtype=self.dtype)
+            return asmatrix(self.rmatvec(o))
+        elif axis==1:
+            # sum over rows
+            o = asmatrix(ones((n, 1), dtype=self.dtype))
+            return self * o
+        elif axis==None:
+            # sum over rows and columns
+            m, n = self.shape
+            o0 = asmatrix(ones((1, m), dtype=self.dtype))
+            o1 = asmatrix(ones((n, 1), dtype=self.dtype))
+            # The following doesn't currently work, since NumPy matrices
+            # redefine multiplication:
+            #     o0 = asmatrix(ones(m, dtype=self.dtype))
+            #     return o0 * self * o1
+            # So we use:
+            return (o0 * (self * o1)).A.squeeze()
+
+        else:
+            raise ValueError, "axis out of bounds"
 
     def save(self, file_name, format = '%d %d %f\n'):
         try:
@@ -333,7 +384,7 @@ class csc_matrix(spmatrix):
     """ Compressed sparse column matrix
         This can be instantiated in several ways:
           - csc_matrix(d)
-            with a dense array or matrix d
+            with a dense matrix d
 
           - csc_matrix(s)
             with another sparse matrix s (sugar for .tocsc())
@@ -357,6 +408,7 @@ class csc_matrix(spmatrix):
                 # Convert to a row vector
                 arg1 = arg1.reshape(1, arg1.shape[0])
             if rank(arg1) == 2:
+                #s = asarray(arg1)
                 s = arg1
                 if s.dtype.char not in 'fdFD':
                     # Use a double array as the source (but leave it alone)
@@ -408,16 +460,14 @@ class csc_matrix(spmatrix):
                 self.indptr = temp.indptr
                 self.shape = temp.shape
         elif type(arg1) == tuple:
-            try:
-                # Assume it's a tuple of matrix dimensions (M, N)
-                (M, N) = arg1
-                M = int(M)      # will raise TypeError if (data, ij)
-                N = int(N)
+            if isshape(arg1):
+                # It's a tuple of matrix dimensions (M, N)
+                M, N = arg1
                 self.data = zeros((nzmax,), dtype)
                 self.rowind = zeros((nzmax,), int)
                 self.indptr = zeros((N+1,), int)
                 self.shape = (M, N)
-            except (ValueError, TypeError):
+            else:
                 try:
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
@@ -457,7 +507,11 @@ class csc_matrix(spmatrix):
             (M, N) = dims
         except TypeError:
             M = N = None
-        M = max(oldM, M, int(amax(self.rowind)) + 1)
+        if len(self.rowind) > 0:
+            M = max(oldM, M, int(amax(self.rowind)) + 1)
+        else:
+            # Matrix is completely empty
+            M = max(oldM, M)
         N = max(0, oldN, N, len(self.indptr) - 1)
         self.shape = (M, N)
 
@@ -555,8 +609,6 @@ class csc_matrix(spmatrix):
             return new
         else:
             return self.dot(other)
-        #else:
-        #    return TypeError, "unknown type for sparse matrix multiplication"
 
     def __rmul__(self, other):  # other * self
         if isscalar(other) or (isdense(other) and rank(other)==0):
@@ -566,7 +618,7 @@ class csc_matrix(spmatrix):
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
-            # Don't use asarray unless we have to -- it might be sparse!
+            # Don't use asarray unless we have to
             try:
                 tr = other.transpose()
             except AttributeError:
@@ -631,29 +683,46 @@ class csc_matrix(spmatrix):
 
     def matvec(self, other):
         if isdense(other):
-            # The following check is too harsh -- it prevents a column vector
-            # from being created on-the-fly like dense matrix objects can.
-            #if (rank(other) != 1) or (len(other) != self.shape[1]):
+            # This check is too harsh -- it prevents a column vector from
+            # being created on-the-fly like with dense matrix objects.
+            #if len(other) != self.shape[1]:
             #    raise ValueError, "dimension mismatch"
             func = getattr(sparsetools, self.ftype+'cscmux')
             y = func(self.data, self.rowind, self.indptr, other, self.shape[0])
+            if isinstance(other, matrix):
+                y = asmatrix(y)
+                # If 'other' was an (nx1) column vector, transpose the result
+                # to obtain an (mx1) column vector.
+                if other.ndim == 2 and other.shape[1] == 1:
+                    y = y.T
             return y
         elif isspmatrix(other):
-            raise NotImplementedError, "use matmat() for sparse * sparse"
+            raise TypeError, "use matmat() for sparse * sparse"
         else:
             raise TypeError, "need a dense vector"
 
     def rmatvec(self, other, conjugate=True):
         if isdense(other):
+            # This check is too harsh -- it prevents a column vector from
+            # being created on-the-fly like with dense matrix objects.
+            #if len(other) != self.shape[0]:
+            #    raise ValueError, "dimension mismatch"
             func = getattr(sparsetools, self.ftype+'csrmux')
             if conjugate:
                 cd = conj(self.data)
             else:
                 cd = self.data
             y = func(cd, self.rowind, self.indptr, other)
+
+            if isinstance(other, matrix):
+                y = asmatrix(y)
+                # In the (unlikely) event that this matrix is 1x1 and 'other' was an
+                # (mx1) column vector, transpose the result.
+                if other.ndim == 2 and other.shape[1] == 1:
+                    y = y.T
             return y
         elif isspmatrix(other):
-            raise NotImplementedError, "use matmat() for sparse * sparse"
+            raise TypeError, "use matmat() for sparse * sparse"
         else:
             raise TypeError, "need a dense vector"
 
@@ -695,7 +764,7 @@ class csc_matrix(spmatrix):
             c = zeros((nnzc,), dtypechar)
             rowc = zeros((nnzc,), 'i')
             ierr = irow = kcol = 0
-            while 1:
+            while True:
                 c, rowc, ptrc, irow, kcol, ierr = func(M, a, rowa, ptra, b, rowb, ptrb, c, rowc, ptrc, irow, kcol, ierr)
                 if (ierr==0): break
                 # otherwise we were too small and must resize
@@ -708,14 +777,14 @@ class csc_matrix(spmatrix):
             return csc_matrix((c, rowc, ptrc), dims=(M, N))
         elif isdense(other):
             # This is SLOW!  We need a more efficient implementation
-            # of sparse * dense multiplication!
+            # of sparse * dense matrix multiplication!
             return self.matmat(csc_matrix(other))
         else:
             raise TypeError, "need a dense or sparse matrix"
             
 
     def __getitem__(self, key):
-        if isinstance(key, types.TupleType):
+        if isinstance(key, tuple):
             row = key[0]
             col = key[1]
             func = getattr(sparsetools, self.ftype+'cscgetel')
@@ -724,14 +793,14 @@ class csc_matrix(spmatrix):
                 raise IndexError, "index out of bounds"
             ind, val = func(self.data, self.rowind, self.indptr, row, col)
             return val
-        #elif isinstance(key, type(3)):
-        elif type(key) == int:
+        elif isinstance(key, int):
             return self.data[key]
         else:
-            raise NotImplementedError
+            # We should allow column slices here!
+            raise IndexError, "invalid index"
 
     def __setitem__(self, key, val):
-        if isinstance(key, types.TupleType):
+        if isinstance(key, tuple):
             row = key[0]
             col = key[1]
             func = getattr(sparsetools, self.ftype+'cscsetel')
@@ -756,7 +825,7 @@ class csc_matrix(spmatrix):
                 self.rowind = resize1d(self.rowind, nzmax + alloc)
             func(self.data, self.rowind, self.indptr, row, col, val)
             self._check()
-        elif isinstance(key, types.IntType):
+        elif isinstance(key, int):
             if (key < self.nnz):
                 self.data[key] = val
             else:
@@ -787,7 +856,7 @@ class csc_matrix(spmatrix):
     def tocsr(self):
         return self.tocoo().tocsr()
 
-    def todense(self):
+    def toarray(self):
         func = getattr(sparsetools, self.ftype+'csctofull')
         return func(self.shape[0], self.data, self.rowind, self.indptr)
 
@@ -818,7 +887,7 @@ class csr_matrix(spmatrix):
     """ Compressed sparse row matrix
         This can be instantiated in several ways:
           - csr_matrix(d)
-            with a dense array or matrix d
+            with a dense matrix d
 
           - csr_matrix(s)
              with another sparse matrix s (sugar for .tocsr())
@@ -878,16 +947,14 @@ class csr_matrix(spmatrix):
                 self.indptr = temp.indptr
                 self.shape = temp.shape
         elif type(arg1) == tuple:
-            try:
-                # Assume it's a tuple of matrix dimensions (M, N)
-                (M, N) = arg1
-                M = int(M)      # will raise TypeError if (data, ij)
-                N = int(N)
+            if isshape(arg1):
+                # It's a tuple of matrix dimensions (M, N)
+                M, N = arg1
                 self.data = zeros((nzmax,), dtype)
                 self.colind = zeros((nzmax,), int)
                 self.indptr = zeros((M+1,), int)
                 self.shape = (M, N)
-            except (ValueError, TypeError):
+            else:
                 try:
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
@@ -931,7 +998,11 @@ class csr_matrix(spmatrix):
         except TypeError:
             M = N = None
         M = max(0, oldM, M, len(self.indptr) - 1)
-        N = max(oldN, N, int(amax(self.colind)) + 1)
+        if len(self.colind) > 0:
+            N = max(oldN, N, int(amax(self.colind)) + 1)
+        else:
+            # Matrix is completely empty
+            N = max(oldN, N)
         self.shape = (M, N)
         self._check()
         
@@ -1010,7 +1081,7 @@ class csr_matrix(spmatrix):
             new.ftype = _transtabl[new.dtype.char]
             return new
         else:
-            # Don't use asarray unless we have to -- it might be sparse!
+            # Don't use asarray unless we have to
             try:
                 tr = other.transpose()
             except AttributeError:
@@ -1062,19 +1133,26 @@ class csr_matrix(spmatrix):
         return new
 
     def matvec(self, other):
-        # This check is too harsh
-        #if (rank(other) != 1) or (len(other) != self.shape[1]):
-        #    raise ValueError, "dimension mismatch"
         if isdense(other):
+            # This check is too harsh -- it prevents a column vector from
+            # being created on-the-fly like dense matrix objects can.
+            #if len(other) != self.shape[1]:
+            #    raise ValueError, "dimension mismatch"
             func = getattr(sparsetools, self.ftype+'csrmux')
             y = func(self.data, self.colind, self.indptr, other)
-            return y
-        else:
-            raise TypeError, "need a dense vector"
 
+            if isinstance(other, matrix):
+                y = asmatrix(y)
+                # If 'other' was an (nx1) column vector, transpose the result
+                # to obtain an (mx1) column vector.
+                if other.ndim == 2 and other.shape[1] == 1:
+                    y = y.T
+            return y
+    
     def rmatvec(self, other, conjugate=True):
-        # This check is too harsh
-        #if (rank(other) != 1) or (len(other) != self.shape[0]):
+        # This check is too harsh -- it prevents a column vector from
+        # being created on-the-fly like dense matrix objects can.
+        #if len(other) != self.shape[0]:
         #    raise ValueError, "dimension mismatch"
         func = getattr(sparsetools, self.ftype+'cscmux')
         if conjugate:
@@ -1082,8 +1160,15 @@ class csr_matrix(spmatrix):
         else:
             cd = self.data
         y = func(cd, self.colind, self.indptr, other, self.shape[1])
-        return y
 
+        if isinstance(other, matrix):
+            y = asmatrix(y)
+            # In the (unlikely) event that this matrix is 1x1 and 'other' was an
+            # (mx1) column vector, transpose the result.
+            if other.ndim == 2 and other.shape[1] == 1:
+                y = y.T
+        return y
+    
     def matmat(self, other):
         if isspmatrix(other):
             M, K1 = self.shape
@@ -1155,7 +1240,7 @@ class csr_matrix(spmatrix):
             raise TypeError, "need a dense or sparse matrix"
 
     def __getitem__(self, key):
-        if isinstance(key, types.TupleType):
+        if isinstance(key, tuple):
             row = key[0]
             col = key[1]
             func = getattr(sparsetools, self.ftype+'cscgetel')
@@ -1168,15 +1253,15 @@ class csr_matrix(spmatrix):
                 raise IndexError, "index out of bounds"
             ind, val = func(self.data, self.colind, self.indptr, col, row)
             return val
-        #elif isinstance(key, type(3)):
-        elif type(key) == int:
+        elif isinstance(key, int):
             return self.data[key]
         else:
-            raise NotImplementedError
+            # We should allow column slices here!
+            raise IndexError, "invalid index"
 
 
     def __setitem__(self, key, val):
-        if isinstance(key, types.TupleType):
+        if isinstance(key, tuple):
             row = key[0]
             col = key[1]
             func = getattr(sparsetools, self.ftype+'cscsetel')
@@ -1205,7 +1290,7 @@ class csr_matrix(spmatrix):
                 self.colind = resize1d(self.colind, nzmax + alloc)
             func(self.data, self.colind, self.indptr, col, row, val)
             self._check()
-        elif isinstance(key, types.IntType):
+        elif isinstance(key, int):
             if (key < self.nnz):
                 self.data[key] = val
             else:
@@ -1235,10 +1320,10 @@ class csr_matrix(spmatrix):
     def tocsc(self):
         return self.tocoo().tocsc()
 
-    def todense(self):
+    def toarray(self):
         func = getattr(sparsetools, self.ftype+'csctofull')
         s = func(self.shape[1], self.data, self.colind, self.indptr)
-        return transpose(s)
+        return s.transpose()
 
     def prune(self):
         """ Eliminate non-zero entries, leaving space for at least
@@ -1279,17 +1364,23 @@ class dok_matrix(spmatrix, dict):
     structure for constructing sparse matrices for conversion to other
     sparse matrix types.
     """
-    def __init__(self, A=None, dtype='d'):
+    def __init__(self, A=None, shape=None, dtype='d'):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
         argument A is accepted, which initializes the dok_matrix with it.
-        This can be a tuple of dimensions (m, n) or a (dense) array
+        This can be a tuple of dimensions (M, N) or a (dense) array
         to copy.
         """
         dict.__init__(self)
         spmatrix.__init__(self)
-        self.shape = (0, 0)
-        # If _validate is True, ensure __setitem__ keys are integer tuples
-        self._validate = True
+        if shape is None:
+            self.shape = (0, 0)
+        else:
+            try:
+                m, n = shape
+            except:
+                raise "shape not understood"
+            else:
+                self.shape = shape
         self.dtype = numpy.dtype(dtype)
         if A is not None:
             if type(A) == tuple:
@@ -1310,21 +1401,18 @@ class dok_matrix(spmatrix, dict):
                 raise NotImplementedError, "initializing a dok_matrix with " \
                         "a sparse matrix is not yet supported"
             elif isdense(A):
+                # Convert to a (1 x n) row vector
+                if rank(A) == 1:
+                    A = A.reshape(1, len(A))
                 if rank(A) == 2:
                     M, N = A.shape
                     self.shape = (M, N)
-                    for i in range(M):
-                        for j in range(N):
+                    for i in xrange(M):
+                        for j in xrange(N):
                             if A[i, j] != 0:
                                 self[i, j] = A[i, j]
-                elif rank(A) == 1:
-                    M = A.shape[0]
-                    self.shape = (M, 1)
-                    for i in range(M):
-                        if A[i] != 0:
-                            self[i, 0] = A[i]
                 else:
-                    raise TypeError, "array for initialization must have rank 2"
+                    raise ValueError, "dense array must have rank 1 or 2"
             else:
                 raise TypeError, "argument should be a tuple of dimensions " \
                         "or a sparse or dense matrix"
@@ -1337,7 +1425,7 @@ class dok_matrix(spmatrix, dict):
     
     def __str__(self):
         val = ''
-        nnz = len(self)
+        nnz = self.getnnz()
         keys = self.keys()
         keys.sort()
         if nnz > self.maxprint:
@@ -1355,7 +1443,7 @@ class dok_matrix(spmatrix, dict):
         return val[:-1]
 
     def __repr__(self):
-        nnz = len(self)
+        nnz = self.getnnz()
         format = self.getformat()
         return "<%dx%d sparse matrix with %d stored "\
                "elements in %s format>" % \
@@ -1378,41 +1466,189 @@ class dok_matrix(spmatrix, dict):
         return dict.get(self, key, default)
  
     def  __getitem__(self, key):
-        if self._validate:
-            # Sanity checks: key must be a pair of integers
-            if not isinstance(key, tuple) or len(key) != 2:
-                raise TypeError, "key must be a tuple of two integers"
-            if type(key[0]) != int or type(key[1]) != int:
-                raise TypeError, "key must be a tuple of two integers"
+        """If key=(i,j) is a pair of integers, return the corresponding
+        element.  If either i or j is a slice or sequence, return a new sparse
+        matrix with just these elements.
+        """
+        try:
+            assert len(key) == 2
+        except (AssertionError, TypeError):
+            raise TypeError, "index must be a pair of integers or slices"
+        i, j = key
         
-        return self.get(key, 0)
-
-    def __setitem__(self, key, value):
-        if self._validate:
-            # Sanity checks: key must be a pair of integers
-            try:
-                # Cast to integers and compare.  This way the key
-                # can be a pair of rank-0 arrays.
-                i, j = int(key[0]), int(key[1])
-                assert i == key[0] and j == key[1]
-            except:
-                raise TypeError, "key must be a tuple of two integers"
-             
-            if (value == 0):
-                if self.has_key(key):  # get rid of it something already there
-                    del self[key]              
-                return                 # do nothing
-            dict.__setitem__(self, key, value)
-            newrows = max(self.shape[0], int(key[0])+1)
-            newcols = max(self.shape[1], int(key[1])+1)
-            self.shape = (newrows, newcols)
+        # Bounds checking
+        if isinstance(i, int):
+            if i < 0 or i >= self.shape[0]:
+                raise IndexError, "index out of bounds"
+        if isinstance(j, int):
+            if j < 0 or j >= self.shape[1]:
+                raise IndexError, "index out of bounds"
+            
+        # First deal with the case where both i and j are integers
+        if isinstance(i, int) and isinstance(j, int):
+            return dict.get(self, key, 0.)
         else:
-            # Faster version without sanity checks
-            if (value == 0):
-                if self.has_key(key):  # get rid of it something already there
-                    del self[key]              
-                return                 # do nothing
-            dict.__setitem__(self, key, value)
+            # Either i or j is a slice, sequence, or invalid.  If i is a slice
+            # or sequence, unfold it first and call __getitem__ recursively.
+        
+            if isinstance(i, slice):
+                # Is there an easier way to do this?
+                seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
+            elif operator.isSequenceType(i):
+                seq = i
+            else:
+                # Make sure i is an integer. (But allow it to be a subclass of int).
+                if not isinstance(i, int):
+                    raise TypeError, "index must be a pair of integers or slices"
+                seq = None
+            if seq is not None: 
+                # i is a seq
+                if isinstance(j, int):
+                    # Create a new matrix of the correct dimensions
+                    first = seq[0]
+                    last = seq[-1]
+                    if first < 0 or first >= self.shape[0] or last < 0 \
+                                 or last >= self.shape[0]:
+                        raise IndexError, "index out of bounds"
+                    newshape = (last-first+1, 1)
+                    new = dok_matrix(newshape)
+                    # ** This uses linear time in the size m of dimension 0:
+                    # new[0:seq[-1]-seq[0]+1, 0] = \
+                    #         [self.get((element, j), 0) for element in seq]
+                    # ** Instead just add the non-zero elements.  This uses
+                    # ** linear time in the number of non-zeros:
+                    for (ii,jj) in self:
+                        if jj == j and ii >= first and ii <= last:
+                            dict.__setitem__(new, (ii-first,0), \
+                                             dict.__getitem__(self, (ii,jj)))
+                else:
+                    ###################################
+                    # We should reshape the new matrix here!
+                    ###################################
+                    raise NotImplementedError, "fancy indexing supported over" \
+                            " one axis only" 
+                return new
+            
+            # Below here, j is a sequence, but i is an integer
+            if isinstance(j, slice):
+                # Is there an easier way to do this?
+                seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
+            elif operator.isSequenceType(j):
+                seq = j
+            else:
+                # j is not an integer
+                raise TypeError, "index must be a pair of integers or slices"
+            
+            # Create a new matrix of the correct dimensions
+            first = seq[0]
+            last = seq[-1]
+            if first < 0 or first >= self.shape[1] or last < 0 \
+                         or last >= self.shape[1]:
+                raise IndexError, "index out of bounds"
+            newshape = (1, last-first+1)
+            new = dok_matrix(newshape)
+            # ** This uses linear time in the size n of dimension 1:
+            # new[0, 0:seq[-1]-seq[0]+1] = \
+            #         [self.get((i, element), 0) for element in seq]
+            # ** Instead loop over the non-zero elements.  This is slower
+            # ** if there are many non-zeros
+            for (ii,jj) in self:
+                if ii == i and jj >= first and jj <= last:
+                    dict.__setitem__(new, (0,jj-first), \
+                                     dict.__getitem__(self, (ii,jj)))
+            return new
+    
+    
+    def __setitem__(self, key, value):
+        try:
+            assert len(key) == 2
+        except (AssertionError, TypeError):
+            raise TypeError, "index must be a pair of integers, slices, or" \
+                    " sequences"
+        i, j = key
+        
+        # First deal with the case where both i and j are integers
+        if isinstance(i, int) and isinstance(j, int):
+            if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
+                raise IndexError, "index out of bounds"
+            if isinstance(value, int) and value == 0:
+                if key in self:  # get rid of it something already there
+                    del self[key]
+            else:
+                # Ensure value is a single element, not a sequence
+                if isinstance(value, float) or isinstance(value, int) or \
+                    isinstance(value, complex):
+                    dict.__setitem__(self, key, value)
+                    newrows = max(self.shape[0], int(key[0])+1)
+                    newcols = max(self.shape[1], int(key[1])+1)
+                    self.shape = (newrows, newcols)
+                else:
+                    raise TypeError, "cannot set matrix element to non-scalar"
+            return                 # done
+        else:
+            # Either i or j is a slice, sequence, or invalid.  If i is a slice
+            # or sequence, unfold it first and call __setitem__ recursively.
+            if isinstance(i, slice):
+                # Is there an easier way to do this?
+                seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
+            elif operator.isSequenceType(i):
+                seq = i
+            else:
+                # Make sure i is an integer. (But allow it to be a subclass of int).
+                if not isinstance(i, int):
+                    raise TypeError, "index must be a pair of integers or slices"
+                seq = None
+            if seq is not None: 
+                # First see if 'value' is another dok_matrix of the appropriate
+                # dimensions
+                if isinstance(value, dok_matrix):
+                    if value.shape[1] == 1:
+                        for element in seq:
+                            self[element, j] = value[element, 0]
+                    else:
+                        raise NotImplementedError, "setting a 2-d slice of" \
+                                " a dok_matrix is not yet supported"
+                elif operator.isSequenceType(value):
+                    if len(seq) != len(value):
+                        raise ValueError, "index and value ranges must have" \
+                                          " the same length"
+                    for element, val in itertools.izip(seq, value):
+                        self[element, j] = val   # don't use dict.__setitem__
+                            # here, since we still want to be able to delete
+                            # 0-valued keys, do type checking on 'val' (e.g. if
+                            # it's a rank-1 dense array), etc.
+                else:
+                    for element in seq:
+                        self[element, j] = value
+            else:
+                # Process j
+                if isinstance(j, slice):
+                    seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
+                elif operator.isSequenceType(j):
+                    seq = j
+                else:
+                    # j is not an integer
+                    raise TypeError, "index must be a pair of integers or slices"
+                
+                # First see if 'value' is another dok_matrix of the appropriate
+                # dimensions
+                if isinstance(value, dok_matrix):
+                    if value.shape[0] == 1:
+                        for element in seq:
+                            self[i, element] = value[0, element]
+                    else:
+                        raise NotImplementedError, "setting a 2-d slice of" \
+                                " a dok_matrix is not yet supported"
+                elif operator.isSequenceType(value):
+                    if len(seq) != len(value):
+                        raise ValueError, "index and value ranges must have" \
+                                          " the same length"
+                    for element, val in itertools.izip(seq, value):
+                        self[i, element] = val
+                else:
+                    for element in seq:
+                        self[i, element] = value
+    
     
     def __add__(self, other):
         # First check if argument is a scalar
@@ -1420,13 +1656,17 @@ class dok_matrix(spmatrix, dict):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in range(M):
-                for j in range(N):
+            for i in xrange(M):
+                for j in xrange(N):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
             #new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
+            if other.shape != self.shape:
+                raise ValueError, "matrix dimensions are not equal"
+            # We could alternatively set the dimensions to the the largest of
+            # the two matrices to be summed.  Would this be a good idea?
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
             for key in other:
@@ -1434,9 +1674,10 @@ class dok_matrix(spmatrix, dict):
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other
-        else:
-            # Perhaps it's a dense matrix?
+        elif isdense(other):
             new = self.todense() + other
+        else:
+            raise TypeError, "data type not understood"
         return new
 
     def __radd__(self, other):
@@ -1445,15 +1686,16 @@ class dok_matrix(spmatrix, dict):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in range(M):
-                for j in range(N):
+            for i in xrange(M):
+                for j in xrange(N):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
         elif isinstance(other, dok_matrix):
+            if other.shape != self.shape:
+                raise ValueError, "matrix dimensions are not equal"
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
-            new.shape = self.shape
             for key in other:
                 new[key] += other[key]
         elif isspmatrix(other):
@@ -1491,7 +1733,7 @@ class dok_matrix(spmatrix, dict):
             #new.dtype.char = self.dtype.char
             return new
         else:
-            # Don't use asarray unless we have to -- it might be sparse!
+            # Don't use asarray unless we have to
             try:
                 tr = other.transpose()
             except AttributeError:
@@ -1505,8 +1747,8 @@ class dok_matrix(spmatrix, dict):
     def transpose(self):
         """ Return the transpose
         """
-        m, n = self.shape
-        new = dok_matrix((n, m), dtype=self.dtype)
+        M, N = self.shape
+        new = dok_matrix((N, M), dtype=self.dtype)
         for key, value in self.iteritems():
             new[key[1], key[0]] = value
         return new
@@ -1514,8 +1756,8 @@ class dok_matrix(spmatrix, dict):
     def conjtransp(self):
         """ Return the conjugate transpose
         """
-        m, n = self.shape
-        new = dok_matrix((n, m), dtype=self.dtype)
+        M, N = self.shape
+        new = dok_matrix((N, M), dtype=self.dtype)
         for key, value in self.iteritems():
             new[key[1], key[0]] = conj(value)
         return new
@@ -1529,7 +1771,7 @@ class dok_matrix(spmatrix, dict):
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
         # assume cols_or_rows is sorted
-        new = dok_matrix(self.shape, dtype=self.dtype)
+        new = dok_matrix(dtype=self.dtype)    # what should the dimensions be ?!
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx: # columns
@@ -1547,9 +1789,8 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def split(self, cols_or_rows, columns=1):
-        # similar to take but returns two array, the extracted
-        #  columns plus the resulting array
-        #  assumes cols_or_rows is sorted
+        # Similar to take but returns two arrays, the extracted columns plus
+        # the resulting array.  Assumes cols_or_rows is sorted
         base = dok_matrix()
         ext = dok_matrix()
         indx = int((columns == 1))
@@ -1576,27 +1817,43 @@ class dok_matrix(spmatrix, dict):
 
 
     def matvec(self, other):
-        other = asarray(other)
-        if other.shape[0] != self.shape[1]:
-            raise ValueError, "dimensions do not match"
-        new = [0]*self.shape[0]
-        for key in self:
-            new[int(key[0])] += self[key] * other[int(key[1]), ...]
-        return array(new)        
+        if isdense(other):
+            if other.shape[0] != self.shape[1]:
+                raise ValueError, "dimensions do not match"
+            new = [0] * self.shape[0]
+            for key in self:
+                new[int(key[0])] += self[key] * other[int(key[1]), ...]
+            new = array(new)
+            if isinstance(other, matrix):
+                new = asmatrix(new)
+                # Do we need to return the transpose?
+                if other.shape[1] == 1:
+                    new = new.T
+            return new
+        else:
+            raise TypeError, "need a dense vector"
 
     def rmatvec(self, other, conjugate=True):
-        other = asarray(other)
-        if other.shape[-1] != self.shape[0]:
-            raise ValueError, "dimensions do not match"
-        new = [0]*self.shape[1]
-        for key in self:
+        if isdense(other):
+	    if other.shape[-1] != self.shape[0]:
+	        raise ValueError, "dimensions do not match"
+	    new = [0] * self.shape[1]
+	    for key in self:
                 new[int(key[1])] += other[..., int(key[0])] * conj(self[key])
-        return array(new)
+            new = array(new)
+            if isinstance(other, matrix):
+                new = asmatrix(new)
+                # Do we need to return the transpose?
+                if other.shape[1] == 1:
+                    new = new.T
+            return new
+        else:
+            raise TypeError, "need a dense vector"
 
     def setdiag(self, values, k=0):
         M, N = self.shape
-        m = len(values)
-        for i in range(min(M, N-k)):
+        assert len(values) >= max(M, N)
+        for i in xrange(min(M, N-k)):
             self[i, i+k] = values[i]
         return
 
@@ -1661,9 +1918,7 @@ class dok_matrix(spmatrix, dict):
             k += 1
         return csc_matrix((data, rowind, col_ptr), dims=self.shape, nzmax=nzmax)
 
-    def todense(self, dtype=None):
-        if dtype is None:
-            dtype = 'd'
+    def toarray(self, dtype=float):
         new = zeros(self.shape, dtype=dtype)
         for key in self:
             ikey0 = int(key[0])
@@ -1697,10 +1952,6 @@ class dok_matrix(spmatrix, dict):
 class dod_matrix(spmatrix):
     pass
 
-# linked list matrix
-class lnk_matrix(spmatrix):
-    pass
-
 
 class coo_matrix(spmatrix):
     """ A sparse matrix in coordinate list format.
@@ -1725,7 +1976,7 @@ class coo_matrix(spmatrix):
             # Assume the first calling convention
             #            assert len(ij) == 2
             if len(ij_in) != 2:
-                if isdense(ij_in) and (ij_in.shape[1] == 2):
+                if isdense( ij_in ) and (ij_in.shape[1] == 2):
                     ij = (ij_in[:,0], ij_in[:,1])
                 else:
                     raise AssertionError
@@ -1748,8 +1999,7 @@ class coo_matrix(spmatrix):
             self.nzmax = nzmax
             self._check()
         except Exception:
-            print "invalid input format"
-            raise
+            raise TypeError, "invalid input format"
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
@@ -1809,6 +2059,248 @@ class coo_matrix(spmatrix):
         else:
             return self
         
+
+# Linked list matrix, by Ed Schofield -- report bugs to him!
+# This contains a list (self.rows) of rows, each of which is a sorted list of
+# column indices of non-zero elements; and a list (self.vals) of lists of these
+# elements.
+class lil_matrix(spmatrix):
+    def __init__(self, A=None, shape=None, dtype='d'):
+        """ Create a new list-of-lists sparse matrix.  An optional
+        argument A is accepted, which initializes the lil_matrix with it.
+        This can be a tuple of dimensions (M, N) or a (dense)
+        array/matrix to copy.
+        """
+        spmatrix.__init__(self)
+        self.dtype = numpy.dtype(dtype)
+        
+        # First get the shape
+        if A is None:
+            if not isshape(shape):
+                raise TypeError, "need a valid shape"
+            M, N = shape
+        else:
+            if isshape(A):
+                M, N = A
+                A = None
+            else:
+                if not isdense(A):
+                    # A is not dense.  Try converting to a matrix.
+                    # (so if it has rank 1, it will become a row vector)
+                    A = asmatrix(A)
+                elif rank(A) == 1:
+                    # Construct a row vector
+                    A = asmatrix(A)
+                if rank(A) != 2:
+                    raise ValueError, "can only initialize with a rank 1 or" \
+                            " 2 array"
+                if shape is None:
+                    shape = (None, None)   # simplifies max() operation
+                M = max(shape[0], A.shape[0])
+                N = max(shape[1], A.shape[1])
+        self.shape = (M, N)
+        
+        # Pluck out all non-zeros from the dense array/matrix A
+        self.rows = []
+        for i in xrange(M):
+            self.rows.append([])
+        # The non-zero values of the matrix:
+        self.vals = [[] for i in xrange(M)]
+        
+        if A is not None:
+            for i in xrange(len(A)):
+                self[i, :] = A[i, :]
+    
+    
+    # Whenever the dimensions change, empty lists should be created for each
+    # row
+
+    def getnnz(self):
+        return sum(len(rowvals) for rowvals in self.vals)
+    
+    def __str__(self):
+        val = ''
+        for i, row in enumerate(self.rows):
+            for pos, j in enumerate(row):
+                val += "  %s\t%s\n" % (str((i, j)), str(self.vals[i][pos]))
+        return val[:-1]
+
+    def __repr__(self):
+        format = self.getformat()
+        return "<%dx%d sparse matrix with %d stored "\
+               "elements in %s format>" % \
+               (self.shape + (self.getnnz(), _formats[format][1]))
+    
+    def __getitem__(self, index):
+        try:
+            assert len(index) == 2
+        except (AssertionError, TypeError):
+            raise IndexError, "invalid index"
+        i, j = index
+        if type(i) is slice:
+            raise NotImplementedError
+        elif isinstance(i, int):
+            if not (i>=0 and i<self.shape[0]):
+                raise IndexError, "lil_matrix index out of range"
+        else:
+            raise IndexError, "invalid index"
+        row = self.rows[i]
+        if type(j) is slice:
+            if j == slice(None, None, None):
+                # Create a new lil_matrix with just this row
+                new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
+                new.rows[0] = row
+                new.vals[0] = self.vals[i]
+                return new
+            else:
+                raise NotImplementedError
+        elif isinstance(j, int):
+            if not (j>=0 and j<self.shape[1]):
+                raise IndexError, "lil_matrix index out of range"
+        else:
+            raise IndexError, "invalid index"
+        pos = bisect_left(row, j)
+        if pos == len(row) or row[pos] != j:
+            # Element doesn't exist (is zero)
+            return 0.0
+        else:
+            return self.vals[i][pos]
+
+    def __setitem__(self, index, x):
+        try:
+            assert len(index) == 2
+        except (AssertionError, TypeError):
+            raise IndexError, "invalid index"
+        i, j = index
+        if isinstance(i, int):
+            if not (i>=0 and i<self.shape[0]):
+                raise IndexError, "lil_matrix index out of range"
+        else:
+            if isinstance(i, slice):
+                # Is there an easier way to do this?
+                seq = xrange(i.start or 0, i.stop or self.shape[1], i.step or 1)
+            elif operator.isSequenceType(i):
+                seq = i
+            else:
+                raise IndexError, "invalid index"
+            if operator.isSequenceType(x):
+                if not len(x) == len(seq):
+                    raise ValueError, "number of elements in source must be" \
+                            " same as number of elements in destimation"
+                # Call __setitem__ recursively, once for each row
+                for i in xrange(len(seq)):
+                    self[seq[i], index[1]] = x[i] 
+                return
+            else:
+                # This could be enhanced to allow a scalar source
+                raise ValueError, "number of elements in source must be same" \
+                        " as number of elements in destimation"
+        
+        # Below here, i is an integer
+        row = self.rows[i]
+        if isinstance(j, int):
+            if not (j>=0 and j<self.shape[1]):
+                raise IndexError, "lil_matrix index out of range"
+            # Find element to be set or removed
+            pos = bisect_left(row, j)
+            if x != 0:
+                if pos == len(row):
+                    # New element at end
+                    row.append(j)
+                    self.vals[i].append(x)
+                elif row[pos] != j:
+                    # New element
+                    row.insert(pos, j)
+                    self.vals[i].insert(pos, x)
+                else:
+                    # Element already exists
+                    self.vals[i][pos] = x
+            else:
+                # Remove element
+                if pos < len(row) and row[pos] == j:
+                    # Element already exists
+                    del row[pos]
+                    del self.vals[i][pos]
+                # otherwise no element exists -- do nothing
+        else:
+            if isinstance(j, slice):
+                # Is there an easier way to do this?
+                seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
+            elif operator.isSequenceType(j):
+                seq = j
+            else:
+                raise IndexError, "invalid index"
+            if operator.isSequenceType(x):
+                if not len(x) == len(seq):
+                    # Perhaps x is a rank-2 row vector (matrix object)?
+                    try:
+                        x = x.A.squeeze()
+                        assert len(x) == len(seq)
+                    except:
+                        raise ValueError, "number of elements in source must" \
+                                " be same as number of elements in" \
+                                " destimation or 1"
+                # Is the row currently empty, and are we adding an entire row?
+                if len(row) == 0 and len(seq) == self.shape[1]:
+                    # Remove zeros
+                    nonzeros = [ind for ind, xi in enumerate(x) if xi != 0]
+                    x = [x[ind] for ind in nonzeros]
+                    row[:] = nonzeros
+                    self.vals[i] = x
+                else:
+                    # add elements the slow way
+                    for k, col in enumerate(seq):
+                        self[i, col] = x[k]
+                return
+            else:
+                if not numpy.rank(x) == 0:
+                    raise ValueError, "number of elements in source must be"\
+                            " same as number of elements in destimation or 1"
+                # x is a scalar
+                if len(row) == 0:
+                    row[:] = seq
+                    self.vals[i] = [x for item in seq]   # [x] * len(seq) but copied
+                else:
+                    # add elements the slow way
+                    for k, col in enumerate(j):
+                        self[i, col] = x
+                return
+        
+    
+
+    def toarray(self):
+        d = zeros(self.shape, dtype=float)
+        for i, row in enumerate(self.rows):
+            for pos, j in enumerate(row):
+                d[i, j] = self.vals[i][pos]
+        return d
+    
+    def tocsr(self, nzmax=None):
+        """ Return Compressed Sparse Row format arrays for this matrix
+        """
+        nnz = self.getnnz()
+        nzmax = max(nnz, nzmax)
+        data = zeros(nzmax, dtype=self.dtype)
+        colind = zeros(nzmax, dtype=self.dtype)
+        row_ptr = empty(self.shape[0]+1)
+        row_ptr[:] = nnz
+        k = 0
+        for i, row in enumerate(self.rows):
+            data[k : k+len(row)] = self.vals[i]
+            colind[k : k+len(row)] = self.rows[i]
+            row_ptr[i] = k
+            k += len(row)
+        
+        row_ptr[-1] = len(self)  # last row number + 1
+        return csr_matrix((data, colind, row_ptr), dims=self.shape, nzmax=nzmax)    
+    
+    def tocsc(self, nzmax=None):
+        """ Return Compressed Sparse Column format arrays for this matrix
+        """
+        return self.tocsr(nzmax).tocsc()
+
+
+
 # symmetric sparse skyline
 # diagonal (banded) matrix
 # ellpack-itpack generalized diagonal
@@ -1825,26 +2317,39 @@ class coo_matrix(spmatrix):
 def isspmatrix(x):
     return isinstance(x, spmatrix)
 
-def isspmatrix_csr(x):
+def isspmatrix_csr( x ):
     return isinstance(x, csr_matrix)
 
-def isspmatrix_csc(x):
+def isspmatrix_csc( x ):
     return isinstance(x, csc_matrix)
 
-def isspmatrix_dok(x):
+def isspmatrix_dok( x ):
     return isinstance(x, dok_matrix)
 
-def isspmatrix_dod(x):
+def isspmatrix_dod( x ):
     return isinstance(x, dod_matrix)
 
-def isspmatrix_lnk(x):
-    return isinstance(x, lnk_matrix)
+def isspmatrix_lil( x ):
+    return isinstance(x, lil_matrix)
 
-def isspmatrix_coo(x):
+def isspmatrix_coo( x ):
     return isinstance(x, coo_matrix)
 
 def isdense(x):
     return isinstance(x, ndarray)
+
+def isshape(x):
+    """Is x a valid 2-tuple of dimensions?
+    """
+    try:
+        # Assume it's a tuple of matrix dimensions (M, N)
+        (M, N) = x
+        assert M == int(M) and N == int(N)   # raises TypeError unless integers
+    except (ValueError, TypeError, AssertionError):
+        return False
+    else:
+        return True
+
 
 def _spdiags_tosub(diag_num, a, b):
     part1 = where(less(diag_num, a), abs(diag_num-a), 0)
@@ -1871,7 +2376,7 @@ def spdiags(diags, offsets, M, N):
     offsets = array(offsets, copy=False)
     mtype = diags.dtype.char
     assert(len(offsets) == diags.shape[0])
-    # set correct diagonal to csr conversion routine for this type
+    # set correct diagonal to csc conversion routine for this type
     diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsc')
     a, rowa, ptra, ierr = diagfunc(M, N, diags, offsets)
     if ierr:
@@ -1883,11 +2388,12 @@ def solve(A, b, permc_spec=2):
         raise ValueError, "sparse matrix must be able to return CSC format--"\
               "A.tocsc()--or CSR format--A.tocsr()"
     if not hasattr(A, 'shape'):
-        raise ValueError, "sparse matrix must be able to return shape (rows, cols) = A.shape"
+        raise ValueError, "sparse matrix must be able to return shape" \
+                " (rows, cols) = A.shape"
     M, N = A.shape
     if (M != N):
         raise ValueError, "matrix must be square"    
-    if hasattr(A, 'tocsc') and not isspmatrix_csr(A):
+    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
         mat = A.tocsc()
         ftype, lastel, data, index0, index1 = \
                mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
@@ -1931,7 +2437,7 @@ def speye( n, m = None, k = 0, dtype = 'd' ):
 
 
 if __name__ == "__main__":
-    a = csc_matrix((arange(1, 9), transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
+    a = csc_matrix((arange(1, 9), numpy.transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
     print "Representation of a matrix:"
     print repr(a)
     print "How a matrix prints:"
@@ -1950,7 +2456,7 @@ if __name__ == "__main__":
     print "Inverting a sparse linear system:"
     print "The sparse matrix (constructed from diagonals):"
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
-    b = array([1, 2, 3, 4, 5])
+    b = numpy.array([1, 2, 3, 4, 5])
     print a
     print "Solve: single precision complex:"
     a = a.astype('F')
