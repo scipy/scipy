@@ -10,11 +10,17 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, dot,\
                   less, where, greater, array, transpose, ravel, empty, ones, \
                   arange, shape
 import numpy
-import itertools, operator
 import sparsetools
 import _superlu
+import itertools, operator
 from bisect import bisect_left
-
+try:
+    import umfpack
+    isUmfpack = True
+except:
+    isUmfpack = False
+useUmfpack = True
+    
 def resize1d(arr, newlen):
     old = len(arr)
     new = zeros((newlen,), arr.dtype)
@@ -76,7 +82,11 @@ class spmatrix:
                   " to be instantiated directly."
         self.maxprint = maxprint
         self.allocsize = allocsize
-        
+
+    def astype( self, t ):
+        csc = self.tocsc()
+        return csc.astype( t )
+    
     def getmaxprint(self):
         try:
             maxprint = self.maxprint
@@ -546,7 +556,12 @@ class csc_matrix(spmatrix):
             self.dtype = self.data.dtype
         self.ftype = _transtabl[self.dtype.char]
         
-
+    def astype( self, t ):
+        out = self.copy()
+        out.data = out.data.astype( t )
+        out.dtype = numpy.dtype( t )
+        return out
+    
     def __radd__(self, other):
         """ Function supporting the operation: self + other.
         This does not currently work correctly for self + dense.
@@ -1034,6 +1049,11 @@ class csr_matrix(spmatrix):
             
         self.ftype = _transtabl[self.dtype.char]
 
+    def astype( self, t ):
+        out = self.copy()
+        out.data = out.data.astype( t )
+        out.dtype = numpy.dtype( t )
+        return out
         
     def __add__(self, other):
         # First check if argument is a scalar
@@ -1866,7 +1886,7 @@ class dok_matrix(spmatrix, dict):
         nnz = len(keys)
         nzmax = max(nnz, nzmax)
         data = zeros(nzmax, dtype=self.dtype)
-        colind = zeros(nzmax, dtype=self.dtype)
+        colind = zeros(nzmax, dtype=int)
         # Empty rows will leave row_ptr dangling.  We assign row_ptr[i] 
         # for each empty row i to point off the end.  Is this sufficient??
         row_ptr = empty(self.shape[0]+1, dtype=int)
@@ -2313,30 +2333,38 @@ class lil_matrix(spmatrix):
 # jagged diagonal
 # unsymmetric sparse skyline
 # variable block row
+
+def _isinstance( x, _class ):
+    ##
+    # This makes scipy.sparse.sparse.csc_matrix == __main__.csc_matrix.
+    c1 = ('%s' % x.__class__).split( '.' )
+    c2 = ('%s' % _class).split( '.' )
+    aux = c1[-1] == c2[-1]
+    return isinstance( x, _class ) or aux
                
 def isspmatrix(x):
-    return isinstance(x, spmatrix)
+    return _isinstance(x, spmatrix)
 
 def isspmatrix_csr( x ):
-    return isinstance(x, csr_matrix)
+    return _isinstance(x, csr_matrix)
 
 def isspmatrix_csc( x ):
-    return isinstance(x, csc_matrix)
+    return _isinstance(x, csc_matrix)
 
 def isspmatrix_dok( x ):
-    return isinstance(x, dok_matrix)
+    return _isinstance(x, dok_matrix)
 
 def isspmatrix_dod( x ):
-    return isinstance(x, dod_matrix)
+    return _isinstance(x, dod_matrix)
 
 def isspmatrix_lil( x ):
-    return isinstance(x, lil_matrix)
+    return _isinstance(x, lil_matrix)
 
 def isspmatrix_coo( x ):
-    return isinstance(x, coo_matrix)
+    return _isinstance(x, coo_matrix)
 
 def isdense(x):
-    return isinstance(x, ndarray)
+    return _isinstance(x, ndarray)
 
 def isshape(x):
     """Is x a valid 2-tuple of dimensions?
@@ -2368,7 +2396,8 @@ def spdiags(diags, offsets, M, N):
         offsets -- diagonals to set (0 is main)
         M, N    -- sparse matrix returned is M X N
     """
-#    diags = array(transpose(diags), copy=True)
+    #    diags = array(transpose(diags), copy=True)
+    diags = numpy.array( diags, copy = True )
     if diags.dtype.char not in 'fdFD':
         diags = diags.astype('d')
     if not hasattr( offsets, '__len__' ):
@@ -2383,6 +2412,29 @@ def spdiags(diags, offsets, M, N):
         raise ValueError, "ran out of memory (shouldn't have happened)"
     return csc_matrix((a, rowa, ptra), dims=(M, N))
 
+def _toCS_superLU( A ):
+    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
+        mat = A.tocsc()
+        csc = 1
+    elif hasattr(A, 'tocsr'):
+        mat = A.tocsr()
+        csc = 0
+    else:
+        raise ValueError, "matrix cannot be converted to CSC/CSR"
+    return mat, csc
+
+def _toCS_umfpack( A ):
+    if isspmatrix_csr( A ) or isspmatrix_csc( A ):
+        mat = A
+    else:
+        if hasattr(A, 'tocsc'):
+            mat = A.tocsc()
+        elif hasattr(A, 'tocsr'):
+            mat = A.tocsr()
+        else:
+            raise ValueError, "matrix cannot be converted to CSC/CSR"
+    return mat
+
 def solve(A, b, permc_spec=2):
     if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
         raise ValueError, "sparse matrix must be able to return CSC format--"\
@@ -2392,19 +2444,25 @@ def solve(A, b, permc_spec=2):
                 " (rows, cols) = A.shape"
     M, N = A.shape
     if (M != N):
-        raise ValueError, "matrix must be square"    
-    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
-        mat = A.tocsc()
+        raise ValueError, "matrix must be square"
+
+    if isUmfpack and useUmfpack:
+        mat = _toCS_umfpack( A )
+
+        if mat.dtype.char not in 'dD':
+            raise ValueError, "convert matrix data to double, please, using"\
+                  " .astype(), or set sparse.useUmfpack = False"
+
+        family = {'d' : 'di', 'D' : 'zi'}
+        umf = umfpack.UmfpackContext( family[mat.dtype.char] )
+        return umf.linsolve( umfpack.UMFPACK_A, mat, b, autoTranspose = True )
+
+    else:
+        mat, csc = _toCS_superLU( A )
         ftype, lastel, data, index0, index1 = \
                mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
-        csc = 1
-    else:
-        mat = A.tocsr()
-        ftype, lastel, data, index0, index1 = \
-               mat.ftype, mat.nnz, mat.data, mat.colind, mat.indptr
-        csc = 0
-    gssv = eval('_superlu.' + ftype + 'gssv')
-    return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
+        gssv = eval('_superlu.' + ftype + 'gssv')
+        return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
     
 
 def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
@@ -2412,6 +2470,10 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
     M, N = A.shape
     if (M != N):
         raise ValueError, "can only factor square matrices"
+
+##     if isUmfpack:
+##         print "UMFPACK is present - try umfpack.numeric and umfpack.solve instead!"
+
     csc = A.tocsc()
     gstrf = eval('_superlu.' + csc.ftype + 'gstrf')
     return gstrf(N, csc.nnz, csc.data, csc.rowind, csc.indptr, permc_spec,
@@ -2457,14 +2519,15 @@ if __name__ == "__main__":
     print "The sparse matrix (constructed from diagonals):"
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
     b = numpy.array([1, 2, 3, 4, 5])
-    print a
     print "Solve: single precision complex:"
+    useUmfpack = False
     a = a.astype('F')
-    x = solve(a, b)
-    print x
-    print "Error: ", a*x-b
+##     x = solve(a, b)
+##     print x
+##     print "Error: ", a*x-b
 
     print "Solve: double precision complex:"
+    useUmfpack = True
     a = a.astype('D')
     x = solve(a, b)
     print x
@@ -2477,14 +2540,15 @@ if __name__ == "__main__":
     print "Error: ", a*x-b
 
     print "Solve: single precision:"
+    useUmfpack = False
     a = a.astype('f')
-    x = solve(a, b.astype('f'))
-    print x
-    print "Error: ", a*x-b
+##    x = solve(a, b.astype('f'))
+##    print x
+##    print "Error: ", a*x-b
 
     print "(Various small tests follow ...)\n"
     print "Dictionary of keys matrix:"
-    a = dok_matrix()
+    a = dok_matrix( shape = (10, 10) )
     a[1, 1] = 1.
     a[1, 5] = 1.
     print a

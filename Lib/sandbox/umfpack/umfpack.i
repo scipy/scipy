@@ -21,6 +21,9 @@
 
 %{
 /*!
+  Appends @a what to @a where. On input, @a where need not to be a tuple, but on
+  return it always is.
+
   @par Revision history:
   - 17.02.2005, c
 */
@@ -46,6 +49,8 @@ PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
 }
 
 /*!
+  Gets PyArrayObject from a PyObject.
+
   @par Revision history:
   - 22.02.2005, c
   - 03.03.2005
@@ -75,6 +80,13 @@ PyArrayObject *helper_getCArrayObject( PyObject *input, int type,
 %}
 
 /*!
+  Use for arrays as input arguments. Could be also used for changing an array
+  in place.
+
+  @a rtype ... return this C data type
+  @a ctype ... C data type of the C function
+  @a atype ... PyArray_* suffix
+
   @par Revision history:
   - 30.11.2005, c
 */
@@ -151,12 +163,16 @@ ARRAY_IN( double, const double, DOUBLE )
 %apply const double *array {
     const double Ax [ ],
     const double Az [ ],
-    const double B [ ]
+    const double B [ ],
+    const double Bx [ ],
+    const double Bz [ ]
 };
 
 ARRAY_IN( double, double, DOUBLE )
 %apply double *array {
-    double X [ ]
+    double X [ ],
+    double Xx [ ],
+    double Xz [ ]
 };
 
 CONF_IN( UMFPACK_CONTROL )

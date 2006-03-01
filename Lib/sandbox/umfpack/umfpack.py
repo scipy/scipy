@@ -315,6 +315,7 @@ class UmfpackContext( Struct ):
     # 30.11.2005, c
     # 01.12.2005
     # 21.12.2005
+    # 01.03.2006
     def __init__( self, family = 'di', **kwargs ):
         """
         Arguments:
@@ -337,6 +338,8 @@ class UmfpackContext( Struct ):
         self._symbolic = None
         self._numeric = None
         self.mtx = None
+        self.isReal = self.family in umfRealTypes
+
         ##
         # Functions corresponding to <family> are stored in self.funs.
         pattern = 'umfpack_' + family + '_(.*)'
@@ -368,10 +371,9 @@ class UmfpackContext( Struct ):
     # 30.11.2005, c
     # 01.12.2005
     # 14.12.2005
+    # 01.03.2006
     def _getIndx( self, mtx ):
 
-        ##
-        # Should check types of indices to correspond to familyTypes.
         if sp.isspmatrix_csc( mtx ):
             indx = mtx.rowind
             self.isCSR = 0
@@ -379,23 +381,50 @@ class UmfpackContext( Struct ):
             indx = mtx.colind
             self.isCSR = 1
         else:
-            raise TypeError, 'must be a CSC/CSR matrix'
+            raise TypeError, 'must be a CSC/CSR matrix (is %s)' % mtx.__class__
+
+        ##
+        # Should check types of indices to correspond to familyTypes.
+        if self.family[1] == 'i':
+            if (indx.dtype != nm.dtype('i')) \
+                   or mtx.indptr.dtype != nm.dtype('i'):
+                raise ValueError, 'matrix must have int indices'
+        else:
+            if (indx.dtype != nm.dtype('l')) \
+                   or mtx.indptr.dtype != nm.dtype('l'):
+                raise ValueError, 'matrix must have long indices'
+
+        if self.isReal:
+            if mtx.data.dtype != nm.dtype('<f8'):
+                raise ValueError, 'matrix must have float64 values'
+        else:
+            if mtx.data.dtype != nm.dtype('<c16'):
+                raise ValueError, 'matrix must have complex128 values'
 
         return indx
 
     ##
     # 30.11.2005, c
     # 01.12.2005
+    # 01.03.2006
     def symbolic( self, mtx ):
         """Symbolic object (symbolic LU decomposition) computation for a given
         sparsity pattern."""
         self.free_symbolic()
         
         indx = self._getIndx( mtx )
-        status, self._symbolic\
-                = self.funs.symbolic( mtx.shape[0], mtx.shape[1],
-                                      mtx.indptr, indx, mtx.data,
-                                      self.control, self.info )
+        if self.isReal:
+            status, self._symbolic\
+                    = self.funs.symbolic( mtx.shape[0], mtx.shape[1],
+                                          mtx.indptr, indx, mtx.data,
+                                          self.control, self.info )
+        else:
+            real, imag = mtx.data.real.copy(), mtx.data.imag.copy()
+            status, self._symbolic\
+                    = self.funs.symbolic( mtx.shape[0], mtx.shape[1],
+                                          mtx.indptr, indx,
+                                          real, imag,
+                                          self.control, self.info )
 ##         print status, self._symbolic
 
         if status != UMFPACK_OK:
@@ -408,6 +437,7 @@ class UmfpackContext( Struct ):
     # 30.11.2005, c
     # 01.12.2005
     # 02.12.2005
+    # 01.03.2006
     def numeric( self, mtx ):
         """Numeric object (LU decomposition) computation using the
         symbolic decomposition. The symbolic decomposition is (re)computed
@@ -422,10 +452,18 @@ class UmfpackContext( Struct ):
 
         failCount = 0
         while 1:
-            status, self._numeric\
-                    = self.funs.numeric( mtx.indptr, indx, mtx.data,
-                                         self._symbolic,
-                                         self.control, self.info )
+            if self.isReal:
+                status, self._numeric\
+                        = self.funs.numeric( mtx.indptr, indx, mtx.data,
+                                             self._symbolic,
+                                             self.control, self.info )
+            else:
+                real, imag = mtx.data.real.copy(), mtx.data.imag.copy()
+                status, self._numeric\
+                        = self.funs.numeric( mtx.indptr, indx,
+                                             real, imag,
+                                             self._symbolic,
+                                             self.control, self.info )
 ##             print status, self._numeric
 
             if status != UMFPACK_OK:
@@ -502,6 +540,7 @@ class UmfpackContext( Struct ):
     # 01.12.2005
     # 02.12.2005
     # 21.12.2005
+    # 01.03.2006
     def solve( self, sys, mtx, rhs, autoTranspose = False ):
         """Solution of system of linear equation using the Numeric object."""
         if sys not in umfSys:
@@ -523,10 +562,24 @@ class UmfpackContext( Struct ):
         else:
             raise RuntimeError, 'numeric() not called'
 
-        sol = nm.zeros( (mtx.shape[1],), dtype = nm.double )
         indx = self._getIndx( mtx )
-        status = self.funs.solve( sys, mtx.indptr, indx, mtx.data, sol, rhs,
-                                  self._numeric, self.control, self.info )
+
+        if self.isReal:
+            rhs = rhs.astype( nm.float64 )
+            sol = nm.zeros( (mtx.shape[1],), dtype = nm.float64 )
+            status = self.funs.solve( sys, mtx.indptr, indx, mtx.data, sol, rhs,
+                                      self._numeric, self.control, self.info )
+        else:
+            rhs = rhs.astype( nm.complex128 )
+            sol = nm.zeros( (mtx.shape[1],), dtype = nm.complex128 )
+            mreal, mimag = mtx.data.real.copy(), mtx.data.imag.copy()
+            sreal, simag = sol.real.copy(), sol.imag.copy()
+            rreal, rimag = rhs.real.copy(), rhs.imag.copy()
+            status = self.funs.solve( sys, mtx.indptr, indx,
+                                      mreal, mimag, sreal, simag, rreal, rimag,
+                                      self._numeric, self.control, self.info )
+            sol.real, sol.imag = sreal, simag
+            
         #self.funs.report_info( self.control, self.info )
         #pause()
         if status != UMFPACK_OK:
@@ -551,6 +604,7 @@ class UmfpackContext( Struct ):
         """One-shot solution of system of linear equation. Reuses Numeric
         object if possible."""
 
+#        print self.family
         if sys not in umfSys:
             raise ValueError, 'sys must be in' % umfSys
 
