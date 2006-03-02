@@ -1460,7 +1460,7 @@ Returns: t-value, two-tailed p-value
 
     if type(t) == ArrayType:
         probs = reshape(probs,t.shape)
-    if len(probs) == 1:
+    if not isscalar(probs) and len(probs) == 1:
         probs = probs[0]
         
     if printit != 0:
@@ -1492,7 +1492,7 @@ Returns: t-value, two-tailed p-value
 """
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a)!=len(b):
-        raise ValueError, 'Unequal length arrays.'
+        raise ValueError, 'unequal length arrays'
     x1 = mean(a,axis)
     x2 = mean(b,axis)
     v1 = var(a,axis)
@@ -1503,13 +1503,13 @@ Returns: t-value, two-tailed p-value
 
     denom = sqrt((n*add.reduce(d*d,axis) - add.reduce(d,axis)**2) /df)
     zerodivproblem = equal(denom,0)
-    t = add.reduce(d,axis) / denom      # N-D COMPUTATION HERE!!!!!!
+    t = add.reduce(d, axis) / denom      # N-D COMPUTATION HERE!!!!!!
     t = where(zerodivproblem,1.0,t)          # replace NaN t-values with 1.0
     t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
     probs = betai(0.5*df,0.5,float(df)/(df+t*t))
     if type(t) == ArrayType:
         probs = reshape(probs,t.shape)
-    if len(probs) == 1:
+    if not isscalar(probs) and len(probs) == 1:
         probs = probs[0]
 
     if printit != 0:
