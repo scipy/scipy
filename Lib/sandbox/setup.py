@@ -12,13 +12,13 @@ def configuration(parent_package='',top_path=None):
 
     # Maximum entropy package
     #config.add_subpackage('maxent')
-    
+
     # Monte Carlo package
     #config.add_subpackage('montecarlo')
-    
+
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
-    
+
     # ODRPACK
     #config.add_subpackage('odr')
 
@@ -29,7 +29,10 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('xplt')
 
     #config.add_subpackage('nd_image')
-    
+
+    # elementwise numerical expressions
+    #config.add_subpackage('numexpr')
+
     return config
 
 if __name__ == '__main__':
