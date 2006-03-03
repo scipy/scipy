@@ -44,7 +44,7 @@ static PyObject *
 NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     NumExprObject *self;
-
+    intp dims[] = {0};
     self = (NumExprObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->n_inputs = 0;
@@ -56,7 +56,6 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
-        intp dims[] = {0};
         self->constants = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
         if (!self->constants) {
             Py_DECREF(self);
