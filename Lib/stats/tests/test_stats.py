@@ -115,6 +115,18 @@ class test_basicstats(ScipyTestCase):
         y = scipy.stats.std(X)
         assert_almost_equal(y,2.738612788)
 
+    def check_tmeanX(self):
+        y = scipy.stats.tmean(X, (2, 8), (True, True))
+        assert_almost_equal(y, 5.0)
+
+    def check_tvarX(self):
+        y = scipy.stats.tvar(X, (2, 8), (True, True))
+        assert_almost_equal(y, 4.6666666666666661)
+
+    def check_tstdX(self):
+        y = scipy.stats.tstd(X, (2, 8), (True, True))
+        assert_almost_equal(y, 2.1602468994692865)
+
     def check_meanZERO(self):
         y = scipy.stats.mean(ZERO)
         assert_almost_equal(y,0.0)

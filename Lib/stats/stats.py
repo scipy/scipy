@@ -185,8 +185,7 @@ SUPPORT FUNCTIONS:  writecc
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
-import string, sys, _support
-from types import *
+import sys, _support
 
 from numpy import *
 import numpy.core.umath as math
@@ -215,9 +214,6 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'fastsort', 'shellsort', 'rankdata', 'writecc',
            'outputpairedstats', 'findwithin',
           ]
-
-SequenceType = (ListType, TupleType, ArrayType)
-
 
 # These two functions replace letting axis be a sequence and the
 #  keepdims features used throughout.  These ideas
@@ -337,7 +333,7 @@ def mean(a,axis=0):
        If m is of integer type, returns a floating point answer.
     """
     a, axis = _chk_asarray(a, axis)
-    return add.reduce(a,axis)/float(a.shape[axis])
+    return a.mean(axis)
 
 def cmedian(a,numbins=1000):
     """Calculates the COMPUTED median value of an array of numbers, given the
@@ -399,111 +395,89 @@ def mode(a, axis=0):
         oldmostfreq = mostfrequent
     return mostfrequent, oldcounts
 
+def mask_to_limits(a, limits, inclusive):
+    lower_limit, upper_limit = limits
+    lower_include, upper_include = inclusive
+    am = ma.MaskedArray(a)
+    if lower_limit is not None:
+        if lower_include:
+            am = ma.masked_less(am, lower_limit)
+        else:
+            am = ma.masked_less_equal(am, lower_limit)
+    if upper_limit is not None:
+        if upper_include:
+            am = ma.masked_greater(am, upper_limit)
+        else:
+            am = ma.masked_greater_equal(am, upper_limit)
+    if am.count() == 0:
+        raise ValueError("No array values within given limits")
+    return am
+
 def tmean(a,limits=None,inclusive=(1,1)):
-     """Returns the arithmetic mean of all values in an array, ignoring values
-     strictly outside the sequence passed to 'limits'.   Note: either limit
-     in the sequence, or the value of limits itself, can be set to None.  The
-     inclusive list/tuple determines whether the lower and upper limiting bounds
-     (respectively) are open/exclusive (0) or closed/inclusive (1).
+    """Returns the arithmetic mean of all values in an array, ignoring values
+    strictly outside the sequence passed to 'limits'.   Note: either limit
+    in the sequence, or the value of limits itself, can be set to None.  The
+    inclusive list/tuple determines whether the lower and upper limiting bounds
+    (respectively) are open/exclusive (0) or closed/inclusive (1).
 
-     """
-     a = asarray(a)
-     if a.typecode() in ['l','s','b']:
-         a = a.astype(Float)
-     if limits is None:
-         return mean(a,None)
-     assert type(limits) in SequenceType, "Wrong type for limits in tmean"
-     if inclusive[0]:    lowerfcn = greater_equal
-     else:               lowerfcn = greater
-     if inclusive[1]:    upperfcn = less_equal
-     else:               upperfcn = less
-     if limits[0] > maximum.reduce(ravel(a)) or limits[1] < minimum.reduce(ravel(a)):
-         raise ValueError, "No array values within given limits (tmean)."
-     elif limits[0] is None and limits[1] is not None:
-         mask = upperfcn(a,limits[1])
-     elif limits[0] is not None and limits[1] is None:
-         mask = lowerfcn(a,limits[0])
-     elif limits[0] is not None and limits[1] is not None:
-         mask = lowerfcn(a,limits[0])*upperfcn(a,limits[1])
-     s = float(add.reduce(ravel(a*mask)))
-     n = float(add.reduce(ravel(mask)))
-     return s/n
+    """
+    a = asarray(a)
+    if issubclass(a.dtype.type, integer):
+        a = a.astype(float)
+    if limits is None:
+        return mean(a,None)
+    am = mask_to_limits(a.ravel(), limits, inclusive)
+    return am.mean()
 
+def masked_var(am):
+    m = am.mean()
+    s = ma.add.reduce((am - m)**2)
+    n = am.count() - 1.0
+    return s / n
 
 def tvar(a,limits=None,inclusive=(1,1)):
-     """Returns the sample variance of values in an array, (i.e., using
-     N-1), ignoring values strictly outside the sequence passed to
-     'limits'.  Note: either limit in the sequence, or the value of
-     limits itself, can be set to None.  The inclusive list/tuple
-     determines whether the lower and upper limiting bounds
-     (respectively) are open/exclusive (0) or closed/inclusive (1).
-     """
-     a = asarray(a)
-     a = a.astype(Float)
-     if limits is None or limits == [None,None]:
-         term1 = add.reduce(ravel(a*a))
-         n = float(len(ravel(a))) - 1
-         term2 = add.reduce(ravel(a))**2 / n
-         return (term1 - term2) / n
-     assert type(limits) in SequenceType, "Wrong type for limits in tvar"
-     if inclusive[0]:    lowerfcn = greater_equal
-     else:               lowerfcn = greater
-     if inclusive[1]:    upperfcn = less_equal
-     else:               upperfcn = less
-     if limits[0] > maximum.reduce(ravel(a)) or limits[1] < minimum.reduce(ravel(a)):
-         raise ValueError, "No array values within given limits (tvar)."
-     elif limits[0] is None and limits[1] is not None:
-         mask = upperfcn(a,limits[1])
-     elif limits[0] is not None and limits[1] is None:
-         mask = lowerfcn(a,limits[0])
-     elif limits[0] is not None and limits[1] is not None:
-         mask = lowerfcn(a,limits[0])*upperfcn(a,limits[1])
-     term1 = add.reduce(ravel(a*a*mask))
-     n = float(add.reduce(ravel(mask))) - 1
-     term2 = add.reduce(ravel(a*mask))**2 / n
-     return (term1 - term2) / n
+    """Returns the sample variance of values in an array, (i.e., using
+    N-1), ignoring values strictly outside the sequence passed to
+    'limits'.  Note: either limit in the sequence, or the value of
+    limits itself, can be set to None.  The inclusive list/tuple
+    determines whether the lower and upper limiting bounds
+    (respectively) are open/exclusive (0) or closed/inclusive (1).
+    """
+    a = asarray(a)
+    a = a.astype(float).ravel()
+    if limits is None:
+        return a.var()
+    am = mask_to_limits(a, limits, inclusive)
+    return masked_var(am)
 
 def tmin(a,lowerlimit=None,axis=0,inclusive=True):
-     """Returns the minimum value of a, along axis, including only values
-     less than (or equal to, if inclusive is True) lowerlimit.  If the
-     limit is set to None, all values in the array are used.
-     """
-     a, axis = _chk_asarray(a, axis)
-     if inclusive:
-         lowerfcn = greater
-     else:
-         lowerfcn = greater_equal
-     if lowerlimit is None:
-         lowerlimit = minimum.reduce(ravel(a))-11
-     biggest = maximum.reduce(ravel(a))
-     ta = where(lowerfcn(a,lowerlimit),a,biggest)
-     return minimum.reduce(ta,axis)
+    """Returns the minimum value of a, along axis, including only values
+    less than (or equal to, if inclusive is True) lowerlimit.  If the
+    limit is set to None, all values in the array are used.
+    """
+    a, axis = _chk_asarray(a, axis)
+    am = mask_to_limits(a, (lowerlimit, None), (inclusive, False))
+    return ma.minimum.reduce(am, axis)
 
 def tmax(a,upperlimit,axis=0,inclusive=True):
-     """Returns the maximum value of a, along axis, including only values
-     greater than (or equal to, if inclusive is True) upperlimit.  If the limit
-     is set to None, a limit larger than the max value in the array is
-     used.
-     """
-     a, axis = _chk_asarray(a, axis)
-     if inclusive:       upperfcn = less
-     else:               upperfcn = less_equal
-     if upperlimit is None:
-         upperlimit = maximum.reduce(ravel(a))+1
-     smallest = minimum.reduce(ravel(a))
-     ta = where(upperfcn(a,upperlimit),a,smallest)
-     return maximum.reduce(ta,axis)
-
+    """Returns the maximum value of a, along axis, including only values
+    greater than (or equal to, if inclusive is True) upperlimit.  If the limit
+    is set to None, a limit larger than the max value in the array is
+    used.
+    """
+    a, axis = _chk_asarray(a, axis)
+    am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
+    return ma.maximum.reduce(am, axis)
 
 def tstd(a,limits=None,inclusive=(1,1)):
-     """Returns the standard deviation of all values in an array,
-     ignoring values strictly outside the sequence passed to 'limits'.
-     Note: either limit in the sequence, or the value of limits itself,
-     can be set to None.  The inclusive list/tuple determines whether the
-     lower and upper limiting bounds (respectively) are open/exclusive
-     (0) or closed/inclusive (1).     
-     """
-     return sqrt(tvar(a,limits,inclusive))
+    """Returns the standard deviation of all values in an array,
+    ignoring values strictly outside the sequence passed to 'limits'.
+    Note: either limit in the sequence, or the value of limits itself,
+    can be set to None.  The inclusive list/tuple determines whether the
+    lower and upper limiting bounds (respectively) are open/exclusive
+    (0) or closed/inclusive (1).     
+    """
+    return sqrt(tvar(a,limits,inclusive))
 
 
 def tsem(a,limits=None,inclusive=(True,True)):
@@ -514,30 +488,13 @@ def tsem(a,limits=None,inclusive=(True,True)):
     inclusive list/tuple determines whether the lower and upper limiting
     bounds (respectively) are open/exclusive (0) or closed/inclusive (1).
     """
-    a = asarray(a)
-    sd = tstd(a,limits,inclusive)
-    if limits is None or limits == [None,None]:
+    a = asarray(a).ravel()
+    if limits is None:
         n = float(len(ravel(a)))
-    assert type(limits) in SequenceType, "Wrong type for limits in tsem"
-    if inclusive[0]:
-        lowerfcn = greater_equal
-    else:
-        lowerfcn = greater
-    if inclusive[1]:
-        upperfcn = less_equal
-    else:
-        upperfcn = less
-    if limits[0] > maximum.reduce(ravel(a)) or limits[1] < minimum.reduce(ravel(a)):
-        raise ValueError, "No array values within given limits (tsem)."
-    elif limits[0] is None and limits[1] is not None:
-        mask = upperfcn(a,limits[1])
-    elif limits[0] is not None and limits[1] is None:
-        mask = lowerfcn(a,limits[0])
-    elif limits[0] is not None and limits[1] is not None:
-        mask = lowerfcn(a,limits[0])*upperfcn(a,limits[1])
-    #term1 = add.reduce(ravel(a*a*mask))
-    n = float(add.reduce(ravel(mask)))
-    return sd/math.sqrt(n)
+        return a.std()/sqrt(n)
+    am = mask_to_limits(a.ravel(), limits, inclusive)
+    sd = sqrt(masked_var(am))
+    return sd / am.count()
 
 
 #####################################
@@ -1070,14 +1027,14 @@ def trim1 (a,proportiontocut,tail='right'):
     array (i.e., if proportiontocut=0.1, slices off 'leftmost' or 'rightmost'
     10% of scores).  Slices off LESS if proportion results in a non-integer
     slice index (i.e., conservatively slices off proportiontocut).
-    
+
     Returns: trimmed version of array a
     """
     a = asarray(a)
-    if string.lower(tail) == 'right':
+    if tail.lower() == 'right':
         lowercut = 0
         uppercut = len(a) - int(proportiontocut*len(a))
-    elif string.lower(tail) == 'left':
+    elif tail.lower() == 'left':
         lowercut = int(proportiontocut*len(a))
         uppercut = len(a)
     return a[lowercut:uppercut]
@@ -1088,7 +1045,7 @@ def trim_mean(a,proportiontocut):
     """
     newa = trimboth(sort(a),proportiontocut)
     return mean(newa)
-        
+
 
 
 #####################################
@@ -1458,15 +1415,15 @@ Returns: t-value, two-tailed p-value
     t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
     probs = betai(0.5*df,0.5,float(df)/(df+t*t))
 
-    if type(t) == ArrayType:
+    if not isscalar(t):
         probs = reshape(probs,t.shape)
     if not isscalar(probs) and len(probs) == 1:
         probs = probs[0]
-        
-    if printit != 0:
-        if type(t) == ArrayType:
+
+    if printit:
+        if not isscalar(t):
             t = t[0]
-        if type(probs) == ArrayType:
+        if not isscalar(t):
             probs = probs[0]
         statname = 'Independent samples T-test.'
         outputpairedstats(printit,writemode,
@@ -1507,7 +1464,7 @@ Returns: t-value, two-tailed p-value
     t = where(zerodivproblem,1.0,t)          # replace NaN t-values with 1.0
     t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
     probs = betai(0.5*df,0.5,float(df)/(df+t*t))
-    if type(t) == ArrayType:
+    if not isscalar(t):
         probs = reshape(probs,t.shape)
     if not isscalar(probs) and len(probs) == 1:
         probs = probs[0]
@@ -1539,10 +1496,10 @@ def kstest(rvs,cdf,args=(),N=20):
     cannot reject the hypothesis that the data come from the given
     distribution.
     """
-    if type(rvs) is StringType:
+    if isinstance(rvs, basestring):
         cdf = getattr(scipy.stats, rvs).cdf
         rvs = getattr(scipy.stats, rvs).rvs
-    if type(cdf) is StringType:
+    if isinstance(cdf, basestring):
         cdf = getattr(scipy.stats, cdf).cdf
     if callable(rvs):
         kwds = {'size':N}
@@ -1858,7 +1815,7 @@ lists-of-lists.
 
     print
     variables = 1       # this function only handles one measured variable
-    if type(data)==ArrayType:
+    if not isscalar(data):
         data = data.tolist()
 
 ## Create a list of all unique values in each column, and a list of these Ns
@@ -2563,78 +2520,78 @@ i.e., calculate full-model using a D-variable.
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-     """
+    """
 Calculation of Wilks lambda F-statistic for multivarite data, per
 Maxwell & Delaney p.657.
 
 """
-     if type(ER) in [IntType, FloatType]:
-         ER = array([[ER]])
-     if type(EF) in [IntType, FloatType]:
-         EF = array([[EF]])
-     lmbda = linalg.det(EF) / linalg.det(ER)
-     if (a-1)**2 + (b-1)**2 == 5:
-         q = 1
-     else:
-         q = math.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
-     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
-     return n_um / d_en
+    if isinstance(ER, (int, float)):
+        ER = array([[ER]])
+    if isinstance(EF, (int, float)):
+        EF = array([[EF]])
+    lmbda = linalg.det(EF) / linalg.det(ER)
+    if (a-1)**2 + (b-1)**2 == 5:
+        q = 1
+    else:
+        q = math.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
+    n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
+    d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
+    return n_um / d_en
 
 def member(factor,source):
-     return (1 << factor) & source != 0
+    return (1 << factor) & source != 0
 
 def setsize(source):
-     size = 0
-     for bit in source:
-         if bit == 1:
-             size = size + 1
-     return size
+    size = 0
+    for bit in source:
+        if bit == 1:
+            size = size + 1
+    return size
 
 def subset (a,b):
-     return (a&b)==a
+    return (a&b)==a
 
 def propersubset (a,b):
-     sub = ((a&b)==a)
-     if a==b:
-         sub = 0
-     return sub
+    sub = ((a&b)==a)
+    if a==b:
+        sub = 0
+    return sub
 
 def numlevels(source,Nlevels):
-     for i in range(30): # find the biggest i such that 2**i >= source
-         if 1<<i >= source:
-             break
-     levelcount = 1
-     for j in range(i): # loop up through each bit
-         if subset(1<<j,source):
-             levelcount = levelcount * Nlevels[j] - 1
-     return levelcount
+    for i in range(30): # find the biggest i such that 2**i >= source
+        if 1<<i >= source:
+            break
+    levelcount = 1
+    for j in range(i): # loop up through each bit
+        if subset(1<<j,source):
+            levelcount = levelcount * Nlevels[j] - 1
+    return levelcount
 
 def numbitson(a):
-     numon = 0
-     while a>0:
-         numon = numon + a%2
-         a = a>>1
-     return numon
+    numon = 0
+    while a>0:
+        numon = numon + a%2
+        a = a>>1
+    return numon
 
 def makebin(sourcelist):
-     outbin = 0
-     for item in sourcelist:
-         outbin = outbin + 2**item
-     return outbin
+    outbin = 0
+    for item in sourcelist:
+        outbin = outbin + 2**item
+    return outbin
 
 def makelist(source,ncols):
-     levellist = []
-     for j in range(ncols):
-         if subset(1<<j,source):
-             levellist.append(j)
-     return levellist
+    levellist = []
+    for j in range(ncols):
+        if subset(1<<j,source):
+            levellist.append(j)
+    return levellist
 
 def round4(num):
-     try:
-         return around(num,4)
-     except:
-         return 'N/A'
+    try:
+        return around(num,4)
+    except:
+        return 'N/A'
 
 
 def f_value (ER,EF,dfR,dfF):
@@ -2649,25 +2606,25 @@ Returns an F-statistic given the following:
 
 
 def outputfstats(Enum, Eden, dfnum, dfden, f, prob):
-     Enum = around(Enum,3)
-     Eden = around(Eden,3)
-     dfnum = around(Enum,3)
-     dfden = around(dfden,3)
-     f = around(f,3)
-     prob = around(prob,3)
-     suffix = ''                       # for *s after the p-value
-     if  prob < 0.001:  suffix = '  ***'
-     elif prob < 0.01:  suffix = '  **'
-     elif prob < 0.05:  suffix = '  *'
-     title = [['EF/ER','DF','Mean Square','F-value','prob','']]
-     lofl = title+[[Enum, dfnum, around(Enum/float(dfnum),3), f, prob, suffix],
-                   [Eden, dfden, around(Eden/float(dfden),3),'','','']]
-     _support.printcc(lofl)
-     return
+    Enum = around(Enum,3)
+    Eden = around(Eden,3)
+    dfnum = around(Enum,3)
+    dfden = around(dfden,3)
+    f = around(f,3)
+    prob = around(prob,3)
+    suffix = ''                       # for *s after the p-value
+    if  prob < 0.001:  suffix = '  ***'
+    elif prob < 0.01:  suffix = '  **'
+    elif prob < 0.05:  suffix = '  *'
+    title = [['EF/ER','DF','Mean Square','F-value','prob','']]
+    lofl = title+[[Enum, dfnum, around(Enum/float(dfnum),3), f, prob, suffix],
+                  [Eden, dfden, around(Eden/float(dfden),3),'','','']]
+    _support.printcc(lofl)
+    return
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):
-     """
+    """
 Returns an F-statistic given the following:
         ER  = error associated with the null hypothesis (the Restricted model)
         EF  = error associated with the alternate hypothesis (the Full model)
@@ -2675,13 +2632,13 @@ Returns an F-statistic given the following:
         dfF = degrees of freedom associated with the Restricted model
 where ER and EF are matrices from a multivariate F calculation.
 """
-     if type(ER) in [IntType, FloatType]:
-         ER = array([[ER]])
-     if type(EF) in [IntType, FloatType]:
-         EF = array([[EF]])
-     n_um = (linalg.det(ER) - linalg.det(EF)) / float(dfnum)
-     d_en = linalg.det(EF) / float(dfden)
-     return n_um / d_en
+    if isinstance(ER, (int, float)):
+        ER = array([[ER]])
+    if isinstance(EF, (int, float)):
+        EF = array([[EF]])
+    n_um = (linalg.det(ER) - linalg.det(EF)) / float(dfnum)
+    d_en = linalg.det(EF) / float(dfden)
+    return n_um / d_en
 
 
 #####################################
@@ -2723,8 +2680,8 @@ Returns: the square of the sum over axis.
 """
     a, axis = _chk_asarray(a, axis)
     s = sum(a,axis)
-    if type(s) == ArrayType:
-        return s.astype(Float)*s
+    if not isscalar(s):
+        return s.astype(float)*s
     else:
         return float(s)*s
 
@@ -2808,7 +2765,7 @@ to specified file.  File-overwrite is the default.
 Usage:   writecc (listoflists,file,writetype='w',extra=2)
 Returns: None
 """
-    if type(listoflists[0]) not in [ListType,TupleType]:
+    if not isinstance(listoflists[0], (list, tuple)):
         listoflists = [listoflists]
     outfile = open(file,writetype)
     rowstokill = []
@@ -2863,7 +2820,7 @@ Returns: None
     title = [['Name','N','Mean','SD','Min','Max']]
     lofl = title+[[name1,n1,round(m1,3),round(math.sqrt(se1),3),min1,max1],
                   [name2,n2,round(m2,3),round(math.sqrt(se2),3),min2,max2]]
-    if type(fname)!=StringType or len(fname)==0:
+    if not isinstance(fname, basestring) or len(fname) == 0:
         print
         print statname
         print
