@@ -331,7 +331,7 @@ class spmatrix:
 
     def toarray(self):
         csc = self.tocsc()
-        return csc.todense()
+        return csc.toarray()
     
     def tocoo(self):
         csc = self.tocsc()
@@ -410,9 +410,10 @@ class csc_matrix(spmatrix):
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
     """
-    def __init__(self, arg1, dims=None, nzmax=100, dtype='d', copy=False):
+    def __init__(self, arg1, dims=None, nzmax=100, dtype=None, copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
+            self.dtype = getdtype(dtype, arg1)
             # Convert the dense array or matrix arg1 to CSC format
             if rank(arg1) == 1:
                 # Convert to a row vector
@@ -429,7 +430,7 @@ class csc_matrix(spmatrix):
                     func = getattr(sparsetools, _transtabl[dtype.char]+'fulltocsc')
                     ierr = irow = jcol = 0
                     nnz = sum(ravel(s != 0.0))
-                    a = zeros((nnz,), dtype)
+                    a = zeros((nnz,), self.dtype)
                     rowa = zeros((nnz,), 'i')
                     ptra = zeros((N+1,), 'i')
                     while 1:
@@ -447,6 +448,7 @@ class csc_matrix(spmatrix):
                 raise ValueError, "dense array must have rank 1 or 2"
         elif isspmatrix(arg1):
             s = arg1
+            self.dtype = getdtype(dtype, s)
             if isinstance(s, csc_matrix):
                 # do nothing but copy information
                 self.shape = s.shape
@@ -471,9 +473,10 @@ class csc_matrix(spmatrix):
                 self.shape = temp.shape
         elif type(arg1) == tuple:
             if isshape(arg1):
+                self.dtype = getdtype(dtype, default=float)
                 # It's a tuple of matrix dimensions (M, N)
                 M, N = arg1
-                self.data = zeros((nzmax,), dtype)
+                self.data = zeros((nzmax,), self.dtype)
                 self.rowind = zeros((nzmax,), int)
                 self.indptr = zeros((N+1,), int)
                 self.shape = (M, N)
@@ -486,6 +489,7 @@ class csc_matrix(spmatrix):
                     try:
                         # Try interpreting it as (data, rowind, indptr)
                         (s, rowind, indptr) = arg1
+                        self.dtype = getdtype(dtype, s)
                         if copy:
                             self.data = array(s)
                             self.rowind = array(rowind)
@@ -498,6 +502,7 @@ class csc_matrix(spmatrix):
                         raise ValueError, "unrecognized form for csc_matrix constructor"
                 else:
                     # (data, ij) format
+                    self.dtype = getdtype(dtype, s)
                     temp = coo_matrix(s, ij, dims=dims, nzmax=nzmax, \
                             dtype=dtype).tocsc()
                     self.shape = temp.shape
@@ -556,10 +561,10 @@ class csc_matrix(spmatrix):
             self.dtype = self.data.dtype
         self.ftype = _transtabl[self.dtype.char]
         
-    def astype( self, t ):
+    def astype(self, t):
         out = self.copy()
-        out.data = out.data.astype( t )
-        out.dtype = numpy.dtype( t )
+        out.data = out.data.astype(t)
+        out.dtype = numpy.dtype(t)
         return out
     
     def __radd__(self, other):
@@ -905,22 +910,23 @@ class csr_matrix(spmatrix):
             with a dense matrix d
 
           - csr_matrix(s)
-             with another sparse matrix s (sugar for .tocsr())
+            with another sparse matrix s (sugar for .tocsr())
 
           - csr_matrix((M, N), [nzmax, dtype])
-             to construct a container, where (M, N) are dimensions and
-             nzmax, dtype are optional, defaulting to nzmax=100 and dtype='d'.
+            to construct a container, where (M, N) are dimensions and
+            nzmax, dtype are optional, defaulting to nzmax=100 and dtype='d'.
 
           - csr_matrix((data, ij), [(M, N), nzmax])
-             where data, ij satisfy:
+            where data, ij satisfy:
                 a[ij[k, 0], ij[k, 1]] = data[k]
 
           - csr_matrix((data, col, ptr), [(M, N)])
-             standard CSR representation
+            standard CSR representation
     """
-    def __init__(self, arg1, dims=None, nzmax=100, dtype='d', copy=False):
+    def __init__(self, arg1, dims=None, nzmax=100, dtype=None, copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
+            self.dtype = getdtype(dtype, arg1)
             # Convert the dense array or matrix arg1 to CSR format
             if rank(arg1) == 1:
                 # Convert to a row vector
@@ -936,6 +942,7 @@ class csr_matrix(spmatrix):
                 raise ValueError, "dense array must have rank 1 or 2"
         elif isspmatrix(arg1):
             s = arg1
+            self.dtype = getdtype(dtype, s)
             if isinstance(s, csr_matrix):
                 # do nothing but copy information
                 self.shape = s.shape
@@ -965,7 +972,8 @@ class csr_matrix(spmatrix):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 M, N = arg1
-                self.data = zeros((nzmax,), dtype)
+                self.dtype = getdtype(dtype, default=float)
+                self.data = zeros((nzmax,), self.dtype)
                 self.colind = zeros((nzmax,), int)
                 self.indptr = zeros((M+1,), int)
                 self.shape = (M, N)
@@ -978,12 +986,13 @@ class csr_matrix(spmatrix):
                     try:
                         # Try interpreting it as (data, colind, indptr)
                         (s, colind, indptr) = arg1
+                        self.dtype = getdtype(dtype, s)
                         if copy:
-                            self.data = array(s)
+                            self.data = array(s, dtype=self.dtype)
                             self.colind = array(colind)
                             self.indptr = array(indptr)
                         else:
-                            self.data = asarray(s)
+                            self.data = asarray(s, dtype=self.dtype)
                             self.colind = asarray(colind)
                             self.indptr = asarray(indptr)
                     except:
@@ -999,6 +1008,7 @@ class csr_matrix(spmatrix):
                     self.data = temp.data
                     self.colind = temp.colind
                     self.indptr = temp.indptr
+                    self.dtype = temp.dtype
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
@@ -1049,10 +1059,10 @@ class csr_matrix(spmatrix):
             
         self.ftype = _transtabl[self.dtype.char]
 
-    def astype( self, t ):
+    def astype(self, t):
         out = self.copy()
-        out.data = out.data.astype( t )
-        out.dtype = numpy.dtype( t )
+        out.data = out.data.astype(t)
+        out.dtype = numpy.dtype(t)
         return out
         
     def __add__(self, other):
@@ -1384,7 +1394,7 @@ class dok_matrix(spmatrix, dict):
     structure for constructing sparse matrices for conversion to other
     sparse matrix types.
     """
-    def __init__(self, A=None, shape=None, dtype='d'):
+    def __init__(self, A=None, shape=None, dtype=None):
         """ Create a new dictionary-of-keys sparse matrix.  An optional
         argument A is accepted, which initializes the dok_matrix with it.
         This can be a tuple of dimensions (M, N) or a (dense) array
@@ -1401,7 +1411,7 @@ class dok_matrix(spmatrix, dict):
                 raise "shape not understood"
             else:
                 self.shape = shape
-        self.dtype = numpy.dtype(dtype)
+        self.dtype = getdtype(dtype, A, default=float)
         if A is not None:
             if type(A) == tuple:
                 # Interpret as dimensions
@@ -1919,10 +1929,10 @@ class dok_matrix(spmatrix, dict):
         nnz = len(keys)
         nzmax = max(nnz, nzmax)
         data = zeros(nzmax, dtype=self.dtype)
-        rowind = zeros(nzmax, dtype=self.dtype)
+        rowind = zeros(nzmax, dtype=int)
         # Empty columns will leave col_ptr dangling.  We assign col_ptr[j] 
         # for each empty column j to point off the end.  Is this sufficient??
-        col_ptr = empty(self.shape[1]+1)
+        col_ptr = empty(self.shape[1]+1, dtype=int)
         col_ptr[:] = nnz
         current_col = -1
         k = 0
@@ -1938,8 +1948,8 @@ class dok_matrix(spmatrix, dict):
             k += 1
         return csc_matrix((data, rowind, col_ptr), dims=self.shape, nzmax=nzmax)
 
-    def toarray(self, dtype=float):
-        new = zeros(self.shape, dtype=dtype)
+    def toarray(self):
+        new = zeros(self.shape, dtype=self.dtype)
         for key in self:
             ikey0 = int(key[0])
             ikey1 = int(key[1])
@@ -1992,6 +2002,7 @@ class coo_matrix(spmatrix):
     """
     def __init__(self, obj, ij_in, dims=None, nzmax=None, dtype=None):
         spmatrix.__init__(self)
+        self.dtype = getdtype(dtype, obj, default=float)
         try:
             # Assume the first calling convention
             #            assert len(ij) == 2
@@ -2012,8 +2023,7 @@ class coo_matrix(spmatrix):
                 self.shape = (M, N)
             self.row = asarray(ij[0])
             self.col = asarray(ij[1])
-            self.data = asarray(obj, dtype=dtype)
-            self.dtype = self.data.dtype
+            self.data = asarray(obj, dtype=self.dtype)
             if nzmax is None:
                 nzmax = len(self.data)
             self.nzmax = nzmax
@@ -2085,14 +2095,14 @@ class coo_matrix(spmatrix):
 # column indices of non-zero elements; and a list (self.vals) of lists of these
 # elements.
 class lil_matrix(spmatrix):
-    def __init__(self, A=None, shape=None, dtype='d'):
+    def __init__(self, A=None, shape=None, dtype=None):
         """ Create a new list-of-lists sparse matrix.  An optional
         argument A is accepted, which initializes the lil_matrix with it.
         This can be a tuple of dimensions (M, N) or a (dense)
         array/matrix to copy.
         """
         spmatrix.__init__(self)
-        self.dtype = numpy.dtype(dtype)
+        self.dtype = getdtype(dtype, A, default=float)
         
         # First get the shape
         if A is None:
@@ -2287,9 +2297,8 @@ class lil_matrix(spmatrix):
                 return
         
     
-
     def toarray(self):
-        d = zeros(self.shape, dtype=float)
+        d = zeros(self.shape, dtype=self.dtype)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
                 d[i, j] = self.vals[i][pos]
@@ -2301,8 +2310,8 @@ class lil_matrix(spmatrix):
         nnz = self.getnnz()
         nzmax = max(nnz, nzmax)
         data = zeros(nzmax, dtype=self.dtype)
-        colind = zeros(nzmax, dtype=self.dtype)
-        row_ptr = empty(self.shape[0]+1)
+        colind = zeros(nzmax, dtype=int)
+        row_ptr = empty(self.shape[0]+1, dtype=int)
         row_ptr[:] = nnz
         k = 0
         for i, row in enumerate(self.rows):
@@ -2377,6 +2386,24 @@ def isshape(x):
         return False
     else:
         return True
+
+def getdtype(dtype, a=None, default=None):
+    """Function used to simplify argument processing.  If 'dtype' is not
+    specified (is None), returns a.dtype; otherwise returns a numpy.dtype
+    object created from the specified dtype argument.  If 'dtype' and 'a'
+    are both None, construct a data type out of the 'default' parameter.
+    """
+    if dtype is None:
+        try:
+            newdtype = a.dtype
+        except AttributeError:
+            if default is not None:
+                newdtype = numpy.dtype(default)
+            else:
+                raise TypeError, "could not interpret data type"
+    else:
+        newdtype = numpy.dtype(dtype)
+    return newdtype
 
 
 def _spdiags_tosub(diag_num, a, b):
@@ -2479,7 +2506,7 @@ def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
     return gstrf(N, csc.nnz, csc.data, csc.rowind, csc.indptr, permc_spec,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 
-def spidentity( n, dtype = 'd' ):
+def spidentity(n, dtype='d'):
     """
     spidentity( n ) returns the identity matrix of shape (n, n) stored
     in CSC sparse matrix format.
@@ -2488,14 +2515,14 @@ def spidentity( n, dtype = 'd' ):
     return spdiags( diags, 0, n, n )
     
 
-def speye( n, m = None, k = 0, dtype = 'd' ):
+def speye(n, m = None, k = 0, dtype = 'd'):
     """
-    speye( n, m ) returns a (n, m) matrix stored
+    speye(n, m) returns a (n x m) matrix stored
     in CSC sparse matrix format, where the  k-th diagonal is all ones,
     and everything else is zeros.
     """
-    diags = ones( (1, n), dtype = dtype )
-    return spdiags( diags, k, n, m )
+    diags = ones((1, n), dtype = dtype)
+    return spdiags(diags, k, n, m)
 
 
 if __name__ == "__main__":

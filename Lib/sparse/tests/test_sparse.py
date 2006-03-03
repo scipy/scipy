@@ -21,7 +21,7 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, spidentity, \
-        speye, lil_matrix
+        speye, lil_matrix, lu_factor
 restore_path()
 
 class _test_cs(ScipyTestCase):
@@ -168,15 +168,18 @@ class _test_cs(ScipyTestCase):
 
     def check_tocoo(self):
         a = self.datsp.tocoo()
-        assert_array_almost_equal(a.todense(),self.dat)
+        assert_array_almost_equal(a.todense(), self.dat)
 
     def check_tocsc(self):
         a = self.datsp.tocsc()
-        assert_array_almost_equal(a.todense(),self.dat)
+        assert_array_almost_equal(a.todense(), self.dat)
+        b = complexsp = self.spmatrix(self.dat+3j)
+        c = b.tocsc()
+        assert_array_almost_equal(c.todense(), self.dat+3j)
 
     def check_tocsr(self):
         a = self.datsp.tocsr()
-        assert_array_almost_equal(a.todense(),self.dat)
+        assert_array_almost_equal(a.todense(), self.dat)
 
     def check_transpose(self):
         a = self.datsp.transpose()
@@ -234,6 +237,23 @@ class _test_cs(ScipyTestCase):
     #    dense_dot_dense = dot(self.dat, b)
     #    dense_dot_sparse = dot(self.datsp, b)
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
+
+    def check_solve(self):
+        """ Test whether the lu_solve command segfaults, as reported by Nils
+        Wagner for a 64-bit machine, 02 March 2005 (EJS)
+        """
+        n = 20
+        A = self.spmatrix((n,n), dtype=complex)
+        x = numpy.rand(n)
+        y = numpy.rand(n-1)+1j*numpy.rand(n-1)
+        r = numpy.rand(n)
+        for i in range(len(x)):
+            A[i,i] = x[i]
+        for i in range(len(y)):
+           A[i,i+1] = y[i]
+           A[i+1,i] = numpy.conjugate(y[i])
+        xx = lu_factor(A.tocsc()).solve(r)
+        # Don't actually test the output until we know what it should be ...
 
 class _test_fancy_indexing(ScipyTestCase):
     """Tests slicing and fancy indexing features.  The tests for dok_matrix and
@@ -489,6 +509,7 @@ class test_construct_utils(ScipyTestCase):
 #        print a, a.__repr__
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
+
 
 if __name__ == "__main__":
     ScipyTest().run()
