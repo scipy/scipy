@@ -57,17 +57,26 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_DOUBLE,1,2);
-  if (Py_X == NULL) goto fail;
+  if (Py_X == NULL) return NULL;
 
   if (csc) {
-      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) goto fail;
+      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
   else {
-      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) goto fail; 
+      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
-
-  if (DenseSuper_from_Numeric(&B, Py_X)) goto fail;
-
+  
+  if (DenseSuper_from_Numeric(&B, Py_X)) {
+          Destroy_SuperMatrix_Store(&A);  
+          Py_DECREF(Py_X);
+          return NULL;
+  }
 
   /* B and Py_X  share same data now but Py_X "owns" it */
     

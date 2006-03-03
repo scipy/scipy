@@ -58,7 +58,8 @@ void superlu_python_module_free(void *ptr)
      the memory that "might" have been allocated to avoid memory leaks on abort 
      calls.
    */ 
-  if (!(PyDict_DelItem(_superlumodule_memory_dict, key))) {
+  if (_superlumodule_memory_dict && \
+      !(PyDict_DelItem(_superlumodule_memory_dict, key))) {
     free(ptr);
   }
   Py_DECREF(key);

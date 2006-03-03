@@ -58,15 +58,25 @@ static PyObject *Py_cgssv (PyObject *self, PyObject *args, PyObject *kwdict)
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_CFLOAT,1,2);
-  if (Py_X == NULL) goto fail;
+  if (Py_X == NULL) return NULL;
   if (csc) {
-      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) goto fail;
+      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
   else {
-      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) goto fail; 
+      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
   
-  if (DenseSuper_from_Numeric(&B, Py_X)) goto fail;
+  if (DenseSuper_from_Numeric(&B, Py_X)) {
+          Destroy_SuperMatrix_Store(&A);  
+          Py_DECREF(Py_X);
+          return NULL;
+  }
 
   /* Setup options */
   
@@ -154,9 +164,9 @@ Py_cgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
  
   result = newSciPyLUObject(&A, diag_pivot_thresh, drop_tol, relax, panel_size,\
                             permc_spec, PyArray_CFLOAT);
-  if (result == NULL) goto fail;
 
   Destroy_SuperMatrix_Store(&A); /* arrays of input matrix will not be freed */  
+
   return result;
 
  fail:

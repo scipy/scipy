@@ -2536,7 +2536,7 @@ def speye(n, m = None, k = 0, dtype = 'd'):
     return spdiags(diags, k, n, m)
 
 
-if __name__ == "__main__":
+def _testme():
     a = csc_matrix((arange(1, 9), numpy.transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
     print "Representation of a matrix:"
     print repr(a)
@@ -2606,3 +2606,6 @@ if __name__ == "__main__":
     print "Adding a constant:"
     c += 5
     print c
+
+if __name__ == "__main__":
+    _testme()
