@@ -8,6 +8,9 @@
 #include "SuperLU/SRC/scomplex.h"
 #include "SuperLU/SRC/dcomplex.h"
 
+
+#define _CHECK_INTEGER(x) (PyArray_ISINTEGER(x) && (x)->descr->elsize == sizeof(int))
+
 /*********************************************************************** 
  * SuperLUObject definition
  */

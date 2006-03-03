@@ -49,6 +49,11 @@ static PyObject *Py_sgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|ii", kwlist, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec))
     return NULL;
 
+  if (!_CHECK_INTEGER(colind) || !_CHECK_INTEGER(rowptr)) {
+          PyErr_SetString(PyExc_TypeError, "colind and rowptr must be of type cint");
+          return NULL;
+  }
+
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_FLOAT,1,2);
   if (Py_X == NULL) goto fail;
@@ -138,6 +143,11 @@ Py_sgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
 					&panel_size);
   if (!res)
     return NULL;
+
+  if (!_CHECK_INTEGER(colptr) || !_CHECK_INTEGER(rowind)) {
+          PyErr_SetString(PyExc_TypeError, "colptr and rowind must be of type cint");
+          return NULL;
+  }
 
   if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr, PyArray_FLOAT)) goto fail;
  
