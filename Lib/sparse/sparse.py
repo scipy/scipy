@@ -2392,17 +2392,28 @@ def getdtype(dtype, a=None, default=None):
     specified (is None), returns a.dtype; otherwise returns a numpy.dtype
     object created from the specified dtype argument.  If 'dtype' and 'a'
     are both None, construct a data type out of the 'default' parameter.
+    Furthermore, 'dtype' must be in 'allowed' set.
     """
+    canCast = True
     if dtype is None:
         try:
             newdtype = a.dtype
         except AttributeError:
             if default is not None:
                 newdtype = numpy.dtype(default)
+                canCast = False
             else:
                 raise TypeError, "could not interpret data type"
     else:
         newdtype = numpy.dtype(dtype)
+
+    allowed = 'fdFD'
+#    print newdtype, newdtype.char
+    if newdtype.char not in allowed:
+        if default is None or canCast:
+            newdtype = numpy.dtype( 'd' )
+        else:
+            raise TypeError, "dtype must be one of 'fdFD'"
     return newdtype
 
 
@@ -2569,9 +2580,9 @@ if __name__ == "__main__":
     print "Solve: single precision:"
     useUmfpack = False
     a = a.astype('f')
-##    x = solve(a, b.astype('f'))
-##    print x
-##    print "Error: ", a*x-b
+    x = solve(a, b.astype('f'))
+    print x
+    print "Error: ", a*x-b
 
     print "(Various small tests follow ...)\n"
     print "Dictionary of keys matrix:"
