@@ -564,7 +564,7 @@ class csc_matrix(spmatrix):
     def astype(self, t):
         out = self.copy()
         out.data = out.data.astype(t)
-        out.dtype = numpy.dtype(t)
+        out.dtype = out.data.dtype
         out.ftype = _transtabl[out.dtype.char]
         return out
     
@@ -1063,7 +1063,7 @@ class csr_matrix(spmatrix):
     def astype(self, t):
         out = self.copy()
         out.data = out.data.astype(t)
-        out.dtype = numpy.dtype(t)
+        out.dtype = out.data.dtype
         out.ftype = _transtabl[out.dtype.char]
         return out
         
