@@ -8,7 +8,7 @@ Modified and extended by Ed Schofield and Robert Cimrman.
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, dot,\
                   ArrayType, ceil, amax, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, ravel, empty, ones, \
-                  arange, shape
+                  arange, shape, intc
 import numpy
 import sparsetools
 import _superlu
@@ -477,8 +477,8 @@ class csc_matrix(spmatrix):
                 # It's a tuple of matrix dimensions (M, N)
                 M, N = arg1
                 self.data = zeros((nzmax,), self.dtype)
-                self.rowind = zeros((nzmax,), int)
-                self.indptr = zeros((N+1,), int)
+                self.rowind = zeros((nzmax,), intc)
+                self.indptr = zeros((N+1,), intc)
                 self.shape = (M, N)
             else:
                 try:
@@ -975,8 +975,8 @@ class csr_matrix(spmatrix):
                 M, N = arg1
                 self.dtype = getdtype(dtype, default=float)
                 self.data = zeros((nzmax,), self.dtype)
-                self.colind = zeros((nzmax,), int)
-                self.indptr = zeros((M+1,), int)
+                self.colind = zeros((nzmax,), intc)
+                self.indptr = zeros((M+1,), intc)
                 self.shape = (M, N)
             else:
                 try:
@@ -1898,10 +1898,10 @@ class dok_matrix(spmatrix, dict):
         nnz = len(keys)
         nzmax = max(nnz, nzmax)
         data = zeros(nzmax, dtype=self.dtype)
-        colind = zeros(nzmax, dtype=int)
+        colind = zeros(nzmax, dtype=intc)
         # Empty rows will leave row_ptr dangling.  We assign row_ptr[i] 
         # for each empty row i to point off the end.  Is this sufficient??
-        row_ptr = empty(self.shape[0]+1, dtype=int)
+        row_ptr = empty(self.shape[0]+1, dtype=intc)
         row_ptr[:] = nnz
         current_row = -1
         k = 0
@@ -1931,10 +1931,10 @@ class dok_matrix(spmatrix, dict):
         nnz = len(keys)
         nzmax = max(nnz, nzmax)
         data = zeros(nzmax, dtype=self.dtype)
-        rowind = zeros(nzmax, dtype=int)
+        rowind = zeros(nzmax, dtype=intc)
         # Empty columns will leave col_ptr dangling.  We assign col_ptr[j] 
         # for each empty column j to point off the end.  Is this sufficient??
-        col_ptr = empty(self.shape[1]+1, dtype=int)
+        col_ptr = empty(self.shape[1]+1, dtype=intc)
         col_ptr[:] = nnz
         current_col = -1
         k = 0
@@ -2044,7 +2044,7 @@ class coo_matrix(spmatrix):
         if (self.nzmax < nnz):
             raise ValueError, "nzmax must be >= nnz"
         self.nnz = nnz
-        self.ftype = _transtabl[self.dtype.char]
+        self.ftype = _transtabl.get(self.dtype.char,'')
 
     def _normalize(self, rowfirst=False):
         if rowfirst:
@@ -2312,8 +2312,8 @@ class lil_matrix(spmatrix):
         nnz = self.getnnz()
         nzmax = max(nnz, nzmax)
         data = zeros(nzmax, dtype=self.dtype)
-        colind = zeros(nzmax, dtype=int)
-        row_ptr = empty(self.shape[0]+1, dtype=int)
+        colind = zeros(nzmax, dtype=intc)
+        row_ptr = empty(self.shape[0]+1, dtype=intc)
         row_ptr[:] = nnz
         k = 0
         for i, row in enumerate(self.rows):

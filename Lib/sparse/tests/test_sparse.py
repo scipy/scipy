@@ -252,7 +252,8 @@ class _test_cs(ScipyTestCase):
         for i in range(len(y)):
            A[i,i+1] = y[i]
            A[i+1,i] = numpy.conjugate(y[i])
-        xx = lu_factor(A.tocsc()).solve(r)
+        B = A.tocsc()
+        xx = lu_factor(B).solve(r)
         # Don't actually test the output until we know what it should be ...
 
 class _test_fancy_indexing(ScipyTestCase):
