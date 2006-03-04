@@ -565,6 +565,7 @@ class csc_matrix(spmatrix):
         out = self.copy()
         out.data = out.data.astype(t)
         out.dtype = numpy.dtype(t)
+        out.ftype = _transtabl[out.dtype.char]
         return out
     
     def __radd__(self, other):
@@ -1063,6 +1064,7 @@ class csr_matrix(spmatrix):
         out = self.copy()
         out.data = out.data.astype(t)
         out.dtype = numpy.dtype(t)
+        out.ftype = _transtabl[out.dtype.char]
         return out
         
     def __add__(self, other):
@@ -2500,8 +2502,9 @@ def solve(A, b, permc_spec=2):
         ftype, lastel, data, index0, index1 = \
                mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
         gssv = eval('_superlu.' + ftype + 'gssv')
-        return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
-    
+        print "data-ftype: %s compared to data %s" % (ftype, data.dtype.char)
+        print "Calling _superlu.%sgssv" % ftype
+        return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]    
 
 def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
               drop_tol=0.0, relax=1, panel_size=10):
@@ -2601,10 +2604,6 @@ def _testme():
 
     print "Converting to a CSR matrix:"
     c = a.tocsr()
-    print c
-
-    print "Adding a constant:"
-    c += 5
     print c
 
 if __name__ == "__main__":
