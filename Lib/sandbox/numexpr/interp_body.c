@@ -65,6 +65,22 @@
             }
             break;
         }
+        case OP_POW:
+        {
+            double *p2 = mem[arg2];
+            for (j = 0; j < VECTOR_SIZE; j++) {
+                p_dest[j] = pow(p1[j], p2[j]);
+            }
+            break;
+        }
+        case OP_MOD:
+        {
+            double *p2 = mem[arg2];
+            for (j = 0; j < VECTOR_SIZE; j++) {
+                p_dest[j] = fmod(p1[j], p2[j]);
+            }
+            break;
+        }
         case OP_ADD_C:
         {
             double c = constants[arg2];
@@ -94,6 +110,22 @@
             double c = constants[arg2];
             for (j = 0; j < VECTOR_SIZE; j++) {
                 p_dest[j] = c / p1[j];
+            }
+            break;
+        }
+        case OP_POW_C:
+        {
+            double c = constants[arg2];
+            for (j = 0; j < VECTOR_SIZE; j++) {
+                p_dest[j] = pow(p1[j], c);
+            }
+            break;
+        }
+        case OP_MOD_C:
+        {
+            double c = constants[arg2];
+            for (j = 0; j < VECTOR_SIZE; j++) {
+                p_dest[j] = fmod(p1[j], c);
             }
             break;
         }

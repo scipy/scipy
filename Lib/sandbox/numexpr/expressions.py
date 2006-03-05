@@ -230,13 +230,16 @@ def evaluate(ex, local_dict=None, global_dict=None):
         arguments.append(a)
     return compiled_ex(*arguments)
 
-def binop(opname):
+def binop(opname, reversed=False):
     def operation(self, other):
         if isinstance(other, (int, float)):
             other = ConstantNode(other)
         elif not isinstance(other, ExpressionNode):
             return NotImplemented
-        return OpNode(opname, (self, other))
+        if reversed:
+            return OpNode(opname, (other, self))
+        else:
+            return OpNode(opname, (self, other))
     return operation
 
 
@@ -311,10 +314,16 @@ class ExpressionNode(object):
     def __pos__(self):
         return self
 
-    __sub__ = __rsub__ = binop('sub')
+    __sub__ = binop('sub')
+    __rsub__ = binop('sub', reversed=True)
     __mul__ = __rmul__ = binop('mul')
-    __div__ = __rdiv__ = binop('div')
-    
+    __div__ =  binop('div')
+    __rdiv__ = binop('div', reversed=True)
+    __pow__ = binop('pow')
+    __rpow__ = binop('pow', reversed=True)
+    __mod__ = binop('mod')
+    __rmod__ = binop('mod', reversed=True)
+
     __gt__ = compareop('gt')
     __ge__ = compareop('ge')
     __eq__ = compareop('eq')
@@ -379,6 +388,8 @@ class ConstantNode(ExpressionNode):
     __sub__ = optimize_constants('__sub__', operator.sub)
     __mul__ = optimize_constants('__mul__', operator.mul)
     __div__ = optimize_constants('__div__', operator.div)
+    __pow__ = optimize_constants('__pow__', operator.pow)
+    __mod__ = optimize_constants('__mod__', operator.mod)
 
     def __neg__(self):
         return ConstantNode(-self._value)
@@ -389,8 +400,12 @@ class OpNode(ExpressionNode):
         ExpressionNode.__init__(self)
         if len(args) == 2:
             if isinstance(args[0], ConstantNode):
-                opcode += '_c'
-                args = (args[1], args[0])
+                if opcode in ('pow', 'mod'):
+                    cp = OpNode('copy', (RawNode(0), args[0]))
+                    args = (cp, args[1])
+                else:
+                    opcode += '_c'
+                    args = (args[1], args[0])
             elif isinstance(args[1], ConstantNode):
                 # constant goes last, although the op is constant - value
                 if opcode == 'sub':

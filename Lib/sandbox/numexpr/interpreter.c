@@ -22,12 +22,16 @@ enum OpCodes {
     OP_SUB,
     OP_MUL,
     OP_DIV,
-    /* OP_POW, OP_POW_1C and OP_POW_C1 */
-    /* OP_MOD, OP_MOD_1C, and OP_MOD_C1 */
+    OP_POW,
+    OP_MOD,
     OP_ADD_C,
     OP_SUB_C,
     OP_MUL_C,
     OP_DIV_C,
+    /* pow_c and mod_c are backwards from other div_c and sub_c in that constant
+       is second since this is the more common case. */
+    OP_POW_C,
+    OP_MOD_C,
     OP_GT,
     OP_GE,
     OP_EQ,
@@ -399,10 +403,14 @@ initinterpreter(void)
     add_op("sub", OP_SUB);
     add_op("mul", OP_MUL);
     add_op("div", OP_DIV);
+    add_op("pow", OP_POW);
+    add_op("mod", OP_MOD);
     add_op("add_c", OP_ADD_C);
     add_op("sub_c", OP_SUB_C);
     add_op("mul_c", OP_MUL_C);
     add_op("div_c", OP_DIV_C);
+    add_op("pow_c", OP_POW_C);
+    add_op("mod_c", OP_MOD_C);
     add_op("gt", OP_GT);
     add_op("ge", OP_GE);    
     add_op("eq", OP_EQ);

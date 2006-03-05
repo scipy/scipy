@@ -13,6 +13,12 @@ tests = [
           '1+1',
           '1',
           'cos(a2)'])]
+optests = []
+for op in list('+-*/%') + ['**']:
+    optests.append("(a+1) %s (b+3)" % op)
+    optests.append("3 %s (b+3)" % op)
+    optests.append("(a+1) %s 4" % op)
+tests.append(('OPERATIONS', optests))
 cmptests = []
 for op in ['<', '<=', '==', '>=', '>', '!=']:
     cmptests.append("a/2+5 %s b" % op)
