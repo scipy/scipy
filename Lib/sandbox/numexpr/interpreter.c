@@ -1,19 +1,103 @@
 #include "Python.h"
 #include "structmember.h"
 #include "numpy/arrayobject.h"
+#include "math.h"
+
+/*
+    I'm using suffixes like _1C and _C1 to indicate which argument is a constant
+    This notation is a little goofy and it might be better to replace it with _xC
+    and _Cx for instance. 
+
+    For these functions, all the variables are passed in before all the constants,
+    then reorderd based on the suffix.
+
+*/
 
 enum OpCodes {
-    OP_COPY = 0,
+    OP_NOOP = 0,
+    OP_COPY,
+    OP_COPY_C,
     OP_NEG,
     OP_ADD,
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    /* OP_POW, OP_POW_1C and OP_POW_C1 */
+    /* OP_MOD, OP_MOD_1C, and OP_MOD_C1 */
     OP_ADD_C,
     OP_SUB_C,
     OP_MUL_C,
     OP_DIV_C,
+    OP_GT,
+    OP_GE,
+    OP_EQ,
+    OP_NE,
+    OP_GT_C,
+    OP_GE_C,
+    OP_EQ_C,
+    OP_NE_C,
+    OP_LT_C,
+    OP_LE_C,
+    OP_SIN,
+    OP_COS,
+    OP_TAN,
+    OP_ARCTAN2,
+    OP_ARCTAN2_1C,
+    OP_ARCTAN2_C1,
+    OP_WHERE,
+    OP_WHERE_1C1,
+    OP_WHERE_11C,
+    OP_FUNC_1,
+    OP_FUNC_2,
+    OP_FUNC_1C,
+    OP_FUNC_C1,
 };
+
+/* 
+   Lots of functions still to be added: exp, ln, log10, etc, etc. Still not
+   sure which get there own opcodes and which get relegated to loopup table. 
+   Some functions at least (sin and arctan2 for instance) seem to have a large
+   slowdown when run through lookup table. Not entirely sure why.
+
+   To add a function to the lookup table, add to FUNC_CODES (first group is 
+   1-arg functions, second is 2-arg functions), also to functions_1 or functions_2
+   as appropriate. Finally, use add_func down below to add to funccodes.
+
+   To add a function opcode, just copy OP_SIN or OP_ARCTAN2 for 1- and 2-arg
+   functions. For three arg functions, just say no. Or copy where, but be aware
+   that you'll need more OP_CODES (6 instead of 3), since the first arg could
+   also be a constant.
+
+   Yet another approach would be to use copy_c to move the constant into a 
+   variable. I haven't tried this, but it might be able to work. copy_c isn't
+   currently used for anything - I had a use for it, but it went away. I'm 
+   leaving it there for now as I think it may be useful for something and
+   we're not yet short of opcode space.
+
+*/
+
+enum FuncCodes {
+    FUNC_SINH = 0,
+    FUNC_COSH,
+    FUNC_TANH,
+    
+    FUNC_FMOD = 0,
+};
+
+typedef double (*Func1Ptr)(double);
+
+Func1Ptr functions_1[] = {
+    sinh,
+    cosh,
+    tanh,
+};
+
+typedef double (*Func2Ptr)(double, double);
+
+Func2Ptr functions_2[] = {
+    fmod,
+};
+
 
 #define BLOCK_SIZE1 128
 #define BLOCK_SIZE2 8
@@ -307,7 +391,9 @@ initinterpreter(void)
     Py_XDECREF(o);                                      \
     if (r < 0) {PyErr_SetString(PyExc_RuntimeError, "add_op"); return;}
 
+    add_op("noop", OP_NOOP);
     add_op("copy", OP_COPY);
+    add_op("copy_c", OP_COPY_C);
     add_op("neg", OP_NEG);
     add_op("add", OP_ADD);
     add_op("sub", OP_SUB);
@@ -317,8 +403,49 @@ initinterpreter(void)
     add_op("sub_c", OP_SUB_C);
     add_op("mul_c", OP_MUL_C);
     add_op("div_c", OP_DIV_C);
+    add_op("gt", OP_GT);
+    add_op("ge", OP_GE);    
+    add_op("eq", OP_EQ);
+    add_op("ne", OP_NE);
+    add_op("gt_c", OP_GT_C);
+    add_op("ge_c", OP_GE_C);
+    add_op("eq_c", OP_EQ_C);
+    add_op("ne_c", OP_NE_C);
+    add_op("lt_c", OP_LT_C);
+    add_op("le_c", OP_LE_C);
+    add_op("sin", OP_SIN);
+    add_op("cos", OP_COS);
+    add_op("tan", OP_TAN);
+    add_op("arctan2", OP_ARCTAN2);
+    add_op("arctan2_1C", OP_ARCTAN2_1C);
+    add_op("arctan2_C1", OP_ARCTAN2_C1);
+    add_op("where", OP_WHERE);
+    add_op("where_11C", OP_WHERE_11C);
+    add_op("where_1C1", OP_WHERE_1C1);
+    add_op("func_1", OP_FUNC_1);
+    add_op("func_2", OP_FUNC_2);
+    add_op("func_1C", OP_FUNC_1C);
+    add_op("func_C1", OP_FUNC_C1);
 #undef add_op
 
     if (PyModule_AddObject(m, "opcodes", d) < 0) return;
+    
+    d = PyDict_New();
+    if (!d) return;
+    
+#define add_func(sname, name) o = PyInt_FromLong(name);   \
+    r = PyDict_SetItemString(d, sname, o);              \
+    Py_XDECREF(o);                                      \
+    if (r < 0) {PyErr_SetString(PyExc_RuntimeError, "add_func"); return;}
+
+    add_func("sinh", FUNC_SINH);
+    add_func("cosh", FUNC_COSH);
+    add_func("tanh", FUNC_TANH);
+    
+    add_func("fmod", FUNC_FMOD);
+
+#undef add_func
+
+   if (PyModule_AddObject(m, "funccodes", d) < 0) return;
 
 }

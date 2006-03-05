@@ -3,7 +3,7 @@ __all__ = ['E', 'numexpr', 'evaluate']
 import sys
 import operator
 import numpy
-import interpreter
+from numexpr import interpreter
 
 class Expression(object):
     def __init__(self):
@@ -37,6 +37,9 @@ class Register(object):
             return 'Register(%d)' % (self.n,)
     __repr__ = __str__
 
+
+
+
 def string2expression(s):
     # first compile to a code object to determine the names
     c = compile(s, '<expr>', 'eval')
@@ -44,9 +47,26 @@ def string2expression(s):
     names = {}
     for name in c.co_names:
         names[name] = getattr(E, name)
+    names.update(functions)
     # now build the expression
     ex = eval(c, names)
+    if isinstance(ex, (int, float)):
+        ex = ConstantNode(ex)
     return ex
+
+class ConstantNumexpr(object):
+    """Used to wrap a constant when numexpr returns a constant value.
+    
+    Should add input_names and n_inputs so that can detect errors on calls.
+    """
+    def __init__(self, value): 
+        self._value = value
+        self.input_names = []
+    def __call__(self, *args, **kargs):
+        return self._value
+    def __str__(self):
+        return str(self._value)
+    __repr__ = __str__
 
 def numexpr(ex, input_order=None, precompiled=False):
     """Compile an expression built using E.<variable> variables to a function.
@@ -61,6 +81,8 @@ def numexpr(ex, input_order=None, precompiled=False):
     """
     if isinstance(ex, str):
         ex = string2expression(ex)
+    if isinstance(ex, ConstantNode):
+        return ConstantNumexpr(ex._value)
     if not isinstance(ex, OpNode):
         ex = OpNode('copy', (ex,))
 
@@ -120,7 +142,7 @@ def numexpr(ex, input_order=None, precompiled=False):
 
     for a in walk(instances_of=OpNode):
         # put result in one of the operand temporaries if there is one
-        for arg in a._args:
+        for arg in a.walk(instances_of=ExpressionNode):
             arg = node_map.get(arg, arg)
             if registers[arg].temporary:
                 registers[a] = registers[arg]
@@ -132,6 +154,8 @@ def numexpr(ex, input_order=None, precompiled=False):
 
     seen_temps = set()
     def reg(a):
+        if isinstance(a, RawNode):
+            return Register(a._value)
         a = node_map.get(a, a)
         m = registers[a]
         if m not in seen_temps and m.temporary:
@@ -141,7 +165,10 @@ def numexpr(ex, input_order=None, precompiled=False):
     def to_string(opcode, store, a1, a2):
         cop = chr(interpreter.opcodes[opcode])
         cs = chr(store.n)
-        ca1 = chr(a1.n)
+        if a1 is None:
+            ca1 = chr(0)
+        else:
+            ca1 = chr(a1.n)
         if a2 is None:
             ca2 = chr(0)
         else:
@@ -151,9 +178,15 @@ def numexpr(ex, input_order=None, precompiled=False):
     for a in ex.walk(instances_of=OpNode):
         if len(a._args) == 1:
             program.append( (a._opcode, reg(a), reg(a._args[0]), None) )
-        else:
+        elif len(a._args) == 2:
             program.append( (a._opcode, reg(a),
                              reg(a._args[0]), reg(a._args[1])))
+        elif len(a._args) == 3:
+            program.append( (a._opcode, reg(a),
+                             reg(a._args[0]), reg(a._args[1])))
+            program.append( ('noop', reg(a._args[2]), None, None) )
+        else:
+            raise ValueError('too many arguments')
 
     if precompiled:
         return program
@@ -206,6 +239,64 @@ def binop(opname):
         return OpNode(opname, (self, other))
     return operation
 
+
+def compareop(opname):
+    reverse = {'lt' : 'gt',
+               'le' : 'ge',
+               'eq' : 'eq',
+               'ne' : 'ne'}
+    def operation(self, other):
+        if isinstance(other, (int, float)):
+            other = ConstantNode(other)
+        elif not isinstance(other, ExpressionNode):
+            return NotImplemented
+        if isinstance(self, ConstantNode) and isinstance(other, ConstantNode):
+            return ConstantNode(getattr(self.__val__, "__%s__" % opname)(other))
+        if isinstance(self, ConstantNode):
+            return OpNode(reverse[opname] + '_c', (other, self))
+        if isinstance(other, ConstantNode):
+            return OpNode(opname + '_c', (other, self))
+        if opname in reverse:
+            return OpNode(reverse[opname], (other, self))
+        return OpNode(opname, (self, other))
+    return operation
+
+def func(func):
+    def function(*args):
+        args = list(args)
+        constant = True
+        expression = True
+        for i, x in enumerate(args):
+            if isinstance(x, (int, float)):
+                args[i] = x = ConstantNode(x)
+            if not isinstance(x, ConstantNode):
+                constant = False
+            if not isinstance(x, ExpressionNode):
+                expression = False
+        if constant:
+            return ConstantNode(func(*[x._value for x in args]))
+        elif not expression:
+            return NotImplemented
+        elif (func.__name__ == 'where') and isinstance(args[0], ConstantNode):
+            raise ValueError("too many dimensions")
+        return FuncNode(func.__name__, args)
+    return function
+
+functions = {
+    'sin' : func(numpy.sin),
+    'cos' : func(numpy.cos),
+    'tan' : func(numpy.tan),
+    'sinh' : func(numpy.sinh),
+    'cosh' : func(numpy.cosh),
+    'tanh' : func(numpy.tanh),
+    
+    'arctan2' : func(numpy.arctan2),
+    'fmod' : func(numpy.fmod),
+    
+    'where' : func(numpy.where)
+            }
+
+
 class ExpressionNode(object):
     def __init__(self):
         object.__init__(self)
@@ -223,6 +314,13 @@ class ExpressionNode(object):
     __sub__ = __rsub__ = binop('sub')
     __mul__ = __rmul__ = binop('mul')
     __div__ = __rdiv__ = binop('div')
+    
+    __gt__ = compareop('gt')
+    __ge__ = compareop('ge')
+    __eq__ = compareop('eq')
+    __ne__ = compareop('ne')
+    __lt__ = compareop('lt')
+    __le__ = compareop('le')
 
     def _walk(self):
         yield self
@@ -246,13 +344,29 @@ class VariableNode(ExpressionNode):
 
 def optimize_constants(name, op):
     def operation(self, other):
-        if isinstance(other, ConstantNode):
+        if isinstance(other, (int, float)):
+            return ConstantNode(op(self._value, other))
+        elif isinstance(other, ConstantNode):
             return ConstantNode(op(self._value, other._value))
         else:
             a = getattr(ExpressionNode, name)
             return a(self, other)
     return operation
 
+class RawNode(object):
+    """Used to pass raw integers to interpreter. 
+    For instance, for selecting what function to use in func1.
+    Purposely don't inherit from ExpressionNode, since we don't wan't 
+    this to be used for anything but being walked.
+    """
+    def __init__(self, value):
+        self._value = value
+    def __str__(self):
+        return 'RawNode(%s)' % (self._value,)
+    def walk(self, instances_of=None):
+        if instances_of is not None:
+            yield self
+        
 class ConstantNode(ExpressionNode):
     def __init__(self, value):
         ExpressionNode.__init__(self)
@@ -268,6 +382,7 @@ class ConstantNode(ExpressionNode):
 
     def __neg__(self):
         return ConstantNode(-self._value)
+    
 
 class OpNode(ExpressionNode):
     def __init__(self, opcode, args):
@@ -275,6 +390,7 @@ class OpNode(ExpressionNode):
         if len(args) == 2:
             if isinstance(args[0], ConstantNode):
                 opcode += '_c'
+                args = (args[1], args[0])
             elif isinstance(args[1], ConstantNode):
                 # constant goes last, although the op is constant - value
                 if opcode == 'sub':
@@ -296,3 +412,38 @@ class OpNode(ExpressionNode):
             for w in a.walk():
                 yield w
         yield self
+
+
+
+class FuncNode(OpNode):
+    
+    def __init__(self, opcode, args):
+        ExpressionNode.__init__(self)
+        inline = (opcode in interpreter.opcodes)
+        sig = '_' + ''.join('1C'[isinstance(x, ConstantNode)] for x in args)
+        if 'C' not in sig:
+            sig = ''
+        # Move constants to end of arglist
+        vars = [x for x in args if not isinstance(x, ConstantNode)]
+        consts = [x for x in args if isinstance(x, ConstantNode)]
+        args = vars + consts
+        # Build the opcodes and arglists
+        if inline:
+            self._opcode = opcode + sig
+            self._args = args
+        else:
+            if sig:
+                self._opcode = 'func' + sig
+            else:
+                self._opcode = 'func_%s' % len(args)
+            self._args = args + [RawNode(interpreter.funccodes[opcode])]
+   
+    def __str__(self):
+        return 'FuncNode(%r, %s)' % (self._opcode, self._args)
+
+    def _walk(self):
+        for a in self._args:
+            for w in a.walk():
+                yield w
+        yield self
+
