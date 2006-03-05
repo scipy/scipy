@@ -212,7 +212,7 @@
         {
             double c = constants[arg2];
             for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = atan2(c, 1);
+                p_dest[j] = atan2(c, p1[j]);
             }
             break;
         }
