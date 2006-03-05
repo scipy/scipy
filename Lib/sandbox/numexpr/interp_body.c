@@ -232,22 +232,6 @@
             }
             break;
         }
-        case OP_ARCTAN2_1C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = atan2(p1[j], c);
-            }
-            break;
-        }
-        case OP_ARCTAN2_C1:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = atan2(c, p1[j]);
-            }
-            break;
-        }
         case OP_WHERE:
         {
             char next_op = program[p+4];
@@ -260,7 +244,7 @@
             break;
         
         }
-        case OP_WHERE_11C:
+        case OP_WHERE_XXC:
         {
             char next_op = program[p+4];
             int arg3 = program[p+5];
@@ -272,7 +256,7 @@
             break;
         
         }
-        case OP_WHERE_1C1:
+        case OP_WHERE_XCX:
         {
             char next_op = program[p+4];
             int arg3 = program[p+5];
@@ -300,28 +284,6 @@
             Func2Ptr func = functions_2[arg3];
             for (j = 0; j < VECTOR_SIZE; j++) {
                 p_dest[j] = func(p1[j], p2[j]);
-            }
-            break;
-        }
-        case OP_FUNC_1C:
-        {
-            char next_op = program[p+4];
-            int arg3 = program[p+5];
-            double c = constants[arg2];
-            Func2Ptr func = functions_2[arg3];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = func(p1[j], c);
-            }
-            break;
-        }
-        case OP_FUNC_C1:
-        {
-            char next_op = program[p+4];
-            int arg3 = program[p+5];
-            double c = constants[arg2];
-            Func2Ptr func = functions_2[arg3];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = func(c, p1[j]);
             }
             break;
         }

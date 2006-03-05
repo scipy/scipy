@@ -4,13 +4,14 @@
 #include "math.h"
 
 /*
-    I'm using suffixes like _1C and _C1 to indicate which argument is a constant
-    This notation is a little goofy and it might be better to replace it with _xC
-    and _Cx for instance. 
+    I'm using suffixes like _XC and _CX to indicate which argument is a constant
+    when there is more than one argument to afunctions
 
     For these functions, all the variables are passed in before all the constants,
-    then reorderd based on the suffix.
-
+    then reordered based on the suffix.
+    
+    Currently, only where is treated specially like this: it seems like a common
+    function and it can be implemented inline, so we avoid any extra overhead.
 */
 
 enum OpCodes {
@@ -28,8 +29,9 @@ enum OpCodes {
     OP_SUB_C,
     OP_MUL_C,
     OP_DIV_C,
-    /* pow_c and mod_c are backwards from other div_c and sub_c in that constant
-       is second since this is the more common case. */
+    /* pow_c and mod_c are backwards from  div_c and sub_c in that constant
+       is second in the former versus first in the latter since this is the
+       more common case for those ops. */
     OP_POW_C,
     OP_MOD_C,
     OP_GT,
@@ -46,15 +48,11 @@ enum OpCodes {
     OP_COS,
     OP_TAN,
     OP_ARCTAN2,
-    OP_ARCTAN2_1C,
-    OP_ARCTAN2_C1,
     OP_WHERE,
-    OP_WHERE_1C1,
-    OP_WHERE_11C,
+    OP_WHERE_XCX,
+    OP_WHERE_XXC,
     OP_FUNC_1,
     OP_FUNC_2,
-    OP_FUNC_1C,
-    OP_FUNC_C1,
 };
 
 /* 
@@ -65,18 +63,11 @@ enum OpCodes {
 
    To add a function to the lookup table, add to FUNC_CODES (first group is 
    1-arg functions, second is 2-arg functions), also to functions_1 or functions_2
-   as appropriate. Finally, use add_func down below to add to funccodes.
+   as appropriate. Finally, use add_func down below to add to funccodes. Functions
+   with more arguments aren't implemented at present, but should be easy; just copy
+   the 1- or 2-arg case.
 
-   To add a function opcode, just copy OP_SIN or OP_ARCTAN2 for 1- and 2-arg
-   functions. For three arg functions, just say no. Or copy where, but be aware
-   that you'll need more OP_CODES (6 instead of 3), since the first arg could
-   also be a constant.
-
-   Yet another approach would be to use copy_c to move the constant into a 
-   variable. I haven't tried this, but it might be able to work. copy_c isn't
-   currently used for anything - I had a use for it, but it went away. I'm 
-   leaving it there for now as I think it may be useful for something and
-   we're not yet short of opcode space.
+   To add a function opcode, just copy OP_SIN or OP_ARCTAN2.
 
 */
 
@@ -425,15 +416,11 @@ initinterpreter(void)
     add_op("cos", OP_COS);
     add_op("tan", OP_TAN);
     add_op("arctan2", OP_ARCTAN2);
-    add_op("arctan2_1C", OP_ARCTAN2_1C);
-    add_op("arctan2_C1", OP_ARCTAN2_C1);
     add_op("where", OP_WHERE);
-    add_op("where_11C", OP_WHERE_11C);
-    add_op("where_1C1", OP_WHERE_1C1);
+    add_op("where_xxc", OP_WHERE_XXC);
+    add_op("where_xcx", OP_WHERE_XCX);
     add_op("func_1", OP_FUNC_1);
     add_op("func_2", OP_FUNC_2);
-    add_op("func_1C", OP_FUNC_1C);
-    add_op("func_C1", OP_FUNC_C1);
 #undef add_op
 
     if (PyModule_AddObject(m, "opcodes", d) < 0) return;

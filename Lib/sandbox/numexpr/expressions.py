@@ -56,8 +56,6 @@ def string2expression(s):
 
 class ConstantNumexpr(object):
     """Used to wrap a constant when numexpr returns a constant value.
-    
-    Should add input_names and n_inputs so that can detect errors on calls.
     """
     def __init__(self, value): 
         self._value = value
@@ -65,7 +63,7 @@ class ConstantNumexpr(object):
     def __call__(self, *args, **kargs):
         return self._value
     def __str__(self):
-        return str(self._value)
+        return "%s(%s)" % (self.__class__.__name__, self._value)
     __repr__ = __str__
 
 def numexpr(ex, input_order=None, precompiled=False):
@@ -207,8 +205,8 @@ def evaluate(ex, local_dict=None, global_dict=None):
     (through use of sys._getframe()). Alternatively, they can be specifed
     using the 'local_dict' or 'global_dict' arguments.
 
-    Only the basic operators +, -, *, and / are supported, and only on real
-    constants, and arrays of floats.
+    Not all operations are supported, and only on real
+    constants and arrays of floats currently work..
     """
     if not isinstance(ex, str):
         raise ValueError("must specify expression as a string")
@@ -372,6 +370,7 @@ class RawNode(object):
         self._value = value
     def __str__(self):
         return 'RawNode(%s)' % (self._value,)
+    __repr__ = __str__
     def walk(self, instances_of=None):
         if instances_of is not None:
             yield self
@@ -434,24 +433,32 @@ class FuncNode(OpNode):
     
     def __init__(self, opcode, args):
         ExpressionNode.__init__(self)
+        # There are three cases:
+        #    1. Function is inline and can be called without copying constants
+        #    2. Function is inline but constants must be copied
+        #    3. Function is called from function table. Constants always copied.
         inline = (opcode in interpreter.opcodes)
-        sig = '_' + ''.join('1C'[isinstance(x, ConstantNode)] for x in args)
-        if 'C' not in sig:
-            sig = ''
-        # Move constants to end of arglist
-        vars = [x for x in args if not isinstance(x, ConstantNode)]
-        consts = [x for x in args if isinstance(x, ConstantNode)]
-        args = vars + consts
-        # Build the opcodes and arglists
+        has_constants = bool([x for x in args if isinstance(x, ConstantNode)])
+        copy_constants = True
         if inline:
-            self._opcode = opcode + sig
-            self._args = args
+            if has_constants:
+                sig = '_'+''.join('xc'[isinstance(x, ConstantNode)] for x in args)
+                if (opcode+sig) in interpreter.opcodes: 
+                    opcode += sig
+                    copy_constants = False
         else:
-            if sig:
-                self._opcode = 'func' + sig
-            else:
-                self._opcode = 'func_%s' % len(args)
-            self._args = args + [RawNode(interpreter.funccodes[opcode])]
+            args = args + [RawNode(interpreter.funccodes[opcode])]
+            opcode = 'func_%s' % (len(args)-1)
+        self._opcode = opcode
+        if copy_constants:
+            for i, x in enumerate(args):
+                if isinstance(x, ConstantNode):
+                    args[i] = OpNode('copy', (RawNode(0), x))            
+        # Put all constants and RawNodes last.
+        CNode = (ConstantNode, RawNode)
+        vars = [x for x in args if not isinstance(x, CNode)]
+        consts = [x for x in args if isinstance(x, CNode)]
+        self._args = vars + consts
    
     def __str__(self):
         return 'FuncNode(%r, %s)' % (self._opcode, self._args)
@@ -461,4 +468,3 @@ class FuncNode(OpNode):
             for w in a.walk():
                 yield w
         yield self
-
