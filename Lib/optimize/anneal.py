@@ -1,16 +1,18 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
-# Author: Travis Oliphant 2002
+# Original Author: Travis Oliphant 2002
+# Bug-fixes in 2006 by Tim Leslie
+
 
 from __future__ import nested_scopes
-import copy
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
-     all
+     all, log, sqrt, pi, shape, array, minimum
 from numpy import random
 
 __all__ = ['anneal']
 
+_double_max = numpy.finfo(float).max
 class base_schedule:
     def __init__(self):
         self.dwell = 20
@@ -26,10 +28,10 @@ class base_schedule:
 
     def init(self, **options):
         self.__dict__.update(options)
-        if self.lower == numpy.NINF:
-            self.lower = -numpy.utils.limits.double_max
-        if self.upper == numpy.PINF:
-            self.upper = numpy.utils.limits.double_max
+        self.lower = asarray(self.lower)
+        self.lower[self.lower == numpy.NINF] = -_double_max
+        self.upper = asarray(self.upper)
+        self.upper[self.upper == numpy.PINF] = _double_max
         self.k = 0
         self.accepted = 0
         self.feval = 0
@@ -37,14 +39,13 @@ class base_schedule:
 
     def getstart_temp(self, best_state):
         assert(not self.dims is None)
-        x0 = ones(self.dims,'d')
-        lrange = x0*self.lower
-        urange = x0*self.upper
+        lrange = self.lower
+        urange = self.upper
         fmax = -300e8
         fmin = 300e8
-        for n in range(self.Ninit):
-            x0[:] = random.uniform(size=self.dims)*(urange-lrange) + lrange
-            fval = self.func(x0,*self.args)
+        for _ in range(self.Ninit):
+            x0 = random.uniform(size=self.dims)*(urange-lrange) + lrange
+            fval = self.func(x0, *self.args)
             self.feval += 1
             if fval > fmax:
                 fmax = fval
@@ -62,7 +63,7 @@ class base_schedule:
             self.accepted += 1
             return 1
         p = exp(-dE*1.0/self.boltzmann/T)
-        if (p > random.uniform(0.0,1.0)):
+        if (p > random.uniform(0.0, 1.0)):
             self.accepted += 1
             return 1
         return 0
@@ -82,11 +83,11 @@ class fast_sa(base_schedule):
             self.m = 1.0
         if self.n is None:
             self.n = 1.0
-        self.c = self.m * exp(-self.n * self.quench / self.dims)
+        self.c = self.m * exp(-self.n * self.quench)
         
     def update_guess(self, x0):
         x0 = asarray(x0)
-        u = squeeze(random.uniform(0.0,1.0, size=len(x0)))
+        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
         T = self.T
         y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
         xc = y*(self.upper - self.lower)
@@ -94,14 +95,14 @@ class fast_sa(base_schedule):
         return xnew
 
     def update_temp(self):
-        self.T = self.T0*exp(-self.c * self.k**(self.quench/self.dims))
+        self.T = self.T0*exp(-self.c * self.k**(self.quench))
         self.k += 1
         return
 
 class cauchy_sa(base_schedule):
     def update_guess(self, x0):
         x0 = asarray(x0)
-        numbers = squeeze(random.uniform(-pi/2,pi/2, size=len(x0)))
+        numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
         xc = self.learn_rate * self.T * tan(numbers)
         xnew = x0 + xc
         return xnew
@@ -113,10 +114,14 @@ class cauchy_sa(base_schedule):
 
 class boltzmann_sa(base_schedule):
     def update_guess(self, x0):
-        std = min(sqrt(self.T), (self.upper-self.lower)/3.0/self.learn_rate)
+        #print sqrt(self.T)
+        #print (self.upper-self.lower)/3.0/self.learn_rate
+        std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
         x0 = asarray(x0)
-        xc = squeeze(random.normal(0,std*self.learn_rate, size=len(x0)))
-        xnew = x0 + xc
+        #xc = squeeze(random.normal(0, std*self.learn_rate, size=self.dims))
+        xc = squeeze(random.normal(0, 1.0, size=self.dims))
+        
+        xnew = x0 + xc*std*self.learn_rate
         return xnew
 
     def update_temp(self):
@@ -167,7 +172,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     lower, upper -- lower and upper bounds on x0 (scalar or array).
     dwell        -- The number of times to search the space at each temperature.
 
-    Outputs: (xmin, {Jmin, T, feval, iter, accept,} retval)
+    Outputs: (xmin, {Jmin, T, feval, iters, accept,} retval)
 
     xmin -- Point giving smallest value found
     retval -- Flag indicating stopping condition:
@@ -180,25 +185,26 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     Jmin  -- Minimum value of function found
     T     -- final temperature
     feval -- Number of function evaluations
-    iter  -- Number of cooling iterations
+    iters  -- Number of cooling iterations
     accept -- Number of tests accepted.
     """
     x0 = asarray(x0)
-
+    lower = asarray(lower)
+    upper = asarray(upper)
+    
     schedule = eval(schedule+'_sa()')
     #   initialize the schedule
-    schedule.init(dims=len(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
+    schedule.init(dims=shape(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
                   learn_rate=learn_rate, lower=lower, upper=upper,
                   m=m, n=n, quench=quench, dwell=dwell)
 
     current_state, last_state, best_state = _state(), _state(), _state()
-    feval = 0
-    done = 0
     if T0 is None:
         x0 = schedule.getstart_temp(best_state)
     else:
         best_state.x = None
         best_state.cost = 300e8
+
     last_state.x = asarray(x0).copy()
     fval = func(x0,*args)
     schedule.feval += 1
@@ -207,25 +213,23 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         best_state.cost = fval
         best_state.x = asarray(x0).copy()
     schedule.T = schedule.T0
-    fqueue = [100,300,500,700]
-    iter=0
+    fqueue = [100, 300, 500, 700]
+    iters = 0
     while 1:
         for n in range(dwell):
-            xnew = schedule.update_guess(x0)
-            fval = func(xnew,*args)
+            current_state.x = schedule.update_guess(last_state.x)
+            current_state.cost = func(current_state.x,*args)
             schedule.feval += 1
-            current_state.x = asarray(xnew).copy()
-            current_state.cost = fval
+
             dE = current_state.cost - last_state.cost
             if schedule.accept_test(dE):
-                if dE < 0:
-                    last_state.x = current_state.x.copy()
-                    last_state.cost = current_state.cost
+                last_state.x = current_state.x.copy()
+                last_state.cost = current_state.cost
                 if last_state.cost < best_state.cost:                
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
         schedule.update_temp()
-        iter += 1
+        iters += 1
         # Stopping conditions
         # 0) last saved values of f from each cooling step
         #     are all very similar (effectively cooled)
@@ -235,14 +239,14 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         # 4) maxaccept is set and we are past it
 
         fqueue.append(squeeze(last_state.cost))
-        tmp = fqueue.pop(0)
+        fqueue.pop(0)
         af = asarray(fqueue)*1.0
         if all(abs((af-af[0])/af[0]) < feps):
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
-                print "Warning: Cooled to %f at %f but this is not" \
-                      % (squeeze(last_state.cost), squeeze(last_state.x)) \
+                print "Warning: Cooled to %f at %s but this is not" \
+                      % (squeeze(last_state.cost), str(squeeze(last_state.x))) \
                       + " the smallest point found."
             break
         if (Tf is not None) and (schedule.T < Tf):
@@ -251,7 +255,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         if (maxeval is not None) and (schedule.feval > maxeval):
             retval = 2
             break
-        if (iter > maxiter):
+        if (iters > maxiter):
             print "Warning: Maximum number of iterations exceeded."
             retval = 3
             break
@@ -261,15 +265,22 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     if full_output:        
         return best_state.x, best_state.cost, schedule.T, \
-               schedule.feval, iter, schedule.accepted, retval
+               schedule.feval, iters, schedule.accepted, retval
     else:
         return best_state.x, retval
 
 
 
 if __name__ == "__main__":
+    from numpy import cos
+    # minimum expected at ~-0.195
     func = lambda x: cos(14.5*x-0.3) + (x+0.2)*x
-    #print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=1000,schedule=fast_sa())
-    #print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=1000,schedule=cauchy_sa())
-    #print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=1000,schedule=boltzmann_sa())
+    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='cauchy')
+    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='fast')
+    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='boltzmann')
 
+    # minimum expected at ~[-0.195, -0.1]
+    func = lambda x: cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
+    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy')
+    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast')
+    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann')
