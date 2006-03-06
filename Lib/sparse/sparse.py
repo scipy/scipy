@@ -2561,14 +2561,14 @@ def _testme():
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
     b = numpy.array([1, 2, 3, 4, 5])
     print "Solve: single precision complex:"
-    useUmfpack = False
+    globals()['useUmfpack'] = False
     a = a.astype('F')
-##     x = solve(a, b)
-##     print x
-##     print "Error: ", a*x-b
+    x = solve(a, b)
+    print x
+    print "Error: ", a*x-b
 
     print "Solve: double precision complex:"
-    useUmfpack = True
+    globals()['useUmfpack'] = True
     a = a.astype('D')
     x = solve(a, b)
     print x
@@ -2581,7 +2581,7 @@ def _testme():
     print "Error: ", a*x-b
 
     print "Solve: single precision:"
-    useUmfpack = False
+    globals()['useUmfpack'] = False
     a = a.astype('f')
     x = solve(a, b.astype('f'))
     print x
