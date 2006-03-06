@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
-
 # Original Author: Travis Oliphant 2002
 # Bug-fixes in 2006 by Tim Leslie
 
@@ -114,8 +112,6 @@ class cauchy_sa(base_schedule):
 
 class boltzmann_sa(base_schedule):
     def update_guess(self, x0):
-        #print sqrt(self.T)
-        #print (self.upper-self.lower)/3.0/self.learn_rate
         std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
         x0 = asarray(x0)
         #xc = squeeze(random.normal(0, std*self.learn_rate, size=self.dims))
@@ -214,7 +210,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         best_state.x = asarray(x0).copy()
     schedule.T = schedule.T0
     fqueue = [100, 300, 500, 700]
-    iters = 0
+    iter = 0
     while 1:
         for n in range(dwell):
             current_state.x = schedule.update_guess(last_state.x)
@@ -229,7 +225,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
         schedule.update_temp()
-        iters += 1
+        iter += 1
         # Stopping conditions
         # 0) last saved values of f from each cooling step
         #     are all very similar (effectively cooled)
@@ -255,7 +251,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         if (maxeval is not None) and (schedule.feval > maxeval):
             retval = 2
             break
-        if (iters > maxiter):
+        if (iter > maxiter):
             print "Warning: Maximum number of iterations exceeded."
             retval = 3
             break
@@ -265,7 +261,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     if full_output:        
         return best_state.x, best_state.cost, schedule.T, \
-               schedule.feval, iters, schedule.accepted, retval
+               schedule.feval, iter, schedule.accepted, retval
     else:
         return best_state.x, retval
 
