@@ -112,7 +112,7 @@ print ("\tp['dans'] + p['" + a_grave + "']  = " + \
 # (Or substitute "x.encode('latin-1')" if you have a primitive terminal.)
 
 print "\nEstimated error in constraint satisfaction (should be close to 0):\n" \
-        + str(abs(model.expectationsapprox() - K))
+        + str(abs(model.expectations() - K))
 print "\nTrue error in constraint satisfaction (should be close to 0):\n" + \
         str(abs(smallmodel.expectations() - K))
 

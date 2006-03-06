@@ -355,7 +355,7 @@ def innerprodtranspose(A,v):
     except AttributeError:
         # See if A is a scipy.sparse.spmatrix
         if sparse.isspmatrix(A):
-            innerprodtranspose = A.rmatvec(v)
+            innerprodtranspose = A.rmatvec(v).transpose()
             return innerprodtranspose
         else:
             # Assume A is a dense matrix
@@ -459,16 +459,17 @@ def columnvariances(A):
         means = columnmeans(A)
         return columnmeans((A-means)**2) * (m/(m-1.0))
 
-class Error(Exception):
-    """Base class for exceptions in this module."""
-    pass
+def flatten(a):
+    """Flattens the dense matrix 'a' into a 1-dimensional array
+    """
+    return numpy.asarray(a).flatten()
 
-class DivergenceError(Error):
+class DivergenceError(Exception):
     """Exception raised if the entropy dual has no finite minimum.
     """
     def __init__(self, message):
         self.message = message
-        Error.__init__(self)
+        Exception.__init__(self)
         
     def __str__(self):
         return repr(self.message)
