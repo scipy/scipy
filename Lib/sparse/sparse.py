@@ -431,8 +431,8 @@ class csc_matrix(spmatrix):
                     ierr = irow = jcol = 0
                     nnz = sum(ravel(s != 0.0))
                     a = zeros((nnz,), self.dtype)
-                    rowa = zeros((nnz,), 'i')
-                    ptra = zeros((N+1,), 'i')
+                    rowa = zeros((nnz,), intc)
+                    ptra = zeros((N+1,), intc)
                     while 1:
                         a, rowa, ptra, irow, jcol, ierr = \
                            func(s, a, rowa, ptra, irow, jcol, ierr)
@@ -780,10 +780,10 @@ class csc_matrix(spmatrix):
                 ptrb = other.indptr
             a, b = _convert_data(a, b, dtypechar)
             newshape = (M, N)
-            ptrc = zeros((N+1,), 'i')
+            ptrc = zeros((N+1,), intc)
             nnzc = 2*max(ptra[-1], ptrb[-1])
             c = zeros((nnzc,), dtypechar)
-            rowc = zeros((nnzc,), 'i')
+            rowc = zeros((nnzc,), intc)
             ierr = irow = kcol = 0
             while True:
                 c, rowc, ptrc, irow, kcol, ierr = func(M, a, rowa, ptra, b, rowb, ptrb, c, rowc, ptrc, irow, kcol, ierr)
@@ -1240,12 +1240,12 @@ class csr_matrix(spmatrix):
             a, b = _convert_data(a, b, dtypechar)            
             newshape = (M, N)
             if out == 'csr':
-                ptrc = zeros((M+1,), 'i')
+                ptrc = zeros((M+1,), intc)
             else:
-                ptrc = zeros((N+1,), 'i')
+                ptrc = zeros((N+1,), intc)
             nnzc = 2*max(ptra[-1], ptrb[-1])
             c = zeros((nnzc,), dtypechar)
-            rowc = zeros((nnzc,), 'i')
+            rowc = zeros((nnzc,), intc)
             ierr = irow = kcol = 0
             while 1:
                 args = firstarg+(a, rowa, ptra, b, colb, ptrb, c, rowc, ptrc, irow,
@@ -2057,8 +2057,8 @@ class coo_matrix(spmatrix):
         l = zip(self.col, self.row, self.data)
         l.sort()
         col, row, data = list(itertools.izip(*l))
-        self.col = asarray(col, 'i')
-        self.row = asarray(row, 'i')
+        self.col = asarray(col, intc)
+        self.row = asarray(row, intc)
         self.data = array(data, self.dtype)
         setattr(self, '_is_normalized', 1)
         return self.data, self.row, self.col
@@ -2437,10 +2437,10 @@ def spdiags(diags, offsets, M, N):
         M, N    -- sparse matrix returned is M X N
     """
     #    diags = array(transpose(diags), copy=True)
-    diags = numpy.array( diags, copy = True )
+    diags = numpy.array(diags, copy = True)
     if diags.dtype.char not in 'fdFD':
         diags = diags.astype('d')
-    if not hasattr( offsets, '__len__' ):
+    if not hasattr(offsets, '__len__' ):
         offsets = (offsets,)
     offsets = array(offsets, copy=False)
     mtype = diags.dtype.char
