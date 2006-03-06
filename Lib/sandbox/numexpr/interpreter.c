@@ -72,11 +72,14 @@ enum OpCodes {
 
 */
 
-enum FuncCodes {
+enum Func1Codes {
     FUNC_SINH = 0,
     FUNC_COSH,
     FUNC_TANH,
-    FUNC_FMOD = 10,
+};
+
+enum Func2Codes {
+    FUNC_FMOD = 0,
 };
 
 typedef double (*Func1Ptr)(double);
@@ -222,7 +225,8 @@ run_interpreter(NumExprObject *self, int len, double *output, double **inputs)
 {
     double **mem, *constants;
     char *program;
-    unsigned int n_inputs, prog_len, t, blen1, index;
+    int prog_len;
+    unsigned int n_inputs, t, blen1, index;
 
     n_inputs = self->n_inputs;
     mem = self->mem;

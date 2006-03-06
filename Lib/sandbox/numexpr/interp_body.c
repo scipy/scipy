@@ -2,35 +2,34 @@
 #define VEC_LOOP(expr) for(j = 0; j < VECTOR_SIZE; j++) {       \
         p_dest[j] = expr;                                       \
     }
-#define VEC_ARG1(expr) do {                     \
+#define VEC_ARG1(expr)                          \
+    {                                           \
         VEC_LOOP(expr);                         \
-        break;                                  \
-    } while (0)
-#define VEC_ARG2_C(expr)                           \
-    do {                                           \
-        double c = constants[arg2];                \
-        VEC_LOOP(expr);                            \
-        break;                                     \
-    } while (0)
-#define VEC_ARG2(expr) do {                    \
-        double *p2 = mem[arg2];                \
-        VEC_LOOP(expr);                        \
-        break;                                 \
-    } while (0)
+    } break
+#define VEC_ARG2_C(expr)                        \
+    {                                           \
+        double c = constants[arg2];             \
+        VEC_LOOP(expr);                         \
+    } break
+#define VEC_ARG2(expr)                          \
+    {                                           \
+        double *p2 = mem[arg2];                 \
+        VEC_LOOP(expr);                         \
+    } break
 
-    unsigned int p, j, r;
+    unsigned int pc, j, r;
     /* set up pointers to next block of inputs and outputs */
     mem[0] = output + index;
     for (r = 0; r < n_inputs; r++) {
         mem[1+r] = inputs[r] + index;;
     }
-    for (p = 0; p < prog_len; p += 4) {
-        char op = program[p];
-        int store_in = program[p+1];
-        int arg1 = program[p+2];
+    for (pc = 0; pc < prog_len; pc += 4) {
+        char op = program[pc];
+        int store_in = program[pc+1];
+        int arg1 = program[pc+2];
         double *p_dest = mem[store_in];
         double *p1 = mem[arg1];
-        int arg2 = program[p+3];
+        int arg2 = program[pc+3];
         switch (op) {
         case OP_NOOP:
             break;
@@ -65,35 +64,26 @@
         case OP_ARCTAN2: VEC_ARG2(atan2(p1[j], p2[j]));
         case OP_WHERE:
         {
-            char next_op = program[p+4];
-            int arg3 = program[p+5];
+            int arg3 = program[pc+5];
             double *p2 = mem[arg2];
             double *p3 = mem[arg3];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] ? p2[j] : p3[j];
-            }
+            VEC_LOOP(p1[j] ? p2[j] : p3[j]);
             break;
         }
         case OP_WHERE_XXC:
         {
-            char next_op = program[p+4];
-            int arg3 = program[p+5];
+            int arg3 = program[pc+5];
             double *p2 = mem[arg2];
             double c = constants[arg3];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] ? p2[j] : c;
-            }
+            VEC_LOOP(p1[j] ? p2[j] : c);
             break;
         }
         case OP_WHERE_XCX:
         {
-            char next_op = program[p+4];
-            int arg3 = program[p+5];
+            int arg3 = program[pc+5];
             double *p2 = mem[arg2];
             double c = constants[arg3];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] ? c : p2[j];
-            }
+            VEC_LOOP(p1[j] ? c : p2[j]);
             break;
         }
         case OP_FUNC_1:
@@ -104,14 +94,14 @@
         }
         case OP_FUNC_2:
         {
-            char next_op = program[p+4];
-            int arg3 = program[p+5];
+            int arg3 = program[pc+5];
             double *p2 = mem[arg2];
             Func2Ptr func = functions_2[arg3];
             VEC_LOOP(func(p1[j], p2[j]));
             break;
         }
         default:
+            return -1;
             break;
         }
     }

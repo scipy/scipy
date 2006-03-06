@@ -25,5 +25,4 @@ Licenced under a BSD-style license. See LICENSE.txt in the scipy source
 directory.
 """
 
-__all__ = ['E', 'numexpr', 'evaluate']
 depends = ['core', 'testing']

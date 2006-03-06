@@ -1,4 +1,4 @@
-__all__ = ['E', 'numexpr', 'evaluate']
+__all__ = ['E', 'numexpr', 'evaluate', 'disassemble']
 
 import sys
 import operator
@@ -179,11 +179,11 @@ def numexpr(ex, input_order=None, precompiled=False):
         cop = chr(interpreter.opcodes[opcode])
         cs = chr(store.n)
         if a1 is None:
-            ca1 = chr(0)
+            ca1 = chr(255)
         else:
             ca1 = chr(a1.n)
         if a2 is None:
-            ca2 = chr(0)
+            ca2 = chr(255)
         else:
             ca2 = chr(a2.n)
         return cop + cs + ca1 + ca2
@@ -194,6 +194,30 @@ def numexpr(ex, input_order=None, precompiled=False):
                               program=prog_str, constants=constants,
                               input_names=tuple(input_order))
     return nex
+
+def disassemble(nex):
+    rev_opcodes = {}
+    for op in interpreter.opcodes:
+        rev_opcodes[interpreter.opcodes[op]] = op
+    def get_arg(pc):
+        arg = ord(nex.program[pc])
+        if arg == 0:
+            return Register(arg)
+        elif arg < 1 + nex.n_inputs:
+            return Register(arg, name=nex.input_names[arg-1])
+        else:
+            return Register(arg, temporary=True)
+    source = []
+    for pc in range(0, len(nex.program), 4):
+        op = rev_opcodes.get(ord(nex.program[pc]))
+        dest = get_arg(pc+1)
+        arg1 = get_arg(pc+2)
+        arg2 = get_arg(pc+3)
+        if op.endswith('_c'):
+            arg2.constant = True
+            arg2.value = nex.constants[arg2.n]
+        source.append( (op, dest, arg1, arg2) )
+    return source
 
 _numexpr_cache = {}
 def evaluate(ex, local_dict=None, global_dict=None):
