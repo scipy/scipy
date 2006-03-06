@@ -37,9 +37,6 @@ class Register(object):
             return 'Register(%d)' % (self.n,)
     __repr__ = __str__
 
-
-
-
 def string2expression(s):
     # first compile to a code object to determine the names
     c = compile(s, '<expr>', 'eval')
@@ -57,7 +54,7 @@ def string2expression(s):
 class ConstantNumexpr(object):
     """Used to wrap a constant when numexpr returns a constant value.
     """
-    def __init__(self, value): 
+    def __init__(self, value):
         self._value = value
         self.input_names = []
     def __call__(self, *args, **kargs):
@@ -160,18 +157,7 @@ def numexpr(ex, input_order=None, precompiled=False):
             m.n = 1 + n_inputs + len(seen_temps)
             seen_temps.add(m)
         return m
-    def to_string(opcode, store, a1, a2):
-        cop = chr(interpreter.opcodes[opcode])
-        cs = chr(store.n)
-        if a1 is None:
-            ca1 = chr(0)
-        else:
-            ca1 = chr(a1.n)
-        if a2 is None:
-            ca2 = chr(0)
-        else:
-            ca2 = chr(a2.n)
-        return cop + cs + ca1 + ca2
+
     program = []
     for a in ex.walk(instances_of=OpNode):
         if len(a._args) == 1:
@@ -188,6 +174,19 @@ def numexpr(ex, input_order=None, precompiled=False):
 
     if precompiled:
         return program
+
+    def to_string(opcode, store, a1, a2):
+        cop = chr(interpreter.opcodes[opcode])
+        cs = chr(store.n)
+        if a1 is None:
+            ca1 = chr(0)
+        else:
+            ca1 = chr(a1.n)
+        if a2 is None:
+            ca2 = chr(0)
+        else:
+            ca2 = chr(a2.n)
+        return cop + cs + ca1 + ca2
 
     prog_str = ''.join([to_string(*t) for t in program])
     n_temps = len(seen_temps)
@@ -228,6 +227,8 @@ def evaluate(ex, local_dict=None, global_dict=None):
         arguments.append(a)
     return compiled_ex(*arguments)
 
+# helper functions for creating __magic__ methods
+
 def binop(opname, reversed=False):
     def operation(self, other):
         if isinstance(other, (int, float)):
@@ -239,7 +240,6 @@ def binop(opname, reversed=False):
         else:
             return OpNode(opname, (self, other))
     return operation
-
 
 def compareop(opname):
     reverse = {'lt' : 'gt',
@@ -290,10 +290,10 @@ functions = {
     'sinh' : func(numpy.sinh),
     'cosh' : func(numpy.cosh),
     'tanh' : func(numpy.tanh),
-    
+
     'arctan2' : func(numpy.arctan2),
     'fmod' : func(numpy.fmod),
-    
+
     'where' : func(numpy.where)
             }
 
@@ -349,6 +349,22 @@ class VariableNode(ExpressionNode):
     def __str__(self):
         return 'VariableNode(%s)' % (self._name,)
 
+class RawNode(object):
+    """Used to pass raw integers to interpreter.
+    For instance, for selecting what function to use in func1.
+    Purposely don't inherit from ExpressionNode, since we don't wan't
+    this to be used for anything but being walked.
+    """
+    def __init__(self, value):
+        self._value = value
+    def __str__(self):
+        return 'RawNode(%s)' % (self._value,)
+    __repr__ = __str__
+    def walk(self, instances_of=None):
+        if instances_of is not None:
+            yield self
+
+
 def optimize_constants(name, op):
     def operation(self, other):
         if isinstance(other, (int, float)):
@@ -360,21 +376,6 @@ def optimize_constants(name, op):
             return a(self, other)
     return operation
 
-class RawNode(object):
-    """Used to pass raw integers to interpreter. 
-    For instance, for selecting what function to use in func1.
-    Purposely don't inherit from ExpressionNode, since we don't wan't 
-    this to be used for anything but being walked.
-    """
-    def __init__(self, value):
-        self._value = value
-    def __str__(self):
-        return 'RawNode(%s)' % (self._value,)
-    __repr__ = __str__
-    def walk(self, instances_of=None):
-        if instances_of is not None:
-            yield self
-        
 class ConstantNode(ExpressionNode):
     def __init__(self, value):
         ExpressionNode.__init__(self)
@@ -392,7 +393,7 @@ class ConstantNode(ExpressionNode):
 
     def __neg__(self):
         return ConstantNode(-self._value)
-    
+
 
 class OpNode(ExpressionNode):
     def __init__(self, opcode, args):
@@ -430,7 +431,6 @@ class OpNode(ExpressionNode):
 
 
 class FuncNode(OpNode):
-    
     def __init__(self, opcode, args):
         ExpressionNode.__init__(self)
         # There are three cases:
@@ -443,7 +443,7 @@ class FuncNode(OpNode):
         if inline:
             if has_constants:
                 sig = '_'+''.join('xc'[isinstance(x, ConstantNode)] for x in args)
-                if (opcode+sig) in interpreter.opcodes: 
+                if (opcode+sig) in interpreter.opcodes:
                     opcode += sig
                     copy_constants = False
         else:
@@ -453,13 +453,13 @@ class FuncNode(OpNode):
         if copy_constants:
             for i, x in enumerate(args):
                 if isinstance(x, ConstantNode):
-                    args[i] = OpNode('copy', (RawNode(0), x))            
+                    args[i] = OpNode('copy', (RawNode(0), x))
         # Put all constants and RawNodes last.
         CNode = (ConstantNode, RawNode)
         vars = [x for x in args if not isinstance(x, CNode)]
         consts = [x for x in args if isinstance(x, CNode)]
         self._args = vars + consts
-   
+
     def __str__(self):
         return 'FuncNode(%r, %s)' % (self._opcode, self._args)
 

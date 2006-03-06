@@ -1,4 +1,23 @@
 {
+#define VEC_LOOP(expr) for(j = 0; j < VECTOR_SIZE; j++) {       \
+        p_dest[j] = expr;                                       \
+    }
+#define VEC_ARG1(expr) do {                     \
+        VEC_LOOP(expr);                         \
+        break;                                  \
+    } while (0)
+#define VEC_ARG2_C(expr)                           \
+    do {                                           \
+        double c = constants[arg2];                \
+        VEC_LOOP(expr);                            \
+        break;                                     \
+    } while (0)
+#define VEC_ARG2(expr) do {                    \
+        double *p2 = mem[arg2];                \
+        VEC_LOOP(expr);                        \
+        break;                                 \
+    } while (0)
+
     unsigned int p, j, r;
     /* set up pointers to next block of inputs and outputs */
     mem[0] = output + index;
@@ -15,223 +34,35 @@
         switch (op) {
         case OP_NOOP:
             break;
-        case OP_COPY:
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j];
-            }
-            break;
-        case OP_COPY_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = c;
-            }
-            break;
-        }
-        case OP_NEG:
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = -p1[j];
-            }
-            break;
-        case OP_ADD:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] + p2[j];
-            }
-            break;
-        }
-        case OP_SUB:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] - p2[j];
-            }
-            break;
-        }
-        case OP_MUL:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] * p2[j];
-            }
-            break;
-        }
-        case OP_DIV:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = p1[j] / p2[j];
-            }
-            break;
-        }
-        case OP_POW:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = pow(p1[j], p2[j]);
-            }
-            break;
-        }
-        case OP_MOD:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = fmod(p1[j], p2[j]);
-            }
-            break;
-        }
-        case OP_ADD_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = c + p1[j];
-            }
-            break;
-        }
-        case OP_SUB_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = c - p1[j];
-            }
-            break;
-        }
-        case OP_MUL_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = c * p1[j];
-            }
-            break;
-        }
-        case OP_DIV_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = c / p1[j];
-            }
-            break;
-        }
-        case OP_POW_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = pow(p1[j], c);
-            }
-            break;
-        }
-        case OP_MOD_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = fmod(p1[j], c);
-            }
-            break;
-        }
-        case OP_GT:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] > p2[j]) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_GE:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] >= p2[j]) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_EQ:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] == p2[j]) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_NE:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] != p2[j]) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_GT_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] > c) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_GE_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] >= c) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_EQ_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] == c) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_NE_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] == c) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_LT_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] < c) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_LE_C:
-        {
-            double c = constants[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = (p1[j] <= c) ? 1 : 0;
-            }
-            break;
-        }
-        case OP_SIN:
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = sin(p1[j]);
-            }
-            break;
-        case OP_COS:
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = cos(p1[j]);
-            }
-            break;
-        case OP_TAN:
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = tan(p1[j]);
-            }
-            break;
-        case OP_ARCTAN2:
-        {
-            double *p2 = mem[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = atan2(p1[j], p2[j]);
-            }
-            break;
-        }
+        case OP_COPY: VEC_ARG1(p1[j]);
+        case OP_COPY_C: VEC_ARG2_C(c);
+        case OP_NEG: VEC_ARG1(-p1[j]);
+        case OP_ADD: VEC_ARG2(p1[j] + p2[j]);
+        case OP_SUB: VEC_ARG2(p1[j] - p2[j]);
+        case OP_MUL: VEC_ARG2(p1[j] * p2[j]);
+        case OP_DIV: VEC_ARG2(p1[j] / p2[j]);
+        case OP_POW: VEC_ARG2(pow(p1[j], p2[j]));
+        case OP_MOD: VEC_ARG2(fmod(p1[j], p2[j]));
+        case OP_ADD_C: VEC_ARG2_C(c + p1[j]);
+        case OP_SUB_C: VEC_ARG2_C(c - p1[j]);
+        case OP_MUL_C: VEC_ARG2_C(c * p1[j]);
+        case OP_DIV_C: VEC_ARG2_C(c / p1[j]);
+        case OP_POW_C: VEC_ARG2_C(pow(p1[j], c));
+        case OP_MOD_C: VEC_ARG2_C(fmod(p1[j], c));
+        case OP_GT: VEC_ARG2((p1[j] > p2[j]) ? 1 : 0);
+        case OP_GE: VEC_ARG2((p1[j] >= p2[j]) ? 1 : 0);
+        case OP_EQ: VEC_ARG2((p1[j] == p2[j]) ? 1 : 0);
+        case OP_NE: VEC_ARG2((p1[j] != p2[j]) ? 1 : 0);
+        case OP_GT_C: VEC_ARG2_C((p1[j] > c) ? 1 : 0);
+        case OP_GE_C: VEC_ARG2_C((p1[j] >= c) ? 1 : 0);
+        case OP_EQ_C: VEC_ARG2_C((p1[j] == c) ? 1 : 0);
+        case OP_NE_C: VEC_ARG2_C((p1[j] != c) ? 1 : 0);
+        case OP_LT_C: VEC_ARG2_C((p1[j] < c) ? 1 : 0);
+        case OP_LE_C: VEC_ARG2_C((p1[j] <= c) ? 1 : 0);
+        case OP_SIN: VEC_ARG1(sin(p1[j]));
+        case OP_COS: VEC_ARG1(cos(p1[j]));
+        case OP_TAN: VEC_ARG1(tan(p1[j]));
+        case OP_ARCTAN2: VEC_ARG2(atan2(p1[j], p2[j]));
         case OP_WHERE:
         {
             char next_op = program[p+4];
@@ -242,7 +73,6 @@
                 p_dest[j] = p1[j] ? p2[j] : p3[j];
             }
             break;
-        
         }
         case OP_WHERE_XXC:
         {
@@ -254,7 +84,6 @@
                 p_dest[j] = p1[j] ? p2[j] : c;
             }
             break;
-        
         }
         case OP_WHERE_XCX:
         {
@@ -266,14 +95,11 @@
                 p_dest[j] = p1[j] ? c : p2[j];
             }
             break;
-        
         }
         case OP_FUNC_1:
         {
             Func1Ptr func = functions_1[arg2];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = func(p1[j]);
-            }
+            VEC_LOOP(func(p1[j]));
             break;
         }
         case OP_FUNC_2:
@@ -282,13 +108,17 @@
             int arg3 = program[p+5];
             double *p2 = mem[arg2];
             Func2Ptr func = functions_2[arg3];
-            for (j = 0; j < VECTOR_SIZE; j++) {
-                p_dest[j] = func(p1[j], p2[j]);
-            }
+            VEC_LOOP(func(p1[j], p2[j]));
             break;
         }
         default:
             break;
         }
     }
+
+#undef VEC_LOOP
+#undef VEC_ARG1
+#undef VEC_ARG2_C
+#undef VEC_ARG2
+
 }

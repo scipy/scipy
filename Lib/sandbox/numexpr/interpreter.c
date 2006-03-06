@@ -7,9 +7,9 @@
     I'm using suffixes like _XC and _CX to indicate which argument is a constant
     when there is more than one argument to afunctions
 
-    For these functions, all the variables are passed in before all the constants,
-    then reordered based on the suffix.
-    
+    For these functions, all the variables are passed in before all
+    the constants, then reordered based on the suffix.
+
     Currently, only where is treated specially like this: it seems like a common
     function and it can be implemented inline, so we avoid any extra overhead.
 */
@@ -55,17 +55,18 @@ enum OpCodes {
     OP_FUNC_2,
 };
 
-/* 
+/*
    Lots of functions still to be added: exp, ln, log10, etc, etc. Still not
-   sure which get there own opcodes and which get relegated to loopup table. 
+   sure which get there own opcodes and which get relegated to loopup table.
    Some functions at least (sin and arctan2 for instance) seem to have a large
    slowdown when run through lookup table. Not entirely sure why.
 
-   To add a function to the lookup table, add to FUNC_CODES (first group is 
-   1-arg functions, second is 2-arg functions), also to functions_1 or functions_2
-   as appropriate. Finally, use add_func down below to add to funccodes. Functions
-   with more arguments aren't implemented at present, but should be easy; just copy
-   the 1- or 2-arg case.
+   To add a function to the lookup table, add to FUNC_CODES (first
+   group is 1-arg functions, second is 2-arg functions), also to
+   functions_1 or functions_2 as appropriate. Finally, use add_func
+   down below to add to funccodes. Functions with more arguments
+   aren't implemented at present, but should be easy; just copy the 1-
+   or 2-arg case.
 
    To add a function opcode, just copy OP_SIN or OP_ARCTAN2.
 
@@ -75,8 +76,7 @@ enum FuncCodes {
     FUNC_SINH = 0,
     FUNC_COSH,
     FUNC_TANH,
-    
-    FUNC_FMOD = 0,
+    FUNC_FMOD = 10,
 };
 
 typedef double (*Func1Ptr)(double);
@@ -403,7 +403,7 @@ initinterpreter(void)
     add_op("pow_c", OP_POW_C);
     add_op("mod_c", OP_MOD_C);
     add_op("gt", OP_GT);
-    add_op("ge", OP_GE);    
+    add_op("ge", OP_GE);
     add_op("eq", OP_EQ);
     add_op("ne", OP_NE);
     add_op("gt_c", OP_GT_C);
@@ -424,11 +424,11 @@ initinterpreter(void)
 #undef add_op
 
     if (PyModule_AddObject(m, "opcodes", d) < 0) return;
-    
+
     d = PyDict_New();
     if (!d) return;
-    
-#define add_func(sname, name) o = PyInt_FromLong(name);   \
+
+#define add_func(sname, name) o = PyInt_FromLong(name); \
     r = PyDict_SetItemString(d, sname, o);              \
     Py_XDECREF(o);                                      \
     if (r < 0) {PyErr_SetString(PyExc_RuntimeError, "add_func"); return;}
@@ -436,7 +436,7 @@ initinterpreter(void)
     add_func("sinh", FUNC_SINH);
     add_func("cosh", FUNC_COSH);
     add_func("tanh", FUNC_TANH);
-    
+
     add_func("fmod", FUNC_FMOD);
 
 #undef add_func
