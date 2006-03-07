@@ -68,7 +68,7 @@ class intsampler(object):
             if return_probs == 1:
                 return (sample, sampleprobs)
             elif return_probs == 2:
-                return (sample, scipy.log(sampleprobs))
+                return (sample, numpy.log(sampleprobs))
  
 
 
@@ -133,7 +133,7 @@ class dictsampler(object):
             if return_probs == 1:
                 return (sample, sampleprobs)
             elif return_probs == 2:
-                return (sample, scipy.log(sampleprobs))
+                return (sample, numpy.log(sampleprobs))
  
 
 def _test():
