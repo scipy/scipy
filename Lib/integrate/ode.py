@@ -276,8 +276,8 @@ class vode(IntegratorBase):
         self.with_jacobian = with_jacobian
         self.rtol = rtol
         self.atol = atol
-        self.mu = lband
-        self.ml = uband
+        self.mu = uband
+        self.ml = lband
 
         self.order = order
         self.nsteps = nsteps
