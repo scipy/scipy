@@ -17,7 +17,6 @@
 enum OpCodes {
     OP_NOOP = 0,
     OP_COPY,
-    OP_COPY_C,
     OP_NEG,
     OP_ADD,
     OP_SUB,
@@ -25,34 +24,20 @@ enum OpCodes {
     OP_DIV,
     OP_POW,
     OP_MOD,
-    OP_ADD_C,
-    OP_SUB_C,
-    OP_MUL_C,
     OP_DIV_C,
-    /* pow_c and mod_c are backwards from  div_c and sub_c in that constant
-       is second in the former versus first in the latter since this is the
-       more common case for those ops. */
-    OP_POW_C,
-    OP_MOD_C,
     OP_GT,
     OP_GE,
     OP_EQ,
     OP_NE,
-    OP_GT_C,
-    OP_GE_C,
-    OP_EQ_C,
-    OP_NE_C,
-    OP_LT_C,
-    OP_LE_C,
     OP_SIN,
     OP_COS,
     OP_TAN,
     OP_ARCTAN2,
     OP_WHERE,
-    OP_WHERE_XCX,
-    OP_WHERE_XXC,
     OP_FUNC_1,
     OP_FUNC_2,
+
+    OP_LAST_OP
 };
 
 /*
@@ -76,10 +61,14 @@ enum Func1Codes {
     FUNC_SINH = 0,
     FUNC_COSH,
     FUNC_TANH,
+
+    FUNC1_LAST
 };
 
 enum Func2Codes {
     FUNC_FMOD = 0,
+
+    FUNC2_LAST
 };
 
 typedef double (*Func1Ptr)(double);
@@ -157,6 +146,51 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->input_names = Py_None;
     }
     return (PyObject *)self;
+}
+
+static int
+check_program(NumExprObject *self)
+{
+    unsigned char *program;
+    int prog_len, pc;
+
+    if (PyString_AsStringAndSize(self->program, (char **)&program,
+                                 &prog_len) < 0) {
+        return -1;
+    }
+    if (prog_len % 4 != 0) {
+        return -1;
+    }
+    for (pc = 0; pc < prog_len; pc += 4) {
+        unsigned int op = program[pc];
+        unsigned int store = program[pc+1];
+        unsigned int arg1 = program[pc+2];
+        unsigned int arg2 = program[pc+3];
+        if (op >= OP_LAST_OP) return -1;
+        if (op == OP_NOOP) {
+            continue;
+        }
+        if (store >= self->r_end) return -1;
+        if (arg1 >= self->r_end && arg1 != 255) return -1;
+        if (op == OP_WHERE) {
+            unsigned int arg3;
+            if (pc + 5 > prog_len) return -1;
+            if (program[pc+4] != OP_NOOP) return -1;
+            arg3 = program[pc+5];
+            if (arg2 >= self->r_end) return -1;
+        }
+        if (op == OP_FUNC_1) {
+            if (arg2 >= FUNC1_LAST) return -1;
+        } else if (arg2 >= self->r_end && arg2 != 255) return -1;
+        if (op == OP_FUNC_2) {
+            unsigned int arg3;
+            if (pc + 5 > prog_len) return -1;
+            if (program[pc+4] != OP_NOOP) return -1;
+            arg3 = program[pc+5];
+            if (arg3 >= FUNC2_LAST) return -1;
+        }
+    }
+    return 0;
 }
 
 static int
@@ -243,6 +277,12 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
             }
         }
     }
+
+    if (check_program(self) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid program");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -331,8 +371,8 @@ run_interpreter(NumExprObject *self, int len, double *output, double **inputs,
     double *tdata;
 
     *pc_error = -1;
-    if (PyString_AsStringAndSize(self->program,
-                                 &(params.program), &(params.prog_len)) < 0) {
+    if (PyString_AsStringAndSize(self->program, (char **)&(params.program),
+                                 &(params.prog_len)) < 0) {
         return -1;
     }
     params.n_inputs = self->n_inputs;
@@ -502,7 +542,6 @@ initinterpreter(void)
 
     add_op("noop", OP_NOOP);
     add_op("copy", OP_COPY);
-    add_op("copy_c", OP_COPY_C);
     add_op("neg", OP_NEG);
     add_op("add", OP_ADD);
     add_op("sub", OP_SUB);
@@ -510,29 +549,16 @@ initinterpreter(void)
     add_op("div", OP_DIV);
     add_op("pow", OP_POW);
     add_op("mod", OP_MOD);
-    add_op("add_c", OP_ADD_C);
-    add_op("sub_c", OP_SUB_C);
-    add_op("mul_c", OP_MUL_C);
     add_op("div_c", OP_DIV_C);
-    add_op("pow_c", OP_POW_C);
-    add_op("mod_c", OP_MOD_C);
     add_op("gt", OP_GT);
     add_op("ge", OP_GE);
     add_op("eq", OP_EQ);
     add_op("ne", OP_NE);
-    add_op("gt_c", OP_GT_C);
-    add_op("ge_c", OP_GE_C);
-    add_op("eq_c", OP_EQ_C);
-    add_op("ne_c", OP_NE_C);
-    add_op("lt_c", OP_LT_C);
-    add_op("le_c", OP_LE_C);
     add_op("sin", OP_SIN);
     add_op("cos", OP_COS);
     add_op("tan", OP_TAN);
     add_op("arctan2", OP_ARCTAN2);
     add_op("where", OP_WHERE);
-    add_op("where_xxc", OP_WHERE_XXC);
-    add_op("where_xcx", OP_WHERE_XCX);
     add_op("func_1", OP_FUNC_1);
     add_op("func_2", OP_FUNC_2);
 #undef add_op
