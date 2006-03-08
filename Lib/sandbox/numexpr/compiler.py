@@ -139,7 +139,7 @@ def assignBranchRegisters(inodes, registerMaker):
         node.reg = registerMaker(node, temporary=True)
 
 def optimizeTemporariesAllocation(ast):
-    for a in ast.allOf('op', 'function'):
+    for a in ast.allOf('op'):
         # put result in one of the operand temporaries if there is one
         for c in a.children:
             if c.reg.temporary:
@@ -165,7 +165,7 @@ def setRegisterNumbersForTemporaries(ast, start):
 
 def convertASTtoThreeAddrForm(ast):
     program = []
-    for node in ast.allOf('op', 'function'):
+    for node in ast.allOf('op'):
         children = node.children
         instr = (node.value, node.reg) \
                 + tuple([c.reg for c in children])
@@ -223,7 +223,7 @@ def numexpr(ex, input_order=None, precompiled=False):
     # the AST is like the expression, but the node objects don't have
     # any odd interpretations
     ast = expressionToAST(ex)
-    if ex.astType not in ('op', 'function'):
+    if ex.astType not in ('op'):
         ast = ASTNode('op', value='copy', children=(ast,))
 
     input_order = getInputOrder(ast, input_order)
@@ -238,7 +238,7 @@ def numexpr(ex, input_order=None, precompiled=False):
 
     assignLeafRegisters(ast.allOf('raw'), Immediate)
     assignLeafRegisters(ast.allOf('variable', 'constant'), registerMaker)
-    assignBranchRegisters(ast.allOf('op', 'function'), registerMaker)
+    assignBranchRegisters(ast.allOf('op'), registerMaker)
 
     optimizeTemporariesAllocation(ast)
 
@@ -301,8 +301,8 @@ def evaluate(ex, local_dict=None, global_dict=None):
     (through use of sys._getframe()). Alternatively, they can be specifed
     using the 'local_dict' or 'global_dict' arguments.
 
-    Not all operations are supported, and only on real
-    constants and arrays of floats currently work..
+    Not all operations are supported, and only real
+    constants and arrays of floats currently work.
     """
     if not isinstance(ex, str):
         raise ValueError("must specify expression as a string")

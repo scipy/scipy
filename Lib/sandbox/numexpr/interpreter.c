@@ -2,17 +2,10 @@
 #include "structmember.h"
 #include "numpy/arrayobject.h"
 #include "math.h"
+#ifdef _WIN32
+#define inline __inline
+#endif
 
-/*
-    I'm using suffixes like _XC and _CX to indicate which argument is a constant
-    when there is more than one argument to afunctions
-
-    For these functions, all the variables are passed in before all
-    the constants, then reordered based on the suffix.
-
-    Currently, only where is treated specially like this: it seems like a common
-    function and it can be implemented inline, so we avoid any extra overhead.
-*/
 
 enum OpCodes {
     OP_NOOP = 0,
@@ -24,7 +17,6 @@ enum OpCodes {
     OP_DIV,
     OP_POW,
     OP_MOD,
-    OP_DIV_C,
     OP_GT,
     OP_GE,
     OP_EQ,
@@ -549,7 +541,6 @@ initinterpreter(void)
     add_op("div", OP_DIV);
     add_op("pow", OP_POW);
     add_op("mod", OP_MOD);
-    add_op("div_c", OP_DIV_C);
     add_op("gt", OP_GT);
     add_op("ge", OP_GE);
     add_op("eq", OP_EQ);

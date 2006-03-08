@@ -19,11 +19,6 @@
     {                                           \
         VEC_LOOP(expr);                         \
     } break
-#define VEC_ARG2_C(expr)                        \
-    {                                           \
-        double c = params.mem[arg2][0];         \
-        VEC_LOOP(expr);                         \
-    } break
 #define VEC_ARG2(expr)                          \
     {                                           \
         double *p2 = params.mem[arg2];          \
@@ -39,12 +34,12 @@
     for (pc = 0; pc < params.prog_len; pc += 4) {
         unsigned char op = params.program[pc];
         unsigned int store_in = params.program[pc+1];
-        BOUNDS_CHECK(store_in);
         unsigned int arg1 = params.program[pc+2];
-        BOUNDS_CHECK(arg1);
         double *p_dest = params.mem[store_in];
         double *p1 = params.mem[arg1];
         unsigned int arg2 = params.program[pc+3];
+        BOUNDS_CHECK(store_in);
+        BOUNDS_CHECK(arg1);
         BOUNDS_CHECK(arg2);
         switch (op) {
         case OP_NOOP:
@@ -57,7 +52,6 @@
         case OP_DIV: VEC_ARG2(p1[j] / p2[j]);
         case OP_POW: VEC_ARG2(pow(p1[j], p2[j]));
         case OP_MOD: VEC_ARG2(fmod(p1[j], p2[j]));
-        case OP_DIV_C: VEC_ARG2_C(c / p1[j]);
         case OP_GT: VEC_ARG2((p1[j] > p2[j]) ? 1 : 0);
         case OP_GE: VEC_ARG2((p1[j] >= p2[j]) ? 1 : 0);
         case OP_EQ: VEC_ARG2((p1[j] == p2[j]) ? 1 : 0);

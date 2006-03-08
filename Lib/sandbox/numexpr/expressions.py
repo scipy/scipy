@@ -25,49 +25,30 @@ def binop(opname, reversed=False):
         elif not isinstance(other, ExpressionNode):
             return NotImplemented
         if reversed:
-            return OpNode(opname, (other, self))
-        else:
-            return OpNode(opname, (self, other))
-    return operation
-
-def compareop(opname):
-    reverse = {'lt' : 'gt',
-               'le' : 'ge',
-               'eq' : 'eq',
-               'ne' : 'ne'}
-    def operation(self, other):
-        if isinstance(other, (int, float)):
-            other = ConstantNode(other)
-        elif not isinstance(other, ExpressionNode):
-            return NotImplemented
+            self, other = other, self
         if isinstance(self, ConstantNode) and isinstance(other, ConstantNode):
-            return ConstantNode(getattr(self.__val__, "__%s__" % opname)(other))
-        if isinstance(self, ConstantNode):
-            return OpNode(reverse[opname], (other, self))
-        if isinstance(other, ConstantNode):
-            return OpNode(opname, (other, self))
-        if opname in reverse:
-            return OpNode(reverse[opname], (other, self))
-        return OpNode(opname, (self, other))
+            return ConstantNode(getattr(self.value, "__%s__" % opname)(other.value))
+        else:
+            return BinopNode(opname, (self, other))
     return operation
 
 def func(func):
     def function(*args):
         args = list(args)
         constant = True
-        expression = True
         for i, x in enumerate(args):
             if isinstance(x, (int, float)):
                 args[i] = x = ConstantNode(x)
             if not isinstance(x, ConstantNode):
                 constant = False
             if not isinstance(x, ExpressionNode):
-                expression = False
+                return NotImplemented
         if constant:
-            return ConstantNode(func(*[x.value for x in args]))
-        elif not expression:
-            return NotImplemented
+            return ConstantNode(func(*[x.value for x in args])) 
         elif (func.__name__ == 'where') and isinstance(args[0], ConstantNode):
+            # TAH: Would be nice to put this kind of special casing into the 
+            # functions themselves at some point. Particularly if we get a bunch
+            # more functions that require some checking.
             raise ValueError("too many dimensions")
         return FuncNode(func.__name__, args)
     return function
@@ -120,12 +101,12 @@ class ExpressionNode(object):
     __mod__ = binop('mod')
     __rmod__ = binop('mod', reversed=True)
 
-    __gt__ = compareop('gt')
-    __ge__ = compareop('ge')
-    __eq__ = compareop('eq')
-    __ne__ = compareop('ne')
-    __lt__ = compareop('lt')
-    __le__ = compareop('le')
+    __gt__ = binop('gt')
+    __ge__ = binop('ge')
+    __eq__ = binop('eq')
+    __ne__ = binop('ne')
+    __lt__ = binop('gt', reversed=True)
+    __le__ = binop('ge', reversed=True)
 
 class LeafNode(ExpressionNode):
     leafNode = True
@@ -149,58 +130,30 @@ class RawNode(object):
         return 'RawNode(%s)' % (self.value,)
     __repr__ = __str__
 
-def optimize_constants(name, op):
-    def operation(self, other):
-        if isinstance(other, (int, float)):
-            return ConstantNode(op(self.value, other))
-        elif isinstance(other, ConstantNode):
-            return ConstantNode(op(self.value, other.value))
-        else:
-            a = getattr(ExpressionNode, name)
-            return a(self, other)
-    return operation
 
 class ConstantNode(LeafNode):
     astType = 'constant'
     def __init__(self, value=None, children=None):
         LeafNode.__init__(self, value=float(value))
-
-    __add__ = optimize_constants('__add__', operator.add)
-    __sub__ = optimize_constants('__sub__', operator.sub)
-    __mul__ = optimize_constants('__mul__', operator.mul)
-    __div__ = optimize_constants('__div__', operator.div)
-    __pow__ = optimize_constants('__pow__', operator.pow)
-    __mod__ = optimize_constants('__mod__', operator.mod)
-
     def __neg__(self):
         return ConstantNode(-self.value)
 
 class OpNode(ExpressionNode):
     astType = 'op'
     def __init__(self, opcode=None, args=None):
-        if len(args) == 2:
-            if isinstance(args[0], ConstantNode):
-                if opcode == 'div':
-                    opcode += '_c'
-                    args = (args[1], args[0])
-            elif isinstance(args[1], ConstantNode):
-                # constant goes last, although the op is constant - value
-                if opcode == 'sub':
-                    opcode = 'add'
-                    args = args[0], -args[1]
-                elif opcode == 'div':
-                    opcode = 'mul'
-                    args = args[0], ConstantNode(1./args[1].value)
-        ExpressionNode.__init__(self, value=opcode, children=args)
+        ExpressionNode.__init__(self, value=opcode, children=args)    
+
+class BinopNode(OpNode):
+    def __init__(self, opcode=None, args=None):
+        if (opcode == 'div') and isinstance(args[1], ConstantNode):
+            opcode = 'mul'
+            args = args[0], ConstantNode(1./args[1].value)
+        OpNode.__init__(self, opcode, args)
 
 class FuncNode(OpNode):
-    astType = 'function'
     def __init__(self, opcode=None, args=None):
-        # There are three cases:
-        #    1. Function is inline and can be called without copying constants
-        #    2. Function is inline but constants must be copied
-        #    3. Function is called from function table. Constants always copied.
         if opcode not in interpreter.opcodes:
-            args = args + [RawNode(interpreter.funccodes[opcode])]
+            args = list(args) + [RawNode(interpreter.funccodes[opcode])]
             opcode = 'func_%s' % (len(args)-1)
-        OpNode.__init__(self, opcode, args)
+        ExpressionNode.__init__(self, value=opcode, children=args)
+

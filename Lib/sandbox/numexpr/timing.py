@@ -94,6 +94,11 @@ expr6 = 'where(a, 2, b)'
 
 expr7 = 'where(a-10, a, 2)'
 
+expr8 = 'where(a%2, b+5, 2)'
+
+expr9 = 'where(a%2, 2, b+5)'
+
+
 
 def compare(check_only=False):
     compare_times(setup1, expr1)
@@ -107,6 +112,11 @@ def compare(check_only=False):
     compare_times(setup5, expr6)
     print
     compare_times(setup5, expr7)
+    print
+    compare_times(setup5, expr8)
+    print
+    compare_times(setup5, expr9)
+
 
 if __name__ == '__main__':
     compare()
