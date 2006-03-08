@@ -190,7 +190,7 @@ class OpNode(ExpressionNode):
                     args = args[0], -args[1]
                 elif opcode == 'div':
                     opcode = 'mul'
-                    args = args[0], 1./args[1].value
+                    args = args[0], ConstantNode(1./args[1].value)
         ExpressionNode.__init__(self, value=opcode, children=args)
 
 class FuncNode(OpNode):

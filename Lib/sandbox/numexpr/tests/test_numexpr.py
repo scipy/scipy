@@ -1,4 +1,4 @@
-from numpy import array, arange
+from numpy import *
 from numpy.testing import *
 
 set_package_path()
@@ -56,6 +56,64 @@ class test_evaluate(NumpyTestCase):
         x = (a + 2*b) / (1 + a + 4*b*b)
         y = evaluate("(a + 2*b) / (1 + a + 4*b*b)")
         assert_array_equal(x, y)
+
+
+tests = [
+('MISC', ['b*c+d*e',
+          '2*a+3*b',
+          'sinh(a)',
+          '2*a + (cos(3)+5)*sinh(cos(b))',
+          '2*a + arctan2(a, b)',
+          'where(0.1*a > arctan2(a, b), 2*a, arctan2(a,b))',
+          'where(a, 2, b)',
+          'where(a-10, a, 2)',
+          'cos(1+1)',
+          '1+1',
+          '1',
+          'cos(a2)'])]
+optests = []
+for op in list('+-*/%') + ['**']:
+    optests.append("(a+1) %s (b+3)" % op)
+    optests.append("3 %s (b+3)" % op)
+    optests.append("(a+1) %s 4" % op)
+tests.append(('OPERATIONS', optests))
+cmptests = []
+for op in ['<', '<=', '==', '>=', '>', '!=']:
+    cmptests.append("a/2+5 %s b" % op)
+tests.append(('COMPARISONS', cmptests))
+func1tests = []
+for func in ['sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh']:
+    func1tests.append("a + %s(b+c)" % func)
+tests.append(('1-ARG FUNCS', func1tests))
+func2tests = []
+for func in ['arctan2', 'fmod']:
+    func2tests.append("a + %s(b+c, d+1)" % func)
+    func2tests.append("a + %s(b+c, 1)" % func)
+    func2tests.append("a + %s(1, d+1)" % func)
+tests.append(('2-ARG FUNCS', func2tests))
+
+class test_expressions(NumpyTestCase):
+    def check_expressions(self):
+        array_size = 1e2
+        a = arange(array_size)
+        a2 = zeros([array_size, array_size])
+        b = arange(array_size)
+        c = arange(array_size)
+        d = arange(array_size)
+        e = arange(array_size)
+
+        try:
+            for section_name, section_tests in tests:
+                for expr in section_tests:
+                    npval = eval(expr)
+                    neval = evaluate(expr)
+                    assert shape(npval) == shape(neval), expr
+                    assert alltrue(ravel(npval) == ravel(neval)), expr
+        except AssertionError:
+            raise
+        except:
+            self.warn('numexpr error for expression %r' % (expr,))
+            raise
 
 if __name__ == '__main__':
     NumpyTest().run()

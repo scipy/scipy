@@ -40,12 +40,12 @@ class ConstantNumexpr(object):
     """Used to wrap a constant when numexpr returns a constant value.
     """
     def __init__(self, value):
-        self._value = value
+        self.value = value
         self.input_names = []
     def __call__(self, *args, **kargs):
-        return self._value
+        return self.value
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self._value)
+        return "%s(%s)" % (self.__class__.__name__, self.value)
     __repr__ = __str__
 
 
@@ -218,7 +218,7 @@ def numexpr(ex, input_order=None, precompiled=False):
     if isinstance(ex, str):
         ex = stringToExpression(ex)
     if ex.astType == 'constant':
-        return ConstantNumexpr(ex._value)
+        return ConstantNumexpr(ex.value)
 
     # the AST is like the expression, but the node objects don't have
     # any odd interpretations
