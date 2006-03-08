@@ -105,11 +105,14 @@ typedef struct
     PyObject_HEAD
     unsigned int n_inputs;
     unsigned int n_temps;
+    unsigned int r_constants;
+    unsigned int r_temps;
+    unsigned int r_end;
     PyObject *program;      /* a python string */
     PyObject *constants;    /* a PyArrayObject */
     PyObject *input_names;  /* tuple of strings */
     double **mem;
-    double *temps;
+    PyObject *temps;        /* a PyArrayObject */
 } NumExprObject;
 
 static void
@@ -118,21 +121,23 @@ NumExpr_dealloc(NumExprObject *self)
     Py_XDECREF(self->program);
     Py_XDECREF(self->constants);
     Py_XDECREF(self->input_names);
+    Py_XDECREF(self->temps);
     PyMem_Del(self->mem);
-    PyMem_Del(self->temps);
 }
 
 static PyObject *
 NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     NumExprObject *self;
-    intp dims[] = {0};
+    intp dims[] = {0}, dims2[] = {0,0};
     self = (NumExprObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->n_inputs = 0;
         self->n_temps = 0;
+        self->r_constants = 0;
+        self->r_temps = 0;
+        self->r_end = 0;
         self->mem = NULL;
-        self->temps = NULL;
         self->program = PyString_FromString("");
         if (!self->program) {
             Py_DECREF(self);
@@ -140,6 +145,11 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         self->constants = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
         if (!self->constants) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        self->temps = PyArray_SimpleNew(2, dims2, PyArray_DOUBLE);
+        if (!self->temps) {
             Py_DECREF(self);
             return NULL;
         }
@@ -152,7 +162,9 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *program = NULL, *o_constants = NULL, *input_names = NULL, *tmp;
+    int i, j, n_constants;
+    PyObject *program = NULL, *o_constants = NULL, *input_names = NULL;
+    PyObject *constants, *tmp;
     static char *kwlist[] = {"n_inputs", "n_temps",
                              "program", "constants",
                              "input_names", NULL};
@@ -163,13 +175,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
                                      &program, &o_constants, &input_names)) {
         return -1;
     }
-    if (self->n_inputs + self->n_temps + 1 > 256) {
-        PyErr_SetString(PyExc_ValueError,
-                        "number inputs + outputs + temporaries must be <= 256");
-        return -1;
-    }
     if (o_constants) {
-        PyObject *constants;
         constants = PyArray_FromAny(o_constants,
                                     PyArray_DescrFromType(PyArray_DOUBLE),
                                     1, 1,
@@ -178,16 +184,28 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (!constants) {
             return -1;
         }
-        if (PyArray_DIM(constants, 0) > 256) {
-            PyErr_SetString(PyExc_ValueError,
-                            "number of constants must be <= 256");
-            Py_DECREF(constants);
+    } else {
+        intp dims[] = {0};
+        constants = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
+        if (!constants) {
             return -1;
         }
-        tmp = self->constants;
-        self->constants = constants;
-        Py_XDECREF(tmp);
     }
+    n_constants = PyArray_DIM(constants, 0);
+    self->r_constants = 1 + self->n_inputs;
+    self->r_temps = self->r_constants + n_constants;
+    self->r_end = self->r_temps + self->n_temps;
+
+    if (self->r_end > 255) {
+        PyErr_SetString(PyExc_ValueError,
+                        "expression too complicated");
+        Py_DECREF(constants);
+        return -1;
+    }
+
+    tmp = self->constants;
+    self->constants = constants;
+    Py_XDECREF(tmp);
 
     tmp = self->program;
     Py_INCREF(program);
@@ -203,61 +221,141 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(tmp);
 
     PyMem_Del(self->mem);
-    self->mem = PyMem_New(double *, 1 + self->n_inputs + self->n_temps);
-    PyMem_Del(self->temps);
-    self->temps = PyMem_New(double, self->n_temps * BLOCK_SIZE1);
+    self->mem = PyMem_New(double *, self->r_end);
 
+    {
+        intp dims[2];
+        double *tdata;
+
+        tmp = self->temps;
+        dims[0] = n_constants + self->n_temps;
+        dims[1] = BLOCK_SIZE1;
+        self->temps = PyArray_SimpleNew(2, dims, PyArray_DOUBLE);
+        Py_XDECREF(tmp);
+
+        PyArray_FILLWBYTE(self->temps, 0);
+        tdata = PyArray_DATA(self->temps);
+        for (i = 0; i < n_constants; i++ ) {
+            double c = ((double *)PyArray_DATA(self->constants))[i];
+            double *p = tdata + i * BLOCK_SIZE1;
+            for (j = 0; j < BLOCK_SIZE1; j++) {
+                p[j] = c;
+            }
+        }
+    }
     return 0;
 }
 
 static PyMemberDef NumExpr_members[] = {
     {"n_inputs", T_UINT, offsetof(NumExprObject, n_inputs), READONLY, NULL},
     {"n_temps", T_UINT, offsetof(NumExprObject, n_temps), READONLY, NULL},
+    {"r_constants", T_UINT, offsetof(NumExprObject, r_constants),
+     READONLY, NULL},
+    {"r_temps", T_UINT, offsetof(NumExprObject, r_temps), READONLY, NULL},
+    {"r_end", T_UINT, offsetof(NumExprObject, r_end), READONLY, NULL},
     {"program", T_OBJECT_EX, offsetof(NumExprObject, program), READONLY, NULL},
     {"constants", T_OBJECT_EX, offsetof(NumExprObject, constants),
      READONLY, NULL},
+    {"temps", T_OBJECT_EX, offsetof(NumExprObject, temps), READONLY, NULL},
     {"input_names", T_OBJECT, offsetof(NumExprObject, input_names), 0, NULL},
     {NULL},
 };
 
-static int
-run_interpreter(NumExprObject *self, int len, double *output, double **inputs)
-{
-    double **mem, *constants;
-    char *program;
+struct vm_params {
     int prog_len;
-    unsigned int n_inputs, t, blen1, index;
+    unsigned char *program;
+    unsigned int n_inputs;
+    unsigned int r_end;
+    double *output;
+    double **inputs;
+    double **mem;
+};
 
-    n_inputs = self->n_inputs;
-    mem = self->mem;
-    for (t = 0; t < self->n_temps; t++) {
-        mem[1+n_inputs+t] = self->temps + BLOCK_SIZE1 * t;
+#if DO_BOUNDS_CHECK
+#define BOUNDS_CHECK(arg) if (((arg) >= params.r_end) && ((arg) != 255)) { \
+        *pc_error = pc;                                                 \
+        return -2;                                                      \
     }
+#else
+#define BOUNDS_CHECK(arg)
+#endif
 
-    if (PyString_AsStringAndSize(self->program, &program, &prog_len) < 0) {
-        return -1;
-    }
-    constants = PyArray_DATA(self->constants);
-
-    blen1 = len - len % BLOCK_SIZE1;
-    for (index = 0; index < blen1; index += BLOCK_SIZE1) {
+static inline int
+vm_engine_1(int start, int blen, struct vm_params params, int *pc_error)
+{
+    unsigned int index;
+    for (index = start; index < blen; index += BLOCK_SIZE1) {
+#define UNROLL 0
 #define VECTOR_SIZE BLOCK_SIZE1
 #include "interp_body.c"
 #undef VECTOR_SIZE
+#undef UNROLL
     }
-    if (len != blen1) {
-        int blen2 = len - len % BLOCK_SIZE2;
-        for (index = blen1; index < blen2; index += BLOCK_SIZE2) {
+    return 0;
+}
+
+static inline int
+vm_engine_2(int start, int blen, struct vm_params params, int *pc_error)
+{
+    unsigned int index;
+    for (index = start; index < blen; index += BLOCK_SIZE2) {
+#define UNROLL 0
 #define VECTOR_SIZE BLOCK_SIZE2
 #include "interp_body.c"
 #undef VECTOR_SIZE
-        }
-        if (len != blen2) {
-            int rest = len - blen2;
-            index = blen2;
+#undef UNROLL
+    }
+    return 0;
+}
+
+static inline int
+vm_engine_rest(int start, int blen, struct vm_params params, int *pc_error)
+{
+    unsigned int index = start;
+    unsigned int rest = blen - start;
+#define UNROLL 0
 #define VECTOR_SIZE rest
 #include "interp_body.c"
 #undef VECTOR_SIZE
+#undef UNROLL
+    return 0;
+}
+
+static int
+run_interpreter(NumExprObject *self, int len, double *output, double **inputs,
+                int *pc_error)
+{
+    int r;
+    unsigned int t, blen1, blen2, n_constants;
+    struct vm_params params;
+    double *tdata;
+
+    *pc_error = -1;
+    if (PyString_AsStringAndSize(self->program,
+                                 &(params.program), &(params.prog_len)) < 0) {
+        return -1;
+    }
+    params.n_inputs = self->n_inputs;
+    params.output = output;
+    params.inputs = inputs;
+    params.mem = self->mem;
+    n_constants = PyArray_DIM(self->constants, 0);
+    tdata = PyArray_DATA(self->temps);
+    for (t = 0; t < n_constants + self->n_temps; t++) {
+        params.mem[self->r_constants + t] = tdata + BLOCK_SIZE1 * t;
+    }
+    params.r_end = self->r_end;
+
+    blen1 = len - len % BLOCK_SIZE1;
+    r = vm_engine_1(0, blen1, params, pc_error);
+    if (r < 0) return r;
+    if (len != blen1) {
+        blen2 = len - len % BLOCK_SIZE2;
+        r = vm_engine_2(blen1, blen2, params, pc_error);
+        if (r < 0) return r;
+        if (len != blen2) {
+            r = vm_engine_rest(blen2, len, params, pc_error);
+            if (r < 0) return r;
         }
     }
     return 0;
@@ -269,7 +367,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *output = NULL, *a_inputs;
     unsigned int n_inputs;
-    int i, len = -1;
+    int i, len = -1, r, pc_error;
     double **inputs;
 
     n_inputs = PyTuple_Size(args);
@@ -302,11 +400,23 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         }
         inputs[i] = PyArray_DATA(a);
     }
-    if (run_interpreter(self, len, PyArray_DATA(output), inputs) < 0) {
+    r = run_interpreter(self, len, PyArray_DATA(output), inputs, &pc_error);
+    if (r < 0) {
         Py_XDECREF(output);
         output = NULL;
-        PyErr_SetString(PyExc_RuntimeError,
-                        "an error occurred while running the program");
+        if (r == -1) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "an error occurred while running the program");
+        } else if (r == -2) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "bad argument at pc=%d", pc_error);
+        } else if (r == -3) {
+            PyErr_Format(PyExc_RuntimeError,
+                         "bad opcode at pc=%d", pc_error);
+        } else {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "unknown error occurred while running the program");
+        }
     }
     Py_XDECREF(a_inputs);
     PyMem_Del(inputs);
