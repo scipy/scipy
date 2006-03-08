@@ -53,6 +53,7 @@ class Register(object):
     def __init__(self, astnode, temporary=False):
         self.node = astnode
         self.temporary = temporary
+        self.immediate = False
         self.n = None
 
     def __str__(self):
@@ -65,6 +66,14 @@ class Register(object):
     def __repr__(self):
         return self.__str__()
 
+
+class Immediate(Register):
+    def __init__(self, astnode):
+        Register.__init__(self, astnode)
+        self.immediate = True
+
+    def __str__(self):
+        return 'Immediate(%d)' % (self.node.value,)
 
 def stringToExpression(s):
     from numexpr.expressions import E, ConstantNode, functions
@@ -145,8 +154,9 @@ def setOrderedRegisterNumbers(order, start):
 def setRegisterNumbersForTemporaries(ast, start):
     seen = 0
     for node in ast.postorderWalk():
-        if node.astType == 'raw':
+        if node.reg.immediate:
             node.reg.n = node.value
+            continue
         reg = node.reg
         if reg.n < 0:
             reg.n = start + seen
@@ -157,19 +167,19 @@ def convertASTtoThreeAddrForm(ast):
     program = []
     for node in ast.allOf('op', 'function'):
         children = node.children
-        instr = (node.value, node.reg.n) \
-                + tuple([c.reg.n for c in children])
+        instr = (node.value, node.reg) \
+                + tuple([c.reg for c in children])
         program.append(instr)
     return program
 
 def compileThreeAddrForm(program):
-    def nToChr(n):
-        if n is None:
+    def nToChr(reg):
+        if reg is None:
             return '\xff'
-        elif n < 0:
+        elif reg.n < 0:
             raise ValueError("negative value for register number %s" % (n,))
         else:
-            return chr(n)
+            return chr(reg.n)
 
     def quadrupleToString(opcode, store, a1=None, a2=None):
         cop = chr(interpreter.opcodes[opcode])
@@ -194,7 +204,7 @@ def compileThreeAddrForm(program):
     prog_str = ''.join([toString(*t) for t in program])
     return prog_str
 
-def numexpr(ex, input_order=None, precompiled=False, debug=False):
+def numexpr(ex, input_order=None, precompiled=False):
     """Compile an expression built using E.<variable> variables to a function.
 
     ex can also be specified as a string "2*a+3*b".
@@ -226,12 +236,9 @@ def numexpr(ex, input_order=None, precompiled=False, debug=False):
         reg_num[0] -= 1
         return reg
 
-    assignLeafRegisters(ast.allOf('variable', 'constant', 'raw'), registerMaker)
+    assignLeafRegisters(ast.allOf('raw'), Immediate)
+    assignLeafRegisters(ast.allOf('variable', 'constant'), registerMaker)
     assignBranchRegisters(ast.allOf('op', 'function'), registerMaker)
-
-    if debug:
-        print 'Before temporaries optimization'
-        print ast
 
     optimizeTemporariesAllocation(ast)
 
@@ -243,10 +250,6 @@ def numexpr(ex, input_order=None, precompiled=False, debug=False):
     r_temps = setOrderedRegisterNumbers(constants_order, r_constants)
     r_end = setRegisterNumbersForTemporaries(ast, r_temps)
     n_temps = r_end - r_temps
-
-    if debug:
-        print 'After register number assignments'
-        print ast
 
     threeAddrProgram = convertASTtoThreeAddrForm(ast)
 
