@@ -51,7 +51,7 @@
         case OP_MUL: VEC_ARG2(p1[j] * p2[j]);
         case OP_DIV: VEC_ARG2(p1[j] / p2[j]);
         case OP_POW: VEC_ARG2(pow(p1[j], p2[j]));
-        case OP_MOD: VEC_ARG2(fmod(p1[j], p2[j]));
+        case OP_MOD: VEC_ARG2(p1[j] - floor(p1[j]/p2[j]) * p2[j]);
         case OP_GT: VEC_ARG2((p1[j] > p2[j]) ? 1 : 0);
         case OP_GE: VEC_ARG2((p1[j] >= p2[j]) ? 1 : 0);
         case OP_EQ: VEC_ARG2((p1[j] == p2[j]) ? 1 : 0);
