@@ -59,8 +59,8 @@ class test_evaluate(NumpyTestCase):
 
 
 tests = [
-('MISC', ['b*c+d*e',
-          '2*a+3*b',
+('MISC', ['b*c+d*e', 
+          '2*a+3*b', 
           'sinh(a)',
           '2*a + (cos(3)+5)*sinh(cos(b))',
           '2*a + arctan2(a, b)',
@@ -70,19 +70,27 @@ tests = [
           'cos(1+1)',
           '1+1',
           '1',
-          'cos(a2)'])]
+          'cos(a2)',
+          '(a+1)**0'])]
 optests = []
 for op in list('+-*/%') + ['**']:
     optests.append("(a+1) %s (b+3)" % op)
     optests.append("3 %s (b+3)" % op)
     optests.append("(a+1) %s 4" % op)
+    optests.append("2 %s (b+3)" % op)
+    optests.append("(a+1) %s 2" % op)
+    optests.append("(a+1) %s -1" % op)
+    optests.append("(a+1) %s 0.5" % op)
+
 tests.append(('OPERATIONS', optests))
 cmptests = []
 for op in ['<', '<=', '==', '>=', '>', '!=']:
     cmptests.append("a/2+5 %s b" % op)
+    cmptests.append("a/2+5 %s 7" % op)
+    cmptests.append("7 %s b" % op)
 tests.append(('COMPARISONS', cmptests))
 func1tests = []
-for func in ['sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh']:
+for func in ['copy', 'ones_like', 'sin', 'cos', 'tan', 'sqrt', 'sinh', 'cosh', 'tanh']:
     func1tests.append("a + %s(b+c)" % func)
 tests.append(('1-ARG FUNCS', func1tests))
 func2tests = []
@@ -91,6 +99,17 @@ for func in ['arctan2', 'fmod']:
     func2tests.append("a + %s(b+c, 1)" % func)
     func2tests.append("a + %s(1, d+1)" % func)
 tests.append(('2-ARG FUNCS', func2tests))
+powtests = []
+for n in (-2.5, -1.5, -1.3, -.5, 0, 0.5, 1, 0.5, 1, 2.3, 2.5):
+    powtests.append("(a+1)**%s" % n)
+tests.append(('POW TESTS', powtests))
+
+EXACT = False
+def equal(a, b):
+    if EXACT:
+        return (shape(a) == shape(b)) and alltrue(ravel(a) == ravel(b))
+    else:
+        return (shape(a) == shape(b)) and allclose(ravel(a), ravel(b))
 
 class test_expressions(NumpyTestCase):
     def check_expressions(self):
@@ -107,8 +126,7 @@ class test_expressions(NumpyTestCase):
                 for expr in section_tests:
                     npval = eval(expr)
                     neval = evaluate(expr)
-                    assert shape(npval) == shape(neval), expr
-                    assert alltrue(ravel(npval) == ravel(neval)), expr
+                    assert equal(npval, neval), expr
         except AssertionError:
             raise
         except:

@@ -76,16 +76,48 @@ def pow_op(a, b):
         return ConstantNode(a**b)
     if isinstance(b, ConstantNode):
         x = b.value  
-        if x == -1:
-            return OpNode('div', [ConstantNode(1),a])
-        if x == 0:
-            return FuncNode('ones_like', [a])
-        if x == 0.5:
-            return FuncNode('sqrt', [a])
-        if x == 1:
-            return a
-        if x == 2:
-            return OpNode('mul', [a,a])
+        if False: # Relatively safe optimizations
+            if x == -1:
+                return OpNode('div', [ConstantNode(1),a])
+            if x == 0:
+                return FuncNode('ones_like', [a])
+            if x == 0.5:
+                return FuncNode('sqrt', [a])
+            if x == 1:
+                return a
+            if x == 2:
+                return OpNode('mul', [a,a])
+        if True: # Aggressive 
+            RANGE = 50 # Approximate break even point with pow(x,y)
+            # Optimize all integral and half integral powers in [-RANGE, RANGE]
+            # Note: for complex numbers RANGE would be larger.
+            if (int(2*x) == 2*x) and (-RANGE <= abs(x) <= RANGE):
+                n = int(abs(x))
+                ishalfpower = int(abs(2*x)) % 2
+                r = None
+                p = a
+                mask = 1
+                while True:
+                    if (n & mask):
+                        if r is None:
+                            r = p
+                        else:
+                            r = OpNode('mul', [r,p])
+                    mask <<= 1
+                    if mask > n:
+                        break
+                    p = OpNode('mul', [p,p])
+                if ishalfpower:
+                    sqrta = OpNode('sqrt', [a])
+                    if r is None: 
+                        r = sqrta
+                    else:         
+                        r = OpNode('mul', [r, sqrta])
+                if r is None:
+                    r = OpNode('ones_like', [a])
+                if x < 0:
+                    r = OpNode('div', [ConstantNode(1), r])
+                return r
     return OpNode('pow', [a,b])
 
 

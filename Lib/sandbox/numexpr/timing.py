@@ -7,10 +7,7 @@ def compare_times(setup, expr):
     print "Expression:", expr
     namespace = {}
     exec setup in namespace    
-    if not numpy.alltrue(eval(expr, namespace) == eval('evaluate("%s")' % expr, namespace)):
-        print eval(expr, namespace)[:10], 'versus', eval('evaluate("%s")' % expr, namespace)[:10]
-        raise RuntimeError("numexpr returned incorrect value")
-        
+
     numpy_timer = timeit.Timer(expr, setup)
     numpy_time = numpy_timer.timeit(number=iterations)
     print 'numpy:', numpy_time / iterations
@@ -98,26 +95,30 @@ expr8 = 'where(a%2, b+5, 2)'
 
 expr9 = 'where(a%2, 2, b+5)'
 
-expr10 = 'a**2 + b**0.5'
+expr10 = 'a**2 + (b+1)**-2.5'
+
+expr11 = 'a**49.5'
 
 def compare(check_only=False):
-    #~ compare_times(setup1, expr1)
-    #~ print
-    #~ compare_times(setup2, expr2)
-    #~ print
-    #~ compare_times(setup3, expr3)
-    #~ print
-    #~ compare_times(setup4, expr4)
-    #~ print
-    #~ compare_times(setup5, expr6)
-    #~ print
-    #~ compare_times(setup5, expr7)
-    #~ print
-    #~ compare_times(setup5, expr8)
-    #~ print
-    #~ compare_times(setup5, expr9)
+    compare_times(setup1, expr1)
+    print
+    compare_times(setup2, expr2)
+    print
+    compare_times(setup3, expr3)
+    print
+    compare_times(setup4, expr4)
+    print
+    compare_times(setup5, expr6)
+    print
+    compare_times(setup5, expr7)
+    print
+    compare_times(setup5, expr8)
+    print
+    compare_times(setup5, expr9)
     print
     compare_times(setup5, expr10)
+    print
+    compare_times(setup5, expr11)
 
 if __name__ == '__main__':
     compare()
