@@ -3,6 +3,7 @@ __all__ = ['E']
 import operator
 import numpy
 from numexpr import interpreter
+import sys
 
 class Expression(object):
     def __init__(self):
@@ -15,6 +16,13 @@ class Expression(object):
             return VariableNode(name)
 
 E = Expression()
+
+
+def get_context():
+    """Context used to evaluate expression. Typically overridden in compiler."""
+    return {}
+def get_optimization():
+    return get_context().get('optimization', 'none')
 
 # helper functions for creating __magic__ methods
 
@@ -65,8 +73,9 @@ def where_func(a, b, c):
 
 @ophelper
 def div_op(a, b):
-    if isinstance(b, ConstantNode):
-        return OpNode('mul', [a, ConstantNode(1./b.value)])
+    if get_optimization() in ('moderate', 'aggressive'):
+        if isinstance(b, ConstantNode):
+            return OpNode('mul', [a, ConstantNode(1./b.value)])
     return OpNode('div', [a,b])
     
     
@@ -76,7 +85,7 @@ def pow_op(a, b):
         return ConstantNode(a**b)
     if isinstance(b, ConstantNode):
         x = b.value  
-        if False: # Relatively safe optimizations
+        if get_optimization() == 'moderate': 
             if x == -1:
                 return OpNode('div', [ConstantNode(1),a])
             if x == 0:
@@ -87,32 +96,28 @@ def pow_op(a, b):
                 return a
             if x == 2:
                 return OpNode('mul', [a,a])
-        if True: # Aggressive 
+        if get_optimization() == 'aggressive':
             RANGE = 50 # Approximate break even point with pow(x,y)
             # Optimize all integral and half integral powers in [-RANGE, RANGE]
-            # Note: for complex numbers RANGE would be larger.
+            # Note: for complex numbers RANGE could be larger.
             if (int(2*x) == 2*x) and (-RANGE <= abs(x) <= RANGE):
                 n = int(abs(x))
                 ishalfpower = int(abs(2*x)) % 2
+                def multiply(x, y):
+                    if x is None: return y
+                    return OpNode('mul', [x, y])
                 r = None
                 p = a
                 mask = 1
                 while True:
                     if (n & mask):
-                        if r is None:
-                            r = p
-                        else:
-                            r = OpNode('mul', [r,p])
+                        r = multiply(r, p)
                     mask <<= 1
                     if mask > n:
                         break
                     p = OpNode('mul', [p,p])
                 if ishalfpower:
-                    sqrta = OpNode('sqrt', [a])
-                    if r is None: 
-                        r = sqrta
-                    else:         
-                        r = OpNode('mul', [r, sqrta])
+                    r = multiply(r, OpNode('sqrt', [a]))
                 if r is None:
                     r = OpNode('ones_like', [a])
                 if x < 0:
@@ -141,6 +146,7 @@ functions = {
 
 class ExpressionNode(object):
     astType = 'generic'
+    
     def __init__(self, value=None, children=None):
         object.__init__(self)
         self.value = value
@@ -201,7 +207,6 @@ class RawNode(object):
     def __str__(self):
         return 'RawNode(%s)' % (self.value,)
     __repr__ = __str__
-
 
 class ConstantNode(LeafNode):
     astType = 'constant'

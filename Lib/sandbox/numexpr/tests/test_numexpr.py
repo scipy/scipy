@@ -104,9 +104,8 @@ for n in (-2.5, -1.5, -1.3, -.5, 0, 0.5, 1, 0.5, 1, 2.3, 2.5):
     powtests.append("(a+1)**%s" % n)
 tests.append(('POW TESTS', powtests))
 
-EXACT = False
-def equal(a, b):
-    if EXACT:
+def equal(a, b, exact):
+    if exact:
         return (shape(a) == shape(b)) and alltrue(ravel(a) == ravel(b))
     else:
         return (shape(a) == shape(b)) and allclose(ravel(a), ravel(b))
@@ -122,11 +121,12 @@ class test_expressions(NumpyTestCase):
         e = arange(array_size)
 
         try:
-            for section_name, section_tests in tests:
-                for expr in section_tests:
-                    npval = eval(expr)
-                    neval = evaluate(expr)
-                    assert equal(npval, neval), expr
+            for optimization, exact in [('none', True), ('moderate', True), ('aggressive', False)]:
+                for section_name, section_tests in tests:
+                    for expr in section_tests:
+                        npval = eval(expr)
+                        neval = evaluate(expr, optimization=optimization)
+                        assert equal(npval, neval, exact), expr
         except AssertionError:
             raise
         except:

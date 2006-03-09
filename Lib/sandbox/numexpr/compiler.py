@@ -75,19 +75,40 @@ class Immediate(Register):
     def __str__(self):
         return 'Immediate(%d)' % (self.node.value,)
 
-def stringToExpression(s):
-    from numexpr.expressions import E, ConstantNode, functions
+def makeExpressions(context):
+    """Make private copy of the expressions module with a custom get_context().
+    
+    An attempt was made to make this threadsafe, but I can't guarantee it's
+    bulletproof.
+    """
+    import sys, imp, numexpr.expressions
+    # get our own, private copy of expressions
+    imp.acquire_lock()
+    try:
+        old = sys.modules.pop('numexpr.expressions')
+        import numexpr.expressions
+        private = sys.modules.pop('numexpr.expressions')
+        sys.modules['numexpr.expressions'] = old
+    finally:
+        imp.release_lock()
+    def get_context():
+        return context
+    private.get_context = get_context
+    return private
+
+def stringToExpression(s, context):
+    expressions = makeExpressions(context)
     # first compile to a code object to determine the names
     c = compile(s, '<expr>', 'eval')
     # make VariableNode's for the names
     names = {}
     for name in c.co_names:
-        names[name] = getattr(E, name)
-    names.update(functions)
+        names[name] = getattr(expressions.E, name)
+    names.update(expressions.functions)
     # now build the expression
     ex = eval(c, names)
     if isinstance(ex, (int, float)):
-        ex = ConstantNode(ex)
+        ex = expressions.ConstantNode(ex)
     return ex
 
 
@@ -204,7 +225,11 @@ def compileThreeAddrForm(program):
     prog_str = ''.join([toString(*t) for t in program])
     return prog_str
 
-def numexpr(ex, input_order=None, precompiled=False):
+context_info = [
+    ('optimization', ('none', 'moderate', 'aggressive'), 'aggressive'),
+               ]
+
+def numexpr(ex, input_order=None, precompiled=False, **kwargs):
     """Compile an expression built using E.<variable> variables to a function.
 
     ex can also be specified as a string "2*a+3*b".
@@ -215,8 +240,18 @@ def numexpr(ex, input_order=None, precompiled=False):
     If precompiled is set to True, a nonusable, easy-to-read representation of
     the bytecode program used is returned instead.
     """
+    context = {}
+    for name, allowed, default in context_info:
+        value = kwargs.pop(name, default)
+        if value in allowed:
+            context[name] = value
+        else:
+            raise ValueError("'%s' must be one of %s" % (name, allowed))
+    if kwargs:
+        raise ValueError("Unknown keyword argument '%s'" % kwargs.pop())
+            
     if isinstance(ex, str):
-        ex = stringToExpression(ex)
+        ex = stringToExpression(ex, context)
     if ex.astType == 'constant':
         return ConstantNumexpr(ex.value)
 
@@ -293,7 +328,7 @@ def disassemble(nex):
     return source
 
 _numexpr_cache = {}
-def evaluate(ex, local_dict=None, global_dict=None):
+def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     """Evaluate a simple array expression elementwise.
 
     ex is a string forming an expression, like "2*a+3*b". The values for "a"
@@ -306,10 +341,11 @@ def evaluate(ex, local_dict=None, global_dict=None):
     """
     if not isinstance(ex, str):
         raise ValueError("must specify expression as a string")
+    key = (ex, tuple(sorted(kwargs.items())))
     try:
-        compiled_ex = _numexpr_cache[ex]
+        compiled_ex = _numexpr_cache[key]
     except KeyError:
-        compiled_ex = _numexpr_cache[ex] = numexpr(ex)
+        compiled_ex = _numexpr_cache[key] = numexpr(ex, **kwargs)
     call_frame = sys._getframe().f_back
     if local_dict is None:
         local_dict = call_frame.f_locals
@@ -323,3 +359,7 @@ def evaluate(ex, local_dict=None, global_dict=None):
             a = global_dict[name]
         arguments.append(a)
     return compiled_ex(*arguments)
+
+
+if __name__ == '__main__':
+    print numexpr("cos(a)", precompiled=True, optimization='moderate')

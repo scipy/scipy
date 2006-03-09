@@ -77,7 +77,7 @@ expr4 = '2*a + arctan2(a, b)'
 
 
 setup5 = """\
-from numpy import arange, sin, cos, sinh, arctan2, where
+from numpy import arange, sin, cos, sinh, arctan2, sqrt, where
 try: from scipy.weave import blitz
 except: pass
 from numexpr import evaluate
@@ -97,7 +97,9 @@ expr9 = 'where(a%2, 2, b+5)'
 
 expr10 = 'a**2 + (b+1)**-2.5'
 
-expr11 = 'a**49.5'
+expr11 = 'a**50'
+
+expr12 = 'sqrt(a**2 + b**2)'
 
 def compare(check_only=False):
     compare_times(setup1, expr1)
@@ -119,6 +121,8 @@ def compare(check_only=False):
     compare_times(setup5, expr10)
     print
     compare_times(setup5, expr11)
+    print
+    compare_times(setup5, expr12)
 
 if __name__ == '__main__':
     compare()
