@@ -45,6 +45,7 @@
         case OP_NOOP:
             break;
         case OP_COPY: VEC_ARG1(p1[j]);
+        case OP_ONES_LIKE: VEC_ARG1(1.0);
         case OP_NEG: VEC_ARG1(-p1[j]);
         case OP_ADD: VEC_ARG2(p1[j] + p2[j]);
         case OP_SUB: VEC_ARG2(p1[j] - p2[j]);
@@ -59,6 +60,7 @@
         case OP_SIN: VEC_ARG1(sin(p1[j]));
         case OP_COS: VEC_ARG1(cos(p1[j]));
         case OP_TAN: VEC_ARG1(tan(p1[j]));
+        case OP_SQRT: VEC_ARG1(sqrt(p1[j]));
         case OP_ARCTAN2: VEC_ARG2(atan2(p1[j], p2[j]));
         case OP_WHERE:
         {

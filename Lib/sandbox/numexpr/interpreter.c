@@ -10,6 +10,7 @@
 enum OpCodes {
     OP_NOOP = 0,
     OP_COPY,
+    OP_ONES_LIKE,
     OP_NEG,
     OP_ADD,
     OP_SUB,
@@ -24,6 +25,7 @@ enum OpCodes {
     OP_SIN,
     OP_COS,
     OP_TAN,
+    OP_SQRT,
     OP_ARCTAN2,
     OP_WHERE,
     OP_FUNC_1,
@@ -534,6 +536,7 @@ initinterpreter(void)
 
     add_op("noop", OP_NOOP);
     add_op("copy", OP_COPY);
+    add_op("ones_like", OP_ONES_LIKE);
     add_op("neg", OP_NEG);
     add_op("add", OP_ADD);
     add_op("sub", OP_SUB);
@@ -548,6 +551,7 @@ initinterpreter(void)
     add_op("sin", OP_SIN);
     add_op("cos", OP_COS);
     add_op("tan", OP_TAN);
+    add_op("sqrt", OP_SQRT);
     add_op("arctan2", OP_ARCTAN2);
     add_op("where", OP_WHERE);
     add_op("func_1", OP_FUNC_1);

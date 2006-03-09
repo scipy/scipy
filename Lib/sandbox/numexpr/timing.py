@@ -98,25 +98,26 @@ expr8 = 'where(a%2, b+5, 2)'
 
 expr9 = 'where(a%2, 2, b+5)'
 
-
+expr10 = 'a**2 + b**0.5'
 
 def compare(check_only=False):
-    compare_times(setup1, expr1)
+    #~ compare_times(setup1, expr1)
+    #~ print
+    #~ compare_times(setup2, expr2)
+    #~ print
+    #~ compare_times(setup3, expr3)
+    #~ print
+    #~ compare_times(setup4, expr4)
+    #~ print
+    #~ compare_times(setup5, expr6)
+    #~ print
+    #~ compare_times(setup5, expr7)
+    #~ print
+    #~ compare_times(setup5, expr8)
+    #~ print
+    #~ compare_times(setup5, expr9)
     print
-    compare_times(setup2, expr2)
-    print
-    compare_times(setup3, expr3)
-    print
-    compare_times(setup4, expr4)
-    print
-    compare_times(setup5, expr6)
-    print
-    compare_times(setup5, expr7)
-    print
-    compare_times(setup5, expr8)
-    print
-    compare_times(setup5, expr9)
-
+    compare_times(setup5, expr10)
 
 if __name__ == '__main__':
     compare()

@@ -18,45 +18,85 @@ E = Expression()
 
 # helper functions for creating __magic__ methods
 
-def binop(opname, reversed=False):
-    def operation(self, other):
-        if isinstance(other, (int, float)):
-            other = ConstantNode(other)
-        elif not isinstance(other, ExpressionNode):
-            return NotImplemented
-        if reversed:
-            self, other = other, self
-        if isinstance(self, ConstantNode) and isinstance(other, ConstantNode):
-            return ConstantNode(getattr(self.value, "__%s__" % opname)(other.value))
-        else:
-            return BinopNode(opname, (self, other))
-    return operation
-
-def func(func):
-    def function(*args):
+def ophelper(f):
+    def func(*args):
         args = list(args)
-        constant = True
         for i, x in enumerate(args):
             if isinstance(x, (int, float)):
                 args[i] = x = ConstantNode(x)
-            if not isinstance(x, ConstantNode):
-                constant = False
             if not isinstance(x, ExpressionNode):
                 return NotImplemented
-        if constant:
+        return f(*args)
+    return func
+
+def all_constant(args):
+    "returns true if args are all constant. Converts scalars to ConstantNodes"
+    for x in args:
+        if not isinstance(x, ConstantNode):
+            return False
+    return True
+
+def binop(opname, reversed=False):
+    @ophelper
+    def operation(self, other):
+        if reversed:
+            self, other = other, self
+        if all_constant([self, other]):
+            return ConstantNode(getattr(self.value, "__%s__" % opname)(other.value))
+        else:
+            return OpNode(opname, (self, other))
+    return operation
+
+def func(func):
+    @ophelper
+    def function(*args):
+        if all_constant(args):
             return ConstantNode(func(*[x.value for x in args])) 
-        elif (func.__name__ == 'where') and isinstance(args[0], ConstantNode):
-            # TAH: Would be nice to put this kind of special casing into the 
-            # functions themselves at some point. Particularly if we get a bunch
-            # more functions that require some checking.
-            raise ValueError("too many dimensions")
         return FuncNode(func.__name__, args)
     return function
+    
+@ophelper
+def where_func(a, b, c):
+    if all_constant([a,b,c]):
+        return ConstantNode(numpy.where(a, b, c))
+    if isinstance(a, ConstantNode):
+        raise ValueError("too many dimensions")
+    return FuncNode('where', [a,b,c])
+
+@ophelper
+def div_op(a, b):
+    if isinstance(b, ConstantNode):
+        return OpNode('mul', [a, ConstantNode(1./b.value)])
+    return OpNode('div', [a,b])
+    
+    
+@ophelper
+def pow_op(a, b):
+    if all_constant([a,b]):
+        return ConstantNode(a**b)
+    if isinstance(b, ConstantNode):
+        x = b.value  
+        if x == -1:
+            return OpNode('div', [ConstantNode(1),a])
+        if x == 0:
+            return FuncNode('ones_like', [a])
+        if x == 0.5:
+            return FuncNode('sqrt', [a])
+        if x == 1:
+            return a
+        if x == 2:
+            return OpNode('mul', [a,a])
+    return OpNode('pow', [a,b])
+
 
 functions = {
+    'copy' : func(numpy.copy),
+    'ones_like' : func(numpy.ones_like),
     'sin' : func(numpy.sin),
     'cos' : func(numpy.cos),
     'tan' : func(numpy.tan),
+    'sqrt' : func(numpy.sqrt),
+        
     'sinh' : func(numpy.sinh),
     'cosh' : func(numpy.cosh),
     'tanh' : func(numpy.tanh),
@@ -64,7 +104,7 @@ functions = {
     'arctan2' : func(numpy.arctan2),
     'fmod' : func(numpy.fmod),
 
-    'where' : func(numpy.where)
+    'where' : where_func
             }
 
 class ExpressionNode(object):
@@ -94,9 +134,9 @@ class ExpressionNode(object):
     __sub__ = binop('sub')
     __rsub__ = binop('sub', reversed=True)
     __mul__ = __rmul__ = binop('mul')
-    __div__ =  binop('div')
+    __div__ =  div_op
     __rdiv__ = binop('div', reversed=True)
-    __pow__ = binop('pow')
+    __pow__ = pow_op
     __rpow__ = binop('pow', reversed=True)
     __mod__ = binop('mod')
     __rmod__ = binop('mod', reversed=True)
@@ -142,13 +182,6 @@ class OpNode(ExpressionNode):
     astType = 'op'
     def __init__(self, opcode=None, args=None):
         ExpressionNode.__init__(self, value=opcode, children=args)    
-
-class BinopNode(OpNode):
-    def __init__(self, opcode=None, args=None):
-        if (opcode == 'div') and isinstance(args[1], ConstantNode):
-            opcode = 'mul'
-            args = args[0], ConstantNode(1./args[1].value)
-        OpNode.__init__(self, opcode, args)
 
 class FuncNode(OpNode):
     def __init__(self, opcode=None, args=None):
