@@ -13,8 +13,8 @@ from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
      isfinite, sqrt, identity, single
 from numpy import matrix as mat
 import numpy as sb
-from basic import solve, LinAlgError, inv, norm, triu, all_mat
-from decomp import eig, schur, rsf2csf, orth, eigvals, svd
+from basic import solve, inv, norm, triu, all_mat
+from decomp import eig, schur, rsf2csf, orth, svd
 
 eps = sb.finfo(float).eps.item()
 feps = sb.finfo(single).eps.item()
@@ -296,10 +296,6 @@ def sqrtm(A,disp=1):
     A = asarray(A)
     if len(A.shape)!=2:
         raise ValueError, "Non-matrix input to matrix function."    
-    if A.dtype.char in ['F', 'D']:
-        cmplx_type = 1
-    else:
-        cmplx_type = 0
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
     n,n = T.shape

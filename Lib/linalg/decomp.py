@@ -19,8 +19,8 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import numpy
-from numpy import asarray_chkfinite, asarray, diag, zeros, ones, \
-     dot, transpose, single
+from numpy import asarray_chkfinite, asarray, diag, zeros, ones, single
+
 cast = numpy.cast
 r_ = numpy.r_
 c_ = numpy.c_
@@ -244,7 +244,6 @@ def lu(a,permute_l=0,overwrite_a=0):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
-    m,n = a1.shape
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     flu, = get_flinalg_funcs(('lu',),(a1,))
     p,l,u,info = flu(a1,permute_l=permute_l,overwrite_a = overwrite_a)
@@ -436,7 +435,6 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError, 'expected square matrix'
-    N = a1.shape[0]
     typ = a1.dtype.char
     if output in ['complex','c'] and typ not in ['F','D']:
         if typ in _double_precision:
@@ -481,7 +479,7 @@ def _castCopy(type, *arrays):
         else:
             cast_arrays = cast_arrays + (a.astype(type),)
     if len(cast_arrays) == 1:
-            return cast_arrays[0]
+        return cast_arrays[0]
     else:
         return cast_arrays
 

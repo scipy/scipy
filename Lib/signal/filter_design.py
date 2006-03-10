@@ -309,7 +309,7 @@ def bilinear(b,a,fs=1.0):
                 for l in range(M-i+1):
                     if k+l == j:
                         val += comb(i,k)*comb(M-i,l)*b[N-i]*pow(2*fs,i)*(-1)**k
-	bprime[j] = real(val)
+        bprime[j] = real(val)
     for j in range(Dp+1):
         val = 0.0
         for i in range(D+1):
@@ -317,7 +317,7 @@ def bilinear(b,a,fs=1.0):
                 for l in range(M-i+1):
                     if k+l == j:
                         val += comb(i,k)*comb(M-i,l)*a[D-i]*pow(2*fs,i)*(-1)**k
-	aprime[j] = real(val)
+        aprime[j] = real(val)
         
     return normalize(bprime, aprime)
 
@@ -1504,7 +1504,7 @@ def kaiserord(ripple, width):
     if (A>50):
         beta = 0.1102*(A-8.7)
     elif (A>21):
-	beta = 0.5842*(A-21)**0.4 + 0.07886*(A-21)
+        beta = 0.5842*(A-21)**0.4 + 0.07886*(A-21)
     else:
         beta = 0.0
     N = (A-8)/2.285/(pi*width)
@@ -1542,6 +1542,4 @@ def firwin(N, cutoff, width=None, window='hamming'):
     m = Num.arange(0,N)
     h = win*special.sinc(cutoff*(m-alpha))
     return h / sum(h)
-    
-    
-    
+

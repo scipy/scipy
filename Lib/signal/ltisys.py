@@ -5,7 +5,7 @@
 #
 
 from filter_design import tf2zpk, zpk2tf, normalize
-from numpy import product, zeros, concatenate, \
+from numpy import product, zeros, \
      array, dot, transpose, arange, ones, Float
 import numpy as Numeric
 import scipy.interpolate as interpolate
@@ -13,7 +13,6 @@ import scipy.integrate as integrate
 import scipy.linalg as linalg
 from numpy import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
-from numpy import matrix as Mat
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.
@@ -105,7 +104,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     if MD != MC:
         raise ValueError, "C and D must have the same number of rows."
     if ND != NB:
-        raise ValueErrro, "B and D must have the same number of columns."
+        raise ValueError, "B and D must have the same number of columns."
 
     return A, B, C, D
     

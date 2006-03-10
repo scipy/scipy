@@ -6,7 +6,6 @@
 
 __all__ = ['get_blas_funcs']
 
-import string
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
@@ -55,9 +54,9 @@ def get_blas_funcs(names,arrays=(),debug=0):
         func = getattr(m1,func_name,None)
         if func is None:
             func = getattr(m2,func_name)
-            func.module_name = string.split(m2.__name__,'.')[-1]
+            func.module_name = m2.__name__.split('.')[-1]
         else:
-            func.module_name = string.split(m1.__name__,'.')[-1]
+            func.module_name = m1.__name__.split('.')[-1]
         func.prefix = required_prefix
         func.typecode = typecode
         funcs.append(func)

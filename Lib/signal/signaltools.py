@@ -484,7 +484,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     
     """
     if isscalar(a):
-	a = [a]
+        a = [a]
     if zi is None:
         return sigtools._linear_filter(b, a, x, axis)
     else:

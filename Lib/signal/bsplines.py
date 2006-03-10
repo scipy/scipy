@@ -325,7 +325,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     jlower = floor(newx-2).astype(int)+1
     for i in range(4):
         thisj = jlower + i
-	indj = thisj.clip(0,N-1) # handle edge cases
+        indj = thisj.clip(0,N-1) # handle edge cases
         result += cj[indj] * cubic(newx - thisj)
     res[cond3] = result
     return res
@@ -361,7 +361,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     jlower = floor(newx-1.5).astype(int)+1
     for i in range(3):
         thisj = jlower + i
-	indj = thisj.clip(0,N-1) # handle edge cases
+        indj = thisj.clip(0,N-1) # handle edge cases
         result += cj[indj] * quadratic(newx - thisj)
     res[cond3] = result
     return res

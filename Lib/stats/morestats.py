@@ -11,7 +11,7 @@ import inspect
 from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
      array, atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
-     pi, exp, ravel
+     pi, exp, ravel, angle
 import scipy
 import numpy
 import types
@@ -192,7 +192,7 @@ def probplot(x, sparams=(), dist='norm', fit=1, plot=None):
     Ui[1:-1] = (i-0.3175)/(N+0.365)
     try:
         ppf_func = eval('distributions.%s.ppf'%dist)
-    except AttributError:
+    except AttributeError:
         raise dist, "is not a valid distribution with a ppf."
     if sparams is None:
         sparams = ()
@@ -245,7 +245,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     """
     try:
         ppf_func = eval('distributions.%s.ppf'%dist)
-    except AttributError:
+    except AttributeError:
         raise dist, "is not a valid distribution with a ppf."
     """
     res = inspect.getargspec(ppf_func)

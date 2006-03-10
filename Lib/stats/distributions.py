@@ -10,11 +10,11 @@ import scipy.special as special
 import scipy.optimize as optimize
 import inspect
 from numpy import alltrue, where, arange, put, putmask, nonzero, \
-     ravel, compress, take, ones, sum, shape, product, repeat, reshape, \
+     ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray
 from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
-     any, argsort, argmax, argmin, vectorize, r_, asarray, nan, inf, select, pi
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
 import numpy.random as mtrand
 
@@ -45,7 +45,7 @@ errp = special.errprint
 arr = asarray
 gam = special.gamma
 
-import types, math
+import types
 import stats as st
 
 
@@ -750,8 +750,8 @@ class rv_continuous:
 
     def est_loc_scale(self, data, *args):
         mu, mu2, g1, g2 = self.stats(*args,**{'moments':'mv'})
-        muhat = stats.nanmean(data)
-        mu2hat = stats.nanstd(data)
+        muhat = st.nanmean(data)
+        mu2hat = st.nanstd(data)
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
         return Lhat, Shat
@@ -1712,7 +1712,7 @@ class gengamma_gen(rv_continuous):
         return where(cond > 0,val1**ic,val2**ic)
     def _munp(self, n, a, c):
         return special.gamma(a+n*1.0/c) / special.gamma(a)
-    def _entropy(a,c):
+    def _entropy(self, a,c):
         val = special.psi(a)
         return a*(1-val) + 1.0/c*val + special.gammaln(a)-log(abs(c))
 gengamma = gengamma_gen(a=0.0, name='gengamma',
@@ -2720,7 +2720,7 @@ class rdist_gen(rv_continuous):
     def _cdf(self, x, c):
         return 0.5 + x/special.beta(0.5,c/2.0)* \
                special.hyp2f1(0.5,1.0-c/2.0,1.5,x*x)
-    def _munp(self, c):
+    def _munp(self, n, c):
         return (1-(n % 2))*special.beta((n+1.0)/2,c/2.0)
 rdist = rdist_gen(a=-1.0,b=1.0, name="rdist", longname="An R-distributed",
                   shapes="c", extradoc="""
@@ -4057,7 +4057,7 @@ class planck_gen(rv_discrete):
             return 1
         return 0  # lambda_ = 0
     def _pmf(self, k, lambda_):
-        fact = (1-exp(-lamba))
+        fact = (1-exp(-lamba_))
         return fact*exp(-lambda_(k))
     def _cdf(self, x, lambda_):
         k = floor(x)

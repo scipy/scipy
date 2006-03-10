@@ -7,8 +7,6 @@
 __all__ = ['get_lapack_funcs']
 
 import new
-import string
-import warnings
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
@@ -62,8 +60,8 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     if not _use_force_clapack:
         force_clapack = 0
     funcs = []
-    m1_name = string.split(m1.__name__,'.')[-1]
-    m2_name = string.split(m2.__name__,'.')[-1]
+    m1_name = m1.__name__.split('.')[-1]
+    m2_name = m2.__name__.split('.')[-1]
     for name in names:
         func_name = required_prefix + name
         func = getattr(m1,func_name,None)

@@ -88,7 +88,7 @@ class gaussian_kde(object):
         points.shape == (# of dimensions, # of points)
         """
 
-	points = atleast_2d(points).astype(self.dataset.dtype)
+        points = atleast_2d(points).astype(self.dataset.dtype)
         
         d, m = points.shape
         if d != self.d:

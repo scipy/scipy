@@ -17,7 +17,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from flinalg import get_flinalg_funcs
 from scipy.lib.lapack import get_lapack_funcs
 from numpy import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,sqrt,add,real
 import numpy
 from numpy import asarray_chkfinite, outerproduct, concatenate, reshape, single
 from numpy import matrix as Matrix
@@ -72,7 +72,7 @@ def cho_solve((c, lower), b, overwrite_b=0):
     b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if c.shape[0] != b1.shape[0]:
-        raise ValuError, "incompatible dimensions."
+        raise ValueError, "incompatible dimensions."
     potrs, = get_lapack_funcs(('potrs',),(c,b1))
     x,info = potrs(c,b1,lower=lower,overwrite_b=overwrite_b)
     if info==0:
