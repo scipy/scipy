@@ -279,9 +279,9 @@ def nanstd(x,axis=0,bias=False):
     return m2c
 
 def _nanmedian(arr1d):  # This only works on 1d arrays
-   cond = 1-isnan(arr1d)
-   x = sort(compress(cond,arr1d))
-   return median(x)
+    cond = 1-isnan(arr1d)
+    x = sort(compress(cond,arr1d))
+    return median(x)
    
 def nanmedian(x, axis=0):
     """ Compute the median along the given axis ignoring nan values
@@ -585,20 +585,20 @@ def kurtosis(a,axis=0,fisher=True,bias=True):
         return vals
 
 def describe(a,axis=0):
-     """Returns several descriptive statistics of the passed array.  Axis
-     can equal None (ravel array first), or an integer (the axis over
-     which to operate)
-     
-     Returns: n, (min,max), mean, standard deviation, skew, kurtosis
-     """
-     a, axis = _chk_asarray(a, axis)
-     n = a.shape[axis]
-     mm = (minimum.reduce(a),maximum.reduce(a))
-     m = mean(a,axis)
-     v = var(a,axis)
-     sk = skew(a,axis)
-     kurt = kurtosis(a,axis)
-     return n, mm, m, v, sk, kurt
+    """Returns several descriptive statistics of the passed array.  Axis
+    can equal None (ravel array first), or an integer (the axis over
+    which to operate)
+    
+    Returns: n, (min,max), mean, standard deviation, skew, kurtosis
+    """
+    a, axis = _chk_asarray(a, axis)
+    n = a.shape[axis]
+    mm = (minimum.reduce(a),maximum.reduce(a))
+    m = mean(a,axis)
+    v = var(a,axis)
+    sk = skew(a,axis)
+    kurt = kurtosis(a,axis)
+    return n, mm, m, v, sk, kurt
 
 #####################################
 ########  NORMALITY TESTS  ##########
@@ -2334,35 +2334,35 @@ lists-of-lists.
 
 
 def d_full_model(workd,subjslots):
-     """
-     RESTRICTS NOTHING (i.e., FULL MODEL CALCULATION).  Subtracts D-variable
-cell-mean for each between-subj group and then calculates the SS array.
-     """
-     workd = subtr_cellmeans(workd,subjslots)
-     sserr = multivar_SScalc(workd)
-     return sserr
+    """
+    RESTRICTS NOTHING (i.e., FULL MODEL CALCULATION).  Subtracts D-variable
+    cell-mean for each between-subj group and then calculates the SS array.
+    """
+    workd = subtr_cellmeans(workd,subjslots)
+    sserr = multivar_SScalc(workd)
+    return sserr
 
 
 def d_restrict_mean(workd,subjslots):
-     """
-     RESTRICTS GRAND MEA  Subtracts D-variable cell-mean for each between-
-subj group, and then adds back each D-variable's grand mean.
-     """
-     # subtract D-variable cell-mean for each (btw-subj) group
-     errors = subtr_cellmeans(workd,subjslots)
-
-     # add back in appropriate grand mean from individual scores
-     grandDmeans = expand_dims(mean(workd,0),0)
-     errors = errors + transpose(grandDmeans) # errors has reversed dims!!
-     # SS for mean-restricted model is calculated below.  Note: already put
-     # subj as last dim because later code expects this code here to leave
-     # workd that way
-     sserr = multivar_SScalc(errors)
-     return sserr
+    """
+    RESTRICTS GRAND MEA  Subtracts D-variable cell-mean for each between-
+    subj group, and then adds back each D-variable's grand mean.
+    """
+    # subtract D-variable cell-mean for each (btw-subj) group
+    errors = subtr_cellmeans(workd,subjslots)
+    
+    # add back in appropriate grand mean from individual scores
+    grandDmeans = expand_dims(mean(workd,0),0)
+    errors = errors + transpose(grandDmeans) # errors has reversed dims!!
+    # SS for mean-restricted model is calculated below.  Note: already put
+    # subj as last dim because later code expects this code here to leave
+    # workd that way
+    sserr = multivar_SScalc(errors)
+    return sserr
 
 
 def d_restrict_source(workd,subjslots,source):
-     """
+    """
 Calculates error for a given model on array workd.  Subjslots is an
 array of 1s and 0s corresponding to whether or not the subject is a
 member of that between-subjects variable combo.  source is the code
@@ -2377,146 +2377,146 @@ Returns: SS array for multivariate F calculation
 ### RESTRICT COLUMNS/AXES SPECIFIED IN source (BINARY)
 ### (i.e., is the value of source not equal to 0 or -1?)
 ###
-     global D
-     if source > 0:
-         sourcewithins = (source-1) & Bwithins
-         sourcebetweens = (source-1) & Bbetweens
-         dindex = Bwonly_sources.index(sourcewithins)
-         all_cellmeans = transpose(DM[dindex],[-1]+range(0,len(DM[dindex].shape)-1))
-         all_cellns = transpose(DN[dindex],[-1]+range(0,len(DN[dindex].shape)-1))
-         hn = hmean(all_cellns, None)
+    global D
+    if source > 0:
+        sourcewithins = (source-1) & Bwithins
+        sourcebetweens = (source-1) & Bbetweens
+        dindex = Bwonly_sources.index(sourcewithins)
+        all_cellmeans = transpose(DM[dindex],[-1]+range(0,len(DM[dindex].shape)-1))
+        all_cellns = transpose(DN[dindex],[-1]+range(0,len(DN[dindex].shape)-1))
+        hn = hmean(all_cellns, None)
+        
+        levels = D[dindex].shape[1]  # GENERAL, 'cause each workd is always 2D
+        SSm = zeros((levels,levels),'f') #called RCm=SCm in Lindman,p.317-8
+        tworkd = transpose(D[dindex])
 
-         levels = D[dindex].shape[1]  # GENERAL, 'cause each workd is always 2D
-         SSm = zeros((levels,levels),'f') #called RCm=SCm in Lindman,p.317-8
-         tworkd = transpose(D[dindex])
-
-     ## Calculate SSw, within-subj variance (Lindman approach)
-         RSw = zeros((levels,levels),'f')
-         RSinter = zeros((levels,levels),PyObject)  
-         for i in range(levels):
-             for j in range(i,levels):
-                 RSw[i,j] = RSw[j,i] = sum(tworkd[i]*tworkd[j])
-                 cross = all_cellmeans[i] * all_cellmeans[j]
-                 multfirst = sum(cross*all_cellns[i])
-                 RSinter[i,j] = RSinter[j,i] = asarray(multfirst)
-                 SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i],None) *
+        ## Calculate SSw, within-subj variance (Lindman approach)
+        RSw = zeros((levels,levels),'f')
+        RSinter = zeros((levels,levels),PyObject)  
+        for i in range(levels):
+            for j in range(i,levels):
+                RSw[i,j] = RSw[j,i] = sum(tworkd[i]*tworkd[j])
+                cross = all_cellmeans[i] * all_cellmeans[j]
+                multfirst = sum(cross*all_cellns[i])
+                RSinter[i,j] = RSinter[j,i] = asarray(multfirst)
+                SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i],None) *
                                         mean(all_cellmeans[j],None) *
                                         len(all_cellmeans[i]) *hn)
-         #SSw = RSw - RSinter
+        #SSw = RSw - RSinter
 
 ### HERE BEGINS THE MAXWELL & DELANEY APPROACH TO CALCULATING SS
-         Lsource = makelist(sourcebetweens,Nfactors+1)
-         #btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
-         Bbtwnonsourcedims = ~source & Bbetweens
-         Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
-         btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
+        Lsource = makelist(sourcebetweens,Nfactors+1)
+        #btwsourcecols = (array(map(Bscols.index,Lsource))-1).tolist()
+        Bbtwnonsourcedims = ~source & Bbetweens
+        Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
+        btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
        ## Average Marray over non-source axes
-         sourceDMarray = DM[dindex] *1.0
-         for dim in btwnonsourcedims: # collapse all non-source dims
-             if dim == len(DM[dindex].shape)-1:
-                 raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
-             sourceDMarray = expand_dims(mean(sourceDMarray,dim),dim)
+        sourceDMarray = DM[dindex] *1.0
+        for dim in btwnonsourcedims: # collapse all non-source dims
+            if dim == len(DM[dindex].shape)-1:
+                raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
+            sourceDMarray = expand_dims(mean(sourceDMarray,dim),dim)
 
        ## Calculate harmonic means for each level in source
-         sourceDNarray = apply_over_axes(hmean, DN[dindex],btwnonsourcedims)
+        sourceDNarray = apply_over_axes(hmean, DN[dindex],btwnonsourcedims)
 
        ## Calc grand average (ga), used for ALL effects
-         variableNs = apply_over_axes(sum, sourceDNarray,
-                                      range(len(sourceDMarray.shape)-1))
-         ga = apply_over_axes(sum, (sourceDMarray*sourceDNarray) / \
-                              variableNs,
-                              range(len(sourceDMarray.shape)-1))
+        variableNs = apply_over_axes(sum, sourceDNarray,
+                                     range(len(sourceDMarray.shape)-1))
+        ga = apply_over_axes(sum, (sourceDMarray*sourceDNarray) / \
+                             variableNs,
+                             range(len(sourceDMarray.shape)-1))
 
        ## If GRAND interaction, use harmonic mean of ALL cell Ns
-         if source == Nallsources-1:
-             sourceDNarray = hmean(DN[dindex],
-                                          range(len(sourceDMarray.shape)-1))
+        if source == Nallsources-1:
+            sourceDNarray = hmean(DN[dindex],
+                                  range(len(sourceDMarray.shape)-1))
                 
        ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
-         sub_effects = ga *1.0   # start with grand mean
-         for subsource in range(3,source-2,2):
+        sub_effects = ga *1.0   # start with grand mean
+        for subsource in range(3,source-2,2):
        ## Make a list of the non-subsource axes
-             #subsourcebtw = (subsource-1) & Bbetweens
-             if (propersubset(subsource-1,source-1) and
-                 (subsource-1)&Bwithins == (source-1)&Bwithins and
-                 (subsource-1) != (source-1)&Bwithins):
-                 sub_effects = (sub_effects +
+            #subsourcebtw = (subsource-1) & Bbetweens
+            if (propersubset(subsource-1,source-1) and
+                (subsource-1)&Bwithins == (source-1)&Bwithins and
+                (subsource-1) != (source-1)&Bwithins):
+                sub_effects = (sub_effects +
                                 alleffects[alleffsources.index(subsource)])
 
        ## Calc this effect (a(j)'s, b(k)'s, ab(j,k)'s, whatever)
-         effect = sourceDMarray - sub_effects
+        effect = sourceDMarray - sub_effects
 
        ## Save it so you don't have to calculate it again next time
-         alleffects.append(effect)
-         alleffsources.append(source)
+        alleffects.append(effect)
+        alleffsources.append(source)
 
        ## Calc and save sums of squares for this source
-         SS = zeros((levels,levels),'f')
-         SS = sum((effect**2 *sourceDNarray) *
-                   multiply.reduce(take(DM[dindex].shape,btwnonsourcedims)),
-                         range(len(sourceDMarray.shape)-1))
+        SS = zeros((levels,levels),'f')
+        SS = sum((effect**2 *sourceDNarray) *
+            multiply.reduce(take(DM[dindex].shape,btwnonsourcedims)),
+            range(len(sourceDMarray.shape)-1))
        ## Save it so you don't have to calculate it again next time
-         SSlist.append(SS)
-         SSsources.append(source)
+        SSlist.append(SS)
+        SSsources.append(source)
 
-         return SS
+        return SS
 
 
 def multivar_sscalc(workd):
 ###
 ### DO SS CALCS ON THE OUTPUT FROM THE SOURCE=0 AND SOURCE=-1 CASES
 ###
-     # this section expects workd to have subj. in LAST axis!!!!!!
-     if len(workd.shape) == 1:
-         levels = 1
-     else:
-         levels = workd.shape[0] # works because workd is always 2D
+    # this section expects workd to have subj. in LAST axis!!!!!!
+    if len(workd.shape) == 1:
+        levels = 1
+    else:
+        levels = workd.shape[0] # works because workd is always 2D
 
-     sserr = zeros((levels,levels),'f')
-     for i in range(levels):
-         for j in range(i,levels):
-             ssval = add.reduce(workd[i]*workd[j])
-             sserr[i,j] = ssval
-             sserr[j,i] = ssval
-     return sserr
+    sserr = zeros((levels,levels),'f')
+    for i in range(levels):
+        for j in range(i,levels):
+            ssval = add.reduce(workd[i]*workd[j])
+            sserr[i,j] = ssval
+            sserr[j,i] = ssval
+    return sserr
 
 
 def subtr_cellmeans(workd,subjslots):
-     """
-Subtract all cell means when within-subjects factors are present ...
-i.e., calculate full-model using a D-variable.
-"""
-     # Get a list of all dims that are source and between-subj
-     sourcedims = makelist(Bbetweens,Nfactors+1)
-
-     # Now, fix this list by mapping the dims from the original source
-     # to dims for a between-subjects variable (namely, subjslots)
-     transidx = range(len(subjslots.shape))[1:] + [0] # put subj dim at end
-     tsubjslots = transpose(subjslots,transidx) # get all Ss for this idx
-     tworkd = transpose(workd) # swap subj. and variable dims
-     errors = 1.0 * tworkd
-
-     if len(sourcedims) == 0:
-         idx = [-1]
-         loopcap = [0]
-     if len(sourcedims) != 0:
-         btwsourcedims = map(Bscols.index,sourcedims)
-         idx = [0] * len(btwsourcedims)
-         idx[0] = -1 # compensate for pre-increment of 1st slot in incr()
-             
-         # Get a list of the maximum values each factor can handle
-         loopcap = take(array(Nlevels),sourcedims)-1
+    """
+    Subtract all cell means when within-subjects factors are present ...
+    i.e., calculate full-model using a D-variable.
+    """
+    # Get a list of all dims that are source and between-subj
+    sourcedims = makelist(Bbetweens,Nfactors+1)
+    
+    # Now, fix this list by mapping the dims from the original source
+    # to dims for a between-subjects variable (namely, subjslots)
+    transidx = range(len(subjslots.shape))[1:] + [0] # put subj dim at end
+    tsubjslots = transpose(subjslots,transidx) # get all Ss for this idx
+    tworkd = transpose(workd) # swap subj. and variable dims
+    errors = 1.0 * tworkd
+    
+    if len(sourcedims) == 0:
+        idx = [-1]
+        loopcap = [0]
+    if len(sourcedims) != 0:
+        btwsourcedims = map(Bscols.index,sourcedims)
+        idx = [0] * len(btwsourcedims)
+        idx[0] = -1 # compensate for pre-increment of 1st slot in incr()
+        
+        # Get a list of the maximum values each factor can handle
+        loopcap = take(array(Nlevels),sourcedims)-1
 
 ### WHILE STILL MORE GROUPS, CALCULATE GROUP MEAN FOR EACH D-VAR
-     while incr(idx,loopcap) != -1:  # loop through source btw level-combos
-         mask = tsubjslots[idx]
-         thisgroup = tworkd*mask[NewAxis,:]
-         groupmns = mean(compress(mask,thisgroup),1)
+    while incr(idx,loopcap) != -1:  # loop through source btw level-combos
+        mask = tsubjslots[idx]
+        thisgroup = tworkd*mask[NewAxis,:]
+        groupmns = mean(compress(mask,thisgroup),1)
 
 ### THEN SUBTRACT THEM FROM APPROPRIATE SUBJECTS
-         errors = errors - multiply.outer(groupmns,mask)
-     return errors
+        errors = errors - multiply.outer(groupmns,mask)
+    return errors
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
