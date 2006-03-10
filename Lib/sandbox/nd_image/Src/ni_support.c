@@ -325,7 +325,7 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
       CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
       CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
     default:
-      PyErr_SetString(PyExc_RuntimeError, "array type not supported");
+      PyErr_Format(PyExc_RuntimeError, "array type %d not supported", buffer->array_type);
       return 0;
     }
     /* goto next line in the array: */

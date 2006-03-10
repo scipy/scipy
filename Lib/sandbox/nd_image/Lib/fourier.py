@@ -30,23 +30,23 @@
 
 import types
 import math
-import numarray
+import numpy as numarray
 import _ni_support
 import _nd_image
 
 def _get_output_fourier(output, input):
     if output == None:
-        if input.type() in [numarray.Complex32, numarray.Complex64,
-                            numarray.Float32]:
-            output = numarray.zeros(input.shape, type = input.type())
+        if input.dtype.type in [numarray.complex64, numarray.complex64,
+                                numarray.float32]:
+            output = numarray.zeros(input.shape, dtype = input.dtype)
         else:
-            output = numarray.zeros(input.shape, type = numarray.Float64)
+            output = numarray.zeros(input.shape, dtype = numarray.Float64)
         return_value = output
-    elif isinstance(output, numarray.NumericType):
-        if output not in [numarray.Complex32, numarray.Complex64,
-                          numarray.Float32, numarray.Float64]:
+    elif type(output) is types.TypeType:
+        if output not in [numarray.complex64, numarray.complex64,
+                          numarray.float32, numarray.float64]:
             raise RuntimeError, "output type not supported"
-        output = numarray.zeros(input.shape, type = output)
+        output = numarray.zeros(input.shape, dtype = output)
         return_value = output        
     else:
         if output.shape != input.shape:
@@ -56,15 +56,15 @@ def _get_output_fourier(output, input):
 
 def _get_output_fourier_complex(output, input):
     if output == None:
-        if input.type() in [numarray.Complex32, numarray.Complex64]:
-            output = numarray.zeros(input.shape, type = input.type())
+        if input.dtype.type in [numarray.complex64, numarray.complex64]:
+            output = numarray.zeros(input.shape, dtype = input.dtype)
         else:
-            output = numarray.zeros(input.shape, type = numarray.Complex64)
+            output = numarray.zeros(input.shape, dtype = numarray.Complex64)
         return_value = output
-    elif isinstance(output, numarray.NumericType):
-        if output not in [numarray.Complex32, numarray.Complex64]:
+    elif type(output) is types.TypeType:
+        if output not in [numarray.complex64, numarray.complex64]:
             raise RuntimeError, "output type not supported"
-        output = numarray.zeros(input.shape, type = output)
+        output = numarray.zeros(input.shape, dtype = output)
         return_value = output        
     else:
         if output.shape != input.shape:
@@ -85,11 +85,12 @@ def fourier_gaussian(input, sigma, n = -1, axis = -1, output = None):
     """
     input = numarray.asarray(input)
     output, return_value = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.rank)
-    sigmas = _ni_support._normalize_sequence(sigma, input.rank)
-    sigmas = numarray.asarray(sigmas, type = numarray.Float64)
-    if not sigmas.iscontiguous():
+    axis = _ni_support._check_axis(axis, input.ndim)
+    sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
+    sigmas = numarray.asarray(sigmas, dtype = numarray.Float64)
+    if not sigmas.flags.contiguous:
         sigmas = sigmas.copy()
+
     _nd_image.fourier_filter(input, sigmas, n, axis, output, 0)
     return return_value
 
@@ -106,10 +107,10 @@ def fourier_uniform(input, size, n = -1, axis = -1, output = None):
     """
     input = numarray.asarray(input)
     output, return_value = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.rank)
-    sizes = _ni_support._normalize_sequence(size, input.rank)
-    sizes = numarray.asarray(sizes, type = numarray.Float64)
-    if not sizes.iscontiguous():
+    axis = _ni_support._check_axis(axis, input.ndim)
+    sizes = _ni_support._normalize_sequence(size, input.ndim)
+    sizes = numarray.asarray(sizes, dtype = numarray.Float64)
+    if not sizes.flags.contiguous:
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 1)
     return return_value
@@ -128,10 +129,10 @@ def fourier_ellipsoid(input, size, n = -1, axis = -1, output = None):
     """
     input = numarray.asarray(input)
     output, return_value = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.rank)
-    sizes = _ni_support._normalize_sequence(size, input.rank)
-    sizes = numarray.asarray(sizes, type = numarray.Float64)
-    if not sizes.iscontiguous():
+    axis = _ni_support._check_axis(axis, input.ndim)
+    sizes = _ni_support._normalize_sequence(size, input.ndim)
+    sizes = numarray.asarray(sizes, dtype = numarray.Float64)
+    if not sizes.flags.contiguous:
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 2)
     return return_value
@@ -149,10 +150,10 @@ def fourier_shift(input, shift, n = -1, axis = -1, output = None):
      """
     input = numarray.asarray(input)
     output, return_value = _get_output_fourier_complex(output, input)
-    axis = _ni_support._check_axis(axis, input.rank)
-    shifts = _ni_support._normalize_sequence(shift, input.rank)
-    shifts = numarray.asarray(shifts, type = numarray.Float64)
-    if not shifts.iscontiguous():
+    axis = _ni_support._check_axis(axis, input.ndim)
+    shifts = _ni_support._normalize_sequence(shift, input.ndim)
+    shifts = numarray.asarray(shifts, dtype = numarray.Float64)
+    if not shifts.flags.contiguous:
         shifts = shifts.copy()
     _nd_image.fourier_shift(input, shifts, n, axis, output)
     return return_value

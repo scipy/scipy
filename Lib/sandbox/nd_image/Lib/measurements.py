@@ -30,11 +30,10 @@
 
 import types
 import math
-import numarray
+import numpy as numarray
 import _ni_support
 import _nd_image
 import morphology
-from numarray.generic import _broadcast
 
 def label(input, structure = None, output = None):
     """Label an array of objects.
@@ -47,20 +46,20 @@ def label(input, structure = None, output = None):
     objects found is returned.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if structure == None:
-        structure = morphology.generate_binary_structure(input.rank, 1)
-    structure = numarray.asarray(structure, type = numarray.Bool)
-    if structure.rank != input.rank:
+        structure = morphology.generate_binary_structure(input.ndim, 1)
+    structure = numarray.asarray(structure, dtype = numarray.Bool)
+    if structure.ndim != input.ndim:
         raise RuntimeError, 'structure and input must have equal rank'
     for ii in structure.shape:
         if ii != 3:
             raise  RuntimeError, 'structure dimensions must be equal to 3'
-    if not structure.iscontiguous():
+    if not structure.flags.contiguous:
         structure = structure.copy()
-    if isinstance(output, numarray.NumArray):
-        if output.type() != numarray.Int32:
+    if isinstance(output, numarray.ndarray):
+        if output.dtype.type != numarray.int32:
             raise RuntimeError, 'output type must be Int32'
     else:
         output = numarray.Int32
@@ -70,7 +69,6 @@ def label(input, structure = None, output = None):
         return max_label
     else:
         return return_value, max_label
-
 
 def find_objects(input, max_label = 0):
     """Find objects in a labeled array.
@@ -83,7 +81,7 @@ def find_objects(input, max_label = 0):
     all are returned.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if max_label < 1:
         max_label = input.max()
@@ -97,11 +95,12 @@ def sum(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     return _nd_image.statistics(input, labels, index, 0)
@@ -115,11 +114,12 @@ def mean(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     return _nd_image.statistics(input, labels, index, 1)
@@ -133,11 +133,12 @@ def variance(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     return _nd_image.statistics(input, labels, index, 2)
@@ -165,11 +166,12 @@ def minimum(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     return _nd_image.statistics(input, labels, index, 3)
@@ -183,11 +185,12 @@ def maximum(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     return _nd_image.statistics(input, labels, index, 4)
@@ -215,11 +218,12 @@ def minimum_position(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     pos = _nd_image.statistics(input, labels, index, 5)
@@ -237,11 +241,12 @@ def maximum_position(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     pos = _nd_image.statistics(input, labels, index, 6)
@@ -260,13 +265,16 @@ def extrema(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
+    
+
     min, max, minp, maxp = _nd_image.statistics(input, labels, index, 7)
     if (isinstance(minp, types.ListType)):
         minp = [_index_to_position(x, input.shape) for x in minp]
@@ -285,11 +293,12 @@ def center_of_mass(input, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     return _nd_image.center_of_mass(input, labels, index)
@@ -306,11 +315,12 @@ def histogram(input, min, max, bins, labels = None, index = None):
     values are used where labels is larger than zero.
     """
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
         labels = numarray.asarray(labels)
         labels = _broadcast(labels, input.shape)
+
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
     if bins < 1:
@@ -330,28 +340,58 @@ def watershed_ift(input, markers, structure = None, output = None):
     to one. An output array can optionally be provided.
     """
     input = numarray.asarray(input)
-    if input.type() not in [numarray.UInt8, numarray.UInt16]:
+    if input.dtype.type not in [numarray.uint8, numarray.uint16]:
         raise TypeError, 'only 8 and 16 unsigned inputs are supported'
     if structure == None:
-        structure = morphology.generate_binary_structure(input.rank, 1)
-    structure = numarray.asarray(structure, type = numarray.Bool)
-    if structure.rank != input.rank:
+        structure = morphology.generate_binary_structure(input.ndim, 1)
+    structure = numarray.asarray(structure, dtype = numarray.Bool)
+    if structure.ndim != input.ndim:
         raise RuntimeError, 'structure and input must have equal rank'
     for ii in structure.shape:
         if ii != 3:
             raise  RuntimeError, 'structure dimensions must be equal to 3'
-    if not structure.iscontiguous():
+    if not structure.flags.contiguous:
         structure = structure.copy()
     markers = numarray.asarray(markers)
     if input.shape != markers.shape:
         raise RuntimeError, 'input and markers must have equal shape'
-    if not isinstance(markers.type(), numarray.IntegralType):
+
+    integral_types = [numarray.int0,
+                      numarray.int8,
+                      numarray.int16,
+                      numarray.int32,
+                      numarray.int_,
+                      numarray.int64,
+                      numarray.intc,
+                      numarray.intp]
+
+    if markers.dtype.type not in integral_types:
         raise RuntimeError, 'marker should be of integer type'
-    if isinstance(output, numarray.NumArray):
-        if not isinstance(output.type(), numarray.IntegralType):
+    if isinstance(output, numarray.ndarray):
+        if output.dtype.type not in integral_types:
             raise RuntimeError, 'output should be of integer type'
     else:
-        output = markers.type()
+        output = markers.dtype
     output, return_value = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
+    return return_value
+
+def _broadcast(arr, sshape):
+    """Return broadcast view of arr, else return None."""
+    ashape = arr.shape
+    return_value = numarray.zeros(sshape, arr.dtype)
+    # Just return arr if they have the same shape
+    if sshape == ashape:
+        return arr
+    srank = len(sshape)
+    arank = len(ashape)
+
+    aslices = []
+    sslices = []
+    for i in range(arank):
+        aslices.append(slice(0, ashape[i], 1))
+
+    for i in range(srank):
+        sslices.append(slice(0, sshape[i], 1))
+    return_value[sslices] = arr[aslices]
     return return_value

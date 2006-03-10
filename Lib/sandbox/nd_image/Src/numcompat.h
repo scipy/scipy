@@ -38,6 +38,8 @@ typedef enum
 
 #define nNumarrayType 16
 
+#define HAS_UINT64 1
+
 typedef enum 
 {
 	NUM_LITTLE_ENDIAN=0,
