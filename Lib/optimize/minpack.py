@@ -1,12 +1,26 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
 import _minpack
-from common_routines import *
+
+from numpy import *  # originally from common_routines,
+                     # fix me to only import what we need
 from numpy import atleast_1d, dot, take, triu
 
 error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
+
+def check_func(thefunc, x0, args, numinputs, output_shape=None):
+    args = (x0[:numinputs],) + args
+    res = atleast_1d(apply(thefunc,args))
+    if (output_shape != None) and (shape(res) != output_shape):
+        if (output_shape[0] != 1):
+            if len(output_shape) > 1:
+                if output_shape[1] == 1:
+                    return shape(res)
+            raise TypeError, "There is a mismatch between the input and output shape of %s." % thefunc.func_name
+    return shape(res)
+
 
 def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
     """Find the roots of a function.

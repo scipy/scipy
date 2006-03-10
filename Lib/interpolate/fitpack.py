@@ -32,7 +32,8 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
                          'spalde', 'bisplrep', 'bisplev']
 __version__ = "$Revision$"[10:-1]
 import _fitpack
-from common_routines import *
+from numpy import *
+myasarray = atleast_1d
 
 _iermess = {0:["""\
     The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
