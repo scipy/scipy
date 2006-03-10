@@ -36,14 +36,14 @@ import _nd_image
 
 def _get_output_fourier(output, input):
     if output == None:
-        if input.dtype.type in [numarray.complex64, numarray.complex64,
+        if input.dtype.type in [numarray.complex64, numarray.complex128,
                                 numarray.float32]:
             output = numarray.zeros(input.shape, dtype = input.dtype)
         else:
             output = numarray.zeros(input.shape, dtype = numarray.Float64)
         return_value = output
     elif type(output) is types.TypeType:
-        if output not in [numarray.complex64, numarray.complex64,
+        if output not in [numarray.complex64, numarray.complex128,
                           numarray.float32, numarray.float64]:
             raise RuntimeError, "output type not supported"
         output = numarray.zeros(input.shape, dtype = output)
@@ -56,13 +56,13 @@ def _get_output_fourier(output, input):
 
 def _get_output_fourier_complex(output, input):
     if output == None:
-        if input.dtype.type in [numarray.complex64, numarray.complex64]:
+        if input.dtype.type in [numarray.complex64, numarray.complex128]:
             output = numarray.zeros(input.shape, dtype = input.dtype)
         else:
             output = numarray.zeros(input.shape, dtype = numarray.Complex64)
         return_value = output
     elif type(output) is types.TypeType:
-        if output not in [numarray.complex64, numarray.complex64]:
+        if output not in [numarray.complex64, numarray.complex128]:
             raise RuntimeError, "output type not supported"
         output = numarray.zeros(input.shape, dtype = output)
         return_value = output        
