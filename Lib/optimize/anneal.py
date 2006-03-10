@@ -5,7 +5,7 @@
 from __future__ import nested_scopes
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
-     all, log, sqrt, pi, shape, array, minimum
+     all, log, sqrt, pi, shape, array, minimum, where
 from numpy import random
 
 __all__ = ['anneal']
@@ -27,9 +27,9 @@ class base_schedule:
     def init(self, **options):
         self.__dict__.update(options)
         self.lower = asarray(self.lower)
-        self.lower[self.lower == numpy.NINF] = -_double_max
+        self.lower = where(self.lower == numpy.NINF, -_double_max, self.lower)
         self.upper = asarray(self.upper)
-        self.upper[self.upper == numpy.PINF] = _double_max
+        self.upper = where(self.upper == numpy.PINF, _double_max, self.upper)
         self.k = 0
         self.accepted = 0
         self.feval = 0
@@ -114,7 +114,6 @@ class boltzmann_sa(base_schedule):
     def update_guess(self, x0):
         std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
         x0 = asarray(x0)
-        #xc = squeeze(random.normal(0, std*self.learn_rate, size=self.dims))
         xc = squeeze(random.normal(0, 1.0, size=self.dims))
         
         xnew = x0 + xc*std*self.learn_rate
@@ -210,7 +209,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         best_state.x = asarray(x0).copy()
     schedule.T = schedule.T0
     fqueue = [100, 300, 500, 700]
-    iter = 0
+    iters = 0
     while 1:
         for n in range(dwell):
             current_state.x = schedule.update_guess(last_state.x)
@@ -225,7 +224,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
         schedule.update_temp()
-        iter += 1
+        iters += 1
         # Stopping conditions
         # 0) last saved values of f from each cooling step
         #     are all very similar (effectively cooled)
@@ -251,7 +250,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         if (maxeval is not None) and (schedule.feval > maxeval):
             retval = 2
             break
-        if (iter > maxiter):
+        if (iters > maxiter):
             print "Warning: Maximum number of iterations exceeded."
             retval = 3
             break
@@ -261,7 +260,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     if full_output:        
         return best_state.x, best_state.cost, schedule.T, \
-               schedule.feval, iter, schedule.accepted, retval
+               schedule.feval, iters, schedule.accepted, retval
     else:
         return best_state.x, retval
 
