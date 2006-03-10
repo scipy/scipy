@@ -32,7 +32,7 @@ import sys
 import unittest
 import math
 import numpy as numarray
-import scipy.sandbox.nd_image as nd_image
+import scipy.nd_image as nd_image
 import numpy.dft as dft
 #import numarray.numinclude as numinclude
 

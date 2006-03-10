@@ -18,6 +18,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('sparse')
     config.add_subpackage('special')
     config.add_subpackage('stats')
+    config.add_subpackage('nd_image')
     config.add_subpackage('weave')
     config.make_svn_version_py()  # installs __svn_version__.py
     config.make_config_py()
