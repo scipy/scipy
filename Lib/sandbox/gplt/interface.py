@@ -1,7 +1,7 @@
 import new_plot
 pyPlot = new_plot
 from Numeric import *
-from numpy.scimath import *
+from numpy.lib.scimath import *
 
 
 def _intialize():
