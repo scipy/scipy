@@ -814,13 +814,12 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
             data = atleast_1d(fid.fread(numels,storage))
             if header[3]:  # imaginary data
                 data2 = fid.fread(numels,storage)
-                if data.dtype.char == 'f' and data2.dtype.char == 'f':
-                    new = zeros(data.shape,'F')
-                    new.real = data
-                    new.imag = data2
-                    data = new
-                    del(new)
-                    del(data2)
+                new = zeros(data.shape,data.dtype.char.capitalize())
+                new.real = data
+                new.imag = data2
+                data = new
+                del(new)
+                del(data2)
             if len(data) > 1:
                 data=data.reshape((header[2], header[1])                )
                 thisdict[varname] = transpose(squeeze(data))
