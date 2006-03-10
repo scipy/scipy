@@ -570,8 +570,6 @@ class csc_matrix(spmatrix):
     
     def __radd__(self, other):
         """ Function supporting the operation: self + other.
-        This does not currently work correctly for self + dense.
-        Perhaps dense matrices need some hooks to support this.
         """
         if isscalar(other) or (isdense(other) and rank(other)==0):
             raise NotImplementedError, 'adding a scalar to a CSC matrix is ' \
@@ -586,12 +584,11 @@ class csc_matrix(spmatrix):
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
             c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
             if ierr:
-                raise ValueError, "ran out of space (but shouldn't have happened)"
+                raise RuntimeError, "ran out of space"
             M, N = self.shape
             return csc_matrix((c, rowc, ptrc), dims=(M, N))
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them.
-            # This does not currently work.
             return self.todense() + other
         else:
             raise TypeError, "unsupported type for sparse matrix addition"
@@ -610,7 +607,7 @@ class csc_matrix(spmatrix):
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
             c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
             if ierr:
-                raise ValueError, "ran out of space (but shouldn't have happened)"
+                raise RuntimeError, "ran out of space"
             M, N = self.shape
             return csc_matrix((c, rowc, ptrc), dims=(M, N))
         elif isdense(other):
@@ -671,7 +668,7 @@ class csc_matrix(spmatrix):
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscmul')
             c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
             if ierr:
-                raise ValueError, "ran out of space (but shouldn't have happened)"
+                raise RuntimeError, "ran out of space"
             M, N = self.shape
             return csc_matrix((c, rowc, ptrc), dims=(M, N))
 
@@ -1083,12 +1080,11 @@ class csr_matrix(spmatrix):
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
             c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2, ocs.colind, ocs.indptr)
             if ierr:
-                raise ValueError, "ran out of space (but shouldn't have happened)"
+                raise RuntimeError, "ran out of space"
             M, N = self.shape
             return csr_matrix((c, colc, ptrc), dims=(M, N))
         elif isdense(other):
             # Convert this matrix to a dense matrix and add them.
-            # This does not currently work.
             return self.todense() + other
         else:
             raise TypeError, "unsupported type for sparse matrix addition"
@@ -1144,7 +1140,7 @@ class csr_matrix(spmatrix):
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscmul')
             c, colc, ptrc, ierr = func(data1, self.colind, self.indptr, data2, ocs.colind, ocs.indptr)
             if ierr:
-                raise ValueError, "ran out of space (but shouldn't have happened)"
+                raise RuntimeError, "ran out of space"
             M, N = self.shape
             return csr_matrix((c, colc, ptrc), dims=(M, N))
         else:
@@ -2449,7 +2445,7 @@ def spdiags(diags, offsets, M, N):
     diagfunc = eval('sparsetools.'+_transtabl[mtype]+'diatocsc')
     a, rowa, ptra, ierr = diagfunc(M, N, diags, offsets)
     if ierr:
-        raise ValueError, "ran out of memory (shouldn't have happened)"
+        raise RuntimeError, "ran out of space"
     return csc_matrix((a, rowa, ptra), dims=(M, N))
 
 def _toCS_superLU( A ):
