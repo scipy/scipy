@@ -13,8 +13,6 @@ from scipy.misc import comb
 import string, types
 
 
-MLab = numpy
-Num = MLab
 abs = absolute
 
 def findfreqs(num, den, N):
@@ -24,11 +22,11 @@ def findfreqs(num, den, N):
     if len(ep) == 0:
         ep = atleast_1d(-1000)+0j
 
-    ez = c_[Num.compress(ep.imag >=0, ep), Num.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
+    ez = c_[numpy.compress(ep.imag >=0, ep), numpy.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
 
     integ = abs(ez) < 1e-10
-    hfreq = Num.around(Num.log10(Num.max(3*abs(ez.real + integ)+1.5*ez.imag))+0.5)
-    lfreq = Num.around(Num.log10(0.1*Num.min(abs(real(ez+integ))+2*ez.imag))-0.5)
+    hfreq = numpy.around(numpy.log10(numpy.max(3*abs(ez.real + integ)+1.5*ez.imag))+0.5)
+    lfreq = numpy.around(numpy.log10(0.1*numpy.min(abs(real(ez+integ))+2*ez.imag))-0.5)
 
     w = logspace(lfreq, hfreq, N)
     return w
@@ -107,10 +105,10 @@ def freqz(b, a, worN=None, whole=0, plot=None):
         lastpoint = pi
     if worN is None:
         N = 512
-        w = Num.arange(0,lastpoint,lastpoint/N)
+        w = numpy.arange(0,lastpoint,lastpoint/N)
     elif isinstance(worN, types.IntType):
         N = worN
-        w = Num.arange(0,lastpoint,lastpoint/N)
+        w = numpy.arange(0,lastpoint,lastpoint/N)
     else:
         w = worN
     w = atleast_1d(w)
@@ -192,7 +190,7 @@ def lp2lp(b,a,wo=1.0):
     d = len(a)
     n = len(b)
     M = max((d,n))
-    pwo = pow(wo,Num.arange(M-1,-1,-1))
+    pwo = pow(wo,numpy.arange(M-1,-1,-1))
     start1 = max((n-d,0))
     start2 = max((d-n,0))
     b = b * pwo[start1]/pwo[start2:]
@@ -209,9 +207,9 @@ def lp2hp(b,a,wo=1.0):
     d = len(a)
     n = len(b)
     if wo != 1:
-        pwo = pow(wo,Num.arange(max((d,n))))
+        pwo = pow(wo,numpy.arange(max((d,n))))
     else:
-        pwo = Num.ones(max((d,n)),b.dtype.char)
+        pwo = numpy.ones(max((d,n)),b.dtype.char)
     if d >= n:
         outa = a[::-1] * pwo
         outb = resize(b,(d,))
@@ -236,8 +234,8 @@ def lp2bp(b,a,wo=1.0, bw=1.0):
     ma = max([N,D])
     Np = N + ma
     Dp = D + ma
-    bprime = Num.zeros(Np+1,artype)
-    aprime = Num.zeros(Dp+1,artype)
+    bprime = numpy.zeros(Np+1,artype)
+    aprime = numpy.zeros(Dp+1,artype)
     wosq = wo*wo
     for j in range(Np+1):
         val = 0.0
@@ -267,8 +265,8 @@ def lp2bs(b,a,wo=1,bw=1):
     M = max([N,D])
     Np = M + M
     Dp = M + M
-    bprime = Num.zeros(Np+1,artype)
-    aprime = Num.zeros(Dp+1,artype)
+    bprime = numpy.zeros(Np+1,artype)
+    aprime = numpy.zeros(Dp+1,artype)
     wosq = wo*wo
     for j in range(Np+1):
         val = 0.0
@@ -296,16 +294,16 @@ def bilinear(b,a,fs=1.0):
     a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
-    artype = Num.Float
+    artype = numpy.Float
     M = max([N,D])
     Np = M
     Dp = M
-    bprime = Num.zeros(Np+1,artype)
-    aprime = Num.zeros(Dp+1,artype)
+    bprime = numpy.zeros(Np+1,artype)
+    aprime = numpy.zeros(Dp+1,artype)
     for j in range(Np+1):
         val = 0.0
         for i in range(N+1):
-             for k in range(i+1):
+            for k in range(i+1):
                 for l in range(M-i+1):
                     if k+l == j:
                         val += comb(i,k)*comb(M-i,l)*b[N-i]*pow(2*fs,i)*(-1)**k
@@ -667,18 +665,18 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2: # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = Num.zeros(2,Float)
+        WN = numpy.zeros(2,Float)
         WN[0] = ((passb[1] - passb[0]) + sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN[1] = ((passb[1] - passb[0]) - sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
-        WN = Num.sort(abs(WN))
+        WN = numpy.sort(abs(WN))
     elif filter_type == 4: # pass
-        W0 = Num.array([-W0, W0],Float)
+        W0 = numpy.array([-W0, W0],Float)
         WN = -W0 * (passb[1]-passb[0]) / 2.0 + sqrt(W0**2 / 4.0 * \
                                               (passb[1]-passb[0])**2 + \
                                               passb[0]*passb[1])
-        WN = Num.sort(abs(WN))
+        WN = numpy.sort(abs(WN))
     else:
         raise ValueError, "Bad type."
 
@@ -847,13 +845,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = Num.zeros(2,Num.Float)
+        nat = numpy.zeros(2,numpy.Float)
         nat[0] = new_freq / 2.0 * (passb[0]-passb[1]) + \
                  sqrt(new_freq**2 * (passb[1]-passb[0])**2 / 4.0 + \
                       passb[1] * passb[0])
         nat[1] = passb[1] * passb[0] / nat[0]
     elif filter_type == 4:
-        nat = Num.zeros(2,Num.Float)
+        nat = numpy.zeros(2,numpy.Float)
         nat[0] = 1.0/(2.0*new_freq) * (passb[0] - passb[1]) + \
                  sqrt((passb[1]-passb[0])**2 / (4.0*new_freq**2) + \
                       passb[1] * passb[0])
@@ -953,8 +951,8 @@ def buttap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
     order Butterworth filter."""
     z = []
-    n = Num.arange(1,N+1)
-    p = Num.exp(1j*(2*n-1)/(2.0*N)*pi)*1j
+    n = numpy.arange(1,N+1)
+    p = numpy.exp(1j*(2*n-1)/(2.0*N)*pi)*1j
     k = 1
     return z, p, k
 
@@ -964,12 +962,12 @@ def cheb1ap(N,rp):
     in the passband.
     """
     z = []
-    eps = Num.sqrt(10**(0.1*rp)-1.0)
-    n = Num.arange(1,N+1)
-    mu = 1.0/N * Num.log((1.0+Num.sqrt(1+eps*eps)) / eps)
+    eps = numpy.sqrt(10**(0.1*rp)-1.0)
+    n = numpy.arange(1,N+1)
+    mu = 1.0/N * numpy.log((1.0+numpy.sqrt(1+eps*eps)) / eps)
     theta = pi/2.0 * (2*n-1.0)/N
-    p = -Num.sinh(mu)*Num.sin(theta) + 1j*Num.cosh(mu)*Num.cos(theta)
-    k = MLab.prod(-p).real
+    p = -numpy.sinh(mu)*numpy.sin(theta) + 1j*numpy.cosh(mu)*numpy.cos(theta)
+    k = numpy.prod(-p).real
     if N % 2 == 0:
         k = k / sqrt((1+eps*eps))
     return z, p, k
@@ -985,16 +983,16 @@ def cheb2ap(N,rs):
 
     if N % 2:
         m = N - 1
-        n = Num.concatenate((Num.arange(1,N-1,2),Num.arange(N+2,2*N,2)))
+        n = numpy.concatenate((numpy.arange(1,N-1,2),numpy.arange(N+2,2*N,2)))
     else:
         m = N
-        n = Num.arange(1,2*N,2)
+        n = numpy.arange(1,2*N,2)
         
     z = conjugate(1j / cos(n*pi/(2.0*N)))
-    p = exp(1j*(pi*Num.arange(1,2*N,2)/(2.0*N) + pi/2.0))
+    p = exp(1j*(pi*numpy.arange(1,2*N,2)/(2.0*N) + pi/2.0))
     p = sinh(mu) * p.real + 1j*cosh(mu)*p.imag
     p = 1.0 / p
-    k = (MLab.prod(-p)/MLab.prod(-z)).real
+    k = (numpy.prod(-p)/numpy.prod(-z)).real
     return z, p, k
     
 
@@ -1034,9 +1032,9 @@ def ellipap(N,rp,rs):
         z = []
         return z, p, k
 
-    eps = Num.sqrt(10**(0.1*rp)-1)
-    ck1 = eps / Num.sqrt(10**(0.1*rs)-1)
-    ck1p = Num.sqrt(1-ck1*ck1)
+    eps = numpy.sqrt(10**(0.1*rp)-1)
+    ck1 = eps / numpy.sqrt(10**(0.1*rs)-1)
+    ck1p = numpy.sqrt(1-ck1*ck1)
     if ck1p == 1:
         raise ValueError, "Cannot design a filter with given rp and rs specifications."
 
@@ -1057,14 +1055,14 @@ def ellipap(N,rp,rs):
     ws = wp / sqrt(m)
     m1 = 1-m
 
-    j = Num.arange(1-N%2,N,2)
+    j = numpy.arange(1-N%2,N,2)
     jj = len(j)
 
-    [s,c,d,phi] = special.ellipj(j*capk/N,m*Num.ones(jj))
-    snew = Num.compress(abs(s) > EPSILON, s)
+    [s,c,d,phi] = special.ellipj(j*capk/N,m*numpy.ones(jj))
+    snew = numpy.compress(abs(s) > EPSILON, s)
     z = 1.0 / (sqrt(m)*snew)
     z = 1j*z
-    z = Num.concatenate((z,conjugate(z)))
+    z = numpy.concatenate((z,conjugate(z)))
 
     r = optimize.fmin(vratio, special.ellipk(m), args=(1./eps, ck1p*ck1p),
                       maxfun=250, maxiter=250, disp=0)
@@ -1074,14 +1072,14 @@ def ellipap(N,rp,rs):
     p = -(c*d*sv*cv + 1j*s*dv) / (1-(d*sv)**2.0)
 
     if N % 2:
-        newp = Num.compress(abs(p.imag) > EPSILON*Num.sqrt(MLab.sum(p*Num.conjugate(p)).real), p)
-        p = Num.concatenate((p,conjugate(newp)))
+        newp = numpy.compress(abs(p.imag) > EPSILON*numpy.sqrt(numpy.sum(p*numpy.conjugate(p)).real), p)
+        p = numpy.concatenate((p,conjugate(newp)))
     else:
-        p = Num.concatenate((p,conjugate(p)))
+        p = numpy.concatenate((p,conjugate(p)))
 
-    k = (MLab.prod(-p) / MLab.prod(-z)).real
+    k = (numpy.prod(-p) / numpy.prod(-z)).real
     if N % 2 == 0:
-        k = k / Num.sqrt((1+eps*eps))
+        k = k / numpy.sqrt((1+eps*eps))
 
     return z, p, k
 
@@ -1539,7 +1537,7 @@ def firwin(N, cutoff, width=None, window='hamming'):
 
     win = get_window(window,N,fftbins=1)
     alpha = N//2
-    m = Num.arange(0,N)
+    m = numpy.arange(0,N)
     h = win*special.sinc(cutoff*(m-alpha))
     return h / sum(h)
 
