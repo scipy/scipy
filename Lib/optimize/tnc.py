@@ -193,7 +193,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
         scale = []
 
     if maxfun == None:
-       maxfun = max(1000, 100*len(x0))
+        maxfun = max(1000, 100*len(x0))
         
     return moduleTNC.minimize(func_and_grad, x0, low, up, scale, messages,
                               maxCGit, maxfun, eta, stepmx, accuracy,
