@@ -7,7 +7,9 @@
 __all__ = ['interp1d']
 # XXX: not interp2d?
 
-from numpy import *
+from numpy import shape, sometrue, atleast_1d, rank, array, transpose, \
+     swapaxes, searchsorted, clip, Int, take, ones, putmask, less, greater, \
+     logical_or
 
 import fitpack
 
