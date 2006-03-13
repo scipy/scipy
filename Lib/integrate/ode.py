@@ -92,7 +92,7 @@ __all__ = ['ode']
 __version__ = "$Id$"
 
 from numpy import asarray, array, zeros, sin, int32
-import re,types,sys
+import re, sys
 
 class ode:
     """\

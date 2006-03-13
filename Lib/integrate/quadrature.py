@@ -5,7 +5,7 @@
 __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb','cumtrapz']
 
 from scipy.special.orthogonal import p_roots
-from numpy import sum, array, ones, add, diff, isinf, isscalar, \
+from numpy import sum, ones, add, diff, isinf, isscalar, \
      asarray, real, trapz
 
 def fixed_quad(func,a,b,args=(),n=5):
