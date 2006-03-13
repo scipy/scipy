@@ -79,9 +79,8 @@ class test_round(ScipyTestCase):
             numbers inconsistently). Needless to say, statical packages
             written in these languages may fail the test as well.
         """
- 
         for i in range(0,9):
-            y = numpy.round_(ROUND[i])
+            y = round(ROUND[i])
             assert_equal(y,i+1)
         
     def check_rounding1(self):
