@@ -1,4 +1,3 @@
-import numpy as Numeric
 import cPickle
 
 def objsave(file, allglobals, *args):
