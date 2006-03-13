@@ -2,12 +2,11 @@
 # (special, linalg)
 
 import sys
-import types
 
-import numpy as Numeric
+import numpy
 
-from numpy import exp, amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, hstack, product, array, typename, where, \
+from numpy import exp, asarray, arange, \
+     NewAxis, hstack, product, array, typename, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
 __all__ = ['factorial','factorial2','factorialk','comb','who',
@@ -245,7 +244,7 @@ def who(vardict=None):
     sta = []
     cache = {}
     for name in vardict.keys():
-        if isinstance(vardict[name],Numeric.ArrayType):
+        if isinstance(vardict[name],numpy.ArrayType):
             var = vardict[name]
             idv = id(var)
             if idv in cache.keys():
@@ -256,7 +255,7 @@ def who(vardict=None):
                 namestr = name
                 original=1
             shapestr = " x ".join(map(str, var.shape))
-            bytestr = str(var.itemsize*Numeric.product(var.shape))
+            bytestr = str(var.itemsize*numpy.product(var.shape))
             sta.append([namestr, shapestr, bytestr, typename(var.dtype.char),
                         original])
 
@@ -275,7 +274,7 @@ def who(vardict=None):
         if val[4]:
             totalbytes += int(val[2])
 
-    max = Numeric.maximum
+    max = numpy.maximum
     if len(sta) > 0:
         sp1 = max(10,maxname)
         sp2 = max(10,maxshape)
