@@ -111,7 +111,6 @@ robert.kern@gmail.com
 """
 
 from scipy.sandbox.odr import __odrpack
-import scipy
 from types import NoneType
 
 odr = __odrpack.odr
