@@ -1204,9 +1204,9 @@ def get_window(window,Nx,fftbins=1):
         elif winstr in ['hanning', 'hann', 'han']:
             winfunc = hanning
         elif winstr in ['blackmanharris', 'blackharr','bkh']:
-            winfun = blackmanharris
+            winfunc = blackmanharris
         elif winstr in ['parzen', 'parz', 'par']:
-            winfun = parzen
+            winfunc = parzen
         elif winstr in ['bohman', 'bman', 'bmn']:
             winfunc = bohman
         elif winstr in ['nuttall', 'nutl', 'nut']:
