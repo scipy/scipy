@@ -19,7 +19,7 @@ Run tests if linalg is not installed:
   python tests/test_basic.py [<level>]
 """
 
-import numpy as Numeric
+import numpy
 from numpy import arange, add, array, dot, zeros, identity
 
 import sys
@@ -52,33 +52,33 @@ class test_solve_banded(ScipyTestCase):
         for b in ([[1,0,0,0],[0,0,0,1],[0,1,0,0],[0,1,0,0]],
                   [[2,1],[-30,4],[2,3],[1,3]]):
             x = solve_banded((l,u),ab,b)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
 class test_solve(ScipyTestCase):
 
     def check_20Feb04_bug(self):
         a = [[1,1],[1.0,0]] # ok
         x0 = solve(a,[1,0j])
-        assert_array_almost_equal(Numeric.matrixmultiply(a,x0),[1,0])
+        assert_array_almost_equal(numpy.matrixmultiply(a,x0),[1,0])
 
         a = [[1,1],[1.2,0]] # gives failure with clapack.zgesv(..,rowmajor=0)
         b = [1,0j]
         x0 = solve(a,b)
-        assert_array_almost_equal(Numeric.matrixmultiply(a,x0),[1,0])
+        assert_array_almost_equal(numpy.matrixmultiply(a,x0),[1,0])
 
     def check_simple(self):
         a = [[1,20],[-30,4]]
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
             x = solve(a,b)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
         
     def check_simple_sym(self):
         a = [[2,3],[3,5]]
         for lower in [0,1]:
             for b in ([[1,0],[0,1]],[1,0]):
                 x = solve(a,b,sym_pos=1,lower=lower)
-                assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+                assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_simple_sym_complex(self):
         a = [[5,2],[2,4]]
@@ -87,7 +87,7 @@ class test_solve(ScipyTestCase):
                    [0,2]],
                   ]:
             x = solve(a,b,sym_pos=1)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_simple_complex(self):
         a = array([[5,2],[2j,4]],'D')
@@ -98,7 +98,7 @@ class test_solve(ScipyTestCase):
                   array([1,0],'D'),
                   ]:
             x = solve(a,b)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_nils_20Feb04(self):
         n = 2
@@ -119,7 +119,7 @@ class test_solve(ScipyTestCase):
         for i in range(4):
             b = random([n,3])
             x = solve(a,b)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_random_complex(self):
         n = 20
@@ -128,7 +128,7 @@ class test_solve(ScipyTestCase):
         for i in range(2):
             b = random([n,3])
             x = solve(a,b)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_random_sym(self):
         n = 20
@@ -140,7 +140,7 @@ class test_solve(ScipyTestCase):
         for i in range(4):
             b = random([n])
             x = solve(a,b,sym_pos=1)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_random_sym_complex(self):
         n = 20
@@ -149,11 +149,11 @@ class test_solve(ScipyTestCase):
         for i in range(n):
             a[i,i] = abs(20*(.1+a[i,i]))
             for j in range(i):
-                a[i,j] = Numeric.conjugate(a[j,i])
+                a[i,j] = numpy.conjugate(a[j,i])
         b = random([n])+2j*random([n])
         for i in range(2):
             x = solve(a,b,sym_pos=1)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def bench_random(self,level=5):
         import numpy.linalg as linalg
@@ -198,11 +198,11 @@ class test_inv(ScipyTestCase):
     def check_simple(self):
         a = [[1,2],[3,4]]
         a_inv = inv(a)
-        assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
+        assert_array_almost_equal(numpy.matrixmultiply(a,a_inv),
                                   [[1,0],[0,1]])
         a = [[1,2,3],[4,5,6],[7,8,10]]
         a_inv = inv(a)
-        assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
+        assert_array_almost_equal(numpy.matrixmultiply(a,a_inv),
                                   [[1,0,0],[0,1,0],[0,0,1]])
 
     def check_random(self):
@@ -211,12 +211,12 @@ class test_inv(ScipyTestCase):
             a = random([n,n])
             for i in range(n): a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
-                                      Numeric.identity(n))
+            assert_array_almost_equal(numpy.matrixmultiply(a,a_inv),
+                                      numpy.identity(n))
     def check_simple_complex(self):
         a = [[1,2],[3,4j]]
         a_inv = inv(a)
-        assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
+        assert_array_almost_equal(numpy.matrixmultiply(a,a_inv),
                                   [[1,0],[0,1]])
 
     def check_random_complex(self):
@@ -225,8 +225,8 @@ class test_inv(ScipyTestCase):
             a = random([n,n])+2j*random([n,n])
             for i in range(n): a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
-            assert_array_almost_equal(Numeric.matrixmultiply(a,a_inv),
-                                      Numeric.identity(n))
+            assert_array_almost_equal(numpy.matrixmultiply(a,a_inv),
+                                      numpy.identity(n))
 
     def bench_random(self,level=5):
 	import numpy.linalg as linalg
@@ -333,8 +333,8 @@ class test_det(ScipyTestCase):
 
 
 def direct_lstsq(a,b):
-    a1 = Numeric.matrixmultiply(Numeric.transpose(a),a)
-    b1 = Numeric.matrixmultiply(Numeric.transpose(a),b)
+    a1 = numpy.matrixmultiply(numpy.transpose(a),a)
+    b1 = numpy.matrixmultiply(numpy.transpose(a),b)
     return solve(a1,b1)
 
 class test_lstsq(ScipyTestCase):
@@ -352,7 +352,7 @@ class test_lstsq(ScipyTestCase):
         for b in ([[1,0],[0,1]],[1,0],
                   [[2,1],[-30,4]]):
             x = lstsq(a,b)[0]
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
@@ -377,7 +377,7 @@ class test_lstsq(ScipyTestCase):
         for i in range(4):
             b = random([n,3])
             x = lstsq(a,b)[0]
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_random_complex_exact(self):
         n = 20
@@ -386,7 +386,7 @@ class test_lstsq(ScipyTestCase):
         for i in range(2):
             b = random([n,3])
             x = lstsq(a,b)[0]
-            assert_array_almost_equal(Numeric.matrixmultiply(a,x),b)
+            assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
 
     def check_random_overdet(self):
         n = 20
