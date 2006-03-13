@@ -1,9 +1,9 @@
 # Functions which need the PIL
 
 import types
-import numpy as Numeric
+import numpy
 
-from numpy import exp, amin, amax, ravel, asarray, cast, arange, \
+from numpy import amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
 
 import Image
@@ -12,7 +12,7 @@ import ImageFilter
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
 
-_UInt8 = Numeric.UnsignedInt8
+_UInt8 = numpy.UnsignedInt8
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
@@ -48,7 +48,7 @@ def imsave(name, arr):
     return
 
 def fromimage(im, flatten=0):
-    """Takes a PIL image and returns a copy of the image in a Numeric container.
+    """Takes a PIL image and returns a copy of the image in a numpy container.
     If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
 
     Optional arguments:
@@ -73,7 +73,7 @@ def fromimage(im, flatten=0):
         type = 'f'
     if mode == 'I':
         type = 'I'
-    arr = Numeric.fromstring(str,type)
+    arr = numpy.fromstring(str,type)
     shape = list(im.size)
     shape.reverse()
     if mode == 'P':
@@ -81,7 +81,7 @@ def fromimage(im, flatten=0):
         if im.palette.rawmode != 'RGB':
             print "Warning: Image has invalid palette."
             return arr
-        pal = Numeric.fromstring(im.palette.data,type)
+        pal = numpy.fromstring(im.palette.data,type)
         N = len(pal)
         pal.shape = (int(N/3.0),3)
         return arr, pal
@@ -97,7 +97,7 @@ def fromimage(im, flatten=0):
 _errstr = "Mode is unknown or incompatible with input array shape."
 def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             mode=None,channel_axis=None):
-    """Takes a Numeric array and returns a PIL image.  The mode of the
+    """Takes a numpy array and returns a PIL image.  The mode of the
     PIL image depends on the array shape, the pal keyword, and the mode
     keyword.
 
@@ -111,7 +111,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
       by default or 'YCbCr' if selected.  
     if the
 
-    The Numeric array must be either 2 dimensional or 3 dimensional.
+    The numpy array must be either 2 dimensional or 3 dimensional.
     """
     data = asarray(arr)
     if iscomplexobj(data):
@@ -155,9 +155,9 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     # Check for 3 in datacube shape --- 'RGB' or 'YCbCr'
     if channel_axis is None:
         if (3 in shape):
-            ca = Numeric.nonzero(asarray(shape) == 3)[0]
+            ca = numpy.nonzero(asarray(shape) == 3)[0]
         else:
-            ca = Numeric.nonzero(asarray(shape) == 4)
+            ca = numpy.nonzero(asarray(shape) == 4)
             if len(ca):
                 ca = ca[0]
             else:
