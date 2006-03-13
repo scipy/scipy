@@ -72,7 +72,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
 
     if hasattr(object,'_ppimport_importer') or \
        hasattr(object, '_ppimport_module'):
-	object = object._ppimport_module
+        object = object._ppimport_module
     elif hasattr(object, '_ppimport_attr'):
         object = object._ppimport_attr
 
@@ -163,7 +163,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
                 arguments = "()"
 
             if hasattr(object,'name'):
-		name = "%s" % object.name
+                name = "%s" % object.name
             else:	
                 name = "<name>"
             if len(name+arguments) > maxwidth:
