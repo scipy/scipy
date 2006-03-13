@@ -254,7 +254,7 @@ class _ModuleLoader:
 
         try:
             module = sys.modules[name]
-	except KeyError:
+        except KeyError:
             raise ImportError,self.__dict__.get('_ppimport_exc_info')[1]
         if module is not self:
             exc_info = self.__dict__.get('_ppimport_exc_info')
