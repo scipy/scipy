@@ -8,10 +8,9 @@ Text File
 """
 
 __all__ = ['read_array', 'write_array']
-import numpy as Numeric
 import numpy
 from numpy import array, take, concatenate, Float, asarray, real, imag
-import types, re, copy, sys
+import types, re, sys
 import numpyio
 default = None
 _READ_BUFFER_SIZE = 1024*1024
@@ -276,7 +275,7 @@ def getcolumns(stream, columns, separator):
     for k in range(N):
         collist[k] = build_numberlist(columns[k])
     _not_warned = 0
-    val = process_line(firstline, separator, collist, [Numeric.Float]*N, 0)
+    val = process_line(firstline, separator, collist, [numpy.Float]*N, 0)
     for k in range(N):
         colsize[k] = len(val[k])
     return colsize, collist
@@ -295,7 +294,7 @@ def convert_to_equal_lists(cols, atype):
 
 
 def read_array(fileobject, separator=default, columns=default, comment="#",
-               lines=default, atype=Numeric.Float, linesep='\n',
+               lines=default, atype=numpy.Float, linesep='\n',
                rowsize=10000, missing=0):
     """Return an array or arrays from ascii_formatted data in |fileobject|.
 
@@ -353,11 +352,11 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
     # Intialize the output arrays
     outrange = range(numout)
     outarr = []
-    typecodes = "".join(Numeric.typecodes.values())
+    typecodes = "".join(numpy.typecodes.values())
     for k in outrange:
         if not atype[k] in typecodes:
             raise ValueError, "One of the array types is invalid, k=%d" % k
-        outarr.append(Numeric.zeros((rowsize, colsize[k]),atype[k]))
+        outarr.append(numpy.zeros((rowsize, colsize[k]),atype[k]))
     row = 0
     block_row = 0
     _not_warned = 1
@@ -378,7 +377,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
             outarr[k].resize((row,colsize[k]))
         a = outarr[k]            
         if a.shape[0] == 1 or a.shape[1] == 1:
-            outarr[k] = Numeric.ravel(a)
+            outarr[k] = numpy.ravel(a)
     if len(outarr) == 1:
         return outarr[0]
     else:
@@ -439,18 +438,18 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
       file -- The open file (if keep_open is non-zero)
     """
     file = get_open_file(fileobject, mode='wa')
-    rank = Numeric.rank(arr)
+    rank = numpy.rank(arr)
     if rank > 2:
         raise ValueError, "Can-only write up to 2-D arrays."
 
     if rank == 0:
         h = 1
-        arr = Numeric.reshape(arr, (1,1))
+        arr = numpy.reshape(arr, (1,1))
     elif rank == 1:
-        h = Numeric.shape(arr)[0]
-        arr = Numeric.reshape(arr, (h,1))
+        h = numpy.shape(arr)[0]
+        arr = numpy.reshape(arr, (h,1))
     else:
-        h = Numeric.shape(arr)[0]
+        h = numpy.shape(arr)[0]
         arr = asarray(arr)
 
     for ch in separator:
