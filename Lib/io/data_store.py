@@ -17,7 +17,6 @@
 
 __all__ = ['load', 'save', 'create_module', 'create_shelf']
 import dumb_shelve
-import string
 import os
 
 def load(module):
@@ -25,7 +24,7 @@ def load(module):
         the same name as the module.
     """
     dir,filename = os.path.split(module.__file__)
-    filebase = string.split(filename,'.')[0]
+    filebase = filename.split('.')[0]
     fn = os.path.join(dir, filebase)
     f = dumb_shelve.open(fn, "r")
     #exec( 'import ' + module.__name__)
@@ -57,7 +56,7 @@ def create_module(file_name):
 def create_shelf(file_name,data):
     """Use this to write the data to a new file
     """
-    shelf_name = string.split(file_name,'.')[0]
+    shelf_name = file_name.split('.')[0]
     f = dumb_shelve.open(shelf_name,'w')
     for i in data.keys():
 #       print 'saving...',i
