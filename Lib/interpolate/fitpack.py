@@ -32,7 +32,8 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
                          'spalde', 'bisplrep', 'bisplev']
 __version__ = "$Revision$"[10:-1]
 import _fitpack
-from numpy import *
+from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
+     matrixmultiply, sin, cos, pi, arange
 myasarray = atleast_1d
 
 _iermess = {0:["""\
