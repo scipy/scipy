@@ -14,8 +14,8 @@ function_catalog = catalog.catalog()
 class inline_ext_function(ext_tools.ext_function):
     # Some specialization is needed for inline extension functions
     def function_declaration_code(self):
-       code  = 'static PyObject* %s(PyObject*self, PyObject* args)\n{\n'
-       return code % self.name
+        code  = 'static PyObject* %s(PyObject*self, PyObject* args)\n{\n'
+        return code % self.name
 
     def template_declaration_code(self):
         code = 'template<class T>\n' \
@@ -99,7 +99,7 @@ class inline_ext_function(ext_tools.ext_function):
                       "{                                 \n" + \
                       "    return_val =  py::object();   \n"   \
                       "    exception_occured = 1;        \n"   \
-                      "}                                 \n"   
+                      "}                                 \n"
         return_code = "    /* cleanup code */                   \n" + \
                            cleanup_code                             + \
                       "    if(!(PyObject*)return_val && !exception_occured)\n"   \
@@ -156,8 +156,8 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
         code -- string. A string of valid C++ code.  It should not specify a
                 return statement.  Instead it should assign results that
                 need to be returned to Python in the return_val.
-        arg_names -- optional. list of strings. A list of Python variable names 
-                     that should be transferred from Python into the C/C++ 
+        arg_names -- optional. list of strings. A list of Python variable names
+                     that should be transferred from Python into the C/C++
                      code.  It defaults to an empty string.
         local_dict -- optional. dictionary. If specified, it is a dictionary
                       of values that should be used as the local scope for the
@@ -200,10 +200,10 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
                         function.  This could be declarations of functions,
                         classes, or structures.
         headers      -- optional. list of strings.  A list of strings specifying
-                        header files to use when compiling the code.  The list 
-                        might look like ["<vector>","'my_header'"].  Note that 
-                        the header strings need to be in a form than can be 
-                        pasted at the end of a #include statement in the 
+                        header files to use when compiling the code.  The list
+                        might look like ["<vector>","'my_header'"].  Note that
+                        the header strings need to be in a form than can be
+                        pasted at the end of a #include statement in the
                         C++ code.
         customize --   optional. base_info.custom_info object. An alternative
                        way to specify support_code, headers, etc. needed by
@@ -302,13 +302,13 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
         try:
             results = apply(function_cache[code],(local_dict,global_dict))
             return results
-        except TypeError, msg: 
+        except TypeError, msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
             else:
                 raise TypeError, msg
-        except NameError, msg: 
+        except NameError, msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
@@ -360,12 +360,12 @@ def attempt_function_call(code,local_dict,global_dict):
                 pass
             else:
                 raise TypeError, msg
-        except NameError, msg: 
+        except NameError, msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
             else:
-                raise NameError, msg                
+                raise NameError, msg
     # 3. try persistent catalog
     module_dir = global_dict.get('__file__',None)
     function_list = function_catalog.get_functions(code,module_dir)
@@ -427,7 +427,7 @@ def compile_function(code,arg_names,local_dict,global_dict,
     # add the extra "support code" needed by the function to the module.
     if support_code:
         mod.customize.add_support_code(support_code)
-    
+
     # add the extra headers needed by the function to the module.
     for header in headers:
         mod.customize.add_header(header)
@@ -435,7 +435,7 @@ def compile_function(code,arg_names,local_dict,global_dict,
     # it's nice to let the users know when anything gets compiled, as the
     # slowdown is very noticeable.
     print '<weave: compiling>'
-    
+
     # compile code in correct location, with the given compiler and verbosity
     # setting.  All input keywords are passed through to distutils
     mod.compile(location=storage_dir,compiler=compiler,

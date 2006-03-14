@@ -186,7 +186,7 @@ def hilbert(x,
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[n] = omega
-    overwrite_x = tmp is not x and not hasattr(x,'__array__')        
+    overwrite_x = tmp is not x and not hasattr(x,'__array__')
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
@@ -425,4 +425,3 @@ def shift(x, a, period=None,
                                overwrite_x=overwrite_x)
 
 del _cache
-

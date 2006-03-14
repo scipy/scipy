@@ -19,7 +19,7 @@ if test == 1:
     for i in xrange(n):
         I[i,i] = 1.0
     Keye = precon.jacobi(I)
-    
+
     k_conv, lmbd, Q, it, it_inner = jdsym.jdsym(A.to_sss(), M.to_sss(), None, 5, sigma, 1e-10, 15, itsolvers.qmrs,
                                                 jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=200, clvl=1, strategy=1)
 
@@ -27,13 +27,13 @@ if test == 1:
                                                  jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=200, clvl=1, strategy=1)
 
 elif test == 2:
-    
+
     # Test 2: K = diag(A - sigma*M), test diagonal prec using Matlab
 
     Asigma = A.copy()
     Asigma.shift(-sigma, M)
     K = precon.jacobi(Asigma.to_sss())
-    
+
     b = numpy.ones(n, 'd')
     x = numpy.zeros(n, 'd')
     K.precon(b, x)
@@ -43,15 +43,15 @@ elif test == 2:
                                        jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=200, clvl=1, strategy=1)
 
 elif test == 3:
-    
+
     Asigma = A.copy()
     Asigma.shift(-sigma, M)
     K = precon.ssor(Asigma.to_sss())
     k_conv, lmbd, Q, it, it_inner  = jdsym.jdsym(A.to_sss(), M.to_sss(), K, 5, sigma, 1e-10, 150, itsolvers.qmrs,
                                        jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=200, clvl=1, strategy=1)
-    
+
 elif test == 4:
-    
+
     Asigma = A.copy()
     Asigma.shift(-sigma, M)
     K = precon.jacobi(Asigma.to_sss())
@@ -68,15 +68,15 @@ elif test == 5:
     M = spmatrix.ll_mat_from_mtx(path + 'cop18_el5_M.mtx')
     n = A.shape[0]
     sigma = 1.4
-    
+
     Asigma = A.copy()
     Asigma.shift(-sigma, M)
     K = precon.jacobi(Asigma.to_sss())
-    
+
     k_conv, lmbd, Q, it, it_inner  = jdsym.jdsym(A.to_sss(), M.to_sss(), K, 1, sigma, 1e-6, 150, itsolvers.qmrs,
                                        jmin=5, jmax=10, eps_tr=1e-4, toldecay=2.0, linitmax=1000, clvl=1,
                                        strategy=1)
-    
+
     print k_conv, lmbd, it, it_inner
 
 elif test == 6:
@@ -110,4 +110,3 @@ elif test == 6:
                                        strategy=1)
 
     print k_conv, lmbd, it, it_inner
-

@@ -159,7 +159,7 @@ class test_cephes(ScipyTestCase):
 
     def check_fresnel(self):
         assert_equal(cephes.fresnel(0),(0.0,0.0))
-        
+
     def check_gamma(self):
         assert_equal(cephes.gamma(5),24.0)
     def check_gammainc(self):
@@ -386,7 +386,7 @@ class test_cephes(ScipyTestCase):
     def _check_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
     def check_pro_rad1(self):
-        cephes.pro_rad1(1,1,1,0.1) 
+        cephes.pro_rad1(1,1,1,0.1)
     def check_pro_rad1_cv(self):
         cephes.pro_rad1_cv(1,1,1,1,0)
     def check_pro_rad2(self):
@@ -524,7 +524,7 @@ class test_assoc_laguerre(ScipyTestCase):
         a2 = assoc_laguerre(.2,11,1)
         assert_array_almost_equal(a2,a1(.2),8)
         a2 = assoc_laguerre(1,11,1)
-        assert_array_almost_equal(a2,a1(1),8)	
+        assert_array_almost_equal(a2,a1(1),8)
 
 class test_besselpoly(ScipyTestCase):
 
@@ -570,13 +570,13 @@ class test_bei_zeros(ScipyTestCase):
                                                -5.512395729663599,
                                                -6.781294445990305,
                                                -7.940178689168587]),10)
-        
+
         assert_array_almost_equal(bi[2],array([-0.454944383639657,
                                                0.396522836094465,
                                                -0.367969161486959,
                                                0.349499116831805,
                                                -0.336026240133662]),11)
-        
+
         assert_array_almost_equal(bi[3],array([0.601957887976239,
                                                -0.760310141492801,
                                                0.836991012619261,
@@ -681,7 +681,7 @@ class test_chebys(ScipyTestCase):
 
     def check_chebys(self):
         S0 = chebys(0)
-        S1 = chebys(1)        
+        S1 = chebys(1)
         S2 = chebys(2)
         S3 = chebys(3)
         S4 = chebys(4)
@@ -697,7 +697,7 @@ class test_chebyt(ScipyTestCase):
 
     def check_chebyt(self):
         T0 = chebyt(0)
-        T1 = chebyt(1)        
+        T1 = chebyt(1)
         T2 = chebyt(2)
         T3 = chebyt(3)
         T4 = chebyt(4)
@@ -713,7 +713,7 @@ class test_chebyu(ScipyTestCase):
 
     def check_chebyu(self):
         U0 = chebyu(0)
-        U1 = chebyu(1)        
+        U1 = chebyu(1)
         U2 = chebyu(2)
         U3 = chebyu(3)
         U4 = chebyu(4)
@@ -834,7 +834,7 @@ class test_ellipeinc(ScipyTestCase):
         m = sin(alpha)**2
         eleinc = ellipeinc(phi,m)
         assert_almost_equal(eleinc, 0.58823065, 8)
-        
+
 
 class test_erf(ScipyTestCase):
 
@@ -870,7 +870,7 @@ class test_errprint(ScipyTestCase):
     def check_errprint(self):
         a = errprint()
         b = 1-a #a is the state 1-a inverts state
-        c = errprint(b) #returns last state 'a' 
+        c = errprint(b) #returns last state 'a'
         assert_equal(a,c)
         d = errprint(a) #returns to original state
         assert_equal(d,b) #makes sure state was returned
@@ -880,7 +880,7 @@ class test_euler(ScipyTestCase):
 
     def check_euler(self):
         eu0 = euler(0)
-        eu1 = euler(1)  
+        eu1 = euler(1)
         eu2 = euler(2)   # just checking segfaults
         assert_almost_equal(eu0[0],1,8)
         assert_almost_equal(eu2[2],-1,8)
@@ -944,7 +944,7 @@ class test_fresnel(ScipyTestCase):
 class test_fresnel_zeros(ScipyTestCase):
 
     # values from pg 329  Table 7.11 of A & S
-    #  slightly corrected in 4th decimal place 
+    #  slightly corrected in 4th decimal place
     def check_fresnel_zeros(self):
         szo, czo = fresnel_zeros(5)
         assert_array_almost_equal(szo,
@@ -963,7 +963,7 @@ class test_fresnel_zeros(ScipyTestCase):
         vals2 = fresnel(czo)[1]
         assert_array_almost_equal(vals1,0,14)
         assert_array_almost_equal(vals2,0,14)
-        
+
     def check_fresnelc_zeros(self):
         szo, czo = fresnel_zeros(6)
         frc = fresnelc_zeros(6)
@@ -1048,7 +1048,7 @@ class test_hermite(ScipyTestCase):
 
     def check_hermite(self):
         H0 = hermite(0)
-        H1 = hermite(1)        
+        H1 = hermite(1)
         H2 = hermite(2)
         H3 = hermite(3)
         H4 = hermite(4)
@@ -1064,7 +1064,7 @@ class test_hermite(ScipyTestCase):
         # He_n(x) = 2**(-n/2) H_n(x/sqrt(2))
         psub = poly1d([1.0/sqrt(2),0])
         H0 = hermitenorm(0)
-        H1 = hermitenorm(1)        
+        H1 = hermitenorm(1)
         H2 = hermitenorm(2)
         H3 = hermitenorm(3)
         H4 = hermitenorm(4)
@@ -1084,7 +1084,7 @@ class test_hermite(ScipyTestCase):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 _gam = cephes.gamma
-    
+
 class test_gegenbauer(ScipyTestCase):
 
     def check_gegenbauer(self):
@@ -1107,12 +1107,12 @@ class test_gegenbauer(ScipyTestCase):
                                                0,3*a*(a+1)])/6.0,11)
         assert_array_almost_equal(Ca5.c,array([4*poch(a,5),0,-20*poch(a,4),
                                                0,15*poch(a,3),0])/15.0,11)
-        
+
 
 class test_h1vp(ScipyTestCase):
 
     def check_h1vp(self):
-        
+
         h1 = h1vp(1,.1)
         h1real = (jvp(1,.1)+yvp(1,.1)*1j)
         assert_almost_equal(h1,h1real,8)
@@ -1269,7 +1269,7 @@ class test_jacobi(ScipyTestCase):
         P1 = jacobi(1,a,b)
         P2 = jacobi(2,a,b)
         P3 = jacobi(3,a,b)
-        
+
         assert_array_almost_equal(P0.c,[1],13)
         assert_array_almost_equal(P1.c,array([a+b+2,a-b])/2.0,13)
         cp = [(a+b+3)*(a+b+4), 4*(a+b+3)*(a+2), 4*(a+1)*(a+2)]
@@ -1278,8 +1278,8 @@ class test_jacobi(ScipyTestCase):
         cp = [(a+b+4)*(a+b+5)*(a+b+6),6*(a+b+4)*(a+b+5)*(a+3),
               12*(a+b+4)*(a+2)*(a+3),8*(a+1)*(a+2)*(a+3)]
         p3c = [cp[0],cp[1]-3*cp[0],cp[2]-2*cp[1]+3*cp[0],cp[3]-cp[2]+cp[1]-cp[0]]
-        assert_array_almost_equal(P3.c,array(p3c)/48.0,13)        
-        
+        assert_array_almost_equal(P3.c,array(p3c)/48.0,13)
+
 
 class test_jn(ScipyTestCase):
 
@@ -1332,7 +1332,7 @@ class test_jnp_zeros(ScipyTestCase):
 
     def check_jnp_zeros(self):
         jnp = jnp_zeros(1,5)
-        assert_array_almost_equal(jnp, array([	1.84118,
+        assert_array_almost_equal(jnp, array([  1.84118,
                                                 5.33144,
                                                 8.53632,
                                                 11.70600,
@@ -1342,22 +1342,22 @@ class test_jnyn_zeros(ScipyTestCase):
 
     def check_jnyn_zeros(self):
         jnz = jnyn_zeros(1,5)
-        assert_array_almost_equal(jnz,(array([	3.83171,
+        assert_array_almost_equal(jnz,(array([  3.83171,
                                                 7.01559,
                                                 10.17347,
                                                 13.32369,
                                                 16.47063]),
-                                       array([	1.84118,
+                                       array([  1.84118,
                                                 5.33144,
                                                 8.53632,
                                                 11.70600,
                                                 14.86359]),
-                                       array([	2.19714,
+                                       array([  2.19714,
                                                 5.42968,
                                                 8.59601,
                                                 11.74915,
                                                 14.89744]),
-                                       array([	3.68302,
+                                       array([  3.68302,
                                                 6.94150,
                                                 10.12340,
                                                 13.28576,
@@ -1445,7 +1445,7 @@ class test_keip_zeros(ScipyTestCase):
 
     def check_keip_zeros(self):
         keip = keip_zeros(5)
-        assert_array_almost_equal(keip,array([	4.93181,
+        assert_array_almost_equal(keip,array([  4.93181,
                                                 9.40405,
                                                 13.85827,
                                                 18.30717,
@@ -1455,7 +1455,7 @@ class test_keip_zeros(ScipyTestCase):
 
 class test_kelvin_zeros(ScipyTestCase):
 
-    # numbers come from 9.9 of A&S pg. 381 
+    # numbers come from 9.9 of A&S pg. 381
     def check_kelvin_zeros(self):
         tmp = kelvin_zeros(5)
         berz,beiz,kerz,keiz,berpz,beipz,kerpz,keipz = tmp
@@ -1491,17 +1491,17 @@ class test_kelvin_zeros(ScipyTestCase):
                                                 12.74215,
                                                 17.19343,
                                                 21.64114]),4)
-        assert_array_almost_equal(kerpz,array([	2.66584,
+        assert_array_almost_equal(kerpz,array([ 2.66584,
                                                 7.17212,
                                                 11.63218,
                                                 16.08312,
                                                 20.53068]),4)
-        assert_array_almost_equal(keipz,array([	4.93181,
+        assert_array_almost_equal(keipz,array([ 4.93181,
                                                 9.40405,
                                                 13.85827,
                                                 18.30717,
                                                 22.75379]),4)
-        
+
 class test_ker_zeros(ScipyTestCase):
 
     def check_ker_zeros(self):
@@ -1550,7 +1550,7 @@ class test_kvp(ScipyTestCase):
     def check_kvp(self):
         kvprim = kvp(1,2)
         kvprimrl = (kv(0,2) - kv(2,2))/2
-        assert_almost_equal(kvprim,kvprimrl,4)	 #this function (kvp) is broken
+        assert_almost_equal(kvprim,kvprimrl,4)   #this function (kvp) is broken
 
 class test_laguerre(ScipyTestCase):
 
@@ -1578,7 +1578,7 @@ class test_laguerre(ScipyTestCase):
         assert_equal(lag1.c,[-1,k+1])
         assert_almost_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
         assert_almost_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
-        
+
 
 # Base polynomials come from Abrahmowitz and Stegan
 class test_legendre(ScipyTestCase):
@@ -1623,10 +1623,10 @@ class test_lpmn(ScipyTestCase):
     def check_lpmn(self):
 
         lp = lpmn(0,2,.5)
-        assert_array_almost_equal(lp,(array([	    [ 1.00000 ,
+        assert_array_almost_equal(lp,(array([       [ 1.00000 ,
                                                       0.50000,
                                                       -0.12500]]),
-                                      array([	    [ 0.00000 ,
+                                      array([       [ 0.00000 ,
                                                       1.00000 ,
                                                       1.50000]])),4)
 
@@ -1637,7 +1637,7 @@ class test_lpn(ScipyTestCase):
         assert_array_almost_equal(lpnf,(array(      [ 1.00000 ,
                                                         0.50000,
                                                         -0.12500]),
-                                      array(	    [ 0.00000 ,
+                                      array(        [ 0.00000 ,
                                                       1.00000 ,
                                                       1.50000])),4)
 
@@ -1656,7 +1656,7 @@ class test_lqmn(ScipyTestCase):
         assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
         assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
 
-                
+
 
 
 class test_lqn(ScipyTestCase):
@@ -1664,7 +1664,7 @@ class test_lqn(ScipyTestCase):
     def check_lqn(self):
         lqf = lqn(2,.5)
         assert_array_almost_equal(lqf,(array([ 0.5493, -0.7253, -0.8187]),
-                                       array([ 1.3333,	1.216 , -0.8427])),4)
+                                       array([ 1.3333,  1.216 , -0.8427])),4)
 
 class test_mathieu_a(ScipyTestCase):
 
@@ -1801,9 +1801,9 @@ class test_round(ScipyTestCase):
     def check_round(self):
         rnd = map(int,(round(10.1),round(10.4),round(10.5),round(10.6)))
 
-        # Note: According to the documentation, scipy.special.round is 
+        # Note: According to the documentation, scipy.special.round is
         # supposed to round to the nearest even number if the fractional
-        # part is exactly 0.5. On some platforms, this does not appear 
+        # part is exactly 0.5. On some platforms, this does not appear
         # to work and thus this test may fail. However, this unit test is
         # correctly written.
         rndrl = (10,10,10,11)
@@ -1815,7 +1815,7 @@ class _test_sh_legendre(ScipyTestCase):
         # P*_n(x) = P_n(2x-1)
         psub = poly1d([2,-1])
         Ps0 = sh_legendre(0)
-        Ps1 = sh_legendre(1)        
+        Ps1 = sh_legendre(1)
         Ps2 = sh_legendre(2)
         Ps3 = sh_legendre(3)
         Ps4 = sh_legendre(4)
@@ -1832,14 +1832,14 @@ class _test_sh_legendre(ScipyTestCase):
         assert_array_almost_equal(Ps3.c,pse3.c,13)
         assert_array_almost_equal(Ps4.c,pse4.c,12)
         assert_array_almost_equal(Ps5.c,pse5.c,12)
-        
+
 class _test_sh_chebyt(ScipyTestCase):
 
     def check_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
         psub = poly1d([2,-1])
         Ts0 = sh_chebyt(0)
-        Ts1 = sh_chebyt(1)        
+        Ts1 = sh_chebyt(1)
         Ts2 = sh_chebyt(2)
         Ts3 = sh_chebyt(3)
         Ts4 = sh_chebyt(4)
@@ -1856,7 +1856,7 @@ class _test_sh_chebyt(ScipyTestCase):
         assert_array_almost_equal(Ts3.c,tse3.c,13)
         assert_array_almost_equal(Ts4.c,tse4.c,12)
         assert_array_almost_equal(Ts5.c,tse5.c,12)
-        
+
 
 class _test_sh_chebyu(ScipyTestCase):
 
@@ -1864,7 +1864,7 @@ class _test_sh_chebyu(ScipyTestCase):
         # U*_n(x) = U_n(2x-1)
         psub = poly1d([2,-1])
         Us0 = sh_chebyu(0)
-        Us1 = sh_chebyu(1)        
+        Us1 = sh_chebyu(1)
         Us2 = sh_chebyu(2)
         Us3 = sh_chebyu(3)
         Us4 = sh_chebyu(4)
@@ -1892,7 +1892,7 @@ class _test_sh_jacobi(ScipyTestCase):
         p = q-1 + 2*rand()
         print "shifted jacobi p,q = ", p, q
         G0 = sh_jacobi(0,p,q)
-        G1 = sh_jacobi(1,p,q)        
+        G1 = sh_jacobi(1,p,q)
         G2 = sh_jacobi(2,p,q)
         G3 = sh_jacobi(3,p,q)
         G4 = sh_jacobi(4,p,q)
@@ -1910,7 +1910,7 @@ class _test_sh_jacobi(ScipyTestCase):
         assert_array_almost_equal(G3.c,ge3.c,13)
         assert_array_almost_equal(G4.c,ge4.c,13)
         assert_array_almost_equal(G5.c,ge5.c,13)
-        
+
 
 class test_sinc(ScipyTestCase):
 
@@ -2061,14 +2061,14 @@ class test_y0_zeros(ScipyTestCase):
         allval = r_[ypo,zpo]
         assert_array_almost_equal(abs(yv(0.0,all)),0.0,11)
         assert_array_almost_equal(abs(yv(1,all)-allval),0.0,11)
-                                         
+
 
 class test_y1_zeros(ScipyTestCase):
 
     def check_y1_zeros(self):
         y1 = y1_zeros(1)
         assert_array_almost_equal(y1,(array([2.19714]),array([0.52079])),5)
-        
+
 class test_y1p_zeros(ScipyTestCase):
 
     def check_y1p_zeros(self):

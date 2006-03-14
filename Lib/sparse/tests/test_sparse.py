@@ -102,24 +102,24 @@ class _test_cs(ScipyTestCase):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         col = matrix([1,2,3]).T
         assert_array_almost_equal(M * col, M.todense() * col)
-        
+
         # Should this be supported or not?!
         #flat = array([1,2,3])
         #assert_array_almost_equal(M*flat, M.todense()*flat)
         # Currently numpy dense matrices promote the result to a 1x3 matrix,
         # whereas sparse matrices leave the result as a rank-1 array.  Which
         # is preferable?
-        
+
         # Note: the following command does not work.  Both NumPy matrices
         # and spmatrices should raise exceptions!
         # assert_array_almost_equal(M*[1,2,3], M.todense()*[1,2,3])
-        
+
         # The current relationship between sparse matrix products and array
         # products is as follows:
         assert_array_almost_equal(M*array([1,2,3]), dot(M.A,[1,2,3]))
         assert_array_almost_equal(M*[[1],[2],[3]], asmatrix(dot(M.A,[1,2,3])).T)
         # Note that the result of M * x is dense if x has a singleton dimension.
-        
+
         # Currently M.matvec(asarray(col)) is rank-1, whereas M.matvec(col)
         # is rank-2.  Is this desirable?
 
@@ -135,16 +135,16 @@ class _test_cs(ScipyTestCase):
         # of the multiplication, calling numpy.dot(), which fouls up
         # our sparse matrix.  NumPy needs special hooks for this.
         # assert_array_almost_equal((a*bsp).todense(), a*b)
-        
+
         assert_array_almost_equal((a2*bsp).todense(), a*b)
-        
+
         # Now try performing cross-type multplication:
         csp = bsp.tocsc()
         c = b
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal((asp*c).todense(), a*c)
-        
+
         # NumPy needs hooks to support this too:
         # assert_array_almost_equal((a*csp).todense(), a*c)
         assert_array_almost_equal((a2*csp).todense(), a*c)
@@ -152,7 +152,7 @@ class _test_cs(ScipyTestCase):
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal((asp*c).todense(), a*c)
-        
+
         # NumPy needs hooks to support this too:
         # assert_array_almost_equal((a*csp).todense(), a*c)
         assert_array_almost_equal((a2*csp).todense(), a*c)
@@ -160,10 +160,10 @@ class _test_cs(ScipyTestCase):
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal((asp*c).todense(), a*c)
-        
+
         # NumPy needs hooks to support this too:
         # assert_array_almost_equal((a*csp).todense(), a*c)
-        
+
         assert_array_almost_equal((a2*csp).todense(), a*c)
 
     def check_tocoo(self):
@@ -250,8 +250,8 @@ class _test_cs(ScipyTestCase):
         for i in range(len(x)):
             A[i,i] = x[i]
         for i in range(len(y)):
-           A[i,i+1] = y[i]
-           A[i+1,i] = numpy.conjugate(y[i])
+            A[i,i+1] = y[i]
+            A[i+1,i] = numpy.conjugate(y[i])
         B = A.tocsc()
         xx = lu_factor(B).solve(r)
         # Don't actually test the output until we know what it should be ...
@@ -266,7 +266,7 @@ class _test_fancy_indexing(ScipyTestCase):
     #    A = self.spmatrix(B)
     #    assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
     #    assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
-    
+
     def check_get_slice(self):
         """Test for new slice functionality (EJS)"""
         B = asmatrix(arange(50.).reshape(5,10))
@@ -275,9 +275,9 @@ class _test_fancy_indexing(ScipyTestCase):
         assert_array_equal(B[:,1], A[:,1].todense())
         assert_array_equal(B[1,:], A[1,:].todense())
         # Both slicing and fancy indexing: not yet supported
-        # assert_array_equal(B[(1,2),:], A[(1,2),:].todense())  
+        # assert_array_equal(B[(1,2),:], A[(1,2),:].todense())
         # assert_array_equal(B[(1,2,3),:], A[(1,2,3),:].todense())
-        
+
         # The following commands should all raise exceptions:
         caught = 0
         try:
@@ -356,7 +356,7 @@ class _test_fancy_indexing(ScipyTestCase):
         except IndexError:
             caught += 1
         assert caught == 6
-    
+
     def check_advanced_indexing(self):
         """Test for new indexing functionality (EJS)"""
         B = ones((5,10), float)
@@ -387,7 +387,7 @@ class test_csr(_test_cs):
         assert_array_equal(bsp.colind,[4])
         assert_array_equal(bsp.indptr,[0,0,0,0,1,1,1])
         assert_array_almost_equal(bsp.todense(),b)
-        
+
     def check_constructor3(self):
         b = matrix([[1,0],
                    [0,2],
@@ -409,7 +409,7 @@ class test_csc(_test_cs):
         assert_array_equal(bsp.indptr,[0,2,3,4])
         assert_equal(bsp.getnnz(),4)
         assert_equal(bsp.getformat(),'csc')
-        
+
     def check_constructor2(self):
         b = zeros((6,6),'d')
         b[2,4] = 5
@@ -427,7 +427,7 @@ class test_csc(_test_cs):
 
 class test_dok(_test_cs, _test_fancy_indexing):
     spmatrix = dok_matrix
-    
+
     def check_mult(self):
         A = dok_matrix((10,10))
         A[0,3] = 10
@@ -435,7 +435,7 @@ class test_dok(_test_cs, _test_fancy_indexing):
         D = A*A.T
         E = A*A.H
         assert_array_equal(D.A, E.A)
-    
+
     def check_add(self):
         A = dok_matrix((3,2))
         A[0,1] = -10
@@ -449,7 +449,7 @@ class test_dok(_test_cs, _test_fancy_indexing):
         """
         (m, n) = (6, 7)
         a=dok_matrix((m, n))
-        
+
         # set a few elements, but none in the last column
         a[2,1]=1
         a[0,2]=2
@@ -457,10 +457,10 @@ class test_dok(_test_cs, _test_fancy_indexing):
         a[1,5]=4
         a[4,3]=5
         a[4,2]=6
-        
+
         # assert that the last column is all zeros
         assert_array_equal( a.toarray()[:,n-1], zeros(m,) )
-        
+
         # make sure it still works for CSC format
         csc=a.tocsc()
         assert_array_equal( csc.toarray()[:,n-1], zeros(m,) )
@@ -482,7 +482,7 @@ class test_lil(_test_cs, _test_fancy_indexing):
         A = matrix(zeros((10,10)))
         A[0,3] = 10
         A[5,6] = 20
-        
+
         B = lil_matrix((10,10))
         B[0,3] = 10
         B[5,6] = 20

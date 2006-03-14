@@ -23,7 +23,7 @@ class test_sparray(unittest.TestCase):
         self.assertEqual(a[3,3], a[18])
         a[:,3] = (1,2,3,4,5)
         self.assertEqual(a[3,3], 4)
-        
+
     def testgetitem(self):
         a = sparray((5,5))
         a[:,3] = (1,2,3,4,5)
@@ -31,12 +31,11 @@ class test_sparray(unittest.TestCase):
         a[3,3] = 7
         self.assertEqual(a[3,3], 7)
         self.assertEqual(a[3,:], map(float, (0,0,0,7,0)))
-    
- 
+
+
 
 
 if __name__=='__main__':
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(test_sparray))
     unittest.TextTestRunner(verbosity=2).run(suite)
-

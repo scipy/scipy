@@ -53,7 +53,7 @@ def _logsumexpcomplex(values):
             return float('-inf')
         if b_i.real != float('-inf'):
             break
-    
+
     # Now the rest
     for a_i in iterator:
         a_i += 0j
@@ -65,9 +65,9 @@ def _logsumexpcomplex(values):
             increment = robustlog(1.+cmath.exp(b_i - a_i))
             # print "Increment is " + str(increment)
             b_i = a_i + increment
-            
+
     return b_i
-    
+
 
 def logsumexp_naive(values):
     """For testing logsumexp().  Subject to numerical overflow for large
@@ -133,7 +133,7 @@ def arrayexp(x):
         for j in range(len(x)):
             ex[j] = math.exp(x[j])
     return ex
- 
+
 def arrayexpcomplex(x):
     """Returns the elementwise antilog of the vector x.  We try to
     exponentiate with numpy.exp() and, if that fails, with python's
@@ -155,7 +155,7 @@ def arrayexpcomplex(x):
             for j in range(len(x)):
                 ex[j] = cmath.exp(x[j]).real
     return ex
- 
+
 
 def sample_wr(population, k):
     """Chooses k random elements (with replacement) from a population.
@@ -170,7 +170,7 @@ def densefeatures(f, x):
     """Returns a dense array of non-zero evaluations of the functions fi
     in the list f at the point x.
     """
-    
+
     return numpy.array([fi(x) for fi in f])
 
 def densefeaturematrix(f, sample):
@@ -178,12 +178,12 @@ def densefeaturematrix(f, sample):
     scalar functions fi in the list f at the points x_1,...,x_n in the
     list sample.
     """
-    
+
     # Was: return numpy.array([[fi(x) for fi in f] for x in sample])
 
     m = len(f)
     n = len(sample)
-    
+
     F = numpy.empty((m, n), float)
     for i in xrange(m):
         f_i = f[i]
@@ -195,7 +195,7 @@ def densefeaturematrix(f, sample):
      #   x = sample[j]
      #   for i in xrange(m):
      #       F[j,i] = f[i](x)
-            
+
     return F
 
 
@@ -214,12 +214,12 @@ def sparsefeatures(f, x, format='csc_matrix'):
         sparsef = spmatrix.ll_mat(m, 1)
     elif format in ('dok_matrix', 'csc_matrix', 'csr_matrix'):
         sparsef = sparse.dok_matrix((m, 1))
-    
+
     for i in xrange(m):
         f_i_x = f[i](x)
         if f_i_x != 0:
             sparsef[i, 0] = f_i_x
-    
+
     if format == 'csc_matrix':
         print "Converting to CSC matrix ..."
         return sparsef.tocsc()
@@ -233,7 +233,7 @@ def sparsefeaturematrix(f, sample, format='csc_matrix'):
     """Returns an (m x n) sparse matrix of non-zero evaluations of the scalar
     or vector functions f_1,...,f_m in the list f at the points
     x_1,...,x_n in the sequence 'sample'.
-    
+
     If format='ll_mat', the PySparse module (or a symlink to it) must be
     available in the Python site-packages/ directory.  A trimmed-down
     version, patched for NumPy compatibility, is available in the SciPy
@@ -249,7 +249,7 @@ def sparsefeaturematrix(f, sample, format='csc_matrix'):
         sparseF = sparse.dok_matrix((m, n))
     else:
         raise ValueError, "sparse matrix format not recognized"
-    
+
     for i in xrange(m):
         f_i = f[i]
         for j in xrange(n):
@@ -257,7 +257,7 @@ def sparsefeaturematrix(f, sample, format='csc_matrix'):
             f_i_x = f_i(x)
             if f_i_x != 0:
                 sparseF[i,j] = f_i_x
-    
+
     if format == 'csc_matrix':
         return sparseF.tocsc()
     elif format == 'csr_matrix':
@@ -271,18 +271,18 @@ def dotprod(u,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
-    
-    Returns the dot product of the (1 x m) sparse array u with the 
+
+    Returns the dot product of the (1 x m) sparse array u with the
     (m x 1) (dense) numpy array v.
     """
     #print "Taking the dot product u.v, where"
     #print "u has shape " + str(u.shape)
     #print "v = " + str(v)
-    
+
     try:
         dotprod = numpy.array([0.0])  # a 1x1 array.  Required by spmatrix.
         u.matvec(v, dotprod)
-        return dotprod[0]		# extract the scalar
+        return dotprod[0]               # extract the scalar
     except AttributeError:
         # Assume u is a dense array.
         return numpy.dot(u,v)
@@ -293,13 +293,13 @@ def innerprod(A,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
-    
+
     Returns the inner product of the (m x n) dense or sparse matrix A
     with the n-element dense array v.  This is a wrapper for A.dot(v) for
     dense arrays and spmatrix objects, and for A.matvec(v, result) for
     PySparse matrices.
     """
-    
+
     # We assume A is sparse.
     (m, n) = A.shape
     vshape = v.shape
@@ -339,7 +339,7 @@ def innerprodtranspose(A,v):
     """This is a wrapper around general dense or sparse dot products.
     It is not necessary except as a common interface for supporting
     ndarray, scipy spmatrix, and PySparse arrays.
-    
+
     Computes A^T V, where A is a dense or sparse matrix and V is a numpy
     array.  If A is sparse, V must be a rank-1 array, not a matrix.  This
     function is efficient for large matrices A.  This is a wrapper for
@@ -394,7 +394,7 @@ def rowmeans(A):
 
     Returns a dense (m x 1) vector representing the mean of the rows of A,
     which be an (m x n) sparse or dense matrix.
-    
+
     >>> a = numpy.array([[1,2],[3,4]], float)
     >>> rowmeans(a)
     array([ 1.5,  3.5])
@@ -418,7 +418,7 @@ def columnmeans(A):
 
     Returns a dense (1 x n) vector with the column averages of A, which can
     be an (m x n) sparse or dense matrix.
-    
+
     >>> a = numpy.array([[1,2],[3,4]],'d')
     >>> columnmeans(a)
     array([ 2.,  3.])
@@ -443,7 +443,7 @@ def columnvariances(A):
     Returns a dense (1 x n) vector with unbiased estimators for the column
     variances for each column of the (m x n) sparse or dense matrix A.  (The
     normalization is by (m - 1).)
-    
+
     >>> a = numpy.array([[1,2], [3,4]], 'd')
     >>> columnvariances(a)
     array([ 2.,  2.])
@@ -470,14 +470,13 @@ class DivergenceError(Exception):
     def __init__(self, message):
         self.message = message
         Exception.__init__(self)
-        
+
     def __str__(self):
         return repr(self.message)
-    
+
 def _test():
     import doctest
     doctest.testmod()
 
 if __name__ == "__main__":
     _test()
-

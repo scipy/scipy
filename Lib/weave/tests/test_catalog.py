@@ -22,10 +22,10 @@ class test_default_dir(ScipyTestCase):
             test_file.close()
             os.remove(name)
 
-class test_os_dependent_catalog_name(ScipyTestCase):        
+class test_os_dependent_catalog_name(ScipyTestCase):
     pass
-    
-class test_catalog_path(ScipyTestCase):        
+
+class test_catalog_path(ScipyTestCase):
     def check_default(self):
         in_path = catalog.default_dir()
         path = catalog.catalog_path(in_path)
@@ -36,14 +36,14 @@ class test_catalog_path(ScipyTestCase):
         in_path = '.'
         path = catalog.catalog_path(in_path)
         d,f = os.path.split(path)
-        assert(d == os.path.abspath(in_path))     
-        assert(f == catalog.os_dependent_catalog_name())   
+        assert(d == os.path.abspath(in_path))
+        assert(f == catalog.os_dependent_catalog_name())
     def check_user(path):
         if sys.platform != 'win32':
             in_path = '~'
             path = catalog.catalog_path(in_path)
             d,f = os.path.split(path)
-            assert(d == os.path.expanduser(in_path))        
+            assert(d == os.path.expanduser(in_path))
             assert(f == catalog.os_dependent_catalog_name())
     def check_module(self):
         # hand it a module and see if it uses the parent directory
@@ -77,7 +77,7 @@ class test_get_catalog(ScipyTestCase):
         pardir = tempfile.mktemp(suffix='cat_test')
         if not os.path.exists(pardir):
             os.mkdir(pardir)
-        cat_glob = os.path.join(pardir,catalog.os_dependent_catalog_name()+'.*')    
+        cat_glob = os.path.join(pardir,catalog.os_dependent_catalog_name()+'.*')
         cat_files = glob.glob(cat_glob)
         if erase:
             for cat_file in cat_files:
@@ -86,7 +86,7 @@ class test_get_catalog(ScipyTestCase):
     def remove_dir(self,d):
         import distutils.dir_util
         distutils.dir_util.remove_tree(d)
-            
+
     def check_nonexistent_catalog_is_none(self):
         pardir = self.get_test_dir(erase=1)
         cat = catalog.get_catalog(pardir,'r')
@@ -104,17 +104,17 @@ class test_catalog(ScipyTestCase):
         if os.environ.has_key('PYTHONCOMPILED'):
             self.old_PYTHONCOMPILED = os.environ['PYTHONCOMPILED']
             del os.environ['PYTHONCOMPILED']
-        else:    
+        else:
             self.old_PYTHONCOMPILED = None
     def reset_environ(self):
         if self.old_PYTHONCOMPILED:
             os.environ['PYTHONCOMPILED'] = self.old_PYTHONCOMPILED
             self.old_PYTHONCOMPILED = None
     def setUp(self):
-        self.clear_environ()        
+        self.clear_environ()
     def tearDown(self):
         self.reset_environ()
-    
+
     def check_set_module_directory(self):
         q = catalog.catalog()
         q.set_module_directory('bob')
@@ -132,31 +132,31 @@ class test_catalog(ScipyTestCase):
         else: sep = ':'
         os.environ['PYTHONCOMPILED'] = sep.join(('path1','path2','path3'))
         q = catalog.catalog()
-        path = q.get_environ_path()                
+        path = q.get_environ_path()
         assert(path == ['path1','path2','path3'])
-    def check_build_search_order1(self):        
+    def check_build_search_order1(self):
         """ MODULE in search path should be replaced by module_dir.
-        """                        
+        """
         q = catalog.catalog(['first','MODULE','third'])
         q.set_module_directory('second')
         order = q.build_search_order()
         assert(order == ['first','second','third',catalog.default_dir()])
-    def check_build_search_order2(self):        
+    def check_build_search_order2(self):
         """ MODULE in search path should be removed if module_dir==None.
-        """                        
+        """
         q = catalog.catalog(['first','MODULE','third'])
         order = q.build_search_order()
-        assert(order == ['first','third',catalog.default_dir()])        
+        assert(order == ['first','third',catalog.default_dir()])
     def check_build_search_order3(self):
         """ If MODULE is absent, module_dir shouldn't be in search path.
-        """                        
+        """
         q = catalog.catalog(['first','second'])
         q.set_module_directory('third')
         order = q.build_search_order()
         assert(order == ['first','second',catalog.default_dir()])
     def check_build_search_order4(self):
         """ Make sure environment variable is getting used.
-        """                        
+        """
         q = catalog.catalog(['first','second'])
         if sys.platform == 'win32': sep = ';'
         else: sep = ':'
@@ -164,7 +164,7 @@ class test_catalog(ScipyTestCase):
         q.set_module_directory('third')
         order = q.build_search_order()
         assert(order == ['first','second','third','fourth','fifth',catalog.default_dir()])
-    
+
     def check_catalog_files1(self):
         """ Be sure we get at least one file even without specifying the path.
         """
@@ -179,10 +179,10 @@ class test_catalog(ScipyTestCase):
         os.environ['PYTHONCOMPILED'] = '_some_bad_path_'
         files = q.get_catalog_files()
         assert(len(files) == 1)
-    
+
     def check_get_existing_files1(self):
-        """ Shouldn't get any files when temp doesn't exist and no path set.            
-        """ 
+        """ Shouldn't get any files when temp doesn't exist and no path set.
+        """
         clear_temp_catalog()
         q = catalog.catalog()
         files = q.get_existing_files()
@@ -190,18 +190,18 @@ class test_catalog(ScipyTestCase):
         assert(len(files) == 0)
     def check_get_existing_files2(self):
         """ Shouldn't get a single file from the temp dir.
-        """ 
+        """
         clear_temp_catalog()
         q = catalog.catalog()
         # create a dummy file
-        import os 
+        import os
         q.add_function('code', os.getpid)
         del q
         q = catalog.catalog()
         files = q.get_existing_files()
         restore_temp_catalog()
         assert(len(files) == 1)
-                       
+
     def check_access_writable_file(self):
         """ There should always be a writable file -- even if it is in temp
         """
@@ -212,13 +212,13 @@ class test_catalog(ScipyTestCase):
             f.write('bob')
         finally:
             f.close()
-            os.remove(file)                
+            os.remove(file)
     def check_writable_with_bad_path(self):
         """ There should always be a writable file -- even if search paths contain
             bad values.
         """
         if sys.platform == 'win32': sep = ';'
-        else: sep = ':'        
+        else: sep = ':'
         os.environ['PYTHONCOMPILED'] = sep.join(('_bad_path_name_'))
         q = catalog.catalog()
         file = q.get_writable_file()
@@ -227,7 +227,7 @@ class test_catalog(ScipyTestCase):
             f.write('bob')
         finally:
             f.close()
-        os.remove(file)                
+        os.remove(file)
     def check_writable_dir(self):
         """ Check that we can create a file in the writable directory
         """
@@ -251,7 +251,7 @@ class test_catalog(ScipyTestCase):
         try:
             f = open(cfile1,'w')
             f.write('bob')
-        finally:    
+        finally:
             f.close()
         # try again with same code fragment -- should get unique name
         file = q.unique_module_name('bob')
@@ -268,20 +268,20 @@ class test_catalog(ScipyTestCase):
         funcs = [string.upper, string.lower, string.find,string.replace]
         for i in funcs:
             q.add_function_persistent('code',i)
-        pfuncs = q.get_cataloged_functions('code')    
+        pfuncs = q.get_cataloged_functions('code')
         # any way to clean modules???
         restore_temp_catalog()
         for i in funcs:
-            assert(i in pfuncs)        
- 
+            assert(i in pfuncs)
+
     def check_add_function_ordered(self):
         clear_temp_catalog()
         q = catalog.catalog()
         import string
-        
-        q.add_function('f',string.upper)        
+
+        q.add_function('f',string.upper)
         q.add_function('f',string.lower)
-        q.add_function('ff',string.find)        
+        q.add_function('ff',string.find)
         q.add_function('ff',string.replace)
         q.add_function('fff',string.atof)
         q.add_function('fff',string.atoi)

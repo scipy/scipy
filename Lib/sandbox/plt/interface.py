@@ -29,7 +29,7 @@ def figure(which_one = None):
         _figure.append(plot_class(title=title))
         _active = _figure[-1]
     elif (type(which_one) == type(1)) or (type(which_one) == type(1.)):
-        try:    
+        try:
             _active = _figure[int(which_one)]
             _active.Raise()
         except IndexError:
@@ -50,8 +50,8 @@ def figure(which_one = None):
             pass
     fig = current()
     return fig
-    
-    
+
+
 def validate_active():
     global _active
     if _active is None: figure()
@@ -60,8 +60,8 @@ def validate_active():
             _active = None
             figure()
     except:
-        pass        
-    
+        pass
+
 def current():
     return _active
 
@@ -77,8 +77,8 @@ def close(which_one = None):
             _figure.remove(_active)
         except ValueError:
             pass
-            
-        try: 
+
+        try:
             # should make sure the new plot window really exist
             set_new_active()
         except IndexError: _active = None
@@ -88,26 +88,26 @@ def close(which_one = None):
     else:
         raise NotImplementedError, "currently close only works with"\
                                    " _active window or 'all'"
-        #try: 
+        #try:
         #   _figure.remove(which_one)
         #   which_one.close()
         #except ValueError:
-        #   which_one.close() 
+        #   which_one.close()
 
 def set_new_active():
     # should validate new active here
     try:
         _active = _figure[-1]
     except IndexError:
-        _active = None    
-        
+        _active = None
+
 
 def _auto_all():
     validate_active()
     _active.x_axis.bounds = ['auto','auto']
     _active.y_axis.bounds = ['auto','auto']
     _active.x_axis.tick_interval = 'auto'
-    _active.y_axis.tick_interval = 'auto'    
+    _active.y_axis.tick_interval = 'auto'
 def autoscale():
     validate_active()
     _auto_all()
@@ -128,12 +128,12 @@ def _an_axis(ax,setting):
         ax.bounds = [setting[0],setting[1]]
         if len(setting) > 2:
             ax.tick_interval = setting[2]
-            
+
 def xaxis(rng):
     validate_active()
     _an_axis(_active.x_axis,rng)
     _active.update()
-    
+
 def yaxis(rng):
     validate_active()
     _an_axis(_active.y_axis,rng)
@@ -170,7 +170,7 @@ def grid(state=None):
         _active.y_axis.grid_visible = state
     else:
         raise ValueError, 'grid argument can be "on","off",'\
-                          '"yes","no". Not ' + state        
+                          '"yes","no". Not ' + state
     _active.update()
 
 def hold(state):
@@ -179,12 +179,12 @@ def hold(state):
         _active.hold = state
     else:
         raise ValueError, 'holds argument can be "on","off",'\
-                          '"yes","no". Not ' + state        
-    
+                          '"yes","no". Not ' + state
+
 def axis(setting):
     validate_active()
     x_ticks = _active.x_axis.ticks
-    print type(x_ticks), dir(x_ticks)    
+    print type(x_ticks), dir(x_ticks)
     x_interval = x_ticks[1]- x_ticks[0]
     y_ticks = _active.y_axis.ticks
     x_interval = x_ticks[1]- y_ticks[0]
@@ -194,12 +194,12 @@ def axis(setting):
         _active.client.aspect_ratio = setting
         _auto_all()
     elif setting == 'equal':
-        _active.client.aspect_ratio = setting    
+        _active.client.aspect_ratio = setting
     elif setting == 'freeze':
         _active.x_axis.bounds = [axes[0],axes[1]]
         _active.y_axis.bounds = [axes[2],axes[3]]
         _active.x_axis.tick_interval = x_interval
-        _active.x_axis.tick_interval = y_interval        
+        _active.x_axis.tick_interval = y_interval
     elif setting in ['tight','fit']:
         _active.x_axis.bounds = ['fit','fit']
         _active.y_axis.bounds = ['fit','fit']
@@ -208,7 +208,7 @@ def axis(setting):
     else:
         _active.x_axis.bounds = [setting[0],setting[1]]
         _active.y_axis.bounds = [setting[2],setting[3]]
-    _active.update()    
+    _active.update()
 
 def save(file_name,format='png'):
     _active.save(file_name,format)
@@ -221,17 +221,17 @@ def save(file_name,format='png'):
 #---- array utilities ------------
 
 def is1D(a):
-	as = shape(a)
-	if(len(as) == 1):
-		return 1
-	if(as[0] == 1 or as[1]==1):
-		return 1
-	return 0
-	
+    as = shape(a)
+    if(len(as) == 1):
+        return 1
+    if(as[0] == 1 or as[1]==1):
+        return 1
+    return 0
+
 def row(a):
-	return reshape(asarray(a),[1,-1])
+    return reshape(asarray(a),[1,-1])
 def col(a):
-	return reshape(asarray(a),[-1,1])
+    return reshape(asarray(a),[-1,1])
 
 SizeMismatch = 'SizeMismatch'
 SizeError = 'SizeError'
@@ -251,8 +251,8 @@ def plot_groups(data):
     while len(remains):
         group,remains = get_plot_group(remains)
         groups.append(group)
-    return groups        
-    
+    return groups
+
 def get_plot_group(data):
     group = ()
     remains = data
@@ -262,7 +262,7 @@ def get_plot_group(data):
         el = remains[0]
         if(state == 0):
             el = asarray(el)
-            state = 1 
+            state = 1
         elif(state == 1):
             if(type(el) == StringType):
                 finished = 1
@@ -280,12 +280,12 @@ def get_plot_group(data):
         except:
             pass
         group = group + (el,)
-        remains = remains[1:]       
-    return group, remains           
+        remains = remains[1:]
+    return group, remains
 
-def hstack(tup):		
-	#horizontal stack (column wise)
-	return concatenate(tup,1)
+def hstack(tup):
+        #horizontal stack (column wise)
+    return concatenate(tup,1)
 
 def lines_from_group(group):
     lines = []
@@ -301,12 +301,12 @@ def lines_from_group(group):
     if len(group) == 3:
         plotinfo = group[2]
     #force 1D arrays to 2D columns
-    if is1D(x): 
+    if is1D(x):
         x = col(x)
-    if ar_num == 2 and is1D(y):  
+    if ar_num == 2 and is1D(y):
         y = col(y)
-    
-    xs = shape(x)            
+
+    xs = shape(x)
     if ar_num == 2:  ys = shape(y)
     #test that x and y have compatible shapes
     if ar_num == 2:
@@ -317,16 +317,16 @@ def lines_from_group(group):
         #no error x has 1 column
         if(xs[1] > 1 and xs[1] != ys[1]):
             raise SizeMismatch, ('cols', xs, ys)
-    
+
     #plot x against index
     if(ar_num == 1):
         for y_data in transpose(x):
             index = arange(len(y_data))
             pts = hstack(( col(index), col(y_data) ))
             pts = remove_bad_vals(pts)
-            line = plot_module.line_object(pts)            
+            line = plot_module.line_object(pts)
             lines.append(line)
-    #plot x vs y                    
+    #plot x vs y
     elif(ar_num ==2):
         #x is effectively 1D
         if(xs[1] == 1):
@@ -335,7 +335,7 @@ def lines_from_group(group):
                 pts = remove_bad_vals(pts)
                 line = plot_module.line_object(pts)
                 lines.append(line)
-        #x is 2D                    
+        #x is 2D
         else:
             x = transpose(x); y = transpose(y)
             for i in range(len(x)):
@@ -374,7 +374,7 @@ import re
 color_re = re.compile('[ymcrgbwk]')
 color_trans = {'y':'yellow','m':'magenta','c':'cyan','r':'red','g':'green',
                'b':'blue', 'w':'white','k':'black'}
-# this one isn't quite right               
+# this one isn't quite right
 marker_re = re.compile('[ox+s^v]|(?:[^-])[.]')
 marker_trans = {'.':'dot','o':'circle','x':'cross','+':'plus','s':'square',
                 '^':'triangle','v':'down_triangle'}
@@ -389,18 +389,18 @@ def process_format(format):
     if len(m): color = color_trans[m[0]]
     m = marker_re.findall(format)
     # the -1 takes care of 'r.', etc
-    if len(m): marker = marker_trans[m[0][-1]]    
+    if len(m): marker = marker_trans[m[0][-1]]
     m = line_re.findall(format)
     if len(m): line = line_trans[m[0]]
     return color,marker,line
-    
+
 def remove_bad_vals(x):
     # !! Fix axis order when interface changed.
     # mapping:
     #    NaN -> 0
     #    Inf -> limits.double_max
     #   -Inf -> limits.double_min
-    y = nan_to_num(x)    
+    y = nan_to_num(x)
     big = limits.double_max / 10
     small = limits.double_min / 10
     y = clip(y,small,big)
@@ -418,7 +418,7 @@ def stem(*data):
             x = data[0]
         elif type(data[1]) in [types.ListType, types.TupleType]:
             n = arange(len(data[0]))
-            x = data[0]            
+            x = data[0]
             ltype = data[1][:2]
         else:
             n = data[0]
@@ -447,9 +447,9 @@ def stem(*data):
     newdata.extend([n,x,ltype[1]])
     keywds = {'fill_style': 'transparent'}
     return plot(*newdata,**keywds)
-    
-                           
-    
+
+
+
 def plot(*data,**keywds):
     groups = plot_groups(data)
     lines = []
@@ -469,7 +469,7 @@ def plot(*data,**keywds):
         _active.image_list.data = [] # clear it out
     for i in lines:
         _active.line_list.append(i)
-    _active.update()                
+    _active.update()
     return _active
 
 def markers(visible=None):
@@ -481,9 +481,9 @@ def markers(visible=None):
 
 def image(img,x=None,y=None,colormap = 'grey',scale='no'):
     """Colormap should really default to the current colormap..."""
-    # check for hold here    
+    # check for hold here
     validate_active()
-    image = wxplt.image_object(img,x,y,colormap=colormap,scale=scale)    
+    image = wxplt.image_object(img,x,y,colormap=colormap,scale=scale)
     if not _active.hold in ['on','yes']:
         _active.line_list.data = [] # clear it out
         _active.image_list.data = [] # clear it out
@@ -497,15 +497,15 @@ def image(img,x=None,y=None,colormap = 'grey',scale='no'):
             axis('equal')
     else:
         _active.image_list.append(image)
-        _active.update()                
+        _active.update()
     return _active
 
 def imagesc(img,x=None,y=None,colormap = 'grey'):
     image(img,x,y,colormap,scale='yes')
-    
+
 #matlab equivalence
 xlabel = xtitle
-ylabel = ytitle     
+ylabel = ytitle
 
 def speed_test():
     p = plot([1,2,3],'r:o')
@@ -513,7 +513,7 @@ def speed_test():
     s2 = (400,400)
     p.SetSize(s1)
     for i in range(20):
-        if p.GetSizeTuple()[0] == 200: 
+        if p.GetSizeTuple()[0] == 200:
             p.SetSize(s2)
-        else: 
+        else:
             p.SetSize(s1)

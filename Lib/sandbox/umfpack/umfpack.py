@@ -270,7 +270,7 @@ umfSys = [
     UMFPACK_Q_Uat,
     UMFPACK_Ut,
     UMFPACK_Uat,
-]    
+]
 
 # Real, complex.
 umfSys_transposeMap = [
@@ -294,7 +294,7 @@ class Struct( object ):
     def __init__( self, **kwargs ):
         if kwargs:
             self.__dict__.update( kwargs )
-        
+
     # 08.03.2005
     def __str__( self ):
         ss = "%s\n" % self.__class__
@@ -323,7 +323,7 @@ class UmfpackContext( Struct ):
         family  .. family of UMFPACK functions ('di', 'dl', 'zi', 'zl')
 
         Keyword arguments:
-        
+
         maxCond .. if extimated condition number is greater than maxCond,
                    a warning is printed (default: 1e12)"""
         self.maxCond = 1e12
@@ -411,7 +411,7 @@ class UmfpackContext( Struct ):
         """Symbolic object (symbolic LU decomposition) computation for a given
         sparsity pattern."""
         self.free_symbolic()
-        
+
         indx = self._getIndx( mtx )
         if self.isReal:
             status, self._symbolic\
@@ -430,7 +430,7 @@ class UmfpackContext( Struct ):
         if status != UMFPACK_OK:
             raise RuntimeError, '%s failed with %s' % (self.funs.symbolic,
                                                        umfStatus[status])
-            
+
         self.mtx = mtx
 
     ##
@@ -579,7 +579,7 @@ class UmfpackContext( Struct ):
                                       mreal, mimag, sreal, simag, rreal, rimag,
                                       self._numeric, self.control, self.info )
             sol.real, sol.imag = sreal, simag
-            
+
         #self.funs.report_info( self.control, self.info )
         #pause()
         if status != UMFPACK_OK:

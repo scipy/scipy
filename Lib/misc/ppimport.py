@@ -44,7 +44,7 @@ def _get_so_ext(_cache={}):
                 so_ext = get_config_vars('SO')[0] or ''
             except ImportError:
                 #XXX: implement hooks for .sl, .dll to fully support
-                #     Python 1.5.x   
+                #     Python 1.5.x
                 so_ext = '.so'
         _cache['so_ext'] = so_ext
     return so_ext
@@ -230,7 +230,7 @@ def frame_traceback(frame):
         f = f.f_back
     print '='*50
     print '\n'.join(blocks)
-    print '='*50    
+    print '='*50
 
 class _ModuleLoader:
     # Don't use it directly. Use ppimport instead.

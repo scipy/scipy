@@ -31,7 +31,7 @@ def spline_filter(Iin, lmbda=5.0):
         out = out.astype(intype)
     else:
         raise TypeError;
-    return out            
+    return out
 
 _splinefunc_cache = {}
 
@@ -74,7 +74,7 @@ def _bspline_piecefunctions(order):
     condfuncs.append(condfuncgen(2, 0, -(order+1)/2.0))
 
     # final value of bound is used in piecefuncgen below
-    
+
     # the functions to evaluate are taken from the left-hand-side
     #  in the general expression derived from the central difference
     #  operator (because they involve fewer terms).
@@ -92,7 +92,7 @@ def _bspline_piecefunctions(order):
                 res += coeffs[k]*(x+shifts[k])**order
             return res
         return thefunc
-        
+
     funclist = [piecefuncgen(k) for k in xrange(last)]
 
     _splinefunc_cache[order] = (funclist, condfuncs)
@@ -189,7 +189,7 @@ def _hs(k,cs,rho,omega):
     gamma = (1-rho*rho) / (1+rho*rho) / tan(omega)
     ak = abs(k)
     return c0 * rho**ak * (cos(omega*ak) + gamma*sin(omega*ak))
-    
+
 def _cubic_smooth_coeff(signal,lamb):
     rho, omega = _coeff_smooth(lamb)
     cs = 1-2*rho*cos(omega) + rho*rho
@@ -205,7 +205,7 @@ def _cubic_smooth_coeff(signal,lamb):
 
     for n in range(2,K):
         yp[n] = cs * signal[n] + 2*rho*cos(omega)*yp[n-1] - rho*rho*yp[n-2]
-        
+
     y = zeros((K,),signal.dtype.char)
 
     y[K-1] = add.reduce((_hs(k,cs,rho,omega) + _hs(k+1,cs,rho,omega))*signal[::-1])
@@ -231,11 +231,11 @@ def _cubic_coeff(signal):
     return output*6.0
 
 def _quadratic_coeff(signal):
-    zi = -3 + 2*sqrt(2.0)    
+    zi = -3 + 2*sqrt(2.0)
     K = len(signal)
     yplus = zeros((K,),signal.dtype.char)
     powers = zi**arange(K)
-    yplus[0] = signal[0] + zi*add.reduce(powers*signal)    
+    yplus[0] = signal[0] + zi*add.reduce(powers*signal)
     for k in range(1,K):
         yplus[k] = signal[k] + zi*yplus[k-1]
     output = zeros((K,),signal.dtype.char)
@@ -299,7 +299,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     dx is the old sample-spacing while x0 was the old origin.
 
     In other-words the old-sample points (knot-points) for which the cj
-    represent spline coefficients were at equally-spaced points of 
+    represent spline coefficients were at equally-spaced points of
 
     oldx = x0 + j*dx  j=0...N-1
 
@@ -335,7 +335,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     dx is the old sample-spacing while x0 was the old origin.
 
     In other-words the old-sample points (knot-points) for which the cj
-    represent spline coefficients were at equally-spaced points of 
+    represent spline coefficients were at equally-spaced points of
 
     oldx = x0 + j*dx  j=0...N-1
 
@@ -344,7 +344,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     edges are handled using mirror-symmetric boundary conditions.
     """
     newx = (asarray(newx)-x0)/dx
-    res = zeros_like(newx)    
+    res = zeros_like(newx)
     if (res.size == 0):
         return res
     N = len(cj)
@@ -365,7 +365,3 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
         result += cj[indj] * quadratic(newx - thisj)
     res[cond3] = result
     return res
-
-
-
-

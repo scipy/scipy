@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------
 #
-#  Define classes for (uni/multi)-variate kernel density estimation. 
+#  Define classes for (uni/multi)-variate kernel density estimation.
 #
 #  Currently, only Gaussian kernels are implemented.
 #
@@ -30,7 +30,7 @@ from numpy.random import randint, multivariate_normal
 import stats
 import mvn
 
-__all__ = ['gaussian_kde', 
+__all__ = ['gaussian_kde',
           ]
 
 #-------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
 
         self._compute_covariance()
-   
+
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
 
@@ -89,7 +89,7 @@ class gaussian_kde(object):
         """
 
         points = atleast_2d(points).astype(self.dataset.dtype)
-        
+
         d, m = points.shape
         if d != self.d:
             if d == 1 and m == self.d:
@@ -101,7 +101,7 @@ class gaussian_kde(object):
                 raise ValueError(msg)
 
         result = zeros((m,), points.dtype)
-    
+
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
@@ -144,7 +144,7 @@ class gaussian_kde(object):
 
         mean = atleast_1d(squeeze(mean))
         cov = atleast_2d(cov)
-        
+
         if mean.shape != (self.d,):
             raise ValueError("mean does not have dimension %s" % self.d)
         if cov.shape != (self.d, self.d):
@@ -257,7 +257,7 @@ class gaussian_kde(object):
 
             energies = sum(diff*tdiff)/2.0
             result += sum(exp(-energies))
-        
+
         result /= sqrt(linalg.det(2*pi*sum_cov))*large.n*small.n
 
         return result
@@ -269,7 +269,7 @@ class gaussian_kde(object):
         ----------
         size : int=None
           if None, then size = self.n; otherwise, the number of samples to draw
-        
+
         Returns
         -------
         dataset : (self.d, size)-array
@@ -300,6 +300,6 @@ class gaussian_kde(object):
         covariance_factor
         """
         self.factor = self.covariance_factor()
-        self.covariance = atleast_2d(stats.cov(self.dataset, rowvar=1) * 
+        self.covariance = atleast_2d(stats.cov(self.dataset, rowvar=1) *
             self.factor * self.factor)
         self.inv_cov = linalg.inv(self.covariance)

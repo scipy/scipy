@@ -1,10 +1,10 @@
 """ Cast Copy Tranpose is used in numpy LinearAlgebra.py to convert
     C ordered arrays to Fortran order arrays before calling Fortran
-    functions.  A couple of C implementations are provided here that 
+    functions.  A couple of C implementations are provided here that
     show modest speed improvements.  One is an "inplace" transpose that
     does an in memory transpose of an arrays elements.  This is the
     fastest approach and is beneficial if you don't need to keep the
-    original array.    
+    original array.
 """
 # C:\home\ej\wrk\scipy\compiler\examples>python cast_copy_transpose.py
 # Cast/Copy/Transposing (150,150)array 1 times
@@ -28,8 +28,8 @@ def _cast_copy_transpose(type,a_2d):
     code = """
            for(int i = 0; i < Na_2d[0]; i++)
                for(int j = 0; j < Na_2d[1]; j++)
-                   new_array(i,j) = a_2d(j,i);  
-           """ 
+                   new_array(i,j) = a_2d(j,i);
+           """
     inline_tools.inline(code,['new_array','a_2d'],
                         type_converters = cblitz,
                         compiler='gcc',
@@ -49,10 +49,10 @@ def _cast_copy_transpose2(type,a_2d):
                for(int j = 0; j < J; j++)
                {
                    new_array[new_off++] = a_2d[old_off];
-                   old_off += I; 
-               }    
-           } 
-           """ 
+                   old_off += I;
+               }
+           }
+           """
     inline_tools.inline(code,['new_array','a_2d'],compiler='gcc',verbose=1)
     return new_array
 
@@ -66,8 +66,8 @@ def _inplace_transpose(a_2d):
                {
                    temp = a_2d(i,j);
                    a_2d(i,j) = a_2d(j,i);
-                   a_2d(j,i) = temp; 
-               }     
+                   a_2d(j,i) = temp;
+               }
            """ % numeric_type
     inline_tools.inline(code,['a_2d'],
                         type_converters = cblitz,
@@ -127,7 +127,7 @@ def _castCopyAndTranspose(type, *arrays):
             cast_arrays = cast_arrays + (copy.copy(
                                        numpy.transpose(a).astype(type)),)
     if len(cast_arrays) == 1:
-            return cast_arrays[0]
+        return cast_arrays[0]
     else:
         return cast_arrays
 
@@ -145,26 +145,26 @@ def compare(m,n):
     t2 = time.time()
     py = (t2-t1)
     print ' speed in python:', (t2 - t1)/m
-    
 
-    # load into cache    
+
+    # load into cache
     b = cast_copy_transpose(type,a)
     t1 = time.time()
     for i in range(m):
         for i in range(n):
             b = cast_copy_transpose(type,a)
     t2 = time.time()
-    print ' speed in c (blitz):',(t2 - t1)/ m    
+    print ' speed in c (blitz):',(t2 - t1)/ m
     print ' speed up   (blitz): %3.2f' % (py/(t2-t1))
 
-    # load into cache    
+    # load into cache
     b = cast_copy_transpose2(type,a)
     t1 = time.time()
     for i in range(m):
         for i in range(n):
             b = cast_copy_transpose2(type,a)
     t2 = time.time()
-    print ' speed in c (pointers):',(t2 - t1)/ m    
+    print ' speed in c (pointers):',(t2 - t1)/ m
     print ' speed up   (pointers): %3.2f' % (py/(t2-t1))
 
     # inplace tranpose
@@ -174,9 +174,9 @@ def compare(m,n):
         for i in range(n):
             b = _inplace_transpose(a)
     t2 = time.time()
-    print ' inplace transpose c:',(t2 - t1)/ m    
+    print ' inplace transpose c:',(t2 - t1)/ m
     print ' speed up: %3.2f' % (py/(t2-t1))
-    
+
 if __name__ == "__main__":
     m,n = 1,500
-    compare(m,n)    
+    compare(m,n)

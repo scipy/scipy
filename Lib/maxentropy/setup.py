@@ -16,4 +16,3 @@ def configuration(parent_package='', top_path=None):
 
 if __name__ == '__main__':
     setup(**configuration(top_path='').todict())
-

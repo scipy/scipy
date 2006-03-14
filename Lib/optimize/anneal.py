@@ -33,7 +33,7 @@ class base_schedule:
         self.k = 0
         self.accepted = 0
         self.feval = 0
-        self.tests = 0        
+        self.tests = 0
 
     def getstart_temp(self, best_state):
         assert(not self.dims is None)
@@ -82,7 +82,7 @@ class fast_sa(base_schedule):
         if self.n is None:
             self.n = 1.0
         self.c = self.m * exp(-self.n * self.quench)
-        
+
     def update_guess(self, x0):
         x0 = asarray(x0)
         u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
@@ -115,7 +115,7 @@ class boltzmann_sa(base_schedule):
         std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
         x0 = asarray(x0)
         xc = squeeze(random.normal(0, 1.0, size=self.dims))
-        
+
         xnew = x0 + xc*std*self.learn_rate
         return xnew
 
@@ -186,7 +186,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     x0 = asarray(x0)
     lower = asarray(lower)
     upper = asarray(upper)
-    
+
     schedule = eval(schedule+'_sa()')
     #   initialize the schedule
     schedule.init(dims=shape(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
@@ -220,7 +220,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             if schedule.accept_test(dE):
                 last_state.x = current_state.x.copy()
                 last_state.cost = current_state.cost
-                if last_state.cost < best_state.cost:                
+                if last_state.cost < best_state.cost:
                     best_state.x = last_state.x.copy()
                     best_state.cost = last_state.cost
         schedule.update_temp()
@@ -258,7 +258,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             retval = 4
             break
 
-    if full_output:        
+    if full_output:
         return best_state.x, best_state.cost, schedule.T, \
                schedule.feval, iters, schedule.accepted, retval
     else:

@@ -19,18 +19,18 @@ obj = foo()
 code = """
        int i = obj.attr("val");
        std::cout << "initial val: " << i << std::endl;
-       
+
        py::tuple args(1);
-       args[0] = 2; 
+       args[0] = 2;
        i = obj.mcall("inc",args);
        std::cout << "inc result: " << i << std::endl;
-       
+
        obj.set_attr("val",5);
        i = obj.attr("val");
        std::cout << "after set attr: " << i << std::endl;
        """
-weave.inline(code,['obj'])       
-       
+weave.inline(code,['obj'])
+
 #----------------------------------------------------------------------------
 # indexing of values.
 #----------------------------------------------------------------------------
@@ -47,5 +47,5 @@ code = """
        for(i = 0; i < obj.length(); i++)
            obj[i] = "goodbye";
        """
-weave.inline(code,['obj'])       
+weave.inline(code,['obj'])
 print "obj with new values:", obj

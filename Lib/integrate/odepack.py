@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
+## Automatically adapted for scipy Oct 21, 2005 by
 
 # Author: Travis Oliphant
 
@@ -28,7 +28,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
       Solve a system of ordinary differential equations Using lsoda from the
       FORTRAN library odepack.
-      
+
       Solves the initial value problem for stiff or non-stiff systems
       of first order ode-s:
            dy/dt = func(y,t0,...) where y can be a vector.
@@ -37,7 +37,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
       func -- func(y,t0,...) computes the derivative of y at t0.
       y0   -- initial condition on y (can be a vector).
-      t    -- a sequence of time points for which to solve for y.  The intial 
+      t    -- a sequence of time points for which to solve for y.  The intial
               value point should be the first element of this sequence.
       args -- extra arguments to pass to function.
       Dfun -- the gradient (Jacobian) of func (same input signature as func).
@@ -124,7 +124,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     else:
         if printmessg:
             print _msgs[output[-1]]
-        
+
     if full_output:
         output[1]['message'] = _msgs[output[-1]]
 
@@ -133,6 +133,3 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         return output[0]
     else:
         return output
-
-
-

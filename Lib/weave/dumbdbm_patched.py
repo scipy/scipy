@@ -43,9 +43,9 @@ class _Database:
             f = _open(self._datfile, 'w')
         f.close()
         self._update()
-    
+
     def _update(self):
-        import string   
+        import string
         self._index = {}
         try:
             f = _open(self._dirfile)
@@ -68,7 +68,7 @@ class _Database:
         for key, (pos, siz) in self._index.items():
             f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
         f.close()
-    
+
     def __getitem__(self, key):
         pos, siz = self._index[key] # may raise KeyError
         f = _open(self._datfile, 'rb')
@@ -76,7 +76,7 @@ class _Database:
         dat = f.read(siz)
         f.close()
         return dat
-    
+
     def _addval(self, val):
         f = _open(self._datfile, 'rb+')
         f.seek(0, 2)
@@ -87,24 +87,24 @@ class _Database:
         npos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
         f.write('\0'*(npos-pos))
         pos = npos
-        
+
         f.write(val)
         f.close()
         return (pos, len(val))
-    
+
     def _setval(self, pos, val):
         f = _open(self._datfile, 'rb+')
         f.seek(pos)
         f.write(val)
         f.close()
         return (pos, len(val))
-    
+
     def _addkey(self, key, (pos, siz)):
         self._index[key] = (pos, siz)
         f = _open(self._dirfile, 'a')
         f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
         f.close()
-    
+
     def __setitem__(self, key, val):
         if not type(key) == type('') == type(val):
             raise TypeError, "keys and values must be strings"
@@ -122,20 +122,20 @@ class _Database:
                 pos, siz = self._addval(val)
                 self._index[key] = pos, siz
             self._addkey(key, (pos, siz))
-    
+
     def __delitem__(self, key):
         del self._index[key]
         self._commit()
-    
+
     def keys(self):
         return self._index.keys()
-    
+
     def has_key(self, key):
         return self._index.has_key(key)
-    
+
     def __len__(self):
         return len(self._index)
-    
+
     def close(self):
         self._index = None
         self._datfile = self._dirfile = self._bakfile = None

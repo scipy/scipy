@@ -6,11 +6,11 @@ Optimization Tools
 
    fmin        --  Nelder-Mead Simplex algorithm
                      (uses only function calls)
-   fmin_powell --  Powell's (modified) level set method (uses only 
+   fmin_powell --  Powell's (modified) level set method (uses only
                      function calls)
    fmin_cg     --  Non-linear (Polak-Rubiere) conjugate gradient algorithm
                      (can use function and gradient).
-                     
+
    fmin_bfgs   --  Quasi-Newton method (can use function and gradient)
    fmin_ncg    --  Line-search Newton Conjugate Gradient (can use
                      function, gradient and hessian).
@@ -33,12 +33,12 @@ Optimization Tools
    brute       --  Brute Force searching Optimizer
 
   Scalar function minimizers
- 
+
    fminbound   --  Bounded minimization of a scalar function.
    brent       --  1-D function minimization using Brent method.
    golden      --  1-D function minimization using Golden Section method
    bracket     --  Bracket a minimum (given two starting points)
-  
+
  Also a collection of general_purpose root-finding routines.
 
    fsolve      --  Non-linear multi-variable equation solver.

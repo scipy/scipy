@@ -9,10 +9,10 @@ summation. The other, "bigmodel", is for sample spaces that are either
 continuous (and perhaps high-dimensional) or discrete but too large to
 sum over, and uses importance sampling.  conditional Monte Carlo methods.
 
-The maximum entropy model has exponential form 
+The maximum entropy model has exponential form
 
     p(x) = exp(theta^T . f_vec(x)) / Z(theta).
-        
+
 with a real parameter vector theta of the same length as the feature
 statistic f_vec.  For more background, see, for example, Cover and
 Thomas (1991), Elements of Information Theory.

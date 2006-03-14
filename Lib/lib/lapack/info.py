@@ -28,7 +28,7 @@ Linear Equations
     c,x,info = posv(a,b,lower=0,overwrite_a=0,overwrite_b=0)
 
   Computational routines::
-  
+
     lu,piv,info = getrf(a,overwrite_a=0)
     x,info = getrs(lu,piv,b,trans=0,overwrite_b=0)
     inv_a,info = getri(lu,piv,lwork=min_lwork,overwrite_lu=0)

@@ -28,16 +28,16 @@ def c_int_search(seq,t,chk=1):
     #if chk:
     #    assert(type(t) is int)
     #    assert(type(seq) is list)
-    code = """     
+    code = """
            #line 33 "binary_search.py"
            if (!PyList_Check(py_seq))
                py::fail(PyExc_TypeError, "seq must be a list");
            if (!PyInt_Check(py_t))
-               py::fail(PyExc_TypeError, "t must be an integer");               
-           int val, m, min = 0; 
+               py::fail(PyExc_TypeError, "t must be an integer");
+           int val, m, min = 0;
            int max = seq.len()- 1;
-           for(;;) 
-           { 
+           for(;;)
+           {
                if (max < min )
                {
                    return_val = -1;
@@ -45,17 +45,17 @@ def c_int_search(seq,t,chk=1):
                }
                m = (min + max) / 2;
                val = py_to_int(PyList_GET_ITEM(py_seq,m),"val");
-               if (val < t)     
+               if (val < t)
                    min = m + 1;
-               else if (val > t)    
+               else if (val > t)
                    max = m - 1;
                else
                {
                    return_val = m;
                    break;
                }
-           }      
-           """    
+           }
+           """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
     return inline_tools.inline(code,['seq','t'],verbose = 2)
 
@@ -65,12 +65,12 @@ def c_int_search_scxx(seq,t,chk=1):
     if chk:
         assert(type(t) is int)
         assert(type(seq) is list)
-    code = """     
+    code = """
            #line 67 "binary_search.py"
-           int val, m, min = 0; 
+           int val, m, min = 0;
            int max = seq.len()- 1;
-           for(;;) 
-           { 
+           for(;;)
+           {
                if (max < min )
                {
                    return_val = -1;
@@ -78,30 +78,30 @@ def c_int_search_scxx(seq,t,chk=1):
                }
                m = (min + max) / 2;
                val = seq[m];
-               if (val < t)     
+               if (val < t)
                    min = m + 1;
-               else if (val > t)    
+               else if (val > t)
                    max = m - 1;
                else
                {
                    return_val = m;
                    break;
                }
-           }      
-           """    
+           }
+           """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
     return inline_tools.inline(code,['seq','t'],verbose = 2)
 
 try:
     from numpy import *
     def c_array_int_search(seq,t):
-        code = """     
+        code = """
                #line 62 "binary_search.py"
-               int val, m, min = 0; 
+               int val, m, min = 0;
                int max = Nseq[0] - 1;
                PyObject *py_val;
-               for(;;) 
-               { 
+               for(;;)
+               {
                    if (max < min )
                    {
                        return_val = PyInt_FromLong(-1);
@@ -109,23 +109,23 @@ try:
                    }
                    m = (min + max) / 2;
                    val = seq[m];
-                   if (val < t)     
+                   if (val < t)
                        min = m + 1;
-                   else if (val > t)    
+                   else if (val > t)
                        max = m - 1;
                    else
                    {
                        return_val = PyInt_FromLong(m);
                        break;
                    }
-               }        
-               """    
+               }
+               """
         #return inline_tools.inline(code,['seq','t'],compiler='msvc')
         return inline_tools.inline(code,['seq','t'],verbose = 2,
                                    extra_compile_args=['-O2','-G6'])
 except:
     pass
-        
+
 def py_int_search(seq, t):
     min = 0; max = len(seq) - 1
     while 1:
@@ -176,7 +176,7 @@ def search_compare(a,n):
         c_int_search(a,i,chk=0)
     t2 = time.time()
     sp = (t2-t1)+1e-20 # protect against div by zero
-    print ' speed in c(no asserts):',sp    
+    print ' speed in c(no asserts):',sp
     print ' speed up: %3.2f' % (py/sp)
 
     # get it in cache
@@ -196,7 +196,7 @@ def search_compare(a,n):
         c_int_search_scxx(a,i,chk=0)
     t2 = time.time()
     sp = (t2-t1)+1e-20 # protect against div by zero
-    print ' speed for scxx(no asserts):',sp    
+    print ' speed for scxx(no asserts):',sp
     print ' speed up: %3.2f' % (py/sp)
 
     # get it in cache
@@ -209,17 +209,17 @@ def search_compare(a,n):
             c_array_int_search(a,i)
         t2 = time.time()
         sp = (t2-t1)+1e-20 # protect against div by zero
-        print ' speed in c(numpy arrays):',sp    
+        print ' speed in c(numpy arrays):',sp
         print ' speed up: %3.2f' % (py/sp)
     except:
         pass
-        
+
 if __name__ == "__main__":
     # note bisect returns index+1 compared to other algorithms
     m= 100000
     a = range(m)
     n = 50000
-    search_compare(a,n)    
+    search_compare(a,n)
     print 'search(a,3450)', c_int_search(a,3450), py_int_search(a,3450), bisect(a,3450)
     print 'search(a,-1)', c_int_search(a,-1), py_int_search(a,-1), bisect(a,-1)
     print 'search(a,10001)', c_int_search(a,10001), py_int_search(a,10001),bisect(a,10001)

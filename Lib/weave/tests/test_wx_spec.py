@@ -16,30 +16,30 @@ restore_path()
 import wxPython
 import wxPython.wx
 
-class test_wx_converter(ScipyTestCase):    
+class test_wx_converter(ScipyTestCase):
     def check_type_match_string(self,level=5):
         s = wx_spec.wx_converter()
         assert(not s.type_match('string') )
     def check_type_match_int(self,level=5):
-        s = wx_spec.wx_converter()        
+        s = wx_spec.wx_converter()
         assert(not s.type_match(5))
     def check_type_match_float(self,level=5):
-        s = wx_spec.wx_converter()        
+        s = wx_spec.wx_converter()
         assert(not s.type_match(5.))
     def check_type_match_complex(self,level=5):
-        s = wx_spec.wx_converter()        
+        s = wx_spec.wx_converter()
         assert(not s.type_match(5.+1j))
     def check_type_match_complex(self,level=5):
-        s = wx_spec.wx_converter()        
+        s = wx_spec.wx_converter()
         assert(not s.type_match(5.+1j))
     def check_type_match_wxframe(self,level=5):
         s = wx_spec.wx_converter()
-        f=wxPython.wx.wxFrame(wxPython.wx.NULL,-1,'bob')        
+        f=wxPython.wx.wxFrame(wxPython.wx.NULL,-1,'bob')
         assert(s.type_match(f))
-        
+
     def check_var_in(self,level=5):
         mod = ext_tools.ext_module('wx_var_in',compiler='msvc')
-        a = wxPython.wx.wxFrame(wxPython.wx.NULL,-1,'bob')        
+        a = wxPython.wx.wxFrame(wxPython.wx.NULL,-1,'bob')
         code = """
                a->SetTitle(wxString("jim"));
                """
@@ -60,7 +60,7 @@ class test_wx_converter(ScipyTestCase):
             wx_var_in.test(b)
         except TypeError:
             pass
-            
+
     def no_check_var_local(self,level=5):
         mod = ext_tools.ext_module('wx_var_local')
         a = 'string'

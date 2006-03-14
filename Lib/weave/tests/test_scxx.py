@@ -13,4 +13,3 @@ restore_path()
 
 if __name__ == "__main__":
     ScipyTest().run()
-

@@ -10,7 +10,7 @@ def printMatrix(M):
         for j in range(m):
             Z[i,j] = M[i,j]
     print str(Z) + '\n'
-    
+
 n = 10
 A = spmatrix.ll_mat(n,n)
 As = spmatrix.ll_mat_sym(n)
@@ -26,7 +26,7 @@ for i in range(n):
         else:
             A[i,j] = 10*j + i
         O[i,j] = 1
-            
+
 for i in range(n):
     for j in range(n):
         if i >= j:
@@ -57,7 +57,7 @@ try:
     As[5:9, 4:10]
 except:
     traceback.print_exc()
-   
+
 print 'Setting submatrices'
 T = spmatrix.ll_mat_sym(n)
 T[6:9,6:9] = As[6:9,6:9]

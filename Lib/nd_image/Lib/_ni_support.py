@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
-# are met: 
+# are met:
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
@@ -26,7 +26,7 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import types
 import numpy as numarray
@@ -44,7 +44,7 @@ def _extend_mode_to_code(mode):
         return 4
     else:
         raise RuntimeError, 'boundary mode not supported'
-    
+
 def _normalize_sequence(input, rank, array_type = None):
     """If input is a scalar, create a sequence of length equal to the
     rank by duplicating the input. If input is a sequence,
@@ -59,7 +59,7 @@ def _normalize_sequence(input, rank, array_type = None):
             err = "sequence argument must have length equal to input rank"
             raise RuntimeError, err
     return normalized
-    
+
 import warnings
 def _get_output(output, input, output_type = None, shape = None):
     if output_type != None:
@@ -69,7 +69,7 @@ def _get_output(output, input, output_type = None, shape = None):
         warnings.warn(msg, DeprecationWarning)
         if output == None:
             output = output_type
-        elif ((type(output) is not type(types.TypeType)) or 
+        elif ((type(output) is not type(types.TypeType)) or
               output.dtype != output_type):
             raise RuntimeError, "'output' type and 'output_type' not equal"
     if shape is None:
@@ -79,17 +79,17 @@ def _get_output(output, input, output_type = None, shape = None):
         return_value = output
     elif type(output) in [type(types.TypeType), type(numarray.zeros((4,)).dtype)]:
         output = numarray.zeros(shape, dtype = output)
-        return_value = output        
+        return_value = output
     elif type(output) is types.StringType:
         output = numarray.typeDict[output]
         output = numarray.zeros(shape, dtype = output)
-        return_value = output        
+        return_value = output
     else:
         if output.shape != shape:
             raise RuntimeError, "output shape not correct"
         return_value = None
     return output, return_value
-    
+
 def _check_axis(axis, rank):
     if axis < 0:
         axis += rank

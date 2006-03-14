@@ -11,7 +11,7 @@
 #    [0, 1, 2, 3, 4]
 #     speed in c (scxx): 0.200000047684
 #     speed up: 1.25
-#    [0, 1, 2, 3, 4] 
+#    [0, 1, 2, 3, 4]
 
 import sys
 sys.path.insert(0,'..')
@@ -20,10 +20,10 @@ import inline_tools
 def c_sort(adict):
     assert(type(adict) is dict)
     code = """
-           #line 24 "dict_sort.py" 
+           #line 24 "dict_sort.py"
            py::list keys = adict.keys();
            py::list items(keys.length());
-           keys.sort(); 
+           keys.sort();
            PyObject* item = NULL;
            int N = keys.length();
            for(int i = 0; i < N;i++)
@@ -31,24 +31,24 @@ def c_sort(adict):
               item = PyList_GetItem(keys,i);
               item = PyDict_GetItem(adict,item);
               Py_XINCREF(item);
-              PyList_SetItem(items,i,item);              
-           }           
+              PyList_SetItem(items,i,item);
+           }
            return_val = items;
-           """   
+           """
     return inline_tools.inline(code,['adict'])
 
 def c_sort2(adict):
     assert(type(adict) is dict)
     code = """
-           #line 44 "dict_sort.py"     
+           #line 44 "dict_sort.py"
            py::list keys = adict.keys();
            py::list items(keys.len());
-           keys.sort(); 
+           keys.sort();
            int N = keys.length();
            for(int i = 0; i < N;i++)
               items[i] = adict[keys[i]];
            return_val = items;
-           """   
+           """
     return inline_tools.inline(code,['adict'],verbose=1)
 
 # (IMHO) the simplest approach:
@@ -83,13 +83,13 @@ def sort_compare(a,n):
     py = (t2-t1)
     print ' speed in python:', (t2 - t1)
     print b[:5]
-    
+
     b=c_sort(a)
     t1 = time.time()
     for i in range(n):
         b=c_sort(a)
     t2 = time.time()
-    print ' speed in c (Python API):',(t2 - t1)    
+    print ' speed in c (Python API):',(t2 - t1)
     print ' speed up: %3.2f' % (py/(t2-t1))
     print b[:5]
 
@@ -98,7 +98,7 @@ def sort_compare(a,n):
     for i in range(n):
         b=c_sort2(a)
     t2 = time.time()
-    print ' speed in c (scxx):',(t2 - t1)    
+    print ' speed in c (scxx):',(t2 - t1)
     print ' speed up: %3.2f' % (py/(t2-t1))
     print b[:5]
 
@@ -111,9 +111,9 @@ def setup_dict(m):
         key = random.choice(a)
         a.remove(key)
         d[key]=key
-    return d    
+    return d
 if __name__ == "__main__":
     m = 1000
     a = setup_dict(m)
     n = 3000
-    sort_compare(a,n)    
+    sort_compare(a,n)

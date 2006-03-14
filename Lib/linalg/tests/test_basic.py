@@ -72,7 +72,7 @@ class test_solve(ScipyTestCase):
                   [[2,1],[-30,4]]):
             x = solve(a,b)
             assert_array_almost_equal(numpy.matrixmultiply(a,x),b)
-        
+
     def check_simple_sym(self):
         a = [[2,3],[3,5]]
         for lower in [0,1]:
@@ -104,7 +104,7 @@ class test_solve(ScipyTestCase):
         n = 2
         A = random([n,n])+random([n,n])*1j
         X = zeros((n,n),'D')
-        Ainv = inv(A) 
+        Ainv = inv(A)
         R = identity(n)+identity(n)*0j
         for i in arange(0,n):
             r = R[:,i]
@@ -165,12 +165,12 @@ class test_solve(ScipyTestCase):
         print '      |    contiguous     |   non-contiguous '
         print '----------------------------------------------'
         print ' size |  scipy  | basic   |  scipy  | basic '
-        
+
         for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
             repeat *= 2
             print '%5s' % size,
             sys.stdout.flush()
-            
+
             a = random([size,size])
             # larger diagonal ensures non-singularity:
             for i in range(size): a[i,i] = 10*(.1+a[i,i])
@@ -181,7 +181,7 @@ class test_solve(ScipyTestCase):
 
             print '| %6.2f ' % self.measure('basic_solve(a,b)',repeat),
             sys.stdout.flush()
-                        
+
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
@@ -237,12 +237,12 @@ class test_inv(ScipyTestCase):
         print '      |    contiguous     |   non-contiguous '
         print '----------------------------------------------'
         print ' size |  scipy  | basic   |  scipy  | basic'
-        
+
         for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
             repeat *= 2
             print '%5s' % size,
             sys.stdout.flush()
-            
+
             a = random([size,size])
             # large diagonal ensures non-singularity:
             for i in range(size): a[i,i] = 10*(.1+a[i,i])
@@ -252,7 +252,7 @@ class test_inv(ScipyTestCase):
 
             print '| %6.2f ' % self.measure('basic_inv(a)',repeat),
             sys.stdout.flush()
-                        
+
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
@@ -278,7 +278,7 @@ class test_det(ScipyTestCase):
         assert_almost_equal(a_det,-6+4j)
 
     def check_random(self):
-        import numpy.linalg as linalg 
+        import numpy.linalg as linalg
         basic_det = linalg.determinant
         n = 20
         for i in range(4):
@@ -306,12 +306,12 @@ class test_det(ScipyTestCase):
         print '      |    contiguous     |   non-contiguous '
         print '----------------------------------------------'
         print ' size |  scipy  | basic   |  scipy  | basic '
-        
+
         for size,repeat in [(20,1000),(100,150),(500,2),(1000,1)][:-1]:
             repeat *= 2
             print '%5s' % size,
             sys.stdout.flush()
-            
+
             a = random([size,size])
 
             print '| %6.2f ' % self.measure('det(a)',repeat),
@@ -319,7 +319,7 @@ class test_det(ScipyTestCase):
 
             print '| %6.2f ' % self.measure('basic_det(a)',repeat),
             sys.stdout.flush()
-                        
+
             a = a[-1::-1,-1::-1] # turn into a non-contiguous array
             assert not a.flags['CONTIGUOUS']
 
@@ -368,7 +368,7 @@ class test_lstsq(ScipyTestCase):
         #XXX: need independent check
         assert_array_almost_equal(x,[[-0.05555556],
                                      [0.11111111],[0.27777778]])
-        
+
     def check_random_exact(self):
 
         n = 20
@@ -439,7 +439,7 @@ class test_tri(unittest.TestCase):
                                      [1,1,1]]))
         assert_equal(tri(3,4),array([[1,0,0,0],
                                      [1,1,0,0],
-                                     [1,1,1,0]]))        
+                                     [1,1,1,0]]))
     def check_diag2d(self):
         assert_equal(tri(3,4,k=2),array([[1,1,1,0],
                                          [1,1,1,1],
@@ -458,7 +458,7 @@ class test_tril(unittest.TestCase):
                 b[k,l] = 0
         assert_equal(tril(a),b)
 
-    def check_diag(self):        
+    def check_diag(self):
         a = (100*get_mat(5)).astype('f')
         b = a.copy()
         for k in range(5):
@@ -480,7 +480,7 @@ class test_triu(unittest.TestCase):
                 b[l,k] = 0
         assert_equal(triu(a),b)
 
-    def check_diag(self):        
+    def check_diag(self):
         a = (100*get_mat(5)).astype('f')
         b = a.copy()
         for k in range(5):
@@ -499,7 +499,7 @@ class test_toeplitz(unittest.TestCase):
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
-        
+
 class test_hankel(unittest.TestCase):
     def check_basic(self):
         y = hankel([1,2,3])

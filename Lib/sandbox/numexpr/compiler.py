@@ -249,7 +249,7 @@ def numexpr(ex, input_order=None, precompiled=False, **kwargs):
             raise ValueError("'%s' must be one of %s" % (name, allowed))
     if kwargs:
         raise ValueError("Unknown keyword argument '%s'" % kwargs.pop())
-            
+
     if isinstance(ex, str):
         ex = stringToExpression(ex, context)
     if ex.astType == 'constant':

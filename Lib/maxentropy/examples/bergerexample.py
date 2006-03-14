@@ -8,11 +8,11 @@
 
     Consider the translation of the English word 'in' into French.  We
     notice in a corpus of parallel texts the following facts:
-        
+
         (1)    p(dans) + p(en) + p(a) + p(au cours de) + p(pendant) = 1
         (2)    p(dans) + p(en) = 3/10
         (3)    p(dans) + p(a)  = 1/2
-        
+
     This code finds the probability distribution with maximal entropy
     subject to these constraints.
 """
@@ -69,5 +69,3 @@ print "Actual expectations under the fitted model:"
 print "\tp['dans'] + p['en'] =", p[0] + p[1]
 print ("\tp['dans'] + p['" + a_grave + "']  = " + str(p[0]+p[2])).encode('utf-8')
 # (Or substitute "x.encode('latin-1')" if you have a primitive terminal.)
-
-

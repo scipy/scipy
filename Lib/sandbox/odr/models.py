@@ -8,10 +8,10 @@ from types import *
 def _lin_fcn(B, x, sum=sb.sum):
     a, b = B[0], B[1:]
     b.shape = (b.shape[0], 1)
-    
+
     return a + sum(x*b)
 
-def _lin_fjb(B, x, concatenate=sb.concatenate, Float=sb.Float, 
+def _lin_fjb(B, x, concatenate=sb.concatenate, Float=sb.Float,
              ones=sb.ones, ravel=sb.ravel):
     a = ones((x.shape[-1],), Float)
     res = concatenate((a, ravel(x)))
@@ -26,9 +26,9 @@ def _lin_fjd(B, x, repeat=sb.repeat):
 
 def _lin_est(data):
     # Eh. The answer is analytical, so just return all ones.
-    # Don't return zeros since that will interfere with 
+    # Don't return zeros since that will interfere with
     # ODRPACK's auto-scaling procedures.
-    
+
     if len(data.x.shape) == 2:
         m = data.x.shape[0]
     else:
@@ -51,9 +51,9 @@ def _poly_fjacb(B, x, powers, power=sb.power,
 def _poly_fjacd(B, x, powers, power=sb.power, sum=sb.sum):
     b = B[1:]
     b.shape = (b.shape[0], 1)
-    
+
     b = b * powers
-    
+
     return sum(b * power(x, powers-1))
 
 def _exp_fcn(B, x, exp=sb.exp):
@@ -62,7 +62,7 @@ def _exp_fcn(B, x, exp=sb.exp):
 def _exp_fjd(B, x, exp=sb.exp):
     return B[1] * exp(B[1] * x)
 
-def _exp_fjb(B, x, exp=sb.exp, concatenate=sb.concatenate, ones=sb.ones, 
+def _exp_fjb(B, x, exp=sb.exp, concatenate=sb.concatenate, ones=sb.ones,
              Float=sb.Float):
     res = concatenate((ones((x.shape[-1],), sb.Float), x * exp(B[1] * x)))
     res.shape = (2, x.shape[-1])
@@ -72,7 +72,7 @@ def _exp_est(data):
     # Eh.
     return array([1., 1.])
 
-multilinear = Model(_lin_fcn, fjacb=_lin_fjb, 
+multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
                fjacd=_lin_fjd, estimate=_lin_est,
                meta={'name': 'Arbitrary-dimensional Linear',
                      'equ':'y = B_0 + Sum[i=1..m, B_i * x_i]',
@@ -81,8 +81,8 @@ multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
 def polynomial(order):
     """Factory function for a general polynomial model.
 
-The argument "order" can be either an integer, where it becomes the 
-order of the polynomial to fit, or it can be a sequence of numbers to 
+The argument "order" can be either an integer, where it becomes the
+order of the polynomial to fit, or it can be a sequence of numbers to
 explicitly determine the powers in the polynomial.
 
 Oh yeah, a constant is always included, so don't include 0.
@@ -93,7 +93,7 @@ Thus, polynomial(n) is equivalent to polynomial(range(1, n+1)).
 
     if type(order) is int:
         order = range(1, order+1)
-    
+
     powers = sb.asarray(order)
     powers.shape = (len(powers), 1)
 
@@ -104,7 +104,7 @@ Thus, polynomial(n) is equivalent to polynomial(range(1, n+1)).
 
         return sb.ones((len_beta,), sb.Float)
 
-    return Model(_poly_fcn, fjacd=_poly_fjd, fjacb=_poly_fjb, 
+    return Model(_poly_fcn, fjacd=_poly_fjd, fjacb=_poly_fjb,
                  estimate=_poly_est, extra_args=(powers,),
                  meta={'name': 'Sorta-general Polynomial',
                  'equ':'y = B_0 + Sum[i=1..%s, B_i * (x**i)]' % (len_beta-1),

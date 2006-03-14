@@ -1,5 +1,5 @@
 # Author:  Travis Oliphant, 2002
-# 
+#
 
 from numpy.testing import *
 
@@ -44,7 +44,7 @@ class test_anderson(ScipyTestCase):
         A,crit,sig = scipy.stats.anderson(x1)
         assert_array_less(crit[:-1], A)
         A,crit,sig = scipy.stats.anderson(x2)
-        try: 
+        try:
             assert_array_less(A, crit[-2:])
         except:
             A, crit, sig = scipy.stats.anderson(x2)
@@ -53,7 +53,7 @@ class test_anderson(ScipyTestCase):
     def check_expon(self):
         x1 = scipy.stats.expon.rvs(size=50)
         x2 = scipy.stats.norm.rvs(size=50)
-        A,crit,sig = scipy.stats.anderson(x1,'expon')        
+        A,crit,sig = scipy.stats.anderson(x1,'expon')
         assert_array_less(A, crit[-2:])
         A,crit,sig = scipy.stats.anderson(x2,'expon')
         assert_array_less(crit[:-1], A)
@@ -76,7 +76,7 @@ class test_ansari(ScipyTestCase):
         assert_almost_equal(pval,0.18145819972867083,11)
 
     def check_exact(self):
-        W,pval = stats.ansari([1,2,3,4],[15,5,20,8,10,12]) 
+        W,pval = stats.ansari([1,2,3,4],[15,5,20,8,10,12])
         assert_almost_equal(W,10.0,11)
         assert_almost_equal(pval,0.533333333333333333,7)
 
@@ -105,7 +105,7 @@ class test_binom_test(ScipyTestCase):
         pval = stats.binom_test(201,405)
         assert_almost_equal(pval,0.92085205962670713,11)
         pval = stats.binom_test([682,243],p=3.0/4)
-        assert_almost_equal(pval,0.38249155957481695,11)        
+        assert_almost_equal(pval,0.38249155957481695,11)
 
 class test_find_repeats(ScipyTestCase):
     def check_basic(self):

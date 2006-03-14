@@ -4,7 +4,7 @@ def configuration(parent_package='',top_path=None):
 
     # All subpackages should be commented out in the version
     # committed to the repository. This prevents build problems
-    # for people who are not actively working with these 
+    # for people who are not actively working with these
     # potentially unstable packages.
 
     # An example package:
@@ -15,7 +15,7 @@ def configuration(parent_package='',top_path=None):
 
     # PySparse fork with NumPy compatibility
     #config.add_subpackage('pysparse')
-    
+
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
 

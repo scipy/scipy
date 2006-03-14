@@ -21,7 +21,7 @@ class ItSolver:
         self.lastIterations = 0
         self.lastInfo = 0
         self.debug = debug
-        
+
     def solve(self, b, x):
         "solve A*x = b iteratively with zero initial guess"
         x[:] = 0
@@ -54,7 +54,7 @@ class Minres(ItSolver):
     def __init__(self, A, tol, maxit, K=None, debug=0):
         ItSolver.__init__(self, A, tol, maxit, K, debug)
         self.itsolver = itsolvers.minres
-        
+
 class Qmrs(ItSolver):
     def __init__(self, A, tol, maxit, K=None, debug=0):
         ItSolver.__init__(self, A, tol, maxit, K, debug)
@@ -72,7 +72,7 @@ solve(b, x) solves the linear system A*x = b with a zero initial guess
     def __init__(self, A, tol, maxit, K=None, debug=0):
         ItSolver.__init__(self, A, tol, maxit, K, debug)
         self.itsolver = itsolvers.cgs
-                        
+
 if __name__ == '__main__':
     import math
     import Numeric
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         A.matvec(x, r)
         r = b - r
         return math.sqrt(Numeric.dot(r, r))
-    
+
     solver = Pcg(A, 1e-10, 300)
     solver.solve(b, x)
     print resid(A, b, x), solver.nofCalled, solver.totalIterations
@@ -96,4 +96,3 @@ if __name__ == '__main__':
     solver.K = precon.ssor(A.to_sss())
     solver.solve(b, x)
     print resid(A, b, x), solver.nofCalled, solver.totalIterations
-    

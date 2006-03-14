@@ -33,7 +33,7 @@ class test_build_slice_atom(ScipyTestCase):
                       'single_index':'_index','pos':0}
         desired = 'slice(1,2-1)'
         self.generic_test(slice_vars,desired)
-        
+
 class test_slice(ScipyTestCase):
 
     def generic_test(self,suite_string,desired):
@@ -134,14 +134,14 @@ def replace_whitespace(in_str):
     out = string.replace(out,"\t","")
     out = string.replace(out,"\n","")
     return out
-    
+
 class test_transform_slices(ScipyTestCase):
     def generic_test(self,suite_string,desired):
         import parser
         ast_list = parser.suite(suite_string).tolist()
         slice_handler.transform_slices(ast_list)
         actual = ast_to_string(ast_list)
-        # Remove white space from expressions so that equivelant 
+        # Remove white space from expressions so that equivelant
         # but differently formatted string will compare equally
         import string
         actual = replace_whitespace(actual)

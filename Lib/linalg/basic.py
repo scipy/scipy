@@ -1,6 +1,6 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #
 # Author: Pearu Peterson, March 2002
@@ -37,7 +37,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
       b        -- a set of right-hand sides
       trans    -- type of system to solve:
                   0 : a   * x = b   (no transpose)
-                  1 : a^T * x = b   (transpose) 
+                  1 : a^T * x = b   (transpose)
                   2   a^H * x = b   (conjugate transpose)
 
     Outputs:
@@ -121,7 +121,7 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
         lu,piv,x,info = gesv(a1,b1,
                              overwrite_a=overwrite_a,
                              overwrite_b=overwrite_b)
-        
+
     if info==0:
         return x
     if info>0:
@@ -137,7 +137,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
     a is a banded matrix stored in diagonal orded form
 
      *   *     a1u
-     
+
      *  a12 a23 ...
     a11 a22 a33 ...
     a21 a32 a43 ...
@@ -160,7 +160,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
 
     gbsv, = get_lapack_funcs(('gbsv',),(a1,b1))
     a2 = zeros((2*l+u+1,a1.shape[1]),gbsv.dtypechar)
-    a2[l:,:] = a1 
+    a2[l:,:] = a1
     lu,piv,x,info = gbsv(l,u,a2,b1,
                          overwrite_ab=1,
                          overwrite_b=overwrite_b)
@@ -399,7 +399,7 @@ def pinv2(a, cond=None):
 #-----------------------------------------------------------------------------
 
 def tri(N, M=None, k=0, dtype=None):
-    """ returns a N-by-M matrix where all the diagonals starting from 
+    """ returns a N-by-M matrix where all the diagonals starting from
         lower left corner up to the k-th are all ones.
     """
     if M is None: M = N
@@ -438,17 +438,17 @@ def toeplitz(c,r=None):
     """ Construct a toeplitz matrix (i.e. a matrix with constant diagonals).
 
         Description:
-    
+
            toeplitz(c,r) is a non-symmetric Toeplitz matrix with c as its first
            column and r as its first row.
-    
-           toeplitz(c) is a symmetric (Hermitian) Toeplitz matrix (r=c). 
-    
+
+           toeplitz(c) is a symmetric (Hermitian) Toeplitz matrix (r=c).
+
         See also: hankel
     """
     isscalar = numpy.isscalar
     if isscalar(c) or isscalar(r):
-        return c   
+        return c
     if r is None:
         r = c
         r[0] = conjugate(r[0])
@@ -468,20 +468,20 @@ def toeplitz(c,r=None):
 
 def hankel(c,r=None):
     """ Construct a hankel matrix (i.e. matrix with constant anti-diagonals).
-    
+
         Description:
-    
+
           hankel(c,r) is a Hankel matrix whose first column is c and whose
           last row is r.
-    
+
           hankel(c) is a square Hankel matrix whose first column is C.
           Elements below the first anti-diagonal are zero.
-    
+
         See also:  toeplitz
     """
     isscalar = numpy.isscalar
     if isscalar(c) or isscalar(r):
-        return c   
+        return c
     if r is None:
         r = zeros(len(c))
     elif r[0] != c[-1]:

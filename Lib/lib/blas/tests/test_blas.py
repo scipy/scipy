@@ -187,14 +187,14 @@ class test_fblas3_simple(ScipyTestCase):
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
             assert_array_almost_equal(f(1,[[1,2],[1,2]],[[3],[4]]),[[11],[11]])
             assert_array_almost_equal(f(1,[[1,2]],[[3,3],[4,4]]),[[11,11]])
-            
+
     def check_gemm2(self):
         for p in 'sdcz':
             f = getattr(fblas,p+'gemm',None)
             if f is None: continue
             assert_array_almost_equal(f(1,[[1,2]],[[3],[4]]),[11])
             assert_array_almost_equal(f(1,[[1,2],[1,2]],[[3],[4]]),[[11],[11]])
-        
+
 class test_blas(ScipyTestCase):
 
     def check_blas(self):

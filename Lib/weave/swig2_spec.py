@@ -109,7 +109,7 @@ swig2_py_to_c_template = \
 """
 class %(type_name)s_handler
 {
-public:    
+public:
     %(c_type)s convert_to_%(type_name)s(PyObject* py_obj, const char* name)
     {
         %(c_type)s c_ptr;
@@ -122,7 +122,7 @@ public:
         %(inc_ref_count)s
         return c_ptr;
     }
-    
+
     %(c_type)s py_to_%(type_name)s(PyObject* py_obj,const char* name)
     {
         %(c_type)s c_ptr;
@@ -218,7 +218,7 @@ class swig2_converter(common_base_converter):
 
     def init_info(self, runtime=0):
         """Keyword arguments:
-        
+
           runtime -- If false (default), the user does not need to
           link to the swig runtime (libswipy).  Newer versions of SWIG
           (>=1.3.23) do not need to build a SWIG runtime library at
@@ -237,7 +237,7 @@ class swig2_converter(common_base_converter):
 
         """
         common_base_converter.init_info(self)
-        # These are generated on the fly instead of defined at 
+        # These are generated on the fly instead of defined at
         # the class level.
         self.type_name = self.class_name
         self.c_type = self.class_name + "*"
@@ -250,8 +250,8 @@ class swig2_converter(common_base_converter):
             self.define_macros.append(("SWIG_COBJECT_PYTHON", None))
         elif self.pycobj == 2:
             self.define_macros.append(("SWIG_COBJECT_TYPES", None))
-            
-            
+
+
         if self.runtime_version is None:
             self.runtime_version = self._get_swig_runtime_version()
 
@@ -296,8 +296,8 @@ class swig2_converter(common_base_converter):
             elif type_str.find('PySwig') > -1:
                 swig_typ = 'pyswig'
 
-        return swig_typ        
-    
+        return swig_typ
+
     def type_match(self,value):
         """ This is a generic type matcher for SWIG-1.3 objects.  For
         specific instances, override this method.  The method also
@@ -319,13 +319,13 @@ class swig2_converter(common_base_converter):
             import base_info
             res = base_info.base_info()
         return res
-        
+
     def py_to_c_code(self):
         return swig2_py_to_c_template % self.template_vars()
 
     def c_to_py_code(self):
         return swig2_c_to_py_template % self.template_vars()
-                    
+
     def type_spec(self,name,value):
         """ This returns a generic type converter for SWIG-1.3
         objects.  For specific instances, override this function if
@@ -346,7 +346,7 @@ class swig2_converter(common_base_converter):
             class_name = value.__class__.__name__
             if class_name[-3:] == 'Ptr':
                 class_name = class_name[:-3]
-            
+
         new_spec = self.__class__(class_name, pycobj, self.runtime_version)
         new_spec.name = name
         return new_spec

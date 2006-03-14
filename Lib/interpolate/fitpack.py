@@ -2,7 +2,7 @@
 """
 fitpack (dierckx in netlib) --- A Python-C wrapper to FITPACK (by P. Dierckx).
         FITPACK is a collection of FORTRAN programs for CURVE and SURFACE
-        FITTING with SPLINES and TENSOR PRODUCT SPLINES. 
+        FITTING with SPLINES and TENSOR PRODUCT SPLINES.
 
 See
  http://www.cs.kuleuven.ac.be/cwis/research/nalag/research/topics/fitpack.html
@@ -10,8 +10,8 @@ or
  http://www.netlib.org/dierckx/index.html
 
 Copyright 2002 Pearu Peterson all rights reserved,
-Pearu Peterson <pearu@cens.ioc.ee>          
-Permission to use, modify, and distribute this software is given under the 
+Pearu Peterson <pearu@cens.ioc.ee>
+Permission to use, modify, and distribute this software is given under the
 terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
 this distribution for specifics.
 
@@ -110,7 +110,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
 
     Inputs:
 
-      x -- A list of sample vector arrays representing the curve. 
+      x -- A list of sample vector arrays representing the curve.
       u -- An array of parameter values.  If not given, these values are
            calculated automatically as (M = len(x[0])):
            v[0] = 0
@@ -151,16 +151,16 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
       tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
              coefficients, and the degree of the spline.
       u -- An array of the values of the parameter.
-             
+
       fp -- The weighted sum of squared residuals of the spline approximation.
       ier -- An integer flag about splrep success.  Success is indicated
              if ier<=0. If ier in [1,2,3] an error occurred but was not raised.
              Otherwise an error is raised.
-      msg -- A message corresponding to the integer flag, ier.          
- 
+      msg -- A message corresponding to the integer flag, ier.
+
     Remarks:
 
-      SEE splev for evaluation of the spline and its derivatives.      
+      SEE splev for evaluation of the spline and its derivatives.
     """
     if task<=0:
         _parcur_cache = {'t': array([],'d'), 'wrk': array([],'d'),
@@ -290,7 +290,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 
       tck -- (t,c,k) a tuple containing the vector of knots, the B-spline
              coefficients, and the degree of the spline.
-             
+
       fp -- The weighted sum of squared residuals of the spline approximation.
       ier -- An integer flag about splrep success.  Success is indicated if
              ier<=0. If ier in [1,2,3] an error occurred but was not raised.
@@ -299,7 +299,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 
     Remarks:
 
-      SEE splev for evaluation of the spline and its derivatives.      
+      SEE splev for evaluation of the spline and its derivatives.
     """
     if task<=0:
         _curfit_cache = {'t': array([],'d'), 'wrk': array([],'d'),
@@ -367,7 +367,7 @@ def _ntlist(l): # return non-trivial list
     return l
     #if len(l)>1: return l
     #return l[0]
-    
+
 def splev(x,tck,der=0):
     """Evaulate a B-spline and its derivatives.
 
@@ -427,7 +427,7 @@ def splint(a,b,tck,full_output=0):
       wrk -- An array containing the integrals of the normalized B-splines defined
              on the set of knots.
 
-    """      
+    """
     t,c,k=tck
     try: c[0][0];return _ntlist(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c))
     except: pass
@@ -488,7 +488,7 @@ def spalde(x,tck):
 
       results -- An array (or a list of arrays) containing all derivatives
                  up to order k inclusive for each point x.
-    """    
+    """
     t,c,k=tck
     try:
         c[0][0]
@@ -524,7 +524,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
 
       x, y, z -- Rank-1 arrays of data points.
       w -- Rank-1 array of weights. By default w=ones(len(x)).
-      xb, xe -- End points of approximation interval in x. 
+      xb, xe -- End points of approximation interval in x.
       yb, ye -- End points of approximation interval in y.
                 By default xb, xe, yb, ye = x[0], x[-1], y[0], y[-1]
       kx, ky -- The degrees of the spline (1 <= kx, ky <= 5).  Third order
@@ -563,12 +563,12 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
     Remarks:
 
       SEE bisplev to evaluate the value of the B-spline given its tck
-      representation.           
+      representation.
     """
     x,y,z=map(myasarray,[x,y,z])
     x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
     m=len(x)
-    if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'  
+    if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'
     if w is None: w=ones(m,'d')
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
@@ -588,7 +588,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
         raise TypeError, 'There must be at least 2*kx+2 knots_x for task=-1'
     if task==-1 and ny<2*ky+2:
         raise TypeError, 'There must be at least 2*ky+2 knots_x for task=-1'
-    if not ((1<=kx<=5) and (1<=ky<=5)): 
+    if not ((1<=kx<=5) and (1<=ky<=5)):
         raise TypeError, 'Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)'%(kx,ky)
     if m<(kx+1)*(ky+1): raise TypeError, 'm>=(kx+1)(ky+1) must hold'
     if nxest is None: nxest=kx+sqrt(m/2)
@@ -851,10 +851,3 @@ if __name__ == "__main__":
 \tTests of bisplrep, bisplev
 ******************************************"""
         test5()
-
-
-
-
-
-
-

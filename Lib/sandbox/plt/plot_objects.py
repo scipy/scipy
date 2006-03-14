@@ -20,8 +20,8 @@ tick_length = [0,1,2,3,4,5,6,7,8,9,10]
 
 line_style_map = {'solid':wx.wxSOLID,'dot dash': wx.wxDOT_DASH,
                  'dash':wx.wxSHORT_DASH,'dot': wx.wxDOT,
-                 'long dash':wx.wxLONG_DASH,'transparent':wx.wxTRANSPARENT}   
-line_styles = line_style_map.keys()      
+                 'long dash':wx.wxLONG_DASH,'transparent':wx.wxTRANSPARENT}
+line_styles = line_style_map.keys()
 
 fill_style_map = {'solid':wx.wxSOLID,'stipple': wx.wxSTIPPLE,
                  'back hatch':wx.wxBDIAGONAL_HATCH,
@@ -31,7 +31,7 @@ fill_style_map = {'solid':wx.wxSOLID,'stipple': wx.wxSTIPPLE,
                  'horz hatch': wx.wxHORIZONTAL_HATCH,
                  'vert hatch': wx.wxVERTICAL_HATCH,
                  'transparent':wx.wxTRANSPARENT
-                 }                 
+                 }
 fill_styles = fill_style_map.keys()
 
 image_type_map = { 'jpg': wx.wxBITMAP_TYPE_JPEG,
@@ -40,16 +40,16 @@ image_type_map = { 'jpg': wx.wxBITMAP_TYPE_JPEG,
                    'pcx': wx.wxBITMAP_TYPE_PCX,
                    'tif': wx.wxBITMAP_TYPE_TIF,
                    'tiff': wx.wxBITMAP_TYPE_TIF, }
-    
+
 def get_color(in_color):
     """ Convert a color name or  rgb sequence to a wxColour
     """
     if type(in_color) == type(''):
-        color = wx.wxNamedColour(in_color) 
-    else: 
+        color = wx.wxNamedColour(in_color)
+    else:
         r,g,b = in_color
         ##color = wx.wxColour(r,g,b) # mod by GAP 26092003
-        color = wx.wxColour(int(r),int(g),int(b)) 
+        color = wx.wxColour(int(r),int(g),int(b))
     return color
 
 def default_font():
@@ -58,8 +58,8 @@ def default_font():
         each text object will get its own font object that can
         change indepedently of all others.
     """
-    return wx.wxFont(12, wx.wxSWISS, wx.wxNORMAL, 
-                     wx.wxNORMAL,wx.false,"Arial")                
+    return wx.wxFont(12, wx.wxSWISS, wx.wxNORMAL,
+                     wx.wxNORMAL,wx.false,"Arial")
 
 
 #-----------------------------------------------------------------------#
@@ -68,11 +68,11 @@ def default_font():
 
 def draw_point_list(start,stop,pen,dc):
     """ Draw lines between the points listed in start and stop.
-    
+
         start and stop are 2xN arrays of x,y point coordinates.  N lines
         are drawn, one between each of the start,stop pairs using the
-        specified pen.  The lines are drawn on the given device context, dc.    
-    """    
+        specified pen.  The lines are drawn on the given device context, dc.
+    """
     dc.SetPen(pen)
     for i in range(len(start)):
         pt1 = start[i]
@@ -85,14 +85,14 @@ def draw_point_list(start,stop,pen,dc):
 #-----------------------------------------------------------------------#
 
 class text_object(box_object,property_object):
-    """ Text objects can be placed anywhere in the plot window.  They have 
-        "font", "color", and "rotate" attributes as well as "visible" 
+    """ Text objects can be placed anywhere in the plot window.  They have
+        "font", "color", and "rotate" attributes as well as "visible"
         attribute that specifies whether the text is displayed.  The font
         attribute is a wxWindows font.  "color" can either be a named
         color (string such as 'black') or a 3-element sequence specifiy
-        rgb values (0 to 255).  Rotatation is specified in degrees.  
+        rgb values (0 to 255).  Rotatation is specified in degrees.
         Currently only 0 and 90 degree rotation are supported.
-        
+
         Issues:
           -- The font attribute seems to be ignored when drawing
              rotated text. (wxPython)
@@ -102,12 +102,12 @@ class text_object(box_object,property_object):
              from the topleft to bottomleft corner.  This inconsistency
              may be problematic in the future, but it was convienient
              for laying out axis titles.
-          -- There is some ugliness with calculating the size of 
+          -- There is some ugliness with calculating the size of
              the object because text needs to know the dc it is drawing
              in to know its size.  As a result, you must call set_dc(dc)
              before calling size.  To keep from having a dc reference
-             hanging around, I added a clear_dc() method.  Necessary??   
-    """    
+             hanging around, I added a clear_dc() method.  Necessary??
+    """
     _attributes = {'color': ['black',colors,"Color of line"],
                    'font':  [None,[],"Font of text object"],
                    'rotate': [0,[], "Angular rotation of text in degrees"],
@@ -141,15 +141,15 @@ class text_object(box_object,property_object):
             del self.dc
         except:
             pass
-            
+
     def size(self):
         """ Calculate the width and length of the text in pixels.
-        
+
             If "visible" == 'no', size() always returns (0,0) regardless
             of the text size.  If the rotation angle is 90 degrees,
             the width of the text is actually its height on the screen
             and visa-versa.
-            
+
             Issues:
                -- haven't really thought about how to handle non-orthogonal
                   text rotations.
@@ -157,28 +157,28 @@ class text_object(box_object,property_object):
         if self.visible in ['yes','on',1] and self.text:
             if not hasattr(self,'dc'):
                 raise ValueError, "no device context to calculate text " \
-                                  "size. Call set_dc() first."            
+                                  "size. Call set_dc() first."
             preset = (self.dc.GetFont() == self.font)
             if not preset: self.dc.SetFont(self.font)
             sz= array(self.dc.GetTextExtent(self.text))
-            
+
             # Commented the following line out since calling this
-            # seems to turn of plotting of any text            
+            # seems to turn of plotting of any text
             #if not preset: self.dc.SetFont(wx.wxNullFont)
-            
+
             # should do something here to calculate real width
             # this only works for 90 degree rotations
             if self.rotate: sz = sz[::-1]
         else:
             sz = array((0,0))
         return sz
-                                                    
+
     def set_size(self):
         raise ValueError, "Can't set size of text objects"
-        
+
     def draw(self,dc):
         """ Draw the text on the screen.
-        
+
             If the text is rotated by 90 degrees, the "insertion point"
             is the bottom-left corner.  Otherwise the stanard top-left
             corner is used.
@@ -196,13 +196,13 @@ class text_object(box_object,property_object):
                 dc.DrawRotatedText(self.text,int(self.left()),int(self.bottom()),
                                    int(self.rotate))
             else:
-                dc.DrawText(self.text,self.left(),self.top()) 
+                dc.DrawText(self.text,self.left(),self.top())
 
             dc.SetPen(wx.wxNullPen)
             dc.SetFont(wx.wxNullFont)
             # hmmm. really should clear the dc...
             self.clear_dc()
-            
+
 
 class text_window(wx.wxWindow,text_object):
     """
@@ -227,7 +227,7 @@ class text_window(wx.wxWindow,text_object):
         #print 'fp:',self.text
         menu.UpdateUI()
         self.PopupMenuXY(menu,pos[0],pos[1])
-        
+
     def OnFont(self,event):
         data = wx.wxFontData()
         data.SetColour(get_color(self.color))
@@ -247,17 +247,17 @@ class text_window(wx.wxWindow,text_object):
                             defaultValue=self.text)
         if dlg.ShowModal() == wx.wxID_OK:
             self.text = dlg.GetValue()
-            self.plot_canvas.update()     
+            self.plot_canvas.update()
         dlg.Destroy()
 
-        
+
 #-----------------------------------------------------------------------#
 #-------------------------- legend_object ------------------------------#
 #-----------------------------------------------------------------------#
 
 class legend_object(property_object,box_object):
     """ Draws a legend to the lines plotted on the graph.
-    
+
         Unimplemented.
     """
     _attributes = {
@@ -272,11 +272,11 @@ class legend_object(property_object,box_object):
         property_object.__init__(self,attr)
         box_object.__init__(self,(0,0),(0,0))
     def layout(self,graph_lines,graph_area,dc):
-        
+
         self.graph_lines = graph_lines # keep a pointer so we can clone
                                        # properties when drawing
-        # create duplicates of the lines            
-        
+        # create duplicates of the lines
+
         #figure out where to put it
         #create legend
     def draw(self,dc):
@@ -286,14 +286,14 @@ class legend_object(property_object,box_object):
             self.labels = []
             self.lines = []
             self.markers = []
-            
+
             for line in self.graph_lines:
                 #self.labels.append(text_object(line.name))
                 self.labels.append(text_object('bug'))
                 self.labels[-1].set_dc(dc)
                 #create legend lines and markers and steal properties
                 #from actual line.  We'll update the points later
-    
+
             # figure out size
             w,h = 0,0
             margin = 0
@@ -313,13 +313,13 @@ class legend_object(property_object,box_object):
                 new_marker.clone_properties(line.markers)
                 self.markers.append(new_marker)
                 previous = label
-    
+
             for items in self.labels: items.clear_dc()
             # end of junk that should be moved
             for item in self.lines:
                 item.draw(dc)
             for item in self.markers:
-                item.draw(dc)                
+                item.draw(dc)
             for item in self.labels:
                 item.draw(dc)
 
@@ -329,8 +329,8 @@ class legend_object(property_object,box_object):
 
 class axis_object(property_object):
     """ Class for drawing an axis on a graph.
-    
-        
+
+
     """
     _attributes = {
     'labels_visible':  ['yes',['yes','no'], "Turns on/off labels for axis"],
@@ -355,19 +355,19 @@ class axis_object(property_object):
                    }
     # axis crossing
     # others...
-                    
-                    
+
+
     def __init__(self, rotate = 0, graph_location='above',**attr):
-        # attr to allow or disallow labels        
+        # attr to allow or disallow labels
         property_object.__init__(self,attr)
         self.rotate = rotate
         if graph_location == 'above' or graph_location == 'left':
             self.tick_sign = -1
         elif graph_location == 'below' or graph_location == 'right':
-            self.tick_sign = 1                        
-        else: 
+            self.tick_sign = 1
+        else:
             raise ValueError, "graph_location can be 'left','right','above" \
-                              ", or 'below'. You tried '%s'" % graph_location    
+                              ", or 'below'. You tried '%s'" % graph_location
         if not self.label_font:
             self.label_font = default_font()
             self.label_font.SetPointSize(10)
@@ -378,18 +378,18 @@ class axis_object(property_object):
         """ data bounds is (lower bound, upper bound)
            axis_settings is a 3-tuple (lower bound, upper bound, interval)
            Each of its settings can be 'auto', or a numerical value.
-           In addition, the bounds can be 'fit' and interval can be 
+           In addition, the bounds can be 'fit' and interval can be
            'linear' or 'log' (well, not yet).
-           'auto' -- bound or interval is calculated for you based on the 
+           'auto' -- bound or interval is calculated for you based on the
                      data bounds.
            'fit'  -- bound is set to be slightly beyond than data_bounds
             value  -- bound is exactly to specified value.
            Typical settings are the following:
             ['auto','auto','auto'
-        """    
+        """
         bounds_settings = [self.bounds[0], self.bounds[1], self.tick_interval]
         self.ticks = auto_ticks(data_bounds,bounds_settings)
-        # This code tries to omit printing of first and last labels when they 
+        # This code tries to omit printing of first and last labels when they
         # are strange values due to 'fit' settings.
         self.omit_first_label = 0
         self.omit_last_label = 0
@@ -403,9 +403,9 @@ class axis_object(property_object):
                 self.omit_first_label = 1
             if last_diff > .01*delta:
                 self.omit_last_label = 1
-            
+
         self.create_labels()
-    
+
     def create_labels(self):
         self.labels = []
         tick_text = format_tick_labels(self.ticks)
@@ -413,16 +413,16 @@ class axis_object(property_object):
             label = text_object(text,(0,0),font=self.label_font,
                                            color=self.label_color)
             self.labels.append(label)
-        if len(self.labels):    
+        if len(self.labels):
             if self.omit_first_label:
                 self.labels[0] = text_object(' ',(0,0),font=self.label_font,
                                                color=self.label_color)
             if self.omit_last_label:
                 self.labels[-1] = text_object(' ',(0,0),font=self.label_font,
                                                color=self.label_color)
-        
-    
-    def max_label_size(self,dc,idx):        
+
+
+    def max_label_size(self,dc,idx):
         dim = [0]
         for i in self.labels:
             i.set_dc(dc)
@@ -430,42 +430,42 @@ class axis_object(property_object):
             i.clear_dc()
         return max(dim) + self.tick_out + self.label_offset
 
-    def max_label_width(self,dc):        
+    def max_label_width(self,dc):
         return self.max_label_size(dc,0)
-    def max_label_height(self,dc):        
+    def max_label_height(self,dc):
         return self.max_label_size(dc,1)
     def range(self):
         return float(self.ticks[-1]-self.ticks[0])
-        
+
     def layout(self,graph_area,dc):
-        if self.rotate == 0:           
+        if self.rotate == 0:
             length = graph_area.width()
             grid_length = graph_area.height()
-        elif self.rotate == 90 or self.rotate == -90: 
+        elif self.rotate == 90 or self.rotate == -90:
             length = graph_area.height()
             grid_length = graph_area.width()
-        else: 
-            raise ValueError,'rotate must be 0 or 90. It is %d' % self.rotate            
+        else:
+            raise ValueError,'rotate must be 0 or 90. It is %d' % self.rotate
 
         # translate to screen units for the ticks.
         scale = length / float(self.ticks[-1] - self.ticks[0])
         tick_locations = floor((self.ticks - self.ticks[0]) * scale)
-        
+
         # make array of points with tick screen units as x value, 0 for y value
         tick_points = []
         for i in tick_locations:
-            tick_points.append((i,0))            
+            tick_points.append((i,0))
         tick_points = array(tick_points)
 
         # create array of end points for the tick lines
         tick_start =  tick_points + array((0,self.tick_in*self.tick_sign))
-        tick_stop =  tick_points - array((0,self.tick_out*self.tick_sign))            
-        
+        tick_stop =  tick_points - array((0,self.tick_out*self.tick_sign))
+
         # set up grid lines
-        grid_start = tick_points 
+        grid_start = tick_points
         grid_stop =  tick_points + array((0,grid_length*self.tick_sign))
-        
-        # rotate all of this stuff to the correct axis orientation.        
+
+        # rotate all of this stuff to the correct axis orientation.
         angle = -self.rotate*pi/180 # neg. since up is y decreasing in canvas.
         zero_point = array((0,0))
         self.tick_points = rotate(tick_points,zero_point,angle)
@@ -482,11 +482,11 @@ class axis_object(property_object):
             else: label_angle = angle - pi/2
         for i in range(len(self.labels)):
             self.labels[i].set_dc(dc)
-            pt = point_object(self.tick_points[i])        
+            pt = point_object(self.tick_points[i])
             self.labels[i].radial_offset_from(pt,label_angle,
                                               margin=self.label_offset)
             self.labels[i].clear_dc()
-        self.labels[i].set_dc(dc)            
+        self.labels[i].set_dc(dc)
 
         # for fast line drawing.
         # not currently used
@@ -502,7 +502,7 @@ class axis_object(property_object):
             self.single_tick_line.append(ts[i])
             self.single_tick_line.append(tc[i])
 
-        
+
     def move(self,offset):
         self.tick_start = self.tick_start + offset
         self.tick_stop = self.tick_stop + offset
@@ -512,7 +512,7 @@ class axis_object(property_object):
         # need to rebuild fast_line drawing stuff
         for i in self.labels:
             i.translate(offset)
-    
+
     def contains(self,pt,dc):
         mins,maxs = [],[]
         for i in self.labels: i.set_dc(dc)
@@ -530,31 +530,31 @@ class axis_object(property_object):
         hi = maximum.reduce(maxs)
         sz = hi-lo
         return box_object(lo,sz).contains(pt)
-          
+
     def draw_ticks(self,dc):
         if self.ticks_visible in ['yes','on']:
             style = line_style_map[self.tick_style]
             color = get_color(self.tick_color)
-            pen = wx.wxPen(color, self.tick_weight, style)        
+            pen = wx.wxPen(color, self.tick_weight, style)
             draw_point_list(self.tick_start,self.tick_stop,pen,dc)
             #dc.DrawLines(self.single_tick_line)
         # draw axis line here also
-        pt1 = self.tick_points[0]    
+        pt1 = self.tick_points[0]
         pt2 = self.tick_points[-1]
         draw_point_list([pt1],[pt2],pen,dc)
-        
+
     def draw_grid_lines(self,dc):
         if self.grid_visible in ['yes','on']:
             style = line_style_map[self.grid_style]
             color = get_color(self.grid_color)
-            pen = wx.wxPen(color,self.grid_weight, style)        
+            pen = wx.wxPen(color,self.grid_weight, style)
             draw_point_list(self.grid_start,self.grid_stop,pen,dc)
 
     def draw_labels(self,dc):
         if self.labels_visible in ['yes','on']:
             for label in self.labels:
                 label.draw(dc)
-                    
+
     def draw_lines(self,dc):
         self.draw_grid_lines(dc)
         self.draw_ticks(dc)
@@ -583,7 +583,7 @@ class axis_window(wx.wxWindow,axis_object):
         wx.EVT_MENU(self, 600, self.OnFont)
         menu.UpdateUI()
         self.PopupMenuXY(menu,pos[0],pos[1])
-        
+
     def OnFont(self,event):
         data = wx.wxFontData()
         data.SetColour(get_color(self.label_color))
@@ -615,9 +615,9 @@ class border_object(property_object):
     'style': ['solid',line_styles,"Line style for border lines"],
     }
     def __init__(self,**attr):
-        # attr to allow or disallow labels        
+        # attr to allow or disallow labels
         property_object.__init__(self,attr)
-    
+
     def add_ticks(self,tick_points, origin, tick_in, tick_out):
         offset = array((0,self.tick_out))
         self.tick_start.append( tick_points + offset + origin )
@@ -628,12 +628,12 @@ class border_object(property_object):
         # top
         x_points = x_axis.tick_points - x_axis.tick_points[0]
         y_points = y_axis.tick_points - y_axis.tick_points[0]
-        
+
         #clear tick lines
         self.tick_start = []
         self.tick_stop = []
         self.tick_center = []
-        
+
         #top
         origin = array((graph_area.left(),graph_area.top()))
         offset = array((0,-self.tick_out))
@@ -662,11 +662,11 @@ class border_object(property_object):
         offset = array((self.tick_in,0))
         self.tick_stop.append( y_points + offset + origin )
         self.tick_center.append(y_points + origin)
-        
+
         self.tick_start = concatenate(self.tick_start)
         self.tick_stop = concatenate(self.tick_stop)
         self.tick_center = concatenate(self.tick_center)
-        
+
         self.border_start = []
         self.border_stop = []
         gr = graph_area
@@ -682,7 +682,7 @@ class border_object(property_object):
         self.border_stop.append((gr.right(),gr.bottom()))
         self.border_start = array(self.border_start)
         self.border_stop = array(self.border_stop)
-                
+
         # this stuff is only needed for the fast_draw method
         # needs slight amount of work
         self.single_line = []
@@ -695,30 +695,30 @@ class border_object(property_object):
             self.single_line.append(te[i])
             self.single_line.append(ts[i])
             self.single_line.append(tc[i])
-            
+
     def draw(self,dc):
         vis = self.visible in ['yes','on']
         tick_vis = self.ticks_visible in ['yes','on']
-        
+
         #if vis and tick_vis:
         if 0:
             # Really should check styles etc. here to make
             # sure the are the same.
             self.draw_fast(dc)
-        else:    
+        else:
             #draw border
             if vis:
                 style = line_style_map[self.style]
                 color = get_color(self.color)
-                pen = wx.wxPen(color, self.weight, style)        
+                pen = wx.wxPen(color, self.weight, style)
                 draw_point_list(self.border_start,self.border_stop,pen,dc)
             #draw ticks
             if tick_vis:
                 style = line_style_map[self.tick_style]
                 color = get_color(self.tick_color)
-                pen = wx.wxPen(color, self.tick_weight, style)        
+                pen = wx.wxPen(color, self.tick_weight, style)
                 draw_point_list(self.tick_start,self.tick_stop,pen,dc)
-        
+
     def draw_fast(self,dc):
         """ This approach uses wxPythons DrawLines to draw
             the entire border in one call instead of drawing
@@ -728,7 +728,7 @@ class border_object(property_object):
         """
         style = line_style_map[self.style]
         color = get_color(self.color)
-        pen = wx.wxPen(color, self.weight, style)        
+        pen = wx.wxPen(color, self.weight, style)
         dc.SetPen(pen)
         dc.DrawLines(self.single_line)
         dc.SetPen(wx.wxNullPen)
@@ -747,7 +747,7 @@ class poly_points(property_object):
     def scale_and_shift(self, scale=1, shift=0):
         self.scaled = scale*self.points+shift
         #self.scaled = map(tuple,self.scaled)
-       
+
 class poly_line(poly_points):
     _attributes = {'color': ['black',colors,"Color of line"],
                    'weight': [1,line_widths, "Weight of Line"],
@@ -763,13 +763,13 @@ class poly_line(poly_points):
             style = line_style_map[self.style]
             dc.SetPen(wx.wxPen(color, self.weight,style))
             try:
-                dc.DrawLines(self.scaled)           
+                dc.DrawLines(self.scaled)
             except:
                 dc.DrawLines(map(tuple,self.scaled))
             dc.SetPen(wx.wxNullPen)
-                    
+
 marker_styles = ['circle','square','dot','triangle','down_triangle',\
-                 'cross','plus']                    
+                 'cross','plus']
 
 class poly_marker(poly_points):
     """ adding a layout method that did most of the computation
@@ -782,7 +782,7 @@ class poly_marker(poly_points):
        'fill_style': ['solid',fill_styles, "pattern used when filling marker"],
        'size':       [1,[],"Size of marker"],
        'symbol':     ['circle',marker_styles,"Shape used for marker"],
-       'visible':    ['yes',['yes','no'], "Turn on/off markers"],       
+       'visible':    ['yes',['yes','no'], "Turn on/off markers"],
        }
     def __init__(self,points,**attr):
         poly_points.__init__(self,points,attr)
@@ -850,7 +850,7 @@ class line_object(poly_points):
         self.line = poly_line(points)
     def clip_box(self,box):
         self.clip = box.left(),box.top(),box.width(),box.height()
-    def draw(self,dc):                   
+    def draw(self,dc):
         if hasattr(self,'clip'):
             c = self.clip
             ##dc.SetClippingRegion(c[0]-1,c[1]-1,c[2]+2,c[3]+2) # mod by GAP 26092003
@@ -861,9 +861,9 @@ class line_object(poly_points):
             c = self.clip
             ##dc.SetClippingRegion(c[0]-5,c[1]-5,c[2]+10,c[3]+10)  # mod by GAP 26092003
             dc.SetClippingRegion(int(c[0]-5),int(c[1]-5),int(c[2]+10),int(c[3]+10))
-        self.markers.draw(dc)        
+        self.markers.draw(dc)
         if hasattr(self,'clip'): dc.DestroyClippingRegion()
-        
+
     def scale_and_shift(self, scale=1, shift=0):
         self.markers.scale_and_shift(scale, shift)
         self.line.scale_and_shift(scale, shift)
@@ -873,24 +873,24 @@ class line_object(poly_points):
         self.markers.fill_color = color
 
 
-        
+
 class image_object(property_object):
     _attributes = {
       'colormap': ['grey',[],"name of colormap or Nx3 color array"],
       'scale':    ['yes',['yes','no'],"Turn scaling on/off"],
       }
     def __init__(self, matrix,x_bounds=None,y_bounds=None,**attr):
-        property_object.__init__(self,attr)        
-        if not x_bounds: 
+        property_object.__init__(self,attr)
+        if not x_bounds:
             self.x_bounds = array((0,matrix.shape[1]))
         else:
             # works for both 2 element or N element x
             self.x_bounds = array((x_bounds[0],x_bounds[-1]))
-        if not y_bounds: 
+        if not y_bounds:
             self.y_bounds = array((0,matrix.shape[0]))
         else:
             self.y_bounds = array((y_bounds[0],y_bounds[-1]))
-        
+
         self.matrix = matrix
         self.the_image = self.form_image()
 
@@ -898,14 +898,14 @@ class image_object(property_object):
                               self.y_bounds[1]-self.y_bounds[0]))
         self.image_pixels_per_axis_unit =array((matrix.shape[1], matrix.shape[0]),Float)/axis_lengths
         self.image_origin = array((self.x_bounds[0],self.y_bounds[0]))
-        
+
     def scale_magnitude(self,image,colormap):
         themin = float(minimum.reduce(ravel(image)))
         themax = float(maximum.reduce(ravel(image)))
         scaled = (image - themin) / (themax-themin) * len(colormap) *.99999
         scaled = scaled.astype('b')
         return scaled
-        
+
     def form_image(self):
         # look up colormap if it si identified by a string
         if type(self.colormap) == type(''):
@@ -916,18 +916,18 @@ class image_object(property_object):
                                 % `colormap_map.keys()`
         else:
             colormap = self.colormap
-        # scale image if we're supposed to.    
+        # scale image if we're supposed to.
         if self.scale in ['yes','on']:
             scaled_mag = self.scale_magnitude(self.matrix,colormap)
-        else:    
+        else:
             scaled_mag = self.matrix.astype('b')
         scaled_mag = clip(scaled_mag,0,len(colormap)-1)
-        
+
         if float(maximum.reduce(ravel(colormap))) == 1.:
             cmap = colormap * 255
         else:
-            cmap = colormap    
-        
+            cmap = colormap
+
         pixels = take( cmap, scaled_mag)
         del scaled_mag
         # need to transpose pixels in memory...
@@ -935,7 +935,7 @@ class image_object(property_object):
         image = wx.wxEmptyImage(self.matrix.shape[1],self.matrix.shape[0])
         image.SetData(bitmap)
         return image
-        
+
     def bounding_box(self):
         bb = array((self.x_bounds[0],self.y_bounds[0])), \
              array((self.x_bounds[1],self.y_bounds[1]))
@@ -957,7 +957,7 @@ class image_object(property_object):
         scaled_image = self.the_image.Scale(sz[0],sz[1])
         bitmap = scaled_image.ConvertToBitmap()
 
-        dc.DrawBitmap(bitmap, self.origin[0]+1, 
+        dc.DrawBitmap(bitmap, self.origin[0]+1,
                       self.origin[1]-scaled_image.GetHeight()+1, wx.false)
 
 import UserList
@@ -968,7 +968,7 @@ class graphic_list(UserList.UserList):
     """
     def __init__(self):
         UserList.UserList.__init__(self)
-    
+
     def bounding_box(self):
         p1 =[]; p2 = []
         for o in self.data:
@@ -980,9 +980,9 @@ class graphic_list(UserList.UserList):
             return huge,tiny
 
     def axis_bounds(self):
-        p1, p2 = self.bounding_box()        
+        p1, p2 = self.bounding_box()
         return array((p1[0],p2[0])), array((p1[1],p2[1]))
-    
+
     def scale_and_shift(self, scale=1, shift=0):
         for o in self.data:
             o.scale_and_shift(scale, shift)
@@ -994,9 +994,9 @@ class graphic_list(UserList.UserList):
 auto_styles = [['blue','circle','solid'], ['green','square','solid'],
                ['red','triangle','solid'],['cyan','down_triangle','solid'],
                ['orange','cross','solid'],['purple','plus','solid'] ]
-              
+
 # make a black and white auto?
-      
+
 class auto_line_list(graphic_list):
     """ Handles drawing of line_objects with auto styles
         only works with line_objects
@@ -1010,7 +1010,7 @@ class auto_line_list(graphic_list):
             #print 'line vis before:',o.line_type, o.line.visible
             #print 'marker vis before:',o.marker_type, o.markers.visible
             if 'auto' in [o.color,o.line_type,o.marker_type]:
-                if idx >= len(auto_styles): 
+                if idx >= len(auto_styles):
                     idx = 0
                 color,marker,line_type = auto_styles[idx]
                 #print 'clm: ',color,marker,line_type
@@ -1024,4 +1024,4 @@ class auto_line_list(graphic_list):
                 idx = idx + 1
             #print 'line vis after:',o.line_type, o.line.visible
             #print 'marker vis after:',o.marker_type, o.markers.visible
-            o.draw(canvas)          
+            o.draw(canvas)

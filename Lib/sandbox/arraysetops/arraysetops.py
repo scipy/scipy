@@ -67,7 +67,7 @@ def unique1d( ar1, retIndx = False ):
         return numpy.compress( flag, perm ), numpy.compress( flag, aux )
     else:
         aux = numpy.sort( ar )
-        return numpy.compress( ediff1d( aux, 1 ) != 0, aux ) 
+        return numpy.compress( ediff1d( aux, 1 ) != 0, aux )
 
 ##
 # 01.11.2005, c
@@ -240,7 +240,7 @@ def test_manyways():
     b = numpy.fix( nItem / 10 * numpy.random.random( nItem ) )
 
     c1 = intersect1d_nu( a, b )
-    c2 = unique1d( intersect1d( a, b ) )    
+    c2 = unique1d( intersect1d( a, b ) )
     assert numpy.alltrue( c1 == c2 )
 
     a = numpy.array( [5, 7, 1, 2, 8] )
@@ -268,13 +268,13 @@ def test_unique1d_speed( plotResults = False ):
         a = numpy.fix( nItem / 10 * numpy.random.random( nItem ) )
 
         print 'dictionary:'
-        tt = time.clock() 
+        tt = time.clock()
         b = numpy.unique( a )
         dt1 = time.clock() - tt
         print dt1
 
         print 'array:'
-        tt = time.clock() 
+        tt = time.clock()
         c = unique1d( a )
         dt2 = time.clock() - tt
         print dt2

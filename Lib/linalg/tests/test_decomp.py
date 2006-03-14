@@ -61,17 +61,17 @@ class test_eigvals(ScipyTestCase):
         print '      |    contiguous     '#'|   non-contiguous '
         print '----------------------------------------------'
         print ' size |  scipy  '#'| core |  scipy  | core '
-        
+
         for size,repeat in [(20,150),(100,7),(200,2)]:
             repeat *= 1
             print '%5s' % size,
             sys.stdout.flush()
-            
+
             a = random([size,size])
 
             print '| %6.2f ' % self.measure('eigvals(a)',repeat),
             sys.stdout.flush()
-            
+
             print '   (secs for %s calls)' % (repeat)
 
 class test_eig(ScipyTestCase):
@@ -125,16 +125,16 @@ class test_lu(ScipyTestCase):
 
     #XXX: need more tests
 
-class test_lu_solve(ScipyTestCase):        
+class test_lu_solve(ScipyTestCase):
     def check_lu(self):
         a = random((10,10))
         b = random((10,))
-        
+
         x1 = solve(a,b)
-        
+
         lu_a = lu_factor(a)
         x2 = lu_solve(lu_a,b)
-        
+
         assert_array_equal(x1,x2)
 
 class test_svd(ScipyTestCase):

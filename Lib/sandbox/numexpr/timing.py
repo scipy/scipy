@@ -6,17 +6,17 @@ iterations = 10
 def compare_times(setup, expr):
     print "Expression:", expr
     namespace = {}
-    exec setup in namespace    
+    exec setup in namespace
 
     numpy_timer = timeit.Timer(expr, setup)
     numpy_time = numpy_timer.timeit(number=iterations)
     print 'numpy:', numpy_time / iterations
-    
+
     try:
         weave_timer = timeit.Timer('blitz("result=%s")' % expr, setup)
         weave_time = weave_timer.timeit(number=iterations)
         print "Weave:", weave_time/iterations
-    
+
         print "Speed-up of weave over numpy:", numpy_time/weave_time
     except:
         print "Skipping weave timing"

@@ -16,7 +16,7 @@ class test_rand(unittest.TestCase):
     def __init__(self,*args,**kwds):
         unittest.TestCase.__init__(self,*args,**kwds)
         self.z = rand(100,10,20)
-        
+
     def check_shape(self):
         assert_equal(self.z.shape,(100,10,20))
 
@@ -32,7 +32,7 @@ class test_randn(unittest.TestCase):
     def __init__(self,*args,**kwds):
         unittest.TestCase.__init__(self,*args,**kwds)
         self.z = randn(100,10,20)
-        
+
     def check_shape(self):
         assert_equal(self.z.shape,(100,10,20))
 
@@ -73,7 +73,7 @@ class test_eye(unittest.TestCase):
                                      [0,0,0]]))
         assert_equal(eye(3,4),array([[1,0,0,0],
                                      [0,1,0,0],
-                                     [0,0,1,0]]))        
+                                     [0,0,1,0]]))
     def check_diag2d(self):
         assert_equal(eye(3,4,k=2),array([[0,0,1,0],
                                          [0,0,0,1],
@@ -109,7 +109,7 @@ class test_tri(unittest.TestCase):
                                      [1,1,1]]))
         assert_equal(tri(3,4),array([[1,0,0,0],
                                      [1,1,0,0],
-                                     [1,1,1,0]]))        
+                                     [1,1,1,0]]))
     def check_diag2d(self):
         assert_equal(tri(3,4,k=2),array([[1,1,1,0],
                                          [1,1,1,1],
@@ -150,7 +150,7 @@ class test_diag(unittest.TestCase):
 
 class test_fliplr(unittest.TestCase):
     def check_basic(self):
-        self.failUnlessRaises(ValueError, fliplr, ones(4))        
+        self.failUnlessRaises(ValueError, fliplr, ones(4))
         self.failUnlessRaises(ValueError, fliplr, ones((4,3,2)))
         a = rand(4,4)
         b = a[:,::-1]
@@ -210,7 +210,7 @@ class test_tril(unittest.TestCase):
                 b[k,l] = 0
         assert_equal(tril(a),b)
 
-    def check_diag(self):        
+    def check_diag(self):
         a = (100*rand(5,5)).astype('f')
         b = a.copy()
         for k in range(5):
@@ -232,7 +232,7 @@ class test_triu(unittest.TestCase):
                 b[l,k] = 0
         assert_equal(triu(a),b)
 
-    def check_diag(self):        
+    def check_diag(self):
         a = (100*rand(5,5)).astype('f')
         b = a.copy()
         for k in range(5):
@@ -254,7 +254,7 @@ class test_amax(unittest.TestCase):
              [8,3.0,2.0]]
         assert_equal(amax(b),[8.0,10.0,9.0])
         assert_equal(amax(b,axis=1),[9.0,10.0,8.0])
-        
+
 class test_amin(unittest.TestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6.0]
@@ -304,7 +304,7 @@ class test_prod(unittest.TestCase):
                 self.failUnlessRaises(ArithmeticError, prod, a)
                 self.failUnlessRaises(ArithmeticError, prod, a2, 1)
                 self.failUnlessRaises(ArithmeticError, prod, a)
-            else:                
+            else:
                 assert_equal(prod(a),26400)
                 assert_array_equal(prod(a2), array([50,36,84,180],ctype))
                 assert_array_equal(prod(a2,axis=1),
@@ -321,7 +321,7 @@ class test_cumprod(unittest.TestCase):
                 self.failUnlessRaises(ArithmeticError, cumprod, a)
                 self.failUnlessRaises(ArithmeticError, cumprod, a2, 1)
                 self.failUnlessRaises(ArithmeticError, cumprod, a)
-            else:                
+            else:
                 assert_array_equal(cumprod(a),
                                    array([1, 2, 20, 220,
                                           1320, 6600, 26400],ctype))
@@ -363,7 +363,7 @@ class test_cov(unittest.TestCase):
              [1.1,1.5],
              [0.9,1.8]]
         c = cov(x)
-        tmp = [[0.0100, -0.0150],[-0.0150, 0.0633]]        
+        tmp = [[0.0100, -0.0150],[-0.0150, 0.0633]]
         assert_array_almost_equal(c,tmp,4)
 
     def check_twoargs(self):
@@ -429,7 +429,7 @@ class test_sinc(unittest.TestCase):
         tmp[50] = 1.0
         tmp[49] = 1.0
         assert_array_almost_equal(y,tmp,11)
-        
+
 class test_angle(unittest.TestCase):
     def check_basic(self):
         x = [1+3j,sqrt(2)/2.0+1j*sqrt(2)/2,1,1j,-1,-1j,1-3j,-1+3j]
@@ -439,7 +439,7 @@ class test_angle(unittest.TestCase):
         zo = array(yo)*180/pi
         assert_array_almost_equal(y,yo,11)
         assert_array_almost_equal(z,zo,11)
-        
+
 ##################################################
 
 def test_suite(level=1):

@@ -11,7 +11,7 @@ restore_path()
 
 def is_writable(val):
     return os.access(val,os.W_OK)
-    
+
 class test_configure_build_dir(ScipyTestCase):
     def check_default(self):
         " default behavior is to return current directory "
@@ -24,13 +24,13 @@ class test_configure_build_dir(ScipyTestCase):
         d = build_tools.configure_build_dir('.')
         if is_writable('.'):
             assert(d == os.path.abspath('.'))
-        assert(is_writable(d))    
+        assert(is_writable(d))
     def check_pardir(self):
-        " make sure it handles relative values "        
+        " make sure it handles relative values "
         d = build_tools.configure_build_dir('..')
         if is_writable('..'):
             assert(d == os.path.abspath('..'))
-        assert(is_writable(d))                
+        assert(is_writable(d))
     def check_bad_path(self):
         " bad path should return same as default (and warn) "
         d = build_tools.configure_build_dir('_bad_path_')

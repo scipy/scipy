@@ -81,7 +81,7 @@ def freqz(b, a, worN=None, whole=0, plot=None):
            jw  B(e)    b[0] + b[1]e + .... + b[m]e
         H(e) = ---- = ------------------------------------
                   jw               -jw            -jnw
-               A(e)    a[0] + a[2]e + .... + a[n]e             
+               A(e)    a[0] + a[2]e + .... + a[n]e
 
     Inputs:
 
@@ -117,7 +117,7 @@ def freqz(b, a, worN=None, whole=0, plot=None):
     if not plot is None:
         plot(w, h)
     return w, h
-    
+
 def tf2zpk(b,a):
     """Return zero, pole, gain (z,p,k) representation from a numerator,
     denominator representation of a linear filter.
@@ -130,7 +130,7 @@ def tf2zpk(b,a):
     z = roots(b)
     p = roots(a)
     return z, p, k
-    
+
 def zpk2tf(z,p,k):
     """Return polynomial transfer function representation from zeros
     and poles
@@ -173,7 +173,7 @@ def normalize(b,a):
     while allclose(b[:,0], 0, rtol=1e-14) and (b.shape[-1] > 1):
         b = b[:,1:]
     if b.shape[0] == 1:
-        b = b[0]        
+        b = b[0]
     outb = b * (1.0) / a[0]
     outa = a * (1.0) / a[0]
     return outb, outa
@@ -203,7 +203,7 @@ def lp2hp(b,a,wo=1.0):
     """
     a,b = map(atleast_1d,(a,b))
     if type(wo) is type(a):
-        wo = wo[0]    
+        wo = wo[0]
     d = len(a)
     n = len(b)
     if wo != 1:
@@ -214,7 +214,7 @@ def lp2hp(b,a,wo=1.0):
         outa = a[::-1] * pwo
         outb = resize(b,(d,))
         outb[n:] = 0.0
-        outb[:n] = b[::-1] * pwo[:n]        
+        outb[:n] = b[::-1] * pwo[:n]
     else:
         outb = b[::-1] * pwo
         outa = resize(a,(n,))
@@ -251,7 +251,7 @@ def lp2bp(b,a,wo=1.0, bw=1.0):
                 if ma-i+2*k == j:
                     val += comb(i,k)*a[D-i]*(wosq)**(i-k) / bw**i
         aprime[Dp-j] = val
-        
+
     return normalize(bprime, aprime)
 
 def lp2bs(b,a,wo=1,bw=1):
@@ -282,7 +282,7 @@ def lp2bs(b,a,wo=1,bw=1):
                 if i+2*k == j:
                     val += comb(M-i,k)*a[D-i]*(wosq)**(M-i-k) * bw**i
         aprime[Dp-j] = val
-        
+
     return normalize(bprime, aprime)
 
 def bilinear(b,a,fs=1.0):
@@ -316,7 +316,7 @@ def bilinear(b,a,fs=1.0):
                     if k+l == j:
                         val += comb(i,k)*comb(M-i,l)*a[D-i]*pow(2*fs,i)*(-1)**k
         aprime[j] = real(val)
-        
+
     return normalize(bprime, aprime)
 
 def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
@@ -351,7 +351,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
     Outputs: (b,a) or (z,p,k)
 
       b,a -- Numerator and denominator of the iir filter.
-      z,p,k -- Zeros, poles, and gain of the iir filter.      
+      z,p,k -- Zeros, poles, and gain of the iir filter.
     """
 
     try:
@@ -364,12 +364,12 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     band_type = 2*(len(wp)-1)
-    band_type +=1 
+    band_type +=1
     if wp[0] >= ws[0]:
         band_type += 1
 
     btype = {1:'lowpass', 2:'highpass', 3:'bandstop', 4:'bandpass'}[band_type]
-       
+
     N, Wn = ordfunc(wp, ws, gpass, gstop, analog=analog)
     return iirfilter(N, Wn, rp=gpass, rs=gstop, analog=analog, btype=btype, ftype=ftype, output=output)
 
@@ -380,7 +380,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
     Description:
 
       Design an Nth order lowpass digital or analog filter and return the filter
-      coefficients in (B,A) (numerator, denominator) or (Z,P,K) form.          
+      coefficients in (B,A) (numerator, denominator) or (Z,P,K) form.
 
     Inputs:
 
@@ -412,21 +412,21 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
 
     if output not in ['ba', 'zpk']:
         raise ValueError, "%s is not a valid output form." % output
-    
+
     #pre-warp frequencies for digital filter design
     if not analog:
         fs = 2.0
         warped = 2*fs*tan(pi*Wn/fs)
     else:
         warped = Wn
-    
+
     # convert to low-pass prototype
     if btype in ['lowpass', 'highpass']:
         wo = warped
     else:
         bw = warped[1] - warped[0]
-        wo = sqrt(warped[0]*warped[1])    
-    
+        wo = sqrt(warped[0]*warped[1])
+
     # Get analog lowpass prototype
     if typefunc in [buttap, besselap]:
         z, p, k = typefunc(N)
@@ -442,9 +442,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
         if rs is None or rp is None:
             raise ValueError, "Both rp and rs must be provided to design an elliptic filter."
         z, p, k = typefunc(N, rp, rs)
-    
+
     b, a = zpk2tf(z,p,k)
-    
+
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype == 'lowpass':
         b, a = lp2lp(b,a,wo=wo)
@@ -454,18 +454,18 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0, ftype='butter', o
         b, a = lp2bp(b,a,wo=wo,bw=bw)
     else: # 'bandstop'
         b, a = lp2bs(b,a,wo=wo,bw=bw)
-               
+
 
     # Find discrete equivalent if necessary
     if not analog:
         b, a = bilinear(b, a, fs=fs)
-    
-    # Transform to proper out type (pole-zero, state-space, numer-denom)    
+
+    # Transform to proper out type (pole-zero, state-space, numer-denom)
     if output == 'zpk':
         return tf2zpk(b,a)
     else:
         return b,a
-      
+
 
 def butter(N, Wn, btype='low', analog=0, output='ba'):
     """Butterworth digital and analog filter design.
@@ -487,7 +487,7 @@ def cheby1(N, rp, Wn, btype='low', analog=0, output='ba'):
       Design an Nth order lowpass digital or analog Chebyshev type I filter
       and return the filter coefficients in (B,A) or (Z,P,K) form.
 
-    See also cheb1ord.      
+    See also cheb1ord.
     """
     return iirfilter(N, Wn, rp=rp, btype=btype, analog=analog, output=output, ftype='cheby1')
 
@@ -526,7 +526,7 @@ def bessel(N, Wn, btype='low', analog=0, output='ba'):
     """
     return iirfilter(N, Wn, btype=btype, analog=analog, output=output, ftype='bessel')
 
-    
+
 def maxflat():
     pass
 
@@ -606,7 +606,7 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     Outputs: (ord, Wn)
 
       ord -- The lowest order for a Butterworth filter which meets specs.
-      Wn -- The Butterworth natural frequency (i.e. the "3dB frequency"). 
+      Wn -- The Butterworth natural frequency (i.e. the "3dB frequency").
             Should be used with scipy.signal.butter to give filter results.
 
     """
@@ -614,7 +614,7 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     filter_type = 2*(len(wp)-1)
-    filter_type +=1 
+    filter_type +=1
     if wp[0] >= ws[0]:
         filter_type += 1
 
@@ -755,7 +755,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
     GPASS = 10**(0.1*abs(gpass))
     ord = int(ceil(arccosh(sqrt((GSTOP-1.0) / (GPASS-1.0))) / arccosh(nat)))
 
-    # Natural frequencies are just the passband edges 
+    # Natural frequencies are just the passband edges
     if not analog:
         wn = (2.0/pi)*arctan(passb)
     else:
@@ -764,7 +764,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
     if len(wn) == 1:
         wn = wn[0]
     return ord, wn
-    
+
 
 def cheb2ord(wp, ws, gpass, gstop, analog=0):
     """Chebyshev type II filter order selection.
@@ -839,7 +839,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
 
     new_freq = cosh(1.0/ord * arccosh(sqrt((GSTOP-1.0)/(GPASS-1.0))))
     new_freq = 1.0 / new_freq
-    
+
     if filter_type == 1:
         nat = passb / new_freq
     elif filter_type == 2:
@@ -855,7 +855,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
         nat[0] = 1.0/(2.0*new_freq) * (passb[0] - passb[1]) + \
                  sqrt((passb[1]-passb[0])**2 / (4.0*new_freq**2) + \
                       passb[1] * passb[0])
-        nat[1] = passb[0] * passb[1] / nat[0]        
+        nat[1] = passb[0] * passb[1] / nat[0]
 
     if not analog:
         wn = (2.0/pi)*arctan(nat)
@@ -946,7 +946,7 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
     if len(wn) == 1:
         wn = wn[0]
     return ord, wn
-    
+
 def buttap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
     order Butterworth filter."""
@@ -987,14 +987,14 @@ def cheb2ap(N,rs):
     else:
         m = N
         n = numpy.arange(1,2*N,2)
-        
+
     z = conjugate(1j / cos(n*pi/(2.0*N)))
     p = exp(1j*(pi*numpy.arange(1,2*N,2)/(2.0*N) + pi/2.0))
     p = sinh(mu) * p.real + 1j*cosh(mu)*p.imag
     p = 1.0 / p
     k = (numpy.prod(-p)/numpy.prod(-z)).real
     return z, p, k
-    
+
 
 EPSILON = 2e-16
 
@@ -1024,7 +1024,7 @@ def ellipap(N,rp,rs):
     in the passband and a stopband rs decibels down.
 
     See Chapter 12 and Chapter 5 of "Filter Design for Signal Processing",
-    by Lutova, Tosic, and Evans.  This is 
+    by Lutova, Tosic, and Evans.  This is
     """
     if N == 1:
         p = -sqrt(1.0/(10**(0.1*rp)-1.0))
@@ -1050,7 +1050,7 @@ def ellipap(N,rp,rs):
     if m < 0 or m > 1:
         m = optimize.fminbound(kratio, 0, 1, args=(krat,), maxfun=250,
                                maxiter=250, disp=0)
-    
+
     capk = special.ellipk(m)
     ws = wp / sqrt(m)
     m1 = 1-m
@@ -1475,7 +1475,7 @@ band_dict = {'band':'bandpass',
              'highpass' : 'highpass',
              'h' : 'highpass'
              }
-             
+
 def kaiserord(ripple, width):
     """Design a Kaiser window to limit ripple and width of transition region.
 
@@ -1506,13 +1506,13 @@ def kaiserord(ripple, width):
     else:
         beta = 0.0
     N = (A-8)/2.285/(pi*width)
-    return ceil(N), beta 
+    return ceil(N), beta
 
 def firwin(N, cutoff, width=None, window='hamming'):
     """FIR Filter Design using windowed ideal filter method.
 
     Inputs:
-    
+
       N      -- order of filter (number of taps)
       cutoff -- cutoff frequency of filter (normalized so that 1 corresponds to
                   Nyquist or pi radians / sample)
@@ -1524,7 +1524,7 @@ def firwin(N, cutoff, width=None, window='hamming'):
 
     Outputs:
 
-      h      -- coefficients of length N fir filter. 
+      h      -- coefficients of length N fir filter.
     """
 
     from signaltools import get_window
@@ -1540,4 +1540,3 @@ def firwin(N, cutoff, width=None, window='hamming'):
     m = numpy.arange(0,N)
     h = win*special.sinc(cutoff*(m-alpha))
     return h / sum(h)
-

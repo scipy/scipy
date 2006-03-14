@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
-# are met: 
+# are met:
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
@@ -26,7 +26,7 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import types
 import math
@@ -84,20 +84,20 @@ def spline_filter(input, order = 3, output = numarray.Float64,
 
 def geometric_transform(input, mapping, output_shape = None,
                         output_type = None, output = None, order = 3,
-                        mode = 'constant', cval = 0.0, prefilter = True, 
+                        mode = 'constant', cval = 0.0, prefilter = True,
                         extra_arguments = (), extra_keywords = {}):
     """Apply an arbritrary geometric transform.
 
-    The given mapping function is used to find for each point in the 
-    output the corresponding coordinates in the input. The value of the 
-    input at those coordinates is determined by spline interpolation of 
-    the requested order. Points outside the boundaries of the input are 
-    filled according to the given mode. The output shape can optionally be 
-    given. If not given, it is equal to the input shape. The parameter 
-    prefilter determines if the input is pre-filtered before 
-    interpolation, if False it is assumed that the input is already 
-    filtered. The extra_arguments and extra_keywords arguments can be 
-    used to provide extra arguments and keywords that are passed to the 
+    The given mapping function is used to find for each point in the
+    output the corresponding coordinates in the input. The value of the
+    input at those coordinates is determined by spline interpolation of
+    the requested order. Points outside the boundaries of the input are
+    filled according to the given mode. The output shape can optionally be
+    given. If not given, it is equal to the input shape. The parameter
+    prefilter determines if the input is pre-filtered before
+    interpolation, if False it is assumed that the input is already
+    filtered. The extra_arguments and extra_keywords arguments can be
+    used to provide extra arguments and keywords that are passed to the
     mapping function at each call.
     """
     if order < 0 or order > 5:
@@ -125,12 +125,12 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
                 order = 3, mode = 'constant', cval = 0.0, prefilter = True):
     """Apply an arbritrary coordinate transformation.
 
-    The array of coordinates is used to find for each point in the output 
-    the corresponding coordinates in the input. The value of the input at 
-    that coordinates is determined by spline interpolation of the 
-    requested order. Points outside the boundaries of the input are filled 
-    according to the given mode. The parameter prefilter determines if the 
-    input is pre-filtered before interpolation, if False it is assumed 
+    The array of coordinates is used to find for each point in the output
+    the corresponding coordinates in the input. The value of the input at
+    that coordinates is determined by spline interpolation of the
+    requested order. Points outside the boundaries of the input are filled
+    according to the given mode. The parameter prefilter determines if the
+    input is pre-filtered before interpolation, if False it is assumed
     that the input is already filtered.
     """
     if order < 0 or order > 5:
@@ -163,14 +163,14 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
                      mode = 'constant', cval = 0.0, prefilter = True):
     """Apply an affine transformation.
 
-    The given matrix and offset are used to find for each point in the 
-    output the corresponding coordinates in the input by an affine 
-    transformation. The value of the input at those coordinates is 
-    determined by spline interpolation of the requested order. Points 
-    outside the boundaries of the input are filled according to the given 
-    mode. The output shape can optionally be given. If not given it is 
-    equal to the input shape. The parameter prefilter determines if the 
-    input is pre-filtered before interpolation, if False it is assumed 
+    The given matrix and offset are used to find for each point in the
+    output the corresponding coordinates in the input by an affine
+    transformation. The value of the input at those coordinates is
+    determined by spline interpolation of the requested order. Points
+    outside the boundaries of the input are filled according to the given
+    mode. The output shape can optionally be given. If not given it is
+    equal to the input shape. The parameter prefilter determines if the
+    input is pre-filtered before interpolation, if False it is assumed
     that the input is already filtered.
 
     The matrix must be two-dimensional or can also be given as a
@@ -216,16 +216,16 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
                             output, order, mode, cval, None, None)
     return return_value
-    
+
 
 def shift(input, shift, output_type = None, output = None, order = 3,
           mode = 'constant', cval = 0.0, prefilter = True):
     """Shift an array.
 
-    The array is shifted using spline interpolation of the requested 
-    order. Points outside the boundaries of the input are filled according 
-    to the given mode. The parameter prefilter determines if the input is 
-    pre-filtered before interpolation, if False it is assumed that the 
+    The array is shifted using spline interpolation of the requested
+    order. Points outside the boundaries of the input are filled according
+    to the given mode. The parameter prefilter determines if the input is
+    pre-filtered before interpolation, if False it is assumed that the
     input is already filtered.
     """
     if order < 0 or order > 5:
@@ -255,10 +255,10 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
          mode = 'constant', cval = 0.0, prefilter = True):
     """Zoom an array.
 
-    The array is zoomed using spline interpolation of the requested order. 
-    Points outside the boundaries of the input are filled according to the 
+    The array is zoomed using spline interpolation of the requested order.
+    Points outside the boundaries of the input are filled according to the
     given mode. The parameter prefilter determines if the input is pre-
-    filtered before interpolation, if False it is assumed that the input 
+    filtered before interpolation, if False it is assumed that the input
     is already filtered.
     """
     if order < 0 or order > 5:
@@ -300,13 +300,13 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
            mode = 'constant', cval = 0.0, prefilter = True):
     """Rotate an array.
 
-    The array is rotated in the plane defined by the two axes given by the 
-    axes parameter using spline interpolation of the requested order. The 
-    angle is given in degrees. Points outside the boundaries of the input 
-    are filled according to the given mode. If reshape is true, the output 
-    shape is adapted so that the input array is contained completely in 
+    The array is rotated in the plane defined by the two axes given by the
+    axes parameter using spline interpolation of the requested order. The
+    angle is given in degrees. Points outside the boundaries of the input
+    are filled according to the given mode. If reshape is true, the output
+    shape is adapted so that the input array is contained completely in
     the output. The parameter prefilter determines if the input is pre-
-    filtered before interpolation, if False it is assumed that the input 
+    filtered before interpolation, if False it is assumed that the input
     is already filtered.
     """
     input = numarray.asarray(input)
@@ -360,7 +360,7 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
     output, return_value = _ni_support._get_output(output, input,
                                         output_type, shape = output_shape)
     if input.ndim <= 2:
-        affine_transform(input, matrix, offset, output_shape, None, output, 
+        affine_transform(input, matrix, offset, output_shape, None, output,
                          order, mode, cval, prefilter)
     else:
         coordinates = []

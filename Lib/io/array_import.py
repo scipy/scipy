@@ -24,7 +24,7 @@ _READ_BUFFER_SIZE = 1024*1024
 #
 # Written by Travis Oliphant and Trent Oliphant
 #   with support from Agilent, Inc.
-# 
+#
 
 import os, sys
 
@@ -44,14 +44,14 @@ def build_numberlist(lines):
         linelist = []
         errstr = "Argument lines must be a sequence of integers and/or range tuples."
         try:
-            for num in lines[:-1]:  # handle all but last element 
+            for num in lines[:-1]:  # handle all but last element
                 if type(num) not in [types.IntType, types.TupleType]:
                     raise ValueError, errstr
                 if isinstance(num, types.IntType):
                     linelist.append(num)
                 else:
                     if not 1 < len(num) < 4:
-                        raise ValueError, "Tuples must be valid range tuples."                        
+                        raise ValueError, "Tuples must be valid range tuples."
                     linelist.extend(range(*num))
         except TypeError:
             raise ValueError, errstr
@@ -60,7 +60,7 @@ def build_numberlist(lines):
             linelist.append(num)
         elif type(num) is types.TupleType:
             if [types.IntType]*len(num) != map(type, num):
-                if len(num) > 1 and num[1] is not None:                        
+                if len(num) > 1 and num[1] is not None:
                     raise ValueError, errstr
             if len(num) == 1:
                 linelist.extend([num[0],-1])
@@ -96,7 +96,7 @@ def get_open_file(fileobject, mode='rb'):
         file = fileobject
 
     return file
-            
+
 
 class ascii_stream:
     """Text files with line iteration
@@ -109,7 +109,7 @@ class ascii_stream:
     '~user' to indicate a home directory(for reading only).
 
     Constructor: ascii_stream(|fileobject|, |lines|,|comment|),
-    where |fileobject| is either an open python file object or 
+    where |fileobject| is either an open python file object or
     the name of the file, |lines| is a sequence of integers
     or tuples(indicating ranges) of lines to be read, |comment| is the
     comment line identifier """
@@ -160,7 +160,7 @@ class ascii_stream:
             if len(line) < self.lencomment or line[:self.lencomment] != self.comment:
                 break
         return line
-        
+
     def readnextline(self):
         if self.linelist[self._lineindex] >= 0:
             self._linetoget = self.linelist[self._lineindex]
@@ -174,7 +174,7 @@ class ascii_stream:
             if (self._totbuflines == self._oldbuflines):
                 return None
         line = self._buffer[self._linetoget - self._oldbuflines]
-        return line    
+        return line
 
     def close(self):
         self.file.close()
@@ -203,9 +203,9 @@ def extract_columns(arlist, collist, atype, missing):
         toconvlist = take(arlist, collist)
 
     return numpyio.convert_objectarray(toconvlist, atype, missing)
-    
 
-# Given a string representing one line, a separator tuple, a list of 
+
+# Given a string representing one line, a separator tuple, a list of
 #  columns to read for each element of the atype list and a missing
 #  value to insert when conversion fails.
 
@@ -269,7 +269,7 @@ def getcolumns(stream, columns, separator):
     if k == K:
         raise ValueError, "First line to read not within %d lines of top." % K
     firstline = stream._buffer[k]
-    N = len(columns)    
+    N = len(columns)
     collist = [None]*N
     colsize = [None]*N
     for k in range(N):
@@ -316,7 +316,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
                  should be an ordered list of such tuples.  There should be
                  one entry in the list for each arraytype in the atype list.
       lines   -- a tuple with the same structure as columns which indicates
-                 the lines to read. 
+                 the lines to read.
       comment -- the comment character (line will be ignored even if it is
                  specified by the lines tuple)
       linesep -- separator between rows.
@@ -333,7 +333,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
 
     Output -- the 1 or 2d array, or a tuple of output arrays of different
               types, sorted in order of the first column to be placed
-              in the output array. 
+              in the output array.
 
     """
 
@@ -375,7 +375,7 @@ def read_array(fileobject, separator=default, columns=default, comment="#",
     for k in outrange:
         if outarr[k].shape[0] != row:
             outarr[k].resize((row,colsize[k]))
-        a = outarr[k]            
+        a = outarr[k]
         if a.shape[0] == 1 or a.shape[1] == 1:
             outarr[k] = numpy.ravel(a)
     if len(outarr) == 1:
@@ -408,9 +408,9 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
                 thisval = eval('fmtstr % rval')
                 if (ival >= 0):
                     istr = eval('fmtstr % ival')
-                    thisval = '%s+j%s' % (thisval, istr) 
+                    thisval = '%s+j%s' % (thisval, istr)
                 else:
-                    istr = eval('fmtstr % abs(ival)')                    
+                    istr = eval('fmtstr % abs(ival)')
                     thisval = '%s-j%s' % (thisval, istr)
             else:
                 thisval = eval('fmtstr % val')
@@ -418,7 +418,7 @@ def str_array(arr, precision=5,col_sep=' ',row_sep="\n",ss=0):
         strline = col_sep.join(theline)
         thestr.append(strline)
     return row_sep.join(thestr)
-        
+
 
 def write_array(fileobject, arr, separator=" ", linesep='\n',
                 precision=5, suppress_small=0, keep_open=0):
@@ -455,7 +455,7 @@ def write_array(fileobject, arr, separator=" ", linesep='\n',
     for ch in separator:
         if ch in '0123456789-+FfeEgGjJIi.':
             raise ValueError, "Bad string for separator"
-        
+
     astr = str_array(arr, precision=precision,
                      col_sep=separator, row_sep=linesep,
                      ss = suppress_small)

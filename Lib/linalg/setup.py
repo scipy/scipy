@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #!/usr/bin/env python
 
@@ -38,7 +38,7 @@ def configuration(parent_package='',top_path=None):
         raise NotFoundError,'no lapack/blas resources found'
 
     atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[]) \
-                      if k=='ATLAS_INFO']+[None])[0] 
+                      if k=='ATLAS_INFO']+[None])[0]
     if atlas_version:
         print 'ATLAS version',atlas_version
 
@@ -126,7 +126,7 @@ def configuration(parent_package='',top_path=None):
                                     'interface_gen.py'],
                          extra_info = lapack_opt
                          )
-    
+
     # clapack:
     config.add_extension('clapack',
                          sources = [generate_pyf],

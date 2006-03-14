@@ -15,4 +15,3 @@ def foo_gun():
     Scipy module exmplpackage test function.
     """
     return "Hello from foo_gun"
-

@@ -23,8 +23,8 @@ class test_dict_construct(ScipyTestCase):
         res = inline_tools.inline(code)
         assert sys.getrefcount(res) == 2
         assert res == {}
-                              
-                    
+
+
 class test_dict_has_key(ScipyTestCase):
     def check_obj(self,level=5):
         class foo:
@@ -33,7 +33,7 @@ class test_dict_has_key(ScipyTestCase):
         a = {}
         a[key] = 12345
         code = """
-               return_val = a.has_key(key);               
+               return_val = a.has_key(key);
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
@@ -41,7 +41,7 @@ class test_dict_has_key(ScipyTestCase):
         a = {}
         a[1234] = 12345
         code = """
-               return_val = a.has_key(1234);               
+               return_val = a.has_key(1234);
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -49,7 +49,7 @@ class test_dict_has_key(ScipyTestCase):
         a = {}
         a[1234.] = 12345
         code = """
-               return_val = a.has_key(1234.);               
+               return_val = a.has_key(1234.);
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -58,16 +58,16 @@ class test_dict_has_key(ScipyTestCase):
         a[1+1j] = 12345
         key = 1+1j
         code = """
-               return_val = a.has_key(key);               
+               return_val = a.has_key(key);
                """
         res = inline_tools.inline(code,['a','key'])
         assert res
-        
+
     def check_string(self,level=5):
         a = {}
         a["b"] = 12345
         code = """
-               return_val = a.has_key("b");               
+               return_val = a.has_key("b");
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -76,15 +76,15 @@ class test_dict_has_key(ScipyTestCase):
         a["b"] = 12345
         key_name = "b"
         code = """
-               return_val = a.has_key(key_name);               
+               return_val = a.has_key(key_name);
                """
         res = inline_tools.inline(code,['a','key_name'])
-        assert res        
+        assert res
     def check_string_fail(self,level=5):
         a = {}
         a["b"] = 12345
         code = """
-               return_val = a.has_key("c");               
+               return_val = a.has_key("c");
                """
         res = inline_tools.inline(code,['a'])
         assert not res
@@ -94,7 +94,7 @@ class test_dict_get_item_op(ScipyTestCase):
     def generic_get(self,code,args=['a']):
         a = {}
         a['b'] = 12345
-                
+
         res = inline_tools.inline(code,args)
         assert res == a['b']
 
@@ -108,7 +108,7 @@ class test_dict_get_item_op(ScipyTestCase):
             self.generic_get('return_val = a["c"];')
         except KeyError:
             pass
-            
+
     def check_string(self,level=5):
         self.generic_get('return_val = a[std::string("b")];')
 
@@ -117,7 +117,7 @@ class test_dict_get_item_op(ScipyTestCase):
         code = """
                py::object name = "b";
                return_val = a[name];
-               """ 
+               """
         self.generic_get(code,['a'])
 
     def DOESNT_WORK_check_obj_fail(self,level=5):
@@ -127,11 +127,11 @@ class test_dict_get_item_op(ScipyTestCase):
             code = """
                    py::object name = "c";
                    return_val = a[name];
-                   """ 
+                   """
             self.generic_get(code,['a'])
         except KeyError:
-            pass    
-            
+            pass
+
 class test_dict_set_operator(ScipyTestCase):
     def generic_new(self,key,val):
         # test that value is set correctly and that reference counts
@@ -162,7 +162,7 @@ class test_dict_set_operator(ScipyTestCase):
         after_overwritten = sys.getrefcount(overwritten)
         assert before == after
         assert before_overwritten == after_overwritten
-        
+
     def check_new_int_int(self,level=5):
         key,val = 1234,12345
         self.generic_new(key,val)
@@ -177,7 +177,7 @@ class test_dict_set_operator(ScipyTestCase):
         self.generic_new(key,val)
     def check_new_obj_int(self,level=5):
         class foo:
-           pass
+            pass
         key,val = foo(),12345
         self.generic_new(key,val)
 
@@ -195,10 +195,10 @@ class test_dict_set_operator(ScipyTestCase):
         self.generic_overwrite(key,val)
     def check_overwrite_obj_int(self,level=5):
         class foo:
-           pass
+            pass
         key,val = foo(),12345
         self.generic_overwrite(key,val)
-                
+
 class test_dict_del(ScipyTestCase):
     def generic(self,key):
         # test that value is set correctly and that reference counts
@@ -229,7 +229,7 @@ class test_dict_del(ScipyTestCase):
         self.generic(key)
     def check_obj(self,level=5):
         class foo:
-           pass
+            pass
         key = foo()
         self.generic(key)
 

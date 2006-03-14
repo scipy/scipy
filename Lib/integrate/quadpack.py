@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
+## Automatically adapted for scipy Oct 21, 2005 by
 
 # Author: Travis Oliphant 2001
 
@@ -188,7 +188,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     msgs = {80: "A Python error occurred possibly while calling the function.",
              1: "The maximum number of subdivisions (%d) has been achieved.\n  If increasing the limit yields no improvement it is advised to analyze \n  the integrand in order to determine the difficulties.  If the position of a \n  local difficulty can be determined (singularity, discontinuity) one will \n  probably gain from splitting up the interval and calling the integrator \n  on the subranges.  Perhaps a special-purpose integrator should be used." % limit,
              2: "The ocurrence of roundoff error is detected, which prevents \n  the requested tolerance from being achieved.  The error may be \n  underestimated.",
-             3: "Extremely bad integrand behavior occurs at some points of the\n  integration interval.", 
+             3: "Extremely bad integrand behavior occurs at some points of the\n  integration interval.",
              4: "The algorithm does not converge.  Roundoff error is detected\n  in the extrapolation table.  It is assumed that the requested tolerance\n  cannot be achieved, and that the returned result (if full_output = 1) is \n  the best which can be obtained.",
              5: "The integral is probably divergent, or slowly convergent.",
              6: "The input is invalid.",
@@ -320,7 +320,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     (a,b) -- the limits of integration in x: a < b
     gfun -- the lower boundary curve in y which is a function taking a single
               floating point argument (x) and returning a floating point result:
-              a lambda function can be useful here.  
+              a lambda function can be useful here.
     hfun -- the upper boundary curve in y (same requirements as gfun).
     args -- extra arguments to pass to func2d.
     epsabs -- absolute tolerance passed directly to the inner 1-D quadrature
@@ -357,7 +357,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     (a,b) -- the limits of integration in x: a < b
     gfun -- the lower boundary curve in y which is a function taking a single
               floating point argument (x) and returning a floating point result:
-              a lambda function can be useful here.  
+              a lambda function can be useful here.
     hfun -- the upper boundary curve in y (same requirements as gfun).
     qfun -- the lower boundary surface in z.  It must be a function that takes
             two floats in the order (x, y) and returns a float.

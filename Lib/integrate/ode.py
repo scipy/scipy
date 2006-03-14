@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
+## Automatically adapted for scipy Oct 21, 2005 by
 
 #!/usr/bin/env python
 #Author: Pearu Peterson
@@ -363,7 +363,7 @@ class vode(IntegratorBase):
         r = self.run(*args)
         self.call_args[2] = itask
         return r
-    
+
     def run_relax(self,*args):
         itask = self.call_args[2]
         self.call_args[2] = 3

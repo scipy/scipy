@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 #!/usr/bin/env python
 
@@ -39,7 +39,7 @@ if not (windows or cygwin or macosx):
     x11 = 1
 if 'NO_XLIB' in os.environ:
     x11 = 0
-        
+
 
 
 gistsource = ["src/gist/gist.c",
@@ -189,7 +189,7 @@ def getallparams(gistpath,local_path,config_path):
         extra_compile_args.append("-DMACOSX")
         extra_link_args.append('-framework')
         extra_link_args.append('Cocoa')
-        
+
 
     include_dirs = ['src/gist', 'src/play', 'src/play/unix' ]
 
@@ -224,16 +224,16 @@ def getallparams(gistpath,local_path,config_path):
                 if xlib and sys.platform not in ['cygwin','win32']:
                     # remove the -L
                     xlib = xlib[2:]
-                    library_dirs.append(xlib)    
+                    library_dirs.append(xlib)
 
     return include_dirs, library_dirs, libraries, \
                extra_compile_args, extra_link_args
-    
+
 
 def configuration(parent_package='',top_path=None):
     """
        This will install *.gs and *.gp files to
-       'site-packages/scipy/xplt/gistdata' 
+       'site-packages/scipy/xplt/gistdata'
     """
     from numpy.distutils.misc_util   import Configuration
     from config_pygist import config_pygist
@@ -261,7 +261,7 @@ def configuration(parent_package='',top_path=None):
         config_path = os.path.join(build_dir,'config_pygist')
         dir_util.mkpath(config_path)
         conf = config_pygist(local_path,config_path)
-        # Look to see if compiler is set on command line and add it 
+        # Look to see if compiler is set on command line and add it
         #    This is repeating code, but I'm not sure how to avoid it
         #    As this gets run before overall setup does.
         #    This is needed so that compiler can be over-ridden from the
@@ -287,7 +287,7 @@ def configuration(parent_package='',top_path=None):
         extension.extra_compile_args.extend(extra_compile_args)
         extension.extra_link_args.extend(extra_link_args)
         return sources
-    
+
 
 
 
@@ -300,8 +300,8 @@ def configuration(parent_package='',top_path=None):
                          depends = ['src']
                          )
     config.add_extension('gistfuncs',
-		         [os.path.join('pygist','gistfuncsmodule.c')])
-		   
+                         [os.path.join('pygist','gistfuncsmodule.c')])
+
 
     file_ext = ['*.gs','*.gp', '*.ps', '*.help']
     xplt_files = [os.path.join('gistdata',x) for x in file_ext]
@@ -313,6 +313,6 @@ def configuration(parent_package='',top_path=None):
 
     return config
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())

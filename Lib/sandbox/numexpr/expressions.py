@@ -59,10 +59,10 @@ def func(func):
     @ophelper
     def function(*args):
         if all_constant(args):
-            return ConstantNode(func(*[x.value for x in args])) 
+            return ConstantNode(func(*[x.value for x in args]))
         return FuncNode(func.__name__, args)
     return function
-    
+
 @ophelper
 def where_func(a, b, c):
     if all_constant([a,b,c]):
@@ -77,15 +77,15 @@ def div_op(a, b):
         if isinstance(b, ConstantNode):
             return OpNode('mul', [a, ConstantNode(1./b.value)])
     return OpNode('div', [a,b])
-    
-    
+
+
 @ophelper
 def pow_op(a, b):
     if all_constant([a,b]):
         return ConstantNode(a**b)
     if isinstance(b, ConstantNode):
-        x = b.value  
-        if get_optimization() == 'moderate': 
+        x = b.value
+        if get_optimization() == 'moderate':
             if x == -1:
                 return OpNode('div', [ConstantNode(1),a])
             if x == 0:
@@ -133,7 +133,7 @@ functions = {
     'cos' : func(numpy.cos),
     'tan' : func(numpy.tan),
     'sqrt' : func(numpy.sqrt),
-        
+
     'sinh' : func(numpy.sinh),
     'cosh' : func(numpy.cosh),
     'tanh' : func(numpy.tanh),
@@ -146,7 +146,7 @@ functions = {
 
 class ExpressionNode(object):
     astType = 'generic'
-    
+
     def __init__(self, value=None, children=None):
         object.__init__(self)
         self.value = value
@@ -218,7 +218,7 @@ class ConstantNode(LeafNode):
 class OpNode(ExpressionNode):
     astType = 'op'
     def __init__(self, opcode=None, args=None):
-        ExpressionNode.__init__(self, value=opcode, children=args)    
+        ExpressionNode.__init__(self, value=opcode, children=args)
 
 class FuncNode(OpNode):
     def __init__(self, opcode=None, args=None):
@@ -226,4 +226,3 @@ class FuncNode(OpNode):
             args = list(args) + [RawNode(interpreter.funccodes[opcode])]
             opcode = 'func_%s' % (len(args)-1)
         ExpressionNode.__init__(self, value=opcode, children=args)
-

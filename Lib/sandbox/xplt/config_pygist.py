@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 
 import os
@@ -36,7 +36,7 @@ class config_pygist(config):
         # This code is added to correct error
         if self.compiler.exe_extension is None:
             self.compiler.exe_extension = ''
-        # End of code different from standard 
+        # End of code different from standard
         prog = prog + self.compiler.exe_extension
         self.temp_files.append(prog)
 
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 
         print
         print "  ============== end play/unix configuration =============="
-        
+
     def find_time(self,configfile):
         # find CPU time function (getrusage is best if present)
         testcode = """\

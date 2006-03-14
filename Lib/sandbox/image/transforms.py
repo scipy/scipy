@@ -19,7 +19,7 @@ def dct(x,axis=-1):
     for k in range(4):
         slices[k] = []
         for j in range(n):
-            slices[k].append(slice(None))    
+            slices[k].append(slice(None))
     if even:
         xtilde = 0.0*x
         slices[0][axis] = slice(None,N/2)
@@ -50,7 +50,7 @@ def dct(x,axis=-1):
 
     return sb.real(Xt*pk)
 
-    
+
 def idct(v,axis=-1):
     n = len(v.shape)
     N = v.shape[axis]
@@ -59,7 +59,7 @@ def idct(v,axis=-1):
     for k in range(4):
         slices[k] = []
         for j in range(n):
-            slices[k].append(slice(None))    
+            slices[k].append(slice(None))
     k = arange(N)
     if even:
         ak = sb.r_[1.0,[2]*(N-1)]*exp(1j*pi*k/(2*N))
@@ -71,7 +71,7 @@ def idct(v,axis=-1):
         slices[0][axis] = slice(None,None,2)
         slices[1][axis] = slice(None,N/2)
         slices[2][axis] = slice(N,None,-2)
-        slices[3][axis] = slice(N/2,None) 
+        slices[3][axis] = slice(N/2,None)
         for k in range(4):
             slices[k] = tuple(slices[k])
         x[slices[0]] = xhat[slices[1]]
@@ -94,7 +94,7 @@ def idct(v,axis=-1):
         Y[slices[0]] = ak*v
         Y[slices[2]] = conj(Y[slices[3]])
         x = real(numpy.ifft(Y,axis=axis))[slices[0]]
-        return x               
+        return x
 
 def dct2(x,axes=(-1,-2)):
     return dct(dct(x,axis=axes[0]),axis=axes[1])
@@ -118,7 +118,7 @@ def idctn(v,axes=None):
         res = idct(res,axis=k)
     return res
 
-    
+
 def makeC(N):
     n,l = ogrid[:N,:N]
     C = cos(pi*(2*n+1)*l/(2*N))
@@ -141,7 +141,7 @@ def makeS(N):
     C = sin(pi*(k+1)*(n+1)/(N+1))
     return C
 
-# DST-I 
+# DST-I
 def dst(x,axis=-1):
     """Discrete Sine Transform (DST-I)
 
@@ -157,7 +157,7 @@ def dst(x,axis=-1):
     for k in range(3):
         slices[k] = []
         for j in range(n):
-            slices[k].append(slice(None))    
+            slices[k].append(slice(None))
     newshape = list(x.shape)
     newshape[axis] = 2*(N+1)
     xtilde = sb.zeros(newshape,sb.Float)
@@ -178,7 +178,7 @@ def idst(v,axis=-1):
     for k in range(3):
         slices[k] = []
         for j in range(n):
-            slices[k].append(slice(None))    
+            slices[k].append(slice(None))
     newshape = list(v.shape)
     newshape[axis] = 2*(N+1)
     Xt = sb.zeros(newshape,sb.Complex)
@@ -229,7 +229,7 @@ def digitrevorder(x,base):
         L += 1
     vec = r_[[base**n for n in range(L)]]
     newx = x[NewAxis,:]*vec[:,NewAxis]
-    # compute digits 
+    # compute digits
     for k in range(L-1,-1,-1):
         newx[k] = x // vec[k]
         x = x - newx[k]*vec[k]
@@ -240,11 +240,11 @@ def digitrevorder(x,base):
     for k in range(L):
         x += newx[k]*vec[k]
     return x
-               
+
 
 def bitrevorder(x):
     return digitrevorder(x,2)
-    
+
 
 # needs to be fixed
 def wht(data):
@@ -257,7 +257,7 @@ def wht(data):
     MES College of Engineering Kuttippuram,
     Kerala, India, February 2005.
     copyright 2005.
-    Reference: N.Ahmed, K.R. Rao, "Orthogonal Transformations for 
+    Reference: N.Ahmed, K.R. Rao, "Orthogonal Transformations for
     Digital Signal Processing" Spring Verlag, New York 1975. page-111.
     """
     N = len(data)
@@ -267,19 +267,18 @@ def wht(data):
     x=bitrevorder(data);
 
     k1=N; k2=1; k3=N/2;
-    for i1 in range(1,L+1):  #Iteration stage 
+    for i1 in range(1,L+1):  #Iteration stage
         L1=1;
         for i2 in range(1,k2+1):
             for i3 in range(1,k3+1):
                 i=i3+L1-1; j=i+k3;
-                temp1= x[i-1]; temp2 = x[j-1]; 
+                temp1= x[i-1]; temp2 = x[j-1];
                 if (i2 % 2) == 0:
-                  x[i-1] = temp1 - temp2;
-                  x[j-1] = temp1 + temp2;
-                  x[i-1] = temp1 + temp2;
-                  x[j-1] = temp1 - temp2;
+                    x[i-1] = temp1 - temp2;
+                    x[j-1] = temp1 + temp2;
+                    x[i-1] = temp1 + temp2;
+                    x[j-1] = temp1 - temp2;
                 L1=L1+k1;
             k1 = k1/2;  k2 = k2*2;  k3 = k3/2;
     x = x*1.0/N; # Delete this line for inverse wht
     return x
-    

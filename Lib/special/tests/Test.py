@@ -6,10 +6,10 @@ import sys
 
 class Test:
 
-    """ 
+    """
     There are two reasons why we don't rely on test.regrtest:
     first, putting the expected results inside the test_
-    script would lead to very small coverage, or VERY HUGE test_ 
+    script would lead to very small coverage, or VERY HUGE test_
     files; second, I liked the idea of trying to evenly cover the
     configuration space, avoiding deterministic lattices; third, I never
     pickled variables, and wanted to try!  """
@@ -53,7 +53,7 @@ class Test:
             for t in self.result:
                 p.dump(t)
             f.close
-            
+
     def _gen_array(self,limits):
         seed=RandomArray.seed
         random=RandomArray.uniform

@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #!/usr/bin/env python
 
@@ -14,11 +14,11 @@ def all_subroutines(interface_in):
     comment_block_exp = re.compile(r'/\*(?:\s|.)*?\*/')
     subroutine_exp = re.compile(r'subroutine (?:\s|.)*?end subroutine.*')
     function_exp = re.compile(r'function (?:\s|.)*?end function.*')
-    
+
     interface = comment_block_exp.sub('',interface_in)
     subroutine_list = subroutine_exp.findall(interface)
     function_list = function_exp.findall(interface)
-    subroutine_list = subroutine_list + function_list 
+    subroutine_list = subroutine_list + function_list
     subroutine_list = map(lambda x: string.strip(x),subroutine_list)
     return subroutine_list
 
@@ -40,13 +40,13 @@ def convert_types(interface_in,converter):
 
 def generic_expand(generic_interface,skip_names=[]):
     generic_types ={'s' :('real',            'real', real_convert,
-                          'real'), 
+                          'real'),
                     'd' :('double precision','double precision',real_convert,
                           'double precision'),
                     'c' :('complex',         'complex',complex_convert,
-                          'real'), 
+                          'real'),
                     'z' :('double complex',  'double complex',complex_convert,
-                          'double precision'),                   
+                          'double precision'),
                     'cs':('complex',         'real',complex_convert,
                           'real'),
                     'zd':('double complex',  'double precision',complex_convert,
@@ -64,7 +64,7 @@ def generic_expand(generic_interface,skip_names=[]):
                        'double precision':'double',
                        'complex':'void',
                        'double complex':'void'}
-    #2. get all subroutines    
+    #2. get all subroutines
     subs = all_subroutines(generic_interface)
     print len(subs)
     #loop through the subs
@@ -89,7 +89,7 @@ def generic_expand(generic_interface,skip_names=[]):
         if m is not None:
             sub = re.sub(TYPE_EXP,'<TCHAR>',sub)
         sub_generic = string.strip(sub)
-        for char in type_chars:            
+        for char in type_chars:
             type_in,type_out,converter, rtype_in = generic_types[char]
             sub = convert_types(sub_generic,converter)
             function_def = string.replace(sub,'<tchar>',char)
@@ -100,7 +100,7 @@ def generic_expand(generic_interface,skip_names=[]):
                                           generic_c_types[type_in])
             function_def = string.replace(function_def,'<type_in_cc>',
                                           generic_cc_types[type_in])
-            
+
             function_def = string.replace(function_def,'<rtype_in>',rtype_in)
             function_def = string.replace(function_def,'<rtype_in_c>',
                                           generic_c_types[rtype_in])
@@ -166,6 +166,6 @@ def process_all():
     for name in ['fblas','cblas','clapack','flapack']:
         generate_interface(name,'generic_%s.pyf'%(name),name+'.pyf')
 
-    
+
 if __name__ == "__main__":
     process_all()

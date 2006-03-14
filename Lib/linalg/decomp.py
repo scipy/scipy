@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #
 # Author: Pearu Peterson, March 2002
@@ -84,7 +84,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
             return w, vl, vr
         return w, vl
     return w, vr
-        
+
 def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
     """ Solve ordinary and generalized eigenvalue problem
     of a square matrix.
@@ -104,7 +104,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
       w,vl,vr  -- [left==right==1].
 
     Definitions:
-      
+
       a * vr[:,i] = w[i] * b * vr[:,i]
 
       a^H * vl[:,i] = conjugate(w[i]) * b^H * vl[:,i]
@@ -170,7 +170,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
 def eigvals(a,b=None,overwrite_a=0):
     """Return eigenvalues of square matrix."""
     return eig(a,b=b,left=0,right=0,overwrite_a=overwrite_a)
-    
+
 def lu_factor(a, overwrite_a=0):
     """Return raw LU decomposition of a matrix and pivots, for use in solving
     a system of linear equations.
@@ -205,9 +205,9 @@ def lu_solve(a_lu_pivots,b):
     pivots = asarray_chkfinite(pivots)
     b = asarray_chkfinite(b)
     _assert_squareness(a_lu)
-    
+
     getrs, = get_lapack_funcs(('getrs',),(a_lu,))
-    b, info = getrs(a_lu,pivots,b)    
+    b, info = getrs(a_lu,pivots,b)
     if info < 0:
         msg = "Argument %d to lapack's ?getrs() has an illegal value." % info
         raise TypeError, msg
@@ -215,8 +215,8 @@ def lu_solve(a_lu_pivots,b):
         msg = "Unknown error occured int ?getrs(): error code = %d" % info
         raise TypeError, msg
     return b
-    
-    
+
+
 def lu(a,permute_l=0,overwrite_a=0):
     """Return LU decompostion of a matrix.
 
@@ -231,7 +231,7 @@ def lu(a,permute_l=0,overwrite_a=0):
       pl,u   -- LU decomposition matrices of a [permute_l=1]
 
     Definitions:
-      
+
       a = p * l * u    [permute_l=0]
       a = pl * u       [permute_l=1]
 
@@ -385,10 +385,10 @@ def qr(a,overwrite_a=0,lwork=None):
                      i.e. a is used as a work array if possible.
 
       lwork=None -- >= shape(a)[1]. If None (or -1) compute optimal
-                    work array size. 
+                    work array size.
 
     Outputs:
-    
+
       q, r -- matrices such that q * r = a
 
     """
@@ -402,7 +402,7 @@ def qr(a,overwrite_a=0,lwork=None):
         # get optimal work array
         qr,tau,work,info = geqrf(a1,lwork=-1,overwrite_a=1)
         lwork = work[0]
-    qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)    
+    qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(qr,))
@@ -422,7 +422,7 @@ def qr(a,overwrite_a=0,lwork=None):
 _double_precision = ['i','l','d']
 
 def schur(a,output='real',lwork=None,overwrite_a=0):
-    """Compute Schur decomposition of matrix a. 
+    """Compute Schur decomposition of matrix a.
 
     Description:
 
@@ -508,7 +508,7 @@ def rsf2csf(T, Z):
     if T.shape[0] != Z.shape[0]:
         raise ValueError, "matrices must be same dimension."
     N = T.shape[0]
-    arr = numpy.array    
+    arr = numpy.array
     t = _commonType(Z, T, arr([3.0],'F'))
     Z, T = _castCopy(t, Z, T)
     conj = numpy.conj

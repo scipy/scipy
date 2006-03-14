@@ -8,18 +8,18 @@ class sparray:
     """
     d-dimensionnal sparse array emulation by a long sparse vector.
     supports syntax like:
-    
+
     a[2,1,6,5]=2
     a[:,5,6,6]=list of appropriate length (one slice at a time only)
     b=a[:,5,6,6] (b is a numeric array)
     b=a[n], a[n]=6  if n in range
-    
+
     a=sparray((2,6,9,8),dicto,shifts)
         where, optionnally, dicto is a dictionnary whose keys are tuple
         in range of (2,6,9,8), and shifts is a tuple
         to shift origins in case the smallest coordinate in dicto
         is not (0,...,0)
-    
+
     """
     def __init__(self,dim,dicto=None,shifts=None):
         """
@@ -28,30 +28,30 @@ class sparray:
         """
 
         self.shifts=shifts
-        
+
         if type(dim)==type(()) or type(dim)==type([]):
             self.data = spmatrix.ll_mat(reduce(operator.mul, dim), 1)
-            self.dims = dim        
+            self.dims = dim
             if dicto:
                 for k, v in dicto.iteritems():
                     shk = map(operator.__sub__, k, shifts)
                     self.data[self.comp(shk), 0]=v
-        
+
         elif type(dim)==IntType:
             self.data = spmatrix.ll_mat(dim,1)
-            self.dims = dim        
+            self.dims = dim
             if dicto:
                 for k, v in dicto.iteritems():
                     shk = k - shifts
                     self.data[shk,0] = v
-        
+
         self.is1D = type(self.dims)==IntType
-        
-        
+
+
 
     def __get_shape0(self):return self.data.shape[0]
     length = property(__get_shape0, doc="sparray linear length")
-    
+
     def decomp(self,ind):
         "from linear to multi indice"
         a = ind
@@ -61,7 +61,7 @@ class sparray:
             a, b = divmod(a,self.dims[i])
             res[i] = b
         return tuple(res)
-    
+
     def comp(self,indice):
         "from multi indice to linear"
         l = len(self.dims)
@@ -70,14 +70,14 @@ class sparray:
             a += reduce(operator.mul, self.dims[i+1:]) * indice[i]
         a += indice[l-1]
         return a
-        
+
     def __setitem__(self, k, value):
         if type(k) is IntType:
             self.data[k, 0] = value
             return
-        
+
         vec = map(lambda x: type(x) is SliceType, k)
-        
+
         if True in vec: # suppose only one slice
             ii = vec.index(True)
             indices = []
@@ -88,17 +88,17 @@ class sparray:
                 self.data[comp(k), 0] = value[i]
         else:
             self.data[self.comp(k),0]=value
-    
-    
+
+
     def __getitem__(self,k):
         """
         output a Numeric vector if slice in coordinates
         (one slice present only)
         """
         if type(k) is IntType: return self.data[k, 0]
-        
+
         vec = map(lambda x: type(x) is SliceType, k)
-        
+
         if True in vec: #suppose only one slice
             ii=vec.index(True)
             indices=[]
@@ -110,8 +110,6 @@ class sparray:
             return rep
         else:
             return self.data[self.comp(k), 0]
-            
+
     def dump(self):
         print self.data
-
-

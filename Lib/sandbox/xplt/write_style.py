@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 import types
 points = 0.0013000
@@ -245,7 +245,7 @@ def getsys(color=-2,frame=1,labelsize=14, font='helvetica', ticks='solid', hticp
                   }
               }
     return newsys
-    
+
 import string, types
 
 def sys2string(system,level=0):
@@ -260,7 +260,7 @@ def sys2string(system,level=0):
         else:
             retstr = retstr+"%s%s=%s,\n" % (' '*spaces,key,system[key])
     return retstr[:-2]+"\n%s},\n" % (' '*spaces)
-            
+
 def style2string(systemslist, landscape=0):
     retstr = "landscape = %d\n" % landscape
     num = 1
@@ -288,6 +288,3 @@ def writestyle(name, systemslist, landscape=0):
     fid.write(style2string(systemslist,landscape))
     fid.close()
     return
-
-
-

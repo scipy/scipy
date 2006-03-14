@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 # 1998 - 2003
 # Author: Travis Oliphant
@@ -105,7 +105,7 @@ except ImportError:
         SSH = Statistics
         def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
             """Plot a histogram.  ntype is the normalization type.
-            
+
             Use ntype == 2 to compare with probability density function.
             """
             h = SSH.histogram(data,nbins,range)
@@ -114,15 +114,15 @@ except ImportError:
             elif ntype == 2:
                 h.normalizeArea()
             if bar:
-                barplot(h[:,0],h[:,1],width=bwidth,color=bcolor)                
+                barplot(h[:,0],h[:,1],width=bwidth,color=bcolor)
             else:
                 plot(h[:,0],h[:,1])
-            return h        
+            return h
     except ImportError:
         from scipy.stats import histogram2 as hist
         def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
             """Plot a histogram.  ntype is the normalization type.
-            
+
             Use ntype == 2 to compare with probability density function.
             """
             if range is None:
@@ -154,7 +154,7 @@ def textcolor(color=None):
     if color is not None:
         _textcolor = color
     return _textcolor
-    
+
 def reverse_dict(dict):
     newdict = {}
     for key in dict.keys():
@@ -186,7 +186,7 @@ def barplot(x,y,width=0.8,color=0):
     """Plot a barplot.
 
     Description:
-    
+
       Plot a barplot with centers at x and heights y with given color
 
     Inputs:
@@ -236,7 +236,7 @@ def hold(state):
         raise ValueError, 'holds argument can be "on","off",'\
                           '"yes","no". Not ' + state
     return
-          
+
 
 def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25):
     """Draw connected points with errorbars.
@@ -275,7 +275,7 @@ def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25
     viewp = gist.viewport()
     plotlims = gist.limits()
     conv_factorx = (viewp[1] - viewp[0]) / (plotlims[1]-plotlims[0])
-    conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])    
+    conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])
     width = fac*(x[1]-x[0])
     x0 = x-width/2.0
     x1 = x+width/2.0
@@ -298,8 +298,8 @@ def legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=
                    with the curves in the order they were originally
                    drawn.  Otherwise, associate the text strings with the
                    corresponding curve types given.  See plot for description.
-                   
-    """    
+
+    """
     global _hold
     global _textcolor
     if color is None:
@@ -434,7 +434,7 @@ def ispointtype(linetype):
 
 import operator
 def arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None):
-    """Draw an arrow.   
+    """Draw an arrow.
 
     Description:
 
@@ -446,7 +446,7 @@ def arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None):
       x1, y1 -- Then ending point.
       color -- The color of the arrowhead.  Number represents an index
                in the current palette or a negative number or a spelled
-               out basic color. 
+               out basic color.
       lc -- The color of the line (same as color by default).
       ang -- The angle of the arrowhead.
       height -- The height of the arrowhead in points.
@@ -487,11 +487,11 @@ def _parse_type_arg(thearg,nowplotting):
         thetype = _find_and_set(_types,thearg,'none')
         thecolor = _find_and_set(_colors,thearg,_colors[_corder[indx]])
         themarker = _find_and_set(_markers,thearg,None)
-        
+
         if (themarker is None):
             tomark = 0
             if thetype == 'none':
-                thetype = 'solid'        
+                thetype = 'solid'
 
         return (thetype, thecolor, themarker, tomark)
 
@@ -588,7 +588,7 @@ def plot(x,*args,**keywds):
             x = numpy.real(x)
             y = numpy.real(y)
         y = where(numpy.isfinite(y),y,0)
-        y = _minsqueeze(y) 
+        y = _minsqueeze(y)
         x = _minsqueeze(x)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,msize=msize,width=linewidth)
 
@@ -612,7 +612,7 @@ def plot(x,*args,**keywds):
             x = x
             y = args[argpos]
             argpos = argpos+1
-        else:   # 3 
+        else:   # 3
             x = args[argpos]
             y = args[argpos+1]
             argpos = argpos+2
@@ -631,7 +631,7 @@ def matplot(x,y=None,axis=-1):
         gist.fma()
     clear_global_linetype()
     for k in range(y.shape[otheraxis]):
-        thiscolor = _colors[_corder[k % len(_corder)]] 
+        thiscolor = _colors[_corder[k % len(_corder)]]
         sliceobj[otheraxis] = k
         ysl = where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
         gist.plg(ysl,x,type='solid',color=thiscolor,marks=0)
@@ -687,7 +687,7 @@ def list_palettes():
     for file in files:
         print file[:-3] + ' '*(maxlen-len(file[:-3])-3) + ' --- ',
         k = 0
-        fid = open(direc+"/"+file)        
+        fid = open(direc+"/"+file)
         while 1:
             line = fid.readline()
             if line[0] != '#':
@@ -701,7 +701,7 @@ def list_palettes():
                 print line[1:-1]
             k = k + 1
 
-                                     
+
 def change_palette(pal):
     if pal is not None:
         if isinstance(pal, types.StringType):
@@ -787,11 +787,11 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
         saveval = gist.plsys(2)
         gist.plsys(saveval)
     except:
-        _style = 'default'        
+        _style = 'default'
         if not _hold:
             gist.fma()
         gist.animate(0)
-    
+
     if _style is not None:
         if _style == "default":
             _style=os.path.join(_user_path,'image.gs')
@@ -858,7 +858,7 @@ def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame
     if n is None:
         winnum = gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
         if winnum < 0:
-            gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi)) 
+            gist.window(style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
     else:
         gist.window(n,style=style,width=int(width*1.25/inches*_dpi),height=int(height*1.4/inches*_dpi))
         _current_style = style
@@ -904,9 +904,9 @@ def _chng_font(system, font, height):
     if height is None:
         height=14
     if font is None:
-        font = 'helvetica'        
+        font = 'helvetica'
     num = write_style.tfont[font]
-    system['ticks'] = { 
+    system['ticks'] = {
         'horiz':{
         'textStyle':{'font':num,
                      'height':height*points}
@@ -943,7 +943,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
         msg = 0
     if land:
         maxwidth=min(_maxwidth,11*_dpi)
-        maxheight=min(_maxheight,8.5*_dpi)        
+        maxheight=min(_maxheight,8.5*_dpi)
     else:
         maxwidth=min(_maxwidth,8.5*_dpi)
         maxheight=min(_maxheight,11*_dpi)
@@ -955,7 +955,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     if pw > maxwidth:
         pw = maxwidth
         printit = 1
-        
+
     if _dpi != 100:
         fontsize = 12
     conv = inches *1.0 / _dpi  # multiply by this factor to convert pixels to
@@ -977,7 +977,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
             cntr = array([4.25,5.5])*_dpi
 
     Yspace = ph/float(Numy)*conv
-    Xspace = pw/float(Numx)*conv 
+    Xspace = pw/float(Numx)*conv
 
     hsep = hsep * conv
     vsep = vsep * conv
@@ -1029,10 +1029,10 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
     zlabel -- The label to attach to the colorbar (font, fontsize, and color
               match this).
     color -- The color to use for the ticks and frame.
-    """    
+    """
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
-        
+
     if not _hold:
         gist.fma()
     gist.animate(0)
@@ -1048,7 +1048,7 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
     if cmax is None:
         cmax = max(ravel(z))
     if cmin is None:
-        cmin = min(ravel(z))        
+        cmin = min(ravel(z))
     cmax = float(cmax)
     cmin = float(cmin)
 
@@ -1066,7 +1066,7 @@ def xlabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
     global _textcolor
     if color is None:
         color = _textcolor
-    else: 
+    else:
         _textcolor = color
     if color is None:
         color = 'black'
@@ -1115,7 +1115,7 @@ def title(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
         _textcolor = color
     if color is None:
         color = 'black'
-        
+
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     if text != "":
@@ -1187,7 +1187,7 @@ def makeleg(leg,pos,lenx,dd,theight=12):
         if leg['sym'][k][0] is not None:
             gist.plg([y0+k*dy]*2,[x0,x0+lenx],type='none',marks=1,marker=leg['sym'][k][0])
         if leg['txt'][k] != "":
-            gist.plt(leg['txt'][k],x0+lenx+dx,y0+k*dy,height=theight,tosys=1,justify='LH') 
+            gist.plt(leg['txt'][k],x0+lenx+dx,y0+k*dy,height=theight,tosys=1,justify='LH')
     return
 
 def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
@@ -1210,7 +1210,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         xb = [0,0,0]
     if xe is None:
         xe = DATA.shape
-    # get two image slices 
+    # get two image slices
     # make special style file so that pixels are square
     getdx = array([1,1,1])
     imgsl1 = [slice(None,None),slice(None,None),slice(None,None)]
@@ -1261,8 +1261,8 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         dx2 = dx2[::-1]
         xb2 = xb2[::-1]
         xe2 = xe2[::-1]
-        
-        
+
+
 
     assert(img1.shape[1] == img2.shape[1])
     units = totalheight - space
@@ -1280,7 +1280,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         print xwidth
     ystart = 0.5 - totalheight / 2
     ypos1 = [ystart, ystart+height1]
-    ypos2 = [ystart+height1+space,ystart+totalheight]    
+    ypos2 = [ystart+height1+space,ystart+totalheight]
     xpos = [0.395-xwidth/2.0, 0.395+xwidth/2.0]
 
     systems = []
@@ -1335,7 +1335,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         gist.pldj([xstart],[yval],[xstop],[yval],type='dash',width=2,color='white')
 
     if cb:
-        colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04) 
+        colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04)
 
 def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
          theta=30.0,zscale=1.0,palette=None,gnomon=0):
@@ -1393,7 +1393,7 @@ def axes(type='b|'):
     y1 = numpy.r_[v2:v3:5j]
     plot(x0,y0,type,x1,y1,type,hold=1)
     gist.limits(v0,v1,v2,v3)
-    
+
 
 def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'):
     """Plot a bode plot of the transfer function H as a function of w.
@@ -1408,7 +1408,7 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
     if freq == 'Hz':
         xlabel('Frequency (Hz)',color=tcolor,deltay=-0.005)
     else:
-        xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)         
+        xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)
     ylabel('Magnitude (dB)',color=tcolor,deltax=-0.005)
     title("Bode Plot",color=tcolor)
     gist.plsys(2)
@@ -1418,16 +1418,16 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
     if freq == 'Hz':
         xlabel('Frequency (Hz)',color=tcolor,deltay=-0.005)
     else:
-        xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)         
+        xlabel('Frequency (rad/s)',color=tcolor,deltay=-0.005)
     ylabel('Phase (deg.)',color=tcolor,deltax=-0.005)
-    
+
 
 def addtext(txt,xy=None,fontsize=16,font='helvetica',color='black',
             orient=0,justify='LA',tosys=0):
     if xy is None:
         result = gist.mouse(0,0,"Click on point for lower left starting position")
         if result is None:
-            raise ValueError, "Invalid point entered."        
+            raise ValueError, "Invalid point entered."
         x,y = result[4],result[5]
         tosys = 0
     else:
@@ -1436,5 +1436,3 @@ def addtext(txt,xy=None,fontsize=16,font='helvetica',color='black',
         gist.plt(txt, x, y, tosys=tosys, justify=justify,
                  height=fontsize,font=font, color=color, orient=orient)
     return
-
-    

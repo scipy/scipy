@@ -15,7 +15,7 @@ import fitpack
 
 def reduce_sometrue(a):
     all = a
-    while len(shape(all)) > 1:    
+    while len(shape(all)) > 1:
         all = sometrue(all)
     return all
 
@@ -48,7 +48,7 @@ class interp2d:
             raise ValueError, "Grid values is not a 2-d array."
 
 
-        
+
 
     def __call__(self,x,y,dx=0,dy=0):
         """
@@ -72,7 +72,7 @@ class interp2d:
 class interp1d:
     interp_axis = -1 # used to set which is default interpolation
                      # axis.  DO NOT CHANGE OR CODE WILL BREAK.
-                     
+
     def __init__(self,x,y,kind='linear',axis = -1,
                  copy = 1,bounds_error=1, fill_value=None):
         """Initialize a 1d linear interpolation class
@@ -92,11 +92,11 @@ class interp1d:
                  of x.
             kind -- specify the kind of interpolation: 'nearest', 'linear',
                     'cubic', or 'spline'
-            axis -- specifies the axis of y along which to 
+            axis -- specifies the axis of y along which to
                     interpolate. Interpolation defaults to the last
                     axis of y.  (default: -1)
             copy -- If 1, the class makes internal copies of x and y.
-                    If 0, references to x and y are used. The default 
+                    If 0, references to x and y are used. The default
                     is to copy. (default: 1)
             bounds_error -- If 1, an error is thrown any time interpolation
                             is attempted on a value outside of the range
@@ -105,7 +105,7 @@ class interp1d:
                             NaN (#INF) value.  By default, an error is
                             raised, although this is prone to change.
                             (default: 1)
-        """      
+        """
         self.axis = axis
         self.copy = copy
         self.bounds_error = bounds_error
@@ -116,28 +116,28 @@ class interp1d:
 
         if kind != 'linear':
             raise NotImplementedError, "Only linear supported for now. Use fitpack routines for other types."
-        
-        # Check that both x and y are at least 1 dimensional.    
+
+        # Check that both x and y are at least 1 dimensional.
         if len(shape(x)) == 0 or len(shape(y)) == 0:
-            raise ValueError, "x and y arrays must have at least one dimension."  
+            raise ValueError, "x and y arrays must have at least one dimension."
         # make a "view" of the y array that is rotated to the
-        # interpolation axis.  
+        # interpolation axis.
         oriented_x = x
-        oriented_y = swapaxes(y,self.interp_axis,axis)            
-        interp_axis = self.interp_axis        
+        oriented_y = swapaxes(y,self.interp_axis,axis)
+        interp_axis = self.interp_axis
         len_x,len_y = shape(oriented_x)[interp_axis], shape(oriented_y)[interp_axis]
         if len_x != len_y:
             raise ValueError, "x and y arrays must be equal in length along "\
                               "interpolation axis."
         if len_x < 2 or len_y < 2:
-            raise ValueError, "x and y arrays must have more than 1 entry"            
+            raise ValueError, "x and y arrays must have more than 1 entry"
         self.x = array(oriented_x,copy=self.copy)
-        self.y = array(oriented_y,copy=self.copy)       
-        
+        self.y = array(oriented_y,copy=self.copy)
+
     def __call__(self,x_new):
         """Find linearly interpolated y_new = <name>(x_new).
 
-        Inputs:        
+        Inputs:
           x_new -- New independent variables.
 
         Outputs:
@@ -149,16 +149,16 @@ class interp1d:
         x_new = atleast_1d(x_new)
         out_of_bounds = self._check_bounds(x_new)
         # 2. Find where in the orignal data, the values to interpolate
-        #    would be inserted.  
+        #    would be inserted.
         #    Note: If x_new[n] = x[m], then m is returned by searchsorted.
         x_new_indices = searchsorted(self.x,x_new)
-        # 3. Clip x_new_indices so that they are within the range of 
+        # 3. Clip x_new_indices so that they are within the range of
         #    self.x indices and at least 1.  Removes mis-interpolation
-        #    of x_new[n] = x[0] 
+        #    of x_new[n] = x[0]
         x_new_indices = clip(x_new_indices,1,len(self.x)-1).astype(Int)
         # 4. Calculate the slope of regions that each x_new value falls in.
-        lo = x_new_indices - 1; hi = x_new_indices        
-        
+        lo = x_new_indices - 1; hi = x_new_indices
+
         # !! take() should default to the last axis (IMHO) and remove
         # !! the extra argument.
         x_lo = take(self.x,lo,axis=self.interp_axis)
@@ -167,9 +167,9 @@ class interp1d:
         y_hi = take(self.y,hi,axis=self.interp_axis);
         slope = (y_hi-y_lo)/(x_hi-x_lo)
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new-x_lo) + y_lo 
+        y_new = slope*(x_new-x_lo) + y_lo
         # 6. Fill any values that were out of bounds with NaN
-        # !! Need to think about how to do this efficiently for 
+        # !! Need to think about how to do this efficiently for
         # !! mutli-dimensional Cases.
         yshape = y_new.shape
         y_new = y_new.ravel()
@@ -180,7 +180,7 @@ class interp1d:
         out_of_bounds.shape = sec_shape
         new_out = ones(new_shape)*out_of_bounds
         putmask(y_new, new_out.ravel(), self.fill_value)
-        y_new.shape = yshape      
+        y_new.shape = yshape
         # Rotate the values of y_new back so that they coorespond to the
         # correct x_new values.
         result = swapaxes(y_new,self.interp_axis,self.axis)
@@ -190,11 +190,11 @@ class interp1d:
         except TypeError:
             return result[0]
         return result
-    
+
     def _check_bounds(self,x_new):
         # If self.bounds_error = 1, we raise an error if any x_new values
         # fall outside the range of x.  Otherwise, we return an array indicating
-        # which values are outside the boundary region.  
+        # which values are outside the boundary region.
         # !! Needs some work for multi-dimensional x !!
         below_bounds = less(x_new,self.x[0])
         above_bounds = greater(x_new,self.x[-1])
@@ -210,13 +210,13 @@ class interp1d:
         # !! matlab does not.
         out_of_bounds = logical_or(below_bounds,above_bounds)
         return out_of_bounds
-       
+
     def model_error(self,x_new,y_new):
         # How well do x_new,yy points fit the model?
         # Return an array of error values.
         pass
 
-    
+
 #assumes module test_xxx is in python path
 #def test():
 #    test_module = 'test_' + __name__ # __name__ is name of this module

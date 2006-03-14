@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
-# are met: 
+# are met:
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
@@ -26,7 +26,7 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import types
 import math
@@ -208,7 +208,7 @@ def _index_to_position(index, shape):
         return tuple(pos)
     else:
         return 0
-    
+
 
 def minimum_position(input, labels = None, index = None):
     """Find the position of the minimum of the values of the array.
@@ -257,7 +257,7 @@ def maximum_position(input, labels = None, index = None):
 
 
 def extrema(input, labels = None, index = None):
-    """Calculate the minimum, the maximum and their positions of the 
+    """Calculate the minimum, the maximum and their positions of the
        values of the array.
 
     The index parameter is a single label number or a sequence of
@@ -273,7 +273,7 @@ def extrema(input, labels = None, index = None):
 
         if labels.shape != input.shape:
             raise RuntimeError, 'input and labels shape are not equal'
-    
+
 
     min, max, minp, maxp = _nd_image.statistics(input, labels, index, 7)
     if (isinstance(minp, types.ListType)):

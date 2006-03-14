@@ -22,26 +22,26 @@ wx_to_c_template = \
 """
 class %(type_name)s_handler
 {
-public:    
+public:
     %(c_type)s convert_to_%(type_name)s(PyObject* py_obj, const char* name)
     {
-        %(c_type)s wx_ptr;        
+        %(c_type)s wx_ptr;
         // work on this error reporting...
         if (SWIG_GetPtrObj(py_obj,(void **) &wx_ptr,"_%(type_name)s_p"))
             handle_conversion_error(py_obj,"%(type_name)s", name);
         %(inc_ref_count)s
         return wx_ptr;
     }
-    
+
     %(c_type)s py_to_%(type_name)s(PyObject* py_obj,const char* name)
     {
-        %(c_type)s wx_ptr;        
+        %(c_type)s wx_ptr;
         // work on this error reporting...
         if (SWIG_GetPtrObj(py_obj,(void **) &wx_ptr,"_%(type_name)s_p"))
             handle_bad_type(py_obj,"%(type_name)s", name);
         %(inc_ref_count)s
         return wx_ptr;
-    }    
+    }
 };
 
 %(type_name)s_handler x__%(type_name)s_handler = %(type_name)s_handler();
@@ -59,7 +59,7 @@ class wx_converter(common_base_converter):
 
     def init_info(self):
         common_base_converter.init_info(self)
-        # These are generated on the fly instead of defined at 
+        # These are generated on the fly instead of defined at
         # the class level.
         self.type_name = self.class_name
         self.c_type = self.class_name + "*"
@@ -67,17 +67,17 @@ class wx_converter(common_base_converter):
         self.to_c_return = None # not used
         self.check_func = None # not used
         self.headers.append('"wx/wx.h"')
-        if sys.platform == "win32":        
+        if sys.platform == "win32":
             # These will be used in many cases
-            self.headers.append('<windows.h>')        
-            
+            self.headers.append('<windows.h>')
+
             # These are needed for linking.
             self.libraries.extend(['kernel32','user32','gdi32','comdlg32',
-                                   'winspool', 'winmm', 'shell32', 
+                                   'winspool', 'winmm', 'shell32',
                                    'oldnames', 'comctl32', 'ctl3d32',
-                                   'odbc32', 'ole32', 'oleaut32', 
+                                   'odbc32', 'ole32', 'oleaut32',
                                    'uuid', 'rpcrt4', 'advapi32', 'wsock32'])
-                                   
+
             # not sure which of these macros are needed.
             self.define_macros.append(('WIN32', '1'))
             self.define_macros.append(('__WIN32__', '1'))
@@ -89,21 +89,21 @@ class wx_converter(common_base_converter):
             #self.define_macros.append(('WINVER', '0x0350'))
 
             self.library_dirs.append(os.path.join(wx_base,'lib'))
-            #self.include_dirs.append(os.path.join(wx_base,'include'))            
-            self.include_dirs.append(wx_base)            
-            self.include_dirs.append(os.path.join(wx_base,'include'))            
-            self.include_dirs.append(os.path.join(wx_base,'include','msw'))            
-            # how do I discover unicode or not unicode??            
-            # non-unicode            
+            #self.include_dirs.append(os.path.join(wx_base,'include'))
+            self.include_dirs.append(wx_base)
+            self.include_dirs.append(os.path.join(wx_base,'include'))
+            self.include_dirs.append(os.path.join(wx_base,'include','msw'))
+            # how do I discover unicode or not unicode??
+            # non-unicode
             self.libraries.append('wxmsw24h')
             self.include_dirs.append(os.path.join(wx_base,'lib'))
-            
+
             # unicode
             #self.libraries.append('wxmswuh')
             #self.include_dirs.append(os.path.join(wx_base,'lib','mswdlluh'))
             #self.define_macros.append(('UNICODE', '1'))
         else:
-            # make sure the gtk files are available 
+            # make sure the gtk files are available
             # ?? Do I need to link to them?
             self.headers.append('"gdk/gdk.h"')
             # !! This shouldn't be hard coded.
@@ -112,18 +112,18 @@ class wx_converter(common_base_converter):
             self.include_dirs.append("/usr/lib/glib/include")
             cxxflags = get_wxconfig('cxxflags')
             libflags = get_wxconfig('libs') + get_wxconfig('gl-libs')
-            
+
             #older versions of wx do not support the ldflags.
             try:
                 ldflags = get_wxconfig('ldflags')
             except RuntimeError:
                 ldflags = []
-                    
+
             self.extra_compile_args.extend(cxxflags)
             self.extra_link_args.extend(libflags)
-            self.extra_link_args.extend(ldflags)            
+            self.extra_link_args.extend(ldflags)
         self.support_code.append(common_info.swig_support_code)
-    
+
     def type_match(self,value):
         is_match = 0
         try:
@@ -143,18 +143,18 @@ class wx_converter(common_base_converter):
             import base_info
             res = base_info.base_info()
         return res
-        
+
     def py_to_c_code(self):
         return wx_to_c_template % self.template_vars()
 
     #def c_to_py_code(self):
     #    return simple_c_to_py_template % self.template_vars()
-                    
+
     def type_spec(self,name,value):
         # factory
         class_name = value.this.split('_')[-2]
         new_spec = self.__class__(class_name)
-        new_spec.name = name        
+        new_spec.name = name
         return new_spec
 
     def __cmp__(self,other):

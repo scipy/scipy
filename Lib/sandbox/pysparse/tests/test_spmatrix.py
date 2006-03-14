@@ -26,14 +26,14 @@ class LLMatSimpleTestCase(unittest.TestCase):
         self.failUnless(self.S.shape == (self.n, self.n))
         self.failUnless(self.S.nnz == 0)
         self.failUnless(self.S.issym)
-        
+
     def testEntry(self):
         def assignUP(): self.S[0,1] = 1.0
         def assignLeft(): self.S[-11,0] = 1.0
         def assignRight(): self.S[10,0] = 1.0
         def assignTop(): self.S[0,-11] = 1.0
         def assignBottom(): self.S[0,10] = 1.0
-        
+
         self.A[0,0] = 1.0
         self.S[0,0] = 1.0
         self.failUnless(self.A[0,0] == 1.0)
@@ -58,10 +58,10 @@ class LLMatSimpleTestCase(unittest.TestCase):
         for i in range(-10, 0):
             for j in range(-10, 0):
                 self.failUnless(I[i,j] == I[10+i,10+j])
-        
+
 
 class LLMatPoissonTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         self.n = 20
         self.A = poisson.poisson2d(self.n)
@@ -115,10 +115,10 @@ class LLMatPoissonTestCase(unittest.TestCase):
             self.failUnless(llmat_isEqual(R[n*(i+1):n*(i+2),n*i:n*(i+1)], Psym))
 
 class LLMatDeleteRowColsTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         import Numeric
-        
+
         self.n = 30
         self.P = poisson.poisson1d(self.n)
         for i in range(self.n):
@@ -136,16 +136,16 @@ class LLMatDeleteRowColsTestCase(unittest.TestCase):
     def testDeleteRowColsSym(self):
         self.S.delete_rowcols(self.mask)
         self.failUnless(llmat_isEqual(self.S, self.P))
-        
+
     def testDeleteRowColsGen(self):
         self.A.delete_rowcols(self.mask)
         self.failUnless(llmat_isEqual(self.A, self.P))
-        
+
     def testDeleteRowColsGen2Step(self):
         self.A.delete_rows(self.mask)
         self.A.delete_cols(self.mask)
         self.failUnless(llmat_isEqual(self.A, self.P))
-        
+
     def testDeleteRowColsGen2StepOff(self):
         self.A.delete_rows(self.mask)
         self.A.delete_cols(self.mask1)
@@ -171,7 +171,7 @@ class LLMatDeleteRowColsTestCase(unittest.TestCase):
                 i = random.randrange(n)
                 j = random.randrange(n)
                 A[i, j] = 0.0
-        
+
 class LLMatNorm(unittest.TestCase):
     def setUp(self):
         self.n = 30
@@ -181,40 +181,40 @@ class LLMatNorm(unittest.TestCase):
         self.failUnless(A.norm('1') == 8)
         self.failUnless(A.norm('inf') == 8)
         self.failUnless(poisson.poisson1d(3).norm('fro') == 4)
-            
+
     def testNormSymmetric(self):
         A = spmatrix.ll_mat_sym(4)
         A[0,0] = 1; A[1,1] = 2; A[2,2] = 3; A[3,3] = 4;
-        A[1,0] = 3; A[2,0] = 2; A[3,0] = 2; 
+        A[1,0] = 3; A[2,0] = 2; A[3,0] = 2;
         self.failUnless(A.norm('fro') == 8)
-        
+
     def testNormSymmetricNotImplemented(self):
         def f(): return A.norm('1')
         def g(): return A.norm('inf')
-        
+
         A = poisson.poisson2d_sym(self.n)
         self.failUnlessRaises(NotImplementedError, f)
         self.failUnlessRaises(NotImplementedError, g)
 
 class LLMatMatMul(unittest.TestCase):
-      def testRandomMat(self):
-          eps = 2.2204460492503131E-16
-          n = 30; m = 60; k = 30
+    def testRandomMat(self):
+        eps = 2.2204460492503131E-16
+        n = 30; m = 60; k = 30
 
-          for i in range(100):
-              A = spmatrix_util.ll_mat_rand(n, k, 0.9)
-              B = spmatrix_util.ll_mat_rand(k, m, 0.4)
-              C = spmatrix.matrixmultiply(A, B)
-              t = Numeric.zeros(k, 'd')
-              y1 = Numeric.zeros(n, 'd')
-              y2 = Numeric.zeros(n, 'd')
-              for s in range(10):
-                  #x = RandomArray.random((m, ))
-                  x = numpy.rand((m, ))
-                  C.matvec(x, y1)
-                  B.matvec(x, t)
-                  A.matvec(t, y2)
-                  self.failUnless(math.sqrt(Numeric.dot(y1 - y2, y1 - y2)) < eps * n*m*k)
-              
+        for i in range(100):
+            A = spmatrix_util.ll_mat_rand(n, k, 0.9)
+            B = spmatrix_util.ll_mat_rand(k, m, 0.4)
+            C = spmatrix.matrixmultiply(A, B)
+            t = Numeric.zeros(k, 'd')
+            y1 = Numeric.zeros(n, 'd')
+            y2 = Numeric.zeros(n, 'd')
+            for s in range(10):
+                #x = RandomArray.random((m, ))
+                x = numpy.rand((m, ))
+                C.matvec(x, y1)
+                B.matvec(x, t)
+                A.matvec(t, y2)
+                self.failUnless(math.sqrt(Numeric.dot(y1 - y2, y1 - y2)) < eps * n*m*k)
+
 if __name__ == '__main__':
     unittest.main()

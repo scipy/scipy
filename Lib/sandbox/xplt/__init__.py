@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 
 from info_xplt import __doc__
@@ -42,8 +42,7 @@ if display and (maxwidth is None or maxheight is None):
 
 if maxwidth is None:
     maxwidth = 1024
-if maxheight is None:    
+if maxheight is None:
     maxheight = 768
 
 from Mplot import *
-

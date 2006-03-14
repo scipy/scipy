@@ -8,10 +8,10 @@ def multi_return():
 def c_multi_return():
 
     code =  """
- 	        py::tuple results(2);
- 	        results[0] = 1;
- 	        results[1] = "2nd";
- 	        return_val = results; 	        
+                py::tuple results(2);
+                results[0] = 1;
+                results[1] = "2nd";
+                return_val = results;
             """
     return inline_tools.inline(code,[])
 
@@ -24,7 +24,7 @@ def compare(m):
     t2 = time.time()
     py = t2 - t1
     print 'python speed:', py
-    
+
     #load cache
     result = c_multi_return()
     t1 = time.time()
@@ -37,6 +37,6 @@ def compare(m):
     print 'or slow down (more likely:', c / py
     print 'python result:', py_result
     print 'c result:', c_result
-    
+
 if __name__ == "__main__":
     compare(10000)

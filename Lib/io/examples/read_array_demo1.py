@@ -16,7 +16,7 @@
 #
 # USAGE:
 # python read_array_demo1.py
-#	
+#       
 # PARAMETERS:
 #
 # DEPENDENCIES:

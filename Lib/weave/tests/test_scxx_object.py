@@ -65,10 +65,10 @@ class test_object_construct(ScipyTestCase):
         res = inline_tools.inline(code)
         assert sys.getrefcount(res) == 2
         assert res == "hello"
-            
+
 class test_object_print(ScipyTestCase):
     #------------------------------------------------------------------------
-    # Check the object print protocol.  
+    # Check the object print protocol.
     #------------------------------------------------------------------------
     def check_stdout(self,level=5):
         code = """
@@ -94,13 +94,13 @@ class test_object_print(ScipyTestCase):
                py::object val = "how now brown cow";
                val.print(file);
                """
-        try:       
+        try:
             res = inline_tools.inline(code)
         except:
             # error was supposed to occur.
-            pass    
+            pass
 
-                    
+
 class test_object_cast(ScipyTestCase):
     def check_int_cast(self,level=5):
         code = """
@@ -133,7 +133,7 @@ class test_object_cast(ScipyTestCase):
                std::string raw_val = val;
                """
         inline_tools.inline(code)
-                    
+
 # test class used for testing python class access from C++.
 class foo:
     def bar(self):
@@ -144,15 +144,15 @@ class foo:
         return val1, val2, val3
 
 class str_obj:
-            def __str__(self):
-                return "b"
+    def __str__(self):
+        return "b"
 
 class test_object_hasattr(ScipyTestCase):
     def check_string(self,level=5):
         a = foo()
         a.b = 12345
         code = """
-               return_val = a.hasattr("b");               
+               return_val = a.hasattr("b");
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -161,15 +161,15 @@ class test_object_hasattr(ScipyTestCase):
         a.b = 12345
         attr_name = "b"
         code = """
-               return_val = a.hasattr(attr_name);               
+               return_val = a.hasattr(attr_name);
                """
         res = inline_tools.inline(code,['a','attr_name'])
-        assert res        
+        assert res
     def check_string_fail(self,level=5):
         a = foo()
         a.b = 12345
         code = """
-               return_val = a.hasattr("c");               
+               return_val = a.hasattr("c");
                """
         res = inline_tools.inline(code,['a'])
         assert not res
@@ -179,26 +179,26 @@ class test_object_hasattr(ScipyTestCase):
         a = foo()
         a.b = 12345
         code = """
-               throw_error(PyExc_AttributeError,"bummer");               
+               throw_error(PyExc_AttributeError,"bummer");
                """
         try:
             before = sys.getrefcount(a)
             res = inline_tools.inline(code,['a'])
         except AttributeError:
             after = sys.getrefcount(a)
-            try: 
+            try:
                 res = inline_tools.inline(code,['a'])
             except:
                 after2 = sys.getrefcount(a)
-            print "after and after2 should be equal in the following"        
+            print "after and after2 should be equal in the following"
             print 'before, after, after2:', before, after, after2
-            pass    
+            pass
 
     def check_func(self,level=5):
         a = foo()
         a.b = 12345
         code = """
-               return_val = a.hasattr("bar");               
+               return_val = a.hasattr("bar");
                """
         res = inline_tools.inline(code,['a'])
         assert res
@@ -208,7 +208,7 @@ class test_object_attr(ScipyTestCase):
     def generic_attr(self,code,args=['a']):
         a = foo()
         a.b = 12345
-                
+
         before = sys.getrefcount(a.b)
         res = inline_tools.inline(code,args)
         assert res == a.b
@@ -224,7 +224,7 @@ class test_object_attr(ScipyTestCase):
             self.generic_attr('return_val = a.attr("c");')
         except AttributeError:
             pass
-            
+
     def check_string(self,level=5):
         self.generic_attr('return_val = a.attr(std::string("b"));')
 
@@ -232,13 +232,13 @@ class test_object_attr(ScipyTestCase):
         try:
             self.generic_attr('return_val = a.attr(std::string("c"));')
         except AttributeError:
-            pass    
+            pass
 
     def check_obj(self,level=5):
         code = """
                py::object name = "b";
                return_val = a.attr(name);
-               """ 
+               """
         self.generic_attr(code,['a'])
 
     def check_obj_fail(self,level=5):
@@ -246,11 +246,11 @@ class test_object_attr(ScipyTestCase):
             code = """
                    py::object name = "c";
                    return_val = a.attr(name);
-                   """ 
+                   """
             self.generic_attr(code,['a'])
         except AttributeError:
-            pass    
-            
+            pass
+
     def check_attr_call(self,level=5):
         a = foo()
         res = inline_tools.inline('return_val = a.attr("bar").call();',['a'])
@@ -266,7 +266,7 @@ class test_object_set_attr(ScipyTestCase):
     def generic_existing(self, code, desired):
         args = ['a']
         a = foo()
-        a.b = 12345                
+        a.b = 12345
         res = inline_tools.inline(code,args)
         assert a.b == desired
 
@@ -304,7 +304,7 @@ class test_object_set_attr(ScipyTestCase):
                    """
             self.generic_new(code,"hello")
         except:
-            pass    
+            pass
 
     def check_existing_int(self,level=5):
         self.generic_existing('a.set_attr("b",1);',1)
@@ -317,7 +317,7 @@ class test_object_set_attr(ScipyTestCase):
                """
         self.generic_existing(code,1+1j)
     def check_existing_char1(self,level=5):
-        self.generic_existing('a.set_attr("b","hello");',"hello")        
+        self.generic_existing('a.set_attr("b","hello");',"hello")
     def check_existing_string1(self,level=5):
         code = """
                std::string obj = std::string("hello");
@@ -329,7 +329,7 @@ class test_object_del(ScipyTestCase):
     def generic(self, code):
         args = ['a']
         a = foo()
-        a.b = 12345                
+        a.b = 12345
         res = inline_tools.inline(code,args)
         assert not hasattr(a,"b")
 
@@ -418,7 +418,7 @@ class test_object_repr(ScipyTestCase):
                 return "str return"
             def __repr__(self):
                 return "repr return"
-        a = foo()                
+        a = foo()
         res = inline_tools.inline('return_val = a.repr();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -434,7 +434,7 @@ class test_object_str(ScipyTestCase):
                 return "str return"
             def __repr__(self):
                 return "repr return"
-        a = foo()                
+        a = foo()
         res = inline_tools.inline('return_val = a.str();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -452,7 +452,7 @@ class test_object_unicode(ScipyTestCase):
                 return "repr return"
             def __str__(self):
                 return "unicode"
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.unicode();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -466,13 +466,13 @@ class test_object_is_callable(ScipyTestCase):
         class foo:
             def __call__(self):
                 return 0
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert res
     def check_false(self,level=5):
         class foo:
             pass
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert not res
 
@@ -503,14 +503,14 @@ class test_object_call(ScipyTestCase):
                args[0] = 1;
                args[1] = "hello";
                py::dict kw;
-               kw["val3"] = 3;               
+               kw["val3"] = 3;
                return_val = foo.call(args,kw);
                """
         res = inline_tools.inline(code,['foo'])
         assert res == (1,"hello",3)
         assert sys.getrefcount(res) == 2
     def check_noargs_with_args(self,level=5):
-        # calling a function that does take args with args 
+        # calling a function that does take args with args
         # should fail.
         def foo():
             return "blah"
@@ -524,14 +524,14 @@ class test_object_call(ScipyTestCase):
             first = sys.getrefcount(foo)
             res = inline_tools.inline(code,['foo'])
         except TypeError:
-            second = sys.getrefcount(foo) 
+            second = sys.getrefcount(foo)
             try:
                 res = inline_tools.inline(code,['foo'])
             except TypeError:
-                third = sys.getrefcount(foo)    
-        # first should == second, but the weird refcount error        
+                third = sys.getrefcount(foo)
+        # first should == second, but the weird refcount error
         assert second == third
-        
+
 class test_object_mcall(ScipyTestCase):
     def check_noargs(self,level=5):
         a = foo()
@@ -605,7 +605,7 @@ class test_object_mcall(ScipyTestCase):
         assert res == (1,"hello",3)
         assert sys.getrefcount(res) == 2
     def check_noargs_with_args(self,level=5):
-        # calling a function that does take args with args 
+        # calling a function that does take args with args
         # should fail.
         a = foo()
         code = """
@@ -618,12 +618,12 @@ class test_object_mcall(ScipyTestCase):
             first = sys.getrefcount(a)
             res = inline_tools.inline(code,['a'])
         except TypeError:
-            second = sys.getrefcount(a) 
+            second = sys.getrefcount(a)
             try:
                 res = inline_tools.inline(code,['a'])
             except TypeError:
-                third = sys.getrefcount(a)    
-        # first should == second, but the weird refcount error        
+                third = sys.getrefcount(a)
+        # first should == second, but the weird refcount error
         assert second == third
 
 class test_object_hash(ScipyTestCase):
@@ -631,7 +631,7 @@ class test_object_hash(ScipyTestCase):
         class foo:
             def __hash__(self):
                 return 123
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.hash(); ',['a'])
         print 'hash:', res
         assert res == 123
@@ -640,11 +640,11 @@ class test_object_is_true(ScipyTestCase):
     def check_true(self,level=5):
         class foo:
             pass
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert res == 1
     def check_false(self,level=5):
-        a= None                
+        a= None
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert res == 0
 
@@ -652,19 +652,19 @@ class test_object_is_true(ScipyTestCase):
     def check_false(self,level=5):
         class foo:
             pass
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.not();',['a'])
         assert res == 0
     def check_true(self,level=5):
-        a= None                
+        a= None
         res = inline_tools.inline('return_val = a.not();',['a'])
-        assert res == 1    
+        assert res == 1
 
 class test_object_type(ScipyTestCase):
     def check_type(self,level=5):
         class foo:
             pass
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.type();',['a'])
         assert res == type(a)
 
@@ -673,57 +673,57 @@ class test_object_size(ScipyTestCase):
         class foo:
             def __len__(self):
                 return 10
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.size();',['a'])
         assert res == len(a)
     def check_len(self,level=5):
         class foo:
             def __len__(self):
                 return 10
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.len();',['a'])
         assert res == len(a)
     def check_length(self,level=5):
         class foo:
             def __len__(self):
                 return 10
-        a= foo()                
+        a= foo()
         res = inline_tools.inline('return_val = a.length();',['a'])
-        assert res == len(a)                            
+        assert res == len(a)
 
 from UserList import UserList
 class test_object_set_item_op_index(ScipyTestCase):
     def check_list_refcount(self,level=5):
-        a = UserList([1,2,3])            
+        a = UserList([1,2,3])
         # temporary refcount fix until I understand why it incs by one.
-        inline_tools.inline("a[1] = 1234;",['a'])        
+        inline_tools.inline("a[1] = 1234;",['a'])
         before1 = sys.getrefcount(a)
         after1 = sys.getrefcount(a)
         assert after1 == before1
     def check_set_int(self,level=5):
-        a = UserList([1,2,3])            
-        inline_tools.inline("a[1] = 1234;",['a'])        
-        assert sys.getrefcount(a[1]) == 2                
+        a = UserList([1,2,3])
+        inline_tools.inline("a[1] = 1234;",['a'])
+        assert sys.getrefcount(a[1]) == 2
         assert a[1] == 1234
     def check_set_double(self,level=5):
-        a = UserList([1,2,3])            
+        a = UserList([1,2,3])
         inline_tools.inline("a[1] = 123.0;",['a'])
-        assert sys.getrefcount(a[1]) == 2       
-        assert a[1] == 123.0        
+        assert sys.getrefcount(a[1]) == 2
+        assert a[1] == 123.0
     def check_set_char(self,level=5):
-        a = UserList([1,2,3])            
+        a = UserList([1,2,3])
         inline_tools.inline('a[1] = "bubba";',['a'])
-        assert sys.getrefcount(a[1]) == 2       
+        assert sys.getrefcount(a[1]) == 2
         assert a[1] == 'bubba'
     def check_set_string(self,level=5):
-        a = UserList([1,2,3])            
+        a = UserList([1,2,3])
         inline_tools.inline('a[1] = std::string("sissy");',['a'])
-        assert sys.getrefcount(a[1]) == 2       
+        assert sys.getrefcount(a[1]) == 2
         assert a[1] == 'sissy'
     def check_set_string(self,level=5):
-        a = UserList([1,2,3])            
+        a = UserList([1,2,3])
         inline_tools.inline('a[1] = std::complex<double>(1,1);',['a'])
-        assert sys.getrefcount(a[1]) == 2       
+        assert sys.getrefcount(a[1]) == 2
         assert a[1] == 1+1j
 
 from UserDict import UserDict
@@ -748,7 +748,7 @@ class test_object_set_item_op_key(ScipyTestCase):
                 obj_counts[2] = a.refcount();
                 key_counts[2] = one.refcount();
                 val_counts[2] = two.refcount();
-                
+
                 ref_counts[0] = obj_counts;
                 ref_counts[1] = key_counts;
                 ref_counts[2] = val_counts;
@@ -758,10 +758,10 @@ class test_object_set_item_op_key(ScipyTestCase):
         assert obj[0] == obj[1] and obj[1] == obj[2]
         assert key[0] + 1 == key[1] and key[1] == key[2]
         assert val[0] + 1 == val[1] and val[1] == val[2]
-        
+
     def check_set_double_exists(self,level=5):
-        a = UserDict()   
-        key = 10.0     
+        a = UserDict()
+        key = 10.0
         a[key] = 100.0
         inline_tools.inline('a[key] = 123.0;',['a','key'])
         first = sys.getrefcount(key)
@@ -770,30 +770,30 @@ class test_object_set_item_op_key(ScipyTestCase):
         assert first == second
         # !! I think the following should be 3
         assert sys.getrefcount(key) ==  5
-        assert sys.getrefcount(a[key]) == 2       
+        assert sys.getrefcount(a[key]) == 2
         assert a[key] == 123.0
     def check_set_double_new(self,level=5):
-        a = UserDict()        
+        a = UserDict()
         key = 1.0
         inline_tools.inline('a[key] = 123.0;',['a','key'])
-        assert sys.getrefcount(key) == 4 # should be 3       
-        assert sys.getrefcount(a[key]) == 2       
+        assert sys.getrefcount(key) == 4 # should be 3
+        assert sys.getrefcount(a[key]) == 2
         assert a[key] == 123.0
     def check_set_complex(self,level=5):
         a = UserDict()
-        key = 1+1j            
+        key = 1+1j
         inline_tools.inline("a[key] = 1234;",['a','key'])
-        assert sys.getrefcount(key) == 3       
-        assert sys.getrefcount(a[key]) == 2                
+        assert sys.getrefcount(key) == 3
+        assert sys.getrefcount(a[key]) == 2
         assert a[key] == 1234
     def check_set_char(self,level=5):
-        a = UserDict()        
+        a = UserDict()
         inline_tools.inline('a["hello"] = 123.0;',['a'])
-        assert sys.getrefcount(a["hello"]) == 2       
+        assert sys.getrefcount(a["hello"]) == 2
         assert a["hello"] == 123.0
-        
+
     def check_set_class(self,level=5):
-        a = UserDict()        
+        a = UserDict()
         class foo:
             def __init__(self,val):
                 self.val = val
@@ -801,17 +801,17 @@ class test_object_set_item_op_key(ScipyTestCase):
                 return self.val
         key = foo(4)
         inline_tools.inline('a[key] = "bubba";',['a','key'])
-        first = sys.getrefcount(key)       
+        first = sys.getrefcount(key)
         inline_tools.inline('a[key] = "bubba";',['a','key'])
-        second = sys.getrefcount(key)       
+        second = sys.getrefcount(key)
         # I don't think we're leaking if this is true
-        assert first == second  
+        assert first == second
         # !! BUT -- I think this should be 3
-        assert sys.getrefcount(key) == 4 
-        assert sys.getrefcount(a[key]) == 2       
+        assert sys.getrefcount(key) == 4
+        assert sys.getrefcount(a[key]) == 2
         assert a[key] == 'bubba'
     def check_set_from_member(self,level=5):
-        a = UserDict()        
+        a = UserDict()
         a['first'] = 1
         a['second'] = 2
         inline_tools.inline('a["first"] = a["second"];',['a'])

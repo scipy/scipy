@@ -29,9 +29,9 @@ def CStr(s):
 ##################################################################
 class Instance(Type_Descriptor):
     cxxtype = 'PyObject*'
-    
+
     def __init__(self,prototype):
-        self.prototype	= prototype
+        self.prototype  = prototype
         return
 
     def check(self,s):
@@ -227,13 +227,13 @@ import math
 functiondefs = {
     (len,(String,)):
     Function_Descriptor(code='strlen(%s)',return_type=Integer),
-    
+
     (len,(LongVector,)):
     Function_Descriptor(code='PyArray_Size((PyObject*)%s)',return_type=Integer),
 
     (float,(Integer,)):
     Function_Descriptor(code='(double)(%s)',return_type=Double),
-    
+
     (range,(Integer,Integer)):
     Function_Descriptor(code='XRange(%s)',return_type=XRange),
 
@@ -249,7 +249,7 @@ functiondefs = {
     (math.sqrt,(Double,)):
     Function_Descriptor(code='sqrt(%s)',return_type=Double),
     }
-    
+
 
 
 ##################################################################
@@ -272,7 +272,7 @@ def lookup_type(x):
 #                        class ACCELERATE                        #
 ##################################################################
 class accelerate:
-    
+
     def __init__(self, function, *args, **kw):
         assert type(function) == FunctionType
         self.function = function
@@ -291,7 +291,7 @@ class accelerate:
         except TypeError:
             # Figure out type info -- Do as tuple so its hashable
             signature = tuple( map(lookup_type,args) )
-            
+
             # If we know the function, call it
             try:
                 fast = self.__call_map[signature]
@@ -309,7 +309,7 @@ class accelerate:
 
     def singleton(self,signature):
         identifier = self.identifier(signature)
-        
+
         # Generate a new function, then call it
         f = self.function
 
@@ -350,7 +350,7 @@ class accelerate:
                      str(co.co_varnames)+\
                      co.co_code
         return 'F'+md5.md5(identifier).hexdigest()
-        
+
     def accelerate(self,signature,identifier):
         P = Python2CXX(self.function,signature,name=identifier)
         return P
@@ -364,7 +364,7 @@ class accelerate:
         signature = tuple( map(lookup_type,args) )
         ident = self.function.__name__
         return self.accelerate(signature,ident).function_code()
-        
+
 
 ##################################################################
 #                        CLASS PYTHON2CXX                        #

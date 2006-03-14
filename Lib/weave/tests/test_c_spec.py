@@ -1,11 +1,11 @@
 import time
 import os,sys
 
-# Note: test_dir is global to this file.  
+# Note: test_dir is global to this file.
 #       It is made by setup_test_location()
 
 #globals
-global test_dir 
+global test_dir
 test_dir = ''
 
 from numpy.testing import *
@@ -20,14 +20,14 @@ def unique_mod(d,file_name):
     f = os.path.basename(unique_file(d,file_name))
     m = os.path.splitext(f)[0]
     return m
-    
+
 def remove_whitespace(in_str):
     import string
     out = string.replace(in_str," ","")
     out = string.replace(out,"\t","")
     out = string.replace(out,"\n","")
     return out
-   
+
 def print_assert_equal(test_string,actual,desired):
     """this should probably be in scipy_test.testing
     """
@@ -49,18 +49,18 @@ def print_assert_equal(test_string,actual,desired):
 #   int, float, complex
 #----------------------------------------------------------------------------
 class test_int_converter(ScipyTestCase):
-    compiler = ''    
+    compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.int_converter()
         assert( not s.type_match('string') )
     def check_type_match_int(self,level=5):
-        s = c_spec.int_converter()        
+        s = c_spec.int_converter()
         assert(s.type_match(5))
     def check_type_match_float(self,level=5):
-        s = c_spec.int_converter()        
+        s = c_spec.int_converter()
         assert(not s.type_match(5.))
     def check_type_match_complex(self,level=5):
-        s = c_spec.int_converter()        
+        s = c_spec.int_converter()
         assert(not s.type_match(5.+1j))
     def check_var_in(self,level=5):
         mod_name = 'int_var_in' + self.compiler
@@ -84,7 +84,7 @@ class test_int_converter(ScipyTestCase):
             test(b)
         except TypeError:
             pass
-                    
+
     def check_int_return(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
@@ -103,19 +103,19 @@ class test_int_converter(ScipyTestCase):
 
         assert( c == 3)
 
-class test_float_converter(ScipyTestCase):    
+class test_float_converter(ScipyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.float_converter()
         assert( not s.type_match('string') )
     def check_type_match_int(self,level=5):
-        s = c_spec.float_converter()        
+        s = c_spec.float_converter()
         assert(not s.type_match(5))
     def check_type_match_float(self,level=5):
-        s = c_spec.float_converter()        
+        s = c_spec.float_converter()
         assert(s.type_match(5.))
     def check_type_match_complex(self,level=5):
-        s = c_spec.float_converter()        
+        s = c_spec.float_converter()
         assert(not s.type_match(5.+1j))
     def check_float_var_in(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -141,7 +141,7 @@ class test_float_converter(ScipyTestCase):
             pass
 
 
-    def check_float_return(self,level=5):   
+    def check_float_return(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
@@ -157,20 +157,20 @@ class test_float_converter(ScipyTestCase):
         b=1.
         c = test(b)
         assert( c == 3.)
-        
-class test_complex_converter(ScipyTestCase):    
+
+class test_complex_converter(ScipyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.complex_converter()
         assert( not s.type_match('string') )
     def check_type_match_int(self,level=5):
-        s = c_spec.complex_converter()        
+        s = c_spec.complex_converter()
         assert(not s.type_match(5))
     def check_type_match_float(self,level=5):
-        s = c_spec.complex_converter()        
+        s = c_spec.complex_converter()
         assert(not s.type_match(5.))
     def check_type_match_complex(self,level=5):
-        s = c_spec.complex_converter()        
+        s = c_spec.complex_converter()
         assert(s.type_match(5.+1j))
     def check_complex_var_in(self,level=5):
         mod_name = sys._getframe().f_code.co_name + self.compiler
@@ -216,22 +216,22 @@ class test_complex_converter(ScipyTestCase):
 # File conversion tests
 #----------------------------------------------------------------------------
 
-class test_file_converter(ScipyTestCase):    
+class test_file_converter(ScipyTestCase):
     compiler = ''
     def check_py_to_file(self,level=5):
         import tempfile
-        file_name = tempfile.mktemp()        
+        file_name = tempfile.mktemp()
         file = open(file_name,'w')
         code = """
                fprintf(file,"hello bob");
                """
-        inline_tools.inline(code,['file'],compiler=self.compiler,force=1) 
+        inline_tools.inline(code,['file'],compiler=self.compiler,force=1)
         file.close()
         file = open(file_name,'r')
         assert(file.read() == "hello bob")
     def check_file_to_py(self,level=5):
         import tempfile
-        file_name = tempfile.mktemp()        
+        file_name = tempfile.mktemp()
         # not sure I like Py::String as default -- might move to std::sting
         # or just plain char*
         code = """
@@ -241,7 +241,7 @@ class test_file_converter(ScipyTestCase):
                """
         file = inline_tools.inline(code,['file_name'], compiler=self.compiler,
                                    force=1)
-        file.write("hello fred")        
+        file.write("hello fred")
         file.close()
         file = open(file_name,'r')
         assert(file.read() == "hello fred")
@@ -250,14 +250,14 @@ class test_file_converter(ScipyTestCase):
 # Instance conversion tests
 #----------------------------------------------------------------------------
 
-class test_instance_converter(ScipyTestCase):    
+class test_instance_converter(ScipyTestCase):
     pass
 
 #----------------------------------------------------------------------------
 # Callable object conversion tests
 #----------------------------------------------------------------------------
-    
-class test_callable_converter(ScipyTestCase):        
+
+class test_callable_converter(ScipyTestCase):
     compiler=''
     def check_call_function(self,level=5):
         import string
@@ -274,37 +274,37 @@ class test_callable_converter(ScipyTestCase):
                """
         actual = inline_tools.inline(code,['func','search_str','sub_str'],
                                      compiler=self.compiler,force=1)
-        desired = func(search_str,sub_str)        
+        desired = func(search_str,sub_str)
         assert(desired == actual)
 
-class test_sequence_converter(ScipyTestCase):    
+class test_sequence_converter(ScipyTestCase):
     compiler = ''
     def check_convert_to_dict(self,level=5):
         d = {}
-        inline_tools.inline("",['d'],compiler=self.compiler,force=1) 
-    def check_convert_to_list(self,level=5):        
+        inline_tools.inline("",['d'],compiler=self.compiler,force=1)
+    def check_convert_to_list(self,level=5):
         l = []
         inline_tools.inline("",['l'],compiler=self.compiler,force=1)
-    def check_convert_to_string(self,level=5):        
+    def check_convert_to_string(self,level=5):
         s = 'hello'
         inline_tools.inline("",['s'],compiler=self.compiler,force=1)
-    def check_convert_to_tuple(self,level=5):        
+    def check_convert_to_tuple(self,level=5):
         t = ()
         inline_tools.inline("",['t'],compiler=self.compiler,force=1)
 
-class test_string_converter(ScipyTestCase):    
+class test_string_converter(ScipyTestCase):
     compiler = ''
     def check_type_match_string(self,level=5):
         s = c_spec.string_converter()
         assert( s.type_match('string') )
     def check_type_match_int(self,level=5):
-        s = c_spec.string_converter()        
+        s = c_spec.string_converter()
         assert(not s.type_match(5))
     def check_type_match_float(self,level=5):
-        s = c_spec.string_converter()        
+        s = c_spec.string_converter()
         assert(not s.type_match(5.))
     def check_type_match_complex(self,level=5):
-        s = c_spec.string_converter()        
+        s = c_spec.string_converter()
         assert(not s.type_match(5.+1j))
     def check_var_in(self,level=5):
         mod_name = 'string_var_in'+self.compiler
@@ -329,7 +329,7 @@ class test_string_converter(ScipyTestCase):
             test(b)
         except TypeError:
             pass
-            
+
     def check_return(self,level=5):
         mod_name = 'string_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
@@ -347,7 +347,7 @@ class test_string_converter(ScipyTestCase):
         c = test(b)
         assert( c == 'hello')
 
-class test_list_converter(ScipyTestCase):    
+class test_list_converter(ScipyTestCase):
     compiler = ''
     def check_type_match_bad(self,level=5):
         s = c_spec.list_converter()
@@ -355,7 +355,7 @@ class test_list_converter(ScipyTestCase):
         for i in objs:
             assert( not s.type_match(i) )
     def check_type_match_good(self,level=5):
-        s = c_spec.list_converter()        
+        s = c_spec.list_converter()
         assert(s.type_match([]))
     def check_var_in(self,level=5):
         mod_name = 'list_var_in'+self.compiler
@@ -379,7 +379,7 @@ class test_list_converter(ScipyTestCase):
             test(b)
         except TypeError:
             pass
-            
+
     def check_return(self,level=5):
         mod_name = 'list_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
@@ -397,21 +397,21 @@ class test_list_converter(ScipyTestCase):
         b=[1,2]
         c = test(b)
         assert( c == ['hello'])
-        
+
     def check_speed(self,level=5):
         mod_name = 'list_speed'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
         a = range(1000000);
         code = """
-               int v, sum = 0;            
+               int v, sum = 0;
                for(int i = 0; i < a.len(); i++)
                {
                    v = a[i];
                    if (v % 2)
                     sum += v;
                    else
-                    sum -= v; 
+                    sum -= v;
                }
                return_val = sum;
                """
@@ -419,7 +419,7 @@ class test_list_converter(ScipyTestCase):
         mod.add_function(with_cxx)
         code = """
                int vv, sum = 0;
-               PyObject *v;               
+               PyObject *v;
                for(int i = 0; i < a.len(); i++)
                {
                    v = PyList_GetItem(py_a,i);
@@ -428,7 +428,7 @@ class test_list_converter(ScipyTestCase):
                    if (vv % 2)
                     sum += vv;
                    else
-                    sum -= vv; 
+                    sum -= vv;
                }
                return_val = sum;
                """
@@ -455,10 +455,10 @@ class test_list_converter(ScipyTestCase):
             else:
                 sum3 -= i
         t2 = time.time()
-        print 'python:', t2 - t1        
+        print 'python:', t2 - t1
         assert( sum1 == sum2 and sum1 == sum3)
 
-class test_tuple_converter(ScipyTestCase):    
+class test_tuple_converter(ScipyTestCase):
     compiler = ''
     def check_type_match_bad(self,level=5):
         s = c_spec.tuple_converter()
@@ -466,7 +466,7 @@ class test_tuple_converter(ScipyTestCase):
         for i in objs:
             assert( not s.type_match(i) )
     def check_type_match_good(self,level=5):
-        s = c_spec.tuple_converter()        
+        s = c_spec.tuple_converter()
         assert(s.type_match((1,)))
     def check_var_in(self,level=5):
         mod_name = 'tuple_var_in'+self.compiler
@@ -490,7 +490,7 @@ class test_tuple_converter(ScipyTestCase):
             test(b)
         except TypeError:
             pass
-            
+
     def check_return(self,level=5):
         mod_name = 'tuple_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
@@ -511,14 +511,14 @@ class test_tuple_converter(ScipyTestCase):
         assert( c == ('hello',None))
 
 
-class test_dict_converter(ScipyTestCase):    
+class test_dict_converter(ScipyTestCase):
     def check_type_match_bad(self,level=5):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
             assert( not s.type_match(i) )
     def check_type_match_good(self,level=5):
-        s = c_spec.dict_converter()        
+        s = c_spec.dict_converter()
         assert(s.type_match({}))
     def check_var_in(self,level=5):
         mod_name = 'dict_var_in'+self.compiler
@@ -542,7 +542,7 @@ class test_dict_converter(ScipyTestCase):
             test(b)
         except TypeError:
             pass
-            
+
     def check_return(self,level=5):
         mod_name = 'dict_return'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
@@ -561,93 +561,93 @@ class test_dict_converter(ScipyTestCase):
         c = test(b)
         assert( c['hello'] == 5)
 
-class test_msvc_int_converter(test_int_converter):    
+class test_msvc_int_converter(test_int_converter):
     compiler = 'msvc'
-class test_unix_int_converter(test_int_converter):    
+class test_unix_int_converter(test_int_converter):
     compiler = ''
-class test_gcc_int_converter(test_int_converter):    
+class test_gcc_int_converter(test_int_converter):
     compiler = 'gcc'
 
-class test_msvc_float_converter(test_float_converter):    
+class test_msvc_float_converter(test_float_converter):
     compiler = 'msvc'
 
-class test_msvc_float_converter(test_float_converter):    
+class test_msvc_float_converter(test_float_converter):
     compiler = 'msvc'
-class test_unix_float_converter(test_float_converter):    
+class test_unix_float_converter(test_float_converter):
     compiler = ''
-class test_gcc_float_converter(test_float_converter):    
+class test_gcc_float_converter(test_float_converter):
     compiler = 'gcc'
 
-class test_msvc_complex_converter(test_complex_converter):    
+class test_msvc_complex_converter(test_complex_converter):
     compiler = 'msvc'
-class test_unix_complex_converter(test_complex_converter):    
+class test_unix_complex_converter(test_complex_converter):
     compiler = ''
-class test_gcc_complex_converter(test_complex_converter):    
+class test_gcc_complex_converter(test_complex_converter):
     compiler = 'gcc'
 
-class test_msvc_file_converter(test_file_converter):    
+class test_msvc_file_converter(test_file_converter):
     compiler = 'msvc'
-class test_unix_file_converter(test_file_converter):    
+class test_unix_file_converter(test_file_converter):
     compiler = ''
-class test_gcc_file_converter(test_file_converter):    
+class test_gcc_file_converter(test_file_converter):
     compiler = 'gcc'
 
-class test_msvc_callable_converter(test_callable_converter):    
+class test_msvc_callable_converter(test_callable_converter):
     compiler = 'msvc'
-class test_unix_callable_converter(test_callable_converter):    
+class test_unix_callable_converter(test_callable_converter):
     compiler = ''
-class test_gcc_callable_converter(test_callable_converter):    
+class test_gcc_callable_converter(test_callable_converter):
     compiler = 'gcc'
 
-class test_msvc_sequence_converter(test_sequence_converter):    
+class test_msvc_sequence_converter(test_sequence_converter):
     compiler = 'msvc'
-class test_unix_sequence_converter(test_sequence_converter):    
+class test_unix_sequence_converter(test_sequence_converter):
     compiler = ''
-class test_gcc_sequence_converter(test_sequence_converter):    
+class test_gcc_sequence_converter(test_sequence_converter):
     compiler = 'gcc'
 
-class test_msvc_string_converter(test_string_converter):    
+class test_msvc_string_converter(test_string_converter):
     compiler = 'msvc'
-class test_unix_string_converter(test_string_converter):    
+class test_unix_string_converter(test_string_converter):
     compiler = ''
-class test_gcc_string_converter(test_string_converter):    
+class test_gcc_string_converter(test_string_converter):
     compiler = 'gcc'
 
-class test_msvc_list_converter(test_list_converter):    
+class test_msvc_list_converter(test_list_converter):
     compiler = 'msvc'
-class test_unix_list_converter(test_list_converter):    
+class test_unix_list_converter(test_list_converter):
     compiler = ''
-class test_gcc_list_converter(test_list_converter):    
+class test_gcc_list_converter(test_list_converter):
     compiler = 'gcc'
 
-class test_msvc_tuple_converter(test_tuple_converter):    
+class test_msvc_tuple_converter(test_tuple_converter):
     compiler = 'msvc'
-class test_unix_tuple_converter(test_tuple_converter):    
+class test_unix_tuple_converter(test_tuple_converter):
     compiler = ''
-class test_gcc_tuple_converter(test_tuple_converter):    
+class test_gcc_tuple_converter(test_tuple_converter):
     compiler = 'gcc'
 
-class test_msvc_dict_converter(test_dict_converter):    
+class test_msvc_dict_converter(test_dict_converter):
     compiler = 'msvc'
-class test_unix_dict_converter(test_dict_converter):    
+class test_unix_dict_converter(test_dict_converter):
     compiler = ''
-class test_gcc_dict_converter(test_dict_converter):    
+class test_gcc_dict_converter(test_dict_converter):
     compiler = 'gcc'
 
-class test_msvc_instance_converter(test_instance_converter):    
+class test_msvc_instance_converter(test_instance_converter):
     compiler = 'msvc'
-class test_unix_instance_converter(test_instance_converter):    
+class test_unix_instance_converter(test_instance_converter):
     compiler = ''
-class test_gcc_instance_converter(test_instance_converter):    
+class test_gcc_instance_converter(test_instance_converter):
     compiler = 'gcc'
-    
+
 def setup_test_location():
     import tempfile
     #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     test_dir = tempfile.mktemp()
     if not os.path.exists(test_dir):
         os.mkdir(test_dir)
-    sys.path.insert(0,test_dir)    
+    sys.path.insert(0,test_dir)
     return test_dir
 
 test_dir = setup_test_location()

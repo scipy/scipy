@@ -12,13 +12,13 @@ from scipy import stats
 # Notes: for future modifications:
 # Ali, M. M., and A. Toern. Topographical differential evoltion using
 # pre-calculated differentials. _Stochastic and Global Optimization_. 1--17.
-#  
+#
 #  A good scale value:
 #    F = max(l_min, 1-min(abs(f_min/f_max), abs(f_max/f_min)))
 #      ~ 0.3 <= l_min <= 0.4
 #      ~ f_min and f_max are the minimum and maximum values in the initial
 #        population.
-# 
+#
 #  Pre-calculated differentials:
 #    Keep a set of differentials A.
 #    For each x_i of the population S:
@@ -28,10 +28,10 @@ from scipy import stats
 #      Each other step:
 #        Randomly select x_r1 from S and a differential vector from A.
 #      Crossover.
-# 
+#
 #  Convergence criterion:
 #    f_max - f_min < eps
-# 
+#
 #  Topographical DEPD:
 #    Two populations S and Sa (auxiliary).
 #    Phase counter t = 0 and array shift[:] = False.
@@ -59,7 +59,7 @@ class DiffEvolver(object):
 
     Constructors
     ------------
-    DiffEvolver(func, pop0, args=(), crossover_rate=0.5, scale=None, 
+    DiffEvolver(func, pop0, args=(), crossover_rate=0.5, scale=None,
         strategy=('rand', 2, 'bin'), eps=1e-6)
       func -- function to minimize
       pop0 -- sequence of initial vectors
@@ -75,8 +75,8 @@ class DiffEvolver(object):
         The third element is (currently) 'bin' to specify binomial crossover.
       eps -- if the maximum and minimum function values of a given generation are
         with eps of each other, convergence has been achieved.
-    
-    DiffEvolver.frombounds(func, lbound, ubound, npop, crossover_rate=0.5, 
+
+    DiffEvolver.frombounds(func, lbound, ubound, npop, crossover_rate=0.5,
         scale=None, strategy=('rand', 2, 'bin'), eps=1e-6)
       Randomly initialize the population within given rectangular bounds.
       lbound -- lower bound vector
@@ -129,7 +129,7 @@ class DiffEvolver(object):
             ('rand', 2, 'bin'): (self.choose_rand, self.diff2, self.bin_crossover),
             ('best', 1, 'bin'): (self.choose_best, self.diff1, self.bin_crossover),
             ('best', 2, 'bin'): (self.choose_best, self.diff2, self.bin_crossover),
-            ('rand-to-best', 1, 'bin'): 
+            ('rand-to-best', 1, 'bin'):
                 (self.choose_rand_to_best, self.diff1, self.bin_crossover),
             }
 
@@ -139,7 +139,7 @@ class DiffEvolver(object):
         self.generations = 0
         self.pop_values = [self.func(m, *self.args) for m in self.population]
 
-    def frombounds(cls, func, lbound, ubound, npop, crossover_rate=0.5, 
+    def frombounds(cls, func, lbound, ubound, npop, crossover_rate=0.5,
             scale=None, strategy=('rand', 2, 'bin'), eps=1e-6):
         lbound = sp.asarray(lbound)
         ubound = sp.asarray(ubound)
@@ -179,12 +179,12 @@ class DiffEvolver(object):
         return self.population[i]
 
     def choose_rand_to_best(self, candidate):
-        return ((1-self.scale) * self.population[candidate] + 
+        return ((1-self.scale) * self.population[candidate] +
                 self.scale * self.best_vector)
 
     def get_trial(self, candidate):
         chooser, differ, crosser = self.jump_table[self.strategy]
-        trial = crosser(self.population[candidate], 
+        trial = crosser(self.population[candidate],
             chooser(candidate) + differ(candidate))
         return trial
 
@@ -212,4 +212,3 @@ class DiffEvolver(object):
                 break
         self.generations = gen
         return self.best_vector
-

@@ -158,11 +158,11 @@ class test_fft(ScipyTestCase):
                       random([size]).astype('D')+random([size]).astype('D')*1j
                       ]:
                 if size > 500: y = fft(x)
-                else: y = direct_dft(x)                
+                else: y = direct_dft(x)
                 assert_array_almost_equal(fft(x),y)
                 print '|%8.2f' % self.measure('fft(x)',repeat),
                 sys.stdout.flush()
-                
+
                 if FFT_fft is not None:
                     x = array(x.tolist())
                     assert_array_almost_equal(FFT_fft(x),y)
@@ -246,7 +246,7 @@ class test_ifft(ScipyTestCase):
                       random([size]).astype('D')+random([size]).astype('D')*1j
                       ]:
                 if size > 500: y = ifft(x)
-                else: y = direct_idft(x)                
+                else: y = direct_idft(x)
                 assert_array_almost_equal(ifft(x),y)
                 print '|%8.2f' % self.measure('ifft(x)',repeat),
                 sys.stdout.flush()
@@ -319,7 +319,7 @@ class test_rfft(ScipyTestCase):
             x = random([size]).astype('d')
             print '|%8.2f' % self.measure('rfft(x)',repeat),
             sys.stdout.flush()
-            
+
             if FFT_rfft is not None:
                 x = array(x.tolist())
                 print '|%8.2f' % self.measure('FFT_rfft(x)',repeat),
@@ -407,7 +407,7 @@ class test_irfft(ScipyTestCase):
 
             print '|%8.2f' % self.measure('irfft(x)',repeat),
             sys.stdout.flush()
-            
+
             if FFT_irfft is not None:
                 assert_array_almost_equal(FFT_irfft(x1,size),y)
                 print '|%8.2f' % self.measure('FFT_irfft(x1,size)',repeat),
@@ -474,7 +474,7 @@ class test_fftn(ScipyTestCase):
         y = fftn(x,axes=(0,2,1)) # kij_space
         assert_array_almost_equal(swapaxes(y,-2,-1),
                                   fftn(kij_space))
-        
+
         y = fftn(x,axes=(-2,-1)) # ji_plane
         assert_array_almost_equal(fftn(plane1),y[0])
         assert_array_almost_equal(fftn(plane2),y[1])
@@ -572,11 +572,11 @@ class test_fftn(ScipyTestCase):
                       ]:
                 y = fftn(x)
                 #if size > 500: y = fftn(x)
-                #else: y = direct_dft(x)                
+                #else: y = direct_dft(x)
                 assert_array_almost_equal(fftn(x),y)
                 print '|%8.2f' % self.measure('fftn(x)',repeat),
                 sys.stdout.flush()
-                
+
                 if FFT_fftn is not None:
                     x = array(x.tolist())
                     assert_array_almost_equal(asarray(FFT_fftn(x).tolist()),y)

@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #
 # Author: Travis Oliphant, March 2002
@@ -28,7 +28,7 @@ def expm(A,q=7):
         pass  ## A.savespace(1)
     else:
         pass  ## A.savespace(0)
- 
+
     # Scale A so that norm is < 1/2
     nA = norm(A,Inf)
     if nA==0:
@@ -38,7 +38,7 @@ def expm(A,q=7):
     e = int(floor(val))
     j = max(0,e+1)
     A = A / 2.0**j
- 
+
     # Pade Approximation for exp(A)
     X = A
     c = 1.0/2
@@ -66,7 +66,7 @@ def expm2(A):
     t = A.dtype.char
     if t not in ['f','F','d','D']:
         A = A.astype('d')
-        t = 'd'    
+        t = 'd'
     s,vr = eig(A)
     vri = inv(vr)
     return dot(dot(vr,diag(exp(s))),vri).astype(t)
@@ -98,7 +98,7 @@ def toreal(arr,tol=None):
        sb.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
- 
+
 def cosm(A):
     """matrix cosine.
     """
@@ -107,8 +107,8 @@ def cosm(A):
         return toreal(0.5*(expm(1j*A) + expm(-1j*A)))
     else:
         return 0.5*(expm(1j*A) + expm(-1j*A))
-        
-            
+
+
 def sinm(A):
     """matrix sine.
     """
@@ -117,17 +117,17 @@ def sinm(A):
         return toreal(-0.5j*(expm(1j*A) - expm(-1j*A)))
     else:
         return -0.5j*(expm(1j*A) - expm(-1j*A))
-    
-def tanm(A): 
+
+def tanm(A):
     """matrix tangent.
     """
     A = asarray(A)
     if A.dtype.char not in ['F','D']:
         return toreal(solve(cosm(A), sinm(A)))
-    else:        
+    else:
         return solve(cosm(A), sinm(A))
- 
-def coshm(A): 
+
+def coshm(A):
     """matrix hyperbolic cosine.
     """
     A = asarray(A)
@@ -135,7 +135,7 @@ def coshm(A):
         return toreal(0.5*(expm(A) + expm(-A)))
     else:
         return 0.5*(expm(A) + expm(-A))
- 
+
 def sinhm(A):
     """matrix hyperbolic sine.
     """
@@ -144,7 +144,7 @@ def sinhm(A):
         return toreal(0.5*(expm(A) - expm(-A)))
     else:
         return 0.5*(expm(A) - expm(-A))
-    
+
 def tanhm(A):
     """matrix hyperbolic tangent.
     """
@@ -153,17 +153,17 @@ def tanhm(A):
         return toreal(solve(coshm(A), sinhm(A)))
     else:
         return solve(coshm(A), sinhm(A))
- 
+
 def funm(A,func,disp=1):
     """matrix function for arbitrary callable object func.
     """
     # func should take a vector of arguments (see vectorize if
     #  it needs wrapping.
- 
+
     # Perform Shur decomposition (lapack ?gees)
     A = asarray(A)
     if len(A.shape)!=2:
-        raise ValueError, "Non-matrix input to matrix function."    
+        raise ValueError, "Non-matrix input to matrix function."
     if A.dtype.char in ['F', 'D', 'G']:
         cmplx_type = 1
     else:
@@ -177,7 +177,7 @@ def funm(A,func,disp=1):
     minden = abs(T[0,0])
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
-    #                 "matrix Computations." 
+    #                 "matrix Computations."
     for p in range(1,n):
         for i in range(1,n-p+1):
             j = i + p
@@ -295,7 +295,7 @@ def sqrtm(A,disp=1):
     """
     A = asarray(A)
     if len(A.shape)!=2:
-        raise ValueError, "Non-matrix input to matrix function."    
+        raise ValueError, "Non-matrix input to matrix function."
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
@@ -320,10 +320,3 @@ def sqrtm(A,disp=1):
     else:
         arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
         return X.A, arg2
-
-    
-
-
-
-
-

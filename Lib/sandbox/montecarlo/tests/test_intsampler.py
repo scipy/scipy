@@ -44,12 +44,12 @@ class test_intsampler(ScipyTestCase):
         # Use a normal approximation for confidence intervals for the mean
         z = 2.5758   # = norminv(0.995), for a 1% confidence interval
         assert abs(m - lam) < z * lam/sqrt(numsamples)
-    
+
     def check_sanity(self):
         # Sample from this pmf:
         #      x        0       1       2       3       4
         #      p(x)     0.5     0.1     0.15    0       0.25
-        
+
         # The true mean and variance are:
         truemean = 1.4
         truevar = 2.74

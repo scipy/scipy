@@ -1,7 +1,7 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 """
-Plotting routines based on Gist 
+Plotting routines based on Gist
 ===============================
 
   All Gist functions are also available as xplt.<command>

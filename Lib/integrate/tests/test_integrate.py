@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Test provided by Nils Wagner.
-# File created by Ed Schofield on Nov 16. 
+# File created by Ed Schofield on Nov 16.
 
 """ Tests for numerical integration.
 """
@@ -29,7 +29,7 @@ class test_odeint(ScipyTestCase):
     def F(self, z, t):
         tmp = zeros((2,2), float)
         tmp[0,1] = 1.0
-        tmp[1,0] = -self.k / self.m 
+        tmp[1,0] = -self.k / self.m
         return dot(tmp,z)
 
     def check_odeint1(self):

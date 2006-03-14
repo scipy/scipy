@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
-# are met: 
+# are met:
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
@@ -26,7 +26,7 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as numarray
 import _ni_support
@@ -114,7 +114,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         output = numarray.Bool
     output, return_value = _ni_support._get_output(output, input)
 
-    
+
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                      border_value, origin, invert, cit, 0)
@@ -162,7 +162,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
 def binary_erosion(input, structure = None, iterations = 1, mask = None,
         output = None, border_value = 0, origin = 0, brute_force = False):
     """Multi-dimensional binary erosion with the given structure.
-    
+
     An output array can optionally be provided. The origin parameter
     controls the placement of the filter. If no structuring element is
     provided an element is generated with a squared connectivity equal
@@ -175,11 +175,11 @@ def binary_erosion(input, structure = None, iterations = 1, mask = None,
     """
     return _binary_erosion(input, structure, iterations, mask,
                            output, border_value, origin, 0, brute_force)
-                           
+
 def binary_dilation(input, structure = None, iterations = 1, mask = None,
         output = None, border_value = 0, origin = 0, brute_force = False):
     """Multi-dimensional binary dilation with the given structure.
-    
+
     An output array can optionally be provided. The origin parameter
     controls the placement of the filter. If no structuring element is
     provided an element is generated with a squared connectivity equal
@@ -247,7 +247,7 @@ def binary_closing(input, structure = None, iterations = 1, output = None,
 def binary_hit_or_miss(input, structure1 = None, structure2 = None,
                        output = None, origin1 = 0, origin2 = None):
     """Multi-dimensional binary hit-or-miss transform.
-    
+
     An output array can optionally be provided. The origin parameters
     controls the placement of the structuring elements. If the first
     structuring element is not given one is generated with a squared
@@ -278,11 +278,11 @@ def binary_hit_or_miss(input, structure1 = None, structure2 = None,
     else:
         numarray.logical_not(result, result)
         return numarray.logical_and(tmp1, result)
-        
+
 def binary_propagation(input, structure = None, mask = None,
                        output = None, border_value = 0, origin = 0):
     """Multi-dimensional binary propagation with the given structure.
-    
+
     An output array can optionally be provided. The origin parameter
     controls the placement of the filter. If no structuring element is
     provided an element is generated with a squared connectivity equal
@@ -294,11 +294,11 @@ def binary_propagation(input, structure = None, mask = None,
     the result does not change anymore.
     """
     return binary_dilation(input, structure, -1, mask, output,
-                           border_value, origin)   
-                           
+                           border_value, origin)
+
 def binary_fill_holes(input, structure = None, output = None, origin = 0):
     """Fill the holes in binary objects.
-    
+
     An output array can optionally be provided. The origin parameter
     controls the placement of the filter. If no structuring element is
     provided an element is generated with a squared connectivity equal
@@ -315,7 +315,7 @@ def binary_fill_holes(input, structure = None, output = None, origin = 0):
                                  origin)
         numarray.logical_not(output, output)
         return output
-     
+
 def grey_erosion(input,  size = None, footprint = None, structure = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a grey values erosion.
@@ -333,7 +333,7 @@ def grey_erosion(input,  size = None, footprint = None, structure = None,
 def grey_dilation(input,  size = None, footprint = None, structure = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a grey values dilation.
-    
+
     Either a size or a footprint, or the structure must be
     provided. An output array can optionally be provided. The origin
     parameter controls the placement of the filter. The mode parameter
@@ -395,7 +395,7 @@ def grey_closing(input, size = None, footprint = None, structure = None,
 
 
 def morphological_gradient(input, size = None, footprint = None,
-                        structure = None, output = None, mode = "reflect", 
+                        structure = None, output = None, mode = "reflect",
                         cval = 0.0, origin = 0):
     """Multi-dimensional morphological gradient.
 
@@ -414,10 +414,10 @@ def morphological_gradient(input, size = None, footprint = None,
     else:
         return (tmp - grey_erosion(input, size, footprint, structure,
                                    None, mode, cval, origin))
-    
+
 
 def morphological_laplace(input, size = None, footprint = None,
-                          structure = None, output = None, 
+                          structure = None, output = None,
                           mode = "reflect", cval = 0.0, origin = 0):
     """Multi-dimensional morphological laplace.
 
@@ -621,13 +621,13 @@ def distance_transform_cdt(input, structure = 'chessboard',
     The return_distances, and return_indices flags can be used to
     indicate if the distance transform, the feature transform, or both
     must be returned.
-    
+
     The distances and indices arguments can be used to give optional
     output arrays that must be of the correct size and type (both Int32).
     """
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError, msg    
+        raise RuntimeError, msg
     ft_inplace = isinstance(indices, numarray.ndarray)
     dt_inplace = isinstance(distances, numarray.ndarray)
     input = numarray.asarray(input)
@@ -649,7 +649,7 @@ def distance_transform_cdt(input, structure = 'chessboard',
         structure = structure.copy()
     if dt_inplace:
         if distances.dtype.type != numarray.int32:
-            raise RuntimeError, 'distances must be of Int32 type'    
+            raise RuntimeError, 'distances must be of Int32 type'
         if distances.shape != input.shape:
             raise RuntimeError, 'distances has wrong shape'
         dt = distances
@@ -700,7 +700,7 @@ def distance_transform_cdt(input, structure = 'chessboard',
         return None
 
 
-def distance_transform_edt(input, sampling = None, 
+def distance_transform_edt(input, sampling = None,
                         return_distances = True, return_indices = False,
                         distances = None, indices = None):
     """Exact euclidean distance transform.
@@ -742,7 +742,7 @@ def distance_transform_edt(input, sampling = None,
             raise RuntimeError, 'indices must be of Int32 type'
     else:
         ft = numarray.zeros((input.ndim,) + input.shape,
-                            dtype = numarray.Int32) 
+                            dtype = numarray.Int32)
     _nd_image.euclidean_feature_transform(input, sampling, ft)
     # if requested, calculate the distance transform
     if return_distances:

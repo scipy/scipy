@@ -88,24 +88,24 @@ approx_fprime = optimize.approx_fprime
 def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon=1e-8,
              scale=None, messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=0, rescale=-1):
-    """Minimize a function with variables subject to bounds, using gradient 
+    """Minimize a function with variables subject to bounds, using gradient
     information.
-    
+
     returns (rc, nfeval, x).
-    
+
     Inputs:
 
     func    -- function to minimize. Called as func(x, *args)
-    
+
     x0      -- initial guess to minimum
-    
+
     fprime  -- gradient of func. If None, then func returns the function
                value and the gradient ( f, g = func(x, *args) ).
                Called as fprime(x, *args)
-                   
+
     args    -- arguments to pass to function
 
-    approx_grad -- if true, approximate the gradient numerically    
+    approx_grad -- if true, approximate the gradient numerically
 
     bounds  -- a list of (min, max) pairs for each element in x, defining
                the bounds on that parameter. Use None for one of min or max
@@ -188,13 +188,13 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
             up[i] = HUGE_VAL
         else:
             up[i] = u
-        
+
     if scale == None:
         scale = []
 
     if maxfun == None:
         maxfun = max(1000, 100*len(x0))
-        
+
     return moduleTNC.minimize(func_and_grad, x0, low, up, scale, messages,
                               maxCGit, maxfun, eta, stepmx, accuracy,
                               fmin, ftol, rescale)
@@ -202,119 +202,119 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
 if __name__ == '__main__':
         # Examples for TNC
 
-        def example():
-                print "Example"
-                # A function to minimize
-                def function(x):
-                        f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
-                        g = [0,0]
-                        g[0] = 2.0*x[0]
-                        g[1] = 3.0*pow(abs(x[1]),2.0)
-                        if x[1]<0:
-                                g[1] = -g[1]
-                        return f, g
+    def example():
+        print "Example"
+        # A function to minimize
+        def function(x):
+            f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
+            g = [0,0]
+            g[0] = 2.0*x[0]
+            g[1] = 3.0*pow(abs(x[1]),2.0)
+            if x[1]<0:
+                g[1] = -g[1]
+            return f, g
 
-                # Optimizer call
-                rc, nf, x = fmin_tnc(function, [-7, 3], bounds=([-10, 10], [1, 10]))
+        # Optimizer call
+        rc, nf, x = fmin_tnc(function, [-7, 3], bounds=([-10, 10], [1, 10]))
 
-                print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
-                print "x =", x
-                print "exact value = [0, 1]"
-                print
-
-        example()
-
-        # Tests
-        # These tests are taken from Prof. K. Schittkowski test examples for 
-        # constrained nonlinear programming.
-        # http://www.uni-bayreuth.de/departments/math/~kschittkowski/home.htm
-        tests = []
-        def test1fg(x):
-                f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
-                dif = [0,0]
-                dif[1] = 200.0*(x[1]-pow(x[0],2))
-                dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
-                return f, dif
-        tests.append ((test1fg, [-2,1], ([-HUGE_VAL,None],[-1.5,None]), [1,1]))
-
-        def test2fg(x):
-                f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
-                dif = [0,0]
-                dif[1] = 200.0*(x[1]-pow(x[0],2))
-                dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
-                return f, dif
-        tests.append ((test2fg, [-2,1], [(-HUGE_VAL,None),(1.5,None)], [-1.2210262419616387,1.5]))
-
-        def test3fg(x):
-                f = x[1]+pow(x[1]-x[0],2)*1.0e-5
-                dif = [0,0]
-                dif[0] = -2.0*(x[1]-x[0])*1.0e-5
-                dif[1] = 1.0-dif[0]
-                return f, dif
-        tests.append ((test3fg, [10,1], [(-HUGE_VAL,None),(0.0, None)], [0,0]))
-
-        def test4fg(x):
-                f = pow(x[0]+1.0,3)/3.0+x[1]
-                dif = [0,0]
-                dif[0] = pow(x[0]+1.0,2)
-                dif[1] = 1.0
-                return f, dif
-        tests.append ((test4fg, [1.125,0.125], [(1, None),(0, None)], [1,0]))
-
-        from math import *
-
-        def test5fg(x):
-                f = sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
-                dif = [0,0]
-                v1 = cos(x[0]+x[1]);
-                v2 = 2.0*(x[0]-x[1]);
-
-                dif[0] = v1+v2-1.5;
-                dif[1] = v1-v2+2.5;
-                return f, dif
-        tests.append ((test5fg, [0,0], [(-1.5, 4),(-3,3)], [-0.54719755119659763, -1.5471975511965976]))
-
-        def test38fg(x):
-                f = (100.0*pow(x[1]-pow(x[0],2),2)+pow(1.0-x[0],2)+90.0*pow(x[3]-pow(x[2],2),2) \
-                        +pow(1.0-x[2],2)+10.1*(pow(x[1]-1.0,2)+pow(x[3]-1.0,2)) \
-                        +19.8*(x[1]-1.0)*(x[3]-1.0))*1.0e-5
-                dif = [0,0,0,0]
-                dif[0] = (-400.0*x[0]*(x[1]-pow(x[0],2))-2.0*(1.0-x[0]))*1.0e-5
-                dif[1] = (200.0*(x[1]-pow(x[0],2))+20.2*(x[1]-1.0)+19.8*(x[3]-1.0))*1.0e-5
-                dif[2] = (-360.0*x[2]*(x[3]-pow(x[2],2))-2.0*(1.0-x[2]))*1.0e-5
-                dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2*(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
-                return f, dif
-        tests.append ((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
-
-        def test45fg(x):
-                f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
-                dif = [0]*5
-                dif[0] = -x[1]*x[2]*x[3]*x[4]/120.0
-                dif[1] = -x[0]*x[2]*x[3]*x[4]/120.0
-                dif[2] = -x[0]*x[1]*x[3]*x[4]/120.0
-                dif[3] = -x[0]*x[1]*x[2]*x[4]/120.0
-                dif[4] = -x[0]*x[1]*x[2]*x[3]/120.0
-                return f, dif
-        tests.append ((test45fg, [2]*5, [(0,1),(0,2),(0,3),(0,4),(0,5)], [1,2,3,4,5]))
-
-        def test(fg, x, bounds, xopt):
-                print "** Test", fg.__name__
-                rc, nf, x = fmin_tnc(fg, x, bounds=bounds,  messages = MSG_NONE, maxnfeval = 200)
-                print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
-                print "x =", x
-                print "exact value =", xopt
-                enorm = 0.0
-                norm = 1.0
-                for y,yo in zip(x, xopt):
-                        enorm += (y-yo)*(y-yo)
-                        norm += yo*yo
-                e = pow(enorm/norm, 0.5)
-                print "Error =", e
-                if e > 1e-8:
-                        raise "Test "+fg.__name__+" failed"
-
-        for fg, x, bounds, xopt in tests:
-                test(fg, x, bounds, xopt)
-        
+        print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
+        print "x =", x
+        print "exact value = [0, 1]"
         print
-        print "** All TNC tests passed."
+
+    example()
+
+    # Tests
+    # These tests are taken from Prof. K. Schittkowski test examples for
+    # constrained nonlinear programming.
+    # http://www.uni-bayreuth.de/departments/math/~kschittkowski/home.htm
+    tests = []
+    def test1fg(x):
+        f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
+        dif = [0,0]
+        dif[1] = 200.0*(x[1]-pow(x[0],2))
+        dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
+        return f, dif
+    tests.append ((test1fg, [-2,1], ([-HUGE_VAL,None],[-1.5,None]), [1,1]))
+
+    def test2fg(x):
+        f = 100.0*pow((x[1]-pow(x[0],2)),2)+pow(1.0-x[0],2)
+        dif = [0,0]
+        dif[1] = 200.0*(x[1]-pow(x[0],2))
+        dif[0] = -2.0*(x[0]*(dif[1]-1.0)+1.0)
+        return f, dif
+    tests.append ((test2fg, [-2,1], [(-HUGE_VAL,None),(1.5,None)], [-1.2210262419616387,1.5]))
+
+    def test3fg(x):
+        f = x[1]+pow(x[1]-x[0],2)*1.0e-5
+        dif = [0,0]
+        dif[0] = -2.0*(x[1]-x[0])*1.0e-5
+        dif[1] = 1.0-dif[0]
+        return f, dif
+    tests.append ((test3fg, [10,1], [(-HUGE_VAL,None),(0.0, None)], [0,0]))
+
+    def test4fg(x):
+        f = pow(x[0]+1.0,3)/3.0+x[1]
+        dif = [0,0]
+        dif[0] = pow(x[0]+1.0,2)
+        dif[1] = 1.0
+        return f, dif
+    tests.append ((test4fg, [1.125,0.125], [(1, None),(0, None)], [1,0]))
+
+    from math import *
+
+    def test5fg(x):
+        f = sin(x[0]+x[1])+pow(x[0]-x[1],2)-1.5*x[0]+2.5*x[1]+1.0
+        dif = [0,0]
+        v1 = cos(x[0]+x[1]);
+        v2 = 2.0*(x[0]-x[1]);
+
+        dif[0] = v1+v2-1.5;
+        dif[1] = v1-v2+2.5;
+        return f, dif
+    tests.append ((test5fg, [0,0], [(-1.5, 4),(-3,3)], [-0.54719755119659763, -1.5471975511965976]))
+
+    def test38fg(x):
+        f = (100.0*pow(x[1]-pow(x[0],2),2)+pow(1.0-x[0],2)+90.0*pow(x[3]-pow(x[2],2),2) \
+                +pow(1.0-x[2],2)+10.1*(pow(x[1]-1.0,2)+pow(x[3]-1.0,2)) \
+                +19.8*(x[1]-1.0)*(x[3]-1.0))*1.0e-5
+        dif = [0,0,0,0]
+        dif[0] = (-400.0*x[0]*(x[1]-pow(x[0],2))-2.0*(1.0-x[0]))*1.0e-5
+        dif[1] = (200.0*(x[1]-pow(x[0],2))+20.2*(x[1]-1.0)+19.8*(x[3]-1.0))*1.0e-5
+        dif[2] = (-360.0*x[2]*(x[3]-pow(x[2],2))-2.0*(1.0-x[2]))*1.0e-5
+        dif[3] = (180.0*(x[3]-pow(x[2],2))+20.2*(x[3]-1.0)+19.8*(x[1]-1.0))*1.0e-5
+        return f, dif
+    tests.append ((test38fg, [-3,-1,-3,-1], [(-10,10)]*4, [1]*4))
+
+    def test45fg(x):
+        f = 2.0-x[0]*x[1]*x[2]*x[3]*x[4]/120.0
+        dif = [0]*5
+        dif[0] = -x[1]*x[2]*x[3]*x[4]/120.0
+        dif[1] = -x[0]*x[2]*x[3]*x[4]/120.0
+        dif[2] = -x[0]*x[1]*x[3]*x[4]/120.0
+        dif[3] = -x[0]*x[1]*x[2]*x[4]/120.0
+        dif[4] = -x[0]*x[1]*x[2]*x[3]/120.0
+        return f, dif
+    tests.append ((test45fg, [2]*5, [(0,1),(0,2),(0,3),(0,4),(0,5)], [1,2,3,4,5]))
+
+    def test(fg, x, bounds, xopt):
+        print "** Test", fg.__name__
+        rc, nf, x = fmin_tnc(fg, x, bounds=bounds,  messages = MSG_NONE, maxnfeval = 200)
+        print "After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc]
+        print "x =", x
+        print "exact value =", xopt
+        enorm = 0.0
+        norm = 1.0
+        for y,yo in zip(x, xopt):
+            enorm += (y-yo)*(y-yo)
+            norm += yo*yo
+        e = pow(enorm/norm, 0.5)
+        print "Error =", e
+        if e > 1e-8:
+            raise "Test "+fg.__name__+" failed"
+
+    for fg, x, bounds, xopt in tests:
+        test(fg, x, bounds, xopt)
+
+    print
+    print "** All TNC tests passed."

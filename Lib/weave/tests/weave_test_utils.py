@@ -1,5 +1,5 @@
 import os,sys,string
-import pprint 
+import pprint
 
 def remove_whitespace(in_str):
     import string
@@ -7,7 +7,7 @@ def remove_whitespace(in_str):
     out = string.replace(out,"\t","")
     out = string.replace(out,"\n","")
     return out
-    
+
 def print_assert_equal(test_string,actual,desired):
     """this should probably be in scipy_test.testing
     """
@@ -24,7 +24,7 @@ def print_assert_equal(test_string,actual,desired):
         raise AssertionError, msg.getvalue()
 
 ###################################################
-# mainly used by catalog tests               
+# mainly used by catalog tests
 ###################################################
 
 from numpy.testing import set_package_path, restore_path
@@ -46,7 +46,7 @@ import tempfile
 def clear_temp_catalog():
     """ Remove any catalog from the temp dir
     """
-    global backup_dir 
+    global backup_dir
     backup_dir =tempfile.mktemp()
     os.mkdir(backup_dir)
     for file in temp_catalog_files():
@@ -70,7 +70,7 @@ def restore_temp_catalog():
         move_file(file,dst_file)
     os.rmdir(backup_dir)
     backup_dir = None
-         
+
 def empty_temp_dir():
     """ Create a sub directory in the temp directory for use in tests
     """
@@ -95,15 +95,15 @@ def cleanup_temp_dir(d):
             else:
                 os.remove(i)
         except OSError:
-            pass # failed to remove file for whatever reason 
-                 # (maybe it is a DLL Python is currently using)        
+            pass # failed to remove file for whatever reason
+                 # (maybe it is a DLL Python is currently using)
     try:
         os.rmdir(d)
     except OSError:
-        pass        
-        
+        pass
 
-# from distutils -- old versions had bug, so copying here to make sure 
+
+# from distutils -- old versions had bug, so copying here to make sure
 # a working version is available.
 from distutils.errors import DistutilsFileError
 import distutils.file_util

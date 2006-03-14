@@ -29,7 +29,7 @@ def test_suite(level=1):
     if level > 0:
         suites.append( unittest.makeSuite(test_float,'check_') )
         suites.append( unittest.makeSuite(test_double,'check_') )
-    
+
     total_suite = unittest.TestSuite(suites)
     return total_suite
 

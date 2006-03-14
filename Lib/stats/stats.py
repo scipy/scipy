@@ -1,7 +1,7 @@
 # Copyright (c) Gary Strangman.  All rights reserved
 #
 # Disclaimer
-# 
+#
 # This software is provided "as-is".  There are no expressed or implied
 # warranties of any kind, including, but not limited to, the warranties
 # of merchantability and fittness for a given application.  In no event
@@ -27,7 +27,7 @@ stats.py module
 A collection of basic statistical functions for python.  The function
 names appear below.
 
- *** Some scalar functions defined here are also available in the scipy.special 
+ *** Some scalar functions defined here are also available in the scipy.special
      package where they work on arbitrary sized arrays. ****
 
 Disclaimers:  The function list is obviously incomplete and, worse, the
@@ -51,10 +51,10 @@ MOMENTS:  moment
           kurtosis
           normaltest (for arrays only)
 
-ALTERED VERSIONS:  tmean 
-                   tvar  
+ALTERED VERSIONS:  tmean
+                   tvar
                    tstd
-                   tsem  
+                   tsem
                    describe
 
 FREQUENCY STATS:  freqtable
@@ -129,7 +129,7 @@ SUPPORT FUNCTIONS:  writecc
 ## ===========
 ## 29-11-05 ... fixed default axis to be 0 for consistency with scipy;
 ##              cleanup of redundant imports, dead code, {0,1} -> booleans
-## 02-02-10 ... require Numeric, eliminate "list-only" functions 
+## 02-02-10 ... require Numeric, eliminate "list-only" functions
 ##              (only 1 set of functions now and no Dispatch class),
 ##              removed all references to aXXXX functions.
 ## 00-04-13 ... pulled all "global" statements, except from aanova()
@@ -251,12 +251,12 @@ def nanmean(x,axis=0):
     x = x.copy()
     Norig = x.shape[axis]
     factor = 1.0-sum(isnan(x),axis)*1.0/Norig
-    
+
     # XXX: this line is quite clearly wrong
     n = N-sum(isnan(x),axis)
     putmask(x,isnan(x),0)
     return stats.mean(x,axis)/factor
-    
+
 def nanstd(x,axis=0,bias=False):
     """Compute the standard deviation over the given axis ignoring nans
     """
@@ -265,7 +265,7 @@ def nanstd(x,axis=0,bias=False):
     Norig = x.shape[axis]
     n = Norig - sum(isnan(x),axis)*1.0
     factor = n/Norig
-    
+
     # XXX: this line is quite clearly wrong
     n = N-sum(isnan(x),axis)
     putmask(x,isnan(x),0)
@@ -282,7 +282,7 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     cond = 1-isnan(arr1d)
     x = sort(compress(cond,arr1d))
     return median(x)
-   
+
 def nanmedian(x, axis=0):
     """ Compute the median along the given axis ignoring nan values
     """
@@ -297,10 +297,10 @@ def nanmedian(x, axis=0):
 
 def gmean(a,axis=0):
     """Calculates the geometric mean of the values in the passed array.
-    
+
     That is:  n-th root of (x1 * x2 * ... * xn).
-    
-    If a is 1D, a single value is returned.  If a is multi-dimensional, 
+
+    If a is 1D, a single value is returned.  If a is multi-dimensional,
     the geometric mean along the dimension specified is calculated.  The
     returned array has one less dimension than a.  dimension defaults
     to the last dimension of the array.  This means that, for a two
@@ -316,12 +316,12 @@ def gmean(a,axis=0):
 def hmean(a,axis=0):
     """Calculates the harmonic mean of the values in the passed array.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn).  Defaults to ALL values in 
-    the passed array.  REMEMBER: if axis=0, it collapses over 
-    axis 0 ('rows' in a 2D array) only, and if axis is a 
+    That is:  n / (1/x1 + 1/x2 + ... + 1/xn).  Defaults to ALL values in
+    the passed array.  REMEMBER: if axis=0, it collapses over
+    axis 0 ('rows' in a 2D array) only, and if axis is a
     sequence, it collapses over all specified axes.
-    
-    Returns: harmonic mean computed over dim(s) in axis     
+
+    Returns: harmonic mean computed over dim(s) in axis
     """
     a, axis = _chk_asarray(a, axis)
     size = a.shape[axis]
@@ -341,7 +341,7 @@ def cmedian(a,numbins=1000):
     precise median value of the array; default number of bins = 1000).  From
     G.W. Heiman's Basic Stats, or CRC Probability & Statistics.
     NOTE:  THIS ROUTINE ALWAYS uses the entire passed array (flattens it first).
-    
+
     Returns: median calculated over ALL values in the array
 """
     a = ravel(a)
@@ -475,7 +475,7 @@ def tstd(a,limits=None,inclusive=(1,1)):
     Note: either limit in the sequence, or the value of limits itself,
     can be set to None.  The inclusive list/tuple determines whether the
     lower and upper limiting bounds (respectively) are open/exclusive
-    (0) or closed/inclusive (1).     
+    (0) or closed/inclusive (1).
     """
     return sqrt(tvar(a,limits,inclusive))
 
@@ -506,7 +506,7 @@ def moment(a,moment=1,axis=0):
     1st moment).  Generally used to calculate coefficients of skewness and
     kurtosis.  Axis can equal None (ravel array first), or an integer
     (the axis over which to operate).
-        
+
     Returns: appropriate moment along given axis
     """
     a, axis = _chk_asarray(a, axis)
@@ -531,7 +531,7 @@ def skew(a,axis=0,bias=True):
     weight in left tail).  Use skewtest() to see if it's close enough.
     Axis can equal None (ravel array first), or an integer (the
     axis over which to operate).
-    
+
     Returns: skew of vals in a along axis, returning ZERO where all vals equal
     """
     a, axis = _chk_asarray(a,axis)
@@ -554,7 +554,7 @@ def kurtosis(a,axis=0,fisher=True,bias=True):
 
     Kurtosis is the fourth central moment divided by the square of the
       variance.  If Fisher's definition is used, then 3.0 is subtracted
-      from the result to give 0.0 for a normal distribution. 
+      from the result to give 0.0 for a normal distribution.
 
     Axis can equal None (ravel arrayfirst), or an integer
     (the axis over which to operate)
@@ -588,7 +588,7 @@ def describe(a,axis=0):
     """Returns several descriptive statistics of the passed array.  Axis
     can equal None (ravel array first), or an integer (the axis over
     which to operate)
-    
+
     Returns: n, (min,max), mean, standard deviation, skew, kurtosis
     """
     a, axis = _chk_asarray(a, axis)
@@ -870,7 +870,7 @@ an integer (the axis over which to operate)
 """
     a, axis = _chk_asarray(a, axis)
     mn = expand_dims(mean(a, axis), axis)
-    deviations = a - mn 
+    deviations = a - mn
     n = a.shape[axis]
     svar = ss(deviations,axis) / float(n)
     return svar
@@ -983,7 +983,7 @@ of the compare array.
 #######  ATRIMMING FUNCTIONS  #######
 #####################################
 
-# Removed round --- same as Numeric.around 
+# Removed round --- same as Numeric.around
 
 def threshold(a,threshmin=None,threshmax=None,newval=0):
     """
@@ -1054,7 +1054,7 @@ def trim_mean(a,proportiontocut):
 
 #  Cov is more flexible than the original
 #    covariance and computes an unbiased covariance matrix
-#    by default. 
+#    by default.
 def cov(m,y=None, rowvar=False, bias=False):
     """Estimate the covariance matrix.
 
@@ -1081,7 +1081,7 @@ def cov(m,y=None, rowvar=False, bias=False):
         y = transpose(y)
     N = m.shape[0]
     if (y.shape[0] != N):
-        raise ValueError, "x and y must have the same number of observations."    
+        raise ValueError, "x and y must have the same number of observations."
     m = m - mean(m,axis=0)
     y = y - mean(y,axis=0)
     if bias:
@@ -1097,7 +1097,7 @@ def corrcoef(x, y=None, rowvar=False, bias=True):
 
     corrcoef(x,y) where x and y are 1d arrays is the same as
     corrcoef(transpose([x,y]))
-    
+
     If rowvar is True, then each row is a variables with
     observations in the columns.
     """
@@ -1647,7 +1647,7 @@ Returns: z-statistic, two-tailed p-value
     return z, prob
 
 
-    
+
 def kruskal(*args):
     """
 The Kruskal-Wallis H-test is a non-parametric ANOVA for 2 or more
@@ -1725,7 +1725,7 @@ fprob = special.fdtrc
 def betai(a,b,x):
     """
     Returns the incomplete beta function:
-    
+
     I-sub-x(a,b) = 1/B(a,b)*(Integral(0,x) of t^(a-1)(1-t)^(b-1) dt)
 
     where a,b>0 and B(a,b) = G(a)*G(b)/(G(a+b)) where G(a) is the gamma
@@ -1821,7 +1821,7 @@ lists-of-lists.
 ## Create a list of all unique values in each column, and a list of these Ns
     alluniqueslist = [0]*(len(data[0])-variables) # all cols but data cols
     Nlevels = [0]*(len(data[0])-variables)        # (as above)
-    for column in range(len(Nlevels)): 
+    for column in range(len(Nlevels)):
         alluniqueslist[column] = _support.unique(_support.colex(data,column))
         Nlevels[column] = len(alluniqueslist[column])
 
@@ -1917,7 +1917,7 @@ lists-of-lists.
 
     if len(Bscols) == 1: # ie., if no btw-subj factors
         # 1 (below) needed because we need 2D array even w/ only 1 group of subjects
-        subjslots = ones((Nsubjects,1)) 
+        subjslots = ones((Nsubjects,1))
     else: # create array to hold 1s (subj present) and 0s (subj absent)
         subjslots = zeros(Nblevels)
     for i in range(len(data)): # for every datapoint given as input
@@ -1958,7 +1958,7 @@ lists-of-lists.
             Bwscols = makebin(Wscols) # make a binary version of Wscols
             # Figure out which cols from the ORIGINAL (input) data matrix are both non-
             # source and also within-subj vars (excluding subjects col)
-            Bwithinnonsource = Bnonsource & Bwscols 
+            Bwithinnonsource = Bnonsource & Bwscols
 
             # Next, make a list of the above.  The list is a list of axes in DA
             # because DA has the same number of axes as there are factors
@@ -1979,10 +1979,10 @@ lists-of-lists.
             # CREATE LIST OF COEFF-COMBINATIONS TO DO (len=e-1, f-1, (e-1)*(f-1), etc...)
             #
             # Figure out which cols are both source and within-subjects, including col 0
-            Bwithinsource = source & Bwscols 
+            Bwithinsource = source & Bwscols
             # Make a list of within-subj cols, incl subjects col (0)
             Lwithinsourcecol = makelist(Bwithinsource, Nfactors+1)
-            # Make a list of cols that are source within-subj OR btw-subj 
+            # Make a list of cols that are source within-subj OR btw-subj
             Lsourceandbtws = makelist(source | Bbetweens, Nfactors+1)
             if Lwithinnonsource != []:
                 Lwithinsourcecol = map(Lsourceandbtws.index,Lwithinsourcecol)
@@ -2157,7 +2157,7 @@ lists-of-lists.
             # Collapse again, this time SUMMING instead of averaging (to get cell Ns)
             #contrastns = _support.collapse(collapsed,btwsourcecols,-1,0,0,
             #                            sum)
-                
+
             # Collapse again, this time calculating hmeans (for hns)
             #contrasthns = _support.collapse(collapsed,btwsourcecols,-1,0,0,
             #                             hmean)
@@ -2206,7 +2206,7 @@ lists-of-lists.
             #
             if subset((source-1),Bwithins):
                 # restrict grand mean, as per M&D p.680
-                er = d_restrict_mean(workd,subjslots) 
+                er = d_restrict_mean(workd,subjslots)
         #
         # **BOTH** WITHIN- AND BETWEEN-SUBJECTS VARIABLES TO CONSIDER
         #
@@ -2281,7 +2281,7 @@ lists-of-lists.
         # These terms are for the numerator of the current effect/source
                       + [[thiseffect, round4(SS),dfnum,
                           round4(SS/float(dfnum)),round4(f),
-                          round4(prob),suffix]] 
+                          round4(prob),suffix]]
         # These terms are for the denominator for the current effect/source
                       + [[thiseffect+'/w', round4(SSw),dfden,
                           round4(SSw/float(dfden)),'','','']]
@@ -2350,7 +2350,7 @@ def d_restrict_mean(workd,subjslots):
     """
     # subtract D-variable cell-mean for each (btw-subj) group
     errors = subtr_cellmeans(workd,subjslots)
-    
+
     # add back in appropriate grand mean from individual scores
     grandDmeans = expand_dims(mean(workd,0),0)
     errors = errors + transpose(grandDmeans) # errors has reversed dims!!
@@ -2385,14 +2385,14 @@ Returns: SS array for multivariate F calculation
         all_cellmeans = transpose(DM[dindex],[-1]+range(0,len(DM[dindex].shape)-1))
         all_cellns = transpose(DN[dindex],[-1]+range(0,len(DN[dindex].shape)-1))
         hn = hmean(all_cellns, None)
-        
+
         levels = D[dindex].shape[1]  # GENERAL, 'cause each workd is always 2D
         SSm = zeros((levels,levels),'f') #called RCm=SCm in Lindman,p.317-8
         tworkd = transpose(D[dindex])
 
         ## Calculate SSw, within-subj variance (Lindman approach)
         RSw = zeros((levels,levels),'f')
-        RSinter = zeros((levels,levels),PyObject)  
+        RSinter = zeros((levels,levels),PyObject)
         for i in range(levels):
             for j in range(i,levels):
                 RSw[i,j] = RSw[j,i] = sum(tworkd[i]*tworkd[j])
@@ -2432,7 +2432,7 @@ Returns: SS array for multivariate F calculation
         if source == Nallsources-1:
             sourceDNarray = hmean(DN[dindex],
                                   range(len(sourceDMarray.shape)-1))
-                
+
        ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
         sub_effects = ga *1.0   # start with grand mean
         for subsource in range(3,source-2,2):
@@ -2489,14 +2489,14 @@ def subtr_cellmeans(workd,subjslots):
     """
     # Get a list of all dims that are source and between-subj
     sourcedims = makelist(Bbetweens,Nfactors+1)
-    
+
     # Now, fix this list by mapping the dims from the original source
     # to dims for a between-subjects variable (namely, subjslots)
     transidx = range(len(subjslots.shape))[1:] + [0] # put subj dim at end
     tsubjslots = transpose(subjslots,transidx) # get all Ss for this idx
     tworkd = transpose(workd) # swap subj. and variable dims
     errors = 1.0 * tworkd
-    
+
     if len(sourcedims) == 0:
         idx = [-1]
         loopcap = [0]
@@ -2504,7 +2504,7 @@ def subtr_cellmeans(workd,subjslots):
         btwsourcedims = map(Bscols.index,sourcedims)
         idx = [0] * len(btwsourcedims)
         idx[0] = -1 # compensate for pre-increment of 1st slot in incr()
-        
+
         # Get a list of the maximum values each factor can handle
         loopcap = take(array(Nlevels),sourcedims)-1
 
@@ -2672,7 +2672,7 @@ axis over which to operate),
     return sum(array1*array2,axis)
 
 
-def square_of_sums(a, axis=0):    
+def square_of_sums(a, axis=0):
     """Adds the values in the passed array, squares that sum, and returns the
 result.
 
@@ -2733,7 +2733,7 @@ Use fastsort for speed.
 
 def rankdata(a):
     """
-Ranks the data in a, dealing with ties appropritely.  First ravels 
+Ranks the data in a, dealing with ties appropritely.  First ravels
 a.  Adapted from Gary Perlman's |Stat ranksort.
 
 Returns: array of length equal to a, containing rank scores

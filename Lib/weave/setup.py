@@ -10,7 +10,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('examples')
     return config
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from numpy.distutils.core import setup
     from weave_version import weave_version
     setup(version = weave_version,

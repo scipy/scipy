@@ -56,15 +56,15 @@ def makenamedict():
 
 def info(object=None,maxwidth=76,output=sys.stdout,):
     """Get help information for a function, class, or module.
-    
+
        Example:
-          >>> from scipy import * 
+          >>> from scipy import *
           >>> info(polyval)
           polyval(p, x)
-        
+
             Evaluate the polymnomial p at x.
-            
-            Description:        
+
+            Description:
                 If p is of length N, this function returns the value:
                 p[0]*(x**N-1) + p[1]*(x**N-2) + ... + p[N-2]*x + p[N-1]
     """
@@ -76,7 +76,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
     elif hasattr(object, '_ppimport_attr'):
         object = object._ppimport_attr
 
-    if object is None:        
+    if object is None:
         info(info)
     elif isinstance(object, types.StringType):
         if _namedict is None:
@@ -100,7 +100,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
             print >> output, "Help for %s not found." % object
         else:
             print >> output, "\n     *** Total of %d references found. ***" % numfound
-                    
+
     elif inspect.isfunction(object):
         name = object.func_name
         arguments = apply(inspect.formatargspec, inspect.getargspec(object))
@@ -113,10 +113,10 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
         print >> output, " " + argstr + "\n"
         print >> output, inspect.getdoc(object)
 
-    elif inspect.isclass(object):  
+    elif inspect.isclass(object):
         name = object.__name__
         if hasattr(object, '__init__'):
-            arguments = apply(inspect.formatargspec, inspect.getargspec(object.__init__.im_func))        
+            arguments = apply(inspect.formatargspec, inspect.getargspec(object.__init__.im_func))
             arglist = arguments.split(', ')
             if len(arglist) > 1:
                 arglist[1] = "("+arglist[1]
@@ -132,7 +132,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
             argstr = name + arguments
 
         print >> output, " " + argstr + "\n"
-        doc1 = inspect.getdoc(object) 
+        doc1 = inspect.getdoc(object)
         if doc1 is None:
             if hasattr(object,'__init__'):
                 print >> output, inspect.getdoc(object.__init__)
@@ -164,7 +164,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
 
             if hasattr(object,'name'):
                 name = "%s" % object.name
-            else:	
+            else:
                 name = "<name>"
             if len(name+arguments) > maxwidth:
                 argstr = split_line(name, arguments, maxwidth)
@@ -176,10 +176,10 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
             if doc is not None:
                 print >> output, inspect.getdoc(object.__call__)
             print >> output, inspect.getdoc(object)
-            
+
         else:
             print >> output, inspect.getdoc(object)
-                                            
+
     elif inspect.ismethod(object):
         name = object.__name__
         arguments = apply(inspect.formatargspec, inspect.getargspec(object.im_func))
@@ -201,7 +201,7 @@ def info(object=None,maxwidth=76,output=sys.stdout,):
     elif hasattr(object, '__doc__'):
         print >> output, inspect.getdoc(object)
 
-        
+
 
 def source(object, output=sys.stdout):
     """Write source for this object to output.
@@ -211,4 +211,3 @@ def source(object, output=sys.stdout):
         print >> output,  inspect.getsource(object)
     except:
         print >> output,  "Not available for this object."
-

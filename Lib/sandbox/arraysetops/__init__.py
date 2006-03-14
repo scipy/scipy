@@ -1,5 +1,5 @@
 #
-# exmplpackage - Example of a Scipy module, see DEVELOPERS.txt 
+# exmplpackage - Example of a Scipy module, see DEVELOPERS.txt
 #
 
 # Get documentation string:

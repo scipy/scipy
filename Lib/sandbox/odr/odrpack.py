@@ -6,7 +6,7 @@ Functions
 odr() -- calls the fitting subroutine. For your sake and mine, use the class
          wrappers.
 
-report_error(info) -- converts the return code from ODRPACK's routine to 
+report_error(info) -- converts the return code from ODRPACK's routine to
                       an English string or list of strings
 
 
@@ -39,7 +39,7 @@ Use
 
 Basic use:
 
-1) Define the function you want to fit against: 
+1) Define the function you want to fit against:
 
   def f(B, x):
       return B[0]*x + B[1]
@@ -75,7 +75,7 @@ Basic use:
 
 Read the docstrings and the accompanying tests for more advanced usage.
 
-  
+
 Notes
 =====
 
@@ -83,7 +83,7 @@ Notes
   array element A(i, j, k) will be next to A(i+1, j, k). In C and, consequently,
   NumPy, arrays are stored row first: A[i, j, k] is next to A[i, j, k+1]. For
   efficiency and convenience, the input and output arrays of the fitting
-  function (and its Jacobians) are passed to FORTRAN without transposition. 
+  function (and its Jacobians) are passed to FORTRAN without transposition.
   Therefore, where the ODRPACK documentation says that the X array is of shape
   (N, M), it will be passed to the Python function as an array of shape (M, N).
   If M==1, the one-dimensional case, then nothing matters; if M>1, then your
@@ -94,9 +94,9 @@ Notes
   really is easier to deal with x[0] and x[1] than x[:,0] and x[:,1]. Of course,
   you can always use the transpose() function from scipy explicitly.
 
-* Examples -- See the accompanying file test/test.py for examples of how to set 
+* Examples -- See the accompanying file test/test.py for examples of how to set
   up fits of your own. Some are taken from the User's Guide; some are from
-  other sources. 
+  other sources.
 
 * Models -- Some common models are instantiated in the accompanying module
   models.py . Contributions are welcome.
@@ -119,9 +119,9 @@ odr_stop = __odrpack.odr_stop
 
 def _conv(obj):
     """Convert an object to the preferred form for input to the odr routine."""
-    
+
     t = type(obj)
-    
+
     if t in (float, int, long, NoneType):
         # scalar or None, pass through
         return obj
@@ -142,7 +142,7 @@ def report_error(info):
 
     if info >= 5:
         # questionable results or fatal error
-        
+
         I = (info/10000 % 10,
              info/1000 % 10,
              info/100 % 10,
@@ -205,69 +205,69 @@ class Data(object):
 Each argument is attached to the member of the instance of the same name.
 The structures of x and y are described in the Model class docstring. If
 y is an integer, then the Data instance can only be used to fit with implicit
-models where the dimensionality of the response is equal to the specified 
-value of y. The structures of wd and we are described below. meta is an 
+models where the dimensionality of the response is equal to the specified
+value of y. The structures of wd and we are described below. meta is an
 freeform dictionary for application-specific use.
 
 we weights the effect a deviation in the response variable has on the fit.
 wd weights the effect a deviation in the input variable has on the fit. To
 handle multidimensional inputs and responses easily, the structure of these
-arguments has the n'th dimensional axis first. These arguments heavily use 
+arguments has the n'th dimensional axis first. These arguments heavily use
 the structured arguments feature of ODRPACK to conveniently and flexibly
 support all options. See the ODRPACK User's Guide for a full explanation of
-how these weights are used in the algorithm. Basically, a higher value of the 
-weight for a particular data point makes a deviation at that point more 
+how these weights are used in the algorithm. Basically, a higher value of the
+weight for a particular data point makes a deviation at that point more
 detrimental to the fit.
 
-  we -- if we is a scalar, then that value is used for all data points 
-        (and all dimensions of the response variable). 
-        
-        If we is a rank-1 array of length q (the dimensionality of the 
-        response variable), then this vector is the diagonal of the covariant 
+  we -- if we is a scalar, then that value is used for all data points
+        (and all dimensions of the response variable).
+
+        If we is a rank-1 array of length q (the dimensionality of the
+        response variable), then this vector is the diagonal of the covariant
         weighting matrix for all data points.
 
         If we is a rank-1 array of length n (the number of data points), then
-        the i'th element is the weight for the i'th response variable 
+        the i'th element is the weight for the i'th response variable
         observation (single-dimensional only).
 
-        If we is a rank-2 array of shape (q, q), then this is the full 
+        If we is a rank-2 array of shape (q, q), then this is the full
         covariant weighting matrix broadcast to each observation.
 
-        If we is a rank-2 array of shape (q, n), then we[:,i] is the 
+        If we is a rank-2 array of shape (q, n), then we[:,i] is the
         diagonal of the covariant weighting matrix for the i'th observation.
 
-        If we is a rank-3 array of shape (q, q, n), then we[:,:,i] is 
+        If we is a rank-3 array of shape (q, q, n), then we[:,:,i] is
         the full specification of the covariant weighting matrix for each
         observation.
 
         If the fit is implicit, then only a positive scalar value is used.
 
-  wd -- if wd is a scalar, then that value is used for all data points 
-        (and all dimensions of the input variable). If wd = 0, then 
-        the covariant weighting matrix for each observation is set to the 
-        identity matrix (so each dimension of each observation has the 
+  wd -- if wd is a scalar, then that value is used for all data points
+        (and all dimensions of the input variable). If wd = 0, then
+        the covariant weighting matrix for each observation is set to the
+        identity matrix (so each dimension of each observation has the
         same weight).
-        
-        If wd is a rank-1 array of length m (the dimensionality of the 
-        input variable), then this vector is the diagonal of the covariant 
+
+        If wd is a rank-1 array of length m (the dimensionality of the
+        input variable), then this vector is the diagonal of the covariant
         weighting matrix for all data points.
 
         If wd is a rank-1 array of length n (the number of data points), then
-        the i'th element is the weight for the i'th input variable 
+        the i'th element is the weight for the i'th input variable
         observation (single-dimensional only).
 
-        If wd is a rank-2 array of shape (m, m), then this is the full 
+        If wd is a rank-2 array of shape (m, m), then this is the full
         covariant weighting matrix broadcast to each observation.
 
-        If wd is a rank-2 array of shape (m, n), then wd[:,i] is the 
+        If wd is a rank-2 array of shape (m, n), then wd[:,i] is the
         diagonal of the covariant weighting matrix for the i'th observation.
 
-        If wd is a rank-3 array of shape (m, m, n), then wd[:,:,i] is 
+        If wd is a rank-3 array of shape (m, m, n), then wd[:,:,i] is
         the full specification of the covariant weighting matrix for each
         observation.
 
     fix -- fix is the same as ifixx in the class ODR. It is an array of integers
-           with the same shape as data.x that determines which input 
+           with the same shape as data.x that determines which input
            observations are treated as fixed. One can use a sequence of length m
            (the dimensionality of the input observations) to fix some dimensions
            for all observations. A value of 0 fixes the observation, a value > 0
@@ -276,10 +276,10 @@ detrimental to the fit.
     meta -- optional, freeform dictionary for metadata
 
 Data has one method::
-    
+
     set_meta(**kwds) -- updates the metadata dictionary conveniently with
                         keyword arguments."""
-    
+
     def __init__(self, x, y=None, we=None, wd=None, fix=None, meta={}):
         self.x = _conv(x)
         self.y = _conv(y)
@@ -305,12 +305,12 @@ here.
 
 
 class RealData(Data):
-    """The RealData class stores the weightings as actual standard deviations 
-and/or covariances. The weights needed for ODRPACK are generated on-the-fly 
+    """The RealData class stores the weightings as actual standard deviations
+and/or covariances. The weights needed for ODRPACK are generated on-the-fly
 with __getattr__ trickery.
 
-sx and sy are standard deviations of x and y and are converted to weights by 
-dividing 1.0 by their squares. 
+sx and sy are standard deviations of x and y and are converted to weights by
+dividing 1.0 by their squares.
 
   E.g.  wd = 1./numpy.power(sx, 2)
 
@@ -334,7 +334,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
   observations. A value of 0 fixes the observation, a value > 0 makes it free.
 """
 
-    def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None, 
+    def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None,
                  fix=None, meta={}):
         if (sx is not None) and (covx is not None):
             raise ValueError, "cannot set both sx and covx"
@@ -363,7 +363,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
 
     def _sd2wt(self, sd):
         """Convert standard deviation to weights."""
-        
+
         return 1./numpy.power(sd, 2)
 
     def _cov2wt(self, cov):
@@ -391,7 +391,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
                       ('we', 'sy'):  (self._sd2wt, self.sy),
                       ('we', 'covy'): (self._cov2wt, self.covy)}
 
-        
+
         if attr not in ('wd', 'we'):
             if attr in self.meta.keys():
                 return self.meta[attr]
@@ -404,7 +404,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
                 return apply(func, (arg,))
             else:
                 return None
-        
+
 class Model(object):
     """The Model class stores information about the function you wish
 to fit. It stores the function itself, at the least, and optionally
@@ -415,28 +415,28 @@ for the fit parameters possibly given the set of data.
     Model(fcn, fjacb=None, fjacd=None, extra_args=None,
           estimate=None, implicit=0, meta={})
 
-The initialization method stores these into members of the 
+The initialization method stores these into members of the
 same name.
 
   fcn -- fit function: fcn(beta, x) --> y
 
-  fjacb -- Jacobian of fcn wrt the fit parameters beta: 
+  fjacb -- Jacobian of fcn wrt the fit parameters beta:
            fjacb(beta, x) --> @f_i(x,B)/@B_j
-  
+
   fjacd -- Jacobian of fcn wrt the (possibly multidimensional) input variable:
            fjacd(beta, x) --> @f_i(x,B)/@x_j
 
   extra_args -- if specified, extra_args should be a tuple of extra arguments
-                to pass to fcn, fjacb, and fjacd. Each will be called 
+                to pass to fcn, fjacb, and fjacd. Each will be called
                 like the following: apply(fcn, (beta, x) + extra_args)
 
   estimate -- provide estimates of the fit parameters from the data:
               estimate(data) --> estbeta
-  
+
   implicit -- boolean variable which, if TRUE, specifies that the model
               is implicit; i.e fcn(beta, x) ~= 0 and there is no y data
               to fit against.
-  
+
   meta -- an optional, freeform dictionary of metadata for the model
 
 Note that the fcn, fjacb, and fjacd operate on NumPy arrays and return
@@ -444,7 +444,7 @@ a NumPy array. estimate takes an instance of the Data class.
 
 Model has one method:
 
-  set_meta(**kwds) -- conveniently update the metadata dictionary via the 
+  set_meta(**kwds) -- conveniently update the metadata dictionary via the
                       keyword arguments.
 
 Here are the rules for the shapes of the argument and return arrays:
@@ -454,7 +454,7 @@ Here are the rules for the shapes of the argument and return arrays:
        If the input data is multi-dimensional, then x is a rank-2 array;
        i.e. x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n)
        In all cases, it has the same shape as the input data array passed
-       to odr(). m is the dimensionality of the input data, n is the 
+       to odr(). m is the dimensionality of the input data, n is the
        number of observations.
 
   y -- if the response variable is single-dimensional, then y is a rank-1
@@ -465,20 +465,20 @@ Here are the rules for the shapes of the argument and return arrays:
 
   beta -- rank-1 array of length p where p is the number of parameters;
           i.e. beta = array([B_1, B_2, ..., B_p])
-  
+
   fjacb -- if the response variable is multi-dimensional, then the return
-           array's shape is (q, p, n) such that 
-           fjacb(x,beta)[l,k,i] = @f_l(X,B)/@B_k evaluated at the i'th data 
+           array's shape is (q, p, n) such that
+           fjacb(x,beta)[l,k,i] = @f_l(X,B)/@B_k evaluated at the i'th data
            point.
-           If q == 1, then the return array is only rank-2 and with shape 
+           If q == 1, then the return array is only rank-2 and with shape
            (p, n).
-  
+
   fjacd -- as with fjacb, only the return array's shape is (q, m, n) such that
            fjacd(x,beta)[l,j,i] = @f_l(X,B)/@X_j at the i'th data point.
-           If q == 1, then the return array's shape is (m, n). If m == 1, 
+           If q == 1, then the return array's shape is (m, n). If m == 1,
            the shape is (q, n). If m == q == 1, the shape is (n,)."""
 
-    def __init__(self, fcn, fjacb=None, fjacd=None, 
+    def __init__(self, fcn, fjacb=None, fjacd=None,
                  extra_args=None, estimate=None, implicit=0, meta=None):
         self.fcn = fcn
         self.fjacb = fjacb
@@ -510,7 +510,7 @@ here.
 class Output(object):
     """The Output class stores the output of an ODR run.
 
-Takes one argument for initialization: the return value from the 
+Takes one argument for initialization: the return value from the
 function odr().
 
  Output(output)
@@ -519,15 +519,15 @@ Members:
 
   beta -- estimated parameter values [beta.shape == (q,)]
 
-  sd_beta -- standard errors of the estimated parameters 
+  sd_beta -- standard errors of the estimated parameters
              [sd_beta.shape == (p,)]
 
-  cov_beta -- covariance matrix of the estimated parameters 
+  cov_beta -- covariance matrix of the estimated parameters
               [cov_beta.shape == (p, p)]
 
 Optional Members (if odr() was run with "full_output=1":
 
-  delta -- array of estimated errors in input variables 
+  delta -- array of estimated errors in input variables
            [delta.shape == data.x.shape]
 
   eps -- array of estimated errors in response variables
@@ -551,10 +551,10 @@ Optional Members (if odr() was run with "full_output=1":
 
   work -- final work array [array]
 
-  work_ind -- indices into work for drawing out values [dictionary] 
+  work_ind -- indices into work for drawing out values [dictionary]
               (cf. ODRPACK UG p. 83)
 
-  info -- reason for returning (as output by ODRPACK) [integer] 
+  info -- reason for returning (as output by ODRPACK) [integer]
           (cf. ODRPACK UG p. 38)
 
   stopreason -- "info" interpreted into English [list of strings]
@@ -601,20 +601,20 @@ to the initialization routine. Descriptions are given below.
            model provides an "estimate" function to estimate these values.
 
  Optional:
-  delta0 -- a (double-precision) float array to hold the initial values of 
+  delta0 -- a (double-precision) float array to hold the initial values of
             the errors in the input variables. Must be same shape as data.x .
 
-  ifixb -- sequence of integers with the same length as beta0 that determines 
+  ifixb -- sequence of integers with the same length as beta0 that determines
            which parameters are held fixed. A value of 0 fixes the parameter,
            a value > 0 makes the parameter free.
 
   ifixx -- an array of integers with the same shape as data.x that determines
-           which input observations are treated as fixed. One can use a 
+           which input observations are treated as fixed. One can use a
            sequence of length m (the dimensionality of the input observations)
            to fix some dimensions for all observations. A value of 0 fixes the
            observation, a value > 0 makes it free.
 
-  job -- an integer telling ODRPACK what tasks to perform. See p. 31 of the 
+  job -- an integer telling ODRPACK what tasks to perform. See p. 31 of the
          ODRPACK User's Guide if you absolutely must set the value here. Use
          the method set_job post-initialization for a more readable interface.
 
@@ -650,7 +650,7 @@ to the initialization routine. Descriptions are given below.
            first runs, maxit is the total number of iterations performed and
            defaults to 50.  For restarts, maxit is the number of additional
            iterations to perform and defaults to 10.
-  
+
   stpb -- sequence (len(stpb) == len(beta0)) of relative step sizes to compute
           finite difference derivatives wrt the parameters.
 
@@ -668,8 +668,8 @@ to the initialization routine. Descriptions are given below.
 
   scld -- array (scld.shape == data.x.shape or scld.shape == (m,)) of scaling
           factors for the *errors* in the input variables. Again, these factors
-          are automatically computed if you do not provide them. If 
-          scld.shape == (m,), then the scaling factors are broadcast to all 
+          are automatically computed if you do not provide them. If
+          scld.shape == (m,), then the scaling factors are broadcast to all
           observations.
 
   work -- array to hold the double-valued working data for ODRPACK. When
@@ -679,7 +679,7 @@ to the initialization routine. Descriptions are given below.
            restarting, takes the value of self.output.iwork .
 
  Other Members (not supplied as initialization arguments):
-  output -- an instance if the Output class containing all of the returned 
+  output -- an instance if the Output class containing all of the returned
             data from an invocation of ODR.run() or ODR.restart()
 
  Methods (see docstrings):
@@ -692,15 +692,15 @@ to the initialization routine. Descriptions are given below.
   restart -- restarts a previous run.
 """
 
-    def __init__(self, data, model, beta0=None, delta0=None, ifixb=None, 
+    def __init__(self, data, model, beta0=None, delta0=None, ifixb=None,
                  ifixx=None, job=None, iprint=None, errfile=None, rptfile=None,
                  ndigit=None, taufac=None, sstol=None, partol=None, maxit=None,
-                 stpb=None, stpd=None, sclb=None, scld=None, work=None, 
+                 stpb=None, stpd=None, sclb=None, scld=None, work=None,
                  iwork=None):
         self.data = data
         self.model = model
 
-        if beta0 is None: 
+        if beta0 is None:
             if self.model.estimate is not None:
                 self.beta0 = _conv(self.model.estimate(self.data))
             else:
@@ -708,7 +708,7 @@ to the initialization routine. Descriptions are given below.
                   "must specify beta0 or provide an estimater with the model"
         else:
             self.beta0 = _conv(beta0)
-        
+
         self.delta0 = _conv(delta0)
         self.ifixx = _conv(ifixx)
         self.ifixb = _conv(ifixb)
@@ -735,7 +735,7 @@ to the initialization routine. Descriptions are given below.
     def _check(self):
         """Check the inputs for consistency, but don't bother
 checking things that the builtin function odr will check.
-        
+
   _check()"""
 
         x_s = list(self.data.x.shape)
@@ -785,7 +785,7 @@ checking things that the builtin function odr will check.
             fjacd_perms.append((n,))
         if p == q == 1:
             fjacb_perms.append((n,))
-        
+
         # try evaluating the supplied functions to make sure they provide
         # sensible outputs
 
@@ -818,7 +818,7 @@ checking things that the builtin function odr will check.
         """Generate a suitable work array if one does not already exist.
 
   _gen_work()"""
-        
+
         n = self.data.x.shape[-1]
         p = self.beta0.shape[0]
 
@@ -839,18 +839,18 @@ checking things that the builtin function odr will check.
         elif len(self.data.we.shape) == 3:
             ld2we, ldwe = self.data.we.shape[1:]
         else:
-            # Okay, this isn't precisely right, but for this calculation, 
+            # Okay, this isn't precisely right, but for this calculation,
             # it's fine
             ldwe = 1
             ld2we = self.data.we.shape[1]
 
         if self.job % 10 < 2:
             # ODR not OLS
-            lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 6*n*m + 2*n*q*p + 
+            lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 6*n*m + 2*n*q*p +
                      2*n*q*m + q*q + 5*q + q*(p+m) + ldwe*ld2we*q)
         else:
             # OLS not ODR
-            lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 2*n*m + 2*n*q*p + 
+            lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 2*n*m + 2*n*q*p +
                      5*q + q*(p+m) + ldwe*ld2we*q)
 
         if type(self.work) is numpy.ArrayType and self.work.shape == (lwork,)\
@@ -860,11 +860,11 @@ checking things that the builtin function odr will check.
         else:
             self.work = numpy.zeros((lwork,), numpy.Float)
 
-    def set_job(self, fit_type=None, deriv=None, var_calc=None, 
+    def set_job(self, fit_type=None, deriv=None, var_calc=None,
                 del_init=None, restart=None):
         """Sets the "job" parameter is a hopefully comprehensible way.
-  
-If an argument is not specified, then the value is left as is. The default 
+
+If an argument is not specified, then the value is left as is. The default
 value from class initialization is for all of these options set to 0.
 
 ______________________________________________________________________________
@@ -893,13 +893,13 @@ restart      0    fit is not a restart
              1    fit is a restart
 ______________________________________________________________________________
 
-The permissible values are different from those given on pg. 31 of the 
-ODRPACK User's Guide only in that one cannot specify numbers greater than the 
+The permissible values are different from those given on pg. 31 of the
+ODRPACK User's Guide only in that one cannot specify numbers greater than the
 last value for each variable.
 
-If one does not supply functions to compute the Jacobians, the fitting 
+If one does not supply functions to compute the Jacobians, the fitting
 procedure will change deriv to 0, finite differences, as a default. To
-initialize the input variable offsets by yourself, set del_init to 1 and 
+initialize the input variable offsets by yourself, set del_init to 1 and
 put the offsets into the "work" variable correctly.
 
   set_job(fit_type=None, deriv=None, var_calc=None, del_init=None, restart=None)
@@ -924,16 +924,16 @@ put the offsets into the "work" variable correctly.
         if restart in (0, 1):
             job_l[0] = restart
 
-        self.job = (job_l[0]*10000 + job_l[1]*1000 + 
+        self.job = (job_l[0]*10000 + job_l[1]*1000 +
                     job_l[2]*100 + job_l[3]*10 + job_l[4])
 
-    def set_iprint(self, init=None, so_init=None, 
+    def set_iprint(self, init=None, so_init=None,
                    iter=None, so_iter=None, iter_step=None,
                    final=None, so_final=None):
         """Set the iprint parameter for the printing of computation reports.
-  
+
 If any of the arguments are specified here, then they are set in the iprint
-member. If iprint is not set manually or with this method, then ODRPACK 
+member. If iprint is not set manually or with this method, then ODRPACK
 defaults to no printing. If no filename is specified with the member rptfile,
 then ODRPACK prints to stdout. One can tell ODRPACK to print to stdout
 in addition to the specified filename by setting the so_* arguments to this
@@ -942,7 +942,7 @@ one can do that by not specifying a rptfile filename.
 
 There are three reports: initialization, iteration, and final reports.
 They are represented by the arguments init, iter, and final respectively.
-The permissible values are 0, 1, and 2 representing "no report", "short 
+The permissible values are 0, 1, and 2 representing "no report", "short
 report", and "long report" respectively.
 
 The argument iter_step (0 <= iter_step <= 9) specifies how often to make the
@@ -950,21 +950,21 @@ iteration report; the report will be made for every iter_step'th iteration
 starting with iteration one. If iter_step == 0, then no iteration report
 is made, regardless of the other arguments.
 
-If the rptfile is None, then any so_* arguments supplied will raise an 
+If the rptfile is None, then any so_* arguments supplied will raise an
 exception.
 
-  set_iprint(init=None, so_init=None, 
+  set_iprint(init=None, so_init=None,
              iter=None, so_iter=None, iter_step=None,
              final=None, so_final=None)
 """
         if self.iprint is None:
             self.iprint = 0
-            
+
         ip = [self.iprint / 1000 % 10,
               self.iprint / 100 % 10,
               self.iprint / 10 % 10,
               self.iprint % 10]
-        
+
         # make a list to convert iprint digits to/from argument inputs
         #                   rptfile, stdout
         ip2arg = [[0, 0], # none,  none
@@ -1006,7 +1006,7 @@ exception.
         ip[3] = ip2arg.index(iprint_l[4:6])
 
         self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
-        
+
     def run(self):
         """Run the fitting routine with all of the information given.
 
@@ -1015,8 +1015,8 @@ Returns an Output instance and assigns it to the member self.output .
   run()"""
         args = (self.model.fcn, self.beta0, self.data.y, self.data.x)
         kwds = {'full_output': 1}
-        kwd_l = ['ifixx', 'ifixb', 'job', 'iprint', 'errfile', 'rptfile', 
-                 'ndigit', 'taufac', 'sstol', 'partol', 'maxit', 'stpb', 
+        kwd_l = ['ifixx', 'ifixb', 'job', 'iprint', 'errfile', 'rptfile',
+                 'ndigit', 'taufac', 'sstol', 'partol', 'maxit', 'stpb',
                  'stpd', 'sclb', 'scld', 'work', 'iwork']
 
         if self.delta0 is not None and self.job % 1000 / 10 == 1:
@@ -1026,7 +1026,7 @@ Returns an Output instance and assigns it to the member self.output .
             d0 = numpy.ravel(self.delta0)
 
             self.work[:len(d0)] = d0
-        
+
         # set the kwds from other objects explicitly
 
         if self.model.fjacb is not None:
@@ -1069,4 +1069,3 @@ ODRPACK's default for the number of new iterations is 10.
         self.maxit = iter
 
         return self.run()
- 

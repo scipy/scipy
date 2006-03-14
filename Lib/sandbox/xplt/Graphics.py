@@ -27,15 +27,15 @@ def make_palettes():
     Palette['gray'] = p
 
     p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        array([0,0,1],dtype='B')[NewAxis,:]    
+        array([0,0,1],dtype='B')[NewAxis,:]
     Palette['blue'] = p
 
     p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        array([1,0,0],dtype='B')[NewAxis,:]        
+        array([1,0,0],dtype='B')[NewAxis,:]
     Palette['red'] = p
 
     p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        array([0,1,0],dtype='B')[NewAxis,:]        
+        array([0,1,0],dtype='B')[NewAxis,:]
     Palette['green'] = p
 
     p = zeros((256,3),'B')
@@ -53,7 +53,7 @@ def _interpolate_colormap(p,num):
     pf = p.astype('d')
     pfnew = signaltools.resample(pf,num,axis=0)
     return pfnew.astype('B')
-    
+
 def read_gist_palettes():
     import commands
 
@@ -95,10 +95,10 @@ def _makewavebytes(data,bot,top,cmin,cmax):
     bytelow = (mid-bot)/(0.0-cmin) * data + mid
     bytehigh = (top - mid)/(cmax-0.0) * data + mid
     bytedata = where(greater(data,0),bytehigh,bytelow).astype('B')
-    
+
     return bytedata
 
-    
+
 ##def array2image(data,expand=None,top=255,cmin=None,cmax=None,p=None):
 ##    """array2image(data,expand=None,cmin=None,cmax=None,p=None)"""
 ##    assert(len(data.shape) == 2)
@@ -168,15 +168,3 @@ def make_wavemovie(data,filename,dim=0,expand=None,cmin=None,cmax=None,p=None):
         filelist.append(file)
     os.system('convert %s %s.gif' % (string.join(filelist," "),filename))
     os.system('rm %s' % string.join(filelist," "))
-
-
-
-
-
-
-
-
-
-
-
-

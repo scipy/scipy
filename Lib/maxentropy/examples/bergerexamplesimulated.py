@@ -9,11 +9,11 @@
 
     Consider the translation of the English word 'in' into French.  We
     notice in a corpus of parallel texts the following facts:
-        
+
         (1)    p(dans) + p(en) + p(a) + p(au cours de) + p(pendant) = 1
         (2)    p(dans) + p(en) = 3/10
         (3)    p(dans) + p(a)  = 1/2
-        
+
     This code finds the probability distribution with maximal entropy
     subject to these constraints.
 
@@ -115,5 +115,3 @@ print "\nEstimated error in constraint satisfaction (should be close to 0):\n" \
         + str(abs(model.expectations() - K))
 print "\nTrue error in constraint satisfaction (should be close to 0):\n" + \
         str(abs(smallmodel.expectations() - K))
-
-

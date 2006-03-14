@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
+## Automatically adapted for scipy Oct 21, 2005 by
 
 # Author: Travis Oliphant
 
@@ -27,11 +27,11 @@ def fixed_quad(func,a,b,args=(),n=5):
   Outputs: (val, None)
 
     val -- Gaussian quadrature approximation to the integral.
-    
+
     """
     [x,w] = p_roots(n)
     x = real(x)
-    ainf, binf = map(isinf,(a,b))    
+    ainf, binf = map(isinf,(a,b))
     if ainf or binf:
         raise ValueError, "Gaussian quadrature is only available for finite limits."
     y = (b-a)*(x+1)/2.0 + a
@@ -42,13 +42,13 @@ def vec_func(x,func,*args):
         return asarray([func(xx,*args) for xx in x])
     except TypeError:
         return func(x,*args)
-    
+
 def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
     """Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
   Description:
 
-    Integrate func from a to b using Gaussian quadrature 
+    Integrate func from a to b using Gaussian quadrature
     with absolute tolerance tol.
 
   Inputs:
@@ -136,7 +136,7 @@ def _basic_simps(y,start,stop,x,dx,axis):
 def simps(y, x=None, dx=1, axis=-1, even='avg'):
     """Integrate y(x) using samples along the given axis and the composite
     Simpson's rule.  If x is None, spacing of dx is assumed.
-    
+
     If there are an even number of samples, N, then there are an odd
     number of intervals (N-1), but Simpson's rule requires an even number
     of intervals.  The parameter 'even' controls how this is handled as
@@ -260,7 +260,7 @@ def romb(y, dx=1.0, axis=-1, show=0):
             except (TypeError, IndexError):
                 width=8
             formstr = "%" + str(width) + '.' + str(precis)+'f'
-            
+
             print "\n       Richardson Extrapolation Table for Romberg Integration       "
             print "===================================================================="
             for i in range(1,k+1):
@@ -362,6 +362,3 @@ def romberg(function, a, b, tol=1.48E-8, show=0, divmax=10):
         i = i + 1
     if show: _printresmat(function, interval, resmat)
     return result
-    
-    
-

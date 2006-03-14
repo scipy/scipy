@@ -12,7 +12,7 @@ from numpy import exp, asarray, arange, \
 __all__ = ['factorial','factorial2','factorialk','comb','who',
            'central_diff_weights', 'derivative', 'pade', 'lena']
 
-# XXX: the factorial functions could move to scipy.special, and the others 
+# XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
 
 def factorial(n,exact=0):
@@ -21,7 +21,7 @@ def factorial(n,exact=0):
     If exact==0, then floating point precision is used, otherwise
     exact long integer is computed.
 
-    Notes:    
+    Notes:
       - Array argument accepted only for exact=0 case.
       - If n<0, the return value is 0.
     """
@@ -51,7 +51,7 @@ def factorial2(n,exact=0):
     If exact==0, then floating point precision is used, otherwise
     exact long integer is computed.
 
-    Notes:    
+    Notes:
       - Array argument accepted only for exact=0 case.
       - If n<0, the return value is 0.
     """
@@ -99,7 +99,7 @@ def factorialk(n,k,exact=1):
         return val
     else:
         raise NotImplementedError
-        
+
 
 def comb(N,k,exact=0):
     """Combinations of N things taken k at a time.
@@ -107,7 +107,7 @@ def comb(N,k,exact=0):
     If exact==0, then floating point precision is used, otherwise
     exact long integer is computed.
 
-    Notes:    
+    Notes:
       - Array arguments accepted only for exact=0 case.
       - If k > N, N < 0, or k < 0, then a 0 is returned.
     """
@@ -139,9 +139,9 @@ def central_diff_weights(Np,ndiv=1):
     """Return weights for an Np-point central derivative of order ndiv
        assuming equally-spaced function points.
 
-       If weights are in the vector w, then 
+       If weights are in the vector w, then
        derivative is w[0] * f(x-ho*dx) + ... + w[-1] * f(x+h0*dx)
-       
+
        Can be inaccurate for large number of points.
     """
     assert (Np >= ndiv+1), "Number of points must be at least the derivative order + 1."
@@ -159,7 +159,7 @@ def central_diff_weights(Np,ndiv=1):
 def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
     """Given a function, use a central difference formula with spacing dx to
        compute the nth derivative at x0.
-       
+
        order is the number of points to use and must be odd.
 
        Warning: Decreasing the step size too small can result in
@@ -281,7 +281,7 @@ def who(vardict=None):
         sp3 = max(10,maxbyte)
         prval = "Name %s Shape %s Bytes %s Type" % (sp1*' ', sp2*' ', sp3*' ')
         print prval + "\n" + "="*(len(prval)+5) + "\n"
-        
+
     for k in range(len(sta)):
         val = sta[k]
         print "%s %s %s %s %s %s %s" % (val[0], ' '*(sp1-len(val[0])+4),
@@ -292,4 +292,3 @@ def who(vardict=None):
     return
 
 #-----------------------------------------------------------------------------
-

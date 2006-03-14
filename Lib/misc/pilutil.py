@@ -26,7 +26,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     scale = high *1.0 / (cmax-cmin or 1)
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
     return bytedata + cast[_UInt8](low)
-            
+
 def imread(name,flatten=0):
     """Read an image file from a filename.
 
@@ -106,9 +106,9 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     as 'F' or 'I' in which case a float and/or integer array is made
 
     For 3-D arrays, the channel_axis argument tells which dimension of the
-      array holds the channel data. 
+      array holds the channel data.
     For 3-D arrays if one of the dimensions is 3, the mode is 'RGB'
-      by default or 'YCbCr' if selected.  
+      by default or 'YCbCr' if selected.
     if the
 
     The numpy array must be either 2 dimensional or 3 dimensional.
@@ -138,7 +138,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = (data > high)
-            image = Image.fromstring('1',shape,bytedata.tostring())   
+            image = Image.fromstring('1',shape,bytedata.tostring())
             return image
         if cmin is None:
             cmin = amin(ravel(data))
@@ -202,7 +202,7 @@ def imrotate(arr,angle,interp='bilinear'):
     Interpolation methods can be:
         'nearest' :  for nearest neighbor
         'bilinear' : for bilinear
-        'cubic' or 'bicubic' : for bicubic 
+        'cubic' or 'bicubic' : for bicubic
     """
     arr = asarray(arr)
     func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
@@ -219,7 +219,7 @@ def imresize(arr,newsize,interp='bilinear',mode=None):
     im = toimage(arr,mode=mode)
     im = im.resize(newsize,resample=func[interp])
     return fromimage(im)
-    
+
 def imshow(arr):
     """Simple showing of an image through an external viewer.
     """
@@ -233,7 +233,7 @@ def imshow(arr):
             return
         except:
             print "Warning: Alpha channel may not be handled correctly."
-            
+
     im.show()
     return
 
@@ -279,8 +279,8 @@ def imfilter(arr,ftype):
     if ftype not in _tdict.keys():
         raise ValueError, "Unknown filter type."
     return fromimage(im.filter(_tdict[ftype]))
-           
- 
+
+
 def radon(arr,theta=None):
     if theta is None:
         theta = mgrid[0:180]
@@ -291,4 +291,3 @@ def radon(arr,theta=None):
         s[:,k] = sum(im,axis=0)
         k += 1
     return s
-        

@@ -5,8 +5,8 @@ def configuration(parent_package='', top_path=None):
 
     config = Configuration('delaunay', parent_package, top_path)
 
-    config.add_extension("_delaunay", 
-        sources=["_delaunay.cpp", "VoronoiDiagramGenerator.cpp", 
+    config.add_extension("_delaunay",
+        sources=["_delaunay.cpp", "VoronoiDiagramGenerator.cpp",
             "delaunay_utils.cpp", "natneighbors.cpp"],
         include_dirs=['.'],
     )

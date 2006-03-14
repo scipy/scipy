@@ -98,7 +98,7 @@ if sys.version[:3] < "2.2":
 
         def writelines(sequence):
             self.fid.write(sequence)
-            
+
 
 class fopen(file):
     """Class for reading and writing binary files into Numeric arrays.
@@ -133,17 +133,17 @@ class fopen(file):
 #      seek -- seek to some position in the file
 #      tell -- return current position in file
 #      close -- close the file
-#      
-#      
 #
-    
+#
+#
+
     def __init__(self,file_name,permission='rb',format='n'):
         if 'B' not in permission: permission += 'B'
         if type(file_name) in (types.StringType, types.UnicodeType):
             file.__init__(self, file_name, permission)
         elif 'fileno' in file_name.__methods__:  # first argument is an open file
             self = file_name
-            
+
         if format in ['native','n','default']:
             self.__dict__['bs'] = 0
             self.__dict__['format'] = 'native'
@@ -157,7 +157,7 @@ class fopen(file):
             raise ValueError, "Unrecognized format: " + format
 
 #    def __setattr__(self, attribute):
-#        raise SyntaxError, "There are no user-settable attributes."            
+#        raise SyntaxError, "There are no user-settable attributes."
 
     def __del__(self):
         try:
@@ -187,7 +187,7 @@ class fopen(file):
         else:
             raise ValueError, "Unrecognized format: " + format
         return
-        
+
     def write(self,data,mtype=None,bs=None):
         """Write to open file object the flattened Numeric array data.
 
@@ -225,7 +225,7 @@ class fopen(file):
         howmany,mtype = getsize_type(mtype)
         count = product(data.shape)
         numpyio.fwrite(self,count,data,mtype,bs)
-        return 
+        return
 
     fwrite = write
 
@@ -253,7 +253,7 @@ class fopen(file):
         else:
             bs = (bs == 1)
         howmany,stype = getsize_type(stype)
-        shape = None        
+        shape = None
         if c_is_b:
             if count % howmany != 0:
                 raise ValueError, "When c_is_b is non-zero then " \
@@ -310,7 +310,7 @@ class fopen(file):
         """
         try:
             sz = self.thesize
-        except AttributeError:            
+        except AttributeError:
             curpos = self.tell()
             self.seek(0,2)
             sz = self.tell()
@@ -326,10 +326,10 @@ class fopen(file):
           fmt -- If a string then it represents the same format string as
                  used by struct.pack.  The remaining arguments are passed
                  to struct.pack.
-                 
+
                  If fmt is an array, then this array will be written as
                  a Fortran record using the output type args[0].
-                 
+
           *args -- Arguments representing data to write.
         """
         if self.format == 'ieee-le':
@@ -485,11 +485,11 @@ miDataTypes = {
     miUINT32 : ('miUINT32',4,'I'),
     miSINGLE : ('miSINGLE',4,'f'),
     miDOUBLE : ('miDOUBLE',8,'d'),
-    miINT64 : ('miINT64',8,'q'),   
+    miINT64 : ('miINT64',8,'q'),
     miUINT64 : ('miUINT64',8,'Q'),
     miMATRIX : ('miMATRIX',0,None),
     }
-    
+
 mxCELL_CLASS = 1
 mxSTRUCT_CLASS = 2
 mxOBJECT_CLASS = 3
@@ -518,7 +518,7 @@ mxArrays = (
 
 def _parse_header(fid, dict):
     correct_endian = (ord('M')<<8) + ord('I')
-                 # if this number is read no BS    
+                 # if this number is read no BS
     fid.seek(126)  # skip to endian detector
     endian_test = fid.read(1,'int16')
     if (endian_test == correct_endian): openstr = 'n'
@@ -527,7 +527,7 @@ def _parse_header(fid, dict):
             openstr = 'B'
         else: openstr = 'l'
     fid.setformat(openstr)  # change byte-order if necessary
-    fid.rewind()    
+    fid.rewind()
     dict['__header__'] = fid.raw_read(124).strip(' \t\n\000')
     vers = fid.read(1,'int16')
     dict['__version__'] = '%d.%d' % (vers >> 8, vers & 255)
@@ -553,7 +553,7 @@ def _parse_array_flags(fid):
         nzmax = None
     return class_, cmplx, nzmax
 
-def _parse_mimatrix(fid,bytes): 
+def _parse_mimatrix(fid,bytes):
     dclass, cmplx, nzmax =_parse_array_flags(fid)
     dims = _get_element(fid)[0]
     name = asarray(_get_element(fid)[0]).tostring()
@@ -579,7 +579,7 @@ def _parse_mimatrix(fid,bytes):
             result[i]= sa
         result = squeeze(transpose(reshape(result,tupdims)))
         if rank(result)==0: result = result.item()
-        
+
     elif dclass == mxSTRUCT_CLASS:
         length = product(dims)
         result = zeros(length, PyObject)
@@ -596,7 +596,7 @@ def _parse_mimatrix(fid,bytes):
                 val,unused = _get_element(fid)
                 result[i].__dict__[element] = val
         result = squeeze(transpose(reshape(result,tupdims)))
-        if rank(result)==0: result = result.item()        
+        if rank(result)==0: result = result.item()
 
         # object is like a structure with but with a class name
     elif dclass == mxOBJECT_CLASS:
@@ -617,8 +617,8 @@ def _parse_mimatrix(fid,bytes):
                 val,unused = _get_element(fid)
                 result[i].__dict__[element] = val
         result = squeeze(transpose(reshape(result,tupdims)))
-        if rank(result)==0: result = result.item()        
-         
+        if rank(result)==0: result = result.item()
+
     elif dclass == mxSPARSE_CLASS:
         rowind, unused = _get_element(fid)
         colind, unused = _get_element(fid)
@@ -637,7 +637,7 @@ def _parse_mimatrix(fid,bytes):
             result = (dims, rowind, colind, res)
 
     return result, name
-    
+
 # Return a Python object for the element
 def _get_element(fid):
 
@@ -648,7 +648,7 @@ def _get_element(fid):
         fid.rewind(1)
     # get the data tag
     raw_tag = fid.read(1,'I')
-    
+
     # check for compressed
     numbytes = raw_tag >> 16
     if numbytes > 0:  # compressed format
@@ -663,7 +663,7 @@ def _get_element(fid):
     # otherwise parse tag
     dtype = raw_tag
     numbytes = fid.read(1,'I')
-    if dtype != miMATRIX:  # basic data type 
+    if dtype != miMATRIX:  # basic data type
         try:
             outarr = fid.read(numbytes,miDataTypes[dtype][2],c_is_b=1)
         except KeyError:
@@ -756,7 +756,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
             return
         else:
             return thisdict
-        
+
 
     testtype = struct.unpack('i',test_vals.tostring())
     # Check to see if the number is positive and less than 5000.
@@ -781,7 +781,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
     thisdict = {}
     while 1:
         if (fid.tell() == length):
-            break        
+            break
         header = fid.fread(5,'int')
         if len(header) != 5:
             fid.close()
@@ -883,10 +883,3 @@ def savemat(filename, dict):
             fid.fwrite(var)
     fid.close()
     return
-        
-        
-            
-
-
-
-

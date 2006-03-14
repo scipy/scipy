@@ -40,5 +40,3 @@ if __name__ == '__main__':
           url = "http://www.scipy.org",
           license = "SciPy License (BSD Style)",
           **configuration(parent_path='').todict())
-
-

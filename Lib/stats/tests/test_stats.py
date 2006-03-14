@@ -66,14 +66,14 @@ class test_round(ScipyTestCase):
         packages.  Since the square of a square root should return the same
         number, and the exponential of a log should return the same number,
         we should get back a 2 from this function of functions.  By taking
-        the integer result and subtracting from 2, we are exposing the 
-        roundoff errors.  These simple functions are at the heart of  
+        the integer result and subtracting from 2, we are exposing the
+        roundoff errors.  These simple functions are at the heart of
         statistical calculations.
     """
 
     def check_rounding0(self):
         """ W.II.A.0. Print ROUND with only one digit.
-        
+
             You should get the numbers 1 to 9.  Many language compilers,
             such as Turbo Pascal and Lattice C, fail this test (they round
             numbers inconsistently). Needless to say, statical packages
@@ -82,17 +82,17 @@ class test_round(ScipyTestCase):
         for i in range(0,9):
             y = round(ROUND[i])
             assert_equal(y,i+1)
-        
+
     def check_rounding1(self):
         """ W.II.A.1. Y = INT(2.6*7 -0.2) (Y should be 18)"""
         y = int(2.6*7 -0.2)
         assert_equal(y, 18)
-        
+
     def check_rounding2(self):
         """ W.II.A.2. Y = 2-INT(EXP(LOG(SQR(2)*SQR(2))))   (Y should be 0)"""
         y=2-int(numpy.exp(numpy.log(numpy.sqrt(2.)*numpy.sqrt(2.))))
         assert_equal(y,0)
-        
+
     def check_rounding3(self):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
         y=(int(round((3-numpy.exp(numpy.log(numpy.sqrt(2.0)*numpy.sqrt(2.0)))))))
@@ -182,7 +182,7 @@ class test_basicstats(ScipyTestCase):
     def check_stdROUND(self):
         y = scipy.stats.std(ROUND)
         assert_approx_equal(y,2.738612788)
-            
+
 class test_corr(ScipyTestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
@@ -191,180 +191,180 @@ class test_corr(ScipyTestCase):
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
     """
-    def check_pXX(self):    
+    def check_pXX(self):
         y = scipy.stats.pearsonr(X,X)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pXBIG(self):    
+    def check_pXBIG(self):
         y = scipy.stats.pearsonr(X,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pXLITTLE(self):    
+    def check_pXLITTLE(self):
         y = scipy.stats.pearsonr(X,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pXHUGE(self):    
+    def check_pXHUGE(self):
         y = scipy.stats.pearsonr(X,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pXTINY(self):    
+    def check_pXTINY(self):
         y = scipy.stats.pearsonr(X,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pXROUND(self):    
+    def check_pXROUND(self):
         y = scipy.stats.pearsonr(X,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pBIGBIG(self):    
+    def check_pBIGBIG(self):
         y = scipy.stats.pearsonr(BIG,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pBIGLITTLE(self):    
+    def check_pBIGLITTLE(self):
         y = scipy.stats.pearsonr(BIG,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pBIGHUGE(self):    
+    def check_pBIGHUGE(self):
         y = scipy.stats.pearsonr(BIG,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pBIGTINY(self):    
+    def check_pBIGTINY(self):
         y = scipy.stats.pearsonr(BIG,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pBIGROUND(self):    
+    def check_pBIGROUND(self):
         y = scipy.stats.pearsonr(BIG,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pLITTLELITTLE(self):    
+    def check_pLITTLELITTLE(self):
         y = scipy.stats.pearsonr(LITTLE,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pLITTLEHUGE(self):    
+    def check_pLITTLEHUGE(self):
         y = scipy.stats.pearsonr(LITTLE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pLITTLETINY(self):    
+    def check_pLITTLETINY(self):
         y = scipy.stats.pearsonr(LITTLE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pLITTLEROUND(self):    
+    def check_pLITTLEROUND(self):
         y = scipy.stats.pearsonr(LITTLE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pHUGEHUGE(self):    
+    def check_pHUGEHUGE(self):
         y = scipy.stats.pearsonr(HUGE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pHUGETINY(self):    
+    def check_pHUGETINY(self):
         y = scipy.stats.pearsonr(HUGE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pHUGEROUND(self):    
+    def check_pHUGEROUND(self):
         y = scipy.stats.pearsonr(HUGE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pTINYTINY(self):    
+    def check_pTINYTINY(self):
         y = scipy.stats.pearsonr(TINY,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pTINYROUND(self):    
+    def check_pTINYROUND(self):
         y = scipy.stats.pearsonr(TINY,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_pROUNDROUND(self):    
+    def check_pROUNDROUND(self):
         y = scipy.stats.pearsonr(ROUND,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sXX(self):    
+    def check_sXX(self):
         y = scipy.stats.spearmanr(X,X)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sXBIG(self):    
+    def check_sXBIG(self):
         y = scipy.stats.spearmanr(X,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sXLITTLE(self):    
+    def check_sXLITTLE(self):
         y = scipy.stats.spearmanr(X,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sXHUGE(self):    
+    def check_sXHUGE(self):
         y = scipy.stats.spearmanr(X,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sXTINY(self):    
+    def check_sXTINY(self):
         y = scipy.stats.spearmanr(X,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sXROUND(self):    
+    def check_sXROUND(self):
         y = scipy.stats.spearmanr(X,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sBIGBIG(self):    
+    def check_sBIGBIG(self):
         y = scipy.stats.spearmanr(BIG,BIG)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sBIGLITTLE(self):    
+    def check_sBIGLITTLE(self):
         y = scipy.stats.spearmanr(BIG,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sBIGHUGE(self):    
+    def check_sBIGHUGE(self):
         y = scipy.stats.spearmanr(BIG,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sBIGTINY(self):    
+    def check_sBIGTINY(self):
         y = scipy.stats.spearmanr(BIG,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sBIGROUND(self):    
+    def check_sBIGROUND(self):
         y = scipy.stats.spearmanr(BIG,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sLITTLELITTLE(self):    
+    def check_sLITTLELITTLE(self):
         y = scipy.stats.spearmanr(LITTLE,LITTLE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sLITTLEHUGE(self):    
+    def check_sLITTLEHUGE(self):
         y = scipy.stats.spearmanr(LITTLE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sLITTLETINY(self):    
+    def check_sLITTLETINY(self):
         y = scipy.stats.spearmanr(LITTLE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sLITTLEROUND(self):    
+    def check_sLITTLEROUND(self):
         y = scipy.stats.spearmanr(LITTLE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sHUGEHUGE(self):    
+    def check_sHUGEHUGE(self):
         y = scipy.stats.spearmanr(HUGE,HUGE)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sHUGETINY(self):    
+    def check_sHUGETINY(self):
         y = scipy.stats.spearmanr(HUGE,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sHUGEROUND(self):    
+    def check_sHUGEROUND(self):
         y = scipy.stats.spearmanr(HUGE,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sTINYTINY(self):    
+    def check_sTINYTINY(self):
         y = scipy.stats.spearmanr(TINY,TINY)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sTINYROUND(self):    
+    def check_sTINYROUND(self):
         y = scipy.stats.spearmanr(TINY,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
-    def check_sROUNDROUND(self):    
+    def check_sROUNDROUND(self):
         y = scipy.stats.spearmanr(ROUND,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
 
-##    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values 
+##    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 ##    should appear on the diagonal and the total should be 899999955.
-##    If the table cannot hold these values, forget about working with 
+##    If the table cannot hold these values, forget about working with
 ##    census data.  You can also tabulate HUGE against TINY.  There is no
-##    reason a tabulation program should not be able to digtinguish 
+##    reason a tabulation program should not be able to digtinguish
 ##    different values regardless of their magnitude.
 
 ### I need to figure out how to do this one.
@@ -381,7 +381,7 @@ class test_regression(ScipyTestCase):
         r=y[2]
         assert_almost_equal(intercept,99999990)
         assert_almost_equal(r,1.0)
-        
+
 ##     W.IV.A. Take the NASTY dataset above.  Use the variable X as a
 ##     basis for computing polynomials.  Namely, compute X1=X, X2=X*X,
 ##     X3=X*X*X, and so on up to 9 products.  Use the algebraic
@@ -447,7 +447,7 @@ anovadata = ([[1,'A1','B1',2],
 ##        is not significant, but this test is not particularlrly meaningful
 ##        because of the interaction.  Test, therefore, the simple constrast
 ##        between A1 and A2 within B1.  Then test A1 vs. A2 within B2.  Both
-##        tests should use the same residual error term (separate t-tests are 
+##        tests should use the same residual error term (separate t-tests are
 ##        unacceptable).  Several widely used mainframe programs fail this
 ##        test.  Unless the program can constrast any terms in a model (not
 ##        just main effects), it cannot handle this frequently encountered
@@ -568,7 +568,7 @@ class test_hmean(ScipyTestCase):
                    (1,2,3,4),
                    (1,2,3,4)))
         actual = stats.hmean(a)
-        desired = array((1.,2.,3.,4.))        
+        desired = array((1.,2.,3.,4.))
         assert_array_almost_equal(desired,actual,decimal=14)
 
         actual1 = stats.hmean(a,axis=0)
@@ -580,7 +580,7 @@ class test_hmean(ScipyTestCase):
                    (1,2,3,4)))
 
         v = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        desired1 = array((v,v,v))      
+        desired1 = array((v,v,v))
         actual1 = stats.hmean(a, axis=1)
         assert_array_almost_equal(desired1,actual1,decimal=14)
 
@@ -594,7 +594,7 @@ class test_mean(ScipyTestCase):
         mn1 = 0.0
         for el in a:
             mn1 += el / float(Na)
-        assert_almost_equal(stats.mean(a),mn1,11) 
+        assert_almost_equal(stats.mean(a),mn1,11)
         mn2 = 0.0
         for el in af:
             mn2 += el / float(Naf)
@@ -629,7 +629,7 @@ class test_median(ScipyTestCase):
         a3 = [3.,4,5,10,-3,-5,-6,7.0]
         assert_equal(stats.median(a1),4)
         assert_equal(stats.median(a2),2.5)
-        assert_equal(stats.median(a3),3.5)        
+        assert_equal(stats.median(a3),3.5)
 
 class test_std(ScipyTestCase):
     def check_basic(self):
@@ -698,7 +698,7 @@ class test_variability(ScipyTestCase):
         #assert_approx_equal(y,5.4081)
         y = scipy.stats.samplevar(self.testcase)
         assert_approx_equal(y,1.25)
-        
+
     def check_samplestd(self):
         #y = scipy.stats.samplestd(self.shoes[0])
         #assert_approx_equal(y,2.325532197)
@@ -732,9 +732,9 @@ class test_variability(ScipyTestCase):
         #assert_approx_equal(y,0.775177399)
         y = scipy.stats.sem(self.testcase)
         assert_approx_equal(y,0.6454972244)
-        
+
     def check_z(self):
-        """ 
+        """
         not in R, so used
         (10-mean(testcase))/sqrt(var(testcase)*3/4)
         """
@@ -749,7 +749,7 @@ class test_variability(ScipyTestCase):
         y = scipy.stats.zs(self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
-        
+
 
 
 class test_moments(ScipyTestCase):
@@ -814,5 +814,3 @@ class test_moments(ScipyTestCase):
 
 if __name__ == "__main__":
     ScipyTest().run()
-
-

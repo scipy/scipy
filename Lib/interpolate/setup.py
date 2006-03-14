@@ -10,7 +10,7 @@ def configuration(parent_package='',top_path=None):
     config.add_library('fitpack',
                        sources=[os.path.join('fitpack', '*.f')],
                       )
-                      
+
     config.add_extension('_fitpack',
                          sources=['_fitpackmodule.c'],
                          libraries=['fitpack'],
@@ -25,6 +25,6 @@ def configuration(parent_package='',top_path=None):
 
     return config
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())

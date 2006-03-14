@@ -1,7 +1,7 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
+## Automatically adapted for scipy Oct 21, 2005 by
 
 """
-Discrete Fourier Transforms - basic.py 
+Discrete Fourier Transforms - basic.py
 """
 # Created by Pearu Peterson, August,September 2002
 
@@ -239,7 +239,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
     #XXX: should we allow/check for repeated indices in axes?
     # If allowed then using it has an effect of reducing the shape
-    # implicitly. 
+    # implicitly.
     s = [x.shape[i] for i in axes]
     s = [1]*(len(x.shape)-len(s)) + s
     swaps = []
@@ -259,7 +259,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
 def fftn(x, shape=None, axes=None, overwrite_x=0):
     """ fftn(x, shape=None, axes=None, overwrite_x=0) -> y
-    
+
     Return multi-dimensional discrete Fourier transform of arbitrary
     type sequence x.
 
@@ -304,7 +304,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
 
 def ifftn(x, shape=None, axes=None, overwrite_x=0):
     """ ifftn(x, s=None, axes=None, overwrite_x=0) -> y
-    
+
     Return inverse multi-dimensional discrete Fourier transform of
     arbitrary type sequence x.
 
@@ -333,7 +333,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
 
 def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     """ fft2(x, shape=None, axes=(-2,-1), overwrite_x=0) -> y
-    
+
     Return two-dimensional discrete Fourier transform of
     arbitrary type sequence x.
 
@@ -344,7 +344,7 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
 
 def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     """ ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0) -> y
-    
+
     Return inverse two-dimensional discrete Fourier transform of
     arbitrary type sequence x.
 

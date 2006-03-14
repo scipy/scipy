@@ -18,7 +18,7 @@ def objsave(file, allglobals, *args):
             savedict[key] = obj
     cPickle.dump(savedict,fid,1)
     fid.close()
-        
+
 def objload(file, allglobals):
     """Load a previously pickled dictionary and insert into given dictionary.
 

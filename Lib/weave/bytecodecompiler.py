@@ -35,8 +35,8 @@ class Function_Descriptor(__Descriptor):
         self.support = support
         return
 
-        
-            
+
+
 
 haveArgument = 90 # Opcodes greater-equal to this have argument
 byName = {
@@ -151,7 +151,7 @@ for name,op in map(None, byName.keys(), byName.values()):
     byOpcode[op] = name
     del name
     del op
-    
+
 
 ##################################################################
 #                       FUNCTION OPCODIZE                        #
@@ -221,7 +221,7 @@ class ByteCodeMeaning:
             argument = None
             next = pc+1
         return next,opcode,argument
-    
+
     def execute(self,pc,opcode,argument):
         name = byOpcode[opcode]
         method = getattr(self,name)
@@ -247,7 +247,7 @@ class ByteCodeMeaning:
                 }
     def cmp_op(self,opname):
         return self.symbols[opname]
-    
+
     def STOP_CODE(self,pc):
         "Indicates end-of-code to the compiler, not used by the interpreter."
         raise NotImplementedError
@@ -671,7 +671,7 @@ class ByteCodeMeaning:
         "Calls a function. argc is interpreted as in CALL_FUNCTION. The top element on the stack contains the keyword arguments dictionary, followed by the variable-arguments tuple, followed by explicit keyword and positional arguments."
         raise NotImplementedError
 
-    
+
 
 ##################################################################
 #                         CLASS CXXCODER                         #
@@ -683,7 +683,7 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def typedef_by_value(self,v):
         raise NotImplementedError # VIRTUAL
-    
+
     ##################################################################
     #                        MEMBER __INIT__                         #
     ##################################################################
@@ -709,7 +709,7 @@ class CXXCoder(ByteCodeMeaning):
                 f()
             self.forwards[pc] = []
         return ByteCodeMeaning.evaluate(self,pc,code)
-    
+
     ##################################################################
     #                        MEMBER GENERATE                         #
     ##################################################################
@@ -749,7 +749,7 @@ class CXXCoder(ByteCodeMeaning):
             rtype = 'void'
         else:
             rtype = self.rtype.cxxtype
-            
+
         # -----------------------------------------------
         # Insert code body if available
         # -----------------------------------------------
@@ -805,7 +805,7 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def wrapped_code(self):
         code = self.generate()
-        
+
         # -----------------------------------------------
         # Wrapper
         # -----------------------------------------------
@@ -832,7 +832,7 @@ class CXXCoder(ByteCodeMeaning):
                 T.__class__.__name__)
             code += '    return 0;\n'
             code += '  }\n'
-        
+
         code += '\n  // Do conversions\n'
         argnames = []
         for i in range(len(self.signature)):
@@ -935,7 +935,7 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def multiarg(self):
         return type(self.stack[-1]) == TupleType
-    
+
     ##################################################################
     #                         MEMBER UNIQUE                          #
     ##################################################################
@@ -957,7 +957,7 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def emit_value(self, v):
         descriptor = self.typedef_by_value(v)
-    
+
         # Convert representation to CXX rhs
         rhs = descriptor.literalizer(v)
         lhs = self.unique()
@@ -966,7 +966,7 @@ class CXXCoder(ByteCodeMeaning):
             lhs,
             rhs))
         self.push(lhs,descriptor)
-        return        
+        return
 
     ##################################################################
     #                       MEMBER GLOBAL_INFO                       #
@@ -998,8 +998,8 @@ class CXXCoder(ByteCodeMeaning):
             rhs))
         print self.__body
         self.push(lhs,rhs_type)
-        return        
-        
+        return
+
 
     ##################################################################
     #                          MEMBER BINOP                          #
@@ -1051,7 +1051,7 @@ class CXXCoder(ByteCodeMeaning):
             t2 = (t2,)
         v1,t1 = self.pop()
         v0,t0 = self.pop()
-        
+
         rhs,rhs_type = t1.setitem(v1,v2,t2)
         assert rhs_type == t0,"Store the right thing"
         self.emit('%s = %s;'%(rhs,v0))
@@ -1094,7 +1094,7 @@ class CXXCoder(ByteCodeMeaning):
         self.emit('PyFile_WriteString("\\n",%s);'%w);
         self.emit('PyFile_SoftSpace(%s,0);'%w);
         return
-        
+
     ##################################################################
     #                       MEMBER SET_LINENO                        #
     ##################################################################
@@ -1120,7 +1120,7 @@ class CXXCoder(ByteCodeMeaning):
 
         # Fetch a None is just skipped
         if t == NoneType:
-            self.push('<void>',t) 
+            self.push('<void>',t)
             return
 
         self.emit_value(k)
@@ -1322,13 +1322,13 @@ class CXXCoder(ByteCodeMeaning):
             v,t = self.pop()
             args = [v]+args
             types = [t]+types
- 
+
         # Pull function object off stack and get descriptor
         f,t = self.pop()
         signature = (f,tuple(types))
         descriptor = self.function_by_signature(signature)
         #self.prerequisites += descriptor['prerequisite']+'\n'
-        
+
         # Build a rhs
         rhs = descriptor.code%string.join(args,',')
 
@@ -1361,7 +1361,7 @@ class CXXCoder(ByteCodeMeaning):
         if t != IntType: raise TypeError, 'Invalid comparison type %s'%t
         self.emit('if (%s) {\n'%v)
         return
-    
+
 
     ##################################################################
     #                      MEMBER JUMP_FORWARD                       #
@@ -1373,7 +1373,7 @@ class CXXCoder(ByteCodeMeaning):
             )
         self.post(pc+delta,action)
         return
-    
+
     ##################################################################
     #                      MEMBER RETURN_VALUE                       #
     ##################################################################
@@ -1390,4 +1390,3 @@ class CXXCoder(ByteCodeMeaning):
             self.emit('return %s;'%v)
         print 'return with',v
         return
-

@@ -17,5 +17,5 @@ for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
 del k, register_func
 
 
-from numpy.testing import ScipyTest 
+from numpy.testing import ScipyTest
 test = ScipyTest().test

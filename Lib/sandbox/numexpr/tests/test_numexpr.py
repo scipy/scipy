@@ -59,8 +59,8 @@ class test_evaluate(NumpyTestCase):
 
 
 tests = [
-('MISC', ['b*c+d*e', 
-          '2*a+3*b', 
+('MISC', ['b*c+d*e',
+          '2*a+3*b',
           'sinh(a)',
           '2*a + (cos(3)+5)*sinh(cos(b))',
           '2*a + arctan2(a, b)',

@@ -1,7 +1,7 @@
 import os, sys
 import string, re
 
-import catalog 
+import catalog
 import build_tools
 import converters
 import base_spec
@@ -13,14 +13,14 @@ class ext_function_from_specs:
         self.code_block = code_block
         self.compiler = ''
         self.customize = base_info.custom_info()
-        
+
     def header_code(self):
         pass
 
     def function_declaration_code(self):
-       code  = 'static PyObject* %s(PyObject*self, PyObject* args,' \
-               ' PyObject* kywds)\n{\n'
-       return code % self.name
+        code  = 'static PyObject* %s(PyObject*self, PyObject* args,' \
+                ' PyObject* kywds)\n{\n'
+        return code % self.name
 
     def template_declaration_code(self):
         code = 'template<class T>\n' \
@@ -32,11 +32,11 @@ class ext_function_from_specs:
     #    pass
     #def cpp_function_call_code(self):
     #s    pass
-        
+
     def parse_tuple_code(self):
         """ Create code block for PyArg_ParseTuple.  Variable declarations
             for all PyObjects are done also.
-            
+
             This code got a lot uglier when I added local_dict...
         """
         join = string.join
@@ -55,12 +55,12 @@ class ext_function_from_specs:
         py_vars = join(self.arg_specs.py_variables(),' = ')
         if py_objects:
             declare_py_objects  = 'PyObject ' + py_objects +';\n'
-            declare_py_objects += 'int '+ init_flags + ';\n'            
+            declare_py_objects += 'int '+ init_flags + ';\n'
             init_values  = py_vars + ' = NULL;\n'
             init_values += init_flags_init + ' = 0;\n\n'
         else:
             declare_py_objects = ''
-            init_values = ''    
+            init_values = ''
 
         #Each variable is in charge of its own cleanup now.
         #cnt = len(arg_list)
@@ -71,7 +71,7 @@ class ext_function_from_specs:
             ref_string += ', &py_local_dict'
         else:
             ref_string = '&py_local_dict'
-            
+
         format = "O"* len(self.arg_specs) + "|O" + ':' + self.name
         parse_tuple =  'if(!PyArg_ParseTupleAndKeywords(args,' \
                              'kywds,"%s",kwlist,%s))\n' % (format,ref_string)
@@ -106,7 +106,7 @@ class ext_function_from_specs:
             arg_strings.append(arg.local_dict_code())
         code = string.join(arg_strings,"")
         return code
-        
+
     def function_code(self):
         decl_code = indent(self.arg_declaration_code(),4)
         cleanup_code = indent(self.arg_cleanup_code(),4)
@@ -164,7 +164,7 @@ class ext_function_from_specs:
 class ext_function(ext_function_from_specs):
     def __init__(self,name,code_block, args, local_dict=None, global_dict=None,
                  auto_downcast=1, type_converters=None):
-                    
+
         call_frame = sys._getframe().f_back
         if local_dict is None:
             local_dict = call_frame.f_locals
@@ -175,8 +175,8 @@ class ext_function(ext_function_from_specs):
         arg_specs = assign_variable_types(args,local_dict, global_dict,
                                           auto_downcast, type_converters)
         ext_function_from_specs.__init__(self,name,code_block,arg_specs)
-        
-            
+
+
 import base_info
 
 class ext_module:
@@ -187,7 +187,7 @@ class ext_module:
         self.compiler = compiler
         self.customize = base_info.custom_info()
         self._build_information = base_info.info_list(standard_info)
-        
+
     def add_function(self,func):
         self.functions.append(func)
     def module_code(self):
@@ -241,7 +241,7 @@ class ext_module:
         all_warnings = self.build_information().warnings()
         w=map(lambda x: "#pragma warning(%s)\n" % x,all_warnings)
         return ''.join(w)
-        
+
     def header_code(self):
         h = self.get_headers()
         h= map(lambda x: '#include ' + x + '\n',h)
@@ -292,12 +292,12 @@ class ext_module:
         #for i in self.arg_specs()
         #    i.set_compiler(compiler)
         for i in self.build_information():
-            i.set_compiler(compiler)    
+            i.set_compiler(compiler)
         for i in self.functions:
             i.set_compiler(compiler)
-        self.compiler = compiler    
+        self.compiler = compiler
 
-    def build_kw_and_file(self,location,kw):    
+    def build_kw_and_file(self,location,kw):
         arg_specs = self.arg_specs()
         info = self.build_information()
         _source_files = info.sources()
@@ -306,7 +306,7 @@ class ext_module:
         for i in _source_files:
             source_files[i] = None
         source_files = source_files.keys()
-        
+
         # add internally specified macros, includes, etc. to the key words
         # values of the same names so that distutils will use them.
         kw['define_macros'] = kw.get('define_macros',[]) + \
@@ -318,36 +318,36 @@ class ext_module:
                                    info.extra_compile_args()
         kw['extra_link_args'] = kw.get('extra_link_args',[]) + \
                                    info.extra_link_args()
-        kw['sources'] = kw.get('sources',[]) + source_files        
+        kw['sources'] = kw.get('sources',[]) + source_files
         file = self.generate_file(location=location)
         return kw,file
-    
+
     def setup_extension(self,location='.',**kw):
         kw,file = self.build_kw_and_file(location,kw)
         return build_tools.create_extension(file, **kw)
-            
+
     def compile(self,location='.',compiler=None, verbose = 0, **kw):
-        
+
         if compiler is not None:
             self.compiler = compiler
-        
+
         # !! removed -- we don't have any compiler dependent code
-        # currently in spec or info classes    
+        # currently in spec or info classes
         # hmm.  Is there a cleaner way to do this?  Seems like
-        # choosing the compiler spagettis around a little.        
-        #compiler = build_tools.choose_compiler(self.compiler)    
+        # choosing the compiler spagettis around a little.
+        #compiler = build_tools.choose_compiler(self.compiler)
         #self.set_compiler(compiler)
-        
+
         kw,file = self.build_kw_and_file(location,kw)
-        
+
         # This is needed so that files build correctly even when different
         # versions of Python are running around.
         # Imported at beginning of file now to help with test paths.
-        # import catalog 
+        # import catalog
         #temp = catalog.default_temp_dir()
         # for speed, build in the machines temp directory
         temp = catalog.intermediate_dir()
-                
+
         success = build_tools.build_extension(file, temp_dir = temp,
                                               compiler_name = compiler,
                                               verbose = verbose, **kw)
@@ -393,7 +393,7 @@ def assign_variable_types(variables,local_dict = {}, global_dict = {},
             for factory in type_converters:
                 if factory.type_match(example_type):
                     spec = factory.type_spec(var,example_type)
-                    break                
+                    break
             if not spec:
                 # should really define our own type.
                 raise IndexError

@@ -2,7 +2,7 @@
 
     Take a look at the DoDrawing2() method below.  The first 6 lines
     or so have been translated into C++.
-    
+
 """
 
 
@@ -95,7 +95,7 @@ class MyCanvas(wxScrolledWindow):
         dc.EndDrawing()
 
     def DoDrawing2(self, dc):
-        
+
         red = wxNamedColour("RED");
         blue = wxNamedColour("BLUE");
         grey_brush = wxLIGHT_GREY_BRUSH;
@@ -111,7 +111,7 @@ class MyCanvas(wxScrolledWindow):
         dc->DrawRectangle(15, 15, 50, 50);
         """
         inline_tools.inline(code,['dc','red','blue','grey_brush'],verbose=2)
-        
+
         dc.SetFont(wxFont(14, wxSWISS, wxNORMAL, wxNORMAL))
         dc.SetTextForeground(wxColour(0xFF, 0x20, 0xFF))
         te = dc.GetTextExtent("Hello World")
@@ -190,17 +190,17 @@ class MyCanvas(wxScrolledWindow):
 #---------------------------------------------------------------------------
 # This example isn't currently used.
 
-class py_canvas(wx.wxWindow):   
+class py_canvas(wx.wxWindow):
     def __init__(self, parent, id = -1, pos=wx.wxPyDefaultPosition,
                  size=wx.wxPyDefaultSize, **attr):
         wx.wxWindow.__init__(self, parent, id, pos,size)
         #wx.EVT_PAINT(self,self.on_paint)
         background = wx.wxNamedColour('white')
-        
+
         code = """
                self->SetBackgroundColour(*background);
                """
-        inline_tools.inline(code,['self','background'],compiler='msvc')               
+        inline_tools.inline(code,['self','background'],compiler='msvc')
 #----------------------------------------------------------------------------
 
 class MyFrame(wxFrame):
@@ -216,14 +216,14 @@ class MyFrame(wxFrame):
         #canvas = py_canvas(self,-1)
         canvas = MyCanvas(self,-1)
         canvas.Show(true)
-        
+
 class MyApp(wxApp):
     def OnInit(self):
         win = MyFrame(NULL, -1, "This is a wxFrame", size=(350, 200),
                       style = wxDEFAULT_FRAME_STYLE)# |  wxFRAME_TOOL_WINDOW )
         win.Show(true)
         return true
-    
+
 if __name__ == "__main__":
     app = MyApp(0)
     app.MainLoop()

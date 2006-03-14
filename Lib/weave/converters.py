@@ -17,18 +17,18 @@ default = [c_spec.int_converter(),
            c_spec.dict_converter(),
            c_spec.tuple_converter(),
            c_spec.file_converter(),
-           c_spec.instance_converter(),]                          
+           c_spec.instance_converter(),]
           #common_spec.module_converter()]
 
 #----------------------------------------------------------------------------
 # If scipy_core is installed, add numeric array converters to the default
 # converter list.
 #----------------------------------------------------------------------------
-try: 
+try:
     import standard_array_spec
     default.append(standard_array_spec.array_converter())
-except ImportError: 
-    pass    
+except ImportError:
+    pass
 
 #----------------------------------------------------------------------------
 # Add wxPython support
@@ -36,21 +36,21 @@ except ImportError:
 # RuntimeError can occur if wxPython isn't installed.
 #----------------------------------------------------------------------------
 
-try: 
+try:
     # this is currently safe because it doesn't import wxPython.
     import wx_spec
     default.insert(0,wx_spec.wx_converter())
-except (RuntimeError,IndexError): 
+except (RuntimeError,IndexError):
     pass
 
 #----------------------------------------------------------------------------
 # Add VTK support
 #----------------------------------------------------------------------------
 
-try: 
+try:
     import vtk_spec
     default.insert(0,vtk_spec.vtk_converter())
-except IndexError: 
+except IndexError:
     pass
 
 #----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ standard_info += [x.generate_build_info() for x in default]
 #----------------------------------------------------------------------------
 # Blitz conversion classes
 #
-# same as default, but will convert numerix arrays to blitz C++ classes 
+# same as default, but will convert numerix arrays to blitz C++ classes
 # !! only available if numerix is installed !!
 #----------------------------------------------------------------------------
 try:
@@ -76,10 +76,9 @@ try:
     #-----------------------------------
     # Add "sentinal" catchall converter
     #
-    # if everything else fails, this one 
+    # if everything else fails, this one
     # is the last hope (it always works)
     #-----------------------------------
     blitz.append(c_spec.catchall_converter())
 except:
     pass
-

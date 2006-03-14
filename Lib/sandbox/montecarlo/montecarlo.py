@@ -17,16 +17,16 @@ class intsampler(object):
     """A class that samples objects from a given discrete distribution.
     The distribution is defined on an integer-valued sample space and
     specified with a PMF as a list or array like this:
-    
+
     >>> table = [10, 15, 20]
 
     representing this pmf:
         x       0       1       2
         p(x)    10/45   15/45   20/45
-    
+
     The output will be something like:
     >>> sampler = intsampler(table)
-    
+
     >> sampler.sample(10)
     array([c, b, b, b, b, b, c, b, b, b], dtype=object)
 
@@ -45,14 +45,14 @@ class intsampler(object):
             self.probs /= s
         else:
             raise ValueError, "sum of table frequencies must be > 0"
-        
+
         self.sampler =  _intsampler(self.probs)
 
     def sample(self, size, return_probs=0):
         """Generates a sample of the given size from the specified
         discrete distribution, optionally returning the probabilities
         under the distribution.
-        
+
         The optional argument return_probs, 0 by default, has the
         following meaning:
             0: don't return pmf values at each sample point
@@ -69,7 +69,7 @@ class intsampler(object):
                 return (sample, sampleprobs)
             elif return_probs == 2:
                 return (sample, numpy.log(sampleprobs))
- 
+
 
 
 class dictsampler(object):
@@ -80,10 +80,10 @@ class dictsampler(object):
     >>> table['a'] = 10
     >>> table['b'] = 15
     >>> table['c'] = 20
-    
+
     The output will be something like:
     >>> sampler = dictsampler(table)
-    
+
     >> sampler.sample(10)
     array([c, b, b, b, b, b, c, b, b, b], dtype=object)
 
@@ -115,7 +115,7 @@ class dictsampler(object):
         """Generates a sample of the given size from the specified
         discrete distribution, optionally returning the probabilities
         under the distribution.
-        
+
         The optional argument return_probs, 0 by default, has the
         following meaning:
             0: don't return pmf values at each sample point
@@ -134,7 +134,7 @@ class dictsampler(object):
                 return (sample, sampleprobs)
             elif return_probs == 2:
                 return (sample, numpy.log(sampleprobs))
- 
+
 
 def _test():
     import doctest
@@ -142,4 +142,3 @@ def _test():
 
 if __name__ == "__main__":
     _test()
-

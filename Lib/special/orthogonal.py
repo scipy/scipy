@@ -35,14 +35,14 @@ B_n = ( a4n / a3n sqrt(h_n-1 / h_n))**2
 assume:
 P_0(x) = 1
 P_-1(x) == 0
-             
+
 See Numerical Recipies in C, page 156 and
 Abramowitz and Stegun p. 774, 782
 
 Functions:
 
   gen_roots_and_weights  -- Generic roots and weights.
-  j_roots                -- Jacobi 
+  j_roots                -- Jacobi
   js_roots               -- Shifted Jacobi
   la_roots               -- Generalized Laguerre
   h_roots                -- Hermite
@@ -73,7 +73,7 @@ class orthopoly1d(poly1d):
     def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0):
         poly1d.__init__(self, roots, r=1)
         equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
-        self.__dict__['weights'] = array(zip(roots,weights,equiv_weights)) 
+        self.__dict__['weights'] = array(zip(roots,weights,equiv_weights))
         self.__dict__['weight_func'] = wfunc
         self.__dict__['limits'] = limits
         mu = sqrt(hn)
@@ -106,7 +106,7 @@ def gen_roots_and_weights(n,an_func,sqrt_bn_func,mu):
     sortind = argsort(real(x))
     answer.append(take(x,sortind))
     answer.append(take(mu*v[0]**2,sortind))
-    return answer    
+    return answer
 
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
 def j_roots(n,alpha,beta,mu=0):
@@ -167,7 +167,7 @@ def js_roots(n,p1,q1,mu=0):
         raise ValueError, "(p - q) > -1 and q > 0 please."
     if (n <= 0):
         raise ValueError, "n must be positive."
-    
+
     p,q = p1,q1
 
     sbn_Js = lambda k: sqrt(where(k==1,q*(p-q+1.0)/(p+2.0), \
@@ -192,7 +192,7 @@ def js_roots(n,p1,q1,mu=0):
     #    return [(x+1)/2.0,w,mu0]
     #else:
     #    [x,w] = j_roots(n,p-q,q-1,mu=0)
-    #    return [(x+1)/2.0,w]    
+    #    return [(x+1)/2.0,w]
 
 def sh_jacobi(n, p, q, monic=0):
     """Returns the nth order Jacobi polynomial, G_n(p,q,x)
@@ -203,7 +203,7 @@ def sh_jacobi(n, p, q, monic=0):
         raise ValueError, "n must be nonnegative"
     wfunc = lambda x: (1.0-x)**(p-q) * (x)**(q-1.)
     if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic)
-    n1 = n  
+    n1 = n
     x,w,mu0 = js_roots(n1,p,q,mu=1)
     hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
     hn /= (2*n+p)*(_gam(2*n+p)**2)
@@ -225,8 +225,8 @@ def la_roots(n,alpha,mu=0):
     assert(n>0), "n must be positive."
     (p,q) = (alpha,0.0)
     sbn_La = lambda k: -sqrt(k*(k + p))  # from recurrence relation
-    an_La = lambda k: 2*k + p + 1                 
-    mu0 = cephes.gamma(alpha+1)           # integral of weight over interval 
+    an_La = lambda k: 2*k + p + 1
+    mu0 = cephes.gamma(alpha+1)           # integral of weight over interval
     val = gen_roots_and_weights(n,an_La,sbn_La,mu0)
     if mu:
         return val + [mu0]
@@ -273,7 +273,7 @@ def laguerre(n,monic=0):
     hn = 1.0
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic)
-    return p 
+    return p
 
 
 # Hermite  1                         H_n(x)
@@ -286,8 +286,8 @@ def h_roots(n,mu=0):
     """
     assert(n>0), "n must be positive."
     sbn_H = lambda k: sqrt(k/2)  # from recurrence relation
-    an_H = lambda k: 0*k                    
-    mu0 = sqrt(pi)               # integral of weight over interval 
+    an_H = lambda k: 0*k
+    mu0 = sqrt(pi)               # integral of weight over interval
     val = gen_roots_and_weights(n,an_H,sbn_H,mu0)
     if mu:
         return val + [mu0]
@@ -308,7 +308,7 @@ def hermite(n,monic=0):
     kn = 2**n
     p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic)
     return p
-    
+
 # Hermite  2                         He_n(x)
 def he_roots(n,mu=0):
     """[x,w] = he_roots(n)
@@ -319,8 +319,8 @@ def he_roots(n,mu=0):
     """
     assert(n>0), "n must be positive."
     sbn_He = lambda k: sqrt(k)   # from recurrence relation
-    an_He  = lambda k: 0*k                
-    mu0 = sqrt(2*pi)             # integral of weight over interval 
+    an_He  = lambda k: 0*k
+    mu0 = sqrt(2*pi)             # integral of weight over interval
     val = gen_roots_and_weights(n,an_He,sbn_He,mu0)
     if mu:
         return val + [mu0]
@@ -400,7 +400,7 @@ def chebyt(n,monic=0):
     kn = 2**(n-1)
     p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic)
     return p
-    
+
     return jacobi(n,-0.5,-0.5,monic=monic)
 
 # Chebyshev of the second kind
@@ -507,7 +507,7 @@ def sh_chebyt(n,monic=0):
     else:
         factor = 1.0
     return base * factor
-    
+
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
 def us_roots(n,mu=0):
@@ -528,7 +528,7 @@ def sh_chebyu(n,monic=0):
     factor = 4**n
     return base * factor
 
-# Legendre 
+# Legendre
 def p_roots(n,mu=0):
     """[x,w] = p_roots(n)
 
@@ -573,4 +573,4 @@ def sh_legendre(n,monic=0):
     hn = 1.0/(2*n+1.0)
     kn = _gam(2*n+1)/_gam(n+1)**2
     p = orthopoly1d(x,w,hn,kn,wfunc,limits=(0,1),monic=monic)
-    return p 
+    return p

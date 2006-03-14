@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
-# are met: 
+# are met:
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
@@ -26,19 +26,19 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import math
 import numpy as numarray
 import _ni_support
 import _nd_image
-    
+
 def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
                 cval = 0.0, origin = 0):
     """Calculate a one-dimensional correlation along the given axis.
 
-    The lines of the array along the given axis are correlated with the     
-    given weights. The weights parameter must be a one-dimensional sequence 
+    The lines of the array along the given axis are correlated with the
+    given weights. The weights parameter must be a one-dimensional sequence
     of numbers."""
     input = numarray.asarray(input)
     if numarray.iscomplexobj(input):
@@ -62,8 +62,8 @@ def convolve1d(input, weights, axis = -1, output = None, mode = "reflect",
                cval = 0.0, origin = 0):
     """Calculate a one-dimensional convolution along the given axis.
 
-    The lines of the array along the given axis are convolved with the     
-    given weights. The weights parameter must be a one-dimensional sequence 
+    The lines of the array along the given axis are convolved with the
+    given weights. The weights parameter must be a one-dimensional sequence
     of numbers."""
     weights = weights[::-1]
     origin = -origin
@@ -147,17 +147,17 @@ def gaussian_filter(input, sigma, order = 0, output = None,
     orders = _ni_support._normalize_sequence(order, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     axes = range(input.ndim)
-    axes = [(axes[ii], sigmas[ii], orders[ii]) 
+    axes = [(axes[ii], sigmas[ii], orders[ii])
                         for ii in range(len(axes)) if sigmas[ii] > 1e-15]
     if len(axes) > 0:
-       for axis, sigma, order in axes:
+        for axis, sigma, order in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
                               mode, cval)
             input = output
     else:
         output[...] = input[...]
     return return_value
-        
+
 def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
     """Calculate a Prewitt filter.
     """
@@ -182,7 +182,7 @@ def sobel(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
         correlate1d(output, [1, 2, 1], ii, output, mode, cval, 0)
     return return_value
 
-def generic_laplace(input, derivative2, output = None, mode = "reflect", 
+def generic_laplace(input, derivative2, output = None, mode = "reflect",
                     cval = 0.0, extra_arguments = (), extra_keywords = {}):
     """Calculate a multidimensional laplace filter using the provided
     second derivative function.
@@ -192,9 +192,9 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
 
     derivative2(input, axis, output, mode, cval,
                 *extra_arguments, **extra_keywords)
-                
-    The extra_arguments and extra_keywords arguments can be used to pass 
-    extra arguments and keywords that are passed to derivative2 at each 
+
+    The extra_arguments and extra_keywords arguments can be used to pass
+    extra arguments and keywords that are passed to derivative2 at each
     call.
     """
     input = numarray.asarray(input)
@@ -210,7 +210,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
     else:
         output[...] = input[...]
     return return_value
-        
+
 def laplace(input, output = None, mode = "reflect", cval = 0.0):
     """Calculate a multidimensional laplace filter using an estimation
     for the second derivative based on differences.
@@ -242,14 +242,14 @@ def generic_gradient_magnitude(input, derivative, output = None,
     """Calculate a gradient magnitude using the provdide function for
     the gradient.
 
-    The derivative parameter must be a callable with the following 
+    The derivative parameter must be a callable with the following
     signature:
-                    
+
     derivative(input, axis, output, mode, cval,
                *extra_arguments, **extra_keywords)
 
-    The extra_arguments and extra_keywords arguments can be used to pass 
-    extra arguments and keywords that are passed to derivative2 at each 
+    The extra_arguments and extra_keywords arguments can be used to pass
+    extra arguments and keywords that are passed to derivative2 at each
     call.
     """
     input = numarray.asarray(input)
@@ -264,11 +264,11 @@ def generic_gradient_magnitude(input, derivative, output = None,
                              *extra_arguments, **extra_keywords)
             numarray.multiply(tmp, tmp, tmp)
             output += tmp
-        numarray.sqrt(output, output)    
+        numarray.sqrt(output, output)
     else:
         output[...] = input[...]
     return return_value
-    
+
 def gaussian_gradient_magnitude(input, sigma, output = None,
                 mode = "reflect", cval = 0.0):
     """Calculate a multidimensional gradient magnitude using gaussian
@@ -311,7 +311,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate(input, weights, output, mode, cval, origins)
     return return_value
-    
+
 def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
               origin = 0):
     """Multi-dimensional correlation.
@@ -334,7 +334,7 @@ def uniform_filter1d(input, size, axis = -1, output = None,
                      mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a one-dimensional uniform filter along the given axis.
 
-    The lines of the array along the given axis are filtered with a     
+    The lines of the array along the given axis are filtered with a
     uniform filter of given size."""
     input = numarray.asarray(input)
     if numarray.iscomplexobj(input):
@@ -369,7 +369,7 @@ def uniform_filter(input, size = 3, output = None, mode = "reflect",
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     axes = range(input.ndim)
-    axes = [(axes[ii], sizes[ii], origins[ii]) 
+    axes = [(axes[ii], sizes[ii], origins[ii])
                            for ii in range(len(axes)) if sizes[ii] > 1]
     if len(axes) > 0:
         for axis, size, origin in axes:
@@ -384,7 +384,7 @@ def minimum_filter1d(input, size, axis = -1, output = None,
                      mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a one-dimensional minimum filter along the given axis.
 
-    The lines of the array along the given axis are filtered with a     
+    The lines of the array along the given axis are filtered with a
     minimum filter of given size."""
     input = numarray.asarray(input)
     if numarray.iscomplexobj(input):
@@ -404,7 +404,7 @@ def maximum_filter1d(input, size, axis = -1, output = None,
                      mode = "reflect", cval = 0.0, origin = 0):
     """Calculate a one-dimensional maximum filter along the given axis.
 
-    The lines of the array along the given axis are filtered with a     
+    The lines of the array along the given axis are filtered with a
     maximum filter of given size."""
     input = numarray.asarray(input)
     if numarray.iscomplexobj(input):
@@ -420,12 +420,12 @@ def maximum_filter1d(input, size, axis = -1, output = None,
                                   origin, 0)
     return return_value
 
-def _min_or_max_filter(input, size, footprint, structure, output, mode, 
+def _min_or_max_filter(input, size, footprint, structure, output, mode,
                        cval, origin, minimum):
     if structure is None:
         if footprint is None:
             if size is None:
-               raise RuntimeError, "no footprint provided" 
+                raise RuntimeError, "no footprint provided"
             separable= True
         else:
             footprint = numarray.asarray(footprint)
@@ -452,7 +452,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     if separable:
         sizes = _ni_support._normalize_sequence(size, input.ndim)
         axes = range(input.ndim)
-        axes = [(axes[ii], sizes[ii], origins[ii]) 
+        axes = [(axes[ii], sizes[ii], origins[ii])
                                for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
             filter = minimum_filter1d
@@ -463,7 +463,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 filter(input, int(size), axis, output, mode, cval, origin)
                 input = output
         else:
-            output[...] = input[...]        
+            output[...] = input[...]
     else:
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
@@ -479,14 +479,14 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             if not structure.flags.contiguous:
                 structure = structure.copy()
         mode = _ni_support._extend_mode_to_code(mode)
-        _nd_image.min_or_max_filter(input, footprint, structure, output, 
+        _nd_image.min_or_max_filter(input, footprint, structure, output,
                                     mode, cval, origins, minimum)
     return return_value
-    
+
 def minimum_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional minimum filter.
-    
+
     Either a size or a footprint with the filter must be
     provided. An output array can optionally be provided. The origin
     parameter controls the placement of the filter. The mode parameter
@@ -499,14 +499,14 @@ def minimum_filter(input, size = None, footprint = None, output = None,
 def maximum_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional maximum filter.
-    
+
     Either a size or a footprint with the filter must be
     provided. An output array can optionally be provided. The origin
     parameter controls the placement of the filter. The mode parameter
     determines how the array borders are handled, where cval is the
     value when mode is equal to 'constant'.
     """
-    return _min_or_max_filter(input, size, footprint, None, output, mode, 
+    return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 0)
 
 
@@ -518,7 +518,7 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if footprint == None:
         if size == None:
-           raise RuntimeError, "no footprint or filter size provided" 
+            raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
         footprint = numarray.ones(sizes, dtype = numarray.Bool)
     else:
@@ -564,7 +564,7 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
 def rank_filter(input, rank, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional rank filter.
-    
+
     The rank parameter may be less then zero, i.e., rank = -1
     indicates the larges element. Either a size or a footprint with
     the filter must be provided. An output array can optionally be
@@ -578,7 +578,7 @@ def rank_filter(input, rank, size = None, footprint = None, output = None,
 def median_filter(input, size = None, footprint = None, output = None,
       mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional median filter.
-    
+
     Either a size or a footprint with the filter must be provided. An
     output array can optionally be provided. The origin parameter
     controls the placement of the filter. The mode parameter
@@ -591,7 +591,7 @@ def median_filter(input, size = None, footprint = None, output = None,
 def percentile_filter(input, percentile, size = None, footprint = None,
                  output = None, mode = "reflect", cval = 0.0, origin = 0):
     """Calculates a multi-dimensional percentile filter.
-    
+
     The percentile parameter may be less then zero, i.e., percentile =
     -20 equals percentile = 80. Either a size or a footprint with the
     filter must be provided. An output array can optionally be
@@ -609,13 +609,13 @@ def generic_filter1d(input, function, filter_size, axis = -1,
 
     The function iterates over the lines of the array, calling the given
     function at each line. The arguments of the line are the input line,
-    and the output line. The input and output lines are 1D double arrays. 
-    The input line is extended appropiately according to the filter size 
-    and  origin. The output line must be modified in-place with the result. 
-    The origin parameter controls  the placement of the filter. The mode 
-    parameter determines how the array borders are handled, where cval is 
-    the value when mode is equal to 'constant'. The extra_arguments and 
-    extra_keywords arguments can be used to pass extra arguments and 
+    and the output line. The input and output lines are 1D double arrays.
+    The input line is extended appropiately according to the filter size
+    and  origin. The output line must be modified in-place with the result.
+    The origin parameter controls  the placement of the filter. The mode
+    parameter determines how the array borders are handled, where cval is
+    the value when mode is equal to 'constant'. The extra_arguments and
+    extra_keywords arguments can be used to pass extra arguments and
     keywords that are passed to the function at each call."""
     input = numarray.asarray(input)
     if numarray.iscomplexobj(input):
@@ -631,16 +631,16 @@ def generic_filter1d(input, function, filter_size, axis = -1,
     _nd_image.generic_filter1d(input, function, filter_size, axis, output,
                       mode, cval, origin, extra_arguments, extra_keywords)
     return return_value
-         
+
 def generic_filter(input, function, size = None, footprint = None,
                    output = None, mode = "reflect", cval = 0.0, origin = 0,
                    extra_arguments = (), extra_keywords = {}):
     """Calculates a multi-dimensional filter using the given function.
-    
+
     At each element the provided function is called. The input values
     within the filter footprint at that element are passed to the function
     as a 1D array of double values.
-       
+
     Either a size or a footprint with the filter must be provided. An
     output array can optionally be provided. The origin parameter
     controls the placement of the filter. The mode parameter
@@ -654,7 +654,7 @@ def generic_filter(input, function, size = None, footprint = None,
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if footprint == None:
         if size == None:
-           raise RuntimeError, "no footprint or filter size provided" 
+            raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
         footprint = numarray.ones(size, dtype = numarray.Bool)
     else:
