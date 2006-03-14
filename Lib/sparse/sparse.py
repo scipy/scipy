@@ -1867,10 +1867,10 @@ class dok_matrix(spmatrix, dict):
 
     def rmatvec(self, other, conjugate=True):
         if isdense(other):
-	    if other.shape[-1] != self.shape[0]:
-	        raise ValueError, "dimensions do not match"
-	    new = [0] * self.shape[1]
-	    for key in self:
+            if other.shape[-1] != self.shape[0]:
+                raise ValueError, "dimensions do not match"
+            new = [0] * self.shape[1]
+            for key in self:
                 new[int(key[1])] += other[..., int(key[0])] * conj(self[key])
             new = array(new)
             if isinstance(other, matrix):

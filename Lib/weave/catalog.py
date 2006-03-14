@@ -678,7 +678,7 @@ class catalog:
             cat[pkey] = [mod_path] + cat.get(pkey,[])
         except:
             pass
-	cat.close()
+        cat.close()
 
     def fast_cache(self,code,function):
         """ Move function to the front of the cache entry for code

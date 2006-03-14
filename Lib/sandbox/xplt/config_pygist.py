@@ -398,7 +398,7 @@ main(int argc, char *argv[])
         elif self.try_link("#define FPU_GNU_FENV \n" + testcode,
                            libraries=[self.mathlib],
                            include_dirs=self.unix_include_dirs):
-	    raise 'kutje'
+            raise 'kutje'
             print "using FPU_GNU_FENV (SIGFPE delivery)"
             configfile.write('#define FPU_GNU_FENV\n')
             fpedef="-DFPU_GNU_FENV"
@@ -644,8 +644,8 @@ main(int argc, char *argv[])
             xinc = ' '.join(['-I'+d for d in xinc])
             xlib = x11_info.get('library_dirs','')
             xlib = ' '.join(['-L'+d for d in xlib])
-	    if xinc:
-            	print "  - using X11 header switch "+xinc
+            if xinc:
+                print "  - using X11 header switch "+xinc
             print "  - using X11 loader switch "+xlib
             self.configfile.write("XINC="+xinc+"\n")
             self.configfile.write("XLIB="+xlib+"\n")
@@ -731,13 +731,13 @@ int main(int argc, char *argv[])
                 xfound=2
             else:
                 xlist = [replace(directory,'include','lib') for directory in xlist]
-		if xinc:
+                if xinc:
                     for d in xlist:
                         if self.try_link(testcode,include_dirs=[xinc],library_dirs=[d],libraries=['X11']):
                             xlib = d
                             xfound=2
                             break
-		else:
+                else:
                     for d in xlist:
                         if self.try_link(testcode,library_dirs=[d],libraries=['X11']):
                             xlib = d
@@ -745,18 +745,18 @@ int main(int argc, char *argv[])
                             break
         if xfound:
             print "found X Window System, X11 headers and libraries"
-	    if xinc:
-            	print "  - using X11 header switch -I"+xinc
-	    else:
-            	print "  - using X11 header switch [none]"
+            if xinc:
+                print "  - using X11 header switch -I"+xinc
+            else:
+                print "  - using X11 header switch [none]"
             print "  - using X11 loader switch -L"+xlib
         else:
             print "FATAL unable to find X11 libraries (play/x11) $xlib"
             self.fatality=1
         if xinc:
-	    self.configfile.write("XINC=-I"+xinc+"\n")
-	else:
-	    self.configfile.write("XINC=\n")
+            self.configfile.write("XINC=-I"+xinc+"\n")
+        else:
+            self.configfile.write("XINC=\n")
         self.configfile.write("XLIB=-L"+xlib+"\n")
 
         print "appended to Make.cfg"

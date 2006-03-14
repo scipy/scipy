@@ -229,7 +229,7 @@ class test_inv(ScipyTestCase):
                                       numpy.identity(n))
 
     def bench_random(self,level=5):
-	import numpy.linalg as linalg
+        import numpy.linalg as linalg
         basic_inv = linalg.inverse
         print
         print '           Finding matrix inverse'

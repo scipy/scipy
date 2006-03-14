@@ -587,7 +587,7 @@ def plot(x,*args,**keywds):
             print "Warning: complex data provided, using only real part."
             x = numpy.real(x)
             y = numpy.real(y)
-	y = where(numpy.isfinite(y),y,0)
+        y = where(numpy.isfinite(y),y,0)
         y = _minsqueeze(y) 
         x = _minsqueeze(x)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,msize=msize,width=linewidth)
@@ -633,7 +633,7 @@ def matplot(x,y=None,axis=-1):
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]] 
         sliceobj[otheraxis] = k
-	ysl = where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
+        ysl = where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
         gist.plg(ysl,x,type='solid',color=thiscolor,marks=0)
         append_global_linetype(_rcolors[thiscolor]+'-')
 
@@ -714,8 +714,8 @@ def change_palette(pal):
                     raise ValueError, "Palette %s not found." % pal
         else:
             data = Numeric.transpose(Numeric.asarray(pal))
-	    data = data.astype('B')
-	    gist.palette(*transpose(data))
+            data = data.astype('B')
+            gist.palette(*transpose(data))
             #filename = os.path.join(_user_path,'_temp.gp')
             #write_palette(filename,data)
             #gist.palette(filename)

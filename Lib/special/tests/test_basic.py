@@ -458,20 +458,20 @@ class test_cephes(ScipyTestCase):
 class test_airy(ScipyTestCase):
 
     def check_airy(self):
-	#This tests the airy function to ensure 8 place accuracy in computation
+        #This tests the airy function to ensure 8 place accuracy in computation
 
-	x = airy(.99)
-	assert_array_almost_equal(x,array([0.13689066,-0.16050153,1.19815925,0.92046818]),8)
-	x = airy(.41)
-	assert_array_almost_equal(x,array([0.25238916,-.23480512,0.80686202,0.51053919]),8)
-	x = airy(-.36)
-	assert_array_almost_equal(x,array([0.44508477,-0.23186773,0.44939534,0.48105354]),8)
+        x = airy(.99)
+        assert_array_almost_equal(x,array([0.13689066,-0.16050153,1.19815925,0.92046818]),8)
+        x = airy(.41)
+        assert_array_almost_equal(x,array([0.25238916,-.23480512,0.80686202,0.51053919]),8)
+        x = airy(-.36)
+        assert_array_almost_equal(x,array([0.44508477,-0.23186773,0.44939534,0.48105354]),8)
 
 class test_airye(ScipyTestCase):
 
     def check_airye(self):
-	a = airye(0.01)
-	b = airy(0.01)
+        a = airye(0.01)
+        b = airy(0.01)
         b1 = [None]*4
         for n in range(2):
             b1[n] = b[n]*exp(2.0/3.0*0.01*sqrt(0.01))
@@ -1918,7 +1918,7 @@ class test_sinc(ScipyTestCase):
         c = arange(-2,2,.1)
         y = sinc(c)
         yre = sin(pi*c)/(pi*c)
-	yre[20] = 1.0
+        yre[20] = 1.0
         assert_array_almost_equal(y, yre, 4)
     def check_0(self):
         x = 0.0

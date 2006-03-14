@@ -31,8 +31,8 @@ class Instance(Type_Descriptor):
     cxxtype = 'PyObject*'
     
     def __init__(self,prototype):
-	self.prototype	= prototype
-	return
+        self.prototype	= prototype
+        return
 
     def check(self,s):
         return "PyInstance_Check(%s)"%s

@@ -30,10 +30,10 @@ class Type_Descriptor(__Descriptor):
 ##################################################################
 class Function_Descriptor(__Descriptor):
     def __init__(self,code,return_type,support=''):
-	self.code	= code
-	self.return_type	= return_type
+        self.code = code
+        self.return_type = return_type
         self.support = support
-	return
+        return
 
         
             
