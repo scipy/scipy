@@ -24,7 +24,7 @@ _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
                  ('d','F'):'D', ('d','D'):'D', ('F','f'):'F',
                  ('F','d'):'D', ('F','F'):'F', ('F','D'):'D',
-                 ('D','f'):'D', ('D','d'):'d', ('D','F'):'D',
+                 ('D','f'):'D', ('D','d'):'D', ('D','F'):'D',
                  ('D','D'):'D'}
 
 class get_matvec:
@@ -545,8 +545,8 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 from A.dtype.char and b.  If A does not have a dtype attribute then it will
+                 compute A.matvec(x0) to get a data type.   To save the extra computation when
                  A does not have a typecode attribute use xtype=0 for the same type as b or
                  use xtype='f','d','F',or 'D'
     """
@@ -563,8 +563,6 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
         try:
             atyp = A.dtype.char
         except AttributeError:
-            atyp = None
-        if atyp is None:
             atyp = A.matvec(x).dtype.char
         typ = _coerce_rules[b.dtype.char,atyp]
     elif xtype == 0:

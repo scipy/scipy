@@ -580,6 +580,8 @@ class csc_matrix(spmatrix):
                 raise ValueError, "inconsistent shapes"
             dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             nnz1, nnz2 = self.nnz, ocs.nnz
+            if (nnz1 == 0): nnz1 = 1
+            if (nnz2 == 0): nnz2 = 1
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
             c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
@@ -603,6 +605,8 @@ class csc_matrix(spmatrix):
                 raise ValueError, "inconsistent shapes"
             dtypechar = _coerce_rules[(self.dtype.char, ocs.dtype.char)]
             nnz1, nnz2 = self.nnz, ocs.nnz
+            if (nnz1 == 0): nnz1=1
+            if (nnz2 == 0): nnz2=1
             data1, data2 = _convert_data(self.data[:nnz1], ocs.data[:nnz2], dtypechar)
             func = getattr(sparsetools, _transtabl[dtypechar]+'cscadd')
             c, rowc, ptrc, ierr = func(data1, self.rowind[:nnz1], self.indptr, data2, ocs.rowind[:nnz2], ocs.indptr)
