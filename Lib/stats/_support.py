@@ -1,4 +1,5 @@
-from numpy import *
+from numpy import asarray
+import stats
 import numpy as N
 from types import ListType, TupleType, StringType
 import copy
@@ -95,7 +96,7 @@ Format:  printcc (lst,extra=2)
 Returns: None\n"""
 
     def makestr (x):
-        if type(x) <> StringType:
+        if type(x) != StringType:
             x = str(x)
         return x
 
@@ -194,9 +195,9 @@ def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
             for col in collapsecols:
                 avgcol = colex(tmprows,col)
                 item.append(cfcn(avgcol))
-                if sterr:
+                if stderr:
                     if len(avgcol)>1:
-                        item.append(stats.sterr(avgcol))
+                        item.append(stats.stderr(avgcol))
                     else:
                         item.append('N/A')
                 if ns:
@@ -210,7 +211,7 @@ def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
 
 
 def makestr (item):
-    if type(item) <> StringType:
+    if type(item) != StringType:
         item = str(item)
     return item
 
@@ -225,7 +226,7 @@ Returns: formatted string created from inlist\n"""
 
     outstr = ''
     for i in range(len(inlist)):
-        if type(inlist[i]) <> StringType:
+        if type(inlist[i]) != StringType:
             item = str(inlist[i])
         else:
             item = inlist[i]
@@ -247,4 +248,4 @@ Format:  list2string (inlist)
 Returns: the string created from inlist\n"""
 
     stringlist = map(makestr,inlist)
-    return string.join(stringlist)
+    return "".join(stringlist)
