@@ -226,24 +226,26 @@ def inv(a, overwrite_a=0):
 
 ## matrix and Vector norm
 import decomp
-def norm(x, ord=2):
-    """ norm(x, ord=2) -> n
+def norm(x, ord=None):
+    """ norm(x, ord=None) -> n
 
-    Matrix and vector norm.
+    Matrix or vector norm.
 
     Inputs:
 
       x -- a rank-1 (vector) or rank-2 (matrix) array
-      ord -- the order of norm.
+      ord -- the order of the norm.
 
      Comments:
+       For arrays of any rank, if ord is None:
+         calculate the square norm (Euclidean norm for vectors, Frobenius norm for matrices)
 
        For vectors ord can be any real number including Inf or -Inf.
          ord = Inf, computes the maximum of the magnitudes
          ord = -Inf, computes minimum of the magnitudes
          ord is finite, computes sum(abs(x)**ord)**(1.0/ord)
 
-       For matrices ord can only be + or - 1, 2, Inf.
+       For matrices ord can only be one of the following values:
          ord = 2 computes the largest singular value
          ord = -2 computes the smallest singular value
          ord = 1 computes the largest column sum of absolute values
@@ -251,8 +253,14 @@ def norm(x, ord=2):
          ord = Inf computes the largest row sum of absolute values
          ord = -Inf computes the smallest row sum of absolute values
          ord = 'fro' computes the frobenius norm sqrt(sum(diag(X.H * X)))
+
+       For values ord < 0, the result is, strictly speaking, not a
+       mathematical 'norm', but it may still be useful for numerical purposes.
     """
     x = asarray_chkfinite(x)
+    if ord is None: # check the default case first and handle it immediately
+        return sqrt(add.reduce(real((conjugate(x)*x).ravel())))
+
     nd = len(x.shape)
     Inf = numpy.Inf
     if nd == 1:
@@ -260,6 +268,10 @@ def norm(x, ord=2):
             return numpy.amax(abs(x))
         elif ord == -Inf:
             return numpy.amin(abs(x))
+        elif ord == 1:
+            return numpy.sum(abs(x)) # special case for speedup
+        elif ord == 2:
+            return sqrt(numpy.sum(real((conjugate(x)*x)))) # special case for speedup
         else:
             return numpy.sum(abs(x)**ord)**(1.0/ord)
     elif nd == 2:
@@ -276,8 +288,7 @@ def norm(x, ord=2):
         elif ord == -Inf:
             return numpy.amin(numpy.sum(abs(x),axis=1))
         elif ord in ['fro','f']:
-            val = real((conjugate(x)*x).ravel())
-            return sqrt(add.reduce(val))
+            return sqrt(add.reduce(real((conjugate(x)*x).ravel())))
         else:
             raise ValueError, "Invalid norm order for matrices."
     else:

@@ -6,7 +6,7 @@
 # additions by Travis Oliphant, March 2002
 # additions by Eric Jones,      June 2002
 
-__all__ = ['eig','eigvals','lu','svd','svdvals','diagsvd','cholesky','qr',
+__all__ = ['eig','eigh','eigvals','eigvalsh','lu','svd','svdvals','diagsvd','cholesky','qr',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
@@ -19,7 +19,7 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import numpy
-from numpy import asarray_chkfinite, asarray, diag, zeros, ones, single
+from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, single, typecodes, isfinite
 
 cast = numpy.cast
 r_ = numpy.r_
@@ -167,9 +167,84 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
         return w, vl
     return w, vr
 
+def eigh(a,lower=1,eigvals_only=0,overwrite_a=0):
+    """ Solve real symmetric or complex hermitian eigenvalue problem.
+
+    Inputs:
+
+      a            -- A hermitian N x N matrix.
+      lower        -- values in a are read from lower triangle [1: UPLO='L' (default) / 0: UPLO='U']
+      eigvals_only -- don't compute eigenvectors.
+      overwrite_a  -- content of a may be destroyed
+
+    Outputs:
+
+      w,v     -- w: eigenvalues, v: eigenvectors [for eigvals_only == False]
+      w       -- eigenvalues [for eigvals_only == True (default)].
+
+    Definitions:
+
+      a * v[:,i] = w[i] * vr[:,i]
+      v.H * v = identity
+
+    """
+    if eigvals_only or overwrite_a:
+	a1 = asarray_chkfinite(a)
+	overwrite_a = overwrite_a or (_datanotshared(a1,a))
+    else:
+	a1 = array(a)
+        if (a1.dtype.char in typecodes['AllFloat']) and not isfinite(a1).all():
+	    raise ValueError, "array must not contain infs or NaNs"
+	overwrite_a = 1
+
+    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
+        raise ValueError, 'expected square matrix'
+
+    if a1.dtype.char in 'FD':
+	heev, = get_lapack_funcs(('heev',),(a1,))
+        if heev.module_name[:7] == 'flapack':
+	    lwork = calc_lwork.heev(heev.prefix,a1.shape[0],lower)
+	    w,v,info = heev(a1,lwork = lwork,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+	else: # 'clapack'
+	    w,v,info = heev(a1,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+        if info<0: raise ValueError,\
+	   'illegal value in %-th argument of internal heev'%(-info)
+        if info>0: raise LinAlgError,"eig algorithm did not converge"
+    else: # a1.dtype.char in 'fd':
+	syev, = get_lapack_funcs(('syev',),(a1,))
+        if syev.module_name[:7] == 'flapack':
+	    lwork = calc_lwork.syev(syev.prefix,a1.shape[0],lower)
+	    w,v,info = syev(a1,lwork = lwork,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+	else: # 'clapack'
+	    w,v,info = syev(a1,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+        if info<0: raise ValueError,\
+	   'illegal value in %-th argument of internal syev'%(-info)
+        if info>0: raise LinAlgError,"eig algorithm did not converge"
+
+    if eigvals_only:
+        return w
+    return w, v
+
+
 def eigvals(a,b=None,overwrite_a=0):
     """Return eigenvalues of square matrix."""
     return eig(a,b=b,left=0,right=0,overwrite_a=overwrite_a)
+
+def eigvalsh(a,lower=1,overwrite_a=0):
+    """Return eigenvalues of hermitean or real symmetric matrix."""
+    return eigh(a,lower=lower,eigvals_only=1,overwrite_a=overwrite_a)
 
 def lu_factor(a, overwrite_a=0):
     """Return raw LU decomposition of a matrix and pivots, for use in solving

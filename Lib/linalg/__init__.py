@@ -14,7 +14,7 @@ from iterative import *
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 
 from numpy.dual import register_func
-for k in ['inv', 'svd', 'solve', 'det', 'eig', 'eigvals', 'lstsq',
+for k in ['norm', 'inv', 'svd', 'solve', 'det', 'eig', 'eigh', 'eigvals', 'eigvalsh', 'lstsq',
           'pinv', 'cholesky']:
     register_func(k, eval(k))
 del k, register_func
