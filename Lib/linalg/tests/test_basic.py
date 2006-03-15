@@ -279,7 +279,7 @@ class test_det(ScipyTestCase):
 
     def check_random(self):
         import numpy.linalg as linalg
-        basic_det = linalg.determinant
+        basic_det = linalg.det
         n = 20
         for i in range(4):
             a = random([n,n])
@@ -289,7 +289,7 @@ class test_det(ScipyTestCase):
 
     def check_random_complex(self):
         import numpy.linalg as linalg
-        basic_det = linalg.determinant
+        basic_det = linalg.det
         n = 20
         for i in range(4):
             a = random([n,n]) + 2j*random([n,n])
@@ -299,7 +299,7 @@ class test_det(ScipyTestCase):
 
     def bench_random(self,level=5):
         import numpy.linalg as linalg
-        basic_det = linalg.determinant
+        basic_det = linalg.det
         print
         print '           Finding matrix determinant'
         print '      =================================='
