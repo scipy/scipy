@@ -115,7 +115,8 @@ class interp1d:
             self.fill_value = fill_value
 
         if kind != 'linear':
-            raise NotImplementedError, "Only linear supported for now. Use fitpack routines for other types."
+            raise NotImplementedError, "Only linear supported for now. Use "\
+                                       "fitpack routines for other types."
 
         # Check that both x and y are at least 1 dimensional.
         if len(shape(x)) == 0 or len(shape(y)) == 0:
@@ -125,7 +126,8 @@ class interp1d:
         oriented_x = x
         oriented_y = swapaxes(y,self.interp_axis,axis)
         interp_axis = self.interp_axis
-        len_x,len_y = shape(oriented_x)[interp_axis], shape(oriented_y)[interp_axis]
+        len_x = shape(oriented_x)[interp_axis]
+        len_y = shape(oriented_y)[interp_axis]
         if len_x != len_y:
             raise ValueError, "x and y arrays must be equal in length along "\
                               "interpolation axis."
