@@ -195,7 +195,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if task==-1 and n<2*k+2:
         raise TypeError, 'There must be at least 2*k+2 knots for task=-1'
     if m<=k: raise TypeError, 'm>k must hold'
-    if nest is None: nest=m/2
+    if nest is None: nest=m+2*k
 
     if (task>=0 and s==0) or (nest<0):
         if per: nest=m+2*k

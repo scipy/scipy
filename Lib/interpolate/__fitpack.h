@@ -239,7 +239,7 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
 
 static char doc_parcur[] = " [t,c,o] = _parcur(x,w,u,ub,ue,k,iopt,ipar,s,t,nest,wrk,iwrk,per)";
 static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
-  int k,iopt,ipar,nest,*iwrk,idim,m,mx,n,no=0,nc,ier,lc,lwa,lwrk,i,per;
+  int k,iopt,ipar,nest,*iwrk,idim,m,mx,n=0,no=0,nc,ier,lc,lwa,lwrk,i,per;
   double *x,*w,*u,*c,*t,*wrk,*wa=NULL,ub,ue,fp,s;
   PyObject *x_py = NULL,*u_py = NULL,*w_py = NULL,*t_py = NULL;
   PyObject *wrk_py=NULL,*iwrk_py=NULL;
@@ -290,6 +290,7 @@ static PyObject *fitpack_parcur(PyObject *dummy, PyObject *args) {
     PARCUR(&iopt,&ipar,&idim,&m,u,&mx,x,w,&ub,&ue,&k,&s,&nest,&n,t,&nc,\
 	   c,&fp,wrk,&lwrk,iwrk,&ier);
   if (ier==10) goto fail;
+  if (ier>0 && n==0) n=1;
   lc = (n-k-1)*idim;
   ap_t = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
   ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
