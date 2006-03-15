@@ -1,5 +1,7 @@
 from numpy import *
 import numpy as N
+from types import ListType, TupleType, StringType
+import copy
 
 def abut (source, *args):
     """\nLike the |Stat abut command.  It concatenates two arrays column-wise
