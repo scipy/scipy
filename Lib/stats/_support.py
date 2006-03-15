@@ -124,6 +124,21 @@ Returns: None\n"""
             print lineincustcols(row,maxsize)
     return None
 
+def adm (a,criterion):
+    """\nReturns rows from the passed list of lists that meet the criteria in
+the passed criterion expression (a string).
+
+Format:  adm (a,criterion)   where criterion is like 'x[2]==37'\n"""
+
+    function = 'lines = filter(lambda x: '+criterion+',a)'
+    exec(function)
+    try:
+        lines = N.array(lines)
+    except:
+        lines = N.array(lines,'O')
+    return lines
+
+
 def linexand (a,columnlist,valuelist):
     """Returns the rows of an array where col (from columnlist) = val
     (from valuelist).  One value is required for each column in columnlist.
