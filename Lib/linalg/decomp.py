@@ -6,7 +6,8 @@
 # additions by Travis Oliphant, March 2002
 # additions by Eric Jones,      June 2002
 
-__all__ = ['eig','eigh','eigvals','eigvalsh','lu','svd','svdvals','diagsvd','cholesky','qr',
+__all__ = ['eig','eigh','eigvals','eigvalsh','lu','svd','svdvals','diagsvd',
+           'cholesky','qr',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
