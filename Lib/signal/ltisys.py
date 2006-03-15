@@ -5,9 +5,9 @@
 #
 
 from filter_design import tf2zpk, zpk2tf, normalize
+import numpy
 from numpy import product, zeros, \
      array, dot, transpose, arange, ones, Float
-import numpy as Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
@@ -141,7 +141,7 @@ def ss2tf(A, B, C, D, input=0):
     den = poly(A)
 
     if (product(B.shape) == 0) and (product(C.shape) == 0):
-        num = Numeric.ravel(D)
+        num = numpy.ravel(D)
         if (product(D.shape) == 0) and (product(A.shape) == 0):
             den = []
         end
@@ -149,7 +149,7 @@ def ss2tf(A, B, C, D, input=0):
 
     num_states = A.shape[0]
     type_test = A[:,0] + B[:,0] + C[0,:] + D
-    num = Numeric.zeros((nout, num_states+1),type_test.dtype.char)
+    num = numpy.zeros((nout, num_states+1),type_test.dtype.char)
     for k in range(nout):
         Ck = atleast_2d(C[k,:])
         num[k] = poly(A - dot(B,Ck)) + (D[k]-1)*den
@@ -401,7 +401,7 @@ def lsim(system, U, T, X0=None, interp=1):
     lam, v = linalg.eig(A)
     vt = transpose(v)
     vti = linalg.inv(vt)
-    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtype.char)
+    GT = dot(dot(vti,diag(numpy.exp(dt*lam))),vt).astype(xout.dtype.char)
     ATm1 = linalg.inv(AT)
     ATm2 = dot(ATm1,ATm1)
     I = eye(A.shape[0],dtype=A.dtype.char)
@@ -414,7 +414,7 @@ def lsim(system, U, T, X0=None, interp=1):
         dt1 = T[k] - T[k-1]
         if dt1 != dt:
             dt = dt1
-            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtype.char)
+            GT = dot(dot(vti,diag(numpy.exp(dt*lam))),vt).astype(xout.dtype.char)
             GTmI = GT-I
             F1T = dot(dot(BT,GTmI),ATm1)
             if interp:
@@ -464,7 +464,7 @@ def impulse(system, X0=None, T=None, N=None):
     vi = linalg.inv(v)
     C = sys.C
     for k in range(len(h)):
-        es = diag(Numeric.exp(s*T[k]))
+        es = diag(numpy.exp(s*T[k]))
         eA = (dot(dot(v,es),vi)).astype(h.dtype.char)
         h[k] = squeeze(dot(dot(C,eA),B))
     return T, h

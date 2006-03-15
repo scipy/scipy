@@ -55,13 +55,10 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad']
 
-import numpy as Numeric
+import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
 import linesearch
-Num = Numeric
-MLab = Numeric
-numpy = Numeric
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
@@ -69,13 +66,13 @@ def max(m,axis=0):
     """max(m,axis=0) returns the maximum of m along dimension axis.
     """
     m = asarray(m)
-    return Numeric.maximum.reduce(m,axis)
+    return numpy.maximum.reduce(m,axis)
 
 def min(m,axis=0):
     """min(m,axis=0) returns the minimum of m along dimension axis.
     """
     m = asarray(m)
-    return Numeric.minimum.reduce(m,axis)
+    return numpy.minimum.reduce(m,axis)
 
 abs = absolute
 import __builtin__
@@ -94,14 +91,14 @@ def vecnorm(x, ord=2):
 
 def rosen(x):  # The Rosenbrock function
     x = asarray(x)
-    return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    return numpy.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
 
 def rosen_der(x):
     x = asarray(x)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
-    der = MLab.zeros(x.shape,x.dtype.char)
+    der = numpy.zeros(x.shape,x.dtype.char)
     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
     der[-1] = 200*(x[-1]-x[-2]**2)
@@ -109,17 +106,17 @@ def rosen_der(x):
 
 def rosen_hess(x):
     x = atleast_1d(x)
-    H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
-    diagonal = Num.zeros(len(x),x.dtype.char)
+    H = numpy.diag(-400*x[:-1],1) - numpy.diag(400*x[:-1],-1)
+    diagonal = numpy.zeros(len(x),x.dtype.char)
     diagonal[0] = 1200*x[0]-400*x[1]+2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
-    H = H + MLab.diag(diagonal)
+    H = H + numpy.diag(diagonal)
     return H
 
 def rosen_hess_prod(x,p):
     x = atleast_1d(x)
-    Hp = Num.zeros(len(x),x.dtype.char)
+    Hp = numpy.zeros(len(x),x.dtype.char)
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
                -400*x[1:-1]*p[2:]
@@ -186,10 +183,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     one2np1 = range(1,N+1)
 
     if rank == 0:
-        sim = Num.zeros((N+1,),x0.dtype.char)
+        sim = numpy.zeros((N+1,),x0.dtype.char)
     else:
-        sim = Num.zeros((N+1,N),x0.dtype.char)
-    fsim = Num.zeros((N+1,),'d')
+        sim = numpy.zeros((N+1,N),x0.dtype.char)
+    fsim = numpy.zeros((N+1,),'d')
     sim[0] = x0
     if retall:
         allvecs = [sim[0]]
@@ -197,7 +194,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     nonzdelt = 0.05
     zdelt = 0.00025
     for k in range(0,N):
-        y = Num.array(x0,copy=True)
+        y = numpy.array(x0,copy=True)
         if y[k] != 0:
             y[k] = (1+nonzdelt)*y[k]
         else:
@@ -207,18 +204,18 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         f = func(y)
         fsim[k+1] = f
 
-    ind = Num.argsort(fsim)
-    fsim = Num.take(fsim,ind)  # sort so sim[0,:] has the lowest function value
-    sim = Num.take(sim,ind,0)
+    ind = numpy.argsort(fsim)
+    fsim = numpy.take(fsim,ind)  # sort so sim[0,:] has the lowest function value
+    sim = numpy.take(sim,ind,0)
 
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (max(Num.ravel(abs(sim[1:]-sim[0]))) <= xtol \
+        if (max(numpy.ravel(abs(sim[1:]-sim[0]))) <= xtol \
             and max(abs(fsim[0]-fsim[1:])) <= ftol):
             break
 
-        xbar = Num.add.reduce(sim[:-1],0) / N
+        xbar = numpy.add.reduce(sim[:-1],0) / N
         xr = (1+rho)*xbar - rho*sim[-1]
         fxr = func(xr)
         doshrink = 0
@@ -264,9 +261,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
                         sim[j] = sim[0] + sigma*(sim[j] - sim[0])
                         fsim[j] = func(sim[j])
 
-        ind = Num.argsort(fsim)
-        sim = Num.take(sim,ind,0)
-        fsim = Num.take(fsim,ind)
+        ind = numpy.argsort(fsim)
+        sim = numpy.take(sim,ind,0)
+        fsim = numpy.take(fsim,ind)
         iterations = iterations + 1
         if retall:
             allvecs.append(sim[0])
@@ -319,7 +316,7 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     dc = c-a
     if (db == 0) or (dc == 0) or (b==c): return None
     denom = (db*dc)**2 * (db-dc)
-    [A,B] = Num.dot([[dc**2, -db**2],[-dc**3, db**3]],[fb-fa-C*db,fc-fa-C*dc])
+    [A,B] = numpy.dot([[dc**2, -db**2],[-dc**3, db**3]],[fb-fa-C*db,fc-fa-C*dc])
     A /= denom
     B /= denom
     radical = B*B-3*A*C
@@ -441,18 +438,18 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             fprime = myfprime[0]
             newargs = (f,eps) + args
             _ls_ingfk = fprime(xk+alpha*pk,*newargs)  # store for later use
-            return Num.dot(_ls_ingfk,pk)
+            return numpy.dot(_ls_ingfk,pk)
     else:
         fprime = myfprime
         def phiprime(alpha):
             global _ls_gc, _ls_ingfk
             _ls_gc += 1
             _ls_ingfk = fprime(xk+alpha*pk,*args)  # store for later use
-            return Num.dot(_ls_ingfk,pk)
+            return numpy.dot(_ls_ingfk,pk)
 
     alpha0 = 0
     phi0 = old_fval
-    derphi0 = Num.dot(gfk,pk)
+    derphi0 = numpy.dot(gfk,pk)
 
     alpha1 = pymin(1.0,1.01*2*(phi0-old_old_fval)/derphi0)
 
@@ -536,7 +533,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     phi0 = old_fval                            # compute f(xk) -- done in past loop
     phi_a0 = apply(f,(xk+alpha0*pk,)+args)     # compute f
     fc = fc + 1
-    derphi0 = Num.dot(gfk,pk)
+    derphi0 = numpy.dot(gfk,pk)
 
     if (phi_a0 <= phi0 + c1*alpha0*derphi0):
         return alpha0, fc, 0, phi_a0
@@ -564,7 +561,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
             alpha1**3 * (phi_a0 - phi0 - derphi0*alpha0)
         b = b / factor
 
-        alpha2 = (-b + Num.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
+        alpha2 = (-b + numpy.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
         phi_a2 = apply(f,(xk+alpha2*pk,)+args)
         fc = fc + 1
 
@@ -582,8 +579,8 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
 
 def approx_fprime(xk,f,epsilon,*args):
     f0 = apply(f,(xk,)+args)
-    grad = Num.zeros((len(xk),),'d')
-    ei = Num.zeros((len(xk),),'d')
+    grad = numpy.zeros((len(xk),),'d')
+    ei = numpy.zeros((len(xk),),'d')
     for k in range(len(xk)):
         ei[k] = epsilon
         grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
@@ -655,7 +652,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     gfk = myfprime(x0)
     k = 0
     N = len(x0)
-    I = MLab.eye(N)
+    I = numpy.eye(N)
     Hk = I
     old_fval = f(x0)
     old_old_fval = old_fval + 5000
@@ -666,7 +663,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     warnflag = 0
     gnorm = vecnorm(gfk,ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        pk = -Num.dot(Hk,gfk)
+        pk = -numpy.dot(Hk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,
                                   old_fval,old_old_fval)
@@ -693,14 +690,14 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             break
 
         try:
-            rhok = 1 / (Num.dot(yk,sk))
+            rhok = 1 / (numpy.dot(yk,sk))
         except ZeroDivisionError:
             rhok = 1000.
             print "Divide-by-zero encountered: rhok assumed large"
-        A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
-        A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
-        Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
-                 * sk[Num.NewAxis,:]
+        A1 = I - sk[:,numpy.NewAxis] * yk[numpy.NewAxis,:] * rhok
+        A2 = I - yk[:,numpy.NewAxis] * sk[numpy.NewAxis,:] * rhok
+        Hk = numpy.dot(A1,numpy.dot(Hk,A2)) + rhok * sk[:,numpy.NewAxis] \
+                 * sk[numpy.NewAxis,:]
 
     if disp or full_output:
         fval = old_fval
@@ -804,7 +801,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     pk = -gfk
     gnorm = vecnorm(gfk,ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        deltak = Num.dot(gfk,gfk)
+        deltak = numpy.dot(gfk,gfk)
 
         # These values are modified by the line search, even if it fails
         old_fval_backup = old_fval
@@ -827,7 +824,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         if gfkp1 is None:
             gfkp1 = myfprime(xk)
         yk = gfkp1 - gfk
-        beta_k = pymax(0,Num.dot(yk,gfkp1)/deltak)
+        beta_k = pymax(0,numpy.dot(yk,gfkp1)/deltak)
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         gnorm = vecnorm(gfk,ord=norm)
@@ -939,24 +936,24 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         allvecs = [xk]
     k = 0
     old_fval = f(x0)
-    while (Num.add.reduce(abs(update)) > xtol) and (k < maxiter):
+    while (numpy.add.reduce(abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
-        maggrad = Num.add.reduce(abs(b))
-        eta = min([0.5,Num.sqrt(maggrad)])
+        maggrad = numpy.add.reduce(abs(b))
+        eta = min([0.5,numpy.sqrt(maggrad)])
         termcond = eta * maggrad
         xsupi = zeros(len(x0), x0.dtype.char)
         ri = -b
         psupi = -ri
         i = 0
-        dri0 = Num.dot(ri,ri)
+        dri0 = numpy.dot(ri,ri)
 
         if fhess is not None:             # you want to compute hessian once.
             A = apply(fhess,(xk,)+args)
             hcalls = hcalls + 1
 
-        while Num.add.reduce(abs(ri)) > termcond:
+        while numpy.add.reduce(abs(ri)) > termcond:
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk,psupi,fprime,epsilon)
@@ -964,9 +961,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
                     Ap = fhess_p(xk,psupi, *args)
                     hcalls = hcalls + 1
             else:
-                Ap = Num.dot(A,psupi)
+                Ap = numpy.dot(A,psupi)
             # check curvature
-            curv = Num.dot(psupi,Ap)
+            curv = numpy.dot(psupi,Ap)
             if curv == 0.0:
                 break
             elif curv < 0:
@@ -978,11 +975,11 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             alphai = dri0 / curv
             xsupi = xsupi + alphai * psupi
             ri = ri + alphai * Ap
-            dri1 = Num.dot(ri,ri)
+            dri1 = numpy.dot(ri,ri)
             betai = dri1 / dri0
             psupi = -ri + betai * psupi
             i = i + 1
-            dri0 = dri1          # update Num.dot(ri,ri) for next time.
+            dri0 = dri1          # update numpy.dot(ri,ri) for next time.
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
@@ -1111,7 +1108,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                 step = '       parabolic'
 
                 if ((x-a) < tol2) or ((b-x) < tol2):
-                    si = Num.sign(xm-xf) + ((xm-xf)==0)
+                    si = numpy.sign(xm-xf) + ((xm-xf)==0)
                     rat = tol1*si
             else:      # do a golden section step
                 golden = 1
@@ -1124,7 +1121,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
             rat = golden_mean*e
             step = '       golden'
 
-        si = Num.sign(rat) + (rat == 0)
+        si = numpy.sign(rat) + (rat == 0)
         x = xf + si*max([abs(rat), tol1])
         fu = func(x,*args)
         num += 1
