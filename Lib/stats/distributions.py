@@ -12,7 +12,7 @@ import inspect
 from numpy import alltrue, where, arange, put, putmask, nonzero, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray
+     arctan, tanh, ndarray, cos, cosh, sinh
 from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
@@ -4057,7 +4057,7 @@ class planck_gen(rv_discrete):
             return 1
         return 0  # lambda_ = 0
     def _pmf(self, k, lambda_):
-        fact = (1-exp(-lamba_))
+        fact = (1-exp(-lambda_))
         return fact*exp(-lambda_(k))
     def _cdf(self, x, lambda_):
         k = floor(x)
