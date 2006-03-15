@@ -237,7 +237,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         infbounds = -1
         bound = b
     else:
-        raise RunTimeError, "Infinity comparisons don't work for you."
+        raise RuntimeError, "Infinity comparisons don't work for you."
 
     if points is None:
         if infbounds == 0:
