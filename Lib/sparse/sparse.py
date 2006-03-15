@@ -4,8 +4,7 @@ Original code by Travis Oliphant.
 Modified and extended by Ed Schofield and Robert Cimrman.
 """
 
-#from numpy import *         # get rid of this!
-from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, dot,\
+from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ArrayType, ceil, amax, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, ravel, empty, ones, \
                   arange, shape, intc
@@ -888,7 +887,7 @@ class csc_matrix(spmatrix):
         nnz = self.indptr[-1]
         if self.nzmax <= nnz:
             if self.nzmax < nnz:
-                raise RunTimeError, "should never have nnz > nzmax"
+                raise RuntimeError, "should never have nnz > nzmax"
             return
         self.nnz = nnz
         self.data = self.data[:nnz]
@@ -1364,7 +1363,7 @@ class csr_matrix(spmatrix):
         nnz = self.indptr[-1]
         if self.nzmax <= nnz:
             if self.nzmax < nnz:
-                raise RunTimeError, "should never have nnz > nzmax"
+                raise RuntimeError, "should never have nnz > nzmax"
             return
         self.data = self.data[:nnz]
         self.colind = self.colind[:nnz]
