@@ -32,7 +32,7 @@ import sys
 import unittest
 import math
 import numpy as numarray
-import scipy.nd_image as nd_image
+import scipy.image as image
 import numpy.dft as dft
 #import numarray.numinclude as numinclude
 
@@ -78,26 +78,26 @@ class NDImageTest(unittest.TestCase):
         array = numarray.array([1, 2])
         weights = numarray.array([2])
         true = [2, 4]
-        output = nd_image.correlate(array, weights)
+        output = image.correlate(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve(array, weights)
+        output = image.convolve(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.correlate1d(array, weights)
+        output = image.correlate1d(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve1d(array, weights)
+        output = image.convolve1d(array, weights)
         self.failUnless(diff(output, true) < eps)
 
     def test_correlate02(self):
         "correlation 2"
         array = numarray.array([1, 2, 3])
         kernel = numarray.array([1])
-        output = nd_image.correlate(array, kernel)
+        output = image.correlate(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.convolve(array, kernel)
+        output = image.convolve(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.correlate1d(array, kernel)
+        output = image.correlate1d(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.convolve1d(array, kernel)
+        output = image.convolve1d(array, kernel)
         self.failUnless(diff(array, output) < eps)
 
     def test_correlate03(self):
@@ -105,13 +105,13 @@ class NDImageTest(unittest.TestCase):
         array = numarray.array([1])
         weights = numarray.array([1, 1])
         true = [2]
-        output = nd_image.correlate(array, weights)
+        output = image.correlate(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve(array, weights)
+        output = image.convolve(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.correlate1d(array, weights)
+        output = image.correlate1d(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve1d(array, weights)
+        output = image.convolve1d(array, weights)
         self.failUnless(diff(output, true) < eps)
 
     def test_correlate04(self):
@@ -120,13 +120,13 @@ class NDImageTest(unittest.TestCase):
         tcor = [2, 3]
         tcov = [3, 4]
         weights = numarray.array([1, 1])
-        output = nd_image.correlate(array, weights)
+        output = image.correlate(array, weights)
         self.failUnless(diff(output, tcor) < eps)
-        output = nd_image.convolve(array, weights)
+        output = image.convolve(array, weights)
         self.failUnless(diff(output, tcov) < eps)
-        output = nd_image.correlate1d(array, weights)
+        output = image.correlate1d(array, weights)
         self.failUnless(diff(output, tcor) < eps)
-        output = nd_image.convolve1d(array, weights)
+        output = image.convolve1d(array, weights)
         self.failUnless(diff(output, tcov) < eps)
 
     def test_correlate05(self):
@@ -135,13 +135,13 @@ class NDImageTest(unittest.TestCase):
         tcor = [2, 3, 5]
         tcov = [3, 5, 6]
         kernel = numarray.array([1, 1])
-        output = nd_image.correlate(array, kernel)
+        output = image.correlate(array, kernel)
         self.failUnless(diff(tcor, output) < eps)
-        output = nd_image.convolve(array, kernel)
+        output = image.convolve(array, kernel)
         self.failUnless(diff(tcov, output) < eps)
-        output = nd_image.correlate1d(array, kernel)
+        output = image.correlate1d(array, kernel)
         self.failUnless(diff(tcor, output) < eps)
-        output = nd_image.convolve1d(array, kernel)
+        output = image.convolve1d(array, kernel)
         self.failUnless(diff(tcov, output) < eps)
 
     def test_correlate06(self):
@@ -150,13 +150,13 @@ class NDImageTest(unittest.TestCase):
         tcor = [9, 14, 17]
         tcov = [7, 10, 15]
         weights = numarray.array([1, 2, 3])
-        output = nd_image.correlate(array, weights)
+        output = image.correlate(array, weights)
         self.failUnless(diff(output, tcor) < eps)
-        output = nd_image.convolve(array, weights)
+        output = image.convolve(array, weights)
         self.failUnless(diff(output, tcov) < eps)
-        output = nd_image.correlate1d(array, weights)
+        output = image.correlate1d(array, weights)
         self.failUnless(diff(output, tcor) < eps)
-        output = nd_image.convolve1d(array, weights)
+        output = image.convolve1d(array, weights)
         self.failUnless(diff(output, tcov) < eps)
 
     def test_correlate07(self):
@@ -164,13 +164,13 @@ class NDImageTest(unittest.TestCase):
         array = numarray.array([1, 2, 3])
         true = [5, 8, 11]
         weights = numarray.array([1, 2, 1])
-        output = nd_image.correlate(array, weights)
+        output = image.correlate(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve(array, weights)
+        output = image.convolve(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.correlate1d(array, weights)
+        output = image.correlate1d(array, weights)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve1d(array, weights)
+        output = image.convolve1d(array, weights)
         self.failUnless(diff(output, true) < eps)
 
     def test_correlate08(self):
@@ -179,35 +179,35 @@ class NDImageTest(unittest.TestCase):
         tcor = [1, 2, 5]
         tcov = [3, 6, 7]
         weights = numarray.array([1, 2, -1])
-        output = nd_image.correlate(array, weights)
+        output = image.correlate(array, weights)
         self.failUnless(diff(output, tcor) < eps)
-        output = nd_image.convolve(array, weights)
+        output = image.convolve(array, weights)
         self.failUnless(diff(output, tcov) < eps)
-        output = nd_image.correlate1d(array, weights)
+        output = image.correlate1d(array, weights)
         self.failUnless(diff(output, tcor) < eps)
-        output = nd_image.convolve1d(array, weights)
+        output = image.convolve1d(array, weights)
         self.failUnless(diff(output, tcov) < eps)
 
     def test_correlate09(self):
         "correlation 9"
         array = []
         kernel = numarray.array([1, 1])
-        output = nd_image.correlate(array, kernel)
+        output = image.correlate(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.convolve(array, kernel)
+        output = image.convolve(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.correlate1d(array, kernel)
+        output = image.correlate1d(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.convolve1d(array, kernel)
+        output = image.convolve1d(array, kernel)
         self.failUnless(diff(array, output) < eps)
 
     def test_correlate10(self):
         "correlation 10"
         array = [[]]
         kernel = numarray.array([[1, 1]])
-        output = nd_image.correlate(array, kernel)
+        output = image.correlate(array, kernel)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.convolve(array, kernel)
+        output = image.convolve(array, kernel)
         self.failUnless(diff(array, output) < eps)
 
     def test_correlate11(self):
@@ -216,9 +216,9 @@ class NDImageTest(unittest.TestCase):
                                 [4, 5, 6]])
         kernel = numarray.array([[1, 1],
                                  [1, 1]])
-        output = nd_image.correlate(array, kernel)
+        output = image.correlate(array, kernel)
         self.failUnless(diff([[4, 6, 10], [10, 12, 16]], output) < eps)
-        output = nd_image.convolve(array, kernel)
+        output = image.convolve(array, kernel)
         self.failUnless(diff([[12, 16, 18], [18, 22, 24]], output) < eps)
 
     def test_correlate12(self):
@@ -227,9 +227,9 @@ class NDImageTest(unittest.TestCase):
                                 [4, 5, 6]])
         kernel = numarray.array([[1, 0],
                                  [0, 1]])
-        output = nd_image.correlate(array, kernel)
+        output = image.correlate(array, kernel)
         self.failUnless(diff([[2, 3, 5], [5, 6, 8]], output) < eps)
-        output = nd_image.convolve(array, kernel)
+        output = image.convolve(array, kernel)
         self.failUnless(diff([[6, 8, 9], [9, 11, 12]], output) < eps)
 
     def test_correlate13(self):
@@ -240,11 +240,11 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[1, 2, 3],
                                     [4, 5, 6]], type1)
             for type2 in self.types:
-                output = nd_image.correlate(array, kernel,
+                output = image.correlate(array, kernel,
                                                     output = type2)
                 error = diff([[2, 3, 5], [5, 6, 8]], output)
                 self.failUnless(error < eps and output.dtype.type == type2)
-                output = nd_image.convolve(array, kernel,
+                output = image.convolve(array, kernel,
                                                    output = type2)
                 error = diff([[6, 8, 9], [9, 11, 12]], output)
                 self.failUnless(error < eps and output.dtype.type == type2)
@@ -258,11 +258,11 @@ class NDImageTest(unittest.TestCase):
                                     [4, 5, 6]], type1)
             for type2 in self.types:
                 output = numarray.zeros(array.shape, type2)
-                nd_image.correlate(array, kernel,
+                image.correlate(array, kernel,
                                                         output = output)
                 error = diff([[2, 3, 5], [5, 6, 8]], output)
                 self.failUnless(error < eps and output.dtype.type == type2)
-                nd_image.convolve(array, kernel, output = output)
+                image.convolve(array, kernel, output = output)
                 error = diff([[6, 8, 9], [9, 11, 12]], output)
                 self.failUnless(error < eps and output.dtype.type == type2)
 
@@ -273,12 +273,12 @@ class NDImageTest(unittest.TestCase):
         for type1 in self.types:
             array = numarray.array([[1, 2, 3],
                                     [4, 5, 6]], type1)
-            output = nd_image.correlate(array, kernel,
+            output = image.correlate(array, kernel,
                                                 output = numarray.float32)
             error = diff([[2, 3, 5], [5, 6, 8]], output)
             self.failUnless(error < eps and
                             output.dtype.type == numarray.float32)
-            output = nd_image.convolve(array, kernel,
+            output = image.convolve(array, kernel,
                                                output = numarray.float32)
             error = diff([[6, 8, 9], [9, 11, 12]], output)
             self.failUnless(error < eps and
@@ -291,12 +291,12 @@ class NDImageTest(unittest.TestCase):
         for type1 in self.types:
             array = numarray.array([[1, 2, 3],
                                     [4, 5, 6]], type1)
-            output = nd_image.correlate(array, kernel,
+            output = image.correlate(array, kernel,
                                                 output = numarray.float32)
             error = diff([[1, 1.5, 2.5], [2.5, 3, 4]], output)
             self.failUnless(error < eps and
                             output.dtype.type == numarray.float32)
-            output = nd_image.convolve(array, kernel,
+            output = image.convolve(array, kernel,
                                                output = numarray.float32)
             error = diff([[3, 4, 4.5], [4.5, 5.5, 6]], output)
             self.failUnless(error < eps and
@@ -308,13 +308,13 @@ class NDImageTest(unittest.TestCase):
         tcor = [3, 5, 6]
         tcov = [2, 3, 5]
         kernel = numarray.array([1, 1])
-        output = nd_image.correlate(array, kernel, origin = -1)
+        output = image.correlate(array, kernel, origin = -1)
         self.failUnless(diff(tcor, output) < eps)
-        output = nd_image.convolve(array, kernel, origin = -1)
+        output = image.convolve(array, kernel, origin = -1)
         self.failUnless(diff(tcov, output) < eps)
-        output = nd_image.correlate1d(array, kernel, origin = -1)
+        output = image.correlate1d(array, kernel, origin = -1)
         self.failUnless(diff(tcor, output) < eps)
-        output = nd_image.convolve1d(array, kernel, origin = -1)
+        output = image.convolve1d(array, kernel, origin = -1)
         self.failUnless(diff(tcov, output) < eps)
 
     def test_correlate18(self):
@@ -324,13 +324,13 @@ class NDImageTest(unittest.TestCase):
         for type1 in self.types:
             array = numarray.array([[1, 2, 3],
                                     [4, 5, 6]], type1)
-            output = nd_image.correlate(array, kernel,
+            output = image.correlate(array, kernel,
                                         output = numarray.float32,
                                         mode = 'nearest', origin = -1)
             error = diff([[6, 8, 9], [9, 11, 12]], output)
             self.failUnless(error < eps and
                             output.dtype.type == numarray.float32)
-            output = nd_image.convolve(array, kernel,
+            output = image.convolve(array, kernel,
                 output = numarray.float32, mode = 'nearest', origin = -1)
             error = diff([[2, 3, 5], [5, 6, 8]], output)
             self.failUnless(error < eps and
@@ -343,13 +343,13 @@ class NDImageTest(unittest.TestCase):
         for type1 in self.types:
             array = numarray.array([[1, 2, 3],
                                     [4, 5, 6]], type1)
-            output = nd_image.correlate(array, kernel,
+            output = image.correlate(array, kernel,
                                     output = numarray.float32,
                                     mode = 'nearest', origin = [-1, 0])
             error = diff([[5, 6, 8], [8, 9, 11]], output)
             self.failUnless(error < eps and
                             output.dtype.type == numarray.float32)
-            output = nd_image.convolve(array, kernel,
+            output = image.convolve(array, kernel,
                                     output = numarray.float32,
                                     mode = 'nearest', origin = [-1, 0])
             error = diff([[3, 5, 6], [6, 8, 9]], output)
@@ -365,10 +365,10 @@ class NDImageTest(unittest.TestCase):
                                     [2, 4, 6]], type1)
             for type2 in self.types:
                 output = numarray.zeros((2, 3), type2)
-                nd_image.correlate1d(array, weights, axis = 0,
+                image.correlate1d(array, weights, axis = 0,
                                               output = output)
                 self.failUnless(diff(output, true) < eps)
-                nd_image.convolve1d(array, weights, axis = 0,
+                image.convolve1d(array, weights, axis = 0,
                                               output = output)
                 self.failUnless(diff(output, true) < eps)
 
@@ -378,9 +378,9 @@ class NDImageTest(unittest.TestCase):
                                 [2, 4, 6]])
         true = [[5, 10, 15], [7, 14, 21]]
         weights = numarray.array([1, 2, 1])
-        output = nd_image.correlate1d(array, weights, axis = 0)
+        output = image.correlate1d(array, weights, axis = 0)
         self.failUnless(diff(output, true) < eps)
-        output = nd_image.convolve1d(array, weights, axis = 0)
+        output = image.convolve1d(array, weights, axis = 0)
         self.failUnless(diff(output, true) < eps)
 
     def test_correlate22(self):
@@ -392,10 +392,10 @@ class NDImageTest(unittest.TestCase):
                                     [2, 4, 6]], type1)
             for type2 in self.types:
                 output = numarray.zeros((2, 3), type2)
-                nd_image.correlate1d(array, weights, axis = 0,
+                image.correlate1d(array, weights, axis = 0,
                                             mode = 'wrap', output = output)
                 self.failUnless(diff(output, true) < eps)
-                nd_image.convolve1d(array, weights, axis = 0,
+                image.convolve1d(array, weights, axis = 0,
                                             mode = 'wrap', output = output)
                 self.failUnless(diff(output, true) < eps)
 
@@ -408,10 +408,10 @@ class NDImageTest(unittest.TestCase):
                                     [2, 4, 6]], type1)
             for type2 in self.types:
                 output = numarray.zeros((2, 3), type2)
-                nd_image.correlate1d(array, weights, axis = 0,
+                image.correlate1d(array, weights, axis = 0,
                                          mode = 'nearest', output = output)
                 self.failUnless(diff(output, true) < eps)
-                nd_image.convolve1d(array, weights, axis = 0,
+                image.convolve1d(array, weights, axis = 0,
                                          mode = 'nearest', output = output)
                 self.failUnless(diff(output, true) < eps)
 
@@ -425,10 +425,10 @@ class NDImageTest(unittest.TestCase):
                                     [2, 4, 6]], type1)
             for type2 in self.types:
                 output = numarray.zeros((2, 3), type2)
-                nd_image.correlate1d(array, weights, axis = 0,
+                image.correlate1d(array, weights, axis = 0,
                            mode = 'nearest', output = output, origin = -1)
                 self.failUnless(diff(output, tcor) < eps)
-                nd_image.convolve1d(array, weights, axis = 0,
+                image.convolve1d(array, weights, axis = 0,
                            mode = 'nearest', output = output, origin = -1)
                 self.failUnless(diff(output, tcov) < eps)
 
@@ -442,10 +442,10 @@ class NDImageTest(unittest.TestCase):
                                     [2, 4, 6]], type1)
             for type2 in self.types:
                 output = numarray.zeros((2, 3), type2)
-                nd_image.correlate1d(array, weights, axis = 0,
+                image.correlate1d(array, weights, axis = 0,
                              mode = 'nearest', output = output, origin = 1)
                 self.failUnless(diff(output, tcor) < eps)
-                nd_image.convolve1d(array, weights, axis = 0,
+                image.convolve1d(array, weights, axis = 0,
                              mode = 'nearest', output = output, origin = 1)
                 self.failUnless(diff(output, tcov) < eps)
 
@@ -453,14 +453,14 @@ class NDImageTest(unittest.TestCase):
         "gaussian filter 1"
         input = numarray.array([[1, 2, 3],
                                 [2, 4, 6]], numarray.float32)
-        output = nd_image.gaussian_filter(input, 0)
+        output = image.gaussian_filter(input, 0)
         self.failUnless(diff(output, input) < eps)
 
     def test_gauss02(self):
         "gaussian filter 2"
         input = numarray.array([[1, 2, 3],
                                 [2, 4, 6]], numarray.float32)
-        output = nd_image.gaussian_filter(input, 1.0)
+        output = image.gaussian_filter(input, 1.0)
         self.failUnless(input.dtype == output.dtype and
                         input.shape == output.shape)
 
@@ -468,7 +468,7 @@ class NDImageTest(unittest.TestCase):
         "gaussian filter 3"
         input = numarray.arange(100 * 100).astype(numarray.float32)
         input.shape = (100, 100)
-        output = nd_image.gaussian_filter(input, [1.0, 1.0])
+        output = image.gaussian_filter(input, [1.0, 1.0])
 
         self.failUnless(input.dtype == output.dtype and
                         input.shape == output.shape and
@@ -480,7 +480,7 @@ class NDImageTest(unittest.TestCase):
         input = numarray.arange(100 * 100).astype(numarray.float32)
         input.shape = (100, 100)
         otype = numarray.float64
-        output = nd_image.gaussian_filter(input, [1.0, 1.0],
+        output = image.gaussian_filter(input, [1.0, 1.0],
                                                             output = otype)
         self.failUnless(output.dtype.type == numarray.float64 and
                         input.shape == output.shape and
@@ -491,7 +491,7 @@ class NDImageTest(unittest.TestCase):
         input = numarray.arange(100 * 100).astype(numarray.float32)
         input.shape = (100, 100)
         otype = numarray.float64
-        output = nd_image.gaussian_filter(input, [1.0, 1.0],
+        output = image.gaussian_filter(input, [1.0, 1.0],
                                                  order = 1, output = otype)
         self.failUnless(output.dtype.type == numarray.float64 and
                         input.shape == output.shape and
@@ -502,9 +502,9 @@ class NDImageTest(unittest.TestCase):
         input = numarray.arange(100 * 100).astype(numarray.float32)
         input.shape = (100, 100)
         otype = numarray.float64
-        output1 = nd_image.gaussian_filter(input, [1.0, 1.0],
+        output1 = image.gaussian_filter(input, [1.0, 1.0],
                                                             output = otype)
-        output2 = nd_image.gaussian_filter(input, 1.0,
+        output2 = image.gaussian_filter(input, 1.0,
                                                             output = otype)
         self.failUnless(diff(output1, output2) < eps)
 
@@ -514,9 +514,9 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = nd_image.correlate1d(t, [1.0, 1.0, 1.0], 1)
-            output = nd_image.prewitt(array, 0)
+            t = image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+            t = image.correlate1d(t, [1.0, 1.0, 1.0], 1)
+            output = image.prewitt(array, 0)
             self.failUnless(diff(t, output) < eps)
 
 
@@ -526,10 +526,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = nd_image.correlate1d(t, [1.0, 1.0, 1.0], 1)
+            t = image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+            t = image.correlate1d(t, [1.0, 1.0, 1.0], 1)
             output = numarray.zeros(array.shape, type)
-            nd_image.prewitt(array, 0, output)
+            image.prewitt(array, 0, output)
             self.failUnless(diff(t, output) < eps)
 
     def test_prewitt03(self):
@@ -538,9 +538,9 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.correlate1d(array, [-1.0, 0.0, 1.0], 1)
-            t = nd_image.correlate1d(t, [1.0, 1.0, 1.0], 0)
-            output = nd_image.prewitt(array, 1)
+            t = image.correlate1d(array, [-1.0, 0.0, 1.0], 1)
+            t = image.correlate1d(t, [1.0, 1.0, 1.0], 0)
+            output = image.prewitt(array, 1)
             self.failUnless(diff(t, output) < eps)
 
     def test_prewitt04(self):
@@ -549,8 +549,8 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.prewitt(array, -1)
-            output = nd_image.prewitt(array, 1)
+            t = image.prewitt(array, -1)
+            output = image.prewitt(array, 1)
             self.failUnless(diff(t, output) < eps)
 
     def test_sobel01(self):
@@ -559,9 +559,9 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = nd_image.correlate1d(t, [1.0, 2.0, 1.0], 1)
-            output = nd_image.sobel(array, 0)
+            t = image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+            t = image.correlate1d(t, [1.0, 2.0, 1.0], 1)
+            output = image.sobel(array, 0)
             self.failUnless(diff(t, output) < eps)
 
     def test_sobel02(self):
@@ -570,10 +570,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
-            t = nd_image.correlate1d(t, [1.0, 2.0, 1.0], 1)
+            t = image.correlate1d(array, [-1.0, 0.0, 1.0], 0)
+            t = image.correlate1d(t, [1.0, 2.0, 1.0], 1)
             output = numarray.zeros(array.shape, type)
-            nd_image.sobel(array, 0, output)
+            image.sobel(array, 0, output)
             self.failUnless(diff(t, output) < eps)
 
     def test_sobel03(self):
@@ -582,10 +582,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.correlate1d(array, [-1.0, 0.0, 1.0], 1)
-            t = nd_image.correlate1d(t, [1.0, 2.0, 1.0], 0)
+            t = image.correlate1d(array, [-1.0, 0.0, 1.0], 1)
+            t = image.correlate1d(t, [1.0, 2.0, 1.0], 0)
             output = numarray.zeros(array.shape, type)
-            output = nd_image.sobel(array, 1)
+            output = image.sobel(array, 1)
             self.failUnless(diff(t, output) < eps)
 
     def test_sobel04(self):
@@ -594,8 +594,8 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            t = nd_image.sobel(array, -1)
-            output = nd_image.sobel(array, 1)
+            t = image.sobel(array, -1)
+            output = image.sobel(array, 1)
             self.failUnless(diff(t, output) < eps)
 
     def test_laplace01(self):
@@ -604,9 +604,9 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type) * 100
-            tmp1 = nd_image.correlate1d(array, [1, -2, 1], 0)
-            tmp2 = nd_image.correlate1d(array, [1, -2, 1], 1)
-            output = nd_image.laplace(array)
+            tmp1 = image.correlate1d(array, [1, -2, 1], 0)
+            tmp2 = image.correlate1d(array, [1, -2, 1], 1)
+            output = image.laplace(array)
             self.failUnless(diff(tmp1 + tmp2, output) < eps)
 
     def test_laplace02(self):
@@ -615,10 +615,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type) * 100
-            tmp1 = nd_image.correlate1d(array, [1, -2, 1], 0)
-            tmp2 = nd_image.correlate1d(array, [1, -2, 1], 1)
+            tmp1 = image.correlate1d(array, [1, -2, 1], 0)
+            tmp2 = image.correlate1d(array, [1, -2, 1], 1)
             output = numarray.zeros(array.shape, type)
-            nd_image.laplace(array, output = output)
+            image.laplace(array, output = output)
             self.failUnless(diff(tmp1 + tmp2, output) < eps)
 
     def test_gaussian_laplace01(self):
@@ -627,9 +627,9 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type) * 100
-            tmp1 = nd_image.gaussian_filter(array, 1.0, [2, 0])
-            tmp2 = nd_image.gaussian_filter(array, 1.0, [0, 2])
-            output = nd_image.gaussian_laplace(array, 1.0)
+            tmp1 = image.gaussian_filter(array, 1.0, [2, 0])
+            tmp2 = image.gaussian_filter(array, 1.0, [0, 2])
+            output = image.gaussian_laplace(array, 1.0)
             self.failUnless(diff(tmp1 + tmp2, output) < eps)
 
     def test_gaussian_laplace02(self):
@@ -638,10 +638,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type) * 100
-            tmp1 = nd_image.gaussian_filter(array, 1.0, [2, 0])
-            tmp2 = nd_image.gaussian_filter(array, 1.0, [0, 2])
+            tmp1 = image.gaussian_filter(array, 1.0, [2, 0])
+            tmp2 = image.gaussian_filter(array, 1.0, [0, 2])
             output = numarray.zeros(array.shape, type)
-            nd_image.gaussian_laplace(array, 1.0, output)
+            image.gaussian_laplace(array, 1.0, output)
             self.failUnless(diff(tmp1 + tmp2, output) < eps)
 
     def test_generic_laplace01(self):
@@ -651,16 +651,16 @@ class NDImageTest(unittest.TestCase):
             input = numarray.asarray(input)
             order = [0] * input.ndim
             order[axis] = 2
-            return nd_image.gaussian_filter(input, sigma, order,
+            return image.gaussian_filter(input, sigma, order,
                                            output, mode, cval)
         for type in self.types:
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
             output = numarray.zeros(array.shape, type)
-            tmp = nd_image.generic_laplace(array, derivative2,
+            tmp = image.generic_laplace(array, derivative2,
                     extra_arguments = (1.0,), extra_keywords = {'b': 2.0})
-            nd_image.gaussian_laplace(array, 1.0, output)
+            image.gaussian_laplace(array, 1.0, output)
             self.failUnless(diff(tmp, output) < eps)
 
     def test_gaussian_gradient_magnitude01(self):
@@ -669,9 +669,9 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type) * 100
-            tmp1 = nd_image.gaussian_filter(array, 1.0, [1, 0])
-            tmp2 = nd_image.gaussian_filter(array, 1.0, [0, 1])
-            output = nd_image.gaussian_gradient_magnitude(array,
+            tmp1 = image.gaussian_filter(array, 1.0, [1, 0])
+            tmp2 = image.gaussian_filter(array, 1.0, [0, 1])
+            output = image.gaussian_gradient_magnitude(array,
                                                                        1.0)
             true = tmp1 * tmp1 + tmp2 * tmp2
             numarray.sqrt(true, true)
@@ -683,10 +683,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type) * 100
-            tmp1 = nd_image.gaussian_filter(array, 1.0, [1, 0])
-            tmp2 = nd_image.gaussian_filter(array, 1.0, [0, 1])
+            tmp1 = image.gaussian_filter(array, 1.0, [1, 0])
+            tmp2 = image.gaussian_filter(array, 1.0, [0, 1])
             output = numarray.zeros(array.shape, type)
-            nd_image.gaussian_gradient_magnitude(array, 1.0,
+            image.gaussian_gradient_magnitude(array, 1.0,
                                                            output)
             true = tmp1 * tmp1 + tmp2 * tmp2
             numarray.sqrt(true, true)
@@ -702,10 +702,10 @@ class NDImageTest(unittest.TestCase):
             input = numarray.asarray(input)
             order = [0] * input.ndim
             order[axis] = 1
-            return nd_image.gaussian_filter(input, sigma, order,
+            return image.gaussian_filter(input, sigma, order,
                                         output, mode, cval)
-        tmp1 = nd_image.gaussian_gradient_magnitude(array, 1.0)
-        tmp2 = nd_image.generic_gradient_magnitude(array,
+        tmp1 = image.gaussian_gradient_magnitude(array, 1.0)
+        tmp2 = image.generic_gradient_magnitude(array,
                 derivative, extra_arguments = (1.0,),
                 extra_keywords = {'b': 2.0})
         self.failUnless(diff(tmp1, tmp2) < eps)
@@ -714,7 +714,7 @@ class NDImageTest(unittest.TestCase):
         "uniform filter 1"
         array = numarray.array([2, 4, 6])
         size = 2
-        output = nd_image.uniform_filter1d(array, size,
+        output = image.uniform_filter1d(array, size,
                                                    origin = -1)
         self.failUnless(diff([3, 5, 6], output) < eps)
 
@@ -722,28 +722,28 @@ class NDImageTest(unittest.TestCase):
         "uniform filter 2"
         array = numarray.array([1, 2, 3])
         filter_shape = [0]
-        output = nd_image.uniform_filter(array, filter_shape)
+        output = image.uniform_filter(array, filter_shape)
         self.failUnless(diff(array, output) < eps)
 
     def test_uniform03(self):
         "uniform filter 3"
         array = numarray.array([1, 2, 3])
         filter_shape = [1]
-        output = nd_image.uniform_filter(array, filter_shape)
+        output = image.uniform_filter(array, filter_shape)
         self.failUnless(diff(array, output) < eps)
 
     def test_uniform04(self):
         "uniform filter 4"
         array = numarray.array([2, 4, 6])
         filter_shape = [2]
-        output = nd_image.uniform_filter(array, filter_shape)
+        output = image.uniform_filter(array, filter_shape)
         self.failUnless(diff([2, 3, 5], output) < eps)
 
     def test_uniform05(self):
         "uniform filter 5"
         array = []
         filter_shape = [1]
-        output = nd_image.uniform_filter(array, filter_shape)
+        output = image.uniform_filter(array, filter_shape)
         self.failUnless(diff([], output) < eps)
 
     def test_uniform06(self):
@@ -753,7 +753,7 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[4, 8, 12],
                                     [16, 20, 24]], type1)
             for type2 in self.types:
-                output = nd_image.uniform_filter(array,
+                output = image.uniform_filter(array,
                                         filter_shape, output = type2)
                 error = diff([[4, 6, 10], [10, 12, 16]], output)
                 self.failUnless(error < eps and output.dtype.type == type2)
@@ -762,28 +762,28 @@ class NDImageTest(unittest.TestCase):
         "minimum filter 1"
         array = numarray.array([1, 2, 3, 4, 5])
         filter_shape = numarray.array([2])
-        output = nd_image.minimum_filter(array, filter_shape)
+        output = image.minimum_filter(array, filter_shape)
         self.failUnless(diff([1, 1, 2, 3, 4], output) < eps)
 
     def test_minimum_filter02(self):
         "minimum filter 2"
         array = numarray.array([1, 2, 3, 4, 5])
         filter_shape = numarray.array([3])
-        output = nd_image.minimum_filter(array, filter_shape)
+        output = image.minimum_filter(array, filter_shape)
         self.failUnless(diff([1, 1, 2, 3, 4], output) < eps)
 
     def test_minimum_filter03(self):
         "minimum filter 3"
         array = numarray.array([3, 2, 5, 1, 4])
         filter_shape = numarray.array([2])
-        output = nd_image.minimum_filter(array, filter_shape)
+        output = image.minimum_filter(array, filter_shape)
         self.failUnless(diff([3, 2, 2, 1, 1], output) < eps)
 
     def test_minimum_filter04(self):
         "minimum filter 4"
         array = numarray.array([3, 2, 5, 1, 4])
         filter_shape = numarray.array([3])
-        output = nd_image.minimum_filter(array, filter_shape)
+        output = image.minimum_filter(array, filter_shape)
         self.failUnless(diff([2, 2, 1, 1, 1], output) < eps)
 
     def test_minimum_filter05(self):
@@ -792,7 +792,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         filter_shape = numarray.array([2, 3])
-        output = nd_image.minimum_filter(array, filter_shape)
+        output = image.minimum_filter(array, filter_shape)
         self.failUnless(diff([[2, 2, 1, 1, 1],
                               [2, 2, 1, 1, 1],
                               [5, 3, 3, 1, 1]], output) < eps)
@@ -803,7 +803,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
-        output = nd_image.minimum_filter(array,
+        output = image.minimum_filter(array,
                                                  footprint = footprint)
         self.failUnless(diff([[2, 2, 1, 1, 1],
                               [2, 2, 1, 1, 1],
@@ -815,7 +815,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.minimum_filter(array,
+        output = image.minimum_filter(array,
                                                  footprint = footprint)
         self.failUnless(diff([[2, 2, 1, 1, 1],
                               [2, 3, 1, 3, 1],
@@ -827,7 +827,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.minimum_filter(array,
+        output = image.minimum_filter(array,
                                        footprint = footprint, origin = -1)
         self.failUnless(diff([[3, 1, 3, 1, 1],
                               [5, 3, 3, 1, 1],
@@ -839,7 +839,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.minimum_filter(array,
+        output = image.minimum_filter(array,
                                   footprint = footprint, origin = [-1, 0])
         self.failUnless(diff([[2, 3, 1, 3, 1],
                               [5, 5, 3, 3, 1],
@@ -849,28 +849,28 @@ class NDImageTest(unittest.TestCase):
         "maximum filter 1"
         array = numarray.array([1, 2, 3, 4, 5])
         filter_shape = numarray.array([2])
-        output = nd_image.maximum_filter(array, filter_shape)
+        output = image.maximum_filter(array, filter_shape)
         self.failUnless(diff([1, 2, 3, 4, 5], output) < eps)
 
     def test_maximum_filter02(self):
         "maximum filter 2"
         array = numarray.array([1, 2, 3, 4, 5])
         filter_shape = numarray.array([3])
-        output = nd_image.maximum_filter(array, filter_shape)
+        output = image.maximum_filter(array, filter_shape)
         self.failUnless(diff([2, 3, 4, 5, 5], output) < eps)
 
     def test_maximum_filter03(self):
         "maximum filter 3"
         array = numarray.array([3, 2, 5, 1, 4])
         filter_shape = numarray.array([2])
-        output = nd_image.maximum_filter(array, filter_shape)
+        output = image.maximum_filter(array, filter_shape)
         self.failUnless(diff([3, 3, 5, 5, 4], output) < eps)
 
     def test_maximum_filter04(self):
         "maximum filter 4"
         array = numarray.array([3, 2, 5, 1, 4])
         filter_shape = numarray.array([3])
-        output = nd_image.maximum_filter(array, filter_shape)
+        output = image.maximum_filter(array, filter_shape)
         self.failUnless(diff([3, 5, 5, 5, 4], output) < eps)
 
     def test_maximum_filter05(self):
@@ -879,7 +879,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         filter_shape = numarray.array([2, 3])
-        output = nd_image.maximum_filter(array, filter_shape)
+        output = image.maximum_filter(array, filter_shape)
         self.failUnless(diff([[3, 5, 5, 5, 4],
                               [7, 9, 9, 9, 5],
                               [8, 9, 9, 9, 7]], output) < eps)
@@ -890,7 +890,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
-        output = nd_image.maximum_filter(array,
+        output = image.maximum_filter(array,
                                                  footprint = footprint)
         self.failUnless(diff([[3, 5, 5, 5, 4],
                               [7, 9, 9, 9, 5],
@@ -902,7 +902,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.maximum_filter(array,
+        output = image.maximum_filter(array,
                                                  footprint = footprint)
         self.failUnless(diff([[3, 5, 5, 5, 4],
                               [7, 7, 9, 9, 5],
@@ -914,7 +914,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.maximum_filter(array,
+        output = image.maximum_filter(array,
                                       footprint = footprint, origin = -1)
         self.failUnless(diff([[7, 9, 9, 5, 5],
                               [9, 8, 9, 7, 5],
@@ -926,7 +926,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.maximum_filter(array,
+        output = image.maximum_filter(array,
                                  footprint = footprint, origin = [-1, 0])
         self.failUnless(diff([[7, 7, 9, 9, 5],
                               [7, 9, 8, 9, 7],
@@ -935,47 +935,47 @@ class NDImageTest(unittest.TestCase):
     def test_rank01(self):
         "rank filter 1"
         array = numarray.array([1, 2, 3, 4, 5])
-        output = nd_image.rank_filter(array, 1, size = 2)
+        output = image.rank_filter(array, 1, size = 2)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.percentile_filter(array, 100, size = 2)
+        output = image.percentile_filter(array, 100, size = 2)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.median_filter(array, 2)
+        output = image.median_filter(array, 2)
         self.failUnless(diff(array, output) < eps)
 
     def test_rank02(self):
         "rank filter 2"
         array = numarray.array([1, 2, 3, 4, 5])
-        output = nd_image.rank_filter(array, 1, size = [3])
+        output = image.rank_filter(array, 1, size = [3])
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.percentile_filter(array, 50, size = 3)
+        output = image.percentile_filter(array, 50, size = 3)
         self.failUnless(diff(array, output) < eps)
-        output = nd_image.median_filter(array, (3,))
+        output = image.median_filter(array, (3,))
         self.failUnless(diff(array, output) < eps)
 
     def test_rank03(self):
         "rank filter 3"
         array = numarray.array([3, 2, 5, 1, 4])
-        output = nd_image.rank_filter(array, 1, size = [2])
+        output = image.rank_filter(array, 1, size = [2])
         self.failUnless(diff([3, 3, 5, 5, 4], output) < eps)
-        output = nd_image.percentile_filter(array, 100, size = 2)
+        output = image.percentile_filter(array, 100, size = 2)
         self.failUnless(diff([3, 3, 5, 5, 4], output) < eps)
 
     def test_rank04(self):
         "rank filter 4"
         array = numarray.array([3, 2, 5, 1, 4])
         true = [3, 3, 2, 4, 4]
-        output = nd_image.rank_filter(array, 1, size = 3)
+        output = image.rank_filter(array, 1, size = 3)
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.percentile_filter(array, 50, size = 3)
+        output = image.percentile_filter(array, 50, size = 3)
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.median_filter(array, size = 3)
+        output = image.median_filter(array, size = 3)
         self.failUnless(diff(true, output) < eps)
 
     def test_rank05(self):
         "rank filter 5"
         array = numarray.array([3, 2, 5, 1, 4])
         true = [3, 3, 2, 4, 4]
-        output = nd_image.rank_filter(array, -2, size = 3)
+        output = image.rank_filter(array, -2, size = 3)
         self.failUnless(diff(true, output) < eps)
 
     def test_rank06(self):
@@ -986,9 +986,9 @@ class NDImageTest(unittest.TestCase):
         true = [[2, 2, 1, 1, 1],
                 [3, 3, 2, 1, 1],
                 [5, 5, 3, 3, 1]]
-        output = nd_image.rank_filter(array, 1, size = [2, 3])
+        output = image.rank_filter(array, 1, size = [2, 3])
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.percentile_filter(array, 17,
+        output = image.percentile_filter(array, 17,
                                                     size = (2, 3))
         self.failUnless(diff(true, output) < eps)
 
@@ -1000,7 +1000,7 @@ class NDImageTest(unittest.TestCase):
         true = [[3, 5, 5, 5, 4],
                 [5, 5, 7, 5, 4],
                 [6, 8, 8, 7, 5]]
-        output = nd_image.rank_filter(array, -2, size = [2, 3])
+        output = image.rank_filter(array, -2, size = [2, 3])
         self.failUnless(diff(true, output) < eps)
 
     def test_rank08(self):
@@ -1012,12 +1012,12 @@ class NDImageTest(unittest.TestCase):
                 [5, 5, 5, 4, 4],
                 [5, 6, 7, 5, 5]]
         kernel = numarray.array([2, 3])
-        output = nd_image.percentile_filter(array, 50.0,
+        output = image.percentile_filter(array, 50.0,
                                                     size = (2, 3))
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.rank_filter(array, 3, size = (2, 3))
+        output = image.rank_filter(array, 3, size = (2, 3))
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.median_filter(array, size = (2, 3))
+        output = image.median_filter(array, size = (2, 3))
         self.failUnless(diff(true, output) < eps)
 
     def test_rank09(self):
@@ -1030,10 +1030,10 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            output = nd_image.rank_filter(array, 1,
+            output = image.rank_filter(array, 1,
                                                   footprint = footprint)
             self.failUnless(diff(true, output) < eps)
-            output = nd_image.percentile_filter(array, 35,
+            output = image.percentile_filter(array, 35,
                                                     footprint = footprint)
             self.failUnless(diff(true, output) < eps)
 
@@ -1046,10 +1046,10 @@ class NDImageTest(unittest.TestCase):
                 [2, 3, 1, 3, 1],
                 [5, 5, 3, 3, 1]]
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.rank_filter(array, 0,
+        output = image.rank_filter(array, 0,
                                               footprint = footprint)
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.percentile_filter(array, 0.0,
+        output = image.percentile_filter(array, 0.0,
                                                     footprint = footprint)
         self.failUnless(diff(true, output) < eps)
 
@@ -1062,10 +1062,10 @@ class NDImageTest(unittest.TestCase):
                 [7, 7, 9, 9, 5],
                 [7, 9, 8, 9, 7]]
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.rank_filter(array, -1,
+        output = image.rank_filter(array, -1,
                                               footprint = footprint)
         self.failUnless(diff(true, output) < eps)
-        output = nd_image.percentile_filter(array, 100.0,
+        output = image.percentile_filter(array, 100.0,
                                                     footprint = footprint)
         self.failUnless(diff(true, output) < eps)
 
@@ -1080,13 +1080,13 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            output = nd_image.rank_filter(array, 1,
+            output = image.rank_filter(array, 1,
                                                   footprint = footprint)
             self.failUnless(diff(true, output) < eps)
-            output = nd_image.percentile_filter(array, 50.0,
+            output = image.percentile_filter(array, 50.0,
                                                      footprint = footprint)
             self.failUnless(diff(true, output) < eps)
-            output = nd_image.median_filter(array,
+            output = image.median_filter(array,
                                                     footprint = footprint)
             self.failUnless(diff(true, output) < eps)
 
@@ -1100,7 +1100,7 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            output = nd_image.rank_filter(array, 1,
+            output = image.rank_filter(array, 1,
                                        footprint = footprint, origin = -1)
             self.failUnless(diff(true, output) < eps)
 
@@ -1114,7 +1114,7 @@ class NDImageTest(unittest.TestCase):
             array = numarray.array([[3, 2, 5, 1, 4],
                                     [5, 8, 3, 7, 1],
                                     [5, 6, 9, 3, 5]], type)
-            output = nd_image.rank_filter(array, 1,
+            output = image.rank_filter(array, 1,
                                   footprint = footprint, origin = [-1, 0])
             self.failUnless(diff(true, output) < eps)
 
@@ -1130,9 +1130,9 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             a = numarray.arange(12, dtype = type)
             a.shape = (3,4)
-            r1 = nd_image.correlate1d(a, weights / weights.sum(), 0,
+            r1 = image.correlate1d(a, weights / weights.sum(), 0,
                                               origin = -1)
-            r2 = nd_image.generic_filter1d(a, _filter_func, 3,
+            r2 = image.generic_filter1d(a, _filter_func, 3,
                       axis = 0, origin = -1, extra_arguments = (weights,),
                       extra_keywords = {'total': weights.sum()})
             self.failUnless(diff(r1, r2) < eps)
@@ -1148,8 +1148,8 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             a = numarray.arange(12, dtype = type)
             a.shape = (3,4)
-            r1 = nd_image.correlate(a, filter * footprint) / 5
-            r2 = nd_image.generic_filter(a, _filter_func,
+            r1 = image.correlate(a, filter * footprint) / 5
+            r2 = image.generic_filter(a, _filter_func,
                             footprint = footprint, extra_arguments = (cf,),
                             extra_keywords = {'total': cf.sum()})
             self.failUnless(diff(r1, r2) < eps)
@@ -1163,7 +1163,7 @@ class NDImageTest(unittest.TestCase):
                        [1, 1, 2],
                        [0, 1, 2]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate1d(array, weights, 0,
+            output = image.correlate1d(array, weights, 0,
                                                    mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1176,7 +1176,7 @@ class NDImageTest(unittest.TestCase):
                        [3, 3, 2],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate1d(array, weights, 0,
+            output = image.correlate1d(array, weights, 0,
                                                    mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1189,7 +1189,7 @@ class NDImageTest(unittest.TestCase):
                        [2, 3, 3],
                        [2, 3, 0]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate1d(array, weights, 0,
+            output = image.correlate1d(array, weights, 0,
                                                    mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1202,7 +1202,7 @@ class NDImageTest(unittest.TestCase):
                        [2, 1, 1],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate1d(array, weights, 0,
+            output = image.correlate1d(array, weights, 0,
                                                    mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1218,7 +1218,7 @@ class NDImageTest(unittest.TestCase):
                        [[1, 1, 2], [1, 1, 2], [4, 4, 5]],
                        [[0, 0, 0], [0, 1, 2], [0, 4, 5]]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate(array, weights,
+            output = image.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1234,7 +1234,7 @@ class NDImageTest(unittest.TestCase):
                        [[5, 6, 6], [8, 9, 9], [8, 9, 9]],
                        [[5, 6, 0], [8, 9, 0], [0, 0, 0]]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate(array, weights,
+            output = image.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1248,7 +1248,7 @@ class NDImageTest(unittest.TestCase):
                        [2, 1, 1],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate(array, weights,
+            output = image.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1262,7 +1262,7 @@ class NDImageTest(unittest.TestCase):
                        [[2], [1], [1]],
                        [[0], [0], [0]]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate(array, weights,
+            output = image.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1275,7 +1275,7 @@ class NDImageTest(unittest.TestCase):
                        [2, 1, 1],
                        [0, 0, 0]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate(array, weights,
+            output = image.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1289,7 +1289,7 @@ class NDImageTest(unittest.TestCase):
                        [[2], [1], [1]],
                        [[0], [0], [0]]]
         for mode, true_value in zip(self.modes, true_values):
-            output = nd_image.correlate(array, weights,
+            output = image.correlate(array, weights,
                                                  mode = mode, cval = 0)
             self.failUnless(diff(output, true_value) < eps)
 
@@ -1301,11 +1301,11 @@ class NDImageTest(unittest.TestCase):
                 a[0, 0] = 1.0
                 a = dft.real_fft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_gaussian(a, [5.0, 2.5],
+                a = image.fourier_gaussian(a, [5.0, 2.5],
                                                        shape[0], 0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_real_fft(a, shape[0], 0)
-                self.failUnless(diff(nd_image.sum(a), 1.0) < eps)
+                self.failUnless(diff(image.sum(a), 1.0) < eps)
 
     def test_fourier_gaussian_complex01(self):
         "gaussian fourier filter for complex transforms 1"
@@ -1315,11 +1315,11 @@ class NDImageTest(unittest.TestCase):
                 a[0, 0] = 1.0
                 a = dft.fft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_gaussian(a, [5.0, 2.5], -1,
+                a = image.fourier_gaussian(a, [5.0, 2.5], -1,
                                                        0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_fft(a, shape[0], 0)
-                error = diff(nd_image.sum(a.real), 1.0)
+                error = diff(image.sum(a.real), 1.0)
                 self.failUnless(error < eps)
 
     def test_fourier_uniform_real01(self):
@@ -1330,11 +1330,11 @@ class NDImageTest(unittest.TestCase):
                 a[0, 0] = 1.0
                 a = dft.real_fft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_uniform(a, [5.0, 2.5],
+                a = image.fourier_uniform(a, [5.0, 2.5],
                                                       shape[0], 0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_real_fft(a, shape[0], 0)
-                self.failUnless(diff(nd_image.sum(a), 1.0) < eps)
+                self.failUnless(diff(image.sum(a), 1.0) < eps)
 
     def test_fourier_uniform_complex01(self):
         "uniform fourier filter for complex transforms 1"
@@ -1344,10 +1344,10 @@ class NDImageTest(unittest.TestCase):
                 a[0, 0] = 1.0
                 a = dft.fft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_uniform(a, [5.0, 2.5], -1, 0)
+                a = image.fourier_uniform(a, [5.0, 2.5], -1, 0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_fft(a, shape[0], 0)
-                error = diff(nd_image.sum(a.real), 1.0)
+                error = diff(image.sum(a.real), 1.0)
                 self.failUnless(error < eps)
 
     def test_fourier_shift_real01(self):
@@ -1358,7 +1358,7 @@ class NDImageTest(unittest.TestCase):
                 true.shape = shape
                 a = dft.real_fft(true, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_shift(a, [1, 1], shape[0], 0)
+                a = image.fourier_shift(a, [1, 1], shape[0], 0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_real_fft(a, shape[0], 0)
                 error1 = diff(a[1:, 1:], true[:-1, :-1])
@@ -1374,7 +1374,7 @@ class NDImageTest(unittest.TestCase):
                 true.shape = shape
                 a = dft.fft(true, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_shift(a, [1, 1], -1, 0)
+                a = image.fourier_shift(a, [1, 1], -1, 0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_fft(a, shape[0], 0)
                 error1 = diff(a.real[1:, 1:], true[:-1, :-1])
@@ -1389,11 +1389,11 @@ class NDImageTest(unittest.TestCase):
                 a[0, 0] = 1.0
                 a = dft.real_fft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_ellipsoid(a, [5.0, 2.5],
+                a = image.fourier_ellipsoid(a, [5.0, 2.5],
                                                         shape[0], 0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_real_fft(a, shape[0], 0)
-                self.failUnless(diff(nd_image.sum(a), 1.0) < eps)
+                self.failUnless(diff(image.sum(a), 1.0) < eps)
 
     def test_fourier_ellipsoid_complex01(self):
         "ellipsoid fourier filter for complex transforms 1"
@@ -1403,11 +1403,11 @@ class NDImageTest(unittest.TestCase):
                 a[0, 0] = 1.0
                 a = dft.fft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
-                a = nd_image.fourier_ellipsoid(a, [5.0, 2.5], -1,
+                a = image.fourier_ellipsoid(a, [5.0, 2.5], -1,
                                                         0)
                 a = dft.inverse_fft(a, shape[1], 1)
                 a = dft.inverse_fft(a, shape[0], 0)
-                error = diff(nd_image.sum(a.real), 1.0)
+                error = diff(image.sum(a.real), 1.0)
                 self.failUnless(error < eps)
 
     def test_spline01(self):
@@ -1415,7 +1415,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.ones([], type)
             for order in range(2, 6):
-                out = nd_image.spline_filter(data, order = order)
+                out = image.spline_filter(data, order = order)
                 self.failUnless(diff(out, 1)< eps and
                                 out.dtype.type == numarray.float64)
 
@@ -1424,7 +1424,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.array([1])
             for order in range(2, 6):
-                out = nd_image.spline_filter(data, order = order)
+                out = image.spline_filter(data, order = order)
                 self.failUnless(diff(out, [1]) < eps and
                                 out.dtype.type == numarray.float64)
 
@@ -1433,7 +1433,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.ones([], type)
             for order in range(2, 6):
-                out = nd_image.spline_filter(data, order,
+                out = image.spline_filter(data, order,
                                                       output = type)
                 self.failUnless(diff(out, 1) < eps and
                                 out.dtype.type == type)
@@ -1443,7 +1443,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.ones([4], type)
             for order in range(2, 6):
-                out = nd_image.spline_filter(data, order)
+                out = image.spline_filter(data, order)
                 self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
 
     def test_spline05(self):
@@ -1451,7 +1451,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.ones([4, 4], type)
             for order in range(2, 6):
-                out = nd_image.spline_filter(data, order = order)
+                out = image.spline_filter(data, order = order)
                 self.failUnless(diff(out, [[1, 1, 1, 1],
                                            [1, 1, 1, 1],
                                            [1, 1, 1, 1],
@@ -1463,7 +1463,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return x
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                         data.shape,
                                                         order=order)
             self.failUnless(diff(out, [1]) < eps)
@@ -1474,7 +1474,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return x
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                   data.shape, order=order)
             self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
 
@@ -1484,7 +1484,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] - 1,)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                    data.shape, order=order)
             self.failUnless(diff(out, [0, 1, 1, 1]) < eps)
 
@@ -1494,7 +1494,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] - 1,)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                    data.shape, order=order)
             self.failUnless(diff(out, [0, 4, 1, 3]) < eps)
 
@@ -1506,7 +1506,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0], x[1] - 1)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                    data.shape, order=order)
             self.failUnless(diff(out, [[0, 1, 1, 1],
                                        [0, 1, 1, 1],
@@ -1520,7 +1520,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0], x[1] - 1)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                    data.shape, order=order)
             self.failUnless(diff(out, [[0, 4, 1, 3],
                                        [0, 7, 6, 8],
@@ -1534,7 +1534,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] - 1, x[1])
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                    data.shape, order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [4, 1, 3, 2],
@@ -1548,7 +1548,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                    data.shape, order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [0, 4, 1, 3],
@@ -1563,11 +1563,11 @@ class NDImageTest(unittest.TestCase):
             return (x[0] - 1, x[1] - 1)
         for order in range(0, 6):
             if (order > 1):
-                filtered = nd_image.spline_filter(data,
+                filtered = image.spline_filter(data,
                                                            order=order)
             else:
                 filtered = data
-            out = nd_image.geometric_transform(filtered, mapping,
+            out = image.geometric_transform(filtered, mapping,
                                data.shape, order=order, prefilter = False)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [0, 4, 1, 3],
@@ -1579,7 +1579,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] / 2,)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                         [4], order=order)
             self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
 
@@ -1589,7 +1589,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (2 * x[0],)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                         [4], order=order)
             self.failUnless(diff(out, [1, 2, 3, 4]) < eps)
 
@@ -1599,7 +1599,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] / 2,)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                         [8], order=order)
             self.failUnless(diff(out[::2], [1, 2, 3, 4]) < eps)
 
@@ -1611,7 +1611,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0], x[1] * 2)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                        (3, 2), order=order)
             self.failUnless(diff(out, [[1, 3], [5, 7], [9, 11]]) < eps)
 
@@ -1623,7 +1623,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] * 2, x[1])
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                        (1, 4), order=order)
             self.failUnless(diff(out, [[1, 2, 3, 4]]) < eps)
 
@@ -1635,7 +1635,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                        (1, 2), order=order)
             self.failUnless(diff(out, [[1, 3]]) < eps)
 
@@ -1647,7 +1647,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0], x[1] / 2)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                        (3, 8), order=order)
             self.failUnless(diff(out[..., ::2], data) < eps)
 
@@ -1659,7 +1659,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] / 2, x[1])
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                        (6, 4), order=order)
             self.failUnless(diff(out[::2, ...], data) < eps)
 
@@ -1671,7 +1671,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (x[0] / 2, x[1] / 2)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                       (6, 8), order=order)
             self.failUnless(diff(out[::2, ::2], data) < eps)
 
@@ -1686,9 +1686,9 @@ class NDImageTest(unittest.TestCase):
         def mapping2(x):
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping1,
+            out = image.geometric_transform(data, mapping1,
                                                       (6, 8),  order=order)
-            out = nd_image.geometric_transform(out, mapping2,
+            out = image.geometric_transform(out, mapping2,
                                                        (3, 4), order=order)
             error = diff(out, data)
             self.failUnless(diff(out, data) < eps)
@@ -1701,7 +1701,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x):
             return (1, x[0] * 2)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                                         (2,), order=order)
             out = out.astype(numarray.int32)
             self.failUnless(diff(out, [5, 7]) < eps)
@@ -1714,7 +1714,7 @@ class NDImageTest(unittest.TestCase):
         def mapping(x, a, b):
             return (a, x[0] * b)
         for order in range(0, 6):
-            out = nd_image.geometric_transform(data, mapping,
+            out = image.geometric_transform(data, mapping,
                                 (2,), order=order, extra_arguments = (1,),
                                 extra_keywords = {'b': 2})
             self.failUnless(diff(out, [5, 7]) < eps)
@@ -1727,7 +1727,7 @@ class NDImageTest(unittest.TestCase):
         idx = numarray.indices(data.shape)
         idx -= 1
         for order in range(0, 6):
-            out = nd_image.map_coordinates(data, idx, order=order)
+            out = image.map_coordinates(data, idx, order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]]) < eps)
@@ -1740,8 +1740,8 @@ class NDImageTest(unittest.TestCase):
         idx = numarray.indices(data.shape, numarray.float64)
         idx -= 0.5
         for order in range(0, 6):
-            out1 = nd_image.shift(data, 0.5, order=order)
-            out2 = nd_image.map_coordinates(data, idx,
+            out1 = image.shift(data, 0.5, order=order)
+            out2 = image.map_coordinates(data, idx,
                                                      order=order)
             self.failUnless(diff(out1, out2) < eps)
 
@@ -1749,7 +1749,7 @@ class NDImageTest(unittest.TestCase):
         "affine_transform 1"
         data = numarray.array([1])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1]],
+            out = image.affine_transform(data, [[1]],
                                                      order=order)
             self.failUnless(diff(out, [1]) < eps)
 
@@ -1757,7 +1757,7 @@ class NDImageTest(unittest.TestCase):
         "affine transform 2"
         data = numarray.ones([4])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1]],
+            out = image.affine_transform(data, [[1]],
                                                      order=order)
             self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
 
@@ -1765,7 +1765,7 @@ class NDImageTest(unittest.TestCase):
         "affine transform 3"
         data = numarray.ones([4])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1]], -1,
+            out = image.affine_transform(data, [[1]], -1,
                                                      order=order)
             self.failUnless(diff(out, [0, 1, 1, 1]) < eps)
 
@@ -1773,7 +1773,7 @@ class NDImageTest(unittest.TestCase):
         "affine transform 4"
         data = numarray.array([4, 1, 3, 2])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1]], -1,
+            out = image.affine_transform(data, [[1]], -1,
                                                      order=order)
             self.failUnless(diff(out, [0, 4, 1, 3]) < eps)
 
@@ -1783,7 +1783,7 @@ class NDImageTest(unittest.TestCase):
                                [1, 1, 1, 1],
                                [1, 1, 1, 1]])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1, 0],
+            out = image.affine_transform(data, [[1, 0],
                                                             [0, 1]],
                                                      [0, -1], order=order)
             self.failUnless(diff(out, [[0, 1, 1, 1],
@@ -1796,7 +1796,7 @@ class NDImageTest(unittest.TestCase):
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1, 0],
+            out = image.affine_transform(data, [[1, 0],
                                                             [0, 1]],
                                                      [0, -1], order=order)
             self.failUnless(diff(out, [[0, 4, 1, 3],
@@ -1809,7 +1809,7 @@ class NDImageTest(unittest.TestCase):
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1, 0],
+            out = image.affine_transform(data, [[1, 0],
                                                             [0, 1]],
                                                      [-1, 0], order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
@@ -1822,7 +1822,7 @@ class NDImageTest(unittest.TestCase):
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1, 0],
+            out = image.affine_transform(data, [[1, 0],
                                                             [0, 1]],
                                                      [-1, -1], order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
@@ -1836,11 +1836,11 @@ class NDImageTest(unittest.TestCase):
                                [3, 5, 3, 6]])
         for order in range(0, 6):
             if (order > 1):
-                filtered = nd_image.spline_filter(data,
+                filtered = image.spline_filter(data,
                                                            order=order)
             else:
                 filtered = data
-            out = nd_image.affine_transform(filtered,[[1, 0],
+            out = image.affine_transform(filtered,[[1, 0],
                                                                [0, 1]],
                                   [-1, -1], order=order, prefilter = False)
             self.failUnless(diff(out, [[0, 0, 0, 0],
@@ -1851,7 +1851,7 @@ class NDImageTest(unittest.TestCase):
         "affine transform 10"
         data = numarray.ones([2], numarray.float64)
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[0.5]],
+            out = image.affine_transform(data, [[0.5]],
                                           output_shape = (4,), order=order)
             self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
 
@@ -1859,7 +1859,7 @@ class NDImageTest(unittest.TestCase):
         "affine transform 11"
         data = [1, 5, 2, 6, 3, 7, 4, 4]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[2]], 0, (4,),
+            out = image.affine_transform(data, [[2]], 0, (4,),
                                                      order=order)
             self.failUnless(diff(out, [1, 2, 3, 4]) < eps)
 
@@ -1867,7 +1867,7 @@ class NDImageTest(unittest.TestCase):
         "affine transform 12"
         data = [1, 2, 3, 4]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[0.5]], 0,
+            out = image.affine_transform(data, [[0.5]], 0,
                                                      (8,), order=order)
             self.failUnless(diff(out[::2], [1, 2, 3, 4]) < eps)
 
@@ -1877,7 +1877,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1, 0],
+            out = image.affine_transform(data, [[1, 0],
                                                             [0, 2]], 0,
                                                      (3, 2), order=order)
             self.failUnless(diff(out, [[1, 3], [5, 7], [9, 11]]) < eps)
@@ -1888,7 +1888,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[2, 0],
+            out = image.affine_transform(data, [[2, 0],
                                                             [0, 1]], 0,
                                                      (1, 4), order=order)
             self.failUnless(diff(out, [[1, 2, 3, 4]]) < eps)
@@ -1899,7 +1899,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[2, 0],
+            out = image.affine_transform(data, [[2, 0],
                                                             [0, 2]], 0,
                                                      (1, 2), order=order)
             self.failUnless(diff(out, [[1, 3]]) < eps)
@@ -1910,7 +1910,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[1, 0.0],
+            out = image.affine_transform(data, [[1, 0.0],
                                                             [0, 0.5]], 0,
                                                      (3, 8), order=order)
             self.failUnless(diff(out[..., ::2], data) < eps)
@@ -1921,7 +1921,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[0.5, 0],
+            out = image.affine_transform(data, [[0.5, 0],
                                                             [0,   1]], 0,
                                                      (6, 4), order=order)
             self.failUnless(diff(out[::2, ...], data) < eps)
@@ -1932,7 +1932,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data,
+            out = image.affine_transform(data,
                                                      [[0.5, 0],
                                                       [0, 0.5]], 0,
                                                      (6, 8), order=order)
@@ -1944,11 +1944,11 @@ class NDImageTest(unittest.TestCase):
                                [5, 6, 7, 8],
                                [9, 10, 11, 12]], numarray.float64)
         for order in range(0, 6):
-            out = nd_image.affine_transform(data,
+            out = image.affine_transform(data,
                                                      [[0.5, 0],
                                                       [0, 0.5]], 0,
                                                      (6, 8), order=order)
-            out = nd_image.affine_transform(out,
+            out = image.affine_transform(out,
                                                      [[2.0, 0],
                                                       [0, 2.0]], 0,
                                                      (3, 4), order=order)
@@ -1960,7 +1960,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[0], [2]], 0,
+            out = image.affine_transform(data, [[0], [2]], 0,
                                                      (2,), order=order)
             self.failUnless(diff(out, [1, 3]) < eps)
 
@@ -1970,7 +1970,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [[2], [0]], 0,
+            out = image.affine_transform(data, [[2], [0]], 0,
                                                      (2,), order=order)
             self.failUnless(diff(out, [1, 9]) < eps)
 
@@ -1978,28 +1978,28 @@ class NDImageTest(unittest.TestCase):
         "shift 1"
         data = numarray.array([1])
         for order in range(0, 6):
-            out = nd_image.shift(data, [1], order=order)
+            out = image.shift(data, [1], order=order)
             self.failUnless(diff(out, [0]) < eps)
 
     def test_shift02(self):
         "shift 2"
         data = numarray.ones([4])
         for order in range(0, 6):
-            out = nd_image.shift(data, [1], order=order)
+            out = image.shift(data, [1], order=order)
             self.failUnless(diff(out, [0, 1, 1, 1]) < eps)
 
     def test_shift03(self):
         "shift 3"
         data = numarray.ones([4])
         for order in range(0, 6):
-            out = nd_image.shift(data, -1, order=order)
+            out = image.shift(data, -1, order=order)
             self.failUnless(diff(out, [1, 1, 1, 0]) < eps)
 
     def test_shift04(self):
         "shift 4"
         data = numarray.array([4, 1, 3, 2])
         for order in range(0, 6):
-            out = nd_image.shift(data, 1, order=order)
+            out = image.shift(data, 1, order=order)
             self.failUnless(diff(out, [0, 4, 1, 3]) < eps)
 
     def test_shift05(self):
@@ -2008,7 +2008,7 @@ class NDImageTest(unittest.TestCase):
                                [1, 1, 1, 1],
                                [1, 1, 1, 1]])
         for order in range(0, 6):
-            out = nd_image.shift(data, [0, 1], order=order)
+            out = image.shift(data, [0, 1], order=order)
             self.failUnless(diff(out, [[0, 1, 1, 1],
                                        [0, 1, 1, 1],
                                        [0, 1, 1, 1]]) < eps)
@@ -2019,7 +2019,7 @@ class NDImageTest(unittest.TestCase):
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
         for order in range(0, 6):
-            out = nd_image.shift(data, [0, 1], order=order)
+            out = image.shift(data, [0, 1], order=order)
             self.failUnless(diff(out, [[0, 4, 1, 3],
                                        [0, 7, 6, 8],
                                        [0, 3, 5, 3]]) < eps)
@@ -2030,7 +2030,7 @@ class NDImageTest(unittest.TestCase):
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
         for order in range(0, 6):
-            out = nd_image.shift(data, [1, 0], order=order)
+            out = image.shift(data, [1, 0], order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [4, 1, 3, 2],
                                        [7, 6, 8, 5]]) < eps)
@@ -2042,7 +2042,7 @@ class NDImageTest(unittest.TestCase):
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
         for order in range(0, 6):
-            out = nd_image.shift(data, [1, 1], order=order)
+            out = image.shift(data, [1, 1], order=order)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]]) < eps)
@@ -2054,11 +2054,11 @@ class NDImageTest(unittest.TestCase):
                                [3, 5, 3, 6]])
         for order in range(0, 6):
             if (order > 1):
-                filtered = nd_image.spline_filter(data,
+                filtered = image.spline_filter(data,
                                                            order=order)
             else:
                 filtered = data
-            out = nd_image.shift(filtered, [1, 1], order=order,
+            out = image.shift(filtered, [1, 1], order=order,
                                           prefilter = False)
             self.failUnless(diff(out, [[0, 0, 0, 0],
                                        [0, 4, 1, 3],
@@ -2068,21 +2068,21 @@ class NDImageTest(unittest.TestCase):
         "zoom 1"
         data = numarray.ones([2], numarray.float64)
         for order in range(0, 6):
-            out = nd_image.zoom(data, 2.0, order=order)
+            out = image.zoom(data, 2.0, order=order)
             self.failUnless(diff(out, [1, 1, 1, 1]) < eps)
 
     def test_zoom02(self):
         "zoom 2"
         data = [1, 5, 2, 6, 3, 7, 4, 4]
         for order in range(0, 6):
-            out = nd_image.zoom(data, 0.5, order=order)
+            out = image.zoom(data, 0.5, order=order)
             self.failUnless(diff(out, [1, 2, 3, 4]) < eps)
 
     def test_zoom03(self):
         "zoom 3"
         data = [1, 2, 3, 4]
         for order in range(0, 6):
-            out = nd_image.zoom(data, 2, order=order)
+            out = image.zoom(data, 2, order=order)
             self.failUnless(diff(out[::2], [1, 2, 3, 4]) < eps)
 
     def test_zoom04(self):
@@ -2091,7 +2091,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.zoom(data, [1, 0.5], order=order)
+            out = image.zoom(data, [1, 0.5], order=order)
             self.failUnless(diff(out, [[1, 3], [5, 7], [9, 11]]) < eps)
 
     def test_zoom05(self):
@@ -2100,7 +2100,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.zoom(data, [0.5, 1], order=order)
+            out = image.zoom(data, [0.5, 1], order=order)
             self.failUnless(diff(out, [[1, 2, 3, 4]]) < eps)
 
     def test_zoom06(self):
@@ -2109,7 +2109,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.zoom(data, [0.5, 0.5], order=order)
+            out = image.zoom(data, [0.5, 0.5], order=order)
             self.failUnless(diff(out, [[1, 3]]) < eps)
 
     def test_zoom07(self):
@@ -2118,7 +2118,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.zoom(data, [1, 2], order=order)
+            out = image.zoom(data, [1, 2], order=order)
             self.failUnless(diff(out[..., ::2], data) < eps)
 
     def test_zoom08(self):
@@ -2127,7 +2127,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.zoom(data, [2, 1], order=order)
+            out = image.zoom(data, [2, 1], order=order)
             self.failUnless(diff(out[::2, ...], data) < eps)
 
     def test_zoom09(self):
@@ -2136,7 +2136,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.zoom(data, [2, 2], order=order)
+            out = image.zoom(data, [2, 2], order=order)
             self.failUnless(diff(out[::2, ::2], data) < eps)
 
     def test_zoom10(self):
@@ -2145,8 +2145,8 @@ class NDImageTest(unittest.TestCase):
                                [5, 6, 7, 8],
                                [9, 10, 11, 12]], numarray.float64)
         for order in range(0, 6):
-            out = nd_image.zoom(data, [2, 2], order=order)
-            out = nd_image.zoom(out, [0.5, 0.5], order=order)
+            out = image.zoom(data, [2, 2], order=order)
+            out = image.zoom(out, [0.5, 0.5], order=order)
             self.failUnless(diff(out, data) < eps)
 
     def test_zoom_affine01(self):
@@ -2155,7 +2155,7 @@ class NDImageTest(unittest.TestCase):
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = nd_image.affine_transform(data, [0.5, 0.5], 0,
+            out = image.affine_transform(data, [0.5, 0.5], 0,
                                                      (6, 8), order=order)
             self.failUnless(diff(out[::2, ::2], data) < eps)
 
@@ -2165,7 +2165,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 1, 1, 0],
                                [0, 0, 0, 0]], dtype = numarray.float64)
         for order in range(0, 6):
-            out = nd_image.rotate(data, 0)
+            out = image.rotate(data, 0)
             self.failUnless(diff(out, data) < eps)
 
     def test_rotate02(self):
@@ -2178,7 +2178,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 1, 0],
                                [0, 0, 0]], dtype = numarray.float64)
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90)
+            out = image.rotate(data, 90)
             self.failUnless(diff(out, true) < eps)
 
     def test_rotate03(self):
@@ -2192,7 +2192,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 1, 0],
                                [0, 0, 0]], dtype = numarray.float64)
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90)
+            out = image.rotate(data, 90)
             self.failUnless(diff(out, true) < eps)
 
     def test_rotate04(self):
@@ -2204,7 +2204,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 0, 0],
                                [0, 0, 1, 0, 0]], dtype = numarray.float64)
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90, reshape = False)
+            out = image.rotate(data, 90, reshape = False)
             self.failUnless(diff(out, true) < eps)
 
     def test_rotate05(self):
@@ -2219,7 +2219,7 @@ class NDImageTest(unittest.TestCase):
                                 [0, 1, 0],
                                 [0, 0, 0]]] * 3, dtype = numarray.float64)
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90)
+            out = image.rotate(data, 90)
             self.failUnless(diff(out, true) < eps)
 
     def test_rotate06(self):
@@ -2233,7 +2233,7 @@ class NDImageTest(unittest.TestCase):
                                 [0, 0, 1, 0, 0]]] * 3,
                               dtype = numarray.float64)
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90, reshape = False)
+            out = image.rotate(data, 90, reshape = False)
             self.failUnless(diff(out, true) < eps)
 
     def test_rotate07(self):
@@ -2251,7 +2251,7 @@ class NDImageTest(unittest.TestCase):
         true = true.transpose([2,1,0])
 
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90, axes = (0, 1))
+            out = image.rotate(data, 90, axes = (0, 1))
             self.failUnless(diff(out, true) < eps)
 
     def test_rotate08(self):
@@ -2267,7 +2267,7 @@ class NDImageTest(unittest.TestCase):
                               dtype = numarray.float64)
         true = true.transpose()
         for order in range(0, 6):
-            out = nd_image.rotate(data, 90, axes = (0, 1),
+            out = image.rotate(data, 90, axes = (0, 1),
                                            reshape = False)
             self.failUnless(diff(out, true) < eps)
 
@@ -2290,7 +2290,7 @@ class NDImageTest(unittest.TestCase):
                                   [  0, 0, 0, 0, 0, 0, 0],
                                   [  0, 0, 0, 0, 0, 0, 0]],
                                  numarray.int8)
-        out = nd_image.watershed_ift(data, markers,
+        out = image.watershed_ift(data, markers,
                                      structure = [[1,1,1],
                                                   [1,1,1],
                                                   [1,1,1]])
@@ -2323,7 +2323,7 @@ class NDImageTest(unittest.TestCase):
                                   [  0, 0, 0, 0, 0, 0, 0],
                                   [  0, 0, 0, 0, 0, 0, 0]],
                                  numarray.int8)
-        out = nd_image.watershed_ift(data, markers)
+        out = image.watershed_ift(data, markers)
         error = diff([[-1, -1, -1, -1, -1, -1, -1],
                       [-1, -1,  1,  1,  1, -1, -1],
                       [-1,  1,  1,  1,  1,  1, -1],
@@ -2351,7 +2351,7 @@ class NDImageTest(unittest.TestCase):
                                   [ 0, 0, 0, 0, 0, 0, 0],
                                   [ 0, 0, 0, 0, 0, 0, -1]],
                                  numarray.int8)
-        out = nd_image.watershed_ift(data, markers)
+        out = image.watershed_ift(data, markers)
         error = diff([[-1, -1, -1, -1, -1, -1, -1],
                       [-1, -1,  2, -1,  3, -1, -1],
                       [-1,  2,  2,  3,  3,  3, -1],
@@ -2378,7 +2378,7 @@ class NDImageTest(unittest.TestCase):
                                   [ 0, 0, 0, 0, 0, 0, 0],
                                   [ 0, 0, 0, 0, 0, 0, -1]],
                                  numarray.int8)
-        out = nd_image.watershed_ift(data, markers,
+        out = image.watershed_ift(data, markers,
                                               structure = [[1,1,1],
                                                            [1,1,1],
                                                            [1,1,1]])
@@ -2408,7 +2408,7 @@ class NDImageTest(unittest.TestCase):
                                   [ 0, 0, 0, 0, 0, 0, 0],
                                   [ 0, 0, 0, 0, 0, 0, -1]],
                                  numarray.int8)
-        out = nd_image.watershed_ift(data, markers,
+        out = image.watershed_ift(data, markers,
                                               structure = [[1,1,1],
                                                            [1,1,1],
                                                            [1,1,1]])
@@ -2436,7 +2436,7 @@ class NDImageTest(unittest.TestCase):
                                   [  0, 0, 0, 0, 0, 0, 0],
                                   [  0, 0, 0, 0, 0, 0, 0]],
                                  numarray.int8)
-        out = nd_image.watershed_ift(data, markers,
+        out = image.watershed_ift(data, markers,
                                               structure = [[1,1,1],
                                                            [1,1,1],
                                                            [1,1,1]])
@@ -2468,7 +2468,7 @@ class NDImageTest(unittest.TestCase):
                                  numarray.int8)
         out = numarray.zeros(shape, dtype = numarray.int16)
         out = out.transpose()
-        nd_image.watershed_ift(data, markers,
+        image.watershed_ift(data, markers,
                                structure = [[1,1,1],
                                             [1,1,1],
                                             [1,1,1]],
@@ -2484,37 +2484,37 @@ class NDImageTest(unittest.TestCase):
     def test_label01(self):
         "label 1"
         data = numarray.ones([])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, 1) < eps and n == 1)
 
     def test_label02(self):
         "label 2"
         data = numarray.zeros([])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, 0) < eps and n == 0)
 
     def test_label03(self):
         "label 3"
         data = numarray.ones([1])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, [1]) < eps and n == 1)
 
     def test_label04(self):
         "label 4"
         data = numarray.zeros([1])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, [0]) < eps and n == 0)
 
     def test_label05(self):
         "label 5"
         data = numarray.ones([5])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, [1, 1, 1, 1, 1]) < eps and n == 1)
 
     def test_label06(self):
         "label 6"
         data = numarray.array([1, 0, 1, 1, 0, 1])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, [1, 0, 2, 2, 0, 3]) < eps and n == 3)
 
     def test_label07(self):
@@ -2525,7 +2525,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0]])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, [[0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0],
@@ -2541,7 +2541,7 @@ class NDImageTest(unittest.TestCase):
                                [1, 1, 0, 0, 0, 0],
                                [1, 1, 0, 0, 0, 0],
                                [0, 0, 0, 1, 1, 0]])
-        out, n = nd_image.label(data)
+        out, n = image.label(data)
         self.failUnless(diff(out, [[1, 0, 0, 0, 0, 0],
                                    [0, 0, 2, 2, 0, 0],
                                    [0, 0, 2, 2, 2, 0],
@@ -2557,8 +2557,8 @@ class NDImageTest(unittest.TestCase):
                                [1, 1, 0, 0, 0, 0],
                                [1, 1, 0, 0, 0, 0],
                                [0, 0, 0, 1, 1, 0]])
-        struct = nd_image.generate_binary_structure(2, 2)
-        out, n = nd_image.label(data, struct)
+        struct = image.generate_binary_structure(2, 2)
+        out, n = image.label(data, struct)
         self.failUnless(diff(out, [[1, 0, 0, 0, 0, 0],
                                    [0, 0, 2, 2, 0, 0],
                                    [0, 0, 2, 2, 2, 0],
@@ -2572,8 +2572,8 @@ class NDImageTest(unittest.TestCase):
                                [0, 1, 1, 0, 1, 0],
                                [0, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0]])
-        struct = nd_image.generate_binary_structure(2, 2)
-        out, n = nd_image.label(data, struct)
+        struct = image.generate_binary_structure(2, 2)
+        out, n = image.label(data, struct)
         self.failUnless(diff(out, [[0, 0, 0, 0, 0, 0],
                                    [0, 1, 1, 0, 1, 0],
                                    [0, 1, 1, 1, 1, 0],
@@ -2588,7 +2588,7 @@ class NDImageTest(unittest.TestCase):
                                    [1, 1, 0, 0, 0, 0],
                                    [1, 1, 0, 0, 0, 0],
                                    [0, 0, 0, 1, 1, 0]], type)
-            out, n = nd_image.label(data)
+            out, n = image.label(data)
             error = diff(out, [[1, 0, 0, 0, 0, 0],
                                [0, 0, 2, 2, 0, 0],
                                [0, 0, 2, 2, 2, 0],
@@ -2605,7 +2605,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 1, 1],
                                    [0, 0, 1, 1, 1, 1],
                                    [0, 0, 0, 1, 1, 0]], type)
-            out, n = nd_image.label(data)
+            out, n = image.label(data)
             error = diff(out, [[0, 0, 0, 0, 1, 1],
                                [0, 0, 0, 0, 0, 1],
                                [0, 0, 1, 0, 1, 1],
@@ -2621,7 +2621,7 @@ class NDImageTest(unittest.TestCase):
                                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
                                   type)
-            out, n = nd_image.label(data)
+            out, n = image.label(data)
             error = diff(out, [[1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
                                [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
                                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -2631,37 +2631,37 @@ class NDImageTest(unittest.TestCase):
     def test_find_objects01(self):
         "find_objects 1"
         data = numarray.ones([])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [()])
 
     def test_find_objects02(self):
         "find_objects 2"
         data = numarray.zeros([])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [])
 
     def test_find_objects03(self):
         "find_objects 3"
         data = numarray.ones([1])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [(slice(0, 1, None),)])
 
     def test_find_objects04(self):
         "find_objects 4"
         data = numarray.zeros([1])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [])
 
     def test_find_objects05(self):
         "find_objects 5"
         data = numarray.ones([5])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [(slice(0, 5, None),)])
 
     def test_find_objects06(self):
         "find_objects 6"
         data = numarray.array([1, 0, 2, 2, 0, 3])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [(slice(0, 1, None),),
                                 (slice(2, 4, None),),
                                 (slice(5, 6, None),)])
@@ -2674,7 +2674,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0]])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == []),
 
     def test_find_objects08(self):
@@ -2685,7 +2685,7 @@ class NDImageTest(unittest.TestCase):
                                [3, 3, 0, 0, 0, 0],
                                [3, 3, 0, 0, 0, 0],
                                [0, 0, 0, 4, 4, 0]])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [(slice(0, 1, None), slice(0, 1, None)),
                                 (slice(1, 3, None), slice(2, 5, None)),
                                 (slice(3, 5, None), slice(0, 2, None)),
@@ -2699,7 +2699,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 4, 4, 0]])
-        out = nd_image.find_objects(data)
+        out = image.find_objects(data)
         self.failUnless(out == [(slice(0, 1, None), slice(0, 1, None)),
                                 (slice(1, 3, None), slice(2, 5, None)),
                                 None,
@@ -2709,35 +2709,35 @@ class NDImageTest(unittest.TestCase):
         "sum 1"
         for type in self.types:
             input = numarray.array([], type)
-            output = nd_image.sum(input)
+            output = image.sum(input)
             self.failUnless(output == 0.0)
 
     def test_sum02(self):
         "sum 2"
         for type in self.types:
             input = numarray.zeros([0, 4], type)
-            output = nd_image.sum(input)
+            output = image.sum(input)
             self.failUnless(output == 0.0)
 
     def test_sum03(self):
         "sum 3"
         for type in self.types:
             input = numarray.ones([], type)
-            output = nd_image.sum(input)
+            output = image.sum(input)
             self.failUnless(output == 1.0)
 
     def test_sum04(self):
         "sum 4"
         for type in self.types:
             input = numarray.array([1, 2], type)
-            output = nd_image.sum(input)
+            output = image.sum(input)
             self.failUnless(output == 3.0)
 
     def test_sum05(self):
         "sum 5"
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.sum(input)
+            output = image.sum(input)
             self.failUnless(output == 10.0)
 
     def test_sum06(self):
@@ -2745,7 +2745,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([], numarray.Bool)
         for type in self.types:
             input = numarray.array([], type)
-            output = nd_image.sum(input, labels = labels)
+            output = image.sum(input, labels = labels)
             self.failUnless(output == 0.0)
 
     def test_sum07(self):
@@ -2753,7 +2753,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.ones([0, 4], numarray.Bool)
         for type in self.types:
             input = numarray.zeros([0, 4], type)
-            output = nd_image.sum(input, labels = labels)
+            output = image.sum(input, labels = labels)
             self.failUnless(output == 0.0)
 
     def test_sum08(self):
@@ -2761,7 +2761,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([1, 2], type)
-            output = nd_image.sum(input, labels = labels)
+            output = image.sum(input, labels = labels)
             self.failUnless(output == 1.0)
 
     def test_sum09(self):
@@ -2769,14 +2769,14 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.sum(input, labels = labels)
+            output = image.sum(input, labels = labels)
             self.failUnless(output == 4.0)
 
     def test_sum10(self):
         "sum 10"
         labels = numarray.array([1, 0], numarray.Bool)
         input = numarray.array([[1, 2], [3, 4]], numarray.Bool)
-        output = nd_image.sum(input, labels = labels)
+        output = image.sum(input, labels = labels)
         self.failUnless(output == 2.0)
 
     def test_sum11(self):
@@ -2784,7 +2784,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 2], numarray.int8)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.sum(input, labels = labels,
+            output = image.sum(input, labels = labels,
                                            index = 2)
             self.failUnless(output == 6.0)
 
@@ -2793,7 +2793,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([[1, 2], [2, 4]], numarray.int8)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.sum(input, labels = labels,
+            output = image.sum(input, labels = labels,
                                             index = [4, 8, 2])
             self.failUnless(output == [4.0, 0.0, 5.0])
 
@@ -2802,14 +2802,14 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.mean(input, labels = labels)
+            output = image.mean(input, labels = labels)
             self.failUnless(output == 2.0)
 
     def test_mean02(self):
         "mean 2"
         labels = numarray.array([1, 0], numarray.Bool)
         input = numarray.array([[1, 2], [3, 4]], numarray.Bool)
-        output = nd_image.mean(input, labels = labels)
+        output = image.mean(input, labels = labels)
         self.failUnless(output == 1.0)
 
     def test_mean03(self):
@@ -2817,7 +2817,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 2])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.mean(input, labels = labels,
+            output = image.mean(input, labels = labels,
                                             index = 2)
             self.failUnless(output == 3.0)
 
@@ -2826,7 +2826,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([[1, 2], [2, 4]], numarray.int8)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.mean(input, labels = labels,
+            output = image.mean(input, labels = labels,
                                             index = [4, 8, 2])
             self.failUnless(output == [4.0, 0.0, 2.5])
 
@@ -2835,14 +2835,14 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.minimum(input, labels = labels)
+            output = image.minimum(input, labels = labels)
             self.failUnless(output == 1.0)
 
     def test_minimum02(self):
         "minimum 2"
         labels = numarray.array([1, 0], numarray.Bool)
         input = numarray.array([[2, 2], [2, 4]], numarray.Bool)
-        output = nd_image.minimum(input, labels = labels)
+        output = image.minimum(input, labels = labels)
         self.failUnless(output == 1.0)
 
     def test_minimum03(self):
@@ -2850,7 +2850,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 2])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.minimum(input, labels = labels,
+            output = image.minimum(input, labels = labels,
                                                index = 2)
             self.failUnless(output == 2.0)
 
@@ -2859,7 +2859,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([[1, 2], [2, 3]])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.minimum(input, labels = labels,
+            output = image.minimum(input, labels = labels,
                                                index = [2, 3, 8])
             self.failUnless(output == [2.0, 4.0, 0.0])
 
@@ -2868,14 +2868,14 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.maximum(input, labels = labels)
+            output = image.maximum(input, labels = labels)
             self.failUnless(output == 3.0)
 
     def test_maximum02(self):
         "maximum 2"
         labels = numarray.array([1, 0], numarray.Bool)
         input = numarray.array([[2, 2], [2, 4]], numarray.Bool)
-        output = nd_image.maximum(input, labels = labels)
+        output = image.maximum(input, labels = labels)
         self.failUnless(output == 1.0)
 
     def test_maximum03(self):
@@ -2883,7 +2883,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 2])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.maximum(input, labels = labels,
+            output = image.maximum(input, labels = labels,
                                                index = 2)
             self.failUnless(output == 4.0)
 
@@ -2892,7 +2892,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([[1, 2], [2, 3]])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.maximum(input, labels = labels,
+            output = image.maximum(input, labels = labels,
                                                index = [2, 3, 8])
             self.failUnless(output == [3.0, 4.0, 0.0])
 
@@ -2900,27 +2900,27 @@ class NDImageTest(unittest.TestCase):
         "variance 1"
         for type in self.types:
             input = numarray.array([], type)
-            output = nd_image.variance(input)
+            output = image.variance(input)
             self.failUnless(float(output) == 0.0)
 
     def test_variance02(self):
         "variance 2"
         for type in self.types:
             input = numarray.array([1], type)
-            output = nd_image.variance(input)
+            output = image.variance(input)
             self.failUnless(float(output) == 0.0)
 
     def test_variance03(self):
         "variance 3"
         for type in self.types:
             input = numarray.array([1, 3], type)
-            output = nd_image.variance(input)
+            output = image.variance(input)
             self.failUnless(output == 2.0)
 
     def test_variance04(self):
         "variance 4"
         input = numarray.array([1, 0], numarray.Bool)
-        output = nd_image.variance(input)
+        output = image.variance(input)
         self.failUnless(output == 0.5)
 
     def test_variance05(self):
@@ -2928,7 +2928,7 @@ class NDImageTest(unittest.TestCase):
         labels = [2, 2, 3]
         for type in self.types:
             input = numarray.array([1, 3, 8], type)
-            output = nd_image.variance(input, labels, 2)
+            output = image.variance(input, labels, 2)
             self.failUnless(output == 2.0)
 
     def test_variance06(self):
@@ -2936,34 +2936,34 @@ class NDImageTest(unittest.TestCase):
         labels = [2, 2, 3, 3, 4]
         for type in self.types:
             input = numarray.array([1, 3, 8, 10, 8], type)
-            output = nd_image.variance(input, labels, [2, 3, 4])
+            output = image.variance(input, labels, [2, 3, 4])
             self.failUnless(output == [2.0, 2.0, 0.0])
 
     def test_standard_deviation01(self):
         "standard deviation 1"
         for type in self.types:
             input = numarray.array([], type)
-            output = nd_image.standard_deviation(input)
+            output = image.standard_deviation(input)
             self.failUnless(float(output) == 0.0)
 
     def test_standard_deviation02(self):
         "standard deviation 2"
         for type in self.types:
             input = numarray.array([1], type)
-            output = nd_image.standard_deviation(input)
+            output = image.standard_deviation(input)
             self.failUnless(float(output) == 0.0)
 
     def test_standard_deviation03(self):
         "standard deviation 3"
         for type in self.types:
             input = numarray.array([1, 3], type)
-            output = nd_image.standard_deviation(input)
+            output = image.standard_deviation(input)
             self.failUnless(output == math.sqrt(2.0))
 
     def test_standard_deviation04(self):
         "standard deviation 4"
         input = numarray.array([1, 0], numarray.Bool)
-        output = nd_image.standard_deviation(input)
+        output = image.standard_deviation(input)
         self.failUnless(output == math.sqrt(0.5))
 
     def test_standard_deviation05(self):
@@ -2971,7 +2971,7 @@ class NDImageTest(unittest.TestCase):
         labels = [2, 2, 3]
         for type in self.types:
             input = numarray.array([1, 3, 8], type)
-            output = nd_image.standard_deviation(input, labels, 2)
+            output = image.standard_deviation(input, labels, 2)
             self.failUnless(output == math.sqrt(2.0))
 
     def test_standard_deviation06(self):
@@ -2979,7 +2979,7 @@ class NDImageTest(unittest.TestCase):
         labels = [2, 2, 3, 3, 4]
         for type in self.types:
             input = numarray.array([1, 3, 8, 10, 8], type)
-            output = nd_image.standard_deviation(input, labels,
+            output = image.standard_deviation(input, labels,
                                                           [2, 3, 4])
             self.failUnless(output == [math.sqrt(2.0), math.sqrt(2.0),
                                        0.0])
@@ -2989,7 +2989,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.minimum_position(input,
+            output = image.minimum_position(input,
                                                         labels = labels)
             self.failUnless(output == (0, 0))
 
@@ -2999,7 +2999,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 0, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.minimum_position(input)
+            output = image.minimum_position(input)
             self.failUnless(output == (1, 2))
 
     def test_minimum_position03(self):
@@ -3007,7 +3007,7 @@ class NDImageTest(unittest.TestCase):
         input = numarray.array([[5, 4, 2, 5],
                                 [3, 7, 0, 2],
                                 [1, 5, 1, 1]], numarray.Bool)
-        output = nd_image.minimum_position(input)
+        output = image.minimum_position(input)
         self.failUnless(output == (1, 2))
 
     def test_minimum_position04(self):
@@ -3015,7 +3015,7 @@ class NDImageTest(unittest.TestCase):
         input = numarray.array([[5, 4, 2, 5],
                                 [3, 7, 1, 2],
                                 [1, 5, 1, 1]], numarray.Bool)
-        output = nd_image.minimum_position(input)
+        output = image.minimum_position(input)
         self.failUnless(output == (0, 0))
 
     def test_minimum_position05(self):
@@ -3025,7 +3025,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 0, 2],
                                     [1, 5, 2, 3]], type)
-            output = nd_image.minimum_position(input, labels)
+            output = image.minimum_position(input, labels)
             self.failUnless(output == (2, 0))
 
     def test_minimum_position06(self):
@@ -3035,7 +3035,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 0, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.minimum_position(input, labels, 2)
+            output = image.minimum_position(input, labels, 2)
             self.failUnless(output == (0, 1))
 
     def test_minimum_position07(self):
@@ -3045,7 +3045,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 0, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.minimum_position(input, labels,
+            output = image.minimum_position(input, labels,
                                                         [2, 3])
             self.failUnless(output == [(0, 1), (1, 2)])
 
@@ -3054,7 +3054,7 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output = nd_image.maximum_position(input,
+            output = image.maximum_position(input,
                                                         labels = labels)
             self.failUnless(output == (1, 0))
 
@@ -3064,7 +3064,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 8, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.maximum_position(input)
+            output = image.maximum_position(input)
             self.failUnless(output == (1, 2))
 
     def test_maximum_position03(self):
@@ -3072,7 +3072,7 @@ class NDImageTest(unittest.TestCase):
         input = numarray.array([[5, 4, 2, 5],
                                 [3, 7, 8, 2],
                                 [1, 5, 1, 1]], numarray.Bool)
-        output = nd_image.maximum_position(input)
+        output = image.maximum_position(input)
         self.failUnless(output == (0, 0))
 
     def test_maximum_position04(self):
@@ -3082,7 +3082,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 8, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.maximum_position(input, labels)
+            output = image.maximum_position(input, labels)
             self.failUnless(output == (1, 1))
 
     def test_maximum_position05(self):
@@ -3092,7 +3092,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 8, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.maximum_position(input, labels, 1)
+            output = image.maximum_position(input, labels, 1)
             self.failUnless(output == (0, 0))
 
     def test_maximum_position06(self):
@@ -3102,7 +3102,7 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 8, 2],
                                     [1, 5, 1, 1]], type)
-            output = nd_image.maximum_position(input, labels,
+            output = image.maximum_position(input, labels,
                                                         [1, 2])
             self.failUnless(output == [(0, 0), (1, 1)])
 
@@ -3111,12 +3111,12 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 0], numarray.Bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output1 = nd_image.extrema(input, labels = labels)
-            output2 = nd_image.minimum(input, labels = labels)
-            output3 = nd_image.maximum(input, labels = labels)
-            output4 = nd_image.minimum_position(input,
+            output1 = image.extrema(input, labels = labels)
+            output2 = image.minimum(input, labels = labels)
+            output3 = image.maximum(input, labels = labels)
+            output4 = image.minimum_position(input,
                                                          labels = labels)
-            output5 = nd_image.maximum_position(input,
+            output5 = image.maximum_position(input,
                                                          labels = labels)
             self.failUnless(output1 == (output2, output3, output4,
                                         output5))
@@ -3126,15 +3126,15 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([1, 2])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output1 = nd_image.extrema(input, labels = labels,
+            output1 = image.extrema(input, labels = labels,
                                                 index = 2)
-            output2 = nd_image.minimum(input, labels = labels,
+            output2 = image.minimum(input, labels = labels,
                                                 index = 2)
-            output3 = nd_image.maximum(input, labels = labels,
+            output3 = image.maximum(input, labels = labels,
                                                 index = 2)
-            output4 = nd_image.minimum_position(input,
+            output4 = image.minimum_position(input,
                                                 labels = labels, index = 2)
-            output5 = nd_image.maximum_position(input,
+            output5 = image.maximum_position(input,
                                                 labels = labels, index = 2)
             self.failUnless(output1 == (output2, output3, output4,
                                         output5))
@@ -3144,15 +3144,15 @@ class NDImageTest(unittest.TestCase):
         labels = numarray.array([[1, 2], [2, 3]])
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
-            output1 = nd_image.extrema(input, labels = labels,
+            output1 = image.extrema(input, labels = labels,
                                                 index = [2, 3, 8])
-            output2 = nd_image.minimum(input, labels = labels,
+            output2 = image.minimum(input, labels = labels,
                                                 index = [2, 3, 8])
-            output3 = nd_image.maximum(input, labels = labels,
+            output3 = image.maximum(input, labels = labels,
                                                 index = [2, 3, 8])
-            output4 = nd_image.minimum_position(input,
+            output4 = image.minimum_position(input,
                                         labels = labels, index = [2, 3, 8])
-            output5 = nd_image.maximum_position(input,
+            output5 = image.maximum_position(input,
                                         labels = labels, index = [2, 3, 8])
             self.failUnless(output1 == (output2, output3, output4,
                                         output5))
@@ -3164,12 +3164,12 @@ class NDImageTest(unittest.TestCase):
             input = numarray.array([[5, 4, 2, 5],
                                     [3, 7, 8, 2],
                                     [1, 5, 1, 1]], type)
-            output1 = nd_image.extrema(input, labels, [1, 2])
-            output2 = nd_image.minimum(input, labels, [1, 2])
-            output3 = nd_image.maximum(input, labels, [1, 2])
-            output4 = nd_image.minimum_position(input, labels,
+            output1 = image.extrema(input, labels, [1, 2])
+            output2 = image.minimum(input, labels, [1, 2])
+            output3 = image.maximum(input, labels, [1, 2])
+            output4 = image.minimum_position(input, labels,
                                                          [1, 2])
-            output5 = nd_image.maximum_position(input, labels,
+            output5 = image.maximum_position(input, labels,
                                                          [1, 2])
             self.failUnless(output1 == (output2, output3, output4,
                                         output5))
@@ -3179,7 +3179,7 @@ class NDImageTest(unittest.TestCase):
         true = [0.0, 0.0]
         for type in self.types:
             input = numarray.array([[1, 0], [0, 0]], type)
-            output = nd_image.center_of_mass(input)
+            output = image.center_of_mass(input)
             e = diff(true, output)
             self.failUnless(e < eps)
 
@@ -3188,7 +3188,7 @@ class NDImageTest(unittest.TestCase):
         true = [1, 0]
         for type in self.types:
             input = numarray.array([[0, 0], [1, 0]], type)
-            output = nd_image.center_of_mass(input)
+            output = image.center_of_mass(input)
             e = diff(true, output)
             self.failUnless(e < eps)
 
@@ -3197,7 +3197,7 @@ class NDImageTest(unittest.TestCase):
         true = [0, 1]
         for type in self.types:
             input = numarray.array([[0, 1], [0, 0]], type)
-            output = nd_image.center_of_mass(input)
+            output = image.center_of_mass(input)
             e = diff(true, output)
             self.failUnless(e < eps)
 
@@ -3206,7 +3206,7 @@ class NDImageTest(unittest.TestCase):
         true = [1, 1]
         for type in self.types:
             input = numarray.array([[0, 0], [0, 1]], type)
-            output = nd_image.center_of_mass(input)
+            output = image.center_of_mass(input)
             e = diff(true, output)
             self.failUnless(e < eps)
 
@@ -3215,7 +3215,7 @@ class NDImageTest(unittest.TestCase):
         true = [0.5, 0.5]
         for type in self.types:
             input = numarray.array([[1, 1], [1, 1]], type)
-            output = nd_image.center_of_mass(input)
+            output = image.center_of_mass(input)
             e = diff(true, output)
             self.failUnless(e < eps)
 
@@ -3223,7 +3223,7 @@ class NDImageTest(unittest.TestCase):
         "center of mass 6"
         true = [0.5, 0.5]
         input = numarray.array([[1, 2], [3, 1]], numarray.Bool)
-        output = nd_image.center_of_mass(input)
+        output = image.center_of_mass(input)
         e = diff(true, output)
         self.failUnless(e < eps)
 
@@ -3232,7 +3232,7 @@ class NDImageTest(unittest.TestCase):
         labels = [1, 0]
         true = [0.5, 0.0]
         input = numarray.array([[1, 2], [3, 1]], numarray.Bool)
-        output = nd_image.center_of_mass(input, labels)
+        output = image.center_of_mass(input, labels)
         e = diff(true, output)
         self.failUnless(e < eps)
 
@@ -3241,7 +3241,7 @@ class NDImageTest(unittest.TestCase):
         labels = [1, 2]
         true = [0.5, 1.0]
         input = numarray.array([[5, 2], [3, 1]], numarray.Bool)
-        output = nd_image.center_of_mass(input, labels, 2)
+        output = image.center_of_mass(input, labels, 2)
         e = diff(true, output)
         self.failUnless(e < eps)
 
@@ -3251,7 +3251,7 @@ class NDImageTest(unittest.TestCase):
         labels = [1, 2]
         true = [(0.5, 0.0), (0.5, 1.0)]
         input = numarray.array([[1, 2], [1, 1]], numarray.Bool)
-        output = nd_image.center_of_mass(input, labels, [1, 2])
+        output = image.center_of_mass(input, labels, [1, 2])
         e = diff(true, output)
         self.failUnless(e < eps)
 
@@ -3259,7 +3259,7 @@ class NDImageTest(unittest.TestCase):
         "histogram 1"
         true = numarray.ones(10)
         input = numarray.arange(10)
-        output = nd_image.histogram(input, 0, 10, 10)
+        output = image.histogram(input, 0, 10, 10)
         e = diff(true, output)
         self.failUnless(e < eps)
 
@@ -3268,7 +3268,7 @@ class NDImageTest(unittest.TestCase):
         labels = [1, 1, 1, 1, 2, 2, 2, 2]
         true = [0, 2, 0, 1, 0]
         input = numarray.array([1, 1, 3, 4, 3, 3, 3, 3])
-        output = nd_image.histogram(input, 0, 4, 5, labels, 1)
+        output = image.histogram(input, 0, 4, 5, labels, 1)
         e = diff(true, output)
         self.failUnless(e < eps)
 
@@ -3278,7 +3278,7 @@ class NDImageTest(unittest.TestCase):
         true1 = [0, 1, 0, 1, 0]
         true2 = [0, 0, 0, 3, 0]
         input = numarray.array([1, 1, 3, 4, 3, 5, 3, 3])
-        output = nd_image.histogram(input, 0, 4, 5, labels, (1,2))
+        output = image.histogram(input, 0, 4, 5, labels, (1,2))
         e1 = diff(true1, output[0])
         e2 = diff(true2, output[1])
         self.failUnless(e1 < eps and e2 < eps)
@@ -3295,7 +3295,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_bf(data,
+        out, ft = image.distance_transform_bf(data,
                                         'euclidean', return_indices = True)
         error1 = diff([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -3339,7 +3339,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_bf(data,
+        out, ft = image.distance_transform_bf(data,
                                         'cityblock', return_indices = True)
         error1 = diff([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -3382,7 +3382,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_bf(data,
+        out, ft = image.distance_transform_bf(data,
                                     'chessboard', return_indices = True)
         error1 = diff([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -3425,37 +3425,37 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        tdt, tft = nd_image.distance_transform_bf(data,
+        tdt, tft = image.distance_transform_bf(data,
                                                     return_indices = 1)
         dts = []
         fts = []
         dt = numarray.zeros(data.shape, dtype = numarray.float64)
-        nd_image.distance_transform_bf(data, distances = dt)
+        image.distance_transform_bf(data, distances = dt)
         dts.append(dt)
-        ft = nd_image.distance_transform_bf(data,
+        ft = image.distance_transform_bf(data,
                             return_distances = False, return_indices = 1)
         fts.append(ft)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_bf(data,
+        image.distance_transform_bf(data,
              return_distances = False, return_indices = True, indices = ft)
         fts.append(ft)
-        dt, ft = nd_image.distance_transform_bf(data,
+        dt, ft = image.distance_transform_bf(data,
                                                        return_indices = 1)
         dts.append(dt)
         fts.append(ft)
         dt = numarray.zeros(data.shape, dtype = numarray.float64)
-        ft = nd_image.distance_transform_bf(data, distances = dt,
+        ft = image.distance_transform_bf(data, distances = dt,
                                                      return_indices = True)
         dts.append(dt)
         fts.append(ft)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        dt = nd_image.distance_transform_bf(data,
+        dt = image.distance_transform_bf(data,
                                        return_indices = True, indices = ft)
         dts.append(dt)
         fts.append(ft)
         dt = numarray.zeros(data.shape, dtype = numarray.float64)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_bf(data, distances = dt,
+        image.distance_transform_bf(data, distances = dt,
                                        return_indices = True, indices = ft)
         dts.append(dt)
         fts.append(ft)
@@ -3476,7 +3476,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_bf(data,
+        out, ft = image.distance_transform_bf(data,
                      'euclidean', return_indices = True, sampling = [2, 2])
         error1 = diff([[0, 0, 0,  0,  0,  0, 0, 0, 0],
                        [0, 0, 0,  0,  0,  0, 0, 0, 0],
@@ -3519,7 +3519,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_bf(data,
+        out, ft = image.distance_transform_bf(data,
                      'euclidean', return_indices = True, sampling = [2, 1])
         error1 = diff([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -3563,9 +3563,9 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_cdt(data,
+        out, ft = image.distance_transform_cdt(data,
                                         'cityblock', return_indices = True)
-        bf = nd_image.distance_transform_bf(data, 'cityblock')
+        bf = image.distance_transform_bf(data, 'cityblock')
         error1 = diff(bf, out)
         error2 = diff([[[0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -3599,9 +3599,9 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_cdt(data,
+        out, ft = image.distance_transform_cdt(data,
                                        'chessboard', return_indices = True)
-        bf = nd_image.distance_transform_bf(data, 'chessboard')
+        bf = image.distance_transform_bf(data, 'chessboard')
         error1 = diff(bf, out)
         error2 = diff([[[0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -3635,37 +3635,37 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        tdt, tft = nd_image.distance_transform_cdt(data,
+        tdt, tft = image.distance_transform_cdt(data,
                                                      return_indices = True)
         dts = []
         fts = []
         dt = numarray.zeros(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_cdt(data, distances = dt)
+        image.distance_transform_cdt(data, distances = dt)
         dts.append(dt)
-        ft = nd_image.distance_transform_cdt(data,
+        ft = image.distance_transform_cdt(data,
                            return_distances = False, return_indices = True)
         fts.append(ft)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_cdt(data,
+        image.distance_transform_cdt(data,
              return_distances = False, return_indices = True, indices = ft)
         fts.append(ft)
-        dt, ft = nd_image.distance_transform_cdt(data,
+        dt, ft = image.distance_transform_cdt(data,
                                                      return_indices = True)
         dts.append(dt)
         fts.append(ft)
         dt = numarray.zeros(data.shape, dtype = numarray.int32)
-        ft = nd_image.distance_transform_cdt(data, distances = dt,
+        ft = image.distance_transform_cdt(data, distances = dt,
                                                      return_indices = True)
         dts.append(dt)
         fts.append(ft)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        dt = nd_image.distance_transform_cdt(data,
+        dt = image.distance_transform_cdt(data,
                                        return_indices = True, indices = ft)
         dts.append(dt)
         fts.append(ft)
         dt = numarray.zeros(data.shape, dtype = numarray.int32)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_cdt(data, distances = dt,
+        image.distance_transform_cdt(data, distances = dt,
                                        return_indices = True, indices = ft)
         dts.append(dt)
         fts.append(ft)
@@ -3686,9 +3686,9 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        out, ft = nd_image.distance_transform_edt(data,
+        out, ft = image.distance_transform_edt(data,
                                                      return_indices = True)
-        bf = nd_image.distance_transform_bf(data, 'euclidean')
+        bf = image.distance_transform_bf(data, 'euclidean')
 
         error1 = diff(bf, out)
         dt = ft - numarray.indices(ft.shape[1:], dtype = ft.dtype)
@@ -3711,37 +3711,37 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        tdt, tft = nd_image.distance_transform_edt(data,
+        tdt, tft = image.distance_transform_edt(data,
                                                      return_indices = True)
         dts = []
         fts = []
         dt = numarray.zeros(data.shape, dtype = numarray.float64)
-        nd_image.distance_transform_edt(data, distances = dt)
+        image.distance_transform_edt(data, distances = dt)
         dts.append(dt)
-        ft = nd_image.distance_transform_edt(data,
+        ft = image.distance_transform_edt(data,
                                return_distances = 0, return_indices = True)
         fts.append(ft)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_edt(data,
+        image.distance_transform_edt(data,
               return_distances = False,return_indices = True, indices = ft)
         fts.append(ft)
-        dt, ft = nd_image.distance_transform_edt(data,
+        dt, ft = image.distance_transform_edt(data,
                                                      return_indices = True)
         dts.append(dt)
         fts.append(ft)
         dt = numarray.zeros(data.shape, dtype = numarray.float64)
-        ft = nd_image.distance_transform_edt(data, distances = dt,
+        ft = image.distance_transform_edt(data, distances = dt,
                                                      return_indices = True)
         dts.append(dt)
         fts.append(ft)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        dt = nd_image.distance_transform_edt(data,
+        dt = image.distance_transform_edt(data,
                                        return_indices = True, indices = ft)
         dts.append(dt)
         fts.append(ft)
         dt = numarray.zeros(data.shape, dtype = numarray.float64)
         ft = numarray.indices(data.shape, dtype = numarray.int32)
-        nd_image.distance_transform_edt(data, distances = dt,
+        image.distance_transform_edt(data, distances = dt,
                                        return_indices = True, indices = ft)
         dts.append(dt)
         fts.append(ft)
@@ -3762,9 +3762,9 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        ref = nd_image.distance_transform_bf(data, 'euclidean',
+        ref = image.distance_transform_bf(data, 'euclidean',
                                                       sampling = [2, 2])
-        out = nd_image.distance_transform_edt(data,
+        out = image.distance_transform_edt(data,
                                                        sampling = [2, 2])
         self.failUnless(diff(ref, out) < eps)
 
@@ -3781,32 +3781,32 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
-        ref = nd_image.distance_transform_bf(data, 'euclidean',
+        ref = image.distance_transform_bf(data, 'euclidean',
                                                       sampling = [2, 1])
-        out = nd_image.distance_transform_edt(data,
+        out = image.distance_transform_edt(data,
                                                        sampling = [2, 1])
         self.failUnless(diff(ref, out) < eps)
 
     def test_generate_structure01(self):
         "generation of a binary structure 1"
-        struct = nd_image.generate_binary_structure(0, 1)
+        struct = image.generate_binary_structure(0, 1)
         self.failUnless(diff(struct, 1) < eps)
 
     def test_generate_structure02(self):
         "generation of a binary structure 2"
-        struct = nd_image.generate_binary_structure(1, 1)
+        struct = image.generate_binary_structure(1, 1)
         self.failUnless(diff(struct, [1, 1, 1]) < eps)
 
     def test_generate_structure03(self):
         "generation of a binary structure 3"
-        struct = nd_image.generate_binary_structure(2, 1)
+        struct = image.generate_binary_structure(2, 1)
         self.failUnless(diff(struct, [[0, 1, 0],
                                       [1, 1, 1],
                                       [0, 1, 0]]) < eps)
 
     def test_generate_structure04(self):
         "generation of a binary structure 4"
-        struct = nd_image.generate_binary_structure(2, 2)
+        struct = image.generate_binary_structure(2, 2)
         self.failUnless(diff(struct, [[1, 1, 1],
                                       [1, 1, 1],
                                       [1, 1, 1]]) < eps)
@@ -3816,7 +3816,7 @@ class NDImageTest(unittest.TestCase):
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
-        out = nd_image.iterate_structure(struct, 2)
+        out = image.iterate_structure(struct, 2)
         self.failUnless(diff(out, [[0, 0, 1, 0, 0],
                                    [0, 1, 1, 1, 0],
                                    [1, 1, 1, 1, 1],
@@ -3828,7 +3828,7 @@ class NDImageTest(unittest.TestCase):
         struct = [[0, 1],
                   [1, 1],
                   [0, 1]]
-        out = nd_image.iterate_structure(struct, 2)
+        out = image.iterate_structure(struct, 2)
         self.failUnless(diff(out, [[0, 0, 1],
                                    [0, 1, 1],
                                    [1, 1, 1],
@@ -3840,7 +3840,7 @@ class NDImageTest(unittest.TestCase):
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
-        out = nd_image.iterate_structure(struct, 2, 1)
+        out = image.iterate_structure(struct, 2, 1)
         error = diff(out[0], [[0, 0, 1, 0, 0],
                               [0, 1, 1, 1, 0],
                               [1, 1, 1, 1, 1],
@@ -3852,56 +3852,56 @@ class NDImageTest(unittest.TestCase):
         "binary erosion 1"
         for type in self.types:
             data = numarray.ones([], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, 1) < eps)
 
     def test_binary_erosion02(self):
         "binary erosion 2"
         for type in self.types:
             data = numarray.ones([], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, 1) < eps)
 
     def test_binary_erosion03(self):
         "binary erosion 3"
         for type in self.types:
             data = numarray.ones([1], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [0]) < eps)
 
     def test_binary_erosion04(self):
         "binary erosion 4"
         for type in self.types:
             data = numarray.ones([1], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [1]) < eps)
 
     def test_binary_erosion05(self):
         "binary erosion 5"
         for type in self.types:
             data = numarray.ones([3], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [0, 1, 0]) < eps)
 
     def test_binary_erosion06(self):
         "binary erosion 6"
         for type in self.types:
             data = numarray.ones([3], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [1, 1, 1]) < eps)
 
     def test_binary_erosion07(self):
         "binary erosion 7"
         for type in self.types:
             data = numarray.ones([5], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [0, 1, 1, 1, 0]) < eps)
 
     def test_binary_erosion08(self):
         "binary erosion 8"
         for type in self.types:
             data = numarray.ones([5], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [1, 1, 1, 1, 1]) < eps)
 
     def test_binary_erosion09(self):
@@ -3909,7 +3909,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.ones([5], type)
             data[2] = 0
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [0, 0, 0, 0, 0]) < eps)
 
     def test_binary_erosion10(self):
@@ -3917,7 +3917,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.ones([5], type)
             data[2] = 0
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [1, 0, 0, 0, 1]) < eps)
 
     def test_binary_erosion11(self):
@@ -3926,7 +3926,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.ones([5], type)
             data[2] = 0
             struct = [1, 0, 1]
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1)
             self.failUnless(diff(out, [1, 0, 1, 0, 1]) < eps)
 
@@ -3936,7 +3936,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.ones([5], type)
             data[2] = 0
             struct = [1, 0, 1]
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1,
                                                    origin = -1)
             self.failUnless(diff(out, [0, 1, 0, 1, 1]) < eps)
@@ -3947,7 +3947,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.ones([5], type)
             data[2] = 0
             struct = [1, 0, 1]
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1,
                                                    origin = 1)
             self.failUnless(diff(out, [1, 1, 0, 1, 0]) < eps)
@@ -3958,7 +3958,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.ones([5], type)
             data[2] = 0
             struct = [1, 1]
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1)
             self.failUnless(diff(out, [1, 1, 0, 0, 1]) < eps)
 
@@ -3968,7 +3968,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.ones([5], type)
             data[2] = 0
             struct = [1, 1]
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1,
                                                    origin = -1)
             self.failUnless(diff(out, [1, 0, 0, 1, 1]) < eps)
@@ -3977,35 +3977,35 @@ class NDImageTest(unittest.TestCase):
         "binary erosion 16"
         for type in self.types:
             data = numarray.ones([1, 1], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [[1]]) < eps)
 
     def test_binary_erosion17(self):
         "binary erosion 17"
         for type in self.types:
             data = numarray.ones([1, 1], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [[0]]) < eps)
 
     def test_binary_erosion18(self):
         "binary erosion 18"
         for type in self.types:
             data = numarray.ones([1, 3], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [[0, 0, 0]]) < eps)
 
     def test_binary_erosion19(self):
         "binary erosion 19"
         for type in self.types:
             data = numarray.ones([1, 3], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [[1, 1, 1]]) < eps)
 
     def test_binary_erosion20(self):
         "binary erosion 20"
         for type in self.types:
             data = numarray.ones([3, 3], type)
-            out = nd_image.binary_erosion(data)
+            out = image.binary_erosion(data)
             self.failUnless(diff(out, [[0, 0, 0],
                                        [0, 1, 0],
                                        [0, 0, 0]]) < eps)
@@ -4014,7 +4014,7 @@ class NDImageTest(unittest.TestCase):
         "binary erosion 21"
         for type in self.types:
             data = numarray.ones([3, 3], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, [[1, 1, 1],
                                        [1, 1, 1],
                                        [1, 1, 1]]) < eps)
@@ -4038,12 +4038,12 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 0, 0, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_erosion(data, border_value = 1)
+            out = image.binary_erosion(data, border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_erosion23(self):
         "binary erosion 23"
-        struct = nd_image.generate_binary_structure(2, 2)
+        struct = image.generate_binary_structure(2, 2)
         true = [[0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -4061,7 +4061,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 0, 0, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
@@ -4086,7 +4086,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 0, 0, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
@@ -4112,7 +4112,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 0, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 0, 0, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                                    border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
@@ -4138,7 +4138,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 0, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 0, 0, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_erosion(data, struct,
+            out = image.binary_erosion(data, struct,
                                       border_value = 1, origin = (-1, -1))
             self.failUnless(diff(out, true) < eps)
 
@@ -4161,7 +4161,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_erosion(data, struct,
+        out = image.binary_erosion(data, struct,
                                          border_value = 1, iterations = 2)
         self.failUnless(diff(out, true) < eps)
 
@@ -4185,7 +4185,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 1, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
         out = numarray.zeros(data.shape, numarray.Bool)
-        nd_image.binary_erosion(data, struct, border_value = 1,
+        image.binary_erosion(data, struct, border_value = 1,
                                          iterations = 2, output = out)
         self.failUnless(diff(out, true) < eps)
 
@@ -4208,7 +4208,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_erosion(data, struct,
+        out = image.binary_erosion(data, struct,
                                          border_value = 1, iterations = 3)
         self.failUnless(diff(out, true) < eps)
 
@@ -4232,7 +4232,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
         out = numarray.zeros(data.shape, numarray.Bool)
-        nd_image.binary_erosion(data, struct, border_value = 1,
+        image.binary_erosion(data, struct, border_value = 1,
                                          iterations = 3, output = out)
         self.failUnless(diff(out, true) < eps)
 
@@ -4256,7 +4256,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
         out = numarray.zeros(data.shape, numarray.Bool)
-        nd_image.binary_erosion(data, struct, border_value = 1,
+        image.binary_erosion(data, struct, border_value = 1,
                           iterations = 1, output = out, origin = (-1, -1))
         self.failUnless(diff(out, true) < eps)
 
@@ -4279,7 +4279,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_erosion(data, struct,
+        out = image.binary_erosion(data, struct,
                                          border_value = 1, iterations = 2)
         self.failUnless(diff(out, true) < eps)
 
@@ -4309,7 +4309,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_erosion(data, struct,
+        out = image.binary_erosion(data, struct,
                             border_value = 1, mask = mask, iterations = -1)
         self.failUnless(diff(out, true) < eps)
 
@@ -4339,7 +4339,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_erosion(data, struct,
+        out = image.binary_erosion(data, struct,
                                             border_value = 1, mask = mask)
         self.failUnless(diff(out, true) < eps)
 
@@ -4373,7 +4373,7 @@ class NDImageTest(unittest.TestCase):
         tmp = numarray.logical_and(data, numarray.logical_not(mask))
         true = numarray.logical_or(true, tmp)
         out = numarray.zeros(data.shape, numarray.Bool)
-        nd_image.binary_erosion(data, struct, border_value = 1,
+        image.binary_erosion(data, struct, border_value = 1,
                                          iterations = 1, output = out,
                                          origin = (-1, -1), mask = mask)
         self.failUnless(diff(out, true) < eps)
@@ -4410,7 +4410,7 @@ class NDImageTest(unittest.TestCase):
         true = numarray.logical_and(tmp, mask)
         tmp = numarray.logical_and(data, numarray.logical_not(mask))
         true = numarray.logical_or(true, tmp)
-        out = nd_image.binary_erosion(data, struct, mask = mask,
+        out = image.binary_erosion(data, struct, mask = mask,
                                        border_value = 1, origin = (-1, -1))
         self.failUnless(diff(out, true) < eps)
 
@@ -4418,51 +4418,51 @@ class NDImageTest(unittest.TestCase):
         "binary dilation 1"
         for type in self.types:
             data = numarray.ones([], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, 1) < eps)
 
     def test_binary_dilation02(self):
         "binary dilation 2"
         for type in self.types:
             data = numarray.zeros([], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, 0) < eps)
 
     def test_binary_dilation03(self):
         "binary dilation 3"
         for type in self.types:
             data = numarray.ones([1], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [1]) < eps)
 
     def test_binary_dilation04(self):
         "binary dilation 4"
         for type in self.types:
             data = numarray.zeros([1], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [0]) < eps)
 
     def test_binary_dilation05(self):
         "binary dilation 5"
         for type in self.types:
             data = numarray.ones([3], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [1, 1, 1]) < eps)
 
     def test_binary_dilation06(self):
         "binary dilation 6"
         for type in self.types:
             data = numarray.zeros([3], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [0, 0, 0]) < eps)
 
     def test_binary_dilation07(self):
         "binary dilation 7"
-        struct = nd_image.generate_binary_structure(1, 1)
+        struct = image.generate_binary_structure(1, 1)
         for type in self.types:
             data = numarray.zeros([3], type)
             data[1] = 1
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [1, 1, 1]) < eps)
 
     def test_binary_dilation08(self):
@@ -4471,7 +4471,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.zeros([5], type)
             data[1] = 1
             data[3] = 1
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [1, 1, 1, 1, 1]) < eps)
 
     def test_binary_dilation09(self):
@@ -4479,7 +4479,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.zeros([5], type)
             data[1] = 1
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [1, 1, 1, 0, 0]) < eps)
 
     def test_binary_dilation10(self):
@@ -4487,7 +4487,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.zeros([5], type)
             data[1] = 1
-            out = nd_image.binary_dilation(data, origin = -1)
+            out = image.binary_dilation(data, origin = -1)
             self.failUnless(diff(out, [0, 1, 1, 1, 0]) < eps)
 
     def test_binary_dilation11(self):
@@ -4495,7 +4495,7 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.zeros([5], type)
             data[1] = 1
-            out = nd_image.binary_dilation(data, origin = 1)
+            out = image.binary_dilation(data, origin = 1)
             self.failUnless(diff(out, [1, 1, 0, 0, 0]) < eps)
 
     def test_binary_dilation12(self):
@@ -4504,7 +4504,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.zeros([5], type)
             data[1] = 1
             struct = [1, 0, 1]
-            out = nd_image.binary_dilation(data, struct)
+            out = image.binary_dilation(data, struct)
             self.failUnless(diff(out, [1, 0, 1, 0, 0]) < eps)
 
     def test_binary_dilation13(self):
@@ -4513,7 +4513,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.zeros([5], type)
             data[1] = 1
             struct = [1, 0, 1]
-            out = nd_image.binary_dilation(data, struct,
+            out = image.binary_dilation(data, struct,
                                                     border_value = 1)
             self.failUnless(diff(out, [1, 0, 1, 0, 1]) < eps)
 
@@ -4523,7 +4523,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.zeros([5], type)
             data[1] = 1
             struct = [1, 0, 1]
-            out = nd_image.binary_dilation(data, struct,
+            out = image.binary_dilation(data, struct,
                                                     origin = -1)
             self.failUnless(diff(out, [0, 1, 0, 1, 0]) < eps)
 
@@ -4533,7 +4533,7 @@ class NDImageTest(unittest.TestCase):
             data = numarray.zeros([5], type)
             data[1] = 1
             struct = [1, 0, 1]
-            out = nd_image.binary_dilation(data, struct,
+            out = image.binary_dilation(data, struct,
                                             origin = -1, border_value = 1)
             self.failUnless(diff(out, [1, 1, 0, 1, 0]) < eps)
 
@@ -4541,28 +4541,28 @@ class NDImageTest(unittest.TestCase):
         "binary dilation 16"
         for type in self.types:
             data = numarray.ones([1, 1], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [[1]]) < eps)
 
     def test_binary_dilation17(self):
         "binary dilation 17"
         for type in self.types:
             data = numarray.zeros([1, 1], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [[0]]) < eps)
 
     def test_binary_dilation18(self):
         "binary dilation 18"
         for type in self.types:
             data = numarray.ones([1, 3], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [[1, 1, 1]]) < eps)
 
     def test_binary_dilation19(self):
         "binary dilation 19"
         for type in self.types:
             data = numarray.ones([3, 3], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [[1, 1, 1],
                                [1, 1, 1],
                                [1, 1, 1]]) < eps)
@@ -4572,18 +4572,18 @@ class NDImageTest(unittest.TestCase):
         for type in self.types:
             data = numarray.zeros([3, 3], type)
             data[1, 1] = 1
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, [[0, 1, 0],
                                        [1, 1, 1],
                                        [0, 1, 0]]) < eps)
 
     def test_binary_dilation21(self):
         "binary dilation 21"
-        struct = nd_image.generate_binary_structure(2, 2)
+        struct = image.generate_binary_structure(2, 2)
         for type in self.types:
             data = numarray.zeros([3, 3], type)
             data[1, 1] = 1
-            out = nd_image.binary_dilation(data, struct)
+            out = image.binary_dilation(data, struct)
             self.failUnless(diff(out, [[1, 1, 1],
                                        [1, 1, 1],
                                        [1, 1, 1]]) < eps)
@@ -4608,7 +4608,7 @@ class NDImageTest(unittest.TestCase):
                                            [0, 0, 1, 0, 0, 1, 0, 0],
                                            [0, 0, 0, 0, 0, 0, 0, 0],
                                            [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data)
+            out = image.binary_dilation(data)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation23(self):
@@ -4631,7 +4631,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, border_value = 1)
+            out = image.binary_dilation(data, border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation24(self):
@@ -4654,7 +4654,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, origin = (1, 1))
+            out = image.binary_dilation(data, origin = (1, 1))
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation25(self):
@@ -4677,13 +4677,13 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, origin = (1, 1),
+            out = image.binary_dilation(data, origin = (1, 1),
                                                          border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation26(self):
         "binary dilation 26"
-        struct = nd_image.generate_binary_structure(2, 2)
+        struct = image.generate_binary_structure(2, 2)
         true = [[1, 1, 1, 0, 0, 0, 0, 0],
                 [1, 1, 1, 0, 0, 0, 0, 0],
                 [1, 1, 1, 0, 1, 1, 1, 0],
@@ -4702,7 +4702,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, struct)
+            out = image.binary_dilation(data, struct)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation27(self):
@@ -4727,7 +4727,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, struct)
+            out = image.binary_dilation(data, struct)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation28(self):
@@ -4742,7 +4742,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 0],
                                    [0, 0, 0, 0],
                                    [0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, border_value = 1)
+            out = image.binary_dilation(data, border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_dilation29(self):
@@ -4760,7 +4760,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 0],
                                [0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_dilation(data, struct,
+        out = image.binary_dilation(data, struct,
                                                 iterations = 2)
         self.failUnless(diff(out, true) < eps)
 
@@ -4780,7 +4780,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 1, 0],
                                [0, 0, 0, 0, 0]], numarray.Bool)
         out = numarray.zeros(data.shape, numarray.Bool)
-        nd_image.binary_dilation(data, struct, iterations = 2,
+        image.binary_dilation(data, struct, iterations = 2,
                                           output = out)
         self.failUnless(diff(out, true) < eps)
 
@@ -4799,7 +4799,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 0],
                                [0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_dilation(data, struct,
+        out = image.binary_dilation(data, struct,
                                                 iterations = 3)
         self.failUnless(diff(out, true) < eps)
 
@@ -4819,7 +4819,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 1, 0],
                                [0, 0, 0, 0, 0]], numarray.Bool)
         out = numarray.zeros(data.shape, numarray.Bool)
-        nd_image.binary_dilation(data, struct, iterations = 3,
+        image.binary_dilation(data, struct, iterations = 3,
                                           output = out)
         self.failUnless(diff(out, true) < eps)
 
@@ -4853,7 +4853,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
 
-        out = nd_image.binary_dilation(data, struct,
+        out = image.binary_dilation(data, struct,
                            iterations = -1, mask = mask, border_value = 0)
         self.failUnless(diff(out, true) < eps)
 
@@ -4879,7 +4879,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
         data = numarray.zeros(mask.shape, numarray.Bool)
-        out = nd_image.binary_dilation(data, struct,
+        out = image.binary_dilation(data, struct,
                           iterations = -1, mask = mask, border_value = 1)
         self.failUnless(diff(out, true) < eps)
 
@@ -4921,7 +4921,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_dilation(data, mask = mask,
+            out = image.binary_dilation(data, mask = mask,
                                         origin = (1, 1), border_value = 1)
             self.failUnless(diff(out, true) < eps)
 
@@ -4955,7 +4955,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
 
-        out = nd_image.binary_propagation(data, struct,
+        out = image.binary_propagation(data, struct,
                                             mask = mask, border_value = 0)
         self.failUnless(diff(out, true) < eps)
 
@@ -4981,7 +4981,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
         data = numarray.zeros(mask.shape, numarray.Bool)
-        out = nd_image.binary_propagation(data, struct,
+        out = image.binary_propagation(data, struct,
                                              mask = mask, border_value = 1)
         self.failUnless(diff(out, true) < eps)
 
@@ -5004,12 +5004,12 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_opening(data)
+            out = image.binary_opening(data)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_opening02(self):
         "binary opening 2"
-        struct = nd_image.generate_binary_structure(2, 2)
+        struct = image.generate_binary_structure(2, 2)
         true = [[1, 1, 1, 0, 0, 0, 0, 0],
                 [1, 1, 1, 0, 0, 0, 0, 0],
                 [1, 1, 1, 0, 0, 0, 0, 0],
@@ -5027,7 +5027,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_opening(data, struct)
+            out = image.binary_opening(data, struct)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_closing01(self):
@@ -5049,12 +5049,12 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 0, 1, 0, 0, 1, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_closing(data)
+            out = image.binary_closing(data)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_closing02(self):
         "binary closing 2"
-        struct = nd_image.generate_binary_structure(2, 2)
+        struct = image.generate_binary_structure(2, 2)
         true = [[0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 1, 1, 0, 0, 0, 0, 0],
                 [0, 1, 1, 1, 1, 1, 1, 0],
@@ -5072,7 +5072,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_closing(data, struct)
+            out = image.binary_closing(data, struct)
             self.failUnless(diff(out, true) < eps)
 
     def test_binary_fill_holes01(self):
@@ -5091,7 +5091,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_fill_holes(data)
+        out = image.binary_fill_holes(data)
         self.failUnless(diff(out, true) < eps)
 
     def test_binary_fill_holes02(self):
@@ -5110,7 +5110,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 0, 1, 1, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_fill_holes(data)
+        out = image.binary_fill_holes(data)
         self.failUnless(diff(out, true) < eps)
 
     def test_binary_fill_holes03(self):
@@ -5129,7 +5129,7 @@ class NDImageTest(unittest.TestCase):
                                [0, 1, 0, 1, 0, 1, 0, 1],
                                [0, 0, 1, 0, 0, 1, 1, 1],
                                [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = nd_image.binary_fill_holes(data)
+        out = image.binary_fill_holes(data)
         self.failUnless(diff(out, true) < eps)
 
     def test_grey_erosion01(self):
@@ -5138,7 +5138,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        output = nd_image.grey_erosion(array,
+        output = image.grey_erosion(array,
                                                 footprint = footprint)
         self.failUnless(diff([[2, 2, 1, 1, 1],
                               [2, 3, 1, 3, 1],
@@ -5151,7 +5151,7 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        output = nd_image.grey_erosion(array,
+        output = image.grey_erosion(array,
                               footprint = footprint, structure = structure)
         self.failUnless(diff([[2, 2, 1, 1, 1],
                               [2, 3, 1, 3, 1],
@@ -5164,7 +5164,7 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[1, 1, 1], [1, 1, 1]]
-        output = nd_image.grey_erosion(array,
+        output = image.grey_erosion(array,
                               footprint = footprint, structure = structure)
         self.failUnless(diff([[1, 1, 0, 0, 0],
                               [1, 2, 0, 2, 0],
@@ -5176,7 +5176,7 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[0, 1, 1], [1, 0, 1]]
-        output = nd_image.grey_dilation(array,
+        output = image.grey_dilation(array,
                                                  footprint = footprint)
         self.failUnless(diff([[7, 7, 9, 9, 5],
                               [7, 9, 8, 9, 7],
@@ -5189,7 +5189,7 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[0, 1, 1], [1, 0, 1]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        output = nd_image.grey_dilation(array,
+        output = image.grey_dilation(array,
                              footprint = footprint, structure = structure)
         self.failUnless(diff([[7, 7, 9, 9, 5],
                               [7, 9, 8, 9, 7],
@@ -5202,7 +5202,7 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[0, 1, 1], [1, 0, 1]]
         structure = [[1, 1, 1], [1, 1, 1]]
-        output = nd_image.grey_dilation(array,
+        output = image.grey_dilation(array,
                              footprint = footprint, structure = structure)
         self.failUnless(diff([[8,  8, 10, 10, 6],
                               [8, 10,  9, 10, 8],
@@ -5214,9 +5214,9 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        tmp = nd_image.grey_erosion(array, footprint = footprint)
-        true = nd_image.grey_dilation(tmp, footprint = footprint)
-        output = nd_image.grey_opening(array,
+        tmp = image.grey_erosion(array, footprint = footprint)
+        true = image.grey_dilation(tmp, footprint = footprint)
+        output = image.grey_opening(array,
                                                 footprint = footprint)
         self.failUnless(diff(true, output) < eps)
 
@@ -5228,11 +5228,11 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp = nd_image.grey_erosion(array, footprint = footprint,
+        tmp = image.grey_erosion(array, footprint = footprint,
                                              structure = structure)
-        true = nd_image.grey_dilation(tmp, footprint = footprint,
+        true = image.grey_dilation(tmp, footprint = footprint,
                                                structure = structure)
-        output = nd_image.grey_opening(array,
+        output = image.grey_opening(array,
                              footprint = footprint, structure = structure)
         self.failUnless(diff(true, output) < eps)
 
@@ -5242,9 +5242,9 @@ class NDImageTest(unittest.TestCase):
                                 [7, 6, 9, 3, 5],
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
-        tmp = nd_image.grey_dilation(array, footprint = footprint)
-        true = nd_image.grey_erosion(tmp, footprint = footprint)
-        output = nd_image.grey_closing(array,
+        tmp = image.grey_dilation(array, footprint = footprint)
+        true = image.grey_erosion(tmp, footprint = footprint)
+        output = image.grey_closing(array,
                                                 footprint = footprint)
         self.failUnless(diff(true, output) < eps)
 
@@ -5255,11 +5255,11 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp = nd_image.grey_dilation(array, footprint = footprint,
+        tmp = image.grey_dilation(array, footprint = footprint,
                                               structure = structure)
-        true = nd_image.grey_erosion(tmp, footprint = footprint,
+        true = image.grey_erosion(tmp, footprint = footprint,
                                               structure = structure)
-        output = nd_image.grey_closing(array,
+        output = image.grey_closing(array,
                               footprint = footprint, structure = structure)
         self.failUnless(diff(true, output) < eps)
 
@@ -5270,13 +5270,13 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp1 = nd_image.grey_dilation(array,
+        tmp1 = image.grey_dilation(array,
                              footprint = footprint, structure = structure)
-        tmp2 = nd_image.grey_erosion(array, footprint = footprint,
+        tmp2 = image.grey_erosion(array, footprint = footprint,
                                               structure = structure)
         true = tmp1 - tmp2
         output = numarray.zeros(array.shape, array.dtype)
-        nd_image.morphological_gradient(array,
+        image.morphological_gradient(array,
                 footprint=footprint, structure=structure, output = output)
         self.failUnless(diff(true, output) < eps)
 
@@ -5287,12 +5287,12 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp1 = nd_image.grey_dilation(array,
+        tmp1 = image.grey_dilation(array,
                              footprint = footprint, structure = structure)
-        tmp2 = nd_image.grey_erosion(array, footprint = footprint,
+        tmp2 = image.grey_erosion(array, footprint = footprint,
                                               structure = structure)
         true = tmp1 - tmp2
-        output =nd_image.morphological_gradient(array,
+        output =image.morphological_gradient(array,
                                 footprint=footprint, structure=structure)
         self.failUnless(diff(true, output) < eps)
 
@@ -5303,13 +5303,13 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp1 = nd_image.grey_dilation(array,
+        tmp1 = image.grey_dilation(array,
                               footprint = footprint, structure = structure)
-        tmp2 = nd_image.grey_erosion(array, footprint = footprint,
+        tmp2 = image.grey_erosion(array, footprint = footprint,
                                               structure = structure)
         true = tmp1 + tmp2 - 2 * array
         output = numarray.zeros(array.shape, array.dtype)
-        nd_image.morphological_laplace(array, footprint=footprint,
+        image.morphological_laplace(array, footprint=footprint,
                                      structure=structure, output = output)
         self.failUnless(diff(true, output) < eps)
 
@@ -5320,12 +5320,12 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp1 = nd_image.grey_dilation(array,
+        tmp1 = image.grey_dilation(array,
                              footprint = footprint, structure = structure)
-        tmp2 = nd_image.grey_erosion(array, footprint = footprint,
+        tmp2 = image.grey_erosion(array, footprint = footprint,
                                               structure = structure)
         true = tmp1 + tmp2 - 2 * array
-        output = nd_image.morphological_laplace(array,
+        output = image.morphological_laplace(array,
                                 footprint=footprint, structure=structure)
         self.failUnless(diff(true, output) < eps)
 
@@ -5336,11 +5336,11 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp = nd_image.grey_opening(array, footprint = footprint,
+        tmp = image.grey_opening(array, footprint = footprint,
                                              structure = structure)
         true = array - tmp
         output = numarray.zeros(array.shape, array.dtype)
-        nd_image.white_tophat(array, footprint=footprint,
+        image.white_tophat(array, footprint=footprint,
                                       structure=structure, output = output)
         self.failUnless(diff(true, output) < eps)
 
@@ -5351,10 +5351,10 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp = nd_image.grey_opening(array, footprint = footprint,
+        tmp = image.grey_opening(array, footprint = footprint,
                                              structure = structure)
         true = array - tmp
-        output = nd_image.white_tophat(array, footprint=footprint,
+        output = image.white_tophat(array, footprint=footprint,
                                                 structure=structure)
         self.failUnless(diff(true, output) < eps)
 
@@ -5365,11 +5365,11 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp = nd_image.grey_closing(array, footprint = footprint,
+        tmp = image.grey_closing(array, footprint = footprint,
                                              structure = structure)
         true = tmp - array
         output = numarray.zeros(array.shape, array.dtype)
-        nd_image.black_tophat(array, footprint=footprint,
+        image.black_tophat(array, footprint=footprint,
                                       structure=structure, output = output)
         self.failUnless(diff(true, output) < eps)
 
@@ -5380,10 +5380,10 @@ class NDImageTest(unittest.TestCase):
                                 [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         structure = [[0, 0, 0], [0, 0, 0]]
-        tmp = nd_image.grey_closing(array, footprint = footprint,
+        tmp = image.grey_closing(array, footprint = footprint,
                                              structure = structure)
         true = tmp - array
-        output = nd_image.black_tophat(array, footprint=footprint,
+        output = image.black_tophat(array, footprint=footprint,
                                                 structure=structure)
         self.failUnless(diff(true, output) < eps)
 
@@ -5410,7 +5410,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 1, 1, 1, 1],
                                    [0, 0, 0, 0, 0]], type)
             out = numarray.zeros(data.shape, numarray.Bool)
-            nd_image.binary_hit_or_miss(data, struct,
+            image.binary_hit_or_miss(data, struct,
                                                  output = out)
             self.failUnless(diff(true, out) < eps)
 
@@ -5428,7 +5428,7 @@ class NDImageTest(unittest.TestCase):
                                    [1, 1, 1, 0, 0, 1, 0, 0],
                                    [0, 1, 0, 1, 1, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_hit_or_miss(data, struct)
+            out = image.binary_hit_or_miss(data, struct)
             self.failUnless(diff(true, out) < eps)
 
     def test_hit_or_miss03(self):
@@ -5456,7 +5456,7 @@ class NDImageTest(unittest.TestCase):
                                    [0, 0, 0, 0, 1, 1, 1, 0],
                                    [0, 1, 1, 1, 1, 1, 1, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0]], type)
-            out = nd_image.binary_hit_or_miss(data, struct1,
+            out = image.binary_hit_or_miss(data, struct1,
                                               struct2)
             self.failUnless(diff(true, out) < eps)
 
