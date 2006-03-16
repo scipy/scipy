@@ -130,7 +130,8 @@ class spmatrix:
         return None
 
     def listprint(self, start, stop):
-        # provides a way to print over a single index
+        """Provides a way to print over a single index.
+        """
         val = ''
         for ind in xrange(start, stop):
             val = val + '  %s\t%s\n' % (self.rowcol(ind), self.getdata(ind))
@@ -260,6 +261,28 @@ class spmatrix:
         csc.dtype = csc.data.dtype
         csc.ftype = _transtabl[csc.dtype.char]
         return csc
+
+    def getcol(self, j):
+        """Returns a copy of column j of the matrix, as an (m x 1) sparse
+        matrix (column vector).
+        """
+        # Post-multiply by a (n x 1) column vector 'a' containing all zeros
+        # except for a_j = 1
+        n = self.shape[1]
+        a = csc_matrix((n, 1), dtype=self.dtype)
+        a[j, 0] = 1
+        return self * a
+
+    def getrow(self, i):
+        """Returns a copy of row i of the matrix, as a (1 x n) sparse 
+        matrix (row vector).
+        """
+        # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
+        # except for a_i = 1
+        m = self.shape[0]
+        a = csr_matrix((1, m), dtype=self.dtype)
+        a[0, i] = 1
+        return a * self
 
     def dot(self, other):
         """ A generic interface for matrix-matrix or matrix-vector
@@ -517,9 +540,12 @@ class csc_matrix(spmatrix):
         except:
             oldM = oldN = None
         # Read matrix dimensions given, if any
-        try:
-            (M, N) = dims
-        except TypeError:
+        if dims is not None:
+            try:
+                (M, N) = dims
+            except (TypeError, ValueError), e:
+                raise TypeError, "dimensions not understood"
+        else:
             M = N = None
         if len(self.rowind) > 0:
             M = max(oldM, M, int(amax(self.rowind)) + 1)
@@ -1019,9 +1045,12 @@ class csr_matrix(spmatrix):
         except:
             oldM = oldN = None
         # Read matrix dimensions given, if any
-        try:
-            (M, N) = dims
-        except TypeError:
+        if dims is not None:
+            try:
+                (M, N) = dims
+            except (TypeError, ValueError), e:
+                raise TypeError, "dimensions not understood"
+        else:
             M = N = None
         M = max(0, oldM, M, len(self.indptr) - 1)
         if len(self.colind) > 0:
@@ -1426,7 +1455,7 @@ class dok_matrix(spmatrix, dict):
                 except (TypeError, ValueError, AssertionError):
                     raise TypeError, "dimensions must be a 2-tuple of positive"\
                             " integers"
-            if isspmatrix(A):
+            elif isspmatrix(A):
                 # For sparse matrices, this is too inefficient; we need
                 # something else.
                 raise NotImplementedError, "initializing a dok_matrix with " \
@@ -2409,7 +2438,6 @@ def getdtype(dtype, a=None, default=None):
         newdtype = numpy.dtype(dtype)
 
     allowed = 'fdFD'
-#    print newdtype, newdtype.char
     if newdtype.char not in allowed:
         if default is None or canCast:
             newdtype = numpy.dtype( 'd' )
