@@ -18,7 +18,8 @@
 from numpy.random import randint
 from scipy.stats import std, mean
 from numpy import common_type as _common_type
-from numpy import *
+from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, Int, \
+     NewAxis, arange, compress, equal, take
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis
