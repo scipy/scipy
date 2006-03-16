@@ -157,7 +157,7 @@ class test_solve(ScipyTestCase):
 
     def bench_random(self,level=5):
         import numpy.linalg as linalg
-        basic_solve = linalg.solve_linear_equations
+        basic_solve = linalg.solve
         print
         print '      Solving system of linear equations'
         print '      =================================='

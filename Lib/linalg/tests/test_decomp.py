@@ -54,7 +54,7 @@ class test_eigvals(ScipyTestCase):
 
     def bench_random(self,level=5):
         import numpy.linalg as linalg
-        Numeric_eigvals = linalg.eigenvalues
+        Numeric_eigvals = linalg.eigvals
         print
         print '           Finding matrix eigenvalues'
         print '      =================================='
