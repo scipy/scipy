@@ -5,6 +5,7 @@ import numpy
 from numexpr import interpreter
 import sys
 
+# XXX Is there any reason to keep Expression around?
 class Expression(object):
     def __init__(self):
         object.__init__(self)
@@ -13,7 +14,7 @@ class Expression(object):
         if name.startswith('_'):
             return self.__dict__[name]
         else:
-            return VariableNode(name)
+            return VariableNode(name, 'float')
 
 E = Expression()
 
@@ -43,8 +44,15 @@ def all_constant(args):
         if not isinstance(x, ConstantNode):
             return False
     return True
+    
+kind_rank = ['int', 'float', 'complex', 'none']
+def common_kind(nodes):
+    n = -1
+    for x in nodes:
+        n = max(n, kind_rank.index(x.astKind))
+    return kind_rank[n]
 
-def binop(opname, reversed=False):
+def binop(opname, reversed=False, kind=None):
     @ophelper
     def operation(self, other):
         if reversed:
@@ -52,15 +60,18 @@ def binop(opname, reversed=False):
         if all_constant([self, other]):
             return ConstantNode(getattr(self.value, "__%s__" % opname)(other.value))
         else:
-            return OpNode(opname, (self, other))
+            return OpNode(opname, (self, other), kind=kind)
     return operation
 
-def func(func):
+def func(func, minkind=None):
     @ophelper
     def function(*args):
         if all_constant(args):
             return ConstantNode(func(*[x.value for x in args]))
-        return FuncNode(func.__name__, args)
+        kind = common_kind(args)
+        if minkind and kind_rank.index(minkind) > kind_rank.index(kind):
+            kind = minkind
+        return FuncNode(func.__name__, args, kind)
     return function
 
 @ophelper
@@ -69,12 +80,13 @@ def where_func(a, b, c):
         return ConstantNode(numpy.where(a, b, c))
     if isinstance(a, ConstantNode):
         raise ValueError("too many dimensions")
+    kind = common_kind([b,c])
     return FuncNode('where', [a,b,c])
 
 @ophelper
 def div_op(a, b):
     if get_optimization() in ('moderate', 'aggressive'):
-        if isinstance(b, ConstantNode):
+        if isinstance(b, ConstantNode) and (a.astKind == b.astKind) and a.astKind in ('float', 'complex'):
             return OpNode('mul', [a, ConstantNode(1./b.value)])
     return OpNode('div', [a,b])
 
@@ -85,18 +97,11 @@ def pow_op(a, b):
         return ConstantNode(a**b)
     if isinstance(b, ConstantNode):
         x = b.value
-        if get_optimization() == 'moderate':
-            if x == -1:
-                return OpNode('div', [ConstantNode(1),a])
-            if x == 0:
-                return FuncNode('ones_like', [a])
-            if x == 0.5:
-                return FuncNode('sqrt', [a])
-            if x == 1:
-                return a
-            if x == 2:
-                return OpNode('mul', [a,a])
-        if get_optimization() == 'aggressive':
+        if False: #get_optimization() == 'aggressive':
+            # This is disabled at the moment since for anything but leaf nodes
+            # it becomes a pessimization since the 'a' is computed multiple times
+            # what is needed is subexpression elimination in the compiler, then
+            # this can be usefully enabled.
             RANGE = 50 # Approximate break even point with pow(x,y)
             # Optimize all integral and half integral powers in [-RANGE, RANGE]
             # Note: for complex numbers RANGE could be larger.
@@ -123,23 +128,36 @@ def pow_op(a, b):
                 if x < 0:
                     r = OpNode('div', [ConstantNode(1), r])
                 return r
+        if get_optimization() in ('moderate', 'aggressive'):
+            if x == -1:
+                return OpNode('div', [ConstantNode(1),a])
+            if x == 0:
+                return FuncNode('ones_like', [a])
+            if x == 0.5:
+                kind = a.astKind
+                if kind == 'int': kind = 'float'
+                return FuncNode('sqrt', [a], kind=kind)
+            if x == 1:
+                return a
+            if x == 2:
+                return OpNode('mul', [a,a])
     return OpNode('pow', [a,b])
 
 
 functions = {
     'copy' : func(numpy.copy),
     'ones_like' : func(numpy.ones_like),
-    'sin' : func(numpy.sin),
-    'cos' : func(numpy.cos),
-    'tan' : func(numpy.tan),
-    'sqrt' : func(numpy.sqrt),
+    'sin' : func(numpy.sin, 'float'),
+    'cos' : func(numpy.cos, 'float'),
+    'tan' : func(numpy.tan, 'float'),
+    'sqrt' : func(numpy.sqrt, 'float'),
 
-    'sinh' : func(numpy.sinh),
-    'cosh' : func(numpy.cosh),
-    'tanh' : func(numpy.tanh),
+    'sinh' : func(numpy.sinh, 'float'),
+    'cosh' : func(numpy.cosh, 'float'),
+    'tanh' : func(numpy.tanh, 'float'),
 
-    'arctan2' : func(numpy.arctan2),
-    'fmod' : func(numpy.fmod),
+    'arctan2' : func(numpy.arctan2, 'float'),
+    'fmod' : func(numpy.fmod, 'float'),
 
     'where' : where_func
             }
@@ -147,28 +165,29 @@ functions = {
 class ExpressionNode(object):
     astType = 'generic'
 
-    def __init__(self, value=None, children=None):
+    def __init__(self, value=None, kind=None, children=None):
         object.__init__(self)
         self.value = value
+        if kind is None:
+            kind = 'none'
+        self.astKind = kind
         if children is None:
             self.children = ()
         else:
             self.children = tuple(children)
 
     def __str__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, self.value,
+        return '%s(%s, %s, %s)' % (self.__class__.__name__, self.value, self.astKind,
                                self.children)
-
     def __repr__(self):
         return self.__str__()
-
-    __add__ = __radd__ = binop('add')
 
     def __neg__(self):
         return OpNode('neg', (self,))
     def __pos__(self):
         return self
 
+    __add__ = __radd__ = binop('add')
     __sub__ = binop('sub')
     __rsub__ = binop('sub', reversed=True)
     __mul__ = __rmul__ = binop('mul')
@@ -179,20 +198,20 @@ class ExpressionNode(object):
     __mod__ = binop('mod')
     __rmod__ = binop('mod', reversed=True)
 
-    __gt__ = binop('gt')
-    __ge__ = binop('ge')
-    __eq__ = binop('eq')
-    __ne__ = binop('ne')
-    __lt__ = binop('gt', reversed=True)
-    __le__ = binop('ge', reversed=True)
+    __gt__ = binop('gt', kind='int')
+    __ge__ = binop('ge', kind='int')
+    __eq__ = binop('eq', kind='int')
+    __ne__ = binop('ne', kind='int')
+    __lt__ = binop('gt', reversed=True, kind='int')
+    __le__ = binop('ge', reversed=True, kind='int')
 
 class LeafNode(ExpressionNode):
     leafNode = True
-
+        
 class VariableNode(LeafNode):
     astType = 'variable'
-    def __init__(self, value=None, children=None):
-        ExpressionNode.__init__(self, value=value)
+    def __init__(self, value=None, kind=None, children=None):
+        ExpressionNode.__init__(self, value=value, kind=kind)
 
 class RawNode(object):
     """Used to pass raw integers to interpreter.
@@ -201,6 +220,7 @@ class RawNode(object):
     this to be used for anything but being walked.
     """
     astType = 'raw'
+    astKind = 'none'
     def __init__(self, value):
         self.value = value
         self.children = ()
@@ -208,21 +228,39 @@ class RawNode(object):
         return 'RawNode(%s)' % (self.value,)
     __repr__ = __str__
 
+
+def normalizeConstant(x):
+    for converter in int, float, complex:
+        try:
+            y = converter(x)
+        except StandardError, err:
+            print x, converter, err
+            continue
+        if x == y:
+            return y
+            
+def getKind(x):
+    return {int : 'int', 
+            float : 'float', 
+            complex : 'complex'}[type(normalizeConstant(x))]
+
 class ConstantNode(LeafNode):
     astType = 'constant'
     def __init__(self, value=None, children=None):
-        LeafNode.__init__(self, value=float(value))
+        kind = getKind(value)
+        LeafNode.__init__(self, value=value, kind=kind)
     def __neg__(self):
         return ConstantNode(-self.value)
 
 class OpNode(ExpressionNode):
     astType = 'op'
-    def __init__(self, opcode=None, args=None):
-        ExpressionNode.__init__(self, value=opcode, children=args)
+    def __init__(self, opcode=None, args=None, kind=None):
+        if (kind is None) and (args is not None):
+            kind = common_kind(args)
+        ExpressionNode.__init__(self, value=opcode, kind=kind, children=args)    
 
 class FuncNode(OpNode):
-    def __init__(self, opcode=None, args=None):
-        if opcode not in interpreter.opcodes:
-            args = list(args) + [RawNode(interpreter.funccodes[opcode])]
-            opcode = 'func_%s' % (len(args)-1)
-        ExpressionNode.__init__(self, value=opcode, children=args)
+    def __init__(self, opcode=None, args=None, kind=None):
+        if (kind is None) and (args is not None):
+            kind = common_kind(args)
+        OpNode.__init__(self, opcode, args, kind)

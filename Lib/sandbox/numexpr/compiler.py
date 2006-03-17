@@ -2,22 +2,24 @@
 import sys
 import numpy
 from numexpr import interpreter
+from expressions import getKind
 
 class ASTNode(object):
-    def __init__(self, astType='generic', value=None, children=()):
+    def __init__(self, astType='generic', astKind='unknown', value=None, children=()):
         object.__init__(self)
         self.astType = astType
+        self.astKind = astKind
         self.value = value
         self.children = tuple(children)
         self.reg = None
 
     def __str__(self):
-        return 'AST(%s, %s, %s, %s)' % (self.astType, self.value,
-                                        self.children, self.reg)
+        return 'AST(%s, %s, %s, %s, %s)' % (self.astType, self.astKind, 
+                                            self.value, self.children, self.reg)
     __repr__ = __str__
 
     def key(self):
-        return (self.astType, self.value, self.children)
+        return (self.astType, self.astKind, self.value, self.children)
 
     def postorderWalk(self):
         for c in self.children:
@@ -32,9 +34,57 @@ class ASTNode(object):
                 yield w
 
 def expressionToAST(ex):
-    this_ast = ASTNode(ex.astType, ex.value,
+    this_ast = ASTNode(ex.astType, ex.astKind, ex.value,
                            [expressionToAST(c) for c in ex.children])
     return this_ast
+
+
+def sigPerms(s):
+    codes = 'ifc'
+    if not s: 
+        yield ''
+    elif s[0] in codes:
+        start = codes.index(s[0])
+        for x in codes[start:]:
+            for y in sigPerms(s[1:]):
+                yield x + y
+    else:
+        yield s
+
+def typeCompileAst(ast):
+    children = list(ast.children)
+    if ast.astType  == 'op': 
+        retsig = ast.astKind[0]
+        basesig = ''.join(x.astKind[0] for x in list(ast.children))
+        # Find some operation that will work on an acceptable casting of args.
+        for sig in sigPerms(basesig):
+            value = ast.value + '_' + retsig + sig
+            if value in interpreter.opcodes:
+                break
+        else:
+            for sig in sigPerms(basesig):
+                funcname = ast.value + '_' + retsig + sig
+                if funcname in interpreter.funccodes:
+                    value = 'func_%s' % (retsig+sig)
+                    children += [ASTNode('raw', 'none', interpreter.funccodes[funcname])]
+                    break
+            else:
+                raise NotImplementedError("couldn't find matching opcode for '%s'" % (ast.value + '_' + retsig+basesig))
+        # First just cast constants, then cast variables if necessary:
+        for i, (have, want)  in enumerate(zip(basesig, sig)):
+            if have != want: 
+                kind = {'i' : 'int', 'f' : 'float', 'd' : 'double'}[want]
+                if children[i].astType == 'constant':
+                    children[i] = ASTNode('constant', kind, children[i].value)
+                else:
+                    opname = "cast"
+                    children[i] = ASTNode('op', kind, opname, [children[i]])
+    else: 
+        value = ast.value
+        children = ast.children
+    new_ast = ASTNode(ast.astType, ast.astKind, value,
+                           [typeCompileAst(c) for c in children])
+    return new_ast
 
 class ConstantNumexpr(object):
     """Used to wrap a constant when numexpr returns a constant value.
@@ -61,7 +111,7 @@ class Register(object):
             name = 'Temporary'
         else:
             name = 'Register'
-        return '%s(%s, %s)' % (name, self.node.astType, self.n,)
+        return '%s(%s, %s, %s)' % (name, self.node.astType, self.node.astKind, self.n,)
 
     def __repr__(self):
         return self.__str__()
@@ -96,19 +146,21 @@ def makeExpressions(context):
     private.get_context = get_context
     return private
 
-def stringToExpression(s, context):
-    expressions = makeExpressions(context)
+
+def stringToExpression(s, types, context):
+    expr = makeExpressions(context)
     # first compile to a code object to determine the names
     c = compile(s, '<expr>', 'eval')
     # make VariableNode's for the names
     names = {}
+    kind_names = {int : 'int', float : 'float', complex : 'complex'}
     for name in c.co_names:
-        names[name] = getattr(expressions.E, name)
-    names.update(expressions.functions)
+        names[name] = expr.VariableNode(name, kind_names[types.get(name, float)])
+    names.update(expr.functions)
     # now build the expression
     ex = eval(c, names)
-    if isinstance(ex, (int, float)):
-        ex = expressions.ConstantNode(ex)
+    if isinstance(ex, (int, float, complex)):
+        ex = expr.ConstantNode(ex, getKind(ex))
     return ex
 
 
@@ -128,14 +180,19 @@ def getInputOrder(ast, input_order=None):
     ordered_variables = [variables[v] for v in ordered_names]
     return ordered_variables
 
+def convertConstant(x, kind):
+    return {'int' : int,
+            'float' : float,
+            'complex' : complex}[kind](x)
+
 def getConstants(ast):
     const_map = {}
     for a in ast.allOf('constant'):
-        const_map[a.value] = a
+        const_map[(a.astKind, a.value)] = a
     ordered_constants = const_map.keys()
     ordered_constants.sort()
     constants_order = [const_map[v] for v in ordered_constants]
-    constants = numpy.array([a.value for a in constants_order], dtype=float)
+    constants = [convertConstant(a.value, a.astKind) for a in constants_order]
     return constants_order, constants
 
 def sortNodesByOrder(nodes, order):
@@ -163,7 +220,7 @@ def optimizeTemporariesAllocation(ast):
     for a in ast.allOf('op'):
         # put result in one of the operand temporaries if there is one
         for c in a.children:
-            if c.reg.temporary:
+            if c.reg.temporary and (c.astKind == a.astKind):
                 a.reg = c.reg
                 break
 
@@ -174,6 +231,7 @@ def setOrderedRegisterNumbers(order, start):
 
 def setRegisterNumbersForTemporaries(ast, start):
     seen = 0
+    signature = ''
     for node in ast.postorderWalk():
         if node.reg.immediate:
             node.reg.n = node.value
@@ -182,7 +240,8 @@ def setRegisterNumbersForTemporaries(ast, start):
         if reg.n < 0:
             reg.n = start + seen
             seen += 1
-    return start + seen
+            signature += reg.node.astKind[0]
+    return start + seen, signature
 
 def convertASTtoThreeAddrForm(ast):
     program = []
@@ -228,8 +287,20 @@ def compileThreeAddrForm(program):
 context_info = [
     ('optimization', ('none', 'moderate', 'aggressive'), 'aggressive'),
                ]
+def get_context(map):
+    context = {}
+    for name, allowed, default in context_info:
+        value = map.pop(name, default)
+        if value in allowed:
+            context[name] = value
+        else:
+            raise ValueError("'%s' must be one of %s" % (name, allowed))
+    if map:
+        raise ValueError("Unknown keyword argument '%s'" % kwargs.pop())    
+    return context
 
-def numexpr(ex, input_order=None, precompiled=False, **kwargs):
+
+def numexpr(ex, input_order=None, precompiled=False, types=None, **kwargs):
     """Compile an expression built using E.<variable> variables to a function.
 
     ex can also be specified as a string "2*a+3*b".
@@ -240,30 +311,38 @@ def numexpr(ex, input_order=None, precompiled=False, **kwargs):
     If precompiled is set to True, a nonusable, easy-to-read representation of
     the bytecode program used is returned instead.
     """
-    context = {}
-    for name, allowed, default in context_info:
-        value = kwargs.pop(name, default)
-        if value in allowed:
-            context[name] = value
-        else:
-            raise ValueError("'%s' must be one of %s" % (name, allowed))
-    if kwargs:
-        raise ValueError("Unknown keyword argument '%s'" % kwargs.pop())
+    # TAH: Eventually signature could replace input_order and types.
+    #
+    # TAH: right now I'm consdiering being able to specify only whether
+    # TAH: a given variable as either a scalar-int?/float/complex
+    # TAH: or as an array-int?/float/complex. This leaves a naming
+    # TAH: problem though, if we use float for float-arrays, what do
+    # TAH: use for float scalars. And vice-versa. For now just use float
+    # TAH: and double for float and double arrays and worry about the
+    # TAH: rest later. (Maybe the interpreter can convert 0-d arrays
+    # TAH: to constants on the fly -- that would fix the problem.)
+    if types is None: types = {}
+    
+    context = get_context(kwargs)
 
+            
     if isinstance(ex, str):
-        ex = stringToExpression(ex, context)
+        ex = stringToExpression(ex, types, context)
     if ex.astType == 'constant':
         return ConstantNumexpr(ex.value)
 
     # the AST is like the expression, but the node objects don't have
     # any odd interpretations
+        
     ast = expressionToAST(ex)
     if ex.astType not in ('op'):
-        ast = ASTNode('op', value='copy', children=(ast,))
+        ast = ASTNode('op', value='copy', astKind=ex.astKind, children=(ast,))
+        
+        
+    ast = typeCompileAst(ast)
 
     input_order = getInputOrder(ast, input_order)
     constants_order, constants = getConstants(ast)
-
     reg_num = [-1]
     def registerMaker(node, temporary=False):
         reg = Register(node, temporary=temporary)
@@ -283,7 +362,7 @@ def numexpr(ex, input_order=None, precompiled=False, **kwargs):
     r_inputs = r_output + 1
     r_constants = setOrderedRegisterNumbers(input_order, r_inputs)
     r_temps = setOrderedRegisterNumbers(constants_order, r_constants)
-    r_end = setRegisterNumbersForTemporaries(ast, r_temps)
+    r_end, tempsig = setRegisterNumbersForTemporaries(ast, r_temps)
     n_temps = r_end - r_temps
 
     threeAddrProgram = convertASTtoThreeAddrForm(ast)
@@ -291,10 +370,12 @@ def numexpr(ex, input_order=None, precompiled=False, **kwargs):
     if precompiled:
         return threeAddrProgram
 
+
     program = compileThreeAddrForm(threeAddrProgram)
     input_names = tuple([a.value for a in input_order])
-    nex = interpreter.NumExpr(n_inputs=len(input_order),
-                              n_temps=n_temps,
+    signature = ''.join(types.get(x, float).__name__[0] for x in input_names)
+    nex = interpreter.NumExpr(signature=signature,
+                              tempsig=tempsig,
                               program=program,
                               constants=constants,
                               input_names=input_names)
@@ -327,6 +408,26 @@ def disassemble(nex):
         source.append( (op, dest, arg1, arg2) )
     return source
 
+
+def get_type(a):
+    tname = a.dtype.type.__name__
+    if tname.startswith('int'):
+        return int
+    if tname.startswith('float'):
+        return float
+    if tname.startswith('complex'):
+        return complex
+    raise ValueError("unkown type %s" % tname)
+        
+
+def get_ex_names(text, context): 
+    ex = stringToExpression(text, {}, context)
+    ast = expressionToAST(ex)
+    input_order = getInputOrder(ast, None)
+    return [a.value for a in input_order]
+
+
+_names_cache = {}
 _numexpr_cache = {}
 def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     """Evaluate a simple array expression elementwise.
@@ -339,27 +440,46 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     Not all operations are supported, and only real
     constants and arrays of floats currently work.
     """
+    
+    # XXX needs to sniff type dictionary. Will need fancy footwork to not be slow
+    # XXX for instance, break numexpr in half and do a half compile to get the names
+    # XXX find the types, then compile. Can cache both parts.
     if not isinstance(ex, str):
         raise ValueError("must specify expression as a string")
-    key = (ex, tuple(sorted(kwargs.items())))
-    try:
-        compiled_ex = _numexpr_cache[key]
-    except KeyError:
-        compiled_ex = _numexpr_cache[key] = numexpr(ex, **kwargs)
-    call_frame = sys._getframe().f_back
+    # Get the names for this expression
+    expr_key = (ex, tuple(sorted(kwargs.items())))
+    if expr_key not in _names_cache:
+        context = get_context(kwargs)
+        _names_cache[expr_key] = get_ex_names(ex, context)
+    names = _names_cache[expr_key]
+    # Get the arguments based on the names.
+    call_frame = sys._getframe(1)
     if local_dict is None:
         local_dict = call_frame.f_locals
     if global_dict is None:
         global_dict = call_frame.f_globals
     arguments = []
-    for name in compiled_ex.input_names:
+    for name in names:
         try:
             a = local_dict[name]
         except KeyError:
             a = global_dict[name]
-        arguments.append(a)
+        arguments.append(numpy.asarray(a))
+    # Create a types dictionary based on the arguments
+    types = {}
+    for name, arg in zip(names, arguments):
+        types[name] = get_type(arg)
+    # Can we look up the numexpr?
+    numexpr_key = expr_key + (tuple(sorted(types.items())),)
+    try:
+        compiled_ex = _numexpr_cache[numexpr_key]
+    except KeyError:
+        compiled_ex = _numexpr_cache[numexpr_key] = numexpr(ex, types=types, **kwargs)
     return compiled_ex(*arguments)
 
 
 if __name__ == '__main__':
-    print numexpr("cos(a)", precompiled=True, optimization='moderate')
+    a = b = c = d = e = numpy.arange(10, dtype=int)
+    expr = 'a**0.5'
+    print stringToExpression(expr, {'a':int}, {'optimization':"moderate"})
+    print evaluate(expr, optimization="moderate")

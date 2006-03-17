@@ -112,26 +112,32 @@ def equal(a, b, exact):
 
 class test_expressions(NumpyTestCase):
     def check_expressions(self):
-        array_size = 1e2
-        a = arange(array_size)
-        a2 = zeros([array_size, array_size])
-        b = arange(array_size)
-        c = arange(array_size)
-        d = arange(array_size)
-        e = arange(array_size)
-
-        try:
-            for optimization, exact in [('none', True), ('moderate', True), ('aggressive', False)]:
+        for dtype in [int, float]:
+            array_size = 100
+            a = arange(array_size, dtype=dtype)
+            a2 = zeros([array_size, array_size], dtype=dtype)
+            b = arange(array_size, dtype=dtype)
+            c = arange(array_size, dtype=dtype)
+            d = arange(array_size, dtype=dtype)
+            e = arange(array_size, dtype=dtype)
+    
+            for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:
                 for section_name, section_tests in tests:
                     for expr in section_tests:
-                        npval = eval(expr)
-                        neval = evaluate(expr, optimization=optimization)
-                        assert equal(npval, neval, exact), expr
-        except AssertionError:
-            raise
-        except:
-            self.warn('numexpr error for expression %r' % (expr,))
-            raise
+                        try:
+                            npval = eval(expr)
+                            neval = evaluate(expr, optimization=optimization)
+                            assert equal(npval, neval, exact), "%s (%s, %s, %s)" % (expr, dtype.__name__, optimization, exact)
+                        except AssertionError:
+                            if '**' in expr and dtype==int:
+                                self.warn("evaluate(%s) != eval(%s)" % (expr, expr))
+                            else:
+                                raise
+                        except NotImplementedError:
+                            self.warn('%r not implemented for %s' % (expr,dtype.__name__))
+                        except:
+                            self.warn('numexpr error for expression %r' % (expr,))
+                            raise
 
 if __name__ == '__main__':
     NumpyTest().run()

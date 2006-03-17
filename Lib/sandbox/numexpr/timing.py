@@ -81,9 +81,9 @@ from numpy import arange, sin, cos, sinh, arctan2, sqrt, where
 try: from scipy.weave import blitz
 except: pass
 from numexpr import evaluate
-a = arange(%f)
-b = arange(%f)
-result = arange(%f)
+a = arange(%f, dtype=float)
+b = arange(%f, dtype=float)
+result = arange(%f, dtype=float)
 """ % ((array_size,)*3)
 expr5 = 'where(0.1*a > arctan2(a, b), 2*a, arctan2(a,b))'
 
