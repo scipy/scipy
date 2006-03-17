@@ -971,7 +971,7 @@ class conditionalmodel(model):
             return log_p_dot
     
 
- class bigmodel(basemodel):
+class bigmodel(basemodel):
     """A maximum-entropy (exponential-form) model on a large sample
     space.
 
