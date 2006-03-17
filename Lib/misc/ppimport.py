@@ -12,7 +12,6 @@ __all__ = ['ppimport','ppimport_attr','ppresolve']
 
 import os
 import sys
-import string
 import types
 import traceback
 

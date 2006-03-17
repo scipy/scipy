@@ -1,5 +1,7 @@
-# Functions which are common and require SciPy Base and Level 1 SciPy
-# (special, linalg)
+"""
+Functions which are common and require SciPy Base and Level 1 SciPy
+(special, linalg)
+"""
 
 import sys
 
