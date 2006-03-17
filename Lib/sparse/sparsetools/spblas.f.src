@@ -9,7 +9,8 @@ c        and indexes are 0-based
 
       subroutine <_c>cscadd(n,a,rowa,ptra,nnzamax,b,rowb,ptrb,nnzbmax,
      $     c,rowc,ptrc,nnzcmax,ierr)
-      <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1), val
+      <_t> a(0:nnzamax-1), b(0:nnzbmax-1)
+      <_t> c(0:nnzcmax-1), val
       integer n, rowa(0:nnzamax-1), rowb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:n), ptrb(0:n), ptrc(0:n), nnzamax, nnzbmax
       integer ia, ib, ra, rb, j, nnzcmax
@@ -116,7 +117,8 @@ c     can have at most the minimum of nnzamax and nnzbmax
 
       subroutine <_c>cscmul(n,a,rowa,ptra,nnzamax,b,rowb,ptrb,nnzbmax,
      $     c,rowc,ptrc,nnzcmax,ierr)
-      <_t> a(0:nnzamax-1), b(0:nnzbmax-1), c(0:nnzcmax-1), val
+      <_t> a(0:nnzamax-1), b(0:nnzbmax-1)
+      <_t> c(0:nnzcmax-1), val
       integer n, rowa(0:nnzamax-1), rowb(0:nnzbmax-1), rowc(0:nnzcmax-1)
       integer ptra(0:n), ptrb(0:n), ptrc(0:n), nnzamax, nnzbmax
       integer ia, ib, ra, rb, j, nnzcmax
@@ -171,9 +173,8 @@ c   successful completion (fix the ptr array)
 
 c  matrix-vector multiplication
 
-
       subroutine <_c>cscmux(a,rowa,ptra,nnzamax,ncol,x,mrow,y)
-      <_t> a(0:nnzamax-1),x(0:ncol-1),y(0:mrow-1)
+      <_t> a(0:nnzamax-1), x(0:ncol-1), y(0:mrow-1)
       integer rowa(0:nnzamax-1), ptra(0:ncol)
       integer nnzamax, mrow, ncol
       integer i, j, ia, ra
@@ -309,7 +310,7 @@ c
       integer nnzamax, nnzbmax, nnzcmax
       integer m, n, irow, kcol, ierr, cumsum
 
-      integer kk, ii, jjb, jb, cb, ia, nnzc
+      integer kk, ii, nnzc
       <_t> val
 
       ierr = 0
@@ -378,7 +379,7 @@ c     intentended for re-entry if nnzcmax is not big enough
       integer nnzamax, nnzbmax, nnzcmax
       integer m, k, n, irow, kcol, ierr
 
-      integer kk, ii, jjb, jb, cb, ia, ra, nnzc, cumsum
+      integer kk, ii, jb, ia, ra, nnzc, cumsum
       <_t> val
       
       ierr = 0

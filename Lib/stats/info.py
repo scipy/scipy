@@ -9,7 +9,7 @@ Each included distribution is an instance of the class rv_continous.
 For each given name the following methods are available.  See docstring for
 rv_continuous for more information
 
-rvs   --  random variates with the distribution 
+rvs   --  random variates with the distribution
 pdf   --  probability density function
 cdf   --  cummulative distribution function
 sf    --  survival function (1.0 - cdf)
@@ -18,7 +18,7 @@ isf   --  inverse survival function
 stats --  mean, variance, and optionally skew and kurtosis
 
 Calling the instance as a function returns a frozen pdf whose shape,
-location, and scale parameters are fixed. 
+location, and scale parameters are fixed.
 
 The distributions available with the above methods are:
 
@@ -54,7 +54,7 @@ genpareto       --  Generalized Pareto
 genexpon        --  Generalized Exponential
 genextreme      --  Generalized Extreme Value
 gausshyper      --  Gauss Hypergeometric
-gamma           --  Gamma 
+gamma           --  Gamma
 gengamma        --  Generalized gamma
 genhalflogistic --  Generalized Half Logistic
 gompertz        --  Gompertz (Truncated Gumbel)
@@ -174,7 +174,7 @@ corrcoef    -- _
 
 f_oneway    -- _
 paired    -- _
-pearsonr    -- _ 
+pearsonr    -- _
 spearmanr    -- _
 pointbiserialr    -- _
 kendalltau    -- _
@@ -214,7 +214,7 @@ ppcc_max    -- _
 ppcc_plot    -- _
 
 
-For many more stat related functions install the software R and the 
+For many more stat related functions install the software R and the
 interface package rpy.
 """
 

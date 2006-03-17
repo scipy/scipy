@@ -57,7 +57,7 @@ def simple_test():
     object created from Python in C++ using weave.inline.
 
     """
-    
+
     a = vtk.vtkStructuredPoints()
     a.SetOrigin(1.0, 1.0, 1.0)
     print "sys.getrefcount(a) = ", sys.getrefcount(a)
@@ -71,7 +71,7 @@ def simple_test():
     weave.inline(code, ['a'], include_dirs=inc_dirs, library_dirs=lib_dirs)
 
     print "sys.getrefcount(a) = ", sys.getrefcount(a)
-    
+
 
 def array_test():
     """Tests if a large numpy array can be copied into a
@@ -88,7 +88,7 @@ def array_test():
     ts = time.clock()
     for i in range(arr.shape[0]):
         v_arr.InsertNextValue(arr[i])
-    print "Time taken to do it in pure Python =", time.clock() - ts    
+    print "Time taken to do it in pure Python =", time.clock() - ts
 
     # Now do the same thing using weave.inline
     v_arr = vtk.vtkFloatArray()
@@ -100,7 +100,7 @@ def array_test():
     ts = time.clock()
     # Note the use of the include_dirs and library_dirs.
     weave.inline(code, ['arr', 'v_arr'], include_dirs=inc_dirs,
-                 library_dirs=lib_dirs)    
+                 library_dirs=lib_dirs)
     print "Time taken to do it using Weave =", time.clock() - ts
 
     # Test the data to make certain that we have done it right.
@@ -111,6 +111,6 @@ def array_test():
     print "OK."
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     simple_test()
     array_test()

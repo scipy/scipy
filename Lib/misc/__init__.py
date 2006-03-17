@@ -16,5 +16,5 @@ except ImportError:
 __all__ += common.__all__
 __all__ += helpmod.__all__
 
-from numpy.testing import ScipyTest 
+from numpy.testing import ScipyTest
 test = ScipyTest().test

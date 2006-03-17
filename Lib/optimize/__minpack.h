@@ -548,9 +548,6 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
   SET_DIAG(ap_diag,o_diag,mode);
 
-  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
-  if (ap_fvec == NULL) goto fail;
-  fvec = (double *) ap_fvec->data;
   m = ap_fvec->dimensions[0];
 
   dims[0] = n; dims[1] = m;

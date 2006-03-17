@@ -1,27 +1,23 @@
-## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
-
 # Author: Travis Oliphant
 # 1999 -- 2002
 
+import types
 import sigtools
-import scipy.special as special
-import scipy.linalg as linalg
+from scipy import special, linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from numpy import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
-     ones
-import types
-import scipy
-from scipy.stats import mean
-import numpy as Numeric
-import numpy
-from numpy import array, arange, where, sqrt, rank, zeros, NewAxis, \
-    argmax, product, cos, pi, exp
+     ones, sin, linspace, real, extract, real_if_close, zeros, array, arange, \
+     where, sqrt, rank, NewAxis, argmax, product, cos, pi, exp, \
+     ravel, size, less_equal, sum, r_, iscomplexobj, take, \
+     argsort, allclose, expand_dims, unique, prod, sort, reshape, c_, \
+     transpose, dot, any, minimum, maximum, mean
+from scipy.fftpack import fftn, ifftn
 from scipy.misc import factorial
 
 _modedict = {'valid':0, 'same':1, 'full':2}
 _boundarydict = {'fill':0, 'pad':0, 'wrap':2, 'circular':2, 'symm':1, 'symmetric':1, 'reflect':4}
-                                                                            
+
 def _valfrommode(mode):
     try:
         val = _modedict[mode]
@@ -64,7 +60,7 @@ def correlate(in1, in2, mode='full'):
 
     out -- an N-dimensional array containing a subset of the discrete linear
            cross-correlation of in1 with in2.
- 
+
     """
     # Code is faster if kernel is smallest array.
     volume = asarray(in1)
@@ -89,9 +85,9 @@ def _centered(arr, newsize):
     endind = startind + newsize
     myslice = [slice(startind[k], endind[k]) for k in range(len(endind))]
     return arr[tuple(myslice)]
-        
+
 def fftconvolve(in1, in2, mode="full"):
-    """Convolve two N-dimensional arrays using FFT. SEE convolve
+    """Convolve two N-dimensional arrays using FFT. See convolve.
     """
     s1 = array(in1.shape)
     s2 = array(in2.shape)
@@ -115,7 +111,7 @@ def fftconvolve(in1, in2, mode="full"):
         return _centered(ret,osize)
     elif mode == "valid":
         return _centered(ret,abs(s2-s1)+1)
-            
+
 
 def convolve(in1, in2, mode='full'):
     """Convolve two N-dimensional arrays.
@@ -147,7 +143,7 @@ def convolve(in1, in2, mode='full'):
     kernel = asarray(in2)
     if rank(volume) == rank(kernel) == 0:
         return volume*kernel
-    if (Numeric.product(kernel.shape) > Numeric.product(volume.shape)):
+    if (product(kernel.shape) > product(volume.shape)):
         temp = kernel
         kernel = volume
         volume = temp
@@ -155,12 +151,12 @@ def convolve(in1, in2, mode='full'):
 
     slice_obj = [slice(None,None,-1)]*len(kernel.shape)
     val = _valfrommode(mode)
-    
+
     return sigtools._correlateND(volume,kernel[slice_obj],val)
 
 def order_filter(a, domain, order):
     """Perform an order filter on an N-dimensional array.
-    
+
   Description:
 
     Perform an order filter on the array in.  The domain argument acts as a
@@ -168,7 +164,7 @@ def order_filter(a, domain, order):
     used to select elements surrounding each input pixel which are placed
     in a list.   The list is sorted, and the output for that pixel is the
     element corresponding to rank in the sorted list.
-    
+
   Inputs:
 
     in -- an N-dimensional input array.
@@ -182,7 +178,7 @@ def order_filter(a, domain, order):
 
     out -- the results of the order filter in an array with the same
            shape as in.
-          
+
     """
     domain = asarray(domain)
     size = domain.shape
@@ -190,7 +186,7 @@ def order_filter(a, domain, order):
         if (size[k] % 2) != 1:
             raise ValueError, "Each dimension of domain argument should have an odd number of elements."
     return sigtools._orderfilterND(a, domain, rank)
-   
+
 
 def medfilt(volume,kernel_size=None):
     """Perform a median filter on an N-dimensional array.
@@ -212,7 +208,7 @@ def medfilt(volume,kernel_size=None):
 
     out -- An array the same size as input containing the median filtered
            result.
-  
+
     """
     volume = asarray(volume)
     if kernel_size is None:
@@ -224,21 +220,21 @@ def medfilt(volume,kernel_size=None):
 
     for k in range(len(volume.shape)):
         if (kernel_size[k] % 2) != 1:
-            raise ValueError, "Each element of kernel_size should be odd." 
+            raise ValueError, "Each element of kernel_size should be odd."
 
-    domain = Numeric.ones(kernel_size)
+    domain = ones(kernel_size)
 
-    numels = Numeric.product(kernel_size)
+    numels = product(kernel_size)
     order = int(numels/2)
     return sigtools._order_filterND(volume,domain,order)
 
 
 def wiener(im,mysize=None,noise=None):
-    """Perform a wiener filter on an N-dimensional array.
+    """Perform a Wiener filter on an N-dimensional array.
 
   Description:
 
-    Apply a wiener filter to the N-dimensional array in.
+    Apply a Wiener filter to the N-dimensional array in.
 
   Inputs:
 
@@ -261,14 +257,14 @@ def wiener(im,mysize=None,noise=None):
     mysize = asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlate(im,Numeric.ones(mysize),1) / Numeric.product(mysize)
+    lMean = correlate(im,ones(mysize),1) / product(mysize)
 
     # Estimate the local variance
-    lVar = correlate(im**2,Numeric.ones(mysize),1) / Numeric.product(mysize) - lMean**2
+    lVar = correlate(im**2,ones(mysize),1) / product(mysize) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
-        noise = mean(Numeric.ravel(lVar))
+        noise = mean(ravel(lVar))
 
     res = (im - lMean)
     res *= (1-noise / lVar)
@@ -276,7 +272,7 @@ def wiener(im,mysize=None,noise=None):
     out = where(lVar < noise, lMean, res)
 
     return out
-    
+
 
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Conolve two 2-dimensional arrays.
@@ -311,7 +307,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-        
+
     return sigtools._convolve2d(in1,in2,1,val,bval,fillvalue)
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
@@ -347,7 +343,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-        
+
     return sigtools._convolve2d(in1, in2, 0,val,bval,fillvalue)
 
 def medfilt2d(input, kernel_size=3):
@@ -381,14 +377,14 @@ def medfilt2d(input, kernel_size=3):
 
     for size in kernel_size:
         if (size % 2) != 1:
-            raise ValueError, "Each element of kernel_size should be odd." 
+            raise ValueError, "Each element of kernel_size should be odd."
 
     return sigtools._medfilt2d(image, kernel_size)
 
 def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
           maxiter=25, grid_density=16):
     """Calculate the minimax optimal filter using Remez exchange algorithm.
-    
+
   Description:
 
     Calculate the filter-coefficients for the finite impulse response
@@ -413,7 +409,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
 
     out -- A rank-1 array containing the coefficients of the optimal
            (in a minimax sense) filter.
-    
+
     """
     # Convert type
     try:
@@ -437,7 +433,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     Filter a data sequence, x, using a digital filter.  This works for many
     fundamental data types (including Object type).  The filter is a direct
     form II transposed implementation of the standard difference equation
-    (see "Algorithm"). 
+    (see "Algorithm").
 
   Inputs:
 
@@ -485,10 +481,10 @@ def lfilter(b, a, x, axis=-1, zi=None):
             Y(z) = ---------------------------------- X(z)
                                 -1               -na
                     a[0] + a[1]z  + ... + a[na] z
-                    
+
     """
     if isscalar(a):
-	a = [a]
+        a = [a]
     if zi is None:
         return sigtools._linear_filter(b, a, x, axis)
     else:
@@ -500,7 +496,7 @@ def lfiltic(b,a,y,x=None):
     which is used by lfilter to generate the output given the input.
 
     If M=len(b)-1 and N=len(a)-1.  Then, the initial conditions are given
-    in the vectors x and y as 
+    in the vectors x and y as
 
     x = {x[-1],x[-2],...,x[-M]}
     y = {y[-1],y[-2],...,y[-N]}
@@ -513,8 +509,8 @@ def lfiltic(b,a,y,x=None):
 
     zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
     """
-    N = Numeric.size(a)-1
-    M = Numeric.size(b)-1
+    N = size(a)-1
+    M = size(b)-1
     K = max(M,N)
     y = asarray(y)
     zi = zeros(K,y.dtype.char)
@@ -522,23 +518,23 @@ def lfiltic(b,a,y,x=None):
         x = zeros(M,y.dtype.char)
     else:
         x = asarray(x)
-        L = Numeric.size(x)
+        L = size(x)
         if L < M:
             x = r_[x,zeros(M-L)]
-    L = Numeric.size(y)
+    L = size(y)
     if L < N:
         y = r_[y,zeros(N-L)]
 
     for m in range(M):
-        zi[m] = Numeric.sum(b[m+1:]*x[:M-m])
+        zi[m] = sum(b[m+1:]*x[:M-m])
 
     for m in range(N):
-        zi[m] -= Numeric.sum(a[m+1:]*y[:N-m])
+        zi[m] -= sum(a[m+1:]*y[:N-m])
 
     return zi
 
 def deconvolve(signal, divisor):
-    """Deconvolves divisor out of signal. 
+    """Deconvolves divisor out of signal.
     """
     num = atleast_1d(signal)
     den = atleast_1d(divisor)
@@ -553,30 +549,30 @@ def deconvolve(signal, divisor):
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
-    
+
 
 def boxcar(M,sym=1):
     """The M-point boxcar window.
     """
-    return Numeric.ones(M,Numeric.Float)
+    return ones(M, float)
 
 def triang(M,sym=1):
     """The M-point triangular window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M + 1        
+        M = M + 1
     n = arange(1,int((M+1)/2)+1)
     if M % 2 == 0:
         w = (2*n-1.0)/M
-        w = numpy.r_[w, w[::-1]]
+        w = r_[w, w[::-1]]
     else:
         w = 2*n/(M+1.0)
-        w = numpy.r_[w, w[-2::-1]]
+        w = r_[w, w[-2::-1]]
 
     if not sym and not odd:
         w = w[:-1]
@@ -586,18 +582,18 @@ def parzen(M,sym=1):
     """The M-point Parzen window
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1    
-    n = Numeric.arange(-(M-1)/2.0,(M-1)/2.0+0.5,1.0)
+        M = M+1
+    n = arange(-(M-1)/2.0,(M-1)/2.0+0.5,1.0)
     na = extract(n < -(M-1)/4.0, n)
     nb = extract(abs(n) <= (M-1)/4.0, n)
     wa = 2*(1-abs(na)/(M/2.0))**3.0
     wb = 1-6*(abs(nb)/(M/2.0))**2.0 + 6*(abs(nb)/(M/2.0))**3.0
-    w = numpy.r_[wa,wb,wa[::-1]]
+    w = r_[wa,wb,wa[::-1]]
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -606,15 +602,15 @@ def bohman(M,sym=1):
     """The M-point Bohman window
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1    
+        M = M+1
     fac = abs(linspace(-1,1,M)[1:-1])
     w = (1 - fac)* cos(pi*fac) + 1.0/pi*sin(pi*fac)
-    w = numpy.r_[0,w,0]    
+    w = r_[0,w,0]
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -623,9 +619,9 @@ def blackman(M,sym=1):
     """The M-point Blackman window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
         M = M+1
@@ -639,51 +635,51 @@ def nuttall(M,sym=1):
     """A minimum 4-term Blackman-Harris window according to Nuttall.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1    
+        M = M+1
     a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
     n = arange(0,M)
     fac = n*2*pi/(M-1.0)
     w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac)
     if not sym and not odd:
-        w = w[:-1]    
+        w = w[:-1]
     return w
 
 def blackmanharris(M,sym=1):
     """The M-point minimum 4-term Blackman-Harris window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1        
+        M = M+1
     a = [0.35875, 0.48829, 0.14128, 0.01168];
     n = arange(0,M)
     fac = n*2*pi/(M-1.0)
     w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac)
     if not sym and not odd:
-        w = w[:-1]    
+        w = w[:-1]
     return w
 
-    
+
 def bartlett(M,sym=1):
     """The M-point Bartlett window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1    
+        M = M+1
     n = arange(0,M)
-    w = where(Numeric.less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
+    w = where(less_equal(n,(M-1)/2.0),2.0*n/(M-1),2.0-2.0*n/(M-1))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -692,12 +688,12 @@ def hanning(M,sym=1):
     """The M-point Hanning window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1        
+        M = M+1
     n = arange(0,M)
     w = 0.5-0.5*cos(2.0*pi*n/(M-1))
     if not sym and not odd:
@@ -708,30 +704,30 @@ def barthann(M,sym=1):
     """Return the M-point modified Bartlett-Hann window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1            
+        M = M+1
     n = arange(0,M)
     fac = abs(n/(M-1.0)-0.5)
     w = 0.62 - 0.48*fac + 0.38*cos(2*pi*fac)
     if not sym and not odd:
         w = w[:-1]
-    return w    
+    return w
 
 def hamming(M,sym=1):
     """The M-point Hamming window.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1        
-    n = arange(0,M)    
+        M = M+1
+    n = arange(0,M)
     w = 0.54-0.46*cos(2.0*pi*n/(M-1))
     if not sym and not odd:
         w = w[:-1]
@@ -741,12 +737,12 @@ def kaiser(M,beta,sym=1):
     """Returns a Kaiser window of length M with shape parameter beta.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1    
+        M = M+1
     n = arange(0,M)
     alpha = (M-1)/2.0
     w = special.i0(beta * sqrt(1-((n-alpha)/alpha)**2.0))/special.i0(beta)
@@ -758,10 +754,10 @@ def gaussian(M,std,sym=1):
     """Returns a Gaussian window of length M with standard-deviation std.
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
-    odd = M % 2        
+        return ones(1,'d')
+    odd = M % 2
     if not sym and not odd:
         M = M + 1
     n = arange(0,M)-(M-1.0)/2.0
@@ -779,12 +775,12 @@ def general_gaussian(M,p,sig,sym=1):
     half power point is at (2*log(2)))**(1/(2*p))*sig
     """
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
-        M = M+1        
+        M = M+1
     n = arange(0,M)-(M-1.0)/2.0
     w = exp(-0.5*(n/sig)**(2*p))
     if not sym and not odd:
@@ -797,9 +793,9 @@ def slepian(M,width,sym=1):
         raise ValueError, "Cannot reliably obtain slepian sequences for"\
               " M*width > 27.38."
     if M < 1:
-        return Numeric.array([])
+        return array([])
     if M == 1:
-        return Numeric.ones(1,'d')
+        return ones(1,'d')
     odd = M % 2
     if not sym and not odd:
         M = M+1
@@ -814,11 +810,11 @@ def slepian(M,width,sym=1):
     ind = argmax(abs(lam))
     w = abs(vec[:,ind])
     w = w / max(w)
-    
+
     if not sym and not odd:
         w = w[:-1]
     return w
-            
+
 
 def hilbert(x, N=None):
     """Return the hilbert transform of x of length N.
@@ -828,11 +824,11 @@ def hilbert(x, N=None):
         N = len(x)
     if N <=0:
         raise ValueError, "N must be positive."
-    if numpy.iscomplexobj(x):
+    if iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
-        x = numpy.real(x)
+        x = real(x)
     Xf = fft(x,N,axis=0)
-    h = Numeric.zeros(N)
+    h = zeros(N)
     if N % 2 == 0:
         h[0] = h[N/2] = 1
         h[1:N/2] = 2
@@ -841,7 +837,7 @@ def hilbert(x, N=None):
         h[1:(N+1)/2] = 2
 
     if len(x.shape) > 1:
-        h = h[:,Numeric.NewAxis]
+        h = h[:, NewAxis]
     x = ifft(Xf*h)
     return x
 
@@ -856,13 +852,13 @@ def hilbert2(x,N=None):
         if N <=0:
             raise ValueError, "N must be positive."
         N = (N,N)
-    if numpy.iscomplexobj(x):
+    if iscomplexobj(x):
         print "Warning: imaginary part of x ignored."
-        x = numpy.real(x)
+        x = real(x)
     print N
     Xf = fft2(x,N,axes=(0,1))
-    h1 = Numeric.zeros(N[0],'d')
-    h2 = Numeric.zeros(N[1],'d')
+    h1 = zeros(N[0],'d')
+    h2 = zeros(N[1],'d')
     for p in range(2):
         h = eval("h%d"%(p+1))
         N1 = N[p]
@@ -877,20 +873,20 @@ def hilbert2(x,N=None):
     h = h1[:,NewAxis] * h2[NewAxis,:]
     k = len(x.shape)
     while k > 2:
-        h = h[:,Numeric.NewAxis]
+        h = h[:, NewAxis]
         k -= 1
     x = ifft2(Xf*h,axes=(0,1))
     return x
-    
+
 
 def cmplx_sort(p):
     "sort roots based on magnitude."
     p = asarray(p)
-    if numpy.iscomplexobj(p):
-        indx = Numeric.argsort(abs(p))
+    if iscomplexobj(p):
+        indx = argsort(abs(p))
     else:
-        indx = Numeric.argsort(p)
-    return Numeric.take(p,indx), indx
+        indx = argsort(p)
+    return take(p,indx), indx
 
 def unique_roots(p,tol=1e-3,rtype='min'):
     """Determine the unique roots and their multiplicities in two lists
@@ -899,7 +895,7 @@ def unique_roots(p,tol=1e-3,rtype='min'):
 
       p -- The list of roots
       tol --- The tolerance for two roots to be considered equal.
-      rtype --- How to determine the returned root from the close 
+      rtype --- How to determine the returned root from the close
                   ones:  'max': pick the maximum
                          'min': pick the minimum
                          'avg': average roots
@@ -932,20 +928,18 @@ def unique_roots(p,tol=1e-3,rtype='min'):
         else:
             pout.append(tr)
             curp = tr
-            sameroots = [tr]            
+            sameroots = [tr]
             indx += 1
             mult.append(1)
     return array(pout), array(mult)
-
-from numpy import real_if_close, atleast_1d
 
 
 def invres(r,p,k,tol=1e-3,rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
     If M = len(b) and N = len(a)
-    
-            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1] 
+
+            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
     H(s) = ------ = ----------------------------------------------
             a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
 
@@ -957,14 +951,14 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
     fraction expansion has terms like
 
             r[i]      r[i+1]              r[i+n-1]
-          -------- + ----------- + ... + ----------- 
+          -------- + ----------- + ... + -----------
           (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
     See also:  residue, poly, polyval, unique_roots
     """
     extra = k
     p, indx = cmplx_sort(p)
-    r = Numeric.take(r,indx)
+    r = take(r,indx)
     pout, mult = unique_roots(p,tol=tol,rtype=rtype)
     p = []
     for k in range(len(pout)):
@@ -986,7 +980,7 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
             b = polyadd(b,r[indx]*poly(t2))
             indx += 1
     b = real_if_close(b)
-    while Numeric.allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+    while allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
         b = b[1:]
     return b, a
 
@@ -994,8 +988,8 @@ def residue(b,a,tol=1e-3,rtype='avg'):
     """Compute partial-fraction expansion of b(s) / a(s).
 
     If M = len(b) and N = len(a)
-    
-            b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1] 
+
+            b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1]
     H(s) = ------ = ----------------------------------------------
             a(s)     a[0] s**(N-1) + a[1] s**(N-2) + ... + a[N-1]
 
@@ -1004,10 +998,10 @@ def residue(b,a,tol=1e-3,rtype='avg'):
            (s-p[0])   (s-p[1])         (s-p[-1])
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like 
+    fraction expansion has terms like
 
             r[i]      r[i+1]              r[i+n-1]
-          -------- + ----------- + ... + ----------- 
+          -------- + ----------- + ... + -----------
           (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
     See also:  invres, poly, polyval, unique_roots
@@ -1040,7 +1034,7 @@ def residue(b,a,tol=1e-3,rtype='avg'):
                 term1 = polymul(polyder(bn,1),an)
                 term2 = polymul(bn,polyder(an,1))
                 bn = polysub(term1,term2)
-                an = polymul(an,an)                
+                an = polymul(an,an)
             r[indx+m-1] = polyval(bn,pout[n]) / polyval(an,pout[n]) \
                           / factorial(sig-m)
         indx += sig
@@ -1050,7 +1044,7 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
     """Compute partial-fraction expansion of b(z) / a(z).
 
     If M = len(b) and N = len(a)
-    
+
             b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
     H(z) = ------ = ----------------------------------------------
             a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
@@ -1060,10 +1054,10 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
            (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like 
+    fraction expansion has terms like
 
                r[i]              r[i+1]                    r[i+n-1]
-          -------------- + ------------------ + ... + ------------------ 
+          -------------- + ------------------ + ... + ------------------
           (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
     See also:  invresz, poly, polyval, unique_roots
@@ -1075,7 +1069,7 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
     if krev == []:
         k = []
     else:
-        k = krev[::-1]    
+        k = krev[::-1]
     b = brev[::-1]
     p = roots(a)
     r = p*0.0
@@ -1105,7 +1099,7 @@ def residuez(b,a,tol=1e-3,rtype='avg'):
                 term1 = polymul(polyder(bn,1),an)
                 term2 = polymul(bn,polyder(an,1))
                 bn = polysub(term1,term2)
-                an = polymul(an,an)                
+                an = polymul(an,an)
             r[indx+m-1] = polyval(bn,1.0/pout[n]) / polyval(an,1.0/pout[n]) \
                           / factorial(sig-m) / (-pout[n])**(sig-m)
         indx += sig
@@ -1115,7 +1109,7 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
     """Compute b(z) and a(z) from partial fraction expansion: r,p,k
 
     If M = len(b) and N = len(a)
-    
+
             b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
     H(z) = ------ = ----------------------------------------------
             a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
@@ -1125,17 +1119,17 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
            (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like 
+    fraction expansion has terms like
 
                r[i]              r[i+1]                    r[i+n-1]
-          -------------- + ------------------ + ... + ------------------ 
+          -------------- + ------------------ + ... + ------------------
           (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
     See also:  residuez, poly, polyval, unique_roots
     """
     extra = asarray(k)
     p, indx = cmplx_sort(p)
-    r = Numeric.take(r,indx)
+    r = take(r,indx)
     pout, mult = unique_roots(p,tol=tol,rtype=rtype)
     p = []
     for k in range(len(pout)):
@@ -1147,7 +1141,7 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
         b = [0]
     indx = 0
     brev = asarray(b)[::-1]
-    for k in range(len(pout)):  
+    for k in range(len(pout)):
         temp = []
         # Construct polynomial which does not include any of this root
         for l in range(len(pout)):
@@ -1166,7 +1160,7 @@ def get_window(window,Nx,fftbins=1):
     """Return a window of length Nx and type window.
 
     If fftbins is 1, create a "periodic" window ready to use with ifftshift
-    and be multiplied by the result of an fft (SEE ALSO fftfreq). 
+    and be multiplied by the result of an fft (SEE ALSO fftfreq).
 
     Window types:  boxcar, triang, blackman, hamming, hanning, bartlett,
                    parzen, bohman, blackmanharris, nuttall, barthann,
@@ -1198,7 +1192,7 @@ def get_window(window,Nx,fftbins=1):
                 raise ValueError, "That window needs a parameter -- pass a tuple"
             else:
                 winstr = window
-                
+
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman
         elif winstr in ['triangle', 'triang', 'tri']:
@@ -1210,16 +1204,16 @@ def get_window(window,Nx,fftbins=1):
         elif winstr in ['hanning', 'hann', 'han']:
             winfunc = hanning
         elif winstr in ['blackmanharris', 'blackharr','bkh']:
-            winfun = blackmanharris
+            winfunc = blackmanharris
         elif winstr in ['parzen', 'parz', 'par']:
-            winfun = parzen
+            winfunc = parzen
         elif winstr in ['bohman', 'bman', 'bmn']:
             winfunc = bohman
         elif winstr in ['nuttall', 'nutl', 'nut']:
             winfunc = nuttall
         elif winstr in ['barthann', 'brthan', 'bth']:
             winfunc = barthann
-            
+
         elif winstr in ['kaiser', 'ksr']:
             winfunc = kaiser
         elif winstr in ['gaussian', 'gauss', 'gss']:
@@ -1240,7 +1234,7 @@ def get_window(window,Nx,fftbins=1):
         params = (Nx,beta,sym)
 
     return winfunc(*params)
-        
+
 
 def resample(x,num,t=None,axis=0,window=None):
     """Resample to num samples using Fourier method along the given axis.
@@ -1287,8 +1281,8 @@ def resample(x,num,t=None,axis=0,window=None):
     sl = [slice(None)]*len(x.shape)
     newshape = list(x.shape)
     newshape[axis] = num
-    N = int(Numeric.minimum(num,Nx))
-    Y = Numeric.zeros(newshape,'D')
+    N = int(numpy.minimum(num,Nx))
+    Y = zeros(newshape,'D')
     sl[axis] = slice(0,(N+1)/2)
     Y[sl] = X[sl]
     sl[axis] = slice(-(N-1)/2,None)
@@ -1304,10 +1298,6 @@ def resample(x,num,t=None,axis=0,window=None):
         new_t = arange(0,num)*(t[1]-t[0])* Nx / float(num) + t[0]
         return y, new_t
 
-from numpy import expand_dims, unique, prod, sort, zeros, ones, \
-     reshape, r_, any, c_, transpose, take, dot
-
-import scipy.linalg as linalg
 def detrend(data, axis=-1, type='linear', bp=0):
     """Remove linear trend along axis from data.
 
@@ -1356,4 +1346,3 @@ def detrend(data, axis=-1, type='linear', bp=0):
         olddims = vals[:axis] + [0] + vals[axis:]
         ret = transpose(ret,tuple(olddims))
         return ret
-

@@ -31,7 +31,7 @@ def configuration(parent_package='',top_path=None):
     #macs = [('USER_ABORT','superlu_python_module_abort'),
     #        ('USER_MALLOC','superlu_python_module_malloc'),
     #        ('USER_FREE','superlu_python_module_free')]
-    
+
     # Extension
     config.add_extension('_zsuperlu',
                          sources = ['_zsuperlumodule.c','_superlu_utils.c',
@@ -68,7 +68,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('sparsetools',
                          sources =  sources,
                          )
-    
+
     return config
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ def poisson1d(n):
         if i < n-1:
             L[i,i+1] = -1
     return L
- 
+
 def poisson1d_sym(n):
     L = spmatrix.ll_mat_sym(n)
     for i in range(n):
@@ -17,7 +17,7 @@ def poisson1d_sym(n):
         if i > 0:
             L[i,i-1] = -1
     return L
-        
+
 def poisson2d(n):
     L = spmatrix.ll_mat(n*n, n*n)
     for i in range(n):

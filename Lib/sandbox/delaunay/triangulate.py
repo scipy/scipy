@@ -26,26 +26,26 @@ class Triangulation(object):
         point_id = an integer identifying a particular point (specifically, an
             index into x and y), range(0, npoints)
         edge_id = an integer identifying a particular edge, range(0, nedges)
-        triangle_id = an integer identifying a particular triangle 
+        triangle_id = an integer identifying a particular triangle
             range(0, ntriangles)
 
     Attributes: (all should be treated as read-only to maintain consistency)
       x, y -- the coordinates of the points as 1-D arrays of floats.
 
-      circumcenters -- (ntriangles, 2) array of floats giving the (x,y) 
-        coordinates of the circumcenters of each triangle (indexed by a 
+      circumcenters -- (ntriangles, 2) array of floats giving the (x,y)
+        coordinates of the circumcenters of each triangle (indexed by a
         triangle_id).
 
-      edge_db -- (nedges, 2) array of point_id's giving the points forming 
+      edge_db -- (nedges, 2) array of point_id's giving the points forming
         each edge in no particular order; indexed by an edge_id.
 
-      triangle_nodes -- (ntriangles, 3) array of point_id's giving the points 
-        forming each triangle in counter-clockwise order; indexed by a 
+      triangle_nodes -- (ntriangles, 3) array of point_id's giving the points
+        forming each triangle in counter-clockwise order; indexed by a
         triangle_id.
 
-      triangle_neighbors -- (ntriangles, 3) array of triangle_id's giving the 
-        neighboring triangle; indexed by a triangle_id. 
-        
+      triangle_neighbors -- (ntriangles, 3) array of triangle_id's giving the
+        neighboring triangle; indexed by a triangle_id.
+
         The value can also be -1 meaning that that edge is on the convex hull of
         the points and there is no neighbor on that edge. The values are ordered
         such that triangle_neighbors[tri, i] corresponds with the edge
@@ -82,7 +82,7 @@ class Triangulation(object):
                          self.triangle_nodes[border[:,1]][:,0]))
         edges.update(zip(self.triangle_nodes[border[:,2]][:,0],
                          self.triangle_nodes[border[:,2]][:,1]))
-        
+
         # Take an arbitrary starting point and its subsequent node
         hull = list(edges.popitem())
         while edges:
@@ -94,10 +94,10 @@ class Triangulation(object):
         return hull
 
     def linear_interpolator(self, z, default_value=sp.nan):
-        """Get an object which can interpolate within the convex hull by 
+        """Get an object which can interpolate within the convex hull by
         assigning a plane to each triangle.
 
-        z -- an array of floats giving the known function values at each point 
+        z -- an array of floats giving the known function values at each point
           in the triangulation.
         """
         z = sp.asarray(z, dtype=sp.float64)
@@ -107,10 +107,10 @@ class Triangulation(object):
         return LinearInterpolator(self, z, default_value)
 
     def nn_interpolator(self, z, default_value=sp.nan):
-        """Get an object which can interpolate within the convex hull by 
+        """Get an object which can interpolate within the convex hull by
         the natural neighbors method.
 
-        z -- an array of floats giving the known function values at each point 
+        z -- an array of floats giving the known function values at each point
           in the triangulation.
         """
         z = sp.asarray(z, dtype=sp.float64)
@@ -169,5 +169,3 @@ class Triangulation(object):
             s = g.setdefault(j, set())
             s.add(i)
         return g
-
-

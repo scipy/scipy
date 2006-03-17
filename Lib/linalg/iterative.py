@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 
 # Iterative methods using reverse-communication raw material
@@ -9,7 +9,7 @@
 #    or be a numeric array
 
 
-__all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr'] 
+__all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 import _iterative
 import numpy as sb
 
@@ -24,7 +24,7 @@ _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('f','D'):'D', ('d','f'):'d', ('d','d'):'d',
                  ('d','F'):'D', ('d','D'):'D', ('F','f'):'F',
                  ('F','d'):'D', ('F','F'):'F', ('F','D'):'D',
-                 ('D','f'):'D', ('D','d'):'d', ('D','F'):'D',
+                 ('D','f'):'D', ('D','d'):'D', ('D','F'):'D',
                  ('D','D'):'D'}
 
 class get_matvec:
@@ -62,7 +62,7 @@ class get_psolve:
     def __init__(self, obj, *args):
         self.obj = obj
         self.args = args
-        meth = getattr(obj,self.methname,None)   
+        meth = getattr(obj,self.methname,None)
         if meth is None:  # no preconditiong available
             self.callfunc = self.type1
             return
@@ -76,7 +76,7 @@ class get_psolve:
 
     def __call__(self, x):
         return self.callfunc(x)
-    
+
     def type1(self, x):
         return x
 
@@ -99,7 +99,7 @@ class get_psolveq(get_psolve):
 
 class get_rpsolveq(get_psolveq):
     methname = 'rpsolve'
-    
+
 def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     """Use BIConjugate Gradient iteration to solve A x = b
 
@@ -157,7 +157,7 @@ def bicg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     x = sb.asarray(x,typ)
     b = sb.asarray(b,typ)
-        
+
     matvec, psolve, rmatvec, rpsolve = (None,)*4
     ltr = _type_conv[typ]
     revcom = _iterative.__dict__[ltr+'bicgrevcom']
@@ -267,7 +267,7 @@ def bicgstab(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     x = sb.asarray(x,typ)
     b = sb.asarray(b,typ)
-        
+
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
     revcom = _iterative.__dict__[ltr+'bicgstabrevcom']
@@ -322,7 +322,7 @@ def cg(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
            representing solution to the preconditioning equation
            M * x = b.
     b --   An n-length vector
-    
+
 
     Outputs:
 
@@ -425,7 +425,7 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
            representing solution to the preconditioning equation
            M * x = b.
     b --   An n-length vector
-    
+
 
     Outputs:
 
@@ -472,7 +472,7 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     x = sb.asarray(x,typ)
     b = sb.asarray(b,typ)
-        
+
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
     revcom = _iterative.__dict__[ltr+'cgsrevcom']
@@ -518,7 +518,7 @@ def cgs(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     return x, info
 
 def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
-    """Use Generalized Minimal RESidual iteration to solve A x = b 
+    """Use Generalized Minimal RESidual iteration to solve A x = b
 
     Inputs:
 
@@ -527,10 +527,10 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
            representing solution to the preconditioning equation
            M * x = b.
     b --   An n-length vector
-    
+
 
     Outputs:
-    
+
     x  --  The converged solution
     info -- output result
             0  : successful exit
@@ -540,13 +540,13 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
     Optional Inputs:
 
     restrt -- (n) When to restart (change this to get faster performance -- but
-                   may not converge). 
+                   may not converge).
     x0  -- (0) default starting guess
     tol -- (1e-5) relative tolerance to achieve
     maxiter -- (10*n) maximum number of iterations
     xtype  --  The type of the result.  If None, then it will be determined
-                 from A.dtype.char and b.  If A does not have a typecode method then it will
-                 compute A.matvec(x0) to get a typecode.   To save the extra computation when
+                 from A.dtype.char and b.  If A does not have a dtype attribute then it will
+                 compute A.matvec(x0) to get a data type.   To save the extra computation when
                  A does not have a typecode attribute use xtype=0 for the same type as b or
                  use xtype='f','d','F',or 'D'
     """
@@ -563,8 +563,6 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
         try:
             atyp = A.dtype.char
         except AttributeError:
-            atyp = None
-        if atyp is None:
             atyp = A.matvec(x).dtype.char
         typ = _coerce_rules[b.dtype.char,atyp]
     elif xtype == 0:
@@ -576,7 +574,7 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
 
     x = sb.asarray(x,typ)
     b = sb.asarray(b,typ)
-        
+
     matvec, psolve = (None,)*2
     ltr = _type_conv[typ]
     revcom = _iterative.__dict__[ltr+'gmresrevcom']
@@ -605,7 +603,7 @@ def gmres(A,b,restrt=None,x0=None,tol=1e-5,maxiter=None,xtype=None):
             if matvec is None:
                 matvec = get_matvec(A)
             work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)            
+            work[slice2] += sclr1*matvec(x)
         elif (ijob == 2):
             if psolve is None:
                 psolve = get_psolve(A)
@@ -684,7 +682,7 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
     x = sb.asarray(x,typ)
     b = sb.asarray(b,typ)
 
-        
+
     matvec, psolve, rmatvec, rpsolve = (None,)*4
     ltr = _type_conv[typ]
     revcom = _iterative.__dict__[ltr+'qmrrevcom']
@@ -723,7 +721,7 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         elif (ijob == 4):
             if psolve is None:
                 psolve = get_psolveq(A)
-            work[slice1] = psolve(work[slice2],'right')            
+            work[slice1] = psolve(work[slice2],'right')
         elif (ijob == 5):
             if rpsolve is None:
                 rpsolve = get_rpsolveq(A)
@@ -745,5 +743,3 @@ def qmr(A,b,x0=None,tol=1e-5,maxiter=None,xtype=None):
         ijob = 2
 
     return x, info
-
-

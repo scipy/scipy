@@ -50,18 +50,33 @@ static PyObject *Py_cgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|ii", kwlist, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec))
     return NULL;
 
+  if (!_CHECK_INTEGER(colind) || !_CHECK_INTEGER(rowptr)) {
+          PyErr_SetString(PyExc_TypeError, "colind and rowptr must be of type cint");
+          return NULL;
+  }
+
 
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_CFLOAT,1,2);
-  if (Py_X == NULL) goto fail;
+  if (Py_X == NULL) return NULL;
   if (csc) {
-      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) goto fail;
+      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
   else {
-      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) goto fail; 
+      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_CFLOAT)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
   
-  if (DenseSuper_from_Numeric(&B, Py_X)) goto fail;
+  if (DenseSuper_from_Numeric(&B, Py_X)) {
+          Destroy_SuperMatrix_Store(&A);  
+          Py_DECREF(Py_X);
+          return NULL;
+  }
 
   /* Setup options */
   
@@ -140,13 +155,18 @@ Py_cgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!res)
     return NULL;
 
+  if (!_CHECK_INTEGER(colptr) || !_CHECK_INTEGER(rowind)) {
+          PyErr_SetString(PyExc_TypeError, "colptr and rowind must be of type cint");
+          return NULL;
+  }
+
   if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr, PyArray_CFLOAT)) goto fail;
  
   result = newSciPyLUObject(&A, diag_pivot_thresh, drop_tol, relax, panel_size,\
                             permc_spec, PyArray_CFLOAT);
-  if (result == NULL) goto fail;
 
   Destroy_SuperMatrix_Store(&A); /* arrays of input matrix will not be freed */  
+
   return result;
 
  fail:

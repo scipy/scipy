@@ -40,7 +40,7 @@ Polyline(hdc,(POINT*)p_data,left_over);
 
 def polyline(dc,line,xoffset=0,yoffset=0):
     #------------------------------------------------------------------------
-    # Make sure the array is the correct size/shape 
+    # Make sure the array is the correct size/shape
     #------------------------------------------------------------------------
     shp = line.shape
     assert(len(shp)==2 and shp[1] == 2)
@@ -50,38 +50,38 @@ def polyline(dc,line,xoffset=0,yoffset=0):
     #------------------------------------------------------------------------
     if xoffset or yoffset:
         line = line + array((xoffset,yoffset),line.typecode())
-    
+
     #------------------------------------------------------------------------
     # Define the win32 version of the function
-    #------------------------------------------------------------------------        
+    #------------------------------------------------------------------------
     if sys.platform == 'win32':
         # win32 requires int type for lines.
         if (line.typecode() != Int or not line.iscontiguous()):
-            line = line.astype(Int)   
+            line = line.astype(Int)
         code = """
-               HDC hdc = (HDC) dc->GetHDC();                    
+               HDC hdc = (HDC) dc->GetHDC();
                Polyline(hdc,(POINT*)line,Nline[0]);
                """
     else:
-        if (line.typecode() != UInt16 or 
+        if (line.typecode() != UInt16 or
             not line.iscontiguous()):
-            line = line.astype(UInt16)   
+            line = line.astype(UInt16)
         code = """
-               GdkWindow* win = dc->m_window;                    
+               GdkWindow* win = dc->m_window;
                GdkGC* pen = dc->m_penGC;
-               gdk_draw_lines(win,pen,(GdkPoint*)line,Nline[0]);         
+               gdk_draw_lines(win,pen,(GdkPoint*)line,Nline[0]);
                """
     weave.inline(code,['dc','line'])
 
-    
+
     #------------------------------------------------------------------------
     # Find the maximum and minimum points in the drawing list and add
-    # them to the bounding box.    
+    # them to the bounding box.
     #------------------------------------------------------------------------
     max_pt = maximum.reduce(line,0)
     min_pt = minimum.reduce(line,0)
     dc.CalcBoundingBox(max_pt[0],max_pt[1])
-    dc.CalcBoundingBox(min_pt[0],min_pt[1])    
+    dc.CalcBoundingBox(min_pt[0],min_pt[1])
 
 #-----------------------------------------------------------------------------
 # Define a new version of DrawLines that calls the optimized
@@ -93,7 +93,7 @@ def NewDrawLines(dc,line):
     if (type(line) is ArrayType):
         polyline(dc,line)
     else:
-        dc.DrawLines(line)            
+        dc.DrawLines(line)
 
 #-----------------------------------------------------------------------------
 # And attach our new method to the wxPaintDC class
@@ -101,7 +101,7 @@ def NewDrawLines(dc,line):
 # !! to get timing comparison between the old and new way.
 #-----------------------------------------------------------------------------
 #wxPaintDC.DrawLines = NewDrawLines
-        
+
 if __name__ == '__main__':
     from wxPython.wx import *
     import time
@@ -115,7 +115,7 @@ if __name__ == '__main__':
             EVT_SIZE(self, self.OnSize)
 
         def calc_points(self):
-            w,h = self.GetSizeTuple()            
+            w,h = self.GetSizeTuple()
             #x = randint(0+50, w-50, self.point_count)
             #y = randint(0+50, h-50, len(x))
             x = arange(0,w,typecode=Int32)
@@ -128,7 +128,7 @@ if __name__ == '__main__':
             self.Refresh()
 
         def OnPaint(self,event):
-            w,h = self.GetSizeTuple()            
+            w,h = self.GetSizeTuple()
             print len(self.points)
             dc = wxPaintDC(self)
             dc.BeginDrawing()
@@ -142,24 +142,24 @@ if __name__ == '__main__':
             mod = array((w,0))
             x = pt_copy[:,0];
             ang = 2*pi/w;
-            
+
             size = 1
-            red_pen = wxPen('red',size)            
+            red_pen = wxPen('red',size)
             white_pen = wxPen('white',size)
             blue_pen = wxPen('blue',size)
             pens = iter([red_pen,white_pen,blue_pen])
             phase = 10
             for i in range(1500):
                 if phase > 2*pi:
-                    phase = 0                
+                    phase = 0
                     try:
                         pen = pens.next()
                     except:
                         pens = iter([red_pen,white_pen,blue_pen])
                         pen = pens.next()
                     dc.SetPen(pen)
-                polyline(dc,pt_copy)            
-                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(Int32)            
+                polyline(dc,pt_copy)
+                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(Int32)
                 pt_copy[:,1] = next_y
                 phase += ang
             t2 = time.clock()
@@ -171,7 +171,7 @@ if __name__ == '__main__':
             phase = 10
             for i in range(1500):
                 if phase > 2*pi:
-                    phase = 0                
+                    phase = 0
                     try:
                         pen = pens.next()
                     except:
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                         pen = pens.next()
                     dc.SetPen(pen)
                 dc.DrawLines(pt_copy)
-                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(Int32)            
+                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(Int32)
                 pt_copy[:,1] = next_y
                 phase += ang
             t2 = time.clock()
@@ -203,4 +203,3 @@ if __name__ == '__main__':
 
     app = MyApp(0)
     app.MainLoop()
-    

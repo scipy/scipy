@@ -19,7 +19,7 @@ cie_primaries = [700, 546.1, 435.8]
 sb_primaries = [1./155 * 1e5, 1./190 * 1e5, 1./225 * 1e5]
 
 
-# Matrices from Jain 
+# Matrices from Jain
 
 xyz_from_rgbcie = [[0.490, 0.310, 0.200],
                    [0.177, 0.813, 0.011],
@@ -58,8 +58,8 @@ rgbp_from_ycbcr = scipy.linalg.inv(ycbcr_from_rgbp)
 
 # LMS color space spectral matching curves provide the
 #  spectral response curves of three types of cones.
-# 
-# 
+#
+#
 # Vos, Estevez, and Walraven (1990)
 # with alteration in S-cone sensitivity from
 #  Stockman and Sharpe (2000)
@@ -82,7 +82,7 @@ lms_from_xyz = [[0.15513920309034629, 0.54298741130344153,
                 [-0.15513920309034629, 0.45684891207177714,
                  0.029689739651154123],
                 [0.0, 6.3686624249879016e-05, 0.0073203016383768691]]
-        
+
 # Read spectral matching curves from file
 # XYZJV and RGBsb55 are most modern curves to use
 # LMScvrl are the cone response curves from www.cvrl.org
@@ -179,7 +179,7 @@ def convert(matrix,TTT,axis=None):
         axis = coloraxis(TTT.shape)
     if (axis != 0):
         TTT = sb.swapaxes(TTT,0,axis)
-    oldshape = TTT.shape        
+    oldshape = TTT.shape
     TTT = sb.reshape(TTT,(3,-1))
     OUT = numpy.dot(matrix, TTT)
     OUT.shape = oldshape
@@ -214,7 +214,7 @@ def separate_colors(xyz,axis=None):
     slices[axis] = 2
     z = xyz[slices]
     return x, y, z, axis
-    
+
 def join_colors(c1,c2,c3,axis):
     c1,c2,c3 = sb.asarray(c1),sb.asarray(c2),sb.asarray(c3)
     newshape = c1.shape[:axis] + (1,) + c1.shape[axis:]
@@ -228,7 +228,7 @@ def xyz2lab(xyz, axis=None, wp=whitepoints['D65'][-1], doclip=1):
     xn,yn,zn = x/wp[0], y/wp[1], z/wp[2]
     def f(t):
         eps = 216/24389.
-        kap = 24389/27.        
+        kap = 24389/27.
         return sb.where(t > eps,
                         sb.power(t, 1.0/3),
                         (kap*t + 16.0)/116)
@@ -250,13 +250,13 @@ def lab2xyz(lab, axis=None, wp=whitepoints['D65'][-1]):
     fx = a/500.0 + fy
     def finv(y):
         eps3 = (216/24389.)**3
-        kap = 24389/27.        
+        kap = 24389/27.
         return sb.where(y > eps3,
                         sb.power(y,3),
                         (116*y-16)/kap)
     xr, yr, zr = finv(fx), finv(fy), finv(fz)
     return join_colors(xr*wp[0],yr*wp[1],zr*wp[2],axis)
-    
+
 def rgb2lab(rgb):
     return xyz2lab(rgb2xyz(rgb))
 
@@ -265,14 +265,14 @@ def lab2rgb(lab):
 
 #  RGB values that will be displayed on a screen are always
 #  R'G'B' values.  To get the XYZ value of the color that will be
-#  displayed you need a calibrated monitor with a profile 
+#  displayed you need a calibrated monitor with a profile
 #  -- someday we should support reading and writing such profiles and
 #     doing color conversion with them.
 #  But, for quick-and-dirty calculation you can often assume the sR'G'B'
 #   coordinate system for your computer, and so the rgbp2rgb will
 #   put you in the linear coordinate system (assuming normalized to [0,1]
 #   sR'G'B' coordiates)
-#  
+#
 
 # sRGB <-> sR'G'B'  equations from
 #   http://www.w3.org/Graphics/Color/sRGB
@@ -293,7 +293,7 @@ def lab2rgb(lab):
 def rgb2rgbp(rgb,gamma=None):
     rgb = sb.asarray(rgb)
     if gamma is None:
-        eps = 0.0031308    
+        eps = 0.0031308
         return where(rgb < eps, 12.92*rgb,
                      1.055*rgb**(1.0/2.4) - 0.055)
     else:
@@ -315,7 +315,7 @@ def rgbp2rgb(rgbp,gamma=None):
         return rgbp**gamma
 
 # The Y'CbCr coordinate system is useful because
-#  
+#
 # Y'CbCr information from here
 #  http://www.mir.com/DMG/ycbcr.html
 # This transforms from rgbp coordinates to normalized
@@ -351,11 +351,3 @@ def ycbcr_norm(YCbCr,axis=None):
     cb = (Cb-128.)/224
     cr = (Cr-128.)/224
     return join_colors(y,cb,cr,axis)
-        
-
-
-
-
-
-
-

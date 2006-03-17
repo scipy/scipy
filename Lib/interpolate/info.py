@@ -11,7 +11,7 @@ Wrappers around FITPACK functions:
   sproot    -- find the roots of a cubic spline.
   spalde    -- compute all derivatives of a spline at given points.
   bisplrep   -- find bivariate smoothing spline representation.
-  bisplev   -- evaluate bivariate smoothing spline. 
+  bisplev   -- evaluate bivariate smoothing spline.
 
 Interpolation Class
 

@@ -37,7 +37,7 @@ converters.default.insert(0, swig2_spec.swig2_converter())
 def test():
     """Instantiate the SWIG wrapped object and then call its method
     from C++ using weave.inline
-    
+
     """
     a = swig2_ext.A()
     b = swig2_ext.foo()  # This will be an APtr instance.
@@ -45,9 +45,9 @@ def test():
     code = """a->f();
               b->f();
               """
-    weave.inline(code, ['a', 'b'], include_dirs=['.'], 
+    weave.inline(code, ['a', 'b'], include_dirs=['.'],
                  headers=['"swig2_ext.h"'], verbose=1)
 
-    
+
 if __name__ == "__main__":
     test()

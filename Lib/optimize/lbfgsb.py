@@ -50,7 +50,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     fprime  -- gradient of func. If None, then func returns the function
                value and the gradient ( f, g = func(x, *args) ), unless
-               approx_grad is True then func returns only f. 
+               approx_grad is True then func returns only f.
                Called as fprime(x, *args)
 
     args    -- arguments to pass to function
@@ -77,7 +77,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     pgtol   -- The iteration will stop when
                   max{|proj g_i | i = 1, ..., n} <= pgtol
-               where pg_i is the ith component of the projected gradient.   
+               where pg_i is the ith component of the projected gradient.
 
     epsilon -- step size used when approx_grad is true, for numerically
                calculating the gradient
@@ -89,7 +89,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Returns:
     x, f, d = fmin_lbfgs_b(func, x0, ...)
-    
+
     x -- position of the minimum
     f -- value of func at the minimum
     d -- dictionary of information from routine
@@ -224,7 +224,7 @@ if __name__ == '__main__':
             g[i] = 8*t2 - 16*x[i]*t1
         g[-1] = 8*t1
         return g
-    
+
     factr = 1e7
     pgtol = 1e-5
 

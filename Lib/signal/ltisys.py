@@ -5,15 +5,14 @@
 #
 
 from filter_design import tf2zpk, zpk2tf, normalize
-from numpy import product, zeros, concatenate, \
+import numpy
+from numpy import product, zeros, \
      array, dot, transpose, arange, ones, Float
-import numpy as Numeric
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
 from numpy import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
-from numpy import matrix as Mat
 
 def tf2ss(num, den):
     """Transfer function to state-space representation.
@@ -27,9 +26,9 @@ def tf2ss(num, den):
       A, B, C, D -- state space representation of the system.
     """
     # Controller canonical state-space representation.
-    #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K 
+    #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K
     #  states are found by asserting that X(s) = U(s) / D(s)
-    #  then Y(s) = N(s) * X(s) 
+    #  then Y(s) = N(s) * X(s)
     #
     #   A, B, C, and D follow quite naturally.
     #
@@ -37,8 +36,8 @@ def tf2ss(num, den):
     nn = len(num.shape)
     if nn == 1:
         num = asarray([num],num.dtype.char)
-    M = num.shape[1] 
-    K = len(den) 
+    M = num.shape[1]
+    K = len(den)
     if (M > K):
         raise ValueError, "Improper transfer function."
     if (M == 0 or K == 0):  # Null system
@@ -55,7 +54,7 @@ def tf2ss(num, den):
 
     if K == 1:
         return array([], Float), array([], Float), array([], Float), D
-    
+
     frow = -array([den[1:]])
     A = r_[frow, eye(K-2, K-1)]
     B = eye(K-1, 1)
@@ -105,10 +104,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     if MD != MC:
         raise ValueError, "C and D must have the same number of rows."
     if ND != NB:
-        raise ValueErrro, "B and D must have the same number of columns."
+        raise ValueError, "B and D must have the same number of columns."
 
     return A, B, C, D
-    
+
 def ss2tf(A, B, C, D, input=0):
     """State-space to transfer function.
 
@@ -124,7 +123,7 @@ def ss2tf(A, B, C, D, input=0):
     """
     # transfer function is C (sI - A)**(-1) B + D
     A, B, C, D = map(asarray, (A, B, C, D))
-    # Check consistency and 
+    # Check consistency and
     #     make them all rank-2 arrays
     A, B, C, D = abcd_normalize(A, B, C, D)
 
@@ -142,15 +141,15 @@ def ss2tf(A, B, C, D, input=0):
     den = poly(A)
 
     if (product(B.shape) == 0) and (product(C.shape) == 0):
-        num = Numeric.ravel(D)
+        num = numpy.ravel(D)
         if (product(D.shape) == 0) and (product(A.shape) == 0):
             den = []
         end
         return num, den
 
-    num_states = A.shape[0] 
+    num_states = A.shape[0]
     type_test = A[:,0] + B[:,0] + C[0,:] + D
-    num = Numeric.zeros((nout, num_states+1),type_test.dtype.char)
+    num = numpy.zeros((nout, num_states+1),type_test.dtype.char)
     for k in range(nout):
         Ck = atleast_2d(C[k,:])
         num[k] = poly(A - dot(B,Ck)) + (D[k]-1)*den
@@ -181,7 +180,7 @@ def ss2zpk(A,B,C,D,input=0):
     Outputs:
 
       z, p, k -- zeros and poles in sequences and gain constant.
-    """    
+    """
     return tf2zpk(*ss2tf(A,B,C,D,input=input))
 
 class lti:
@@ -258,7 +257,7 @@ class lti:
                                            self.C, self.D)
             self.__dict__['num'], self.__dict__['den'] = \
                                   ss2tf(self.A, self.B,
-                                        self.C, self.D)            
+                                        self.C, self.D)
         else:
             self.__dict__[attr] = val
 
@@ -285,7 +284,7 @@ def lsim2(system, U, T, X0=None):
                   4 (A, B, C, D)
       U -- an input array describing the input at each time T
            (linear interpolation is assumed between given times).
-           If there are multiple inputs, then each column of the 
+           If there are multiple inputs, then each column of the
            rank-2 array represents an input.
       T -- the time steps at which the input is defined and at which
            the output is desired.
@@ -308,7 +307,7 @@ def lsim2(system, U, T, X0=None):
     #   being the number of inputs
 
     # rather than use lsim, use direct integration and matrix-exponential.
-    if isinstance(system, lti):        
+    if isinstance(system, lti):
         sys = system
     else:
         sys = lti(*system)
@@ -316,7 +315,7 @@ def lsim2(system, U, T, X0=None):
     T = atleast_1d(T)
     if len(U.shape) == 1:
         U.shape = (U.shape[0],1)
-    sU = U.shape        
+    sU = U.shape
     if len(T.shape) != 1:
         raise ValueError, "T must be a rank-1 array."
     if sU[0] != len(T):
@@ -353,7 +352,7 @@ def lsim(system, U, T, X0=None, interp=1):
                   4 (A, B, C, D)
       U -- an input array describing the input at each time T
            (interpolation is assumed between given times).
-           If there are multiple inputs, then each column of the 
+           If there are multiple inputs, then each column of the
            rank-2 array represents an input.
       T -- the time steps at which the input is defined and at which
            the output is desired.
@@ -383,7 +382,7 @@ def lsim(system, U, T, X0=None, interp=1):
     T = atleast_1d(T)
     if len(U.shape) == 1:
         U.shape = (U.shape[0],1)
-    sU = U.shape        
+    sU = U.shape
     if len(T.shape) != 1:
         raise ValueError, "T must be a rank-1 array."
     if sU[0] != len(T):
@@ -402,7 +401,7 @@ def lsim(system, U, T, X0=None, interp=1):
     lam, v = linalg.eig(A)
     vt = transpose(v)
     vti = linalg.inv(vt)
-    GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtype.char)
+    GT = dot(dot(vti,diag(numpy.exp(dt*lam))),vt).astype(xout.dtype.char)
     ATm1 = linalg.inv(AT)
     ATm2 = dot(ATm1,ATm1)
     I = eye(A.shape[0],dtype=A.dtype.char)
@@ -415,7 +414,7 @@ def lsim(system, U, T, X0=None, interp=1):
         dt1 = T[k] - T[k-1]
         if dt1 != dt:
             dt = dt1
-            GT = dot(dot(vti,diag(Numeric.exp(dt*lam))),vt).astype(xout.dtype.char)
+            GT = dot(dot(vti,diag(numpy.exp(dt*lam))),vt).astype(xout.dtype.char)
             GTmI = GT-I
             F1T = dot(dot(BT,GTmI),ATm1)
             if interp:
@@ -465,7 +464,7 @@ def impulse(system, X0=None, T=None, N=None):
     vi = linalg.inv(v)
     C = sys.C
     for k in range(len(h)):
-        es = diag(Numeric.exp(s*T[k]))
+        es = diag(numpy.exp(s*T[k]))
         eA = (dot(dot(v,es),vi)).astype(h.dtype.char)
         h[k] = squeeze(dot(dot(C,eA),B))
     return T, h
@@ -500,4 +499,3 @@ def step(system, X0=None, T=None, N=None):
     U = ones(T.shape, sys.A.dtype.char)
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]
-    

@@ -6,7 +6,7 @@ import os
 def configuration(parent_package='', parent_path=None):
     from numpy.distutils.system_info import get_info, dict_append
     from numpy.distutils.misc_util import default_config_dict, \
-         dot_join, get_path    
+         dot_join, get_path
 
     package = 'image'
     config = default_config_dict(package,parent_package)

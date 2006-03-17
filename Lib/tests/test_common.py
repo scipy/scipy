@@ -18,7 +18,7 @@ class test_rand(unittest.TestCase):
     def __init__(self,*args,**kwds):
         unittest.TestCase.__init__(self,*args,**kwds)
         self.z = rand(100,10,20)
-        
+
     def check_shape(self):
         assert_equal(self.z.shape,(100,10,20))
 
@@ -34,7 +34,7 @@ class test_randn(unittest.TestCase):
     def __init__(self,*args,**kwds):
         unittest.TestCase.__init__(self,*args,**kwds)
         self.z = randn(100,10,20)
-        
+
     def check_shape(self):
         assert_equal(self.z.shape,(100,10,20))
 
@@ -77,7 +77,7 @@ class test_comb(unittest.TestCase):
                    (-10,1):0L, (10,-1):0L, (-10,-3):0L,(10,11):0L}
         for key in resdict.keys():
             assert_equal(comb(key[0],key[1],exact=1),resdict[key])
-        
+
 #-----------------------------------------------------------------------------
 
 def test_suite(level=1):

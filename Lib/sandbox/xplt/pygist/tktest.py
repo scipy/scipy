@@ -26,34 +26,34 @@ def MoveButton(Side):
     QuitButton.pack(side=Side)
 
 def plot():
-   print ".. Gist button pressed"
-   gistdemolow.run()
+    print ".. Gist button pressed"
+    gistdemolow.run()
 #  plg([0,1])
 #  fma()
 
 
 def main():
-   root=Tkinter.Tk()
-   MainCanvas=Tkinter.Canvas(root)
+    root=Tkinter.Tk()
+    MainCanvas=Tkinter.Canvas(root)
 
-   MainCanvas.bind("<Button-1>",DrawOval)
-   MainCanvas.bind("<Button-3>",DrawRectangle)
-   MainCanvas.pack(fill=Tkinter.BOTH,expand=Tkinter.YES)
+    MainCanvas.bind("<Button-1>",DrawOval)
+    MainCanvas.bind("<Button-3>",DrawRectangle)
+    MainCanvas.pack(fill=Tkinter.BOTH,expand=Tkinter.YES)
 
-   gistButton=Tkinter.Button(MainCanvas,text="Gist",
-    command=plot)
-   quitButton=Tkinter.Button(MainCanvas,text="Quit",
-    command=sys.exit)
-   gistButton.pack(side=Tkinter.TOP)
-   quitButton.pack(side=Tkinter.BOTTOM)
+    gistButton=Tkinter.Button(MainCanvas,text="Gist",
+     command=plot)
+    quitButton=Tkinter.Button(MainCanvas,text="Quit",
+     command=sys.exit)
+    gistButton.pack(side=Tkinter.TOP)
+    quitButton.pack(side=Tkinter.BOTTOM)
 
-   root.bind("<Up>",lambda e:MoveButton(Tkinter.TOP))
-   root.bind("<Down>",lambda e:MoveButton(Tkinter.BOTTOM))
-   root.bind("<Left>",lambda e:MoveButton(Tkinter.LEFT))
-   root.bind("<Right>",lambda e:MoveButton(Tkinter.RIGHT))
-   root.geometry("300x300") # Set minimum window size
+    root.bind("<Up>",lambda e:MoveButton(Tkinter.TOP))
+    root.bind("<Down>",lambda e:MoveButton(Tkinter.BOTTOM))
+    root.bind("<Left>",lambda e:MoveButton(Tkinter.LEFT))
+    root.bind("<Right>",lambda e:MoveButton(Tkinter.RIGHT))
+    root.geometry("300x300") # Set minimum window size
 
-   root.mainloop()
+    root.mainloop()
 
 if (__name__=="__main__"):
-   main()
+    main()

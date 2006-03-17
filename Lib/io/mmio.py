@@ -244,7 +244,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         if len(a.shape) != 2:
             raise ValueError, 'expected matrix'
         rows,cols = a.shape
-        entries = rows*cols        
+        entries = rows*cols
         typecode = a.dtype.char
         if field is not None:
             if field=='integer':

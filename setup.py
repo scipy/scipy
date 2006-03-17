@@ -30,7 +30,7 @@ def setup_package():
         # Force scipy to be a package (its __init__.py file comes from scipy_core)
         config.packages.append('scipy')
         config.package_dir['scipy'] = os.path.join(config.local_path,'Lib')
-        
+
         config.add_subpackage('Lib')
         config.name = 'scipy'
         from version import version as version

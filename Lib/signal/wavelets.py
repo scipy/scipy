@@ -22,7 +22,7 @@ def daub(p):
         tmp  = 12*sqrt(10)
         z1 = 1.5 + sqrt(15+tmp)/6 - 1j*(sqrt(15)+sqrt(tmp-15))/6
         z1c = sb.conj(z1)
-        f = sqrt(2)/8        
+        f = sqrt(2)/8
         d0 = sb.real((1-z1)*(1-z1c))
         a0 = sb.real(z1*z1c)
         a1 = 2*sb.real(z1)
@@ -50,7 +50,7 @@ def daub(p):
         q = sb.real(q) * c
         # Normalize result
         q = q / sb.sum(q) * sqrt(2)
-        return q.c[::-1]        
+        return q.c[::-1]
     else:
         raise ValueError, "Polynomial factorization does not work "\
               "well for p too large."
@@ -89,7 +89,7 @@ def cascade(hk,J=7):
 
       Builds a dictionary of values and slices for quick reuse.
       Then inserts vectors into final vector at then end
-      
+
     """
 
     N = len(hk)-1
@@ -98,23 +98,23 @@ def cascade(hk,J=7):
         raise ValueError, "Too many levels."
     if (J < 1):
         raise ValueError, "Too few levels."
-    
+
 
     # construct matrices needed
     nn,kk = sb.ogrid[:N,:N]
-    s2 = sb.sqrt(2)    
+    s2 = sb.sqrt(2)
     # append a zero so that take works
     thk = sb.r_[hk,0]
     gk = qmf(hk)
-    tgk = sb.r_[gk,0]    
-    
+    tgk = sb.r_[gk,0]
+
     indx1 = sb.clip(2*nn-kk,-1,N+1)
     indx2 = sb.clip(2*nn-kk+1,-1,N+1)
     m = sb.zeros((2,2,N,N),'d')
     m[0,0] = sb.take(thk,indx1)
     m[0,1] = sb.take(thk,indx2)
     m[1,0] = sb.take(tgk,indx1)
-    m[1,1] = sb.take(tgk,indx2)        
+    m[1,1] = sb.take(tgk,indx2)
     m *= s2
 
     # construct the grid of points
@@ -132,10 +132,10 @@ def cascade(hk,J=7):
     # need scaling function to integrate to 1 so find
     #  eigenvector normalized to sum(v)=1
     sm = sb.sum(v)
-    if sm < 0:  # need scaling function to integrate to 1 
+    if sm < 0:  # need scaling function to integrate to 1
         v = -v
         sm = -sm
-    bitdic = {}    
+    bitdic = {}
     bitdic['0'] = v / sm
     bitdic['1'] = sb.dot(m[0,1],bitdic['0'])
     step = 1<<J
@@ -152,7 +152,7 @@ def cascade(hk,J=7):
         newkeys = ['%d%s' % (xx,yy) for xx in [0,1] for yy in prevkeys]
         fac = 1<<(J-level)
         for key in newkeys:
-            # convert key to number 
+            # convert key to number
             num = 0
             for pos in range(level):
                 if key[pos] == '1':
@@ -166,12 +166,3 @@ def cascade(hk,J=7):
         prevkeys = newkeys
 
     return x, phi, psi
-
-    
-
-        
-    
-
-    
-    
-        

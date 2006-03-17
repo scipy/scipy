@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #!/usr/bin/env python
 
@@ -24,6 +24,6 @@ def configuration (parent_package=''):
     config['ext_modules'].append(ext)
     return config
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from distutils.core import setup
     setup(**configuration())

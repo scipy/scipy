@@ -1,16 +1,30 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
 import _minpack
-from common_routines import *
+
+from numpy import *  # originally from common_routines,
+                     # fix me to only import what we need
 from numpy import atleast_1d, dot, take, triu
 
 error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'newton', 'fixed_point','bisection']
 
+def check_func(thefunc, x0, args, numinputs, output_shape=None):
+    args = (x0[:numinputs],) + args
+    res = atleast_1d(apply(thefunc,args))
+    if (output_shape != None) and (shape(res) != output_shape):
+        if (output_shape[0] != 1):
+            if len(output_shape) > 1:
+                if output_shape[1] == 1:
+                    return shape(res)
+            raise TypeError, "There is a mismatch between the input and output shape of %s." % thefunc.func_name
+    return shape(res)
+
+
 def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8,maxfev=0,band=None,epsfcn=0.0,factor=100,diag=None):
     """Find the roots of a function.
-    
+
   Description:
 
     Return the roots of the (non-linear) equations defined by
@@ -52,7 +66,7 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
             failure.
 
   Extended Inputs:
-  
+
    xtol -- The calculation will terminate if the relative error
            between two consecutive iterates is at most xtol.
    maxfev -- The maximum number of calls to the function. If zero,
@@ -127,7 +141,7 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
 def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,xtol=1.49012e-8,gtol=0.0,maxfev=0,epsfcn=0.0,factor=100,diag=None):
     """Minimize the sum of squares of a set of equations.
-    
+
   Description:
 
     Return the point which minimizes the sum of squares of M
@@ -152,7 +166,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                  computes derivatives down the columns (faster, because
                  there is no transpose operation).
 
-  
+
   Outputs: (x, {cov_x, infodict, ier}, mesg)
 
     x -- the solution (or the result of the last iteration for an
@@ -164,9 +178,9 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                 'fvec' : the function evaluated at the output
                 'fjac' : A permutation of the R matrix of a QR
                          factorization of the final approximate
-                         Jacobian matrix, stored column wise. 
-			 Together with ipvt, the covariance of the
-			 estimate can be approximated.
+                         Jacobian matrix, stored column wise.
+                         Together with ipvt, the covariance of the
+                         estimate can be approximated.
                 'ipvt' : an integer array of length N which defines
                          a permutation matrix, p, such that
                          fjac*p = q*r, where r is upper triangular
@@ -180,10 +194,10 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     mesg -- a string message giving information about the cause of
             failure.
     cov_x -- uses the fjac and ipvt optional outputs to construct an
-             estimate of the covariance matrix of the solution. 
+             estimate of the covariance matrix of the solution.
 
   Extended Inputs:
-  
+
    ftol -- Relative error desired in the sum of squares.
    xtol -- Relative error desired in the approximate solution.
    gtol -- Orthogonality desired between the function vector
@@ -280,11 +294,11 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     err = zeros((m,),Float64)
     fvecp = None
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,1,err)
-    
+
     fvecp = atleast_1d(fcn(xp,*args))
     fvecp=fvecp.reshape((m,))
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,2,err)
-    
+
     good = (product(greater(err,0.5)))
 
     return (good,err)
@@ -354,7 +368,7 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
         p0 = p
     raise RuntimeError, "Failed to converge after %d iterations, value is %f" % (maxiter,p)
 
-        
+
 def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     """Bisection root-finding method.  Given a function and an interval with
     func(a) * func(b) < 0, find the root between a and b.
@@ -379,19 +393,3 @@ def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
             b = p
     print "Warning: Method failed after %d iterations." % maxiter
     return p
-        
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-

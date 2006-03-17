@@ -20,15 +20,15 @@ def c_list_map(func,seq):
     code = """
            #line 22 "functional.py"
            py::tuple args(1);
-           int N = seq.len();    
+           int N = seq.len();
            py::list result(N);
            for(int i = 0; i < N;i++)
            {
               args[0] = seq[i];
               result[i] = func.call(args);
-           }           
+           }
            return_val = result;
-           """   
+           """
     return inline_tools.inline(code,['func','seq'])
 
 def c_list_map2(func,seq):
@@ -38,7 +38,7 @@ def c_list_map2(func,seq):
     assert(type(func) in [FunctionType,MethodType,type(len)])
     code = """
            #line 40 "functional.py"
-           py::tuple args(1);    
+           py::tuple args(1);
            PyObject* py_args = (PyObject*)args;
            py::list result(seq.len());
            PyObject* py_result = (PyObject*)result;
@@ -51,12 +51,12 @@ def c_list_map2(func,seq):
               Py_INCREF(item);
               PyTuple_SetItem(py_args,0,item);
               this_result = PyEval_CallObject(py_func,py_args);
-              PyList_SetItem(py_result,i,this_result);              
-           }           
+              PyList_SetItem(py_result,i,this_result);
+           }
            return_val = result;
-           """   
+           """
     return inline_tools.inline(code,['func','seq'])
-    
+
 def main():
     seq = ['aa','bbb','cccc']
     print 'desired:', map(len,seq)
@@ -72,7 +72,7 @@ def time_it(m,n):
     t2 = time.time()
     py = t2 - t1
     print 'python speed:', py
-    
+
     #load cache
     result = c_list_map(len,seq)
     t1 = time.time()

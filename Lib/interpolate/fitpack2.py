@@ -331,7 +331,7 @@ class SmoothBivariateSpline(BivariateSpline):
         """
         Input:
           x,y,z  - 1-d sequences of data points (order is not
-                   important) 
+                   important)
         Optional input:
           w          - positive 1-d sequence of weights
           bbox       - 4-sequence specifying the boundary of
@@ -371,9 +371,9 @@ class LSQBivariateSpline(BivariateSpline):
         """
         Input:
           x,y,z  - 1-d sequences of data points (order is not
-                   important) 
+                   important)
           tx,ty  - strictly ordered 1-d sequences of knots
-                   coordinates. 
+                   coordinates.
         Optional input:
           w          - positive 1-d sequence of weights
           bbox       - 4-sequence specifying the boundary of
@@ -382,7 +382,7 @@ class LSQBivariateSpline(BivariateSpline):
           kx,ky=3,3  - degrees of the bivariate spline.
           eps        - a threshold for determining the effective rank
                        of an over-determined linear system of
-                       equations. 0 < eps < 1, default is 1e-16. 
+                       equations. 0 < eps < 1, default is 1e-16.
         """
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
@@ -411,4 +411,3 @@ class LSQBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
-

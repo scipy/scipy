@@ -3,10 +3,10 @@
     needed for building C++ extension modules for Python that
     handle different data types.  The information includes
     such as include files, libraries, and even code snippets.
-    
-    base_info -- base class for cxx_info, blitz_info, etc.                  
+
+    base_info -- base class for cxx_info, blitz_info, etc.
     info_list -- a handy list class for working with multiple
-                 info classes at the same time.            
+                 info classes at the same time.
 """
 import os
 import UserList
@@ -33,10 +33,10 @@ class base_info:
     # very complicated, and I don't really know the variety of things
     # that should be passed in at this point.
     def check_compiler(self,compiler):
-        pass        
-    def warnings(self):   
+        pass
+    def warnings(self):
         return self._warnings
-    def headers(self):   
+    def headers(self):
         return self._headers
     def include_dirs(self):
         return self._include_dirs
@@ -57,8 +57,8 @@ class base_info:
     def extra_compile_args(self):
         return self._extra_compile_args
     def extra_link_args(self):
-        return self._extra_link_args        
-        
+        return self._extra_link_args
+
 class custom_info(base_info):
     def __init__(self):
         self._warnings =[]
@@ -93,15 +93,15 @@ class custom_info(base_info):
     def add_define_macro(self,define_macro):
         self._define_macros.append(define_macro)
     def add_undefine_macro(self,undefine_macro):
-        self._undefine_macros.append(undefine_macro)    
+        self._undefine_macros.append(undefine_macro)
     def add_extra_compile_arg(self,compile_arg):
         return self._extra_compile_args.append(compile_arg)
     def add_extra_link_arg(self,link_arg):
-        return self._extra_link_args.append(link_arg)        
+        return self._extra_link_args.append(link_arg)
 
 class info_list(UserList.UserList):
     def get_unique_values(self,attribute):
-        all_values = []        
+        all_values = []
         for info in self:
             vals = eval('info.'+attribute+'()')
             all_values.extend(vals)
@@ -112,7 +112,7 @@ class info_list(UserList.UserList):
     def extra_link_args(self):
         return self.get_unique_values('extra_link_args')
     def sources(self):
-        return self.get_unique_values('sources')    
+        return self.get_unique_values('sources')
     def define_macros(self):
         return self.get_unique_values('define_macros')
     def sources(self):
@@ -133,9 +133,8 @@ class info_list(UserList.UserList):
         return self.get_unique_values('module_init_code')
 
 def unique_values(lst):
-    all_values = []        
+    all_values = []
     for value in lst:
         if value not in all_values or value == '-framework':
             all_values.append(value)
     return all_values
-

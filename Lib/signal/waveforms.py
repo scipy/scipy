@@ -41,7 +41,7 @@ def sawtooth(t,width=1):
     tsub = extract(mask3,tmod)
     wsub = extract(mask3,w)
     insert(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
-    return y    
+    return y
 
 
 def square(t,duty=0.5):
@@ -79,7 +79,7 @@ def square(t,duty=0.5):
     tsub = extract(mask3,tmod)
     wsub = extract(mask3,w)
     insert(y,mask3,-1)
-    return y    
+    return y
 
 def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
     """Return a gaussian modulated sinusoid:  exp(-a t^2) exp(1j*2*pi*fc)
@@ -114,7 +114,7 @@ def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):
     #
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
     a = -(pi*fc*bw)**2 / (4*log(ref))
-    
+
     if t == 'cutoff': # compute cut_off point
         #  Solve exp(-a tc**2) = tref  for tc
         #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
@@ -147,7 +147,7 @@ def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
         qshape     --  shape parameter for quadratic curve: concave or convex
     """
     phi /= 360
-    if size(f0) > 1:   # Polynomial type 
+    if size(f0) > 1:   # Polynomial type
         return cos(2*pi*polyval(polyint(f0),t)+phi)
     if method in ['linear','lin','li']:
         beta = (f1-f0)/t1
@@ -160,7 +160,7 @@ def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
         elif qshape == 'convex':
             mxf = max(f0,f1)
             mnf = min(f0,f1)
-            f1,f0 = mnf, mxf            
+            f1,f0 = mnf, mxf
         beta = (f1-f0)/t1/t1
         f = f0+beta*t*t
     elif method in ['logarithmic','log','lo']:
@@ -170,9 +170,5 @@ def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
                   % (f1, f0)
         beta = log10(f1-f0)/t1
         f = f0+pow(10,beta*t)
-        
+
     return cos(2*pi*f*t+phi)
-
-
-       
-

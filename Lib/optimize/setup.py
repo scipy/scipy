@@ -29,18 +29,18 @@ def configuration(parent_package='',top_path=None):
     sources=['moduleTNC.c','tnc.c']
     config.add_extension('moduleTNC',
                          sources=[join('tnc',x) for x in sources])
-                         
+
     config.add_extension('_cobyla',
                          sources=[join('cobyla',x) for x in ['cobyla.pyf',
                                                              'cobyla2.f',
                                                              'trstlp.f']])
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
     config.add_extension('minpack2',
-                         sources=[join('minpack2',x) for x in sources])    
+                         sources=[join('minpack2',x) for x in sources])
 
     config.add_data_dir('tests')
     return config
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())

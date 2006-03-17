@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 """
 Linear algebra routines
@@ -35,7 +35,7 @@ Linear algebra routines
    hessenberg --- Hessenberg form of a matrix
 
  matrix Functions:
- 
+
    expm       --- matrix exponential using Pade approx.
    expm2      --- matrix exponential using Eigenvalue decomp.
    expm3      --- matrix exponential using Taylor-series expansion
@@ -51,14 +51,14 @@ Linear algebra routines
    funm       --- Evaluating an arbitrary matrix function.
 
  Iterative linear systems solutions
-   
+
    cg         --- Conjugate gradient (symmetric systems only)
    cgs        --- Conjugate gradient squared
    qmr        --- Quasi-minimal residual
    gmres      --- Generalized minimal residual
    bicg       --- Bi-conjugate gradient
    bicgstab   --- Bi-conjugate gradient stabilized
- 
+
 """
 
 postpone_import = 1

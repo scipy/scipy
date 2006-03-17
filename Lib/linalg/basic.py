@@ -1,6 +1,6 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #
 # Author: Pearu Peterson, March 2002
@@ -17,7 +17,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 from flinalg import get_flinalg_funcs
 from scipy.lib.lapack import get_lapack_funcs
 from numpy import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
-     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,diag,sqrt,add,real
+     conjugate,ravel,r_,mgrid,take,ones,dot,transpose,sqrt,add,real
 import numpy
 from numpy import asarray_chkfinite, outerproduct, concatenate, reshape, single
 from numpy import matrix as Matrix
@@ -37,7 +37,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=0):
       b        -- a set of right-hand sides
       trans    -- type of system to solve:
                   0 : a   * x = b   (no transpose)
-                  1 : a^T * x = b   (transpose) 
+                  1 : a^T * x = b   (transpose)
                   2   a^H * x = b   (conjugate transpose)
 
     Outputs:
@@ -72,7 +72,7 @@ def cho_solve((c, lower), b, overwrite_b=0):
     b1 = asarray_chkfinite(b)
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
     if c.shape[0] != b1.shape[0]:
-        raise ValuError, "incompatible dimensions."
+        raise ValueError, "incompatible dimensions."
     potrs, = get_lapack_funcs(('potrs',),(c,b1))
     x,info = potrs(c,b1,lower=lower,overwrite_b=overwrite_b)
     if info==0:
@@ -121,7 +121,7 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
         lu,piv,x,info = gesv(a1,b1,
                              overwrite_a=overwrite_a,
                              overwrite_b=overwrite_b)
-        
+
     if info==0:
         return x
     if info>0:
@@ -137,7 +137,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
     a is a banded matrix stored in diagonal orded form
 
      *   *     a1u
-     
+
      *  a12 a23 ...
     a11 a22 a33 ...
     a21 a32 a43 ...
@@ -160,7 +160,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
 
     gbsv, = get_lapack_funcs(('gbsv',),(a1,b1))
     a2 = zeros((2*l+u+1,a1.shape[1]),gbsv.dtypechar)
-    a2[l:,:] = a1 
+    a2[l:,:] = a1
     lu,piv,x,info = gbsv(l,u,a2,b1,
                          overwrite_ab=1,
                          overwrite_b=overwrite_b)
@@ -226,24 +226,26 @@ def inv(a, overwrite_a=0):
 
 ## matrix and Vector norm
 import decomp
-def norm(x, ord=2):
-    """ norm(x, ord=2) -> n
+def norm(x, ord=None):
+    """ norm(x, ord=None) -> n
 
-    Matrix and vector norm.
+    Matrix or vector norm.
 
     Inputs:
 
       x -- a rank-1 (vector) or rank-2 (matrix) array
-      ord -- the order of norm.
+      ord -- the order of the norm.
 
      Comments:
+       For arrays of any rank, if ord is None:
+         calculate the square norm (Euclidean norm for vectors, Frobenius norm for matrices)
 
        For vectors ord can be any real number including Inf or -Inf.
          ord = Inf, computes the maximum of the magnitudes
          ord = -Inf, computes minimum of the magnitudes
          ord is finite, computes sum(abs(x)**ord)**(1.0/ord)
 
-       For matrices ord can only be + or - 1, 2, Inf.
+       For matrices ord can only be one of the following values:
          ord = 2 computes the largest singular value
          ord = -2 computes the smallest singular value
          ord = 1 computes the largest column sum of absolute values
@@ -251,8 +253,14 @@ def norm(x, ord=2):
          ord = Inf computes the largest row sum of absolute values
          ord = -Inf computes the smallest row sum of absolute values
          ord = 'fro' computes the frobenius norm sqrt(sum(diag(X.H * X)))
+
+       For values ord < 0, the result is, strictly speaking, not a
+       mathematical 'norm', but it may still be useful for numerical purposes.
     """
     x = asarray_chkfinite(x)
+    if ord is None: # check the default case first and handle it immediately
+        return sqrt(add.reduce(real((conjugate(x)*x).ravel())))
+
     nd = len(x.shape)
     Inf = numpy.Inf
     if nd == 1:
@@ -260,6 +268,10 @@ def norm(x, ord=2):
             return numpy.amax(abs(x))
         elif ord == -Inf:
             return numpy.amin(abs(x))
+        elif ord == 1:
+            return numpy.sum(abs(x)) # special case for speedup
+        elif ord == 2:
+            return sqrt(numpy.sum(real((conjugate(x)*x)))) # special case for speedup
         else:
             return numpy.sum(abs(x)**ord)**(1.0/ord)
     elif nd == 2:
@@ -276,8 +288,7 @@ def norm(x, ord=2):
         elif ord == -Inf:
             return numpy.amin(numpy.sum(abs(x),axis=1))
         elif ord in ['fro','f']:
-            val = real((conjugate(x)*x).ravel())
-            return sqrt(add.reduce(val))
+            return sqrt(add.reduce(real((conjugate(x)*x).ravel())))
         else:
             raise ValueError, "Invalid norm order for matrices."
     else:
@@ -399,7 +410,7 @@ def pinv2(a, cond=None):
 #-----------------------------------------------------------------------------
 
 def tri(N, M=None, k=0, dtype=None):
-    """ returns a N-by-M matrix where all the diagonals starting from 
+    """ returns a N-by-M matrix where all the diagonals starting from
         lower left corner up to the k-th are all ones.
     """
     if M is None: M = N
@@ -438,17 +449,17 @@ def toeplitz(c,r=None):
     """ Construct a toeplitz matrix (i.e. a matrix with constant diagonals).
 
         Description:
-    
+
            toeplitz(c,r) is a non-symmetric Toeplitz matrix with c as its first
            column and r as its first row.
-    
-           toeplitz(c) is a symmetric (Hermitian) Toeplitz matrix (r=c). 
-    
+
+           toeplitz(c) is a symmetric (Hermitian) Toeplitz matrix (r=c).
+
         See also: hankel
     """
     isscalar = numpy.isscalar
     if isscalar(c) or isscalar(r):
-        return c   
+        return c
     if r is None:
         r = c
         r[0] = conjugate(r[0])
@@ -468,20 +479,20 @@ def toeplitz(c,r=None):
 
 def hankel(c,r=None):
     """ Construct a hankel matrix (i.e. matrix with constant anti-diagonals).
-    
+
         Description:
-    
+
           hankel(c,r) is a Hankel matrix whose first column is c and whose
           last row is r.
-    
+
           hankel(c) is a square Hankel matrix whose first column is C.
           Elements below the first anti-diagonal are zero.
-    
+
         See also:  toeplitz
     """
     isscalar = numpy.isscalar
     if isscalar(c) or isscalar(r):
-        return c   
+        return c
     if r is None:
         r = zeros(len(c))
     elif r[0] != c[-1]:

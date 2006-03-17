@@ -27,5 +27,3 @@ if _have_wx:
     from wxplt import *
     import wxplt
     import plot_objects
-
-

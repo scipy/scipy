@@ -3,7 +3,7 @@
     needed for building C++ extension modules for Python that
     handle different data types.  The information includes
     such as include files, libraries, and even code snippets.
-       
+
     array_info -- for building functions that use scipy arrays
 """
 
@@ -26,7 +26,7 @@ blitz::Range _all = blitz::Range::all();
 
 template<class T, int N>
 static blitz::Array<T,N> convert_to_blitz(PyArrayObject* arr_obj,const char* name)
-{    
+{
     blitz::TinyVector<int,N> shape(0);
     blitz::TinyVector<int,N> strides(0);
     int stride_acc = 1;
@@ -36,7 +36,7 @@ static blitz::Array<T,N> convert_to_blitz(PyArrayObject* arr_obj,const char* nam
         shape[i] = arr_obj->dimensions[i];
         strides[i] = arr_obj->strides[i]/sizeof(T);
     }
-    //return blitz::Array<T,N>((T*) arr_obj->data,shape,        
+    //return blitz::Array<T,N>((T*) arr_obj->data,shape,
     return blitz::Array<T,N>((T*) arr_obj->data,shape,strides,
                              blitz::neverDeleteData);
 }
@@ -44,7 +44,7 @@ static blitz::Array<T,N> convert_to_blitz(PyArrayObject* arr_obj,const char* nam
 template<class T, int N>
 static blitz::Array<T,N> py_to_blitz(PyArrayObject* arr_obj,const char* name)
 {
-    
+
     blitz::TinyVector<int,N> shape(0);
     blitz::TinyVector<int,N> strides(0);
     int stride_acc = 1;
@@ -54,30 +54,30 @@ static blitz::Array<T,N> py_to_blitz(PyArrayObject* arr_obj,const char* name)
         shape[i] = arr_obj->dimensions[i];
         strides[i] = arr_obj->strides[i]/sizeof(T);
     }
-    //return blitz::Array<T,N>((T*) arr_obj->data,shape,        
+    //return blitz::Array<T,N>((T*) arr_obj->data,shape,
     return blitz::Array<T,N>((T*) arr_obj->data,shape,strides,
                              blitz::neverDeleteData);
 }
 """
 
 import os, blitz_spec
-local_dir,junk = os.path.split(os.path.abspath(blitz_spec.__file__))   
+local_dir,junk = os.path.split(os.path.abspath(blitz_spec.__file__))
 blitz_dir = os.path.join(local_dir,'blitz')
 
 # The need to warn about compilers made the info_object method in
-# converters necessary and also this little class necessary.  
-# The spec/info unification needs to continue so that this can 
+# converters necessary and also this little class necessary.
+# The spec/info unification needs to continue so that this can
 # incorporated into the spec somehow.
 
-class array_info(base_info.custom_info):    
+class array_info(base_info.custom_info):
     # throw error if trying to use msvc compiler
-    
-    def check_compiler(self,compiler):        
+
+    def check_compiler(self,compiler):
         msvc_msg = 'Unfortunately, the blitz arrays used to support numeric' \
                    ' arrays will not compile with MSVC.' \
                    '  Please try using mingw32 (www.mingw.org).'
         if compiler == 'msvc':
-            return ValueError, self.msvc_msg        
+            return ValueError, self.msvc_msg
 
 
 class array_converter(standard_array_spec.array_converter):
@@ -89,13 +89,13 @@ class array_converter(standard_array_spec.array_converter):
         self.headers.extend(blitz_headers)
         self.include_dirs = [blitz_dir]
         self.support_code.append(blitz_support_code)
-        
+
         # type_name is used to setup the initial type conversion.  Even
         # for blitz conversion, the first step is to convert it to a
         # standard numpy array.
         #self.type_name = 'blitz'
         self.type_name = 'numpy'
-        
+
     def info_object(self):
         return array_info()
 
@@ -109,10 +109,10 @@ class array_converter(standard_array_spec.array_converter):
         return new_spec
 
     def template_vars(self,inline=0):
-        res = standard_array_spec.array_converter.template_vars(self,inline)    
+        res = standard_array_spec.array_converter.template_vars(self,inline)
         if hasattr(self,'dims'):
             res['dims'] = self.dims
-        return res    
+        return res
 
     def declaration_code(self,templatize = 0,inline=0):
         code = '%(py_var)s = %(var_lookup)s;\n'   \
@@ -127,8 +127,7 @@ class array_converter(standard_array_spec.array_converter):
 
     def __cmp__(self,other):
         #only works for equal
-        return ( cmp(self.name,other.name) or  
-                 cmp(self.var_type,other.var_type) or 
-                 cmp(self.dims, other.dims) or 
+        return ( cmp(self.name,other.name) or
+                 cmp(self.var_type,other.var_type) or
+                 cmp(self.dims, other.dims) or
                  cmp(self.__class__, other.__class__) )
-

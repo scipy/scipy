@@ -11,10 +11,6 @@ import sys
 import threading
 import Queue
 import traceback
-import types
-import inspect
-import time
-import atexit
 
 class ParallelExec(threading.Thread):
     """ Create a thread of parallel execution.

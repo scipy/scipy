@@ -1,5 +1,8 @@
-from numpy import *
+from numpy import asarray
+import stats
 import numpy as N
+from types import ListType, TupleType, StringType
+import copy
 
 def abut (source, *args):
     """\nLike the |Stat abut command.  It concatenates two arrays column-wise
@@ -72,7 +75,7 @@ def colex (a,indices,axis=1):
     """\nExtracts specified indices (a list) from passed array, along passed
     axis (column extraction is default).  BEWARE: A 1D array is presumed to be a
     column-array (and that the whole array will be returned as a column).
- 
+
     Returns: the columns of a specified by indices\n"""
 
     if type(indices) not in [ListType,TupleType,N.ArrayType]:
@@ -93,10 +96,10 @@ Format:  printcc (lst,extra=2)
 Returns: None\n"""
 
     def makestr (x):
-        if type(x) <> StringType:
+        if type(x) != StringType:
             x = str(x)
         return x
- 
+
     if type(lst[0]) not in [ListType,TupleType]:
         lst = [lst]
     rowstokill = []
@@ -123,6 +126,21 @@ Returns: None\n"""
         else:
             print lineincustcols(row,maxsize)
     return None
+
+def adm (a,criterion):
+    """\nReturns rows from the passed list of lists that meet the criteria in
+the passed criterion expression (a string).
+
+Format:  adm (a,criterion)   where criterion is like 'x[2]==37'\n"""
+
+    function = 'lines = filter(lambda x: '+criterion+',a)'
+    exec(function)
+    try:
+        lines = N.array(lines)
+    except:
+        lines = N.array(lines,'O')
+    return lines
+
 
 def linexand (a,columnlist,valuelist):
     """Returns the rows of an array where col (from columnlist) = val
@@ -177,9 +195,9 @@ def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
             for col in collapsecols:
                 avgcol = colex(tmprows,col)
                 item.append(cfcn(avgcol))
-                if sterr:
+                if stderr:
                     if len(avgcol)>1:
-                        item.append(stats.sterr(avgcol))
+                        item.append(stats.stderr(avgcol))
                     else:
                         item.append('N/A')
                 if ns:
@@ -193,7 +211,7 @@ def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
 
 
 def makestr (item):
-    if type(item) <> StringType:
+    if type(item) != StringType:
         item = str(item)
     return item
 
@@ -208,7 +226,7 @@ Returns: formatted string created from inlist\n"""
 
     outstr = ''
     for i in range(len(inlist)):
-        if type(inlist[i]) <> StringType:
+        if type(inlist[i]) != StringType:
             item = str(inlist[i])
         else:
             item = inlist[i]
@@ -230,5 +248,4 @@ Format:  list2string (inlist)
 Returns: the string created from inlist\n"""
 
     stringlist = map(makestr,inlist)
-    return string.join(stringlist)
-
+    return "".join(stringlist)

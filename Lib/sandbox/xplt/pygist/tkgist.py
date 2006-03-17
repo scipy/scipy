@@ -7,7 +7,7 @@
 #  CHANGES:
 #  12/06/02 dhm Originated.
 #  01/21/03 llc gistC should be gist.
-#  
+#
 #  ---------------------------------------------------------------------
 """
 Make gistC module compatible with _tkinter module
@@ -36,26 +36,26 @@ _refresh = 1
 #          idle event??
 
 def do_pending(file, mask):
-   global _root
-   global _refresh
-   print "python do_pending"
-   if _root and _refresh:
-      _refresh = 0
-   gist.pyg_pending()
+    global _root
+    global _refresh
+    print "python do_pending"
+    if _root and _refresh:
+        _refresh = 0
+    gist.pyg_pending()
 
 #def do_idle(*a):
 def do_idle(dis, fd):
-   global _root
-   global _refresh
-   print "python do_idle; dis=", dis, "fd=", fd
-   gist.pyg_idler()
-   _refresh = 1
+    global _root
+    global _refresh
+    print "python do_idle; dis=", dis, "fd=", fd
+    gist.pyg_idler()
+    _refresh = 1
 
-   if _root:
-      print _root
-      if dis == 0:
-         print dis
-         _root.after_idle(do_idle)
+    if _root:
+        print _root
+        if dis == 0:
+            print dis
+            _root.after_idle(do_idle)
 #        _root.after(100, do_idle)
 
 def do_connector(dis, fd):
@@ -77,7 +77,7 @@ def do_keyhandler(msg):
     print msg
     # should evaluate msg as python command here
 
-""" 
+"""
 Initialization for Tkinter cooperating with Gist
 """
 

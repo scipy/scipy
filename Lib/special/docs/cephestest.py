@@ -16,6 +16,3 @@ for k in names[4:]:
             print "  %f" % fun(val)
         except:
             print "Error: " + k
-
-
-

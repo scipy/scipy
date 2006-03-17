@@ -1,8 +1,8 @@
-""" Generic support code for: 
-        error handling code found in every weave module      
+""" Generic support code for:
+        error handling code found in every weave module
         local/global dictionary access code for inline() modules
         swig pointer (old style) conversion support
-        
+
 """
 
 import base_info
@@ -27,10 +27,10 @@ char* find_type(PyObject* py_obj)
     if(PyTuple_Check(py_obj)) return "tuple";
     if(PyFile_Check(py_obj)) return "file";
     if(PyModule_Check(py_obj)) return "module";
-    
+
     //should probably do more intergation (and thinking) on these.
     if(PyCallable_Check(py_obj) && PyInstance_Check(py_obj)) return "callable";
-    if(PyInstance_Check(py_obj)) return "instance"; 
+    if(PyInstance_Check(py_obj)) return "instance";
     if(PyCallable_Check(py_obj)) return "callable";
     return "unkown type";
 }
@@ -48,7 +48,7 @@ void handle_bad_type(PyObject* py_obj, const char* good_type, const char* var_na
     char msg[500];
     sprintf(msg,"received '%s' type instead of '%s' for variable '%s'",
             find_type(py_obj),good_type,var_name);
-    throw_error(PyExc_TypeError,msg);    
+    throw_error(PyExc_TypeError,msg);
 }
 
 void handle_conversion_error(PyObject* py_obj, const char* good_type, const char* var_name)
@@ -70,7 +70,7 @@ class basic_module_info(base_info.base_info):
 #----------------------------------------------------------------------------
 # inline() generated support code
 #
-# The following two function declarations handle access to variables in the 
+# The following two function declarations handle access to variables in the
 # global and local dictionaries for inline functions.
 #----------------------------------------------------------------------------
 
@@ -117,9 +117,9 @@ class inline_info(base_info.base_info):
 #----------------------------------------------------------------------------
 # swig pointer support code
 #
-# The support code for swig is just slirped in from the swigptr.c file 
+# The support code for swig is just slirped in from the swigptr.c file
 # from the *old* swig distribution.  The code from swigptr.c is now a string
-# in swigptr.py to ease the process of incorporating it into py2exe 
+# in swigptr.py to ease the process of incorporating it into py2exe
 # installations. New style swig pointers are not yet supported.
 #----------------------------------------------------------------------------
 

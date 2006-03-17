@@ -92,7 +92,7 @@ class test_any(unittest.TestCase):
         y1 = [[0,0,0],[0,1,0],[1,1,0]]
         assert_array_equal(any(y1),[1,1,0])
         assert_array_equal(any(y1,axis=1),[0,1,1])
-        
+
 class test_all(unittest.TestCase):
     def check_basic(self):
         y1 = [0,1,1,0]
@@ -130,7 +130,7 @@ class test_fftshift(unittest.TestCase):
         assert_array_equal(y1s[0],5*ones((11,13),'d'))
         assert_array_equal(y1s[:,0,0],fftshift(grid[0:10]))
         assert_array_equal(y1,ifftshift(y1s,(0,2)))
-        
+
 
 class test_ifftshift(unittest.TestCase):
     def check_basic(self):
@@ -151,7 +151,7 @@ class test_fftfreq(unittest.TestCase):
             lower = -(k/2)
             upper = (k-1)/2
             assert_array_equal(fftshift(y),grid[lower:upper+1])
-    
+
 class test_cont_ft(unittest.TestCase):
     def check_basic(self):
         n = arange(100) - 49.5
@@ -162,7 +162,7 @@ class test_cont_ft(unittest.TestCase):
         actual = exp(-pi*fr**2)
         comp = cont_ft(gn,fr,delta=dx,n=n).real
         assert_array_almost_equal(comp,actual,6)
-        
+
 class test_atleast_1d(unittest.TestCase):
     def check_basic(self):
         assert(atleast_1d(3).shape == (1,))
@@ -192,7 +192,7 @@ class test_toeplitz(unittest.TestCase):
         assert_array_equal(y,[[1,2,3],[2,1,2],[3,2,1]])
         y = toeplitz([1,2,3],[1,4,5])
         assert_array_equal(y,[[1,4,5],[2,1,4],[3,2,1]])
-        
+
 class test_hankel(unittest.TestCase):
     def check_basic(self):
         y = hankel([1,2,3])
@@ -216,7 +216,7 @@ class test_polyint(unittest.TestCase):
     def check_order1_noconstant(self):
         a = rand(10)*4
 
-        
+
 ##################################################
 
 def test_suite(level=1):
@@ -238,7 +238,7 @@ def test_suite(level=1):
         suites.append( unittest.makeSuite(test_isscalar,'check_') )
         suites.append( unittest.makeSuite(test_toeplitz,'check_') )
         suites.append( unittest.makeSuite(test_hankel,'check_') )
-        suites.append( unittest.makeSuite(test_real_if_close,'check_') )    
+        suites.append( unittest.makeSuite(test_real_if_close,'check_') )
     total_suite = unittest.TestSuite(suites)
     return total_suite
 

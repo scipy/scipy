@@ -7,7 +7,7 @@ from weave import ext_tools, c_spec
 try:
     from weave.standard_array_spec import array_converter
 except ImportError:
-    pass # requires numpy.numerix    
+    pass # requires numpy.numerix
 restore_path()
 
 set_local_path()
@@ -15,7 +15,7 @@ from weave_test_utils import *
 restore_path()
 
 build_dir = empty_temp_dir()
-print 'building extensions here:', build_dir    
+print 'building extensions here:', build_dir
 
 class test_ext_module(ScipyTestCase):
     #should really do some testing of where modules end up
@@ -39,11 +39,11 @@ class test_ext_module(ScipyTestCase):
     def check_with_include(self,level=5):
         # decalaring variables
         a = 2.;
-    
+
         # declare module
         mod = ext_tools.ext_module('ext_module_with_include')
         mod.customize.add_header('<iostream>')
-    
+
         # function 2 --> a little more complex expression
         var_specs = ext_tools.assign_variable_types(['a'],locals(),globals())
         code = """
@@ -57,9 +57,9 @@ class test_ext_module(ScipyTestCase):
         import ext_module_with_include
         ext_module_with_include.test(a)
 
-    def check_string_and_int(self,level=5):        
+    def check_string_and_int(self,level=5):
         # decalaring variables
-        a = 2;b = 'string'    
+        a = 2;b = 'string'
         # declare module
         mod = ext_tools.ext_module('ext_string_and_int')
         code = """
@@ -72,10 +72,10 @@ class test_ext_module(ScipyTestCase):
         import ext_string_and_int
         c = ext_string_and_int.test(a,b)
         assert(c == len(b))
-        
-    def check_return_tuple(self,level=5):        
+
+    def check_return_tuple(self,level=5):
         # decalaring variables
-        a = 2    
+        a = 2
         # declare module
         mod = ext_tools.ext_module('ext_return_tuple')
         var_specs = ext_tools.assign_variable_types(['a'],locals())
@@ -93,7 +93,7 @@ class test_ext_module(ScipyTestCase):
         import ext_return_tuple
         c,d = ext_return_tuple.test(a)
         assert(c==a and d == a+1)
-           
+
 class test_ext_function(ScipyTestCase):
     #should really do some testing of where modules end up
     def check_simple(self,level=5):
@@ -106,30 +106,30 @@ class test_ext_function(ScipyTestCase):
         mod.compile(location = build_dir)
         import simple_ext_function
         simple_ext_function.test()
-      
-class test_assign_variable_types(ScipyTestCase):            
+
+class test_assign_variable_types(ScipyTestCase):
     def check_assign_variable_types(self):
         try:
             from numpy.numerix import arange, Float32, Float64
         except:
             # skip this test if numpy.numerix not installed
             return
-            
+
         import types
         a = arange(10,typecode = Float32)
         b = arange(5,typecode = Float64)
         c = 5
         arg_list = ['a','b','c']
-        actual = ext_tools.assign_variable_types(arg_list,locals())        
+        actual = ext_tools.assign_variable_types(arg_list,locals())
         #desired = {'a':(Float32,1),'b':(Float32,1),'i':(Int32,0)}
-        
+
         ad = array_converter()
         ad.name, ad.var_type, ad.dims = 'a', Float32, 1
         bd = array_converter()
         bd.name, bd.var_type, bd.dims = 'b', Float64, 1
 
         cd = c_spec.int_converter()
-        cd.name, cd.var_type = 'c', types.IntType        
+        cd.name, cd.var_type = 'c', types.IntType
         desired = [ad,bd,cd]
         expr = ""
         print_assert_equal(expr,actual,desired)

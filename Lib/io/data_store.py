@@ -1,4 +1,4 @@
-""" Load or save values to a file.  
+""" Load or save values to a file.
 
     Shelves work well for storing data, but they are slow to access
     repeatedly - especially for large data sets.  This module allows
@@ -17,7 +17,6 @@
 
 __all__ = ['load', 'save', 'create_module', 'create_shelf']
 import dumb_shelve
-import string
 import os
 
 def load(module):
@@ -25,7 +24,7 @@ def load(module):
         the same name as the module.
     """
     dir,filename = os.path.split(module.__file__)
-    filebase = string.split(filename,'.')[0]
+    filebase = filename.split('.')[0]
     fn = os.path.join(dir, filebase)
     f = dumb_shelve.open(fn, "r")
     #exec( 'import ' + module.__name__)
@@ -33,7 +32,7 @@ def load(module):
         exec( 'import ' + module.__name__+ ';' +
               module.__name__+'.'+i + '=' + 'f["' + i + '"]')
 #       print i, 'loaded...'
-#   print 'done'    
+#   print 'done'
 
 def save(file_name=None,data=None):
     """ Save the dictionary "data" into
@@ -48,7 +47,7 @@ def create_module(file_name):
     """
     if not os.path.exists(file_name+'.py'): # don't clobber existing files
         module_name = os.path.split(file_name)[-1]
-        f = open(file_name+'.py','w')   
+        f = open(file_name+'.py','w')
         f.write('import scipy.io.data_store as data_store\n')
         f.write('import %s\n' % module_name)
         f.write('data_store.load(%s)' % module_name)
@@ -57,14 +56,10 @@ def create_module(file_name):
 def create_shelf(file_name,data):
     """Use this to write the data to a new file
     """
-    shelf_name = string.split(file_name,'.')[0]
+    shelf_name = file_name.split('.')[0]
     f = dumb_shelve.open(shelf_name,'w')
     for i in data.keys():
 #       print 'saving...',i
         f[i] = data[i]
 #   print 'done'
     f.close()
-
-
-
-    

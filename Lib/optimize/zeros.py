@@ -7,7 +7,7 @@ _xtol = 1e-12
 _args = ()
 
 __all__ = ['bisect','ridder','brentq','brenth']
-    
+
 def bisect(f,a,b,xtol=_xtol,maxiter=_iter,args=_args, full_output=0, disp=1) :
     """ Find root of f in [a,b]
 
@@ -25,7 +25,7 @@ def bisect(f,a,b,xtol=_xtol,maxiter=_iter,args=_args, full_output=0, disp=1) :
             to lie within xtol of the value return. Should be >= 0.
             The routine modifies this to take into account the relative
             precision of doubles.
-            
+
         maxiter : Number, if convergence is not achieved in
             maxiter iterations, and error is raised. Must be
             >= 0.
@@ -34,7 +34,7 @@ def bisect(f,a,b,xtol=_xtol,maxiter=_iter,args=_args, full_output=0, disp=1) :
             f is called by apply(f,(x)+args).
     """
     if type(args) != type(()) :
-	    args = (args,)
+        args = (args,)
     return _zeros._bisect(f,a,b,xtol,maxiter,args,full_output,disp)
 
 def ridder(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
@@ -58,7 +58,7 @@ def ridder(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
             to lie within xtol of the value return. Should be >= 0.
             The routine modifies this to take into account the relative
             precision of doubles.
-            
+
         maxiter : Number, if convergence is not achieved in
             maxiter iterations, and error is raised. Must be
             >= 0.
@@ -67,7 +67,7 @@ def ridder(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
             f is called by apply(f,(x)+args).
     """
     if type(args) != type(()) :
-	    args = (args,)
+        args = (args,)
     return _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
 
 def brentq(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
@@ -92,7 +92,7 @@ def brentq(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
             to lie within xtol of the value return. Should be >= 0.
             The routine modifies this to take into account the relative
             precision of doubles.
-            
+
         maxiter : Number, if convergence is not achieved in
             maxiter iterations, and error is raised. Must be
             >= 0.
@@ -101,7 +101,7 @@ def brentq(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
             f is called by apply(f,(x)+args).
     """
     if type(args) != type(()) :
-	    args = (args,)
+        args = (args,)
     return _zeros._brentq(f,a,b,xtol,maxiter,args,full_output,disp)
 
 def brenth(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
@@ -126,7 +126,7 @@ def brenth(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
             to lie within xtol of the value return. Should be >= 0.
             The routine modifies this to take into account the relative
             precision of doubles.
-            
+
         maxiter : Number, if convergence is not achieved in
             maxiter iterations, and error is raised. Must be
             >= 0.
@@ -135,6 +135,5 @@ def brenth(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
             f is called by apply(f,(x)+args).
     """
     if type(args) != type(()) :
-	    args = (args,)
+        args = (args,)
     return _zeros._brenth(f,a,b,xtol,maxiter,args,full_output,disp)
-

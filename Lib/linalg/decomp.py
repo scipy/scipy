@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 #
 # Author: Pearu Peterson, March 2002
@@ -6,7 +6,8 @@
 # additions by Travis Oliphant, March 2002
 # additions by Eric Jones,      June 2002
 
-__all__ = ['eig','eigvals','lu','svd','svdvals','diagsvd','cholesky','qr',
+__all__ = ['eig','eigh','eigvals','eigvalsh','lu','svd','svdvals','diagsvd',
+           'cholesky','qr',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
@@ -19,8 +20,8 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import numpy
-from numpy import asarray_chkfinite, asarray, diag, zeros, ones, \
-     dot, transpose, single
+from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, single, typecodes, isfinite
+
 cast = numpy.cast
 r_ = numpy.r_
 c_ = numpy.c_
@@ -84,7 +85,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
             return w, vl, vr
         return w, vl
     return w, vr
-        
+
 def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
     """ Solve ordinary and generalized eigenvalue problem
     of a square matrix.
@@ -104,7 +105,7 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
       w,vl,vr  -- [left==right==1].
 
     Definitions:
-      
+
       a * vr[:,i] = w[i] * b * vr[:,i]
 
       a^H * vl[:,i] = conjugate(w[i]) * b^H * vl[:,i]
@@ -167,10 +168,85 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
         return w, vl
     return w, vr
 
+def eigh(a,lower=1,eigvals_only=0,overwrite_a=0):
+    """ Solve real symmetric or complex hermitian eigenvalue problem.
+
+    Inputs:
+
+      a            -- A hermitian N x N matrix.
+      lower        -- values in a are read from lower triangle [1: UPLO='L' (default) / 0: UPLO='U']
+      eigvals_only -- don't compute eigenvectors.
+      overwrite_a  -- content of a may be destroyed
+
+    Outputs:
+
+      w,v     -- w: eigenvalues, v: eigenvectors [for eigvals_only == False]
+      w       -- eigenvalues [for eigvals_only == True (default)].
+
+    Definitions:
+
+      a * v[:,i] = w[i] * vr[:,i]
+      v.H * v = identity
+
+    """
+    if eigvals_only or overwrite_a:
+	a1 = asarray_chkfinite(a)
+	overwrite_a = overwrite_a or (_datanotshared(a1,a))
+    else:
+	a1 = array(a)
+        if (a1.dtype.char in typecodes['AllFloat']) and not isfinite(a1).all():
+	    raise ValueError, "array must not contain infs or NaNs"
+	overwrite_a = 1
+
+    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
+        raise ValueError, 'expected square matrix'
+
+    if a1.dtype.char in 'FD':
+	heev, = get_lapack_funcs(('heev',),(a1,))
+        if heev.module_name[:7] == 'flapack':
+	    lwork = calc_lwork.heev(heev.prefix,a1.shape[0],lower)
+	    w,v,info = heev(a1,lwork = lwork,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+	else: # 'clapack'
+	    w,v,info = heev(a1,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+        if info<0: raise ValueError,\
+	   'illegal value in %-th argument of internal heev'%(-info)
+        if info>0: raise LinAlgError,"eig algorithm did not converge"
+    else: # a1.dtype.char in 'fd':
+	syev, = get_lapack_funcs(('syev',),(a1,))
+        if syev.module_name[:7] == 'flapack':
+	    lwork = calc_lwork.syev(syev.prefix,a1.shape[0],lower)
+	    w,v,info = syev(a1,lwork = lwork,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+	else: # 'clapack'
+	    w,v,info = syev(a1,
+	                    compute_v = not eigvals_only,
+			    lower = lower,
+			    overwrite_a = overwrite_a)
+        if info<0: raise ValueError,\
+	   'illegal value in %-th argument of internal syev'%(-info)
+        if info>0: raise LinAlgError,"eig algorithm did not converge"
+
+    if eigvals_only:
+        return w
+    return w, v
+
+
 def eigvals(a,b=None,overwrite_a=0):
     """Return eigenvalues of square matrix."""
     return eig(a,b=b,left=0,right=0,overwrite_a=overwrite_a)
-    
+
+def eigvalsh(a,lower=1,overwrite_a=0):
+    """Return eigenvalues of hermitean or real symmetric matrix."""
+    return eigh(a,lower=lower,eigvals_only=1,overwrite_a=overwrite_a)
+
 def lu_factor(a, overwrite_a=0):
     """Return raw LU decomposition of a matrix and pivots, for use in solving
     a system of linear equations.
@@ -205,9 +281,9 @@ def lu_solve(a_lu_pivots,b):
     pivots = asarray_chkfinite(pivots)
     b = asarray_chkfinite(b)
     _assert_squareness(a_lu)
-    
+
     getrs, = get_lapack_funcs(('getrs',),(a_lu,))
-    b, info = getrs(a_lu,pivots,b)    
+    b, info = getrs(a_lu,pivots,b)
     if info < 0:
         msg = "Argument %d to lapack's ?getrs() has an illegal value." % info
         raise TypeError, msg
@@ -215,8 +291,8 @@ def lu_solve(a_lu_pivots,b):
         msg = "Unknown error occured int ?getrs(): error code = %d" % info
         raise TypeError, msg
     return b
-    
-    
+
+
 def lu(a,permute_l=0,overwrite_a=0):
     """Return LU decompostion of a matrix.
 
@@ -231,7 +307,7 @@ def lu(a,permute_l=0,overwrite_a=0):
       pl,u   -- LU decomposition matrices of a [permute_l=1]
 
     Definitions:
-      
+
       a = p * l * u    [permute_l=0]
       a = pl * u       [permute_l=1]
 
@@ -244,7 +320,6 @@ def lu(a,permute_l=0,overwrite_a=0):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
-    m,n = a1.shape
     overwrite_a = overwrite_a or (_datanotshared(a1,a))
     flu, = get_flinalg_funcs(('lu',),(a1,))
     p,l,u,info = flu(a1,permute_l=permute_l,overwrite_a = overwrite_a)
@@ -386,10 +461,10 @@ def qr(a,overwrite_a=0,lwork=None):
                      i.e. a is used as a work array if possible.
 
       lwork=None -- >= shape(a)[1]. If None (or -1) compute optimal
-                    work array size. 
+                    work array size.
 
     Outputs:
-    
+
       q, r -- matrices such that q * r = a
 
     """
@@ -403,7 +478,7 @@ def qr(a,overwrite_a=0,lwork=None):
         # get optimal work array
         qr,tau,work,info = geqrf(a1,lwork=-1,overwrite_a=1)
         lwork = work[0]
-    qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)    
+    qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal geqrf'%(-info)
     gemm, = get_blas_funcs(('gemm',),(qr,))
@@ -423,7 +498,7 @@ def qr(a,overwrite_a=0,lwork=None):
 _double_precision = ['i','l','d']
 
 def schur(a,output='real',lwork=None,overwrite_a=0):
-    """Compute Schur decomposition of matrix a. 
+    """Compute Schur decomposition of matrix a.
 
     Description:
 
@@ -436,7 +511,6 @@ def schur(a,output='real',lwork=None,overwrite_a=0):
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError, 'expected square matrix'
-    N = a1.shape[0]
     typ = a1.dtype.char
     if output in ['complex','c'] and typ not in ['F','D']:
         if typ in _double_precision:
@@ -481,7 +555,7 @@ def _castCopy(type, *arrays):
         else:
             cast_arrays = cast_arrays + (a.astype(type),)
     if len(cast_arrays) == 1:
-            return cast_arrays[0]
+        return cast_arrays[0]
     else:
         return cast_arrays
 
@@ -510,7 +584,7 @@ def rsf2csf(T, Z):
     if T.shape[0] != Z.shape[0]:
         raise ValueError, "matrices must be same dimension."
     N = T.shape[0]
-    arr = numpy.array    
+    arr = numpy.array
     t = _commonType(Z, T, arr([3.0],'F'))
     Z, T = _castCopy(t, Z, T)
     conj = numpy.conj

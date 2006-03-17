@@ -18,5 +18,5 @@ from numpy.dual import register_func
 register_func('i0',i0)
 del register_func
 
-from numpy.testing import ScipyTest 
+from numpy.testing import ScipyTest
 test = ScipyTest().test

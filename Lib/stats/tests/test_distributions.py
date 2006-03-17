@@ -44,7 +44,7 @@ for dist in dists:
     nargs = distfunc.numargs
     alpha = 0.01
     if dist == 'fatiguelife':
-        alpha = 0.001        
+        alpha = 0.001
     if dist == 'erlang':
         args = str((4,)+tuple(rand(2)))
     elif dist == 'frechet':
@@ -105,8 +105,8 @@ class test_binom(ScipyTestCase):
         val = stats.binom.rvs(10, 0.75)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
-        
+
+
 class test_bernoulli(ScipyTestCase):
     def check_rvs(self):
         vals = stats.bernoulli.rvs(0.75, size=(2, 50))
@@ -116,7 +116,7 @@ class test_bernoulli(ScipyTestCase):
         val = stats.bernoulli.rvs(0.75)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_nbinom(ScipyTestCase):
     def check_rvs(self):
         vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
@@ -126,7 +126,7 @@ class test_nbinom(ScipyTestCase):
         val = stats.nbinom.rvs(10, 0.75)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_geom(ScipyTestCase):
     def check_rvs(self):
         vals = stats.geom.rvs(0.75, size=(2, 50))
@@ -136,7 +136,7 @@ class test_geom(ScipyTestCase):
         val = stats.geom.rvs(0.75)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_hypergeom(ScipyTestCase):
     def check_rvs(self):
         vals = stats.hypergeom.rvs(20, 10, 3, size=(2, 50))
@@ -147,7 +147,7 @@ class test_hypergeom(ScipyTestCase):
         val = stats.hypergeom.rvs(20, 3, 10)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_logser(ScipyTestCase):
     def check_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
@@ -157,7 +157,7 @@ class test_logser(ScipyTestCase):
         val = stats.logser.rvs(0.75)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_poisson(ScipyTestCase):
     def check_rvs(self):
         vals = stats.poisson.rvs(0.5, size=(2, 50))
@@ -167,7 +167,7 @@ class test_poisson(ScipyTestCase):
         val = stats.poisson.rvs(0.5)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_zipf(ScipyTestCase):
     def check_rvs(self):
         vals = stats.zipf.rvs(1.5, size=(2, 50))
@@ -177,16 +177,15 @@ class test_zipf(ScipyTestCase):
         val = stats.zipf.rvs(1.5)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 class test_dlaplace(ScipyTestCase):
     def check_rvs(self):
         vals = stats.dlaplace.rvs(1.5 , size=(2, 50))
-        assert(numpy.shape(vals) == (2, 50))        
+        assert(numpy.shape(vals) == (2, 50))
         assert(vals.dtype.char in numpy.typecodes['AllInteger'])
         val = stats.dlaplace.rvs(1.5)
         assert(isinstance(val, numpy.ArrayType))
         assert(val.dtype.char in numpy.typecodes['AllInteger'])
-        
+
 if __name__ == "__main__":
     ScipyTest('stats.distributions').run()
-

@@ -12,7 +12,7 @@ t1 = time.clock()
 
 for k in xrange(nnz):
     A[R[k,0],R[k,1]] = k
-    
+
 print 'Time for populating matrix: %8.2f sec' % (time.clock() - t1, )
 
 print A.nnz
@@ -20,4 +20,3 @@ print A.nnz
 B = A[:,:]
 A.shift(-1.0, B)
 print A
-

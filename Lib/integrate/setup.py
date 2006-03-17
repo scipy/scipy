@@ -22,7 +22,7 @@ def configuration(parent_package='',top_path=None):
     # LAPACK routines?
     # Yes, someday...
 
-    
+
 
     # Extensions
     # quadpack:
@@ -30,7 +30,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
                          libraries=['quadpack', 'linpack_lite', 'mach'])
-    # odepack    
+    # odepack
     libs = ['odepack','linpack_lite','mach']
 
     # Remove libraries key from blas_opt
@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
                          sources=['_odepackmodule.c'],
                          libraries=libs,
                          **newblas)
-    
+
     # vode
     config.add_extension('vode',
                          sources=['vode.pyf'],
@@ -55,6 +55,6 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
     return config
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())

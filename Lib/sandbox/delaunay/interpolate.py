@@ -13,8 +13,8 @@ def slice2gridspec(key):
     For now, the only accepted step values are imaginary integers (interpreted
     in the same way numpy.mgrid, etc. do).
     """
-    if ((len(key) != 2) or 
-        (not isinstance(key[0], slice)) or 
+    if ((len(key) != 2) or
+        (not isinstance(key[0], slice)) or
         (not isinstance(key[1], slice))):
         raise ValueError("only 2-D slices, please")
 
@@ -34,7 +34,7 @@ def slice2gridspec(key):
     return x0, x1, xstep, y0, y1, ystep
 
 class LinearInterpolator(object):
-    """Interpolate a function defined on the nodes of a triangulation by 
+    """Interpolate a function defined on the nodes of a triangulation by
     using the planes defined by the three function values at each corner of
     the triangles.
 
@@ -45,12 +45,12 @@ class LinearInterpolator(object):
     default_value -- a float giving the default value should the interpolating
       point happen to fall outside of the convex hull of the triangulation
 
-    At the moment, the only regular rectangular grids are supported for 
+    At the moment, the only regular rectangular grids are supported for
     interpolation.
 
         vals = interp[ystart:ystop:ysteps*1j, xstart:xstop:xsteps*1j]
 
-    vals would then be a (ysteps, xsteps) array containing the interpolated 
+    vals would then be a (ysteps, xsteps) array containing the interpolated
     values. These arguments are interpreted the same way as numpy.mgrid.
 
     Attributes:
@@ -62,7 +62,7 @@ class LinearInterpolator(object):
     Given the Delauany triangulation (or indeed *any* complete triangulation) we
     can interpolate values inside the convex hull by locating the enclosing
     triangle of the interpolation point and returning the value at that point of
-    the plane defined by the three node values. 
+    the plane defined by the three node values.
 
         f = planes[tri,0]*x + planes[tri,1]*y + planes[tri,2]
 
@@ -86,7 +86,7 @@ class LinearInterpolator(object):
         return grid
 
 class NNInterpolator(object):
-    """Interpolate a function defined on the nodes of a triangulation by 
+    """Interpolate a function defined on the nodes of a triangulation by
     the natural neighbors method.
 
     NNInterpolator(triangulation, z, default_value=numpy.nan)
@@ -96,18 +96,18 @@ class NNInterpolator(object):
     default_value -- a float giving the default value should the interpolating
       point happen to fall outside of the convex hull of the triangulation
 
-    At the moment, the only regular rectangular grids are supported for 
+    At the moment, the only regular rectangular grids are supported for
     interpolation.
 
         vals = interp[ystart:ystop:ysteps*1j, xstart:xstop:xsteps*1j]
 
-    vals would then be a (ysteps, xsteps) array containing the interpolated 
+    vals would then be a (ysteps, xsteps) array containing the interpolated
     values. These arguments are interpreted the same way as numpy.mgrid.
 
     Natural Neighbors Interpolation
     -------------------------------
-    One feature of the Delaunay triangulation is that for each triangle, its 
-    circumcircle contains no other point (although in degenerate cases, like 
+    One feature of the Delaunay triangulation is that for each triangle, its
+    circumcircle contains no other point (although in degenerate cases, like
     squares, other points may be *on* the circumcircle). One can also construct
     what is called the Voronoi diagram from a Delaunay triangulation by
     connecting the circumcenters of the triangles to those of their neighbors to
@@ -124,8 +124,8 @@ class NNInterpolator(object):
     point. This polygon would "steal" area from the original Voronoi polygons.
     For each node i in the natural neighbors set, we compute the area stolen
     from its original Voronoi polygon, stolen[i]. We define the natural
-    neighbors coordinates 
-    
+    neighbors coordinates
+
         phi[i] = stolen[i] / sum(stolen)
 
     We then use these phi[i] to weight the corresponding function values from
@@ -145,17 +145,16 @@ class NNInterpolator(object):
     def __getitem__(self, key):
         x0, x1, xstep, y0, y1, ystep = slice2gridspec(key)
         grid = nn_interpolate_grid(x0, x1, xstep, y0, y1, ystep, self.default_value,
-            self.triangulation.x, self.triangulation.y, self.z, 
+            self.triangulation.x, self.triangulation.y, self.z,
             self.triangulation.circumcenters,
-            self.triangulation.triangle_nodes, 
+            self.triangulation.triangle_nodes,
             self.triangulation.triangle_neighbors)
         return grid
 
     def __call__(self, intx, inty):
         intz = nn_interpolate_unstructured(intx, inty, self.default_value,
-            self.triangulation.x, self.triangulation.y, self.z, 
+            self.triangulation.x, self.triangulation.y, self.z,
             self.triangulation.circumcenters,
-            self.triangulation.triangle_nodes, 
+            self.triangulation.triangle_nodes,
             self.triangulation.triangle_neighbors)
         return intz
-

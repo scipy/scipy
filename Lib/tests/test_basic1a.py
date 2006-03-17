@@ -11,7 +11,7 @@ from scipy import *
 ##################################################
 
 
-class test_roots(unittest.TestCase):        
+class test_roots(unittest.TestCase):
     def check_basic(self):
         a1 = [1,-4,4]
         a2 = [4,-16,16]
@@ -28,7 +28,7 @@ class test_factorial(unittest.TestCase):
     def check_basic(self):
         for k in range(0,13):
             assert_equal(factorial(k),product(grid[1:k+1]))
-        self.failUnlessRaises(ValueError, factorial, -10)        
+        self.failUnlessRaises(ValueError, factorial, -10)
 
     def check_exact(self):
         resdict = {4:24L,10:3628800L,15:1307674368000L,
@@ -56,7 +56,7 @@ class test_comb(unittest.TestCase):
         for key in resdict.keys():
             assert_equal(comb(key[0],key[1],exact=1),resdict[key])
 
-                                        
+
 ##################################################
 
 def test_suite(level=1):

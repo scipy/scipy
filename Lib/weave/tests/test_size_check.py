@@ -9,7 +9,7 @@ restore_path()
 import numpy as nx
 
 empty = array(())
- 
+
 
 class test_make_same_length(ScipyTestCase):
 
@@ -20,7 +20,7 @@ class test_make_same_length(ScipyTestCase):
 
     def check_scalar(self):
         x,y = (),()
-        desired = empty,empty        
+        desired = empty,empty
         self.generic_test(x,y,desired)
     def check_x_scalar(self):
         x,y = (),(1,2)
@@ -50,9 +50,9 @@ class test_binary_op_size(ScipyTestCase):
             #print actual
             raise AttributeError, "Should have raised ValueError"
         except ValueError:
-            pass    
+            pass
     def desired_type(self,val):
-        return array(val)            
+        return array(val)
     def check_scalar(self):
         x,y = (),()
         desired = self.desired_type(())
@@ -93,7 +93,7 @@ class test_binary_op_size(ScipyTestCase):
         x,y = (5,4,3,2,1),(3,2,1)
         desired = self.desired_type((5,4,3,2,1))
         self.generic_test(x,y,desired)
-        
+
     def check_error1(self):
         x,y = (5,),(4,)
         self.generic_error_test(x,y)
@@ -105,7 +105,7 @@ class test_dummy_array(test_binary_op_size):
     def assert_array_equal(self,test_string,actual,desired):
         """this should probably be in scipy_test.testing
         """
-        import pprint        
+        import pprint
         try:
             assert(actual == desired)
         except AssertionError:
@@ -116,7 +116,7 @@ class test_dummy_array(test_binary_op_size):
             pprint.pprint(actual,msg)
             msg.write('DESIRED: \n')
             pprint.pprint(desired,msg)
-            raise AssertionError, msg.getvalue()    
+            raise AssertionError, msg.getvalue()
     def generic_test(self,x,y,desired):
         if type(x) is type(()):
             x = ones(x)
@@ -134,7 +134,7 @@ class test_dummy_array(test_binary_op_size):
             self.generic_test('',x,y)
             raise AttributeError, "Should have raised ValueError"
         except ValueError:
-            pass    
+            pass
     def desired_type(self,val):
         return size_check.dummy_array(array(val),1)
 
@@ -142,9 +142,9 @@ class test_dummy_array_indexing(ScipyTestCase):
     def assert_array_equal(self,test_string,actual,desired):
         """this should probably be in scipy_test.testing
         """
-        import pprint        
+        import pprint
         try:
-            assert(all(equal(actual,desired)))            
+            assert(all(equal(actual,desired)))
         except AssertionError:
             import cStringIO
             msg = cStringIO.StringIO()
@@ -156,7 +156,7 @@ class test_dummy_array_indexing(ScipyTestCase):
             raise AssertionError, msg.getvalue()
     def generic_test(self,ary,expr,desired):
         a = size_check.dummy_array(ary)
-        actual = eval(expr).shape        
+        actual = eval(expr).shape
         #print desired, actual
         self.assert_array_equal(expr,actual,desired)
     def generic_wrap(self,a,expr):
@@ -168,7 +168,7 @@ class test_dummy_array_indexing(ScipyTestCase):
             if 0 not in desired:
                 msg = '%s raised IndexError in dummy_array, but forms\n' \
                       'valid array shape -> %s' % (expr, str(desired))
-                raise AttributeError, msg        
+                raise AttributeError, msg
     def generic_1d(self,expr):
         a = arange(10)
         self.generic_wrap(a,expr)
@@ -178,7 +178,7 @@ class test_dummy_array_indexing(ScipyTestCase):
     def generic_3d(self,expr):
         a = ones((10,20,1))
         self.generic_wrap(a,expr)
-        
+
     def generic_1d_index(self,expr):
         a = arange(10)
         #print expr ,eval(expr)
@@ -192,66 +192,66 @@ class test_dummy_array_indexing(ScipyTestCase):
         self.generic_1d_index('a[-4]')
     def check_1d_index_3(self):
         try: self.generic_1d('a[12]')
-        except IndexError: pass            
+        except IndexError: pass
     def check_1d_index_calculated(self):
         self.generic_1d_index('a[0+1]')
     def check_1d_0(self):
         self.generic_1d('a[:]')
-    def check_1d_1(self):            
+    def check_1d_1(self):
         self.generic_1d('a[1:]')
-    def check_1d_2(self):            
+    def check_1d_2(self):
         self.generic_1d('a[-1:]')
     def check_1d_3(self):
         # dummy_array is "bug for bug" equiv to numpy.numerix.array
         # on wrapping of indices.
         if nx.which[0] != "numarray":
             self.generic_1d('a[-11:]')
-    def check_1d_4(self):            
+    def check_1d_4(self):
         self.generic_1d('a[:1]')
-    def check_1d_5(self):            
+    def check_1d_5(self):
         self.generic_1d('a[:-1]')
     def check_1d_6(self):
         if nx.which[0] != "numarray":
             self.generic_1d('a[:-11]')
-    def check_1d_7(self):            
+    def check_1d_7(self):
         self.generic_1d('a[1:5]')
-    def check_1d_8(self):            
+    def check_1d_8(self):
         self.generic_1d('a[1:-5]')
     def check_1d_9(self):
         # don't support zero length slicing at the moment.
         try: self.generic_1d('a[-1:-5]')
-        except IndexError: pass            
-    def check_1d_10(self):            
+        except IndexError: pass
+    def check_1d_10(self):
         self.generic_1d('a[-5:-1]')
-        
-    def check_1d_stride_0(self):            
-        self.generic_1d('a[::1]')        
-    def check_1d_stride_1(self):            
-        self.generic_1d('a[::-1]')        
-    def check_1d_stride_2(self):            
-        self.generic_1d('a[1::1]')        
-    def check_1d_stride_3(self):            
-        self.generic_1d('a[1::-1]')        
-    def check_1d_stride_4(self):            
+
+    def check_1d_stride_0(self):
+        self.generic_1d('a[::1]')
+    def check_1d_stride_1(self):
+        self.generic_1d('a[::-1]')
+    def check_1d_stride_2(self):
+        self.generic_1d('a[1::1]')
+    def check_1d_stride_3(self):
+        self.generic_1d('a[1::-1]')
+    def check_1d_stride_4(self):
         # don't support zero length slicing at the moment.
-        try: self.generic_1d('a[1:5:-1]')        
-        except IndexError: pass            
-    def check_1d_stride_5(self):            
-        self.generic_1d('a[5:1:-1]')        
-    def check_1d_stride_6(self):            
-        self.generic_1d('a[:4:1]')        
-    def check_1d_stride_7(self):            
-        self.generic_1d('a[:4:-1]')        
-    def check_1d_stride_8(self):            
-        self.generic_1d('a[:-4:1]')        
-    def check_1d_stride_9(self):            
-        self.generic_1d('a[:-4:-1]')        
-    def check_1d_stride_10(self):            
-        self.generic_1d('a[:-3:2]')        
-    def check_1d_stride_11(self):            
-        self.generic_1d('a[:-3:-2]')        
-    def check_1d_stride_12(self):            
-        self.generic_1d('a[:-3:-7]')        
+        try: self.generic_1d('a[1:5:-1]')
+        except IndexError: pass
+    def check_1d_stride_5(self):
+        self.generic_1d('a[5:1:-1]')
+    def check_1d_stride_6(self):
+        self.generic_1d('a[:4:1]')
+    def check_1d_stride_7(self):
+        self.generic_1d('a[:4:-1]')
+    def check_1d_stride_8(self):
+        self.generic_1d('a[:-4:1]')
+    def check_1d_stride_9(self):
+        self.generic_1d('a[:-4:-1]')
+    def check_1d_stride_10(self):
+        self.generic_1d('a[:-3:2]')
+    def check_1d_stride_11(self):
+        self.generic_1d('a[:-3:-2]')
+    def check_1d_stride_12(self):
+        self.generic_1d('a[:-3:-7]')
     def check_1d_random(self):
         """ through a bunch of different indexes at it for good measure.
         """
@@ -261,8 +261,8 @@ class test_dummy_array_indexing(ScipyTestCase):
             try:
                 beg = random.choice(choices)
                 end = random.choice(choices)
-                step = random.choice(choices)                
-                self.generic_1d('a[%s:%s:%s]' %(beg,end,step))        
+                step = random.choice(choices)
+                self.generic_1d('a[%s:%s:%s]' %(beg,end,step))
             except IndexError:
                 pass
 
@@ -276,31 +276,31 @@ class test_dummy_array_indexing(ScipyTestCase):
         """ through a bunch of different indexes at it for good measure.
         """
         import random
-        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50        
+        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
                 beg = random.choice(choices)
                 end = random.choice(choices)
-                step = random.choice(choices)                
+                step = random.choice(choices)
                 beg2 = random.choice(choices)
                 end2 = random.choice(choices)
-                step2 = random.choice(choices)                
+                step2 = random.choice(choices)
                 expr = 'a[%s:%s:%s,%s:%s:%s]' %(beg,end,step,beg2,end2,step2)
-                self.generic_2d(expr)        
+                self.generic_2d(expr)
             except IndexError:
                 pass
     def check_3d_random(self):
         """ through a bunch of different indexes at it for good measure.
         """
         import random
-        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50        
+        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
                 idx = []
                 for i in range(9):
                     idx.append(random.choice(choices))
                 expr = 'a[%s:%s:%s,%s:%s:%s,%s:%s:%s]' % tuple(idx)
-                self.generic_3d(expr)        
+                self.generic_3d(expr)
             except IndexError:
                 pass
 
@@ -309,42 +309,42 @@ class test_reduction(ScipyTestCase):
         a = ones((5,))
         actual = size_check.reduction(a,0)
         desired = size_check.dummy_array((),1)
-        assert_array_equal('',actual.shape,desired.shape)        
+        assert_array_equal('',actual.shape,desired.shape)
     def check_2d_0(self):
         a = ones((5,10))
         actual = size_check.reduction(a,0)
         desired = size_check.dummy_array((10,),1)
-        assert_array_equal('',actual.shape,desired.shape)        
+        assert_array_equal('',actual.shape,desired.shape)
     def check_2d_1(self):
         a = ones((5,10))
         actual = size_check.reduction(a,1)
         desired = size_check.dummy_array((5,),1)
-        assert_array_equal('',actual.shape,desired.shape)        
+        assert_array_equal('',actual.shape,desired.shape)
     def check_3d_0(self):
         a = ones((5,6,7))
         actual = size_check.reduction(a,1)
         desired = size_check.dummy_array((5,7),1)
-        assert_array_equal('',actual.shape,desired.shape)        
+        assert_array_equal('',actual.shape,desired.shape)
     def check_error0(self):
         a = ones((5,))
         try:
             actual = size_check.reduction(a,-2)
         except ValueError:
-            pass            
+            pass
     def check_error1(self):
         a = ones((5,))
         try:
             actual = size_check.reduction(a,1)
         except ValueError:
-            pass            
+            pass
 
-class test_expressions(ScipyTestCase):        
+class test_expressions(ScipyTestCase):
     def assert_array_equal(self,test_string,actual,desired):
         """this should probably be in scipy_test.testing
         """
-        import pprint        
+        import pprint
         try:
-            assert(all(equal(actual,desired)))            
+            assert(all(equal(actual,desired)))
         except AssertionError:
             import cStringIO
             msg = cStringIO.StringIO()
@@ -362,13 +362,13 @@ class test_expressions(ScipyTestCase):
         for var in args:
             s='%s = size_check.dummy_array(%s)'% (var,var)
             exec(s,loc)
-        try:    
-            actual = eval(expr,locals()).shape        
+        try:
+            actual = eval(expr,locals()).shape
         except:
-            actual = 'failed'    
+            actual = 'failed'
         if actual is 'failed' and  desired is 'failed':
             return
-        try:            
+        try:
             self.assert_array_equal(expr,actual,desired)
         except:
             print 'EXPR:',expr
@@ -385,33 +385,33 @@ class test_expressions(ScipyTestCase):
             desired = 'failed'
         self.generic_test(expr,desired,**kw)
     def check_generic_1d(self):
-        a = arange(10)    
-        expr = 'a[:]'    
+        a = arange(10)
+        expr = 'a[:]'
         self.generic_wrap(expr,a=a)
-        expr = 'a[:] + a'    
+        expr = 'a[:] + a'
         self.generic_wrap(expr,a=a)
-        bad_expr = 'a[4:] + a'    
+        bad_expr = 'a[4:] + a'
         self.generic_wrap(bad_expr,a=a)
-        a = arange(10)    
+        a = arange(10)
         b = ones((1,10))
-        expr = 'a + b'    
+        expr = 'a + b'
         self.generic_wrap(expr,a=a,b=b)
-        bad_expr = 'a[:5] + b'    
+        bad_expr = 'a[:5] + b'
         self.generic_wrap(bad_expr,a=a,b=b)
-    def check_single_index(self):    
-        a = arange(10)    
-        expr = 'a[5] + a[3]'    
+    def check_single_index(self):
+        a = arange(10)
+        expr = 'a[5] + a[3]'
         self.generic_wrap(expr,a=a)
-        
-    def check_calculated_index(self):    
-        a = arange(10)    
+
+    def check_calculated_index(self):
+        a = arange(10)
         nx = 0
-        expr = 'a[5] + a[nx+3]'    
+        expr = 'a[5] + a[nx+3]'
         size_check.check_expr(expr,locals())
-    def check_calculated_index2(self):    
-        a = arange(10)    
+    def check_calculated_index2(self):
+        a = arange(10)
         nx = 0
-        expr = 'a[1:5] + a[nx+1:5+nx]'    
+        expr = 'a[1:5] + a[nx+1:5+nx]'
         size_check.check_expr(expr,locals())
     def generic_2d(self,expr):
         a = ones((10,20))
@@ -419,7 +419,7 @@ class test_expressions(ScipyTestCase):
     def generic_3d(self,expr):
         a = ones((10,20,1))
         self.generic_wrap(a,expr)
-    
+
 
 if __name__ == "__main__":
     ScipyTest('weave.size_check').run()

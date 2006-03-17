@@ -159,5 +159,3 @@ S.matvec(x, r)
 r = b - r
 print 'norm(b - A*x) = %g' % math.sqrt(numpy.dot(r, r))
 print 'bye'
-
-

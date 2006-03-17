@@ -33,7 +33,7 @@ def setup_package():
                                                       moduleName)
     print 'running SWIG:', swig_cmd
     os.system( swig_cmd )
-    
+
     _umfpack\
       = Extension( '__umfpack',
                    sources = ['umfpack_wrap.c'],

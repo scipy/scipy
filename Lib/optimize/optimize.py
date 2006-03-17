@@ -29,9 +29,9 @@ fmin_cg     ---      Non-linear (Polak-Rubiere) conjugate gradient algorithm
                        (can use function and gradient).
 fmin_bfgs   ---      Quasi-Newton method (Broyden-Fletcher-Goldfarb-Shanno
                        (can use function and gradient).
-fmin_ncg    ---      Line-search Newton Conjugate Gradient (can use function, 
+fmin_ncg    ---      Line-search Newton Conjugate Gradient (can use function,
                        gradient and hessian).
-                     
+
 
 brute       ---      Perform a brute force search for the minimum
                        with final optimization if desired.
@@ -55,13 +55,10 @@ __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad']
 
-import numpy as Numeric
+import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, isscalar, vectorize, asarray, absolute, sqrt, Inf, asfarray
 import linesearch
-Num = Numeric
-MLab = Numeric
-numpy = Numeric
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
@@ -69,13 +66,13 @@ def max(m,axis=0):
     """max(m,axis=0) returns the maximum of m along dimension axis.
     """
     m = asarray(m)
-    return Numeric.maximum.reduce(m,axis)
+    return numpy.maximum.reduce(m,axis)
 
 def min(m,axis=0):
     """min(m,axis=0) returns the minimum of m along dimension axis.
     """
     m = asarray(m)
-    return Numeric.minimum.reduce(m,axis)
+    return numpy.minimum.reduce(m,axis)
 
 abs = absolute
 import __builtin__
@@ -91,17 +88,17 @@ def vecnorm(x, ord=2):
         return numpy.amin(abs(x))
     else:
         return numpy.sum(abs(x)**ord)**(1.0/ord)
-        
+
 def rosen(x):  # The Rosenbrock function
     x = asarray(x)
-    return MLab.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    return numpy.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
 
 def rosen_der(x):
     x = asarray(x)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
-    der = MLab.zeros(x.shape,x.dtype.char)
+    der = numpy.zeros(x.shape,x.dtype.char)
     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
     der[-1] = 200*(x[-1]-x[-2]**2)
@@ -109,17 +106,17 @@ def rosen_der(x):
 
 def rosen_hess(x):
     x = atleast_1d(x)
-    H = MLab.diag(-400*x[:-1],1) - MLab.diag(400*x[:-1],-1)
-    diagonal = Num.zeros(len(x),x.dtype.char)
+    H = numpy.diag(-400*x[:-1],1) - numpy.diag(400*x[:-1],-1)
+    diagonal = numpy.zeros(len(x),x.dtype.char)
     diagonal[0] = 1200*x[0]-400*x[1]+2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
-    H = H + MLab.diag(diagonal)
+    H = H + numpy.diag(diagonal)
     return H
 
 def rosen_hess_prod(x,p):
     x = atleast_1d(x)
-    Hp = Num.zeros(len(x),x.dtype.char)
+    Hp = numpy.zeros(len(x),x.dtype.char)
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
                -400*x[1:-1]*p[2:]
@@ -132,13 +129,13 @@ def wrap_function(function, args):
         ncalls[0] += 1
         return function(x, *args)
     return ncalls, function_wrapper
-        
-def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None, 
+
+def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
          full_output=0, disp=1, retall=0):
     """Minimize a function using the downhill simplex algorithm.
 
     Description:
-    
+
       Uses a Nelder-Mead simplex algorithm to find the minimum of function
       of one or more variables.
 
@@ -169,7 +166,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       full_output -- non-zero if fval and warnflag outputs are desired.
       disp -- non-zero to print convergence messages.
       retall -- non-zero to return list of solutions at each iteration
-      
+
       """
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0)
@@ -186,10 +183,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     one2np1 = range(1,N+1)
 
     if rank == 0:
-        sim = Num.zeros((N+1,),x0.dtype.char)
-    else:        
-        sim = Num.zeros((N+1,N),x0.dtype.char)
-    fsim = Num.zeros((N+1,),'d')
+        sim = numpy.zeros((N+1,),x0.dtype.char)
+    else:
+        sim = numpy.zeros((N+1,N),x0.dtype.char)
+    fsim = numpy.zeros((N+1,),'d')
     sim[0] = x0
     if retall:
         allvecs = [sim[0]]
@@ -197,7 +194,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     nonzdelt = 0.05
     zdelt = 0.00025
     for k in range(0,N):
-        y = Num.array(x0,copy=True)
+        y = numpy.array(x0,copy=True)
         if y[k] != 0:
             y[k] = (1+nonzdelt)*y[k]
         else:
@@ -207,18 +204,18 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         f = func(y)
         fsim[k+1] = f
 
-    ind = Num.argsort(fsim)
-    fsim = Num.take(fsim,ind)  # sort so sim[0,:] has the lowest function value
-    sim = Num.take(sim,ind,0)
-    
+    ind = numpy.argsort(fsim)
+    fsim = numpy.take(fsim,ind)  # sort so sim[0,:] has the lowest function value
+    sim = numpy.take(sim,ind,0)
+
     iterations = 1
-    
+
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (max(Num.ravel(abs(sim[1:]-sim[0]))) <= xtol \
+        if (max(numpy.ravel(abs(sim[1:]-sim[0]))) <= xtol \
             and max(abs(fsim[0]-fsim[1:])) <= ftol):
             break
 
-        xbar = Num.add.reduce(sim[:-1],0) / N
+        xbar = numpy.add.reduce(sim[:-1],0) / N
         xr = (1+rho)*xbar - rho*sim[-1]
         fxr = func(xr)
         doshrink = 0
@@ -264,12 +261,12 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
                         sim[j] = sim[0] + sigma*(sim[j] - sim[0])
                         fsim[j] = func(sim[j])
 
-        ind = Num.argsort(fsim)
-        sim = Num.take(sim,ind,0)
-        fsim = Num.take(fsim,ind)
+        ind = numpy.argsort(fsim)
+        sim = numpy.take(sim,ind,0)
+        fsim = numpy.take(fsim,ind)
         iterations = iterations + 1
         if retall:
-            allvecs.append(sim[0])        
+            allvecs.append(sim[0])
 
     x = sim[0]
     fval = min(fsim)
@@ -296,7 +293,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         retlist = x, fval, iterations, fcalls[0], warnflag
         if retall:
             retlist += (allvecs,)
-    else: 
+    else:
         retlist = x
         if retall:
             retlist = (x, allvecs)
@@ -319,7 +316,7 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     dc = c-a
     if (db == 0) or (dc == 0) or (b==c): return None
     denom = (db*dc)**2 * (db-dc)
-    [A,B] = Num.dot([[dc**2, -db**2],[-dc**3, db**3]],[fb-fa-C*db,fc-fa-C*dc])
+    [A,B] = numpy.dot([[dc**2, -db**2],[-dc**3, db**3]],[fb-fa-C*db,fc-fa-C*dc])
     A /= denom
     B /= denom
     radical = B*B-3*A*C
@@ -328,7 +325,7 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     xmin = a + (-B + sqrt(radical))/(3*A)
     return xmin
 
-    
+
 def _quadmin(a,fa,fpa,b,fb):
     # finds the minimizer for a quadratic polynomial that goes through
     #  the points (a,fa), (b,fb) with derivative at a of fpa
@@ -353,7 +350,7 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
     while 1:
         # interpolate to find a trial step length between a_lo and a_hi
         # Need to choose interpolation here.  Use cubic interpolation and then if the
-        #  result is within delta * dalpha or outside of the interval bounded by a_lo or a_hi 
+        #  result is within delta * dalpha or outside of the interval bounded by a_lo or a_hi
         #  then use quadratic interpolation, if the result is still too close, then use bisection
 
         dalpha = a_hi-a_lo;
@@ -379,7 +376,7 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 #            else: print "Using quadratic."
 #        else: print "Using cubic."
 
-        # Check new value of a_j 
+        # Check new value of a_j
 
         phi_aj = phi(a_j)
         if (phi_aj > phi0 + c1*a_j*derphi0) or (phi_aj >= phi_lo):
@@ -388,7 +385,7 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             a_hi = a_j
             phi_hi = phi_aj
         else:
-            derphi_aj = derphi(a_j)            
+            derphi_aj = derphi(a_j)
             if abs(derphi_aj) <= -c2*derphi0:
                 a_star = a_j
                 val_star = phi_aj
@@ -399,7 +396,7 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
                 a_rec = a_hi
                 a_hi = a_lo
                 phi_hi = phi_lo
-            else:                
+            else:
                 phi_rec = phi_lo
                 a_rec = a_lo
             a_lo = a_j
@@ -410,17 +407,17 @@ def zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             a_star = a_j
             val_star = phi_aj
             valprime_star = None
-            break    
+            break
     return a_star, val_star, valprime_star
 
 def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                 args=(), c1=1e-4, c2=0.9, amax=50):
-    """Find alpha that satisfies strong Wolfe conditions. 
-    
-    Uses the line search algorithm to enforce strong Wolfe conditions 
+    """Find alpha that satisfies strong Wolfe conditions.
+
+    Uses the line search algorithm to enforce strong Wolfe conditions
     Wright and Nocedal, 'Numerical Optimization', 1999, pg. 59-60
 
-    For the zoom phase it uses an algorithm by 
+    For the zoom phase it uses an algorithm by
     Outputs: (alpha0, gc, fc)
     """
 
@@ -441,21 +438,21 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
             fprime = myfprime[0]
             newargs = (f,eps) + args
             _ls_ingfk = fprime(xk+alpha*pk,*newargs)  # store for later use
-            return Num.dot(_ls_ingfk,pk)
+            return numpy.dot(_ls_ingfk,pk)
     else:
         fprime = myfprime
         def phiprime(alpha):
             global _ls_gc, _ls_ingfk
             _ls_gc += 1
             _ls_ingfk = fprime(xk+alpha*pk,*args)  # store for later use
-            return Num.dot(_ls_ingfk,pk)
+            return numpy.dot(_ls_ingfk,pk)
 
     alpha0 = 0
     phi0 = old_fval
-    derphi0 = Num.dot(gfk,pk)
+    derphi0 = numpy.dot(gfk,pk)
 
     alpha1 = pymin(1.0,1.01*2*(phi0-old_old_fval)/derphi0)
-         
+
     if alpha1 == 0:
         # This shouldn't happen. Perhaps the increment has slipped below
         # machine precision?  For now, set the return variables skip the
@@ -473,7 +470,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
 
     i = 1
     maxiter = 10
-    while 1:         # bracketing phase 
+    while 1:         # bracketing phase
         if alpha1 == 0:
             break
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
@@ -507,7 +504,7 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         derphi_a0 = derphi_a1
 
         # stopping test if lower function not found
-        if (i > maxiter):          
+        if (i > maxiter):
             alpha_star = alpha1
             fval_star = phi_a1
             fprime_star = None
@@ -519,16 +516,16 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
         #                                     this is the gradient at the next step
         #                                     no need to compute it again in the outer loop.
         fprime_star = _ls_ingfk
-        
+
     return alpha_star, _ls_fc, _ls_gc, fval_star, old_fval, fprime_star
-    
+
 
 def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     """Minimize over alpha, the function f(xk+alpha pk)
 
     Uses the interpolation algorithm (Armiijo backtracking) as suggested by
     Wright and Nocedal in 'Numerical Optimization', 1999, pg. 56-57
-    
+
     Outputs: (alpha, fc, gc)
     """
 
@@ -536,7 +533,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     phi0 = old_fval                            # compute f(xk) -- done in past loop
     phi_a0 = apply(f,(xk+alpha0*pk,)+args)     # compute f
     fc = fc + 1
-    derphi0 = Num.dot(gfk,pk)
+    derphi0 = numpy.dot(gfk,pk)
 
     if (phi_a0 <= phi0 + c1*alpha0*derphi0):
         return alpha0, fc, 0, phi_a0
@@ -550,7 +547,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
         return alpha1, fc, 0, phi_a1
 
-    # Otherwise loop with cubic interpolation until we find an alpha which 
+    # Otherwise loop with cubic interpolation until we find an alpha which
     # satifies the first Wolfe condition (since we are backtracking, we will
     # assume that the value of alpha is not too small and satisfies the second
     # condition.
@@ -564,7 +561,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
             alpha1**3 * (phi_a0 - phi0 - derphi0*alpha0)
         b = b / factor
 
-        alpha2 = (-b + Num.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
+        alpha2 = (-b + numpy.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
         phi_a2 = apply(f,(xk+alpha2*pk,)+args)
         fc = fc + 1
 
@@ -582,8 +579,8 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
 
 def approx_fprime(xk,f,epsilon,*args):
     f0 = apply(f,(xk,)+args)
-    grad = Num.zeros((len(xk),),'d')
-    ei = Num.zeros((len(xk),),'d')
+    grad = numpy.zeros((len(xk),),'d')
+    ei = numpy.zeros((len(xk),),'d')
     for k in range(len(xk)):
         ei[k] = epsilon
         grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
@@ -655,7 +652,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     gfk = myfprime(x0)
     k = 0
     N = len(x0)
-    I = MLab.eye(N)
+    I = numpy.eye(N)
     Hk = I
     old_fval = f(x0)
     old_old_fval = old_fval + 5000
@@ -666,7 +663,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     warnflag = 0
     gnorm = vecnorm(gfk,ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        pk = -Num.dot(Hk,gfk)
+        pk = -numpy.dot(Hk,gfk)
         alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
            linesearch.line_search(f,myfprime,xk,pk,gfk,
                                   old_fval,old_old_fval)
@@ -676,7 +673,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
                                  old_fval,old_old_fval)
             if alpha_k is None:
                 raise ValueError, "Line-search failing..."
-            
+
         xkp1 = xk + alpha_k * pk
         if retall:
             allvecs.append(xkp1)
@@ -686,21 +683,21 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             gfkp1 = myfprime(xkp1)
 
         yk = gfkp1 - gfk
-        gfk = gfkp1        
+        gfk = gfkp1
         k = k + 1
         gnorm = vecnorm(gfk,ord=norm)
         if (gnorm <= gtol):
             break
 
         try:
-            rhok = 1 / (Num.dot(yk,sk))
+            rhok = 1 / (numpy.dot(yk,sk))
         except ZeroDivisionError:
             rhok = 1000.
-	    print "Divide-by-zero encountered: rhok assumed large"
-        A1 = I - sk[:,Num.NewAxis] * yk[Num.NewAxis,:] * rhok
-        A2 = I - yk[:,Num.NewAxis] * sk[Num.NewAxis,:] * rhok
-        Hk = Num.dot(A1,Num.dot(Hk,A2)) + rhok * sk[:,Num.NewAxis] \
-                 * sk[Num.NewAxis,:]
+            print "Divide-by-zero encountered: rhok assumed large"
+        A1 = I - sk[:,numpy.NewAxis] * yk[numpy.NewAxis,:] * rhok
+        A2 = I - yk[:,numpy.NewAxis] * sk[numpy.NewAxis,:] * rhok
+        Hk = numpy.dot(A1,numpy.dot(Hk,A2)) + rhok * sk[:,numpy.NewAxis] \
+                 * sk[numpy.NewAxis,:]
 
     if disp or full_output:
         fval = old_fval
@@ -711,7 +708,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
-        
+
     elif k >= maxiter:
         warnflag = 1
         if disp:
@@ -732,7 +729,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         retlist = xk, fval, gfk, Hk, func_calls[0], grad_calls[0], warnflag
         if retall:
             retlist += (allvecs,)
-    else: 
+    else:
         retlist = xk
         if retall:
             retlist = (xk, allvecs)
@@ -804,7 +801,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     pk = -gfk
     gnorm = vecnorm(gfk,ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        deltak = Num.dot(gfk,gfk)
+        deltak = numpy.dot(gfk,gfk)
 
         # These values are modified by the line search, even if it fails
         old_fval_backup = old_fval
@@ -827,13 +824,13 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         if gfkp1 is None:
             gfkp1 = myfprime(xk)
         yk = gfkp1 - gfk
-        beta_k = pymax(0,Num.dot(yk,gfkp1)/deltak)
+        beta_k = pymax(0,numpy.dot(yk,gfkp1)/deltak)
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         gnorm = vecnorm(gfk,ord=norm)
         k = k + 1
-        
-        
+
+
     if disp or full_output:
         fval = old_fval
     if warnflag == 2:
@@ -843,7 +840,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             print "         Iterations: %d" % k
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
-        
+
     elif k >= maxiter:
         warnflag = 1
         if disp:
@@ -865,7 +862,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         retlist = xk, fval, func_calls[0], grad_calls[0], warnflag
         if retall:
             retlist += (allvecs,)
-    else: 
+    else:
         retlist = xk
         if retall:
             retlist = (xk, allvecs)
@@ -899,7 +896,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
   Outputs: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag},{allvecs})
 
     xopt -- the minimizer of f
-    
+
     fopt -- the value of the function at xopt: fopt = f(xopt)
     fcalls -- the number of function calls.
     gcalls -- the number of gradient calls.
@@ -911,12 +908,12 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
   Additional Inputs:
 
     avextol -- Convergence is assumed when the average relative error in
-               the minimizer falls below this amount.  
+               the minimizer falls below this amount.
     maxiter -- Maximum number of iterations to allow.
     full_output -- If non-zero return the optional outputs.
     disp -- If non-zero print convergence message.
-    retall -- return a list of results at each iteration if True    
-    
+    retall -- return a list of results at each iteration if True
+
   Remarks:
 
     Only one of fhess_p or fhess need be given.  If fhess is provided,
@@ -931,7 +928,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     hcalls = 0
     if maxiter is None:
         maxiter = len(x0)*200
-    
+
     xtol = len(x0)*avextol
     update = [2*xtol]
     xk = x0
@@ -939,24 +936,24 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         allvecs = [xk]
     k = 0
     old_fval = f(x0)
-    while (Num.add.reduce(abs(update)) > xtol) and (k < maxiter):
+    while (numpy.add.reduce(abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
-        maggrad = Num.add.reduce(abs(b))
-        eta = min([0.5,Num.sqrt(maggrad)])
+        maggrad = numpy.add.reduce(abs(b))
+        eta = min([0.5,numpy.sqrt(maggrad)])
         termcond = eta * maggrad
         xsupi = zeros(len(x0), x0.dtype.char)
         ri = -b
         psupi = -ri
         i = 0
-        dri0 = Num.dot(ri,ri)
+        dri0 = numpy.dot(ri,ri)
 
         if fhess is not None:             # you want to compute hessian once.
             A = apply(fhess,(xk,)+args)
             hcalls = hcalls + 1
 
-        while Num.add.reduce(abs(ri)) > termcond:
+        while numpy.add.reduce(abs(ri)) > termcond:
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk,psupi,fprime,epsilon)
@@ -964,9 +961,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
                     Ap = fhess_p(xk,psupi, *args)
                     hcalls = hcalls + 1
             else:
-                Ap = Num.dot(A,psupi)
+                Ap = numpy.dot(A,psupi)
             # check curvature
-            curv = Num.dot(psupi,Ap)
+            curv = numpy.dot(psupi,Ap)
             if curv == 0.0:
                 break
             elif curv < 0:
@@ -978,12 +975,12 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             alphai = dri0 / curv
             xsupi = xsupi + alphai * psupi
             ri = ri + alphai * Ap
-            dri1 = Num.dot(ri,ri)
+            dri1 = numpy.dot(ri,ri)
             betai = dri1 / dri0
             psupi = -ri + betai * psupi
             i = i + 1
-            dri0 = dri1          # update Num.dot(ri,ri) for next time.
-    
+            dri0 = dri1          # update numpy.dot(ri,ri) for next time.
+
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
         alphak, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval)
@@ -1014,20 +1011,20 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             print "         Function evaluations: %d" % fcalls[0]
             print "         Gradient evaluations: %d" % gcalls[0]
             print "         Hessian evaluations: %d" % hcalls
-            
+
     if full_output:
         retlist = xk, fval, fcalls[0], gcalls[0], hcalls, warnflag
         if retall:
             retlist += (allvecs,)
-    else: 
+    else:
         retlist = xk
         if retall:
             retlist = (xk, allvecs)
 
     return retlist
-    
 
-def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500, 
+
+def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
               full_output=0, disp=1):
     """Bounded minimization for scalar functions.
 
@@ -1044,12 +1041,12 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
       args -- extra arguments to pass to function.
       xtol -- the convergence tolerance.
       maxfun -- maximum function evaluations.
-      full_output -- Non-zero to return optional outputs. 
+      full_output -- Non-zero to return optional outputs.
       disp -- Non-zero to print messages.
               0 : no message printing.
               1 : non-convergence notification messages only.
               2 : print a message on convergence too.
-              3 : print iteration results. 
+              3 : print iteration results.
 
 
     Outputs: (xopt, {fval, ierr, numfunc})
@@ -1088,7 +1085,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         print (" ")
         print (header)
         print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
-    
+
 
     while ( abs(xf-xm) > (tol2 - 0.5*(b-a)) ):
         golden = 1
@@ -1111,7 +1108,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                 step = '       parabolic'
 
                 if ((x-a) < tol2) or ((b-x) < tol2):
-                    si = Num.sign(xm-xf) + ((xm-xf)==0)
+                    si = numpy.sign(xm-xf) + ((xm-xf)==0)
                     rat = tol1*si
             else:      # do a golden section step
                 golden = 1
@@ -1124,14 +1121,14 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
             rat = golden_mean*e
             step = '       golden'
 
-        si = Num.sign(rat) + (rat == 0)
+        si = numpy.sign(rat) + (rat == 0)
         x = xf + si*max([abs(rat), tol1])
         fu = func(x,*args)
         num += 1
         fmin_data = (num, x, fu)
         if disp > 2:
             print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
-                
+
         if fu <= fx:
             if x >= xf:
                 a = xf
@@ -1168,7 +1165,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     fval = fx
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xtol, disp)
-    
+
     if full_output:
         return xf, fval, flag, num
     else:
@@ -1221,7 +1218,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         if abs(x-xmid) < (tol2-0.5*(b-a)):  # check for convergence
             xmin=x; fval=fx
             break
-        if (abs(deltax) <= tol1):           
+        if (abs(deltax) <= tol1):
             if (x>=xmid): deltax=a-x       # do a golden section step
             else: deltax=b-x
             rat = _cg*deltax
@@ -1261,19 +1258,19 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
                 v=w; w=u; fv=fw; fw=fu
             elif (fu<=fv) or (v==x) or (v==w):
                 v=u; fv=fu
-        else: 
+        else:
             if (u >= x): a = x
             else: b = x
             v=w; w=x; x=u
             fv=fw; fw=fx; fx=fu
-        
+
     xmin = x
     fval = fx
     if full_output:
         return xmin, fval, iter, funcalls
     else:
         return xmin
-    
+
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -1331,7 +1328,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     if full_output:
         return xmin, fval, funcalls
     else:
-        return xmin    
+        return xmin
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
@@ -1344,7 +1341,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
     _verysmall_num = 1e-21
     fa = apply(func, (xa,)+args)
     fb = apply(func, (xb,)+args)
-    if (fa < fb):                      # Switch so fa > fb 
+    if (fa < fb):                      # Switch so fa > fb
         dum = xa; xa = xb; xb = dum
         dum = fa; fa = fb; fb = dum
     xc = xb + _gold*(xb-xa)
@@ -1393,9 +1390,9 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
         xa=xb; xb=xc; xc=w
         fa=fb; fb=fc; fc=fw
     return xa, xb, xc, fa, fb, fc, funcalls
-            
-            
-    
+
+
+
 def _linesearch_powell(func, p, xi, tol=1e-3):
     # line-search algorithm using fminbound
     #  find the minimium of the function
@@ -1405,14 +1402,14 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
     alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
     xi = alpha_min*xi
     return squeeze(fret), p+xi, xi
-    
+
 
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0):
     """Minimize a function using modified Powell's method.
 
     Description:
-    
+
       Uses a modification of Powell's method to find the minimum of a function
       of N variables
 
@@ -1499,7 +1496,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             if t < 0.0:
                 fval, x, direc1 = _linesearch_powell(func, x, direc1, tol=xtol*100)
                 direc[bigind] = direc[-1]
-                direc[-1] = direc1            
+                direc[-1] = direc1
 
     warnflag = 0
     if fcalls[0] >= maxfun:
@@ -1524,14 +1521,14 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         retlist = x, fval, direc, iter, fcalls[0], warnflag
         if retall:
             retlist += (allvecs,)
-    else: 
+    else:
         retlist = x
         if retall:
             retlist = (x, allvecs)
 
     return retlist
-    
-    
+
+
 
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):
@@ -1579,11 +1576,11 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
             lrange[k] = slice(*lrange[k])
     if (N==1):
         lrange = lrange[0]
-        
+
     def _scalarfunc(*params):
         params = squeeze(asarray(params))
         return func(params,*args)
-        
+
     vecfunc = vectorize(_scalarfunc)
     grid = mgrid[lrange]
     if (N==1):
@@ -1609,13 +1606,13 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         xmin = vals[0]
         Jmin = vals[1]
         if vals[-1] > 0:
-            print "Warning: Final optimization did not succeed"        
+            print "Warning: Final optimization did not succeed"
     if full_output:
         return xmin, Jmin, grid, Jout
     else:
         return xmin
 
-            
+
 def main():
     import time
 
@@ -1675,7 +1672,7 @@ def main():
     print x
     times.append(time.time() - start)
     algor.append('Newton-CG with hessian product')
-    
+
 
     print
     print "Newton-CG with full Hessian"

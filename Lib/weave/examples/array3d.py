@@ -13,7 +13,7 @@ def create_array():
     """Creates a simple 3D numpy array with unique values at each
     location in the matrix.
 
-    """    
+    """
     rows, cols, depth = 2, 3, 4
     arr = numpy.zeros((rows, cols, depth), 'i')
     count = 0
@@ -33,13 +33,13 @@ def pure_inline(arr):
       1. '\\n' to escape generating a newline in the C++ code.
       2. rows, cols = Narr[0], Narr[1].
       3. Array access using arr[(i*cols + j)*depth + k].
-      
+
     """
-    
+
     code = """
     int rows = Narr[0];
     int cols = Narr[1];
-    int depth = Narr[2];    
+    int depth = Narr[2];
     for (int i=0; i < rows; i++)
     {
         for (int j=0; j < cols; j++)
@@ -65,13 +65,13 @@ def blitz_inline(arr):
       1. '\\n' to escape generating a newline in the C++ code.
       2. rows, cols = Narr[0], Narr[1].
       3. Array access using arr(i, j, k).
-      
+
     """
-    
+
     code = """
     int rows = Narr[0];
     int cols = Narr[1];
-    int depth = Narr[2];    
+    int depth = Narr[2];
     for (int i=0; i < rows; i++)
     {
         for (int j=0; j < cols; j++)
@@ -91,15 +91,15 @@ def blitz_inline(arr):
 
 def main():
     arr = create_array()
-    print "numpy:"    
+    print "numpy:"
     print arr
 
     print "Pure Inline:"
     pure_inline(arr)
-    
+
     print "Blitz Inline:"
     blitz_inline(arr)
-    
+
 
 if __name__ == '__main__':
     main()

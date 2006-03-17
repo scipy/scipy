@@ -30,7 +30,7 @@ supported formats are:
 
 
 ##
-# 05.12.2005, c 
+# 05.12.2005, c
 def read_triplet( fd ):
     nRow, nCol = map( int, fd.readline().split() )
     nItem = int( fd.readline() )
@@ -47,7 +47,7 @@ def read_triplet( fd ):
     return mtx
 
 ##
-# 06.12.2005, c 
+# 06.12.2005, c
 def read_triplet2( fd ):
     nRow, nCol = map( int, fd.readline().split() )
     nItem = int( fd.readline() )
@@ -64,7 +64,7 @@ def read_triplet2( fd ):
 
 formatMap = {'triplet' : read_triplet}
 ##
-# 05.12.2005, c 
+# 05.12.2005, c
 def readMatrix( matrixName, options ):
 
     if options.default_url:
@@ -77,7 +77,7 @@ def readMatrix( matrixName, options ):
 ##        print status
     else:
         fileName = matrixName
-        
+
     print 'file:', fileName
 
     try:
@@ -102,7 +102,7 @@ def readMatrix( matrixName, options ):
     return mtx
 
 ##
-# 05.12.2005, c 
+# 05.12.2005, c
 def main():
     parser = OptionParser( usage = usage )
     parser.add_option( "-c", "--compare",
@@ -141,7 +141,7 @@ def main():
         times.append( tts )
         err = nm.zeros( (2,2), dtype = nm.double )
         errors.append( err )
-        
+
         print 'size              : %s (%d nnz)' % (mtx.shape, mtx.nnz)
 
         sol0 = nm.ones( (mtx.shape[0],), dtype = nm.double )
@@ -186,7 +186,7 @@ def main():
             del legends[1]
 
         print legends
-        
+
         ax = pylab.axis()
         y2 = 0.5 * (ax[3] - ax[2])
         xrng = range( len( nnzs ) )
@@ -211,7 +211,6 @@ def main():
         pylab.legend( legends )
         pylab.axis( [ax[0] - 0.05, ax[1] + 1, ax[2], ax[3]] )
         pylab.show()
-        
+
 if __name__ == '__main__':
     main()
-    

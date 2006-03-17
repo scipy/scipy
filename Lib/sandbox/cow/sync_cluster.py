@@ -243,7 +243,7 @@ class standard_sync_client:
 
             # 1. Create an 256x256 image of random pixels
             #    between 0 and 1.
-            import scipy.stats 
+            import scipy.stats
             image1 = scipy.stats.uniform(0.,1.,(256,256))
             image2 = scipy.stats.uniform(0.,1.,(256,256))
             # 2. Create connections to remote machines
@@ -374,7 +374,7 @@ class standard_sync_client:
         package = self.apply_pack(function,args,keywords)
         self.send(package)
         return self.recv()
-        
+
     def exec_code(self,code,inputs=None,returns=None,global_vars=None):
         package = self.exec_code_pack(code,inputs,returns,global_vars)
         self.send(package)
@@ -407,7 +407,7 @@ class standard_sync_client:
         self.catch_exception(contents)
         #print 'after exception'
         #try:    print  contents['_exec_time']
-        #except: pass    
+        #except: pass
         return contents['result']
     def get_load_info(contents):
         #use this to read execution time info from the package...
@@ -506,9 +506,9 @@ def catch_keyword_conflicts(kw1, kw2):
             raise TypeError, ('keyword parameter "%s" redefined' % key)
 
 def read_log():
-    """ Read the results of the log file.  
-    
-        This assumes that stdout and the log file are the same.    
+    """ Read the results of the log file.
+
+        This assumes that stdout and the log file are the same.
     """
     #global log_file
     #sys.stdout.close()
@@ -518,7 +518,7 @@ def read_log():
     #sys.stdout = open(log_file,'a+')
     #return results
     pass
-    
+
 import SocketServer
 class standard_sync_handler(SocketServer.StreamRequestHandler):
     verbose = 1
@@ -532,7 +532,7 @@ class standard_sync_handler(SocketServer.StreamRequestHandler):
         print 'here:',self.connection
         self.rfile = self.connection.makefile('rb', bufsize)
         self.wfile = self.connection.makefile('wb', bufsize)
-        
+
         #SocketServer.StreamRequestHandler.setup(self)
         #import tempfile,os
         #global log_file
@@ -674,12 +674,12 @@ def exec_code(code,inputs,returns,global_vars,addendum=None):
 
 def loop_func(function,loop_var,args,keywords,addendum=None):
     if not keywords: keywords = {}
-    if addendum: 
+    if addendum:
         keywords.update(addendum)
     result = []
     _loop_data = keywords[loop_var]
     del keywords[loop_var] #not strictly necessary
-    if type(loop_var) == type(''):                                
+    if type(loop_var) == type(''):
         for _i in _loop_data:
             keywords[loop_var] = _i
             result.append(apply(function,args ,keywords))
@@ -696,7 +696,7 @@ def loop_code(code,loop_var,inputs,returns,global_vars,addendum=None):
         raise TypeError, 'returns must be a sequence object - not a string'
     if addendum: inputs.update(addendum)
     globals()['_loop_data'] = inputs[loop_var]
-    globals()['_returns'] = returns 
+    globals()['_returns'] = returns
     #added to set all inputs in the global namespace
     globals().update(inputs)
     del inputs[loop_var] #not strictly necessary
@@ -811,13 +811,13 @@ def force_kill():
 
 class MyThreadingTCPServer(SocketServer.ThreadingTCPServer):
     """ Threaded Server for handling request for python commands
-    
+
         This class was added as of Python2.1 in response
         to the bug reported at:
-           
+
            http://sourceforge.net/tracker/index.php?
               func=detail&aid=417845&group_id=5470&atid=105470
-        
+
         Hopefully the issue will get fixed in the standard library
         by 2.2, and this can go away.
     """

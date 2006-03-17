@@ -60,7 +60,7 @@ PyObject* %(type_name)s_to_py(vtkObjectBase* obj)
     return vtkPythonGetObjectFromPointer(obj);
 }
 """
-                  
+
 
 class vtk_converter(common_base_converter):
     def __init__(self,class_name="undefined"):
@@ -69,11 +69,11 @@ class vtk_converter(common_base_converter):
 
     def init_info(self):
         common_base_converter.init_info(self)
-        # These are generated on the fly instead of defined at 
+        # These are generated on the fly instead of defined at
         # the class level.
         self.type_name = self.class_name
         self.c_type = self.class_name + "*"
-        self.return_type = self.c_type        
+        self.return_type = self.c_type
         self.to_c_return = None # not used
         self.check_func = None # not used
         hdr = self.class_name + ".h"
@@ -85,7 +85,7 @@ class vtk_converter(common_base_converter):
         #self.library_dirs.extend(vtk_lib)
         self.libraries.extend(['vtkCommonPython', 'vtkCommon'])
         #self.support_code.append(common_info.swig_support_code)
-    
+
     def type_match(self,value):
         is_match = 0
         try:
@@ -104,18 +104,18 @@ class vtk_converter(common_base_converter):
             import base_info
             res = base_info.base_info()
         return res
-        
+
     def py_to_c_code(self):
         return vtk_py_to_c_template % self.template_vars()
 
     def c_to_py_code(self):
         return vtk_c_to_py_template % self.template_vars()
-                    
+
     def type_spec(self,name,value):
         # factory
         class_name = value.__class__.__name__
         new_spec = self.__class__(class_name)
-        new_spec.name = name        
+        new_spec.name = name
         return new_spec
 
     def __cmp__(self,other):

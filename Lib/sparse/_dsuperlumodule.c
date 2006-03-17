@@ -50,19 +50,33 @@ static PyObject *Py_dgssv (PyObject *self, PyObject *args, PyObject *kwdict)
   if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|ii", kwlist, &N, &nnz, &PyArray_Type, &nzvals, &PyArray_Type, &colind, &PyArray_Type, &rowptr, &Py_B, &csc, &permc_spec))
     return NULL;
 
+  if (!_CHECK_INTEGER(colind) || !_CHECK_INTEGER(rowptr)) {
+          PyErr_SetString(PyExc_TypeError, "colind and rowptr must be of type cint");
+          return NULL;
+  }
+
   /* Create Space for output */
   Py_X = PyArray_CopyFromObject(Py_B,PyArray_DOUBLE,1,2);
-  if (Py_X == NULL) goto fail;
+  if (Py_X == NULL) return NULL;
 
   if (csc) {
-      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) goto fail;
+      if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
   else {
-      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) goto fail; 
+      if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr, PyArray_DOUBLE)) {
+          Py_DECREF(Py_X);
+          return NULL;
+      }
   }
-
-  if (DenseSuper_from_Numeric(&B, Py_X)) goto fail;
-
+  
+  if (DenseSuper_from_Numeric(&B, Py_X)) {
+          Destroy_SuperMatrix_Store(&A);  
+          Py_DECREF(Py_X);
+          return NULL;
+  }
 
   /* B and Py_X  share same data now but Py_X "owns" it */
     
@@ -181,6 +195,11 @@ Py_dgstrf(PyObject *self, PyObject *args, PyObject *keywds) {
 					&panel_size);
   if (!res)
     return NULL;
+
+  if (!_CHECK_INTEGER(colptr) || !_CHECK_INTEGER(rowind)) {
+          PyErr_SetString(PyExc_TypeError, "rowind and colptr must be of type cint");
+          return NULL;
+  }
 
   if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr, PyArray_DOUBLE)) goto fail;
  

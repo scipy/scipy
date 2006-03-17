@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
@@ -48,70 +48,70 @@ x = multiply.outer (arange (25, dtype = Float), ones (35, Float))
 y = multiply.outer (ones (25, Float), arange (35, dtype = Float))
 
 def demo () :
-   qm = QuadMesh (x = zt, y = rt, ireg = ireg, width = 1., color = "blue")
-   gr = Graph2d (qm)
-   gr.plot ()
-   paws ( )
-   # qm.set (width = 3.)
-   # gr.plot ()
-   # paws ( )
-   qm.set (color = "red", width = 1.)
-   gr.change_plot(xyequal = 1)
-   paws ()
-   qm.set (color = "yellow")
-   gr.change_plot(xyequal = 0)
-   paws ()
-   # Now we need two meshes, one with boundaries of regions showing,
-   # the other emphasizing Region 2.
-   r1 = Region (number = 1, width = 1., color = "fg", boundary = 1)
-   r2 = Region (number = 2, width = 1., color = "green", type = "dash")
-   r3 = Region (number = 3, width = 1., color = "fg", boundary = 1)
-   
-   qm.set (regions = [r1, r2, r3])
-   gr.change(text = "Region 2", text_pos = [0.25,0.54], text_size = 18, text_color = "red")
-   gr.plot ()
-   paws ()
-   qm.set (vx = vt, vy = ut, color = "red", scale = 1.)
-   r1.set (color = "red")
-   r2.set (color = "fg", type = "solid", boundary = 1)
-   r3.set (vectors = 0)
-   gr.change(text = "")
-   gr.plot ()
-   paws ()
-   qm.set(z=z,x=xr, y = yr, vx = xr + yr/5., vy = yr + xr/10., scale = .05)
-   r1.set (color = "orange",width = 3.)
-   r2.set (color = "red",width = 3., vectors = 0, contours = 1, type = "solid",levels=20)
-   r3.set (color = "cyan",width = 3., vectors = 1)
-   gr.plot ()
-   paws ()
-   
-   qm2 = QuadMesh (z = z, y = y, x = x, color = "yellow", width = 3.,
-                   levels = 20, marks = 1)
-   gr.delete (1)
-   gr.add (qm2)
-   gr.plot ()
-   paws()
-   qm2 = QuadMesh (z = z - z[kmax / 2, lmax / 2] , y = yr, x = xr, type = "dash",
-                   color = "fg", levels = 20, width = 2., marks = 1)
-   gr.delete (1)
-   gr.add (qm2)
-   gr.plot ()
-   paws()
-   qm2.set(filled=1)
-   gr.plot ()
-   paws()
-   qm2 = QuadMesh (z = z, y = yr, x = xr , color = "purple" , marks = 1,
-                   marker = "O", width = 3.)
-   gr.delete (1)
-   gr.add (qm2)
-   gr.plot ()
-   paws()
-   qm2 = QuadMesh (z = z, y = yr, x = xr , color = "cyan" , marks = 1,
-       width = 3., levels = [0.,max (ravel(z)) / 4., 3.*max (ravel(z)) / 4.,
-       7. *max (ravel(z)) / 8.])
-   gr.delete (1)
-   gr.add (qm2)
-   gr.plot ()
-   paws()
+    qm = QuadMesh (x = zt, y = rt, ireg = ireg, width = 1., color = "blue")
+    gr = Graph2d (qm)
+    gr.plot ()
+    paws ( )
+    # qm.set (width = 3.)
+    # gr.plot ()
+    # paws ( )
+    qm.set (color = "red", width = 1.)
+    gr.change_plot(xyequal = 1)
+    paws ()
+    qm.set (color = "yellow")
+    gr.change_plot(xyequal = 0)
+    paws ()
+    # Now we need two meshes, one with boundaries of regions showing,
+    # the other emphasizing Region 2.
+    r1 = Region (number = 1, width = 1., color = "fg", boundary = 1)
+    r2 = Region (number = 2, width = 1., color = "green", type = "dash")
+    r3 = Region (number = 3, width = 1., color = "fg", boundary = 1)
+
+    qm.set (regions = [r1, r2, r3])
+    gr.change(text = "Region 2", text_pos = [0.25,0.54], text_size = 18, text_color = "red")
+    gr.plot ()
+    paws ()
+    qm.set (vx = vt, vy = ut, color = "red", scale = 1.)
+    r1.set (color = "red")
+    r2.set (color = "fg", type = "solid", boundary = 1)
+    r3.set (vectors = 0)
+    gr.change(text = "")
+    gr.plot ()
+    paws ()
+    qm.set(z=z,x=xr, y = yr, vx = xr + yr/5., vy = yr + xr/10., scale = .05)
+    r1.set (color = "orange",width = 3.)
+    r2.set (color = "red",width = 3., vectors = 0, contours = 1, type = "solid",levels=20)
+    r3.set (color = "cyan",width = 3., vectors = 1)
+    gr.plot ()
+    paws ()
+
+    qm2 = QuadMesh (z = z, y = y, x = x, color = "yellow", width = 3.,
+                    levels = 20, marks = 1)
+    gr.delete (1)
+    gr.add (qm2)
+    gr.plot ()
+    paws()
+    qm2 = QuadMesh (z = z - z[kmax / 2, lmax / 2] , y = yr, x = xr, type = "dash",
+                    color = "fg", levels = 20, width = 2., marks = 1)
+    gr.delete (1)
+    gr.add (qm2)
+    gr.plot ()
+    paws()
+    qm2.set(filled=1)
+    gr.plot ()
+    paws()
+    qm2 = QuadMesh (z = z, y = yr, x = xr , color = "purple" , marks = 1,
+                    marker = "O", width = 3.)
+    gr.delete (1)
+    gr.add (qm2)
+    gr.plot ()
+    paws()
+    qm2 = QuadMesh (z = z, y = yr, x = xr , color = "cyan" , marks = 1,
+        width = 3., levels = [0.,max (ravel(z)) / 4., 3.*max (ravel(z)) / 4.,
+        7. *max (ravel(z)) / 8.])
+    gr.delete (1)
+    gr.add (qm2)
+    gr.plot ()
+    paws()
 
 print "Type demo() to proceed."

@@ -16,7 +16,7 @@ def bytesToString(n):
 
 
 def printInfo(mat, name):
-    
+
     if type(mat) == spmatrix.LLMatType:
         if mat.issym:
             typeName = 'LL symmetric'
@@ -89,17 +89,17 @@ def viewVtk(mat):
     imageData.SetScalarTypeToUnsignedShort()
     imageData.SetNumberOfScalarComponents(1)
     imageData.AllocateScalars()
-    
+
     viewer = vtk.vtkImageViewer()
     viewer.SetInput(imageData)
     viewer.SetZSlice(0)
-    
+
     iren = vtk.vtkRenderWindowInteractor()
     iren.SetRenderWindow(viewer.GetRenderWindow())
 
     iren.Initialize()
     iren.Start()
-    
+
     imageData = vtk.vtkImageSinusoidSource()
     imageData.SetWholeExtent(0, 300, 0, 300, 0, 10)
     imageData.SetAmplitude(63)

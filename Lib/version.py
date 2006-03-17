@@ -11,4 +11,3 @@ if os.path.isfile(svn_version_file):
                           svn_version_file,
                           ('.py','U',1))
     version += '.'+svn.version
-

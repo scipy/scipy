@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
@@ -8,40 +8,40 @@ from numpy.core.umath import *
 GraphicsError = "GraphicsError"
 import os
 try:
-   graphics = os.environ["PYGRAPH"]
+    graphics = os.environ["PYGRAPH"]
 except KeyError:
-   graphics = "Gist"
+    graphics = "Gist"
 
 if graphics [0:3] == "Nar" :
-   import NarPlotter
+    import NarPlotter
 elif graphics == "Gist" :
-   import GistPlotter
+    import GistPlotter
 else :
-   raise GraphicsError , \
-      graphics + " is an unknown graphics package. Check PYGRAPH " + \
-         "environment variable."
+    raise GraphicsError , \
+       graphics + " is an unknown graphics package. Check PYGRAPH " + \
+          "environment variable."
 
 from curve import Curve
 from graph2d import *
 def paws ( ) :
     i = raw_input ("Type in any string to continue; ^C to return to prompt. ")
     return
- 
+
 if graphics [0:3] == "Nar" :
-   print "This is a test of the Python interface to the Limeil Lab graphics"
-   print "package, Narcisse. You  need Narcisse to be running. Fire it up by"
-   print "typing /dist/basis/Narcisse/bin/Narcisse."
+    print "This is a test of the Python interface to the Limeil Lab graphics"
+    print "package, Narcisse. You  need Narcisse to be running. Fire it up by"
+    print "typing /dist/basis/Narcisse/bin/Narcisse."
 elif graphics == "Gist" :
-   print "This is a test of the Python interface to the Gist graphics package."
- 
+    print "This is a test of the Python interface to the Gist graphics package."
+
 paws ()
- 
+
 vsf = 0.
 c = 1
 s = 1000.
 kmax = 25
 lmax = 35
- 
+
 c1 = Curve ( y = arange (1, kmax+1, dtype = Float) , color = "yellow" )
 g2 = Graph2d ( c1 , titles = ["Bottom of the Barrel", "Top Dog",
                               "Leftist", "Reaganist"] )
@@ -73,11 +73,11 @@ mycolor= ["red", "blue", "yellow", "green", "orange", "purple"]
 markers= ["+", "*", "o", "x", "."]
 c5 = [ ]
 for i in range (len (markers)) :
-   c5.append ( Curve (
-      y = exp (array (multiply ((1.0+(i+1)/10.), log (range (1, kmax))))) ,
-               color = mycolor [i] , marks = 1, marker = markers [i] ,
-               type = "none" )
-             )
+    c5.append ( Curve (
+       y = exp (array (multiply ((1.0+(i+1)/10.), log (range (1, kmax))))) ,
+                color = mycolor [i] , marks = 1, marker = markers [i] ,
+                type = "none" )
+              )
 g2.new ( c5 , text="Line style and grid test" , text_color="black" ,
           text_pos = array ( [.2, .8]) , text_size = 60 ,
           titles = "Figure 1", old_plotter = 1)

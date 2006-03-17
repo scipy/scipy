@@ -34,10 +34,10 @@ def loop():
 #     checking system (I think).  Hope it comes to pass...
 #  -- This should be split up into several modules.  Probably
 #     a package.
-#  -- Printing on windows does not print out line styles.  
+#  -- Printing on windows does not print out line styles.
 #     Everything is printed as solid lines. argh!
 #     Update: This seems like an issue with calling dc.SetUserScale
-#     If this isn't called, the problem is fixed - but the graph is 
+#     If this isn't called, the problem is fixed - but the graph is
 #     tiny!!!  Should I work out the appropriate scaling in draw()
 #     or should the SetUserScale() method maintain line types?
 #  -- Print Preview scaling is not correct.  Not sure why not,
@@ -68,7 +68,7 @@ class plot_canvas(wx.wxWindow,property_object):
      }
 
     __type_hack__ = "plot_canvas"
-    
+
     #background color is not working...
     def __init__(self, parent, id = -1, pos=wx.wxPyDefaultPosition,
                  size=wx.wxPyDefaultSize, **attr):
@@ -76,7 +76,7 @@ class plot_canvas(wx.wxWindow,property_object):
         wx.EVT_PAINT(self,self.on_paint)
         property_object.__init__(self, attr)
         background = wx.wxNamedColour(self.background_color)
-        self.SetBackgroundColour(background) 
+        self.SetBackgroundColour(background)
         ##self.title = text_object('')
         ##self.x_title = text_object('')
         ##self.y_title = text_object('')
@@ -84,18 +84,18 @@ class plot_canvas(wx.wxWindow,property_object):
         self.x_title = text_window(self,'')
         self.y_title = text_window(self,'')
         self.all_titles = [self.title,self.x_title,self.y_title] #handy to have
-        ##self.x_axis = axis_object(graph_location='above',rotate=0)        
+        ##self.x_axis = axis_object(graph_location='above',rotate=0)
         ##self.y_axis = axis_object(graph_location='right',rotate=90)
-        self.x_axis = axis_window(self,graph_location='above',rotate=0)        
+        self.x_axis = axis_window(self,graph_location='above',rotate=0)
         self.y_axis = axis_window(self,graph_location='right',rotate=90)
 
         self.image_list = graphic_list()
         self.line_list = auto_line_list()  # make this the data object.
-        self.legend = legend_object() 
+        self.legend = legend_object()
         self.text_list = None  # list of text objects to place on screen
-        self.overlays = None   # list of objects to draw on top of graph 
+        self.overlays = None   # list of objects to draw on top of graph
                                # (boxes, circles, etc.)
-        ##self.y2_axis = axis_object(graph_location='left',rotate=90) 
+        ##self.y2_axis = axis_object(graph_location='left',rotate=90)
         self.client_size = (0,0)
         # zoom selection helpers
         self._mouse_selection = 0
@@ -136,10 +136,10 @@ class plot_canvas(wx.wxWindow,property_object):
         self.x_axis.tick_interval = 'auto'
         self.y_axis.tick_interval = 'auto'
         self.update()
-    
+
     def on_auto_zoom(self,event):
-        self.auto_zoom()    
-        
+        self.auto_zoom()
+
     def on_paint(self, event):
         self.draw(wx.wxPaintDC(self))
 
@@ -167,9 +167,9 @@ class plot_canvas(wx.wxWindow,property_object):
         menu.Append(500, 'Auto Zoom', 'Auto Zoom')
         wx.EVT_MENU(self, 500, self.on_auto_zoom)
         menu.UpdateUI()
-        self.PopupMenuXY(menu,pos[0],pos[1])        
+        self.PopupMenuXY(menu,pos[0],pos[1])
     # workers
-    
+
     def rubberband(self, new):
         """Delete previous selection band and paint new one."""
         if self._mouse_selection:
@@ -191,9 +191,9 @@ class plot_canvas(wx.wxWindow,property_object):
         dc = wx.wxMemoryDC()
         dc.SelectObject(bitmap)
         #self.update()
-        # The background isn't drawn right without this cluge.   
+        # The background isn't drawn right without this cluge.
         #fill_color = get_color(self.background_color)
-        fill_color = get_color('white')        
+        fill_color = get_color('white')
         dc.SetPen(wx.wxPen(fill_color))
         dc.SetBrush(wx.wxBrush(fill_color)) #how to handle transparency???
         dc.DrawRectangle(0,0,w,h)
@@ -209,34 +209,34 @@ class plot_canvas(wx.wxWindow,property_object):
         #settingbackgroundcolors
         #background = wx.wxNamedColour(self.background_color)
         #if self.GetBackgroundColour() != background:
-        #   self.SetBackgroundColour(background) 
+        #   self.SetBackgroundColour(background)
            #self.Clear()
-        #   print 'refreshing'  
-        if not dc: dc = wx.wxClientDC(self)            
+        #   print 'refreshing'
+        if not dc: dc = wx.wxClientDC(self)
         self.client_size = array(self.GetClientSizeTuple())
         # set the device context for all titles so they can
         # calculate their size
         for text_obj in self.all_titles:
             text_obj.set_dc(dc)
-            
+
         graph_area = box_object((0,0),self.client_size)
         graph_area.inflate(.95) # shrink box slightly
-        
+
         # shrink graph area to make room for titles
-        graph_area = self.layout_border_text(graph_area)        
+        graph_area = self.layout_border_text(graph_area)
         # layout axis and graph data
         graph_area = self.layout_graph(graph_area,dc)
         # center titles around graph area.
-        self.finalize_border_text(graph_area,dc)   
+        self.finalize_border_text(graph_area,dc)
         self.graph_box = graph_area
         # clear the dc for all titles
         # ? neccessary ?
         for text_obj in self.all_titles:
             text_obj.clear_dc()
         self.layout_data()
-        
+
         #self.legend.layout(self.line_list,graph_area,dc)
-        
+
     def layout_border_text(self,graph_area):
         # Shrink graph area to make room for titles.
         # Also, specify where the text is to live
@@ -246,7 +246,7 @@ class plot_canvas(wx.wxWindow,property_object):
         # is calculated.
         margin = 4
         graph_area.trim_top(self.title.height()+margin)
-        graph_area.trim_bottom(self.x_title.height()+margin)            
+        graph_area.trim_bottom(self.x_title.height()+margin)
         self.y_title.rotate = 90 # make sure it is rotated
         graph_area.trim_left(self.y_title.width()+margin)
         #this is just to make so extra room for axis labels
@@ -254,19 +254,19 @@ class plot_canvas(wx.wxWindow,property_object):
         graph_area.trim_right(12)
         return graph_area
 
-    def layout_data(self):    
+    def layout_data(self):
         # get scale and offset
         axis_range = array((self.x_axis.range(),self.y_axis.range()),Float)
         # negative y to account for positve down in window coordinates
         scale = self.graph_box.size() / axis_range * array((1.,-1.))
         offset = self.graph_to_window(array((0.,0.)))
         self.image_list.scale_and_shift(scale,offset)
-        self.line_list.scale_and_shift(scale,offset)        
-        #self.legend 
+        self.line_list.scale_and_shift(scale,offset)
+        #self.legend
         #self.text_list
         #self.overlays
-        
-    def layout_graph(self,graph_area,dc):                        
+
+    def layout_graph(self,graph_area,dc):
         self.axes = []
         #data_x_bounds,data_y_bounds = [0,6.28], [-1.1,1000]
         #jeez this is unwieldy code...
@@ -276,13 +276,13 @@ class plot_canvas(wx.wxWindow,property_object):
             smalls.append(p1);bigs.append(p2)
         if len(self.image_list):
             p1,p2 =  self.image_list.bounding_box()
-            smalls.append(p1);bigs.append(p2)        
-        if len(smalls):    
+            smalls.append(p1);bigs.append(p2)
+        if len(smalls):
             min_point = minimum.reduce(smalls)
             max_point = maximum.reduce(bigs)
         else:
             min_point = array((-1.,-1.),)
-            max_point = array((1.,1.))               
+            max_point = array((1.,1.))
         data_x_bounds = array((min_point[0],max_point[0]))
         data_y_bounds = array((min_point[1],max_point[1]))
         self.x_axis.calculate_ticks(data_x_bounds)
@@ -300,7 +300,7 @@ class plot_canvas(wx.wxWindow,property_object):
                 remove = .5 * (graph_area.width() - new_width)
                 graph_area.trim_left(remove)
                 graph_area.trim_right(remove)
-            else:    
+            else:
                 new_height = x_scale * self.y_axis.range()
                 remove = .5 * (graph_area.height() - new_height)
                 graph_area.trim_top(remove)
@@ -323,37 +323,37 @@ class plot_canvas(wx.wxWindow,property_object):
         self.border = border_object()
         self.border.layout(graph_area,self.x_axis,self.y_axis)
         return graph_area
-        
+
     def finalize_border_text(self,graph_area,dc):
         # Center the titles around the graph.
         # -- Really need to make axis object box_objects.
-        #    Use this to help determine more appropriate 
+        #    Use this to help determine more appropriate
         #    title location.  Current works fine
         #    if axis labels are beside graph.  Title
-        #    will be to far away if they are in center of graph        
+        #    will be to far away if they are in center of graph
         margin = 4
-        if self.title:   
+        if self.title:
             self.title.center_on_x_of(graph_area)
             self.title.above(graph_area,margin)
-        if self.x_title: 
+        if self.x_title:
             offset = self.x_axis.max_label_height(dc)
             self.x_title.center_on_x_of(graph_area)
             self.x_title.below(graph_area,margin + offset)
-        if self.y_title: 
+        if self.y_title:
             offset = self.y_axis.max_label_width(dc)
             self.y_title.center_on_y_of(graph_area)
             self.y_title.left_of(graph_area,margin+offset)
         #if self.y2_title:self.y2_title.center_on_y_of(graph_area)
-    
+
     def graph_to_window(self,pts):
         axis_range =  array((self.x_axis.range(),self.y_axis.range()))
         # negative y to account for positve down in window coordinates
         scale = self.graph_box.size() / axis_range * array((1.,-1.))
         graph_min = array((self.x_axis.ticks[0],self.y_axis.ticks[0]))
-        zero_offset = (array((0.,0))- graph_min)  * scale 
+        zero_offset = (array((0.,0))- graph_min)  * scale
         graph_offset = array((self.graph_box.left(),self.graph_box.bottom()))
         return pts * scale + zero_offset + graph_offset
-                   
+
     def reset_size(self, dc = None):
         new_size = self.GetClientSizeTuple()
         if new_size != self.client_size:
@@ -361,7 +361,7 @@ class plot_canvas(wx.wxWindow,property_object):
             self.client_size = new_size
 
     def draw_graph_area(self,dc=None):
-        if not dc: dc = wx.wxClientDC(self)                                     
+        if not dc: dc = wx.wxClientDC(self)
         self.layout_data() # just to check how real time plot would go...
 
         gb = self.graph_box
@@ -380,31 +380,31 @@ class plot_canvas(wx.wxWindow,property_object):
                              int(gb.width()+2),int(gb.height()+2))
         # draw images
         self.image_list.draw(dc)
-        dc.DestroyClippingRegion()        
-        # draw axes lines and tick marks               
-        t1 = time.clock()    
+        dc.DestroyClippingRegion()
+        # draw axes lines and tick marks
+        t1 = time.clock()
         for axis in self.axes:
             axis.draw_lines(dc)
         #for axis in self.axes:
         #    axis.draw_grid_lines(dc)
         #for axis in self.axes:
-        #    axis.draw_ticks(dc)    
+        #    axis.draw_ticks(dc)
         t2 = time.clock()
         #print 'lines:', t2 - t1
         #draw border
         t1 = time.clock(); self.border.draw(dc); t2 = time.clock()
-        #print 'border:', t2 - t1                    
+        #print 'border:', t2 - t1
         # slightly larger clipping area so that marks
         # aren't clipped on edges
         # should really clip markers and lines separately
         # draw lines
         self.line_list.clip_box(self.graph_box)
         self.line_list.draw(dc)
-        # draw text        
+        # draw text
         # draw legend
         # self.legend.draw(dc)
         # draw overlay objects
-        
+
     def draw(self,dc=None):
         #if not len(self.line_list) or len(self.image_list):
         #    return
@@ -412,21 +412,21 @@ class plot_canvas(wx.wxWindow,property_object):
         #print 'draw'
         #print 'dc:',dc
         t1 = time.clock();self.reset_size(dc);t2 = time.clock()
-        #print 'resize:',t2 - t1        
+        #print 'resize:',t2 - t1
         if not dc: dc = wx.wxClientDC(self)
         # draw titles and axes labels
-        t1 = time.clock()    
+        t1 = time.clock()
         for text in self.all_titles:
-            text.draw(dc)        
+            text.draw(dc)
         for axis in self.axes:
             axis.draw_labels(dc)
         t2 = time.clock()
         #print 'text:',t2 - t1
         self.draw_graph_area(dc)
-            
+
     def update(self,event=None):
         self.client_size = (0,0) # forces the layout
-        self.Refresh()        
+        self.Refresh()
 
     def zoom(self, stop):
         """Delete selection band and zoom selection to full scale."""
@@ -498,14 +498,14 @@ class graph_printout(wx.wxPrintout):
         #-------------------------------------------
         # One possible method of setting scaling factors...
         #print w_inch,h_inch
-        #print dc.GetSizeTuple()        
+        #print dc.GetSizeTuple()
         graph_box = box_object((0,0),self.graph.GetSizeTuple())
         # Get the size of the DC in pixels
         page_size = dc.GetSizeTuple()
         #print 'dc size:',page_size
         #page_size = self.GetPageSizePixels()
         #print 'page size:',page_size
-        print_box = box_object((0,0),page_size)        
+        print_box = box_object((0,0),page_size)
         print_box.trim_left(x_margin)
         print_box.trim_right(x_margin)
         print_box.trim_top(y_margin)
@@ -570,7 +570,7 @@ class plot_window(plot_canvas):
         self.title = text_window(self, title)
         self.all_titles[0] = self.title
         self.update()
-        
+
     def set_xaxis_title(self, xtitle):
         """Set x-axis title"""
         self.x_title = text_window(self, xtitle)
@@ -618,12 +618,12 @@ class plot_frame(wx.wxFrame):
     TITLE_FONT = 210
     AXIS_FONT = 211
     LABEL_FONT = 212
-    
+
     TITLE_TEXT,X_TEXT,Y_TEXT = 220,221,222
 
     default_size = (500,400) # the default on Linux is always tiny???
-    
-    def __init__(self, parent=wx.NULL, id = -1, title = '', 
+
+    def __init__(self, parent=wx.NULL, id = -1, title = '',
                  pos=wx.wxPyDefaultPosition,
                  size=default_size,visible=1):
         wx.wxFrame.__init__(self, parent, id, title,pos,size)
@@ -647,7 +647,7 @@ class plot_frame(wx.wxFrame):
         menu.Append(self.Y_TEXT, '&Y Title', 'Title for Y axis')
         wx.EVT_MENU(self,self.Y_TEXT,self.title)
         self.mainmenu.Append(menu, '&Titles')
-        #menu = wx.wxMenu()        
+        #menu = wx.wxMenu()
         #menu.Append(300, '&Profile', 'Check the hot spots in the program')
         #wx.EVT_MENU(self,300,self.OnProfile)
         #self.mainmenu.Append(menu, '&Utility')
@@ -659,8 +659,8 @@ class plot_frame(wx.wxFrame):
         self.client = plot_canvas(self)
         if visible: self.Show(1)
         self.Raise()
-        self.SetFocus()        
-                    
+        self.SetFocus()
+
     def plot_draw(self, event):
         #self.client.graphics = _InitObjects()
         self.client.title.text = 'Bubba'
@@ -669,7 +669,7 @@ class plot_frame(wx.wxFrame):
         #self.client.y2_title.text = 'y2 title'
         for i in _InitObjects():
             self.client.line_list.append(i)
-        #self.client.image_list.append(lena_obj())    
+        #self.client.image_list.append(lena_obj())
         self.client.draw();
 
 
@@ -682,11 +682,11 @@ class plot_frame(wx.wxFrame):
         #self.client.y2_title.text = 'y2 title'
         #for i in _InitObjects():
         #    self.client.line_list.append(i)
-        #self.client.image_list.append(lena_obj())    
+        #self.client.image_list.append(lena_obj())
         global bub
         bub = self
-        profile.run('from plt import loop;loop()','profile')        
-        
+        profile.run('from plt import loop;loop()','profile')
+
     def file_print(self, event):
         self.print_data.SetPaperId(wx.wxPAPER_LETTER)
         pdd = wx.wxPrintDialogData()
@@ -695,7 +695,7 @@ class plot_frame(wx.wxFrame):
         printout = graph_printout(self.client)
         print_ok = printer.Print(self, printout)
         #Is Abort() not wrapped?
-        #if not printer.Abort() and not print_ok:     
+        #if not printer.Abort() and not print_ok:
         #    wx.wxMessageBox("There was a problem printing.\n" \
         #                    "Perhaps your current printer is not set correctly?",
         #                    "Printing", wx.wxOK)
@@ -741,7 +741,7 @@ class plot_frame(wx.wxFrame):
                 msg = "Extension is currently used to determine file type." \
                       "'%s' is not a valid extension."  \
                       "You may use one of the following extensions. %s" \
-                          % (ftype,image_type_map.keys())   
+                          % (ftype,image_type_map.keys())
                 d = wx.wxMessageDialog(self,msg,style=wx.wxOK)
                 d.ShowModal()
                 d.Destroy()
@@ -749,12 +749,12 @@ class plot_frame(wx.wxFrame):
 
     def file_close(self, event):
         self.Close()
-        
+
     def format_font(self,event):
         font_attr,color_attr = 'font','color'
         if event.GetId() == self.TITLE_FONT:
             texts = [self.client.title]
-        elif event.GetId() == self.AXIS_FONT:            
+        elif event.GetId() == self.AXIS_FONT:
             texts = [self.client.x_title,self.client.y_title]
            #texts = [self.client.y_title]
         elif event.GetId() == self.LABEL_FONT:
@@ -781,12 +781,12 @@ class plot_frame(wx.wxFrame):
         if event.GetId() == self.TITLE_TEXT:
             title = self.client.title
             prompt = 'Enter graph title'
-        elif event.GetId() == self.X_TEXT:            
+        elif event.GetId() == self.X_TEXT:
             title = self.client.x_title
             prompt = 'Enter x axis title'
         elif event.GetId() == self.Y_TEXT:
             title = self.client.y_title
-            prompt = 'Enter y axis title'        
+            prompt = 'Enter y axis title'
         dlg = wx.wxTextEntryDialog(self, prompt,'', title.text)
         if dlg.ShowModal() == wx.wxID_OK:
             title.text = dlg.GetValue()
@@ -795,20 +795,20 @@ class plot_frame(wx.wxFrame):
 
     def update(self):
         self.client.update()
-            
+
     def __getattr__(self,key):
-        try:        
+        try:
             return self.__dict__[key]
-        except KeyError:  
+        except KeyError:
             return getattr(self.__dict__['client'],key)
-    """        
+    """
     def __setattr__(self,key,val):
         #print key,val
         #if plot_canvas._attributes.has_key(key):
         #    self.__dict__['client'].__dict__[key] = val
         #    return None
         self.__dict__[key] = val
-    """    
+    """
 
 
 # global functions
@@ -823,7 +823,7 @@ def _InitObjects():
     data1[:,1] = sin(data1[:,0])
     #markers1 = poly_marker(data1, color='green', marker='circle',size=1)
     markers1 = line_object(data1)
-    
+
     # 50 points cos function, plotted as red line
     data1 = 2.*pi*arange(100)/100.
     data1.shape = (50,2)
@@ -847,7 +847,7 @@ def test_axis():
     dummy_dc = 0
     a.layout(graph_area,dummy_dc)
     print a.tick_points
-    
+
     bounds = (0.,1.)
     a.calculate_ticks(bounds)
     a.layout(graph_area,dummy_dc)
@@ -858,7 +858,7 @@ def test_axis():
 
 
 if __name__ == '__main__':
-        
+
     class MyApp(wx.wxApp):
         def OnInit(self):
             frame = plot_frame(wx.NULL, -1, "Graph",size=(400,400))

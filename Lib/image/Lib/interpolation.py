@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
-# are met: 
+# are met:
 #
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
@@ -26,13 +26,14 @@
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import types
 import math
-import numarray
+import numpy as numarray
 import _ni_support
 import _nd_image
+
 
 def spline_filter1d(input, order = 3, axis = -1, output = numarray.Float64,
                     output_type = None):
@@ -44,14 +45,14 @@ def spline_filter1d(input, order = 3, axis = -1, output = numarray.Float64,
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     output, return_value = _ni_support._get_output(output, input,
                                                     output_type)
     if order in [0, 1]:
         output[...] = numarray.array(input)
     else:
-        axis = _ni_support._check_axis(axis, input.rank)
+        axis = _ni_support._check_axis(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output)
     return return_value
 
@@ -69,12 +70,12 @@ def spline_filter(input, order = 3, output = numarray.Float64,
     if order < 2 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     output, return_value = _ni_support._get_output(output, input,
                                                     output_type)
-    if order not in [0, 1] and input.rank > 0:
-        for axis in range(input.rank):
+    if order not in [0, 1] and input.ndim > 0:
+        for axis in range(input.ndim):
             spline_filter1d(input, order, axis, output = output)
             input = output
     else:
@@ -83,30 +84,30 @@ def spline_filter(input, order = 3, output = numarray.Float64,
 
 def geometric_transform(input, mapping, output_shape = None,
                         output_type = None, output = None, order = 3,
-                        mode = 'constant', cval = 0.0, prefilter = True, 
+                        mode = 'constant', cval = 0.0, prefilter = True,
                         extra_arguments = (), extra_keywords = {}):
     """Apply an arbritrary geometric transform.
 
-    The given mapping function is used to find for each point in the 
-    output the corresponding coordinates in the input. The value of the 
-    input at those coordinates is determined by spline interpolation of 
-    the requested order. Points outside the boundaries of the input are 
-    filled according to the given mode. The output shape can optionally be 
-    given. If not given, it is equal to the input shape. The parameter 
-    prefilter determines if the input is pre-filtered before 
-    interpolation, if False it is assumed that the input is already 
-    filtered. The extra_arguments and extra_keywords arguments can be 
-    used to provide extra arguments and keywords that are passed to the 
+    The given mapping function is used to find for each point in the
+    output the corresponding coordinates in the input. The value of the
+    input at those coordinates is determined by spline interpolation of
+    the requested order. Points outside the boundaries of the input are
+    filled according to the given mode. The output shape can optionally be
+    given. If not given, it is equal to the input shape. The parameter
+    prefilter determines if the input is pre-filtered before
+    interpolation, if False it is assumed that the input is already
+    filtered. The extra_arguments and extra_keywords arguments can be
+    used to provide extra arguments and keywords that are passed to the
     mapping function at each call.
     """
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if output_shape == None:
         output_shape = input.shape
-    if input.rank < 1 or len(output_shape) < 1:
+    if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'
     mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
@@ -124,26 +125,26 @@ def map_coordinates(input, coordinates, output_type = None, output = None,
                 order = 3, mode = 'constant', cval = 0.0, prefilter = True):
     """Apply an arbritrary coordinate transformation.
 
-    The array of coordinates is used to find for each point in the output 
-    the corresponding coordinates in the input. The value of the input at 
-    that coordinates is determined by spline interpolation of the 
-    requested order. Points outside the boundaries of the input are filled 
-    according to the given mode. The parameter prefilter determines if the 
-    input is pre-filtered before interpolation, if False it is assumed 
+    The array of coordinates is used to find for each point in the output
+    the corresponding coordinates in the input. The value of the input at
+    that coordinates is determined by spline interpolation of the
+    requested order. Points outside the boundaries of the input are filled
+    according to the given mode. The parameter prefilter determines if the
+    input is pre-filtered before interpolation, if False it is assumed
     that the input is already filtered.
     """
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     coordinates = numarray.asarray(coordinates)
-    if isinstance(coordinates.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(coordinates):
         raise TypeError, 'Complex type not supported'
     output_shape = coordinates.shape[1:]
-    if input.rank < 1 or len(output_shape) < 1:
+    if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'
-    if coordinates.shape[0] != input.rank:
+    if coordinates.shape[0] != input.ndim:
         raise RuntimeError, 'invalid shape for coordinate array'
     mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
@@ -162,14 +163,14 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
                      mode = 'constant', cval = 0.0, prefilter = True):
     """Apply an affine transformation.
 
-    The given matrix and offset are used to find for each point in the 
-    output the corresponding coordinates in the input by an affine 
-    transformation. The value of the input at those coordinates is 
-    determined by spline interpolation of the requested order. Points 
-    outside the boundaries of the input are filled according to the given 
-    mode. The output shape can optionally be given. If not given it is 
-    equal to the input shape. The parameter prefilter determines if the 
-    input is pre-filtered before interpolation, if False it is assumed 
+    The given matrix and offset are used to find for each point in the
+    output the corresponding coordinates in the input by an affine
+    transformation. The value of the input at those coordinates is
+    determined by spline interpolation of the requested order. Points
+    outside the boundaries of the input are filled according to the given
+    mode. The output shape can optionally be given. If not given it is
+    equal to the input shape. The parameter prefilter determines if the
+    input is pre-filtered before interpolation, if False it is assumed
     that the input is already filtered.
 
     The matrix must be two-dimensional or can also be given as a
@@ -180,11 +181,11 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if output_shape == None:
         output_shape = input.shape
-    if input.rank < 1 or len(output_shape) < 1:
+    if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError, 'input and output rank must be > 0'
     mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
@@ -193,46 +194,46 @@ def affine_transform(input, matrix, offset = 0.0, output_shape = None,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                         output_type, shape = output_shape)
-    matrix = numarray.asarray(matrix, type = numarray.Float64)
-    if matrix.rank not in [1, 2] or matrix.shape[0] < 1:
+    matrix = numarray.asarray(matrix, dtype = numarray.Float64)
+    if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
         raise RuntimeError, 'no proper affine matrix provided'
-    if matrix.shape[0] != input.rank:
+    if matrix.shape[0] != input.ndim:
         raise RuntimeError, 'affine matrix has wrong number of rows'
-    if matrix.rank == 2 and matrix.shape[1] != output.rank:
+    if matrix.ndim == 2 and matrix.shape[1] != output.ndim:
         raise RuntimeError, 'affine matrix has wrong number of columns'
-    if not matrix.iscontiguous():
+    if not matrix.flags.contiguous:
         matrix = matrix.copy()
-    offset = _ni_support._normalize_sequence(offset, input.rank)
-    offset = numarray.asarray(offset, type = numarray.Float64)
-    if offset.rank != 1 or offset.shape[0] < 1:
+    offset = _ni_support._normalize_sequence(offset, input.ndim)
+    offset = numarray.asarray(offset, dtype = numarray.Float64)
+    if offset.ndim != 1 or offset.shape[0] < 1:
         raise RuntimeError, 'no proper offset provided'
-    if not offset.iscontiguous():
+    if not offset.flags.contiguous:
         offset = offset.copy()
-    if matrix.rank == 1:
+    if matrix.ndim == 1:
         _nd_image.zoom_shift(filtered, matrix, offset, output, order,
                              mode, cval)
     else:
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
                             output, order, mode, cval, None, None)
     return return_value
-    
+
 
 def shift(input, shift, output_type = None, output = None, order = 3,
           mode = 'constant', cval = 0.0, prefilter = True):
     """Shift an array.
 
-    The array is shifted using spline interpolation of the requested 
-    order. Points outside the boundaries of the input are filled according 
-    to the given mode. The parameter prefilter determines if the input is 
-    pre-filtered before interpolation, if False it is assumed that the 
+    The array is shifted using spline interpolation of the requested
+    order. Points outside the boundaries of the input are filled according
+    to the given mode. The parameter prefilter determines if the input is
+    pre-filtered before interpolation, if False it is assumed that the
     input is already filtered.
     """
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if input.rank < 1:
+    if input.ndim < 1:
         raise RuntimeError, 'input and output rank must be > 0'
     mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
@@ -241,10 +242,10 @@ def shift(input, shift, output_type = None, output = None, order = 3,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                     output_type)
-    shift = _ni_support._normalize_sequence(shift, input.rank)
+    shift = _ni_support._normalize_sequence(shift, input.ndim)
     shift = [-ii for ii in shift]
-    shift = numarray.asarray(shift, type = numarray.Float64)
-    if not shift.iscontiguous():
+    shift = numarray.asarray(shift, dtype = numarray.Float64)
+    if not shift.flags.contiguous:
         shift = shift.copy()
     _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval)
     return return_value
@@ -254,31 +255,31 @@ def zoom(input, zoom, output_type = None, output = None, order = 3,
          mode = 'constant', cval = 0.0, prefilter = True):
     """Zoom an array.
 
-    The array is zoomed using spline interpolation of the requested order. 
-    Points outside the boundaries of the input are filled according to the 
+    The array is zoomed using spline interpolation of the requested order.
+    Points outside the boundaries of the input are filled according to the
     given mode. The parameter prefilter determines if the input is pre-
-    filtered before interpolation, if False it is assumed that the input 
+    filtered before interpolation, if False it is assumed that the input
     is already filtered.
     """
     if order < 0 or order > 5:
         raise RuntimeError, 'spline order not supported'
     input = numarray.asarray(input)
-    if isinstance(input.type(), numarray.ComplexType):
+    if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
-    if input.rank < 1:
+    if input.ndim < 1:
         raise RuntimeError, 'input and output rank must be > 0'
     mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output = numarray.Float64)
     else:
         filtered = input
-    zoom = _ni_support._normalize_sequence(zoom, input.rank)
+    zoom = _ni_support._normalize_sequence(zoom, input.ndim)
     output_shape = [int(ii * jj) for ii, jj in zip(input.shape, zoom)]
     zoom = [1.0 / ii for ii in zoom]
     output, return_value = _ni_support._get_output(output, input,
                                         output_type, shape = output_shape)
-    zoom = numarray.asarray(zoom, type = numarray.Float64)
-    if not zoom.iscontiguous():
+    zoom = numarray.asarray(zoom, dtype = numarray.Float64)
+    if not zoom.flags.contiguous:
         zoom = shift.copy()
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return return_value
@@ -299,18 +300,18 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
            mode = 'constant', cval = 0.0, prefilter = True):
     """Rotate an array.
 
-    The array is rotated in the plane defined by the two axes given by the 
-    axes parameter using spline interpolation of the requested order. The 
-    angle is given in degrees. Points outside the boundaries of the input 
-    are filled according to the given mode. If reshape is true, the output 
-    shape is adapted so that the input array is contained completely in 
+    The array is rotated in the plane defined by the two axes given by the
+    axes parameter using spline interpolation of the requested order. The
+    angle is given in degrees. Points outside the boundaries of the input
+    are filled according to the given mode. If reshape is true, the output
+    shape is adapted so that the input array is contained completely in
     the output. The parameter prefilter determines if the input is pre-
-    filtered before interpolation, if False it is assumed that the input 
+    filtered before interpolation, if False it is assumed that the input
     is already filtered.
     """
     input = numarray.asarray(input)
     axes = list(axes)
-    rank = input.rank
+    rank = input.ndim
     if axes[0] < 0:
         axes[0] += rank
     if axes[1] < 0:
@@ -325,12 +326,12 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
     m21 = -math.sin(angle)
     m22 = math.cos(angle)
     matrix = numarray.array([[m11, m12],
-                             [m21, m22]], type = numarray.Float64)
+                             [m21, m22]], dtype = numarray.Float64)
     iy = input.shape[axes[0]]
     ix = input.shape[axes[1]]
     if reshape:
         mtrx = numarray.array([[ m11, -m21],
-                               [-m12,  m22]], type = numarray.Float64)
+                               [-m12,  m22]], dtype = numarray.Float64)
         minc = [0, 0]
         maxc = [0, 0]
         coor = numarray.matrixmultiply(mtrx, [0, ix])
@@ -344,11 +345,11 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
     else:
         oy = input.shape[axes[0]]
         ox = input.shape[axes[1]]
-    offset = numarray.zeros((2,), type = numarray.Float64)
+    offset = numarray.zeros((2,), dtype = numarray.Float64)
     offset[0] = float(oy) / 2.0 - 0.5
     offset[1] = float(ox) / 2.0 - 0.5
     offset = numarray.matrixmultiply(matrix, offset)
-    tmp = numarray.zeros((2,), type = numarray.Float64)
+    tmp = numarray.zeros((2,), dtype = numarray.Float64)
     tmp[0] = float(iy) / 2.0 - 0.5
     tmp[1] = float(ix) / 2.0 - 0.5
     offset = tmp - offset
@@ -358,20 +359,20 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
     output_shape = tuple(output_shape)
     output, return_value = _ni_support._get_output(output, input,
                                         output_type, shape = output_shape)
-    if input.rank <= 2:
-        affine_transform(input, matrix, offset, output_shape, None, output, 
+    if input.ndim <= 2:
+        affine_transform(input, matrix, offset, output_shape, None, output,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
-        size = input.nelements() 
+        size = numarray.product(input.shape)
         size /= input.shape[axes[0]]
         size /= input.shape[axes[1]]
-        for ii in range(input.rank):
+        for ii in range(input.ndim):
             if ii not in axes:
                 coordinates.append(0)
             else:
                 coordinates.append(slice(None, None, None))
-        iter_axes = range(input.rank)
+        iter_axes = range(input.ndim)
         iter_axes.reverse()
         iter_axes.remove(axes[0])
         iter_axes.remove(axes[1])

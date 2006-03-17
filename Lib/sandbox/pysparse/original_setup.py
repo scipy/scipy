@@ -74,17 +74,17 @@ elif sys.platform == 'darwin':
     libraries_list = []
     f77_defs = []
 
-    
+
     # the following 'linky' arguments must not be concatenated together into a single
     # string, c.f. <http://mail.python.org/pipermail/distutils-sig/2003-December/003532.html>
-    
+
     if sys.exec_prefix == '/sw':
         # fink python
         linky=["-faltivec","-framework","vecLib","-bundle_loader","/sw/bin/python"]
     else:
         # Apple python
         linky=["-faltivec","-framework","vecLib"]
-        # The python Framework build is compiled with (and propagates to all library builds) the 
+        # The python Framework build is compiled with (and propagates to all library builds) the
         # '-fno-common' flag. Nobody seems to know why.
         # (c.f. <https://sourceforge.net/tracker/?func=detail&atid=105470&aid=768306&group_id=5470>)
         # This flag wreaks havoc with the nightmarishly circular declarations in the itsolvers module.
@@ -98,7 +98,7 @@ elif sys.platform == 'linux2':
         if 'release 4' in f.read():
             libraries_list = ['lapack', 'blas']
         f.close()
-        
+
 
 ext_modules = [Extension('spmatrix', ['Src/spmatrixmodule.c']),
                Extension('itsolvers', ['Src/itsolversmodule.c',
@@ -267,8 +267,8 @@ ext_modules = [Extension('spmatrix', ['Src/spmatrixmodule.c']),
                                      'umfpack/umfpack_save_symbolic.c'],
                          define_macros=umfpack_defs, include_dirs=umfpack_include_dirs,
                          libraries=umfpack_libraries, library_dirs=umfpack_library_dirs)
-               
-                                     
+
+
                ]
 
 execfile(os.path.join('Lib', 'pysparse_version.py'))

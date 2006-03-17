@@ -217,7 +217,7 @@ def exponential(x, y):
     y7 = y-7.0
     f = (0.75 * sp.exp(-(x2*x2+y2*y2)/4.0) +
          0.75 * sp.exp(-x1*x1/49.0 - y1/10.0) +
-         0.5 * sp.exp(-(x7*x7 + y3*y3)/4.0) - 
+         0.5 * sp.exp(-(x7*x7 + y3*y3)/4.0) -
          0.2 * sp.exp(-x4*x4 -y7*y7))
     return f
 exponential.title = 'Exponential and Some Gaussians'
@@ -267,7 +267,7 @@ def cloverleaf(x, y):
     ey = sp.exp((10.0-20.0*y)/3.0)
     logitx = 1.0/(1.0+ex)
     logity = 1.0/(1.0+ey)
-    f = (((20.0/3.0)**3 * ex*ey)**2 * (logitx*logity)**5 * 
+    f = (((20.0/3.0)**3 * ex*ey)**2 * (logitx*logity)**5 *
         (ex-2.0*logitx)*(ey-2.0*logity))
     return f
 cloverleaf.title = 'Cloverleaf'
@@ -451,7 +451,7 @@ def allquality(interpolator='nn', allfuncs=allfuncs, data=data, n=33):
         for func in allfuncs:
             reslist.append(quality(func, mesh, interpolator, n))
     return results
-        
+
 
 def funky():
     x0 = sp.array([0.25, 0.3, 0.5, 0.6, 0.6])

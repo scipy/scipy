@@ -27,7 +27,7 @@ def demo1():
 
     def make_plot():
         xplt.plot(x,y,'x',xnew,spline(xnew),x,y,'b',xnew,sin(xnew),
-                  spline.get_knots(),spline(spline.get_knots()),'o')        
+                  spline.get_knots(),spline(spline.get_knots()),'o')
 
     spline = UnivariateSpline(x,y,k=1)
     assert isinstance(spline,LSQUnivariateSpline)
@@ -49,6 +49,6 @@ def demo1():
     make_plot()
     print 'Residual=',spline.get_residual()
     raw_input('Press any key to continue..')
-    
+
 if __name__ == "__main__":
     demo1()

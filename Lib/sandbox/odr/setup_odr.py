@@ -37,11 +37,11 @@ def configuration(parent_package=''):
     else:
         libodr_files.append('d_lpk.f')
         blas_libs.extend(atlas_info['libraries'])
-        
+
     libodr = [os.path.join(local_path, 'odrpack', x) for x in libodr_files]
     config.add_library('odrpack', sources=libodr)
     sources = ['__odrpack.c']
-    config.add_extension('__odrpack', 
+    config.add_extension('__odrpack',
                          sources=sources,
                          libraries=['odrpack']+blas_libs,
                          include_dirs=[local_path],
@@ -53,4 +53,3 @@ def configuration(parent_package=''):
 if __name__ == '__main__':
     from numpy.distutils.core import setup
     setup(**configuration())
-

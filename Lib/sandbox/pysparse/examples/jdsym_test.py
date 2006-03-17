@@ -12,7 +12,7 @@ class diagPrecShifted:
             self.dinv[i] = 1.0 / (A[i,i] - sigma*M[i,i])
     def precon(self, x, y):
         multiply(x, self.dinv, y)
-    
+
 def computeResiduals(A, M, lmbd, Q):
     kconv = lmbd.shape[0]
     residuals = zeros((kconv, ), 'd')
@@ -29,7 +29,7 @@ def computeResiduals(A, M, lmbd, Q):
         r = r - lmbd[k]*t
         residuals[k] = sqrt(dot(r,r))
     return residuals
-    
+
 n = 1000; ncv = 5; tol = 1e-6
 
 A = spmatrix.ll_mat_sym(n)
@@ -56,7 +56,7 @@ for k in xrange(ncv):
 
 kconv, lmbd, Q, it, it_inner = jdsym.jdsym(As, None, None, ncv, 0.0, tol, 150, itsolvers.qmrs,
                                            jmin=5, jmax=10, eps_tr=1e-4, clvl=1)
-    
+
 assert ncv == kconv
 assert allclose(computeResiduals(As, None, lmbd, Q), zeros(kconv), 0.0, tol)
 assert allclose(lmbd, lmbd_exact, tol*tol, 0.0)
@@ -77,7 +77,7 @@ X0 = RandomArray.random((n,ncv))
 
 kconv, lmbd, Q, it, it_inner = jdsym.jdsym(As, Ms, None, ncv, 0.0, tol, 150, itsolvers.qmrs,
                                            jmin=5, jmax=10, eps_tr=1e-4, clvl=1)
-    
+
 assert ncv == kconv
 assert allclose(computeResiduals(As, Ms, lmbd, Q), zeros(kconv), 0.0, normM*tol)
 assert allclose(lmbd, lmbd_exact, normM*tol*tol, 0.0)

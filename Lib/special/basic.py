@@ -1,6 +1,6 @@
 ## Automatically adapted for scipy Oct 05, 2005 by convertcode.py
 
-# 
+#
 # Author:  Travis Oliphant, 2002
 #
 
@@ -53,7 +53,7 @@ def jnjnp_zeros(nt):
     and arange them in order of their magnitudes.
 
     Outputs (all are arrays of length nt):
-    
+
        zo[l-1] -- Value of the lth zero of of Jn(x) and Jn'(x)
        n[l-1]  -- Order of the Jn(x) or Jn'(x) associated with lth zero
        m[l-1]  -- Serial number of the zeros of Jn(x) or Jn'(x) associated
@@ -129,7 +129,7 @@ def y1p_zeros(nt,complex=0):
     kf = 2
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
-    
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
@@ -141,7 +141,7 @@ def jvp(v,z,n=1):
         return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
 
 def yvp(v,z,n=1):
-    """Return the nth derivative of Yv(z) with respect to z. 
+    """Return the nth derivative of Yv(z) with respect to z.
     """
     if not isinstance(n,types.IntType) or (n<0):
         raise ValueError, "n must be a non-negative integer."
@@ -151,7 +151,7 @@ def yvp(v,z,n=1):
         return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
 def kvp(v,z,n=1):
-    """Return the nth derivative of Kv(z) with respect to z. 
+    """Return the nth derivative of Kv(z) with respect to z.
     """
     if not isinstance(n,types.IntType) or (n<0):
         raise ValueError, "n must be a non-negative integer."
@@ -199,11 +199,11 @@ def sph_jn(n,z):
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
-    else: n1 = n    
+    else: n1 = n
     if any(iscomplex(z)):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
-        nm,jn,jnp = specfun.sphj(n1,z)        
+        nm,jn,jnp = specfun.sphj(n1,z)
     return jn[:(n+1)], jnp[:(n+1)]
 
 def sph_yn(n,z):
@@ -215,7 +215,7 @@ def sph_yn(n,z):
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
-    else: n1 = n 
+    else: n1 = n
     if any(iscomplex(z)) or any(z<0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
@@ -231,7 +231,7 @@ def sph_jnyn(n,z):
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
-    else: n1 = n    
+    else: n1 = n
     if any(iscomplex(z)) or any(z<0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
@@ -252,7 +252,7 @@ def sph_in(n,z):
     if any(iscomplex(z)):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
-        nm,In,Inp = specfun.sphi(n1,z)        
+        nm,In,Inp = specfun.sphi(n1,z)
     return In[:(n+1)], Inp[:(n+1)]
 
 def sph_kn(n,z):
@@ -264,7 +264,7 @@ def sph_kn(n,z):
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
-    else: n1 = n    
+    else: n1 = n
     if any(iscomplex(z)) or any(z<0):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
@@ -308,7 +308,7 @@ def riccati_yn(n,x):
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if (n == 0): n1 = 1
-    else: n1 = n 
+    else: n1 = n
     nm,jn,jnp = specfun.rcty(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
 
@@ -478,7 +478,7 @@ def lpmn(m,n,z):
         mp = m
     if any(iscomplex(z)):
         p,pd = specfun.clpmn(mp,n,real(z),imag(z))
-    else:        
+    else:
         p,pd = specfun.lpmn(mp,n,z)
     if (m < 0):
         p = p * fixarr
@@ -496,7 +496,7 @@ def lqmn(m,n,z):
     z can be complex.
     """
     if not isscalar(m) or (m<0):
-        raise ValueError, "m must be a non-negative integer."    
+        raise ValueError, "m must be a non-negative integer."
     if not isscalar(n) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if not isscalar(z):
@@ -508,7 +508,7 @@ def lqmn(m,n,z):
         nn = max(1,n)
     if any(iscomplex(z)):
         q,qd = specfun.clqmn(mm,nn,z)
-    else:        
+    else:
         q,qd = specfun.lqmn(mm,nn,z)
     return q[:(m+1),:(n+1)],qd[:(m+1),:(n+1)]
 
@@ -532,7 +532,7 @@ def euler(n):
     if (n < 2): n1 = 2
     else:  n1 = n
     return specfun.eulerb(n1)[:(n+1)]
-    
+
 def lpn(n,z):
     """Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -552,7 +552,7 @@ def lpn(n,z):
     return pn[:(n+1)],pd[:(n+1)]
 
 ## lpni
-    
+
 def lqn(n,z):
     """Compute sequence of Legendre functions of the second kind,
     Qn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -562,7 +562,7 @@ def lqn(n,z):
     if (n!= floor(n)) or (n<0):
         raise ValueError, "n must be a non-negative integer."
     if (n < 1): n1 = 1
-    else: n1 = n    
+    else: n1 = n
     if any(iscomplex(z)):
         qn,qd = specfun.clqn(n1,z)
     else:
@@ -584,7 +584,7 @@ def ai_zeros(nt):
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError, "nt must be a positive integer scalar."
     return specfun.airyzo(nt,kf)
-    
+
 def bi_zeros(nt):
     """Compute the zeros of Airy Functions Bi(x) and Bi'(x), b and b'
     respectively, and the associated values of Ai(b') and Ai'(b).
@@ -630,7 +630,7 @@ def pbdv_seq(v,x):
     v0 = v-n
     if (n < 2): n1=2
     else: n1 = n
-    v1 = n1 + v0    
+    v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbdv(v1,x)
     return dv[:(n1+1)],dp[:(n1+1)]
 
@@ -735,7 +735,7 @@ def kelvin_zeros(nt):
            specfun.klvnzo(nt,6), \
            specfun.klvnzo(nt,7), \
            specfun.klvnzo(nt,8)
-    
+
 def pro_cv_seq(m,n,c):
     """Compute a sequence of characteristic values for the prolate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
@@ -749,7 +749,7 @@ def pro_cv_seq(m,n,c):
         raise ValueError, "Difference between n and m is too large."
     maxL = n-m+1
     return specfun.segv(m,n,c,1)[1][:maxL]
-    
+
 def obl_cv_seq(m,n,c):
     """Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal

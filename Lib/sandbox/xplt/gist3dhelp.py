@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 31, 2005 by 
+## Automatically adapted for scipy Oct 31, 2005 by
 
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
@@ -309,7 +309,7 @@ helpdict = {
      will be non-zero, so DRAWING_FUNCTION can be written like this:
 
      def drawing_function(arg) :
-      
+
        if (draw3_) :
           arg1= arg [0]
           arg1= arg [1]
@@ -579,7 +579,7 @@ helpdict = {
        a color value for each cell in the mesh.
 
    There are a number of ways to call slice3mesh:
- 
+
       slice3mesh (z, color = None)
 
    z is a two dimensional array of cell function values, assumed
@@ -795,7 +795,7 @@ helpdict = {
    """
    pl3tree (nverts, xyzverts = None, values = None, plane = None,
       cmin = None, cmax = None)
-   
+
      Add the polygon list specified by NVERTS (number of vertices in
      each polygon) and XYZVERTS (3-by-sum(NVERTS) vertex coordinates)
      to the currently displayed b-tree.  If VALUES is specified, it
@@ -940,7 +940,7 @@ helpdict = {
    sum of split and the difference between ththe new and old values
    of 'elapsed.'
    """,
-   "timer_print" : 
+   "timer_print" :
    """
    timer_print (label1, split1 [,label2, split2, ...]) prints
    out a timing summary for splits accumulated by timer_.
@@ -950,16 +950,16 @@ helpdict = {
 from string import *
 
 def gist3dhelp ( routine ) :
-   routine = `routine` [0:min (len (`routine`), 58)]
-   key = None
-   lenkey = 0
-   for k in helpdict.keys () :
-      if find (routine, k) >= 0 :
-         if len (k) > lenkey :
-            key = k
-            lenkey = len (k)
-   if key is not None:
-      print helpdict [key]
-   else :
-      print "No help available for " + routine + "."
-   return
+    routine = `routine` [0:min (len (`routine`), 58)]
+    key = None
+    lenkey = 0
+    for k in helpdict.keys () :
+        if find (routine, k) >= 0 :
+            if len (k) > lenkey :
+                key = k
+                lenkey = len (k)
+    if key is not None:
+        print helpdict [key]
+    else :
+        print "No help available for " + routine + "."
+    return

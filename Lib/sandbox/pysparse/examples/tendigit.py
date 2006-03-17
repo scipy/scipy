@@ -1,6 +1,6 @@
 """ Solves problem 7 of the One Hundred Dollars, One Hundred Digits Challenge """
 
-import scipy 
+import scipy
 import spmatrix, itsolvers, precon
 
 def get_primes(nofPrimes):

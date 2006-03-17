@@ -23,7 +23,7 @@ class test_optimize(ScipyTestCase):
         self.solution = array([0., -0.524869316, 0.487525860])
         self.maxiter = 1000
         self.funccalls = 0
-    
+
 
     def func(self, x):
         self.funccalls += 1
@@ -33,14 +33,14 @@ class test_optimize(ScipyTestCase):
         logZ = log(sum(exp(log_pdot)))
         f = logZ - dot(self.K, x)
         return f
-    
+
 
     def grad(self, x):
         log_pdot = dot(self.F, x)
         logZ = log(sum(exp(log_pdot)))
         p = exp(log_pdot - logZ)
         return dot(self.F.transpose(), p) - self.K
-    
+
 
     def check_cg(self):
         """ conjugate gradient optimization routine
@@ -48,7 +48,7 @@ class test_optimize(ScipyTestCase):
         retval = optimize.fmin_cg(self.func, self.startparams, self.grad, (), \
                                   maxiter=self.maxiter, \
                                   full_output=True, disp=False, retall=False)
-                
+
         (params, fopt, func_calls, grad_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
@@ -62,7 +62,7 @@ class test_optimize(ScipyTestCase):
         retval = optimize.fmin_bfgs(self.func, self.startparams, self.grad, \
                                     args=(), maxiter=self.maxiter, \
                                     full_output=True, disp=False, retall=False)
-                
+
         (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
@@ -76,7 +76,7 @@ class test_optimize(ScipyTestCase):
         retval = optimize.fmin_powell(self.func, self.startparams, \
                                     args=(), maxiter=self.maxiter, \
                                     full_output=True, disp=False, retall=False)
-                
+
         (params, fopt, direc, numiter, func_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
@@ -89,7 +89,7 @@ class test_optimize(ScipyTestCase):
         retval = optimize.fmin(self.func, self.startparams, \
                                     args=(), maxiter=self.maxiter, \
                                     full_output=True, disp=False, retall=False)
-                
+
         (params, fopt, numiter, func_calls, warnflag) = retval
 
         err = abs(self.func(params) - self.func(self.solution))
@@ -102,7 +102,7 @@ class test_optimize(ScipyTestCase):
         retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,\
                                     args=(), maxiter=self.maxiter, \
                                     full_output=False, disp=False, retall=False)
-                
+
         params = retval
 
         err = abs(self.func(params) - self.func(self.solution))
@@ -115,7 +115,7 @@ class test_optimize(ScipyTestCase):
         """
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams, self.grad,\
                                     args=(), maxfun=self.maxiter)
-                
+
         (params, fopt, d) = retval
 
         err = abs(self.func(params) - self.func(self.solution))

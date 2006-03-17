@@ -19,20 +19,20 @@ def build_fibonacci():
     """
     mod = ext_tools.ext_module('fibonacci_ext')
     a = 1 # this is effectively a type declaration
-    
-    # recursive fibonacci in C 
+
+    # recursive fibonacci in C
     fib_code = """
                    int fib1(int a)
-                   {                   
+                   {
                        if(a <= 2)
                            return 1;
                        else
-                           return fib1(a-2) + fib1(a-1);  
-                   }                         
+                           return fib1(a-2) + fib1(a-1);
+                   }
                """
     ext_code = """
                    return_val = fib1(a);
-               """    
+               """
     fib = ext_tools.ext_function('c_fib1',ext_code,['a'])
     fib.customize.add_support_code(fib_code)
     mod.add_function(fib)
@@ -42,9 +42,9 @@ def build_fibonacci():
                     int fib2( int a )
                     {
                         int last, next_to_last, result;
-            
+
                         if( a <= 2 )
-                            return 1;            
+                            return 1;
                         last = next_to_last = 1;
                         for(int i = 2; i < a; i++ )
                         {
@@ -52,16 +52,16 @@ def build_fibonacci():
                             next_to_last = last;
                             last = result;
                         }
-            
+
                         return result;
-                    }    
+                    }
                """
     ext_code = """
                    return_val = fib2(a);
-               """    
+               """
     fib = ext_tools.ext_function('c_fib2',ext_code,['a'])
     fib.customize.add_support_code(fib_code)
-    mod.add_function(fib)       
+    mod.add_function(fib)
     mod.compile()
 
 try:
@@ -87,7 +87,7 @@ def py_fib1(a):
 
 def py_fib2(a):
     if a <= 2:
-        return 1            
+        return 1
     last = next_to_last = 1
     for i in range(2,a):
         result = last + next_to_last
@@ -105,14 +105,14 @@ def recurse_compare(n):
     t2 = time.time()
     py = t2- t1
     print ' speed in python:', t2 - t1
-    
+
     #load into cache
     c_fib1(i)
     t1 = time.time()
     for i in range(n):
         c_fib1(i)
-    t2 = time.time()    
-    print ' speed in c:',t2 - t1    
+    t2 = time.time()
+    print ' speed in c:',t2 - t1
     print ' speed up: %3.2f' % (py/(t2-t1))
 
 def loop_compare(m,n):
@@ -124,7 +124,7 @@ def loop_compare(m,n):
     t2 = time.time()
     py = (t2-t1)
     print ' speed in python:', (t2 - t1)/m
-    
+
     #load into cache
     c_fib2(i)
     t1 = time.time()
@@ -132,12 +132,12 @@ def loop_compare(m,n):
         for i in range(n):
             c_fib2(i)
     t2 = time.time()
-    print ' speed in c:',(t2 - t1)/ m    
+    print ' speed in c:',(t2 - t1)/ m
     print ' speed up: %3.2f' % (py/(t2-t1))
-    
+
 if __name__ == "__main__":
     n = 30
     recurse_compare(n)
-    m= 1000    
-    loop_compare(m,n)    
+    m= 1000
+    loop_compare(m,n)
     print 'fib(30)', c_fib1(30),py_fib1(30),c_fib2(30),py_fib2(30)

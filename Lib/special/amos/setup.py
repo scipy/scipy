@@ -23,7 +23,7 @@ class f90_compiler:
         print cmd
         failure = os.system(cmd)
         if failure:
-            raise ValueError, 'failure during compile' 
+            raise ValueError, 'failure during compile'
     def object_to_library(self,library_name,object_files):
         import string
         objects = string.join(object_files)
@@ -34,7 +34,7 @@ class f90_compiler:
         print cmd
         os.system(cmd)
     def build_library(self,library_name,source_list):
-        
+
         object_list = map(lambda x: x[:-1] +'o',source_list)
         file_pairs = zip(source_list,object_list)
         dirty_files = []
@@ -43,8 +43,8 @@ class f90_compiler:
                 dirty_files.append(source)
         if dirty_files != []:
             self.to_object(dirty_files)
-        self.object_to_library(library_name,object_list)           
-    
+        self.object_to_library(library_name,object_list)
+
 if __name__ == "__main__":
     import setup # this file
     d,f = os.path.split(setup.__file__)

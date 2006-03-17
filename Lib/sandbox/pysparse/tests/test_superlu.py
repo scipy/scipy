@@ -27,7 +27,7 @@ def macheps():
     while (1.0 + eps > 1.0):
         eps /= 2.0
     return 2.0 * eps
-    
+
 class EyeTestCase(unittest.TestCase):
     def setUp(self):
         self.n = 10000
@@ -56,23 +56,23 @@ class EyeTestCase(unittest.TestCase):
             luA = superlu.factorize(self.A, permc_spec=permc_spec)
             luA.solve(self.b, self.x)
             self.failUnless(residual(self.A, self.x, self.b) == 0.0)
-            
+
 class Poisson1dTestCase(unittest.TestCase):
     def setUp(self):
         self.n = 50000
         self.B = poisson.poisson1d(self.n).to_csr()
-        
+
         self.b = numpy.zeros(self.n, 'd')
         self.x = numpy.zeros(self.n, 'd')
         self.x_exact = numpy.ones(self.n, 'd')
         self.x_exact /= math.sqrt(self.n)
         self.B.matvec(self.x_exact, self.b)
-        
+
         lmbd_min = 4.0 * math.sin(math.pi/2.0/self.n) ** 2
         lmbd_max = 4.0 * math.sin((self.n - 1)*math.pi/2.0/self.n) ** 2
         cond = lmbd_max/lmbd_min
         self.tol = cond * macheps()
-        
+
     def testPoisson1dDefault(self):
         luA = superlu.factorize(self.B)
         luA.solve(self.b, self.x)
@@ -96,7 +96,7 @@ class Poisson1dTestCase(unittest.TestCase):
         luA.solve(self.b, self.x)
         print error(self.x, self.x_exact), self.tol, luA.nnz
         self.failUnless(error(self.x, self.x_exact) < self.tol)
-        
+
     def testPoisson1dOrigOrdering(self):
         luA = superlu.factorize(self.B, permc_spec=0)
         luA.solve(self.b, self.x)
@@ -120,12 +120,12 @@ class Poisson1dTestCase(unittest.TestCase):
         luA.solve(self.b, self.x)
         print error(self.x, self.x_exact), self.tol, luA.nnz
         self.failUnless(error(self.x, self.x_exact) < self.tol)
-        
+
 class Poisson2dTestCase(unittest.TestCase):
     def setUp(self):
         self.n = 200
         self.B = poisson.poisson2d(self.n).to_csr()
-        
+
         self.b = numpy.zeros(self.n*self.n, 'd')
         self.x = numpy.zeros(self.n*self.n, 'd')
         self.x_exact = numpy.ones(self.n*self.n, 'd')
@@ -139,7 +139,7 @@ class Poisson2dTestCase(unittest.TestCase):
                               math.sin((self.n - 1)*math.pi*h/2.0) ** 2)
         cond = lmbd_max/lmbd_min
         self.tol = cond * macheps()
-        
+
     def testPoisson2dDefault(self):
         luA = superlu.factorize(self.B)
         luA.solve(self.b, self.x)
@@ -163,7 +163,7 @@ class Poisson2dTestCase(unittest.TestCase):
         luA.solve(self.b, self.x)
         print error(self.x, self.x_exact), self.tol, luA.nnz
         self.failUnless(error(self.x, self.x_exact) < self.tol)
-        
+
     def testPoisson2dOrigOrdering(self):
         luA = superlu.factorize(self.B, permc_spec=0)
         luA.solve(self.b, self.x)

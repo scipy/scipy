@@ -53,7 +53,7 @@ Special Functions
     y1p_zeros   -- **Complex zeros of Y1'(z1')=0 and values of Y1(z1')
 
   Faster versions of common Bessel Functions.
-    
+
     j0       -- Bessel function of order 0.
     j1       -- Bessel function of order 1.
     y0       -- Bessel function of second kind of order 0.
@@ -87,7 +87,7 @@ Special Functions
     kvp     -- Nth derivative of Kv(v,z)
     ivp     -- Nth derivative of Iv(v,z)
     h1vp    -- Nth derivative of H1v(v,z)
-    h2vp    -- Nth derivative of H2v(v,z)    
+    h2vp    -- Nth derivative of H2v(v,z)
 
   Spherical Bessel Functions
 
@@ -110,8 +110,8 @@ Special Functions
     itstruve0    -- Integral of H0(t) from 0 to x
     it2struve0   -- Integral of H0(t)/t from x to Inf.
     itmodstruve0 -- Integral of L0(t) from 0 to x.
-    
-        
+
+
   Raw Statistical Functions (Friendly versions in scipy.stats)
 
     bdtr       -- Sum of terms 0 through k of of the binomial pdf.
@@ -145,7 +145,7 @@ Special Functions
                           statistic (Kn*) valid for large n.
     kolmogi    -- Inverse of kolmogorov
     tklmbda    -- Tukey-Lambda CDF
-      
+
   Gamma and Related Functions
 
     gamma        -- Gamma function.
@@ -159,13 +159,13 @@ Special Functions
     betainc      -- Incomplete beta integral.
     betaincinv   -- Inverse of betainc.
     betaincinva  -- Inverse (in first argument, a) of betainc
-    betaincinvb  -- Inverse (in first argument, b) of betainc        
+    betaincinvb  -- Inverse (in first argument, b) of betainc
     psi(digamma) -- Logarithmic derivative of the gamma function.
     rgamma       -- One divided by the gamma function.
     polygamma    -- Nth derivative of psi function.
 
   Error Function and Fresnel Integrals
-  
+
     erf           -- Error function.
     erfc          -- Complemented error function (1- erf(x))
     erfinv        -- Inverse of error function
@@ -192,7 +192,7 @@ Special Functions
    ** These functions all return a polynomial class which can then be
       evaluated:  vals = chebyt(n)(x)
       This class also has an attribute 'weights' which
-      return the roots, weights, and total weights for the appropriate 
+      return the roots, weights, and total weights for the appropriate
       form of Gaussian quadrature.  These are returned in an n x 3 array with roots
       in the first column, weights in the second column, and total weights in the final
       column
@@ -212,21 +212,21 @@ Special Functions
     sh_chebyt   -- **shifted Chebyshev polynomial, T*_n(x)
     sh_chebyu   -- **shifted Chebyshev polynomial, U*_n(x)
     sh_jacobi   -- **shifted Jacobi polynomial, J*_n(x) = G^(p,q)_n(x)
-      
+
   HyperGeometric Functions
 
     hyp2f1   -- Gauss hypergeometric function (2F1)
     hyp1f1   -- Confluent hypergeometric function (1F1)
     hyperu   -- Confluent hypergeometric function (U)
     hyp0f1   -- Confluent hypergeometric limit function (0F1)
-    hyp2f0   -- Hypergeometric function (2F0) 
+    hyp2f0   -- Hypergeometric function (2F0)
     hyp1f2   -- Hypergeometric function (1F2)
     hyp3f0   -- Hypergeometric function (3F0)
 
   Parabolic Cylinder Functions
 
     pbdv     -- Parabolic cylinder function Dv(x) and derivative.
-    pbvv     -- Parabolic cylinder function Vv(x) and derivative. 
+    pbvv     -- Parabolic cylinder function Vv(x) and derivative.
     pbwa     -- Parabolic cylinder function W(a,x) and derivative.
     pbdv_seq -- **Sequence of parabolic cylinder functions Dv(x)
     pbvv_seq -- **Sequence of parabolic cylinder functions Vv(x)
@@ -257,7 +257,7 @@ Special Functions
     pro_cv     -- Compute characteristic value for prolate functions
     obl_cv     -- Compute characteristic value for oblate functions
     pro_cv_seq -- Compute sequence of prolate characteristic values
-    obl_cv_seq -- Compute sequence of oblate characteristic values    
+    obl_cv_seq -- Compute sequence of oblate characteristic values
      ** The following functions require pre-computed characteristic values **
     pro_ang1_cv -- Prolate spheroidal angular function of the first kind
     pro_rad1_cv -- Prolate spheroidal radial function of the first kind
@@ -267,7 +267,7 @@ Special Functions
     obl_rad2_cv -- Oblate spheroidal radial function of the second kind
 
   Kelvin Functions
-  
+
     kelvin       -- All Kelvin functions (order 0) and derivatives.
     kelvin_zeros -- **Zeros of All Kelvin functions (order 0) and derivatives
     ber          -- Kelvin function ber x
@@ -286,7 +286,7 @@ Special Functions
     kei_zeros    -- **Zeros of Kelvin function ker x
     kerp_zeros   -- **Zeros of derivative of Kelvin function ker x
     keip_zeros   -- **Zeros of derivative of Kelvin function kei x
-  
+
   Other Special Functions
 
     expn         -- Exponential integral.
@@ -332,7 +332,7 @@ Special Functions
       >>> print scipy.special.bdtr(-1,10,0.3)
       >>> scipy.special.errprint(1)
       >>> print scipy.special.bdtr(-1,10,0.3)
- 
+
 """
 
 postpone_import = 1

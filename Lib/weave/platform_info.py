@@ -26,7 +26,7 @@ import distutils.bcppcompiler
 
 def dummy_dist():
     # create a dummy distribution.  It will look at any site configuration files
-    # and parse the command line to pick up any user configured stuff.  The 
+    # and parse the command line to pick up any user configured stuff.  The
     # resulting Distribution object is returned from setup.
     # Setting _setup_stop_after prevents the any commands from actually executing.
     distutils.core._setup_stop_after = "commandline"
@@ -34,24 +34,24 @@ def dummy_dist():
     distutils.core._setup_stop_after = None
     return dist
 
-def create_compiler_instance(dist):    
+def create_compiler_instance(dist):
     # build_ext is in charge of building C/C++ files.
-    # We are using it and dist to parse config files, and command line 
+    # We are using it and dist to parse config files, and command line
     # configurations.  There may be other ways to handle this, but I'm
     # worried I may miss one of the steps in distutils if I do it my self.
     #ext_builder = build_ext(dist)
     #ext_builder.finalize_options ()
-    
-    # For some reason the build_ext stuff wasn't picking up the compiler 
+
+    # For some reason the build_ext stuff wasn't picking up the compiler
     # setting, so we grab it manually from the distribution object instead.
     opts = dist.command_options.get('build_ext',None)
     compiler_name = ''
     if opts:
         comp = opts.get('compiler',('',''))
         compiler_name = comp[1]
-        
+
     # Create a new compiler, customize it based on the build settings,
-    # and return it. 
+    # and return it.
     if not compiler_name:
         compiler_name = None
     #print compiler_name
@@ -59,9 +59,9 @@ def create_compiler_instance(dist):
     customize_compiler(compiler)
     return compiler
 
-def compiler_exe_name(compiler):    
+def compiler_exe_name(compiler):
     exe_name = ''
-    # this is really ugly...  Why aren't the attribute names 
+    # this is really ugly...  Why aren't the attribute names
     # standardized and used in a consistent way?
     if hasattr(compiler, "compiler"):
         # standard unix format
@@ -85,22 +85,22 @@ def compiler_exe_path(exe_name):
             path = os.path.join(path,exe_name)
             if os.path.exists(path):
                 exe_path = path
-                break               
-            # needed to catch gcc on mingw32 installations.    
-            path = path + '.exe'    
+                break
+            # needed to catch gcc on mingw32 installations.
+            path = path + '.exe'
             if os.path.exists(path):
                 exe_path = path
                 break
     return exe_path
 
 def check_sum(file):
-    
+
     import md5
     try:
         f = open(file,'r')
         bytes = f.read(-1)
     except IOError:
-        bytes = ''    
+        bytes = ''
     chk_sum = md5.md5(bytes)
     return chk_sum.hexdigest()
 
@@ -114,16 +114,16 @@ def get_compiler_dir(compiler_name):
     #print compiler_type
     configure_sys_argv(compiler_type)
     #print sys.argv
-    dist = dummy_dist()    
+    dist = dummy_dist()
     compiler_obj = create_compiler_instance(dist)
     #print compiler_obj.__class__
     exe_name = compiler_exe_name(compiler_obj)
     exe_path = compiler_exe_path(exe_name)
     if not exe_path:
         raise ValueError, "The '%s' compiler was not found." % compiler_name
-    chk_sum = check_sum(exe_path)    
+    chk_sum = check_sum(exe_path)
     restore_sys_argv()
-    
+
     return 'compiler_'+chk_sum
 
 #----------------------------------------------------------------------------
@@ -133,13 +133,13 @@ def get_compiler_dir(compiler_name):
 def choose_compiler(compiler_name=''):
     """ Try and figure out which compiler is gonna be used on windows.
         On other platforms, it just returns whatever value it is given.
-        
+
         converts 'gcc' to 'mingw32' on win32
     """
     if not compiler_name:
         compiler_name = ''
-        
-    if sys.platform == 'win32':        
+
+    if sys.platform == 'win32':
         if not compiler_name:
             # On Windows, default to MSVC and use gcc if it wasn't found
             # wasn't found.  If neither are found, go with whatever
@@ -149,27 +149,27 @@ def choose_compiler(compiler_name=''):
             elif gcc_exists():
                 compiler_name = 'mingw32'
         elif compiler_name == 'gcc':
-                compiler_name = 'mingw32'
+            compiler_name = 'mingw32'
     else:
         # don't know how to force gcc -- look into this.
         if compiler_name == 'gcc':
-                compiler_name = 'unix'                    
+            compiler_name = 'unix'
     return compiler_name
 
 old_argv = []
 def configure_sys_argv(compiler_name):
-    # We're gonna play some tricks with argv here to pass info to distutils 
+    # We're gonna play some tricks with argv here to pass info to distutils
     # which is really built for command line use. better way??
     global old_argv
-    old_argv = sys.argv[:]        
+    old_argv = sys.argv[:]
     sys.argv = ['','build_ext','--compiler='+compiler_name]
 
 def restore_sys_argv():
     sys.argv = old_argv
 
 def gcc_exists(name = 'gcc'):
-    """ Test to make sure gcc is found 
-       
+    """ Test to make sure gcc is found
+
         Does this return correct value on win98???
     """
     result = 0
@@ -211,10 +211,10 @@ def msvc_exists():
         # In Python 2.3 the function is 'get_build_version'
         try:
             version = distutils.msvccompiler.get_devstudio_versions()
-            
+
         except:
             version = distutils.msvccompiler.get_build_version()
-            
+
         if version:
             result = 1
     return result
@@ -222,13 +222,13 @@ def msvc_exists():
 if __name__ == "__main__":
     """
     import time
-    t1 = time.time()    
-    dist = dummy_dist()    
+    t1 = time.time()
+    dist = dummy_dist()
     compiler_obj = create_compiler_instance(dist)
     exe_name = compiler_exe_name(compiler_obj)
     exe_path = compiler_exe_path(exe_name)
-    chk_sum = check_sum(exe_path)    
-    
+    chk_sum = check_sum(exe_path)
+
     t2 = time.time()
     print 'compiler exe:', exe_path
     print 'check sum:', chk_sum
@@ -238,8 +238,8 @@ if __name__ == "__main__":
     path = get_compiler_dir('gcc')
     print 'gcc path:', path
     print
-    try: 
+    try:
         path = get_compiler_dir('msvc')
         print 'gcc path:', path
     except ValueError:
-        pass    
+        pass

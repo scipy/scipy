@@ -120,4 +120,3 @@ print 'iter:',ziter, 'resid:',zresid, 'info:',zinfor
 print 'x=',zx
 print '*****************************************'
 print
-

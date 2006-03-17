@@ -178,7 +178,7 @@ int NI_InitLineBuffer(PyArrayObject*, int, maybelong, maybelong, maybelong,
                       double*, NI_ExtendMode, double, NI_LineBuffer*);
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double*, int, int, int, NI_ExtendMode, double);
+int NI_ExtendLine(double*, maybelong, maybelong, maybelong, NI_ExtendMode, double);
 
 /* Copy a line from an array to a buffer: */
 int NI_ArrayToLineBuffer(NI_LineBuffer*, maybelong*, int*);

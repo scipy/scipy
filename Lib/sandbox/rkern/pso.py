@@ -47,7 +47,7 @@ def pso(func, nswarm, lbound, ubound, vmax, args=(), maxiter=1000, cp=2.0, cg=2.
             gbestv = pbestv[gbesti]
             gbest = pbest[gbesti]
 
-        velocities += (cp*sp.rand()*(pbest - swarm) + 
+        velocities += (cp*sp.rand()*(pbest - swarm) +
                        cg*sp.rand()*(gbest - swarm))
         velocities = sp.clip(velocities, -vmax, vmax)
         swarm += velocities
@@ -58,5 +58,3 @@ def pso(func, nswarm, lbound, ubound, vmax, args=(), maxiter=1000, cp=2.0, cg=2.
 
 def _testfunc(x):
     return -sp.multiply.reduce(sp.cos(x/2.0/sp.pi))*sp.exp(-sp.sum(x*x))
-
-

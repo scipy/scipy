@@ -12,12 +12,12 @@ def configuration(parent_package='',top_path=None):
                                   'firfilter.c','medianfilter.c'],
                          depends = ['sigtools.h']
     )
-    
+
     config.add_extension('spline',
         sources = ['splinemodule.c','S_bspline_util.c','D_bspline_util.c',
                    'C_bspline_util.c','Z_bspline_util.c','bspline_util.c'],
     )
-    
+
     return config
 
 if __name__ == '__main__':

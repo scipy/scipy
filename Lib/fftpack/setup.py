@@ -2,7 +2,6 @@
 # Created by Pearu Peterson, August 2002
 
 import os
-import sys
 join = os.path.join
 
 def configuration(parent_package='',top_path=None):
@@ -11,7 +10,7 @@ def configuration(parent_package='',top_path=None):
          DJBFFTNotFoundError
     config = Configuration('fftpack',parent_package, top_path)
     fft_opt_info = get_info('fft_opt')
-    
+
     config.add_data_dir('tests')
 
     config.add_library('dfftpack',

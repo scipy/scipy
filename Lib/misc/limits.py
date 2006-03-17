@@ -30,4 +30,3 @@ if __name__ == '__main__':
     print 'single tiny:',single_tiny
     print 'float epsilon:',float_epsilon
     print 'float tiny:',float_tiny
-

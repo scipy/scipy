@@ -12,7 +12,7 @@
 # !! Only real valued complex numbers are used in tests.
 #
 # !! Uses matrixmultiply to check against blas.  If matrixmultiply is
-# !! ever !replaced! by a blas call, we'll need to fill in a simple 
+# !! ever !replaced! by a blas call, we'll need to fill in a simple
 # !! matrix multiply here to ensure integrity of tests.
 
 from numpy import *
@@ -35,20 +35,20 @@ class base_axpy(ScipyTestCase):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype.char)
         real_y = x*1.+y
-        self.blas_func(x,y)        
+        self.blas_func(x,y)
         assert_array_equal(real_y,y)
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype.char)
         real_y = x*3.+y
-        self.blas_func(x,y,a=3.)        
+        self.blas_func(x,y,a=3.)
         assert_array_equal(real_y,y)
     def check_x_stride(self):
         x = arange(6.,dtype=self.dtype)
         y = zeros(3,x.dtype.char)
         y = arange(3.,dtype=x.dtype.char)
         real_y = x[::2]*3.+y
-        self.blas_func(x,y,a=3.,n=3,incx=2)        
+        self.blas_func(x,y,a=3.,n=3,incx=2)
         assert_array_equal(real_y,y)
     def check_y_stride(self):
         x = arange(3.,dtype=self.dtype)
@@ -69,8 +69,8 @@ class base_axpy(ScipyTestCase):
             self.blas_func(x,y,n=4,incx=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)    
+        # should catch error and never get here
+        assert(0)
     def check_y_bad_size(self):
         x = arange(12.,dtype=Complex32)
         y = zeros(6,x.dtype.char)
@@ -78,8 +78,8 @@ class base_axpy(ScipyTestCase):
             self.blas_func(x,y,n=3,incy=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)                
+        # should catch error and never get here
+        assert(0)
 
 try:
     class test_saxpy(base_axpy):
@@ -108,13 +108,13 @@ class base_scal(ScipyTestCase):
     def check_simple(self):
         x = arange(3.,dtype=self.dtype)
         real_x = x*3.
-        self.blas_func(3.,x)        
+        self.blas_func(3.,x)
         assert_array_equal(real_x,x)
     def check_x_stride(self):
         x = arange(6.,dtype=self.dtype)
         real_x = x.copy()
         real_x[::2] = x[::2]*array(3.,self.dtype)
-        self.blas_func(3.,x,n=3,incx=2)        
+        self.blas_func(3.,x,n=3,incx=2)
         assert_array_equal(real_x,x)
     def check_x_bad_size(self):
         x = arange(12.,dtype=self.dtype)
@@ -122,8 +122,8 @@ class base_scal(ScipyTestCase):
             self.blas_func(2.,x,n=4,incx=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)    
+        # should catch error and never get here
+        assert(0)
 try:
     class test_sscal(base_scal):
         blas_func = fblas.sscal
@@ -177,8 +177,8 @@ class base_copy(ScipyTestCase):
             self.blas_func(x,y,n=4,incx=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)    
+        # should catch error and never get here
+        assert(0)
     def check_y_bad_size(self):
         x = arange(12.,dtype=Complex32)
         y = zeros(6,x.dtype.char)
@@ -186,8 +186,8 @@ class base_copy(ScipyTestCase):
             self.blas_func(x,y,n=3,incy=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)                
+        # should catch error and never get here
+        assert(0)
     #def check_y_bad_type(self):
     ##   Hmmm. Should this work?  What should be the output.
     #    x = arange(3.,dtype=self.dtype)
@@ -212,7 +212,7 @@ except AttributeError:
     class test_ccopy: pass
 class test_zcopy(base_copy):
     blas_func = fblas.zcopy
-    dtype = Complex                       
+    dtype = Complex
 
 
 ##################################################
@@ -243,7 +243,7 @@ class base_swap(ScipyTestCase):
         self.blas_func(x,y,n=3,incy=2)
         assert_array_equal(desired_x,x)
         assert_array_equal(desired_y,y[::2])
-    
+
     def check_x_and_y_stride(self):
         x = arange(12.,dtype=self.dtype)
         y = zeros(6,x.dtype.char)
@@ -259,8 +259,8 @@ class base_swap(ScipyTestCase):
             self.blas_func(x,y,n=4,incx=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)    
+        # should catch error and never get here
+        assert(0)
     def check_y_bad_size(self):
         x = arange(12.,dtype=Complex32)
         y = zeros(6,x.dtype.char)
@@ -268,8 +268,8 @@ class base_swap(ScipyTestCase):
             self.blas_func(x,y,n=3,incy=5)
         except: # what kind of error should be caught?
             return
-        # should catch error and never get here                        
-        assert(0)                
+        # should catch error and never get here
+        assert(0)
 
 try:
     class test_sswap(base_swap):
@@ -288,7 +288,7 @@ except AttributeError:
     class test_cswap: pass
 class test_zswap(base_swap):
     blas_func = fblas.zswap
-    dtype = Complex                       
+    dtype = Complex
 
 ##################################################
 ### Test blas ?gemv
@@ -296,7 +296,7 @@ class test_zswap(base_swap):
 
 class base_gemv(ScipyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
-        mult = array(1, dtype = self.dtype)            
+        mult = array(1, dtype = self.dtype)
         if self.dtype in ['F', 'D']:
             mult = array(1+1j, dtype = self.dtype)
         from numpy.random import normal
@@ -343,12 +343,12 @@ class base_gemv(ScipyTestCase):
             y = self.blas_func(1,a,x,1,y,trans=0,incx=3)
             assert(0)
         except:
-            pass                    
+            pass
         try:
             y = self.blas_func(1,a,x,1,y,trans=1,incx=3)
             assert(0)
         except:
-            pass                    
+            pass
     def check_y_stride(self):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         desired_y = y.copy()
@@ -357,7 +357,7 @@ class base_gemv(ScipyTestCase):
         assert(allclose(desired_y,y))
     def check_y_stride_transpose(self):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
-        desired_y = y.copy()        
+        desired_y = y.copy()
         desired_y[::2] = alpha*matrixmultiply(transpose(a),x)+beta*y[::2]
         y = self.blas_func(alpha,a,x,beta,y,trans=1,incy=2)
         assert(allclose(desired_y,y))
@@ -366,12 +366,12 @@ class base_gemv(ScipyTestCase):
         alpha,beta,a,x,y = self.get_data(y_stride=2)
         try:
             y = self.blas_func(1,a,x,1,y,trans=0,incy=3)
-            assert(0)            
+            assert(0)
         except:
             pass
         try:
             y = self.blas_func(1,a,x,1,y,trans=1,incy=3)
-            assert(0)            
+            assert(0)
         except:
             pass
 
@@ -392,7 +392,7 @@ except AttributeError:
     class test_cgemv: pass
 class test_zgemv(base_gemv):
     blas_func = fblas.zgemv
-    dtype = Complex                       
+    dtype = Complex
 
 """
 ##################################################
@@ -424,7 +424,7 @@ class base_ger(ScipyTestCase):
             self.blas_func(x,y,a,incx=3)
             assert(0)
         except:
-            pass                    
+            pass
     def check_y_stride(self):
         alpha,a,x,y = self.get_data(y_stride=2)
         desired_a = alpha*transpose(x[:,NewAxis]*y[::2]) + a
@@ -435,7 +435,7 @@ class base_ger(ScipyTestCase):
         alpha,a,x,y = self.get_data(y_stride=2)
         try:
             self.blas_func(a,x,y,incy=3)
-            assert(0)            
+            assert(0)
         except:
             pass
 
@@ -509,7 +509,7 @@ class test_zgerc(base_ger_complex):
     dtype = Complex
     def transform(self,x):
         return conjugate(x)
-"""        
+"""
 
 if __name__ == "__main__":
     ScipyTest().run()

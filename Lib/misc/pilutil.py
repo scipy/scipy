@@ -1,9 +1,9 @@
 # Functions which need the PIL
 
 import types
-import numpy as Numeric
+import numpy
 
-from numpy import exp, amin, amax, ravel, asarray, cast, arange, \
+from numpy import amin, amax, ravel, asarray, cast, arange, \
      ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
 
 import Image
@@ -12,7 +12,7 @@ import ImageFilter
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
 
-_UInt8 = Numeric.UnsignedInt8
+_UInt8 = numpy.UnsignedInt8
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
@@ -26,7 +26,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     scale = high *1.0 / (cmax-cmin or 1)
     bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
     return bytedata + cast[_UInt8](low)
-            
+
 def imread(name,flatten=0):
     """Read an image file from a filename.
 
@@ -48,7 +48,7 @@ def imsave(name, arr):
     return
 
 def fromimage(im, flatten=0):
-    """Takes a PIL image and returns a copy of the image in a Numeric container.
+    """Takes a PIL image and returns a copy of the image in a numpy container.
     If the image is RGB returns a 3-dimensional array:  arr[:,:,n] is each channel
 
     Optional arguments:
@@ -73,7 +73,7 @@ def fromimage(im, flatten=0):
         type = 'f'
     if mode == 'I':
         type = 'I'
-    arr = Numeric.fromstring(str,type)
+    arr = numpy.fromstring(str,type)
     shape = list(im.size)
     shape.reverse()
     if mode == 'P':
@@ -81,7 +81,7 @@ def fromimage(im, flatten=0):
         if im.palette.rawmode != 'RGB':
             print "Warning: Image has invalid palette."
             return arr
-        pal = Numeric.fromstring(im.palette.data,type)
+        pal = numpy.fromstring(im.palette.data,type)
         N = len(pal)
         pal.shape = (int(N/3.0),3)
         return arr, pal
@@ -97,7 +97,7 @@ def fromimage(im, flatten=0):
 _errstr = "Mode is unknown or incompatible with input array shape."
 def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             mode=None,channel_axis=None):
-    """Takes a Numeric array and returns a PIL image.  The mode of the
+    """Takes a numpy array and returns a PIL image.  The mode of the
     PIL image depends on the array shape, the pal keyword, and the mode
     keyword.
 
@@ -106,12 +106,12 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     as 'F' or 'I' in which case a float and/or integer array is made
 
     For 3-D arrays, the channel_axis argument tells which dimension of the
-      array holds the channel data. 
+      array holds the channel data.
     For 3-D arrays if one of the dimensions is 3, the mode is 'RGB'
-      by default or 'YCbCr' if selected.  
+      by default or 'YCbCr' if selected.
     if the
 
-    The Numeric array must be either 2 dimensional or 3 dimensional.
+    The numpy array must be either 2 dimensional or 3 dimensional.
     """
     data = asarray(arr)
     if iscomplexobj(data):
@@ -138,7 +138,7 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = (data > high)
-            image = Image.fromstring('1',shape,bytedata.tostring())   
+            image = Image.fromstring('1',shape,bytedata.tostring())
             return image
         if cmin is None:
             cmin = amin(ravel(data))
@@ -155,9 +155,9 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     # Check for 3 in datacube shape --- 'RGB' or 'YCbCr'
     if channel_axis is None:
         if (3 in shape):
-            ca = Numeric.nonzero(asarray(shape) == 3)[0]
+            ca = numpy.nonzero(asarray(shape) == 3)[0]
         else:
-            ca = Numeric.nonzero(asarray(shape) == 4)
+            ca = numpy.nonzero(asarray(shape) == 4)
             if len(ca):
                 ca = ca[0]
             else:
@@ -202,7 +202,7 @@ def imrotate(arr,angle,interp='bilinear'):
     Interpolation methods can be:
         'nearest' :  for nearest neighbor
         'bilinear' : for bilinear
-        'cubic' or 'bicubic' : for bicubic 
+        'cubic' or 'bicubic' : for bicubic
     """
     arr = asarray(arr)
     func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
@@ -219,7 +219,7 @@ def imresize(arr,newsize,interp='bilinear',mode=None):
     im = toimage(arr,mode=mode)
     im = im.resize(newsize,resample=func[interp])
     return fromimage(im)
-    
+
 def imshow(arr):
     """Simple showing of an image through an external viewer.
     """
@@ -233,7 +233,7 @@ def imshow(arr):
             return
         except:
             print "Warning: Alpha channel may not be handled correctly."
-            
+
     im.show()
     return
 
@@ -279,8 +279,8 @@ def imfilter(arr,ftype):
     if ftype not in _tdict.keys():
         raise ValueError, "Unknown filter type."
     return fromimage(im.filter(_tdict[ftype]))
-           
- 
+
+
 def radon(arr,theta=None):
     if theta is None:
         theta = mgrid[0:180]
@@ -291,4 +291,3 @@ def radon(arr,theta=None):
         s[:,k] = sum(im,axis=0)
         k += 1
     return s
-        

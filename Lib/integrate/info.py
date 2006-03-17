@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 21, 2005 by 
+## Automatically adapted for scipy Oct 21, 2005 by
 
 """
 Integration routines

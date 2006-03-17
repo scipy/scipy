@@ -1,4 +1,4 @@
-## Automatically adapted for scipy Oct 18, 2005 by 
+## Automatically adapted for scipy Oct 18, 2005 by
 
 major = 0
 minor = 4
