@@ -23,7 +23,7 @@
 """
 
 __author__  =  'Ed Schofield'
-__version__ =  '2.0-beta1'
+__version__ =  '2.1'
 
 
 import sys
