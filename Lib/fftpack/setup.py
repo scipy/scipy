@@ -2,7 +2,6 @@
 # Created by Pearu Peterson, August 2002
 
 import os
-import sys
 join = os.path.join
 
 def configuration(parent_package='',top_path=None):
