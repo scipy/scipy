@@ -6,6 +6,9 @@
 #define inline __inline
 #endif
 
+#define BLOCK_SIZE1 128
+#define BLOCK_SIZE2 8
+
 /* This file and interp_body should really be generated from a description of
    the opcodes -- there's too much repetition here for manually editing */
    
@@ -52,7 +55,6 @@ enum OpCodes {
     
     OP_ADD_CCC,
 
-    OP_LAST_OP
 };
 
 /* returns the sig of the nth op, '\0' if no more ops -1 on failure */
@@ -175,8 +177,6 @@ FuncFFFPtr functions_ff[] = {
 };
 
 
-#define BLOCK_SIZE1 128
-#define BLOCK_SIZE2 8
 
 typedef struct
 {
@@ -190,8 +190,8 @@ typedef struct
     PyObject *input_names;  /* tuple of strings */
     char **mem;             /* pointers to registers */
     char *rawmem;           /* a chunks of raw memory for storing registers */
-    int  rawmemsize;
     int  *memsteps;
+    int  rawmemsize;
 } NumExprObject;
 
 static void
@@ -216,41 +216,26 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     intp dims[] = {0}, dims2[] = {0,0};
     self = (NumExprObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
+#define INIT_WITH(name, object) \
+        self->name = object; \
+        if (!self->name) { \
+            Py_DECREF(self); \
+            return NULL; \
+        }
+
+        INIT_WITH(signature, PyString_FromString(""));
+        INIT_WITH(tempsig, PyString_FromString(""));
+        INIT_WITH(constsig, PyString_FromString(""));
+        INIT_WITH(fullsig, PyString_FromString(""));
+        INIT_WITH(program, PyString_FromString(""));
+        INIT_WITH(constants, PyTuple_New(0));
+        Py_INCREF(Py_None);
+        self->input_names = Py_None;
         self->mem = NULL;
         self->rawmem = NULL;
         self->memsteps = NULL;
-        self->program = PyString_FromString("");
-        if (!self->program) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->signature = PyString_FromString("");
-        if (!self->signature) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->tempsig = PyString_FromString("");
-        if (!self->tempsig) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->constsig = PyString_FromString("");
-        if (!self->constsig) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->fullsig = PyString_FromString("");
-        if (!self->fullsig) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        self->constants = PyTuple_New(0);
-        if (!self->constants) {
-            Py_DECREF(self);
-            return NULL;
-        }
-        Py_INCREF(Py_None);
-        self->input_names = Py_None;
+        self->rawmemsize = 0;
+#undef INIT_WITH
     }
     return (PyObject *)self;
 }
@@ -267,6 +252,46 @@ get_return_sig(PyObject* program) {
     sig = op_signature(last_opcode, 0);
     if (sig <= 0) return 'X';
     return sig;
+}
+
+static intp
+size_from_char(char c) 
+{
+    switch (c) {
+        case 'i': return sizeof(long);
+        case 'f': return sizeof(double);
+        case 'c': return 2*sizeof(double);
+        default:
+            PyErr_SetString(PyExc_TypeError, "signature value not in 'ifc'");
+            return -1;
+    }
+}
+
+static intp
+size_from_sig(PyObject *o)
+{
+    intp size = 0;
+    char *s = PyString_AsString(o);
+    if (!s) return -1;
+    for (; *s != NULL; s++) {
+        intp x = size_from_char(*s);
+        if (x == -1) return -1;
+        size += x;
+    }
+    return size;
+}
+
+static intp
+typecode_from_char(char c)
+{
+    switch (c) {
+        case 'i': return PyArray_LONG;
+        case 'f': return PyArray_DOUBLE;
+        case 'c': return PyArray_CDOUBLE;
+        default:
+            PyErr_SetString(PyExc_TypeError, "signature value not in 'ifc'");
+            return -1;
+    }
 }
 
 static int
@@ -300,7 +325,7 @@ check_program(NumExprObject *self)
         return -1;
     }
     for (rno = n_inputs+1; rno < n_buffers; rno++) {
-        char *bufend = self->mem[rno] + BLOCK_SIZE1 * sizeFromChar(fullsig[rno]);
+        char *bufend = self->mem[rno] + BLOCK_SIZE1 * size_from_char(fullsig[rno]);
         if ( (bufend - self->rawmem) > self->rawmemsize) {
             PyErr_Format(PyExc_RuntimeError, "invalid program: too many buffers");
             return -1;
@@ -360,54 +385,17 @@ check_program(NumExprObject *self)
 }
 
 
-static intp
-sizeFromChar(char c) 
-{
-    switch (c) {
-        case 'i': return sizeof(long);
-        case 'f': return sizeof(double);
-        case 'c': return 2*sizeof(double);
-        default:
-            PyErr_SetString(PyExc_TypeError, "signature value not in 'ifc'");
-            return -1;
-    }
-}
-
-static intp
-sizeFromSig(PyObject *o)
-{
-    intp size = 0;
-    char *s = PyString_AsString(o);
-    if (!s) return -1;
-    for (; *s != NULL; s++) {
-        intp x = sizeFromChar(*s);
-        if (x == -1) return -1;
-        size += x;
-    }
-    return size;
-}
-
-static intp
-typecodeFromChar(char c)
-{
-    switch (c) {
-        case 'i': return PyArray_LONG;
-        case 'f': return PyArray_DOUBLE;
-        case 'c': return PyArray_CDOUBLE;
-        default:
-            PyErr_SetString(PyExc_TypeError, "signature value not in 'ifc'");
-            return -1;
-    }
-}
 
 static int
 NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
-    int i, j, mem_offset, n_constants, n_inputs, n_temps;
-    PyObject *signature = NULL, *tempsig = NULL, *fullsig = NULL,
-             *program = NULL, 
-             *o_constants = NULL, *input_names = NULL;
-    PyObject *constants, *constsig, *tmp;
+    int i, j, mem_offset;
+    int n_constants, n_inputs, n_temps;
+    PyObject *signature = NULL, *tempsig = NULL, *constsig = NULL;
+    PyObject *fullsig = NULL, *program = NULL, *constants = NULL;
+    PyObject *input_names = NULL, *o_constants = NULL;
+    char **mem = NULL, *rawmem = NULL;
+    int *memsteps, rawmemsize;
     static char *kwlist[] = {"signature", "tempsig",
                              "program",  "constants",
                              "input_names", NULL};
@@ -471,8 +459,6 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         }
     }
 
-
-    
     fullsig = PyString_FromFormat("%c%s%s%s", get_return_sig(program),
         PyString_AS_STRING(signature), PyString_AS_STRING(constsig), 
         PyString_AS_STRING(tempsig));
@@ -481,99 +467,105 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(constsig);
     }
 
-    tmp = self->constants;
-    self->constants = constants;
-    Py_XDECREF(tmp);
-
-    tmp = self->signature;
-    Py_INCREF(signature);
-    self->signature = signature;
-    Py_XDECREF(tmp);
-    
-    tmp = self->constsig;
-    self->constsig = constsig;
-    Py_XDECREF(tmp);
-    
-    tmp = self->tempsig;
-    Py_INCREF(tempsig);
-    self->tempsig = tempsig;
-    Py_XDECREF(tmp);
-    
-    tmp = self->fullsig;
-    self->fullsig = fullsig;
-    Py_XDECREF(tmp);
-    
-    tmp = self->program;
-    Py_INCREF(program);
-    self->program = program;
-    Py_XDECREF(tmp);
-
-    tmp = self->input_names;
     if (!input_names) {
         input_names = Py_None;
     }
-    Py_INCREF(input_names);
-    self->input_names = input_names;
-    Py_XDECREF(tmp);
-
-    PyMem_Del(self->rawmem);
-    PyMem_Del(self->mem);
-    PyMem_Del(self->memsteps);
     
-    self->rawmemsize = BLOCK_SIZE1 * (sizeFromSig(constsig) + sizeFromSig(tempsig));
-    self->rawmem = PyMem_New(char, self->rawmemsize);
-    if (PyErr_Occurred()) return -1;
-    self->mem = PyMem_New(void *, 1 + n_inputs + n_constants + n_temps);
-    self->memsteps = PyMem_New(int, 1 + n_inputs);
-    
+    rawmemsize = BLOCK_SIZE1 * (size_from_sig(constsig) + size_from_sig(tempsig));
+    mem = PyMem_New(void *, 1 + n_inputs + n_constants + n_temps);
+    rawmem = PyMem_New(char, rawmemsize);
+    memsteps = PyMem_New(int, 1 + n_inputs);
+    if (!mem || !rawmem || !memsteps) {
+        Py_DECREF(constants);
+        Py_DECREF(constsig);
+        Py_DECREF(fullsig);
+        PyMem_Del(mem);    
+        PyMem_Del(rawmem);
+        PyMem_Del(memsteps);
+        return -1;
+    }
     /* 
-       Now we need to fill mem with pointers to the correct block of memory *
-       0 -> output (fill in memsteps)
-       [1, n_inputs+1) -> inputs (fill in memsteps)
-       [n_inputs+1, n_inputs+n_consts+1) -> constants
+       0                                                  -> output 
+       [1, n_inputs+1)                                    -> inputs 
+       [n_inputs+1, n_inputs+n_consts+1)                  -> constants
        [n_inputs+n_consts+1, n_inputs+n_consts+n_temps+1) -> temps
     */
-    self->memsteps[0] = sizeFromChar(get_return_sig(program));
+    /* Fill in 'memsteps' for  output and inputs. 'mem' filled on call. */
+    memsteps[0] = size_from_char(get_return_sig(program));
     for (i = 0; i < n_inputs; i++) {
-        self->memsteps[i+1] = sizeFromChar(PyString_AS_STRING(signature)[i]);
+        memsteps[i+1] = size_from_char(PyString_AS_STRING(signature)[i]);
     }
-    
+    /* Fill in 'mem' and 'rawmem' for constants */
     mem_offset = 0;
     for (i = 0; i < n_constants; i++) {
         char c = PyString_AS_STRING(constsig)[i];
-        self->mem[i+n_inputs+1] = self->rawmem + mem_offset;
-        mem_offset += BLOCK_SIZE1 * sizeFromChar(c);
+        mem[i+n_inputs+1] = rawmem + mem_offset;
+        mem_offset += BLOCK_SIZE1 * size_from_char(c);
         /* fill in the constants */
         if (c == 'i') {
-            long *imem = (long*)self->mem[i+n_inputs+1];
-            long value = PyInt_AS_LONG(PyTuple_GET_ITEM(self->constants, i));
+            long *imem = (long*)mem[i+n_inputs+1];
+            long value = PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
             for (j = 0; j < BLOCK_SIZE1; j++) 
                 imem[j] = value;
         } else if (c == 'f') {
-            double *dmem = (double*)self->mem[i+n_inputs+1];
-            double value = PyFloat_AS_DOUBLE(PyTuple_GET_ITEM(self->constants, i));
+            double *dmem = (double*)mem[i+n_inputs+1];
+            double value = PyFloat_AS_DOUBLE(PyTuple_GET_ITEM(constants, i));
             for (j = 0; j < BLOCK_SIZE1; j++) 
                 dmem[j] = value;
         } else if (c == 'c') {
-            /* XXX rework in terms of doubles to avoid dependancy on gut of PyComplex */
-            double *cmem = (double*)self->mem[i+n_inputs+1];
-            Py_complex value = PyComplex_AsCComplex(PyTuple_GET_ITEM(self->constants, i));
+            double *cmem = (double*)mem[i+n_inputs+1];
+            Py_complex value = PyComplex_AsCComplex(PyTuple_GET_ITEM(constants, i));
             for (j = 0; j < 2*BLOCK_SIZE1; j+=2) { 
                 cmem[j] = value.real;
-                cmem[j] = value.imag;
+                cmem[j+1] = value.imag;
             }
         }          
     }    
+    /* Fill in 'mem' for temps */
     for (i = 0; i < n_temps; i++) {
-        self->mem[i+n_inputs+n_constants+1] = self->rawmem + mem_offset;
-        mem_offset += BLOCK_SIZE1 * sizeFromChar(PyString_AS_STRING(tempsig)[i]);
+        mem[i+n_inputs+n_constants+1] = rawmem + mem_offset;
+        mem_offset += BLOCK_SIZE1 * size_from_char(PyString_AS_STRING(tempsig)[i]);
     }     
-    if (PyErr_Occurred()) return -1;
-    if (mem_offset != self->rawmemsize) {
-        PyErr_Format(PyExc_RuntimeError, "mem_offset does not match rawmemsize");
+    /* See if any errors occured (e.g., in size_from_char) or if mem_offset is wrong */
+    if (PyErr_Occurred() || mem_offset != rawmemsize) {
+        if (mem_offset != rawmemsize) {
+            PyErr_Format(PyExc_RuntimeError, "mem_offset does not match rawmemsize");
+        }
+        Py_DECREF(constants);
+        Py_DECREF(constsig);
+        Py_DECREF(fullsig);
+        PyMem_Del(mem);    
+        PyMem_Del(rawmem);
+        PyMem_Del(memsteps);
         return -1;
     }
 
+    
+    #define REPLACE_OBJ(arg) \
+    {PyObject *tmp = self->arg; \
+     self->arg = arg; \
+     Py_XDECREF(tmp);} 
+    #define INCREF_REPLACE_OBJ(arg) {Py_INCREF(arg); REPLACE_OBJ(arg);}
+    #define REPLACE_MEM(arg) {PyMem_Del(self->arg); self->arg=arg;}
+    
+    INCREF_REPLACE_OBJ(signature);
+    INCREF_REPLACE_OBJ(tempsig);
+    REPLACE_OBJ(constsig);
+    REPLACE_OBJ(fullsig);
+    INCREF_REPLACE_OBJ(program);
+    REPLACE_OBJ(constants);
+    INCREF_REPLACE_OBJ(input_names);
+    REPLACE_MEM(mem);
+    REPLACE_MEM(rawmem);
+    REPLACE_MEM(memsteps);
+    self->rawmemsize = rawmemsize;
+    
+    #undef REPLACE_OBJ
+    #undef INCREF_REPLACE_OBJ
+    #undef REPLACE_MEM
+
+    #define REPLACE_MEM
+    
     return check_program(self);
 }
 
@@ -708,19 +700,10 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     for (i = 0; i < n_inputs; i++) {
         PyObject *o = PyTuple_GetItem(args, i); /* borrowed ref */
         PyObject *a;
-        switch (PyString_AS_STRING(self->signature)[i]) {
-            case 'i':
-                a = PyArray_ContiguousFromAny(o, PyArray_LONG, 0, 0);
-                break;
-            case 'f':
-                a = PyArray_ContiguousFromAny(o, PyArray_DOUBLE, 0, 0);
-                break;
-            case 'c':
-                a = PyArray_ContiguousFromAny(o, PyArray_CDOUBLE, 0, 0);
-                break;
-            default:
-                return PyErr_Format(PyExc_RuntimeError, "illegal signature value");
-        }
+        intp typecode = typecode_from_char(PyString_AS_STRING(self->signature)[i]);
+        if (typecode == -1) return NULL;
+        a = PyArray_ContiguousFromAny(o, typecode, 0, 0);
+        if (!a) return NULL;
         PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
         if (len == -1) { 
             char retsig = get_return_sig(self->program);
@@ -734,7 +717,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             len = PyArray_SIZE(a);
             output = PyArray_SimpleNew(PyArray_NDIM(a),
                                        PyArray_DIMS(a),
-                                       typecodeFromChar(retsig));            
+                                       typecode_from_char(retsig));            
         } else {
             if (len != PyArray_SIZE(a)) {
                 Py_XDECREF(a_inputs);
