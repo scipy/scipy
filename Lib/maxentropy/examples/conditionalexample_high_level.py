@@ -32,7 +32,7 @@ samplespace = ['dans', 'en', a_grave, 'au cours de', 'pendant']
 contexts = ['happy', 'healthy', 'harold', 'a', 'the', 'beans']
 # Occurrences of French words, and their 'next English word' contexts, in a parallel corpus:
 corpus = [('dans', 'a'), ('dans', 'a'), ('dans', 'a'), ('dans', 'the'), ('pendant', 'a')] + \
-         [('dans', 'happy'), (a_grave, 'healthy')]
+         [('dans', 'happy'), ('au cours de', 'healthy')]
 
 def f0(x, c):
     return x in samplespace
