@@ -1,6 +1,6 @@
 major = 0
 minor = 4
-micro = 0
+micro = 9
 #release_level = 'alpha'
 release_level = ''
 
