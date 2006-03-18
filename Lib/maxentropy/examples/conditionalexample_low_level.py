@@ -51,6 +51,6 @@ print "x \ w \t 0 \t 1",
 for x in range(4):
     print '\n' + str(x),
     for w in range(2):
-        print ' \t ' + str(pmf[indices_context[w]][x]),
+        print ' \t %.3f' % pmf[indices_context[w]][x],
 print
 

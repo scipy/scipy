@@ -107,7 +107,7 @@ for label in samplespace:
 for c, context in enumerate(contexts):
     print "\n" + context + "\t",
     for x, label in enumerate(samplespace):
-        print ("%.3f" % p[c * len(samplespace) + x]) + "\t",
+        print ("%.3f" % p[indices_context[c][x]]) + "\t",
 
 print
 
