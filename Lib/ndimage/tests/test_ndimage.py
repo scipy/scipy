@@ -32,8 +32,11 @@ import sys
 import unittest
 import math
 import numpy as numarray
+from numpy import dft
+from numpy.testing import *
+set_package_path()
 import scipy.ndimage as ndimage
-import numpy.dft as dft
+restore_path()
 #import numarray.numinclude as numinclude
 
 eps = 1e-12
@@ -59,7 +62,7 @@ def diff(a, b):
     return math.sqrt(t)
 
 
-class NDImageTest(unittest.TestCase):
+class test_ndimage(ScipyTestCase):
 
     def setUp(self):
         # list of numarray data types
@@ -5461,62 +5464,63 @@ class NDImageTest(unittest.TestCase):
             self.failUnless(diff(true, out) < eps)
 
 
-class NDImageTestResult(unittest.TestResult):
-    separator1 = '=' * 70 + '\n'
-    separator2 = '-' * 70 + '\n'
+#class NDImageTestResult(unittest.TestResult):
+#    separator1 = '=' * 70 + '\n'
+#    separator2 = '-' * 70 + '\n'
+#
+#    def __init__(self, stream, verbose):
+#        unittest.TestResult.__init__(self)
+#        self.stream = stream
+#        self.verbose = verbose
+#
+#    def getDescription(self, test):
+#        return test.shortDescription() or str(test)
+#
+#    def startTest(self, test):
+#        unittest.TestResult.startTest(self, test)
+#        if self.verbose:
+#            self.stream.write(self.getDescription(test))
+#            self.stream.write(" ... ")
+#
+#    def addSuccess(self, test):
+#        unittest.TestResult.addSuccess(self, test)
+#        if self.verbose:
+#            self.stream.write("ok\n")
+#
+#    def addError(self, test, err):
+#        unittest.TestResult.addError(self, test, err)
+#        if self.verbose:
+#            self.stream.write("ERROR\n")
+#
+#    def addFailure(self, test, err):
+#        unittest.TestResult.addFailure(self, test, err)
+#        if self.verbose:
+#            self.stream.write("FAIL\n")
+#
+#    def printErrors(self):
+#        self.printErrorList('ERROR', self.errors)
+#        self.printErrorList('FAIL', self.failures)
+#
+#    def printErrorList(self, flavour, errors):
+#        for test, err in errors:
+#            self.stream.write(self.separator1)
+#            description = self.getDescription(test)
+#            self.stream.write("%s: %s\n" % (flavour, description))
+#            self.stream.write(self.separator2)
+#            self.stream.write(err)
+#
+#def test():
+#    if '-v' in sys.argv[1:]:
+#        verbose = 1
+#    else:
+#        verbose = 0
+#    suite = unittest.TestSuite()
+#    suite.addTest(unittest.makeSuite(NDImageTest))
+#    result = NDImageTestResult(sys.stdout, verbose)
+#    suite(result)
+#    result.printErrors()
+#    return len(result.failures), result.testsRun
 
-    def __init__(self, stream, verbose):
-        unittest.TestResult.__init__(self)
-        self.stream = stream
-        self.verbose = verbose
-
-    def getDescription(self, test):
-        return test.shortDescription() or str(test)
-
-    def startTest(self, test):
-        unittest.TestResult.startTest(self, test)
-        if self.verbose:
-            self.stream.write(self.getDescription(test))
-            self.stream.write(" ... ")
-
-    def addSuccess(self, test):
-        unittest.TestResult.addSuccess(self, test)
-        if self.verbose:
-            self.stream.write("ok\n")
-
-    def addError(self, test, err):
-        unittest.TestResult.addError(self, test, err)
-        if self.verbose:
-            self.stream.write("ERROR\n")
-
-    def addFailure(self, test, err):
-        unittest.TestResult.addFailure(self, test, err)
-        if self.verbose:
-            self.stream.write("FAIL\n")
-
-    def printErrors(self):
-        self.printErrorList('ERROR', self.errors)
-        self.printErrorList('FAIL', self.failures)
-
-    def printErrorList(self, flavour, errors):
-        for test, err in errors:
-            self.stream.write(self.separator1)
-            description = self.getDescription(test)
-            self.stream.write("%s: %s\n" % (flavour, description))
-            self.stream.write(self.separator2)
-            self.stream.write(err)
-
-def test():
-    if '-v' in sys.argv[1:]:
-        verbose = 1
-    else:
-        verbose = 0
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(NDImageTest))
-    result = NDImageTestResult(sys.stdout, verbose)
-    suite(result)
-    result.printErrors()
-    return len(result.failures), result.testsRun
-
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    #unittest.main()
+    ScipyTest().run()
