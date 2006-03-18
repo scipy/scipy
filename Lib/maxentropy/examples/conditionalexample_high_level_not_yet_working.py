@@ -30,6 +30,7 @@ a_grave = u'\u00e0'
 
 samplespace = ['dans', 'en', a_grave, 'au cours de', 'pendant']
 contexts = ['happy', 'healthy', 'harold', 'a', 'the', 'beans']
+# Occurrences of French words, and their 'next English word' contexts, in a parallel corpus:
 corpus = [('dans', 'a'), ('dans', 'a'), ('dans', 'a'), ('dans', 'the'), ('pendant', 'a')] + \
          [('dans', 'happy'), (a_grave, 'healthy')]
 
@@ -92,8 +93,21 @@ model.fit()
 
 # Output the distribution
 print "\nFitted model parameters are:\n" + str(model.theta)
-print "\nFitted distribution is:"
+
 p = model.probdist()
-# Write code to reformat this into an intelligible form!
-print p
+
+print "\npmf table p(x | c), where c is the context 'the':"
+c = contexts.index('the')
+print p[indices_context[c]]
+
+print "\nFitted distribution is:"
+print "c \ x \t",
+for label in samplespace:
+    print label + "\t",
+for c, context in enumerate(contexts):
+    print "\n" + context + "\t",
+    for x, label in enumerate(samplespace):
+        print ("%.3f" % p[c * len(samplespace) + x]) + "\t",
+
+print
 

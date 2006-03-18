@@ -682,10 +682,8 @@ class model(basemodel):
         """
         return arrayexp(self.logpmf())
     
-    def probdist(self):
-        """An alias for pmf()
-        """
-        return self.pmf()
+    # An alias for pmf
+    probdist = pmf
     
     def pmf_function(self, f=None):
         """Returns the pmf p_theta(x) as a function taking values on the
@@ -796,17 +794,23 @@ class conditionalmodel(model):
         self.indices_context = indices_context
         self.numcontexts = len(indices_context)
         
-        # Set the empirical pmf:  p_tilde(x | c) = N(x | c) / \sum_y N(y | c).
-        # If the denominator is zero for any context, define p_tilde(x | c) as
+        # Set the empirical pmf:  p_tilde(w, x) = N(w, x) / \sum_c \sum_y N(c, y).
+        # ***
+        # OLD: If the denominator is zero for any context, define p_tilde(x | w) as
         # zero too by converting NaNs to zeros.
+        # ***
         self.p_tilde_context = numpy.empty(self.numcontexts, float)
         counts = numpy.asarray(counts)
-        p_tilde = numpy.array(counts, float)
+        self.p_tilde = numpy.array(counts, float) / counts.sum()
+        
         for w in xrange(self.numcontexts):
-            self.p_tilde_context[w] = s = counts[indices_context[w]].sum()
-            p_tilde[indices_context[w]] /= s
-        self.p_tilde = numpy.nan_to_num(p_tilde)
-        self.p_tilde_context /= counts.sum()
+            self.p_tilde_context[w] = self.p_tilde[indices_context[w]].sum()
+    
+        #for w in xrange(self.numcontexts):
+        #    self.p_tilde_context[w] = s = counts[indices_context[w]].sum()
+        #    p_tilde[indices_context[w]] /= s
+        ## OLD: self.p_tilde = numpy.nan_to_num(p_tilde)
+        #self.p_tilde_context /= counts.sum()
     
     
     def lognormconst(self):
@@ -843,13 +847,18 @@ class conditionalmodel(model):
 
     def dual(self, theta=None, ignorepenalty=False):
         """The entropy dual function is defined for conditional models as
+        
             L(theta) = sum_w q(w) log Z(w; theta) 
                        - sum_{w,x} q(w,x) [theta . f(w,x)] 
 
-        where q(w) is the empirical probability mass function derived
-        from observations of the context w in a training set.  Normally q(w, x)
-        will be 1, unless the same class label is assigned to the same context
-        more than once.
+        or equivalently as
+
+            L(theta) = sum_w q(w) log Z(w; theta) - (theta . k)
+
+        where K_i = \sum_{w, x} q(w, x) f_i(w, x), and where q(w) is the
+        empirical probability mass function derived from observations of the
+        context w in a training set.  Normally q(w, x) will be 1, unless the
+        same class label is assigned to the same context more than once.
         
         Note that both sums are only over the training set {w,x}, not the
         entire sample space, since q(w,x) = 0 for all w,x not in the training
@@ -869,11 +878,11 @@ class conditionalmodel(model):
         
         logZs = self.lognormconst()
         
-        # Size of sample space
-        n = len(self.p_tilde) // self.numcontexts
-        assert int(n) == n    # p_tilde should be exactly divisible by numcontexts!
-        L = n * numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.p_tilde, \
-                innerprodtranspose(self.F, self.theta))
+        #L = numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.p_tilde, \
+        #        innerprodtranspose(self.F, self.theta))
+        
+        L = numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.theta, \
+                                                               self.K)
         
         if self.verbose and self.external is None:
             print "  dual is ", L
@@ -921,36 +930,61 @@ class conditionalmodel(model):
     
     
     def fit(self, algorithm='CG'):
+        """Fits the conditional maximum entropy model subject to the
+        constraints
+
+            sum_{w, x} p_tilde(w) p(x | w) f_i(w, x) = k_i
+
+        for i=1,...,m, where k_i is the empirical expectation
+            k_i = sum_{w, x} p_tilde(w, x) f_i(w, x).
+        """
         # First compute the vector K = (K_i) of expectations of the
-        # features with respect to the distribution q(w) p(x | w), where
-        # q(w) is the empirical pmf stored in self.p_tilde, with context
-        # indices stored in self.indices_context.  This is given by:
+        # features with respect to the empirical distribution p_tilde(w, x).
+        # This is given by:
         # 
-        #     K_i  =  \sum_{w, x} q(w, x) f_i(w, x)
+        #     K_i = \sum_{w, x} q(w, x) f_i(w, x)
         #
         # This is independent of the model parameters.
         K = innerprod(self.F, self.p_tilde)
-        # Where is this actually used?
         
+        # Call base class method
         return model.fit(self, K, algorithm)
     
     
     def expectations(self):
         """The vector of expectations of the features with respect to the
-        distribution q(w) p(x | w), where q(w) is the empirical
-        probability mass function derived from observations of the
-        context w in a training set.
+        distribution p_tilde(w) p(x | w), where p_tilde(w) is the empirical
+        probability mass function of each context w stored in
+        self.p_tilde_context, with context indices stored in
+        self.indices_context.
         """
-        # We only override to modify the documentation string.  The code
-        # is the same as for the model class.
-        return model.expectations(self)
+        try:
+            self.F
+        except AttributeError:
+            raise AttributeError, "need a pre-computed feature matrix F"
+        # A pre-computed matrix of features exists
+
+        p = self.pmf()
+        # p is now an array representing p(x | w) for each class w.  Now we
+        # multiply the appropriate elements by p_tilde(w) to get the hybrid pmf
+        # required for conditional modelling:
+        for w in xrange(self.numcontexts):
+            p[self.indices_context[w]] *= self.p_tilde_context[w]
+        
+        # Use the representation E_p[f(X)] = p . F
+        return innerprod(self.F, p)
+
+        # # We only override to modify the documentation string.  The code
+        # # is the same as for the model class.
+        # return model.expectations(self)
     
 
     def logpmf(self):
-        """Returns an array indexed by integers representing the
-        logarithms of the probability mass function (pmf) at each point
-        in the sample space under the current model (with the current
-        parameter vector self.theta).
+        """Returns an array of logarithms of the conditional probability mass
+        function (pmf) values p(x | c) for all pairs (c, x), where c are
+        contexts and x are points in the sample space.  The order of these is
+        as specified by self.indices_context, so log p(x | c) =
+        logpmf()[self.indices_context[c][x]].
         """
         # Have the features already been computed and stored?
         try:
@@ -958,7 +992,7 @@ class conditionalmodel(model):
         except AttributeError:
             raise AttributeError, "first set the feature matrix F"
         else:
-            # p(x) = exp(theta.f(x)) / sum_y[exp theta.f(y)]
+            # p(x | c) = exp(theta.f(x, c)) / sum_c[exp theta.f(x, c)]
             #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
             
             log_p_dot = innerprodtranspose(self.F, self.theta)
