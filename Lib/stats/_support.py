@@ -43,7 +43,7 @@ def unique(inarray):
         for item in inarray[1:]:
             if N.add.reduce(N.equal(uniques,item).flat) == 0:
                 try:
-                    uniques = N.concatenate([uniques,N.array[N.NewAxis,:]])
+                    uniques = N.concatenate([uniques,N.array[N.newaxis,:]])
                 except TypeError:
                     uniques = N.concatenate([uniques,N.array([item])])
     else:                                  # IT MUST BE A 2+D ARRAY
@@ -51,7 +51,7 @@ def unique(inarray):
             for item in inarray[1:]:
                 if not N.sum(N.alltrue(N.equal(uniques,item),1)):
                     try:
-                        uniques = N.concatenate( [uniques,item[N.NewAxis,:]] )
+                        uniques = N.concatenate( [uniques,item[N.newaxis,:]] )
                     except TypeError:    # the item to add isn't a list
                         uniques = N.concatenate([uniques,N.array([item])])
                 else:
@@ -66,7 +66,7 @@ def unique(inarray):
                         break
                 if newflag == 1:
                     try:
-                        uniques = N.concatenate( [uniques,item[N.NewAxis,:]] )
+                        uniques = N.concatenate( [uniques,item[N.newaxis,:]] )
                     except TypeError:    # the item to add isn't a list
                         uniques = N.concatenate([uniques,N.array([item])])
     return uniques

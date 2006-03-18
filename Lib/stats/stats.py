@@ -2194,9 +2194,9 @@ lists-of-lists.
             # CALCULATE Er, Ef
     ## Set up workd and subjslots for upcoming calcs
             if len(workd.shape)==1:
-                workd = workd[:,NewAxis]
+                workd = workd[:,newaxis]
             if len(subjslots.shape)==1:
-                subjslots = subjslots[:,NewAxis]
+                subjslots = subjslots[:,newaxis]
 
     ## Calculate full-model sums of squares
             ef = d_full_model(workd,subjslots) # Uses cell-means model
@@ -2511,7 +2511,7 @@ def subtr_cellmeans(workd,subjslots):
 ### WHILE STILL MORE GROUPS, CALCULATE GROUP MEAN FOR EACH D-VAR
     while incr(idx,loopcap) != -1:  # loop through source btw level-combos
         mask = tsubjslots[idx]
-        thisgroup = tworkd*mask[NewAxis,:]
+        thisgroup = tworkd*mask[newaxis,:]
         groupmns = mean(compress(mask,thisgroup),1)
 
 ### THEN SUBTRACT THEM FROM APPROPRIATE SUBJECTS

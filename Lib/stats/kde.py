@@ -24,7 +24,7 @@
 import warnings
 
 from scipy import linalg, special
-from numpy import atleast_2d, reshape, zeros, NewAxis, dot, exp, pi, sqrt, \
+from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, Float, take, power, atleast_1d, squeeze, transpose
 from numpy.random import randint, multivariate_normal
 
@@ -106,14 +106,14 @@ class gaussian_kde(object):
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
-                diff = self.dataset[:,i,NewAxis] - points
+                diff = self.dataset[:,i,newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff*tdiff)/2.0
                 result += exp(-energy)
         else:
             # loop over points
             for i in range(m):
-                diff = self.dataset - points[:,i,NewAxis]
+                diff = self.dataset - points[:,i,newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff*tdiff)/2.0
                 result[i] = sum(exp(-energy))
@@ -152,7 +152,7 @@ class gaussian_kde(object):
             raise ValueError("covariance does not have dimension %s" % self.d)
 
         # make mean a column vector
-        mean = mean[:,NewAxis]
+        mean = mean[:,newaxis]
 
         sum_cov = self.covariance + cov
 
@@ -252,7 +252,7 @@ class gaussian_kde(object):
         sum_cov = small.covariance + large.covariance
         result = 0.0
         for i in range(small.n):
-            mean = small.dataset[:,i,NewAxis]
+            mean = small.dataset[:,i,newaxis]
             diff = large.dataset - mean
             tdiff = dot(linalg.inv(sum_cov), diff)
 

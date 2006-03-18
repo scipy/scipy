@@ -12,7 +12,7 @@ import inspect
 from numpy import alltrue, where, arange, put, putmask, nonzero, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis
 from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
@@ -3212,11 +3212,11 @@ def _drv_nonzero(self, k, *args):
 
 def _drv_moment(self, n, *args):
     n = arr(n)
-    return sum(self.xk**n[NewAxis,...] * self.pk, axis=0)
+    return sum(self.xk**n[newaxis,...] * self.pk, axis=0)
 
 def _drv_moment_gen(self, t, *args):
     t = arr(t)
-    return sum(exp(self.xk * t[NewAxis,...]) * self.pk, axis=0)
+    return sum(exp(self.xk * t[newaxis,...]) * self.pk, axis=0)
 
 def _drv2_moment(self, n, *args):
     tot = 0.0

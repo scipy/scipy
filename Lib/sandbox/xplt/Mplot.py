@@ -9,7 +9,7 @@ import pl3d, plwf
 import numpy as Numeric
 numpy = Numeric
 from numpy import ravel, reshape, repeat, arange, transpose, compress, \
-     where, ones, NewAxis, asarray
+     where, ones, newaxis, asarray
 import numpy.lib.mlab as MLab
 from numpy.lib.mlab import pi, cos, sin, arctan2, array, angle
 import types
@@ -1362,9 +1362,9 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
     x = numpy.squeeze(x)
     y = numpy.squeeze(y)
     if (len(numpy.shape(x)) == 1):
-        x = x[:,NewAxis]*ones((1,M))
+        x = x[:,newaxis]*ones((1,M))
     if (len(numpy.shape(y)) == 1):
-        y = ones((N,1))*y[NewAxis,:]
+        y = ones((N,1))*y[newaxis,:]
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
     lims = pl3d.draw3(1)
     gist.limits(lims[0],lims[1],lims[2],lims[3])

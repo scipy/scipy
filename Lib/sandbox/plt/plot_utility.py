@@ -540,7 +540,7 @@ def auto_interval(data_bounds):
     magic_intervals = array((1.,2.,2.5,5.,10.))
     # calculate the absolute differences between the candidates
     # (with mag removed) and the magic intervals
-    differences = abs(magic_intervals[:,NewAxis] - mantissas)
+    differences = abs(magic_intervals[:,newaxis] - mantissas)
 
     # Find the division and magic interval combo
     # that produce the smallest differences.
@@ -550,7 +550,7 @@ def auto_interval(data_bounds):
     # dependent amount from each difference to
     # force correct ordering
     sh = shape(differences)
-    small = 2.2e-16 *arange(sh[1]) * arange(sh[0])[:,NewAxis]
+    small = 2.2e-16 *arange(sh[1]) * arange(sh[0])[:,newaxis]
     small = small[::-1,::-1] #reverse order
     differences = differences - small
     # ? Numeric should allow keyword "axis" ? comment out for now

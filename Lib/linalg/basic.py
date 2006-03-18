@@ -16,7 +16,7 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
 #from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
 from scipy.lib.lapack import get_lapack_funcs
-from numpy import asarray,zeros,sum,NewAxis,greater_equal,subtract,arange,\
+from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,sqrt,add,real
 import numpy
 from numpy import asarray_chkfinite, outerproduct, concatenate, reshape, single
@@ -472,8 +472,8 @@ def toeplitz(c,r=None):
     vals = r_[r[rN-1:0:-1], c]
     cols = mgrid[0:cN]
     rows = mgrid[rN:0:-1]
-    indx = cols[:,NewAxis]*ones((1,rN)) + \
-           rows[NewAxis,:]*ones((cN,1)) - 1
+    indx = cols[:,newaxis]*ones((1,rN)) + \
+           rows[newaxis,:]*ones((cN,1)) - 1
     return take(vals, indx)
 
 
@@ -503,8 +503,8 @@ def hankel(c,r=None):
     vals = r_[c, r[1:rN]]
     cols = mgrid[1:cN+1]
     rows = mgrid[0:rN]
-    indx = cols[:,NewAxis]*ones((1,rN)) + \
-           rows[NewAxis,:]*ones((cN,1)) - 1
+    indx = cols[:,newaxis]*ones((1,rN)) + \
+           rows[newaxis,:]*ones((cN,1)) - 1
     return take(vals, indx)
 
 def all_mat(*args):

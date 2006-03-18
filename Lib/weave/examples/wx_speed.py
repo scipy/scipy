@@ -121,7 +121,7 @@ if __name__ == '__main__':
             x = arange(0,w,typecode=Int32)
             y = h/2.*sin(x*2*pi/w)+h/2.
             y = y.astype(Int32)
-            self.points = concatenate((x[:,NewAxis],y[:,NewAxis]),-1)
+            self.points = concatenate((x[:,newaxis],y[:,newaxis]),-1)
 
         def OnSize(self,event):
             self.calc_points()

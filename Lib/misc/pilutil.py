@@ -4,7 +4,7 @@ import types
 import numpy
 
 from numpy import amin, amax, ravel, asarray, cast, arange, \
-     ones, NewAxis, transpose, mgrid, iscomplexobj, sum, zeros
+     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros
 
 import Image
 import ImageFilter
@@ -132,8 +132,8 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
                 image.putpalette(asarray(pal,dtype=_UInt8).tostring())
                 # Becomes a mode='P' automagically.
             elif mode == 'P':  # default gray-scale
-                pal = arange(0,256,1,dtype='B')[:,NewAxis] * \
-                      ones((3,),dtype='B')[NewAxis,:]
+                pal = arange(0,256,1,dtype='B')[:,newaxis] * \
+                      ones((3,),dtype='B')[newaxis,:]
                 image.putpalette(asarray(pal,dtype=_UInt8).tostring())
             return image
         if mode == '1':  # high input gives threshold for 1

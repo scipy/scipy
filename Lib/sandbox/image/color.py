@@ -159,8 +159,8 @@ def tri2chr(tri,axis=None):
     slices = []
     for k in range(n):
         slices.append(slice(None))
-    slices[axis] = NewAxis
-    norm = numpy.sum(tri,axis=axis)[slices]
+    slices[axis] = sb.newaxis
+    norm = sb.sum(tri,axis=axis)[slices]
     slices[axis] = slice(None,2)
     out = tri[slices]/norm
     return out
@@ -181,7 +181,7 @@ def convert(matrix,TTT,axis=None):
         TTT = sb.swapaxes(TTT,0,axis)
     oldshape = TTT.shape
     TTT = sb.reshape(TTT,(3,-1))
-    OUT = numpy.dot(matrix, TTT)
+    OUT = sb.dot(matrix, TTT)
     OUT.shape = oldshape
     if (axis != 0):
         OUT = sb.swapaxes(OUT,axis,0)
