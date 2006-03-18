@@ -114,12 +114,21 @@ class basemodel(object):
         self.storegradnorms = False
         self.gradnorms = {}
         
+        # Do we seek to minimize the KL divergence between the model and a
+        # prior density p_0?  If not, set this to None; then we maximize the
+        # entropy.  If so, set this to an array of the log probability densities
+        # p_0(x) for each x in the sample space.  For bigmodel objects, set this
+        # to an array of the log probability densities p_0(x) for each x in the
+        # random sample from the auxiliary distribution.
+        self.priorlogprobs = None
+
         # By default, use the sample matrix sampleF to estimate the
         # entropy dual and its gradient.  Otherwise, set self.external to
         # the index of the sample feature matrix in the list self.externalFs.
         # This applies to 'bigmodel' objects only, but setting this here
         # simplifies the code in dual() and grad().
         self.external = None
+        self.externalpriorlogprobs = None
         
 
     def fit(self, K, algorithm='CG'):
@@ -341,10 +350,9 @@ class basemodel(object):
                 self.callback(self)
             self.callingback = False
             if L < self.mindual:
-                raise DivergenceError, \
-                  "the dual is below the threshold 'mindual' and may be diverging" \
-                  " to -inf.  Fix the constraints or lower the"\
-                  " threshold."
+                raise DivergenceError, "dual is below the threshold 'mindual'" \
+                        " and may be diverging to -inf.  Fix the constraints" \
+                        " or lower the threshold!"
             self.fnevals += 1
         
         # (We don't reset theta to its prior value.)
@@ -409,7 +417,7 @@ class basemodel(object):
         Z = E_aux_dist [{exp (theta.f(X))} / aux_dist(X)] using a sample
         from aux_dist.
         """
-        return math.exp(self.lognormconst())
+        return numpy.exp(self.lognormconst())
     
     
     def numconstraints(self):
@@ -576,12 +584,6 @@ class model(basemodel):
             raise ValueError, "not supported: specify both features and" \
                     " sample space or neither"
         
-        # Do we seek to minimize the KL divergence between the model and a
-        # prior density p_0?  If so, set this to an array of the log
-        # probability densities p_0(x) for each x in the sample space.  To
-        # maximize the entropy, set this to None.
-        self.priorlogprobs = None
-        
         
     def setfeaturesandsamplespace(self, f, samplespace):
         """Creates a new exponential model, where f is a list of feature
@@ -733,7 +735,7 @@ class model(basemodel):
                 return math.exp(numpy.dot(self.theta, f_x) - logZ)
         return p
     
-   
+  
 class conditionalmodel(model):
     """A conditional maximum-entropy (exponential-form) model p(x|w) on a
     discrete sample space.  This is useful for classification problems:
@@ -780,9 +782,10 @@ class conditionalmodel(model):
     
     
     """
-    def __init__(self, F, context_indices, counts):
+    #def __init__(self, f=None, samplespace=None, eventspace=None, classes=None):
+    def __init__(self, F, indices_context, counts):
         """The F parameter should be a (m x size) matrix, where size = number W
-        of contexts * size X of sample space.  The context_indices parameter
+        of contexts * size X of sample space.  The indices_context parameter
         should be a (W x X) matrix whose 'w'th row is the list of indices into
         F of elements of the sample space.  counts should be a vector of length
         W x X whose element [w * X + x] is the number of occurrences of x in
@@ -790,8 +793,8 @@ class conditionalmodel(model):
         """
         super(conditionalmodel, self).__init__()
         self.F = F
-        self.context_indices = context_indices
-        self.numcontexts = len(context_indices)
+        self.indices_context = indices_context
+        self.numcontexts = len(indices_context)
         
         # Set the empirical pmf:  p_tilde(x | c) = N(x | c) / \sum_y N(y | c).
         # If the denominator is zero for any context, define p_tilde(x | c) as
@@ -800,8 +803,8 @@ class conditionalmodel(model):
         counts = numpy.asarray(counts)
         p_tilde = numpy.array(counts, float)
         for w in xrange(self.numcontexts):
-            self.p_tilde_context[w] = s = counts[context_indices[w]].sum()
-            p_tilde[context_indices[w]] /= s
+            self.p_tilde_context[w] = s = counts[indices_context[w]].sum()
+            p_tilde[indices_context[w]] /= s
         self.p_tilde = numpy.nan_to_num(p_tilde)
         self.p_tilde_context /= counts.sum()
     
@@ -831,7 +834,7 @@ class conditionalmodel(model):
             
             self.logZ = numpy.zeros(self.numcontexts, float)
             for w in xrange(self.numcontexts):
-                self.logZ[w] = logsumexp(log_p_dot[self.context_indices[w]])
+                self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
             return self.logZ
         
         except AttributeError:
@@ -864,9 +867,12 @@ class conditionalmodel(model):
             if theta is not None:
                 self.setparams(theta)
         
-        Zs = self.lognormconst()
+        logZs = self.lognormconst()
         
-        L = numpy.dot(self.p_tilde_context, Zs) - numpy.dot(self.p_tilde, \
+        # Size of sample space
+        n = len(self.p_tilde) // self.numcontexts
+        assert int(n) == n    # p_tilde should be exactly divisible by numcontexts!
+        L = n * numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.p_tilde, \
                 innerprodtranspose(self.F, self.theta))
         
         if self.verbose and self.external is None:
@@ -918,12 +924,13 @@ class conditionalmodel(model):
         # First compute the vector K = (K_i) of expectations of the
         # features with respect to the distribution q(w) p(x | w), where
         # q(w) is the empirical pmf stored in self.p_tilde, with context
-        # indices stored in self.context_indices.  This is given by:
+        # indices stored in self.indices_context.  This is given by:
         # 
         #     K_i  =  \sum_{w, x} q(w, x) f_i(w, x)
         #
         # This is independent of the model parameters.
         K = innerprod(self.F, self.p_tilde)
+        # Where is this actually used?
         
         return model.fit(self, K, algorithm)
     
@@ -964,13 +971,13 @@ class conditionalmodel(model):
                 # Compute the norm constant (quickly!)
                 self.logZ = numpy.zeros(self.numcontexts, float)
                 for w in xrange(self.numcontexts):
-                    self.logZ[w] = logsumexp(log_p_dot[self.context_indices[w]])
+                    self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
             # Renormalize
             for w in xrange(self.numcontexts):
-                log_p_dot[self.context_indices[w]] -= self.logZ[w]
+                log_p_dot[self.indices_context[w]] -= self.logZ[w]
             return log_p_dot
-    
 
+    
 class bigmodel(basemodel):
     """A maximum-entropy (exponential-form) model on a large sample
     space.
@@ -989,12 +996,6 @@ class bigmodel(basemodel):
     
     def __init__(self):
         super(bigmodel, self).__init__()
-        
-        # Do we seek to minimize the KL divergence between the model and a
-        # prior density p_0?  If so, set this to an array of the log
-        # probability densities p_0(x) for each x in the sample.  To
-        # maximize the entropy, set this to None.
-        self.samplepriorlogprobs = None
         
         # Number of sample matrices to generate and use to estimate E and logZ
         self.matrixtrials = 1 
@@ -1183,15 +1184,18 @@ class bigmodel(basemodel):
         if self.external is None:
             thetadotF = innerprodtranspose(self.sampleF, self.theta)
             logw = thetadotF - self.samplelogprobs
+            # Are we minimizing KL divergence between the model and a prior
+            # density p_0?
+            if self.priorlogprobs is not None:
+                logw += self.priorlogprobs
         else:
             e = self.external
             thetadotF = innerprodtranspose(self.externalFs[e], self.theta)
             logw = thetadotF - self.externallogprobs[e]
-        
-        # Are we minimizing KL divergence between the model and a prior
-        # density p_0?
-        if self.samplepriorlogprobs is not None:
-            logw += self.samplepriorlogprobs
+            # Are we minimizing KL divergence between the model and a prior
+            # density p_0?
+            if self.externalpriorlogprobs is not None:
+                logw += self.externalpriorlogprobs[e]
         
         # Good, we have our logw.  Now:
         self.logw = logw
@@ -1543,7 +1547,7 @@ class bigmodel(basemodel):
                 break
 
                       
-    def settestsamples(self, F_list, logprob_list, M):
+    def settestsamples(self, M, F_list, logprob_list, priorlogprob_list=None):
         """Sets the model to test itself every M iterations during
         fitting using the provided list of feature matrices, each
         representing a sample {x_j} from an auxiliary distribution q,
@@ -1553,13 +1557,19 @@ class bigmodel(basemodel):
         optimization, which could otherwise reflect the vagaries of the
         single sample being used for optimization, rather than the
         population as a whole.
+
+        If priorlogprob_list is not None, it should be a list of arrays
+        of log(p0(x_j)) values, j = 0,. ..., n - 1, specifying the prior
+        distribution p0 for the sample points x_j for each of the test
+        samples.
         """
         # Sanity check 
         assert len(F_list) == len(logprob_list)
         
+        self.testevery = M
         self.externalFs = F_list
         self.externallogprobs = logprob_list
-        self.testevery = M
+        self.externalpriorlogprobs = priorlogprob_list
         
         # Store the dual and mean square error based on the internal and
         # external (test) samples.  (The internal sample is used

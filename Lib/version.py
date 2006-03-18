@@ -1,4 +1,4 @@
-version = '0.4.7'
+version = '0.4.9'
 
 import os
 svn_version_file = os.path.join(os.path.dirname(__file__),
