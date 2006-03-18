@@ -57,11 +57,10 @@ In the following, a *SciPy module* is defined as a Python package, say
 xxx, that is located in the Lib/ directory.  All SciPy modules should
 follow the following conventions:
 
-* Ideally, each SciPy module should be as self-contained as
-  possible.  That is, it should have minimal
-  dependencies on other packages or modules.  Even dependencies on other
-  SciPy modules should be kept to a minimum.  A dependency on NumPy is
-  of course assumed.
+* Ideally, each SciPy module should be as self-contained as possible.
+  That is, it should have minimal dependencies on other packages or
+  modules.  Even dependencies on other SciPy modules should be kept to a
+  minimum.  A dependency on NumPy is of course assumed.
 
 * Directory ``xxx/`` must contain 
 
