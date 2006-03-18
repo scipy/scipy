@@ -2,7 +2,8 @@
 
 # Author: Travis Oliphant
 
-__all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb','cumtrapz']
+__all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
+           'cumtrapz']
 
 from scipy.special.orthogonal import p_roots
 from numpy import sum, ones, add, diff, isinf, isscalar, \
@@ -33,7 +34,8 @@ def fixed_quad(func,a,b,args=(),n=5):
     x = real(x)
     ainf, binf = map(isinf,(a,b))
     if ainf or binf:
-        raise ValueError, "Gaussian quadrature is only available for finite limits."
+        raise ValueError, "Gaussian quadrature is only available for " \
+              "finite limits."
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args)), None
 
@@ -172,9 +174,11 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             returnshape = 1
             x=x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
-            raise ValueError, "If given, shape of x must be 1-d or the same as y."
+            raise ValueError, "If given, shape of x must be 1-d or the " \
+                  "same as y."
         if x.shape[axis] != N:
-            raise ValueError, "If given, length of x along axis must be the same as y."
+            raise ValueError, "If given, length of x along axis must be the " \
+                  "same as y."
     if N % 2 == 0:
         val = 0.0
         result = 0.0
@@ -206,7 +210,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     else:
         result = _basic_simps(y,0,N-2,x,dx,axis)
     if returnshape:
-        x=x.reshape(saveshape)
+        x = x.reshape(saveshape)
     return result
 
 def romb(y, dx=1.0, axis=-1, show=0):
@@ -252,13 +256,13 @@ def romb(y, dx=1.0, axis=-1, show=0):
                   " of a single data set."
         else:
             try:
-                precis=show[0]
+                precis = show[0]
             except (TypeError, IndexError):
-                precis=5
+                precis = 5
             try:
-                width=show[1]
+                width = show[1]
             except (TypeError, IndexError):
-                width=8
+                width = 8
             formstr = "%" + str(width) + '.' + str(precis)+'f'
 
             print "\n       Richardson Extrapolation Table for Romberg Integration       "
