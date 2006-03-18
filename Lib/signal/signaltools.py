@@ -8,7 +8,7 @@ from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2
 from numpy import polyadd, polymul, polydiv, polysub, \
      roots, poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
      ones, sin, linspace, real, extract, real_if_close, zeros, array, arange, \
-     where, sqrt, rank, NewAxis, argmax, product, cos, pi, exp, \
+     where, sqrt, rank, newaxis, argmax, product, cos, pi, exp, \
      ravel, size, less_equal, sum, r_, iscomplexobj, take, \
      argsort, allclose, expand_dims, unique, prod, sort, reshape, c_, \
      transpose, dot, any, minimum, maximum, mean
@@ -803,8 +803,8 @@ def slepian(M,width,sym=1):
     twoF = width/2.0
     alpha = (M-1)/2.0
     m = arange(0,M)-alpha
-    n = m[:,NewAxis]
-    k = m[NewAxis,:]
+    n = m[:,newaxis]
+    k = m[newaxis,:]
     AF = twoF*special.sinc(twoF*(n-k))
     [lam,vec] = linalg.eig(AF)
     ind = argmax(abs(lam))
@@ -837,7 +837,7 @@ def hilbert(x, N=None):
         h[1:(N+1)/2] = 2
 
     if len(x.shape) > 1:
-        h = h[:, NewAxis]
+        h = h[:, newaxis]
     x = ifft(Xf*h)
     return x
 
@@ -870,10 +870,10 @@ def hilbert2(x,N=None):
             h[1:(N1+1)/2] = 2
         exec("h%d = h" % (p+1), globals(), locals())
 
-    h = h1[:,NewAxis] * h2[NewAxis,:]
+    h = h1[:,newaxis] * h2[newaxis,:]
     k = len(x.shape)
     while k > 2:
-        h = h[:, NewAxis]
+        h = h[:, newaxis]
         k -= 1
     x = ifft2(Xf*h,axes=(0,1))
     return x

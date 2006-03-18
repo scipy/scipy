@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 18, 2005 by
-
 """
 Linear algebra routines
 =======================

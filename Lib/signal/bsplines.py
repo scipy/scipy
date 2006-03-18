@@ -1,8 +1,10 @@
 ## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
 
 import scipy.special
-from numpy import *
-from numpy.core.umath import sqrt, exp, greater, equal, cos, add, sin
+from numpy import sarray, logical_and, asarray, pi, zeros_like, \
+     piecewise, array, arctan2, tan, zeros, arange, floor
+from numpy.core.umath import sqrt, exp, greater, less, equal, cos, add, sin, \
+     less_equal, greater_equal
 from spline import *      # C-modules
 from scipy.misc import comb
 

@@ -694,10 +694,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         except ZeroDivisionError:
             rhok = 1000.
             print "Divide-by-zero encountered: rhok assumed large"
-        A1 = I - sk[:,numpy.NewAxis] * yk[numpy.NewAxis,:] * rhok
-        A2 = I - yk[:,numpy.NewAxis] * sk[numpy.NewAxis,:] * rhok
-        Hk = numpy.dot(A1,numpy.dot(Hk,A2)) + rhok * sk[:,numpy.NewAxis] \
-                 * sk[numpy.NewAxis,:]
+        A1 = I - sk[:,numpy.newaxis] * yk[numpy.newaxis,:] * rhok
+        A2 = I - yk[:,numpy.newaxis] * sk[numpy.newaxis,:] * rhok
+        Hk = numpy.dot(A1,numpy.dot(Hk,A2)) + rhok * sk[:,numpy.newaxis] \
+                 * sk[numpy.newaxis,:]
 
     if disp or full_output:
         fval = old_fval

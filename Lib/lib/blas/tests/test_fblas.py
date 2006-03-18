@@ -409,12 +409,12 @@ class base_ger(ScipyTestCase):
     def check_simple(self):
         alpha,a,x,y = self.get_data()
         # tranpose takes care of Fortran vs. C(and Python) memory layout
-        desired_a = alpha*transpose(x[:,NewAxis]*y) + a
+        desired_a = alpha*transpose(x[:,newaxis]*y) + a
         self.blas_func(x,y,a)
         assert_array_almost_equal(desired_a,a)
     def check_x_stride(self):
         alpha,a,x,y = self.get_data(x_stride=2)
-        desired_a = alpha*transpose(x[::2,NewAxis]*y) + a
+        desired_a = alpha*transpose(x[::2,newaxis]*y) + a
         self.blas_func(x,y,a,incx=2)
         assert_array_almost_equal(desired_a,a)
     def check_x_stride_assert(self):
@@ -426,7 +426,7 @@ class base_ger(ScipyTestCase):
             pass
     def check_y_stride(self):
         alpha,a,x,y = self.get_data(y_stride=2)
-        desired_a = alpha*transpose(x[:,NewAxis]*y[::2]) + a
+        desired_a = alpha*transpose(x[:,newaxis]*y[::2]) + a
         self.blas_func(x,y,a,incy=2)
         assert_array_almost_equal(desired_a,a)
 
@@ -465,8 +465,8 @@ class base_ger_complex(base_ger):
         alpha,a,x,y = self.get_data()
         # tranpose takes care of Fortran vs. C(and Python) memory layout
         a = a * array(0.,dtype = self.dtype)
-        #desired_a = alpha*transpose(x[:,NewAxis]*self.transform(y)) + a
-        desired_a = alpha*transpose(x[:,NewAxis]*y) + a
+        #desired_a = alpha*transpose(x[:,newaxis]*self.transform(y)) + a
+        desired_a = alpha*transpose(x[:,newaxis]*y) + a
         #self.blas_func(x,y,a,alpha = alpha)
         fblas.cgeru(x,y,a,alpha = alpha)
         print x, y
@@ -477,12 +477,12 @@ class base_ger_complex(base_ger):
 
     #def check_x_stride(self):
     #    alpha,a,x,y = self.get_data(x_stride=2)
-    #    desired_a = alpha*transpose(x[::2,NewAxis]*self.transform(y)) + a
+    #    desired_a = alpha*transpose(x[::2,newaxis]*self.transform(y)) + a
     #    self.blas_func(x,y,a,incx=2)
     #    assert_array_almost_equal(desired_a,a)
     #def check_y_stride(self):
     #    alpha,a,x,y = self.get_data(y_stride=2)
-    #    desired_a = alpha*transpose(x[:,NewAxis]*self.transform(y[::2])) + a
+    #    desired_a = alpha*transpose(x[:,newaxis]*self.transform(y[::2])) + a
     #    self.blas_func(x,y,a,incy=2)
     #    assert_array_almost_equal(desired_a,a)
 

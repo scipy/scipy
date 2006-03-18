@@ -19,7 +19,7 @@ from numpy.random import randint
 from scipy.stats import std, mean
 from numpy import common_type as _common_type
 from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, Int, \
-     NewAxis, arange, compress, equal, take
+     newaxis, arange, compress, equal, take
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis
@@ -173,7 +173,7 @@ def py_vq2(obs,code_book):
     No,Nf = shape(obs) #No = observation count, Nf = feature count
     # code books and observations should have same number of features
     assert(Nf == code_book.shape[1])
-    diff = obs[NewAxis,:,:]-code_book[:,NewAxis,:]
+    diff = obs[newaxis,:,:]-code_book[:,newaxis,:]
     dist = sqrt(sum(diff*diff,-1))
     code = argmin(dist,0)
     min_dist = minimum.reduce(dist,0) #the next line I think is equivalent

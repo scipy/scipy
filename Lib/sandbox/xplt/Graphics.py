@@ -22,20 +22,20 @@ def read_act(filename):
 Palette = {}
 
 def make_palettes():
-    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        ones((3,),dtype='B')[NewAxis,:]
+    p = arange(0,256,1,dtype='B')[:,newaxis] * \
+        ones((3,),dtype='B')[newaxis,:]
     Palette['gray'] = p
 
-    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        array([0,0,1],dtype='B')[NewAxis,:]
+    p = arange(0,256,1,dtype='B')[:,newaxis] * \
+        array([0,0,1],dtype='B')[newaxis,:]
     Palette['blue'] = p
 
-    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        array([1,0,0],dtype='B')[NewAxis,:]
+    p = arange(0,256,1,dtype='B')[:,newaxis] * \
+        array([1,0,0],dtype='B')[newaxis,:]
     Palette['red'] = p
 
-    p = arange(0,256,1,dtype='B')[:,NewAxis] * \
-        array([0,1,0],dtype='B')[NewAxis,:]
+    p = arange(0,256,1,dtype='B')[:,newaxis] * \
+        array([0,1,0],dtype='B')[newaxis,:]
     Palette['green'] = p
 
     p = zeros((256,3),'B')

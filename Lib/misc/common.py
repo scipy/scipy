@@ -8,7 +8,7 @@ import sys
 import numpy
 
 from numpy import exp, asarray, arange, \
-     NewAxis, hstack, product, array, typename, where, \
+     newaxis, hstack, product, array, typename, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
 __all__ = ['factorial','factorial2','factorialk','comb','who',
@@ -151,7 +151,7 @@ def central_diff_weights(Np,ndiv=1):
     from scipy import linalg
     ho = Np >> 1
     x = arange(-ho,ho+1.0)
-    x = x[:,NewAxis]
+    x = x[:,newaxis]
     X = x**0.0
     for k in range(1,Np):
         X = hstack([X,x**k])

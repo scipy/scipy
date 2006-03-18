@@ -228,7 +228,7 @@ def digitrevorder(x,base):
         rem = intd
         L += 1
     vec = r_[[base**n for n in range(L)]]
-    newx = x[NewAxis,:]*vec[:,NewAxis]
+    newx = x[sb.newaxis,:]*vec[:,sb.newaxis]
     # compute digits
     for k in range(L-1,-1,-1):
         newx[k] = x // vec[k]
