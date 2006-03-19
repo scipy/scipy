@@ -780,14 +780,14 @@ class conditionalmodel(model):
     
     
     """
-    #def __init__(self, f=None, samplespace=None, eventspace=None, classes=None):
     def __init__(self, F, indices_context, counts):
-        """The F parameter should be a (m x size) matrix, where size = number W
-        of contexts * size X of sample space.  The indices_context parameter
-        should be a (W x X) matrix whose 'w'th row is the list of indices into
-        F of elements of the sample space.  counts should be a vector of length
-        W x X whose element [w * X + x] is the number of occurrences of x in
-        context w in the training set.
+        """The F parameter should be a (m x size) matrix (probably sparse),
+        where size = number W of contexts * size X of sample space.  The
+        indices_context parameter should be a (W x X) matrix whose 'w'th row is
+        the list of indices into the elements of the sample space represented
+        by the columns of F.  counts should be a vector of length W x X whose
+        element [w * X + x] is the number of occurrences of x in context w in
+        the training set.
         """
         super(conditionalmodel, self).__init__()
         self.F = F
@@ -795,22 +795,12 @@ class conditionalmodel(model):
         self.numcontexts = len(indices_context)
         
         # Set the empirical pmf:  p_tilde(w, x) = N(w, x) / \sum_c \sum_y N(c, y).
-        # ***
-        # OLD: If the denominator is zero for any context, define p_tilde(x | w) as
-        # zero too by converting NaNs to zeros.
-        # ***
         self.p_tilde_context = numpy.empty(self.numcontexts, float)
         counts = numpy.asarray(counts)
         self.p_tilde = numpy.array(counts, float) / counts.sum()
         
         for w in xrange(self.numcontexts):
             self.p_tilde_context[w] = self.p_tilde[indices_context[w]].sum()
-    
-        #for w in xrange(self.numcontexts):
-        #    self.p_tilde_context[w] = s = counts[indices_context[w]].sum()
-        #    p_tilde[indices_context[w]] /= s
-        ## OLD: self.p_tilde = numpy.nan_to_num(p_tilde)
-        #self.p_tilde_context /= counts.sum()
     
     
     def lognormconst(self):
