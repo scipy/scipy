@@ -97,11 +97,7 @@ def pow_op(a, b):
         return ConstantNode(a**b)
     if isinstance(b, ConstantNode):
         x = b.value
-        if False: #get_optimization() == 'aggressive':
-            # This is disabled at the moment since for anything but leaf nodes
-            # it becomes a pessimization since the 'a' is computed multiple times
-            # what is needed is subexpression elimination in the compiler, then
-            # this can be usefully enabled.
+        if get_optimization() == 'aggressive':
             RANGE = 50 # Approximate break even point with pow(x,y)
             # Optimize all integral and half integral powers in [-RANGE, RANGE]
             # Note: for complex numbers RANGE could be larger.
@@ -122,7 +118,9 @@ def pow_op(a, b):
                         break
                     p = OpNode('mul', [p,p])
                 if ishalfpower:
-                    r = multiply(r, OpNode('sqrt', [a]))
+                    kind = common_kind([a])
+                    if kind == 'int': kind = 'float'
+                    r = multiply(r, OpNode('sqrt', [a], kind))
                 if r is None:
                     r = OpNode('ones_like', [a])
                 if x < 0:

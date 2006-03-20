@@ -108,7 +108,7 @@ def equal(a, b, exact):
     if exact:
         return (shape(a) == shape(b)) and alltrue(ravel(a) == ravel(b))
     else:
-        return (shape(a) == shape(b)) and allclose(ravel(a), ravel(b))
+        return (shape(a) == shape(b)) and (allclose(ravel(a), ravel(b)) or alltrue(ravel(a) == ravel(b))) # XXX report a bug?
 
 class test_expressions(NumpyTestCase):
     def check_expressions(self):
@@ -129,10 +129,7 @@ class test_expressions(NumpyTestCase):
                             neval = evaluate(expr, optimization=optimization)
                             assert equal(npval, neval, exact), "%s (%s, %s, %s)" % (expr, dtype.__name__, optimization, exact)
                         except AssertionError:
-                            if '**' in expr and dtype==int:
-                                self.warn("evaluate(%s) != eval(%s)" % (expr, expr))
-                            else:
-                                raise
+                            raise
                         except NotImplementedError:
                             self.warn('%r not implemented for %s' % (expr,dtype.__name__))
                         except:

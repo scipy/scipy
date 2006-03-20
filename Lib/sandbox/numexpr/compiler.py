@@ -5,6 +5,7 @@ from numexpr import interpreter
 from expressions import getKind
 
 class ASTNode(object):
+    cmpnames = ['astType', 'astKind', 'value', 'children']
     def __init__(self, astType='generic', astKind='unknown', value=None, children=()):
         object.__init__(self)
         self.astType = astType
@@ -13,10 +14,31 @@ class ASTNode(object):
         self.children = tuple(children)
         self.reg = None
 
+    def __eq__(self, other):
+        #~ if self.astType == 'alias':
+            #~ self = self.value
+        #~ if other.astType == 'alias':
+            #~ other = other.value
+        if not isinstance(other, ASTNode):
+            return False
+        for name in self.cmpnames:
+            if getattr(self, name) != getattr(other, name):
+                return False
+        return True
+        
+    def __hash__(self):
+        #~ if self.astType == 'alias':
+            #~ self = self.value
+        hashval = 0
+        for name in self.cmpnames:
+            hashval ^= hash(getattr(self, name))
+        return hashval
+
     def __str__(self):
         return 'AST(%s, %s, %s, %s, %s)' % (self.astType, self.astKind, 
                                             self.value, self.children, self.reg)
-    __repr__ = __str__
+    #~ __repr__ = __str__
+    def __repr__(self): return '<AST object at %s>' % id(self)
 
     def key(self):
         return (self.astType, self.astKind, self.value, self.children)
@@ -216,13 +238,25 @@ def assignBranchRegisters(inodes, registerMaker):
     for node in inodes:
         node.reg = registerMaker(node, temporary=True)
 
-def optimizeTemporariesAllocation(ast):
+
+def collapseDuplicateSubtrees(ast):
+    seen = {}
     for a in ast.allOf('op'):
-        # put result in one of the operand temporaries if there is one
         for c in a.children:
-            if c.reg.temporary and (c.astKind == a.astKind):
-                a.reg = c.reg
-                break
+            if c in seen:
+                target = seen[c]
+                c.astType = 'alias'
+                c.value = target
+                c.children = ()
+            else:
+                seen[c] = c
+
+
+def optimizeTemporariesAllocation(ast):
+    pass
+    # This should reuse registers once they become available. I (TAH) broke the
+    # original code when I added collapseDuplicateSubtrees and I haven't got
+    # around to successfully replacing it.
 
 def setOrderedRegisterNumbers(order, start):
     for i, node in enumerate(order):
@@ -232,7 +266,11 @@ def setOrderedRegisterNumbers(order, start):
 def setRegisterNumbersForTemporaries(ast, start):
     seen = 0
     signature = ''
+    aliases = []
     for node in ast.postorderWalk():
+        while node.astType == 'alias':
+            aliases.append(node)
+            node = node.value
         if node.reg.immediate:
             node.reg.n = node.value
             continue
@@ -241,6 +279,10 @@ def setRegisterNumbersForTemporaries(ast, start):
             reg.n = start + seen
             seen += 1
             signature += reg.node.astKind[0]
+    for node in aliases:
+        while node.value.astType == 'alias':
+            node.value = node.value.value
+        node.reg = node.value.reg
     return start + seen, signature
 
 def convertASTtoThreeAddrForm(ast):
@@ -257,7 +299,7 @@ def compileThreeAddrForm(program):
         if reg is None:
             return '\xff'
         elif reg.n < 0:
-            raise ValueError("negative value for register number %s" % (n,))
+            raise ValueError("negative value for register number %s" % (reg.n,))
         else:
             return chr(reg.n)
 
@@ -341,8 +383,6 @@ def numexpr(ex, input_order=None, precompiled=False, types=None, **kwargs):
         
     ast = typeCompileAst(ast)
 
-    input_order = getInputOrder(ast, input_order)
-    constants_order, constants = getConstants(ast)
     reg_num = [-1]
     def registerMaker(node, temporary=False):
         reg = Register(node, temporary=temporary)
@@ -353,6 +393,11 @@ def numexpr(ex, input_order=None, precompiled=False, types=None, **kwargs):
     assignLeafRegisters(ast.allOf('raw'), Immediate)
     assignLeafRegisters(ast.allOf('variable', 'constant'), registerMaker)
     assignBranchRegisters(ast.allOf('op'), registerMaker)
+
+    collapseDuplicateSubtrees(ast)
+
+    input_order = getInputOrder(ast, input_order)
+    constants_order, constants = getConstants(ast)
 
     optimizeTemporariesAllocation(ast)
 
@@ -440,10 +485,6 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     Not all operations are supported, and only real
     constants and arrays of floats currently work.
     """
-    
-    # XXX needs to sniff type dictionary. Will need fancy footwork to not be slow
-    # XXX for instance, break numexpr in half and do a half compile to get the names
-    # XXX find the types, then compile. Can cache both parts.
     if not isinstance(ex, str):
         raise ValueError("must specify expression as a string")
     # Get the names for this expression
@@ -478,8 +519,12 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     return compiled_ex(*arguments)
 
 
-if __name__ == '__main__':
-    a = b = c = d = e = numpy.arange(10, dtype=int)
-    expr = 'a**0.5'
-    print stringToExpression(expr, {'a':int}, {'optimization':"moderate"})
-    print evaluate(expr, optimization="moderate")
+
+if __name__ == "__main__":
+    a = b = c = d = numpy.arange(100)
+    expr = "(a+1)**7"
+    print numexpr(expr, optimization='aggressive', precompiled=True)
+    #~ x = evaluate(expr)
+    #~ y = eval(expr)
+    #~ print numpy.alltrue(x == y)
+    
