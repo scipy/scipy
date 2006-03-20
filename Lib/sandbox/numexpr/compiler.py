@@ -15,10 +15,10 @@ class ASTNode(object):
         self.reg = None
 
     def __eq__(self, other):
-        #~ if self.astType == 'alias':
-            #~ self = self.value
-        #~ if other.astType == 'alias':
-            #~ other = other.value
+        if self.astType == 'alias':
+            self = self.value
+        if other.astType == 'alias':
+            other = other.value
         if not isinstance(other, ASTNode):
             return False
         for name in self.cmpnames:
@@ -27,8 +27,8 @@ class ASTNode(object):
         return True
         
     def __hash__(self):
-        #~ if self.astType == 'alias':
-            #~ self = self.value
+        if self.astType == 'alias':
+            self = self.value
         hashval = 0
         for name in self.cmpnames:
             hashval ^= hash(getattr(self, name))
@@ -241,22 +241,42 @@ def assignBranchRegisters(inodes, registerMaker):
 
 def collapseDuplicateSubtrees(ast):
     seen = {}
+    aliases = []
     for a in ast.allOf('op'):
-        for c in a.children:
-            if c in seen:
-                target = seen[c]
-                c.astType = 'alias'
-                c.value = target
-                c.children = ()
-            else:
-                seen[c] = c
+        if a in seen:
+            target = seen[a]
+            a.astType = 'alias'
+            a.value = target
+            a.children = ()
+            aliases.append(a)
+        else:
+            seen[a] = a
+    # Set values and registers so optimizeTemporariesAllocation doesn't get confused
+    for a in aliases:
+        while a.value.astType == 'alias':
+            a.value = a.value.value
+        a.reg = a.value.reg
 
 
 def optimizeTemporariesAllocation(ast):
-    pass
-    # This should reuse registers once they become available. I (TAH) broke the
-    # original code when I added collapseDuplicateSubtrees and I haven't got
-    # around to successfully replacing it.
+    nodes = list(x for x in ast.postorderWalk() if x.reg.temporary)
+    users_of = dict((n.reg, set()) for n in nodes)
+    for n in reversed(nodes):
+        for c in n.children:
+            if c.reg.temporary:
+                users_of[c.reg].add(n)
+    unused = {'int' : set(), 'float' : set(), 'complex' : set()}
+    for n in nodes:
+        for reg, users in users_of.iteritems():
+            if n in users:
+                users.remove(n)
+                if not users:
+                    unused[reg.node.astKind].add(reg)
+        if unused[n.astKind]:
+            reg = unused[n.astKind].pop()
+            users_of[reg] = users_of[n.reg]
+            n.reg = reg
+
 
 def setOrderedRegisterNumbers(order, start):
     for i, node in enumerate(order):
@@ -268,7 +288,7 @@ def setRegisterNumbersForTemporaries(ast, start):
     signature = ''
     aliases = []
     for node in ast.postorderWalk():
-        while node.astType == 'alias':
+        if node.astType == 'alias':
             aliases.append(node)
             node = node.value
         if node.reg.immediate:
@@ -280,8 +300,6 @@ def setRegisterNumbersForTemporaries(ast, start):
             seen += 1
             signature += reg.node.astKind[0]
     for node in aliases:
-        while node.value.astType == 'alias':
-            node.value = node.value.value
         node.reg = node.value.reg
     return start + seen, signature
 
@@ -521,9 +539,12 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
 
 
 if __name__ == "__main__":
-    a = b = c = d = numpy.arange(100)
-    expr = "(a+1)**7"
+    from numpy import where, arctan2
+    a = b = c = d = numpy.arange(10.0)
+    expr = "a*b*c*d"
     print numexpr(expr, optimization='aggressive', precompiled=True)
+    print evaluate(expr)
+    print eval(expr)
     #~ x = evaluate(expr)
     #~ y = eval(expr)
     #~ print numpy.alltrue(x == y)
