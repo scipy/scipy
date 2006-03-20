@@ -80,7 +80,7 @@ def tilbert(x,h,period=None,
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then
 
-      y_j = -sqrt(-1)*coth(j*h*2*pi/period) * x_j
+      y_j = sqrt(-1)*coth(j*h*2*pi/period) * x_j
       y_0 = 0
 
     Input:
@@ -109,7 +109,7 @@ def tilbert(x,h,period=None,
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,h=h):
-            if k: return -1/tanh(h*k)
+            if k: return 1.0/tanh(h*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
@@ -128,7 +128,7 @@ def itilbert(x,h,period=None,
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then
 
-      y_j = sqrt(-1)*tanh(j*h*2*pi/period) * x_j
+      y_j = -sqrt(-1)*tanh(j*h*2*pi/period) * x_j
       y_0 = 0
 
     Optional input: see tilbert.__doc__
@@ -145,7 +145,7 @@ def itilbert(x,h,period=None,
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k,h=h):
-            if k: return tanh(h*k)
+            if k: return -tanh(h*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
@@ -164,7 +164,7 @@ def hilbert(x,
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then
 
-      y_j = -sqrt(-1)*sign(j) * x_j
+      y_j = sqrt(-1)*sign(j) * x_j
       y_0 = 0
 
     Notes:
@@ -181,9 +181,9 @@ def hilbert(x,
         if len(_cache)>20:
             while _cache: _cache.popitem()
         def kernel(k):
-            if k>0: return -1
-            elif k<0: return 1
-            return 0
+            if k>0: return 1.0
+            elif k<0: return -1.0
+            return 0.0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[n] = omega
     overwrite_x = tmp is not x and not hasattr(x,'__array__')
@@ -199,7 +199,7 @@ def ihilbert(x):
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then
 
-      y_j = sqrt(-1)*sign(j) * x_j
+      y_j = -sqrt(-1)*sign(j) * x_j
       y_0 = 0
     """
     return -hilbert(x)

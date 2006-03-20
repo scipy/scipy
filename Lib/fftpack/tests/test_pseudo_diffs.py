@@ -45,7 +45,7 @@ def direct_tilbert(x,h=1,period=None):
         period = 2*pi
     w = fftfreq(n)*h*2*pi/period*n
     w[0] = 1
-    w = -1j/tanh(w)
+    w = 1j/tanh(w)
     w[0] = 0j
     return ifft(w*fx)
 
@@ -55,14 +55,14 @@ def direct_itilbert(x,h=1,period=None):
     if period is None:
         period = 2*pi
     w = fftfreq(n)*h*2*pi/period*n
-    w = 1j*tanh(w)
+    w = -1j*tanh(w)
     return ifft(w*fx)
 
 def direct_hilbert(x):
     fx = fft(x)
     n = len (fx)
     w = fftfreq(n)*n
-    w = -1j*sign(w)
+    w = 1j*sign(w)
     return ifft(w*fx)
 
 def direct_ihilbert(x):
