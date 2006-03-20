@@ -678,7 +678,7 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
 static PyObject *
 NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *output = NULL, *a_inputs;
+    PyObject *output = NULL, *a_inputs = NULL;
     unsigned int n_inputs;
     int i, len = -1, r, pc_error;
     char **inputs;
@@ -697,6 +697,10 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     inputs = PyMem_New(char *, n_inputs);
+    if (!inputs) {
+        Py_DECREF(a_inputs);
+        return NULL;
+    }
     for (i = 0; i < n_inputs; i++) {
         PyObject *o = PyTuple_GetItem(args, i); /* borrowed ref */
         PyObject *a;
@@ -707,9 +711,8 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
         if (len == -1) { 
             char retsig = get_return_sig(self->program);
-            if (retsig != 'i' && retsig == 'f' && retsig == 'c') {
+            if (retsig != 'i' && retsig != 'f' && retsig != 'c') {
                 Py_XDECREF(a_inputs);
-                Py_XDECREF(output);
                 PyMem_Del(inputs);
                 return PyErr_Format(PyExc_RuntimeError,
                                     "bad return format %c", retsig);
@@ -717,7 +720,11 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             len = PyArray_SIZE(a);
             output = PyArray_SimpleNew(PyArray_NDIM(a),
                                        PyArray_DIMS(a),
-                                       typecode_from_char(retsig));            
+                                       typecode_from_char(retsig));    
+            if (!output) {
+                Py_XDECREF(a_inputs);
+                PyMem_Del(inputs);
+            }
         } else {
             if (len != PyArray_SIZE(a)) {
                 Py_XDECREF(a_inputs);
