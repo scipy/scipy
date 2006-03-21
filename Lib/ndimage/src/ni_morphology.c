@@ -90,8 +90,8 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
         NI_CoordinateList **coordinate_list)
 {
   maybelong struct_size = 0, *offsets = NULL, size, *oo, jj;
-  maybelong ssize, block_size = 0, *current = NULL;
-  int kk, border_flag_value, true, false, msk_value;
+  maybelong ssize, block_size = 0, *current = NULL, border_flag_value;
+  int kk, true, false, msk_value;  
   NI_Iterator ii, io, mi;
   NI_FilterIterator fi;
   Bool *ps, out = 0;
@@ -543,9 +543,9 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
       temp->next = border_elements;
       border_elements = temp;
       temp->index = jj;
-      temp->coordinates = (int*)malloc(input->nd * sizeof(int));
+      temp->coordinates = (maybelong*)malloc(input->nd * sizeof(maybelong));
       for(kk = 0; kk < input->nd; kk++)
-        temp->coordinates[kk] = ii.coordinates[kk];
+	temp->coordinates[kk] = ii.coordinates[kk];
     }
     NI_ITERATOR_NEXT(ii, pi);
   }
@@ -704,7 +704,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
     goto exit;
   
   if (features) {
-    int dummy;
+    maybelong dummy;
     /* initialize point iterator: */
     pf = NA_OFFSETDATA(features);
     if (!NI_InitPointIterator(features, &fi))

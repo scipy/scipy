@@ -341,7 +341,7 @@ case t ## _type:                            \
   break;
 
 int 
-NI_GeometricTransform(PyArrayObject *input, int (*map)(int*, double*, 
+NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*, 
         int, int, void*), void* map_data, PyArrayObject* matrix_ar,
         PyArrayObject* shift_ar, PyArrayObject *coordinates,
         PyArrayObject *output, int order, int mode, double cval)
@@ -548,7 +548,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(int*, double*,
     }
 
     if (!constant) {                                                         
-      int *ff = fcoordinates;               
+      maybelong *ff = fcoordinates;               
       for(hh = 0; hh < filter_size; hh++) {                           
         int idx = 0;
         if (edge) {                                                         
@@ -567,7 +567,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(int*, double*,
       }
     }
     if (!constant) {                                                         
-      int *ff = fcoordinates;               
+      maybelong *ff = fcoordinates;               
       t = 0.0;
       for(hh = 0; hh < filter_size; hh++) {                           
         double coeff = 0.0;
@@ -706,7 +706,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   for(jj = 0; jj < rank; jj++) {
     offsets[jj] = (maybelong*)malloc(odimensions[jj] * sizeof(maybelong));
     splvals[jj] = (double**)malloc(odimensions[jj] * sizeof(double*));
-    edge_offsets[jj] = (int**)malloc(odimensions[jj] * sizeof(double*));
+    edge_offsets[jj] = (maybelong**)malloc(odimensions[jj] * sizeof(maybelong*));
     if (!offsets[jj] || !splvals[jj] || !edge_offsets[jj]) {
       PyErr_NoMemory();
       goto exit;
@@ -840,7 +840,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     }                                                                         
       
     if (!zero) {                                                         
-      int *ff = fcoordinates;
+      maybelong *ff = fcoordinates;
       for(hh = 0; hh < filter_size; hh++) {
         int idx = 0;        
         if (edge) {
@@ -861,7 +861,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
       }
     }
     if (!zero) {                                                         
-      int *ff = fcoordinates;
+      maybelong *ff = fcoordinates;
       t = 0.0;
       for(hh = 0; hh < filter_size; hh++) {
         double coeff = 0.0;
