@@ -377,8 +377,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(int*, double*,
   }
 
   /* offsets used at the borders: */
-  edge_offsets = (int**)malloc(irank * sizeof(int*));
-  data_offsets = (int**)malloc(irank * sizeof(int*));
+  edge_offsets = (maybelong**)malloc(irank * sizeof(maybelong*));
+  data_offsets = (maybelong**)malloc(irank * sizeof(maybelong*));
   if (!edge_offsets || !data_offsets) {
     PyErr_NoMemory();
     goto exit;
@@ -386,7 +386,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(int*, double*,
   for(jj = 0; jj < irank; jj++)
     data_offsets[jj] = NULL;
   for(jj = 0; jj < irank; jj++) {
-    data_offsets[jj] = (int*)malloc((order + 1) * sizeof(int));
+    data_offsets[jj] = (maybelong*)malloc((order + 1) * sizeof(maybelong));
     if (!data_offsets[jj]) {
       PyErr_NoMemory();
       goto exit;
@@ -426,9 +426,9 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(int*, double*,
   po = NA_OFFSETDATA(output);
 
   /* make a table of all possible coordinates within the spline filter: */
-  fcoordinates = (int*)malloc(irank * filter_size * sizeof(int));
+  fcoordinates = (maybelong*)malloc(irank * filter_size * sizeof(maybelong));
   /* make a table of all offsets within the spline filter: */
-  foffsets = (int*)malloc(filter_size * sizeof(int));
+  foffsets = (maybelong*)malloc(filter_size * sizeof(maybelong));
   if (!fcoordinates || !foffsets) {
     PyErr_NoMemory();
     goto exit;
@@ -672,7 +672,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
   /* if the mode is 'constant' we need some temps later: */
   if (mode == NI_EXTEND_CONSTANT) {
-    zeros = (int**)malloc(rank * sizeof(int*));
+    zeros = (maybelong**)malloc(rank * sizeof(maybelong*));
     if (!zeros) {
       PyErr_NoMemory();
       goto exit;
@@ -680,7 +680,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     for(jj = 0; jj < rank; jj++)
       zeros[jj] = NULL;
     for(jj = 0; jj < rank; jj++) {
-      zeros[jj] = (int*)malloc(odimensions[jj] * sizeof(int));
+      zeros[jj] = (maybelong*)malloc(odimensions[jj] * sizeof(maybelong));
       if(!zeros[jj]) {
         PyErr_NoMemory();
         goto exit;
@@ -689,11 +689,11 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   }
   
   /* store offsets, along each axis: */
-  offsets = (int**)malloc(rank * sizeof(int*));
+  offsets = (maybelong**)malloc(rank * sizeof(maybelong*));
   /* store spline coefficients, along each axis: */
   splvals = (double***)malloc(rank * sizeof(double**));
   /* store offsets at all edges: */
-  edge_offsets = (int***)malloc(rank * sizeof(int**));
+  edge_offsets = (maybelong***)malloc(rank * sizeof(maybelong**));
   if (!offsets || !splvals || !edge_offsets) {
     PyErr_NoMemory();
     goto exit;
@@ -704,7 +704,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     edge_offsets[jj] = NULL;
   }
   for(jj = 0; jj < rank; jj++) {
-    offsets[jj] = (int*)malloc(odimensions[jj] * sizeof(int));
+    offsets[jj] = (maybelong*)malloc(odimensions[jj] * sizeof(maybelong));
     splvals[jj] = (double**)malloc(odimensions[jj] * sizeof(double*));
     edge_offsets[jj] = (int**)malloc(odimensions[jj] * sizeof(double*));
     if (!offsets[jj] || !splvals[jj] || !edge_offsets[jj]) {
@@ -742,7 +742,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         }
         offsets[jj][kk] = istrides[jj] * start;
         if (start < 0 || start + order >= idimensions[jj]) {
-          edge_offsets[jj][kk] = (int*)malloc((order + 1) * sizeof(int));
+          edge_offsets[jj][kk] = (maybelong*)malloc((order + 1) * sizeof(maybelong));
           if (!edge_offsets[jj][kk]) {
             PyErr_NoMemory();
             goto exit;
@@ -796,8 +796,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
   po = NA_OFFSETDATA(output);
     
   /* store all coordinates and offsets with filter: */
-  fcoordinates = (int*)malloc(rank * filter_size * sizeof(int));
-  foffsets = (int*)malloc(filter_size * sizeof(int));
+  fcoordinates = (maybelong*)malloc(rank * filter_size * sizeof(maybelong));
+  foffsets = (maybelong*)malloc(filter_size * sizeof(maybelong));
   if (!fcoordinates || !foffsets) {
     PyErr_NoMemory();
     goto exit;
