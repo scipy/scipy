@@ -57,6 +57,19 @@ class test_evaluate(NumpyTestCase):
         y = evaluate("(a + 2*b) / (1 + a + 4*b*b)")
         assert_array_equal(x, y)
 
+    def check_complex_expr(self):
+        def complex(a, b, complex=__builtins__.complex):
+            c = zeros(a.shape, dtype=complex)
+            c.real = a
+            c.imag = b
+            return c
+        a = arange(1e4)
+        b = arange(1e4)**1e-5
+        z = a + 1j*b
+        x = z.imag
+        x = sin(complex(a, b)).real + z.imag
+        y = evaluate("sin(complex(a, b)).real + z.imag")
+        assert_array_almost_equal(x, y)                                                                                                
 
 tests = [
 ('MISC', ['b*c+d*e',
@@ -64,9 +77,8 @@ tests = [
           'sinh(a)',
           '2*a + (cos(3)+5)*sinh(cos(b))',
           '2*a + arctan2(a, b)',
-          'where(0.1*a > arctan2(a, b), 2*a, arctan2(a,b))',
           'where(a, 2, b)',
-          'where(a-10, a, 2)',
+          'where(a-10.real, a, 2)',
           'cos(1+1)',
           '1+1',
           '1',
@@ -110,24 +122,38 @@ def equal(a, b, exact):
     else:
         return (shape(a) == shape(b)) and (allclose(ravel(a), ravel(b)) or alltrue(ravel(a) == ravel(b))) # XXX report a bug?
 
+class Skip(Exception): pass
+
 class test_expressions(NumpyTestCase):
     def check_expressions(self):
-        for dtype in [int, float]:
+        for dtype in [int, float, complex]:
             array_size = 100
             a = arange(array_size, dtype=dtype)
             a2 = zeros([array_size, array_size], dtype=dtype)
-            b = arange(array_size, dtype=dtype)
+            b = arange(array_size, dtype=dtype) / array_size
             c = arange(array_size, dtype=dtype)
             d = arange(array_size, dtype=dtype)
             e = arange(array_size, dtype=dtype)
+            if dtype == complex:
+                a = a.real
+                for x in [a2, b, c, d, e]:
+                    x += 1j
+                    x *= 1+1j
     
             for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:
                 for section_name, section_tests in tests:
                     for expr in section_tests:
+                        if dtype == complex and ('<' in expr or '>' in expr or '%' in expr):
+                            continue # skip complex comparisons
                         try:
-                            npval = eval(expr)
+                            try:
+                                npval = eval(expr)
+                            except:
+                                raise Skip()
                             neval = evaluate(expr, optimization=optimization)
                             assert equal(npval, neval, exact), "%s (%s, %s, %s)" % (expr, dtype.__name__, optimization, exact)
+                        except Skip:
+                            pass
                         except AssertionError:
                             raise
                         except NotImplementedError:

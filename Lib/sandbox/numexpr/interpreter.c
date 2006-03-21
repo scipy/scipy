@@ -2,6 +2,9 @@
 #include "structmember.h"
 #include "numpy/arrayobject.h"
 #include "math.h"
+
+#include "complex_functions.inc"
+
 #ifdef _WIN32
 #define inline __inline
 #endif
@@ -51,10 +54,26 @@ enum OpCodes {
     OP_FUNC_FF,
     OP_FUNC_FFF,
     
-    /* Ops returning Complex */
+    OP_EQ_ICC,
+    OP_NE_ICC,
     
+    OP_CAST_CI,
+    OP_ONES_LIKE_CC,
+    OP_CAST_CF,  
+    OP_COPY_CC,
+    OP_NEG_CC,
     OP_ADD_CCC,
-
+    OP_SUB_CCC,
+    OP_MUL_CCC,
+    OP_DIV_CCC,
+    OP_WHERE_CFCC, 
+    OP_FUNC_CC,
+    OP_FUNC_CCC,
+    
+    OP_REAL_FC,
+    OP_IMAG_FC,
+    OP_COMPLEX_CFF,
+    
 };
 
 /* returns the sig of the nth op, '\0' if no more ops -1 on failure */
@@ -119,8 +138,50 @@ static char op_signature(int op, int n) {
             if (n == 0 || n == 1 || n == 2) return 'f';
             if (n == 3) return 'n';
             break;
+        case OP_EQ_ICC:
+        case OP_NE_ICC:
+            if (n == 0) return 'i';
+            if (n == 1 || n == 2) return 'c';
+            break;
+        case OP_CAST_CI:
+            if (n == 0) return 'c';
+            if (n == 1) return 'i';
+            break;
+        case OP_CAST_CF:
+            if (n == 0) return 'c';
+            if (n == 1) return 'f';
+            break;
+        case OP_COPY_CC:
+        case OP_ONES_LIKE_CC:
+        case OP_NEG_CC:
+            if (n == 0 || n == 1) return 'c';
+            break;
         case OP_ADD_CCC:
+        case OP_SUB_CCC:
+        case OP_MUL_CCC:
+        case OP_DIV_CCC:
             if (n == 0 || n == 1 || n == 2) return 'c';
+            break;
+        case OP_WHERE_CFCC:
+            if (n == 0 || n == 2 || n == 3) return 'c';
+            if (n == 1) return 'f';
+            break;
+        case OP_FUNC_CC:
+            if (n == 0 || n == 1) return 'c';
+            if (n == 2) return 'n';
+            break;
+        case OP_FUNC_CCC:
+            if (n == 0 || n == 1 || n == 2) return 'c';
+            if (n == 3) return 'n';
+            break;
+        case OP_REAL_FC:
+        case OP_IMAG_FC:
+            if (n == 0) return 'f';
+            if (n == 1) return 'c';
+            break;
+        case OP_COMPLEX_CFF:
+            if (n == 0) return 'c';
+            if (n == 1 || n == 2) return 'f';
             break;
         default:
             return -1;
@@ -149,11 +210,33 @@ static char op_signature(int op, int n) {
 */
 
 enum FuncFFCodes { 
-    FUNC_SINH_FF = 0,
+    FUNC_SQRT_FF = 0,
+    FUNC_SIN_FF,
+    FUNC_COS_FF,
+    FUNC_TAN_FF,
+    FUNC_ARCSIN_FF,
+    FUNC_ARCCOS_FF,
+    FUNC_ARCTAN_FF,
+    FUNC_SINH_FF,
     FUNC_COSH_FF,
     FUNC_TANH_FF,
 
     FUNC_FF_LAST
+};
+
+typedef double (*FuncFFPtr)(double);
+
+FuncFFPtr functions_f[] = {
+    sqrt,
+    sin,
+    cos, 
+    tan,
+    asin,
+    acos,
+    atan,
+    sinh,
+    cosh,
+    tanh,
 };
 
 enum FuncFFFCodes {
@@ -162,21 +245,54 @@ enum FuncFFFCodes {
     FUNC_FFF_LAST
 };
 
-typedef double (*FuncFFPtr)(double);
-
-FuncFFPtr functions_f[] = {
-    sinh,
-    cosh,
-    tanh,
-};
-
 typedef double (*FuncFFFPtr)(double, double);
 
 FuncFFFPtr functions_ff[] = {
     fmod,
 };
 
+enum FuncCCCodes {
+    FUNC_SQRT_CC = 0,
+    FUNC_SIN_CC,
+    FUNC_COS_CC,
+    FUNC_TAN_CC,
+    FUNC_ARCSIN_CC,
+    FUNC_ARCCOS_CC,
+    FUNC_ARCTAN_CC,
+    FUNC_SINH_CC,
+    FUNC_COSH_CC,
+    FUNC_TANH_CC,
+    
+    FUNC_CC_LAST 
+};
 
+
+typedef void (*FuncCCPtr)(cdouble*, cdouble*);
+
+FuncCCPtr functions_cc[] = {
+    nc_sqrt,
+    nc_sin,
+    nc_cos, 
+    nc_tan,
+    nc_asin,
+    nc_acos,
+    nc_atan,
+    nc_sinh,
+    nc_cosh,
+    nc_tanh,
+};
+
+enum FuncCCCCodes {
+    FUNC_POW_CCC = 0,
+    
+    FUNC_CCC_LAST 
+};
+
+typedef void (*FuncCCCPtr)(cdouble*, cdouble*, cdouble*);
+
+FuncCCCPtr functions_ccc[] = {
+    nc_pow,
+};
 
 typedef struct
 {
@@ -354,8 +470,8 @@ check_program(NumExprObject *self)
                 argloc = pc+argno+2;
             }
             arg = program[argloc];
-                        
-            if (arg >= n_buffers) {
+            
+            if (sig != 'n' && arg >= n_buffers) {
                 PyErr_Format(PyExc_RuntimeError, "invalid program: buffer out of range (%i) at %i", arg, argloc);
                 return -1;
             }
@@ -367,6 +483,16 @@ check_program(NumExprObject *self)
                     }
                 } else if (op == OP_FUNC_FFF) {
                     if (arg < 0 || arg >= FUNC_FFF_LAST) {
+                        PyErr_Format(PyExc_RuntimeError, "invalid program: funccode out of range (%i) at %i", arg, argloc);
+                        return -1;
+                    }
+                } else if (op == OP_FUNC_CC) {
+                    if (arg < 0 || arg >= FUNC_CC_LAST) {
+                        PyErr_Format(PyExc_RuntimeError, "invalid program: funccode out of range (%i) at %i", arg, argloc);
+                        return -1;
+                    }
+                } else if (op == OP_FUNC_CCC) {
+                    if (arg < 0 || arg >= FUNC_CCC_LAST) {
                         PyErr_Format(PyExc_RuntimeError, "invalid program: funccode out of range (%i) at %i", arg, argloc);
                         return -1;
                     }
@@ -858,6 +984,7 @@ initinterpreter(void)
     add_op("cast_fi", OP_CAST_FI);
     add_op("copy_ff", OP_COPY_FF);
     add_op("ones_like_ff", OP_ONES_LIKE_FF);
+    add_op("neg_cc", OP_NEG_CC);
     add_op("neg_ff", OP_NEG_FF);
     add_op("add_fff", OP_ADD_FFF);
     add_op("sub_fff", OP_SUB_FFF);
@@ -874,7 +1001,26 @@ initinterpreter(void)
     add_op("func_ff", OP_FUNC_FF);
     add_op("func_fff", OP_FUNC_FFF);
     
+    add_op("eq_icc", OP_EQ_ICC);
+    add_op("ne_icc", OP_NE_ICC);
+    
+    add_op("cast_ci", OP_CAST_CI);
+    add_op("cast_cf", OP_CAST_CF);
+    add_op("copy_cc", OP_COPY_CC);
+    add_op("ones_like_cc", OP_ONES_LIKE_CC);
+    add_op("neg_cc", OP_NEG_CC);
     add_op("add_ccc", OP_ADD_CCC);
+    add_op("sub_ccc", OP_SUB_CCC);
+    add_op("mul_ccc", OP_MUL_CCC);
+    add_op("div_ccc", OP_DIV_CCC);
+    add_op("where_cfcc", OP_WHERE_CFCC);
+    add_op("func_cc", OP_FUNC_CC);
+    add_op("func_ccc", OP_FUNC_CCC);
+    
+    add_op("real_fc", OP_REAL_FC);
+    add_op("imag_fc", OP_IMAG_FC);
+    add_op("complex_cff", OP_COMPLEX_CFF);
+    
 #undef add_op
 
     if (PyModule_AddObject(m, "opcodes", d) < 0) return;
@@ -887,11 +1033,31 @@ initinterpreter(void)
     Py_XDECREF(o);                                      \
     if (r < 0) {PyErr_SetString(PyExc_RuntimeError, "add_func"); return;}
 
+    add_func("sqrt_ff", FUNC_SQRT_FF);
+    add_func("sin_ff", FUNC_SIN_FF);
+    add_func("cos_ff", FUNC_COS_FF);
+    add_func("tan_ff", FUNC_TAN_FF);
+    add_func("arcsin_ff", FUNC_ARCSIN_FF);
+    add_func("arccos_ff", FUNC_ARCCOS_FF);
+    add_func("arctan_ff", FUNC_ARCTAN_FF);
     add_func("sinh_ff", FUNC_SINH_FF);
     add_func("cosh_ff", FUNC_COSH_FF);
     add_func("tanh_ff", FUNC_TANH_FF);
     
     add_func("fmod_fff", FUNC_FMOD_FFF);
+    
+    add_func("sqrt_cc", FUNC_SQRT_CC);
+    add_func("sin_cc", FUNC_SIN_CC);
+    add_func("cos_cc", FUNC_COS_CC);
+    add_func("tan_cc", FUNC_TAN_CC);
+    add_func("arcsin_cc", FUNC_ARCSIN_CC);
+    add_func("arccos_cc", FUNC_ARCCOS_CC);
+    add_func("arctan_cc", FUNC_ARCTAN_CC);
+    add_func("sinh_cc", FUNC_SINH_CC);
+    add_func("cosh_cc", FUNC_COSH_CC);
+    add_func("tanh_cc", FUNC_TANH_CC);
+    
+    add_func("pow_ccc", FUNC_POW_CCC);
 
 #undef add_func
 

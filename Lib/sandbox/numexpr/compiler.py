@@ -95,7 +95,7 @@ def typeCompileAst(ast):
         # First just cast constants, then cast variables if necessary:
         for i, (have, want)  in enumerate(zip(basesig, sig)):
             if have != want: 
-                kind = {'i' : 'int', 'f' : 'float', 'd' : 'double'}[want]
+                kind = {'i' : 'int', 'f' : 'float', 'c' : 'complex'}[want]
                 if children[i].astType == 'constant':
                     children[i] = ASTNode('constant', kind, children[i].value)
                 else:
@@ -539,13 +539,5 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
 
 
 if __name__ == "__main__":
-    from numpy import where, arctan2
-    a = b = c = d = numpy.arange(10.0)
-    expr = "a*b*c*d"
-    print numexpr(expr, optimization='aggressive', precompiled=True)
-    print evaluate(expr)
-    print eval(expr)
-    #~ x = evaluate(expr)
-    #~ y = eval(expr)
-    #~ print numpy.alltrue(x == y)
+    pass
     

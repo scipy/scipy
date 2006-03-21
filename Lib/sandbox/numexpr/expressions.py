@@ -31,7 +31,7 @@ def ophelper(f):
     def func(*args):
         args = list(args)
         for i, x in enumerate(args):
-            if isinstance(x, (int, float)):
+            if isinstance(x, (int, float, complex)):
                 args[i] = x = ConstantNode(x)
             if not isinstance(x, ExpressionNode):
                 return NotImplemented
@@ -157,7 +157,9 @@ functions = {
     'arctan2' : func(numpy.arctan2, 'float'),
     'fmod' : func(numpy.fmod, 'float'),
 
-    'where' : where_func
+    'where' : where_func,
+        
+    'complex' : func(complex, 'complex'),
             }
 
 class ExpressionNode(object):
@@ -173,6 +175,18 @@ class ExpressionNode(object):
             self.children = ()
         else:
             self.children = tuple(children)
+    
+    def get_real(self):
+        if self.astType == 'constant':
+            return ConstantNode(complex(self.value).real)
+        return OpNode('real', (self,), 'float')
+    real = property(get_real)
+
+    def get_imag(self):
+        if self.astType == 'constant':
+            return ConstantNode(complex(self.value).imag)
+        return OpNode('imag', (self,), 'float')
+    imag = property(get_imag)
 
     def __str__(self):
         return '%s(%s, %s, %s)' % (self.__class__.__name__, self.value, self.astKind,
@@ -232,7 +246,6 @@ def normalizeConstant(x):
         try:
             y = converter(x)
         except StandardError, err:
-            print x, converter, err
             continue
         if x == y:
             return y
