@@ -33,11 +33,10 @@
 #define NI_INTERPOLATION_H
 
 int NI_SplineFilter1D(PyArrayObject*, int, int, PyArrayObject*);
-int 
-NI_GeometricTransform(PyArrayObject *input, int (*map)(maybelong*, double*, 
-        int, int, void*), void* map_data, PyArrayObject* matrix_ar,
-        PyArrayObject* shift_ar, PyArrayObject *coordinates,
-		      PyArrayObject *output, int order, int mode, double cval);
+int NI_GeometricTransform(PyArrayObject*, int (*)(maybelong*, double*, int, int,
+                          void*), void*, PyArrayObject*, PyArrayObject*,
+                          PyArrayObject*, PyArrayObject*, int, int,
+                          double);
 int NI_ZoomShift(PyArrayObject*, PyArrayObject*, PyArrayObject*,
                  PyArrayObject*, int, int, double);
 
