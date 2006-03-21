@@ -108,18 +108,6 @@ def typeCompileAst(ast):
                            [typeCompileAst(c) for c in children])
     return new_ast
 
-class ConstantNumexpr(object):
-    """Used to wrap a constant when numexpr returns a constant value.
-    """
-    def __init__(self, value):
-        self.value = value
-        self.input_names = []
-    def __call__(self, *args, **kargs):
-        return self.value
-    def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.value)
-    __repr__ = __str__
-
 
 class Register(object):
     def __init__(self, astnode, temporary=False):
@@ -347,7 +335,7 @@ def compileThreeAddrForm(program):
 context_info = [
     ('optimization', ('none', 'moderate', 'aggressive'), 'aggressive'),
                ]
-def get_context(map):
+def getContext(map):
     context = {}
     for name, allowed, default in context_info:
         value = map.pop(name, default)
@@ -356,40 +344,17 @@ def get_context(map):
         else:
             raise ValueError("'%s' must be one of %s" % (name, allowed))
     if map:
-        raise ValueError("Unknown keyword argument '%s'" % kwargs.pop())    
+        raise ValueError("Unknown keyword argument '%s'" % map.popitem()[0])    
     return context
 
 
-def numexpr(ex, input_order=None, precompiled=False, types=None, **kwargs):
-    """Compile an expression built using E.<variable> variables to a function.
-
-    ex can also be specified as a string "2*a+3*b".
-
-    The order of the input variables can be specified using the input_order
-    parameter.
-
-    If precompiled is set to True, a nonusable, easy-to-read representation of
-    the bytecode program used is returned instead.
-    """
-    # TAH: Eventually signature could replace input_order and types.
-    #
-    # TAH: right now I'm consdiering being able to specify only whether
-    # TAH: a given variable as either a scalar-int?/float/complex
-    # TAH: or as an array-int?/float/complex. This leaves a naming
-    # TAH: problem though, if we use float for float-arrays, what do
-    # TAH: use for float scalars. And vice-versa. For now just use float
-    # TAH: and double for float and double arrays and worry about the
-    # TAH: rest later. (Maybe the interpreter can convert 0-d arrays
-    # TAH: to constants on the fly -- that would fix the problem.)
-    if types is None: types = {}
-    
-    context = get_context(kwargs)
-
+def precompile(ex, signature=(), **kwargs):
+    types = dict(signature)
+    input_order = [name for (name, type) in signature]
+    context = getContext(kwargs)
             
     if isinstance(ex, str):
         ex = stringToExpression(ex, types, context)
-    if ex.astType == 'constant':
-        return ConstantNumexpr(ex.value)
 
     # the AST is like the expression, but the node objects don't have
     # any odd interpretations
@@ -397,7 +362,6 @@ def numexpr(ex, input_order=None, precompiled=False, types=None, **kwargs):
     ast = expressionToAST(ex)
     if ex.astType not in ('op'):
         ast = ASTNode('op', value='copy', astKind=ex.astKind, children=(ast,))
-        
         
     ast = typeCompileAst(ast)
 
@@ -426,23 +390,27 @@ def numexpr(ex, input_order=None, precompiled=False, types=None, **kwargs):
     r_constants = setOrderedRegisterNumbers(input_order, r_inputs)
     r_temps = setOrderedRegisterNumbers(constants_order, r_constants)
     r_end, tempsig = setRegisterNumbersForTemporaries(ast, r_temps)
-    n_temps = r_end - r_temps
 
     threeAddrProgram = convertASTtoThreeAddrForm(ast)
-
-    if precompiled:
-        return threeAddrProgram
-
-
-    program = compileThreeAddrForm(threeAddrProgram)
     input_names = tuple([a.value for a in input_order])
     signature = ''.join(types.get(x, float).__name__[0] for x in input_names)
-    nex = interpreter.NumExpr(signature=signature,
-                              tempsig=tempsig,
-                              program=program,
-                              constants=constants,
-                              input_names=input_names)
-    return nex
+
+    return threeAddrProgram, signature, tempsig, constants
+    
+
+def numexpr(ex, signature=(), **kwargs):
+    """Compile an expression built using E.<variable> variables to a function.
+
+    ex can also be specified as a string "2*a+3*b".
+
+    The order of the input variables and their types can be specified using the 
+    signature parameter, which is a list of (name, type) pairs.
+    
+    """
+    threeAddrProgram, inputsig, tempsig, constants = precompile(ex, signature, **kwargs)
+    program = compileThreeAddrForm(threeAddrProgram)
+    return interpreter.NumExpr(inputsig, tempsig, program, constants)
+    
 
 def disassemble(nex):
     rev_opcodes = {}
@@ -450,7 +418,7 @@ def disassemble(nex):
         rev_opcodes[interpreter.opcodes[op]] = op
     r_constants = 1 + nex.n_inputs
     r_temps = r_constants + len(nex.constants)
-    def get_arg(pc):
+    def getArg(pc):
         arg = ord(nex.program[pc])
         if arg == 0:
             return 'r0'
@@ -465,14 +433,14 @@ def disassemble(nex):
     source = []
     for pc in range(0, len(nex.program), 4):
         op = rev_opcodes.get(ord(nex.program[pc]))
-        dest = get_arg(pc+1)
-        arg1 = get_arg(pc+2)
-        arg2 = get_arg(pc+3)
+        dest = getArg(pc+1)
+        arg1 = getArg(pc+2)
+        arg2 = getArg(pc+3)
         source.append( (op, dest, arg1, arg2) )
     return source
 
 
-def get_type(a):
+def getType(a):
     tname = a.dtype.type.__name__
     if tname.startswith('int'):
         return int
@@ -483,7 +451,7 @@ def get_type(a):
     raise ValueError("unkown type %s" % tname)
         
 
-def get_ex_names(text, context): 
+def getExprNames(text, context): 
     ex = stringToExpression(text, {}, context)
     ast = expressionToAST(ex)
     input_order = getInputOrder(ast, None)
@@ -508,8 +476,8 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     # Get the names for this expression
     expr_key = (ex, tuple(sorted(kwargs.items())))
     if expr_key not in _names_cache:
-        context = get_context(kwargs)
-        _names_cache[expr_key] = get_ex_names(ex, context)
+        context = getContext(kwargs)
+        _names_cache[expr_key] = getExprNames(ex, context)
     names = _names_cache[expr_key]
     # Get the arguments based on the names.
     call_frame = sys._getframe(1)
@@ -524,20 +492,18 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
         except KeyError:
             a = global_dict[name]
         arguments.append(numpy.asarray(a))
-    # Create a types dictionary based on the arguments
-    types = {}
-    for name, arg in zip(names, arguments):
-        types[name] = get_type(arg)
-    # Can we look up the numexpr?
-    numexpr_key = expr_key + (tuple(sorted(types.items())),)
+    # Create a signature
+    signature = [(name, getType(arg)) for (name, arg) in zip(names, arguments)]
+    # Look up numexpr if possible
+    numexpr_key = expr_key + (tuple(signature),)
     try:
         compiled_ex = _numexpr_cache[numexpr_key]
     except KeyError:
-        compiled_ex = _numexpr_cache[numexpr_key] = numexpr(ex, types=types, **kwargs)
+        compiled_ex = _numexpr_cache[numexpr_key] = numexpr(ex, signature, **kwargs)
     return compiled_ex(*arguments)
 
 
 
 if __name__ == "__main__":
-    pass
+    print evaluate("5")
     

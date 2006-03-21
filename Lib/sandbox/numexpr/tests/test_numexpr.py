@@ -8,7 +8,7 @@ restore_path()
 class test_numexpr(NumpyTestCase):
     def check_simple(self):
         ex = 2.0 * E.a + 3.0 * E.b * E.c
-        func = numexpr(ex, input_order=('a', 'b', 'c'))
+        func = numexpr(ex, signature=[('a', float), ('b', float), ('c', float)])
         x = func(array([1., 2, 3]), array([4., 5, 6]), array([7., 8, 9]))
         assert_array_equal(x, array([  86.,  124.,  168.]))
 

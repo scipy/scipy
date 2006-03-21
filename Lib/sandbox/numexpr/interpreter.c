@@ -827,6 +827,20 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(a_inputs);
         return NULL;
     }
+
+    if (n_inputs == 0) {
+        /* allocate one space for scalar result */
+        char retsig = get_return_sig(self->program);
+        intp dims[1];
+        len = 1;
+        output = PyArray_SimpleNew(0,
+                                   &dims,
+                                   typecode_from_char(retsig));    
+        if (!output) {
+            Py_XDECREF(a_inputs);
+            PyMem_Del(inputs);
+        }
+    }
     for (i = 0; i < n_inputs; i++) {
         PyObject *o = PyTuple_GetItem(args, i); /* borrowed ref */
         PyObject *a;
