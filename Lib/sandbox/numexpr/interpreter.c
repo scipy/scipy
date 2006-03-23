@@ -323,14 +323,13 @@ NumExpr_dealloc(NumExprObject *self)
     PyMem_Del(self->mem);
     PyMem_Del(self->rawmem);
     PyMem_Del(self->memsteps);
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *
 NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    NumExprObject *self;
-    intp dims[] = {0}, dims2[] = {0,0};
-    self = (NumExprObject *)type->tp_alloc(type, 0);
+    NumExprObject *self = (NumExprObject *)type->tp_alloc(type, 0);
     if (self != NULL) {
 #define INIT_WITH(name, object) \
         self->name = object; \
@@ -551,13 +550,12 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         }
         for (i = 0; i < n_constants; i++) {
             PyObject *o;
-            if (!(o = PySequence_GetItem(o_constants, i))) {
+            if (!(o = PySequence_GetItem(o_constants, i))) { /* new reference */
                 Py_DECREF(constants);
                 Py_DECREF(constsig);
                 return -1;
             }
-            Py_INCREF(o);
-            PyTuple_SET_ITEM(constants, i, o);
+            PyTuple_SET_ITEM(constants, i, o); /* steals reference */
             if (PyInt_Check(o)) {
                 PyString_AS_STRING(constsig)[i] = 'i';
                 continue;
@@ -616,11 +614,6 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
        [n_inputs+1, n_inputs+n_consts+1)                  -> constants
        [n_inputs+n_consts+1, n_inputs+n_consts+n_temps+1) -> temps
     */
-    /* Fill in 'memsteps' for  output and inputs. 'mem' filled on call. */
-    memsteps[0] = size_from_char(get_return_sig(program));
-    for (i = 0; i < n_inputs; i++) {
-        memsteps[i+1] = size_from_char(PyString_AS_STRING(signature)[i]);
-    }
     /* Fill in 'mem' and 'rawmem' for constants */
     mem_offset = 0;
     for (i = 0; i < n_constants; i++) {
@@ -689,8 +682,6 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     #undef REPLACE_OBJ
     #undef INCREF_REPLACE_OBJ
     #undef REPLACE_MEM
-
-    #define REPLACE_MEM
     
     return check_program(self);
 }
@@ -722,7 +713,7 @@ struct vm_params {
 #define DO_BOUNDS_CHECK 1
 
 #if DO_BOUNDS_CHECK
-#define BOUNDS_CHECK(arg) if (((arg) >= params.r_end) && ((arg) != 255)) { \
+#define BOUNDS_CHECK(arg) if ((arg) >= params.r_end) { \
         *pc_error = pc;                                                 \
         return -2;                                                      \
     }
@@ -819,62 +810,78 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                             "keyword arguments are not accepted");
     }
     a_inputs = PyTuple_New(n_inputs);
-    if (!a_inputs) {
-        return NULL;
-    }
-    inputs = PyMem_New(char *, n_inputs);
-    if (!inputs) {
-        Py_DECREF(a_inputs);
-        return NULL;
-    }
+    if (!a_inputs) goto cleanup_and_exit;
 
-    if (n_inputs == 0) {
-        /* allocate one space for scalar result */
-        char retsig = get_return_sig(self->program);
-        intp dims[1];
-        len = 1;
-        output = PyArray_SimpleNew(0,
-                                   &dims,
-                                   typecode_from_char(retsig));    
-        if (!output) {
-            Py_XDECREF(a_inputs);
-            PyMem_Del(inputs);
-        }
-    }
+    inputs = PyMem_New(char *, n_inputs);
+    if (!inputs) goto cleanup_and_exit;
+
     for (i = 0; i < n_inputs; i++) {
-        PyObject *o = PyTuple_GetItem(args, i); /* borrowed ref */
+        PyObject *o = PyTuple_GET_ITEM(args, i); /* borrowed ref */
         PyObject *a;
         intp typecode = typecode_from_char(PyString_AS_STRING(self->signature)[i]);
-        if (typecode == -1) return NULL;
+        if (typecode == -1) goto cleanup_and_exit;
         a = PyArray_ContiguousFromAny(o, typecode, 0, 0);
-        if (!a) return NULL;
-        PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
-        if (len == -1) { 
-            char retsig = get_return_sig(self->program);
-            if (retsig != 'i' && retsig != 'f' && retsig != 'c') {
-                Py_XDECREF(a_inputs);
-                PyMem_Del(inputs);
-                return PyErr_Format(PyExc_RuntimeError,
-                                    "bad return format %c", retsig);
-            } 
-            len = PyArray_SIZE(a);
-            output = PyArray_SimpleNew(PyArray_NDIM(a),
-                                       PyArray_DIMS(a),
-                                       typecode_from_char(retsig));    
-            if (!output) {
-                Py_XDECREF(a_inputs);
-                PyMem_Del(inputs);
+        if (!a) goto cleanup_and_exit;
+        if (PyArray_DIMS(a) == 0) { 
+            /* Broadcast scalars */
+            int j, dims[1] = {BLOCK_SIZE1};
+            PyObject *b = PyArray_SimpleNew(1, dims, typecode); 
+            if (!b) goto cleanup_and_exit;
+            self->memsteps[i+1] = 0;
+            PyTuple_SET_ITEM(a_inputs, i, b);  /* steals reference */
+            inputs[i] = PyArray_DATA(b);
+            if (typecode == PyArray_LONG) {
+                long value = ((long*)PyArray_DATA(a))[0];
+                for (j = 0; j < BLOCK_SIZE1; j++) 
+                    ((long*)PyArray_DATA(b))[j] = value;
+            } else if (typecode == PyArray_DOUBLE) {
+                double value = ((double*)PyArray_DATA(a))[0];
+                for (j = 0; j < BLOCK_SIZE1; j++) 
+                    ((double*)PyArray_DATA(b))[j] = value;
+            } else if (typecode == PyArray_CDOUBLE) {
+                double rvalue = ((double*)PyArray_DATA(a))[0];
+                double ivalue = ((double*)PyArray_DATA(a))[1];
+                for (j = 0; j < 2*BLOCK_SIZE1; j+=2) { 
+                    ((double*)PyArray_DATA(b))[j] = rvalue;
+                    ((double*)PyArray_DATA(b))[j+1] = ivalue;
+                }
+            } else {
+                PyErr_SetString(PyExc_RuntimeError, "illegal typecode value");
+                goto cleanup_and_exit;
             }
-        } else {
-            if (len != PyArray_SIZE(a)) {
-                Py_XDECREF(a_inputs);
-                Py_XDECREF(output);
-                PyMem_Del(inputs);
-                return PyErr_Format(PyExc_ValueError,
-                                    "all inputs must be the same size");
+            Py_DECREF(a);
+        }  else {
+            self->memsteps[i+1] = size_from_char(PyString_AS_STRING(self->signature)[i]);
+            PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
+            inputs[i] = PyArray_DATA(a);
+            if (len == -1) { 
+                char retsig = get_return_sig(self->program);
+                self->memsteps[0] = size_from_char(retsig);
+                len = PyArray_SIZE(a);
+                output = PyArray_SimpleNew(PyArray_NDIM(a),
+                                           PyArray_DIMS(a),
+                                           typecode_from_char(retsig));    
+                if (!output) goto cleanup_and_exit;
+            } else {
+                if (len != PyArray_SIZE(a)) {
+                    Py_XDECREF(output);
+                    PyErr_SetString(PyExc_ValueError, "all inputs must be the same size");
+                    goto cleanup_and_exit;
+                }
             }
         }
-        inputs[i] = PyArray_DATA(a);
+    }
+    if (len == -1) {
+        /* either no inputs or they're all scalars, 
+           so allocate one space for scalar result */
+        char retsig = get_return_sig(self->program);
+        intp dims[1];
+        self->memsteps[0] = 0;
+        len = 1;
+        output = PyArray_SimpleNew(0,
+                                   dims,
+                                   typecode_from_char(retsig));    
+        if (!output) goto cleanup_and_exit;
     }
     
     r = run_interpreter(self, len, PyArray_DATA(output), inputs, &pc_error);
@@ -896,6 +903,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                             "unknown error occurred while running the program");
         }
     }
+cleanup_and_exit:
     Py_XDECREF(a_inputs);
     PyMem_Del(inputs);
     return output;

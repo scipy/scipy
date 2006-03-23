@@ -78,7 +78,7 @@ tests = [
           '2*a + (cos(3)+5)*sinh(cos(b))',
           '2*a + arctan2(a, b)',
           'where(a, 2, b)',
-          'where(a-10.real, a, 2)',
+          'where((a-10).real, a, 2)',
           'cos(1+1)',
           '1+1',
           '1',
@@ -126,41 +126,47 @@ class Skip(Exception): pass
 
 class test_expressions(NumpyTestCase):
     def check_expressions(self):
-        for dtype in [int, float, complex]:
-            array_size = 100
-            a = arange(array_size, dtype=dtype)
-            a2 = zeros([array_size, array_size], dtype=dtype)
-            b = arange(array_size, dtype=dtype) / array_size
-            c = arange(array_size, dtype=dtype)
-            d = arange(array_size, dtype=dtype)
-            e = arange(array_size, dtype=dtype)
-            if dtype == complex:
-                a = a.real
-                for x in [a2, b, c, d, e]:
-                    x += 1j
-                    x *= 1+1j
-    
-            for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:
-                for section_name, section_tests in tests:
-                    for expr in section_tests:
-                        if dtype == complex and ('<' in expr or '>' in expr or '%' in expr):
-                            continue # skip complex comparisons
-                        try:
+        for test_scalar in [0,1,2]:
+            for dtype in [int, float, complex]:
+                array_size = 100
+                a = arange(array_size, dtype=dtype)
+                a2 = zeros([array_size, array_size], dtype=dtype)
+                b = arange(array_size, dtype=dtype) / array_size
+                c = arange(array_size, dtype=dtype)
+                d = arange(array_size, dtype=dtype)
+                e = arange(array_size, dtype=dtype)
+                if dtype == complex:
+                    a = a.real
+                    for x in [a2, b, c, d, e]:
+                        x += 1j
+                        x *= 1+1j
+                if test_scalar == 1:
+                    a = a[array_size/2] 
+                if test_scalar == 2:
+                    b = b[array_size/2]
+                for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:
+                    for section_name, section_tests in tests:
+                        for expr in section_tests:
+                            if dtype == complex and (
+                                   '<' in expr or '>' in expr or '%' in expr
+                                   or "arctan2" in expr or "fmod" in expr):
+                                continue # skip complex comparisons
                             try:
-                                npval = eval(expr)
+                                try:
+                                    npval = eval(expr)
+                                except:
+                                    raise Skip()
+                                neval = evaluate(expr, optimization=optimization)
+                                assert equal(npval, neval, exact), "%s (%s, %s, %s, %s)" % (expr, test_scalar, dtype.__name__, optimization, exact)
+                            except Skip:
+                                pass
+                            except AssertionError:
+                                raise
+                            except NotImplementedError:
+                                self.warn('%r not implemented for %s' % (expr,dtype.__name__))
                             except:
-                                raise Skip()
-                            neval = evaluate(expr, optimization=optimization)
-                            assert equal(npval, neval, exact), "%s (%s, %s, %s)" % (expr, dtype.__name__, optimization, exact)
-                        except Skip:
-                            pass
-                        except AssertionError:
-                            raise
-                        except NotImplementedError:
-                            self.warn('%r not implemented for %s' % (expr,dtype.__name__))
-                        except:
-                            self.warn('numexpr error for expression %r' % (expr,))
-                            raise
+                                self.warn('numexpr error for expression %r' % (expr,))
+                                raise
 
 if __name__ == '__main__':
     NumpyTest().run()

@@ -156,7 +156,7 @@ nc_pow(cdouble *a, cdouble *b, cdouble *r)
                         nc_prod(&p,&p,&p);
                 }
                 r->real = aa.real; r->imag = aa.imag;
-                if (bi < 0) nc_quot(&nc_1, r, r);
+                if (br < 0) nc_quot(&nc_1, r, r);
                 return;
             }
         }

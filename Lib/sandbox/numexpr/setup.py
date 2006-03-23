@@ -4,7 +4,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('numexpr', parent_package, top_path)
     config.add_extension('interpreter',
                          sources = ['interpreter.c'],
-                         depends = ['interp_body.c'],
+                         depends = ['interp_body.c', 'complex_functions.inc', 'setup.py'],
                          extra_compile_args=['-O2', '-funroll-all-loops'],
                          )
     config.add_data_dir('tests')
