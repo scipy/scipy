@@ -1,0 +1,4 @@
+"""PySparse
+"""
+
+from spmatrix import *

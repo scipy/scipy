@@ -11,7 +11,7 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
 import numpy
 import sparsetools
 import _superlu
-import itertools, operator
+import itertools, operator, copy
 from bisect import bisect_left
 try:
     import umfpack
@@ -74,6 +74,7 @@ class spmatrix:
     """
 
     __array_priority__ = 10.1
+    ndim = 2
     def __init__(self, maxprint=MAXPRINT, allocsize=ALLOCSIZE):
         self.format = self.__class__.__name__[:3]
         if self.format == 'spm':
@@ -198,7 +199,14 @@ class spmatrix:
         csc = self.tocsc()
         return csc * other
 
+    def __truediv__(self, other):
+        if isscalar(other):
+            return self * (1./other)
+        else:
+            raise NotImplementedError, "sparse matrix division not yet supported"
+
     def __div__(self, other):
+        # Always do true division
         if isscalar(other):
             return self * (1./other)
         else:
@@ -373,12 +381,11 @@ class spmatrix:
         m, n = self.shape
         if axis==0:
             # sum over columns
-            # The following doesn't currently work, since NumPy matrices
-            # redefine multiplication:
-            #     o = asmatrix(ones((1, m), dtype=self.dtype))
-            #     return o * self
-            o = ones(m, dtype=self.dtype)
-            return asmatrix(self.rmatvec(o))
+            # Does the following multiplication work in NumPy now?
+            o = asmatrix(ones((1, m), dtype=self.dtype))
+            return o * self
+            # o = ones(m, dtype=self.dtype)
+            # return asmatrix(self.rmatvec(o))
         elif axis==1:
             # sum over rows
             o = asmatrix(ones((n, 1), dtype=self.dtype))
@@ -388,13 +395,21 @@ class spmatrix:
             m, n = self.shape
             o0 = asmatrix(ones((1, m), dtype=self.dtype))
             o1 = asmatrix(ones((n, 1), dtype=self.dtype))
-            # The following doesn't currently work, since NumPy matrices
-            # redefine multiplication:
-            #     o0 = asmatrix(ones(m, dtype=self.dtype))
-            #     return o0 * self * o1
-            # So we use:
             return (o0 * (self * o1)).A.squeeze()
 
+        else:
+            raise ValueError, "axis out of bounds"
+
+    def mean(self, axis=None):
+        """Average the matrix over the given axis.  If the axis is None,
+        average over both rows and columns, returning a scalar.
+        """
+        if axis==0:
+            return self.sum(0) * 1.0 / self.shape[0]
+        elif axis==1:
+            return self.sum(1) * 1.0 / self.shape[1]
+        elif axis is None:
+            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError, "axis out of bounds"
 
@@ -2326,7 +2341,35 @@ class lil_matrix(spmatrix):
                         self[i, col] = x
                 return
 
+    def __mul__(self, other):           # self * other
+        if isscalar(other) or (isdense(other) and rank(other)==0):
+            # Was: new = lil_matrix(self.shape, dtype=self.dtype)
+            new = self.copy()
+            if other == 0:
+                # Multiply by zero: return the zero matrix
+                return new
+            # Multiply this scalar by every element.
+            new.vals = [[val * other for val in rowvals] for rowvals in new.vals]
+            return new
+        else:
+            return self.dot(other)
 
+
+    def copy(self):
+        new = lil_matrix(self.shape, dtype=self.dtype)
+        new.vals = copy.deepcopy(self.vals)
+        new.rows = copy.deepcopy(self.rows)
+        return new
+    
+    
+    def __rmul__(self, other):          # other * self
+        if isscalar(other) or (isdense(other) and rank(other)==0):
+            # Multiplication by a scalar is symmetric
+            return self.__mul__(other)
+        else:
+            return spmatrix.__rmul__(self, other)
+    
+    
     def toarray(self):
         d = zeros(self.shape, dtype=self.dtype)
         for i, row in enumerate(self.rows):

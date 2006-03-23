@@ -780,27 +780,64 @@ class conditionalmodel(model):
     
     
     """
-    def __init__(self, F, indices_context, counts):
-        """The F parameter should be a (m x size) matrix (probably sparse),
-        where size = number W of contexts * size X of sample space.  The
-        indices_context parameter should be a (W x X) matrix whose 'w'th row is
-        the list of indices into the elements of the sample space represented
-        by the columns of F.  counts should be a vector of length W x X whose
-        element [w * X + x] is the number of occurrences of x in context w in
-        the training set.
+    def __init__(self, F, counts, numcontexts):
+        """The F parameter should be a (sparse) m x size matrix, where m
+        is the number of features and size is |W| * |X|, where |W| is the
+        number of contexts and |X| is the number of elements X in the
+        sample space.  The 'counts' parameter should be a row vector
+        stored as a (1 x |W|*|X|) sparse matrix, whose element i*|W|+j is
+        the number of occurrences of x_j in context w_i in the training
+        set.
+         
+        We store F and counts as sparse matrices, but as 1 x n row
+        vectors, for efficient multiplication of all contexts at once.
         """
         super(conditionalmodel, self).__init__()
         self.F = F
-        self.indices_context = indices_context
-        self.numcontexts = len(indices_context)
+        # self.indices_context = indices_context
+        # self.numcontexts = len(indices_context)
+        self.numcontexts = numcontexts
+        numsamplepoints = F.shape[1] // numcontexts
+        assert isinstance(numsamplepoints, int)
         
         # Set the empirical pmf:  p_tilde(w, x) = N(w, x) / \sum_c \sum_y N(c, y).
-        self.p_tilde_context = numpy.empty(self.numcontexts, float)
-        counts = numpy.asarray(counts)
-        self.p_tilde = numpy.array(counts, float) / counts.sum()
+        # This is always a rank-2 beast with only one row (to support either
+        # arrays or dense/sparse matrices.
+        if not hasattr(counts, 'shape'):
+            # Not an array or dense/sparse matrix
+            p_tilde = asarray(counts).reshape(1, len(counts))
+        else:
+            if counts.ndim == 1:
+                p_tilde = counts.reshape(1, len(counts))
+            elif counts.ndim == 2:
+                # It needs to be flat (a row vector)
+                if counts.shape[0] > 1:
+                    try:
+                        # Try converting to a row vector
+                        p_tilde = count.reshape((1, size))
+                    except AttributeError:
+                        raise ValueError, "the 'counts' object needs to be a row vector (1 x n) rank-2 array/matrix) or have a .reshape method to convert it into one"
+                else:
+                    p_tilde = counts
+        # Make a copy -- don't modify 'counts'
+        self.p_tilde = p_tilde / p_tilde.sum()
         
-        for w in xrange(self.numcontexts):
-            self.p_tilde_context[w] = self.p_tilde[indices_context[w]].sum()
+        # As an optimization, p_tilde need not be copied or stored at all!  It is only
+        # used by this function.
+
+        self.p_tilde_context = numpy.empty(numcontexts, float)
+        for w in xrange(numcontexts):
+            # Old: self.p_tilde_context[w] = self.p_tilde.getrow(w).sum()
+            self.p_tilde_context[w] = self.p_tilde[0, w * numsamplepoints : (w+1) * numsamplepoints].sum()
+
+        # Now compute the vector K = (K_i) of expectations of the
+        # features with respect to the empirical distribution p_tilde(w, x).
+        # This is given by:
+        # 
+        #     K_i = \sum_{w, x} q(w, x) f_i(w, x)
+        #
+        # This is independent of the model parameters.
+        self.K = flatten(innerprod(self.F, self.p_tilde.transpose()))
     
     
     def lognormconst(self):
@@ -815,6 +852,7 @@ class conditionalmodel(model):
         except AttributeError:
             pass
         
+        numcontexts = self.numcontexts
         # Has F = {f_i(x_j)} been precomputed?
         try:
             self.F
@@ -826,9 +864,9 @@ class conditionalmodel(model):
             if self.priorlogprobs is not None:
                 log_p_dot += self.priorlogprobs
             
-            self.logZ = numpy.zeros(self.numcontexts, float)
-            for w in xrange(self.numcontexts):
-                self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
+            self.logZ = numpy.zeros(numcontexts, float)
+            for w in xrange(numcontexts):
+                self.logZ[w] = logsumexp(log_p_dot[w*numcontexts:(w+1)*numcontexts])
             return self.logZ
         
         except AttributeError:
@@ -928,25 +966,16 @@ class conditionalmodel(model):
         for i=1,...,m, where k_i is the empirical expectation
             k_i = sum_{w, x} p_tilde(w, x) f_i(w, x).
         """
-        # First compute the vector K = (K_i) of expectations of the
-        # features with respect to the empirical distribution p_tilde(w, x).
-        # This is given by:
-        # 
-        #     K_i = \sum_{w, x} q(w, x) f_i(w, x)
-        #
-        # This is independent of the model parameters.
-        K = innerprod(self.F, self.p_tilde)
-        
+       
         # Call base class method
-        return model.fit(self, K, algorithm)
+        return model.fit(self, self.K, algorithm)
     
     
     def expectations(self):
         """The vector of expectations of the features with respect to the
-        distribution p_tilde(w) p(x | w), where p_tilde(w) is the empirical
-        probability mass function of each context w stored in
-        self.p_tilde_context, with context indices stored in
-        self.indices_context.
+        distribution p_tilde(w) p(x | w), where p_tilde(w) is the
+        empirical probability mass function value stored as
+        self.p_tilde_context[w].
         """
         try:
             self.F
@@ -954,15 +983,17 @@ class conditionalmodel(model):
             raise AttributeError, "need a pre-computed feature matrix F"
         # A pre-computed matrix of features exists
 
+        numcontexts = self.numcontexts
         p = self.pmf()
         # p is now an array representing p(x | w) for each class w.  Now we
         # multiply the appropriate elements by p_tilde(w) to get the hybrid pmf
         # required for conditional modelling:
-        for w in xrange(self.numcontexts):
-            p[self.indices_context[w]] *= self.p_tilde_context[w]
+        for w in xrange(numcontexts):
+            # p[self.indices_context[w]] *= self.p_tilde_context[w]
+            p[w * numcontexts : (w+1) * numcontexts] *= self.p_tilde_context[w]
         
         # Use the representation E_p[f(X)] = p . F
-        return innerprod(self.F, p)
+        return flatten(innerprod(self.F, p))
 
         # # We only override to modify the documentation string.  The code
         # # is the same as for the model class.
@@ -970,10 +1001,12 @@ class conditionalmodel(model):
     
 
     def logpmf(self):
-        """Returns an array of logarithms of the conditional probability mass
-        function (pmf) values p(x | c) for all pairs (c, x), where c are
-        contexts and x are points in the sample space.  The order of these is
-        as specified by self.indices_context, so log p(x | c) =
+        """Returns a (sparse) row vector of logarithms of the conditional
+        probability mass function (pmf) values p(x | c) for all pairs (c, x),
+        where c are contexts and x are points in the sample space.  The order
+        of these is log p(x | c) = logpmf()[c * numcontexts + x].
+        
+        # OLD: as specified by self.indices_context, so log p(x | c) =
         logpmf()[self.indices_context[c][x]].
         """
         # Have the features already been computed and stored?
@@ -985,7 +1018,8 @@ class conditionalmodel(model):
             # p(x | c) = exp(theta.f(x, c)) / sum_c[exp theta.f(x, c)]
             #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
             
-            log_p_dot = innerprodtranspose(self.F, self.theta)
+            numcontexts = self.numcontexts
+            log_p_dot = flatten(innerprodtranspose(self.F, self.theta))
             # Do we have a prior distribution p_0?
             if self.priorlogprobs is not None:
                 log_p_dot += self.priorlogprobs
@@ -993,12 +1027,14 @@ class conditionalmodel(model):
                 self.logZ
             except AttributeError:
                 # Compute the norm constant (quickly!)
-                self.logZ = numpy.zeros(self.numcontexts, float)
-                for w in xrange(self.numcontexts):
-                    self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
+                self.logZ = numpy.zeros(numcontexts, float)
+                for w in xrange(numcontexts):
+                    # self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
+                    self.logZ[w] = logsumexp(log_p_dot[w * numcontexts : (w+1) * numcontexts])
             # Renormalize
-            for w in xrange(self.numcontexts):
-                log_p_dot[self.indices_context[w]] -= self.logZ[w]
+            for w in xrange(numcontexts):
+                # log_p_dot[self.indices_context[w]] -= self.logZ[w]
+                log_p_dot[w * numcontexts : (w+1) * numcontexts] -= self.logZ[w]
             return log_p_dot
 
     

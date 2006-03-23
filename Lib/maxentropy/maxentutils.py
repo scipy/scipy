@@ -460,9 +460,13 @@ def columnvariances(A):
         return columnmeans((A-means)**2) * (m/(m-1.0))
 
 def flatten(a):
-    """Flattens the dense matrix 'a' into a 1-dimensional array
+    """Flattens the sparse matrix or dense array/matrix 'a' into a
+    1-dimensional array
     """
-    return numpy.asarray(a).flatten()
+    if sparse.isspmatrix(a):
+        return a.A.flatten()
+    else:
+        return numpy.asarray(a).flatten()
 
 class DivergenceError(Exception):
     """Exception raised if the entropy dual has no finite minimum.
