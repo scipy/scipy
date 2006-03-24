@@ -204,15 +204,13 @@ class test_dummy_array_indexing(ScipyTestCase):
     def check_1d_3(self):
         # dummy_array is "bug for bug" equiv to numpy.numerix.array
         # on wrapping of indices.
-        if nx.which[0] != "numarray":
-            self.generic_1d('a[-11:]')
+        self.generic_1d('a[-11:]')
     def check_1d_4(self):
         self.generic_1d('a[:1]')
     def check_1d_5(self):
         self.generic_1d('a[:-1]')
     def check_1d_6(self):
-        if nx.which[0] != "numarray":
-            self.generic_1d('a[:-11]')
+        self.generic_1d('a[:-11]')
     def check_1d_7(self):
         self.generic_1d('a[1:5]')
     def check_1d_8(self):
