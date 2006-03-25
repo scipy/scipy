@@ -3,7 +3,8 @@
 # Author: Travis Oliphant
 # 2003
 
-from numpy import *
+from numpy import asarray, zeros, insert, nan, mod, pi, extract, log, sqrt, \
+     exp, cos, sin, size, polyval, polyint, log10
 
 def sawtooth(t,width=1):
     """Returns a periodic sawtooth waveform with period 2*pi

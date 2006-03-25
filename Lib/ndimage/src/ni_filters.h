@@ -44,7 +44,7 @@ int NI_MinOrMaxFilter(PyArrayObject*, PyArrayObject*, PyArrayObject*,
                       PyArrayObject*, NI_ExtendMode, double, maybelong*,
                       int);
 int NI_RankFilter(PyArrayObject*, int, PyArrayObject*, PyArrayObject*,
-                  NI_ExtendMode, double, int *);
+                  NI_ExtendMode, double, maybelong*);
 int NI_GenericFilter1D(PyArrayObject*, int (*)(double*, maybelong, 
                        double*, maybelong, void*), void*, maybelong, int,
                        PyArrayObject*, NI_ExtendMode, double, maybelong);

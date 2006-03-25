@@ -703,8 +703,8 @@ NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
     PyErr_NoMemory();
     goto exit;
   }
-  block->coordinates = (int*)malloc(list->block_size * list->rank * 
-                                    sizeof(int));
+  block->coordinates = (maybelong*)malloc(list->block_size * list->rank * 
+					  sizeof(maybelong));
   if (!block->coordinates) {
     PyErr_NoMemory();
     goto exit;

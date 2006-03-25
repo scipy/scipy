@@ -595,7 +595,7 @@ break
 
 int NI_RankFilter(PyArrayObject* input, int rank, 
                   PyArrayObject* footprint, PyArrayObject* output,
-                  NI_ExtendMode mode, double cvalue, int *origins)
+                  NI_ExtendMode mode, double cvalue, maybelong *origins)
 {
   maybelong fsize, jj, filter_size = 0, border_flag_value;
   maybelong *offsets = NULL, *oo, size;
