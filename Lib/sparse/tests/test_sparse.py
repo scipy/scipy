@@ -239,7 +239,7 @@ class _test_cs(ScipyTestCase):
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
     def check_solve(self):
-        """ Test whether the lu_solve command segfaults, as reported by Nils
+        """Test whether the lu_solve command segfaults, as reported by Nils
         Wagner for a 64-bit machine, 02 March 2005 (EJS)
         """
         n = 20
@@ -256,38 +256,30 @@ class _test_cs(ScipyTestCase):
         xx = lu_factor(B).solve(r)
         # Don't actually test the output until we know what it should be ...
 
-class _test_fancy_indexing(ScipyTestCase):
-    """Tests slicing and fancy indexing features.  The tests for dok_matrix and
-    lil_matrix objects should derive from this class.  (EJS)
-    """
-    # This isn't implemented for dok_matrix objects yet:
-    #def check_sequence_indexing(self):
-    #    B = asmatrix(arange(50.).reshape(5,10))
-    #    A = self.spmatrix(B)
-    #    assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
-    #    assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
 
+class _test_horiz_slicing(ScipyTestCase):
+    """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
+    matrix types that implement this should derive from this class.
+    """
     def check_get_slice(self):
         """Test for new slice functionality (EJS)"""
         B = asmatrix(arange(50.).reshape(5,10))
-        A = dok_matrix(B)
-        assert_array_equal(B[2:5,0], A[2:5,0].todense())
-        assert_array_equal(B[:,1], A[:,1].todense())
+        A = self.spmatrix(B)
         assert_array_equal(B[1,:], A[1,:].todense())
-        # Both slicing and fancy indexing: not yet supported
-        # assert_array_equal(B[(1,2),:], A[(1,2),:].todense())
-        # assert_array_equal(B[(1,2,3),:], A[(1,2,3),:].todense())
+        assert_array_equal(B[1,2:5], A[1,2:5].todense())
 
-        # The following commands should all raise exceptions:
+        C = matrix([[1, 2, 1], [4, 0, 6], [0, 0, 0], [0, 0, 1]])
+        D = self.spmatrix(C)
+        assert_array_equal(C[1, 1:3], D[1, 1:3].todense())
+
+        # Now test slicing when a row contains only zeros
+        E = matrix([[1, 2, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
+        F = self.spmatrix(E)
+        assert_array_equal(E[1, 1:3], F[1, 1:3].todense())
+        assert_array_equal(E[2, -2:], F[2, -2:].A)
+        
+        # The following should raise exceptions:
         caught = 0
-        try:
-            a = A[-1,:]
-        except IndexError:
-            caught += 1
-        try:
-            a = A[:,-1]
-        except IndexError:
-            caught += 1
         try:
             a = A[:,11]
         except IndexError:
@@ -296,75 +288,186 @@ class _test_fancy_indexing(ScipyTestCase):
             a = A[6,3:7]
         except IndexError:
             caught += 1
-        assert caught == 4
+        assert caught == 2
 
-    def check_set_slice(self):
+    #def check_set_slice(self):
+    #    """Test for new slice functionality (EJS)"""
+    #    A = dok_matrix((5,10))
+    #    B = zeros((5,10), float)
+    #    A[:,0] = 1
+    #    B[:,0] = 1
+    #    assert_array_equal(A.todense(), B)
+    #    A[1,:] = 2
+    #    B[1,:] = 2
+    #    assert_array_equal(A.todense(), B)
+    #    A[:,:] = 3
+    #    B[:,:] = 3
+    #    assert_array_equal(A.todense(), B)
+    #    A[1:5, 3] = 4
+    #    B[1:5, 3] = 4
+    #    assert_array_equal(A.todense(), B)
+    #    A[1, 3:6] = 5
+    #    B[1, 3:6] = 5
+    #    assert_array_equal(A.todense(), B)
+    #    A[1:4, 3:6] = 6
+    #    B[1:4, 3:6] = 6
+    #    assert_array_equal(A.todense(), B)
+    #    A[1, 3:10:3] = 7
+    #    B[1, 3:10:3] = 7
+    #    assert_array_equal(A.todense(), B)
+    #    A[1:5, 0] = range(1,5)
+    #    B[1:5, 0] = range(1,5)
+    #    assert_array_equal(A.todense(), B)
+    #    A[0, 1:10:2] = xrange(1,10,2)
+    #    B[0, 1:10:2] = xrange(1,10,2)
+    #    assert_array_equal(A.todense(), B)
+    #    caught = 0
+    #    # The next 6 commands should raise exceptions
+    #    try:
+    #        A[0,0] = range(100)
+    #    except TypeError:
+    #        caught += 1
+    #    try:
+    #        A[0,0] = arange(100)
+    #    except TypeError:
+    #        caught += 1
+    #    try:
+    #        A[0,:] = range(100)
+    #    except ValueError:
+    #        caught += 1
+    #    try:
+    #        A[:,1] = range(100)
+    #    except ValueError:
+    #        caught += 1
+    #    try:
+    #        A[:,1] = A.copy()
+    #    except:
+    #        caught += 1
+    #    try:
+    #        A[:,-1] = range(5)
+    #    except IndexError:
+    #        caught += 1
+    #    assert caught == 6
+
+
+class _test_vert_slicing(ScipyTestCase):
+    """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
+    matrix types that implement this should derive from this class.
+    """
+    def check_get_slice(self):
         """Test for new slice functionality (EJS)"""
-        A = dok_matrix((5,10))
-        B = zeros((5,10), float)
-        A[:,0] = 1
-        B[:,0] = 1
-        assert_array_equal(A.todense(), B)
-        A[1,:] = 2
-        B[1,:] = 2
-        assert_array_equal(A.todense(), B)
-        A[:,:] = 3
-        B[:,:] = 3
-        assert_array_equal(A.todense(), B)
-        A[1:5, 3] = 4
-        B[1:5, 3] = 4
-        assert_array_equal(A.todense(), B)
-        A[1, 3:6] = 5
-        B[1, 3:6] = 5
-        assert_array_equal(A.todense(), B)
-        A[1:4, 3:6] = 6
-        B[1:4, 3:6] = 6
-        assert_array_equal(A.todense(), B)
-        A[1, 3:10:3] = 7
-        B[1, 3:10:3] = 7
-        assert_array_equal(A.todense(), B)
-        A[1:5, 0] = range(1,5)
-        B[1:5, 0] = range(1,5)
-        assert_array_equal(A.todense(), B)
-        A[0, 1:10:2] = xrange(1,10,2)
-        B[0, 1:10:2] = xrange(1,10,2)
-        assert_array_equal(A.todense(), B)
+        B = asmatrix(arange(50.).reshape(5,10))
+        A = self.spmatrix(B)
+        assert_array_equal(B[2:5,0], A[2:5,0].todense())
+        assert_array_equal(B[:,1], A[:,1].todense())
+
+        C = matrix([[1, 2, 1], [4, 0, 6], [0, 0, 0], [0, 0, 1]])
+        D = self.spmatrix(C)
+        assert_array_equal(C[1:3, 1], D[1:3, 1].todense())
+        assert_array_equal(C[:, 2], D[:, 2].todense())
+
+        # Now test slicing when a column contains only zeros
+        E = matrix([[1, 0, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
+        F = self.spmatrix(E)
+        assert_array_equal(E[:, 1], F[:, 1].todense())
+        assert_array_equal(E[-2:, 2], F[-2:, 2].todense())
+        
+        # The following should raise exceptions:
         caught = 0
-        # The next 6 commands should raise exceptions
         try:
-            A[0,0] = range(100)
-        except TypeError:
-            caught += 1
-        try:
-            A[0,0] = arange(100)
-        except TypeError:
-            caught += 1
-        try:
-            A[0,:] = range(100)
-        except ValueError:
-            caught += 1
-        try:
-            A[:,1] = range(100)
-        except ValueError:
-            caught += 1
-        try:
-            A[:,1] = A.copy()
-        except:
-            caught += 1
-        try:
-            A[:,-1] = range(5)
+            a = A[:,11]
         except IndexError:
             caught += 1
-        assert caught == 6
+        try:
+            a = A[6,3:7]
+        except IndexError:
+            caught += 1
+        assert caught == 2
 
-    def check_advanced_indexing(self):
-        """Test for new indexing functionality (EJS)"""
+    #def check_set_slice(self):
+    #    """Test for new slice functionality (EJS)"""
+    #    A = dok_matrix((5,10))
+    #    B = zeros((5,10), float)
+    #    A[:,0] = 1
+    #    B[:,0] = 1
+    #    assert_array_equal(A.todense(), B)
+    #    A[1,:] = 2
+    #    B[1,:] = 2
+    #    assert_array_equal(A.todense(), B)
+    #    A[:,:] = 3
+    #    B[:,:] = 3
+    #    assert_array_equal(A.todense(), B)
+    #    A[1:5, 3] = 4
+    #    B[1:5, 3] = 4
+    #    assert_array_equal(A.todense(), B)
+    #    A[1, 3:6] = 5
+    #    B[1, 3:6] = 5
+    #    assert_array_equal(A.todense(), B)
+    #    A[1:4, 3:6] = 6
+    #    B[1:4, 3:6] = 6
+    #    assert_array_equal(A.todense(), B)
+    #    A[1, 3:10:3] = 7
+    #    B[1, 3:10:3] = 7
+    #    assert_array_equal(A.todense(), B)
+    #    A[1:5, 0] = range(1,5)
+    #    B[1:5, 0] = range(1,5)
+    #    assert_array_equal(A.todense(), B)
+    #    A[0, 1:10:2] = xrange(1,10,2)
+    #    B[0, 1:10:2] = xrange(1,10,2)
+    #    assert_array_equal(A.todense(), B)
+    #    caught = 0
+    #    # The next 6 commands should raise exceptions
+    #    try:
+    #        A[0,0] = range(100)
+    #    except TypeError:
+    #        caught += 1
+    #    try:
+    #        A[0,0] = arange(100)
+    #    except TypeError:
+    #        caught += 1
+    #    try:
+    #        A[0,:] = range(100)
+    #    except ValueError:
+    #        caught += 1
+    #    try:
+    #        A[:,1] = range(100)
+    #    except ValueError:
+    #        caught += 1
+    #    try:
+    #        A[:,1] = A.copy()
+    #    except:
+    #        caught += 1
+    #    try:
+    #        A[:,-1] = range(5)
+    #    except IndexError:
+    #        caught += 1
+    #    assert caught == 6
+
+
+class _test_fancy_indexing(ScipyTestCase):
+    """Tests fancy indexing features.  The tests for dok_matrix and
+    lil_matrix objects should derive from this class.
+    """
+    # This isn't implemented for dok_matrix objects yet:
+    #def check_sequence_indexing(self):
+    #    B = asmatrix(arange(50.).reshape(5,10))
+    #    A = self.spmatrix(B)
+    #    assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
+    #    assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
+
+    def check_fancy_indexing(self):
+        """Test for new indexing functionality"""
         B = ones((5,10), float)
         A = dok_matrix(B)
         # Write me!
+        
+        # Both slicing and fancy indexing: not yet supported
+        # assert_array_equal(B[(1,2),:], A[(1,2),:].todense())
+        # assert_array_equal(B[(1,2,3),:], A[(1,2,3),:].todense())
 
 
-class test_csr(_test_cs):
+
+class test_csr(_test_cs, _test_horiz_slicing):
     spmatrix = csr_matrix
 
     def check_constructor1(self):
@@ -398,7 +501,7 @@ class test_csr(_test_cs):
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
 
-class test_csc(_test_cs):
+class test_csc(_test_cs, _test_vert_slicing):
     spmatrix = csc_matrix
 
     def check_constructor1(self):
@@ -476,7 +579,7 @@ class test_dok(_test_cs, _test_fancy_indexing):
         csr=b.tocsr()
         assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
 
-class test_lil(_test_cs, _test_fancy_indexing):
+class test_lil(_test_cs, _test_fancy_indexing, _test_horiz_slicing):
     spmatrix = lil_matrix
     def check_mult(self):
         A = matrix(zeros((10,10)))
