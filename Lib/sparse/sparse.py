@@ -138,12 +138,12 @@ class spmatrix:
         return val
 
     def __repr__(self):
+        nnz = self.getnnz()
         format = self.getformat()
-        return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
-               "elements (space for %d)\n\tin %s format>" % \
-               (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
-                   _formats[format][1]))
-
+        return "<%dx%d sparse matrix of type '%s'\n" \
+               "\twith %d stored elements in %s format>" % \
+               (self.shape + (self.dtype.type, nnz, _formats[format][1]))
+    
     def __str__(self):
         nnz = self.getnnz()
         maxprint = self.getmaxprint()
@@ -525,8 +525,7 @@ class csc_matrix(spmatrix):
                 else:
                     # (data, ij) format
                     self.dtype = getdtype(dtype, s)
-                    temp = coo_matrix(s, ij, dims=dims, nzmax=nzmax, \
-                            dtype=dtype).tocsc()
+                    temp = coo_matrix((s, ij), dims=dims, dtype=dtype).tocsc()
                     self.shape = temp.shape
                     self.data = temp.data
                     self.rowind = temp.rowind
@@ -593,6 +592,13 @@ class csc_matrix(spmatrix):
         out.ftype = _transtabl[out.dtype.char]
         return out
 
+    def __repr__(self):
+        format = self.getformat()
+        return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
+               "elements (space for %d)\n\tin %s format>" % \
+               (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
+                   _formats[format][1]))
+    
     def __radd__(self, other):
         """ Function supporting the operation: self + other.
         """
@@ -896,9 +902,12 @@ class csc_matrix(spmatrix):
         return new
 
     def tocoo(self):
-        func = getattr(sparsetools, self.ftype+"csctocoo")
-        data, row, col = func(self.data, self.rowind, self.indptr)
-        return coo_matrix(data, (row, col), dims=self.shape)
+        if self.nnz == 0:
+            return coo_matrix(None, dims=self.shape, dtype=self.dtype)
+        else:
+            func = getattr(sparsetools, self.ftype+"csctocoo")
+            data, row, col = func(self.data, self.rowind, self.indptr)
+            return coo_matrix((data, (row, col)), dims=self.shape)
 
     def tocsr(self):
         return self.tocoo().tocsr()
@@ -1029,8 +1038,7 @@ class csr_matrix(spmatrix):
                     ijnew = ij.copy()
                     ijnew[:, 0] = ij[:, 1]
                     ijnew[:, 1] = ij[:, 0]
-                    temp = coo_matrix(s, ijnew, dims=dims, nzmax=nzmax,
-                                      dtype=dtype).tocsr()
+                    temp = coo_matrix((s, ijnew), dims=dims, dtype=dtype).tocsr()
                     self.shape = temp.shape
                     self.data = temp.data
                     self.colind = temp.colind
@@ -1096,6 +1104,13 @@ class csr_matrix(spmatrix):
         out.ftype = _transtabl[out.dtype.char]
         return out
 
+    def __repr__(self):
+        format = self.getformat()
+        return "<%dx%d sparse matrix of type '%s'\n\twith %d stored "\
+               "elements (space for %d)\n\tin %s format>" % \
+               (self.shape + (self.dtype.type, self.getnnz(), self.nzmax, \
+                   _formats[format][1]))
+    
     def __add__(self, other):
         # First check if argument is a scalar
         if isscalar(other) or (isdense(other) and rank(other)==0):
@@ -1272,6 +1287,13 @@ class csr_matrix(spmatrix):
             else:
                 ptrc = zeros((N+1,), intc)
             nnzc = 2*max(ptra[-1], ptrb[-1])
+            # Avoid an infinite loop when multiplying by a matrix with
+            # only zeros
+            if nnzc == 0:
+                if out == 'csr':
+                    return csr_matrix(newshape, dtype=dtypechar)
+                else:
+                    return csc_matrix(newshape, dtype=dtypechar)
             c = zeros((nnzc,), dtypechar)
             rowc = zeros((nnzc,), intc)
             ierr = irow = kcol = 0
@@ -1286,7 +1308,7 @@ class csr_matrix(spmatrix):
                 c = resize1d(c, newnnzc)
                 rowc = resize1d(rowc, newnnzc)
                 nnzc = newnnzc
-
+            
             if out == 'csr':
                 # Note: 'rowc' is deliberate
                 return csr_matrix((c, rowc, ptrc), dims=(M, N))
@@ -1373,9 +1395,12 @@ class csr_matrix(spmatrix):
             return self
 
     def tocoo(self):
-        func = getattr(sparsetools, self.ftype+"csctocoo")
-        data, col, row = func(self.data, self.colind, self.indptr)
-        return coo_matrix(data, (row, col), dims=self.shape)
+        if self.nnz == 0:
+            return coo_matrix(None, dims=self.shape, dtype=self.dtype)
+        else:
+            func = getattr(sparsetools, self.ftype+"csctocoo")
+            data, col, row = func(self.data, self.colind, self.indptr)
+            return coo_matrix((data, (row, col)), dims=self.shape)
 
     def tocsc(self):
         return self.tocoo().tocsc()
@@ -1501,13 +1526,6 @@ class dok_matrix(spmatrix, dict):
                 key = keys[k]
                 val += "  %s\t%s\n" % (str(key), str(self[key]))
         return val[:-1]
-
-    def __repr__(self):
-        nnz = self.getnnz()
-        format = self.getformat()
-        return "<%dx%d sparse matrix with %d stored "\
-               "elements in %s format>" % \
-               (self.shape + (nnz, _formats[format][1]))
 
     def get(self, key, default=0.):
         """This overrides the dict.get method, providing type checking
@@ -2016,22 +2034,41 @@ class dod_matrix(spmatrix):
 class coo_matrix(spmatrix):
     """ A sparse matrix in coordinate list format.
 
-    COO matrices are instantiated as follows:
+    COO matrices are created either as:
+        A = coo_matrix(None, dims=(m, n), [dtype])
+    for a zero matrix, or as:
         A = coo_matrix(obj, ij, [dims])
-    The dimensions are optional.  If supplied, we set (M, N) = dims.
+    where the dimensions are optional.  If supplied, we set (M, N) = dims.
     If not supplied, we infer these from the index arrays
     ij[:][0] and ij[:][1]
-
+    
     The arguments 'obj' and 'ij' represent three arrays:
         1. obj[:]: the entries of the matrix, in any order
         2. ij[:][0]: the row indices of the matrix entries
         3. ij[:][1]: the column indices of the matrix entries
-
+    
     So the following holds:
         A[ij[k][0], ij[k][1]] = obj[k]
     """
-    def __init__(self, obj, ij_in, dims=None, nzmax=None, dtype=None):
+    def __init__(self, arg1, dims=None, dtype=None):
         spmatrix.__init__(self)
+        if isinstance(arg1, tuple):
+            try:
+                obj, ij_in = arg1
+            except:
+                raise TypeError, "invalid input format"
+        elif arg1 is None:      # clumsy!  We should make ALL arguments
+                                # keyword arguments instead!
+            # Initialize an empty matrix.
+            if not isinstance(dims, tuple) or not isinstance(dims[0], int):
+                raise TypeError, "dimensions not understood"
+            self.shape = dims
+            self.dtype = getdtype(dtype, default=float)
+            self.data = array([])
+            self.row = array([])
+            self.col = array([])
+            self._check()
+            return
         self.dtype = getdtype(dtype, obj, default=float)
         try:
             # Assume the first calling convention
@@ -2054,9 +2091,6 @@ class coo_matrix(spmatrix):
             self.row = asarray(ij[0])
             self.col = asarray(ij[1])
             self.data = asarray(obj, dtype=self.dtype)
-            if nzmax is None:
-                nzmax = len(self.data)
-            self.nzmax = nzmax
             self._check()
         except Exception:
             raise TypeError, "invalid input format"
@@ -2069,8 +2103,6 @@ class coo_matrix(spmatrix):
         if (nnz != len(self.row)) or (nnz != len(self.col)):
             raise ValueError, "row, column, and data array must all be "\
                   "the same length"
-        if (self.nzmax < nnz):
-            raise ValueError, "nzmax must be >= nnz"
         self.nnz = nnz
         self.ftype = _transtabl.get(self.dtype.char,'')
 
@@ -2084,6 +2116,7 @@ class coo_matrix(spmatrix):
             return self.data, self.row, self.col
         l = zip(self.col, self.row, self.data)
         l.sort()
+        # This breaks when len(self.data) etc == 0.  Does this matter?
         col, row, data = list(itertools.izip(*l))
         self.col = asarray(col, intc)
         self.row = asarray(row, intc)
@@ -2098,20 +2131,26 @@ class coo_matrix(spmatrix):
         return self.data[num]
 
     def tocsc(self):
-        func = getattr(sparsetools, self.ftype+"cootocsc")
-        data, row, col = self._normalize()
-        a, rowa, ptra, ierr = func(self.shape[1], data, row, col)
-        if ierr:
-            raise RuntimeError, "error in conversion"
-        return csc_matrix((a, rowa, ptra), dims=self.shape)
+        if self.nnz == 0:
+            return csc_matrix(self.shape, dtype=self.dtype)
+        else:
+            func = getattr(sparsetools, self.ftype+"cootocsc")
+            data, row, col = self._normalize()
+            a, rowa, ptra, ierr = func(self.shape[1], data, row, col)
+            if ierr:
+                raise RuntimeError, "error in conversion"
+            return csc_matrix((a, rowa, ptra), dims=self.shape)
 
     def tocsr(self):
-        func = getattr(sparsetools, self.ftype+"cootocsc")
-        data, row, col = self._normalize(rowfirst=True)
-        a, cola, ptra, ierr = func(self.shape[0], data, col, row)
-        if ierr:
-            raise RuntimeError, "error in conversion"
-        return csr_matrix((a, cola, ptra), dims=self.shape)
+        if self.nnz == 0:
+            return csr_matrix(self.shape, dtype=self.dtype)
+        else:
+            func = getattr(sparsetools, self.ftype+"cootocsc")
+            data, row, col = self._normalize(rowfirst=True)
+            a, cola, ptra, ierr = func(self.shape[0], data, col, row)
+            if ierr:
+                raise RuntimeError, "error in conversion"
+            return csr_matrix((a, cola, ptra), dims=self.shape)
 
     def tocoo(self, copy=False):
         if copy:
@@ -2185,11 +2224,11 @@ class lil_matrix(spmatrix):
                 val += "  %s\t%s\n" % (str((i, j)), str(self.vals[i][pos]))
         return val[:-1]
 
-    def __repr__(self):
-        format = self.getformat()
-        return "<%dx%d sparse matrix with %d stored "\
-               "elements in %s format>" % \
-               (self.shape + (self.getnnz(), _formats[format][1]))
+    #def __repr__(self):
+    #    format = self.getformat()
+    #    return "<%dx%d sparse matrix with %d stored "\
+    #           "elements in %s format>" % \
+    #           (self.shape + (self.getnnz(), _formats[format][1]))
 
     def __getitem__(self, index):
         try:

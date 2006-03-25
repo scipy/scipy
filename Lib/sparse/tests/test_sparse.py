@@ -15,7 +15,8 @@ Run tests if sparse is not installed:
 """
 
 import numpy
-from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, asarray
+from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, asarray, \
+        int8, int16, int32, int64, float32, float64, complex64, complex128
 
 import random
 from numpy.testing import *
@@ -378,7 +379,7 @@ class test_csr(_test_cs):
         assert_equal(bsp.getnnz(),4)
         assert_equal(bsp.getformat(),'csr')
         assert_array_almost_equal(bsp.todense(),b)
-
+    
     def check_constructor2(self):
         b = zeros((6,6),'d')
         b[3,4] = 5
@@ -387,7 +388,7 @@ class test_csr(_test_cs):
         assert_array_equal(bsp.colind,[4])
         assert_array_equal(bsp.indptr,[0,0,0,0,1,1,1])
         assert_array_almost_equal(bsp.todense(),b)
-
+    
     def check_constructor3(self):
         b = matrix([[1,0],
                    [0,2],
@@ -397,6 +398,26 @@ class test_csr(_test_cs):
         assert_array_equal(bsp.colind,[0,1,0])
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
+    
+    def check_empty(self):
+        """Test manipulating empty matrices. Fails in SciPy SVN <= r1766
+        """
+        # This test should be made global (in _test_cs), but first we
+        # need a uniform argument order / syntax for constructing an
+        # empty sparse matrix. (coo_matrix is currently different).
+        shape = (5, 5)
+        for mytype in [int8, int16, int32, int64, float32, float64, \
+                complex64, complex128]:
+            a = self.spmatrix(shape, dtype=mytype)
+            b = a + a
+            c = 2 * a
+            d = a + a.tocsc()
+            e = a * a.tocoo()
+            assert_equal(e.A, a.A*a.A)
+            # These fail in all revisions <= r1766:
+            #assert(e.dtype.type == mytype)
+            #assert(e.A.dtype.type == mytype)
+
 
 class test_csc(_test_cs):
     spmatrix = csc_matrix
@@ -424,6 +445,26 @@ class test_csc(_test_cs):
         assert_array_almost_equal(bsp.data,[1,3,2])
         assert_array_equal(bsp.rowind,[0,2,1])
         assert_array_equal(bsp.indptr,[0,2,3])
+
+    def check_empty(self):
+        """Test manipulating empty matrices. Fails in SciPy SVN <= r1766
+        """
+        # This test should be made global (in _test_cs), but first we
+        # need a uniform argument order / syntax for constructing an
+        # empty sparse matrix. (coo_matrix is currently different).
+        shape = (5, 5)
+        for mytype in [int8, int16, int32, int64, float32, float64, \
+                complex64, complex128]:
+            a = self.spmatrix(shape, dtype=mytype)
+            b = a + a
+            c = 2 * a
+            d = a + a.tocsc()
+            e = a * a.tocoo()
+            assert_equal(e.A, a.A*a.A)
+            # These fail in all revisions <= r1766:
+            #assert(e.dtype.type == mytype)
+            #assert(e.A.dtype.type == mytype)
+
 
 class test_dok(_test_cs, _test_fancy_indexing):
     spmatrix = dok_matrix
