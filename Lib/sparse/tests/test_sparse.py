@@ -400,7 +400,7 @@ class test_csr(_test_cs):
         assert_array_almost_equal(bsp.todense(),b)
     
     def check_empty(self):
-        """Test manipulating empty matrices. Fails in SciPy SVN <= r1766
+        """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
         # This test should be made global (in _test_cs), but first we
         # need a uniform argument order / syntax for constructing an
@@ -414,9 +414,9 @@ class test_csr(_test_cs):
             d = a + a.tocsc()
             e = a * a.tocoo()
             assert_equal(e.A, a.A*a.A)
-            # These fail in all revisions <= r1766:
-            #assert(e.dtype.type == mytype)
-            #assert(e.A.dtype.type == mytype)
+            # These fail in all revisions <= r1768:
+            assert(e.dtype.type == mytype)
+            assert(e.A.dtype.type == mytype)
 
 
 class test_csc(_test_cs):
@@ -447,7 +447,7 @@ class test_csc(_test_cs):
         assert_array_equal(bsp.indptr,[0,2,3])
 
     def check_empty(self):
-        """Test manipulating empty matrices. Fails in SciPy SVN <= r1766
+        """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
         """
         # This test should be made global (in _test_cs), but first we
         # need a uniform argument order / syntax for constructing an
@@ -461,9 +461,9 @@ class test_csc(_test_cs):
             d = a + a.tocsc()
             e = a * a.tocoo()
             assert_equal(e.A, a.A*a.A)
-            # These fail in all revisions <= r1766:
-            #assert(e.dtype.type == mytype)
-            #assert(e.A.dtype.type == mytype)
+            # These fail in all revisions <= r1768:
+            assert(e.dtype.type == mytype)
+            assert(e.A.dtype.type == mytype)
 
 
 class test_dok(_test_cs, _test_fancy_indexing):
