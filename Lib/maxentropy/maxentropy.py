@@ -987,13 +987,14 @@ class conditionalmodel(model):
         # A pre-computed matrix of features exists
 
         numcontexts = self.numcontexts
+        S = self.numsamplepoints
         p = self.pmf()
         # p is now an array representing p(x | w) for each class w.  Now we
         # multiply the appropriate elements by p_tilde(w) to get the hybrid pmf
         # required for conditional modelling:
         for w in xrange(numcontexts):
             # p[self.indices_context[w]] *= self.p_tilde_context[w]
-            p[w * numcontexts : (w+1) * numcontexts] *= self.p_tilde_context[w]
+            p[w*S : (w+1)*S] *= self.p_tilde_context[w]
         
         # Use the representation E_p[f(X)] = p . F
         return flatten(innerprod(self.F, p))
@@ -1007,7 +1008,7 @@ class conditionalmodel(model):
         """Returns a (sparse) row vector of logarithms of the conditional
         probability mass function (pmf) values p(x | c) for all pairs (c, x),
         where c are contexts and x are points in the sample space.  The order
-        of these is log p(x | c) = logpmf()[c * numcontexts + x].
+        of these is log p(x | c) = logpmf()[c * numsamplepoints + x].
         
         # OLD: as specified by self.indices_context, so log p(x | c) =
         logpmf()[self.indices_context[c][x]].
