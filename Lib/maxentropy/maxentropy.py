@@ -797,8 +797,9 @@ class conditionalmodel(model):
         # self.indices_context = indices_context
         # self.numcontexts = len(indices_context)
         self.numcontexts = numcontexts
-        numsamplepoints = F.shape[1] // numcontexts
-        assert isinstance(numsamplepoints, int)
+        
+        S = F.shape[1] // numcontexts          # number of sample point
+        assert isinstance(S, int)
         
         # Set the empirical pmf:  p_tilde(w, x) = N(w, x) / \sum_c \sum_y N(c, y).
         # This is always a rank-2 beast with only one row (to support either
@@ -828,7 +829,7 @@ class conditionalmodel(model):
         self.p_tilde_context = numpy.empty(numcontexts, float)
         for w in xrange(numcontexts):
             # Old: self.p_tilde_context[w] = self.p_tilde.getrow(w).sum()
-            self.p_tilde_context[w] = self.p_tilde[0, w * numsamplepoints : (w+1) * numsamplepoints].sum()
+            self.p_tilde_context[w] = self.p_tilde[0, w*S : (w+1)*S].sum()
 
         # Now compute the vector K = (K_i) of expectations of the
         # features with respect to the empirical distribution p_tilde(w, x).
@@ -838,6 +839,7 @@ class conditionalmodel(model):
         #
         # This is independent of the model parameters.
         self.K = flatten(innerprod(self.F, self.p_tilde.transpose()))
+        self.numsamplepoints = S
     
     
     def lognormconst(self):
@@ -853,6 +855,7 @@ class conditionalmodel(model):
             pass
         
         numcontexts = self.numcontexts
+        S = self.numsamplepoints
         # Has F = {f_i(x_j)} been precomputed?
         try:
             self.F
@@ -866,7 +869,7 @@ class conditionalmodel(model):
             
             self.logZ = numpy.zeros(numcontexts, float)
             for w in xrange(numcontexts):
-                self.logZ[w] = logsumexp(log_p_dot[w*numcontexts:(w+1)*numcontexts])
+                self.logZ[w] = logsumexp(log_p_dot[w*S: (w+1)*S])
             return self.logZ
         
         except AttributeError:
@@ -1019,6 +1022,7 @@ class conditionalmodel(model):
             #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
             
             numcontexts = self.numcontexts
+            S = self.numsamplepoints
             log_p_dot = flatten(innerprodtranspose(self.F, self.theta))
             # Do we have a prior distribution p_0?
             if self.priorlogprobs is not None:
@@ -1030,11 +1034,11 @@ class conditionalmodel(model):
                 self.logZ = numpy.zeros(numcontexts, float)
                 for w in xrange(numcontexts):
                     # self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
-                    self.logZ[w] = logsumexp(log_p_dot[w * numcontexts : (w+1) * numcontexts])
+                    self.logZ[w] = logsumexp(log_p_dot[w*S : (w+1)*S])
             # Renormalize
             for w in xrange(numcontexts):
                 # log_p_dot[self.indices_context[w]] -= self.logZ[w]
-                log_p_dot[w * numcontexts : (w+1) * numcontexts] -= self.logZ[w]
+                log_p_dot[w*S : (w+1)*S] -= self.logZ[w]
             return log_p_dot
 
     
