@@ -95,9 +95,7 @@ class _test_cs(ScipyTestCase):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         assert_array_almost_equal([1,2,3,4]*M, dot([1,2,3,4], M.toarray()))
         row = matrix([[1,2,3,4]])
-        # This doesn't work since row*M computes incorrectly when row is 2d.
-        # NumPy needs special hooks for this.
-        # assert_array_almost_equal(row*M, row*M.todense())
+        assert_array_almost_equal(row*M, row*M.todense())
 
     def check_matvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
@@ -132,11 +130,7 @@ class _test_cs(ScipyTestCase):
         bsp = self.spmatrix(b)
         assert_array_almost_equal((asp*bsp).todense(), a*b)
         assert_array_almost_equal((asp*b).todense(), a*b)
-        # The following test fails, since the dense matrix a takes control
-        # of the multiplication, calling numpy.dot(), which fouls up
-        # our sparse matrix.  NumPy needs special hooks for this.
-        # assert_array_almost_equal((a*bsp).todense(), a*b)
-
+        assert_array_almost_equal((a*bsp).todense(), a*b)
         assert_array_almost_equal((a2*bsp).todense(), a*b)
 
         # Now try performing cross-type multplication:
@@ -145,28 +139,39 @@ class _test_cs(ScipyTestCase):
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal((asp*c).todense(), a*c)
-
-        # NumPy needs hooks to support this too:
-        # assert_array_almost_equal((a*csp).todense(), a*c)
+        
+        assert_array_almost_equal((a*csp).todense(), a*c)
         assert_array_almost_equal((a2*csp).todense(), a*c)
         csp = bsp.tocsr()
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal((asp*c).todense(), a*c)
 
-        # NumPy needs hooks to support this too:
-        # assert_array_almost_equal((a*csp).todense(), a*c)
+        assert_array_almost_equal((a*csp).todense(), a*c)
         assert_array_almost_equal((a2*csp).todense(), a*c)
         csp = bsp.tocoo()
         assert_array_almost_equal((asp*csp).todense(), a*c)
         assert_array_almost_equal((asp.matmat(csp)).todense(), a*c)
         assert_array_almost_equal((asp*c).todense(), a*c)
 
-        # NumPy needs hooks to support this too:
-        # assert_array_almost_equal((a*csp).todense(), a*c)
-
+        assert_array_almost_equal((a*csp).todense(), a*c)
         assert_array_almost_equal((a2*csp).todense(), a*c)
 
+        # Test provided by Andy Fraser, 2006-03-26
+        L = 30
+        frac = .3
+        random.seed(0) # make runs repeatable
+        A = self.spmatrix((L,2))
+        for i in xrange(L):
+            for j in xrange(2):
+                r = random.random()
+                if r < frac:
+                    A[i,j] = r/frac
+        B = A*A.T
+        assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
+        assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
+    
+    
     def check_tocoo(self):
         a = self.datsp.tocoo()
         assert_array_almost_equal(a.todense(), self.dat)
