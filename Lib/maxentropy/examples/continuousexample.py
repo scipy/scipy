@@ -22,7 +22,6 @@ __version__ =  '2.1'
 
 import sys
 from scipy import maxentropy
-# from scipy.sandbox import montecarlo
 from numpy import rand
 
 try:

@@ -8,9 +8,9 @@
     Consider the translation of the English word 'in' into French.  Suppose we
     notice the following facts in a corpus of parallel texts:
         
-        (1)    p(dans) + p(en) + p(a) + p(au cours de) + p(pendant) = 1
+        (1)    p(dans) + p(en) + p(à) + p(au cours de) + p(pendant) = 1
         (2)    p(dans | next English word = 'a' or 'the') = 8/10
-        (3)    p(dans | c) + p(a | c)  = 1/2   for all other c
+        (3)    p(dans | c) + p(à | c)  = 1/2   for all other c
         
     This code finds the probability distribution with maximal entropy
     subject to these constraints.
@@ -28,7 +28,8 @@ a_grave = u'\u00e0'
 
 samplespace = ['dans', 'en', a_grave, 'au cours de', 'pendant']
 contexts = ['happy', 'healthy', 'harold', 'a', 'the', 'beans']
-# Occurrences of French words, and their 'next English word' contexts, in a parallel corpus:
+# Occurrences of French words, and their 'next English word' contexts, in
+# a hypothetical parallel corpus:
 corpus = [('dans', 'a'), ('dans', 'a'), ('dans', 'a'), ('dans', 'the'), ('pendant', 'a')] + \
          [('dans', 'happy'), ('au cours de', 'healthy')]
 
@@ -163,16 +164,17 @@ p = model.probdist()
 
 print "\npmf table p(x | c), where c is the context 'the':"
 c = contexts.index('the')
-print p[indices_context[c]]
+print p[c*numsamplepoints:(c+1)*numsamplepoints]
 
 print "\nFitted distribution is:"
 print "c \ x \t",
 for label in samplespace:
     print label + "\t",
+
 for c, context in enumerate(contexts):
     print "\n" + context + "\t",
     for x, label in enumerate(samplespace):
-        print ("%.3f" % p[indices_context[c][x]]) + "\t",
+        print ("%.3f" % p[c*numsamplepoints+x]) + "\t",
 
 print
 
