@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
 """ Example use of the maximum entropy package for a classification task.
 
     An extension of the machine translation example from the paper 'A maximum
@@ -24,9 +24,9 @@ import math
 from scipy import maxentropy, sparse
 import numpy
 
-a_grave = u'\u00e0'
+# a_grave = u'\u00e0'
 
-samplespace = ['dans', 'en', a_grave, 'au cours de', 'pendant']
+samplespace = ['dans', 'en', 'à', 'au cours de', 'pendant']
 contexts = ['happy', 'healthy', 'harold', 'a', 'the', 'beans']
 # Occurrences of French words, and their 'next English word' contexts, in
 # a hypothetical parallel corpus:
@@ -43,7 +43,7 @@ def f1(x, c):
         return False
 
 def f2(x, c):
-    return (x=='dans' or x==a_grave) and c not in ['a', 'the']
+    return (x=='dans' or x=='à') and c not in ['a', 'the']
 
 f = [f0, f1, f2]
 
