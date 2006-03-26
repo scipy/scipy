@@ -212,7 +212,7 @@ def mmread(source):
                 k += 1
             line = source.readline()
         assert k==entries,`k,entries`
-        a = coo_matrix(data, (row, col), dims=(rows, cols), dtype=dtype)
+        a = coo_matrix((data, (row, col)), dims=(rows, cols), dtype=dtype)
     else:
         raise NotImplementedError,`rep`
 
