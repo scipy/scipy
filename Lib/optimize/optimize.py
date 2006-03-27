@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
-
 from __future__ import nested_scopes
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
@@ -16,36 +14,6 @@ from __future__ import nested_scopes
 #  Updated strong Wolfe conditions line search to use cubic-interpolation (Mar. 2004)
 
 # Minimization routines
-"""optimize.py
-
-A collection of general-purpose optimization routines
-
-
-N-D Algorithms
-===============
-fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls).
-fmin_powell ---      Powell (direction set) method (uses only function calls).
-fmin_cg     ---      Non-linear (Polak-Ribiere) conjugate gradient algorithm
-                       (can use function and gradient).
-fmin_bfgs   ---      Quasi-Newton method (Broyden-Fletcher-Goldfarb-Shanno
-                       (can use function and gradient).
-fmin_ncg    ---      Line-search Newton Conjugate Gradient (can use function,
-                       gradient and hessian).
-brute       ---      Perform a brute force search for the minimum
-                       with final optimization if desired.
-
-1-D Algorithms
-===============
-brent       ---      Use Brent's method (does not need inital guess)
-fminbound   ---      Bounded minimization for scalar functions on an
-                       interval using Brent's parabolic/golden mean method.
-golden      ---      Use Golden Section method (does not need initial guess)
-bracket     ---      Find a bracket containing the minimum.
-
-
-
-"""
-
 
 __all__ = ['fmin', 'fmin_powell','fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound','brent', 'golden','bracket','rosen','rosen_der',
