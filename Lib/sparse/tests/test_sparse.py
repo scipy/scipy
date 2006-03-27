@@ -16,7 +16,7 @@ Run tests if sparse is not installed:
 
 import numpy
 from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, asarray, \
-        int8, int16, int32, int64, float32, float64, complex64, complex128
+        float32, float64, complex64, complex128
 
 import random
 from numpy.testing import *
@@ -411,8 +411,7 @@ class test_csr(_test_cs):
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
-        for mytype in [int8, int16, int32, int64, float32, float64, \
-                complex64, complex128]:
+        for mytype in [float32, float64, complex64, complex128]:
             a = self.spmatrix(shape, dtype=mytype)
             b = a + a
             c = 2 * a
@@ -458,8 +457,7 @@ class test_csc(_test_cs):
         # need a uniform argument order / syntax for constructing an
         # empty sparse matrix. (coo_matrix is currently different).
         shape = (5, 5)
-        for mytype in [int8, int16, int32, int64, float32, float64, \
-                complex64, complex128]:
+        for mytype in [float32, float64, complex64, complex128]:
             a = self.spmatrix(shape, dtype=mytype)
             b = a + a
             c = 2 * a
