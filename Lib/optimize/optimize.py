@@ -18,21 +18,19 @@ from __future__ import nested_scopes
 # Minimization routines
 """optimize.py
 
-A collection of general-purpose optimization routines using Numeric
+A collection of general-purpose optimization routines
 
 
 N-D Algorithms
 ===============
 fmin        ---      Nelder-Mead Simplex algorithm (uses only function calls).
 fmin_powell ---      Powell (direction set) method (uses only function calls).
-fmin_cg     ---      Non-linear (Polak-Rubiere) conjugate gradient algorithm
+fmin_cg     ---      Non-linear (Polak-Ribiere) conjugate gradient algorithm
                        (can use function and gradient).
 fmin_bfgs   ---      Quasi-Newton method (Broyden-Fletcher-Goldfarb-Shanno
                        (can use function and gradient).
 fmin_ncg    ---      Line-search Newton Conjugate Gradient (can use function,
                        gradient and hessian).
-
-
 brute       ---      Perform a brute force search for the minimum
                        with final optimization if desired.
 
@@ -40,9 +38,8 @@ brute       ---      Perform a brute force search for the minimum
 ===============
 brent       ---      Use Brent's method (does not need inital guess)
 fminbound   ---      Bounded minimization for scalar functions on an
-                     interval using Brent's parabolic/golden_mean method.
-golden      --       Use Golden Section method (does not need initial guess)
-
+                       interval using Brent's parabolic/golden mean method.
+golden      ---      Use Golden Section method (does not need initial guess)
 bracket     ---      Find a bracket containing the minimum.
 
 
