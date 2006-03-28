@@ -6,7 +6,7 @@ Modified and extended by Ed Schofield and Robert Cimrman.
 
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   ArrayType, ceil, amax, rank, conj, searchsorted, ndarray,   \
-                  less, where, greater, array, transpose, ravel, empty, ones, \
+                  less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc
 import numpy
 import sparsetools
@@ -451,7 +451,7 @@ class csc_matrix(spmatrix):
                     dtype = s.dtype
                     func = getattr(sparsetools, _transtabl[dtype.char]+'fulltocsc')
                     ierr = irow = jcol = 0
-                    nnz = sum(ravel(s != 0.0))
+                    nnz = (s != 0.0).sum()
                     a = zeros((nnz,), self.dtype)
                     rowa = zeros((nnz,), intc)
                     ptra = zeros((N+1,), intc)
@@ -817,12 +817,13 @@ class csc_matrix(spmatrix):
             c = zeros((nnzc,), dtypechar)
             rowc = zeros((nnzc,), intc)
             ierr = irow = kcol = 0
-            while True:
+            while True: # loop in case first call runs out of memory.
                 c, rowc, ptrc, irow, kcol, ierr = func(M, a, rowa, ptra, b, rowb, ptrb, c, rowc, ptrc, irow, kcol, ierr)
                 if (ierr==0): break
-                # otherwise we were too small and must resize
+                # otherwise we were too small and must resize arrays
                 #  calculations continue where they left off...
-                percent_to_go = 1- (1.0*kcol) / N
+                print "Resizing...", kcol, irow, ierr
+                percent_to_go = 1- (1.0*kcol*M + irow) / (N*M)
                 newnnzc = int(ceil((1+percent_to_go)*nnzc))
                 c = resize1d(c, newnnzc)
                 rowc = resize1d(rowc, newnnzc)
@@ -2002,7 +2003,7 @@ class dok_matrix(spmatrix, dict):
             ikey0 = int(key[0])
             ikey1 = int(key[1])
             new[ikey0, ikey1] = self[key]
-        if amax(ravel(abs(new.imag))) == 0:
+        if abs(new.imag).max() == 0:
             new = new.real
         return new
 
