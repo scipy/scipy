@@ -315,7 +315,7 @@ c   successful completion (fix the ptr array)
 
       nnza = 0
       ierr = 0
-      write (*,*) m, n, numdia, diasize, nzmax
+c      write (*,*) "SDSD", m, n, numdia, diasize, nzmax
       do col = 0, n-1
 c   Loop through the offsets 
          do jj = 0, numdia-1

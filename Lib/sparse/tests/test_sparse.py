@@ -22,7 +22,8 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, spidentity, \
-        speye, lil_matrix, lu_factor
+        speye, lil_matrix
+from scipy.linsolve import splu
 restore_path()
 
 class _test_cs(ScipyTestCase):
@@ -259,7 +260,7 @@ class _test_cs(ScipyTestCase):
             A[i,i+1] = y[i]
             A[i+1,i] = numpy.conjugate(y[i])
         B = A.tocsc()
-        xx = lu_factor(B).solve(r)
+        xx = splu(B).solve(r)
         # Don't actually test the output until we know what it should be ...
 
 class _test_fancy_indexing(ScipyTestCase):
