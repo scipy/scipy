@@ -25,7 +25,7 @@ def configuration(parent_package='',top_path=None):
                           include_dirs = [umfpackInclude, scipyInclude],
                           libraries = ['cblas'],
                           extra_objects = umf_info['extra_objects'] )
-    config.add_scripts( 'test_umfpack.py' )
+    # config.add_scripts( 'test_umfpack.py' )
 
     return config
 
