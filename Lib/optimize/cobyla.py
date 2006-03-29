@@ -3,7 +3,7 @@
 Functions:
 fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             iprint=1, maxfun=1000)
-    Minimize a function using the Contrained Optimization BY Linear
+    Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method
 
 """
@@ -14,7 +14,7 @@ import _cobyla
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
                 iprint=1, maxfun=1000):
     """
-    Minimize a function using the Contrained Optimization BY Linear
+    Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method
 
     Arguments:

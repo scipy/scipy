@@ -1,9 +1,11 @@
 # 05.12.2005, c
+# last change: 27.03.2006
 def setup_package():
     from distutils.core import setup, Extension
     from glob import glob
     import os
     import os.path as op
+    import numpy
 
     moduleName = 'umfpack'
 
@@ -12,44 +14,27 @@ def setup_package():
     umfpackLib = op.join( umfpackDir, 'Lib' )
     amdLib = op.join( umfpackDir, '../AMD/Lib' )
 
-    scipyDir = op.normpath( '/home/share/software/' )
-    scipyInclude = op.join( scipyDir, 'include' )
+    scipyInclude = numpy.get_numpy_include()
 
-    ##
-    # The code below does not work - I don't know how to tell distutils
-    # to include the generated shadow class file _umfpack,py.
-##     _umfpack \
-##       = Extension( '__umfpack',
-##                    sources = ['umfpack.i'],
-##                    include_dirs = [umfpackInclude, scipyInclude],
-##                    swig_opts = ['-noruntime',  '-python', '-I'
-##                                 + umfpackInclude],
-##                    libraries = ['swigpy'],
-##                    extra_objects = [op.join( umfpackLib, 'libumfpack.a' )] )
-
-    ##
-    # So this is the work-around... (*)
-    swig_cmd = 'swig -noruntime -python -I%s %s.i' % (umfpackInclude,
-                                                      moduleName)
-    print 'running SWIG:', swig_cmd
-    os.system( swig_cmd )
-
-    _umfpack\
+    _umfpack \
       = Extension( '__umfpack',
-                   sources = ['umfpack_wrap.c'],
+                   sources = [op.join( 'umfpack', ii ) for ii in ['umfpack.i']],
+                   swig_opts = ['-I' + umfpackInclude],
                    include_dirs = [umfpackInclude, scipyInclude],
-                   libraries = ['swigpy', 'cblas'],
+                   libraries = ['cblas'],
                    extra_objects = [op.join( umfpackLib, 'libumfpack.a' ),
                                     op.join( amdLib, 'libamd.a' )] )
-
 
     setup( name = moduleName,
            description = 'Python bindings for UMFPACK v4.4',
            version = '4.4.0',
            author = 'Robert Cimrman',
            author_email = 'cimrman3 (at) ntc (dot) zcu (dot) cz',
-           py_modules = ['umfpack', '_umfpack'], # _umfpack (*)
-           ext_modules = [_umfpack] )
+           scripts = ['test_umfpack.py'],
+           ext_package  = 'umfpack',
+           ext_modules = [_umfpack],
+           package_dir  = {'umfpack' : 'umfpack'},
+           packages = ['umfpack'] )
 
 if __name__ == '__main__':
     setup_package()

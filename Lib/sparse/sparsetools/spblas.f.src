@@ -238,11 +238,13 @@ c     if memory ran-out at last attempt
       integer kk, ii, jjb, jb, cb, ia, nnzc
       <_t> val
 
+
+      nnzc = ierr
       ierr = 0
-      nnzc = ptrc(n)
       do kk = kcol, n-1
          do ii = irow, m-1
             if (nnzc.ge.nnzcmax) goto 999
+            irow = 0
             val = 0.0
 c   loop through the column array of b using the ptrb array
 c        so that we know which row we are on.
@@ -282,7 +284,7 @@ c   successful completion (fix the ptr array)
  999  continue
       kcol = kk
       irow = ii
-      ierr = 1
+      ierr = nnzc
 
       return
       end subroutine <_c>cscmucsr
@@ -313,11 +315,12 @@ c
       integer kk, ii, nnzc
       <_t> val
 
+      nnzc = ierr
       ierr = 0
-      nnzc = ptrc(n)
       do kk = kcol, n-1
          do ii = irow, m-1
             if (nnzc.ge.nnzcmax) goto 999
+            irow = 0
             val = 0.0
 c   loop through the non-zero rows of b
             do ib = ptrb(kk), ptrb(kk+1)-1
@@ -352,7 +355,7 @@ c   successful completion (fix the ptr array)
  999  continue
       kcol = kk
       irow = ii
-      ierr = 1
+      ierr = nnzc
 
       return
       end subroutine <_c>csrmucsc
@@ -382,10 +385,13 @@ c     intentended for re-entry if nnzcmax is not big enough
       integer kk, ii, jb, ia, ra, nnzc, cumsum
       <_t> val
       
-      ierr = 0
       nnzc = ierr
+      ierr = 0
       do kk = kcol, n-1
          do ii = irow, m-1
+            if (nnzc.ge.nnzcmax) goto 999
+c   reset the irow to 0
+            irow = 0
             val = 0.0
 c   loop through the row array of b for this column
             do jb = ptrb(kk), ptrb(kk+1)-1
@@ -399,7 +405,6 @@ c     see if aij is nonzero and if so add to val
             end do
             if (val.ne.0.0) then
 c     there is a non-zero value for this value of i and k
-               if (nnzc.ge.nnzcmax) goto 999
                c(nnzc) = val
                rowc(nnzc) = ii
                ptrc(kk+1) = ptrc(kk+1) + 1

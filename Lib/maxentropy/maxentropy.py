@@ -405,8 +405,22 @@ class basemodel(object):
         return G
             
         
-   
-   
+    def crossentropy(self, fx, log_prior_x=None):
+        """Returns the cross entropy H(q, p) of the empirical
+        distribution q of the data (with the given feature matrix fx)
+        with respect to the model p.  For discrete distributions this is
+        defined as:
+        
+            H(q, p) = n^{-1} \sum_{j=1}^n log p(x_j)
+        
+        where x_j are the data elements whose features are given by the
+        matrix {fx = f(x_j)}, j=1,...,n.
+        
+        For continuous distributions this makes no sense!
+        """
+        return self.logpdf(fx, log_prior_x).mean()
+    
+
     def normconst(self):
         """Returns the normalization constant, or partition function, for
         the current model.  Warning -- this may be too large to represent;
@@ -1472,7 +1486,7 @@ class bigmodel(basemodel):
         return p
      
     
-    def logpdf(self, fx):
+    def logpdf(self, fx, log_prior_x=None):
         """Returns the log of the estimated density p_theta(x) at the
         point x.  This is defined as:
             log p(x) = theta.f(x) - log Z
@@ -1485,14 +1499,24 @@ class bigmodel(basemodel):
         
         log Z is estimated using the sample provided with
         setsampleFgen().
+
+        The optional argument log_prior_x is the log of the prior density
+        p_0 at the point x (or at each point x_j if fx is 2-dimensional).
+        The log pdf of the model is then defined as
+            log p(x) = log p0(x) + theta.f(x) - log Z
+        and p then represents the model of minimum KL divergence D(p||p0)
+        instead of maximum entropy.
         """
         log_Z_est = self.lognormconst()
         if len(fx.shape) == 1:
-            return numpy.dot(self.theta, fx) - log_Z_est
+            logpdf = numpy.dot(self.theta, fx) - log_Z_est
         else:
-            return innerprodtranspose(fx, self.theta) - log_Z_est
-
-
+            logpdf = innerprodtranspose(fx, self.theta) - log_Z_est
+        if log_prior_x is not None:
+            logpdf += log_prior_x
+        return logpdf
+    
+    
     def stochapprox(self, K):
         """Tries to fit the model to the feature expectations K using
         stochastic approximation, with the Robbins-Monro stochastic

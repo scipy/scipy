@@ -28,6 +28,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import numpy
+if numpy.int_ == numpy.int64:
+    raise ImportError, "ndimage does not yet support 64-bit systems"
 from filters import *
 from fourier import *
 from interpolation import *

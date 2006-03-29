@@ -110,7 +110,8 @@ class dictsampler(object):
             raise ValueError, "sum of table frequencies must be > 0"
 
         self.sampler =  intsampler(self.probs)
-
+    
+    
     def sample(self, size, return_probs=0):
         """Generates a sample of the given size from the specified
         discrete distribution, optionally returning the probabilities

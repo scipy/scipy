@@ -54,13 +54,12 @@ numsamplepoints = len(samplespace)
 # F = numpy.array([[f_i(x, c) for c in contexts for x in samplespace] for f_i in f])
 
 # NEW: Sparse matrix version:
-# Not fully supported by scipy.sparse yet, which needs more complete slicing support.
-
 # Sparse matrices are only two dimensional in SciPy.  Store as m x size, where
 # size is |W|*|X|.  Constructing this matrix by looping over all features,
-# contexts, and points in the sample space, as here, is very slow.  This can
-# and should be done more efficiently, but doing so requires some knowledge of
-# the structure of the features.
+# contexts, and points in the sample space, as here, is possibly very slow.
+# This can and should be done more efficiently, but doing so requires some
+# knowledge of the structure of the features -- so only the non-zeros can be
+# looped over.
 F = sparse.lil_matrix((len(f), numcontexts * numsamplepoints))
 for i, f_i in enumerate(f):
     for c, context in enumerate(contexts):
@@ -79,8 +78,9 @@ for i, f_i in enumerate(f):
 #         for x, samplepoint in samplespace):
 #             F[c, x] = f_i(samplepoint, context)
 #     Fs.append(F)
-# This would work fine, and maybe have a simpler interface, but would be less efficient, since
-# we'd need m=numfeatures=len(f) matrix products each iteration instead of just one.
+# This would work fine, and maybe have a simpler interface, but would be less
+# efficient, since we'd need m=numfeatures=len(f) matrix products each
+# iteration instead of just one.
 
 
 # The indices_context parameter is not longer necessary if the features are
