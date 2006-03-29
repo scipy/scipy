@@ -26,7 +26,7 @@ Optimization Tools
    fmin_tnc      -- Truncated Newton Code originally written by Stephen Nash and
                       adapted to C by Jean-Sebastien Roy.
 
-   fmin_cobyla   -- Contrained Optimization BY Linear Approximation
+   fmin_cobyla   -- Constrained Optimization BY Linear Approximation
 
 
   Global Optimizers
