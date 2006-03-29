@@ -405,20 +405,26 @@ class basemodel(object):
         return G
             
         
-    def crossentropy(self, fx, log_prior_x=None):
+    def crossentropy(self, fx, log_prior_x=None, base=numpy.e):
         """Returns the cross entropy H(q, p) of the empirical
         distribution q of the data (with the given feature matrix fx)
         with respect to the model p.  For discrete distributions this is
         defined as:
         
-            H(q, p) = n^{-1} \sum_{j=1}^n log p(x_j)
+            H(q, p) = - n^{-1} \sum_{j=1}^n log p(x_j)
         
         where x_j are the data elements whose features are given by the
         matrix {fx = f(x_j)}, j=1,...,n.
         
+        When the base of the logarithm is not e, this is 
         For continuous distributions this makes no sense!
         """
-        return self.logpdf(fx, log_prior_x).mean()
+        H = -self.logpdf(fx, log_prior_x).mean()
+        if base != e:
+            # H' = H * log_{base} (e)
+            return H / numpy.log(base)
+        else:
+            return H
     
 
     def normconst(self):
@@ -618,8 +624,8 @@ class model(basemodel):
     
     def lognormconst(self):
         """Compute the log of the normalization constant (partition
-        function) Z=sum_{x \in samplespace} exp(theta . f(x)).  The
-        sample space must be discrete and finite.
+        function) Z=sum_{x \in samplespace} p_0(x) exp(theta . f(x)).
+        The sample space must be discrete and finite.
         """        
         # See if it's been precomputed
         try:
@@ -1248,8 +1254,8 @@ class bigmodel(basemodel):
         weights corresponding to the sample x_j whose features are
         represented as the columns of self.sampleF.
             logw_j = p_dot(x_j) / q(x_j),
-        where p_dot(x_j) is the unnormalized pdf value of the point x_j
-        under the current model.
+        where p_dot(x_j) = p_0(x_j) exp(theta . f(x_j)) is the
+        unnormalized pdf value of the point x_j under the current model.
         """
         # First see whether logw has been precomputed
         try:
@@ -1488,7 +1494,7 @@ class bigmodel(basemodel):
     
     def logpdf(self, fx, log_prior_x=None):
         """Returns the log of the estimated density p_theta(x) at the
-        point x.  This is defined as:
+        point x.  If log_prior_x is not passed, this is defined as:
             log p(x) = theta.f(x) - log Z
         where f(x) is given by the (m x 1) array fx.
 
