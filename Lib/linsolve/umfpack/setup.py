@@ -4,7 +4,7 @@
 def configuration(parent_package='',top_path=None):
     import numpy
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from numpy.distutils.system_info import get_info, dict_append
 
     config = Configuration( 'umfpack', parent_package, top_path )
     config.add_data_dir('tests')
@@ -16,11 +16,15 @@ def configuration(parent_package='',top_path=None):
         if umf_info:
             return umfpack_i_file
 
+    blas_info = get_info('blas_opt')
+    build_info = {}
+    dict_append(build_info, **umf_info)
+    dict_append(build_info, **blas_info)
+
     config.add_extension( '__umfpack',
                           sources = [umfpack_i],
-                          depends = ['umfpack.i']
-                          libraries = ['cblas'],
-                          **umf_info)
+                          depends = ['umfpack.i'],
+                          **build_info)
 
     return config
 
