@@ -18,6 +18,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension( '__umfpack',
                           sources = [umfpack_i],
+                          depends = ['umfpack.i']
                           libraries = ['cblas'],
                           **umf_info)
 
