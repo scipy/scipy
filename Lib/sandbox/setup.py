@@ -31,6 +31,8 @@ def configuration(parent_package='',top_path=None):
     # elementwise numerical expressions
     #config.add_subpackage('numexpr')
 
+    # Adaptation of Scientific.IO (2.4.9) to use NumPy
+    #config.add_subpackage('netcdf')
     return config
 
 if __name__ == '__main__':
