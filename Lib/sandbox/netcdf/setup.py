@@ -12,8 +12,7 @@ if netcdf_prefix is None:
             netcdf_lib = os.path.join(netcdf_prefix, 'lib')
             if os.path.exists(os.path.join(netcdf_include, 'netcdf.h')):
                 break
-        else:
-            netcdf_prefix = None
+            netcdf_prefix = None            
 
 if netcdf_prefix is None:
     print "netCDF not found, the netCDF module will not be built!"
@@ -27,11 +26,12 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('netcdf',parent_package,top_path)
     config.add_extension('_netcdf',
                          sources = ['_netcdf.c'],
+                         depends = ['_netcdf.h'],
                          include_dirs=[netcdf_include],
                          library_dirs=[netcdf_lib],
                          libraries = ['netcdf'])
-    config.add_data_files(['netcdf',('demomodule.c','Scientific_LICENSE',
-	                             'README')])
+    config.add_data_files('demomodule.c','Scientific_LICENSE',
+                          'README')
     return config
 
 if __name__ == "__main__":
