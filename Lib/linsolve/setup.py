@@ -55,7 +55,7 @@ def configuration(parent_package='',top_path=None):
                          extra_info = lapack_opt
                          )
 
-    config.add_subpackage( 'umfpack')
+    config.add_subpackage('umfpack')
 
     return config
 

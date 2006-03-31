@@ -33,6 +33,9 @@ def configuration(parent_package='',top_path=None):
 
     # Adaptation of Scientific.IO (2.4.9) to use NumPy
     #config.add_subpackage('netcdf')
+
+    # Finite Difference Formulae package
+    #config.add_subpackage('fdfpack')
     return config
 
 if __name__ == '__main__':
