@@ -4,12 +4,12 @@
 """Benchamrks for umfpack module"""
 
 from optparse import OptionParser
-import umfpack as um
+import scipy.linsolve.umfpack as um
 import numpy as nm
 #import scipy.io as io
 import scipy.sparse as sp
 import scipy.linalg as nla
-import pylab
+#import pylab
 import time
 import urllib
 import gzip
@@ -177,6 +177,10 @@ def main():
             print '||x - x_{exact}|| :', err[1,1]
 
     if options.plot:
+        try:
+            import pylab
+        except ImportError:
+            raise "could not import pylab"
         times = nm.array( times )
         print times
         pylab.plot( times[:,0], 'b-o' )
