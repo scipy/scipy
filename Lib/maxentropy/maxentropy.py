@@ -1027,12 +1027,10 @@ class conditionalmodel(model):
 
     def logpmf(self):
         """Returns a (sparse) row vector of logarithms of the conditional
-        probability mass function (pmf) values p(x | c) for all pairs (c, x),
-        where c are contexts and x are points in the sample space.  The order
-        of these is log p(x | c) = logpmf()[c * numsamplepoints + x].
-        
-        # OLD: as specified by self.indices_context, so log p(x | c) =
-        logpmf()[self.indices_context[c][x]].
+        probability mass function (pmf) values p(x | c) for all pairs (c,
+        x), where c are contexts and x are points in the sample space.
+        The order of these is log p(x | c) = logpmf()[c * numsamplepoints
+        + x].
         """
         # Have the features already been computed and stored?
         try:
