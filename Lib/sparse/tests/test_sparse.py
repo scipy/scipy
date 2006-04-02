@@ -263,38 +263,30 @@ class _test_cs(ScipyTestCase):
         xx = splu(B).solve(r)
         # Don't actually test the output until we know what it should be ...
 
-class _test_fancy_indexing(ScipyTestCase):
-    """Tests slicing and fancy indexing features.  The tests for dok_matrix and
-    lil_matrix objects should derive from this class.  (EJS)
-    """
-    # This isn't implemented for dok_matrix objects yet:
-    #def check_sequence_indexing(self):
-    #    B = asmatrix(arange(50.).reshape(5,10))
-    #    A = self.spmatrix(B)
-    #    assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
-    #    assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
 
-    def check_get_slice(self):
+class _test_horiz_slicing(ScipyTestCase):
+    """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
+    matrix types that implement this should derive from this class.
+    """
+    def check_get_horiz_slice(self):
         """Test for new slice functionality (EJS)"""
         B = asmatrix(arange(50.).reshape(5,10))
-        A = dok_matrix(B)
-        assert_array_equal(B[2:5,0], A[2:5,0].todense())
-        assert_array_equal(B[:,1], A[:,1].todense())
+        A = self.spmatrix(B)
         assert_array_equal(B[1,:], A[1,:].todense())
-        # Both slicing and fancy indexing: not yet supported
-        # assert_array_equal(B[(1,2),:], A[(1,2),:].todense())
-        # assert_array_equal(B[(1,2,3),:], A[(1,2,3),:].todense())
+        assert_array_equal(B[1,2:5], A[1,2:5].todense())
 
-        # The following commands should all raise exceptions:
+        C = matrix([[1, 2, 1], [4, 0, 6], [0, 0, 0], [0, 0, 1]])
+        D = self.spmatrix(C)
+        assert_array_equal(C[1, 1:3], D[1, 1:3].todense())
+
+        # Now test slicing when a row contains only zeros
+        E = matrix([[1, 2, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
+        F = self.spmatrix(E)
+        assert_array_equal(E[1, 1:3], F[1, 1:3].todense())
+        assert_array_equal(E[2, -2:], F[2, -2:].A)
+        
+        # The following should raise exceptions:
         caught = 0
-        try:
-            a = A[-1,:]
-        except IndexError:
-            caught += 1
-        try:
-            a = A[:,-1]
-        except IndexError:
-            caught += 1
         try:
             a = A[:,11]
         except IndexError:
@@ -303,10 +295,218 @@ class _test_fancy_indexing(ScipyTestCase):
             a = A[6,3:7]
         except IndexError:
             caught += 1
-        assert caught == 4
+        assert caught == 2
+
+
+class _test_vert_slicing(ScipyTestCase):
+    """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
+    matrix types that implement this should derive from this class.
+    """
+    def check_get_vert_slice(self):
+        """Test for new slice functionality (EJS)"""
+        B = asmatrix(arange(50.).reshape(5,10))
+        A = self.spmatrix(B)
+        assert_array_equal(B[2:5,0], A[2:5,0].todense())
+        assert_array_equal(B[:,1], A[:,1].todense())
+
+        C = matrix([[1, 2, 1], [4, 0, 6], [0, 0, 0], [0, 0, 1]])
+        D = self.spmatrix(C)
+        assert_array_equal(C[1:3, 1], D[1:3, 1].todense())
+        assert_array_equal(C[:, 2], D[:, 2].todense())
+
+        # Now test slicing when a column contains only zeros
+        E = matrix([[1, 0, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
+        F = self.spmatrix(E)
+        assert_array_equal(E[:, 1], F[:, 1].todense())
+        assert_array_equal(E[-2:, 2], F[-2:, 2].todense())
+        
+        # The following should raise exceptions:
+        caught = 0
+        try:
+            a = A[:,11]
+        except IndexError:
+            caught += 1
+        try:
+            a = A[6,3:7]
+        except IndexError:
+            caught += 1
+        assert caught == 2
+
+
+class _test_fancy_indexing(ScipyTestCase):
+    """Tests fancy indexing features.  The tests for any matrix formats
+    that implement these features should derive from this class.
+    """
+    # This isn't supported by any matrix objects yet:
+    def check_sequence_indexing(self):
+        B = asmatrix(arange(50.).reshape(5,10))
+        A = self.spmatrix(B)
+        assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
+        assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
+
+    def check_fancy_indexing(self):
+        """Test for new indexing functionality"""
+        B = ones((5,10), float)
+        A = dok_matrix(B)
+        # Write me!
+        
+        # Both slicing and fancy indexing: not yet supported
+        # assert_array_equal(B[(1,2),:], A[(1,2),:].todense())
+        # assert_array_equal(B[(1,2,3),:], A[(1,2,3),:].todense())
+
+
+
+class test_csr(_test_cs, _test_horiz_slicing):
+    spmatrix = csr_matrix
+
+    def check_constructor1(self):
+        b = matrix([[0,4,0],
+                   [3,0,1],
+                   [0,2,0]],'d')
+        bsp = csr_matrix(b)
+        assert_array_almost_equal(bsp.data,[4,3,1,2])
+        assert_array_equal(bsp.colind,[1,0,2,1])
+        assert_array_equal(bsp.indptr,[0,1,3,4])
+        assert_equal(bsp.getnnz(),4)
+        assert_equal(bsp.getformat(),'csr')
+        assert_array_almost_equal(bsp.todense(),b)
+    
+    def check_constructor2(self):
+        b = zeros((6,6),'d')
+        b[3,4] = 5
+        bsp = csr_matrix(b)
+        assert_array_almost_equal(bsp.data,[5])
+        assert_array_equal(bsp.colind,[4])
+        assert_array_equal(bsp.indptr,[0,0,0,0,1,1,1])
+        assert_array_almost_equal(bsp.todense(),b)
+    
+    def check_constructor3(self):
+        b = matrix([[1,0],
+                   [0,2],
+                   [3,0]],'d')
+        bsp = csr_matrix(b)
+        assert_array_almost_equal(bsp.data,[1,2,3])
+        assert_array_equal(bsp.colind,[0,1,0])
+        assert_array_equal(bsp.indptr,[0,1,2,3])
+        assert_array_almost_equal(bsp.todense(),b)
+    
+    def check_empty(self):
+        """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
+        """
+        # This test should be made global (in _test_cs), but first we
+        # need a uniform argument order / syntax for constructing an
+        # empty sparse matrix. (coo_matrix is currently different).
+        shape = (5, 5)
+        for mytype in [float32, float64, complex64, complex128]:
+            a = self.spmatrix(shape, dtype=mytype)
+            b = a + a
+            c = 2 * a
+            d = a + a.tocsc()
+            e = a * a.tocoo()
+            assert_equal(e.A, a.A*a.A)
+            # These fail in all revisions <= r1768:
+            assert(e.dtype.type == mytype)
+            assert(e.A.dtype.type == mytype)
+
+
+class test_csc(_test_cs, _test_vert_slicing):
+    spmatrix = csc_matrix
+
+    def check_constructor1(self):
+        b = matrix([[1,0,0],[3,0,1],[0,2,0]],'d')
+        bsp = csc_matrix(b)
+        assert_array_almost_equal(bsp.data,[1,3,2,1])
+        assert_array_equal(bsp.rowind,[0,1,2,1])
+        assert_array_equal(bsp.indptr,[0,2,3,4])
+        assert_equal(bsp.getnnz(),4)
+        assert_equal(bsp.getformat(),'csc')
+
+    def check_constructor2(self):
+        b = zeros((6,6),'d')
+        b[2,4] = 5
+        bsp = csc_matrix(b)
+        assert_array_almost_equal(bsp.data,[5])
+        assert_array_equal(bsp.rowind,[2])
+        assert_array_equal(bsp.indptr,[0,0,0,0,0,1,1])
+
+    def check_constructor3(self):
+        b = matrix([[1,0],[0,2],[3,0]],'d')
+        bsp = csc_matrix(b)
+        assert_array_almost_equal(bsp.data,[1,3,2])
+        assert_array_equal(bsp.rowind,[0,2,1])
+        assert_array_equal(bsp.indptr,[0,2,3])
+
+    def check_empty(self):
+        """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
+        """
+        # This test should be made global (in _test_cs), but first we
+        # need a uniform argument order / syntax for constructing an
+        # empty sparse matrix. (coo_matrix is currently different).
+        shape = (5, 5)
+        for mytype in [float32, float64, complex64, complex128]:
+            a = self.spmatrix(shape, dtype=mytype)
+            b = a + a
+            c = 2 * a
+            d = a + a.tocsc()
+            e = a * a.tocoo()
+            assert_equal(e.A, a.A*a.A)
+            assert(e.dtype.type == mytype)
+            assert(e.A.dtype.type == mytype)
+
+
+class test_dok(_test_cs):
+    spmatrix = dok_matrix
+
+    def check_mult(self):
+        A = dok_matrix((10,10))
+        A[0,3] = 10
+        A[5,6] = 20
+        D = A*A.T
+        E = A*A.H
+        assert_array_equal(D.A, E.A)
+
+    def check_add(self):
+        A = dok_matrix((3,2))
+        A[0,1] = -10
+        A[2,0] = 20
+        A += 10
+        B = matrix([[10, 0], [10, 10], [30, 10]])
+        assert_array_equal(A.todense(), B)
+
+    def check_convert(self):
+        """Test provided by Andrew Straw.  Fails in SciPy <= r1477.
+        """
+        (m, n) = (6, 7)
+        a=dok_matrix((m, n))
+
+        # set a few elements, but none in the last column
+        a[2,1]=1
+        a[0,2]=2
+        a[3,1]=3
+        a[1,5]=4
+        a[4,3]=5
+        a[4,2]=6
+
+        # assert that the last column is all zeros
+        assert_array_equal( a.toarray()[:,n-1], zeros(m,) )
+
+        # make sure it still works for CSC format
+        csc=a.tocsc()
+        assert_array_equal( csc.toarray()[:,n-1], zeros(m,) )
+
+        # now test CSR
+        (m, n) = (n, m)
+        b = a.transpose()
+        assert b.shape == (m, n)
+        # assert that the last row is all zeros
+        assert_array_equal( b.toarray()[m-1,:], zeros(n,) )
+
+        # make sure it still works for CSR format
+        csr=b.tocsr()
+        assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
 
     def check_set_slice(self):
-        """Test for new slice functionality (EJS)"""
+        """Test for slice functionality (EJS)"""
         A = dok_matrix((5,10))
         B = zeros((5,10), float)
         A[:,0] = 1
@@ -364,164 +564,8 @@ class _test_fancy_indexing(ScipyTestCase):
             caught += 1
         assert caught == 6
 
-    def check_advanced_indexing(self):
-        """Test for new indexing functionality (EJS)"""
-        B = ones((5,10), float)
-        A = dok_matrix(B)
-        # Write me!
 
-
-class test_csr(_test_cs):
-    spmatrix = csr_matrix
-
-    def check_constructor1(self):
-        b = matrix([[0,4,0],
-                   [3,0,1],
-                   [0,2,0]],'d')
-        bsp = csr_matrix(b)
-        assert_array_almost_equal(bsp.data,[4,3,1,2])
-        assert_array_equal(bsp.colind,[1,0,2,1])
-        assert_array_equal(bsp.indptr,[0,1,3,4])
-        assert_equal(bsp.getnnz(),4)
-        assert_equal(bsp.getformat(),'csr')
-        assert_array_almost_equal(bsp.todense(),b)
-    
-    def check_constructor2(self):
-        b = zeros((6,6),'d')
-        b[3,4] = 5
-        bsp = csr_matrix(b)
-        assert_array_almost_equal(bsp.data,[5])
-        assert_array_equal(bsp.colind,[4])
-        assert_array_equal(bsp.indptr,[0,0,0,0,1,1,1])
-        assert_array_almost_equal(bsp.todense(),b)
-    
-    def check_constructor3(self):
-        b = matrix([[1,0],
-                   [0,2],
-                   [3,0]],'d')
-        bsp = csr_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,2,3])
-        assert_array_equal(bsp.colind,[0,1,0])
-        assert_array_equal(bsp.indptr,[0,1,2,3])
-        assert_array_almost_equal(bsp.todense(),b)
-    
-    def check_empty(self):
-        """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
-        """
-        # This test should be made global (in _test_cs), but first we
-        # need a uniform argument order / syntax for constructing an
-        # empty sparse matrix. (coo_matrix is currently different).
-        shape = (5, 5)
-        for mytype in [float32, float64, complex64, complex128]:
-            a = self.spmatrix(shape, dtype=mytype)
-            b = a + a
-            c = 2 * a
-            d = a + a.tocsc()
-            e = a * a.tocoo()
-            assert_equal(e.A, a.A*a.A)
-            # These fail in all revisions <= r1768:
-            assert(e.dtype.type == mytype)
-            assert(e.A.dtype.type == mytype)
-
-
-class test_csc(_test_cs):
-    spmatrix = csc_matrix
-
-    def check_constructor1(self):
-        b = matrix([[1,0,0],[3,0,1],[0,2,0]],'d')
-        bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,3,2,1])
-        assert_array_equal(bsp.rowind,[0,1,2,1])
-        assert_array_equal(bsp.indptr,[0,2,3,4])
-        assert_equal(bsp.getnnz(),4)
-        assert_equal(bsp.getformat(),'csc')
-
-    def check_constructor2(self):
-        b = zeros((6,6),'d')
-        b[2,4] = 5
-        bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[5])
-        assert_array_equal(bsp.rowind,[2])
-        assert_array_equal(bsp.indptr,[0,0,0,0,0,1,1])
-
-    def check_constructor3(self):
-        b = matrix([[1,0],[0,2],[3,0]],'d')
-        bsp = csc_matrix(b)
-        assert_array_almost_equal(bsp.data,[1,3,2])
-        assert_array_equal(bsp.rowind,[0,2,1])
-        assert_array_equal(bsp.indptr,[0,2,3])
-
-    def check_empty(self):
-        """Test manipulating empty matrices. Fails in SciPy SVN <= r1768
-        """
-        # This test should be made global (in _test_cs), but first we
-        # need a uniform argument order / syntax for constructing an
-        # empty sparse matrix. (coo_matrix is currently different).
-        shape = (5, 5)
-        for mytype in [float32, float64, complex64, complex128]:
-            a = self.spmatrix(shape, dtype=mytype)
-            b = a + a
-            c = 2 * a
-            d = a + a.tocsc()
-            e = a * a.tocoo()
-            assert_equal(e.A, a.A*a.A)
-            # These fail in all revisions <= r1768:
-            assert(e.dtype.type == mytype)
-            assert(e.A.dtype.type == mytype)
-
-
-class test_dok(_test_cs, _test_fancy_indexing):
-    spmatrix = dok_matrix
-
-    def check_mult(self):
-        A = dok_matrix((10,10))
-        A[0,3] = 10
-        A[5,6] = 20
-        D = A*A.T
-        E = A*A.H
-        assert_array_equal(D.A, E.A)
-
-    def check_add(self):
-        A = dok_matrix((3,2))
-        A[0,1] = -10
-        A[2,0] = 20
-        A += 10
-        B = matrix([[10, 0], [10, 10], [30, 10]])
-        assert_array_equal(A.todense(), B)
-
-    def check_convert(self):
-        """Test provided by Andrew Straw.  Fails in SciPy <= r1477.
-        """
-        (m, n) = (6, 7)
-        a=dok_matrix((m, n))
-
-        # set a few elements, but none in the last column
-        a[2,1]=1
-        a[0,2]=2
-        a[3,1]=3
-        a[1,5]=4
-        a[4,3]=5
-        a[4,2]=6
-
-        # assert that the last column is all zeros
-        assert_array_equal( a.toarray()[:,n-1], zeros(m,) )
-
-        # make sure it still works for CSC format
-        csc=a.tocsc()
-        assert_array_equal( csc.toarray()[:,n-1], zeros(m,) )
-
-        # now test CSR
-        (m, n) = (n, m)
-        b = a.transpose()
-        assert b.shape == (m, n)
-        # assert that the last row is all zeros
-        assert_array_equal( b.toarray()[m-1,:], zeros(n,) )
-
-        # make sure it still works for CSR format
-        csr=b.tocsr()
-        assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
-
-class test_lil(_test_cs, _test_fancy_indexing):
+class test_lil(_test_cs, _test_horiz_slicing):
     spmatrix = lil_matrix
     def check_mult(self):
         A = matrix(zeros((10,10)))
