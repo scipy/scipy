@@ -180,7 +180,7 @@ def main():
         try:
             import pylab
         except ImportError:
-            raise "could not import pylab"
+            raise ImportError, "could not import pylab"
         times = nm.array( times )
         print times
         pylab.plot( times[:,0], 'b-o' )
