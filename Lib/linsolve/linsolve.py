@@ -47,7 +47,7 @@ def spsolve(A, b, permc_spec=2):
 
         if mat.dtype.char not in 'dD':
             raise ValueError, "convert matrix data to double, please, using"\
-                  " .astype(), or set sparse.useUmfpack = False"
+                  " .astype(), or set linsolve.useUmfpack = False"
 
         family = {'d' : 'di', 'D' : 'zi'}
         umf = umfpack.UmfpackContext( family[mat.dtype.char] )
