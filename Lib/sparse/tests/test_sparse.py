@@ -22,7 +22,8 @@ import random
 from numpy.testing import *
 set_package_path()
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, spidentity, \
-        speye, lil_matrix, lu_factor
+        speye, lil_matrix
+from scipy.linsolve import splu
 restore_path()
 
 class _test_cs(ScipyTestCase):
@@ -245,7 +246,7 @@ class _test_cs(ScipyTestCase):
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
     def check_solve(self):
-        """Test whether the lu_solve command segfaults, as reported by Nils
+        """ Test whether the lu_solve command segfaults, as reported by Nils
         Wagner for a 64-bit machine, 02 March 2005 (EJS)
         """
         n = 20
@@ -259,7 +260,7 @@ class _test_cs(ScipyTestCase):
             A[i,i+1] = y[i]
             A[i+1,i] = numpy.conjugate(y[i])
         B = A.tocsc()
-        xx = lu_factor(B).solve(r)
+        xx = splu(B).solve(r)
         # Don't actually test the output until we know what it should be ...
 
 
@@ -267,7 +268,7 @@ class _test_horiz_slicing(ScipyTestCase):
     """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
-    def check_get_slice(self):
+    def check_get_horiz_slice(self):
         """Test for new slice functionality (EJS)"""
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
@@ -296,71 +297,12 @@ class _test_horiz_slicing(ScipyTestCase):
             caught += 1
         assert caught == 2
 
-    #def check_set_slice(self):
-    #    """Test for new slice functionality (EJS)"""
-    #    A = dok_matrix((5,10))
-    #    B = zeros((5,10), float)
-    #    A[:,0] = 1
-    #    B[:,0] = 1
-    #    assert_array_equal(A.todense(), B)
-    #    A[1,:] = 2
-    #    B[1,:] = 2
-    #    assert_array_equal(A.todense(), B)
-    #    A[:,:] = 3
-    #    B[:,:] = 3
-    #    assert_array_equal(A.todense(), B)
-    #    A[1:5, 3] = 4
-    #    B[1:5, 3] = 4
-    #    assert_array_equal(A.todense(), B)
-    #    A[1, 3:6] = 5
-    #    B[1, 3:6] = 5
-    #    assert_array_equal(A.todense(), B)
-    #    A[1:4, 3:6] = 6
-    #    B[1:4, 3:6] = 6
-    #    assert_array_equal(A.todense(), B)
-    #    A[1, 3:10:3] = 7
-    #    B[1, 3:10:3] = 7
-    #    assert_array_equal(A.todense(), B)
-    #    A[1:5, 0] = range(1,5)
-    #    B[1:5, 0] = range(1,5)
-    #    assert_array_equal(A.todense(), B)
-    #    A[0, 1:10:2] = xrange(1,10,2)
-    #    B[0, 1:10:2] = xrange(1,10,2)
-    #    assert_array_equal(A.todense(), B)
-    #    caught = 0
-    #    # The next 6 commands should raise exceptions
-    #    try:
-    #        A[0,0] = range(100)
-    #    except TypeError:
-    #        caught += 1
-    #    try:
-    #        A[0,0] = arange(100)
-    #    except TypeError:
-    #        caught += 1
-    #    try:
-    #        A[0,:] = range(100)
-    #    except ValueError:
-    #        caught += 1
-    #    try:
-    #        A[:,1] = range(100)
-    #    except ValueError:
-    #        caught += 1
-    #    try:
-    #        A[:,1] = A.copy()
-    #    except:
-    #        caught += 1
-    #    try:
-    #        A[:,-1] = range(5)
-    #    except IndexError:
-    #        caught += 1
-    #    assert caught == 6
-
 
 class _test_vert_slicing(ScipyTestCase):
     """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
-    def check_get_slice(self):
+    def check_get_vert_slice(self):
         """Test for new slice functionality (EJS)"""
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
@@ -390,76 +332,17 @@ class _test_vert_slicing(ScipyTestCase):
             caught += 1
         assert caught == 2
 
-    #def check_set_slice(self):
-    #    """Test for new slice functionality (EJS)"""
-    #    A = dok_matrix((5,10))
-    #    B = zeros((5,10), float)
-    #    A[:,0] = 1
-    #    B[:,0] = 1
-    #    assert_array_equal(A.todense(), B)
-    #    A[1,:] = 2
-    #    B[1,:] = 2
-    #    assert_array_equal(A.todense(), B)
-    #    A[:,:] = 3
-    #    B[:,:] = 3
-    #    assert_array_equal(A.todense(), B)
-    #    A[1:5, 3] = 4
-    #    B[1:5, 3] = 4
-    #    assert_array_equal(A.todense(), B)
-    #    A[1, 3:6] = 5
-    #    B[1, 3:6] = 5
-    #    assert_array_equal(A.todense(), B)
-    #    A[1:4, 3:6] = 6
-    #    B[1:4, 3:6] = 6
-    #    assert_array_equal(A.todense(), B)
-    #    A[1, 3:10:3] = 7
-    #    B[1, 3:10:3] = 7
-    #    assert_array_equal(A.todense(), B)
-    #    A[1:5, 0] = range(1,5)
-    #    B[1:5, 0] = range(1,5)
-    #    assert_array_equal(A.todense(), B)
-    #    A[0, 1:10:2] = xrange(1,10,2)
-    #    B[0, 1:10:2] = xrange(1,10,2)
-    #    assert_array_equal(A.todense(), B)
-    #    caught = 0
-    #    # The next 6 commands should raise exceptions
-    #    try:
-    #        A[0,0] = range(100)
-    #    except TypeError:
-    #        caught += 1
-    #    try:
-    #        A[0,0] = arange(100)
-    #    except TypeError:
-    #        caught += 1
-    #    try:
-    #        A[0,:] = range(100)
-    #    except ValueError:
-    #        caught += 1
-    #    try:
-    #        A[:,1] = range(100)
-    #    except ValueError:
-    #        caught += 1
-    #    try:
-    #        A[:,1] = A.copy()
-    #    except:
-    #        caught += 1
-    #    try:
-    #        A[:,-1] = range(5)
-    #    except IndexError:
-    #        caught += 1
-    #    assert caught == 6
-
 
 class _test_fancy_indexing(ScipyTestCase):
-    """Tests fancy indexing features.  The tests for dok_matrix and
-    lil_matrix objects should derive from this class.
+    """Tests fancy indexing features.  The tests for any matrix formats
+    that implement these features should derive from this class.
     """
-    # This isn't implemented for dok_matrix objects yet:
-    #def check_sequence_indexing(self):
-    #    B = asmatrix(arange(50.).reshape(5,10))
-    #    A = self.spmatrix(B)
-    #    assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
-    #    assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
+    # This isn't supported by any matrix objects yet:
+    def check_sequence_indexing(self):
+        B = asmatrix(arange(50.).reshape(5,10))
+        A = self.spmatrix(B)
+        assert_array_equal(B[(1,2),(3,4)], A[(1,2),(3,4)].todense())
+        assert_array_equal(B[(1,2,3),(3,4,5)], A[(1,2,3),(3,4,5)].todense())
 
     def check_fancy_indexing(self):
         """Test for new indexing functionality"""
@@ -567,12 +450,11 @@ class test_csc(_test_cs, _test_vert_slicing):
             d = a + a.tocsc()
             e = a * a.tocoo()
             assert_equal(e.A, a.A*a.A)
-            # These fail in all revisions <= r1768:
             assert(e.dtype.type == mytype)
             assert(e.A.dtype.type == mytype)
 
 
-class test_dok(_test_cs, _test_fancy_indexing):
+class test_dok(_test_cs):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -623,7 +505,67 @@ class test_dok(_test_cs, _test_fancy_indexing):
         csr=b.tocsr()
         assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
 
-class test_lil(_test_cs, _test_fancy_indexing, _test_horiz_slicing):
+    def check_set_slice(self):
+        """Test for slice functionality (EJS)"""
+        A = dok_matrix((5,10))
+        B = zeros((5,10), float)
+        A[:,0] = 1
+        B[:,0] = 1
+        assert_array_equal(A.todense(), B)
+        A[1,:] = 2
+        B[1,:] = 2
+        assert_array_equal(A.todense(), B)
+        A[:,:] = 3
+        B[:,:] = 3
+        assert_array_equal(A.todense(), B)
+        A[1:5, 3] = 4
+        B[1:5, 3] = 4
+        assert_array_equal(A.todense(), B)
+        A[1, 3:6] = 5
+        B[1, 3:6] = 5
+        assert_array_equal(A.todense(), B)
+        A[1:4, 3:6] = 6
+        B[1:4, 3:6] = 6
+        assert_array_equal(A.todense(), B)
+        A[1, 3:10:3] = 7
+        B[1, 3:10:3] = 7
+        assert_array_equal(A.todense(), B)
+        A[1:5, 0] = range(1,5)
+        B[1:5, 0] = range(1,5)
+        assert_array_equal(A.todense(), B)
+        A[0, 1:10:2] = xrange(1,10,2)
+        B[0, 1:10:2] = xrange(1,10,2)
+        assert_array_equal(A.todense(), B)
+        caught = 0
+        # The next 6 commands should raise exceptions
+        try:
+            A[0,0] = range(100)
+        except TypeError:
+            caught += 1
+        try:
+            A[0,0] = arange(100)
+        except TypeError:
+            caught += 1
+        try:
+            A[0,:] = range(100)
+        except ValueError:
+            caught += 1
+        try:
+            A[:,1] = range(100)
+        except ValueError:
+            caught += 1
+        try:
+            A[:,1] = A.copy()
+        except:
+            caught += 1
+        try:
+            A[:,-1] = range(5)
+        except IndexError:
+            caught += 1
+        assert caught == 6
+
+
+class test_lil(_test_cs, _test_horiz_slicing):
     spmatrix = lil_matrix
     def check_mult(self):
         A = matrix(zeros((10,10)))

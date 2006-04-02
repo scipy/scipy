@@ -10,15 +10,8 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   arange, shape, intc
 import numpy
 import sparsetools
-import _superlu
 import itertools, operator, copy
 from bisect import bisect_left
-try:
-    import umfpack
-    isUmfpack = True
-except:
-    isUmfpack = False
-useUmfpack = True
 
 def resize1d(arr, newlen):
     old = len(arr)
@@ -275,6 +268,7 @@ class spmatrix:
         """Returns a copy of column j of the matrix, as an (m x 1) sparse
         matrix (column vector).
         """
+        # Spmatrix subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
         n = self.shape[1]
@@ -286,6 +280,7 @@ class spmatrix:
         """Returns a copy of row i of the matrix, as a (1 x n) sparse 
         matrix (row vector).
         """
+        # Spmatrix subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
         m = self.shape[0]
@@ -397,7 +392,6 @@ class spmatrix:
             o0 = asmatrix(ones((1, m), dtype=self.dtype))
             o1 = asmatrix(ones((n, 1), dtype=self.dtype))
             return (o0 * (self * o1)).A.squeeze()
-
         else:
             raise ValueError, "axis out of bounds"
 
@@ -859,7 +853,7 @@ class csc_matrix(spmatrix):
             row = key[0]
             col = key[1]
             if isinstance(col, slice):
-                raise IndexError, "CSC matrix supports slices only of a single"\
+                raise IndexError, "csc_matrix supports slices only of a single"\
                                   " column"
             elif isinstance(row, slice):
                 return self._getcolslice(row, col)
@@ -1386,7 +1380,7 @@ class csr_matrix(spmatrix):
             row = key[0]
             col = key[1]
             if isinstance(row, slice):
-                raise IndexError, "CSR matrix supports slices only of a single"\
+                raise IndexError, "csr_matrix supports slices only of a single"\
                                   " row"
             elif isinstance(col, slice):
                 return self._getrowslice(row, col)
@@ -2669,74 +2663,6 @@ def spdiags(diags, offsets, M, N):
         raise RuntimeError, "ran out of space"
     return csc_matrix((a, rowa, ptra), dims=(M, N))
 
-def _toCS_superLU( A ):
-    if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
-        mat = A.tocsc()
-        csc = 1
-    elif hasattr(A, 'tocsr'):
-        mat = A.tocsr()
-        csc = 0
-    else:
-        raise ValueError, "matrix cannot be converted to CSC/CSR"
-    return mat, csc
-
-def _toCS_umfpack( A ):
-    if isspmatrix_csr( A ) or isspmatrix_csc( A ):
-        mat = A
-    else:
-        if hasattr(A, 'tocsc'):
-            mat = A.tocsc()
-        elif hasattr(A, 'tocsr'):
-            mat = A.tocsr()
-        else:
-            raise ValueError, "matrix cannot be converted to CSC/CSR"
-    return mat
-
-def solve(A, b, permc_spec=2):
-    if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
-        raise ValueError, "sparse matrix must be able to return CSC format--"\
-              "A.tocsc()--or CSR format--A.tocsr()"
-    if not hasattr(A, 'shape'):
-        raise ValueError, "sparse matrix must be able to return shape" \
-                " (rows, cols) = A.shape"
-    M, N = A.shape
-    if (M != N):
-        raise ValueError, "matrix must be square"
-
-    if isUmfpack and useUmfpack:
-        mat = _toCS_umfpack( A )
-
-        if mat.dtype.char not in 'dD':
-            raise ValueError, "convert matrix data to double, please, using"\
-                  " .astype(), or set sparse.useUmfpack = False"
-
-        family = {'d' : 'di', 'D' : 'zi'}
-        umf = umfpack.UmfpackContext( family[mat.dtype.char] )
-        return umf.linsolve( umfpack.UMFPACK_A, mat, b, autoTranspose = True )
-
-    else:
-        mat, csc = _toCS_superLU( A )
-        ftype, lastel, data, index0, index1 = \
-               mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
-        gssv = eval('_superlu.' + ftype + 'gssv')
-        print "data-ftype: %s compared to data %s" % (ftype, data.dtype.char)
-        print "Calling _superlu.%sgssv" % ftype
-        return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
-
-def lu_factor(A, permc_spec=2, diag_pivot_thresh=1.0,
-              drop_tol=0.0, relax=1, panel_size=10):
-    M, N = A.shape
-    if (M != N):
-        raise ValueError, "can only factor square matrices"
-
-##     if isUmfpack:
-##         print "UMFPACK is present - try umfpack.numeric and umfpack.solve instead!"
-
-    csc = A.tocsc()
-    gstrf = eval('_superlu.' + csc.ftype + 'gstrf')
-    return gstrf(N, csc.nnz, csc.data, csc.rowind, csc.indptr, permc_spec,
-                 diag_pivot_thresh, drop_tol, relax, panel_size)
-
 def spidentity(n, dtype='d'):
     """
     spidentity( n ) returns the identity matrix of shape (n, n) stored
@@ -2755,9 +2681,9 @@ def speye(n, m = None, k = 0, dtype = 'd'):
     diags = ones((1, n), dtype = dtype)
     return spdiags(diags, k, n, m)
 
-
 def _testme():
-    a = csc_matrix((arange(1, 9), numpy.transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
+    a = csc_matrix((arange(1, 9), \
+            transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
     print "Representation of a matrix:"
     print repr(a)
     print "How a matrix prints:"
@@ -2776,37 +2702,11 @@ def _testme():
     print "Inverting a sparse linear system:"
     print "The sparse matrix (constructed from diagonals):"
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
-    b = numpy.array([1, 2, 3, 4, 5])
-    print "Solve: single precision complex:"
-    globals()['useUmfpack'] = False
-    a = a.astype('F')
-    x = solve(a, b)
-    print x
-    print "Error: ", a*x-b
-
-    print "Solve: double precision complex:"
-    globals()['useUmfpack'] = True
-    a = a.astype('D')
-    x = solve(a, b)
-    print x
-    print "Error: ", a*x-b
-
-    print "Solve: double precision:"
-    a = a.astype('d')
-    x = solve(a, b)
-    print x
-    print "Error: ", a*x-b
-
-    print "Solve: single precision:"
-    globals()['useUmfpack'] = False
-    a = a.astype('f')
-    x = solve(a, b.astype('f'))
-    print x
-    print "Error: ", a*x-b
-
+    b = array([1, 2, 3, 4, 5])
+    
     print "(Various small tests follow ...)\n"
     print "Dictionary of keys matrix:"
-    a = dok_matrix( shape = (10, 10) )
+    a = dok_matrix(shape=(10, 10))
     a[1, 1] = 1.
     a[1, 5] = 1.
     print a
@@ -2825,3 +2725,4 @@ def _testme():
 
 if __name__ == "__main__":
     _testme()
+
