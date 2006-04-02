@@ -420,7 +420,7 @@ class basemodel(object):
         For continuous distributions this makes no sense!
         """
         H = -self.logpdf(fx, log_prior_x).mean()
-        if base != e:
+        if base != numpy.e:
             # H' = H * log_{base} (e)
             return H / numpy.log(base)
         else:
@@ -804,13 +804,14 @@ class conditionalmodel(model):
         """The F parameter should be a (sparse) m x size matrix, where m
         is the number of features and size is |W| * |X|, where |W| is the
         number of contexts and |X| is the number of elements X in the
-        sample space.  The 'counts' parameter should be a row vector
-        stored as a (1 x |W|*|X|) sparse matrix, whose element i*|W|+j is
-        the number of occurrences of x_j in context w_i in the training
-        set.
+        sample space.
+        
+        The 'counts' parameter should be a row vector stored as a (1 x
+        |W|*|X|) sparse matrix, whose element i*|W|+j is the number of
+        occurrences of x_j in context w_i in the training set.
          
-        We store F and counts as sparse matrices, but as 1 x n row
-        vectors, for efficient multiplication of all contexts at once.
+        This storage format allows efficient multiplication over all
+        contexts in one operation.
         """
         super(conditionalmodel, self).__init__()
         self.F = F
