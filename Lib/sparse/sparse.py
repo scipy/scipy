@@ -10,7 +10,7 @@ from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
                   arange, shape, intc
 import numpy
 import sparsetools
-import itertools, operator
+import itertools, operator, copy
 from bisect import bisect_left
 
 def resize1d(arr, newlen):
@@ -268,6 +268,7 @@ class spmatrix:
         """Returns a copy of column j of the matrix, as an (m x 1) sparse
         matrix (column vector).
         """
+        # Spmatrix subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
         n = self.shape[1]
@@ -279,6 +280,7 @@ class spmatrix:
         """Returns a copy of row i of the matrix, as a (1 x n) sparse 
         matrix (row vector).
         """
+        # Spmatrix subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
         m = self.shape[0]
@@ -850,17 +852,26 @@ class csc_matrix(spmatrix):
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
-            func = getattr(sparsetools, self.ftype+'cscgetel')
+            if isinstance(col, slice):
+                raise IndexError, "csc_matrix supports slices only of a single"\
+                                  " column"
+            elif isinstance(row, slice):
+                return self._getcolslice(row, col)
             M, N = self.shape
+            if (row < 0):
+                row = M + row
+            if (col < 0):
+                col = N + col
             if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
+            func = getattr(sparsetools, self.ftype+'cscgetel')
             ind, val = func(self.data, self.rowind, self.indptr, row, col)
             return val
         elif isinstance(key, int):
             return self.data[key]
         else:
-            # We should allow column slices here!
             raise IndexError, "invalid index"
+
 
     def __setitem__(self, key, val):
         if isinstance(key, tuple):
@@ -888,14 +899,45 @@ class csc_matrix(spmatrix):
                 self.rowind = resize1d(self.rowind, nzmax + alloc)
             func(self.data, self.rowind, self.indptr, row, col, val)
             self._check()
-        elif isinstance(key, int):
-            if (key < self.nnz):
-                self.data[key] = val
-            else:
-                raise IndexError, "index out of bounds"
         else:
-            raise NotImplementedError
+            # We should allow slices here!
+            raise IndexError, "invalid index"
 
+    def _getcolslice(self, myslice, j):
+        """Returns a view of the elements [myslice.start:myslice.stop, j].
+        """
+        start, stop, stride = myslice.indices(self.shape[0])
+        if stride != 1:
+            raise ValueError, "slicing with step != 1 not supported"
+        if stop <= start:
+            raise ValueError, "slice width must be >= 1"
+        startind = -1
+        # Locate the first element in self.data
+        # (could be made more efficient with a binary search)
+        for ind in xrange(self.indptr[j], self.indptr[j+1]):
+            if self.rowind[ind] >= start:
+                startind = ind
+                break
+        if startind == -1:
+            # Col has only zeros
+            return csc_matrix((stop-start, 1), dtype=self.dtype, \
+                              nzmax=min(NZMAX, stop-start))
+        
+        stopind = self.indptr[j+1]
+        # Locate the last+1 index into self.data
+        # (could be made more efficient with a binary search)
+        for ind in xrange(startind, self.indptr[j+1]):
+            if self.rowind[ind] >= stop:
+                stopind = ind
+                break
+                
+        data = self.data[startind : stopind]
+        rowind = self.rowind[startind : stopind] - start
+        indptr = numpy.array([0, stopind - startind])
+        new = csc_matrix((data, rowind, indptr), dims=(stop-start, 1), \
+                         dtype=self.dtype)
+        return new
+    
     def rowcol(self, ind):
         row = self.rowind[ind]
         col = searchsorted(self.indptr, ind+1)-1
@@ -963,11 +1005,11 @@ class csr_matrix(spmatrix):
             nzmax, dtype are optional, defaulting to nzmax=sparse.NZMAX
             and dtype='d'.
 
-          - csr_matrix((data, ij), [(M, N), nzmax])
+          - csr_matrix((data, ij), [dims=(M, N), nzmax=nzmax])
             where data, ij satisfy:
                 a[ij[k, 0], ij[k, 1]] = data[k]
 
-          - csr_matrix((data, col, ptr), [(M, N)])
+          - csr_matrix((data, col, ptr), [dims=(M, N)])
             standard CSR representation
     """
     def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
@@ -1332,27 +1374,67 @@ class csr_matrix(spmatrix):
         else:
             raise TypeError, "need a dense or sparse matrix"
 
+
     def __getitem__(self, key):
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
-            func = getattr(sparsetools, self.ftype+'cscgetel')
+            if isinstance(row, slice):
+                raise IndexError, "csr_matrix supports slices only of a single"\
+                                  " row"
+            elif isinstance(col, slice):
+                return self._getrowslice(row, col)
             M, N = self.shape
             if (row < 0):
                 row = M + row
             if (col < 0):
                 col = N + col
-            if (row >= M ) or (col >= N) or (row < 0) or (col < 0):
+            if not (0<=row<M) or not (0<=col<N):
                 raise IndexError, "index out of bounds"
+            func = getattr(sparsetools, self.ftype+'cscgetel')
             ind, val = func(self.data, self.colind, self.indptr, col, row)
             return val
         elif isinstance(key, int):
             return self.data[key]
         else:
-            # We should allow column slices here!
             raise IndexError, "invalid index"
-
-
+    
+    
+    def _getrowslice(self, i, myslice):
+        """Returns a view of the elements [i, myslice.start:myslice.stop].
+        """
+        start, stop, stride = myslice.indices(self.shape[1])
+        if stride != 1:
+            raise ValueError, "slicing with step != 1 not supported"
+        if stop <= start:
+            raise ValueError, "slice width must be >= 1"
+        startind = -1
+        # Locate the first element in self.data
+        # (could be made more efficient with a binary search)
+        for ind in xrange(self.indptr[i], self.indptr[i+1]):
+            if self.colind[ind] >= start:
+                startind = ind
+                break
+        if startind == -1:
+            # Row has only zeros
+            return csr_matrix((1, stop-start), dtype=self.dtype, \
+                              nzmax=min(NZMAX, stop-start))
+        
+        stopind = self.indptr[i+1]
+        # Locate the last+1 index into self.data
+        # (could be made more efficient with a binary search)
+        for ind in xrange(startind, self.indptr[i+1]):
+            if self.colind[ind] >= stop:
+                stopind = ind
+                break
+                
+        data = self.data[startind : stopind]
+        colind = self.colind[startind : stopind] - start
+        indptr = numpy.array([0, stopind - startind])
+        new = csr_matrix((data, colind, indptr), dims=(1, stop-start), \
+                         dtype=self.dtype)
+        return new
+    
     def __setitem__(self, key, val):
         if isinstance(key, tuple):
             row = key[0]
@@ -1383,13 +1465,9 @@ class csr_matrix(spmatrix):
                 self.colind = resize1d(self.colind, nzmax + alloc)
             func(self.data, self.colind, self.indptr, col, row, val)
             self._check()
-        elif isinstance(key, int):
-            if (key < self.nnz):
-                self.data[key] = val
-            else:
-                raise IndexError, "index out of bounds"
         else:
-            raise NotImplementedError
+            # We should allow slices here!
+            raise IndexError, "invalid index"
 
     def rowcol(self, ind):
         col = self.colind[ind]
@@ -2170,9 +2248,9 @@ class coo_matrix(spmatrix):
             return self
 
 
-# Linked list matrix, by Ed Schofield -- report bugs to him!
+# Row-based linked list matrix, by Ed Schofield -- report bugs to him!
 # This contains a list (self.rows) of rows, each of which is a sorted list of
-# column indices of non-zero elements; and a list (self.vals) of lists of these
+# column indices of non-zero elements; and a list (self.data) of lists of these
 # elements.
 class lil_matrix(spmatrix):
     def __init__(self, A=None, shape=None, dtype=None):
@@ -2215,7 +2293,7 @@ class lil_matrix(spmatrix):
         for i in xrange(M):
             self.rows.append([])
         # The non-zero values of the matrix:
-        self.vals = [[] for i in xrange(M)]
+        self.data = [[] for i in xrange(M)]
 
         if A is not None:
             for i in xrange(len(A)):
@@ -2226,13 +2304,13 @@ class lil_matrix(spmatrix):
     # row
 
     def getnnz(self):
-        return sum([len(rowvals) for rowvals in self.vals])
+        return sum([len(rowvals) for rowvals in self.data])
 
     def __str__(self):
         val = ''
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
-                val += "  %s\t%s\n" % (str((i, j)), str(self.vals[i][pos]))
+                val += "  %s\t%s\n" % (str((i, j)), str(self.data[i][pos]))
         return val[:-1]
 
     #def __repr__(self):
@@ -2241,14 +2319,34 @@ class lil_matrix(spmatrix):
     #           "elements in %s format>" % \
     #           (self.shape + (self.getnnz(), _formats[format][1]))
 
+    def getrowview(self, i):
+        """Returns a view of the 'i'th row (without copying).
+        """
+        new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
+        new.rows[0] = self.rows[i]
+        new.data[0] = self.data[i]
+        return new
+
+    def getrow(self, i):
+        """Returns a copy of the 'i'th row.
+        """
+        new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
+        new.rows[0] = self.rows[i][:]
+        new.data[0] = self.data[i][:]
+        return new
+        
     def __getitem__(self, index):
+        """Return the element(s) index=(i, j), where j may be a slice.
+        This always returns a copy for consistency, since slices into
+        Python lists return copies.
+        """
         try:
             assert len(index) == 2
         except (AssertionError, TypeError):
             raise IndexError, "invalid index"
         i, j = index
         if type(i) is slice:
-            raise NotImplementedError
+            raise IndexError, "LIL matrix supports slices only of a single row"
         elif isinstance(i, int):
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
@@ -2256,14 +2354,21 @@ class lil_matrix(spmatrix):
             raise IndexError, "invalid index"
         row = self.rows[i]
         if type(j) is slice:
-            if j == slice(None, None, None):
-                # Create a new lil_matrix with just this row
-                new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
-                new.rows[0] = row
-                new.vals[0] = self.vals[i]
-                return new
-            else:
-                raise NotImplementedError
+            start, stop, stride = j.indices(self.shape[1])
+            if stride != 1:
+                raise ValueError, "slicing with step != 1 not supported"
+            if min(start, stop) < 0 or max(start, stop-1) >= self.shape[1]:
+                raise IndexError, "invalid index"
+            if stop <= start:
+                raise ValueError, "slice width must be >= 1"
+            # Look up 'start' and 'stop' in column index
+            startind = bisect_left(row, start)
+            stopind = bisect_left(row, stop)
+            new = lil_matrix((1, stop - start), dtype=self.dtype)
+            new.data = [self.data[i][startind:stopind]]
+            new.rows = [[colind - start for colind in row[startind:stopind]]]
+            return new
+        
         elif isinstance(j, int):
             if not (j>=0 and j<self.shape[1]):
                 raise IndexError, "lil_matrix index out of range"
@@ -2274,8 +2379,9 @@ class lil_matrix(spmatrix):
             # Element doesn't exist (is zero)
             return 0.0
         else:
-            return self.vals[i][pos]
-
+            return self.data[i][pos]
+    
+    
     def __setitem__(self, index, x):
         try:
             assert len(index) == 2
@@ -2317,20 +2423,20 @@ class lil_matrix(spmatrix):
                 if pos == len(row):
                     # New element at end
                     row.append(j)
-                    self.vals[i].append(x)
+                    self.data[i].append(x)
                 elif row[pos] != j:
                     # New element
                     row.insert(pos, j)
-                    self.vals[i].insert(pos, x)
+                    self.data[i].insert(pos, x)
                 else:
                     # Element already exists
-                    self.vals[i][pos] = x
+                    self.data[i][pos] = x
             else:
                 # Remove element
                 if pos < len(row) and row[pos] == j:
                     # Element already exists
                     del row[pos]
-                    del self.vals[i][pos]
+                    del self.data[i][pos]
                 # otherwise no element exists -- do nothing
         else:
             if isinstance(j, slice):
@@ -2356,7 +2462,7 @@ class lil_matrix(spmatrix):
                     nonzeros = [ind for ind, xi in enumerate(x) if xi != 0]
                     x = [x[ind] for ind in nonzeros]
                     row[:] = nonzeros
-                    self.vals[i] = x
+                    self.data[i] = x
                 else:
                     # add elements the slow way
                     for k, col in enumerate(seq):
@@ -2369,19 +2475,47 @@ class lil_matrix(spmatrix):
                 # x is a scalar
                 if len(row) == 0:
                     row[:] = seq
-                    self.vals[i] = [x for item in seq]   # [x] * len(seq) but copied
+                    self.data[i] = [x for item in seq]   # [x] * len(seq) but copied
                 else:
                     # add elements the slow way
                     for k, col in enumerate(j):
                         self[i, col] = x
                 return
 
+    def __mul__(self, other):           # self * other
+        if isscalar(other) or (isdense(other) and rank(other)==0):
+            # Was: new = lil_matrix(self.shape, dtype=self.dtype)
+            new = self.copy()
+            if other == 0:
+                # Multiply by zero: return the zero matrix
+                return new
+            # Multiply this scalar by every element.
+            new.data = [[val * other for val in rowvals] for rowvals in new.data]
+            return new
+        else:
+            return self.dot(other)
 
+
+    def copy(self):
+        new = lil_matrix(self.shape, dtype=self.dtype)
+        new.data = copy.deepcopy(self.data)
+        new.rows = copy.deepcopy(self.rows)
+        return new
+    
+    
+    def __rmul__(self, other):          # other * self
+        if isscalar(other) or (isdense(other) and rank(other)==0):
+            # Multiplication by a scalar is symmetric
+            return self.__mul__(other)
+        else:
+            return spmatrix.__rmul__(self, other)
+    
+    
     def toarray(self):
         d = zeros(self.shape, dtype=self.dtype)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
-                d[i, j] = self.vals[i][pos]
+                d[i, j] = self.data[i][pos]
         return d
 
     def tocsr(self, nzmax=None):
@@ -2395,7 +2529,7 @@ class lil_matrix(spmatrix):
         row_ptr[:] = nnz
         k = 0
         for i, row in enumerate(self.rows):
-            data[k : k+len(row)] = self.vals[i]
+            data[k : k+len(row)] = self.data[i]
             colind[k : k+len(row)] = self.rows[i]
             row_ptr[i] = k
             k += len(row)
