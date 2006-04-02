@@ -25,11 +25,11 @@ from scipy import maxentropy, sparse
 import numpy
 
 samplespace = ['dans', 'en', 'à', 'au cours de', 'pendant']
-contexts = ['happy', 'healthy', 'harold', 'a', 'the', 'beans']
 # Occurrences of French words, and their 'next English word' contexts, in
 # a hypothetical parallel corpus:
 corpus = [('dans', 'a'), ('dans', 'a'), ('dans', 'a'), ('dans', 'the'), \
           ('pendant', 'a'), ('dans', 'happy'), ('au cours de', 'healthy')]
+contexts = list(set([c for (x, c) in corpus]))
 
 def f0(x, c):
     return x in samplespace
@@ -70,32 +70,6 @@ for i, f_i in enumerate(f):
             # print "context: %s; \t sample point: %s" % (samplepoint, context)
             F[i, c * numsamplepoints + x] = f_i(samplepoint, context)
 
-# Note: just looping over the corpus, instead of the entire sample space, yields
-# a different fitted distribution.  For example, using
-#
-# F = sparse.lil_matrix((len(f), numcontexts * numsamplepoints))
-# for i, f_i in enumerate(f):
-#     for (x, c) in corpus:
-#         F[i, context_index[c] * numsamplepoints + samplespace_index[x]] = \
-#                 f_i(x, c)
-#
-# yields 
-#
-# c \ x   dans    en      à       au cours de     pendant
-# happy   1.000   0.000   0.000   0.000           0.000
-# healthy 0.000   0.000   0.000   1.000           0.000
-# harold  0.200   0.200   0.200   0.200           0.200
-# a       0.750   0.000   0.000   0.000           0.250
-# the     1.000   0.000   0.000   0.000           0.000
-# beans   0.200   0.200   0.200   0.200           0.200
-#
-# One difference is that the distribution for the context 'beans' is uniform. We
-# wanted to impose a constraint upon it, but this context never appeared in the
-# corpus. So how could this have worked? To be able to impose constraints like
-# this we need to compute the features of all sample points eventually.  But
-# perhaps some of this could be postponed until later (e.g. testing time), rather than
-# required up-front?
-
 
 # Store the counts of each (context, sample point) pair in the corpus, in a
 # sparse matrix of dimensions (1 x size), where size is |W| x |X|.  The element
@@ -106,6 +80,7 @@ for i, f_i in enumerate(f):
 N = sparse.lil_matrix((1, numcontexts * len(samplespace)))   # initialized to zero
 for (x, c) in corpus:
     N[0, context_index[c] * numsamplepoints + samplespace_index[x]] += 1
+
 
 # OLD:
 # # Use a sparse matrix of size C x X, whose ith row vector contains all
@@ -148,5 +123,40 @@ for c, context in enumerate(contexts):
     for x, label in enumerate(samplespace):
         print ("%.3f" % p[c*numsamplepoints+x]) + "\t",
 
-print
+
+# Ignore below here
+
+# # Also suppose the corpus never contains the English word 'purple', but
+# # we attempt to impose a fourth constraint
+# #        (4)    p(à | c) = 0  for c = 'purple'
+# # Is this possible under this framework?
+# def f3(x, c):
+#     return x=='en' and c == 'beans'
+# f.append(f3)
+# 
+# print "The conditional distributions in some contexts not in the corpus:"
+# newcontexts = ['purple', 'may']
+# newF = sparse.lil_matrix((len(f), len(newcontexts) * numsamplepoints))
+# for c, context in enumerate(newcontexts):
+#     # We need to compute the features of all sample points in these new contexts
+#     for x, samplepoint in enumerate(samplespace):
+#         for i, f_i in enumerate(f):
+#             newF[i, c * numsamplepoints + x] = f_i(samplepoint, context)
+#         # Computing N is not necessary.
+#         # newN[0, context_index[c] * numsamplepoints + samplespace_index[x]] += 1
+# 
+# model.F = newF
+# del model.p_tilde, model.p_tilde_context
+# model.clearcache()
+# p = model.probdist()
+# print "c \ x \t",
+# for label in samplespace:
+#     print label + "\t",
+# 
+# for c, context in enumerate(newcontexts):
+#     print "\n" + context + "\t",
+#     for x, label in enumerate(samplespace):
+#         print ("%.3f" % p[c*numsamplepoints+x]) + "\t",
+# 
+# print
 
