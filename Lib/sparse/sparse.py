@@ -192,7 +192,14 @@ class spmatrix:
         csc = self.tocsc()
         return csc * other
 
+    def __truediv__(self, other):
+        if isscalar(other):
+            return self * (1./other)
+        else:
+            raise NotImplementedError, "sparse matrix division not yet supported"
+
     def __div__(self, other):
+        # Always do true division
         if isscalar(other):
             return self * (1./other)
         else:
@@ -389,6 +396,19 @@ class spmatrix:
             # So we use:
             return (o0 * (self * o1)).A.squeeze()
 
+        else:
+            raise ValueError, "axis out of bounds"
+
+    def mean(self, axis=None):
+        """Average the matrix over the given axis.  If the axis is None,
+        average over both rows and columns, returning a scalar.
+        """
+        if axis==0:
+            return self.sum(0) * 1.0 / self.shape[0]
+        elif axis==1:
+            return self.sum(1) * 1.0 / self.shape[1]
+        elif axis is None:
+            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError, "axis out of bounds"
 
