@@ -1,4 +1,4 @@
-from scipy.sparse import *
+from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, spdiags
 import _superlu
 
 try:
@@ -77,26 +77,13 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 
 def _testme():
-    a = csc_matrix((arange(1, 9), numpy.transpose([[0, 1, 1, 2, 2, 3, 3, 4], [0, 1, 3, 0, 2, 3, 4, 4]])))
-    print "Representation of a matrix:"
-    print repr(a)
-    print "How a matrix prints:"
-    print a
-    print "Adding two matrices:"
-    b = a+a
-    print b
-    print "Subtracting two matrices:"
-    c = b - a
-    print c
-    print "Multiplying a sparse matrix by a dense vector:"
-    d = a*[1, 2, 3, 4, 5]
-    print d
-    print [1, 2, 3, 4, 5]*a
-
+    from scipy.sparse import csc_matrix, dok_matrix
+    from numpy import transpose, array, arange
+    
     print "Inverting a sparse linear system:"
     print "The sparse matrix (constructed from diagonals):"
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
-    b = numpy.array([1, 2, 3, 4, 5])
+    b = array([1, 2, 3, 4, 5])
     print "Solve: single precision complex:"
     globals()['useUmfpack'] = False
     a = a.astype('F')
@@ -124,24 +111,6 @@ def _testme():
     print x
     print "Error: ", a*x-b
 
-    print "(Various small tests follow ...)\n"
-    print "Dictionary of keys matrix:"
-    a = dok_matrix( shape = (10, 10) )
-    a[1, 1] = 1.
-    a[1, 5] = 1.
-    print a
-    print "Adding it to itself:"
-    print a + a
-
-    print "Multiplying by a scalar:"
-    print a * 100
-
-    print "Dense representation:"
-    print a.todense()
-
-    print "Converting to a CSR matrix:"
-    c = a.tocsr()
-    print c
 
 if __name__ == "__main__":
     _testme()
