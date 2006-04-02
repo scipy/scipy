@@ -21,6 +21,7 @@ def resize1d(arr, newlen):
 
 MAXPRINT=50
 ALLOCSIZE=1000
+NZMAX = 100
 
 _coerce_rules = {('f', 'f'):'f', ('f', 'd'):'d', ('f', 'F'):'F',
                  ('f', 'D'):'D', ('d', 'f'):'d', ('d', 'd'):'d',
@@ -374,12 +375,11 @@ class spmatrix:
         m, n = self.shape
         if axis==0:
             # sum over columns
-            # The following doesn't currently work, since NumPy matrices
-            # redefine multiplication:
-            #     o = asmatrix(ones((1, m), dtype=self.dtype))
-            #     return o * self
-            o = ones(m, dtype=self.dtype)
-            return asmatrix(self.rmatvec(o))
+            # Does the following multiplication work in NumPy now?
+            o = asmatrix(ones((1, m), dtype=self.dtype))
+            return o * self
+            # o = ones(m, dtype=self.dtype)
+            # return asmatrix(self.rmatvec(o))
         elif axis==1:
             # sum over rows
             o = asmatrix(ones((n, 1), dtype=self.dtype))
@@ -389,13 +389,7 @@ class spmatrix:
             m, n = self.shape
             o0 = asmatrix(ones((1, m), dtype=self.dtype))
             o1 = asmatrix(ones((n, 1), dtype=self.dtype))
-            # The following doesn't currently work, since NumPy matrices
-            # redefine multiplication:
-            #     o0 = asmatrix(ones(m, dtype=self.dtype))
-            #     return o0 * self * o1
-            # So we use:
             return (o0 * (self * o1)).A.squeeze()
-
         else:
             raise ValueError, "axis out of bounds"
 
@@ -437,7 +431,8 @@ class csc_matrix(spmatrix):
 
           - csc_matrix((M, N), [nzmax, dtype])
             to construct a container, where (M, N) are dimensions and
-            nzmax, dtype are optional, defaulting to nzmax=100 and dtype='d'.
+            nzmax, dtype are optional, defaulting to nzmax=sparse.NZMAX
+            and dtype='d'.
 
           - csc_matrix((data, ij), [(M, N), nzmax])
             where data, ij satisfy:
@@ -446,7 +441,7 @@ class csc_matrix(spmatrix):
           - csc_matrix((data, row, ptr), [(M, N)])
             standard CSC representation
     """
-    def __init__(self, arg1, dims=None, nzmax=100, dtype=None, copy=False):
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
@@ -965,7 +960,8 @@ class csr_matrix(spmatrix):
 
           - csr_matrix((M, N), [nzmax, dtype])
             to construct a container, where (M, N) are dimensions and
-            nzmax, dtype are optional, defaulting to nzmax=100 and dtype='d'.
+            nzmax, dtype are optional, defaulting to nzmax=sparse.NZMAX
+            and dtype='d'.
 
           - csr_matrix((data, ij), [(M, N), nzmax])
             where data, ij satisfy:
@@ -974,7 +970,7 @@ class csr_matrix(spmatrix):
           - csr_matrix((data, col, ptr), [(M, N)])
             standard CSR representation
     """
-    def __init__(self, arg1, dims=None, nzmax=100, dtype=None, copy=False):
+    def __init__(self, arg1, dims=None, nzmax=NZMAX, dtype=None, copy=False):
         spmatrix.__init__(self)
         if isdense(arg1):
             self.dtype = getdtype(dtype, arg1)
