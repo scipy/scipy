@@ -1641,15 +1641,15 @@ class bigmodel(basemodel):
                 break
 
                       
-    def settestsamples(self, M, F_list, logprob_list, priorlogprob_list=None):
-        """Sets the model to test itself every M iterations during
-        fitting using the provided list of feature matrices, each
-        representing a sample {x_j} from an auxiliary distribution q,
-        together with the corresponding log probabiltiy mass or density
-        values log {q(x_j)} in logprob_list.  This is useful as an
-        external check on the fitting process with sample path
-        optimization, which could otherwise reflect the vagaries of the
-        single sample being used for optimization, rather than the
+    def settestsamples(self, F_list, logprob_list, testevery=1, priorlogprob_list=None):
+        """Requests that the model be tested every 'testevery' iterations
+        during fitting using the provided list F_list of feature
+        matrices, each representing a sample {x_j} from an auxiliary
+        distribution q, together with the corresponding log probabiltiy
+        mass or density values log {q(x_j)} in logprob_list.  This is
+        useful as an external check on the fitting process with sample
+        path optimization, which could otherwise reflect the vagaries of
+        the single sample being used for optimization, rather than the
         population as a whole.
 
         If priorlogprob_list is not None, it should be a list of arrays
@@ -1660,7 +1660,7 @@ class bigmodel(basemodel):
         # Sanity check 
         assert len(F_list) == len(logprob_list)
         
-        self.testevery = M
+        self.testevery = testevery
         self.externalFs = F_list
         self.externallogprobs = logprob_list
         self.externalpriorlogprobs = priorlogprob_list
