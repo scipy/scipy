@@ -8,6 +8,15 @@ except:
     isUmfpack = False
 useUmfpack = True
 
+def use_solver( use ):
+    """
+    The default sparse solver is umfpack when available. This can be changed by
+    passing "use = {'useUmfpack' : False}"
+    which then causes the always present SuperLU based solver to be used.
+    """
+    for key, val in use.iteritems():
+        globals()[key] = val
+
 def _toCS_superLU( A ):
     if hasattr(A, 'tocsc') and not isspmatrix_csr( A ):
         mat = A.tocsc()
