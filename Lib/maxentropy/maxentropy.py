@@ -114,12 +114,21 @@ class basemodel(object):
         self.storegradnorms = False
         self.gradnorms = {}
         
+        # Do we seek to minimize the KL divergence between the model and a
+        # prior density p_0?  If not, set this to None; then we maximize the
+        # entropy.  If so, set this to an array of the log probability densities
+        # p_0(x) for each x in the sample space.  For bigmodel objects, set this
+        # to an array of the log probability densities p_0(x) for each x in the
+        # random sample from the auxiliary distribution.
+        self.priorlogprobs = None
+
         # By default, use the sample matrix sampleF to estimate the
         # entropy dual and its gradient.  Otherwise, set self.external to
         # the index of the sample feature matrix in the list self.externalFs.
         # This applies to 'bigmodel' objects only, but setting this here
         # simplifies the code in dual() and grad().
         self.external = None
+        self.externalpriorlogprobs = None
         
 
     def fit(self, K, algorithm='CG'):
@@ -341,10 +350,9 @@ class basemodel(object):
                 self.callback(self)
             self.callingback = False
             if L < self.mindual:
-                raise DivergenceError, \
-                  "the dual is below the threshold 'mindual' and may be diverging" \
-                  " to -inf.  Fix the constraints or lower the"\
-                  " threshold."
+                raise DivergenceError, "dual is below the threshold 'mindual'" \
+                        " and may be diverging to -inf.  Fix the constraints" \
+                        " or lower the threshold!"
             self.fnevals += 1
         
         # (We don't reset theta to its prior value.)
@@ -397,8 +405,28 @@ class basemodel(object):
         return G
             
         
-   
-   
+    def crossentropy(self, fx, log_prior_x=None, base=numpy.e):
+        """Returns the cross entropy H(q, p) of the empirical
+        distribution q of the data (with the given feature matrix fx)
+        with respect to the model p.  For discrete distributions this is
+        defined as:
+        
+            H(q, p) = - n^{-1} \sum_{j=1}^n log p(x_j)
+        
+        where x_j are the data elements whose features are given by the
+        matrix {fx = f(x_j)}, j=1,...,n.
+        
+        When the base of the logarithm is not e, this is 
+        For continuous distributions this makes no sense!
+        """
+        H = -self.logpdf(fx, log_prior_x).mean()
+        if base != numpy.e:
+            # H' = H * log_{base} (e)
+            return H / numpy.log(base)
+        else:
+            return H
+    
+
     def normconst(self):
         """Returns the normalization constant, or partition function, for
         the current model.  Warning -- this may be too large to represent;
@@ -409,7 +437,7 @@ class basemodel(object):
         Z = E_aux_dist [{exp (theta.f(X))} / aux_dist(X)] using a sample
         from aux_dist.
         """
-        return math.exp(self.lognormconst())
+        return numpy.exp(self.lognormconst())
     
     
     def numconstraints(self):
@@ -576,12 +604,6 @@ class model(basemodel):
             raise ValueError, "not supported: specify both features and" \
                     " sample space or neither"
         
-        # Do we seek to minimize the KL divergence between the model and a
-        # prior density p_0?  If so, set this to an array of the log
-        # probability densities p_0(x) for each x in the sample space.  To
-        # maximize the entropy, set this to None.
-        self.priorlogprobs = None
-        
         
     def setfeaturesandsamplespace(self, f, samplespace):
         """Creates a new exponential model, where f is a list of feature
@@ -602,8 +624,8 @@ class model(basemodel):
     
     def lognormconst(self):
         """Compute the log of the normalization constant (partition
-        function) Z=sum_{x \in samplespace} exp(theta . f(x)).  The
-        sample space must be discrete and finite.
+        function) Z=sum_{x \in samplespace} p_0(x) exp(theta . f(x)).
+        The sample space must be discrete and finite.
         """        
         # See if it's been precomputed
         try:
@@ -680,10 +702,8 @@ class model(basemodel):
         """
         return arrayexp(self.logpmf())
     
-    def probdist(self):
-        """An alias for pmf()
-        """
-        return self.pmf()
+    # An alias for pmf
+    probdist = pmf
     
     def pmf_function(self, f=None):
         """Returns the pmf p_theta(x) as a function taking values on the
@@ -728,12 +748,330 @@ class model(basemodel):
             # Do we have a prior distribution p_0?
             if priorlogpmf is not None:
                 priorlogprob_x = priorlogpmf(x)
-                return math.exp(numpy.dot(self.theta, f_x) + priorlogprob_x - logZ)
+                return math.exp(numpy.dot(self.theta, f_x) + priorlogprob_x \
+                                - logZ)
             else:
                 return math.exp(numpy.dot(self.theta, f_x) - logZ)
         return p
     
-   
+  
+class conditionalmodel(model):
+    """A conditional maximum-entropy (exponential-form) model p(x|w) on a
+    discrete sample space.  This is useful for classification problems:
+    given the context w, what is the probability of each class x?
+
+    The form of such a model is
+
+        p(x | w) = exp(theta . f(w, x)) / Z(w; theta)
+
+    where Z(w; theta) is a normalization term equal to
+
+        Z(w; theta) = sum_x exp(theta . f(w, x)).
+
+    The sum is over all classes x in the set Y, which must be supplied to
+    the constructor as the parameter 'samplespace'.
+
+    Such a model form arises from maximizing the entropy of a conditional
+    model p(x | w) subject to the constraints:
+
+        K_i = E f_i(W, X)
+
+    where the expectation is with respect to the distribution
+
+        q(w) p(x | w)
+
+    where q(w) is the empirical probability mass function derived from
+    observations of the context w in a training set.  Normally the vector
+    K = {K_i} of expectations is set equal to the expectation of f_i(w,
+    x) with respect to the empirical distribution.
+
+    This method minimizes the Lagrangian dual L of the entropy, which is
+    defined for conditional models as
+    
+        L(theta) = sum_w q(w) log Z(w; theta) 
+                   - sum_{w,x} q(w,x) [theta . f(w,x)] 
+    
+    Note that both sums are only over the training set {w,x}, not the
+    entire sample space, since q(w,x) = 0 for all w,x not in the training
+    set.
+
+    The partial derivatives of L are:
+        dL / dtheta_i = K_i - E f_i(X, Y)
+    where the expectation is as defined above.
+    
+    """
+    def __init__(self, F, counts, numcontexts):
+        """The F parameter should be a (sparse) m x size matrix, where m
+        is the number of features and size is |W| * |X|, where |W| is the
+        number of contexts and |X| is the number of elements X in the
+        sample space.
+        
+        The 'counts' parameter should be a row vector stored as a (1 x
+        |W|*|X|) sparse matrix, whose element i*|W|+j is the number of
+        occurrences of x_j in context w_i in the training set.
+         
+        This storage format allows efficient multiplication over all
+        contexts in one operation.
+        """
+        # Ideally, the 'counts' parameter could be represented as a sparse
+        # matrix of size C x X, whose ith row # vector contains all points x_j
+        # in the sample space X in context c_i.  For example:
+        #     N = sparse.lil_matrix((len(contexts), len(samplespace)))   
+        #     for (c, x) in corpus:
+        #         N[c, x] += 1
+        
+        # This would be a nicer input format, but computations are more
+        # efficient internally with one long row vector.  What we really need
+        # is for sparse # matrices to offer a .reshape method so this
+        # conversion could be done internally and transparently.  Then the
+        # numcontexts argument to the conditionalmodel constructor could also
+        # be inferred from the matrix dimensions.
+
+        super(conditionalmodel, self).__init__()
+        self.F = F
+        self.numcontexts = numcontexts
+        
+        S = F.shape[1] // numcontexts          # number of sample point
+        assert isinstance(S, int)
+        
+        # Set the empirical pmf:  p_tilde(w, x) = N(w, x) / \sum_c \sum_y N(c, y).
+        # This is always a rank-2 beast with only one row (to support either
+        # arrays or dense/sparse matrices.
+        if not hasattr(counts, 'shape'):
+            # Not an array or dense/sparse matrix
+            p_tilde = asarray(counts).reshape(1, len(counts))
+        else:
+            if counts.ndim == 1:
+                p_tilde = counts.reshape(1, len(counts))
+            elif counts.ndim == 2:
+                # It needs to be flat (a row vector)
+                if counts.shape[0] > 1:
+                    try:
+                        # Try converting to a row vector
+                        p_tilde = count.reshape((1, size))
+                    except AttributeError:
+                        raise ValueError, "the 'counts' object needs to be a"\
+                            " row vector (1 x n) rank-2 array/matrix) or have"\
+                            " a .reshape method to convert it into one"
+                else:
+                    p_tilde = counts
+        # Make a copy -- don't modify 'counts'
+        self.p_tilde = p_tilde / p_tilde.sum()
+        
+        # As an optimization, p_tilde need not be copied or stored at all, since
+        # it is only used by this function.
+
+        self.p_tilde_context = numpy.empty(numcontexts, float)
+        for w in xrange(numcontexts):
+            self.p_tilde_context[w] = self.p_tilde[0, w*S : (w+1)*S].sum()
+
+        # Now compute the vector K = (K_i) of expectations of the
+        # features with respect to the empirical distribution p_tilde(w, x).
+        # This is given by:
+        # 
+        #     K_i = \sum_{w, x} q(w, x) f_i(w, x)
+        #
+        # This is independent of the model parameters.
+        self.K = flatten(innerprod(self.F, self.p_tilde.transpose()))
+        self.numsamplepoints = S
+    
+    
+    def lognormconst(self):
+        """Compute the elementwise log of the normalization constant
+        (partition function) Z(w)=sum_{y \in Y(w)} exp(theta . f(w, y)).
+        The sample space must be discrete and finite.  This is a vector
+        with one element for each context w.
+        """        
+        # See if it's been precomputed
+        try:
+            return self.logZ
+        except AttributeError:
+            pass
+        
+        numcontexts = self.numcontexts
+        S = self.numsamplepoints
+        # Has F = {f_i(x_j)} been precomputed?
+        try:
+            self.F
+            # Good, assume F has been precomputed
+            
+            log_p_dot = innerprodtranspose(self.F, self.theta)
+
+            # Are we minimizing KL divergence?
+            if self.priorlogprobs is not None:
+                log_p_dot += self.priorlogprobs
+            
+            self.logZ = numpy.zeros(numcontexts, float)
+            for w in xrange(numcontexts):
+                self.logZ[w] = logsumexp(log_p_dot[w*S: (w+1)*S])
+            return self.logZ
+        
+        except AttributeError:
+            raise AttributeError, "first create a feature matrix F"
+
+
+    def dual(self, theta=None, ignorepenalty=False):
+        """The entropy dual function is defined for conditional models as
+        
+            L(theta) = sum_w q(w) log Z(w; theta) 
+                       - sum_{w,x} q(w,x) [theta . f(w,x)] 
+
+        or equivalently as
+
+            L(theta) = sum_w q(w) log Z(w; theta) - (theta . k)
+
+        where K_i = \sum_{w, x} q(w, x) f_i(w, x), and where q(w) is the
+        empirical probability mass function derived from observations of the
+        context w in a training set.  Normally q(w, x) will be 1, unless the
+        same class label is assigned to the same context more than once.
+        
+        Note that both sums are only over the training set {w,x}, not the
+        entire sample space, since q(w,x) = 0 for all w,x not in the training
+        set.
+        
+        The entropy dual function equals the negative log likelihood.
+
+        Compare to the entropy dual of an unconditional model:
+            L(theta) = log(Z) - theta^T . K
+        """
+        if not self.callingback:
+            if self.verbose:
+                print "Function eval #", self.fnevals
+            
+            if theta is not None:
+                self.setparams(theta)
+        
+        logZs = self.lognormconst()
+        
+        #L = numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.p_tilde, \
+        #        innerprodtranspose(self.F, self.theta))
+        
+        L = numpy.dot(self.p_tilde_context, logZs) - numpy.dot(self.theta, \
+                                                               self.K)
+        
+        if self.verbose and self.external is None:
+            print "  dual is ", L
+        
+        # Use a Gaussian prior for smoothing if requested.
+        # This adds the penalty term \sum_{i=1}^m \theta_i^2 / {2 \sigma_i^2}
+        if self.sigma2 is not None and ignorepenalty==False:
+            penalty = 0.5 * (self.theta**2 / self.sigma2).sum()
+            L += penalty
+            if self.verbose and self.external is None:
+                print "  regularized dual is ", L
+        
+        # Store new dual
+        if not self.callingback:
+            if self.storeduals:
+                self.duals[self.fnevals] = L
+            # Prevent infinite recursion if the callback function calls dual():
+            self.callingback = True   
+            # Call the callback function.  The complex-looking attribute-test
+            # sequence is necessary to prevent an AttributeError in the
+            # callback function from being caught and silenced
+            # inappropriately.
+            try:
+                self.callback
+            except AttributeError:
+                pass
+            else:
+                self.callback(self)
+            self.callingback = False
+            if L < self.mindual:
+                raise DivergenceError, \
+                  "the dual is below the threshold 'mindual' and may be"\
+                  " diverging to -inf.  Fix the constraints or lower the"\
+                  " threshold."
+            self.fnevals += 1
+        
+        # (We don't reset theta to its prior value.)
+        return L
+    
+    
+    # These do not need to be overridden:
+    #     grad
+    #     pmf
+    #     probdist
+    
+    
+    def fit(self, algorithm='CG'):
+        """Fits the conditional maximum entropy model subject to the
+        constraints
+
+            sum_{w, x} p_tilde(w) p(x | w) f_i(w, x) = k_i
+
+        for i=1,...,m, where k_i is the empirical expectation
+            k_i = sum_{w, x} p_tilde(w, x) f_i(w, x).
+        """
+       
+        # Call base class method
+        return model.fit(self, self.K, algorithm)
+    
+    
+    def expectations(self):
+        """The vector of expectations of the features with respect to the
+        distribution p_tilde(w) p(x | w), where p_tilde(w) is the
+        empirical probability mass function value stored as
+        self.p_tilde_context[w].
+        """
+        try:
+            self.F
+        except AttributeError:
+            raise AttributeError, "need a pre-computed feature matrix F"
+        # A pre-computed matrix of features exists
+
+        numcontexts = self.numcontexts
+        S = self.numsamplepoints
+        p = self.pmf()
+        # p is now an array representing p(x | w) for each class w.  Now we
+        # multiply the appropriate elements by p_tilde(w) to get the hybrid pmf
+        # required for conditional modelling:
+        for w in xrange(numcontexts):
+            p[w*S : (w+1)*S] *= self.p_tilde_context[w]
+        
+        # Use the representation E_p[f(X)] = p . F
+        return flatten(innerprod(self.F, p))
+
+        # # We only override to modify the documentation string.  The code
+        # # is the same as for the model class.
+        # return model.expectations(self)
+    
+
+    def logpmf(self):
+        """Returns a (sparse) row vector of logarithms of the conditional
+        probability mass function (pmf) values p(x | c) for all pairs (c,
+        x), where c are contexts and x are points in the sample space.
+        The order of these is log p(x | c) = logpmf()[c * numsamplepoints
+        + x].
+        """
+        # Have the features already been computed and stored?
+        try:
+            self.F
+        except AttributeError:
+            raise AttributeError, "first set the feature matrix F"
+        else:
+            # p(x | c) = exp(theta.f(x, c)) / sum_c[exp theta.f(x, c)]
+            #      = exp[log p_dot(x) - logsumexp{log(p_dot(y))}]
+            
+            numcontexts = self.numcontexts
+            S = self.numsamplepoints
+            log_p_dot = flatten(innerprodtranspose(self.F, self.theta))
+            # Do we have a prior distribution p_0?
+            if self.priorlogprobs is not None:
+                log_p_dot += self.priorlogprobs
+            try:
+                self.logZ
+            except AttributeError:
+                # Compute the norm constant (quickly!)
+                self.logZ = numpy.zeros(numcontexts, float)
+                for w in xrange(numcontexts):
+                    self.logZ[w] = logsumexp(log_p_dot[w*S : (w+1)*S])
+            # Renormalize
+            for w in xrange(numcontexts):
+                log_p_dot[w*S : (w+1)*S] -= self.logZ[w]
+            return log_p_dot
+
+    
 class bigmodel(basemodel):
     """A maximum-entropy (exponential-form) model on a large sample
     space.
@@ -752,12 +1090,6 @@ class bigmodel(basemodel):
     
     def __init__(self):
         super(bigmodel, self).__init__()
-        
-        # Do we seek to minimize the KL divergence between the model and a
-        # prior density p_0?  If so, set this to an array of the log
-        # probability densities p_0(x) for each x in the sample.  To
-        # maximize the entropy, set this to None.
-        self.samplepriorlogprobs = None
         
         # Number of sample matrices to generate and use to estimate E and logZ
         self.matrixtrials = 1 
@@ -931,8 +1263,8 @@ class bigmodel(basemodel):
         weights corresponding to the sample x_j whose features are
         represented as the columns of self.sampleF.
             logw_j = p_dot(x_j) / q(x_j),
-        where p_dot(x_j) is the unnormalized pdf value of the point x_j
-        under the current model.
+        where p_dot(x_j) = p_0(x_j) exp(theta . f(x_j)) is the
+        unnormalized pdf value of the point x_j under the current model.
         """
         # First see whether logw has been precomputed
         try:
@@ -946,15 +1278,18 @@ class bigmodel(basemodel):
         if self.external is None:
             thetadotF = innerprodtranspose(self.sampleF, self.theta)
             logw = thetadotF - self.samplelogprobs
+            # Are we minimizing KL divergence between the model and a prior
+            # density p_0?
+            if self.priorlogprobs is not None:
+                logw += self.priorlogprobs
         else:
             e = self.external
             thetadotF = innerprodtranspose(self.externalFs[e], self.theta)
             logw = thetadotF - self.externallogprobs[e]
-        
-        # Are we minimizing KL divergence between the model and a prior
-        # density p_0?
-        if self.samplepriorlogprobs is not None:
-            logw += self.samplepriorlogprobs
+            # Are we minimizing KL divergence between the model and a prior
+            # density p_0?
+            if self.externalpriorlogprobs is not None:
+                logw += self.externalpriorlogprobs[e]
         
         # Good, we have our logw.  Now:
         self.logw = logw
@@ -1166,9 +1501,9 @@ class bigmodel(basemodel):
         return p
      
     
-    def logpdf(self, fx):
+    def logpdf(self, fx, log_prior_x=None):
         """Returns the log of the estimated density p_theta(x) at the
-        point x.  This is defined as:
+        point x.  If log_prior_x is not passed, this is defined as:
             log p(x) = theta.f(x) - log Z
         where f(x) is given by the (m x 1) array fx.
 
@@ -1179,14 +1514,24 @@ class bigmodel(basemodel):
         
         log Z is estimated using the sample provided with
         setsampleFgen().
+
+        The optional argument log_prior_x is the log of the prior density
+        p_0 at the point x (or at each point x_j if fx is 2-dimensional).
+        The log pdf of the model is then defined as
+            log p(x) = log p0(x) + theta.f(x) - log Z
+        and p then represents the model of minimum KL divergence D(p||p0)
+        instead of maximum entropy.
         """
         log_Z_est = self.lognormconst()
         if len(fx.shape) == 1:
-            return numpy.dot(self.theta, fx) - log_Z_est
+            logpdf = numpy.dot(self.theta, fx) - log_Z_est
         else:
-            return innerprodtranspose(fx, self.theta) - log_Z_est
-
-
+            logpdf = innerprodtranspose(fx, self.theta) - log_Z_est
+        if log_prior_x is not None:
+            logpdf += log_prior_x
+        return logpdf
+    
+    
     def stochapprox(self, K):
         """Tries to fit the model to the feature expectations K using
         stochastic approximation, with the Robbins-Monro stochastic
@@ -1306,23 +1651,29 @@ class bigmodel(basemodel):
                 break
 
                       
-    def settestsamples(self, F_list, logprob_list, M):
-        """Sets the model to test itself every M iterations during
-        fitting using the provided list of feature matrices, each
-        representing a sample {x_j} from an auxiliary distribution q,
-        together with the corresponding log probabiltiy mass or density
-        values log {q(x_j)} in logprob_list.  This is useful as an
-        external check on the fitting process with sample path
-        optimization, which could otherwise reflect the vagaries of the
-        single sample being used for optimization, rather than the
+    def settestsamples(self, F_list, logprob_list, testevery=1, priorlogprob_list=None):
+        """Requests that the model be tested every 'testevery' iterations
+        during fitting using the provided list F_list of feature
+        matrices, each representing a sample {x_j} from an auxiliary
+        distribution q, together with the corresponding log probabiltiy
+        mass or density values log {q(x_j)} in logprob_list.  This is
+        useful as an external check on the fitting process with sample
+        path optimization, which could otherwise reflect the vagaries of
+        the single sample being used for optimization, rather than the
         population as a whole.
+
+        If priorlogprob_list is not None, it should be a list of arrays
+        of log(p0(x_j)) values, j = 0,. ..., n - 1, specifying the prior
+        distribution p0 for the sample points x_j for each of the test
+        samples.
         """
         # Sanity check 
         assert len(F_list) == len(logprob_list)
         
+        self.testevery = testevery
         self.externalFs = F_list
         self.externallogprobs = logprob_list
-        self.testevery = M
+        self.externalpriorlogprobs = priorlogprob_list
         
         # Store the dual and mean square error based on the internal and
         # external (test) samples.  (The internal sample is used

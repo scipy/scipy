@@ -17,7 +17,7 @@ __version__ = '2.0'
 from __future__ import division
 import random, math, bisect, cmath
 import numpy
-from numpy import log, exp, asarray
+from numpy import log, exp, asarray, ndarray
 from scipy import sparse
 
 def logsumexp(a):
@@ -309,10 +309,7 @@ def innerprod(A,v):
         (p, q) = vshape
     if n != p:
         raise TypeError, "matrix dimensions are incompatible"
-    try:
-        v.matvec
-    except AttributeError:
-        # It looks like v is dense
+    if isinstance(v, ndarray):
         try:
             # See if A is sparse
             A.matvec
@@ -329,10 +326,10 @@ def innerprod(A,v):
                 innerprod = numpy.empty(m, float)
                 A.matvec(v, innerprod)
                 return innerprod
+    elif sparse.isspmatrix(v):
+        return A * v
     else:
-        raise TypeError, "can't discern correct types for the inner" \
-              " product.  If you are trying to multiply a dense matrix by a" \
-              " sparse vector, this is unsupported."
+        raise TypeError, "unsupported types for inner product"
 
 
 def innerprodtranspose(A,v):
@@ -349,33 +346,7 @@ def innerprodtranspose(A,v):
 
     (m, n) = A.shape
     #pdb.set_trace()
-    try:
-        # See if A is a PySparse matrix
-        A.matvec_transp
-    except AttributeError:
-        # See if A is a scipy.sparse.spmatrix
-        if sparse.isspmatrix(A):
-            innerprodtranspose = A.rmatvec(v).transpose()
-            return innerprodtranspose
-        else:
-            # Assume A is a dense matrix
-            if isinstance(v, numpy.ndarray):
-                # v is also dense
-                if len(v.shape) == 1:
-                    # We can't transpose a rank-1 matrix into a row vector, so
-                    # we reshape it.
-                    vm = v.shape[0]
-                    vcolumn = numpy.reshape(v, (1, vm))
-                    x = numpy.dot(vcolumn, A)
-                    return numpy.reshape(x, (n,))
-                else:
-                    #(vm, vn) = v.shape
-                    # Assume vm == m
-                    x = numpy.dot(numpy.transpose(v), A)
-                    return numpy.transpose(x)
-            else:
-                raise TypeError, "v must be a dense array"
-    else:
+    if hasattr(A, 'matvec_transp'):
         # A looks like a PySparse matrix
         if len(v.shape) == 1:
             innerprod = numpy.empty(n, float)
@@ -384,7 +355,26 @@ def innerprodtranspose(A,v):
             raise TypeError, "innerprodtranspose(A,v) requires that v be " \
                     "a vector (rank-1 dense array) if A is sparse."
         return innerprod
-
+    elif sparse.isspmatrix(A):
+        return A.rmatvec(v).transpose()
+    else:
+        # Assume A is dense
+        if isinstance(v, numpy.ndarray):
+            # v is also dense
+            if len(v.shape) == 1:
+                # We can't transpose a rank-1 matrix into a row vector, so
+                # we reshape it.
+                vm = v.shape[0]
+                vcolumn = numpy.reshape(v, (1, vm))
+                x = numpy.dot(vcolumn, A)
+                return numpy.reshape(x, (n,))
+            else:
+                #(vm, vn) = v.shape
+                # Assume vm == m
+                x = numpy.dot(numpy.transpose(v), A)
+                return numpy.transpose(x)
+        else:
+            raise TypeError, "unsupported types for inner product"
 
 
 def rowmeans(A):
@@ -460,9 +450,13 @@ def columnvariances(A):
         return columnmeans((A-means)**2) * (m/(m-1.0))
 
 def flatten(a):
-    """Flattens the dense matrix 'a' into a 1-dimensional array
+    """Flattens the sparse matrix or dense array/matrix 'a' into a
+    1-dimensional array
     """
-    return numpy.asarray(a).flatten()
+    if sparse.isspmatrix(a):
+        return a.A.flatten()
+    else:
+        return numpy.asarray(a).flatten()
 
 class DivergenceError(Exception):
     """Exception raised if the entropy dual has no finite minimum.
