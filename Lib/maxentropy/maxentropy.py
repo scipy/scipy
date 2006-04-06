@@ -748,7 +748,8 @@ class model(basemodel):
             # Do we have a prior distribution p_0?
             if priorlogpmf is not None:
                 priorlogprob_x = priorlogpmf(x)
-                return math.exp(numpy.dot(self.theta, f_x) + priorlogprob_x - logZ)
+                return math.exp(numpy.dot(self.theta, f_x) + priorlogprob_x \
+                                - logZ)
             else:
                 return math.exp(numpy.dot(self.theta, f_x) - logZ)
         return p
@@ -798,7 +799,6 @@ class conditionalmodel(model):
         dL / dtheta_i = K_i - E f_i(X, Y)
     where the expectation is as defined above.
     
-    
     """
     def __init__(self, F, counts, numcontexts):
         """The F parameter should be a (sparse) m x size matrix, where m
@@ -813,10 +813,22 @@ class conditionalmodel(model):
         This storage format allows efficient multiplication over all
         contexts in one operation.
         """
+        # Ideally, the 'counts' parameter could be represented as a sparse
+        # matrix of size C x X, whose ith row # vector contains all points x_j
+        # in the sample space X in context c_i.  For example:
+        #     N = sparse.lil_matrix((len(contexts), len(samplespace)))   
+        #     for (c, x) in corpus:
+        #         N[c, x] += 1
+        
+        # This would be a nicer input format, but computations are more
+        # efficient internally with one long row vector.  What we really need
+        # is for sparse # matrices to offer a .reshape method so this
+        # conversion could be done internally and transparently.  Then the
+        # numcontexts argument to the conditionalmodel constructor could also
+        # be inferred from the matrix dimensions.
+
         super(conditionalmodel, self).__init__()
         self.F = F
-        # self.indices_context = indices_context
-        # self.numcontexts = len(indices_context)
         self.numcontexts = numcontexts
         
         S = F.shape[1] // numcontexts          # number of sample point
@@ -838,18 +850,19 @@ class conditionalmodel(model):
                         # Try converting to a row vector
                         p_tilde = count.reshape((1, size))
                     except AttributeError:
-                        raise ValueError, "the 'counts' object needs to be a row vector (1 x n) rank-2 array/matrix) or have a .reshape method to convert it into one"
+                        raise ValueError, "the 'counts' object needs to be a"\
+                            " row vector (1 x n) rank-2 array/matrix) or have"\
+                            " a .reshape method to convert it into one"
                 else:
                     p_tilde = counts
         # Make a copy -- don't modify 'counts'
         self.p_tilde = p_tilde / p_tilde.sum()
         
-        # As an optimization, p_tilde need not be copied or stored at all!  It is only
-        # used by this function.
+        # As an optimization, p_tilde need not be copied or stored at all, since
+        # it is only used by this function.
 
         self.p_tilde_context = numpy.empty(numcontexts, float)
         for w in xrange(numcontexts):
-            # Old: self.p_tilde_context[w] = self.p_tilde.getrow(w).sum()
             self.p_tilde_context[w] = self.p_tilde[0, w*S : (w+1)*S].sum()
 
         # Now compute the vector K = (K_i) of expectations of the
@@ -966,8 +979,8 @@ class conditionalmodel(model):
             self.callingback = False
             if L < self.mindual:
                 raise DivergenceError, \
-                  "the dual is below the threshold 'mindual' and may be diverging" \
-                  " to -inf.  Fix the constraints or lower the"\
+                  "the dual is below the threshold 'mindual' and may be"\
+                  " diverging to -inf.  Fix the constraints or lower the"\
                   " threshold."
             self.fnevals += 1
         
@@ -1014,7 +1027,6 @@ class conditionalmodel(model):
         # multiply the appropriate elements by p_tilde(w) to get the hybrid pmf
         # required for conditional modelling:
         for w in xrange(numcontexts):
-            # p[self.indices_context[w]] *= self.p_tilde_context[w]
             p[w*S : (w+1)*S] *= self.p_tilde_context[w]
         
         # Use the representation E_p[f(X)] = p . F
@@ -1053,11 +1065,9 @@ class conditionalmodel(model):
                 # Compute the norm constant (quickly!)
                 self.logZ = numpy.zeros(numcontexts, float)
                 for w in xrange(numcontexts):
-                    # self.logZ[w] = logsumexp(log_p_dot[self.indices_context[w]])
                     self.logZ[w] = logsumexp(log_p_dot[w*S : (w+1)*S])
             # Renormalize
             for w in xrange(numcontexts):
-                # log_p_dot[self.indices_context[w]] -= self.logZ[w]
                 log_p_dot[w*S : (w+1)*S] -= self.logZ[w]
             return log_p_dot
 

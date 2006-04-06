@@ -58,11 +58,7 @@ context_index = dict((c, i) for i, c in enumerate(contexts))
 
 # NEW: Sparse matrix version:
 # Sparse matrices are only two dimensional in SciPy.  Store as m x size, where
-# size is |W|*|X|.  Constructing this matrix by looping over all features,
-# contexts, and points in the sample space, as here, is possibly very slow.
-# This can and should be done more efficiently, but doing so requires some
-# knowledge of the structure of the features -- so only the non-zeros can be
-# looped over.
+# size is |W|*|X|.
 F = sparse.lil_matrix((len(f), numcontexts * numsamplepoints))
 for i, f_i in enumerate(f):
     for c, context in enumerate(contexts):
@@ -81,19 +77,18 @@ N = sparse.lil_matrix((1, numcontexts * len(samplespace)))   # initialized to ze
 for (x, c) in corpus:
     N[0, context_index[c] * numsamplepoints + samplespace_index[x]] += 1
 
-
-# OLD:
-# # Use a sparse matrix of size C x X, whose ith row vector contains all
-# # points x_j in the sample space X in context c_i:
+# Ideally, this could be stored as a sparse matrix of size C x X, whose ith row
+# vector contains all points x_j in the sample space X in context c_i:
 # N = sparse.lil_matrix((len(contexts), len(samplespace)))   # initialized to zero
 # for (c, x) in corpus:
 #     N[c, x] += 1
 
 # This would be a nicer input format, but computations are more efficient
-# internally with one long row vector.  Ideally sparse matrices would
-# offer a .reshape method so this conversion could be done internally and
-# transparently.  Then the numcontexts argument to the conditionalmodel
-# constructor could also be inferred from the matrix dimensions.
+# internally with one long row vector.  What we really need is for sparse
+# matrices to offer a .reshape method so this conversion could be done
+# internally and transparently.  Then the numcontexts argument to the
+# conditionalmodel constructor could also be inferred from the matrix
+# dimensions.
 
 # Create a model
 model = maxentropy.conditionalmodel(F, N, numcontexts)
@@ -114,15 +109,16 @@ c = contexts.index('the')
 print p[c*numsamplepoints:(c+1)*numsamplepoints]
 
 print "\nFitted distribution is:"
-print "c \ x \t",
+print "%12s" % ("c \ x"),
 for label in samplespace:
-    print label + "\t",
+    print "%12s" % label,
 
 for c, context in enumerate(contexts):
-    print "\n" + context + "\t",
+    print "\n%12s" % context,
     for x, label in enumerate(samplespace):
-        print ("%.3f" % p[c*numsamplepoints+x]) + "\t",
+        print ("%12.3f" % p[c*numsamplepoints+x]),
 
+print
 
 # Ignore below here
 
