@@ -13,7 +13,8 @@ def configuration(parent_package='',top_path=None):
     config.add_library('linpack_lite',
                        sources=[join('linpack_lite','*.f')])
     config.add_library('mach',
-                       sources=[join('mach','*.f')])
+                       sources=[join('mach','*.f')],
+                       config_fc={'noopt':(__file__,1)})
     config.add_library('quadpack',
                        sources=[join('quadpack','*.f')])
     config.add_library('odepack',

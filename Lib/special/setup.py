@@ -18,7 +18,8 @@ def configuration(parent_package='',top_path=None):
                        macros=define_macros)
 
     # Fortran libraries
-    config.add_library('mach',sources=[join('mach','*.f')])
+    config.add_library('mach',sources=[join('mach','*.f')],
+                       config_fc={'noopt':(__file__,1)})
     config.add_library('toms',sources=[join('amos','*.f')])
     config.add_library('amos',sources=[join('toms','*.f')])
     config.add_library('cdf',sources=[join('cdflib','*.f')])
