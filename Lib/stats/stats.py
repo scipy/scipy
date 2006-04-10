@@ -746,20 +746,30 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     else:
         return vals
 
-def describe(a,axis=0):
-    """Returns several descriptive statistics of the passed array.  Axis
-    can equal None (ravel array first), or an integer (the axis over
-    which to operate)
+def describe(a, axis=0):
+    """Computes several descriptive statistics of the passed array.
 
-    Returns: n, (min,max), mean, standard deviation, skew, kurtosis
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    (size of the data,
+     (min, max),
+     arithmetic mean,
+     unbiased variance,
+     biased skewness,
+     biased kurtosis)
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    mm = (minimum.reduce(a),maximum.reduce(a))
-    m = mean(a,axis)
-    v = var(a,axis)
-    sk = skew(a,axis)
-    kurt = kurtosis(a,axis)
+    mm = (np.minimum.reduce(a), np.maximum.reduce(a))
+    m = mean(a, axis)
+    v = var(a, axis)
+    sk = skew(a, axis)
+    kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
 
 #####################################
