@@ -1051,7 +1051,7 @@ Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 
 
 #####################################
-######  AVARIABILITY FUNCTIONS  #####
+######  VARIABILITY FUNCTIONS  #####
 #####################################
 
 def obrientransform(*args):
@@ -1091,7 +1091,7 @@ Returns: transformed data for use in an ANOVA
         return array(nargs)
 
 
-def samplevar (a,axis=0):
+def samplevar(a, axis=0):
     """
 Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
@@ -1105,7 +1105,7 @@ an integer (the axis over which to operate)
     return svar
 
 
-def samplestd (a, axis=0):
+def samplestd(a, axis=0):
     """Returns the sample standard deviation of the values in the passed
 array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate).
@@ -1209,10 +1209,8 @@ of the compare array.
 
 
 #####################################
-#######  ATRIMMING FUNCTIONS  #######
+#######  TRIMMING FUNCTIONS  #######
 #####################################
-
-# Removed round --- same as Numeric.around
 
 def threshold(a,threshmin=None,threshmax=None,newval=0):
     """
@@ -1278,13 +1276,13 @@ def trim_mean(a,proportiontocut):
 
 
 #####################################
-#####  ACORRELATION FUNCTIONS  ######
+#####  CORRELATION FUNCTIONS  ######
 #####################################
 
 #  Cov is more flexible than the original
 #    covariance and computes an unbiased covariance matrix
 #    by default.
-def cov(m,y=None, rowvar=False, bias=False):
+def cov(m, y=None, rowvar=False, bias=False):
     """Estimate the covariance matrix.
 
     If m is a vector, return the variance.  For matrices where each row
