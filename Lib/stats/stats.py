@@ -472,6 +472,29 @@ def mode(a, axis=0):
     return mostfrequent, oldcounts
 
 def mask_to_limits(a, limits, inclusive):
+    """Mask an array for values outside of given limits.
+
+    This is primarily a utility function.
+
+    Parameters
+    ----------
+    a : array
+    limits : (float or None, float or None)
+        A tuple consisting of the (lower limit, upper limit).  Values in the
+        input array less than the lower limit or greater than the upper limit
+        will be masked out. None implies no limit.
+    inclusive : (bool, bool)
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to lower or upper are allowed.
+
+    Returns
+    -------
+    A MaskedArray.
+
+    Raises
+    ------
+    A ValueError if there are no values within the given limits.
+    """
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     am = ma.MaskedArray(a)
