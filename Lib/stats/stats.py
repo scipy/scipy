@@ -3091,24 +3091,38 @@ Use fastsort for speed.
     return array(svec), array(ivec)
 
 def rankdata(a):
-    """
-Ranks the data in a, dealing with ties appropritely.  First ravels
-a.  Adapted from Gary Perlman's |Stat ranksort.
+    """Ranks the data in a, dealing with ties appropriately.
 
-Returns: array of length equal to a, containing rank scores
-"""
-    a = ravel(a)
+    Equal values are assigned a rank that is the average of the ranks that would
+    have been otherwise assigned to all of the values within that set. Ranks
+    begin at 1, not 0.
+
+    Example
+    -------
+    In [15]: stats.rankdata([0, 2, 2, 3])
+    Out[15]: array([ 1. ,  2.5,  2.5,  4. ])
+
+    Parameters
+    ----------
+    a : array
+        This array is first flattened.
+
+    Returns
+    -------
+    An array of length equal to the size of a, containing rank scores.
+    """
+    a = np.ravel(a)
     n = len(a)
     svec, ivec = fastsort(a)
     sumranks = 0
     dupcount = 0
-    newarray = zeros(n,Float)
-    for i in range(n):
-        sumranks = sumranks + i
-        dupcount = dupcount + 1
+    newarray = np.zeros(n, float)
+    for i in xrange(n):
+        sumranks += i
+        dupcount += 1
         if i==n-1 or svec[i] != svec[i+1]:
             averank = sumranks / float(dupcount) + 1
-            for j in range(i-dupcount+1,i+1):
+            for j in xrange(i-dupcount+1,i+1):
                 newarray[ivec[j]] = averank
             sumranks = 0
             dupcount = 0
