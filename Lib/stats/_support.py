@@ -4,7 +4,7 @@ import numpy as N
 from types import ListType, TupleType, StringType
 import copy
 
-def abut (source, *args):
+def abut(source, *args):
     # comment: except for the repetition, this is equivalent to hstack.
     """\nLike the |Stat abut command.  It concatenates two arrays column-wise
     and returns the result.  CAUTION:  If one array is shorter, it will be
@@ -72,7 +72,7 @@ def unique(inarray):
                         uniques = N.concatenate([uniques,N.array([item])])
     return uniques
 
-def colex (a,indices,axis=1):
+def colex(a, indices, axis=1):
     """\nExtracts specified indices (a list) from passed array, along passed
     axis (column extraction is default).  BEWARE: A 1D array is presumed to be a
     column-array (and that the whole array will be returned as a column).
@@ -87,7 +87,7 @@ def colex (a,indices,axis=1):
         cols = N.take(a,indices,axis)
     return cols
 
-def printcc (lst,extra=2):
+def printcc(lst, extra=2):
     """\nPrints a list of lists in columns, customized by the max size of items
 within the columns (max size of items in col, plus 'extra' number of spaces).
 Use 'dashes' or '\n' in the list(oflists) to print dashes or blank lines,
@@ -128,7 +128,7 @@ Returns: None\n"""
             print lineincustcols(row,maxsize)
     return None
 
-def adm (a,criterion):
+def adm(a, criterion):
     """\nReturns rows from the passed list of lists that meet the criteria in
 the passed criterion expression (a string).
 
@@ -143,7 +143,7 @@ Format:  adm (a,criterion)   where criterion is like 'x[2]==37'\n"""
     return lines
 
 
-def linexand (a,columnlist,valuelist):
+def linexand(a, columnlist, valuelist):
     """Returns the rows of an array where col (from columnlist) = val
     (from valuelist).  One value is required for each column in columnlist.
 
@@ -165,7 +165,7 @@ def linexand (a,columnlist,valuelist):
     return adm(a,criterion)
 
 
-def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
+def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
     """Averages data in collapsecol, keeping all unique items in keepcols
     (using unique, which keeps unique LISTS of column numbers), retaining
     the unique sets of values in keepcols, the mean for each.  If the sterr or
@@ -211,12 +211,12 @@ def collapse (a,keepcols,collapsecols,stderr=0,ns=0,cfcn=None):
         return new_a
 
 
-def makestr (item):
+def makestr(item):
     if type(item) != StringType:
         item = str(item)
     return item
 
-def lineincustcols (inlist,colsizes):
+def lineincustcols(inlist, colsizes):
     """\nReturns a string composed of elements in inlist, with each element
 right-aligned in a column of width specified by a sequence colsizes.  The
 length of colsizes must be greater than or equal to the number of columns in
@@ -241,7 +241,7 @@ Returns: formatted string created from inlist\n"""
     return outstr
 
 
-def list2string (inlist):
+def list2string(inlist):
     """\nConverts a 1D list to a single long string for file output, using
 the string.join function.
 
