@@ -609,24 +609,34 @@ def tsem(a,limits=None,inclusive=(True,True)):
 
 
 #####################################
-############  AMOMENTS  #############
+############  MOMENTS  #############
 #####################################
 
-def moment(a,moment=1,axis=0):
-    """Calculates the nth moment about the mean for a sample (defaults to the
-    1st moment).  Generally used to calculate coefficients of skewness and
-    kurtosis.  Axis can equal None (ravel array first), or an integer
-    (the axis over which to operate).
+def moment(a, moment=1, axis=0):
+    """Calculates the nth moment about the mean for a sample.
+    
+    Generally used to calculate coefficients of skewness and
+    kurtosis.
 
-    Returns: appropriate moment along given axis
+    Parameters
+    ----------
+    a : array
+    moment : int
+    axis : int or None
+
+    Returns
+    -------
+    The appropriate moment along the given axis or over all values if axis is 
+    None.
     """
     a, axis = _chk_asarray(a, axis)
     if moment == 1:
+        # By definition the first moment about the mean is 0.
         return 0.0
     else:
-        mn = expand_dims(mean(a,axis),axis)
-        s = power((a-mn),moment)
-        return mean(s,axis)
+        mn = np.expand_dims(np.mean(a,axis),axis)
+        s = np.power((a-mn), moment)
+        return np.mean(s,axis)
 
 
 def variation(a,axis=0):
