@@ -2029,27 +2029,51 @@ Returns: chi-square statistic, associated p-value
 zprob = special.ndtr
 erfc = special.erfc
 
-def chisqprob(chisq,df):
+def chisqprob(chisq, df):
     """Returns the (1-tail) probability value associated with the provided chi-square
-    value and df.
+    value and degrees of freedom.
+
+    Broadcasting rules apply.
+
+    Parameters
+    ----------
+    chisq : array or float > 0
+    df : array or float, probably int >= 1
+
+    Returns
+    -------
+    The area from chisq to infinity under the Chi^2 probability distribution
+    with degrees of freedom df.
     """
     return special.chdtrc(df,chisq)
 
 ksprob = special.kolmogorov
 fprob = special.fdtrc
 
-def betai(a,b,x):
-    """
-    Returns the incomplete beta function:
+def betai(a, b, x):
+    """Returns the incomplete beta function.
 
-    I-sub-x(a,b) = 1/B(a,b)*(Integral(0,x) of t^(a-1)(1-t)^(b-1) dt)
+    I_x(a,b) = 1/B(a,b)*(Integral(0,x) of t^(a-1)(1-t)^(b-1) dt)
 
     where a,b>0 and B(a,b) = G(a)*G(b)/(G(a+b)) where G(a) is the gamma
     function of a.
+
+    The standard broadcasting rules apply to a, b, and x.
+
+    Parameters
+    ----------
+    a : array or float > 0
+    b : array or float > 0
+    x : array or float
+        x will be clipped to be no greater than 1.0 .
+
+    Returns
+    -------
+    
     """
-    x = asarray(x)
-    x = where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
-    return special.betainc(a,b,x)
+    x = np.asarray(x)
+    x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
+    return special.betainc(a, b, x)
 
 #####################################
 #######  AANOVA CALCULATIONS  #######
