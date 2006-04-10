@@ -2076,7 +2076,7 @@ def betai(a, b, x):
     return special.betainc(a, b, x)
 
 #####################################
-#######  AANOVA CALCULATIONS  #######
+#######  ANOVA CALCULATIONS  #######
 #####################################
 
 def glm(data,para):
@@ -2097,6 +2097,7 @@ Returns: statistic, p-value ???
     x = zeros((n,len(p)))  # design matrix
     for l in range(len(p)):
         x[:,l] = equal(para,p[l])
+    # fixme: normal equations are bad. Use linalg.lstsq instead.
     b = dot(dot(linalg.inv(dot(transpose(x),x)),  # i.e., b=inv(X'X)X'Y
                     transpose(x)),data)
     diffs = (data - dot(x,b))
