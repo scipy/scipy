@@ -329,19 +329,24 @@ def gmean(a, axis=0):
     return np.power(prod, 1./size)
 
 
-def hmean(a,axis=0):
+def hmean(a, axis=0):
     """Calculates the harmonic mean of the values in the passed array.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn).  Defaults to ALL values in
-    the passed array.  REMEMBER: if axis=0, it collapses over
-    axis 0 ('rows' in a 2D array) only, and if axis is a
-    sequence, it collapses over all specified axes.
+    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)  
+    
+    Parameters
+    ----------
+    a : array
+    axis : int or None
 
-    Returns: harmonic mean computed over dim(s) in axis
+    Returns
+    -------
+    The harmonic mean computed over a single dimension of the input array or all
+    values in the array if axis=None.
     """
     a, axis = _chk_asarray(a, axis)
     size = a.shape[axis]
-    return size / add.reduce(1.0/a, axis)
+    return size / np.sum(1.0/a, axis)
 
 def mean(a,axis=0):
     """Returns the mean of m along the given dimension.
