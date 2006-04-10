@@ -3045,11 +3045,25 @@ Returns: sum[(a-b)**2]
     return sum((a-b)**2,axis)
 
 def fastsort(a):
-    it = argsort(a)
-    as = take(a, it)
+    # fixme: the wording in the docstring is nonsense.
+    """Sort an array and provide the argsort.
+
+    Parameters
+    ----------
+    a : array
+
+    Returns
+    -------
+    (sorted array,
+     indices into the original array,
+    )
+    """
+    it = np.argsort(a)
+    as = a[it]
     return as, it
 
 def shellsort(a):
+    # fixme: remove; obsolete
     """
 Shellsort algorithm.  Sorts a 1D-array.
 
