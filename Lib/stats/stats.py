@@ -419,21 +419,28 @@ def cmedian(a, numbins=1000):
     median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize # MEDIAN
     return median
 
-def median(a,axis=0):
-    """ Returns the median of the passed array along the given axis.
-    If there is an even number of entires, the mean of the
+def median(a, axis=0):
+    # fixme: This would be redundant with numpy.median() except that the latter 
+    # does not deal with arbitrary axes.
+    """Returns the median of the passed array along the given axis.
+
+    If there is an even number of entries, the mean of the
     2 middle values is returned.
 
-    Returns: median of the array, or the mean of the 2 middle values.
+    Parameters
+    ----------
+    a : array
+    axis=0 : int
+
+    Returns
+    -------
+    The median of each remaining axis, or of all of the values in the array
+    if axis is None.
     """
     a, axis = _chk_asarray(a, axis)
-    a = sort(a,axis)
-    indx = int(a.shape[axis]/2.0)
-    if a.shape[axis] % 2 == 0:   # if even number of elements
-        median = asarray(take(a,[indx],axis)+take(a,[indx-1],axis)) / 2.0
-    else:
-        median = take(a,[indx],axis)
-    return squeeze(median)
+    if axis != 0:
+        a = _move_axis_to_0(a, axis)
+    return np.median(a)
 
 def mode(a, axis=0):
     """Returns an array of the modal (most common) value in the passed array.
