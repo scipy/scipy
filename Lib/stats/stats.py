@@ -776,58 +776,79 @@ def describe(a, axis=0):
 ########  NORMALITY TESTS  ##########
 #####################################
 
-def skewtest(a,axis=0):
+def skewtest(a, axis=0):
     """Tests whether the skew is significantly different from a normal
-    distribution.  Axis can equal None (ravel array first), an integer
-    (the axis over which to operate), or a sequence (operate over
-    multiple axes).
+    distribution.
 
-    Returns: z-score and 2-tail z-probability
+    The size of the dataset should be >= 8.
+
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    (Z-score,
+     2-tail Z-probability,
+    )
     """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
-        a = ravel(a)
+        a = np.ravel(a)
         axis = 0
     b2 = skew(a,axis)
     n = float(a.shape[axis])
-    if n<8:
-        print "kurtosistest only valid for n>=8 ... continuing anyway, n=",n
-    y = b2 * sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
+    if n < 8:
+        warnings.warn(
+            "skewtest only valid for n>=8 ... continuing anyway, n=%i" % 
+            int(n))
+    y = b2 * np.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
     beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
-    W2 = -1 + sqrt(2*(beta2-1))
-    delta = 1/sqrt(log(sqrt(W2)))
-    alpha = sqrt(2.0/(W2-1))
-    y = where(equal(y,0),1,y)
-    Z = delta*log(y/alpha + sqrt((y/alpha)**2+1))
-    return Z, (1.0-zprob(Z))*2
+    W2 = -1 + np.sqrt(2*(beta2-1))
+    delta = 1/np.sqrt(np.log(np.sqrt(W2)))
+    alpha = np.sqrt(2.0/(W2-1))
+    y = np.where(y==0, 1, y)
+    Z = delta*np.log(y/alpha + np.sqrt((y/alpha)**2+1))
+    return Z, (1.0 - zprob(Z))*2
 
 
-def kurtosistest(a,axis=0):
+def kurtosistest(a, axis=0):
+    """Tests whether a dataset has normal kurtosis (i.e.,
+    kurtosis=3(n-1)/(n+1)). 
+
+    Valid only for n>20.
+
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    (Z-score,
+     2-tail Z-probability)
+    The Z-score is set to 0 for bad entries.
     """
-Tests whether a dataset has normal kurtosis (i.e.,
-kurtosis=3(n-1)/(n+1)) Valid only for n>20.  Axis can equal None
-(ravel array first), an integer (the axis over which to operate),
-or a sequence (operate over multiple axes).
-
-Returns: z-score and 2-tail z-probability, returns 0 for bad pixels
-"""
     a, axis = _chk_asarray(a, axis)
     n = float(a.shape[axis])
-    if n<20:
-        print "kurtosistest only valid for n>=20 ... continuing anyway, n=",n
-    b2 = kurtosis(a,axis)
+    if n < 20:
+        warnings.warn(
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % 
+            int(n))
+    b2 = kurtosis(a, axis)
     E = 3.0*(n-1) /(n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
-    x = (b2-E)/sqrt(varb2)
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * sqrt((6.0*(n+3)*(n+5))/
+    x = (b2-E)/np.sqrt(varb2)
+    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5))/
                                                        (n*(n-2)*(n-3)))
-    A = 6.0 + 8.0/sqrtbeta1 *(2.0/sqrtbeta1 + sqrt(1+4.0/(sqrtbeta1**2)))
+    A = 6.0 + 8.0/sqrtbeta1 *(2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 -2/(9.0*A)
-    denom = 1 +x*sqrt(2/(A-4.0))
-    denom = where(less(denom,0), 99, denom)
-    term2 = where(equal(denom,0), term1, power((1-2.0/A)/denom,1/3.0))
-    Z = ( term1 - term2 ) / sqrt(2/(9.0*A))
-    Z = where(equal(denom,99), 0, Z)
+    denom = 1 +x*np.sqrt(2/(A-4.0))
+    denom = np.where(denom < 0, 99, denom)
+    term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom,1/3.0))
+    Z = ( term1 - term2 ) / np.sqrt(2/(9.0*A))
+    Z = np.where(denom == 99, 0, Z)
     return Z, (1.0-zprob(Z))*2
 
 
