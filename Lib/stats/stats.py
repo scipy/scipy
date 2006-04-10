@@ -348,10 +348,23 @@ def hmean(a, axis=0):
     size = a.shape[axis]
     return size / np.sum(1.0/a, axis)
 
-def mean(a,axis=0):
-    """Returns the mean of m along the given dimension.
+def mean(a, axis=0):
+    # fixme: This seems to be redundant with numpy.mean() or even the ndarray.mean() 
+    # method.
+    """Returns the arithmetic mean of m along the given dimension.
 
-       If m is of integer type, returns a floating point answer.
+    That is: (x1 + x2 + .. + xn) / n
+
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    The arithmetic mean computed over a single dimension of the input array or
+    all values in the array if axis=None. The return value will have a floating
+    point dtype even if the input data are integers.
     """
     a, axis = _chk_asarray(a, axis)
     return a.mean(axis)
