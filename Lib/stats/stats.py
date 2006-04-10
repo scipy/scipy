@@ -1488,28 +1488,58 @@ def pearsonr(x, y):
     return r,prob
 
 
-def spearmanr(x,y):
-    """
-Calculates a Spearman rank-order correlation coefficient.  Taken
-from Heiman's Basic Statistics for the Behav. Sci (1st), p.192.
+def spearmanr(x, y):
+    """Calculates a Spearman rank-order correlation coefficient and the p-value 
+    to test for non-correlation.
 
-Returns: Spearman's r, two-tailed p-value
-"""
+    The Spearman correlation is a nonparametric measure of the linear
+    relationship between two datasets. Unlike the Pearson correlation, the
+    Spearman correlation does not assume that both datasets are normally
+    distributed. Like other correlation coefficients, this one varies between -1
+    and +1 with 0 implying no correlation. Correlations of -1 or +1 imply an
+    exact linear relationship. Positive correlations imply that as x increases,
+    so does y. Negative correlations imply that as x increases, y decreases.
+
+    The p-value roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Spearman correlation at least as extreme as
+    the one computed from these datasets. The p-values are not entirely reliable
+    but are probably reasonable for datasets larger than 500 or so.
+
+    Parameters
+    ----------
+    x : 1D array
+    y : 1D array the same length as x
+        The lengths of both arrays must be > 2.
+
+    Returns
+    -------
+    (Spearman correlation coefficient,
+     2-tailed p-value)
+
+    References
+    ----------
+    [CRCProbStat2000] section 14.7
+    """
+    x = np.asanyarray(x)
+    y = np.asanyarray(y)
     n = len(x)
-    assert (n>2), "Length of array must be > 2."
+    m = len(y)
+    if n != m:
+        raise ValueError("lengths of x and y must match: %s != %s" % (n, m))
+    if n <= 2:
+        raise ValueError("length must be > 2")
     rankx = rankdata(x)
     ranky = rankdata(y)
-    dsq = add.reduce((rankx-ranky)**2)
+    dsq = np.add.reduce((rankx-ranky)**2)
     rs = 1 - 6*dsq / float(n*(n**2-1))
     df = n-2
+
     try:
-        t = rs * math.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
-        probrs = betai(0.5*df,0.5,df/(df+t*t))
+        t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+        probrs = betai(0.5*df, 0.5, df/(df+t*t))
     except ZeroDivisionError:
         probrs = 0.0
 
-# probability values for rs are from part 2 of the spearman function in
-# Numerical Recipies, p.510.  They close to tables, but not exact.(?)
     return rs, probrs
 
 
