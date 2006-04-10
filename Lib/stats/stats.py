@@ -1578,8 +1578,8 @@ def pointbiserialr(x, y):
     #      0.1]
     # rpb = 0.36149
 
-    x = asarray(x, dtype=bool)
-    y = asarray(y, dtype=float)
+    x = np.asarray(x, dtype=bool)
+    y = np.asarray(y, dtype=float)
     n = len(x)
 
     # phat is the fraction of x values that are True
@@ -1589,8 +1589,7 @@ def pointbiserialr(x, y):
     y0m = y0.mean()
     y1m = y1.mean()
 
-    # fixme: determine if y.std() should be biased or unbiased
-    rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / y.std()
+    rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / (y.std() * np.sqrt((n-1)/float(n)))
 
     df = n-2
     # fixme: see comment about TINY in pearsonr()
