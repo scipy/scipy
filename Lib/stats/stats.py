@@ -2987,16 +2987,20 @@ where ER and EF are matrices from a multivariate F calculation.
 #####################################
 
 def ss(a, axis=0):
-    """
-Squares each value in the passed array, adds these squares & returns
-the result.  Axis can equal None (ravel array first), an integer
-(the axis over which to operate), or a sequence (operate over
-multiple axes).
+    """Squares each value in the passed array, adds these squares, and returns the
+    result.
 
-Returns: sum-along-'axis' for (a*a)
-"""
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    The sum along the given axis for (a*a).
+    """
     a, axis = _chk_asarray(a, axis)
-    return sum(a*a,axis)
+    return np.sum(a*a, axis)
 
 def summult (array1,array2,axis=0):
     """
