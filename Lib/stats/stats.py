@@ -852,17 +852,22 @@ def kurtosistest(a, axis=0):
     return Z, (1.0-zprob(Z))*2
 
 
-def normaltest(a,axis=0):
+def normaltest(a, axis=0):
+    # fixme: find reference
+    """Tests whether skew and/or kurtosis of dataset differs from normal curve.
+
+    This is the omnibus test of D'Agostino and Pearson, 1973
+
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    (Chi^2 score,
+     2-tail probability)
     """
-Tests whether skew and/OR kurtosis of dataset differs from normal
-curve.  Can operate over multiple axes.  Axis can equal
-None (ravel array first), an integer (the axis over which to
-operate), or a sequence (operate over multiple axes).
-
-Omnibus test of D'Agostino and Pearson, 1973
-
-Returns: Score and 2-tail probability
-"""
     a, axis = _chk_asarray(a, axis)
     s,p = skewtest(a,axis)
     k,p = kurtosistest(a,axis)
