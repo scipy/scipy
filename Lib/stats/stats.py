@@ -257,7 +257,7 @@ def _chk2_asarray(a, b, axis):
 ### NAN friendly functions
 ########
 
-def nanmean(x,axis=0):
+def nanmean(x, axis=0):
     """Compute the mean over the given axis ignoring nans.
     """
     x, axis = _chk_asarray(x,axis)
@@ -270,7 +270,7 @@ def nanmean(x,axis=0):
     putmask(x,isnan(x),0)
     return stats.mean(x,axis)/factor
 
-def nanstd(x,axis=0,bias=False):
+def nanstd(x, axis=0, bias=False):
     """Compute the standard deviation over the given axis ignoring nans
     """
     x, axis = _chk_asarray(x,axis)
@@ -546,7 +546,7 @@ def masked_var(am):
     n = am.count() - 1.0
     return s / n
 
-def tvar(a,limits=None,inclusive=(1,1)):
+def tvar(a, limits=None, inclusive=(1,1)):
     """Returns the sample variance of values in an array, (i.e., using
     N-1), ignoring values strictly outside the sequence passed to
     'limits'.  Note: either limit in the sequence, or the value of
@@ -561,7 +561,7 @@ def tvar(a,limits=None,inclusive=(1,1)):
     am = mask_to_limits(a, limits, inclusive)
     return masked_var(am)
 
-def tmin(a,lowerlimit=None,axis=0,inclusive=True):
+def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     """Returns the minimum value of a, along axis, including only values
     less than (or equal to, if inclusive is True) lowerlimit.  If the
     limit is set to None, all values in the array are used.
@@ -570,7 +570,7 @@ def tmin(a,lowerlimit=None,axis=0,inclusive=True):
     am = mask_to_limits(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
 
-def tmax(a,upperlimit,axis=0,inclusive=True):
+def tmax(a, upperlimit, axis=0, inclusive=True):
     """Returns the maximum value of a, along axis, including only values
     greater than (or equal to, if inclusive is True) upperlimit.  If the limit
     is set to None, a limit larger than the max value in the array is
@@ -580,7 +580,7 @@ def tmax(a,upperlimit,axis=0,inclusive=True):
     am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 
-def tstd(a,limits=None,inclusive=(1,1)):
+def tstd(a, limits=None, inclusive=(1,1)):
     """Returns the standard deviation of all values in an array,
     ignoring values strictly outside the sequence passed to 'limits'.
     Note: either limit in the sequence, or the value of limits itself,
@@ -591,7 +591,7 @@ def tstd(a,limits=None,inclusive=(1,1)):
     return sqrt(tvar(a,limits,inclusive))
 
 
-def tsem(a,limits=None,inclusive=(True,True)):
+def tsem(a, limits=None, inclusive=(True,True)):
     """Returns the standard error of the mean for the values in an array,
     (i.e., using N for the denominator), ignoring values strictly outside
     the sequence passed to 'limits'.   Note: either limit in the
@@ -937,7 +937,7 @@ def scoreatpercentile(a, percent):
     return score
 
 
-def percentileofscore(a,score,histbins=10,defaultlimits=None):
+def percentileofscore(a, score, histbins=10, defaultlimits=None):
     # fixme: Again with the histogramming. This probably should be replaced by
     # an empirical CDF approach.
     """
@@ -1024,7 +1024,7 @@ Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
     return (bins, lowerreallimit, binsize, extrapoints)
 
 
-def cumfreq(a,numbins=10,defaultreallimits=None):
+def cumfreq(a, numbins=10, defaultreallimits=None):
     """
 Returns a cumulative frequency histogram, using the histogram function.
 Defaultreallimits can be None (use all data), or a 2-sequence containing
@@ -1037,7 +1037,7 @@ Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
     return cumhist,l,b,e
 
 
-def relfreq(a,numbins=10,defaultreallimits=None):
+def relfreq(a, numbins=10, defaultreallimits=None):
     """
 Returns a relative frequency histogram, using the histogram function.
 Defaultreallimits can be None (use all data), or a 2-sequence containing
@@ -1113,7 +1113,7 @@ an integer (the axis over which to operate).
     return sqrt(samplevar(a,axis))
 
 
-def signaltonoise(instack,axis=0):
+def signaltonoise(instack, axis=0):
     """
 Calculates signal-to-noise.  Axis can equal None (ravel array
 first), an integer (the axis over which to operate).
@@ -1212,7 +1212,7 @@ of the compare array.
 #######  TRIMMING FUNCTIONS  #######
 #####################################
 
-def threshold(a,threshmin=None,threshmax=None,newval=0):
+def threshold(a, threshmin=None, threshmax=None, newval=0):
     """
 Like numpy.clip() except that values <threshmid or >threshmax are replaced
 by newval instead of by threshmin/threshmax (respectively).
@@ -1229,7 +1229,7 @@ Returns: a, with values <threshmin or >threshmax replaced with newval
     return where(mask,newval,a)
 
 
-def trimboth (a,proportiontocut):
+def trimboth (a, proportiontocut):
     """
 Slices off the passed proportion of items from BOTH ends of the passed
 array (i.e., with proportiontocut=0.1, slices 'leftmost' 10% AND
@@ -1248,7 +1248,7 @@ Returns: trimmed version of array a
     return a[lowercut:uppercut]
 
 
-def trim1 (a,proportiontocut,tail='right'):
+def trim1 (a, proportiontocut, tail='right'):
     """
     Slices off the passed proportion of items from ONE end of the passed
     array (i.e., if proportiontocut=0.1, slices off 'leftmost' or 'rightmost'
@@ -1266,7 +1266,7 @@ def trim1 (a,proportiontocut,tail='right'):
         uppercut = len(a)
     return a[lowercut:uppercut]
 
-def trim_mean(a,proportiontocut):
+def trim_mean(a, proportiontocut):
     """Return mean with proportiontocut chopped from each of the lower and
     upper tails.
     """
@@ -1368,7 +1368,7 @@ Returns: f-value, probability
     return f, prob
 
 
-def paired(x,y):
+def paired(x, y):
     """
 Interactively determines the type of data in x and y, and then runs the
 appropriated statistic for paired group data.
@@ -1599,7 +1599,7 @@ def pointbiserialr(x, y):
     return rpb, prob
 
 
-def kendalltau(x,y):
+def kendalltau(x, y):
     """Calculates Kendall's tau, a correlation measure for ordinal data, and an
     associated p-value.
 
@@ -1677,7 +1677,7 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
 #####  INFERENTIAL STATISTICS  #####
 #####################################
 
-def ttest_1samp(a,popmean,printit=False,name='Sample',writemode='a'):
+def ttest_1samp(a, popmean, printit=False, name='Sample', writemode='a'):
     """
 Calculates the t-obtained for the independent samples T-test on ONE group
 of scores a, given a population mean.  If printit is True, results are printed
@@ -1705,7 +1705,7 @@ Returns: t-value, two-tailed prob
     return t,prob
 
 
-def ttest_ind (a, b, axis=0, printit=False, name1='Samp1', name2='Samp2',writemode='a'):
+def ttest_ind (a, b, axis=0, printit=False, name1='Samp1', name2='Samp2', writemode='a'):
     """
 Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
 a, and b.  From Numerical Recipies, p.483.  If printit is True, results are
@@ -1829,7 +1829,7 @@ def kstest(rvs, cdf, args=(), N=20):
     D = D1
     return D, distributions.ksone.sf(D,N)
 
-def chisquare(f_obs,f_exp=None):
+def chisquare(f_obs, f_exp=None):
     """
 Calculates a one-way chi square for array of observed frequencies and returns
 the result.  If no expected frequencies are given, the total N is assumed to
@@ -1847,7 +1847,7 @@ Returns: chisquare-statistic, associated p-value
     return chisq, chisqprob(chisq, k-1)
 
 
-def ks_2samp (data1,data2):
+def ks_2samp(data1, data2):
     """
 Computes the Kolmogorov-Smirnof statistic on 2 samples.  Modified from
 Numerical Recipies in C, page 493.  Returns KS D-value, prob.  Not ufunc-
@@ -1887,7 +1887,7 @@ Returns: KS D-value, p-value
     return d, prob
 
 
-def mannwhitneyu(x,y):
+def mannwhitneyu(x, y):
     """
 Calculates a Mann-Whitney U statistic on the provided scores and
 returns the result.  Use only when the n in each condition is < 20 and
@@ -1941,7 +1941,7 @@ Returns: T correction factor for U or H
     return 1.0 - T
 
 
-def ranksums(x,y):
+def ranksums(x, y):
     """
 Calculates the rank sums statistic on the provided scores and returns
 the result.
@@ -2078,7 +2078,7 @@ def betai(a, b, x):
 #######  ANOVA CALCULATIONS  #######
 #####################################
 
-def glm(data,para):
+def glm(data, para):
     """
 Calculates a linear model fit ... anova/ancova/lin-regress/t-test/etc. Taken
 from:
@@ -2110,7 +2110,7 @@ Returns: statistic, p-value ???
         probs = betai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs
 
-def anova(data,effects=['A','B','C','D','E','F','G','H','I','J','K']):
+def anova(data, effects=['A','B','C','D','E','F','G','H','I','J','K']):
     """
 Prints the results of single-variable between- and within-subject ANOVA
 designs.  The function can only handle univariate ANOVAs with a single
@@ -2673,7 +2673,7 @@ lists-of-lists.
     return
 
 
-def d_full_model(workd,subjslots):
+def d_full_model(workd, subjslots):
     """
     RESTRICTS NOTHING (i.e., FULL MODEL CALCULATION).  Subtracts D-variable
     cell-mean for each between-subj group and then calculates the SS array.
@@ -2683,7 +2683,7 @@ def d_full_model(workd,subjslots):
     return sserr
 
 
-def d_restrict_mean(workd,subjslots):
+def d_restrict_mean(workd, subjslots):
     """
     RESTRICTS GRAND MEA  Subtracts D-variable cell-mean for each between-
     subj group, and then adds back each D-variable's grand mean.
@@ -2701,7 +2701,7 @@ def d_restrict_mean(workd,subjslots):
     return sserr
 
 
-def d_restrict_source(workd,subjslots,source):
+def d_restrict_source(workd, subjslots, source):
     """
 Calculates error for a given model on array workd.  Subjslots is an
 array of 1s and 0s corresponding to whether or not the subject is a
@@ -2822,7 +2822,7 @@ def multivar_sscalc(workd):
     return sserr
 
 
-def subtr_cellmeans(workd,subjslots):
+def subtr_cellmeans(workd, subjslots):
     """
     Subtract all cell means when within-subjects factors are present ...
     i.e., calculate full-model using a D-variable.
@@ -2878,7 +2878,7 @@ Maxwell & Delaney p.657.
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
 
-def member(factor,source):
+def member(factor, source):
     return (1 << factor) & source != 0
 
 def setsize(source):
@@ -2888,16 +2888,16 @@ def setsize(source):
             size = size + 1
     return size
 
-def subset (a,b):
+def subset(a, b):
     return (a&b)==a
 
-def propersubset (a,b):
+def propersubset(a, b):
     sub = ((a&b)==a)
     if a==b:
         sub = 0
     return sub
 
-def numlevels(source,Nlevels):
+def numlevels(source, Nlevels):
     for i in range(30): # find the biggest i such that 2**i >= source
         if 1<<i >= source:
             break
@@ -2920,7 +2920,7 @@ def makebin(sourcelist):
         outbin = outbin + 2**item
     return outbin
 
-def makelist(source,ncols):
+def makelist(source, ncols):
     levellist = []
     for j in range(ncols):
         if subset(1<<j,source):
@@ -2934,7 +2934,7 @@ def round4(num):
         return 'N/A'
 
 
-def f_value (ER,EF,dfR,dfF):
+def f_value(ER, EF, dfR, dfF):
     """
 Returns an F-statistic given the following:
         ER  = error associated with the null hypothesis (the Restricted model)
@@ -3001,7 +3001,7 @@ def ss(a, axis=0):
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
 
-def summult (array1,array2,axis=0):
+def summult(array1, array2, axis=0):
     """
 Multiplies elements in array1 and array2, element by element, and
 returns the sum (along 'axis') of all resulting multiplications.
@@ -3075,7 +3075,7 @@ Use fastsort for speed.
     svec = a*1.0
     ivec = range(n)
     gap = n/2   # integer division needed
-    while gap >0:
+    while gap > 0:
         for i in range(gap,n):
             for j in range(i-gap,-1,-gap):
                 while j>=0 and svec[j]>svec[j+gap]:
@@ -3128,7 +3128,7 @@ def rankdata(a):
     return newarray
 
 
-def writecc (listoflists,file,writetype='w',extra=2):
+def writecc (listoflists, file, writetype='w', extra=2):
     """
 Writes a list of lists to a file in columns, customized by the max
 size of items within the columns (max size of items in col, +2 characters)
