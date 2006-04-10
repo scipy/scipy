@@ -444,24 +444,30 @@ def median(a, axis=0):
 
 def mode(a, axis=0):
     """Returns an array of the modal (most common) value in the passed array.
-    If there is more than one such value, ONLY THE FIRST is returned.
-    The bin-count for the modal bins is also returned.  Operates on whole
-    array (axis=None), or on a given axis.
 
-    Returns: array of bin-counts for mode(s), array of corresponding modal value
+    If there is more than one such value, only the first is returned.
+    The bin-count for the modal bins is also returned.
+
+    Parameters
+    ----------
+    a : array
+    axis=0 : int
+
+    Returns
+    -------
+    (array of modal values, array of counts for each mode)
     """
-
     a, axis = _chk_asarray(a, axis)
-    scores = unique(ravel(a))       # get ALL unique values
+    scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
-    oldmostfreq = zeros(testshape)
-    oldcounts = zeros(testshape)
+    oldmostfreq = np.zeros(testshape)
+    oldcounts = np.zeros(testshape)
     for score in scores:
-        template = equal(a,score)
-        counts = expand_dims(sum(template,axis),axis)
-        mostfrequent = where(greater(counts,oldcounts),score,oldmostfreq)
-        oldcounts = where(greater(counts,oldcounts),counts,oldcounts)
+        template = (a == score)
+        counts = np.expand_dims(np.sum(template, axis),axis)
+        mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
+        oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
     return mostfrequent, oldcounts
 
