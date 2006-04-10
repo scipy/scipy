@@ -305,25 +305,28 @@ def nanmedian(x, axis=0):
 
 
 #####################################
-########  ACENTRAL TENDENCY  ########
+########  CENTRAL TENDENCY  ########
 #####################################
 
-def gmean(a,axis=0):
+def gmean(a, axis=0):
     """Calculates the geometric mean of the values in the passed array.
 
-    That is:  n-th root of (x1 * x2 * ... * xn).
+    That is:  n-th root of (x1 * x2 * ... * xn)
 
-    If a is 1D, a single value is returned.  If a is multi-dimensional,
-    the geometric mean along the dimension specified is calculated.  The
-    returned array has one less dimension than a.  dimension defaults
-    to the last dimension of the array.  This means that, for a two
-    dimensional array, the default is to calculate the geometric mean
-    of each row.
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+
+    Returns
+    -------
+    The geometric mean computed over a single dimension of the input array or
+    all values in the array if axis==None.
     """
     a, axis = _chk_asarray(a, axis)
     size = a.shape[axis]
-    prod = product(a,axis)
-    return power(prod,1./size)
+    prod = np.product(a, axis)
+    return np.power(prod, 1./size)
 
 
 def hmean(a,axis=0):
