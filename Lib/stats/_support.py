@@ -5,6 +5,7 @@ from types import ListType, TupleType, StringType
 import copy
 
 def abut (source, *args):
+    # comment: except for the repetition, this is equivalent to hstack.
     """\nLike the |Stat abut command.  It concatenates two arrays column-wise
     and returns the result.  CAUTION:  If one array is shorter, it will be
     repeated until it is as long as the other.
