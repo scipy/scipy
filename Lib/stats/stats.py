@@ -639,13 +639,23 @@ def moment(a, moment=1, axis=0):
         return np.mean(s,axis)
 
 
-def variation(a,axis=0):
-    """Returns the coefficient of variation, as defined in CRC Standard
-    Probability and Statistics, p.6. Axis can equal None (ravel array
-    first), or an integer (the axis over which to operate)
-    """
-    return samplestd(a,axis)/mean(a,axis)
+def variation(a, axis=0):
+    """Computes the coefficient of variation, the ratio of the biased standard
+    deviation to the mean.
+    
+    Parameters
+    ----------
+    a : array
+    axis : int or None
 
+    References
+    ----------
+    [CRCProbStat2000] section 2.2.20
+    """
+    a, axis = _chk_asarray(a, axis)
+    n = a.shape[axis]
+    correction = np.sqrt(float(n-1) / n)
+    return a.std(axis)/a.mean(axis) * correction
 
 def skew(a,axis=0,bias=True):
     """Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
