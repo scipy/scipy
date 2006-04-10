@@ -1590,7 +1590,7 @@ def pointbiserialr(x, y):
     y1m = y1.mean()
 
     # fixme: determine if y.std() should be biased or unbiased
-    rpb = (y1m - y0m)*np.sqrt(p * (1-p)) / y.std()
+    rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / y.std()
 
     df = n-2
     # fixme: see comment about TINY in pearsonr()
