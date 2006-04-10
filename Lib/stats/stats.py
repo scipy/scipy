@@ -1601,12 +1601,11 @@ def pointbiserialr(x, y):
 
 
 def kendalltau(x,y):
-    """
-Calculates Kendall's tau ... correlation of ordinal data.  Adapted
-from function kendl1 in Numerical Recipies.  Needs good test-cases.@@@
+    """Calculates Kendall's tau, a correlation measure for ordinal data, and an
+    associated p-value.
 
-Returns: Kendall's tau, two-tailed p-value
-"""
+    Returns: Kendall's tau, two-tailed p-value
+    """
     n1 = 0
     n2 = 0
     iss = 0
@@ -1627,9 +1626,9 @@ Returns: Kendall's tau, two-tailed p-value
                     n1 = n1 + 1
                 if a2:
                     n2 = n2 + 1
-    tau = iss / math.sqrt(float(n1*n2))
+    tau = iss / np.sqrt(float(n1*n2))
     svar = (4.0*len(x)+10.0) / (9.0*len(x)*(len(x)-1))
-    z = tau / math.sqrt(svar)
+    z = tau / np.sqrt(svar)
     prob = erfc(abs(z)/1.4142136)
     return tau, prob
 
