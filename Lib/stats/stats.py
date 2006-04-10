@@ -369,25 +369,54 @@ def mean(a, axis=0):
     a, axis = _chk_asarray(a, axis)
     return a.mean(axis)
 
-def cmedian(a,numbins=1000):
-    """Calculates the COMPUTED median value of an array of numbers, given the
-    number of bins to use for the histogram (more bins approaches finding the
-    precise median value of the array; default number of bins = 1000).  From
-    G.W. Heiman's Basic Stats, or CRC Probability & Statistics.
-    NOTE:  THIS ROUTINE ALWAYS uses the entire passed array (flattens it first).
+def cmedian(a, numbins=1000):
+    # fixme: numpy.median() always seems to be a better choice.
+    # A better version of this function would take already-histogrammed data
+    # and compute the median from that.
+    # fixme: the wording of the docstring is a bit wonky.
+    """Returns the computed median value of an array.
 
-    Returns: median calculated over ALL values in the array
-"""
-    a = ravel(a)
-    (hist, smallest, binsize, extras) = histogram(a,numbins)
-    cumhist = cumsum(hist)            # make cumulative histogram
-    otherbins = greater_equal(cumhist,len(a)/2.0)
-    otherbins = list(otherbins)         # list of 0/1s, 1s start at median bin
-    cfbin = otherbins.index(1)          # get 1st(!) index holding 50%ile score
-    LRL = smallest + binsize*cfbin      # get lower read limit of that bin
-    cfbelow = add.reduce(hist[0:cfbin])       # cum. freq. below bin
+    All of the values in the input array are used. The input array is first
+    histogrammed using numbins bins. The bin containing the median is 
+    selected by searching for the halfway point in the cumulative histogram.
+    The median value is then computed by linearly interpolating across that bin.
+
+    Parameters
+    ----------
+    a : array
+    numbins : int
+        The number of bins used to histogram the data. More bins give greater
+        accuracy to the approximation of the median.
+    
+    Returns
+    -------
+    A floating point value approximating the median.
+
+    References
+    ----------
+    [CRCProbStat2000] Section 2.2.6
+    """
+    a = np.ravel(a)
+    n = float(len(a))
+
+    # We will emulate the (fixed!) bounds selection scheme used by
+    # scipy.stats.histogram(), but use numpy.histogram() since it is faster.
+    amin = a.min()
+    amax = a.max()
+    estbinwidth = (amax - amin)/float(numbins - 1)
+    binsize = (amax - amin + estbinwidth) / float(numbins)
+    (hist, bins) = np.histogram(a, numbins, 
+        range=(amin-binsize*0.5, amax+binsize*0.5))
+    binsize = bins[1] - bins[0]
+    cumhist = np.cumsum(hist)           # make cumulative histogram
+    cfbin = np.searchsorted(cumhist, n/2.0)
+    LRL = bins[cfbin]      # get lower read limit of that bin
+    if cfbin == 0:
+        cfbelow = 0.0
+    else:
+        cfbelow = cumhist[cfbin-1]       # cum. freq. below bin
     freq = hist[cfbin]                  # frequency IN the 50%ile bin
-    median = LRL + ((len(a)/2.0-cfbelow)/float(freq))*binsize # MEDIAN
+    median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize # MEDIAN
     return median
 
 def median(a,axis=0):
@@ -791,7 +820,8 @@ def histogram2(a, bins):
 
 
 
-def histogram(a,numbins=10,defaultlimits=None,printextras=True):
+def histogram(a, numbins=10, defaultlimits=None, printextras=True):
+    # fixme: use numpy.histogram() to implement
     """
 Returns (i) an array of histogram bin counts, (ii) the smallest value
 of the histogram binning, and (iii) the bin width (the last 2 are not
@@ -810,7 +840,7 @@ Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
     else:
         Min = minimum.reduce(a)
         Max = maximum.reduce(a)
-        estbinwidth = float(Max - Min)/float(numbins) + 1
+        estbinwidth = float(Max - Min)/float(numbins - 1)
         binsize = (Max-Min+estbinwidth)/float(numbins)
         lowerreallimit = Min - binsize/2.0  #lower real limit,1st bin
     bins = zeros(numbins)
@@ -825,6 +855,7 @@ Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
         except:                           # point outside lower/upper limits
             extrapoints += 1
     if extrapoints > 0 and printextras:
+        # fixme: warnings.warn()
         print '\nPoints outside given histogram range =',extrapoints
     return (bins, lowerreallimit, binsize, extrapoints)
 

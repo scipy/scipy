@@ -653,9 +653,9 @@ class test_std(ScipyTestCase):
 class test_cmedian(ScipyTestCase):
     def check_basic(self):
         data = [1,2,3,1,5,3,6,4,3,2,4,3,5,2.0]
-        assert_almost_equal(stats.cmedian(data,5),2.7)
-        assert_almost_equal(stats.cmedian(data,3),3.1296296296296298)
-        assert_almost_equal(stats.cmedian(data),2.999665)
+        assert_almost_equal(stats.cmedian(data,5),3.2916666666666665)
+        assert_almost_equal(stats.cmedian(data,3),3.083333333333333)
+        assert_almost_equal(stats.cmedian(data),3.0020020020020022)
 
 class test_median(ScipyTestCase):
     def check_basic(self):
