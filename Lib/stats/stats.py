@@ -1432,25 +1432,58 @@ Returns: appropriate statistic name, value, and probability
     return None
 
 
-def pearsonr(x,y):
-    """
-Calculates a Pearson correlation coefficient and returns p.  Taken
-from Heiman's Basic Statistics for the Behav. Sci (2nd), p.195.
+def pearsonr(x, y):
+    """Calculates a Pearson correlation coefficient and the p-value for testing
+    non-correlation.
 
-Returns: Pearson's r, two-tailed p-value
-"""
+    The Pearson correlation coefficient measures the linear relationship between
+    two datasets. Strictly speaking, Pearson's correlation requires that each
+    dataset be normally distributed. Like other correlation coefficients, this
+    one varies between -1 and +1 with 0 implying no correlation. Correlations of
+    -1 or +1 imply an exact linear relationship. Positive correlations imply
+    that as x increases, so does y. Negative correlations imply that as
+    x increases, y decreases.
+   
+    The p-value roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Pearson correlation at least as extreme as
+    the one computed from these datasets. The p-values are not entirely reliable
+    but are probably reasonable for datasets larger than 500 or so.
+
+    Parameters
+    ----------
+    x : 1D array
+    y : 1D array the same length as x
+
+    Returns
+    -------
+    (Pearson's correlation coefficient,
+     2-tailed p-value)
+
+    References
+    ----------
+    http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+    """
     # x and y should have same length.
-    x,y = map(asarray, (x,y))
-    TINY = 1.0e-20
+    x = np.asarray(x)
+    y = np.asarray(y)
     n = len(x)
-    mx,my = mean(x), mean(y)
-    xm,ym = x-mx, y-my
-    r_num = n*(add.reduce(xm*ym))
-    r_den = n*math.sqrt(ss(xm)*ss(ym))
+    mx = x.mean()
+    my = y.mean()
+    xm, ym = x-mx, y-my
+    r_num = n*(np.add.reduce(xm*ym))
+    r_den = n*np.sqrt(ss(xm)*ss(ym))
     r = (r_num / r_den)
-    if (r > 1.0): r = 1.0  # numerical error caused this
+
+    # Presumably, if r > 1, then it is only some small artifact of floating
+    # point arithmetic.
+    r = min(r, 1.0)  
     df = n-2
-    t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
+
+    # Use a small floating point value to prevent divide-by-zero nonsense
+    # fixme: TINY is probably not the right value and this is probably not 
+    # the way to be robust. The scheme used in spearmanr is probably better.
+    TINY = 1.0e-20
+    t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = betai(0.5*df,0.5,df/(df+t*t))
     return r,prob
 
