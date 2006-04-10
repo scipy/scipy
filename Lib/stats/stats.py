@@ -124,6 +124,11 @@ SUPPORT FUNCTIONS:  writecc
                     rankdata
                     outputpairedstats
                     findwithin
+
+References
+----------
+[CRCProbStat2000] Zwillinger, D. and Kokoska, S. _CRC Standard Probablity and
+Statistics Tables and Formulae_. Chapman & Hall: New York. 2000.
 """
 ## CHANGE LOG:
 ## ===========
@@ -185,13 +190,21 @@ SUPPORT FUNCTIONS:  writecc
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
-import sys, _support
+import sys
+import warnings
 
 from numpy import *
 import numpy.core.umath as math
 from numpy.core.umath import *
 import scipy.special as special
 import scipy.linalg as linalg
+import numpy as np
+import scipy as sp
+
+# Grab this useful utility routine
+from numpy.core.numeric import _move_axis_to_0
+
+import _support
 
 __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
