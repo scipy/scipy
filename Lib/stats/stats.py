@@ -907,9 +907,25 @@ def itemfreq(a):
 
 
 def scoreatpercentile(a, percent):
+    # fixme: Instead of computing the histogram, it would be much easier and
+    # more accurate to simply sort the data, compute the empirical CDF using
+    # linear interpolation, and pick out the appropriate value.
+    # fixme: cmedian() could use this function directly as its implementation.
+    """Computes the score (value in dataspace) that corresponds to the given
+    percentile of the dataset distribution.
+
+    For example, the score at 50% is the median.
+
+    Parameters
+    ----------
+    a : array
+    percent : float
+        0 <= percent <= 100
+
+    Returns
+    -------
+    The score at the given percentile.
     """
-Returns: score at given percentile, relative to a distribution
-"""
     percent = percent / 100.0
     targetcf = percent*len(a)
     h, lrl, binsize, extras = histogram(a)
@@ -922,6 +938,8 @@ Returns: score at given percentile, relative to a distribution
 
 
 def percentileofscore(a,score,histbins=10,defaultlimits=None):
+    # fixme: Again with the histogramming. This probably should be replaced by
+    # an empirical CDF approach.
     """
 Note: result of this function depends on the values used to histogram
 the data(!).
@@ -936,6 +954,7 @@ Returns: percentile-position of score (0-100) relative to a
 
 
 def histogram2(a, bins):
+    # comment: probably obsoleted by numpy.histogram()
     """ histogram2(a,bins) -- Compute histogram of a using divisions in bins
 
          Description:
