@@ -878,16 +878,26 @@ def normaltest(a, axis=0):
 # K-S test
 
 #####################################
-######  AFREQUENCY FUNCTIONS  #######
+######  FREQUENCY FUNCTIONS  #######
 #####################################
 
 def itemfreq(a):
-    """
-Returns a 2D array of item frequencies.  Column 1 contains item values,
-column 2 contains their respective counts.  Assumes a 1D array is passed.
+    # fixme: I'm not sure I understand what this does. The docstring is
+    # internally inconsistent.
+    # comment: fortunately, this function doesn't appear to be used elsewhere
+    """Returns a 2D array of item frequencies.
 
-Returns: a 2D frequency table (col [0:n-1]=scores, col n=frequencies)
-"""
+    Column 1 contains item values, column 2 contains their respective counts.
+    Assumes a 1D array is passed.
+
+    Parameters
+    ----------
+    a : array
+
+    Returns
+    -------
+    A 2D frequency table (col [0:n-1]=scores, col n=frequencies)
+    """
     scores = _support.unique(a)
     scores = sort(scores)
     freq = zeros(len(scores))
