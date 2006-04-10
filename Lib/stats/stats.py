@@ -105,7 +105,8 @@ PROBABILITY CALCS:  chisqprob
                     fprob
                     betai
 
-## Note that scipy.stats.distributions has many more statistical probability functions defined.
+## Note that scipy.stats.distributions has many more statistical probability
+## functions defined.
 
 
 ANOVA FUNCTIONS:  anova (NumPy required)
@@ -349,8 +350,8 @@ def hmean(a, axis=0):
     return size / np.sum(1.0/a, axis)
 
 def mean(a, axis=0):
-    # fixme: This seems to be redundant with numpy.mean() or even the ndarray.mean() 
-    # method.
+    # fixme: This seems to be redundant with numpy.mean() or even
+    # the ndarray.mean() method.
     """Returns the arithmetic mean of m along the given dimension.
 
     That is: (x1 + x2 + .. + xn) / n
@@ -1161,7 +1162,7 @@ first), or an integer (the axis over which to operate).
     return std(a,axis) / float(sqrt(a.shape[axis]))
 
 
-def sem (a, axis=0):
+def sem(a, axis=0):
     """
 Returns the standard error of the mean (i.e., using N) of the values
 in the passed array.  Axis can equal None (ravel array first), or an
@@ -1173,7 +1174,7 @@ integer (the axis over which to operate)
     return s
 
 
-def z (a, score):
+def z(a, score):
     """
 Returns the z-score of a given input score, given thearray from which
 that score came.  Not appropriate for population calculations, nor for
@@ -1184,7 +1185,7 @@ arrays > 1D.
     return z
 
 
-def zs (a):
+def zs(a):
     """
 Returns a 1D array of z-scores, one for each score in the passed array,
 computed relative to the passed array.
@@ -1196,7 +1197,7 @@ computed relative to the passed array.
     return array(zscores)
 
 
-def zmap (scores, compare, axis=0):
+def zmap(scores, compare, axis=0):
     """
 Returns an array of z-scores the shape of scores (e.g., [x,y]), compared to
 array passed to compare (e.g., [time,x,y]).  Assumes collapsing over dim 0
@@ -1229,7 +1230,7 @@ Returns: a, with values <threshmin or >threshmax replaced with newval
     return where(mask,newval,a)
 
 
-def trimboth (a, proportiontocut):
+def trimboth(a, proportiontocut):
     """
 Slices off the passed proportion of items from BOTH ends of the passed
 array (i.e., with proportiontocut=0.1, slices 'leftmost' 10% AND
@@ -1248,7 +1249,7 @@ Returns: trimmed version of array a
     return a[lowercut:uppercut]
 
 
-def trim1 (a, proportiontocut, tail='right'):
+def trim1(a, proportiontocut, tail='right'):
     """
     Slices off the passed proportion of items from ONE end of the passed
     array (i.e., if proportiontocut=0.1, slices off 'leftmost' or 'rightmost'
@@ -1348,9 +1349,6 @@ Returns: f-value, probability
 """
     na = len(args)            # ANOVA on 'na' groups, each in it's own array
     tmp = map(array,args)
-    #means = map(mean,tmp)
-    #vars = map(var,tmp)
-    #ns = map(len,args)
     alldata = concatenate(args)
     bign = len(alldata)
     sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
@@ -1418,7 +1416,8 @@ Returns: appropriate statistic name, value, and probability
         if corrtype in ['c','C']:
             m,b,r,p,see = linregress(x,y)
             print '\nLinear regression for continuous variables ...'
-            lol = [['Slope','Intercept','r','Prob','SEestimate'],[around(m,4),around(b,4),around(r,4),around(p,4),around(see,4)]]
+            lol = [['Slope','Intercept','r','Prob','SEestimate'],
+                   [around(m,4),around(b,4),around(r,4),around(p,4),around(see,4)]]
             _support.printcc(lol)
         elif corrtype in ['r','R']:
             r,p = spearmanr(x,y)
@@ -1705,7 +1704,7 @@ Returns: t-value, two-tailed prob
     return t,prob
 
 
-def ttest_ind (a, b, axis=0, printit=False, name1='Samp1', name2='Samp2', writemode='a'):
+def ttest_ind(a, b, axis=0, printit=False, name1='Samp1', name2='Samp2', writemode='a'):
     """
 Calculates the t-obtained T-test on TWO INDEPENDENT samples of scores
 a, and b.  From Numerical Recipies, p.483.  If printit is True, results are
@@ -1751,7 +1750,7 @@ Returns: t-value, two-tailed p-value
     return t, probs
 
 
-def ttest_rel (a,b,axis=None,printit=False,name1='Samp1',name2='Samp2',writemode='a'):
+def ttest_rel(a,b,axis=None,printit=False,name1='Samp1',name2='Samp2',writemode='a'):
     """
 Calculates the t-obtained T-test on TWO RELATED samples of scores, a
 and b.  From Numerical Recipies, p.483.  If printit, results are
@@ -2155,6 +2154,7 @@ lists-of-lists.
 
     print
     variables = 1       # this function only handles one measured variable
+    data = asarray(data)
     if not isscalar(data):
         data = data.tolist()
 
@@ -2751,32 +2751,32 @@ Returns: SS array for multivariate F calculation
         Lbtwnonsourcedims = makelist(Bbtwnonsourcedims,Nfactors+1)
         btwnonsourcedims = (array(map(Bscols.index,Lbtwnonsourcedims))-1).tolist()
 
-       ## Average Marray over non-source axes
+        # Average Marray over non-source axes
         sourceDMarray = DM[dindex] *1.0
         for dim in btwnonsourcedims: # collapse all non-source dims
             if dim == len(DM[dindex].shape)-1:
                 raise ValueError, "Crashing ... shouldn't ever collapse ACROSS variables"
             sourceDMarray = expand_dims(mean(sourceDMarray,dim),dim)
 
-       ## Calculate harmonic means for each level in source
+        # Calculate harmonic means for each level in source
         sourceDNarray = apply_over_axes(hmean, DN[dindex],btwnonsourcedims)
 
-       ## Calc grand average (ga), used for ALL effects
+        # Calc grand average (ga), used for ALL effects
         variableNs = apply_over_axes(sum, sourceDNarray,
                                      range(len(sourceDMarray.shape)-1))
         ga = apply_over_axes(sum, (sourceDMarray*sourceDNarray) / \
                              variableNs,
                              range(len(sourceDMarray.shape)-1))
 
-       ## If GRAND interaction, use harmonic mean of ALL cell Ns
+        # If GRAND interaction, use harmonic mean of ALL cell Ns
         if source == Nallsources-1:
             sourceDNarray = hmean(DN[dindex],
                                   range(len(sourceDMarray.shape)-1))
 
-       ## Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
+        # Calc all SUBSOURCES to be subtracted from sourceMarray (M&D p.320)
         sub_effects = ga *1.0   # start with grand mean
         for subsource in range(3,source-2,2):
-       ## Make a list of the non-subsource axes
+            # Make a list of the non-subsource axes
             #subsourcebtw = (subsource-1) & Bbetweens
             if (propersubset(subsource-1,source-1) and
                 (subsource-1)&Bwithins == (source-1)&Bwithins and
@@ -2784,19 +2784,19 @@ Returns: SS array for multivariate F calculation
                 sub_effects = (sub_effects +
                                 alleffects[alleffsources.index(subsource)])
 
-       ## Calc this effect (a(j)'s, b(k)'s, ab(j,k)'s, whatever)
+        # Calc this effect (a(j)'s, b(k)'s, ab(j,k)'s, whatever)
         effect = sourceDMarray - sub_effects
 
-       ## Save it so you don't have to calculate it again next time
+        # Save it so you don't have to calculate it again next time
         alleffects.append(effect)
         alleffsources.append(source)
 
-       ## Calc and save sums of squares for this source
+        # Calc and save sums of squares for this source
         SS = zeros((levels,levels),'f')
         SS = sum((effect**2 *sourceDNarray) *
             multiply.reduce(take(DM[dindex].shape,btwnonsourcedims)),
             range(len(sourceDMarray.shape)-1))
-       ## Save it so you don't have to calculate it again next time
+        # Save it so you don't have to calculate it again next time
         SSlist.append(SS)
         SSsources.append(source)
 
@@ -3235,7 +3235,9 @@ column = measured values.
     numfact = len(data[0])-2
     withinvec = [0]*numfact
     for col in range(1,numfact+1):
-        rows = _support.linexand(data,col,_support.unique(_support.colex(data,1))[0])  # get 1 level of this factor
-        if len(_support.unique(_support.colex(rows,0))) < len(rows):   # if fewer subjects than scores on this factor
+        # get 1 level of this factor
+        rows = _support.linexand(data,col,_support.unique(_support.colex(data,1))[0])  
+        # if fewer subjects than scores on this factor
+        if len(_support.unique(_support.colex(rows,0))) < len(rows):   
             withinvec[col-1] = 1
     return withinvec
