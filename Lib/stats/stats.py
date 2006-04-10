@@ -512,13 +512,25 @@ def mask_to_limits(a, limits, inclusive):
         raise ValueError("No array values within given limits")
     return am
 
-def tmean(a,limits=None,inclusive=(1,1)):
+def tmean(a, limits=None, inclusive=(True, True)):
     """Returns the arithmetic mean of all values in an array, ignoring values
-    strictly outside the sequence passed to 'limits'.   Note: either limit
-    in the sequence, or the value of limits itself, can be set to None.  The
-    inclusive list/tuple determines whether the lower and upper limiting bounds
-    (respectively) are open/exclusive (0) or closed/inclusive (1).
+    strictly outside given limits.
+    
+    Parameters
+    ----------
+    a : array
+    limits : None or (lower limit, upper limit)
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be masked out. When limits is None, then all values are
+        used. Either of the limit values in the tuple can also be None
+        representing a half-open interval.
+    inclusive : (bool, bool)
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to lower or upper are allowed.
 
+    Returns
+    -------
+    A float.
     """
     a = asarray(a)
     if issubclass(a.dtype.type, integer):
