@@ -697,36 +697,50 @@ def skew(a, axis=0, bias=True):
             np.insert(vals, can_correct, nval)
     return vals
 
-def kurtosis(a,axis=0,fisher=True,bias=True):
-    """Returns the kurtosis (fisher or pearson) of a distribution
+def kurtosis(a, axis=0, fisher=True, bias=True):
+    """Computes the kurtosis (Fisher or Pearson) of a dataset.
 
-    Kurtosis is the fourth central moment divided by the square of the
-      variance.  If Fisher's definition is used, then 3.0 is subtracted
-      from the result to give 0.0 for a normal distribution.
+    Kurtosis is the fourth central moment divided by the square of the variance.
+    If Fisher's definition is used, then 3.0 is subtracted from the result to
+    give 0.0 for a normal distribution.
 
-    Axis can equal None (ravel arrayfirst), or an integer
-    (the axis over which to operate)
-
-    If bias is 0 then the kurtosis is calculated using k statistics to
-       eliminate bias comming from biased moment estimators
+    If bias is False then the kurtosis is calculated using k statistics to
+    eliminate bias comming from biased moment estimators
 
     Use kurtosistest() to see if result is close enough to normal.
 
-    Returns: kurtosis of values in a along axis, and ZERO where all vals equal
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+    fisher : bool
+        If True, Fisher's definition is used (normal ==> 0.0). If False,
+        Pearson's definition is used (normal ==> 3.0).
+    bias : bool
+        If False, then the calculations are corrected for statistical bias.
+
+    Returns
+    -------
+    The kurtosis of values along an axis, returning 0 where all values are 
+    equal.
+
+    References
+    ----------
+    [CRCProbStat2000] section 2.2.25
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
     m2 = moment(a,2,axis)
     m4 = moment(a,4,axis)
     zero = (m2 == 0)
-    vals = where(zero, 0, m4/ m2**2.0)
+    vals = np.where(zero, 0, m4/ m2**2.0)
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
-        if any(can_correct):
-            m2 = extract(can_correct,m2)
-            m4 = extract(can_correct,m4)
+        if can_correct.any():
+            m2 = np.extract(can_correct, m2)
+            m4 = np.extract(can_correct, m4)
             nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
-            insert(vals, can_correct, nval+3.0)
+            np.insert(vals, can_correct, nval+3.0)
     if fisher:
         return vals - 3
     else:
