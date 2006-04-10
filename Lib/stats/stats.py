@@ -657,27 +657,44 @@ def variation(a, axis=0):
     correction = np.sqrt(float(n-1) / n)
     return a.std(axis)/a.mean(axis) * correction
 
-def skew(a,axis=0,bias=True):
-    """Returns the skewness of a distribution (normal ==> 0.0; >0 means extra
-    weight in left tail).  Use skewtest() to see if it's close enough.
-    Axis can equal None (ravel array first), or an integer (the
-    axis over which to operate).
 
-    Returns: skew of vals in a along axis, returning ZERO where all vals equal
+def skew(a, axis=0, bias=True):
+    """Computes the skewness of a data set.
+    
+    For normally distributed data, the skewness should be about 0. A skewness
+    value > 0 means that there is more weight in the left tail of the 
+    distribution. The function skewtest() can be used to determine if the 
+    skewness value is close enough to 0, statistically speaking.
+
+    Parameters
+    ----------
+    a : array
+    axis : int or None
+    bias : bool
+        If False, then the calculations are corrected for statistical bias.
+
+    Returns
+    -------
+    The skewness of values along an axis, returning 0 where all values are 
+    equal.
+
+    References
+    ----------
+    [CRCProbStat2000] section 2.2.24.1
     """
     a, axis = _chk_asarray(a,axis)
     n = a.shape[axis]
-    m2 = moment(a,2,axis)
-    m3 = moment(a,3,axis)
+    m2 = moment(a, 2, axis)
+    m3 = moment(a, 3, axis)
     zero = (m2 == 0)
-    vals = where(zero, 0, m3/ m2**1.5)
+    vals = np.where(zero, 0, m3 / m2**1.5)
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
-        if any(can_correct):
-            m2 = extract(can_correct,m2)
-            m3 = extract(can_correct,m3)
-            nval = sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
-            insert(vals, can_correct, nval)
+        if np.any(can_correct):
+            m2 = np.extract(can_correct, m2)
+            m3 = np.extract(can_correct, m3)
+            nval = np.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
+            np.insert(vals, can_correct, nval)
     return vals
 
 def kurtosis(a,axis=0,fisher=True,bias=True):
