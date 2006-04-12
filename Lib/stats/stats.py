@@ -116,7 +116,6 @@ SUPPORT FUNCTIONS:  ss
                     square_of_sums
                     shellsort
                     rankdata
-                    findwithin
 
 References
 ----------
@@ -218,7 +217,6 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums',
            'fastsort', 'rankdata',
-           'findwithin',
           ]
 
 # These two functions replace letting axis be a sequence and the
