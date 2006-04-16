@@ -11,10 +11,10 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('exmplpackage')
 
     # Monte Carlo package
-    #config.add_subpackage('montecarlo')
+    config.add_subpackage('montecarlo')
 
     # PySparse fork with NumPy compatibility
-    #config.add_subpackage('pysparse')
+    config.add_subpackage('pysparse')
 
     # Robert Kern's corner:
     #config.add_subpackage('rkern')
