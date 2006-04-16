@@ -1,4 +1,0 @@
-"""PySparse
-"""
-
-from spmatrix import *

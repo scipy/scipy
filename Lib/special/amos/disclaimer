@@ -1,5 +1,0 @@
-*  The i1mach,r1mach,d1mach routines supplied here are not the official
-*  netlib versions.  They are said to be enhanced copies of the 1975
-*  release.  If you have troubles, try mailing to netlib
-*      send i1mach r1mach d1mach from blas
-*  and see if that helps.
