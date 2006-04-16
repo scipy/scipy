@@ -1,0 +1,192 @@
+$Id$
+HISTORY of pygist/src
+
+V030225 Chase
+
+        1.  gistCmodule.c:  Correct mouse return; see MouseCallBack.
+            *** Problem reported by Dave Grote.  the MouseCallBack
+                calls of PyGist agree with those with Yorick-1.5
+                both in number of calls and arguments.  There is no
+                mouseError setting in Yorick; removing these in 
+                MouseCallBack causes things to return properly.
+                However, Yorick-1.5 has more logic in this area.
+                Do not implement additional code for now.
+
+V030213 Chase
+
+        1.  gistCmodule.c:  Add plremove implementation contributed by
+            Dave P. Grote (LBNL).
+            Add his fix to pli (interchange iMax and jMax).
+
+V030117 Chase
+
+        1.  gistCmodule.c: Remove remaining warnings with gcc 2.96 by:
+            - Reduce to one dummy for file
+            - Remove dumpFreeList, Add1 cumsum, equal, greater, 
+              greater_equal, less, logical_and, not_equal, 
+              WeightedHist if not INCLUDE_EXTRA_GISTCODE.
+
+        *** Tested compilation with gcc 3.2.1 (latest I could get hold of).
+
+V030113 Michiel de Hoon 
+
+        1.  gistCmodule.c:   Add back on omitted bug fix for Windows 
+            (wait_for_expose).  Unix/Linux version is unaffected.
+
+V021227 Michiel de Hoon 
+
+        1.  play/unix/config.sh:  Add fputest.
+
+        2.  play/win/pwin.c and play/win/pmin.c:  Add CYGWIN
+            coding, including p_xhandler, w_hook_recurse, and p_signalling.
+
+        3.  gistCmodule.c: Windows/Cygwin adjustments (e.g. 
+            add pyg_on_idle calls for Windows); fix formats for pointers.
+
+V021206 Munro 
+
+        1.  gist/xbasic.c:  Change to gist_expose_wait.
+
+        2.  play/play.h:  Add p_on_connect.
+
+        3.  play/win/psrc.c:  Add p_on_connect.
+  
+        4.  play/win/wpoll.c:  Add w_nwins.
+
+        5.  play/x11/connect.c:  Add p_on_connect.
+
+        6.  gistCmodoule.c:  more fixes to get pygist working under windows
+            and _tkinter.
+            Macros for proper printing to stdout and stderr.
+            Add pyg_unhook, pyg_idler, pyg_pending, and pyg_register.
+
+V021126 Chase
+
+        1.  gistCmodule.c: Add plg marker documentation.
+
+V021125 Munro 
+
+        1.  Reworked gistCmodule.c, g, gist, and play. 
+
+            Added play/pmin.h and play/win/pmin.c.
+            
+            Note g_on_keyline hook.
+
+V021119 Chase
+
+        1.  Upgrade pygist to Yorick-1.5.13 from Dave Munro.
+
+            - g/ps.ps and g/pscom.ps were changed. 
+            - gist/*, play/*: Lots of changes, many source formatting
+
+            Fixed bug in gist/gread.c.
+
+        2.  gistCmodule.c:  Use gist interface (u_wait_stdin) provided by 
+            Dave Munro for PyOS_InputHook.  Remove old solutions now 
+            that play/unix has changed.
+
+            This solution was tested on OSF/1, AIX, Linux, and cygwin.
+
+V021115 Michiel de Hoon 
+
+        Another approach to interfacing Python to Gist:
+        This approach solves Dave Munro's concern about commenting out
+        the if !serviced_event test in u_waiter.
+        It also solves the slow updates of the cursor position; with this
+        fix, the coordinates of the cursor position are updated immediately 
+        when the mouse moves in the window.
+
+        1.  gistCmodule.c:  Add u_eventloop wrapper function around u_getc,
+            and set PyOS_InputHook to it.
+
+        2.  play/unix/ugetc.c:  Comment out getc function, so that just
+            Python retrieves characters from stdin.
+
+V021113 Chase
+
+        1.  gistCmodule.c:  Add back USE_RL_GETC to optionally 
+            use rl_getc_function.  Also add to play/unix/umain.c. 
+
+V021111 Chase
+
+        1. gistCmodule.c:  Add Numeric to arrayobject.h include.
+
+V021108 Chase
+
+        1.  gistCmodule.c:  Use pyfpe.h include and standard PyFFE* macros.
+
+V021107 Chase
+
+        1. gistCmodule.c:  Clean up some compiler warnings.
+
+V021106 Chase
+
+        1. play/x11/colors.c:  Fix drawing function problem per instructions
+           from Dave Munro.
+
+V021101 Chase
+
+        Implement recommended changes from Michiel de Hoon,
+        University of Tokyo (mdehoon@ims.u-tokyo.ac.jp) to resolve a 
+        problem getting events on cygwin, Linux, and AIX.
+
+        1.  gistCmodule.c: Replace rl_getc_function with PyOS_InputHook.
+
+        2.  play/unix/umain.c:  Michiel suggested a change to the uwaiter 
+            function, but Dave Munro is concerned about loss of functionality
+            with this omission.  For now, if the user wants this omitted, 
+            undef UWAITER_TEST. 
+
+V020904 Chase
+
+        1.  gistCmodule.c:  Deep copy string returned from PyString_AsString
+            in setkw_string.
+
+V020123 Chase
+
+        1.  install.sh:  Comment out commands involving yorick, i, i0, and doc
+            subdirectories.  Not relevant here.
+            Also remove yorick/*.h from include file list.
+
+V011217 Chase
+
+        1.  gistCmodule.c:  Add comments to slice2.
+
+V011206 Chase
+
+        1.  gistCmodule.c:  Remove continue when E_TEXT type encountered 
+            in legend.
+
+V011204 Chase
+    
+        1.  gistCmodule.c:  Found that one replacement line (in plf) from the
+            1.5 graph.c in yorick causes unaligned accesses and the
+            test suite to fail.  Replace by previous form, which uses
+            a temporary.  With this fix, the test suite runs to completion.
+
+V011112 Chase
+
+        1.  gistCmodule.c:  Unpack color triples for true color. 
+            Colors changed from int to unsigned long (1.4 to 1.5).
+            Check for negative colors.
+
+            Test 11 color cartoids now appear, but there is no legend on 
+            Test 12.
+
+V011108 Munro
+
+        1.  gistCmodule.c:  Turn on idle function to do graphics tasks. 
+            All plots now display, except test 11 & 12 (nested cartoid),
+            probably related to color.
+
+V011105 Chase
+
+        1.  gistCmodule.c: Move all of the function documentation from 
+            gist.help to doc strings for each PyObject defined here, 
+            so it can be accessed with pydoc.
+
+V011030 Chase
+
+        1.  gistCmodule.c:  gistpath
+            /graphics/gist is not /gist, 
+            since the full graphics directory is not implemented.

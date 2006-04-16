@@ -1,0 +1,117 @@
+24/oct/01
+
+created pygist-1.5 mock distribution directory
+still needs:
+  - python interpreted code
+  - make targets to actually build a python module
+  - README fixed to reflect python reality instead of yorick
+
+the gist/ and play/ directories are straight from the yorick-1.5
+distribution EXCEPT gist/Makefile has been slightly modified
+  - should make a copy of this outside the gist/ directory in
+    order to make it easy to drop in a later version of the
+    package from the yorick source
+
+the Makefile has three important targets:
+
+    make ysite Y_SITE=....
+      sets the directory where the g/ subdirectory must be installed
+      in order for gist to find style sheets, postscript template, etc
+
+    make config
+      configure for current platform (after make ysite)
+
+    make
+      builds libpyg.a containing gistCmodule plus all gist code
+
+If you don't set Y_SITE, the default is the source directory.  You do
+not need to run make config explicitly.  The install targets are
+currently broken, of course.
+
+I did some more work to address some of the problems below:
+
+(1) I made a first cut at error handling, adopting exactly the same
+strategy Busby originally used for pygist.  It would still be better
+to integrate this into python's system, but if that system does not
+use longjmps, it will need to remain in pretty much its current form.
+
+(2) I made a first cut at a blocking event loop for pause, window,wait=1
+and mouse functions.
+
+That means the only FIXMEs left are the argc/argv access (which may
+not be appropriate) and the 24-bit color interface, which needs to be
+added to setkw_color and pli.
+
+-----------
+
+(1) renamed fma pyg_fma (like pyg_pause) to avoid name conflict
+    (Compaq /usr/include.dtk/math.h declares fma)
+
+(2) changed gist-1.4 functions to gist-1.5 (e.g.- GmMalloc -> p_malloc)
+    changed #include directives to reflect 1.5
+
+(3) made simple Makefile with -I options for A-div network
+
+(4) made first pass through yorick/graph.c (which was Busby's
+    starting point for gistCmodule.c;)  ideally, gistCmodule.c
+    should be scanned line-by-line to make it correspond to the
+    1.5 yorick/graph.c (it is largely still at 1.3)
+
+    I did a good job with the window function and one or two others,
+    but I didn't check the bulk of the file.
+
+(5) placed FIXME comments at the places I noticed that need repair
+    the window,wait=1 and mouse functions in particular need work
+
+(6) needs to add support for true color plf, pli, plfc commands
+
+-----------
+
+The worst problem will be to figure out how to handle errors.
+
+Xlib can signal errors asynchronously, which Busby tried to handle by
+means of a SETJMP0 macro.  I disabled that, since the gist error and
+event handling has totally changed.  Nevertheless, everywhere there is
+a SETJMP0 macro in gistCmodule.c still needs to be fixed.
+
+I am realizing that the gist-1.5 error handling probably needs to be
+reworked in order to be usable with pygist.  The play/README file
+describes how the event/exception mechanism is supposed to work in
+gist (yorick).  This is bound to be inconsistent with python's
+mechanism.  The low level graphics functions in gist watch the new
+p_signalling semaphore, and the error routines set it when Xlib alerts
+them of an error.  The thing which probably needs to be reworked is
+that the gist graphics routines call p_abort(), which longjmps back to
+gist's main event handling loop.  The problem is that under python,
+those routines might well be called outside gist's event loop, which
+would be a disaster.  There must be someplace to longjmp to in python
+when an asynchronous signal (SIGINT, SIGFPE, etc) occurs, and the
+p_abort() function in the yorick version of gist should be replaced by
+one that longjmps to the python error handling system.  (A good place
+to start would be to track down exactly what happens when you type C-c
+to python -- how does it print "KeyboardInterrupt"?)
+
+So, you need to find a good place to longjmp to in python.  When you
+do, write a function to do the longjmp, and set u_abort_hook to your
+function to override the default p_abort().  If all else fails, you
+can reinstate Busby's SETJMP0 idea and make the longjmp target inside
+each individual wrapper routine.  That is probably a bad idea,
+however.  Even once you've done that, you will need to watch out that
+gist might try to steal SIGINT away from python.  You can tell what
+exception or error is being signalled from within your u_abort_hook by
+testing the p_signalling semaphore, and take appropriate action.
+
+The new gist event handling system is not quite so disastrous for
+pygist.  The function u_getc (declared in play/unix/ugetc.h) is
+designed to be the readline rl_getc_function; gist will turn its event
+handling inside out so that its main event loop happens while python
+is waiting for keyboard input if you build a readline version of
+python and put rl_getc_function=u_getc.  You might also consider
+adding calls to u_pending_events other places in python, if you need
+to have the gist graphics event queue run at times other than when you
+are waiting for keyboard input.
+
+Finally, the window,wait=1 and mouse functions need to block until
+their event arrives.  That will probably require adding an API to
+gist, similar to the u_getc function, but waiting for a callback to
+tell it to return instead of for keyboard input to arrive.

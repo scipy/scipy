@@ -1,0 +1,8 @@
+# Here are defined tests for functions coming from ToMS
+#
+cephes.wofz2,'wofz2',in_vars={'x':(-100.,100.),'y':(0.,1.)}, 
+out_vars={'u': 0,'v':0}
+
+cephes.wofz,'wofz',in_vars={'zeta':(-100.+0.j,100.+5j)}, 
+out_vars={'w': 0}
+

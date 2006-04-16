@@ -1,0 +1,1218 @@
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 1
+\use_amsmath 1
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Discrete Statistical Distributions
+\layout Standard
+
+Discrete random variables take on only a countable number of values.
+ The commonly used distributions are included in SciPy and described in
+ this document.
+ Each discrete distribution can take one extra integer parameter: 
+\begin_inset Formula $L.$
+\end_inset 
+
+ The relationship between the general distribution and the standard one
+ is 
+\begin_inset Formula \[
+p\left(x\right)=p_{0}\left(x-L\right)\]
+
+\end_inset 
+
+ which allows for shifting of the input.
+ When a distribution generator is initialized, the discrete distribution
+ can either specify the beginning and ending (integer) values 
+\begin_inset Formula $a$
+\end_inset 
+
+ and 
+\begin_inset Formula $b$
+\end_inset 
+
+ which must be such that 
+\begin_inset Formula \[
+p_{0}\left(x\right)=0\quad x<a\textrm{ or }x>b\]
+
+\end_inset 
+
+ in which case, it is assumed that the pdf function is specified on the
+ integers 
+\begin_inset Formula $a+mk\leq b$
+\end_inset 
+
+ where 
+\begin_inset Formula $k$
+\end_inset 
+
+ is a non-negative integer (
+\begin_inset Formula $0,1,2,\ldots$
+\end_inset 
+
+) and 
+\begin_inset Formula $m$
+\end_inset 
+
+ is a positive integer multiplier.
+ Alternatively, the two lists 
+\begin_inset Formula $x_{k}$
+\end_inset 
+
+ and 
+\begin_inset Formula $p\left(x_{k}\right)$
+\end_inset 
+
+ can be provided directly in which case a dictionary is set up internally
+ to evaulate probabilities and generate random variates.
+ 
+\layout Subsection
+
+Probability Mass Function (PMF)
+\layout Standard
+
+The probability mass function of a random variable X is defined as the probabili
+ty that the random variable takes on a particular value.
+ 
+\begin_inset Formula \[
+p\left(x_{k}\right)=P\left[X=x_{k}\right]\]
+
+\end_inset 
+
+ This is also sometimes called the probability density function, although
+ technically 
+\begin_inset Formula \[
+f\left(x\right)=\sum_{k}p\left(x_{k}\right)\delta\left(x-x_{k}\right)\]
+
+\end_inset 
+
+ is the probability density function for a discrete distribution
+\begin_inset Foot
+collapsed false
+
+\layout Standard
+
+Note that we will be using 
+\begin_inset Formula $p$
+\end_inset 
+
+ to represent the probability mass function and a parameter (a probability).
+ The usage should be obvious from context.
+ 
+\end_inset 
+
+.
+ 
+\layout Subsection
+
+Cumulative Distribution Function (CDF)
+\layout Standard
+
+The cumulative distribution function is 
+\begin_inset Formula \[
+F\left(x\right)=P\left[X\leq x\right]=\sum_{x_{k}\leq x}p\left(x_{k}\right)\]
+
+\end_inset 
+
+ and is also useful to be able to compute.
+ Note that 
+\begin_inset Formula \[
+F\left(x_{k}\right)-F\left(x_{k-1}\right)=p\left(x_{k}\right)\]
+
+\end_inset 
+
+
+\layout Subsection
+
+Survival Function
+\layout Standard
+
+The survival function is just 
+\begin_inset Formula \[
+S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]\]
+
+\end_inset 
+
+ the probability that the random variable is strictly larger than 
+\begin_inset Formula $k$
+\end_inset 
+
+.
+ 
+\layout Subsection
+
+Percent Point Function (Inverse CDF)
+\layout Standard
+
+The percent point function is the inverse of the cumulative distribution
+ function and is 
+\begin_inset Formula \[
+G\left(q\right)=F^{-1}\left(q\right)\]
+
+\end_inset 
+
+ for discrete distributions, this must be modified for cases where there
+ is no 
+\begin_inset Formula $x_{k}$
+\end_inset 
+
+ such that 
+\begin_inset Formula $F\left(x_{k}\right)=q.$
+\end_inset 
+
+ In these cases we choose 
+\begin_inset Formula $G\left(q\right)$
+\end_inset 
+
+ to be the smallest value 
+\begin_inset Formula $x_{k}=G\left(q\right)$
+\end_inset 
+
+ for which 
+\begin_inset Formula $F\left(x_{k}\right)\geq q$
+\end_inset 
+
+.
+ If 
+\begin_inset Formula $q=0$
+\end_inset 
+
+ then we define 
+\begin_inset Formula $G\left(0\right)=a-1$
+\end_inset 
+
+.
+ This definition allows random variates to be defined in the same way as
+ with continuous rv's using the inverse cdf on a uniform distribution to
+ generate random variates.
+ 
+\layout Subsection
+
+Inverse survival function
+\layout Standard
+
+The inverse survival function is the inverse of the survival function 
+\begin_inset Formula \[
+Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)\]
+
+\end_inset 
+
+ and is thus the smallest non-negative integer 
+\begin_inset Formula $k$
+\end_inset 
+
+ for which 
+\begin_inset Formula $F\left(k\right)\geq1-\alpha$
+\end_inset 
+
+ or the smallest non-negative integer 
+\begin_inset Formula $k$
+\end_inset 
+
+ for which 
+\begin_inset Formula $S\left(k\right)\leq\alpha.$
+\end_inset 
+
+ 
+\layout Subsection
+
+Hazard functions
+\layout Standard
+
+If desired, the hazard function and the cumulative hazard function could
+ be defined as 
+\begin_inset Formula \[
+h\left(x_{k}\right)=\frac{p\left(x_{k}\right)}{1-F\left(x_{k}\right)}\]
+
+\end_inset 
+
+ and 
+\begin_inset Formula \[
+H\left(x\right)=\sum_{x_{k}\leq x}h\left(x_{k}\right)=\sum_{x_{k}\leq x}\frac{F\left(x_{k}\right)-F\left(x_{k-1}\right)}{1-F\left(x_{k}\right)}.\]
+
+\end_inset 
+
+
+\layout Subsection
+
+Moments
+\layout Standard
+
+Non-central moments are defined using the PDF 
+\begin_inset Formula \[
+\mu_{m}^{\prime}=E\left[X^{m}\right]=\sum_{k}x_{k}^{m}p\left(x_{k}\right).\]
+
+\end_inset 
+
+ Central moments are computed similarly 
+\begin_inset Formula $\mu=\mu_{1}^{\prime}$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu_{m}=E\left[\left(X-\mu\right)^{2}\right] & = & \sum_{k}\left(x_{k}-\mu\right)^{m}p\left(x_{k}\right)\\
+ & = & \sum_{k=0}^{m}\left(-1\right)^{m-k}\left(\begin{array}{c}
+m\\
+k\end{array}\right)\mu^{m-k}\mu_{k}^{\prime}\end{eqnarray*}
+
+\end_inset 
+
+ The mean is the first moment 
+\begin_inset Formula \[
+\mu=\mu_{1}^{\prime}=E\left[X\right]=\sum_{k}x_{k}p\left(x_{k}\right)\]
+
+\end_inset 
+
+ the variance is the second central moment 
+\begin_inset Formula \[
+\mu_{2}=E\left[\left(X-\mu\right)^{2}\right]=\sum_{x_{k}}x_{k}^{2}p\left(x_{k}\right)-\mu^{2}.\]
+
+\end_inset 
+
+Skewness is defined as 
+\begin_inset Formula \[
+\gamma_{1}=\frac{\mu_{3}}{\mu_{2}^{3/2}}\]
+
+\end_inset 
+
+ while (Fisher) kurtosis is 
+\begin_inset Formula \[
+\gamma_{2}=\frac{\mu_{4}}{\mu_{2}^{2}}-3,\]
+
+\end_inset 
+
+ so that a normal distribution has a kurtosis of zero.
+ 
+\layout Subsection
+
+Moment generating function
+\layout Standard
+
+The moment generating funtion is defined as 
+\begin_inset Formula \[
+M_{X}\left(t\right)=E\left[e^{Xt}\right]=\sum_{x_{k}}e^{x_{k}t}p\left(x_{k}\right)\]
+
+\end_inset 
+
+ Moments are found as the derivatives of the moment generating function
+ evaluated at 
+\begin_inset Formula $0.$
+\end_inset 
+
+ 
+\layout Subsection
+
+Fitting data
+\layout Standard
+
+To fit data to a distribution, maximizing the likelihood function is common.
+ Alternatively, some distributions have well-known minimum variance unbiased
+ estimators.
+ These will be chosen by default, but the likelihood function will always
+ be available for minimizing.
+ 
+\layout Standard
+
+If 
+\begin_inset Formula $f_{i}\left(k;\boldsymbol{\theta}\right)$
+\end_inset 
+
+ is the PDF of a random-variable where 
+\begin_inset Formula $\boldsymbol{\theta}$
+\end_inset 
+
+ is a vector of parameters (
+\emph on 
+e.g.
+ 
+\begin_inset Formula $L$
+\end_inset 
+
+ 
+\emph default 
+and 
+\begin_inset Formula $S$
+\end_inset 
+
+), then for a collection of 
+\begin_inset Formula $N$
+\end_inset 
+
+ independent samples from this distribution, the joint distribution the
+ random vector 
+\begin_inset Formula $\mathbf{k}$
+\end_inset 
+
+ is 
+\begin_inset Formula \[
+f\left(\mathbf{k};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f_{i}\left(k_{i};\boldsymbol{\theta}\right).\]
+
+\end_inset 
+
+ The maximum likelihood estimate of the parameters 
+\begin_inset Formula $\boldsymbol{\theta}$
+\end_inset 
+
+ are the parameters which maximize this function with 
+\begin_inset Formula $\mathbf{x}$
+\end_inset 
+
+ fixed and given by the data: 
+\begin_inset Formula \begin{eqnarray*}
+\hat{\boldsymbol{\theta}} & = & \arg\max_{\boldsymbol{\theta}}f\left(\mathbf{k};\boldsymbol{\theta}\right)\\
+ & = & \arg\min_{\boldsymbol{\theta}}l_{\mathbf{k}}\left(\boldsymbol{\theta}\right).\end{eqnarray*}
+
+\end_inset 
+
+ Where 
+\begin_inset Formula \begin{eqnarray*}
+l_{\mathbf{k}}\left(\boldsymbol{\theta}\right) & = & -\sum_{i=1}^{N}\log f\left(k_{i};\boldsymbol{\theta}\right)\\
+ & = & -N\overline{\log f\left(k_{i};\boldsymbol{\theta}\right)}\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Subsection
+
+Standard notation for mean
+\layout Standard
+
+We will use 
+\begin_inset Formula \[
+\overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum_{i=1}^{N}y\left(x_{i}\right)\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $N$
+\end_inset 
+
+ should be clear from context.
+ 
+\layout Subsection
+
+Combinations 
+\layout Standard
+
+Note that 
+\begin_inset Formula \[
+k!=k\cdot\left(k-1\right)\cdot\left(k-2\right)\cdot\cdots\cdot1=\Gamma\left(k+1\right)\]
+
+\end_inset 
+
+ and has special cases of 
+\begin_inset Formula \begin{eqnarray*}
+0! & \equiv & 1\\
+k! & \equiv & 0\quad k<0\end{eqnarray*}
+
+\end_inset 
+
+ and 
+\begin_inset Formula \[
+\left(\begin{array}{c}
+n\\
+k\end{array}\right)=\frac{n!}{\left(n-k\right)!k!}.\]
+
+\end_inset 
+
+ If 
+\begin_inset Formula $n<0$
+\end_inset 
+
+ or 
+\begin_inset Formula $k<0$
+\end_inset 
+
+ or 
+\begin_inset Formula $k>n$
+\end_inset 
+
+ we define 
+\begin_inset Formula $\left(\begin{array}{c}
+n\\
+k\end{array}\right)=0$
+\end_inset 
+
+
+\layout Section
+
+Bernoulli
+\layout Standard
+
+A Bernoulli random variable of parameter 
+\begin_inset Formula $p$
+\end_inset 
+
+ takes one of only two values 
+\begin_inset Formula $X=0$
+\end_inset 
+
+ or 
+\begin_inset Formula $X=1$
+\end_inset 
+
+.
+ The probability of success (
+\begin_inset Formula $X=1$
+\end_inset 
+
+) is 
+\begin_inset Formula $p$
+\end_inset 
+
+, and the probability of failure (
+\begin_inset Formula $X=0$
+\end_inset 
+
+) is 
+\begin_inset Formula $1-p.$
+\end_inset 
+
+ It can be thought of as a binomial random variable with 
+\begin_inset Formula $n=1$
+\end_inset 
+
+.
+ The PMF is 
+\begin_inset Formula $p\left(k\right)=0$
+\end_inset 
+
+ for 
+\begin_inset Formula $k\neq0,1$
+\end_inset 
+
+ and 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;p\right) & = & \begin{cases}
+1-p & k=0\\
+p & k=1\end{cases}\\
+F\left(x;p\right) & = & \begin{cases}
+0 & x<0\\
+1-p & 0\le x<1\\
+1 & 1\leq x\end{cases}\\
+G\left(q;p\right) & = & \begin{cases}
+0 & 0\leq q<1-p\\
+1 & 1-p\leq q\leq1\end{cases}\\
+\mu & = & p\\
+\mu_{2} & = & p\left(1-p\right)\\
+\gamma_{3} & = & \frac{1-2p}{\sqrt{p\left(1-p\right)}}\\
+\gamma_{4} & = & \frac{1-6p\left(1-p\right)}{p\left(1-p\right)}\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+M\left(t\right)=1-p\left(1-e^{t}\right)\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+\mu_{m}^{\prime}=p\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+h\left[X\right]=p\log p+\left(1-p\right)\log\left(1-p\right)\]
+
+\end_inset 
+
+
+\layout Section
+
+Binomial
+\layout Standard
+
+A binomial random variable with parameters 
+\begin_inset Formula $\left(n,p\right)$
+\end_inset 
+
+ can be described as the sum of 
+\begin_inset Formula $n$
+\end_inset 
+
+ independent Bernoulli random variables of parameter 
+\begin_inset Formula $p;$
+\end_inset 
+
+
+\begin_inset Formula \[
+Y=\sum_{i=1}^{n}X_{i}.\]
+
+\end_inset 
+
+ Therefore, this random variable counts the number of successes in 
+\begin_inset Formula $n$
+\end_inset 
+
+ independent trials of a random experiment where the probability of success
+ is 
+\begin_inset Formula $p.$
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;n,p\right) & = & \left(\begin{array}{c}
+n\\
+k\end{array}\right)p^{k}\left(1-p\right)^{n-k}\,\, k\in\left\{ 0,1,\ldots n\right\} ,\\
+F\left(x;n,p\right) & = & \sum_{k\leq x}\left(\begin{array}{c}
+n\\
+k\end{array}\right)p^{k}\left(1-p\right)^{n-k}=I_{1-p}\left(n-\left\lfloor x\right\rfloor ,\left\lfloor x\right\rfloor +1\right)\quad x\geq0\end{eqnarray*}
+
+\end_inset 
+
+ where the incomplete beta integral is 
+\begin_inset Formula \[
+I_{x}\left(a,b\right)=\frac{\Gamma\left(a+b\right)}{\Gamma\left(a\right)\Gamma\left(b\right)}\int_{0}^{x}t^{a-1}\left(1-t\right)^{b-1}dt.\]
+
+\end_inset 
+
+ Now 
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & np\\
+\mu_{2} & = & np\left(1-p\right)\\
+\gamma_{1} & = & \frac{1-2p}{\sqrt{np\left(1-p\right)}}\\
+\gamma_{2} & = & \frac{1-6p\left(1-p\right)}{np\left(1-p\right)}.\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+M\left(t\right)=\left[1-p\left(1-e^{t}\right)\right]^{n}\]
+
+\end_inset 
+
+
+\layout Section
+
+Boltzmann (truncated Planck)
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;N,\lambda\right) & = & \frac{1-e^{-\lambda}}{1-e^{-\lambda N}}\exp\left(-\lambda k\right)\quad k\in\left\{ 0,1,\ldots,N-1\right\} \\
+F\left(x;N,\lambda\right) & = & \left\{ \begin{array}{cc}
+0 & x<0\\
+\frac{1-\exp\left[-\lambda\left(\left\lfloor x\right\rfloor +1\right)\right]}{1-\exp\left(-\lambda N\right)} & 0\leq x\leq N-1\\
+1 & x\geq N-1\end{array}\right.\\
+G\left(q,\lambda\right) & = & \left\lceil -\frac{1}{\lambda}\log\left[1-q\left(1-e^{-\lambda N}\right)\right]-1\right\rceil \end{eqnarray*}
+
+\end_inset 
+
+ Define 
+\begin_inset Formula $z=e^{-\lambda}$
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & \frac{z}{1-z}-\frac{Nz^{N}}{1-z^{N}}\\
+\mu_{2} & = & \frac{z}{\left(1-z\right)^{2}}-\frac{N^{2}z^{N}}{\left(1-z^{N}\right)^{2}}\\
+\gamma_{1} & = & \frac{z\left(1+z\right)\left(\frac{1-z^{N}}{1-z}\right)^{3}-N^{3}z^{N}\left(1+z^{N}\right)}{\left[z\left(\frac{1-z^{N}}{1-z}\right)^{2}-N^{2}z^{N}\right]^{3/2}}\\
+\gamma_{2} & = & \frac{z\left(1+4z+z^{2}\right)\left(\frac{1-z^{N}}{1-z}\right)^{4}-N^{4}z^{N}\left(1+4z^{N}+z^{2N}\right)}{\left[z\left(\frac{1-z^{N}}{1-z}\right)^{2}-N^{2}z^{N}\right]^{2}}\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+M\left(t\right)=\frac{1-e^{N\left(t-\lambda\right)}}{1-e^{t-\lambda}}\frac{1-e^{-\lambda}}{1-e^{-\lambda N}}\]
+
+\end_inset 
+
+
+\layout Section
+
+Planck (discrete exponential)
+\layout Standard
+
+Named Planck because of its relationship to the black-body problem he solved.
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;\lambda\right) & = & \left(1-e^{-\lambda}\right)e^{-\lambda k}\quad k\lambda\geq0\\
+F\left(x;\lambda\right) & = & 1-e^{-\lambda\left(\left\lfloor x\right\rfloor +1\right)}\quad x\lambda\geq0\\
+G\left(q;\lambda\right) & = & \left\lceil -\frac{1}{\lambda}\log\left[1-q\right]-1\right\rceil .\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & \frac{1}{e^{\lambda}-1}\\
+\mu_{2} & = & \frac{e^{-\lambda}}{\left(1-e^{-\lambda}\right)^{2}}\\
+\gamma_{1} & = & 2\cosh\left(\frac{\lambda}{2}\right)\\
+\gamma_{2} & = & 4+2\cosh\left(\lambda\right)\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+M\left(t\right)=\frac{1-e^{-\lambda}}{1-e^{t-\lambda}}\]
+
+\end_inset 
+
+ 
+\begin_inset Formula \[
+h\left[X\right]=\frac{\lambda e^{-\lambda}}{1-e^{-\lambda}}-\log\left(1-e^{-\lambda}\right)\]
+
+\end_inset 
+
+
+\layout Section
+
+Poisson
+\layout Standard
+
+The Poisson random variable counts the number of successes in 
+\begin_inset Formula $n$
+\end_inset 
+
+ independent Bernoulli trials in the limit as 
+\begin_inset Formula $n\rightarrow\infty$
+\end_inset 
+
+ and 
+\begin_inset Formula $p\rightarrow0$
+\end_inset 
+
+ where the probability of success in each trial is 
+\begin_inset Formula $p$
+\end_inset 
+
+ and 
+\begin_inset Formula $np=\lambda\geq0$
+\end_inset 
+
+ is a constant.
+ It can be used to approximate the Binomial random variable or in it's own
+ right to count the number of events that occur in the interval 
+\begin_inset Formula $\left[0,t\right]$
+\end_inset 
+
+ for a process satisfying certain 
+\begin_inset Quotes eld
+\end_inset 
+
+sparsity
+\begin_inset Quotes erd
+\end_inset 
+
+ constraints.
+ The functions are 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;\lambda\right) & = & e^{-\lambda}\frac{\lambda^{k}}{k!}\quad k\geq0,\\
+F\left(x;\lambda\right) & = & \sum_{n=0}^{\left\lfloor x\right\rfloor }e^{-\lambda}\frac{\lambda^{n}}{n!}=\frac{1}{\Gamma\left(\left\lfloor x\right\rfloor +1\right)}\int_{\lambda}^{\infty}t^{\left\lfloor x\right\rfloor }e^{-t}dt,\\
+\mu & = & \lambda\\
+\mu_{2} & = & \lambda\\
+\gamma_{1} & = & \frac{1}{\sqrt{\lambda}}\\
+\gamma_{2} & = & \frac{1}{\lambda}.\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right].\]
+
+\end_inset 
+
+
+\layout Section
+
+Geometric
+\layout Standard
+
+The geometric random variable with parameter 
+\begin_inset Formula $p\in\left(0,1\right)$
+\end_inset 
+
+ can be defined as the number of trials required to obtain a success where
+ the probability of success on each trial is 
+\begin_inset Formula $p$
+\end_inset 
+
+.
+ Thus, 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;p\right) & = & \left(1-p\right)^{k-1}p\quad k\geq1\\
+F\left(x;p\right) & = & 1-\left(1-p\right)^{\left\lfloor x\right\rfloor }\quad x\geq1\\
+G\left(q;p\right) & = & \left\lceil \frac{\log\left(1-q\right)}{\log\left(1-p\right)}\right\rceil \\
+\mu & = & \frac{1}{p}\\
+\mu_{2} & = & \frac{1-p}{p^{2}}\\
+\gamma_{1} & = & \frac{2-p}{\sqrt{1-p}}\\
+\gamma_{2} & = & \frac{p^{2}-6p+6}{1-p}.\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \frac{p}{e^{-t}-\left(1-p\right)}\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Negative Binomial
+\layout Standard
+
+The negative binomial random variable with parameters 
+\begin_inset Formula $n$
+\end_inset 
+
+ and 
+\begin_inset Formula $p\in\left(0,1\right)$
+\end_inset 
+
+ can be defined as the number of 
+\emph on 
+extra 
+\emph default 
+independent trials (beyond 
+\begin_inset Formula $n$
+\end_inset 
+
+) required to accumulate a total of 
+\begin_inset Formula $n$
+\end_inset 
+
+ successes where the probability of a success on each trial is 
+\begin_inset Formula $p.$
+\end_inset 
+
+ Equivalently, this random variable is the number of failures encoutered
+ while accumulating 
+\begin_inset Formula $n$
+\end_inset 
+
+ successes during independent trials of an experiment that succeeds with
+ probability 
+\begin_inset Formula $p.$
+\end_inset 
+
+ Thus, 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;n,p\right) & = & \left(\begin{array}{c}
+k+n-1\\
+n-1\end{array}\right)p^{n}\left(1-p\right)^{k}\quad k\geq0\\
+F\left(x;n,p\right) & = & \sum_{i=0}^{\left\lfloor x\right\rfloor }\left(\begin{array}{c}
+i+n-1\\
+i\end{array}\right)p^{n}\left(1-p\right)^{i}\quad x\geq0\\
+ & = & I_{p}\left(n,\left\lfloor x\right\rfloor +1\right)\quad x\geq0\\
+\mu & = & n\frac{1-p}{p}\\
+\mu_{2} & = & n\frac{1-p}{p^{2}}\\
+\gamma_{1} & = & \frac{2-p}{\sqrt{n\left(1-p\right)}}\\
+\gamma_{2} & = & \frac{p^{2}+6\left(1-p\right)}{n\left(1-p\right)}.\end{eqnarray*}
+
+\end_inset 
+
+ Recall that 
+\begin_inset Formula $I_{p}\left(a,b\right)$
+\end_inset 
+
+ is the incomplete beta integral.
+ 
+\layout Section
+
+Hypergeometric
+\layout Standard
+
+The hypergeometric random variable with parameters 
+\begin_inset Formula $\left(M,n,N\right)$
+\end_inset 
+
+ counts the number of 
+\begin_inset Quotes eld
+\end_inset 
+
+good
+\begin_inset Quotes erd
+\end_inset 
+
+ objects in a sample of size 
+\begin_inset Formula $N$
+\end_inset 
+
+ chosen without replacement from a population of 
+\begin_inset Formula $M$
+\end_inset 
+
+ objects where 
+\begin_inset Formula $n$
+\end_inset 
+
+ is the number of 
+\begin_inset Quotes eld
+\end_inset 
+
+good
+\begin_inset Quotes erd
+\end_inset 
+
+ objects in the total population.
+ 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;N,n,M\right) & = & \frac{\left(\begin{array}{c}
+n\\
+k\end{array}\right)\left(\begin{array}{c}
+M-n\\
+N-k\end{array}\right)}{\left(\begin{array}{c}
+M\\
+N\end{array}\right)}\quad N-\left(M-n\right)\leq k\leq\min\left(n,N\right)\\
+F\left(x;N,n,M\right) & = & \sum_{k=0}^{\left\lfloor x\right\rfloor }\frac{\left(\begin{array}{c}
+m\\
+k\end{array}\right)\left(\begin{array}{c}
+N-m\\
+n-k\end{array}\right)}{\left(\begin{array}{c}
+N\\
+n\end{array}\right)},\\
+\mu & = & \frac{nN}{M}\\
+\mu_{2} & = & \frac{nN\left(M-n\right)\left(M-N\right)}{M^{2}\left(M-1\right)}\\
+\gamma_{1} & = & \frac{\left(M-2n\right)\left(M-2N\right)}{M-2}\sqrt{\frac{M-1}{nN\left(M-m\right)\left(M-n\right)}}\\
+\gamma_{2} & = & \frac{g\left(N,n,M\right)}{nN\left(M-n\right)\left(M-3\right)\left(M-2\right)\left(N-M\right)}\end{eqnarray*}
+
+\end_inset 
+
+ where (defining 
+\begin_inset Formula $m=M-n$
+\end_inset 
+
+)
+\begin_inset Formula \begin{eqnarray*}
+g\left(N,n,M\right) & = & m^{3}-m^{5}+3m^{2}n-6m^{3}n+m^{4}n+3mn^{2}\\
+ &  & -12m^{2}n^{2}+8m^{3}n^{2}+n^{3}-6mn^{3}+8m^{2}n^{3}\\
+ &  & +mn^{4}-n^{5}-6m^{3}N+6m^{4}N+18m^{2}nN\\
+ &  & -6m^{3}nN+18mn^{2}N-24m^{2}n^{2}N-6n^{3}N\\
+ &  & -6mn^{3}N+6n^{4}N+6m^{2}N^{2}-6m^{3}N^{2}-24mnN^{2}\\
+ &  & +12m^{2}nN^{2}+6n^{2}N^{2}+12mn^{2}N^{2}-6n^{3}N^{2}.\end{eqnarray*}
+
+\end_inset 
+
+ 
+\layout Section
+
+Zipf (Zeta)
+\layout Standard
+
+A random variable has the zeta distribution (also called the zipf distribution)
+ with parameter 
+\begin_inset Formula $\alpha>1$
+\end_inset 
+
+ if it's probability mass function is given by
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;\alpha\right) & = & \frac{1}{\zeta\left(\alpha\right)k^{\alpha}}\quad k\geq1\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula \[
+\zeta\left(\alpha\right)=\sum_{n=1}^{\infty}\frac{1}{n^{\alpha}}\]
+
+\end_inset 
+
+ is the Riemann zeta function.
+ Other functions of this distribution are 
+\begin_inset Formula \begin{eqnarray*}
+F\left(x;\alpha\right) & = & \frac{1}{\zeta\left(\alpha\right)}\sum_{k=1}^{\left\lfloor x\right\rfloor }\frac{1}{k^{\alpha}}\\
+\mu & = & \frac{\zeta_{1}}{\zeta_{0}}\quad\alpha>2\\
+\mu_{2} & = & \frac{\zeta_{2}\zeta_{0}-\zeta_{1}^{2}}{\zeta_{0}^{2}}\quad\alpha>3\\
+\gamma_{1} & = & \frac{\zeta_{3}\zeta_{0}^{2}-3\zeta_{0}\zeta_{1}\zeta_{2}+2\zeta_{1}^{3}}{\left[\zeta_{2}\zeta_{0}-\zeta_{1}^{2}\right]^{3/2}}\quad\alpha>4\\
+\gamma_{2} & = & \frac{\zeta_{4}\zeta_{0}^{3}-4\zeta_{3}\zeta_{1}\zeta_{0}^{2}+12\zeta_{2}\zeta_{1}^{2}\zeta_{0}-6\zeta_{1}^{4}-3\zeta_{2}^{2}\zeta_{0}^{2}}{\left(\zeta_{2}\zeta_{0}-\zeta_{1}^{2}\right)^{2}}.\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \frac{\textrm{Li}_{\alpha}\left(e^{t}\right)}{\zeta\left(\alpha\right)}\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula $\zeta_{i}=\zeta\left(\alpha-i\right)$
+\end_inset 
+
+ and 
+\begin_inset Formula $\textrm{Li}_{n}\left(z\right)$
+\end_inset 
+
+ is the 
+\begin_inset Formula $n^{\textrm{th}}$
+\end_inset 
+
+ polylogarithm function of 
+\begin_inset Formula $z$
+\end_inset 
+
+ defined as 
+\begin_inset Formula \[
+\textrm{Li}_{n}\left(z\right)\equiv\sum_{k=1}^{\infty}\frac{z^{k}}{k^{n}}\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{\alpha-n}\left(e^{t}\right)}{\zeta\left(a\right)}\right|_{t=0}=\frac{\zeta\left(\alpha-n\right)}{\zeta\left(\alpha\right)}\]
+
+\end_inset 
+
+
+\layout Section
+
+Logarithmic (Log-Series, Series)
+\layout Standard
+
+The logarimthic distribution with parameter 
+\begin_inset Formula $p$
+\end_inset 
+
+ has a probability mass function with terms proportional to the Taylor series
+ expansion of 
+\begin_inset Formula $\log\left(1-p\right)$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;p\right) & = & -\frac{p^{k}}{k\log\left(1-p\right)}\quad k\geq1\\
+F\left(x;p\right) & = & -\frac{1}{\log\left(1-p\right)}\sum_{k=1}^{\left\lfloor x\right\rfloor }\frac{p^{k}}{k}=1+\frac{p^{1+\left\lfloor x\right\rfloor }\Phi\left(p,1,1+\left\lfloor x\right\rfloor \right)}{\log\left(1-p\right)}\end{eqnarray*}
+
+\end_inset 
+
+where 
+\begin_inset Formula \[
+\Phi\left(z,s,a\right)=\sum_{k=0}^{\infty}\frac{z^{k}}{\left(a+k\right)^{s}}\]
+
+\end_inset 
+
+ is the Lerch Transcendent.
+ Also define 
+\begin_inset Formula $r=\log\left(1-p\right)$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & -\frac{p}{\left(1-p\right)r}\\
+\mu_{2} & = & -\frac{p\left[p+r\right]}{\left(1-p\right)^{2}r^{2}}\\
+\gamma_{1} & = & -\frac{2p^{2}+3pr+\left(1+p\right)r^{2}}{r\left(p+r\right)\sqrt{-p\left(p+r\right)}}r\\
+\gamma_{2} & = & -\frac{6p^{3}+12p^{2}r+p\left(4p+7\right)r^{2}+\left(p^{2}+4p+1\right)r^{3}}{p\left(p+r\right)^{2}}.\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & -\frac{1}{\log\left(1-p\right)}\sum_{k=1}^{\infty}\frac{e^{tk}p^{k}}{k}\\
+ & = & \frac{\log\left(1-pe^{t}\right)}{\log\left(1-p\right)}\end{eqnarray*}
+
+\end_inset 
+
+ Thus, 
+\begin_inset Formula \[
+\mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{1-n}\left(pe^{t}\right)}{\log\left(1-p\right)}\right|_{t=0}=-\frac{\textrm{Li}_{1-n}\left(p\right)}{\log\left(1-p\right)}.\]
+
+\end_inset 
+
+
+\layout Section
+
+Discrete Uniform (randint)
+\layout Standard
+
+The discrete uniform distribution with parameters
+\begin_inset Formula $\left(a,b\right)$
+\end_inset 
+
+ constructs a random variable that has an equal probability of being any
+ one of the integers in the half-open range 
+\begin_inset Formula $[a,b).$
+\end_inset 
+
+ If 
+\begin_inset Formula $a$
+\end_inset 
+
+ is not given it is assumed to be zero and the only parameter is 
+\begin_inset Formula $b.$
+\end_inset 
+
+ Therefore, 
+\begin_inset Formula \begin{eqnarray*}
+p\left(k;a,b\right) & = & \frac{1}{b-a}\quad a\leq k<b\\
+F\left(x;a,b\right) & = & \frac{\left\lfloor x\right\rfloor -a}{b-a}\quad a\leq x\leq b\\
+G\left(q;a,b\right) & = & \left\lceil q\left(b-a\right)+a\right\rceil \\
+\mu & = & \frac{b+a-1}{2}\\
+\mu_{2} & = & \frac{\left(b-a-1\right)\left(b-a+1\right)}{12}\\
+\gamma_{1} & = & 0\\
+\gamma_{2} & = & -\frac{6}{5}\frac{\left(b-a\right)^{2}+1}{\left(b-a-1\right)\left(b-a+1\right)}.\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \frac{1}{b-a}\sum_{k=a}^{b-1}e^{tk}\\
+ & = & \frac{e^{bt}-e^{at}}{\left(b-a\right)\left(e^{t}-1\right)}\end{eqnarray*}
+
+\end_inset 
+
+
+\layout Section
+
+Discrete Laplacian
+\layout Standard
+
+Defined over all integers for 
+\begin_inset Formula $a>0$
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+p\left(k\right) & = & \tanh\left(\frac{a}{2}\right)e^{-a\left|k\right|},\\
+F\left(x\right) & = & \left\{ \begin{array}{cc}
+\frac{e^{a\left(\left\lfloor x\right\rfloor +1\right)}}{e^{a}+1} & \left\lfloor x\right\rfloor <0,\\
+1-\frac{e^{-a\left\lfloor x\right\rfloor }}{e^{a}+1} & \left\lfloor x\right\rfloor \geq0.\end{array}\right.\\
+G\left(q\right) & = & \left\{ \begin{array}{cc}
+\left\lceil \frac{1}{a}\log\left[q\left(e^{a}+1\right)\right]-1\right\rceil  & q<\frac{1}{1+e^{-a}},\\
+\left\lceil -\frac{1}{a}\log\left[\left(1-q\right)\left(1+e^{a}\right)\right]\right\rceil  & q\geq\frac{1}{1+e^{-a}}.\end{array}\right.\end{eqnarray*}
+
+\end_inset 
+
+ 
+\begin_inset Formula \begin{eqnarray*}
+M\left(t\right) & = & \tanh\left(\frac{a}{2}\right)\sum_{k=-\infty}^{\infty}e^{tk}e^{-a\left|k\right|}\\
+ & = & C\left(1+\sum_{k=1}^{\infty}e^{-\left(t+a\right)k}+\sum_{1}^{\infty}e^{\left(t-a\right)k}\right)\\
+ & = & \tanh\left(\frac{a}{2}\right)\left(1+\frac{e^{-\left(t+a\right)}}{1-e^{-\left(t+a\right)}}+\frac{e^{t-a}}{1-e^{t-a}}\right)\\
+ & = & \frac{\tanh\left(\frac{a}{2}\right)\sinh a}{\cosh a-\cosh t}.\end{eqnarray*}
+
+\end_inset 
+
+ Thus, 
+\begin_inset Formula \[
+\mu_{n}^{\prime}=M^{\left(n\right)}\left(0\right)=\left[1+\left(-1\right)^{n}\right]\textrm{Li}_{-n}\left(e^{-a}\right)\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula $\textrm{Li}_{-n}\left(z\right)$
+\end_inset 
+
+ is the polylogarithm function of order 
+\begin_inset Formula $-n$
+\end_inset 
+
+ evaluated at 
+\begin_inset Formula $z.$
+\end_inset 
+
+
+\begin_inset Formula \[
+h\left[X\right]=-\log\left(\tanh\left(\frac{a}{2}\right)\right)+\frac{a}{\sinh a}\]
+
+\end_inset 
+
+
+\layout Section
+
+Discrete Gaussian*
+\layout Standard
+
+Defined for all 
+\begin_inset Formula $\mu$
+\end_inset 
+
+ and 
+\begin_inset Formula $\lambda>0$
+\end_inset 
+
+ and 
+\begin_inset Formula $k$
+\end_inset 
+
+
+\begin_inset Formula \[
+p\left(k;\mu,\lambda\right)=\frac{1}{Z\left(\lambda\right)}\exp\left[-\lambda\left(k-\mu\right)^{2}\right]\]
+
+\end_inset 
+
+ where 
+\begin_inset Formula \[
+Z\left(\lambda\right)=\sum_{k=-\infty}^{\infty}\exp\left[-\lambda k^{2}\right]\]
+
+\end_inset 
+
+
+\begin_inset Formula \begin{eqnarray*}
+\mu & = & \mu\\
+\mu_{2} & = & -\frac{\partial}{\partial\lambda}\log Z\left(\lambda\right)\\
+ & = & G\left(\lambda\right)e^{-\lambda}\end{eqnarray*}
+
+\end_inset 
+
+ where 
+\begin_inset Formula $G\left(0\right)\rightarrow\infty$
+\end_inset 
+
+ and 
+\begin_inset Formula $G\left(\infty\right)\rightarrow2$
+\end_inset 
+
+ with a minimum less than 2 near 
+\begin_inset Formula $\lambda=1$
+\end_inset 
+
+ 
+\begin_inset Formula \[
+G\left(\lambda\right)=\frac{1}{Z\left(\lambda\right)}\sum_{k=-\infty}^{\infty}k^{2}\exp\left[-\lambda\left(k+1\right)\left(k-1\right)\right]\]
+
+\end_inset 
+
+
+\the_end

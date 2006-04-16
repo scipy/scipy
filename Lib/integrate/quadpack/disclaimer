@@ -1,0 +1,10 @@
+This version obtained on 1 Jun 84 from    (kahaner@nbs-sdc)
+   David K. Kahaner
+   Scientific Computing Division
+   National Bureau of Standards
+   Washington DC 20234
+
+WARNING: the calling sequences here differ from those in the book:
+  R. Piessens, E. deDoncker-Kapenga, C. Uberhuber, D. Kahaner
+  Quadpack: a Subroutine Package for Automatic Integration
+  Springer Verlag, 1983.    Series in Computational Mathematics v.1

@@ -1,0 +1,17 @@
+!%f90 -*- f90 -*-
+! Signatures for f2py-wrappers of ATLAS C BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: Jan-Feb 2002
+! $Revision$ $Date$
+! 
+! Usage:
+!  f2py -c cblas.pyf -L/usr/local/lib/atlas -lf77blas -lcblas  -latlas -lg2c
+
+python module generic_cblas
+    interface
+
+       <include_file=generic_cblas1.pyf>
+
+    end interface
+end python module generic_cblas

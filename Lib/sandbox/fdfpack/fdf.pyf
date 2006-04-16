@@ -1,0 +1,16 @@
+!%90 -*- f90 -*-
+
+python module fdf
+  interface
+     subroutine periodic_finite_difference(n,x,y,h,k,m)
+       intent(c) periodic_finite_difference
+       integer intent(c,hide),depend(x) :: n = len(x)
+       real*8 intent(c,in),dimension(n) :: x
+       real*8 intent(c,out),dimension(n),depend(n) :: y
+       real*8 intent(c,in),depend(n,m,k),optional :: h=2.0*M_PI/n
+       integer intent(c,in),optional,check(k>0&&k<=7) :: k = 1
+       integer intent (c,in),optional,depend(n),check(m>0&&m<=n&&m<=25) &
+            :: m = 1
+     end subroutine periodic_finite_difference
+  end interface
+end python module fdf

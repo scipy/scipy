@@ -1,0 +1,40 @@
+! -*- f90 -*-
+! Signatures for f2py-wrappers of FORTRAN LEVEL 3 BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: April 2002
+!
+!   gemm
+!
+! Not Implemented:
+!   symm, hemm, syrk, herk, syr2k, her2k, trmm, trsm
+!
+
+subroutine <prefix>gemm(m,n,k,alpha,a,b,beta,c,trans_a,trans_b,lda,ka,ldb,kb)
+  ! c = gemm(alpha,a,b,beta=0,c=0,trans_a=0,trans_b=0,overwrite_c=0)
+  ! Calculate C <- alpha * op(A) * op(B) + beta * C
+
+  callstatement (*f2py_func)((trans_a?(trans_a==2?"C":"T"):"N"),(trans_b?(trans_b==2?"C":"T"):"N"),&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&m)
+  callprotoargument char*,char*,int*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*
+
+  integer optional,intent(in),check(trans_a>=0 && trans_a <=2) :: trans_a = 0
+  integer optional,intent(in),check(trans_b>=0 && trans_b <=2) :: trans_b = 0
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(lda,ka),intent(in) :: a
+  <ftype> dimension(ldb,kb),intent(in) :: b
+  <ftype> dimension(m,n),intent(in,out,copy),depend(m,n),optional :: c
+  check(shape(c,0)==m && shape(c,1)==n) :: c
+
+  integer depend(a),intent(hide) :: lda = shape(a,0)
+  integer depend(a),intent(hide) :: ka = shape(a,1)
+  integer depend(b),intent(hide) :: ldb = shape(b,0)
+  integer depend(b),intent(hide) :: kb = shape(b,1)
+
+  integer depend(a,trans_a,ka,lda),intent(hide):: m = (trans_a?ka:lda)
+  integer depend(a,trans_a,ka,lda),intent(hide):: k = (trans_a?lda:ka)
+  integer depend(b,trans_b,kb,ldb,k),intent(hide),check(trans_b?kb==k:ldb==k):: n = (trans_b?ldb:kb)
+
+
+end subroutine <prefix>gemm

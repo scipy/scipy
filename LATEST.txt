@@ -1,0 +1,9 @@
+The Subversion tree for this distribution contains the latest code.
+It can be downloaded using the subversion client as
+
+  svn co http://svn.scipy.org/svn/scipy/trunk scipy
+
+which will create a directory named scipy in your current directory
+and fill it with the current version of scipy.
+
+

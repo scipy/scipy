@@ -1,0 +1,11 @@
+c     <p2=c,z,c,z> <s2=u,u,c,c> <ftype2=complex,double complex,\0,\1>
+      subroutine w<p2>dot<s2> (r, n, x, incx, y, incy)
+      external <p2>dot<s2>
+      <ftype2> <p2>dot<s2>, r
+      integer n
+      <ftype2> x (*)
+      integer incx
+      <ftype2> y (*)
+      integer incy
+      r = <p2>dot<s2> (n, x, incx, y, incy)
+      end

@@ -1,0 +1,22 @@
+! -*- f90 -*-
+!
+! Contains wrappers for the following LAPACK routines:
+!
+!  Computational routines for the symmetric eigenproblem:
+!
+!   sytrd, hetrd (dense symmetric/Hermitian, tridiagonal reduction) - Not Implemented
+!   sptrd, hptrd (packed symmetric/Hermitian, tridiagonal reduction) - Not Implemented
+!   sbtrd, hbtrd (band symmetric/Hermitian, tridiagonal reduction) - Not Implemented
+!   orgtr, ungtr (orthogonal/unitary, generate matrix after sytrd) - Not Implemented
+!   ormtr, unmtr (orthogonal/unitary, multiply matrix after sytrd) - Not Implemented
+!   opgtr, upgtr (packed orthogonal/unitary, generate matrix after sptrd) - Not Implemented
+!   opmtr, upmtr (packed orthogonal/unitary, multiply matrix after sptrd) - Not Implemented
+!   steqr (symmetric tridiagonal eigenvalues/vectors via QR) - Not Implemented
+!   sterf (symmetric tridiagonal eigenvalues only via root-free QR, real) - Not Implemented
+!   stedc (symmetric tridiagonal eigenvalues/vectors via D&C) - Not Implemented
+!   stegr (symmetric tridiagonal eigenvalues/vectors via RRR) - Not Implemented
+!   stebz (symmetric tridiagonal eigenvalues only via bisection, real) - Not Implemented
+!   stein (symmetric tridiagonal eigenvectors by inverse iteration) - Not Implemented
+!   pteqr (symmetric tridiagonal positive eigenvalues/vectors) - Not Implemented
+!
+

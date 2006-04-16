@@ -1,0 +1,89 @@
+!%f90 -*- f90 -*-
+! Author: Pearu Peterson, August 2002
+
+python module _fftpack
+    interface
+
+       subroutine zfft(x,n,direction,howmany,normalize)
+         ! y = fft(x[,n,direction,normalize,overwrite_x])
+         intent(c) zfft
+         complex*16 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: direction = 1
+         integer optional,intent(c,in),depend(direction) &
+              :: normalize = (direction<0)
+       end subroutine zfft
+
+       subroutine drfft(x,n,direction,howmany,normalize)
+         ! y = drfft(x[,n,direction,normalize,overwrite_x])
+         intent(c) drfft
+         real*8 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: direction = 1
+         integer optional,intent(c,in),depend(direction) &
+              :: normalize = (direction<0)
+       end subroutine drfft
+
+       subroutine zrfft(x,n,direction,howmany,normalize)
+         ! y = zrfft(x[,n,direction,normalize,overwrite_x])
+         intent(c) zrfft
+         complex*16 intent(c,in,out,overwrite,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: direction = 1
+         integer optional,intent(c,in),depend(direction) &
+              :: normalize = (direction<0)
+       end subroutine zrfft
+
+       subroutine zfftnd(x,r,s,direction,howmany,normalize,j)
+         ! y = zfftnd(x[,s,direction,normalize,overwrite_x])
+         intent(c) zfftnd
+         complex*16 intent(c,in,out,copy,out=y) :: x(*)
+         integer intent(c,hide),depend(x) :: r=old_rank(x)
+         integer intent(c,hide) :: j=0
+         integer optional,depend(r),dimension(r),intent(c,in) &
+              :: s=old_shape(x,j++)
+         check(r>=len(s)) s
+         integer intent(c,hide) :: howmany = 1
+         integer optional,intent(c,in) :: direction = 1
+         integer optional,intent(c,in),depend(direction) :: &
+              normalize = (direction<0)
+         callprotoargument complex_double*,int,int*,int,int,int
+         callstatement {&
+              int i,sz=1,xsz=size(x); &
+              for (i=0;i<r;++i) sz *= s[i]; &
+              howmany = xsz/sz; &
+              if (sz*howmany==xsz) &
+                (*f2py_func)(x,r,s,direction,howmany,normalize); &
+              else {&
+                f2py_success = 0; &
+                PyErr_SetString(_fftpack_error, &
+                  "inconsistency in x.shape and s argument"); &
+                } &
+              }
+       end subroutine zfftnd
+
+       subroutine destroy_zfft_cache()
+         intent(c) destroy_zfft_cache
+       end subroutine destroy_zfft_cache
+
+       subroutine destroy_zfftnd_cache()
+         intent(c) destroy_zfftnd_cache
+       end subroutine destroy_zfftnd_cache
+
+       subroutine destroy_drfft_cache()
+         intent(c) destroy_drfft_cache
+       end subroutine destroy_drfft_cache
+
+    end interface 
+end python module _fftpack
+
+! See http://cens.ioc.ee/projects/f2py2e/

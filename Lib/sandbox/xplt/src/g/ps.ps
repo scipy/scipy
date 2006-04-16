@@ -1,0 +1,856 @@
+%!PS-Adobe-3.0
+%%Title:
+%%For:
+%%CreationDate:
+%%Creator: Gist
+%%DocumentData: Clean7Bit
+%%DocumentSuppliedResources: procset Gist-Primitives 1.0 0
+%%Pages: (atend)
+%%BoundingBox: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+%%BeginProlog
+%
+% Gist PostScript Prolog
+% $Id$
+% Copyright (c) 1994.  The Regents of the University of California.
+%               All rights reserved.
+%
+%%BeginResource: procset Gist-Primitives 1.0 0
+/GistPrimitives 128 dict def
+GistPrimitives begin
+/PG 0 def
+/LAND { 90 rotate 0 -12240 translate } bind def
+/CLON {
+  gsave /TxYxs TxYx def /TxYns TxYn def
+    newpath
+    moveto dup 0 exch rlineto exch 0 rlineto neg 0 exch rlineto
+    closepath clip newpath
+} bind def
+/CLOF {
+  /TxYx TxYxs def /TxYn TxYns def grestore
+} bind def
+/BG { 1 setgray } bind def
+/FG { 0 setgray } bind def
+/BLK { 0 setgray } bind def
+/WHT { 1 setgray } bind def
+/RED { 1 0 0 setrgbcolor } bind def
+/GRN { 0 1 0 setrgbcolor } bind def
+/BLU { 0 0 1 setrgbcolor } bind def
+/CYA { 0 1 1 setrgbcolor } bind def
+/MAG { 1 0 1 setrgbcolor } bind def
+/YEL { 1 1 0 setrgbcolor } bind def
+/GYD { 0.392 setgray } bind def
+/GYC { 0.588 setgray } bind def
+/GYB { 0.745 setgray } bind def
+/GYA { 0.839 setgray } bind def
+/DSH {  % index DSH
+  [ [ ] [ 82.5 ] [ 4.5 61.5 ] [ 82.5 39.0 4.5 39.0 ]
+  [ 82.5 39.0 4.5 39.0 4.5 39.0 ] ] exch get
+  dup length 0 ne {
+    currentlinewidth dup 16.5 lt {
+      pop
+    } {
+      16.5 div 1 index { 2 copy mul 4 1 roll pop } forall pop astore
+    } ifelse
+  } if
+  0 setdash
+} bind def
+/LW /setlinewidth load def
+/GPL { 1 setlinecap 1 setlinejoin } bind def
+/GDJ { 2 setlinecap } bind def
+/GPT {
+  currentfile 4 string readhexstring pop { } forall
+  exch 8 bitshift or 3 1 roll exch 8 bitshift or exch
+} bind def
+/L {
+  GPL
+  newpath 1 sub GPT
+  { 3 2 roll dup 255 gt { 255 sub 255 } { 0 exch } ifelse
+    4 2 roll moveto 0 exch 0 exch
+    { GPT 4 2 roll pop pop 2 copy lineto } repeat stroke
+    2 index 0 le { pop pop pop exit } if
+  } loop
+} bind def
+/LS {
+  GPL
+  newpath 1 sub 3 idiv GPT
+  { 3 2 roll dup 85 gt { 85 sub 85 } { 0 exch } ifelse
+    4 2 roll moveto 0 exch 0 exch
+    { GPT GPT GPT 8 6 roll pop pop 2 copy 8 2 roll curveto } repeat stroke
+    2 index 0 le { pop pop pop exit } if
+  } loop
+} bind def
+/D {
+  GDJ
+  newpath { GPT moveto GPT lineto stroke } repeat
+} bind def
+/Cour {
+  [ /L-Courier /L-Courier-Bold /L-Courier-Oblique /L-Courier-BoldOblique ]
+  exch get FindLatin
+} bind def
+/Tims {
+  [ /L-Times-Roman /L-Times-Bold /L-Times-Italic /L-Times-BoldItalic ]
+  exch get FindLatin
+} bind def
+/Helv {
+  [ /L-Helvetica /L-Helvetica-Bold
+    /L-Helvetica-Oblique /L-Helvetica-BoldOblique ]
+  exch get FindLatin
+} bind def
+/Symb {
+  pop /Symbol findfont
+} bind def
+/NCen {
+  [ /L-NewCenturySchlbk-Roman /L-NewCenturySchlbk-Bold
+    /L-NewCenturySchlbk-Italic /L-NewCenturySchlbk-BoldItalic ]
+  exch get FindLatin
+} bind def
+/StdNames 16 dict begin % dictionary of fonts not yet re-encoded
+  /L-Courier /Courier def /L-Courier-Bold /Courier-Bold def
+  /L-Courier-Oblique /Courier-Oblique def
+  /L-Courier-BoldOblique /Courier-BoldOblique def
+  /L-Times-Roman /Times-Roman def /L-Times-Bold /Times-Bold def
+  /L-Times-Italic /Times-Italic def /L-Times-BoldItalic /Times-BoldItalic def
+  /L-Helvetica /Helvetica def /L-Helvetica-Bold /Helvetica-Bold def
+  /L-Helvetica-Oblique /Helvetica-Oblique def
+  /L-Helvetica-BoldOblique /Helvetica-BoldOblique def
+  /L-NewCenturySchlbk-Roman /NewCenturySchlbk-Roman def
+  /L-NewCenturySchlbk-Bold /NewCenturySchlbk-Bold def
+  /L-NewCenturySchlbk-Italic /NewCenturySchlbk-Italic def
+  /L-NewCenturySchlbk-BoldItalic /NewCenturySchlbk-BoldItalic def
+currentdict end def
+/FindLatin {
+  dup StdNames exch known
+  { dup StdNames exch get findfont dup length dict begin
+      { 1 index /FID ne { def } { pop pop } ifelse } forall
+      /Encoding ISOLatin1Encoding def
+    currentdict end
+    exch dup StdNames exch undef exch definefont }
+  { findfont } ifelse
+} bind def
+/FNT {
+  /LnSp exch FontRescale mul def
+  /PtSz exch FontRescale mul def
+  PtSz scalefont setfont
+  currentfont /FontBBox get aload pop
+  currentfont /FontMatrix get transform /TxYx exch def pop
+  currentfont /FontMatrix get transform /TxYn exch def pop
+} bind def
+/SS1cpy { dup length string copy } bind def
+/SS3cpy { 3 { 3 1 roll SS1cpy } repeat } bind def
+/SScleave {
+  dup 0 get exch dup length 1 sub 1 exch getinterval exch
+} bind def
+/SSstring {
+  1 string dup 3 2 roll 0 exch put
+} bind def
+/SFwidth {
+  (\024) search {
+    /wfn 0 def
+    { stringwidth pop wfn add /wfn exch def pop SS1cpy SScleave SSstring
+      currentfont exch /Symbol findfont PtSz scalefont setfont
+      stringwidth pop wfn add /wfn exch def setfont
+      SS1cpy (\024) search not { exit } if } loop
+    stringwidth pop wfn add /wfn exch def wfn 0
+  } { stringwidth } ifelse
+} bind def
+/SFshow {
+  (\024) search {
+    { show pop SS1cpy SScleave SSstring
+      currentfont exch /Symbol findfont PtSz scalefont setfont show setfont
+      SS1cpy (\024) search not { exit } if } loop
+  } if
+  show
+} bind def
+/SSscale 0.75000 def
+/SSdown -0.11111 def
+/SSup 0.36111 def
+/SSwidth { % string SSwidth --> dx dy
+  (\021) search {
+    /wn 0 def
+    /ws 0 def
+    { SS3cpy SFwidth pop wn add /wn exch def
+      search pop SS3cpy SScleave pop SFwidth pop ws add /ws exch def
+      search not { exit } if } loop
+    SFwidth pop wn add /wn exch def
+    ws SSscale mul wn add 0
+  } { SFwidth } ifelse
+} bind def
+/SSshow {
+  (\021) search {
+    { SS3cpy SFshow
+      search pop SS3cpy SScleave 8#022 eq { SSup } { SSdown } ifelse
+      TxYx mul dup 0 exch rmoveto exch
+      matrix currentmatrix exch SSscale SSscale scale SFshow setmatrix
+      neg 0 exch rmoveto
+      search not { exit } if } loop
+  } if
+  SFshow
+} bind def
+/OShw /pop load def
+/OPQ {
+  0 eq {
+    /OShw /SSshow load def
+  } {
+    /OShw {
+      gsave
+        dup SSwidth
+        0 TxYn
+        rmoveto 2 copy rlineto 0 LnSp rlineto
+        neg exch neg exch rlineto closepath
+        1 setgray fill
+      grestore
+      SSshow
+    } def
+  } ifelse
+} bind def
+/LF { } def
+/CN { dup SSwidth -0.5 mul exch -0.5 mul exch rmoveto } bind def
+/RT { dup SSwidth neg exch neg exch rmoveto } bind def
+/TP { 0 LnSp neg rmoveto } bind def
+/CP { 0 TxYx TxYn add neg rmoveto } bind def
+/HF { 0 TxYx TxYn add -0.5 mul rmoveto} bind def
+/BA { } def
+/BT { 0 TxYn neg rmoveto } bind def
+/JUS {
+  load /YAdj exch def
+  load /XAdj exch def
+} bind def
+/XAD { /XAdj load exec } bind def
+/YAD { /YAdj load exec } bind def
+/OSH { /OShw load exec } bind def
+/T {
+  newpath moveto YAD XAD OSH
+} bind def
+/TX { XAD OSH currentpoint exch pop 0 exch LnSp sub moveto } bind def
+/TA {
+  gsave
+    newpath translate 0 0 moveto YAD
+    { TX } forall
+  grestore
+} bind def
+/TR {
+  gsave
+    newpath translate rotate 0 0 moveto YAD
+    { TX } forall
+  grestore
+} bind def
+/M {
+  newpath { GPT moveto HF CN dup show } repeat pop
+} bind def
+/MX { } def
+/M1 { 1 0 rlineto stroke } bind def
+/M2 { PtSz 0.5 mul
+      dup -0.5 mul dup 0 rmoveto 1 index 0 rlineto
+      dup rmoveto 0 exch rlineto stroke
+} bind def
+/M3 { PtSz 0.5 mul
+      dup -0.5 mul dup 0 exch rmoveto 0 2 index rlineto
+      exch 0.866025 mul 2 copy -0.5 mul exch 0.5 mul rmoveto
+      exch 2 copy rlineto
+      dup 0 exch neg rmoveto
+      exch neg exch rlineto stroke
+} bind def
+/M4 { currentpoint PtSz 0.25 mul dup 0 rmoveto
+      0 360 arc stroke
+} bind def
+/M5 { PtSz 0.5 mul
+      dup -0.5 mul dup rmoveto dup dup rlineto
+      dup neg 0 rmoveto dup neg rlineto stroke
+} bind def
+/MS {
+  gsave
+    exch dup 0 eq {
+      PtSz 0.1 mul setlinewidth 1 setlinecap
+    } {
+      PtSz 0.05 mul setlinewidth 0 setlinecap
+    } ifelse
+    /MX [ /M1 /M2 /M3 /M4 /M5 ] 3 -1 roll get load def
+    [ ] 0 setdash
+    newpath { GPT moveto /MX load exec } repeat
+  grestore
+} bind def
+
+/CTrgb 0 array def
+/CTn 0 def
+/CThi 0 def
+/CTsn 0 def
+/CT {
+  dup dup /CTn exch def 1 sub /CThi exch def
+  /CTrgb exch 3 mul string def
+  currentfile CTrgb readhexstring pop pop
+  /CTX load exec
+} bind def
+/CT1 {
+  CTrgb
+    /CTrgb CTn array def
+    gsave
+      0 1 CThi {
+        2 copy 3 mul 3 getinterval { 255.0 div } forall
+        setrgbcolor currentgray
+        CTrgb 3 1 roll put
+      } for
+    grestore
+  pop
+  /I /I1 load def
+  /C /C1 load def
+  /CI { } def
+} bind def
+/CT2 {
+  CTrgb
+    /CTrgb CTn array def
+    0 1 CThi {
+      2 copy 3 mul 3 getinterval { 255.0 div } forall
+      3 array astore CTrgb 3 1 roll put
+    } for
+  pop
+  /I /I2 load def
+  /C /C2 load def
+  /CI { } def
+} bind def
+/CT3 {
+  CTrgb
+    /CTrgx CTn array def
+    0 1 CThi {
+      2 copy 3 mul 3 getinterval { 255.0 div } forall
+      3 array astore CTrgx 3 1 roll put
+    } for
+  pop
+  /I /I3 load def
+  /C /C3 load def
+  /CI { } def
+} bind def
+/F {
+  newpath GPT moveto
+  1 sub { GPT lineto } repeat closepath fill
+} bind def
+/E {
+  dup 0 eq {
+    pop stroke
+  } {
+    newpath GPT moveto
+    1 sub { GPT lineto } repeat closepath gsave fill grestore
+  } ifelse
+} bind def
+/GRGB {
+  exch dup 255 le { exch exec } { dup 255 and 255.0 div exch dup
+    -8 bitshift 255 and 255.0 div exch -16 bitshift 255 and 255.0 div
+    setrgbcolor pop } ifelse
+} bind def
+/CI { } def
+/C { } def
+/C0 {
+  { 255.0 div setgray } GRGB
+} bind def
+/C1 {
+  { CTrgb exch get setgray } GRGB
+} bind def
+/C2 {
+  { CTrgb exch get aload pop setrgbcolor } GRGB
+} bind def
+/C3 {
+  { CTrgx exch get aload pop setrgbcolor } GRGB
+} bind def
+/I { } def
+/I0 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]
+    { currentfile ROW readhexstring pop } image
+  grestore
+} bind def
+/I1 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get } /exec load
+      currenttransfer /exec load ] cvx settransfer
+    { currentfile ROW readhexstring pop } image
+  grestore                          % restore saved CTM and transfer
+} bind def
+/I2 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]
+    currentcolortransfer
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 0 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 1 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 2 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 0 get } /exec load
+      7 -1 roll /exec load ] cvx
+    setcolortransfer
+    { currentfile ROW readhexstring pop } { ROW } { ROW }
+    true 3 colorimage
+  grestore
+} bind def
+/I3 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    [ /Indexed /DeviceRGB CThi CTrgb ] setcolorspace
+    7 dict begin
+      /ImageType 1 def
+      /BitsPerComponent exch def
+      /Height exch def
+      /Width exch def
+      /ImageMatrix [ Width 0 0 Height 0 0 ] def
+      /Decode [ 0 1 BitsPerComponent bitshift 1 sub ] def
+      /DataSource { currentfile ROW readhexstring pop } def
+    currentdict end image
+  grestore
+} bind def
+/J { } def
+/J1 {
+  /ROW 6 index 3 mul string def
+  4 2 roll 2 index add exch 3 index add exch
+  gsave
+    0 setgray 20 setlinewidth 0 setlinejoin 2 setlinecap
+    3 index 3 index moveto 3 index 1 index lineto 1 index 1 index lineto
+    1 index 3 index lineto closepath stroke 0 setlinecap
+    3 index 3 index moveto 1 index 1 index lineto stroke
+    1 index 3 index moveto 3 index 1 index lineto stroke pop pop pop pop
+    exch pop { currentfile ROW readhexstring pop pop } repeat
+  grestore
+} bind def
+/J2 {
+  /ROW 6 index 3 mul string def
+  gsave
+    translate scale
+    8 [ 3 index 0 0 5 index 0 0 ]
+    { currentfile ROW readhexstring pop }
+    false 3 colorimage
+  grestore
+} bind def
+/GI {
+  0.05 0.05 scale
+  10 setlinewidth
+  0 Cour 240 240 FNT
+  0 OPQ
+  /LF /BA JUS
+  /I /I0 load def
+  /C /C0 load def
+  /CI { } def
+} bind def
+end
+%%EndResource
+%%EndProlog
+%%BeginSetup
+GistPrimitives begin
+/FontRescale where { pop } { /FontRescale 1 def } ifelse
+/languagelevel where { pop languagelevel } { 1 } ifelse
+2 lt { % this is level 1 PostScript
+  /colorimage where { % color extension is present
+    % assume that if colorimage is available,
+    % setcolortransfer and currentcolortransfer are too
+    % (These are all listed as CMYK extensions to PostScript level 1)
+    pop
+    /CTX /CT2 load def
+    /J /J2 load def
+  } {                 % color extension not present
+    /CTX /CT1 load def
+    /J /J1 load def
+  } ifelse
+} {    % this is level 2 PostScript
+  /CTX /CT3 load def
+  /J /J2 load def
+} ifelse
+end
+%%EndSetup
+
+% -----------------------------------------------------------------------
+
+% IMPORTANT---------------------IMPORTANT-----------------------IMPORTANT
+% A commented version of the preceding prolog is available in pscom.ps.
+% The comments have been stripped in this version to save space.
+% IMPORTANT---------------------IMPORTANT-----------------------IMPORTANT
+
+% -----------------------------------------------------------------------
+
+% Remainder of this file is a sample illustrating how the Gist driver
+% lays out pages.  It can be used to test this PostScript program.
+
+% ---------------------------WARNING-------------------------------------
+% The T and TA procedures violate a PostScript "blue book" rule by using
+% the stringwidth operator to determine the location of text on the page.
+% This is done specifically to avoid having the application know about
+% font metrics (also not a recommended practice, but easy).
+% ---------------------------WARNING-------------------------------------
+
+% ---------------------------WARNING-------------------------------------
+% The I primitive may tinker with the device transfer functions.
+% I attempt to be compliant with Appendix I of the 2nd edition of
+% the "PostScript Language Reference Manual" (from Adobe Systems Inc).
+%
+% Gist supports pseudo color implemented by color lookup tables; level 1
+% PostScript does not fully support this, but level 2 PostScript does.
+% This file attempts to be portable across either type, and to the
+% intermediate situation of a color printer with level 1 PostScript
+% and the CMYK color extensions (specifically the colorimage operator).
+%
+% The Gist PostScript driver operates in two modes:
+% 1. Color tables are NOT DUMPED into the PostScript file, and
+%    filled meshes and images use level 1 style grayscales.
+% 2. The color table IS DUMPED at the beginning of the page, and
+%    filled mesh and image colors are dumped as indices into this
+%    color table.
+%
+% In case 2, this PostScript code adopts one of three strategies:
+% A. If the PostScript interpreter is level 2 or higher, an Indexed
+%    color space is used.
+% B. If the colorimage operator is present (even thought the PostScript
+%    is otherwise at level 1), filled meshes use setrgbcolor, while
+%    images use colorimage with modfied transfer functions to mock
+%    up the color table.
+% C. Otherwise, filled meshes use setrgbcolor, and images use a modified
+%    transfer function to mock up the grayscale.
+% ---------------------------WARNING-------------------------------------
+
+% By appending " EPSF-3.0" to the first line of this file, Gist driver
+% output should be compatible with Appendix H of the 2nd edition of
+% the "PostScript Language Reference Manual" (from Adobe Systems Inc),
+% although the Gist driver does not attempt to produce previewing
+% output.  In order for the Gist file to be a stand alone printable
+% file, the showpage operator is included at the end of each page.
+
+% -----------------------------------------------------------------------
+
+%%Page: 1 1
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+GistPrimitives begin /PG save def GI
+%%EndPageSetup
+/languagelevel where { pop languagelevel } { 1 } ifelse
+2 lt { % this is level 1 PostScript
+  /colorimage where { % color extension is present
+    % assume that if colorimage is available,
+    % setcolortransfer and currentcolortransfer are too
+    % (These are all listed as CMYK extensions to PostScript level 1)
+    pop
+    (PostScript is level 1 color) 1000 12000 T
+  } {                 % color extension not present
+    (PostScript is level 1 mono) 1000 12000 T
+  } ifelse
+} {    % this is level 2 PostScript
+    (PostScript is level 2) 1000 12000 T
+} ifelse
+(Available fonts:) 1000 11700 T
+FontDirectory dup length array exch 0 exch
+  { pop 80 string cvs 3 copy put pop 1 add } forall pop 4000 11700 TA
+5 D 08002a00 09002a00 08002800 09002800 08002600 09002600
+    08002400 09002400 08002200 09002200
+/RT /TP JUS (Ag8) 2000 10752 T
+/RT /CP JUS (Ag8) 2000 10240 T
+/RT /HF JUS (Ag8) 2000  9728 T
+/RT /BA JUS (Ag8) 2000  9216 T
+/RT /BT JUS (Ag8) 2000  8704 T
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 0 0 612 792
+
+%%Page: 2 2
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+GistPrimitives begin /PG save def GI
+%%EndPageSetup
+(Test text default font \(Courier 12 pt\)) 500 11000 T
+1 Helv 280 280 FNT [ (Helvetica...) (14 pt...) (bold) ] 500 10500 TA
+9 9 8 2000 2500 7000 7000
+%%BeginData: 10 Hex Lines
+I
+000000a0a0a0000000
+00ffff808080ffff00
+00ff8000000080ff00
+50ffff800080ffff50
+50ffff800080ffff50
+50ffff800080ffff50
+00ff8000000080ff00
+00ffff808080ffff00
+000000a0a0a0000000
+%%EndData
+9 9 4 2000 2500 3000 7000
+%%BeginData: 10 Hex Lines
+I
+000aaa0003
+0ff888ff03
+0f80008f03
+5ff808ff53
+5ff808ff53
+5ff808ff53
+0f80008f03
+0ff888ff03
+000aaa0003
+%%EndData
+3 Tims 240 240 FNT 1 OPQ (Times opaque) 2800 8000 T
+0 OPQ (... Non-opaque) 6800 8000 T
+0 C 4 F 0c001800 0d001800 0d001900 0c001900
+50 C 4 F 0d001800 0e001800 0e001900 0d001900
+100 C 4 F 0e001800 0f001800 0f001900 0e001900
+150 C 4 F 0f001800 10001800 10001900 0f001900
+200 C 4 F 10001800 11001800 11001900 10001900
+255 C 4 F 11001800 12001800 12001900 11001900
+0 C 4 F 12001800 13001800 13001900 12001900
+4 L 08001000 12001000 10001600 08001000
+1 DSH 4 L 09001080 13001080 11001680 09001080
+2 DSH 4 L 0a001100 14001100 12001700 0a001100
+3 DSH 4 L 0b001180 15001180 13001780 0b001180
+30 LW 0 DSH 4 L 18001000 22001000 20001600 18001000
+1 DSH 4 L 19001080 23001080 21001680 19001080
+2 DSH 4 L 1a001100 24001100 22001700 1a001100
+3 DSH 4 L 1b001180 25001180 23001780 1b001180
+16#1000 16#0500 16#1100 16#0900 CLON
+10 LW 0 DSH 4 L 08000800 12000800 10000e00 08000800
+1 DSH 4 L 09000880 13000880 11000e80 09000880
+2 DSH 4 L 0a000900 14000900 12000f00 0a000900
+3 DSH 4 L 0b000980 15000980 13000f80 0b000980
+30 LW 0 DSH 4 L 18000800 22000800 20000e00 18000800
+1 DSH 4 L 19000880 23000880 21000e80 19000880
+2 DSH 4 L 1a000900 24000900 22000f00 1a000900
+3 DSH 4 L 1b000980 25000980 23000f80 1b000980
+CLOF
+/RT /BA JUS GRN
+2 NCen 240 240 FNT [ (New Century Schoolbook) (12 pt italic) (right justif\
+ied) (green) ] 11740 11000 TA
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 0 0 612 792
+
+%%Page: 3 3
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+GistPrimitives begin /PG save def GI
+LAND
+6 CT 000000 800000 ff8000 ff8080 ffff80 ffffff
+%%EndPageSetup
+(Test text default font \(Courier 12 pt\)) 500 11000 T
+1 Helv 280 280 FNT [ (Helvetica...) (14 pt...) (bold) ] 500 10500 TA
+9 9 8 2000 2500 7000 7000
+%
+% Note: GhostScript 2.1.1 does not do this correctly, because it never
+%       uses the transfer function set with settransfer.
+%       setcolortransfer is not really done at all.
+%
+%%BeginData: 10 Hex Lines
+I
+000001040404010000
+000505020202050500
+000502000000020500
+030505020002050503
+030505020002050503
+030505020002050503
+000502000000020500
+000505020202050500
+000001040404010000
+%%EndData
+9 9 4 2000 2500 3000 7000
+%%BeginData: 10 Hex Lines
+I
+0014441009
+0552225509
+0520002509
+3552025539
+3552025539
+3552025539
+0520002509
+0552225509
+0014441009
+%%EndData
+3 Tims 240 240 FNT 1 OPQ (Times opaque) 2800 8000 T
+0 OPQ (... Non-opaque) 6800 8000 T
+CI 0 C 4 F 0c001800 0d001800 0d001900 0c001900
+1 C 4 F 0d001800 0e001800 0e001900 0d001900
+2 C 4 F 0e001800 0f001800 0f001900 0e001900
+3 C 4 F 0f001800 10001800 10001900 0f001900
+4 C 4 F 10001800 11001800 11001900 10001900
+5 C 4 F 11001800 12001800 12001900 11001900
+0 C 4 F 12001800 13001800 13001900 12001900
+4 L 08001000 12001000 10001600 08001000
+1 DSH 4 L 09001080 13001080 11001680 09001080
+2 DSH 4 L 0a001100 14001100 12001700 0a001100
+3 DSH 4 L 0b001180 15001180 13001780 0b001180
+30 LW 0 DSH 4 L 18001000 22001000 20001600 18001000
+1 DSH 4 L 19001080 23001080 21001680 19001080
+2 DSH 4 L 1a001100 24001100 22001700 1a001100
+3 DSH 4 L 1b001180 25001180 23001780 1b001180
+16#1000 16#0500 16#1100 16#0900 CLON
+10 LW 0 DSH 4 L 08000800 12000800 10000e00 08000800
+1 DSH 4 L 09000880 13000880 11000e80 09000880
+2 DSH 4 L 0a000900 14000900 12000f00 0a000900
+3 DSH 4 L 0b000980 15000980 13000f80 0b000980
+30 LW 0 DSH 4 L 18000800 22000800 20000e00 18000800
+1 DSH 4 L 19000880 23000880 21000e80 19000880
+2 DSH 4 L 1a000900 24000900 22000f00 1a000900
+3 DSH 4 L 1b000980 25000980 23000f80 1b000980
+CLOF
+/RT /BA JUS GRN
+2 NCen 240 240 FNT [ (New Century Schoolbook) (12 pt italic) (right justif\
+ied) (green) ] 11740 11000 TA
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 0 0 612 792
+
+%%Page: 4 4
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+GistPrimitives begin /PG save def GI
+%%EndPageSetup
+(Test text default font \(Courier 12 pt\)) 500 11000 T
+1 Helv 280 280 FNT [ (Helvetica...) (14 pt...) (bold) ] 500 10500 TA
+9 9 8 2000 2500 7000 7000
+%%BeginData: 10 Hex Lines
+I
+000000a0a0a0000000
+00ffff808080ffff00
+00ff8000000080ff00
+50ffff800080ffff50
+50ffff800080ffff50
+50ffff800080ffff50
+00ff8000000080ff00
+00ffff808080ffff00
+000000a0a0a0000000
+%%EndData
+9 9 4 2000 2500 3000 7000
+%%BeginData: 10 Hex Lines
+I
+000aaa0003
+0ff888ff03
+0f80008f03
+5ff808ff53
+5ff808ff53
+5ff808ff53
+0f80008f03
+0ff888ff03
+000aaa0003
+%%EndData
+3 Tims 240 240 FNT 1 OPQ (Times opaque) 2800 8000 T
+0 OPQ (... Non-opaque) 6800 8000 T
+0 C 4 F 0c001800 0d001800 0d001900 0c001900
+50 C 4 F 0d001800 0e001800 0e001900 0d001900
+100 C 4 F 0e001800 0f001800 0f001900 0e001900
+150 C 4 F 0f001800 10001800 10001900 0f001900
+200 C 4 F 10001800 11001800 11001900 10001900
+255 C 4 F 11001800 12001800 12001900 11001900
+0 C 4 F 12001800 13001800 13001900 12001900
+4 L 08001000 12001000 10001600 08001000
+1 DSH 4 L 09001080 13001080 11001680 09001080
+2 DSH 4 L 0a001100 14001100 12001700 0a001100
+3 DSH 4 L 0b001180 15001180 13001780 0b001180
+30 LW 0 DSH 4 L 18001000 22001000 20001600 18001000
+1 DSH 4 L 19001080 23001080 21001680 19001080
+2 DSH 4 L 1a001100 24001100 22001700 1a001100
+3 DSH 4 L 1b001180 25001180 23001780 1b001180
+16#1000 16#0500 16#1100 16#0900 CLON
+10 LW 0 DSH 4 L 08000800 12000800 10000e00 08000800
+1 DSH 4 L 09000880 13000880 11000e80 09000880
+2 DSH 4 L 0a000900 14000900 12000f00 0a000900
+3 DSH 4 L 0b000980 15000980 13000f80 0b000980
+30 LW 0 DSH 4 L 18000800 22000800 20000e00 18000800
+1 DSH 4 L 19000880 23000880 21000e80 19000880
+2 DSH 4 L 1a000900 24000900 22000f00 1a000900
+3 DSH 4 L 1b000980 25000980 23000f80 1b000980
+CLOF
+/RT /BA JUS GRN
+2 NCen 240 240 FNT [ (New Century Schoolbook) (12 pt italic) (right justif\
+ied) (green) ] 11740 11000 TA
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 0 0 612 792
+
+%%Page: 5 5
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+GistPrimitives begin /PG save def GI
+%%EndPageSetup
+(Test text default font \(Courier 12 pt\)) 500 11000 T
+1 Helv 280 280 FNT [ (Helvetica...) (14 pt...) (bold) ] 500 10500 TA
+9 9 2000 2500 7000 7000
+%%BeginData: 10 Hex Lines
+J
+000000000000800000ffff80ffff80ffff80800000000000000000
+000000ffffffffffffff8000ff8000ff8000ffffffffffff000000
+000000ffffffff8000000000000000000000ff8000ffffff000000
+ff8080ffffffffffffff8000000000ff8000ffffffffffffff8080
+ff8080ffffffffffffff8000000000ff8000ffffffffffffff8080
+ff8080ffffffffffffff8000000000ff8000ffffffffffffff8080
+000000ffffffff8000000000000000000000ff8000ffffff000000
+000000ffffffffffffff8000ff8000ff8000ffffffffffff000000
+000000000000800000ffff80ffff80ffff80800000000000000000
+%%EndData
+9 9 4 2000 2500 3000 7000
+%%BeginData: 10 Hex Lines
+I
+000aaa0003
+0ff888ff03
+0f80008f03
+5ff808ff53
+5ff808ff53
+5ff808ff53
+0f80008f03
+0ff888ff03
+000aaa0003
+%%EndData
+3 Tims 240 240 FNT 1 OPQ (Times opaque) 2800 8000 T
+0 OPQ (... Non-opaque) 6800 8000 T
+16#01000000 C 4 F 0c001800 0d001800 0d001900 0c001900
+16#01000080 C 4 F 0d001800 0e001800 0e001900 0d001900
+16#010080ff C 4 F 0e001800 0f001800 0f001900 0e001900
+16#018080ff C 4 F 0f001800 10001800 10001900 0f001900
+16#0180ffff C 4 F 10001800 11001800 11001900 10001900
+16#01ffffff C 4 F 11001800 12001800 12001900 11001900
+16#01000000 C 4 F 12001800 13001800 13001900 12001900
+4 L 08001000 12001000 10001600 08001000
+1 DSH 4 L 09001080 13001080 11001680 09001080
+2 DSH 4 L 0a001100 14001100 12001700 0a001100
+3 DSH 4 L 0b001180 15001180 13001780 0b001180
+30 LW 0 DSH 4 L 18001000 22001000 20001600 18001000
+1 DSH 4 L 19001080 23001080 21001680 19001080
+2 DSH 4 L 1a001100 24001100 22001700 1a001100
+3 DSH 4 L 1b001180 25001180 23001780 1b001180
+16#1000 16#0500 16#1100 16#0900 CLON
+10 LW 0 DSH 4 L 08000800 12000800 10000e00 08000800
+1 DSH 4 L 09000880 13000880 11000e80 09000880
+2 DSH 4 L 0a000900 14000900 12000f00 0a000900
+3 DSH 4 L 0b000980 15000980 13000f80 0b000980
+30 LW 0 DSH 4 L 18000800 22000800 20000e00 18000800
+1 DSH 4 L 19000880 23000880 21000e80 19000880
+2 DSH 4 L 1a000900 24000900 22000f00 1a000900
+3 DSH 4 L 1b000980 25000980 23000f80 1b000980
+CLOF
+/RT /BA JUS GRN
+2 NCen 240 240 FNT [ (New Century Schoolbook) (12 pt italic) (right justif\
+ied) (green) ] 11740 11000 TA
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 0 0 612 792
+
+%%Trailer
+%%Pages: 5
+%%BoundingBox: 0 0 612 792
+%%DocumentFonts: Courier
+%%+ Helvetica-Bold
+%%+ Times-BoldItalic
+%%+ NewCenturySchlbk-Italic

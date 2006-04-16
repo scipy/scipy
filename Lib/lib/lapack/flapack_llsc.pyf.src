@@ -1,0 +1,69 @@
+! -*- f90 -*-
+!
+! Contains wrappers for the following LAPACK routines:
+!
+!  Computational routines for orthogonal/unitary factorizations:
+!
+!   geqp3 (QR, general,factorize with pivoting) - Not Implemented
+!   geqrf (QR, general, factorize, no pivoting)
+!   orgqr, ungqr (QR, general, generate Q)
+!   ormqr, unmqr (QR, general, multiply matrix by Q) - Not Implemented
+!   gelqf (LQ, general, factorize, no pivoting) - Not Implemented
+!   orglq, unglq (LQ, general, generate Q) - Not Implemented
+!   ormlq, unmlq (LQ, general, multiply matrix by Q) - Not Implemented
+!   geqlf (QL, general, factorize, no pivoting) - Not Implemented
+!   orgql, ungql (QL, general, generate Q) - Not Implemented
+!   ormql, unmql (QL, general, multiply matrix by Q) - Not Implemented
+!   gerqf (RQ, general, factorize, no pivoting) - Not Implemented
+!   orgrq, ungrq (RQ, general, generate Q) - Not Implemented
+!   ormrq, unmrq (RQ, general, multiply matrix by Q) - Not Implemented
+!   tzrzf (RZ, trapezoidal, factorize, no pivoting) - Not Implemented
+!   ormrz, unmrz (RZ, trapezoidal,multiply matrix by Q) - Not Implemented
+!
+!  Computational routines for general orthogonal/unitary factorizations:
+!
+!   ggqrf (GQR, factorize) - Not Implemented
+!   ggrqf (GRQ, factorize) - Not Implemented
+!
+
+   subroutine <prefix>geqrf(m,n,a,tau,work,lwork,info)
+
+   ! qr,tau,info = geqrf(a,lwork=n,overwrite_a=0)
+   ! Compute a QR factorization of a real M-by-N matrix A:
+   !   A = Q * R.
+
+     callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
+     callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+     integer intent(hide),depend(a):: m = shape(a,0)
+     integer intent(hide),depend(a):: n = shape(a,1)
+     <ftype> dimension(m,n),intent(in,out,copy,out=qr) :: a
+     <ftype> dimension(MIN(m,n)),intent(out) :: tau
+
+     <_lwork=n,\0,\0,\0>
+     integer optional,intent(in),depend(n),check(lwork\>=<_lwork>) :: lwork=<_lwork>
+     <ftype> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+     integer intent(out) :: info
+   end subroutine <prefix>geqrf
+   
+   ! <orth=or,\0,un,\2>
+   subroutine <prefix><orth>gqr(m,n,k,qr,tau,work,lwork,info)
+
+   ! q,info = (or|un)gqr(qr,tau,lwork=n,overwrite_qr=0,overwrite_tau=1)
+   ! Compute matrix Q of a QR factorization of a real M-by-N matrix A
+   ! from the results of geqrf.
+
+     callstatement (*f2py_func)(&m,&n,&k,qr,&m,tau,work,&lwork,&info)
+     callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+     integer intent(hide),depend(qr):: m = shape(qr,0)
+     integer intent(hide),depend(qr):: n = shape(qr,1)
+     integer intent(hide),depend(m,n):: k = MIN(m,n)
+     <ftype> dimension(m,n),intent(in,out,copy,out=q) :: qr
+     <ftype> dimension(k),intent(in,overwrite) :: tau
+     ! <_lwork=n,\0,\0,\0>
+     integer optional,intent(in),depend(n),check(lwork\>=<_lwork>) :: lwork=<_lwork>
+     <ftype> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+
+     integer intent(out) :: info
+   end subroutine <prefix><orth>gqr

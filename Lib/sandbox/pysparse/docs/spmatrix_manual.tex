@@ -1,0 +1,1117 @@
+\documentclass[a4paper]{article}
+
+\usepackage[]{subfigure}
+\usepackage{url}
+\usepackage{alltt}
+\usepackage{amsfonts} 
+\usepackage{amsmath} 
+\usepackage{amssymb}
+\usepackage{dcolumn}
+\newcolumntype{.}{D{.}{.}{-1}}  % column is centered at '.'
+\newcolumntype{d}[1]{D{.}{.}{#1}} % right aligned
+\usepackage{times}
+
+\newcommand{\kmax}{\ensuremath{k_{\text{max}}}}
+\newcommand{\jmin}{\ensuremath{j_{\text{min}}}}
+\newcommand{\jmax}{\ensuremath{j_{\text{max}}}}
+\newcommand{\epstr}{\ensuremath{\varepsilon_{\text{tr}}}}
+\newcommand{\epsjd}{\ensuremath{\varepsilon}}
+\newcommand{\epslin}{\ensuremath{\varepsilon_{\text{lin}}}}
+\newcommand{\itmax}{\ensuremath{\mathit{it}_{\text{max}}}}
+\newcommand{\itmaxlin}{\ensuremath{\mathit{it}_{\text{max,lin}}}}
+\newcommand{\istep}{\ensuremath{i_\text{step}}}
+\newcommand{\nofit}{\ensuremath{\mathit{it}}}
+\newcommand{\mat}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\vect}[1]{\ensuremath{\mathbf{#1}}}
+\newlength{\pyindent} \newlength{\pyminipagewidth}
+\setlength{\pyindent}{1.0\parindent}
+\setlength{\pyminipagewidth}{\textwidth}\addtolength{\pyminipagewidth}{-\pyindent}
+\newenvironment{pycode}{\begin{trivlist}\item\hspace*{\pyindent}\begin{minipage}{\pyminipagewidth}\small\begin{alltt}}
+      {\end{alltt}\end{minipage}\end{trivlist}}
+\newenvironment{pyinline}{\begin{trivlist}\item\hspace*{\pyindent}\begin{minipage}{\pyminipagewidth}\small\begin{alltt}}
+      {\end{alltt}\end{minipage}\end{trivlist}}
+\newenvironment{arglist} {\begin{list}{}{\setlength{\leftmargin}{4em}\setlength{\itemsep}{0cm}\setlength{\labelwidth}{3em}}}
+  {\end{list}}
+\renewcommand{\subfigcapskip}{0pt}
+\renewcommand{\subfigbottomskip}{0pt}
+
+\title{PySparse - A sparse linear algebra extension for Python} 
+\author{Roman Geus} 
+
+\begin{document}
+\maketitle
+
+This document is a portion of a draft of my PhD thesis. Unfortunately
+the document contains unresolved references to other parts of my
+thesis, which are printed as double question marks. Nevertheless the
+document could be useful as a reference for the PySparse package.
+
+\subsection{The PySparse package}
+\label{sec:python:pysparse}
+%
+The PySparse package extends the Python interpreter by a set of sparse
+matrix types. PySparse also includes modules that implement
+\begin{itemize}
+\item iterative methods for solving linear systems of equations,
+\item a set of standard preconditioners,
+\item an interface to a direct solver for sparse linear systems of
+  equations,
+\item and the JDSYM eigensolver.
+\end{itemize}
+%
+All these modules are implemented as C extension modules for maximum
+performance. In the following sections all modules of PySparse are
+described in detail.
+
+%------------------------------------------------------------------------
+\subsubsection{The spmatrix module}
+\label{sec:python:spmatrix}
+%
+The \textit{spmatrix} module is the foundation of the PySparse
+package. It extends the Python interpreter by three new types named
+\textit{ll\_mat}, \textit{csr\_mat} and \textit{sss\_mat}. These types
+represent sparse matrices in the LL-, the CSR- and SSS-formats
+respectively (cf.\ Appendix \ref{sec:spformat}). For all three
+formats, double precision values (C type \texttt{double}) are used to
+represent the non-zero entries.
+
+The common way to use the \textit{spmatrix} module is to first build a
+matrix in the LL-format. The LL-matrix is manipulated until it has its
+final shape and content. Afterwards it may be converted to either the
+CSR- or SSS-format, which needs less memory and allows for fast
+matrix-vector multiplications.
+
+A \textit{ll\_mat} object can be created from scratch, by reading data
+from a file (in MatrixMarket format) or as a result of matrix
+operation (as e.g.\ a matrix-matrix multiplication). The
+\textit{ll\_mat} object supports manipulating (reading, writing,
+add-updating) single entries or sub-matrices.
+
+\textit{csr\_mat} and \textit{sss\_mat} are not constructed directly,
+instead they are created by converting \textit{ll\_mat} objects. Once
+created, \textit{csr\_mat} and \textit{sss\_mat} objects cannot be
+manipulated. Their purpose is to support efficient matrix-vector
+multiplications.
+
+%------------------------------------------------------------------------
+\paragraph{spmatrix module functions}
+
+\subparagraph{ll\_mat(n, m, sizeHint=1000)} 
+%
+Creates a \textit{ll\_mat} object, that represents a general, all zero
+$m\times n$ matrix. The optional \textit{sizeHint} parameter specifies
+the number of non-zero entries for which space is allocated initially.
+
+If the total number of non-zero elements of the final matrix is known
+(approximately), this number can be passed as \textit{sizeHint}. This
+will avoid costly memory reallocations.
+
+\subparagraph{ll\_mat\_sym(n, sizeHint=1000)} 
+%
+Creates a \textit{ll\_mat} object, that represents a \emph{symmetric},
+all zero $n\times n$ matrix. The optional \textit{sizeHint} parameter
+specifies, how much space is initially allocated for the matrix.
+
+\subparagraph{ll\_mat\_from\_mtx(fileName)} 
+%
+Creates a \textit{ll\_mat} object from a file named \textit{fileName},
+which must be in MatrixMarket Coordinate format as described at
+\url{http://math.nist.gov/MatrixMarket/formats.html}. Depending on the
+file content, either a symmetric or a general sparse matrix is
+generated.
+
+\subparagraph{matrixmultiply(A, B)}
+%
+computes the matrix-matrix multiplication 
+\begin{equation*}
+  \mat{C} := \mat{A}\mat{B}
+\end{equation*}
+and returns the result $\mat{C}$ as a new \textit{ll\_mat} object
+representing a general sparse matrix. The parameters $\mat{A}$ and
+$\mat{B}$ are expected to be objects of type \textit{ll\_mat}.
+
+\subparagraph{dot(A, B)}
+%
+computes the ``dot-product''
+\begin{equation*}
+  \mat{C} := \mat{A}^T\mat{B}
+\end{equation*}
+and returns the result $\mat{C}$ as a new \textit{ll\_mat} object
+representing a general sparse matrix. The parameters $\mat{A}$ and
+$\mat{B}$ are expected to be objects of type \textit{ll\_mat}.
+
+%------------------------------------------------------------------------
+\paragraph{ll\_mat objects}
+%
+\textit{ll\_mat} objects represent matrices stored in the LL format,
+which are described in Appendix~\ref{sec:spformat:ll}.
+\textit{ll\_mat} objects come in two flavours: general matrices and
+symmetric matrices.  For symmetric matrices only the non-zero entries
+in the lower triangle are stored.  Write operations to the strictly
+upper triangle are prohibited for the symmetric format.  The
+\texttt{issym} attribute of an \textit{ll\_mat} object can be queried
+to find out whether or not the symmetric storage format is used.
+
+The entries of a matrix can be accessed conveniently using
+two-dimensional array indices\footnote{The standard Python language
+  does not know multidimensional indices.  However, thanks to Python's
+  clever design, its easy to provide multidimensional indices for
+  extension types, without any dirty hacks.
+  
+  In the Python language, subscripts can be of any type (as it is
+  customary for dictionaries). A two-dimensional index can be regarded
+  as a 2-tuple (the brackets do not have to be written, so
+  \texttt{A[1,2]} is the same as \texttt{A[(1,2)]}). If both tuple
+  elements are integers, then a single matrix element is referenced.
+  If at least one of the tuple elements is a slice (which is also a
+  Python object), then a submatrix is referenced.
+
+Subscripts have to be decoded at runtime. This task includes type
+checks, extraction of indices from the 2-tuple, parsing of slice
+objects and index bound checks. }.  Following Python conventions,
+indices start with 0 and wrap around (so -1 is equivalent to the last
+index).
+
+The following code creates an empty 5$\times$5 matrix \texttt{A}, sets
+all diagonal elements to their respective row/column index and then
+copies the value of \texttt{A[0,0]} to \texttt{A[2,1]}.
+\begin{pyinline}
+>>> import spmatrix
+>>> A = spmatrix.ll_mat(5, 5)
+>>> for i in range(5):
+...     A[i,i] = i+1
+>>> A[2,1] = A[0,0]
+>>> print A
+ll_mat(general, [5,5], [(0,0): 1, (1,1): 2, (2,1): 1,
+(2,2): 3, (3,3): 4, (4,4): 5])
+\end{pyinline}
+
+\noindent The Python slice notation can be used to conveniently access
+sub-matrices.
+\begin{pyinline}
+>>> print A[:2,:]     # the first two rows
+ll_mat(general, [2,5], [(0,0): 1, (1,1): 2])
+>>> print A[:,2:5]    # columns 2 to 4
+ll_mat(general, [5,3], [(2,0): 3, (3,1): 4, (4,2): 5])
+>>> print A[1:3,2:5]  # submatrix 
+                      # starting at row 1 col 2,
+                      # ending at row 2 col 4
+ll_mat(general, [2,3], [(1,0): 3])
+\end{pyinline}
+The slice operator always returns a new \textit{ll\_mat} object,
+containing a copy of the selected submatrix.
+
+Write operations to slices are also possible:
+\begin{pyinline}
+>>> B = ll_mat(2, 2)           # create 2-by-2
+>>> B[0,0] = -1; B[1,1] = -1   # diagonal matrix
+>>> A[:2,:2] = B               # assign it to upper
+>>>                            # diagonal block of A
+>>> print A
+ll_mat(general, [5,5], [(0,0): -1, (1,1): -1, (2,1): 1, 
+(2,2): 3, (3,3): 4, (4,4): 5])
+\end{pyinline}
+
+%------------------------------------------------------------------------
+\paragraph{ll\_mat object attributes}
+%
+
+\subparagraph{A.shape}
+%
+Returns a 2-tuple containing the shape of the matrix $\mat{A}$, i.e.\ 
+the number of rows and columns.
+
+\subparagraph{A.nnz}
+%
+Returns the number of non-zero entries stored in matrix $\mat{A}$. If
+$\mat{A}$ is stored in the symmetric format, only the number of
+non-zero entries in the lower triangle (including the diagonal) are
+returned.
+
+\subparagraph{A.issym}
+%
+Returns true (a non-zero integer) if matrix $\mat{A}$ is stored in the
+symmetric LL format, i.e. only the non-zero entries in the lower
+triangle are stored. Returns false (zero) if matrix $\mat{A}$ is
+stored in the general LL format.
+
+\paragraph{ll\_mat object methods}
+%
+
+\subparagraph{A.to\_csr()}
+%
+Returns a newly allocated \textit{csr\_mat} object, which results from
+converting matrix $\mat{A}$.
+
+\subparagraph{A.to\_sss()}
+%
+Returns a newly allocated \textit{sss\_mat} object, which results from
+converting matrix $\mat{A}$. This function works for \textit{ll\_mat}
+objects in both the symmetric and the general format. If $\mat{A}$ is
+stored in the general format, only the entries in the lower triangle
+are used for the conversion. No check, whether $\mat{A}$ is symmetric,
+is performed.
+
+\subparagraph{A.export\_mtx(fileName, precision=6)}
+%
+Exports the matrix $\mat{A}$ to file named \textit{fileName}. The
+matrix is stored in MatrixMarket Coordinate format as described at
+\url{http://math.nist.gov/MatrixMarket/formats.html}. Depending on the
+properties of \textit{ll\_mat} object $\mat{A}$ the generated file
+either uses the symmetric or a general MatrixMarket Coordinate format.
+The optional parameter \textit{precision} specifies the number of
+decimal digits that are used to express the non-zero entries in the
+output file.
+
+\subparagraph{A.shift(sigma, M)}
+%
+Performs a daxpy-like operation on matrix $\mat{A}$,
+\begin{equation*}
+  \mat{A} \leftarrow \mat{A} + \sigma \mat{M}.  
+\end{equation*}
+The parameter $\sigma$ is expected to be a Python Float object. The
+parameter $\mat{M}$ is expected to an object of type \textit{ll\_mat}.
+
+\subparagraph{A.copy()}
+%
+Returns a new \textit{ll\_mat} object, that represents a copy of the
+\textit{ll\_mat} object $\mat{A}$. So,
+\begin{pyinline}
+>>> B = A.copy()
+\end{pyinline}
+is equivalent to
+\begin{pyinline}
+>>> B = A[:,:]
+\end{pyinline}
+On the other hand
+\begin{pyinline}
+>>> B = A.copy()
+\end{pyinline}
+is \emph{not} the same as
+\begin{pyinline}
+>>> B = A
+\end{pyinline}
+The latter version only returns a reference to the same object and
+assigns it to \texttt{B}. Subsequent changes to \texttt{A} will
+therefore also be visible in \texttt{B}.
+
+\subparagraph{A.update\_add\_mask(B, ind0, ind1, mask0, mask1)}
+%
+This method is provided for efficiently assembling global finite
+element matrices. The method adds the matrix $\mat{B}$ to entries of
+matrix $\mat{A}$. The indices of the entries to be updated are
+specified by \textit{ind0} and \textit{ind1}. The individual updates
+are enabled or disabled using the \textit{mask0} and \textit{mask1}
+arrays.
+
+The operation is equivalent to the following Python code:
+\begin{pyinline}
+for i in range(len(ind0)):
+    for j in range(len(ind1)):
+        if mask0[i] and mask1[j]:
+            A[ind0[i],ind1[j]] += B[i,j]
+\end{pyinline}
+%
+All five parameters are NumPy arrays. $\mat{B}$ is an array of rank
+two. The four remaining parameters are rank-1 arrays. Their length
+corresponds to either the number of rows or the number of columns of
+$\mat{B}$.
+
+This method is not supported for \textit{ll\_mat} objects of symmetric
+type, since it would generally result in an non-symmetric matrix.
+\textit{update\_add\_mask\_sym} must be used in that case.  Attempting
+to call this method using a \textit{ll\_mat} object of symmetric type
+will raise an exception.
+
+\subparagraph{A.update\_add\_mask\_sym(B, ind, mask)}
+%
+This method is provided for efficiently assembling symmetric global
+finite element matrices. The method adds the matrix $\mat{B}$ to
+entries of matrix $\mat{A}$. The indices of the entries to be updated
+are specified by \textit{ind}. The individual updates are enabled or
+disabled using the \textit{mask} array.
+
+The operation is equivalent to the following Python code:
+\begin{pyinline}
+for i in range(len(ind)):
+    for j in range(len(ind)):
+        if mask[i]:
+            A[ind[i],ind[j]] += B[i,j]
+\end{pyinline}
+%
+The three parameters are all NumPy arrays. $\mat{B}$ is an array of
+rank two representing a square matrix. The four remaining parameters
+are rank-1 arrays. Their length corresponds to the order of matrix
+$\mat{B}$.
+
+%------------------------------------------------------------------------
+\paragraph{csr\_mat and sss\_mat objects}
+%
+\textit{csr\_mat} objects represent matrices stored in the CSR format,
+which are described in Appendix~\ref{sec:spformat:csr}.
+\textit{sss\_mat} objects represent matrices stored in the SSS format
+(c.f.\ Appendix~\ref{sec:spformat:sss}).  The only way to create a
+\textit{csr\_mat} or a \textit{sss\_mat} object is by conversion of a
+\textit{ll\_mat} object using the \textit{to\_csr()} or the
+\textit{to\_sss()} method respectively. The purpose of the
+\textit{csr\_mat} and the \textit{to\_sss()} objects is to provide
+fast matrix-vector multiplications for sparse matrices. In addition, a
+matrix stored in the CSR or SSS format uses less memory than the same
+matrix stored in the LL format, since the \textit{link} array is not
+needed.
+
+\textit{csr\_mat} and \textit{sss\_mat} objects do not support
+two-dimensional indices to access matrix entries or sub-matrices.
+Again, their purpose is to provide fast matrix-vector multiplication.
+
+%------------------------------------------------------------------------
+\paragraph{csr\_mat and sss\_mat object attributes}
+
+\subparagraph{A.shape}
+%
+Returns a 2-tuple containing the shape of the matrix $\mat{A}$, i.e.\ 
+the number of rows and columns.
+
+\subparagraph{A.nnz}
+%
+Returns the number of non-zero entries stored in matrix $\mat{A}$. If
+$\mat{A}$ is an \textit{sss\_mat} object, the non-zero entries in the
+strictly upper triangle are not counted.
+
+%------------------------------------------------------------------------
+\paragraph{csr\_mat and sss\_mat object methods}
+
+\subparagraph{A.matvec(x, y)}
+%
+Computes the sparse matrix-vector product 
+\begin{equation*}
+  \vect{y} \leftarrow \mat{A} \vect{x}.
+\end{equation*}
+$\vect{x}$ and $\vect{y}$ are two double precision, rank-1 NumPy arrays
+of appropriate size.
+
+\subparagraph{A.matvec\_transp(x, y)} 
+%
+Computes the transposed sparse matrix-vector product
+\begin{equation*}
+  \vect{y} \leftarrow \mat{A}^T \vect{x}.
+\end{equation*}
+$\vect{x}$ and $\vect{y}$ are two double precision, rank-1 NumPy arrays
+of appropriate size. For \textit{sss\_mat} objects
+\textit{matvec\_transp} is equivalent to \textit{matvec}.
+
+%------------------------------------------------------------------------
+\paragraph{Example: 2D-Poisson matrix}
+%
+This section illustrates the use of the \textit{spmatrix} module to
+build the well known 2D-Poisson matrix resulting from a $n \times n$
+square grid.
+\begin{pycode}
+def poisson2d(n):
+    L = spmatrix.ll_mat(n*n, n*n)
+    for i in range(n):
+        for j in range(n):
+            k = i + n*j
+            L[k,k] = 4
+            if i > 0:
+                L[k,k-1] = -1
+            if i < n-1:
+                L[k,k+1] = -1
+            if j > 0:
+                L[k,k-n] = -1
+            if j < n-1:
+                L[k,k+n] = -1
+    return L
+\end{pycode} 
+Using the symmetric variant of the \textit{ll\_mat} object, this gets
+even shorter.
+\begin{pycode}
+def poisson2d_sym(n):
+    L = spmatrix.ll_mat_sym(n*n)
+    for i in range(n):
+        for j in range(n):
+            k = i + n*j
+            L[k,k] = 4
+            if i > 0:
+                L[k,k-1] = -1
+            if j > 0:
+                L[k,k-n] = -1
+    return L
+\end{pycode}
+To illustrate the use of the slice notation to address sub-matrices,
+let's build the 2D Poisson matrix using the diagonal and off-diagonal
+blocks.
+\begin{pycode}
+def poisson2d_sym_blk(n):
+    L = spmatrix.ll_mat_sym(n*n)
+    I = spmatrix.ll_mat_sym(n)
+    P = spmatrix.ll_mat_sym(n)
+    for i in range(n):
+        I[i,i] = -1
+    for i in range(n):
+        P[i,i] = 4
+        if i > 0: P[i,i-1] = -1
+    for i in range(0, n*n, n):
+        L[i:i+n,i:i+n] = P
+        if i > 0: L[i:i+n,i-n:i] = I
+    return L
+\end{pycode}
+
+%------------------------------------------------------------------------
+\subparagraph{Performance comparison with Matlab}
+%
+Let's compare the performance of three python codes above with the
+following Matlab functions:
+
+The Matlab function \texttt{poisson2d} is equivalent to the Python
+function with the same name
+\begin{pycode}
+function L = poisson2d(n)
+  L = sparse(n*n);
+  for i = 1:n
+    for j = 1:n
+      k = i + n*(j-1);
+      L(k,k) = 4;
+      if i > 1, L(k,k-1) = -1; end
+      if i < n, L(k,k+1) = -1; end
+      if j > 1, L(k,k-n) = -1; end
+      if j < n, L(k,k+n) = -1; end
+    end
+  end
+\end{pycode}
+\begin{sloppypar}
+  The function \texttt{poisson2d\_blk} is an adaption of the Python
+  function \texttt{poisson2d\_sym\_blk} (except for exploiting the
+  symmetry, which is not directly supported in Matlab).
+\end{sloppypar}
+\begin{pycode}
+function L = poisson2d_blk(n)
+  e = ones(n,1);
+  P = spdiags([-e 4*e -e], [-1 0 1], n, n);
+  I = -speye(n);
+  L = sparse(n*n);
+  for i = 1:n:n*n
+    L(i:i+n-1,i:i+n-1) = P;
+    if i > 1, L(i:i+n-1,i-n:i-1) = I; end
+    if i < n*n - n, L(i:i+n-1,i+n:i+2*n-1) = I; end
+  end
+\end{pycode}
+\noindent The function \texttt{poisson2d\_kron} demonstrates one of the most efficient 
+ways to generate the 2D Poisson matrix in Matlab.
+\begin{pycode}
+function L = poisson2d_kron(n)
+  e = ones(n,1);
+  P = spdiags([-e 2*e -e], [-1 0 1], n, n);
+  L = kron(P, speye(n)) + kron(speye(n), P);
+\end{pycode}
+
+\begin{table}
+  \small
+  \begin{center}
+    \begin{tabular}{|l|*{4}{d{2}|}}
+      \hline
+      \multicolumn{1}{|c|}{Function} &
+      \multicolumn{1}{c|}{$n=100$} &
+      \multicolumn{1}{c|}{$n=300$} &
+      \multicolumn{1}{c|}{$n=500$} &
+      \multicolumn{1}{c|}{$n=1000$} \\
+      \hline
+      Python \texttt{poisson2d}           &  0.44 &    4.11 &    11.34 & 45.50 \\
+      Python \texttt{poisson2d\_sym}      &  0.26 &    2.34 &     6.55 & 26.33 \\
+      Python \texttt{poisson2d\_sym\_blk} &  0.03 &    0.21 &     0.62 &  2.22 \\
+      Matlab \texttt{poisson2d}           & 28.19 & 3464.9  & 38859    & \multicolumn{1}{c|}{$\infty$} \\
+      Matlab \texttt{poisson2d\_blk}      &  6.85 &  309.20 &1912.1  & \multicolumn{1}{c|}{$\infty$} \\
+      Matlab \texttt{poisson2d\_kron}     &  0.21 &    2.05 &   6.23 & 29.96 \\
+      \hline
+    \end{tabular}
+    \caption[Performance comparison of Python and Matlab functions to generate the 2D Poisson matrix]{Performance comparison of Python and Matlab functions to generate the 2D Poisson matrix \\ \small The execution times are given in seconds. Matlab version 6.0 Release 12 was used for these timings.}
+    \label{tab:python:spmatrix_matpy}
+  \end{center}
+\end{table}
+
+The execution times reported in Tab.~\ref{tab:python:spmatrix_matpy}
+clearly show, that the Python implementation is superior to the Matlab
+implementation. If the fastest versions are compared for both
+languages, Python is approximately 10 times faster. Comparing the
+straight forward \texttt{poisson2d} versions, one is struck by the
+result that, the Matlab function is incredibly slow. The Python
+version is more then three orders of magnitude faster! This result
+really raises the doubt, whether Matlab's sparse matrix format is
+appropriately chosen.
+
+\begin{sloppypar}
+  The performance difference between Python's \texttt{poisson2d\_sym}
+  and \texttt{poisson2d\_sym\_blk} indicates, that a lot of time is
+  spent parsing indices.
+\end{sloppypar}
+
+%------------------------------------------------------------------------
+\subsubsection{The precon module}
+\label{sec:python:precon}
+%
+The \textit{precon} module provides preconditioners, which can be used
+e.g.\ for the iterative methods implemented in the in the
+\textit{itsolvers} module or the JDSYM eigensolver (in the
+\textit{jdsym} module).
+
+In the PySparse framework, any Python object that has the following
+properties can be used as a preconditioner:
+\begin{itemize}
+\item a \textit{shape} attribute, which returns a 2-tuple describing
+  the dimension of the preconditioner,
+\item and a \textit{precon} method, that accepts two vectors
+  $\vect{x}$ and $\vect{y}$, and applies the preconditioner to
+  $\vect{x}$ and stores the result in $\vect{y}$. Both $\vect{x}$ and
+  $\vect{y}$ are double precision, rank-1 NumPy arrays of appropriate
+  size.
+\end{itemize}
+
+The \textit{precon} module implements two new object types
+\textit{jacobi} and \textit{ssor}, representing Jacobi and the SSOR
+preconditioners as described in Sections~\ref{sec:precon:jacobi}
+and~\ref{sec:precon:ssor}.
+
+%------------------------------------------------------------------------
+\paragraph{precon module functions}
+%
+
+\subparagraph{jacobi(A, omega=1.0, steps=1)}
+%
+Creates a \textit{jacobi} object, representing the Jacobi
+preconditioner. The parameter $\mat{A}$ is the system matrix used for
+the Jacobi iteration. The matrix needs to be subscriptable using
+two-dimensional indices, so e.g.\ an \textit{ll\_mat} object would
+work.  The optional parameter $\omega$, which defaults to $1.0$, is
+the weight parameter as described in Section~\ref{sec:precon:jacobi}.
+The optional \textit{steps} parameter (defaults to $1$) specifies the
+number of iteration steps.
+
+\subparagraph{ssor(A, omega=1.0, steps=1)}
+%
+Creates a \textit{ssor} object, representing the SSOR preconditioner.
+The parameter $\mat{A}$ is the system matrix used for the SSOR
+iteration.  The matrix $\mat{A}$ has to be an object of type
+\textit{sss\_mat}.  The optional parameter $\omega$, which defaults to
+$1.0$, is the relaxation parameter as described in
+Section~\ref{sec:precon:jacobi}. The optional \textit{steps} parameter
+(defaults to $1$) specifies the number of iteration steps.
+
+%------------------------------------------------------------------------
+\paragraph{jacobi and ssor objects}
+%
+Both \textit{jacobi} and \textit{ssor} objects provide the
+\textit{shape} attribute and the \textit{precon} method, that every
+preconditioner object in the PySparse framework must implement.  Apart
+from that, there is nothing noteworthy to say about these objects.
+
+%------------------------------------------------------------------------
+\paragraph{Example: diagonal preconditioner}
+%
+The diagonal preconditioner is just a special case of the Jacobi
+preconditioner, with $\omega=1.0$ and $\text{steps}=1$, which happen
+to be the default values of these parameters.
+
+It is however easy to implement the diagonal preconditioner using a
+Python class:
+\begin{pycode}
+class diag_prec:
+    def __init__(self, A):
+        self.shape = A.shape
+        n = self.shape[0]
+        self.dinv = Numeric.zeros(n, 'd')
+        for i in xrange(n):
+            self.dinv[i] = 1.0 / A[i,i]
+    def precon(self, x, y):
+        Numeric.multiply(x, self.dinv, y)
+\end{pycode}
+So,
+\begin{pyinline}
+>>> D1 = precon.jacobi(A, 1.0, 1)
+\end{pyinline}
+and
+\begin{pyinline}
+>>> D2 = diag_prec(A)
+\end{pyinline}
+yield functionally equivalent preconditioners. \texttt{D1} is probably
+faster than \texttt{D2}, because it is fully implemented in C.
+
+%------------------------------------------------------------------------
+\subsubsection{The itsolvers module}
+\label{sec:python:itsolvers}
+%
+The \textit{itsolvers} module provides a set of iterative methods for
+solving linear systems of equations.
+
+The iterative methods are callable like ordinary Python functions. All
+these functions expect the same parameter list, and all function
+return values also follow a common standard.
+
+Any user-defined iterative solvers should also follow these
+conventions, since other PySparse modules rely on them (e.g.\ the
+\textit{jdsym} module)
+
+%------------------------------------------------------------------------
+\paragraph{Parameter list}
+%
+Let's illustrate the calling conventions, using the PCG method
+defined as \mbox{\textit{info}, \textit{iter}, \textit{relres} =
+  \textit{pcg}($\mat{A}$, $\vect{b}$, $\vect{x}$, \textit{tol},
+  \textit{maxit}, $\mat{K}$)}.
+%
+\begin{arglist}
+\item[$\mat{A}$] The parameter $\mat{A}$ represents the coefficient
+  matrix of the linear system of equations.  $\mat{A}$ must provide
+  the \textit{shape} attribute and the \textit{matvec} and
+  \textit{matvec\_transp} methods for multiplying with a vector.
+\item[$\vect{b}$] The parameter $\vect{b}$, representing the
+  right-hand-side of the linear system, is a rank-1 NumPy array.
+\item[$\vect{x}$] The parameter $\vect{x}$ is also a rank-1 NumPy
+array. On input, $\vect{x}$ holds the initial guess. On output,
+$\vect{x}$ holds the approximate solution of the linear system.
+\item[\textit{tol}] The \textit{tol} parameter is a float value
+  representing the requested error tolerance. The exact meaning of
+  this parameter depends on the actual iterative solver.
+\item[\textit{maxit}] The \textit{maxit} parameter is an integer that
+  specifies the maximum number of iterations to be executed.
+\item[$\mat{K}$] The \emph{optional} $\mat{K}$ parameter represents a
+  preconditioner object that supplies the \textit{shape} attribute and
+  the \textit{precon} method.
+\end{arglist}
+The iterative solvers may accept additional parameters, which are
+passed as keyword arguments.
+
+%------------------------------------------------------------------------
+\paragraph{Return value}
+%
+All iterative solvers return a tuple with three elements
+(\textit{info}, \textit{iter}, \textit{relres}):
+\begin{arglist}
+\item[\textit{info}] is an integer that contains the exit status of
+  the iterative solver. \textit{info} has one of the following values
+  \begin{list}{}{}
+  \item[2] iteration converged, residual is as small as seems
+    reasonable on this machine.
+  \item[1] iteration converged, $\vect{b} = \vect{0}$, so the exact
+    solution is $\vect{x} = \vect{0}$.
+    \item[0] iteration converged, relative error appears to be less
+      than \textit{tol}.
+    \item[-1] iteration not converged, maximum number of iterations
+      was reached.
+    \item[-2] iteration not converged, the system involving the
+      preconditioner was ill-conditioned.
+    \item[-3] iteration not converged, an inner product of the form
+      $\vect{x}^T \mat{K}^{-1} \vect{x}$ was not positive, so the
+      preconditioning matrix $\mat{K}$ does not appear to be positive
+      definite.
+    \item[-4] iteration not converged, the matrix $\mat{A}$ appears to
+      be very ill-conditioned
+    \item[-5] iteration not converged, the method stagnated
+    \item[-6] iteration not converged, a scalar quantity became too
+      small or too large to continue computing
+  \end{list}
+  So, $\mathit{info} >= 0$ indicates, that $\vect{x}$ holds an
+  acceptable solution, and $\mathit{info} < 0$ indicates an error
+  condition.
+
+  Note that not all iterative solvers check for all above error
+  conditions.
+\item[\textit{iter}] holds the of iterations performed.
+\item[\textit{relres}] holds relative error of the solution computed
+  by the iterative method. What this actually is, depends on the
+  actual iterative method used.
+\end{arglist}
+
+%------------------------------------------------------------------------
+\paragraph{precon module functions}
+%
+The module functions defined in the \textit{precon} module implement
+various iterative methods (PCG, MINRES, QMRS and CGS, cf.\ 
+Section~\ref{sec:itsolv}). The parameters and return values conform to
+the conventions described above.
+
+\subparagraph{pcg(A, b, x, tol, maxit, K)}
+%
+The \textit{pcg} function implements the Preconditioned Conjugate
+Gradients method.
+
+\subparagraph{minres(A, b, x, tol, maxit, K)}
+%
+The \textit{minres} function implements the MINRES method.
+
+\subparagraph{qmrs(A, b, x, tol, maxit, K)}
+%
+The \textit{qmrs} function implements the QMRS method.
+
+\subparagraph{cgs(A, b, x, tol, maxit, K)} The \textit{min} function
+implements the CGS method.
+%
+
+%------------------------------------------------------------------------
+\paragraph{Example: Solving the poisson system}
+%
+Let's solve the Poisson system
+\begin{equation}
+  \label{eq:python:1}
+  \mat{L} \vect{x} = \vect{1},
+\end{equation}
+using the PCG method. $\mat{L}$ is the 2D Poisson matrix, introduced
+in Section~\ref{sec:python:spmatrix} and $\vect{1}$ is a vector with
+all entries equal to one.
+
+\noindent The Python solution for this task looks as follows:
+\begin{pycode}
+import Numeric, spmatrix, precon, itsolvers
+n = 300
+L = poisson2d_sym_blk(n)
+b = Numeric.ones(n*n, 'd')
+x = Numeric.zeros(n*n, 'd')
+info, iter, relres = itsolvers.pcg(L.to_sss(), b, x, 1e-12, 2000)
+\end{pycode}
+The code makes use of the Python function \texttt{poisson2d\_sym\_blk},
+which was defined in Section~\ref{sec:python:spmatrix}.
+
+\noindent Incorporating e.g.\ a SSOR preconditioner is straight-forward:
+\begin{pycode}
+import Numeric, spmatrix, precon, itsolvers
+n = 300
+L = poisson2d_sym_blk(n)
+b = Numeric.ones(n*n, 'd')
+x = Numeric.zeros(n*n, 'd')
+S = L.to_sss()
+Kssor = precon.ssor(S)
+info, iter, relres = itsolvers.pcg(S, b, x, 1e-12, 2000, Kssor)
+\end{pycode}
+
+\noindent The Matlab solution (without preconditioner) may look as follows:
+\begin{pycode}
+n = 300;
+L = poisson2d_kron(n);
+[x,flag,relres,iter] = pcg(L, ones(n*n,1), 1e-12, 2000, ...
+                           [], [], zeros(n*n,1));
+\end{pycode}
+
+%------------------------------------------------------------------------
+\subparagraph{Performance comparison with Matlab and native C}
+%
+To evaluate the performance of the Python implementation we solve the
+2D Poisson system \eqref{eq:python:1} using the PCG method. The Python
+timings are compared with results of a Matlab and a native C
+implementation.
+
+The native C and the Python implementation use the same core
+algorithms for PCG method and the matrix-vector multiplication. On the
+other hand, C reads the matrix from an external file instead of
+building it on the fly. In contrast to the Python implementation, the
+native C version does not suffer from the overhead generated by the
+runtime argument parsing and calling overhead.
+
+\begin{table}[h]
+  \begin{center}
+    \begin{tabular}{|l|l|*{3}{d{2}|}}
+      \hline
+      \multicolumn{1}{|c|}{Function} &
+      \multicolumn{1}{c|}{Size} &
+      \multicolumn{1}{c|}{$t_\text{constr}$} &
+      \multicolumn{1}{c|}{$t_\text{solv}$} &
+      \multicolumn{1}{c|}{$t_\text{tot}$} \\
+      \hline
+      Python   & $n=100$ &  0.03 &   1.12 &   1.15 \\
+               & $n=300$ &  0.21 &  49.65 &  49.86 \\
+               & $n=500$ &  0.62 & 299.39 & 300.01 \\
+               \hline
+      native C & $n=100$ &  0.30 &   0.96 &   1.26 \\
+               & $n=300$ &  3.14 &  48.38 &  51.52 \\
+               & $n=500$ & 10.86 & 288.67 & 299.53 \\
+               \hline
+      Matlab   & $n=100$ &  0.21 &    8.85 &    9.06 \\
+               & $n=300$ &  2.05 &  387.26 &  389.31 \\
+               & $n=500$ &  6.23 & 1905.67 & 1911.8  \\
+      \hline
+    \end{tabular}
+    \caption[Performance comparison of Python, Matlab and native C implementations to solve the 2D Poisson system]{Performance comparison of Python, Matlab and native C implementations to solve the linear system \eqref{eq:python:1} without preconditioning\\ \small The execution times are given in seconds. $t_\text{constr}$ is the time for constructing the matrix (or reading it from a file in the case of native C).  $t_\text{solv}$ is the time spent in the PCG solver. $t_\text{tot}$ is the sum of $t_\text{constr}$ and $t_\text{solv}$. Matlab version 6.0 Release 12 was used for these timings.}
+    \label{tab:python:perf_itsolvers}
+  \end{center}
+\end{table}
+
+Tab.~\ref{tab:python:perf_itsolvers} shows the execution times for the
+Python, the Matlab and the native C implementation for solving the
+linear system \eqref{eq:python:1}. Matlab is not only slower when
+building the matrix, also the matrix-vector multiplication seems to be
+implemented inefficiently. Considering $t_\text{solv}$, the
+performance of Python and native C is comparable.  The Python overhead
+is under 4\% for this case.
+
+%------------------------------------------------------------------------
+\subsubsection{The jdsym module}
+%
+The \textit{jdsym} module provides an implementation of the JDSYM
+algorithm (cf.\ Algorithm~\ref{alg:jd-sym}), that is conveniently
+callable from Python. The module exports a single function called
+\textit{jdsym}.
+
+\paragraph{jdsym(A, M, K, kmax, tau, jdtol, itmax, linsolver, **keywords)}
+%
+Invokes the JDSYM eigenvalue solver (cf.\ Section~\ref{sec:jd-sym}).
+JDSYM computes eigenpairs of a generalised matrix eigenvalue problem
+of the form
+\begin{equation}
+  \label{eq:python:2}
+  \mat{A} \vect{x} = \lambda \mat{M} \vect{x} 
+\end{equation}
+or a standard eigenvalue problem of the form
+\begin{equation}
+  \label{eq:python:3}
+  \mat{A} \vect{x} = \lambda \vect{x},
+\end{equation}
+where $\mat{A}$ is symmetric and $\mat{M}$ is symmetric
+positive-definite.
+
+\subparagraph{Arguments}
+%
+The \textit{jdsym} function has seven mandatory arguments
+\begin{arglist}
+\item[$\mat{A}$] This parameter represents the matrix
+  $\mat{A}$ in \eqref{eq:python:2} or \eqref{eq:python:3}.  $\mat{A}$
+  must provide the \textit{shape} attribute and the \textit{matvec}
+  and \textit{matvec\_transp} methods.
+\item[$\mat{M}$] This parameter represents the matrix $\mat{M}$ in
+  \eqref{eq:python:2}.  $\mat{M}$ must provide the \textit{shape}
+  attribute and the \textit{matvec} and \textit{matvec\_transp}
+  methods. If the standard eigenvalue problem \eqref{eq:python:3} is
+  to be solved, the \texttt{None} value can be passed for this
+  parameter.
+\item[$\mat{K}$] The $\mat{K}$ parameter represents a preconditioner
+  object that supplies the \textit{shape} attribute and the
+  \textit{precon} method. If no preconditioner is to used, then the
+  \texttt{None} value can be passed for this parameter.
+\item[\textit{kmax}] is an integer that specifies the number of
+  eigenpairs to be computed.
+\item[\textit{tau}] is a float value that specifies the target value
+  $\tau$. Eigenvalues in the vicinity of $\tau$ will be computed.
+\item[\textit{jdtol}] is a float value that specifies the convergence
+  tolerance for eigenpairs $(\lambda,\vect{x})$. The converged
+  eigenpairs satisfy $\|\mat{A} \vect{x} - \lambda \mat{M}
+  \vect{x}\|_2 <{}$ \textit{jdtol}.
+\item[\textit{itmax}] is an integer that specifies the maximum number
+  of Jacobi-Davidson iterations to undertake.
+\item[\textit{linsolver}] is a function that implements an iterative
+  method for solving linear systems of equations. The function
+  \textit{linsolver} is required to conform to the standards mentioned
+  in Section~\ref{sec:python:itsolvers}.
+\end{arglist}
+
+\noindent The remaining (optional) arguments are specified using keyword
+arguments:
+\begin{arglist}
+\item[\textit{jmax}] is an integer that specifies the maximum
+  dimension of the search subspace. (default: 25)
+\item[\textit{jmin}] is an integer that specifies dimension of the
+  search subspace after a restart. (default: 10)
+\item[\textit{blksize}] is an integer that specifies the block size
+  used in the JDSYM algorithm. (default: 1)
+\item[\textit{blkwise}] is an integer that affects the convergence
+  criterion if \textit{blksize}${}>1$ (cf.\ 
+  Section~\ref{sec:jdsym:block}). (default: 0)
+\item[\textit{V0}] is NumPy array of rank one or two. It specifies the
+  initial search subspace. (default: a randomly generated initial
+  search subspace)
+\item[\textit{optype}] is an integer specifying the operator type used
+  in the correction equation. If \textit{optype}${}=1$, the
+  non-symmetric version is used. If \textit{optype}${}=2$, the
+  symmetric version is used. See Section~\ref{sec:correq} for more
+  information. (default: 2)
+\item[\textit{linitmax}] is an integer specifying the maximum number
+  steps taken in the inner iteration (iterative linear solver).
+  (default: 200)
+\item[\textit{eps\_tr}] is a float value setting the tracking
+  parameter $\epstr$ described in Section \ref{sec:jdsym:shift}.
+  (default: $10^{-3}$)
+\item[\textit{toldecay}] is a float value, that influences the dynamic
+  adaption of the stopping criterion of the inner iteration.
+  \textit{toldecay} corresponds to the value $\gamma$ in
+  Section~\ref{sec:jdsym:stopcrit}. (default: 1.5)
+\item[\textit{clvl}] is an integer specifying the ``verbosity'' of the
+  \textit{jdsym} function. The higher the \textit{clvl} parameter, the
+  more output is sent to the standard output. \textit{clvl}${}=0$
+  produces no output. (default: 0)
+\item[\textit{strategy}] is an integer specifying shifting and sorting
+  strategy of JDSYM. \textit{strategy}${}=0$ enables the default JDSYM
+  algorithm. \textit{strategy}${}=1$ enables JDSYM to avoid
+  convergence to eigenvalues smaller than $\tau$. (default: 0)
+\item[\textit{projector}] is used to keep the search subspace and the
+  eigenvectors in a certain subspace. The parameter \textit{projector}
+  can actually be any Python object, that provides a \textit{shape}
+  attribute and a \textit{project} method. The \textit{project} method
+  takes a vector (a rank-1 NumPy array) as its sole argument and
+  projects that vector in-place. This parameter can be used to
+  implement the DIRPROJ and SAUG methods described in
+  Sections~\ref{sec:eigprob:direct} and~~\ref{sec:eigprob:simplaug}.
+  (Default: no projection)
+\end{arglist}
+
+\subparagraph{Return value}
+%
+\noindent The \textit{jdsym} module function returns a tuple with four elements
+(\textit{kconv}, \textit{lambda}, \textit{Q}, \textit{it}):
+
+\begin{arglist}
+\item[\textit{kconv}] is an integer that indicates the number of
+  converged eigenpairs.
+\item[\textit{lambda}] is a rank-1 NumPy array containing the
+  converged eigenvalues.
+\item[$\mat{Q}$] is a rank-2 NumPy array containing the converged
+  eigenvectors. The i-th eigenvector is accessed by \texttt{Q[:,i]}.
+\item[\textit{it}] is an integer indicating the number of
+  Jacobi-Davidson steps (outer iteration steps) performed.
+\end{arglist}
+
+%------------------------------------------------------------------------
+\paragraph{Example: Maxwell problem}
+The following code illustrates the use of the \textit{jdsym} module.
+Two matrices $\mat{A}$ and $\mat{M}$ are read from files. A Jacobi
+preconditioner from $\mat{A} - \tau\mat{M}$ is built. Then the JDSYM
+eigensolver is called, calculating 5 eigenvalues near 25.0 and the
+associated eigenvalues to an accuracy of $10^{-10}$.  We set
+\textit{strategy}${}=1$ to avoid convergence to the high-dimensional
+null space of ($\mat{A}$, $\mat{M}$).
+\begin{pycode}
+import spmatrix, itsolvers, jdsym, precon
+
+A = spmatrix.ll_mat_from_mtx('edge6x3x5_A.mtx')
+M = spmatrix.ll_mat_from_mtx('edge6x3x5_B.mtx')
+tau = 25.0
+
+Atau = A.copy()
+Atau.shift(-tau, M)
+K = precon.jacobi(Atau)
+
+A = A.to_sss(); M = M.to_sss()
+k_conv, lmbd, Q, it  = \symbol{92}
+      jdsym.jdsym(A, M, K, 5, tau, 1e-10, 150, itsolvers.qmrs,
+                  jmin=5, jmax=10, clvl=1, strategy=1)
+\end{pycode}
+This code takes $33.71$ seconds to compute the five wanted eigenpairs.
+A native C version, using the same computational kernels, takes
+$35.64$ for the same task. We expected the Python version to be slower
+due to the overhead generated when calling the matrix-vector
+multiplication and the preconditioner, but surprisingly the Python
+code was even a bit faster.
+
+%------------------------------------------------------------------------
+\subsubsection{The superlu module}
+%
+The \textit{superlu} module interfaces the SuperLU library to make it
+usable by Python code. SuperLU is a software package written in C,
+that is able to compute a $LU$-factorisation of a general
+non-symmetric, sparse matrix with partial pivoting.
+
+The \textit{superlu} module exports a single function, called
+\textit{factorize}.
+
+%------------------------------------------------------------------------
+\paragraph{factorize(A, diag\_pivot\_thresh, drop\_tol, relax, panel\_size, permc\_spec)}
+%
+The factorise module function computes a $LU$-factorisation of the
+matrix $\mat{A}$. All but the first parameter are optional and can be
+specified using keyword arguments.
+\begin{arglist}
+\item[$\mat{A}$] is a \textit{csr\_mat} object that represents the
+  matrix to be factorised.
+\item[\textit{diag\_pivot\_thresh}] is a float value in the interval
+  $[0,1]$ representing the threshold for partial pivoting.
+  \textit{diag\_pivot\_thresh}${}=0$ corresponds to no pivoting.
+  \textit{diag\_pivot\_thresh}${}=1$ corresponds to partial pivoting.
+  (default: $1.0$)
+\item[\textit{drop\_tol}] is a float value in the interval $[0,1]$
+  representing the drop tolerance parameter.  \textit{drop\_tol}${}=0$
+  corresponds to the exact factorisation. \\
+  CAUTION: the \textit{drop\_tol} has no effect in the current and all
+  older SuperLU releases (versions 2.0 and below). (default: 0.0)
+\item[\textit{relax}] is an integer that controls the degree of
+  relaxing supernodes. (default: 1)
+\item[\textit{panel\_size}] is an integer specifying the maximum number
+  of columns that form a panel. (default: 10)
+\item[\textit{permc\_spec}] is an integer specifying the matrix
+  ordering used for the factorisation:
+  \begin{list}{}{}
+  \item[0] natural ordering
+  \item[1] MMD applied to the structure of $\mat{A}^T\mat{A}$
+  \item[2] MMD applied to the structure of $\mat{A}^T + \mat{A}$
+  \item[3] COLAMD, approximate minimum degree column ordering
+  \end{list}
+  (default: 2)
+\end{arglist}
+
+The \textit{factorize} function returns an object of type
+\textit{superlu\_context}. This object encapsulates the $LU$-factors
+computed during the factorisation.
+
+%------------------------------------------------------------------------
+\paragraph{superlu\_context object attributes}
+%
+\subparagraph{shape} 
+%
+The \textit{shape} attribute, returns a 2-tuple describing the
+dimension of the factorised matrix $\mat{A}$.
+
+\subparagraph{nnz}
+%
+The \textit{nnz} attribute returns an integer holding the total number
+of non-zero entries stored in both the $\mat{L}$ and the $\mat{U}$
+factors.
+
+%------------------------------------------------------------------------
+\paragraph{superlu\_context object methods}
+%
+\subparagraph{solve(b, x, trans)}
+%
+The \textit{solve} method accepts two rank-1 NumPy arrays $\vect{b}$
+and $\vect{x}$ of appropriate size and assigns the solution of the
+linear system
+\begin{equation*}
+  \mat{A}\vect{x} = \vect{b}
+\end{equation*}
+to $\vect{x}$. If the optional parameter \textit{trans} is set to
+\texttt{'T'}, then the transposed system
+\begin{equation*}
+  \mat{A}^T\vect{x} = \vect{b}
+\end{equation*}
+is solved instead.
+
+%------------------------------------------------------------------------
+\paragraph{Example: 2D Poisson matrix}
+%
+Let's now solve the 2D Poisson system
+\begin{equation*}
+  \mat{L} \vect{x} = \vect{1},
+\end{equation*}
+using a factorisation. $\mat{L}$ is the 2D Poisson matrix, introduced
+in Section~\ref{sec:python:spmatrix} and $\vect{1}$ is a vector with
+all one entries.
+
+\noindent The Python solution for this task looks as follows:
+\begin{pycode}
+import Numeric, spmatrix, superlu
+n = 100
+L = poisson2d_sym_blk(n)
+b = Numeric.ones(n*n, 'd')
+x = Numeric.zeros(n*n, 'd')
+LU = superlu.factorize(L.to_csr(), diag_pivot_thresh=0.0)
+LU.solve(b, x)
+\end{pycode}
+The code makes use of the Python function
+\texttt{poisson2d\_sym\_blk}, which was defined in
+Section~\ref{sec:python:spmatrix}.
+
+\appendix
+\include{spformat}
+
+
+\end{document}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "spmatrix_manual"
+%%% End: 

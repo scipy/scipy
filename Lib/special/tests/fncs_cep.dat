@@ -1,0 +1,18 @@
+# here are the tests for functions defined in cephes
+# library
+#
+# each test should be written as CONSECUTIVE lines.
+# If you split a test on more than one line,
+# remember putting commas at the end of each line, excluding the
+# last one.
+# An empty line, or a comment only one, marks the end 
+# of each test's definition.
+#
+cephes.airy,'airy',in_vars={'z':(0.+0.j,10.+10j)}, # You can put comments
+out_vars={'Ai': 0, 'Aip': 0, 'Bi':0, 'Bip':0}      # on test lines too!
+
+cephes.airye,'airye',in_vars={'z':(0.+0j,10.+10j)},
+out_vars={'Ai': 0, 'Aip': 0, 'Bi':0, 'Bip':0}
+
+cephes.ellpj,'ellpj_sn',in_vars={'m':(0.,1.),'u':(-100,100)},
+out_vars={'sn':0,'cn':0,'dn':0,'ph':0}

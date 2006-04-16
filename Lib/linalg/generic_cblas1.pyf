@@ -1,0 +1,55 @@
+!%f90 -*- f90 -*-
+! Signatures for f2py-wrappers of ATLAS LEVEL 1 BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: Jan-Feb 2002
+! $Revision$ $Date$
+!
+! Level 1 BLAS
+
+subroutine <tchar=s,d>axpy(n,a,x,incx,y,incy)
+
+  ! z = axpy(a,x,y,n=len(x)/abs(incx),incx=1,incy=incx,overwrite_y=0)
+  ! Calculate z = a*x+y, where a is scalar.
+
+  fortranname cblas_<tchar=s,d>axpy
+  
+  callstatement (*f2py_func)(n,a,x,incx,y,incy);
+  callprotoargument const int,const <type_in_c>,const <type_in_c>*,const int,<type_in_c>*,const int
+
+  intent(c)
+  intent(c) <tchar=s,d>axpy
+
+  integer optional,intent(in),depend(x,incx) :: n = len(x)/abs(incx)
+  <type_in> intent(in):: a
+  <type_in> dimension(n),intent(in) :: x
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  <type_in> dimension(n),depend(x),check(len(x)==len(y)) :: y
+  intent(in,out,copy,out=z) :: y
+  integer optional, intent(in),depend(incx) ,check(incy>0||incy<0) :: incy = incx
+
+end subroutine <tchar=s,d>axpy
+
+subroutine <tchar=c,z>axpy(n,a,x,incx,y,incy)
+
+  ! z = axpy(a,x,y,n=len(x)/abs(incx),incx=1,incy=incx,overwrite_y=0)
+  ! Calculate z = a*x+y, where a is scalar.
+
+  fortranname cblas_<tchar=c,z>axpy
+  
+  callstatement (*f2py_func)(n,&a,x,incx,y,incy);
+  callprotoargument const int,const <type_in_cc>*,const <type_in_cc>*,const int,<type_in_cc>*,const int
+
+  intent(c)
+  intent(c) <tchar=c,z>axpy
+
+  integer optional,intent(in),depend(x,incx) :: n = len(x)/abs(incx)
+  <type_in> intent(in):: a
+  <type_in> dimension(n),intent(in) :: x
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  <type_in> dimension(n),depend(x),check(len(x)==len(y)) :: y
+  intent(in,out,copy,out=z) :: y
+  integer optional, intent(in),depend(incx) ,check(incy>0||incy<0) :: incy = incx
+
+end subroutine <tchar=c,z>axpy
+

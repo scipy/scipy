@@ -1,0 +1,33 @@
+!%f90 -*- f90 -*-
+! Signatures for f2py-wrappers of ATLAS LEVEL 1 BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: Jan-Feb 2002
+! $Revision$ $Date$
+!
+!   axpy
+!
+! Level 1 BLAS
+
+subroutine <prefix>axpy(n,a,x,incx,y,incy)
+
+  ! z = axpy(a,x,y,n=len(x)/abs(incx),incx=1,incy=incx,overwrite_y=0)
+  ! Calculate z = a*x+y, where a is scalar.
+
+  fortranname cblas_<prefix>axpy
+  
+  callstatement (*f2py_func)(n,<,,&,&>a,x,incx,y,incy);
+  callprotoargument const int,const <ctype><,,*,*>,const <ctype>*,const int,<ctype>*,const int
+
+  intent(c)
+  intent(c) <prefix>axpy
+
+  integer optional,intent(in),depend(x,incx) :: n = len(x)/abs(incx)
+  <ftype> optional,intent(in):: a=<1.0,\0,(1.0\,0.0),\2>
+  <ftype> dimension(n),intent(in) :: x
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  <ftype> dimension(n),depend(x),check(len(x)==len(y)) :: y
+  intent(in,out,copy,out=z) :: y
+  integer optional, intent(in),depend(incx) ,check(incy>0||incy<0) :: incy = incx
+
+end subroutine <prefix>axpy

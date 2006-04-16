@@ -1,0 +1,719 @@
+%!PS-Adobe-3.0
+%%Title:
+%%For:
+%%CreationDate:
+%%Creator: Gist
+%%DocumentData: Clean7Bit
+%%DocumentSuppliedResources: procset Gist-Primitives 1.0 0
+%%Pages: (atend)
+%%BoundingBox: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+
+% By appending " EPSF-3.0" to the first line of this file, Gist driver
+% output should be compatible with Appendix H of the 2nd edition of
+% the "PostScript Language Reference Manual" (from Adobe Systems Inc),
+% although the Gist driver does not attempt to produce previewing
+% output.  In order for the Gist file to be a stand alone printable
+% file, the showpage operator is included at the end of each page.
+
+% -----------------------------------------------------------------------
+
+%%BeginProlog
+%
+% Gist PostScript Prolog
+% $Id$
+% Copyright (c) 1994.  The Regents of the University of California.
+%               All rights reserved.
+%
+
+%%BeginResource: procset Gist-Primitives 1.0 0
+/GistPrimitives 128 dict def
+GistPrimitives begin
+
+% ------------- landscape, clipping, and predefined colors
+
+/PG 0 def    % used to restore the initial state after each page
+
+/LAND { 90 rotate 0 -12240 translate } bind def
+
+/CLON {  % xmax-xmin ymax-ymin xmin ymin CLON
+  gsave  % save graphics state before clipping starts
+    /TxYxs TxYx def /TxYns TxYn def   % private font state info
+    newpath
+    moveto dup 0 exch rlineto exch 0 rlineto neg 0 exch rlineto
+    closepath clip newpath
+} bind def
+
+/CLOF {  % turn off clipping established with CLON
+  /TxYx TxYxs def /TxYn TxYns def
+  grestore
+} bind def
+
+/BG { 1 setgray } bind def
+/FG { 0 setgray } bind def
+/BLK { 0 setgray } bind def
+/WHT { 1 setgray } bind def
+/RED { 1 0 0 setrgbcolor } bind def
+/GRN { 0 1 0 setrgbcolor } bind def
+/BLU { 0 0 1 setrgbcolor } bind def
+/CYA { 0 1 1 setrgbcolor } bind def
+/MAG { 1 0 1 setrgbcolor } bind def
+/YEL { 1 1 0 setrgbcolor } bind def
+/GYD { 0.392 setgray } bind def
+/GYC { 0.588 setgray } bind def
+/GYB { 0.745 setgray } bind def
+/GYA { 0.839 setgray } bind def
+% To get indexed colors (as with F, G, or I primitives):
+%    CI index1 C ... other primitives ... index2 C ... more ...
+
+% ------------- DrawLines and DrawDisjoint primitives
+
+/DSH {  % index DSH
+  [ [ ] [ 82.5 ] [ 4.5 61.5 ] [ 82.5 39.0 4.5 39.0 ]
+  [ 82.5 39.0 4.5 39.0 4.5 39.0 ] ] exch get
+  dup length 0 ne {
+    currentlinewidth dup 16.5 lt {
+      pop   % if lines thinner than 0.825 points use pattern as is
+    } {     % else scale pattern
+      16.5 div 1 index { 2 copy mul 4 1 roll pop } forall pop astore
+    } ifelse
+  } if
+  0 setdash
+} bind def
+
+/LW /setlinewidth load def
+
+/GPL { 1 setlinecap 1 setlinejoin } bind def  % polyline caps and joins
+/GDJ { 2 setlinecap } bind def                % disjoint line caps
+
+/GPT { % coordinate reader for L, LS, D, M, MS, F, and G commands
+       % each px1 py1 pair must be a sequence of 8 hex digits
+  currentfile 4 string readhexstring pop { } forall
+  exch 8 bitshift or 3 1 roll exch 8 bitshift or exch
+} bind def
+
+/L {   % Gist DrawLines method (unsmoothed)
+       %   n L px1 py1 px2 py2 ... pxn pyn
+  GPL                       % set polyline caps and joins
+  newpath 1 sub GPT
+  { 3 2 roll dup 255 gt { 255 sub 255 } { 0 exch } ifelse
+    4 2 roll moveto 0 exch 0 exch
+    { GPT 4 2 roll pop pop 2 copy lineto } repeat stroke
+    2 index 0 le { pop pop pop exit } if
+  } loop
+} bind def
+
+/LS {   % Gist DrawLines method (smooth)
+        %   n LS px1 py1 px2 py2 ... pxn pyn
+  GPL                              % set polyline caps and joins
+  newpath 1 sub 3 idiv GPT
+  { 3 2 roll dup 85 gt { 85 sub 85 } { 0 exch } ifelse
+    4 2 roll moveto 0 exch 0 exch
+    { GPT GPT GPT 8 6 roll pop pop 2 copy 8 2 roll curveto } repeat stroke
+    2 index 0 le { pop pop pop exit } if
+  } loop
+} bind def
+
+/D {   % Gist DrawDisjoint method
+       %   n D px1 py1 qx1 qy1 px2 py2 qx2 qy2 ... pxn pyn qxn qyn
+  GDJ                   % set disjoint line caps
+  newpath { GPT moveto GPT lineto stroke } repeat
+} bind def
+
+% ------------- DrawText and DrawMarkers primitives
+
+% The following variables supplement the graphics state information
+% maintained by the PostScript interpreter:
+% PtSz   point size of currentfont (set by FONT)
+% LnSp   line spacing to use with currentfont (set by FONT)
+% TxYn   currentfont bounding box ymin (set by FONT)
+% TxYx   currentfont bounding box ymax (set by FONT)
+% XAdj   procedure for horizontal alignment (set by JUST)
+% YAdj   procedure for vertical alignment (set by JUST)
+% OShw   procedure to show possibly opaque text (set by OPAQ)
+
+% FontRescale is a hook for encapsulating PostScript files to scale all
+% text by a different amount than graphics
+
+% ---------------------------WARNING-------------------------------------
+% The T and TA procedures violate a PostScript "blue book" rule by using
+% the stringwidth operator to determine the location of text on the page.
+% This is done specifically to avoid having the application know about
+% font metrics (also not a recommended practice, but easy).
+% ---------------------------WARNING-------------------------------------
+
+/Cour { % bi Cour    return Courier font dictionary
+        % bi= 0 roman, 1 bold, 2 italic, 3 bold italic
+  [ /L-Courier /L-Courier-Bold /L-Courier-Oblique /L-Courier-BoldOblique ]
+  exch get FindLatin
+} bind def
+/Tims { % bi Tims    return Times font dictionary
+        % bi= 0 roman, 1 bold, 2 italic, 3 bold italic
+  [ /L-Times-Roman /L-Times-Bold /L-Times-Italic /L-Times-BoldItalic ]
+  exch get FindLatin
+} bind def
+/Helv { % bi Helv    return Helvetica font dictionary
+        % bi= 0 roman, 1 bold, 2 italic, 3 bold italic
+  [ /L-Helvetica /L-Helvetica-Bold 
+    /L-Helvetica-Oblique /L-Helvetica-BoldOblique ]
+  exch get FindLatin
+} bind def
+/Symb { % bi Symb    return Symbol font dictionary
+        % bi= 0 roman, 1 bold, 2 italic, 3 bold italic
+  pop /Symbol findfont
+} bind def
+/NCen { % bi NCen    return New Century Schoolbook font dictionary
+        % bi= 0 roman, 1 bold, 2 italic, 3 bold italic
+  [ /L-NewCenturySchlbk-Roman /L-NewCenturySchlbk-Bold
+    /L-NewCenturySchlbk-Italic /L-NewCenturySchlbk-BoldItalic ]
+  exch get FindLatin
+} bind def
+/StdNames 16 dict begin % dictionary of fonts not yet re-encoded
+  /L-Courier /Courier def /L-Courier-Bold /Courier-Bold def
+  /L-Courier-Oblique /Courier-Oblique def
+  /L-Courier-BoldOblique /Courier-BoldOblique def
+  /L-Times-Roman /Times-Roman def /L-Times-Bold /Times-Bold def
+  /L-Times-Italic /Times-Italic def /L-Times-BoldItalic /Times-BoldItalic def
+  /L-Helvetica /Helvetica def /L-Helvetica-Bold /Helvetica-Bold def
+  /L-Helvetica-Oblique /Helvetica-Oblique def
+  /L-Helvetica-BoldOblique /Helvetica-BoldOblique def
+  /L-NewCenturySchlbk-Roman /NewCenturySchlbk-Roman def
+  /L-NewCenturySchlbk-Bold /NewCenturySchlbk-Bold def
+  /L-NewCenturySchlbk-Italic /NewCenturySchlbk-Italic def
+  /L-NewCenturySchlbk-BoldItalic /NewCenturySchlbk-BoldItalic def
+currentdict end def
+/FindLatin { % name FindLatin  return ISO Latin1 encoded font dictionary
+  dup StdNames exch known
+  { % this font has not yet been ISO Latin1 encoded
+    dup StdNames exch get findfont dup length dict begin
+      { 1 index /FID ne { def } { pop pop } ifelse } forall
+      /Encoding ISOLatin1Encoding def
+    currentdict end
+    exch dup StdNames exch undef exch definefont }
+  { findfont } ifelse
+} bind def
+
+/FNT {  % 0 Helv ptSize lnSpace FNT     (for example)
+        %  -or-  fontKey findfont ptSize lnSpace FNT
+  /LnSp exch FontRescale mul def
+  /PtSz exch FontRescale mul def
+  PtSz scalefont setfont
+  currentfont /FontBBox get aload pop
+  currentfont /FontMatrix get transform /TxYx exch def pop
+  currentfont /FontMatrix get transform /TxYn exch def pop
+} bind def
+
+% work around postscript bug or misfeature
+% -- search on result of search leaves interpreter in a bad state
+%    therefore copy results of a search before a second search
+%    or getinterval
+/SS1cpy { dup length string copy } bind def
+/SS3cpy { 3 { 3 1 roll SS1cpy } repeat } bind def
+
+% modify stringwidth and show operators to handle
+% escape sequences for symbol font
+% DC4c   renders character c in symbol font
+/SScleave { % string SScleave   returns substring first_char
+  dup 0 get exch dup length 1 sub 1 exch getinterval exch
+} bind def
+/SSstring { % int SSstring --> char
+  1 string dup 3 2 roll 0 exch put
+} bind def
+/SFwidth { % string SFwidth --> dx dy
+  (\024) search {
+    /wfn 0 def   % intialize width
+    { stringwidth pop wfn add /wfn exch def pop SS1cpy SScleave SSstring
+      currentfont exch /Symbol findfont PtSz scalefont setfont
+      stringwidth pop wfn add /wfn exch def setfont
+      SS1cpy (\024) search not { exit } if } loop
+    stringwidth pop wfn add /wfn exch def wfn 0
+  } { stringwidth } ifelse
+} bind def
+/SFshow {  % string SFshow
+  (\024) search {
+    { show pop SS1cpy SScleave SSstring
+      currentfont exch /Symbol findfont PtSz scalefont setfont show setfont
+      SS1cpy (\024) search not { exit } if } loop
+  } if
+  show
+} bind def
+
+% modify stringwidth and show operators to handle
+% escape sequences for superscripts and subscripts
+% DC1DC2superscriptDC1 
+% DC1DC3subscriptDC1
+/SSscale 0.75000 def  % scale factor for super or sub scripts
+/SSdown -0.11111 def  % fraction of PtSz to drop subscripts
+/SSup 0.36111 def     % fraction of PtSz to raise superscripts
+/SSwidth { % string SSwidth --> dx dy
+  % scan through string counting widths of normal and small parts of string
+  (\021) search {
+    /wn 0 def   % intialize normal width
+    /ws 0 def   % initialize small width
+    { SS3cpy SFwidth pop wn add /wn exch def
+      search pop SS3cpy SScleave pop SFwidth pop ws add /ws exch def
+      search not { exit } if } loop
+    SFwidth pop wn add /wn exch def
+    ws SSscale mul wn add 0
+  } { SFwidth } ifelse
+} bind def
+/SSshow { % string SSshow
+  % scan through string displaying normal and super or subscripts
+  % achieve scaling by mere rescaling of coordinates to avoid the
+  % hassle of actually rescaling the font
+  (\021) search {
+    { SS3cpy SFshow
+      search pop SS3cpy SScleave 8#022 eq { SSup } { SSdown } ifelse
+      TxYx mul dup 0 exch rmoveto exch
+      matrix currentmatrix exch SSscale SSscale scale SFshow setmatrix
+      neg 0 exch rmoveto
+      search not { exit } if } loop
+  } if
+  SFshow
+} bind def
+
+/OShw /pop load def
+/OPQ {  % 0-or-1 OPQ
+  0 eq { % if non-opaque
+    /OShw /SSshow load def
+  } {    % else opaque
+    /OShw {
+      gsave
+        dup SSwidth
+        0 TxYn                % stack now:   wx wy 0 ymin
+        rmoveto 2 copy rlineto 0 LnSp rlineto
+        neg exch neg exch rlineto closepath
+        1 setgray fill        % white out box text will go in
+      grestore
+      SSshow
+    } def
+  } ifelse
+} bind def
+
+% left, center, and right horizontal alignment
+/LF { } def
+/CN { dup SSwidth -0.5 mul exch -0.5 mul exch rmoveto } bind def
+/RT { dup SSwidth neg exch neg exch rmoveto } bind def
+
+% top, cap, half, base, bottom vertical alignment
+/TP { 0 LnSp neg rmoveto } bind def
+/CP { 0 TxYx TxYn add neg rmoveto } bind def
+/HF { 0 TxYx TxYn add -0.5 mul rmoveto} bind def
+/BA { } def
+/BT { 0 TxYn neg rmoveto } bind def
+
+/JUS {  % to get right-cap justification, e.g.-  /RT /CP JUS
+  load /YAdj exch def
+  load /XAdj exch def
+} bind def
+
+/XAD { /XAdj load exec } bind def
+/YAD { /YAdj load exec } bind def
+/OSH { /OShw load exec } bind def
+
+/T {   % Gist DrawText method (single line)
+       % line x y T
+  newpath moveto YAD XAD OSH
+} bind def
+
+/TX { XAD OSH currentpoint exch pop 0 exch LnSp sub moveto } bind def
+
+/TA {   % Gist DrawText method (multiple lines)
+        % [ line1 line2 ... lineN ] x1 y1 TA
+  gsave
+    newpath translate 0 0 moveto YAD
+    { TX } forall
+  grestore
+} bind def
+
+/TR {   % rotated DrawText method (multiple lines)
+        % [ line1 line2 ... lineN ] angle x1 y1 TA
+  gsave
+    newpath translate rotate 0 0 moveto YAD
+    { TX } forall
+  grestore
+} bind def
+
+/M {   % Gist DrawMarkers method (character)
+       %   char n M px1 py1 px2 py2 ... pxn pyn
+  newpath { GPT moveto HF CN dup show } repeat pop
+} bind def
+
+/MX { } def
+/M1 { 1 0 rlineto stroke } bind def                            % dot
+/M2 { PtSz 0.5 mul                                             % plus
+      dup -0.5 mul dup 0 rmoveto 1 index 0 rlineto
+      dup rmoveto 0 exch rlineto stroke
+} bind def
+/M3 { PtSz 0.5 mul                                             % asterisk
+      dup -0.5 mul dup 0 exch rmoveto 0 2 index rlineto
+      exch 0.866025 mul 2 copy -0.5 mul exch 0.5 mul rmoveto
+      exch 2 copy rlineto
+      dup 0 exch neg rmoveto
+      exch neg exch rlineto stroke
+} bind def
+/M4 { currentpoint PtSz 0.25 mul dup 0 rmoveto
+      0 360 arc stroke
+} bind def                                                     % circle
+/M5 { PtSz 0.5 mul                                             % cross
+      dup -0.5 mul dup rmoveto dup dup rlineto
+      dup neg 0 rmoveto dup neg rlineto stroke
+} bind def
+
+/MS {  % Gist DrawMarkers method (special marker type)
+       %   type n MS px1 py1 px2 py2 ... pxn pyn
+  gsave
+    exch dup 0 eq { % if type==0 (dot)
+      PtSz 0.1 mul setlinewidth 1 setlinecap
+    } {             % else type!=0 (not dot)
+      PtSz 0.05 mul setlinewidth 0 setlinecap
+    } ifelse
+    /MX [ /M1 /M2 /M3 /M4 /M5 ] 3 -1 roll get load def
+    [ ] 0 setdash
+    newpath { GPT moveto /MX load exec } repeat
+  grestore
+} bind def
+
+% ------------- DrawFilled and DrawCells primitives
+
+% Gist supports pseudo color implemented by color lookup tables; level 1
+% PostScript does not fully support this, but level 2 PostScript does.
+% This file attempts to be portable across either type, and to the
+% intermediate situation of a color printer with level 1 PostScript
+% and the CMYK color extensions (specifically the colorimage operator).
+%
+% The Gist PostScript driver operates in two modes:
+% 1. Color tables are NOT DUMPED into the PostScript file, and
+%    filled meshes and images use level 1 style grayscales.
+% 2. The color table IS DUMPED at the beginning of the page, and
+%    filled mesh and image colors are dumped as indices into this
+%    color table.
+%
+% In case 2, this PostScript code adopts one of three strategies:
+% A. If the PostScript interpreter is level 2 or higher, an Indexed
+%    color space is used.
+% B. If the colorimage operator is present (even thought the PostScript
+%    is otherwise at level 1), filled meshes use setrgbcolor, while
+%    images use colorimage with modfied transfer functions to mock
+%    up the color table.
+% C. Otherwise, filled meshes use setrgbcolor, and images use a modified
+%    transfer function to mock up the grayscale.
+
+% ---------------------------WARNING-------------------------------------
+% The I primitive may tinker with the device transfer functions.
+% I attempt to be compliant with Appendix I of the 2nd edition of
+% the "PostScript Language Reference Manual" (from Adobe Systems Inc).
+% ---------------------------WARNING-------------------------------------
+
+% The color table mode requires the following state info:
+% CTrgb    3*CTn string of rgb values normalized 0 - 255 (level 2)
+%          CTn array of gray values normalized 0 - 1 (level 1 mono)
+%          CTn array of 3 arrays rgb values normalized 0 - 1 (level 1 color)
+% CTn      length of the color table
+% CThi     CTn-1 (maximum legal color index)
+% CTsn     sample size (2^BitsPerSample-1)
+% When the CT command is given, it must be the first thing on a
+% new page.  When present, the color values are interpreted as
+% indexes into CTrgb for the F, G, and I commands.  When not present,
+% the color indices for F and G are expected to run from 0 to 255,
+% and for I from 0 to 2^depth-1.
+
+/CTrgb 0 array def
+/CTn 0 def
+/CThi 0 def
+/CTsn 0 def
+
+/CT {  % n CT r1 g1 b1 ... rn gn bn
+       % Each value should be 2 hex digits normalized so that
+       % 00 means no color and ff means full intensity
+  dup dup /CTn exch def 1 sub /CThi exch def
+  /CTrgb exch 3 mul string def
+  currentfile CTrgb readhexstring pop pop
+  /CTX load exec
+} bind def
+
+/CT1 { % prepare level 1 mono device for color table mode
+  CTrgb
+    /CTrgb CTn array def
+    gsave
+      0 1 CThi {
+        2 copy 3 mul 3 getinterval { 255.0 div } forall
+        setrgbcolor currentgray   % convert rgb to gray
+        CTrgb 3 1 roll put
+      } for
+    grestore
+  pop
+  /I /I1 load def      % set appropriate image command
+  /C /C1 load def   % set appropriate set fill color command
+  /CI { } def         % no fill color initialization
+} bind def
+/CT2 { % prepare level 1 color device for color table mode
+  CTrgb
+    /CTrgb CTn array def
+    0 1 CThi {
+      2 copy 3 mul 3 getinterval { 255.0 div } forall
+      3 array astore CTrgb 3 1 roll put
+    } for
+  pop
+  /I /I2 load def      % set appropriate image command
+  /C /C2 load def   % set appropriate set fill color command
+  /CI { } def         % no fill color initialization
+} bind def
+/CT3 { % prepare level 2 device for color table mode
+  % proper postscript would allow use of setcolorspace CI, setcolor C3
+  % with here to pop omitted
+  % use of setcolorspace here is workaround for adobe illustrator 10 bugs
+  CTrgb
+    /CTrgx CTn array def
+    0 1 CThi {
+      2 copy 3 mul 3 getinterval { 255.0 div } forall
+      3 array astore CTrgx 3 1 roll put
+    } for
+  pop
+  /I /I3 load def      % set appropriate image command
+  /C /C3 load def   % set appropriate set fill color command
+  % /CI { [ /Indexed /DeviceRGB CThi CTrgb ] setcolorspace } def
+  /CI { } def
+} bind def
+
+/F {   % Gist DrawFill method
+       %   n F px1 py1 px2 py2 ... pxn pyn
+  newpath GPT moveto   % new path starting at (px1,py1)
+  1 sub { GPT lineto } repeat closepath fill
+} bind def
+
+/E {   % Gist DrawFill method with edges
+       %   n E px1 py1 px2 py2 ... pxn pyn (reset color) 0 E
+  dup 0 eq {
+    pop stroke   % this must be deferred until color has been reset
+  } {
+    newpath GPT moveto   % new path starting at (px1,py1)
+    1 sub { GPT lineto } repeat closepath gsave fill grestore
+  } ifelse
+} bind def
+
+/GRGB { % 16#xxbbggrr {indexed_proc} GRGB -
+  exch dup 255 le { exch exec } { dup 255 and 255.0 div exch dup
+    -8 bitshift 255 and 255.0 div exch -16 bitshift 255 and 255.0 div
+    setrgbcolor } ifelse
+} bind def
+/CI { } def
+/C { } def  % color C
+/C0 {   % (no color table)
+  { 255.0 div setgray } GRGB
+} bind def
+/C1 {   % (color table but level 1 mono device)
+  { CTrgb exch get setgray } GRGB
+} bind def
+/C2 {  % (color table and level 1 color device)
+  { CTrgb exch get aload pop setrgbcolor } GRGB
+} bind def
+/C3 {  % (color table and level 2)
+  % { setcolor } GRGB
+  { CTrgx exch get aload pop setrgbcolor } GRGB
+} bind def
+
+/I { } def
+/I0 {  % Gist DrawCells method (no color table)
+       %   width height depth qx-px qy-py px py I ...hexstring...
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave                             % save CTM on stack
+    translate scale                 % map unit square to (px,py),(qx,qy)
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]     % matrix mapping image to unit square
+    { currentfile ROW readhexstring pop } image
+  grestore                          % restore saved CTM
+} bind def
+/I1 {  % Gist DrawCells method (color table, level 1 PostScript mono)
+       %   width height depth qx-px qy-py px py I ...hexstring...
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave                             % save CTM on stack
+    translate scale                 % map unit square to (px,py),(qx,qy)
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]     % matrix mapping image to unit square
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get } /exec load
+      currenttransfer /exec load ] cvx settransfer
+      % Note: transfer function is actually called first for all CTsn+1
+      %       possible values before image reads any data, at
+      %       least with the PostScript in some printers
+    { currentfile ROW readhexstring pop } image
+  grestore                          % restore saved CTM and transfer
+} bind def
+/I2 {  % Gist DrawCells method (color table, level 1 PostScript color)
+       %   width height depth qx-px qy-py px py I ...hexstring...
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave                             % save CTM on stack
+    translate scale                 % map unit square to (px,py),(qx,qy)
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]     % matrix mapping image to unit square
+    currentcolortransfer
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 0 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 1 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 2 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 0 get } /exec load
+      7 -1 roll /exec load ] cvx
+    setcolortransfer
+    { currentfile ROW readhexstring pop } { ROW } { ROW }
+    true 3 colorimage
+  grestore                          % restore saved CTM and transfer
+} bind def
+/I3 {  % Gist DrawCells method (color table, level 2 PostScript)
+       %   width height depth qx-px qy-py px py I3 ...hexstring...
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave                             % save CTM on stack
+    translate scale                 % map unit square to (px,py),(qx,qy)
+    [ /Indexed /DeviceRGB CThi CTrgb ] setcolorspace
+    7 dict begin
+      /ImageType 1 def
+      /BitsPerComponent exch def
+      /Height exch def
+      /Width exch def
+      /ImageMatrix [ Width 0 0 Height 0 0 ] def
+      /Decode [ 0 1 BitsPerComponent bitshift 1 sub ] def
+      /DataSource { currentfile ROW readhexstring pop } def
+    currentdict end image
+  grestore                          % restore saved CTM
+} bind def
+
+/J { } def
+/J1 {  % Gist DrawCells method (rgb mode, level 1 PostScript)
+       %   width height qx-px qy-py px py J ...hexstring...
+  /ROW 6 index 3 mul string def
+  4 2 roll 2 index add exch 3 index add exch
+  gsave                             % save CTM on stack
+    % just draw a box with an X throught it -- no colorimage
+    0 setgray 20 setlinewidth 0 setlinejoin 2 setlinecap
+    3 index 3 index moveto 3 index 1 index lineto 1 index 1 index lineto
+    1 index 3 index lineto closepath stroke 0 setlinecap
+    3 index 3 index moveto 1 index 1 index lineto stroke
+    1 index 3 index moveto 3 index 1 index lineto stroke pop pop pop pop
+    % still need to read hexstring and clean up stack
+    exch pop { currentfile ROW readhexstring pop } repeat
+  grestore                          % restore saved CTM and transfer
+} bind def
+/J2 {  % Gist DrawCells method (rgb mode, level 1 PostScript color)
+       %   width height qx-px qy-py px py J ...hexstring...
+  /ROW 6 index 3 mul string def
+  gsave                             % save CTM on stack
+    translate scale                 % map unit square to (px,py),(qx,qy)
+    8 [ 3 index 0 0 5 index 0 0 ]   % matrix mapping image to unit square
+    { currentfile ROW readhexstring pop }
+    false 3 colorimage
+  grestore                          % restore saved CTM and transfer
+} bind def
+
+/GI {  % Gist initialize page
+  % Rescale graphics to units of 1/20 point to allow 1440 dpi resolution
+  % using integer coordinates (assuming that the coordinate units are
+  % initially 1 point, as for a start from scratch)
+  % Default orientation assumed to be Portrait.  The LAND command can
+  % be used at the beginning of a page to set up for Landscape mode,
+  % assuming 8.5x11 paper.
+  0.05 0.05 scale
+  10 setlinewidth           % 1/2 point lines
+
+  % Reset graphics to a known default state matching Gist defaults
+  0 Cour 240 240 FNT  % Courier 12 point
+  0 OPQ               % transparent (non-opaque) text
+  /LF /BA JUS         % left justify baseline of text
+
+  % Set default no color table mode.  The CT command can be used at the
+  % beginning of each page to set up for color table mode.
+  /I /I0 load def      % appropriate image command
+  /C /C0 load def      % appropriate set fill color command
+  /CI { } def          % no fill color initialization
+} bind def
+
+end   % GistPrimitives resource directory
+%%EndResource
+
+%%EndProlog
+
+% -----------------------------------------------------------------------
+
+%%BeginSetup
+
+% Push GistPrimitives dictionary onto dictionary stack.  Popped just
+% before trailer.
+GistPrimitives begin
+
+% Detect font rescaling or supply default
+/FontRescale where { pop } { /FontRescale 1 def } ifelse
+
+% Determine whether this is a level 1, extended level 1, or level 2
+% PostScript interpreter and install appropriate color table mode
+% initialization.  This file should be printable on most devices, even
+% in the color table mode.
+/languagelevel where { pop languagelevel } { 1 } ifelse
+2 lt { % this is level 1 PostScript
+  /colorimage where { % color extension is present
+    % assume that if colorimage is available,
+    % setcolortransfer and currentcolortransfer are too
+    % (These are all listed as CMYK extensions to PostScript level 1)
+    pop
+    /CTX /CT2 load def
+    /J /J2 load def
+  } {                 % color extension not present
+    /CTX /CT1 load def
+    /J /J1 load def
+  } ifelse
+} {    % this is level 2 PostScript
+  /CTX /CT3 load def
+  /J /J2 load def
+} ifelse
+
+end
+
+%%EndSetup
+
+% -----------------------------------------------------------------------
+
+% -----------------------------------------------------------------------
+
+%%Page: 1 1
+%%PageBoundingBox: (atend)
+%%BeginPageSetup
+GistPrimitives begin /PG save def GI
+%%EndPageSetup
+/languagelevel where { pop languagelevel } { 1 } ifelse
+2 lt { % this is level 1 PostScript
+  /colorimage where { % color extension is present
+    % assume that if colorimage is available,
+    % setcolortransfer and currentcolortransfer are too
+    % (These are all listed as CMYK extensions to PostScript level 1)
+    pop
+    (PostScript is level 1 color) 1000 12000 T
+  } {                 % color extension not present
+    (PostScript is level 1 mono) 1000 12000 T
+  } ifelse
+} {    % this is level 2 PostScript
+    (PostScript is level 2) 1000 12000 T
+} ifelse
+( \() show version show (\)) show 
+/languagelevel where { pop languagelevel } { 1 } ifelse
+1 gt {
+  (  product: ) show product show
+  ( rev: ) show revision 20 string cvs show
+} if
+(Available fonts:) 1000 11700 T
+FontDirectory dup length array exch 0 exch
+  { pop 80 string cvs 3 copy put pop 1 add } forall pop 4000 11700 TA
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 0 0 612 792
+
+%%Trailer
+%%Pages: 1
+%%BoundingBox: 0 0 612 792
+%%DocumentFonts: Courier

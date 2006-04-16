@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# Created by Pearu Peterson, August 2002
+
+import os
+join = os.path.join
+
+def configuration(parent_package='',top_path=None):
+    from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.system_info import get_info,FFTWNotFoundError,\
+         DJBFFTNotFoundError
+    config = Configuration('fftpack',parent_package, top_path)
+    fft_opt_info = get_info('fft_opt')
+
+    config.add_data_dir('tests')
+
+    config.add_library('dfftpack',
+                       sources=[join('dfftpack','*.f')])
+
+    sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
+               'src/zfftnd.c']
+
+    config.add_extension('_fftpack',
+                         sources=sources,
+                         libraries=['dfftpack'],
+                         extra_info = fft_opt_info
+                         )
+
+    config.add_extension('convolve',
+                         sources = ['convolve.pyf','src/convolve.c'],
+                         libraries = ['dfftpack'],
+                         extra_info = fft_opt_info
+                         )
+    return config
+
+if __name__ == '__main__':
+    from numpy.distutils.core import setup
+    from fftpack_version import fftpack_version
+    setup(version=fftpack_version,
+          description='fftpack - Discrete Fourier Transform package',
+          author='Pearu Peterson',
+          author_email = 'pearu@cens.ioc.ee',
+          maintainer_email = 'scipy-dev@scipy.org',
+          license = 'SciPy License (BSD Style)',
+          **configuration(top_path='').todict())

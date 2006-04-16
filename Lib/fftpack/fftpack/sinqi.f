@@ -1,0 +1,5 @@
+      SUBROUTINE SINQI (N,WSAVE)
+      DIMENSION       WSAVE(*)
+      CALL COSQI (N,WSAVE)
+      RETURN
+      END
