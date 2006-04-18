@@ -1,8 +1,11 @@
 #from base import Struct, pause
 import numpy as nm
 import scipy.sparse as sp
-import _umfpack as _um
 import re
+try: # Silence the error...
+    import _umfpack as _um
+except:
+    raise
 
 __doc__ = """
 Interface to the UMFPACK library.
