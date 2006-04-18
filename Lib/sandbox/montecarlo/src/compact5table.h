@@ -1,7 +1,7 @@
-/* Include file for discrete random variable generation with Marsaglia's compact
+/* Header file for discrete random variable generation with Marsaglia's compact
  * 5-table algorithm. 
  *
- * Copyright: Ed Schofield, 2005
+ * Copyright: Ed Schofield, 2005-6
  * License: BSD-style (see LICENSE.txt at root of scipy tree)
  */
 
@@ -22,14 +22,14 @@ typedef struct sampler_t
 
 /* Represent probabilities as 30-bit integers and create the 5 tables.
  * The prob mass function is specified as n values p(j) = weights[j]. */
-Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed);
+Sampler* init_sampler5tbl(double* weights, unsigned long n, unsigned long seed);
 
 /* Deallocate it */
 void destroy_sampler5tbl(Sampler*);
 
 /* Discrete random variable generating functions using 5 compact tables */
-uint32_t Dran(Sampler* sampler);  /* for a single variate */
-void Dran_array(Sampler*, uint32_t* output, long samplesize);  /* array version */
+unsigned long Dran(Sampler* sampler);  /* for a single variate */
+void Dran_array(Sampler*, unsigned long* output, unsigned long samplesize);  /* array version */
 
 
 

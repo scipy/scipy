@@ -6,7 +6,7 @@
  * different random number generator, the Mersenne Twister in Jean-Sebastien
  * Roy's RandomKit.
  *
- * Copyright: Ed Schofield, 2005
+ * Copyright: Ed Schofield, 2005-6
  * License: BSD-style (see LICENSE.txt at root of scipy tree)
  */
 
@@ -20,17 +20,22 @@
 #define dg(m,k) ((m>>(30-6*k))&63)  /* gets kth digit of m (base 64) */
 #define MAX(a,b)  ((a)>(b)?(a):(b))
 
-/* Represent probabilities as 30-bit integers and create the 5 tables.
-   We assume the n weights are all non-negative and that their sum is strictly
-   positive. */
-Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
+
+/* init_sampler5tbl:  Initialize the table sampler, creating the lookup tables
+ * and representing the pmf values as 30-bit integers.  We assume the n weights
+ * are all non-negative and that their sum is strictly positive.
+   
+ * If the provided seed for the RNG is zero, obtain a random seed from
+ * /dev/urandom or the system clock.
+ */
+Sampler* init_sampler5tbl(double* weights, unsigned long n, unsigned long seed)
 {
     Sampler* sampler = NULL;
     int32_t *AA,*BB,*CC,*DD,*EE;      /* Tables for condensed table-lookup */
 
     int32_t *P;         /* probabilities as an array of 30-bit integers */
     int32_t sizeAA=0, sizeBB=0, sizeCC=0, sizeDD=0, sizeEE=0;
-    long i;             /* the number of table elements */
+    unsigned long i;             /* the number of table elements */
     int32_t m, k, j;    /* the probs are stored as 30-bit integers in a 32-bit
                            data type */
     double sum = 0.0;
@@ -39,6 +44,10 @@ Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
     uint32_t random_value;
     double random_double;
 
+    /* Normalize weights */
+    for (i=0; i<n; i++)
+        sum += weights[i];
+    
     if(sum <= 0)
     {
         fprintf(stderr, "Error: invalid arguments to init_sampler5tbl()." \
@@ -60,12 +69,12 @@ Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
     sampler->prob1event = -1;
 
     /* Now seed the RandomKit RNG */
-    rk_seed(seed, &sampler->state);
-    
-    /* Normalize weights */
-    for (i=0; i<n; i++)
-        sum += weights[i];
-    
+    if (seed != 0)
+        rk_seed(seed, &sampler->state);
+    else
+        rk_randomseed(&sampler->state);  /* use a random seed from /dev/urandom or the
+                                   clock */
+
     /* Now create the 5 tables */ 
     /* Get table sizes, then malloc */
     for(i=0; i<n; i++)
@@ -149,7 +158,8 @@ Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
 }
 
 
-/* Destroys the sampler created by start() and frees memory */
+/* destroy_sampler5tbl:  Destroy the sampler created by start() and free memory
+ */
 void destroy_sampler5tbl(Sampler* sampler)
 {
     if (sampler->prob1event == -1  /* if there is no prob1event */ )
@@ -164,9 +174,9 @@ void destroy_sampler5tbl(Sampler* sampler)
 }
 
 
-/* Discrete random variable generating function. Uses the provided compact
- * 5-table sampler. */
-uint32_t Dran(Sampler* sampler)
+/* Dran:  Discrete random variable generating function using the specified
+ * sampler */
+unsigned long Dran(Sampler* sampler)
 {
     uint32_t j;
     if (sampler->prob1event > -1)
@@ -200,12 +210,12 @@ uint32_t Dran(Sampler* sampler)
 }
 
 
-/* Array version of discrete random variable generating function using the
- * compact 5-table representation. */
-void Dran_array(Sampler* sampler, uint32_t* output, long samplesize)
+/* Dran_array:  Array version of the discrete random variable generating
+ * function using the provided sampler */
+void Dran_array(Sampler* sampler, unsigned long* output, unsigned long samplesize)
 {
     uint32_t j;
-    long i;
+    unsigned long i;
     
     if (sampler->prob1event > -1)
     {
