@@ -1,14 +1,26 @@
+/* Python module for fast variate generation from a discrete distribution.  Uses
+ * Marsaglia's compact 5-table method, as described in his paper 'Fast
+ * generation of discrete random variables' in the Journal of Statistical
+ * Software, July 2004, vol 11, issue 3.  
+ *
+ * The underlying algorithms are in the file sampler5tbl.c.  This code is based
+ * upon the C implementation that accompanies that paper, but is simpler, and
+ * uses a different random number generator, the Mersenne Twister in
+ * Jean-Sebastien Roy's RandomKit.
+ *
+ * Copyright: Ed Schofield, 2005-6
+ * License: BSD-style (see LICENSE.txt at root of scipy tree)
+ */
+
+
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include "sampler5tbl.h"
+#include "compact5table.h"
 
 // Function prototypes:
-static PyArrayObject* PyArray_Intsample(Sampler* mysampler, int size);
+static PyArrayObject* PyArray_Intsample(Sampler* mysampler, unsigned long size);
 static PyObject* sample(PyObject *self, PyObject *args, PyObject *keywords);
 
-
-// Global variable:
-// Sampler* sampler_global;
 
 // IntSampler type
 typedef struct {
@@ -16,6 +28,7 @@ typedef struct {
     Sampler* pSampler;
 } IntSampler;
 
+//    "destroy" should be called automatically upon deletion
 static void IntSampler_destroy(IntSampler* self)
 {
     // printf("[Started destroying sampler]\n");
@@ -42,7 +55,10 @@ static int
 IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
 {
     PyArrayObject *pmf_table;
-    int k;  // size of the table
+    int k;                              /* size of the table */
+    unsigned long seed = 0;             /* Initialize with random seed. This can
+                                         * be set explicitly by calling seed().
+                                         */
 
     // printf("[Started initializing sampler]\n");
 
@@ -63,7 +79,7 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
 
     // printf("[Array is 1D]\n");
 
-    /* check that the datatype is float64, (C double) */
+    /* check that the data type is float64, (C double) */
     if (PyArray_DESCR(pmf_table)->type_num != PyArray_DOUBLE) {
       PyErr_SetString(PyExc_ValueError,
                       "the pmf table must be of type float64");
@@ -74,7 +90,7 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
 
     k = pmf_table->dimensions[0];    /* length of the array */
 
-    self->pSampler = init_sampler5tbl((double*) pmf_table->data, k);
+    self->pSampler = init_sampler5tbl((double*) pmf_table->data, k, seed);
     if (self->pSampler == NULL)
     {
         Py_DECREF(self);
@@ -95,16 +111,6 @@ static char sample__doc__[] = \
   "sample(size): return an array with a random discrete sample\n"\
   "of the given size from the probability mass function specified when\n"\
   "initializing the sampler.\n";
-  // "\n"\
-  // "If the optional argument 'probs' is zero (the default), this function\n"\
-  // "returns only the generated sample.\n"
-  // "\n"\
-  // "If 'probs' is 1, it returns a tuple (sample, prob), where prob is an\n"\
-  // "array of length len(sample) for which probs[i] is the (normalized) pmf\n"\
-  // "value of sample[i] in the table used to initialize the sampler.\n"\
-  // "\n"\
-  // "If 'probs' is 2, it returns a tuple (sample, logprob), where logprob\n"\
-  // "contains the natural logarithms of the probabilities of the sample points.";
                                                       
 static PyObject*
 sample(PyObject *self, PyObject *args, PyObject *keywords)
@@ -137,10 +143,10 @@ sample(PyObject *self, PyObject *args, PyObject *keywords)
 
 
 static PyArrayObject*
-PyArray_Intsample(Sampler* mysampler, int size)
+PyArray_Intsample(Sampler* mysampler, unsigned long size)
 {
     PyArrayObject* samplearray;
-    long* ptr;
+    unsigned long* ptr;
     
     int ndim = 1;
     int dims[1] = {size};
@@ -149,7 +155,7 @@ PyArray_Intsample(Sampler* mysampler, int size)
                                                      typenum);
     if (samplearray == NULL) return NULL;
 
-    ptr = (long*) PyArray_DATA(samplearray);
+    ptr = (unsigned long*) PyArray_DATA(samplearray);
     Dran_array(mysampler, ptr, size);
 
     return samplearray;
@@ -158,9 +164,9 @@ PyArray_Intsample(Sampler* mysampler, int size)
  
 
 /* Doc strings: */
-// static char sumarray__doc__[] = "sumarray(a)";
 static char intsampler__doc__[] = \
-  "A module allowing fast sampling from a given discrete distribution.\n"\
+  "A module allowing fast sampling from a discrete distribution given its\n"\
+  "probability mass function.\n"\
   "\n"\
   "Use the syntax:\n"\
   ">>> s = _intsampler(table)\n"\
@@ -170,7 +176,8 @@ static char intsampler__doc__[] = \
   "x       0           1           ...     k-1\n"\
   "p(x)    table[0]    table[1]            table[k-1]\n"\
   "\n"\
-  "The values of table[i] are normalized by dividing by sum(table).\n";
+  "The values of table[i] need not be normalized to sum to 1, but must be\n"\
+  "non-negative.\n";
 
 
 
@@ -186,9 +193,6 @@ static PyMethodDef IntSampler_methods[] = {
          (PyCFunction)sample,
          METH_VARARGS | METH_KEYWORDS,
          sample__doc__},
-        //    "destroy" should be called automatically upon deletion
-//     "Free the memory and destroy an existing sample of sentences."},
-//        {"destroy",  destroy, METH_VARARGS, destroy__doc__},
         {NULL,          NULL}           /* sentinel */
 };
 
@@ -237,7 +241,7 @@ static PyTypeObject IntSamplerType = {
 
 
 
-#ifndef PyMODINIT_FUNC  /* declarations for DLL import/export */
+#ifndef PyMODINIT_FUNC  /* declarations for shared library import/export */
 #define PyMODINIT_FUNC void
 #endif
 PyMODINIT_FUNC
@@ -269,7 +273,7 @@ init_intsampler(void)
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
 
-    s = PyString_FromString("2.0-alpha4");
+    s = PyString_FromString("2.0-alpha5");
     PyDict_SetItemString(d, "__version__", s);
     Py_DECREF(s);
 

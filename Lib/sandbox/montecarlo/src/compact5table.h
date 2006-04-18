@@ -6,7 +6,7 @@
  */
 
 #include <stdint.h>
-#include "mtrand/randomkit.h"
+#include "randomkit.h"
 
 typedef struct sampler_t
 {

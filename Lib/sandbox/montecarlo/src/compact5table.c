@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "compact5table.h"
-#include "mtrand/randomkit.h"
+#include "randomkit.h"
 
 #define dg(m,k) ((m>>(30-6*k))&63)  /* gets kth digit of m (base 64) */
 #define MAX(a,b)  ((a)>(b)?(a):(b))
@@ -39,10 +39,6 @@ Sampler* init_sampler5tbl(double* weights, unsigned long n, unsigned long seed)
     int32_t m, k, j;    /* the probs are stored as 30-bit integers in a 32-bit
                            data type */
     double sum = 0.0;
-    int seedhigh, seedlow;
-
-    uint32_t random_value;
-    double random_double;
 
     /* Normalize weights */
     for (i=0; i<n; i++)
