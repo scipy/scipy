@@ -1,10 +1,11 @@
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, spdiags
 import _superlu
 
-try:
-    import umfpack
+import umfpack
+if hasattr( umfpack, 'UMFPACK_OK' ):
     isUmfpack = True
-except:
+else:
+    del umfpack
     isUmfpack = False
 useUmfpack = True
 

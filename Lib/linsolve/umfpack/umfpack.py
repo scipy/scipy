@@ -1,11 +1,11 @@
 #from base import Struct, pause
 import numpy as nm
 import scipy.sparse as sp
-import re
-try: # Silence the error...
+import re, imp
+try: # Silence import error.
     import _umfpack as _um
 except:
-    raise
+    _um = None
 
 __doc__ = """
 Interface to the UMFPACK library.
@@ -109,11 +109,6 @@ def updateDictWithVars( adict, module, pattern, group = None ):
         adict[outName] = module.__dict__[name]
 
     return adict
-
-##
-# Export UMFPACK constants from _um.
-umfDefines = updateDictWithVars( {}, _um, 'UMFPACK_.*' )
-locals().update( umfDefines )
 
 ##
 # How to list these automagically?
@@ -240,54 +235,60 @@ umfInfo = [
     'UMFPACK_ORDERING_GIVEN',
 ]
 
-umfStatus = {
-    UMFPACK_OK : 'UMFPACK_OK',
-    UMFPACK_WARNING_singular_matrix : 'UMFPACK_WARNING_singular_matrix',
-    UMFPACK_WARNING_determinant_underflow : 'UMFPACK_WARNING_determinant_underflow',
-    UMFPACK_WARNING_determinant_overflow : 'UMFPACK_WARNING_determinant_overflow',
-    UMFPACK_ERROR_out_of_memory : 'UMFPACK_ERROR_out_of_memory',
-    UMFPACK_ERROR_invalid_Numeric_object : 'UMFPACK_ERROR_invalid_Numeric_object',
-    UMFPACK_ERROR_invalid_Symbolic_object : 'UMFPACK_ERROR_invalid_Symbolic_object',
-    UMFPACK_ERROR_argument_missing : 'UMFPACK_ERROR_argument_missing',
-    UMFPACK_ERROR_n_nonpositive : 'UMFPACK_ERROR_n_nonpositive',
-    UMFPACK_ERROR_invalid_matrix : 'UMFPACK_ERROR_invalid_matrix',
-    UMFPACK_ERROR_different_pattern : 'UMFPACK_ERROR_different_pattern',
-    UMFPACK_ERROR_invalid_system : 'UMFPACK_ERROR_invalid_system',
-    UMFPACK_ERROR_invalid_permutation : 'UMFPACK_ERROR_invalid_permutation',
-    UMFPACK_ERROR_internal_error : 'UMFPACK_ERROR_internal_error',
-    UMFPACK_ERROR_file_IO : 'UMFPACK_ERROR_file_IO',
-}
+if _um:
+    ##
+    # Export UMFPACK constants from _um.
+    umfDefines = updateDictWithVars( {}, _um, 'UMFPACK_.*' )
+    locals().update( umfDefines )
 
-umfSys = [
-    UMFPACK_A,
-    UMFPACK_At,
-    UMFPACK_Aat,
-    UMFPACK_Pt_L,
-    UMFPACK_L,
-    UMFPACK_Lt_P,
-    UMFPACK_Lat_P,
-    UMFPACK_Lt,
-    UMFPACK_U_Qt,
-    UMFPACK_U,
-    UMFPACK_Q_Ut,
-    UMFPACK_Q_Uat,
-    UMFPACK_Ut,
-    UMFPACK_Uat,
-]
 
-# Real, complex.
-umfSys_transposeMap = [
-    {UMFPACK_A : UMFPACK_At,
-     UMFPACK_At : UMFPACK_A,
-     UMFPACK_Aat : UMFPACK_A},
-    {UMFPACK_A : UMFPACK_Aat,
-     UMFPACK_Aat : UMFPACK_A}
-]
+    umfStatus = {
+        UMFPACK_OK : 'UMFPACK_OK',
+        UMFPACK_WARNING_singular_matrix : 'UMFPACK_WARNING_singular_matrix',
+        UMFPACK_WARNING_determinant_underflow : 'UMFPACK_WARNING_determinant_underflow',
+        UMFPACK_WARNING_determinant_overflow : 'UMFPACK_WARNING_determinant_overflow',
+        UMFPACK_ERROR_out_of_memory : 'UMFPACK_ERROR_out_of_memory',
+        UMFPACK_ERROR_invalid_Numeric_object : 'UMFPACK_ERROR_invalid_Numeric_object',
+        UMFPACK_ERROR_invalid_Symbolic_object : 'UMFPACK_ERROR_invalid_Symbolic_object',
+        UMFPACK_ERROR_argument_missing : 'UMFPACK_ERROR_argument_missing',
+        UMFPACK_ERROR_n_nonpositive : 'UMFPACK_ERROR_n_nonpositive',
+        UMFPACK_ERROR_invalid_matrix : 'UMFPACK_ERROR_invalid_matrix',
+        UMFPACK_ERROR_different_pattern : 'UMFPACK_ERROR_different_pattern',
+        UMFPACK_ERROR_invalid_system : 'UMFPACK_ERROR_invalid_system',
+        UMFPACK_ERROR_invalid_permutation : 'UMFPACK_ERROR_invalid_permutation',
+        UMFPACK_ERROR_internal_error : 'UMFPACK_ERROR_internal_error',
+        UMFPACK_ERROR_file_IO : 'UMFPACK_ERROR_file_IO',
+    }
+
+    umfSys = [
+        UMFPACK_A,
+        UMFPACK_At,
+        UMFPACK_Aat,
+        UMFPACK_Pt_L,
+        UMFPACK_L,
+        UMFPACK_Lt_P,
+        UMFPACK_Lat_P,
+        UMFPACK_Lt,
+        UMFPACK_U_Qt,
+        UMFPACK_U,
+        UMFPACK_Q_Ut,
+        UMFPACK_Q_Uat,
+        UMFPACK_Ut,
+        UMFPACK_Uat,
+    ]
+
+    # Real, complex.
+    umfSys_transposeMap = [
+        {UMFPACK_A : UMFPACK_At,
+         UMFPACK_At : UMFPACK_A,
+         UMFPACK_Aat : UMFPACK_A},
+        {UMFPACK_A : UMFPACK_Aat,
+         UMFPACK_Aat : UMFPACK_A}
+    ]
 
 umfFamilyTypes = {'di' : int, 'dl' : long, 'zi' : int, 'zl' : long}
 umfRealTypes = ('di', 'dl')
 umfComplexTypes = ('zi', 'zl')
-
 
 ##
 # 02.01.2005
