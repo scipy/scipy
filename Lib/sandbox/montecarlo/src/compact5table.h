@@ -10,14 +10,14 @@
 
 typedef struct sampler_t
 {
-    int32_t t1,t2,t3,t4;  /* limits for table lookups */
-    int32_t *AA,*BB,*CC,*DD,*EE;      /* Tables for condensed table-lookup */
+    int32_t t1,t2,t3,t4;           /* limits for table lookups */
+    int32_t *AA,*BB,*CC,*DD,*EE;   /* tables for condensed table-lookup */
     int32_t sizeEE;
     long prob1event;     /* If this is >= 0, this sample point x=prob1event has
                           * p(x) = 1, so the lookup table sampling method won't
                           * work.  (We just let Dran() spit out this value
                           * instead.)  */
-    rk_state state;      /* state variable for the RandomKit RNG. */
+    rk_state state;                /* state variable for the RandomKit RNG. */
 } Sampler;
 
 /* Represent probabilities as 30-bit integers and create the 5 tables.

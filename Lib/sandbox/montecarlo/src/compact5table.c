@@ -20,8 +20,6 @@
 #define dg(m,k) ((m>>(30-6*k))&63)  /* gets kth digit of m (base 64) */
 #define MAX(a,b)  ((a)>(b)?(a):(b))
 
-// static uint32_t jxr=182736531; /* Xorshift RNG */
-
 /* Represent probabilities as 30-bit integers and create the 5 tables.
    We assume the n weights are all non-negative and that their sum is strictly
    positive. */
@@ -56,23 +54,13 @@ Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
         P[i] = weights[i]/sum * (1<<30);
     
     sampler = malloc(sizeof(Sampler));
-    /*  Initialize prob1event to -1, indicating that there's no event with prob=1
-     *  (in which case the lookup table sampling method wouldn't work)
+    /*  Initialize prob1event to -1, indicating that there's no event with
+     *  prob=1 (in which case the lookup table sampling method wouldn't work)
      */
     sampler->prob1event = -1;
 
     /* Now seed the RandomKit RNG */
     rk_seed(seed, &sampler->state);
-
-    // /* We need to do this in a way that supports non-SVID C platforms.
-    //  * We use rand() twice, constructing a 32-bit integer out of the
-    //  * two results. */
-    // srand( (unsigned int) time( NULL ));
-    // seedhigh = rand();
-    // seedlow = rand();
-
-    // /* Construct a 30-bit random integer out of these. */
-    // jxr = ((seedhigh & 0x3fff) << 16) + (seedlow & 0xffff);
     
     /* Normalize weights */
     for (i=0; i<n; i++)
@@ -83,7 +71,11 @@ Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
     for(i=0; i<n; i++)
     {
         m=P[i];
-        sizeAA+=dg(m,1);sizeBB+=dg(m,2);sizeCC+=dg(m,3);sizeDD+=dg(m,4);sizeEE+=dg(m,5);
+        sizeAA+=dg(m,1);
+        sizeBB+=dg(m,2);
+        sizeCC+=dg(m,3);
+        sizeDD+=dg(m,4);
+        sizeEE+=dg(m,5);
     }
     
     if (sizeAA+sizeBB+sizeCC+sizeDD+sizeEE <= 0)
@@ -102,8 +94,8 @@ Sampler* init_sampler5tbl(double* weights, long n, unsigned long seed)
         }
         // if (sampler->prob1event == -1)
         // {
-        //     /* This has been tested above, so I think this should never occur...
-        //     */
+        //     /* This has been tested above, so I think this should never
+        //        occur...  */
         //     fprintf(stderr, "Error: invalid arguments to init_sampler5tbl()." \
         //             "The sum of the probabilities is zero.  Aborting!\n");
         //     free(P);
@@ -172,14 +164,14 @@ void destroy_sampler5tbl(Sampler* sampler)
 }
 
 
-/* Discrete random variable generating function */
-/* Uses 5 compact tables */
+/* Discrete random variable generating function. Uses the provided compact
+ * 5-table sampler. */
 uint32_t Dran(Sampler* sampler)
 {
     uint32_t j;
     if (sampler->prob1event > -1)
     {
-        /* One event x has probability p(x) = 1.  Spit it out! */
+        /* One event x has probability p(x) = 1.  Return it. */
         return sampler->prob1event;
     }
 
@@ -192,14 +184,15 @@ uint32_t Dran(Sampler* sampler)
     if(j < sampler->t4) return sampler->DD[(j-sampler->t3)>>6];
     
     /* It seems we need to deal specially with the boundary cases where
-     *     jxr >= 2^30-1 == 1073741823
+     *     j >= 2^30-1 == 1073741823
      */
     if (j - sampler->t4 >= sampler->sizeEE)
     {
-        // The random number generated is larger than the sizes of all tables.
-        // This should happen only very rarely. For now, just generate another
-        // random number.
-        fprintf(stderr, "Debug: random number is larger than the sizes of all tables!");
+        /* The random number generated is larger than the sizes of all tables.
+         * This should happen only very rarely. For now, just generate another
+         * random number. */
+        fprintf(stderr, 
+            "Debug: random number is larger than the sizes of all tables!");
         return Dran(sampler);
     }
     else
@@ -238,15 +231,17 @@ void Dran_array(Sampler* sampler, uint32_t* output, long samplesize)
         else if(j < sampler->t4) {
             output[i] = sampler->DD[(j-sampler->t3)>>6];
         }
-        // It seems we need to deal specially with the boundary cases where
-        //     jxr >= 2^30-1 == 1073741823
+        /* It seems we need to deal specially with the boundary cases where
+         *     j >= 2^30-1 == 1073741823
+         */
         else if (j - sampler->t4 >= sampler->sizeEE)
         {
-            /* The random number generated is larger than the sizes of all tables.
-             * This should happen only very rarely. For now, just generate another
-             * random number.
+            /* The random number generated is larger than the sizes of all
+             * tables.  This should happen only very rarely. For now, just
+             * generate another random number.
              */
-            fprintf(stderr, "Debug: random number is larger than the sizes of all tables!");
+            fprintf(stderr,
+                "Debug: random number is larger than the sizes of all tables!");
             i--;
         }
         else
