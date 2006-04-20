@@ -1,0 +1,15 @@
+Metadata-Version: 1.0
+Name: scipy_stats_models
+Version: 0.01a
+Summary: 
+           This is a package to try to add statistical models to scipy,
+           originally in neuroimaging.scipy.org repository.
+           
+Home-page: http://neuroimaging.scipy.org
+Author: Jonathan Taylor + hopefully others
+Author-email: jonathan.taylor@stanford.edu
+License: UNKNOWN
+Description: 
+        Insert long description here.
+        
+Platform: UNKNOWN
