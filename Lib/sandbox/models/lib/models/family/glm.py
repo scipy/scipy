@@ -1,6 +1,6 @@
 import numpy as N
 import family
-from scipy_stats_models.regression import WLSModel
+from models.regression import WLSModel
 
 class GeneralizedLinearModel(WLSModel):
 

@@ -4,7 +4,7 @@ import numpy.random as R
 import numpy.linalg as L
 import scipy, string
 
-from scipy_stats_models import utils, formula, contrast
+from models import utils, formula, contrast
 
 class FormulaTest(unittest.TestCase):
 

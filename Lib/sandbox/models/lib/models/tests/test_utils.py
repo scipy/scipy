@@ -3,7 +3,7 @@ import numpy as N
 import numpy.random as R
 import scipy
 
-from scipy_stats_models import utils
+from models import utils
 
 class UtilsTest(unittest.TestCase):
 

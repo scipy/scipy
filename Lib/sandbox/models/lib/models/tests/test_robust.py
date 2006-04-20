@@ -1,4 +1,4 @@
-import scipy_stats_models as S
+import models as S
 import unittest
 import numpy.random as R
 import numpy as N

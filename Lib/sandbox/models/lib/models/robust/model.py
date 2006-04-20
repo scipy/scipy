@@ -1,7 +1,7 @@
 import numpy as N
 import norms, scale
 
-from scipy_stats_models.regression import WLSModel
+from models.regression import WLSModel
 
 class RobustLinearModel(WLSModel):
 
