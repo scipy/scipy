@@ -1,6 +1,9 @@
 import model
-import regression, robust
+import regression
+import robust
 import family
+import glm
+import rlm
 
 import unittest
 def suite():

@@ -11,7 +11,7 @@ class RegressionTest(unittest.TestCase):
         X = W((40,10))
         Y = N.greater(W((40,)), 0)
         family = S.family.Binomial()
-        model = S.family.GeneralizedLinearModel(design=X, family=S.family.Binomial())
+        model = S.glm.GeneralizedLinearModel(design=X, family=S.family.Binomial())
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 30)
 
@@ -20,7 +20,7 @@ class RegressionTest(unittest.TestCase):
         X[:,0] = X[:,1] + X[:,2]
         Y = N.greater(W((40,)), 0)
         family = S.family.Binomial()
-        model = S.family.GeneralizedLinearModel(design=X, family=S.family.Binomial())
+        model = S.glm.GeneralizedLinearModel(design=X, family=S.family.Binomial())
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 31)
 

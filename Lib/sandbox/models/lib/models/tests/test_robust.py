@@ -10,7 +10,7 @@ class RegressionTest(unittest.TestCase):
     def testRobust(self):
         X = W((40,10))
         Y = W((40,))
-        model = S.robust.RobustLinearModel(design=X)
+        model = S.rlm.RobustLinearModel(design=X)
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 30)
 
@@ -18,7 +18,7 @@ class RegressionTest(unittest.TestCase):
         X = W((40,10))
         X[:,0] = X[:,1] + X[:,2]
         Y = W((40,))
-        model = S.robust.RobustLinearModel(design=X)
+        model = S.rlm.RobustLinearModel(design=X)
         results = model.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
