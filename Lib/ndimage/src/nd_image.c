@@ -1308,7 +1308,7 @@ static PyMethodDef methods[] = {
   {NULL, NULL, 0, NULL}
 };
 
-void init_nd_image(void)
+DL_EXPORT(void) init_nd_image(void)
 {
   Py_InitModule("_nd_image", methods);
   import_libnumarray();

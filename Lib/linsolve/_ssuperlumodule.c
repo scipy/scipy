@@ -190,7 +190,7 @@ static PyMethodDef sSuperLU_Methods[] = {
 };
 
 DL_EXPORT(void)
-init_ssuperlu()
+init_ssuperlu(void)
 {
   Py_InitModule("_ssuperlu", sSuperLU_Methods);
   import_array();

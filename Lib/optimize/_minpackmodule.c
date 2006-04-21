@@ -13,7 +13,7 @@ static struct PyMethodDef minpack_module_methods[] = {
 {"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
 {NULL,		NULL, 0, NULL}
 };
-void init_minpack(void) {
+DL_EXPORT(void) init_minpack(void) {
   PyObject *m, *d, *s;
   m = Py_InitModule("_minpack", minpack_module_methods);
   import_array();

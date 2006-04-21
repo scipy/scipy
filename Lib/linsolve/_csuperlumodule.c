@@ -191,7 +191,7 @@ static PyMethodDef cSuperLU_Methods[] = {
 
 
 DL_EXPORT(void)
-init_csuperlu()
+init_csuperlu(void)
 {
   Py_InitModule("_csuperlu", cSuperLU_Methods);
   import_array();

@@ -8,7 +8,7 @@ static struct PyMethodDef odepack_module_methods[] = {
 {"odeint", (PyCFunction) odepack_odeint, METH_VARARGS|METH_KEYWORDS, doc_odeint},
 {NULL,		NULL, 0, NULL}
 };
-void init_odepack() {
+DL_EXPORT(void) init_odepack() {
   PyObject *m, *d, *s;
   m = Py_InitModule("_odepack", odepack_module_methods);
   import_array();

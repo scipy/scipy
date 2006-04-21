@@ -297,7 +297,7 @@ static PyMethodDef moduleTNC_methods[] =
   {NULL, NULL}
 };
 
-void initmoduleTNC(void)
+DL_EXPORT(void) initmoduleTNC(void)
 {
   (void) Py_InitModule("moduleTNC", moduleTNC_methods);
 }

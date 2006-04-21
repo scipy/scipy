@@ -159,8 +159,7 @@ Zerosmethods[] = {
 	{NULL, NULL}
 };
 
-void
-init_zeros(void)
+DL_EXPORT(void) init_zeros(void)
 {
         double tol;
 

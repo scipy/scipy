@@ -1345,7 +1345,7 @@ static PyMethodDef methods[] = {
   {NULL, NULL},
 };
 
-void init__odrpack()
+DL_EXPORT(void) init__odrpack(void)
 {
   PyObject *m, *d;
 

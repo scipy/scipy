@@ -232,7 +232,7 @@ static PyMethodDef dSuperLU_Methods[] = {
 
 
 DL_EXPORT(void)
-init_dsuperlu()
+init_dsuperlu(void)
 {
   PyObject *m, *d;
   

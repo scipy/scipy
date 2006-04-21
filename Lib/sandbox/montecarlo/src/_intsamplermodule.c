@@ -242,7 +242,7 @@ static PyTypeObject IntSamplerType = {
 
 
 #ifndef PyMODINIT_FUNC  /* declarations for shared library import/export */
-#define PyMODINIT_FUNC void
+#define PyMODINIT_FUNC DL_EXPORT(void)
 #endif
 PyMODINIT_FUNC
 init_intsampler(void)
