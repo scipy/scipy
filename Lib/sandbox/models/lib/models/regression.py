@@ -24,6 +24,14 @@ class OLSModel(Model):
     def whiten(self, Y):
         return Y
     
+    def est_coef(self, Y):
+        lfit = Results()
+        Z = self.whiten(Y)
+
+        lfit.beta = L.lstsq(self.wdesign, Z)
+        lfit.fitted = N.dot(self.design, lfit.beta)
+        lfit.Y = Y
+
     def fit(self, Y, **keywords):
 
         Z = self.whiten(Y)
