@@ -27,10 +27,10 @@ class RobustLinearModel(WLSModel):
         """
         if results is None:
             results = self.results
-        return self.M((results.Y - results.fitted) / N.sqrt(results.scale)).sum()
+        return self.M((results.Y - results.predict) / N.sqrt(results.scale)).sum()
 
     def next(self, results):
-        self.weights = self.M.weights((results.Y - results.fitted) / N.sqrt(results.scale))
+        self.weights = self.M.weights((results.Y - results.predict) / N.sqrt(results.scale))
         self.initialize(self.design)
         results = WLSModel.fit(self, results.Y)
         self.scale = results.scale = self.estimate_scale(results)
@@ -56,7 +56,7 @@ class RobustLinearModel(WLSModel):
         Note that self.scale is interpreted as a variance in OLSModel, so
         we return MAD(resid)**2 by default. 
         """
-        resid = results.Y - results.fitted
+        resid = results.Y - results.predict
         if self.scale_est == 'MAD':
             return scale.MAD(resid)**2
         elif self.scale_est == 'Huber2':

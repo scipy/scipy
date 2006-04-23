@@ -25,15 +25,25 @@ class OLSModel(Model):
         return Y
     
     def est_coef(self, Y):
+        """
+        Estimate coefficients using lstsq, returning fitted values, Y and coefficients, but
+        initialize is not called no psuedo-inverse is calculated.
+        """
+            
         lfit = Results()
         Z = self.whiten(Y)
 
         lfit.beta = L.lstsq(self.wdesign, Z)
-        lfit.fitted = N.dot(self.design, lfit.beta)
+        lfit.predict = N.dot(self.design, lfit.beta)
         lfit.Y = Y
 
     def fit(self, Y, **keywords):
+        """
+        Full \'fit\' of the model including estimate of covariance matrix, (whitened)
+        residuals and scale. 
 
+        """
+    
         Z = self.whiten(Y)
             
         lfit = Results()
@@ -41,9 +51,8 @@ class OLSModel(Model):
         lfit.beta = N.dot(self.calc_beta, Z)
         lfit.normalized_cov_beta = self.normalized_cov_beta
         lfit.df_resid = self.df_resid
-        lfit.predict = N.dot(self.wdesign, lfit.beta)
-        lfit.fitted = N.dot(self.design, lfit.beta)
-        lfit.resid = Z - lfit.predict
+        lfit.predict = N.dot(self.design, lfit.beta)
+        lfit.resid = Z - N.dot(self.design, lfit.beta)
 
         lfit.scale = N.add.reduce(lfit.resid**2) / lfit.df_resid
 

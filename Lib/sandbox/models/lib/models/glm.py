@@ -31,9 +31,9 @@ class GeneralizedLinearModel(WLSModel):
     def next(self, results, Y):
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
-        Z = results.fitted + self.family.link.deriv(results.mu) * (Y - results.mu)
+        Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
         newresults = WLSModel.fit(self, Z)
-        newresults.mu = self.family.link.inverse(newresults.fitted)
+        newresults.mu = self.family.link.inverse(newresults.predict)
         self.iter += 1
         return newresults
 
@@ -68,7 +68,7 @@ class GeneralizedLinearModel(WLSModel):
         self.Y = N.asarray(Y, N.Float)
         iter(self)
         self.results = WLSModel.fit(self, self.family.link(Y, initialize=True))
-        self.results.mu = self.family.link.inverse(self.results.fitted)
+        self.results.mu = self.family.link.inverse(self.results.predict)
         self.scale = self.results.scale = self.estimate_scale()
         
         while self.cont(self.results):
