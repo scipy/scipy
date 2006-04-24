@@ -17,25 +17,29 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('pysparse')
 
     # Robert Kern's corner:
-    #config.add_subpackage('rkern')
+    config.add_subpackage('rkern')
 
     # ODRPACK
-    #config.add_subpackage('odr')
+    config.add_subpackage('odr')
 
     # Delaunay triangulation and Natural Neighbor interpolation
-    #config.add_subpackage('delaunay')
+    config.add_subpackage('delaunay')
 
     # Gist-based plotting library for X11
     #config.add_subpackage('xplt')
 
     # elementwise numerical expressions
-    #config.add_subpackage('numexpr')
+    config.add_subpackage('numexpr')
+
+    # Statistical models
+    config.add_subpackage('models')
 
     # Adaptation of Scientific.IO (2.4.9) to use NumPy
     #config.add_subpackage('netcdf')
 
     # Finite Difference Formulae package
-    #config.add_subpackage('fdfpack')
+    config.add_subpackage('fdfpack')
+    
     return config
 
 if __name__ == '__main__':
