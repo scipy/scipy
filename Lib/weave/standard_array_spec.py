@@ -127,7 +127,7 @@ numeric_init_code = \
 """
 Py_Initialize();
 import_array();
-PyImport_ImportModule("scipy");
+PyImport_ImportModule("numpy");
 """
 
 class array_converter(common_base_converter):

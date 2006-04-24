@@ -272,7 +272,7 @@ class ext_module:
     def module_init_code(self):
         init_code_list =  self.build_information().module_init_code()
         init_code = indent(''.join(init_code_list),4)
-        code = 'extern "C" void init%s()\n' \
+        code = 'DL_EXPORT(void) init%s(void)\n' \
                '{\n' \
                '%s' \
                '    (void) Py_InitModule("%s", compiled_methods);\n' \
