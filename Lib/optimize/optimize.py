@@ -776,9 +776,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
            linesearch.line_search(f,myfprime,xk,pk,gfk,old_fval,
                                   old_old_fval,c2=0.4)
         if alpha_k is None:  # line search failed -- use different one.
-            alpha_k, fc, gc, old_fval_backup, old_old_fval_backup, gfkp1 = \
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      line_search(f,myfprime,xk,pk,gfk,
-                                 old_fval,old_old_fval)
+                                 old_fval_backup,old_old_fval_backup)
             if alpha_k is None or alpha_k == 0:
                 # This line search also failed to find a better solution.
                 warnflag = 2
