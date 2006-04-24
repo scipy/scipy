@@ -16,7 +16,7 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_bispev", fitpack_bispev, METH_VARARGS, doc_bispev},
 {NULL,		NULL, 0, NULL}
 };
-DL_EXPORT(void) init_fitpack(void) {
+PyMODINIT_FUNC init_fitpack(void) {
   PyObject *m, *d, *s;
   m = Py_InitModule("_fitpack", fitpack_module_methods);
   import_array();

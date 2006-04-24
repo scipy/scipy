@@ -347,7 +347,7 @@ static PyMethodDef spmatrix_methods[] = {
   {NULL, NULL}	/* sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initspmatrix(void)
 {
   PyObject *m, *d;

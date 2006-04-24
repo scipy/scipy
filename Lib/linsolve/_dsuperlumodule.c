@@ -231,7 +231,7 @@ static PyMethodDef dSuperLU_Methods[] = {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_dsuperlu(void)
 {
   PyObject *m, *d;

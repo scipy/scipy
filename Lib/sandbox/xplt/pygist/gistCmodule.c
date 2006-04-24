@@ -9349,7 +9349,7 @@ static struct PyMethodDef gist_methods[] =
 /* Initialize the module.  This should be the only symbol with
    external linkage. */
 
-DL_EXPORT(void) initgistC (void)
+PyMODINIT_FUNC initgistC (void)
 {
   PyObject *m, *d, *sys_path;
   int i, n;

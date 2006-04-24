@@ -583,7 +583,7 @@ static PyMethodDef precon_methods[] = {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initumfpack(void)
 {
   PyObject *m, *d;

@@ -3,7 +3,7 @@ extern "C" {
 #endif
 #include "Python.h"
 static PyMethodDef module_methods[] = { {NULL,NULL} };
-DL_EXPORT(void) initatlas_version(void) {
+PyMODINIT_FUNC initatlas_version(void) {
   PyObject *m = NULL;
 #if defined(NO_ATLAS_INFO)
   printf("NO ATLAS INFO AVAILABLE\n");

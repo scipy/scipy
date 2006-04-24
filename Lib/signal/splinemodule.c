@@ -470,7 +470,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
 
 /* Initialization function for the module (*must* be called initXXXXX) */
 
-DL_EXPORT(void) initspline(void) {
+PyMODINIT_FUNC initspline(void) {
     PyObject *m, *d, *s;
 	
     /* Create the module and add the functions */

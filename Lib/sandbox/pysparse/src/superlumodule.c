@@ -339,7 +339,7 @@ static PyMethodDef precon_methods[] = {
 };
 
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initsuperlu(void)
 {
   PyObject *m, *d;

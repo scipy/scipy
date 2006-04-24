@@ -71,7 +71,7 @@ static PyMethodDef demo_methods[] = {
 
 /* Module initialization */
 
-DL_EXPORT(void) initdemo(void)
+PyMODINIT_FUNC initdemo(void)
 {
   PyObject *module;
   PyObject *netcdf, *netcdf_dict;

@@ -318,7 +318,7 @@ static PyMethodDef jdsym_methods[] = {
 static char module_doc[] = "This module ...\n\
 ";
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initjdsym(void) {
   PyObject *m;
   

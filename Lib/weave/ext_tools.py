@@ -191,12 +191,24 @@ class ext_module:
     def add_function(self,func):
         self.functions.append(func)
     def module_code(self):
-        code = '\n'.join([self.warning_code(),
-               self.header_code(),
-               self.support_code(),
-               self.function_code(),
-               self.python_function_definition_code(),
-               self.module_init_code()])
+        code = '\n'.join([
+            """\
+#ifdef __CPLUSPLUS__
+extern "C" {
+#endif
+""",
+            self.warning_code(),
+            self.header_code(),
+            self.support_code(),
+            self.function_code(),
+            self.python_function_definition_code(),
+            self.module_init_code(),
+            """\
+#ifdef __CPLUSCPLUS__
+}
+#endif
+"""
+            ])
         return code
 
     def arg_specs(self):
@@ -272,7 +284,7 @@ class ext_module:
     def module_init_code(self):
         init_code_list =  self.build_information().module_init_code()
         init_code = indent(''.join(init_code_list),4)
-        code = 'DL_EXPORT(void) init%s(void)\n' \
+        code = 'PyMODINIT_FUNC init%s(void)\n' \
                '{\n' \
                '%s' \
                '    (void) Py_InitModule("%s", compiled_methods);\n' \

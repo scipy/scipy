@@ -1075,7 +1075,7 @@ static struct PyMethodDef methods[] = {
 };
 
 
-DL_EXPORT(void) init_cephes(void) {
+PyMODINIT_FUNC init_cephes(void) {
   PyObject *m, *d, *s;
   
   /* Create the module and add the functions */

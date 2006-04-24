@@ -842,7 +842,7 @@ static struct PyMethodDef numpyio_methods[] = {
   {NULL,         NULL}
 };
 
-DL_EXPORT(void) initnumpyio(void)
+PyMODINIT_FUNC initnumpyio(void)
 {
   PyObject *m, *d;
 

@@ -159,7 +159,7 @@ Zerosmethods[] = {
 	{NULL, NULL}
 };
 
-DL_EXPORT(void) init_zeros(void)
+PyMODINIT_FUNC init_zeros(void)
 {
         double tol;
 

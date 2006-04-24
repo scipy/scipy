@@ -14,7 +14,7 @@ static struct PyMethodDef quadpack_module_methods[] = {
 {"_qawce", quadpack_qawce, METH_VARARGS, doc_qawce},
 {NULL,		NULL, 0, NULL}
 };
-DL_EXPORT(void) init_quadpack() {
+PyMODINIT_FUNC init_quadpack(void) {
   PyObject *m, *d, *s;
   m = Py_InitModule("_quadpack", quadpack_module_methods);
   import_array();

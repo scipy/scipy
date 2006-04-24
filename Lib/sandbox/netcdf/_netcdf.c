@@ -2064,7 +2064,7 @@ static PyMethodDef netcdf_methods[] = {
 
 /* Module initialization */
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_netcdf(void)
 {
   PyObject *m, *d;

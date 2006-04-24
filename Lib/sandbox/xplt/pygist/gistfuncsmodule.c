@@ -1415,7 +1415,7 @@ static char arrayfns_module_documentation[] =
 ""
 ;
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initgistfuncs(void)
 {
     PyObject *m, *d;

@@ -665,7 +665,7 @@ static PyMethodDef delaunay_methods[] = {
 };
 
 
-DL_EXPORT(void) init_delaunay()
+PyMODINIT_FUNC init_delaunay(void)
 {
     PyObject* m;
     m = Py_InitModule3("_delaunay", delaunay_methods, 

@@ -2178,7 +2178,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
 
 /* Initialization function for the module (*must* be called initsigtools) */
 
-DL_EXPORT(void) initsigtools(void) {
+PyMODINIT_FUNC initsigtools(void) {
         PyObject *m, *d;
 	
 	/* Create the module and add the functions */

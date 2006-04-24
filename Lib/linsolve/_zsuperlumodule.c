@@ -193,7 +193,7 @@ static PyMethodDef zSuperLU_Methods[] = {
 
 
 /* This should be imported first */
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_zsuperlu(void)
 {
 

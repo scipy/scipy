@@ -637,7 +637,7 @@ The result is tuple with 3 elements:\n\
 \n\
 ";
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 inititsolvers(void)
 {
   PyObject *m;
