@@ -12,6 +12,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('linsolve')
     config.add_subpackage('maxentropy')
     config.add_subpackage('misc')
+    #config.add_subpackage('models')
     #config.add_subpackage('montecarlo')
     config.add_subpackage('optimize')
     config.add_subpackage('sandbox')

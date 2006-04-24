@@ -33,7 +33,7 @@ class OLSModel(Model):
         lfit = Results()
         Z = self.whiten(Y)
 
-        lfit.beta = L.lstsq(self.wdesign, Z)
+        lfit.beta = L.lstsq(self.wdesign, Z)[0]
         lfit.predict = N.dot(self.design, lfit.beta)
         lfit.Y = Y
 
