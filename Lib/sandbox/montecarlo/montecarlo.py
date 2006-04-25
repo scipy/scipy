@@ -9,11 +9,25 @@ from __future__ import division
 import random, math, bisect, string
 import numpy
 import scipy
-#from scipy.montecarlo.intsampler import intsampler
 from scipy.sandbox.montecarlo._intsampler import _intsampler
 
 
-class intsampler(object):
+class genericsampler(object):
+    """A base class for other samplers.
+    """
+    def __init__(self):
+        self.format = self.__class__.__name__[:3]
+        if self.__class__.__name__ == "genericsampler":
+            raise TypeError, "this class cannot be instantiated directly"
+    
+    def seed(self, myseed):
+        """Initializes the sampler with a given seed.  If the seed is 0, uses a
+        seed from /dev/urandom or the system time.
+        """
+        self.sampler.seed(myseed)
+
+
+class intsampler(genericsampler):
     """A class that samples objects from a given discrete distribution.
     The distribution is defined on an integer-valued sample space and
     specified with a PMF as a list or array like this:
@@ -48,6 +62,7 @@ class intsampler(object):
 
         self.sampler =  _intsampler(self.probs)
 
+
     def sample(self, size, return_probs=0):
         """Generates a sample of the given size from the specified
         discrete distribution, optionally returning the probabilities
@@ -72,7 +87,7 @@ class intsampler(object):
 
 
 
-class dictsampler(object):
+class dictsampler(genericsampler):
     """A class that samples objects from a given discrete distribution.
     The distribution is specified as a dictionary representing a PMF
     like this:
@@ -110,7 +125,8 @@ class dictsampler(object):
             raise ValueError, "sum of table frequencies must be > 0"
 
         self.sampler =  intsampler(self.probs)
-
+    
+    
     def sample(self, size, return_probs=0):
         """Generates a sample of the given size from the specified
         discrete distribution, optionally returning the probabilities

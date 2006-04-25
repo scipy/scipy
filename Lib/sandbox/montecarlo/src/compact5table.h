@@ -31,5 +31,8 @@ void destroy_sampler5tbl(Sampler*);
 unsigned long Dran(Sampler* sampler);  /* for a single variate */
 void Dran_array(Sampler*, unsigned long* output, unsigned long samplesize);  /* array version */
 
+/* seed_sampler5tbl:  Initialize the RNG with a specified seed.  If the seed is
+ * zero, select a random seed from /dev/urandom or the clock. */
+void seed_sampler5tbl(Sampler* sampler, unsigned long seed);
 
 

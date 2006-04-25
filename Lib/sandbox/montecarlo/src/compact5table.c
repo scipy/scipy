@@ -69,7 +69,7 @@ Sampler* init_sampler5tbl(double* weights, unsigned long n, unsigned long seed)
         rk_seed(seed, &sampler->state);
     else
         rk_randomseed(&sampler->state);  /* use a random seed from /dev/urandom or the
-                                   clock */
+                                            clock */
 
     /* Now create the 5 tables */ 
     /* Get table sizes, then malloc */
@@ -153,6 +153,19 @@ Sampler* init_sampler5tbl(double* weights, unsigned long n, unsigned long seed)
     return sampler;
 }
 
+
+/* seed_sampler5tbl:  Initialize the RNG with a specified seed.  If the seed is
+ * zero, select a random seed from /dev/urandom or the clock.
+ */
+void seed_sampler5tbl(Sampler* sampler, unsigned long seed)
+{
+    /* Now seed the RandomKit RNG */
+    if (seed != 0)
+        rk_seed(seed, &sampler->state);
+    else
+        rk_randomseed(&sampler->state);  /* use a random seed from /dev/urandom or the
+                                            clock */
+}
 
 /* destroy_sampler5tbl:  Destroy the sampler created by start() and free memory
  */

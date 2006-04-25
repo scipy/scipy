@@ -107,6 +107,27 @@ IntSampler_init(IntSampler *self, PyObject *args, PyObject *kwds)
 
 
 
+static char seed__doc__[] = \
+  "seed(myseed): initialize the RNG with the provided seed.\n";
+                                                      
+static PyObject*
+seed(PyObject *self, PyObject *args, PyObject *keywords)
+{
+    static char *kwlist[] = {"seed",NULL};
+    long myseed;
+    
+    /* parse the arguments  */
+    if (!PyArg_ParseTupleAndKeywords(args, keywords, "i", kwlist, &myseed))
+        return NULL;
+    
+    seed_sampler5tbl(((IntSampler*)self)->pSampler, (unsigned long) myseed);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+
 static char sample__doc__[] = \
   "sample(size): return an array with a random discrete sample\n"\
   "of the given size from the probability mass function specified when\n"\
@@ -193,6 +214,10 @@ static PyMethodDef IntSampler_methods[] = {
          (PyCFunction)sample,
          METH_VARARGS | METH_KEYWORDS,
          sample__doc__},
+        {"seed", 
+         (PyCFunction)seed,
+         METH_VARARGS | METH_KEYWORDS,
+         seed__doc__},
         {NULL,          NULL}           /* sentinel */
 };
 
