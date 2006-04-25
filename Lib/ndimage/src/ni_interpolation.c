@@ -954,5 +954,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     free(foffsets);
   if (fcoordinates)
     free(fcoordinates);
+  if (idxs)
+    free(idxs);
   return PyErr_Occurred() ? 0 : 1;
 }
