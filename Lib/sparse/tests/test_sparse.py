@@ -26,7 +26,7 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, spidentity, \
 from scipy.linsolve import splu
 restore_path()
 
-class _test_cs(ScipyTestCase):
+class _test_cs:
 
     def setUp(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
@@ -264,7 +264,7 @@ class _test_cs(ScipyTestCase):
         # Don't actually test the output until we know what it should be ...
 
 
-class _test_horiz_slicing(ScipyTestCase):
+class _test_horiz_slicing:
     """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
@@ -298,7 +298,7 @@ class _test_horiz_slicing(ScipyTestCase):
         assert caught == 2
 
 
-class _test_vert_slicing(ScipyTestCase):
+class _test_vert_slicing:
     """Tests vertical slicing (e.g. [:, 0]).  Tests for individual sparse
     matrix types that implement this should derive from this class.
     """
@@ -333,7 +333,7 @@ class _test_vert_slicing(ScipyTestCase):
         assert caught == 2
 
 
-class _test_fancy_indexing(ScipyTestCase):
+class _test_fancy_indexing:
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
     """
@@ -356,7 +356,7 @@ class _test_fancy_indexing(ScipyTestCase):
 
 
 
-class test_csr(_test_cs, _test_horiz_slicing):
+class test_csr(_test_cs, _test_horiz_slicing, ScipyTestCase):
     spmatrix = csr_matrix
 
     def check_constructor1(self):
@@ -409,7 +409,7 @@ class test_csr(_test_cs, _test_horiz_slicing):
             assert(e.A.dtype.type == mytype)
 
 
-class test_csc(_test_cs, _test_vert_slicing):
+class test_csc(_test_cs, _test_vert_slicing, ScipyTestCase):
     spmatrix = csc_matrix
 
     def check_constructor1(self):
@@ -454,7 +454,7 @@ class test_csc(_test_cs, _test_vert_slicing):
             assert(e.A.dtype.type == mytype)
 
 
-class test_dok(_test_cs):
+class test_dok(_test_cs, ScipyTestCase):
     spmatrix = dok_matrix
 
     def check_mult(self):
@@ -565,7 +565,7 @@ class test_dok(_test_cs):
         assert caught == 6
 
 
-class test_lil(_test_cs, _test_horiz_slicing):
+class test_lil(_test_cs, _test_horiz_slicing, ScipyTestCase):
     spmatrix = lil_matrix
     def check_mult(self):
         A = matrix(zeros((10,10)))
