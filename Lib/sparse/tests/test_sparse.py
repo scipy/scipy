@@ -46,6 +46,14 @@ class _test_cs:
         assert_array_equal(self.dat.sum(axis=0), self.datsp.sum(axis=0))
         assert_array_equal(self.dat.sum(axis=1), self.datsp.sum(axis=1))
 
+    def check_mean(self):
+        """Does the matrix's mean() method work?
+        """
+        assert_array_equal(self.dat.mean(), self.datsp.mean())
+        assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))
+        assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
+        assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
+
     def check_todense(self):
         chk = self.datsp.todense()
         assert_array_equal(chk,self.dat)
@@ -577,6 +585,36 @@ class test_lil(_test_cs, _test_horiz_slicing, ScipyTestCase):
         B[5,6] = 20
         assert_array_equal(A * A.T, (B * B.T).todense())
         assert_array_equal(A * A.H, (B * B.H).todense())
+    
+    def check_lil_lil_assignment(self):
+        """ Tests whether a row of one lil_matrix can be assigned to
+        another.
+        """
+        B = lil_matrix((10,10))
+        B[0,3] = 10
+        B[5,6] = 20
+        B[8,3] = 30
+        B[3,8] = 40
+        B[8,9] = 50
+        A = B / 10
+        B[0, :] = A[0, :]
+        assert_array_equal(A[0, :].A, B[0, :].A)
+        assert_array_equal(A[0, :].A, array([[0, 0, 0, 1, 0, 0, 0, 0, 0, 0]]))
+
+    def check_lil_from_csr(self):
+        """ Tests whether a lil_matrix can be constructed from a
+        csr_matrix.
+        """
+        B = lil_matrix((10,10))
+        B[0,3] = 10
+        B[5,6] = 20
+        B[8,3] = 30
+        B[3,8] = 40
+        B[8,9] = 50
+        C = B.tocsr()
+        D = lil_matrix(C)
+        assert_array_equal(C.A, D.A)
+
 
 class test_construct_utils(ScipyTestCase):
     def check_identity(self):

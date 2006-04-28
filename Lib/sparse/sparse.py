@@ -158,10 +158,12 @@ class spmatrix:
         return self.getnnz() > 0
 
     # What should len(sparse) return? For consistency with dense matrices,
-    # perhaps it should be the number of rows?  For now we return the number of
-    # non-zero elements.
+    # perhaps it should be the number of rows?  But for some uses the number of
+    # non-zeros is more important.  For now, raise an exception!
     def __len__(self):
-        return self.getnnz()
+        # return self.getnnz()
+        raise TypeError, "sparse matrix length is ambiguous; use getnnz()" \
+                         " or shape[0]"
 
     def asformat(self, format):
         # default converter goes through the CSC format
@@ -400,9 +402,13 @@ class spmatrix:
         average over both rows and columns, returning a scalar.
         """
         if axis==0:
-            return self.sum(0) * 1.0 / self.shape[0]
+            mean = self.sum(0)
+            mean *= 1.0 / self.shape[0]
+            return mean
         elif axis==1:
-            return self.sum(1) * 1.0 / self.shape[1]
+            mean = self.sum(1)
+            mean *= 1.0 / self.shape[1]
+            return mean
         elif axis is None:
             return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
@@ -745,6 +751,34 @@ class csc_matrix(spmatrix):
         new._check()
         return new
 
+    def sum(self, axis=None):
+        # Override the base class sum method for efficiency in the cases
+        # axis=0 and axis=None.
+        m, n = self.shape
+        data = self.data
+        if axis in (0, None):
+            indptr = self.indptr
+            out = empty(n, dtype=self.dtype)
+            # The first element in column j has index indptr[j], the last
+            # indptr[j+1]
+            for j in xrange(n):
+                out[j] = data[indptr[j] : indptr[j+1]].sum()
+            if axis==0:
+                # Output is a (1 x n) dense matrix
+                return asmatrix(out)
+            else:
+                return out.sum()
+        else:
+            # Was: return spmatrix.sum(self, axis)
+            rowind = self.rowind
+            out = zeros(m, dtype=self.dtype)
+            # Loop over non-zeros
+            for k in xrange(self.nnz):
+                out[rowind[k]] += data[k]
+            # Output is a (m x 1) dense matrix
+            return asmatrix(out).T
+            
+        
     def matvec(self, other):
         if isdense(other):
             # This check is too harsh -- it prevents a column vector from
@@ -868,7 +902,10 @@ class csc_matrix(spmatrix):
             ind, val = func(self.data, self.rowind, self.indptr, row, col)
             return val
         elif isinstance(key, int):
-            return self.data[key]
+            # Was: return self.data[key]
+            # If this is allowed, it should return the relevant row, as for
+            # dense matrices (and __len__ should be supported again).
+            raise IndexError, "integer index not supported for csc_matrix"
         else:
             raise IndexError, "invalid index"
 
@@ -1260,6 +1297,33 @@ class csr_matrix(spmatrix):
         new._check()
         return new
 
+    def sum(self, axis=None):
+        # Override the base class sum method for efficiency in the cases
+        # axis=1 and axis=None.
+        m, n = self.shape
+        data = self.data
+        if axis in (1, None):
+            out = empty(m, dtype=self.dtype)
+            # The first element in row i has index indptr[i], the last
+            # indptr[i+1]
+            indptr = self.indptr
+            for i in xrange(m):
+                out[i] = data[indptr[i] : indptr[i+1]].sum()
+            if axis==1:
+                # Output is a (m x 1) dense matrix
+                return asmatrix(out).T
+            else:
+                return out.sum()
+        else:
+            # Was: return spmatrix.sum(self, axis)
+            colind = self.colind
+            out = zeros(n, dtype=self.dtype)
+            # Loop over non-zeros
+            for k in xrange(self.nnz):
+                out[colind[k]] += data[k]
+            # Output is a (1 x n) dense matrix
+            return asmatrix(out)
+
     def matvec(self, other):
         if isdense(other):
             # This check is too harsh -- it prevents a column vector from
@@ -1395,7 +1459,9 @@ class csr_matrix(spmatrix):
             ind, val = func(self.data, self.colind, self.indptr, col, row)
             return val
         elif isinstance(key, int):
-            return self.data[key]
+            # If an integer index is allowed, it should return the relevant row,
+            # as for dense matrices (and __len__ should be supported again).
+            return self[key, :]
         else:
             raise IndexError, "invalid index"
     
@@ -1775,18 +1841,26 @@ class dok_matrix(spmatrix, dict):
                     else:
                         raise NotImplementedError, "setting a 2-d slice of" \
                                 " a dok_matrix is not yet supported"
-                elif operator.isSequenceType(value):
-                    if len(seq) != len(value):
-                        raise ValueError, "index and value ranges must have" \
-                                          " the same length"
+                elif isscalar(value):
+                    for element in seq:
+                        self[element, j] = value
+                else:
+                    # See if value is a sequence
+                    try:
+                        if len(seq) != len(value):
+                            raise ValueError, "index and value ranges must" \
+                                              " have the same length"
+                    except TypeError:
+                        # Not a sequence
+                        raise TypeError, "unsupported type for" \
+                                         " dok_matrix.__setitem__"
+                    
+                    # Value is a sequence
                     for element, val in itertools.izip(seq, value):
                         self[element, j] = val   # don't use dict.__setitem__
                             # here, since we still want to be able to delete
                             # 0-valued keys, do type checking on 'val' (e.g. if
                             # it's a rank-1 dense array), etc.
-                else:
-                    for element in seq:
-                        self[element, j] = value
             else:
                 # Process j
                 if isinstance(j, slice):
@@ -1806,15 +1880,21 @@ class dok_matrix(spmatrix, dict):
                     else:
                         raise NotImplementedError, "setting a 2-d slice of" \
                                 " a dok_matrix is not yet supported"
-                elif operator.isSequenceType(value):
-                    if len(seq) != len(value):
-                        raise ValueError, "index and value ranges must have" \
-                                          " the same length"
-                    for element, val in itertools.izip(seq, value):
-                        self[i, element] = val
-                else:
+                elif isscalar(value):
                     for element in seq:
                         self[i, element] = value
+                else:
+                    # See if value is a sequence
+                    try:
+                        if len(seq) != len(value):
+                            raise ValueError, "index and value ranges must have" \
+                                              " the same length"
+                    except TypeError:
+                        # Not a sequence
+                        raise TypeError, "unsupported type for dok_matrix.__setitem__"
+                    else:
+                        for element, val in itertools.izip(seq, value):
+                            self[i, element] = val
 
 
     def __add__(self, other):
@@ -2256,8 +2336,10 @@ class lil_matrix(spmatrix):
     def __init__(self, A=None, shape=None, dtype=None):
         """ Create a new list-of-lists sparse matrix.  An optional
         argument A is accepted, which initializes the lil_matrix with it.
-        This can be a tuple of dimensions (M, N) or a (dense)
-        array/matrix to copy.
+        This can be a tuple of dimensions (M, N) or a dense array /
+        matrix to copy, or a sparse matrix of the following types:
+          - csr_matrix
+          - lil_matrix
         """
         spmatrix.__init__(self)
         self.dtype = getdtype(dtype, A, default=float)
@@ -2273,9 +2355,21 @@ class lil_matrix(spmatrix):
                 A = None
             else:
                 if not isdense(A):
-                    # A is not dense.  Try converting to a matrix.
-                    # (so if it has rank 1, it will become a row vector)
-                    A = asmatrix(A)
+                    # A is not dense.  If it's a spmatrix, ensure it's a
+                    # csr_matrix or lil_matrix, which are the only types that
+                    # support row slices.
+                    if isinstance(A, spmatrix):
+                        if not isinstance(A, lil_matrix) and \
+                                not isinstance(A, csr_matrix):
+                            raise TypeError, "unsupported matrix type"
+                    
+                    # Otherwise, try converting to a matrix.  So if it's
+                    # a list (rank 1), it will become a row vector
+                    else:
+                        try:
+                            A = asmatrix(A)
+                        except TypeError:
+                            raise TypeError, "unsupported matrix type"
                 elif rank(A) == 1:
                     # Construct a row vector
                     A = asmatrix(A)
@@ -2296,7 +2390,7 @@ class lil_matrix(spmatrix):
         self.data = [[] for i in xrange(M)]
 
         if A is not None:
-            for i in xrange(len(A)):
+            for i in xrange(A.shape[0]):
                 self[i, :] = A[i, :]
 
 
@@ -2346,7 +2440,8 @@ class lil_matrix(spmatrix):
             raise IndexError, "invalid index"
         i, j = index
         if type(i) is slice:
-            raise IndexError, "LIL matrix supports slices only of a single row"
+            raise IndexError, "lil_matrix supports slices only of a single row"
+            # TODO: add support for this, like in __setitem__
         elif isinstance(i, int):
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
@@ -2393,24 +2488,27 @@ class lil_matrix(spmatrix):
                 raise IndexError, "lil_matrix index out of range"
         else:
             if isinstance(i, slice):
-                # Is there an easier way to do this?
                 seq = xrange(i.start or 0, i.stop or self.shape[1], i.step or 1)
             elif operator.isSequenceType(i):
                 seq = i
             else:
                 raise IndexError, "invalid index"
-            if operator.isSequenceType(x):
+            try:
                 if not len(x) == len(seq):
                     raise ValueError, "number of elements in source must be" \
                             " same as number of elements in destimation"
-                # Call __setitem__ recursively, once for each row
+            except TypeError:
+                # Either x or seq is not a sequence.  Note that a sparse matrix
+                # is also not a sequence under this definition.
+                # Currently we don't support setting to/from non-sequence types.
+                # This could be enhanced, though, to allow a scalar source,
+                # and/or a sparse vector.
+                raise TypeError, "unsupported type for lil_matrix.__setitem__"
+            else:
+                # Sequence: call __setitem__ recursively, once for each row
                 for i in xrange(len(seq)):
                     self[seq[i], index[1]] = x[i]
                 return
-            else:
-                # This could be enhanced to allow a scalar source
-                raise ValueError, "number of elements in source must be same" \
-                        " as number of elements in destimation"
 
         # Below here, i is an integer
         row = self.rows[i]
@@ -2446,33 +2544,8 @@ class lil_matrix(spmatrix):
                 seq = j
             else:
                 raise IndexError, "invalid index"
-            if operator.isSequenceType(x):
-                if not len(x) == len(seq):
-                    # Perhaps x is a rank-2 row vector (matrix object)?
-                    try:
-                        x = x.A.squeeze()
-                        assert len(x) == len(seq)
-                    except:
-                        raise ValueError, "number of elements in source must" \
-                                " be same as number of elements in" \
-                                " destimation or 1"
-                # Is the row currently empty, and are we adding an entire row?
-                if len(row) == 0 and len(seq) == self.shape[1]:
-                    # Remove zeros
-                    nonzeros = [ind for ind, xi in enumerate(x) if xi != 0]
-                    x = [x[ind] for ind in nonzeros]
-                    row[:] = nonzeros
-                    self.data[i] = x
-                else:
-                    # add elements the slow way
-                    for k, col in enumerate(seq):
-                        self[i, col] = x[k]
-                return
-            else:
-                if not numpy.rank(x) == 0:
-                    raise ValueError, "number of elements in source must be"\
-                            " same as number of elements in destimation or 1"
-                # x is a scalar
+
+            if isscalar(x):
                 if len(row) == 0:
                     row[:] = seq
                     self.data[i] = [x for item in seq]   # [x] * len(seq) but copied
@@ -2481,6 +2554,52 @@ class lil_matrix(spmatrix):
                     for k, col in enumerate(j):
                         self[i, col] = x
                 return
+            else:
+                if isdense(x):
+                    # If x is a row or column vector stored as a dense matrix,
+                    # remove its singleton dimension
+                    x = asarray(x).squeeze()
+                    if len(x) != len(seq):
+                        raise ValueError, "number of elements in source" \
+                                " must be same as number of elements in" \
+                                " destimation or 1"
+                
+                    # Is the row currently empty, and are we adding an entire row?
+                    if len(row) == 0 and len(seq) == self.shape[1]:
+                        # Remove zeros.  This could be done generically for
+                        # dense arrays and all sparse matrix formats by
+                        # implementing a nonzero() method for sparse matrices
+                        nonzeros = [ind for ind, xi in enumerate(x) if xi != 0]
+                        x = [x[ind] for ind in nonzeros]
+                        row[:] = nonzeros
+                        self.data[i] = x
+                    else:
+                        # add elements the slow way
+                        for k, col in enumerate(seq):
+                            self[i, col] = x[k]
+                    return
+                elif isinstance(x, lil_matrix):
+                    if x.shape != (1, self.shape[1]):
+                        raise ValueError, "sparse matrix source must be (1 x n)"
+                    self.rows[i] = x.rows[0]
+                    self.data[i] = x.data[0]  # doesn't make a copy.  Whether to
+                                              # copy or not with sparse matrix
+                                              # slicing needs a thorough
+                                              # analysis to ensure consistency
+                elif isinstance(x, csr_matrix):
+                    if x.shape != (1, self.shape[1]):
+                        raise ValueError, "sparse matrix source must be (1 x n)"
+                    self.rows[i] = x.colind.tolist()
+                    self.data[i] = x.data.tolist()
+                    # This should be generalized to other shapes than an entire
+                    # row.
+
+                else:
+                    raise TypeError, "unsupported type for" \
+                                     " lil_matrix.__setitem__"
+                    
+                return
+                
 
     def __mul__(self, other):           # self * other
         if isscalar(other) or (isdense(other) and rank(other)==0):
@@ -2518,8 +2637,15 @@ class lil_matrix(spmatrix):
                 d[i, j] = self.data[i][pos]
         return d
 
+    def transpose(self):
+        """ Return the transpose as a csc_matrix.
+        """
+        # Overriding the spmatrix.transpose method here prevents an unnecessary
+        # csr -> csc conversion
+        return self.tocsr().transpose()
+    
     def tocsr(self, nzmax=None):
-        """ Return Compressed Sparse Row format arrays for this matrix
+        """ Return Compressed Sparse Row format arrays for this matrix.
         """
         nnz = self.getnnz()
         nzmax = max(nnz, nzmax)
@@ -2534,11 +2660,11 @@ class lil_matrix(spmatrix):
             row_ptr[i] = k
             k += len(row)
 
-        row_ptr[-1] = len(self)  # last row number + 1
+        row_ptr[-1] = nnz           # last row number + 1
         return csr_matrix((data, colind, row_ptr), dims=self.shape, nzmax=nzmax)
 
     def tocsc(self, nzmax=None):
-        """ Return Compressed Sparse Column format arrays for this matrix
+        """ Return Compressed Sparse Column format arrays for this matrix.
         """
         return self.tocsr(nzmax).tocsc()
 
@@ -2567,6 +2693,8 @@ def _isinstance( x, _class ):
 
 def isspmatrix(x):
     return _isinstance(x, spmatrix)
+
+issparse = isspmatrix
 
 def isspmatrix_csr( x ):
     return _isinstance(x, csr_matrix)
