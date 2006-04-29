@@ -94,7 +94,7 @@ def toreal(arr,tol=None):
     """
     if tol is None:
         tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.dtype.char]]
-    if (arr.dtype.char in ['F', 'D']) and \
+    if (arr.dtype.char in ['F', 'D','G']) and \
        sb.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
@@ -103,8 +103,8 @@ def cosm(A):
     """matrix cosine.
     """
     A = asarray(A)
-    if A.dtype.char not in ['F','D']:
-        return toreal(0.5*(expm(1j*A) + expm(-1j*A)))
+    if A.dtype.char not in ['F','D','G']:
+        return expm(1j*A).real
     else:
         return 0.5*(expm(1j*A) + expm(-1j*A))
 
@@ -113,8 +113,8 @@ def sinm(A):
     """matrix sine.
     """
     A = asarray(A)
-    if A.dtype.char not in ['F','D']:
-        return toreal(-0.5j*(expm(1j*A) - expm(-1j*A)))
+    if A.dtype.char not in ['F','D','G']:
+        return expm(1j*A).imag
     else:
         return -0.5j*(expm(1j*A) - expm(-1j*A))
 
@@ -122,7 +122,7 @@ def tanm(A):
     """matrix tangent.
     """
     A = asarray(A)
-    if A.dtype.char not in ['F','D']:
+    if A.dtype.char not in ['F','D','G']:
         return toreal(solve(cosm(A), sinm(A)))
     else:
         return solve(cosm(A), sinm(A))
@@ -131,7 +131,7 @@ def coshm(A):
     """matrix hyperbolic cosine.
     """
     A = asarray(A)
-    if A.dtype.char not in ['F','D']:
+    if A.dtype.char not in ['F','D','G']:
         return toreal(0.5*(expm(A) + expm(-A)))
     else:
         return 0.5*(expm(A) + expm(-A))
