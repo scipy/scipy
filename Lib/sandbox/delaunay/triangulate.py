@@ -76,12 +76,12 @@ class Triangulation(object):
         border = (self.triangle_neighbors == -1)
 
         edges = {}
-        edges.update(zip(self.triangle_nodes[border[:,0]][:,1],
-                         self.triangle_nodes[border[:,0]][:,2]))
-        edges.update(zip(self.triangle_nodes[border[:,1]][:,2],
-                         self.triangle_nodes[border[:,1]][:,0]))
-        edges.update(zip(self.triangle_nodes[border[:,2]][:,0],
-                         self.triangle_nodes[border[:,2]][:,1]))
+        edges.update(dict(zip(self.triangle_nodes[border[:,0]][:,1],
+                              self.triangle_nodes[border[:,0]][:,2])))
+        edges.update(dict(zip(self.triangle_nodes[border[:,1]][:,2],
+                              self.triangle_nodes[border[:,1]][:,0])))
+        edges.update(dict(zip(self.triangle_nodes[border[:,2]][:,0],
+                              self.triangle_nodes[border[:,2]][:,1])))
 
         # Take an arbitrary starting point and its subsequent node
         hull = list(edges.popitem())
