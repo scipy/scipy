@@ -413,7 +413,19 @@ class spmatrix:
             return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError, "axis out of bounds"
-
+    
+    def setdiag(self, values, k=0):
+        """Fills the diagonal elements {a_ii} with the values from the
+        given sequence.  If k != 0, fills the off-diagonal elements
+        {a_{i,i+k}} instead.
+        """
+        M, N = self.shape
+        if len(values) > min(M, N+k):
+            raise ValueError, "sequence of target values is too long"
+        for i, v in enumerate(values):
+            self[i, i+k] = v
+        return
+    
     def save(self, file_name, format = '%d %d %f\n'):
         try:
             fd = open(file_name, 'w')
@@ -2097,13 +2109,6 @@ class dok_matrix(spmatrix, dict):
         else:
             raise TypeError, "need a dense vector"
 
-    def setdiag(self, values, k=0):
-        M, N = self.shape
-        assert len(values) >= max(M, N)
-        for i in xrange(min(M, N-k)):
-            self[i, i+k] = values[i]
-        return
-
     def tocsr(self, nzmax=None):
         """ Return Compressed Sparse Row format arrays for this matrix
         """
@@ -2548,22 +2553,53 @@ class lil_matrix(spmatrix):
             if isscalar(x):
                 if len(row) == 0:
                     row[:] = seq
-                    self.data[i] = [x for item in seq]   # [x] * len(seq) but copied
+                    self.data[i] = [x for item in seq]  # make copies 
                 else:
                     # add elements the slow way
                     for k, col in enumerate(j):
                         self[i, col] = x
                 return
             else:
-                if isdense(x):
+                if isinstance(x, lil_matrix):
+                    if x.shape == (1, self.shape[1]):
+                        self.rows[i] = x.rows[0]
+                        self.data[i] = x.data[0]  
+                        # This doesn't make a copy.  Whether to copy or
+                        # not with sparse matrix slicing needs a thorough
+                        # review for consistency!
+                    elif x.shape == (1, len(seq)):
+                        # Add elements the slow way.  This could be made
+                        # more efficient!
+                        for k, col in enumerate(seq):
+                            self[i, col] = x[0, k]
+                    else:
+                        # This should never happen:
+                        raise ValueError, "source and destination must have" \
+                                          " the same shape"
+                    return
+                elif isinstance(x, csr_matrix):
+
+                    if x.shape != (1, self.shape[1]):
+                        raise ValueError, "sparse matrix source must be (1 x n)"
+                    self.rows[i] = x.colind.tolist()
+                    self.data[i] = x.data.tolist()
+                    # This should be generalized to other shapes than an entire
+                    # row.
+
+                else:
+                    # Try converting to a dense array.
                     # If x is a row or column vector stored as a dense matrix,
-                    # remove its singleton dimension
-                    x = asarray(x).squeeze()
+                    # remove its singleton dimension.
+                    try:
+                        x = asarray(x).squeeze()
+                    except Error, e:
+                        raise TypeError, "unsupported type for" \
+                                         " lil_matrix.__setitem__"
                     if len(x) != len(seq):
                         raise ValueError, "number of elements in source" \
                                 " must be same as number of elements in" \
                                 " destimation or 1"
-                
+                     
                     # Is the row currently empty, and are we adding an entire row?
                     if len(row) == 0 and len(seq) == self.shape[1]:
                         # Remove zeros.  This could be done generically for
@@ -2578,25 +2614,6 @@ class lil_matrix(spmatrix):
                         for k, col in enumerate(seq):
                             self[i, col] = x[k]
                     return
-                elif isinstance(x, lil_matrix):
-                    if x.shape != (1, self.shape[1]):
-                        raise ValueError, "sparse matrix source must be (1 x n)"
-                    self.rows[i] = x.rows[0]
-                    self.data[i] = x.data[0]  # doesn't make a copy.  Whether to
-                                              # copy or not with sparse matrix
-                                              # slicing needs a thorough
-                                              # analysis to ensure consistency
-                elif isinstance(x, csr_matrix):
-                    if x.shape != (1, self.shape[1]):
-                        raise ValueError, "sparse matrix source must be (1 x n)"
-                    self.rows[i] = x.colind.tolist()
-                    self.data[i] = x.data.tolist()
-                    # This should be generalized to other shapes than an entire
-                    # row.
-
-                else:
-                    raise TypeError, "unsupported type for" \
-                                     " lil_matrix.__setitem__"
                     
                 return
                 
