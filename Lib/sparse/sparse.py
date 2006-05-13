@@ -2200,10 +2200,6 @@ class dok_matrix(spmatrix, dict):
         self.shape = (newM, newN)
 
 
-# dictionary of dictionaries based matrix
-class dod_matrix(spmatrix):
-    pass
-
 
 class coo_matrix(spmatrix):
     """ A sparse matrix in coordinate list format.
@@ -2333,11 +2329,14 @@ class coo_matrix(spmatrix):
             return self
 
 
-# Row-based linked list matrix, by Ed Schofield -- report bugs to him!
-# This contains a list (self.rows) of rows, each of which is a sorted list of
-# column indices of non-zero elements; and a list (self.data) of lists of these
-# elements.
 class lil_matrix(spmatrix):
+    """Row-based linked list matrix, by Ed Schofield.
+    
+    This contains a list (self.rows) of rows, each of which is a sorted
+    list of column indices of non-zero elements. It also contains a list
+    (self.data) of lists of these elements.
+    """
+
     def __init__(self, A=None, shape=None, dtype=None):
         """ Create a new list-of-lists sparse matrix.  An optional
         argument A is accepted, which initializes the lil_matrix with it.
@@ -2721,9 +2720,6 @@ def isspmatrix_csc( x ):
 
 def isspmatrix_dok( x ):
     return _isinstance(x, dok_matrix)
-
-def isspmatrix_dod( x ):
-    return _isinstance(x, dod_matrix)
 
 def isspmatrix_lil( x ):
     return _isinstance(x, lil_matrix)
