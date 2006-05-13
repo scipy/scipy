@@ -631,6 +631,23 @@ class test_median(ScipyTestCase):
         assert_equal(stats.median(a2),2.5)
         assert_equal(stats.median(a3),3.5)
 
+class test_percentile(ScipyTestCase):
+    def setUp(self):
+        self.a1 = [3,4,5,10,-3,-5,6]
+        self.a2 = [3,-6,-2,8,7,4,2,1]
+        self.a3 = [3.,4,5,10,-3,-5,-6,7.0]
+        
+    def check_median(self):
+        assert_equal(stats.median(self.a1), 4)
+        assert_equal(stats.median(self.a2), 2.5)
+        assert_equal(stats.median(self.a3), 3.5)
+    
+    def check_percentile(self):
+        x = arange(8) * 0.5
+        assert_equal(stats.scoreatpercentile(x, 0), 0.)
+        assert_equal(stats.scoreatpercentile(x, 100), 3.5)
+        assert_equal(stats.scoreatpercentile(x, 50), 1.75)
+        
 class test_std(ScipyTestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6]

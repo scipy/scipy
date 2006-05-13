@@ -904,35 +904,35 @@ def itemfreq(a):
     return array(_support.abut(scores, freq))
 
 
-def scoreatpercentile(a, percent):
-    # fixme: Instead of computing the histogram, it would be much easier and
-    # more accurate to simply sort the data, compute the empirical CDF using
-    # linear interpolation, and pick out the appropriate value.
-    # fixme: cmedian() could use this function directly as its implementation.
-    """Computes the score (value in dataspace) that corresponds to the given
-    percentile of the dataset distribution.
-
-    For example, the score at 50% is the median.
-
-    Parameters
-    ----------
-    a : array
-    percent : float
-        0 <= percent <= 100
-
-    Returns
-    -------
-    The score at the given percentile.
+def _interpolate(a, b, fraction):
+    """Returns the point at the given fraction between a and b, where
+    'fraction' must be between 0 and 1.
     """
-    percent = percent / 100.0
-    targetcf = percent*len(a)
-    h, lrl, binsize, extras = histogram(a)
-    cumhist = cumsum(h*1)
-    for i in range(len(cumhist)):
-        if cumhist[i] >= targetcf:
-            break
-    score = binsize * ((targetcf - cumhist[i-1]) / float(h[i])) + (lrl+binsize*i)
-    return score
+    return a + (b - a)*fraction;
+
+def scoreatpercentile(a, per, limit=()):
+    """Calculates the score at the given 'per' percentile of the sequence
+    a.  For example, the score at per=50 is the median.
+
+    If the desired quantile lies between two data points, we interpolate
+    between them.
+    
+    If the parameter 'limit' is provided, it should be a tuple (lower,
+    upper) of two values.  Values of 'a' outside this (closed) interval
+    will be ignored.
+    """
+    # TODO: this should be a simple wrapper around a well-written quantile
+    # function.  GNU R provides 9 quantile algorithms (!), with differing
+    # behaviour at, for example, discontinuities.
+    values = np.sort(a)
+    if limit:
+        values = values[(limit[0] < a) & (a < limit[1])]
+    
+    idx = per /100. * (len(values) - 1)
+    if (idx % 1 == 0):
+        return values[idx]
+    else:
+        return _interpolate(values[int(idx)], values[int(idx) + 1], idx % 1) 
 
 
 def percentileofscore(a, score, histbins=10, defaultlimits=None):
