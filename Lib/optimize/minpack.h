@@ -141,7 +141,7 @@ static PyObject *call_python_function(PyObject *func, int n, double *x, PyObject
     PYERR2(error_obj,"Internal error constructing argument list.");
 
   Py_DECREF(arg1);    /* arglist has a reference to sequence, now. */
-    
+  arg1 = NULL;
 
   /* Call function object --- variable passed to routine.  Extra
           arguments are in another passed variable.

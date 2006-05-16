@@ -449,7 +449,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
   if (ap_fvec == NULL) goto fail;
   fvec = (double *) ap_fvec->data;
-  m = ap_fvec->dimensions[0];
+  m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
 
   dims[0] = n; dims[1] = m;
   ap_ipvt = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
@@ -548,7 +548,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
   SET_DIAG(ap_diag,o_diag,mode);
 
-  m = ap_fvec->dimensions[0];
+  m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
 
   dims[0] = n; dims[1] = m;
   ap_ipvt = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
