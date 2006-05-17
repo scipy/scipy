@@ -2555,7 +2555,7 @@ class lil_matrix(spmatrix):
                     self.data[i] = [x for item in seq]  # make copies 
                 else:
                     # add elements the slow way
-                    for k, col in enumerate(j):
+                    for k, col in enumerate(seq):
                         self[i, col] = x
                 return
             else:
