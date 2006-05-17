@@ -1,13 +1,17 @@
 import numpy as N
 import numpy.linalg as L
-from model import Model
+from model import LikelihoodModel
 import utils
+import scipy.linalg
 
-class OLSModel(Model):
+class OLSModel(LikelihoodModel):
     
     """
     A simple ordinary least squares model.
     """
+
+    def logL(self, b, Y, **extra):
+        return -scipy.linalg.norm(self.whiten(Y) - N.dot(self.wdesign, b))**2 / 2.
 
     def __init__(self, design, **keywords):
         Model.__init__(self, **keywords)

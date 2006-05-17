@@ -1,3 +1,4 @@
+import scipy.optimize
 
 class Model:
 
@@ -36,3 +37,30 @@ class Model:
         """
         raise NotImplementedError
 
+class LikelihoodModel(Model):
+
+    def logL(self, theta, **extra):
+        """
+        Log-likelihood of model.
+        """
+        raise NotImplementedError
+
+    def score(self, theta, **extra):
+        """
+        Score function of model = gradient of logL with respect to
+        theta.
+        """
+        raise NotImplementedError
+
+    def information(self, theta, **extra):
+        """
+        Score function of model = - Hessian of logL with respect to
+        theta.
+        """
+        raise NotImplementedError
+
+    def newton(self, theta, **extra):
+        def f(theta):
+            return -self.logL(theta)
+        self.results = scipy.optimize.fmin(f, theta)
+        
