@@ -329,7 +329,7 @@ def lu(a,permute_l=0,overwrite_a=0):
         return l,u
     return p,l,u
 
-def svd(a,compute_uv=1,overwrite_a=0):
+def svd(a,full_matrices=1,compute_uv=1,overwrite_a=0):
     """Compute singular value decomposition (SVD) of matrix a.
 
     Description:
@@ -354,6 +354,10 @@ def svd(a,compute_uv=1,overwrite_a=0):
       vh -- An N x N unitary matrix [compute_uv=1], vh = v^H.
 
     """
+    # A hack until full_matrices == 0 support is fixed here.
+    if full_matrices == 0:
+        import numpy.linalg
+        return numpy.linalg.svd(a, full_matrices=0, compute_uv=compute_uv)
     a1 = asarray_chkfinite(a)
     if len(a1.shape) != 2:
         raise ValueError, 'expected matrix'
