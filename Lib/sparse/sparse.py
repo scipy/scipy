@@ -535,7 +535,8 @@ class csc_matrix(spmatrix):
                 try:
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
-                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s), 2))
+                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) \
+                            and (shape(ij) == (2, len(s)))
                 except (AssertionError, TypeError, ValueError):
                     try:
                         # Try interpreting it as (data, rowind, indptr)
@@ -554,7 +555,9 @@ class csc_matrix(spmatrix):
                 else:
                     # (data, ij) format
                     self.dtype = getdtype(dtype, s)
-                    temp = coo_matrix((s, ij), dims=dims, dtype=dtype).tocsc()
+                    ijnew = array(ij, copy=copy)
+                    temp = coo_matrix((s, ijnew), dims=dims, \
+                                      dtype=self.dtype).tocsc()
                     self.shape = temp.shape
                     self.data = temp.data
                     self.rowind = temp.rowind
@@ -1056,7 +1059,7 @@ class csr_matrix(spmatrix):
 
           - csr_matrix((data, ij), [dims=(M, N), nzmax=nzmax])
             where data, ij satisfy:
-                a[ij[k, 0], ij[k, 1]] = data[k]
+                a[ij[0, k], ij[1, k]] = data[k]
 
           - csr_matrix((data, col, ptr), [dims=(M, N)])
             standard CSR representation
@@ -1119,11 +1122,15 @@ class csr_matrix(spmatrix):
                 try:
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
-                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) and (shape(ij) == (len(s), 2))
+                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) \
+                           and (shape(ij) == (2, len(s)))
                 except (AssertionError, TypeError, ValueError, AttributeError):
                     try:
                         # Try interpreting it as (data, colind, indptr)
                         (s, colind, indptr) = arg1
+                    except (TypeError, ValueError):
+                        raise ValueError, "unrecognized form for csr_matrix constructor"
+                    else:
                         self.dtype = getdtype(dtype, s)
                         if copy:
                             self.data = array(s, dtype=self.dtype)
@@ -1133,19 +1140,16 @@ class csr_matrix(spmatrix):
                             self.data = asarray(s, dtype=self.dtype)
                             self.colind = asarray(colind)
                             self.indptr = asarray(indptr)
-                    except:
-                        raise ValueError, "unrecognized form for csr_matrix constructor"
                 else:
                     # (data, ij) format
-                    ijnew = ij.copy()
-                    ijnew[:, 0] = ij[:, 1]
-                    ijnew[:, 1] = ij[:, 0]
-                    temp = coo_matrix((s, ijnew), dims=dims, dtype=dtype).tocsr()
+                    self.dtype = getdtype(dtype, s)
+                    ijnew = array([ij[1], ij[0]], copy=copy)
+                    temp = coo_matrix((s, ijnew), dims=dims, \
+                                      dtype=self.dtype).tocsr()
                     self.shape = temp.shape
                     self.data = temp.data
                     self.colind = temp.colind
                     self.indptr = temp.indptr
-                    self.dtype = temp.dtype
         else:
             raise ValueError, "unrecognized form for csr_matrix constructor"
 
@@ -2207,24 +2211,24 @@ class coo_matrix(spmatrix):
     COO matrices are created either as:
         A = coo_matrix(None, dims=(m, n), [dtype])
     for a zero matrix, or as:
-        A = coo_matrix(obj, ij, [dims])
+        A = coo_matrix((obj, ij), [dims])
     where the dimensions are optional.  If supplied, we set (M, N) = dims.
     If not supplied, we infer these from the index arrays
-    ij[:][0] and ij[:][1]
+    ij[0][:] and ij[1][:]
     
     The arguments 'obj' and 'ij' represent three arrays:
-        1. obj[:]: the entries of the matrix, in any order
-        2. ij[:][0]: the row indices of the matrix entries
-        3. ij[:][1]: the column indices of the matrix entries
+        1. obj[:]    the entries of the matrix, in any order
+        2. ij[0][:]  the row indices of the matrix entries
+        3. ij[1][:]  the column indices of the matrix entries
     
     So the following holds:
-        A[ij[k][0], ij[k][1]] = obj[k]
+        A[ij[0][k], ij[1][k] = obj[k]
     """
     def __init__(self, arg1, dims=None, dtype=None):
         spmatrix.__init__(self)
         if isinstance(arg1, tuple):
             try:
-                obj, ij_in = arg1
+                obj, ij = arg1
             except:
                 raise TypeError, "invalid input format"
         elif arg1 is None:      # clumsy!  We should make ALL arguments
@@ -2239,31 +2243,29 @@ class coo_matrix(spmatrix):
             self.col = array([])
             self._check()
             return
-        self.dtype = getdtype(dtype, obj, default=float)
-        try:
-            # Assume the first calling convention
-            #            assert len(ij) == 2
-            if len(ij_in) != 2:
-                if isdense( ij_in ) and (ij_in.shape[1] == 2):
-                    ij = (ij_in[:,0], ij_in[:,1])
-                else:
-                    raise AssertionError
-            else:
-                ij = ij_in
-            if dims is None:
-                M = int(amax(ij[0])) + 1
-                N = int(amax(ij[1])) + 1
-                self.shape = (M, N)
-            else:
-                # Use 2 steps to ensure dims has length 2.
-                M, N = dims
-                self.shape = (M, N)
-            self.row = asarray(ij[0])
-            self.col = asarray(ij[1])
-            self.data = asarray(obj, dtype=self.dtype)
-            self._check()
-        except Exception:
+        else:
             raise TypeError, "invalid input format"
+        
+        self.dtype = getdtype(dtype, obj, default=float)
+
+        try:
+            if len(ij) != 2:
+                raise TypeError
+        except TypeError:
+            raise TypeError, "invalid input format"
+        
+        if dims is None:
+            M = int(amax(ij[0])) + 1
+            N = int(amax(ij[1])) + 1
+            self.shape = (M, N)
+        else:
+            # Use 2 steps to ensure dims has length 2.
+            M, N = dims
+            self.shape = (M, N)
+        self.row = asarray(ij[0])
+        self.col = asarray(ij[1])
+        self.data = asarray(obj, dtype=self.dtype)
+        self._check()
 
     def _check(self):
         """ Checks for consistency and stores the number of non-zeros as
