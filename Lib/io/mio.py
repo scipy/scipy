@@ -787,8 +787,7 @@ def loadmat(name, dict=None, appendmat=1, basename='raw'):
             fid.close()
             print "Warning: Read error in file."
             break
-
-        M,rest = divmod(header[0],1000)
+        M,rest = divmod(int(header[0]),1000) # int is for workaround numpy 0.9.9 bug
         O,rest = divmod(rest,100)
         P,rest = divmod(rest,10)
         T = rest
