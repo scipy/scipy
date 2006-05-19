@@ -1,11 +1,35 @@
+import os
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('sandbox',parent_package,top_path)
+
+    sandbox_packages = []
+    try:
+        sandbox_file = open(os.path.join(config.package_path,
+                                         'enabled_packages.txt'), 'rU')
+    except IOError:
+        pass
+    else:
+        for line in sandbox_file:
+            p = line.strip()
+            if line.startswith('#'):
+                continue
+            sandbox_packages.append(p)
+        sandbox_file.close()
+
+    for p in sandbox_packages:
+        config.add_subpackage(p)
 
     # All subpackages should be commented out in the version
     # committed to the repository. This prevents build problems
     # for people who are not actively working with these
     # potentially unstable packages.
+
+    # You can put a list of modules you want to always enable in the
+    # file 'enabled_packages.txt' in this directory (you'll have to create it).
+    # Since this isn't under version control, it's less likely you'll
+    # check it in and screw other people up :-)
 
     # An example package:
     #config.add_subpackage('exmplpackage')
@@ -39,7 +63,7 @@ def configuration(parent_package='',top_path=None):
 
     # Finite Difference Formulae package
     #config.add_subpackage('fdfpack')
-    
+
     return config
 
 if __name__ == '__main__':
