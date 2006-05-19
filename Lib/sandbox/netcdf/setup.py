@@ -1,35 +1,45 @@
 #!/usr/bin/env python
 import os
+from numpy.distutils.system_info import system_info, dict_append, \
+    NotFoundError
 
-netcdf_prefix = None
+class NetCDFNotFound(NotFoundError):
+    """
+    NetCDF (http://www.unidata.ucar.edu/software/netcdf/) not found.
+    Directories to search for the libraries can be specified in the
+    numpy/distutils/site.cfg file (section [netcdf]) or by setting
+    the NETCDF variable.
+    """
 
-if netcdf_prefix is None:
-    try:
-        netcdf_prefix = os.environ['NETCDF_PREFIX']
-    except KeyError:
-        for netcdf_prefix in ['/usr/local', '/usr', '/sw']:
-            netcdf_include = os.path.join(netcdf_prefix, 'include')
-            netcdf_lib = os.path.join(netcdf_prefix, 'lib')
-            if os.path.exists(os.path.join(netcdf_include, 'netcdf.h')):
+class netcdf_info(system_info):
+    section = 'netcdf'
+    dir_env_var = 'NETCDF'
+    notfounderror = NetCDFNotFound
+
+    def __init__(self, *args, **kw):
+        system_info.__init__(self, *args, **kw)
+        self.cp.defaults()['libraries'] = 'netcdf'
+
+    def calc_info(self):
+        info = self.calc_libraries_info()
+        include_dirs = self.get_include_dirs()
+        inc_dir = None
+        for d in include_dirs:
+            if self.combine_paths(d, 'netcdf.h'):
+                inc_dir = d
                 break
-            netcdf_prefix = None            
+        if inc_dir is not None:
+            dict_append(info, include_dirs=[inc_dir])
+        self.set_info(**info)
 
-if netcdf_prefix is None:
-    print "netCDF not found, the netCDF module will not be built!"
-    print "If netCDF is installed somewhere on this computer,"
-    print "please set NETCDF_PREFIX to the path where"
-    print "include/netcdf.h and lib/netcdf.a are located"
-    print "and re-run the build procedure."
-        
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('netcdf',parent_package,top_path)
+    netcdf = netcdf_info().get_info()
     config.add_extension('_netcdf',
                          sources = ['_netcdf.c'],
                          depends = ['_netcdf.h'],
-                         include_dirs=[netcdf_include],
-                         library_dirs=[netcdf_lib],
-                         libraries = ['netcdf'])
+                         extra_info = netcdf)
     config.add_data_files('demomodule.c','Scientific_LICENSE',
                           'README')
     return config
