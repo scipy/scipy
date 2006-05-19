@@ -121,7 +121,7 @@ class Vector(Type_Descriptor):
     owned = 0 # Convertion is by casting!
 
     prerequisites = Type_Descriptor.prerequisites+\
-                   ['#include "numpy/arrayobject.h"']
+                    ['#include "numpy/arrayobject.h"']
     dims = 1
     def check(self,s):
         return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s"%(

@@ -458,7 +458,7 @@ class catalog:
         finally:
             if module_dir is not None:
                 self.clear_module_directory()
-        return unique_file(d,code)
+        return unique_file(d, code)
 
     def path_key(self,code):
         """ Return key for path information for functions associated with code.

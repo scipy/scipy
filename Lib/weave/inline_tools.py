@@ -6,6 +6,9 @@ import string
 import catalog
 import common_info
 
+from numpy.core.multiarray import _get_ndarray_c_version
+ndarray_api_version = '/* NDARRAY API VERSION %x */' % (_get_ndarray_c_version(),)
+
 # not an easy way for the user_path_list to come in here.
 # the PYTHONCOMPILED environment variable offers the most hope.
 
@@ -409,7 +412,8 @@ def compile_function(code,arg_names,local_dict,global_dict,
     # figure out where to store and what to name the extension module
     # that will contain the function.
     #storage_dir = catalog.intermediate_dir()
-    module_path = function_catalog.unique_module_name(code,module_dir)
+    code = ndarray_api_version + '\n' + code
+    module_path = function_catalog.unique_module_name(code, module_dir)
     storage_dir, module_name = os.path.split(module_path)
     mod = inline_ext_module(module_name,compiler)
 

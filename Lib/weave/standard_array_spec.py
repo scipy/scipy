@@ -4,7 +4,6 @@ from numpy import *
 from types import *
 import os
 
-
 num_typecode = {}
 num_typecode['?'] = 'PyArray_BOOL'
 num_typecode['b'] = 'PyArray_BYTE'
