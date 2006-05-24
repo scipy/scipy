@@ -784,7 +784,6 @@ class csc_matrix(spmatrix):
             else:
                 return out.sum()
         else:
-            # Was: return spmatrix.sum(self, axis)
             rowind = self.rowind
             out = zeros(m, dtype=self.dtype)
             # Loop over non-zeros
@@ -1331,7 +1330,6 @@ class csr_matrix(spmatrix):
             else:
                 return out.sum()
         else:
-            # Was: return spmatrix.sum(self, axis)
             colind = self.colind
             out = zeros(n, dtype=self.dtype)
             # Loop over non-zeros
@@ -2589,19 +2587,26 @@ class lil_matrix(spmatrix):
 
                 else:
                     # Try converting to a dense array.
-                    # If x is a row or column vector stored as a dense matrix,
-                    # remove its singleton dimension.
                     try:
-                        x = asarray(x).squeeze()
+                        x = asarray(x)
                     except Error, e:
                         raise TypeError, "unsupported type for" \
                                          " lil_matrix.__setitem__"
-                    if len(x) != len(seq):
-                        raise ValueError, "number of elements in source" \
-                                " must be same as number of elements in" \
-                                " destimation or 1"
+                    else:
+                        if x.ndim == 2:
+                            # If it's 2d, ensure it's 1 x n, then
+                            # squeeze it down to 1d
+                            if x.shape != (1, len(seq)):
+                                raise ValueError, \
+                                    "source and destination have incompatible "\
+                                    "dimensions"
+                            else:
+                                x = x.squeeze()
                      
-                    # Is the row currently empty, and are we adding an entire row?
+                    # Below here x is a 1d array of correct size
+                    
+                    # Are we adding an entire row to a currently empty
+                    # row?  Special case -- this can be done fast
                     if len(row) == 0 and len(seq) == self.shape[1]:
                         # Remove zeros.  This could be done generically for
                         # dense arrays and all sparse matrix formats by
@@ -2621,7 +2626,6 @@ class lil_matrix(spmatrix):
 
     def __mul__(self, other):           # self * other
         if isscalar(other) or (isdense(other) and rank(other)==0):
-            # Was: new = lil_matrix(self.shape, dtype=self.dtype)
             new = self.copy()
             if other == 0:
                 # Multiply by zero: return the zero matrix
