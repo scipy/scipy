@@ -2603,22 +2603,9 @@ class lil_matrix(spmatrix):
                             else:
                                 x = x.squeeze()
                      
-                    # Below here x is a 1d array of correct size
-                    
-                    # Are we adding an entire row to a currently empty
-                    # row?  Special case -- this can be done fast
-                    if len(row) == 0 and len(seq) == self.shape[1]:
-                        # Remove zeros.  This could be done generically for
-                        # dense arrays and all sparse matrix formats by
-                        # implementing a nonzero() method for sparse matrices
-                        nonzeros = [ind for ind, xi in enumerate(x) if xi != 0]
-                        x = [x[ind] for ind in nonzeros]
-                        row[:] = nonzeros
-                        self.data[i] = x
-                    else:
-                        # add elements the slow way
-                        for k, col in enumerate(seq):
-                            self[i, col] = x[k]
+                    # Add elements one by one
+                    for k, col in enumerate(seq):
+                        self[i, col] = x[k]
                     return
                     
                 return
