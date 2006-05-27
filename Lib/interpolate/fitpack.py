@@ -309,8 +309,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     if w is None: w=ones(m,'d')
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
-    if xb is None: xb=x[0]
-    if xe is None: xe=x[-1]
+    if xb is None: xb=x.min()
+    if xe is None: xe=x.max()
     if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
     if s is None: s=m-sqrt(2*m)
     if t is None and task==-1: raise TypeError, 'Knots must be given for task=-1'
@@ -572,10 +572,10 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
     if w is None: w=ones(m,'d')
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
-    if xb is None: xb=x[0]
-    if xe is None: xe=x[-1]
-    if yb is None: yb=y[0]
-    if ye is None: ye=y[-1]
+    if xb is None: xb=x.min()
+    if xe is None: xe=x.max()
+    if yb is None: yb=y.min()
+    if ye is None: ye=y.max()
     if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
     if s is None: s=m-sqrt(2*m)
     if tx is None and task==-1: raise TypeError, 'Knots_x must be given for task=-1'

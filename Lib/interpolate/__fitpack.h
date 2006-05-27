@@ -198,7 +198,10 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
     SURFIT(&iopt,&m,x,y,z,w,&xb,&xe,&yb,&ye,&kx,&ky,&s,&nxest,&nyest,&nmax,&eps,&nx,tx,&ny,ty,c,&fp,wrk1,&lwrk1,wrk2,&lwrk2,iwrk,&kwrk,&ier);
     if (wrk2) free(wrk2);
   }
-  if (ier==10) goto fail;
+  if (ier==10) {
+	  PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
+	  goto fail;
+  }
   lc = (nx-kx-1)*(ny-ky-1);
   ap_tx = (PyArrayObject *)PyArray_FromDims(1,&nx,PyArray_DOUBLE);
   ap_ty = (PyArrayObject *)PyArray_FromDims(1,&ny,PyArray_DOUBLE);
@@ -233,6 +236,9 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_ty);
   Py_XDECREF(ap_wrk);
   /*Py_XDECREF(ap_iwrk);*/
+  if (!PyErr_Occurred()) {
+	  PyErr_SetString(PyExc_ValueError, "An error occurred.");
+  }
   return NULL;
 }
 
