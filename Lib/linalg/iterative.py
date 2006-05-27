@@ -32,6 +32,9 @@ class get_matvec:
     def __init__(self, obj, *args):
         self.obj = obj
         self.args = args
+        if isinstance(obj, sb.matrix):
+            self.callfunc = self.type1m
+            return
         if isinstance(obj, sb.ArrayType):
             self.callfunc = self.type1
             return
@@ -49,6 +52,9 @@ class get_matvec:
     def type1(self, x):
         return sb.dot(self.obj, x)
 
+    def type1m(self, x):
+        return sb.dot(self.obj.A, x)
+
     def type2(self, x):
         return self.obj(x,*self.args)
 
@@ -56,6 +62,8 @@ class get_rmatvec(get_matvec):
     methname = 'rmatvec'
     def type1(self, x):
         return sb.dot(x, self.obj)
+    def type1m(self, x):
+        return sb.dot(x, self.obj.A)
 
 class get_psolve:
     methname = 'psolve'
