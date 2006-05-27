@@ -166,12 +166,15 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                  computes derivatives down the columns (faster, because
                  there is no transpose operation).
 
-
-  Outputs: (x, {cov_x, infodict, ier}, mesg)
+  Outputs: (x, {cov_x, infodict, mesg}, ier)
 
     x -- the solution (or the result of the last iteration for an
          unsuccessful call.
 
+    cov_x -- uses the fjac and ipvt optional outputs to construct an
+             estimate of the covariance matrix of the solution.
+             None if a singular matrix encountered (indicates
+             infinite covariance in some direction). 
     infodict -- a dictionary of optional outputs with the keys:
                 'nfev' : the number of function calls
                 'njev' : the number of jacobian calls
@@ -188,13 +191,12 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                          magnitude. Column j of p is column ipvt(j)
                          of the identity matrix.
                 'qtf'  : the vector (transpose(q) * fvec).
+    mesg -- a string message giving information about the cause of
+            failure.
     ier -- an integer flag.  If it is equal to 1 the solution was
            found.  If it is not equal to 1, the solution was not
            found and the following message gives more information.
-    mesg -- a string message giving information about the cause of
-            failure.
-    cov_x -- uses the fjac and ipvt optional outputs to construct an
-             estimate of the covariance matrix of the solution.
+             
 
   Extended Inputs:
 
@@ -268,10 +270,13 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
         perm = take(eye(n),retval[1]['ipvt']-1)
         r = triu(transpose(retval[1]['fjac'])[:n,:])
         R = dot(r, perm)
-        cov_x = sl.inv(dot(transpose(R),R))
-        return (retval[0], cov_x) + retval[1:] + (mesg,)
+        try:
+            cov_x = sl.inv(dot(transpose(R),R))
+        except sl.basic.LinAlgError:
+            cov_x = None
+        return (retval[0], cov_x) + retval[1:-1] + (mesg,info)
     else:
-        return (retval[0], mesg)
+        return (retval[0], info)
 
 
 def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
