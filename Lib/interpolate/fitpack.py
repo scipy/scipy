@@ -33,8 +33,12 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     matrixmultiply, sin, cos, pi, arange
+     matrixmultiply, sin, cos, pi, arange, empty
 myasarray = atleast_1d
+
+# Try to replace _fitpack interface with
+#  f2py-generated version
+import dfitpack
 
 _iermess = {0:["""\
     The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
@@ -57,6 +61,7 @@ _iermess = {0:["""\
     Error on input data""",ValueError],
                'unknown':["""\
     An error occured""",TypeError]}
+
 _iermess2 = {0:["""\
     The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
             -1:["""\
@@ -240,7 +245,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
 
 _curfit_cache = {'t': array([],'d'), 'wrk': array([],'d'), 'iwrk':array([],'i')}
 def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
-           full_output=0,nest=None,per=0,quiet=1):
+           full_output=0,per=0,quiet=1):
     """Find the B-spline representation of 1-D curve.
 
     Description:
@@ -263,11 +268,13 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
            Even order splines should be avoided especially with small s values.
            1 <= k <= 5
       task -- If task==0 find t and c for a given smoothing factor, s.
-              If task==1 find t and c for another value of the smoothing factor,
-                s. There must have been a previous call with task=0 or task=1
-                for the same set of data.
-              If task=-1 find the weighted least square spline for a given set of
-                knots, t.
+              If task==1 find t and c for another value of the
+                smoothing factor, s. There must have been a previous
+                call with task=0 or task=1 for the same set of data
+                (t will be stored an used internally)
+              If task=-1 find the weighted least square spline for
+                a given set of knots, t.  These should be interior knots
+                as knots on the ends will be added automatically.
       s -- A smoothing condition.  The amount of smoothness is determined by
            satisfying the conditions: sum((w * (y - g))**2) <= s where
            g(x) is the smoothed interpolation of (x,y).  The user can use s to
@@ -277,10 +284,10 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
            weights represent the inverse of the standard-deviation of y, then a
            good s value should be found in the range (m-sqrt(2*m),m+sqrt(2*m))
            where m is the number of datapoints in x, y, and w.
-      t -- The knots needed for task=-1.
+           default : s=m-sqrt(2*m)
+      t -- The knots needed for task=-1.  If given then task is automatically
+           set to -1.
       full_output -- If non-zero, then return optional outputs.
-      nest -- An over-estimate of the total number of knots of the spline to
-              help in determining the storage space.  By default nest=m/2.
       per -- If non-zero, data points are considered periodic with period
              x[m-1] - x[0] and a smooth periodic spline approximation is returned.
              Values of y[m-1] and w[m-1] are not used.
@@ -302,48 +309,51 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
       SEE splev for evaluation of the spline and its derivatives.
     """
     if task<=0:
-        _curfit_cache = {'t': array([],'d'), 'wrk': array([],'d'),
-                         'iwrk':array([],'i')}
+        _curfit_cache = {}
     x,y=map(myasarray,[x,y])
     m=len(x)
     if w is None: w=ones(m,'d')
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
-    if xb is None: xb=x.min()
-    if xe is None: xe=x.max()
-    if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
-    if s is None: s=m-sqrt(2*m)
-    if t is None and task==-1: raise TypeError, 'Knots must be given for task=-1'
-    if t is not None: _curfit_cache['t']=myasarray(t)
-    n=len(_curfit_cache['t'])
-    if task==-1 and n<2*k+2:
-        raise TypeError, 'There must be at least 2*k+2 knots for task=-1'
     if (m != len(y)) or (m != len(w)):
         raise TypeError, 'Lengths of the first three arguments (x,y,w) must be equal'
     if not (1<=k<=5):
         raise TypeError, 'Given degree of the spline (k=%d) is not supported. (1<=k<=5)'%(k)
-    if m<=k: raise TypeError, 'm>k must hold'
-    if nest is None: nest=m/2
-    if nest<0:
-        if per: nest=m+2*k
-        else: nest=m+k+1
-    nest=max(nest,2*k+3)
-    if task>=0 and s==0:
-        if per: nest=m+2*k
-        else: nest=m+k+1
-    if task==-1:
-        _curfit_cache['t']=myasarray(t)
-        if not (2*k+2<=len(t)<=min(nest,m+k+1)):
-            raise TypeError, 'Number of knots n is not acceptable (2*k+2<=n<=min(nest,m+l+1))'
-    t=_curfit_cache['t']
-    wrk=_curfit_cache['wrk']
-    iwrk=_curfit_cache['iwrk']
-    t,c,o = _fitpack._curfit(x,y,w,xb,xe,k,task,s,t,nest,wrk,iwrk,per)
-    _curfit_cache['t']=t
-    _curfit_cache['wrk']=o['wrk']
-    _curfit_cache['iwrk']=o['iwrk']
-    ier,fp=o['ier'],o['fp']
-    tck = [t,c,k]
+    if m<=k: raise TypeError, 'm>k must hold'     
+    if xb is None: xb=x[0]
+    if xe is None: xe=x[-1]
+    if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
+    if s is None: s = m-sqrt(2*m)
+    if t is not None:
+        task = -1
+    if task == -1:
+        if t is None: raise TypeError, 'Knots must be given for task=-1'
+        numknots = len(t)
+        _curfit_cache['t'] = empty((numknots + 2*k+2,),'d')
+        _curfit_cache['t'][k+1:-k-1] = t
+        nest = len(_curfit_cache['t'])
+    elif task == 0:
+        if per:
+            nest = max(m+2*k,2*k+3)
+        else:
+            nest = max(m+k+1,2*k+3)
+        t = empty((nest,),'d')
+        _curfit_cache['t'] = t
+    if task <= 0:
+        _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),'d')
+        _curfit_cache['iwrk'] = empty((nest,),'i')
+    try:
+        t=_curfit_cache['t']
+        wrk=_curfit_cache['wrk']
+        iwrk=_curfit_cache['iwrk']
+    except KeyError:
+        raise TypeError, "must call with task=1 only after"\
+              " call with task=0,-1"
+    if not per:
+        n,c,fp,ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk, xb, xe, k, s)
+    else:
+        n,c,fp,ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
+    tck = [t[:n],c[:n-k-1],k]
     if ier<=0 and not quiet:
         print _iermess[ier][0]
         print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
@@ -389,9 +399,9 @@ def splev(x,tck,der=0):
 
     Outputs: (y, )
 
-      y -- an array of values representing the spline function or curve.  If tck
-           was returned from splrep, then this is a list of arrays representing
-           the curve in N-dimensional space.
+      y -- an array of values representing the spline function or curve.
+           If tck was returned from splrep, then this is a list of arrays
+           representing the curve in N-dimensional space.
     """
     t,c,k=tck
     try:
@@ -511,8 +521,9 @@ def spalde(x,tck):
 
 _surfit_cache = {'tx': array([],'d'),'ty': array([],'d'),
                  'wrk': array([],'d'), 'iwrk':array([],'i')}
-def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=None,
-             eps=1e-16,tx=None,ty=None,full_output=0,nxest=None,nyest=None,quiet=1):
+def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
+             s=None,eps=1e-16,tx=None,ty=None,full_output=0,
+             nxest=None,nyest=None,quiet=1):
     """Find a bivariate B-spline representation of a surface.
 
     Description:
@@ -526,7 +537,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
       w -- Rank-1 array of weights. By default w=ones(len(x)).
       xb, xe -- End points of approximation interval in x.
       yb, ye -- End points of approximation interval in y.
-                By default xb, xe, yb, ye = x[0], x[-1], y[0], y[-1]
+                By default xb, xe, yb, ye = x.min(), x.max(), y.min(), y.max()
       kx, ky -- The degrees of the spline (1 <= kx, ky <= 5).  Third order
                 (kx=ky=3) is recommended.
       task -- If task=0, find knots in x and y and coefficients for a given
@@ -535,17 +546,18 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
                 smoothing factor, s.  bisplrep must have been previously called
                 with task=0 or task=1.
               If task=-1, find coefficients for a given set of knots tx, ty.
-      s -- A non-negative smoothing factor.  If weights correspond to the inverse
-           of the standard-deviation of the errors in z, then a good s-value
-           should be found in the range (m-sqrt(2*m),m+sqrt(2*m)) where m=len(x)
-      eps -- A threshold for determining the effective rank of an over-determined
-             linear system of equations (0 < eps < 1) --- not likely to need
-             changing.
+      s -- A non-negative smoothing factor.  If weights correspond
+           to the inverse of the standard-deviation of the errors in z,
+           then a good s-value should be found in the range
+           (m-sqrt(2*m),m+sqrt(2*m)) where m=len(x)
+      eps -- A threshold for determining the effective rank of an
+             over-determined linear system of equations (0 < eps < 1)
+             --- not likely to need changing.
       tx, ty -- Rank-1 arrays of the knots of the spline for task=-1
       full_output -- Non-zero to return optional outputs.
-      nxest, nyest -- Over-estimates of the total number of knots.  If None then
-                      nxest = max(kx+sqrt(m/2),2*kx+3),
-                      nyest = max(ky+sqrt(m/2),2*ky+3)
+      nxest, nyest -- Over-estimates of the total number of knots.
+                      If None then nxest = max(kx+sqrt(m/2),2*kx+3),
+                                   nyest = max(ky+sqrt(m/2),2*ky+3)
       quiet -- Non-zero to suppress printing of messages.
 
     Outputs: (tck, {fp, ier, msg})
@@ -579,10 +591,10 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,s=Non
     if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
     if s is None: s=m-sqrt(2*m)
     if tx is None and task==-1: raise TypeError, 'Knots_x must be given for task=-1'
-    if tx is not None: _curfit_cache['tx']=myasarray(tx)
+    if tx is not None: _surfit_cache['tx']=myasarray(tx)
     nx=len(_surfit_cache['tx'])
     if ty is None and task==-1: raise TypeError, 'Knots_y must be given for task=-1'
-    if ty is not None: _curfit_cache['ty']=myasarray(ty)
+    if ty is not None: _surfit_cache['ty']=myasarray(ty)
     ny=len(_surfit_cache['ty'])
     if task==-1 and nx<2*kx+2:
         raise TypeError, 'There must be at least 2*kx+2 knots_x for task=-1'

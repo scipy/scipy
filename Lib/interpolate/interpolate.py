@@ -26,7 +26,8 @@ class interp2d:
         Input:
           x,y  - 1-d arrays defining 2-d grid (or 2-d meshgrid arrays)
           z    - 2-d array of grid values
-          kind - interpolation type ('nearest', 'linear', 'cubic', 'spline')
+          kind - interpolation type ('nearest', 'linear', 'cubic',
+          'quintic')
           copy - if true then data is copied into class, otherwise only a
                    reference is held.
           bounds_error - if true, then when out_of_bounds occurs, an error is
@@ -37,7 +38,7 @@ class interp2d:
         """
         self.x = atleast_1d(x).copy()
         self.y = atleast_1d(y).copy()
-        if rank(self.x) > 2 or rank(self.y) > 2:
+        if self.x > 2 or rank(self.y) > 2:
             raise ValueError, "One of the input arrays is not 1-d or 2-d."
         if rank(self.x) == 2:
             self.x = self.x[:,0]
@@ -46,9 +47,12 @@ class interp2d:
         self.z = array(z,copy=True)
         if rank(z) != 2:
             raise ValueError, "Grid values is not a 2-d array."
-
-
-
+        try:
+            kx = {'linear' : 1,
+                  'cubic' : 3,
+                  'qunitic' : 5}[kind]
+        except:
+            raise ValueError, "Unsupported interpolation type."
 
     def __call__(self,x,y,dx=0,dy=0):
         """

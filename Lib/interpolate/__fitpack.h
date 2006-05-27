@@ -203,6 +203,8 @@ static PyObject *fitpack_surfit(PyObject *dummy, PyObject *args) {
 	  goto fail;
   }
   lc = (nx-kx-1)*(ny-ky-1);
+  Py_XDECREF(ap_tx);
+  Py_XDECREF(ap_ty);
   ap_tx = (PyArrayObject *)PyArray_FromDims(1,&nx,PyArray_DOUBLE);
   ap_ty = (PyArrayObject *)PyArray_FromDims(1,&ny,PyArray_DOUBLE);
   ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
@@ -371,12 +373,20 @@ static PyObject *fitpack_curfit(PyObject *dummy, PyObject *args) {
     PERCUR(&iopt,&m,x,y,w,&k,&s,&nest,&n,t,c,&fp,wrk,&lwrk,iwrk,&ier);
   else
     CURFIT(&iopt,&m,x,y,w,&xb,&xe,&k,&s,&nest,&n,t,c,&fp,wrk,&lwrk,iwrk,&ier);
-  if (ier==10) goto fail;
+  if (ier==10) {
+	  PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
+	  goto fail;
+  }
   lc = n-k-1;
-  ap_t = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
+  if (!iopt) {
+	  ap_t = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
+	  if (ap_t == NULL) goto fail;
+  }
   ap_c = (PyArrayObject *)PyArray_FromDims(1,&lc,PyArray_DOUBLE);
-  if (ap_t == NULL || ap_c == NULL) goto fail;
+  if (ap_c == NULL) goto fail;
   if ((iopt==0)||(n>no)) {
+    Py_XDECREF(ap_wrk);
+    Py_XDECREF(ap_iwrk);
     ap_wrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_DOUBLE);
     ap_iwrk = (PyArrayObject *)PyArray_FromDims(1,&n,PyArray_INT);
     if (ap_wrk == NULL || ap_iwrk == NULL) goto fail;

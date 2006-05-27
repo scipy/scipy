@@ -132,7 +132,77 @@ static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
        real*8 dimension(k+1),intent(out),depend(k) :: d
        integer intent(out) :: ier
      end subroutine spalde
- 
+
+     subroutine curfit(iopt,m,x,y,w,xb,xe,k,s,nest,n,t,c,fp,wrk,lwrk,iwrk,ier)
+       ! in  curfit.f
+       integer :: iopt
+       integer intent(hide),depend(x),check(m>k),depend(k) :: m=len(x)
+       real*8 dimension(m) :: x
+       real*8 dimension(m),depend(m),check(len(y)==m) :: y
+       real*8 dimension(m),depend(m),check(len(w)==m) :: w
+       real*8 optional,depend(x),check(xb<=x[0]) :: xb = x[0]
+       real*8 optional,depend(x,m),check(xe>=x[m-1]) :: xe = x[m-1]
+       integer optional,check(1<=k && k <=5),intent(in) :: k=3
+       real*8 optional,check(s>=0.0) :: s = 0.0
+       integer intent(hide),depend(t) :: nest=len(t)
+       integer intent(out), depend(nest) :: n=nest
+       real*8 dimension(nest),intent(inout) :: t
+       real*8 dimension(n),intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk),intent(inout) :: wrk
+       integer intent(hide),depend(wrk) :: lwrk=len(wrk)
+       integer dimension(nest),intent(inout) :: iwrk
+       integer intent(out) :: ier
+     end subroutine curfit
+
+     subroutine percur(iopt,m,x,y,w,k,s,nest,n,t,c,fp,wrk,lwrk,iwrk,ier) 
+       ! in percur.f
+       integer :: iopt
+       integer intent(hide),depend(x),check(m>k),depend(k) :: m=len(x)
+       real*8 dimension(m) :: x
+       real*8 dimension(m),depend(m),check(len(y)==m) :: y
+       real*8 dimension(m),depend(m),check(len(w)==m) :: w
+       integer optional,check(1<=k && k <=5),intent(in) :: k=3
+       real*8 optional,check(s>=0.0) :: s = 0.0
+       integer intent(hide),depend(t) :: nest=len(t)
+       integer intent(out), depend(nest) :: n=nest
+       real*8 dimension(nest),intent(inout) :: t
+       real*8 dimension(n),intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk),intent(inout) :: wrk
+       integer intent(hide),depend(wrk) :: lwrk=len(wrk)
+       integer dimension(nest),intent(inout) :: iwrk
+       integer intent(out) :: ier
+     end subroutine percur
+     
+
+     subroutine parcur(iopt,ipar,idim,m,u,mx,x,w,ub,ue,k,s,nest,n,t,nc,c,fp,wrk,lwrk,iwrk,ier) 
+       ! in parcur.f
+       integer check(iopt>=-1 && iopt <= 1):: iopt
+       integer check(ipar == 1 || ipar == 0) :: ipar
+       integer check(idim > 0 && idim < 11) :: idim
+       integer intent(hide),depend(u,k),check(m>k) :: m=len(u)
+       real*8 dimension(m), intent(inout) :: u
+       integer intent(hide),depend(x,idim,m),check(mx>=idim*m) :: mx=len(x)
+       real*8 dimension(mx) :: x
+       real*8 dimension(m) :: w
+       real*8 :: ub
+       real*8 :: ue
+       integer optional, check(1<=k && k<=5) :: k=3.0
+       real*8 optional, check(s>=0.0) :: s = 0.0
+       integer intent(hide), depend(t) :: nest=len(t)
+       integer intent(out), depend(nest) :: n=nest
+       real*8 dimension(nest), intent(inout) :: t
+       integer intent(hide), depend(c,nest,idim), check(nc>=idim*nest) :: nc=len(c)
+       real*8 dimension(nc), intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk), intent(inout) :: wrk
+       integer intent(hide),depend(wrk) :: lwrk=len(wrk)
+       integer dimension(nest), intent(inout) :: iwrk
+       integer intent(out) :: ier
+     end subroutine parcur
+
+
      subroutine fpcurf0(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,n,t,c,fp,fpint,wrk,nrdata,ier)
        ! x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier = \
        !   fpcurf0(x,y,k,[w,xb,xe,s,nest])
