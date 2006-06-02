@@ -548,7 +548,8 @@ def tvar(a, limits=None, inclusive=(1,1)):
     a = asarray(a)
     a = a.astype(float).ravel()
     if limits is None:
-        return a.var()
+        n = len(a)
+        return a.var()*(n/(n-1.))
     am = mask_to_limits(a, limits, inclusive)
     return masked_var(am)
 
@@ -592,7 +593,7 @@ def tsem(a, limits=None, inclusive=(True,True)):
     """
     a = asarray(a).ravel()
     if limits is None:
-        n = float(len(ravel(a)))
+        n = float(len(a))    
         return a.std()/sqrt(n)
     am = mask_to_limits(a.ravel(), limits, inclusive)
     sd = sqrt(masked_var(am))
@@ -652,8 +653,7 @@ def variation(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    correction = np.sqrt(float(n-1) / n)
-    return a.std(axis)/a.mean(axis) * correction
+    return a.std(axis)/a.mean(axis) 
 
 
 def skew(a, axis=0, bias=True):
@@ -1521,7 +1521,7 @@ def pointbiserialr(x, y):
     y0m = y0.mean()
     y1m = y1.mean()
 
-    rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / (y.std() * np.sqrt((n-1)/float(n)))
+    rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / y.std()
 
     df = n-2
     # fixme: see comment about TINY in pearsonr()
