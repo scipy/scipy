@@ -64,6 +64,8 @@ def configuration(parent_package='',top_path=None):
     # Finite Difference Formulae package
     #config.add_subpackage('fdfpack')
 
+    # Package with useful constants and unit-conversions defined
+    #config.add_subpackage('constants')
     return config
 
 if __name__ == '__main__':
