@@ -5,9 +5,6 @@
 
 """
 
-#import numpy
-#from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, asarray, \
-#        float32, float64, complex64, complex128
 from numpy import transpose, array, arange
 
 import random
