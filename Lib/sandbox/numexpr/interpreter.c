@@ -14,7 +14,7 @@
 
 /* This file and interp_body should really be generated from a description of
    the opcodes -- there's too much repetition here for manually editing */
-   
+
 
 enum OpCodes {
     OP_NOOP = 0,
@@ -34,7 +34,7 @@ enum OpCodes {
     OP_GE_IFF,
     OP_EQ_IFF,
     OP_NE_IFF,
-    
+
     OP_CAST_FI,
     OP_COPY_FF,
     OP_ONES_LIKE_FF,
@@ -50,30 +50,30 @@ enum OpCodes {
     OP_TAN_FF,
     OP_SQRT_FF,
     OP_ARCTAN2_FFF,
-    OP_WHERE_FFFF, 
+    OP_WHERE_FFFF,
     OP_FUNC_FF,
     OP_FUNC_FFF,
-    
+
     OP_EQ_ICC,
     OP_NE_ICC,
-    
+
     OP_CAST_CI,
     OP_ONES_LIKE_CC,
-    OP_CAST_CF,  
+    OP_CAST_CF,
     OP_COPY_CC,
     OP_NEG_CC,
     OP_ADD_CCC,
     OP_SUB_CCC,
     OP_MUL_CCC,
     OP_DIV_CCC,
-    OP_WHERE_CFCC, 
+    OP_WHERE_CFCC,
     OP_FUNC_CC,
     OP_FUNC_CCC,
-    
+
     OP_REAL_FC,
     OP_IMAG_FC,
     OP_COMPLEX_CFF,
-    
+
 };
 
 /* returns the sig of the nth op, '\0' if no more ops -1 on failure */
@@ -209,7 +209,7 @@ static char op_signature(int op, int n) {
 
 */
 
-enum FuncFFCodes { 
+enum FuncFFCodes {
     FUNC_SQRT_FF = 0,
     FUNC_SIN_FF,
     FUNC_COS_FF,
@@ -229,7 +229,7 @@ typedef double (*FuncFFPtr)(double);
 FuncFFPtr functions_f[] = {
     sqrt,
     sin,
-    cos, 
+    cos,
     tan,
     asin,
     acos,
@@ -262,8 +262,8 @@ enum FuncCCCodes {
     FUNC_SINH_CC,
     FUNC_COSH_CC,
     FUNC_TANH_CC,
-    
-    FUNC_CC_LAST 
+
+    FUNC_CC_LAST
 };
 
 
@@ -272,7 +272,7 @@ typedef void (*FuncCCPtr)(cdouble*, cdouble*);
 FuncCCPtr functions_cc[] = {
     nc_sqrt,
     nc_sin,
-    nc_cos, 
+    nc_cos,
     nc_tan,
     nc_asin,
     nc_acos,
@@ -284,8 +284,8 @@ FuncCCPtr functions_cc[] = {
 
 enum FuncCCCCodes {
     FUNC_POW_CCC = 0,
-    
-    FUNC_CCC_LAST 
+
+    FUNC_CCC_LAST
 };
 
 typedef void (*FuncCCCPtr)(cdouble*, cdouble*, cdouble*);
@@ -370,7 +370,7 @@ get_return_sig(PyObject* program) {
 }
 
 static intp
-size_from_char(char c) 
+size_from_char(char c)
 {
     switch (c) {
         case 'i': return sizeof(long);
@@ -469,7 +469,7 @@ check_program(NumExprObject *self)
                 argloc = pc+argno+2;
             }
             arg = program[argloc];
-            
+
             if (sig != 'n' && arg >= n_buffers) {
                 PyErr_Format(PyExc_RuntimeError, "invalid program: buffer out of range (%i) at %i", arg, argloc);
                 return -1;
@@ -500,7 +500,7 @@ check_program(NumExprObject *self)
                     return -1;
                 }
             } else if (sig != fullsig[arg]) {
-                PyErr_Format(PyExc_RuntimeError, 
+                PyErr_Format(PyExc_RuntimeError,
                 "invalid : opcode signature doesn't match buffer (%c vs %c) at %i", sig, fullsig[arg], argloc);
                 return -1;
             }
@@ -528,14 +528,14 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "SSS|OO", kwlist,
                                      &signature,
                                      &tempsig,
-                                     &program, &o_constants, 
+                                     &program, &o_constants,
                                      &input_names)) {
         return -1;
     }
-    
+
     n_inputs = PyString_Size(signature);
     n_temps = PyString_Size(tempsig);
-    
+
     if (o_constants) {
         if (!PySequence_Check(o_constants) ) {
                 PyErr_SetString(PyExc_TypeError, "constants must be a sequence");
@@ -584,7 +584,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
 
     fullsig = PyString_FromFormat("%c%s%s%s", get_return_sig(program),
-        PyString_AS_STRING(signature), PyString_AS_STRING(constsig), 
+        PyString_AS_STRING(signature), PyString_AS_STRING(constsig),
         PyString_AS_STRING(tempsig));
     if (!fullsig) {
         Py_DECREF(constants);
@@ -594,7 +594,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     if (!input_names) {
         input_names = Py_None;
     }
-    
+
     rawmemsize = BLOCK_SIZE1 * (size_from_sig(constsig) + size_from_sig(tempsig));
     mem = PyMem_New(void *, 1 + n_inputs + n_constants + n_temps);
     rawmem = PyMem_New(char, rawmemsize);
@@ -603,14 +603,14 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(constants);
         Py_DECREF(constsig);
         Py_DECREF(fullsig);
-        PyMem_Del(mem);    
+        PyMem_Del(mem);
         PyMem_Del(rawmem);
         PyMem_Del(memsteps);
         return -1;
     }
-    /* 
-       0                                                  -> output 
-       [1, n_inputs+1)                                    -> inputs 
+    /*
+       0                                                  -> output
+       [1, n_inputs+1)                                    -> inputs
        [n_inputs+1, n_inputs+n_consts+1)                  -> constants
        [n_inputs+n_consts+1, n_inputs+n_consts+n_temps+1) -> temps
     */
@@ -624,27 +624,27 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (c == 'i') {
             long *imem = (long*)mem[i+n_inputs+1];
             long value = PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
-            for (j = 0; j < BLOCK_SIZE1; j++) 
+            for (j = 0; j < BLOCK_SIZE1; j++)
                 imem[j] = value;
         } else if (c == 'f') {
             double *dmem = (double*)mem[i+n_inputs+1];
             double value = PyFloat_AS_DOUBLE(PyTuple_GET_ITEM(constants, i));
-            for (j = 0; j < BLOCK_SIZE1; j++) 
+            for (j = 0; j < BLOCK_SIZE1; j++)
                 dmem[j] = value;
         } else if (c == 'c') {
             double *cmem = (double*)mem[i+n_inputs+1];
             Py_complex value = PyComplex_AsCComplex(PyTuple_GET_ITEM(constants, i));
-            for (j = 0; j < 2*BLOCK_SIZE1; j+=2) { 
+            for (j = 0; j < 2*BLOCK_SIZE1; j+=2) {
                 cmem[j] = value.real;
                 cmem[j+1] = value.imag;
             }
-        }          
-    }    
+        }
+    }
     /* Fill in 'mem' for temps */
     for (i = 0; i < n_temps; i++) {
         mem[i+n_inputs+n_constants+1] = rawmem + mem_offset;
         mem_offset += BLOCK_SIZE1 * size_from_char(PyString_AS_STRING(tempsig)[i]);
-    }     
+    }
     /* See if any errors occured (e.g., in size_from_char) or if mem_offset is wrong */
     if (PyErr_Occurred() || mem_offset != rawmemsize) {
         if (mem_offset != rawmemsize) {
@@ -653,20 +653,20 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(constants);
         Py_DECREF(constsig);
         Py_DECREF(fullsig);
-        PyMem_Del(mem);    
+        PyMem_Del(mem);
         PyMem_Del(rawmem);
         PyMem_Del(memsteps);
         return -1;
     }
 
-    
+
     #define REPLACE_OBJ(arg) \
     {PyObject *tmp = self->arg; \
      self->arg = arg; \
-     Py_XDECREF(tmp);} 
+     Py_XDECREF(tmp);}
     #define INCREF_REPLACE_OBJ(arg) {Py_INCREF(arg); REPLACE_OBJ(arg);}
     #define REPLACE_MEM(arg) {PyMem_Del(self->arg); self->arg=arg;}
-    
+
     INCREF_REPLACE_OBJ(signature);
     INCREF_REPLACE_OBJ(tempsig);
     REPLACE_OBJ(constsig);
@@ -678,15 +678,15 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     REPLACE_MEM(rawmem);
     REPLACE_MEM(memsteps);
     self->rawmemsize = rawmemsize;
-    
+
     #undef REPLACE_OBJ
     #undef INCREF_REPLACE_OBJ
     #undef REPLACE_MEM
-    
+
     return check_program(self);
 }
 
-static PyMemberDef NumExpr_members[] = {  
+static PyMemberDef NumExpr_members[] = {
     {"signature", T_OBJECT_EX, offsetof(NumExprObject, signature), READONLY, NULL},
     {"constsig", T_OBJECT_EX, offsetof(NumExprObject, constsig), READONLY, NULL},
     {"tempsig", T_OBJECT_EX, offsetof(NumExprObject, tempsig), READONLY, NULL},
@@ -822,26 +822,26 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (typecode == -1) goto cleanup_and_exit;
         a = PyArray_ContiguousFromAny(o, typecode, 0, 0);
         if (!a) goto cleanup_and_exit;
-        if (PyArray_DIMS(a) == 0) { 
+        if (PyArray_DIMS(a) == 0) {
             /* Broadcast scalars */
             int j, dims[1] = {BLOCK_SIZE1};
-            PyObject *b = PyArray_SimpleNew(1, dims, typecode); 
+            PyObject *b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
             PyTuple_SET_ITEM(a_inputs, i, b);  /* steals reference */
             inputs[i] = PyArray_DATA(b);
             if (typecode == PyArray_LONG) {
                 long value = ((long*)PyArray_DATA(a))[0];
-                for (j = 0; j < BLOCK_SIZE1; j++) 
+                for (j = 0; j < BLOCK_SIZE1; j++)
                     ((long*)PyArray_DATA(b))[j] = value;
             } else if (typecode == PyArray_DOUBLE) {
                 double value = ((double*)PyArray_DATA(a))[0];
-                for (j = 0; j < BLOCK_SIZE1; j++) 
+                for (j = 0; j < BLOCK_SIZE1; j++)
                     ((double*)PyArray_DATA(b))[j] = value;
             } else if (typecode == PyArray_CDOUBLE) {
                 double rvalue = ((double*)PyArray_DATA(a))[0];
                 double ivalue = ((double*)PyArray_DATA(a))[1];
-                for (j = 0; j < 2*BLOCK_SIZE1; j+=2) { 
+                for (j = 0; j < 2*BLOCK_SIZE1; j+=2) {
                     ((double*)PyArray_DATA(b))[j] = rvalue;
                     ((double*)PyArray_DATA(b))[j+1] = ivalue;
                 }
@@ -854,13 +854,13 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             self->memsteps[i+1] = size_from_char(PyString_AS_STRING(self->signature)[i]);
             PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
             inputs[i] = PyArray_DATA(a);
-            if (len == -1) { 
+            if (len == -1) {
                 char retsig = get_return_sig(self->program);
                 self->memsteps[0] = size_from_char(retsig);
                 len = PyArray_SIZE(a);
                 output = PyArray_SimpleNew(PyArray_NDIM(a),
                                            PyArray_DIMS(a),
-                                           typecode_from_char(retsig));    
+                                           typecode_from_char(retsig));
                 if (!output) goto cleanup_and_exit;
             } else {
                 if (len != PyArray_SIZE(a)) {
@@ -872,7 +872,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         }
     }
     if (len == -1) {
-        /* either no inputs or they're all scalars, 
+        /* either no inputs or they're all scalars,
            so allocate one space for scalar result */
         char retsig = get_return_sig(self->program);
         intp dims[1];
@@ -880,10 +880,10 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         len = 1;
         output = PyArray_SimpleNew(0,
                                    dims,
-                                   typecode_from_char(retsig));    
+                                   typecode_from_char(retsig));
         if (!output) goto cleanup_and_exit;
     }
-    
+
     r = run_interpreter(self, len, PyArray_DATA(output), inputs, &pc_error);
 
     if (r < 0) {
@@ -986,7 +986,7 @@ initinterpreter(void)
     Py_XDECREF(o);                                      \
     if (r < 0) {PyErr_SetString(PyExc_RuntimeError, "add_op"); return;}
     add_op("noop", OP_NOOP);
-    
+
     add_op("ones_like_ii", OP_ONES_LIKE_II);
     add_op("copy_ii", OP_COPY_II);
     add_op("neg_ii", OP_NEG_II);
@@ -997,12 +997,12 @@ initinterpreter(void)
     add_op("pow_iii", OP_POW_III);
     add_op("mod_iii", OP_MOD_III);
     add_op("where_ifii", OP_WHERE_IFII);
-    
+
     add_op("gt_iff", OP_GT_IFF);
     add_op("ge_iff", OP_GE_IFF);
     add_op("eq_iff", OP_EQ_IFF);
     add_op("ne_iff", OP_NE_IFF);
-    
+
     add_op("cast_fi", OP_CAST_FI);
     add_op("copy_ff", OP_COPY_FF);
     add_op("ones_like_ff", OP_ONES_LIKE_FF);
@@ -1022,10 +1022,10 @@ initinterpreter(void)
     add_op("where_ffff", OP_WHERE_FFFF);
     add_op("func_ff", OP_FUNC_FF);
     add_op("func_fff", OP_FUNC_FFF);
-    
+
     add_op("eq_icc", OP_EQ_ICC);
     add_op("ne_icc", OP_NE_ICC);
-    
+
     add_op("cast_ci", OP_CAST_CI);
     add_op("cast_cf", OP_CAST_CF);
     add_op("copy_cc", OP_COPY_CC);
@@ -1038,18 +1038,18 @@ initinterpreter(void)
     add_op("where_cfcc", OP_WHERE_CFCC);
     add_op("func_cc", OP_FUNC_CC);
     add_op("func_ccc", OP_FUNC_CCC);
-    
+
     add_op("real_fc", OP_REAL_FC);
     add_op("imag_fc", OP_IMAG_FC);
     add_op("complex_cff", OP_COMPLEX_CFF);
-    
+
 #undef add_op
 
     if (PyModule_AddObject(m, "opcodes", d) < 0) return;
 
     d = PyDict_New();
     if (!d) return;
-    
+
 #define add_func(sname, name) o = PyInt_FromLong(name); \
     r = PyDict_SetItemString(d, sname, o);              \
     Py_XDECREF(o);                                      \
@@ -1065,9 +1065,9 @@ initinterpreter(void)
     add_func("sinh_ff", FUNC_SINH_FF);
     add_func("cosh_ff", FUNC_COSH_FF);
     add_func("tanh_ff", FUNC_TANH_FF);
-    
+
     add_func("fmod_fff", FUNC_FMOD_FFF);
-    
+
     add_func("sqrt_cc", FUNC_SQRT_CC);
     add_func("sin_cc", FUNC_SIN_CC);
     add_func("cos_cc", FUNC_COS_CC);
@@ -1078,7 +1078,7 @@ initinterpreter(void)
     add_func("sinh_cc", FUNC_SINH_CC);
     add_func("cosh_cc", FUNC_COSH_CC);
     add_func("tanh_cc", FUNC_TANH_CC);
-    
+
     add_func("pow_ccc", FUNC_POW_CCC);
 
 #undef add_func

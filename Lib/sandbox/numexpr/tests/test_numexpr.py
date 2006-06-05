@@ -69,7 +69,7 @@ class test_evaluate(NumpyTestCase):
         x = z.imag
         x = sin(complex(a, b)).real + z.imag
         y = evaluate("sin(complex(a, b)).real + z.imag")
-        assert_array_almost_equal(x, y)                                                                                                
+        assert_array_almost_equal(x, y)
 
 tests = [
 ('MISC', ['b*c+d*e',
@@ -141,7 +141,7 @@ class test_expressions(NumpyTestCase):
                         x += 1j
                         x *= 1+1j
                 if test_scalar == 1:
-                    a = a[array_size/2] 
+                    a = a[array_size/2]
                 if test_scalar == 2:
                     b = b[array_size/2]
                 for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:

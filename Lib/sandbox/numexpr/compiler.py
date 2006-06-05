@@ -25,7 +25,7 @@ class ASTNode(object):
             if getattr(self, name) != getattr(other, name):
                 return False
         return True
-        
+
     def __hash__(self):
         if self.astType == 'alias':
             self = self.value
@@ -35,7 +35,7 @@ class ASTNode(object):
         return hashval
 
     def __str__(self):
-        return 'AST(%s, %s, %s, %s, %s)' % (self.astType, self.astKind, 
+        return 'AST(%s, %s, %s, %s, %s)' % (self.astType, self.astKind,
                                             self.value, self.children, self.reg)
     #~ __repr__ = __str__
     def __repr__(self): return '<AST object at %s>' % id(self)
@@ -63,7 +63,7 @@ def expressionToAST(ex):
 
 def sigPerms(s):
     codes = 'ifc'
-    if not s: 
+    if not s:
         yield ''
     elif s[0] in codes:
         start = codes.index(s[0])
@@ -75,7 +75,7 @@ def sigPerms(s):
 
 def typeCompileAst(ast):
     children = list(ast.children)
-    if ast.astType  == 'op': 
+    if ast.astType  == 'op':
         retsig = ast.astKind[0]
         basesig = ''.join(x.astKind[0] for x in list(ast.children))
         # Find some operation that will work on an acceptable casting of args.
@@ -94,14 +94,14 @@ def typeCompileAst(ast):
                 raise NotImplementedError("couldn't find matching opcode for '%s'" % (ast.value + '_' + retsig+basesig))
         # First just cast constants, then cast variables if necessary:
         for i, (have, want)  in enumerate(zip(basesig, sig)):
-            if have != want: 
+            if have != want:
                 kind = {'i' : 'int', 'f' : 'float', 'c' : 'complex'}[want]
                 if children[i].astType == 'constant':
                     children[i] = ASTNode('constant', kind, children[i].value)
                 else:
                     opname = "cast"
                     children[i] = ASTNode('op', kind, opname, [children[i]])
-    else: 
+    else:
         value = ast.value
         children = ast.children
     new_ast = ASTNode(ast.astType, ast.astKind, value,
@@ -137,7 +137,7 @@ class Immediate(Register):
 
 def makeExpressions(context):
     """Make private copy of the expressions module with a custom get_context().
-    
+
     An attempt was made to make this threadsafe, but I can't guarantee it's
     bulletproof.
     """
@@ -344,7 +344,7 @@ def getContext(map):
         else:
             raise ValueError("'%s' must be one of %s" % (name, allowed))
     if map:
-        raise ValueError("Unknown keyword argument '%s'" % map.popitem()[0])    
+        raise ValueError("Unknown keyword argument '%s'" % map.popitem()[0])
     return context
 
 
@@ -352,17 +352,17 @@ def precompile(ex, signature=(), **kwargs):
     types = dict(signature)
     input_order = [name for (name, type) in signature]
     context = getContext(kwargs)
-            
+
     if isinstance(ex, str):
         ex = stringToExpression(ex, types, context)
 
     # the AST is like the expression, but the node objects don't have
     # any odd interpretations
-        
+
     ast = expressionToAST(ex)
     if ex.astType not in ('op'):
         ast = ASTNode('op', value='copy', astKind=ex.astKind, children=(ast,))
-        
+
     ast = typeCompileAst(ast)
 
     reg_num = [-1]
@@ -396,21 +396,21 @@ def precompile(ex, signature=(), **kwargs):
     signature = ''.join(types.get(x, float).__name__[0] for x in input_names)
 
     return threeAddrProgram, signature, tempsig, constants
-    
+
 
 def numexpr(ex, signature=(), **kwargs):
     """Compile an expression built using E.<variable> variables to a function.
 
     ex can also be specified as a string "2*a+3*b".
 
-    The order of the input variables and their types can be specified using the 
+    The order of the input variables and their types can be specified using the
     signature parameter, which is a list of (name, type) pairs.
-    
+
     """
     threeAddrProgram, inputsig, tempsig, constants = precompile(ex, signature, **kwargs)
     program = compileThreeAddrForm(threeAddrProgram)
     return interpreter.NumExpr(inputsig, tempsig, program, constants)
-    
+
 
 def disassemble(nex):
     rev_opcodes = {}
@@ -449,9 +449,9 @@ def getType(a):
     if tname.startswith('complex'):
         return complex
     raise ValueError("unkown type %s" % tname)
-        
 
-def getExprNames(text, context): 
+
+def getExprNames(text, context):
     ex = stringToExpression(text, {}, context)
     ast = expressionToAST(ex)
     input_order = getInputOrder(ast, None)
@@ -506,4 +506,4 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
 
 if __name__ == "__main__":
     print evaluate("5")
-    
+

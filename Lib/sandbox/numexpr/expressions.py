@@ -44,7 +44,7 @@ def all_constant(args):
         if not isinstance(x, ConstantNode):
             return False
     return True
-    
+
 kind_rank = ['int', 'float', 'complex', 'none']
 def common_kind(nodes):
     n = -1
@@ -158,7 +158,7 @@ functions = {
     'fmod' : func(numpy.fmod, 'float'),
 
     'where' : where_func,
-        
+
     'complex' : func(complex, 'complex'),
             }
 
@@ -175,7 +175,7 @@ class ExpressionNode(object):
             self.children = ()
         else:
             self.children = tuple(children)
-    
+
     def get_real(self):
         if self.astType == 'constant':
             return ConstantNode(complex(self.value).real)
@@ -219,7 +219,7 @@ class ExpressionNode(object):
 
 class LeafNode(ExpressionNode):
     leafNode = True
-        
+
 class VariableNode(LeafNode):
     astType = 'variable'
     def __init__(self, value=None, kind=None, children=None):
@@ -249,10 +249,10 @@ def normalizeConstant(x):
             continue
         if x == y:
             return y
-            
+
 def getKind(x):
-    return {int : 'int', 
-            float : 'float', 
+    return {int : 'int',
+            float : 'float',
             complex : 'complex'}[type(normalizeConstant(x))]
 
 class ConstantNode(LeafNode):
@@ -268,7 +268,7 @@ class OpNode(ExpressionNode):
     def __init__(self, opcode=None, args=None, kind=None):
         if (kind is None) and (args is not None):
             kind = common_kind(args)
-        ExpressionNode.__init__(self, value=opcode, kind=kind, children=args)    
+        ExpressionNode.__init__(self, value=opcode, kind=kind, children=args)
 
 class FuncNode(OpNode):
     def __init__(self, opcode=None, args=None, kind=None):
