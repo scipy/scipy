@@ -2,8 +2,12 @@ __all__ = ['E']
 
 import operator
 import numpy
-from numexpr import interpreter
 import sys
+
+try:
+    from scipy.sandbox.numexpr import interpreter
+except ImportError:
+    from numexpr import interpreter
 
 # XXX Is there any reason to keep Expression around?
 class Expression(object):

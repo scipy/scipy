@@ -1,8 +1,11 @@
 
 import sys
 import numpy
-from numexpr import interpreter
-from expressions import getKind
+
+try:
+    from scipy.sandbox.numexpr import interpreter, expressions
+except ImportError:
+    from numexpr import interpreter, expressions
 
 class ASTNode(object):
     cmpnames = ['astType', 'astKind', 'value', 'children']
@@ -141,14 +144,20 @@ def makeExpressions(context):
     An attempt was made to make this threadsafe, but I can't guarantee it's
     bulletproof.
     """
-    import sys, imp, numexpr.expressions
+    import sys, imp
+    try:
+        from scipy.sandbox.numexpr import expressions
+        modname = 'scipy.sandbox.numexpr.expressions'
+    except ImportError:
+        from numexpr import expressions
+        modname = 'numexpr.expressions'
     # get our own, private copy of expressions
     imp.acquire_lock()
     try:
-        old = sys.modules.pop('numexpr.expressions')
-        import numexpr.expressions
-        private = sys.modules.pop('numexpr.expressions')
-        sys.modules['numexpr.expressions'] = old
+        old = sys.modules.pop(modname)
+        import expressions
+        private = sys.modules.pop(modname)
+        sys.modules[modname] = old
     finally:
         imp.release_lock()
     def get_context():
@@ -170,7 +179,7 @@ def stringToExpression(s, types, context):
     # now build the expression
     ex = eval(c, names)
     if isinstance(ex, (int, float, complex)):
-        ex = expr.ConstantNode(ex, getKind(ex))
+        ex = expr.ConstantNode(ex, expressions.getKind(ex))
     return ex
 
 
@@ -503,7 +512,5 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     return compiled_ex(*arguments)
 
 
-
 if __name__ == "__main__":
     print evaluate("5")
-
