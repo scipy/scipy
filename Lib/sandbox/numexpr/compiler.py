@@ -411,7 +411,7 @@ def precompile(ex, signature=(), copy_args=(), **kwargs):
     input_names = tuple([a.value for a in input_order])
     signature = ''.join(types.get(x, float).__name__[0] for x in input_names)
 
-    return threeAddrProgram, signature, tempsig, constants
+    return threeAddrProgram, signature, tempsig, constants, input_names
 
 
 def numexpr(ex, signature=(), copy_args=(), **kwargs):
@@ -423,17 +423,18 @@ def numexpr(ex, signature=(), copy_args=(), **kwargs):
     signature parameter, which is a list of (name, type) pairs.
 
     """
-    threeAddrProgram, inputsig, tempsig, constants = \
+    threeAddrProgram, inputsig, tempsig, constants, input_names = \
                       precompile(ex, signature, copy_args, **kwargs)
     program = compileThreeAddrForm(threeAddrProgram)
-    return interpreter.NumExpr(inputsig, tempsig, program, constants)
+    return interpreter.NumExpr(inputsig, tempsig, program, constants,
+                               input_names)
 
 
 def disassemble(nex):
     rev_opcodes = {}
     for op in interpreter.opcodes:
         rev_opcodes[interpreter.opcodes[op]] = op
-    r_constants = 1 + nex.n_inputs
+    r_constants = 1 + len(nex.signature)
     r_temps = r_constants + len(nex.constants)
     def getArg(pc):
         arg = ord(nex.program[pc])
