@@ -391,8 +391,8 @@ size_from_sig(PyObject *o)
     intp size = 0;
     char *s = PyString_AsString(o);
     if (!s) return -1;
-    for (; *s != NULL; s++) {
-        intp x = size_from_char(*s);
+    for (; *s != '\0'; s++) {
+        int x = size_from_char(*s);
         if (x == -1) return -1;
         size += x;
     }
@@ -425,7 +425,7 @@ check_program(NumExprObject *self)
         return -1;
     }
     if (prog_len % 4 != 0) {
-        PyErr_Format(PyExc_RuntimeError, "invalid program: prog_len % 4 != 0");
+        PyErr_Format(PyExc_RuntimeError, "invalid program: prog_len mod 4 != 0");
         return -1;
     }
     if (PyString_AsStringAndSize(self->fullsig, (char **)&fullsig,
@@ -633,13 +633,15 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (c == 'i') {
             long *imem = (long*)mem[i+n_inputs+1];
             long value = PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
-            for (j = 0; j < BLOCK_SIZE1; j++)
+            for (j = 0; j < BLOCK_SIZE1; j++) {
                 imem[j] = value;
+            }
         } else if (c == 'f') {
             double *dmem = (double*)mem[i+n_inputs+1];
             double value = PyFloat_AS_DOUBLE(PyTuple_GET_ITEM(constants, i));
-            for (j = 0; j < BLOCK_SIZE1; j++)
+            for (j = 0; j < BLOCK_SIZE1; j++) {
                 dmem[j] = value;
+            }
         } else if (c == 'c') {
             double *cmem = (double*)mem[i+n_inputs+1];
             Py_complex value = PyComplex_AsCComplex(PyTuple_GET_ITEM(constants, i));
