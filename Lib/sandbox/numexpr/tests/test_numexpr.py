@@ -1,3 +1,4 @@
+import new
 from numpy import *
 from numpy.testing import *
 
@@ -125,48 +126,69 @@ def equal(a, b, exact):
 class Skip(Exception): pass
 
 class test_expressions(NumpyTestCase):
-    def check_expressions(self):
-        for test_scalar in [0,1,2]:
-            for dtype in [int, float, complex]:
-                array_size = 100
-                a = arange(array_size, dtype=dtype)
-                a2 = zeros([array_size, array_size], dtype=dtype)
-                b = arange(array_size, dtype=dtype) / array_size
-                c = arange(array_size, dtype=dtype)
-                d = arange(array_size, dtype=dtype)
-                e = arange(array_size, dtype=dtype)
-                if dtype == complex:
-                    a = a.real
-                    for x in [a2, b, c, d, e]:
-                        x += 1j
-                        x *= 1+1j
-                if test_scalar == 1:
-                    a = a[array_size/2]
-                if test_scalar == 2:
-                    b = b[array_size/2]
-                for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:
-                    for section_name, section_tests in tests:
-                        for expr in section_tests:
-                            if dtype == complex and (
-                                   '<' in expr or '>' in expr or '%' in expr
-                                   or "arctan2" in expr or "fmod" in expr):
-                                continue # skip complex comparisons
-                            try:
-                                try:
-                                    npval = eval(expr)
-                                except:
-                                    raise Skip()
-                                neval = evaluate(expr, optimization=optimization)
-                                assert equal(npval, neval, exact), "%s (%s, %s, %s, %s)" % (expr, test_scalar, dtype.__name__, optimization, exact)
-                            except Skip:
-                                pass
-                            except AssertionError:
-                                raise
-                            except NotImplementedError:
-                                self.warn('%r not implemented for %s' % (expr,dtype.__name__))
-                            except:
-                                self.warn('numexpr error for expression %r' % (expr,))
-                                raise
+    pass
+
+def generate_check_expressions():
+    test_no = [0]
+    def make_check_method(a, a2, b, c, d, e, x, expr,
+                          test_scalar, dtype, optimization, exact):
+        this_locals = locals()
+        def method(self):
+            try:
+                npval = eval(expr, globals(), this_locals)
+            except:
+                return
+            try:
+                neval = evaluate(expr, local_dict=this_locals,
+                                 optimization=optimization)
+                assert equal(npval, neval, exact), \
+                    """%r
+(test_scalar=%r, dtype=%r, optimization=%r, exact=%r,
+ npval=%r (%r), neval=%r (%r))""" % (expr, test_scalar, dtype.__name__,
+                                     optimization, exact,
+                                     npval, type(npval), neval, type(neval))
+            except AssertionError:
+                raise
+            except NotImplementedError:
+                self.warn('%r not implemented for %s' % (expr,dtype.__name__))
+            except:
+                self.warn('numexpr error for expression %r' % (expr,))
+                raise
+        test_no[0] += 1
+        name = 'check_%04d' % (test_no[0],)
+        setattr(test_expressions, name,
+                new.instancemethod(method, None, test_expressions))
+    x = None
+    for test_scalar in [0,1,2]:
+        for dtype in [int, float, complex]:
+            array_size = 100
+            a = arange(array_size, dtype=dtype)
+            a2 = zeros([array_size, array_size], dtype=dtype)
+            b = arange(array_size, dtype=dtype) / array_size
+            c = arange(array_size, dtype=dtype)
+            d = arange(array_size, dtype=dtype)
+            e = arange(array_size, dtype=dtype)
+            if dtype == complex:
+                a = a.real
+                for x in [a2, b, c, d, e]:
+                    x += 1j
+                    x *= 1+1j
+            if test_scalar == 1:
+                a = a[array_size/2]
+            if test_scalar == 2:
+                b = b[array_size/2]
+            for optimization, exact in [('none', False), ('moderate', False), ('aggressive', False)]:
+                for section_name, section_tests in tests:
+                    for expr in section_tests:
+                        if dtype == complex and (
+                               '<' in expr or '>' in expr or '%' in expr
+                               or "arctan2" in expr or "fmod" in expr):
+                            continue # skip complex comparisons
+                        make_check_method(a, a2, b, c, d, e, x,
+                                          expr, test_scalar, dtype,
+                                          optimization, exact)
+
+generate_check_expressions()
 
 if __name__ == '__main__':
     NumpyTest().run()
