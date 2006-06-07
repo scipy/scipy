@@ -306,7 +306,8 @@ typedef struct
     PyObject *input_names;  /* tuple of strings */
     char **mem;             /* pointers to registers */
     char *rawmem;           /* a chunks of raw memory for storing registers */
-    int  *memsteps;
+    intp *memsteps;
+    int *memsizes;
     int  rawmemsize;
 } NumExprObject;
 
@@ -323,6 +324,7 @@ NumExpr_dealloc(NumExprObject *self)
     PyMem_Del(self->mem);
     PyMem_Del(self->rawmem);
     PyMem_Del(self->memsteps);
+    PyMem_Del(self->memsizes);
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -349,6 +351,7 @@ NumExpr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->mem = NULL;
         self->rawmem = NULL;
         self->memsteps = NULL;
+        self->memsizes = NULL;
         self->rawmemsize = 0;
 #undef INIT_WITH
     }
@@ -369,7 +372,7 @@ get_return_sig(PyObject* program) {
     return sig;
 }
 
-static intp
+static int
 size_from_char(char c)
 {
     switch (c) {
@@ -382,7 +385,7 @@ size_from_char(char c)
     }
 }
 
-static intp
+static int
 size_from_sig(PyObject *o)
 {
     intp size = 0;
@@ -396,7 +399,7 @@ size_from_sig(PyObject *o)
     return size;
 }
 
-static intp
+static int
 typecode_from_char(char c)
 {
     switch (c) {
@@ -520,7 +523,9 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     PyObject *fullsig = NULL, *program = NULL, *constants = NULL;
     PyObject *input_names = NULL, *o_constants = NULL;
     char **mem = NULL, *rawmem = NULL;
-    int *memsteps, rawmemsize;
+    intp *memsteps;
+    int *memsizes;
+    int rawmemsize;
     static char *kwlist[] = {"signature", "tempsig",
                              "program",  "constants",
                              "input_names", NULL};
@@ -598,14 +603,16 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     rawmemsize = BLOCK_SIZE1 * (size_from_sig(constsig) + size_from_sig(tempsig));
     mem = PyMem_New(void *, 1 + n_inputs + n_constants + n_temps);
     rawmem = PyMem_New(char, rawmemsize);
-    memsteps = PyMem_New(int, 1 + n_inputs);
-    if (!mem || !rawmem || !memsteps) {
+    memsteps = PyMem_New(intp, 1 + n_inputs);
+    memsizes = PyMem_New(int, 1 + n_inputs + n_constants + n_temps);
+    if (!mem || !rawmem || !memsteps || !memsizes) {
         Py_DECREF(constants);
         Py_DECREF(constsig);
         Py_DECREF(fullsig);
         PyMem_Del(mem);
         PyMem_Del(rawmem);
         PyMem_Del(memsteps);
+        PyMem_Del(memsizes);
         return -1;
     }
     /*
@@ -618,8 +625,10 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     mem_offset = 0;
     for (i = 0; i < n_constants; i++) {
         char c = PyString_AS_STRING(constsig)[i];
+        int size = size_from_char(c);
         mem[i+n_inputs+1] = rawmem + mem_offset;
-        mem_offset += BLOCK_SIZE1 * size_from_char(c);
+        mem_offset += BLOCK_SIZE1 * size;
+        memsizes[i+n_inputs+1] = size;
         /* fill in the constants */
         if (c == 'i') {
             long *imem = (long*)mem[i+n_inputs+1];
@@ -642,8 +651,10 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
     /* Fill in 'mem' for temps */
     for (i = 0; i < n_temps; i++) {
+        int size = size_from_char(PyString_AS_STRING(tempsig)[i]);
         mem[i+n_inputs+n_constants+1] = rawmem + mem_offset;
-        mem_offset += BLOCK_SIZE1 * size_from_char(PyString_AS_STRING(tempsig)[i]);
+        mem_offset += BLOCK_SIZE1 * size;
+        memsizes[i+n_inputs+n_constants+1] = size;
     }
     /* See if any errors occured (e.g., in size_from_char) or if mem_offset is wrong */
     if (PyErr_Occurred() || mem_offset != rawmemsize) {
@@ -656,6 +667,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         PyMem_Del(mem);
         PyMem_Del(rawmem);
         PyMem_Del(memsteps);
+        PyMem_Del(memsizes);
         return -1;
     }
 
@@ -677,6 +689,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     REPLACE_MEM(mem);
     REPLACE_MEM(rawmem);
     REPLACE_MEM(memsteps);
+    REPLACE_MEM(memsizes);
     self->rawmemsize = rawmemsize;
 
     #undef REPLACE_OBJ
@@ -707,7 +720,8 @@ struct vm_params {
     char *output;
     char **inputs;
     char **mem;
-    int  *memsteps;
+    intp *memsteps;
+    int *memsizes;
 };
 
 #define DO_BOUNDS_CHECK 1
@@ -775,6 +789,7 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
     params.inputs = inputs;
     params.mem = self->mem;
     params.memsteps = self->memsteps;
+    params.memsizes = self->memsizes;
     params.r_end = PyString_Size(self->fullsig);
     blen1 = len - len % BLOCK_SIZE1;
     r = vm_engine_1(0, blen1, params, pc_error);
@@ -818,16 +833,20 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     for (i = 0; i < n_inputs; i++) {
         PyObject *o = PyTuple_GET_ITEM(args, i); /* borrowed ref */
         PyObject *a;
-        intp typecode = typecode_from_char(PyString_AS_STRING(self->signature)[i]);
+        char c = PyString_AS_STRING(self->signature)[i];
+        int sizetype = size_from_char(c);
+        int typecode = typecode_from_char(c);
         if (typecode == -1) goto cleanup_and_exit;
-        a = PyArray_ContiguousFromAny(o, typecode, 0, 0);
+        /* Convert it just in case of a non-swapped array */
+        a = PyArray_FROM_OTF(o, typecode, NOTSWAPPED);
         if (!a) goto cleanup_and_exit;
-        if (PyArray_DIMS(a) == 0) {
+        if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
             int j, dims[1] = {BLOCK_SIZE1};
             PyObject *b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
+            self->memsizes[i+1] = 0;
             PyTuple_SET_ITEM(a_inputs, i, b);  /* steals reference */
             inputs[i] = PyArray_DATA(b);
             if (typecode == PyArray_LONG) {
@@ -850,13 +869,15 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                 goto cleanup_and_exit;
             }
             Py_DECREF(a);
-        }  else {
-            self->memsteps[i+1] = size_from_char(PyString_AS_STRING(self->signature)[i]);
+        } else {
+            self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
+            self->memsizes[i+1] = sizetype;
             PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
             inputs[i] = PyArray_DATA(a);
             if (len == -1) {
                 char retsig = get_return_sig(self->program);
                 self->memsteps[0] = size_from_char(retsig);
+                self->memsizes[0] = size_from_char(retsig);
                 len = PyArray_SIZE(a);
                 output = PyArray_SimpleNew(PyArray_NDIM(a),
                                            PyArray_DIMS(a),
@@ -877,6 +898,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         char retsig = get_return_sig(self->program);
         intp dims[1];
         self->memsteps[0] = 0;
+        self->memsizes[0] = 0;
         len = 1;
         output = PyArray_SimpleNew(0,
                                    dims,

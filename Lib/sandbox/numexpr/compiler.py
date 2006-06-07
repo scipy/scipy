@@ -357,7 +357,7 @@ def getContext(map):
     return context
 
 
-def precompile(ex, signature=(), **kwargs):
+def precompile(ex, signature=(), copy_args=(), **kwargs):
     types = dict(signature)
     input_order = [name for (name, type) in signature]
     context = getContext(kwargs)
@@ -369,6 +369,13 @@ def precompile(ex, signature=(), **kwargs):
     # any odd interpretations
 
     ast = expressionToAST(ex)
+
+    # Add a copy for strided or unaligned arrays
+    for a in ast.postorderWalk():
+        if a.astType == "variable" and a.value in copy_args:
+            newVar = ASTNode(*a.key())
+            a.astType, a.value, a.children = ('op', 'copy', (newVar,))
+
     if ex.astType not in ('op'):
         ast = ASTNode('op', value='copy', astKind=ex.astKind, children=(ast,))
 
@@ -407,7 +414,7 @@ def precompile(ex, signature=(), **kwargs):
     return threeAddrProgram, signature, tempsig, constants
 
 
-def numexpr(ex, signature=(), **kwargs):
+def numexpr(ex, signature=(), copy_args=(), **kwargs):
     """Compile an expression built using E.<variable> variables to a function.
 
     ex can also be specified as a string "2*a+3*b".
@@ -416,7 +423,8 @@ def numexpr(ex, signature=(), **kwargs):
     signature parameter, which is a list of (name, type) pairs.
 
     """
-    threeAddrProgram, inputsig, tempsig, constants = precompile(ex, signature, **kwargs)
+    threeAddrProgram, inputsig, tempsig, constants = \
+                      precompile(ex, signature, copy_args, **kwargs)
     program = compileThreeAddrForm(threeAddrProgram)
     return interpreter.NumExpr(inputsig, tempsig, program, constants)
 
@@ -495,20 +503,29 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     if global_dict is None:
         global_dict = call_frame.f_globals
     arguments = []
+    copy_args = []
     for name in names:
         try:
             a = local_dict[name]
         except KeyError:
             a = global_dict[name]
-        arguments.append(numpy.asarray(a))
+        # byteswapped arrays are taken care of in the extension.
+        arguments.append(numpy.asarray(a)) # don't make a data copy, if possible
+        if (hasattr(a, "flags") and            # numpy object
+            (not a.flags.contiguous or
+             not a.flags.aligned)):
+            copy_args.append(name)    # do a copy to temporary
+
     # Create a signature
     signature = [(name, getType(arg)) for (name, arg) in zip(names, arguments)]
-    # Look up numexpr if possible
-    numexpr_key = expr_key + (tuple(signature),)
+    # Look up numexpr if possible. copy_args *must* be added to the key,
+    # just in case a non-copy expression is already in cache.
+    numexpr_key = expr_key + (tuple(signature),) + tuple(copy_args)
     try:
         compiled_ex = _numexpr_cache[numexpr_key]
     except KeyError:
-        compiled_ex = _numexpr_cache[numexpr_key] = numexpr(ex, signature, **kwargs)
+        compiled_ex = _numexpr_cache[numexpr_key] = \
+                      numexpr(ex, signature, copy_args, **kwargs)
     return compiled_ex(*arguments)
 
 

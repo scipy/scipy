@@ -47,22 +47,24 @@
         unsigned int arg1 = params.program[pc+2];
         unsigned int arg2 = params.program[pc+3];
         # define     arg3   params.program[pc+5]
+        void *dst = params.mem[store_in];
+        void *src = params.mem[arg1];
         #define i_dest ((long *)dest)[j]
         #define f_dest ((double *)dest)[j]
         #define cr_dest ((double *)dest)[2*j]
         #define ci_dest ((double *)dest)[2*j+1]
-        #define i1  ((long   *)x1)[j]
-        #define f1  ((double *)x1)[j]
-        #define c1r ((double *)x1)[2*j]
-        #define c1i ((double *)x1)[2*j+1]
-        #define i2  ((long   *)x2)[j]
-        #define f2  ((double *)x2)[j]
-        #define c2r ((double *)x2)[2*j]
-        #define c2i ((double *)x2)[2*j+1]
-        #define i3  ((long   *)x3)[j]
-        #define f3  ((double *)x3)[j]
-        #define c3r ((double *)x3)[2*j]
-        #define c3i ((double *)x3)[2*j+1]
+        #define i1    ((long   *)x1)[j]
+        #define f1    ((double *)x1)[j]
+        #define c1r   ((double *)x1)[2*j]
+        #define c1i   ((double *)x1)[2*j+1]
+        #define i2    ((long   *)x2)[j]
+        #define f2    ((double *)x2)[j]
+        #define c2r   ((double *)x2)[2*j]
+        #define c2i   ((double *)x2)[2*j+1]
+        #define i3    ((long   *)x3)[j]
+        #define f3    ((double *)x3)[j]
+        #define c3r   ((double *)x3)[2*j]
+        #define c3i   ((double *)x3)[2*j+1]
         double fa, fb;
         cdouble ca, cb;
 
@@ -70,7 +72,26 @@
 
         case OP_NOOP: break;
 
-        case OP_COPY_II: VEC_ARG1(i_dest = i1);
+        /* The COPY are the only ops that depend on stride */
+        case OP_COPY_II: {
+            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
+                                            : params.memsizes[arg1]);
+            VEC_ARG1(memcpy(dst, src, sizeof(long));
+                     dst += sizeof(long); src += str1);
+            }
+        case OP_COPY_FF: {
+            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
+                                            : params.memsizes[arg1]);
+            VEC_ARG1(memcpy(dst, src, sizeof(double));
+                     dst += sizeof(double); src += str1);
+            }
+        case OP_COPY_CC: {
+            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
+                                            : params.memsizes[arg1]);
+            VEC_ARG1(memcpy(dst, src, sizeof(double)*2);
+                     dst += sizeof(double)*2; src += str1);
+            }
+
         case OP_ONES_LIKE_II: VEC_ARG1(i_dest = 1);
         case OP_NEG_II: VEC_ARG1(i_dest = -i1);
 
@@ -84,7 +105,6 @@
         case OP_WHERE_IFII: VEC_ARG3(i_dest = f1 ? i2 : i3);
 
         case OP_CAST_FI: VEC_ARG1(f_dest = (double)(i1));
-        case OP_COPY_FF: VEC_ARG1(f_dest = f1);
         case OP_ONES_LIKE_FF: VEC_ARG1(f_dest = 1.0);
         case OP_NEG_FF: VEC_ARG1(f_dest = -f1);
 
@@ -115,8 +135,6 @@
                                   ci_dest = 0);
         case OP_CAST_CF: VEC_ARG1(cr_dest = f1;
                                   ci_dest = 0);
-        case OP_COPY_CC: VEC_ARG1(cr_dest = c1r;
-                                  ci_dest = c1i);
         case OP_ONES_LIKE_CC: VEC_ARG1(cr_dest = 1;
                                   ci_dest = 0);
         case OP_NEG_CC: VEC_ARG1(cr_dest = -c1r;
@@ -170,11 +188,19 @@
 #undef VEC_ARG3
 
 #undef i_dest
-#undef f_des
+#undef f_dest
+#undef cr_dest
+#undef ci_dest
 #undef i1
 #undef f1
+#undef c1r
+#undef c1i
 #undef i2
 #undef f2
+#undef c2r
+#undef c2i
 #undef i3
 #undef f3
+#undef c3r
+#undef c3i
 }
