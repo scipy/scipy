@@ -59,8 +59,8 @@ class test_evaluate(NumpyTestCase):
         assert_array_equal(x, y)
 
     def check_complex_expr(self):
-        def complex(a, b, complex=__builtins__.complex):
-            c = zeros(a.shape, dtype=complex)
+        def complex(a, b):
+            c = zeros(a.shape, dtype=complex_)
             c.real = a
             c.imag = b
             return c
@@ -85,6 +85,7 @@ tests = [
           '1',
           'cos(a2)',
           '(a+1)**0'])]
+
 optests = []
 for op in list('+-*/%') + ['**']:
     optests.append("(a+1) %s (b+3)" % op)
@@ -94,24 +95,27 @@ for op in list('+-*/%') + ['**']:
     optests.append("(a+1) %s 2" % op)
     optests.append("(a+1) %s -1" % op)
     optests.append("(a+1) %s 0.5" % op)
-
 tests.append(('OPERATIONS', optests))
+
 cmptests = []
 for op in ['<', '<=', '==', '>=', '>', '!=']:
     cmptests.append("a/2+5 %s b" % op)
     cmptests.append("a/2+5 %s 7" % op)
     cmptests.append("7 %s b" % op)
 tests.append(('COMPARISONS', cmptests))
+
 func1tests = []
 for func in ['copy', 'ones_like', 'sin', 'cos', 'tan', 'sqrt', 'sinh', 'cosh', 'tanh']:
     func1tests.append("a + %s(b+c)" % func)
 tests.append(('1-ARG FUNCS', func1tests))
+
 func2tests = []
 for func in ['arctan2', 'fmod']:
     func2tests.append("a + %s(b+c, d+1)" % func)
     func2tests.append("a + %s(b+c, 1)" % func)
     func2tests.append("a + %s(1, d+1)" % func)
 tests.append(('2-ARG FUNCS', func2tests))
+
 powtests = []
 for n in (-2.5, -1.5, -1.3, -.5, 0, 0.5, 1, 0.5, 1, 2.3, 2.5):
     powtests.append("(a+1)**%s" % n)
