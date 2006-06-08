@@ -62,7 +62,7 @@ def expressionToAST(ex):
 
 
 def sigPerms(s):
-    codes = 'ifc'
+    codes = 'bifc'
     if not s:
         yield ''
     elif s[0] in codes:
@@ -95,7 +95,8 @@ def typeCompileAst(ast):
         # First just cast constants, then cast variables if necessary:
         for i, (have, want)  in enumerate(zip(basesig, sig)):
             if have != want:
-                kind = {'i' : 'int', 'f' : 'float', 'c' : 'complex'}[want]
+                kind = {'b': 'bool', 'i' : 'int',
+                        'f' : 'float', 'c' : 'complex'}[want]
                 if children[i].astType == 'constant':
                     children[i] = ASTNode('constant', kind, children[i].value)
                 else:
@@ -164,13 +165,14 @@ def stringToExpression(s, types, context):
     c = compile(s, '<expr>', 'eval')
     # make VariableNode's for the names
     names = {}
-    kind_names = {int : 'int', float : 'float', complex : 'complex'}
+    kind_names = {bool: 'bool', int : 'int',
+                  float : 'float', complex : 'complex'}
     for name in c.co_names:
         names[name] = expr.VariableNode(name, kind_names[types.get(name, float)])
     names.update(expr.functions)
     # now build the expression
     ex = eval(c, names)
-    if isinstance(ex, (int, float, complex)):
+    if isinstance(ex, (bool, int, float, complex)):
         ex = expr.ConstantNode(ex, expressions.getKind(ex))
     return ex
 
@@ -192,7 +194,8 @@ def getInputOrder(ast, input_order=None):
     return ordered_variables
 
 def convertConstant(x, kind):
-    return {'int' : int,
+    return {'bool' : bool,
+            'int' : int,
             'float' : float,
             'complex' : complex}[kind](x)
 
@@ -254,7 +257,8 @@ def optimizeTemporariesAllocation(ast):
         for c in n.children:
             if c.reg.temporary:
                 users_of[c.reg].add(n)
-    unused = {'int' : set(), 'float' : set(), 'complex' : set()}
+    unused = {'bool' : set(), 'int' : set(),
+              'float' : set(), 'complex' : set()}
     for n in nodes:
         for reg, users in users_of.iteritems():
             if n in users:
@@ -451,14 +455,16 @@ def disassemble(nex):
 
 
 def getType(a):
-    tname = a.dtype.type.__name__
-    if tname.startswith('int'):
+    t = a.dtype.type
+    if issubclass(t, numpy.bool_):
+        return bool
+    if issubclass(t, numpy.integer):
         return int
-    if tname.startswith('float'):
+    if issubclass(t, numpy.floating):
         return float
-    if tname.startswith('complex'):
+    if issubclass(t, numpy.complexfloating):
         return complex
-    raise ValueError("unkown type %s" % tname)
+    raise ValueError("unkown type %s" % a.dtype.name)
 
 
 def getExprNames(text, context):

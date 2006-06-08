@@ -4,10 +4,7 @@ import operator
 import numpy
 import sys
 
-try:
-    from scipy.sandbox.numexpr import interpreter
-except ImportError:
-    from numexpr import interpreter
+import interpreter
 
 # XXX Is there any reason to keep Expression around?
 class Expression(object):
@@ -35,11 +32,14 @@ def ophelper(f):
     def func(*args):
         args = list(args)
         for i, x in enumerate(args):
-            if isinstance(x, (int, float, complex)):
+            if isinstance(x, (bool, int, float, complex)):
                 args[i] = x = ConstantNode(x)
             if not isinstance(x, ExpressionNode):
                 return NotImplemented
         return f(*args)
+    func.__name__ = f.__name__
+    func.__doc__ = f.__doc__
+    func.__dict__.update(f.__dict__)
     return func
 
 def all_constant(args):
@@ -49,7 +49,7 @@ def all_constant(args):
             return False
     return True
 
-kind_rank = ['int', 'float', 'complex', 'none']
+kind_rank = ['bool', 'int', 'float', 'complex', 'none']
 def common_kind(nodes):
     n = -1
     for x in nodes:
@@ -80,11 +80,10 @@ def func(func, minkind=None):
 
 @ophelper
 def where_func(a, b, c):
-    if all_constant([a,b,c]):
-        return ConstantNode(numpy.where(a, b, c))
     if isinstance(a, ConstantNode):
         raise ValueError("too many dimensions")
-    kind = common_kind([b,c])
+    if all_constant([a,b,c]):
+        return ConstantNode(numpy.where(a, b, c))
     return FuncNode('where', [a,b,c])
 
 @ophelper
@@ -145,7 +144,6 @@ def pow_op(a, b):
                 return OpNode('mul', [a,a])
     return OpNode('pow', [a,b])
 
-
 functions = {
     'copy' : func(numpy.copy),
     'ones_like' : func(numpy.ones_like),
@@ -164,7 +162,8 @@ functions = {
     'where' : where_func,
 
     'complex' : func(complex, 'complex'),
-            }
+    }
+
 
 class ExpressionNode(object):
     astType = 'generic'
@@ -200,6 +199,8 @@ class ExpressionNode(object):
 
     def __neg__(self):
         return OpNode('neg', (self,))
+    def __invert__(self):
+        return OpNode('invert', (self,))
     def __pos__(self):
         return self
 
@@ -214,12 +215,17 @@ class ExpressionNode(object):
     __mod__ = binop('mod')
     __rmod__ = binop('mod', reversed=True)
 
-    __gt__ = binop('gt', kind='int')
-    __ge__ = binop('ge', kind='int')
-    __eq__ = binop('eq', kind='int')
-    __ne__ = binop('ne', kind='int')
-    __lt__ = binop('gt', reversed=True, kind='int')
-    __le__ = binop('ge', reversed=True, kind='int')
+    __and__ = binop('and', kind='bool')
+    __or__ = binop('or', kind='bool')
+
+    __gt__ = binop('gt', kind='bool')
+    __ge__ = binop('ge', kind='bool')
+    __eq__ = binop('eq', kind='bool')
+    __ne__ = binop('ne', kind='bool')
+    __lt__ = binop('gt', reversed=True, kind='bool')
+    __le__ = binop('ge', reversed=True, kind='bool')
+
+
 
 class LeafNode(ExpressionNode):
     leafNode = True
@@ -246,7 +252,7 @@ class RawNode(object):
 
 
 def normalizeConstant(x):
-    for converter in int, float, complex:
+    for converter in bool, int, float, complex:
         try:
             y = converter(x)
         except StandardError, err:
@@ -255,7 +261,8 @@ def normalizeConstant(x):
             return y
 
 def getKind(x):
-    return {int : 'int',
+    return {bool : 'bool',
+            int : 'int',
             float : 'float',
             complex : 'complex'}[type(normalizeConstant(x))]
 
@@ -266,6 +273,8 @@ class ConstantNode(LeafNode):
         LeafNode.__init__(self, value=value, kind=kind)
     def __neg__(self):
         return ConstantNode(-self.value)
+    def __invert__(self):
+        return ConstantNode(~self.value)
 
 class OpNode(ExpressionNode):
     astType = 'op'

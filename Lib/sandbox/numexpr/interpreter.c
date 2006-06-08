@@ -19,6 +19,23 @@
 enum OpCodes {
     OP_NOOP = 0,
 
+    OP_COPY_BB,
+
+    OP_INVERT_BB,
+    OP_AND_BBB,
+    OP_OR_BBB,
+
+    OP_GT_BII,
+    OP_GE_BII,
+    OP_EQ_BII,
+    OP_NE_BII,
+
+    OP_GT_BFF,
+    OP_GE_BFF,
+    OP_EQ_BFF,
+    OP_NE_BFF,
+
+    OP_CAST_IB,
     OP_COPY_II,
     OP_ONES_LIKE_II,
     OP_NEG_II,
@@ -30,11 +47,7 @@ enum OpCodes {
     OP_MOD_III,
     OP_WHERE_IFII,
 
-    OP_GT_IFF,
-    OP_GE_IFF,
-    OP_EQ_IFF,
-    OP_NE_IFF,
-
+    OP_CAST_FB,
     OP_CAST_FI,
     OP_COPY_FF,
     OP_ONES_LIKE_FF,
@@ -54,12 +67,13 @@ enum OpCodes {
     OP_FUNC_FF,
     OP_FUNC_FFF,
 
-    OP_EQ_ICC,
-    OP_NE_ICC,
+    OP_EQ_BCC,
+    OP_NE_BCC,
 
+    OP_CAST_CB,
     OP_CAST_CI,
-    OP_ONES_LIKE_CC,
     OP_CAST_CF,
+    OP_ONES_LIKE_CC,
     OP_COPY_CC,
     OP_NEG_CC,
     OP_ADD_CCC,
@@ -81,6 +95,34 @@ static char op_signature(int op, int n) {
     switch (op) {
         case OP_NOOP:
             break;
+        case OP_COPY_BB:
+            if (n == 0 || n == 1) return 'b';
+            break;
+        case OP_INVERT_BB:
+            if (n == 0 || n == 1) return 'b';
+            break;
+        case OP_AND_BBB:
+        case OP_OR_BBB:
+            if (n == 0 || n == 1 || n == 2) return 'b';
+            break;
+        case OP_GT_BII:
+        case OP_GE_BII:
+        case OP_EQ_BII:
+        case OP_NE_BII:
+            if (n == 0) return 'b';
+            if (n == 1 || n == 2) return 'i';
+            break;
+        case OP_GT_BFF:
+        case OP_GE_BFF:
+        case OP_EQ_BFF:
+        case OP_NE_BFF:
+            if (n == 0) return 'b';
+            if (n == 1 || n == 2) return 'f';
+            break;
+        case OP_CAST_IB:
+            if (n == 0) return 'i';
+            if (n == 1) return 'b';
+            break;
         case OP_COPY_II:
         case OP_ONES_LIKE_II:
         case OP_NEG_II:
@@ -98,12 +140,9 @@ static char op_signature(int op, int n) {
             if (n == 0 || n == 2 || n == 3) return 'i';
             if (n == 1) return 'f';
             break;
-        case OP_GT_IFF:
-        case OP_GE_IFF:
-        case OP_EQ_IFF:
-        case OP_NE_IFF:
-            if (n == 0) return 'i';
-            if (n == 1 || n == 2) return 'f';
+        case OP_CAST_FB:
+            if (n == 0) return 'f';
+            if (n == 1) return 'b';
             break;
         case OP_CAST_FI:
             if (n == 0) return 'f';
@@ -138,10 +177,14 @@ static char op_signature(int op, int n) {
             if (n == 0 || n == 1 || n == 2) return 'f';
             if (n == 3) return 'n';
             break;
-        case OP_EQ_ICC:
-        case OP_NE_ICC:
-            if (n == 0) return 'i';
+        case OP_EQ_BCC:
+        case OP_NE_BCC:
+            if (n == 0) return 'b';
             if (n == 1 || n == 2) return 'c';
+            break;
+        case OP_CAST_CB:
+            if (n == 0) return 'c';
+            if (n == 1) return 'b';
             break;
         case OP_CAST_CI:
             if (n == 0) return 'c';
@@ -376,11 +419,12 @@ static int
 size_from_char(char c)
 {
     switch (c) {
+        case 'b': return sizeof(char);
         case 'i': return sizeof(long);
         case 'f': return sizeof(double);
         case 'c': return 2*sizeof(double);
         default:
-            PyErr_SetString(PyExc_TypeError, "signature value not in 'ifc'");
+            PyErr_SetString(PyExc_TypeError, "signature value not in 'bifc'");
             return -1;
     }
 }
@@ -403,6 +447,7 @@ static int
 typecode_from_char(char c)
 {
     switch (c) {
+        case 'b': return PyArray_BOOL;
         case 'i': return PyArray_LONG;
         case 'f': return PyArray_DOUBLE;
         case 'c': return PyArray_CDOUBLE;
@@ -561,6 +606,10 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
                 return -1;
             }
             PyTuple_SET_ITEM(constants, i, o); /* steals reference */
+            if (PyBool_Check(o)) {
+                PyString_AS_STRING(constsig)[i] = 'b';
+                continue;
+            }
             if (PyInt_Check(o)) {
                 PyString_AS_STRING(constsig)[i] = 'i';
                 continue;
@@ -601,7 +650,7 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
 
     rawmemsize = BLOCK_SIZE1 * (size_from_sig(constsig) + size_from_sig(tempsig));
-    mem = PyMem_New(void *, 1 + n_inputs + n_constants + n_temps);
+    mem = PyMem_New(char *, 1 + n_inputs + n_constants + n_temps);
     rawmem = PyMem_New(char, rawmemsize);
     memsteps = PyMem_New(intp, 1 + n_inputs);
     memsizes = PyMem_New(int, 1 + n_inputs + n_constants + n_temps);
@@ -630,7 +679,13 @@ NumExpr_init(NumExprObject *self, PyObject *args, PyObject *kwds)
         mem_offset += BLOCK_SIZE1 * size;
         memsizes[i+n_inputs+1] = size;
         /* fill in the constants */
-        if (c == 'i') {
+        if (c == 'b') {
+            char *bmem = (char*)mem[i+n_inputs+1];
+            char value = (char)PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
+            for (j = 0; j < BLOCK_SIZE1; j++) {
+                bmem[j] = value;
+            }
+        } else if (c == 'i') {
             long *imem = (long*)mem[i+n_inputs+1];
             long value = PyInt_AS_LONG(PyTuple_GET_ITEM(constants, i));
             for (j = 0; j < BLOCK_SIZE1; j++) {
@@ -777,7 +832,7 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
                 int *pc_error)
 {
     int r;
-    unsigned int t, blen1, blen2, n_constants;
+    unsigned int blen1, blen2;
     struct vm_params params;
 
     *pc_error = -1;
@@ -815,7 +870,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     PyObject *output = NULL, *a_inputs = NULL;
     unsigned int n_inputs;
     int i, len = -1, r, pc_error;
-    char **inputs;
+    char **inputs = NULL;
 
     n_inputs = PyTuple_Size(args);
     if (PyString_Size(self->signature) != n_inputs) {
@@ -1011,6 +1066,21 @@ initinterpreter(void)
     if (r < 0) {PyErr_SetString(PyExc_RuntimeError, "add_op"); return;}
     add_op("noop", OP_NOOP);
 
+    add_op("copy_bb", OP_COPY_BB);
+    add_op("invert_bb", OP_INVERT_BB);
+    add_op("and_bbb", OP_AND_BBB);
+    add_op("or_bbb", OP_OR_BBB);
+    add_op("gt_bii", OP_GT_BII);
+    add_op("ge_bii", OP_GE_BII);
+    add_op("eq_bii", OP_EQ_BII);
+    add_op("ne_bii", OP_NE_BII);
+
+    add_op("gt_bff", OP_GT_BFF);
+    add_op("ge_bff", OP_GE_BFF);
+    add_op("eq_bff", OP_EQ_BFF);
+    add_op("ne_bff", OP_NE_BFF);
+
+    add_op("cast_ib", OP_CAST_IB);
     add_op("ones_like_ii", OP_ONES_LIKE_II);
     add_op("copy_ii", OP_COPY_II);
     add_op("neg_ii", OP_NEG_II);
@@ -1022,11 +1092,7 @@ initinterpreter(void)
     add_op("mod_iii", OP_MOD_III);
     add_op("where_ifii", OP_WHERE_IFII);
 
-    add_op("gt_iff", OP_GT_IFF);
-    add_op("ge_iff", OP_GE_IFF);
-    add_op("eq_iff", OP_EQ_IFF);
-    add_op("ne_iff", OP_NE_IFF);
-
+    add_op("cast_fb", OP_CAST_FB);
     add_op("cast_fi", OP_CAST_FI);
     add_op("copy_ff", OP_COPY_FF);
     add_op("ones_like_ff", OP_ONES_LIKE_FF);
@@ -1047,9 +1113,10 @@ initinterpreter(void)
     add_op("func_ff", OP_FUNC_FF);
     add_op("func_fff", OP_FUNC_FFF);
 
-    add_op("eq_icc", OP_EQ_ICC);
-    add_op("ne_icc", OP_NE_ICC);
+    add_op("eq_bcc", OP_EQ_BCC);
+    add_op("ne_bcc", OP_NE_BCC);
 
+    add_op("cast_cb", OP_CAST_CB);
     add_op("cast_ci", OP_CAST_CI);
     add_op("cast_cf", OP_CAST_CF);
     add_op("copy_cc", OP_COPY_CC);

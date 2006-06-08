@@ -49,18 +49,22 @@
         # define     arg3   params.program[pc+5]
         void *dst = params.mem[store_in];
         void *src = params.mem[arg1];
+        #define b_dest ((char *)dest)[j]
         #define i_dest ((long *)dest)[j]
         #define f_dest ((double *)dest)[j]
         #define cr_dest ((double *)dest)[2*j]
         #define ci_dest ((double *)dest)[2*j+1]
+        #define b1    ((char   *)x1)[j]
         #define i1    ((long   *)x1)[j]
         #define f1    ((double *)x1)[j]
         #define c1r   ((double *)x1)[2*j]
         #define c1i   ((double *)x1)[2*j+1]
+        #define b2    ((char   *)x2)[j]
         #define i2    ((long   *)x2)[j]
         #define f2    ((double *)x2)[j]
         #define c2r   ((double *)x2)[2*j]
         #define c2i   ((double *)x2)[2*j+1]
+        #define b3    ((char   *)x3)[j]
         #define i3    ((long   *)x3)[j]
         #define f3    ((double *)x3)[j]
         #define c3r   ((double *)x3)[2*j]
@@ -73,6 +77,12 @@
         case OP_NOOP: break;
 
         /* The COPY are the only ops that depend on stride */
+        case OP_COPY_BB: {
+            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
+                                            : params.memsizes[arg1]);
+            VEC_ARG1(memcpy(dst, src, sizeof(char));
+                     dst += sizeof(char); src += str1);
+            }
         case OP_COPY_II: {
             intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
                                             : params.memsizes[arg1]);
@@ -92,6 +102,22 @@
                      dst += sizeof(double)*2; src += str1);
             }
 
+        case OP_INVERT_BB: VEC_ARG1(b_dest = !b1);
+
+        case OP_AND_BBB: VEC_ARG2(b_dest = b1 && b2);
+        case OP_OR_BBB: VEC_ARG2(b_dest = b1 || b2);
+
+        case OP_GT_BII: VEC_ARG2(b_dest = (i1 > i2) ? 1 : 0);
+        case OP_GE_BII: VEC_ARG2(b_dest = (i1 >= i2) ? 1 : 0);
+        case OP_EQ_BII: VEC_ARG2(b_dest = (i1 == i2) ? 1 : 0);
+        case OP_NE_BII: VEC_ARG2(b_dest = (i1 != i2) ? 1 : 0);
+
+        case OP_GT_BFF: VEC_ARG2(b_dest = (f1 > f2) ? 1 : 0);
+        case OP_GE_BFF: VEC_ARG2(b_dest = (f1 >= f2) ? 1 : 0);
+        case OP_EQ_BFF: VEC_ARG2(b_dest = (f1 == f2) ? 1 : 0);
+        case OP_NE_BFF: VEC_ARG2(b_dest = (f1 != f2) ? 1 : 0);
+
+        case OP_CAST_IB: VEC_ARG1(i_dest = (long)b1);
         case OP_ONES_LIKE_II: VEC_ARG1(i_dest = 1);
         case OP_NEG_II: VEC_ARG1(i_dest = -i1);
 
@@ -104,6 +130,7 @@
 
         case OP_WHERE_IFII: VEC_ARG3(i_dest = f1 ? i2 : i3);
 
+        case OP_CAST_FB: VEC_ARG1(f_dest = (long)b1);
         case OP_CAST_FI: VEC_ARG1(f_dest = (double)(i1));
         case OP_ONES_LIKE_FF: VEC_ARG1(f_dest = 1.0);
         case OP_NEG_FF: VEC_ARG1(f_dest = -f1);
@@ -114,11 +141,6 @@
         case OP_DIV_FFF: VEC_ARG2(f_dest = f1 / f2);
         case OP_POW_FFF: VEC_ARG2(f_dest = pow(f1, f2));
         case OP_MOD_FFF: VEC_ARG2(f_dest = f1 - floor(f1/f2) * f2);
-
-        case OP_GT_IFF: VEC_ARG2(i_dest = (f1 > f2) ? 1 : 0);
-        case OP_GE_IFF: VEC_ARG2(i_dest = (f1 >= f2) ? 1 : 0);
-        case OP_EQ_IFF: VEC_ARG2(i_dest = (f1 == f2) ? 1 : 0);
-        case OP_NE_IFF: VEC_ARG2(i_dest = (f1 != f2) ? 1 : 0);
 
         case OP_SIN_FF: VEC_ARG1(f_dest = sin(f1));
         case OP_COS_FF: VEC_ARG1(f_dest = cos(f1));
@@ -131,6 +153,8 @@
         case OP_FUNC_FF: VEC_ARG1(f_dest = functions_f[arg2](f1));
         case OP_FUNC_FFF: VEC_ARG2(f_dest = functions_ff[arg3](f1, f2));
 
+        case OP_CAST_CB: VEC_ARG1(cr_dest = (double)b1;
+                                  ci_dest = 0);
         case OP_CAST_CI: VEC_ARG1(cr_dest = (double)(i1);
                                   ci_dest = 0);
         case OP_CAST_CF: VEC_ARG1(cr_dest = f1;
@@ -152,8 +176,8 @@
                                   ci_dest = (c1i*c2r - c1r*c2i) / fa;
                                   cr_dest = fb);
 
-        case OP_EQ_ICC: VEC_ARG2(i_dest = (c1r == c2r && c1i == c2i) ? 1 : 0);
-        case OP_NE_ICC: VEC_ARG2(i_dest = (c1r != c2r || c1i != c2i) ? 1 : 0);
+        case OP_EQ_BCC: VEC_ARG2(b_dest = (c1r == c2r && c1i == c2i) ? 1 : 0);
+        case OP_NE_BCC: VEC_ARG2(b_dest = (c1r != c2r || c1i != c2i) ? 1 : 0);
 
         case OP_WHERE_CFCC: VEC_ARG3(cr_dest = f1 ? c2r : c3r;
                                      ci_dest = f1 ? c2i : c3i);
@@ -187,18 +211,22 @@
 #undef VEC_ARG2
 #undef VEC_ARG3
 
+#undef b_dest
 #undef i_dest
 #undef f_dest
 #undef cr_dest
 #undef ci_dest
+#undef b1
 #undef i1
 #undef f1
 #undef c1r
 #undef c1i
+#undef b2
 #undef i2
 #undef f2
 #undef c2r
 #undef c2i
+#undef b3
 #undef i3
 #undef f3
 #undef c3r
