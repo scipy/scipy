@@ -3,17 +3,8 @@
 # The tests are more of interface than they are of the underlying blas.
 # Only very small matrices checked -- N=3 or so.
 #
-# These test really need to be checked on 64 bit architectures.
-# What does complex32 become on such machines? complex64 I'll bet.
-# If so, I think we are OK.
-# Check when we have a machine to check on.
-#
 # !! Complex calculations really aren't checked that carefully.
 # !! Only real valued complex numbers are used in tests.
-#
-# !! Uses matrixmultiply to check against blas.  If matrixmultiply is
-# !! ever !replaced! by a blas call, we'll need to fill in a simple
-# !! matrix multiply here to ensure integrity of tests.
 
 from numpy import *
 
@@ -25,6 +16,26 @@ restore_path()
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5
+
+# Since numpy.dot likely uses the same blas, use this routine
+# to check.
+def matrixmultiply(a, b):
+    if len(b.shape) == 1:
+        b_is_vector = True
+        b = b[:,newaxis]
+    else:
+        b_is_vector = False
+    assert a.shape[1] == b.shape[0]
+    c = zeros((a.shape[0], b.shape[1]), common_type(a, b))
+    for i in xrange(a.shape[0]):
+        for j in xrange(b.shape[1]):
+            s = 0
+            for k in xrange(a.shape[1]):
+                s += a[i,k] * b[k, j]
+            c[i,j] = s
+    if b_is_vector:
+        c = c.reshape((a.shape[0],))
+    return c
 
 ##################################################
 ### Test blas ?axpy
@@ -296,7 +307,7 @@ class test_zswap(base_swap):
 class base_gemv(ScipyTestCase):
     def get_data(self,x_stride=1,y_stride=1):
         mult = array(1, dtype = self.dtype)
-        if self.dtype in ['F', 'D']:
+        if self.dtype in [complex64, complex128]:
             mult = array(1+1j, dtype = self.dtype)
         from numpy.random import normal
         alpha = array(1., dtype = self.dtype) * mult
@@ -469,10 +480,6 @@ class base_ger_complex(base_ger):
         desired_a = alpha*transpose(x[:,newaxis]*y) + a
         #self.blas_func(x,y,a,alpha = alpha)
         fblas.cgeru(x,y,a,alpha = alpha)
-        print x, y
-        print desired_a.dtype,desired_a
-        print
-        print a.dtype,a
         assert_array_almost_equal(desired_a,a)
 
     #def check_x_stride(self):

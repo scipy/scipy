@@ -94,8 +94,7 @@ class test_eig(ScipyTestCase):
             assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
         w,v = eig(a,left=1,right=0)
         for i in range(3):
-            assert_array_almost_equal(matrixmultiply(\
-                transpose(a),v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(dot(transpose(a),v[:,i]),w[i]*v[:,i])
 
     def check_simple_complex(self):
         a = [[1,2,3],[1,2,3],[2,5,6+1j]]
@@ -103,8 +102,7 @@ class test_eig(ScipyTestCase):
         for i in range(3):
             assert_array_almost_equal(dot(a,vr[:,i]),w[i]*vr[:,i])
         for i in range(3):
-            assert_array_almost_equal(matrixmultiply(\
-            conjugate(transpose(a)),vl[:,i]),
+            assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
                                       conjugate(w[i])*vl[:,i])
 
 class test_lu(ScipyTestCase):

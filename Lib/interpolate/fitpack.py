@@ -33,7 +33,7 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     matrixmultiply, sin, cos, pi, arange, empty
+     dot, sin, cos, pi, arange, empty
 myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
@@ -697,7 +697,7 @@ if __name__ == "__main__":
         runtest=map(string.atoi,sys.argv[1:])
     put=sys.stdout.write
     def norm2(x):
-        return matrixmultiply(transpose(x),x)
+        return dot(transpose(x),x)
     def f1(x,d=0):
         if d is None: return "sin"
         if x is None: return "sin(x)"

@@ -376,11 +376,11 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
                                [-m12,  m22]], dtype = numarray.Float64)
         minc = [0, 0]
         maxc = [0, 0]
-        coor = numarray.matrixmultiply(mtrx, [0, ix])
+        coor = numarray.dot(mtrx, [0, ix])
         minc, maxc = _minmax(coor, minc, maxc)
-        coor = numarray.matrixmultiply(mtrx, [iy, 0])
+        coor = numarray.dot(mtrx, [iy, 0])
         minc, maxc = _minmax(coor, minc, maxc)
-        coor = numarray.matrixmultiply(mtrx, [iy, ix])
+        coor = numarray.dot(mtrx, [iy, ix])
         minc, maxc = _minmax(coor, minc, maxc)
         oy = int(maxc[0] - minc[0] + 0.5)
         ox = int(maxc[1] - minc[1] + 0.5)
@@ -390,7 +390,7 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
     offset = numarray.zeros((2,), dtype = numarray.Float64)
     offset[0] = float(oy) / 2.0 - 0.5
     offset[1] = float(ox) / 2.0 - 0.5
-    offset = numarray.matrixmultiply(matrix, offset)
+    offset = numarray.dot(matrix, offset)
     tmp = numarray.zeros((2,), dtype = numarray.Float64)
     tmp[0] = float(iy) / 2.0 - 0.5
     tmp[1] = float(ix) / 2.0 - 0.5
