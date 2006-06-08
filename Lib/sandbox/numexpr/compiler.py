@@ -2,10 +2,7 @@
 import sys
 import numpy
 
-try:
-    from scipy.sandbox.numexpr import interpreter, expressions
-except ImportError:
-    from numexpr import interpreter, expressions
+import interpreter, expressions
 
 class ASTNode(object):
     cmpnames = ['astType', 'astKind', 'value', 'children']
@@ -145,12 +142,7 @@ def makeExpressions(context):
     bulletproof.
     """
     import sys, imp
-    try:
-        from scipy.sandbox.numexpr import expressions
-        modname = 'scipy.sandbox.numexpr.expressions'
-    except ImportError:
-        from numexpr import expressions
-        modname = 'numexpr.expressions'
+    modname = modname[__name__.rfind('.')-1:] + '.expressions'
     # get our own, private copy of expressions
     imp.acquire_lock()
     try:
