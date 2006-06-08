@@ -83,6 +83,10 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
         print "Took %d points." % n
     return val, err
 
+def tupleset(t, i, value):
+    l = list(t)
+    l[i] = value
+    return tuple(l)
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1):
     """Cumulatively integrate y(x) using samples along the given axis
@@ -95,23 +99,19 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1):
     else:
         d = diff(x,axis=axis)
     nd = len(y.shape)
-    slice1 = [slice(None)]*nd
-    slice2 = [slice(None)]*nd
-    slice1[axis] = slice(1,None)
-    slice2[axis] = slice(None,-1)
+    slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
+    slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
     return add.accumulate(d * (y[slice1]+y[slice2])/2.0,axis)
 
 def _basic_simps(y,start,stop,x,dx,axis):
     nd = len(y.shape)
-    slice0 = [slice(None)]*nd
-    slice1 = [slice(None)]*nd
-    slice2 = [slice(None)]*nd
     if start is None:
         start = 0
     step = 2
-    slice0[axis] = slice(start,stop,step)
-    slice1[axis] = slice(start+1,stop+1,step)
-    slice2[axis] = slice(start+2,stop+2,step)
+    all = (slice(None),)*nd
+    slice0 = tupleset(all, axis, slice(start, stop, step))
+    slice1 = tupleset(all, axis, slice(start+1, stop+1, step))
+    slice2 = tupleset(all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even spaced Simpson's rule.
         result = add.reduce(dx/3.0* (y[slice0]+4*y[slice1]+y[slice2]),
@@ -120,10 +120,8 @@ def _basic_simps(y,start,stop,x,dx,axis):
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
         h = diff(x,axis=axis)
-        sl0 = [slice(None)]*nd
-        sl1 = [slice(None)]*nd
-        sl0[axis] = slice(start,stop,step)
-        sl1[axis] = slice(start+1,stop+1,step)
+        sl0 = tupleset(all, axis, slice(start, stop, step))
+        sl1 = tupleset(all, axis, slice(start+1, stop+1, step))
         h0 = h[sl0]
         h1 = h[sl1]
         hsum = h0 + h1
@@ -182,25 +180,25 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     if N % 2 == 0:
         val = 0.0
         result = 0.0
-        slice1 = [slice(None)]*nd
-        slice2 = [slice(None)]*nd
+        slice1 = (slice(None),)*nd
+        slice2 = (slice(None),)*nd
         if not even in ['avg', 'last', 'first']:
             raise ValueError, \
                   "Parameter 'even' must be 'avg', 'last', or 'first'."
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
-            slice1[axis] = -1
-            slice2[axis] = -2
+            slice1 = tupleset(slice1, axis, -1)
+            slice2 = tupleset(slice2, axis, -2)
             if not x is None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
             result = _basic_simps(y,0,N-3,x,dx,axis)
         # Compute using Simpson's rule on last set of intervals
         if even in ['avg', 'last']:
-            slice1[axis] = 0
-            slice2[axis] = 1
+            slice1 = tupleset(slice1, axis, 0)
+            slice2 = tupleset(slice2, axis, 1)
             if not x is None:
-                first_dx = x[slice2] - x[slice1]
+                first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
             result += _basic_simps(y,1,N-2,x,dx,axis)
         if even == 'avg':
@@ -232,17 +230,16 @@ def romb(y, dx=1.0, axis=-1, show=0):
               "Number of samples must be one plus a non-negative power of 2."
 
     R = {}
-    slice0 = [slice(None)]*nd
-    slice0[axis] = 0
-    slicem1 = [slice(None)]*nd
-    slicem1[axis] = -1
+    all = (slice(None),) * nd
+    slice0 = tupleset(all, axis, 0)
+    slicem1 = tupleset(all, axis, -1)
     h = Ninterv*asarray(dx)*1.0
     R[(1,1)] = (y[slice0] + y[slicem1])/2.0*h
-    slice_R = [slice(None)]*nd
+    slice_R = all
     start = stop = step = Ninterv
     for i in range(2,k+1):
         start >>= 1
-        slice_R[axis] = slice(start,stop,step)
+        slice_R = tupleset(slice_R, slice(start,stop,step))
         step >>= 1
         R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
         for j in range(2,i+1):
