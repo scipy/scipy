@@ -15,11 +15,12 @@
         Train a codebook for mimimum distortion using the kmeans algorithm
 
 """
+__all__ = ['whiten', 'vq', 'kmeans']
+
 from numpy.random import randint
 from scipy.stats import std, mean
-from numpy import common_type as _common_type
-from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, Int, \
-     newaxis, arange, compress, equal, take
+from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, \
+     newaxis, arange, compress, equal, take, common_type, single, double
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis
@@ -120,16 +121,12 @@ def vq(obs,code_book):
     """
     try:
         import _vq
-
-        # XXX: huh? Bitrot!
-        #from scipy.misc import x_common_type
-        #ct = x_common_type(obs,code_book)
-        ct = _common_type(obs, code_book)
+        ct = common_type(obs, code_book)
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
-        if   ct == 'f':
+        if ct is single:
             results = _vq.float_vq(c_obs,c_code_book)
-        elif ct == 'd':
+        elif ct is double:
             results = _vq.double_vq(c_obs,c_code_book)
         else:
             results = py_vq(obs,code_book)
@@ -151,7 +148,7 @@ def py_vq(obs,code_book):
     assert(Nf == code_book.shape[1])
     code = [];min_dist = []
     #create a memory block to use for the difference calculations
-    diff = zeros(shape(code_book),_common_type(obs,code_book))
+    diff = zeros(shape(code_book), common_type(obs,code_book))
     for o in obs:
         subtract(code_book,o,diff) # faster version of --> diff = code_book - o
         dist = sqrt(sum(diff*diff,-1))
@@ -162,7 +159,7 @@ def py_vq(obs,code_book):
         try:    dst = dst[0]
         except: pass
         min_dist.append(dst)
-    return array(code,typecode=Int), array(min_dist)
+    return array(code,dtype=int), array(min_dist)
 
 def py_vq2(obs,code_book):
     """ This could be faster when number of codebooks is small, but it becomes
