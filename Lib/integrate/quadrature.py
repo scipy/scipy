@@ -7,7 +7,7 @@ __all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
 
 from scipy.special.orthogonal import p_roots
 from numpy import sum, ones, add, diff, isinf, isscalar, \
-     asarray, real, trapz
+     asarray, real, trapz, arange, empty
 
 def fixed_quad(func,a,b,args=(),n=5):
     """Compute a definite integral using fixed-order Gaussian quadrature.
@@ -39,13 +39,26 @@ def fixed_quad(func,a,b,args=(),n=5):
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args)), None
 
-def vec_func(x,func,*args):
-    try:
-        return asarray([func(xx,*args) for xx in x])
-    except TypeError:
-        return func(x,*args)
+def vectorize1(func, args=(), vec_func=False):
+    if vec_func:
+        def vfunc(x):
+            return func(x, *args)
+    else:
+        def vfunc(x):
+            if isscalar(x):
+                return func(x, *args)
+            x = asarray(x)
+            # call with first point to get output type
+            y0 = func(x[0], *args)
+            n = len(x)
+            output = empty((n,), dtype=y0.dtype)
+            output[0] = y0
+            for i in xrange(1, n):
+                output[i] = func(x[i], *args)
+            return output
+    return vfunc
 
-def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
+def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
     """Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
   Description:
@@ -62,6 +75,8 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
     tol -- iteration stops when error between last two iterates is less than
            tolerance.
     maxiter -- maximum number of iterations.
+    vec_func -- True or False if func handles arrays as arguments (is
+                a "vector" function ). Default is True.
 
   Outputs: (val, err)
 
@@ -72,12 +87,13 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50):
     err = 100.0
     val = err
     n = 1
+    vfunc = vectorize1(func, args, vec_func=vec_func)
     while (err > tol) and (n < maxiter):
-        newval = fixed_quad(vec_func,a,b,(func,)+args,n)[0]
+        newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
         n = n + 1
-    if (n==maxiter):
+    if n == maxiter:
         print "maxiter (%d) exceeded. Latest difference = %e" % (n,err)
     else:
         print "Took %d points." % n
@@ -211,7 +227,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         x = x.reshape(saveshape)
     return result
 
-def romb(y, dx=1.0, axis=-1, show=0):
+def romb(y, dx=1.0, axis=-1, show=False):
     """Uses Romberg integration to integrate y(x) using N samples
     along the given axis which are assumed equally spaced with distance dx.
     The number of samples must be 1 + a non-negative power of two: N=2**k + 1
@@ -286,33 +302,35 @@ def romb(y, dx=1.0, axis=-1, show=0):
 # last revision: Dec 2001
 
 def _difftrap(function, interval, numtraps):
-    # Perform part of the trapezoidal rule to integrate a function.
-    # Assume that we had called difftrap with all lower powers-of-2
-    # starting with 1.  Calling difftrap only returns the summation
-    # of the new ordinates.  It does _not_ multiply by the width
-    # of the trapezoids.  This must be performed by the caller.
-    #     'function' is the function to evaluate.
-    #     'interval' is a sequence with lower and upper limits
-    #                of integration.
-    #     'numtraps' is the number of trapezoids to use (must be a
-    #                power-of-2).
-    if numtraps<=0:
-        print "numtraps must be > 0 in difftrap()."
-        return
-    elif numtraps==1:
+    """
+    Perform part of the trapezoidal rule to integrate a function.
+    Assume that we had called difftrap with all lower powers-of-2
+    starting with 1.  Calling difftrap only returns the summation
+    of the new ordinates.  It does _not_ multiply by the width
+    of the trapezoids.  This must be performed by the caller.
+        'function' is the function to evaluate (must accept vector arguments).
+        'interval' is a sequence with lower and upper limits
+                   of integration.
+        'numtraps' is the number of trapezoids to use (must be a
+                   power-of-2).
+    """
+    if numtraps <= 0:
+        raise ValueError("numtraps must be > 0 in difftrap().")
+    elif numtraps == 1:
         return 0.5*(function(interval[0])+function(interval[1]))
     else:
         numtosum = numtraps/2
         h = float(interval[1]-interval[0])/numtosum
         lox = interval[0] + 0.5 * h;
-        sum = 0.0
-        for i in range(0, numtosum):
-            sum = sum + function(lox + i*h)
-        return sum
+        points = lox + h * arange(0, numtosum)
+        s = sum(function(points))
+        return s
 
 def _romberg_diff(b, c, k):
-    # Compute the differences for the Romberg quadrature corrections.
-    # See Forman Acton's "Real Computing Made Real," p 143.
+    """
+    Compute the differences for the Romberg quadrature corrections.
+    See Forman Acton's "Real Computing Made Real," p 143.
+    """
     tmp = 4.0**k
     return (tmp * c - b)/(tmp - 1.0)
 
@@ -332,7 +350,8 @@ def _printresmat(function, interval, resmat):
     print 'The final result is', resmat[i][j],
     print 'after', 2**(len(resmat)-1)+1, 'function evaluations.'
 
-def romberg(function, a, b, tol=1.48E-8, show=0, divmax=10):
+def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
+            divmax=10, vec_func=False):
     """Romberg integration of a callable function or method.
 
     Returns the integral of |function| (a function of one variable)
@@ -340,26 +359,29 @@ def romberg(function, a, b, tol=1.48E-8, show=0, divmax=10):
     upper limit of the integration interval), calculated using
     Romberg integration up to the specified |accuracy|. If |show| is 1,
     the triangular array of the intermediate results will be printed.
+    If |vec_func| is True (default is False), then |function| is
+    assumed to support vector arguments.
     """
     if isinf(a) or isinf(b):
-        raise ValueError, "Romberg integration only available for finite limits."
+        raise ValueError("Romberg integration only available for finite limits.")
+    vfunc = vectorize1(function, args, vec_func=vec_func)
     i = n = 1
     interval = [a,b]
     intrange = b-a
-    ordsum = _difftrap(function, interval, n)
+    ordsum = _difftrap(vfunc, interval, n)
     result = intrange * ordsum
     resmat = [[result]]
     lastresult = result + tol * 2.0
     while (abs(result - lastresult) > tol) and (i <= divmax):
         n = n * 2
-        ordsum = ordsum + _difftrap(function, interval, n)
+        ordsum = ordsum + _difftrap(vfunc, interval, n)
         resmat.append([])
         resmat[i].append(intrange * ordsum / n)
         for k in range(i):
-            resmat[i].append(_romberg_diff(resmat[i-1][k],
-                                          resmat[i][k], k+1))
+            resmat[i].append(_romberg_diff(resmat[i-1][k], resmat[i][k], k+1))
         result = resmat[i][i]
         lastresult = resmat[i-1][i-1]
         i = i + 1
-    if show: _printresmat(function, interval, resmat)
+    if show:
+        _printresmat(vfunc, interval, resmat)
     return result
