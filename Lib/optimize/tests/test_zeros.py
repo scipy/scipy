@@ -57,20 +57,12 @@ class test_basic(ScipyTestCase) :
     def check_run(self) :
         a = .5
         b = sqrt(3)
-        repeat = 2000
-
-        print 'TESTING CONVERGENCE\n'
-        print 'zero should be 1\n'
         for i in range(len(functions)) :
-            print 'function %s\n'%fstrings[i]
             for j in range(len(methods)) :
-                try:
-                    zero = methods[j](functions[i],a,b)
-                except:
-                    print '%s : failed'%mstrings[j]
-                else:
-                    print '%s : %21.16f'%(mstrings[j],zero)
-            print '\n\n'
+                zero = methods[j](functions[i],a,b, xtol=0.1e-12)
+                assert_almost_equal(zero, 1.0, decimal=12,
+                    err_msg='method %s, function %s' % (mstrings[j],
+                                                        fstrings[i]))
 
     def bench_run(self,level=5):
         a = .5
