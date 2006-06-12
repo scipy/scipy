@@ -13,9 +13,8 @@ __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
            'all_mat']
 
 #from blas import get_blas_funcs
-#from lapack import get_lapack_funcs
 from flinalg import get_flinalg_funcs
-from scipy.lib.lapack import get_lapack_funcs
+from lapack import get_lapack_funcs
 from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,sqrt,add,real
 import numpy
@@ -111,7 +110,7 @@ def solve(a, b, sym_pos=0, lower=0, overwrite_a=0, overwrite_b=0,
         print 'solve:overwrite_a=',overwrite_a
         print 'solve:overwrite_b=',overwrite_b
     if sym_pos:
-        posv, = get_lapack_funcs(('posv',),(a1,b1),debug=debug)
+        posv, = get_lapack_funcs(('posv',),(a1,b1))
         c,x,info = posv(a1,b1,
                         lower = lower,
                         overwrite_a=overwrite_a,
@@ -159,7 +158,7 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
     overwrite_b = overwrite_b or (b1 is not b and not hasattr(b,'__array__'))
 
     gbsv, = get_lapack_funcs(('gbsv',),(a1,b1))
-    a2 = zeros((2*l+u+1,a1.shape[1]),gbsv.dtypechar)
+    a2 = zeros((2*l+u+1,a1.shape[1]), dtype=gbsv.dtype)
     a2[l:,:] = a1
     lu,piv,x,info = gbsv(l,u,a2,b1,
                          overwrite_ab=1,
@@ -346,7 +345,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     if n>m:
         # need to extend b matrix as it will be filled with
         # a larger solution matrix
-        b2 = zeros((n,nrhs),gelss.dtypechar)
+        b2 = zeros((n,nrhs), dtype=gelss.dtype)
         if len(b1.shape)==2: b2[:m,:] = b1
         else: b2[:m,0] = b1
         b1 = b2
@@ -363,7 +362,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     if info>0: raise LinAlgError, "SVD did not converge in Linear Least Squares"
     if info<0: raise ValueError,\
        'illegal value in %-th argument of internal gelss'%(-info)
-    resids = asarray([],x.dtype.char)
+    resids = asarray([], dtype=x.dtype)
     if n<m:
         x1 = x[:n]
         if rank==n: resids = sum(x[n:]**2)
@@ -377,8 +376,7 @@ def pinv(a, cond=None):
     Compute generalized inverse of A using least-squares solver.
     """
     a = asarray_chkfinite(a)
-    t = a.dtype.char
-    b = numpy.identity(a.shape[0],t)
+    b = numpy.identity(a.shape[0], dtype=a.dtype)
     return lstsq(a, b, cond=cond)[0]
 
 
