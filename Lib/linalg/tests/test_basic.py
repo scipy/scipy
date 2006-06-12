@@ -404,13 +404,15 @@ class test_lstsq(ScipyTestCase):
         n = 20
         m = 15
         a = random([n,m]) + 1j * random([n,m])
-        for i in range(m): a[i,i] = 20*(.1+a[i,i])
+        for i in range(m):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(2):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)
             assert r==m,'unexpected efficient rank'
             #XXX: check definition of res
-            assert_array_almost_equal(x,direct_lstsq(a,b),3)
+            assert_array_almost_equal(x,direct_lstsq(a,b),3,
+                   err_msg='We know this test fails; a fix is welcome!!!')
             #XXX: tolerance 1e-3 is quite large, investigate the reason
 
 class test_tri(unittest.TestCase):
