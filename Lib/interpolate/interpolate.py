@@ -4,8 +4,7 @@
     !! found, get rid of it!
 """
 
-__all__ = ['interp1d']
-# XXX: not interp2d?
+__all__ = ['interp2d', 'interp1d']
 
 from numpy import shape, sometrue, atleast_1d, rank, array, transpose, \
      swapaxes, searchsorted, clip, Int, take, ones, putmask, less, greater, \
@@ -20,14 +19,13 @@ def reduce_sometrue(a):
     return all
 
 class interp2d:
-    def __init__(self,x,y,z,kind='linear',
-                 copy=True,bounds_error=0,fill_value=None):
+    def __init__(self, x, y, z, kind='linear',
+                 copy=True, bounds_error=False, fill_value=None):
         """
         Input:
           x,y  - 1-d arrays defining 2-d grid (or 2-d meshgrid arrays)
           z    - 2-d array of grid values
-          kind - interpolation type ('nearest', 'linear', 'cubic',
-          'quintic')
+          kind - interpolation type ('linear', 'cubic', 'quintic')
           copy - if true then data is copied into class, otherwise only a
                    reference is held.
           bounds_error - if true, then when out_of_bounds occurs, an error is
@@ -38,7 +36,7 @@ class interp2d:
         """
         self.x = atleast_1d(x).copy()
         self.y = atleast_1d(y).copy()
-        if self.x > 2 or rank(self.y) > 2:
+        if rank(self.x) > 2 or rank(self.y) > 2:
             raise ValueError, "One of the input arrays is not 1-d or 2-d."
         if rank(self.x) == 2:
             self.x = self.x[:,0]
@@ -50,9 +48,10 @@ class interp2d:
         try:
             kx = {'linear' : 1,
                   'cubic' : 3,
-                  'qunitic' : 5}[kind]
+                  'quintic' : 5}[kind]
         except:
             raise ValueError, "Unsupported interpolation type."
+        self.tck = fitpack.bisplrep(x, y, z, kx=kx, ky=ky)
 
     def __call__(self,x,y,dx=0,dy=0):
         """
@@ -65,12 +64,15 @@ class interp2d:
         """
         x = atleast_1d(x)
         y = atleast_1d(y)
-        z,ier=fitpack._fitpack._bispev(*(self.tck+[x,y,dx,dy]))
-        if ier==10: raise ValueError,"Invalid input data"
-        if ier: raise TypeError,"An error occurred"
+        z,ier=fitpack.bisplev(self.tck, x, y, dx, dy)
+        if ier==10:
+            raise ValueError, "Invalid input data"
+        if ier:
+            raise TypeError, "An error occurred"
         z.shape=len(x),len(y)
         z = transpose(z)
-        if len(z)==1: z = z[0]
+        if len(z)==1:
+            z = z[0]
         return array(z)
 
 class interp1d:
