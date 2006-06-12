@@ -86,7 +86,7 @@ def _geneig(a1,b,left,right,overwrite_a,overwrite_b):
         return w, vl
     return w, vr
 
-def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
+def eig(a,b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
     """ Solve ordinary and generalized eigenvalue problem
     of a square matrix.
 
@@ -96,13 +96,15 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
       b     -- An N x N matrix [default is identity(N)].
       left  -- Return left eigenvectors [disabled].
       right -- Return right eigenvectors [enabled].
+      overwrite_a, overwrite_b -- save space by overwriting the a and/or
+                                  b matrices (both False by default)
 
     Outputs:
 
-      w      -- eigenvalues [left==right==0].
-      w,vr   -- w and right eigenvectors [left==0,right=1].
-      w,vl   -- w and left eigenvectors [left==1,right==0].
-      w,vl,vr  -- [left==right==1].
+      w      -- eigenvalues [left==right==False].
+      w,vr   -- w and right eigenvectors [left==False,right=True].
+      w,vl   -- w and left eigenvectors [left==True,right==False].
+      w,vl,vr  -- [left==right==True].
 
     Definitions:
 
@@ -168,20 +170,23 @@ def eig(a,b=None,left=0,right=1,overwrite_a=0,overwrite_b=0):
         return w, vl
     return w, vr
 
-def eigh(a,lower=1,eigvals_only=0,overwrite_a=0):
+def eigh(a, lower=True, eigvals_only=False, overwrite_a=False):
     """ Solve real symmetric or complex hermitian eigenvalue problem.
 
     Inputs:
 
       a            -- A hermitian N x N matrix.
-      lower        -- values in a are read from lower triangle [1: UPLO='L' (default) / 0: UPLO='U']
+      lower        -- values in a are read from lower triangle
+                      [True: UPLO='L' (default) / False: UPLO='U']
       eigvals_only -- don't compute eigenvectors.
       overwrite_a  -- content of a may be destroyed
 
     Outputs:
 
-      w,v     -- w: eigenvalues, v: eigenvectors [for eigvals_only == False]
-      w       -- eigenvalues [for eigvals_only == True (default)].
+      For eigvals_only == False (the default),
+      w,v     -- w: eigenvalues, v: eigenvectors
+      For eigvals_only == True,
+      w       -- eigenvalues
 
     Definitions:
 
@@ -190,48 +195,48 @@ def eigh(a,lower=1,eigvals_only=0,overwrite_a=0):
 
     """
     if eigvals_only or overwrite_a:
-	a1 = asarray_chkfinite(a)
-	overwrite_a = overwrite_a or (_datanotshared(a1,a))
+        a1 = asarray_chkfinite(a)
+        overwrite_a = overwrite_a or (_datanotshared(a1,a))
     else:
-	a1 = array(a)
+        a1 = array(a)
         if (a1.dtype.char in typecodes['AllFloat']) and not isfinite(a1).all():
-	    raise ValueError, "array must not contain infs or NaNs"
-	overwrite_a = 1
+            raise ValueError, "array must not contain infs or NaNs"
+        overwrite_a = 1
 
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError, 'expected square matrix'
 
     if a1.dtype.char in 'FD':
-	heev, = get_lapack_funcs(('heev',),(a1,))
+        heev, = get_lapack_funcs(('heev',),(a1,))
         if heev.module_name[:7] == 'flapack':
-	    lwork = calc_lwork.heev(heev.prefix,a1.shape[0],lower)
-	    w,v,info = heev(a1,lwork = lwork,
-	                    compute_v = not eigvals_only,
-			    lower = lower,
-			    overwrite_a = overwrite_a)
-	else: # 'clapack'
-	    w,v,info = heev(a1,
-	                    compute_v = not eigvals_only,
-			    lower = lower,
-			    overwrite_a = overwrite_a)
+            lwork = calc_lwork.heev(heev.prefix,a1.shape[0],lower)
+            w,v,info = heev(a1,lwork = lwork,
+                            compute_v = not eigvals_only,
+                            lower = lower,
+                            overwrite_a = overwrite_a)
+        else: # 'clapack'
+            w,v,info = heev(a1,
+                            compute_v = not eigvals_only,
+                            lower = lower,
+                            overwrite_a = overwrite_a)
         if info<0: raise ValueError,\
-	   'illegal value in %-th argument of internal heev'%(-info)
+           'illegal value in %-th argument of internal heev'%(-info)
         if info>0: raise LinAlgError,"eig algorithm did not converge"
     else: # a1.dtype.char in 'fd':
-	syev, = get_lapack_funcs(('syev',),(a1,))
+        syev, = get_lapack_funcs(('syev',),(a1,))
         if syev.module_name[:7] == 'flapack':
-	    lwork = calc_lwork.syev(syev.prefix,a1.shape[0],lower)
-	    w,v,info = syev(a1,lwork = lwork,
-	                    compute_v = not eigvals_only,
-			    lower = lower,
-			    overwrite_a = overwrite_a)
-	else: # 'clapack'
-	    w,v,info = syev(a1,
-	                    compute_v = not eigvals_only,
-			    lower = lower,
-			    overwrite_a = overwrite_a)
+            lwork = calc_lwork.syev(syev.prefix,a1.shape[0],lower)
+            w,v,info = syev(a1,lwork = lwork,
+                            compute_v = not eigvals_only,
+                            lower = lower,
+                            overwrite_a = overwrite_a)
+        else: # 'clapack'
+            w,v,info = syev(a1,
+                            compute_v = not eigvals_only,
+                            lower = lower,
+                            overwrite_a = overwrite_a)
         if info<0: raise ValueError,\
-	   'illegal value in %-th argument of internal syev'%(-info)
+           'illegal value in %-th argument of internal syev'%(-info)
         if info>0: raise LinAlgError,"eig algorithm did not converge"
 
     if eigvals_only:
