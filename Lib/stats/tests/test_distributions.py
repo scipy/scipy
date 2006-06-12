@@ -6,7 +6,7 @@
 from numpy.testing import *
 
 set_package_path()
-import numpy
+import numpy.oldnumeric as numpy
 import stats
 restore_path()
 

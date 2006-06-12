@@ -30,7 +30,7 @@
 
 import types
 import math
-import numpy as numarray
+import numpy.oldnumeric as numarray
 import _ni_support
 import _nd_image
 

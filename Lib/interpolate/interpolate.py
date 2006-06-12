@@ -7,8 +7,9 @@
 __all__ = ['interp2d', 'interp1d']
 
 from numpy import shape, sometrue, atleast_1d, rank, array, transpose, \
-     swapaxes, searchsorted, clip, Int, take, ones, putmask, less, greater, \
+     swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
      logical_or
+from numpy.oldnumeric import Int
 
 import fitpack
 

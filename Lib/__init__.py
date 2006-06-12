@@ -28,8 +28,8 @@ if show_numpy_config is None:
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
-import numpy as _num
-from numpy import *
+import numpy.oldnumeric as _num
+from numpy.oldnumeric import *
 del lib
 del linalg
 __all__ += _num.__all__

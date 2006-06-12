@@ -13,7 +13,7 @@ from io import numpyio
 restore_path()
 
 
-import numpy as N
+import numpy.oldnumeric as N
 import tempfile
 
 class test_numpyio(ScipyTestCase):

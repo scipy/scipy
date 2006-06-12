@@ -1,7 +1,7 @@
 ## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
 
 import scipy.special
-from numpy import sarray, logical_and, asarray, pi, zeros_like, \
+from numpy import logical_and, asarray, pi, zeros_like, \
      piecewise, array, arctan2, tan, zeros, arange, floor
 from numpy.core.umath import sqrt, exp, greater, less, equal, cos, add, sin, \
      less_equal, greater_equal
@@ -19,7 +19,7 @@ def spline_filter(Iin, lmbda=5.0):
     fall-off lmbda.
     """
     intype = Iin.dtype.char
-    hcol = sarray([1.0,4.0,1.0],'f')/6.0
+    hcol = array([1.0,4.0,1.0],'f')/6.0
     if intype in ['F','D']:
         Iin = Iin.astype('F')
         ckr = cspline2d(Iin.real,lmbda)

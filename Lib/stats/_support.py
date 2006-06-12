@@ -79,7 +79,7 @@ def colex(a, indices, axis=1):
 
     Returns: the columns of a specified by indices\n"""
 
-    if type(indices) not in [ListType,TupleType,N.ArrayType]:
+    if type(indices) not in [ListType,TupleType,N.ndarray]:
         indices = [indices]
     if len(N.shape(a)) == 1:
         cols = N.resize(a,[a.shape[0],1])
@@ -150,9 +150,9 @@ def linexand(a, columnlist, valuelist):
     Returns: the rows of a where columnlist[i]=valuelist[i] for ALL i\n"""
 
     a = asarray(a)
-    if type(columnlist) not in [ListType,TupleType,N.ArrayType]:
+    if type(columnlist) not in [ListType,TupleType,N.ndarray]:
         columnlist = [columnlist]
-    if type(valuelist) not in [ListType,TupleType,N.ArrayType]:
+    if type(valuelist) not in [ListType,TupleType,N.ndarray]:
         valuelist = [valuelist]
     criterion = ''
     for i in range(len(columnlist)):
@@ -183,14 +183,14 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
         means = cfcn(avgcol)
         return means
     else:
-        if type(keepcols) not in [ListType,TupleType,N.ArrayType]:
+        if type(keepcols) not in [ListType,TupleType,N.ndarray]:
             keepcols = [keepcols]
         values = colex(a,keepcols)   # so that "item" can be appended (below)
         uniques = unique(values)  # get a LIST, so .sort keeps rows intact
         uniques.sort()
         newlist = []
         for item in uniques:
-            if type(item) not in [ListType,TupleType,N.ArrayType]:
+            if type(item) not in [ListType,TupleType,N.ndarray]:
                 item =[item]
             tmprows = linexand(a,keepcols,item)
             for col in collapsecols:

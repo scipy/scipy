@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import types
-import numpy as numarray
+import numpy.oldnumeric as numarray
 
 def _extend_mode_to_code(mode):
     """Convert an extension mode to the corresponding integer code.

@@ -20,7 +20,8 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import numpy
-from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, single, typecodes, isfinite
+from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, single, isfinite
+from numpy.oldnumeric import typecodes
 
 cast = numpy.cast
 r_ = numpy.r_

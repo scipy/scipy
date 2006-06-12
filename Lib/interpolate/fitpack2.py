@@ -16,7 +16,8 @@ __all__ = [
     'SmoothBivariateSpline']
 
 import warnings
-from numpy import zeros, Float, concatenate, alltrue
+from numpy import zeros, concatenate, alltrue
+from numpy.oldnumeric import Float
 
 import dfitpack
 

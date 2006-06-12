@@ -5,7 +5,7 @@ Modified and extended by Ed Schofield and Robert Cimrman.
 """
 
 from numpy import zeros, isscalar, real, imag, asarray, asmatrix, matrix, \
-                  ArrayType, ceil, amax, rank, conj, searchsorted, ndarray,   \
+                  ndarray, ceil, amax, rank, conj, searchsorted, ndarray,   \
                   less, where, greater, array, transpose, empty, ones, \
                   arange, shape, intc
 import numpy
@@ -535,7 +535,7 @@ class csc_matrix(spmatrix):
                 try:
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
-                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) \
+                    assert isinstance(ij, ndarray) and (rank(ij) == 2) \
                             and (shape(ij) == (2, len(s)))
                 except (AssertionError, TypeError, ValueError):
                     try:
@@ -1121,7 +1121,7 @@ class csr_matrix(spmatrix):
                 try:
                     # Try interpreting it as (data, ij)
                     (s, ij) = arg1
-                    assert isinstance(ij, ArrayType) and (rank(ij) == 2) \
+                    assert isinstance(ij, ndarray) and (rank(ij) == 2) \
                            and (shape(ij) == (2, len(s)))
                 except (AssertionError, TypeError, ValueError, AttributeError):
                     try:

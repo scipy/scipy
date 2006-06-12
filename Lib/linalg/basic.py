@@ -18,7 +18,7 @@ from lapack import get_lapack_funcs
 from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
      conjugate,ravel,r_,mgrid,take,ones,dot,transpose,sqrt,add,real
 import numpy
-from numpy import asarray_chkfinite, outerproduct, concatenate, reshape, single
+from numpy import asarray_chkfinite, outer, concatenate, reshape, single
 from numpy import matrix as Matrix
 import calc_lwork
 
@@ -520,6 +520,6 @@ def kron(a,b):
         a = reshape(a, a.shape)
     if not b.flags['CONTIGUOUS']:
         b = reshape(b, b.shape)
-    o = outerproduct(a,b)
+    o = outer(a,b)
     o=o.reshape(a.shape + b.shape)
     return concatenate(concatenate(o, axis=1), axis=1)

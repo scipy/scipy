@@ -7,7 +7,8 @@
 from filter_design import tf2zpk, zpk2tf, normalize
 import numpy
 from numpy import product, zeros, \
-     array, dot, transpose, arange, ones, Float
+     array, dot, transpose, arange, ones
+from numpy.oldnumeric import Float
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg

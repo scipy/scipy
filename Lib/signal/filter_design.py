@@ -6,7 +6,7 @@
 import numpy
 from numpy.core.umath import *
 from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
-     allclose, Float, resize, pi, concatenate, absolute, logspace, c_
+     allclose, resize, pi, concatenate, absolute, logspace, c_
 from numpy import mintypecode, select
 from scipy import special, optimize, linalg
 from scipy.misc import comb
@@ -294,7 +294,7 @@ def bilinear(b,a,fs=1.0):
     a,b = map(atleast_1d,(a,b))
     D = len(a) - 1
     N = len(b) - 1
-    artype = numpy.Float
+    artype = float
     M = max([N,D])
     Np = M
     Dp = M
@@ -665,14 +665,14 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2: # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = numpy.zeros(2,Float)
+        WN = numpy.zeros(2,float)
         WN[0] = ((passb[1] - passb[0]) + sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN[1] = ((passb[1] - passb[0]) - sqrt((passb[1] - passb[0])**2 + \
                                         4*W0**2 * passb[0] * passb[1])) / (2*W0)
         WN = numpy.sort(abs(WN))
     elif filter_type == 4: # pass
-        W0 = numpy.array([-W0, W0],Float)
+        W0 = numpy.array([-W0, W0],float)
         WN = -W0 * (passb[1]-passb[0]) / 2.0 + sqrt(W0**2 / 4.0 * \
                                               (passb[1]-passb[0])**2 + \
                                               passb[0]*passb[1])
@@ -845,13 +845,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = numpy.zeros(2,numpy.Float)
+        nat = numpy.zeros(2,float)
         nat[0] = new_freq / 2.0 * (passb[0]-passb[1]) + \
                  sqrt(new_freq**2 * (passb[1]-passb[0])**2 / 4.0 + \
                       passb[1] * passb[0])
         nat[1] = passb[1] * passb[0] / nat[0]
     elif filter_type == 4:
-        nat = numpy.zeros(2,numpy.Float)
+        nat = numpy.zeros(2,float)
         nat[0] = 1.0/(2.0*new_freq) * (passb[0] - passb[1]) + \
                  sqrt((passb[1]-passb[0])**2 / (4.0*new_freq**2) + \
                       passb[1] * passb[0])

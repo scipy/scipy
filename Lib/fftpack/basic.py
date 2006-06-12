@@ -9,7 +9,7 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2', 'rfftfreq']
 
 from numpy import asarray, zeros, swapaxes, integer, array
-import numpy
+import numpy.oldnumeric as numpy
 import _fftpack as fftpack
 
 import atexit

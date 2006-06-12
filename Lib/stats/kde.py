@@ -24,7 +24,7 @@
 import warnings
 
 from scipy import linalg, special
-from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
+from numpy.oldnumeric import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, Float, take, power, atleast_1d, squeeze, transpose
 from numpy.random import randint, multivariate_normal
 

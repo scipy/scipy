@@ -14,7 +14,8 @@
 
 import os
 from types import ListType, TupleType
-from numpy import asarray, ArrayType, real,imag,conj,zeros
+from numpy import asarray, real,imag,conj,zeros
+from numpy import ndarray as ArrayType
 
 __all__ = ['mminfo','mmread','mmwrite']
 

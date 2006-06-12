@@ -9,7 +9,8 @@ Text File
 
 __all__ = ['read_array', 'write_array']
 import numpy
-from numpy import array, take, concatenate, Float, asarray, real, imag
+from numpy.oldnumeric import array, take, concatenate, Float, asarray, real, imag
+import numpy.oldnumeric as Numeric
 import types, re, sys
 import numpyio
 default = None
@@ -275,7 +276,7 @@ def getcolumns(stream, columns, separator):
     for k in range(N):
         collist[k] = build_numberlist(columns[k])
     _not_warned = 0
-    val = process_line(firstline, separator, collist, [numpy.Float]*N, 0)
+    val = process_line(firstline, separator, collist, [Numeric.Float]*N, 0)
     for k in range(N):
         colsize[k] = len(val[k])
     return colsize, collist
@@ -294,7 +295,7 @@ def convert_to_equal_lists(cols, atype):
 
 
 def read_array(fileobject, separator=default, columns=default, comment="#",
-               lines=default, atype=numpy.Float, linesep='\n',
+               lines=default, atype=Numeric.Float, linesep='\n',
                rowsize=10000, missing=0):
     """Return an array or arrays from ascii_formatted data in |fileobject|.
 
