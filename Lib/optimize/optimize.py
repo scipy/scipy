@@ -96,7 +96,7 @@ def wrap_function(function, args):
     return ncalls, function_wrapper
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0):
+         full_output=0, disp=1, retall=0, callback=None):
     """Minimize a function using the downhill simplex algorithm.
 
     Description:
@@ -109,6 +109,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       func -- the Python function or method to be minimized.
       x0 -- the initial guess.
       args -- extra arguments for func.
+      callback -- an optional user-supplied function to call after each
+                  iteration.  It is called as callback(xk), where xk is the
+                  current parameter vector.
 
     Outputs: (xopt, {fopt, iter, funcalls, warnflag})
 
@@ -229,7 +232,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         ind = numpy.argsort(fsim)
         sim = numpy.take(sim,ind,0)
         fsim = numpy.take(fsim,ind)
-        iterations = iterations + 1
+        if callback is not None:
+            callback(sim[0])
+        iterations += 1
         if retall:
             allvecs.append(sim[0])
 
@@ -563,7 +568,7 @@ def approx_fhess_p(x0,p,fprime,epsilon,*args):
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0):
+              retall=0, callback=None):
     """Minimize a function using the BFGS algorithm.
 
     Description:
@@ -583,6 +588,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
       norm -- order of norm (Inf is max, -Inf is min)
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
+      callback -- an optional user-supplied function to call after each
+                  iteration.  It is called as callback(xk), where xk is the
+                  current parameter vector.
 
     Outputs: (xopt, {fopt, gopt, Hopt, func_calls, grad_calls, warnflag}, <allvecs>)
 
@@ -649,7 +657,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
         yk = gfkp1 - gfk
         gfk = gfkp1
-        k = k + 1
+        if callback is not None:
+            callback(xk)
+        k += 1
         gnorm = vecnorm(gfk,ord=norm)
         if (gnorm <= gtol):
             break
@@ -703,7 +713,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
-              maxiter=None, full_output=0, disp=1, retall=0):
+              maxiter=None, full_output=0, disp=1, retall=0, callback=None):
     """Minimize a function with nonlinear conjugate gradient algorithm.
 
     Description:
@@ -723,6 +733,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
       norm -- order of vector norm to use
       epsilon -- if fprime is approximated use this value for
                  the step size (can be scalar or vector)
+      callback -- an optional user-supplied function to call after each
+                  iteration.  It is called as callback(xk), where xk is the
+                  current parameter vector.
 
     Outputs: (xopt, {fopt, func_calls, grad_calls, warnflag}, {allvecs})
 
@@ -793,7 +806,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         gnorm = vecnorm(gfk,ord=norm)
-        k = k + 1
+        if callback is not None:
+            callback(xk)
+        k += 1
 
 
     if disp or full_output:
@@ -835,7 +850,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     return retlist
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
-             epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0):
+             epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
+             callback=None):
     """Description:
 
     Minimize the function, f, whose gradient is given by fprime using the
@@ -857,6 +873,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     epsilon -- if fhess is approximated use this value for
                  the step size (can be scalar or vector)
+    callback -- an optional user-supplied function to call after each
+                iteration.  It is called as callback(xk), where xk is the
+                current parameter vector.
 
   Outputs: (xopt, {fopt, fcalls, gcalls, hcalls, warnflag},{allvecs})
 
@@ -951,10 +970,12 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         alphak, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval)
 
         update = alphak * pk
-        xk = xk + update
+        xk += update
+        if callback is not None:
+            callback(xk)
         if retall:
             allvecs.append(xk)
-        k = k + 1
+        k += 1
 
     if disp or full_output:
         fval = old_fval
@@ -1370,7 +1391,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
 
 
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
-                maxfun=None, full_output=0, disp=1, retall=0):
+                maxfun=None, full_output=0, disp=1, retall=0, callback=None):
     """Minimize a function using modified Powell's method.
 
     Description:
@@ -1383,6 +1404,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
       func -- the Python function or method to be minimized.
       x0 -- the initial guess.
       args -- extra arguments for func.
+      callback -- an optional user-supplied function to call after each
+                  iteration.  It is called as callback(xk), where xk is the
+                  current parameter vector.
 
     Outputs: (xopt, {fopt, xi, direc, iter, funcalls, warnflag}, {allvecs})
 
@@ -1428,7 +1452,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     x1 = x.copy()
     iter = 0;
     ilist = range(N)
-    while 1:
+    while True:
         fx = fval
         bigind = 0
         delta = 0.0
@@ -1440,6 +1464,8 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 delta = fx2 - fval
                 bigind = i
         iter += 1
+        if callback is not None:
+            callback(x)
         if retall:
             allvecs.append(x)
         if (2.0*(fx - fval) <= ftol*(abs(fx)+abs(fval))+1e-20): break
