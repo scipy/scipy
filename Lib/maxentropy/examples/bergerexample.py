@@ -50,7 +50,7 @@ model.verbose = True
 model.fit(K)
 
 # Output the distribution
-print "\nFitted model parameters are:\n" + str(model.theta)
+print "\nFitted model parameters are:\n" + str(model.params)
 print "\nFitted distribution is:"
 p = model.probdist()
 for j in range(len(model.samplespace)):

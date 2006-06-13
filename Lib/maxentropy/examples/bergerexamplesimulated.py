@@ -28,7 +28,6 @@ __version__ =  '2.1'
 
 import sys
 from scipy import maxentropy
-#from scipy import montecarlo
 from scipy.sandbox import montecarlo
 
 try:
@@ -89,9 +88,9 @@ model.avegtol = 1e-4
 model.fit(K, algorithm=algorithm)
 
 # Output the true distribution
-print "\nFitted model parameters are:\n" + str(model.theta)
+print "\nFitted model parameters are:\n" + str(model.params)
 smallmodel = maxentropy.model(f, samplespace)
-smallmodel.setparams(model.theta)
+smallmodel.setparams(model.params)
 print "\nFitted distribution is:"
 p = smallmodel.probdist()
 for j in range(len(smallmodel.samplespace)):

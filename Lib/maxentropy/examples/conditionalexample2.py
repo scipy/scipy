@@ -100,7 +100,7 @@ model.fit()
 model.fit()
 
 # Output the distribution
-print "\nFitted model parameters are:\n" + str(model.theta)
+print "\nFitted model parameters are:\n" + str(model.params)
 
 p = model.probdist()
 
