@@ -1,6 +1,6 @@
 from c_spec import common_base_converter
 from c_spec import num_to_c_types
-from numpy import *
+from numpy.oldnumeric import *
 from types import *
 import os
 

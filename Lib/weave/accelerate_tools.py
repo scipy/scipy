@@ -109,7 +109,7 @@ Integer = Integer()
 Double = Double()
 String = String()
 
-import numpy as nx
+import numpy.oldnumeric as nx
 
 class Vector(Type_Descriptor):
     cxxtype = 'PyArrayObject*'

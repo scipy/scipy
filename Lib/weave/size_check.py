@@ -1,4 +1,4 @@
-from numpy import *
+from numpy.oldnumeric import *
 
 from ast_tools import *
 from types import *
