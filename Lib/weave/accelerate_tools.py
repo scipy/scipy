@@ -12,7 +12,7 @@ C++ equivalents to Python functions.
 from types import InstanceType,FunctionType,IntType,FloatType,StringType,TypeType,XRangeType
 import inspect
 import md5
-import weave
+import scipy.weave as weave
 import imp
 from bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
 
