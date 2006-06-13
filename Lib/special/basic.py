@@ -158,7 +158,7 @@ def kvp(v,z,n=1):
     if n == 0:
         return kv(v,z)
     else:
-        return (kvp(v-1,z,n-1) - kvp(v+1,z,n-1))/2.0
+        return (kvp(v-1,z,n-1) + kvp(v+1,z,n-1))/(-2.0)
 
 def ivp(v,z,n=1):
     """Return the nth derivative of Iv(z) with respect to z.
@@ -168,7 +168,7 @@ def ivp(v,z,n=1):
     if n == 0:
         return iv(v,z)
     else:
-        return (ivp(v-1,z,n-1) - ivp(v+1,z,n-1))/2.0
+        return (ivp(v-1,z,n-1) + ivp(v+1,z,n-1))/2.0
 
 def h1vp(v,z,n=1):
     """Return the nth derivative of H1v(z) with respect to z.
