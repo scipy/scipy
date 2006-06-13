@@ -8,7 +8,7 @@ import sys
 import numpy
 
 from numpy import exp, asarray, arange, \
-     newaxis, hstack, product, array, typename, where, \
+     newaxis, hstack, product, array, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
 __all__ = ['factorial','factorial2','factorialk','comb','who',
@@ -258,7 +258,7 @@ def who(vardict=None):
                 original=1
             shapestr = " x ".join(map(str, var.shape))
             bytestr = str(var.itemsize*numpy.product(var.shape))
-            sta.append([namestr, shapestr, bytestr, typename(var.dtype.char),
+            sta.append([namestr, shapestr, bytestr, var.dtype.name,
                         original])
 
     maxname = 0

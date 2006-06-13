@@ -4,7 +4,7 @@ import types
 import numpy
 
 from numpy import amin, amax, ravel, asarray, cast, arange, \
-     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros
+     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8
 
 import Image
 import ImageFilter
@@ -12,11 +12,9 @@ import ImageFilter
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
 
-from numpy.oldnumeric import UnsignedInt8 as _UInt8
-
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
-    if data.dtype.char == _UInt8:
+    if data.dtype is uint8:
         return data
     high = high - low
     if cmin is None:
@@ -24,8 +22,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if cmax is None:
         cmax = amax(ravel(data))
     scale = high *1.0 / (cmax-cmin or 1)
-    bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(_UInt8)
-    return bytedata + cast[_UInt8](low)
+    bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(uint8)
+    return bytedata + cast[uint8](low)
 
 def imread(name,flatten=0):
     """Read an image file from a filename.
@@ -68,10 +66,11 @@ def fromimage(im, flatten=0):
         mode = 'L'
         adjust = 1
     str = im.tostring()
-    type = 'B'
+    type = uint8
     if mode == 'F':
-        type = 'f'
+        type = numpy.float32
     if mode == 'I':
+        type = numpy.uint32
         type = 'I'
     arr = numpy.fromstring(str,type)
     shape = list(im.size)
@@ -123,18 +122,19 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     if len(shape) == 2:
         shape = (shape[1],shape[0]) # columns show up first
         if mode == 'F':
-            image = Image.fromstring(mode,shape,data.astype('f').tostring())
+            data32 = data.astype(numpy.float32)
+            image = Image.fromstring(mode,shape,data32.tostring())
             return image
         if mode in [None, 'L', 'P']:
             bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
             image = Image.fromstring('L',shape,bytedata.tostring())
             if pal is not None:
-                image.putpalette(asarray(pal,dtype=_UInt8).tostring())
+                image.putpalette(asarray(pal,dtype=uint8).tostring())
                 # Becomes a mode='P' automagically.
             elif mode == 'P':  # default gray-scale
-                pal = arange(0,256,1,dtype='B')[:,newaxis] * \
-                      ones((3,),dtype='B')[newaxis,:]
-                image.putpalette(asarray(pal,dtype=_UInt8).tostring())
+                pal = arange(0,256,1,dtype=uint8)[:,newaxis] * \
+                      ones((3,),dtype=uint8)[newaxis,:]
+                image.putpalette(asarray(pal,dtype=uint8).tostring())
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = (data > high)
@@ -146,7 +146,8 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
             cmax = amax(ravel(data))
         data = (data*1.0 - cmin)*(high-low)/(cmax-cmin) + low
         if mode == 'I':
-            image = Image.fromstring(mode,shape,data.astype('i').tostring())
+            data32 = data.astype(numpy.uint32)
+            image = Image.fromstring(mode,shape,data32.tostring())
         else:
             raise ValueError, _errstr
         return image
@@ -284,7 +285,7 @@ def imfilter(arr,ftype):
 def radon(arr,theta=None):
     if theta is None:
         theta = mgrid[0:180]
-    s = zeros((arr.shape[1],len(theta)),'d')
+    s = zeros((arr.shape[1],len(theta)), float)
     k = 0
     for th in theta:
         im = imrotate(arr,-th)
