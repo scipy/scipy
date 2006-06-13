@@ -1317,7 +1317,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         return xmin
 
 
-def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
+def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     """Given a function and distinct initial points, search in the downhill
     direction (as defined by the initital points) and return new points
     xa, xb, xc that bracket the minimum of the function:
@@ -1344,8 +1344,9 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0):
             denom = 2.0*val
         w = xb - ((xb-xc)*tmp2-(xb-xa)*tmp1)/denom
         wlim = xb + grow_limit*(xc-xb)
-        if iter > 1000:
+        if iter > maxiter:
             raise RuntimeError, "Too many iterations."
+        iter += 1
         if (w-xc)*(xb-w) > 0.0:
             fw = apply(func, (w,)+args)
             funcalls += 1
