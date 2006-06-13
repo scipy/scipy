@@ -970,7 +970,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         alphak, fc, gc, old_fval = line_search_BFGS(f,xk,pk,gfk,old_fval)
 
         update = alphak * pk
-        xk += update
+        xk = xk + update        # upcast if necessary
         if callback is not None:
             callback(xk)
         if retall:
