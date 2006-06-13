@@ -12,7 +12,7 @@ import ImageFilter
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter','radon']
 
-_UInt8 = numpy.UnsignedInt8
+from numpy.oldnumeric import UnsignedInt8 as _UInt8
 
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):

@@ -71,7 +71,7 @@ import sys, os  # To be sure expand_path has posixpath and we have sys.path
 from gistC import *
 from pydoc import help
 from shapetest import *
-from numpy import *
+from numpy.oldnumeric import *
 from gistfuncs import *
 
 # Parameters used by pltitle and xytitles
