@@ -388,9 +388,11 @@ class rv_continuous:
     def __fix_loc_scale(self, args, loc, scale):
         N = len(args)
         if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:  # loc is given without keyword
+            if N == self.numargs + 1 and loc is None:
+                # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and scale is None: # loc and scale given without keyword
+            if N == self.numargs + 2 and scale is None:
+                # loc and scale given without keyword
                 loc, scale = args[-2:]
             args = args[:self.numargs]
         if scale is None:
@@ -603,11 +605,14 @@ class rv_continuous:
 
         N = len(args)
         if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:  # loc is given without keyword
+            if N == self.numargs + 1 and loc is None:
+                # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and scale is None: # loc and scale given without keyword
+            if N == self.numargs + 2 and scale is None:
+                # loc and scale given without keyword
                 loc, scale = args[-2:]
-            if N == self.numargs + 3 and moments is None: # loc, scale, and moments
+            if N == self.numargs + 3 and moments is None:
+                # loc, scale, and moments
                 loc, scale, moments = args[-3:]
             args = args[:self.numargs]
         if scale is None: scale = 1.0
@@ -4016,8 +4021,8 @@ class poisson_gen(rv_discrete):
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
     def _pmf(self, k, mu):
-        Pk = mu**k * exp(-mu) / arr(special.gamma(k+1))
-        return Pk
+        Pk = k*log(mu)-special.gammaln(k+1) - mu
+        return exp(Pk)
     def _cdf(self, x, mu):
         k = floor(x)
         return special.pdtr(k,mu)
