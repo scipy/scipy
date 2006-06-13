@@ -143,7 +143,7 @@ def makeExpressions(context):
     bulletproof.
     """
     import sys, imp
-    modname = modname[__name__.rfind('.')-1:] + '.expressions'
+    modname = __name__[__name__.rfind('.')-1:] + '.expressions'
     # get our own, private copy of expressions
     imp.acquire_lock()
     try:
