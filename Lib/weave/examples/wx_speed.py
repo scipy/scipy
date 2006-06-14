@@ -56,7 +56,7 @@ def polyline(dc,line,xoffset=0,yoffset=0):
     #------------------------------------------------------------------------
     if sys.platform == 'win32':
         # win32 requires int type for lines.
-        if not issubclass(line.dtype.type, int) or not line.iscontiguous()):
+        if not issubclass(line.dtype.type, int) or not line.iscontiguous():
             line = line.astype(int)
         code = """
                HDC hdc = (HDC) dc->GetHDC();
