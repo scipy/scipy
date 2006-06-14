@@ -4,11 +4,11 @@
     !! found, get rid of it!
 """
 
-__all__ = ['interp2d', 'interp1d']
+__all__ = ['interp1d', 'interp2d']
 
-from numpy import shape, sometrue, atleast_1d, rank, array, transpose, \
+from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
-     logical_or
+     logical_or, atleast_1d, atleast_2d
 from numpy.oldnumeric import Int
 
 import fitpack
@@ -47,12 +47,12 @@ class interp2d:
         if rank(z) != 2:
             raise ValueError, "Grid values is not a 2-d array."
         try:
-            kx = {'linear' : 1,
-                  'cubic' : 3,
-                  'quintic' : 5}[kind]
+            kx = ky = {'linear' : 1,
+                       'cubic' : 3,
+                       'quintic' : 5}[kind]
         except:
             raise ValueError, "Unsupported interpolation type."
-        self.tck = fitpack.bisplrep(x, y, z, kx=kx, ky=ky)
+        self.tck = fitpack.bisplrep(x, y, z, kx=kx, ky=ky, s=0.)
 
     def __call__(self,x,y,dx=0,dy=0):
         """
@@ -65,12 +65,8 @@ class interp2d:
         """
         x = atleast_1d(x)
         y = atleast_1d(y)
-        z,ier=fitpack.bisplev(self.tck, x, y, dx, dy)
-        if ier==10:
-            raise ValueError, "Invalid input data"
-        if ier:
-            raise TypeError, "An error occurred"
-        z.shape=len(x),len(y)
+        z = fitpack.bisplev(x, y, self.tck, dx, dy)
+        z = atleast_2d(z)
         z = transpose(z)
         if len(z)==1:
             z = z[0]
