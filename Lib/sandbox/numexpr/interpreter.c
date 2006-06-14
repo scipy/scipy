@@ -518,7 +518,7 @@ check_program(NumExprObject *self)
             }
             arg = program[argloc];
 
-            if (sig != 'n' && arg >= n_buffers) {
+            if (sig != 'n' && (arg >= n_buffers) || (arg < 0)) {
                 PyErr_Format(PyExc_RuntimeError, "invalid program: buffer out of range (%i) at %i", arg, argloc);
                 return -1;
             }
@@ -899,7 +899,8 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (!a) goto cleanup_and_exit;
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
-            int j, dims[1] = {BLOCK_SIZE1};
+            int j;
+            intp dims[1] = {BLOCK_SIZE1};
             PyObject *b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
