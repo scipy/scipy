@@ -46,9 +46,7 @@
         unsigned int store_in = params.program[pc+1];
         unsigned int arg1 = params.program[pc+2];
         unsigned int arg2 = params.program[pc+3];
-        # define     arg3   params.program[pc+5]
-        void *dst = params.mem[store_in];
-        void *src = params.mem[arg1];
+        #define      arg3   params.program[pc+5]
         #define b_dest ((char *)dest)[j]
         #define i_dest ((long *)dest)[j]
         #define f_dest ((double *)dest)[j]
@@ -78,24 +76,32 @@
 
         /* The COPY are the only ops that depend on stride */
         case OP_COPY_BB: {
+            char *dst = params.mem[store_in];
+            char *src = params.mem[arg1];
             intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
                                             : params.memsizes[arg1]);
             VEC_ARG1(memcpy(dst, src, sizeof(char));
                      dst += sizeof(char); src += str1);
             }
         case OP_COPY_II: {
+            char *dst = params.mem[store_in];
+            char *src = params.mem[arg1];
             intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
                                             : params.memsizes[arg1]);
             VEC_ARG1(memcpy(dst, src, sizeof(long));
                      dst += sizeof(long); src += str1);
             }
         case OP_COPY_FF: {
+            char *dst = params.mem[store_in];
+            char *src = params.mem[arg1];
             intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
                                             : params.memsizes[arg1]);
             VEC_ARG1(memcpy(dst, src, sizeof(double));
                      dst += sizeof(double); src += str1);
             }
         case OP_COPY_CC: {
+            char *dst = params.mem[store_in];
+            char *src = params.mem[arg1];
             intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
                                             : params.memsizes[arg1]);
             VEC_ARG1(memcpy(dst, src, sizeof(double)*2);
