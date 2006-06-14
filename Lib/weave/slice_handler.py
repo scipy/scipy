@@ -1,10 +1,8 @@
-import pprint
-import string
-from ast_tools import *
+from ast_tools import token, symbol, ast_to_string, match, atom_list
 
 def slice_ast_to_dict(ast_seq):
     sl_vars = {}
-    if type(ast_seq) in (ListType,TupleType):
+    if isinstance(ast_seq, (list, tuple)):
         for pattern in slice_patterns:
             found,data = match(pattern,ast_seq)
             if found:
@@ -52,11 +50,11 @@ def build_slice_atom(slice_vars, position):
     if slice_vars['single_index'] != '_index':
         expr = '%(single_index)s' % slice_vars
     else:
-        begin = string.strip(slice_vars['begin'])
+        begin = slice_vars['begin'].strip()
         if begin[0] == '-':
             slice_vars['begin'] = 'N' + slice_vars['var']+`position`+begin;
 
-        end = string.strip(slice_vars['end'])
+        end = slice_vars['end'].strip()
         if end != '_end' and end[0] != '-':
             #compensate for blitz using inclusive indexing on top end
             #of slice for positive indices.
@@ -95,14 +93,14 @@ def harvest_subscript_dicts(ast_list):
     """ Needs Tests!
     """
     subscript_lists = []
-    if type(ast_list)  == ListType:
+    if isinstance(ast_list, list):
         found,data = match(indexed_array_pattern,ast_list)
         # data is a dict with 'var' = variable name
         # and 'subscript_list' = to the ast_seq for the subscript list
         if found:
             subscript_lists.append(data)
         for item in ast_list:
-            if type(item) == ListType:
+            if isinstance(item, list):
                 subscript_lists.extend(harvest_subscript_dicts(item))
     return subscript_lists
 

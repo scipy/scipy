@@ -11,14 +11,8 @@ import distutils
 from distutils.sysconfig import customize_compiler
 
 
-try:
-    from numpy.distutils.ccompiler import new_compiler
-    from numpy.distutils.core import Extension, setup
-    from numpy.distutils.command.build_ext import build_ext
-except ImportError:
-    from distutils.ccompiler import new_compiler
-    from distutils.core import Extension, setup
-    from distutils.command.build_ext import build_ext
+from numpy.distutils.ccompiler import new_compiler
+from numpy.distutils.core import setup
 
 import distutils.bcppcompiler
 
@@ -178,8 +172,7 @@ def gcc_exists(name = 'gcc'):
         w,r=os.popen4(cmd)
         w.close()
         str_result = r.read()
-        #print str_result
-        if string.find(str_result,'Reading specs') != -1:
+        if str_result.find('Reading specs') != -1:
             result = 1
     except:
         # This was needed because the msvc compiler messes with
@@ -197,8 +190,7 @@ def msvc_exists():
         w,r=os.popen4('cl')
         w.close()
         str_result = r.read()
-        #print str_result
-        if string.find(str_result,'Microsoft') != -1:
+        if str_result.find('Microsoft') != -1:
             result = 1
     except:
         #assume we're ok if devstudio exists

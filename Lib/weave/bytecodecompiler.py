@@ -6,9 +6,8 @@
 #**************************************************************************#
 #*  *#
 #**************************************************************************#
-from types import *
-import string
 import inspect
+import accelerate_tools
 
 ##################################################################
 #                       CLASS __DESCRIPTOR                       #
@@ -180,7 +179,7 @@ def opcodize(s):
 ##################################################################
 def listing(f):
     "Pretty print the internals of your function"
-    assert type(f) == FunctionType,"Arg %r must be a function"%f
+    assert inspect.isfunction(f)
     filename = f.func_code.co_filename
     try:
         lines = open(filename).readlines()
@@ -688,7 +687,7 @@ class CXXCoder(ByteCodeMeaning):
     #                        MEMBER __INIT__                         #
     ##################################################################
     def __init__(self,function,signature,name=None):
-        assert type(function) == FunctionType,"Arg must be a user function"
+        assert inspect.isfunction(function)
         assert not function.func_defaults ,"Function cannot have default args (yet)"
         if name is None: name = function.func_name
         self.name = name
@@ -745,7 +744,7 @@ class CXXCoder(ByteCodeMeaning):
         # -----------------------------------------------
         # Return?
         # -----------------------------------------------
-        if self.rtype == NoneType:
+        if self.rtype is None:
             rtype = 'void'
         else:
             rtype = self.rtype.cxxtype
@@ -754,18 +753,20 @@ class CXXCoder(ByteCodeMeaning):
         # Insert code body if available
         # -----------------------------------------------
         source = inspect.getsource(self.function)
-        if not source: source = ''
+        if not source:
+            source = ''
         comments = inspect.getcomments(self.function)
-        if comments: source = comments+source
-        code = string.join(map(lambda x: '/////// '+x,string.split(source,'\n')),
-                           '\n')+'\n'
+        if comments:
+            source = comments+source
+        code = '\n'.join(['/////// '+x for x in source.split('\n')]) + '\n'
 
         # -----------------------------------------------
         # Add in the headers
         # -----------------------------------------------
         code += '#include "Python.h"\n'
         for T in self.used:
-            if T is None: continue
+            if T is None:
+                continue
             for pre in T.prerequisites:
                 code += pre
                 code += '\n'
@@ -847,7 +848,7 @@ class CXXCoder(ByteCodeMeaning):
             argnames.append(self.codeobject.co_varnames[i])
 
         code += '\n  // Compute result\n'
-        if self.rtype != NoneType:
+        if self.rtype is not None:
             code += '  %s _result = '%(
                 self.rtype.cxxtype,
                 )
@@ -855,12 +856,12 @@ class CXXCoder(ByteCodeMeaning):
             code += '  '
         code += '%s(%s);\n'%(
             self.name,
-            string.join(argnames,','),
+            ','.join(argnames),
             )
 
 
         code += '\n  // Pack return\n'
-        if ( self.rtype == NoneType ):
+        if self.rtype is None:
             code += '  Py_INCREF(Py_None);\n'
             code += '  return Py_None;\n'
         else:
@@ -901,10 +902,10 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def pop(self):
         v = self.stack[-1]
-        assert type(v) != TupleType
+        assert isinstance(v, tuple)
         del self.stack[-1]
         t = self.types[-1]
-        assert type(t) != TupleType
+        assert isinstance(t, tuple)
         del self.types[-1]
         return v,t
 
@@ -912,9 +913,9 @@ class CXXCoder(ByteCodeMeaning):
     #                        MEMBER PUSHTUPLE                        #
     ##################################################################
     def pushTuple(self,V,T):
-        assert type(V) == TupleType
+        assert isinstance(V, tuple)
         self.stack.append(V)
-        assert type(V) == TupleType
+        assert isinstance(T, tuple)
         self.types.append(T)
         return
 
@@ -924,17 +925,17 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def popTuple(self):
         v = self.stack[-1]
-        assert type(v) == TupleType
+        assert isinstance(v, tuple)
         del self.stack[-1]
         t = self.types[-1]
-        assert type(t) == TupleType
+        assert isinstance(t, tuple)
         del self.types[-1]
         return v,t
     ##################################################################
     #                        MEMBER MULTIARG                         #
     ##################################################################
     def multiarg(self):
-        return type(self.stack[-1]) == TupleType
+        return isinstance(self.stack[-1], tuple)
 
     ##################################################################
     #                         MEMBER UNIQUE                          #
@@ -983,7 +984,7 @@ class CXXCoder(ByteCodeMeaning):
             if module and id(module.__dict__) == myHash:
                 break
         else:
-            raise ValueError,'Cannot locate module owning %s'%varname
+            raise ValueError,'Cannot locate module owning %s'%var_name
         return module_name,var_name
 
 
@@ -1119,7 +1120,7 @@ class CXXCoder(ByteCodeMeaning):
         print 'LOAD_CONST',repr(k),t
 
         # Fetch a None is just skipped
-        if t == NoneType:
+        if t is None:
             self.push('<void>',t)
             return
 
@@ -1201,10 +1202,11 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def LOAD_GLOBAL(self,pc,var_num):
         # Figure out the name and load it
+        import __builtin__
         try:
             F = self.function.func_globals[self.codeobject.co_names[var_num]]
         except:
-            F = __builtins__[self.codeobject.co_names[var_num]]
+            F = __builtin__.__dict__[self.codeobject.co_names[var_num]]
 
         # For functions, we see if we know about this function
         if callable(F):
@@ -1218,7 +1220,7 @@ class CXXCoder(ByteCodeMeaning):
 
         # We hope it's type is correct
         t = type(F)
-        descriptor = typedefs[t]
+        descriptor = accelerate_tools.typedefs[t]
         native = self.unique()
         py = self.unique()
         mod = self.unique()
@@ -1297,7 +1299,7 @@ class CXXCoder(ByteCodeMeaning):
 
         # Convert the value to Python object
         v,t = self.pop()
-        descriptor = typedefs[t]
+        descriptor = accelerate_tools.typedefs[t]
         py = self.unique()
         code,owned = descriptor.outbound(v)
         self.emit('PyObject* %s = %s;'%(py,code))
@@ -1330,7 +1332,7 @@ class CXXCoder(ByteCodeMeaning):
         #self.prerequisites += descriptor['prerequisite']+'\n'
 
         # Build a rhs
-        rhs = descriptor.code%string.join(args,',')
+        rhs = descriptor.code % ','.join(args)
 
         # Build a statement
         temp = self.unique()
@@ -1358,9 +1360,9 @@ class CXXCoder(ByteCodeMeaning):
             self.push(v,t),
             )
         self.post(pc+delta,action)
-        if t != IntType: raise TypeError, 'Invalid comparison type %s'%t
+        if not isinstance(t, int):
+            raise TypeError, 'Invalid comparison type %s'%t
         self.emit('if (%s) {\n'%v)
-        return
 
 
     ##################################################################
@@ -1372,7 +1374,6 @@ class CXXCoder(ByteCodeMeaning):
             self.emit('}'),
             )
         self.post(pc+delta,action)
-        return
 
     ##################################################################
     #                      MEMBER RETURN_VALUE                       #
@@ -1380,13 +1381,12 @@ class CXXCoder(ByteCodeMeaning):
     def RETURN_VALUE(self,pc):
         v,t = self.pop()
         if hasattr(self,'rtype'):
-            print v,t
-            if t == NoneType: return # just the extra return
-            raise ValueError,'multiple returns'
+            if t is None:
+                return # just the extra return
+            raise ValueError,'multiple returns: (v=%s, t=%s)' % (v, t)
         self.rtype = t
-        if t == NoneType:
+        if t is None:
             self.emit('return;')
         else:
             self.emit('return %s;'%v)
         print 'return with',v
-        return

@@ -316,7 +316,7 @@ class catalog:
             first for function catalogs.  They will come before the path
             entries in the PYTHONCOMPILED environment varilable.
         """
-        if type(user_path_list) == type('string'):
+        if isinstance(user_path_list, str):
             self.user_path_list = [user_path_list]
         elif user_path_list:
             self.user_path_list = user_path_list

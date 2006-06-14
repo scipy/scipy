@@ -1,8 +1,6 @@
 from c_spec import common_base_converter
 from c_spec import num_to_c_types
-from numpy.oldnumeric import *
-from types import *
-import os
+import numpy
 
 num_typecode = {}
 num_typecode['?'] = 'PyArray_BOOL'
@@ -138,7 +136,7 @@ class array_converter(common_base_converter):
         self.c_type = 'PyArrayObject*'
         self.return_type = 'PyArrayObject*'
         self.to_c_return = '(PyArrayObject*) py_obj'
-        self.matching_types = [ArrayType]
+        self.matching_types = [numpy.ndarray]
         self.headers = ['"numpy/arrayobject.h"',
                         '<complex>','<math.h>']
         self.support_code = [size_check_code, type_check_code]

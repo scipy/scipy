@@ -1,7 +1,6 @@
 from shelve import Shelf
 import zlib
-from cStringIO import  StringIO
-import  cPickle
+import cPickle
 import dumbdbm_patched
 
 class DbfilenameShelf(Shelf):

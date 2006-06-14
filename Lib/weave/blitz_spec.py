@@ -9,8 +9,6 @@
 
 import base_info
 import standard_array_spec
-from numpy import *
-from types import *
 import os
 
 blitz_support_code =  \
@@ -60,7 +58,7 @@ static blitz::Array<T,N> py_to_blitz(PyArrayObject* arr_obj,const char* name)
 }
 """
 
-import os, blitz_spec
+import blitz_spec
 local_dir,junk = os.path.split(os.path.abspath(blitz_spec.__file__))
 blitz_dir = os.path.join(local_dir,'blitz')
 

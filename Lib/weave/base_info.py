@@ -8,7 +8,6 @@
     info_list -- a handy list class for working with multiple
                  info classes at the same time.
 """
-import os
 import UserList
 
 class base_info:

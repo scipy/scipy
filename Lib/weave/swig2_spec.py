@@ -77,9 +77,7 @@ Prabhu Ramachandran <prabhu_r@users.sf.net>
 """
 
 import sys
-import common_info
 from c_spec import common_base_converter
-import converters
 import swigptr2
 
 
@@ -284,7 +282,7 @@ class swig2_converter(common_base_converter):
         if hasattr(value, 'this'):
             type_this = type(value.this)
             type_str = str(type_this)
-            if type_this == type('str'):
+            if isinstance(type_this, str):
                 try:
                     data = value.this.split('_')
                     if data[2] == 'p':

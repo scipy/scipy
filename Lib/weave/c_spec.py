@@ -1,4 +1,4 @@
-from types import *
+import types
 from base_spec import base_converter
 import base_info
 
@@ -197,7 +197,7 @@ class module_converter(common_base_converter):
         self.type_name = 'module'
         self.check_func = 'PyModule_Check'
         # probably should test for callable classes here also.
-        self.matching_types = [ModuleType]
+        self.matching_types = [types.ModuleType]
 
 #----------------------------------------------------------------------------
 # String Converter
@@ -210,7 +210,7 @@ class string_converter(common_base_converter):
         self.c_type = 'std::string'
         self.return_type = 'std::string'
         self.to_c_return = "std::string(PyString_AsString(py_obj))"
-        self.matching_types = [StringType]
+        self.matching_types = [types.StringType]
         self.headers.append('<string>')
     def c_to_py_code(self):
         # !! Need to dedent returned code.
@@ -236,7 +236,7 @@ class unicode_converter(common_base_converter):
         self.c_type = 'Py_UNICODE*'
         self.return_type = self.c_type
         self.to_c_return = "PyUnicode_AS_UNICODE(py_obj)"
-        self.matching_types = [UnicodeType]
+        self.matching_types = [types.UnicodeType]
         #self.headers.append('<string>')
 
     def declaration_code(self,templatize = 0,inline=0):
@@ -261,7 +261,7 @@ class file_converter(common_base_converter):
         self.return_type = self.c_type
         self.to_c_return = "PyFile_AsFile(py_obj)"
         self.headers = ['<stdio.h>']
-        self.matching_types = [FileType]
+        self.matching_types = [types.FileType]
 
     def c_to_py_code(self):
         # !! Need to dedent returned code.
@@ -336,7 +336,7 @@ class int_converter(scalar_converter):
         self.c_type = 'long'
         self.return_type = 'long'
         self.to_c_return = "PyInt_AsLong(py_obj)"
-        self.matching_types = [IntType]
+        self.matching_types = [types.IntType]
 
 class long_converter(scalar_converter):
     def init_info(self):
@@ -347,7 +347,7 @@ class long_converter(scalar_converter):
         self.c_type = 'longlong'
         self.return_type = 'longlong'
         self.to_c_return = "(longlong) PyLong_AsLongLong(py_obj)"
-        self.matching_types = [LongType]
+        self.matching_types = [types.LongType]
 
 class float_converter(scalar_converter):
     def init_info(self):
@@ -358,7 +358,7 @@ class float_converter(scalar_converter):
         self.c_type = 'double'
         self.return_type = 'double'
         self.to_c_return = "PyFloat_AsDouble(py_obj)"
-        self.matching_types = [FloatType]
+        self.matching_types = [types.FloatType]
 
 class complex_converter(scalar_converter):
     def init_info(self):
@@ -369,7 +369,7 @@ class complex_converter(scalar_converter):
         self.return_type = 'std::complex<double>'
         self.to_c_return = "std::complex<double>(PyComplex_RealAsDouble(py_obj),"\
                                                 "PyComplex_ImagAsDouble(py_obj))"
-        self.matching_types = [ComplexType]
+        self.matching_types = [types.ComplexType]
 
 #----------------------------------------------------------------------------
 #
@@ -397,7 +397,7 @@ class list_converter(scxx_converter):
         self.c_type = 'py::list'
         self.return_type = 'py::list'
         self.to_c_return = 'py::list(py_obj)'
-        self.matching_types = [ListType]
+        self.matching_types = [types.ListType]
         # ref counting handled by py::list
         self.use_ref_count = 0
 
@@ -409,7 +409,7 @@ class tuple_converter(scxx_converter):
         self.c_type = 'py::tuple'
         self.return_type = 'py::tuple'
         self.to_c_return = 'py::tuple(py_obj)'
-        self.matching_types = [TupleType]
+        self.matching_types = [types.TupleType]
         # ref counting handled by py::tuple
         self.use_ref_count = 0
 
@@ -421,7 +421,7 @@ class dict_converter(scxx_converter):
         self.c_type = 'py::dict'
         self.return_type = 'py::dict'
         self.to_c_return = 'py::dict(py_obj)'
-        self.matching_types = [DictType]
+        self.matching_types = [types.DictType]
         # ref counting handled by py::dict
         self.use_ref_count = 0
 
@@ -436,7 +436,7 @@ class instance_converter(scxx_converter):
         self.c_type = 'py::object'
         self.return_type = 'py::object'
         self.to_c_return = 'py::object(py_obj)'
-        self.matching_types = [InstanceType]
+        self.matching_types = [types.InstanceType]
         # ref counting handled by py::object
         self.use_ref_count = 0
 

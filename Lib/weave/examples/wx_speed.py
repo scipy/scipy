@@ -56,16 +56,16 @@ def polyline(dc,line,xoffset=0,yoffset=0):
     #------------------------------------------------------------------------
     if sys.platform == 'win32':
         # win32 requires int type for lines.
-        if (line.typecode() != Int or not line.iscontiguous()):
-            line = line.astype(Int)
+        if not issubclass(line.dtype.type, int) or not line.iscontiguous()):
+            line = line.astype(int)
         code = """
                HDC hdc = (HDC) dc->GetHDC();
                Polyline(hdc,(POINT*)line,Nline[0]);
                """
     else:
-        if (line.typecode() != UInt16 or
+        if (line.typecode() != uint16 or
             not line.iscontiguous()):
-            line = line.astype(UInt16)
+            line = line.astype(uint16)
         code = """
                GdkWindow* win = dc->m_window;
                GdkGC* pen = dc->m_penGC;
@@ -90,7 +90,7 @@ def polyline(dc,line,xoffset=0,yoffset=0):
 def NewDrawLines(dc,line):
     """
     """
-    if (type(line) is ArrayType):
+    if (type(line) is ndarray):
         polyline(dc,line)
     else:
         dc.DrawLines(line)
@@ -118,9 +118,9 @@ if __name__ == '__main__':
             w,h = self.GetSizeTuple()
             #x = randint(0+50, w-50, self.point_count)
             #y = randint(0+50, h-50, len(x))
-            x = arange(0,w,typecode=Int32)
+            x = arange(0,w,typecode=int32)
             y = h/2.*sin(x*2*pi/w)+h/2.
-            y = y.astype(Int32)
+            y = y.astype(int32)
             self.points = concatenate((x[:,newaxis],y[:,newaxis]),-1)
 
         def OnSize(self,event):
@@ -159,7 +159,7 @@ if __name__ == '__main__':
                         pen = pens.next()
                     dc.SetPen(pen)
                 polyline(dc,pt_copy)
-                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(Int32)
+                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(int32)
                 pt_copy[:,1] = next_y
                 phase += ang
             t2 = time.clock()
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                         pen = pens.next()
                     dc.SetPen(pen)
                 dc.DrawLines(pt_copy)
-                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(Int32)
+                next_y = (h/2.*sin(x*ang-phase)+h/2.).astype(int32)
                 pt_copy[:,1] = next_y
                 phase += ang
             t2 = time.clock()

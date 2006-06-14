@@ -17,7 +17,6 @@ Authors:
   Eric Jones <eric@enthought.com>
 """
 
-import common_info
 from c_spec import common_base_converter
 
 

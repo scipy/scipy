@@ -1,17 +1,13 @@
 import parser
 import string
-import os,sys
+import sys
 import ast_tools
-import token,symbol
 import slice_handler
 import size_check
 import converters
 
-from ast_tools import *
-
-from numpy import *
+import numpy
 import copy
-from types import *
 
 import inline_tools
 from inline_tools import attempt_function_call
@@ -54,7 +50,7 @@ def blitz(expr,local_dict=None, global_dict=None,check_size=1,verbose=0,**kw):
         ast = parser.suite(expr)
         ast_list = ast.tolist()
         expr_code = ast_to_blitz_expr(ast_list)
-        arg_names = harvest_variables(ast_list)
+        arg_names = ast_tools.harvest_variables(ast_list)
         module_dir = global_dict.get('__file__',None)
         #func = inline_tools.compile_function(expr_code,arg_names,
         #                                    local_dict,global_dict,
@@ -117,10 +113,10 @@ def test_function():
     #ast = parser.suite('a = (b + c) * sin(d)')
     ast = parser.suite(expr)
     k = 1.
-    ex = ones((1,1,1),dtype=Float32)
-    ca_x = ones((1,1,1),dtype=Float32)
-    cb_y_x = ones((1,1,1),dtype=Float32)
-    cb_z_x = ones((1,1,1),dtype=Float32)
-    hz = ones((1,1,1),dtype=Float32)
-    hy = ones((1,1,1),dtype=Float32)
+    ex = numpy.ones((1,1,1),dtype=numpy.float32)
+    ca_x = numpy.ones((1,1,1),dtype=numpy.float32)
+    cb_y_x = numpy.ones((1,1,1),dtype=numpy.float32)
+    cb_z_x = numpy.ones((1,1,1),dtype=numpy.float32)
+    hz = numpy.ones((1,1,1),dtype=numpy.float32)
+    hy = numpy.ones((1,1,1),dtype=numpy.float32)
     blitz(expr)

@@ -28,6 +28,11 @@ import platform_info
 # necessary to make sure stdc++ is linked in cross-platform way.
 import distutils.sysconfig
 import distutils.dir_util
+# some (most?) platforms will fail to link C++ correctly
+# unless numpy.distutils is used.
+from numpy.distutils.core import Extension
+
+
 old_init_posix = distutils.sysconfig._init_posix
 
 def _init_posix():
@@ -73,15 +78,8 @@ def create_extension(module_path, **kw):
 
         See build_extension for information on keyword arguments.
     """
-    # some (most?) platforms will fail to link C++ correctly
-    # unless numpy.distutils is used.
-    try:
-        from numpy.distutils.core import Extension
-    except ImportError:
-        from distutils.core import Extension
 
     # this is a screwy trick to get rid of a ton of warnings on Unix
-    import distutils.sysconfig
     distutils.sysconfig.get_config_vars()
     if distutils.sysconfig._config_vars.has_key('OPT'):
         flags = distutils.sysconfig._config_vars['OPT']
@@ -209,12 +207,9 @@ def build_extension(module_path,compiler_name = '',build_dir = None,
           extension_name.
     """
     success = 0
-    try:
-        from numpy.distutils.core import setup, Extension
-        from numpy.distutils.log import set_verbosity
-        set_verbosity(-1)
-    except ImportError:
-        from distutils.core import setup, Extension
+    from numpy.distutils.core import setup
+    from numpy.distutils.log import set_verbosity
+    set_verbosity(-1)
 
     # this is a screwy trick to get rid of a ton of warnings on Unix
     import distutils.sysconfig
@@ -436,8 +431,7 @@ def configure_build_dir(build_dir=None):
 if sys.platform == 'win32':
     import distutils.cygwinccompiler
     from distutils.version import StrictVersion
-    from distutils.ccompiler import gen_preprocess_options, gen_lib_options
-    from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
+    from distutils.errors import CompileError
 
     from distutils.unixccompiler import UnixCCompiler
 

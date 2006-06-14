@@ -446,10 +446,9 @@ def downcast(var_specs):
         not ('d' in numeric_types or 'D' in numeric_types) ):
         for var in var_specs:
             if hasattr(var,'numeric_type'):
-                # really should do this some other way...
-                if var.numeric_type == type(1+1j):
+                if issubclass(var.numeric_type, complex):
                     var.numeric_type = 'F'
-                elif var.numeric_type == type(1.):
+                elif issubclass(var.numeric_type, float):
                     var.numeric_type = 'f'
     return var_specs
 

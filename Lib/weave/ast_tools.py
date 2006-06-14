@@ -2,7 +2,8 @@ import token
 import symbol
 import parser
 
-from types import ListType, TupleType, StringType, IntType
+def issequence(t):
+    return isinstance(t, (list, tuple))
 
 def int_to_symbol(i):
     """ Convert numeric symbol or token to a desriptive name.
@@ -20,13 +21,13 @@ def translate_symbols(ast_tuple):
     """
     new_list = []
     for item in ast_tuple:
-        if type(item) == IntType:
+        if isinstance(item, int):
             new_list.append(int_to_symbol(item))
-        elif type(item) in [TupleType,ListType]:
+        elif issequence(item):
             new_list.append(translate_symbols(item))
         else:
             new_list.append(item)
-    if type(ast_tuple) == TupleType:
+    if isinstance(ast_tuple, tuple):
         return tuple(new_list)
     else:
         return new_list
@@ -41,9 +42,9 @@ def ast_to_string(ast_seq):
     *"""
     output = ''
     for item in ast_seq:
-        if type(item) is StringType:
+        if isinstance(item, str):
             output = output + item
-        elif type(item) in [ListType,TupleType]:
+        elif issequence(item):
             output = output + ast_to_string(item)
     return output
 
@@ -59,7 +60,7 @@ def build_atom(expr_string):
     # I'm considering test to be the root of atom symbols.
     # It might be a better idea to move down a little in the
     # parse tree. Any benefits? Right now, this works fine.
-    if type(expr_string) == StringType:
+    if isinstance(expr_string, str):
         ast = parser.expr(expr_string).totuple()[1][1]
     else:
         ast = parser.expr(`expr_string`).totuple()[1][1]
@@ -89,7 +90,7 @@ def find_first_pattern(ast_tuple,pattern_list):
     found,data = 0,{}
 
     # convert to a list if input wasn't a list
-    if type(pattern_list) != ListType:
+    if not isinstance(pattern_list, list):
         pattern_list = [pattern_list]
 
     # look for any of the patterns in a list of patterns
@@ -101,7 +102,7 @@ def find_first_pattern(ast_tuple,pattern_list):
     # if we didn't find the pattern, search sub-trees of the parse tree
     if not found:
         for item in ast_tuple:
-            if type(item) in [TupleType,ListType]:
+            if issequence(item):
                 # only search sub items if they are a list or tuple.
                 found, data = find_first_pattern(item,pattern_list)
             if found:
@@ -134,12 +135,12 @@ def harvest_variables(ast_list):
     """ Retreive all the variables that need to be defined.
     """
     variables = []
-    if type(ast_list) in (ListType,TupleType):
+    if issequence(ast_list):
         found,data = match(name_pattern,ast_list)
         if found:
             variables.append(data['var'])
         for item in ast_list:
-            if type(item) in (ListType,TupleType):
+            if issequence(item):
                 variables.extend(harvest_variables(item))
     variables = remove_duplicates(variables)
     variables = remove_reserved_names(variables)
@@ -172,10 +173,10 @@ def match(pattern, data, vars=None):
     """
     if vars is None:
         vars = {}
-    if type(pattern) is ListType:       # 'variables' are ['varname']
+    if isinstance(pattern, list):       # 'variables' are ['varname']
         vars[pattern[0]] = data
         return 1, vars
-    if type(pattern) is not TupleType:
+    if not isinstance(pattern, tuple):
         return (pattern == data), vars
     if len(data) != len(pattern):
         return 0, vars
@@ -189,7 +190,7 @@ def match(pattern, data, vars=None):
 def tuples_to_lists(ast_tuple):
     """ Convert an ast object tree in tuple form to list form.
     """
-    if type(ast_tuple) not in [ListType,TupleType]:
+    if not issequence(ast_tuple):
         return ast_tuple
 
     new_list = []

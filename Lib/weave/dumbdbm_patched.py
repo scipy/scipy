@@ -106,7 +106,7 @@ class _Database:
         f.close()
 
     def __setitem__(self, key, val):
-        if not type(key) == type('') == type(val):
+        if not isinstance(key, str) or not isinstance(val, str):
             raise TypeError, "keys and values must be strings"
         if not self._index.has_key(key):
             (pos, siz) = self._addval(val)

@@ -1,8 +1,13 @@
-from numpy.oldnumeric import *
+from numpy import ones, ndarray, array, asarray, concatenate, zeros, shape, \
+         alltrue, equal, divide, arccos, arcsin, arctan, cos, cosh, \
+         sin, sinh, exp, ceil, floor, fabs, log, log10, sqrt, argmin, \
+         argmax, argsort, around, absolute, sign, negative, float32
 
-from ast_tools import *
-from types import *
 import sys
+
+numericTypes = (int, long, float, complex)
+def isnumeric(t):
+    return isinstance(t, numericTypes)
 
 def time_it():
     import time
@@ -10,12 +15,12 @@ def time_it():
     expr = "ex[:,1:,1:] =   ca_x[:,1:,1:] * ex[:,1:,1:]" \
                          "+ cb_y_x[:,1:,1:] * (hz[:,1:,1:] - hz[:,:-1,1:])" \
                          "- cb_z_x[:,1:,1:] * (hy[:,1:,1:] - hy[:,1:,:-1])"
-    ex = ones((10,10,10),dtype=Float32)
-    ca_x = ones((10,10,10),dtype=Float32)
-    cb_y_x = ones((10,10,10),dtype=Float32)
-    cb_z_x = ones((10,10,10),dtype=Float32)
-    hz = ones((10,10,10),dtype=Float32)
-    hy = ones((10,10,10),dtype=Float32)
+    ex = ones((10,10,10),dtype=float32)
+    ca_x = ones((10,10,10),dtype=float32)
+    cb_y_x = ones((10,10,10),dtype=float32)
+    cb_z_x = ones((10,10,10),dtype=float32)
+    hz = ones((10,10,10),dtype=float32)
+    hy = ones((10,10,10),dtype=float32)
 
     N = 1
     t1 = time.time()
@@ -33,15 +38,15 @@ def check_expr(expr,local_vars,global_vars={}):
 
     #first handle the globals
     for var,val in global_vars.items():
-        if type(val) in [ArrayType]:
+        if isinstance(val, ndarray):
             values[var] = dummy_array(val,name=var)
-        elif type(val) in [IntType,LongType,FloatType,ComplexType]:
+        elif isnumeric(val):
             values[var] = val
     #now handle the locals
     for var,val in local_vars.items():
-        if type(val) in [ArrayType]:
+        if isinstance(val, ndarray):
             values[var] = dummy_array(val,name=var)
-        elif type(val) in [IntType,LongType,FloatType,ComplexType]:
+        if isnumeric(val):
             values[var] = val
     exec(expr,values)
     try:
@@ -71,7 +76,7 @@ def make_same_length(x,y):
         return asarray(x),asarray(y)
     else:
         diff = abs(Nx - Ny)
-        front = ones(diff,Int)
+        front = ones(diff, int)
         if Nx > Ny:
             return asarray(x), concatenate((front,y))
         elif Ny > Nx:
@@ -117,7 +122,7 @@ class dummy_array:
     def __cmp__(self,other):
         # This isn't an exact compare, but does work for ==
         # cluge for Numeric
-        if type(other) in [IntType,LongType,FloatType,ComplexType]:
+        if isnumeric(other):
             return 0
         if len(self.shape) == len(other.shape) == 0:
             return 0
@@ -165,7 +170,7 @@ class dummy_array:
     def __getitem__(self,indices):
         # ayeyaya this is a mess
         #print indices, type(indices), indices.shape
-        if type(indices) is not TupleType:
+        if not isinstance(indices, tuple):
             indices = (indices,)
         if Ellipsis in indices:
             raise IndexError, "Ellipsis not currently supported"
@@ -180,14 +185,14 @@ class dummy_array:
             #if (type(index) is SliceType and index.start == index.stop == index.step):
             if (index is empty_slice):
                 slc_len = dim_len
-            elif type(index) is SliceType:
+            elif isinstance(index, slice):
                 beg,end,step = index.start,index.stop,index.step
                 # handle if they are dummy arrays
-                #if hasattr(beg,'value') and type(beg.value) != ArrayType:
+                #if hasattr(beg,'value') and type(beg.value) != ndarray:
                 #    beg = beg.value
-                #if hasattr(end,'value') and type(end.value) != ArrayType:
+                #if hasattr(end,'value') and type(end.value) != ndarray:
                 #    end = end.value
-                #if hasattr(step,'value') and type(step.value) != ArrayType:
+                #if hasattr(step,'value') and type(step.value) != ndarray:
                 #    step = step.value
                 if beg is None: beg = 0
                 if end == sys.maxint or  end is None:

@@ -9,17 +9,18 @@ C++ equivalents to Python functions.
 """
 #**************************************************************************#
 
-from types import InstanceType,FunctionType,IntType,FloatType,StringType,TypeType,XRangeType
+from types import InstanceType, XRangeType
 import inspect
 import md5
 import scipy.weave as weave
-import imp
+
 from bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
 
 def CStr(s):
     "Hacky way to get legal C string from Python string"
-    if s is None: return '""'
-    assert type(s) == StringType,"Only None and string allowed"
+    if s is None:
+        return '""'
+    assert isinstance(s, str), "only None and string allowed"
     r = repr('"'+s) # Better for embedded quotes
     return '"'+r[2:-1]+'"'
 
@@ -32,7 +33,6 @@ class Instance(Type_Descriptor):
 
     def __init__(self,prototype):
         self.prototype  = prototype
-        return
 
     def check(self,s):
         return "PyInstance_Check(%s)"%s
@@ -109,7 +109,7 @@ Integer = Integer()
 Double = Double()
 String = String()
 
-import numpy.oldnumeric as nx
+import numpy as nx
 
 class Vector(Type_Descriptor):
     cxxtype = 'PyArrayObject*'
@@ -211,15 +211,15 @@ XRange = XRange()
 
 
 typedefs = {
-    IntType: Integer,
-    FloatType: Double,
-    StringType: String,
-    (nx.ArrayType,1,'i'): IntegerVector,
-    (nx.ArrayType,2,'i'): Integermatrix,
-    (nx.ArrayType,1,'l'): LongVector,
-    (nx.ArrayType,2,'l'): Longmatrix,
-    (nx.ArrayType,1,'d'): DoubleVector,
-    (nx.ArrayType,2,'d'): Doublematrix,
+    int : Integer,
+    float : Double,
+    str: String,
+    (nx.ndarray,1,int): IntegerVector,
+    (nx.ndarray,2,int): Integermatrix,
+    (nx.ndarray,1,nx.long): LongVector,
+    (nx.ndarray,2,nx.long): Longmatrix,
+    (nx.ndarray,1,float): DoubleVector,
+    (nx.ndarray,2,float): Doublematrix,
     XRangeType : XRange,
     }
 
@@ -260,10 +260,9 @@ def lookup_type(x):
     try:
         return typedefs[T]
     except:
-        import numpy as nx
-        if isinstance(T,nx.ArrayType):
+        if isinstance(T,nx.ndarray):
             return typedefs[(T,len(x.shape),x.dtype.char)]
-        elif T == InstanceType:
+        elif issubclass(T, InstanceType):
             return Instance(x)
         else:
             raise NotImplementedError,T
@@ -274,7 +273,7 @@ def lookup_type(x):
 class accelerate:
 
     def __init__(self, function, *args, **kw):
-        assert type(function) == FunctionType
+        assert inspect.isfunction(function)
         self.function = function
         self.module = inspect.getmodule(function)
         if self.module is None:
@@ -384,8 +383,7 @@ class Python2CXX(CXXCoder):
 
     def __init__(self,f,signature,name=None):
         # Make sure function is a function
-        import types
-        assert type(f) == FunctionType
+        assert inspect.isfunction(f)
         # and check the input type signature
         assert reduce(lambda x,y: x and y,
                       map(lambda x: isinstance(x,Type_Descriptor),
