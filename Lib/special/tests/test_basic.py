@@ -1017,6 +1017,8 @@ class test_gammaincinv(ScipyTestCase):
         assert_almost_equal(x,0.4,1)
 
 class test_hankel1(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(hankel1(-3,2), -hankel1(3,2), 14)
 
     def check_hankel1(self):
         hank1 = hankel1(1,.1)
@@ -1024,6 +1026,8 @@ class test_hankel1(ScipyTestCase):
         assert_almost_equal(hank1,hankrl,8)
 
 class test_hankel1e(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(hankel1e(-3,2), -hankel1e(3,2), 14)
 
     def check_hankel1e(self):
         hank1e = hankel1e(1,.1)
@@ -1031,6 +1035,8 @@ class test_hankel1e(ScipyTestCase):
         assert_almost_equal(hank1e,hankrle,8)
 
 class test_hankel2(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(hankel2(-3,2), -hankel2(3,2), 14)
 
     def check_hankel2(self):
         hank2 = hankel2(1,.1)
@@ -1038,6 +1044,8 @@ class test_hankel2(ScipyTestCase):
         assert_almost_equal(hank2,hankrl2,8)
 
 class test_hankel2e(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(hankel2e(-3,2), -hankel2e(3,2), 14)
 
     def check_hankl2e(self):
         hank2e = hankel2e(1,.1)
@@ -1227,12 +1235,16 @@ class test_it2j0y0(ScipyTestCase):
         assert_array_almost_equal(it2,array([0.0049937546274601858, -0.43423067011231614]),8)
 
 class test_iv(ScipyTestCase):
+    def check_negv(self):
+        assert_equal(iv(3,2), iv(-3,2))
 
     def check_iv(self):
         iv1 = iv(0,.1)*exp(-.1)
         assert_almost_equal(iv1,0.90710092578230106,10)
 
 class test_ive(ScipyTestCase):
+    def check_negv(self):
+        assert_equal(ive(3,2), ive(-3,2))
 
     def check_ive(self):
         ive1 = ive(0,.1)
@@ -1240,9 +1252,11 @@ class test_ive(ScipyTestCase):
         assert_almost_equal(ive1,iv1,10)
 
 class test_ivp(ScipyTestCase):
+    def check_ivp0(self):
+        assert_almost_equal(iv(1,2), ivp(0,2), 10)
 
     def check_ivp(self):
-        y=(iv(0,2)-iv(2,2))/2
+        y=(iv(0,2)+iv(2,2))/2
         x = ivp(1,2)
         assert_almost_equal(x,y,10)
 
@@ -1288,12 +1302,16 @@ class test_jn(ScipyTestCase):
         assert_almost_equal(jnnr,0.099500832639235995,8)
 
 class test_jv(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(jv(-3,2), -jv(3,2), 14)
 
     def check_jv(self):
         jc = jv(0,.1)
         assert_almost_equal(jc,0.99750156206604002,8)
 
 class test_jve(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(jve(-3,2), -jve(3,2), 14)
 
     def check_jve(self):
         jvexp = jve(1,.2)
@@ -1368,7 +1386,7 @@ class test_jvp(ScipyTestCase):
     def check_jvp(self):
         jvprim = jvp(2,2)
         jv0 = (jv(1,2)-jv(3,2))/2
-        assert_almost_equal(jvprim,jv0,4)
+        assert_almost_equal(jvprim,jv0,10)
 
 class test_k0(ScipyTestCase):
 
@@ -1529,12 +1547,23 @@ class test_kn(ScipyTestCase):
         assert_almost_equal(kn1,1.7527038555281462,8)
 
 class test_kv(ScipyTestCase):
+    def check_negv(self):
+        assert_equal(kv(3.0, 2.2), kv(-3.0, 2.2))
 
-    def check_kv(self):
-        kv1 = kv(0,.2)
-        assert_almost_equal(kv1,1.7527038555281462,8)
+    def check_kv0(self):
+        kv0 = kv(0,.2)
+        assert_almost_equal(kv0, 1.7527038555281462, 10)
+    def check_kv1(self):
+        kv1 = kv(1,0.2)
+        assert_almost_equal(kv1, 4.775972543220472, 10)
+    def check_kv2(self):
+        kv2 = kv(2,0.2)
+        assert_almost_equal(kv2, 49.51242928773287, 10)
+
 
 class test_kve(ScipyTestCase):
+    def check_negv(self):
+        assert_equal(kve(3.0, 2.2), kve(-3.0, 2.2))
 
     def check_kve(self):
         kve1 = kve(0,.2)
@@ -1546,11 +1575,23 @@ class test_kve(ScipyTestCase):
         assert_almost_equal(kve2,kv2,8)
 
 class test_kvp(ScipyTestCase):
+    def check_kvp_v0n1(self):
+        z = 2.2
+        assert_almost_equal(-kv(1,z), kvp(0,z, n=1), 10)
 
-    def check_kvp(self):
-        kvprim = kvp(1,2)
-        kvprimrl = (kv(0,2) - kv(2,2))/2
-        assert_almost_equal(kvprim,kvprimrl,4)   #this function (kvp) is broken
+    def check_kvp_n1(self):
+        v = 3.
+        z = 2.2
+        xc = -kv(v+1,z) + v/z*kv(v,z)
+        x = kvp(v,z, n=1)
+        assert_almost_equal(xc, x, 10)   #this function (kvp) is broken
+
+    def check_kvp_n2(self):
+        v = 3.
+        z = 2.2
+        xc = (z**2+v**2-v)/z**2 * kv(v,z) + kv(v+1,z)/z
+        x = kvp(v, z, n=2)
+        assert_almost_equal(xc, x, 10)
 
 class test_laguerre(ScipyTestCase):
 
@@ -2094,12 +2135,16 @@ class test_yn(ScipyTestCase):
         assert_almost_equal(yn2n,-3.3238249881118471,8)
 
 class test_yv(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(yv(-3,2), -yv(3,2), 14)
 
     def check_yv(self):
         yv2 = yv(1,.2)
         assert_almost_equal(yv2,-3.3238249881118471,8)
 
 class test_yve(ScipyTestCase):
+    def check_negv(self):
+        assert_almost_equal(yve(-3,2), -yve(3,2), 14)
 
     def check_yve(self):
         yve2 = yve(1,.2)
@@ -2113,7 +2158,7 @@ class test_yvp(ScipyTestCase):
     def check_yvp(self):
         yvpr = (yv(1,.2) - yv(3,.2))/2.0
         yvp1 = yvp(2,.2)
-        assert_array_almost_equal(yvp1,yvpr,6)
+        assert_array_almost_equal(yvp1,yvpr,10)
 
 class test_zeros(ScipyTestCase):
 

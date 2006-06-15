@@ -62,6 +62,17 @@ int ierr_to_mtherr( int nz, int ierr) {
   return -1;
 }
 
+static Py_complex
+rotate(Py_complex z, double v)
+{
+    Py_complex w;
+    double c = cos(v * M_PI);
+    double s = sin(v * M_PI);
+    w.real = z.real*c - z.imag*s;
+    w.imag = z.real*s + z.imag*c;
+    return w;
+}
+
 int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip) {
   int id = 0;
   int ierr = 0;
@@ -105,6 +116,9 @@ Py_complex cbesi_wrap( double v, Py_complex z) {
   int nz, ierr;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+  }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("iv:");
   return cy;
@@ -116,6 +130,9 @@ Py_complex cbesi_wrap_e( double v, Py_complex z) {
   int nz, ierr;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+  }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("ive:");
   return cy;
@@ -126,10 +143,18 @@ Py_complex cbesj_wrap( double v, Py_complex z) {
   int n = 1;
   int kode = 1;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
   F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("jv:");
+  if (sign == -1) {
+    cy = rotate(cy, v);
+  }
   return cy;
 }
 
@@ -137,10 +162,18 @@ Py_complex cbesj_wrap_e( double v, Py_complex z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
   F_FUNC(zbesj,ZBESJ)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("jve:");
+  if (sign == -1) {
+    cy = rotate(cy, v);
+  }
   return cy;
 }
 
@@ -149,11 +182,19 @@ Py_complex cbesy_wrap( double v, Py_complex z) {
   int n = 1;
   int kode = 1;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy, cwork;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
   F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, CADDR(cwork), &ierr);
 
   DO_MTHERR("yv:");
+  if (sign == -1) {
+    cy = rotate(cy, v);
+  }
   return cy;
 }
 
@@ -161,10 +202,18 @@ Py_complex cbesy_wrap_e( double v, Py_complex z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy, cwork;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
   F_FUNC(zbesy,ZBESY)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, CADDR(cwork), &ierr);
   DO_MTHERR("yve:");
+  if (sign == -1) {
+    cy = rotate(cy, v);
+  }
   return cy;
 }
 
@@ -175,6 +224,9 @@ Py_complex cbesk_wrap( double v, Py_complex z) {
   int nz, ierr;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+  }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("kv:");
   return cy;
@@ -186,6 +238,9 @@ Py_complex cbesk_wrap_e( double v, Py_complex z) {
   int nz, ierr;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+  }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("kve:");
   return cy;
@@ -196,10 +251,18 @@ Py_complex cbesh_wrap1( double v, Py_complex z) {
   int kode = 1;
   int m = 1;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v,  &kode, &m, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("hankel1:");
+  if (sign == -1) {
+    cy = rotate(cy, v);
+  }
   return cy;
 }
 
@@ -208,10 +271,18 @@ Py_complex cbesh_wrap1_e( double v, Py_complex z) {
   int kode = 2;
   int m = 1;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("hankel1e:");
+  if (sign == -1) {
+    cy = rotate(cy, v);
+  }
   return cy;
 }
   
@@ -220,10 +291,19 @@ Py_complex cbesh_wrap2( double v, Py_complex z) {
   int kode = 1;
   int m = 2;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
+  F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v,  &kode, &m, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("hankel2:");
+  if (sign == -1) {
+    cy = rotate(cy, -v);
+  }
   return cy;
 }
 
@@ -232,9 +312,18 @@ Py_complex cbesh_wrap2_e( double v, Py_complex z) {
   int kode = 2;
   int m = 2;
   int nz, ierr;
+  int sign = 1;
   Py_complex cy;
 
+  if (v < 0) {
+    v = -v;
+    sign = -1;
+  }
+  F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
   DO_MTHERR("hankel2e:");
+  if (sign == -1) {
+    cy = rotate(cy, -v);
+  }
   return cy;
 }
