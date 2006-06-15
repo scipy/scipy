@@ -1,139 +1,208 @@
 ## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
 
 import _zeros
+from numpy import sqrt, sign, finfo
 
 _iter = 100
 _xtol = 1e-12
-_args = ()
+# not actually used at the moment
+_rtol = finfo(float).eps * 2
 
 __all__ = ['bisect','ridder','brentq','brenth']
 
-def bisect(f,a,b,xtol=_xtol,maxiter=_iter,args=_args, full_output=0, disp=1) :
-    """ Find root of f in [a,b]
+CONVERGED = 'converged'
+SIGNERR = 'sign error'
+CONVERR = 'convergence error'
+flag_map = {0 : CONVERGED, -1 : SIGNERR, -2 : CONVERR}
 
-        Basic bisection routine to find a zero of the function
-        f between the arguments a and b. f(a) and f(b) can not
-        have the same signs. Slow but sure.
+class RootResults(object):
+    def __init__(self, root, iterations, function_calls, flag):
+        self.root = root
+        self.iterations = iterations
+        self.function_calls = function_calls
+        self.converged = flag == 0
+        try:
+            self.flag = flag_map[flag]
+        except KeyError:
+            self.flag = 'unknown error %d' % (flag,)
 
-        f : Python function returning a number.
+def results_c(full_output, r):
+    if full_output:
+        x, funcalls, iterations, flag = r
+        results = RootResults(root=x,
+                              iterations=iterations,
+                              function_calls=funcalls,
+                              flag=flag)
+        return x, results
+    else:
+        return r
 
-        a : Number, one end of the bracketing interval.
+def bisect(f, a, b, args=(),
+           xtol=_xtol, rtol=_rtol, maxiter=_iter,
+           full_output=False, disp=False):
+    """Find root of f in [a,b]
 
-        b : Number, the other end of the bracketing interval.
+    Basic bisection routine to find a zero of the function
+    f between the arguments a and b. f(a) and f(b) can not
+    have the same signs. Slow but sure.
 
-        xtol : Number, the routine converges when a root is known
-            to lie within xtol of the value return. Should be >= 0.
-            The routine modifies this to take into account the relative
-            precision of doubles.
+    f : Python function returning a number.
 
-        maxiter : Number, if convergence is not achieved in
-            maxiter iterations, and error is raised. Must be
-            >= 0.
+    a : Number, one end of the bracketing interval.
 
-        args : tuple containing extra arguments for the function f.
-            f is called by apply(f,(x)+args).
+    b : Number, the other end of the bracketing interval.
+
+    xtol : Number, the routine converges when a root is known
+        to lie within xtol of the value return. Should be >= 0.
+        The routine modifies this to take into account the relative
+        precision of doubles.
+
+    maxiter : Number, if convergence is not achieved in
+        maxiter iterations, and error is raised. Must be
+        >= 0.
+
+    args : tuple containing extra arguments for the function f.
+        f is called by apply(f,(x)+args).
+
+    If full_output is False, the root is returned.
+
+    If full_output is True, the return value is (x, r), where x
+    is the root, and r is a RootResults object containing information
+    about the convergence. In particular, r.converged is True if the
+    the routine converged.
     """
     if type(args) != type(()) :
         args = (args,)
-    return _zeros._bisect(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._bisect(f,a,b,xtol,maxiter,args,full_output,disp)
+    return results_c(full_output, r)
 
-def ridder(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
-    """ Find root of f in [a,b]
+def ridder(f, a, b, args=(),
+           xtol=_xtol, rtol=_rtol, maxiter=_iter,
+           full_output=False, disp=False):
+    """Find root of f in [a,b]
 
-        Ridder routine to find a zero of the function
-        f between the arguments a and b. f(a) and f(b) can not
-        have the same signs. Faster than bisection, but not
-        generaly as fast as the brent rountines. A description
-        may be found in a recent edition of Numerical Recipes.
-        The routine here is modified a bit to be more careful
-        of tolerance.
+    Ridder routine to find a zero of the function
+    f between the arguments a and b. f(a) and f(b) can not
+    have the same signs. Faster than bisection, but not
+    generaly as fast as the brent rountines. A description
+    may be found in a recent edition of Numerical Recipes.
+    The routine here is modified a bit to be more careful
+    of tolerance.
 
-        f : Python function returning a number.
+    f : Python function returning a number.
 
-        a : Number, one end of the bracketing interval.
+    a : Number, one end of the bracketing interval.
 
-        b : Number, the other end of the bracketing interval.
+    b : Number, the other end of the bracketing interval.
 
-        xtol : Number, the routine converges when a root is known
-            to lie within xtol of the value return. Should be >= 0.
-            The routine modifies this to take into account the relative
-            precision of doubles.
+    xtol : Number, the routine converges when a root is known
+        to lie within xtol of the value return. Should be >= 0.
+        The routine modifies this to take into account the relative
+        precision of doubles.
 
-        maxiter : Number, if convergence is not achieved in
-            maxiter iterations, and error is raised. Must be
-            >= 0.
+    maxiter : Number, if convergence is not achieved in
+        maxiter iterations, and error is raised. Must be
+        >= 0.
 
-        args : tuple containing extra arguments for the function f.
-            f is called by apply(f,(x)+args).
+    args : tuple containing extra arguments for the function f.
+        f is called by apply(f,(x)+args).
+
+    If full_output is False, the root is returned.
+
+    If full_output is True, the return value is (x, r), where x
+    is the root, and r is a RootResults object containing information
+    about the convergence. In particular, r.converged is True if the
+    the routine converged.
     """
     if type(args) != type(()) :
         args = (args,)
-    return _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
+    return results_c(full_output, r)
 
-def brentq(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
-    """ Find root of f in [a,b]
+def brentq(f, a, b, args=(),
+           xtol=_xtol, rtol=_rtol, maxiter=_iter,
+           full_output=False, disp=False):
+    """Find root of f in [a,b]
 
-        The classic Brent routine to find a zero of the function
-        f between the arguments a and b. f(a) and f(b) can not
-        have the same signs. Generally the best of the routines here.
-        It is a safe version of the secant method that uses inverse
-        quadratic extrapolation. The version here is a slight
-        modification that uses a different formula in the extrapolation
-        step. A description may be found in Numerical Recipes, but the
-        code here is probably easier to understand.
+    The classic Brent routine to find a zero of the function
+    f between the arguments a and b. f(a) and f(b) can not
+    have the same signs. Generally the best of the routines here.
+    It is a safe version of the secant method that uses inverse
+    quadratic extrapolation. The version here is a slight
+    modification that uses a different formula in the extrapolation
+    step. A description may be found in Numerical Recipes, but the
+    code here is probably easier to understand.
 
-        f : Python function returning a number.
+    f : Python function returning a number.
 
-        a : Number, one end of the bracketing interval.
+    a : Number, one end of the bracketing interval.
 
-        b : Number, the other end of the bracketing interval.
+    b : Number, the other end of the bracketing interval.
 
-        xtol : Number, the routine converges when a root is known
-            to lie within xtol of the value return. Should be >= 0.
-            The routine modifies this to take into account the relative
-            precision of doubles.
+    xtol : Number, the routine converges when a root is known
+        to lie within xtol of the value return. Should be >= 0.
+        The routine modifies this to take into account the relative
+        precision of doubles.
 
-        maxiter : Number, if convergence is not achieved in
-            maxiter iterations, and error is raised. Must be
-            >= 0.
+    maxiter : Number, if convergence is not achieved in
+        maxiter iterations, and error is raised. Must be
+        >= 0.
 
-        args : tuple containing extra arguments for the function f.
-            f is called by apply(f,(x)+args).
+    args : tuple containing extra arguments for the function f.
+        f is called by apply(f,(x)+args).
+
+    If full_output is False, the root is returned.
+
+    If full_output is True, the return value is (x, r), where x
+    is the root, and r is a RootResults object containing information
+    about the convergence. In particular, r.converged is True if the
+    the routine converged.
     """
     if type(args) != type(()) :
         args = (args,)
-    return _zeros._brentq(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._brentq(f,a,b,xtol,maxiter,args,full_output,disp)
+    return results_c(full_output, r)
 
-def brenth(f,a,b,xtol=_xtol,maxiter=_iter,args=_args,full_output=0,disp=1) :
-    """ Find root of f in [a,b]
+def brenth(f, a, b, args=(),
+           xtol=_xtol, rtol=_rtol, maxiter=_iter,
+           full_output=False, disp=False):
+    """Find root of f in [a,b]
 
-        A variation on the classic Brent routine to find a zero
-        of the function f between the arguments a and b that uses
-        hyperbolic extrapolation instead of inverse quadratic
-        extrapolation. There was a paper back in the 1980's ...
-        f(a) and f(b) can not have the same signs. Generally on a
-        par with the brent routine, but not as heavily tested.
-        It is a safe version of the secant method that uses hyperbolic
-        extrapolation. The version here is by Chuck Harris.
+    A variation on the classic Brent routine to find a zero
+    of the function f between the arguments a and b that uses
+    hyperbolic extrapolation instead of inverse quadratic
+    extrapolation. There was a paper back in the 1980's ...
+    f(a) and f(b) can not have the same signs. Generally on a
+    par with the brent routine, but not as heavily tested.
+    It is a safe version of the secant method that uses hyperbolic
+    extrapolation. The version here is by Chuck Harris.
 
-        f : Python function returning a number.
+    f : Python function returning a number.
 
-        a : Number, one end of the bracketing interval.
+    a : Number, one end of the bracketing interval.
 
-        b : Number, the other end of the bracketing interval.
+    b : Number, the other end of the bracketing interval.
 
-        xtol : Number, the routine converges when a root is known
-            to lie within xtol of the value return. Should be >= 0.
-            The routine modifies this to take into account the relative
-            precision of doubles.
+    xtol : Number, the routine converges when a root is known
+        to lie within xtol of the value return. Should be >= 0.
+        The routine modifies this to take into account the relative
+        precision of doubles.
 
-        maxiter : Number, if convergence is not achieved in
-            maxiter iterations, and error is raised. Must be
-            >= 0.
+    maxiter : Number, if convergence is not achieved in
+        maxiter iterations, and error is raised. Must be
+        >= 0.
 
-        args : tuple containing extra arguments for the function f.
-            f is called by apply(f,(x)+args).
+    args : tuple containing extra arguments for the function f.
+        f is called by apply(f,(x)+args).
+
+    If full_output is False, the root is returned.
+
+    If full_output is True, the return value is (x, r), where x
+    is the root, and r is a RootResults object containing information
+    about the convergence. In particular, r.converged is True if the
+    the routine converged.
     """
     if type(args) != type(()) :
         args = (args,)
-    return _zeros._brenth(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._brenth(f,a,b,xtol,maxiter,args,full_output,disp)
+    return results_c(full_output, r)

@@ -32,13 +32,12 @@ def f6(x) :
     elif x < 1 : return -random()
     else : return 0
 
-description =\
-"""
+description = """
 f2 is a symmetric parabola, x**2 - 1
 f3 is a quartic polynomial with large hump in interval
 f4 is step function with a discontinuity at 1
 f5 is a hyperbola with vertical asymptote at 1
-f6 has random values positive to left of 1 , negative to right
+f6 has random values positive to left of 1, negative to right
 
 of course these are not real problems. They just test how the
 'good' solvers behave in bad circumstances where bisection is
@@ -53,23 +52,30 @@ functions = [f2,f3,f4,f5,f6]
 fstrings = ['f2','f3','f4','f5','f6']
 
 class test_basic(ScipyTestCase) :
-
-    def check_run(self) :
+    def run_test(self, method, name):
         a = .5
         b = sqrt(3)
-        for i in range(len(functions)) :
-            for j in range(len(methods)) :
-                zero = methods[j](functions[i],a,b, xtol=0.1e-12)
-                assert_almost_equal(zero, 1.0, decimal=12,
-                    err_msg='method %s, function %s' % (mstrings[j],
-                                                        fstrings[i]))
+        for function, fname in zip(functions, fstrings):
+            zero, r = method(function, a, b, xtol=0.1e-12, full_output=True)
+            assert r.converged
+            assert_almost_equal(zero, 1.0, decimal=12,
+                err_msg='method %s, function %s' % (name, fname))
+
+    def check_bisect(self):
+        self.run_test(cc.bisect, 'bisect')
+    def check_ridder(self):
+        self.run_test(cc.ridder, 'ridder')
+    def check_brentq(self):
+        self.run_test(cc.brentq, 'brentq')
+    def check_brenth(self):
+        self.run_test(cc.brenth, 'brenth')
 
     def bench_run(self,level=5):
         a = .5
         b = sqrt(3)
         repeat = 2000
 
-        print '%s\n',description
+        print description
 
         print 'TESTING SPEED\n'
         print 'times in seconds for %d iterations \n'%repeat

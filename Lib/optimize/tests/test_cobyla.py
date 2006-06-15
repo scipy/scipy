@@ -14,7 +14,8 @@ class test_cobyla(ScipyTestCase):
 
         x = co.fmin_cobyla(function, [4.95,0.66], [con1, con2], rhobeg=1,
                            rhoend=1e-5, iprint=0, maxfun=100)
-        print 'Result:',x,'(exact result = 4.955356249106168, 0.666666666666666)'
+        assert_almost_equal(x, [4.955356249106168, 0.666666666666666],
+                            decimal=5)
 
 if __name__ == "__main__":
     ScipyTest().run()

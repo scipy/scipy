@@ -70,22 +70,20 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol, int iter
                 /* interpolate */
                 stry = -fcur*(xcur - xpre)/(fcur - fpre);
             }
-            else { 
+            else {
                 /* extrapolate */
                 dpre = (fpre - fcur)/(xpre - xcur);
                 dblk = (fblk - fcur)/(xblk - xcur);
                 stry = -fcur*(fblk*dblk - fpre*dpre)
                     /(dblk*dpre*(fblk - fpre));
             }
-            
-      if (2*fabs(stry) < DMIN(fabs(spre), 3*fabs(sbis) - tol)) {
-          /* good short step */
-          spre = scur; scur = stry;
-      }
-      else { 
-          /* bisect */
-          spre = sbis; scur = sbis;
-      }
+            if (2*fabs(stry) < DMIN(fabs(spre), 3*fabs(sbis) - tol)) {
+                /* good short step */
+                spre = scur; scur = stry;
+            } else {
+                /* bisect */
+                spre = sbis; scur = sbis;
+            }
         }
         else { 
             /* bisect */
