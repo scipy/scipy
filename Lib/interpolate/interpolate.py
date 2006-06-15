@@ -60,7 +60,7 @@ class interp2d:
           dx,dy - order of partial derivatives in x and y, respectively.
                   0<=dx<kx, 0<=dy<ky
         Output:
-          z     - 2-d array of interpolated values
+          z     - 2-d array of interpolated values of shape (len(y), len(x)).
         """
         x = atleast_1d(x)
         y = atleast_1d(y)
