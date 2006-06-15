@@ -100,8 +100,8 @@ _iermess2 = {0:["""\
             'unknown':["""\
     An error occured""",TypeError]}
 
-_parcur_cache = {'t': array([],'d'), 'wrk': array([],'d'), 'iwrk':array([],'i'),
-                 'u': array([],'d'),'ub':0,'ue':1}
+_parcur_cache = {'t': array([],float), 'wrk': array([],float),
+                 'iwrk':array([],int), 'u': array([],float),'ub':0,'ue':1}
 
 def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             full_output=0,nest=None,per=0,quiet=1):
@@ -168,8 +168,9 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
       SEE splev for evaluation of the spline and its derivatives.
     """
     if task<=0:
-        _parcur_cache = {'t': array([],'d'), 'wrk': array([],'d'),
-                         'iwrk':array([],'i'),'u': array([],'d'),'ub':0,'ue':1}
+        _parcur_cache = {'t': array([],float), 'wrk': array([],float),
+                         'iwrk':array([],int),'u': array([],float),
+                         'ub':0,'ue':1}
     x=myasarray(x)
     idim,m=x.shape
     if per:
@@ -178,7 +179,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
                 if quiet<2:print 'Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i)
                 x[i][-1]=x[i][0]
     if not 0<idim<11: raise TypeError,'0<idim<11 must hold'
-    if w is None: w=ones(m,'d')
+    if w is None: w=ones(m,float)
     else: w=myasarray(w)
     ipar=(u is not None)
     if ipar:
@@ -187,7 +188,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         else: _parcur_cache['ub']=ub
         if ue is None: _parcur_cache['ue']=u[-1]
         else: _parcur_cache['ue']=ue
-    else: _parcur_cache['u']=zeros(m,'d')
+    else: _parcur_cache['u']=zeros(m,float)
     if not (1<=k<=5): raise TypeError, '1<=k=%d<=5 must hold'%(k)
     if not (-1<=task<=1): raise TypeError, 'task must be either -1,0, or 1'
     if (not len(w)==m) or (ipar==1 and (not len(u)==m)):
@@ -243,7 +244,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     else:
         return tcku
 
-_curfit_cache = {'t': array([],'d'), 'wrk': array([],'d'), 'iwrk':array([],'i')}
+_curfit_cache = {'t': array([],float), 'wrk': array([],float),
+                 'iwrk':array([],int)}
 def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
            full_output=0,per=0,quiet=1):
     """Find the B-spline representation of 1-D curve.
@@ -312,7 +314,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         _curfit_cache = {}
     x,y=map(myasarray,[x,y])
     m=len(x)
-    if w is None: w=ones(m,'d')
+    if w is None: w=ones(m,float)
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
     if (m != len(y)) or (m != len(w)):
@@ -329,7 +331,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     if task == -1:
         if t is None: raise TypeError, 'Knots must be given for task=-1'
         numknots = len(t)
-        _curfit_cache['t'] = empty((numknots + 2*k+2,),'d')
+        _curfit_cache['t'] = empty((numknots + 2*k+2,),float)
         _curfit_cache['t'][k+1:-k-1] = t
         nest = len(_curfit_cache['t'])
     elif task == 0:
@@ -337,11 +339,11 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
             nest = max(m+2*k,2*k+3)
         else:
             nest = max(m+k+1,2*k+3)
-        t = empty((nest,),'d')
+        t = empty((nest,),float)
         _curfit_cache['t'] = t
     if task <= 0:
-        _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),'d')
-        _curfit_cache['iwrk'] = empty((nest,),'i')
+        _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
+        _curfit_cache['iwrk'] = empty((nest,),int)
     try:
         t=_curfit_cache['t']
         wrk=_curfit_cache['wrk']
@@ -519,8 +521,8 @@ def spalde(x,tck):
 #def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
 
-_surfit_cache = {'tx': array([],'d'),'ty': array([],'d'),
-                 'wrk': array([],'d'), 'iwrk':array([],'i')}
+_surfit_cache = {'tx': array([],float),'ty': array([],float),
+                 'wrk': array([],float), 'iwrk':array([],int)}
 def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
              s=None,eps=1e-16,tx=None,ty=None,full_output=0,
              nxest=None,nyest=None,quiet=1):
@@ -581,7 +583,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
     m=len(x)
     if not (m==len(y)==len(z)): raise TypeError, 'len(x)==len(y)==len(z) must hold.'
-    if w is None: w=ones(m,'d')
+    if w is None: w=ones(m,float)
     else: w=myasarray(w)
     if not len(w) == m: raise TypeError,' len(w)=%d is not equal to m=%d'%(len(w),m)
     if xb is None: xb=x.min()
@@ -715,8 +717,8 @@ if __name__ == "__main__":
     def test1(f=f1,per=0,s=0,a=0,b=2*pi,N=20,at=0,xb=None,xe=None):
         if xb is None: xb=a
         if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,typecode='d')/float(N)    # nodes
-        x1=a+(b-a)*arange(1,N,typecode='d')/float(N-1) # middle points of the nodes
+        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
+        x1=a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
         v,v1=f(x),f(x1)
         nk=[]
         for k in range(1,6):
@@ -745,7 +747,7 @@ if __name__ == "__main__":
               ia=0,ib=2*pi,dx=0.2*pi):
         if xb is None: xb=a
         if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,typecode='d')/float(N)    # nodes
+        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         v=f(x)
         nk=[]
         for k in range(1,6):
@@ -772,7 +774,7 @@ if __name__ == "__main__":
               ia=0,ib=2*pi,dx=0.2*pi):
         if xb is None: xb=a
         if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,typecode='d')/float(N)    # nodes
+        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         v=f(x)
         nk=[]
         print "  k  :     Roots of s(x) approx %s  x in [%s,%s]:"%\
@@ -784,8 +786,8 @@ if __name__ == "__main__":
               ia=0,ib=2*pi,dx=0.2*pi):
         if xb is None: xb=a
         if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,typecode='d')/float(N)    # nodes
-        x1=a+(b-a)*arange(1,N,typecode='d')/float(N-1) # middle points of the nodes
+        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
+        x1=a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
         v,v1=f(x),f(x1)
         nk=[]
         print " u = %s   N = %d"%(`round(dx,3)`,N)
@@ -812,8 +814,8 @@ if __name__ == "__main__":
         xy.shape=sh[0]*sh[1],sh[2]
         return transpose(xy)
     def test5(f=f2,kx=3,ky=3,xb=0,xe=2*pi,yb=0,ye=2*pi,Nx=20,Ny=20,s=0):
-        x=xb+(xe-xb)*arange(Nx+1,typecode='d')/float(Nx)
-        y=yb+(ye-yb)*arange(Ny+1,typecode='d')/float(Ny)
+        x=xb+(xe-xb)*arange(Nx+1,dtype=float)/float(Nx)
+        y=yb+(ye-yb)*arange(Ny+1,dtype=float)/float(Ny)
         xy=makepairs(x,y)
         tck=bisplrep(xy[0],xy[1],f(xy[0],xy[1]),s=s,kx=kx,ky=ky)
         tt=[tck[0][kx:-kx],tck[1][ky:-ky]]

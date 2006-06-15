@@ -9,7 +9,6 @@ __all__ = ['interp1d', 'interp2d']
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
      logical_or, atleast_1d, atleast_2d
-from numpy.oldnumeric import Int
 
 import fitpack
 
@@ -160,7 +159,7 @@ class interp1d:
         # 3. Clip x_new_indices so that they are within the range of
         #    self.x indices and at least 1.  Removes mis-interpolation
         #    of x_new[n] = x[0]
-        x_new_indices = clip(x_new_indices,1,len(self.x)-1).astype(Int)
+        x_new_indices = clip(x_new_indices,1,len(self.x)-1).astype(int)
         # 4. Calculate the slope of regions that each x_new value falls in.
         lo = x_new_indices - 1; hi = x_new_indices
 

@@ -17,7 +17,6 @@ __all__ = [
 
 import warnings
 from numpy import zeros, concatenate, alltrue
-from numpy.oldnumeric import Float
 
 import dfitpack
 
@@ -387,8 +386,8 @@ class LSQBivariateSpline(BivariateSpline):
         """
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
-        tx1 = zeros((nx,),Float)
-        ty1 = zeros((ny,),Float)
+        tx1 = zeros((nx,),float)
+        ty1 = zeros((ny,),float)
         tx1[kx+1:nx-kx-1] = tx
         ty1[ky+1:ny-ky-1] = ty
 
