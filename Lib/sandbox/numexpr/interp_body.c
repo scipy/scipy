@@ -8,6 +8,9 @@
     {                                           \
         char *dest = params.mem[store_in];      \
         char *x1 = params.mem[arg1];            \
+        intp sb1 = params.memsteps[arg1];       \
+        intp si1 = sb1 / sizeof(long);          \
+        intp sf1 = sb1 / sizeof(double);        \
         VEC_LOOP(expr);                         \
     } break
 #define VEC_ARG2(expr)                          \
@@ -17,7 +20,14 @@
     {                                           \
         char *dest = params.mem[store_in];      \
         char *x1 = params.mem[arg1];            \
+        intp sb1 = params.memsteps[arg1];       \
+        intp si1 = sb1 / sizeof(long);          \
+        intp sf1 = sb1 / sizeof(double);        \
         char *x2 = params.mem[arg2];            \
+        intp sb2 = params.memsteps[arg2];       \
+        intp si2 = sb2 / sizeof(long);          \
+        intp sf2 = sb2 / sizeof(double);        \
+        intp s2 = params.memsteps[arg2];        \
         VEC_LOOP(expr);                         \
     } break
 
@@ -29,8 +39,19 @@
     {                                           \
         char *dest = params.mem[store_in];      \
         char *x1 = params.mem[arg1];            \
+        intp sb1 = params.memsteps[arg1];       \
+        intp si1 = sb1 / sizeof(long);          \
+        intp sf1 = sb1 / sizeof(double);        \
         char *x2 = params.mem[arg2];            \
+        intp s2 = params.memsteps[arg2];        \
+        intp sb2 = params.memsteps[arg2];       \
+        intp si2 = sb2 / sizeof(long);          \
+        intp sf2 = sb2 / sizeof(double);        \
         char *x3 = params.mem[arg3];            \
+        intp s3 = params.memsteps[arg3];        \
+        intp sb3 = params.memsteps[arg3];       \
+        intp si3 = sb3 / sizeof(long);          \
+        intp sf3 = sb3 / sizeof(double);        \
         VEC_LOOP(expr);                         \
     } break
 
@@ -52,21 +73,22 @@
         #define f_dest ((double *)dest)[j]
         #define cr_dest ((double *)dest)[2*j]
         #define ci_dest ((double *)dest)[2*j+1]
-        #define b1    ((char   *)x1)[j]
-        #define i1    ((long   *)x1)[j]
-        #define f1    ((double *)x1)[j]
-        #define c1r   ((double *)x1)[2*j]
-        #define c1i   ((double *)x1)[2*j+1]
-        #define b2    ((char   *)x2)[j]
-        #define i2    ((long   *)x2)[j]
-        #define f2    ((double *)x2)[j]
-        #define c2r   ((double *)x2)[2*j]
-        #define c2i   ((double *)x2)[2*j+1]
-        #define b3    ((char   *)x3)[j]
-        #define i3    ((long   *)x3)[j]
-        #define f3    ((double *)x3)[j]
-        #define c3r   ((double *)x3)[2*j]
-        #define c3i   ((double *)x3)[2*j+1]
+        #define b1    ((char   *)x1)[j*sb1]
+        #define i1    ((long   *)x1)[j*si1]
+        #define f1    ((double *)x1)[j*sf1]
+        #define c1r   ((double *)x1)[j*sf1]
+        #define c1i   ((double *)x1)[j*sf1+1]
+        #define b2    ((char   *)x2)[j*sb2]
+        #define i2    ((long   *)x2)[j*si2]
+        #define f2    ((double *)x2)[j*sf2]
+        #define c2r   ((double *)x2)[j*sf2]
+        #define c2i   ((double *)x2)[j*sf2+1]
+        #define b3    ((char   *)x3)[j*sb3]
+        #define i3    ((long   *)x3)[j*si3]
+        #define f3    ((double *)x3)[j*sf3]
+        #define c3r   ((double *)x3)[j*sf3]
+        #define c3i   ((double *)x3)[j*sf3+1]
+        
         double fa, fb;
         cdouble ca, cb;
 
@@ -74,39 +96,11 @@
 
         case OP_NOOP: break;
 
-        /* The COPY are the only ops that depend on stride */
-        case OP_COPY_BB: {
-            char *dst = params.mem[store_in];
-            char *src = params.mem[arg1];
-            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
-                                            : params.memsizes[arg1]);
-            VEC_ARG1(memcpy(dst, src, sizeof(char));
-                     dst += sizeof(char); src += str1);
-            }
-        case OP_COPY_II: {
-            char *dst = params.mem[store_in];
-            char *src = params.mem[arg1];
-            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
-                                            : params.memsizes[arg1]);
-            VEC_ARG1(memcpy(dst, src, sizeof(long));
-                     dst += sizeof(long); src += str1);
-            }
-        case OP_COPY_FF: {
-            char *dst = params.mem[store_in];
-            char *src = params.mem[arg1];
-            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
-                                            : params.memsizes[arg1]);
-            VEC_ARG1(memcpy(dst, src, sizeof(double));
-                     dst += sizeof(double); src += str1);
-            }
-        case OP_COPY_CC: {
-            char *dst = params.mem[store_in];
-            char *src = params.mem[arg1];
-            intp str1 = ((arg1 <= params.n_inputs) ? params.memsteps[arg1]
-                                            : params.memsizes[arg1]);
-            VEC_ARG1(memcpy(dst, src, sizeof(double)*2);
-                     dst += sizeof(double)*2; src += str1);
-            }
+        case OP_COPY_BB: VEC_ARG1(b_dest = b1);
+        case OP_COPY_II: VEC_ARG1(i_dest = i1);
+        case OP_COPY_FF: VEC_ARG1(f_dest = f1);
+        case OP_COPY_CC: VEC_ARG1(cr_dest = c1r;
+                                  ci_dest = c1i);
 
         case OP_INVERT_BB: VEC_ARG1(b_dest = !b1);
 
