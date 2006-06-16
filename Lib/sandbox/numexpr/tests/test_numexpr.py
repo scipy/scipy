@@ -71,6 +71,14 @@ class test_evaluate(NumpyTestCase):
         x = sin(complex(a, b)).real + z.imag
         y = evaluate("sin(complex(a, b)).real + z.imag")
         assert_array_almost_equal(x, y)
+        
+        
+    def check_complex_strides(self):
+        a = arange(100).reshape(10,10)[::2]
+        b = arange(50).reshape(5,10)
+        assert_array_equal(evaluate("a+b"), a+b)
+        
+        
 
 tests = [
 ('MISC', ['b*c+d*e',
@@ -166,7 +174,7 @@ def generate_check_expressions():
     for test_scalar in [0,1,2]:
         for dtype in [int, float, complex]:
             array_size = 100
-            a = arange(array_size, dtype=dtype)
+            a = arange(2*array_size, dtype=dtype)[::2]
             a2 = zeros([array_size, array_size], dtype=dtype)
             b = arange(array_size, dtype=dtype) / array_size
             c = arange(array_size, dtype=dtype)
@@ -188,6 +196,8 @@ def generate_check_expressions():
                                '<' in expr or '>' in expr or '%' in expr
                                or "arctan2" in expr or "fmod" in expr):
                             continue # skip complex comparisons
+                        if dtype == int and test_scalar and expr == '(a+1) ** -1':
+                            continue
                         make_check_method(a, a2, b, c, d, e, x,
                                           expr, test_scalar, dtype,
                                           optimization, exact)

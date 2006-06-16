@@ -859,7 +859,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *output = NULL, *a_inputs = NULL;
     unsigned int n_inputs;
-    int i, len = -1, r, pc_error;
+    int i, j, len = -1, r, pc_error;
     char **inputs = NULL;
 
     n_inputs = PyTuple_Size(args);
@@ -889,7 +889,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (!a) goto cleanup_and_exit;
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
-            int j;
             intp dims[1] = {BLOCK_SIZE1};
             PyObject *b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
@@ -917,6 +916,15 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             }
             Py_DECREF(a);
         } else {
+            /* Check discontiguous strides appear only on the last dimension. */
+            for (j = PyArray_NDIM(a)-2; j >= 0; j--) 
+                if (PyArray_STRIDE(a, j) != 
+                        PyArray_STRIDE(a, j+1) * PyArray_DIM(a, j+1)) {
+                    Py_DECREF(a);
+                    a = PyArray_FROM_OTF(o, typecode, ENSURECOPY | NOTSWAPPED);
+                    break;
+                }
+            
             self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
             PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
             inputs[i] = PyArray_DATA(a);
