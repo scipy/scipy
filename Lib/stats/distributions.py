@@ -1294,6 +1294,8 @@ Exponential distribution
 
 expon.pdf(x) = exp(-x)
 for x >= 0.
+
+scale = 1.0 / lambda
 """
                   )
 

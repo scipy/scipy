@@ -1432,5 +1432,5 @@ initgistfuncs(void)
     PyDict_SetItemString(d, "error", ErrorObject);
 
     /* XXXX Add constants here */
-    if (import_array() < 1) return;
+    import_array();
 }
