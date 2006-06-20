@@ -1,5 +1,7 @@
-import sets, types, re, string, csv, copy
+import types, re, string, csv, copy
 import numpy as N
+
+terms = {}
 
 class Term:
 
@@ -7,11 +9,12 @@ class Term:
     This class is very simple: it is just a named term in a model formula.
 
     It is also callable: by default it namespace[self.name], where namespace
-    defaults to globals().
+    defaults to formula.terms, to which variables are added on
+    instantiation.
     
     """
 
-    def __init__(self, name, func=None, termname=None):
+    def __init__(self, name, func=None, termname=None, namespace=terms):
         
         self.name = name
 
@@ -24,6 +27,8 @@ class Term:
             raise ValueError, 'expecting a string for termname'
         if func:
             self.func = func
+
+        namespace[self.termname] = self
 
     def __str__(self):
         """
@@ -61,18 +66,16 @@ class Term:
         else:
             return list(self.name)
 
-    def __call__(self, namespace=None, usefn=True, **extra):
+    def __call__(self, namespace=terms, usefn=True, **extra):
         """
         Return the columns associated to self in a design matrix.
         The default behaviour is to return namespace[self.termname]
         where namespace defaults to globals().
 
         If usefn, and self.func exists then return
-            self.func(namespace=namspace, **extra).
+            self.func(namespace=namespace, **extra)
         """
         
-        if namespace is None:
-            namespace = globals()
 	if not hasattr(self, 'func') or not usefn:
             val = namespace[self.termname]
             if isinstance(val, Formula):
@@ -96,7 +99,7 @@ class Factor(Term):
         levels of the factor.
         """
         
-        self.keys = list(sets.Set(keys))
+        self.keys = list(set(keys))
         self.keys.sort()
         self._name = termname
         self.termname = termname
@@ -105,14 +108,14 @@ class Factor(Term):
         if self.ordinal:
             self._sort = True
 
-            def func(namespace=None, key=key):
+            def func(namespace=terms, key=key):
                 v = namespace[self._name]
                 col = [float(self.keys.index(v[i])) for i in range(n)]
                 return N.array(col)
             Term.__init__(self, self.name, func=func)
 
         else:
-            def func(namespace=None):
+            def func(namespace=terms):
                 v = namespace[self._name]
                 value = []
                 for key in self.keys:
@@ -121,7 +124,7 @@ class Factor(Term):
                 return N.array(value)
             Term.__init__(self, ['(%s==%s)' % (self.termname, str(key)) for key in self.keys], func=func, termname=self.termname)
 
-    def __call__(self, namespace=None, values=False, **extra):
+    def __call__(self, namespace=terms, values=False, **extra):
         """
         Return either the columns in the design matrix, or the
         actual values of the factor, if values==True.
@@ -138,7 +141,7 @@ class Factor(Term):
         """
         Verify that all values correspond to valid keys in self.
         """
-        s = sets.Set(values)
+        s = set(values)
         if not s.issubset(self.keys):
             raise ValueError, 'unknown keys in values'
 
@@ -163,7 +166,7 @@ class Factor(Term):
         if reference is None:
             reference = 0
 
-        def func(namespace=None, reference=reference, names=self.names(), **keywords):
+        def func(namespace=terms, reference=reference, names=self.names(), **keywords):
             value = N.asarray(self(namespace=namespace, **keywords))
             rvalue = []
             keep = range(value.shape[0])
@@ -193,13 +196,15 @@ class Quantitative(Term):
         Raise the quantitative Term's values to an integer power, i.e.
         polynomial.
         """
-        if type(power) is not types.IntType:
+        try:
+            power = float(power)
+        except:
             raise ValueError, 'expecting an integer'
 
-        name = '%s^%d' % (self.name, power)
+        name = '%s^%0.2f' % (self.name, power)
 
-        def func(namespace=None, power=power):
-            x = N.array(namespace[self.name])
+        def func(namespace=terms, power=power, **extra):
+            x = N.asarray(obj(namespace=namespace, **extra))
             return N.power(x, power)
         return Term(name, func=func)
 
@@ -218,7 +223,7 @@ class FuncQuant(Quantitative):
         
         self.f = f
         self.x = x
-        def func(namespace=None, f=self.f):
+        def func(namespace=terms, f=self.f):
             x = namespace[x.name]
             return f(x)
         try:
@@ -272,9 +277,9 @@ class Formula:
         value = []
         for term in self.terms:
             value += [term.termname]
-        return '<formula: %s>' % string.join(value, ' + ')  
+        return '<formula: %s>' % ' + '.join(value)
 
-    def __call__(self, namespace=None, nrow=-1, **extra):
+    def __call__(self, namespace=terms, nrow=-1, **extra):
         """
         Create (transpose) of the design matrix of the Formula within
         namespace. Extra arguments are passed to each Term instance. If
@@ -325,6 +330,13 @@ class Formula:
         else:
             raise ValueError, 'more than one term passed to hasterm'
         
+    def __getitem__(self, name):
+        t = self.termnames()
+        if name in t:
+            return self.terms[t.index(name)]
+        else:
+            raise KeyError, 'formula has no such term: %s' % repr(name)
+
     def termcolumns(self, term, dict=False):
         """
         Return a list of the indices of all columns associated
@@ -366,7 +378,7 @@ class Formula:
             names += [term.termname]
         return names
 
-    def design(self, namespace=None, **keywords):
+    def design(self, namespace=terms, **keywords):
         """
         transpose(self(namespace=namespace, **keywords))
         """
@@ -396,7 +408,7 @@ class Formula:
                 termname = '%s*%s' % (str(selftermnames[i]), str(othertermnames[j]))
                 pieces = termname.split('*')
                 pieces.sort()
-                termname = string.join(pieces, '*')
+                termname = '*'.join(pieces)
                 termnames.append(termname)
 
                 selfnames = self.terms[i].names()
@@ -417,7 +429,7 @@ class Formula:
                             name = string.join(pieces, '*')
                             names.append(name)
 
-                    def func(namespace=None, selfterm=self.terms[i], otherterm=other.terms[j], **extra):
+                    def func(namespace=terms, selfterm=self.terms[i], otherterm=other.terms[j], **extra):
                         value = []
                         selfval = N.array(selfterm(namespace=namespace, **extra))
                         if len(selfval.shape) == 1:
@@ -486,12 +498,12 @@ def isnested(A, B, namespace=globals()):
     if len(a) != len(b):
         raise ValueError, 'A() and B() should be sequences of the same length'
 
-    nA = len(sets.Set(a))
-    nB = len(sets.Set(b))
+    nA = len(set(a))
+    nB = len(set(b))
     n = max(nA, nB)
 
     AB = [(a[i],b[i]) for i in range(len(a))]
-    nAB = len(sets.Set(AB))
+    nAB = len(set(AB))
 
     if nAB == n:
         if nA > nB:
