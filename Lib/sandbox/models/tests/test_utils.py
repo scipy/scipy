@@ -3,7 +3,7 @@ import numpy as N
 import numpy.random as R
 import scipy
 
-from neuroimaging.statistics import utils
+from scipy.sandbox.models import utils
 
 class UtilsTest(unittest.TestCase):
 
