@@ -1,5 +1,5 @@
 import numpy as N
-import numpy.linalg as L
+from numpy.linalg import pinv
 import utils
 
 class Contrast:
@@ -58,7 +58,7 @@ class Contrast:
 
         if evaldesign:
             self.D = self.formula.design(**keywords)
-            self.pinv = L.pinv(self.D)
+            self.pinv = pinv(self.D)
 
         self.matrix = contrastfromcols(T, self.D)
         try:
@@ -66,7 +66,7 @@ class Contrast:
         except:
             self.rank = 1
 
-def contrastfromcols(T, D, pinv=None, warn=True):
+def contrastfromcols(T, D, pseudo=None, warn=True):
     """
     From an n x p design matrix D and a matrix T, tries
     to determine a p x q contrast matrix C which
@@ -91,11 +91,11 @@ def contrastfromcols(T, D, pinv=None, warn=True):
     if T.shape[0] != n and T.shape[1] != p:
         raise ValueError, 'shape of T and D mismatched'
 
-    if pinv is None:
-        pinv = L.pinv(D)
+    if pseudo is None:
+        pseudo = pinv(D)
 
     if T.shape[0] == n:
-        C = N.transpose(N.dot(pinv, T))
+        C = N.transpose(N.dot(pseudo, T))
     else:
         C = T
 
@@ -103,7 +103,7 @@ def contrastfromcols(T, D, pinv=None, warn=True):
 
     if utils.rank(Tp) != Tp.shape[1]:
         Tp = utils.fullrank(Tp)
-        C = N.transpose(N.dot(pinv, Tp))
+        C = N.transpose(N.dot(pseudo, Tp))
 
     return N.squeeze(C)
 

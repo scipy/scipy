@@ -2,7 +2,7 @@ import numpy as N
 import family
 from regression import WLSModel
 
-class GeneralizedLinearModel(WLSModel):
+class Model(WLSModel):
 
     niter = 10
     

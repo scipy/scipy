@@ -3,7 +3,7 @@ from robust import norms, scale
 
 from regression import WLSModel
 
-class RobustLinearModel(WLSModel):
+class Model(WLSModel):
 
     niter = 20
     scale_est = 'MAD'
@@ -41,7 +41,7 @@ class RobustLinearModel(WLSModel):
         """
         Continue iterating, or has convergence been obtained?
         """
-        if self.iter >= RobustLinearModel.niter:
+        if self.iter >= Model.niter:
             return False
 
         curdev = self.deviance(results)
