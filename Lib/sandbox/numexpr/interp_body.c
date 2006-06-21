@@ -56,11 +56,31 @@
     } break
 
 
-    unsigned int pc, j, r;
+    unsigned int pc, j, k, r;
     /* set up pointers to next block of inputs and outputs */
     params.mem[0] = params.output + index * params.memsteps[0];
     for (r = 0; r < params.n_inputs; r++) {
-        params.mem[1+r] = params.inputs[r] + index * params.memsteps[1+r];
+        struct index_data id = params.index_data[r];
+        if (id.count) {
+            params.mem[1+r] = params.inputs[r];
+            for (j = 0; j < VECTOR_SIZE; j++) {
+                unsigned int flatindex = 0;
+                for (k = 0; k < id.count; k ++)
+                    flatindex += id.strides[k] * id.index[k];
+                memcpy(params.mem[1+r]+ (j*id.size), id.buffer + flatindex, id.size);
+                k = id.count - 1;
+                id.index[k] += 1;
+                if (id.index[k] >= id.shape[k])
+                    while (id.index[k] >= id.shape[k]) {
+                        id.index[k] -= id.shape[k];
+                        if (k < 1) break;
+                        id.index[k-1] += 1;
+                        k -= 1;
+                    }
+            }
+        } else {
+            params.mem[1+r] = params.inputs[r] + index * params.memsteps[1+r];
+        }
     }
     for (pc = 0; pc < params.prog_len; pc += 4) {
         unsigned char op = params.program[pc];

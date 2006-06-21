@@ -761,6 +761,16 @@ static PyMemberDef NumExpr_members[] = {
     {NULL},
 };
 
+
+struct index_data {
+    int count;
+    int size;
+    int *shape;
+    int *strides;
+    int *index;
+    char *buffer;
+};
+
 struct vm_params {
     int prog_len;
     unsigned char *program;
@@ -770,7 +780,10 @@ struct vm_params {
     char **inputs;
     char **mem;
     intp *memsteps;
+    struct index_data *index_data;
 };
+
+
 
 #define DO_BOUNDS_CHECK 1
 
@@ -820,7 +833,7 @@ vm_engine_rest(int start, int blen, struct vm_params params, int *pc_error)
 
 static int
 run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
-                int *pc_error)
+                struct index_data *index_data, int *pc_error)
 {
     int r;
     unsigned int blen1, blen2;
@@ -835,6 +848,7 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
         return -1;
     params.output = output;
     params.inputs = inputs;
+    params.index_data = index_data;
     params.mem = self->mem;
     params.memsteps = self->memsteps;
     params.r_end = PyString_Size(self->fullsig);
@@ -858,6 +872,7 @@ static PyObject *
 NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *output = NULL, *a_inputs = NULL;
+    struct index_data *inddata = NULL;
     unsigned int n_inputs;
     int i, j, len = -1, r, pc_error;
     char **inputs = NULL;
@@ -876,6 +891,9 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 
     inputs = PyMem_New(char *, n_inputs);
     if (!inputs) goto cleanup_and_exit;
+        
+    inddata = PyMem_New(struct index_data, n_inputs);
+    if (!inddata) goto cleanup_and_exit;
 
     for (i = 0; i < n_inputs; i++) {
         PyObject *o = PyTuple_GET_ITEM(args, i); /* borrowed ref */
@@ -887,6 +905,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         /* Convert it just in case of a non-swapped array */
         a = PyArray_FROM_OTF(o, typecode, NOTSWAPPED);
         if (!a) goto cleanup_and_exit;
+        inddata[i].count = 0;
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
             intp dims[1] = {BLOCK_SIZE1};
@@ -916,14 +935,29 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             }
             Py_DECREF(a);
         } else {
+            PyObject *origA = a;
             /* Check discontiguous strides appear only on the last dimension. */
-            for (j = PyArray_NDIM(a)-2; j >= 0; j--) 
+            for (j = PyArray_NDIM(a)-2; j >= 0; j--) {
                 if (PyArray_STRIDE(a, j) != 
                         PyArray_STRIDE(a, j+1) * PyArray_DIM(a, j+1)) {
+                    intp dims[1] = {BLOCK_SIZE1};
                     Py_DECREF(a);
-                    a = PyArray_FROM_OTF(o, typecode, ENSURECOPY | NOTSWAPPED);
+                    /* I think it's OK that we're not holding a reference to *a*
+                       since if we made a copy above, we won't be here, and if
+                       we didn't there should be at least one outside reference 
+                       to *a*. However, I'm not certain about that. */
+                    inddata[i].count = PyArray_NDIM(a);
+                    inddata[i].size = PyArray_ITEMSIZE(a);
+                    inddata[i].shape = PyArray_DIMS(a);
+                    inddata[i].strides = PyArray_STRIDES(a);
+                    inddata[i].buffer = PyArray_BYTES(a);
+                    inddata[i].index = PyMem_New(int, inddata[i].count);
+                    for (j = 0; j < inddata[i].count; j++)
+                        inddata[i].index[j] = 0;
+                    a = PyArray_SimpleNew(1, dims, typecode);
                     break;
                 }
+            }
             
             self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
             PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
@@ -931,13 +965,14 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             if (len == -1) {
                 char retsig = get_return_sig(self->program);
                 self->memsteps[0] = size_from_char(retsig);
-                len = PyArray_SIZE(a);
-                output = PyArray_SimpleNew(PyArray_NDIM(a),
-                                           PyArray_DIMS(a),
+                len = PyArray_SIZE(origA);
+                output = PyArray_SimpleNew(PyArray_NDIM(origA),
+                                           PyArray_DIMS(origA),
                                            typecode_from_char(retsig));
+
                 if (!output) goto cleanup_and_exit;
             } else {
-                if (len != PyArray_SIZE(a)) {
+                if (len != PyArray_SIZE(origA)) {
                     Py_XDECREF(output);
                     PyErr_SetString(PyExc_ValueError, "all inputs must be the same size");
                     goto cleanup_and_exit;
@@ -958,8 +993,8 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (!output) goto cleanup_and_exit;
     }
 
-    r = run_interpreter(self, len, PyArray_DATA(output), inputs, &pc_error);
-
+    r = run_interpreter(self, len, PyArray_DATA(output), inputs, inddata, &pc_error);
+    
     if (r < 0) {
         Py_XDECREF(output);
         output = NULL;
@@ -980,6 +1015,14 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 cleanup_and_exit:
     Py_XDECREF(a_inputs);
     PyMem_Del(inputs);
+    if (inddata) {
+        for (i = 0; i < n_inputs; i++) {
+            if (inddata[i].count) {
+                PyMem_Del(inddata[i].index);
+            }
+        }
+    }
+    PyMem_Del(inddata);
     return output;
 }
 
