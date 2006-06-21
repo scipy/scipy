@@ -12,6 +12,8 @@ BasSw 2006
 physical constants: imported from CODATA
 unit conversion: see e.g. NIST special publication 811
 Use at own risk: double-check values before calculating your Mars orbit-insertion burn.
+Some constants exist in a few variants, which are marked with sufixes.
+The ones without any suffix should be the most common one.
 """
 
 import math as _math
@@ -21,6 +23,7 @@ from codata import value as _cd
 pi = _math.pi
 golden = golden_ratio = (1 + _math.sqrt(5)) / 2
 
+#SI prefixes
 yotta = 1e24 
 zetta = 1e21 
 exa = 1e18 
@@ -41,8 +44,17 @@ femto = 1e-15
 atto = 1e-18
 zepto = 1e-21
 
-#physical constants
+#binary prefixes
+kibi = 2**10
+mebi = 2**20
+gibi = 2**30
+tebi = 2**40
+pebi = 2**50
+exbi = 2**60
+zebi = 2**70
+yobi = 2**80
 
+#physical constants
 c = speed_of_light = _cd('speed of light in vacuum')
 mu_0 = 4e-7*pi
 epsilon_0 = 1 / (mu_0*c*c)
@@ -60,12 +72,19 @@ Wien = _cd('Wien displacement law constant')
 Rydberg = _cd('Rydberg constant')
 
 #weight in kg
-lb = pound = 0.45359237 #definition
+gram = 1e-3
+metric_ton = 1e3
+grain = 64.79891e-6 
+lb = pound = 7000 * grain #avoirdupois
 oz = ounce = pound / 16
 stone = 14 * pound
 long_ton = 2240 * pound
 short_ton = 2000 * pound
-metric_ton = 1000.0
+
+troy_ounce = 480 * grain #only for metals / gems
+troy_pound = 12 * troy_ounce
+carat = 200e-6
+
 m_e = electron_mass = _cd('electron mass')
 m_p = proton_mass = _cd('proton mass')
 m_n = neutron_mass = _cd('neutron mass')
@@ -89,24 +108,23 @@ inch = 0.0254
 foot = 12 * inch
 yard = 3 * foot
 mile = 1760 * yard
-nm = nautical_mile = 1852.0
+mil = inch / 1000
+pt = point = inch / 72 #typography
+survey_foot = 1200.0 / 3937
+survey_mile = 5280 * survey_foot
+nautical_mile = 1852.0
+fermi = 1e-15
 angstrom = 1e-10
 micron = 1e-6
-au = astronimical_unit = 149597870691.0
+au = astronomical_unit = 149597870691.0
+light_year = Julian_year * c
 parsec = au / arcsec
-lightyear = Julian_year * c
 
-#pressure in Pascal
+#pressure in pascal
 atm = atmosphere = _cd('standard atmosphere')
 bar = 1e5 
 torr = mmHg = atm / 760
 psi = pound * g / (inch * inch)
-
-#astronomy
-#M_earth
-#M_sun
-#M_jup
-#R_earth = earth_radius
 
 #area in meter**2
 hectare = 1e4
@@ -114,24 +132,43 @@ acre = 43560 * foot**2
 
 #volume in meter**3
 litre = liter = 1e-3
-gallon = 231 * inch**3
-pint = gallon / 8
+gallon = gallon_US = 231 * inch**3 #US
+#pint = gallon_US / 8
+fluid_ounce = fluid_ounce_US = gallon_US / 128
+bbl = barrel = 42 * gallon_US #for oil
+
+gallon_imp = 4.54609e-3 #uk
+fluid_ounce_imp = gallon_imp / 160
 
 #speed in meter per second
 kmh = 1e3 / hour
 mph = mile / hour
 mach = speed_of_sound = 340.5 #approx value at 15 degrees in 1 atm. is this a common value?
-knot = nm / hour
+knot = nautical_mile / hour
+
+#temperature in kelvin
+zero_Celsius = 273.15
+degree_Fahrenheit = 1/1.8 #only for differences
 
 #energy in joule
 eV = electron_volt = elementary_charge # * 1 Volt
-calorie = 4.184 # or 4.1868?
+calorie = calorie_th = 4.184
+calorie_IT = 4.1868
+erg = 1e-7
+Btu_th = pound * degree_Fahrenheit * calorie_th / gram
+Btu = Btu_IT = pound * degree_Fahrenheit * calorie_IT / gram
+ton_TNT = 1e9 * calorie_th
+#Wh = watt_hour 
 
 #power in watt
 hp = horsepower = 550 * foot * pound * g
 
-#temperature conversions 
-zero_Celsius = 273.15 #Kelvin
+#force in newton
+dyn = dyne = 1e-5
+lbf = pound_force = pound * g
+kgf = kilogram_force = g # * 1 kg
+
+#functions for conversions that are not linear
 
 def C2K(C):
     """Convert Celcius to Kelvin"""
