@@ -871,9 +871,9 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
 static PyObject *
 NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *output = NULL, *a_inputs = NULL;
+    PyObject *output = NULL, *a_inputs = NULL, *oshape = NULL;
     struct index_data *inddata = NULL;
-    unsigned int n_inputs;
+    unsigned int n_inputs, n_dimensions = 0, shape[MAX_DIMS];
     int i, j, len = -1, r, pc_error;
     char **inputs = NULL;
 
@@ -886,7 +886,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError,
                             "keyword arguments are not accepted");
     }
-    a_inputs = PyTuple_New(n_inputs);
+    a_inputs = PyList_New(2*n_inputs);
     if (!a_inputs) goto cleanup_and_exit;
 
     inputs = PyMem_New(char *, n_inputs);
@@ -895,16 +895,83 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     inddata = PyMem_New(struct index_data, n_inputs);
     if (!inddata) goto cleanup_and_exit;
 
+    /* First, make sure everything is some sort of array so that we can work
+       with their shapes. Count dimensions concurrently. */
+    
     for (i = 0; i < n_inputs; i++) {
         PyObject *o = PyTuple_GET_ITEM(args, i); /* borrowed ref */
         PyObject *a;
         char c = PyString_AS_STRING(self->signature)[i];
-        int sizetype = size_from_char(c);
         int typecode = typecode_from_char(c);
         if (typecode == -1) goto cleanup_and_exit;
         /* Convert it just in case of a non-swapped array */
         a = PyArray_FROM_OTF(o, typecode, NOTSWAPPED);
-        if (!a) goto cleanup_and_exit;
+        if (!a) goto cleanup_and_exit;  
+        PyList_SET_ITEM(a_inputs, i, a);  /* steals reference */
+        if (PyArray_NDIM(a) > n_dimensions)
+            n_dimensions = PyArray_NDIM(a);
+    }
+    
+    /* Broadcast all of the inputs to determine the output shape (this will
+       require some modifications if we later allow a final reduction 
+       operation). If an array has too few dimensions it's shape is padded
+       with ones fromthe left. All array dimensions must match, or be one. */
+    
+    for (i = 0; i < n_dimensions; i++) 
+        shape[i] = 1;
+    for (i = 0; i < n_inputs; i++) {
+        PyObject *a = PyList_GET_ITEM(a_inputs, i);
+        unsigned int ndims = PyArray_NDIM(a);
+        int delta = n_dimensions - ndims;
+        for (j = 0; j < ndims; j++) {
+            unsigned int n = PyArray_DIM(a, j);
+            if (n == 1 || n == shape[delta+j]) continue;
+            if (shape[delta+j] == 1)
+                shape[delta+j] = n;
+            else {
+                PyErr_SetString(PyExc_ValueError, 
+                                "cannot broadcast inputs to common shape");
+                goto cleanup_and_exit;
+            }
+        }
+    }
+    
+    /* Broadcast indices of all of the arrays. We could improve efficiency
+       by keeping track of what needs to be broadcast above */
+    
+    oshape = PyTuple_New(n_dimensions);
+    if (!oshape) goto cleanup_and_exit;
+    for (i = 0; i < n_dimensions; i++) 
+        PyTuple_SET_ITEM(oshape, i, PyInt_FromLong(shape[i]));
+    for (i = 0; i < n_inputs; i++) {
+        PyObject *a = PyList_GET_ITEM(a_inputs, i);
+        PyObject *b;
+        int strides[MAX_DIMS];
+        int delta = n_dimensions - PyArray_NDIM(a);
+        for (j = 0; j < n_dimensions; j++)
+            strides[j] = (j < delta || PyArray_DIM(a, j-delta) == 1) ? 
+                            0 : PyArray_STRIDE(a, j-delta);
+        Py_INCREF(PyArray_DESCR(a));
+        b = PyArray_NewFromDescr(a->ob_type, 
+                                   PyArray_DESCR(a),
+				   n_dimensions, shape, 
+				   strides, PyArray_DATA(a), 0, a);
+        /*PyObject_CallMethod(a, "reshape", "(O)", oshape);*/
+        if (!b) goto cleanup_and_exit;
+        /* Store b twice so that it stays alive till we're done */
+        Py_INCREF(b);
+        PyList_SetItem(a_inputs, i, b);
+        PyList_SetItem(a_inputs, i+n_inputs, b);
+    }
+        
+    
+    for (i = 0; i < n_inputs; i++) {
+        PyObject *o = PyTuple_GET_ITEM(args, i); /* borrowed ref */
+        PyObject *a;
+        char c = PyString_AS_STRING(self->signature)[i];
+        int typecode = typecode_from_char(c);
+        a = PyList_GET_ITEM(a_inputs, i);
+        Py_INCREF(a);
         inddata[i].count = 0;
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
@@ -912,7 +979,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             PyObject *b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
-            PyTuple_SET_ITEM(a_inputs, i, b);  /* steals reference */
+            PyList_SetItem(a_inputs, i, b);  /* steals reference */
             inputs[i] = PyArray_DATA(b);
             if (typecode == PyArray_LONG) {
                 long value = ((long*)PyArray_DATA(a))[0];
@@ -960,7 +1027,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             }
             
             self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
-            PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
+            PyList_SetItem(a_inputs, i, a);  /* steals reference */
             inputs[i] = PyArray_DATA(a);
             if (len == -1) {
                 char retsig = get_return_sig(self->program);
@@ -1014,6 +1081,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
 cleanup_and_exit:
     Py_XDECREF(a_inputs);
+    Py_XDECREF(oshape);
     PyMem_Del(inputs);
     if (inddata) {
         for (i = 0; i < n_inputs; i++) {

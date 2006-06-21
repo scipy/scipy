@@ -79,6 +79,14 @@ class test_evaluate(NumpyTestCase):
         assert_array_equal(evaluate("a+b"), a+b)
         
         
+    def check_broadcasting(self):
+        a = arange(100).reshape(10,10)[::2]
+        c = arange(10)
+        d = arange(5).reshape(5,1)
+        assert_array_equal(evaluate("a+c"), a+c)
+        assert_array_equal(evaluate("a+d"), a+d)
+        
+        
 
 tests = [
 ('MISC', ['b*c+d*e',
