@@ -81,8 +81,14 @@ if( n == 0 )
 	return( sign * j0(x) );
 if( n == 1 )
 	return( sign * j1(x) );
-if( n == 2 )
+if( n == 2 ) {
+    if (x < 1e-5) {
+        double y = x*x;
+        return sign * 0.125 * y * (1 - y / 12.);
+    } else {
 	return( sign * (2.0 * j1(x) / x  -  j0(x)) );
+    }
+}
 
 if( x < MACHEP )
 	return( 0.0 );
