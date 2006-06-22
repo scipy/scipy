@@ -85,7 +85,21 @@ class test_evaluate(NumpyTestCase):
         d = arange(5).reshape(5,1)
         assert_array_equal(evaluate("a+c"), a+c)
         assert_array_equal(evaluate("a+d"), a+d)
+        expr = numexpr("2.0*a+3.0*c",[('a',float),('c', float)])
+        assert_array_equal(expr(a,c), 2.0*a+3.0*c)
         
+    def check_all_scalar(self):
+        a = 3.
+        b = 4.
+        assert_equal(evaluate("a+b"), a+b)
+        expr = numexpr("2*a+3*b",[('a',float),('b', float)])
+        assert_equal(expr(a,b), 2*a+3*b)
+        
+    def check_run(self):
+        a = arange(100).reshape(10,10)[::2]
+        b = arange(10)
+        expr = numexpr("2*a+3*b",[('a',float),('b', float)])
+        assert_array_equal(expr(a,b), expr.run(a,b))
         
 
 tests = [

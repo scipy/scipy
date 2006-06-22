@@ -871,7 +871,7 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
 static PyObject *
 NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *output = NULL, *a_inputs = NULL, *oshape = NULL;
+    PyObject *output = NULL, *a_inputs = NULL;
     struct index_data *inddata = NULL;
     unsigned int n_inputs, n_dimensions = 0, shape[MAX_DIMS];
     int i, j, len = -1, r, pc_error;
@@ -886,7 +886,10 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError,
                             "keyword arguments are not accepted");
     }
-    a_inputs = PyList_New(2*n_inputs);
+    
+    /* This is overkill - we shouldn't need to allocate all of this space,
+       but this makes it easier figure out */
+    a_inputs = PyTuple_New(3*n_inputs);
     if (!a_inputs) goto cleanup_and_exit;
 
     inputs = PyMem_New(char *, n_inputs);
@@ -907,7 +910,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         /* Convert it just in case of a non-swapped array */
         a = PyArray_FROM_OTF(o, typecode, NOTSWAPPED);
         if (!a) goto cleanup_and_exit;  
-        PyList_SET_ITEM(a_inputs, i, a);  /* steals reference */
+        PyTuple_SET_ITEM(a_inputs, i, a);  /* steals reference */
         if (PyArray_NDIM(a) > n_dimensions)
             n_dimensions = PyArray_NDIM(a);
     }
@@ -920,7 +923,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     for (i = 0; i < n_dimensions; i++) 
         shape[i] = 1;
     for (i = 0; i < n_inputs; i++) {
-        PyObject *a = PyList_GET_ITEM(a_inputs, i);
+        PyObject *a = PyTuple_GET_ITEM(a_inputs, i);
         unsigned int ndims = PyArray_NDIM(a);
         int delta = n_dimensions - ndims;
         for (j = 0; j < ndims; j++) {
@@ -939,39 +942,35 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     /* Broadcast indices of all of the arrays. We could improve efficiency
        by keeping track of what needs to be broadcast above */
     
-    oshape = PyTuple_New(n_dimensions);
-    if (!oshape) goto cleanup_and_exit;
-    for (i = 0; i < n_dimensions; i++) 
-        PyTuple_SET_ITEM(oshape, i, PyInt_FromLong(shape[i]));
     for (i = 0; i < n_inputs; i++) {
-        PyObject *a = PyList_GET_ITEM(a_inputs, i);
+        PyObject *a = PyTuple_GET_ITEM(a_inputs, i);
         PyObject *b;
         int strides[MAX_DIMS];
         int delta = n_dimensions - PyArray_NDIM(a);
-        for (j = 0; j < n_dimensions; j++)
-            strides[j] = (j < delta || PyArray_DIM(a, j-delta) == 1) ? 
-                            0 : PyArray_STRIDE(a, j-delta);
-        Py_INCREF(PyArray_DESCR(a));
-        b = PyArray_NewFromDescr(a->ob_type, 
-                                   PyArray_DESCR(a),
-				   n_dimensions, shape, 
-				   strides, PyArray_DATA(a), 0, a);
-        /*PyObject_CallMethod(a, "reshape", "(O)", oshape);*/
-        if (!b) goto cleanup_and_exit;
-        /* Store b twice so that it stays alive till we're done */
-        Py_INCREF(b);
-        PyList_SetItem(a_inputs, i, b);
-        PyList_SetItem(a_inputs, i+n_inputs, b);
+        if (PyArray_NDIM(a)) {
+            for (j = 0; j < n_dimensions; j++)
+                strides[j] = (j < delta || PyArray_DIM(a, j-delta) == 1) ? 
+                                0 : PyArray_STRIDE(a, j-delta);
+            Py_INCREF(PyArray_DESCR(a));
+            //~ Py_INCREF(a); /* XXX leak */
+            b = PyArray_NewFromDescr(a->ob_type, 
+                                       PyArray_DESCR(a),
+                                       n_dimensions, shape, 
+                                       strides, PyArray_DATA(a), 0, a);
+            if (!b) goto cleanup_and_exit;
+        } else { /* Leave scalars alone */
+            b = a;
+            Py_INCREF(b);
+        }
+        /* Store b so that it stays alive till we're done */
+        PyTuple_SET_ITEM(a_inputs, i+n_inputs, b); 
     }
         
     
     for (i = 0; i < n_inputs; i++) {
-        PyObject *o = PyTuple_GET_ITEM(args, i); /* borrowed ref */
-        PyObject *a;
+        PyObject *a = PyTuple_GET_ITEM(a_inputs, i+n_inputs);
         char c = PyString_AS_STRING(self->signature)[i];
         int typecode = typecode_from_char(c);
-        a = PyList_GET_ITEM(a_inputs, i);
-        Py_INCREF(a);
         inddata[i].count = 0;
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
@@ -979,7 +978,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             PyObject *b = PyArray_SimpleNew(1, dims, typecode);
             if (!b) goto cleanup_and_exit;
             self->memsteps[i+1] = 0;
-            PyList_SetItem(a_inputs, i, b);  /* steals reference */
+            PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, b);  /* steals reference */
             inputs[i] = PyArray_DATA(b);
             if (typecode == PyArray_LONG) {
                 long value = ((long*)PyArray_DATA(a))[0];
@@ -1000,7 +999,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                 PyErr_SetString(PyExc_RuntimeError, "illegal typecode value");
                 goto cleanup_and_exit;
             }
-            Py_DECREF(a);
         } else {
             PyObject *origA = a;
             /* Check discontiguous strides appear only on the last dimension. */
@@ -1008,11 +1006,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                 if (PyArray_STRIDE(a, j) != 
                         PyArray_STRIDE(a, j+1) * PyArray_DIM(a, j+1)) {
                     intp dims[1] = {BLOCK_SIZE1};
-                    Py_DECREF(a);
-                    /* I think it's OK that we're not holding a reference to *a*
-                       since if we made a copy above, we won't be here, and if
-                       we didn't there should be at least one outside reference 
-                       to *a*. However, I'm not certain about that. */
                     inddata[i].count = PyArray_NDIM(a);
                     inddata[i].size = PyArray_ITEMSIZE(a);
                     inddata[i].shape = PyArray_DIMS(a);
@@ -1022,12 +1015,12 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                     for (j = 0; j < inddata[i].count; j++)
                         inddata[i].index[j] = 0;
                     a = PyArray_SimpleNew(1, dims, typecode);
+                    PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, a);  /* steals reference */
                     break;
                 }
             }
-            
+
             self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
-            PyList_SetItem(a_inputs, i, a);  /* steals reference */
             inputs[i] = PyArray_DATA(a);
             if (len == -1) {
                 char retsig = get_return_sig(self->program);
@@ -1059,7 +1052,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                                    typecode_from_char(retsig));
         if (!output) goto cleanup_and_exit;
     }
-
+    
     r = run_interpreter(self, len, PyArray_DATA(output), inputs, inddata, &pc_error);
     
     if (r < 0) {
@@ -1081,7 +1074,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
 cleanup_and_exit:
     Py_XDECREF(a_inputs);
-    Py_XDECREF(oshape);
     PyMem_Del(inputs);
     if (inddata) {
         for (i = 0; i < n_inputs; i++) {
@@ -1095,7 +1087,7 @@ cleanup_and_exit:
 }
 
 static PyMethodDef NumExpr_methods[] = {
-    {"run", (PyCFunction) NumExpr_run, METH_VARARGS, NULL},
+    {"run", (PyCFunction) NumExpr_run, METH_VARARGS|METH_KEYWORDS, NULL},
     {NULL, NULL}
 };
 
