@@ -23,7 +23,7 @@ def configuration(parent_package='',top_path=None):
     lapack = get_info('lapack_opt')
     sources=['lbfgsb.pyf','routines.f']
     config.add_extension('_lbfgsb',
-                         sources=[join('lbfgsb-0.9',x) for x in sources],
+                         sources=[join('lbfgsb',x) for x in sources],
                          **lapack)
 
     sources=['moduleTNC.c','tnc.c']
