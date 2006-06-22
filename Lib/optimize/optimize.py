@@ -1,4 +1,3 @@
-from __future__ import nested_scopes
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
@@ -63,7 +62,7 @@ def rosen_der(x):
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
-    der = numpy.zeros(x.shape,x.dtype.char)
+    der = numpy.zeros_like(x)
     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
     der[-1] = 200*(x[-1]-x[-2]**2)
@@ -72,7 +71,7 @@ def rosen_der(x):
 def rosen_hess(x):
     x = atleast_1d(x)
     H = numpy.diag(-400*x[:-1],1) - numpy.diag(400*x[:-1],-1)
-    diagonal = numpy.zeros(len(x),x.dtype.char)
+    diagonal = numpy.zeros(len(x), dtype=x.dtype)
     diagonal[0] = 1200*x[0]-400*x[1]+2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
@@ -81,7 +80,7 @@ def rosen_hess(x):
 
 def rosen_hess_prod(x,p):
     x = atleast_1d(x)
-    Hp = numpy.zeros(len(x),x.dtype.char)
+    Hp = numpy.zeros(len(x), dtype=x.dtype)
     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
                -400*x[1:-1]*p[2:]
@@ -151,10 +150,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     one2np1 = range(1,N+1)
 
     if rank == 0:
-        sim = numpy.zeros((N+1,),x0.dtype.char)
+        sim = numpy.zeros((N+1,), dtype=x0.dtype)
     else:
-        sim = numpy.zeros((N+1,N),x0.dtype.char)
-    fsim = numpy.zeros((N+1,),'d')
+        sim = numpy.zeros((N+1,N), dtype=x0.dtype)
+    fsim = numpy.zeros((N+1,), float)
     sim[0] = x0
     if retall:
         allvecs = [sim[0]]
@@ -549,8 +548,8 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
 
 def approx_fprime(xk,f,epsilon,*args):
     f0 = apply(f,(xk,)+args)
-    grad = numpy.zeros((len(xk),),'d')
-    ei = numpy.zeros((len(xk),),'d')
+    grad = numpy.zeros((len(xk),), float)
+    ei = numpy.zeros((len(xk),), float)
     for k in range(len(xk)):
         ei[k] = epsilon
         grad[k] = (apply(f,(xk+ei,)+args) - f0)/epsilon
@@ -927,7 +926,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         maggrad = numpy.add.reduce(abs(b))
         eta = min([0.5,numpy.sqrt(maggrad)])
         termcond = eta * maggrad
-        xsupi = zeros(len(x0), x0.dtype.char)
+        xsupi = zeros(len(x0), dtype=x0.dtype)
         ri = -b
         psupi = -ri
         i = 0
@@ -1448,7 +1447,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     if maxfun is None:
         maxfun = N * 1000
 
-    direc = eye(N,dtype='d')
+    direc = eye(N,dtype=float)
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0;
@@ -1581,7 +1580,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     Nshape = shape(Jout)
     indx = argmin(Jout.ravel())
     Nindx = zeros(N)
-    xmin = zeros(N,'d')
+    xmin = zeros(N,float)
     for k in range(N-1,-1,-1):
         thisN = Nshape[k]
         Nindx[k] = indx % Nshape[k]

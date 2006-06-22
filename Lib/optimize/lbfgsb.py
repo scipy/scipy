@@ -26,8 +26,6 @@
 
 ## Modifications by Travis Oliphant and Enthought, Inc.  for inclusion in SciPy
 
-from __future__ import nested_scopes
-
 from numpy import zeros, float64, array, int32
 import _lbfgsb
 import optimize

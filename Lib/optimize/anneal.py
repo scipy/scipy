@@ -2,7 +2,6 @@
 # Bug-fixes in 2006 by Tim Leslie
 
 
-from __future__ import nested_scopes
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
      all, log, sqrt, pi, shape, array, minimum, where

@@ -3,13 +3,9 @@
 import minpack2
 import numpy
 import sys
-if sys.version[:3] < "2.3":
-    True = 1
-    False = 0
 
 import __builtin__
 pymin = __builtin__.min
-
 
 def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
                 args=(), c1=1e-4, c2=0.9, amax=50):
@@ -32,8 +28,8 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
 
     xtol = 1e-14
     amin = 1e-8
-    isave = numpy.zeros((2,),'i')
-    dsave = numpy.zeros((13,),'d')
+    isave = numpy.zeros((2,), numpy.int32)
+    dsave = numpy.zeros((13,), numpy.float64)
     task = 'START'
     fval = old_fval
     gval = gfk

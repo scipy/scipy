@@ -1,10 +1,7 @@
-## Automatically adapted for scipy Oct 07, 2005 by convertcode.py
-
 import _minpack
 
-from numpy import *  # originally from common_routines,
-                     # fix me to only import what we need
-from numpy import atleast_1d, dot, take, triu
+from numpy import atleast_1d, dot, take, triu, shape, eye, \
+                  transpose, zeros, product, greater
 
 error = _minpack.error
 
@@ -295,8 +292,8 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     if col_deriv == 0:
         fjac = transpose(fjac)
 
-    xp = zeros((n,),Float64)
-    err = zeros((m,),Float64)
+    xp = zeros((n,), float)
+    err = zeros((m,), float)
     fvecp = None
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,1,err)
 
