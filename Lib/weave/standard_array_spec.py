@@ -157,8 +157,8 @@ class array_converter(common_base_converter):
         code = '%(py_var)s = %(var_lookup)s;\n'   \
                '%(c_type)s %(array_name)s = %(var_convert)s;\n'  \
                'conversion_numpy_check_type(%(array_name)s,%(num_typecode)s,"%(name)s");\n' \
-               'int* N%(name)s = %(array_name)s->dimensions;\n' \
-               'int* S%(name)s = %(array_name)s->strides;\n' \
+               'intp* N%(name)s = %(array_name)s->dimensions;\n' \
+               'intp* S%(name)s = %(array_name)s->strides;\n' \
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
         code = code % self.template_vars(inline=inline)
