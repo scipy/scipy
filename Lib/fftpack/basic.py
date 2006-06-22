@@ -9,7 +9,7 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2', 'rfftfreq']
 
 from numpy import asarray, zeros, swapaxes, integer, array
-import numpy.oldnumeric as numpy
+import numpy
 import _fftpack as fftpack
 
 import atexit
@@ -17,6 +17,9 @@ atexit.register(fftpack.destroy_zfft_cache)
 atexit.register(fftpack.destroy_zfftnd_cache)
 atexit.register(fftpack.destroy_drfft_cache)
 del atexit
+
+def istype(arr, typeclass):
+    return issubclass(arr.dtype.type, typeclass)
 
 def _fix_shape(x, n, axis):
     """ Internal auxiliary function for _raw_fft, _raw_fftnd."""
@@ -79,12 +82,11 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
       y == fft(ifft(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtype.char
-    if t==numpy.Complex64:
+    if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
-    elif t==numpy.Complex32:
+    elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -118,12 +120,11 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     Optional input: see fft.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtype.char
-    if t == numpy.Complex64:
+    if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfft
-    elif t == numpy.Complex32:
+    elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -172,8 +173,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
       y == rfft(irfft(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtype.char
-    if t in (numpy.Complex32, numpy.Complex64):
+    if not numpy.isrealobj(tmp):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
@@ -192,7 +192,7 @@ def rfftfreq(n,d=1.0):
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
     """
     assert isinstance(n,int) or isinstance(n,integer)
-    return array(range(1,n+1),'i')/2/float(n*d)
+    return array(range(1,n+1),dtype=int)/2/float(n*d)
 
 
 def irfft(x, n=None, axis=-1, overwrite_x=0):
@@ -217,8 +217,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     Optional input: see rfft.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtype.char
-    if t in (numpy.Complex32, numpy.Complex64):
+    if not numpy.isrealobj(tmp):
         raise TypeError,"1st argument must be real sequence"
     work_function = fftpack.drfft
     return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
@@ -289,12 +288,11 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
       y == fftn(ifftn(y)) within numerical accuracy.
     """
     tmp = asarray(x)
-    t = tmp.dtype.char
-    if t==numpy.Complex64:
+    if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
-    elif t==numpy.Complex32:
+    elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1
@@ -318,12 +316,11 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     Optional input: see fftn.__doc__
     """
     tmp = asarray(x)
-    t = tmp.dtype.char
-    if t==numpy.Complex64:
+    if istype(tmp, numpy.complex128):
         overwrite_x = overwrite_x or (tmp is not x and not \
                                       hasattr(x,'__array__'))
         work_function = fftpack.zfftnd
-    elif t==numpy.Complex32:
+    elif istype(tmp, numpy.complex64):
         raise NotImplementedError
     else:
         overwrite_x = 1

@@ -1,6 +1,5 @@
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq']
 
-import types
 from numpy import array
 from numpy.dft.helper import fftshift, ifftshift, fftfreq
 
@@ -16,5 +15,5 @@ def rfftfreq(n,d=1.0):
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2]/(d*n)   if n is even
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
     """
-    assert isinstance(n,types.IntType)
-    return array(range(1,n+1),'i')/2/float(n*d)
+    assert isinstance(n,int)
+    return array(range(1,n+1),dtype=int)/2/float(n*d)

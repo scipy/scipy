@@ -8,8 +8,7 @@ __all__ = ['diff',
            'cs_diff','cc_diff','sc_diff','ss_diff',
            'shift']
 
-import numpy.oldnumeric as numpy
-from numpy import pi, asarray, sin, cos, sinh, cosh, tanh
+from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
 import convolve
 
 import atexit
@@ -46,7 +45,7 @@ def diff(x,order=1,period=None,
     tmp = asarray(x)
     if order==0:
         return tmp
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return diff(tmp.real,order,period)+1j*diff(tmp.imag,order,period)
     if period is not None:
         c = 2*pi/period
@@ -98,7 +97,7 @@ def tilbert(x,h,period=None,
       For even len(x), the Nyquist mode of x is taken zero.
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return tilbert(tmp.real,h,period)+\
                1j*tilbert(tmp.imag,h,period)
     if period is not None:
@@ -134,7 +133,7 @@ def itilbert(x,h,period=None,
     Optional input: see tilbert.__doc__
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return itilbert(tmp.real,h,period)+\
                1j*itilbert(tmp.imag,h,period)
     if period is not None:
@@ -173,7 +172,7 @@ def hilbert(x,
       For even len(x), the Nyquist mode of x is taken zero.
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return hilbert(tmp.real)+1j*hilbert(tmp.imag)
     n = len(x)
     omega = _cache.get(n)
@@ -229,7 +228,7 @@ def cs_diff(x, a, b, period=None,
       For even len(x), the Nyquist mode of x is taken zero.
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return cs_diff(tmp.real,a,b,period)+\
                1j*cs_diff(tmp.imag,a,b,period)
     if period is not None:
@@ -275,7 +274,7 @@ def sc_diff(x, a, b, period=None,
       For even len(x), the Nyquist mode of x is taken zero.
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return sc_diff(tmp.real,a,b,period)+\
                1j*sc_diff(tmp.imag,a,b,period)
     if period is not None:
@@ -320,7 +319,7 @@ def ss_diff(x, a, b, period=None,
       ss_diff(ss_diff(x,a,b),b,a) == x
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return ss_diff(tmp.real,a,b,period)+\
                1j*ss_diff(tmp.imag,a,b,period)
     if period is not None:
@@ -366,7 +365,7 @@ def cc_diff(x, a, b, period=None,
       cc_diff(cc_diff(x,a,b),b,a) == x
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return cc_diff(tmp.real,a,b,period)+\
                1j*cc_diff(tmp.imag,a,b,period)
     if period is not None:
@@ -402,7 +401,7 @@ def shift(x, a, period=None,
         The period of the sequences x and y. Default period is 2*pi.
     """
     tmp = asarray(x)
-    if tmp.dtype.char in (numpy.Complex32, numpy.Complex64):
+    if iscomplexobj(tmp):
         return shift(tmp.real,a,period)+1j*shift(tmp.imag,a,period)
     if period is not None:
         a = a*2*pi/period
