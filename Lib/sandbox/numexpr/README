@@ -1,0 +1,8 @@
+Numexpr is a fast numerical expression evaluator for Numpy. With it,
+expressions that operate on arrays (like "3*a+4*b") are accelerated
+and use less memory than doing the same calculation in Python.
+
+Numexpr is written by David Cooke <cookedm@physics.mcmaster.ca> and
+Tim Hochberg <tim.hochberg@ieee.org>. Francesc Altet <faltet@carabos.com>
+contributed support for booleans, and initial support for strided arrays.
+It is distributed under the same license as SciPy.
