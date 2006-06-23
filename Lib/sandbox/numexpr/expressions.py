@@ -32,7 +32,7 @@ def ophelper(f):
     def func(*args):
         args = list(args)
         for i, x in enumerate(args):
-            if isinstance(x, (bool, int, float, complex)):
+            if isConstant(x):
                 args[i] = x = ConstantNode(x)
             if not isinstance(x, ExpressionNode):
                 return NotImplemented
@@ -42,26 +42,46 @@ def ophelper(f):
     func.__dict__.update(f.__dict__)
     return func
 
-def all_constant(args):
-    "returns true if args are all constant. Converts scalars to ConstantNodes"
+def allConstantNodes(args):
+    "returns True if args are all ConstantNodes."
     for x in args:
         if not isinstance(x, ConstantNode):
             return False
     return True
 
+def isConstant(ex):
+    "Returns True if ex is a constant scalar of an allowed type."
+    return isinstance(ex, (bool, int, float, complex))
+
+type_to_kind = {bool: 'bool', int: 'int', float: 'float', complex: 'complex'}
+kind_to_type = {'bool': bool, 'int': int, 'float': float, 'complex': complex}
 kind_rank = ['bool', 'int', 'float', 'complex', 'none']
-def common_kind(nodes):
+
+def commonKind(nodes):
     n = -1
     for x in nodes:
         n = max(n, kind_rank.index(x.astKind))
     return kind_rank[n]
+
+def bestConstantType(x):
+    for converter in bool, int, float, complex:
+        try:
+            y = converter(x)
+        except StandardError, err:
+            continue
+        if x == y:
+            return converter
+
+def getKind(x):
+    converter = bestConstantType(x)
+    return type_to_kind[converter]
 
 def binop(opname, reversed=False, kind=None):
     @ophelper
     def operation(self, other):
         if reversed:
             self, other = other, self
-        if all_constant([self, other]):
+        if allConstantNodes([self, other]):
             return ConstantNode(getattr(self.value, "__%s__" % opname)(other.value))
         else:
             return OpNode(opname, (self, other), kind=kind)
@@ -70,9 +90,9 @@ def binop(opname, reversed=False, kind=None):
 def func(func, minkind=None):
     @ophelper
     def function(*args):
-        if all_constant(args):
+        if allConstantNodes(args):
             return ConstantNode(func(*[x.value for x in args]))
-        kind = common_kind(args)
+        kind = commonKind(args)
         if minkind and kind_rank.index(minkind) > kind_rank.index(kind):
             kind = minkind
         return FuncNode(func.__name__, args, kind)
@@ -82,7 +102,7 @@ def func(func, minkind=None):
 def where_func(a, b, c):
     if isinstance(a, ConstantNode):
         raise ValueError("too many dimensions")
-    if all_constant([a,b,c]):
+    if allConstantNodes([a,b,c]):
         return ConstantNode(numpy.where(a, b, c))
     return FuncNode('where', [a,b,c])
 
@@ -96,7 +116,7 @@ def div_op(a, b):
 
 @ophelper
 def pow_op(a, b):
-    if all_constant([a,b]):
+    if allConstantNodes([a,b]):
         return ConstantNode(a**b)
     if isinstance(b, ConstantNode):
         x = b.value
@@ -121,7 +141,7 @@ def pow_op(a, b):
                         break
                     p = OpNode('mul', [p,p])
                 if ishalfpower:
-                    kind = common_kind([a])
+                    kind = commonKind([a])
                     if kind == 'int': kind = 'float'
                     r = multiply(r, OpNode('sqrt', [a], kind))
                 if r is None:
@@ -166,6 +186,11 @@ functions = {
 
 
 class ExpressionNode(object):
+    """An object that represents a generic number object.
+
+    This implements the number special methods so that we can keep
+    track of how this object has been used.
+    """
     astType = 'generic'
 
     def __init__(self, value=None, kind=None, children=None):
@@ -192,8 +217,8 @@ class ExpressionNode(object):
     imag = property(get_imag)
 
     def __str__(self):
-        return '%s(%s, %s, %s)' % (self.__class__.__name__, self.value, self.astKind,
-                               self.children)
+        return '%s(%s, %s, %s)' % (self.__class__.__name__, self.value,
+                                   self.astKind, self.children)
     def __repr__(self):
         return self.__str__()
 
@@ -214,6 +239,8 @@ class ExpressionNode(object):
     __rpow__ = binop('pow', reversed=True)
     __mod__ = binop('mod')
     __rmod__ = binop('mod', reversed=True)
+
+    # boolean operations
 
     __and__ = binop('and', kind='bool')
     __or__ = binop('or', kind='bool')
@@ -251,21 +278,6 @@ class RawNode(object):
     __repr__ = __str__
 
 
-def normalizeConstant(x):
-    for converter in bool, int, float, complex:
-        try:
-            y = converter(x)
-        except StandardError, err:
-            continue
-        if x == y:
-            return y
-
-def getKind(x):
-    return {bool : 'bool',
-            int : 'int',
-            float : 'float',
-            complex : 'complex'}[type(normalizeConstant(x))]
-
 class ConstantNode(LeafNode):
     astType = 'constant'
     def __init__(self, value=None, children=None):
@@ -280,11 +292,11 @@ class OpNode(ExpressionNode):
     astType = 'op'
     def __init__(self, opcode=None, args=None, kind=None):
         if (kind is None) and (args is not None):
-            kind = common_kind(args)
+            kind = commonKind(args)
         ExpressionNode.__init__(self, value=opcode, kind=kind, children=args)
 
 class FuncNode(OpNode):
     def __init__(self, opcode=None, args=None, kind=None):
         if (kind is None) and (args is not None):
-            kind = common_kind(args)
+            kind = commonKind(args)
         OpNode.__init__(self, opcode, args, kind)
