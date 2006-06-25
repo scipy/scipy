@@ -17,6 +17,8 @@ if sys.version_info[0] < 2 or sys.version_info[1] < 3:
     False = 0
     True = 1
 
+LittleEndian = (sys.byteorder == 'little')
+
 _unit_imag = {'f': array(1j,'F'), 'd': 1j}
 
 __all__ = ['fopen','loadmat','savemat']
