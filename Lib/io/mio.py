@@ -3,6 +3,7 @@
 # Author: Travis Oliphant
 
 from numpy import squeeze
+from numpy import ndarray as ArrayType
 from numpy import *
 import numpyio
 import struct, os, sys
