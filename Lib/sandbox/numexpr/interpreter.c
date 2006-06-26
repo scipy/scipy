@@ -874,7 +874,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     PyObject *output = NULL, *a_inputs = NULL;
     struct index_data *inddata = NULL;
     unsigned int n_inputs, n_dimensions = 0, shape[MAX_DIMS];
-    int i, j, len = -1, r, pc_error;
+    int i, j, size, r, pc_error;
     char **inputs = NULL;
 
     n_inputs = PyTuple_Size(args);
@@ -938,6 +938,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             }
         }
     }
+    size = PyArray_MultiplyList(shape, n_dimensions);
     
     /* Broadcast indices of all of the arrays. We could improve efficiency
        by keeping track of what needs to be broadcast above */
@@ -1022,38 +1023,22 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 
             self->memsteps[i+1] = PyArray_STRIDE(a, PyArray_NDIM(a)-1);
             inputs[i] = PyArray_DATA(a);
-            if (len == -1) {
-                char retsig = get_return_sig(self->program);
-                self->memsteps[0] = size_from_char(retsig);
-                len = PyArray_SIZE(origA);
-                output = PyArray_SimpleNew(PyArray_NDIM(origA),
-                                           PyArray_DIMS(origA),
-                                           typecode_from_char(retsig));
 
-                if (!output) goto cleanup_and_exit;
-            } else {
-                if (len != PyArray_SIZE(origA)) {
-                    Py_XDECREF(output);
-                    PyErr_SetString(PyExc_ValueError, "all inputs must be the same size");
-                    goto cleanup_and_exit;
-                }
-            }
         }
     }
-    if (len == -1) {
-        /* either no inputs or they're all scalars,
-           so allocate one space for scalar result */
+    
+    {   /* no reductino case --  add reduction case */
         char retsig = get_return_sig(self->program);
-        intp dims[1];
-        self->memsteps[0] = 0;
-        len = 1;
-        output = PyArray_SimpleNew(0,
-                                   dims,
+        self->memsteps[0] = size_from_char(retsig);
+        output = PyArray_SimpleNew(n_dimensions,
+                                   shape,
                                    typecode_from_char(retsig));
+
         if (!output) goto cleanup_and_exit;
     }
-    
-    r = run_interpreter(self, len, PyArray_DATA(output), inputs, inddata, &pc_error);
+            
+
+    r = run_interpreter(self, size, PyArray_DATA(output), inputs, inddata, &pc_error);
     
     if (r < 0) {
         Py_XDECREF(output);
