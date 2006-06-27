@@ -2,6 +2,32 @@ import numpy as N
 from numpy.linalg import pinv
 import utils
 
+class ContrastResults:
+    """
+    Results from looking at a particular contrast of coefficients in
+    a parametric model. The class does nothing, it is a container
+    for the results from T and F contrasts.
+    """
+
+    def __init__(self, t=None, F=None, sd=None, effect=None, df_denom=None,
+                 df_num=None):
+        if F is not None:
+            self.F = F 
+            self.df_denom = df_denom
+            self.df_num = df_num
+        else:
+            self.t = t
+            self.sd = sd
+            self.effect = effect
+            self.df_denom = df_denom
+            
+    def __str__(self):
+        if hasattr(self, 'F'):
+            return '<F contrast: F=%s, df_denom=%d, df_num=%d>' % (`self.F`, self.df_denom, self.df_num)
+        else:
+            return '<T contrast: effect=%s, sd=%s, t=%s, df_denom=%d>' % (`self.effect`, `self.sd`, `self.t`, self.df_denom)
+            
+
 class Contrast:
     """
     This class is used to construct contrast matrices in regression models.

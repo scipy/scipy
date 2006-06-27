@@ -3,6 +3,7 @@ import numpy as N
 from numpy.linalg import inv
 
 from utils import recipr
+from contrast import ContrastResults
 
 class Model:
 
@@ -74,7 +75,6 @@ class LikelihoodModelResults:
         self.beta = beta
         self.normalized_cov_beta = normalized_cov_beta
         self.scale = 1.
-        self.sd = N.sqrt(self.scale)
 
     def t(self, column=None):
         """
@@ -88,12 +88,14 @@ class LikelihoodModelResults:
             raise ValueError, 'need covariance of parameters for computing T statistics'
 
         if column is None:
-            _t = N.zeros(_beta.shape, N.float64)
-            for i in range(self.beta.shape[0]):
-                _t[i] = _beta[i] * recipr((self.sd * self.sqrt(self.normalized_cov_beta[i,i])))
-        else:
-            i = column
-            _t = _beta[i] * recipr((self.sd * self.sqrt(self.normalized_cov_beta[i,i])))
+            column = range(self.beta.shape[0])
+
+        column = N.asarray(column)
+        _beta = self.beta[column]
+        _cov = self.cov_beta(column=column)
+        if _cov.ndim == 2:
+            _cov = N.diag(_cov)
+        _t = _beta * recipr(N.sqrt(_cov))
         return _t
 
     def cov_beta(self, matrix=None, column=None, scale=None, other=None):
@@ -136,14 +138,14 @@ class LikelihoodModelResults:
         if self.normalized_cov_beta is None:
             raise ValueError, 'need covariance of parameters for computing T statistics'
 
-        results = ContrastResults()
+        _t = _sd = None
 
-        results.effect = N.dot(matrix, self.beta)
+        _effect = N.dot(matrix, self.beta)
         if sd:
-            results.sd = N.sqrt(self.cov_beta(matrix=matrix)) * self.sd
+            _sd = N.sqrt(self.cov_beta(matrix=matrix))
         if t:
-            results.t = results.effect * recipr(results.sd)
-        return results
+            _t = _effect * recipr(_sd)
+        return ContrastResults(effect=_effect, t=_t, sd=_sd, df_denom=self.df_resid)
 
     def Fcontrast(self, matrix, eff=True, t=True, sd=True, scale=None, invcov=None):
         """
@@ -166,20 +168,12 @@ class LikelihoodModelResults:
         if self.normalized_cov_beta is None:
             raise ValueError, 'need covariance of parameters for computing F statistics'
 
-        results = ContrastResults()
         cbeta = N.dot(matrix, self.beta)
 
         q = matrix.shape[0]
         if invcov is None:
             invcov = inv(self.cov_beta(matrix=matrix, scale=1.0))
-        results.F = N.add.reduce(N.dot(invcov, cbeta) * cbeta, 0) * recipr((q * self.scale))
-        return results
+        F = N.add.reduce(N.dot(invcov, cbeta) * cbeta, 0) * recipr((q * self.scale))
+        return ContrastResults(F=F, df_denom=self.df_resid, df_num=invcov.shape[0])
 
-class ContrastResults:
-    """
-    Results from looking at a particular contrast of coefficients in
-    a parametric model. The class does nothing, it is a container
-    for the results from T and F contrasts.
-    """
-    pass
 

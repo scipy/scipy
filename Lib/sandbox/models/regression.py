@@ -1,6 +1,6 @@
 import numpy as N
 import numpy.linalg as L
-from model import LikelihoodModel, LikelihoodModelResults, ContrastResults
+from model import LikelihoodModel, LikelihoodModelResults
 
 import utils
 import scipy.linalg
@@ -50,15 +50,14 @@ class OLSModel(LikelihoodModel):
         """
     
         Z = self.whiten(Y)
-            
 
         lfit = Results(N.dot(self.calc_beta, Z),
                        normalized_cov_beta=self.normalized_cov_beta)
 
         lfit.df_resid = self.df_resid
-        lfit.resid = Z - N.dot(self.design, lfit.beta)
-        lfit.scale=N.add.reduce(lfit.resid**2) / lfit.df_resid
         lfit.predict = N.dot(self.design, lfit.beta)
+        lfit.resid = Z - N.dot(self.wdesign, lfit.beta)
+        lfit.scale = N.add.reduce(lfit.resid**2) / lfit.df_resid
 
         lfit.Z = Z # just in case
         lfit.Y = Y
