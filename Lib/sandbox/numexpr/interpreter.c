@@ -803,6 +803,7 @@ static PyMemberDef NumExpr_members[] = {
 struct index_data {
     int count;
     int size;
+    int findex;
     int *shape;
     int *strides;
     int *index;
@@ -822,19 +823,26 @@ struct vm_params {
 };
 
 static inline unsigned int 
-flat_index(struct index_data id, unsigned int j) {
-    unsigned int findex, k = 0;
-    for (k = 0; k < id.count; k++)
-        findex += id.strides[k] * id.index[k];
-    k = id.count - 1;
-    id.index[k] += 1;
-    if (id.index[k] >= id.shape[k])
-        while (id.index[k] >= id.shape[k]) {
-            id.index[k] -= id.shape[k];
+flat_index(struct index_data *id, unsigned int j) {
+    int i, k = id->count - 1;
+    unsigned int findex = id->findex;
+    if (k < 0) return 0;
+    if (findex == -1) {
+        findex = 0;
+        for (i = 0; i < id->count; i++)
+            findex += id->strides[i] * id->index[i];
+    }   
+    id->index[k] += 1;
+    if (id->index[k] >= id->shape[k]) {
+        while (id->index[k] >= id->shape[k]) {
+            id->index[k] -= id->shape[k];
             if (k < 1) break;
-            id.index[k-1] += 1;
-            k -= 1;
+            id->index[--k] += 1;
         }
+        id->findex = -1;
+    } else {
+        id->findex = findex + id->strides[k];
+    }
     return findex;
 }
 
@@ -1063,6 +1071,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                         PyArray_STRIDE(a, j+1) * PyArray_DIM(a, j+1)) {
                     intp dims[1] = {BLOCK_SIZE1};
                     inddata[i+1].count = PyArray_NDIM(a);
+                    inddata[i+1].findex = -1;
                     inddata[i+1].size = PyArray_ITEMSIZE(a);
                     inddata[i+1].shape = PyArray_DIMS(a);
                     inddata[i+1].strides = PyArray_STRIDES(a);
@@ -1093,14 +1102,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                 strides[i] = 0;
             output = PyArray_SimpleNew(0, dims, typecode_from_char(retsig));
             if (!output) goto cleanup_and_exit;
-            inddata[0].count = n_dimensions;
-            inddata[0].size = PyArray_ITEMSIZE(output);
-            inddata[0].shape = shape;
-            inddata[0].strides = strides;
-            inddata[0].buffer = PyArray_BYTES(output);
-            inddata[0].index = PyMem_New(int, n_dimensions);
-            for (j = 0; j < inddata[0].count; j++)
-                inddata[0].index[j] = 0;
         } else {
             intp dims[MAX_DIMS];
             for (i = j = 0; i < n_dimensions; i++) {
@@ -1119,16 +1120,21 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                     strides[i] = 0;
                 }
             }
-            inddata[0].count = n_dimensions;
-            inddata[0].size = PyArray_ITEMSIZE(output);
-            inddata[0].shape = shape;
-            inddata[0].strides = strides;
-            inddata[0].buffer = PyArray_BYTES(output);
-            inddata[0].index = PyMem_New(int, n_dimensions);
-            for (j = 0; j < inddata[0].count; j++)
-                inddata[0].index[j] = 0;
+
             
         }
+        /* TODO optimize strides -- in this and other inddata cases, strides and
+           shape can be tweaked to minimize the amount of looping */
+        inddata[0].count = n_dimensions;
+        inddata[0].findex = -1;
+        inddata[0].size = PyArray_ITEMSIZE(output);
+        inddata[0].shape = shape;
+        inddata[0].strides = strides;
+        inddata[0].buffer = PyArray_BYTES(output);
+        inddata[0].index = PyMem_New(int, n_dimensions);
+        for (j = 0; j < inddata[0].count; j++)
+            inddata[0].index[j] = 0;
+        
         if (last_opcode(self->program) >= OP_SUM &&
             last_opcode(self->program) < OP_PROD) {
                 PyObject *zero = PyInt_FromLong(0);

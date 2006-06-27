@@ -221,20 +221,12 @@
 
         case OP_SUM_FFN: {
             struct index_data id = params.index_data[store_in];
-            if (id.count) {
-                VEC_ARG1(*(double *)(params.output + flat_index(id, j)) += f1);
-            } else {
-                VEC_ARG1(f_dest += f1);
-            }
+            VEC_ARG1(*(double *)(params.output + flat_index(&id, j)) += f1);
         }
         
         case OP_PROD_FFN: {
             struct index_data id = params.index_data[store_in];
-            if (id.count) {
-                VEC_ARG1(*(double *)(params.output + flat_index(id, j)) *= f1);
-            } else {
-                VEC_ARG1(f_dest += f1);
-            }
+            VEC_ARG1(*(double *)(params.output + flat_index(&id, j)) *= f1);
         }
         
         default:
