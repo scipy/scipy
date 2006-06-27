@@ -333,9 +333,9 @@ class test_det(ScipyTestCase):
 
 
 def direct_lstsq(a,b):
-    a1 = numpy.dot(numpy.transpose(a),a)
-    b1 = numpy.dot(numpy.transpose(a),b)
-    return solve(a1,b1)
+    import numpy.linalg
+    apinv = numpy.linalg.pinv(a)
+    return dot(apinv, b)
 
 class test_lstsq(ScipyTestCase):
     def check_random_overdet_large(self):
@@ -411,9 +411,7 @@ class test_lstsq(ScipyTestCase):
             x,res,r,s = lstsq(a,b)
             assert r==m,'unexpected efficient rank'
             #XXX: check definition of res
-            assert_array_almost_equal(x,direct_lstsq(a,b),3,
-                   err_msg='We know this test fails; a fix is welcome!!!')
-            #XXX: tolerance 1e-3 is quite large, investigate the reason
+            assert_array_almost_equal(x,direct_lstsq(a,b),7)
 
 class test_tri(unittest.TestCase):
     def check_basic(self):
