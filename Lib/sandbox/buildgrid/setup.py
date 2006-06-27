@@ -8,7 +8,6 @@ def configuration(parent_package='',top_path=None):
                            author='Eugene Druker',
                            author_email='eugene.druker@gmail.com')
                           
-    netcdf = netcdf_info().get_info()
     config.add_extension('build_grid',
                          sources = ['build_grid.c'])
     config.add_data_files('README')
