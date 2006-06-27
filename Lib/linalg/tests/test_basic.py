@@ -20,8 +20,7 @@ Run tests if linalg is not installed:
 """
 
 import numpy
-from numpy import arange, add, array, dot, zeros, identity, \
-     conjugate, transpose,
+from numpy import arange, add, array, dot, zeros, identity, conjugate, transpose
 
 import sys
 from numpy.testing import *
