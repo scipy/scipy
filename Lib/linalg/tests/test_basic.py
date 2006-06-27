@@ -20,7 +20,8 @@ Run tests if linalg is not installed:
 """
 
 import numpy
-from numpy import arange, add, array, dot, zeros, identity
+from numpy import arange, add, array, dot, zeros, identity, \
+     conjugate, transpose,
 
 import sys
 from numpy.testing import *
@@ -332,10 +333,13 @@ class test_det(ScipyTestCase):
             print '   (secs for %s calls)' % (repeat)
 
 
-def direct_lstsq(a,b):
-    import numpy.linalg
-    apinv = numpy.linalg.pinv(a)
-    return dot(apinv, b)
+def direct_lstsq(a,b,cmplx=0):
+    at = transpose(a)
+    if cmplx:
+        at = conjugate(at)
+    a1 = dot(at, a)
+    b1 = dot(at, b)
+    return solve(a1, b1)
 
 class test_lstsq(ScipyTestCase):
     def check_random_overdet_large(self):
@@ -411,7 +415,7 @@ class test_lstsq(ScipyTestCase):
             x,res,r,s = lstsq(a,b)
             assert r==m,'unexpected efficient rank'
             #XXX: check definition of res
-            assert_array_almost_equal(x,direct_lstsq(a,b),7)
+            assert_array_almost_equal(x,direct_lstsq(a,b,1))
 
 class test_tri(unittest.TestCase):
     def check_basic(self):
