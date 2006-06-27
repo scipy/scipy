@@ -50,6 +50,16 @@ class test_numexpr(NumpyTestCase):
         # Check that full reductions work.
         x = arange(10.0)
         assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
+        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2, axis=None))
+        # Check that reductions along an axis work
+        y = arange(9.0).reshape(3,3)
+        assert_equal(evaluate("sum(y**2, axis=1)"), sum(y**2, axis=1))
+        assert_equal(evaluate("sum(y**2, axis=0)"), sum(y**2, axis=0))
+        assert_equal(evaluate("sum(y**2, axis=None)"), sum(y**2, axis=None))
+        assert_equal(evaluate("prod(y**2, axis=1)"), prod(y**2, axis=1))
+        assert_equal(evaluate("prod(y**2, axis=0)"), prod(y**2, axis=0))
+        assert_equal(evaluate("prod(y**2, axis=None)"), prod(y**2, axis=None))
+        
         
     def check_r0_reuse(self):
         assert_equal(disassemble(numexpr("x**2+2", [('x', float)])),

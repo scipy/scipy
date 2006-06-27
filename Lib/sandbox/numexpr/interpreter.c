@@ -89,8 +89,11 @@ enum OpCodes {
     OP_COMPLEX_CFF,
     
     OP_REDUCTION,
-
+    
+    OP_SUM,
     OP_SUM_FFN,
+    
+    OP_PROD,
     OP_PROD_FFN,
 
 };
@@ -465,11 +468,11 @@ typecode_from_char(char c)
 }
 
 static int
-is_reduction(PyObject *program_object) {
+last_opcode(PyObject *program_object) {
     int n;
     unsigned char *program;
     PyString_AsStringAndSize(program_object, (char **)&program, &n);
-    return (program[n-4] > OP_REDUCTION);
+    return program[n-4];
 
 }    
 
@@ -1080,17 +1083,16 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     }
     
 
-    if (is_reduction(self->program)) {
+    if (last_opcode(self->program) > OP_REDUCTION) {
         char retsig = get_return_sig(self->program);
+        int axis = get_reduction_axis(self->program);
         self->memsteps[0] = size_from_char(retsig);
-        if (get_reduction_axis(self->program) == 255) {
+        if (axis == 255) {
             intp dims[1];
             for (i = 0; i < n_dimensions; i++)
                 strides[i] = 0;
             output = PyArray_SimpleNew(0, dims, typecode_from_char(retsig));
-            //~ output = PyArray_New(&PyArray_Type, n_dimensions, shape, 
-                                 //~ typecode_from_char(retsig),
-                                 //~ strides, NULL, 0, 0, NULL);
+            if (!output) goto cleanup_and_exit;
             inddata[0].count = n_dimensions;
             inddata[0].size = PyArray_ITEMSIZE(output);
             inddata[0].shape = shape;
@@ -1100,13 +1102,42 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             for (j = 0; j < inddata[0].count; j++)
                 inddata[0].index[j] = 0;
         } else {
-            PyErr_SetString(PyExc_NotImplementedError, "not done yet, sorry!");
-            goto cleanup_and_exit;
+            intp dims[MAX_DIMS];
+            for (i = j = 0; i < n_dimensions; i++) {
+                if (i != axis) {
+                    dims[j] = shape[i];
+                    j += 1;
+                }
+            }
+            output = PyArray_SimpleNew(n_dimensions-1, dims, typecode_from_char(retsig));
+            if (!output) goto cleanup_and_exit;
+            for (i = j = 0; i < n_dimensions; i++) {
+                if (i != axis) {
+                    strides[i] = PyArray_STRIDES(output)[j];
+                    j += 1;
+                } else {
+                    strides[i] = 0;
+                }
+            }
+            inddata[0].count = n_dimensions;
+            inddata[0].size = PyArray_ITEMSIZE(output);
+            inddata[0].shape = shape;
+            inddata[0].strides = strides;
+            inddata[0].buffer = PyArray_BYTES(output);
+            inddata[0].index = PyMem_New(int, n_dimensions);
+            for (j = 0; j < inddata[0].count; j++)
+                inddata[0].index[j] = 0;
+            
         }
-        {
-            PyObject *zero = PyInt_FromLong(0);
-            PyArray_FillWithScalar(output, zero);
-            Py_DECREF(zero);
+        if (last_opcode(self->program) >= OP_SUM &&
+            last_opcode(self->program) < OP_PROD) {
+                PyObject *zero = PyInt_FromLong(0);
+                PyArray_FillWithScalar(output, zero);
+                Py_DECREF(zero);
+        } else {
+                PyObject *one = PyInt_FromLong(1);
+                PyArray_FillWithScalar(output, one);
+                Py_DECREF(one);
         }
     }
     else { 

@@ -106,6 +106,8 @@ def where_func(a, b, c):
 
 
 def sum_func(a, axis=None):
+    if isinstance(axis, ConstantNode):
+        axis = axis.value
     if axis is None:
         axis = interpreter.allaxes
     if isinstance(a, ConstantNode):

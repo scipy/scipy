@@ -215,8 +215,11 @@ def stringToExpression(s, types, context):
     # make VariableNode's for the names
     names = {}
     for name in c.co_names:
-        t = types.get(name, float)
-        names[name] = expr.VariableNode(name, type_to_kind[t])
+        if name == "None":
+            names[name] = None
+        else:
+            t = types.get(name, float)
+            names[name] = expr.VariableNode(name, type_to_kind[t])
     names.update(expr.functions)
     # now build the expression
     ex = eval(c, names)
