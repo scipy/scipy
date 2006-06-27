@@ -66,6 +66,9 @@ def configuration(parent_package='',top_path=None):
 
     # Package with useful constants and unit-conversions defined
     #config.add_subpackage('constants')
+
+    # Interpolating between sparse samples
+    #config.add_subpackage('buildgrid')
     return config
 
 if __name__ == '__main__':
