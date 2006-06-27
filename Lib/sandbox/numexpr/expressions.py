@@ -6,7 +6,6 @@ import sys
 
 import interpreter
 
-# XXX Is there any reason to keep Expression around?
 class Expression(object):
     def __init__(self):
         object.__init__(self)
@@ -27,7 +26,6 @@ def get_optimization():
     return get_context().get('optimization', 'none')
 
 # helper functions for creating __magic__ methods
-
 def ophelper(f):
     def func(*args):
         args = list(args)
@@ -106,13 +104,31 @@ def where_func(a, b, c):
         return ConstantNode(numpy.where(a, b, c))
     return FuncNode('where', [a,b,c])
 
+
+def sum_func(a, axis=None):
+    if axis is None:
+        axis = interpreter.allaxes
+    if isinstance(a, ConstantNode):
+        return a
+    if isinstance(a, (bool, int, float, complex)):
+       a = ConstantNode(a)
+    return FuncNode('sum', [a, RawNode(axis)], kind=a.astKind)
+
+def prod_func(a, axis=None):
+    if axis is None:
+        axis = interpreter.allaxes
+    if isinstance(a, (bool, int, float, complex)):
+       a = ConstantNode(a)
+    if isinstance(a, ConstantNode):
+        return a
+    return FuncNode('prod', [a, RawNode(axis)], kind=a.astKind)
+
 @ophelper
 def div_op(a, b):
     if get_optimization() in ('moderate', 'aggressive'):
         if isinstance(b, ConstantNode) and (a.astKind == b.astKind) and a.astKind in ('float', 'complex'):
             return OpNode('mul', [a, ConstantNode(1./b.value)])
     return OpNode('div', [a,b])
-
 
 @ophelper
 def pow_op(a, b):
@@ -182,6 +198,9 @@ functions = {
     'where' : where_func,
 
     'complex' : func(complex, 'complex'),
+        
+    'sum' : sum_func,
+    'prod' : prod_func,
     }
 
 

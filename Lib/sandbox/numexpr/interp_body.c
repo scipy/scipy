@@ -60,7 +60,7 @@
     /* set up pointers to next block of inputs and outputs */
     params.mem[0] = params.output + index * params.memsteps[0];
     for (r = 0; r < params.n_inputs; r++) {
-        struct index_data id = params.index_data[r];
+        struct index_data id = params.index_data[r+1];
         if (id.count) {
             params.mem[1+r] = params.inputs[r];
             for (j = 0; j < VECTOR_SIZE; j++) {
@@ -219,6 +219,12 @@
         case OP_COMPLEX_CFF: VEC_ARG2(cr_dest = f1;
                                       ci_dest = f2);
 
+        case OP_SUM_FFN: {
+            struct index_data id = params.index_data[store_in];
+            VEC_ARG1(*(double *)(params.output + flat_index(id, j)) += f1);
+        }
+        
+        
         default:
             *pc_error = pc;
             return -3;

@@ -87,6 +87,11 @@ enum OpCodes {
     OP_REAL_FC,
     OP_IMAG_FC,
     OP_COMPLEX_CFF,
+    
+    OP_REDUCTION,
+
+    OP_SUM_FFN,
+    OP_PROD_FFN,
 
 };
 
@@ -225,6 +230,11 @@ static char op_signature(int op, int n) {
         case OP_COMPLEX_CFF:
             if (n == 0) return 'c';
             if (n == 1 || n == 2) return 'f';
+            break;
+        case OP_PROD_FFN:
+        case OP_SUM_FFN:
+            if (n == 0 || n == 1) return 'f';
+            if (n == 2) return 'n';
             break;
         default:
             return -1;
@@ -455,6 +465,24 @@ typecode_from_char(char c)
 }
 
 static int
+is_reduction(PyObject *program_object) {
+    int n;
+    unsigned char *program;
+    PyString_AsStringAndSize(program_object, (char **)&program, &n);
+    return (program[n-4] > OP_REDUCTION);
+
+}    
+
+static unsigned int
+get_reduction_axis(PyObject* program) {
+    char last_opcode, sig;
+    int end = PyString_Size(program);
+    return ((unsigned char *)PyString_AS_STRING(program))[end-1];
+}
+
+
+
+static int
 check_program(NumExprObject *self)
 {
     unsigned char *program;
@@ -496,6 +524,11 @@ check_program(NumExprObject *self)
         if (op == OP_NOOP) {
             continue;
         }
+        if ((op == OP_SUM_FFN || op == OP_PROD_FFN) && pc != prog_len-4) {
+                PyErr_Format(PyExc_RuntimeError, 
+                    "invalid program: reduction operations must occur last");
+                return -1;
+        }  
         for (argno = 0; ; argno++) {
             sig = op_signature(op, argno);
             if (sig == -1) {
@@ -540,6 +573,8 @@ check_program(NumExprObject *self)
                         PyErr_Format(PyExc_RuntimeError, "invalid program: funccode out of range (%i) at %i", arg, argloc);
                         return -1;
                     }
+                } else if (op == OP_SUM_FFN  || op == OP_PROD_FFN) {
+                    ;
                 } else {
                     PyErr_Format(PyExc_RuntimeError, "invalid program: internal checker errror processing %i", argloc);
                     return -1;
@@ -783,6 +818,22 @@ struct vm_params {
     struct index_data *index_data;
 };
 
+static inline unsigned int 
+flat_index(struct index_data id, unsigned int j) {
+    unsigned int findex, k = 0;
+    for (k = 0; k < id.count; k++)
+        findex += id.strides[k] * id.index[k];
+    k = id.count - 1;
+    id.index[k] += 1;
+    if (id.index[k] >= id.shape[k])
+        while (id.index[k] >= id.shape[k]) {
+            id.index[k] -= id.shape[k];
+            if (k < 1) break;
+            id.index[k-1] += 1;
+            k -= 1;
+        }
+    return findex;
+}
 
 
 #define DO_BOUNDS_CHECK 1
@@ -876,7 +927,8 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     unsigned int n_inputs, n_dimensions = 0, shape[MAX_DIMS];
     int i, j, size, r, pc_error;
     char **inputs = NULL;
-
+    intp strides[MAX_DIMS]; /* clean up XXX */
+    
     n_inputs = PyTuple_Size(args);
     if (PyString_Size(self->signature) != n_inputs) {
         return PyErr_Format(PyExc_ValueError,
@@ -895,8 +947,10 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     inputs = PyMem_New(char *, n_inputs);
     if (!inputs) goto cleanup_and_exit;
         
-    inddata = PyMem_New(struct index_data, n_inputs);
+    inddata = PyMem_New(struct index_data, n_inputs+1);
     if (!inddata) goto cleanup_and_exit;
+    for (i = 0; i < n_inputs+1; i++)
+        inddata[i].count = 0;
 
     /* First, make sure everything is some sort of array so that we can work
        with their shapes. Count dimensions concurrently. */
@@ -953,7 +1007,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                 strides[j] = (j < delta || PyArray_DIM(a, j-delta) == 1) ? 
                                 0 : PyArray_STRIDE(a, j-delta);
             Py_INCREF(PyArray_DESCR(a));
-            //~ Py_INCREF(a); /* XXX leak */
             b = PyArray_NewFromDescr(a->ob_type, 
                                        PyArray_DESCR(a),
                                        n_dimensions, shape, 
@@ -972,7 +1025,6 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         PyObject *a = PyTuple_GET_ITEM(a_inputs, i+n_inputs);
         char c = PyString_AS_STRING(self->signature)[i];
         int typecode = typecode_from_char(c);
-        inddata[i].count = 0;
         if (PyArray_NDIM(a) == 0) {
             /* Broadcast scalars */
             intp dims[1] = {BLOCK_SIZE1};
@@ -1007,14 +1059,14 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                 if (PyArray_STRIDE(a, j) != 
                         PyArray_STRIDE(a, j+1) * PyArray_DIM(a, j+1)) {
                     intp dims[1] = {BLOCK_SIZE1};
-                    inddata[i].count = PyArray_NDIM(a);
-                    inddata[i].size = PyArray_ITEMSIZE(a);
-                    inddata[i].shape = PyArray_DIMS(a);
-                    inddata[i].strides = PyArray_STRIDES(a);
-                    inddata[i].buffer = PyArray_BYTES(a);
-                    inddata[i].index = PyMem_New(int, inddata[i].count);
-                    for (j = 0; j < inddata[i].count; j++)
-                        inddata[i].index[j] = 0;
+                    inddata[i+1].count = PyArray_NDIM(a);
+                    inddata[i+1].size = PyArray_ITEMSIZE(a);
+                    inddata[i+1].shape = PyArray_DIMS(a);
+                    inddata[i+1].strides = PyArray_STRIDES(a);
+                    inddata[i+1].buffer = PyArray_BYTES(a);
+                    inddata[i+1].index = PyMem_New(int, inddata[i+1].count);
+                    for (j = 0; j < inddata[i+1].count; j++)
+                        inddata[i+1].index[j] = 0;
                     a = PyArray_SimpleNew(1, dims, typecode);
                     PyTuple_SET_ITEM(a_inputs, i+2*n_inputs, a);  /* steals reference */
                     break;
@@ -1027,13 +1079,42 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         }
     }
     
-    {   /* no reductino case --  add reduction case */
+
+    if (is_reduction(self->program)) {
+        char retsig = get_return_sig(self->program);
+        self->memsteps[0] = size_from_char(retsig);
+        if (get_reduction_axis(self->program) == 255) {
+            intp dims[1];
+            for (i = 0; i < n_dimensions; i++)
+                strides[i] = 0;
+            output = PyArray_SimpleNew(0, dims, typecode_from_char(retsig));
+            //~ output = PyArray_New(&PyArray_Type, n_dimensions, shape, 
+                                 //~ typecode_from_char(retsig),
+                                 //~ strides, NULL, 0, 0, NULL);
+            inddata[0].count = n_dimensions;
+            inddata[0].size = PyArray_ITEMSIZE(output);
+            inddata[0].shape = shape;
+            inddata[0].strides = strides;
+            inddata[0].buffer = PyArray_BYTES(output);
+            inddata[0].index = PyMem_New(int, n_dimensions);
+            for (j = 0; j < inddata[0].count; j++)
+                inddata[0].index[j] = 0;
+        } else {
+            PyErr_SetString(PyExc_NotImplementedError, "not done yet, sorry!");
+            goto cleanup_and_exit;
+        }
+        {
+            PyObject *zero = PyInt_FromLong(0);
+            PyArray_FillWithScalar(output, zero);
+            Py_DECREF(zero);
+        }
+    }
+    else { 
         char retsig = get_return_sig(self->program);
         self->memsteps[0] = size_from_char(retsig);
         output = PyArray_SimpleNew(n_dimensions,
                                    shape,
                                    typecode_from_char(retsig));
-
         if (!output) goto cleanup_and_exit;
     }
             
@@ -1061,7 +1142,7 @@ cleanup_and_exit:
     Py_XDECREF(a_inputs);
     PyMem_Del(inputs);
     if (inddata) {
-        for (i = 0; i < n_inputs; i++) {
+        for (i = 0; i < n_inputs+1; i++) {
             if (inddata[i].count) {
                 PyMem_Del(inddata[i].index);
             }
@@ -1216,6 +1297,9 @@ initinterpreter(void)
     add_op("real_fc", OP_REAL_FC);
     add_op("imag_fc", OP_IMAG_FC);
     add_op("complex_cff", OP_COMPLEX_CFF);
+    
+    add_op("sum_ffn", OP_SUM_FFN);
+    add_op("prod_ffn", OP_PROD_FFN);
 
 #undef add_op
 
@@ -1257,6 +1341,8 @@ initinterpreter(void)
 
 #undef add_func
 
-   if (PyModule_AddObject(m, "funccodes", d) < 0) return;
+    if (PyModule_AddObject(m, "funccodes", d) < 0) return;
+       
+    if (PyModule_AddObject(m, "allaxes", PyInt_FromLong(255)) < 0) return;
 
 }

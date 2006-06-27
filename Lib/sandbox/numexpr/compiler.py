@@ -4,8 +4,8 @@ import numpy
 
 import interpreter, expressions
 
-typecode_to_kind = {'b': 'bool', 'i': 'int', 'f': 'float', 'c': 'complex'}
-kind_to_typecode = {'bool': 'b', 'int': 'i', 'float': 'f', 'complex': 'c'}
+typecode_to_kind = {'b': 'bool', 'i': 'int', 'f': 'float', 'c': 'complex', 'n' : 'none'}
+kind_to_typecode = {'bool': 'b', 'int': 'i', 'float': 'f', 'complex': 'c', 'none' : 'n'}
 type_to_kind = expressions.type_to_kind
 kind_to_type = expressions.kind_to_type
 
@@ -225,6 +225,9 @@ def stringToExpression(s, types, context):
     return ex
 
 
+def isReduction(ast):
+    return ast.value.startswith('sum_') or ast.value.startswith('prod_')
+
 def getInputOrder(ast, input_order=None):
     """Derive the input order of the variables in an expression.
     """
@@ -311,6 +314,10 @@ def optimizeTemporariesAllocation(ast):
     """
     nodes = list(x for x in ast.postorderWalk() if x.reg.temporary)
     users_of = dict((n.reg, set()) for n in nodes)
+    if nodes and nodes[-1] is not ast:
+        for c in ast.children:
+            if c.reg.temporary:
+                users_of[c.reg].add(ast)
     for n in reversed(nodes):
         for c in n.children:
             if c.reg.temporary:
@@ -468,12 +475,16 @@ def precompile(ex, signature=(), copy_args=(), **kwargs):
 
     input_order = getInputOrder(ast, input_order)
     constants_order, constants = getConstants(ast)
-
+    
+    if isReduction(ast):
+        ast.reg.temporary = False
+    
     optimizeTemporariesAllocation(ast)
-
+    
+    ast.reg.temporary = False
     r_output = 0
     ast.reg.n = 0
-    ast.reg.temporary = False
+    
     r_inputs = r_output + 1
     r_constants = setOrderedRegisterNumbers(input_order, r_inputs)
     r_temps = setOrderedRegisterNumbers(constants_order, r_constants)
@@ -511,24 +522,29 @@ def disassemble(nex):
         rev_opcodes[interpreter.opcodes[op]] = op
     r_constants = 1 + len(nex.signature)
     r_temps = r_constants + len(nex.constants)
-    def getArg(pc):
-        arg = ord(nex.program[pc])
-        if arg == 0:
-            return 'r0'
-        elif arg == 255:
+    def getArg(pc, offset):
+        arg = ord(nex.program[pc+offset])
+        op = rev_opcodes.get(ord(nex.program[pc]))
+        code = op.split('_')[1][offset-1]
+        if arg == 255:
             return None
-        elif arg < r_constants:
-            return 'r%d[%s]' % (arg, nex.input_names[arg-1])
-        elif arg < r_temps:
-            return 'c%d[%s]' % (arg, nex.constants[arg - r_constants])
+        if code != 'n':
+            if arg == 0:
+                return 'r0'
+            elif arg < r_constants:
+                return 'r%d[%s]' % (arg, nex.input_names[arg-1])
+            elif arg < r_temps:
+                return 'c%d[%s]' % (arg, nex.constants[arg - r_constants])
+            else:
+                return 't%d' % (arg,)
         else:
-            return 't%d' % (arg,)
+            return arg
     source = []
     for pc in range(0, len(nex.program), 4):
         op = rev_opcodes.get(ord(nex.program[pc]))
-        dest = getArg(pc+1)
-        arg1 = getArg(pc+2)
-        arg2 = getArg(pc+3)
+        dest = getArg(pc, 1)
+        arg1 = getArg(pc, 2)
+        arg2 = getArg(pc, 3)
         source.append( (op, dest, arg1, arg2) )
     return source
 
@@ -607,5 +623,3 @@ def evaluate(ex, local_dict=None, global_dict=None, **kwargs):
     return compiled_ex(*arguments)
 
 
-if __name__ == "__main__":
-    print evaluate("5")

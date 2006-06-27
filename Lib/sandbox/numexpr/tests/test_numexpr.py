@@ -3,7 +3,7 @@ from numpy import *
 from numpy.testing import *
 
 set_package_path()
-from numexpr import E, numexpr, evaluate
+from numexpr import E, numexpr, evaluate, disassemble
 restore_path()
 
 class test_numexpr(NumpyTestCase):
@@ -32,6 +32,29 @@ class test_numexpr(NumpyTestCase):
         x = (a + 2*b) / (1 + a + 4*b*b)
         y = func(a, b)
         assert_array_equal(x, y)
+
+    def check_reductions(self):
+        # Check that they compile OK.
+        assert_equal(disassemble(numexpr("sum(x**2+2)", [('x', float)])),
+                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
+                     ('add_fff', 't3', 't3', 'c2[2.0]'), 
+                     ('sum_ffn', 'r0', 't3', None)])
+        assert_equal(disassemble(numexpr("sum(x**2+2, axis=1)", [('x', float)])),
+                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
+                     ('add_fff', 't3', 't3', 'c2[2.0]'), 
+                     ('sum_ffn', 'r0', 't3', 1)])
+        assert_equal(disassemble(numexpr("prod(x**2+2, axis=2)", [('x', float)])),
+                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
+                     ('add_fff', 't3', 't3', 'c2[2.0]'), 
+                     ('prod_ffn', 'r0', 't3', 2)])
+        # Check that full reductions work.
+        x = arange(10.0)
+        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
+        
+    def check_r0_reuse(self):
+        assert_equal(disassemble(numexpr("x**2+2", [('x', float)])),
+                    [('mul_fff', 'r0', 'r1[x]', 'r1[x]'), 
+                     ('add_fff', 'r0', 'r0', 'c2[2.0]')])
 
 class test_evaluate(NumpyTestCase):
     def check_simple(self):
@@ -101,6 +124,7 @@ class test_evaluate(NumpyTestCase):
         expr = numexpr("2*a+3*b",[('a',float),('b', float)])
         assert_array_equal(expr(a,b), expr.run(a,b))
         
+
 
 tests = [
 ('MISC', ['b*c+d*e',
