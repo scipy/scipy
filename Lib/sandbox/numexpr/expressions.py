@@ -104,24 +104,31 @@ def where_func(a, b, c):
         return ConstantNode(numpy.where(a, b, c))
     return FuncNode('where', [a,b,c])
 
-
-def sum_func(a, axis=None):
+def encode_axis(axis):
     if isinstance(axis, ConstantNode):
         axis = axis.value
     if axis is None:
         axis = interpreter.allaxes
-    if isinstance(a, ConstantNode):
-        return a
-    if isinstance(a, (bool, int, float, complex)):
-       a = ConstantNode(a)
-    kind = a.astKind
-    if kind == 'bool':
-        kind = 'int'
-    return FuncNode('sum', [a, RawNode(axis)], kind=kind)
+    else:
+        if axis < 0:
+            axis = interpreter.maxdims - axis
+        if axis > 254:
+            raise ValueError("cannot encode axis")
+    return RawNode(axis)
 
-def prod_func(a, axis=None):
-    if axis is None:
-        axis = interpreter.allaxes
+def sum_func(a, axis=-1):
+    axis = encode_axis(axis)
+    if isinstance(a, ConstantNode):
+        return a
+    if isinstance(a, (bool, int, float, complex)):
+       a = ConstantNode(a)
+    kind = a.astKind
+    if kind == 'bool':
+        kind = 'int'
+    return FuncNode('sum', [a, axis], kind=kind)
+
+def prod_func(a, axis=-1):
+    axis = encode_axis(axis)
     if isinstance(a, (bool, int, float, complex)):
        a = ConstantNode(a)
     if isinstance(a, ConstantNode):
@@ -129,7 +136,7 @@ def prod_func(a, axis=None):
     kind = a.astKind
     if kind == 'bool':
         kind = 'int'
-    return FuncNode('prod', [a, RawNode(axis)], kind=kind)
+    return FuncNode('prod', [a, axis], kind=kind)
 
 @ophelper
 def div_op(a, b):

@@ -490,11 +490,14 @@ last_opcode(PyObject *program_object) {
 
 }    
 
-static unsigned int
+static int
 get_reduction_axis(PyObject* program) {
     char last_opcode, sig;
     int end = PyString_Size(program);
-    return ((unsigned char *)PyString_AS_STRING(program))[end-1];
+    int axis = ((unsigned char *)PyString_AS_STRING(program))[end-1];
+    if (axis != 255 && axis >= MAX_DIMS)
+        axis = MAX_DIMS - axis;
+    return axis;
 }
 
 
@@ -1118,6 +1121,12 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
             if (!output) goto cleanup_and_exit;
         } else {
             intp dims[MAX_DIMS];
+            if (axis < 0)
+                axis = n_dimensions + axis;
+            if (axis < 0 || axis >= n_dimensions) {
+                PyErr_SetString(PyExc_ValueError, "axis out of range");
+                goto cleanup_and_exit;
+            }
             for (i = j = 0; i < n_dimensions; i++) {
                 if (i != axis) {
                     dims[j] = shape[i];
@@ -1400,5 +1409,6 @@ initinterpreter(void)
     if (PyModule_AddObject(m, "funccodes", d) < 0) return;
        
     if (PyModule_AddObject(m, "allaxes", PyInt_FromLong(255)) < 0) return;
-
+    if (PyModule_AddObject(m, "maxdims", PyInt_FromLong(MAX_DIMS)) < 0) return;
+    
 }

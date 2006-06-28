@@ -35,7 +35,7 @@ class test_numexpr(NumpyTestCase):
 
     def check_reductions(self):
         # Check that they compile OK.
-        assert_equal(disassemble(numexpr("sum(x**2+2)", [('x', float)])),
+        assert_equal(disassemble(numexpr("sum(x**2+2, axis=None)", [('x', float)])),
                     [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
                      ('add_fff', 't3', 't3', 'c2[2.0]'), 
                      ('sum_ffn', 'r0', 't3', None)])
@@ -49,8 +49,8 @@ class test_numexpr(NumpyTestCase):
                      ('prod_ffn', 'r0', 't3', 2)])
         # Check that full reductions work.
         x = arange(10.0)
-        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
-        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2, axis=None))
+        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2))
+        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2))
         # Check that reductions along an axis work
         y = arange(9.0).reshape(3,3)
         assert_equal(evaluate("sum(y**2, axis=1)"), sum(y**2, axis=1))
@@ -61,16 +61,32 @@ class test_numexpr(NumpyTestCase):
         assert_equal(evaluate("prod(y**2, axis=None)"), prod(y**2, axis=None))
         # Check integers
         x = x.astype(int)
-        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
-        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2, axis=None))
+        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2))
+        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2))
         # Check complex
         x = x + 5j
-        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
-        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2, axis=None))
+        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2))
+        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2))
         # Check boolean (should cast to integer)
         x = (arange(10) % 2).astype(bool)
-        assert_equal(evaluate("prod(x)"), prod(x, axis=None))
-        assert_equal(evaluate("sum(x)"), sum(x, axis=None))
+        assert_equal(evaluate("prod(x)"), prod(x))
+        assert_equal(evaluate("sum(x)"), sum(x))
+        
+    def check_axis(self):
+        y = arange(9.0).reshape(3,3)
+        try:
+            evaluate("sum(y, axis=2)")
+        except ValueError:
+            pass
+        else:
+            raise ValueError("should raise exception!")
+        try:
+            evaluate("sum(y, axis=-3)")
+        except ValueError:
+            pass
+        else:
+            raise ValueError("should raise exception!")
+            
 
         
         
