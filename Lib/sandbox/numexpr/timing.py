@@ -26,6 +26,7 @@ def compare_times(setup, expr):
     print "numexpr:", numexpr_time/iterations
 
     print "Speed-up of numexpr over numpy:", numpy_time/numexpr_time
+    return numpy_time/numexpr_time
 
 setup1 = """\
 from numpy import arange
@@ -102,27 +103,34 @@ expr11 = '(a+1)**50'
 expr12 = 'sqrt(a**2 + b**2)'
 
 def compare(check_only=False):
-    compare_times(setup1, expr1)
+    total = 0
+    total += compare_times(setup1, expr1)
     print
-    compare_times(setup2, expr2)
+    total += compare_times(setup2, expr2)
     print
-    compare_times(setup3, expr3)
+    total += compare_times(setup3, expr3)
     print
-    compare_times(setup4, expr4)
+    total += compare_times(setup4, expr4)
     print
-    compare_times(setup5, expr6)
+    total += compare_times(setup5, expr6)
     print
-    compare_times(setup5, expr7)
+    total += compare_times(setup5, expr7)
     print
-    compare_times(setup5, expr8)
+    total += compare_times(setup5, expr8)
     print
-    compare_times(setup5, expr9)
+    total += compare_times(setup5, expr9)
     print
-    compare_times(setup5, expr10)
+    total += compare_times(setup5, expr10)
     print
-    compare_times(setup5, expr11)
+    total += compare_times(setup5, expr11)
     print
-    compare_times(setup5, expr12)
+    total += compare_times(setup5, expr12)
+    print
+    print "Average =", total / 11.0
+    return total
 
 if __name__ == '__main__':
-    compare()
+    averages = []
+    for i in range(10):
+        averages.append(compare())
+    print "Averages:", ', '.join("%.2f" % x for x in averages)
