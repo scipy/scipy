@@ -91,10 +91,14 @@ enum OpCodes {
     OP_REDUCTION,
     
     OP_SUM,
+    OP_SUM_IIN,
     OP_SUM_FFN,
+    OP_SUM_CCN,
     
     OP_PROD,
+    OP_PROD_IIN,
     OP_PROD_FFN,
+    OP_PROD_CCN
 
 };
 
@@ -234,9 +238,19 @@ static char op_signature(int op, int n) {
             if (n == 0) return 'c';
             if (n == 1 || n == 2) return 'f';
             break;
+        case OP_PROD_IIN:
+        case OP_SUM_IIN:
+            if (n == 0 || n == 1) return 'i';
+            if (n == 2) return 'n';
+            break;
         case OP_PROD_FFN:
         case OP_SUM_FFN:
             if (n == 0 || n == 1) return 'f';
+            if (n == 2) return 'n';
+            break;
+        case OP_PROD_CCN:
+        case OP_SUM_CCN:
+            if (n == 0 || n == 1) return 'c';
             if (n == 2) return 'n';
             break;
         default:
@@ -527,7 +541,7 @@ check_program(NumExprObject *self)
         if (op == OP_NOOP) {
             continue;
         }
-        if ((op == OP_SUM_FFN || op == OP_PROD_FFN) && pc != prog_len-4) {
+        if ((op >= OP_REDUCTION) && pc != prog_len-4) {
                 PyErr_Format(PyExc_RuntimeError, 
                     "invalid program: reduction operations must occur last");
                 return -1;
@@ -576,7 +590,7 @@ check_program(NumExprObject *self)
                         PyErr_Format(PyExc_RuntimeError, "invalid program: funccode out of range (%i) at %i", arg, argloc);
                         return -1;
                     }
-                } else if (op == OP_SUM_FFN  || op == OP_PROD_FFN) {
+                } else if (op >= OP_REDUCTION) {
                     ;
                 } else {
                     PyErr_Format(PyExc_RuntimeError, "invalid program: internal checker errror processing %i", argloc);
@@ -1095,7 +1109,7 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
     if (last_opcode(self->program) > OP_REDUCTION) {
         char retsig = get_return_sig(self->program);
         int axis = get_reduction_axis(self->program);
-        self->memsteps[0] = size_from_char(retsig);
+        self->memsteps[0] = 0; /*size_from_char(retsig);*/
         if (axis == 255) {
             intp dims[1];
             for (i = 0; i < n_dimensions; i++)
@@ -1334,9 +1348,14 @@ initinterpreter(void)
     add_op("real_fc", OP_REAL_FC);
     add_op("imag_fc", OP_IMAG_FC);
     add_op("complex_cff", OP_COMPLEX_CFF);
-    
+
+    add_op("sum_iin", OP_SUM_IIN);
     add_op("sum_ffn", OP_SUM_FFN);
+    add_op("sum_ccn", OP_SUM_CCN);
+
+    add_op("prod_iin", OP_PROD_IIN);
     add_op("prod_ffn", OP_PROD_FFN);
+    add_op("prod_ccn", OP_PROD_CCN);
 
 #undef add_op
 

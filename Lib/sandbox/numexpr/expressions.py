@@ -114,7 +114,10 @@ def sum_func(a, axis=None):
         return a
     if isinstance(a, (bool, int, float, complex)):
        a = ConstantNode(a)
-    return FuncNode('sum', [a, RawNode(axis)], kind=a.astKind)
+    kind = a.astKind
+    if kind == 'bool':
+        kind = 'int'
+    return FuncNode('sum', [a, RawNode(axis)], kind=kind)
 
 def prod_func(a, axis=None):
     if axis is None:
@@ -123,7 +126,10 @@ def prod_func(a, axis=None):
        a = ConstantNode(a)
     if isinstance(a, ConstantNode):
         return a
-    return FuncNode('prod', [a, RawNode(axis)], kind=a.astKind)
+    kind = a.astKind
+    if kind == 'bool':
+        kind = 'int'
+    return FuncNode('prod', [a, RawNode(axis)], kind=kind)
 
 @ophelper
 def div_op(a, b):

@@ -59,6 +59,19 @@ class test_numexpr(NumpyTestCase):
         assert_equal(evaluate("prod(y**2, axis=1)"), prod(y**2, axis=1))
         assert_equal(evaluate("prod(y**2, axis=0)"), prod(y**2, axis=0))
         assert_equal(evaluate("prod(y**2, axis=None)"), prod(y**2, axis=None))
+        # Check integers
+        x = x.astype(int)
+        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
+        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2, axis=None))
+        # Check complex
+        x = x + 5j
+        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2, axis=None))
+        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2, axis=None))
+        # Check boolean (should cast to integer)
+        x = (arange(10) % 2).astype(bool)
+        assert_equal(evaluate("prod(x)"), prod(x, axis=None))
+        assert_equal(evaluate("sum(x)"), sum(x, axis=None))
+
         
         
     def check_r0_reuse(self):

@@ -88,6 +88,12 @@
         unsigned int arg1 = params.program[pc+2];
         unsigned int arg2 = params.program[pc+3];
         #define      arg3   params.program[pc+5]
+        #define store_index params.index_data[store_in]
+        #define reduce_ptr  (dest + flat_index(&store_index, j))
+        #define i_reduce    *(long *)reduce_ptr
+        #define f_reduce    *(double *)reduce_ptr
+        #define cr_reduce   *(double *)ptr       
+        #define ci_reduce   *((double *)ptr+1)                
         #define b_dest ((char *)dest)[j]
         #define i_dest ((long *)dest)[j]
         #define f_dest ((double *)dest)[j]
@@ -111,6 +117,7 @@
         
         double fa, fb;
         cdouble ca, cb;
+        char *ptr;
 
         switch (op) {
 
@@ -219,15 +226,18 @@
         case OP_COMPLEX_CFF: VEC_ARG2(cr_dest = f1;
                                       ci_dest = f2);
 
-        case OP_SUM_FFN: {
-            struct index_data id = params.index_data[store_in];
-            VEC_ARG1(*(double *)(params.output + flat_index(&id, j)) += f1);
-        }
+        case OP_SUM_IIN: VEC_ARG1(i_reduce += i1);
+        case OP_SUM_FFN: VEC_ARG1(f_reduce += f1);
+        case OP_SUM_CCN: VEC_ARG1(ptr = reduce_ptr;
+                                  cr_reduce += c1r;
+                                  ci_reduce += c1i);
         
-        case OP_PROD_FFN: {
-            struct index_data id = params.index_data[store_in];
-            VEC_ARG1(*(double *)(params.output + flat_index(&id, j)) *= f1);
-        }
+        case OP_PROD_IIN: VEC_ARG1(i_reduce *= i1);
+        case OP_PROD_FFN: VEC_ARG1(f_reduce *= f1);
+        case OP_PROD_CCN: VEC_ARG1(ptr = reduce_ptr;
+                                   fa = cr_reduce*c1r - ci_reduce*c1i;
+                                   ci_reduce = cr_reduce*c1i + ci_reduce*c1r;
+                                   cr_reduce = fa);
         
         default:
             *pc_error = pc;
