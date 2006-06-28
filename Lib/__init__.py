@@ -28,10 +28,12 @@ if show_numpy_config is None:
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
-import numpy.oldnumeric as _num
+import numpy as _num
 from numpy import oldnumeric
+from numpy import *
 
-__all__ += _num.__all__
+__all__ += ['oldnumeric']+_num.__all__
+
 __doc__ += """
 Contents
 --------
@@ -82,3 +84,4 @@ Environment variables
 
   SCIPY_IMPORT_VERBOSE --- pkgload verbose flag, default is 0.
 """
+

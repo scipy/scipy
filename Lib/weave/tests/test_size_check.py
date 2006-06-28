@@ -45,12 +45,8 @@ class test_binary_op_size(ScipyTestCase):
         desired = desired
         assert_array_equal(actual,desired)
     def generic_error_test(self,x,y):
-        try:
-            actual = size_check.binary_op_size(x,y)
-            #print actual
-            raise AttributeError, "Should have raised ValueError"
-        except ValueError:
-            pass
+        self.failUnlessRaises(ValueError, size_check.binary_op_size, x, y)
+
     def desired_type(self,val):
         return array(val)
     def check_scalar(self):
@@ -115,11 +111,8 @@ class test_dummy_array(test_binary_op_size):
             desired = desired
             assert_array_equal(actual,desired)
     def generic_error_test(self,x,y):
-        try:
-            self.generic_test('',x,y)
-            raise AttributeError, "Should have raised ValueError"
-        except ValueError:
-            pass
+        self.failUnlessRaises(ValueError, self.generic_test, '', x, y)
+
     def desired_type(self,val):
         return size_check.dummy_array(array(val),1)
 

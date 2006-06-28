@@ -100,6 +100,7 @@ def binary_op_size(xx,yy):
             # offer more information here about which variables.
             raise ValueError, "frames are not aligned"
     return res
+
 class dummy_array:
     def __init__(self,ary,ary_is_shape = 0,name=None):
         self.name = name
@@ -281,3 +282,6 @@ def reduction(ary,axis=0):
 # so this is gonna take some thought (probably some tree manipulation).
 def take(ary,axis=0): raise NotImplemented
 # and all the rest
+
+#from numpy.testing import NumpyTest
+#test = NumpyTest().test
