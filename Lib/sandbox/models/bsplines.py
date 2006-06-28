@@ -29,7 +29,7 @@ class BSpline:
         self.tau = N.hstack([[knots[0]-eps]*(self.M-1), knots, [knots[-1]+eps]*(self.M-1)])
         self.K = self.knots.shape[0] - 2
         if coef is None:
-            coef = N.zeros((self.K + 2 * self.M - self.m), N.Float)
+            coef = N.zeros((self.K + 2 * self.M - self.m), N.float64)
         else:
             self.coef = N.squeeze(coef)
             if self.coef.shape != (self.K + 2 * self.M - self.m):
@@ -42,7 +42,7 @@ class BSpline:
         return v
     
     def basis_element(self, x, i, d=0):
-        x = N.asarray(x, N.Float)
+        x = N.asarray(x, N.float64)
         _shape = x.shape
         if _shape == ():
             x.shape = (1,)
@@ -51,7 +51,8 @@ class BSpline:
             ## TODO: OWNDATA flags...
             v = _bspline.evaluate(x, self.tau, self.m, d, i, i+1)
         else:
-            return N.zeros(x.shape, N.Float)
+            return N.zeros(x.shape, N.float64)
+
         if (i == self.tau.shape[0] - self.m):
             v = N.where(N.equal(x, self.tau[-1]), 1, v)
         v.shape = _shape
@@ -92,10 +93,10 @@ class BSpline:
 
 ##         if m == 1:
 ##             nbasis = upper - lower
-##             v = N.zeros((nbasis,) + x.shape, N.Float)
+##             v = N.zeros((nbasis,) + x.shape, N.float64)
 ##             for i in range(nbasis):
 ##                 if self.tau[i+lower] == self.tau[i+lower+1]:
-##                     v[i] = N.zeros(x.shape, N.Float)
+##                     v[i] = N.zeros(x.shape, N.float64)
 ##                 else:
 ##                     if d <= 0:
 ##                         v[i] = (N.greater_equal(x, self.tau[i+lower]) *
@@ -106,7 +107,7 @@ class BSpline:
 ##                            upper=upper+1)
 ##             nbasis = b.shape[0] - 1
 
-##             v = N.zeros((nbasis,) + x.shape, N.Float)
+##             v = N.zeros((nbasis,) + x.shape, N.float64)
 
 ##             for i in range(nbasis):
 
@@ -169,7 +170,7 @@ class SmoothingSpline(BSpline):
         if not banded:
             btb = N.dot(bt, N.transpose(bt))
         else:
-            btb = N.zeros(self.g.shape, N.Float)
+            btb = N.zeros(self.g.shape, N.float64)
             nband, nbasis = self.g.shape
             for i in range(nbasis):
                 for k in range(nband):
@@ -201,13 +202,15 @@ class SmoothingSpline(BSpline):
 
 
 import pylab
-import time
+import time, gc
 toc = time.time()
-for i in range(10):
+for i in range(1000):
     s = SmoothingSpline(N.linspace(0,1,51), order=4, M=4)
     f = s.gram(dr=2, dl=2)
+
+gc.collect()
 tic = time.time()
-print (tic-toc) / 10
+print (tic-toc) / 1000
 
 ## reader = csv.reader(file('/home/jtaylo/Desktop/bspline.csv'))
 ## v = []
@@ -265,7 +268,7 @@ pylab.show()
 ## g = s.gram(dleft=2,dright=2)
 ## ## x = N.linspace(0,1,1000)
 ## ## ss = s.basis(x)
-## ## G = N.zeros((g.shape[0],)*2, N.Float)
+## ## G = N.zeros((g.shape[0],)*2, N.float64)
 ## ## for i in range(g.shape[0]):
 ## ##     print G.shape
 ## ##     for j in range(g.shape[0]):

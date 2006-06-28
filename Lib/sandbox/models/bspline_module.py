@@ -3,13 +3,15 @@ from scipy.weave import ext_tools
 import scipy.special.orthogonal
 
 def build_bspline_module():
-    """ Builds an extension module with Bspline basis calculators.
+    """
+    Builds an extension module with Bspline basis calculators using
+    weave.
     """
 
     mod = ext_tools.ext_module('_bspline', compiler='gcc')
-    knots = N.linspace(0,1,11).astype(N.Float64)
+    knots = N.linspace(0,1,11).astype(N.float64)
     nknots = knots.shape[0]
-    x = N.array([0.4,0.5], N.Float64)
+    x = N.array([0.4,0.5], N.float64)
     nx = x.shape[0]
     m = 4
     d = 0
@@ -18,7 +20,7 @@ def build_bspline_module():
     
     # Bspline code in C
     eval_code = '''
-    double *bspline(double *x, int nx, 
+    double *bspline(double **output, double *x, int nx, 
                     double *knots, int nknots,
                     int m, int d, int lower, int upper)
     {                   
@@ -30,7 +32,7 @@ def build_bspline_module():
 
        nbasis = upper - lower;
 
-       result = (double *) malloc(sizeof(*result) * nbasis * nx);
+       result = *((double **) output);
        f0 = (double *) malloc(sizeof(*f0) * nx);
        f1 = (double *) malloc(sizeof(*f1) * nx);
 
@@ -62,7 +64,8 @@ def build_bspline_module():
             }
         }    
         else {
-            b = bspline(x, nx, knots, nknots, m-1, d-1, lower, upper+1);
+            b = (double *) malloc(sizeof(*b) * (nbasis+1) * nx);
+            bspline(&b, x, nx, knots, nknots, m-1, d-1, lower, upper+1);
 
             for(i=0; i<nbasis; i++) {
                 b0 = b + nx*i;
@@ -114,7 +117,7 @@ def build_bspline_module():
                     b0++; b1++; result++;
                 }
             }
-        free(b);
+            free(b);
         }    
         free(f0); free(f1); 
         result = result - nx * nbasis;
@@ -126,9 +129,14 @@ def build_bspline_module():
     eval_ext_code = '''
 
     int dim[2] = {upper-lower, Nx[0]};
+    PyArrayObject *basis;
+    double *data;
 
-    return_val = PyArray_SimpleNewFromData(2, dim, PyArray_DOUBLE,
-        (void *) bspline(x, Nx[0], knots, Nknots[0], m, d, lower, upper));
+
+    basis = (PyArrayObject *) PyArray_SimpleNew(2, dim, PyArray_DOUBLE);
+    data = (double *) basis->data;
+    bspline(&data, x, Nx[0], knots, Nknots[0], m, d, lower, upper);
+    return_val = (PyObject *) basis;
 
     '''    
 
@@ -153,13 +161,16 @@ def build_bspline_module():
 
         if (fabs(r - l) <= m) {
             result = (double *) malloc(sizeof(*result) * nx);
+            bl = (double *) malloc(sizeof(*bl) * nx);
+            br = (double *) malloc(sizeof(*br) * nx);
 
-            bl = bspline(x, nx, knots, nknots, m, dl, l, l+1);
-            br = bspline(x, nx, knots, nknots, m, dr, r, r+1);
+            bl = bspline(&bl, x, nx, knots, nknots, m, dl, l, l+1);
+            br = bspline(&br, x, nx, knots, nknots, m, dr, r, r+1);
 
             for (k=0; k<nx; k++) {
                 result[k] = bl[k] * br[k];
             }
+            free(bl); free(br);
         }
         else {
             for (k=0; k<nx; k++) {
@@ -217,7 +228,7 @@ def build_bspline_module():
         return(result);
     }    
 
-    double *bspline_gram(double *knots, int nknots,
+    double *bspline_gram(double **output, double *knots, int nknots,
                         int m, int dl, int dr) 
 
     /* Presumes that the first m and last m knots are to be ignored, i.e.
@@ -233,7 +244,7 @@ def build_bspline_module():
         nbasis = nknots - m;
         nband = 2*m - 1;
 
-        result = (double *) malloc(sizeof(*result) * nbasis * nband);
+        result = *((double **) output);
         for (i=0; i<nbasis; i++) {
             l = i;
             for (j=0; j<nband; j++) {
@@ -251,9 +262,13 @@ def build_bspline_module():
     gram_ext_code = '''
 
     int dim[2] = {Nknots[0]-m, 2*m-1};
+    double *data;
+    PyArrayObject *gram;
 
-    return_val = PyArray_SimpleNewFromData(2, dim, PyArray_DOUBLE,
-        (void *) bspline_gram(knots, Nknots[0], m, dl, dr));
+    gram = (PyArrayObject *) PyArray_SimpleNew(2, dim, PyArray_DOUBLE);
+    data = (double *) gram->data;
+    bspline_gram(&data, knots, Nknots[0], m, dl, dr);
+    return_val = (PyObject *) gram;
 
     '''    
 
@@ -274,11 +289,11 @@ except ImportError:
     import _bspline
 
 ## if __name__ == '__main__':
-##     knots = N.hstack([[0]*3, N.linspace(0,1,11).astype(N.Float64), [1]*3])
+##     knots = N.hstack([[0]*3, N.linspace(0,1,11).astype(N.float64), [1]*3])
 ##     x = N.array([0.4,0.5])
 ##     print bspline_ext.bspline_eval(x, knots, 4, 2, 0, 13)
 
-##     knots = N.hstack([[0]*3, N.linspace(0,1,501).astype(N.Float64), [1]*3])
+##     knots = N.hstack([[0]*3, N.linspace(0,1,501).astype(N.float64), [1]*3])
 ##     nknots = knots.shape[0]
 ##     x = N.linspace(0,1,1000)
 ##     m = 4
