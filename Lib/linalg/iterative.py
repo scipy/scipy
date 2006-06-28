@@ -35,7 +35,7 @@ class get_matvec:
         if isinstance(obj, sb.matrix):
             self.callfunc = self.type1m
             return
-        if isinstance(obj, sb.ArrayType):
+        if isinstance(obj, sb.ndarray):
             self.callfunc = self.type1
             return
         meth = getattr(obj,self.methname,None)

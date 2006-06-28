@@ -246,7 +246,7 @@ def who(vardict=None):
     sta = []
     cache = {}
     for name in vardict.keys():
-        if isinstance(vardict[name],numpy.ArrayType):
+        if isinstance(vardict[name],numpy.ndarray):
             var = vardict[name]
             idv = id(var)
             if idv in cache.keys():
