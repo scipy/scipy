@@ -20,8 +20,8 @@ from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 import calc_lwork
 import numpy
-from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, single, isfinite
-from numpy.oldnumeric import typecodes
+from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
+        single, isfinite
 
 cast = numpy.cast
 r_ = numpy.r_
@@ -200,7 +200,7 @@ def eigh(a, lower=True, eigvals_only=False, overwrite_a=False):
         overwrite_a = overwrite_a or (_datanotshared(a1,a))
     else:
         a1 = array(a)
-        if (a1.dtype.char in typecodes['AllFloat']) and not isfinite(a1).all():
+        if issubclass(a1.dtype.type, inexact) and not isfinite(a1).all():
             raise ValueError, "array must not contain infs or NaNs"
         overwrite_a = 1
 
