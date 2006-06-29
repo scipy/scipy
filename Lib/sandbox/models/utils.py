@@ -115,7 +115,7 @@ class StepFunction:
 
     def __call__(self, time):
 
-        tind = scipy.searchsorted(self.x, time) - 1
+        tind = N.searchsorted(self.x, time) - 1
         _shape = tind.shape
         return self.y[tind]
 
