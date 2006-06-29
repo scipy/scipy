@@ -174,12 +174,19 @@ class array_converter(common_base_converter):
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
         code = code % res
+        self.__doundef=1
         return code
 
     def cleanup_code(self):
         code = common_base_converter.cleanup_code(self)
-        cap_name = self.name.upper()
-        newcode = "#undef %(cap_name)s1\n#undef %(cap_name)s2\n"\
-                  "#undef %(cap_name)s3\n#undef %(cap_name)s4\n" % {'cap_name':cap_name}
-        code = "%s%s" % (code, newcode)
+        try:
+            if self.__doundef != 1:
+                return code
+            cap_name = self.name.upper()
+            newcode = "#undef %(cap_name)s1\n#undef %(cap_name)s2\n"\
+                      "#undef %(cap_name)s3\n#undef %(cap_name)s4\n"\
+                      % {'cap_name':cap_name}
+            code = "%s%s" % (code, newcode)
+        except AttributeError:
+            pass
         return code
