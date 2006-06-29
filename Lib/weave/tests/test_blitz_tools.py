@@ -108,7 +108,7 @@ class test_blitz(ScipyTestCase):
             result = zeros(size,typ)
             arg_dict = {}
             for arg in arg_list:
-                arg_dict[arg] = RandomArray.normal(0,1,size).astype(typ)
+                arg_dict[arg] = random.normal(0,1,size).astype(typ)
                 arg_dict[arg].savespace(1)
                 # set imag part of complex values to non-zero value
                 try:     arg_dict[arg].imag = arg_dict[arg].real
@@ -141,14 +141,14 @@ class test_blitz(ScipyTestCase):
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
-        self.generic_2d(expr,Float32)
+        self.generic_2d(expr,float32)
     def check_5point_avg_2d_double(self,level=10):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
                                + b[1:-1,2:] + b[1:-1,:-2]) / 5.
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
-        self.generic_2d(expr,Float64)
+        self.generic_2d(expr,float64)
     def _check_5point_avg_2d_complex_float(self,level=10):
         """ Note: THIS TEST is KNOWN TO FAIL ON GCC 3.x.  It will not adversely affect 99.99 percent of weave
 
@@ -165,14 +165,14 @@ class test_blitz(ScipyTestCase):
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
-        self.generic_2d(expr,Complex32)
+        self.generic_2d(expr,complex64)
     def check_5point_avg_2d_complex_double(self,level=10):
         """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
                                + b[1:-1,2:] + b[1:-1,:-2]) / 5.
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
-        self.generic_2d(expr,Complex64)
+        self.generic_2d(expr,complex128)
 
 if __name__ == "__main__":
     ScipyTest().run()

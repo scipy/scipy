@@ -89,7 +89,7 @@ public:
     _obj = _own = PyLong_FromUnsignedLong(val); 
   };  
   object(long val) { 
-    _obj = _own = PyInt_FromLong((int)val); 
+    _obj = _own = PyInt_FromLong(val); 
   };  
   object(unsigned long val) { 
     _obj = _own = PyLong_FromUnsignedLong(val); 

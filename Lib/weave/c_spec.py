@@ -313,8 +313,6 @@ num_to_c_types['H'] = 'ushort'
 num_to_c_types['i'] = 'int'
 num_to_c_types['I'] = 'uint'
 
-# not strictly correct, but shoulld be fine fo numeric work.
-# add test somewhere to make sure long can be cast to int before using.
 num_to_c_types['l'] = 'long'
 num_to_c_types['L'] = 'ulong'
 
@@ -328,14 +326,15 @@ class scalar_converter(common_base_converter):
         self.headers = ['<complex>','<math.h>']
         self.use_ref_count = 0
 
+# This has to be int for SCXX to work.
 class int_converter(scalar_converter):
     def init_info(self):
         scalar_converter.init_info(self)
         self.type_name = 'int'
         self.check_func = 'PyInt_Check'
-        self.c_type = 'long'
-        self.return_type = 'long'
-        self.to_c_return = "PyInt_AsLong(py_obj)"
+        self.c_type = 'int'
+        self.return_type = 'int'
+        self.to_c_return = "(int) PyInt_AsLong(py_obj)"
         self.matching_types = [types.IntType]
 
 class long_converter(scalar_converter):

@@ -151,6 +151,7 @@ class _test_sequence_base(ScipyTestCase):
         t2 = time.time()
         print 'weave:', t2 - t1
 
+# Fails
     def check_access_set_speed(self,level=5):
         N = 1000000
         print '%s access/set -- b[i] = a[i] for N =', (self.seq_type,N)

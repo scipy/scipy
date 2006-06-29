@@ -88,17 +88,17 @@ class test_object_print(ScipyTestCase):
         print file_imposter.getvalue()
         assert file_imposter.getvalue() == "'how now brown cow'"
 
-    def check_failure(self,level=5):
-        code = """
-               FILE* file = 0;
-               py::object val = "how now brown cow";
-               val.print(file);
-               """
-        try:
-            res = inline_tools.inline(code)
-        except:
-            # error was supposed to occur.
-            pass
+##    def check_failure(self,level=5):
+##        code = """
+##               FILE* file = 0;
+##               py::object val = "how now brown cow";
+##               val.print(file);
+##               """
+##        try:
+##            res = inline_tools.inline(code)
+##        except:
+##            # error was supposed to occur.
+##            pass
 
 
 class test_object_cast(ScipyTestCase):

@@ -93,6 +93,7 @@ class test_binary_op_size(ScipyTestCase):
     def check_error1(self):
         x,y = (5,),(4,)
         self.generic_error_test(x,y)
+        
     def check_error2(self):
         x,y = (5,5),(4,5)
         self.generic_error_test(x,y)
@@ -110,8 +111,6 @@ class test_dummy_array(test_binary_op_size):
             actual = eval('xx' + op + 'yy')
             desired = desired
             assert_array_equal(actual,desired)
-    def generic_error_test(self,x,y):
-        self.failUnlessRaises(ValueError, self.generic_test, '', x, y)
 
     def desired_type(self,val):
         return size_check.dummy_array(array(val),1)
@@ -123,7 +122,6 @@ class test_dummy_array_indexing(ScipyTestCase):
         #print desired, actual
         assert_array_equal(actual,desired, expr)
     def generic_wrap(self,a,expr):
-        #print expr ,eval(expr)
         desired = array(eval(expr).shape)
         try:
             self.generic_test(a,expr,desired)
@@ -223,6 +221,7 @@ class test_dummy_array_indexing(ScipyTestCase):
                 beg = random.choice(choices)
                 end = random.choice(choices)
                 step = random.choice(choices)
+                if step in ['0',0]: step = 'None'
                 self.generic_1d('a[%s:%s:%s]' %(beg,end,step))
             except IndexError:
                 pass
@@ -246,6 +245,8 @@ class test_dummy_array_indexing(ScipyTestCase):
                 beg2 = random.choice(choices)
                 end2 = random.choice(choices)
                 step2 = random.choice(choices)
+                if step in ['0',0]: step = 'None'
+                if step2 in ['0',0]: step2 = 'None'  
                 expr = 'a[%s:%s:%s,%s:%s:%s]' %(beg,end,step,beg2,end2,step2)
                 self.generic_2d(expr)
             except IndexError:
@@ -259,7 +260,10 @@ class test_dummy_array_indexing(ScipyTestCase):
             try:
                 idx = []
                 for i in range(9):
-                    idx.append(random.choice(choices))
+                    val = random.choice(choices)
+                    if (i+1) % 3 == 0 and val in ['0',0]:
+                        val = 'None'
+                    idx.append(val)                    
                 expr = 'a[%s:%s:%s,%s:%s:%s,%s:%s:%s]' % tuple(idx)
                 self.generic_3d(expr)
             except IndexError:
