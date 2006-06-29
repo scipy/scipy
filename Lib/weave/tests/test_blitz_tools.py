@@ -83,14 +83,14 @@ class test_blitz(ScipyTestCase):
         try:
             # this isn't very stringent.  Need to tighten this up and
             # learn where failures are occuring.
-            assert(allclose(abs(actual.flat),abs(desired.flat),1e-4,1e-6))
+            assert(allclose(abs(actual.ravel()),abs(desired.ravel()),1e-4,1e-6))
         except:
             diff = actual-desired
             print diff[:4,:4]
             print diff[:4,-4:]
             print diff[-4:,:4]
             print diff[-4:,-4:]
-            print sum(abs(diff.flat))
+            print sum(abs(diff.ravel()))
             raise AssertionError
         return standard,compiled
 
@@ -109,7 +109,6 @@ class test_blitz(ScipyTestCase):
             arg_dict = {}
             for arg in arg_list:
                 arg_dict[arg] = random.normal(0,1,size).astype(typ)
-                arg_dict[arg].savespace(1)
                 # set imag part of complex values to non-zero value
                 try:     arg_dict[arg].imag = arg_dict[arg].real
                 except:  pass
