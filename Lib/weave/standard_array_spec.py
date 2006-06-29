@@ -151,27 +151,34 @@ class array_converter(common_base_converter):
             res['num_type'] = num_to_c_types[self.var_type]
             res['num_typecode'] = num_typecode[self.var_type]
         res['array_name'] = self.name + "_array"
-        res['cap_name'] = self.name.capitalize()
+        res['cap_name'] = self.name.upper()
         return res
 
     def declaration_code(self,templatize = 0,inline=0):
+        res = self.template_vars(inline=inline)
+        cap_name = self.name.upper()
+        res['cap_name'] = cap_name        
+        code2 = '#define %(cap_name)s1(i) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0])))\n' \
+                    '#define %(cap_name)s2(i,j) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1])))\n' \
+                    '#define %(cap_name)s3(i,j,k) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1] + (k)*S%(name)s[2])))\n' \
+                    '#define %(cap_name)s4(i,j,k,l) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1] + (k)*S%(name)s[2] + (l)*S%(name)s[3])))\n'
+
+        res['_code2_'] = code2 % res
+            
         code = '%(py_var)s = %(var_lookup)s;\n'   \
                '%(c_type)s %(array_name)s = %(var_convert)s;\n'  \
                'conversion_numpy_check_type(%(array_name)s,%(num_typecode)s,"%(name)s");\n' \
-               '#define %(cap_name)s1(i) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0])))\n' \
-               '#define %(cap_name)s2(i,j) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1])))\n' \
-               '#define %(cap_name)s3(i,j,k) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1] + (k)*S%(name)s[2])))\n' \
-               '#define %(cap_name)s4(i,j,k,l) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1] + (k)*S%(name)s[2] + (l)*S%(name)s[3])))\n' \
+               '%(_code2_)s' \
                'intp* N%(name)s = %(array_name)s->dimensions;\n' \
                'intp* S%(name)s = %(array_name)s->strides;\n' \
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
-        code = code % self.template_vars(inline=inline)
+        code = code % res
         return code
 
     def cleanup_code(self):
         code = common_base_converter.cleanup_code(self)
-        cap_name = self.name.capitalize()        
+        cap_name = self.name.upper()
         newcode = "#undef %(cap_name)s1\n#undef %(cap_name)s2\n"\
                   "#undef %(cap_name)s3\n#undef %(cap_name)s4\n" % {'cap_name':cap_name}
         code = "%s%s" % (code, newcode)
