@@ -140,6 +140,7 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
            customize=None,
            type_converters = None,
            auto_downcast=1,
+           newarr_converter=0,
            **kw):
     """ Inline C/C++ code within Python scripts.
 
@@ -219,7 +220,7 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
                           in the type conversions section of the main
                           documentation for examples.
         auto_downcast -- optional. 0 or 1. default 1.  This only affects
-                         functions that have Numeric arrays as input variables.
+                         functions that have NumPy arrays as input variables.
                          Setting this to 1 will cause all floating point values
                          to be cast as float instead of double if all the
                          Numeric arrays are of type float.  If even one of the

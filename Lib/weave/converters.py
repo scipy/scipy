@@ -21,7 +21,7 @@ default = [c_spec.int_converter(),
           #common_spec.module_converter()]
 
 #----------------------------------------------------------------------------
-# If scipy_core is installed, add numeric array converters to the default
+#  add numeric array converters to the default
 # converter list.
 #----------------------------------------------------------------------------
 try:

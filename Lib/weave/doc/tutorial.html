@@ -10,16 +10,11 @@ By Eric Jones eric@enthought.com
 <p></p>
 <h2>Outline</h2>
 <dl>
-  <dd> <a href="#Introduction">Introduction</a>
-  </dd>
-  <dd> <a href="#Requirements">Requirements</a>
-  </dd>
-  <dd> <a href="#Installation">Installation</a>
-  </dd>
-  <dd> <a href="#Testing">Testing</a>
-  </dd>
-  <dd> <a href="#Benchmarks">Benchmarks</a>
-  </dd>
+  <dd> <a href="#Introduction">Introduction</a> </dd>
+  <dd> <a href="#Requirements">Requirements</a> </dd>
+  <dd> <a href="#Installation">Installation</a> </dd>
+  <dd> <a href="#Testing">Testing</a> </dd>
+  <dd> <a href="#Benchmarks">Benchmarks</a> </dd>
   <dd> <a href="#Inline">Inline</a>
     <dl>
       <dd><a href="#More%20with%20printf">More with printf</a> </dd>
@@ -51,8 +46,8 @@ Argument Conversion</a> </dd>
 List, Tuple, and Dictionary Conversion</a> </dd>
               <dd><a href="#inline_callable_argument_conversion">File
 Conversion</a> </dd>
-              <dd><a href="#inline_callable_argument_conversion">
-Callable, Instance, and Module Conversion</a> </dd>
+              <dd><a href="#inline_callable_argument_conversion">Callable,
+Instance, and Module Conversion</a> </dd>
               <dd><a href="#Customizing%20Conversions">Customizing
 Conversions</a> </dd>
             </dl>
@@ -227,20 +222,8 @@ is useful outside of the scientific community, it has been setup so
 that it can be
 used as a stand-alone module. </p>
 <p>The stand-alone version can be downloaded from <a
- href="http://www.scipy.org/Weave">here</a>. Unix users should grab the
-tar ball (.tgz file) and install it using the following commands </p>
-<blockquote>
-  <pre><code>
-    tar -xzvf weave-0.2.tar.gz
-    cd weave-0.2
-    python setup.py install
-    </code></pre>
-</blockquote>
-<code></code>
-<p>For Windows users, it's even easier. You can download the
-click-install .exe file and run it for automatic installation. There is
-also a .zip file of the
-source for those interested. It also includes a setup.py file to
+ href="http://www.scipy.org/Weave">here</a>.&nbsp; Instructions for
+installing should be found there as well.&nbsp; setup.py file to
 simplify
 installation. </p>
 <p><a name="Testing"></a></p>
@@ -267,16 +250,12 @@ tests.
     &gt;&gt;&gt; 
     </unittest.texttestrunner></code></pre>
 </blockquote>
-This takes a loooong time. On windows, it is usually several minutes.
+This takes a while, usually several minutes.
 On Unix with remote file systems, I've had it take 15 or so minutes. In
 the end, it should run about 180 tests and spew some speed results
 along the way. If you get errors, they'll be reported at the end of the
-output. Please report erros that you find.&nbsp;
-If you don't have NumPy installed, you'll get some module import errors
-during the test setup phase for modules that are NumPy specific
-(blitz_spec, blitz_tools, size_check, standard_array_spec, ast_tools),
-but all test should
-pass (about 100 and they should complete in several minutes).
+output. Please report erros that you find.&nbsp;&nbsp; Some tests are
+known to fail at this point. <br>
 <p>If you only want to test a single module of the package, you can do
 this by
 running test() for that specific module. </p>
@@ -292,7 +271,8 @@ running test() for that specific module. </p>
 <em>Testing Notes:
 </em>
 <ul>
-  <em> <li> Windows 1
+  <em> </em>
+  <li><em> Windows 1
     <p> I've had some test fail on windows machines where I have msvc,
 gcc-2.95.2 (in c:\gcc-2.95.2), and gcc-2.95.3-6 (in c:\gcc) all
 installed. My environment has c:\gcc in the path and does not have
@@ -306,27 +286,31 @@ variables, so we have to undo its work in some places). If anyone else
 sees this, let me know - - it may just be an quirk on my machine
 (unlikely). Testing with the gcc- 2.95.2 installation always works. </p>
     <p> </p>
-  </li>
-  <li> Windows 2
+    </em></li>
+  <em> </em>
+  <li><em> Windows 2
     <p> If you run the tests from PythonWin or some other GUI tool,
 you'll get a ton of DOS windows popping up periodically as <code>weave</code>
 spawns the compiler multiple times. Very annoying. Anyone know how to
 fix this? </p>
     <p> </p>
-  </li>
-  <li> wxPython
+    </em></li>
+  <em> </em>
+  <li><em> wxPython
     <p> wxPython tests are not enabled by default because importing
 wxPython on a Unix machine without access to a X-term will cause the
 program to exit. Anyone know of a safe way to detect whether wxPython
 can be imported and whether a display exists on a machine? </p>
     <p> </p>
     <p></p>
-  </li>
-  </em>
+    </em></li>
+  <em> </em>
 </ul>
 <a name="Benchmarks"></a>
 <h1>Benchmarks</h1>
-This section has a few benchmarks -- thats all people want to see
+This section has not been updated from old scipy weave and Numeric....<br>
+<br>
+This section has a few benchmarks&nbsp; -- thats all people want to see
 anyway right? These are mostly taken from running files in the <code>weave/example</code>
 directory and also from the test scripts. Without more information
 about what the test actually do, their value is limited. Still, their
@@ -753,8 +737,8 @@ compile blitz arrays...). <code>inline()</code> is also forced to use
 'gcc' as the compiler because the default compiler on Windows (MSVC)
 will not compile blitz code. <em> 'gcc' I think will use the standard
 compiler on Unix machine instead of explicitly forcing gcc (check this)
-</em>
-Comparisons of the Python vs inline C++ code show a factor of 3 speed
+</em>Comparisons of the Python vs inline C++ code show a factor of 3
+speed
 up. Also shown are the results of an "inplace" transpose routine that
 can be used if the output of the linear algebra routine can overwrite
 the original matrix (this is often appropriate). This provides another
@@ -860,8 +844,7 @@ names understood by distutils. On Unix, it'll only understand the
 values understoof by distutils. (I should add 'gcc' though to this).
       <p>On windows, the compiler defaults to the Microsoft C++
 compiler. If this isn't available, it looks for mingw32 (the gcc
-compiler).
-      </p>
+compiler). </p>
       <p>On Unix, it'll probably use the same compiler that was used
 when compiling Python. Cygwin's behavior should be similar.</p>
     </dd>
@@ -888,20 +871,17 @@ much). </dd>
 what convert Python data types to C/C++ data types. If you'd like to
 use a different set of type conversions than the default, specify them
 here. Look in the type conversions section of the main documentation
-for examples.
-    </dd>
+for examples. </dd>
     <dt>auto_downcast </dt>
     <dd>optional. 0 or 1. default 1. This only affects functions that
 have Numeric arrays as input variables. Setting this to 1 will cause
 all floating point values to be cast as float instead of double if all
 the NumPy arrays are of type float. If even one of the arrays has type
-double or double complex, all variables maintain there standard types.
-    </dd>
+double or double complex, all variables maintain there standard types. </dd>
   </dl>
 </blockquote>
 <h4> Distutils keywords:</h4>
-<blockquote>
-  <code>inline()</code> also accepts a number of <code>distutils</code>
+<blockquote> <code>inline()</code> also accepts a number of <code>distutils</code>
 keywords for controlling how the code is compiled. The following
 descriptions have been copied from Greg Ward's <code>distutils.extension.Extension</code>
 class doc-
@@ -932,8 +912,8 @@ link time </dd>
     <dd> [string] list of library names (not filenames or paths) to
 link against </dd>
     <dt>runtime_library_dirs </dt>
-    <dd>
-[string] list of directories to search for C/C++ libraries at run time
+    <dd>[string] list of directories to search for C/C++ libraries at
+run time
 (for shared extensions, this is when the extension is loaded) </dd>
     <dt>extra_objects </dt>
     <dd>[string] list of extra files to link with (eg. object files not
@@ -1248,7 +1228,7 @@ The <code>return_val</code> variable can also be used to return newly
 created values. This is possible by returning a tuple. The following
 trivial example illustrates how this can be done:
 <blockquote>
-  <pre><code>       <br>    # python version<br>    def multi_return():<br>        return 1, '2nd'<br>    <br>    # C version.<br>    def c_multi_return():    <br>        code =  """<br>     	        Py::Tuple results(2);<br>     	        results[0] = Py::Int(1);<br>     	        results[1] = Py::String("2nd");<br>     	        return_val = Py::new_reference_to(results); 	        <br>                """<br>        return inline_tools.inline(code)<br>    </code></pre>
+  <pre><code>       <br>    # python version<br>    def multi_return():<br>        return 1, '2nd'<br>    <br>    # C version.<br>    def c_multi_return():    <br>        code =  """<br>     	        py::tuple results(2);<br>     	        results[0] = 1;<br>     	        results[1] = "2nd";<br>     	        return_val = results; 	        <br>                """<br>        return inline_tools.inline(code)<br>    </code></pre>
 </blockquote>
 <p> The example is available in <code>examples/tuple_return.py</code>.
 It also
@@ -2122,8 +2102,7 @@ functions in NumPy such as take, compress, etc. been implemented. Note
 that there are no obvious reasons why most of this functionality cannot
 be added to scipy.weave, so it will likely trickle into future
 versions. Using <code>slice()</code> objects directly instead of <code>start:stop:step</code>
-is also not supported.
-    </p>
+is also not supported. </p>
   </li>
   <li>Currently Python only works on expressions that include
 assignment such as
@@ -2146,10 +2125,9 @@ of if/thens and other conditions are better hand written in C or
 Fortran. Further, the restrictions imposed by requiring vectorized
 expressions sometimes preclude the use of more efficient data
 structures or algorithms. For maximum speed in these cases, hand-coded
-C or Fortran code is the only way to go.
-  </li>
-  <li>
-    <code>weave.blitz</code> can produce different results than NumPy
+C or Fortran code is the only way to go. </li>
+  <li> <code>weave.blitz</code> can produce different results than
+NumPy
 in certain situations. It can happen when the array receiving the
 results of a calculation is also used during the calculation. The NumPy
 behavior is to carry out the entire calculation on the right hand side
@@ -2203,14 +2181,12 @@ You can prevent this behavior by using a temporary array.
         </code></pre>
     </blockquote>
   </li>
-  <li>
-One other point deserves mention lest people be confused. <code>weave.blitz</code>
+  <li>One other point deserves mention lest people be confused. <code>weave.blitz</code>
 is not a general purpose Python-&gt;C compiler. It only works for
 expressions that contain NumPy arrays and/or Python scalar values. This
 focused scope concentrates effort on the compuationally intensive
 regions of the program and sidesteps the difficult issues associated
-with a general purpose Python-&gt;C compiler.
-  </li>
+with a general purpose Python-&gt;C compiler. </li>
 </ol>
 <a name="Numeric Efficiency"></a>
 <h2>NumPy efficiency issues: What compilation buys you</h2>
@@ -2823,8 +2799,8 @@ def build_fibonacci():
     </code></pre>
 </blockquote>
 XXX More about custom_info, and what xxx_info instances are good for.
-<p><em>
-Note: recursion is not the fastest way to calculate fibonacci numbers,
+<p><em>Note: recursion is not the fastest way to calculate fibonacci
+numbers,
 but this approach serves nicely for this example.
 </em></p>
 <p><a name="#Type Factories"></a>

@@ -45,7 +45,7 @@ public:
                                 "int", "uint", "long", "ulong", "longlong", "ulonglong",
                                 "float", "double", "longdouble", "cfloat", "cdouble",
                                 "clongdouble", "object", "string", "unicode", "void", "ntype",
-                                "unkown"};
+                                "unknown"};
         char msg[500];
         sprintf(msg,"Conversion Error: received '%s' typed array instead of '%s' typed array for variable '%s'",
                 type_names[arr_type],type_names[numeric_type],name);
@@ -70,7 +70,7 @@ public:
                                     "int", "uint", "long", "ulong", "longlong", "ulonglong",
                                     "float", "double", "longdouble", "cfloat", "cdouble",
                                     "clongdouble", "object", "string", "unicode", "void", "ntype",
-                                    "unkown"};
+                                    "unknown"};
             char msg[500];
             sprintf(msg,"received '%s' typed array instead of '%s' typed array for variable '%s'",
                     type_names[arr_type],type_names[numeric_type],name);
@@ -151,15 +151,28 @@ class array_converter(common_base_converter):
             res['num_type'] = num_to_c_types[self.var_type]
             res['num_typecode'] = num_typecode[self.var_type]
         res['array_name'] = self.name + "_array"
+        res['cap_name'] = self.name.capitalize()
         return res
 
     def declaration_code(self,templatize = 0,inline=0):
         code = '%(py_var)s = %(var_lookup)s;\n'   \
                '%(c_type)s %(array_name)s = %(var_convert)s;\n'  \
                'conversion_numpy_check_type(%(array_name)s,%(num_typecode)s,"%(name)s");\n' \
+               '#define %(cap_name)s1(i) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0])))\n' \
+               '#define %(cap_name)s2(i,j) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1])))\n' \
+               '#define %(cap_name)s3(i,j,k) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1] + (k)*S%(name)s[2])))\n' \
+               '#define %(cap_name)s4(i,j,k,l) (*((%(num_type)s*)(%(array_name)s->data + (i)*S%(name)s[0] + (j)*S%(name)s[1] + (k)*S%(name)s[2] + (l)*S%(name)s[3])))\n' \
                'intp* N%(name)s = %(array_name)s->dimensions;\n' \
                'intp* S%(name)s = %(array_name)s->strides;\n' \
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
         code = code % self.template_vars(inline=inline)
+        return code
+
+    def cleanup_code(self):
+        code = common_base_converter.cleanup_code(self)
+        cap_name = self.name.capitalize()        
+        newcode = "#undef %(cap_name)s1\n#undef %(cap_name)s2\n"\
+                  "#undef %(cap_name)s3\n#undef %(cap_name)s4\n" % {'cap_name':cap_name}
+        code = "%s%s" % (code, newcode)
         return code
