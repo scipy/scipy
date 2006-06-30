@@ -1188,11 +1188,9 @@ Returns a 1D array of z-scores, one for each score in the passed array,
 computed relative to the passed array.
 
 """
-    zscores = []
-    for item in a:
-        zscores.append(z(a,item))
-    return array(zscores)
-
+    mu = mean(a,None)
+    sigma = samplestd(a)
+    return (array(a)-mu)/sigma
 
 def zmap(scores, compare, axis=0):
     """
