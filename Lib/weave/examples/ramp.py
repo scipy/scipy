@@ -84,7 +84,7 @@ def main():
     print 'python (seconds*ratio):', py_time
     print 'arr[500]:', arr[500]
 
-    arr1 = array([0]*N_array,Float64)
+    arr1 = array([0]*N_array,float)
     # First call compiles function or loads from cache.
     # I'm not including this in the timing.
     Ramp_numeric1(arr1, 0.0, 1.0)
@@ -96,7 +96,7 @@ def main():
     print 'compiled numeric1 (seconds, speed up):', c_time, py_time/ c_time
     print 'arr[500]:', arr1[500]
 
-    arr2 = array([0]*N_array,Float64)
+    arr2 = array([0]*N_array,float)
     # First call compiles function or loads from cache.
     # I'm not including this in the timing.
     Ramp_numeric2(arr2, 0.0, 1.0)

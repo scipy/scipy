@@ -1302,12 +1302,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.float32, numarray.float64]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.refft(a, shape[0], 0)
+                a = dft.rfft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
                 a = ndimage.fourier_gaussian(a, [5.0, 2.5],
                                                        shape[0], 0)
                 a = dft.ifft(a, shape[1], 1)
-                a = dft.irefft(a, shape[0], 0)
+                a = dft.irfft(a, shape[0], 0)
                 self.failUnless(diff(ndimage.sum(a), 1.0) < eps)
 
     def test_fourier_gaussian_complex01(self):
@@ -1331,12 +1331,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.float32, numarray.float64]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.refft(a, shape[0], 0)
+                a = dft.rfft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
                 a = ndimage.fourier_uniform(a, [5.0, 2.5],
                                                       shape[0], 0)
                 a = dft.ifft(a, shape[1], 1)
-                a = dft.irefft(a, shape[0], 0)
+                a = dft.irfft(a, shape[0], 0)
                 self.failUnless(diff(ndimage.sum(a), 1.0) < eps)
 
     def test_fourier_uniform_complex01(self):
@@ -1359,11 +1359,11 @@ class test_ndimage(ScipyTestCase):
             for dtype in [numarray.float32, numarray.float64]:
                 true = numarray.arange(shape[0] * shape[1], dtype = dtype)
                 true.shape = shape
-                a = dft.refft(true, shape[0], 0)
+                a = dft.rfft(true, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
                 a = ndimage.fourier_shift(a, [1, 1], shape[0], 0)
                 a = dft.ifft(a, shape[1], 1)
-                a = dft.irefft(a, shape[0], 0)
+                a = dft.irfft(a, shape[0], 0)
                 error1 = diff(a[1:, 1:], true[:-1, :-1])
                 error2 = diff(a.imag, numarray.zeros(shape))
                 self.failUnless(error1 < 1e-10 and error2 < 1e-10)
@@ -1390,12 +1390,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.float32, numarray.float64]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.refft(a, shape[0], 0)
+                a = dft.rfft(a, shape[0], 0)
                 a = dft.fft(a, shape[1], 1)
                 a = ndimage.fourier_ellipsoid(a, [5.0, 2.5],
                                                         shape[0], 0)
                 a = dft.ifft(a, shape[1], 1)
-                a = dft.irefft(a, shape[0], 0)
+                a = dft.irfft(a, shape[0], 0)
                 self.failUnless(diff(ndimage.sum(a), 1.0) < eps)
 
     def test_fourier_ellipsoid_complex01(self):

@@ -19,7 +19,7 @@ def build_ramp_ext():
     mod = ext_tools.ext_module('ramp_ext')
 
     # type declarations
-    result = array([0],Float64)
+    result = array([0],float)
     start,end = 0.,0.
     code = """
            const int size = Nresult[0];
@@ -51,7 +51,7 @@ def main():
     except:
         build_ramp_ext()
         import ramp_ext
-    arr = array([0]*10000,Float64)
+    arr = array([0]*10000,float)
     for i in xrange(10000):
         ramp_ext.Ramp(arr, 0.0, 1.0)
     t2 = time.time()
