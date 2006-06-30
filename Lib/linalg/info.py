@@ -17,6 +17,8 @@ Linear algebra routines
 
    eig        --- Find the eigenvalues and vectors of a square matrix
    eigvals    --- Find the eigenvalues of a square matrix
+   eig_banded --- Find the eigenvalues and vectors of a band matrix
+   eigvals_banded --- Find the eigenvalues of a band matrix
    lu         --- LU decomposition of a matrix
    lu_factor  --- LU decomposition returning unordered matrix and pivots
    lu_solve   --- solve Ax=b using back substitution with output of lu_factor
