@@ -20,6 +20,10 @@ from numpy.testing import *
 set_package_path()
 from linalg import eig,eigvals,lu,svd,svdvals,cholesky,qr,schur,rsf2csf
 from linalg import lu_solve,lu_factor,solve,diagsvd,hessenberg
+from linalg import eig_banded,eigvals_banded
+from linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs
+from linalg.flapack import dsbev, dsbevd, dsbevx, zhbevd, zhbevx
+
 restore_path()
 
 from numpy import *
@@ -104,6 +108,293 @@ class test_eig(ScipyTestCase):
         for i in range(3):
             assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
                                       conjugate(w[i])*vl[:,i])
+
+
+
+class test_eig_banded(ScipyTestCase):
+
+    def __init__(self, *args):
+        ScipyTestCase.__init__(self, *args)
+
+        self.create_bandmat()
+
+    def create_bandmat(self):
+        """Create the full matrix `self.fullmat` and 
+           the corresponding band matrix `self.bandmat`."""
+        N  = 10
+        self.KL = 2   # number of subdiagonals (below the diagonal)
+        self.KU = 2   # number of superdiagonals (above the diagonal)
+
+        # symmetric band matrix
+        self.sym_mat = ( diag(1.0*ones(N))
+                     +  diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1) 
+                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+
+        # hermitian band matrix
+        self.herm_mat = ( diag(-1.0*ones(N))
+                     + 1j*diag(1.0*ones(N-1), -1) - 1j*diag(1.0*ones(N-1), 1)
+                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+
+        # general real band matrix
+        self.real_mat = ( diag(1.0*ones(N))
+                     +  diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1) 
+                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+
+        # general complex band matrix
+        self.comp_mat = ( 1j*diag(1.0*ones(N))
+                     +  diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1) 
+                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+
+
+        # Eigenvalues and -vectors from linalg.eig
+        ew, ev = linalg.eig(self.sym_mat)
+        ew = ew.real
+        args = argsort(ew)
+        self.w_sym_lin = ew[args]
+        self.evec_sym_lin = ev[:,args]
+
+        ew, ev = linalg.eig(self.herm_mat)
+        ew = ew.real
+        args = argsort(ew)
+        self.w_herm_lin = ew[args]
+        self.evec_herm_lin = ev[:,args]
+
+
+        # Extract upper bands from symmetric and hermitian band matrices
+        # (for use in dsbevd, dsbevx, zhbevd, zhbevx
+        #  and their single precision versions) 
+        LDAB = self.KU + 1
+        self.bandmat_sym  = zeros((LDAB, N), dtype=float)
+        self.bandmat_herm = zeros((LDAB, N), dtype=complex)
+        for i in xrange(LDAB):
+            self.bandmat_sym[LDAB-i-1,i:N]  = diag(self.sym_mat, i)
+            self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
+
+
+        # Extract bands from general real and complex band matrix
+        # (for use in dgbtrf, dgbtrs and their single precision versions)
+        LDAB = 2*self.KL + self.KU + 1
+        self.bandmat_real = zeros((LDAB, N), dtype=float)
+        self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
+        for i in xrange(self.KL):
+            # superdiagonals
+            self.bandmat_real[2*self.KL-1-i,i+1:N]   = diag(self.real_mat, i+1)
+            # subdiagonals
+            self.bandmat_real[2*self.KL+1+i,0:N-1-i] = diag(self.real_mat,-i-1)
+
+        self.bandmat_comp = zeros((LDAB, N), dtype=complex)
+        self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
+        for i in xrange(self.KL):
+            # superdiagonals
+            self.bandmat_comp[2*self.KL-1-i,i+1:N]   = diag(self.comp_mat, i+1)
+            # subdiagonals
+            self.bandmat_comp[2*self.KL+1+i,0:N-1-i] = diag(self.comp_mat,-i-1)
+
+        # absolute value for linear equation system A*x = b
+        self.b = 1.0*arange(N)
+        self.bc = self.b *(1 + 1j) 
+        
+
+    #####################################################################
+
+        
+    def check_dsbev(self):
+        """Compare dsbev eigenvalues and eigenvectors with
+           the result of linalg.eig."""
+        w, evec, info  = dsbev(self.bandmat_sym, compute_v=1)
+        evec_ = evec[:,argsort(w)]
+        assert_array_almost_equal(sort(w), self.w_sym_lin)
+        assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
+
+
+    
+    def check_dsbevd(self):
+        """Compare dsbevd eigenvalues and eigenvectors with
+           the result of linalg.eig."""
+        w, evec, info = dsbevd(self.bandmat_sym, compute_v=1)
+        evec_ = evec[:,argsort(w)]
+        assert_array_almost_equal(sort(w), self.w_sym_lin)
+        assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
+
+
+
+    def check_dsbevx(self):
+        """Compare dsbevx eigenvalues and eigenvectors
+           with the result of linalg.eig."""
+        N,N = shape(self.sym_mat)
+        ## Achtung: Argumente 0.0,0.0,range?
+        w, evec, num, ifail, info = dsbevx(self.bandmat_sym, 0.0, 0.0, 1, N,
+                                       compute_v=1, range=2)
+        evec_ = evec[:,argsort(w)]
+        assert_array_almost_equal(sort(w), self.w_sym_lin)
+        assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
+
+
+    def check_zhbevd(self):
+        """Compare zhbevd eigenvalues and eigenvectors
+           with the result of linalg.eig."""
+        w, evec, info = zhbevd(self.bandmat_herm, compute_v=1)
+        evec_ = evec[:,argsort(w)]
+        assert_array_almost_equal(sort(w), self.w_herm_lin)
+        assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
+
+
+
+    def check_zhbevx(self):
+        """Compare zhbevx eigenvalues and eigenvectors
+           with the result of linalg.eig."""
+        N,N = shape(self.herm_mat)
+        ## Achtung: Argumente 0.0,0.0,range?
+        w, evec, num, ifail, info = zhbevx(self.bandmat_herm, 0.0, 0.0, 1, N,
+                                       compute_v=1, range=2)
+        evec_ = evec[:,argsort(w)]
+        assert_array_almost_equal(sort(w), self.w_herm_lin)
+        assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
+
+
+
+    def check_eigvals_banded(self):
+        """Compare eigenvalues of eigvals_banded with those of linalg.eig."""
+        w_sym = eigvals_banded(self.bandmat_sym)
+        w_sym = w_sym.real
+        assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
+
+        w_herm = eigvals_banded(self.bandmat_herm)
+        w_herm = w_herm.real
+        assert_array_almost_equal(sort(w_herm), self.w_herm_lin)
+
+        # extracting eigenvalues with respect to an index range
+        ind1 = 2   
+        ind2 = 6
+        w_sym_ind = eigvals_banded(self.bandmat_sym,
+                                    select='i', select_range=(ind1, ind2) )
+        assert_array_almost_equal(sort(w_sym_ind),
+                                  self.w_sym_lin[ind1:ind2+1])
+        w_herm_ind = eigvals_banded(self.bandmat_herm,
+                                    select='i', select_range=(ind1, ind2) )
+        assert_array_almost_equal(sort(w_herm_ind),
+                                  self.w_herm_lin[ind1:ind2+1])
+
+        # extracting eigenvalues with respect to a value range
+        v_lower = self.w_sym_lin[ind1] - 1.0e-5
+        v_upper = self.w_sym_lin[ind2] + 1.0e-5
+        w_sym_val = eigvals_banded(self.bandmat_sym,
+                                select='v', select_range=(v_lower, v_upper) )
+        assert_array_almost_equal(sort(w_sym_val),
+                                  self.w_sym_lin[ind1:ind2+1])
+
+        v_lower = self.w_herm_lin[ind1] - 1.0e-5
+        v_upper = self.w_herm_lin[ind2] + 1.0e-5
+        w_herm_val = eigvals_banded(self.bandmat_herm,
+                                select='v', select_range=(v_lower, v_upper) )
+        assert_array_almost_equal(sort(w_herm_val),
+                                  self.w_herm_lin[ind1:ind2+1])
+
+
+
+    def check_eig_banded(self):
+        """Compare eigenvalues and eigenvectors of eig_banded
+           with those of linalg.eig. """
+        w_sym, evec_sym = eig_banded(self.bandmat_sym)
+        evec_sym_ = evec_sym[:,argsort(w_sym.real)]
+        assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
+        assert_array_almost_equal(abs(evec_sym_), abs(self.evec_sym_lin))
+
+        w_herm, evec_herm = eig_banded(self.bandmat_herm)
+        evec_herm_ = evec_herm[:,argsort(w_herm.real)]
+        assert_array_almost_equal(sort(w_herm), self.w_herm_lin)
+        assert_array_almost_equal(abs(evec_herm_), abs(self.evec_herm_lin))
+        
+        # extracting eigenvalues with respect to an index range
+        ind1 = 2   
+        ind2 = 6
+        w_sym_ind, evec_sym_ind = eig_banded(self.bandmat_sym,
+                                    select='i', select_range=(ind1, ind2) )
+        assert_array_almost_equal(sort(w_sym_ind),
+                                  self.w_sym_lin[ind1:ind2+1])
+        assert_array_almost_equal(abs(evec_sym_ind),
+                                  abs(self.evec_sym_lin[:,ind1:ind2+1]) )
+
+        w_herm_ind, evec_herm_ind = eig_banded(self.bandmat_herm,
+                                    select='i', select_range=(ind1, ind2) )
+        assert_array_almost_equal(sort(w_herm_ind),
+                                  self.w_herm_lin[ind1:ind2+1])
+        assert_array_almost_equal(abs(evec_herm_ind),
+                                  abs(self.evec_herm_lin[:,ind1:ind2+1]) )
+
+        # extracting eigenvalues with respect to a value range
+        v_lower = self.w_sym_lin[ind1] - 1.0e-5
+        v_upper = self.w_sym_lin[ind2] + 1.0e-5
+        w_sym_val, evec_sym_val = eig_banded(self.bandmat_sym,
+                                select='v', select_range=(v_lower, v_upper) )
+        assert_array_almost_equal(sort(w_sym_val),
+                                  self.w_sym_lin[ind1:ind2+1])
+        assert_array_almost_equal(abs(evec_sym_val),
+                                  abs(self.evec_sym_lin[:,ind1:ind2+1]) )
+
+        v_lower = self.w_herm_lin[ind1] - 1.0e-5
+        v_upper = self.w_herm_lin[ind2] + 1.0e-5
+        w_herm_val, evec_herm_val = eig_banded(self.bandmat_herm,
+                                select='v', select_range=(v_lower, v_upper) )
+        assert_array_almost_equal(sort(w_herm_val),
+                                  self.w_herm_lin[ind1:ind2+1])
+        assert_array_almost_equal(abs(evec_herm_val),
+                                  abs(self.evec_herm_lin[:,ind1:ind2+1]) )
+
+
+    def check_dgbtrf(self):
+        """Compare dgbtrf  LU factorisation with the LU factorisation result
+           of linalg.lu."""
+        M,N = shape(self.real_mat)        
+        lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
+
+        # extract matrix u from lu_symm_band
+        u = diag(lu_symm_band[2*self.KL,:])
+        for i in xrange(self.KL + self.KU):
+            u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
+
+        p_lin, l_lin, u_lin = lu(self.real_mat, permute_l=0)
+        assert_array_almost_equal(u, u_lin)
+
+
+    def check_zgbtrf(self):
+        """Compare zgbtrf  LU factorisation with the LU factorisation result
+           of linalg.lu."""
+        M,N = shape(self.comp_mat)        
+        lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
+
+        # extract matrix u from lu_symm_band
+        u = diag(lu_symm_band[2*self.KL,:])
+        for i in xrange(self.KL + self.KU):
+            u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
+
+        p_lin, l_lin, u_lin =lu(self.comp_mat, permute_l=0)
+        assert_array_almost_equal(u, u_lin)
+
+
+
+    def check_dgbtrs(self):
+        """Compare dgbtrs  solutions for linear equation system  A*x = b
+           with solutions of linalg.solve."""
+        
+        lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
+        y, info = dgbtrs(lu_symm_band, self.KL, self.KU, self.b, ipiv)
+
+        y_lin = linalg.solve(self.real_mat, self.b)
+        assert_array_almost_equal(y, y_lin)
+
+    def check_zgbtrs(self):
+        """Compare zgbtrs  solutions for linear equation system  A*x = b
+           with solutions of linalg.solve."""
+        
+        lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
+        y, info = zgbtrs(lu_symm_band, self.KL, self.KU, self.bc, ipiv)
+
+        y_lin = linalg.solve(self.comp_mat, self.bc)
+        assert_array_almost_equal(y, y_lin)
+
+
+
 
 class test_lu(ScipyTestCase):
 

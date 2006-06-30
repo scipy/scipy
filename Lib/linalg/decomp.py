@@ -5,9 +5,11 @@
 #
 # additions by Travis Oliphant, March 2002
 # additions by Eric Jones,      June 2002
+# additions by Johannes Loehnert, June 2006
 
-__all__ = ['eig','eigh','eigvals','eigvalsh','lu','svd','svdvals','diagsvd',
-           'cholesky','qr',
+
+__all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
+           'lu','svd','svdvals','diagsvd','cholesky','qr',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
@@ -21,7 +23,7 @@ from flinalg import get_flinalg_funcs
 import calc_lwork
 import numpy
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
-        single, isfinite
+        single, isfinite, inexact
 
 cast = numpy.cast
 r_ = numpy.r_
@@ -245,6 +247,124 @@ def eigh(a, lower=True, eigvals_only=False, overwrite_a=False):
     return w, v
 
 
+    
+def eig_banded(a_band, lower=0, eigvals_only=0, overwrite_a_band=0,
+               select='a', select_range=None, max_ev = 0):
+    """ Solve real symmetric or complex hermetian band matrix problem.
+
+    Inputs:
+
+      a_band            -- A hermitian N x M matrix in 'packed storage'.
+                           Packed storage looks like this: ('upper form')
+                           [ ... (more off-diagonals) ...,
+                            [ *   *   a13 a24 a35 a46 ... a(n-2)(n)],
+                            [ *   a12 a23 a34 a45 a56 ... a(n-1)(n)],
+                            [ a11 a22 a33 a44 a55 a66 ... a(n)(n)  ]]
+                           The cells denoted with * may contain anything.
+      lower             -- a is in lower packed storage
+                           (default: upper packed form)
+      eigvals_only      -- if True, don't compute eigenvectors.
+      overwrite_a_band  -- content of a may be destroyed
+      select       -- 'a', 'all', 0   : return all eigenvalues/vectors
+                      'v', 'value', 1 : eigenvalues in the interval (min, max]
+                                        will be found
+                      'i', 'index', 2 : eigenvalues with index [min...max]
+                                        will be found
+      select_range -- select == 'v': eigenvalue limits as tuple (min, max)
+                      select == 'i': index limits as tuple (min, max)
+                      select == 'a': meaningless
+      max_ev       -- select == 'v': set to max. number of eigenvalues that is
+                                     expected. In doubt, leave untouched.
+                      select == 'i', 'a': meaningless
+
+    Outputs:
+
+      w,v     -- w: eigenvalues, v: eigenvectors [for eigvals_only == False]
+      w       -- eigenvalues [for eigvals_only == True].
+
+    Definitions:
+
+      a_full * v[:,i] = w[i] * v[:,i]  (with full matrix corresponding to a)
+      v.H * v = identity
+
+    """
+    if eigvals_only or overwrite_a_band:
+        a1 = asarray_chkfinite(a_band)
+        overwrite_a_band = overwrite_a_band or (_datanotshared(a1,a_band))
+    else:
+        a1 = array(a_band)
+        if issubclass(a1.dtype.type, inexact) and not isfinite(a1).all():
+            raise ValueError, "array must not contain infs or NaNs"
+        overwrite_a_band = 1
+
+    if len(a1.shape) != 2:
+        raise ValueError, 'expected two-dimensional array'
+    if select.lower() not in [0, 1, 2, 'a', 'v', 'i', 'all', 'value', 'index']:
+        raise ValueError, 'invalid argument for select'
+    if select.lower() in [0, 'a', 'all']:
+        if a1.dtype.char in 'GFD':
+            bevd, = get_lapack_funcs(('hbevd',),(a1,))
+            # FIXME: implement this somewhen, for now go with builtin values
+            # FIXME: calc optimal lwork by calling ?hbevd(lwork=-1)
+            #        or by using calc_lwork.f ???
+            # lwork = calc_lwork.hbevd(bevd.prefix, a1.shape[0], lower)
+            internal_name = 'hbevd'
+        else: # a1.dtype.char in 'fd':
+            bevd, = get_lapack_funcs(('sbevd',),(a1,))
+            # FIXME: implement this somewhen, for now go with builtin values
+            #         see above
+            # lwork = calc_lwork.sbevd(bevd.prefix, a1.shape[0], lower)
+            internal_name = 'sbevd'
+        w,v,info = bevd(a1, compute_v = not eigvals_only,
+                        lower = lower,
+                        overwrite_ab = overwrite_a_band)
+    if select.lower() in [1, 2, 'i', 'v', 'index', 'value']:
+        # calculate certain range only
+        if select.lower() in [2, 'i', 'index']:
+            select = 2
+            vl, vu, il, iu = 0.0, 0.0, min(select_range), max(select_range)
+            if min(il, iu) < 0 or max(il, iu) >= a1.shape[1]:
+                raise ValueError, 'select_range out of bounds'
+            max_ev = iu - il + 1
+        else:  # 1, 'v', 'value'
+            select = 1
+            vl, vu, il, iu = min(select_range), max(select_range), 0, 0
+            if max_ev == 0:
+                max_ev = a_band.shape[1]
+        if eigvals_only:
+            max_ev = 1
+        # calculate optimal abstol for dsbevx (see manpage)
+        if a1.dtype.char in 'fF':  # single precision
+            lamch, = get_lapack_funcs(('lamch',),(array(0, dtype='f'),))
+        else:
+            lamch, = get_lapack_funcs(('lamch',),(array(0, dtype='d'),))
+        abstol = 2 * lamch('s')
+        if a1.dtype.char in 'GFD':
+            bevx, = get_lapack_funcs(('hbevx',),(a1,))
+            internal_name = 'hbevx'
+        else: # a1.dtype.char in 'gfd'
+            bevx, = get_lapack_funcs(('sbevx',),(a1,))
+            internal_name = 'sbevx'
+        # il+1, iu+1: translate python indexing (0 ... N-1) into Fortran
+        # indexing (1 ... N)
+        w, v, m, ifail, info = bevx(a1, vl, vu, il+1, iu+1,
+                                    compute_v = not eigvals_only,
+                                    mmax = max_ev,
+                                    range = select, lower = lower,
+                                    overwrite_ab = overwrite_a_band,
+                                    abstol=abstol)
+        # crop off w and v
+        w = w[:m]
+        if not eigvals_only:
+            v = v[:, :m]
+    if info<0: raise ValueError,\
+    'illegal value in %-th argument of internal %s'%(-info, internal_name)
+    if info>0: raise LinAlgError,"eig algorithm did not converge"
+        
+    if eigvals_only:
+        return w
+    return w, v
+
 def eigvals(a,b=None,overwrite_a=0):
     """Return eigenvalues of square matrix."""
     return eig(a,b=b,left=0,right=0,overwrite_a=overwrite_a)
@@ -252,6 +372,13 @@ def eigvals(a,b=None,overwrite_a=0):
 def eigvalsh(a,lower=1,overwrite_a=0):
     """Return eigenvalues of hermitean or real symmetric matrix."""
     return eigh(a,lower=lower,eigvals_only=1,overwrite_a=overwrite_a)
+
+def eigvals_banded(a_band,lower=0,overwrite_a_band=0,
+                   select='a', select_range=None):
+    """Return eigenvalues of hermitean or real symmetric matrix."""
+    return eig_banded(a_band,lower=lower,eigvals_only=1,
+                      overwrite_a_band=overwrite_a_band, select=select,
+                      select_range=select_range)
 
 def lu_factor(a, overwrite_a=0):
     """Return raw LU decomposition of a matrix and pivots, for use in solving
