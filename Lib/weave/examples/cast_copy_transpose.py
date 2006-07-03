@@ -20,7 +20,7 @@ import sys
 sys.path.insert(0,'..')
 import scipy.weave.inline_tools as inline_tools
 import scipy.weave.c_spec as c_spec
-from weave.converters import blitz as cblitz
+from scipy.weave.converters import blitz as cblitz
 
 def _cast_copy_transpose(type,a_2d):
     assert(len(shape(a_2d)) == 2)
@@ -58,7 +58,7 @@ def _cast_copy_transpose2(type,a_2d):
 
 def _inplace_transpose(a_2d):
     assert(len(shape(a_2d)) == 2)
-    numeric_type = c_spec.num_to_c_types[a_2d.typecode()]
+    numeric_type = c_spec.num_to_c_types[a_2d.dtype.char]
     code = """
            %s temp;
            for(int i = 0; i < Na_2d[0]; i++)
@@ -120,6 +120,7 @@ def inplace_cast_copy_transpose(*arrays):
 
 def _castCopyAndTranspose(type, *arrays):
     cast_arrays = ()
+    import copy
     for a in arrays:
         if a.dtype == numpy.dtype(type):
             cast_arrays = cast_arrays + (copy.copy(numpy.transpose(a)),)
@@ -135,8 +136,8 @@ import time
 
 
 def compare(m,n):
-    a = ones((n,n),Float64)
-    type = Float32
+    a = ones((n,n),float64)
+    type = float32
     print 'Cast/Copy/Transposing (%d,%d)array %d times' % (n,n,m)
     t1 = time.time()
     for i in range(m):
