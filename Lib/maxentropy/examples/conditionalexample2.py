@@ -17,8 +17,6 @@
 """
 
 __author__ =  'Ed Schofield'
-__version__=  '2.1'
-
 
 import math
 from scipy import maxentropy, sparse
@@ -49,9 +47,9 @@ numcontexts = len(contexts)
 numsamplepoints = len(samplespace)
 
 # Utility data structures: store the indices of each context and label in a
-# dict for fast lookups of their indices in their respective lists:
-samplespace_index = dict((x, i) for i, x in enumerate(samplespace))
-context_index = dict((c, i) for i, c in enumerate(contexts))
+# dict for fast lookups of their indices into their respective lists:
+samplespace_index = dict([(x, i) for i, x in enumerate(samplespace)])
+context_index = dict([(c, i) for i, c in enumerate(contexts)])
 
 # # Dense array version:
 # F = numpy.array([[f_i(x, c) for c in contexts for x in samplespace] for f_i in f])
@@ -63,7 +61,6 @@ F = sparse.lil_matrix((len(f), numcontexts * numsamplepoints))
 for i, f_i in enumerate(f):
     for c, context in enumerate(contexts):
         for x, samplepoint in enumerate(samplespace):
-            # print "context: %s; \t sample point: %s" % (samplepoint, context)
             F[i, c * numsamplepoints + x] = f_i(samplepoint, context)
 
 
@@ -97,7 +94,6 @@ model.verbose = True
 
 # Fit the model
 model.fit()
-model.fit()
 
 # Output the distribution
 print "\nFitted model parameters are:\n" + str(model.params)
@@ -119,40 +115,4 @@ for c, context in enumerate(contexts):
         print ("%12.3f" % p[c*numsamplepoints+x]),
 
 print
-
-# Ignore below here
-
-# # Also suppose the corpus never contains the English word 'purple', but
-# # we attempt to impose a fourth constraint
-# #        (4)    p(à | c) = 0  for c = 'purple'
-# # Is this possible under this framework?
-# def f3(x, c):
-#     return x=='en' and c == 'beans'
-# f.append(f3)
-# 
-# print "The conditional distributions in some contexts not in the corpus:"
-# newcontexts = ['purple', 'may']
-# newF = sparse.lil_matrix((len(f), len(newcontexts) * numsamplepoints))
-# for c, context in enumerate(newcontexts):
-#     # We need to compute the features of all sample points in these new contexts
-#     for x, samplepoint in enumerate(samplespace):
-#         for i, f_i in enumerate(f):
-#             newF[i, c * numsamplepoints + x] = f_i(samplepoint, context)
-#         # Computing N is not necessary.
-#         # newN[0, context_index[c] * numsamplepoints + samplespace_index[x]] += 1
-# 
-# model.F = newF
-# del model.p_tilde, model.p_tilde_context
-# model.clearcache()
-# p = model.probdist()
-# print "c \ x \t",
-# for label in samplespace:
-#     print label + "\t",
-# 
-# for c, context in enumerate(newcontexts):
-#     print "\n" + context + "\t",
-#     for x, label in enumerate(samplespace):
-#         print ("%.3f" % p[c*numsamplepoints+x]) + "\t",
-# 
-# print
 
