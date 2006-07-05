@@ -130,8 +130,9 @@ if( (x < 0.0) && (y != an) )
 
 y = fabs(x);
 
-if( y < MACHEP )
-	goto underf;
+if( y*y < fabs(n+1)*MACHEP ) {
+    return pow(0.5*x, n) / gamma(n+1);
+}
 
 k = 3.6 * sqrt(y);
 t = 3.6 * sqrt(an);

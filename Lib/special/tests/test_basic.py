@@ -1098,7 +1098,6 @@ class test_gegenbauer(ScipyTestCase):
     def check_gegenbauer(self):
         a = 5*rand()-0.5
         if any(a==0): a = -0.2
-        print "Gegenbauer, a = ", a
         Ca0 = gegenbauer(0,a)
         Ca1 = gegenbauer(1,a)
         Ca2 = gegenbauer(2,a)
@@ -1335,8 +1334,15 @@ class test_jv(ScipyTestCase):
         assert_almost_equal(jv(-3,2), -jv(3,2), 14)
 
     def check_jv(self):
-        jc = jv(0,.1)
-        assert_almost_equal(jc,0.99750156206604002,8)
+        values = [[0, 0.1, 0.99750156206604002],
+                  [2./3, 1e-8, 0.3239028506761532e-5],
+                  [2./3, 1e-10, 0.1503423854873779e-6],
+                  [3.1, 1e-10, 0.1711956265409013e-32],
+                  [2./3, 4.0, -0.2325440850267039],
+                 ]
+        for i, (v, x, y) in enumerate(values):
+            yc = jv(v, x)
+            assert_almost_equal(yc, y, 8, err_msg='test #%d' % i)
 
 class test_jve(ScipyTestCase):
     def check_negv(self):
