@@ -3,6 +3,8 @@ import numpy.linalg as L
 import scipy.integrate
 import _bspline
 
+# note to self: check out eig_banded! in linalg.decomp?
+
 def _zerofunc(x):
     return N.zeros(x.shape, N.float)
 

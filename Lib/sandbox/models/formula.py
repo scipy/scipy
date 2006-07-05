@@ -76,7 +76,7 @@ class Term:
             self.func(namespace=namespace, **extra)
         """
         
-	if not hasattr(self, 'func') or not usefn:
+        if not hasattr(self, 'func') or not usefn:
             val = namespace[self.termname]
             if isinstance(val, Formula):
                 val = val(namespace=namespace, **extra)
