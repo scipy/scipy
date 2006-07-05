@@ -42,9 +42,8 @@
 
 
 /*
-Cephes Math Library Release 2.2:  July, 1992
-Copyright 1984, 1987, 1989, 1992 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
 */
 
 
@@ -57,21 +56,37 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #define MAXGAM 171.624376956302725
 #endif
 
-#ifndef ANSIPROT
-double fabs(), floor(), frexp(), polevl(), j0(), j1(), sqrt(), cbrt();
-double exp(), log(), sin(), cos(), acos(), pow(), Gamma(), lgam();
-static double recur(), jvs(), hankel(), jnx(), jnt();
-int airy();
-#else
+#ifdef ANSIPROT
+extern int airy ( double, double *, double *, double *, double * );
+extern double fabs ( double );
+extern double floor ( double );
+extern double frexp ( double, int * );
+extern double polevl ( double, void *, int );
+extern double j0 ( double );
+extern double j1 ( double );
+extern double sqrt ( double );
+extern double cbrt ( double );
+extern double exp ( double );
+extern double log ( double );
+extern double sin ( double );
+extern double cos ( double );
+extern double acos ( double );
+extern double pow ( double, double );
+extern double gamma ( double );
+extern double lgam ( double );
 static double recur(double *, double, double *, int);
 static double jvs(double, double);
 static double hankel(double, double);
 static double jnx(double, double);
 static double jnt(double, double);
-extern int airy ( double x, double *ai, double *aip, double *bi, double *bip );
+#else
+int airy();
+double fabs(), floor(), frexp(), polevl(), j0(), j1(), sqrt(), cbrt();
+double exp(), log(), sin(), cos(), acos(), pow(), gamma(), lgam();
+static double recur(), jvs(), hankel(), jnx(), jnt();
 #endif
 
-extern double MAXNUM, MACHEP, MINLOG, MAXLOG, NAN;
+extern double MAXNUM, MACHEP, MINLOG, MAXLOG;
 #define BIG  1.44115188075855872E+17
 
 double jv( n, x )
@@ -109,7 +124,8 @@ if( y == an )
 if( (x < 0.0) && (y != an) )
 	{
 	mtherr( "Jv", DOMAIN );
-	return (NAN); 
+	y = 0.0;
+	goto done;
  	}
 
 y = fabs(x);
@@ -259,7 +275,8 @@ double x;
 double *newn;
 int cancel;
 {
-double pkm2, pkm1, pk, pkp1, qkm2, qkm1;
+double pkm2, pkm1, pk, qkm2, qkm1;
+/* double pkp1; */
 double k, ans, qk, xk, yk, r, t, kf;
 static double big = BIG;
 int nflag, ctr;
@@ -357,7 +374,7 @@ r = 2 * k;
 do
 	{
 	pkm2 = (pkm1 * r  -  pk * x) / x;
-	pkp1 = pk;
+	/*	pkp1 = pk; */
 	pk = pkm1;
 	pkm1 = pkm2;
 	r -= 2.0;
@@ -436,9 +453,9 @@ if(  (ex > -1023)
   && (n > 0.0)
   && (n < (MAXGAM-1.0)) )
 	{
-	t = pow( 0.5*x, n ) / Gamma( n + 1.0 );
+	t = pow( 0.5*x, n ) / gamma( n + 1.0 );
 #if DEBUG
-printf( "pow(.5*x, %.4e)/Gamma(n+1)=%.5e\n", n, t );
+printf( "pow(.5*x, %.4e)/gamma(n+1)=%.5e\n", n, t );
 #endif
 	y *= t;
 	}

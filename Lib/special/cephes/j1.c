@@ -73,9 +73,8 @@
 
 
 /*
-Cephes Math Library Release 2.1:  January, 1989
-Copyright 1984, 1987, 1989 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1989, 2000 by Stephen L. Moshier
 */
 
 /*
@@ -445,8 +444,17 @@ static unsigned short DZ2[] = {0x4048,0x9bf6,0x6072,0xa432};
 #define Z2 (*(double *)DZ2)
 #endif
 
-#ifndef ANSIPROT
-double j1(), polevl(), p1evl(), log(), sin(), cos(), sqrt();
+#ifdef ANSIPROT
+extern double polevl ( double, void *, int );
+extern double p1evl ( double, void *, int );
+extern double log ( double );
+extern double sin ( double );
+extern double cos ( double );
+extern double sqrt ( double );
+double j1 ( double );
+#else
+double polevl(), p1evl(), log(), sin(), cos(), sqrt();
+double j1();
 #endif
 extern double TWOOPI, THPIO4, SQ2OPI;
 
@@ -457,7 +465,7 @@ double w, z, p, q, xn;
 
 w = x;
 if( x < 0 )
-	return -j1(-x);
+        return -j1(-x);
 
 if( w <= 5.0 )
 	{

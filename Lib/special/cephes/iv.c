@@ -22,7 +22,7 @@
  * function, according to the formula
  *
  *              v  -x
- * Iv(x) = (x/2)  e   hyperg( v+0.5, 2v+1, 2x ) / Gamma(v+1)
+ * Iv(x) = (x/2)  e   hyperg( v+0.5, 2v+1, 2x ) / gamma(v+1)
  *
  * If v is a negative integer, then v is replaced by -v.
  *
@@ -47,17 +47,23 @@
 
 
 /*
-Cephes Math Library Release 2.1:  November, 1988
-Copyright 1984, 1987, 1988 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1988, 2000 by Stephen L. Moshier
 */
 
 
 #include "mconf.h"
-#ifndef ANSIPROT
-double hyperg(), exp(), Gamma(), log(), fabs(), floor();
+#ifdef ANSIPROT
+extern double hyperg ( double, double, double );
+extern double exp ( double );
+extern double gamma ( double );
+extern double log ( double );
+extern double fabs ( double );
+extern double floor ( double );
+#else
+double hyperg(), exp(), gamma(), log(), fabs(), floor();
 #endif
-extern double MACHEP, MAXNUM, NAN;
+extern double MACHEP, MAXNUM;
 
 double iv( v, x )
 double v, x;
@@ -82,7 +88,7 @@ if( x < 0.0 )
 	if( t != v )
 		{
 		mtherr( "iv", DOMAIN );
-		return( NAN );
+		return( 0.0 );
 		}
 	if( v != 2.0 * floor(v/2.0) )
 		sign = -1;
@@ -104,7 +110,7 @@ if( x == 0.0 )
 
 ax = fabs(x);
 t = v * log( 0.5 * ax )  -  x;
-t = sign * exp(t) / Gamma( v + 1.0 );
+t = sign * exp(t) / gamma( v + 1.0 );
 ax = v + 0.5;
 return( t * hyperg( ax,  2.0 * ax,  2.0 * x ) );
 }

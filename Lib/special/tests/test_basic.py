@@ -1155,11 +1155,23 @@ class test_hyp2f0(ScipyTestCase):
         pass
 
 class test_hyp2f1(ScipyTestCase):
-
     def check_hyp2f1(self):
-        hyp = hyp2f1(1,1,2,.5)
-        hrl = -(1/.5)*log(1-.5)
-        assert_almost_equal(hyp,hrl,8)
+        # a collection of special cases taken from AMS 55
+        values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
+                  [0.5, 1, 1.5, -0.2**2, 1./0.2*arctan(0.2)],
+                  [1, 1, 2, 0.2, -1/0.2*log(1-0.2)],
+                  [3, 3.5, 1.5, 0.2**2,
+                      0.5/0.2/(-5)*((1+0.2)**(-5)-(1-0.2)**(-5))],
+                  [-3, 3, 0.5, sin(0.2)**2, cos(2*3*0.2)],
+                  [3, 4, 8, 1, gamma(8)*gamma(8-4-3)/gamma(8-3)/gamma(8-4)],
+                  [3, 2, 3-2+1, -1, 1./2**3*sqrt(pi)*
+                      gamma(1+3-2)/gamma(1+0.5*3-2)/gamma(0.5+0.5*3)],
+                  [4, 0.5+4, 5./6+4, 1./9, (0.75)**4*sqrt(pi)*
+                      gamma(5./6+2./3*4)/gamma(0.5+4./3)*gamma(5./6+4./3)],
+                  ]
+        for i, (a, b, c, x, v) in enumerate(values):
+            cv = hyp2f1(a, b, c, x)
+            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
 
 class test_hyp3f0(ScipyTestCase):
 
@@ -1182,11 +1194,19 @@ class test_hyperu(ScipyTestCase):
         assert_array_almost_equal(hypu,hprl,12)
 
 class test_i0(ScipyTestCase):
-
     def check_i0(self):
-        oiz = i0(.1)
-        oizr = iv(0,.1)
-        assert_almost_equal(oiz,oizr,8)
+        values = [[0.0, 1.0],
+                  [1e-10, 1.0],
+                  [0.1, 0.9071009258],
+                  [0.5, 0.6450352706],
+                  [1.0, 0.4657596077],
+                  [2.5, 0.2700464416],
+                  [5.0, 0.1835408126],
+                  [20.0, 0.0897803119],
+                 ]
+        for i, (x, v) in enumerate(values):
+            cv = i0(x) * exp(-x)
+            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
 
 class test_i0e(ScipyTestCase):
 
@@ -1198,10 +1218,17 @@ class test_i0e(ScipyTestCase):
 class test_i1(ScipyTestCase):
 
     def check_i1(self):
-
-        oi1 = i1(.1)
-        oi1r = iv(1,.1)
-        assert_almost_equal(oi1,oi1r,8)
+        values = [[0.0, 0.0],
+                  [1e-10, 0.4999999999500000e-10],
+                  [0.1, 0.0452984468],
+                  [0.5, 0.1564208032],
+                  [1.0, 0.2079104154],
+                  [5.0, 0.1639722669],
+                  [20.0, 0.0875062222],
+                 ]
+        for i, (x, v) in enumerate(values):
+            cv = i1(x) * exp(-x)
+            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
 
 class test_i1e(ScipyTestCase):
 

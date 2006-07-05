@@ -60,21 +60,27 @@
 
 
 /*
-Cephes Math Library Release 2.1:  November, 1988
-Copyright 1984, 1987, 1988 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1988, 2000 by Stephen L. Moshier
 */
 
 #include "mconf.h"
 
-#ifndef ANSIPROT
-double exp(), fabs();
-static double hy1f1p();
-static double hy1f1a();
-#else
+#ifdef ANSIPROT
+extern double exp ( double );
+extern double log ( double );
+extern double gamma ( double );
+extern double lgam ( double );
+extern double fabs ( double );
+double hyp2f0 ( double, double, double, int, double * );
 static double hy1f1p(double, double, double, double *);
 static double hy1f1a(double, double, double, double *);
-double hyp2f0( double,double,double,int,double*);
+double hyperg (double, double, double);
+#else
+double exp(), log(), gamma(), lgam(), fabs(), hyp2f0();
+static double hy1f1p();
+static double hy1f1a();
+double hyperg();
 #endif
 extern double MAXNUM, MACHEP;
 
@@ -125,10 +131,7 @@ double a, b, x;
 double *err;
 {
 double n, a0, sum, t, u, temp;
-#ifndef ANSIPROT
-double fabs();
-#endif
-double an, bn, maxt, pcanc;
+double an, bn, maxt;
 
 
 /* set up for power series summation */
@@ -139,8 +142,7 @@ sum = 1.0;
 n = 1.0;
 t = 1.0;
 maxt = 0.0;
-pcanc = 1.0; /* estimate 100% error if problem */
-*err = pcanc;
+*err = 1.0;
 
 
 while( t > MACHEP )
@@ -160,7 +162,8 @@ while( t > MACHEP )
 	temp = fabs(u);
 	if( (temp > 1.0 ) && (maxt > (MAXNUM/temp)) )
 		{
-		goto blowup;
+		*err = 1.0;	/* blowup: estimate 100% error */
+                return sum;
 		}
 
 	a0 *= u;
@@ -186,11 +189,7 @@ pdone:
 if( sum != 0.0 )
 	maxt /= fabs(sum);
 maxt *= MACHEP; 	/* this way avoids multiply overflow */
-pcanc = fabs( MACHEP * n  +  maxt );
-
-blowup:
-
-*err = pcanc;
+*err = fabs( MACHEP * n  +  maxt );
 
 return( sum );
 }
@@ -218,9 +217,6 @@ double a, b, x;
 double *err;
 {
 double h1, h2, t, u, temp, acanc, asum, err1, err2;
-#ifndef ANSIPROT
-double exp(), log(), Gamma(), lgam(), fabs(), hyp2f0();
-#endif
 
 if( x == 0 )
 	{
@@ -241,14 +237,14 @@ if( b > 0 )
 
 h1 = hyp2f0( a, a-b+1, -1.0/x, 1, &err1 );
 
-temp = exp(u) / Gamma(b-a);
+temp = exp(u) / gamma(b-a);
 h1 *= temp;
 err1 *= temp;
 
 h2 = hyp2f0( b-a, 1.0-a, 1.0/x, 2, &err2 );
 
 if( a < 0 )
-	temp = exp(t) / Gamma(a);
+	temp = exp(t) / gamma(a);
 else
 	temp = exp( t - lgam(a) );
 
@@ -265,7 +261,7 @@ acanc = fabs(err1) + fabs(err2);
 
 if( b < 0 )
 	{
-	temp = Gamma(b);
+	temp = gamma(b);
 	asum *= temp;
 	acanc *= fabs(temp);
 	}
@@ -291,9 +287,6 @@ double a, b, x;
 int type;	/* determines what converging factor to use */
 double *err;
 {
-#ifndef ANSIPROT
-double fabs();
-#endif
 double a0, alast, t, tlast, maxt;
 double n, an, bn, u, sum, temp;
 

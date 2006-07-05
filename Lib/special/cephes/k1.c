@@ -70,9 +70,8 @@
  */
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 2000 by Stephen L. Moshier
 */
 
 #include "mconf.h"
@@ -277,7 +276,13 @@ static unsigned short B[] = {
 };
 #endif
 
-#ifndef ANSIPROT
+#ifdef ANSIPROT
+extern double chbevl ( double, void *, int );
+extern double exp ( double );
+extern double i1 ( double );
+extern double log ( double );
+extern double sqrt ( double );
+#else
 double chbevl(), exp(), i1(), log(), sqrt();
 #endif
 extern double PI;

@@ -51,9 +51,8 @@
 /*							airy.c */
 
 /*
-Cephes Math Library Release 2.1:  January, 1989
-Copyright 1984, 1987, 1989 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1989, 2000 by Stephen L. Moshier
 */
 
 #include "mconf.h"
@@ -823,7 +822,15 @@ static unsigned short APGD[40] = {
 };
 #endif
 
-#ifndef ANSIPROT
+#ifdef ANSIPROT
+extern double fabs ( double );
+extern double exp ( double );
+extern double sqrt ( double );
+extern double polevl ( double, void *, int );
+extern double p1evl ( double, void *, int );
+extern double sin ( double );
+extern double cos ( double );
+#else
 double fabs(), exp(), sqrt();
 double polevl(), p1evl(), sin(), cos();
 #endif

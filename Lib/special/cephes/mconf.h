@@ -199,3 +199,4 @@ int mtherr();
 /* Variable for error reporting.  See mtherr.c.  */
 extern int merror;
 
+#define gamma Gamma

@@ -31,10 +31,9 @@
  *	Transformation for x < -0.5
  *	Psi function expansion if x > 0.5 and c - a - b integer
  *      Conditionally, a recurrence on c to make c-a-b > 0
- * 
- *      x < -1  AMS 15.3.7 transformation applied (Travis Oliphant).
- *             valid for b,a,c,(b-a) != integer and (c-a),(c-b) != negative integer
- *                             
+ *
+ *      x < -1  AMS 15.3.7 transformation applied (Travis Oliphant)
+ *         valid for b,a,c,(b-a) != integer and (c-a),(c-b) != negative integer
  *
  * x >= 1 is rejected (unless special cases are present)
  *
@@ -64,9 +63,8 @@
 
 
 /*
-Cephes Math Library Release 2.2:  November, 1992
-Copyright 1984, 1987, 1992 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
 */
 
 
@@ -94,13 +92,22 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 
 #define ETHRESH 1.0e-12
 
-#ifndef ANSIPROT
-double fabs(), pow(), round(), Gamma(), log(), exp(), psi();
-static double hyt2f1();
-static double hys2f1();
-#else
+#ifdef ANSIPROT
+extern double fabs ( double );
+extern double pow ( double, double );
+extern double round ( double );
+extern double gamma ( double );
+extern double log ( double );
+extern double exp ( double );
+extern double psi ( double );
 static double hyt2f1(double, double, double, double, double *);
 static double hys2f1(double, double, double, double, double *);
+double hyp2f1(double, double, double, double);
+#else
+double fabs(), pow(), round(), gamma(), log(), exp(), psi();
+static double hyt2f1();
+static double hys2f1();
+double hyp2f1();
 #endif
 extern double MAXNUM, MACHEP, NAN;
 
@@ -110,7 +117,6 @@ double a, b, c, x;
 double d, d1, d2, e;
 double p, q, r, s, y, ax;
 double ia, ib, ic, id, err;
-double t1;
 int flag, i, aid;
 
 err = 0.0;
@@ -119,7 +125,6 @@ s = 1.0 - x;
 flag = 0;
 ia = round(a); /* nearest integer to a */
 ib = round(b);
-
 
 if( a <= 0 )
 	{
@@ -133,21 +138,17 @@ if( b <= 0 )
 		flag |= 2;
 	}
 
-
-if( fabs(ax-1.0) > EPS )			/* |x| != 1.0	*/
-    {
-	if( fabs(b-c) < EPS )		/* b = c */
-	    {
+if (fabs(ax-1.0) > EPS) {               /* |x| != 1.0 */
+	if( fabs(b-c) < EPS ) {		/* b = c */
 		y = pow( s, -a );	/* s to the -a power */
 		goto hypdon;
-	    }
-	
-	if( fabs(a-c) < EPS )		/* a = c */
-	    {
+        }
+	if( fabs(a-c) < EPS ) {		/* a = c */
 		y = pow( s, -b );	/* s to the -b power */
 		goto hypdon;
-	    }
+	}
 }
+
 
 
 if( c <= 0.0 )
@@ -167,6 +168,21 @@ if( c <= 0.0 )
 if( flag )			/* function is a polynomial */
 	goto hypok;
 
+if (x < -1.0) {
+    double t1;
+    r = -x;
+    p = hyp2f1(a, 1-c+a, 1-b+a, 1.0/x);
+    q = hyp2f1(b, 1-c+b, 1-b+a, 1.0/x);
+    p *= pow(r, -a);
+    q *= pow(r, -b);
+    t1 = gamma(c);
+    s = t1*gamma(b-a)/(gamma(b)*gamma(c-a));
+    y = t1*gamma(a-b)/(gamma(a)*gamma(c-b));
+    return s*p + y*q;
+}
+
+if( ax > 1.0 )			/* series diverges	*/
+	goto hypdiv;
 
 p = c - a;
 ia = round(p); /* nearest integer to c-a */
@@ -181,7 +197,6 @@ if( (ib <= 0.0) && (fabs(r-ib) < EPS) )	/* negative int c - b */
 d = c - a - b;
 id = round(d); /* nearest integer to d */
 q = fabs(d-id);
-
 
 /* Thanks to Christian Burger <BURGER@DMRHRZ11.HRZ.Uni-Marburg.DE>
  * for reporting a bug here.  */
@@ -198,7 +213,7 @@ if( fabs(ax-1.0) < EPS )			/* |x| == 1.0	*/
 			}
 		if( d <= 0.0 )
 			goto hypdiv;
-		y = Gamma(c)*Gamma(d)/(Gamma(p)*Gamma(r));
+		y = gamma(c)*gamma(d)/(gamma(p)*gamma(r));
 		goto hypdon;
 		}
 
@@ -238,11 +253,6 @@ if( d < 0.0 )
 if( flag & 12 )
 	goto hypf; /* negative integer c-a or c-b */
 
-
-if( ax > 1.0 )			/* series diverges	*/
-	goto hypdiv;
-
-
 hypok:
 y = hyt2f1( a, b, c, x, &err );
 
@@ -264,24 +274,12 @@ goto hypdon;
 
 /* The alarm exit */
 hypdiv:
-
-/* Added by Travis Oliphant */
-
-if ((x < -1) & (fabs(b-a-(ib-ia)) < EPS)) {  /* Handle negative values of x */
-    r = -x;
-    p = hyp2f1(a, 1-c+a, 1-b+a, 1.0/x);
-    q = hyp2f1(b, 1-c+b, 1-a+b, 1.0/x);
-    p *= pow (r, -a);
-    q *= pow (r, -b);
-    t1 = Gamma(c);
-    s = t1*Gamma(b-a)/(Gamma(b)*Gamma(c-a));
-    y = t1*Gamma(a-b)/(Gamma(a)*Gamma(c-b));
-    return s*p + y*q;
-}
-
 mtherr( "hyp2f1", OVERFLOW );
 return( MAXNUM );
 }
+
+
+
 
 
 
@@ -322,9 +320,9 @@ if( fabs(d-id) > EPS ) /* test for integer c-a-b */
 		goto done;
 /* If power series fails, then apply AMS55 #15.3.6 */
 	q = hys2f1( a, b, 1.0-d, s, &err );	
-	q *= Gamma(d) /(Gamma(c-a) * Gamma(c-b));
+	q *= gamma(d) /(gamma(c-a) * gamma(c-b));
 	r = pow(s,d) * hys2f1( c-a, c-b, d+1.0, s, &err1 );
-	r *= Gamma(-d)/(Gamma(a) * Gamma(b));
+	r *= gamma(-d)/(gamma(a) * gamma(b));
 	y = q + r;
 
 	q = fabs(q); /* estimate cancellation error */
@@ -333,7 +331,7 @@ if( fabs(d-id) > EPS ) /* test for integer c-a-b */
 		r = q;
 	err += err1 + (MACHEP*r)/y;
 
-	y *= Gamma(c);
+	y *= gamma(c);
 	goto done;
 	}
 else
@@ -358,9 +356,9 @@ else
 
 	/* sum for t = 0 */
 	y = psi(1.0) + psi(1.0+e) - psi(a+d1) - psi(b+d1) - ax;
-	y /= Gamma(e+1.0);
+	y /= gamma(e+1.0);
 
-	p = (a+d1) * (b+d1) * s / Gamma(e+2.0);	/* Poch for t=1 */
+	p = (a+d1) * (b+d1) * s / gamma(e+2.0);	/* Poch for t=1 */
 	t = 1.0;
 	do
 		{
@@ -377,7 +375,7 @@ else
 
 	if( id == 0.0 )
 		{
-		y *= Gamma(c)/(Gamma(a)*Gamma(b));
+		y *= gamma(c)/(gamma(a)*gamma(b));
 		goto psidon;
 		}
 
@@ -397,10 +395,10 @@ else
 		y1 += p;
 		}
 nosum:
-	p = Gamma(c);
-	y1 *= Gamma(e) * p / (Gamma(a+d1) * Gamma(b+d1));
+	p = gamma(c);
+	y1 *= gamma(e) * p / (gamma(a+d1) * gamma(b+d1));
 
-	y *= p / (Gamma(a+d2) * Gamma(b+d2));
+	y *= p / (gamma(a+d2) * gamma(b+d2));
 	if( (aid & 1) != 0 )
 		y = -y;
 

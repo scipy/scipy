@@ -84,9 +84,8 @@
  */
 
 /*
-Cephes Math Library Release 2.1:  January, 1989
-Copyright 1984, 1987, 1989 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+Cephes Math Library Release 2.8:  June, 2000
+Copyright 1984, 1987, 1989, 2000 by Stephen L. Moshier
 */
 
 /* Note: all coefficients satisfy the relative error criterion
@@ -459,8 +458,17 @@ static unsigned short RQ[32] = {
 };
 #endif
 
-#ifndef ANSIPROT
-double j0(), polevl(), p1evl(), log(), sin(), cos(), sqrt();
+#ifdef ANSIPROT
+extern double polevl ( double, void *, int );
+extern double p1evl ( double, void *, int );
+extern double log ( double );
+extern double sin ( double );
+extern double cos ( double );
+extern double sqrt ( double );
+double j0 ( double );
+#else
+double polevl(), p1evl(), log(), sin(), cos(), sqrt();
+double j0();
 #endif
 extern double TWOOPI, SQ2OPI, PIO4;
 
