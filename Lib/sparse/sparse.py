@@ -196,14 +196,14 @@ class spmatrix:
         return csc * other
 
     def __truediv__(self, other):
-        if isscalar(other):
+        if isscalarlike(other):
             return self * (1./other)
         else:
             raise NotImplementedError, "sparse matrix division not yet supported"
 
     def __div__(self, other):
         # Always do true division
-        if isscalar(other):
+        if isscalarlike(other):
             return self * (1./other)
         else:
             raise NotImplementedError, "sparse matrix division not yet supported"
@@ -634,7 +634,7 @@ class csc_matrix(spmatrix):
     def __radd__(self, other):
         """ Function supporting the operation: self + other.
         """
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             raise NotImplementedError, 'adding a scalar to a CSC matrix is ' \
                     'not yet supported'
         elif isspmatrix(other):
@@ -659,7 +659,7 @@ class csc_matrix(spmatrix):
             raise TypeError, "unsupported type for sparse matrix addition"
 
     def __add__(self, other):
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             raise NotImplementedError, 'adding a scalar to a CSC matrix is ' \
                     'not yet supported'
         elif isspmatrix(other):
@@ -686,7 +686,7 @@ class csc_matrix(spmatrix):
     def __mul__(self, other):
         """ Scalar, vector, or matrix multiplication
         """
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             new.data *= other
             new.dtype = new.data.dtype
@@ -696,7 +696,7 @@ class csc_matrix(spmatrix):
             return self.dot(other)
 
     def __rmul__(self, other):  # other * self
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             new.data = other * new.data
             new.dtype = new.data.dtype
@@ -719,7 +719,7 @@ class csc_matrix(spmatrix):
         """ Element-by-element power (unless other is a scalar, in which
         case return the matrix power.)
         """
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             new.data = new.data ** other
             new.dtype = new.data.dtype
@@ -1218,7 +1218,7 @@ class csr_matrix(spmatrix):
     
     def __add__(self, other):
         # First check if argument is a scalar
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             # Now we would add this scalar to every element.
             raise NotImplementedError, 'adding a scalar to a CSR matrix ' \
                     'is not yet supported'
@@ -1244,7 +1244,7 @@ class csr_matrix(spmatrix):
     def __mul__(self, other):
         """ Scalar, vector, or matrix multiplication
         """
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             new.data = other * new.data         # allows type conversion
             new.dtype = new.data.dtype
@@ -1254,7 +1254,7 @@ class csr_matrix(spmatrix):
             return self.dot(other)
 
     def __rmul__(self, other):  # other * self
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             new.data = other * new.data         # allows type conversion
             new.dtype = new.data.dtype
@@ -1277,7 +1277,7 @@ class csr_matrix(spmatrix):
         """ Element-by-element power (unless other is a scalar, in which
         case return the matrix power.)
         """
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             new.data = new.data ** other
             new.dtype = new.data.dtype
@@ -1913,7 +1913,7 @@ class dok_matrix(spmatrix, dict):
 
     def __add__(self, other):
         # First check if argument is a scalar
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
@@ -1943,7 +1943,7 @@ class dok_matrix(spmatrix, dict):
 
     def __radd__(self, other):
         # First check if argument is a scalar
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
@@ -1975,7 +1975,7 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def __mul__(self, other):           # self * other
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
             for (key, val) in self.iteritems():
@@ -1986,7 +1986,7 @@ class dok_matrix(spmatrix, dict):
             return self.dot(other)
 
     def __rmul__(self, other):          # other * self
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
             for (key, val) in self.iteritems():
@@ -2549,7 +2549,7 @@ class lil_matrix(spmatrix):
             else:
                 raise IndexError, "invalid index"
 
-            if isscalar(x):
+            if isscalar(x):             # does this work with 0-dim arrays too?
                 if len(row) == 0:
                     row[:] = seq
                     self.data[i] = [x for item in seq]  # make copies 
@@ -2612,7 +2612,7 @@ class lil_matrix(spmatrix):
                 
 
     def __mul__(self, other):           # self * other
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             new = self.copy()
             if other == 0:
                 # Multiply by zero: return the zero matrix
@@ -2632,7 +2632,7 @@ class lil_matrix(spmatrix):
     
     
     def __rmul__(self, other):          # other * self
-        if isscalar(other) or (isdense(other) and rank(other)==0):
+        if isscalarlike(other):
             # Multiplication by a scalar is symmetric
             return self.__mul__(other)
         else:
@@ -2722,6 +2722,10 @@ def isspmatrix_coo( x ):
 
 def isdense(x):
     return _isinstance(x, ndarray)
+
+def isscalarlike(x):
+    """Is x either a scalar, an array scalar, or a 0-dim array?"""
+    return isscalar(x) or (isdense(x) and x.ndim == 0)
 
 def isshape(x):
     """Is x a valid 2-tuple of dimensions?
