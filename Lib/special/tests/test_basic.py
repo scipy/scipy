@@ -1166,8 +1166,10 @@ class test_hyp2f1(ScipyTestCase):
                   [3, 4, 8, 1, gamma(8)*gamma(8-4-3)/gamma(8-3)/gamma(8-4)],
                   [3, 2, 3-2+1, -1, 1./2**3*sqrt(pi)*
                       gamma(1+3-2)/gamma(1+0.5*3-2)/gamma(0.5+0.5*3)],
-                  [4, 0.5+4, 5./6+4, 1./9, (0.75)**4*sqrt(pi)*
-                      gamma(5./6+2./3*4)/gamma(0.5+4./3)*gamma(5./6+4./3)],
+                  [5, 2, 5-2+1, -1, 1./2**5*sqrt(pi)*
+                      gamma(1+5-2)/gamma(1+0.5*5-2)/gamma(0.5+0.5*5)],
+                  [4, 0.5+4, 1.5-2*4, -1./3, (8./9)**(-2*4)*gamma(4./3)*
+                      gamma(1.5-2*4)/gamma(3./2)/gamma(4./3-2*4)],
                   ]
         for i, (a, b, c, x, v) in enumerate(values):
             cv = hyp2f1(a, b, c, x)

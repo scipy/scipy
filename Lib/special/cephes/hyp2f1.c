@@ -117,28 +117,37 @@ double a, b, c, x;
 double d, d1, d2, e;
 double p, q, r, s, y, ax;
 double ia, ib, ic, id, err;
-int flag, i, aid;
+int i, aid;
+int neg_int_a = 0, neg_int_b = 0;
+int neg_int_ca_or_cb = 0;
 
 err = 0.0;
 ax = fabs(x);
 s = 1.0 - x;
-flag = 0;
 ia = round(a); /* nearest integer to a */
 ib = round(b);
 
-if( a <= 0 )
-	{
-	if( fabs(a-ia) < EPS )		/* a is a negative integer */
-		flag |= 1;
-	}
+if (x == 0.0) {
+    return 1.0;
+}
 
-if( b <= 0 )
-	{
-	if( fabs(b-ib) < EPS )		/* b is a negative integer */
-		flag |= 2;
-	}
+d = c - a - b;
+if (d <= -1) {
+    return pow(s, d) * hyp2f1(c-a, c-b, c, x);
+}
+if (d <= 0 && x == 1)
+    goto hypdiv;
 
-if (fabs(ax-1.0) > EPS) {               /* |x| != 1.0 */
+if (a <= 0 && fabs(a-ia) < EPS ) {	/* a is a negative integer */
+    neg_int_a = 1;
+}
+
+if (b <= 0 && fabs(b-ib) < EPS ) {	/* b is a negative integer */
+    neg_int_b = 1;
+}
+
+if (ax < 1.0 || x == -1.0) {
+	/* 2F1(a,b;b;x) = (1-x)**(-a) */
 	if( fabs(b-c) < EPS ) {		/* b = c */
 		y = pow( s, -a );	/* s to the -a power */
 		goto hypdon;
@@ -157,24 +166,28 @@ if( c <= 0.0 )
 	if( fabs(c-ic) < EPS )		/* c is a negative integer */
 		{
 		/* check if termination before explosion */
-		if( (flag & 1) && (ia > ic) )
+		if( neg_int_a && (ia > ic) )
 			goto hypok;
-		if( (flag & 2) && (ib > ic) )
+		if( neg_int_b && (ib > ic) )
 			goto hypok;
 		goto hypdiv;
 		}
 	}
 
-if( flag )			/* function is a polynomial */
+if (neg_int_a || neg_int_b)		/* function is a polynomial */
 	goto hypok;
 
 if (x < -1.0) {
     double t1;
-    r = -x;
+    t1 = fabs(b - a);
+    if (fabs(t1 - round(t1)) < EPS) {
+        /* this transformation has a pole for b-a= +-integer */
+        goto hypdiv;
+    }
     p = hyp2f1(a, 1-c+a, 1-b+a, 1.0/x);
-    q = hyp2f1(b, 1-c+b, 1-b+a, 1.0/x);
-    p *= pow(r, -a);
-    q *= pow(r, -b);
+    q = hyp2f1(b, 1-c+b, 1-a+b, 1.0/x);
+    p *= pow(-x, -a);
+    q *= pow(-x, -b);
     t1 = gamma(c);
     s = t1*gamma(b-a)/(gamma(b)*gamma(c-a));
     y = t1*gamma(a-b)/(gamma(a)*gamma(c-b));
@@ -187,40 +200,34 @@ if( ax > 1.0 )			/* series diverges	*/
 p = c - a;
 ia = round(p); /* nearest integer to c-a */
 if( (ia <= 0.0) && (fabs(p-ia) < EPS) )	/* negative int c - a */
-	flag |= 4;
+        neg_int_ca_or_cb = 1;
 
 r = c - b;
 ib = round(r); /* nearest integer to c-b */
 if( (ib <= 0.0) && (fabs(r-ib) < EPS) )	/* negative int c - b */
-	flag |= 8;
+        neg_int_ca_or_cb = 1;
 
-d = c - a - b;
 id = round(d); /* nearest integer to d */
 q = fabs(d-id);
 
 /* Thanks to Christian Burger <BURGER@DMRHRZ11.HRZ.Uni-Marburg.DE>
  * for reporting a bug here.  */
-if( fabs(ax-1.0) < EPS )			/* |x| == 1.0	*/
-	{
-	if( x > 0.0 )
-		{
-		if( flag & 12 ) /* negative int c-a or c-b */
-			{
+if( fabs(ax-1.0) < EPS ) {			/* |x| == 1.0	*/
+	if( x > 0.0 ) {
+                if (neg_int_ca_or_cb) {
 			if( d >= 0.0 )
 				goto hypf;
 			else
 				goto hypdiv;
-			}
+		}
 		if( d <= 0.0 )
 			goto hypdiv;
 		y = gamma(c)*gamma(d)/(gamma(p)*gamma(r));
 		goto hypdon;
-		}
-
+	}
 	if( d <= -1.0 )
 		goto hypdiv;
-
-	}
+}
 
 /* Conditionally make d > 0 by recurrence on c
  * AMS55 #15.2.27
@@ -250,7 +257,7 @@ if( d < 0.0 )
 	}
 
 
-if( flag & 12 )
+if (neg_int_ca_or_cb)
 	goto hypf; /* negative integer c-a or c-b */
 
 hypok:
