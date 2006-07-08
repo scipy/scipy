@@ -168,7 +168,7 @@ netcdf_signalerror(int code)
  */
 
 int data_types[] = {-1,  /* not used */
-		    PyArray_SBYTE,  /* signed 8-bit int */
+		    PyArray_BYTE,  /* signed 8-bit int */
 		    PyArray_CHAR,   /* 8-bit character */
 		    PyArray_SHORT,  /* 16-bit signed int */
 		    PyArray_INT,    /* 32-bit signed int */

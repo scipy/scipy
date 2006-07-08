@@ -28,8 +28,8 @@ def line_search(f, myfprime, xk, pk, gfk, old_fval, old_old_fval,
 
     xtol = 1e-14
     amin = 1e-8
-    isave = numpy.zeros((2,), numpy.int32)
-    dsave = numpy.zeros((13,), numpy.float64)
+    isave = numpy.zeros((2,), numpy.intc)
+    dsave = numpy.zeros((13,), float)
     task = 'START'
     fval = old_fval
     gval = gfk

@@ -624,7 +624,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     gfk = myfprime(x0)
     k = 0
     N = len(x0)
-    I = numpy.eye(N)
+    I = numpy.eye(N,dtype=int)
     Hk = I
     old_fval = f(x0)
     old_old_fval = old_fval + 5000
@@ -644,8 +644,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
                      line_search(f,myfprime,xk,pk,gfk,
                                  old_fval,old_old_fval)
             if alpha_k is None:
-                raise ValueError, "Line-search failing..."
-
+                # This line search also failed to find a better solution.
+                warnflag = 2
+                break                
         xkp1 = xk + alpha_k * pk
         if retall:
             allvecs.append(xkp1)
@@ -1579,7 +1580,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     Jout = vecfunc(*grid)
     Nshape = shape(Jout)
     indx = argmin(Jout.ravel())
-    Nindx = zeros(N)
+    Nindx = zeros(N,int)
     xmin = zeros(N,float)
     for k in range(N-1,-1,-1):
         thisN = Nshape[k]
