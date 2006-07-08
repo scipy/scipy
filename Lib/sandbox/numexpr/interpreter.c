@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "structmember.h"
-#include "numpy/arrayobject.h"
+#include "numpy/noprefix.h"
 #include "math.h"
 
 #include "complex_functions.inc"

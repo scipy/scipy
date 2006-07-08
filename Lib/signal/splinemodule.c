@@ -13,31 +13,31 @@
 #define RANK(arr) ((arr)->nd)
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
 
-static void convert_strides(intp*,intp*,int,int);
+static void convert_strides(npy_intp*,npy_intp*,int,int);
 
-extern int S_cubic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
-extern int S_quadratic_spline2D(float*,float*,int,int,double,intp*,intp*,float);
+extern int S_cubic_spline2D(float*,float*,int,int,double,npy_intp*,npy_intp*,float);
+extern int S_quadratic_spline2D(float*,float*,int,int,double,npy_intp*,npy_intp*,float);
 extern int S_IIR_forback1(float,float,float*,float*,int,int,int,float);
 extern int S_IIR_forback2(double,double,float*,float*,int,int,int,float); 
-extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,intp*,intp*);
+extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,npy_intp*,npy_intp*);
 
-extern int D_cubic_spline2D(double*,double*,int,int,double,intp*,intp*,double);
-extern int D_quadratic_spline2D(double*,double*,int,int,double,intp*,intp*,double);
+extern int D_cubic_spline2D(double*,double*,int,int,double,npy_intp*,npy_intp*,double);
+extern int D_quadratic_spline2D(double*,double*,int,int,double,npy_intp*,npy_intp*,double);
 extern int D_IIR_forback1(double,double,double*,double*,int,int,int,double);
 extern int D_IIR_forback2(double,double,double*,double*,int,int,int,double); 
-extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,intp*,intp*);
+extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,npy_intp*,npy_intp*);
 
 #ifdef __GNUC__
 extern int C_IIR_forback1(__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int,float);
-extern int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,intp*,intp*);
+extern int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,npy_intp*,npy_intp*);
 extern int Z_IIR_forback1(__complex__ double,__complex__ double,__complex__ double*,__complex__ double*,int,int,int,double);
-extern int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,intp*,intp*);
+extern int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,int,__complex__ double*,__complex__ double*,int,int,npy_intp*,npy_intp*);
 #endif
 
 static void
-convert_strides(intp* instrides,intp* convstrides,int size,int N)
+convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
 {
-  int n; intp bitshift;
+  int n; npy_intp bitshift;
 
   bitshift = -1;
 
@@ -69,7 +69,7 @@ static PyObject *cspline2d(PyObject *dummy, PyObject *args)
   double lambda = 0.0;
   double precision = -1.0;
   int thetype, M, N, retval=0;
-  intp outstrides[2], instrides[2];
+  npy_intp outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
@@ -126,7 +126,7 @@ static PyObject *qspline2d(PyObject *dummy, PyObject *args)
   double lambda = 0.0;
   double precision = -1.0;
   int thetype, M, N, retval=0;
-  intp outstrides[2], instrides[2];
+  npy_intp outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
@@ -182,7 +182,7 @@ static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
   PyObject *image=NULL, *hrow=NULL, *hcol=NULL;
   PyArrayObject *a_image=NULL, *a_hrow=NULL, *a_hcol=NULL, *out=NULL;
   int thetype, M, N, ret;
-  intp outstrides[2], instrides[2];
+  npy_intp outstrides[2], instrides[2];
 
   if (!PyArg_ParseTuple(args, "OOO", &image, &hrow, &hcol)) return NULL;
 
@@ -291,7 +291,7 @@ static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
   Py_complex c0, z1;
   double precision = -1.0;
   int thetype, N, ret;
-  intp outstrides, instrides;
+  npy_intp outstrides, instrides;
 
   if (!PyArg_ParseTuple(args, "ODD|d", &sig, &c0, &z1, &precision))
     return NULL;
@@ -411,7 +411,7 @@ static PyObject *IIRsymorder2(PyObject *dummy, PyObject *args)
   double r, omega;
   double precision = -1.0;
   int thetype, N, ret;
-  intp outstrides, instrides;
+  npy_intp outstrides, instrides;
 
   if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
     return NULL;

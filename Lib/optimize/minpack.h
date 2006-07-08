@@ -33,7 +33,7 @@ the result tuple when the full_output argument is non-zero.
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+#define ISCONTIGUOUS(m) ((m)->flags & NPY_CONTIGUOUS)
 
 #define STORE_VARS() PyObject *store_multipack_globals[4]; int store_multipack_globals3;
 

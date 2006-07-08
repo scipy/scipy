@@ -21,10 +21,10 @@ void D_IIR_order2(double,double,double,double*,double*,int,int,int);
 void D_IIR_order2_cascade(double,double,double,double,double*,double*,int,int,int);
 int D_IIR_forback1(double,double,double*,double*,int,int,int,double);
 void D_FIR_mirror_symmetric(double*,double*,int,double*,int,int,int);
-int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,intp*,intp*);
+int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,npy_intp*,npy_intp*);
 int D_IIR_forback2(double,double,double*,double*,int,int,int,double); 
-int D_cubic_spline2D(double*,double*,int,int,double,intp*,intp*,double);
-int D_quadratic_spline2D(double*,double*,int,int,double,intp*,intp*,double);
+int D_cubic_spline2D(double*,double*,int,int,double,npy_intp*,npy_intp*,double);
+int D_quadratic_spline2D(double*,double*,int,int,double,npy_intp*,npy_intp*,double);
 
 /* Implement the following difference equation */
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
@@ -264,7 +264,7 @@ D_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
      int M, N;
      double *hr, *hc;
      int Nhr, Nhc;
-     intp *instrides, *outstrides;
+     npy_intp *instrides, *outstrides;
 {
     int m, n;
     double *tmpmem;
@@ -505,7 +505,7 @@ D_cubic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
      double *coeffs;
      int M, N;
      double lambda;
-     intp *strides, *cstrides; 
+     npy_intp *strides, *cstrides; 
      double precision;
 {    
     double r, omega;
@@ -598,7 +598,7 @@ D_quadratic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
      double *coeffs;
      int M, N;
      double lambda;
-     intp *strides, *cstrides; 
+     npy_intp *strides, *cstrides; 
      double precision;
 {    
     double r;

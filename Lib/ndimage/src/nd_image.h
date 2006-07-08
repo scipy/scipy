@@ -36,7 +36,7 @@
 #define NO_IMPORT_ARRAY
 #endif
 #include "Python.h"
-#include "numcompat.h"
+#include "numpy/libnumarray.h"
 
 #define NI_MAXDIM MAXDIM
 

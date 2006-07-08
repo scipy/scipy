@@ -5,7 +5,7 @@
 #include "VoronoiDiagramGenerator.h"
 #include "delaunay_utils.h"
 #include "natneighbors.h"
-#include "numpy/arrayobject.h"
+#include "numpy/noprefix.h"
 
 using namespace std;
 

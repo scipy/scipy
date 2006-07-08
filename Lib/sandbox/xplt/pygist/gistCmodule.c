@@ -187,6 +187,7 @@ extern "C" {
 #include "pyfpe.h"
 
 #include "numpy/arrayobject.h"
+#define OWN_DATA NPY_OWNDATA
 #include "hlevel.h"
 
 #include "pstdlib.h"

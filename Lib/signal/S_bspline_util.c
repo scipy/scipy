@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #define NO_IMPORT_ARRAY
-#include "numpy/arrayobject.h"
+#include "numpy/noprefix.h"
 
 void compute_root_from_lambda(double, double *, double *);
 

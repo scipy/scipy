@@ -26,7 +26,7 @@ void C_IIR_order2 (__complex__ float,__complex__ float,__complex__ float,__compl
 void C_IIR_order2_cascade (__complex__ float,__complex__ float,__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int);
 int C_IIR_forback1(__complex__ float,__complex__ float,__complex__ float*,__complex__ float*,int,int,int,float);
 void C_FIR_mirror_symmetric(__complex__ float*,__complex__ float*,int,__complex__ float*,int,int,int);
-int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,intp*,intp*);
+int C_separable_2Dconvolve_mirror(__complex__ float*,__complex__ float*,int,int,__complex__ float*,__complex__ float*,int,int,npy_intp*,npy_intp*);
 
 void 
 C_IIR_order1 (a1, a2, x, y, N, stridex, stridey) 
@@ -262,7 +262,7 @@ C_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr,
      int M, N;
      __complex__ float *hr, *hc;
      int Nhr, Nhc;
-     intp *instrides, *outstrides;
+     npy_intp *instrides, *outstrides;
 {
     int m, n;
     __complex__ float *tmpmem;

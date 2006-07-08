@@ -41,7 +41,7 @@ static PyObject *ErrorObject;     /* locally-raised exception */
 #define OBJECTTYPE(arr) ((arr)->descr->type_num)
 #define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
 #define RANK(arr) ((arr)->nd)
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+#define ISCONTIGUOUS(m) ((m)->flags & NPY_CONTIGUOUS)
 
 #define PYSETERROR(message) \
 { PyErr_SetString(ErrorObject, message); goto fail; }
@@ -635,7 +635,7 @@ static int convert_from_object(PyObject *obj, Py_complex *cnum)
   }
 
   size = PySequence_Size(res);
-  for (k=0; k < MIN(size,2); k++) {
+  for (k=0; k < NPY_MIN(size,2); k++) {
     elobj = PySequence_GetItem(res, k);
     if (elobj == NULL) goto fail;
     elN = PyString_Size(elobj);
@@ -695,7 +695,7 @@ static int PyTypeFromChar(char ctype)
   switch(ctype) {
   case 'c': return PyArray_CHAR;
   case 'b': return PyArray_UBYTE;
-  case '1': return PyArray_SBYTE;
+  case '1': return PyArray_BYTE;
   case 's': return PyArray_SHORT;
   case 'i': return PyArray_INT;
 #ifdef PyArray_UNSIGNED_TYPES

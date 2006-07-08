@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "numpy/arrayobject.h"
+#include "numpy/noprefix.h"
 
 #define BOUNDARY_MASK 12
 #define OUTSIZE_MASK 3

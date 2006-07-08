@@ -560,7 +560,7 @@ static PyObject* t_output_helper(PyObject* target, PyObject* o) {
 }
 
 
-#include "numpy/arrayobject.h"
+#include "numpy/noprefix.h"
 
 // hmmm. how do we prevent typedefs from conflicting
 // with users definition on complex numbers?
@@ -731,7 +731,7 @@ PyObject* ARGOUT_argout(char* source, char* basetype_string,
         //PyErr_SetString(PyExc_ValueError, "error converting internal data to array");
     	return NULL;
     }
-    res->flags |= OWN_DATA; // we want the array to deallocate mem when it is finished.
+    res->flags |= NPY_OWNDATA; // we want the array to deallocate mem when it is finished.
     // stick result in the output tuple (target).
     // Need to think about generality of this one...
     return (PyObject *) res;
