@@ -169,8 +169,8 @@ class array_converter(common_base_converter):
                '%(c_type)s %(array_name)s = %(var_convert)s;\n'  \
                'conversion_numpy_check_type(%(array_name)s,%(num_typecode)s,"%(name)s");\n' \
                '%(_code2_)s' \
-               'intp* N%(name)s = %(array_name)s->dimensions;\n' \
-               'intp* S%(name)s = %(array_name)s->strides;\n' \
+               'npy_intp* N%(name)s = %(array_name)s->dimensions;\n' \
+               'npy_intp* S%(name)s = %(array_name)s->strides;\n' \
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
         code = code % res

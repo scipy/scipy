@@ -38,7 +38,7 @@
 #include "Python.h"
 #include "numpy/libnumarray.h"
 
-#define NI_MAXDIM MAXDIM
+#define NI_MAXDIM NPY_MAXDIMS
 
 int NI_GetArrayRank(PyArrayObject*);
 NumarrayType NI_GetArrayType(PyArrayObject*);

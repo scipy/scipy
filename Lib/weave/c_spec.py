@@ -293,7 +293,7 @@ num_to_c_types[type(1)]  = 'long'
 num_to_c_types[type(1.)] = 'double'
 num_to_c_types[type(1.+1.j)] = 'std::complex<double> '
 # !! hmmm. The following is likely unsafe...
-num_to_c_types[type(1L)]  = 'longlong'
+num_to_c_types[type(1L)]  = 'npy_longlong'
 
 #----------------------------------------------------------------------------
 # Numeric array Python numeric --> C type maps
@@ -302,22 +302,22 @@ num_to_c_types['T'] = 'T' # for templates
 num_to_c_types['G'] = 'std::complex<longdouble> '
 num_to_c_types['F'] = 'std::complex<float> '
 num_to_c_types['D'] = 'std::complex<double> '
-num_to_c_types['g'] = 'longdouble'
+num_to_c_types['g'] = 'npy_longdouble'
 num_to_c_types['f'] = 'float'
 num_to_c_types['d'] = 'double'
 num_to_c_types['b'] = 'char'
-num_to_c_types['B'] = 'uchar'
-num_to_c_types['B'] = 'ubyte'  # numpy
+num_to_c_types['B'] = 'npy_uchar'
+num_to_c_types['B'] = 'npy_ubyte'  # numpy
 num_to_c_types['h'] = 'short'
-num_to_c_types['H'] = 'ushort'
+num_to_c_types['H'] = 'npy_ushort'
 num_to_c_types['i'] = 'int'
-num_to_c_types['I'] = 'uint'
+num_to_c_types['I'] = 'npy_uint'
 
 num_to_c_types['l'] = 'long'
-num_to_c_types['L'] = 'ulong'
+num_to_c_types['L'] = 'npy_ulong'
 
-num_to_c_types['q'] = 'longlong'
-num_to_c_types['Q'] = 'ulonglong'
+num_to_c_types['q'] = 'npy_longlong'
+num_to_c_types['Q'] = 'npy_ulonglong'
 
 class scalar_converter(common_base_converter):
     def init_info(self):

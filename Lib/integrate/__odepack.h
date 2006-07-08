@@ -185,7 +185,7 @@ int compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu, int mxo
   lrn = 20 + nyh*(mxordn+1) + 3*neq;
   lrs = 20 + nyh*(mxords+1) + 3*neq + lmat;
 
-  *lrw = MAX(lrn,lrs);
+  *lrw = NPY_MAX(lrn,lrs);
   *liw = 20 + neq;
   return 0;
 

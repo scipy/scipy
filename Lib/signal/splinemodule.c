@@ -11,7 +11,7 @@
 #define OBJECTTYPE(arr) ((arr)->descr->type_num)
 #define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
 #define RANK(arr) ((arr)->nd)
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+#define ISCONTIGUOUS(m) ((m)->flags & NPY_CONTIGUOUS)
 
 static void convert_strides(npy_intp*,npy_intp*,int,int);
 
@@ -74,7 +74,7 @@ static PyObject *cspline2d(PyObject *dummy, PyObject *args)
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
   thetype = PyArray_ObjectType(image, PyArray_FLOAT);
-  thetype = MIN(thetype, PyArray_DOUBLE);
+  thetype = NPY_MIN(thetype, PyArray_DOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
@@ -133,7 +133,7 @@ static PyObject *qspline2d(PyObject *dummy, PyObject *args)
   if (lambda != 0.0) PYERR("Smoothing spline not yet implemented.");
 
   thetype = PyArray_ObjectType(image, PyArray_FLOAT);
-  thetype = MIN(thetype, PyArray_DOUBLE);
+  thetype = NPY_MIN(thetype, PyArray_DOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
@@ -187,7 +187,7 @@ static PyObject *FIRsepsym2d(PyObject *dummy, PyObject *args)
   if (!PyArg_ParseTuple(args, "OOO", &image, &hrow, &hcol)) return NULL;
 
   thetype = PyArray_ObjectType(image, PyArray_FLOAT);
-  thetype = MIN(thetype, PyArray_CDOUBLE);
+  thetype = NPY_MIN(thetype, PyArray_CDOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   a_hrow = (PyArrayObject *)PyArray_ContiguousFromObject(hrow, thetype, 1, 1);
   a_hcol = (PyArrayObject *)PyArray_ContiguousFromObject(hcol, thetype, 1, 1);
@@ -297,7 +297,7 @@ static PyObject *IIRsymorder1(PyObject *dummy, PyObject *args)
     return NULL;
 
   thetype = PyArray_ObjectType(sig, PyArray_FLOAT);
-  thetype = MIN(thetype, PyArray_CDOUBLE);
+  thetype = NPY_MIN(thetype, PyArray_CDOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
   
   if ((a_sig == NULL)) goto fail;
@@ -417,7 +417,7 @@ static PyObject *IIRsymorder2(PyObject *dummy, PyObject *args)
     return NULL;
 
   thetype = PyArray_ObjectType(sig, PyArray_FLOAT);
-  thetype = MIN(thetype, PyArray_DOUBLE);
+  thetype = NPY_MIN(thetype, PyArray_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
   
   if ((a_sig == NULL)) goto fail;
