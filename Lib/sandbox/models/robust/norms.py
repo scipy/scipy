@@ -22,7 +22,7 @@ class LeastSquares(RobustNorm):
         return N.asarray(z)
 
     def weights(self, z):
-        return N.ones(z.shape, N.Float)
+        return N.ones(z.shape, N.float64)
 
 class HuberT(RobustNorm):
 

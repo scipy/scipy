@@ -309,7 +309,7 @@ class Formula:
         else:
             if allvals != []:
                 n = allvals.shape[1]
-                allvals = N.concatenate([N.ones((1,n), N.Float), allvals])
+                allvals = N.concatenate([N.ones((1,n), N.float64), allvals])
             elif nrow <= 1:
                 raise ValueError, 'with only intercept in formula, keyword \'nrow\' argument needed'
             else:

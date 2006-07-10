@@ -86,7 +86,7 @@ class FormulaTest(unittest.TestCase):
     def test_contrast2(self):
     
         dummy = formula.Term('zero')
-        self.namespace['zero'] = N.zeros((40,), N.Float)
+        self.namespace['zero'] = N.zeros((40,), N.float64)
         term = dummy + self.terms[2]
         c = contrast.Contrast(term, self.formula)
         c.getmatrix(namespace=self.namespace)

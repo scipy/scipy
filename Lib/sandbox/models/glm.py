@@ -65,7 +65,7 @@ class Model(WLSModel):
     
     def fit(self, Y, **keywords):
 
-        self.Y = N.asarray(Y, N.Float)
+        self.Y = N.asarray(Y, N.float64)
         iter(self)
         self.results = WLSModel.fit(self, self.family.link(Y, initialize=True))
         self.results.mu = self.family.link.inverse(self.results.predict)

@@ -164,7 +164,7 @@ class Mixed:
 
         d = self.units[0].design(self.fixed)
         self.p = d.shape[1]  # d.shape = p 
-        self.a = N.zeros(self.p, N.Float)
+        self.a = N.zeros(self.p, N.float64)
 
         # Determine size of D, and sensible initial estimates
         # of sigma and D
@@ -172,7 +172,7 @@ class Mixed:
         d = self.units[0].design(self.random)
         self.q = d.shape[1]  # d.shape = q 
 
-        self.D = N.zeros((self.q,)*2, N.Float)
+        self.D = N.zeros((self.q,)*2, N.float64)
         self.sigma = 1.
 
         self.dev = N.inf

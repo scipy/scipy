@@ -16,7 +16,7 @@ class DiscreteRV:
             self.x = N.array([self.x])
         self.n = self.x.shape[0]
         if w is None:
-            w = N.ones(self.n, N.Float)
+            w = N.ones(self.n, N.float64)
         else:
             if w.shape[0] != self.n:
                 raise ValueError, 'incompatible shape for weights w'
@@ -97,7 +97,7 @@ class ProportionalHazards(model.LikelihoodModel):
                                           shape=dshape)
             elif first:
                 d = N.array([s(self.formula, time=t)
-                             for s in self.subjects]).astype(N.Float)
+                             for s in self.subjects]).astype(N.float64)
                 self.design[t] = d
             else:
                 self.design[t] = d

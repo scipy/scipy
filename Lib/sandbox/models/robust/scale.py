@@ -10,7 +10,7 @@ def MAD(a, c=0.6745):
 
     """
 
-    a = N.asarray(a, N.Float)
+    a = N.asarray(a, N.float64)
     d = N.multiply.outer(scipy.median(a), N.ones(a.shape[1:]))
     return scipy.median(N.fabs(a - d) / c)
 
@@ -38,7 +38,7 @@ class Huber:
         is supplied, it is not reestimated.
         """
 
-        self.a = N.asarray(a, N.Float)
+        self.a = N.asarray(a, N.float64)
         if mu is None:
             self.n = self.a.shape[0] - 1
             self.mu = N.multiply.outer(scipy.median(self.a), N.ones(self.a.shape[1:]))
