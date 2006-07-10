@@ -121,7 +121,7 @@ def sum_func(a, axis=-1):
     if isinstance(a, ConstantNode):
         return a
     if isinstance(a, (bool, int, float, complex)):
-       a = ConstantNode(a)
+        a = ConstantNode(a)
     kind = a.astKind
     if kind == 'bool':
         kind = 'int'
@@ -130,7 +130,7 @@ def sum_func(a, axis=-1):
 def prod_func(a, axis=-1):
     axis = encode_axis(axis)
     if isinstance(a, (bool, int, float, complex)):
-       a = ConstantNode(a)
+        a = ConstantNode(a)
     if isinstance(a, ConstantNode):
         return a
     kind = a.astKind
