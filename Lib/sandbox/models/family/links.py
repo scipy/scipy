@@ -60,7 +60,7 @@ class Power(Link):
     def __call__(self, x, **extra):
         return N.power(x, self.power)
 
-    def inverse(self, z):
+    def inverse(self, x):
         return N.power(x, 1. / self.power)
 
     def deriv(self, x):
