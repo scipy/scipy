@@ -294,7 +294,7 @@ def rgb2rgbp(rgb,gamma=None):
     rgb = sb.asarray(rgb)
     if gamma is None:
         eps = 0.0031308
-        return where(rgb < eps, 12.92*rgb,
+        return sb.where(rgb < eps, 12.92*rgb,
                      1.055*rgb**(1.0/2.4) - 0.055)
     else:
         return rgb**(1.0/gamma)
@@ -309,8 +309,8 @@ def rgbp2rgb(rgbp,gamma=None):
     rgbp = sb.asarray(rgbp)
     if gamma is None:
         eps = 0.04045
-        return where(rgbp <= eps, rgbp / 12.92,
-                     power((rgbp + 0.055)/1.055,2.4))
+        return sb.where(rgbp <= eps, rgbp / 12.92,
+                     sb.power((rgbp + 0.055)/1.055,2.4))
     else:
         return rgbp**gamma
 
