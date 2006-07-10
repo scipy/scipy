@@ -8,7 +8,7 @@ class VarianceFunction:
     """
 
     def __call__(self, mu):
-        return N.ones(mu.shape, N.Float)
+        return N.ones(mu.shape, N.float64)
 
 constant = VarianceFunction()
 
