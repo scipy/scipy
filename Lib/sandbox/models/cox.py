@@ -1,5 +1,4 @@
 import numpy as N
-import numpy.linalg as L
 import survival
 import model
 import tempfile, shutil
