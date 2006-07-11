@@ -199,14 +199,19 @@ class Quantitative(Term):
         try:
             power = float(power)
         except:
-            raise ValueError, 'expecting an integer'
+            raise ValueError, 'expecting a float'
 
-        name = '%s^%0.2f' % (self.name, power)
+        if power == int(power):
+            name = '%s^%d' % (self.name, int(power))
+        else:
+            name = '%s^%0.2f' % (self.name, power)
 
-        def func(namespace=terms, power=power, **extra):
+        def func(obj=self, namespace=terms, power=power, **extra):
             x = N.asarray(obj(namespace=namespace, **extra))
             return N.power(x, power)
-        return Term(name, func=func)
+        value = Term(name, func=func)
+        value.power = power
+        return value
 
 class FuncQuant(Quantitative):
 
@@ -308,6 +313,7 @@ class Formula:
                 pass
         else:
             if allvals != []:
+                allvals = N.concatenate(allvals)
                 n = allvals.shape[1]
                 allvals = N.concatenate([N.ones((1,n), N.float64), allvals])
             elif nrow <= 1:
