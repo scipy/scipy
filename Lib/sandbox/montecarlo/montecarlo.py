@@ -6,7 +6,6 @@
 __author__ = "Ed Schofield"
 
 from __future__ import division
-import random, math, bisect, string
 import numpy
 import scipy
 from scipy.sandbox.montecarlo._intsampler import _intsampler
