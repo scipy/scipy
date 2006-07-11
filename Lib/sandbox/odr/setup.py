@@ -12,10 +12,8 @@ from numpy.distutils.system_info import get_info,dict_append,\
      AtlasNotFoundError,LapackNotFoundError,BlasNotFoundError,\
      LapackSrcNotFoundError,BlasSrcNotFoundError
 
-def configuration(parent_package=''):
-    package = 'odr'
-    config = Configuration(package,parent_package)
-    local_path = get_path(__name__)
+def configuration(parent_package='', top_path=None):
+    config = Configuration('odr', parent_package, top_path)
 
     libodr_files = ['d_odr.f',
                     'd_mprec.f',
@@ -38,13 +36,13 @@ def configuration(parent_package=''):
         libodr_files.append('d_lpk.f')
         blas_libs.extend(atlas_info['libraries'])
 
-    libodr = [os.path.join(local_path, 'odrpack', x) for x in libodr_files]
+    libodr = [os.path.join('odrpack', x) for x in libodr_files]
     config.add_library('odrpack', sources=libodr)
     sources = ['__odrpack.c']
     config.add_extension('__odrpack',
                          sources=sources,
                          libraries=['odrpack']+blas_libs,
-                         include_dirs=[local_path],
+                         include_dirs=['.'],
                          library_dirs=atlas_info['library_dirs'],
                          )
 
@@ -52,4 +50,4 @@ def configuration(parent_package=''):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(**configuration())
+    setup(**configuration(top_path='').todict())
