@@ -1075,12 +1075,14 @@ static PyObject *Py_Histogram(PyObject *obj, PyObject *args)
   PyObject *indices_object, *result = NULL;
   maybelong min_label, max_label, *result_indices = NULL, n_results;
   maybelong jj, nbins;
+  long nbins_in;
   double min, max;
-  
-  if (!PyArg_ParseTuple(args, "O&ddiO&O", NI_ObjectToInputArray, &input, 
-                        &min, &max, &nbins, NI_ObjectToOptionalInputArray,
+
+  if (!PyArg_ParseTuple(args, "O&ddlO&O", NI_ObjectToInputArray, &input,
+                        &min, &max, &nbins_in, NI_ObjectToOptionalInputArray,
                         &labels, &indices_object))
     goto exit;
+  nbins = nbins_in;
 
   if (!_NI_GetIndices(indices_object, &result_indices, &min_label,
                       &max_label, &n_results))
