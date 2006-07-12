@@ -260,7 +260,7 @@ class _test_cs:
         n = 20
         A = self.spmatrix((n,n), dtype=complex)
         x = numpy.random.rand(n)
-        y = numpy.random.rand(n-1)+1j*numpy.rand(n-1)
+        y = numpy.random.rand(n-1)+1j*numpy.random.rand(n-1)
         r = numpy.random.rand(n)
         for i in range(len(x)):
             A[i,i] = x[i]
