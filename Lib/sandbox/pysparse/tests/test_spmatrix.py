@@ -210,7 +210,7 @@ class LLMatMatMul(unittest.TestCase):
             y2 = Numeric.zeros(n, 'd')
             for s in range(10):
                 #x = RandomArray.random((m, ))
-                x = numpy.rand((m, ))
+                x = numpy.random.rand((m, ))
                 C.matvec(x, y1)
                 B.matvec(x, t)
                 A.matvec(t, y2)
