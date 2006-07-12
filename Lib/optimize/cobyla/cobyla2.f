@@ -139,7 +139,13 @@ C
       IF (IPRINT .EQ. 3) PRINT 51, (SIM(J,NP),J=1,IPTEM)
    51 FORMAT (/3X, 'SIM = ', 1PE13.6, 1P4E15.6)  
       NFVALS=NFVALS+1
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  BEFORE: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
+      END IF
       CALL CALCFC (N,M,X,F,CON)
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  AFTER: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
+      END IF
       RESMAX=0.0d0
       IF (M .GT. 0) THEN
           DO 60 K=1,M
