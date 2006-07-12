@@ -136,6 +136,8 @@ C
      1      'MAXFUN limit has been reached.')
           GOTO 600
       END IF
+      IF (IPRINT .EQ. 3) PRINT 51, (SIM(J,NP),J=1,IPTEM)
+   51 FORMAT (/3X, 'SIM = ', 1PE13.6, 1P4E15.6)  
       NFVALS=NFVALS+1
       CALL CALCFC (N,M,X,F,CON)
       RESMAX=0.0d0
@@ -299,8 +301,13 @@ C
 C     Calculate the step to the new vertex and its sign.
 C
       TEMP=GAMMA*RHO*VSIG(JDROP)
+      IF (IPRINT .EQ. 3) PRINT 289, (SIMI(JDROP,I),I=1,IPTEM)
+  289 FORMAT (/3X, 'SIMI =',1PE13.6,1P4E15.6)
       DO 290 I=1,N
   290 DX(I)=TEMP*SIMI(JDROP,I)
+      IF (IPRINT .EQ. 3) PRINT 291, (DX(I),I=1,IPTEM)
+  291 FORMAT (/3X, 'DX =',1PE13.6,1P4E15.6)
+         
       CVMAXP=0.0d0
       CVMAXM=0.0d0
       DO 310 K=1,MP
