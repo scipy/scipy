@@ -1,5 +1,10 @@
+#!/usr/bin/env python
 import os
 import sys
+
+# BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
+# update it when the contents of directories change.
+if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 
 os.environ['NO_SCIPY_IMPORT']='SciPy/setup.py'
 
