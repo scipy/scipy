@@ -31,8 +31,11 @@ from numpy import __version__ as __numpy_version__
 import numpy as _num
 from numpy import oldnumeric
 from numpy import *
+from numpy.random import rand, randn
 
 __all__ += ['oldnumeric']+_num.__all__
+
+__all__ += ['randn', 'rand']
 
 __doc__ += """
 Contents
