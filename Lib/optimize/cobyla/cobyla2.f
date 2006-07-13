@@ -61,7 +61,6 @@ C
 C     Partition the working space array W to provide the storage that is needed
 C     for the main calculation.
 C
-      ITOTAL=N*(3*N+2*M+11)+4*M+6
       MPP=M+2
       ICON=1
       ISIM=ICON+MPP
@@ -92,6 +91,7 @@ C     hold the displacements from the optimal vertex to the other vertices.
 C     Further, SIMI holds the inverse of the matrix that is contained in the
 C     first N columns of SIM.
 C
+      ITOTAL=N*(3*N+2*M+11)+4*M+6
       IPTEM=MIN0(N,5)
       IPTEMP=IPTEM+1
       NP=N+1
@@ -368,16 +368,20 @@ C
       IDXNEW=ISDIRN+N
       IVMD=IDXNEW+N
       IF (IPRINT .EQ. 3) THEN
+         print *, ' '
          print *, 'BEFORE trstlp:'
          PRINT *, '  **DX = ', (DX(I),I=1,N)
          PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
          PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
          PRINT *, '  **CON = ', (CON(I),I=1,M)
          PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,MP)
+         PRINT *, '  **W = ', (W(I),I=1,ITOTAL)
+         print *, ' '
       END IF
       CALL TRSTLP (N,M,A,CON,RHO,DX,IFULL,IACT,W(IZ),W(IZDOTA),
      1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD))
       IF (IPRINT .EQ. 3) THEN
+         print *, ' '
          print *, 'AFTER trstlp:'
          PRINT *, '  **DX = ', (DX(I),I=1,N)
          PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
@@ -385,6 +389,8 @@ C
          PRINT *, '  **CON = ', (CON(I),I=1,M)
          PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,MP)
          PRINT *, '  **W = ', (W(I),I=1,ITOTAL)
+         print *, ' '
+         print *, ' '
       END IF
       IF (IFULL .EQ. 0) THEN
           TEMP=0.0d0
