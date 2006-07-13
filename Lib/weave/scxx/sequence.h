@@ -148,23 +148,23 @@ public:
       fail(PyExc_RuntimeError, "problem in in");
     return (rslt==1);
   };  
-  bool sequence::in(int value) const {
+  bool in(int value) const {
     object val = value;
     return in(val);
   };
-  bool sequence::in(double value) const {
+  bool in(double value) const {
     object val = value;
     return in(val);
   };
-  bool sequence::in(const std::complex<double>& value) const {
+  bool in(const std::complex<double>& value) const {
     object val = value;
     return in(val);
   };
-  bool sequence::in(const char* value) const {
+  bool in(const char* value) const {
     object val = value;
     return in(val);
   };
-  bool sequence::in(const std::string& value) const {
+  bool in(const std::string& value) const {
     object val = value.c_str();
     return in(val);
   };
@@ -179,23 +179,23 @@ public:
       fail(PyExc_IndexError, "value not found");
     return rslt;
   };
-  int sequence::index(int value) const {
+  int index(int value) const {
     object val = value;
     return index(val);
   };  
-  int sequence::index(double value) const {
+  int index(double value) const {
     object val = value;
     return index(val);
   };
-  int sequence::index(const std::complex<double>& value) const {
+  int index(const std::complex<double>& value) const {
     object val = value;
     return index(val);
   };
-  int sequence::index(const char* value) const {
+  int index(const char* value) const {
     object val = value;
     return index(val);
   };  
-  int sequence::index(const std::string& value) const {
+  int index(const std::string& value) const {
     object val = value;
     return index(val);
   };
@@ -228,32 +228,32 @@ class indexed_ref : public object
   sequence& _parent;
   int _ndx;
 public:
-  indexed_ref::indexed_ref(PyObject* obj, sequence& parent, int ndx)
+  indexed_ref(PyObject* obj, sequence& parent, int ndx)
     : object(obj), _parent(parent), _ndx(ndx) { };
   virtual ~indexed_ref() {};
   
-  indexed_ref& indexed_ref::operator=(const object& other) {
+  indexed_ref& operator=(const object& other) {
     grab_ref(other);
     _parent.set_item(_ndx, *this);
     return *this;
   };
-  indexed_ref& indexed_ref::operator=(int other) {
+  indexed_ref& operator=(int other) {
     object oth = other;
     return operator=(oth);
   };  
-  indexed_ref& indexed_ref::operator=(double other) {
+  indexed_ref& operator=(double other) {
     object oth = other;
     return operator=(oth);
   };  
-  indexed_ref& indexed_ref::operator=(const std::complex<double>& other) {
+  indexed_ref& operator=(const std::complex<double>& other) {
     object oth = other;
     return operator=(oth);
   };    
-  indexed_ref& indexed_ref::operator=(const char* other) {
+  indexed_ref& operator=(const char* other) {
     object oth = other;
     return operator=(oth);
   };    
-  indexed_ref& indexed_ref::operator=(const std::string& other) {
+  indexed_ref& operator=(const std::string& other) {
     object oth = other;
     return operator=(oth);
   };

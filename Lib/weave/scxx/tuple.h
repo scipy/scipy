@@ -16,7 +16,7 @@ public:
   tuple(int sz=0) : sequence (PyTuple_New(sz))  { lose_ref(_obj); }
   tuple(const tuple& other) : sequence(other) { }
   tuple(PyObject* obj) : sequence(obj) { _violentTypeCheck(); }
-  tuple::tuple(const list& lst)
+  tuple(const list& lst)
     : sequence (PyList_AsTuple(lst)) { lose_ref(_obj); }
     
   //-------------------------------------------------------------------------
@@ -65,7 +65,7 @@ public:
   //-------------------------------------------------------------------------
   // operator[] -- const and non-const versions of element access.
   //-------------------------------------------------------------------------    
-  indexed_ref tuple::operator [] (int i) {   
+  indexed_ref operator [] (int i) {   
     // get a "borrowed" refcount    
     PyObject* o = PyTuple_GetItem(_obj, i);  
     // don't throw error for when [] fails because it might be on left hand 

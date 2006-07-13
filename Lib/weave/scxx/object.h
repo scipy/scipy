@@ -597,7 +597,7 @@ public:
   //       be inlined instead of implemented i weave_imp.cpp.  This 
   //       provides less automatic type checking, but is potentially faster.
   //-------------------------------------------------------------------------
-  object object::mcall(const char* nm) {
+  object mcall(const char* nm) {
     object method = attr(nm);
     PyObject* result = PyEval_CallObjectWithKeywords(method,NULL,NULL);
     if (!result)
@@ -605,7 +605,7 @@ public:
     return object(lose_ref(result));
   }
   
-  object object::mcall(const char* nm, object& args_tup) {
+  object mcall(const char* nm, object& args_tup) {
     object method = attr(nm);
     PyObject* result = PyEval_CallObjectWithKeywords(method,args_tup,NULL);
     if (!result)
@@ -613,7 +613,7 @@ public:
     return object(lose_ref(result));
   }
   
-  object object::mcall(const char* nm, object& args_tup, object& kw_dict) {
+  object mcall(const char* nm, object& args_tup, object& kw_dict) {
     object method = attr(nm);
     PyObject* result = PyEval_CallObjectWithKeywords(method,args_tup,kw_dict);
     if (!result)
@@ -636,19 +636,19 @@ public:
   //
   // Note: see not on mcall()
   //-------------------------------------------------------------------------
-  object object::call() const {
+  object call() const {
     PyObject *rslt = PyEval_CallObjectWithKeywords(*this, NULL, NULL);
     if (rslt == 0)
       throw 1;
     return object(lose_ref(rslt));
   }
-  object object::call(object& args_tup) const {
+  object call(object& args_tup) const {
     PyObject *rslt = PyEval_CallObjectWithKeywords(*this, args_tup, NULL);
     if (rslt == 0)
       throw 1;
     return object(lose_ref(rslt));
   }
-  object object::call(object& args_tup, object& kw_dict) const {
+  object call(object& args_tup, object& kw_dict) const {
     PyObject *rslt = PyEval_CallObjectWithKeywords(*this, args_tup, kw_dict);
     if (rslt == 0)
       throw 1;

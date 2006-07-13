@@ -162,23 +162,23 @@ public:
     };
     return *this;
   };
-  list& list::insert(int ndx, int other) {
+  list& insert(int ndx, int other) {
     object oth = other;
     return insert(ndx, oth);
   };
-  list& list::insert(int ndx, double other) {
+  list& insert(int ndx, double other) {
     object oth = other;
     return insert(ndx, oth);
   };
-  list& list::insert(int ndx, std::complex<double>& other) {
+  list& insert(int ndx, std::complex<double>& other) {
     object oth = other;
     return insert(ndx, oth);
   };  
-  list& list::insert(int ndx, const char* other) {
+  list& insert(int ndx, const char* other) {
     object oth = other;
     return insert(ndx, oth);
   };
-  list& list::insert(int ndx, const std::string& other) {
+  list& insert(int ndx, const std::string& other) {
     object oth = other;
     return insert(ndx, oth);
   };
