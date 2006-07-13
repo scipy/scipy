@@ -61,6 +61,7 @@ C
 C     Partition the working space array W to provide the storage that is needed
 C     for the main calculation.
 C
+      ITOTAL=N*(3*N+2*M+11)+4*M+6
       MPP=M+2
       ICON=1
       ISIM=ICON+MPP
@@ -136,14 +137,10 @@ C
      1        'MAXFUN limit has been reached.')
          GOTO 600
       END IF
-      IF (IPRINT .EQ. 3) THEN
-         PRINT *, '  SIM = ', (SIM(J,NP),J=1,N)
-      END IF
       NFVALS=NFVALS+1
       IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  SIM = ', (SIM(J,NP),J=1,N)
          PRINT *, '  DX = ', (DX(I),I=1,N)
-      END IF
-      IF (IPRINT .EQ. 3) THEN
          PRINT *, '  BEFORE: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
       END IF
       CALL CALCFC (N,M,X,F,CON)
@@ -292,6 +289,7 @@ C
          PRINT *, '  VSIG = ', (VSIG(J),J=1,N), ' -- ', PARSIG
          PRINT *, '  VETA = ', (VETA(J),J=1,N), ' -- ', PARETA
          PRINT *, '  IBRNCH, IFLAG = ', IBRNCH, IFLAG
+         PRINT *, '  A = ', ((A(I,J),I=1,N),J=1,MP)
       END IF
 C
 C     If a new vertex is needed to improve acceptability, then decide which
@@ -374,6 +372,10 @@ C
       IF (IPRINT .EQ. 3) THEN
          PRINT *, '  **DX = ', (DX(I),I=1,N)
          PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
+         PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
+         PRINT *, '  **CON = ', (CON(I),I=1,M)
+         PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,MP)
+         PRINT *, '  **W = ', (W(I),I=1,ITOTAL)
       END IF
       IF (IFULL .EQ. 0) THEN
           TEMP=0.0d0
