@@ -374,7 +374,6 @@ C
          PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
          PRINT *, '  **CON = ', (CON(I),I=1,M)
          PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,MP)
-         PRINT *, '  **W = ', (W(I),I=1,ITOTAL)
       END IF
       CALL TRSTLP (N,M,A,CON,RHO,DX,IFULL,IACT,W(IZ),W(IZDOTA),
      1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD))
