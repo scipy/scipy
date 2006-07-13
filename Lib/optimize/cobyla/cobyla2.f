@@ -373,6 +373,10 @@ C
       IVMD=IDXNEW+N
       CALL TRSTLP (N,M,A,CON,RHO,DX,IFULL,IACT,W(IZ),W(IZDOTA),
      1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD))
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  **DX = ', (DX(I),I=1,N)
+         PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
+      END IF
       IF (IFULL .EQ. 0) THEN
           TEMP=0.0d0
           DO 380 I=1,N
