@@ -287,12 +287,10 @@ C
       IF (VSIG(J) .LT. PARSIG .OR. VETA(J) .GT. PARETA) IFLAG=0
   260 CONTINUE
       IF (IPRINT .EQ. 3) THEN
+         print *, '  SIMI = ', ((SIMI(I,J),I=1,N),J=1,N)
+         print *, '   SIM = ', ((SIM(I,J),I=1,N),J=1,N)
          PRINT *, '  VSIG = ', (VSIG(J),J=1,N), ' -- ', PARSIG
-      END IF
-      IF (IPRINT .EQ. 3) THEN
          PRINT *, '  VETA = ', (VETA(J),J=1,N), ' -- ', PARETA
-      END IF
-      IF (IPRINT .EQ. 3) THEN
          PRINT *, '  IBRNCH, IFLAG = ', IBRNCH, IFLAG
       END IF
 C
