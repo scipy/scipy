@@ -131,14 +131,18 @@ C     instructions are also used for calling CALCFC during the iterations of
 C     the algorithm.
 C
    40 IF (NFVALS .GE. MAXFUN .AND. NFVALS .GT. 0) THEN
-          IF (IPRINT .GE. 1) PRINT 50
-   50     FORMAT (/3X,'Return from subroutine COBYLA because the ',
-     1      'MAXFUN limit has been reached.')
-          GOTO 600
+         IF (IPRINT .GE. 1) PRINT 50
+   50      FORMAT (/3X,'Return from subroutine COBYLA because the ',
+     1        'MAXFUN limit has been reached.')
+         GOTO 600
       END IF
-      IF (IPRINT .EQ. 3) PRINT 51, (SIM(J,NP),J=1,IPTEM)
-   51 FORMAT (/3X, 'SIM = ', 1PE13.6, 1P4E15.6)  
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  SIM = ', (SIM(J,NP),J=1,N)
+      END IF
       NFVALS=NFVALS+1
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  DX = ', (DX(I),I=1,N)
+      END IF
       IF (IPRINT .EQ. 3) THEN
          PRINT *, '  BEFORE: ', N, M, (X(I),I=1,N), F, (CON(I),I=1,M)
       END IF
@@ -282,6 +286,15 @@ C
       VETA(J)=SQRT(WETA)
       IF (VSIG(J) .LT. PARSIG .OR. VETA(J) .GT. PARETA) IFLAG=0
   260 CONTINUE
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  VSIG = ', (VSIG(J),J=1,N), ' -- ', PARSIG
+      END IF
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  VETA = ', (VETA(J),J=1,N), ' -- ', PARETA
+      END IF
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  IBRNCH, IFLAG = ', IBRNCH, IFLAG
+      END IF
 C
 C     If a new vertex is needed to improve acceptability, then decide which
 C     vertex to drop from the simplex.
@@ -307,13 +320,14 @@ C
 C     Calculate the step to the new vertex and its sign.
 C
       TEMP=GAMMA*RHO*VSIG(JDROP)
-      IF (IPRINT .EQ. 3) PRINT 289, (SIMI(JDROP,I),I=1,IPTEM)
-  289 FORMAT (/3X, 'SIMI =',1PE13.6,1P4E15.6)
+      IF (IPRINT .EQ. 3) THEN 
+         PRINT *, '  SIMI =', (SIMI(JDROP,I),I=1,N)
+      END IF
       DO 290 I=1,N
   290 DX(I)=TEMP*SIMI(JDROP,I)
-      IF (IPRINT .EQ. 3) PRINT 291, (DX(I),I=1,IPTEM)
-  291 FORMAT (/3X, 'DX =',1PE13.6,1P4E15.6)
-         
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  DX =', (DX(I),I=1,N)
+      END IF         
       CVMAXP=0.0d0
       CVMAXM=0.0d0
       DO 310 K=1,MP
