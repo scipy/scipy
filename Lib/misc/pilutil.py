@@ -69,9 +69,10 @@ def fromimage(im, flatten=0):
     type = uint8
     if mode == 'F':
         type = numpy.float32
-    if mode == 'I':
+    elif mode == 'I':
         type = numpy.uint32
-        type = 'I'
+    elif mode == 'I;16':
+        type = numpy.uint16
     arr = numpy.fromstring(str,type)
     shape = list(im.size)
     shape.reverse()
