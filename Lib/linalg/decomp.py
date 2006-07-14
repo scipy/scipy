@@ -20,7 +20,7 @@ from warnings import warn
 from lapack import get_lapack_funcs
 from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
-import calc_lwork
+from scipy.linalg import calc_lwork
 import numpy
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         single, isfinite, inexact

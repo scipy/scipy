@@ -20,7 +20,7 @@ from numpy import asarray,zeros,sum,newaxis,greater_equal,subtract,arange,\
 import numpy
 from numpy import asarray_chkfinite, outer, concatenate, reshape, single
 from numpy import matrix as Matrix
-import calc_lwork
+from scipy.linalg import calc_lwork
 
 class LinAlgError(Exception):
     pass

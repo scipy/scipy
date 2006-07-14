@@ -14,8 +14,8 @@ import new
 
 import numpy
 
-import flapack
-import clapack
+from scipy.linalg import flapack
+from scipy.linalg import clapack
 _use_force_clapack = 1
 if hasattr(clapack,'empty_module'):
     clapack = flapack

@@ -11,8 +11,8 @@ __all__ = ['get_blas_funcs']
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
-import fblas
-import cblas
+from scipy.linalg import fblas
+from scipy.linalg import cblas
 if hasattr(cblas,'empty_module'):
     cblas = fblas
 elif hasattr(fblas,'empty_module'):
