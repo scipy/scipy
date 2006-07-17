@@ -2,6 +2,7 @@ C------------------------------------------------------------------------------
       SUBROUTINE TRSTLP (N,M,A,B,RHO,DX,IFULL,IACT,Z,ZDOTA,VMULTC,
      1  SDIRN,DXNEW,VMULTD,IPRINT)
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      DOUBLE PRECISION TEMP
       DIMENSION A(N,*),B(*),DX(*),IACT(*),Z(N,*),ZDOTA(*),
      1  VMULTC(*),SDIRN(*),DXNEW(*),VMULTD(*)
 C
@@ -104,6 +105,7 @@ C
           DO 80 I=1,N
    80     OPTNEW=OPTNEW-DX(I)*A(I,MCON)
       END IF
+      PRINT *, ' ICOUNT, OPTNEW, OPTOLD = ', ICOUNT, OPTNEW, OPTOLD
       IF (ICOUNT .EQ. 0 .OR. OPTNEW .LT. OPTOLD) THEN
           OPTOLD=OPTNEW
           NACTX=NACT
@@ -126,8 +128,9 @@ C
       KK=IACT(ICON)
       DO 90 I=1,N
    90 DXNEW(I)=A(I,KK)
-      TOT=0.0d0
+      TOT=0.0D0
       K=N
+      print *, '   k, nact, dxnew =', k, nact, (dxnew(i),i=1,n)
   100 IF (K .GT. NACT) THEN
           SP=0.0d0
           SPABS=0.0d0
@@ -137,9 +140,11 @@ C
   110     SPABS=SPABS+DABS(TEMP)
           ACCA=SPABS+0.1d0*DABS(SP)
           ACCB=SPABS+0.2d0*DABS(SP)
-          IF (SPABS .GE. ACCA .OR. ACCA .GE. ACCB) SP=0.0d0
-          IF (TOT .EQ. 0.0d0) THEN
+          print *, '   sp, spabs, acca, accb', sp, spabs, acca, accb
+          IF ((SPABS .GE. ACCA) .OR. (ACCA .GE. ACCB)) SP=0.0D0
+          IF (TOT .EQ. 0.0D0) THEN
               TOT=SP
+              print *, '   simple tot = ', tot
           ELSE
               KP=K+1
               TEMP=DSQRT(SP*SP+TOT*TOT)
@@ -150,6 +155,7 @@ C
               TEMP=ALPHA*Z(I,K)+BETA*Z(I,KP)
               Z(I,KP)=ALPHA*Z(I,KP)-BETA*Z(I,K)
   120         Z(I,K)=TEMP
+              print *, '   k, alpha, beta, tot', k, alpha, beta, tot
           END IF
           K=K-1
           GOTO 100
@@ -159,7 +165,7 @@ C     Add the new constraint if this can be done without a deletion from the
 C     active set.
 C
       IF (IPRINT .EQ. 3) THEN
-         PRINT *, 'TOT, NACT, ICON = ', TOT, NACT, ICON
+         PRINT *, '*TOT, NACT, ICON = ', TOT, NACT, ICON
       END IF
       IF (TOT .NE. 0.0d0) THEN
           NACT=NACT+1
@@ -438,6 +444,8 @@ C
   470 VMULTC(K)=DMAX1(0.0d0,TEMP*VMULTC(K)+RATIO*VMULTD(K))
       PRINT *, '  3. VMULTC = ', (VMULTC(I),I=1,M+1)
       IF (MCON .EQ. M) RESMAX=RESOLD+RATIO*(RESMAX-RESOLD)
+      PRINT *, ' RESMAX, MCON, M, ICON = ', 
+     1    RESMAX, MCON, M, ICON
 C
 C     If the full step is not acceptable then begin another iteration.
 C     Otherwise switch to stage two or end the calculation.
