@@ -67,12 +67,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     def calcfc(x, con):
         f = func(x, *args)
         k = 0
-        print "x = ", x
-        print "f = ", f
         for constraints in cons:
             con[k] = constraints(x, *consargs)
             k += 1
-        print "con = ", con
         return f
 
     xopt = _cobyla.minimize(calcfc, m=m, x=x0, rhobeg=rhobeg, rhoend=rhoend,

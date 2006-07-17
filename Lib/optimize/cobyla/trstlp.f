@@ -85,7 +85,9 @@ C
           IACT(K)=K
    40     VMULTC(K)=RESMAX-B(K)
       END IF
-      PRINT *, '  1. VMULTC = ', (VMULTC(I),I=1,M+1)
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  1. VMULTC = ', (VMULTC(I),I=1,M+1)
+      END IF
       IF (RESMAX .EQ. 0.0d0) GOTO 480
       DO 50 I=1,N
    50 SDIRN(I)=0.0d0
@@ -105,7 +107,9 @@ C
           DO 80 I=1,N
    80     OPTNEW=OPTNEW-DX(I)*A(I,MCON)
       END IF
-      PRINT *, ' ICOUNT, OPTNEW, OPTOLD = ', ICOUNT, OPTNEW, OPTOLD
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, ' ICOUNT, OPTNEW, OPTOLD = ', ICOUNT, OPTNEW, OPTOLD
+      END IF
       IF (ICOUNT .EQ. 0 .OR. OPTNEW .LT. OPTOLD) THEN
           OPTOLD=OPTNEW
           NACTX=NACT
@@ -130,7 +134,6 @@ C
    90 DXNEW(I)=A(I,KK)
       TOT=0.0D0
       K=N
-      print *, '   k, nact, dxnew =', k, nact, (dxnew(i),i=1,n)
   100 IF (K .GT. NACT) THEN
           SP=0.0d0
           SPABS=0.0d0
@@ -140,11 +143,9 @@ C
   110     SPABS=SPABS+DABS(TEMP)
           ACCA=SPABS+0.1d0*DABS(SP)
           ACCB=SPABS+0.2d0*DABS(SP)
-          print *, '   sp, spabs, acca, accb', sp, spabs, acca, accb
           IF ((SPABS .GE. ACCA) .OR. (ACCA .GE. ACCB)) SP=0.0D0
           IF (TOT .EQ. 0.0D0) THEN
               TOT=SP
-              print *, '   simple tot = ', tot
           ELSE
               KP=K+1
               TEMP=DSQRT(SP*SP+TOT*TOT)
@@ -155,7 +156,6 @@ C
               TEMP=ALPHA*Z(I,K)+BETA*Z(I,KP)
               Z(I,KP)=ALPHA*Z(I,KP)-BETA*Z(I,K)
   120         Z(I,K)=TEMP
-              print *, '   k, alpha, beta, tot', k, alpha, beta, tot
           END IF
           K=K-1
           GOTO 100
@@ -212,7 +212,9 @@ C
       END IF
       K=K-1
       IF (K .GT. 0) GOTO 130
-      PRINT *, '  1. VMULTD = ', (VMULTD(I),I=1,M+1)
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  1. VMULTD = ', (VMULTD(I),I=1,M+1)
+      END IF
       IF (RATIO .LT. 0.0d0) GOTO 490
 C
 C     Revise the Lagrange multipliers and reorder the active constraints so
@@ -221,7 +223,9 @@ C     new value of ZDOTA(NACT) and branch if it is not acceptable.
 C
       DO 160 K=1,NACT
   160 VMULTC(K)=DMAX1(0.0d0,VMULTC(K)-RATIO*VMULTD(K))
-      PRINT *, '  2. VMULTC = ', (VMULTC(I),I=1,M+1)
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  2. VMULTC = ', (VMULTC(I),I=1,M+1)
+      END IF
       IF (ICON .LT. NACT) THEN
           ISAVE=IACT(ICON)
           VSAVE=VMULTC(ICON)
@@ -398,7 +402,9 @@ C
           GOTO 390
       END IF
       IF (MCON .GT. M) VMULTD(NACT)=DMAX1(0.0d0,VMULTD(NACT))
-      PRINT *, '  2. VMULTD = ', (VMULTD(I),I=1,M+1)
+      IF (IPRINT .EQ. 3) THEN     
+         PRINT *, '  2. VMULTD = ', (VMULTD(I),I=1,M+1)
+      END IF
 C
 C     Complete VMULTC by finding the new constraint residuals.
 C
@@ -419,14 +425,19 @@ C
           IF (SUMABS .GE. ACCA .OR. ACCA .GE. ACCB) SUM=0.0
   440     VMULTD(K)=SUM
       END IF
-      PRINT *, '  3. VMULTD = ', (VMULTD(I),I=1,M+1)
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  3. VMULTD = ', (VMULTD(I),I=1,M+1)
+      END IF
 C
 C     Calculate the fraction of the step from DX to DXNEW that will be taken.
 C
       RATIO=1.0d0
       ICON=0
+C     
+      EPS = 2.2E-16
+C      EPS = 0.0D0
       DO 450 K=1,MCON
-      IF (VMULTD(K) .LT. 0.0d0) THEN
+      IF (VMULTD(K) .LT. -EPS) THEN
           TEMP=VMULTC(K)/(VMULTC(K)-VMULTD(K))
           IF (TEMP .LT. RATIO) THEN
               RATIO=TEMP
@@ -442,10 +453,14 @@ C
   460 DX(I)=TEMP*DX(I)+RATIO*DXNEW(I)
       DO 470 K=1,MCON
   470 VMULTC(K)=DMAX1(0.0d0,TEMP*VMULTC(K)+RATIO*VMULTD(K))
-      PRINT *, '  3. VMULTC = ', (VMULTC(I),I=1,M+1)
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, '  3. VMULTC = ', (VMULTC(I),I=1,M+1)
+      END IF
       IF (MCON .EQ. M) RESMAX=RESOLD+RATIO*(RESMAX-RESOLD)
-      PRINT *, ' RESMAX, MCON, M, ICON = ', 
-     1    RESMAX, MCON, M, ICON
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, ' RESMAX, MCON, M, ICON = ', 
+     1        RESMAX, MCON, M, ICON
+      END IF
 C
 C     If the full step is not acceptable then begin another iteration.
 C     Otherwise switch to stage two or end the calculation.
