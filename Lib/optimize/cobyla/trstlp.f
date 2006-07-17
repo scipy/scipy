@@ -134,15 +134,15 @@ C
           DO 110 I=1,N
           TEMP=Z(I,K)*DXNEW(I)
           SP=SP+TEMP
-  110     SPABS=SPABS+ABS(TEMP)
-          ACCA=SPABS+0.1d0*ABS(SP)
-          ACCB=SPABS+0.2d0*ABS(SP)
+  110     SPABS=SPABS+DABS(TEMP)
+          ACCA=SPABS+0.1d0*DABS(SP)
+          ACCB=SPABS+0.2d0*DABS(SP)
           IF (SPABS .GE. ACCA .OR. ACCA .GE. ACCB) SP=0.0d0
           IF (TOT .EQ. 0.0d0) THEN
               TOT=SP
           ELSE
               KP=K+1
-              TEMP=SQRT(SP*SP+TOT*TOT)
+              TEMP=DSQRT(SP*SP+TOT*TOT)
               ALPHA=SP/TEMP
               BETA=TOT/TEMP
               TOT=TEMP
@@ -158,6 +158,9 @@ C
 C     Add the new constraint if this can be done without a deletion from the
 C     active set.
 C
+      IF (IPRINT .EQ. 3) THEN
+         PRINT *, 'TOT, NACT, ICON = ', TOT, NACT, ICON
+      END IF
       IF (TOT .NE. 0.0d0) THEN
           NACT=NACT+1
           ZDOTA(NACT)=TOT
