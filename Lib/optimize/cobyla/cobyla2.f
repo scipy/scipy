@@ -367,31 +367,8 @@ C
       ISDIRN=IVMC+MP
       IDXNEW=ISDIRN+N
       IVMD=IDXNEW+N
-      IF (IPRINT .EQ. 3) THEN
-         print *, ' '
-         print *, 'BEFORE trstlp:'
-         PRINT *, '  **DX = ', (DX(I),I=1,N)
-         PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
-         PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
-         PRINT *, '  **CON = ', (CON(I),I=1,M)
-         PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,MP)
-         PRINT *, '  **W = ', (W(I),I=1,ITOTAL)
-         print *, ' '
-      END IF
       CALL TRSTLP (N,M,A,CON,RHO,DX,IFULL,IACT,W(IZ),W(IZDOTA),
-     1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD))
-      IF (IPRINT .EQ. 3) THEN
-         print *, ' '
-         print *, 'AFTER trstlp:'
-         PRINT *, '  **DX = ', (DX(I),I=1,N)
-         PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
-         PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
-         PRINT *, '  **CON = ', (CON(I),I=1,M)
-         PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,MP)
-         PRINT *, '  **W = ', (W(I),I=1,ITOTAL)
-         print *, ' '
-         print *, ' '
-      END IF
+     1  W(IVMC),W(ISDIRN),W(IDXNEW),W(IVMD),IPRINT)
       IF (IFULL .EQ. 0) THEN
           TEMP=0.0d0
           DO 380 I=1,N

@@ -1,6 +1,6 @@
 C------------------------------------------------------------------------------
       SUBROUTINE TRSTLP (N,M,A,B,RHO,DX,IFULL,IACT,Z,ZDOTA,VMULTC,
-     1  SDIRN,DXNEW,VMULTD) 
+     1  SDIRN,DXNEW,VMULTD,IPRINT)
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION A(N,*),B(*),DX(*),IACT(*),Z(N,*),ZDOTA(*),
      1  VMULTC(*),SDIRN(*),DXNEW(*),VMULTD(*)
@@ -43,6 +43,23 @@ C     vector SDIRN gives a search direction that reduces all the active
 C     constraint violations by one simultaneously.
 C
 
+      IF (IPRINT .EQ. 3) THEN
+         print *, ' '
+         print *, 'BEFORE trstlp:'
+         PRINT *, '  **DX = ', (DX(I),I=1,N)
+         PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
+         PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
+         PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,M+1)
+         PRINT *, '  **B = ', (B(I),I=1,M)
+         PRINT *, '  **Z = ', ((Z(I,K),I=1,N),K=1,N)
+         PRINT *, '  **ZDOTA = ', (ZDOTA(I),I=1,N)
+         PRINT *, '  **VMULTC = ', (VMULTC(I),I=1,M+1)
+         PRINT *, '  **SDIRN = ', (SDIRN(I),I=1,N)
+         PRINT *, '  **DXNEW = ', (DXNEW(I),I=1,N)
+         PRINT *, '  **VMULTD = ', (VMULTD(I),I=1,M+1)
+         PRINT *, ' '
+      END IF
+
       ICON=0
       NACTX=0
       RESOLD=0
@@ -67,6 +84,7 @@ C
           IACT(K)=K
    40     VMULTC(K)=RESMAX-B(K)
       END IF
+      PRINT *, '  1. VMULTC = ', (VMULTC(I),I=1,M+1)
       IF (RESMAX .EQ. 0.0d0) GOTO 480
       DO 50 I=1,N
    50 SDIRN(I)=0.0d0
@@ -162,9 +180,9 @@ C
       DO 140 I=1,N
       TEMP=Z(I,K)*DXNEW(I)
       ZDOTV=ZDOTV+TEMP
-  140 ZDVABS=ZDVABS+ABS(TEMP)
-      ACCA=ZDVABS+0.1d0*ABS(ZDOTV)
-      ACCB=ZDVABS+0.2d0*ABS(ZDOTV)
+  140 ZDVABS=ZDVABS+DABS(TEMP)
+      ACCA=ZDVABS+0.1d0*DABS(ZDOTV)
+      ACCB=ZDVABS+0.2d0*DABS(ZDOTV)
       IF (ZDVABS .LT. ACCA .AND. ACCA .LT. ACCB) THEN
           TEMP=ZDOTV/ZDOTA(K)
           IF (TEMP .GT. 0.0d0 .AND. IACT(K) .LE. M) THEN
@@ -185,6 +203,7 @@ C
       END IF
       K=K-1
       IF (K .GT. 0) GOTO 130
+      PRINT *, '  1. VMULTD = ', (VMULTD(I),I=1,M+1)
       IF (RATIO .LT. 0.0d0) GOTO 490
 C
 C     Revise the Lagrange multipliers and reorder the active constraints so
@@ -193,6 +212,7 @@ C     new value of ZDOTA(NACT) and branch if it is not acceptable.
 C
       DO 160 K=1,NACT
   160 VMULTC(K)=DMAX1(0.0d0,VMULTC(K)-RATIO*VMULTD(K))
+      PRINT *, '  2. VMULTC = ', (VMULTC(I),I=1,M+1)
       IF (ICON .LT. NACT) THEN
           ISAVE=IACT(ICON)
           VSAVE=VMULTC(ICON)
@@ -369,6 +389,7 @@ C
           GOTO 390
       END IF
       IF (MCON .GT. M) VMULTD(NACT)=DMAX1(0.0d0,VMULTD(NACT))
+      PRINT *, '  2. VMULTD = ', (VMULTD(I),I=1,M+1)
 C
 C     Complete VMULTC by finding the new constraint residuals.
 C
@@ -379,16 +400,17 @@ C
           DO 440 K=KL,MCON
           KK=IACT(K)
           SUM=RESMAX-B(KK)
-          SUMABS=RESMAX+ABS(B(KK))
+          SUMABS=RESMAX+DABS(B(KK))
           DO 430 I=1,N
           TEMP=A(I,KK)*DXNEW(I)
           SUM=SUM+TEMP
-  430     SUMABS=SUMABS+ABS(TEMP)
-          ACCA=SUMABS+0.1*ABS(SUM)
-          ACCB=SUMABS+0.2*ABS(SUM)
+  430     SUMABS=SUMABS+DABS(TEMP)
+          ACCA=SUMABS+0.1*DABS(SUM)
+          ACCB=SUMABS+0.2*DABS(SUM)
           IF (SUMABS .GE. ACCA .OR. ACCA .GE. ACCB) SUM=0.0
   440     VMULTD(K)=SUM
       END IF
+      PRINT *, '  3. VMULTD = ', (VMULTD(I),I=1,M+1)
 C
 C     Calculate the fraction of the step from DX to DXNEW that will be taken.
 C
@@ -411,6 +433,7 @@ C
   460 DX(I)=TEMP*DX(I)+RATIO*DXNEW(I)
       DO 470 K=1,MCON
   470 VMULTC(K)=DMAX1(0.0d0,TEMP*VMULTC(K)+RATIO*VMULTD(K))
+      PRINT *, '  3. VMULTC = ', (VMULTC(I),I=1,M+1)
       IF (MCON .EQ. M) RESMAX=RESOLD+RATIO*(RESMAX-RESOLD)
 C
 C     If the full step is not acceptable then begin another iteration.
@@ -429,7 +452,24 @@ C     function before returning a DX whose length is less than RHO.
 C
   490 IF (MCON .EQ. M) GOTO 480
       IFULL=0
-  500 RETURN
+  500 CONTINUE
+      IF (IPRINT .EQ. 3) THEN
+         print *, ' '
+         print *, 'AFTER trstlp:'
+         PRINT *, '  **DX = ', (DX(I),I=1,N)
+         PRINT *, '  **IACT = ', (IACT(I),I=1,M+1)
+         PRINT *, 'M,N,RHO,IFULL =', M, N, RHO, IFULL
+         PRINT *, '  **A = ', ((A(I,K),I=1,N),K=1,M+1)
+         PRINT *, '  **B = ', (B(I),I=1,M)
+         PRINT *, '  **Z = ', ((Z(I,K),I=1,N),K=1,N)
+         PRINT *, '  **ZDOTA = ', (ZDOTA(I),I=1,N)
+         PRINT *, '  **VMULTC = ', (VMULTC(I),I=1,M+1)
+         PRINT *, '  **SDIRN = ', (SDIRN(I),I=1,N)
+         PRINT *, '  **DXNEW = ', (DXNEW(I),I=1,N)
+         PRINT *, '  **VMULTD = ', (VMULTD(I),I=1,M+1)
+         PRINT *, ' '
+      END IF
+C  500 RETURN
       END
 
       subroutine s360_380(DXNEW,DX,STEP,SDIRN,N,M,MCON,RESMAX,
