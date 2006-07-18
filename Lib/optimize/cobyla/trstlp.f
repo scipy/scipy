@@ -435,9 +435,9 @@ C
       ICON=0
 C     
       EPS = 2.2E-16
-C      EPS = 0.0D0
       DO 450 K=1,MCON
-      IF (VMULTD(K) .LT. -EPS) THEN
+      IF (VMULTD(K) .GT. -EPS .AND. VMULTD(K) .LT. EPS) VMULTD(K)=0.0D0
+      IF (VMULTD(K) .LT. 0.0D0) THEN
           TEMP=VMULTC(K)/(VMULTC(K)-VMULTD(K))
           IF (TEMP .LT. RATIO) THEN
               RATIO=TEMP
