@@ -1,7 +1,7 @@
 import numpy as num
-import convolve
-import convolve._correlate as _correlate
-import numpy.linalg.linalg as MLab
+import scipy.sandbox.stsci.convolve as convolve
+import scipy.sandbox.stsci.convolve._correlate as _correlate
+MLab=num
 
 def _translate(a, dx, dy, output=None, mode="nearest", cval=0.0):
     """_translate does positive sub-pixel shifts using bilinear interpolation."""
