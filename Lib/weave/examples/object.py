@@ -41,7 +41,7 @@ code = """
        // find obj length and accesss each of its items
        std::cout << "UserList items: ";
        for(i = 0; i < obj.length(); i++)
-           std::cout << obj[i] << " ";
+           std::cout << obj[i].str() << " ";
        std::cout << std::endl;
        // assign new values to each of its items
        for(i = 0; i < obj.length(); i++)

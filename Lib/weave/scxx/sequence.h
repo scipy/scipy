@@ -257,6 +257,10 @@ public:
     object oth = other;
     return operator=(oth);
   };
+  indexed_ref& operator=( const indexed_ref& other ) {
+    object oth = other;
+    return operator=( oth );
+  }
 };
 
 

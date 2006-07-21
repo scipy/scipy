@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0,'..')
 #from compiler import inline_tools
 import scipy.weave.inline_tools as inline_tools
-from bisect import bisect
+from bisect import bisect_left as bisect
 import types
 
 def c_int_search(seq,t,chk=1):

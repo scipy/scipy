@@ -726,7 +726,7 @@ public:
   };
   
   object is_tuple() const {
-    return PyDict_Check(_obj) == 1;
+    return PyTuple_Check(_obj) == 1;
   };
   
   object is_dict() const {

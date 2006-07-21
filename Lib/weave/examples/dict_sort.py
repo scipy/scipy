@@ -46,7 +46,9 @@ def c_sort2(adict):
            keys.sort();
            int N = keys.length();
            for(int i = 0; i < N;i++)
-              items[i] = adict[keys[i]];
+           {
+              items[i] = adict[int( keys[i] )];
+           }
            return_val = items;
            """
     return inline_tools.inline(code,['adict'],verbose=1)
