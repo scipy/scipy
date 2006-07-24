@@ -65,8 +65,11 @@ def spsolve(A, b, permc_spec=2):
 
     else:
         mat, csc = _toCS_superLU( A )
-        ftype, lastel, data, index0, index1 = \
-               mat.ftype, mat.nnz, mat.data, mat.rowind, mat.indptr
+        if csc:
+            index0 = mat.rowind
+        else:
+            index0 = mat.colind
+        ftype, lastel, data, index1 = mat.ftype, mat.nnz, mat.data, mat.indptr
         gssv = eval('_superlu.' + ftype + 'gssv')
         print "data-ftype: %s compared to data %s" % (ftype, data.dtype.char)
         print "Calling _superlu.%sgssv" % ftype
