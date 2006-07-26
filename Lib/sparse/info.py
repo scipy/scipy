@@ -14,12 +14,13 @@ There are four available sparse matrix types:
     (4) dok_matrix: Dictionary of Keys format
 
 To construct a matrix efficiently, use either lil_matrix (recommended) or
-dok_matrix.  The lil_matrix class supports basic slicing and fancy
+dok_matrix. The lil_matrix class supports basic slicing and fancy
 indexing with a similar syntax to NumPy arrays.
 
 To perform manipulations such as multiplication or inversion, first
-convert the matrix to either CSC or CSR format.  lil_matrix format is
-row-based, so conversion to CSR very most efficient.
+convert the matrix to either CSC or CSR format. The lil_matrix format is
+row-based, so conversion to CSR is efficient, whereas conversion to CSC
+is less so.
 
 Example:
     Construct a 10x1000 lil_matrix and add some values to it:
