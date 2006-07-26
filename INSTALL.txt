@@ -32,13 +32,15 @@ SciPy requires the following software installed:
 
 __ http://www.python.org
 
-2) NumPy__ 0.9.6 or newer
+2) NumPy__ 1.0b1 or newer
+
+   Debian package: python-numpy
 
 __ http://www.numpy.org/
 
 3) Complete LAPACK__ library (see NOTES 1, 2, 3)
 
-   Debian packages: atlas2-headers atlas2-base atlas2-base-dev
+   Debian packages: atlas3-headers atlas3-base atlas3-base-dev
 
    Various SciPy packages do linear algebra computations using the LAPACK
    routines. SciPy's setup.py scripts can use number of different LAPACK
