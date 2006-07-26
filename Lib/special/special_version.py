@@ -1,9 +1,6 @@
 major = 0
-minor = 4
-micro = 9
-release_level = 'beta'
+minor = 5
+micro = 0
 
-from __svn_version__ import svn_version
-
-special_version = '%(major)d.%(minor)d.%(micro)d_%(svn_version)s'\
+special_version = '%(major)d.%(minor)d.%(micro)d'\
                   % (locals ())
