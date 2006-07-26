@@ -915,7 +915,7 @@ class csc_matrix(spmatrix):
             func = getattr(sparsetools, self.ftype+'cscgetel')
             ind, val = func(self.data, self.rowind, self.indptr, row, col)
             return val
-        elif isinstance(key, int):
+        elif isintlike(key):
             # Was: return self.data[key]
             # If this is allowed, it should return the relevant row, as for
             # dense matrices (and __len__ should be supported again).
@@ -1472,9 +1472,7 @@ class csr_matrix(spmatrix):
             func = getattr(sparsetools, self.ftype+'cscgetel')
             ind, val = func(self.data, self.colind, self.indptr, col, row)
             return val
-        elif isinstance(key, int):
-            # If an integer index is allowed, it should return the relevant row,
-            # as for dense matrices (and __len__ should be supported again).
+        elif isintlike(key):
             return self[key, :]
         else:
             raise IndexError, "invalid index"
@@ -1702,7 +1700,7 @@ class dok_matrix(spmatrix, dict):
         """
         try:
             i, j = key
-            assert isinstance(i, int) and isinstance(j, int)
+            assert isintlike(i) and isintlike(j)
         except (AssertionError, TypeError, ValueError):
             raise IndexError, "index must be a pair of integers"
         try:
@@ -1724,15 +1722,15 @@ class dok_matrix(spmatrix, dict):
         i, j = key
 
         # Bounds checking
-        if isinstance(i, int):
+        if isintlike(i):
             if i < 0 or i >= self.shape[0]:
                 raise IndexError, "index out of bounds"
-        if isinstance(j, int):
+        if isintlike(j):
             if j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
 
         # First deal with the case where both i and j are integers
-        if isinstance(i, int) and isinstance(j, int):
+        if isintlike(i) and isintlike(j):
             return dict.get(self, key, 0.)
         else:
             # Either i or j is a slice, sequence, or invalid.  If i is a slice
@@ -1745,12 +1743,12 @@ class dok_matrix(spmatrix, dict):
                 seq = i
             else:
                 # Make sure i is an integer. (But allow it to be a subclass of int).
-                if not isinstance(i, int):
+                if not isintlike(i):
                     raise TypeError, "index must be a pair of integers or slices"
                 seq = None
             if seq is not None:
                 # i is a seq
-                if isinstance(j, int):
+                if isintlike(j):
                     # Create a new matrix of the correct dimensions
                     first = seq[0]
                     last = seq[-1]
@@ -1815,17 +1813,17 @@ class dok_matrix(spmatrix, dict):
         i, j = key
 
         # First deal with the case where both i and j are integers
-        if isinstance(i, int) and isinstance(j, int):
+        if isintlike(i) and isintlike(j):
             if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
                 raise IndexError, "index out of bounds"
-            if isinstance(value, int) and value == 0:
+            if isintlike(value) and value == 0:
                 if key in self:  # get rid of it something already there
                     del self[key]
             else:
                 # Ensure value is a single element, not a sequence
-                if isinstance(value, float) or isinstance(value, int) or \
-                    isinstance(value, complex):
-                    dict.__setitem__(self, key, value)
+                if isinstance(value, float) or isintlike(value) or \
+                        isinstance(value, complex):
+                    dict.__setitem__(self, key, self.dtype.type(value))
                     newrows = max(self.shape[0], int(key[0])+1)
                     newcols = max(self.shape[1], int(key[1])+1)
                     self.shape = (newrows, newcols)
@@ -1842,7 +1840,7 @@ class dok_matrix(spmatrix, dict):
                 seq = i
             else:
                 # Make sure i is an integer. (But allow it to be a subclass of int).
-                if not isinstance(i, int):
+                if not isintlike(i):
                     raise TypeError, "index must be a pair of integers or slices"
                 seq = None
             if seq is not None:
@@ -2232,7 +2230,7 @@ class coo_matrix(spmatrix):
         elif arg1 is None:      # clumsy!  We should make ALL arguments
                                 # keyword arguments instead!
             # Initialize an empty matrix.
-            if not isinstance(dims, tuple) or not isinstance(dims[0], int):
+            if not isinstance(dims, tuple) or not isintlike(dims[0]):
                 raise TypeError, "dimensions not understood"
             self.shape = dims
             self.dtype = getdtype(dtype, default=float)
@@ -2446,7 +2444,7 @@ class lil_matrix(spmatrix):
         if type(i) is slice:
             raise IndexError, "lil_matrix supports slices only of a single row"
             # TODO: add support for this, like in __setitem__
-        elif isinstance(i, int):
+        elif isintlike(i):
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
         elif operator.isSequenceType(i):
@@ -2471,7 +2469,7 @@ class lil_matrix(spmatrix):
             return new
         elif operator.isSequenceType(j):
             raise NotImplementedError, "sequence indexing not yet fully supported"
-        elif isinstance(j, int):
+        elif isintlike(j):
             if not (j>=0 and j<self.shape[1]):
                 raise IndexError, "lil_matrix index out of range"
         else:
@@ -2490,7 +2488,7 @@ class lil_matrix(spmatrix):
         except (AssertionError, TypeError):
             raise IndexError, "invalid index"
         i, j = index
-        if isinstance(i, int):
+        if isintlike(i):
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
         else:
@@ -2499,6 +2497,8 @@ class lil_matrix(spmatrix):
             elif operator.isSequenceType(i):
                 seq = i
             else:
+                import pdb
+                pdb.set_trace()
                 raise IndexError, "invalid index"
             try:
                 if not len(x) == len(seq):
@@ -2519,7 +2519,7 @@ class lil_matrix(spmatrix):
 
         # Below here, i is an integer
         row = self.rows[i]
-        if isinstance(j, int):
+        if isintlike(j):
             if not (j>=0 and j<self.shape[1]):
                 raise IndexError, "lil_matrix index out of range"
             # Find element to be set or removed
@@ -2729,6 +2729,18 @@ def isdense(x):
 def isscalarlike(x):
     """Is x either a scalar, an array scalar, or a 0-dim array?"""
     return isscalar(x) or (isdense(x) and x.ndim == 0)
+
+def isintlike(x):
+    """Is x appropriate as an index into a sparse matrix? Returns True
+    if it can be cast safely to a machine int.
+    """
+    try:
+        if int(x) == x:
+            return True
+        else:
+            return False
+    except TypeError:
+        return False
 
 def isshape(x):
     """Is x a valid 2-tuple of dimensions?
