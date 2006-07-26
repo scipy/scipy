@@ -2449,6 +2449,8 @@ class lil_matrix(spmatrix):
         elif isinstance(i, int):
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
+        elif operator.isSequenceType(i):
+            raise NotImplementedError, "sequence indexing not yet fully supported"
         else:
             raise IndexError, "invalid index"
         row = self.rows[i]
@@ -2467,7 +2469,8 @@ class lil_matrix(spmatrix):
             new.data = [self.data[i][startind:stopind]]
             new.rows = [[colind - start for colind in row[startind:stopind]]]
             return new
-        
+        elif operator.isSequenceType(j):
+            raise NotImplementedError, "sequence indexing not yet fully supported"
         elif isinstance(j, int):
             if not (j>=0 and j<self.shape[1]):
                 raise IndexError, "lil_matrix index out of range"
@@ -2476,7 +2479,7 @@ class lil_matrix(spmatrix):
         pos = bisect_left(row, j)
         if pos == len(row) or row[pos] != j:
             # Element doesn't exist (is zero)
-            return 0.0
+            return self.dtype.type(0)
         else:
             return self.data[i][pos]
     
