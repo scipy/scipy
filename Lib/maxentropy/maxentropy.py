@@ -953,7 +953,8 @@ class conditionalmodel(model):
         entire sample space, since q(w,x) = 0 for all w,x not in the training
         set.
         
-        The entropy dual function equals the negative log likelihood.
+        The entropy dual function is proportional to the negative log
+        likelihood.
 
         Compare to the entropy dual of an unconditional model:
             L(theta) = log(Z) - theta^T . K
