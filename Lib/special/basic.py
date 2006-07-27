@@ -471,7 +471,7 @@ def mathieu_odd_coef(m,q):
     return fc[:km]
 
 def lpmn(m,n,z):
-    """Associated Legendre functions of the second kind, Pmn(z) and its
+    """Associated Legendre functions of the first kind, Pmn(z) and its
     derivative, Pmn'(z) of order m and degree n.  Returns two
     arrays of size (m+1,n+1) containing Pmn(z) and Pmn'(z) for
     all orders from 0..m and degrees from 0..n.
