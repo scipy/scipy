@@ -857,7 +857,7 @@ def savemat(filename, dict):
     O = 0
     for variable in dict.keys():
         var = dict[variable]
-        if type(var) is not ArrayType:
+        if not isinstance(var, ArrayType):
             continue
         if var.dtype.char == 'S1':
             T = 1
