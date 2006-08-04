@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 31, 2005 by
-
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
@@ -31,6 +29,7 @@ else :
 from scipy import *
 from numpy.core.umath import *
 from shapetest import *
+from numpy import ndarray
 
 class Graph :
 
@@ -197,7 +196,7 @@ class Graph :
             elif is_scalar (axl) :
                 raise self._AxisSpecError , \
                    "Axis limits must be a point."
-            elif type (axl) == ListType or type (axl) == ArrayType :
+            elif isinstance(axl, list) or isinstance(axl, ndarray):
                 if type (axl [0]) != ListType and type (axl [0]) != ArrayType :
                     self._axis_limits [0] = axl
                 else :

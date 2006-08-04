@@ -13,9 +13,7 @@
 # TODO: support for sparse matrices, need spmatrix.tocoo().
 
 import os
-from types import ListType, TupleType
-from numpy import asarray, real,imag,conj,zeros
-from numpy import ndarray as ArrayType
+from numpy import asarray, real, imag, conj, zeros, ndarray
 
 __all__ = ['mminfo','mmread','mmwrite']
 
@@ -239,7 +237,7 @@ def mmwrite(target,a,comment='',field=None,precision=None):
         target = open(target,'w')
         close_it = 1
 
-    if type(a) in [ListType,ArrayType,TupleType] or hasattr(a,'__array__'):
+    if isinstance(a, list) or isinstance(a, ndarray) or isinstance(a, tuple) or hasattr(a,'__array__'):
         rep = 'array'
         a = asarray(a)
         if len(a.shape) != 2:

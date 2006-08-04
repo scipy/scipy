@@ -378,7 +378,7 @@ The argument and member fix is the same as Data.fix and ODR.ifixx:
         if len(cov.shape) == 2:
             return linalg.inverse(cov)
         else:
-            weights = numpy.zeros(cov.shape, Float)
+            weights = numpy.zeros(cov.shape, float)
 
             for i in range(cov.shape[-1]):  # n
                 weights[:,:,i] = linalg.inv(cov[:,:,i])
@@ -740,7 +740,7 @@ checking things that the builtin function odr will check.
 
         x_s = list(self.data.x.shape)
 
-        if type(self.data.y) is numpy.ArrayType:
+        if isinstance(self.data.y, numpy.ndarray):
             y_s = list(self.data.y.shape)
             if self.model.implicit:
                 raise odr_error, "an implicit model cannot use response data"
@@ -853,12 +853,12 @@ checking things that the builtin function odr will check.
             lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 2*n*m + 2*n*q*p +
                      5*q + q*(p+m) + ldwe*ld2we*q)
 
-        if type(self.work) is numpy.ArrayType and self.work.shape == (lwork,)\
-           and self.work.dtype == numpy.Float:
+        if isinstance(self.work, numpy.ndarray) and self.work.shape == (lwork,)\
+                and self.work.dtype == numpy.Float:
             # the existing array is fine
             return
         else:
-            self.work = numpy.zeros((lwork,), numpy.Float)
+            self.work = numpy.zeros((lwork,), float)
 
     def set_job(self, fit_type=None, deriv=None, var_calc=None,
                 del_init=None, restart=None):

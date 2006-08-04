@@ -3,7 +3,7 @@
 # Author: Travis Oliphant
 
 from numpy import squeeze
-from numpy import ndarray as ArrayType
+from numpy import ndarray
 from numpy import *
 import numpyio
 import struct, os, sys
@@ -857,7 +857,7 @@ def savemat(filename, dict):
     O = 0
     for variable in dict.keys():
         var = dict[variable]
-        if not isinstance(var, ArrayType):
+        if not isinstance(var, ndarray):
             continue
         if var.dtype.char == 'S1':
             T = 1

@@ -158,6 +158,7 @@ from cellarray import *
 
 import shapetest
 from scipy import *
+from numpy import ndarray
 from numpy.core.umath import *
 
 _ezdict_ = {'t': 'true' , 'T': 'true', 'y': 'true', 'Y': 'true',
@@ -934,7 +935,7 @@ def plot (y = None, x = None, ** keywords) :
             col = [col] * no_of_coords
         elif len (col) < no_of_coords :
             col = col + [_color_] * (no_of_coords - len (col))
-        if x is None or type (x) == ArrayType and len (shape (x)) == 1 :
+        if x is None or isinstance(x, ndarray) and x.ndim == 1:
             x = [x] * no_of_coords
         elif shape (x) [0] < no_of_coords :
             x = x + [None] * no_of_coords - shape (x) [0]
