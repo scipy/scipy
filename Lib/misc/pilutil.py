@@ -157,9 +157,9 @@ def toimage(arr,high=255,low=0,cmin=None,cmax=None,pal=None,
     # Check for 3 in datacube shape --- 'RGB' or 'YCbCr'
     if channel_axis is None:
         if (3 in shape):
-            ca = numpy.nonzero(asarray(shape) == 3)[0]
+            ca = numpy.flatnonzero(asarray(shape) == 3)[0]
         else:
-            ca = numpy.nonzero(asarray(shape) == 4)
+            ca = numpy.flatnonzero(asarray(shape) == 4)
             if len(ca):
                 ca = ca[0]
             else:

@@ -161,7 +161,7 @@ class SmoothingSpline(BSpline):
 
         # throw out rows with zeros (this happens at boundary points!)
 
-        mask = N.nonzero(1 - N.alltrue(N.equal(bt, 0), axis=0))
+        mask = N.flatnonzero(1 - N.alltrue(N.equal(bt, 0), axis=0))
 
         bt = bt[:,mask]
         y = y[mask]

@@ -17,7 +17,7 @@ from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
 import numpy.random as mtrand
-from numpy.oldnumeric import nonzero
+from numpy import flatnonzero as nonzero
 
 __all__ = [
            'rv_continuous',

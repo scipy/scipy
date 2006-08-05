@@ -32,7 +32,7 @@ c_ = numpy.c_
 _I = cast['F'](1j)
 def _make_complex_eigvecs(w,vin,cmplx_tcode):
     v = numpy.array(vin,dtype=cmplx_tcode)
-    ind = numpy.nonzero(numpy.not_equal(w.imag,0.0))
+    ind = numpy.flatnonzero(numpy.not_equal(w.imag,0.0))
     vnew = numpy.zeros((v.shape[0],len(ind)>>1),cmplx_tcode)
     vnew.real = numpy.take(vin,ind[::2],1)
     vnew.imag = numpy.take(vin,ind[1::2],1)

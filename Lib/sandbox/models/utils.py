@@ -40,10 +40,8 @@ def clean0(matrix):
     """
     Erase columns of zeros: can save some time in pseudoinverse.
     """
-
     colsum = N.add.reduce(matrix**2, 0)
-    
-    val = [matrix[:,i] for i in N.nonzero(colsum)]
+    val = [matrix[:,i] for i in N.flatnonzero(colsum)]
     return N.array(N.transpose(val))
 
 def rank(X, cond=1.0e-12):

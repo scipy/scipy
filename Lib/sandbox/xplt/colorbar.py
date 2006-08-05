@@ -9,6 +9,7 @@ from numpy.core.umath import *
 from numpy import *
 from gist import *
 from slice3 import *
+from numpy.oldnumeric import nonzero
 
 def nice_levels (z, n = 8) :
     """nice_levels(z, n = 8) finds approximately n "nice values"

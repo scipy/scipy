@@ -22,6 +22,7 @@ from pl3d import *
 from numpy import *
 from gistC import *
 from gistfuncs import *
+from numpy.oldnumeric import nonzero
 
  #
  # Caveats:
