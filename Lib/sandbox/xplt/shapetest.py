@@ -18,8 +18,8 @@ def is_scalar (x) :
 # This routine should be able to tell you the size of any object:
 def no_of_dims (x) :
     if x == None : return 0
-    if (isinstance(x, ndarray)) : return len (x.shape)
-    if (isinstance(x, list) or isinstance(x, tuple) : return 1
+    if isinstance(x, ndarray) : return len (x.shape)
+    if isinstance(x, (list, tuple)) : return 1
     # I don't know if there are any other possibilities.
     for i in range (10) :
         if is_scalar (x) : return i

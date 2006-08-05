@@ -429,7 +429,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             separable= True
         else:
             footprint = numarray.asarray(footprint)
-            footprint = footprint.astype(numarray.Bool)
+            footprint = footprint.astype(bool)
             if numarray.alltrue(numarray.ravel(footprint)):
                 size = footprint.shape
                 footprint = None
@@ -440,10 +440,10 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         structure = numarray.asarray(structure, dtype = numarray.Float64)
         separable = False
         if footprint is None:
-            footprint = numarray.ones(structure.shape, numarray.Bool)
+            footprint = numarray.ones(structure.shape, bool)
         else:
             footprint = numarray.asarray(footprint)
-            footprint = footprint.astype(numarray.Bool)
+            footprint = footprint.astype(bool)
     input = numarray.asarray(input)
     if numarray.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
@@ -520,9 +520,9 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
         if size == None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numarray.ones(sizes, dtype = numarray.Bool)
+        footprint = numarray.ones(sizes, dtype = bool)
     else:
-        footprint = numarray.asarray(footprint, dtype = numarray.Bool)
+        footprint = numarray.asarray(footprint, dtype = bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
         raise RuntimeError, 'filter footprint array has incorrect shape.'
@@ -656,10 +656,10 @@ def generic_filter(input, function, size = None, footprint = None,
         if size == None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numarray.ones(size, dtype = numarray.Bool)
+        footprint = numarray.ones(size, dtype = bool)
     else:
         footprint = numarray.asarray(footprint)
-        footprint = footprint.astype(numarray.Bool)
+        footprint = footprint.astype(bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
         raise RuntimeError, 'filter footprint array has incorrect shape.'

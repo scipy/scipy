@@ -9,7 +9,7 @@ import scipy
 import scipy.special as special
 import scipy.optimize as optimize
 import inspect
-from numpy import alltrue, where, arange, put, putmask, nonzero, \
+from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis
@@ -17,6 +17,7 @@ from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
 import numpy.random as mtrand
+from numpy.oldnumeric import nonzero
 
 __all__ = [
            'rv_continuous',

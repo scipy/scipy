@@ -1,7 +1,7 @@
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq']
 
 from numpy import array
-from numpy.dft.helper import fftshift, ifftshift, fftfreq
+from numpy.fft.helper import fftshift, ifftshift, fftfreq
 
 def rfftfreq(n,d=1.0):
     """ rfftfreq(n, d=1.0) -> f

@@ -32,7 +32,8 @@ import sys
 import unittest
 import math
 import numpy.oldnumeric as numarray
-from numpy import dft
+import numpy
+from numpy import fft
 from numpy.testing import *
 set_package_path()
 import scipy.ndimage as ndimage
@@ -42,9 +43,9 @@ restore_path()
 eps = 1e-12
 
 def diff(a, b):
-    if not isinstance(a, numarray.ndarray):
+    if not isinstance(a, numpy.ndarray):
         a = numarray.asarray(a)
-    if not isinstance(b, numarray.ndarray):
+    if not isinstance(b, numpy.ndarray):
         b = numarray.asarray(b)
     if (0 in a.shape) and (0 in b.shape):
         return 0.0
@@ -1302,12 +1303,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.float32, numarray.float64]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.rfft(a, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.rfft(a, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_gaussian(a, [5.0, 2.5],
                                                        shape[0], 0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.irfft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.irfft(a, shape[0], 0)
                 self.failUnless(diff(ndimage.sum(a), 1.0) < eps)
 
     def test_fourier_gaussian_complex01(self):
@@ -1316,12 +1317,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.complex64, numarray.complex128]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.fft(a, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.fft(a, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_gaussian(a, [5.0, 2.5], -1,
                                                        0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.ifft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.ifft(a, shape[0], 0)
                 error = diff(ndimage.sum(a.real), 1.0)
                 self.failUnless(error < eps)
 
@@ -1331,12 +1332,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.float32, numarray.float64]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.rfft(a, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.rfft(a, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_uniform(a, [5.0, 2.5],
                                                       shape[0], 0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.irfft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.irfft(a, shape[0], 0)
                 self.failUnless(diff(ndimage.sum(a), 1.0) < eps)
 
     def test_fourier_uniform_complex01(self):
@@ -1345,11 +1346,11 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.complex64, numarray.complex128]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.fft(a, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.fft(a, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_uniform(a, [5.0, 2.5], -1, 0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.ifft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.ifft(a, shape[0], 0)
                 error = diff(ndimage.sum(a.real), 1.0)
                 self.failUnless(error < eps)
 
@@ -1359,11 +1360,11 @@ class test_ndimage(ScipyTestCase):
             for dtype in [numarray.float32, numarray.float64]:
                 true = numarray.arange(shape[0] * shape[1], dtype = dtype)
                 true.shape = shape
-                a = dft.rfft(true, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.rfft(true, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_shift(a, [1, 1], shape[0], 0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.irfft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.irfft(a, shape[0], 0)
                 error1 = diff(a[1:, 1:], true[:-1, :-1])
                 error2 = diff(a.imag, numarray.zeros(shape))
                 self.failUnless(error1 < 1e-10 and error2 < 1e-10)
@@ -1375,11 +1376,11 @@ class test_ndimage(ScipyTestCase):
                 true = numarray.arange(shape[0] * shape[1],
                                        dtype = type)
                 true.shape = shape
-                a = dft.fft(true, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.fft(true, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_shift(a, [1, 1], -1, 0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.ifft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.ifft(a, shape[0], 0)
                 error1 = diff(a.real[1:, 1:], true[:-1, :-1])
                 error2 = diff(a.imag, numarray.zeros(shape))
                 self.failUnless(error1 < 1e-10 and error2 < 1e-10)
@@ -1390,12 +1391,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.float32, numarray.float64]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.rfft(a, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.rfft(a, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_ellipsoid(a, [5.0, 2.5],
                                                         shape[0], 0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.irfft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.irfft(a, shape[0], 0)
                 self.failUnless(diff(ndimage.sum(a), 1.0) < eps)
 
     def test_fourier_ellipsoid_complex01(self):
@@ -1404,12 +1405,12 @@ class test_ndimage(ScipyTestCase):
             for type in [numarray.complex64, numarray.complex128]:
                 a = numarray.zeros(shape, type)
                 a[0, 0] = 1.0
-                a = dft.fft(a, shape[0], 0)
-                a = dft.fft(a, shape[1], 1)
+                a = fft.fft(a, shape[0], 0)
+                a = fft.fft(a, shape[1], 1)
                 a = ndimage.fourier_ellipsoid(a, [5.0, 2.5], -1,
                                                         0)
-                a = dft.ifft(a, shape[1], 1)
-                a = dft.ifft(a, shape[0], 0)
+                a = fft.ifft(a, shape[1], 1)
+                a = fft.ifft(a, shape[0], 0)
                 error = diff(ndimage.sum(a.real), 1.0)
                 self.failUnless(error < eps)
 
@@ -2745,7 +2746,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_sum06(self):
         "sum 6"
-        labels = numarray.array([], numarray.Bool)
+        labels = numarray.array([], bool)
         for type in self.types:
             input = numarray.array([], type)
             output = ndimage.sum(input, labels = labels)
@@ -2753,7 +2754,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_sum07(self):
         "sum 7"
-        labels = numarray.ones([0, 4], numarray.Bool)
+        labels = numarray.ones([0, 4], bool)
         for type in self.types:
             input = numarray.zeros([0, 4], type)
             output = ndimage.sum(input, labels = labels)
@@ -2761,7 +2762,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_sum08(self):
         "sum 8"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([1, 2], type)
             output = ndimage.sum(input, labels = labels)
@@ -2769,7 +2770,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_sum09(self):
         "sum 9"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output = ndimage.sum(input, labels = labels)
@@ -2777,8 +2778,8 @@ class test_ndimage(ScipyTestCase):
 
     def test_sum10(self):
         "sum 10"
-        labels = numarray.array([1, 0], numarray.Bool)
-        input = numarray.array([[1, 2], [3, 4]], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
+        input = numarray.array([[1, 2], [3, 4]], bool)
         output = ndimage.sum(input, labels = labels)
         self.failUnless(output == 2.0)
 
@@ -2802,7 +2803,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_mean01(self):
         "mean 1"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output = ndimage.mean(input, labels = labels)
@@ -2810,8 +2811,8 @@ class test_ndimage(ScipyTestCase):
 
     def test_mean02(self):
         "mean 2"
-        labels = numarray.array([1, 0], numarray.Bool)
-        input = numarray.array([[1, 2], [3, 4]], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
+        input = numarray.array([[1, 2], [3, 4]], bool)
         output = ndimage.mean(input, labels = labels)
         self.failUnless(output == 1.0)
 
@@ -2835,7 +2836,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_minimum01(self):
         "minimum 1"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output = ndimage.minimum(input, labels = labels)
@@ -2843,8 +2844,8 @@ class test_ndimage(ScipyTestCase):
 
     def test_minimum02(self):
         "minimum 2"
-        labels = numarray.array([1, 0], numarray.Bool)
-        input = numarray.array([[2, 2], [2, 4]], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
+        input = numarray.array([[2, 2], [2, 4]], bool)
         output = ndimage.minimum(input, labels = labels)
         self.failUnless(output == 1.0)
 
@@ -2868,7 +2869,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_maximum01(self):
         "maximum 1"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output = ndimage.maximum(input, labels = labels)
@@ -2876,8 +2877,8 @@ class test_ndimage(ScipyTestCase):
 
     def test_maximum02(self):
         "maximum 2"
-        labels = numarray.array([1, 0], numarray.Bool)
-        input = numarray.array([[2, 2], [2, 4]], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
+        input = numarray.array([[2, 2], [2, 4]], bool)
         output = ndimage.maximum(input, labels = labels)
         self.failUnless(output == 1.0)
 
@@ -2922,7 +2923,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_variance04(self):
         "variance 4"
-        input = numarray.array([1, 0], numarray.Bool)
+        input = numarray.array([1, 0], bool)
         output = ndimage.variance(input)
         self.failUnless(output == 0.5)
 
@@ -2965,7 +2966,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_standard_deviation04(self):
         "standard deviation 4"
-        input = numarray.array([1, 0], numarray.Bool)
+        input = numarray.array([1, 0], bool)
         output = ndimage.standard_deviation(input)
         self.failUnless(output == math.sqrt(0.5))
 
@@ -2989,7 +2990,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_minimum_position01(self):
         "minimum position 1"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output = ndimage.minimum_position(input,
@@ -3009,7 +3010,7 @@ class test_ndimage(ScipyTestCase):
         "minimum position 3"
         input = numarray.array([[5, 4, 2, 5],
                                 [3, 7, 0, 2],
-                                [1, 5, 1, 1]], numarray.Bool)
+                                [1, 5, 1, 1]], bool)
         output = ndimage.minimum_position(input)
         self.failUnless(output == (1, 2))
 
@@ -3017,7 +3018,7 @@ class test_ndimage(ScipyTestCase):
         "minimum position 4"
         input = numarray.array([[5, 4, 2, 5],
                                 [3, 7, 1, 2],
-                                [1, 5, 1, 1]], numarray.Bool)
+                                [1, 5, 1, 1]], bool)
         output = ndimage.minimum_position(input)
         self.failUnless(output == (0, 0))
 
@@ -3054,7 +3055,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_maximum_position01(self):
         "maximum position 1"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output = ndimage.maximum_position(input,
@@ -3074,7 +3075,7 @@ class test_ndimage(ScipyTestCase):
         "maximum position 3"
         input = numarray.array([[5, 4, 2, 5],
                                 [3, 7, 8, 2],
-                                [1, 5, 1, 1]], numarray.Bool)
+                                [1, 5, 1, 1]], bool)
         output = ndimage.maximum_position(input)
         self.failUnless(output == (0, 0))
 
@@ -3111,7 +3112,7 @@ class test_ndimage(ScipyTestCase):
 
     def test_extrema01(self):
         "extrema 1"
-        labels = numarray.array([1, 0], numarray.Bool)
+        labels = numarray.array([1, 0], bool)
         for type in self.types:
             input = numarray.array([[1, 2], [3, 4]], type)
             output1 = ndimage.extrema(input, labels = labels)
@@ -3225,7 +3226,7 @@ class test_ndimage(ScipyTestCase):
     def test_center_of_mass06(self):
         "center of mass 6"
         true = [0.5, 0.5]
-        input = numarray.array([[1, 2], [3, 1]], numarray.Bool)
+        input = numarray.array([[1, 2], [3, 1]], bool)
         output = ndimage.center_of_mass(input)
         e = diff(true, output)
         self.failUnless(e < eps)
@@ -3234,7 +3235,7 @@ class test_ndimage(ScipyTestCase):
         "center of mass 7"
         labels = [1, 0]
         true = [0.5, 0.0]
-        input = numarray.array([[1, 2], [3, 1]], numarray.Bool)
+        input = numarray.array([[1, 2], [3, 1]], bool)
         output = ndimage.center_of_mass(input, labels)
         e = diff(true, output)
         self.failUnless(e < eps)
@@ -3243,7 +3244,7 @@ class test_ndimage(ScipyTestCase):
         "center of mass 8"
         labels = [1, 2]
         true = [0.5, 1.0]
-        input = numarray.array([[5, 2], [3, 1]], numarray.Bool)
+        input = numarray.array([[5, 2], [3, 1]], bool)
         output = ndimage.center_of_mass(input, labels, 2)
         e = diff(true, output)
         self.failUnless(e < eps)
@@ -3253,7 +3254,7 @@ class test_ndimage(ScipyTestCase):
         "center of mass 9"
         labels = [1, 2]
         true = [(0.5, 0.0), (0.5, 1.0)]
-        input = numarray.array([[1, 2], [1, 1]], numarray.Bool)
+        input = numarray.array([[1, 2], [1, 1]], bool)
         output = ndimage.center_of_mass(input, labels, [1, 2])
         e = diff(true, output)
         self.failUnless(e < eps)
@@ -4163,7 +4164,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_erosion(data, struct,
                                          border_value = 1, iterations = 2)
         self.failUnless(diff(out, true) < eps)
@@ -4186,8 +4187,8 @@ class test_ndimage(ScipyTestCase):
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        out = numarray.zeros(data.shape, numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0]], bool)
+        out = numarray.zeros(data.shape, bool)
         ndimage.binary_erosion(data, struct, border_value = 1,
                                          iterations = 2, output = out)
         self.failUnless(diff(out, true) < eps)
@@ -4210,7 +4211,7 @@ class test_ndimage(ScipyTestCase):
                                [1, 1, 1, 1, 1, 1, 1],
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
-                               [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 1, 0, 0, 0]], bool)
         out = ndimage.binary_erosion(data, struct,
                                          border_value = 1, iterations = 3)
         self.failUnless(diff(out, true) < eps)
@@ -4233,8 +4234,8 @@ class test_ndimage(ScipyTestCase):
                                [1, 1, 1, 1, 1, 1, 1],
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
-                               [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
-        out = numarray.zeros(data.shape, numarray.Bool)
+                               [0, 0, 0, 1, 0, 0, 0]], bool)
+        out = numarray.zeros(data.shape, bool)
         ndimage.binary_erosion(data, struct, border_value = 1,
                                          iterations = 3, output = out)
         self.failUnless(diff(out, true) < eps)
@@ -4257,8 +4258,8 @@ class test_ndimage(ScipyTestCase):
                                [1, 1, 1, 1, 1, 1, 1],
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
-                               [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
-        out = numarray.zeros(data.shape, numarray.Bool)
+                               [0, 0, 0, 1, 0, 0, 0]], bool)
+        out = numarray.zeros(data.shape, bool)
         ndimage.binary_erosion(data, struct, border_value = 1,
                           iterations = 1, output = out, origin = (-1, -1))
         self.failUnless(diff(out, true) < eps)
@@ -4281,7 +4282,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_erosion(data, struct,
                                          border_value = 1, iterations = 2)
         self.failUnless(diff(out, true) < eps)
@@ -4311,7 +4312,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_erosion(data, struct,
                             border_value = 1, mask = mask, iterations = -1)
         self.failUnless(diff(out, true) < eps)
@@ -4341,7 +4342,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_erosion(data, struct,
                                             border_value = 1, mask = mask)
         self.failUnless(diff(out, true) < eps)
@@ -4364,7 +4365,7 @@ class test_ndimage(ScipyTestCase):
                                [1, 1, 1, 1, 1, 1, 1],
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 1, 1, 1, 0, 0],
-                               [0, 0, 0, 1, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 1, 0, 0, 0]], bool)
         tmp = [[0, 0, 1, 0, 0, 0, 0],
                [0, 1, 1, 1, 0, 0, 0],
                [1, 1, 1, 1, 1, 0, 1],
@@ -4375,7 +4376,7 @@ class test_ndimage(ScipyTestCase):
         true = numarray.logical_and(tmp, mask)
         tmp = numarray.logical_and(data, numarray.logical_not(mask))
         true = numarray.logical_or(true, tmp)
-        out = numarray.zeros(data.shape, numarray.Bool)
+        out = numarray.zeros(data.shape, bool)
         ndimage.binary_erosion(data, struct, border_value = 1,
                                          iterations = 1, output = out,
                                          origin = (-1, -1), mask = mask)
@@ -4762,7 +4763,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 0],
-                               [0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_dilation(data, struct,
                                                 iterations = 2)
         self.failUnless(diff(out, true) < eps)
@@ -4781,8 +4782,8 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 0],
-                               [0, 0, 0, 0, 0]], numarray.Bool)
-        out = numarray.zeros(data.shape, numarray.Bool)
+                               [0, 0, 0, 0, 0]], bool)
+        out = numarray.zeros(data.shape, bool)
         ndimage.binary_dilation(data, struct, iterations = 2,
                                           output = out)
         self.failUnless(diff(out, true) < eps)
@@ -4801,7 +4802,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 0],
-                               [0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_dilation(data, struct,
                                                 iterations = 3)
         self.failUnless(diff(out, true) < eps)
@@ -4820,8 +4821,8 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 0],
-                               [0, 0, 0, 0, 0]], numarray.Bool)
-        out = numarray.zeros(data.shape, numarray.Bool)
+                               [0, 0, 0, 0, 0]], bool)
+        out = numarray.zeros(data.shape, bool)
         ndimage.binary_dilation(data, struct, iterations = 3,
                                           output = out)
         self.failUnless(diff(out, true) < eps)
@@ -4838,7 +4839,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 0, 0, 0],
                                [0, 1, 1, 0, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         mask = numarray.array([[0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 1, 0],
@@ -4846,7 +4847,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 0, 0, 0],
                                [0, 1, 1, 0, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         data = numarray.array([[0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -4854,7 +4855,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
 
         out = ndimage.binary_dilation(data, struct,
                            iterations = -1, mask = mask, border_value = 0)
@@ -4880,8 +4881,8 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 1, 1, 0, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        data = numarray.zeros(mask.shape, numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+        data = numarray.zeros(mask.shape, bool)
         out = ndimage.binary_dilation(data, struct,
                           iterations = -1, mask = mask, border_value = 1)
         self.failUnless(diff(out, true) < eps)
@@ -4940,7 +4941,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 0, 0, 0],
                                [0, 1, 1, 0, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         mask = numarray.array([[0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 1, 0],
@@ -4948,7 +4949,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 0, 0, 0],
                                [0, 1, 1, 0, 1, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         data = numarray.array([[0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
@@ -4956,7 +4957,7 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 1, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
 
         out = ndimage.binary_propagation(data, struct,
                                             mask = mask, border_value = 0)
@@ -4982,8 +4983,8 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 0, 1, 1, 0, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
-        data = numarray.zeros(mask.shape, numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
+        data = numarray.zeros(mask.shape, bool)
         out = ndimage.binary_propagation(data, struct,
                                              mask = mask, border_value = 1)
         self.failUnless(diff(out, true) < eps)
@@ -5086,14 +5087,14 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         data = numarray.array([[0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_fill_holes(data)
         self.failUnless(diff(out, true) < eps)
 
@@ -5105,14 +5106,14 @@ class test_ndimage(ScipyTestCase):
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 1, 1, 1, 1, 0, 0],
                                [0, 0, 0, 1, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         data = numarray.array([[0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 1, 1, 0, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 1, 0, 0, 1, 0, 0],
                                [0, 0, 0, 1, 1, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_fill_holes(data)
         self.failUnless(diff(out, true) < eps)
 
@@ -5124,14 +5125,14 @@ class test_ndimage(ScipyTestCase):
                                [0, 1, 1, 1, 0, 1, 1, 1],
                                [0, 1, 1, 1, 0, 1, 1, 1],
                                [0, 0, 1, 0, 0, 1, 1, 1],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         data = numarray.array([[0, 0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 1, 0, 0, 0, 0, 0],
                                [0, 1, 0, 1, 0, 1, 1, 1],
                                [0, 1, 0, 1, 0, 1, 0, 1],
                                [0, 1, 0, 1, 0, 1, 0, 1],
                                [0, 0, 1, 0, 0, 1, 1, 1],
-                               [0, 0, 0, 0, 0, 0, 0, 0]], numarray.Bool)
+                               [0, 0, 0, 0, 0, 0, 0, 0]], bool)
         out = ndimage.binary_fill_holes(data)
         self.failUnless(diff(out, true) < eps)
 
@@ -5412,7 +5413,7 @@ class test_ndimage(ScipyTestCase):
                                    [0, 1, 1, 1, 1],
                                    [0, 1, 1, 1, 1],
                                    [0, 0, 0, 0, 0]], type)
-            out = numarray.zeros(data.shape, numarray.Bool)
+            out = numarray.zeros(data.shape, bool)
             ndimage.binary_hit_or_miss(data, struct,
                                                  output = out)
             self.failUnless(diff(true, out) < eps)

@@ -31,6 +31,7 @@
 import types
 import math
 import numpy.oldnumeric as numarray
+import numpy
 import _ni_support
 import _nd_image
 import morphology
@@ -50,7 +51,7 @@ def label(input, structure = None, output = None):
         raise TypeError, 'Complex type not supported'
     if structure == None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
-    structure = numarray.asarray(structure, dtype = numarray.Bool)
+    structure = numarray.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
         raise RuntimeError, 'structure and input must have equal rank'
     for ii in structure.shape:
@@ -58,7 +59,7 @@ def label(input, structure = None, output = None):
             raise  RuntimeError, 'structure dimensions must be equal to 3'
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if isinstance(output, numarray.ndarray):
+    if isinstance(output, numpy.ndarray):
         if output.dtype.type != numarray.int32:
             raise RuntimeError, 'output type must be Int32'
     else:
@@ -344,7 +345,7 @@ def watershed_ift(input, markers, structure = None, output = None):
         raise TypeError, 'only 8 and 16 unsigned inputs are supported'
     if structure == None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
-    structure = numarray.asarray(structure, dtype = numarray.Bool)
+    structure = numarray.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
         raise RuntimeError, 'structure and input must have equal rank'
     for ii in structure.shape:
@@ -356,18 +357,18 @@ def watershed_ift(input, markers, structure = None, output = None):
     if input.shape != markers.shape:
         raise RuntimeError, 'input and markers must have equal shape'
 
-    integral_types = [numarray.int0,
-                      numarray.int8,
-                      numarray.int16,
-                      numarray.int32,
-                      numarray.int_,
-                      numarray.int64,
-                      numarray.intc,
-                      numarray.intp]
+    integral_types = [numpy.int0,
+                      numpy.int8,
+                      numpy.int16,
+                      numpy.int32,
+                      numpy.int_,
+                      numpy.int64,
+                      numpy.intc,
+                      numpy.intp]
 
     if markers.dtype.type not in integral_types:
         raise RuntimeError, 'marker should be of integer type'
-    if isinstance(output, numarray.ndarray):
+    if isinstance(output, numpy.ndarray):
         if output.dtype.type not in integral_types:
             raise RuntimeError, 'output should be of integer type'
     else:

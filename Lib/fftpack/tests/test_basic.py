@@ -19,7 +19,7 @@ restore_path()
 
 from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes, double, cdouble
-import numpy.dft
+import numpy.fft
 
 from numpy.random import rand
 def random(size):
@@ -121,13 +121,13 @@ class test_fft(ScipyTestCase):
             n = 2**i
             x = range(n)
             y = fftpack.zfft(x)
-            y2 = numpy.dft.fft(x)
+            y2 = numpy.fft.fft(x)
             assert_array_almost_equal(y,y2)
             y = fftpack.zrfft(x)
             assert_array_almost_equal(y,y2)
 
     def bench_random(self,level=5):
-        from numpy.dft import fft as numpy_fft
+        from numpy.fft import fft as numpy_fft
         print
         print '                 Fast Fourier Transform'
         print '================================================='
@@ -183,7 +183,7 @@ class test_ifft(ScipyTestCase):
             n = 2**i
             x = range(n)
             y = fftpack.zfft(x,direction=-1)
-            y2 = numpy.dft.ifft(x)
+            y2 = numpy.fft.ifft(x)
             assert_array_almost_equal(y,y2)
             y = fftpack.zrfft(x,direction=-1)
             assert_array_almost_equal(y,y2)
@@ -202,7 +202,7 @@ class test_ifft(ScipyTestCase):
             assert_array_almost_equal (fft(ifft(x)),x)
 
     def bench_random(self,level=5):
-        from numpy.dft import ifft as numpy_ifft
+        from numpy.fft import ifft as numpy_ifft
         print
         print '       Inverse Fast Fourier Transform'
         print '==============================================='
@@ -250,7 +250,7 @@ class test_rfft(ScipyTestCase):
         assert_array_almost_equal(y,y1)
 
     def check_djbfft(self):
-        from numpy.dft import fft as numpy_fft
+        from numpy.fft import fft as numpy_fft
         for i in range(2,14):
             n = 2**i
             x = range(n)
@@ -265,7 +265,7 @@ class test_rfft(ScipyTestCase):
             assert_array_almost_equal(y,y1)
 
     def bench_random(self,level=5):
-        from numpy.dft import rfft as numpy_rfft
+        from numpy.fft import rfft as numpy_rfft
         print
         print 'Fast Fourier Transform (real data)'
         print '=================================='
@@ -309,7 +309,7 @@ class test_irfft(ScipyTestCase):
         assert_array_almost_equal(y,ifft(x1))
 
     def check_djbfft(self):
-        from numpy.dft import ifft as numpy_ifft
+        from numpy.fft import ifft as numpy_ifft
         for i in range(2,14):
             n = 2**i
             x = range(n)
@@ -330,7 +330,7 @@ class test_irfft(ScipyTestCase):
             assert_array_almost_equal (rfft(irfft(x)),x)
 
     def bench_random(self,level=5):
-        from numpy.dft import irfft as numpy_irfft
+        from numpy.fft import irfft as numpy_irfft
 
         print
         print 'Inverse Fast Fourier Transform (real data)'
@@ -496,7 +496,7 @@ class test_fftn(ScipyTestCase):
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
     def bench_random(self,level=5):
-        from numpy.dft import fftn as numpy_fftn
+        from numpy.fft import fftn as numpy_fftn
         print
         print '    Multi-dimensional Fast Fourier Transform'
         print '==================================================='
