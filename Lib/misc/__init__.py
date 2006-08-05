@@ -1,11 +1,17 @@
 
 from info import __doc__
 
-__all__ = ['limits']
+__all__ = ['limits', 'who', 'source', 'info']
 
 import limits
 from common import *
-from helpmod import *
+from numpy import who, source, info as _info
+
+import sys
+def info(object=None,maxwidth=76,output=sys.stdout,toplevel='scipy'):
+    return _info(object, maxwidth, output, toplevel)
+info.__doc__ = _info.__doc__
+del sys
 
 try:
     from pilutil import *
@@ -14,7 +20,6 @@ except ImportError:
     pass
 
 __all__ += common.__all__
-__all__ += helpmod.__all__
 
 from numpy.testing import ScipyTest
 test = ScipyTest().test

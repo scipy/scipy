@@ -11,7 +11,9 @@ from numpy import exp, asarray, arange, \
      newaxis, hstack, product, array, where, \
      zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
 
-__all__ = ['factorial','factorial2','factorialk','comb','who',
+from numpy import who
+
+__all__ = ['factorial','factorial2','factorialk','comb', 
            'central_diff_weights', 'derivative', 'pade', 'lena']
 
 # XXX: the factorial functions could move to scipy.special, and the others
@@ -223,7 +225,6 @@ def pade(an, m):
     q = r_[1.0,pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
 
-# XXX: broken since plt is gone
 def lena():
     import cPickle, os
     fname = os.path.join(os.path.dirname(__file__),'lena.dat')
@@ -232,65 +233,3 @@ def lena():
     f.close()
     return lena
 
-
-#-----------------------------------------------------------------------------
-# Matlab like functions for output and information on the variables used.
-#-----------------------------------------------------------------------------
-
-def who(vardict=None):
-    """Print the scipy arrays in the given dictionary (or globals() if None).
-    """
-    if vardict is None:
-        frame = sys._getframe().f_back
-        vardict = frame.f_globals
-    sta = []
-    cache = {}
-    for name in vardict.keys():
-        if isinstance(vardict[name],numpy.ndarray):
-            var = vardict[name]
-            idv = id(var)
-            if idv in cache.keys():
-                namestr = name + " (%s)" % cache[idv]
-                original=0
-            else:
-                cache[idv] = name
-                namestr = name
-                original=1
-            shapestr = " x ".join(map(str, var.shape))
-            bytestr = str(var.itemsize*numpy.product(var.shape))
-            sta.append([namestr, shapestr, bytestr, var.dtype.name,
-                        original])
-
-    maxname = 0
-    maxshape = 0
-    maxbyte = 0
-    totalbytes = 0
-    for k in range(len(sta)):
-        val = sta[k]
-        if maxname < len(val[0]):
-            maxname = len(val[0])
-        if maxshape < len(val[1]):
-            maxshape = len(val[1])
-        if maxbyte < len(val[2]):
-            maxbyte = len(val[2])
-        if val[4]:
-            totalbytes += int(val[2])
-
-    max = numpy.maximum
-    if len(sta) > 0:
-        sp1 = max(10,maxname)
-        sp2 = max(10,maxshape)
-        sp3 = max(10,maxbyte)
-        prval = "Name %s Shape %s Bytes %s Type" % (sp1*' ', sp2*' ', sp3*' ')
-        print prval + "\n" + "="*(len(prval)+5) + "\n"
-
-    for k in range(len(sta)):
-        val = sta[k]
-        print "%s %s %s %s %s %s %s" % (val[0], ' '*(sp1-len(val[0])+4),
-                                        val[1], ' '*(sp2-len(val[1])+5),
-                                        val[2], ' '*(sp3-len(val[2])+5),
-                                        val[3])
-    print "\nUpper bound on total bytes  =       %d" % totalbytes
-    return
-
-#-----------------------------------------------------------------------------
