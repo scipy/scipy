@@ -106,11 +106,16 @@ typedef struct
     defined(__decvax__) || defined(pro350) || defined(pdp11)
 #define DEC 1  
 
-#elif defined(ns32000) || defined(sun386) || \
-    defined(i386) || defined(MIPSEL) || defined(_MIPSEL) || \
-    defined(BIT_ZERO_ON_RIGHT) || defined(__alpha__) || defined(__alpha) || \
-    defined(sequent) || defined(i386) || \
-    defined(__ns32000__) || defined(__sun386__) || defined(__i386__)
+#elif defined(ns32000) || defined(__ns32000__) || \
+    defined(sun386) || defined(__sun386__) || \
+    defined(__i386__) || defined(i386) || \
+    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) || \
+    defined(__I86__) || defined(__INTEL__) || \
+    defined(__amd64__) || defined(__ia64__) || defined(_M_IA64) || \
+    defined(MIPSEL) || defined(_MIPSEL) || \
+    defined(BIT_ZERO_ON_RIGHT) || \
+    defined(__alpha__) || defined(__alpha) || \
+    defined(sequent)
 #define IBMPC 1   /* Intel IEEE, low order words come first */
 #define BIGENDIAN 0
 
