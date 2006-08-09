@@ -126,25 +126,41 @@ public:
   };
   
   operator int () const {
-    if (!PyInt_Check(_obj))
-        fail(PyExc_TypeError, "cannot convert value to integer");
-    return PyInt_AsLong(_obj);
+    int _val;
+    _val = PyInt_AsLong(_obj);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+        fail(PyExc_TypeError, "cannot convert value to integer");        
+    }
+    return _val;
   };  
   operator float () const {
-    if (!PyFloat_Check(_obj))
+    float _val;
+    _val = (float) PyFloat_AsDouble(_obj);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
         fail(PyExc_TypeError, "cannot convert value to float");
-    return (float) PyFloat_AsDouble(_obj);
+    }
+    return _val;
   };  
   operator double () const {
-    if (!PyFloat_Check(_obj))
+    double _val;
+    _val = PyFloat_AsDouble(_obj);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
         fail(PyExc_TypeError, "cannot convert value to double");
-    return PyFloat_AsDouble(_obj);
+    }
+    return _val;
   };  
   operator std::complex<double> () const {
-    if (!PyComplex_Check(_obj))
+    double real, imag;
+    real = PyComplex_RealAsDouble(_obj);
+    imag = PyComplex_ImagAsDouble(_obj);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
         fail(PyExc_TypeError, "cannot convert value to complex");
-    return std::complex<double>(PyComplex_RealAsDouble(_obj),
-                                PyComplex_ImagAsDouble(_obj));
+    }
+    return std::complex<double>(real, imag);
   };  
   operator std::string () const {
     if (!PyString_Check(_obj))
