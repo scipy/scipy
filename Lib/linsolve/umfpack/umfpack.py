@@ -1,3 +1,11 @@
+"""
+Interface to the UMFPACK library.
+
+--
+Author: Robert Cimrman
+"""
+
+
 #from base import Struct, pause
 import numpy as nm
 import scipy.sparse as sp
@@ -6,93 +14,6 @@ try: # Silence import error.
     import _umfpack as _um
 except:
     _um = None
-
-__doc__ = """
-Interface to the UMFPACK library.
-Routines for symbolic and numeric LU factorization of sparse
-matrices and for solving systems of linear equations with sparse matrices.
-
-Tested with UMFPACK V4.4 (Jan. 28, 2005),
-Copyright (c) 2005 by Timothy A. Davis.  All Rights Reserved.
-UMFPACK homepage: http://www.cise.ufl.edu/research/sparse/umfpack
-
-Contains: UmfpackContext class
-
-Use 'print UmfpackContext().funs' to see all UMFPACK library functions the
-module exposes, if you need something not covered by the examples below.
-
-Examples:
-=========
-
-Assuming this module imported as um
-
-Sparse matrix in CSR or CSC format: mtx
-Righthand-side: rhs
-Solution: sol
-
-# Contruct the solver.
-umfpack = um.UmfpackContext() # Use default 'di' family of UMFPACK routines.
-
-# One-shot solution.
-sol = umfpack( um.UMFPACK_A, mtx, rhs, autoTranspose = True )
-# same as:
-sol = umfpack.linsolve( um.UMFPACK_A, mtx, rhs, autoTranspose = True )
-
--or-
-
-# Make LU decomposition.
-umfpack.numeric( mtx )
-...
-# Use already LU-decomposed matrix.
-sol1 = umfpack( um.UMFPACK_A, mtx, rhs1, autoTranspose = True )
-sol2 = umfpack( um.UMFPACK_A, mtx, rhs2, autoTranspose = True )
-# same as:
-sol1 = umfpack.solve( um.UMFPACK_A, mtx, rhs1, autoTranspose = True )
-sol2 = umfpack.solve( um.UMFPACK_A, mtx, rhs2, autoTranspose = True )
-
--or-
-
-# Make symbolic decomposition.
-umfpack.symbolic( mtx0 )
-# Print statistics.
-umfpack.report_symbolic()
-
-...
-
-# Make LU decomposition of mtx1 which has same structure as mtx0.
-umfpack.numeric( mtx1 )
-# Print statistics.
-umfpack.report_numeric()
-
-# Use already LU-decomposed matrix.
-sol1 = umfpack( um.UMFPACK_A, mtx1, rhs1, autoTranspose = True )
-
-...
-
-# Make LU decomposition of mtx2 which has same structure as mtx0.
-umfpack.numeric( mtx2 )
-sol2 = umfpack.solve( um.UMFPACK_A, mtx2, rhs2, autoTranspose = True )
-
-# Print all statistics.
-umfpack.report_info()
-
-Setting control parameters:
-===========================
-Assuming this module imported as um:
-
-List of control parameter names is accessible as 'um.umfControls' - their
-meaning and possible values are described in the UMFPACK documentation.
-To each name corresponds an attribute of the 'um' module, such as,
-for example 'um.UMFPACK_PRL' (controlling the verbosity of umfpack report
-functions).  These attributes are in fact indices into the control array
-- to set the corresponding control array value, just do the following:
-
-umfpack = um.UmfpackContext()
-umfpack.control[um.UMFPACK_PRL] = 4 # Let's be more verbose.
-
---
-Author: Robert Cimrman
-"""
 
 ##
 # 30.11.2005, c

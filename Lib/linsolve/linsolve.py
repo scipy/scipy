@@ -90,22 +90,23 @@ def splu(A, permc_spec=2, diag_pivot_thresh=1.0,
                  diag_pivot_thresh, drop_tol, relax, panel_size)
 
 def _testme():
-    from scipy.sparse import csc_matrix, dok_matrix
-    from numpy import transpose, array, arange
-    
+    from scipy.sparse import csc_matrix
+    from numpy import array
+    from scipy.linsolve import spdiags, spsolve, use_solver
+
     print "Inverting a sparse linear system:"
     print "The sparse matrix (constructed from diagonals):"
     a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
     b = array([1, 2, 3, 4, 5])
     print "Solve: single precision complex:"
-    globals()['useUmfpack'] = False
+    use_solver( use = {'useUmfpack' : False} )
     a = a.astype('F')
     x = spsolve(a, b)
     print x
     print "Error: ", a*x-b
 
     print "Solve: double precision complex:"
-    globals()['useUmfpack'] = True
+    use_solver( use = {'useUmfpack' : True} )
     a = a.astype('D')
     x = spsolve(a, b)
     print x
@@ -118,7 +119,7 @@ def _testme():
     print "Error: ", a*x-b
 
     print "Solve: single precision:"
-    globals()['useUmfpack'] = False
+    use_solver( use = {'useUmfpack' : False} )
     a = a.astype('f')
     x = spsolve(a, b.astype('f'))
     print x
