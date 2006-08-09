@@ -1,4 +1,7 @@
 c   Modified for SciPy by removing dependency on linpack
+c   - dnrm2, daxpy, dcopy, ddot, dscal are the same in linpack and
+c     LAPACK
+c   - wrappers that call LAPACK are used for dtrsl and dpofa
 c================    L-BFGS-B (version 2.1)   ==========================
  
       subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa,
@@ -1100,7 +1103,6 @@ c                                to be solved by dtrsl is singular.
 c
 c     Subprograms called:
 c
-c       CHANGED to use dpotrs from LAPACK 
 c       Linpack ... dtrsl.
 c
 c
@@ -1135,8 +1137,7 @@ c 	solve Jp2=v2+LD^(-1)v1.
          p(i2) = v(i2) + sum
   20  continue  
 c     Solve the triangular system
-c      call dtrsl(wt,m,col,p(col+1),11,info)
-      call dpotrs('L',col,1,wt,m,p(col+1),col,info)
+      call dtrsl(wt,m,col,p(col+1),11,info)
       if (info .ne. 0) return
  
 c     	solve D^(1/2)p1=v1.
@@ -1148,8 +1149,7 @@ c     PART II: solve [ -D^(1/2)   D^(-1/2)*L'  ] [ p1 ] = [ p1 ]
 c                    [  0         J'           ] [ p2 ]   [ p2 ]. 
  
 c       solve J^Tp2=p2. 
-c      call dtrsl(wt,m,col,p(col+1),01,info)
-      call dpotrs('U',col,1,wt,m,p(col+1),col,info)
+      call dtrsl(wt,m,col,p(col+1),01,info)
       if (info .ne. 0) return
  
 c       compute p1=-D^(-1/2)(p1-D^(-1/2)L'p2)
@@ -1902,7 +1902,6 @@ c                    = -2 when the 2st Cholesky factorization failed.
 c
 c     Subprograms called:
 c
-c     Changed to LAPACK and BLAS ROUTINES ... dcopy, dpotrf, 
 c       Linpack ... dcopy, dpofa, dtrsl.
 c
 c
@@ -2088,7 +2087,7 @@ c                                    [(-L_a +R_z)L'^-1   S'AA'S*theta  ]
 
 c        first Cholesky factor (1,1) block of wn to get LL'
 c                          with L' stored in the upper triangle of wn.
-      call dpotrf('U',col,wn,m2,info)
+      call dpofa(wn,m2,col,info)
       if (info .ne. 0) then
 	 info = -1
 	 return
@@ -2096,8 +2095,7 @@ c                          with L' stored in the upper triangle of wn.
 c        then form L^-1(-L_a'+R_z') in the (1,2) block.
       col2 = 2*col
       do 71 js = col+1 ,col2
-c         call dtrsl(wn,m2,col,wn(1,js),11,info)
-         call dpotrs('L',col,1,wn,m2,wn(1,js),col,info)
+         call dtrsl(wn,m2,col,wn(1,js),11,info)
   71  continue
 
 c     Form S'AA'S*theta + (L^-1(-L_a'+R_z'))'L^-1(-L_a'+R_z') in the
@@ -2112,7 +2110,7 @@ c        upper triangle of (2,2) block of wn.
 
 c     Cholesky factorization of (2,2) block of wn.
 
-      call dpotrf('U',col,wn(col+1,col+1),m2,info)
+      call dpofa(wn(col+1,col+1),m2,col,info)
       if (info .ne. 0) then
 	 info = -2
 	 return
@@ -2140,7 +2138,6 @@ c         to produce J*J', with J' stored in the upper triangle of wt.
 c
 c     Subprograms called:
 c
-c      CHANGED to LAPACK -- dpotrf
 c       Linpack ... dpofa.
 c
 c
@@ -2182,7 +2179,7 @@ c        store T in the upper triangle of the array wt.
 c     Cholesky factorize T to J*J' with 
 c        J' stored in the upper triangle of wt.
  
-      call dpotrf('U',col,wt,m,info)
+      call dpofa(wt,m,col,info)
       if (info .ne. 0) then
          info = -3
       endif
@@ -3125,14 +3122,12 @@ c     Compute wv:=K^(-1)wv.
 
       m2 = 2*m
       col2 = 2*col
-c      call dtrsl(wn,m2,col2,wv,11,info)
-      call dpotrs('L',col2,1,wn,m2,wv,col2,info)
+      call dtrsl(wn,m2,col2,wv,11,info)
       if (info .ne. 0) return
       do 25 i = 1, col
 	 wv(i) = -wv(i)
   25     continue
-c      call dtrsl(wn,m2,col2,wv,01,info)
-      call dpotrs('U',col2,1,wn,m2,wv,col2,info)
+      call dtrsl(wn,m2,col2,wv,01,info)
       if (info .ne. 0) return
  
 c     Compute d = (1/theta)d + (1/theta**2)Z'W wv.
@@ -3960,5 +3955,120 @@ c     determine dpmeps.
    70 return
 
       end
-      
+
 c====================== The end of dpmeps ==============================
+
+      subroutine dpofa(a,lda,n,info)
+      integer lda,n,info
+      double precision a(lda,1)
+c
+c     dpofa factors a double precision symmetric positive definite
+c     matrix.
+c
+c     dpofa is usually called by dpoco, but it can be called
+c     directly with a saving in time if  rcond  is not needed.
+c     (time for dpoco) = (1 + 18/n)*(time for dpofa) .
+c
+c     on entry
+c
+c        a       double precision(lda, n)
+c                the symmetric matrix to be factored.  only the
+c                diagonal and upper triangle are used.
+c
+c        lda     integer
+c                the leading dimension of the array  a .
+c
+c        n       integer
+c                the order of the matrix  a .
+c
+c     on return
+c
+c        a       an upper triangular matrix  r  so that  a = trans(r)*r
+c                where  trans(r)  is the transpose.
+c                the strict lower triangle is unaltered.
+c                if  info .ne. 0 , the factorization is not complete.
+c
+c        info    integer
+c                = 0  for normal return.
+c                = k  signals an error condition.  the leading minor
+c                     of order  k  is not positive definite.
+c
+c     This is just a wrapper that calls LAPACK, but with the LINPACK
+c     calling convention.
+
+      call dpotrf('U', n, a, lda, info)
+      end
+
+c====================== The end of dpofa ===============================
+
+      subroutine dtrsl(t, ldt, n, b, job, info)
+      integer ldt, n, job, info
+      double precision t(ldt,1), b(1)
+c
+c
+c     dtrsl solves systems of the form
+c
+c                   t * x = b
+c     or
+c                   trans(t) * x = b
+c
+c     where t is a triangular matrix of order n. here trans(t)
+c     denotes the transpose of the matrix t.
+c
+c     on entry
+c
+c         t         double precision(ldt,n)
+c                   t contains the matrix of the system. the zero
+c                   elements of the matrix are not referenced, and
+c                   the corresponding elements of the array can be
+c                   used to store other information.
+c
+c         ldt       integer
+c                   ldt is the leading dimension of the array t.
+c
+c         n         integer
+c                   n is the order of the system.
+c
+c         b         double precision(n).
+c                   b contains the right hand side of the system.
+c
+c         job       integer
+c                   job specifies what kind of system is to be solved.
+c                   if job is
+c
+c                        00   solve t*x=b, t lower triangular,
+c                        01   solve t*x=b, t upper triangular,
+c                        10   solve trans(t)*x=b, t lower triangular,
+c                        11   solve trans(t)*x=b, t upper triangular.
+c
+c     on return
+c
+c         b         b contains the solution, if info .eq. 0.
+c                   otherwise b is unaltered.
+c
+c         info      integer
+c                   info contains zero if the system is nonsingular.
+c                   otherwise info contains the index of
+c                   the first zero diagonal element of t.
+c
+c     This is just a wrapper that calls LAPACK, but with the LINPACK
+c     calling convention.
+
+      character*1 uplo, trans
+
+      if (job .eq. 00) then
+          uplo = 'L'
+          trans = 'N'
+      else if (job .eq. 01) then
+          uplo = 'U'
+          trans = 'N'
+      else if (job .eq. 10) then
+          uplo = 'L'
+          trans = 'T'
+      else if (job .eq. 11) then
+          uplo = 'U'
+          trans = 'T'
+      endif
+      call dtrtrs(uplo, trans, 'N', n, 1, t, ldt, b, n, info)
+      end
+c====================== The end of dtrsl ==============================
