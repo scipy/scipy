@@ -49,7 +49,7 @@ _iermess = {0:["""\
     fp gives the upper bound fp0 for the smoothing factor s""",None],
                1:["""\
     The required storage space exceeds the available strorage space.
-    Probably causes: nest to small or s is too small. (fp>s)""",ValueError],
+    Probably causes: data (x,y) size is too small or smoothing parameter s is too small (fp>s).""",ValueError],
                2:["""\
     A theoretically impossible results when finding a smoothin spline
     with fp = s. Probably causes: s too small. (abs(fp-s)/s>0.001)""",ValueError],
@@ -246,7 +246,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
 
 _curfit_cache = {'t': array([],float), 'wrk': array([],float),
                  'iwrk':array([],int)}
-def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
+def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
            full_output=0,per=0,quiet=1):
     """Find the B-spline representation of 1-D curve.
 
@@ -308,7 +308,17 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 
     Remarks:
 
-      SEE splev for evaluation of the spline and its derivatives.
+      See splev for evaluation of the spline and its derivatives.
+      
+    Example:
+        
+      x = linspace(0, 10, 10)
+      y = sin(x)
+      tck = splrep(x, y)
+      x2 = linspace(0, 10, 200)
+      y2 = splev(x2, tck)
+      plot(x, y, 'o', x2, y2)
+      
     """
     if task<=0:
         _curfit_cache = {}
