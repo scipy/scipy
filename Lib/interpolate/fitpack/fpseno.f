@@ -25,7 +25,8 @@ c  ..
   20  k = right(merk)
       if(k.ne.0) go to 30
       merk = up(merk)
-      if(merk-1) 40,40,20
+      if (merk.le.1) go to 40
+      go to 20
   30  merk = k
       k = left(merk)
       if(k.ne.0) go to 30

@@ -94,11 +94,15 @@ c  are invalid control is immediately repassed to the calling program.
       lwest = nc +(kx1-nux)*mx+(ky1-nuy)*my
       if(lwrk.lt.lwest) go to 400
       if(kwrk.lt.(mx+my)) go to 400
-      if(mx-1) 400,30,10
+      if (mx.lt.1) go to 400
+      if (mx.eq.1) go to 30
+      go to 10
   10  do 20 i=2,mx
         if(x(i).lt.x(i-1)) go to 400
   20  continue
-  30  if(my-1) 400,60,40
+  30  if (my.lt.1) go to 400
+      if (my.eq.1) go to 60
+      go to 40
   40  do 50 i=2,my
         if(y(i).lt.y(i-1)) go to 400
   50  continue

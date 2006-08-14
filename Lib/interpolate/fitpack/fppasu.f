@@ -256,7 +256,9 @@ c  because of the storage capacity limitation.
         ier = 0
 c  adjust the parameter reducu or reducv according to the direction
 c  in which the last added knots were located.
-        if(lastdi) 150,170,160
+        if (lastdi.lt.0) go to 150
+        if (lastdi.eq.0) go to 170
+        go to 160
  150    reducu = fpold-fp
         go to 170
  160    reducv = fpold-fp
@@ -276,7 +278,9 @@ c  find nplv, the number of knots we should add in the v-direction.
         rn = nplusv
         if(reducv.gt.acc) npl1 = rn*fpms/reducv
         nplv = min0(nplusv*2,max0(npl1,nplusv/2,1))
- 190    if(nplu-nplv) 210,200,230
+ 190    if (nplu.lt.nplv) go to 210
+        if (nplu.eq.nplv) go to 200
+        go to 230
  200    if(lastdi.lt.0) go to 230
  210    if(nu.eq.nue) go to 230
 c  addition in the u-direction.

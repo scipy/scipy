@@ -87,11 +87,15 @@ c  are invalid control is immediately repassed to the calling program.
       muv = mu+mv
       if(lwrk.lt.4*muv) go to 100
       if(kwrk.lt.muv) go to 100
-      if(mu-1) 100,30,10
+      if (mu.lt.1) go to 100
+      if (mu.eq.1) go to 30
+      go to 10
   10  do 20 i=2,mu
         if(u(i).lt.u(i-1)) go to 100
   20  continue
-  30  if(mv-1) 100,60,40
+  30  if (mv.lt.1) go to 100
+      if (mv.eq.1) go to 60
+      go to 40
   40  do 50 i=2,mv
         if(v(i).lt.v(i-1)) go to 100
   50  continue

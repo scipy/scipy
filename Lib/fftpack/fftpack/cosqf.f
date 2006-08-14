@@ -1,7 +1,9 @@
       SUBROUTINE COSQF (N,X,WSAVE)
       DIMENSION       X(*)       ,WSAVE(*)
       DATA SQRT2 /1.4142135623731/
-      IF (N-2) 102,101,103
+      IF (N.lt.2) GO TO 102
+      IF (N.eq.2) GO TO 101
+      GO TO 103
   101 TSQX = SQRT2*X(2)
       X(2) = X(1)-TSQX
       X(1) = X(1)+TSQX

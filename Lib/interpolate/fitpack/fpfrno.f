@@ -26,7 +26,9 @@ c  ..
       i = l
       j = j+1
       go to 20
-  30  if(i-count) 110,100,40
+  30  if (i.lt.count) go to 110
+      if (i.eq.count) go to 100
+      go to 40
   40  if(up(count).eq.0) go to 50
       count = count+1
       go to 30

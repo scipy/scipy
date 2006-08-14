@@ -442,7 +442,8 @@ c  we determine the range of z-values.
  135  continue
       wrk(l) = ve
       call fpchep(wrk(9),mv+1,tv,nv,3,ier)
-      if(ier) 200,150,200
+      if (ier.eq.0) go to 150
+      go to 200
  140  if(s.lt.0.) go to 200
       if(s.eq.0. .and. (nuest.lt.(mu+5+iopt(2)+iopt(3)) .or.
      * nvest.lt.(mv+7)) ) go to 200

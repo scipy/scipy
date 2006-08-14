@@ -148,7 +148,9 @@ c  ******  if not, see if kth column can overlap the previous one  *****
   11    if (jlmin .gt. jlptr)  go to 15
         qm = q(qm)
         do 12 j=jlmin,jlptr
-          if (jl(j) - qm)  12, 13, 15
+          if (jl(j).lt.qm) go to 12
+          if (jl(j).eq.qm) go to 13
+          go to 15
   12      continue
         go to 15
   13    ijl(k) = j
@@ -250,7 +252,9 @@ c  ******  if not, see if kth row can overlap the previous one  ********
   28    if (jumin .gt. juptr)  go to 32
         qm = q(qm)
         do 29 j=jumin,juptr
-          if (ju(j) - qm)  29, 30, 32
+          if (ju(j).lt.qm) go to 29
+          if (ju(j).eq.qm) go to 30
+          go to 32
   29      continue
         go to 32
   30    iju(k) = j

@@ -1325,7 +1325,9 @@ c lsodi must compute initial dy/dt (lyd0 points to yh(*,2)). -----------
          call ainvg( res, adda, neq, t, y, rwork(lyd0), miter,
      1               ml, mu, rwork(lp), iwork(21), ier )
          nre = nre + 1
-         if (ier)  560,110,565
+         if (ier.lt.0) go to 560
+         if (ier.eq.0) go to 110
+         go to 565
  110     continue
          do 115 i = 1,n
  115        rwork(i+lyh-1) = y(i)

@@ -367,7 +367,8 @@ c  are invalid, control is immediately repassed to the calling program.
         tv(l3) = tv(l1)+perv
   90  continue
       call fpchep(v,mv,tv,nv,3,ier)
-      if(ier) 200,150,200
+      if (ier.eq.0) go to 150
+      go to 200
  100  if(s.lt.0.) go to 200
       if(s.eq.0. .and. (nuest.lt.(mu+4+2*ipar(1)) .or.
      * nvest.lt.(mv+4+2*ipar(2))) )go to 200

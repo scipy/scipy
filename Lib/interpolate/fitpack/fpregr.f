@@ -230,7 +230,9 @@ c  because of the storage capacity limitation.
         ier = 0
 c  adjust the parameter reducx or reducy according to the direction
 c  in which the last added knots were located.
-        if(lastdi) 150,170,160
+        if (lastdi.lt.0) go to 150
+        if (lastdi.eq.0) go to 170
+        go to 160
  150    reducx = fpold-fp
         go to 170
  160    reducy = fpold-fp
@@ -250,7 +252,9 @@ c  find nply, the number of knots we should add in the y-direction.
         rn = nplusy
         if(reducy.gt.acc) npl1 = rn*fpms/reducy
         nply = min0(nplusy*2,max0(npl1,nplusy/2,1))
- 190    if(nplx-nply) 210,200,230
+ 190    if (nplx.lt.nply) go to 210
+        if (nplx.eq.nply) go to 200
+        go to 230
  200    if(lastdi.lt.0) go to 230
  210    if(nx.eq.nxe) go to 230
 c  addition in the x-direction.

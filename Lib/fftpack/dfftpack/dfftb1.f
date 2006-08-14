@@ -229,7 +229,9 @@
          CH(1,K,1) = CC(1,1,K)+CC(IDO,2,K)
          CH(1,K,2) = CC(1,1,K)-CC(IDO,2,K)
   101 CONTINUE
-      IF (IDO-2) 107,105,102
+      IF (IDO.lt.2) GO TO 107
+      IF (IDO.eq.2) GO TO 105
+      GO TO 102
   102 IDP2 = IDO+2
       DO 104 K=1,L1
          DO 103 I=3,IDO,2
@@ -305,7 +307,9 @@ C     *** TAUI IS SQRT(3)/2 ***
          CH(1,K,3) = TR2-TR3
          CH(1,K,4) = TR1+TR4
   101 CONTINUE
-      IF (IDO-2) 107,105,102
+      IF (IDO.lt.2) GO TO 107
+      IF (IDO.eq.2) GO TO 105
+      GO TO 102
   102 IDP2 = IDO+2
       DO 104 K=1,L1
          DO 103 I=3,IDO,2

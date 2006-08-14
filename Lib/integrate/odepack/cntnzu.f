@@ -16,7 +16,9 @@ c
         jmax = ia(ii+1) - 1
         if (jmin .gt. jmax) go to 50
         do 40 j = jmin,jmax
-          if (ja(j) - ii) 10, 40, 30
+          if (ja(j).lt.ii) go to 10
+          if (ja(j).eq.ii) go to 40
+          go to 30
  10       jj =ja(j)
           kmin = ia(jj)
           kmax = ia(jj+1) - 1

@@ -135,7 +135,9 @@ c  a minimal bandwidth.
           ty(i) = store
   70    continue
         n1 = n+1
-        if(nx-ny) 80,120,100
+        if (nx.lt.ny) go to 80
+        if (nx.eq.ny) go to 120
+        go to 100
   80    do 90 i=n1,ny
           tx(i) = ty(i)
   90    continue
@@ -287,7 +289,8 @@ c  test whether the least-squares spline is an acceptable solution.
         if(iopt.lt.0) go to 820
         fpms = fp-s
         if(abs(fpms).le.acc) then
-          if(fp) 815,815,820
+          if (fp.le.0) go to 815
+          go to 820
         endif
 c  test whether we can accept the choice of knots.
         if(fpms.lt.0.) go to 430
@@ -467,7 +470,8 @@ c  square roots.
               piv = h(1)
               i2 = min0(iband1,ncof-irot)
               if(piv.eq.0.) then
-                if(i2) 550,550,520
+                if (i2.le.0) go to 550
+                go to 520
               endif
 c  calculate the parameters of the givens transformation.
               call fpgivs(piv,q(irot,1),cos,sin)
@@ -509,7 +513,8 @@ c  rotate the new row into triangle by givens transformations .
               piv = h(1)
               i2 = min0(iband3,ncof-irot)
               if(piv.eq.0.) then
-                if(i2) 630,630,600
+                if (i2.le.0) go to 630
+                go to 600
               endif
 c  calculate the parameters of the givens transformation.
               call fpgivs(piv,q(irot,1),cos,sin)
@@ -654,7 +659,9 @@ c  if not, interchange x and y once more.
         ty(i) = store
  870  continue
       n1 = n+1
-      if(nx-ny) 880,920,900
+      if (nx.lt.ny) go to 880
+      if (nx.eq.ny) go to 920
+      go to 900
  880  do 890 i=n1,ny
         tx(i) = ty(i)
  890  continue

@@ -317,7 +317,9 @@ C
       u = 1.0D0/a
       z = sqrt(z+z)
       IF (l.LT.1.0D0) z = -z
-      IF (iop-2) 280,290,300
+      IF (iop.lt.2) GO TO 280
+      IF (iop.eq.2) GO TO 290
+      GO TO 300
 C
   280 IF (abs(s).LE.1.D-3) GO TO 340
       c0 = ((((((((((((d0(13)*z+d0(12))*z+d0(11))*z+d0(10))*z+d0(9))*z+
@@ -363,7 +365,9 @@ C
       u = 1.0D0/a
       z = sqrt(z+z)
       IF (l.LT.1.0D0) z = -z
-      IF (iop-2) 340,350,360
+      IF (iop.lt.2) GO TO 340
+      IF (iop.eq.2) GO TO 350
+      GO TO 360
 C
   340 c0 = ((((((d0(7)*z+d0(6))*z+d0(5))*z+d0(4))*z+d0(3))*z+d0(2))*z+
      +     d0(1))*z - third

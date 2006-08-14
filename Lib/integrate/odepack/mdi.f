@@ -22,7 +22,9 @@ c----for each nonzero entry a(vi,vj)
         if (jmin.gt.jmax)  go to 6
         do 5 j=jmin,jmax
           vj = ja(j)
-          if (vj-vi) 2, 5, 4
+          if (vj.lt.vi) go to 2
+          if (vj.eq.vi) go to 5
+          go to 4
 c
 c------if a(vi,vj) is in strict lower triangle
 c------check for previous occurrence of a(vj,vi)

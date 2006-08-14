@@ -148,7 +148,8 @@ c  are invalid, control is immediately repassed to the calling program.
          if(x(i-1).ge.x(i) .or. w(i).le.0.) go to 40
   10  continue
       call fpchec(x,m,t,n,3,ier)
-      if(ier) 40,20,40
+      if (ier.eq.0) go to 20
+      go to 40
 c  set numbers e(i)
   20  n6 = n-6
       do 30 i=1,n6

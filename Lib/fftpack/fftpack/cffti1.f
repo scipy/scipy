@@ -5,13 +5,15 @@
       NF = 0
       J = 0
   101 J = J+1
-      IF (J-4) 102,102,103
+      IF (J.le.4) GO TO 102
+      GO TO 103
   102 NTRY = NTRYH(J)
       GO TO 104
   103 NTRY = NTRY+2
   104 NQ = NL/NTRY
       NR = NL-NTRY*NQ
-      IF (NR) 101,105,101
+      IF (NR.eq.0) GO TO 105
+      GO TO 101
   105 NF = NF+1
       IFAC(NF+2) = NTRY
       NL = NQ

@@ -329,7 +329,8 @@ c  are invalid, control is immediately repassed to the calling program.
         j = j-1
   40  continue
       call fpchec(y,my,ty,ny,ky,ier)
-      if(ier) 70,60,70
+      if (ier.eq.0) go to 60
+      go to 70
   50  if(s.lt.0.) go to 70
       if(s.eq.0. .and. (nxest.lt.(mx+kx1) .or. nyest.lt.(my+ky1)) )
      * go to 70

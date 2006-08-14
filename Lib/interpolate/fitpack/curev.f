@@ -63,7 +63,9 @@ c  ..
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.
       ier = 10
-      if(m-1) 100,30,10
+      if (m.lt.1) go to 100
+      if (m.eq.1) go to 30
+      go to 10
   10  do 20 i=2,m
         if(u(i).lt.u(i-1)) go to 100
   20  continue

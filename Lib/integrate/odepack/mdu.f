@@ -19,7 +19,9 @@ c----for each vertex vi in ek
       do 10 ilp=1,ilpmax
         i = l(i)
         vi = v(i)
-        if (last(vi))  1, 10, 8
+        if (last(vi).lt.0) go to 1
+        if (last(vi).eq.0) go to 10
+        go to 8
 c
 c------if vi neither prototype nor duplicate vertex, then merge elements
 c------to compute degree

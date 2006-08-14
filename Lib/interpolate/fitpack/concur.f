@@ -330,7 +330,8 @@ c  are invalid, control is immediately repassed to the calling program.
          j = j-1
   20  continue
       call fpched(u,m,t,n,k,ib,ie,ier)
-      if(ier) 90,40,90
+      if (ier.eq.0) go to 40
+      go to 90
   30  if(s.lt.0.) go to 90
       nmax = m+k1+ib1+ie1
       if(s.eq.0. .and. nest.lt.nmax) go to 90

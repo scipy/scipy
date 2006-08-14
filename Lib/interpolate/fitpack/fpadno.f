@@ -25,7 +25,9 @@ c  ..
   10  k = left(point)
       bool = .true.
   20  if(k.eq.0) go to 50
-      if(info(k)-jbind(niveau)) 30,40,50
+      if (info(k)-jbind(niveau).lt.0) go to 30
+      if (info(k)-jbind(niveau).eq.0) go to 40
+      go to 50
   30  point = k
       k = right(point)
       bool = .false.

@@ -39,7 +39,9 @@ c  the integration limits are arranged in increasing order.
       a = x
       b = y
       min = 0
-      if(a-b) 30,160,20
+      if (a.lt.b) go to 30
+      if (a.eq.b) go to 160
+      go to 20
   20  a = y
       b = x
       min = 1

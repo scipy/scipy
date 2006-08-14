@@ -243,7 +243,8 @@ c  are invalid, control is immediately repassed to the calling program.
          j = j-1
   20  continue
       call fpchec(x,m,t,n,k,ier)
-      if(ier) 50,40,50
+      if (ier.eq.0) go to 40
+      go to 50
   30  if(s.lt.0.) go to 50
       if(s.eq.0. .and. nest.lt.(m+k1)) go to 50
       ier = 0

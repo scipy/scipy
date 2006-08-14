@@ -6,7 +6,9 @@
       XH(I) = WAR(I)
       WAR(I) = X(I)
   100 CONTINUE
-      IF (N-2) 101,102,103
+      IF (N.lt.2) GO TO 101
+      IF (N.eq.2) GO TO 102
+      GO TO 103
   101 XH(1) = XH(1)+XH(1)
       GO TO 106
   102 XHOLD = SQRT3*(XH(1)+XH(2))

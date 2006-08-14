@@ -1433,7 +1433,9 @@ c-----------------------------------------------------------------------
       lyhd = lyh - lyhn
       imax = lyhn - 1 + lenyhm
 c move yh.  branch for move right, no move, or move left. --------------
-      if (lyhd) 70,80,74
+      if (lyhd.lt.0) go to 70
+      if (lyhd.eq.0) go to 80
+      go to 74
  70   do 72 i = lyhn,imax
         j = imax + lyhn - i
  72     rwork(j) = rwork(j+lyhd)

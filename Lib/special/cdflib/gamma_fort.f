@@ -63,7 +63,9 @@ C-----------------------------------------------------------------------
 C
 C     LET T BE THE PRODUCT OF A-J WHEN A .GE. 2
 C
-      IF (m) 40,30,10
+      IF (m.lt.0) GO TO 40
+      IF (m.eq.0) GO TO 30
+      GO TO 10
    10 DO 20 j = 1,m
           x = x - 1.0D0
           t = x*t

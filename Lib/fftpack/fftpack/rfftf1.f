@@ -64,7 +64,9 @@
          CH(1,1,K) = CC(1,K,1)+CC(1,K,2)
          CH(IDO,2,K) = CC(1,K,1)-CC(1,K,2)
   101 CONTINUE
-      IF (IDO-2) 107,105,102
+      IF (IDO.lt.2) GO TO 107
+      IF (IDO.eq.2) GO TO 105
+      GO TO 102
   102 IDP2 = IDO+2
       DO 104 K=1,L1
          DO 103 I=3,IDO,2
@@ -131,7 +133,9 @@
          CH(IDO,2,K) = CC(1,K,1)-CC(1,K,3)
          CH(1,3,K) = CC(1,K,4)-CC(1,K,2)
   101 CONTINUE
-      IF (IDO-2) 107,105,102
+      IF (IDO.lt.2) GO TO 107
+      IF (IDO.eq.2) GO TO 105
+      GO TO 102
   102 IDP2 = IDO+2
       DO 104 K=1,L1
          DO 103 I=3,IDO,2

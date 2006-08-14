@@ -52,7 +52,8 @@ c  calculation of acc, the absolute tolerance for the root of f(p)=s.
       acc = tol*s
       if(iopt1.eq.0) go to 10
       if(s.lt.sup) then
-        if(nv-nvmin) 70,90,90
+        if (nv.lt.nvmin) go to 70
+        go to 90
       endif
 c  if iopt1 = 0 we begin by computing the weighted least-squares
 c  polymomial of the form
@@ -419,11 +420,13 @@ c  the spline.
  430    call fprppo(nu,nv,iopt2,iopt3,cosi,ratio,c,ff,ncoff)
 c  test whether the least-squares spline is an acceptable solution.
         if(iopt1.lt.0) then
-          if(fp) 970,970,980
+          if (fp.le.0) go to 970
+          go to 980
         endif
         fpms = fp-s
         if(abs(fpms).le.acc) then
-            if(fp) 970,970,980
+            if (fp.le.0) go to 970
+            go to 980
         endif
 c  if f(p=inf) < s, accept the choice of knots.
         if(fpms.lt.0.) go to 580
@@ -641,7 +644,8 @@ c  rotate the new row into triangle by givens transformations.
               piv = h(1)
               i2 = min0(iband1,ncof-irot)
               if(piv.eq.0.) then
-                 if(i2) 720,720,690
+                 if (i2.le.0) go to 720
+                 go to 690
               endif
 c  calculate the parameters of the givens transformation.
               call fpgivs(piv,q(irot,1),co,si)
@@ -706,7 +710,8 @@ c  rotate the new row into triangle by givens transformations.
               piv = h(1)
               i2 = min0(iband3,ncof-irot)
               if(piv.eq.0.) then
-                if(i2) 810,810,780
+                if (i2.le.0) go to 810
+                go to 780
               endif
 c  calculate the parameters of the givens transformation.
               call fpgivs(piv,q(irot,1),co,si)

@@ -2,7 +2,9 @@
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
       DIMENSION       X(*)       ,WSAVE(*)
       DATA TSQRT2 /2.82842712474619009760D0/
-      IF (N-2) 101,102,103
+      IF (N.lt.2) GO TO 101
+      IF (N.eq.2) GO TO 102
+      GO TO 103
   101 X(1) = 4.0D0*X(1)
       RETURN
   102 X1 = 4.0D0*(X(1)+X(2))

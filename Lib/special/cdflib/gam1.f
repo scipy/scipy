@@ -35,7 +35,9 @@ C     -------------------
       t = a
       d = a - 0.5D0
       IF (d.GT.0.0D0) t = d - 0.5D0
-      IF (t) 40,10,20
+      IF (t.lt.0) GO TO 40
+      IF (t.eq.0) GO TO 10
+      GO TO 20
 C
    10 gam1 = 0.0D0
       RETURN

@@ -66,7 +66,8 @@ c  check condition no 5
   70        i = i+1
             if(i.gt.mm) go to 120
             i2 = i-m1
-            if(i2) 80,80,90
+            if (i2.le.0) go to 80
+            go to 90
   80        xi = x(i)
             go to 100
   90        xi = x(i2)+per
