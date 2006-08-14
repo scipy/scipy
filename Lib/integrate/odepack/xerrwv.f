@@ -100,13 +100,13 @@ c the following is valid for ncpw = 2.
 c 10  format(1x,30a2)
 c-----------------------------------------------------------------------
       if (ni .eq. 1) write (lun, 20) i1
- 20   format(6x,23hin above message,  i1 =,i10)
+ 20   format(6x,'in above message,  i1 =',i10)
       if (ni .eq. 2) write (lun, 30) i1,i2
- 30   format(6x,23hin above message,  i1 =,i10,3x,4hi2 =,i10)
+ 30   format(6x,'in above message,  i1 =',i10,3x,'i2 =',i10)
       if (nr .eq. 1) write (lun, 40) r1
- 40   format(6x,23hin above message,  r1 =,d21.13)
+ 40   format(6x,'in above message,  r1 =',d21.13)
       if (nr .eq. 2) write (lun, 50) r1,r2
- 50   format(6x,15hin above,  r1 =,d21.13,3x,4hr2 =,d21.13)
+ 50   format(6x,'in above,  r1 =',d21.13,3x,'r2 =',d21.13)
 c abort the run if level = 2. ------------------------------------------
  100  if (level .ne. 2) return
       stop

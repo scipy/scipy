@@ -69,14 +69,14 @@ c
  60     dky(i) = r*dky(i)
       return
 c
- 80   call xerrwv(30hintdy--  k (=i1) illegal      ,
+ 80   call xerrwv('intdy--  k (=i1) illegal      ',
      1   30, 51, 0, 1, k, 0, 0, 0.0d0, 0.0d0)
       iflag = -1
       return
- 90   call xerrwv(30hintdy--  t (=r1) illegal      ,
+ 90   call xerrwv('intdy--  t (=r1) illegal      ',
      1   30, 52, 0, 0, 0, 0, 1, t, 0.0d0)
       call xerrwv(
-     1  60h      t not in interval tcur - hu (= r1) to tcur (=r2)      ,
+     1  '     t not in interval tcur - hu (= r1) to tcur (=r2)       ',
      1   60, 52, 0, 0, 0, 0, 2, tp, tn)
       iflag = -2
       return

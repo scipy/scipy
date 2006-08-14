@@ -286,7 +286,9 @@ c  the rank.
 c  test whether the least-squares spline is an acceptable solution.
         if(iopt.lt.0) go to 820
         fpms = fp-s
-        if(abs(fpms).le.acc) if(fp) 815,815,820
+        if(abs(fpms).le.acc) then
+          if(fp) 815,815,820
+        endif
 c  test whether we can accept the choice of knots.
         if(fpms.lt.0.) go to 430
 c  test whether we cannot further increase the number of knots.
@@ -464,7 +466,9 @@ c  square roots.
             do 540 irot=jrot,ncof
               piv = h(1)
               i2 = min0(iband1,ncof-irot)
-              if(piv.eq.0.) if(i2) 550,550,520
+              if(piv.eq.0.) then
+                if(i2) 550,550,520
+              endif
 c  calculate the parameters of the givens transformation.
               call fpgivs(piv,q(irot,1),cos,sin)
 c  apply that givens transformation to the right hand side.
@@ -504,7 +508,9 @@ c  rotate the new row into triangle by givens transformations .
             do 620 irot=jrot,ncof
               piv = h(1)
               i2 = min0(iband3,ncof-irot)
-              if(piv.eq.0.) if(i2) 630,630,600
+              if(piv.eq.0.) then
+                if(i2) 630,630,600
+              endif
 c  calculate the parameters of the givens transformation.
               call fpgivs(piv,q(irot,1),cos,sin)
 c  apply that givens transformation to the right hand side.

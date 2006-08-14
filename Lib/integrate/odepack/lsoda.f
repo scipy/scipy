@@ -164,15 +164,15 @@ c     do 40 iout = 1,12
 c       call lsoda(fex,neq,y,t,tout,itol,rtol,atol,itask,istate,
 c    1     iopt,rwork,lrw,iwork,liw,jdum,jt)
 c       write(6,20)t,y(1),y(2),y(3)
-c 20    format(7h at t =,e12.4,6h   y =,3e14.6)
+c 20    format(' at t =',e12.4,'   y =',3e14.6)
 c       if (istate .lt. 0) go to 80
 c 40    tout = tout*10.0d0
 c     write(6,60)iwork(11),iwork(12),iwork(13),iwork(19),rwork(15)
-c 60  format(/12h no. steps =,i4,11h  no. f-s =,i4,11h  no. j-s =,i4/
-c    1   19h method last used =,i2,25h   last switch was at t =,e12.4)
+c 60  format(/' no. steps =',i4,'  no. f-s =',i4,'  no. j-s =',i4/
+c    1   ' method last used =',i2,'   last switch was at t =',e12.4)
 c     stop
 c 80  write(6,90)istate
-c 90  format(///22h error halt.. istate =,i3)
+c 90  format(///' error halt.. istate =',i3)
 c     stop
 c     end
 c
@@ -1134,13 +1134,13 @@ c-----------------------------------------------------------------------
       insufr = 2
       lewt = len1c + 1
       call xerrwv(
-     1  60hlsoda--  warning.. rwork length is sufficient for now, but  ,
+     1  'lsoda--  warning.. rwork length is sufficient for now, but  ',
      1   60, 103, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      may not be later.  integration will proceed anyway.   ,
+     1  '      may not be later.  integration will proceed anyway.   ',
      1   60, 103, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  50h      length needed is lenrw = i1, while lrw = i2.,
+     1  '      length needed is lenrw = i1, while lrw = i2.',
      1   50, 103, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
  65   lsavf = lewt + n
       lacor = lsavf + n
@@ -1148,13 +1148,13 @@ c-----------------------------------------------------------------------
       if (liw .ge. leniw) go to 70
       insufi = 2
       call xerrwv(
-     1  60hlsoda--  warning.. iwork length is sufficient for now, but  ,
+     1  'lsoda--  warning.. iwork length is sufficient for now, but  ',
      1   60, 104, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      may not be later.  integration will proceed anyway.   ,
+     1  '      may not be later.  integration will proceed anyway.   ',
      1   60, 104, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  50h      length needed is leniw = i1, while liw = i2.,
+     1  '      length needed is leniw = i1, while liw = i2.',
      1   50, 104, 0, 2, leniw, liw, 0, 0.0d0, 0.0d0)
  70   continue
 c check rtol and atol for legality. ------------------------------------
@@ -1334,17 +1334,17 @@ c-----------------------------------------------------------------------
  280  if ((tn + h) .ne. tn) go to 290
       nhnil = nhnil + 1
       if (nhnil .gt. mxhnil) go to 290
-      call xerrwv(50hlsoda--  warning..internal t (=r1) and h (=r2) are,
+      call xerrwv('lsoda--  warning..internal t (=r1) and h (=r2) are',
      1   50, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      such that in the machine, t + h = t on the next step  ,
+     1  '      such that in the machine, t + h = t on the next step  ',
      1   60, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      (h = step size). solver will continue anyway,
+      call xerrwv('      (h = step size). solver will continue anyway',
      1   50, 101, 0, 0, 0, 0, 2, tn, h)
       if (nhnil .lt. mxhnil) go to 290
-      call xerrwv(50hlsoda--  above warning has been issued i1 times.  ,
+      call xerrwv('lsoda--  above warning has been issued i1 times.  ',
      1   50, 102, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      it will not be issued again for this problem,
+      call xerrwv('      it will not be issued again for this problem',
      1   50, 102, 0, 1, mxhnil, 0, 0, 0.0d0, 0.0d0)
  290  continue
 c-----------------------------------------------------------------------
@@ -1375,13 +1375,13 @@ c-----------------------------------------------------------------------
       jstart = -1
       if (ixpr .eq. 0) go to 310
       if (meth .eq. 2) call xerrwv(
-     1  60hlsoda-- a switch to the bdf (stiff) method has occurred     ,
+     1  'lsoda-- a switch to the bdf (stiff) method has occurred     ',
      1   60, 105, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       if (meth .eq. 1) call xerrwv(
-     1  60hlsoda-- a switch to the adams (nonstiff) method has occurred,
+     1  'lsoda-- a switch to the adams (nonstiff) method has occurred',
      1   60, 106, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h     at t = r1,  tentative step size h = r2,  step nst = i1 ,
+     1  '     at t = r1,  tentative step size h = r2,  step nst = i1 ',
      1   60, 107, 0, 1, nst, 0, 2, tn, h)
  310  go to (320, 400, 330, 340, 350), itask
 c itask = 1.  if tout has been reached, interpolate. -------------------
@@ -1440,7 +1440,7 @@ c
  430  ntrep = ntrep + 1
       if (ntrep .lt. 5) return
       call xerrwv(
-     1  60hlsoda--  repeated calls with istate = 1 and tout = t (=r1)  ,
+     1  'lsoda--  repeated calls with istate = 1 and tout = t (=r1)  ',
      1   60, 301, 0, 0, 0, 0, 1, t, 0.0d0)
       go to 800
 c-----------------------------------------------------------------------
@@ -1453,55 +1453,55 @@ c counter illin is set to 0.  the optional outputs are loaded into
 c the work arrays before returning.
 c-----------------------------------------------------------------------
 c the maximum number of steps was taken before reaching tout. ----------
- 500  call xerrwv(50hlsoda--  at current t (=r1), mxstep (=i1) steps   ,
+ 500  call xerrwv('lsoda--  at current t (=r1), mxstep (=i1) steps   ',
      1   50, 201, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      taken on this call before reaching tout     ,
+      call xerrwv('      taken on this call before reaching tout     ',
      1   50, 201, 0, 1, mxstep, 0, 1, tn, 0.0d0)
       istate = -1
       go to 580
 c ewt(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  ewti = rwork(lewt+i-1)
-      call xerrwv(50hlsoda--  at t (=r1), ewt(i1) has become r2 .le. 0.,
+      call xerrwv('lsoda--  at t (=r1), ewt(i1) has become r2 .le. 0.',
      1   50, 202, 0, 1, i, 0, 2, tn, ewti)
       istate = -6
       go to 580
 c too much accuracy requested for machine precision. -------------------
- 520  call xerrwv(50hlsoda--  at t (=r1), too much accuracy requested  ,
+ 520  call xerrwv('lsoda--  at t (=r1), too much accuracy requested  ',
      1   50, 203, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      for precision of machine..  see tolsf (=r2) ,
+      call xerrwv('      for precision of machine..  see tolsf (=r2) ',
      1   50, 203, 0, 0, 0, 0, 2, tn, tolsf)
       rwork(14) = tolsf
       istate = -2
       go to 580
 c kflag = -1.  error test failed repeatedly or with abs(h) = hmin. -----
- 530  call xerrwv(50hlsoda--  at t(=r1) and step size h(=r2), the error,
+ 530  call xerrwv('lsoda--  at t(=r1) and step size h(=r2), the error',
      1   50, 204, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      test failed repeatedly or with abs(h) = hmin,
+      call xerrwv('      test failed repeatedly or with abs(h) = hmin',
      1   50, 204, 0, 0, 0, 0, 2, tn, h)
       istate = -4
       go to 560
 c kflag = -2.  convergence failed repeatedly or with abs(h) = hmin. ----
- 540  call xerrwv(50hlsoda--  at t (=r1) and step size h (=r2), the    ,
+ 540  call xerrwv('lsoda--  at t (=r1) and step size h (=r2), the    ',
      1   50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      corrector convergence failed repeatedly     ,
+      call xerrwv('      corrector convergence failed repeatedly     ',
      1   50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(30h      or with abs(h) = hmin   ,
+      call xerrwv('      or with abs(h) = hmin   ',
      1   30, 205, 0, 0, 0, 0, 2, tn, h)
       istate = -5
       go to 560
 c rwork length too small to proceed. -----------------------------------
- 550  call xerrwv(50hlsoda--  at current t(=r1), rwork length too small,
+ 550  call xerrwv('lsoda--  at current t(=r1), rwork length too small',
      1   50, 206, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      to proceed.  the integration was otherwise successful.,
+     1  '      to proceed.  the integration was otherwise successful.',
      1   60, 206, 0, 0, 0, 0, 1, tn, 0.0d0)
       istate = -7
       go to 580
 c iwork length too small to proceed. -----------------------------------
- 555  call xerrwv(50hlsoda--  at current t(=r1), iwork length too small,
+ 555  call xerrwv('lsoda--  at current t(=r1), iwork length too small',
      1   50, 207, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      to proceed.  the integration was otherwise successful.,
+     1  '      to proceed.  the integration was otherwise successful.',
      1   60, 207, 0, 0, 0, 0, 1, tn, 0.0d0)
       istate = -7
       go to 580
@@ -1540,114 +1540,114 @@ c first the error message routine is called.  then if there have been
 c 5 consecutive such returns just before this call to the solver,
 c the run is halted.
 c-----------------------------------------------------------------------
- 601  call xerrwv(30hlsoda--  istate (=i1) illegal ,
+ 601  call xerrwv('lsoda--  istate (=i1) illegal ',
      1   30, 1, 0, 1, istate, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 602  call xerrwv(30hlsoda--  itask (=i1) illegal  ,
+ 602  call xerrwv('lsoda--  itask (=i1) illegal  ',
      1   30, 2, 0, 1, itask, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 603  call xerrwv(50hlsoda--  istate .gt. 1 but lsoda not initialized  ,
+ 603  call xerrwv('lsoda--  istate .gt. 1 but lsoda not initialized  ',
      1   50, 3, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 604  call xerrwv(30hlsoda--  neq (=i1) .lt. 1     ,
+ 604  call xerrwv('lsoda--  neq (=i1) .lt. 1     ',
      1   30, 4, 0, 1, neq(1), 0, 0, 0.0d0, 0.0d0)
       go to 700
- 605  call xerrwv(50hlsoda--  istate = 3 and neq increased (i1 to i2)  ,
+ 605  call xerrwv('lsoda--  istate = 3 and neq increased (i1 to i2)  ',
      1   50, 5, 0, 2, n, neq(1), 0, 0.0d0, 0.0d0)
       go to 700
- 606  call xerrwv(30hlsoda--  itol (=i1) illegal   ,
+ 606  call xerrwv('lsoda--  itol (=i1) illegal   ',
      1   30, 6, 0, 1, itol, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 607  call xerrwv(30hlsoda--  iopt (=i1) illegal   ,
+ 607  call xerrwv('lsoda--  iopt (=i1) illegal   ',
      1   30, 7, 0, 1, iopt, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 608  call xerrwv(30hlsoda--  jt (=i1) illegal     ,
+ 608  call xerrwv('lsoda--  jt (=i1) illegal     ',
      1   30, 8, 0, 1, jt, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 609  call xerrwv(50hlsoda--  ml (=i1) illegal.. .lt.0 or .ge.neq (=i2),
+ 609  call xerrwv('lsoda--  ml (=i1) illegal.. .lt.0 or .ge.neq (=i2)',
      1   50, 9, 0, 2, ml, neq(1), 0, 0.0d0, 0.0d0)
       go to 700
- 610  call xerrwv(50hlsoda--  mu (=i1) illegal.. .lt.0 or .ge.neq (=i2),
+ 610  call xerrwv('lsoda--  mu (=i1) illegal.. .lt.0 or .ge.neq (=i2)',
      1   50, 10, 0, 2, mu, neq(1), 0, 0.0d0, 0.0d0)
       go to 700
- 611  call xerrwv(30hlsoda--  ixpr (=i1) illegal   ,
+ 611  call xerrwv('lsoda--  ixpr (=i1) illegal   ',
      1   30, 11, 0, 1, ixpr, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 612  call xerrwv(30hlsoda--  mxstep (=i1) .lt. 0  ,
+ 612  call xerrwv('lsoda--  mxstep (=i1) .lt. 0  ',
      1   30, 12, 0, 1, mxstep, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 613  call xerrwv(30hlsoda--  mxhnil (=i1) .lt. 0  ,
+ 613  call xerrwv('lsoda--  mxhnil (=i1) .lt. 0  ',
      1   30, 13, 0, 1, mxhnil, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 614  call xerrwv(40hlsoda--  tout (=r1) behind t (=r2)      ,
+ 614  call xerrwv('lsoda--  tout (=r1) behind t (=r2)      ',
      1   40, 14, 0, 0, 0, 0, 2, tout, t)
-      call xerrwv(50h      integration direction is given by h0 (=r1)  ,
+      call xerrwv('      integration direction is given by h0 (=r1)  ',
      1   50, 14, 0, 0, 0, 0, 1, h0, 0.0d0)
       go to 700
- 615  call xerrwv(30hlsoda--  hmax (=r1) .lt. 0.0  ,
+ 615  call xerrwv('lsoda--  hmax (=r1) .lt. 0.0  ',
      1   30, 15, 0, 0, 0, 0, 1, hmax, 0.0d0)
       go to 700
- 616  call xerrwv(30hlsoda--  hmin (=r1) .lt. 0.0  ,
+ 616  call xerrwv('lsoda--  hmin (=r1) .lt. 0.0  ',
      1   30, 16, 0, 0, 0, 0, 1, hmin, 0.0d0)
       go to 700
  617  call xerrwv(
-     1  60hlsoda--  rwork length needed, lenrw (=i1), exceeds lrw (=i2),
+     1  'lsoda--  rwork length needed, lenrw (=i1), exceeds lrw (=i2)',
      1   60, 17, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
  618  call xerrwv(
-     1  60hlsoda--  iwork length needed, leniw (=i1), exceeds liw (=i2),
+     1  'lsoda--  iwork length needed, leniw (=i1), exceeds liw (=i2)',
      1   60, 18, 0, 2, leniw, liw, 0, 0.0d0, 0.0d0)
       go to 700
- 619  call xerrwv(40hlsoda--  rtol(i1) is r1 .lt. 0.0        ,
+ 619  call xerrwv('lsoda--  rtol(i1) is r1 .lt. 0.0        ',
      1   40, 19, 0, 1, i, 0, 1, rtoli, 0.0d0)
       go to 700
- 620  call xerrwv(40hlsoda--  atol(i1) is r1 .lt. 0.0        ,
+ 620  call xerrwv('lsoda--  atol(i1) is r1 .lt. 0.0        ',
      1   40, 20, 0, 1, i, 0, 1, atoli, 0.0d0)
       go to 700
  621  ewti = rwork(lewt+i-1)
-      call xerrwv(40hlsoda--  ewt(i1) is r1 .le. 0.0         ,
+      call xerrwv('lsoda--  ewt(i1) is r1 .le. 0.0         ',
      1   40, 21, 0, 1, i, 0, 1, ewti, 0.0d0)
       go to 700
  622  call xerrwv(
-     1  60hlsoda--  tout (=r1) too close to t(=r2) to start integration,
+     1  'lsoda--  tout (=r1) too close to t(=r2) to start integration',
      1   60, 22, 0, 0, 0, 0, 2, tout, t)
       go to 700
  623  call xerrwv(
-     1  60hlsoda--  itask = i1 and tout (=r1) behind tcur - hu (= r2)  ,
+     1  'lsoda--  itask = i1 and tout (=r1) behind tcur - hu (= r2)  ',
      1   60, 23, 0, 1, itask, 0, 2, tout, tp)
       go to 700
  624  call xerrwv(
-     1  60hlsoda--  itask = 4 or 5 and tcrit (=r1) behind tcur (=r2)   ,
+     1  'lsoda--  itask = 4 or 5 and tcrit (=r1) behind tcur (=r2)   ',
      1   60, 24, 0, 0, 0, 0, 2, tcrit, tn)
       go to 700
  625  call xerrwv(
-     1  60hlsoda--  itask = 4 or 5 and tcrit (=r1) behind tout (=r2)   ,
+     1  'lsoda--  itask = 4 or 5 and tcrit (=r1) behind tout (=r2)   ',
      1   60, 25, 0, 0, 0, 0, 2, tcrit, tout)
       go to 700
- 626  call xerrwv(50hlsoda--  at start of problem, too much accuracy   ,
+ 626  call xerrwv('lsoda--  at start of problem, too much accuracy   ',
      1   50, 26, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      requested for precision of machine..  see tolsf (=r1) ,
+     1  '      requested for precision of machine..  see tolsf (=r1) ',
      1   60, 26, 0, 0, 0, 0, 1, tolsf, 0.0d0)
       rwork(14) = tolsf
       go to 700
- 627  call xerrwv(50hlsoda--  trouble from intdy. itask = i1, tout = r1,
+ 627  call xerrwv('lsoda--  trouble from intdy. itask = i1, tout = r1',
      1   50, 27, 0, 1, itask, 0, 1, tout, 0.0d0)
       go to 700
- 628  call xerrwv(30hlsoda--  mxordn (=i1) .lt. 0  ,
+ 628  call xerrwv('lsoda--  mxordn (=i1) .lt. 0  ',
      1   30, 28, 0, 1, mxordn, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 629  call xerrwv(30hlsoda--  mxords (=i1) .lt. 0  ,
+ 629  call xerrwv('lsoda--  mxords (=i1) .lt. 0  ',
      1   30, 29, 0, 1, mxords, 0, 0, 0.0d0, 0.0d0)
 c
  700  if (illin .eq. 5) go to 710
       illin = illin + 1
       istate = -3
       return
- 710  call xerrwv(50hlsoda--  repeated occurrences of illegal input    ,
+ 710  call xerrwv('lsoda--  repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv(50hlsoda--  run aborted.. apparent infinite loop     ,
+ 800  call xerrwv('lsoda--  run aborted.. apparent infinite loop     ',
      1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
       return
 c----------------------- end of subroutine lsoda -----------------------

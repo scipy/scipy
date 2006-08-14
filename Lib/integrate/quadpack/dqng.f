@@ -369,6 +369,6 @@ c
 c ***jump out of do-loop
       if (ier.eq.0) go to 999
    70 continue
-   80 call xerror(26habnormal return from dqng ,26,ier,0)
+   80 call xerror('abnormal return from dqng ',26,ier,0)
   999 return
       end

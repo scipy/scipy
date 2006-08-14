@@ -217,9 +217,9 @@ c     do 40 iout = 1,5
 c       call lsodes (fex, neq, y, t, tout, itol, rtol, atol,
 c    1     itask, istate, iopt, rwork, lrw, iwork, liw, jex, mf)
 c       write(6,30)t,iwork(11),rwork(11),(y(i),i=1,neq)
-c 30    format(//7h at t =,e11.3,4x,
-c    1    12h no. steps =,i5,4x,12h last step =,e11.3/
-c    2    13h  y array =  ,4e14.5/13x,4e14.5/13x,4e14.5)
+c 30    format(//' at t =',e11.3,4x,
+c    1    ' no. steps =',i5,4x,' last step =',e11.3/
+c    2    '  y array =  ',4e14.5/13x,4e14.5/13x,4e14.5)
 c       if (istate .lt. 0) go to 80
 c       tout = tout*10.0d0
 c 40    continue
@@ -232,13 +232,13 @@ c     nlu = iwork(21)
 c     nnz = iwork(19)
 c     nnzlu = iwork(25) + iwork(26) + neq
 c     write (6,70) lenrw,leniw,nst,nfe,nje,nlu,nnz,nnzlu
-c 70  format(//22h required rwork size =,i4,15h   iwork size =,i4/
-c    1   12h no. steps =,i4,12h   no. f-s =,i4,12h   no. j-s =,i4,
-c    2   13h   no. lu-s =,i4/23h no. of nonzeros in j =,i5,
-c    3   26h   no. of nonzeros in lu =,i5)
+c 70  format(//' required rwork size =',i4,'   iwork size =',i4/
+c    1   ' no. steps =',i4,'   no. f-s =',i4,'   no. j-s =',i4,
+c    2   '   no. lu-s =',i4/' no. of nonzeros in j =',i5,
+c    3   '   no. of nonzeros in lu =',i5)
 c     stop
 c 80  write(6,90)istate
-c 90  format(///22h error halt.. istate =,i3)
+c 90  format(///' error halt.. istate =',i3)
 c     stop
 c     end
 c
@@ -1646,17 +1646,17 @@ c-----------------------------------------------------------------------
  280  if ((tn + h) .ne. tn) go to 290
       nhnil = nhnil + 1
       if (nhnil .gt. mxhnil) go to 290
-      call xerrwv(50hlsodes-- warning..internal t (=r1) and h (=r2) are,
+      call xerrwv('lsodes-- warning..internal t (=r1) and h (=r2) are',
      1   50, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      such that in the machine, t + h = t on the next step  ,
+     1  '      such that in the machine, t + h = t on the next step  ',
      1   60, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      (h = step size). solver will continue anyway,
+      call xerrwv('      (h = step size). solver will continue anyway',
      1   50, 101, 0, 0, 0, 0, 2, tn, h)
       if (nhnil .lt. mxhnil) go to 290
-      call xerrwv(50hlsodes-- above warning has been issued i1 times.  ,
+      call xerrwv('lsodes-- above warning has been issued i1 times.  ',
      1   50, 102, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      it will not be issued again for this problem,
+      call xerrwv('      it will not be issued again for this problem',
      1   50, 102, 0, 1, mxhnil, 0, 0, 0.0d0, 0.0d0)
  290  continue
 c-----------------------------------------------------------------------
@@ -1732,7 +1732,7 @@ c
  430  ntrep = ntrep + 1
       if (ntrep .lt. 5) return
       call xerrwv(
-     1  60hlsodes-- repeated calls with istate = 1 and tout = t (=r1)  ,
+     1  'lsodes-- repeated calls with istate = 1 and tout = t (=r1)  ',
      1   60, 301, 0, 0, 0, 0, 1, t, 0.0d0)
       go to 800
 c-----------------------------------------------------------------------
@@ -1745,48 +1745,48 @@ c counter illin is set to 0.  the optional outputs are loaded into
 c the work arrays before returning.
 c-----------------------------------------------------------------------
 c the maximum number of steps was taken before reaching tout. ----------
- 500  call xerrwv(50hlsodes-- at current t (=r1), mxstep (=i1) steps   ,
+ 500  call xerrwv('lsodes-- at current t (=r1), mxstep (=i1) steps   ',
      1   50, 201, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      taken on this call before reaching tout     ,
+      call xerrwv('      taken on this call before reaching tout     ',
      1   50, 201, 0, 1, mxstep, 0, 1, tn, 0.0d0)
       istate = -1
       go to 580
 c ewt(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  ewti = rwork(lewt+i-1)
-      call xerrwv(50hlsodes-- at t (=r1), ewt(i1) has become r2 .le. 0.,
+      call xerrwv('lsodes-- at t (=r1), ewt(i1) has become r2 .le. 0.',
      1   50, 202, 0, 1, i, 0, 2, tn, ewti)
       istate = -6
       go to 580
 c too much accuracy requested for machine precision. -------------------
- 520  call xerrwv(50hlsodes-- at t (=r1), too much accuracy requested  ,
+ 520  call xerrwv('lsodes-- at t (=r1), too much accuracy requested  ',
      1   50, 203, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      for precision of machine..  see tolsf (=r2) ,
+      call xerrwv('      for precision of machine..  see tolsf (=r2) ',
      1   50, 203, 0, 0, 0, 0, 2, tn, tolsf)
       rwork(14) = tolsf
       istate = -2
       go to 580
 c kflag = -1.  error test failed repeatedly or with abs(h) = hmin. -----
- 530  call xerrwv(50hlsodes-- at t(=r1) and step size h(=r2), the error,
+ 530  call xerrwv('lsodes-- at t(=r1) and step size h(=r2), the error',
      1   50, 204, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      test failed repeatedly or with abs(h) = hmin,
+      call xerrwv('      test failed repeatedly or with abs(h) = hmin',
      1   50, 204, 0, 0, 0, 0, 2, tn, h)
       istate = -4
       go to 560
 c kflag = -2.  convergence failed repeatedly or with abs(h) = hmin. ----
- 540  call xerrwv(50hlsodes-- at t (=r1) and step size h (=r2), the    ,
+ 540  call xerrwv('lsodes-- at t (=r1) and step size h (=r2), the    ',
      1   50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      corrector convergence failed repeatedly     ,
+      call xerrwv('      corrector convergence failed repeatedly     ',
      1   50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(30h      or with abs(h) = hmin   ,
+      call xerrwv('      or with abs(h) = hmin   ',
      1   30, 205, 0, 0, 0, 0, 2, tn, h)
       istate = -5
       go to 560
 c kflag = -3.  fatal error flag returned by prjs or slss (cdrv). -------
- 550  call xerrwv(50hlsodes-- at t (=r1) and step size h (=r2), a fatal,
+ 550  call xerrwv('lsodes-- at t (=r1) and step size h (=r2), a fatal',
      1   50, 207, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      error flag was returned by cdrv (by way of  ,
+      call xerrwv('      error flag was returned by cdrv (by way of  ',
      1   50, 207, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(30h      subroutine prjs or slss),
+      call xerrwv('      subroutine prjs or slss)',
      1   30, 207, 0, 0, 0, 0, 2, tn, h)
       istate = -7
       go to 580
@@ -1827,161 +1827,161 @@ c first the error message routine is called.  then if there have been
 c 5 consecutive such returns just before this call to the solver,
 c the run is halted.
 c-----------------------------------------------------------------------
- 601  call xerrwv(30hlsodes-- istate (=i1) illegal ,
+ 601  call xerrwv('lsodes-- istate (=i1) illegal ',
      1   30, 1, 0, 1, istate, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 602  call xerrwv(30hlsodes-- itask (=i1) illegal  ,
+ 602  call xerrwv('lsodes-- itask (=i1) illegal  ',
      1   30, 2, 0, 1, itask, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 603  call xerrwv(50hlsodes-- istate .gt. 1 but lsodes not initialized ,
+ 603  call xerrwv('lsodes-- istate .gt. 1 but lsodes not initialized ',
      1   50, 3, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 604  call xerrwv(30hlsodes-- neq (=i1) .lt. 1     ,
+ 604  call xerrwv('lsodes-- neq (=i1) .lt. 1     ',
      1   30, 4, 0, 1, neq(1), 0, 0, 0.0d0, 0.0d0)
       go to 700
- 605  call xerrwv(50hlsodes-- istate = 3 and neq increased (i1 to i2)  ,
+ 605  call xerrwv('lsodes-- istate = 3 and neq increased (i1 to i2)  ',
      1   50, 5, 0, 2, n, neq(1), 0, 0.0d0, 0.0d0)
       go to 700
- 606  call xerrwv(30hlsodes-- itol (=i1) illegal   ,
+ 606  call xerrwv('lsodes-- itol (=i1) illegal   ',
      1   30, 6, 0, 1, itol, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 607  call xerrwv(30hlsodes-- iopt (=i1) illegal   ,
+ 607  call xerrwv('lsodes-- iopt (=i1) illegal   ',
      1   30, 7, 0, 1, iopt, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 608  call xerrwv(30hlsodes-- mf (=i1) illegal     ,
+ 608  call xerrwv('lsodes-- mf (=i1) illegal     ',
      1   30, 8, 0, 1, mf, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 609  call xerrwv(30hlsodes-- seth (=r1) .lt. 0.0  ,
+ 609  call xerrwv('lsodes-- seth (=r1) .lt. 0.0  ',
      1   30, 9, 0, 0, 0, 0, 1, seth, 0.0d0)
       go to 700
- 611  call xerrwv(30hlsodes-- maxord (=i1) .lt. 0  ,
+ 611  call xerrwv('lsodes-- maxord (=i1) .lt. 0  ',
      1   30, 11, 0, 1, maxord, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 612  call xerrwv(30hlsodes-- mxstep (=i1) .lt. 0  ,
+ 612  call xerrwv('lsodes-- mxstep (=i1) .lt. 0  ',
      1   30, 12, 0, 1, mxstep, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 613  call xerrwv(30hlsodes-- mxhnil (=i1) .lt. 0  ,
+ 613  call xerrwv('lsodes-- mxhnil (=i1) .lt. 0  ',
      1   30, 13, 0, 1, mxhnil, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 614  call xerrwv(40hlsodes-- tout (=r1) behind t (=r2)      ,
+ 614  call xerrwv('lsodes-- tout (=r1) behind t (=r2)      ',
      1   40, 14, 0, 0, 0, 0, 2, tout, t)
-      call xerrwv(50h      integration direction is given by h0 (=r1)  ,
+      call xerrwv('      integration direction is given by h0 (=r1)  ',
      1   50, 14, 0, 0, 0, 0, 1, h0, 0.0d0)
       go to 700
- 615  call xerrwv(30hlsodes-- hmax (=r1) .lt. 0.0  ,
+ 615  call xerrwv('lsodes-- hmax (=r1) .lt. 0.0  ',
      1   30, 15, 0, 0, 0, 0, 1, hmax, 0.0d0)
       go to 700
- 616  call xerrwv(30hlsodes-- hmin (=r1) .lt. 0.0  ,
+ 616  call xerrwv('lsodes-- hmin (=r1) .lt. 0.0  ',
      1   30, 16, 0, 0, 0, 0, 1, hmin, 0.0d0)
       go to 700
- 617  call xerrwv(50hlsodes-- rwork length is insufficient to proceed. ,
+ 617  call xerrwv('lsodes-- rwork length is insufficient to proceed. ',
      1   50, 17, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h        length needed is .ge. lenrw (=i1), exceeds lrw (=i2),
+     1  '        length needed is .ge. lenrw (=i1), exceeds lrw (=i2)',
      1   60, 17, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
- 618  call xerrwv(50hlsodes-- iwork length is insufficient to proceed. ,
+ 618  call xerrwv('lsodes-- iwork length is insufficient to proceed. ',
      1   50, 18, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h        length needed is .ge. leniw (=i1), exceeds liw (=i2),
+     1  '        length needed is .ge. leniw (=i1), exceeds liw (=i2)',
      1   60, 18, 0, 2, leniw, liw, 0, 0.0d0, 0.0d0)
       go to 700
- 619  call xerrwv(40hlsodes-- rtol(i1) is r1 .lt. 0.0        ,
+ 619  call xerrwv('lsodes-- rtol(i1) is r1 .lt. 0.0        ',
      1   40, 19, 0, 1, i, 0, 1, rtoli, 0.0d0)
       go to 700
- 620  call xerrwv(40hlsodes-- atol(i1) is r1 .lt. 0.0        ,
+ 620  call xerrwv('lsodes-- atol(i1) is r1 .lt. 0.0        ',
      1   40, 20, 0, 1, i, 0, 1, atoli, 0.0d0)
       go to 700
  621  ewti = rwork(lewt+i-1)
-      call xerrwv(40hlsodes-- ewt(i1) is r1 .le. 0.0         ,
+      call xerrwv('lsodes-- ewt(i1) is r1 .le. 0.0         ',
      1   40, 21, 0, 1, i, 0, 1, ewti, 0.0d0)
       go to 700
  622  call xerrwv(
-     1  60hlsodes-- tout (=r1) too close to t(=r2) to start integration,
+     1  'lsodes-- tout (=r1) too close to t(=r2) to start integration',
      1   60, 22, 0, 0, 0, 0, 2, tout, t)
       go to 700
  623  call xerrwv(
-     1  60hlsodes-- itask = i1 and tout (=r1) behind tcur - hu (= r2)  ,
+     1  'lsodes-- itask = i1 and tout (=r1) behind tcur - hu (= r2)  ',
      1   60, 23, 0, 1, itask, 0, 2, tout, tp)
       go to 700
  624  call xerrwv(
-     1  60hlsodes-- itask = 4 or 5 and tcrit (=r1) behind tcur (=r2)   ,
+     1  'lsodes-- itask = 4 or 5 and tcrit (=r1) behind tcur (=r2)   ',
      1   60, 24, 0, 0, 0, 0, 2, tcrit, tn)
       go to 700
  625  call xerrwv(
-     1  60hlsodes-- itask = 4 or 5 and tcrit (=r1) behind tout (=r2)   ,
+     1  'lsodes-- itask = 4 or 5 and tcrit (=r1) behind tout (=r2)   ',
      1   60, 25, 0, 0, 0, 0, 2, tcrit, tout)
       go to 700
- 626  call xerrwv(50hlsodes-- at start of problem, too much accuracy   ,
+ 626  call xerrwv('lsodes-- at start of problem, too much accuracy   ',
      1   50, 26, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      requested for precision of machine..  see tolsf (=r1) ,
+     1  '      requested for precision of machine..  see tolsf (=r1) ',
      1   60, 26, 0, 0, 0, 0, 1, tolsf, 0.0d0)
       rwork(14) = tolsf
       go to 700
- 627  call xerrwv(50hlsodes-- trouble from intdy. itask = i1, tout = r1,
+ 627  call xerrwv('lsodes-- trouble from intdy. itask = i1, tout = r1',
      1   50, 27, 0, 1, itask, 0, 1, tout, 0.0d0)
       go to 700
  628  call xerrwv(
-     1  60hlsodes-- rwork length insufficient (for subroutine prep).   ,
+     1  'lsodes-- rwork length insufficient (for subroutine prep).   ',
      1   60, 28, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h        length needed is .ge. lenrw (=i1), exceeds lrw (=i2),
+     1  '        length needed is .ge. lenrw (=i1), exceeds lrw (=i2)',
      1   60, 28, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
  629  call xerrwv(
-     1  60hlsodes-- rwork length insufficient (for subroutine jgroup). ,
+     1  'lsodes-- rwork length insufficient (for subroutine jgroup). ',
      1   60, 29, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h        length needed is .ge. lenrw (=i1), exceeds lrw (=i2),
+     1  '        length needed is .ge. lenrw (=i1), exceeds lrw (=i2)',
      1   60, 29, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
  630  call xerrwv(
-     1  60hlsodes-- rwork length insufficient (for subroutine odrv).   ,
+     1  'lsodes-- rwork length insufficient (for subroutine odrv).   ',
      1   60, 30, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h        length needed is .ge. lenrw (=i1), exceeds lrw (=i2),
+     1  '        length needed is .ge. lenrw (=i1), exceeds lrw (=i2)',
      1   60, 30, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
  631  call xerrwv(
-     1  60hlsodes-- error from odrv in yale sparse matrix package      ,
+     1  'lsodes-- error from odrv in yale sparse matrix package      ',
      1   60, 31, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       imul = (iys - 1)/n
       irem = iys - imul*n
       call xerrwv(
-     1  60h      at t (=r1), odrv returned error flag = i1*neq + i2.   ,
+     1  '      at t (=r1), odrv returned error flag = i1*neq + i2.   ',
      1   60, 31, 0, 2, imul, irem, 1, tn, 0.0d0)
       go to 700
  632  call xerrwv(
-     1  60hlsodes-- rwork length insufficient (for subroutine cdrv).   ,
+     1  'lsodes-- rwork length insufficient (for subroutine cdrv).   ',
      1   60, 32, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h        length needed is .ge. lenrw (=i1), exceeds lrw (=i2),
+     1  '        length needed is .ge. lenrw (=i1), exceeds lrw (=i2)',
      1   60, 32, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
  633  call xerrwv(
-     1  60hlsodes-- error from cdrv in yale sparse matrix package      ,
+     1  'lsodes-- error from cdrv in yale sparse matrix package      ',
      1   60, 33, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       imul = (iys - 1)/n
       irem = iys - imul*n
       call xerrwv(
-     1  60h      at t (=r1), cdrv returned error flag = i1*neq + i2.   ,
+     1  '      at t (=r1), cdrv returned error flag = i1*neq + i2.   ',
      1   60, 33, 0, 2, imul, irem, 1, tn, 0.0d0)
       if (imul .eq. 2) call xerrwv(
-     1  60h        duplicate entry in sparsity structure descriptors   ,
+     1  '        duplicate entry in sparsity structure descriptors   ',
      1   60, 33, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       if (imul .eq. 3 .or. imul .eq. 6) call xerrwv(
-     1  60h        insufficient storage for nsfc (called by cdrv)      ,
+     1  '        insufficient storage for nsfc (called by cdrv)      ',
      1   60, 33, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
  700  if (illin .eq. 5) go to 710
       illin = illin + 1
       istate = -3
       return
- 710  call xerrwv(50hlsodes-- repeated occurrences of illegal input    ,
+ 710  call xerrwv('lsodes-- repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv(50hlsodes-- run aborted.. apparent infinite loop     ,
+ 800  call xerrwv('lsodes-- run aborted.. apparent infinite loop     ',
      1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
       return
 c----------------------- end of subroutine lsodes ----------------------

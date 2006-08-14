@@ -280,16 +280,16 @@ c     do 40 io = 1,4
 c       call lsoibt (resid, addabt, jacbt, neq, y, ydoti, t, tout,
 c    1   itol,rtol,atol, itask, istate, iopt, rwork,lrw,iwork,liw, mf)
 c       write (6,30) t, iwork(11), iwork(12), iwork(13)
-c  30   format(7h at t =,f5.2,14h   no. steps =,i4,11h  no. r-s =,i4,
-c    1   11h  no. j-s =,i3)
+c  30   format(' at t =',f5.2,'   no. steps =',i4,'  no. r-s =',i4,
+c    1   '  no. j-s =',i3)
 c       if (istate .ne. 2)  go to 90
 c       tout = tout + 0.1d0
 c  40   continue
 c     write(6,50) (y(i),i=1,neq)
-c  50 format(/24h final solution values../9(5e12.4/))
+c  50 format(/' final solution values..'/9(5e12.4/))
 c     stop
 c  90 write(6,95) istate
-c  95 format(///22h error halt.. istate =,i3)
+c  95 format(///' error halt.. istate =',i3)
 c     stop
 c     end
 c
@@ -1500,17 +1500,17 @@ c-----------------------------------------------------------------------
  280  if ((tn + h) .ne. tn) go to 290
       nhnil = nhnil + 1
       if (nhnil .gt. mxhnil) go to 290
-      call xerrwv(50hlsoibt-- warning..internal t (=r1) and h (=r2) are,
+      call xerrwv('lsoibt-- warning..internal t (=r1) and h (=r2) are',
      1   50, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      such that in the machine, t + h = t on the next step  ,
+     1  '      such that in the machine, t + h = t on the next step  ',
      1   60, 101, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      (h = step size). solver will continue anyway,
+      call xerrwv('      (h = step size). solver will continue anyway',
      1   50, 101, 0, 0, 0, 0, 2, tn, h)
       if (nhnil .lt. mxhnil) go to 290
-      call xerrwv(50hlsoibt-- above warning has been issued i1 times.  ,
+      call xerrwv('lsoibt-- above warning has been issued i1 times.  ',
      1   50, 102, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      it will not be issued again for this problem,
+      call xerrwv('      it will not be issued again for this problem',
      1   50, 102, 0, 1, mxhnil, 0, 0, 0.0d0, 0.0d0)
  290  continue
 c-----------------------------------------------------------------------
@@ -1587,7 +1587,7 @@ c
  430  ntrep = ntrep + 1
       if (ntrep .lt. 5) return
       call xerrwv(
-     1  60hlsoibt-- repeated calls with istate= 0 or 1 and tout= t(=r1),
+     1  'lsoibt-- repeated calls with istate= 0 or 1 and tout= t(=r1)',
      1   60, 301, 0, 0, 0, 0, 1, t, 0.0d0)
       go to 800
 c-----------------------------------------------------------------------
@@ -1600,64 +1600,64 @@ c counter illin is set to 0.  the optional outputs are loaded into
 c the work arrays before returning.
 c-----------------------------------------------------------------------
 c the maximum number of steps was taken before reaching tout. ----------
- 500  call xerrwv(50hlsoibt-- at current t (=r1), mxstep (=i1) steps   ,
+ 500  call xerrwv('lsoibt-- at current t (=r1), mxstep (=i1) steps   ',
      1   50, 201, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      taken on this call before reaching tout     ,
+      call xerrwv('      taken on this call before reaching tout     ',
      1   50, 201, 0, 1, mxstep, 0, 1, tn, 0.0d0)
       istate = -1
       go to 580
 c ewt(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  ewti = rwork(lewt+i-1)
-      call xerrwv(50hlsoibt-- at t (=r1), ewt(i1) has become r2 .le. 0.,
+      call xerrwv('lsoibt-- at t (=r1), ewt(i1) has become r2 .le. 0.',
      1   50, 202, 0, 1, i, 0, 2, tn, ewti)
       istate = -6
       go to 590
 c too much accuracy requested for machine precision. -------------------
- 520  call xerrwv(50hlsoibt-- at t (=r1), too much accuracy requested  ,
+ 520  call xerrwv('lsoibt-- at t (=r1), too much accuracy requested  ',
      1   50, 203, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      for precision of machine..  see tolsf (=r2) ,
+      call xerrwv('      for precision of machine..  see tolsf (=r2) ',
      1   50, 203, 0, 0, 0, 0, 2, tn, tolsf)
       rwork(14) = tolsf
       istate = -2
       go to 590
 c kflag = -1.  error test failed repeatedly or with abs(h) = hmin. -----
- 530  call xerrwv(50hlsoibt-- at t(=r1) and step size h(=r2), the error,
+ 530  call xerrwv('lsoibt-- at t(=r1) and step size h(=r2), the error',
      1   50, 204, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      test failed repeatedly or with abs(h) = hmin,
+      call xerrwv('      test failed repeatedly or with abs(h) = hmin',
      1   50, 204, 0, 0, 0, 0, 2, tn, h)
       istate = -4
       go to 570
 c kflag = -2.  convergence failed repeatedly or with abs(h) = hmin. ----
- 540  call xerrwv(50hlsoibt-- at t (=r1) and step size h (=r2), the    ,
+ 540  call xerrwv('lsoibt-- at t (=r1) and step size h (=r2), the    ',
      1   50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      corrector convergence failed repeatedly     ,
+      call xerrwv('      corrector convergence failed repeatedly     ',
      1   50, 205, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(30h      or with abs(h) = hmin   ,
+      call xerrwv('      or with abs(h) = hmin   ',
      1   30, 205, 0, 0, 0, 0, 2, tn, h)
       istate = -5
       go to 570
 c ires = 3 returned by res, despite retries by stodi. ------------------
- 550  call xerrwv(50hlsoibt-- at t (=r1) residual routine returned     ,
+ 550  call xerrwv('lsoibt-- at t (=r1) residual routine returned     ',
      1   50, 206, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(40h      error ires = 3 repeatedly         ,
+      call xerrwv('      error ires = 3 repeatedly         ',
      1   40, 206, 0, 0, 0, 0, 1, tn, 0.0d0)
       istate = -7
       go to 590
 c aigbt failed because a diagonal block of a-matrix was singular. ------
  560  ier = -ier
       call xerrwv(
-     1  60hlsoibt-- attempt to initialize dy/dt failed.. matrix a has a,
+     1  'lsoibt-- attempt to initialize dy/dt failed.. matrix a has a',
      1   60, 207, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      singular diagonal block, block no. = (i1)   ,
+      call xerrwv('      singular diagonal block, block no. = (i1)   ',
      2   50, 207, 0, 1, ier, 0, 0, 0.0d0, 0.0d0)
       istate = -8
       return
 c aigbt failed because res set ires to 2 or 3. -------------------------
- 565  call xerrwv(50hlsoibt-- attempt to initialize dy/dt failed       ,
+ 565  call xerrwv('lsoibt-- attempt to initialize dy/dt failed       ',
      1   50, 208, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      because residual routine set its error flag ,
+      call xerrwv('      because residual routine set its error flag ',
      1   50, 208, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(20h      to ires = (i1),
+      call xerrwv('      to ires = (i1)',
      1   20, 208, 0, 1, ier, 0, 0, 0.0d0, 0.0d0)
       istate = -8
       return
@@ -1680,9 +1680,9 @@ c compute residual if relevant. ----------------------------------------
       call res ( neq, tn, y, rwork(lsavr), ydoti, ires )
       nre = nre + 1
       if ( ires .le. 1 )  go to 595
-      call xerrwv(50hlsoibt-- residual routine set its flag ires       ,
+      call xerrwv('lsoibt-- residual routine set its flag ires       ',
      1   50, 210, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
-      call xerrwv(50h      to (i1) when called for final output.       ,
+      call xerrwv('      to (i1) when called for final output.       ',
      1   50, 210, 0, 1, ires, 0, 0, 0.0d0, 0.0d0)
       go to 595
 c set y vector, t, illin, and optional outputs. ------------------------
@@ -1707,108 +1707,108 @@ c first the error message routine is called.  then if there have been
 c 5 consecutive such returns just before this call to the solver,
 c the run is halted.
 c-----------------------------------------------------------------------
- 601  call xerrwv(30hlsoibt-- istate (=i1) illegal ,
+ 601  call xerrwv('lsoibt-- istate (=i1) illegal ',
      1   30, 1, 0, 1, istate, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 602  call xerrwv(30hlsoibt-- itask (=i1) illegal  ,
+ 602  call xerrwv('lsoibt-- itask (=i1) illegal  ',
      1   30, 2, 0, 1, itask, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 603  call xerrwv(50hlsoibt-- istate .gt. 1 but lsoibt not initialized ,
+ 603  call xerrwv('lsoibt-- istate .gt. 1 but lsoibt not initialized ',
      1   50, 3, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 604  call xerrwv(30hlsoibt-- neq (=i1) .lt. 1     ,
+ 604  call xerrwv('lsoibt-- neq (=i1) .lt. 1     ',
      1   30, 4, 0, 1, neq(1), 0, 0, 0.0d0, 0.0d0)
       go to 700
- 605  call xerrwv(50hlsoibt-- istate = 3 and neq increased (i1 to i2)  ,
+ 605  call xerrwv('lsoibt-- istate = 3 and neq increased (i1 to i2)  ',
      1   50, 5, 0, 2, n, neq(1), 0, 0.0d0, 0.0d0)
       go to 700
- 606  call xerrwv(30hlsoibt-- itol (=i1) illegal   ,
+ 606  call xerrwv('lsoibt-- itol (=i1) illegal   ',
      1   30, 6, 0, 1, itol, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 607  call xerrwv(30hlsoibt-- iopt (=i1) illegal   ,
+ 607  call xerrwv('lsoibt-- iopt (=i1) illegal   ',
      1   30, 7, 0, 1, iopt, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 608  call xerrwv(30hlsoibt-- mf (=i1) illegal     ,
+ 608  call xerrwv('lsoibt-- mf (=i1) illegal     ',
      1   30, 8, 0, 1, mf, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 609  call xerrwv(40hlsoibt-- mb (=i1) or nb (=i2) illegal   ,
+ 609  call xerrwv('lsoibt-- mb (=i1) or nb (=i2) illegal   ',
      1   50, 9, 0, 2, mb, nb, 0, 0.0d0, 0.0d0)
       go to 700
- 610  call xerrwv(40hlsoibt-- nb(=i1) illegal.. .lt. 4       ,
+ 610  call xerrwv('lsoibt-- nb(=i1) illegal.. .lt. 4       ',
      1   50, 10, 0, 1, nb, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 611  call xerrwv(30hlsoibt-- maxord (=i1) .lt. 0  ,
+ 611  call xerrwv('lsoibt-- maxord (=i1) .lt. 0  ',
      1   30, 11, 0, 1, maxord, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 612  call xerrwv(30hlsoibt-- mxstep (=i1) .lt. 0  ,
+ 612  call xerrwv('lsoibt-- mxstep (=i1) .lt. 0  ',
      1   30, 12, 0, 1, mxstep, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 613  call xerrwv(30hlsoibt-- mxhnil (=i1) .lt. 0  ,
+ 613  call xerrwv('lsoibt-- mxhnil (=i1) .lt. 0  ',
      1   30, 13, 0, 1, mxhnil, 0, 0, 0.0d0, 0.0d0)
       go to 700
- 614  call xerrwv(40hlsoibt-- tout (=r1) behind t (=r2)      ,
+ 614  call xerrwv('lsoibt-- tout (=r1) behind t (=r2)      ',
      1   40, 14, 0, 0, 0, 0, 2, tout, t)
-      call xerrwv(50h      integration direction is given by h0 (=r1)  ,
+      call xerrwv('      integration direction is given by h0 (=r1)  ',
      1   50, 14, 0, 0, 0, 0, 1, h0, 0.0d0)
       go to 700
- 615  call xerrwv(30hlsoibt-- hmax (=r1) .lt. 0.0  ,
+ 615  call xerrwv('lsoibt-- hmax (=r1) .lt. 0.0  ',
      1   30, 15, 0, 0, 0, 0, 1, hmax, 0.0d0)
       go to 700
- 616  call xerrwv(30hlsoibt-- hmin (=r1) .lt. 0.0  ,
+ 616  call xerrwv('lsoibt-- hmin (=r1) .lt. 0.0  ',
      1   30, 16, 0, 0, 0, 0, 1, hmin, 0.0d0)
       go to 700
  617  call xerrwv(
-     1  60hlsoibt-- rwork length needed, lenrw (=i1), exceeds lrw (=i2),
+     1  'lsoibt-- rwork length needed, lenrw (=i1), exceeds lrw (=i2)',
      1   60, 17, 0, 2, lenrw, lrw, 0, 0.0d0, 0.0d0)
       go to 700
  618  call xerrwv(
-     1  60hlsoibt-- iwork length needed, leniw (=i1), exceeds liw (=i2),
+     1  'lsoibt-- iwork length needed, leniw (=i1), exceeds liw (=i2)',
      1   60, 18, 0, 2, leniw, liw, 0, 0.0d0, 0.0d0)
       go to 700
- 619  call xerrwv(40hlsoibt-- rtol(=i1) is r1 .lt. 0.0       ,
+ 619  call xerrwv('lsoibt-- rtol(=i1) is r1 .lt. 0.0       ',
      1   40, 19, 0, 1, i, 0, 1, rtoli, 0.0d0)
       go to 700
- 620  call xerrwv(40hlsoibt-- atol(=i1) is r1 .lt. 0.0       ,
+ 620  call xerrwv('lsoibt-- atol(=i1) is r1 .lt. 0.0       ',
      1   40, 20, 0, 1, i, 0, 1, atoli, 0.0d0)
       go to 700
  621  ewti = rwork(lewt+i-1)
-      call xerrwv(40hlsoibt-- ewt(=i1) is r1 .le. 0.0        ,
+      call xerrwv('lsoibt-- ewt(=i1) is r1 .le. 0.0        ',
      1   40, 21, 0, 1, i, 0, 1, ewti, 0.0d0)
       go to 700
  622  call xerrwv(
-     1  60hlsoibt-- tout (=r1) too close to t(=r2) to start integration,
+     1  'lsoibt-- tout (=r1) too close to t(=r2) to start integration',
      1   60, 22, 0, 0, 0, 0, 2, tout, t)
       go to 700
  623  call xerrwv(
-     1  60hlsoibt-- itask = i1 and tout (=r1) behind tcur - hu (= r2)  ,
+     1  'lsoibt-- itask = i1 and tout (=r1) behind tcur - hu (= r2)  ',
      1   60, 23, 0, 1, itask, 0, 2, tout, tp)
       go to 700
  624  call xerrwv(
-     1  60hlsoibt-- itask = 4 or 5 and tcrit (=r1) behind tcur (=r2)   ,
+     1  'lsoibt-- itask = 4 or 5 and tcrit (=r1) behind tcur (=r2)   ',
      1   60, 24, 0, 0, 0, 0, 2, tcrit, tn)
       go to 700
  625  call xerrwv(
-     1  60hlsoibt-- itask = 4 or 5 and tcrit (=r1) behind tout (=r2)   ,
+     1  'lsoibt-- itask = 4 or 5 and tcrit (=r1) behind tout (=r2)   ',
      1   60, 25, 0, 0, 0, 0, 2, tcrit, tout)
       go to 700
- 626  call xerrwv(50hlsoibt-- at start of problem, too much accuracy   ,
+ 626  call xerrwv('lsoibt-- at start of problem, too much accuracy   ',
      1   50, 26, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
       call xerrwv(
-     1  60h      requested for precision of machine..  see tolsf (=r1) ,
+     1  '      requested for precision of machine..  see tolsf (=r1) ',
      1   60, 26, 0, 0, 0, 0, 1, tolsf, 0.0d0)
       rwork(14) = tolsf
       go to 700
- 627  call xerrwv(50hlsoibt-- trouble from intdy. itask = i1, tout = r1,
+ 627  call xerrwv('lsoibt-- trouble from intdy. itask = i1, tout = r1',
      1   50, 27, 0, 1, itask, 0, 1, tout, 0.0d0)
 c
  700  if (illin .eq. 5) go to 710
       illin = illin + 1
       istate = -3
       return
- 710  call xerrwv(50hlsoibt-- repeated occurrences of illegal input    ,
+ 710  call xerrwv('lsoibt-- repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv(50hlsoibt-- run aborted.. apparent infinite loop     ,
+ 800  call xerrwv('lsoibt-- run aborted.. apparent infinite loop     ',
      1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
       return
 c----------------------- end of subroutine lsoibt ----------------------
