@@ -38,8 +38,8 @@ def getsize_type(mtype):
         mtype = 'i'
     elif mtype in ['I','uint','uint32','unsigned int']:
         mtype = 'I'
-    elif mtype in ['l','long','int32','integer*4']:
-        mtype = 'l'
+    elif mtype in ['u4','int32','integer*4']:
+        mtype = 'u4'
     elif mtype in ['f','float','float32','real*4', 'real']:
         mtype = 'f'
     elif mtype in ['d','double','float64','real*8', 'double precision']:
@@ -154,7 +154,7 @@ class fopen(object):
                    unsigned short : 'H', 'ushort','uint16','unsigned short'
                    int            : 'i', 'int'
                    unsigned int   : 'I', 'uint32','uint','unsigned int'
-                   long           : 'l', 'long', 'int32', 'integer*4'
+                   int32           : 'u4', 'int32', 'integer*4'
                    float          : 'f', 'float', 'float32', 'real*4'
                    double         : 'd', 'double', 'float64', 'real*8'
                    complex float  : 'F', 'complex float', 'complex*8', 'complex64'
@@ -461,7 +461,7 @@ miDataTypes = {
     miUINT8 : ('miUINT8', 1,'B'),
     miINT16 : ('miINT16', 2,'h'),
     miUINT16 :('miUINT16',2,'H'),
-    miINT32 : ('miINT32',4,'l'),
+    miINT32 : ('miINT32',4,'u4'),
     miUINT32 : ('miUINT32',4,'I'),
     miSINGLE : ('miSINGLE',4,'f'),
     miDOUBLE : ('miDOUBLE',8,'d'),
@@ -470,7 +470,7 @@ miDataTypes = {
     miMATRIX : ('miMATRIX',0,None),
     miUTF8 : ('miUTF8',1,'b'),
     miUTF16 : ('miUTF16',2,'h'),
-    miUTF32 : ('miUTF32',4,'l'),
+    miUTF32 : ('miUTF32',4,'u4'),
     }
 
 ''' Before release v7.1 (release 14) matlab used the system default
@@ -567,11 +567,13 @@ def _parse_mimatrix(fid,bytes):
             try:
                 " ".encode(en)
             except LookupError:
-                raise ValueError, 'Character encoding %s not supported' % en
+                raise TypeError, 'Character encoding %s not supported' % en
             if dtype == miUINT16:
                 char_len = len("  ".encode(en)) - len(" ".encode(en))
                 if char_len == 1: # Need to downsample from 16 bit
                     result = result.astype(uint8)
+                elif char_len != 2:
+                    raise TypeError, 'miUNIT16 type cannot use >2 bytes encoding'
             result = squeeze(transpose(reshape(result,tupdims)))
             dims = result.shape
             if len(dims) >= 2: # return array of strings
@@ -590,7 +592,7 @@ def _parse_mimatrix(fid,bytes):
                 except KeyError:
                     result = result + 1j*imag
             result = squeeze(transpose(reshape(result,tupdims)))
-
+            
     elif dclass == mxCELL_CLASS:
         length = product(dims)
         result = empty(length, dtype=object)
@@ -713,7 +715,7 @@ def _get_element(fid, return_name_dtype=False):
             fid.zbuffer.fill(fid.raw_read(numbytes))
             _skip_padding(fid, numbytes, 8)
             return _get_element(fid.zbuffer, return_name_dtype)
-        if dtype != miMATRIX:  # basic data type
+        if dtype != miMATRIX:  # therefore basic data type
             try:
                 el = fid.read(numbytes,miDataTypes[dtype][2],c_is_b=1)
             except KeyError:
@@ -895,7 +897,7 @@ def savemat(filename, mdict):
     This saves the arrayobjects in the given dictionary to a matlab Version 4
     style .mat file.
     """
-    storage = {'D':0,'d':0,'F':1,'f':1,'l':2,'i':2,'h':3,'B':5}
+    storage = {'D':0,'d':0,'F':1,'f':1,'u4':2,'i':2,'h':3,'B':5}
     if filename[-4:] != ".mat":
         filename = filename + ".mat"
     fid = fopen(filename,'wb')
