@@ -1,6 +1,6 @@
 import numpy as num
 import _correlate
-import numpy.dft as dft
+import numpy.fft as dft
 import iraf_frame
 
 VALID = 0
