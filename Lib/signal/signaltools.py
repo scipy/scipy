@@ -422,7 +422,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
     if weight is None:
         weight = [1] * len(desired)
 
-    bands = bands.copy()
+    bands = asarray(bands).copy()
     return sigtools._remez(numtaps, bands, desired, weight, tnum, Hz,
                            maxiter, grid_density)
 
