@@ -2497,8 +2497,6 @@ class lil_matrix(spmatrix):
             elif operator.isSequenceType(i):
                 seq = i
             else:
-                import pdb
-                pdb.set_trace()
                 raise IndexError, "invalid index"
             try:
                 if not len(x) == len(seq):
