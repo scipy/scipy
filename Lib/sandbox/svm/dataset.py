@@ -165,7 +165,8 @@ class LibSvmTestDataSet:
             yield convert_to_svm_node(x)
 
     def is_array_data(self):
-        return isinstance(self.data, N.ndarray)
+        return isinstance(self.data, N.ndarray) and \
+            self.data.dtype in N.sctypes['float']
 
 def convert_to_svm_node(x):
     y = N.empty(len(x) + 1, dtype=libsvm.svm_node_dtype)

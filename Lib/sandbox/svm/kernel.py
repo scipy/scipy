@@ -19,6 +19,9 @@ class LinearKernel:
         y = N.atleast_2d(y)
         return N.dot(x, y.T)
 
+    def compact(self, *args):
+        return self
+
 class PolynomialKernel:
     def __init__(self, degree, gamma, coef0):
         self.kernel_type = libsvm.POLY
@@ -43,12 +46,17 @@ class PolynomialKernel:
         return '<PolynomialKernel: degree=%d, gamma=%.4f, coef0=%.4f>' % \
             (self.degree, self.gamma, self.coef0)
 
+    def compact(self, *args):
+        raise NotImplementedError, \
+            'model compaction for PolynomialKernel not implemented'
+
 class RBFKernel:
     def __init__(self, gamma):
         self.kernel_type = libsvm.RBF
         self.gamma = gamma
+        self.__call__ = self.evaluate
 
-    def __call__(self, x, y):
+    def evaluate(self, x, y):
         x = N.atleast_2d(x)
         y = N.atleast_2d(y)
         xnorm = N.atleast_2d(N.sum(x*x, axis=1))
@@ -56,8 +64,15 @@ class RBFKernel:
         z = xnorm + ynorm - 2 * N.atleast_2d(N.dot(x, y.T).squeeze())
         return N.exp(-self.gamma * z)
 
+    def evaluate_compact(self, x, y):
+        raise NotImplementedError
+
     def __repr__(self):
         return '<RBFKernel: gamma=%.4f>' % (self.gamma,)
+
+    def compact(self, *args):
+        raise NotImplementedError, \
+            'model compaction for RBFKernel not implemented'
 
 class SigmoidKernel:
     def __init__(self, gamma, coef0):
@@ -74,6 +89,10 @@ class SigmoidKernel:
         return '<SigmoidKernel: gamma=%.4f, coef0=%.4f>' % \
             (self.gamma, self.coef0)
 
+    def compact(self, *args):
+        raise NotImplementedError, \
+            'model compaction for SigmoidKernel not implemented'
+
 class CustomKernel:
     def __init__(self, f):
         self.kernel_type = libsvm.PRECOMPUTED
@@ -86,3 +105,7 @@ class CustomKernel:
 
     def __repr__(self):
         return '<CustomKernel: %s>' % str(self.f)
+
+    def compact(self, *args):
+        raise NotImplementedError, \
+            'model compaction for CustomKernel not implemented'
