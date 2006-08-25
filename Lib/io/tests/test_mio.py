@@ -52,10 +52,11 @@ class test_mio_array(ScipyTestCase):
             assert SP.issparse(actual), "Expected sparse at %s" % label
             assert_array_almost_equal(actual.todense(),
                                       expected.todense(),
-                                      err_msg = label)
+                                      err_msg = label,
+                                      decimal = 5)
         elif isinstance(expected, ndarray):
             assert isinstance(actual, ndarray), "Expected ndarray at %s" % label
-            assert_array_almost_equal(actual, expected, err_msg=label)
+            assert_array_almost_equal(actual, expected, err_msg=label, decimal = 5)
         else:
             assert isinstance(expected, type(actual)), \
                    "Types %s and %s do not match at %s" % (type(expected), type(actual), label)
@@ -182,6 +183,12 @@ class test_mio_array(ScipyTestCase):
     case_table.append(
         {'name': 'object',
          'expected': {'testobject': a}
+         })
+         
+    case_table.append(
+        {'name': 'vec',
+         'expected': {'fit_params': array([1.27661364061704e+09,7.51130255826677e-03]),
+                      'xdot_filt': array([8.11154474752301e-13,1.28504039006994e-11])}
          })
     
     # add tests
