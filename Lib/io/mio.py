@@ -8,7 +8,8 @@ from tempfile import mkstemp
 import zlib
 
 from numpy import array, asarray, empty, obj2sctype, product, reshape, \
-    squeeze, transpose, zeros, vstack, ndarray, shape, diff, where, uint8
+    squeeze, transpose, zeros, vstack, ndarray, shape, diff, where, uint8, \
+    atleast_1d
 import numpyio
 
 try:
@@ -113,7 +114,7 @@ class fopen(object):
         self.file.seek(*args)
 
     def tell(self):
-        self.file.tell()
+        return self.file.tell()
         
     def raw_read(self, size=-1):
         """Read raw bytes from file as string."""
