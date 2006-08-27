@@ -13,7 +13,7 @@ from numpy import alltrue, where, arange, put, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis
-from numpy import atleast_1d, polyval, angle, ceil, insert, extract, \
+from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isnan, isinf
 import numpy
 import numpy.random as mtrand
@@ -461,10 +461,10 @@ class rv_continuous:
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         goodargs = argsreduce(cond, *((x,)+args+(scale,)))
         scale, goodargs = goodargs[-1], goodargs[:-1]
-        insert(output,cond,self._pdf(*goodargs) / scale)
+        place(output,cond,self._pdf(*goodargs) / scale)
         return output
 
     def cdf(self,x,*args,**kwds):
@@ -490,10 +490,10 @@ class rv_continuous:
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        insert(output,cond2,1.0)
+        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
-        insert(output,cond,self._cdf(*goodargs))
+        place(output,cond,self._cdf(*goodargs))
         return output
 
     def sf(self,x,*args,**kwds):
@@ -519,10 +519,10 @@ class rv_continuous:
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        insert(output,cond2,1.0)
+        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((x,)+args))
-        insert(output,cond,self._sf(*goodargs))
+        place(output,cond,self._sf(*goodargs))
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -547,11 +547,11 @@ class rv_continuous:
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.a*scale + loc)
-        insert(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
-        insert(output,cond2,self.b*scale + loc)
+        place(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
+        place(output,cond2,self.b*scale + loc)
         goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-        insert(output,cond,self._ppf(*goodargs)*scale + loc)
+        place(output,cond,self._ppf(*goodargs)*scale + loc)
         return output
 
     def isf(self,q,*args,**kwds):
@@ -576,11 +576,11 @@ class rv_continuous:
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.b)
-        insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
-        insert(output,cond2,self.a)
+        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        place(output,cond2,self.a)
         goodargs = argsreduce(cond, *((1.0-q,)+args+(scale,loc)))
         scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-        insert(output,cond,self._ppf(*goodargs)*scale + loc)
+        place(output,cond,self._ppf(*goodargs)*scale + loc)
         return output
 
     def stats(self,*args,**kwds):
@@ -643,7 +643,7 @@ class rv_continuous:
             if mu is None:
                 mu = self._munp(1.0,*goodargs)
             out0 = default.copy()
-            insert(out0,cond,mu*scale+loc)
+            place(out0,cond,mu*scale+loc)
             output.append(out0)
 
         if 'v' in moments:
@@ -653,7 +653,7 @@ class rv_continuous:
                     mu = self._munp(1.0,*goodargs)
                 mu2 = mu2p - mu*mu
             out0 = default.copy()
-            insert(out0,cond,mu2*scale*scale)
+            place(out0,cond,mu2*scale*scale)
             output.append(out0)
 
         if 's' in moments:
@@ -667,7 +667,7 @@ class rv_continuous:
                 mu3 = mu3p - 3*mu*mu2 - mu**3
                 g1 = mu3 / mu2**1.5
             out0 = default.copy()
-            insert(out0,cond,g1)
+            place(out0,cond,g1)
             output.append(out0)
 
         if 'k' in moments:
@@ -684,7 +684,7 @@ class rv_continuous:
                 mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
                 g2 = mu4 / mu2**2.0 - 3.0
             out0 = default.copy()
-            insert(out0,cond,g2)
+            place(out0,cond,g2)
             output.append(out0)
 
         if len(output) == 1:
@@ -780,9 +780,9 @@ class rv_continuous:
         args = map(arr,args)
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         output = zeros(shape(cond0),'d')
-        insert(output,(1-cond0),self.badvalue)
+        place(output,(1-cond0),self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        insert(output,cond0,self.vecentropy(*goodargs)+log(scale))
+        place(output,cond0,self.vecentropy(*goodargs)+log(scale))
         return output
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
@@ -2595,25 +2595,25 @@ class pareto_gen(rv_continuous):
             mask = b > 1
             bt = extract(mask,b)
             mu = valarray(shape(b),value=inf)
-            insert(mu, mask, bt / (bt-1.0))
+            place(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
             bt = extract( mask,b)
             mu2 = valarray(shape(b), value=inf)
-            insert(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
+            place(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
             bt = extract( mask,b)
             g1 = valarray(shape(b), value=nan)
             vals = 2*(bt+1.0)*sqrt(b-2.0)/((b-3.0)*sqrt(b))
-            insert(g1, mask, vals)
+            place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
             bt = extract( mask,b)
             g2 = valarray(shape(b), value=nan)
             vals = 6.0*polyval([1.0,1.0,-6,-2],bt)/ \
                    polyval([1.0,-7.0,12.0,0.0],bt)
-            insert(g2, mask, vals)
+            place(g2, mask, vals)
         return mu, mu2, g1, g2
     def _entropy(self, c):
         return 1 + 1.0/c - log(c)
@@ -3142,11 +3142,11 @@ class wrapcauchy_gen(rv_continuous):
             xn = 2*pi - xn
             yn = tan(xn/2.0)
             on = 1.0-1.0/pi*arctan(valn*yn)
-            insert(output, c2, on)
+            place(output, c2, on)
         if (any(xp)):
             yp = tan(xp/2.0)
             op = 1.0/pi*arctan(valp*yp)
-            insert(output, c1, op)
+            place(output, c1, op)
         return output
     def _ppf(self, q, c):
         val = (1.0-c)/(1.0+c)
@@ -3502,9 +3502,9 @@ class rv_discrete:
         cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k,*args)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
         goodargs = argsreduce(cond, *((k,)+args))
-        insert(output,cond,self._pmf(*goodargs))
+        place(output,cond,self._pmf(*goodargs))
         return output
 
     def cdf(self, k, *args, **kwds):
@@ -3529,10 +3529,10 @@ class rv_discrete:
         cond2 = (k >= self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        insert(output,cond2*(cond0==cond0), 1.0)
+        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,cond2*(cond0==cond0), 1.0)
         goodargs = argsreduce(cond, *((k,)+args))
-        insert(output,cond,self._cdf(*goodargs))
+        place(output,cond,self._cdf(*goodargs))
         return output
 
     def sf(self,k,*args,**kwds):
@@ -3557,10 +3557,10 @@ class rv_discrete:
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        insert(output,(1-cond0)*(cond1==cond1),self.badvalue)
-        insert(output,cond2,1.0)
+        place(output,(1-cond0)*(cond1==cond1),self.badvalue)
+        place(output,cond2,1.0)
         goodargs = argsreduce(cond, *((k,)+args))
-        insert(output,cond,self._sf(*goodargs))
+        place(output,cond,self._sf(*goodargs))
         return output
 
     def ppf(self,q,*args,**kwds):
@@ -3584,11 +3584,11 @@ class rv_discrete:
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.a-1)
-        insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
-        insert(output,cond2,self.b)
+        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        place(output,cond2,self.b)
         goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
-        insert(output,cond,self._ppf(*goodargs) + loc)
+        place(output,cond,self._ppf(*goodargs) + loc)
         return output
 
     def isf(self,q,*args,**kwds):
@@ -3613,11 +3613,11 @@ class rv_discrete:
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.b)
-        insert(output,(1-cond0)*(cond1==cond1), self.badvalue)
-        insert(output,cond2,self.a-1)
+        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
+        place(output,cond2,self.a-1)
         goodargs = argsreduce(cond, *((q,)+args+(loc,)))
         loc, goodargs = goodargs[-1], goodargs[:-1]
-        insert(output,cond,self._ppf(*goodargs) + loc)
+        place(output,cond,self._ppf(*goodargs) + loc)
         return output
 
     def stats(self, *args, **kwds):
@@ -3673,7 +3673,7 @@ class rv_discrete:
             if mu is None:
                 mu = self._munp(1.0,*goodargs)
             out0 = default.copy()
-            insert(out0,cond,mu+loc)
+            place(out0,cond,mu+loc)
             output.append(out0)
 
         if 'v' in moments:
@@ -3683,7 +3683,7 @@ class rv_discrete:
                     mu = self._munp(1.0,*goodargs)
                 mu2 = mu2p - mu*mu
             out0 = default.copy()
-            insert(out0,cond,mu2)
+            place(out0,cond,mu2)
             output.append(out0)
 
         if 's' in moments:
@@ -3697,7 +3697,7 @@ class rv_discrete:
                 mu3 = mu3p - 3*mu*mu2 - mu**3
                 g1 = mu3 / mu2**1.5
             out0 = default.copy()
-            insert(out0,cond,g1)
+            place(out0,cond,g1)
             output.append(out0)
 
         if 'k' in moments:
@@ -3714,7 +3714,7 @@ class rv_discrete:
                 mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
                 g2 = mu4 / mu2**2.0 - 3.0
             out0 = default.copy()
-            insert(out0,cond,g2)
+            place(out0,cond,g2)
             output.append(out0)
 
         if len(output) == 1:
@@ -3779,9 +3779,9 @@ class rv_discrete:
         args = map(arr,args)
         cond0 = self._argcheck(*args) & (loc==loc)
         output = zeros(shape(cond0),'d')
-        insert(output,(1-cond0),self.badvalue)
+        place(output,(1-cond0),self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        insert(output,cond0,self.vecentropy(*goodargs))
+        place(output,cond0,self.vecentropy(*goodargs))
         return output
 
     def __call__(self, *args, **kwds):

@@ -32,18 +32,18 @@ def diric(x,n):
     y = zeros(x.shape,ytype)
 
     mask1 = (n <= 0) | (n <> floor(n))
-    insert(y,mask1,nan)
+    place(y,mask1,nan)
 
     z = asarray(x / 2.0 / pi)
     mask2 = (1-mask1) & (z == floor(z))
     zsub = extract(mask2,z)
     nsub = extract(mask2,n)
-    insert(y,mask2,pow(-1,zsub*(nsub-1)))
+    place(y,mask2,pow(-1,zsub*(nsub-1)))
 
     mask = (1-mask1) & (1-mask2)
     xsub = extract(mask,x)
     nsub = extract(mask,n)
-    insert(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
+    place(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
     return y
 
 

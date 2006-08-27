@@ -3,7 +3,7 @@
 # Author: Travis Oliphant
 # 2003
 
-from numpy import asarray, zeros, insert, nan, mod, pi, extract, log, sqrt, \
+from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
      exp, cos, sin, size, polyval, polyint, log10
 
 def sawtooth(t,width=1):
@@ -23,7 +23,7 @@ def sawtooth(t,width=1):
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    insert(y,mask1,nan)
+    place(y,mask1,nan)
 
     # take t modulo 2*pi
     tmod = mod(t,2*pi)
@@ -33,7 +33,7 @@ def sawtooth(t,width=1):
     mask2 = (1-mask1) & (tmod < w*2*pi)
     tsub = extract(mask2,tmod)
     wsub = extract(mask2,w)
-    insert(y,mask2,tsub / (pi*wsub) - 1)
+    place(y,mask2,tsub / (pi*wsub) - 1)
 
     # on the interval width*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
@@ -41,7 +41,7 @@ def sawtooth(t,width=1):
     mask3 = (1-mask1) & (1-mask2)
     tsub = extract(mask3,tmod)
     wsub = extract(mask3,w)
-    insert(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
+    place(y,mask3, (pi*(wsub+1)-tsub)/(pi*(1-wsub)))
     return y
 
 
@@ -61,7 +61,7 @@ def square(t,duty=0.5):
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
-    insert(y,mask1,nan)
+    place(y,mask1,nan)
 
     # take t modulo 2*pi
     tmod = mod(t,2*pi)
@@ -71,7 +71,7 @@ def square(t,duty=0.5):
     mask2 = (1-mask1) & (tmod < w*2*pi)
     tsub = extract(mask2,tmod)
     wsub = extract(mask2,w)
-    insert(y,mask2,1)
+    place(y,mask2,1)
 
     # on the interval duty*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
@@ -79,7 +79,7 @@ def square(t,duty=0.5):
     mask3 = (1-mask1) & (1-mask2)
     tsub = extract(mask3,tmod)
     wsub = extract(mask3,w)
-    insert(y,mask3,-1)
+    place(y,mask3,-1)
     return y
 
 def gausspulse(t,fc=1000,bw=0.5,bwr=-6,tpr=-60,retquad=0,retenv=0):

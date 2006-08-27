@@ -9,7 +9,7 @@ import numpy
 
 from numpy import exp, asarray, arange, \
      newaxis, hstack, product, array, where, \
-     zeros, extract, insert, pi, sqrt, eye, poly1d, dot, r_
+     zeros, extract, place, pi, sqrt, eye, poly1d, dot, r_
 
 from numpy import who
 
@@ -81,8 +81,8 @@ def factorial2(n,exact=0):
         evenn = extract(cond2,n)
         nd2o = oddn / 2.0
         nd2e = evenn / 2.0
-        insert(vals,cond1,special.gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
-        insert(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
+        place(vals,cond1,special.gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
+        place(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
         return vals
 
 def factorialk(n,k,exact=1):
