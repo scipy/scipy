@@ -55,7 +55,7 @@ class LibSvmClassificationResults:
             d = {}
             labels = self.labels
             for v, (li, lj) in \
-                    izip(vv, chain(*[izip(repeat(x,axis=0), labels[i+1:])
+                    izip(vv, chain(*[izip(repeat(x), labels[i+1:])
                                      for i, x in enumerate(labels[:-1])])):
                 d[li, lj] = v
                 d[lj, li] = -v
