@@ -138,7 +138,7 @@ class Results(LikelihoodModelResults):
         """
         Return the R^2 value for each row of the response Y.
         """
-        self.Ssq = N.std(self.Z)**2
+        self.Ssq = N.std(self.Z,axis=0)**2
         ratio = self.scale / self.Ssq
         if not adjusted: ratio *= ((Y.shape[0] - 1) / self.df_resid)
         return 1 - ratio

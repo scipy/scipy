@@ -9,7 +9,7 @@ def _lin_fcn(B, x, sum=sb.sum):
     a, b = B[0], B[1:]
     b.shape = (b.shape[0], 1)
 
-    return a + sum(x*b)
+    return a + sum(x*b,axis=0)
 
 def _lin_fjb(B, x, concatenate=sb.concatenate, Float=sb.Float,
              ones=sb.ones, ravel=sb.ravel):
@@ -20,7 +20,7 @@ def _lin_fjb(B, x, concatenate=sb.concatenate, Float=sb.Float,
 
 def _lin_fjd(B, x, repeat=sb.repeat):
     b = B[1:]
-    b = repeat(b, (x.shape[-1],)*b.shape[-1])
+    b = repeat(b, (x.shape[-1],)*b.shape[-1],axis=0)
     b.shape = x.shape
     return b
 
@@ -40,7 +40,7 @@ def _poly_fcn(B, x, powers, power=sb.power, sum=sb.sum):
     a, b = B[0], B[1:]
     b.shape = (b.shape[0], 1)
 
-    return a + sum(b * power(x, powers))
+    return a + sum(b * power(x, powers),axis=0)
 
 def _poly_fjacb(B, x, powers, power=sb.power,
                 concatenate=sb.concatenate, Float=sb.Float, ones=sb.ones):
@@ -54,7 +54,7 @@ def _poly_fjacd(B, x, powers, power=sb.power, sum=sb.sum):
 
     b = b * powers
 
-    return sum(b * power(x, powers-1))
+    return sum(b * power(x, powers-1),axis=0)
 
 def _exp_fcn(B, x, exp=sb.exp):
     return B[0] + exp(B[1] * x)

@@ -15,7 +15,7 @@ import fitpack
 def reduce_sometrue(a):
     all = a
     while len(shape(all)) > 1:
-        all = sometrue(all)
+        all = sometrue(all,axis=0)
     return all
 
 class interp2d:
@@ -163,7 +163,7 @@ class interp1d:
         # 4. Calculate the slope of regions that each x_new value falls in.
         lo = x_new_indices - 1; hi = x_new_indices
 
-        # !! take() should default to the last axis (IMHO) and remove
+        # !! take(,axis=0) should default to the last axis (IMHO) and remove
         # !! the extra argument.
         x_lo = take(self.x,lo,axis=self.interp_axis)
         x_hi = take(self.x,hi,axis=self.interp_axis);
@@ -204,10 +204,10 @@ class interp1d:
         above_bounds = greater(x_new,self.x[-1])
         #  Note: sometrue has been redefined to handle length 0 arrays
         # !! Could provide more information about which values are out of bounds
-        if self.bounds_error and sometrue(below_bounds):
+        if self.bounds_error and sometrue(below_bounds,axis=0):
             raise ValueError, " A value in x_new is below the"\
                               " interpolation range."
-        if self.bounds_error and sometrue(above_bounds):
+        if self.bounds_error and sometrue(above_bounds,axis=0):
             raise ValueError, " A value in x_new is above the"\
                               " interpolation range."
         # !! Should we emit a warning if some values are out of bounds.

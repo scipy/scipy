@@ -141,9 +141,9 @@ def ss2tf(A, B, C, D, input=0):
 
     den = poly(A)
 
-    if (product(B.shape) == 0) and (product(C.shape) == 0):
+    if (product(B.shape,axis=0) == 0) and (product(C.shape,axis=0) == 0):
         num = numpy.ravel(D)
-        if (product(D.shape) == 0) and (product(A.shape) == 0):
+        if (product(D.shape,axis=0) == 0) and (product(A.shape,axis=0) == 0):
             den = []
         end
         return num, den

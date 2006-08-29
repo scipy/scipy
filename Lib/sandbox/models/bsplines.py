@@ -48,7 +48,7 @@ class BSpline:
         _shape = x.shape
         if _shape == ():
             x.shape = (1,)
-        x.shape = (N.product(_shape),)
+        x.shape = (N.product(_shape,axis=0),)
         if i < self.tau.shape[0] - 1:
             ## TODO: OWNDATA flags...
             v = _bspline.evaluate(x, self.tau, self.m, d, i, i+1)
@@ -65,7 +65,7 @@ class BSpline:
         _shape = x.shape
         if _shape == ():
             x.shape = (1,)
-        x.shape = (N.product(_shape),)
+        x.shape = (N.product(_shape,axis=0),)
 
         if upper is None:
             upper = self.tau.shape[0] - self.m 

@@ -39,7 +39,7 @@ class _test_cs:
         assert_equal(self.datsp[2,1],2)
 
     def check_sum(self):
-        """Does the matrix's sum() method work?
+        """Does the matrix's sum(,axis=0) method work?
         """
         assert_array_equal(self.dat.sum(), self.datsp.sum())
         assert_array_equal(self.dat.sum(axis=None), self.datsp.sum(axis=None))
@@ -47,7 +47,7 @@ class _test_cs:
         assert_array_equal(self.dat.sum(axis=1), self.datsp.sum(axis=1))
 
     def check_mean(self):
-        """Does the matrix's mean() method work?
+        """Does the matrix's mean(,axis=0) method work?
         """
         assert_array_equal(self.dat.mean(), self.datsp.mean())
         assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))

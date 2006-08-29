@@ -1768,11 +1768,11 @@ class Plotter :
                             val = s.val
                     elif s.plane is not None :
                         if len(s.val) == len (s.nv) :
-                            val = to_corners (s.val, s.nv, sum (s.nv))
+                            val = to_corners (s.val, s.nv, sum (s.nv,axis=0))
                         else :
                             val = s.val
                     else :
-                        val = ones (sum (s.nv), Float) * s.iso
+                        val = ones (sum (s.nv,axis=0), Float) * s.iso
                 else :
                     nv = concatenate ( (nv, s.nv))
                     x = concatenate ( (x, s.xyzv [:, 0]))
@@ -1784,13 +1784,13 @@ class Plotter :
                     elif s.plane is not None :
                         if len(s.val) == len (s.nv) :
                             val = concatenate ( (val,
-                               to_corners (s.val, s.nv, sum (s.nv))))
+                               to_corners (s.val, s.nv, sum (s.nv,axis=0))))
                         else :
                             val = concatenate ( (val, s.val))
                     else :
-                        val = concatenate ( (val, ones (sum (s.nv), Float) * s.iso))
+                        val = concatenate ( (val, ones (sum (s.nv,axis=0), Float) * s.iso))
             nc = len (nv)
-            nv = concatenate ( (cumsum (nv), arange (len (x))))
+            nv = concatenate ( (cumsum (nv,axis=0), arange (len (x))))
 ##        if isosurfaces_present :
 ##           self.set_palette (self.split_palette)
             self.set_color_card (graf._color_card)

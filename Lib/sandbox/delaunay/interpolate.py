@@ -126,7 +126,7 @@ class NNInterpolator(object):
     from its original Voronoi polygon, stolen[i]. We define the natural
     neighbors coordinates
 
-        phi[i] = stolen[i] / sum(stolen)
+        phi[i] = stolen[i] / sum(stolen,axis=0)
 
     We then use these phi[i] to weight the corresponding function values from
     the input data z to compute the interpolated value.

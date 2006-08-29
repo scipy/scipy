@@ -114,7 +114,7 @@ class LibSvmPythonPredictor:
             vote = N.zeros((nr_class, dec_values.shape[0]), N.uint32)
             classidx = range(nr_class)
             for pos, (i, j) in \
-                    enumerate(chain(*[izip(repeat(idx), classidx[k+1:])
+                    enumerate(chain(*[izip(repeat(idx,axis=0), classidx[k+1:])
                                       for k, idx in
                                       enumerate(classidx[:-1])])):
                 ji = N.array((j, i))

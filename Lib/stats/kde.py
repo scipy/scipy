@@ -108,15 +108,15 @@ class gaussian_kde(object):
             for i in range(self.n):
                 diff = self.dataset[:,i,newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff)/2.0
+                energy = sum(diff*tdiff,axis=0)/2.0
                 result += exp(-energy)
         else:
             # loop over points
             for i in range(m):
                 diff = self.dataset - points[:,i,newaxis]
                 tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff)/2.0
-                result[i] = sum(exp(-energy))
+                energy = sum(diff*tdiff,axis=0)/2.0
+                result[i] = sum(exp(-energy),axis=0)
 
         det_cov = linalg.det(2*pi*self.covariance)
         result /= sqrt(det_cov)*self.n
@@ -159,8 +159,8 @@ class gaussian_kde(object):
         diff = self.dataset - mean
         tdiff = dot(linalg.inv(sum_cov), diff)
 
-        energies = sum(diff*tdiff)/2.0
-        result = sum(exp(-energies))/sqrt(linalg.det(2*pi*sum_cov))/self.n
+        energies = sum(diff*tdiff,axis=0)/2.0
+        result = sum(exp(-energies),axis=0)/sqrt(linalg.det(2*pi*sum_cov))/self.n
 
         return result
 
@@ -256,8 +256,8 @@ class gaussian_kde(object):
             diff = large.dataset - mean
             tdiff = dot(linalg.inv(sum_cov), diff)
 
-            energies = sum(diff*tdiff)/2.0
-            result += sum(exp(-energies))
+            energies = sum(diff*tdiff,axis=0)/2.0
+            result += sum(exp(-energies),axis=0)
 
         result /= sqrt(linalg.det(2*pi*sum_cov))*large.n*small.n
 

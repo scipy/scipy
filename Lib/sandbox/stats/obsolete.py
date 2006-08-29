@@ -30,7 +30,7 @@ Use fastsort for speed.
 def summult(array1, array2, axis=0):
     """
 Multiplies elements in array1 and array2, element by element, and
-returns the sum (along 'axis') of all resulting multiplications.
+returns the sum (along 'axis',axis=0) of all resulting multiplications.
 Axis can equal None (ravel array first), or an integer (the
 axis over which to operate),
 """

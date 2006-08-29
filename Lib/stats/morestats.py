@@ -39,7 +39,7 @@ def find_repeats(arr):
 ###  Bayesian confidence intervals for mean, variance, std
 ##########################################################
 
-##  Assumes all is known is that mean, and std (variance) exist
+##  Assumes all is known is that mean, and std (variance,axis=0) exist
 ##   and are the same for all the data.  Uses Jeffrey's prior
 ##
 ##  Returns alpha confidence interval for the mean, variance,
@@ -142,7 +142,7 @@ def kstat(data,n=2):
     data = ravel(data)
     N = len(data)
     for k in range(1,n+1):
-        S[k] = sum(data**k)
+        S[k] = sum(data**k,axis=0)
     if n==1:
         return S[1]*1.0/N
     elif n==2:
@@ -309,8 +309,8 @@ def boxcox_llf(lmb, data):
     N = len(data)
     y = boxcox(data,lmb)
     my = stats.mean(y)
-    f = (lmb-1)*sum(log(data))
-    f -= N/2.0*log(sum((y-my)**2.0/N))
+    f = (lmb-1)*sum(log(data),axis=0)
+    f -= N/2.0*log(sum((y-my)**2.0/N,axis=0))
     return f
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -497,8 +497,8 @@ def anderson(x,dist='norm'):
             a,b = ab
             tmp = (xj-a)/b
             tmp2 = exp(tmp)
-            val = [sum(1.0/(1+tmp2))-0.5*N,
-                   sum(tmp*(1.0-tmp2)/(1+tmp2))+N]
+            val = [sum(1.0/(1+tmp2),axis=0)-0.5*N,
+                   sum(tmp*(1.0-tmp2)/(1+tmp2),axis=0)+N]
             return array(val)
         sol0=array([xbar,stats.std(x)])
         sol = optimize.fsolve(rootfunc,sol0,args=(x,N),xtol=1e-5)
@@ -510,17 +510,17 @@ def anderson(x,dist='norm'):
         def fixedsolve(th,xj,N):
             val = stats.sum(xj)*1.0/N
             tmp = exp(-xj/th)
-            term = sum(xj*tmp)
-            term /= sum(tmp)
+            term = sum(xj*tmp,axis=0)
+            term /= sum(tmp,axis=0)
             return val - term
         s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
-        xbar = -s*log(sum(exp(-x/s))*1.0/N)
+        xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
         w = (y-xbar)/s
         z = distributions.gumbel_l.cdf(w)
         sig = array([25,10,5,2.5,1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)),3)
     i = arange(1,N+1)
-    S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])))
+    S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])),axis=0)
     A2 = -N-S
     return A2, critical, sig
 
@@ -575,7 +575,7 @@ def ansari(x,y):
     xy = r_[x,y]  # combine
     rank = stats.rankdata(xy)
     symrank = amin(array((rank,N-rank+1)),0)
-    AB = sum(symrank[:n])
+    AB = sum(symrank[:n],axis=0)
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
     exact = ((m<55) and (n<55) and not repeats)
@@ -584,19 +584,19 @@ def ansari(x,y):
     if exact:
         astart, a1, ifault = statlib.gscale(n,m)
         ind = AB-astart
-        total = sum(a1)
+        total = sum(a1,axis=0)
         if ind < len(a1)/2.0:
             cind = int(ceil(ind))
             if (ind == cind):
-                pval = 2.0*sum(a1[:cind+1])/total
+                pval = 2.0*sum(a1[:cind+1],axis=0)/total
             else:
-                pval = 2.0*sum(a1[:cind])/total
+                pval = 2.0*sum(a1[:cind],axis=0)/total
         else:
             find = int(floor(ind))
             if (ind == floor(ind)):
-                pval = 2.0*sum(a1[find:])/total
+                pval = 2.0*sum(a1[find:],axis=0)/total
             else:
-                pval = 2.0*sum(a1[find+1:])/total
+                pval = 2.0*sum(a1[find+1:],axis=0)/total
         return AB, min(1.0,pval)
 
     # otherwise compute normal approximation
@@ -607,8 +607,8 @@ def ansari(x,y):
         mnAB = n*(N+2.0)/4.0
         varAB = m*n*(N+2)*(N-2.0)/48/(N-1.0)
     if repeats:   # adjust variance estimates
-        # compute sum(tj * rj**2)
-        fac = sum(symrank**2)
+        # compute sum(tj * rj**2,axis=0)
+        fac = sum(symrank**2,axis=0)
         if N % 2: # N odd
             varAB = m*n*(16*N*fac-(N+1)**4)/(16.0 * N**2 * (N-1))
         else:  # N even
@@ -648,10 +648,10 @@ def bartlett(*args):
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = stats.var(args[j])
-    Ntot = sum(Ni)
-    spsq = sum((Ni-1)*ssq)/(1.0*(Ntot-k))
-    numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq))
-    denom = 1.0 + (1.0/(3*(k-1)))*((sum(1.0/(Ni-1.0)))-1.0/(Ntot-k))
+    Ntot = sum(Ni,axis=0)
+    spsq = sum((Ni-1)*ssq,axis=0)/(1.0*(Ntot-k))
+    numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq),axis=0)
+    denom = 1.0 + (1.0/(3*(k-1)))*((sum(1.0/(Ni-1.0),axis=0))-1.0/(Ntot-k))
     T = numer / denom
     pval = distributions.chi2.sf(T,k-1) # 1 - cdf
     return T, pval
@@ -707,7 +707,7 @@ def levene(*args,**kwds):
     for j in range(k):
         Ni[j] = len(args[j])
         Yci[j] = func(args[j])
-    Ntot = sum(Ni)
+    Ntot = sum(Ni,axis=0)
 
     # compute Zij's
     Zij = [None]*k
@@ -721,12 +721,12 @@ def levene(*args,**kwds):
         Zbar += Zbari[i]*Ni[i]
     Zbar /= Ntot
 
-    numer = (Ntot-k)*sum(Ni*(Zbari-Zbar)**2)
+    numer = (Ntot-k)*sum(Ni*(Zbari-Zbar)**2,axis=0)
 
     # compute denom_variance
     dvar = 0.0
     for i in range(k):
-        dvar += sum((Zij[i]-Zbari[i])**2)
+        dvar += sum((Zij[i]-Zbari[i])**2,axis=0)
 
     denom = (k-1.0)*dvar
 
@@ -767,11 +767,11 @@ def binom_test(x,n=None,p=0.5):
     rerr = 1+1e-7
     if (x < p*n):
         i = arange(x+1,n+1)
-        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr)
+        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
     else:
         i = arange(0,x)
-        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr)
+        y = sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(y-1,n,p) + distributions.binom.sf(x-1,n,p)
 
     return min(1.0,pval)
@@ -828,7 +828,7 @@ def fligner(*args,**kwds):
 
     Ni = asarray([len(args[j]) for j in range(k)])
     Yci = asarray([func(args[j]) for j in range(k)])
-    Ntot = sum(Ni)
+    Ntot = sum(Ni,axis=0)
     # compute Zij's
     Zij = [abs(asarray(args[i])-Yci[i]) for i in range(k)]
     allZij = []
@@ -844,7 +844,7 @@ def fligner(*args,**kwds):
     anbar = stats.mean(a)
     varsq = stats.var(a)
 
-    Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0)/varsq
+    Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
 
     pval = distributions.chi2.sf(Xsq,k-1) # 1 - cdf
     return Xsq, pval
@@ -869,7 +869,7 @@ def mood(x,y):
         raise ValueError, "Not enough observations."
     ranks = stats.rankdata(xy)
     Ri = ranks[:n]
-    M = sum((Ri - (N+1.0)/2)**2)
+    M = sum((Ri - (N+1.0)/2)**2,axis=0)
     # Approx stat.
     mnM = n*(N*N-1.0)/12
     varM = m*n*(N+1.0)*(N+2)*(N-2)/180
@@ -903,16 +903,16 @@ def oneway(*args,**kwds):
     Mi = array([stats.mean(args[i]) for i in range(k)])
     Vi = array([stats.var(args[i]) for i in range(k)])
     Wi = Ni / Vi
-    swi = sum(Wi)
-    N = sum(Ni)
-    my = sum(Mi*Ni)*1.0/N
-    tmp = sum((1-Wi/swi)**2 / (Ni-1.0))/(k*k-1.0)
+    swi = sum(Wi,axis=0)
+    N = sum(Ni,axis=0)
+    my = sum(Mi*Ni,axis=0)*1.0/N
+    tmp = sum((1-Wi/swi)**2 / (Ni-1.0),axis=0)/(k*k-1.0)
     if evar:
-        F = ((sum(Ni*(Mi-my)**2) / (k-1.0)) / (sum((Ni-1.0)*Vi) / (N-k)))
+        F = ((sum(Ni*(Mi-my)**2,axis=0) / (k-1.0)) / (sum((Ni-1.0)*Vi,axis=0) / (N-k)))
         pval = distributions.f.sf(F,k-1,N-k)  # 1-cdf
     else:
-        m = sum(Wi*Mi)*1.0/swi
-        F = sum(Wi*(Mi-m)**2) / ((k-1.0)*(1+2*(k-2)*tmp))
+        m = sum(Wi*Mi,axis=0)*1.0/swi
+        F = sum(Wi*(Mi-m)**2,axis=0) / ((k-1.0)*(1+2*(k-2)*tmp))
         pval = distributions.f.sf(F,k-1.0,1.0/(3*tmp))
 
     return F, pval
@@ -932,13 +932,13 @@ Returns: t-statistic, two-tailed p-value
         if len(x) <> len(y):
             raise ValueError, 'Unequal N in wilcoxon.  Aborting.'
         d = x-y
-    d = compress(not_equal(d,0),d) # Keep all non-zero differences
+    d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
     count = len(d)
     if (count < 10):
         print "Warning: sample size too small for normal approximation."
     r = stats.rankdata(abs(d))
-    r_plus = sum((d > 0)*r)
-    r_minus = sum((d < 0)*r)
+    r_plus = sum((d > 0)*r,axis=0)
+    r_minus = sum((d < 0)*r,axis=0)
     T = min(r_plus, r_minus)
     mn = count*(count+1.0)*0.25
     se = math.sqrt(count*(count+1)*(2*count+1.0)/24)

@@ -29,7 +29,7 @@ def demo () :
     n_zones = f.NumZones
     # Put vertices in right order for Gist
 ## n_z = transpose (
-##    take (transpose (n_z), array ( [0, 1, 3, 2, 4, 5, 7, 6])))
+##    take (transpose (n_z), array ( [0, 1, 3, 2, 4, 5, 7, 6]),axis=0))
 
     m1 = Mesh3d (x = x, y = y, z = z, c = c, avs = 1, hex = [n_zones, n_z])
 

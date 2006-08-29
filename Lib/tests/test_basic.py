@@ -269,7 +269,7 @@ class test_amin(unittest.TestCase):
 class test_ptp(unittest.TestCase):
     def check_basic(self):
         a = [3,4,5,10,-3,-5,6.0]
-        assert_equal(ptp(a),15.0)
+        assert_equal(ptp(a,axis=0),15.0)
         b = [[3,6.0, 9.0],
              [4,10.0,5.0],
              [8,3.0,2.0]]
@@ -284,8 +284,8 @@ class test_cumsum(unittest.TestCase):
         for ctype in ['1','b','s','i','l','f','d','F','D']:
             a = array(ba,ctype)
             a2 = array(ba2,ctype)
-            assert_array_equal(cumsum(a), array([1,3,13,24,30,35,39],ctype))
-            assert_array_equal(cumsum(a2),
+            assert_array_equal(cumsum(a,axis=0), array([1,3,13,24,30,35,39],ctype))
+            assert_array_equal(cumsum(a2,axis=0),
                                array([[1,2,3,4],[6,8,10,13],
                                       [16,11,14,18]],ctype))
             assert_array_equal(cumsum(a2,axis=1),
@@ -305,8 +305,8 @@ class test_prod(unittest.TestCase):
                 self.failUnlessRaises(ArithmeticError, prod, a2, 1)
                 self.failUnlessRaises(ArithmeticError, prod, a)
             else:
-                assert_equal(prod(a),26400)
-                assert_array_equal(prod(a2), array([50,36,84,180],ctype))
+                assert_equal(prod(a,axis=0),26400)
+                assert_array_equal(prod(a2,axis=0), array([50,36,84,180],ctype))
                 assert_array_equal(prod(a2,axis=1),
                                    array([24, 1890, 600],ctype))
 
@@ -322,10 +322,10 @@ class test_cumprod(unittest.TestCase):
                 self.failUnlessRaises(ArithmeticError, cumprod, a2, 1)
                 self.failUnlessRaises(ArithmeticError, cumprod, a)
             else:
-                assert_array_equal(cumprod(a),
+                assert_array_equal(cumprod(a,axis=0),
                                    array([1, 2, 20, 220,
                                           1320, 6600, 26400],ctype))
-                assert_array_equal(cumprod(a2),
+                assert_array_equal(cumprod(a2,axis=0),
                                    array([[ 1,  2,  3,   4],
                                           [ 5, 12, 21,  36],
                                           [50, 36, 84, 180]],ctype))

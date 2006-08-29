@@ -90,7 +90,7 @@ class test_blitz(ScipyTestCase):
             print diff[:4,-4:]
             print diff[-4:,:4]
             print diff[-4:,-4:]
-            print sum(abs(diff.ravel()))
+            print sum(abs(diff.ravel()),axis=0)
             raise AssertionError
         return standard,compiled
 

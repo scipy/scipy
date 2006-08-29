@@ -284,7 +284,7 @@ def nanstd(x, axis=0, bias=False):
 
 def _nanmedian(arr1d):  # This only works on 1d arrays
     cond = 1-isnan(arr1d)
-    x = sort(compress(cond,arr1d))
+    x = sort(compress(cond,arr1d,axis=-1))
     return median(x)
 
 def nanmedian(x, axis=0):
@@ -340,7 +340,7 @@ def hmean(a, axis=0):
     return size / np.sum(1.0/a, axis)
 
 def mean(a, axis=0):
-    # fixme: This seems to be redundant with numpy.mean() or even
+    # fixme: This seems to be redundant with numpy.mean(,axis=0) or even
     # the ndarray.mean() method.
     """Returns the arithmetic mean of m along the given dimension.
 
@@ -945,7 +945,7 @@ the data(!).
 Returns: percentile-position of score (0-100) relative to a
 """
     h, lrl, binsize, extras = histogram(a,histbins,defaultlimits)
-    cumhist = cumsum(h*1)
+    cumhist = cumsum(h*1,axis=0)
     i = int((score - lrl)/float(binsize))
     pct = (cumhist[i-1]+((score-(lrl+binsize*i))/float(binsize))*h[i])/float(len(a)) * 100
     return pct
@@ -1031,7 +1031,7 @@ lower and upper limits on values to include.
 Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 """
     h,l,b,e = histogram(a,numbins,defaultreallimits)
-    cumhist = cumsum(h*1)
+    cumhist = cumsum(h*1,axis=0)
     return cumhist,l,b,e
 
 
@@ -1267,7 +1267,7 @@ def trim_mean(a, proportiontocut):
     upper tails.
     """
     newa = trimboth(sort(a),proportiontocut)
-    return mean(newa)
+    return mean(newa,axis=0)
 
 
 
@@ -1734,7 +1734,7 @@ Returns: chisquare-statistic, associated p-value
     f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
-        f_exp = array([sum(f_obs)/float(k)] * len(f_obs),Float)
+        f_exp = array([sum(f_obs,axis=0)/float(k)] * len(f_obs),Float)
     f_exp = f_exp.astype(Float)
     chisq = add.reduce((f_obs-f_exp)**2 / f_exp)
     return chisq, chisqprob(chisq, k-1)
@@ -1797,7 +1797,7 @@ Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
     ranked = rankdata(concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
     #ranky = ranked[n1:]        # the rest are y-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - sum(rankx)  # calc U for x
+    u1 = n1*n2 + (n1*(n1+1))/2.0 - sum(rankx,axis=0)  # calc U for x
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
     smallu = min(u1,u2)
@@ -1848,7 +1848,7 @@ Returns: z-statistic, two-tailed p-value
     ranked = rankdata(alldata)
     x = ranked[:n1]
     y = ranked[n1:]
-    s = sum(x)
+    s = sum(x,axis=0)
     expected = n1*(n1+n2+1) / 2.0
     z = (s - expected) / math.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2*(1.0 -zprob(abs(z)))
@@ -1878,10 +1878,10 @@ Returns: H-statistic (corrected for ties), associated p-value
         del ranked[0:n[i]]
     rsums = []
     for i in range(len(args)):
-        rsums.append(sum(args[i])**2)
+        rsums.append(sum(args[i],axis=0)**2)
         rsums[i] = rsums[i] / float(n[i])
-    ssbn = sum(rsums)
-    totaln = sum(n)
+    ssbn = sum(rsums,axis=0)
+    totaln = sum(n,axis=0)
     h = 12.0 / (totaln*(totaln+1)) * ssbn - 3*(totaln+1)
     df = len(args) - 1
     if T == 0:
@@ -1909,7 +1909,7 @@ Returns: chi-square statistic, associated p-value
     data = data.astype(Float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
-    ssbn = sum(sum(args,1)**2)
+    ssbn = sum(sum(args,1)**2,axis=0)
     chisq = 12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)
     return chisq, chisqprob(chisq,k-1)
 
@@ -1998,7 +1998,7 @@ Returns: statistic, p-value ???
     if len(p) == 2:  # ttest_ind
         c = array([1,-1])
         df = n-2
-        fact = sum(1.0/sum(x,0))  # i.e., 1/n1 + 1/n2 + 1/n3 ...
+        fact = sum(1.0/sum(x,0),axis=0)  # i.e., 1/n1 + 1/n2 + 1/n3 ...
         t = dot(c,b) / sqrt(s_sq*fact)
         probs = betai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs

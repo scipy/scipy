@@ -34,7 +34,7 @@ def _logsumexpcomplex(values):
     complex-numbered, such as the output of robustarraylog().  So we
     expect:
 
-    cmath.exp(logsumexpcomplex(robustarraylog(values))) ~= sum(values)
+    cmath.exp(logsumexpcomplex(robustarraylog(values))) ~= sum(values,axis=0)
 
     except for a small rounding error in both real and imag components.
     The output is complex.  (To recover just the real component, use

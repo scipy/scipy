@@ -45,7 +45,7 @@ from scipy import stats
 #        S[i] = y_i
 #      else:
 #        Sa[i] = y_i
-#      if alltrue(shift):
+#      if alltrue(shift,axis=0):
 #        Find graph minima of f(x) using the Ng best points in S.
 #        Do local search from each minimum.
 #        Replace worst Ng points in S with best Ng points in Sa.

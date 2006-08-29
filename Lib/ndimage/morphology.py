@@ -100,7 +100,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise RuntimeError, 'structure rank must equal input rank'
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if numarray.product(structure.shape) < 1:
+    if numarray.product(structure.shape,axis=0) < 1:
         raise RuntimeError, 'structure must not be empty'
     if mask is not None:
         mask = numarray.asarray(mask)
@@ -659,7 +659,7 @@ def distance_transform_cdt(input, structure = 'chessboard',
         dt = numarray.where(input, -1, 0).astype(numarray.Int32)
     rank = dt.ndim
     if return_indices:
-        sz = numarray.product(dt.shape)
+        sz = numarray.product(dt.shape,axis=0)
         ft = numarray.arange(sz, dtype = numarray.Int32)
         ft.shape = dt.shape
     else:

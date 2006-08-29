@@ -68,7 +68,7 @@ def correlate(in1, in2, mode='full'):
     kernel = asarray(in2)
     if rank(volume) == rank(kernel) == 0:
         return volume*kernel
-    if (product(kernel.shape) > product(volume.shape)):
+    if (product(kernel.shape,axis=0) > product(volume.shape,axis=0)):
         temp = kernel
         kernel = volume
         volume = temp
@@ -105,7 +105,7 @@ def fftconvolve(in1, in2, mode="full"):
     if mode == "full":
         return ret
     elif mode == "same":
-        if product(s1) > product(s2):
+        if product(s1,axis=0) > product(s2,axis=0):
             osize = s1
         else:
             osize = s2
@@ -144,7 +144,7 @@ def convolve(in1, in2, mode='full'):
     kernel = asarray(in2)
     if rank(volume) == rank(kernel) == 0:
         return volume*kernel
-    if (product(kernel.shape) > product(volume.shape)):
+    if (product(kernel.shape,axis=0) > product(volume.shape,axis=0)):
         temp = kernel
         kernel = volume
         volume = temp
@@ -225,7 +225,7 @@ def medfilt(volume,kernel_size=None):
 
     domain = ones(kernel_size)
 
-    numels = product(kernel_size)
+    numels = product(kernel_size,axis=0)
     order = int(numels/2)
     return sigtools._order_filterND(volume,domain,order)
 
@@ -258,14 +258,14 @@ def wiener(im,mysize=None,noise=None):
     mysize = asarray(mysize);
 
     # Estimate the local mean
-    lMean = correlate(im,ones(mysize),1) / product(mysize)
+    lMean = correlate(im,ones(mysize),1) / product(mysize,axis=0)
 
     # Estimate the local variance
-    lVar = correlate(im**2,ones(mysize),1) / product(mysize) - lMean**2
+    lVar = correlate(im**2,ones(mysize),1) / product(mysize,axis=0) - lMean**2
 
     # Estimate the noise power if needed.
     if noise==None:
-        noise = mean(ravel(lVar))
+        noise = mean(ravel(lVar),axis=0)
 
     res = (im - lMean)
     res *= (1-noise / lVar)
@@ -527,10 +527,10 @@ def lfiltic(b,a,y,x=None):
         y = r_[y,zeros(N-L)]
 
     for m in range(M):
-        zi[m] = sum(b[m+1:]*x[:M-m])
+        zi[m] = sum(b[m+1:]*x[:M-m],axis=0)
 
     for m in range(N):
-        zi[m] -= sum(a[m+1:]*y[:N-m])
+        zi[m] -= sum(a[m+1:]*y[:N-m],axis=0)
 
     return zi
 
@@ -808,7 +808,7 @@ def slepian(M,width,sym=1):
     k = m[newaxis,:]
     AF = twoF*special.sinc(twoF*(n-k))
     [lam,vec] = linalg.eig(AF)
-    ind = argmax(abs(lam))
+    ind = argmax(abs(lam),axis=-1)
     w = abs(vec[:,ind])
     w = w / max(w)
 
@@ -1328,7 +1328,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         rnk = len(dshape)
         if axis < 0: axis = axis + rnk
         newdims = r_[axis,0:axis,axis+1:rnk]
-        newdata = reshape(transpose(data,tuple(newdims)),(N,prod(dshape)/N))
+        newdata = reshape(transpose(data,tuple(newdims)),(N,prod(dshape,axis=0)/N))
         newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)

@@ -62,19 +62,19 @@ def unique1d( ar1, retIndx = False ):
     ar = numpy.array( ar1 ).ravel()
     if retIndx:
         perm = numpy.argsort( ar )
-        aux = numpy.take( ar, perm 0)
+        aux = numpy.take( ar, perm 0,axis=0)
         flag = ediff1d( aux, 1 ) != 0
-        return numpy.compress( flag, perm ), numpy.compress( flag, aux )
+        return numpy.compress( flag, perm ,axis=-1), numpy.compress( flag, aux ,axis=-1)
     else:
         aux = numpy.sort( ar )
-        return numpy.compress( ediff1d( aux, 1 ) != 0, aux )
+        return numpy.compress( ediff1d( aux, 1 ) != 0, aux ,axis=-1)
 
 ##
 # 01.11.2005, c
 def intersect1d( ar1, ar2 ):
     """Intersection of 1D arrays with unique elements."""
     aux = numpy.sort( numpy.concatenate( (ar1, ar2 ) ) )
-    return numpy.compress( (aux[1:] - aux[:-1]) == 0, aux )
+    return numpy.compress( (aux[1:] - aux[:-1]) == 0, aux ,axis=-1)
 
 ##
 # 01.11.2005, c
@@ -83,7 +83,7 @@ def intersect1d_nu( ar1, ar2 ):
     # Might be faster then unique1d( intersect1d( ar1, ar2 ) )?
     aux = numpy.sort( numpy.concatenate( (unique1d( ar1 ),
                                           unique1d( ar2  )) ) )
-    return numpy.compress( (aux[1:] - aux[:-1]) == 0, aux )
+    return numpy.compress( (aux[1:] - aux[:-1]) == 0, aux ,axis=-1)
 
 ##
 # 01.11.2005, c
@@ -92,7 +92,7 @@ def setxor1d( ar1, ar2 ):
     aux = numpy.sort( numpy.concatenate( (ar1, ar2 ) ) )
     flag = ediff1d( aux, toEnd = 1, toBegin = 1 ) == 0
     flag2 = ediff1d( flag, 0 ) == 0
-    return numpy.compress( flag2, aux )
+    return numpy.compress( flag2, aux ,axis=-1)
 
 ##
 # 03.11.2005, c
@@ -128,7 +128,7 @@ def union1d( ar1, ar2 ):
 def setdiff1d( ar1, ar2 ):
     """Set difference of 1D arrays with unique elements."""
     aux = setmember1d( ar1, ar2 )
-    return numpy.compress( aux == 0, ar1 )
+    return numpy.compress( aux == 0, ar1 ,axis=-1)
 
 ##
 # 03.11.2005, c
@@ -138,7 +138,7 @@ def test_unique1d():
 
     ec = numpy.array( [1, 2, 5, 7] )
     c = unique1d( a )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 ##
 # 03.11.2005, c
@@ -149,7 +149,7 @@ def test_intersect1d():
 
     ec = numpy.array( [1, 2, 5] )
     c = intersect1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 ##
 # 03.11.2005, c
@@ -160,7 +160,7 @@ def test_intersect1d_nu():
 
     ec = numpy.array( [1, 2, 5] )
     c = intersect1d_nu( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 ##
 # 03.11.2005, c
@@ -171,21 +171,21 @@ def test_setxor1d():
 
     ec = numpy.array( [3, 4, 7] )
     c = setxor1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
     a = numpy.array( [1, 2, 3] )
     b = numpy.array( [6, 5, 4] )
 
     ec = numpy.array( [1, 2, 3, 4, 5, 6] )
     c = setxor1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
     a = numpy.array( [1, 8, 2, 3] )
     b = numpy.array( [6, 5, 4, 8] )
 
     ec = numpy.array( [1, 2, 3, 4, 5, 6] )
     c = setxor1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 
 ##
@@ -197,17 +197,17 @@ def test_setmember1d():
 
     ec = numpy.array( [True, False, True, True] )
     c = setmember1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
     a[0] = 8
     ec = numpy.array( [False, False, True, True] )
     c = setmember1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
     a[0], a[3] = 4, 8
     ec = numpy.array( [True, False, True, False] )
     c = setmember1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 ##
 # 03.11.2005, c
@@ -218,7 +218,7 @@ def test_union1d():
 
     ec = numpy.array( [1, 2, 3, 4, 5, 7] )
     c = union1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 ##
 # 03.11.2005, c
@@ -229,7 +229,7 @@ def test_setdiff1d():
 
     ec = numpy.array( [6, 7] )
     c = setdiff1d( a, b )
-    assert numpy.alltrue( c == ec )
+    assert numpy.alltrue( c == ec ,axis=0)
 
 ##
 # 03.11.2005, c
@@ -241,7 +241,7 @@ def test_manyways():
 
     c1 = intersect1d_nu( a, b )
     c2 = unique1d( intersect1d( a, b ) )
-    assert numpy.alltrue( c1 == c2 )
+    assert numpy.alltrue( c1 == c2 ,axis=0)
 
     a = numpy.array( [5, 7, 1, 2, 8] )
     b = numpy.array( [9, 8, 2, 4, 3, 1, 5] )
@@ -250,7 +250,7 @@ def test_manyways():
     aux1 = intersect1d( a, b )
     aux2 = union1d( a, b )
     c2 = setdiff1d( aux2, aux1 )
-    assert numpy.alltrue( c1 == c2 )
+    assert numpy.alltrue( c1 == c2 ,axis=0)
 
 ##
 # 02.11.2005, c
@@ -292,7 +292,7 @@ def test_unique1d_speed( plotResults = False ):
         dt1s.append( dt1 )
         dt2s.append( dt2 )
 
-        assert numpy.alltrue( b == c )
+        assert numpy.alltrue( b == c ,axis=0)
 
 
     print nItems

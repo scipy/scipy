@@ -273,7 +273,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     Optional input:
       shape
         Defines the shape of the Fourier transform. If shape is not
-        specified then shape=take(x.shape,axes).
+        specified then shape=take(x.shape,axes,axis=0).
         If shape[i]>x.shape[i] then the i-th dimension is padded with
         zeros. If shape[i]<x.shape[i], then the i-th dimension is
         truncated to desired length shape[i].

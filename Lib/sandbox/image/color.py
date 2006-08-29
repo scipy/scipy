@@ -63,7 +63,7 @@ rgbp_from_ycbcr = scipy.linalg.inv(ycbcr_from_rgbp)
 # Vos, Estevez, and Walraven (1990)
 # with alteration in S-cone sensitivity from
 #  Stockman and Sharpe (2000)
-# scaled so that sum(LMS) has a peak of 1
+# scaled so that sum(LMS,axis=0) has a peak of 1
 #  just like LMS_from_XYZ
 
 lms_from_rgbsb = [[0.14266235473644004, 0.49009667755566039,

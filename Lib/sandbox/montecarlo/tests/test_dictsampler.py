@@ -37,7 +37,7 @@ class test_dictsampler(ScipyTestCase):
         #import pdb
         #pdb.set_trace()
         s = sampler.sample(n)
-        assert sum(s[i]=='b' for i in range(n))*1./n > 0.75
+        assert sum(s[i]=='b' for i in range(n),axis=0)*1./n > 0.75
 
         #lam = 10.0
         #n = 35
@@ -68,8 +68,8 @@ class test_dictsampler(ScipyTestCase):
         v = x.var()
         assert x.max() == 4
         assert x.min() == 0
-        assert sum(x==3) == 0
-        assert 0.08 < average(x==1) < 0.12
+        assert sum(x==3,axis=0) == 0
+        assert 0.08 < average(x==1,axis=0) < 0.12
         # Use a normal approx for confidence intervals for the mean
         z = 2.5758   # = norminv(0.995), for a 1% confidence interval
         assert abs(m - truemean) < z * sqrt(truevar/numsamples)

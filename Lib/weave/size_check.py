@@ -127,7 +127,7 @@ class dummy_array:
             return 0
         if len(self.shape) == len(other.shape) == 0:
             return 0
-        return not alltrue(equal(self.shape,other.shape))
+        return not alltrue(equal(self.shape,other.shape),axis=0)
 
     def __add__(self,other): return self.binary_op(other)
     def __radd__(self,other): return self.binary_op(other)

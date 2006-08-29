@@ -174,7 +174,7 @@ class fopen(object):
         if mtype is None:
             mtype = data.dtype.char
         howmany,mtype = getsize_type(mtype)
-        count = product(data.shape)
+        count = product(data.shape,axis=0)
         numpyio.fwrite(self.file,count,data,mtype,bs)
         return
 
@@ -215,20 +215,20 @@ class fopen(object):
             # allow -1 to specify unknown dimension size as in reshape
             minus_ones = shape.count(-1)
             if minus_ones == 0:
-                count = product(shape)
+                count = product(shape,axis=0)
             elif minus_ones == 1:
                 now = self.tell()
                 self.seek(0,2)
                 end = self.tell()
                 self.seek(now)
                 remaining_bytes = end - now
-                know_dimensions_size = -product(count) * getsize_type(stype)[0]
+                know_dimensions_size = -product(count,axis=0) * getsize_type(stype)[0]
                 unknown_dimension_size, illegal = divmod(remaining_bytes,
                                                          know_dimensions_size)
                 if illegal:
                     raise ValueError("unknown dimension doesn't match filesize")
                 shape[shape.index(-1)] = unknown_dimension_size
-                count = product(shape)
+                count = product(shape,axis=0)
             else:
                 raise ValueError(
                     "illegal count; can only specify one unknown dimension")
@@ -302,7 +302,7 @@ class fopen(object):
                 sz,mtype = getsize_type(args[0])
             else:
                 sz,mtype = getsize_type(fmt.dtype.char)
-            count = product(fmt.shape)
+            count = product(fmt.shape,axis=0)
             strlen = struct.pack(nfmt,count*sz)
             self.write(strlen)
             numpyio.fwrite(self.file,count,fmt,mtype,self.bs)
@@ -579,7 +579,7 @@ def _parse_mimatrix(fid,bytes):
             dims = result.shape
             if len(dims) >= 2: # return array of strings
                 n_dims = dims[:-1]
-                string_arr = reshape(result, (product(n_dims), dims[-1]))
+                string_arr = reshape(result, (product(n_dims,axis=0), dims[-1]))
                 result = empty(n_dims, dtype=object)
                 for i in range(0, n_dims[-1]):
                     result[...,i] = string_arr[i].tostring().decode(en)
@@ -595,7 +595,7 @@ def _parse_mimatrix(fid,bytes):
             result = squeeze(transpose(reshape(result,tupdims)))
             
     elif dclass == mxCELL_CLASS:
-        length = product(dims)
+        length = product(dims,axis=0)
         result = empty(length, dtype=object)
         for i in range(length):
             result[i] = _get_element(fid)
@@ -604,7 +604,7 @@ def _parse_mimatrix(fid,bytes):
             result = result.item()
 
     elif dclass == mxSTRUCT_CLASS:
-        length = product(dims)
+        length = product(dims,axis=0)
         result = zeros(length, object)
         namelength = _get_element(fid)
         # get field names
@@ -624,7 +624,7 @@ def _parse_mimatrix(fid,bytes):
         # object is like a structure with but with a class name
     elif dclass == mxOBJECT_CLASS:
         class_name = _get_element(fid).tostring()
-        length = product(dims)
+        length = product(dims,axis=0)
         result = zeros(length, object)
         namelength = _get_element(fid)
         # get field names
@@ -922,7 +922,7 @@ def savemat(filename, mdict):
         var = transpose(var)
 
         if len(var.shape) > 2:
-            var=var.reshape((product(var.shape[:-1]), var.shape[-1]))
+            var=var.reshape((product(var.shape[:-1],axis=0), var.shape[-1]))
 
         imagf = var.dtype.char in ['F', 'D']
         fid.fwrite([var.shape[1], var.shape[0], imagf, len(variable)+1],'int')

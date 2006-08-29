@@ -133,7 +133,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
               If task=-1 find the weighted least square spline for a given set of
                 knots, t.
       s -- A smoothing condition.  The amount of smoothness is determined by
-           satisfying the conditions: sum((w * (y - g))**2) <= s where
+           satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s where
            g(x) is the smoothed interpolation of (x,y).  The user can use s to
            control the tradeoff between closeness and smoothness of fit.  Larger
            s means more smoothing while smaller values of s indicate less
@@ -278,7 +278,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
                 a given set of knots, t.  These should be interior knots
                 as knots on the ends will be added automatically.
       s -- A smoothing condition.  The amount of smoothness is determined by
-           satisfying the conditions: sum((w * (y - g))**2) <= s where
+           satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s where
            g(x) is the smoothed interpolation of (x,y).  The user can use s to
            control the tradeoff between closeness and smoothness of fit.  Larger
            s means more smoothing while smaller values of s indicate less

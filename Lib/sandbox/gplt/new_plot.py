@@ -7,8 +7,8 @@ from pyPlot import *
 
 def squeeze(a):
     s = shape(a)
-    dims = len(s) - sum(equal(1,s))
-    new_s = compress(not_equal(1,s),s)
+    dims = len(s) - sum(equal(1,s),axis=0)
+    new_s = compress(not_equal(1,s),s,axis=-1)
     return reshape(a,new_s)
 
 

@@ -49,8 +49,8 @@ class test_numexpr(NumpyTestCase):
                      ('prod_ffn', 'r0', 't3', 2)])
         # Check that full reductions work.
         x = arange(10.0)
-        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2))
-        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2))
+        assert_equal(evaluate("sum(x**2+2,axis=0)"), sum(x**2+2,axis=0))
+        assert_equal(evaluate("prod(x**2+2,axis=0)"), prod(x**2+2,axis=0))
         # Check that reductions along an axis work
         y = arange(9.0).reshape(3,3)
         assert_equal(evaluate("sum(y**2, axis=1)"), sum(y**2, axis=1))
@@ -61,16 +61,16 @@ class test_numexpr(NumpyTestCase):
         assert_equal(evaluate("prod(y**2, axis=None)"), prod(y**2, axis=None))
         # Check integers
         x = x.astype(int)
-        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2))
-        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2))
+        assert_equal(evaluate("sum(x**2+2,axis=0)"), sum(x**2+2,axis=0))
+        assert_equal(evaluate("prod(x**2+2,axis=0)"), prod(x**2+2,axis=0))
         # Check complex
         x = x + 5j
-        assert_equal(evaluate("sum(x**2+2)"), sum(x**2+2))
-        assert_equal(evaluate("prod(x**2+2)"), prod(x**2+2))
+        assert_equal(evaluate("sum(x**2+2,axis=0)"), sum(x**2+2,axis=0))
+        assert_equal(evaluate("prod(x**2+2,axis=0)"), prod(x**2+2,axis=0))
         # Check boolean (should cast to integer)
         x = (arange(10) % 2).astype(bool)
-        assert_equal(evaluate("prod(x)"), prod(x))
-        assert_equal(evaluate("sum(x)"), sum(x))
+        assert_equal(evaluate("prod(x,axis=0)"), prod(x,axis=0))
+        assert_equal(evaluate("sum(x,axis=0)"), sum(x,axis=0))
         
     def check_axis(self):
         y = arange(9.0).reshape(3,3)
@@ -216,9 +216,9 @@ tests.append(('POW TESTS', powtests))
 
 def equal(a, b, exact):
     if exact:
-        return (shape(a) == shape(b)) and alltrue(ravel(a) == ravel(b))
+        return (shape(a) == shape(b)) and alltrue(ravel(a) == ravel(b),axis=0)
     else:
-        return (shape(a) == shape(b)) and (allclose(ravel(a), ravel(b)) or alltrue(ravel(a) == ravel(b))) # XXX report a bug?
+        return (shape(a) == shape(b)) and (allclose(ravel(a), ravel(b)) or alltrue(ravel(a) == ravel(b),axis=0)) # XXX report a bug?
 
 class Skip(Exception): pass
 

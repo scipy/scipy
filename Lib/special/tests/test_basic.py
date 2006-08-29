@@ -2083,7 +2083,7 @@ class test_take(ScipyTestCase):
 
     def check_take(self):
         a = array([0,1,2,3,4,5,6,7,8])
-        tka = take(a,(0,4,5,8))
+        tka = take(a,(0,4,5,8),axis=0)
         assert_array_equal(tka,array([0,4,5,8]))
 
 class test_tandg(ScipyTestCase):

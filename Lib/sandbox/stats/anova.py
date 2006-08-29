@@ -72,7 +72,7 @@ lists-of-lists.
     Wscols = [0] + Wcolumns                   # w/i subj columns INCL col 0
     Bscols = makelist(Bbetweens+1,Nfactors+1) #list of btw-subj cols,INCL col 0
     Nwifactors = len(Wscols) - 1 # WAS len(Wcolumns)
-    #Nwlevels = take(array(Nlevels),Wscols) # no.lvls for each w/i subj fact
+    #Nwlevels = take(array(Nlevels),Wscols,axis=0) # no.lvls for each w/i subj fact
     #Nbtwfactors = len(Bscols) - 1 # WASNfactors - Nwifactors + 1
     Nblevels = take(array(Nlevels),Bscols,0)
 
@@ -203,7 +203,7 @@ lists-of-lists.
             # dim-numbers change as you collapse).  THIS WORKS BECAUSE WE'RE
             # COLLAPSING ACROSS W/I SUBJECT AXES, WHICH WILL ALL HAVE THE
             # SAME SUBJ IN THE SAME ARRAY LOCATIONS (i.e., dummyvals will still exist
-            # but should remain the same value through the mean() function
+            # but should remain the same value through the mean(,axis=0) function
             for i in range(len(Lwithinnonsource)-1,-1,-1):
                 dwsc = mean(dwsc,Lwithinnonsource[i])
             mns = dwsc
@@ -287,7 +287,7 @@ lists-of-lists.
             idx[0] = -1
             loopcap = array(tsubjslots.shape[0:-1]) -1
             while incr(idx,loopcap) != -1:
-                DNarray[idx] = float(sum(tsubjslots[idx]))
+                DNarray[idx] = float(sum(tsubjslots[idx],axis=0))
                 thismean =  (add.reduce(tsubjslots[idx] * # 1=subj dim
                                           transpose(D[dcount]),1) /
                              DNarray[idx])
@@ -354,9 +354,9 @@ lists-of-lists.
     ## Calculate harmonic means for each level in source
             sourceNarray = apply_over_axes(hmean, Narray,btwnonsourcedims)
 
-    ## Calc grand average (ga), used for ALL effects
+    ## Calc grand average (ga,axis=0), used for ALL effects
             ga = sum((sourceMarray*sourceNarray)/
-                            sum(sourceNarray))
+                            sum(sourceNarray),axis=0),axis=0))
             ga = reshape(ga,ones(len(Marray.shape)))
 
     ## If GRAND interaction, use harmonic mean of ALL cell Ns
@@ -379,7 +379,7 @@ lists-of-lists.
 
     ## Calc and save sums of squares for this source
             SS = sum((effect**2 *sourceNarray) *
-                      multiply.reduce(take(Marray.shape,btwnonsourcedims,0)))
+                      multiply.reduce(take(Marray.shape,btwnonsourcedims,0)),axis=0)
         ## Save it so you don't have to calculate it again next time
             SSlist.append(SS)
             SSsources.append(source)
@@ -628,9 +628,9 @@ Returns: SS array for multivariate F calculation
         RSinter = zeros((levels,levels),PyObject)
         for i in range(levels):
             for j in range(i,levels):
-                RSw[i,j] = RSw[j,i] = sum(tworkd[i]*tworkd[j])
+                RSw[i,j] = RSw[j,i] = sum(tworkd[i]*tworkd[j],axis=0)
                 cross = all_cellmeans[i] * all_cellmeans[j]
-                multfirst = sum(cross*all_cellns[i])
+                multfirst = sum(cross*all_cellns[i],axis=0)
                 RSinter[i,j] = RSinter[j,i] = asarray(multfirst)
                 SSm[i,j] = SSm[j,i] = (mean(all_cellmeans[i],None) *
                                         mean(all_cellmeans[j],None) *
@@ -654,7 +654,7 @@ Returns: SS array for multivariate F calculation
         # Calculate harmonic means for each level in source
         sourceDNarray = apply_over_axes(hmean, DN[dindex],btwnonsourcedims)
 
-        # Calc grand average (ga), used for ALL effects
+        # Calc grand average (ga,axis=0), used for ALL effects
         variableNs = apply_over_axes(sum, sourceDNarray,
                                      range(len(sourceDMarray.shape)-1))
         ga = apply_over_axes(sum, (sourceDMarray*sourceDNarray) / \
@@ -745,7 +745,7 @@ def subtr_cellmeans(workd, subjslots):
     while incr(idx,loopcap) != -1:  # loop through source btw level-combos
         mask = tsubjslots[idx]
         thisgroup = tworkd*mask[newaxis,:]
-        groupmns = mean(compress(mask,thisgroup),1)
+        groupmns = mean(compress(mask,thisgroup,axis=-1),1)
 
 ### THEN SUBTRACT THEM FROM APPROPRIATE SUBJECTS
         errors = errors - multiply.outer(groupmns,mask)

@@ -1218,18 +1218,18 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     img1 = DATA[imgsl1]
     getdx1 = getdx.__copy__()
     getdx1[slice1[0]] = 0
-    dx1 = compress(getdx1,dx)
-    xb1 = compress(getdx1,xb)
-    xe1 = compress(getdx1,xe)
+    dx1 = compress(getdx1,dx,axis=-1)
+    xb1 = compress(getdx1,xb,axis=-1)
+    xe1 = compress(getdx1,xe,axis=-1)
 
     imgsl2 = [slice(None,None),slice(None,None),slice(None,None)]
     imgsl2[slice2[0]] = slice2[1]
     img2 = DATA[imgsl2]
     getdx2 = getdx.__copy__()
     getdx2[slice2[0]] = 0
-    dx2 = compress(getdx2,dx)
-    xb2 = compress(getdx2,xb)
-    xe2 = compress(getdx2,xe)
+    dx2 = compress(getdx2,dx,axis=-1)
+    xb2 = compress(getdx2,xb,axis=-1)
+    xe2 = compress(getdx2,xe,axis=-1)
 
 
     if (slice1[0] == slice2[0]):

@@ -72,8 +72,8 @@ def plane3 (normal, point) :
     # the normal doesn't really need to be normalized, but this
     # has the desirable side effect of blowing up if normal==0
     newnorm = zeros (4, Float)
-    newnorm [0:3] = normal / sqrt (sum (normal*normal))
-    newnorm [3] = sum (multiply (normal, point))
+    newnorm [0:3] = normal / sqrt (sum (normal*normal,axis=0))
+    newnorm [3] = sum (multiply (normal, point),axis=0)
     return newnorm
 
 _Mesh3Error = "Mesh3Error"
@@ -255,7 +255,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       the list [NVERTS, XYZVERTS, color].  Note that it is impossible to
       pass arguments as addresses, as yorick does in this routine.
       NVERTS is the number of vertices in each polygon of the slice, and
-      XYZVERTS is the 3-by-sum(NVERTS) list of polygon vertices.  If the
+      XYZVERTS is the 3-by-sum(NVERTS,axis=0) list of polygon vertices.  If the
       FCOLOR argument is present, the values of that coloring function on
       the polygons are returned as the value of the slice3 function
       (numberof(color_values) == numberof(NVERTS) == number of polygons).
@@ -442,8 +442,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                 critical_cells = bitwise_and (add.reduce \
                    (reshape (ravel (transpose (less (fs [0], slice3_precision))), \
                    (8, dim1))), 7)
-                if (sum (critical_cells) != 0) :
-                    clist = take (fs [1], nonzero (critical_cells))
+                if (sum (critical_cells,axis=0) != 0) :
+                    clist = take (fs [1], nonzero (critical_cells),axis=0)
                     ntotal8 = ntotal8 + len (clist)
                 else :
                     clist = None
@@ -457,8 +457,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                    (6, dim1)))
                 critical_cells = logical_and (greater (critical_cells, 0),
                                              less (critical_cells, 6))
-                if (sum (critical_cells) != 0) :
-                    clist = take (fs [1], nonzero (critical_cells))
+                if (sum (critical_cells,axis=0) != 0) :
+                    clist = take (fs [1], nonzero (critical_cells),axis=0)
                     ntotal6 = ntotal6 + len (clist)
                 else :
                     clist = None
@@ -472,8 +472,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                    (5, dim1)))
                 critical_cells = logical_and (greater (critical_cells, 0),
                                              less (critical_cells, 5))
-                if (sum (critical_cells) != 0) :
-                    clist = take (fs [1], nonzero (critical_cells))
+                if (sum (critical_cells,axis=0) != 0) :
+                    clist = take (fs [1], nonzero (critical_cells),axis=0)
                     ntotal5 = ntotal5 + len (clist)
                 else :
                     clist = None
@@ -485,8 +485,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                 critical_cells = bitwise_and (add.reduce \
                    (reshape (ravel (transpose (less (fs [0], slice3_precision))), \
                    (4, dim1))), 3)
-                if (sum (critical_cells) != 0) :
-                    clist = take (fs [1], nonzero (critical_cells))
+                if (sum (critical_cells,axis=0) != 0) :
+                    clist = take (fs [1], nonzero (critical_cells),axis=0)
                     ntotal4 = ntotal4 + len (clist)
                 else :
                     clist = None
@@ -501,7 +501,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             clist1 = ravel (zcen_ (zcen_ (zcen_
                (array (less (fs, slice3_precision), Float), 0), 1), 2))
             clist1 = logical_and (less (clist1, .9), greater (clist1, .1))
-            if sum (clist1) > 0 :
+            if sum (clist1,axis=0) > 0 :
                 clist = nonzero (clist1)
                 ntotal = ntotal + len (clist)
             else :
@@ -516,30 +516,30 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             #     values at the vertices of these cells
             if (irregular) :
                 # extract the portions of the data indexed by clist
-                fs = take (fs [0], clist)
+                fs = take (fs [0], clist,axis=0)
                 if got_xyz :
-                    _xyz3 = take (_xyz3, clist)
+                    _xyz3 = take (_xyz3, clist,axis=0)
                 if col :
-                    col = take (col, clist)
+                    col = take (col, clist,axis=0)
             else :
                 # extract the to_corners portions of the data indexed by clist
                 indices = to_corners3 (clist, dims [1], dims [2])
                 no_cells = shape (indices) [0]
                 indices = ravel (indices)
-                fs = reshape (take (ravel (fs), indices),\
+                fs = reshape (take (ravel (fs), indices,axis=0),\
                    (no_cells, 2, 2, 2))
                 if got_xyz :
                     new_xyz3 = zeros ( (no_cells, 3, 2, 2, 2), Float )
                     new_xyz3 [:, 0, ...] = reshape (take (ravel (_xyz3 [0, ...]),\
-                       indices), (no_cells, 2, 2, 2))
+                       indices,axis=0), (no_cells, 2, 2, 2))
                     new_xyz3 [:, 1, ...] = reshape (take (ravel (_xyz3 [1, ...]),\
-                       indices), (no_cells, 2, 2, 2))
+                       indices,axis=0), (no_cells, 2, 2, 2))
                     new_xyz3 [:, 2, ...] = reshape (take (ravel (_xyz3 [2, ...]),\
-                       indices), (no_cells, 2, 2, 2))
+                       indices,axis=0), (no_cells, 2, 2, 2))
                     _xyz3 = new_xyz3
                     del new_xyz3
                 if col != None :
-                    col = reshape (take (ravel (col), indices), (no_cells, 2, 2, 2))
+                    col = reshape (take (ravel (col), indices,axis=0), (no_cells, 2, 2, 2))
                     # NB: col represents node colors, and is only used
                     # if those are requested.
             # here, the iterator converts to absolute cell indices without
@@ -616,27 +616,27 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # construct edge endpoint indices in fs, xyz arrays
         # the numbers are the endpoint indices corresponding to
         # the order of the _no_edges [i] edges in the mask array
-        lower = take (_lower_vert [i], edges) + _no_verts [i] * cells
-        upper = take (_upper_vert [i], edges) + _no_verts [i] * cells
-        fsl = take (ravel (fs), lower)
-        fsu = take (ravel (fs), upper)
+        lower = take (_lower_vert [i], edges,axis=0) + _no_verts [i] * cells
+        upper = take (_upper_vert [i], edges,axis=0) + _no_verts [i] * cells
+        fsl = take (ravel (fs), lower,axis=0)
+        fsu = take (ravel (fs), upper,axis=0)
         # following denominator guaranteed non-zero
         denom = fsu - fsl
         fsu = fsu / denom
         fsl = fsl / denom
         new_xyz = zeros ( (len (lower), 3), Float )
-        new_xyz [:, 0] = reshape ( (take (ravel (xyz [:, 0]), lower) * fsu - \
-           take (ravel (xyz [:, 0]), upper) * fsl), (len (lower),))
-        new_xyz [:, 1] = reshape ( (take (ravel (xyz [:, 1]), lower) * fsu - \
-           take (ravel (xyz [:, 1]), upper) * fsl), (len (lower),))
-        new_xyz [:, 2] = reshape ( (take (ravel (xyz [:, 2]), lower) * fsu - \
-           take (ravel (xyz [:, 2]), upper) * fsl), (len (lower),))
+        new_xyz [:, 0] = reshape ( (take (ravel (xyz [:, 0]), lower,axis=0) * fsu - \
+           take (ravel (xyz [:, 0]), upper,axis=0) * fsl), (len (lower),))
+        new_xyz [:, 1] = reshape ( (take (ravel (xyz [:, 1]), lower,axis=0) * fsu - \
+           take (ravel (xyz [:, 1]), upper,axis=0) * fsl), (len (lower),))
+        new_xyz [:, 2] = reshape ( (take (ravel (xyz [:, 2]), lower,axis=0) * fsu - \
+           take (ravel (xyz [:, 2]), upper,axis=0) * fsl), (len (lower),))
         xyz = new_xyz
         del new_xyz
         if col != None :
             # Extract subset of the data the same way
-            col = take (ravel (col), lower) * fsu - \
-               take (ravel (col), upper) * fsl
+            col = take (ravel (col), lower,axis=0) * fsu - \
+               take (ravel (col), upper,axis=0) * fsl
         # The xyz array is now the output xyzverts array,
         # but for the order of the points within each cell.
 
@@ -645,10 +645,10 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # above and below the slicing plane
         p2 = left_shift (ones (_no_verts [i], Int) , array (
            [0, 1, 2, 3, 4, 5, 6, 7], Int) [0: _no_verts [i]])
-        pattern = transpose (sum (transpose (multiply (below, p2))))
+        pattern = transpose (sum (transpose (multiply (below, p2)),axis=0))
 
         # broadcast the cell's pattern onto each of its sliced edges
-        pattern = take (pattern, list / _no_edges [i])
+        pattern = take (pattern, list / _no_edges [i],axis=0)
         # Let ne represent the number of edges of this type of cell,
         # and nv the number of vertices.
         # To each pattern, there corresponds a permutation of the
@@ -662,17 +662,17 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # Let these permutations be stored in a ne-by-2**nv - 2 array
         # _poly_permutations (see next comment for explanation of 4 * ne):
         pattern = take (ravel (transpose (_poly_permutations [i])),
-           _no_edges [i] * (pattern - 1) + edges) + 4 * _no_edges [i] * cells
+           _no_edges [i] * (pattern - 1) + edges,axis=0) + 4 * _no_edges [i] * cells
         order = argsort (pattern)
         xyz1 = zeros ( (len (order), 3), Float )
-        xyz1 [:,0] = take (ravel (xyz [:,0]), order)
-        xyz1 [:,1] = take (ravel (xyz [:,1]), order)
-        xyz1 [:,2] = take (ravel (xyz [:,2]), order)
+        xyz1 [:,0] = take (ravel (xyz [:,0]), order,axis=0)
+        xyz1 [:,1] = take (ravel (xyz [:,1]), order,axis=0)
+        xyz1 [:,2] = take (ravel (xyz [:,2]), order,axis=0)
         xyz = xyz1
         if col != None :
-            col = take (col, order)
-        edges = take (edges, order)
-        pattern = take (pattern, order)
+            col = take (col, order,axis=0)
+        edges = take (edges, order,axis=0)
+        pattern = take (pattern, order,axis=0)
         # cells(order) is same as cells by construction */
 
         # There remains only the question of splitting the points in
@@ -697,7 +697,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         list [1:] = nz + 1
         newpat = zeros (len (pattern) + 1, Int)
         newpat [0] = 1
-        newpat [1:] = cumsum (not_equal (pattern, 0)) + 1
+        newpat [1:] = cumsum (not_equal (pattern, 0),axis=0) + 1
         pattern = newpat
         nverts = histogram (pattern) [1:]
         xyzverts = xyz
@@ -709,7 +709,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
 
         # if some polys have been split, need to split clist as well
         if len (list) > len (clist) :
-            clist = take (clist, take (cells, list))
+            clist = take (clist, take (cells, list, axis=0),axis=0)
         if col == None :
             if nointerp == None :
                 if type (fcolor) == FunctionType :
@@ -780,7 +780,7 @@ def slice3mesh (xyz, * args, ** kw) :
     slice3mesh returns a triple [nverts, xyzverts, color]
      nverts is no_cells long and the ith entry tells how many
         vertices the ith cell has.
-     xyzverts is sum (nverts) by 3 and gives the vertex
+     xyzverts is sum (nverts,axis=0) by 3 and gives the vertex
         coordinates of the cells in order.
      color, if present, is len (nverts) long and contains
         a color value for each cell in the mesh.
@@ -889,18 +889,18 @@ def slice3mesh (xyz, * args, ** kw) :
         elif shape (color) == (ncx, ncy) and smooth == 0 :
             col = ravel (color)
             # Lower left, upper left, upper right, lower right
-            col = 0.25 * (take (col, ravel (add.outer ( ncxx, ncyy))) +
-               take (col, ravel (add.outer ( ncxx, ncyy + 1))) +
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy + 1))) +
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy))))
+            col = 0.25 * (take (col, ravel (add.outer ( ncxx, ncyy)),axis=0) +
+               take (col, ravel (add.outer ( ncxx, ncyy + 1)),axis=0) +
+               take (col, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0) +
+               take (col, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0))
         elif shape (color) == (ncx, ncy) and smooth != 0 :
             # Node-centered colors are wanted (smooth plots)
             col = ravel (color)
             col = ravel (transpose (array ( [
-               take (col, ravel (add.outer ( ncxx, ncyy))),
-               take (col, ravel (add.outer ( ncxx, ncyy + 1))),
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy + 1))),
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy)))])))
+               take (col, ravel (add.outer ( ncxx, ncyy)),axis=0),
+               take (col, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+               take (col, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+               take (col, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
         else :
             raise _Slice3MeshError, \
                "color must be cell-centered or vertex centered."
@@ -920,22 +920,22 @@ def slice3mesh (xyz, * args, ** kw) :
     else :
         newx = ravel (x)
         xyzverts [:, 0] = ravel (transpose (array ( [
-           take (newx, ravel (add.outer ( ncxx, ncyy))),
-           take (newx, ravel (add.outer ( ncxx, ncyy + 1))),
-           take (newx, ravel (add.outer ( ncxx + ncy, ncyy + 1))),
-           take (newx, ravel (add.outer ( ncxx + ncy, ncyy)))])))
+           take (newx, ravel (add.outer ( ncxx, ncyy)),axis=0),
+           take (newx, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+           take (newx, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+           take (newx, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
         newy = ravel (y)
         xyzverts [:, 1] = ravel (transpose (array ( [
-           take (newy, ravel (add.outer ( ncxx, ncyy))),
-           take (newy, ravel (add.outer ( ncxx, ncyy + 1))),
-           take (newy, ravel (add.outer ( ncxx + ncy, ncyy + 1))),
-           take (newy, ravel (add.outer ( ncxx + ncy, ncyy)))])))
+           take (newy, ravel (add.outer ( ncxx, ncyy)),axis=0),
+           take (newy, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+           take (newy, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+           take (newy, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
     newz = ravel (z)
     xyzverts [:, 2] = ravel (transpose (array ( [
-       take (newz, ravel (add.outer ( ncxx, ncyy))),
-       take (newz, ravel (add.outer ( ncxx, ncyy + 1))),
-       take (newz, ravel (add.outer ( ncxx + ncy, ncyy + 1))),
-       take (newz, ravel (add.outer ( ncxx + ncy, ncyy)))])))
+       take (newz, ravel (add.outer ( ncxx, ncyy)),axis=0),
+       take (newz, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+       take (newz, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+       take (newz, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
 
     return [nverts, xyzverts, col]
 
@@ -1041,7 +1041,7 @@ def iterator3_rect (m3, chunk, clist) :
         offsets = array ( [njnk, nj, 1], Int)
         if clist != None :
             # add offset for this chunk to clist and return
-            return sum (offsets * ( chunk [0] - 1)) + clist
+            return sum (offsets * ( chunk [0] - 1),axis=0) + clist
 
     # increment to next chunk
     xi = chunk [1, 0]
@@ -1229,7 +1229,7 @@ def getv3_rect (i, m3, chunk) :
         indices = to_corners3 (chunk, dims [0] + 1, dims [1] + 1)
         no_cells = shape (indices) [0]
         indices = ravel (indices)
-        retval = reshape (take (ravel (fi [i]), indices), (no_cells, 2, 2, 2))
+        retval = reshape (take (ravel (fi [i]), indices,axis=0), (no_cells, 2, 2, 2))
 
         return [retval, chunk]
 
@@ -1282,13 +1282,13 @@ def getv3_irreg (i, m3, chunk) :
     tc = shape (verts) [1]
     # ZCM 2/4/97 the array of cell numbers must be relative
     if tc == 8 : # hex cells
-        return [ reshape (take (fi [i], indices), (no_cells, 2, 2, 2)),
+        return [ reshape (take (fi [i], indices,axis=0), (no_cells, 2, 2, 2)),
                 arange (0, no_cells, dtype = Int), oldstart]
     elif tc == 6 : # pyramids
-        return [ reshape (take (fi [i], indices), (no_cells, 3, 2)),
+        return [ reshape (take (fi [i], indices,axis=0), (no_cells, 3, 2)),
                 arange (0, no_cells, dtype = Int), oldstart]
     else : # tetrahedron or pyramid
-        return [ reshape (take (fi [i], indices), (no_cells, tc)),
+        return [ reshape (take (fi [i], indices,axis=0), (no_cells, tc)),
                 arange (0, no_cells, dtype = Int), oldstart]
 
 _Getc3Error = "Getc3Error"
@@ -1362,7 +1362,7 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
                                c [0, 2] - 1:1 + c [1, 2]]
         else :
             [k, l. m] = dims
-            return reshape (take (ravel (fi [i - 1]), chunk),
+            return reshape (take (ravel (fi [i - 1]), chunk,axis=0),
                (len (chunk), k, l, m))
     else :
         # it is vertex-centered, so we take averages to get cell quantity
@@ -1379,13 +1379,13 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
             indices = to_corners3 (chunk, dims [1] + 1,  dims [2] + 1)
             no_cells = shape (indices) [0]
             indices = ravel (indices)
-            corners = take (ravel (fi [i - 1]), indices)
+            corners = take (ravel (fi [i - 1]), indices,axis=0)
             if l == None :
-                return 0.125 * sum (transpose (reshape (corners, (no_cells, 8))))
+                return 0.125 * sum (transpose (reshape (corners, (no_cells, 8))),axis=0)
             else :
                 # interpolate corner values to get edge values
-                corners = (take (corners, l) * fsu -
-                   take (corners, u) * fsl) / (fsu -fsl)
+                corners = (take (corners, l,axis=0) * fsu -
+                   take (corners, u,axis=0) * fsl) / (fsu -fsl)
                 # average edge values (vertex values of polys) on each poly
                 return histogram (cells, corners) / histogram (cells)
 
@@ -1420,7 +1420,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
         if type (chunk) == ListType :
             return fi [i - 1] [chunk [0] [0]:chunk [0] [1]]
         elif type (chunk) == ArrayType and len (shape (chunk)) == 1 :
-            return take (fi [i - 1], chunk)
+            return take (fi [i - 1], chunk,axis=0)
         else :
             raise _Getc3Error, "chunk argument is incomprehensible."
 
@@ -1434,7 +1434,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
         if type (chunk) == ListType :
             indices = verts [chunk [0] [0]:chunk [0] [1]]
         elif type (chunk) == ArrayType and len (shape (chunk)) == 1 :
-            indices = take (verts, chunk)
+            indices = take (verts, chunk,axis=0)
         else :
             raise _Getc3Error, "chunk argument is incomprehensible."
     else :
@@ -1459,21 +1459,21 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
             ch = chunk
             if j > 0 :
                 ch = chunk - totals [j - 1]
-            indices = take (verts, ch)
+            indices = take (verts, ch,axis=0)
         else :
             raise _Getc3Error, "chunk argument is incomprehensible."
 
     shp = shape (indices)
     no_cells = shp [0]
     indices = ravel (indices)
-    corners = take (fi [i - 1], indices)
+    corners = take (fi [i - 1], indices,axis=0)
     if l == None :
         return (1. / shp [1]) * transpose ((sum (transpose (reshape (corners,
-           (no_cells, shp [1]))) [0:shp [1]])))
+           (no_cells, shp [1]))) [0:shp [1]],axis=0)))
     else :
         # interpolate corner values to get edge values
-        corners = (take (corners, l) * fsu -
-           take (corners, u) * fsl) / (fsu -fsl)
+        corners = (take (corners, l,axis=0) * fsu -
+           take (corners, u,axis=0) * fsl) / (fsu -fsl)
         # average edge values (vertex values of polys) on each poly
         return histogram (cells, corners) / histogram (cells)
 
@@ -1913,7 +1913,7 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
 
       Perform simple 3D rendering of an object created by slice3
       (possibly followed by slice2).  NVERTS and XYZVERTS are polygon
-      lists as returned by slice3, so XYZVERTS is sum(NVERTS)-by-3,
+      lists as returned by slice3, so XYZVERTS is sum(NVERTS,axis=0)-by-3,
       where NVERTS is a list of the number of vertices in each polygon.
       If present, the VALUES should have the same length as NVERTS;
       they are used to color the polygon.  If VALUES is not specified,
@@ -1953,10 +1953,10 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
 #        xyzverts [:, 2] = z
             values = get3_light (xyztmp, nverts)
         [list, vlist] = sort3d (z, nverts)
-        nverts = take (nverts, list)
-        values = take (values, list)
-        x = take (x, vlist)
-        y = take (y, vlist)
+        nverts = take (nverts, list,axis=0)
+        values = take (values, list,axis=0)
+        x = take (x, vlist,axis=0)
+        y = take (y, vlist,axis=0)
         _square = get_square_ ( )
         [_xfactor, _yfactor] = get_factors_ ()
         xmax = max (x)
@@ -1990,7 +1990,7 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
     nverts = array (nverts, Int)
     xyzverts = array (xyzverts, Float )
 
-    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) or \
+    if shape (xyzverts) [0] != sum (nverts,axis=0) or sum (less (nverts, 3),axis=0) or \
        nverts.dtype != Int :
         raise _Pl3surfError, "illegal or inconsistent polygon list"
     if values != None and len (values) != len (nverts) :
@@ -2023,7 +2023,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
        cmin = None, cmax = None)
 
       Add the polygon list specified by NVERTS (number of vertices in
-      each polygon) and XYZVERTS (3-by-sum(NVERTS) vertex coordinates)
+      each polygon) and XYZVERTS (3-by-sum(NVERTS,axis=0) vertex coordinates)
       to the currently displayed b-tree.  If VALUES is specified, it
       must have the same dimension as NVERTS, and represents the color
       of each polygon.  If VALUES is not specified, the polygons
@@ -2096,22 +2096,22 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
     if plane != None :
         plane = plane.astype (Float)
 
-    if shape (xyzverts) [0] != sum (nverts) or sum (less (nverts, 3)) > 0 or \
+    if shape (xyzverts) [0] != sum (nverts,axis=0) or sum (less (nverts, 3),axis=0) > 0 or \
        type (nverts [0]) != IntType :
-        print "Dim1 of xyzverts ", shape (xyzverts) [0], " sum (nverts) ",\
-           sum (nverts), " sum (less (nverts, 3)) ", sum (less (nverts, 3)), \
+        print "Dim1 of xyzverts ", shape (xyzverts) [0], " sum (nverts,axis=0) ",\
+           sum (nverts,axis=0), " sum (less (nverts, 3),axis=0) ", sum (less (nverts, 3),axis=0), \
            " type (nverts [0]) ", `type (nverts [0])`
         raise _Pl3treeError, "illegal or inconsistent polygon list."
     if type (values) == ArrayType and len (values) != len (nverts) and \
-       len (values) != sum (nverts) :
+       len (values) != sum (nverts,axis=0) :
         raise _Pl3treeError, "illegal or inconsistent polygon color values"
-    if type (values) == ArrayType and len (values) == sum (nverts) :
+    if type (values) == ArrayType and len (values) == sum (nverts,axis=0) :
         # We have vertex-centered values, which for Gist must be
         # averaged over each cell
-        list = zeros (sum (nverts), Int)
-        array_set (list, cumsum (nverts) [0:-1], ones (len (nverts), Int))
+        list = zeros (sum (nverts,axis=0), Int)
+        array_set (list, cumsum (nverts,axis=0) [0:-1], ones (len (nverts), Int))
         tpc = values.dtype
-        values = (histogram (cumsum (list), values) / nverts).astype (tpc)
+        values = (histogram (cumsum (list,axis=0), values) / nverts).astype (tpc)
     if plane != None :
         if (len (shape (plane)) != 1 or shape (plane) [0] != 4) :
             raise _Pl3treeError, "illegal plane format, try plane3 function"
@@ -2694,11 +2694,11 @@ def _pl3leaf (leaf, not_plane, minmax) :
     # sort the single polygon list
     if not_plane :
         [_list, _vlist] = sort3d (_z, _nverts)
-        _nverts = take (_nverts, _list)
+        _nverts = take (_nverts, _list,axis=0)
         if _values != "bg" :
-            _values = take (_values, _list)
-        _x = take (_x, _vlist)
-        _y = take (_y, _vlist)
+            _values = take (_values, _list,axis=0)
+        _x = take (_x, _vlist,axis=0)
+        _y = take (_y, _vlist,axis=0)
 
     _square = get_square_ ( )
     [_xfactor, _yfactor] = get_factors_ ()
@@ -2950,7 +2950,7 @@ def _pl3tree_prt (tree, depth) :
     for leaf in list :
         print indent + "leaf length= " + `len (leaf)`
         print indent + "npolys= " + `len (leaf [0])` + \
-           ", nverts= " + `sum (leaf [0])` + ", max= " + `max (leaf [0])`
+           ", nverts= " + `sum (leaf [0],axis=0)` + ", max= " + `max (leaf [0])`
         print indent + "nverts= " + `shape (leaf [1]) [0]` + \
            ", nvals= " + `len (leaf [2])`
 
@@ -3059,11 +3059,11 @@ def xyz3_rect (m3, chunk) :
         indices = ravel (indices)
         retval = zeros ( (no_cells, 3, 2, 2, 2), Float )
         m30 = ravel (m3 [1] [0, ...])
-        retval [:, 0, ...] = reshape (take (m30, indices), (no_cells, 2, 2, 2))
+        retval [:, 0, ...] = reshape (take (m30, indices,axis=0), (no_cells, 2, 2, 2))
         m31 = ravel (m3 [1] [1, ...])
-        retval [:, 1, ...] = reshape (take (m31, indices), (no_cells, 2, 2, 2))
+        retval [:, 1, ...] = reshape (take (m31, indices,axis=0), (no_cells, 2, 2, 2))
         m32 = ravel (m3 [1] [2, ...])
-        retval [:, 2, ...] = reshape (take (m32, indices), (no_cells, 2, 2, 2))
+        retval [:, 2, ...] = reshape (take (m32, indices,axis=0), (no_cells, 2, 2, 2))
         return retval
 
 _xyz3Error = "xyz3Error"
@@ -3104,45 +3104,45 @@ def xyz3_irreg (m3, chunk) :
             else :
                 start = 0
             verts = m3 [1] [0] [i]
-            ns = take (verts, chunk - start)
+            ns = take (verts, chunk - start,axis=0)
             shp = shape (verts)
         else :
-            ns = take (m3 [1] [0], chunk)
+            ns = take (m3 [1] [0], chunk,axis=0)
             shp = shape (m3 [1] [0])
     else :
         raise _xyz3Error, "chunk parameter has the wrong type."
     if shp [1] == 8 : # hex
         retval = zeros ( (no_cells, 3, 2, 2, 2), Float)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns)), (no_cells, 2, 2, 2))
+           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 2, 2, 2))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns)), (no_cells, 2, 2, 2))
+           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 2, 2, 2))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns)), (no_cells, 2, 2, 2))
+           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 2, 2, 2))
     elif shp [1] == 6 : # prism
         retval = zeros ( (no_cells, 3, 3, 2), Float)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns)), (no_cells, 3, 2))
+           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 3, 2))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns)), (no_cells, 3, 2))
+           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 3, 2))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns)), (no_cells, 3, 2))
+           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 3, 2))
     elif shp [1] == 5 : # pyramid
         retval = zeros ( (no_cells, 3, 5), Float)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns)), (no_cells, 5))
+           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 5))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns)), (no_cells, 5))
+           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 5))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns)), (no_cells, 5))
+           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 5))
     elif shp [1] == 4 : # tet
         retval = zeros ( (no_cells, 3, 4), Float)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns)), (no_cells, 4))
+           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 4))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns)), (no_cells, 4))
+           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 4))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns)), (no_cells, 4))
+           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 4))
     else :
         raise _xyz3Error, "Funny number of cell faces: " + `shp [1]`
     return retval
@@ -3211,11 +3211,11 @@ def xyz3_unif (m3, chunk) :
                multiply.outer ( ones (n1, Float ), zz [i [2]: i[2] + n2]))
         else :
             # -- nonconsecutive values
-            xyz [:, 0] = reshape (take (xx, ravel (add.outer (xchunk, ijk0))),
+            xyz [:, 0] = reshape (take (xx, ravel (add.outer (xchunk, ijk0)),axis=0),
                (len (chunk),  2, 2, 2))
-            xyz [:, 1] = reshape (take (yy, ravel (add.outer (ychunk, ijk1))),
+            xyz [:, 1] = reshape (take (yy, ravel (add.outer (ychunk, ijk1)),axis=0),
                (len (chunk),  2, 2, 2))
-            xyz [:, 2] = reshape (take (zz, ravel (add.outer (zchunk, ijk2))),
+            xyz [:, 2] = reshape (take (zz, ravel (add.outer (zchunk, ijk2)),axis=0),
                (len (chunk),  2, 2, 2))
     return xyz
 

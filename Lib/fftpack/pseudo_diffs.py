@@ -38,7 +38,7 @@ def diff(x,order=1,period=None,
         The assumed period of the sequence. Default is 2*pi.
 
     Notes:
-      If sum(x)=0 then
+      If sum(x,axis=0)=0 then
           diff(diff(x,k),-k)==x (within numerical accuracy)
       For odd order and even len(x), the Nyquist mode is taken zero.
     """
@@ -89,7 +89,7 @@ def tilbert(x,h,period=None,
         The assumed period of the sequence. Default period is 2*pi.
 
     Notes:
-      If sum(x)==0 and n=len(x) is odd then
+      If sum(x,axis=0)==0 and n=len(x) is odd then
         tilbert(itilbert(x)) == x
       If 2*pi*h/period is approximately 10 or larger then numerically
         tilbert == hilbert
@@ -167,7 +167,7 @@ def hilbert(x,
       y_0 = 0
 
     Notes:
-      If sum(x)==0 then
+      If sum(x,axis=0)==0 then
         hilbert(ihilbert(x)) == x
       For even len(x), the Nyquist mode of x is taken zero.
     """

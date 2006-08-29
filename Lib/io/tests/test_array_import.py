@@ -31,7 +31,7 @@ class test_numpyio(ScipyTestCase):
         print "\nDon't worry about a warning regarding the number of bytes read."
         b = numpyio.fread(fid,1000000,N.Int16,N.Int)
         fid.close()
-        assert(N.product(a.astype(N.Int16) == b))
+        assert(N.product(a.astype(N.Int16) == b,axis=0))
         os.remove(fname)
 
 class test_read_array(ScipyTestCase):

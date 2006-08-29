@@ -430,7 +430,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             footprint = numarray.asarray(footprint)
             footprint = footprint.astype(bool)
-            if numarray.alltrue(numarray.ravel(footprint)):
+            if numarray.alltrue(numarray.ravel(footprint),axis=0):
                 size = footprint.shape
                 footprint = None
                 separable = True

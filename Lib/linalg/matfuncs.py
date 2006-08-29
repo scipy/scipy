@@ -199,7 +199,7 @@ def funm(A,func,disp=1):
     if minden == 0.0:
         minden = tol
     err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
-    if product(ravel(logical_not(isfinite(F)))):
+    if product(ravel(logical_not(isfinite(F))),axis=0):
         err = Inf
     if disp:
         if err > 1000*tol:

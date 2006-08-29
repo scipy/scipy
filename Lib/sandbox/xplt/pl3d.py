@@ -219,7 +219,7 @@ def orient3 ( ** kw ) :
             theta = kw ["theta"]
             y = array ( [0., z [2], -z [1]])
             x = dot (transpose (gr3), array ( [1., 0., 0.]))
-            phi = arctan2 (sum (y * x), x [0])
+            phi = arctan2 (sum (y * x,axis=0), x [0])
     else :
         phi = kw ["phi"]
         theta = kw ["theta"]
@@ -370,7 +370,7 @@ def get3_light (xyz, * nxyz) :
        or get3_light(xyz)
 
       return 3D lighting for polygons with vertices XYZ.  If NXYZ is
-      specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+      specified, XYZ should be sum(nxyz,axis=0)-by-3, with NXYZ being the
       list of numbers of vertices for each polygon (as for the plfp
       function).  If NXYZ is not specified, XYZ should be a quadrilateral
       mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
@@ -404,7 +404,7 @@ def get3_light (xyz, * nxyz) :
     else :
         view = array ( [0., 0., zc],  Float) - get3_centroid (xyz, nxyz [0])
         m1 = \
-           sqrt ( sum (view * view))
+           sqrt ( sum (view * view,axis=0))
         if m1 == 0. : m1 = 1.
         view = view / m1
 
@@ -412,11 +412,11 @@ def get3_light (xyz, * nxyz) :
        normal [2, ...] * view [2]
     light = ambient + diffuse * abs (nv)
     if specular != 0. :
-        sv = transpose (transpose (sdir) / sqrt (sum (transpose (sdir*sdir))))
+        sv = transpose (transpose (sdir) / sqrt (sum (transpose (sdir*sdir),axis=0)))
         sv = dot (sv, view)
         if len (shape (sdir)) == 1 :
             sn = sum(array([sdir[0]*normal[0],sdir[1]*normal[1],
-                            sdir[2]*normal[2]]))
+                            sdir[2]*normal[2]]),axis=0)
             ####### I left out the specular_hook stuff.
             m1 = maximum (sn * nv -0.5 * sv + 0.5, 1.e-30)
             m1 = m1 ** spower
@@ -426,7 +426,7 @@ def get3_light (xyz, * nxyz) :
             nsrc = len (shape (sdir))
             for i in range (nsrc) :
                 sn = sum(array([sdir[i,0]*normal[0],sdir[i,1]*normal[1],
-                            sdir[i,2]*normal[2]]))
+                            sdir[i,2]*normal[2]]),axis=0)
                 m1 = maximum (sn * nv -0.5 * sv [i] + 0.5, 1.e-30) ** spower [i]
                 light = light + specular * m1
     return light
@@ -438,7 +438,7 @@ def get3_normal (xyz, *nxyz) :
           or get3_normal(xyz)
 
       return 3D normals for polygons with vertices XYZ.  If NXYZ is
-      specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+      specified, XYZ should be sum(nxyz,axis=0)-by-3, with NXYZ being the
       list of numbers of vertices for each polygon (as for the plfp
       function).  If NXYZ is not specified, XYZ should be a quadrilateral
       mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
@@ -463,7 +463,7 @@ def get3_normal (xyz, *nxyz) :
     else :
         # with polygon list, more elaborate calculation required
         # (1) frst subscripts the first vertex of each polygon
-        frst = cumsum (nxyz [0]) - nxyz [0]
+        frst = cumsum (nxyz [0],axis=0) - nxyz [0]
 
         # form normal by getting two approximate diameters
         # (reduces to above medians for quads)
@@ -508,7 +508,7 @@ def get3_centroid (xyz, * nxyz) :
           or get3_centroid(xyz)
 
       return 3D centroids for polygons with vertices XYZ.  If NXYZ is
-      specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+      specified, XYZ should be sum(nxyz,axis=0)-by-3, with NXYZ being the
       list of numbers of vertices for each polygon (as for the plfp
       function).  If NXYZ is not specified, XYZ should be a quadrilateral
       mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
@@ -526,9 +526,9 @@ def get3_centroid (xyz, * nxyz) :
         centroid = zcen_ (zcen_ (xyz, 1), 0)
     else :
         # with polygon list, more elaborate calculation required
-        last = cumsum (nxyz [0])
+        last = cumsum (nxyz [0],axis=0)
         list = histogram (1 + last) [0:-1]
-        list = cumsum (list)
+        list = cumsum (list,axis=0)
         k = len (nxyz [0])
         l = shape (xyz) [0]
         centroid = zeros ( (k, 3))
@@ -807,7 +807,7 @@ def sort3d (z, npolys) :
 
     """
     sort3d(z, npolys)
-      given Z and NPOLYS, with len(Z)==sum(npolys), return
+      given Z and NPOLYS, with len(Z)==sum(npolys,axis=0), return
       a 2-element list [LIST, VLIST] such that Z[VLIST] and NPOLYS[LIST] are
       sorted from smallest average Z to largest average Z, where
       the averages are taken over the clusters of length NPOLYS.
@@ -834,8 +834,8 @@ def sort3d (z, npolys) :
     # get a list the same length as x, y, or z which is 1 for each
     # vertex of poly 1, 2 for each vertex of poly2, etc.
     # the goal is to make nlist with histogram(nlist)==npolys
-    nlist = histogram(cumsum (npolys)) [0:-1]
-    nlist = cumsum (nlist)
+    nlist = histogram(cumsum (npolys,axis=0)) [0:-1]
+    nlist = cumsum (nlist,axis=0)
     # now sum the vertex values and divide by the number of vertices
     z = histogram (nlist, z) / npolys
 
@@ -1079,7 +1079,7 @@ def _gnomon_draw ( ) :
     # label positions: first find shortest axis
     xy = sqrt (x1 * x1 + y1 * y1)
     xysum = add.reduce (xy)
-    i = argmin (xy)          # mnx (xy)
+    i = argmin (xy,axis=-1)          # mnx (xy)
     jk = [ [1, 2], [2, 0], [0, 1]] [i]
     j = jk [0]
     k = jk [1]

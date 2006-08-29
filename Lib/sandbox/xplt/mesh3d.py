@@ -212,10 +212,10 @@ class Mesh3d ( Surface ) :
                 n_z = self.cell_dict[k][1]
                 if n_z.shape [1] == 8 :
                     verts.append (
-                       take (n_z, array ( [0, 1, 3, 2, 4, 5, 7, 6])))
+                       take (n_z, array ( [0, 1, 3, 2, 4, 5, 7, 6]),axis=0))
                 elif n_z.shape [1] == 6 :
                     verts.append (
-                       take (n_z, array ( [3, 0, 4, 1, 5, 2])))
+                       take (n_z, array ( [3, 0, 4, 1, 5, 2]),axis=0))
                 else :
                     verts.append (n_z)
         if len (verts) == 1 :
@@ -317,7 +317,7 @@ class Slice :
     where :
       nv is a one-dimensional integer array whose ith entry is the
          number of vertices of the ith face.
-      xyzv is a two-dimensional array dimensioned sum (nv) by 3.
+      xyzv is a two-dimensional array dimensioned sum (nv,axis=0) by 3.
          The first nv [0] triples are the vertices of face [0],
          the next nv [1] triples are the vertices of face [1], etc.
       val (if present) is an array the same length as nv whose

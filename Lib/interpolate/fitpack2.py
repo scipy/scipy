@@ -69,7 +69,7 @@ class UnivariateSpline:
           k=3        - degree of the univariate spline.
           s          - positive smoothing factor defined for
                        estimation condition:
-                         sum((w[i]*(y[i]-s(x[i])))**2) <= s
+                         sum((w[i]*(y[i]-s(x[i])))**2,axis=0) <= s
                        Default s=len(w) which should be a good value
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
@@ -166,7 +166,7 @@ class UnivariateSpline:
 
     def get_residual(self):
         """ Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(y[i]-s(x[i])))**2)
+        approximation: sum ((w[i]*(y[i]-s(x[i])))**2,axis=0)
         """
         return self._data[10]
 
@@ -240,7 +240,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         if xe is None: xe = x[-1]
         t = concatenate(([xb]*(k+1),t,[xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0):
+        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
             raise ValueError,\
                   'Interior knots t must satisfy Schoenberg-Whitney conditions'
         data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
@@ -300,7 +300,7 @@ class BivariateSpline:
 
     def get_residual(self):
         """ Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2)
+        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
         """
         return self.fp
     def get_knots(self):
@@ -340,7 +340,7 @@ class SmoothBivariateSpline(BivariateSpline):
           kx,ky=3,3  - degrees of the bivariate spline.
           s          - positive smoothing factor defined for
                        estimation condition:
-                         sum((w[i]*(z[i]-s(x[i],y[i])))**2) <= s
+                         sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s
                        Default s=len(w) which should be a good value
                        if 1/w[i] is an estimate of the standard
                        deviation of z[i].

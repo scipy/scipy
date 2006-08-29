@@ -374,7 +374,7 @@ def boxcar(data, boxshape, output=None, mode="nearest", cval=0.0):
 def _fbroadcast(f, N, shape, args, params=()):
     """_fbroadcast(f, N, args, shape, params=()) calls 'f' for each of the
     'N'-dimensional inner subnumarray of 'args'.  Each subarray has
-    .shape == 'shape'[-N:].  There are a total of product(shape[:-N])
+    .shape == 'shape'[-N:].  There are a total of product(shape[:-N],axis=0)
     calls to 'f'.
     """
     if len(shape) == N:

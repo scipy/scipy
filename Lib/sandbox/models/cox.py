@@ -101,7 +101,7 @@ class ProportionalHazards(model.LikelihoodModel):
             else:
                 self.design[t] = d
             self.risk[t] = N.compress([s.atrisk(t) for s in self.subjects],
-                                      N.arange(self.design[t].shape[0]))
+                                      N.arange(self.design[t].shape[0]),axis=-1)
     def __del__(self):
 
         shutil.rmtree(self.cachedir, ignore_errors=True)

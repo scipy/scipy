@@ -71,7 +71,7 @@ def median( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     return _combine_f("median", arrays, output, outtype, nlow, nhigh, badmasks)
 
 def average( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
-    """average() nominally computes the average pixel value for a stack of
+    """average(,axis=0) nominally computes the average pixel value for a stack of
     identically shaped images.
 
     arrays     specifies a sequence of inputs arrays, which are nominally a
@@ -97,7 +97,7 @@ def average( arrays, output=None, outtype=None, nlow=0, nhigh=0, badmasks=None):
     >>> a = num.arange(4)
     >>> a = a.reshape((2,2))
     >>> arrays = [a*16, a*4, a*2, a*8]
-    >>> average(arrays)
+    >>> average(arrays,axis=0)
     array([[ 0,  7],
            [15, 22]])
     >>> average(arrays, nhigh=1)

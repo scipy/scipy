@@ -211,7 +211,7 @@ class rv_frozen:
 def valarray(shape,value=nan,typecode=None):
     """Return an array of all value.
     """
-    out = reshape(repeat([value],product(shape)),shape)
+    out = reshape(repeat([value],product(shape,axis=0),axis=0),shape)
     if typecode is not None:
         out = out.astype(typecode)
     if not isinstance(out, ndarray):
@@ -261,7 +261,7 @@ class rv_continuous:
         - inverse survival function (inverse of sf)
 
     generic.stats(<shape(s)>,loc=0,scale=1,moments='mv')
-        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+        - mean('m',axis=0), variance('v'), skew('s'), and/or kurtosis('k')
 
     generic.entropy(<shape(s)>,loc=0,scale=1)
         - (differential) entropy of the RV.
@@ -428,7 +428,7 @@ class rv_continuous:
         if size is None:
             size = 1
         else:
-            self._size = product(size)
+            self._size = product(size,axis=0)
         if numpy.isscalar(size):
             self._size = size
             size = (size,)
@@ -720,10 +720,10 @@ class rv_continuous:
             return self._munp(n,*args)
 
     def _nnlf(self, x, *args):
-        return -sum(log(self._pdf(x, *args)))
+        return -sum(log(self._pdf(x, *args)),axis=0)
 
     def nnlf(self, theta, x):
-        # - sum (log pdf(x, theta))
+        # - sum (log pdf(x, theta),axis=0)
         #   where theta are the parameters (including loc and scale)
         #
         try:
@@ -1599,7 +1599,7 @@ class genpareto_gen(rv_continuous):
         return vals
     def _munp(self, n, c):
         k = arange(0,n+1)
-        val = (-1.0/c)**n * sum(scipy.comb(n,k)*(-1)**k / (1.0-c*k))
+        val = (-1.0/c)**n * sum(scipy.comb(n,k)*(-1)**k / (1.0-c*k),axis=0)
         return where(c*n < 1, val, inf)
     def _entropy(self, c):
         if (c > 0):
@@ -1657,7 +1657,7 @@ class genextreme_gen(rv_continuous):
         return 1.0/c*(1-(-log(q))**c)
     def _munp(self, n, c):
         k = arange(0,n+1)
-        vals = 1.0/c**n * sum(scipy.comb(n,k) * (-1)**k * special.gamma(c*k + 1))
+        vals = 1.0/c**n * sum(scipy.comb(n,k) * (-1)**k * special.gamma(c*k + 1),axis=0)
         return where(c*n > -1, vals, inf)
 genextreme = genextreme_gen(name='genextreme',
                             longname="A generalized extreme value",
@@ -3173,28 +3173,28 @@ def entropy(pk,qk=None):
     """S = entropy(pk,qk=None)
 
     calculate the entropy of a distribution given the p_k values
-    S = -sum(pk * log(pk))
+    S = -sum(pk * log(pk),axis=0)
 
     If qk is not None, then compute a relative entropy
-    S = -sum(pk * log(pk / qk))
+    S = -sum(pk * log(pk / qk),axis=0)
 
     Routine will normalize pk and qk if they don't sum to 1
     """
     pk = arr(pk)
-    pk = 1.0* pk / sum(pk)
+    pk = 1.0* pk / sum(pk,axis=0)
     if qk is None:
         vec = where(pk == 0, 0.0, pk*log(pk))
     else:
         qk = arr(qk)
         if len(qk) != len(pk):
             raise ValueError, "qk and pk must have same length."
-        qk = 1.0*qk / sum(qk)
+        qk = 1.0*qk / sum(qk,axis=0)
         # If qk is zero anywhere, then unless pk is zero at those places
         #   too, the relative entropy is infinite.
-        if any(take(pk,nonzero(qk==0.0))!=0.0, 0):
+        if any(take(pk,nonzero(qk==0.0),axis=0)!=0.0, 0):
             return inf
         vec = where (pk == 0, 0.0, pk*log(pk / qk))
-    return -sum(vec)
+    return -sum(vec,axis=0)
 
 
 ## Handlers for generic case where xk and pk are given
@@ -3208,11 +3208,11 @@ def _drv_pmf(self, xk, *args):
         return 0.0
 
 def _drv_cdf(self, xk, *args):
-    indx = argmax((self.xk>xk))-1
+    indx = argmax((self.xk>xk),axis=-1)-1
     return self.F[self.xk[indx]]
 
 def _drv_ppf(self, q, *args):
-    indx = argmax((self.qvals>=q))
+    indx = argmax((self.qvals>=q),axis=-1)
     return self.Finv[self.qvals[indx]]
 
 def _drv_nonzero(self, k, *args):
@@ -3320,7 +3320,7 @@ class rv_discrete:
         - inverse survival function (inverse of sf)
 
     generic.stats(<shape(s)>,loc=0,moments='mv')
-        - mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+        - mean('m',axis=0), variance('v'), skew('s'), and/or kurtosis('k')
 
     generic.entropy(<shape(s)>,loc=0)
         - entropy of the RV
@@ -3364,7 +3364,7 @@ class rv_discrete:
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = numpy.cumsum(self.pk)
+            self.qvals = numpy.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = new.instancemethod(sgf(_drv_ppf,otypes='d'),
@@ -3437,7 +3437,7 @@ class rv_discrete:
 
     def _cdfsingle(self, k, *args):
         m = arange(int(self.a),k+1)
-        return sum(self._pmf(m,*args))
+        return sum(self._pmf(m,*args),axis=0)
 
     def _cdf(self, x, *args):
         k = floor(x)
@@ -3469,7 +3469,7 @@ class rv_discrete:
         if size is None:
             size = 1
         else:
-            self._size = product(size)
+            self._size = product(size,axis=0)
         if numpy.isscalar(size):
             self._size = size
             size = (size,)
@@ -3818,7 +3818,7 @@ class binom_gen(rv_discrete):
         k = r_[0:n+1]
         vals = self._pmf(k,n,pr)
         lvals = where(vals==0,0.0,log(vals))
-        return -sum(vals*lvals)
+        return -sum(vals*lvals,axis=0)
 binom = binom_gen(name='binom',shapes="n,pr",extradoc="""
 
 Binomial distribution
@@ -3969,7 +3969,7 @@ class hypergeom_gen(rv_discrete):
         k = r_[N-(M-n):min(n,N)+1]
         vals = self.pmf(k,M,n,N)
         lvals = where(vals==0.0,0.0,log(vals))
-        return -sum(vals*lvals)
+        return -sum(vals*lvals,axis=0)
 hypergeom = hypergeom_gen(name='hypergeom',longname="A hypergeometric",
                           shapes="M,n,N", extradoc="""
 

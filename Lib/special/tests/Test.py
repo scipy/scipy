@@ -89,7 +89,7 @@ class Test:
             for t in range(len(self.out_vars.keys())):
                 dev=abs(self.result[t]-self.out_vars[self.out_vars.keys()[t]])
                 ref=abs(self.result[t]+self.out_vars[self.out_vars.keys()[t]])/2
-                mx_dev_idx=Numeric.argmax(dev)
+                mx_dev_idx=Numeric.argmax(dev,axis=-1)
                 if dev[mx_dev_idx] > 0.:
                     if ref[mx_dev_idx] > 0.:
                         self.max_rel_dev.append(dev[mx_dev_idx]/ref[mx_dev_idx])

@@ -27,7 +27,7 @@ class test_roots(unittest.TestCase):
 class test_factorial(unittest.TestCase):
     def check_basic(self):
         for k in range(0,13):
-            assert_equal(factorial(k),product(grid[1:k+1]))
+            assert_equal(factorial(k),product(grid[1:k+1],axis=0))
         self.failUnlessRaises(ValueError, factorial, -10)
 
     def check_exact(self):
@@ -41,7 +41,7 @@ class test_comb(unittest.TestCase):
     def check_basic(self):
         for N in range(0,11):
             for k in range(0,N+1):
-                ans = product(grid[N-k+1:N+1]) / product(grid[1:k+1])
+                ans = product(grid[N-k+1:N+1],axis=0) / product(grid[1:k+1],axis=0)
                 assert_almost_equal(comb(N,k),ans,9)
         self.failUnlessRaises(ValueError, comb, -10,1)
         self.failUnlessRaises(ValueError, comb, 10,-1)

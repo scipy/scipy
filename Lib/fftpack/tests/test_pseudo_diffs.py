@@ -156,11 +156,11 @@ class test_diff(ScipyTestCase):
         for k in [0,2,4,6]:
             for n in [60,32,64,56,55]:
                 f=random ((n,))
-                af=sum(f)/n
+                af=sum(f,axis=0)/n
                 f=f-af
                 # zeroing Nyquist mode:
                 f = diff(diff(f,1),-1)
-                assert_almost_equal(sum(f),0.0)
+                assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
@@ -168,9 +168,9 @@ class test_diff(ScipyTestCase):
         for k in [0,1,2,3,4,5,6]:
             for n in [33,65,55]:
                 f=random ((n,))
-                af=sum(f)/n
+                af=sum(f,axis=0)/n
                 f=f-af
-                assert_almost_equal(sum(f),0.0)
+                assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
@@ -178,11 +178,11 @@ class test_diff(ScipyTestCase):
         for k in [0,1,2,3,4,5,6]:
             for n in [32,33,64,56,55]:
                 f=random ((n,))
-                af=sum(f)/n
+                af=sum(f,axis=0)/n
                 f=f-af
                 # zeroing Nyquist mode:
                 f = diff(diff(f,1),-1)
-                assert_almost_equal(sum(f),0.0)
+                assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
@@ -234,18 +234,18 @@ class test_tilbert(ScipyTestCase):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [32,64,56]:
                 f=random ((n,))
-                af=sum(f)/n
+                af=sum(f,axis=0)/n
                 f=f-af
-                assert_almost_equal(sum(f),0.0)
+                assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(direct_tilbert(direct_itilbert(f,h),h),f)
 
     def check_random_odd(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [33,65,55]:
                 f=random ((n,))
-                af=sum(f)/n
+                af=sum(f,axis=0)/n
                 f=f-af
-                assert_almost_equal(sum(f),0.0)
+                assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(itilbert(tilbert(f,h),h),f)
                 assert_array_almost_equal(tilbert(itilbert(f,h),h),f)
 
@@ -315,20 +315,20 @@ class test_hilbert(ScipyTestCase):
     def check_random_odd(self):
         for n in [33,65,55]:
             f=random ((n,))
-            af=sum(f)/n
+            af=sum(f,axis=0)/n
             f=f-af
-            assert_almost_equal(sum(f),0.0)
+            assert_almost_equal(sum(f,axis=0),0.0)
             assert_array_almost_equal(ihilbert(hilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
     def check_random_even(self):
         for n in [32,64,56]:
             f=random ((n,))
-            af=sum(f)/n
+            af=sum(f,axis=0)/n
             f=f-af
             # zeroing Nyquist mode:
             f = diff(diff(f,1),-1)
-            assert_almost_equal(sum(f),0.0)
+            assert_almost_equal(sum(f,axis=0),0.0)
             assert_array_almost_equal(direct_hilbert(direct_ihilbert(f)),f)
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 

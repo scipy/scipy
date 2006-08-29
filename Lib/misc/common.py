@@ -157,7 +157,7 @@ def central_diff_weights(Np,ndiv=1):
     X = x**0.0
     for k in range(1,Np):
         X = hstack([X,x**k])
-    w = product(arange(1,ndiv+1))*linalg.inv(X)[ndiv]
+    w = product(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
     return w
 
 def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
@@ -200,7 +200,7 @@ def derivative(func,x0,dx=1.0,n=1,args=(),order=3):
     ho = order >> 1
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
-    return val / product((dx,)*n)
+    return val / product((dx,)*n,axis=0)
 
 def pade(an, m):
     """Given Taylor series coefficients in an, return a Pade approximation to

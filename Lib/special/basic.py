@@ -412,7 +412,7 @@ def polygamma(n, x):
     n, x = asarray(n), asarray(x)
     cond = (n==0)
     fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1,x)
-    if sometrue(cond):
+    if sometrue(cond,axis=0):
         return where(cond, psi(x), fac2)
     return fac2
 

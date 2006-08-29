@@ -9,7 +9,7 @@ def pink1d(n, rvs=stats.norm.rvs):
     m = 1
     for i in range(k):
         p = int(ceil(float(n) / m))
-        pink += repeat(rvs(size=p), m)[:n]
+        pink += repeat(rvs(size=p), m,axis=0)[:n]
         m <<= 1
 
     return pink/k

@@ -406,7 +406,7 @@ def rotate(input, angle, axes = (-1, -2), reshape = True,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
-        size = numarray.product(input.shape)
+        size = numarray.product(input.shape,axis=0)
         size /= input.shape[axes[0]]
         size /= input.shape[axes[1]]
         for ii in range(input.ndim):

@@ -242,7 +242,7 @@ def norm(x, ord=None):
        For vectors ord can be any real number including Inf or -Inf.
          ord = Inf, computes the maximum of the magnitudes
          ord = -Inf, computes minimum of the magnitudes
-         ord is finite, computes sum(abs(x)**ord)**(1.0/ord)
+         ord is finite, computes sum(abs(x)**ord,axis=0)**(1.0/ord)
 
        For matrices ord can only be one of the following values:
          ord = 2 computes the largest singular value
@@ -251,7 +251,7 @@ def norm(x, ord=None):
          ord = -1 computes the smallest column sum of absolute values
          ord = Inf computes the largest row sum of absolute values
          ord = -Inf computes the smallest row sum of absolute values
-         ord = 'fro' computes the frobenius norm sqrt(sum(diag(X.H * X)))
+         ord = 'fro' computes the frobenius norm sqrt(sum(diag(X.H * X),axis=0))
 
        For values ord < 0, the result is, strictly speaking, not a
        mathematical 'norm', but it may still be useful for numerical purposes.
@@ -268,22 +268,22 @@ def norm(x, ord=None):
         elif ord == -Inf:
             return numpy.amin(abs(x))
         elif ord == 1:
-            return numpy.sum(abs(x)) # special case for speedup
+            return numpy.sum(abs(x),axis=0) # special case for speedup
         elif ord == 2:
-            return sqrt(numpy.sum(real((conjugate(x)*x)))) # special case for speedup
+            return sqrt(numpy.sum(real((conjugate(x)*x)),axis=0)) # special case for speedup
         else:
-            return numpy.sum(abs(x)**ord)**(1.0/ord)
+            return numpy.sum(abs(x)**ord,axis=0)**(1.0/ord)
     elif nd == 2:
         if ord == 2:
             return numpy.amax(decomp.svd(x,compute_uv=0))
         elif ord == -2:
             return numpy.amin(decomp.svd(x,compute_uv=0))
         elif ord == 1:
-            return numpy.amax(numpy.sum(abs(x)))
+            return numpy.amax(numpy.sum(abs(x),axis=0))
         elif ord == Inf:
             return numpy.amax(numpy.sum(abs(x),axis=1))
         elif ord == -1:
-            return numpy.amin(numpy.sum(abs(x)))
+            return numpy.amin(numpy.sum(abs(x),axis=0))
         elif ord == -Inf:
             return numpy.amin(numpy.sum(abs(x),axis=1))
         elif ord in ['fro','f']:
@@ -365,7 +365,7 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     resids = asarray([], dtype=x.dtype)
     if n<m:
         x1 = x[:n]
-        if rank==n: resids = sum(x[n:]**2)
+        if rank==n: resids = sum(x[n:]**2,axis=0)
         x = x1
     return x,resids,rank,s
 

@@ -725,7 +725,7 @@ class test_variability(ScipyTestCase):
     def check_signaltonoise(self):
         """
         this is not in R, so used
-        mean(testcase)/(sqrt(var(testcase)*3/4)) """
+        mean(testcase,axis=0)/(sqrt(var(testcase)*3/4)) """
         #y = scipy.stats.signaltonoise(self.shoes[0])
         #assert_approx_equal(y,4.5709967)
         y = scipy.stats.signaltonoise(self.testcase)
@@ -753,7 +753,7 @@ class test_variability(ScipyTestCase):
     def check_z(self):
         """
         not in R, so used
-        (10-mean(testcase))/sqrt(var(testcase)*3/4)
+        (10-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = scipy.stats.z(self.testcase,scipy.stats.mean(self.testcase))
         assert_almost_equal(y,0.0)
@@ -761,7 +761,7 @@ class test_variability(ScipyTestCase):
     def check_zs(self):
         """
         not in R, so tested by using
-        (testcase[i]-mean(testcase))/sqrt(var(testcase)*3/4)
+        (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = scipy.stats.zs(self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
@@ -783,7 +783,7 @@ class test_moments(ScipyTestCase):
     testmathworks = [1.165 , 0.6268, 0.0751, 0.3516, -0.6965]
     def check_moment(self):
         """
-        mean((testcase-mean(testcase))**power))"""
+        mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))"""
         y = scipy.stats.moment(self.testcase,1)
         assert_approx_equal(y,0.0,10)
         y = scipy.stats.moment(self.testcase,2)
@@ -802,7 +802,7 @@ class test_moments(ScipyTestCase):
 
     def check_skewness(self):
         """
-            sum((testmathworks-mean(testmathworks))**3)/((sqrt(var(testmathworks)*4/5))**3)/5
+            sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0)/((sqrt(var(testmathworks)*4/5))**3)/5
         """
         y = scipy.stats.skew(self.testmathworks)
         assert_approx_equal(y,-0.29322304336607,10)
@@ -812,8 +812,8 @@ class test_moments(ScipyTestCase):
         assert_approx_equal(y,0.0,10)
     def check_kurtosis(self):
         """
-            sum((testcase-mean(testcase))**4)/((sqrt(var(testcase)*3/4))**4)/4
-            sum((test2-mean(testmathworks))**4)/((sqrt(var(testmathworks)*4/5))**4)/5
+            sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
+            sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
             Set flags for axis = 0 and
             fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
         """

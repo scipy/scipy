@@ -217,7 +217,7 @@ helpdict = {
       or get3_light(xyz)
 
      return 3D lighting for polygons with vertices XYZ.  If NXYZ is
-     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     specified, XYZ should be sum(nxyz,axis=0)-by-3, with NXYZ being the
      list of numbers of vertices for each polygon (as for the plfp
      function).  If NXYZ is not specified, XYZ should be a quadrilateral
      mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
@@ -235,7 +235,7 @@ helpdict = {
          or get3_normal(xyz)
 
      return 3D normals for polygons with vertices XYZ.  If NXYZ is
-     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     specified, XYZ should be sum(nxyz,axis=0)-by-3, with NXYZ being the
      list of numbers of vertices for each polygon (as for the plfp
      function).  If NXYZ is not specified, XYZ should be a quadrilateral
      mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
@@ -257,7 +257,7 @@ helpdict = {
          or get3_centroid(xyz)
 
      return 3D centroids for polygons with vertices XYZ.  If NXYZ is
-     specified, XYZ should be sum(nxyz)-by-3, with NXYZ being the
+     specified, XYZ should be sum(nxyz,axis=0)-by-3, with NXYZ being the
      list of numbers of vertices for each polygon (as for the plfp
      function).  If NXYZ is not specified, XYZ should be a quadrilateral
      mesh, ni-by-nj-by-3 (as for the plf function).  In the first case,
@@ -332,7 +332,7 @@ helpdict = {
    "sort3d" :
    """
    sort3d(z, npolys)
-     given Z and NPOLYS, with len(Z)==sum(npolys), return
+     given Z and NPOLYS, with len(Z)==sum(npolys,axis=0), return
      a 2-element list [LIST, VLIST] such that Z[VLIST] and NPOLYS[LIST] are
      sorted from smallest average Z to largest average Z, where
      the averages are taken over the clusters of length NPOLYS.
@@ -458,9 +458,9 @@ helpdict = {
            ravel(add.outer (adders,zeros(nj-1, Int))) +
            arange((ni-1)*(nj-1), dtype = Int),
            array ( [[0, 1], [nj + 1, nj]])))
-        xyz=array([take(ravel(xyz[0]),list),
-           take(ravel(xyz[1]),list),
-           take(ravel(xyz[2]),list)])
+        xyz=array([take(ravel(xyz[0]),list,axis=0),
+           take(ravel(xyz[1]),list,axis=0),
+           take(ravel(xyz[2]),list,axis=0)])
         nxyz= ones((ni-1)*(nj-1)) * 4;
       The resulting array xyz is 3-by-(4*(nj-1)*(ni-1)).
       xyz[0:3,4*i:4*(i+1)] are the clockwise coordinates of the
@@ -523,7 +523,7 @@ helpdict = {
      the list [NVERTS, XYZVERTS, color].  Note that it is impossible to
      pass arguments as addresses, as yorick does in this routine.
      NVERTS is the number of vertices in each polygon of the slice, and
-     XYZVERTS is the 3-by-sum(NVERTS) list of polygon vertices.  If the
+     XYZVERTS is the 3-by-sum(NVERTS,axis=0) list of polygon vertices.  If the
      FCOLOR argument is present, the values of that coloring function on
      the polygons are returned as the value of the slice3 function
      (numberof(color_values) == numberof(NVERTS) == number of polygons).
@@ -573,7 +573,7 @@ helpdict = {
    slice3mesh returns a triple [nverts, xyzverts, color]
     nverts is no_cells long and the ith entry tells how many
        vertices the ith cell has.
-    xyzverts is sum (nverts) by 3 and gives the vertex
+    xyzverts is sum (nverts,axis=0) by 3 and gives the vertex
        coordinates of the cells in order.
     color, if present, is len (nverts) long and contains
        a color value for each cell in the mesh.
@@ -781,7 +781,7 @@ helpdict = {
 
      Perform simple 3D rendering of an object created by slice3
      (possibly followed by slice2).  NVERTS and XYZVERTS are polygon
-     lists as returned by slice3, so XYZVERTS is sum(NVERTS)-by-3,
+     lists as returned by slice3, so XYZVERTS is sum(NVERTS,axis=0)-by-3,
      where NVERTS is a list of the number of vertices in each polygon.
      If present, the VALUES should have the same length as NVERTS;
      they are used to color the polygon.  If VALUES is not specified,
@@ -797,7 +797,7 @@ helpdict = {
       cmin = None, cmax = None)
 
      Add the polygon list specified by NVERTS (number of vertices in
-     each polygon) and XYZVERTS (3-by-sum(NVERTS) vertex coordinates)
+     each polygon) and XYZVERTS (3-by-sum(NVERTS,axis=0) vertex coordinates)
      to the currently displayed b-tree.  If VALUES is specified, it
      must have the same dimension as NVERTS, and represents the color
      of each polygon.  If VALUES is not specified, the polygons

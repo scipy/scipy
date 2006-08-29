@@ -49,7 +49,7 @@ class test_randn(unittest.TestCase):
 class test_factorial(unittest.TestCase):
     def check_basic(self):
         for k in range(0,13):
-            assert_equal(factorial(k),product(mgrid[1:k+1]))
+            assert_equal(factorial(k),product(mgrid[1:k+1],axis=0))
         assert_equal(factorial(-10),0)
 
     def check_exact(self):
@@ -63,7 +63,7 @@ class test_comb(unittest.TestCase):
     def check_basic(self):
         for N in range(0,11):
             for k in range(0,N+1):
-                ans = product(mgrid[N-k+1:N+1]) / product(mgrid[1:k+1])
+                ans = product(mgrid[N-k+1:N+1],axis=0) / product(mgrid[1:k+1],axis=0)
                 assert_almost_equal(comb(N,k),ans,9)
         assert_equal(comb(-10,1),0)
         assert_equal(comb(10,-1),0)

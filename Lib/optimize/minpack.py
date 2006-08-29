@@ -145,7 +145,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
     (non-linear) equations in N unknowns given a starting estimate, x0,
     using a modification of the Levenberg-Marquardt algorithm.
 
-                    x = arg min(sum(func(y)**2))
+                    x = arg min(sum(func(y)**2,axis=0))
                              y
 
   Inputs:
@@ -301,7 +301,7 @@ def check_gradient(fcn,Dfcn,x0,args=(),col_deriv=0):
     fvecp=fvecp.reshape((m,))
     _minpack._chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,2,err)
 
-    good = (product(greater(err,0.5)))
+    good = (product(greater(err,0.5),axis=0))
 
     return (good,err)
 

@@ -86,7 +86,7 @@ class basemodel(object):
         self.verbose = False
         
         self.maxgtol = 1e-5
-        # Required tolerance of gradient on average (closeness to zero) for
+        # Required tolerance of gradient on average (closeness to zero,axis=0) for
         # CG optimization:
         self.avegtol = 1e-3
         # Default tolerance for the other optimization algorithms:
@@ -1717,7 +1717,7 @@ class bigmodel(basemodel):
         self.external = None
         self.clearcache()
         
-        meandual = numpy.average(dualapprox)
+        meandual = numpy.average(dualapprox,axis=0)
         self.external_duals[self.iters] = dualapprox
         self.external_gradnorms[self.iters] = gradnorms
                 
@@ -1727,7 +1727,7 @@ class bigmodel(basemodel):
                  (len(self.externalFs), meandual)
             print "** Mean mean square error of the (unregularized) feature" \
                     " expectation estimates from the external samples =" \
-                    " mean(|| \hat{\mu_e} - k ||) =", numpy.average(gradnorms)
+                    " mean(|| \hat{\mu_e} - k ||,axis=0) =", numpy.average(gradnorms,axis=0)
         # Track the parameter vector params with the lowest mean dual estimate
         # so far:
         if meandual < self.bestdual:

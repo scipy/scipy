@@ -130,7 +130,7 @@ def cascade(hk,J=7):
     #   evaluation points x < 1 -- i.e. position is 0.xxxx
     v = sb.real(v[:,ind])
     # need scaling function to integrate to 1 so find
-    #  eigenvector normalized to sum(v)=1
+    #  eigenvector normalized to sum(v,axis=0)=1
     sm = sb.sum(v)
     if sm < 0:  # need scaling function to integrate to 1
         v = -v

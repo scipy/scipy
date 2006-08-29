@@ -51,11 +51,11 @@ def vecnorm(x, ord=2):
     elif ord == -Inf:
         return numpy.amin(abs(x))
     else:
-        return numpy.sum(abs(x)**ord)**(1.0/ord)
+        return numpy.sum(abs(x)**ord,axis=0)**(1.0/ord)
 
 def rosen(x):  # The Rosenbrock function
     x = asarray(x)
-    return numpy.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    return numpy.sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0,axis=0)
 
 def rosen_der(x):
     x = asarray(x)
@@ -1580,7 +1580,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         grid = (grid,)
     Jout = vecfunc(*grid)
     Nshape = shape(Jout)
-    indx = argmin(Jout.ravel())
+    indx = argmin(Jout.ravel(),axis=-1)
     Nindx = zeros(N,int)
     xmin = zeros(N,float)
     for k in range(N-1,-1,-1):

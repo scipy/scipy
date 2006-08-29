@@ -22,7 +22,7 @@ def findfreqs(num, den, N):
     if len(ep) == 0:
         ep = atleast_1d(-1000)+0j
 
-    ez = c_[numpy.compress(ep.imag >=0, ep), numpy.compress((abs(tz) < 1e5) & (tz.imag >=0),tz)]
+    ez = c_[numpy.compress(ep.imag >=0, ep,axis=-1), numpy.compress((abs(tz) < 1e5) & (tz.imag >=0),tz,axis=-1)]
 
     integ = abs(ez) < 1e-10
     hfreq = numpy.around(numpy.log10(numpy.max(3*abs(ez.real + integ)+1.5*ez.imag))+0.5)
@@ -967,7 +967,7 @@ def cheb1ap(N,rp):
     mu = 1.0/N * numpy.log((1.0+numpy.sqrt(1+eps*eps)) / eps)
     theta = pi/2.0 * (2*n-1.0)/N
     p = -numpy.sinh(mu)*numpy.sin(theta) + 1j*numpy.cosh(mu)*numpy.cos(theta)
-    k = numpy.prod(-p).real
+    k = numpy.prod(-p,axis=0).real
     if N % 2 == 0:
         k = k / sqrt((1+eps*eps))
     return z, p, k
@@ -992,7 +992,7 @@ def cheb2ap(N,rs):
     p = exp(1j*(pi*numpy.arange(1,2*N,2)/(2.0*N) + pi/2.0))
     p = sinh(mu) * p.real + 1j*cosh(mu)*p.imag
     p = 1.0 / p
-    k = (numpy.prod(-p)/numpy.prod(-z)).real
+    k = (numpy.prod(-p,axis=0)/numpy.prod(-z,axis=0)).real
     return z, p, k
 
 
@@ -1059,7 +1059,7 @@ def ellipap(N,rp,rs):
     jj = len(j)
 
     [s,c,d,phi] = special.ellipj(j*capk/N,m*numpy.ones(jj))
-    snew = numpy.compress(abs(s) > EPSILON, s)
+    snew = numpy.compress(abs(s) > EPSILON, s,axis=-1)
     z = 1.0 / (sqrt(m)*snew)
     z = 1j*z
     z = numpy.concatenate((z,conjugate(z)))
@@ -1072,12 +1072,12 @@ def ellipap(N,rp,rs):
     p = -(c*d*sv*cv + 1j*s*dv) / (1-(d*sv)**2.0)
 
     if N % 2:
-        newp = numpy.compress(abs(p.imag) > EPSILON*numpy.sqrt(numpy.sum(p*numpy.conjugate(p)).real), p)
+        newp = numpy.compress(abs(p.imag) > EPSILON*numpy.sqrt(numpy.sum(p*numpy.conjugate(p),axis=0).real), p,axis=-1)
         p = numpy.concatenate((p,conjugate(newp)))
     else:
         p = numpy.concatenate((p,conjugate(p)))
 
-    k = (numpy.prod(-p) / numpy.prod(-z)).real
+    k = (numpy.prod(-p,axis=0) / numpy.prod(-z,axis=0)).real
     if N % 2 == 0:
         k = k / numpy.sqrt((1+eps*eps))
 
@@ -1539,4 +1539,4 @@ def firwin(N, cutoff, width=None, window='hamming'):
     alpha = N//2
     m = numpy.arange(0,N)
     h = win*special.sinc(cutoff*(m-alpha))
-    return h / sum(h)
+    return h / sum(h,axis=0)

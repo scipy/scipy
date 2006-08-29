@@ -152,7 +152,7 @@ def py_vq(obs,code_book):
     for o in obs:
         subtract(code_book,o,diff) # faster version of --> diff = code_book - o
         dist = sqrt(sum(diff*diff,-1))
-        code.append(argmin(dist))
+        code.append(argmin(dist,axis=-1))
         #something weird here dst does not work reliably because it sometime
         #returns an array of goofy length. Try except fixes it, but is ugly.
         dst = minimum.reduce(dist,0)

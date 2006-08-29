@@ -50,7 +50,7 @@ def unique(inarray):
     else:                                  # IT MUST BE A 2+D ARRAY
         if inarray.typecode() != 'O':  # not an Object array
             for item in inarray[1:]:
-                if not N.sum(N.alltrue(N.equal(uniques,item),1)):
+                if not N.sum(N.alltrue(N.equal(uniques,item),1),axis=0):
                     try:
                         uniques = N.concatenate( [uniques,item[N.newaxis,:]] )
                     except TypeError:    # the item to add isn't a list
@@ -61,7 +61,7 @@ def unique(inarray):
             for item in inarray[1:]:
                 newflag = 1
                 for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                    test = N.sum(abs(N.array(map(cmp,item,unq))))
+                    test = N.sum(abs(N.array(map(cmp,item,unq))),axis=0)
                     if test == 0:   # if item identical to any 1 row in uniques
                         newflag = 0 # then not a novel item to add
                         break
@@ -172,7 +172,7 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
     N of the mean are desired, set either or both parameters to 1.
 
     Returns: unique 'conditions' specified by the contents of columns specified
-    by keepcols, abutted with the mean(s) of column(s) specified by
+    by keepcols, abutted with the mean(s,axis=0) of column(s) specified by
     collapsecols
     """
     if cfcn is None:

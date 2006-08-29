@@ -215,7 +215,7 @@ def demo5 (*itest) :
         n_zones = f.NumZones
         # Put vertices in right order for Gist
         n_z = transpose (
-           take (transpose (n_z), array ( [0, 4, 3, 7, 1, 5, 2, 6])))
+           take (transpose (n_z), array ( [0, 4, 3, 7, 1, 5, 2, 6]),axis=0))
         m3 = mesh3 (x, y, z, funcs = [c], verts = n_z ) # [0:10])
         [nv, xyzv, cv] = slice3 (m3, 1, None, None, 1, value = .9 * max (c) )
         pyz = plane3 ( array ([1, 0, 0], Float ), zeros (3, Float))
@@ -358,7 +358,7 @@ def demo5 (*itest) :
                 npyr = ZLsc [i]
                 # Now reorder the points (bill has the apex last instead of first)
                 nz_pyr = transpose (
-                   take (transpose (nz_pyr), array ( [4, 0, 1, 2, 3])))
+                   take (transpose (nz_pyr), array ( [4, 0, 1, 2, 3]),axis=0))
                 istart = istart + ZLss [i] * ZLsc [i]
             elif ZLss[i] == 6 : # PRISM
                 nz_prism = reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
@@ -367,7 +367,7 @@ def demo5 (*itest) :
                 # now reorder the points (bill goes around a square face
                 # instead of traversing the opposite sides in the same direction.
                 nz_prism = transpose (
-                   take (transpose (nz_prism), array ( [0, 1, 3, 2, 4, 5])))
+                   take (transpose (nz_prism), array ( [0, 1, 3, 2, 4, 5]),axis=0))
                 istart = istart + ZLss [i] * ZLsc [i]
             elif ZLss[i] == 8 : # HEXAHEDRON
                 nz_hex = reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
@@ -375,7 +375,7 @@ def demo5 (*itest) :
                 # now reorder the points (bill goes around a square face
                 # instead of traversing the opposite sides in the same direction.
                 nz_hex = transpose (
-                   take (transpose (nz_hex), array ( [0, 1, 3, 2, 4, 5, 7, 6])))
+                   take (transpose (nz_hex), array ( [0, 1, 3, 2, 4, 5, 7, 6]),axis=0))
                 nhex = ZLsc [i]
                 istart = istart + ZLss [i] * ZLsc [i]
             else :
