@@ -111,10 +111,10 @@ def cascade(hk,J=7):
     indx1 = sb.clip(2*nn-kk,-1,N+1)
     indx2 = sb.clip(2*nn-kk+1,-1,N+1)
     m = sb.zeros((2,2,N,N),'d')
-    m[0,0] = sb.take(thk,indx1)
-    m[0,1] = sb.take(thk,indx2)
-    m[1,0] = sb.take(tgk,indx1)
-    m[1,1] = sb.take(tgk,indx2)
+    m[0,0] = sb.take(thk,indx1,0)
+    m[0,1] = sb.take(thk,indx2,0)
+    m[1,0] = sb.take(tgk,indx1,0)
+    m[1,1] = sb.take(tgk,indx2,0)
     m *= s2
 
     # construct the grid of points

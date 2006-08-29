@@ -928,7 +928,7 @@ class image_object(property_object):
         else:
             cmap = colormap
 
-        pixels = take( cmap, scaled_mag)
+        pixels = take( cmap, scaled_mag, 0)
         del scaled_mag
         # need to transpose pixels in memory...
         bitmap = pixels.astype(UnsignedInt8).tostring()

@@ -3057,7 +3057,7 @@ class vonmises_gen(rv_continuous):
         c_bad = atleast_1d((b<=0) | (x != x))
 
         indxiter = nonzero(c_xiter)
-        xiter = take(x, indxiter)
+        xiter = take(x, indxiter, 0)
 
         vals = ones(len(c_xsimple),float)
         putmask(vals, c_bad, nan)
@@ -3066,7 +3066,7 @@ class vonmises_gen(rv_continuous):
         st = where(isnan(st),0.0,st)
         putmask(vals, c_xnormal, norm.cdf(x, scale=st))
 
-        biter = take(atleast_1d(b)*(x==x), indxiter)
+        biter = take(atleast_1d(b)*(x==x), indxiter, 0)
         if len(xiter) > 0:
             fac = special.i0(biter)
             x2 = xiter
@@ -3191,7 +3191,7 @@ def entropy(pk,qk=None):
         qk = 1.0*qk / sum(qk)
         # If qk is zero anywhere, then unless pk is zero at those places
         #   too, the relative entropy is infinite.
-        if any(take(pk,nonzero(qk==0.0))!=0.0):
+        if any(take(pk,nonzero(qk==0.0))!=0.0, 0):
             return inf
         vec = where (pk == 0, 0.0, pk*log(pk / qk))
     return -sum(vec)
@@ -3359,8 +3359,8 @@ class rv_discrete:
             self.xk, self.pk = values
             self.return_integers = 0
             indx = argsort(ravel(self.xk))
-            self.xk = take(ravel(self.xk),indx)
-            self.pk = take(ravel(self.pk),indx)
+            self.xk = take(ravel(self.xk),indx, 0)
+            self.pk = take(ravel(self.pk),indx, 0)
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)

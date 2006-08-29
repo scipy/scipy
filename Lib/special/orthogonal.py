@@ -61,6 +61,7 @@ Functions:
 
 from __future__ import nested_scopes
 from numpy import *
+from numpy.oldnumeric import take
 import _cephes as cephes
 _gam = cephes.gamma
 from scipy.linalg import eig

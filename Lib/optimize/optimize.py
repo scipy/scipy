@@ -172,7 +172,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         fsim[k+1] = f
 
     ind = numpy.argsort(fsim)
-    fsim = numpy.take(fsim,ind)  # sort so sim[0,:] has the lowest function value
+    fsim = numpy.take(fsim,ind,0)
+    # sort so sim[0,:] has the lowest function value
     sim = numpy.take(sim,ind,0)
 
     iterations = 1
@@ -230,7 +231,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
         ind = numpy.argsort(fsim)
         sim = numpy.take(sim,ind,0)
-        fsim = numpy.take(fsim,ind)
+        fsim = numpy.take(fsim,ind,0)
         if callback is not None:
             callback(sim[0])
         iterations += 1

@@ -107,8 +107,8 @@ class StepFunction:
 
         if not sorted:
             asort = N.argsort(self.x)
-            self.x = N.take(self.x, asort)
-            self.y = N.take(self.y, asort)
+            self.x = N.take(self.x, asort, 0)
+            self.y = N.take(self.y, asort, 0)
         self.n = self.x.shape[0]
 
     def __call__(self, time):

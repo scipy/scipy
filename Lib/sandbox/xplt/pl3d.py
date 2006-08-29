@@ -469,13 +469,13 @@ def get3_normal (xyz, *nxyz) :
         # (reduces to above medians for quads)
         # (2) compute midpoints of first three sides
         n2 = (nxyz [0] + 1) / 2
-        c0 = (take(xyz, frst) + take(xyz, frst + 1)) / 2.
+        c0 = (take(xyz, frst, 0) + take(xyz, frst + 1, 0)) / 2.
         i = frst + n2 - 1
-        c1 = (take(xyz, i) + take(xyz, i + 1)) / 2.
+        c1 = (take(xyz, i, 0) + take(xyz, i + 1, 0)) / 2.
         i = n2 / 2
-        c2 = (take(xyz, frst + i) + take(xyz, frst + (i + 1) % nxyz [0])) / 2.
+        c2 = (take(xyz, frst + i, 0) + take(xyz, frst + (i + 1) % nxyz [0], 0)) / 2.
         i = minimum (i + n2, nxyz [0]) - 1
-        c3 = (take(xyz, frst + i) + take(xyz, frst + (i + 1) % nxyz [0])) / 2.
+        c3 = (take(xyz, frst + i, 0) + take(xyz, frst + (i + 1) % nxyz [0], 0)) / 2.
         m1 = c1 - c0
         m2 = c3 - c2
 
@@ -847,7 +847,7 @@ def sort3d (z, npolys) :
     array_set (vlist, list, arange (len (list), dtype = Int))
     # then reset the nlist values to that pre-sorted order, so that
     # sort(nlist) will be the required vertex sorting list
-    nlist = take(vlist, nlist)
+    nlist = take(vlist, nlist, 0)
     # the final hitch is to ensure that the vertices within each polygon
     # remain in their initial order (sort scrambles equal values)
     # since the vertices of a polygon can be cyclically permuted,

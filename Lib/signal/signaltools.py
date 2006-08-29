@@ -887,7 +887,7 @@ def cmplx_sort(p):
         indx = argsort(abs(p))
     else:
         indx = argsort(p)
-    return take(p,indx), indx
+    return take(p,indx,0), indx
 
 def unique_roots(p,tol=1e-3,rtype='min'):
     """Determine the unique roots and their multiplicities in two lists
@@ -959,7 +959,7 @@ def invres(r,p,k,tol=1e-3,rtype='avg'):
     """
     extra = k
     p, indx = cmplx_sort(p)
-    r = take(r,indx)
+    r = take(r,indx,0)
     pout, mult = unique_roots(p,tol=tol,rtype=rtype)
     p = []
     for k in range(len(pout)):
@@ -1130,7 +1130,7 @@ def invresz(r,p,k,tol=1e-3,rtype='avg'):
     """
     extra = asarray(k)
     p, indx = cmplx_sort(p)
-    r = take(r,indx)
+    r = take(r,indx,0)
     pout, mult = unique_roots(p,tol=tol,rtype=rtype)
     p = []
     for k in range(len(pout)):
@@ -1341,7 +1341,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
             coef,resids,rank,s = linalg.lstsq(A,newdata[sl])
             newdata[sl] = newdata[sl] - dot(A,coef)
         # Put data back in original shape.
-        tdshape = take(dshape,newdims)
+        tdshape = take(dshape,newdims,0)
         ret = reshape(newdata,tuple(tdshape))
         vals = range(1,rnk)
         olddims = vals[:axis] + [0] + vals[axis:]

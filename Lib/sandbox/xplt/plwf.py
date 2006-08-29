@@ -243,9 +243,9 @@ def xyz_wf (z, y, x, scale = 1.0) :
             ravel(add.outer (adders,zeros(nj-1, Int))) +
             arange((ni-1)*(nj-1), dtype = Int),
             array ( [[0, 1], [nj + 1, nj]])))
-         xyz=array([take(ravel(xyz[0]),list),
-            take(ravel(xyz[1]),list),
-            take(ravel(xyz[2]),list)])
+         xyz=array([take(ravel(xyz[0]),list,0),
+            take(ravel(xyz[1]),list,0),
+            take(ravel(xyz[2]),list,0)])
          nxyz= ones((ni-1)*(nj-1)) * 4;
        The resulting array xyz is 3-by-(4*(nj-1)*(ni-1)).
        xyz[0:3,4*i:4*(i+1)] are the clockwise coordinates of the

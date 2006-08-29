@@ -197,11 +197,11 @@ def extract_columns(arlist, collist, atype, missing):
         if len(collist) == 1:
             toconvlist = arlist[::-collist[-1]]
         else:
-            toconvlist = take(arlist,collist[:-1])
+            toconvlist = take(arlist,collist[:-1],0)
             toconvlist = concatenate((toconvlist,
                                       arlist[(collist[-2]-collist[-1])::(-collist[-1])]))
     else:
-        toconvlist = take(arlist, collist)
+        toconvlist = take(arlist, collist,0)
 
     return numpyio.convert_objectarray(toconvlist, atype, missing)
 

@@ -37,7 +37,7 @@ def fixed_quad(func,a,b,args=(),n=5):
         raise ValueError, "Gaussian quadrature is only available for " \
               "finite limits."
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0*sum(w*func(y,*args)), None
+    return (b-a)/2.0*sum(w*func(y,*args),0), None
 
 def vectorize1(func, args=(), vec_func=False):
     if vec_func:
@@ -323,7 +323,7 @@ def _difftrap(function, interval, numtraps):
         h = float(interval[1]-interval[0])/numtosum
         lox = interval[0] + 0.5 * h;
         points = lox + h * arange(0, numtosum)
-        s = sum(function(points))
+        s = sum(function(points),0)
         return s
 
 def _romberg_diff(b, c, k):

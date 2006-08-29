@@ -273,7 +273,7 @@ class test_ptp(unittest.TestCase):
         b = [[3,6.0, 9.0],
              [4,10.0,5.0],
              [8,3.0,2.0]]
-        assert_equal(ptp(b),[5.0,7.0,7.0])
+        assert_equal(ptp(b,axis=0),[5.0,7.0,7.0])
         assert_equal(ptp(b,axis=1),[6.0,6.0,6.0])
 
 

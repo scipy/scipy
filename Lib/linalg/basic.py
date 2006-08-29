@@ -472,7 +472,7 @@ def toeplitz(c,r=None):
     rows = mgrid[rN:0:-1]
     indx = cols[:,newaxis]*ones((1,rN),dtype=int) + \
            rows[newaxis,:]*ones((cN,1),dtype=int) - 1
-    return take(vals, indx)
+    return take(vals, indx, 0)
 
 
 def hankel(c,r=None):
@@ -503,7 +503,7 @@ def hankel(c,r=None):
     rows = mgrid[0:rN]
     indx = cols[:,newaxis]*ones((1,rN),dtype=int) + \
            rows[newaxis,:]*ones((cN,1),dtype=int) - 1
-    return take(vals, indx)
+    return take(vals, indx, 0)
 
 def all_mat(*args):
     return map(Matrix,args)

@@ -20,7 +20,7 @@ __all__ = ['whiten', 'vq', 'kmeans']
 from numpy.random import randint
 from scipy.stats import std, mean
 from numpy import shape, zeros, subtract, sqrt, argmin, minimum, array, \
-     newaxis, arange, compress, equal, take, common_type, single, double
+     newaxis, arange, compress, equal, common_type, single, double, take
 
 def whiten(obs):
     """ Normalize a group of observations on a per feature basis

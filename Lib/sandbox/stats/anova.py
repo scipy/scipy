@@ -74,7 +74,7 @@ lists-of-lists.
     Nwifactors = len(Wscols) - 1 # WAS len(Wcolumns)
     #Nwlevels = take(array(Nlevels),Wscols) # no.lvls for each w/i subj fact
     #Nbtwfactors = len(Bscols) - 1 # WASNfactors - Nwifactors + 1
-    Nblevels = take(array(Nlevels),Bscols)
+    Nblevels = take(array(Nlevels),Bscols,0)
 
     Nwsources = 2**Nwifactors - 1 # num within-subject factor-combos
     #Nbsources = Nallsources - Nwsources
@@ -159,7 +159,7 @@ lists-of-lists.
             new = alluniqueslist[j].index(data[i][j])
             idx.append(new)
         DA[idx] = data[i][-1] # put this data point in proper place in DA
-        btwidx = take(idx,array(Bscols))
+        btwidx = take(idx,array(Bscols),0)
         subjslots[btwidx] = 1
     # DONE CREATING DATA ARRAY, DA ... #dims = numfactors+1, dim 0=subjects
     # dim -1=measured values, dummyval = values used to fill empty slots in DA
@@ -221,7 +221,7 @@ lists-of-lists.
                 Lwithinsourcecol = map(Lsourceandbtws.index,Lwithinsourcecol)
                 # Now indxlist should hold a list of indices into the list of possible
                 # coefficients, one row per combo of coefficient. Next line PRESERVES dummyval
-            dvarshape = array(take(mns.shape,Lwithinsourcecol[1:])) -1
+            dvarshape = array(take(mns.shape,Lwithinsourcecol[1:],0)) -1
             idxarray = indices(dvarshape)
             newshape = array([idxarray.shape[0],
                                 multiply.reduce(idxarray.shape[1:])])
@@ -379,7 +379,7 @@ lists-of-lists.
 
     ## Calc and save sums of squares for this source
             SS = sum((effect**2 *sourceNarray) *
-                      multiply.reduce(take(Marray.shape,btwnonsourcedims)))
+                      multiply.reduce(take(Marray.shape,btwnonsourcedims,0)))
         ## Save it so you don't have to calculate it again next time
             SSlist.append(SS)
             SSsources.append(source)
@@ -687,7 +687,7 @@ Returns: SS array for multivariate F calculation
         # Calc and save sums of squares for this source
         SS = zeros((levels,levels),'f')
         SS = sum((effect**2 *sourceDNarray) *
-            multiply.reduce(take(DM[dindex].shape,btwnonsourcedims)),
+            multiply.reduce(take(DM[dindex].shape,btwnonsourcedims,0)),
             range(len(sourceDMarray.shape)-1))
         # Save it so you don't have to calculate it again next time
         SSlist.append(SS)
@@ -739,7 +739,7 @@ def subtr_cellmeans(workd, subjslots):
         idx[0] = -1 # compensate for pre-increment of 1st slot in incr()
 
         # Get a list of the maximum values each factor can handle
-        loopcap = take(array(Nlevels),sourcedims)-1
+        loopcap = take(array(Nlevels),sourcedims,0)-1
 
 ### WHILE STILL MORE GROUPS, CALCULATE GROUP MEAN FOR EACH D-VAR
     while incr(idx,loopcap) != -1:  # loop through source btw level-combos
