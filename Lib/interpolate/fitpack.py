@@ -33,7 +33,7 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     dot, sin, cos, pi, arange, empty
+     dot, sin, cos, pi, arange, empty, intc
 myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
@@ -101,7 +101,7 @@ _iermess2 = {0:["""\
     An error occured""",TypeError]}
 
 _parcur_cache = {'t': array([],float), 'wrk': array([],float),
-                 'iwrk':array([],int), 'u': array([],float),'ub':0,'ue':1}
+                 'iwrk':array([],intc), 'u': array([],float),'ub':0,'ue':1}
 
 def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             full_output=0,nest=None,per=0,quiet=1):
@@ -169,7 +169,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     """
     if task<=0:
         _parcur_cache = {'t': array([],float), 'wrk': array([],float),
-                         'iwrk':array([],int),'u': array([],float),
+                         'iwrk':array([],intc),'u': array([],float),
                          'ub':0,'ue':1}
     x=myasarray(x)
     idim,m=x.shape
@@ -245,7 +245,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         return tcku
 
 _curfit_cache = {'t': array([],float), 'wrk': array([],float),
-                 'iwrk':array([],int)}
+                 'iwrk':array([],intc)}
 def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
            full_output=0,per=0,quiet=1):
     """Find the B-spline representation of 1-D curve.
@@ -353,7 +353,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
         _curfit_cache['t'] = t
     if task <= 0:
         _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
-        _curfit_cache['iwrk'] = empty((nest,),int)
+        _curfit_cache['iwrk'] = empty((nest,),intc)
     try:
         t=_curfit_cache['t']
         wrk=_curfit_cache['wrk']
@@ -532,7 +532,7 @@ def spalde(x,tck):
 #           full_output=0,nest=None,per=0,quiet=1):
 
 _surfit_cache = {'tx': array([],float),'ty': array([],float),
-                 'wrk': array([],float), 'iwrk':array([],int)}
+                 'wrk': array([],float), 'iwrk':array([],intc)}
 def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
              s=None,eps=1e-16,tx=None,ty=None,full_output=0,
              nxest=None,nyest=None,quiet=1):
