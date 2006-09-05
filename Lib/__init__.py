@@ -51,7 +51,7 @@ from version import version as __version__
 # Load scipy packages, their global_symbols, set up __doc__ string.
 from numpy._import_tools import PackageLoader
 import os as _os
-SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','0'))
+SCIPY_IMPORT_VERBOSE = int(_os.environ.get('SCIPY_IMPORT_VERBOSE','-1'))
 del _os
 pkgload = PackageLoader()
 pkgload(verbose=SCIPY_IMPORT_VERBOSE,postpone=True)
