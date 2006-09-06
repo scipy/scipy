@@ -1045,7 +1045,7 @@ def ellipap(N,rp,rs):
     else:
         krat = N*val[0] / val[1]
 
-    m = optimize.fmin(kratio, 0.5, args=(krat,), maxfun=250, maxiter=250,
+    m = optimize.fmin(kratio, [0.5], args=(krat,), maxfun=250, maxiter=250,
                       disp=0)
     if m < 0 or m > 1:
         m = optimize.fminbound(kratio, 0, 1, args=(krat,), maxfun=250,
