@@ -11,6 +11,7 @@ __all__ = [
     ]
 
 class LinearKernel:
+    """Linear kernel: u'*v."""
     def __init__(self):
         self.kernel_type = libsvm.LINEAR
 
@@ -23,6 +24,8 @@ class LinearKernel:
         return self
 
 class PolynomialKernel:
+    """Polynomial kernel: (gamma*u'*v + coef0)^degree."""
+
     def __init__(self, degree, gamma, coef0):
         self.kernel_type = libsvm.POLY
         self.degree = degree
@@ -51,6 +54,8 @@ class PolynomialKernel:
             'model compaction for PolynomialKernel not implemented'
 
 class RBFKernel:
+    """Radial basis function kernel: exp(-gamma*|u-v|^2)"""
+
     def __init__(self, gamma):
         self.kernel_type = libsvm.RBF
         self.gamma = gamma
@@ -75,6 +80,8 @@ class RBFKernel:
             'model compaction for RBFKernel not implemented'
 
 class SigmoidKernel:
+    """Sigmoid kernel: tanh(gamma*u'*v + coef0)"""
+
     def __init__(self, gamma, coef0):
         self.kernel_type = libsvm.SIGMOID
         self.gamma = gamma
@@ -94,6 +101,8 @@ class SigmoidKernel:
             'model compaction for SigmoidKernel not implemented'
 
 class CustomKernel:
+    """Custom kernel: any callable"""
+
     def __init__(self, f):
         self.kernel_type = libsvm.PRECOMPUTED
         self.f = f
