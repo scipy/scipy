@@ -1,13 +1,15 @@
 import inspect
 
 from ctypes import *
+import distutils.sysconfig
 import numpy as N
 
 __all__ = [
     'svm_node_dtype'
     ]
 
-_libsvm = N.ctypeslib.load_library('libsvm_', __file__)
+so_ext = distutils.sysconfig.get_config_vars('SO')[0]
+_libsvm = N.ctypeslib.load_library('libsvm_%s' % so_ext, __file__)
 
 svm_node_dtype = \
     N.dtype({'names' : ['index', 'value'],
