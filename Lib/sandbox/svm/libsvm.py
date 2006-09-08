@@ -8,6 +8,9 @@ __all__ = [
     'svm_node_dtype'
     ]
 
+# load libsvm library from the shared library/DLL using the file name
+# extension for Python extensions, because we are currently using
+# distutils to build the shared library/DLL as a Python extension
 so_ext = distutils.sysconfig.get_config_vars('SO')[0]
 _libsvm = N.ctypeslib.load_library('libsvm_%s' % so_ext, __file__)
 
