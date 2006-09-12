@@ -110,6 +110,7 @@ Robert Kern
 robert.kern@gmail.com
 """
 
+import numpy
 from scipy.sandbox.odr import __odrpack
 from types import NoneType
 
@@ -854,7 +855,7 @@ checking things that the builtin function odr will check.
                      5*q + q*(p+m) + ldwe*ld2we*q)
 
         if isinstance(self.work, numpy.ndarray) and self.work.shape == (lwork,)\
-                and self.work.dtype == numpy.Float:
+                and self.work.dtype.str.endswith('f8'):
             # the existing array is fine
             return
         else:
