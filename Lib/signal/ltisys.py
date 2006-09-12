@@ -7,7 +7,7 @@
 from filter_design import tf2zpk, zpk2tf, normalize
 import numpy
 from numpy import product, zeros, \
-     array, dot, transpose, arange, ones
+     array, dot, transpose, arange, ones, nan_to_num
 from numpy.oldnumeric import Float
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
@@ -330,10 +330,10 @@ def lsim2(system, U, T, X0=None):
     # for each output point directly integrate assume zero-order hold
     #   or linear interpolation.
 
-    ufunc = interpolate.linear_1d(T, U, axis=0, bounds_error=0, fill_value=0)
+    ufunc = interpolate.interp1d(T, U, kind='linear', axis=0, bounds_error=False)
 
     def fprime(x, t, sys, ufunc):
-        return dot(sys.A,x) + squeeze(dot(sys.B,ufunc([t])))
+        return dot(sys.A,x) + squeeze(dot(sys.B,nan_to_num(ufunc([t]))))
 
     xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc))
     yout = dot(sys.C,transpose(xout)) + dot(sys.D,transpose(U))
