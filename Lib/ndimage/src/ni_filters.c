@@ -274,9 +274,9 @@ exit:
 }
 
 int
-NI_UniformFilter1D(PyArrayObject *input, maybelong filter_size,
+NI_UniformFilter1D(PyArrayObject *input, long filter_size,
                    int axis, PyArrayObject *output, NI_ExtendMode mode,
-                   double cval, maybelong origin)
+                   double cval, long origin)
 {
   maybelong lines, kk, ll, length, size1, size2;
   int more;
@@ -336,9 +336,9 @@ NI_UniformFilter1D(PyArrayObject *input, maybelong filter_size,
 }
 
 int
-NI_MinOrMaxFilter1D(PyArrayObject *input, maybelong filter_size,
+NI_MinOrMaxFilter1D(PyArrayObject *input, long filter_size,
                     int axis, PyArrayObject *output, NI_ExtendMode mode,
-                    double cval, maybelong origin, int minimum)
+                    double cval, long origin, int minimum)
 {
   maybelong lines, kk, jj, ll, length, size1, size2;
   int more;
@@ -705,8 +705,8 @@ exit:
 
 int NI_GenericFilter1D(PyArrayObject *input,
         int (*function)(double*, maybelong, double*, maybelong, void*),
-        void* data, maybelong filter_size, int axis, PyArrayObject *output, 
-        NI_ExtendMode mode, double cval, maybelong origin)
+        void* data, long filter_size, int axis, PyArrayObject *output, 
+        NI_ExtendMode mode, double cval, long origin)
 {
   int more;
   maybelong ii, lines, length, size1, size2;

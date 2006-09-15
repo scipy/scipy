@@ -305,7 +305,7 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
   long origin, filter_size;
   double cval;
   
-  if (!PyArg_ParseTuple(args, "O&OiiO&idlOO", NI_ObjectToInputArray, 
+  if (!PyArg_ParseTuple(args, "O&OliO&idlOO", NI_ObjectToInputArray, 
         &input, &fnc, &filter_size, &axis, NI_ObjectToOutputArray, 
         &output, &mode, &cval, &origin, &extra_arguments, &extra_keywords))
     goto exit;
