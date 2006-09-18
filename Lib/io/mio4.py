@@ -53,8 +53,30 @@ order_codes = {
     }
 
 class Mat4Header(object):
-    ''' Place holder for Mat4 header '''
-    pass
+    ''' Place holder for Mat4 header
+
+        Defines:
+        next_position - start position of next matrix
+        name
+        dims - shape of matrix as stored (see sparse reader)
+        dtype - numpy dtype of matrix
+        mclass - matlab code for class of matrix
+        is_char    - True if these are char data
+        is_numeric - True if these are numeric data
+        is_complex - True if data are complex
+        original_dtype - data type in matlab workspace
+    '''
+    def __init__(self):
+        self.next_position = None
+        self.name = ''
+        self.dims = ()
+        self.dtype = None
+        self.mclass = None
+        self.is_char = None
+        self.is_numeric = None
+        self.is_complex = None
+        self.original_dtype = None
+        
 
 class Mat4ArrayReader(MatArrayReader):
     ''' Class for reading Mat4 arrays
@@ -70,15 +92,6 @@ class Mat4ArrayReader(MatArrayReader):
         
     def read_header(self):
         ''' Read and return Mat4 matrix header
-
-        Defines:
-        next_position - start position of next matrix
-        name
-        dtype - numpy dtype of matrix
-        mclass - matlab code for class of matrix
-        dims - shape of matrix as stored (see sparse reader)
-        is_complex - True if data are complex
-        is_char    - True if these are char data
         '''
         header = Mat4Header()
         data = self.read_array(self.dtypes['header'])
@@ -93,9 +106,6 @@ class Mat4ArrayReader(MatArrayReader):
             raise ValueError, 'O in MOPT integer should be 0, wrong format?'
         header.dtype = self.dtypes[P]
         header.mclass = T
-        header.is_char = None
-        header.is_numeric = None
-        header.original_dtype = None
         header.dims = (data['mrows'], data['ncols'])
         header.is_complex = data['imagf'] == 1
         remaining_bytes = header.dtype.itemsize * product(header.dims)
@@ -124,6 +134,7 @@ class Mat4MatrixGetter(MatMatrixGetter):
 class Mat4FullGetter(Mat4MatrixGetter):
     def get_raw_array(self):
         self.header.is_numeric = True
+        self.header.original_dtype = dtype(float64)
         if self.header.is_complex:
             # avoid array copy to save memory
             res = self.read_hdr_array(copy=False)
@@ -160,6 +171,7 @@ class Mat4SparseGetter(Mat4MatrixGetter):
     value is again 0
     '''
     def get_raw_array(self):
+        self.header.original_dtype = dtype(float64)
         res = self.read_hdr_array()
         tmp = res[:-1,:]
         dims = res[-1,0:2]

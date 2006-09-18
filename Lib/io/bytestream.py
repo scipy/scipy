@@ -57,7 +57,7 @@ class ByteStream(object):
         if num_bytes < 0:
             num_bytes = self.array_len
         if self.pos >= self.array_len:
-            return []
+            return array([], dtype=uint8)
         next_pos = min(self.pos + num_bytes, self.array_len)
         res = self.bytes[self.pos:next_pos]
         self.pos = next_pos

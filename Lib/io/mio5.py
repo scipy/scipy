@@ -139,15 +139,40 @@ class Mat5Tag(object):
     pass
 
 class Mat5Header(object):
-    ''' Placeholder for Mat5 header '''
-    pass
+    ''' Placeholder for Mat5 header
+
+    Defines:
+    next_position - start position of next matrix
+    name
+    dtype - numpy dtype of matrix
+    mclass - matlab code for class of matrix
+    dims - shape of matrix as stored (see sparse reader)
+    is_complex - True if data are complex
+    is_char    - True if these are char data
+    is_global  - is a global variable in matlab workspace
+    is_numeric - is basic numeric matrix
+    original_dtype - data type when saved from matlab
+    '''
+    def __init__(self):
+        self.next_position = None
+        self.is_empty = False
+        self.flags = None
+        self.is_complex = False
+        self.is_global = False
+        self.is_logical = False
+        self.mclass = 0
+        self.is_numeric = None
+        self.original_dtype = None
+        self.is_char = None
+        self.dims = ()
+        self.name = ''
 
 class Mat5ArrayFlags(object):
     ''' Place holder for array flags '''
     pass
 
 
-class Mat5Arrayreader(MatArrayReader):
+class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
 
     Provides element reader functions, header reader, matrix reader
@@ -155,7 +180,7 @@ class Mat5Arrayreader(MatArrayReader):
     '''
 
     def __init__(self, mat_stream, dtypes, processor_func, codecs, class_dtypes):
-        super(Mat5Arrayreader, self).__init__(mat_stream,
+        super(Mat5ArrayReader, self).__init__(mat_stream,
                                               dtypes,
                                               processor_func,
                                               )
@@ -173,10 +198,10 @@ class Mat5Arrayreader(MatArrayReader):
             tag.byte_count = byte_count
             tag.mdtype = tag.mdtype & 0xFFFF
             tag.skip = 4 - byte_count
-            return tag
-        tag.byte_count = self.read_array(
-            self.dtypes['tag_byte_count'])
-        tag.skip = tag.byte_count % 8 and 8 - tag.byte_count % 8
+        else: # standard tag format
+            tag.byte_count = self.read_array(
+                self.dtypes['tag_byte_count'])
+            tag.skip = tag.byte_count % 8 and 8 - tag.byte_count % 8
         return tag
     
     def read_element(self, copy=True):
@@ -203,34 +228,26 @@ class Mat5Arrayreader(MatArrayReader):
 
     def read_header(self, tag):
         ''' Read header from Mat5 matrix
-        
-        Defines:
-        next_position - start position of next matrix
-        name
-        dtype - numpy dtype of matrix
-        mclass - matlab code for class of matrix
-        dims - shape of matrix as stored (see sparse reader)
-        is_complex - True if data are complex
-        is_char    - True if these are char data
-        is_global  - is a global variable in matlab workspace
-        is_numeric - is basic numeric matrix
-        original_dtype - data type when saved from matlab
         '''
         if not tag.mdtype == miMATRIX:
             raise TypeError, \
                   'Expecting miMATRIX type here, got %d' %  tag.mdtype
         header = Mat5Header()
+        # Note - there is no skip value for the miMATRIX type; the
+        # number of bytes field in the tag points to the next variable
+        # in the file. This is always aligned to 8 byte boundaries
+        # (except for the miCOMPRESSED type)
         header.next_position = (self.mat_stream.pos +
-                                tag.byte_count +
-                                tag.skip)
+                                tag.byte_count)
+        # Apparently an empty miMATRIX can contain no bytes
+        header.is_empty = tag.byte_count == 0
+        if header.is_empty:
+            return header
         header.flags = self.read_array_flags()
         header.is_complex = header.flags.is_complex
         header.is_global = header.flags.is_global
         header.is_logical = header.flags.is_logical
         header.mclass = header.flags.mclass
-        header.is_numeric = None
-        header.original_dtype = None
-        header.is_char = None
         header.dims = self.read_element()
         header.name = self.read_element().tostring()
         return header
@@ -250,11 +267,13 @@ class Mat5Arrayreader(MatArrayReader):
         ''' Returns reader for next matrix '''
         tag = self.read_tag()
         if tag.mdtype == miCOMPRESSED:
-            return Mat5ZArrayreader(self, tag).matrix_getter_factory()
+            return Mat5ZArrayReader(self, tag).matrix_getter_factory()
         header = self.read_header(tag)
         return self.header_to_getter(header)
     
     def header_to_getter(self, header):
+        if header.is_empty:
+            return Mat5EmptyMatrixGetter(self, header)
         mc = header.mclass
         if mc in mx_numbers:
             return Mat5NumericMatrixGetter(self, header)
@@ -271,7 +290,7 @@ class Mat5Arrayreader(MatArrayReader):
         raise TypeError, 'No reader for class code %s' % mc
 
 
-class Mat5ZArrayreader(Mat5Arrayreader):
+class Mat5ZArrayReader(Mat5ArrayReader):
     ''' Getter for compressed arrays
 
     Reads and uncompresses gzipped stream on init, providing wrapper
@@ -282,9 +301,7 @@ class Mat5ZArrayreader(Mat5Arrayreader):
     def __init__(self, array_reader, tag):
         '''Reads and uncompresses gzipped stream'''
         data = array_reader.read_bytes(tag.byte_count)
-        if tag.skip:
-            array_reader.mat_stream.seek(tag.skip, 1)
-        super(Mat5ZArrayreader, self).__init__(
+        super(Mat5ZArrayReader, self).__init__(
             ByteStream(zlib.decompress(data.tostring())),
             array_reader.dtypes,
             array_reader.processor_func,
@@ -295,7 +312,7 @@ class Mat5ZArrayreader(Mat5Arrayreader):
     def header_to_getter(self, header):
         ''' Set next_position to current position in parent stream '''
         header.next_position = self.next_position
-        return super(Mat5ZArrayreader, self).header_to_getter(header)
+        return super(Mat5ZArrayReader, self).header_to_getter(header)
         
 
 class Mat5MatrixGetter(MatMatrixGetter):
@@ -316,6 +333,12 @@ class Mat5MatrixGetter(MatMatrixGetter):
     
     def read_element(self, *args, **kwargs):
         return self.array_reader.read_element(*args, **kwargs)
+    
+
+class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
+    ''' Dummy class to return empty array for empty matrix '''
+    def get_raw_array(self):
+        return array([[]])
 
 
 class Mat5NumericMatrixGetter(Mat5MatrixGetter):
@@ -455,7 +478,7 @@ class MatFile5Reader(MatFileReader):
                  uint16_codec=None
                  ):
         self.codecs = {}
-        self._array_reader = Mat5Arrayreader(
+        self._array_reader = Mat5ArrayReader(
             mat_stream,
             None,
             None,

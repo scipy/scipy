@@ -76,6 +76,8 @@ class MatStreamAgent(object):
         a_dtype is assumed to be correct endianness
         '''
         num_bytes = a_dtype.itemsize * product(a_shape)
+        if not num_bytes:
+            return array([], dtype=a_dtype)
         data = self.read_bytes(num_bytes)
         arr = ndarray(shape=a_shape,
                       dtype=a_dtype,
