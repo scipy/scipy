@@ -1,7 +1,7 @@
 # Authors: Travis Oliphant, Matthew Brett
 
 """
-Base classes for matlab file stream reading
+Base classes for matlab (TM) file stream reading
 """
 
 import sys
@@ -100,7 +100,7 @@ class MatFileReader(MatStreamAgent):
                           or in ('little', '<')
                           or in ('BIG', '>')
     @base_name          - base name for unnamed variables
-    @matlab_compatible  - return arrays as matlab saved them
+    @matlab_compatible  - return arrays as matlab (TM) saved them
     @squeeze_me         - whether to squeeze unit dimensions or not
     @chars_as_strings   - whether to convert char arrays to string arrays
 
@@ -184,7 +184,7 @@ class MatFileReader(MatStreamAgent):
         ''' Processing to apply to read matrices
 
         Function applies options to matrices. We have to pass this
-        function into the reader routines because Matlab 5 matrices
+        function into the reader routines because Mat5 matrices
         occur as submatrices - in cell arrays, structs and objects -
         so we will not see these in the main variable getting routine
         here.
@@ -206,11 +206,12 @@ class MatFileReader(MatStreamAgent):
                 else: # return string
                     arr = self.chars_to_str(arr)
             if self.matlab_compatible:
-                # Apply options to replicate matlab's load into workspace
+                # Apply options to replicate matlab's (TM)
+                # load into workspace
                 if header.is_logical:
                     arr = arr.astype(bool)
                 elif header.is_numeric:
-                    # Cast as original matlab type
+                    # Cast as original matlab (TM) type
                     if header.original_dtype:
                         arr = arr.astype(header.original_dtype)
             if self.squeeze_me:
@@ -331,7 +332,7 @@ class MatStreamWriter(object):
         return dtype(self.arr.dtype.str[:2] + str(num))
 
     def arr_to_chars(self):
-        ''' Converts string array to matlab char array '''
+        ''' Convert string array to char array '''
         dims = list(self.arr.shape)
         if not dims:
             dims = [1]

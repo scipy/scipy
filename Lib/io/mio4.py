@@ -1,4 +1,4 @@
-''' Classes for read / write of matlab 4 files
+''' Classes for read / write of matlab (TM) 4 files
 '''
 
 from numpy import *
@@ -60,11 +60,11 @@ class Mat4Header(object):
         name
         dims - shape of matrix as stored (see sparse reader)
         dtype - numpy dtype of matrix
-        mclass - matlab code for class of matrix
+        mclass - matlab (TM) code for class of matrix
         is_char    - True if these are char data
         is_numeric - True if these are numeric data
         is_complex - True if data are complex
-        original_dtype - data type in matlab workspace
+        original_dtype - data type in matlab (TM) workspace
     '''
     def __init__(self):
         self.next_position = None
@@ -159,26 +159,26 @@ class Mat4CharGetter(Mat4MatrixGetter):
 class Mat4SparseGetter(Mat4MatrixGetter):
     ''' Read sparse matrix type 
 
-    Matlab 4 real sparse arrays are saved in a N+1 by 3 array format,
-    where N is the number of non-zero values.  Column 1 values [0:N]
-    are the (1-based) row indices of the each non-zero value, column 2
-    [0:N] are the column indices, column 3 [0:N] are the (real)
-    values.  The last values [-1,0:2] of the rows, column indices are
-    shape[0] and shape[1] respectively of the output matrix. The last
-    value for the values column is a padding 0. mrows and ncols values
-    from the header give the shape of the stored matrix, here [N+1,
-    3].  Complex data is saved as a 4 column matrix, where the fourth
-    column contains the imaginary component of the data; the last
-    value is again 0.  Complex sparse data do _not_ have the header
-    imagf field set to True; the fact that the data are complex is
-    only detectable because there are 4 storage columns
+    Matlab (TM) 4 real sparse arrays are saved in a N+1 by 3 array
+    format, where N is the number of non-zero values.  Column 1 values
+    [0:N] are the (1-based) row indices of the each non-zero value,
+    column 2 [0:N] are the column indices, column 3 [0:N] are the
+    (real) values.  The last values [-1,0:2] of the rows, column
+    indices are shape[0] and shape[1] respectively of the output
+    matrix. The last value for the values column is a padding 0. mrows
+    and ncols values from the header give the shape of the stored
+    matrix, here [N+1, 3].  Complex data is saved as a 4 column
+    matrix, where the fourth column contains the imaginary component;
+    the last value is again 0.  Complex sparse data do _not_ have the
+    header imagf field set to True; the fact that the data are complex
+    is only detectable because there are 4 storage columns
     '''
     def get_raw_array(self):
         self.header.original_dtype = dtype(float64)
         res = self.read_hdr_array()
         tmp = res[:-1,:]
         dims = res[-1,0:2]
-        ij = transpose(tmp[:,0:2]) - 1 # for matlab 1-based indexing
+        ij = transpose(tmp[:,0:2]) - 1 # for 1-based indexing
         vals = tmp[:,2]
         if res.shape[1] == 4:
             self.header.is_complex = True
@@ -207,7 +207,7 @@ class MatFile4Reader(MatFileReader):
         return self._array_reader.matrix_getter_factory()
 
     def format_looks_right(self):
-        # Matlab 4 files have a zero somewhere in first 4 bytes
+        # Mat4 files have a zero somewhere in first 4 bytes
         self.mat_stream.seek(0)
         mopt_bytes = self.read_bytes(4)
         self.mat_stream.seek(0)
@@ -224,8 +224,15 @@ class MatFile4Reader(MatFileReader):
 
 class Mat4MatrixWriter(MatStreamWriter):
 
-    def write_header(self, P,  T, dims, imagf):
-        ''' Write header for data type, matrix class, dims, complex flag '''
+    def write_header(self, P=0,  T=0, imagf=0, dims=None):
+        ''' Write header for given data options
+        @P      - mat4 data type
+        @T      - mat4 matrix class
+        @imagf  - complex flag
+        @dims   - matrix dimensions
+        '''
+        if dims is None:
+            dims = self.arr.shape
         header = empty((), mdtypes_template['header'])
         M = not ByteOrder.little_endian
         O = 0
@@ -264,7 +271,9 @@ class Mat4NumericWriter(Mat4MatrixWriter):
             else:
                 self.arr = self.arr.astype('f8')
             P = miDOUBLE
-        self.write_header(P, 0, self.arr.shape, imagf)
+        self.write_header(P=P,
+                          T=mxFULL_CLASS,
+                          imagf=imagf)
         if imagf:
             self.write_bytes(self.arr.real)
             self.write_bytes(self.arr.imag)
@@ -278,7 +287,8 @@ class Mat4CharWriter(Mat4MatrixWriter):
         self.arr_to_chars()
         self.arr_to_2d()
         dims = self.arr.shape
-        self.write_header(miUINT8, 1, dims, 0)
+        self.write_header(P=miUINT8,
+                          T=mxCHAR_CLASS)
         if self.arr.dtype.kind == 'U':
             # Recode unicode to ascii
             n_chars = product(dims)
@@ -290,18 +300,45 @@ class Mat4CharWriter(Mat4MatrixWriter):
         self.write_bytes(self.arr)
 
 
+class Mat4SparseWriter(Mat4MatrixWriter):
+
+    def write(self):
+        ''' Sparse matrices are 2D
+        See docstring for Mat4SparseGetter
+        '''
+        imagf = self.arr.dtype.kind == 'c'
+        N = self.arr.nnz
+        ijd = zeros((N+1, 3+imagf), dtype='f8')
+        for i in range(N):
+            ijd[i,0], ijd[i,1] = self.arr.rowcol(i)
+        ijd[:-1,0:2] += 1 # 1 based indexing
+        if imagf:
+            ijd[:-1,2] = self.arr.data.real
+            ijd[:-1,3] = self.arr.data.imag
+        else:
+            ijd[:-1,2] = self.arr.data
+        ijd[-1,0:2] = self.arr.shape
+        self.write_header(P=miDOUBLE,
+                          T=mxSPARSE_CLASS,
+                          dims=ijd.shape)
+        self.write_bytes(ijd)
+        
+            
 def matrix_writer_factory(stream, arr, name):
     ''' Factory function to return matrix writer given variable to write
     @stream      - file or file-like stream to write to
     @arr         - array to write
-    @name        - name in matlab workspace
+    @name        - name in matlab (TM) workspace
     '''
+    if have_sparse:
+        if scipy.sparse.issparse(arr):
+            return Mat4SparseWriter(stream, arr, name)
     arr = array(arr)
     if arr.dtype.hasobject:
         raise TypeError, 'Cannot save object arrays in Mat4'
     if have_sparse:
         if scipy.sparse.issparse(arr):
-            raise TypeError, 'Cannot save sparse arrays yet'
+            return Mat4SparseWriter(stream, arr, name)
     if arr.dtype.kind in ('U', 'S'):
         return Mat4CharWriter(stream, arr, name)
     else:

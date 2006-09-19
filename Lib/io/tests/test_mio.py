@@ -100,71 +100,72 @@ class test_mio_array(ScipyTestCase):
 
     # Define cases to test
     theta = pi/4*arange(9,dtype=float)
-    case_table = [
+    case_table4 = [
         {'name': 'double',
          'expected': {'testdouble': theta}
          }]
-    case_table.append(
+    case_table4.append(
         {'name': 'string',
          'expected': {'teststring': u'"Do nine men interpret?" "Nine men," I nod.'},
          })
-    case_table.append(
+    case_table4.append(
         {'name': 'complex',
          'expected': {'testcomplex': cos(theta) + 1j*sin(theta)}
          })
-    case_table.append(
+    A = zeros((3,5))
+    A[0] = range(1,6)
+    A[:,0] = range(1,4)
+    case_table4.append(
+        {'name': 'matrix',
+         'expected': {'testmatrix': A},
+         })
+    case_table4.append(
+        {'name': 'sparse',
+         'expected': {'testsparse': SP.csc_matrix(A)},
+         })
+    B = A.astype(complex)
+    B[0,0] += 1j
+    case_table4.append(
+        {'name': 'sparsecomplex',
+         'expected': {'testsparsecomplex': SP.csc_matrix(B)},
+         })
+    case_table4.append(
+        {'name': 'multi',
+         'expected': {'theta': theta,
+                      'a': A},
+         })
+    case_table4.append(
+        {'name': 'minus',
+         'expected': {'testminus': array(-1)},
+         })
+    case_table4.append(
+        {'name': 'onechar',
+         'expected': {'testonechar': u'r'},
+         })
+    case_table5 = [
         {'name': 'cell',
          'expected': {'testcell':
                       array([u'This cell contains this string and 3 arrays of '+\
                              'increasing length',
                              array(1), array([1,2]), array([1,2,3])], 
                             dtype=object)}
+         }]
+    case_table5.append(
+        {'name': 'stringarray',
+         'expected': {'teststringarray': array(
+        [u'one  ', u'two  ', u'three'], dtype=object)},
+         })
+    case_table5.append(
+        {'name': '3dmatrix',
+         'expected': {'test3dmatrix': transpose(reshape(range(1,25), (4,3,2)))}
          })
     st = mat_struct()
     st.stringfield = u'Rats live on no evil star.'
     st.doublefield = array([sqrt(2),exp(1),pi])
     st.complexfield = (1+1j)*array([sqrt(2),exp(1),pi])
-    case_table.append(
+    case_table5.append(
         {'name': 'struct', 
          'expected': {'teststruct': st}
-         })
-    A = zeros((3,5))
-    A[0] = range(1,6)
-    A[:,0] = range(1,4)
-    case_table.append(
-        {'name': 'matrix',
-         'expected': {'testmatrix': A},
-         })
-    case_table.append(
-        {'name': '3dmatrix',
-         'expected': {'test3dmatrix': transpose(reshape(range(1,25), (4,3,2)))}
-         })
-    case_table.append(
-        {'name': 'sparse',
-         'expected': {'testsparse': SP.csc_matrix(A)},
-         })
-    B = A.astype(complex)
-    B[0,0] += 1j
-    case_table.append(
-        {'name': 'sparsecomplex',
-         'expected': {'testsparsecomplex': SP.csc_matrix(B)},
-         })
-    case_table.append(
-        {'name': 'multi',
-         'expected': {'theta': theta,
-                      'a': A},
-         })
-    case_table.append(
-        {'name': 'minus',
-         'expected': {'testminus': array(-1)},
-         })
-    case_table.append(
-        {'name': 'onechar',
-         'expected': {'testonechar': u'r'},
-         })
-    case_table.append(
-        {'name': 'stringarray',
-         'expected': {'teststringarray': array([u'one  ', u'two  ', u'three'], dtype=object)},
          })
     a = array([array(1),
                array([array(2), array(3),
@@ -172,7 +173,7 @@ class test_mio_array(ScipyTestCase):
                             dtype=object)],
                      dtype=object)],
               dtype=object)
-    case_table.append(
+    case_table5.append(
         {'name': 'cellnest',
          'expected': {'testcellnest': a},
          })
@@ -180,7 +181,7 @@ class test_mio_array(ScipyTestCase):
     st.one = array(1)
     st.two = mat_struct()
     st.two.three = u'number 3'
-    case_table.append(
+    case_table5.append(
         {'name': 'structnest',
          'expected': {'teststructnest': st}
          })
@@ -189,7 +190,7 @@ class test_mio_array(ScipyTestCase):
     a[0].two = array(2)
     a[1].one = u'number 1'
     a[1].two = u'number 2'
-    case_table.append(
+    case_table5.append(
         {'name': 'structarr',
          'expected': {'teststructarr': a}
          })
@@ -201,19 +202,19 @@ class test_mio_array(ScipyTestCase):
     a.isEmpty = array(0)
     a.numArgs = array(1)
     a.version = array(1)
-    case_table.append(
+    case_table5.append(
         {'name': 'object',
          'expected': {'testobject': a}
          })
     u_str = file(
         os.path.join(test_data_path, 'japanese_utf8.txt'),
         'rb').read().decode('utf-8')
-    case_table.append(
+    case_table5.append(
         {'name': 'unicode',
         'expected': {'testunicode': u_str}
         })
     # add load tests
-    for case in case_table:
+    for case in case_table4 + case_table5:
         name = case['name']
         expected = case['expected']
         filt = os.path.join(test_data_path, 'test%s_*.mat' % name)
@@ -221,24 +222,7 @@ class test_mio_array(ScipyTestCase):
         assert files, "No files for test %s using filter %s" % (name, filt)
         exec 'check_%s = _make_check_case(name, files, expected)' % name
     # round trip tests
-    case_table = [
-        {'name': 'double',
-         'expected': {'testdouble': theta}
-         }]
-    case_table.append(
-        {'name': 'string',
-         'expected': {'teststring': u'"Do nine men interpret?" "Nine men," I nod.'},
-         })
-    case_table.append(
-        {'name': 'complex',
-         'expected': {'testcomplex': cos(theta) + 1j*sin(theta)}
-         })
-    case_table.append(
-        {'name': 'multi',
-         'expected': {'theta': theta,
-                      'a': A},
-         })
-    for case in case_table:
+    for case in case_table4:
         name = case['name'] + '_round_trip'
         expected = case['expected']
         exec 'check_%s = _make_rt_check_case(name, expected)' % name

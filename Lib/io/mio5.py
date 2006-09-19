@@ -1,4 +1,4 @@
-''' Classes for read / write of matlab 5 files
+''' Classes for read / write of matlab (TM) 5 files
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
@@ -102,10 +102,10 @@ mclass_dtypes_template = {
     mxDOUBLE_CLASS: 'f8',
     }
 
-''' Before release v7.1 (release 14) matlab used the system default
-character encoding scheme padded out to 16-bits. Release 14 and later
-use Unicode. When saving character data, matlab R14 checks if it can
-be encoded in 7-bit ascii, and saves in that format if so.'''
+''' Before release v7.1 (release 14) matlab (TM) used the system
+default character encoding scheme padded out to 16-bits. Release 14
+and later use Unicode. When saving character data, R14 checks if it
+can be encoded in 7-bit ascii, and saves in that format if so.'''
 
 codecs_template = {
     miUTF8: {'codec': 'utf_8', 'width': 1},
@@ -145,13 +145,13 @@ class Mat5Header(object):
     next_position - start position of next matrix
     name
     dtype - numpy dtype of matrix
-    mclass - matlab code for class of matrix
+    mclass - matlab (TM) code for class of matrix
     dims - shape of matrix as stored (see sparse reader)
     is_complex - True if data are complex
     is_char    - True if these are char data
-    is_global  - is a global variable in matlab workspace
+    is_global  - is a global variable in matlab (TM) workspace
     is_numeric - is basic numeric matrix
-    original_dtype - data type when saved from matlab
+    original_dtype - data type when saved from matlab (TM)
     '''
     def __init__(self):
         self.next_position = None
@@ -219,7 +219,8 @@ class Mat5ArrayReader(MatArrayReader):
             try:
                 dt = self.dtypes[tag.mdtype]
             except KeyError:
-                raise TypeError, 'Do not know matlab data code %d' % tag.mdtype
+                raise TypeError, 'Do not know matlab (TM) data code %d' \
+                      % tag.mdtype
             el_count = tag.byte_count / dt.itemsize
             el = self.read_array(dt, a_shape=(el_count), copy=copy)
         if tag.skip:
@@ -369,7 +370,7 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
             res = res + (res_j * 1j)
         else:
             res = self.read_element()
-        ''' From the matlab API documentation, last found here:
+        ''' From the matlab (TM) API documentation, last found here:
         http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
         @rowind are simply the row indices for all the (@res) non-zero
         entries in the sparse array.  @rowind has nzmax entries, so
@@ -555,7 +556,7 @@ class MatFile5Reader(MatFileReader):
         return hdict
         
     def format_looks_right(self):
-        # Matlab 4 files have a zero somewhere in first 4 bytes
+        # Mat4 files have a zero somewhere in first 4 bytes
         self.mat_stream.seek(0)
         mopt_bytes = self.read_bytes(4)
         self.mat_stream.seek(0)

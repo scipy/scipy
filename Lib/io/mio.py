@@ -1,7 +1,7 @@
 # Authors: Travis Oliphant, Matthew Brett
 
 """
-Module for reading and writing matlab .mat files
+Module for reading and writing matlab (TM) .mat files
 """
 
 import os
@@ -15,7 +15,7 @@ from mio5 import MatFile5Reader
 
 
 def mat_reader_factory(file_name, append_mat=True):
-    """Create reader for matlab format files
+    """Create reader for matlab (TM) .mat format files
     
     If name not a full path name, search for the file on the sys.path
     list and use the first one found (the current directory is
@@ -25,7 +25,8 @@ def mat_reader_factory(file_name, append_mat=True):
 
     Inputs:
 
-      file_name -- name of the mat file (don't need .mat extension if append_mat=True)
+      file_name -- name of the mat file (don't need .mat extension
+                   if append_mat=True)
       append_mat -- True to append the .mat extension to the end of the
                    given filename.
       """
@@ -74,8 +75,9 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw'):
 def savemat(file_name, mdict, appendmat=True):
     """Save a dictionary of names and arrays into the MATLAB-style .mat file.
 
-    This saves the arrayobjects in the given dictionary to a matlab Version 4
-    style .mat file.
+    This saves the arrayobjects in the given dictionary to a matlab
+    Version 4 style .mat file.
+    
     @appendmat  - if true, appends '.mat' extension to filename, if not present
     """
     if appendmat and file_name[-4:] != ".mat":
