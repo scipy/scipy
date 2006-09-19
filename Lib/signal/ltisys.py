@@ -315,7 +315,7 @@ def lsim2(system, U, T, X0=None):
     U = atleast_1d(U)
     T = atleast_1d(T)
     if len(U.shape) == 1:
-        U.shape = (U.shape[0],1)
+        U = U.reshape((U.shape[0],1))
     sU = U.shape
     if len(T.shape) != 1:
         raise ValueError, "T must be a rank-1 array."
@@ -382,7 +382,7 @@ def lsim(system, U, T, X0=None, interp=1):
     U = atleast_1d(U)
     T = atleast_1d(T)
     if len(U.shape) == 1:
-        U.shape = (U.shape[0],1)
+        U = U.reshape((U.shape[0],1))
     sU = U.shape
     if len(T.shape) != 1:
         raise ValueError, "T must be a rank-1 array."
