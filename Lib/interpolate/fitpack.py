@@ -48,8 +48,8 @@ _iermess = {0:["""\
     The spline is weighted least-squares polynomial of degree k.
     fp gives the upper bound fp0 for the smoothing factor s""",None],
                1:["""\
-    The required storage space exceeds the available strorage space.
-    Probably causes: data (x,y) size is too small or smoothing parameter s is too small (fp>s).""",ValueError],
+    The required storage space exceeds the available storage space.
+    Probable causes: data (x,y) size is too small or smoothing parameter s is too small (fp>s).""",ValueError],
                2:["""\
     A theoretically impossible results when finding a smoothin spline
     with fp = s. Probably causes: s too small. (abs(fp-s)/s>0.001)""",ValueError],
@@ -73,8 +73,8 @@ _iermess2 = {0:["""\
     Warning. The coefficients of the spline have been computed as the minimal
     norm least-squares solution of a rank deficient system.""",None],
             1:["""\
-    The required storage space exceeds the available strorage space.
-    Probably causes: nxest or nyest to small or s is too small. (fp>s)""",ValueError],
+    The required storage space exceeds the available storage space.
+    Probably causes: nxest or nyest too small or s is too small. (fp>s)""",ValueError],
             2:["""\
     A theoretically impossible results when finding a smoothin spline
     with fp = s. Probably causes: s too small or badly chosen eps.
@@ -94,7 +94,7 @@ _iermess2 = {0:["""\
             10:["""\
     Error on input data""",ValueError],
             11:["""\
-    rwrk2 to small, i.e. there is not enough workspace for computing
+    rwrk2 too small, i.e. there is not enough workspace for computing
     the minimal least-squares solution of a rank deficient system of linear
     equations.""",ValueError],
             'unknown':["""\
