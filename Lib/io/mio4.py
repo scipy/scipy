@@ -38,7 +38,7 @@ np_to_mtypes = {
     'u1': miUINT8,
     'S1': miUINT8,
     }
-    
+
 # matrix classes
 mxFULL_CLASS = 0
 mxCHAR_CLASS = 1
@@ -134,13 +134,14 @@ class Mat4MatrixGetter(MatMatrixGetter):
 class Mat4FullGetter(Mat4MatrixGetter):
     def get_raw_array(self):
         self.header.is_numeric = True
-        self.header.original_dtype = dtype(float64)
         if self.header.is_complex:
+            self.header.original_dtype = dtype(complex128)
             # avoid array copy to save memory
             res = self.read_hdr_array(copy=False)
             res_j = self.read_hdr_array(copy=False)
             return res + (res_j * 1j)
         else:
+            self.header.original_dtype = dtype(float64)
             return self.read_hdr_array()
 
 
@@ -162,13 +163,15 @@ class Mat4SparseGetter(Mat4MatrixGetter):
     where N is the number of non-zero values.  Column 1 values [0:N]
     are the (1-based) row indices of the each non-zero value, column 2
     [0:N] are the column indices, column 3 [0:N] are the (real)
-    values.  The last values [-1:0:2] of the rows, column indices are
+    values.  The last values [-1,0:2] of the rows, column indices are
     shape[0] and shape[1] respectively of the output matrix. The last
     value for the values column is a padding 0. mrows and ncols values
     from the header give the shape of the stored matrix, here [N+1,
     3].  Complex data is saved as a 4 column matrix, where the fourth
     column contains the imaginary component of the data; the last
-    value is again 0
+    value is again 0.  Complex sparse data do _not_ have the header
+    imagf field set to True; the fact that the data are complex is
+    only detectable because there are 4 storage columns
     '''
     def get_raw_array(self):
         self.header.original_dtype = dtype(float64)
@@ -219,62 +222,94 @@ class MatFile4Reader(MatFileReader):
         return ByteOrder.native_code
 
 
-class MatFile4Writer(MatFileWriter):
-    codec = 'ascii'
-    
-    def arr_to_matrix(self, arr):
-        ''' Convert numeric array to matlab format '''
-        dts = arr.dtype.str[1:]
-        if not dts in np_to_mtypes:
-            arr = arr.astype('f8')
-        return atleast_2d(arr)
-        
-    def matrix_header(self, var, name):
-        ''' Return header for matrix array '''
+class Mat4MatrixWriter(MatStreamWriter):
+
+    def write_header(self, P,  T, dims, imagf):
+        ''' Write header for data type, matrix class, dims, complex flag '''
         header = empty((), mdtypes_template['header'])
-        dt = var.dtype.str[1:]
         M = not ByteOrder.little_endian
         O = 0
-        P = np_to_mtypes[dt]
-        T = dt == 'S1' # could also be sparse -> 2
-        header['mopt'] = M*1000+O*100+P*10+T
-        dims = var.shape
+        header['mopt'] = (M * 1000 +
+                          O * 100 + 
+                          P * 10 +
+                          T)
         header['mrows'] = dims[0]
         header['ncols'] = dims[1]
-        header['imagf'] = var.dtype.kind == 'c'
-        header['namlen'] = len(name) + 1
-        return header
-    
-    def put_variable(self, var, name):
-        arr = array(var)
-        if arr.dtype.hasobject:
-            raise TypeError, 'Cannot save object arrays in Mat4'
-        if have_sparse:
-            if scipy.sparse.issparse(arr):
-                raise TypeError, 'Cannot save sparse arrays yet'
-        if arr.dtype.kind in ('U', 'S'):
-            arr = self.str_to_chars(arr)
-        else:
-            arr = self.arr_to_matrix(arr)
-        dims = arr.shape
+        header['imagf'] = imagf
+        header['namlen'] = len(self.name) + 1
+        self.write_bytes(header)
+        self.write_string(self.name + '\0')
+        
+    def arr_to_2d(self):
+        self.arr = atleast_2d(self.arr)
+        dims = self.arr.shape
         if len(dims) > 2:
             dims = [product(dims[:-1]), dims[-1]]
-            arr = reshape(arr, dims)
-        if arr.dtype.kind == 'U':
-            # Recode unicode to ascii
-            dt = 'U' + str(product(dims))
-            st_arr = ndarray(shape=(), dtype=dt, buffer=arr)
-            st = st_arr.item().encode('ascii')
-            arr = ndarray(shape=dims, dtype='S1', buffer=st)
-        header = self.matrix_header(arr, name)
-        self.write_bytes(header)
-        self.write_string(name + '\0')
-        if header['imagf']:
-            self.write_bytes(arr.real)
-            self.write_bytes(arr.imag)
-        else:
-            self.write_bytes(arr)
+            self.arr = reshape(self.arr, dims)
             
+    def write(self):
+        assert False, 'Not implemented'
+
+
+class Mat4NumericWriter(Mat4MatrixWriter):
+
+    def write(self):
+        self.arr_to_2d()
+        imagf = self.arr.dtype.kind == 'c'
+        try:
+            P = np_to_mtypes[self.arr.dtype.str[1:]]
+        except KeyError:
+            if imagf:
+                self.arr = self.arr.astype('c128')
+            else:
+                self.arr = self.arr.astype('f8')
+            P = miDOUBLE
+        self.write_header(P, 0, self.arr.shape, imagf)
+        if imagf:
+            self.write_bytes(self.arr.real)
+            self.write_bytes(self.arr.imag)
+        else:
+            self.write_bytes(self.arr)
+
+
+class Mat4CharWriter(Mat4MatrixWriter):
+
+    def write(self):
+        self.arr_to_chars()
+        self.arr_to_2d()
+        dims = self.arr.shape
+        self.write_header(miUINT8, 1, dims, 0)
+        if self.arr.dtype.kind == 'U':
+            # Recode unicode to ascii
+            n_chars = product(dims)
+            st_arr = ndarray(shape=(),
+                             dtype=self.arr_dtype_number(n_chars),
+                             buffer=self.arr)
+            st = st_arr.item().encode('ascii')
+            self.arr = ndarray(shape=dims, dtype='S1', buffer=st)
+        self.write_bytes(self.arr)
+
+
+def matrix_writer_factory(stream, arr, name):
+    ''' Factory function to return matrix writer given variable to write
+    @stream      - file or file-like stream to write to
+    @arr         - array to write
+    @name        - name in matlab workspace
+    '''
+    arr = array(arr)
+    if arr.dtype.hasobject:
+        raise TypeError, 'Cannot save object arrays in Mat4'
+    if have_sparse:
+        if scipy.sparse.issparse(arr):
+            raise TypeError, 'Cannot save sparse arrays yet'
+    if arr.dtype.kind in ('U', 'S'):
+        return Mat4CharWriter(stream, arr, name)
+    else:
+        return Mat4NumericWriter(stream, arr, name)
+        
+
+class MatFile4Writer(MatFileWriter):
+
     def put_variables(self, mdict):
         for name, var in mdict.items():
-            self.put_variable(var, name)
+            matrix_writer_factory(self.file_stream, var, name).write()

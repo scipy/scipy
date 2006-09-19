@@ -52,7 +52,7 @@ def mat_reader_factory(file_name, append_mat=True):
         if full_name is None:
             raise IOError, "%s not found on the path." % file_name
 
-    byte_stream = ByteStream(memmap(full_name))
+    byte_stream = ByteStream(memmap(full_name, mode='r'))
     MR = MatFile4Reader(byte_stream)
     if MR.format_looks_right():
         return MR

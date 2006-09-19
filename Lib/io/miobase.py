@@ -257,7 +257,8 @@ class MatFileReader(MatStreamAgent):
         b = self.read_bytes(1)
         self.mat_stream.seek(-1,1)
         return len(b) == 0
-        
+
+
 class MatMatrixGetter(MatStreamAgent):
     """ Base class for matrix getters
 
@@ -315,25 +316,38 @@ class MatArrayReader(MatStreamAgent):
         assert False, 'Not implemented'
 
 
-class MatFileWriter(object):
-    ''' Base type for writing mat files '''
-    def __init__(self, file_stream):
+class MatStreamWriter(object):
+    ''' Base object for writing to mat files '''
+    def __init__(self, file_stream, arr, name):
         self.file_stream = file_stream
+        self.arr = arr
+        dt = self.arr.dtype
+        if not dt.isnative:
+            self.arr = self.arr.astype(dt.newbyteorder('='))
+        self.name = name
+        
+    def arr_dtype_number(self, num):
+        ''' Return dtype for given number of items per element'''
+        return dtype(self.arr.dtype.str[:2] + str(num))
 
-    def str_to_chars(self, arr):
+    def arr_to_chars(self):
         ''' Converts string array to matlab char array '''
-        dims = list(arr.shape)
+        dims = list(self.arr.shape)
         if not dims:
             dims = [1]
-        dims.append(int(arr.dtype.str[2:]))
-        num_els = product(dims)
-        dt = dtype(arr.dtype.kind + '1')
-        return ndarray(shape=dims, dtype=dt, buffer=arr)
+        dims.append(int(self.arr.dtype.str[2:]))
+        self.arr = ndarray(shape=dims,
+                           dtype=self.arr_dtype_number(1),
+                           buffer=self.arr)
 
     def write_bytes(self, arr):
-        arr.dtype.newbyteorder(ByteOrder.native_code)
-        s = arr.tostring(order='F')
-        self.file_stream.write(s)
+        self.file_stream.write(arr.tostring(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
+
+
+class MatFileWriter(object):
+    ''' Base class for Mat file writers '''
+    def __init__(self, file_stream):
+        self.file_stream = file_stream
