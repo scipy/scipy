@@ -4166,7 +4166,8 @@ class randint_gen(rv_discrete):
             min = 0
         U = random(size=size)
         val = floor((max-min)*U + min)
-        return arr(val).astype(int)
+        return arr(val).astype(int)[()]  # return array scalar if needed
+
     def _entropy(self, min, max):
         return log(max-min)
 randint = randint_gen(name='randint',longname='A discrete uniform '\

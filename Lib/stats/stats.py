@@ -194,7 +194,7 @@ import numpy as np
 import scipy as sp
 
 # Grab this useful utility routine
-from numpy.core.numeric import _move_axis_to_0
+from numpy.core.numeric import rollaxis
 
 import _support
 
@@ -430,7 +430,7 @@ def median(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     if axis != 0:
-        a = _move_axis_to_0(a, axis)
+        a = rollaxis(a, axis, 0)
     return np.median(a)
 
 def mode(a, axis=0):
