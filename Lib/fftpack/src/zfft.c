@@ -48,9 +48,22 @@ GEN_CACHE(zmklfft,(int n)
 
 /**************** FFTW3 *****************************/
 #elif defined WITH_FFTW3
-/*
- *don't cache anything
- */
+GEN_CACHE(zfftw,(int n,int d)
+	,int direction;
+	fftw_plan plan;
+	fftw_complex* ptr;
+	,((caches_zfftw[i].n==n) &&
+	    (caches_zfftw[i].direction==d))
+	,caches_zfftw[id].direction = d;
+	caches_zfftw[id].ptr = fftw_malloc(sizeof(fftw_complex)*(n));
+	    caches_zfftw[id].plan = fftw_plan_dft_1d(n, caches_zfftw[id].ptr,
+	caches_zfftw[id].ptr,
+		(d>0?FFTW_FORWARD:FFTW_BACKWARD),
+		FFTW_ESTIMATE);
+	,fftw_destroy_plan(caches_zfftw[id].plan);
+	fftw_free(caches_zfftw[id].ptr);
+	,10)
+
 #elif defined WITH_FFTW
 /**************** FFTW2 *****************************/
 GEN_CACHE(zfftw,(int n,int d)
@@ -90,6 +103,7 @@ extern void destroy_zfft_cache(void) {
 #ifdef WITH_MKL
   destroy_zmklfft_caches();
 #elif defined WITH_FFTW3
+  destroy_zfftw_caches();
 #elif defined WITH_FFTW
   destroy_zfftw_caches();
 #else
@@ -146,6 +160,7 @@ extern void zfft(complex_double *inout,
 #ifdef WITH_MKL
   desc_handle = caches_zmklfft[get_cache_id_zmklfft(n)].desc_handle;
 #elif defined WITH_FFTW3
+    plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
 #elif defined WITH_FFTW
     plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
 #else
@@ -179,11 +194,10 @@ extern void zfft(complex_double *inout,
 #ifdef WITH_MKL
     DftiComputeForward(desc_handle, (double *)ptr);
 #elif defined WITH_FFTW3
-	plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
-				(direction>0?FFTW_FORWARD:FFTW_BACKWARD),
-				FFTW_ESTIMATE);
-        fftw_execute(plan);
-	fftw_destroy_plan(plan);
+	ptrm = caches_zfftw[get_cache_id_zfftw(n,direction)].ptr;
+	memcpy(ptrm, ptr, sizeof(double)*2*n);
+	fftw_execute(plan);
+	memcpy(ptr, ptrm, sizeof(double)*2*n);
 #elif defined WITH_FFTW
         fftw_one(plan,(fftw_complex*)ptr,NULL);
 #else
@@ -217,11 +231,10 @@ extern void zfft(complex_double *inout,
 #ifdef WITH_MKL
     DftiComputeBackward(desc_handle, (double *)ptr);
 #elif defined WITH_FFTW3
-	plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
-				(direction>0?FFTW_FORWARD:FFTW_BACKWARD),
-				FFTW_ESTIMATE);
-        fftw_execute(plan);
-	fftw_destroy_plan(plan);
+	ptrm = caches_zfftw[get_cache_id_zfftw(n,direction)].ptr;
+	memcpy(ptrm, ptr, sizeof(double)*2*n);
+	fftw_execute(plan);
+	memcpy(ptr, ptrm, sizeof(double)*2*n);
 #elif defined WITH_FFTW
         fftw_one(plan,(fftw_complex*)ptr,NULL);
 #else
@@ -233,7 +246,7 @@ extern void zfft(complex_double *inout,
   default:
     fprintf(stderr,"zfft: invalid direction=%d\n",direction);
   }
-  
+
   if (normalize) {
     ptr = inout;
 #ifndef WITH_MKL
