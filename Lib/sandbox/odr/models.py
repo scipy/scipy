@@ -1,26 +1,26 @@
-"""Collection of Model instances for use with the odrpack fitting package.
+""" Collection of Model instances for use with the odrpack fitting package.
 """
 
+# Scipy imports.
 from scipy.sandbox.odr.odrpack import Model
 import numpy as np
-from types import *
 
-def _lin_fcn(B, x, sum=np.sum):
+
+def _lin_fcn(B, x):
     a, b = B[0], B[1:]
     b.shape = (b.shape[0], 1)
 
-    return a + sum(x*b,axis=0)
+    return a + (x*b).sum(axis=0)
 
-def _lin_fjb(B, x, concatenate=np.concatenate, 
-             ones=np.ones, ravel=np.ravel):
-    a = ones((x.shape[-1],), float)
-    res = concatenate((a, ravel(x)))
+def _lin_fjb(B, x):
+    a = np.ones(x.shape[-1], float)
+    res = np.concatenate((a, x.ravel()))
     res.shape = (B.shape[-1], x.shape[-1])
     return res
 
-def _lin_fjd(B, x, repeat=np.repeat):
+def _lin_fjd(B, x):
     b = B[1:]
-    b = repeat(b, (x.shape[-1],)*b.shape[-1],axis=0)
+    b = np.repeat(b, (x.shape[-1],)*b.shape[-1],axis=0)
     b.shape = x.shape
     return b
 
@@ -36,40 +36,40 @@ def _lin_est(data):
 
     return np.ones((m + 1,), float)
 
-def _poly_fcn(B, x, powers, power=np.power, sum=np.sum):
+def _poly_fcn(B, x, powers):
     a, b = B[0], B[1:]
     b.shape = (b.shape[0], 1)
 
-    return a + sum(b * power(x, powers),axis=0)
+    return a + np.sum(b * np.power(x, powers), axis=0)
 
-def _poly_fjacb(B, x, powers, power=np.power,
-                concatenate=np.concatenate, ones=np.ones):
-    res = concatenate((ones((x.shape[-1],), float), power(x, powers).flat))
+def _poly_fjacb(B, x, powers):
+    res = np.concatenate((np.ones(x.shape[-1], float), np.power(x,
+        powers).flat))
     res.shape = (B.shape[-1], x.shape[-1])
     return res
 
-def _poly_fjacd(B, x, powers, power=np.power, sum=np.sum):
+def _poly_fjacd(B, x, powers):
     b = B[1:]
     b.shape = (b.shape[0], 1)
 
     b = b * powers
 
-    return sum(b * power(x, powers-1),axis=0)
+    return np.sum(b * np.power(x, powers-1),axis=0)
 
-def _exp_fcn(B, x, exp=np.exp):
-    return B[0] + exp(B[1] * x)
+def _exp_fcn(B, x):
+    return B[0] + np.exp(B[1] * x)
 
-def _exp_fjd(B, x, exp=np.exp):
-    return B[1] * exp(B[1] * x)
+def _exp_fjd(B, x):
+    return B[1] * np.exp(B[1] * x)
 
-def _exp_fjb(B, x, exp=np.exp, concatenate=np.concatenate, ones=np.ones):
-    res = concatenate((ones((x.shape[-1],), float), x * exp(B[1] * x)))
+def _exp_fjb(B, x):
+    res = np.concatenate((np.ones(x.shape[-1], float), x * np.exp(B[1] * x)))
     res.shape = (2, x.shape[-1])
     return res
 
 def _exp_est(data):
     # Eh.
-    return array([1., 1.])
+    return np.array([1., 1.])
 
 multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
                fjacd=_lin_fjd, estimate=_lin_est,
@@ -78,32 +78,35 @@ multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
                      'TeXequ':'$y=\\beta_0 + \sum_{i=1}^m \\beta_i x_i$'})
 
 def polynomial(order):
-    """Factory function for a general polynomial model.
+    """ Factory function for a general polynomial model.
 
-The argument "order" can be either an integer, where it becomes the
-order of the polynomial to fit, or it can be a sequence of numbers to
-explicitly determine the powers in the polynomial.
+    Parameters
+    ----------
+    order : int or sequence
+        If an integer, it becomes the order of the polynomial to fit. If
+        a sequence of numbers, then these are the explicit powers in the
+        polynomial.
+        A constant term (power 0) is always included, so don't include 0.
+        Thus, polynomial(n) is equivalent to polynomial(range(1, n+1)).
 
-Oh yeah, a constant is always included, so don't include 0.
-
-Thus, polynomial(n) is equivalent to polynomial(range(1, n+1)).
-
-  polynomial(order)"""
-
-    if type(order) is int:
-        order = range(1, order+1)
+    Returns
+    -------
+    model : Model instance
+    """
 
     powers = np.asarray(order)
-    powers.shape = (len(powers), 1)
+    if powers.shape == ():
+        # Scalar.
+        powers = np.arange(1, powers + 1)
 
+    powers.shape = (len(powers), 1)
     len_beta = len(powers) + 1
 
     def _poly_est(data, len_beta=len_beta):
         # Eh. Ignore data and return all ones.
-
         return np.ones((len_beta,), float)
 
-    return Model(_poly_fcn, fjacd=_poly_fjd, fjacb=_poly_fjb,
+    return Model(_poly_fcn, fjacd=_poly_fjacd, fjacb=_poly_fjacb,
                  estimate=_poly_est, extra_args=(powers,),
                  meta={'name': 'Sorta-general Polynomial',
                  'equ':'y = B_0 + Sum[i=1..%s, B_i * (x**i)]' % (len_beta-1),
@@ -121,8 +124,8 @@ def _unilin(B, x):
 def _unilin_fjd(B, x):
     return np.ones(x.shape, float) * B[0]
 
-def _unilin_fjb(B, x, cat=np.concatenate):
-    _ret = cat((x,np.ones(x.shape, float)))
+def _unilin_fjb(B, x):
+    _ret = np.concatenate((x, np.ones(x.shape, float)))
     _ret.shape = (2,) + x.shape
 
     return _ret
@@ -136,8 +139,8 @@ def _quadratic(B, x):
 def _quad_fjd(B, x):
     return 2*x*B[0] + B[1]
 
-def _quad_fjb(B,x,cat=np.concatenate):
-    _ret = cat((x*x, x, np.ones(x.shape, float)))
+def _quad_fjb(B, x):
+    _ret = np.concatenate((x*x, x, np.ones(x.shape, float)))
     _ret.shape = (3,) + x.shape
 
     return _ret
@@ -154,3 +157,5 @@ quadratic = Model(_quadratic, fjacd=_quad_fjd, fjacb=_quad_fjb,
                   estimate=_quad_est, meta={'name': 'Quadratic',
                   'equ': 'y = B_0*x**2 + B_1*x + B_2',
                   'TeXequ': '$y = \\beta_0 x^2 + \\beta_1 x + \\beta_2'})
+
+#### EOF #######################################################################
