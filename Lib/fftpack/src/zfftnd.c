@@ -5,13 +5,7 @@
  */
 #include "fftpack.h"
 
-#ifdef WITH_FFTW3
-/* Don't worry about caching for fftw3 - plans take specific arrays and
- * keeping around a lot of memory for such a small speed up isn't
- * worth it.
- */
-#elif defined WITH_FFTW
-/**************** FFTW *****************************/
+#if defined(WITH_FFTW) || defined(WITH_MKL)
 static
 int equal_dims(int rank,int *dims1,int *dims2) {
   int i;
@@ -20,6 +14,43 @@ int equal_dims(int rank,int *dims1,int *dims2) {
       return 0;
   return 1;
 }
+#endif
+/**************** INTEL MKL **************************/
+#ifdef WITH_MKL
+long* convert_dims(int n, int *dims)
+{
+    long * ndim;
+    int i;
+    ndim = (long*)malloc(sizeof(long)*n);
+    for(i=0;i<n;i++){ ndim[i] = (long)dims[i];}
+    return ndim;
+}
+
+GEN_CACHE(zmklfftnd,(int n,int *dims)
+	  ,DFTI_DESCRIPTOR_HANDLE desc_handle;
+	   int *dims;
+       long *ndims;
+      ,((caches_zmklfftnd[i].n==n) &&
+	   (equal_dims(n,caches_zmklfftnd[i].dims,dims)))
+	  ,caches_zmklfftnd[id].ndims = convert_dims(n, dims);
+       caches_zmklfftnd[id].n = n;
+       caches_zmklfftnd[id].dims = (int*)malloc(sizeof(int)*n);
+       memcpy(caches_zmklfftnd[id].dims,dims,sizeof(int)*n);
+       DftiCreateDescriptor(&caches_zmklfftnd[id].desc_handle, DFTI_DOUBLE, DFTI_COMPLEX, (long)n, caches_zmklfftnd[id].ndims); 
+       DftiCommitDescriptor(caches_zmklfftnd[id].desc_handle);
+	  ,DftiFreeDescriptor(&caches_zmklfftnd[id].desc_handle);
+	   free(caches_zmklfftnd[id].dims);
+       free(caches_zmklfftnd[id].ndims);
+	  ,10)
+
+/**************** FFTW3 *****************************/
+#elif defined WITH_FFTW3
+/* Don't worry about caching for fftw3 - plans take specific arrays and
+ * keeping around a lot of memory for such a small speed up isn't
+ * worth it.
+ */
+/**************** FFTW2 *****************************/
+#elif defined WITH_FFTW
 GEN_CACHE(zfftwnd,(int n,int *dims,int d,int flags)
 	  ,int direction;
 	   int *dims;
@@ -51,14 +82,16 @@ GEN_CACHE(zfftnd,(int n,int rank)
 #endif
 
 extern void destroy_zfftnd_cache(void) {
-#ifdef WITH_FFTW3
+#ifdef WITH_MKL
+  destroy_zmklfftnd_caches();
+#elif defined WITH_FFTW3
 #elif defined WITH_FFTW
   destroy_zfftwnd_caches();
 #else
   destroy_zfftnd_caches();
 #endif
 }
-#if defined WITH_FFTW || defined WITH_FFTW3
+#if defined(WITH_FFTW) || defined(WITH_FFTW3) || defined(WITH_MKL)
 #else
 static
 /*inline : disabled because MSVC6.0 fails to compile it. */
@@ -103,7 +136,9 @@ extern void zfftnd(complex_double *inout,int rank,
 		   int *dims,int direction,int howmany,int normalize) {
   int i,sz;
   complex_double *ptr = inout;
-#ifdef WITH_FFTW3
+#if defined WITH_MKL
+  DFTI_DESCRIPTOR_HANDLE desc_handle;
+#elif defined WITH_FFTW3
   fftw_plan plan = NULL;
 #elif defined WITH_FFTW
   fftwnd_plan plan = NULL;
@@ -116,7 +151,23 @@ extern void zfftnd(complex_double *inout,int rank,
   sz = 1;
   for(i=0;i<rank;++i)
     sz *= dims[i];
-#ifdef WITH_FFTW3
+#ifdef WITH_MKL
+  desc_handle = caches_zmklfftnd[get_cache_id_zmklfftnd(rank, dims)].desc_handle;
+  for (i=0;i<howmany;++i,ptr+=sz){
+    if (direction == 1){
+      DftiComputeForward(desc_handle, (double *)ptr);
+    }else if (direction == -1){
+      DftiComputeBackward(desc_handle, (double *)ptr);
+    }
+  }
+  if (normalize) {
+    ptr = inout;
+    for (i=sz*howmany-1;i>=0;--i) {
+      *((double*)(ptr)) /= sz;
+      *((double*)(ptr++)+1) /= sz;
+    }
+  }
+#elif defined WITH_FFTW3
   plan = fftw_plan_many_dft(rank,dims,howmany,
 			    (fftw_complex*)ptr,NULL,1,sz,
 			    (fftw_complex*)ptr,NULL,1,sz,

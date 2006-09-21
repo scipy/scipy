@@ -19,6 +19,7 @@ GEN_CACHE(zfftwork,(int n)
 #endif
 
 /**************** DJBFFT *****************************/
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
 GEN_CACHE(zdjbfft,(int n)
 	  ,unsigned int* f;
@@ -33,8 +34,20 @@ GEN_CACHE(zdjbfft,(int n)
 	   free(caches_zdjbfft[id].ptr);
 	  ,10)
 #endif
+#endif
 
-#if defined WITH_FFTW3
+/**************** INTEL MKL **************************/
+#ifdef WITH_MKL
+GEN_CACHE(zmklfft,(int n)
+	  ,DFTI_DESCRIPTOR_HANDLE desc_handle;
+	  ,(caches_zmklfft[i].n==n)
+      ,DftiCreateDescriptor(&caches_zmklfft[id].desc_handle, DFTI_DOUBLE, DFTI_COMPLEX, 1, (long)n); 
+       DftiCommitDescriptor(caches_zmklfft[id].desc_handle);
+	  ,DftiFreeDescriptor(&caches_zmklfft[id].desc_handle);
+	  ,10)
+
+/**************** FFTW3 *****************************/
+#elif defined WITH_FFTW3
 /*
  *don't cache anything
  */
@@ -69,10 +82,14 @@ extern void destroy_zfft_cache(void) {
 #ifdef WITH_FFTWORK
   destroy_zfftwork_caches();
 #endif
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
   destroy_zdjbfft_caches();
 #endif
-#ifdef WITH_FFTW3
+#endif
+#ifdef WITH_MKL
+  destroy_zmklfft_caches();
+#elif defined WITH_FFTW3
 #elif defined WITH_FFTW
   destroy_zfftw_caches();
 #else
@@ -85,21 +102,28 @@ extern void zfft(complex_double *inout,
 		 int n,int direction,int howmany,int normalize) {
   int i;
   complex_double *ptr = inout;
+#ifndef WITH_MKL
 #ifdef WITH_FFTW3
   fftw_complex *ptrm = NULL;
 #endif
 #if defined(WITH_FFTW) || defined(WITH_FFTW3)
   fftw_plan plan = NULL;
+#endif
+#endif
+#if defined WITH_MKL
+  DFTI_DESCRIPTOR_HANDLE desc_handle;
 #else
   double* wsave = NULL;
 #endif
 #ifdef WITH_FFTWORK
   coef_dbl* coef = NULL;
 #endif
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
   int j;
   complex_double *ptrc = NULL;
   unsigned int *f = NULL;
+#endif
 #endif
 #ifdef WITH_FFTWORK
   if (ispow2le2e30(n)) {
@@ -107,6 +131,7 @@ extern void zfft(complex_double *inout,
     coef = caches_zfftwork[i].coef;
   } else
 #endif
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
   switch (n) {
   case 2:;case 4:;case 8:;case 16:;case 32:;case 64:;case 128:;case 256:;
@@ -117,7 +142,10 @@ extern void zfft(complex_double *inout,
   }
   if (f==0)
 #endif
-#ifdef WITH_FFTW3
+#endif
+#ifdef WITH_MKL
+  desc_handle = caches_zmklfft[get_cache_id_zmklfft(n)].desc_handle;
+#elif defined WITH_FFTW3
 #elif defined WITH_FFTW
     plan = caches_zfftw[get_cache_id_zfftw(n,direction)].plan;
 #else
@@ -133,6 +161,7 @@ extern void zfft(complex_double *inout,
         fft_for_cplx_flt((cplx_dbl*)ptr,coef,n);
       } else
 #endif
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
       if (f!=NULL) {
 	memcpy(ptrc,ptr,2*n*sizeof(double));
@@ -146,7 +175,10 @@ extern void zfft(complex_double *inout,
 	for (j=0;j<n;++j) *(ptr+f[j]) = *(ptrc+j);
       } else
 #endif
-#ifdef WITH_FFTW3
+#endif
+#ifdef WITH_MKL
+    DftiComputeForward(desc_handle, (double *)ptr);
+#elif defined WITH_FFTW3
 	plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
 				(direction>0?FFTW_FORWARD:FFTW_BACKWARD),
 				FFTW_ESTIMATE);
@@ -167,6 +199,7 @@ extern void zfft(complex_double *inout,
 	fft_bak_cplx_flt((cplx_dbl*)ptr,coef,n);
       } else
 #endif
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
       if (f!=NULL) {
 	for (j=0;j<n;++j) *(ptrc+j) = *(ptr+f[j]);
@@ -180,7 +213,10 @@ extern void zfft(complex_double *inout,
 	memcpy(ptr,ptrc,2*n*sizeof(double));
       } else
 #endif
-#ifdef WITH_FFTW3
+#endif
+#ifdef WITH_MKL
+    DftiComputeBackward(desc_handle, (double *)ptr);
+#elif defined WITH_FFTW3
 	plan = fftw_plan_dft_1d(n, (fftw_complex*)ptr, (fftw_complex*)ptr,
 				(direction>0?FFTW_FORWARD:FFTW_BACKWARD),
 				FFTW_ESTIMATE);
@@ -197,9 +233,10 @@ extern void zfft(complex_double *inout,
   default:
     fprintf(stderr,"zfft: invalid direction=%d\n",direction);
   }
-
+  
   if (normalize) {
     ptr = inout;
+#ifndef WITH_MKL
 #ifdef WITH_DJBFFT
     if (f!=NULL) {
       for (i=0;i<howmany;++i,ptr+=n) {
@@ -212,6 +249,7 @@ extern void zfft(complex_double *inout,
 	}
       }
     } else
+#endif
 #endif
       for (i=n*howmany-1;i>=0;--i) {
 	*((double*)(ptr)) /= n;

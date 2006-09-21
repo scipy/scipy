@@ -8,7 +8,16 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
     config = Configuration('fftpack',parent_package, top_path)
-    fft_opt_info = get_info('fft_opt')
+
+    djbfft_info = {}
+    mkl_info = get_info('mkl')
+    if mkl_info:
+        mkl_info.setdefault('define_macros', []).append(('SCIPY_MKL_H', None))
+        fft_opt_info = mkl_info
+    else:
+        fft_opt_info = get_info('fftw3') or get_info('fftw2') \
+                        or get_info('dfftw')
+        djbfft_info = get_info('djbfft')
 
     config.add_data_dir('tests')
 
@@ -27,7 +36,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('convolve',
                          sources = ['convolve.pyf','src/convolve.c'],
                          libraries = ['dfftpack'],
-                         extra_info = fft_opt_info
+                         extra_info = [fft_opt_info, djbfft_info],
                          )
     return config
 
