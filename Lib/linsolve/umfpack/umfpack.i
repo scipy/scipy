@@ -220,3 +220,49 @@ OPAQUE_ARGINOUT( void * )
 
 %include <umfpack_free_symbolic.h>
 %include <umfpack_free_numeric.h>
+
+
+
+/*
+ * wnbell - attempt to get L,U,P,Q out
+ */
+%include "typemaps.i"
+%apply int  *OUTPUT {
+    int *lnz,
+    int *unz,
+    int *n_row,
+    int *n_col,
+    int *nz_udiag
+};
+%apply long *OUTPUT {
+    long *lnz,
+    long *unz,
+    long *n_row,
+    long *n_col,
+    long *nz_udiag
+};
+%include <umfpack_get_lunz.h>
+
+
+ARRAY_IN( double, double, DOUBLE )
+%apply double *array {
+    double Lx [ ],
+    double Lz [ ],
+    double Ux [ ],
+    double Uz [ ],
+    double Dx [ ],
+    double Dz [ ],
+    double Rs [ ]
+};
+
+ARRAY_IN( int, int, INT )
+%apply int *array {
+    int Lp [ ],
+    int Lj [ ],
+    int Up [ ],
+    int Ui [ ],
+    int P [ ],
+    int Q [ ]
+};
+%apply int  *OUTPUT { int *do_recip};
+%include <umfpack_get_numeric.h>

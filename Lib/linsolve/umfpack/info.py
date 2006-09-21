@@ -42,6 +42,7 @@ library_dirs = <dir>/UFsparse/UMFPACK/Lib
 include_dirs = <dir>/UFsparse/UMFPACK/Include, <dir>/UFsparse/UFconfig
 umfpack_libs = umfpack
 
+
 Examples:
 =========
 
@@ -97,6 +98,36 @@ sol2 = umfpack.solve( um.UMFPACK_A, mtx2, rhs2, autoTranspose = True )
 # Print all statistics.
 umfpack.report_info()
 
+-or-
+
+# Get LU factors and permutation matrices of a matrix.
+L, U, P, Q, R, do_recip = umfpack.lu( mtx )
+
+Then:
+           L - Lower triangular m-by-min(m,n) CSR matrix
+           U - Upper triangular min(m,n)-by-n CSC matrix
+           P - Vector of row permuations
+           Q - Vector of column permuations            
+           R - Vector of diagonal row scalings
+           do_recip - boolean
+           
+       For a given matrix A, the decomposition satisfies:  
+               LU = PRAQ        when do_recip is true
+               LU = P(R^-1)AQ   when do_recip is false     
+
+Description of arguments of UmfpackContext solution methods:
+=============================================
+This holds for: umfpack(), umfpack.linsolve(), umfpack.solve()
+
+ sys - one of UMFPACK system description constants, like
+       UMFPACK_A, UMFPACK_At, see umfSys list and UMFPACK
+       docs
+ mtx - sparse matrix (CSR or CSC)
+ rhs - right hand side vector
+ autoTranspose - automatically changes 'sys' to the
+       transposed type, if 'mtx' is in CSR, since UMFPACK
+       assumes CSC internally
+
 Setting control parameters:
 ===========================
 Assuming this module imported as um:
@@ -113,6 +144,8 @@ umfpack.control[um.UMFPACK_PRL] = 4 # Let's be more verbose.
 
 --
 Author: Robert Cimrman
+
+Other contributors: Nathan Bell (lu() method wrappers)
 """
 
 postpone_import = 1

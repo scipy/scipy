@@ -467,7 +467,19 @@ class UmfpackContext( Struct ):
     # 21.12.2005
     # 01.03.2006
     def solve( self, sys, mtx, rhs, autoTranspose = False ):
-        """Solution of system of linear equation using the Numeric object."""
+        """
+        Solution of system of linear equation using the Numeric object.
+
+        Arguments:
+                sys - one of UMFPACK system description constants, like
+                      UMFPACK_A, UMFPACK_At, see umfSys list and UMFPACK
+                      docs
+                mtx - sparse matrix (CSR or CSC)
+                rhs - right hand side vector
+                autoTranspose - automatically changes 'sys' to the
+                      transposed type, if 'mtx' is in CSR, since UMFPACK
+                      assumes CSC internally
+        """
         if sys not in umfSys:
             raise ValueError, 'sys must be in' % umfSys
 
@@ -526,8 +538,20 @@ class UmfpackContext( Struct ):
     # 30.11.2005, c
     # 01.12.2005
     def linsolve( self, sys, mtx, rhs, autoTranspose = False ):
-        """One-shot solution of system of linear equation. Reuses Numeric
-        object if possible."""
+        """
+        One-shot solution of system of linear equation. Reuses Numeric object
+        if possible.
+
+        Arguments:
+                sys - one of UMFPACK system description constants, like
+                      UMFPACK_A, UMFPACK_At, see umfSys list and UMFPACK
+                      docs
+                mtx - sparse matrix (CSR or CSC)
+                rhs - right hand side vector
+                autoTranspose - automatically changes 'sys' to the
+                      transposed type, if 'mtx' is in CSR, since UMFPACK
+                      assumes CSC internally
+        """
 
 #        print self.family
         if sys not in umfSys:
@@ -548,10 +572,116 @@ class UmfpackContext( Struct ):
     # 30.11.2005, c
     # 01.12.2005
     def __call__( self, sys, mtx, rhs, autoTranspose = False ):
-        """Uses solve() or linsolve() depending on the presence of
-        the Numeric object."""
+        """
+        Uses solve() or linsolve() depending on the presence of the Numeric
+        object.
+
+        Arguments:
+                sys - one of UMFPACK system description constants, like
+                      UMFPACK_A, UMFPACK_At, see umfSys list and UMFPACK
+                      docs
+                mtx - sparse matrix (CSR or CSC)
+                rhs - right hand side vector
+                autoTranspose - automatically changes 'sys' to the
+                      transposed type, if 'mtx' is in CSR, since UMFPACK
+                      assumes CSC internally
+        """
 
         if self._numeric is not None:
             return self.solve( sys, mtx, rhs, autoTranspose )
         else:
             return self.linsolve( sys, mtx, rhs, autoTranspose )
+
+    ##
+    # 21.09.2006, added by Nathan Bell
+    def lu( self, mtx ):
+        """
+        Returns an LU decomposition of an m-by-n matrix in the form
+        (L, U, P, Q, R, do_recip):
+        
+            L - Lower triangular m-by-min(m,n) CSR matrix
+            U - Upper triangular min(m,n)-by-n CSC matrix
+            P - Vector of row permuations
+            Q - Vector of column permuations            
+            R - Vector of diagonal row scalings
+            do_recip - boolean
+            
+        For a given matrix A, the decomposition satisfies:  
+                LU = PRAQ        when do_recip is true
+                LU = P(R^-1)AQ   when do_recip is false
+        """  
+        
+        #this should probably be changed
+        mtx = mtx.tocsc()        
+        self.numeric( mtx )    
+    
+        #first find out how much space to reserve
+        (status, lnz, unz, n_row, n_col, nz_udiag)\
+                 = self.funs.get_lunz( self._numeric )
+
+        if status != UMFPACK_OK:
+            raise RuntimeError, '%s failed with %s' % (self.funs.get_lunz,
+                                                       umfStatus[status])                    
+        
+        #allocate storage for decomposition data
+        i_type = mtx.indptr.dtype
+
+        Lp = nm.zeros( (n_row+1,), dtype = i_type )
+        Lj = nm.zeros( (lnz,), dtype = i_type )
+        Lx = nm.zeros( (lnz,), dtype = nm.double )
+
+        Up = nm.zeros( (n_col+1,), dtype = i_type )
+        Ui = nm.zeros( (unz,), dtype = i_type )
+        Ux = nm.zeros( (unz,), dtype = nm.double )
+        
+        P  = nm.zeros( (n_row,), dtype = i_type )
+        Q  = nm.zeros( (n_col,), dtype = i_type )
+        
+        Dx = nm.zeros( (min(n_row,n_col),), dtype = nm.double )
+        
+        Rs = nm.zeros( (n_row,), dtype = nm.double )               
+  
+        if self.isReal:                     
+            (status,do_recip) = self.funs.get_numeric( Lp,Lj,Lx,Up,Ui,Ux,
+                                                       P,Q,Dx,Rs,
+                                                       self._numeric )
+            
+            if status != UMFPACK_OK:
+                raise RuntimeError, '%s failed with %s'\
+                      % (self.funs.get_numeric, umfStatus[status])            
+            
+            L = sp.csr_matrix((Lx,Lj,Lp),(n_row,min(n_row,n_col)))
+            U = sp.csc_matrix((Ux,Ui,Up),(min(n_row,n_col),n_col))
+            R = Rs
+            
+            return (L,U,P,Q,R,do_recip)  
+            
+        else:            
+            #allocate additional storage for imaginary parts
+            Lz = nm.zeros( (lnz,), dtype = nm.double )   
+            Uz = nm.zeros( (unz,), dtype = nm.double )
+            Dz = nm.zeros( (min(n_row,n_col),), dtype = nm.double )
+            
+            (status,do_recip) = self.funs.get_numeric(Lp,Lj,Lx,Lz,Up,Ui,Ux,Uz,
+                                                      P,Q,Dx,Dz,Rs,
+                                                      self._numeric)
+            
+            if status != UMFPACK_OK:
+                raise RuntimeError, '%s failed with %s'\
+                      % (self.funs.get_numeric, umfStatus[status])            
+            
+            
+            Lxz = nm.zeros( (lnz,), dtype = nm.complex128 )
+            Uxz = nm.zeros( (unz,), dtype = nm.complex128 )
+            Dxz = nm.zeros( (min(n_row,n_col),), dtype = nm.complex128 )
+            
+            Lxz.real,Lxz.imag = Lx,Lz 
+            Uxz.real,Uxz.imag = Ux,Uz
+            Dxz.real,Dxz.imag = Dx,Dz
+            
+            L = sp.csr_matrix((Lxz,Lj,Lp),(n_row,min(n_row,n_col)))
+            U = sp.csc_matrix((Uxz,Ui,Up),(min(n_row,n_col),n_col))
+            R = Rs
+            
+            return (L,U,P,Q,R,do_recip)  
+
