@@ -94,7 +94,7 @@ class Mat4ArrayReader(MatArrayReader):
         ''' Read and return Mat4 matrix header
         '''
         header = Mat4Header()
-        data = self.read_array(self.dtypes['header'])
+        data = self.read_dtype(self.dtypes['header'])
         header.name = self.read_ztstring(data['namlen'])
         if data['mopt'] < 0 or  data['mopt'] > 5000:
             ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
@@ -125,10 +125,23 @@ class Mat4MatrixGetter(MatMatrixGetter):
     is_global = False
     is_logical = False
     
-    def read_hdr_array(self, *args, **kwargs):
-        ''' Mat4 read array always uses header dtype and dims '''
-        return self.read_array(
-            self.header.dtype, self.dims, *args, **kwargs)
+    def read_array(self, copy=True):
+        ''' Mat4 read array always uses header dtype and dims
+        @copy        - copies array if True
+        (buffer is usually read only)
+        a_dtype is assumed to be correct endianness
+        '''
+        dt = self.header.dtype
+        num_bytes = dt.itemsize
+        for d in self.dims:
+            num_bytes *= d
+        arr = ndarray(shape=self.dims,
+                      dtype=dt,
+                      buffer=self.mat_stream.read(num_bytes),
+                      order='F')
+        if copy:
+            arr = arr.copy()
+        return arr
 
 
 class Mat4FullGetter(Mat4MatrixGetter):
@@ -137,18 +150,18 @@ class Mat4FullGetter(Mat4MatrixGetter):
         if self.header.is_complex:
             self.header.original_dtype = dtype(complex128)
             # avoid array copy to save memory
-            res = self.read_hdr_array(copy=False)
-            res_j = self.read_hdr_array(copy=False)
+            res = self.read_array(copy=False)
+            res_j = self.read_array(copy=False)
             return res + (res_j * 1j)
         else:
             self.header.original_dtype = dtype(float64)
-            return self.read_hdr_array()
+            return self.read_array()
 
 
 class Mat4CharGetter(Mat4MatrixGetter):
     def get_raw_array(self):
         self.header.is_char = True
-        arr = self.read_hdr_array().astype(uint8)
+        arr = self.read_array().astype(uint8)
         # ascii to unicode
         S = arr.tostring().decode('ascii')
         return ndarray(shape=self.dims,
@@ -175,7 +188,7 @@ class Mat4SparseGetter(Mat4MatrixGetter):
     '''
     def get_raw_array(self):
         self.header.original_dtype = dtype(float64)
-        res = self.read_hdr_array()
+        res = self.read_array()
         tmp = res[:-1,:]
         dims = res[-1,0:2]
         ij = transpose(tmp[:,0:2]) - 1 # for 1-based indexing
@@ -209,13 +222,15 @@ class MatFile4Reader(MatFileReader):
     def format_looks_right(self):
         # Mat4 files have a zero somewhere in first 4 bytes
         self.mat_stream.seek(0)
-        mopt_bytes = self.read_bytes(4)
+        mopt_bytes = ndarray(shape=(4,),
+                             dtype=uint8,
+                             buffer = self.mat_stream.read(4))
         self.mat_stream.seek(0)
         return 0 in mopt_bytes
     
     def guess_byte_order(self):
         self.mat_stream.seek(0)
-        mopt = self.read_array(dtype('i4'))
+        mopt = self.read_dtype(dtype('i4'))
         self.mat_stream.seek(0)
         if mopt < 0 or mopt > 5000:
             return ByteOrder.swapped_code

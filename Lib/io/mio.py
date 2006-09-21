@@ -9,7 +9,6 @@ import sys
 
 from numpy import *
 
-from bytestream import ByteStream
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader
 
@@ -53,7 +52,7 @@ def mat_reader_factory(file_name, append_mat=True):
         if full_name is None:
             raise IOError, "%s not found on the path." % file_name
 
-    byte_stream = ByteStream(memmap(full_name, mode='r'))
+    byte_stream = open(full_name, 'rb')
     MR = MatFile4Reader(byte_stream)
     if MR.format_looks_right():
         return MR

@@ -28,10 +28,9 @@
 
 import zlib
 from copy import copy as pycopy
-
+from cStringIO import StringIO
 from numpy import *
 
-from bytestream import ByteStream
 from miobase import *
 
 miINT8 = 1
@@ -82,8 +81,7 @@ mdtypes_template = {
                     ('subsystem_offset', 'i8'),
                     ('version', 'u2'),        
                     ('endian_test', 'S2')],
-    'tag_mdtype': 'u4',
-    'tag_byte_count': 'u4',
+    'tag_full': [('mdtype', 'u4'), ('byte_count', 'u4')],
     'array_flags': [('data_type', 'u4'),
                     ('byte_count', 'u4'),
                     ('flags_class','u4'),
@@ -134,10 +132,6 @@ class mat_obj(object):
     ''' Placeholder for holding read data from objects '''
     pass
 
-class Mat5Tag(object):
-    ''' Placeholder for holding tag information '''
-    pass
-
 class Mat5Header(object):
     ''' Placeholder for Mat5 header
 
@@ -156,7 +150,6 @@ class Mat5Header(object):
     def __init__(self):
         self.next_position = None
         self.is_empty = False
-        self.flags = None
         self.is_complex = False
         self.is_global = False
         self.is_logical = False
@@ -166,10 +159,6 @@ class Mat5Header(object):
         self.is_char = None
         self.dims = ()
         self.name = ''
-
-class Mat5ArrayFlags(object):
-    ''' Place holder for array flags '''
-    pass
 
 
 class Mat5ArrayReader(MatArrayReader):
@@ -187,94 +176,79 @@ class Mat5ArrayReader(MatArrayReader):
         self.codecs = codecs
         self.class_dtypes = class_dtypes
 
-    def read_tag(self):
-        tag = Mat5Tag()
-        # Check for small data element first
-        tag.mdtype = int(self.read_array(self.dtypes['tag_mdtype']))
-        byte_count = tag.mdtype >> 16
+    def read_element(self, copy=True):
+        raw_tag = self.mat_stream.read(8)
+        tag = ndarray(shape=(),
+                      dtype=self.dtypes['tag_full'],
+                      buffer = raw_tag)
+        mdtype = tag['mdtype']
+        byte_count = mdtype >> 16
         if byte_count: # small data element format
             if byte_count > 4:
                 raise ValueError, 'Too many bytes for sde format'
-            tag.byte_count = byte_count
-            tag.mdtype = tag.mdtype & 0xFFFF
-            tag.skip = 4 - byte_count
-        else: # standard tag format
-            tag.byte_count = self.read_array(
-                self.dtypes['tag_byte_count'])
-            tag.skip = tag.byte_count % 8 and 8 - tag.byte_count % 8
-        return tag
-    
-    def read_element(self, copy=True):
-        tag = self.read_tag()
-        if tag.mdtype == miMATRIX:
-            header = self.read_header(tag)
-            return self.header_to_getter(header).get_array()
-        if tag.mdtype in self.codecs: # encoded char data
-           raw_str = self.read_bytes(tag.byte_count)
-           codec = self.codecs[tag.mdtype]
+            mdtype = mdtype & 0xFFFF
+            dt = self.dtypes[mdtype]
+            el_count = byte_count / dt.itemsize
+            return ndarray(shape=(el_count,),
+                           dtype=dt,
+                           buffer=raw_tag[4:])
+        byte_count = tag['byte_count']
+        if mdtype == miMATRIX:
+            return self.getter_from_bytes(byte_count).get_array()
+        if mdtype in self.codecs: # encoded char data
+           raw_str = self.mat_stream.read(byte_count)
+           codec = self.codecs[mdtype]
            if not codec:
-               raise TypeError, 'Do not support encoding %d' % tag.mdtype
-           el = raw_str.tostring().decode(codec)
+               raise TypeError, 'Do not support encoding %d' % mdtype
+           el = raw_str.decode(codec)
         else: # numeric data
-            try:
-                dt = self.dtypes[tag.mdtype]
-            except KeyError:
-                raise TypeError, 'Do not know matlab (TM) data code %d' \
-                      % tag.mdtype
-            el_count = tag.byte_count / dt.itemsize
-            el = self.read_array(dt, a_shape=(el_count), copy=copy)
-        if tag.skip:
-            self.mat_stream.seek(tag.skip, 1)
+            dt = self.dtypes[mdtype]
+            el_count = byte_count / dt.itemsize
+            el = ndarray(shape=(el_count,),
+                         dtype=dt,
+                         buffer=self.mat_stream.read(byte_count))
+            if copy:
+                el = el.copy()
+        mod8 = byte_count % 8
+        skip = mod8 and 8 - mod8
+        if skip:
+            self.mat_stream.seek(skip, 1)
         return el
 
-    def read_header(self, tag):
+    def read_header(self):
         ''' Read header from Mat5 matrix
         '''
-        if not tag.mdtype == miMATRIX:
-            raise TypeError, \
-                  'Expecting miMATRIX type here, got %d' %  tag.mdtype
         header = Mat5Header()
-        # Note - there is no skip value for the miMATRIX type; the
-        # number of bytes field in the tag points to the next variable
-        # in the file. This is always aligned to 8 byte boundaries
-        # (except for the miCOMPRESSED type)
-        header.next_position = (self.mat_stream.pos +
-                                tag.byte_count)
-        # Apparently an empty miMATRIX can contain no bytes
-        header.is_empty = tag.byte_count == 0
-        if header.is_empty:
-            return header
-        header.flags = self.read_array_flags()
-        header.is_complex = header.flags.is_complex
-        header.is_global = header.flags.is_global
-        header.is_logical = header.flags.is_logical
-        header.mclass = header.flags.mclass
+        af = self.read_dtype(self.dtypes['array_flags'])
+        flags_class = af['flags_class']
+        header.mclass = flags_class & 0xFF
+        header.is_logical = flags_class >> 9 & 1
+        header.is_global = flags_class >> 10 & 1
+        header.is_complex = flags_class >> 11 & 1
+        header.nzmax = af['nzmax']
         header.dims = self.read_element()
         header.name = self.read_element().tostring()
         return header
     
-    def read_array_flags(self):
-        flags = Mat5ArrayFlags()
-        af = self.read_array(self.dtypes['array_flags'])
-        flags_class = af['flags_class']
-        flags.mclass = flags_class & 0xFF
-        flags.is_logical = flags_class >> 9 & 1
-        flags.is_global = flags_class >> 10 & 1
-        flags.is_complex = flags_class >> 11 & 1
-        flags.nzmax = af['nzmax']
-        return flags
-
     def matrix_getter_factory(self):
         ''' Returns reader for next matrix '''
-        tag = self.read_tag()
-        if tag.mdtype == miCOMPRESSED:
-            return Mat5ZArrayReader(self, tag).matrix_getter_factory()
-        header = self.read_header(tag)
-        return self.header_to_getter(header)
-    
-    def header_to_getter(self, header):
-        if header.is_empty:
+        tag = self.read_dtype(self.dtypes['tag_full'])
+        mdtype = tag['mdtype']
+        byte_count = tag['byte_count']
+        if mdtype == miCOMPRESSED:
+            return Mat5ZArrayReader(self, byte_count).matrix_getter_factory()
+        if not mdtype == miMATRIX:
+            raise TypeError, \
+                  'Expecting miMATRIX type here, got %d' %  mdtype
+        return self.getter_from_bytes(byte_count)
+
+    def getter_from_bytes(self, byte_count):
+        # Apparently an empty miMATRIX can contain no bytes
+        if not byte_count:
             return Mat5EmptyMatrixGetter(self, header)
+        next_pos = self.mat_stream.tell() + byte_count
+        header = self.read_header()
+        header.next_position = next_pos
         mc = header.mclass
         if mc in mx_numbers:
             return Mat5NumericMatrixGetter(self, header)
@@ -299,22 +273,28 @@ class Mat5ZArrayReader(Mat5ArrayReader):
     allow skipping over this variable (although we have to read and
     uncompress the whole thing anyway to get the name)
     '''
-    def __init__(self, array_reader, tag):
+    def __init__(self, array_reader, byte_count):
         '''Reads and uncompresses gzipped stream'''
-        data = array_reader.read_bytes(tag.byte_count)
+        data = array_reader.mat_stream.read(byte_count)
         super(Mat5ZArrayReader, self).__init__(
-            ByteStream(zlib.decompress(data.tostring())),
+            StringIO(zlib.decompress(data)),
             array_reader.dtypes,
             array_reader.processor_func,
             array_reader.codecs,
             array_reader.class_dtypes)
-        self.next_position = array_reader.mat_stream.tell()
+        self._next_position = array_reader.mat_stream.tell()
         
-    def header_to_getter(self, header):
-        ''' Set next_position to current position in parent stream '''
-        header.next_position = self.next_position
-        return super(Mat5ZArrayReader, self).header_to_getter(header)
+    def getter_from_bytes(self, byte_count):
+        ''' Set next_position to current position in parent stream
         
+        self.next_position is only used by the get_variables routine
+        of the main file reading loop, so must refer to the position
+        in the main stream, not the compressed stream.
+        '''
+        getter = super(Mat5ZArrayReader, self).getter_from_bytes(byte_count)
+        getter.next_position = self._next_position
+        return getter
+    
 
 class Mat5MatrixGetter(MatMatrixGetter):
     ''' Base class for getting Mat5 matrices
@@ -329,9 +309,6 @@ class Mat5MatrixGetter(MatMatrixGetter):
         self.codecs = array_reader.codecs
         self.is_global = header.is_global
 
-    def read_tag(self):
-        return self.array_reader.read_tag()
-    
     def read_element(self, *args, **kwargs):
         return self.array_reader.read_element(*args, **kwargs)
     
@@ -422,7 +399,7 @@ class Mat5CharMatrixGetter(Mat5MatrixGetter):
 class Mat5CellMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
         # Account for fortran indexing of cells
-        tupdims = tuple(self.dims[::-1]) 
+        tupdims = tuple(self.dims[::-1])
         length = product(self.dims)
         result = empty(length, dtype=object)
         for i in range(length):
@@ -435,7 +412,10 @@ class Mat5CellMatrixGetter(Mat5MatrixGetter):
 
 
 class Mat5StructMatrixGetter(Mat5CellMatrixGetter):
-    obj_template = mat_struct()
+    def __init__(self, *args, **kwargs):
+        super(Mat5StructMatrixGetter, self).__init__(*args, **kwargs)
+        self.obj_template = mat_struct()
+        
     def get_raw_array(self):
         namelength = self.read_element()
         # get field names
@@ -454,7 +434,10 @@ class Mat5StructMatrixGetter(Mat5CellMatrixGetter):
 
 
 class Mat5ObjectMatrixGetter(Mat5StructMatrixGetter):
-    obj_template = mat_obj()
+    def __init__(self, *args, **kwargs):
+        super(Mat5StructMatrixGetter, self).__init__(*args, **kwargs)
+        self.obj_template = mat_obj()
+
     def get_raw_array(self):
         self.obj_template._classname = self.read_element().tostring()
         return super(Mat5ObjectMatrixGetter, self).get_raw_array()
@@ -541,14 +524,14 @@ class MatFile5Reader(MatFileReader):
 
     def guess_byte_order(self):
         self.mat_stream.seek(126)
-        mi = self.read_bytes(2).tostring()
+        mi = self.mat_stream.read(2)
         self.mat_stream.seek(0)
         return mi == 'IM' and '<' or '>'
 
     def file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
-        hdr = self.read_array(self.dtypes['file_header'])
+        hdr = self.read_dtype(self.dtypes['file_header'])
         hdict['__header__'] = hdr['description'].strip(' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
@@ -558,7 +541,9 @@ class MatFile5Reader(MatFileReader):
     def format_looks_right(self):
         # Mat4 files have a zero somewhere in first 4 bytes
         self.mat_stream.seek(0)
-        mopt_bytes = self.read_bytes(4)
+        mopt_bytes = ndarray(shape=(4,),
+                             dtype=uint8,
+                             buffer = self.mat_stream.read(4))
         self.mat_stream.seek(0)
         return 0 not in mopt_bytes
 

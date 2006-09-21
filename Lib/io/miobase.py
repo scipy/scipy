@@ -55,40 +55,22 @@ class MatStreamAgent(object):
     def __init__(self, mat_stream):
         self.mat_stream = mat_stream
 
-    def read_bytes(self, num_bytes):
-        ''' Get next block of data of length @num_bytes '''
-        res = self.mat_stream.read(num_bytes)
-        # Allow stream to return strings instead of bytes
-        if isinstance(res, basestring):
-            res = ndarray(shape=(len(res)),
-                          dtype=uint8,
-                          buffer=res)
-        return res
-    
-    def read_array(self, a_dtype, a_shape=(), copy=True):
-        ''' Generic get of byte stream data of known type and shape
+    def read_dtype(self, a_dtype):
+        ''' Generic get of byte stream data of known type
 
         Inputs
         @a_dtype     - dtype of array
-        @a_shape     - shape of desired array
-        @copy        - copies array if True
-        (buffer is usually read only)
         a_dtype is assumed to be correct endianness
         '''
-        num_bytes = a_dtype.itemsize * product(a_shape)
-        if not num_bytes:
-            return array([], dtype=a_dtype)
-        data = self.read_bytes(num_bytes)
-        arr = ndarray(shape=a_shape,
+        num_bytes = a_dtype.itemsize
+        arr = ndarray(shape=(),
                       dtype=a_dtype,
-                      buffer=data,
+                      buffer=self.mat_stream.read(num_bytes),
                       order='F')
-        if copy:
-            arr = arr.copy()
         return arr
 
     def read_ztstring(self, num_bytes):
-        return self.read_bytes(num_bytes).tostring().strip('\x00')
+        return self.mat_stream.read(num_bytes).strip('\x00')
 
         
 class MatFileReader(MatStreamAgent):
@@ -255,7 +237,7 @@ class MatFileReader(MatStreamAgent):
         return mdict
 
     def end_of_stream(self):
-        b = self.read_bytes(1)
+        b = self.mat_stream.read(1)
         self.mat_stream.seek(-1,1)
         return len(b) == 0
 
