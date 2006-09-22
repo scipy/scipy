@@ -162,10 +162,10 @@ class Mat5ArrayReader(MatArrayReader):
             el_count = byte_count / dt.itemsize
             return ndarray(shape=(el_count,),
                            dtype=dt,
-                           buffer=raw_tag[4:])
+                           buffer=raw_tag[4:4+byte_count])
         byte_count = tag['byte_count']
         if mdtype == miMATRIX:
-            return self.current_getter().get_array()
+            return self.current_getter(byte_count).get_array()
         if mdtype in self.codecs: # encoded char data
            raw_str = self.mat_stream.read(byte_count)
            codec = self.codecs[mdtype]
@@ -196,18 +196,18 @@ class Mat5ArrayReader(MatArrayReader):
         elif not mdtype == miMATRIX:
             raise TypeError, \
                   'Expecting miMATRIX type here, got %d' %  mdtype
-        elif not byte_count: # an empty miMATRIX can contain no bytes
-            getter = Mat5EmptyMatrixGetter(self)
         else:
-            getter = self.current_getter()
+            getter = self.current_getter(byte_count)
         getter.next_position = next_pos
         return getter
     
-    def current_getter(self):
+    def current_getter(self, byte_count):
         ''' Return matrix getter for current stream position
 
         Returns matrix getters at top level and sub levels
         '''
+        if not byte_count: # an empty miMATRIX can contain no bytes
+            return Mat5EmptyMatrixGetter(self)
         af = self.read_dtype(self.dtypes['array_flags'])
         header = {}
         flags_class = af['flags_class']
