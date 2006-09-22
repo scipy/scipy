@@ -256,8 +256,6 @@ def nanmean(x, axis=0):
     Norig = x.shape[axis]
     factor = 1.0-sum(isnan(x),axis)*1.0/Norig
 
-    # XXX: this line is quite clearly wrong
-    n = N-sum(isnan(x),axis)
     putmask(x,isnan(x),0)
     return stats.mean(x,axis)/factor
 
@@ -270,8 +268,6 @@ def nanstd(x, axis=0, bias=False):
     n = Norig - sum(isnan(x),axis)*1.0
     factor = n/Norig
 
-    # XXX: this line is quite clearly wrong
-    n = N-sum(isnan(x),axis)
     putmask(x,isnan(x),0)
     m1 = stats.mean(x,axis)
     m1c = m1/factor
