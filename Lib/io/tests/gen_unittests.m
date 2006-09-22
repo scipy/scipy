@@ -47,6 +47,7 @@ save_test('testsparsecomplex', b);
 % Two variables in same file
 save([FILEPREFIX 'testmulti' FILESUFFIX], 'a', 'theta')
 
+
 % struct
 save_test('teststruct', ...
 	  struct('stringfield','Rats live on no evil star.',...
@@ -57,6 +58,9 @@ save_test('teststruct', ...
 save_test('testcell', ...
 	  {['This cell contains this string and 3 arrays of increasing' ...
 	    ' length'], 1., 1.:2., 1.:3.});
+
+% Empty cells in two cell matrices
+save_test('testemptycell', {1, 2, [], [], 3});
 
 % 3D matrix
 save_test('test3dmatrix', reshape(1:24,[2 3 4]))

@@ -151,6 +151,12 @@ class test_mio_array(ScipyTestCase):
                             dtype=object)}
          }]
     case_table5.append(
+        {'name': 'emptycell',
+         'expected': {'testemptycell':
+                      array([array(1), array(2), array([]),
+                             array([]), array(3)], dtype=object)}
+         })
+    case_table5.append(
         {'name': 'stringarray',
          'expected': {'teststringarray': array(
         [u'one  ', u'two  ', u'three'], dtype=object)},

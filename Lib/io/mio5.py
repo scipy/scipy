@@ -132,35 +132,6 @@ class mat_obj(object):
     ''' Placeholder for holding read data from objects '''
     pass
 
-class Mat5Header(object):
-    ''' Placeholder for Mat5 header
-
-    Defines:
-    next_position - start position of next matrix
-    name
-    dtype - numpy dtype of matrix
-    mclass - matlab (TM) code for class of matrix
-    dims - shape of matrix as stored (see sparse reader)
-    is_complex - True if data are complex
-    is_char    - True if these are char data
-    is_global  - is a global variable in matlab (TM) workspace
-    is_numeric - is basic numeric matrix
-    original_dtype - data type when saved from matlab (TM)
-    '''
-    def __init__(self):
-        self.next_position = None
-        self.is_empty = False
-        self.is_complex = False
-        self.is_global = False
-        self.is_logical = False
-        self.mclass = 0
-        self.is_numeric = None
-        self.original_dtype = None
-        self.is_char = None
-        self.dims = ()
-        self.name = ''
-
-
 class Mat5ArrayReader(MatArrayReader):
     ''' Class to get Mat5 arrays
 
@@ -210,26 +181,10 @@ class Mat5ArrayReader(MatArrayReader):
             if copy:
                 el = el.copy()
         mod8 = byte_count % 8
-        skip = mod8 and 8 - mod8
-        if skip:
-            self.mat_stream.seek(skip, 1)
+        if mod8:
+            self.mat_stream.seek(8 - mod8, 1)
         return el
 
-    def read_header(self):
-        ''' Read header from Mat5 matrix
-        '''
-        header = Mat5Header()
-        af = self.read_dtype(self.dtypes['array_flags'])
-        flags_class = af['flags_class']
-        header.mclass = flags_class & 0xFF
-        header.is_logical = flags_class >> 9 & 1
-        header.is_global = flags_class >> 10 & 1
-        header.is_complex = flags_class >> 11 & 1
-        header.nzmax = af['nzmax']
-        header.dims = self.read_element()
-        header.name = self.read_element().tostring()
-        return header
-    
     def matrix_getter_factory(self):
         ''' Returns reader for next matrix '''
         tag = self.read_dtype(self.dtypes['tag_full'])
@@ -243,13 +198,22 @@ class Mat5ArrayReader(MatArrayReader):
         return self.getter_from_bytes(byte_count)
 
     def getter_from_bytes(self, byte_count):
+        ''' Return matrix getter for current stream position '''
         # Apparently an empty miMATRIX can contain no bytes
         if not byte_count:
-            return Mat5EmptyMatrixGetter(self, header)
-        next_pos = self.mat_stream.tell() + byte_count
-        header = self.read_header()
-        header.next_position = next_pos
-        mc = header.mclass
+            return Mat5EmptyMatrixGetter(self)
+        af = self.read_dtype(self.dtypes['array_flags'])
+        header = {}
+        flags_class = af['flags_class']
+        header['next_position'] = self.mat_stream.tell() + byte_count
+        mc = flags_class & 0xFF
+        header['mclass'] = mc
+        header['is_logical'] = flags_class >> 9 & 1
+        header['is_global'] = flags_class >> 10 & 1
+        header['is_complex'] = flags_class >> 11 & 1
+        header['nzmax'] = af['nzmax']
+        header['dims'] = self.read_element()
+        header['name'] = self.read_element().tostring()
         if mc in mx_numbers:
             return Mat5NumericMatrixGetter(self, header)
         if mc == mxSPARSE_CLASS:
@@ -292,7 +256,7 @@ class Mat5ZArrayReader(Mat5ArrayReader):
         in the main stream, not the compressed stream.
         '''
         getter = super(Mat5ZArrayReader, self).getter_from_bytes(byte_count)
-        getter.next_position = self._next_position
+        getter.header['next_position'] = self._next_position
         return getter
     
 
@@ -303,34 +267,49 @@ class Mat5MatrixGetter(MatMatrixGetter):
     '''
     
     def __init__(self, array_reader, header):
-        ''' Accepts @array_reader and @header '''
         super(Mat5MatrixGetter, self).__init__(array_reader, header)
         self.class_dtypes = array_reader.class_dtypes
         self.codecs = array_reader.codecs
-        self.is_global = header.is_global
+        self.is_global = header['is_global']
+        self.mat_dtype = None
 
     def read_element(self, *args, **kwargs):
         return self.array_reader.read_element(*args, **kwargs)
     
 
 class Mat5EmptyMatrixGetter(Mat5MatrixGetter):
-    ''' Dummy class to return empty array for empty matrix '''
+    ''' Dummy class to return empty array for empty matrix
+    '''
+    def __init__(self, array_reader):
+        self.array_reader = array_reader
+        self.mat_stream = array_reader.mat_stream
+        self.data_position = self.mat_stream.tell()
+        self.header = {}
+        self.is_global = False
+        self.mat_dtype = 'f8'
+    
     def get_raw_array(self):
         return array([[]])
 
 
 class Mat5NumericMatrixGetter(Mat5MatrixGetter):
+
+    def __init__(self, array_reader, header):
+        super(Mat5NumericMatrixGetter, self).__init__(array_reader, header)
+        if header['is_logical']:
+            self.mat_dtype = dtype('bool')
+        else:
+            self.mat_dtype = self.class_dtypes[header['mclass']]
+
     def get_raw_array(self):
-        self.header.is_numeric = True
-        self.header.original_dtype = self.class_dtypes[self.header.mclass]
-        if self.header.is_complex:
+        if self.header['is_complex']:
             # avoid array copy to save memory
             res = self.read_element(copy=False)
             res_j = self.read_element(copy=False)
             res = res + (res_j * 1j)
         else:
             res = self.read_element()
-        return ndarray(shape=self.dims,
+        return ndarray(shape=self.header['dims'],
                        dtype=res.dtype,
                        buffer=res,
                        order='F')
@@ -340,7 +319,7 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
         rowind  = self.read_element()
         colind = self.read_element()
-        if self.header.is_complex:
+        if self.header['is_complex']:
             # avoid array copy to save memory
             res = self.read_element(copy=False)
             res_j = self.read_element(copy=False)
@@ -369,7 +348,7 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
         ij = vstack((rowind[:len(res)], cols))
         if have_sparse:
             result = scipy.sparse.csc_matrix((res,ij),
-                                             self.dims)
+                                             self.header['dims'])
         else:
             result = (dims, ij, res)
         return result
@@ -377,7 +356,6 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
 
 class Mat5CharMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
-        self.header.is_char = True
         res = self.read_element()
         # Convert non-string types to unicode
         if isinstance(res, ndarray):
@@ -390,7 +368,7 @@ class Mat5CharMatrixGetter(Mat5MatrixGetter):
             else:
                 raise TypeError, 'Did not expect type %s' % res.dtype
             res = res.tostring().decode(codec)
-        return ndarray(shape=self.dims,
+        return ndarray(shape=self.header['dims'],
                        dtype=dtype('U1'),
                        buffer=array(res),
                        order='F').copy()
@@ -399,8 +377,8 @@ class Mat5CharMatrixGetter(Mat5MatrixGetter):
 class Mat5CellMatrixGetter(Mat5MatrixGetter):
     def get_raw_array(self):
         # Account for fortran indexing of cells
-        tupdims = tuple(self.dims[::-1])
-        length = product(self.dims)
+        tupdims = tuple(self.header['dims'][::-1])
+        length = product(tupdims)
         result = empty(length, dtype=object)
         for i in range(length):
             result[i] = self.get_item()

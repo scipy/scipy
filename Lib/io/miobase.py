@@ -15,6 +15,13 @@ except ImportError:
     have_sparse = 0
 
 
+def small_product(arr):
+    ''' Faster than product for small arrays '''
+    res = 1
+    for e in arr:
+        res *= e
+    return res
+
 class ByteOrder(object):
     ''' Namespace for byte ordering '''
     little_endian = sys.byteorder == 'little'
@@ -170,17 +177,26 @@ class MatFileReader(MatStreamAgent):
         occur as submatrices - in cell arrays, structs and objects -
         so we will not see these in the main variable getting routine
         here.
+
+        The read array is the first argument.
+        The getter, passed as second argument to the function, must
+        define properties, iff matlab_compatible option is True:
+        
+        mat_dtype    - data type when loaded into matlab (tm)
+                       (None for no conversion)
+
+        func returns the processed array
         '''
         
-        def func(arr, header):
-            if header.is_char and self.chars_as_strings:
+        def func(arr, getter):
+            if arr.dtype.kind == 'U' and self.chars_as_strings:
                 # Convert char array to string or array of strings
                 dims = arr.shape
                 if len(dims) >= 2: # return array of strings
                     dtt = self.order_code + 'U'
                     n_dims = dims[:-1]
                     str_arr = reshape(arr,
-                                    (product(n_dims),
+                                    (small_product(n_dims),
                                      dims[-1]))
                     arr = empty(n_dims, dtype=object)
                     for i in range(0, n_dims[-1]):
@@ -190,22 +206,20 @@ class MatFileReader(MatStreamAgent):
             if self.matlab_compatible:
                 # Apply options to replicate matlab's (TM)
                 # load into workspace
-                if header.is_logical:
-                    arr = arr.astype(bool)
-                elif header.is_numeric:
-                    # Cast as original matlab (TM) type
-                    if header.original_dtype:
-                        arr = arr.astype(header.original_dtype)
+                if getter.mat_dtype:
+                    arr = arr.astype(getter.mat_dtype)
             if self.squeeze_me:
                 arr = squeeze(arr)
-                if not arr.shape: # 0d coverted to scalar
+                if not arr.size:
+                    arr = array([])
+                elif not arr.shape: # 0d coverted to scalar
                     arr = arr.item()
             return arr
         return func
 
     def chars_to_str(self, str_arr):
         ''' Convert string array to string '''
-        dt = dtype('U' + str(product(str_arr.shape)))
+        dt = dtype('U' + str(small_product(str_arr.shape)))
         return ndarray(shape=(),
                        dtype = dt,
                        buffer = str_arr.copy()).item()
@@ -254,7 +268,7 @@ class MatMatrixGetter(MatStreamAgent):
 
     Accepts
     @array_reader - array reading object (see below)
-    @header       - header for matrix being read
+    @header       - header dictionary for matrix being read
     """
     
     def __init__(self, array_reader, header):
@@ -262,9 +276,7 @@ class MatMatrixGetter(MatStreamAgent):
         self.array_reader = array_reader
         self.dtypes = array_reader.dtypes
         self.header = header
-        self.name = header.name
-        self.next_position = header.next_position
-        self.dims = header.dims
+        self.name = header['name']
         self.data_position = self.mat_stream.tell()
         
     def get_array(self):
@@ -272,13 +284,13 @@ class MatMatrixGetter(MatStreamAgent):
         if not self.mat_stream.tell() == self.data_position:
             self.mat_stream.seek(self.data_position)
         arr = self.get_raw_array()
-        return self.array_reader.processor_func(arr, self.header)
+        return self.array_reader.processor_func(arr, self)
 
     def get_raw_array(self):
         assert False, 'Not implemented'
 
     def to_next(self):
-        self.mat_stream.seek(self.next_position)
+        self.mat_stream.seek(self.header['next_position'])
 
 
 class MatArrayReader(MatStreamAgent):
