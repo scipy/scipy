@@ -77,15 +77,17 @@ class Mat4ArrayReader(MatArrayReader):
         remaining_bytes = header['dtype'].itemsize * product(header['dims'])
         if header['is_complex'] and not header['mclass'] == mxSPARSE_CLASS:
             remaining_bytes *= 2
-        header['next_position'] = self.mat_stream.tell() + remaining_bytes
+        next_pos = self.mat_stream.tell() + remaining_bytes
         if T == mxFULL_CLASS:
-            return Mat4FullGetter(self, header)
+            getter = Mat4FullGetter(self, header)
         elif T == mxCHAR_CLASS:
-            return Mat4CharGetter(self, header)
+            getter = Mat4CharGetter(self, header)
         elif T == mxSPARSE_CLASS:
-            return Mat4SparseGetter(self, header)
+            getter = Mat4SparseGetter(self, header)
         else:
             raise TypeError, 'No reader for class code %s' % T
+        getter.next_position = next_pos
+        return getter
 
 
 class Mat4MatrixGetter(MatMatrixGetter):

@@ -165,7 +165,7 @@ class Mat5ArrayReader(MatArrayReader):
                            buffer=raw_tag[4:])
         byte_count = tag['byte_count']
         if mdtype == miMATRIX:
-            return self.getter_from_bytes(byte_count).get_array()
+            return self.current_getter().get_array()
         if mdtype in self.codecs: # encoded char data
            raw_str = self.mat_stream.read(byte_count)
            codec = self.codecs[mdtype]
@@ -186,26 +186,31 @@ class Mat5ArrayReader(MatArrayReader):
         return el
 
     def matrix_getter_factory(self):
-        ''' Returns reader for next matrix '''
+        ''' Returns reader for next matrix at top level '''
         tag = self.read_dtype(self.dtypes['tag_full'])
         mdtype = tag['mdtype']
         byte_count = tag['byte_count']
+        next_pos = self.mat_stream.tell() + byte_count
         if mdtype == miCOMPRESSED:
-            return Mat5ZArrayReader(self, byte_count).matrix_getter_factory()
-        if not mdtype == miMATRIX:
+            getter = Mat5ZArrayReader(self, byte_count).matrix_getter_factory()
+        elif not mdtype == miMATRIX:
             raise TypeError, \
                   'Expecting miMATRIX type here, got %d' %  mdtype
-        return self.getter_from_bytes(byte_count)
+        elif not byte_count: # an empty miMATRIX can contain no bytes
+            getter = Mat5EmptyMatrixGetter(self)
+        else:
+            getter = self.current_getter()
+        getter.next_position = next_pos
+        return getter
+    
+    def current_getter(self):
+        ''' Return matrix getter for current stream position
 
-    def getter_from_bytes(self, byte_count):
-        ''' Return matrix getter for current stream position '''
-        # Apparently an empty miMATRIX can contain no bytes
-        if not byte_count:
-            return Mat5EmptyMatrixGetter(self)
+        Returns matrix getters at top level and sub levels
+        '''
         af = self.read_dtype(self.dtypes['array_flags'])
         header = {}
         flags_class = af['flags_class']
-        header['next_position'] = self.mat_stream.tell() + byte_count
         mc = flags_class & 0xFF
         header['mclass'] = mc
         header['is_logical'] = flags_class >> 9 & 1
@@ -233,9 +238,7 @@ class Mat5ZArrayReader(Mat5ArrayReader):
     ''' Getter for compressed arrays
 
     Reads and uncompresses gzipped stream on init, providing wrapper
-    for this new sub-stream.  Sets next_position for main stream to
-    allow skipping over this variable (although we have to read and
-    uncompress the whole thing anyway to get the name)
+    for this new sub-stream.  
     '''
     def __init__(self, array_reader, byte_count):
         '''Reads and uncompresses gzipped stream'''
@@ -246,19 +249,7 @@ class Mat5ZArrayReader(Mat5ArrayReader):
             array_reader.processor_func,
             array_reader.codecs,
             array_reader.class_dtypes)
-        self._next_position = array_reader.mat_stream.tell()
         
-    def getter_from_bytes(self, byte_count):
-        ''' Set next_position to current position in parent stream
-        
-        self.next_position is only used by the get_variables routine
-        of the main file reading loop, so must refer to the position
-        in the main stream, not the compressed stream.
-        '''
-        getter = super(Mat5ZArrayReader, self).getter_from_bytes(byte_count)
-        getter.header['next_position'] = self._next_position
-        return getter
-    
 
 class Mat5MatrixGetter(MatMatrixGetter):
     ''' Base class for getting Mat5 matrices

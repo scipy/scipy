@@ -277,12 +277,9 @@ class MatMatrixGetter(MatStreamAgent):
         self.dtypes = array_reader.dtypes
         self.header = header
         self.name = header['name']
-        self.data_position = self.mat_stream.tell()
         
     def get_array(self):
         ''' Gets an array from matrix, and applies any necessary processing '''
-        if not self.mat_stream.tell() == self.data_position:
-            self.mat_stream.seek(self.data_position)
         arr = self.get_raw_array()
         return self.array_reader.processor_func(arr, self)
 
@@ -290,7 +287,7 @@ class MatMatrixGetter(MatStreamAgent):
         assert False, 'Not implemented'
 
     def to_next(self):
-        self.mat_stream.seek(self.header['next_position'])
+        self.mat_stream.seek(self.next_position)
 
 
 class MatArrayReader(MatStreamAgent):
