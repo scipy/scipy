@@ -162,7 +162,7 @@ class Mat5ArrayReader(MatArrayReader):
             el_count = byte_count / dt.itemsize
             return ndarray(shape=(el_count,),
                            dtype=dt,
-                           buffer=raw_tag[4:4+byte_count])
+                           buffer=raw_tag[4:])
         byte_count = tag['byte_count']
         if mdtype == miMATRIX:
             return self.current_getter(byte_count).get_array()

@@ -120,7 +120,6 @@ class MatFileReader(MatStreamAgent):
         self.squeeze_me = squeeze_me
         self.chars_as_strings = chars_as_strings
         self.matlab_compatible = matlab_compatible
-        self.processor_func = self.get_processor_func()
         
     # matlab_compatible property sets squeeze_me and chars_as_strings
     def get_matlab_compatible(self):
@@ -130,6 +129,7 @@ class MatFileReader(MatStreamAgent):
         if matlab_compatible:
             self.squeeze_me = False
             self.char_as_strings = False
+        self.processor_func = self.get_processor_func()
     matlab_compatible = property(get_matlab_compatible,
                                  set_matlab_compatible,
                                  None,
