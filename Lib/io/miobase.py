@@ -117,24 +117,44 @@ class MatFileReader(MatStreamAgent):
             byte_order = self.guess_byte_order()
         self.order_code = byte_order # sets dtypes and other things too
         self.base_name = base_name
-        self.squeeze_me = squeeze_me
-        self.chars_as_strings = chars_as_strings
+        self._squeeze_me = squeeze_me
+        self._chars_as_strings = chars_as_strings
         self.matlab_compatible = matlab_compatible
         
     # matlab_compatible property sets squeeze_me and chars_as_strings
     def get_matlab_compatible(self):
         return self._matlab_compatible
-    def set_matlab_compatible(self, matlab_compatible):
-        self._matlab_compatible = matlab_compatible
-        if matlab_compatible:
-            self.squeeze_me = False
-            self.char_as_strings = False
+    def set_matlab_compatible(self, m_l_c):
+        self._matlab_compatible = m_l_c
+        if m_l_c:
+            self._squeeze_me = False
+            self._chars_as_strings = False
         self.processor_func = self.get_processor_func()
     matlab_compatible = property(get_matlab_compatible,
                                  set_matlab_compatible,
                                  None,
                                  'get/set matlab_compatible property')
 
+    def get_squeeze_me(self):
+        return self._squeeze_me
+    def set_squeeze_me(self, squeeze_me):
+        self._squeeze_me = squeeze_me
+        self.processor_func = self.get_processor_func()
+    squeeze_me = property(get_squeeze_me,
+                          set_squeeze_me,
+                          None,
+                          'get/set squeeze me property')
+    
+    def get_chars_as_strings(self):
+        return self._chars_as_strings
+    def set_chars_as_strings(self, chars_as_strings):
+        self._chars_as_strings = chars_as_strings
+        self.processor_func = self.get_processor_func()
+    chars_as_strings = property(get_chars_as_strings,
+                          set_chars_as_strings,
+                          None,
+                          'get/set squeeze me property')
+    
     def get_order_code(self):
         return self._order_code
     def set_order_code(self, order_code):
@@ -206,7 +226,7 @@ class MatFileReader(MatStreamAgent):
             if self.matlab_compatible:
                 # Apply options to replicate matlab's (TM)
                 # load into workspace
-                if getter.mat_dtype:
+                if getter.mat_dtype is not None:
                     arr = arr.astype(getter.mat_dtype)
             if self.squeeze_me:
                 arr = squeeze(arr)
@@ -231,6 +251,8 @@ class MatFileReader(MatStreamAgent):
 
         If variable_names is None, then get all variables in file
         '''
+        if isinstance(variable_names, basestring):
+            variable_names = [variable_names]
         self.mat_stream.seek(0)
         mdict = self.file_header()
         mdict['__globals__'] = []
