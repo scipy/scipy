@@ -53,6 +53,13 @@ class UnivariateSpline:
     """ Univariate spline s(x) of degree k on the interval
     [xb,xe] calculated from a given set of data points
     (x,y).
+
+    Can include least-squares fitting.
+
+    See also:
+
+    splrep, splev, sproot, spint, spalde - an older wrapping of FITPACK
+    BivariateSpline - a similar class for bivariate spline interpolation
     """
 
     def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=None):
@@ -195,7 +202,8 @@ class UnivariateSpline:
         raise NotImplementedError,'finding roots unsupported for non-cubic splines'
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
-    """ Interpolated univariate spline approximation."""
+    """ Interpolated univariate spline approximation. Identical to UnivariateSpline with less error checking."""
+
     def __init__(self, x, y, w=None, bbox = [None]*2, k=3):
         """
         Input:
@@ -215,7 +223,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         self._reset_class()
 
 class LSQUnivariateSpline(UnivariateSpline):
-    """ Weighted least-squares univariate spline approximation."""
+    """ Weighted least-squares univariate spline approximation. Appears to be identical to UnivariateSpline with more error checking."""
 
     def __init__(self, x, y, t, w=None, bbox = [None]*2, k=3):
         """
@@ -296,6 +304,15 @@ class BivariateSpline:
     """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
+
+    See also:
+
+    bisplrep, bisplev - an older wrapping of FITPACK
+    UnivariateSpline - a similar class for univariate spline interpolation
+    SmoothUnivariateSpline - to create a BivariateSpline through the 
+                             given points
+    LSQUnivariateSpline - to create a BivariateSpline using weighted
+                          least-squares fitting
     """
 
     def get_residual(self):
@@ -324,7 +341,15 @@ class BivariateSpline:
         raise NotImplementedError
 
 class SmoothBivariateSpline(BivariateSpline):
-    """ Smooth bivariate spline approximation."""
+    """ Smooth bivariate spline approximation.
+
+    See also:
+
+    bisplrep, bisplev - an older wrapping of FITPACK
+    UnivariateSpline - a similar class for univariate spline interpolation
+    LSQUnivariateSpline - to create a BivariateSpline using weighted
+                          least-squares fitting
+    """
 
     def __init__(self, x, y, z, w=None,
                  bbox = [None]*4, kx=3, ky=3, s=None, eps=None):
@@ -364,7 +389,14 @@ class SmoothBivariateSpline(BivariateSpline):
 
 class LSQBivariateSpline(BivariateSpline):
     """ Weighted least-squares spline approximation.
+    See also:
+
+    bisplrep, bisplev - an older wrapping of FITPACK
+    UnivariateSpline - a similar class for univariate spline interpolation
+    SmoothUnivariateSpline - to create a BivariateSpline through the 
+                             given points
     """
+
     def __init__(self, x, y, z, tx, ty, w=None,
                  bbox = [None]*4,
                  kx=3, ky=3, eps=None):

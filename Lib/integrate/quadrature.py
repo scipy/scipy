@@ -29,11 +29,19 @@ def fixed_quad(func,a,b,args=(),n=5):
 
     val -- Gaussian quadrature approximation to the integral.
 
+  See also:
+    
+    quad - adaptive quadrature using QUADPACK
+    dblquad, tplquad - double and triple integrals
+    romberg - adaptive Romberg quadrature
+    quadrature - adaptive Gaussian quadrature
+    romb, simps, trapz - integrators for sampled data
+    cumtrapz - cumulative integration for sampled data
+    ode, odeint - ODE integrators
     """
     [x,w] = p_roots(n)
     x = real(x)
-    ainf, binf = map(isinf,(a,b))
-    if ainf or binf:
+    ainf, binf = map(isinf,(a,b)) if ainf or binf:
         raise ValueError, "Gaussian quadrature is only available for " \
               "finite limits."
     y = (b-a)*(x+1)/2.0 + a
@@ -83,6 +91,15 @@ def quadrature(func,a,b,args=(),tol=1.49e-8,maxiter=50, vec_func=True):
     val -- Gaussian quadrature approximation (within tolerance) to integral.
     err -- Difference between last two estimates of the integral.
 
+  See also:
+    
+    romberg - adaptive Romberg quadrature
+    fixed_quad - fixed-order Gaussian quadrature
+    quad - adaptive quadrature using QUADPACK
+    dblquad, tplquad - double and triple integrals
+    romb, simps, trapz - integrators for sampled data
+    cumtrapz - cumulative integration for sampled data
+    ode, odeint - ODE integrators
     """
     err = 100.0
     val = err
@@ -108,6 +125,17 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1):
     """Cumulatively integrate y(x) using samples along the given axis
     and the composite trapezoidal rule.  If x is None, spacing given by dx
     is assumed.
+
+    See also:
+    
+      quad - adaptive quadrature using QUADPACK
+      romberg - adaptive Romberg quadrature
+      quadrature - adaptive Gaussian quadrature
+      fixed_quad - fixed-order Gaussian quadrature
+      dblquad, tplquad - double and triple integrals
+      romb, trapz - integrators for sampled data
+      cumtrapz - cumulative integration for sampled data
+      ode, odeint - ODE integrators
     """
     y = asarray(y)
     if x is None:
@@ -172,6 +200,17 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         exact if the function is a polynomial of order 3 or less.  If
         the samples are not equally spaced, then the result is exact only
         if the function is a polynomial of order 2 or less.
+
+    See also:
+    
+      quad - adaptive quadrature using QUADPACK
+      romberg - adaptive Romberg quadrature
+      quadrature - adaptive Gaussian quadrature
+      fixed_quad - fixed-order Gaussian quadrature
+      dblquad, tplquad - double and triple integrals
+      romb, trapz - integrators for sampled data
+      cumtrapz - cumulative integration for sampled data
+      ode, odeint - ODE integrators
     """
     y = asarray(y)
     nd = len(y.shape)
@@ -231,6 +270,17 @@ def romb(y, dx=1.0, axis=-1, show=False):
     """Uses Romberg integration to integrate y(x) using N samples
     along the given axis which are assumed equally spaced with distance dx.
     The number of samples must be 1 + a non-negative power of two: N=2**k + 1
+
+    See also:
+    
+      quad - adaptive quadrature using QUADPACK
+      romberg - adaptive Romberg quadrature
+      quadrature - adaptive Gaussian quadrature
+      fixed_quad - fixed-order Gaussian quadrature
+      dblquad, tplquad - double and triple integrals
+      simps, trapz - integrators for sampled data
+      cumtrapz - cumulative integration for sampled data
+      ode, odeint - ODE integrators
     """
     y = asarray(y)
     nd = len(y.shape)
@@ -361,6 +411,16 @@ def romberg(function, a, b, args=(), tol=1.48E-8, show=False,
     the triangular array of the intermediate results will be printed.
     If |vec_func| is True (default is False), then |function| is
     assumed to support vector arguments.
+
+    See also:
+    
+      quad - adaptive quadrature using QUADPACK
+      quadrature - adaptive Gaussian quadrature
+      fixed_quad - fixed-order Gaussian quadrature
+      dblquad, tplquad - double and triple integrals
+      romb, simps, trapz - integrators for sampled data
+      cumtrapz - cumulative integration for sampled data
+      ode, odeint - ODE integrators
     """
     if isinf(a) or isinf(b):
         raise ValueError("Romberg integration only available for finite limits.")

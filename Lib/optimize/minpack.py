@@ -86,6 +86,25 @@ def fsolve(func,x0,args=(),fprime=None,full_output=0,col_deriv=0,xtol=1.49012e-8
 
     "fsolve" is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
+  See also:
+
+      fmin, fmin_powell, fmin_cg,
+	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+  
+      fmin_l_bfgs_b, fmin_tnc,
+	     fmin_cobyla -- constrained multivariate optimizers
+  
+      anneal, brute -- global optimizers
+  
+      fminbound, brent, golden, bracket -- local scalar minimizers
+  
+      fsolve -- n-dimenstional root-finding
+  
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+  
+      fixed_point -- scalar fixed-point finder
+
     """
     x0 = atleast_1d(x0)
     n = len(x0)
@@ -188,8 +207,7 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
                          magnitude. Column j of p is column ipvt(j)
                          of the identity matrix.
                 'qtf'  : the vector (transpose(q) * fvec).
-    mesg -- a string message giving information about the cause of
-            failure.
+    mesg -- a string message giving information about the cause of failure.
     ier -- an integer flag.  If it is equal to 1 the solution was
            found.  If it is not equal to 1, the solution was not
            found and the following message gives more information.
@@ -217,6 +235,25 @@ def leastsq(func,x0,args=(),Dfun=None,full_output=0,col_deriv=0,ftol=1.49012e-8,
   Remarks:
 
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
+
+  See also:
+
+      fmin, fmin_powell, fmin_cg,
+	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+  
+      fmin_l_bfgs_b, fmin_tnc,
+	     fmin_cobyla -- constrained multivariate optimizers
+  
+      anneal, brute -- global optimizers
+  
+      fminbound, brent, golden, bracket -- local scalar minimizers
+  
+      fsolve -- n-dimenstional root-finding
+  
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+  
+      fixed_point -- scalar fixed-point finder
 
     """
     x0 = atleast_1d(x0)
@@ -313,6 +350,26 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 
     fprime is the derivative of the function.  If not given, the
     Secant method is used.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+  
+      fmin_l_bfgs_b, fmin_tnc,
+	     fmin_cobyla -- constrained multivariate optimizers
+  
+      anneal, brute -- global optimizers
+  
+      fminbound, brent, golden, bracket -- local scalar minimizers
+  
+      fsolve -- n-dimenstional root-finding
+  
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+  
+      fixed_point -- scalar fixed-point finder
+
     """
 
     if fprime is not None:
@@ -353,6 +410,26 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50):
 def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
     """Given a function of one variable and a starting point, find a
     fixed-point of the function: i.e. where func(x)=x.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+  
+      fmin_l_bfgs_b, fmin_tnc,
+	     fmin_cobyla -- constrained multivariate optimizers
+  
+      anneal, brute -- global optimizers
+  
+      fminbound, brent, golden, bracket -- local scalar minimizers
+  
+      fsolve -- n-dimenstional root-finding
+  
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+  
+      fixed_point -- scalar fixed-point finder
+
     """
 
     p0 = x0
@@ -374,6 +451,26 @@ def fixed_point(func, x0, args=(), xtol=1e-10, maxiter=500):
 def bisection(func, a, b, args=(), xtol=1e-10, maxiter=400):
     """Bisection root-finding method.  Given a function and an interval with
     func(a) * func(b) < 0, find the root between a and b.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+	     fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+  
+      fmin_l_bfgs_b, fmin_tnc,
+	     fmin_cobyla -- constrained multivariate optimizers
+  
+      anneal, brute -- global optimizers
+  
+      fminbound, brent, golden, bracket -- local scalar minimizers
+  
+      fsolve -- n-dimenstional root-finding
+  
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+  
+      fixed_point -- scalar fixed-point finder
+
     """
     i = 1
     eva = func(a,*args)

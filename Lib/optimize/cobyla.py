@@ -45,6 +45,25 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 
     x -- the minimum
 
+    See also:
+
+	fmin, fmin_powell, fmin_cg, 
+	      fmin_bfgs, fmin_ncg -- multivariate local optimizers
+	leastsq -- nonlinear least squares minimizer
+
+	fmin_l_bfgs_b, fmin_tnc, 
+	      fmin_cobyla -- constrained multivariate optimizers
+
+	anneal, brute -- global optimizers
+
+	fminbound, brent, golden, bracket -- local scalar minimizers
+
+	fsolve -- n-dimenstional root-finding
+
+	brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+	fixed_point -- scalar fixed-point finder
+
     """
     err = "cons must be a sequence of callable functions or a single"\
               " callable function."

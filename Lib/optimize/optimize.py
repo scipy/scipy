@@ -134,6 +134,25 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
       disp -- non-zero to print convergence messages.
       retall -- non-zero to return list of solutions at each iteration
 
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
       """
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0)
@@ -613,6 +632,26 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
                      and warnflag in addition to xopt.
       disp -- print convergence message if non-zero.
       retall -- return a list of results at each iteration if non-zero
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
       """
     x0 = asarray(x0)
     if maxiter is None:
@@ -757,6 +796,26 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
                      and warnflag in addition to xopt.
       disp -- print convergence message if non-zero.
       retall -- return a list of results at each iteration if True
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
       """
     x0 = asarray(x0)
     if maxiter is None:
@@ -906,6 +965,25 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     provided, then the hessian product will be approximated using finite
     differences on fprime.
 
+  See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     x0 = asarray(x0)
     fcalls, f = wrap_function(f, args)
@@ -1043,6 +1121,26 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
       ierr -- An error flag (0 if converged, 1 if maximum number of
               function calls reached).
       numfunc -- The number of function calls.
+
+  See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
 
     if x1 > x2:
@@ -1169,6 +1267,26 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     Uses inverse parabolic interpolation when possible to speed up convergence
     of golden section method.
 
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     _mintol = 1.0e-11
     _cg = 0.3819660
@@ -1267,6 +1385,26 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     (see bracket)
 
     Uses analog of bisection method to decrease the bracketed interval.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     if brack is None:
         xa,xb,xc,fa,fb,fc,funcalls = bracket(func, args=args)
@@ -1433,6 +1571,25 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
       disp -- non-zero to print convergence messages.
       retall -- non-zero to return a list of the solution at each iteration
 
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
       """
     # we need to use a mutable object here that we can update in the
     # wrapper function
@@ -1557,6 +1714,26 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     grid        -- tuple with same length as x0 representing the
                     evaluation grid
     Jout        -- Function values over grid:  Jout = func(*grid)
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     N = len(ranges)
     if N > 40:

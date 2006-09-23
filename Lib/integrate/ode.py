@@ -118,6 +118,10 @@ ode  - a generic interface class to numeric integrators. It has the
         return <f(t,y)>
     def jac(t,y[,arg1,..]):
         return <df/dy(t,y)>
+
+See also:
+    odeint - an integrator with a simpler interface based on lsoda from ODEPACK
+    quad - for finding the area under a curve
     """
 
     def __init__(self,f,jac=None):

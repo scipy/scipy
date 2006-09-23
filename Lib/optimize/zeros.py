@@ -70,6 +70,26 @@ def bisect(f, a, b, args=(),
     is the root, and r is a RootResults object containing information
     about the convergence. In particular, r.converged is True if the
     the routine converged.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     if type(args) != type(()) :
         args = (args,)
@@ -113,6 +133,26 @@ def ridder(f, a, b, args=(),
     is the root, and r is a RootResults object containing information
     about the convergence. In particular, r.converged is True if the
     the routine converged.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     if type(args) != type(()) :
         args = (args,)
@@ -157,6 +197,26 @@ def brentq(f, a, b, args=(),
     is the root, and r is a RootResults object containing information
     about the convergence. In particular, r.converged is True if the
     the routine converged.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     if type(args) != type(()) :
         args = (args,)
@@ -201,6 +261,26 @@ def brenth(f, a, b, args=(),
     is the root, and r is a RootResults object containing information
     about the convergence. In particular, r.converged is True if the
     the routine converged.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     if type(args) != type(()) :
         args = (args,)

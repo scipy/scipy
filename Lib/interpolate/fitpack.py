@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 fitpack (dierckx in netlib) --- A Python-C wrapper to FITPACK (by P. Dierckx).
-        FITPACK is a collection of FORTRAN programs for CURVE and SURFACE
-        FITTING with SPLINES and TENSOR PRODUCT SPLINES.
+        FITPACK is a collection of FORTRAN programs for curve and surface
+        fitting with splines and tensor product splines.
 
 See
  http://www.cs.kuleuven.ac.be/cwis/research/nalag/research/topics/fitpack.html
@@ -28,8 +28,8 @@ TODO: Make interfaces to the following fitpack functions:
     For bivariate splines: profil, regrid, parsur, surev
 """
 
-__all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot',
-                         'spalde', 'bisplrep', 'bisplev']
+__all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
+    'bisplrep', 'bisplev']
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
@@ -166,6 +166,12 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     Remarks:
 
       SEE splev for evaluation of the spline and its derivatives.
+
+    See also:
+      splrep, splev, sproot, spalde, splint - evaluation, roots, integral
+      bisplrep, bisplev - bivariate splines
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     if task<=0:
         _parcur_cache = {'t': array([],float), 'wrk': array([],float),
@@ -319,6 +325,11 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
       y2 = splev(x2, tck)
       plot(x, y, 'o', x2, y2)
       
+    See also:
+      splprep, splev, sproot, spalde, splint - evaluation, roots, integral
+      bisplrep, bisplev - bivariate splines
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     if task<=0:
         _curfit_cache = {}
@@ -414,6 +425,12 @@ def splev(x,tck,der=0):
       y -- an array of values representing the spline function or curve.
            If tck was returned from splrep, then this is a list of arrays
            representing the curve in N-dimensional space.
+
+    See also:
+      splprep, splrep, sproot, spalde, splint - evaluation, roots, integral
+      bisplrep, bisplev - bivariate splines
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     t,c,k=tck
     try:
@@ -449,6 +466,12 @@ def splint(a,b,tck,full_output=0):
       wrk -- An array containing the integrals of the normalized B-splines defined
              on the set of knots.
 
+
+    See also:
+      splprep, splrep, sproot, spalde, splev - evaluation, roots, integral
+      bisplrep, bisplev - bivariate splines
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     t,c,k=tck
     try: c[0][0];return _ntlist(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c))
@@ -475,6 +498,12 @@ def sproot(tck,mest=10):
     Outputs: (zeros, )
 
       zeros -- An array giving the roots of the spline.
+
+    See also:
+      splprep, splrep, splint, spalde, splev - evaluation, roots, integral
+      bisplrep, bisplev - bivariate splines
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     t,c,k=tck
     if k==4: t=t[1:-1]
@@ -510,6 +539,12 @@ def spalde(x,tck):
 
       results -- An array (or a list of arrays) containing all derivatives
                  up to order k inclusive for each point x.
+
+    See also:
+      splprep, splrep, splint, sproot, splev - evaluation, roots, integral
+      bisplrep, bisplev - bivariate splines
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     t,c,k=tck
     try:
@@ -588,6 +623,11 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
 
       SEE bisplev to evaluate the value of the B-spline given its tck
       representation.
+
+    See also:
+      splprep, splrep, splint, sproot, splev - evaluation, roots, integral
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     x,y,z=map(myasarray,[x,y,z])
     x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
@@ -686,6 +726,15 @@ def bisplev(x,y,tck,dx=0,dy=0):
 
       vals -- The B-pline or its derivative evaluated over the set formed by
               the cross-product of x and y.
+
+    Remarks:
+
+      SEE bisprep to generate the tck representation.
+
+    See also:
+      splprep, splrep, splint, sproot, splev - evaluation, roots, integral
+      UnivariateSpline, BivariateSpline - an alternative wrapping 
+              of the FITPACK functions
     """
     tx,ty,c,kx,ky=tck
     if not (0<=dx<kx): raise ValueError,"0<=dx=%d<kx=%d must hold"%(dx,kx)

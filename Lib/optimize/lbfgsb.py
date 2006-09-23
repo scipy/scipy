@@ -117,6 +117,26 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
      * C. Zhu, R. H. Byrd and J. Nocedal. L-BFGS-B: Algorithm 778: L-BFGS-B,
        FORTRAN routines for large scale bound constrained optimization (1997),
        ACM Transactions on Mathematical Software, Vol 23, Num. 4, pp. 550 - 560.
+
+    See also:
+
+        fmin, fmin_powell, fmin_cg,
+               fmin_bfgs, fmin_ncg -- multivariate local optimizers
+        leastsq -- nonlinear least squares minimizer
+
+        fmin_l_bfgs_b, fmin_tnc,
+               fmin_cobyla -- constrained multivariate optimizers
+
+        anneal, brute -- global optimizers
+
+        fminbound, brent, golden, bracket -- local scalar minimizers
+
+        fsolve -- n-dimenstional root-finding
+
+        brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+        fixed_point -- scalar fixed-point finder
+
     """
     n = len(x0)
 

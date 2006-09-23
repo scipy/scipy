@@ -108,6 +108,9 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
       mxordn -- maximum order to be allowed for the nonstiff (Adams) method.
       mxords -- maximum order to be allowed for the stiff (BDF) method.
 
+    See also:
+      ode - a more object-oriented integrator based on VODE
+      quad - for finding the area under a curve
     """
 
     if ml is None:

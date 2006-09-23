@@ -54,6 +54,7 @@ MSGS = {
 }
 
 HUGE_VAL=1e500 # No standard representation of Infinity in Python 2.3.3
+               # FIXME: can we use inf now that we have numpy and IEEE floats?
 
 EINVAL       = -2 # Invalid parameters (n<1)
 INFEASIBLE   = -1 # Infeasible (low > up)
@@ -149,6 +150,26 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, epsilon
         x         : the solution (a list of floats)
         nfeval    : the number of function evaluations
         rc        : return code (corresponding message in optimize.tnc.RCSTRINGS)
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
 
     n = len(x0)

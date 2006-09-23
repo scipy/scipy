@@ -13,10 +13,23 @@ Wrappers around FITPACK functions:
   bisplrep   -- find bivariate smoothing spline representation.
   bisplev   -- evaluate bivariate smoothing spline.
 
+  UnivariateSpline             -- A more recent, object-oriented wrapper;
+                                  finds a (possibly smoothed) interpolating
+				  spline.
+  InterpolatedUnivariateSpline
+  LSQUnivariateSpline
+  BivariateSpline              -- A more recent, object-oriented wrapper;
+                                  finds a interpolating spline for a 
+				  bivariate function.
+
+  SmoothBivariateSpline
+
 Interpolation Class
 
   interp1d -- Create a class whose instances can linearly interpolate
-               to compute unknown values.
+               to compute unknown values of a univariate function.
+  interp2d -- Create a class whose instances can interpolate
+               to compute unknown values of a bivariate function.
 """
 
 postpone_import = 1

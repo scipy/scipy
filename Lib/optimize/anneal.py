@@ -181,6 +181,26 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     feval -- Number of function evaluations
     iters  -- Number of cooling iterations
     accept -- Number of tests accepted.
+
+    See also:
+
+      fmin, fmin_powell, fmin_cg,
+             fmin_bfgs, fmin_ncg -- multivariate local optimizers
+      leastsq -- nonlinear least squares minimizer
+
+      fmin_l_bfgs_b, fmin_tnc,
+             fmin_cobyla -- constrained multivariate optimizers
+
+      anneal, brute -- global optimizers
+
+      fminbound, brent, golden, bracket -- local scalar minimizers
+
+      fsolve -- n-dimenstional root-finding
+
+      brentq, brenth, ridder, bisect, newton -- one-dimensional root-finding
+
+      fixed_point -- scalar fixed-point finder
+
     """
     x0 = asarray(x0)
     lower = asarray(lower)

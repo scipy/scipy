@@ -174,6 +174,13 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     wopts -- Optional input for reusing Chebyshev moments.
     maxp1 -- An upper bound on the number of Chebyshev moments.
 
+    See also:
+      dblquad, tplquad - double and triple integrals
+      fixed_quad - fixed-order Gaussian quadrature
+      quadrature - adaptive Gaussian quadrature
+      odeint, ode - ODE integrators
+      simps, trapz, romb - integrators for sampled data
+      scipy.special - for coefficients and roots of orthogonal polynomials
     """
     if type(args) != type(()): args = (args,)
     if (weight is None):
@@ -332,6 +339,14 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     y -- the resultant integral.
     abserr -- an estimate of the error.
 
+    See also:
+      quad - single integral
+      tplquad - triple integral
+      fixed_quad - fixed-order Gaussian quadrature
+      quadrature - adaptive Gaussian quadrature
+      odeint, ode - ODE integrators
+      simps, trapz, romb - integrators for sampled data
+      scipy.special - for coefficients and roots of orthogonal polynomials
     """
     return quad(_infunc,a,b,(func,gfun,hfun,args),epsabs=epsabs,epsrel=epsrel)
 
@@ -372,5 +387,13 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     y -- the resultant integral.
     abserr -- an estimate of the error.
 
+  See also:
+    quad - single integral
+    dblquad - double integral
+    fixed_quad - fixed-order Gaussian quadrature
+    quadrature - adaptive Gaussian quadrature
+    odeint, ode - ODE integrators
+    simps, trapz, romb - integrators for sampled data
+    scipy.special - for coefficients and roots of orthogonal polynomials
     """
     return dblquad(_infunc2,a,b,gfun,hfun,(func,qfun,rfun,args),epsabs=epsabs,epsrel=epsrel)
