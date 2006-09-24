@@ -182,20 +182,16 @@ Statistics Tables and Formulae_. Chapman & Hall: New York. 2000.
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
-import sys
+# Standard library imports.
 import warnings
 
-from numpy import *
-import numpy.core.umath as math
-from numpy.core.umath import *
+# Scipy imports.
+from numpy import array, asarray, dot, ma, zeros
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
-import scipy as sp
 
-# Grab this useful utility routine
-from numpy.core.numeric import rollaxis
-
+# Local imports.
 import _support
 
 __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
@@ -219,28 +215,24 @@ __all__ = ['gmean', 'hmean', 'mean', 'cmedian', 'median', 'mode',
            'fastsort', 'rankdata',
           ]
 
-# These two functions replace letting axis be a sequence and the
-#  keepdims features used throughout.  These ideas
-#  did not match the rest of Scipy.
-#from numpy import expand_dims, apply_over_axes
 
 def _chk_asarray(a, axis):
     if axis is None:
-        a = ravel(a)
+        a = np.ravel(a)
         outaxis = 0
     else:
-        a = asarray(a)
+        a = np.asarray(a)
         outaxis = axis
     return a, outaxis
 
 def _chk2_asarray(a, b, axis):
     if axis is None:
-        a = ravel(a)
-        b = ravel(b)
+        a = np.ravel(a)
+        b = np.ravel(b)
         outaxis = 0
     else:
-        a = asarray(a)
-        b = asarray(b)
+        a = np.asarray(a)
+        b = np.asarray(b)
         outaxis = axis
     return a, b, outaxis
 
@@ -254,10 +246,10 @@ def nanmean(x, axis=0):
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     Norig = x.shape[axis]
-    factor = 1.0-sum(isnan(x),axis)*1.0/Norig
+    factor = 1.0-sum(np.isnan(x),axis)*1.0/Norig
 
-    putmask(x,isnan(x),0)
-    return stats.mean(x,axis)/factor
+    x[np.isnan(x)] = 0
+    return np.mean(x,axis)/factor
 
 def nanstd(x, axis=0, bias=False):
     """Compute the standard deviation over the given axis ignoring nans
@@ -265,13 +257,13 @@ def nanstd(x, axis=0, bias=False):
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     Norig = x.shape[axis]
-    n = Norig - sum(isnan(x),axis)*1.0
+    n = Norig - np.sum(np.isnan(x),axis)*1.0
     factor = n/Norig
 
-    putmask(x,isnan(x),0)
-    m1 = stats.mean(x,axis)
+    x[np.isnan(x)] = 0
+    m1 = np.mean(x,axis)
     m1c = m1/factor
-    m2 = stats.mean((x-m1c)**2.0,axis)
+    m2 = np.mean((x-m1c)**2.0,axis)
     if bias:
         m2c = m2/factor
     else:
@@ -279,8 +271,8 @@ def nanstd(x, axis=0, bias=False):
     return m2c
 
 def _nanmedian(arr1d):  # This only works on 1d arrays
-    cond = 1-isnan(arr1d)
-    x = sort(compress(cond,arr1d,axis=-1))
+    cond = 1-np.isnan(arr1d)
+    x = np.sort(np.compress(cond,arr1d,axis=-1))
     return median(x)
 
 def nanmedian(x, axis=0):
@@ -288,7 +280,7 @@ def nanmedian(x, axis=0):
     """
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
-    return apply_along_axis(_nanmedian,axis,x)
+    return np.apply_along_axis(_nanmedian,axis,x)
 
 
 #####################################
@@ -426,7 +418,7 @@ def median(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     if axis != 0:
-        a = rollaxis(a, axis, 0)
+        a = np.rollaxis(a, axis, 0)
     return np.median(a)
 
 def mode(a, axis=0):
@@ -520,10 +512,16 @@ def tmean(a, limits=None, inclusive=(True, True)):
     A float.
     """
     a = asarray(a)
-    if issubclass(a.dtype.type, integer):
+
+    # Cast to a float if this is an integer array. If it is already a float
+    # array, leave it as is to preserve its precision.
+    if issubclass(a.dtype.type, np.integer):
         a = a.astype(float)
+
+    # No trimming.
     if limits is None:
         return mean(a,None)
+
     am = mask_to_limits(a.ravel(), limits, inclusive)
     return am.mean()
 
@@ -576,7 +574,7 @@ def tstd(a, limits=None, inclusive=(1,1)):
     lower and upper limiting bounds (respectively) are open/exclusive
     (0) or closed/inclusive (1).
     """
-    return sqrt(tvar(a,limits,inclusive))
+    return np.sqrt(tvar(a,limits,inclusive))
 
 
 def tsem(a, limits=None, inclusive=(True,True)):
@@ -587,12 +585,12 @@ def tsem(a, limits=None, inclusive=(True,True)):
     inclusive list/tuple determines whether the lower and upper limiting
     bounds (respectively) are open/exclusive (0) or closed/inclusive (1).
     """
-    a = asarray(a).ravel()
+    a = np.asarray(a).ravel()
     if limits is None:
         n = float(len(a))    
-        return a.std()/sqrt(n)
+        return a.std()/np.sqrt(n)
     am = mask_to_limits(a.ravel(), limits, inclusive)
-    sd = sqrt(masked_var(am))
+    sd = np.sqrt(masked_var(am))
     return sd / am.count()
 
 
@@ -893,10 +891,10 @@ def itemfreq(a):
     A 2D frequency table (col [0:n-1]=scores, col n=frequencies)
     """
     scores = _support.unique(a)
-    scores = sort(scores)
+    scores = np.sort(scores)
     freq = zeros(len(scores))
     for i in range(len(scores)):
-        freq[i] = add.reduce(equal(a,scores[i]))
+        freq[i] = np.add.reduce(np.equal(a,scores[i]))
     return array(_support.abut(scores, freq))
 
 
@@ -941,7 +939,7 @@ the data(!).
 Returns: percentile-position of score (0-100) relative to a
 """
     h, lrl, binsize, extras = histogram(a,histbins,defaultlimits)
-    cumhist = cumsum(h*1,axis=0)
+    cumhist = np.cumsum(h*1, axis=0)
     i = int((score - lrl)/float(binsize))
     pct = (cumhist[i-1]+((score-(lrl+binsize*i))/float(binsize))*h[i])/float(len(a)) * 100
     return pct
@@ -971,8 +969,8 @@ def histogram2(a, bins):
             along a specific axis (kinda like matlab)
 
     """
-    n = searchsorted(sort(a), bins)
-    n = concatenate([ n, [len(a)]])
+    n = np.searchsorted(np.sort(a), bins)
+    n = np.concatenate([ n, [len(a)]])
     return n[ 1:]-n[:-1]
 
 
@@ -990,14 +988,14 @@ following: array of bin values, lowerreallimit, binsize, extrapoints.
 
 Returns: (array of bin counts, bin-minimum, min-width, #-points-outside-range)
 """
-    a = ravel(a)               # flatten any >1D arrays
+    a = np.ravel(a)               # flatten any >1D arrays
     if (defaultlimits != None):
         lowerreallimit = defaultlimits[0]
         upperreallimit = defaultlimits[1]
         binsize = (upperreallimit-lowerreallimit) / float(numbins)
     else:
-        Min = minimum.reduce(a)
-        Max = maximum.reduce(a)
+        Min = a.min()
+        Max = a.max()
         estbinwidth = float(Max - Min)/float(numbins - 1)
         binsize = (Max-Min+estbinwidth)/float(numbins)
         lowerreallimit = Min - binsize/2.0  #lower real limit,1st bin
@@ -1027,7 +1025,7 @@ lower and upper limits on values to include.
 Returns: array of cumfreq bin values, lowerreallimit, binsize, extrapoints
 """
     h,l,b,e = histogram(a,numbins,defaultreallimits)
-    cumhist = cumsum(h*1,axis=0)
+    cumhist = np.cumsum(h*1, axis=0)
     return cumhist,l,b,e
 
 
@@ -1060,12 +1058,12 @@ Returns: transformed data for use in an ANOVA
 """
     TINY = 1e-10
     k = len(args)
-    n = zeros(k,Float)
-    v = zeros(k,Float)
-    m = zeros(k,Float)
+    n = zeros(k)
+    v = zeros(k)
+    m = zeros(k)
     nargs = []
     for i in range(k):
-        nargs.append(args[i].astype(Float))
+        nargs.append(args[i].astype(float))
         n[i] = float(len(nargs[i]))
         v[i] = var(nargs[i])
         m[i] = mean(nargs[i],None)
@@ -1092,7 +1090,7 @@ array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate)
 """
     a, axis = _chk_asarray(a, axis)
-    mn = expand_dims(mean(a, axis), axis)
+    mn = np.expand_dims(mean(a, axis), axis)
     deviations = a - mn
     n = a.shape[axis]
     svar = ss(deviations,axis) / float(n)
@@ -1104,7 +1102,7 @@ def samplestd(a, axis=0):
 array (i.e., using N).  Axis can equal None (ravel array first),
 an integer (the axis over which to operate).
 """
-    return sqrt(samplevar(a,axis))
+    return np.sqrt(samplevar(a,axis))
 
 
 def signaltonoise(instack, axis=0):
@@ -1117,7 +1115,7 @@ Returns: array containing the value of (mean/stdev) along axis,
 """
     m = mean(instack,axis)
     sd = samplestd(instack,axis)
-    return where(equal(sd,0),0,m/sd)
+    return np.where(sd == 0, 0, m/sd)
 
 
 def var(a, axis=0, bias=False):
@@ -1127,7 +1125,7 @@ array (i.e., N-1).  Axis can equal None (ravel array first), or an
 integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    mn = expand_dims(mean(a,axis),axis)
+    mn = np.expand_dims(mean(a,axis),axis)
     deviations = a - mn
     n = a.shape[axis]
     vals = ss(deviations,axis)/(n-1.0)
@@ -1142,7 +1140,7 @@ Returns the estimated population standard deviation of the values in
 the passed array (i.e., N-1).  Axis can equal None (ravel array
 first), or an integer (the axis over which to operate).
 """
-    return sqrt(var(a,axis,bias))
+    return np.sqrt(var(a,axis,bias))
 
 
 def stderr(a, axis=0):
@@ -1152,7 +1150,7 @@ passed array (i.e., N-1).  Axis can equal None (ravel array
 first), or an integer (the axis over which to operate).
 """
     a, axis = _chk_asarray(a, axis)
-    return std(a,axis) / float(sqrt(a.shape[axis]))
+    return std(a,axis) / float(np.sqrt(a.shape[axis]))
 
 
 def sem(a, axis=0):
@@ -1163,7 +1161,7 @@ integer (the axis over which to operate)
 """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = samplestd(a,axis) / sqrt(n-1)
+    s = samplestd(a,axis) / np.sqrt(n-1)
     return s
 
 
@@ -1212,13 +1210,12 @@ by newval instead of by threshmin/threshmax (respectively).
 Returns: a, with values <threshmin or >threshmax replaced with newval
 """
     a = asarray(a)
-    mask = zeros(a.shape)
+    mask = zeros(a.shape, dtype=bool)
     if threshmin != None:
-        mask = mask + where(less(a,threshmin),1,0)
+        mask |= (a < threshmin)
     if threshmax != None:
-        mask = mask + where(greater(a,threshmax),1,0)
-    mask = clip(mask,0,1)
-    return where(mask,newval,a)
+        mask |= (a > threshmax)
+    return np.where(mask, newval, a)
 
 
 def trimboth(a, proportiontocut):
@@ -1262,7 +1259,7 @@ def trim_mean(a, proportiontocut):
     """Return mean with proportiontocut chopped from each of the lower and
     upper tails.
     """
-    newa = trimboth(sort(a),proportiontocut)
+    newa = trimboth(np.sort(a),proportiontocut)
     return mean(newa,axis=0)
 
 
@@ -1296,8 +1293,8 @@ def cov(m, y=None, rowvar=False, bias=False):
     else:
         y = asarray(y)
     if rowvar:
-        m = transpose(m)
-        y = transpose(y)
+        m = np.transpose(m)
+        y = np.transpose(y)
     N = m.shape[0]
     if (y.shape[0] != N):
         raise ValueError, "x and y must have the same number of observations."
@@ -1307,7 +1304,7 @@ def cov(m, y=None, rowvar=False, bias=False):
         fact = N*1.0
     else:
         fact = N-1.0
-    val = squeeze(dot(transpose(m),conjugate(y))) / fact
+    val = np.squeeze(np.dot(np.transpose(m),np.conjugate(y))) / fact
     return val
 
 def corrcoef(x, y=None, rowvar=False, bias=True):
@@ -1321,11 +1318,11 @@ def corrcoef(x, y=None, rowvar=False, bias=True):
     observations in the columns.
     """
     if y is not None:
-        x = transpose([x,y])
+        x = np.transpose([x,y])
         y = None
     c = cov(x, y, rowvar=rowvar, bias=bias)
-    d = diag(c)
-    return c/sqrt(multiply.outer(d,d))
+    d = np.diag(c)
+    return c/np.sqrt(np.multiply.outer(d,d))
 
 
 
@@ -1339,8 +1336,8 @@ Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
 Returns: f-value, probability
 """
     na = len(args)            # ANOVA on 'na' groups, each in it's own array
-    tmp = map(array,args)
-    alldata = concatenate(args)
+    tmp = map(np.array,args)
+    alldata = np.concatenate(args)
     bign = len(alldata)
     sstot = ss(alldata)-(square_of_sums(alldata)/float(bign))
     ssbn = 0
@@ -1582,20 +1579,20 @@ Returns: slope, intercept, r, two-tailed prob, stderr-of-the-estimate
     xmean = mean(x,None)
     ymean = mean(y,None)
     xm,ym = x-xmean, y-ymean
-    r_num = add.reduce(xm*ym)
-    r_den = math.sqrt(ss(xm)*ss(ym))
+    r_num = np.add.reduce(xm*ym)
+    r_den = np.sqrt(ss(xm)*ss(ym))
     if r_den == 0.0:
         r = 0.0
     else:
         r = r_num / r_den
         if (r > 1.0): r = 1.0 # from numerical error
-    #z = 0.5*math.log((1.0+r+TINY)/(1.0-r+TINY))
+    #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
-    t = r*math.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
+    t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = betai(0.5*df,0.5,df/(df+t*t))
     slope = r_num / ss(xm)
     intercept = ymean - slope*xmean
-    sterrest = math.sqrt(1-r*r)*samplestd(y)
+    sterrest = np.sqrt(1-r*r)*samplestd(y)
     return slope, intercept, r, prob, sterrest
 
 
@@ -1616,7 +1613,7 @@ Returns: t-value, two-tailed prob
     n = len(a)
     df = n-1
     svar = ((n-1)*v) / float(df)
-    t = (x-popmean)/math.sqrt(svar*(1.0/n))
+    t = (x-popmean)/np.sqrt(svar*(1.0/n))
     prob = betai(0.5*df,0.5,df/(df+t*t))
 
     return t,prob
@@ -1640,14 +1637,14 @@ Returns: t-value, two-tailed p-value
     n2 = b.shape[axis]
     df = n1+n2-2
     svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
-    zerodivproblem = equal(svar,0)
-    t = (x1-x2)/sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
-    t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
+    zerodivproblem = svar == 0
+    t = (x1-x2)/np.sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
+    t = np.where(zerodivproblem, 1.0, t)           # replace NaN t-values with 1.0
     probs = betai(0.5*df,0.5,float(df)/(df+t*t))
 
-    if not isscalar(t):
-        probs = reshape(probs,t.shape)
-    if not isscalar(probs) and len(probs) == 1:
+    if not np.isscalar(t):
+        probs = probs.reshape(t.shape)
+    if not np.isscalar(probs) and len(probs) == 1:
         probs = probs[0]
     return t, probs
 
@@ -1672,15 +1669,15 @@ Returns: t-value, two-tailed p-value
     df = float(n-1)
     d = (a-b).astype('d')
 
-    denom = sqrt((n*add.reduce(d*d,axis) - add.reduce(d,axis)**2) /df)
-    zerodivproblem = equal(denom,0)
-    t = add.reduce(d, axis) / denom      # N-D COMPUTATION HERE!!!!!!
-    t = where(zerodivproblem,1.0,t)          # replace NaN t-values with 1.0
-    t = where(zerodivproblem,1.0,t)           # replace NaN t-values with 1.0
+    denom = np.sqrt((n*np.add.reduce(d*d,axis) - np.add.reduce(d,axis)**2) /df)
+    zerodivproblem = denom == 0
+    t = np.add.reduce(d, axis) / denom      # N-D COMPUTATION HERE!!!!!!
+    t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
+    t = np.where(zerodivproblem, 1.0, t)    # replace NaN t-values with 1.0
     probs = betai(0.5*df,0.5,float(df)/(df+t*t))
-    if not isscalar(t):
-        probs = reshape(probs,t.shape)
-    if not isscalar(probs) and len(probs) == 1:
+    if not np.isscalar(t):
+        probs = np.reshape(probs, t.shape)
+    if not np.isscalar(probs) and len(probs) == 1:
         probs = probs[0]
     return t, probs
 
@@ -1707,12 +1704,12 @@ def kstest(rvs, cdf, args=(), N=20):
         cdf = getattr(scipy.stats, cdf).cdf
     if callable(rvs):
         kwds = {'size':N}
-        vals = sort(rvs(*args,**kwds))
+        vals = np.sort(rvs(*args,**kwds))
     else:
-        vals = sort(rvs)
+        vals = np.sort(rvs)
         N = len(vals)
     cdfvals = cdf(vals, *args)
-    D1 = amax(abs(cdfvals - arange(1.0,N+1)/N))
+    D1 = np.absolute(cdfvals - np.arange(1.0, N+1)/N).max()
 #    D2 = amax(abs(cdfvals - arange(0.0,N)/N))
 #    D = max(D1,D2)
     D = D1
@@ -1730,9 +1727,9 @@ Returns: chisquare-statistic, associated p-value
     f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
-        f_exp = array([sum(f_obs,axis=0)/float(k)] * len(f_obs),Float)
-    f_exp = f_exp.astype(Float)
-    chisq = add.reduce((f_obs-f_exp)**2 / f_exp)
+        f_exp = array([sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
+    f_exp = f_exp.astype(float)
+    chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
     return chisq, chisqprob(chisq, k-1)
 
 
@@ -1747,15 +1744,15 @@ Returns: KS D-value, p-value
     data1, data2 = map(asarray, (data1, data2))
     j1 = 0    # zeros(data1.shape[1:]) TRIED TO MAKE THIS UFUNC-LIKE
     j2 = 0    # zeros(data2.shape[1:])
-    fn1 = 0.0 # zeros(data1.shape[1:],Float)
-    fn2 = 0.0 # zeros(data2.shape[1:],Float)
+    fn1 = 0.0 # zeros(data1.shape[1:],float)
+    fn2 = 0.0 # zeros(data2.shape[1:],float)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     en1 = n1*1
     en2 = n2*1
-    d = zeros(data1.shape[1:],Float)
-    data1 = sort(data1,0)
-    data2 = sort(data2,0)
+    d = zeros(data1.shape[1:])
+    data1 = np.sort(data1,0)
+    data2 = np.sort(data2,0)
     while j1 < n1 and j2 < n2:
         d1=data1[j1]
         d2=data2[j2]
@@ -1769,8 +1766,8 @@ Returns: KS D-value, p-value
         if abs(dt) > abs(d):
             d = dt
     try:
-        en = math.sqrt(en1*en2/float(en1+en2))
-        prob = ksprob((en+0.12+0.11/en)*fabs(d))
+        en = np.sqrt(en1*en2/float(en1+en2))
+        prob = ksprob((en+0.12+0.11/en)*np.fabs(d))
     except:
         prob = 1.0
     return d, prob
@@ -1790,17 +1787,17 @@ Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
     y = asarray(y)
     n1 = len(x)
     n2 = len(y)
-    ranked = rankdata(concatenate((x,y)))
+    ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
     #ranky = ranked[n1:]        # the rest are y-ranks
     u1 = n1*n2 + (n1*(n1+1))/2.0 - sum(rankx,axis=0)  # calc U for x
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
     smallu = min(u1,u2)
-    T = math.sqrt(tiecorrect(ranked))  # correction factor for tied scores
+    T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
     if T == 0:
         raise ValueError, 'All numbers are identical in amannwhitneyu'
-    sd = math.sqrt(T*n1*n2*(n1+n2+1)/12.0)
+    sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
     z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
     return smallu, 1.0 - zprob(z)
 
@@ -1837,16 +1834,16 @@ the result.
 
 Returns: z-statistic, two-tailed p-value
 """
-    x,y = map(asarray, (x, y))
+    x,y = map(np.asarray, (x, y))
     n1 = len(x)
     n2 = len(y)
-    alldata = concatenate((x,y))
+    alldata = np.concatenate((x,y))
     ranked = rankdata(alldata)
     x = ranked[:n1]
     y = ranked[n1:]
     s = sum(x,axis=0)
     expected = n1*(n1+n2+1) / 2.0
-    z = (s - expected) / math.sqrt(n1*n2*(n1+n2+1)/12.0)
+    z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2*(1.0 -zprob(abs(z)))
     return z, prob
 
@@ -1902,7 +1899,7 @@ Returns: chi-square statistic, associated p-value
         raise ValueError, '\nLess than 3 levels.  Friedman test not appropriate.\n'
     n = len(args[0])
     data = apply(_support.abut,args)
-    data = data.astype(Float)
+    data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
     ssbn = sum(sum(args,1)**2,axis=0)
@@ -1984,18 +1981,18 @@ Returns: statistic, p-value ???
     p = _support.unique(para)
     x = zeros((n,len(p)))  # design matrix
     for l in range(len(p)):
-        x[:,l] = equal(para,p[l])
+        x[:,l] = para == p[l]
     # fixme: normal equations are bad. Use linalg.lstsq instead.
-    b = dot(dot(linalg.inv(dot(transpose(x),x)),  # i.e., b=inv(X'X)X'Y
-                    transpose(x)),data)
+    b = dot(dot(linalg.inv(dot(np.transpose(x),x)),  # i.e., b=inv(X'X)X'Y
+                    np.transpose(x)),data)
     diffs = (data - dot(x,b))
-    s_sq = 1./(n-len(p)) * dot(transpose(diffs), diffs)
+    s_sq = 1./(n-len(p)) * dot(np.transpose(diffs), diffs)
 
     if len(p) == 2:  # ttest_ind
         c = array([1,-1])
         df = n-2
         fact = sum(1.0/sum(x,0),axis=0)  # i.e., 1/n1 + 1/n2 + 1/n3 ...
-        t = dot(c,b) / sqrt(s_sq*fact)
+        t = dot(c,b) / np.sqrt(s_sq*fact)
         probs = betai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs
 
@@ -2014,7 +2011,7 @@ Maxwell & Delaney p.657.
     if (a-1)**2 + (b-1)**2 == 5:
         q = 1
     else:
-        q = math.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
+        q = np.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
@@ -2078,7 +2075,7 @@ Returns: the square of the sum over axis.
 """
     a, axis = _chk_asarray(a, axis)
     s = sum(a,axis)
-    if not isscalar(s):
+    if not np.isscalar(s):
         return s.astype(float)*s
     else:
         return float(s)*s

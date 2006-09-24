@@ -109,10 +109,11 @@ class test_basicstats(ScipyTestCase):
 
     def check_meanX(self):
         y = scipy.stats.mean(X)
-        assert_almost_equal(y,5.0)
+        assert_almost_equal(y, 5.0)
+
     def check_stdX(self):
         y = scipy.stats.std(X)
-        assert_almost_equal(y,2.738612788)
+        assert_almost_equal(y, 2.738612788)
 
     def check_tmeanX(self):
         y = scipy.stats.tmean(X, (2, 8), (True, True))
@@ -128,60 +129,60 @@ class test_basicstats(ScipyTestCase):
 
     def check_meanZERO(self):
         y = scipy.stats.mean(ZERO)
-        assert_almost_equal(y,0.0)
+        assert_almost_equal(y, 0.0)
 
     def check_stdZERO(self):
         y = scipy.stats.std(ZERO)
-        assert_almost_equal(y,0.0)
+        assert_almost_equal(y, 0.0)
 
 ##    Really need to write these tests to handle missing values properly
 ##    def check_meanMISS(self):
 ##        y = scipy.stats.mean(MISS)
-##        assert_almost_equal(y,0.0)
+##        assert_almost_equal(y, 0.0)
 ##
 ##    def check_stdMISS(self):
 ##        y = scipy.stats.stdev(MISS)
-##        assert_almost_equal(y,0.0)
+##        assert_almost_equal(y, 0.0)
 
     def check_meanBIG(self):
         y = scipy.stats.mean(BIG)
-        assert_almost_equal(y,99999995.00)
+        assert_almost_equal(y, 99999995.00)
 
     def check_stdBIG(self):
         y = scipy.stats.std(BIG)
-        assert_almost_equal(y,2.738612788)
+        assert_almost_equal(y, 2.738612788)
 
     def check_meanLITTLE(self):
         y = scipy.stats.mean(LITTLE)
-        assert_approx_equal(y,0.999999950)
+        assert_approx_equal(y, 0.999999950)
 
     def check_stdLITTLE(self):
         y = scipy.stats.std(LITTLE)
-        assert_approx_equal(y,2.738612788e-8)
+        assert_approx_equal(y, 2.738612788e-8)
 
     def check_meanHUGE(self):
         y = scipy.stats.mean(HUGE)
-        assert_approx_equal(y,5.00000e+12)
+        assert_approx_equal(y, 5.00000e+12)
 
     def check_stdHUGE(self):
         y = scipy.stats.std(HUGE)
-        assert_approx_equal(y,2.738612788e12)
+        assert_approx_equal(y, 2.738612788e12)
 
     def check_meanTINY(self):
         y = scipy.stats.mean(TINY)
-        assert_almost_equal(y,0.0)
+        assert_almost_equal(y, 0.0)
 
     def check_stdTINY(self):
         y = scipy.stats.std(TINY)
-        assert_almost_equal(y,0.0)
+        assert_almost_equal(y, 0.0)
 
     def check_meanROUND(self):
         y = scipy.stats.mean(ROUND)
-        assert_approx_equal(y,4.500000000)
+        assert_approx_equal(y, 4.500000000)
 
     def check_stdROUND(self):
         y = scipy.stats.std(ROUND)
-        assert_approx_equal(y,2.738612788)
+        assert_approx_equal(y, 2.738612788)
 
 class test_corr(ScipyTestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
@@ -424,77 +425,6 @@ class test_regression(ScipyTestCase):
         r=y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,0.0)
-
-anovadata = ([[1,'A1','B1',2],
-              [2,'A1','B1',1],
-              [3,'A1','B1',3],
-              [4,'A1','B1',2],
-              [5,'A1','B2',3],
-              [6,'A1','B2',4],
-              [7,'A1','B2',5],
-              [8,'A2','B1',4],
-              [9,'A2','B1',6],
-              [10,'A2','B1',5],
-              [11,'A1','B2',2],
-              [12,'A1','B2',4],
-              [13,'A1','B2',5]])
-
-##class test_anova(ScipyTestCase):
-##    """ W.V.A.  Simple contrasts.
-##
-##        The following data contain an unbalanced design with a significant
-##        interaction.  A least squares analysis shows the main efefct for A
-##        is not significant, but this test is not particularlrly meaningful
-##        because of the interaction.  Test, therefore, the simple constrast
-##        between A1 and A2 within B1.  Then test A1 vs. A2 within B2.  Both
-##        tests should use the same residual error term (separate t-tests are
-##        unacceptable).  Several widely used mainframe programs fail this
-##        test.  Unless the program can constrast any terms in a model (not
-##        just main effects), it cannot handle this frequently encountered
-##        type of problem.
-##                    B1        B2
-##               ---------------------
-##               |    2     |   3    |
-##        A1     |    1     |   4    |
-##               |    3     |   5    |
-##               |    2     |        |
-##               ---------------------
-##               |    4     |   2    |
-##        A2     |    6     |   4    |
-##               |    5     |   5    |
-##               ---------------------
-##        The numbers in Wilkinson's statistic quiz are from SYSTAT output,
-##        not certified to be the correct values.
-##    """
-##    y=scipy.stats.anova(anovadata)
-##    for i in [0,len(y)]:
-##        if (y[i][0]=='A'):
-##            assert_approx_equal(y[i][1],5.689,3)
-##            """ Sum Squares - A"""
-##            assert_equal(y[i][2],1)
-##            """ Degrees Freedom - A """
-##            assert_approx_equal(y[i][3],5.689,3)
-##            """ Mean Squares - A"""
-##            assert_approx_equal(y[i][4],4.800,3)
-##            """ F ratio - A"""
-##        if (y[i][0]=='B'):
-##            assert_approx_equal(y[i][1],0.356,2)
-##            """ Sum Squares - B """
-##            assert_equal(y[i][2],1)
-##            """ Degrees Freedom - B """
-##            assert_approx_equal(y[i][3],0.356,2)
-##            """ Mean Squares - B """
-##            assert_approx_equal(y[i][4],0.300,2)
-##            """ F ratio - B """
-##        if (y[i][0]=='AB'):
-##            assert_approx_equal(y[i][1],8.889,3)
-##            """ Sum Squares - AB """
-##            assert_equal(y[i][2],1)
-##            """ Degrees Freedom - AB """
-##            assert_approx_equal(y[i][3],8.889,3)
-##            """ Mean Squares - AB """
-##            assert_approx_equal(y[i][4],7.500,3)
-##            """ F ratio - AB """
 
 # Utility
 

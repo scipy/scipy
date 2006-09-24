@@ -4161,12 +4161,9 @@ class randint_gen(rv_discrete):
 
         If max is None, then range is >=0  and < min
         """
-        if max is None:
-            max = min
-            min = 0
-        U = random(size=size)
-        val = floor((max-min)*U + min)
-        return arr(val).astype(int)[()]  # return array scalar if needed
+
+        # Return an array scalar if needed.
+        return arr(mtrand.randint(min, max, size))[()]
 
     def _entropy(self, min, max):
         return log(max-min)
