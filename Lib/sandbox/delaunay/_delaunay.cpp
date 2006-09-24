@@ -362,7 +362,7 @@ static PyObject *linear_interpolate_method(PyObject *self, PyObject *args)
 
     PyArrayObject *planes, *x, *y, *nodes, *neighbors;
 
-    if (!PyArg_ParseTuple(args, "ddlddldOOOOO", &x0, &x1, &xsteps, &y0, &y1, &ysteps,
+    if (!PyArg_ParseTuple(args, "ddiddidOOOOO", &x0, &x1, &xsteps, &y0, &y1, &ysteps,
            &defvalue, &pyplanes, &pyx, &pyy, &pynodes, &pyneighbors)) {
         return NULL;
     }
@@ -524,12 +524,11 @@ static PyObject *nn_interpolate_method(PyObject *self, PyObject *args)
     PyObject *pyx, *pyy, *pyz, *pycenters, *pynodes, *pyneighbors, *grid;
     PyArrayObject *x, *y, *z, *centers, *nodes, *neighbors;
     double x0, x1, y0, y1, defvalue;
-    double *grid_ptr;
     int xsteps, ysteps;
     int npoints, ntriangles;
     intp dims[2];
 
-    if (!PyArg_ParseTuple(args, "ddlddldOOOOOO", &x0, &x1, &xsteps, 
+    if (!PyArg_ParseTuple(args, "ddiddidOOOOOO", &x0, &x1, &xsteps, 
         &y0, &y1, &ysteps, &defvalue, &pyx, &pyy, &pyz, &pycenters, &pynodes,
         &pyneighbors)) {
         return NULL;
@@ -579,7 +578,6 @@ static PyObject *nn_interpolate_method(PyObject *self, PyObject *args)
     dims[1] = xsteps;
     grid = PyArray_SimpleNew(2, dims, PyArray_DOUBLE);
     if (!grid) {CLEANUP} // goto fail;
-    grid_ptr = (double*)PyArray_DATA(grid);
 
     NaturalNeighbors nn(npoints, ntriangles, 
         (double*)PyArray_DATA(x), (double*)PyArray_DATA(y),
