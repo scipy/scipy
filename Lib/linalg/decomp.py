@@ -6,10 +6,10 @@
 # additions by Travis Oliphant, March 2002
 # additions by Eric Jones,      June 2002
 # additions by Johannes Loehnert, June 2006
-
+# additions by Bart Vandereycken, June 2006
 
 __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
-           'lu','svd','svdvals','diagsvd','cholesky','qr',
+           'lu','svd','svdvals','diagsvd','cholesky','qr','qr_old',
            'schur','rsf2csf','lu_factor','cho_factor','cho_solve','orth',
            'hessenberg']
 
@@ -17,7 +17,7 @@ from basic import LinAlgError
 import basic
 
 from warnings import warn
-from lapack import get_lapack_funcs
+from lapack import get_lapack_funcs, find_best_lapack_type
 from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
 from scipy.linalg import calc_lwork
@@ -581,8 +581,90 @@ def cho_solve(clow, b):
         raise TypeError, msg
     return b
 
+def qr(a,overwrite_a=0,lwork=None,econ=False,mode='qr'):
+    """QR decomposition of an M x N matrix a.
 
-def qr(a,overwrite_a=0,lwork=None):
+    Description:
+
+      Find a unitary matrix, q, and an upper-trapezoidal matrix r
+      such that q * r = a
+
+    Inputs:
+
+      a -- the matrix
+      overwrite_a=0 -- if non-zero then discard the contents of a,
+                     i.e. a is used as a work array if possible.
+
+      lwork=None -- >= shape(a)[1]. If None (or -1) compute optimal
+                    work array size.
+      econ=False -- computes the skinny or economy-size QR decomposition
+                    only useful when M>N
+      mode='qr' -- if 'qr' then return both q and r; if 'r' then just return r
+
+    Outputs:
+      q,r  - if mode=='qr'
+      r    - if mode=='r'       
+                    
+    """
+    a1 = asarray_chkfinite(a)
+    if len(a1.shape) != 2:
+        raise ValueError("expected 2D array")
+    M, N = a1.shape
+    overwrite_a = overwrite_a or (_datanotshared(a1,a))    
+
+    geqrf, = get_lapack_funcs(('geqrf',),(a1,))
+    if lwork is None or lwork == -1:
+        # get optimal work array
+        qr,tau,work,info = geqrf(a1,lwork=-1,overwrite_a=1)
+        lwork = work[0]
+
+    qr,tau,work,info = geqrf(a1,lwork=lwork,overwrite_a=overwrite_a)
+    if info<0:
+        raise ValueError("illegal value in %-th argument of internal geqrf" 
+            % -info)
+
+    if not econ or M<N:
+        R = basic.triu(qr)
+    else:
+        R = basic.triu(qr[0:N,0:N])
+        
+    if mode=='r':
+        return R
+    
+    if find_best_lapack_type((a1,))[0]=='s' or find_best_lapack_type((a1,))[0]=='d':
+        gor_un_gqr, = get_lapack_funcs(('orgqr',),(qr,))
+    else:
+        gor_un_gqr, = get_lapack_funcs(('ungqr',),(qr,))
+
+    
+    if M<N:
+        # get optimal work array
+        Q,work,info = gor_un_gqr(qr[:,0:M],tau,lwork=-1,overwrite_a=1)
+        lwork = work[0]
+        Q,work,info = gor_un_gqr(qr[:,0:M],tau,lwork=lwork,overwrite_a=1)
+    elif econ:
+        # get optimal work array
+        Q,work,info = gor_un_gqr(qr,tau,lwork=-1,overwrite_a=1)
+        lwork = work[0]
+        Q,work,info = gor_un_gqr(qr,tau,lwork=lwork,overwrite_a=1)      
+    else:       
+        t = qr.dtype.char
+        qqr = numpy.empty((M,M),dtype=t)
+        qqr[:,0:N]=qr
+        # get optimal work array
+        Q,work,info = gor_un_gqr(qqr,tau,lwork=-1,overwrite_a=1)
+        lwork = work[0]
+        Q,work,info = gor_un_gqr(qqr,tau,lwork=lwork,overwrite_a=1)     
+
+    if info < 0:
+        raise ValueError("illegal value in %-th argument of internal gorgqr" 
+            % -info)
+        
+    return Q, R
+
+
+
+def qr_old(a,overwrite_a=0,lwork=None):
     """QR decomposition of an M x N matrix a.
 
     Description:

@@ -332,6 +332,48 @@ interface
      integer intent(out) :: info
    end subroutine <tchar=s,d,c,z>geqrf
 
+   subroutine <tchar=s,d>orgqr(m,n,k,a,tau,work,lwork,info)
+
+   ! q,work,info = orgqr(a,lwork=3*n,overwrite_a=0)
+   ! Generates an M-by-N real matrix Q with orthonormal columns,
+   ! which is defined as the first N columns of a product of K elementary
+   ! reflectors of order M (e.g. output of geqrf)
+
+     callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
+     callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
+
+     integer intent(hide),depend(a):: m = shape(a,0)
+     integer intent(hide),depend(a):: n = shape(a,1)
+     integer intent(hide),depend(tau):: k = shape(tau,0)
+     <type_in> dimension(m,n),intent(in,out,copy,out=q) :: a
+     <type_in> dimension(k),intent(in) :: tau
+
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     integer intent(out) :: info
+   end subroutine <tchar=s,d>orgqr
+
+   subroutine <tchar=c,z>ungqr(m,n,k,a,tau,work,lwork,info)
+
+   ! q,work,info = ungqr(a,lwork=3*n,overwrite_a=0)
+   ! Generates an M-by-N complex matrix Q with unitary columns,
+   ! which is defined as the first N columns of a product of K elementary
+   ! reflectors of order M (e.g. output of geqrf)
+
+     callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
+     callprotoargument int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,<type_in_c>*,int*,int*
+
+     integer intent(hide),depend(a):: m = shape(a,0)
+     integer intent(hide),depend(a):: n = shape(a,1)
+     integer intent(hide),depend(tau):: k = shape(tau,0)
+     <type_in> dimension(m,n),intent(in,out,copy,out=q) :: a
+     <type_in> dimension(k),intent(in) :: tau
+
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     <type_in> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     integer intent(out) :: info
+   end subroutine <tchar=c,z>ungqr
++
    subroutine <tchar=s,d>geev(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
 
      ! wr,wi,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=4*n,overwrite_a=0)

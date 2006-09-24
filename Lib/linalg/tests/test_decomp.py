@@ -599,6 +599,28 @@ class test_qr(ScipyTestCase):
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
 
+    def check_simple_trap(self):
+        a = [[8,2,3],[2,9,3]]
+        q,r = qr(a)
+        assert_array_almost_equal(dot(transpose(q),q),identity(2))
+        assert_array_almost_equal(dot(q,r),a)
+
+    def check_simple_tall(self):
+        # full version
+        a = [[8,2],[2,9],[5,3]]
+        q,r = qr(a)
+        assert_array_almost_equal(dot(transpose(q),q),identity(3))
+        assert_array_almost_equal(dot(q,r),a)
+
+    def check_simple_tall_e(self):
+        # economy version
+        a = [[8,2],[2,9],[5,3]]
+        q,r = qr(a,econ=True)
+        assert_array_almost_equal(dot(transpose(q),q),identity(2))
+        assert_array_almost_equal(dot(q,r),a)
+        assert_equal(q.shape, (3,2))
+        assert_equal(r.shape, (2,2))
+
     def check_simple_complex(self):
         a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
         q,r = qr(a)
@@ -611,6 +633,37 @@ class test_qr(ScipyTestCase):
             a = random([n,n])
             q,r = qr(a)
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
+            assert_array_almost_equal(dot(q,r),a)
+
+    def check_random_tall(self):
+        # full version
+        m = 200
+        n = 100
+        for k in range(2):
+            a = random([m,n])
+            q,r = qr(a)
+            assert_array_almost_equal(dot(transpose(q),q),identity(m))
+            assert_array_almost_equal(dot(q,r),a)
+
+    def check_random_tall_e(self):
+        # economy version
+        m = 200
+        n = 100
+        for k in range(2):
+            a = random([m,n])
+            q,r = qr(a,econ=True)
+            assert_array_almost_equal(dot(transpose(q),q),identity(n))
+            assert_array_almost_equal(dot(q,r),a)
+            assert_equal(q.shape, (m,n))
+            assert_equal(r.shape, (n,n))
+
+    def check_random_trap(self):
+        m = 100
+        n = 200
+        for k in range(2):
+            a = random([m,n])
+            q,r = qr(a)
+            assert_array_almost_equal(dot(transpose(q),q),identity(m))
             assert_array_almost_equal(dot(q,r),a)
 
     def check_random_complex(self):
