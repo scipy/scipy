@@ -94,7 +94,7 @@ __version__ = "$Id$"
 from numpy import asarray, array, zeros, sin, int32, isscalar
 import re, sys
 
-class ode:
+class ode(object):
     """\
 ode  - a generic interface class to numeric integrators. It has the
   following methods:
@@ -208,7 +208,7 @@ def find_integrator(name):
             return cl
     return
 
-class IntegratorBase:
+class IntegratorBase(object):
 
     runner = None            # runner is None => integrator is not available
     success = None           # success==1 if integrator was called successfully

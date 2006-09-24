@@ -8,11 +8,22 @@ Text File
 """
 
 __all__ = ['read_array', 'write_array']
+
+# Standard library imports.
+import os
+import re
+import sys
+import types
+
+# Numpy imports.
 import numpy
-from numpy.oldnumeric import array, take, concatenate, Float, asarray, real, imag
-import numpy.oldnumeric as Numeric
-import types, re, sys
+from numpy import array, take, concatenate, asarray, real, imag
+# Sadly, this module is still written with typecodes in mind.
+from numpy.oldnumeric import Float
+
+# Local imports.
 import numpyio
+
 default = None
 _READ_BUFFER_SIZE = 1024*1024
 #_READ_BUFFER_SIZE = 1000
@@ -27,7 +38,6 @@ _READ_BUFFER_SIZE = 1024*1024
 #   with support from Agilent, Inc.
 #
 
-import os, sys
 
 def convert_separator(sep):
     newsep = ''
@@ -99,7 +109,7 @@ def get_open_file(fileobject, mode='rb'):
     return file
 
 
-class ascii_stream:
+class ascii_stream(object):
     """Text files with line iteration
 
     Ascii_stream instances can be used like normal read-only file objects
@@ -213,7 +223,6 @@ def extract_columns(arlist, collist, atype, missing):
 # Regular expressions for detecting complex numbers and for dealing
 #  with spaces between the real and imaginary parts
 
-import re
 _obj = re.compile(r"""
       ([0-9.eE]+)            # Real part
       ([\t ]*)               # Space between real and imaginary part
@@ -276,7 +285,7 @@ def getcolumns(stream, columns, separator):
     for k in range(N):
         collist[k] = build_numberlist(columns[k])
     _not_warned = 0
-    val = process_line(firstline, separator, collist, [Numeric.Float]*N, 0)
+    val = process_line(firstline, separator, collist, [Float]*N, 0)
     for k in range(N):
         colsize[k] = len(val[k])
     return colsize, collist
@@ -295,7 +304,7 @@ def convert_to_equal_lists(cols, atype):
 
 
 def read_array(fileobject, separator=default, columns=default, comment="#",
-               lines=default, atype=Numeric.Float, linesep='\n',
+               lines=default, atype=Float, linesep='\n',
                rowsize=10000, missing=0):
     """Return an array or arrays from ascii_formatted data in |fileobject|.
 

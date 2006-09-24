@@ -181,7 +181,7 @@ def ss2zpk(A,B,C,D,input=0):
     """
     return tf2zpk(*ss2tf(A,B,C,D,input=input))
 
-class lti:
+class lti(object):
     """Linear Time Invariant class which simplifies representation.
     """
     def __init__(self,*args,**kwords):

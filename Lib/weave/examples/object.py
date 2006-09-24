@@ -9,7 +9,7 @@ import scipy.weave as weave
 # get/set attribute and call methods example
 #----------------------------------------------------------------------------
 
-class foo:
+class foo(object):
     def __init__(self):
         self.val = 1
     def inc(self,amount):

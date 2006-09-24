@@ -1,4 +1,4 @@
-class base_converter:
+class base_converter(object):
     """
         Properties:
         headers --  list of strings that name the header files needed by this

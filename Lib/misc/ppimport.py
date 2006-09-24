@@ -66,7 +66,7 @@ def ppimport_attr(module, name):
         return _AttrLoader(module, name)
     return getattr(module, name)
 
-class _AttrLoader:
+class _AttrLoader(object):
     def __init__(self, module, name):
         self.__dict__['_ppimport_attr_module'] = module
         self.__dict__['_ppimport_attr_name'] = name
@@ -231,7 +231,7 @@ def frame_traceback(frame):
     print '\n'.join(blocks)
     print '='*50
 
-class _ModuleLoader:
+class _ModuleLoader(object):
     # Don't use it directly. Use ppimport instead.
 
     def __init__(self,name,location,p_frame=None):

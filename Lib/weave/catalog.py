@@ -282,7 +282,7 @@ def get_catalog(module_path,mode='r'):
             sh = shelve.open(catalog_file,mode)
     return sh
 
-class catalog:
+class catalog(object):
     """ Stores information about compiled functions both in cache and on disk.
 
         catalog stores (code, list_of_function) pairs so that all the functions

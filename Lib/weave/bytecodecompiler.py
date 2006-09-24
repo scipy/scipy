@@ -12,7 +12,7 @@ import accelerate_tools
 ##################################################################
 #                       CLASS __DESCRIPTOR                       #
 ##################################################################
-class __Descriptor:
+class __Descriptor(object):
     prerequisites = []
     refcount = 0
     def __repr__(self):
@@ -210,7 +210,7 @@ def listing(f):
 ##################################################################
 #                     CLASS BYTECODEMEANING                      #
 ##################################################################
-class ByteCodeMeaning:
+class ByteCodeMeaning(object):
     def fetch(self, pc,code):
         opcode = ord(code[pc])
         if opcode >= haveArgument:

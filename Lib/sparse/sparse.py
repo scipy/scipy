@@ -62,7 +62,7 @@ def _convert_data(data1, data2, newtype):
         data2 = data2.astype(newtype)
     return data1, data2
 
-class spmatrix:
+class spmatrix(object):
     """ This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """

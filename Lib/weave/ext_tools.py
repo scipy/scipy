@@ -6,7 +6,7 @@ import build_tools
 import converters
 import base_spec
 
-class ext_function_from_specs:
+class ext_function_from_specs(object):
     def __init__(self,name,code_block,arg_specs):
         self.name = name
         self.arg_specs = base_spec.arg_spec_list(arg_specs)
@@ -179,7 +179,7 @@ class ext_function(ext_function_from_specs):
 
 import base_info
 
-class ext_module:
+class ext_module(object):
     def __init__(self,name,compiler=''):
         standard_info = converters.standard_info
         self.name = name

@@ -49,7 +49,7 @@ if iopt=-1:
   xb<t[k+1]<t[k+2]<...<t[n-k-2]<xe"""
                     }
 
-class UnivariateSpline:
+class UnivariateSpline(object):
     """ Univariate spline s(x) of degree k on the interval
     [xb,xe] calculated from a given set of data points
     (x,y).
@@ -300,7 +300,7 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
 
-class BivariateSpline:
+class BivariateSpline(object):
     """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).

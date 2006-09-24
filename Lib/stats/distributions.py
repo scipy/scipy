@@ -79,7 +79,7 @@ permutation = mtrand.permutation
 ## Internal class to compute a ppf given a distribution.
 ##  (needs cdf function) and uses brentq from scipy.optimize
 ##  to compute ppf from cdf.
-class general_cont_ppf:
+class general_cont_ppf(object):
     def __init__(self, dist, xa=-10.0, xb=10.0, xtol=1e-14):
         self.dist = dist
         self.cdf = eval('%scdf'%dist)
@@ -96,7 +96,7 @@ class general_cont_ppf:
 
 
 # Frozen RV class
-class rv_frozen:
+class rv_frozen(object):
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
@@ -230,7 +230,7 @@ def argsreduce(cond, *args):
         newargs[k] = extract(cond,newarr*expand_arr)
     return newargs
 
-class rv_continuous:
+class rv_continuous(object):
     """A Generic continuous random variable.
 
     Continuous random variables are defined from a standard form chosen

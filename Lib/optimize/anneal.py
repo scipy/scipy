@@ -10,7 +10,7 @@ from numpy import random
 __all__ = ['anneal']
 
 _double_max = numpy.finfo(float).max
-class base_schedule:
+class base_schedule(object):
     def __init__(self):
         self.dwell = 20
         self.learn_rate = 0.5
@@ -123,7 +123,7 @@ class boltzmann_sa(base_schedule):
         self.T = self.T0 / log(self.k+1.0)
         return
 
-class _state:
+class _state(object):
     def __init__(self):
         self.x = None
         self.cost = None

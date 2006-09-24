@@ -270,7 +270,7 @@ def lookup_type(x):
 ##################################################################
 #                        class ACCELERATE                        #
 ##################################################################
-class accelerate:
+class accelerate(object):
 
     def __init__(self, function, *args, **kw):
         assert inspect.isfunction(function)

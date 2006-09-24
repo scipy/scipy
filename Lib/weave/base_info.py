@@ -10,7 +10,7 @@
 """
 import UserList
 
-class base_info:
+class base_info(object):
     _warnings =[]
     _headers = []
     _include_dirs = []
