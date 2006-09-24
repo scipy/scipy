@@ -924,7 +924,7 @@ class beta_gen(rv_continuous):
         return special.btdtri(a,b,q)
     def _stats(self, a, b):
         mn = a *1.0 / (a + b)
-        var = (a*b*1.0)*(a+b+1.0)/(a+b)**2.0
+        var = (a*b*1.0)/(a+b+1.0)/(a+b)**2.0
         g1 = 2.0*(b-a)*sqrt((1.0+a+b)/(a*b)) / (2+a+b)
         g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
         g2 /= a*b*(a+b+2)*(a+b+3)
