@@ -1,5 +1,3 @@
-## Automatically adapted for scipy Oct 21, 2005 by convertcode.py
-
 # Author: Travis Oliphant
 # 2003
 
@@ -143,16 +141,22 @@ def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
 
         t          --  array to evaluate waveform at
         f0, f1, t1 --  frequency (in Hz) of waveform is f0 at t=0 and f1 at t=t1
+            Alternatively, if f0 is an array, then it forms the coefficients of
+            a polynomial (c.f. numpy.polval()) in t. The values in f1, t1,
+            method, and qshape are ignored.
         method     --  linear, quadratic, or logarithmic frequency sweep
-        phi        --  optional phase
+        phi        --  optional phase in degrees
         qshape     --  shape parameter for quadratic curve: concave or convex
     """
-    phi /= 360
-    if size(f0) > 1:   # Polynomial type
+
+    # Convert to radians.
+    phi *= pi / 180
+    if size(f0) > 1:
+        # We were given a polynomial.
         return cos(2*pi*polyval(polyint(f0),t)+phi)
     if method in ['linear','lin','li']:
         beta = (f1-f0)/t1
-        f = f0+beta*t
+        phase_angle = 2*pi * (f0*t + 0.5*beta*t*t)
     elif method in ['quadratic','quad','q']:
         if qshape == 'concave':
             mxf = max(f0,f1)
@@ -162,14 +166,20 @@ def chirp(t,f0=0,t1=1,f1=100,method='linear',phi=0,qshape=None):
             mxf = max(f0,f1)
             mnf = min(f0,f1)
             f1,f0 = mnf, mxf
+        else:
+            raise ValueError("qshape must be either 'concave' or 'convex' but "
+                "a value of %r was given." % qshape)
         beta = (f1-f0)/t1/t1
-        f = f0+beta*t*t
+        phase_angle = 2*pi * (f0*t + beta*t*t*t/3)
     elif method in ['logarithmic','log','lo']:
         if f1 <= f0:
-            raise ValueError, \
-                  "For a logarithmic sweep, f1=%f must be larger than f0=%f." \
-                  % (f1, f0)
+            raise ValueError(
+                "For a logarithmic sweep, f1=%f must be larger than f0=%f."
+                % (f1, f0))
         beta = log10(f1-f0)/t1
-        f = f0+pow(10,beta*t)
+        phase_angle = 2*pi * (f0*t + pow(10,beta*t)/(beta*log(10)))
+    else:
+        raise ValueError("method must be 'linear', 'quadratic', or "
+            "'logarithmic' but a value of %r was given." % method)
 
-    return cos(2*pi*f*t+phi)
+    return cos(phase_angle + phi)
