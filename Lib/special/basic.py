@@ -329,13 +329,13 @@ def riccati_yn(n,x):
     return jn[:(n+1)],jnp[:(n+1)]
 
 def _sph_harmonic(m,n,theta,phi):
-    """inputs of (m,n,theta,phi) returns spherical harmonic of order
-    m,n (|m|<=n) and argument theta and phi:  Y^m_n(theta,phi)
+    """Spherical harmonic of order m,n (|m|<=n) and argument theta and phi:
+    Y^m_n(theta,phi)
     """
     x = cos(phi)
     m,n = int(m), int(n)
     Pmn,Pmnd = lpmn(m,n,x)
-    val = Pmn[m,n]
+    val = Pmn[-1, -1]
     val *= sqrt((2*n+1)/4.0/pi)
     val *= exp(0.5*(gammaln(n-m+1)-gammaln(n+m+1)))
     val *= exp(1j*m*theta)
