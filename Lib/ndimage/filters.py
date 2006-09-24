@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import math
-import numpy.oldnumeric as numarray
+import numpy
 import _ni_support
 import _nd_image
 
@@ -40,11 +40,11 @@ def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
     The lines of the array along the given axis are correlated with the
     given weights. The weights parameter must be a one-dimensional sequence
     of numbers."""
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     output, return_value = _ni_support._get_output(output, input)
-    weights = numarray.asarray(weights, dtype = numarray.Float64)
+    weights = numpy.asarray(weights, dtype = numpy.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError, 'no filter weights given'
     if not weights.flags.contiguous:
@@ -142,7 +142,7 @@ def gaussian_filter(input, sigma, order = 0, output = None,
     because intermediate results may be stored with insufficient
     precision.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     orders = _ni_support._normalize_sequence(order, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
@@ -161,7 +161,7 @@ def gaussian_filter(input, sigma, order = 0, output = None,
 def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
     """Calculate a Prewitt filter.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
     output, return_value = _ni_support._get_output(output, input)
     correlate1d(input, [-1, 0, 1], axis, output, mode, cval, 0)
@@ -173,7 +173,7 @@ def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
 def sobel(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
     """Calculate a Sobel filter.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
     output, return_value = _ni_support._get_output(output, input)
     correlate1d(input, [-1, 0, 1], axis, output, mode, cval, 0)
@@ -197,7 +197,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
     extra arguments and keywords that are passed to derivative2 at each
     call.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     axes = range(input.ndim)
     if len(axes) > 0:
@@ -228,7 +228,7 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
     axis as a sequence, or as a single number, in which case it is
     equal for all axes..
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     def derivative2(input, axis, output, mode, cval, sigma):
         order = [0] * input.ndim
         order[axis] = 2
@@ -252,19 +252,19 @@ def generic_gradient_magnitude(input, derivative, output = None,
     extra arguments and keywords that are passed to derivative2 at each
     call.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     axes = range(input.ndim)
     if len(axes) > 0:
         derivative(input, axes[0], output, mode, cval,
                    *extra_arguments, **extra_keywords)
-        numarray.multiply(output, output, output)
+        numpy.multiply(output, output, output)
         for ii in range(1, len(axes)):
             tmp = derivative(input, axes[ii], output.dtype, mode, cval,
                              *extra_arguments, **extra_keywords)
-            numarray.multiply(tmp, tmp, tmp)
+            numpy.multiply(tmp, tmp, tmp)
             output += tmp
-        numarray.sqrt(output, output)
+        numpy.sqrt(output, output)
     else:
         output[...] = input[...]
     return return_value
@@ -278,7 +278,7 @@ def gaussian_gradient_magnitude(input, sigma, output = None,
     axis as a sequence, or as a single number, in which case it is
     equal for all axes..
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     def derivative(input, axis, output, mode, cval, sigma):
         order = [0] * input.ndim
         order[axis] = 1
@@ -288,11 +288,11 @@ def gaussian_gradient_magnitude(input, sigma, output = None,
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                            convolution):
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(int):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(int):
         raise TypeError, 'Complex type not supported'
     origins = _ni_support._normalize_sequence(origin, input.ndim)
-    weights = numarray.asarray(weights, dtype = numarray.Float64)
+    weights = numpy.asarray(weights, dtype = numpy.float64)
     wshape = [ii for ii in weights.shape if ii > 0]
     if len(wshape) != input.ndim:
         raise RuntimeError, 'filter weights array has incorrect shape.'
@@ -336,8 +336,8 @@ def uniform_filter1d(input, size, axis = -1, output = None,
 
     The lines of the array along the given axis are filtered with a
     uniform filter of given size."""
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     axis = _ni_support._check_axis(axis, input.ndim)
     if size < 1:
@@ -364,7 +364,7 @@ def uniform_filter(input, size = 3, output = None, mode = "reflect",
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
@@ -386,8 +386,8 @@ def minimum_filter1d(input, size, axis = -1, output = None,
 
     The lines of the array along the given axis are filtered with a
     minimum filter of given size."""
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     axis = _ni_support._check_axis(axis, input.ndim)
     if size < 1:
@@ -406,8 +406,8 @@ def maximum_filter1d(input, size, axis = -1, output = None,
 
     The lines of the array along the given axis are filtered with a
     maximum filter of given size."""
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     axis = _ni_support._check_axis(axis, input.ndim)
     if size < 1:
@@ -428,24 +428,24 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 raise RuntimeError, "no footprint provided"
             separable= True
         else:
-            footprint = numarray.asarray(footprint)
+            footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
-            if numarray.alltrue(numarray.ravel(footprint),axis=0):
+            if numpy.alltrue(numpy.ravel(footprint),axis=0):
                 size = footprint.shape
                 footprint = None
                 separable = True
             else:
                 separable = False
     else:
-        structure = numarray.asarray(structure, dtype = numarray.Float64)
+        structure = numpy.asarray(structure, dtype = numpy.float64)
         separable = False
         if footprint is None:
-            footprint = numarray.ones(structure.shape, bool)
+            footprint = numpy.ones(structure.shape, bool)
         else:
-            footprint = numarray.asarray(footprint)
+            footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     output, return_value = _ni_support._get_output(output, input)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
@@ -512,17 +512,17 @@ def maximum_filter(input, size = None, footprint = None, output = None,
 
 def _rank_filter(input, rank, size = None, footprint = None, output = None,
      mode = "reflect", cval = 0.0, origin = 0, operation = 'rank'):
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if footprint == None:
         if size == None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numarray.ones(sizes, dtype = bool)
+        footprint = numpy.ones(sizes, dtype = bool)
     else:
-        footprint = numarray.asarray(footprint, dtype = bool)
+        footprint = numpy.asarray(footprint, dtype = bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
         raise RuntimeError, 'filter footprint array has incorrect shape.'
@@ -531,7 +531,7 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
             raise ValueError, 'invalid origin'
     if not footprint.flags.contiguous:
         footprint = footprint.copy()
-    filter_size = numarray.where(footprint, 1, 0).sum()
+    filter_size = numpy.where(footprint, 1, 0).sum()
     if operation == 'median':
         rank = filter_size // 2
     elif operation == 'percentile':
@@ -617,8 +617,8 @@ def generic_filter1d(input, function, filter_size, axis = -1,
     the value when mode is equal to 'constant'. The extra_arguments and
     extra_keywords arguments can be used to pass extra arguments and
     keywords that are passed to the function at each call."""
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     output, return_value = _ni_support._get_output(output, input)
     if filter_size < 1:
@@ -648,17 +648,17 @@ def generic_filter(input, function, size = None, footprint = None,
     value when mode is equal to 'constant'. The extra_arguments and
     extra_keywords arguments can be used to pass extra arguments and
     keywords that are passed to the function at each call."""
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if footprint == None:
         if size == None:
             raise RuntimeError, "no footprint or filter size provided"
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numarray.ones(size, dtype = bool)
+        footprint = numpy.ones(size, dtype = bool)
     else:
-        footprint = numarray.asarray(footprint)
+        footprint = numpy.asarray(footprint)
         footprint = footprint.astype(bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:

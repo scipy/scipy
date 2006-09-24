@@ -30,7 +30,6 @@
 
 import types
 import math
-import numpy.oldnumeric as numarray
 import numpy
 import _ni_support
 import _nd_image
@@ -46,12 +45,12 @@ def label(input, structure = None, output = None):
     of objects found. If an output array is provided only the number of
     objects found is returned.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if structure == None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
-    structure = numarray.asarray(structure, dtype = bool)
+    structure = numpy.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
         raise RuntimeError, 'structure and input must have equal rank'
     for ii in structure.shape:
@@ -60,10 +59,10 @@ def label(input, structure = None, output = None):
     if not structure.flags.contiguous:
         structure = structure.copy()
     if isinstance(output, numpy.ndarray):
-        if output.dtype.type != numarray.int32:
-            raise RuntimeError, 'output type must be Int32'
+        if output.dtype.type != numpy.int32:
+            raise RuntimeError, 'output type must be int32'
     else:
-        output = numarray.Int32
+        output = numpy.int32
     output, return_value = _ni_support._get_output(output, input)
     max_label = _nd_image.label(input, structure, output)
     if return_value == None:
@@ -81,8 +80,8 @@ def find_objects(input, max_label = 0):
     gives the largest object number that is searched for, otherwise
     all are returned.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if max_label < 1:
         max_label = input.max()
@@ -95,11 +94,11 @@ def sum(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -114,11 +113,11 @@ def mean(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -133,11 +132,11 @@ def variance(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -166,11 +165,11 @@ def minimum(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -185,11 +184,11 @@ def maximum(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -201,7 +200,7 @@ def _index_to_position(index, shape):
     """Convert a linear index to a position"""
     if len(shape) > 0:
         pos = []
-        stride = numarray.multiply.reduce(shape)
+        stride = numpy.multiply.reduce(shape)
         for size in shape:
             stride = stride // size
             pos.append(index // stride)
@@ -218,11 +217,11 @@ def minimum_position(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -241,11 +240,11 @@ def maximum_position(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -265,11 +264,11 @@ def extrema(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -293,11 +292,11 @@ def center_of_mass(input, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -315,11 +314,11 @@ def histogram(input, min, max, bins, labels = None, index = None):
     label numbers of the objects to be measured. If index is None, all
     values are used where labels is larger than zero.
     """
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if labels != None:
-        labels = numarray.asarray(labels)
+        labels = numpy.asarray(labels)
         labels = _broadcast(labels, input.shape)
 
         if labels.shape != input.shape:
@@ -340,12 +339,12 @@ def watershed_ift(input, markers, structure = None, output = None):
     provided an element is generated iwth a squared connecitiviy equal
     to one. An output array can optionally be provided.
     """
-    input = numarray.asarray(input)
-    if input.dtype.type not in [numarray.uint8, numarray.uint16]:
+    input = numpy.asarray(input)
+    if input.dtype.type not in [numpy.uint8, numpy.uint16]:
         raise TypeError, 'only 8 and 16 unsigned inputs are supported'
     if structure == None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
-    structure = numarray.asarray(structure, dtype = bool)
+    structure = numpy.asarray(structure, dtype = bool)
     if structure.ndim != input.ndim:
         raise RuntimeError, 'structure and input must have equal rank'
     for ii in structure.shape:
@@ -353,7 +352,7 @@ def watershed_ift(input, markers, structure = None, output = None):
             raise  RuntimeError, 'structure dimensions must be equal to 3'
     if not structure.flags.contiguous:
         structure = structure.copy()
-    markers = numarray.asarray(markers)
+    markers = numpy.asarray(markers)
     if input.shape != markers.shape:
         raise RuntimeError, 'input and markers must have equal shape'
 
@@ -380,7 +379,7 @@ def watershed_ift(input, markers, structure = None, output = None):
 def _broadcast(arr, sshape):
     """Return broadcast view of arr, else return None."""
     ashape = arr.shape
-    return_value = numarray.zeros(sshape, arr.dtype)
+    return_value = numpy.zeros(sshape, arr.dtype)
     # Just return arr if they have the same shape
     if sshape == ashape:
         return arr

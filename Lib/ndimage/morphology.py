@@ -28,7 +28,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy.oldnumeric as numarray
 import numpy
 import _ni_support
 import _nd_image
@@ -37,7 +36,7 @@ import types
 
 
 def _center_is_true(structure, origin):
-    structure = numarray.array(structure)
+    structure = numpy.array(structure)
     coor = tuple([oo + ss // 2 for ss, oo in zip(structure.shape,
                                                  origin)])
     return bool(structure[coor])
@@ -49,7 +48,7 @@ def iterate_structure(structure, iterations, origin = None):
     not, a tuple of the iterated structure and the modified origin is
     returned.
     """
-    structure = numarray.asarray(structure)
+    structure = numpy.asarray(structure)
     if iterations < 2:
         return structure.copy()
     ni = iterations - 1
@@ -57,7 +56,7 @@ def iterate_structure(structure, iterations, origin = None):
     pos = [ni * (structure.shape[ii] / 2) for ii in range(len(shape))]
     slc = [slice(pos[ii], pos[ii] + structure.shape[ii], None)
            for ii in range(len(shape))]
-    out = numarray.zeros(shape, bool)
+    out = numpy.zeros(shape, bool)
     out[slc] = structure != 0
     out = binary_dilation(out, structure, iterations = ni)
     if origin is None:
@@ -77,39 +76,39 @@ def generate_binary_structure(rank, connectivity):
         connectivity = 1
     if rank < 1:
         if connectivity < 1:
-            return numarray.array(0, dtype = bool)
+            return numpy.array(0, dtype = bool)
         else:
-            return numarray.array(1, dtype = bool)
-    output = numarray.zeros([3] * rank, bool)
-    output = numarray.fabs(numarray.indices([3] * rank) - 1)
-    output = numarray.add.reduce(output, 0)
-    return numarray.asarray(output <= connectivity, dtype = bool)
+            return numpy.array(1, dtype = bool)
+    output = numpy.zeros([3] * rank, bool)
+    output = numpy.fabs(numpy.indices([3] * rank) - 1)
+    output = numpy.add.reduce(output, 0)
+    return numpy.asarray(output <= connectivity, dtype = bool)
 
 
 def _binary_erosion(input, structure, iterations, mask, output,
                     border_value, origin, invert, brute_force):
-    input = numarray.asarray(input)
-    if numarray.iscomplexobj(input):
+    input = numpy.asarray(input)
+    if numpy.iscomplexobj(input):
         raise TypeError, 'Complex type not supported'
     if structure is None:
         structure = generate_binary_structure(input.ndim, 1)
     else:
-        structure = numarray.asarray(structure)
+        structure = numpy.asarray(structure)
         structure = structure.astype(bool)
     if structure.ndim != input.ndim:
         raise RuntimeError, 'structure rank must equal input rank'
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if numarray.product(structure.shape,axis=0) < 1:
+    if numpy.product(structure.shape,axis=0) < 1:
         raise RuntimeError, 'structure must not be empty'
     if mask is not None:
-        mask = numarray.asarray(mask)
+        mask = numpy.asarray(mask)
         if mask.shape != input.shape:
             raise RuntimeError, 'mask and input must have equal sizes'
     origin = _ni_support._normalize_sequence(origin, input.ndim)
     cit = _center_is_true(structure, origin)
     if isinstance(output, numpy.ndarray):
-        if numarray.iscomplexobj(output):
+        if numpy.iscomplexobj(output):
             raise TypeError, 'Complex output type not supported'
     else:
         output = bool
@@ -130,8 +129,8 @@ def _binary_erosion(input, structure, iterations, mask, output,
             if not structure.shape[ii] & 1:
                 origin[ii] -= 1
         if mask != None:
-            msk = numarray.asarray(mask)
-            msk = mask.astype(numarray.Int8)
+            msk = numpy.asarray(mask)
+            msk = mask.astype(numpy.int8)
             if msk is mask:
                 msk = mask.copy()
             mask = msk
@@ -141,11 +140,11 @@ def _binary_erosion(input, structure, iterations, mask, output,
                                   origin, invert, coordinate_list)
         return return_value
     else:
-        tmp_in = numarray.zeros(input.shape, bool)
+        tmp_in = numpy.zeros(input.shape, bool)
         if return_value == None:
             tmp_out = output
         else:
-            tmp_out = numarray.zeros(input.shape, bool)
+            tmp_out = numpy.zeros(input.shape, bool)
         if not iterations & 1:
             tmp_in, tmp_out = tmp_out, tmp_in
         changed = _nd_image.binary_erosion(input, structure, mask,
@@ -190,11 +189,11 @@ def binary_dilation(input, structure = None, iterations = 1, mask = None,
     elements with a true value at the corresponding mask element are
     modified at each iteration.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     if structure == None:
         structure = generate_binary_structure(input.ndim, 1)
     origin = _ni_support._normalize_sequence(origin, input.ndim)
-    structure = numarray.asarray(structure)
+    structure = numpy.asarray(structure)
     structure = structure[tuple([slice(None, None, -1)] *
                                 structure.ndim)]
     for ii in range(len(origin)):
@@ -215,7 +214,7 @@ def binary_opening(input, structure = None, iterations = 1, output = None,
     to one. The iterations parameter gives the number of times the
     erosions and then the dilations are done.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     if structure is None:
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
@@ -235,7 +234,7 @@ def binary_closing(input, structure = None, iterations = 1, output = None,
     to one. The iterations parameter gives the number of times the
     dilations and then the erosions are done.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     if structure is None:
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
@@ -257,11 +256,11 @@ def binary_hit_or_miss(input, structure1 = None, structure2 = None,
     element. If the origin for the second structure is equal to None
     it is set equal to the origin of the first.
     """
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     if structure1 is None:
         structure1 = generate_binary_structure(input.ndim, 1)
     if structure2 is None:
-        structure2 = numarray.logical_not(structure1)
+        structure2 = numpy.logical_not(structure1)
     origin1 = _ni_support._normalize_sequence(origin1, input.ndim)
     if origin2 is None:
         origin2 = origin1
@@ -274,11 +273,11 @@ def binary_hit_or_miss(input, structure1 = None, structure2 = None,
     result = _binary_erosion(input, structure2, 1, None, output, 0,
                              origin2, 1, False)
     if inplace:
-        numarray.logical_not(output, output)
-        numarray.logical_and(tmp1, output, output)
+        numpy.logical_not(output, output)
+        numpy.logical_and(tmp1, output, output)
     else:
-        numarray.logical_not(result, result)
-        return numarray.logical_and(tmp1, result)
+        numpy.logical_not(result, result)
+        return numpy.logical_and(tmp1, result)
 
 def binary_propagation(input, structure = None, mask = None,
                        output = None, border_value = 0, origin = 0):
@@ -305,16 +304,16 @@ def binary_fill_holes(input, structure = None, output = None, origin = 0):
     provided an element is generated with a squared connectivity equal
     to one.
     """
-    mask = numarray.logical_not(input)
-    tmp = numarray.zeros(mask.shape, bool)
+    mask = numpy.logical_not(input)
+    tmp = numpy.zeros(mask.shape, bool)
     inplace = isinstance(output, numpy.ndarray)
     if inplace:
         binary_dilation(tmp, structure, -1, mask, output, 1, origin)
-        numarray.logical_not(output, output)
+        numpy.logical_not(output, output)
     else:
         output = binary_dilation(tmp, structure, -1, mask, None, 1,
                                  origin)
-        numarray.logical_not(output, output)
+        numpy.logical_not(output, output)
         return output
 
 def grey_erosion(input,  size = None, footprint = None, structure = None,
@@ -342,14 +341,14 @@ def grey_dilation(input,  size = None, footprint = None, structure = None,
     value when mode is equal to 'constant'.
     """
     if structure is not None:
-        structure = numarray.asarray(structure)
+        structure = numpy.asarray(structure)
         structure = structure[tuple([slice(None, None, -1)] *
                                     structure.ndim)]
     if footprint is not None:
-        footprint = numarray.asarray(footprint)
+        footprint = numpy.asarray(footprint)
         footprint = footprint[tuple([slice(None, None, -1)] *
                                     footprint.ndim)]
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     origin = _ni_support._normalize_sequence(origin, input.ndim)
     for ii in range(len(origin)):
         origin[ii] = -origin[ii]
@@ -411,7 +410,7 @@ def morphological_gradient(input, size = None, footprint = None,
     if isinstance(output, numpy.ndarray):
         grey_erosion(input, size, footprint, structure, output, mode,
                      cval, origin)
-        return numarray.subtract(tmp, output, output)
+        return numpy.subtract(tmp, output, output)
     else:
         return (tmp - grey_erosion(input, size, footprint, structure,
                                    None, mode, cval, origin))
@@ -433,17 +432,17 @@ def morphological_laplace(input, size = None, footprint = None,
     if isinstance(output, numpy.ndarray):
         grey_erosion(input, size, footprint, structure, output, mode,
                      cval, origin)
-        numarray.add(tmp1, output, output)
+        numpy.add(tmp1, output, output)
         del tmp1
-        numarray.subtract(output, input, output)
-        return numarray.subtract(output, input, output)
+        numpy.subtract(output, input, output)
+        return numpy.subtract(output, input, output)
     else:
         tmp2 = grey_erosion(input, size, footprint, structure, None, mode,
                             cval, origin)
-        numarray.add(tmp1, tmp2, tmp2)
+        numpy.add(tmp1, tmp2, tmp2)
         del tmp1
-        numarray.subtract(tmp2, input, tmp2)
-        numarray.subtract(tmp2, input, tmp2)
+        numpy.subtract(tmp2, input, tmp2)
+        numpy.subtract(tmp2, input, tmp2)
         return tmp2
 
 
@@ -463,7 +462,7 @@ def white_tophat(input, size = None, footprint = None, structure = None,
         grey_dilation(tmp, size, footprint, structure, output, mode, cval,
                       origin)
         del tmp
-        return numarray.subtract(input, output, output)
+        return numpy.subtract(input, output, output)
     else:
         tmp = grey_dilation(tmp, size, footprint, structure, None, mode,
                             cval, origin)
@@ -487,7 +486,7 @@ def black_tophat(input, size = None, footprint = None,
         grey_erosion(tmp, size, footprint, structure, output, mode, cval,
                       origin)
         del tmp
-        return numarray.subtract(output, input, output)
+        return numpy.subtract(output, input, output)
     else:
         tmp = grey_erosion(tmp, size, footprint, structure, None, mode,
                            cval, origin)
@@ -524,17 +523,17 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
     chessboard algorithms.
 
     the distances and indices arguments can be used to give optional
-    output arrays that must be of the correct size and type (Float64
-    and Int32).
+    output arrays that must be of the correct size and type (float64
+    and int32).
     """
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
         raise RuntimeError, msg
-    tmp1 = numarray.asarray(input) != 0
+    tmp1 = numpy.asarray(input) != 0
     struct = generate_binary_structure(tmp1.ndim, tmp1.ndim)
     tmp2 = binary_dilation(tmp1, struct)
-    tmp2 = numarray.logical_xor(tmp1, tmp2)
-    tmp1 = tmp1.astype(numarray.Int8) - tmp2.astype(numarray.Int8)
+    tmp2 = numpy.logical_xor(tmp1, tmp2)
+    tmp1 = tmp1.astype(numpy.int8) - tmp2.astype(numpy.int8)
     del tmp2
     metric = metric.lower()
     if metric == 'euclidean':
@@ -547,44 +546,44 @@ def distance_transform_bf(input, metric = "euclidean", sampling = None,
         raise RuntimeError, 'distance metric not supported'
     if sampling != None:
         sampling = _ni_support._normalize_sequence(sampling, tmp1.ndim)
-        sampling = numarray.asarray(sampling, dtype = numarray.Float64)
+        sampling = numpy.asarray(sampling, dtype = numpy.float64)
         if not sampling.flags.contiguous:
             sampling = sampling.copy()
     if return_indices:
-        ft = numarray.zeros(tmp1.shape, dtype = numarray.Int32)
+        ft = numpy.zeros(tmp1.shape, dtype = numpy.int32)
     else:
         ft = None
     if return_distances:
         if distances == None:
             if metric == 1:
-                dt = numarray.zeros(tmp1.shape, dtype = numarray.Float64)
+                dt = numpy.zeros(tmp1.shape, dtype = numpy.float64)
             else:
-                dt = numarray.zeros(tmp1.shape, dtype = numarray.UInt32)
+                dt = numpy.zeros(tmp1.shape, dtype = numpy.uint32)
         else:
             if distances.shape != tmp1.shape:
                 raise RuntimeError, 'distances array has wrong shape'
             if metric == 1:
-                if distances.dtype.type != numarray.float64:
-                    raise RuntimeError, 'distances array must be Float64'
+                if distances.dtype.type != numpy.float64:
+                    raise RuntimeError, 'distances array must be float64'
             else:
-                if distances.dtype.type != numarray.uint32:
-                    raise RuntimeError, 'distances array must be UInt32'
+                if distances.dtype.type != numpy.uint32:
+                    raise RuntimeError, 'distances array must be uint32'
             dt = distances
     else:
         dt = None
     _nd_image.distance_transform_bf(tmp1, metric, sampling, dt, ft)
     if return_indices:
         if isinstance(indices, numpy.ndarray):
-            if indices.dtype.type != numarray.int32:
-                raise RuntimeError, 'indices must of Int32 type'
+            if indices.dtype.type != numpy.int32:
+                raise RuntimeError, 'indices must of int32 type'
             if indices.shape != (tmp1.ndim,) + tmp1.shape:
                 raise RuntimeError, 'indices has wrong shape'
             tmp2 = indices
         else:
-            tmp2 = numarray.indices(tmp1.shape, dtype = numarray.Int32)
-        ft = numarray.ravel(ft)
+            tmp2 = numpy.indices(tmp1.shape, dtype = numpy.int32)
+        ft = numpy.ravel(ft)
         for ii in range(tmp2.shape[0]):
-            rtmp = numarray.ravel(tmp2[ii, ...])[ft]
+            rtmp = numpy.ravel(tmp2[ii, ...])[ft]
             rtmp.shape = tmp1.shape
             tmp2[ii, ...] = rtmp
         ft = tmp2
@@ -624,14 +623,14 @@ def distance_transform_cdt(input, structure = 'chessboard',
     must be returned.
 
     The distances and indices arguments can be used to give optional
-    output arrays that must be of the correct size and type (both Int32).
+    output arrays that must be of the correct size and type (both int32).
     """
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
         raise RuntimeError, msg
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
-    input = numarray.asarray(input)
+    input = numpy.asarray(input)
     if structure == 'cityblock':
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
@@ -640,7 +639,7 @@ def distance_transform_cdt(input, structure = 'chessboard',
         structure = generate_binary_structure(rank, rank)
     else:
         try:
-            structure = numarray.asarray(structure)
+            structure = numpy.asarray(structure)
         except:
             raise RuntimeError, 'invalid structure provided'
         for s in structure.shape:
@@ -649,18 +648,18 @@ def distance_transform_cdt(input, structure = 'chessboard',
     if not structure.flags.contiguous:
         structure = structure.copy()
     if dt_inplace:
-        if distances.dtype.type != numarray.int32:
-            raise RuntimeError, 'distances must be of Int32 type'
+        if distances.dtype.type != numpy.int32:
+            raise RuntimeError, 'distances must be of int32 type'
         if distances.shape != input.shape:
             raise RuntimeError, 'distances has wrong shape'
         dt = distances
-        dt[...] = numarray.where(input, -1, 0).astype(numarray.Int32)
+        dt[...] = numpy.where(input, -1, 0).astype(numpy.int32)
     else:
-        dt = numarray.where(input, -1, 0).astype(numarray.Int32)
+        dt = numpy.where(input, -1, 0).astype(numpy.int32)
     rank = dt.ndim
     if return_indices:
-        sz = numarray.product(dt.shape,axis=0)
-        ft = numarray.arange(sz, dtype = numarray.Int32)
+        sz = numpy.product(dt.shape,axis=0)
+        ft = numpy.arange(sz, dtype = numpy.int32)
         ft.shape = dt.shape
     else:
         ft = None
@@ -672,17 +671,17 @@ def distance_transform_cdt(input, structure = 'chessboard',
     dt = dt[tuple([slice(None, None, -1)] * rank)]
     if return_indices:
         ft = ft[tuple([slice(None, None, -1)] * rank)]
-        ft = numarray.ravel(ft)
+        ft = numpy.ravel(ft)
         if ft_inplace:
-            if indices.dtype.type != numarray.int32:
-                raise RuntimeError, 'indices must of Int32 type'
+            if indices.dtype.type != numpy.int32:
+                raise RuntimeError, 'indices must of int32 type'
             if indices.shape != (dt.ndim,) + dt.shape:
                 raise RuntimeError, 'indices has wrong shape'
             tmp = indices
         else:
-            tmp = numarray.indices(dt.shape, dtype = numarray.Int32)
+            tmp = numpy.indices(dt.shape, dtype = numpy.int32)
         for ii in range(tmp.shape[0]):
-            rtmp = numarray.ravel(tmp[ii, ...])[ft]
+            rtmp = numpy.ravel(tmp[ii, ...])[ft]
             rtmp.shape = dt.shape
             tmp[ii, ...] = rtmp
         ft = tmp
@@ -720,8 +719,8 @@ def distance_transform_edt(input, sampling = None,
     to be equal along all axes.
 
     the distances and indices arguments can be used to give optional
-    output arrays that must be of the correct size and type (Float64
-    and Int32).
+    output arrays that must be of the correct size and type (float64
+    and int32).
     """
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
@@ -729,41 +728,41 @@ def distance_transform_edt(input, sampling = None,
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
     # calculate the feature transform
-    input = numarray.where(input, 1, 0).astype(numarray.Int8)
+    input = numpy.where(input, 1, 0).astype(numpy.int8)
     if sampling is not None:
         sampling = _ni_support._normalize_sequence(sampling, input.ndim)
-        sampling = numarray.asarray(sampling, dtype = numarray.Float64)
+        sampling = numpy.asarray(sampling, dtype = numpy.float64)
         if not sampling.flags.contiguous:
             sampling = sampling.copy()
     if ft_inplace:
         ft = indices
         if ft.shape != (input.ndim,) + input.shape:
             raise RuntimeError, 'indices has wrong shape'
-        if ft.dtype.type != numarray.int32:
-            raise RuntimeError, 'indices must be of Int32 type'
+        if ft.dtype.type != numpy.int32:
+            raise RuntimeError, 'indices must be of int32 type'
     else:
-        ft = numarray.zeros((input.ndim,) + input.shape,
-                            dtype = numarray.Int32)
+        ft = numpy.zeros((input.ndim,) + input.shape,
+                            dtype = numpy.int32)
     _nd_image.euclidean_feature_transform(input, sampling, ft)
     # if requested, calculate the distance transform
     if return_distances:
-        dt = ft - numarray.indices(input.shape, dtype = ft.dtype)
-        dt = dt.astype(numarray.Float64)
+        dt = ft - numpy.indices(input.shape, dtype = ft.dtype)
+        dt = dt.astype(numpy.float64)
         if sampling is not None:
             for ii in range(len(sampling)):
                 dt[ii, ...] *= sampling[ii]
-        numarray.multiply(dt, dt, dt)
+        numpy.multiply(dt, dt, dt)
         if dt_inplace:
-            dt = numarray.add.reduce(dt, axis = 0)
+            dt = numpy.add.reduce(dt, axis = 0)
             if distances.shape != dt.shape:
                 raise RuntimeError, 'indices has wrong shape'
-            if distances.dtype.type != numarray.float64:
-                raise RuntimeError, 'indices must be of Float64 type'
-            numarray.sqrt(dt, distances)
+            if distances.dtype.type != numpy.float64:
+                raise RuntimeError, 'indices must be of float64 type'
+            numpy.sqrt(dt, distances)
             del dt
         else:
-            dt = numarray.add.reduce(dt, axis = 0)
-            dt = numarray.sqrt(dt)
+            dt = numpy.add.reduce(dt, axis = 0)
+            dt = numpy.sqrt(dt)
     # construct and return the result
     result = []
     if return_distances and not dt_inplace:

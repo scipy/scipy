@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import types
-import numpy.oldnumeric as numarray
+import numpy
 
 def _extend_mode_to_code(mode):
     """Convert an extension mode to the corresponding integer code.
@@ -75,14 +75,14 @@ def _get_output(output, input, output_type = None, shape = None):
     if shape is None:
         shape = input.shape
     if output is None:
-        output = numarray.zeros(shape, dtype = input.dtype)
+        output = numpy.zeros(shape, dtype = input.dtype)
         return_value = output
-    elif type(output) in [type(types.TypeType), type(numarray.zeros((4,)).dtype)]:
-        output = numarray.zeros(shape, dtype = output)
+    elif type(output) in [type(types.TypeType), type(numpy.zeros((4,)).dtype)]:
+        output = numpy.zeros(shape, dtype = output)
         return_value = output
     elif type(output) is types.StringType:
-        output = numarray.typeDict[output]
-        output = numarray.zeros(shape, dtype = output)
+        output = numpy.typeDict[output]
+        output = numpy.zeros(shape, dtype = output)
         return_value = output
     else:
         if output.shape != shape:
