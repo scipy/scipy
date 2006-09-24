@@ -27,7 +27,6 @@ from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
 
 cast = numpy.cast
 r_ = numpy.r_
-c_ = numpy.c_
 
 _I = cast['F'](1j)
 def _make_complex_eigvecs(w,vin,cmplx_tcode):
@@ -521,7 +520,7 @@ def diagsvd(s,M,N):
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return c_[part,zeros((M,N-M),typ)]
+        return r_['-1',part,zeros((M,N-M),typ)]
     elif MorN == N:
         return r_[part,zeros((M-N,N),typ)]
     else:

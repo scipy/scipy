@@ -41,7 +41,8 @@ def fixed_quad(func,a,b,args=(),n=5):
     """
     [x,w] = p_roots(n)
     x = real(x)
-    ainf, binf = map(isinf,(a,b)) if ainf or binf:
+    ainf, binf = map(isinf,(a,b))
+    if ainf or binf:
         raise ValueError, "Gaussian quadrature is only available for " \
               "finite limits."
     y = (b-a)*(x+1)/2.0 + a

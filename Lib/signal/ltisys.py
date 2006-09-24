@@ -12,7 +12,7 @@ from numpy.oldnumeric import Float
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from numpy import r_, c_, eye, real, atleast_1d, atleast_2d, poly, \
+from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
 def tf2ss(num, den):
@@ -46,7 +46,7 @@ def tf2ss(num, den):
                array([], Float)
 
     # pad numerator to have same number of columns has denominator
-    num = c_[zeros((num.shape[0],K-M),num.dtype.char), num]
+    num = r_['-1',zeros((num.shape[0],K-M),num.dtype.char), num]
 
     if num.shape[-1] > 0:
         D = num[:,0]

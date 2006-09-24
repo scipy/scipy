@@ -356,7 +356,7 @@ lists-of-lists.
 
     ## Calc grand average (ga,axis=0), used for ALL effects
             ga = sum((sourceMarray*sourceNarray)/
-                            sum(sourceNarray),axis=0),axis=0))
+                            sum(sourceNarray,axis=0),axis=0)
             ga = reshape(ga,ones(len(Marray.shape)))
 
     ## If GRAND interaction, use harmonic mean of ALL cell Ns

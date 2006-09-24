@@ -41,13 +41,13 @@ class test_concatenator(unittest.TestCase):
         b = ones(5)
         c = r_[b,0,0,b]
         assert_array_equal(c,[1,1,1,1,1,0,0,1,1,1,1,1])
-        c = c_[b,0,0,b]
+        c = r_['-1',b,0,0,b]
         assert_array_equal(c,[1,1,1,1,1,0,0,1,1,1,1,1])
 
     def check_2d(self):
         b = rand(5,5)
         c = rand(5,5)
-        d = c_[b,c]  # append columns
+        d = r_['-1',b,c]  # append columns
         assert(d.shape == (5,10))
         assert_array_equal(d[:,:5],b)
         assert_array_equal(d[:,5:],c)

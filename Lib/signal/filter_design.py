@@ -6,7 +6,7 @@
 import numpy
 from numpy.core.umath import *
 from numpy import atleast_1d, poly, polyval, roots, imag, real, asarray,\
-     allclose, resize, pi, concatenate, absolute, logspace, c_
+     allclose, resize, pi, concatenate, absolute, logspace
 from numpy import mintypecode, select
 from scipy import special, optimize, linalg
 from scipy.misc import comb
@@ -22,7 +22,7 @@ def findfreqs(num, den, N):
     if len(ep) == 0:
         ep = atleast_1d(-1000)+0j
 
-    ez = c_[numpy.compress(ep.imag >=0, ep,axis=-1), numpy.compress((abs(tz) < 1e5) & (tz.imag >=0),tz,axis=-1)]
+    ez = r_['-1',numpy.compress(ep.imag >=0, ep,axis=-1), numpy.compress((abs(tz) < 1e5) & (tz.imag >=0),tz,axis=-1)]
 
     integ = abs(ez) < 1e-10
     hfreq = numpy.around(numpy.log10(numpy.max(3*abs(ez.real + integ)+1.5*ez.imag))+0.5)
