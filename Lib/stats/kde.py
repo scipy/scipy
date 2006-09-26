@@ -17,63 +17,60 @@
 #
 #-------------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
-# Imports:
-#-------------------------------------------------------------------------------
-
+# Standard library imports.
 import warnings
 
+# Scipy imports.
 from scipy import linalg, special
-from numpy.oldnumeric import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
-     ravel, Float, take, power, atleast_1d, squeeze, transpose
+from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
+     ravel, power, atleast_1d, squeeze, sum, transpose
 from numpy.random import randint, multivariate_normal
 
+# Local imports.
 import stats
 import mvn
 
 __all__ = ['gaussian_kde',
-          ]
+]
 
-#-------------------------------------------------------------------------------
-# 'gaussian_kde' class:
-#-------------------------------------------------------------------------------
 
 class gaussian_kde(object):
-    """
+    """ Representation of a kernel-density estimate using Gaussian kernels.
+
     Parameters
     ----------
     dataset : (# of dims, # of data)-array
-      datapoints to estimate from
+        datapoints to estimate from
 
     Members
     -------
     d : int
-      number of dimensions
+        number of dimensions
     n : int
-      number of datapoints
+        number of datapoints
 
     Methods
     -------
     kde.evaluate(points) : array
-      evaluate the estimated pdf on a provided set of points
+        evaluate the estimated pdf on a provided set of points
     kde(points) : array
-      same as kde.evaluate(points)
+        same as kde.evaluate(points)
     kde.integrate_gaussian(mean, cov) : float
-      multiply pdf with a specified gaussian and integrate over the whole domain
+        multiply pdf with a specified Gaussian and integrate over the whole domain
     kde.integrate_box_1d(low, high) : float
-      integrate pdf (1D only) between two bounds
+        integrate pdf (1D only) between two bounds
     kde.integrate_box(low_bounds, high_bounds) : float
-      integrate pdf over a rectangular space between low_bounds and high_bounds
+        integrate pdf over a rectangular space between low_bounds and high_bounds
     kde.integrate_kde(other_kde) : float
-      integrate two kernel density estimates multiplied together
+        integrate two kernel density estimates multiplied together
 
    Internal Methods
    ----------------
     kde.covariance_factor() : float
-      computes the coefficient that multiplies the data covariance matrix to
-      obtain the kernel covariance matrix. Set this method to kde.scotts_factor
-      or kde.silverman_factor (or subclass to provide your own). The default is
-      scotts_factor.
+        computes the coefficient that multiplies the data covariance matrix to
+        obtain the kernel covariance matrix. Set this method to
+        kde.scotts_factor or kde.silverman_factor (or subclass to provide your
+        own). The default is scotts_factor.
     """
 
     def __init__(self, dataset):
@@ -82,11 +79,26 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
 
         self._compute_covariance()
-
+        
+        
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.
 
-        points.shape == (# of dimensions, # of points)
+        Parameters
+        ----------
+        points : (# of dimensions, # of points)-array
+            Alternatively, a (# of dimensions,) vector can be passed in and
+            treated as a single point.
+
+        Returns
+        -------
+        values : (# of points,)-array
+            The values at each point.
+
+        Raises
+        ------
+        ValueError if the dimensionality of the input points is different than
+        the dimensionality of the KDE.
         """
 
         points = atleast_2d(points).astype(self.dataset.dtype)
@@ -96,6 +108,7 @@ class gaussian_kde(object):
             if d == 1 and m == self.d:
                 # points was passed in as a row vector
                 points = reshape(points, (self.d, 1))
+                m = 1
             else:
                 msg = "points have dimension %s, dataset has dimension %s" % (d,
                     self.d)
@@ -126,21 +139,25 @@ class gaussian_kde(object):
     __call__ = evaluate
 
     def integrate_gaussian(self, mean, cov):
-        """Multiply estimated density by a multivariate gaussian and integrate
+        """Multiply estimated density by a multivariate Gaussian and integrate
         over the wholespace.
 
         Parameters
         ----------
         mean : vector
-          the mean of the gaussian
+            the mean of the Gaussian
         cov : matrix
-          the covariance matrix of the gaussian
+            the covariance matrix of the Gaussian
 
         Returns
         -------
         result : scalar
-          the value of the integral
+            the value of the integral
 
+        Raises
+        ------
+        ValueError if the mean or covariance of the input Gaussian differs from
+        the KDE's dimensionality.
         """
 
         mean = atleast_1d(squeeze(mean))
@@ -170,19 +187,23 @@ class gaussian_kde(object):
         Parameters
         ----------
         low : scalar
-          lower bound of integration
+            lower bound of integration
         high : scalar
-          upper bound of integration
+            upper bound of integration
 
         Returns
         -------
         value : scalar
-          the result of the integral
+            the result of the integral
+
+        Raises
+        ------
+        ValueError if the KDE is over more than one dimension.
         """
         if self.d != 1:
             raise ValueError("integrate_box_1d() only handles 1D pdfs")
 
-        stdev = ravel(sqrt(self.covariance))[0]
+        stdev = np.ravel(sqrt(self.covariance))[0]
 
         normalized_low = ravel((low - self.dataset)/stdev)
         normalized_high = ravel((high - self.dataset)/stdev)
@@ -198,16 +219,16 @@ class gaussian_kde(object):
         Parameters
         ----------
         low_bounds : vector
-          lower bounds of integration
+            lower bounds of integration
         high_bounds : vector
-          upper bounds of integration
+            upper bounds of integration
         maxpts=None : int
-          maximum number of points to use for integration
+            maximum number of points to use for integration
 
         Returns
         -------
         value : scalar
-          the result of the integral
+            the result of the integral
         """
         if maxpts is not None:
             extra_kwds = {'maxpts': maxpts}
@@ -229,13 +250,17 @@ class gaussian_kde(object):
 
         Parameters
         ----------
-        other : GaussianKDE instance
-          the other kde
+        other : gaussian_kde instance
+            the other kde
 
         Returns
         -------
         value : scalar
-          the result of the integral
+            the result of the integral
+
+        Raises
+        ------
+        ValueError if the KDEs have different dimensionality.
         """
 
         if other.d != self.d:
@@ -268,22 +293,24 @@ class gaussian_kde(object):
 
         Parameters
         ----------
-        size : int=None
-          if None, then size = self.n; otherwise, the number of samples to draw
+        size : int, optional
+            The number of samples to draw.
+            If not provided, then the size is the same as the underlying
+            dataset.
 
         Returns
         -------
         dataset : (self.d, size)-array
-          sampled dataset
+            sampled dataset
         """
 
         if size is None:
             size = self.n
 
-        norm = transpose(multivariate_normal(zeros((self.d,), Float),
+        norm = transpose(multivariate_normal(zeros((self.d,), float),
             self.covariance, size=size))
         indices = randint(0, self.n, size=size)
-        means = take(self.dataset, indices, axis=1)
+        means = self.dataset[:,indices]
 
         return means + norm
 
@@ -294,13 +321,16 @@ class gaussian_kde(object):
     def silverman_factor(self):
         return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
 
+    # This can be replaced with silverman_factor if one wants to use Silverman's
+    # rule for choosing the bandwidth of the kernels.
     covariance_factor = scotts_factor
 
     def _compute_covariance(self):
-        """Computes the covariance matrix for each gaussian kernel using
+        """Computes the covariance matrix for each Gaussian kernel using
         covariance_factor
         """
         self.factor = self.covariance_factor()
         self.covariance = atleast_2d(stats.cov(self.dataset, rowvar=1) *
             self.factor * self.factor)
         self.inv_cov = linalg.inv(self.covariance)
+        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n

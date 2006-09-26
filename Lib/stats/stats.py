@@ -246,7 +246,7 @@ def nanmean(x, axis=0):
     x, axis = _chk_asarray(x,axis)
     x = x.copy()
     Norig = x.shape[axis]
-    factor = 1.0-sum(np.isnan(x),axis)*1.0/Norig
+    factor = 1.0-np.sum(np.isnan(x),axis)*1.0/Norig
 
     x[np.isnan(x)] = 0
     return np.mean(x,axis)/factor
@@ -1727,7 +1727,7 @@ Returns: chisquare-statistic, associated p-value
     f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
-        f_exp = array([sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
+        f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
     f_exp = f_exp.astype(float)
     chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
     return chisq, chisqprob(chisq, k-1)
@@ -1790,7 +1790,7 @@ Returns: u-statistic, one-tailed p-value (i.e., p(z(U)))
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
     #ranky = ranked[n1:]        # the rest are y-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - sum(rankx,axis=0)  # calc U for x
+    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
     smallu = min(u1,u2)
@@ -1841,7 +1841,7 @@ Returns: z-statistic, two-tailed p-value
     ranked = rankdata(alldata)
     x = ranked[:n1]
     y = ranked[n1:]
-    s = sum(x,axis=0)
+    s = np.sum(x,axis=0)
     expected = n1*(n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2*(1.0 -zprob(abs(z)))
@@ -1871,10 +1871,10 @@ Returns: H-statistic (corrected for ties), associated p-value
         del ranked[0:n[i]]
     rsums = []
     for i in range(len(args)):
-        rsums.append(sum(args[i],axis=0)**2)
+        rsums.append(np.sum(args[i],axis=0)**2)
         rsums[i] = rsums[i] / float(n[i])
-    ssbn = sum(rsums,axis=0)
-    totaln = sum(n,axis=0)
+    ssbn = np.sum(rsums,axis=0)
+    totaln = np.sum(n,axis=0)
     h = 12.0 / (totaln*(totaln+1)) * ssbn - 3*(totaln+1)
     df = len(args) - 1
     if T == 0:
@@ -1902,7 +1902,7 @@ Returns: chi-square statistic, associated p-value
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
-    ssbn = sum(sum(args,1)**2,axis=0)
+    ssbn = np.sum(np.sum(args,1)**2,axis=0)
     chisq = 12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)
     return chisq, chisqprob(chisq,k-1)
 
@@ -1991,7 +1991,7 @@ Returns: statistic, p-value ???
     if len(p) == 2:  # ttest_ind
         c = array([1,-1])
         df = n-2
-        fact = sum(1.0/sum(x,0),axis=0)  # i.e., 1/n1 + 1/n2 + 1/n3 ...
+        fact = np.sum(1.0/np.sum(x,0),axis=0)  # i.e., 1/n1 + 1/n2 + 1/n3 ...
         t = dot(c,b) / np.sqrt(s_sq*fact)
         probs = betai(0.5*df,0.5,float(df)/(df+t*t))
         return t, probs
@@ -2074,7 +2074,7 @@ result.
 Returns: the square of the sum over axis.
 """
     a, axis = _chk_asarray(a, axis)
-    s = sum(a,axis)
+    s = np.sum(a,axis)
     if not np.isscalar(s):
         return s.astype(float)*s
     else:
