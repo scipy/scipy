@@ -186,7 +186,7 @@ Statistics Tables and Formulae_. Chapman & Hall: New York. 2000.
 import warnings
 
 # Scipy imports.
-from numpy import array, asarray, dot, ma, zeros
+from numpy import array, asarray, dot, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
