@@ -88,8 +88,9 @@ class MatFileReader(MatStreamAgent):
                           in ('native', '=')
                           or in ('little', '<')
                           or in ('BIG', '>')
-    @base_name          - base name for unnamed variables
-    @matlab_compatible  - return arrays as matlab (TM) saved them
+    @base_name          - base name for unnamed variables (unused in code)
+    @mat_dtype          - return arrays in same dtype as loaded into matlab
+                          (instead of the dtype with which they are saved)
     @squeeze_me         - whether to squeeze unit dimensions or not
     @chars_as_strings   - whether to convert char arrays to string arrays
 
@@ -106,7 +107,7 @@ class MatFileReader(MatStreamAgent):
     def __init__(self, mat_stream,
                  byte_order=None,
                  base_name='raw',
-                 matlab_compatible=False,
+                 mat_dtype=False,
                  squeeze_me=True,
                  chars_as_strings=True,
                  ):
@@ -119,21 +120,25 @@ class MatFileReader(MatStreamAgent):
         self.base_name = base_name
         self._squeeze_me = squeeze_me
         self._chars_as_strings = chars_as_strings
-        self.matlab_compatible = matlab_compatible
-        
-    # matlab_compatible property sets squeeze_me and chars_as_strings
-    def get_matlab_compatible(self):
-        return self._matlab_compatible
-    def set_matlab_compatible(self, m_l_c):
-        self._matlab_compatible = m_l_c
-        if m_l_c:
-            self._squeeze_me = False
-            self._chars_as_strings = False
+        self._mat_dtype = mat_dtype
         self.processor_func = self.get_processor_func()
-    matlab_compatible = property(get_matlab_compatible,
-                                 set_matlab_compatible,
-                                 None,
-                                 'get/set matlab_compatible property')
+        
+    def set_matlab_compatible(self):
+        ''' Sets options to return arrays as matlab (tm) loads them '''
+        self._mat_dtype = True
+        self._squeeze_me = False
+        self._chars_as_strings = False
+        self.processor_func = self.get_processor_func()
+
+    def get_mat_dtype(self):
+        return self._mat_dtype
+    def set_mat_dtype(self, mat_dtype):
+        self._mat_dtype = mat_dtype
+        self.processor_func = self.get_processor_func()
+    mat_dtype = property(get_mat_dtype,
+                         set_mat_dtype,
+                         None,
+                         'get/set mat_dtype property')
 
     def get_squeeze_me(self):
         return self._squeeze_me
@@ -151,9 +156,9 @@ class MatFileReader(MatStreamAgent):
         self._chars_as_strings = chars_as_strings
         self.processor_func = self.get_processor_func()
     chars_as_strings = property(get_chars_as_strings,
-                          set_chars_as_strings,
-                          None,
-                          'get/set squeeze me property')
+                                set_chars_as_strings,
+                                None,
+                                'get/set squeeze me property')
     
     def get_order_code(self):
         return self._order_code
@@ -200,7 +205,7 @@ class MatFileReader(MatStreamAgent):
 
         The read array is the first argument.
         The getter, passed as second argument to the function, must
-        define properties, iff matlab_compatible option is True:
+        define properties, iff mat_dtype option is True:
         
         mat_dtype    - data type when loaded into matlab (tm)
                        (None for no conversion)
@@ -223,7 +228,7 @@ class MatFileReader(MatStreamAgent):
                         arr[...,i] = self.chars_to_str(str_arr[i])
                 else: # return string
                     arr = self.chars_to_str(arr)
-            if self.matlab_compatible:
+            if self.mat_dtype:
                 # Apply options to replicate matlab's (TM)
                 # load into workspace
                 if getter.mat_dtype is not None:

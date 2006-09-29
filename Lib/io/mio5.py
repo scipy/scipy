@@ -517,5 +517,193 @@ class MatFile5Reader(MatFileReader):
         return 0 not in mopt_bytes
 
 
-class Mat5Writer(MatFileWriter):
-    pass
+class Mat5MatrixWriter(MatStreamWriter):
+
+    def write_header(self, mclass,
+                     is_global,
+                     is_complex=False,
+                     is_logical=False,
+                     nzmax=0):
+        ''' Write header for given data options
+        @mclass      - mat5 matrix class
+        @is_global   - True if matrix is global
+        @is_complex  - True is matrix is complex
+        @is_logical  - True if matrix is logical
+        '''
+        dims = self.arr.shape
+        header = empty((), mdtypes_template['header'])
+        M = not ByteOrder.little_endian
+        O = 0
+        header['mopt'] = (M * 1000 +
+                          O * 100 + 
+                          P * 10 +
+                          T)
+        header['mrows'] = dims[0]
+        header['ncols'] = dims[1]
+        header['imagf'] = imagf
+        header['namlen'] = len(self.name) + 1
+        self.write_bytes(header)
+        self.write_string(self.name + '\0')
+        
+    def write(self):
+        assert False, 'Not implemented'
+
+
+class Mat5NumericWriter(Mat5MatrixWriter):
+
+    def write(self):
+        # identify matlab type for array
+        # make at least 2d
+        # write miMATRIX tag
+        # write array flags (complex, global, logical, class, nzmax)
+        # dimensions
+        # array name
+        # maybe downcast array to smaller matlab type
+        # write real
+        # write imaginary
+        # put padded length in miMATRIX tag
+        pass
+    
+
+class Mat5CharWriter(Mat5MatrixWriter):
+
+    def write(self):
+        self.arr_to_chars()
+        self.arr_to_2d()
+        dims = self.arr.shape
+        self.write_header(P=miUINT8,
+                          T=mxCHAR_CLASS)
+        if self.arr.dtype.kind == 'U':
+            # Recode unicode to ascii
+            n_chars = product(dims)
+            st_arr = ndarray(shape=(),
+                             dtype=self.arr_dtype_number(n_chars),
+                             buffer=self.arr)
+            st = st_arr.item().encode('ascii')
+            self.arr = ndarray(shape=dims, dtype='S1', buffer=st)
+        self.write_bytes(self.arr)
+
+
+class Mat5SparseWriter(Mat5MatrixWriter):
+
+    def write(self):
+        ''' Sparse matrices are 2D
+        See docstring for Mat5SparseGetter
+        '''
+        imagf = self.arr.dtype.kind == 'c'
+        N = self.arr.nnz
+        ijd = zeros((N+1, 3+imagf), dtype='f8')
+        for i in range(N):
+            ijd[i,0], ijd[i,1] = self.arr.rowcol(i)
+        ijd[:-1,0:2] += 1 # 1 based indexing
+        if imagf:
+            ijd[:-1,2] = self.arr.data.real
+            ijd[:-1,3] = self.arr.data.imag
+        else:
+            ijd[:-1,2] = self.arr.data
+        ijd[-1,0:2] = self.arr.shape
+        self.write_header(P=miDOUBLE,
+                          T=mxSPARSE_CLASS,
+                          dims=ijd.shape)
+        self.write_bytes(ijd)
+        
+    
+def matrix_writer_factory(stream, arr, name, unicode_strings=False, is_global=False):
+    ''' Factory function to return matrix writer given variable to write
+    @stream      - file or file-like stream to write to
+    @arr         - array to write
+    @name        - name in matlab (TM) workspace
+    '''
+    if have_sparse:
+        if scipy.sparse.issparse(arr):
+            return Mat5SparseWriter(stream, arr, name, is_global)
+    arr = array(arr)
+    if arr.dtype.hasobject:
+        types, arr_type = classify_mobjects(arr)
+        if arr_type == 'c':
+            return Mat5CellWriter(stream, arr, name, is_global, types)
+        elif arr_type == 's':
+            return Mat5StructWriter(stream, arr, name, is_global)
+        elif arr_type == 'o':
+            return Mat5ObjectWriter(stream, arr, name, is_global)
+    if arr.dtype.kind in ('U', 'S'):
+        if unicode_strings:
+            return Mat5UniCharWriter(stream, arr, name, is_global)
+        else:
+            return Mat5IntCharWriter(stream, arr, name, is_global)            
+    else:
+        return Mat5NumericWriter(stream, arr, name, is_global)
+                    
+def classify_mobjects(objarr):
+    ''' Function to classify objects passed for writing
+    returns
+    types         - S1 array of same shape as objarr with codes for each object
+                    i  - invalid object
+                    a  - ndarray
+                    s  - matlab struct
+                    o  - matlab object
+    arr_type       - one of
+                    c  - cell array
+                    s  - struct array
+                    o  - object array
+    '''
+    N = objarr.size
+    types = empty((N,), dtype='S1')
+    types[:] = 'i'
+    type_set = set()
+    flato = objarr.flat
+    for i in range(N):
+        obj = flato[i]
+        if isinstance(obj, ndarray):
+            types[i] = 'a'
+            continue
+        try:
+            fns = tuple(obj._fieldnames)
+        except AttributeError:
+            continue
+        try:
+            cn = obj._classname
+        except AttributeError:
+            types[i] = 's'
+            type_set.add(fns)
+            continue
+        types[i] = 'o'
+        type_set.add((cn, fns))
+    arr_type = 'c'
+    if len(set(types))==1 and len(type_set) == 1:
+        arr_type = types[0]
+    return types.reshape(objarr.shape), arr_type
+           
+        
+class MatFile5Writer(MatFileWriter):
+    ''' Class for writing mat5 files '''
+    def __init__(self, file_stream,
+                 do_compression=False,
+                 unicode_strings=False,
+                 global_vars=None):
+        super(MatFile5Writer, self).__init__(file_stream)
+        self.do_compression = do_compression
+        self.unicode_strings = unicode_strings
+        if global_vars:
+            self.global_vars = global_vars
+        else:
+            self.global_vars = []
+        
+    def put_variables(self, mdict):
+        for name, var in mdict.items():
+            is_global = name in self.global_vars
+            stream = StringIO()
+            matrix_writer_factory(stream,
+                                  var,
+                                  name,
+                                  is_global,
+                                  self.unicode_strings,
+                                  ).write()
+            if self.do_compression:
+                str = zlib.compress(stream.getvalue())
+                tag = empty((), mdtypes_template['tag_full'])
+                tag['mdtype'] = miCOMPRESSED
+                tag['byte_count'] = len(str)
+                self.file_stream.write(tag.tostring() + str)
+            else:
+                self.file_stream.write(stream.getvalue())
