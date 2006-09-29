@@ -11,10 +11,12 @@ Copyright: Ed Schofield, 2003-2006
 License: BSD-style (see LICENSE.txt in main source directory)
 """
 
+# Future imports must come before any code in 2.5
+from __future__ import division
+
 __author__ = "Ed Schofield"
 __version__ = '2.0'
 
-from __future__ import division
 import random, math, bisect, cmath
 import numpy
 from numpy import log, exp, asarray, ndarray

@@ -3,6 +3,9 @@
 # Copyright: Ed Schofield, 2003-2006
 # License: BSD-style (see LICENSE.txt in main source directory)
 
+# Future imports must come before any code in 2.5
+from __future__ import division
+
 __author__ = "Ed Schofield"
 __version__ = '2.1'
 __changelog__ = """ 
@@ -66,7 +69,6 @@ variances.
 """
 
 
-from __future__ import division
 import math, types, cPickle
 import numpy
 from scipy import optimize, sparse
