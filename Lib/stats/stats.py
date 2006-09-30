@@ -1203,19 +1203,24 @@ of the compare array.
 #####################################
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """
-Like numpy.clip() except that values <threshmid or >threshmax are replaced
-by newval instead of by threshmin/threshmax (respectively).
+    """Clip array to a given value.
+    
+Similar to numpy.clip(), except that values less than threshmin or
+greater than threshmax are replaced by newval, instead of by
+threshmin and threshmax respectively.
 
-Returns: a, with values <threshmin or >threshmax replaced with newval
+Returns: a, with values less than threshmin or greater than threshmax
+         replaced with newval
+
 """
-    a = asarray(a)
+    a = asarray(a).copy()
     mask = zeros(a.shape, dtype=bool)
-    if threshmin != None:
-        mask |= (a < threshmin)
-    if threshmax != None:
+    if threshmin is not None:
+        mask = (a < threshmin)
+    if threshmax is not None:
         mask |= (a > threshmax)
-    return np.where(mask, newval, a)
+    a[mask] = newval
+    return a
 
 
 def trimboth(a, proportiontocut):

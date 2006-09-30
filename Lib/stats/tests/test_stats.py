@@ -759,5 +759,16 @@ class test_moments(ScipyTestCase):
         y = scipy.stats.kurtosis(self.testcase,0,0)
         assert_approx_equal(y,1.64)
 
+class test_threshold(ScipyTestCase):
+    def check_basic(self):
+        a = [-1,2,3,4,5,-1,-2]
+        assert_array_equal(stats.threshold(a),a)
+        assert_array_equal(stats.threshold(a,3,None,0),
+                           [0,0,3,4,5,0,0])
+        assert_array_equal(stats.threshold(a,None,3,0),
+                           [-1,2,3,0,0,-1,-2])
+        assert_array_equal(stats.threshold(a,2,4,0),
+                           [0,2,3,4,0,0,0])
+        
 if __name__ == "__main__":
     ScipyTest().run()
