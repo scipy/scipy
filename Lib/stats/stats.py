@@ -1216,7 +1216,7 @@ Returns: a, with values less than threshmin or greater than threshmax
     a = asarray(a).copy()
     mask = zeros(a.shape, dtype=bool)
     if threshmin is not None:
-        mask = (a < threshmin)
+        mask |= (a < threshmin)
     if threshmax is not None:
         mask |= (a > threshmax)
     a[mask] = newval
