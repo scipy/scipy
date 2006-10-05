@@ -58,7 +58,7 @@ from numpy import arange, sin, cos, sinh
 try: from scipy.weave import blitz
 except: pass
 from numexpr import evaluate
-a = arange(%f)
+a = arange(2*%f)[::2]
 b = arange(%f)
 result = arange(%f)
 """ % ((array_size,)*3)
@@ -70,7 +70,7 @@ from numpy import arange, sin, cos, sinh, arctan2
 try: from scipy.weave import blitz
 except: pass
 from numexpr import evaluate
-a = arange(%f)
+a = arange(2*%f)[::2]
 b = arange(%f)
 result = arange(%f)
 """ % ((array_size,)*3)
@@ -82,7 +82,7 @@ from numpy import arange, sin, cos, sinh, arctan2, sqrt, where
 try: from scipy.weave import blitz
 except: pass
 from numexpr import evaluate
-a = arange(%f, dtype=float)
+a = arange(2*%f, dtype=float)[::2]
 b = arange(%f, dtype=float)
 result = arange(%f, dtype=float)
 """ % ((array_size,)*3)

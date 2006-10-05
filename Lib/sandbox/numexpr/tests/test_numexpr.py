@@ -139,6 +139,13 @@ class test_evaluate(NumpyTestCase):
         a = arange(100).reshape(10,10)[::2]
         b = arange(50).reshape(5,10)
         assert_array_equal(evaluate("a+b"), a+b)
+        c = empty([10], dtype=[('c1', int32), ('c2', uint16)])
+        c['c1'] = arange(10)
+        c['c2'].fill(0xaaaa)
+        c1 = c['c1']
+        a0 = a[0]
+        assert_array_equal(evaluate("c1"), c1) 
+        assert_array_equal(evaluate("a0+c1"), a0+c1)
         
         
     def check_broadcasting(self):
