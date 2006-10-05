@@ -668,6 +668,24 @@ def blackmanharris(M,sym=1):
         w = w[:-1]
     return w
 
+def flattop(M,sym=1):
+    """The M-point Flat top window.
+    """
+    if M < 1:
+        return array([])
+    if M == 1:
+        return ones(1,'d')
+    odd = M % 2
+    if not sym and not odd:
+        M = M+1
+    a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
+    n = arange(0,M)
+    fac = n*2*pi/(M-1.0)
+    w = a[0] - a[1]*cos(fac) + a[2]*cos(2*fac) - a[3]*cos(3*fac) + a[4]*cos(4*fac)
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
 
 def bartlett(M,sym=1):
     """The M-point Bartlett window.
@@ -733,6 +751,8 @@ def hamming(M,sym=1):
     if not sym and not odd:
         w = w[:-1]
     return w
+
+    
 
 def kaiser(M,beta,sym=1):
     """Returns a Kaiser window of length M with shape parameter beta.
@@ -1214,7 +1234,8 @@ def get_window(window,Nx,fftbins=1):
             winfunc = nuttall
         elif winstr in ['barthann', 'brthan', 'bth']:
             winfunc = barthann
-
+        elif winstr in ['flattop', 'flat', 'flt']:
+            winfunc = flattop
         elif winstr in ['kaiser', 'ksr']:
             winfunc = kaiser
         elif winstr in ['gaussian', 'gauss', 'gss']:
