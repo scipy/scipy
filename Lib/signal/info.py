@@ -11,7 +11,6 @@ Signal Processing Tools
     correlate2d   --  2-dimensional correlation (more options).
     sepfir2d      --  Convolve with a 2-D separable FIR filter.
 
-
  B-splines:
 
     bspline       --  B-spline basis function of order n.
@@ -35,19 +34,25 @@ Signal Processing Tools
 
     deconvolve    --  1-d deconvolution using lfilter.
 
-    hilbert       --- Compute the analytic signal of a 1-d signal.
-    get_window    --- Create FIR window.
+    hilbert       -- Compute the analytic signal of a 1-d signal.
+    get_window    -- Create FIR window.
 
-    detrend       --- Remove linear and/or constant trends from data.
+    detrend       -- Remove linear and/or constant trends from data.
+    resample      -- Resample using Fourier method.
 
  Filter design:
 
-    remez         --  Optimal FIR filter design.
-    firwin        --- Windowed FIR filter design.
-    iirdesign     --- IIR filter design given bands and gains
-    iirfilter     --- IIR filter design given order and critical frequencies
-    freqs         --- Analog filter frequency response
-    freqz         --- Digital filter frequency response
+    remez         -- Optimal FIR filter design.
+    firwin        -- Windowed FIR filter design.
+    iirdesign     -- IIR filter design given bands and gains.
+    iirfilter     -- IIR filter design given order and critical frequencies.
+    freqs         -- Analog filter frequency response.
+    freqz         -- Digital filter frequency response.
+
+    unique_roots  -- Unique roots and their multiplicities.
+    residue       -- Partial fraction expansion of b(s) / a(s).
+    residuez      -- Partial fraction expansion of b(z) / a(z).    
+    invres        -- Inverse partial fraction expansion.
 
  Matlab-style IIR filter design:
 
@@ -59,31 +64,50 @@ Signal Processing Tools
 
  Linear Systems:
 
-    lti -- linear time invariant system object.
-    lsim -- continuous-time simulation of output to linear system.
+    lti     -- linear time invariant system object.
+    lsim    -- continuous-time simulation of output to linear system.
     impulse -- impulse response of linear, time-invariant (LTI) system.
-    step -- step response of continous-time LTI system.
+    step    -- step response of continous-time LTI system.
 
  LTI Reresentations:
 
     tf2zpk -- transfer function to zero-pole-gain.
     zpk2tf -- zero-pole-gain to transfer function.
-    tf2ss -- transfer function to state-space.
-    ss2tf -- state-pace to transfer function.
+    tf2ss  -- transfer function to state-space.
+    ss2tf  -- state-pace to transfer function.
     zpk2ss -- zero-pole-gain to state-space.
     ss2zpk -- state-space to pole-zero-gain.
 
  Waveforms:
 
-    sawtooth -- Periodic sawtooth
-    square -- Square wave
+    sawtooth   -- Periodic sawtooth
+    square     -- Square wave
     gausspulse -- Gaussian modulated sinusoid
-    chirp -- Frequency swept cosine signal
+    chirp      -- Frequency swept cosine signal
+
+ Window functions:
+
+    boxcar           -- Boxcar window
+    triang           -- Triangular window
+    parzen           -- Parzen window
+    bohman           -- Bohman window
+    blackman         -- Blackman window
+    blackmanharris   -- Minimum 4-term Blackman-Harris window
+    nuttall          -- Nuttall's minimum 4-term Blackman-Harris window
+    flattop          -- Flat top window
+    bartlett         -- Bartlett window
+    hann             -- Hann window
+    barthann         -- Bartlett-Hann window
+    hamming          -- Hamming window
+    kaiser           -- Kaiser window
+    gaussian         -- Gaussian window
+    general_gaussian -- Generalized Gaussian window
+    slepian          -- Slepian window
 
  Wavelets:
 
-    daub -- return low-pass filter for daubechies wavelets
-    qmf  -- return quadrature mirror filter from low-pass
+    daub    -- return low-pass filter for daubechies wavelets
+    qmf     -- return quadrature mirror filter from low-pass
     cascade -- compute scaling function and wavelet from coefficients
 """
 
