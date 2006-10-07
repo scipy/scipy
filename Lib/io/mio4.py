@@ -321,9 +321,12 @@ def matrix_writer_factory(stream, arr, name):
         if scipy.sparse.issparse(arr):
             return Mat4SparseWriter(stream, arr, name)
     arr = array(arr)
-    if arr.dtype.hasobject:
+    dtt = arr.dtype.type
+    if dtt is object_:
         raise TypeError, 'Cannot save object arrays in Mat4'
-    if arr.dtype.kind in ('U', 'S'):
+    elif dtt is void:
+        raise TypeError, 'Cannot save void type arrays'
+    elif dtt in (unicode_, string_):
         return Mat4CharWriter(stream, arr, name)
     else:
         return Mat4NumericWriter(stream, arr, name)

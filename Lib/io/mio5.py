@@ -33,6 +33,11 @@ from numpy import *
 
 from miobase import *
 
+try:  # Python 2.3 support
+    from sets import Set as set
+except:
+    pass
+
 miINT8 = 1
 miUINT8 = 2
 miINT16 = 3

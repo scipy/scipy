@@ -370,3 +370,129 @@ class MatFileWriter(object):
     ''' Base class for Mat file writers '''
     def __init__(self, file_stream):
         self.file_stream = file_stream
+
+
+class DownCaster(object):
+    ''' Downcasts arrays '''
+
+    def __init__(self,
+                 type_list=None,
+                 rtol=1.0000000000000001e-05,
+                 atol=1e-08):
+        ''' Set types for which we are attempting to downcast '''
+        def_dict = self.default_dt_dict()
+        if type_list is None:
+            self.dt_dict = def_dict
+        else:
+            dt_dict = {}
+            for T in type_list:
+                T = dtype(T).type
+                dt_dict[T] = def_dict[T]
+            self.dt_dict = dt_dict
+        self.rtol = rtol
+        self.atol = atol
+        
+    def default_dt_dict(self):
+        d_dict = {}
+        for sc_type in ('complex','float'):
+            t_list = sctypes[sc_type]
+            for T in t_list:
+                dt = dtype(T)
+                d_dict[T] = {
+                    'kind': dt.kind,
+                    'size': dt.itemsize}
+        for T in sctypes['int']:
+            dt = dtype(T)
+            sz = dt.itemsize
+            bits = sz*8-1
+            end = 2**bits
+            d_dict[T] = {
+                'kind': dt.kind,
+                'size': sz,
+                'min': -end,
+                'max': end-1
+                }
+        for T in sctypes['uint']:
+            dt = dtype(T)
+            sz = dt.itemsize
+            bits = sz*8
+            end = 2**bits
+            d_dict[T] = {
+                'kind': dt.kind,
+                'size': sz,
+                'min': 0,
+                'max': end
+            }
+        return d_dict
+    
+    def storage_criterion(self, maxstorage, kinds, cmp_func=lambda x, y: x <= y):
+        D = {}
+        for k, v in self.dt_dict.items():
+            if v['kind'] in kinds:
+                sz = v['size']
+                if cmp_func(sz, maxstorage):
+                    D[k] = sz
+        I = D.items()
+        I.sort(lambda x, y: cmp(x[1], y[1]))
+        return I
+
+    def smaller_same_kind(self, arr):
+        dts = self.storage_criterion(arr.dtype.itemsize,
+                                      (arr.dtype.kind,),
+                                      lambda x, y: x < y)
+        ret_arr = arr
+        for T in dts:
+            test_arr = arr.astype(T)
+            if allclose(test_arr, arr, self.rtol, self.atol):
+                ret_arr = test_arr
+            else:
+                break
+        return ret_arr
+
+        
+    def smallest_int_type(self, mx, mn):
+        dt = None
+        for k, v in self.dt_dict.items():
+            if v['kind'] in ('i', 'u'):
+                if v['max'] >= mx and v['min'] <= mn:
+                    c_sz = v['size']
+                    if dt is None or c_sz < sz:
+                        dt = k
+                        sz = c_sz
+        return dt
+
+    def downcast(self, arr):
+        dtk = arr.dtype.kind
+        if dtk == 'c':
+            return self.downcast_complex(arr)
+        elif dtk == 'f':
+            return self.downcast_float(arr)
+        elif dtk in ('u', 'i'):
+            return self.downcast_integer(arr)
+        else:
+            raise TypeError, 'Do not recognize array kind %s' % dtk
+            
+    def downcast_complex(self, arr):
+        # can we downcast to float?
+        flts = self.storage_criterion(arr.dtype.itemsize / 2,
+                                     ('f'),
+                                      lambda x, y: x <=y)[0]
+        test_arr = arr.astype(flt)
+        if allclose(arr, test_arr, self.rtol, self.atol):
+            return self.downcast_float(test_arr)
+        # try downcasting to another complex type
+        return self.smaller_same_kind(arr)
+    
+    def downcast_float(self, arr):
+        # Try integer
+        test_arr = self.downcast_integer(arr)
+        if allclose(arr, test_arr, self.rtol, self.atol):
+            return test_arr
+        # Otherwise descend the float types
+        return self.smaller_same_kind(arr)
+
+    def downcast_integer(self, arr):
+        mx = amax(arr)
+        mn = amin(arr)
+        idt = self.smallest_int_type(mx, mn)
+        return arr.astype(idt)
