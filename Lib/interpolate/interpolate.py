@@ -8,7 +8,7 @@ __all__ = ['interp1d', 'interp2d']
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
-     logical_or, atleast_1d, atleast_2d, meshgrid
+     logical_or, atleast_1d, atleast_2d, meshgrid, ravel
 import numpy as np
 
 import fitpack
@@ -34,11 +34,25 @@ class interp2d(object):
 
         Parameters
         ----------
-        x : 1D array or 2D meshgrid array
-        y : 1D array or 2D meshgrid array
-            Arrays defining the coordinates of a 2D grid.
-        z : 2D array
-            The values of the interpolated function on the grid points.
+        x : 1D array
+        y : 1D array
+            Arrays defining the coordinates of a 2D grid.  If the
+            points lie on a regular grid, x and y can simply specify
+            the rows and colums, i.e.
+
+            x = [0,1,2]  y = [0,1,2]
+            
+            otherwise x and y must specify the full coordinates, i.e.
+            
+            x = [0,1,2,0,1.5,2,0,1,2]  y = [0,1,2,0,1,2,0,1,2]
+            
+            If x and y are 2-dimensional, they are flattened (allowing
+            the use of meshgrid, for example).
+            
+        z : 1D array
+            The values of the interpolated function on the grid
+            points. If z is a 2-dimensional array, it is flattened.
+
         kind : 'linear', 'cubic', 'quintic'
             The kind of interpolation to use.
         copy : bool
@@ -56,27 +70,27 @@ class interp2d(object):
         ValueError when inputs are invalid.
 
         """        
-        self.x = atleast_1d(x).copy()
-        self.y = atleast_1d(y).copy()
-        if rank(self.x) == 1 and rank(self.y) == 1:
-            # Prepare meshgrid for bisplrep
-            x, y = meshgrid(x,y)        
-        if rank(self.x) > 2 or rank(self.y) > 2:
-            raise ValueError("One of the input arrays is not 1-d or 2-d.")
-        if rank(self.x) == 2:
-            self.x = self.x[:,0]
-        if rank(self.y) == 2:
-            self.y = self.y[0]
-        self.z = array(z,copy=True)
-        if rank(z) != 2:
-            raise ValueError("Grid values is not a 2-d array.")
+        self.x, self.y, self.z = map(ravel, map(array, [x, y, z]))
+        if not (rank(self.x) == 1 and rank(self.y) == 1 and rank(self.z) == 1):
+            raise ValueError("One of the input arrays is not 1-d.")
+        if len(self.x) != len(self.y):
+            raise ValueError("x and y must have equal lengths")
+        if len(self.z) == len(self.x) * len(self.y):
+            print "di"
+            self.x, self.y = meshgrid(x,y)
+            self.x, self.y = map(ravel, [self.x, self.y])
+            print self.x, self.y, self.z
+        if len(self.z) != len(self.x):
+            raise ValueError("Invalid length for input z")
+        
         try:
             kx = ky = {'linear' : 1,
                        'cubic' : 3,
                        'quintic' : 5}[kind]
         except KeyError:
             raise ValueError("Unsupported interpolation type.")
-        self.tck = fitpack.bisplrep(x, y, z, kx=kx, ky=ky, s=0.)
+        
+        self.tck = fitpack.bisplrep(self.x, self.y, self.z, kx=kx, ky=ky, s=0.)
 
     def __call__(self,x,y,dx=0,dy=0):
         """ Interpolate the function.
