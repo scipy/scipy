@@ -76,10 +76,8 @@ class interp2d(object):
         if len(self.x) != len(self.y):
             raise ValueError("x and y must have equal lengths")
         if len(self.z) == len(self.x) * len(self.y):
-            print "di"
             self.x, self.y = meshgrid(x,y)
             self.x, self.y = map(ravel, [self.x, self.y])
-            print self.x, self.y, self.z
         if len(self.z) != len(self.x):
             raise ValueError("Invalid length for input z")
         
