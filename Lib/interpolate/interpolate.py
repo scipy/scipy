@@ -8,7 +8,7 @@ __all__ = ['interp1d', 'interp2d']
 
 from numpy import shape, sometrue, rank, array, transpose, \
      swapaxes, searchsorted, clip, take, ones, putmask, less, greater, \
-     logical_or, atleast_1d, atleast_2d
+     logical_or, atleast_1d, atleast_2d, meshgrid
 import numpy as np
 
 import fitpack
@@ -55,10 +55,12 @@ class interp2d(object):
         ------
         ValueError when inputs are invalid.
 
-        """
-
+        """        
         self.x = atleast_1d(x).copy()
         self.y = atleast_1d(y).copy()
+        if rank(self.x) == 1 and rank(self.y) == 1:
+            # Prepare meshgrid for bisplrep
+            x, y = meshgrid(x,y)        
         if rank(self.x) > 2 or rank(self.y) > 2:
             raise ValueError("One of the input arrays is not 1-d or 2-d.")
         if rank(self.x) == 2:
