@@ -71,7 +71,7 @@ class interp2d(object):
 
         """        
         self.x, self.y, self.z = map(ravel, map(array, [x, y, z]))
-        if not (rank(self.x) == 1 and rank(self.y) == 1 and rank(self.z) == 1):
+        if not map(rank, [self.x, self.y, self.z]) == [1,1,1]:
             raise ValueError("One of the input arrays is not 1-d.")
         if len(self.x) != len(self.y):
             raise ValueError("x and y must have equal lengths")
