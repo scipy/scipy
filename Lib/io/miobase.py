@@ -391,7 +391,27 @@ class DownCaster(object):
             self.dt_dict = dt_dict
         self.rtol = rtol
         self.atol = atol
-        
+
+    def eps(self, dt):
+        ''' Calculate machine precision for datatype
+
+        Machine precision defined as difference between X and smallest
+        encodable number greater than X, where X is usually 1.
+
+        Input can be datatype, in which case X=1, or X.
+        '''
+        try:
+            dt = dtype(dt)
+            start = array(1, dt)
+        except TypeError:
+            start = array(dt)
+            dt = start.dtype
+        two = array(2, dt)
+        e = start.copy()
+        while (e / two + start) > start:
+            e = e / two
+        return e
+    
     def default_dt_dict(self):
         d_dict = {}
         for sc_type in ('complex','float'):
@@ -474,10 +494,9 @@ class DownCaster(object):
             
     def downcast_complex(self, arr):
         # can we downcast to float?
-        flts = self.storage_criterion(arr.dtype.itemsize / 2,
-                                     ('f'),
-                                      lambda x, y: x <=y)[0]
-        test_arr = arr.astype(flt)
+        fts = self.dt_arrs['float']
+        flts = flts[flts['storage'] <= arr.dtype.itemsize]
+        test_arr = arr.astype(flt[0]['type'])
         if allclose(arr, test_arr, self.rtol, self.atol):
             return self.downcast_float(test_arr)
         # try downcasting to another complex type
