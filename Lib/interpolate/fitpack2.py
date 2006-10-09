@@ -93,7 +93,7 @@ class UnivariateSpline(object):
     def _reset_class(self):
         data = self._data
         n,t,c,k,ier = data[7],data[8],data[9],data[5],data[-1]
-        self._eval_args = t[:n],c[:n-k-1],k
+        self._eval_args = t[:n],c[:n],k
         if ier==0:
             # the spline returned has a residual sum of squares fp
             # such that abs(fp-s)/s <= tol with tol a relative

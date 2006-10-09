@@ -73,7 +73,7 @@ static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
        ! y = splev(t,c,k,x)
        real*8 dimension(n),intent(in) :: t
        integer intent(hide),depend(t) :: n=len(t)
-       real*8 dimension(n-k-1),depend(n,k),check(len(c)==n-k-1),intent(in) :: c
+       real*8 dimension(n),depend(n,k),check(len(c)==n),intent(in) :: c
        integer :: k
        real*8 dimension(m),intent(in) :: x
        real*8 dimension(m),depend(m),intent(out) :: y
@@ -85,7 +85,7 @@ static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
        ! dy = splder(t,c,k,x,[nu])
        real*8 dimension(n) :: t
        integer depend(t),intent(hide) :: n=len(t)
-       real*8 dimension(n-k-1),depend(n,k),check(len(c)==n-k-1),intent(in) :: c
+       real*8 dimension(n),depend(n,k),check(len(c)==n),intent(in) :: c
        integer :: k
        integer depend(k),check(0<=nu && nu<=k) :: nu = 1
        real*8 dimension(m) :: x
