@@ -376,7 +376,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=1e-3,t=None,
         n,c,fp,ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk, xb, xe, k, s)
     else:
         n,c,fp,ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
-    tck = [t[:n],c[:n-k-1],k]
+    tck = (t[:n],c[:n-k-1],k)
     if ier<=0 and not quiet:
         print _iermess[ier][0]
         print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
