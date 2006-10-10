@@ -690,6 +690,39 @@ k\end{array}\right)\left(-\mu\right)^{k}\mu_{n-k}^{\prime}\end{eqnarray*}
  
 \layout Subsection
 
+Median and mode
+\layout Standard
+
+The mean, 
+\begin_inset Formula $m_{n}$
+\end_inset 
+
+ is defined as the point at which half of the density is on one side and
+ half on the other.
+ In other words, 
+\begin_inset Formula $F\left(m_{n}\right)=\frac{1}{2}$
+\end_inset 
+
+ so that 
+\begin_inset Formula \[
+m_{n}=G\left(\frac{1}{2}\right).\]
+
+\end_inset 
+
+ In addition, the mode, 
+\begin_inset Formula $m_{d}$
+\end_inset 
+
+, is defined as the value for which the probability density function reaches
+ it's peak 
+\begin_inset Formula \[
+m_{d}=\arg\max_{x}f\left(x\right).\]
+
+\end_inset 
+
+
+\layout Subsection
+
 Fitting data
 \layout Standard
 
@@ -2296,7 +2329,8 @@ G\left(q;a,c\right) & = & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)q\right
 \mu & = & \frac{\Gamma\left(a+\frac{1}{c}\right)}{\Gamma\left(a\right)}\\
 \mu_{2} & = & \frac{\Gamma\left(a+\frac{2}{c}\right)}{\Gamma\left(a\right)}-\mu^{2}\\
 \gamma_{1} & = & \frac{\Gamma\left(a+\frac{3}{c}\right)/\Gamma\left(a\right)-3\mu\mu_{2}-\mu^{3}}{\mu_{2}^{3/2}}\\
-\gamma_{2} & = & \frac{\Gamma\left(a+\frac{4}{c}\right)/\Gamma\left(a\right)-4\mu\mu_{3}-6\mu^{2}\mu_{2}-\mu^{4}}{\mu_{2}^{2}}-3\end{eqnarray*}
+\gamma_{2} & = & \frac{\Gamma\left(a+\frac{4}{c}\right)/\Gamma\left(a\right)-4\mu\mu_{3}-6\mu^{2}\mu_{2}-\mu^{4}}{\mu_{2}^{2}}-3\\
+m_{d} & = & \left(\frac{ac-1}{c}\right)^{1/c}.\end{eqnarray*}
 
 \end_inset 
 
@@ -2901,6 +2935,12 @@ G\left(q;a\right) & = & \left\{ \Gamma^{-1}\left[a,\Gamma\left(a\right)q\right]\
 \mu_{2} & = & \frac{1}{\left(a-2\right)\left(a-1\right)}-\mu^{2}\\
 \gamma_{1} & = & \frac{\frac{1}{\left(a-3\right)\left(a-2\right)\left(a-1\right)}-3\mu\mu_{2}-\mu^{3}}{\mu_{2}^{3/2}}\\
 \gamma_{2} & = & \frac{\frac{1}{\left(a-4\right)\left(a-3\right)\left(a-2\right)\left(a-1\right)}-4\mu\mu_{3}-6\mu^{2}\mu_{2}-\mu^{4}}{\mu_{2}^{2}}-3\end{eqnarray*}
+
+\end_inset 
+
+
+\begin_inset Formula \[
+m_{d}=\frac{1}{a+1}\]
 
 \end_inset 
 

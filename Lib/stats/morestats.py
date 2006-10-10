@@ -16,6 +16,7 @@ import scipy
 import numpy
 import types
 import scipy.optimize as optimize
+import scipy.special as special
 import futil
 import numpy as sb
 
@@ -50,17 +51,18 @@ def bayes_mvs(data,alpha=0.90):
 
     Assumes 1-d data all has same mean and variance and uses Jeffrey's prior
     for variance and std.
-
     alpha gives the probability that the returned interval contains
     the true parameter.
 
     Uses peak of conditional pdf as starting center.
 
     Returns (peak, (a, b)) for each of mean, variance and standard deviation.
+    Requires 2 or more data-points.
     """
     x = ravel(data)
     n = len(x)
     assert(n > 1)
+    assert(alpha < 1 and alpha > 0)
     n = float(n)
     xbar = sb.add.reduce(x)/n
     C = sb.add.reduce(x*x)/n - xbar*xbar
@@ -73,29 +75,35 @@ def bayes_mvs(data,alpha=0.90):
     mp = xbar
     #
     fac = n*C/2.0
-    peak = 2/(n+1.)
-    a = (n-1)/2.0
-    F_peak = distributions.invgamma.cdf(peak,a)
+    a = (n-1)/2.0    
+    if (n > 3): # use mean of distribution as center
+        peak = 2/(n-3.0)
+        F_peak = distributions.invgamma.cdf(peak,a)
+    else: # use median
+        F_peak = -1.0
+    if (F_peak < alpha/2.0):
+        peak = distributions.invgamma.ppf(0.5,a)
+        F_peak = 0.5
     q1 = F_peak - alpha/2.0
     q2 = F_peak + alpha/2.0
-    if (q1 < 0):  # non-symmetric area
-        q2 = alpha
-        va = 0.0
-    else:
-        va = fac*distributions.invgamma.ppf(q1,a)
+    if (q2 > 1): q2 = 1.0
+    va = fac*distributions.invgamma.ppf(q1,a)
     vb = fac*distributions.invgamma.ppf(q2,a)
     vp = peak*fac
     #
     fac = sqrt(fac)
-    peak = sqrt(2./n)
-    F_peak = distributions.gengamma.cdf(peak,a,-2)
+    if (n > 2):
+        peak = special.gamma(a-0.5) / special.gamma(a)
+        F_peak = distributions.gengamma.cdf(peak,a,-2)
+    else: # use median
+        F_peak = -1.0
+    if (F_peak < alpha/2.0):
+        peak = distributions.gengamma.ppf(0.5,a,-2)
+        F_peak = 0.5        
     q1 = F_peak - alpha/2.0
     q2 = F_peak + alpha/2.0
-    if (q1 < 0):
-        q2 = alpha
-        sta = 0.0
-    else:
-        sta = fac*distributions.gengamma.ppf(q1,a,-2)
+    if (q2 > 1): q2 = 1.0    
+    sta = fac*distributions.gengamma.ppf(q1,a,-2)
     stb = fac*distributions.gengamma.ppf(q2,a,-2)
     stp = peak*fac
 
