@@ -2,6 +2,8 @@
 # this module. No care has been taken to ensure that it works in its current
 # state. At minimum, you will have to figure out what it needs to import to work.
 
+from numpy import sum
+
 def anova(data, effects=['A','B','C','D','E','F','G','H','I','J','K']):
     """
 Prints the results of single-variable between- and within-subject ANOVA
@@ -355,8 +357,8 @@ lists-of-lists.
             sourceNarray = apply_over_axes(hmean, Narray,btwnonsourcedims)
 
     ## Calc grand average (ga,axis=0), used for ALL effects
-            ga = sum((sourceMarray*sourceNarray)/
-                            sum(sourceNarray,axis=0),axis=0)
+            ga = sum((sourceMarray*sourceNarray)/ \
+                     sum(sourceNarray,axis=0),axis=0)
             ga = reshape(ga,ones(len(Marray.shape)))
 
     ## If GRAND interaction, use harmonic mean of ALL cell Ns

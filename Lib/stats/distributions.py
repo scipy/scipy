@@ -18,6 +18,7 @@ from numpy import atleast_1d, polyval, angle, ceil, place, extract, \
 import numpy
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
+from scipy.special import gammaln as gamln
 
 __all__ = [
            'rv_continuous',
@@ -1707,7 +1708,7 @@ class gengamma_gen(rv_continuous):
     def _argcheck(self, a, c):
         return (a > 0) & (c != 0)
     def _pdf(self, x, a, c):
-        return abs(c)* x**(c*a-1) / special.gamma(a) * exp(-x**c)
+        return abs(c)* exp((c*a-1)*log(x)-x**c- special.gammaln(a))
     def _cdf(self, x, a, c):
         val = special.gammainc(a,x**c)
         cond = c + 0*val
@@ -1973,13 +1974,13 @@ C = 1/(B(a,b)F[2,1](c,a;a+b;-z))
 
 class invgamma_gen(rv_continuous):
     def _pdf(self, x, a):
-        return x**(-a-1) / special.gamma(a) * exp(-1.0/x)
+        return exp(-(a+1)*log(x)-special.gammaln(a) - 1.0/x)
     def _cdf(self, x, a):
         return 1.0-special.gammainc(a, 1.0/x)
     def _ppf(self, q, a):
         return 1.0/special.gammaincinv(a,1-q)
     def _munp(self, n, a):
-        return special.gamma(a-n) / special.gamma(a)
+        return exp(special.gammaln(a-n) - special.gammaln(a))
     def _entropy(self, a):
         return a - (a+1.0)*special.psi(a) + special.gammaln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma',longname="An inverted gamma",
@@ -2232,7 +2233,7 @@ logistic.pdf(x) = exp(-x)/(1+exp(-x))**2
 #
 class loggamma_gen(rv_continuous):
     def _pdf(self, x, c):
-        return exp(c*x-exp(x))/ special.gamma(c)
+        return exp(c*x-exp(x)-special.gammaln(c))
     def _cdf(self, x, c):
         return special.gammainc(c, exp(x))/ special.gamma(c)
     def _ppf(self, q, c):
@@ -2446,20 +2447,21 @@ class ncf_gen(rv_continuous):
         return mtrand.noncentral_f(dfn,dfd,nc,self._size)
     def _pdf(self, x, dfn, dfd, nc):
         n1,n2 = dfn, dfd
-        Px = exp(-nc/2+nc*n1*x/(2*(n2+n1*x)))
+        term = -nc/2+nc*n1*x/(2*(n2+n1*x)) + gamln(n1/2.)+gamln(1+n2/2.)
+        term -= gamln((n1+n2)/2.0)
+        Px = exp(term)
         Px *= n1**(n1/2) * n2**(n2/2) * x**(n1/2-1)
         Px *= (n2+n1*x)**(-(n1+n2)/2)
-        Px *= special.gamma(n1/2)*special.gamma(1+n2/2)
         Px *= special.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)),n2/2,n1/2-1)
-        Px /= special.beta(n1/2,n2/2)*special.gamma((n1+n2)/2.0)
+        Px /= special.beta(n1/2,n2/2)
     def _cdf(self, x, dfn, dfd, nc):
         return special.ncfdtr(dfn,dfd,nc,x)
     def _ppf(self, q, dfn, dfd, nc):
         return special.ncfdtri(dfn, dfd, nc, q)
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn *1.0/dfd)**n
-        val *= gam(n+0.5*dfn)*gam(0.5*dfd-n) / gam(dfd*0.5)
-        val *= exp(-nc / 2.0)
+        term = gamln(n+0.5*dfn) + gamln(0.5*dfd-n) - gamln(dfd*0.5)
+        val *= exp(-nc / 2.0+term)
         val *= special.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
         return val
     def _stats(self, dfn, dfd, nc):
@@ -2528,8 +2530,9 @@ class nct_gen(rv_continuous):
         x2 = x*x
         ncx2 = nc*nc*x2
         fac1 = n + x2
-        Px = n**(n/2) * special.gamma(n+1)
-        Px /= arr(2.0**n*exp(nc*nc/2)*fac1**(n/2)*special.gamma(n/2))
+        trm1 = n/2.*log(n) + gamln(n+1)
+        trm1 -= n*log(2)+nc*nc/2.+(n/2.)*log(fac1)+gamln(n/2.)
+        Px = exp(trm1)
         valF = ncx2 / (2*fac1)
         trm1 = sqrt(2)*nc*x*special.hyp1f1(n/2+1,1.5,valF)
         trm1 /= arr(fac1*special.gamma((n+1)/2))

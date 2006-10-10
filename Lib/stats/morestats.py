@@ -40,6 +40,32 @@ def find_repeats(arr):
 ###  Bayesian confidence intervals for mean, variance, std
 ##########################################################
 
+# assume distributions are gaussian with given means and variances.
+def _gauss_mvs(x, n, alpha):
+    xbar = x.mean()
+    C = x.var()
+    val = distributions.norm.ppf((1+alpha)/2.0)
+    # mean is a Gaussian with mean xbar and variance C/n
+    mp = xbar
+    fac0 = sqrt(C/n)
+    term = fac0*val
+    ma = mp - term
+    mb = mp + term
+    # var is a Gaussian with mean C and variance 2*C*C/n
+    vp = C
+    fac1 = sqrt(2.0/n)*C
+    term = fac1*val
+    va = vp - term
+    vb = vp + term
+    # std is a Gaussian with mean sqrt(C) and variance C/(2*n)
+    st = sqrt(C)
+    fac2 = sqrt(0.5)*fac0
+    term = fac2*val
+    sta = st - term
+    stb = st + term
+    return mp, (ma, mb), vp, (va, vb), st, (sta, stb)
+    
+
 ##  Assumes all is known is that mean, and std (variance,axis=0) exist
 ##   and are the same for all the data.  Uses Jeffrey's prior
 ##
@@ -51,12 +77,14 @@ def bayes_mvs(data,alpha=0.90):
 
     Assumes 1-d data all has same mean and variance and uses Jeffrey's prior
     for variance and std.
-    alpha gives the probability that the returned interval contains
+
+    alpha gives the probability that the returned confidence interval contains
     the true parameter.
 
-    Uses peak of conditional pdf as starting center.
+    Uses mean of conditional pdf as center estimate
+    (but centers confidence interval on the median)
 
-    Returns (peak, (a, b)) for each of mean, variance and standard deviation.
+    Returns (center, (a, b)) for each of mean, variance and standard deviation.
     Requires 2 or more data-points.
     """
     x = ravel(data)
@@ -64,48 +92,43 @@ def bayes_mvs(data,alpha=0.90):
     assert(n > 1)
     assert(alpha < 1 and alpha > 0)
     n = float(n)
-    xbar = sb.add.reduce(x)/n
-    C = sb.add.reduce(x*x)/n - xbar*xbar
-    #
+    if (n > 1000): # just a guess.  The curves look similar at this point.
+        return _gauss_mvs(x, n, alpha)
+    xbar = x.mean()
+    C = x.var()
+    # mean
     fac = sqrt(C/(n-1))
     tval = distributions.t.ppf((1+alpha)/2.0,n-1)
     delta = fac*tval
     ma = xbar - delta
     mb = xbar + delta
     mp = xbar
-    #
+    # var
     fac = n*C/2.0
-    a = (n-1)/2.0    
-    if (n > 3): # use mean of distribution as center
-        peak = 2/(n-3.0)
-        F_peak = distributions.invgamma.cdf(peak,a)
-    else: # use median
-        F_peak = -1.0
-    if (F_peak < alpha/2.0):
+    a = (n-1)/2
+    if (n < 4):
         peak = distributions.invgamma.ppf(0.5,a)
-        F_peak = 0.5
-    q1 = F_peak - alpha/2.0
-    q2 = F_peak + alpha/2.0
-    if (q2 > 1): q2 = 1.0
+    else:
+        peak = 2.0/(n-3.0)
+    q1 = (1-alpha)/2.0
+    q2 = (1+alpha)/2.0
     va = fac*distributions.invgamma.ppf(q1,a)
     vb = fac*distributions.invgamma.ppf(q2,a)
     vp = peak*fac
-    #
+    # std
     fac = sqrt(fac)
-    if (n > 2):
-        peak = special.gamma(a-0.5) / special.gamma(a)
-        F_peak = distributions.gengamma.cdf(peak,a,-2)
-    else: # use median
-        F_peak = -1.0
-    if (F_peak < alpha/2.0):
+    if (n < 3):
         peak = distributions.gengamma.ppf(0.5,a,-2)
-        F_peak = 0.5        
-    q1 = F_peak - alpha/2.0
-    q2 = F_peak + alpha/2.0
-    if (q2 > 1): q2 = 1.0    
+        stp = fac*peak
+    else:
+        ndiv2 = (n-1)/2.0
+        term = special.gammaln(ndiv2-0.5)-special.gammaln(ndiv2)
+        term += (log(n)+log(C)-log(2.0))*0.5
+        stp = exp(term)
+    q1 = (1-alpha)/2.0
+    q2 = (1+alpha)/2.0
     sta = fac*distributions.gengamma.ppf(q1,a,-2)
     stb = fac*distributions.gengamma.ppf(q2,a,-2)
-    stp = peak*fac
 
     return (mp,(ma,mb)),(vp,(va,vb)),(stp,(sta,stb))
 
