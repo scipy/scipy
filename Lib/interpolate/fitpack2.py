@@ -13,10 +13,11 @@ __all__ = [
     'LSQUnivariateSpline',
 
     'LSQBivariateSpline',
-    'SmoothBivariateSpline']
+    'SmoothBivariateSpline',
+    'RectBivariateSpline']
 
 import warnings
-from numpy import zeros, concatenate, alltrue
+from numpy import zeros, concatenate, alltrue, ravel, all, diff
 
 import dfitpack
 
@@ -134,6 +135,7 @@ class UnivariateSpline(object):
     def set_smoothing_factor(self, s):
         """ Continue spline computation with the given smoothing
         factor s and with the knots found at the last call.
+        
         """
         data = self._data
         if data[6]==-1:
@@ -150,8 +152,9 @@ class UnivariateSpline(object):
 
     def __call__(self, x, nu=None):
         """ Evaluate spline (or its nu-th derivative) at positions x.
-        Note: x can be unordered but the evaluation is
-        more efficient if x is (partially) ordered.
+        Note: x can be unordered but the evaluation is more efficient
+        if x is (partially) ordered.
+        
         """
         if nu is None:
             return dfitpack.splev(*(self._eval_args+(x,)))
@@ -166,14 +169,15 @@ class UnivariateSpline(object):
         return data[8][k:n-k]
 
     def get_coeffs(self):
-        """ Return spline coefficients."""
+        """Return spline coefficients."""
         data = self._data
         k,n = data[5],data[7]
         return data[9][:n-k-1]
 
     def get_residual(self):
-        """ Return weighted sum of squared residuals of the spline
+        """Return weighted sum of squared residuals of the spline
         approximation: sum ((w[i]*(y[i]-s(x[i])))**2,axis=0)
+        
         """
         return self._data[10]
 
@@ -199,10 +203,14 @@ class UnivariateSpline(object):
             z,m,ier = dfitpack.sproot(*self._eval_args[:2])
             assert ier==0,`ier`
             return z[:m]
-        raise NotImplementedError,'finding roots unsupported for non-cubic splines'
+        raise NotImplementedError,\
+              'finding roots unsupported for non-cubic splines'
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
-    """ Interpolated univariate spline approximation. Identical to UnivariateSpline with less error checking."""
+    """ Interpolated univariate spline approximation. Identical to
+    UnivariateSpline with less error checking.
+
+    """
 
     def __init__(self, x, y, w=None, bbox = [None]*2, k=3):
         """
@@ -223,7 +231,11 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         self._reset_class()
 
 class LSQUnivariateSpline(UnivariateSpline):
-    """ Weighted least-squares univariate spline approximation. Appears to be identical to UnivariateSpline with more error checking."""
+    """ Weighted least-squares univariate spline
+    approximation. Appears to be identical to UnivariateSpline with
+    more error checking.
+
+    """
 
     def __init__(self, x, y, t, w=None, bbox = [None]*2, k=3):
         """
@@ -361,7 +373,8 @@ class SmoothBivariateSpline(BivariateSpline):
           w          - positive 1-d sequence of weights
           bbox       - 4-sequence specifying the boundary of
                        the rectangular approximation domain.
-                       By default, bbox=[min(x,tx),max(x,tx),min(y,ty),max(y,ty)]
+                       By default, bbox=[min(x,tx),max(x,tx),
+                                         min(y,ty),max(y,ty)]
           kx,ky=3,3  - degrees of the bivariate spline.
           s          - positive smoothing factor defined for
                        estimation condition:
@@ -374,9 +387,10 @@ class SmoothBivariateSpline(BivariateSpline):
                        equations. 0 < eps < 1, default is 1e-16.
         """
         xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,\
-                                                         xb,xe,yb,ye,\
-                                                         kx,ky,s=s,eps=eps,lwrk2=1)
+        nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
+                                                         xb,xe,yb,ye,
+                                                         kx,ky,s=s,
+                                                         eps=eps,lwrk2=1)
         if ier in [0,-1,-2]: # normal return
             pass
         else:
@@ -410,7 +424,8 @@ class LSQBivariateSpline(BivariateSpline):
           w          - positive 1-d sequence of weights
           bbox       - 4-sequence specifying the boundary of
                        the rectangular approximation domain.
-                       By default, bbox=[min(x,tx),max(x,tx),min(y,ty),max(y,ty)]
+                       By default, bbox=[min(x,tx),max(x,tx),
+                                         min(y,ty),max(y,ty)]
           kx,ky=3,3  - degrees of the bivariate spline.
           eps        - a threshold for determining the effective rank
                        of an over-determined linear system of
@@ -443,3 +458,63 @@ class LSQBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tx1,ty1,c
         self.degrees = kx,ky
+
+class RectBivariateSpline(BivariateSpline):
+    """ Bivariate spline approximation over a rectangular mesh.
+
+    Can be used for both smoothing or interpolating data.
+
+    See also:
+
+    SmoothBivariateSpline - a smoothing bivariate spline for scattered data
+    bisplrep, bisplev - an older wrapping of FITPACK
+    UnivariateSpline - a similar class for univariate spline interpolation
+    """
+
+    def __init__(self, x, y, z,
+                 bbox = [None]*4, kx=3, ky=3, s=0):
+        """
+        Input:
+          x,y  - 1-d sequences of coordinates in strictly ascending order
+            z  - 2-d array of data with shape (x.size,y.size)
+        Optional input:
+          bbox       - 4-sequence specifying the boundary of
+                       the rectangular approximation domain.
+                       By default, bbox=[min(x,tx),max(x,tx),
+                                         min(y,ty),max(y,ty)]
+          kx,ky=3,3  - degrees of the bivariate spline.
+          s          - positive smoothing factor defined for
+                       estimation condition:
+                         sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s
+                       Default s=0 which is for interpolation
+        """
+        x,y = ravel(x),ravel(y)
+        if not all(diff(x) > 0.0):
+            raise TypeError,'x must be strictly increasing'
+        if not all(diff(y) > 0.0):
+            raise TypeError,'y must be strictly increasing'
+        if not ((x.min() == x[0]) and (x.max() == x[-1])):
+            raise TypeError, 'x must be strictly ascending' 
+        if not ((y.min() == y[0]) and (y.max() == y[-1])):
+            raise TypeError, 'y must be strictly ascending' 
+        if not x.size == z.shape[0]:
+            raise TypeError,\
+                  'x dimension of z must have same number of elements as x'
+        if not y.size == z.shape[1]:
+            raise TypeError,\
+                  'y dimension of z must have same number of elements as y'
+        z = ravel(z)
+        xb,xe,yb,ye = bbox
+        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
+                                                    xb,xe,yb,ye,
+                                                    kx,ky,s)
+        if ier in [0,-1,-2]: # normal return
+            pass
+        else:
+            message = _surfit_messages.get(ier,'ier=%s' % (ier))
+            warnings.warn(message)
+
+        self.fp = fp
+        self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
+        self.degrees = kx,ky
+

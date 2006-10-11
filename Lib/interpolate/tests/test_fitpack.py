@@ -14,10 +14,12 @@ Run tests if interpolate is not installed:
 
 import sys
 from numpy.testing import *
+from numpy import array
 set_package_path()
 from interpolate.fitpack2 import UnivariateSpline,LSQUnivariateSpline,\
      InterpolatedUnivariateSpline
-from interpolate.fitpack2 import LSQBivariateSpline, SmoothBivariateSpline
+from interpolate.fitpack2 import LSQBivariateSpline, SmoothBivariateSpline,\
+     RectBivariateSpline
 restore_path()
 
 class test_UnivariateSpline(ScipyTestCase):
@@ -72,6 +74,14 @@ class test_SmoothBivariateSpline(ScipyTestCase):
         assert_array_almost_equal(lut.get_coeffs(),[0,0,4,4])
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
+
+class test_RectBivariateSpline(ScipyTestCase):
+    def check_defaults(self):
+        x = array([1,2,3,4,5])
+        y = array([1,2,3,4,5])
+        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        lut = RectBivariateSpline(x,y,z)
+        assert_array_almost_equal(lut(x,y),z)
 
 if __name__ == "__main__":
     ScipyTest().run()
