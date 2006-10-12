@@ -41,7 +41,7 @@ class Model(WLSModel):
         """
         Continue iterating, or has convergence been obtained?
         """
-        if self.iter >= GeneralizedLinearModel.niter:
+        if self.iter >= Model.niter:
             return False
 
         curdev = self.deviance(results=results)
