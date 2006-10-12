@@ -1,4 +1,4 @@
-import types, re, string, csv, copy
+import types, copy
 import numpy as N
 
 terms = {}
@@ -82,7 +82,7 @@ class Term:
                 val = val(namespace=namespace, **extra)
             elif callable(val):
                 val = val(**extra)
-	else:
+        else:
             val = self.func(namespace=namespace, **extra)
         val = N.asarray(val)
         return N.squeeze(val)
@@ -110,6 +110,7 @@ class Factor(Term):
 
             def func(namespace=terms, key=key):
                 v = namespace[self._name]
+                # FIXME: n is not defined here
                 col = [float(self.keys.index(v[i])) for i in range(n)]
                 return N.array(col)
             Term.__init__(self, self.name, func=func)
@@ -214,7 +215,6 @@ class Quantitative(Term):
         return value
 
 class FuncQuant(Quantitative):
-
     """
     A Term for a quantitative function of a Term.
     """
@@ -231,6 +231,7 @@ class FuncQuant(Quantitative):
         def func(namespace=terms, f=self.f):
             x = namespace[x.name]
             return f(x)
+        # FIXME: quant is not defined here.
         try:
             termname = '%s(%s)' % (f.func_name, quant.name)
         except:
@@ -432,7 +433,7 @@ class Formula:
                             name = '%s*%s' % (str(selfnames[r]), str(othernames[s]))
                             pieces = name.split('*')
                             pieces.sort()
-                            name = string.join(pieces, '*')
+                            name = '*'.join(pieces)
                             names.append(name)
 
                     def func(namespace=terms, selfterm=self.terms[i], otherterm=other.terms[j], **extra):
