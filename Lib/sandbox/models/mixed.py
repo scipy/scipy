@@ -1,7 +1,6 @@
-import UserDict
 import numpy as N
 import numpy.linalg as L
-from formula import Term, Formula, I
+from formula import Formula, I
 
 class Unit:
 
