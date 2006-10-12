@@ -3,6 +3,9 @@ def configuration(parent_package='',top_path=None, package_name='models'):
     config = Configuration(package_name,parent_package,top_path)
 
     config.add_subpackage('*')
+
+    config.add_data_dir('tests')
+
    
     return config
 
