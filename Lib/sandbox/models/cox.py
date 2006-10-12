@@ -60,8 +60,6 @@ class ProportionalHazards(model.LikelihoodModel):
 
     def initialize(self, subjects):
 
-        v = [(s.delta, s.time) for s in subjects]
-
         self.failures = {}
         for i in range(len(subjects)):
             s = subjects[i]
@@ -158,6 +156,9 @@ class ProportionalHazards(model.LikelihoodModel):
                 raise NotImplementedError, 'Cox tie breaking method not implemented'
             else:
                 raise NotImplementedError, 'tie breaking method not recognized'
+        # FIXME: score is an int. it has no shape
+        # is it that we shouldn't be using an int above
+        # or that we shouldn't be looking at shape here
         if score.shape == ():
             score = N.array([score])
         return score
