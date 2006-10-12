@@ -1,10 +1,11 @@
 import unittest
 from numpy.random import standard_normal
 from scipy.sandbox.models.regression import OLSModel, ARModel
+from numpy.testing import *
 
 W = standard_normal
 
-class RegressionTest(unittest.TestCase):
+class test_Regression(ScipyTestCase):
 
     def testOLS(self):
         X = W((40,10))
@@ -42,4 +43,4 @@ def suite():
         
 
 if __name__ == '__main__':
-    unittest.main()
+    ScipyTest.run()

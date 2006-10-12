@@ -3,10 +3,11 @@ import numpy as N
 import numpy.random as R
 import numpy.linalg as L
 import scipy, string
+from numpy.testing import *
 
-from models import utils, formula, contrast
+from scipy.sandbox.models import utils, formula, contrast
 
-class TermTest(unittest.TestCase):
+class test_Term(ScipyTestCase):
 
     def test_init(self):
         t1 = formula.Term("trivial")
@@ -41,7 +42,7 @@ class TermTest(unittest.TestCase):
         f = intercept * t1
         self.assertEqual(str(f), str(formula.Formula(t1)))
 
-class FormulaTest(unittest.TestCase):
+class test_Formula(ScipyTestCase):
 
     def setUp(self):
         self.X = R.standard_normal((40,10))
@@ -72,7 +73,7 @@ class FormulaTest(unittest.TestCase):
         self.formula += prod
         x = self.formula.design(namespace=self.namespace)
         col = self.formula.termcolumns(prod, dict=False)
-        scipy.testing.assert_almost_equal(N.squeeze(x[:,col]), self.X[:,0] * self.X[:,2])
+        assert_almost_equal(N.squeeze(x[:,col]), self.X[:,0] * self.X[:,2])
 
     def test_contrast1(self):
         term = self.terms[0] + self.terms[2]
@@ -81,7 +82,7 @@ class FormulaTest(unittest.TestCase):
         col1 = self.formula.termcolumns(self.terms[0], dict=False)
         col2 = self.formula.termcolumns(self.terms[1], dict=False)
         test = [[1] + [0]*9, [0]*2 + [1] + [0]*7]
-        scipy.testing.assert_almost_equal(c.matrix, test)
+        assert_almost_equal(c.matrix, test)
 
     def test_contrast2(self):
     
@@ -91,7 +92,7 @@ class FormulaTest(unittest.TestCase):
         c = contrast.Contrast(term, self.formula)
         c.getmatrix(namespace=self.namespace)
         test = [0]*2 + [1] + [0]*7
-        scipy.testing.assert_almost_equal(c.matrix, test)
+        assert_almost_equal(c.matrix, test)
 
     def test_contrast3(self):
     
@@ -124,4 +125,4 @@ def suite():
 
 
 if __name__ == '__main__':
-    unittest.main()
+    ScipyTest.run()
