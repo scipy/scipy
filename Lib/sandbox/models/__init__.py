@@ -6,7 +6,12 @@ import family
 from glm import Model as glm
 from rlm import Model as rlm
 
+
+
 import unittest
 def suite():
     return unittest.TestSuite([tests.suite()])
 
+
+from numpy.testing import ScipyTest
+test = ScipyTest().test
