@@ -38,9 +38,9 @@ class OLSModel(LikelihoodModel):
             
         Z = self.whiten(Y)
 
-        lfit = Results(L.lstsq(self.wdesign, Z)[0])
+        lfit = Results(L.lstsq(self.wdesign, Z)[0], Y)
         lfit.predict = N.dot(self.design, lfit.beta)
-        lfit.Y = Y
+
 
     def fit(self, Y, **keywords):
         """
@@ -51,7 +51,7 @@ class OLSModel(LikelihoodModel):
     
         Z = self.whiten(Y)
 
-        lfit = Results(N.dot(self.calc_beta, Z),
+        lfit = Results(N.dot(self.calc_beta, Z), Y,
                        normalized_cov_beta=self.normalized_cov_beta)
 
         lfit.df_resid = self.df_resid
@@ -60,7 +60,6 @@ class OLSModel(LikelihoodModel):
         lfit.scale = N.add.reduce(lfit.resid**2) / lfit.df_resid
 
         lfit.Z = Z # just in case
-        lfit.Y = Y
         
         return lfit
 
@@ -112,19 +111,22 @@ class Results(LikelihoodModelResults):
     It handles the output of contrasts, estimates of covariance, etc.
     """
 
+    def __init__(self, beta, Y, normalized_cov_beta=None, scale=1.):
+        LikelihoodModelResults.__init__(self, beta, normalized_cov_beta, scale)
+        self.Y = Y
+
     def norm_resid(self):
         """
         Residuals, normalized to have unit length.
 
         Note: residuals are whitened residuals.
-
         """
 
         if not hasattr(self, 'resid'):
             raise ValueError, 'need normalized residuals to estimate standard deviation'
 
         sdd = utils.recipr(self.sd) / N.sqrt(self.df)
-        norm_resid = self.resid * N.multiply.outer(N.ones(Y.shape[0]), sdd)
+        norm_resid = self.resid * N.multiply.outer(N.ones(self.Y.shape[0]), sdd)
         return norm_resid
 
     def predict(self, design):
@@ -140,11 +142,11 @@ class Results(LikelihoodModelResults):
         """
         self.Ssq = N.std(self.Z,axis=0)**2
         ratio = self.scale / self.Ssq
-        if not adjusted: ratio *= ((Y.shape[0] - 1) / self.df_resid)
+        if not adjusted: ratio *= ((self.Y.shape[0] - 1) / self.df_resid)
         return 1 - ratio
 
 
-def isestimable(C, D, pinv=None, warn=True):
+def isestimable(C, D):
     """
     From an q x p contrast matrix C and an n x p design matrix D, checks
     if the contrast C is estimable by looking at the rank of hstack([C,D]) and
