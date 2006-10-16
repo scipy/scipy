@@ -69,6 +69,13 @@ def configuration(parent_package='',top_path=None):
 
     # Interpolating between sparse samples
     #config.add_subpackage('buildgrid')
+
+    # Package for Support Vector Machine 
+    #config.add_subpackage('svm')
+
+    # Package for Gaussian Mixture Models
+    #config.add_subpackage('pyem')
+
     return config
 
 if __name__ == '__main__':
