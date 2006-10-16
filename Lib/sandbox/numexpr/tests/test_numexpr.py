@@ -170,7 +170,15 @@ class test_evaluate(NumpyTestCase):
         expr = numexpr("2*a+3*b",[('a',float),('b', float)])
         assert_array_equal(expr(a,b), expr.run(a,b))
         
-
+    def check_illegal_value(self):
+        a = arange(3)
+        try:
+            evaluate("a < [0, 0, 0]")
+        except TypeError:
+            pass
+        else:
+            self.fail()
+            
 
 tests = [
 ('MISC', ['b*c+d*e',
