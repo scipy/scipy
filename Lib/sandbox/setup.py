@@ -76,6 +76,9 @@ def configuration(parent_package='',top_path=None):
     # Package for Gaussian Mixture Models
     #config.add_subpackage('pyem')
 
+    # New spline package (based on scipy.interpolate)
+    #config.add_subpackage('spline')
+
     return config
 
 if __name__ == '__main__':
