@@ -29,6 +29,8 @@ mdtypes_template = {
 
 np_to_mtypes = {
     'f8': miDOUBLE,
+    'c32': miDOUBLE,    
+    'c24': miDOUBLE,
     'c16': miDOUBLE,
     'f4': miSINGLE,
     'c8': miSINGLE,
@@ -98,7 +100,7 @@ class Mat4MatrixGetter(MatMatrixGetter):
     
     def read_array(self, copy=True):
         ''' Mat4 read array always uses header dtype and dims
-        @copy        - copies array if True
+        copy        - copies array if True
         (buffer is usually read only)
         a_dtype is assumed to be correct endianness
         '''
@@ -213,10 +215,10 @@ class Mat4MatrixWriter(MatStreamWriter):
 
     def write_header(self, P=0,  T=0, imagf=0, dims=None):
         ''' Write header for given data options
-        @P      - mat4 data type
-        @T      - mat4 matrix class
-        @imagf  - complex flag
-        @dims   - matrix dimensions
+        P      - mat4 data type
+        T      - mat4 matrix class
+        imagf  - complex flag
+        dims   - matrix dimensions
         '''
         if dims is None:
             dims = self.arr.shape
@@ -313,9 +315,9 @@ class Mat4SparseWriter(Mat4MatrixWriter):
             
 def matrix_writer_factory(stream, arr, name):
     ''' Factory function to return matrix writer given variable to write
-    @stream      - file or file-like stream to write to
-    @arr         - array to write
-    @name        - name in matlab (TM) workspace
+    stream      - file or file-like stream to write to
+    arr         - array to write
+    name        - name in matlab (TM) workspace
     '''
     if have_sparse:
         if scipy.sparse.issparse(arr):

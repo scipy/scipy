@@ -324,15 +324,15 @@ class Mat5SparseMatrixGetter(Mat5MatrixGetter):
             res = self.read_element()
         ''' From the matlab (TM) API documentation, last found here:
         http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
-        @rowind are simply the row indices for all the (@res) non-zero
-        entries in the sparse array.  @rowind has nzmax entries, so
-        may well have more entries than len(@res), the actual number
-        of non-zero entries, but @rowind[len(res):] can be discarded
-        and should be 0. @colind has length (number of columns + 1),
-        and is such that, if D = diff(@colind), D[j] gives the number
-        of non-zero entries in column j. Because @rowind values are
+        rowind are simply the row indices for all the (res) non-zero
+        entries in the sparse array.  rowind has nzmax entries, so
+        may well have more entries than len(res), the actual number
+        of non-zero entries, but rowind[len(res):] can be discarded
+        and should be 0. colind has length (number of columns + 1),
+        and is such that, if D = diff(colind), D[j] gives the number
+        of non-zero entries in column j. Because rowind values are
         stored in column order, this gives the column corresponding to
-        each @rowind
+        each rowind
         '''
         cols = empty((len(res)), dtype=rowind.dtype)
         col_counts = diff(colind)
@@ -422,17 +422,17 @@ class MatFile5Reader(MatFileReader):
 
     Adds the following attribute to base class
     
-    @uint16_codec       - char codec to use for uint16 char arrays
+    uint16_codec       - char codec to use for uint16 char arrays
                           (defaults to system default codec)
    '''
 
     def __init__(self,
                  mat_stream,
                  byte_order=None,
-                 base_name='raw',
-                 matlab_compatible=False,
+                 mat_dtype=False,
                  squeeze_me=True,
                  chars_as_strings=True,
+                 matlab_compatible=False,
                  uint16_codec=None
                  ):
         self.codecs = {}
@@ -446,10 +446,11 @@ class MatFile5Reader(MatFileReader):
         super(MatFile5Reader, self).__init__(
             mat_stream,
             byte_order,
-            base_name,
-            matlab_compatible,
+            mat_dtype,
             squeeze_me,
-            chars_as_strings)
+            chars_as_strings,
+            matlab_compatible,
+            )
         self._array_reader.processor_func = self.processor_func
         self.uint16_codec = uint16_codec
 
@@ -545,10 +546,10 @@ class Mat5MatrixWriter(MatStreamWriter):
                      is_logical=False,
                      nzmax=0):
         ''' Write header for given data options
-        @mclass      - mat5 matrix class
-        @is_global   - True if matrix is global
-        @is_complex  - True is matrix is complex
-        @is_logical  - True if matrix is logical
+        mclass      - mat5 matrix class
+        is_global   - True if matrix is global
+        is_complex  - True is matrix is complex
+        is_logical  - True if matrix is logical
         nzmax        - max non zero elements for sparse arrays
         '''
         self._mat_tag_pos = self.file_stream.tell()
@@ -641,9 +642,9 @@ class Mat5WriterGetter(object):
 
     def matrix_writer_factory(self, arr, name, is_global=False):
         ''' Factory function to return matrix writer given variable to write
-        @stream      - file or file-like stream to write to
-        @arr         - array to write
-        @name        - name in matlab (TM) workspace
+        stream      - file or file-like stream to write to
+        arr         - array to write
+        name        - name in matlab (TM) workspace
         '''
         if have_sparse:
             if scipy.sparse.issparse(arr):

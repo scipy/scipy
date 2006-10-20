@@ -56,7 +56,7 @@ class MatStreamAgent(object):
 
     Implements common array reading functions
 
-    Inputs @mat_steam - MatFileReader object
+    Inputs mat_steam - MatFileReader object
     '''
 
     def __init__(self, mat_stream):
@@ -66,7 +66,8 @@ class MatStreamAgent(object):
         ''' Generic get of byte stream data of known type
 
         Inputs
-        @a_dtype     - dtype of array
+        a_dtype     - dtype of array
+        
         a_dtype is assumed to be correct endianness
         '''
         num_bytes = a_dtype.itemsize
@@ -83,16 +84,20 @@ class MatStreamAgent(object):
 class MatFileReader(MatStreamAgent):
     """ Base object for reading mat files
 
-    @initialized byte stream object  - file io interface object
-    @byte_order         - byte order ('native', 'little', 'BIG')
+    mat_stream         - initialized byte stream object  - file io interface object
+    byte_order         - byte order ('native', 'little', 'BIG')
                           in ('native', '=')
                           or in ('little', '<')
                           or in ('BIG', '>')
-    @base_name          - base name for unnamed variables (unused in code)
-    @mat_dtype          - return arrays in same dtype as loaded into matlab
+    mat_dtype          - return arrays in same dtype as loaded into matlab
                           (instead of the dtype with which they are saved)
-    @squeeze_me         - whether to squeeze unit dimensions or not
-    @chars_as_strings   - whether to convert char arrays to string arrays
+    squeeze_me         - whether to squeeze unit dimensions or not
+    chars_as_strings   - whether to convert char arrays to string arrays
+    mat_dtype          - return matrices with datatype that matlab would load as
+                          (rather than in the datatype matlab saves as)
+    matlab_compatible  - returns matrices as would be loaded by matlab
+                         (implies squeeze_me=False, chars_as_strings=False
+                         mat_dtype=True)
 
     To make this class functional, you will need to override the
     following methods:
@@ -106,10 +111,10 @@ class MatFileReader(MatStreamAgent):
 
     def __init__(self, mat_stream,
                  byte_order=None,
-                 base_name='raw',
                  mat_dtype=False,
                  squeeze_me=True,
                  chars_as_strings=True,
+                 matlab_compatible=False,
                  ):
         # Initialize stream
         self.mat_stream = mat_stream
@@ -117,11 +122,13 @@ class MatFileReader(MatStreamAgent):
         if not byte_order:
             byte_order = self.guess_byte_order()
         self.order_code = byte_order # sets dtypes and other things too
-        self.base_name = base_name
-        self._squeeze_me = squeeze_me
-        self._chars_as_strings = chars_as_strings
-        self._mat_dtype = mat_dtype
-        self.processor_func = self.get_processor_func()
+        if matlab_compatible:
+            self.set_matlab_compatible()
+        else:
+            self._squeeze_me = squeeze_me
+            self._chars_as_strings = chars_as_strings
+            self._mat_dtype = mat_dtype
+            self.processor_func = self.get_processor_func()
         
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as matlab (tm) loads them '''
@@ -252,7 +259,7 @@ class MatFileReader(MatStreamAgent):
     def get_variables(self, variable_names=None):
         ''' get variables from stream as dictionary
 
-        @variable_names   - optional list of variable names to get
+        variable_names   - optional list of variable names to get
 
         If variable_names is None, then get all variables in file
         '''
@@ -294,8 +301,8 @@ class MatMatrixGetter(MatStreamAgent):
     header
 
     Accepts
-    @array_reader - array reading object (see below)
-    @header       - header dictionary for matrix being read
+    array_reader - array reading object (see below)
+    header       - header dictionary for matrix being read
     """
     
     def __init__(self, array_reader, header):
