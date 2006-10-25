@@ -32,12 +32,13 @@ import numpy as _num
 from numpy import oldnumeric
 from numpy import *
 from numpy.random import rand, randn
+from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 _num.seterr(all='ignore')
 
 __all__ += ['oldnumeric']+_num.__all__
 
-__all__ += ['randn', 'rand']
+__all__ += ['randn', 'rand', 'fft', 'ifft']
 
 __doc__ += """
 Contents
