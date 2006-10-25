@@ -1,5 +1,6 @@
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, spdiags
 import _superlu
+from numpy import asarray
 
 import umfpack
 if hasattr( umfpack, 'UMFPACK_OK' ):
@@ -71,8 +72,7 @@ def spsolve(A, b, permc_spec=2):
             index0 = mat.colind
         ftype, lastel, data, index1 = mat.ftype, mat.nnz, mat.data, mat.indptr
         gssv = eval('_superlu.' + ftype + 'gssv')
-        print "data-ftype: %s compared to data %s" % (ftype, data.dtype.char)
-        print "Calling _superlu.%sgssv" % ftype
+        b = asarray(b, dtype=data.dtype)
         return gssv(N, lastel, data, index0, index1, b, csc, permc_spec)[0]
 
 def splu(A, permc_spec=2, diag_pivot_thresh=1.0,

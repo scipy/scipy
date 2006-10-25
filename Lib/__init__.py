@@ -33,6 +33,7 @@ from numpy import oldnumeric
 from numpy import *
 from numpy.random import rand, randn
 from numpy.lib.scimath import *
+_num.seterr(all='ignore')
 
 __all__ += ['oldnumeric']+_num.__all__
 
