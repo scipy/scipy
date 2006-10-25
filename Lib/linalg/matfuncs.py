@@ -16,8 +16,8 @@ import numpy as sb
 from basic import solve, inv, norm, triu, all_mat
 from decomp import eig, schur, rsf2csf, orth, svd
 
-eps = sb.finfo(float).eps.item()
-feps = sb.finfo(single).eps.item()
+eps = sb.finfo(float).eps
+feps = sb.finfo(single).eps
 
 def expm(A,q=7):
     """Compute the matrix exponential using Pade approximation of order q.

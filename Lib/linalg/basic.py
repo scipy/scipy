@@ -380,8 +380,8 @@ def pinv(a, cond=None):
     return lstsq(a, b, cond=cond)[0]
 
 
-eps = numpy.finfo(float).eps.item()
-feps = numpy.finfo(single).eps.item()
+eps = numpy.finfo(float).eps
+feps = numpy.finfo(single).eps
 
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
 def pinv2(a, cond=None):
