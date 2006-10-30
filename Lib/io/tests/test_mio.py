@@ -31,7 +31,7 @@ class test_mio_array(ScipyTestCase):
         # object array is returned from cell array in mat file
         typex = type(expected)
         typac = type(actual)
-        if isinstance(expected, ndarray) and expected.dtype.hasobject == 1:
+        if isinstance(expected, ndarray) and expected.dtype.hasobject:
             assert typex is typac, "Different types at %s" % label
             assert len(expected) == len(actual), "Different list lengths at %s" % label
             for i, ev in enumerate(expected):
@@ -232,7 +232,7 @@ class test_mio_array(ScipyTestCase):
         name = case['name'] + '_round_trip'
         expected = case['expected']
         exec 'check_%s = _make_rt_check_case(name, expected)' % name
-        
+
 
 if __name__ == "__main__":
     ScipyTest().run()
