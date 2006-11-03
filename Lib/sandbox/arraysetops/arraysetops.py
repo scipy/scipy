@@ -62,7 +62,7 @@ def unique1d( ar1, retIndx = False ):
     ar = numpy.array( ar1 ).ravel()
     if retIndx:
         perm = numpy.argsort( ar )
-        aux = numpy.take( ar, perm 0,axis=0)
+        aux = numpy.take( ar, perm, axis=0)
         flag = ediff1d( aux, 1 ) != 0
         return numpy.compress( flag, perm ,axis=-1), numpy.compress( flag, aux ,axis=-1)
     else:
