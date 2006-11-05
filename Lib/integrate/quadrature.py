@@ -273,7 +273,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     The number of samples must be 1 + a non-negative power of two: N=2**k + 1
 
     See also:
-    
+
       quad - adaptive quadrature using QUADPACK
       romberg - adaptive Romberg quadrature
       quadrature - adaptive Gaussian quadrature
@@ -306,7 +306,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     start = stop = step = Ninterv
     for i in range(2,k+1):
         start >>= 1
-        slice_R = tupleset(slice_R, slice(start,stop,step))
+        slice_R = tupleset(slice_R, axis, slice(start,stop,step))
         step >>= 1
         R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
         for j in range(2,i+1):
