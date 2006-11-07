@@ -6,7 +6,6 @@ from utils import recipr
 from contrast import ContrastResults
 
 class Model:
-
     """
     A (predictive) statistical model. The class Model itself does nothing
     but lays out the methods expected of any subclass.

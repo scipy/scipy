@@ -1,6 +1,5 @@
 import numpy as N
 import numpy.linalg as L
-import scipy
 import scipy.interpolate
 import scipy.linalg
 
@@ -23,7 +22,7 @@ def mad(a, c=0.6745, axis=0):
 
     _shape = a.shape
     a.shape = N.product(a.shape,axis=0)
-    m = scipy.median(N.fabs(a - scipy.median(a))) / c
+    m = N.median(N.fabs(a - N.median(a))) / c
     a.shape = _shape
     return m
 
