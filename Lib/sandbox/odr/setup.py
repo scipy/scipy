@@ -19,32 +19,24 @@ def configuration(parent_package='', top_path=None):
                     'd_mprec.f',
                     'dlunoc.f']
 
-    atlas_info = get_info('atlas')
-    #atlas_info = {} # uncomment if ATLAS is available but want to use
-                     # Fortran LAPACK/BLAS; useful for testing
-    blas_libs = []
-    if not atlas_info:
-        warnings.warn(AtlasNotFoundError.__doc__)
-        blas_info = get_info('blas')
-        if blas_info:
-            libodr_files.append('d_lpk.f')
-            blas_libs.extend(blas_info['libraries'])
-        else:
-            warnings.warn(BlasNotFoundError.__doc__)
-            libodr_files.append('d_lpkbls.f')
-    else:
+    blas_info = get_info('blas_opt')
+    if blas_info:
         libodr_files.append('d_lpk.f')
-        blas_libs.extend(atlas_info['libraries'])
+    else:
+        warnings.warn(BlasNotFoundError.__doc__)
+        libodr_files.append('d_lpkbls.f')
 
     libodr = [os.path.join('odrpack', x) for x in libodr_files]
     config.add_library('odrpack', sources=libodr)
     sources = ['__odrpack.c']
+    libraries = ['odrpack'] + blas_info.pop('libraries', [])
+    include_dirs = ['.'] + blas_info.pop('include_dirs', [])
     config.add_extension('__odrpack',
-                         sources=sources,
-                         libraries=['odrpack']+blas_libs,
-                         include_dirs=['.'],
-                         library_dirs=atlas_info['library_dirs'],
-                         )
+        sources=sources,
+        libraries=libraries,
+        include_dirs=include_dirs,
+        **blas_info
+    )
 
     return config
 
