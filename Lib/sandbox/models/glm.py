@@ -1,8 +1,8 @@
 import numpy as N
 from scipy.sandbox.models import family
-from scipy.sandbox.models.regression import WLSModel
+from scipy.sandbox.models.regression import wls_model
 
-class Model(WLSModel):
+class model(wls_model):
 
     niter = 10
     
@@ -20,7 +20,7 @@ class Model(WLSModel):
         """
         Return (unnormalized) log-likelihood for glm.
 
-        Note that self.scale is interpreted as a variance in OLSModel, so
+        Note that self.scale is interpreted as a variance in old_model, so
         we divide the residuals by its sqrt.
         """
         if results is None:
@@ -32,7 +32,7 @@ class Model(WLSModel):
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
         Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
-        newresults = WLSModel.fit(self, Z)
+        newresults = wls_model.fit(self, Z)
         newresults.mu = self.family.link.inverse(newresults.predict)
         self.iter += 1
         return newresults
@@ -41,7 +41,7 @@ class Model(WLSModel):
         """
         Continue iterating, or has convergence been obtained?
         """
-        if self.iter >= Model.niter:
+        if self.iter >= model.niter:
             return False
 
         curdev = self.deviance(results=results)
@@ -67,7 +67,7 @@ class Model(WLSModel):
 
         self.Y = N.asarray(Y, N.float64)
         iter(self)
-        self.results = WLSModel.fit(self, self.family.link(Y, initialize=True))
+        self.results = wls_model.fit(self, self.family.link.initialize(Y))
         self.results.mu = self.family.link.inverse(self.results.predict)
         self.scale = self.results.scale = self.estimate_scale()
         

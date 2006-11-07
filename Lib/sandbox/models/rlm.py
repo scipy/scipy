@@ -1,9 +1,9 @@
 import numpy as N
 
-from scipy.sandbox.models.regression import WLSModel
+from scipy.sandbox.models.regression import wls_model
 from scipy.sandbox.models.robust import norms, scale
 
-class Model(WLSModel):
+class model(wls_model):
 
     niter = 20
     scale_est = 'MAD'
@@ -22,7 +22,7 @@ class Model(WLSModel):
         """
         Return (unnormalized) log-likelihood from M estimator.
 
-        Note that self.scale is interpreted as a variance in OLSModel, so
+        Note that self.scale is interpreted as a variance in ols_model, so
         we divide the residuals by its sqrt.
         """
         if results is None:
@@ -32,7 +32,7 @@ class Model(WLSModel):
     def next(self, results):
         self.weights = self.M.weights((results.Y - results.predict) / N.sqrt(results.scale))
         self.initialize(self.design)
-        results = WLSModel.fit(self, results.Y)
+        results = wls_model.fit(self, results.Y)
         self.scale = results.scale = self.estimate_scale(results)
         self.iter += 1
         return results
@@ -41,7 +41,7 @@ class Model(WLSModel):
         """
         Continue iterating, or has convergence been obtained?
         """
-        if self.iter >= Model.niter:
+        if self.iter >= model.niter:
             return False
 
         curdev = self.deviance(results)
@@ -53,7 +53,7 @@ class Model(WLSModel):
 
     def estimate_scale(self, results):
         """
-        Note that self.scale is interpreted as a variance in OLSModel, so
+        Note that self.scale is interpreted as a variance in ols_model, so
         we return MAD(resid)**2 by default. 
         """
         resid = results.Y - results.predict
@@ -67,7 +67,7 @@ class Model(WLSModel):
     def fit(self, Y, **keywords):
         
         iter(self)
-        self.results = WLSModel.fit(self, Y)
+        self.results = wls_model.fit(self, Y)
         self.scale = self.results.scale = self.estimate_scale(self.results)
         
         while self.cont(self.results):

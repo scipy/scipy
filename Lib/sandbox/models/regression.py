@@ -4,7 +4,7 @@ import scipy.linalg
 from scipy.sandbox.models.model import LikelihoodModel, LikelihoodModelResults
 from scipy.sandbox.models import utils
 
-class OLSModel(LikelihoodModel):
+class ols_model(LikelihoodModel):
     
     """
     A simple ordinary least squares model.
@@ -62,7 +62,7 @@ class OLSModel(LikelihoodModel):
         
         return lfit
 
-class ARModel(OLSModel):
+class ar_model(ols_model):
     """
     A regression model with an AR(1) covariance structure.
 
@@ -79,7 +79,7 @@ class ARModel(OLSModel):
         factor = 1. / N.sqrt(1 - self.rho**2)
         return N.concatenate([[X[0]], (X[1:] - self.rho * X[0:-1]) * factor])
 
-class WLSModel(ARModel):
+class wls_model(ar_model):
     """
 
     A regression model with diagonal but non-identity covariance

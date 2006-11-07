@@ -5,7 +5,7 @@ from numpy.testing import *
 
 W = standard_normal
 
-class test_Regression(ScipyTestCase):
+class test_Regression(unittest.TestCase):
 
     def testOLS(self):
         X = W((40,10))
@@ -39,4 +39,4 @@ class test_Regression(ScipyTestCase):
 
 
 if __name__ == '__main__':
-    ScipyTest.run()
+    unittest.main()

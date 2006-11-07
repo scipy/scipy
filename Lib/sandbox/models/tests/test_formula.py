@@ -7,42 +7,42 @@ from numpy.testing import *
 
 from scipy.sandbox.models import utils, formula, contrast
 
-class test_Term(ScipyTestCase):
+class test_term(unittest.TestCase):
 
     def test_init(self):
-        t1 = formula.Term("trivial")
+        t1 = formula.term("trivial")
         sqr = lambda x: x*x
 
-        t2 = formula.Term("not_so_trivial", sqr, "sqr")
+        t2 = formula.term("not_so_trivial", sqr, "sqr")
 
-        self.assertRaises(ValueError, formula.Term, "name", termname=0)
+        self.assertRaises(ValueError, formula.term, "name", termname=0)
 
     def test_str(self):
-        t = formula.Term("name")
+        t = formula.term("name")
         s = str(t)
 
     def test_add(self):
-        t1 = formula.Term("t1")
-        t2 = formula.Term("t2")
+        t1 = formula.term("t1")
+        t2 = formula.term("t2")
         f = t1 + t2
-        self.assert_(isinstance(f, formula.Formula))
+        self.assert_(isinstance(f, formula.formula))
         self.assert_(f.hasterm(t1))
         self.assert_(f.hasterm(t2))
 
     def test_mul(self):
-        t1 = formula.Term("t1")
-        t2 = formula.Term("t2")
+        t1 = formula.term("t1")
+        t2 = formula.term("t2")
         f = t1 * t2
-        self.assert_(isinstance(f, formula.Formula))
+        self.assert_(isinstance(f, formula.formula))
 
-        intercept = formula.Term("intercept")
+        intercept = formula.term("intercept")
         f = t1 * intercept
-        self.assertEqual(str(f), str(formula.Formula(t1)))
+        self.assertEqual(str(f), str(formula.formula(t1)))
 
         f = intercept * t1
-        self.assertEqual(str(f), str(formula.Formula(t1)))
+        self.assertEqual(str(f), str(formula.formula(t1)))
 
-class test_Formula(ScipyTestCase):
+class test_formula(ScipyTestCase):
 
     def setUp(self):
         self.X = R.standard_normal((40,10))
@@ -51,7 +51,7 @@ class test_Formula(ScipyTestCase):
         for i in range(10):
             name = '%s' % string.uppercase[i]
             self.namespace[name] = self.X[:,i]
-            self.terms.append(formula.Term(name))
+            self.terms.append(formula.term(name))
 
         self.formula = self.terms[0]
         for i in range(1, 10):
@@ -86,7 +86,7 @@ class test_Formula(ScipyTestCase):
 
     def test_contrast2(self):
     
-        dummy = formula.Term('zero')
+        dummy = formula.term('zero')
         self.namespace['zero'] = N.zeros((40,), N.float64)
         term = dummy + self.terms[2]
         c = contrast.Contrast(term, self.formula)
@@ -99,7 +99,7 @@ class test_Formula(ScipyTestCase):
         X = self.formula.design(namespace=self.namespace)
         P = N.dot(X, L.pinv(X))
         
-        dummy = formula.Term('noise')
+        dummy = formula.term('noise')
         resid = N.identity(40) - P
         self.namespace['noise'] = N.transpose(N.dot(resid, R.standard_normal((40,5))))
         term = dummy + self.terms[2]
@@ -120,9 +120,9 @@ class test_Formula(ScipyTestCase):
         self.assertEquals(estimable, False)
 
 def suite():
-    suite = unittest.makeSuite(FormulaTest)
+    suite = unittest.makeSuite(formulaTest)
     return suite
 
 
 if __name__ == '__main__':
-    ScipyTest.run()
+    unittest.main()

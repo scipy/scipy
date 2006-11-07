@@ -5,7 +5,7 @@ import scipy
 from numpy.testing import *
 from scipy.sandbox.models import utils
 
-class test_Utils(ScipyTestCase):
+class test_Utils(unittest.TestCase):
 
     def test_recipr(self):
         X = N.array([[2,1],[-1,0]])
@@ -52,4 +52,4 @@ class test_Utils(ScipyTestCase):
         self.assertRaises(ValueError, utils.StepFunction, x, y)
 
 if __name__ == '__main__':
-    ScipyTest.run()
+    unittest.main()

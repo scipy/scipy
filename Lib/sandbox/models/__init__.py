@@ -3,9 +3,8 @@ import formula
 import regression
 import robust
 import family
-from glm import Model as glm
-from rlm import Model as rlm
-
+from glm import model as glm
+from rlm import model as rlm
 
 
 import unittest

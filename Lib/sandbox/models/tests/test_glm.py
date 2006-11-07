@@ -3,7 +3,7 @@ import unittest
 import numpy.random as R
 import numpy as N
 from numpy.testing import *
-from scipy.sandbox.models.glm import Model
+from scipy.sandbox.models.glm import model
 
 W = R.standard_normal
 
@@ -14,8 +14,8 @@ class test_Regression(ScipyTestCase):
         X = W((40,10))
         Y = N.greater(W((40,)), 0)
         family = S.family.Binomial()
-        model = Model(design=X, family=S.family.Binomial())
-        results = model.fit(Y)
+        cmodel = model(design=X, family=S.family.Binomial())
+        results = cmodel.fit(Y)
         self.assertEquals(results.df_resid, 30)
 
     def check_Logisticdegenerate(self):
@@ -23,8 +23,8 @@ class test_Regression(ScipyTestCase):
         X[:,0] = X[:,1] + X[:,2]
         Y = N.greater(W((40,)), 0)
         family = S.family.Binomial()
-        model = Model(design=X, family=S.family.Binomial())
-        results = model.fit(Y)
+        cmodel = model(design=X, family=S.family.Binomial())
+        results = cmodel.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
 
