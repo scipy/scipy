@@ -1,4 +1,5 @@
-import types, copy
+import copy
+import types
 import numpy as N
 
 terms = {}

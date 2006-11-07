@@ -1,7 +1,7 @@
+import shutil
+import tempfile
 import numpy as N
-import survival
-import model
-import tempfile, shutil
+from scipy.sandbox.models import survival, model
 
 class DiscreteRV:
 

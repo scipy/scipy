@@ -1,6 +1,6 @@
 import numpy as N
 from numpy.linalg import pinv
-import utils
+from scipy.sandbox.models import utils
 
 class ContrastResults:
     """

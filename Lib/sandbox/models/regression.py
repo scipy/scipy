@@ -1,9 +1,8 @@
 import numpy as N
 import numpy.linalg as L
-from model import LikelihoodModel, LikelihoodModelResults
-
-import utils
 import scipy.linalg
+from scipy.sandbox.models.model import LikelihoodModel, LikelihoodModelResults
+from scipy.sandbox.models import utils
 
 class OLSModel(LikelihoodModel):
     

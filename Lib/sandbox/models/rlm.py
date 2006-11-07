@@ -1,7 +1,7 @@
 import numpy as N
-from robust import norms, scale
 
-from regression import WLSModel
+from scipy.sandbox.models.regression import WLSModel
+from scipy.sandbox.models.robust import norms, scale
 
 class Model(WLSModel):
 

@@ -1,9 +1,9 @@
-import scipy.optimize
 import numpy as N
 from numpy.linalg import inv
+import scipy.optimize
 
-from utils import recipr
-from contrast import ContrastResults
+from scipy.sandbox.models.contrast import ContrastResults
+from scipy.sandbox.models.utils import recipr
 
 class Model:
     """

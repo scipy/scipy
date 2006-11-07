@@ -1,7 +1,7 @@
 import numpy as N
 import numpy.linalg as L
 import scipy.integrate
-import _bspline
+from scipy.sandbox.models import _bspline
 
 # note to self: check out eig_banded! in linalg.decomp?
 

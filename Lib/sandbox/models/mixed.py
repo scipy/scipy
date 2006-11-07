@@ -1,6 +1,6 @@
 import numpy as N
 import numpy.linalg as L
-from formula import Formula, I
+from scipy.sandbox.models.formula import Formula, I
 
 class Unit:
 

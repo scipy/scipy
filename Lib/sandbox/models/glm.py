@@ -1,6 +1,6 @@
 import numpy as N
-import family
-from regression import WLSModel
+from scipy.sandbox.models import family
+from scipy.sandbox.models.regression import WLSModel
 
 class Model(WLSModel):
 
