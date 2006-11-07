@@ -3,10 +3,8 @@ import scipy.stats
 
 class Link:
 
-    def __init__(self):
-        pass
-
-    pass
+    def initialize(self, Y):
+        return N.asarray(Y).mean() * N.ones(Y.shape)
 
 class Logit(Link):
 
@@ -17,26 +15,16 @@ class Logit(Link):
     """
 
     tol = 1.0e-10
-    init = 1.0e-03
 
-    def clean(self, p, inverse=False, initialize=False):
-        if initialize:
-            tol = Logit.tol
-        else:
-            tol = Logit.init
+    def clean(self, p):
+        return N.clip(p, Logit.tol, 1. - Logit.tol)
 
-        if not inverse:
-            return N.clip(p, tol, 1. - tol)
-        else:
-            l = self(tol); u = self(1 - tol)
-            return N.clip(p, l, u)
-
-    def __call__(self, p, initialize=True, **extra):
-        p = self.clean(p, **extra)
+    def __call__(self, p):
+        p = self.clean(p)
         return N.log(p / (1. - p))
 
     def inverse(self, z):
-        t = N.exp(self.clean(z, inverse=True))
+        t = N.exp(z)
         return t / (1. + t)
 
     def deriv(self, p):
@@ -57,7 +45,7 @@ class Power(Link):
     def __init__(self, power=1.):
         self.power = power
 
-    def __call__(self, x, **extra):
+    def __call__(self, x):
         return N.power(x, self.power)
 
     def inverse(self, x):
@@ -108,15 +96,9 @@ class Log(Link):
     """
 
     tol = 1.0e-10
-    init = 1.0e-03
 
     def clean(self, x):
-        if initialize:
-            tol = Logit.tol
-        else:
-            tol = Logit.init
-
-        return N.clip(x, tol, N.inf)
+        return N.clip(x, Logit.tol, N.inf)
 
     def __call__(self, x, **extra):
         x = self.clean(x)
@@ -143,7 +125,7 @@ class CDFLink(Logit):
     def __init__(self, dbn=scipy.stats.norm):
         self.dbn = dbn
 
-    def __call__(self, p, **extra):
+    def __call__(self, p):
         p = self.clean(p)
         return self.dbn.ppf(p)
 
@@ -181,7 +163,7 @@ class CLogLog(Logit):
 
     """
 
-    def __call__(self, p, **extra):
+    def __call__(self, p):
         p = self.clean(p)
         return N.log(-N.log(p))
 

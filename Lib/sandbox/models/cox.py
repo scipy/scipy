@@ -3,7 +3,7 @@ import tempfile
 import numpy as N
 from scipy.sandbox.models import survival, model
 
-class DiscreteRV:
+class discrete:
 
     """
     A simple little class for working with discrete random vectors.
@@ -15,13 +15,13 @@ class DiscreteRV:
             self.x = N.array([self.x])
         self.n = self.x.shape[0]
         if w is None:
-            w = N.ones(self.n, N.float64)
+            w = N.ones(self.n, N.float64) 
         else:
             if w.shape[0] != self.n:
                 raise ValueError, 'incompatible shape for weights w'
             if N.any(N.less(w, 0)):
                 raise ValueError, 'weights should be non-negative'
-            self.w = w / w.sum()
+        self.w = w / w.sum()
 
     def mean(self, f=None):
         if f is None:
@@ -31,11 +31,11 @@ class DiscreteRV:
         return (fx * self.w).sum()
 
     def cov(self):
-        mu = self.moment()
+        mu = self.mean()
         dx = self.x - N.multiply.outer(mu, self.x.shape[1])
         return N.dot(dx, N.transpose(dx))
 
-class Observation(survival.RightCensored):
+class observation(survival.right_censored):
 
     def __getitem__(self, item):
         if self.namespace is not None:
@@ -45,18 +45,17 @@ class Observation(survival.RightCensored):
 
     def __init__(self, time, delta, namespace=None):
         self.namespace = namespace
-        survival.RightCensored.__init__(self, time, delta)
+        survival.right_censored.__init__(self, time, delta)
 
     def __call__(self, formula, time=None, **extra):
         return formula(namespace=self, time=time, **extra)
 
-class ProportionalHazards(model.LikelihoodModel):
+class coxph(model.likelihood_model):
 
     def __init__(self, subjects, formula, time_dependent=False):
         self.subjects, self.formula = subjects, formula
         self.time_dependent = time_dependent
         self.initialize(self.subjects)
-        
 
     def initialize(self, subjects):
 
@@ -142,7 +141,7 @@ class ProportionalHazards(model.LikelihoodModel):
 
             if ties == 'breslow':
                 w = N.exp(N.dot(Z, b))
-                rv = DiscreteRV(Z[risk], w=w[risk])
+                rv = discrete(Z[risk], w=w[risk])
                 score -= rv.mean() * d
             elif ties == 'efron':
                 w = N.exp(N.dot(Z, b))
@@ -150,7 +149,7 @@ class ProportionalHazards(model.LikelihoodModel):
                 for j in range(d):
                     efron_w = w
                     efron_w[fail] -= i * w[fail] / d
-                    rv = DiscreteRV(Z[risk], w=efron_w[risk])
+                    rv = discrete(Z[risk], w=efron_w[risk])
                     score -= rv.mean()
             elif ties == 'cox':
                 raise NotImplementedError, 'Cox tie breaking method not implemented'
@@ -175,7 +174,7 @@ class ProportionalHazards(model.LikelihoodModel):
 
             if ties == 'breslow':
                 w = N.exp(N.dot(Z, b))
-                rv = DiscreteRV(Z[risk], w=w[risk])
+                rv = discrete(Z[risk], w=w[risk])
                 info += rv.cov()
             elif ties == 'efron':
                 w = N.exp(N.dot(Z, b))
@@ -183,7 +182,7 @@ class ProportionalHazards(model.LikelihoodModel):
                 for j in range(d):
                     efron_w = w
                     efron_w[fail] -= i * w[fail] / d
-                    rv = DiscreteRV(Z[risk], w=efron_w[risk])
+                    rv = discrete(Z[risk], w=efron_w[risk])
                     info += rv.cov()
             elif ties == 'cox':
                 raise NotImplementedError, 'Cox tie breaking method not implemented'
@@ -200,7 +199,7 @@ if __name__ == '__main__':
     Y = R.standard_exponential((2*n,)) / lin
     delta = R.binomial(1, 0.9, size=(2*n,))
 
-    subjects = [Observation(Y[i], delta[i]) for i in range(2*n)]
+    subjects = [observation(Y[i], delta[i]) for i in range(2*n)]
     for i in range(2*n):
         subjects[i].X = X[i]
 
@@ -208,7 +207,7 @@ if __name__ == '__main__':
     x = F.Quantitative('X')
     f = F.Formula(x)
 
-    c = ProportionalHazards(subjects, f)
+    c = coxph(subjects, f)
 
     c.cache()
     c.newton([0.4])

@@ -4,7 +4,7 @@ import numpy as N
 
 terms = {}
 
-class Term:
+class term:
 
     """
     This class is very simple: it is just a named term in a model formula.
@@ -15,7 +15,7 @@ class Term:
     
     """
 
-    def __init__(self, name, func=None, termname=None, namespace=terms):
+    def __init__(self, name, func=None, termname=None, namespace={}):
         
         self.name = name
 
@@ -39,22 +39,22 @@ class Term:
 
     def __add__(self, other):
         """
-        Formula(self) + Formula(other)
+        formula(self) + formula(other)
         """
-        other = Formula(other)
+        other = formula(other)
         return other + self
 
     def __mul__(self, other):
         """
-        Formula(self) * Formula(other)
+        formula(self) * formula(other)
         """
 
         if other.name is 'intercept':
-            return Formula(self)
+            return formula(self)
         elif self.name is 'intercept':
-            return Formula(other)
+            return formula(other)
         
-        other = Formula(other)
+        other = formula(other)
         return other * self
 
     def names(self):
@@ -67,28 +67,32 @@ class Term:
         else:
             return list(self.name)
 
-    def __call__(self, namespace=terms, usefn=True, **extra):
+    def __call__(self, namespace=terms, usefn=True, args=(), kw={}):
         """
         Return the columns associated to self in a design matrix.
         The default behaviour is to return namespace[self.termname]
         where namespace defaults to globals().
 
         If usefn, and self.func exists then return
-            self.func(namespace=namespace, **extra)
+
+            self.func(*args, **kw)
+
+        with kw['namespace'] = namespace.
         """
         
+        kw['namespace'] = namespace
         if not hasattr(self, 'func') or not usefn:
             val = namespace[self.termname]
-            if isinstance(val, Formula):
-                val = val(namespace=namespace, **extra)
+            if isinstance(val, formula):
+                val = val(*args, **kw)
             elif callable(val):
-                val = val(**extra)
+                val = val(*args, **kw)
         else:
-            val = self.func(namespace=namespace, **extra)
+            val = self.func(*args, **kw)
         val = N.asarray(val)
         return N.squeeze(val)
 
-class Factor(Term):
+class factor(term):
 
     """
     A categorical factor.
@@ -96,7 +100,7 @@ class Factor(Term):
 
     def __init__(self, termname, keys, ordinal=False):
         """
-        Factor is initialized with keys, representing all valid
+        factor is initialized with keys, representing all valid
         levels of the factor.
         """
         
@@ -114,7 +118,7 @@ class Factor(Term):
                 # FIXME: n is not defined here
                 col = [float(self.keys.index(v[i])) for i in range(n)]
                 return N.array(col)
-            Term.__init__(self, self.name, func=func)
+            term.__init__(self, self.name, func=func)
 
         else:
             def func(namespace=terms):
@@ -124,9 +128,9 @@ class Factor(Term):
                     col = [float((v[i] == key)) for i in range(len(v))]
                     value.append(col)
                 return N.array(value)
-            Term.__init__(self, ['(%s==%s)' % (self.termname, str(key)) for key in self.keys], func=func, termname=self.termname)
+            term.__init__(self, ['(%s==%s)' % (self.termname, str(key)) for key in self.keys], func=func, termname=self.termname)
 
-    def __call__(self, namespace=terms, values=False, **extra):
+    def __call__(self, namespace=terms, values=False, args=(), kw={}):
         """
         Return either the columns in the design matrix, or the
         actual values of the factor, if values==True.
@@ -135,9 +139,9 @@ class Factor(Term):
         if namespace is None:
             namespace = globals()
         if not values:
-            return Term.__call__(self, namespace=namespace, usefn=True, **extra)
+            return term.__call__(self, namespace=namespace, usefn=True, args=args, kw=kw)
         else:
-            return Term.__call__(self, namespace=namespace, usefn=False, **extra)
+            return term.__call__(self, namespace=namespace, usefn=False, args=args, kw=kw)
 
     def verify(self, values):
         """
@@ -149,19 +153,19 @@ class Factor(Term):
 
     def __add__(self, other):
         """
-        Formula(self) + Formula(other)
+        formula(self) + formula(other)
 
-        When adding \'intercept\' to a Factor, this just returns self.
+        When adding \'intercept\' to a factor, this just returns self.
         """
         
         if other.name is 'intercept':
-            return Formula(self)
+            return formula(self)
         else:
-            return Term.__add__(self, other)
+            return term.__add__(self, other)
 
     def main_effect(self, reference=None):
         """
-        Return the 'main effect' columns of a Factor, choosing
+        Return the 'main effect' columns of a factor, choosing
         a reference column number to remove.
         """
 
@@ -181,12 +185,12 @@ class Factor(Term):
         keep.pop(reference)
         __names = self.names()
         _names = ['%s-%s' % (__names[keep[i]], __names[reference]) for i in range(len(keep))]
-        return Term(_names, func=func, termname='%s:maineffect' % self.termname)
+        return term(_names, func=func, termname='%s:maineffect' % self.termname)
 
-class Quantitative(Term):
+class quantitative(term):
 
     """
-    A subclass of Term that presumes namespace[self.termname] is
+    A subclass of term that presumes namespace[self.termname] is
     an ndarray.
 
     Basically used for __pow__ method and (looking forward) for splines.
@@ -195,7 +199,7 @@ class Quantitative(Term):
 
     def __pow__(self, power):
         """
-        Raise the quantitative Term's values to an integer power, i.e.
+        Raise the quantitative term's values to an integer power, i.e.
         polynomial.
         """
         try:
@@ -211,13 +215,13 @@ class Quantitative(Term):
         def func(obj=self, namespace=terms, power=power, **extra):
             x = N.asarray(obj(namespace=namespace, **extra))
             return N.power(x, power)
-        value = Term(name, func=func)
+        value = term(name, func=func)
         value.power = power
         return value
 
-class FuncQuant(Quantitative):
+class func_quant(quantitative):
     """
-    A Term for a quantitative function of a Term.
+    A term for a quantitative function of a term.
     """
 
     counter = 0
@@ -238,18 +242,18 @@ class FuncQuant(Quantitative):
         except:
             termname = 'f%d(%s)' % (FuncQuant.counter, quant.name)
             FuncQuant.counter += 1
-        Term.__init__(self, termname, func=func)
+        term.__init__(self, termname, func=func)
 
-class Formula:
+class formula:
 
     """
 
-    A Formula object for manipulating design matrices in regression models,
-    essentially consisting of a list of Term instances.
+    A formula object for manipulating design matrices in regression models,
+    essentially consisting of a list of term instances.
 
     The object supports addition and multiplication which correspond
     to concatenation and pairwise multiplication, respectively,
-    of the columns of the two Formulas.
+    of the columns of the two formulas.
     """
     
     def _terms_changed(self):
@@ -258,19 +262,19 @@ class Formula:
 
     def __init__(self, terms):
         """
-        Create a Formula from either:
+        Create a formula from either:
 
-        i) a Formula object
-        ii) a sequence of Term instances
-        iii) one Term
+        i) a formula object
+        ii) a sequence of term instances
+        iii) one term
 
         """
 
-        if isinstance(terms, Formula):
+        if isinstance(terms, formula):
             self.terms = copy.copy(list(terms.terms))
         elif type(terms) is types.ListType:
             self.terms = terms
-        elif isinstance(terms, Term):
+        elif isinstance(terms, term):
             self.terms = [terms]
         else: 
             raise ValueError
@@ -279,18 +283,18 @@ class Formula:
 
     def __str__(self):
         """
-        String representation of list of termnames of a Formula.
+        String representation of list of termnames of a formula.
         """
         value = []
         for term in self.terms:
             value += [term.termname]
         return '<formula: %s>' % ' + '.join(value)
 
-    def __call__(self, namespace=terms, nrow=-1, **extra):
+    def __call__(self, namespace=terms, nrow=-1, args=(), kw={}):
         """
-        Create (transpose) of the design matrix of the Formula within
-        namespace. Extra arguments are passed to each Term instance. If
-        the Formula just contains an intercept, then the keyword
+        Create (transpose) of the design matrix of the formula within
+        namespace. Extra arguments are passed to each term instance. If
+        the formula just contains an intercept, then the keyword
         argument 'n' indicates the number of rows (observations).
         """
         
@@ -299,7 +303,7 @@ class Formula:
         allvals = []
         intercept = False
         for term in self.terms:
-            val = term(namespace=namespace, **extra)
+            val = term(namespace=namespace, args=args, kw=kw)
             if term.termname == 'intercept':
                 intercept = True
             elif val.ndim == 1:
@@ -330,7 +334,7 @@ class Formula:
         Determine whether a given term is in a formula.
         """
 
-        if not isinstance(term, Formula):
+        if not isinstance(term, formula):
             return term.termname in self.termnames()
         elif len(term.terms) == 1:
             term = term.terms[0]
@@ -365,7 +369,7 @@ class Formula:
 
     def names(self):
         """
-        Return a list of the names in the Formula. The order of the
+        Return a list of the names in the formula. The order of the
         names corresponds to the order of the columns when self
         is evaluated.
         """
@@ -378,7 +382,7 @@ class Formula:
     def termnames(self):
         """
         Return a list of the term names in the formula. These
-        are the names of each Term instance in self.
+        are the names of each term instance in self.
         """
 
         names = []
@@ -386,21 +390,21 @@ class Formula:
             names += [term.termname]
         return names
 
-    def design(self, namespace=terms, **keywords):
+    def design(self, namespace=terms, args=(), kw={}):
         """
         transpose(self(namespace=namespace, **keywords))
         """
-        return N.transpose(self(namespace=namespace, **keywords))
+        return self(namespace=namespace, args=args, kw=kw).T
 
     def __mul__(self, other, nested=False):
         """
-        This returns a Formula whose columns are the pairwise
+        This returns a formula whose columns are the pairwise
         product of the columns of self and other.
 
         TO DO: check for nesting relationship. Should not be too difficult.
         """
 
-        other = Formula(other)
+        other = formula(other)
 
         selftermnames = self.termnames()
         othertermnames = other.termnames()
@@ -423,9 +427,9 @@ class Formula:
                 othernames = other.terms[j].names()
 
                 if self.terms[i].name is 'intercept':
-                    term = other.terms[j]
+                    _term = other.terms[j]
                 elif other.terms[j].name is 'intercept':
-                    term = self.terms[i]
+                    _term = self.terms[i]
 
                 else:
                     names = []
@@ -451,36 +455,36 @@ class Formula:
                                 value.append(selfval[r] * otherval[s])
 
                         return N.array(value)
-                    term = Term(names, func=func, termname=termname)
-                terms.append(term)
+                    _term = term(names, func=func, termname=termname)
+                terms.append(_term)
 
-        return Formula(terms)
+        return formula(terms)
     
     def __add__(self, other):
 
         """
-        Return a Formula whose columns are the
+        Return a formula whose columns are the
         concatenation of the columns of self and other.
 
-        Terms in the formula are sorted alphabetically.
+        terms in the formula are sorted alphabetically.
         """
 
-        other = Formula(other)
+        other = formula(other)
         terms = self.terms + other.terms
         pieces = [(term.name, term) for term in terms]
         pieces.sort()
         terms = [piece[1] for piece in pieces]
-        return Formula(terms)
+        return formula(terms)
 
     def __sub__(self, other):
 
         """
-        Return a Formula with all terms in other removed from self.
-        If other contains Term instances not in Formula, this
+        Return a formula with all terms in other removed from self.
+        If other contains term instances not in formula, this
         function does not raise an exception.
         """
 
-        other = Formula(other)
+        other = formula(other)
         terms = copy.copy(self.terms)
 
         for term in other.terms:
@@ -488,7 +492,7 @@ class Formula:
                 if terms[i].termname == term.termname:
                     terms.pop(i)
                     break 
-        return Formula(terms)
+        return formula(terms)
 
 def isnested(A, B, namespace=globals()):
     """
@@ -524,9 +528,9 @@ def isnested(A, B, namespace=globals()):
 
 def _intercept_fn(nrow=1, **extra):
     return N.ones((1,nrow))
-I = Term('intercept', func=_intercept_fn)
+I = term('intercept', func=_intercept_fn)
 I.__doc__ = """
-Intercept term in a Formula. If intercept is the
+Intercept term in a formula. If intercept is the
 only term in the formula, then a keywords argument
 \'nrow\' is needed.
 
@@ -536,7 +540,7 @@ only term in the formula, then a keywords argument
 >>> I(nrow=5)
 array([1, 1, 1, 1, 1])
 
->>> f=Formula(I)
+>>> f=formula(I)
 >>> f(nrow=5)
 array([1, 1, 1, 1, 1])
 
