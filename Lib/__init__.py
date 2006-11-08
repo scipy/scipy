@@ -47,6 +47,9 @@ Contents
   numpy name space
 """
 del _num
+# Remove the linalg imported from numpy so that the scipy.linalg package can be
+# imported.
+del linalg
 
 from __config__ import show as show_config
 from version import version as __version__
