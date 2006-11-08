@@ -10,14 +10,14 @@ class ols_model(LikelihoodModel):
     A simple ordinary least squares model.
     """
 
-    def logL(self, b, Y, **extra):
+    def logL(self, b, Y):
         return -scipy.linalg.norm(self.whiten(Y) - N.dot(self.wdesign, b))**2 / 2.
 
-    def __init__(self, design, **keywords):
-        LikelihoodModel.__init__(self, **keywords)
+    def __init__(self, design):
+        LikelihoodModel.__init__(self)
         self.initialize(design)
 
-    def initialize(self, design, **keywords):
+    def initialize(self, design):
         self.design = design
         self.wdesign = self.whiten(design)
         self.calc_beta = L.pinv(self.wdesign)
@@ -41,7 +41,7 @@ class ols_model(LikelihoodModel):
         lfit.predict = N.dot(self.design, lfit.beta)
 
 
-    def fit(self, Y, **keywords):
+    def fit(self, Y):
         """
         Full \'fit\' of the model including estimate of covariance matrix, (whitened)
         residuals and scale. 
@@ -70,16 +70,16 @@ class ar_model(ols_model):
     determine the self.whiten method from AR(p) parameters.
     """
 
-    def __init__(self, design, rho=0, **keywords):
-        LikelihoodModel.__init__(self, **keywords)
+    def __init__(self, design, rho=0):
         self.rho = rho
-        self.initialize(design)
+        ols_model.__init__(self, design)
+
 
     def whiten(self, X):
         factor = 1. / N.sqrt(1 - self.rho**2)
         return N.concatenate([[X[0]], (X[1:] - self.rho * X[0:-1]) * factor])
 
-class wls_model(ar_model):
+class wls_model(ols_model):
     """
 
     A regression model with diagonal but non-identity covariance
@@ -88,10 +88,10 @@ class wls_model(ar_model):
 
     """
 
-    def __init__(self, design, weights=1, **keywords):
-        LikelihoodModel.__init__(self, **keywords)
+    def __init__(self, design, weights=1):
         self.weights = weights
-        self.initialize(design)
+        ols_model.__init__(self, design)
+
 
     def whiten(self, X):
         if X.ndim == 1:
@@ -125,14 +125,13 @@ class Results(LikelihoodModelResults):
             raise ValueError, 'need normalized residuals to estimate standard deviation'
 
         sdd = utils.recipr(self.sd) / N.sqrt(self.df)
-        norm_resid = self.resid * N.multiply.outer(N.ones(self.Y.shape[0]), sdd)
-        return norm_resid
+        return  self.resid * N.multiply.outer(N.ones(self.Y.shape[0]), sdd)
+
 
     def predict(self, design):
         """
         Return fitted values from a design matrix.
         """
-
         return N.dot(design, self.beta)
 
     def Rsq(self, adjusted=False):
