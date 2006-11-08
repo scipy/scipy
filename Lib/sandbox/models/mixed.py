@@ -144,7 +144,7 @@ class Mixed:
     Vol. 82, No. 397. (Mar., 1987), pp. 97-105. 
     """
 
-    def __init__(self, units, response, fixed=I, random=I, **extra):
+    def __init__(self, units, response, fixed=I, random=I):
         self.units = units
         self.m = len(self.units)
         

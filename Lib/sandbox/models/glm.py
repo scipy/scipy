@@ -6,7 +6,7 @@ class model(wls_model):
 
     niter = 10
     
-    def __init__(self, design, family=family.Gaussian(), **keywords):
+    def __init__(self, design, family=family.Gaussian()):
         self.family = family
         self.weights = 1
         self.initialize(design)
@@ -59,12 +59,12 @@ class model(wls_model):
         
         if results is None:
             results = self.results
-        if Y is None: Y = self.Y
+        if Y is None:
+            Y = self.Y
         resid = Y - results.mu
         return (N.power(resid, 2) / self.family.variance(results.mu)).sum() / results.df_resid
     
-    def fit(self, Y, **keywords):
-
+    def fit(self, Y):
         self.Y = N.asarray(Y, N.float64)
         iter(self)
         self.results = wls_model.fit(self, self.family.link.initialize(Y))
