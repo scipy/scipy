@@ -100,7 +100,6 @@ class coxph(model.likelihood_model):
             self.risk[t] = N.compress([s.atrisk(t) for s in self.subjects],
                                       N.arange(self.design[t].shape[0]),axis=-1)
     def __del__(self):
-
         shutil.rmtree(self.cachedir, ignore_errors=True)
 
     def logL(self, b, ties='breslow'):
@@ -195,7 +194,7 @@ if __name__ == '__main__':
     n = 100
     X = N.array([0]*n + [1]*n)
     b = 0.4
-    lin = 1. + b * X
+    lin = 1 + b*X
     Y = R.standard_exponential((2*n,)) / lin
     delta = R.binomial(1, 0.9, size=(2*n,))
 
