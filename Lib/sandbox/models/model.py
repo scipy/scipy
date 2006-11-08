@@ -11,10 +11,10 @@ class Model:
     but lays out the methods expected of any subclass.
     """
 
-    def __init__(self, **keywords):
+    def __init__(self):
         pass
 
-    def initialize(self, **keywords):
+    def initialize(self):
         """
         Initialize (possibly re-initialize) a Model instance. For
         instance, the design matrix of a linear model may change
@@ -22,20 +22,20 @@ class Model:
         """
         raise NotImplementedError
 
-    def fit(self, **keywords): 
+    def fit(self): 
         """
         Fit a model to data.
         """
         raise NotImplementedError
 
-    def predict(self, **keywords):
+    def predict(self, design=None):
         """
         After a model has been fit, results are (assumed to be) stored
         in self.results, which itself should have a predict method.
         """
-        self.results.predict(**keywords) 
+        self.results.predict(design)
 
-    def view(self, **keywords):
+    def view(self):
         """
         View results of a model.
         """
@@ -43,27 +43,27 @@ class Model:
 
 class LikelihoodModel(Model):
 
-    def logL(self, theta, **extra):
+    def logL(self, theta):
         """
         Log-likelihood of model.
         """
         raise NotImplementedError
 
-    def score(self, theta, **extra):
+    def score(self, theta):
         """
         Score function of model = gradient of logL with respect to
         theta.
         """
         raise NotImplementedError
 
-    def information(self, theta, **extra):
+    def information(self, theta):
         """
         Score function of model = - Hessian of logL with respect to
         theta.
         """
         raise NotImplementedError
 
-    def newton(self, theta, **extra):
+    def newton(self, theta):
         def f(theta):
             return -self.logL(theta)
         self.results = scipy.optimize.fmin(f, theta)

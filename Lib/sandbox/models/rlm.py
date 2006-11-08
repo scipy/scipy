@@ -8,7 +8,7 @@ class model(wls_model):
     niter = 20
     scale_est = 'MAD'
 
-    def __init__(self, design, M=norms.Hampel(), **keywords):
+    def __init__(self, design, M=norms.Hampel()):
         self.M = M
         self.weights = 1
         self.initialize(design)
@@ -64,7 +64,7 @@ class model(wls_model):
         else:
             return scale.scale_est(self, resid)**2
         
-    def fit(self, Y, **keywords):
+    def fit(self, Y):
         
         iter(self)
         self.results = wls_model.fit(self, Y)
