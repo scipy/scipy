@@ -1,6 +1,8 @@
 import numpy as N
 from numpy.linalg import pinv
 from scipy.sandbox.models import utils
+from scipy.sandbox.models.formula import formula as formula_class
+from scipy.sandbox.models.formula import term as term_class
 
 class ContrastResults:
     """
@@ -66,7 +68,7 @@ class Contrast:
         return '<contrast:%s>' % \
                `{'term':str(self.term), 'formula':str(self.formula)}`
 
-    def getmatrix(self, evaldesign=True, **keywords):
+    def getmatrix(self, *args, **kw):
         """
         Construct a contrast matrix C so that
 
@@ -78,22 +80,22 @@ class Contrast:
         then evaldesign can be set to False.
         """
 
-        T = N.transpose(N.array(self.term(**keywords)))
+	self.term.namespace = self.formula.namespace
+        T = N.transpose(N.array(self.term(*args, **kw)))
 
         if T.ndim == 1:
             T.shape = (T.shape[0], 1)
         
-        T = utils.clean0(T)
+	self.T = utils.clean0(T)
 
-        if evaldesign:
-            self.D = self.formula.design(**keywords)
-            self.pinv = pinv(self.D)
+	self.D = self.formula.design(*args, **kw)
 
-        self.matrix = contrastfromcols(T, self.D)
+        self.matrix = contrastfromcols(self.T, self.D)
         try:
             self.rank = self.matrix.shape[1]
         except:
             self.rank = 1
+
 
 def contrastfromcols(T, D, pseudo=None):
     """
