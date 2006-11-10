@@ -391,7 +391,7 @@ class Mat5StructMatrixGetter(Mat5CellMatrixGetter):
         self.obj_template = mat_struct()
         
     def get_raw_array(self):
-        namelength = self.read_element()
+        namelength = self.read_element()[0]
         # get field names
         names = self.read_element()
         splitnames = [names[i:i+namelength] for i in \
