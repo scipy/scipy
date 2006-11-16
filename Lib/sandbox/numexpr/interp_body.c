@@ -92,8 +92,8 @@
         #define reduce_ptr  (dest + flat_index(&store_index, j))
         #define i_reduce    *(long *)reduce_ptr
         #define f_reduce    *(double *)reduce_ptr
-        #define cr_reduce   *(double *)ptr       
-        #define ci_reduce   *((double *)ptr+1)                
+        #define cr_reduce   *(double *)ptr
+        #define ci_reduce   *((double *)ptr+1)
         #define b_dest ((char *)dest)[j]
         #define i_dest ((long *)dest)[j]
         #define f_dest ((double *)dest)[j]
@@ -114,7 +114,7 @@
         #define f3    ((double *)x3)[j*sf3]
         #define c3r   ((double *)x3)[j*sf3]
         #define c3i   ((double *)x3)[j*sf3+1]
-        
+
         double fa, fb;
         cdouble ca, cb;
         char *ptr;
@@ -231,14 +231,14 @@
         case OP_SUM_CCN: VEC_ARG1(ptr = reduce_ptr;
                                   cr_reduce += c1r;
                                   ci_reduce += c1i);
-        
+
         case OP_PROD_IIN: VEC_ARG1(i_reduce *= i1);
         case OP_PROD_FFN: VEC_ARG1(f_reduce *= f1);
         case OP_PROD_CCN: VEC_ARG1(ptr = reduce_ptr;
                                    fa = cr_reduce*c1r - ci_reduce*c1i;
                                    ci_reduce = cr_reduce*c1i + ci_reduce*c1r;
                                    cr_reduce = fa);
-        
+
         default:
             *pc_error = pc;
             return -3;

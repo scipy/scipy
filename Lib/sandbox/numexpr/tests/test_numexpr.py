@@ -36,16 +36,16 @@ class test_numexpr(NumpyTestCase):
     def check_reductions(self):
         # Check that they compile OK.
         assert_equal(disassemble(numexpr("sum(x**2+2, axis=None)", [('x', float)])),
-                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
-                     ('add_fff', 't3', 't3', 'c2[2.0]'), 
+                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'),
+                     ('add_fff', 't3', 't3', 'c2[2.0]'),
                      ('sum_ffn', 'r0', 't3', None)])
         assert_equal(disassemble(numexpr("sum(x**2+2, axis=1)", [('x', float)])),
-                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
-                     ('add_fff', 't3', 't3', 'c2[2.0]'), 
+                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'),
+                     ('add_fff', 't3', 't3', 'c2[2.0]'),
                      ('sum_ffn', 'r0', 't3', 1)])
         assert_equal(disassemble(numexpr("prod(x**2+2, axis=2)", [('x', float)])),
-                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'), 
-                     ('add_fff', 't3', 't3', 'c2[2.0]'), 
+                    [('mul_fff', 't3', 'r1[x]', 'r1[x]'),
+                     ('add_fff', 't3', 't3', 'c2[2.0]'),
                      ('prod_ffn', 'r0', 't3', 2)])
         # Check that full reductions work.
         x = arange(10.0)
@@ -71,7 +71,7 @@ class test_numexpr(NumpyTestCase):
         x = (arange(10) % 2).astype(bool)
         assert_equal(evaluate("prod(x,axis=0)"), prod(x,axis=0))
         assert_equal(evaluate("sum(x,axis=0)"), sum(x,axis=0))
-        
+
     def check_axis(self):
         y = arange(9.0).reshape(3,3)
         try:
@@ -86,13 +86,13 @@ class test_numexpr(NumpyTestCase):
             pass
         else:
             raise ValueError("should raise exception!")
-            
 
-        
-        
+
+
+
     def check_r0_reuse(self):
         assert_equal(disassemble(numexpr("x**2+2", [('x', float)])),
-                    [('mul_fff', 'r0', 'r1[x]', 'r1[x]'), 
+                    [('mul_fff', 'r0', 'r1[x]', 'r1[x]'),
                      ('add_fff', 'r0', 'r0', 'c2[2.0]')])
 
 class test_evaluate(NumpyTestCase):
@@ -133,8 +133,8 @@ class test_evaluate(NumpyTestCase):
         x = sin(complex(a, b)).real + z.imag
         y = evaluate("sin(complex(a, b)).real + z.imag")
         assert_array_almost_equal(x, y)
-        
-        
+
+
     def check_complex_strides(self):
         a = arange(100).reshape(10,10)[::2]
         b = arange(50).reshape(5,10)
@@ -144,10 +144,10 @@ class test_evaluate(NumpyTestCase):
         c['c2'].fill(0xaaaa)
         c1 = c['c1']
         a0 = a[0]
-        assert_array_equal(evaluate("c1"), c1) 
+        assert_array_equal(evaluate("c1"), c1)
         assert_array_equal(evaluate("a0+c1"), a0+c1)
-        
-        
+
+
     def check_broadcasting(self):
         a = arange(100).reshape(10,10)[::2]
         c = arange(10)
@@ -156,20 +156,20 @@ class test_evaluate(NumpyTestCase):
         assert_array_equal(evaluate("a+d"), a+d)
         expr = numexpr("2.0*a+3.0*c",[('a',float),('c', float)])
         assert_array_equal(expr(a,c), 2.0*a+3.0*c)
-        
+
     def check_all_scalar(self):
         a = 3.
         b = 4.
         assert_equal(evaluate("a+b"), a+b)
         expr = numexpr("2*a+3*b",[('a',float),('b', float)])
         assert_equal(expr(a,b), 2*a+3*b)
-        
+
     def check_run(self):
         a = arange(100).reshape(10,10)[::2]
         b = arange(10)
         expr = numexpr("2*a+3*b",[('a',float),('b', float)])
         assert_array_equal(expr(a,b), expr.run(a,b))
-        
+
     def check_illegal_value(self):
         a = arange(3)
         try:
@@ -178,7 +178,7 @@ class test_evaluate(NumpyTestCase):
             pass
         else:
             self.fail()
-            
+
 
 tests = [
 ('MISC', ['b*c+d*e',

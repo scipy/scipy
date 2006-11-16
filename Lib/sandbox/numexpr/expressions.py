@@ -32,8 +32,8 @@ def ophelper(f):
         for i, x in enumerate(args):
             if isConstant(x):
                 args[i] = x = ConstantNode(x)
-            elif not isinstance(x, ExpressionNode):
-                raise TypeError( "unsupported object type: %s" % type(x) )
+            if not isinstance(x, ExpressionNode):
+                raise TypeError("unsupported object type: %s" % (type(x),))
         return f(*args)
     func.__name__ = f.__name__
     func.__doc__ = f.__doc__
@@ -213,7 +213,7 @@ functions = {
     'where' : where_func,
 
     'complex' : func(complex, 'complex'),
-        
+
     'sum' : sum_func,
     'prod' : prod_func,
     }
