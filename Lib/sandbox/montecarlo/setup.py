@@ -7,18 +7,12 @@ def configuration(parent_package='', top_path=None):
 
     config = Configuration('montecarlo', parent_package, top_path)
 
-    # This code requires 'randomkit' to have been built using 'add_extension' in
-    # numpy/random/setup.py.
-
-    random_lib_dir = dirname(numpy.random.__file__)
+    # This code requires 'randomkit.c' and 'randomkit.h' to have been copied
+    # to (or symlinked to) montecarlo/src/.
 
     config.add_extension('_intsampler',
-              include_dirs = [numpy.get_numpy_include(), random_lib_dir],
-              libraries=['randomkit'],
-              library_dirs=[random_lib_dir],
-              runtime_library_dirs=[random_lib_dir],
               sources = [join('src', f) for f in
-                        ['_intsamplermodule.c', 'compact5table.c']])
+                        ['_intsamplermodule.c', 'compact5table.c', 'randomkit.c']])
     
     config.add_data_dir('tests')
     config.add_data_dir('examples')
