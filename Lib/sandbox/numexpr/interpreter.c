@@ -483,7 +483,7 @@ typecode_from_char(char c)
 
 static int
 last_opcode(PyObject *program_object) {
-    int n;
+    Py_ssize_t n;
     unsigned char *program;
     PyString_AsStringAndSize(program_object, (char **)&program, &n);
     return program[n-4];
@@ -506,7 +506,8 @@ static int
 check_program(NumExprObject *self)
 {
     unsigned char *program;
-    int prog_len, rno, pc, arg, argloc, argno, n_buffers, n_inputs;
+    Py_ssize_t prog_len, n_buffers, n_inputs;
+    int rno, pc, arg, argloc, argno;
     char sig, *fullsig, *signature;
 
     if (PyString_AsStringAndSize(self->program, (char **)&program,
@@ -915,14 +916,16 @@ run_interpreter(NumExprObject *self, int len, char *output, char **inputs,
                 struct index_data *index_data, int *pc_error)
 {
     int r;
+    Py_ssize_t plen;
     unsigned int blen1, blen2;
     struct vm_params params;
 
     *pc_error = -1;
     if (PyString_AsStringAndSize(self->program, (char **)&(params.program),
-                                 &(params.prog_len)) < 0) {
+                                 &plen) < 0) {
         return -1;
     }
+    params.prog_len = plen;
     if ((params.n_inputs = PyObject_Length(self->signature)) == -1)
         return -1;
     params.output = output;
@@ -952,7 +955,8 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *output = NULL, *a_inputs = NULL;
     struct index_data *inddata = NULL;
-    unsigned int n_inputs, n_dimensions = 0, shape[MAX_DIMS];
+    unsigned int n_inputs, n_dimensions = 0;
+    int shape[MAX_DIMS];
     int i, j, size, r, pc_error;
     char **inputs = NULL;
     intp strides[MAX_DIMS]; /* clean up XXX */
@@ -1134,7 +1138,8 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
                     j += 1;
                 }
             }
-            output = PyArray_SimpleNew(n_dimensions-1, dims, typecode_from_char(retsig));
+            output = PyArray_SimpleNew(n_dimensions-1, dims,
+                                       typecode_from_char(retsig));
             if (!output) goto cleanup_and_exit;
             for (i = j = 0; i < n_dimensions; i++) {
                 if (i != axis) {
@@ -1162,11 +1167,11 @@ NumExpr_run(NumExprObject *self, PyObject *args, PyObject *kwds)
         if (last_opcode(self->program) >= OP_SUM &&
             last_opcode(self->program) < OP_PROD) {
                 PyObject *zero = PyInt_FromLong(0);
-                PyArray_FillWithScalar(output, zero);
+                PyArray_FillWithScalar((PyArrayObject *)output, zero);
                 Py_DECREF(zero);
         } else {
                 PyObject *one = PyInt_FromLong(1);
-                PyArray_FillWithScalar(output, one);
+                PyArray_FillWithScalar((PyArrayObject *)output, one);
                 Py_DECREF(one);
         }
     }
