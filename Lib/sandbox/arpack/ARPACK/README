@@ -1,0 +1,111 @@
+1. You have successfully unbundled ARPACK and are now in the ARPACK 
+   directory that was created for you.
+
+2. Recent bug fixes are included in patch.tar.gz and ppatch.tar.gz 
+   (only needed if you are using PARPACK also.)  If you have not
+   retrieved these files, please do so and place them in the 
+   directory right above the current directory.  (They should
+   be in the same directory where arpack96.tar reside).
+   Use uncompress or gunzip to unzip the tar files, and use 'tar -xvf '
+   to unbundle these patches.  The source codes in these patches will 
+   overwrite those contained in arpack96.tar and parpack96.tar.
+
+3. Upon executing the 'ls | more ' command you should see
+
+      BLAS
+      DOCUMENTS
+      EXAMPLES
+      LAPACK
+      README
+      SRC
+      UTIL
+      Makefile
+      ARmake.inc
+      ARMAKES
+
+   The following entries are directories:
+
+      ARMAKES, BLAS, DOCUMENTS, EXAMPLES, LAPACK, SRC, UTIL
+
+   The directory SRC contains the top level routines including 
+   the highest level reverse communication interface routines
+
+      ssaupd, dsaupd - symmetric single and double precision
+      snaupd, dnaupd - non-symmetric single and double precision
+      cnaupd, cnaupd - complex non-symmetric single and double precision
+
+   The headers of these routines contain full documentation of calling
+   sequence and usage.  Additional information is in the DOCUMENTS directory.
+
+
+4. Example driver programs that illustrate all the computational modes,
+   data types and precisions may be found in the EXAMPLES directory.
+   Upon executing the 'ls EXAMPLES | more ' command you should see
+
+      BAND
+      COMPLEX
+      NONSYM
+      README
+      SIMPLE
+      SVD
+      SYM
+
+   Example programs for banded, complex, nonsymmetric, symmetric,
+   and singular value decomposition may be found in the directories
+   BAND, COMPLEX, NONSYM, SYM, SVD respectively.  Look at the README
+   file for further information.  To get started, get into the SIMPLE
+   directory to see example programs that illustrate the use of ARPACK in
+   the simplest modes of operation for the most commonly posed 
+   standard eigenvalue problems.  
+
+   The following instructions explain how to make the ARPACK library.
+
+
+5. Before you can compile anything, you must first edit and correct the file
+   ARmake.inc. Sample ARmake.inc's can be found in the ARMAKES directory.
+   Edit "ARmake.inc" and change the definition "home" to the root of the
+   source tree (Top level of ARPACK directory)
+
+   The makefile is set up to build a self-contained library which includes
+   the needed BLAS 1/2/3 and LAPACK routines.  If you already have the
+   BLAS and LAPACK libraries installed on your system you might want to
+   change the definition of DIRS as indicated in the ARmake.inc file. 
+
+   *** NOTE ***  Unless the LAPACK library on your system is version 2.0,
+   we strongly recommend that you install the LAPACK routines provided with
+   ARPACK. Note that the current LAPACK release is version 3.0; if you are 
+   not sure which version of LAPACK is installed, pleaase compile and link 
+   to the subset of LAPACK included with ARPACK. 
+
+
+6. You will also need to change the file "second.f" in the UTIL directory
+   to whatever is appropriate for timing on your system.  The "second" routine
+   provided works on most workstations.  If you are running on a Cray,
+   you can just edit the makefile in UTIL and take out the reference to
+  "second.o" to use the system second routine.
+
+
+7. Do "make lib" in the current directory to build the standard library 
+   "libarpack_$(PLAT).a" 
+
+8. Within DOCUMENTS directory there are three files 
+
+   ex-sym.doc 
+   ex-nonsym.doc and
+   ex-complex.doc
+
+   for templates on how to invoke the computational modes of ARPACK.
+   Also look in the README file for explanations concerning the 
+   other documents.
+
+
+   Danny Sorensen   at  sorensen@caam.rice.edu
+   Richard Lehoucq  at  rblehou@sandia.gov
+   Chao Yang        at  cyang@lbl.gov
+   Kristi Maschhoff at  kristyn@tera.com
+
+If you have questions regarding using ARPACK, please send email 
+to arpack@caam.rice.edu.
+
+ Good luck and enjoy.
+
