@@ -28,7 +28,7 @@ class test_eigs(ScipyTestCase):
         matvec = get_matvec(A)
         #= lambda x: N.asarray(A*x)[0]
         nev=4
-        eigvs = eigvals(matvec, A.shape[0], nev=nev)
+        eigvs = ARPACK_eigs(matvec, A.shape[0], nev=nev)
         calc_vals = eigvs[0]
         # Ensure the calculate eigenvectors have the same sign as the refence values
         calc_vecs = eigvs[1] / [N.sign(x[0]) for x in eigvs[1].T]
@@ -40,11 +40,14 @@ class test_eigs(ScipyTestCase):
 #     def test(self):
 #         import pickle
 #         import scipy.linsolve
-#         A,B = pickle.load(file('/tmp/mats.pickle'))
+#         A,B = pickle.load(file('mats.pickle'))
 #         sigma = 27.
 #         sigma_solve = scipy.linsolve.splu(A - sigma*B).solve
-#         w = geneigvals(B.matvec, sigma_solve, B.shape[0], sigma, 10)
-        
+#         w = ARPACK_gen_eigs(B.matvec, sigma_solve, B.shape[0], sigma, 10)[0]
+#         assert_array_almost_equal(w,
+#         [27.346442255386375,  49.100299170945405,  56.508474856551544, 56.835800191692492,
+#          65.944215785041365, 66.194792400328367, 78.003788872725238, 79.550811647295944,
+#          94.646308846854879, 95.30841709116271], decimal=11)
 
 if __name__ == "__main__":
     ScipyTest().run()
