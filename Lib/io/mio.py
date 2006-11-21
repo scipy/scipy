@@ -108,7 +108,8 @@ def savemat(file_name, mdict, appendmat=True):
     
     @appendmat  - if true, appends '.mat' extension to filename, if not present
     """
-    if isinstance(file_name, basestring):
+    file_is_string = isinstance(file_name, basestring)
+    if file_is_string:
         if appendmat and file_name[-4:] != ".mat":
             file_name = file_name + ".mat"
         file_stream = open(file_name, 'wb')
@@ -117,9 +118,10 @@ def savemat(file_name, mdict, appendmat=True):
             file_name.write('')
         except AttributeError:
             raise IOError, 'Writer needs file name or writeable file-like object'
-        byte_stream = file_name
+        file_stream = file_name
         
     MW = MatFile4Writer(file_stream)
     MW.put_variables(mdict)
-    file_stream.close()
+    if file_is_string:
+        file_stream.close()
     
