@@ -90,8 +90,7 @@ class test_mio_array(ScipyTestCase):
     def _make_rt_check_case(name, expected):
         def cc(self):
             mat_stream = StringIO()
-            MW = MatFile4Writer(mat_stream)
-            MW.put_variables(expected)
+            savemat(mat_stream, expected)
             mat_stream.seek(0)
             self._check_case(name, [mat_stream], expected)
         cc.__doc__ = "check loadmat case %s" % name
