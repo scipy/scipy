@@ -12,12 +12,12 @@ from numpy import *
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
 
+def find_mat_file(file_name, appendmat=True):
+    ''' Try to find .mat file on system path
 
-def mat_reader_factory(file_name, appendmat=True, **kwargs):
-    """Create reader for matlab (TM) .mat format files
-    
-    See docstring for loadmat for input options
-    """
+    file_name     - file name string
+    append_mat    - If True, and file_name does not end in '.mat', appends it
+    '''
     if appendmat and file_name[-4:] == ".mat":
         file_name = file_name[:-4]
     if os.sep in file_name:
@@ -38,10 +38,25 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
                 break
             except IOError:
                 pass
+    return full_name
+
+def mat_reader_factory(file_name, appendmat=True, **kwargs):
+    """Create reader for matlab (TM) .mat format files
+    
+    See docstring for loadmat for input options
+    """
+    if isinstance(file_name, basestring):
+        full_name = find_mat_file(file_name, appendmat)
         if full_name is None:
             raise IOError, "%s not found on the path." % file_name
-
-    byte_stream = open(full_name, 'rb')
+        byte_stream = open(full_name, 'rb')
+    else:
+        try:
+            file_name.read(0)
+        except AttributeError:
+            raise IOError, 'Reader needs file name or open file-like object'
+        byte_stream = file_name
+            
     MR = MatFile4Reader(byte_stream, **kwargs)
     if MR.format_looks_right():
         return MR
@@ -55,9 +70,10 @@ def loadmat(file_name,  mdict=None, appendmat=True, basename='raw', **kwargs):
                          If name not a full path name, search for the file on
                          the sys.path list and use the first one found (the
                          current directory is searched first).
+                         Can also pass open file-like object
     m_dict             - optional dictionary in which to insert matfile variables 
     appendmat          - True to append the .mat extension to the end of the
-                         given filename.
+                         given filename, if not already present
     base_name          - base name for unnamed variables (unused in code)
     byte_order         - byte order ('native', 'little', 'BIG')
                           in ('native', '=')
@@ -92,12 +108,18 @@ def savemat(file_name, mdict, appendmat=True):
     
     @appendmat  - if true, appends '.mat' extension to filename, if not present
     """
-    if appendmat and file_name[-4:] != ".mat":
-        file_name = file_name + ".mat"
-    file_stream = open(file_name, 'wb')
+    if isinstance(file_name, basestring):
+        if appendmat and file_name[-4:] != ".mat":
+            file_name = file_name + ".mat"
+        file_stream = open(file_name, 'wb')
+    else:
+        try:
+            file_name.write('')
+        except AttributeError:
+            raise IOError, 'Writer needs file name or writeable file-like object'
+        byte_stream = file_name
+        
     MW = MatFile4Writer(file_stream)
     MW.put_variables(mdict)
     file_stream.close()
     
-if __name__ == '__main__':
-    D = savemat('test.mat', {'a': 1})

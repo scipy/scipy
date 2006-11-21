@@ -2,6 +2,7 @@
 
 import os
 from glob import glob
+from cStringIO import StringIO
 from tempfile import mkstemp
 from numpy.testing import set_package_path, restore_path, ScipyTestCase, ScipyTest
 from numpy.testing import assert_equal, assert_array_almost_equal
@@ -88,13 +89,11 @@ class test_mio_array(ScipyTestCase):
     # Add the round trip tests dynamically, with given parameters
     def _make_rt_check_case(name, expected):
         def cc(self):
-            (fd, fname) = mkstemp('.mat')
-            file_stream = os.fdopen(fd, 'wb')
-            MW = MatFile4Writer(file_stream)
+            mat_stream = StringIO()
+            MW = MatFile4Writer(mat_stream)
             MW.put_variables(expected)
-            file_stream.close()
-            self._check_case(name, [fname], expected)
-            os.remove(fname)
+            mat_stream.seek(0)
+            self._check_case(name, [mat_stream], expected)
         cc.__doc__ = "check loadmat case %s" % name
         return cc
 
