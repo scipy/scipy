@@ -7,7 +7,7 @@ def configuration(parent_package='', top_path=None):
 
     config = Configuration('montecarlo', parent_package, top_path)
     
-    if not (exists('src/randomkit.c') and exists('src/randomkit.h')):
+    if not (exists(join(config.package_path, 'src', 'randomkit.c')) and exists(join(config.package_path, 'src', 'randomkit.h'))):
         raise OSError, "Please copy or symlink randomkit.c and randomkit.h to montecarlo/src/ from numpy/random/mtrand/ in the NumPy source tree!"
     
     config.add_extension('_intsampler',
