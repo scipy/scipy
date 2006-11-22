@@ -1,15 +1,15 @@
 import numpy
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
-from os.path import join, dirname
+from os.path import join, dirname, exists
 
 def configuration(parent_package='', top_path=None):
 
     config = Configuration('montecarlo', parent_package, top_path)
-
-    # This code requires 'randomkit.c' and 'randomkit.h' to have been copied
-    # to (or symlinked to) montecarlo/src/.
-
+    
+    if not (exists('src/randomkit.c') and exists('src/randomkit.h')):
+        raise OSError, "Please copy or symlink randomkit.c and randomkit.h to montecarlo/src/ from numpy/random/mtrand/ in the NumPy source tree!"
+    
     config.add_extension('_intsampler',
               sources = [join('src', f) for f in
                         ['_intsamplermodule.c', 'compact5table.c', 'randomkit.c']])
