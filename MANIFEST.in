@@ -11,6 +11,14 @@ include Lib/*.py
 #
 include Lib/sandbox/ann/*
 include Lib/sandbox/ann/data/*
+include Lib/sandbox/ann/doc/*
+include Lib/sandbox/arpack/*
+include Lib/sandbox/arpack/ARPACK/*
+include Lib/sandbox/arpack/ARPACK/LAPACK/*
+include Lib/sandbox/arpack/ARPACK/SRC/*
+include Lib/sandbox/arpack/ARPACK/UTIL/*
+include Lib/sandbox/arpack/build/*
+include Lib/sandbox/arpack/tests/*
 include Lib/sandbox/arraysetops/*
 include Lib/sandbox/arraysetops/tests/*
 include Lib/sandbox/buildgrid/*
@@ -40,9 +48,12 @@ include Lib/sandbox/netcdf/*
 include Lib/sandbox/newoptimize/*
 include Lib/sandbox/numexpr/*
 include Lib/sandbox/numexpr/tests/*
-include Lib/sandbox/odr/*
-include Lib/sandbox/odr/odrpack/*
+include Lib/sandbox/oliphant/*
 include Lib/sandbox/plt/*
+include Lib/sandbox/pyem/*
+include Lib/sandbox/pyem/profile_data/*
+include Lib/sandbox/pyem/src/*
+include Lib/sandbox/pyem/tests/*
 include Lib/sandbox/pysparse/*
 include Lib/sandbox/pysparse/Tools/*
 include Lib/sandbox/pysparse/amd/*
@@ -57,6 +68,9 @@ include Lib/sandbox/pysparse/superlu/*
 include Lib/sandbox/pysparse/tests/*
 include Lib/sandbox/pysparse/umfpack/*
 include Lib/sandbox/rkern/*
+include Lib/sandbox/spline/*
+include Lib/sandbox/spline/fitpack/*
+include Lib/sandbox/spline/tests/*
 include Lib/sandbox/stats/*
 include Lib/sandbox/svm/*
 include Lib/sandbox/svm/libsvm-2.82/*
