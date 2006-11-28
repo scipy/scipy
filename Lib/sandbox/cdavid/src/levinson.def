@@ -1,0 +1,18 @@
+/*
+ * Last Change: Tue Nov 28 03:00 PM 2006 J
+ * vim:syntax=c
+ */
+autogen definitions levinson.tpl;
+
+float_type = {
+	type_name	= "float" ;
+	short_name	= "flt" ;
+	upper_name	= "FLOAT" ;
+} ;
+
+float_type = {
+	type_name	= "double" ;
+	short_name	= "dbl" ;
+	upper_name	= "DOUBLE" ;
+} ;
+

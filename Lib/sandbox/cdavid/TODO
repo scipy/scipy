@@ -1,0 +1,6 @@
+# Last Change: Tue Nov 28 05:00 PM 2006 J
+
+    - there is no doc.
+    - the handling of non contiguous arrays is not really 
+    elegant, and the code is difficult to maintain
+    - rank > 2: must code in C ? (yuk)
