@@ -77,7 +77,7 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('pyem')
 
     # David Cournapeau's corner: autocorrelation, lpc, lpc residual
-    config.add_subpackage('cdavid')
+    #config.add_subpackage('cdavid')
 
     # New spline package (based on scipy.interpolate)
     #config.add_subpackage('spline')
