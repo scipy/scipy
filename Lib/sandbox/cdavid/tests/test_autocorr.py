@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Mon Nov 27 08:00 PM 2006 J
+# Last Change: Tue Nov 28 05:00 PM 2006 J
 
 from numpy.testing import *
 from numpy.random import randn, seed
@@ -9,9 +9,9 @@ from numpy.ctypeslib import ndpointer, load_library
 from ctypes import c_uint
 
 set_package_path()
-from autocorr import _raw_autocorr_1d, _raw_autocorr_1d_noncontiguous
-from autocorr import autocorr_oneside_nofft as autocorr
-from autocorr import _autocorr_oneside_nofft_py as autocorr_py
+from cdavid.autocorr import _raw_autocorr_1d, _raw_autocorr_1d_noncontiguous
+from cdavid.autocorr import autocorr_oneside_nofft as autocorr
+from cdavid.autocorr import _autocorr_oneside_nofft_py as autocorr_py
 restore_path()
 
 import numpy

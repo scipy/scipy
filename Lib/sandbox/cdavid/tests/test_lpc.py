@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Tue Nov 28 03:00 PM 2006 J
+# Last Change: Tue Nov 28 05:00 PM 2006 J
 
 from numpy.testing import *
 from numpy.random import randn, seed
@@ -9,9 +9,9 @@ from numpy.ctypeslib import ndpointer, load_library
 from ctypes import c_uint
 
 set_package_path()
-from lpc import _lpc2_py as lpc_py
-from lpc import lpc_ref, lpc2
-from autocorr import autocorr_oneside_nofft
+from cdavid.lpc import _lpc2_py as lpc_py
+from cdavid.lpc import lpc_ref, lpc2
+from cdavid.autocorr import autocorr_oneside_nofft
 restore_path()
 
 import numpy
