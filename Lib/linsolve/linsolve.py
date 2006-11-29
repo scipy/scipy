@@ -43,6 +43,12 @@ def _toCS_umfpack( A ):
     return mat
 
 def spsolve(A, b, permc_spec=2):
+    if b.ndim > 1:
+        if max( b.shape ) == b.size:
+            b = b.squeeze()
+        else:
+            raise ValueError, "rhs must be a vector (has shape %s)" % (b.shape,)
+    
     if not hasattr(A, 'tocsr') and not hasattr(A, 'tocsc'):
         raise ValueError, "sparse matrix must be able to return CSC format--"\
               "A.tocsc()--or CSR format--A.tocsr()"
@@ -51,8 +57,11 @@ def spsolve(A, b, permc_spec=2):
                 " (rows, cols) = A.shape"
     M, N = A.shape
     if (M != N):
-        raise ValueError, "matrix must be square"
-
+        raise ValueError, "matrix must be square (has shape %s)" % (A.shape,)
+    if M != b.size:
+        raise ValueError, "matrix - rhs size mismatch (%s - %s)"\
+              % (A.shape, b.shape)
+       
     if isUmfpack and useUmfpack:
         mat = _toCS_umfpack( A )
 
