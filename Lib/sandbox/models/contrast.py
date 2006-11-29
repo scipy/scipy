@@ -1,8 +1,6 @@
 import numpy as N
 from numpy.linalg import pinv
 from scipy.sandbox.models import utils
-from scipy.sandbox.models.formula import formula as formula_class
-from scipy.sandbox.models.formula import term as term_class
 
 class ContrastResults:
     """

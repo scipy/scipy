@@ -203,8 +203,8 @@ if __name__ == '__main__':
         subjects[i].X = X[i]
 
     import formula as F
-    x = F.Quantitative('X')
-    f = F.Formula(x)
+    x = F.quantitative('X')
+    f = F.formula(x)
 
     c = coxph(subjects, f)
 

@@ -270,7 +270,7 @@ class quantitative(term):
 	"""
         return self.transform(term.__call__(self, *args, **kw))
 
-class formula:
+class formula(object):
 
     """
 
@@ -367,10 +367,10 @@ class formula:
                     n = allvals[1].shape[1]
                 allvals[interceptindex] = N.ones((1,n), N.float64) 
                 allvals = N.concatenate(allvals)
-            elif nrow <= 1:
+            elif nrow <= 1: # FIXME: nrow is undefined here
                 raise ValueError, 'with only intercept in formula, keyword \'nrow\' argument needed'
             else:
-                allvals = I(nrow=nrow)
+                allvals = I(nrow=nrow) # ... and here
                 allvals.shape = (1,) + allvals.shape
         return allvals
     

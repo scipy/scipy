@@ -1,6 +1,6 @@
 import numpy as N
 import numpy.linalg as L
-from scipy.sandbox.models.formula import Formula, I
+from scipy.sandbox.models.formula import formula, I
 
 class Unit:
 
@@ -148,9 +148,9 @@ class Mixed:
         self.units = units
         self.m = len(self.units)
         
-        self.fixed = Formula(fixed)
-        self.random = Formula(random)
-        self.response = Formula(response)
+        self.fixed = formula(fixed)
+        self.random = formula(random)
+        self.response = formula(response)
 
         self.N = 0
         for unit in self.units:
@@ -315,9 +315,9 @@ if __name__ == '__main__':
     n = 3
 
     import formula
-    fixed = formula.Term('f')
-    random = formula.Term('r')
-    response = formula.Term('y')
+    fixed = formula.term('f')
+    random = formula.term('r')
+    response = formula.term('y')
 
     for i in range(nsubj):
         d = R.standard_normal()
