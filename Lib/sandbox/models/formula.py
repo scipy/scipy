@@ -32,15 +32,15 @@ class term(object):
         else:
             name = '%s^%0.2f' % (self.name, power)
 
-	value = quantitative(name, func=self, transform=lambda x: N.power(x, power))
-	value.power = power
-	value.namespace = self.namespace
+        value = quantitative(name, func=self, transform=lambda x: N.power(x, power))
+        value.power = power
+        value.namespace = self.namespace
         return value
 
     def __init__(self, name, func=None, termname=None):
         
         self.name = name
-	self.__namespace = None
+        self.__namespace = None
         if termname is None:
             self.termname = name
         else:
@@ -70,8 +70,8 @@ class term(object):
         """
         other = formula(other, namespace=self.namespace)
         f = other + self
-	f.namespace = self.namespace
-	return f
+        f.namespace = self.namespace
+        return f
 
     def __mul__(self, other):
         """
@@ -82,11 +82,11 @@ class term(object):
             f = formula(self, namespace=self.namespace)
         elif self.name is 'intercept':
             f = formula(other, namespace=other.namespace)
-	else:
-	    other = formula(other, namespace=self.namespace)
-	    f = other * self
-	f.namespace = self.namespace
-	return f
+        else:
+            other = formula(other, namespace=self.namespace)
+            f = other * self
+        f.namespace = self.namespace
+        return f
 
     def names(self):
         """
@@ -113,12 +113,12 @@ class term(object):
         
         if not hasattr(self, 'func'):
             val = self.namespace[self.termname]
-	else:
-	    val = self.func
-	if callable(val):
-	    if hasattr(val, "namespace"):
-		val.namespace = self.namespace
-	    val = val(*args, **kw)
+        else:
+            val = self.func
+        if callable(val):
+            if hasattr(val, "namespace"):
+                val.namespace = self.namespace
+            val = val(*args, **kw)
 
         val = N.asarray(val)
         return N.squeeze(val)
@@ -144,47 +144,47 @@ class factor(term):
         self.ordinal = ordinal
 
         if self.ordinal:
-	    name = self.name
+            name = self.name
         else:
-	    name = ['(%s==%s)' % (self.termname, str(key)) for key in self.keys]
+            name = ['(%s==%s)' % (self.termname, str(key)) for key in self.keys]
 
-	term.__init__(self, name, termname=self.termname, func=self.get_columns)
+        term.__init__(self, name, termname=self.termname, func=self.get_columns)
 
     def get_columns(self, *args, **kw):
-	"""
+        """
 	Calling function for factor instance.
 	"""
 
-	v = self.namespace[self._name]
-	while True:
-	    if callable(v): 
-		if hasattr(v, "namespace"):
-		    v.namespace = self.namespace
-		v = v(*args, **kw)
-	    else: break 
+        v = self.namespace[self._name]
+        while True:
+            if callable(v): 
+                if hasattr(v, "namespace"):
+                    v.namespace = self.namespace
+                v = v(*args, **kw)
+            else: break 
 
-	if self.ordinal:
-	    col = [float(self.keys.index(v[i])) for i in range(len(self.keys))]
-	    return N.array(col)
+        if self.ordinal:
+            col = [float(self.keys.index(v[i])) for i in range(len(self.keys))]
+            return N.array(col)
 
-	else:
-	    n = len(v)
-	    value = []
-	    for key in self.keys:
-		col = [float((v[i] == key)) for i in range(n)]
-		value.append(col)
-	    return N.array(value)
+        else:
+            n = len(v)
+            value = []
+            for key in self.keys:
+                col = [float((v[i] == key)) for i in range(n)]
+                value.append(col)
+            return N.array(value)
 
     def values(self, *args, **kw):
-	"""
+        """
 	Return the keys of the factor, rather than the columns of the design 
 	matrix.
 	"""
 
-	del(self.func)
-	val = self(*args, **kw)
-	self.func = self.get_columns
-	return val
+        del(self.func)
+        val = self(*args, **kw)
+        self.func = self.get_columns
+        return val
 
     def verify(self, values):
         """
@@ -218,7 +218,7 @@ class factor(term):
         if reference is None:
             reference = 0
 
-	names = self.names()
+        names = self.names()
 
         def maineffect_func(value, reference=reference):
             rvalue = []
@@ -235,8 +235,8 @@ class factor(term):
         value = quantitative(_names, func=self, 
 		     termname='%s:maineffect' % self.termname,
 		     transform=maineffect_func)
-	value.namespace = self.namespace
-	return value
+        value.namespace = self.namespace
+        return value
 
 class quantitative(term):
 
@@ -260,15 +260,15 @@ class quantitative(term):
     """
 
     def __init__(self, name, func=None, termname=None, transform=lambda x: x):
-	self.transform = transform
-	term.__init__(self, name, func=func, termname=termname)
+        self.transform = transform
+        term.__init__(self, name, func=func, termname=termname)
 
     def __call__(self, *args, **kw):
-	"""
+        """
 	A quantitative is just like term, except there is an additional
 	transformation: self.transfrom.
 	"""
-	return self.transform(term.__call__(self, *args, **kw))
+        return self.transform(term.__call__(self, *args, **kw))
 
 class formula:
 
@@ -301,7 +301,7 @@ class formula:
 
         """
 
-	self.__namespace = namespace
+        self.__namespace = namespace
         if isinstance(termlist, formula):
             self.terms = copy.copy(list(termlist.terms))
         elif type(termlist) is types.ListType:
@@ -333,26 +333,26 @@ class formula:
 
         allvals = []
         intercept = False
-	iindex = 0
+        iindex = 0
         for t in self.terms:
 
-	    t.namespace = self.namespace
+            t.namespace = self.namespace
             val = t(*args, **kw)
 
-	    isintercept = False
+            isintercept = False
             if hasattr(t, "termname"):
-		if t.termname == 'intercept': 
-		    intercept = True
-		    isintercept = True
-		    interceptindex = iindex
-		    allvals.append(None)
+                if t.termname == 'intercept': 
+                    intercept = True
+                    isintercept = True
+                    interceptindex = iindex
+                    allvals.append(None)
 
             if val.ndim == 1 and not isintercept:
                 val.shape = (1, val.shape[0])
                 allvals.append(val)
             elif not isintercept:
                 allvals.append(val)
-	    iindex += 1
+            iindex += 1
 
         if not intercept:
             try:
@@ -361,11 +361,11 @@ class formula:
                 pass
         else:
             if allvals != []:
-		if interceptindex > 0:
-		    n = allvals[0].shape[1]
-		else:
-		    n = allvals[1].shape[1]
-		allvals[interceptindex] = N.ones((1,n), N.float64) 
+                if interceptindex > 0:
+                    n = allvals[0].shape[1]
+                else:
+                    n = allvals[1].shape[1]
+                allvals[interceptindex] = N.ones((1,n), N.float64) 
                 allvals = N.concatenate(allvals)
             elif nrow <= 1:
                 raise ValueError, 'with only intercept in formula, keyword \'nrow\' argument needed'
@@ -473,16 +473,16 @@ class formula:
 
                 if self.terms[i].name is 'intercept':
                     _term = other.terms[j]
-		    _term.namespace = other.namespace
+                    _term.namespace = other.namespace
 
                 elif other.terms[j].name is 'intercept':
                     _term = self.terms[i]
-		    _term.namespace = self.namespace
+                    _term.namespace = self.namespace
                 else:
                     names = []
 
-		    d1 = len(selfnames) 
-		    d2 = len(othernames)
+                    d1 = len(selfnames) 
+                    d2 = len(othernames)
 
                     for r in range(d1):
                         for s in range(d2):
@@ -494,19 +494,19 @@ class formula:
 
                     def product_func(value, d1=d1, d2=d2):
 
-			out = []
-			for r in range(d1):
-			    for s in range(d2):
-				out.append(value[r] * value[d1+s])
-			return N.array(out)
+                        out = []
+                        for r in range(d1):
+                            for s in range(d2):
+                                out.append(value[r] * value[d1+s])
+                        return N.array(out)
 
-		    sumterms = self + other
-		    sumterms.terms = [self, other] # enforce the order we want
-		    sumterms.namespace = self.namespace
+                    sumterms = self + other
+                    sumterms.terms = [self, other] # enforce the order we want
+                    sumterms.namespace = self.namespace
 
                     _term = quantitative(names, func=sumterms, termname=termname,
 					 transform=product_func)
-		    _term.namespace = self.namespace
+                    _term.namespace = self.namespace
 
 
                 terms.append(_term)

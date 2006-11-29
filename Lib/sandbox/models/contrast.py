@@ -80,15 +80,15 @@ class Contrast:
         then evaldesign can be set to False.
         """
 
-	self.term.namespace = self.formula.namespace
+        self.term.namespace = self.formula.namespace
         T = N.transpose(N.array(self.term(*args, **kw)))
 
         if T.ndim == 1:
             T.shape = (T.shape[0], 1)
         
-	self.T = utils.clean0(T)
+        self.T = utils.clean0(T)
 
-	self.D = self.formula.design(*args, **kw)
+        self.D = self.formula.design(*args, **kw)
 
         self.matrix = contrastfromcols(self.T, self.D)
         try:
