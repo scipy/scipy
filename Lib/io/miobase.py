@@ -380,46 +380,67 @@ class MatFileWriter(object):
 
 
 class DownCaster(object):
-    ''' Downcasts arrays '''
+    ''' Downcast arrays to acceptable datatypes
 
-    def __init__(self,
-                 type_list=None,
-                 rtol=1.0000000000000001e-05,
-                 atol=1e-08):
-        ''' Set types for which we are attempting to downcast '''
-        def_dict = self.default_dt_dict()
-        if type_list is None:
-            self.dt_dict = def_dict
-        else:
-            dt_dict = {}
-            for T in type_list:
-                T = dtype(T).type
-                dt_dict[T] = def_dict[T]
-            self.dt_dict = dt_dict
-        self.rtol = rtol
-        self.atol = atol
+    Initialization specifies acceptable datatypes (ADs)
 
-    def eps(self, dt):
-        ''' Calculate machine precision for datatype
+    Implements downcast method - returns array that may be of
+    different storage type to the input array, where the new type is
+    one of the ADs.
 
-        Machine precision defined as difference between X and smallest
-        encodable number greater than X, where X is usually 1.
+    Also implements downcast_and_nearest method - returns downcast
+    array, and datatype within the ADs that is nearest to the input
+    datatype.
 
-        Input can be datatype, in which case X=1, or X.
-        '''
-        try:
-            dt = dtype(dt)
-            start = array(1, dt)
-        except TypeError:
-            start = array(dt)
-            dt = start.dtype
-        two = array(2, dt)
-        e = start.copy()
-        while (e / two + start) > start:
-            e = e / two
-        return e
+    The algorithm for the "nearest" is: return input datatype if in
+    ADs; else return a higher precision datatype in ADs of same type
+    if available; else return the next lower precision datatype in
+    ADs of same type; else raise an error.
     
-    def default_dt_dict(self):
+    At its simplest, the downcast method can reject arrays that
+    are not in the list of ADs.
+
+    '''
+
+    _sctype_trans = {'complex': 'c', 'c': 'c',
+                     'float': 'f', 'f': 'f',
+                     'int': 'i', 'i': 'i',
+                     'uint': 'u', 'u': 'u'}
+
+    def __init__(self, sctype_list=None, sctype_tols=None):
+        ''' Set types for which we are attempting to downcast
+
+        Input
+        sctype_list  - list of acceptable scalar types
+                     If None defaults to all system types
+        sctype_tols  - dictionary key datatype, values rtol, tol
+                     to specify tolerances for checking near equality in downcasting
+        
+        '''
+        sys_dict = self.system_sctype_dict()
+        if sctype_list is None:
+            self.sctype_dict = sys_dict.copy()
+            sctype_list = self.sctype_dict.keys()
+        else:
+            D = {}
+            for k, v in sys_dict.items():
+                if k in sctype_list:
+                    D[k] = v
+            self.sctype_dict = D
+        self.sctype_list = sctype_list
+        self.sctype_tols = self.default_sctype_tols()
+        if sctype_tols is not None:
+            self.sctype_tols.merge(sctype_tols)
+        self.sized_sctypes = {}
+        for k in ('c', 'f', 'i', 'u'):
+            self.sized_sctypes[k] = self.sctypes_by_size(k)
+        self.int_sctypes = [T for T in self.sctype_list if dtype(T).kind in ('i', 'u')]
+        N = {}
+        for k in sys_dict:
+            N[k] = self._nearest_dtype(k)
+        self.nearest_dtypes = N
+        
+    def system_sctype_dict(self):
         d_dict = {}
         for sc_type in ('complex','float'):
             t_list = sctypes[sc_type]
@@ -452,42 +473,131 @@ class DownCaster(object):
             }
         return d_dict
     
-    def storage_criterion(self, maxstorage, kinds, cmp_func=lambda x, y: x <= y):
-        D = {}
-        for k, v in self.dt_dict.items():
-            if v['kind'] in kinds:
-                sz = v['size']
-                if cmp_func(sz, maxstorage):
-                    D[k] = sz
-        I = D.items()
-        I.sort(lambda x, y: cmp(x[1], y[1]))
-        return I
+    def default_sctype_tols(self):
+        ''' Default allclose tolerance values for dtypes '''
+        t_dict = {}
+        for sc_type in ('complex','float'):
+            t_list = sctypes[sc_type]
+            for T in t_list:
+                dt = dtype(T)
+                F = finfo(dt)
+                t_dict[T] = {
+                    'rtol': F.eps,
+                    'atol': F.tiny}
+        tiny = finfo(float64).tiny
+        for sc_type in ('int', 'uint'):
+            t_list = sctypes[sc_type]
+            for T in t_list:
+                dt = dtype(T)
+                t_dict[T] = {
+                    'rtol': 0,
+                    'atol': tiny}
+        return t_dict
 
+    def tols_from_sctype(self, sctype):
+        ''' Return rtol and atol for sctype '''
+        tols = self.sctype_tols[sctype]
+        return tols['rtol'], tols['atol']
+        
+    def sctypes_by_size(self, sctype):
+        ''' Returns storage size ordered list of entries of scalar type sctype
+
+        Input
+        sctype   - one of "complex" or "c", "float" or "f" ,
+                  "int" or "i", "uint" or "u"
+        '''
+        try:
+            sctype = self._sctype_trans[sctype]
+        except KeyError:
+            raise TypeError, 'Did not recognize sctype %s' % sctype
+        D = []
+        for t in self.sctype_list:
+            dt = dtype(t)
+            if dt.kind == sctype:
+                D.append([t, dt.itemsize])
+        D.sort(lambda x, y: cmp(y[1], x[1]))
+        return D
+    
+    def _nearest_dtype(self, dt):
+        ''' Return dtype closest in size to that of dt
+
+        Input
+        dt     - dtype
+
+        ID = input dtype. VD = valid dtype.  Return ID if ID is
+        in VDs. If ID is smaller / larger than all VDs, return
+        smallest / largest VD. Otherwise return nearest VD larger than
+        ID.
+        '''
+        dt = dtype(dt)
+        if dt in self.sctype_list:
+            return dt
+        sctypes = self.sized_sctypes[dt.kind]
+        if not sctypes:
+            return None
+        dti = dt.itemsize
+        for i, t in enumerate(sctypes):
+            if t[1] < dti:
+                break
+        else:
+            return t[0]
+        if i:
+            i-=1
+        return sctypes[i][0]
+        
     def smaller_same_kind(self, arr):
-        dts = self.storage_criterion(arr.dtype.itemsize,
-                                      (arr.dtype.kind,),
-                                      lambda x, y: x < y)
+        ''' Return arr maybe downcast to same kind, smaller storage
+
+        If arr cannot be downcast within given tolerances, then return
+        arr if arr is in list of acceptable types, otherwise return
+        None
+        '''
+        dt = arr.dtype
+        dti = dt.itemsize
+        sctypes = self.sized_sctypes[dt.kind]
+        scts = [t[0] for i, t in enumerate(sctypes) if t[1] < dti]
+        rtol, atol = self.tols_from_sctype(dt.type)
         ret_arr = arr
-        for T in dts:
+        for T in scts:
             test_arr = arr.astype(T)
-            if allclose(test_arr, arr, self.rtol, self.atol):
+            if allclose(test_arr, arr, rtol, atol):
                 ret_arr = test_arr
             else:
                 break
+        else:  # No downcasting withing tolerance
+            if dt not in self.sctype_list:
+                return None
         return ret_arr
-
         
-    def smallest_int_type(self, mx, mn):
+    def smallest_int_dtype(self, mx, mn):
+        ''' Return integer type with smallest storage containing mx and mn
+
+        Inputs
+        mx      - maximum value
+        mn      - minumum value
+
+        Returns None if no integer can contain this range
+        '''
         dt = None
-        for k, v in self.dt_dict.items():
-            if v['kind'] in ('i', 'u'):
-                if v['max'] >= mx and v['min'] <= mn:
-                    c_sz = v['size']
-                    if dt is None or c_sz < sz:
-                        dt = k
-                        sz = c_sz
+        for T in self.int_sctypes:
+            t_dict = self.sctype_dict[T]
+            if t_dict['max'] >= mx and t_dict['min'] <= mn:
+                c_sz = t_dict['size']
+                if dt is None or c_sz < sz:
+                    dt = T
+                    sz = c_sz
         return dt
 
+    def recast(self, arr):
+        arr = self.downcast(arr)
+        if arr is not None:
+            return arr
+        # Could not downcast, arr dtype not in known list
+        dt = self.capable_dtype[arr.dtype.type]
+        if dt is not None:
+            return arr.astype(dt)
+        raise ValueError, 'Could not recast array within precision'
+        
     def downcast(self, arr):
         dtk = arr.dtype.kind
         if dtk == 'c':
@@ -501,10 +611,13 @@ class DownCaster(object):
             
     def downcast_complex(self, arr):
         # can we downcast to float?
-        fts = self.dt_arrs['float']
-        flts = flts[flts['storage'] <= arr.dtype.itemsize]
-        test_arr = arr.astype(flt[0]['type'])
-        if allclose(arr, test_arr, self.rtol, self.atol):
+        dt = arr.dtype
+        dti = ceil(dt.itemsize / 2)
+        sctypes = self.sized_sctypes['f']
+        flts = [t[0] for i, t in enumerate(sctypes) if t[1] <= dti]
+        test_arr = arr.astype(flts[0])
+        rtol, atol = self.tols_from_sctype(dt.type)
+        if allclose(arr, test_arr, rtol, atol):
             return self.downcast_float(test_arr)
         # try downcasting to another complex type
         return self.smaller_same_kind(arr)
@@ -512,13 +625,21 @@ class DownCaster(object):
     def downcast_float(self, arr):
         # Try integer
         test_arr = self.downcast_integer(arr)
-        if allclose(arr, test_arr, self.rtol, self.atol):
+        rtol, atol = self.tols_from_sctype(arr.dtype.type)
+        if allclose(arr, test_arr, rtol, atol):
             return test_arr
         # Otherwise descend the float types
         return self.smaller_same_kind(arr)
 
     def downcast_integer(self, arr):
+        ''' Downcasts arr to integer
+
+        Returns None if range of arr cannot be contained in acceptable
+        integer types
+        '''
         mx = amax(arr)
         mn = amin(arr)
-        idt = self.smallest_int_type(mx, mn)
-        return arr.astype(idt)
+        idt = self.smallest_int_dtype(mx, mn)
+        if idt:
+            return arr.astype(idt)
+        return None
