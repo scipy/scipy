@@ -205,15 +205,20 @@ class Recaster(object):
         dti = dtp.itemsize
         sctypes = self.sized_sctypes[dtp.kind]
         sctypes = [t[0] for i, t in enumerate(sctypes) if t[1] < dti]
-        return self.smallest_from_sctypes(arr, sctypes)
+        return self._smallest_from_sctypes(arr, sctypes)
 
-    def smallest_from_sctypes(self, arr, sctypes):
+    def _smallest_from_sctypes(self, arr, sctypes):
         ''' Returns array recast to smallest possible type from list
-
+        
         Inputs
         arr        - array to recast
         sctypes    - list of scalar types to try
-
+        
+        sctypes is expected to be ordered by size with largest first,
+        and to all be of the same type.  It would not usually be
+        sensible to use this routine for integers (see
+        smallest_int_sctype method)
+        
         Returns None if no recast is within tolerance
         '''
         dt = arr.dtype.type
@@ -248,26 +253,6 @@ class Recaster(object):
                     sz = tsz
         return sct
 
-    def recast(self, arr):
-        ''' Try arr downcast, upcast if necesary to get compatible type '''
-        dt = arr.dtype.type
-        ret_arr = self.downcast(arr)
-        if ret_arr is not None:
-            return ret_arr
-        # Could not downcast, arr dtype not in known list
-        # Try upcast to larger dtype of same kind
-        udt = self.capable_dtype[dt]
-        if udt is not None:
-            return arr.astype(udt)
-        # We are stuck for floats and complex now
-        # Can try casting integers to floats
-        if arr.dt.kind in ('i', 'u'):
-            sctypes = self.sized_sctypes['f']
-            arr = self.smallest_from_sctypes(arr, sctypes)
-            if arr is not None:
-                return arr
-        raise ValueError, 'Could not recast array within precision'
-        
     def downcast(self, arr):
         dtk = arr.dtype.kind
         if dtk == 'c':
@@ -313,3 +298,24 @@ class Recaster(object):
         if idt:
             return arr.astype(idt)
         return None
+
+    def recast(self, arr):
+        ''' Try arr downcast, upcast if necesary to get compatible type '''
+        dt = arr.dtype.type
+        ret_arr = self.downcast(arr)
+        if ret_arr is not None:
+            return ret_arr
+        # Could not downcast, arr dtype not in known list
+        # Try upcast to larger dtype of same kind
+        udt = self.capable_dtype[dt]
+        if udt is not None:
+            return arr.astype(udt)
+        # We are stuck for floats and complex now
+        # Can try casting integers to floats
+        if arr.dt.kind in ('i', 'u'):
+            sctypes = self.sized_sctypes['f']
+            arr = self._smallest_from_sctypes(arr, sctypes)
+            if arr is not None:
+                return arr
+        raise ValueError, 'Could not recast array within precision'
+        

@@ -12,7 +12,8 @@ except:
 
 class test_recaster(ScipyTestCase):
     def setUp(self):
-        self.recaster = Recaster([N.int32, N.complex64, N.float32])
+        self.valid_types = [N.int32, N.complex128, N.float64]
+        self.recaster = Recaster(self.valid_types)
     
     def test_init(self):
         # Setting sctype_list
@@ -35,11 +36,64 @@ class test_recaster(ScipyTestCase):
         # Integer sizes
         # Cabable types
         
-    def test_methods(self):
-        A = N.array(1, N.float64)
-        B = A.astype(N.float32)
-        # smallest from sctypes
-        C = self.recaster.smallest_from_sctypes(A, [N.float32])
-        # smaller same kind
-        C = self.recaster.smallest_same_kind(A)
-        assert C.dtype == N.dtype(N.float32), 'Dtype was not downcast'
+    def test_smallest_same_kind(self):
+        R = self.recaster
+        value = 1
+        # smallest same kind
+        # Define expected type output from same kind downcast of value
+        required_types = {'complex': N.complex128,
+                          'float': N.float64,
+                          'int': N.int32,
+                          'uint': None}
+        for kind, req_type in required_types.items():
+            if req_type is not None:
+                rdtsz = N.dtype(req_type).itemsize
+            for T in N.sctypes[kind]:
+                tdtsz = N.dtype(T).itemsize
+                ok_T = T in R.sctype_list
+                expect_none = ((req_type is None) or 
+                               ((tdtsz < rdtsz) and not ok_T))
+                A = N.array(value, T)
+                C = R.smallest_same_kind(A)
+                if expect_none:
+                    assert C is None, 'Expecting None for %s' % T
+                else:
+                    assert C.dtype.type == req_type, \
+                           'Expected %s type, got %s type' % \
+                           (C.dtype.type, req_type)
+
+    def test_smallest_int_sctype(self):
+        # Smallest int sctype with testing recaster
+        params = sctype_attributes()
+        mmax = params[N.int32]['max']
+        mmin = params[N.int32]['min']        
+        for kind in ('int', 'uint'):
+            for T in N.sctypes[kind]:
+                mx = params[T]['max']
+                mn = params[T]['min']
+                rt = self.recaster.smallest_int_sctype(mx, mn)
+                if mx <= mmax and mn >= mmin:
+                    assert rt == N.int32, 'Expected int32 type'
+                else:
+                    assert rt is None, 'Expected None, got %s for %s' % (T, rt)
+                   
+        # Smallest int sctype with full recaster
+        RF = Recaster()
+        test_triples = [(N.uint8, 0, 255),
+                      (N.int8, -128, 0),
+                      (N.uint16, 0, params[N.uint16]['max']),                      
+                      (N.int16, params[N.int16]['min'], 0),
+                      (N.uint32, 0, params[N.uint32]['max']),
+                      (N.int32, params[N.int32]['min'], 0),
+                      (N.uint64, 0, params[N.uint64]['max']),
+                      (N.int64, params[N.int64]['min'], 0)]
+        for T, mn, mx in test_triples:
+            rt = RF.smallest_int_sctype(mx, mn)
+            assert rt == T, 'Expected %s, got %s type' % (T, rt)
+        
+    def test_downcasts(self):
+        value = 1
+        R = self.recaster
+        A = N.array(value, N.complex128)
+        B = R.downcast_complex(A)
+        assert B.dtype.type == N.int32
