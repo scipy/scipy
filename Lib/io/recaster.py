@@ -202,7 +202,7 @@ class Recaster(object):
             D = self.sctype_dict
             mx = D[sct]['max']
             mn = D[sct]['min']
-            for i, t in emumerate(sctypes):
+            for i, t in enumerate(sctypes):
                 this_sct = t[0]
                 this_d = D[dt]
                 if this_d['max'] >= mx and this_d['min'] <= mn:
