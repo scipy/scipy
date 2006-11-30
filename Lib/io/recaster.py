@@ -6,6 +6,42 @@ Recaster class for recasting numeric arrays
 
 from numpy import *
 
+def sctype_attributes():
+    ''' Return dictionary describing numpy scalar types '''
+    d_dict = {}
+    for sc_type in ('complex','float'):
+        t_list = sctypes[sc_type]
+        for T in t_list:
+            F = finfo(T)
+            dt = dtype(T)
+            d_dict[T] = {
+                'kind': dt.kind,
+                'size': dt.itemsize,
+                'max': F.max,
+                'min': F.min}
+    for T in sctypes['int']:
+        dt = dtype(T)
+        sz = dt.itemsize
+        bits = sz*8-1
+        end = 2**bits
+        d_dict[T] = {
+            'kind': dt.kind,
+            'size': sz,
+            'min': -end,
+            'max': end-1
+            }
+    for T in sctypes['uint']:
+        dt = dtype(T)
+        sz = dt.itemsize
+        bits = sz*8
+        end = 2**bits
+        d_dict[T] = {
+            'kind': dt.kind,
+            'size': sz,
+            'min': 0,
+            'max': end
+        }
+    return d_dict
 
 class Recaster(object):
     ''' Class to recast arrays to one of acceptable scalar types
@@ -28,6 +64,8 @@ class Recaster(object):
                      'int': 'i', 'i': 'i',
                      'uint': 'u', 'u': 'u'}
 
+    _sctype_attributes = sctype_attributes()
+
     def __init__(self, sctype_list=None, sctype_tols=None):
         ''' Set types for which we are attempting to downcast
 
@@ -37,68 +75,28 @@ class Recaster(object):
         sctype_tols  - dictionary key datatype, values rtol, tol
                      to specify tolerances for checking near equality in downcasting
         '''
-        sys_dict = self.system_sctype_dict()
         if sctype_list is None:
-            self.sctype_dict = sys_dict.copy()
-            sctype_list = self.sctype_dict.keys()
-        else:
-            D = {}
-            for k, v in sys_dict.items():
-                if k in sctype_list:
-                    D[k] = v
-            self.sctype_dict = D
+            sctype_list = self._sctype_attributes.keys()
         self.sctype_list = sctype_list
         self.sctype_tols = self.default_sctype_tols()
         if sctype_tols is not None:
-            self.sctype_tols.merge(sctype_tols)
+            self.sctype_tols.update(sctype_tols)
         # Cache sctype sizes, 
         self.sized_sctypes = {}
         for k in ('c', 'f', 'i', 'u'):
             self.sized_sctypes[k] = self.sctypes_by_size(k)
-        self.int_sctypes = [T for T in self.sctype_list if dtype(T).kind in ('i', 'u')]
-        self.all_int_sized_sctypes = []
+        # All integer sizes
+        self.ints_sized_sctypes = []
         for k, v in self.sized_sctypes.items():
             if k in ('u', 'i'):
-                self.all_int_sized_sctypes.append(v)
-        self.nearest_dtypes = {}
-        for k in sys_dict:
-            self.nearest_dtypes[k] = self._nearest_dtype(k)
-        self.capable_dtypes = {}
-        for k in sys_dict:
-            self.capable_dtypes[k] = self._capable_dtype(k)
-        
-    def system_sctype_dict(self):
-        d_dict = {}
-        for sc_type in ('complex','float'):
-            t_list = sctypes[sc_type]
-            for T in t_list:
-                dt = dtype(T)
-                d_dict[T] = {
-                    'kind': dt.kind,
-                    'size': dt.itemsize}
-        for T in sctypes['int']:
-            dt = dtype(T)
-            sz = dt.itemsize
-            bits = sz*8-1
-            end = 2**bits
-            d_dict[T] = {
-                'kind': dt.kind,
-                'size': sz,
-                'min': -end,
-                'max': end-1
-                }
-        for T in sctypes['uint']:
-            dt = dtype(T)
-            sz = dt.itemsize
-            bits = sz*8
-            end = 2**bits
-            d_dict[T] = {
-                'kind': dt.kind,
-                'size': sz,
-                'min': 0,
-                'max': end
-            }
-        return d_dict
+                for e in v:
+                    self.ints_sized_sctypes.append(e)
+        if self.ints_sized_sctypes:
+            self.ints_sized_sctypes.sort(lambda x, y: cmp(y[1], x[1]))
+        # Capable types list
+        self._capable_sctypes = {}
+        for k in self._sctype_attributes:
+            self._capable_sctypes[k] = self.get_capable_sctype(k)
     
     def default_sctype_tols(self):
         ''' Default allclose tolerance values for all dtypes '''
@@ -121,11 +119,6 @@ class Recaster(object):
                     'atol': F.tiny}
         return t_dict
 
-    def tols_from_sctype(self, sctype):
-        ''' Return rtol and atol for sctype '''
-        tols = self.sctype_tols[sctype]
-        return tols['rtol'], tols['atol']
-        
     def sctypes_by_size(self, sctype):
         ''' Returns storage size ordered list of entries of scalar type sctype
 
@@ -144,35 +137,19 @@ class Recaster(object):
                 D.append([t, dt.itemsize])
         D.sort(lambda x, y: cmp(y[1], x[1]))
         return D
-    
-    def _nearest_sctype(self, sct):
-        ''' Return scalar type closest in size to that of sct
 
-        Input
-        sct     - sctype
+    def capable_sctype(self, sct):
+        ''' Return smallest type containing sct type without precision loss
 
-        ID = input sctype. AT = acceptable sctype.  Return ID if ID is
-        in ATs. If ID is smaller / larger than all ATs, return
-        smallest / largest AT. Otherwise return nearest AT larger than
-        ID.
+        Value pulled fron dictionary cached from init - see
+        get_capable_sctype method for algorithm
         '''
-        dt = dtype(sct)
-        if sct in self.sctype_list:
-            return sct
-        sctypes = self.sized_sctypes[dt.kind]
-        if not sctypes:
+        try:
+            return self._capable_sctypes[sct]
+        except KeyError:
             return None
-        dti = sct.itemsize
-        for i, t in enumerate(sctypes):
-            if t[1] < dti:
-                break
-        else:
-            return t[0]
-        if i:
-            i-=1
-        return sctypes[i][0]
         
-    def _capable_sctype(self, sct):
+    def get_capable_sctype(self, sct):
         ''' Return smallest scalar type containing sct type without precision loss
 
         Input
@@ -194,33 +171,30 @@ class Recaster(object):
         out_t = None
         # Unsigned and signed integers
         # Precision loss defined by max min outside datatype range
-        dt = dtype(sct)
-        if dt.kind in ('u', 'i'):
-            sctypes = self.all_int_sized_sctypes
-            if not sctypes:
-                return None
-            D = self.sctype_dict
-            mx = D[sct]['max']
-            mn = D[sct]['min']
-            for i, t in enumerate(sctypes):
-                this_sct = t[0]
-                this_d = D[dt]
-                if this_d['max'] >= mx and this_d['min'] <= mn:
-                    out_t = this_sct
+        D = self._sctype_attributes[sct]
+        if D['kind'] in ('u', 'i'):
+            out_t = self.smallest_int_sctype(D['max'], D['min'])
         else:
             # Complex and float types
             # Precision loss defined by data size < sct
-            sctypes = self.sized_sctypes[sct]
+            sctypes = self.sized_sctypes[D['kind']]
             if not sctypes:
                 return None
-            dti = dtype(sct).itemsize
+            dti = D['size']
             out_t = None
             for i, t in enumerate(sctypes):
                 if t[1] >= dti:
                     out_t = t[0]
+                else:
+                    break
         return out_t
 
-    def smaller_same_kind(self, arr):
+    def tols_from_sctype(self, sctype):
+        ''' Return rtol and atol for sctype '''
+        tols = self.sctype_tols[sctype]
+        return tols['rtol'], tols['atol']
+        
+    def smallest_same_kind(self, arr):
         ''' Return arr maybe downcast to same kind, smaller storage
 
         If arr cannot be downcast within given tolerances, then:
@@ -228,10 +202,10 @@ class Recaster(object):
         return None
         '''
         dtp = arr.dtype
-        dti = dt.itemsize
+        dti = dtp.itemsize
         sctypes = self.sized_sctypes[dtp.kind]
         sctypes = [t[0] for i, t in enumerate(sctypes) if t[1] < dti]
-        return self.smaller_from_sctypes(arr, sctypes)
+        return self.smallest_from_sctypes(arr, sctypes)
 
     def smallest_from_sctypes(self, arr, sctypes):
         ''' Returns array recast to smallest possible type from list
@@ -249,14 +223,14 @@ class Recaster(object):
             test_arr = arr.astype(T)
             if allclose(test_arr, arr, rtol, atol):
                 ret_arr = test_arr
+                can_downcast = True
             else:
                 break
-        else: # No downcasting withing tolerance
-            if dt not in self.sctype_list:
-                return None
+        if ret_arr.dtype.type not in self.sctype_list:
+            return None
         return ret_arr
         
-    def smallest_int_dtype(self, mx, mn):
+    def smallest_int_sctype(self, mx, mn):
         ''' Return integer type with smallest storage containing mx and mn
 
         Inputs
@@ -265,15 +239,14 @@ class Recaster(object):
 
         Returns None if no integer can contain this range
         '''
-        dt = None
-        for T in self.int_sctypes:
-            t_dict = self.sctype_dict[T]
+        sct = None
+        for T, tsz in self.ints_sized_sctypes:
+            t_dict = self._sctype_attributes[T]
             if t_dict['max'] >= mx and t_dict['min'] <= mn:
-                c_sz = t_dict['size']
-                if dt is None or c_sz < sz:
-                    dt = T
-                    sz = c_sz
-        return dt
+                if sct is None or tsz < sz:
+                    sct = T
+                    sz = tsz
+        return sct
 
     def recast(self, arr):
         ''' Try arr downcast, upcast if necesary to get compatible type '''
@@ -317,7 +290,7 @@ class Recaster(object):
         if allclose(arr, test_arr, rtol, atol):
             return self.downcast_float(test_arr)
         # try downcasting to another complex type
-        return self.smaller_same_kind(arr)
+        return self.smallest_same_kind(arr)
     
     def downcast_float(self, arr):
         # Try integer
@@ -326,7 +299,7 @@ class Recaster(object):
         if allclose(arr, test_arr, rtol, atol):
             return test_arr
         # Otherwise descend the float types
-        return self.smaller_same_kind(arr)
+        return self.smallest_same_kind(arr)
 
     def downcast_integer(self, arr):
         ''' Downcasts arr to integer
@@ -336,7 +309,7 @@ class Recaster(object):
         '''
         mx = amax(arr)
         mn = amin(arr)
-        idt = self.smallest_int_dtype(mx, mn)
+        idt = self.smallest_int_sctype(mx, mn)
         if idt:
             return arr.astype(idt)
         return None
