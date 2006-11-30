@@ -92,8 +92,11 @@ class test_recaster(ScipyTestCase):
             assert rt == T, 'Expected %s, got %s type' % (T, rt)
         
     def test_downcasts(self):
-        value = 1
+        value = 100
         R = self.recaster
-        A = N.array(value, N.complex128)
-        B = R.downcast_complex(A)
-        assert B.dtype.type == N.int32
+        for T in (N.complex128, N.complex64,
+                  N.float64, N.uint64):
+            B = R.downcast(N.array(value, T))
+            assert B is not None, 'Got None for %s' % T
+            assert B.dtype.type == N.int32
+        

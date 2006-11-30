@@ -265,26 +265,31 @@ class Recaster(object):
             raise TypeError, 'Do not recognize array kind %s' % dtk
             
     def downcast_complex(self, arr):
+        ''' Downcasts complex array to smaller type if possible '''
         # can we downcast to float?
         dt = arr.dtype
         dti = ceil(dt.itemsize / 2)
         sctypes = self.sized_sctypes['f']
         flts = [t[0] for i, t in enumerate(sctypes) if t[1] <= dti]
-        test_arr = arr.astype(flts[0])
-        rtol, atol = self.tols_from_sctype(dt.type)
-        if allclose(arr, test_arr, rtol, atol):
-            return self.downcast_float(test_arr)
-        # try downcasting to another complex type
-        return self.smallest_same_kind(arr)
+        if flts: # There are smaller floats to try
+            test_arr = arr.astype(flts[0])
+            rtol, atol = self.tols_from_sctype(dt.type)
+            if allclose(arr, test_arr, rtol, atol):
+                arr = test_arr
+        # try downcasting to int or another complex type
+        return self.downcast_to_int_or_same(arr)
     
-    def downcast_float(self, arr):
+    def downcast_to_int_or_same(self, arr):
+        ''' Downcast to integer or smaller of same kind '''
         # Try integer
         test_arr = self.downcast_integer(arr)
         rtol, atol = self.tols_from_sctype(arr.dtype.type)
         if allclose(arr, test_arr, rtol, atol):
             return test_arr
-        # Otherwise descend the float types
+        # Otherwise descend the types of same kind
         return self.smallest_same_kind(arr)
+
+    downcast_float = downcast_to_int_or_same
 
     def downcast_integer(self, arr):
         ''' Downcasts arr to integer
