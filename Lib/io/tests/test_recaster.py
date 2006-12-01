@@ -58,6 +58,7 @@ class test_recaster(ScipyTestCase):
                 if expect_none:
                     assert C is None, 'Expecting None for %s' % T
                 else:
+                    assert C is not None, 'Got unexpected None from %s' % T
                     assert C.dtype.type == req_type, \
                            'Expected %s type, got %s type' % \
                            (C.dtype.type, req_type)
