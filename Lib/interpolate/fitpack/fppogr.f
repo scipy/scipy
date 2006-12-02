@@ -45,7 +45,7 @@ c   initialization
       pi = datan2(0d0,-one)
       per = pi+pi
       vb = v(1)
-C      ve = vb+per
+      ve = vb+per
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c part 1: determination of the number of knots and their position.     c
 c ****************************************************************     c
