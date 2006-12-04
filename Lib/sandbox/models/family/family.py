@@ -6,12 +6,15 @@ class Family:
 
     valid = [-N.inf, N.inf]
 
+    tol = 1.0e-05
+
     def __init__(self, link, variance):
         self.link = link
         self.variance = variance
 
     def weights(self, mu):
-        """
+        
+	"""
         Weights for IRLS step.
         """
 
