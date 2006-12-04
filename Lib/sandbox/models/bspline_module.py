@@ -2,7 +2,7 @@ import numpy as N
 from scipy.weave import ext_tools
 import scipy.special.orthogonal
 
-def build_bspline_module():
+def setup_bspline_module():
     """
     Builds an extension module with Bspline basis calculators using
     weave.
@@ -147,7 +147,7 @@ def build_bspline_module():
     mod.add_function(bspline_eval)
     bspline_eval.customize.add_support_code(eval_code)
 
-    nq = 5
+    nq = 18
     qx, qw = scipy.special.orthogonal.p_roots(nq)   
     dl = dr = 2
 
@@ -184,6 +184,7 @@ def build_bspline_module():
     
     double bspline_quad(double *knots, int nknots,
                         int m, int l, int r, int dl, int dr) 
+        /* This is based on scipy.integrate.fixed_quad */
     {
         double *y;
         double qx[%(nq)d]={%(qx)s};
@@ -196,23 +197,14 @@ def build_bspline_module():
 
         result = 0;
 
-        if (l <= r) {
-            lower = l - m / 2 - 1;
-            upper = r + m / 2 + 1;
-        }
-        else {
-            lower = r - m / 2 - 1;
-            upper = l + m / 2 + 1;
-        }        
+	/* TO DO: figure out knot span more efficiently */
 
-        if (lower < m) {
-            lower = m - 1;
-        }
-        if (upper > nknots-m-1) {
-            upper = nknots-m;
-        }
-
-        for (k=lower; k<=upper; k++) {
+        lower = l - m - 1; 
+	if (lower < 0) { lower = 0;}
+	upper = lower + 2 * m + 4;
+	if (upper > nknots - 1) {upper = nknots-1;}
+/*	upper = nknots - m; */
+        for (k=lower; k<upper; k++) {
             partial = 0.;
             a = knots[k]; b=knots[k+1];
             for (kk=0; kk<nq; kk++) {
@@ -220,15 +212,17 @@ def build_bspline_module():
             }
 
             y = bspline_prod(x, nq, knots, nknots, m, l, r, dl, dr);
+
             for (kk=0; kk<nq; kk++) {
                 partial += y[kk] * qw[kk];
             }
             result += (b - a) * partial / 2.;
         }
+
         return(result);
     }    
 
-    double *bspline_gram(double **output, double *knots, int nknots,
+    void bspline_gram(double **output, double *knots, int nknots,
                         int m, int dl, int dr) 
 
     /* Presumes that the first m and last m knots are to be ignored, i.e.
@@ -239,29 +233,26 @@ def build_bspline_module():
     {
         double *result;
         int l, r, i, j;
-        int nbasis, nband;
+        int nbasis;
 
         nbasis = nknots - m;
-        nband = 2*m - 1;
 
         result = *((double **) output);
         for (i=0; i<nbasis; i++) {
-            l = i;
-            for (j=0; j<nband; j++) {
-                r = l-m+1+j;
+	    for (j=0; j<m; j++) {
+                l = i;
+                r = l+j;
                 *result = bspline_quad(knots, nknots, m, l, r, dl, dr);
-                result++;
+		result++;
             }
         } 
-        result -= nbasis * nband;
-        return(result);
     }    
 
     ''' % {'qx':`[q for q in N.real(qx)]`[1:-1], 'qw':`[q for q in qw]`[1:-1], 'nq':nq}
 
     gram_ext_code = '''
 
-    int dim[2] = {Nknots[0]-m, 2*m-1};
+    int dim[2] = {Nknots[0]-m, m};
     double *data;
     PyArrayObject *gram;
 
@@ -280,13 +271,81 @@ def build_bspline_module():
     bspline_gram.customize.add_support_code(gram_code)
     mod.add_function(bspline_gram)
 
+    L = N.zeros((3,10), N.float64)
+
+    invband_support_code = '''
+
+    void invband_compute(double **dataptr, double *L, int n, int m) {
+
+        /* Note: m is number of bands not including the diagonal so L is of size (m+1)xn */
+
+        int i,j,k;
+        int idx, idy;
+	double *data, *odata;
+	double diag;
+
+	data = *((double **) dataptr);
+
+	for (i=0; i<n; i++) {
+             diag = L[i];
+	     data[i] = 1.0 / (diag*diag) ;
+
+	     for (j=0; j<=m; j++) {
+                 L[j*n+i] /= diag;
+		 if (j > 0) { data[j*n+i] = 0;}
+             }
+         }
+
+        for (i=n-1; i>=0; i--) {
+             for (j=1; j <= (m<n-1-i ? m:n-1-i); j++) {
+                  for (k=1; k<=(n-1-i<m ? n-1-i:m); k++) {
+                      idx = (j<k ? k-j:j-k); idy = (j<k ? i+j:i+k);
+                      data[j*n+i] -= L[k*n+i] * data[idx*n+idy];
+                  }
+             }
+
+             for (k=1; k<=(n-1-i<m ? n-1-i:m); k++) {
+                  data[i] -= L[k*n+i] * data[k*n+i];
+             }
+        }
+
+    return;
+    }
+    '''
+
+    invband_ext_code = '''
+
+    int dim[2] = {NL[0], NL[1]};
+    int i, j;
+    double *data;
+    PyArrayObject *invband;
+
+    invband = (PyArrayObject *) PyArray_SimpleNew(2, dim, PyArray_DOUBLE);
+    data = (double *) invband->data;
+    invband_compute(&data, L, NL[1], NL[0]-1);
+
+     return_val = (PyObject *) invband;
+
+    '''    
+
+    invband = ext_tools.ext_function('invband',
+                                     invband_ext_code,
+                                     ['L'])
+    invband.customize.add_support_code(invband_support_code)
+    mod.add_function(invband)
+
+    return mod
+
+mod = setup_bspline_module()
+
+def build_bspline_module():
     mod.compile()
 
-try:
-    import _bspline
-except ImportError:
-    build_bspline_module()
-    import _bspline
+# try:
+#     import _bspline
+# except ImportError:
+#     build_bspline_module()
+#     import _bspline
 
 ## if __name__ == '__main__':
 ##     knots = N.hstack([[0]*3, N.linspace(0,1,11).astype(N.float64), [1]*3])
