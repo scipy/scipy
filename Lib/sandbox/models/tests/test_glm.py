@@ -7,8 +7,7 @@ from scipy.sandbox.models.glm import model
 
 W = R.standard_normal
 
-
-class test_Regression(ScipyTestCase):
+class test_Regression(NumpyTestCase):
 
     def check_Logistic(self):
         X = W((40,10))
@@ -27,10 +26,6 @@ class test_Regression(ScipyTestCase):
         results = cmodel.fit(Y)
         self.assertEquals(results.df_resid, 31)
 
-
-def suite():
-    suite = unittest.makeSuite(RegressionTest)
-    return suite
         
 if __name__ == "__main__":
-    ScipyTest().run()
+    NumpyTest().run()

@@ -266,7 +266,7 @@ class quantitative(term):
     def __call__(self, *args, **kw):
         """
 	A quantitative is just like term, except there is an additional
-	transformation: self.transfrom.
+	transformation: self.transform.
 	"""
         return self.transform(term.__call__(self, *args, **kw))
 
@@ -374,16 +374,20 @@ class formula(object):
                 allvals.shape = (1,) + allvals.shape
         return allvals
     
-    def hasterm(self, term):
+    def hasterm(self, query_term):
         """
         Determine whether a given term is in a formula.
         """
 
-        if not isinstance(term, formula):
-            return term.termname in self.termnames()
-        elif len(term.terms) == 1:
-            term = term.terms[0]
-            return term.termname in self.termnames()
+        if not isinstance(query_term, formula):
+	    if type(query_term) == type("name"):
+		try: query = self[query_term]
+		except: return False
+	    elif isinstance(query_term, term):
+		return query_term.termname in self.termnames()
+        elif len(query_term.terms) == 1:
+            query_term = query_term.terms[0]
+            return query_term.termname in self.termnames()
         else:
             raise ValueError, 'more than one term passed to hasterm'
         
@@ -394,14 +398,14 @@ class formula(object):
         else:
             raise KeyError, 'formula has no such term: %s' % repr(name)
 
-    def termcolumns(self, term, dict=False):
+    def termcolumns(self, query_term, dict=False):
         """
         Return a list of the indices of all columns associated
         to a given term.
         """
 
-        if self.hasterm(term):
-            names = term.names()
+        if self.hasterm(query_term):
+            names = query_term.names()
             value = {}
             for name in names:
                 value[name] = self._names.index(name)

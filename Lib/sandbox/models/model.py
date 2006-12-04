@@ -64,9 +64,10 @@ class LikelihoodModel(Model):
         raise NotImplementedError
 
     def newton(self, theta):
-        def f(theta):
-            return -self.logL(theta)
-        self.results = scipy.optimize.fmin(f, theta)
+	raise NotImplementedError
+#         def f(theta):
+#             return -self.logL(theta)
+#         self.results = scipy.optimize.fmin(f, theta)
         
 class LikelihoodModelResults:
 

@@ -17,6 +17,7 @@ class test_term(unittest.TestCase):
 
         self.assertRaises(ValueError, formula.term, "name", termname=0)
 
+
     def test_str(self):
         t = formula.term("name")
         s = str(t)
@@ -57,6 +58,43 @@ class test_formula(ScipyTestCase):
         for i in range(1, 10):
             self.formula += self.terms[i]
 	self.formula.namespace = self.namespace
+
+    def test_namespace(self):
+	space1 = {'X':N.arange(50), 'Y':N.arange(50)*2}
+	space2 = {'X':N.arange(20), 'Y':N.arange(20)*2}
+	X = formula.term('X')
+	Y = formula.term('Y')
+
+	X.namespace = space1 
+	assert_almost_equal(X(), N.arange(50))
+
+	Y.namespace = space2
+	assert_almost_equal(Y(), N.arange(20)*2)
+
+	f = X + Y
+
+	f.namespace = space1
+	self.assertEqual(f().shape, (2,50))
+	assert_almost_equal(Y(), N.arange(50)*2)
+	assert_almost_equal(X(), N.arange(50))
+
+	f.namespace = space2
+	self.assertEqual(f().shape, (2,20))
+	assert_almost_equal(Y(), N.arange(20)*2)
+	assert_almost_equal(X(), N.arange(20))
+
+
+    def test_termcolumns(self):
+        t1 = formula.term("A")
+        t2 = formula.term("B")
+        f = t1 + t2 + t1 * t2
+	def other(val):
+	    return N.array([3.2*val,4.342*val**2, 5.234*val**3])
+	q = formula.quantitative(['other%d' % i for i in range(1,4)], termname='other', func=t1, transform=other)
+	f += q
+	q.namespace = f.namespace = self.formula.namespace
+	assert_almost_equal(q(), f()[f.termcolumns(q)])
+
 
     def test_str(self):
         s = str(self.formula)
@@ -133,7 +171,7 @@ class test_formula(ScipyTestCase):
     def test_power(self):
     
 	t = self.terms[2]
-	t2 = formula.quantitative('t', func=t)**2
+	t2 = t**2
 	t.namespace = t2.namespace = self.formula.namespace
 	assert_almost_equal(t()**2, t2())
 

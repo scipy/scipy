@@ -209,4 +209,4 @@ if __name__ == '__main__':
     c = coxph(subjects, f)
 
     c.cache()
-    c.newton([0.4])
+#    c.newton([0.4])

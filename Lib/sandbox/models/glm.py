@@ -28,23 +28,25 @@ class model(wls_model):
         if Y is None: Y = self.Y
         return self.family.deviance(Y, results.mu) / scale
 
-    def next(self, results, Y):
+    def next(self):
+	results = self.results; Y = self.Y
         self.weights = self.family.weights(results.mu)
         self.initialize(self.design)
         Z = results.predict + self.family.link.deriv(results.mu) * (Y - results.mu)
         newresults = wls_model.fit(self, Z)
+	newresults.Y = Y
         newresults.mu = self.family.link.inverse(newresults.predict)
         self.iter += 1
         return newresults
 
-    def cont(self, results, tol=1.0e-05):
+    def cont(self, tol=1.0e-05):
         """
         Continue iterating, or has convergence been obtained?
         """
         if self.iter >= model.niter:
             return False
 
-        curdev = self.deviance(results=results)
+        curdev = self.deviance(results=self.results)
 
         if N.fabs((self.dev - curdev) / curdev) < tol:
             return False
@@ -72,7 +74,7 @@ class model(wls_model):
         self.scale = self.results.scale = self.estimate_scale()
         
         while self.cont(self.results):
-            self.results = self.next(self.results, Y)
+            self.results = self.next()
             self.scale = self.results.scale = self.estimate_scale()
 
         return self.results
