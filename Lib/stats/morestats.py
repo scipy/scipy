@@ -41,7 +41,8 @@ def find_repeats(arr):
 ##########################################################
 
 ##  See the paper "A Bayesian perspective on estimating
-##    mean, variance, and standard-deviation from data
+##    mean, variance, and standard-deviation from data" by
+##    Travis E. Oliphant
 ##    at http://dspace.byu.edu/bitstream/1877/438/1/bayes_mvs.pdf
 ##    (Permanent link at http://hdl.handle.net/1877/438 )
 
