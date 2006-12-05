@@ -2445,6 +2445,7 @@ class lil_matrix(spmatrix):
             raise IndexError, "lil_matrix supports slices only of a single row"
             # TODO: add support for this, like in __setitem__
         elif isintlike(i):
+            i = int(i)   # Python list indices must be machine-sized ints
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
         elif operator.isSequenceType(i):
@@ -2470,6 +2471,7 @@ class lil_matrix(spmatrix):
         elif operator.isSequenceType(j):
             raise NotImplementedError, "sequence indexing not yet fully supported"
         elif isintlike(j):
+            j = int(j)   # Python list indices must be machine-sized ints
             if not (j>=0 and j<self.shape[1]):
                 raise IndexError, "lil_matrix index out of range"
         else:
@@ -2489,6 +2491,7 @@ class lil_matrix(spmatrix):
             raise IndexError, "invalid index"
         i, j = index
         if isintlike(i):
+            i = int(i)   # Python list indices must be machine-sized ints
             if not (i>=0 and i<self.shape[0]):
                 raise IndexError, "lil_matrix index out of range"
         else:
@@ -2518,6 +2521,7 @@ class lil_matrix(spmatrix):
         # Below here, i is an integer
         row = self.rows[i]
         if isintlike(j):
+            j = int(j)   # Python list indices must be machine-sized ints
             if not (j>=0 and j<self.shape[1]):
                 raise IndexError, "lil_matrix index out of range"
             # Find element to be set or removed
