@@ -40,6 +40,11 @@ def find_repeats(arr):
 ###  Bayesian confidence intervals for mean, variance, std
 ##########################################################
 
+##  See the paper "A Bayesian perspective on estimating
+##    mean, variance, and standard-deviation from data
+##    at http://dspace.byu.edu/bitstream/1877/438/1/bayes_mvs.pdf
+##    (Permanent link at http://hdl.handle.net/1877/438 )
+
 # assume distributions are gaussian with given means and variances.
 def _gauss_mvs(x, n, alpha):
     xbar = x.mean()
