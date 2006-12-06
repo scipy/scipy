@@ -52,7 +52,7 @@ class test_recaster(ScipyTestCase):
                 tdtsz = N.dtype(T).itemsize
                 ok_T = T in R.sctype_list
                 expect_none = ((req_type is None) or 
-                               ((tdtsz < rdtsz) and not ok_T))
+                               ((tdtsz <= rdtsz) and not ok_T))
                 A = N.array(value, T)
                 C = R.smallest_same_kind(A)
                 if expect_none:
