@@ -277,7 +277,7 @@ def wiener(im,mysize=None,noise=None):
 
 
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
-    """Conolve two 2-dimensional arrays.
+    """Convolve two 2-dimensional arrays.
 
   Description:
 

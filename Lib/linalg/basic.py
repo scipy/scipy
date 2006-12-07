@@ -370,13 +370,15 @@ def lstsq(a, b, cond=None, overwrite_a=0, overwrite_b=0):
     return x,resids,rank,s
 
 
-def pinv(a, cond=None):
-    """ pinv(a, cond=None) -> a_pinv
+def pinv(a, cond=None, rcond=None):
+    """ pinv(a, rcond=None) -> a_pinv
 
     Compute generalized inverse of A using least-squares solver.
     """
     a = asarray_chkfinite(a)
     b = numpy.identity(a.shape[0], dtype=a.dtype)
+    if rcond is not None:
+        cond = rcond
     return lstsq(a, b, cond=cond)[0]
 
 
@@ -384,14 +386,16 @@ eps = numpy.finfo(float).eps
 feps = numpy.finfo(single).eps
 
 _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
-def pinv2(a, cond=None):
-    """ pinv2(a, cond=None) -> a_pinv
+def pinv2(a, cond=None, rcond=None):
+    """ pinv2(a, rcond=None) -> a_pinv
 
     Compute the generalized inverse of A using svd.
     """
     a = asarray_chkfinite(a)
     u, s, vh = decomp.svd(a)
     t = u.dtype.char
+    if rcond is not None:
+        cond = rcond
     if cond in [None,-1]:
         cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
     m,n = a.shape

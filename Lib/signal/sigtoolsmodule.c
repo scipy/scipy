@@ -1740,7 +1740,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
     int mode=2, boundary=0, typenum, flag, flip=1, ret;
-    intp *aout_dimens, *dims=NULL;
+    intp *aout_dimens=NULL, *dims=NULL;
     char zeros[32];  /* Zeros */
     int n1, n2, i;
     PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL;
@@ -1804,7 +1804,6 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
     }
 	
     aout = (PyArrayObject *)PyArray_SimpleNew(ain1->nd, aout_dimens, typenum);
-    free(aout_dimens);
     if (aout == NULL) goto fail;
 
     flag = mode + boundary + (typenum << TYPE_SHIFT) + \
@@ -1849,6 +1848,7 @@ static PyObject *sigtools_convolve2d(PyObject *dummy, PyObject *args) {
     }
 
 fail:
+    free(aout_dimens);
     Py_XDECREF(ain1);
     Py_XDECREF(ain2);
     Py_XDECREF(aout);

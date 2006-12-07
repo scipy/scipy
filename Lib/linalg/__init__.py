@@ -15,11 +15,17 @@ __all__ = filter(lambda s:not s.startswith('_'),dir())
 
 from numpy.dual import register_func
 for k in ['norm', 'inv', 'svd', 'solve', 'det', 'eig', 'eigh', 'eigvals',
-          'eigvalsh', 'lstsq', 'pinv', 'cholesky']:
+          'eigvalsh', 'lstsq', 'cholesky']:
     try:
         register_func(k, eval(k))
     except ValueError:
         pass
+
+try:
+    register_func('pinv', pinv2)
+except ValueError:
+    pass
+
 del k, register_func
 
 from numpy.testing import ScipyTest

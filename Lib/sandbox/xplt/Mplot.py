@@ -10,8 +10,8 @@ import numpy as Numeric
 numpy = Numeric
 from numpy import ravel, reshape, repeat, arange, transpose, compress, \
      where, ones, newaxis, asarray
-import numpy.lib.mlab as MLab
-from numpy.lib.mlab import pi, cos, sin, arctan2, array, angle
+import numpy.oldnumeric.mlab as MLab
+from numpy.oldnumeric.mlab import pi, cos, sin, arctan2, array, angle
 import types
 import write_style
 points = 0.0013000
