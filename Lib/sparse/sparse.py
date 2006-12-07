@@ -2276,19 +2276,20 @@ class coo_matrix(spmatrix):
 
     def _normalize(self, rowfirst=False):
         if rowfirst:
-            l = zip(self.row, self.col, self.data)
-            l.sort()
-            row, col, data = list(itertools.izip(*l))
-            return data, row, col
+            #sort by increasing rows first, columns second
+            if getattr(self, '_is_normalized', None):
+                #columns already sorted, use stable sort for rows
+                P = numpy.argsort(self.row,kind='mergesort')        
+                return self.data[P], self.row[P], self.col[P]
+            else:
+                #nothing already sorted
+                P  = numpy.lexsort(keys=(self.col,self.row))                
+                return self.data[P], self.row[P], self.col[P]
         if getattr(self, '_is_normalized', None):
             return self.data, self.row, self.col
-        l = zip(self.col, self.row, self.data)
-        l.sort()
-        # This breaks when len(self.data) etc == 0.  Does this matter?
-        col, row, data = list(itertools.izip(*l))
-        self.col = asarray(col, intc)
-        self.row = asarray(row, intc)
-        self.data = array(data, self.dtype)
+        #sort by increasing rows first, columns second
+        P  = numpy.lexsort(keys=(self.row,self.col))        
+        self.data,self.row,self.col = self.data[P], self.row[P], self.col[P]
         setattr(self, '_is_normalized', 1)
         return self.data, self.row, self.col
 

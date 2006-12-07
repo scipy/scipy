@@ -21,8 +21,8 @@ from numpy import arange, zeros, array, dot, ones, matrix, asmatrix, asarray, \
 import random
 from numpy.testing import *
 set_package_path()
-from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, spidentity, \
-        speye, lil_matrix
+from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, coo_matrix, \
+     spidentity, speye, lil_matrix
 from scipy.linsolve import splu
 restore_path()
 
@@ -637,6 +637,38 @@ class test_construct_utils(ScipyTestCase):
 #        print a, a.__repr__
         b = array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype='d')
         assert_array_equal(a.toarray(), b)
+
+class test_coo(ScipyTestCase):
+
+    def check_normalize( self ):
+        
+        row  = numpy.array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col  = numpy.array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        data = numpy.array([  6.,  10.,   3.,   9.,   1.,   4.,
+                              11.,   2.,   8.,   5.,   7.])
+
+        # coo.todense()
+        #    matrix([[  0.,   1.,   2.],
+        #            [  3.,   4.,   5.],
+        #            [  6.,   7.,   8.],
+        #            [  9.,  10.,  11.]])
+        coo = coo_matrix((data,(row,col)),(4,3))
+
+        ndata,nrow,ncol = coo._normalize(rowfirst=True)
+        assert(zip(nrow,ncol,ndata) == sorted(zip(row,col,data))) #should sort by rows, then cols
+        assert_array_equal(coo.data, data)                        #coo.data has not changed
+        assert_array_equal(coo.row, row)                          #coo.row has not changed
+        assert_array_equal(coo.col, col)                          #coo.col has not changed
+
+
+        ndata,nrow,ncol = coo._normalize(rowfirst=False)
+        assert(zip(ncol,nrow,ndata) == sorted(zip(col,row,data))) #should sort by cols, then rows
+        assert_array_equal(coo.data, ndata)                       #coo.data has changed
+        assert_array_equal(coo.row, nrow)                         #coo.row has changed
+        assert_array_equal(coo.col, ncol)                         #coo.col has changed
+
+        assert_array_equal(coo.tocsr().todense(), coo.todense())
+        assert_array_equal(coo.tocsc().todense(), coo.todense())
 
 
 if __name__ == "__main__":
