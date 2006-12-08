@@ -90,7 +90,8 @@ class test_recaster(ScipyTestCase):
                       (N.int64, params[N.int64]['min'], 0)]
         for T, mn, mx in test_triples:
             rt = RF.smallest_int_sctype(mx, mn)
-            assert rt == T, 'Expected %s, got %s type' % (T, rt)
+            assert N.dtype(rt) == N.dtype(T), \
+                   'Expected %s, got %s type' % (T, rt)
         
     def test_downcasts(self):
         value = 100
