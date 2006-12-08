@@ -1,0 +1,71 @@
+To-do:
+	===================================================================
+	These are not necessarily things that I am personally going to do,
+	but would be nice to have none-the-less :)
+	===================================================================
+
+	- make the various Date data types actual numpy data types instead of
+	  an ugly hack (this is probably beyond my ability)
+
+	- add month(), year(), day_of_week(), etc... functions that take a
+	  TimeSeries object with dtype as one of the Date types and returns
+	  a TimeSeries object of integer type with the relevant info.
+	  This would make it easy to do things like retrieving all the values
+	  that occur on a Friday for a particular series, for example.
+
+	  I could write a brute force method for this right now fairly easily,
+	  but it would be very slow.
+	  
+	- support "secondly" frequency data in a more robust way. Frequency
+	  conversion methods are not supported for this currently.
+
+	- add a "basis" option to the convert method. Possible values are
+	  'business' or 'daily'. This would be used in determining the weights
+	  of the months, quarters, etc when converting things with
+	  observed='AVERAGED' (right now, it always assumes equal weighting)
+	  
+	  This should also be an attribute of each TimeSeries object that would
+	  provide the default behaviour if the basis option was not specified.
+	  
+	- add an "ignore" option to the convert method to specify whether to
+	  ignore masked values in the calculation or not (current behaviour is
+	  to ignore masked values).
+
+	- support for wider variety of standard numpy/ma functions
+
+	- add time series specific concepts/functions like moving averages, MACD, moving
+	  standard deviation, etc...
+
+	- add support for more frequencies: semi-annual, hourly, minutely,
+	  decade, weekly, and maybe even sub-frequencies like quarterly with
+	  quarters ending on months other than Mar/Jun/Sep/Dec, weekly ending
+	  on different days of the the week, etc...
+	  
+	- Decide how best to handle frequency conversion between frequencies that
+	  don't have a nice relationship where the lower frequency strictly contains
+	  whole periods of the higher frequency. For example, if converting weekly to
+	  monthly, some weeks overlap more than one month.
+
+	- Perhaps change frequency conversion code to simply group data in the C code,
+	  (eg. if going from daily to monthly, create a 2 dimensional array
+	  where each column represents one month's worth of data), and then
+	  perform mathematical operation on the python side (eg. sum/average/etc
+	  the columns to reduce back to a 1-d array). This would not work well
+	  for the scenario described in the previous bullet, but would work nicely
+	  for a lot of scenarios.
+
+
+Wishlist:
+
+	- currently, the code relies on the mx.DateTime module (both the python,
+	  and c extension code). For obvious reasons, it would be nice if
+	  external dependencies could be eliminated as much as possible. Not sure
+	  if the built in datetime module is up to the task though, particularly
+	  where the c-api is concerned.
+
+	- integration with pytables perhaps? Definitely a longer term thing, but eventually who knows? (I currently have my
+	  own module for writing this stuff to FAME databases, but pytables would be cooler)
+
+	- integration with matplotlib?
+
+	- report generation module?
