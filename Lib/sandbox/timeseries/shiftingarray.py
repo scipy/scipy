@@ -1,5 +1,4 @@
 import numpy, types , corelib
-import copy
 from numpy import ma
 
 class ShiftingArray(object):
@@ -216,10 +215,6 @@ class ShiftingArray(object):
         else:
             return "<no data>"
 
-    def show(self, showLists=True):
-        print "indexZeroRepresents = ", self.indexZeroRepresents
-        print self.data
-
 
 
 #apply func to ser1 and ser2, replacing masked values with fill_value
@@ -241,7 +236,7 @@ def doFunc(ser1, ser2, func,fill_value=ma.masked):
             minVal = max(sFV, oFV)
             maxVal = min(sLV, oLV)
     elif ser1.indexZeroRepresents is None and ser2.indexZeroRepresents is None:
-            return ShiftingArray([],ser1.data.dtype)
+        return ShiftingArray([],ser1.data.dtype)
     elif ser1.indexZeroRepresents is None:
         minVal = oFV
         maxVal = oLV
