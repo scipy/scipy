@@ -1,6 +1,5 @@
 import numpy
 from numpy import ma
-import types
 
 import corelib
 import shiftingarray as sa
@@ -10,7 +9,7 @@ import tsdate
 import copy
 
 class TimeSeries(sa.ShiftingArray):
-    def __init__(self,values=[], dtype=numpy.float64, freq=None, observed='END', startIndex=None,mask=ma.nomask):
+    def __init__(self, values=[], dtype=numpy.float64, freq=None, observed='END', startIndex=None, mask=ma.nomask):
     
         if freq is None: raise ValueError("freq not specified")
 
@@ -30,7 +29,7 @@ class TimeSeries(sa.ShiftingArray):
     def __setitem__(self, key, value):
         if isinstance(key, tsdate.Date):
             key = int(key)
-        super(TimeSeries, self).__setitem__(key,value)
+        super(TimeSeries, self).__setitem__(key, value)
 
     
     def convert(self, freq, observed=None):
@@ -44,7 +43,7 @@ class TimeSeries(sa.ShiftingArray):
 
             firstIndex = sa.first_unmasked(self.data)
             if firstIndex is None:
-                return TimeSeries([],dtype=self.dtype,freq=toFreq,observed=observed)
+                return TimeSeries([], dtype=self.dtype, freq=toFreq, observed=observed)
 
             startIndexAdj = self.firstValue()
 
@@ -54,13 +53,13 @@ class TimeSeries(sa.ShiftingArray):
             tempMask = tempData.mask
             tempData = tempData.filled()
 
-            cRetVal = cseries.reindex(tempData, fromFreq, toFreq, observed, startIndexAdj,tempMask)
+            cRetVal = cseries.reindex(tempData, fromFreq, toFreq, observed, startIndexAdj, tempMask)
             _values = cRetVal['values']
             _mask = cRetVal['mask']
 
             startIndex = cseries.convert(startIndexAdj, fromFreq, toFreq)
 
-            return TimeSeries(_values,dtype=self.data.dtype,freq=toFreq,observed=observed,startIndex=startIndex, mask=_mask)
+            return TimeSeries(_values, dtype=self.data.dtype, freq=toFreq, observed=observed, startIndex=startIndex, mask=_mask)
             
         else:
             return copy.deepcopy(self)
@@ -81,71 +80,71 @@ class TimeSeries(sa.ShiftingArray):
     ### DATA 
     
     def __add__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__add__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__add__(other), self.freq, self.observed)
         
     def __radd__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__add__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__add__(other), self.freq, self.observed)
         
     def __sub__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__sub__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__sub__(other), self.freq, self.observed)
         
     def __rsub__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__rsub__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__rsub__(other), self.freq, self.observed)
         
     def __mul__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__mul__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__mul__(other), self.freq, self.observed)
         
     def __rmul__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__rmul__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__rmul__(other), self.freq, self.observed)
         
     def __div__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__div__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__div__(other), self.freq, self.observed)
         
     def __rdiv__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__rdiv__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__rdiv__(other), self.freq, self.observed)
         
     def __pow__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__pow__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__pow__(other), self.freq, self.observed)
         
     ### IN PLACE
     
     def __iadd__(self, other):
-        validOpInputs(self,other)
-        self = SAtoTS(super(TimeSeries, self).__add__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        self = SAtoTS(super(TimeSeries, self).__add__(other), self.freq, self.observed)
         return self
     
     def __isub__(self, other):
-        validOpInputs(self,other)
-        self = SAtoTS(super(TimeSeries, self).__sub__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        self = SAtoTS(super(TimeSeries, self).__sub__(other), self.freq, self.observed)
         return self
     
     def __imul__(self, other):
-        validOpInputs(self,other)
-        self = SAtoTS(super(TimeSeries, self).__mul__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        self = SAtoTS(super(TimeSeries, self).__mul__(other), self.freq, self.observed)
         return self
     
     def __idiv__(self, other):
-        validOpInputs(self,other)
-        self = SAtoTS(super(TimeSeries, self).__div__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        self = SAtoTS(super(TimeSeries, self).__div__(other), self.freq, self.observed)
         return self
         
     # this overrides & and should only be used by boolean series
     def __and__(self, other):
-        validOpInputs(self,other)
+        validOpInputs(self, other)
         return self * other
 
     # this overrides | and should only be used by boolean series
     def __or__(self, other):
-        validOpInputs(self,other)
+        validOpInputs(self, other)
         return ~(~self & ~other)
             
     # this overrides ~ and should only be used by boolean series
@@ -156,57 +155,57 @@ class TimeSeries(sa.ShiftingArray):
     ### COMPARISON
     
     def __eq__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__eq__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__eq__(other), self.freq, self.observed)
         
     def __le__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__le__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__le__(other), self.freq, self.observed)
         
     def __lt__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__lt__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__lt__(other), self.freq, self.observed)
         
     def __ge__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__ge__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__ge__(other), self.freq, self.observed)
         
     def __gt__(self, other):
-        validOpInputs(self,other)
-        return SAtoTS(super(TimeSeries, self).__gt__(other),self.freq,self.observed)
+        validOpInputs(self, other)
+        return SAtoTS(super(TimeSeries, self).__gt__(other), self.freq, self.observed)
 
-def tser(start,end):
+def tser(start, end):
     if start.freq != end.freq:
         raise ValueError("start and end dates must have same frequency!")
-    return TimeSeries(numpy.arange(int(start),int(end)+1),dtype=corelib.freqTypeMapping[start.freq],freq=start.freq,observed='END',startIndex=int(start))
+    return TimeSeries(numpy.arange(int(start), int(end)+1), dtype=corelib.freqTypeMapping[start.freq], freq=start.freq, observed='END', startIndex=int(start))
         
-def validOpInputs(ser1,ser2):
-    if isinstance(ser1,TimeSeries) and isinstance(ser2,TimeSeries) and ser1.freq != ser2.freq:
+def validOpInputs(ser1, ser2):
+    if isinstance(ser1, TimeSeries) and isinstance(ser2, TimeSeries) and ser1.freq != ser2.freq:
         raise "operation cannot be performed on series with different frequencies ("+str(ser1.freq) + " and " + str(ser2.freq)+")"
 
     
-def SAtoTS(values,freq,observed,dtype=None):
+def SAtoTS(values, freq, observed, dtype=None):
     if dtype is None: _dtype = values.dtype
     else: _dtype = dtype
-    return TimeSeries(values.data,dtype=_dtype,freq=freq,observed=observed,startIndex=values.indexZeroRepresents)
+    return TimeSeries(values.data, dtype=_dtype, freq=freq, observed=observed, startIndex=values.indexZeroRepresents)
 
 
 # math functions (two series)
-def add(ser1,ser2,fill_value=ma.masked):
-    return apply_func_twoseries(ma.add,ser1,ser2,fill_value)
+def add(ser1, ser2, fill_value=ma.masked):
+    return apply_func_twoseries(ma.add, ser1, ser2, fill_value)
 
-def multiply(ser1,ser2,fill_value=ma.masked):
-    return apply_func_twoseries(ma.multiply,ser1,ser2,fill_value)
+def multiply(ser1, ser2, fill_value=ma.masked):
+    return apply_func_twoseries(ma.multiply, ser1, ser2, fill_value)
 
-def divide(ser1,ser2,fill_value=ma.masked):
-    return apply_func_twoseries(ma.divide,ser1,ser2,fill_value)
+def divide(ser1, ser2, fill_value=ma.masked):
+    return apply_func_twoseries(ma.divide, ser1, ser2, fill_value)
     
-def subtract(ser1,ser2,fill_value=ma.masked):
-    return apply_func_twoseries(ma.subtract,ser1,ser2,fill_value)
+def subtract(ser1, ser2, fill_value=ma.masked):
+    return apply_func_twoseries(ma.subtract, ser1, ser2, fill_value)
     
 # math functions (one series, return series)
 def sqrt(ser):
-    return apply_func_oneseries(ma.sqrt,ser)
+    return apply_func_oneseries(ma.sqrt, ser)
     
 # math functions (one series, return scalar)
 def sum(ser):
@@ -218,15 +217,15 @@ def product(ser):
 def average(ser):
     return ma.average(ser.data)
     
-def where(condition,x,y):
-    tempResult = ma.where(condition.data,x,y)
-    return TimeSeries(tempResult,dtype=numpy.bool_,freq=condition.freq,observed=condition.observed,startIndex=condition.indexZeroRepresents)
+def where(condition, x, y):
+    tempResult = ma.where(condition.data, x, y)
+    return TimeSeries(tempResult, dtype=numpy.bool_, freq=condition.freq, observed=condition.observed, startIndex=condition.indexZeroRepresents)
 
 # generic functions
-def apply_func_twoseries(func,ser1,ser2,fill_value=ma.masked):
-    validOpInputs(ser1,ser2)
-    return SAtoTS(doFunc(ser1,ser2,func,fill_value=fill_value),ser1.freq,ser1.observed)
+def apply_func_twoseries(func, ser1, ser2, fill_value=ma.masked):
+    validOpInputs(ser1, ser2)
+    return SAtoTS(doFunc(ser1, ser2, func, fill_value=fill_value), ser1.freq, ser1.observed)
     
-def apply_func_oneseries(func,ser):
-    return SAtoTS(doFunc_oneseries(ser,func),ser.freq,ser.observed)
+def apply_func_oneseries(func, ser):
+    return SAtoTS(doFunc_oneseries(ser, func),ser.freq, ser.observed)
     
