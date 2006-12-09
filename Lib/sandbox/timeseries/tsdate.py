@@ -60,14 +60,14 @@ class Date:
                 self.__date = mx.DateTime.Date(year, month, day, _hours, _minutes, _seconds)
                         
                 
-    def day(self):          return self.getDate().day
-    def day_of_week(self):  return self.getDate().day_of_week
-    def month(self):        return self.getDate().month
-    def quarter(self):      return monthToQuarter(self.getDate().month)
-    def year(self):         return self.getDate().year
-    def seconds(self):      return int(self.getDate().second)
-    def minute(self):       return int(self.getDate().minute)
-    def hour(self):         return int(self.getDate().hour)
+    def day(self):          return self.mxDate().day
+    def day_of_week(self):  return self.mxDate().day_of_week
+    def month(self):        return self.mxDate().month
+    def quarter(self):      return monthToQuarter(self.mxDate().month)
+    def year(self):         return self.mxDate().year
+    def seconds(self):      return int(self.mxDate().second)
+    def minute(self):       return int(self.mxDate().minute)
+    def hour(self):         return int(self.mxDate().hour)
     
     def strfmt(self,fmt):
         qFmt = fmt.replace("%q","XXXX")
