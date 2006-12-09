@@ -16,6 +16,9 @@ To-do:
 	  I could write a brute force method for this right now fairly easily,
 	  but it would be very slow.
 	  
+	- add support for a few more frequency conversions that are missing
+	  in the dateOf function in tsdate.py
+	  
 	- support "secondly" frequency data in a more robust way. Frequency
 	  conversion methods are not supported for this currently.
 
