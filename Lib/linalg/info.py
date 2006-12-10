@@ -7,6 +7,7 @@ Linear algebra routines
    inv        --- Find the inverse of a square matrix
    solve      --- Solve a linear system of equations
    solve_banded --- Solve a linear system of equations with a banded matrix
+   solveh_banded --- Solve a linear system of equations with a Hermitian or symmetric banded matrix, returning the Cholesky decomposition as well
    det        --- Find the determinant of a square matrix
    norm       --- matrix and vector norm
    lstsq      --- Solve linear least-squares problem
@@ -27,6 +28,7 @@ Linear algebra routines
    diagsvd    --- construct matrix of singular values from output of svd
    orth       --- construct orthonormal basis for range of A using svd
    cholesky   --- Cholesky decomposition of a matrix
+   cholesky_banded   --- Cholesky decomposition of a banded symmetric or Hermitian matrix
    cho_factor --- Cholesky decomposition for use in solving linear system
    cho_solve  --- Solve previously factored linear system
    qr         --- QR decomposition of a matrix

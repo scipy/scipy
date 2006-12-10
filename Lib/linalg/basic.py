@@ -10,7 +10,7 @@
 __all__ = ['solve','inv','det','lstsq','norm','pinv','pinv2',
            'tri','tril','triu','toeplitz','hankel','lu_solve',
            'cho_solve','solve_banded','LinAlgError','kron',
-           'all_mat']
+           'all_mat', 'cholesky_banded', 'solveh_banded']
 
 #from blas import get_blas_funcs
 from flinalg import get_flinalg_funcs
@@ -169,6 +169,93 @@ def solve_banded((l,u), ab, b, overwrite_ab=0, overwrite_b=0,
         raise LinAlgError, "singular matrix"
     raise ValueError,\
           'illegal value in %-th argument of internal gbsv'%(-info)
+
+def solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0,
+    	          lower=0):
+    """ solveh_banded(ab, b, overwrite_ab=0, overwrite_b=0) -> c, x
+
+    Solve a linear system of equations a * x = b for x where
+    a is a banded symmetric or Hermitian positive definite
+    matrix stored in lower diagonal ordered form (lower=1)
+
+    a11 a22 a33 a44 a55 a66
+    a21 a32 a43 a54 a65 *
+    a31 a42 a53 a64 *   *
+
+    or upper diagonal ordered form
+
+    *   *   a31 a42 a53 a64
+    *   a21 a32 a43 a54 a65
+    a11 a22 a33 a44 a55 a66
+
+    Inputs:
+
+      ab -- An N x l
+      b -- An N x nrhs matrix or N vector.
+      overwrite_y - Discard data in y, where y is ab or b.
+      lower - is ab in lower or upper form?
+
+    Outputs: 
+
+      c:  the Cholesky factorization of ab
+      x:  the solution to ab * x = b
+
+    """
+    ab, b = map(asarray_chkfinite,(ab,b))
+
+    pbsv, = get_lapack_funcs(('pbsv',),(ab,b))
+    c,x,info = pbsv(ab,b,
+                    lower=lower,
+                    overwrite_ab=overwrite_ab,
+                    overwrite_b=overwrite_b)
+    if info==0:
+        return c, x
+    if info>0:
+        raise LinAlgError, "%d-th leading minor not positive definite" % info 
+    raise ValueError,\
+          'illegal value in %d-th argument of internal pbsv'%(-info)
+
+def cholesky_banded(ab, overwrite_ab=0, lower=0):
+    """ cholesky_banded(ab, overwrite_ab=0, lower=0) -> c
+
+    Compute the Cholesky decomposition of a 	
+    banded symmetric or Hermitian positive definite
+    matrix stored in lower diagonal ordered form (lower=1)
+
+    a11 a22 a33 a44 a55 a66
+    a21 a32 a43 a54 a65 *
+    a31 a42 a53 a64 *   *
+
+    or upper diagonal ordered form
+
+    *   *   a31 a42 a53 a64
+    *   a21 a32 a43 a54 a65
+    a11 a22 a33 a44 a55 a66
+
+    Inputs:
+
+      ab -- An N x l
+      overwrite_ab - Discard data in ab
+      lower - is ab in lower or upper form?
+
+    Outputs:  
+
+      c:  the Cholesky factorization of ab
+
+    """
+    ab = asarray_chkfinite(ab)
+
+    pbtrf, = get_lapack_funcs(('pbtrf',),(ab,))
+    c,info = pbtrf(ab,
+                   lower=lower,
+                   overwrite_ab=overwrite_ab)
+
+    if info==0:
+        return c
+    if info>0:
+        raise LinAlgError, "%d-th leading minor not positive definite" % info 
+    raise ValueError,\
+          'illegal value in %d-th argument of internal pbtrf'%(-info)
 
 
 # matrix inversion

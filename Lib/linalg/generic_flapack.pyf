@@ -13,6 +13,113 @@
 python module generic_flapack
 interface
 
+   subroutine <tchar=s,d>pbtrf(lower,n,kd,ab,ldab,info)
+   
+     ! Compute Cholesky decomposition of banded symmetric positive definite
+     ! matrix:
+     ! A = U^T * U, C = U if lower = 0
+     ! A = L * L^T, C = L if lower = 1
+     ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,ab,&ldab,&info); 
+     callprotoargument char*,int*,int*,<type_in_c>*,int*,int*
+
+     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+     integer intent(hide),depend(ab) :: n=shape(ab,1)
+     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     <type_in> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+     integer intent(out) :: info
+     
+   end subroutine <tchar=s,d>pbtrf
+
+   subroutine <tchar=c,z>pbtrf(lower,n,kd,ab,ldab,info)
+   
+
+     ! Compute Cholesky decomposition of banded symmetric positive definite
+     ! matrix:
+     ! A = U^H * U, C = U if lower = 0
+     ! A = L * L^H, C = L if lower = 1
+     ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,ab,&ldab,&info); 
+     callprotoargument char*,int*,int*,<type_in_c>*,int*,int*
+
+     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+     integer intent(hide),depend(ab) :: n=shape(ab,1)
+     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     <type_in> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+     integer intent(out) :: info
+     
+   end subroutine <tchar=c,z>pbtrf
+
+   subroutine <tchar=s,d>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
+   
+     !
+     ! Computes the solution to a real system of linear equations
+     ! A * X = B,
+     !  where A is an N-by-N symmetric positive definite band matrix and X
+     !  and B are N-by-NRHS matrices.
+     !
+     !  The Cholesky decomposition is used to factor A as
+     !     A = U**T * U,  if lower=1, or
+     !     A = L * L**T,  if lower=0
+     !  where U is an upper triangular band matrix, and L is a lower
+     !  triangular band matrix, with the same number of superdiagonals or
+     !  subdiagonals as A.  The factored form of A is then used to solve the
+     !  system of equations A * X = B.
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info); 
+     callprotoargument char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+     integer intent(hide),depend(ab) :: n=shape(ab,1)
+     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+     integer intent(hide),depend(b) :: ldb=shape(b,1)
+     integer intent(hide),depend(b) :: nrhs=shape(b,0)
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     <type_in> dimension(nrhs,ldb),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+     integer intent(out) :: info
+     
+   end subroutine <tchar=s,d>pbsv
+
+   subroutine <tchar=c,z>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
+   
+     !
+     ! Computes the solution to a real system of linear equations
+     ! A * X = B,
+     !  where A is an N-by-N Hermitian positive definite band matrix and X
+     !  and B are N-by-NRHS matrices.
+     !
+     !  The Cholesky decomposition is used to factor A as
+     !     A = U**H * U,  if lower=1, or
+     !     A = L * L**H,  if lower=0
+     !  where U is an upper triangular band matrix, and L is a lower
+     !  triangular band matrix, with the same number of superdiagonals or
+     !  subdiagonals as A.  The factored form of A is then used to solve the
+     !  system of equations A * X = B.
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info); 
+     callprotoargument char*,int*,int*,int*,<type_in_c>*,int*,<type_in_c>*,int*,int*
+
+     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+     integer intent(hide),depend(ab) :: n=shape(ab,1)
+     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+     integer intent(hide),depend(b) :: ldb=shape(b,1)
+     integer intent(hide),depend(b) :: nrhs=shape(b,0)
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     <type_in> dimension(nrhs,ldb),intent(in,out,copy,out=x) :: b
+     <type_in> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+     integer intent(out) :: info
+     
+   end subroutine <tchar=c,z>pbsv
+
    subroutine <tchar=s,d,c,z>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
    !
    ! ba,lo,hi,pivscale,info = gebal(a,scale=0,permute=0,overwrite_a=0)
