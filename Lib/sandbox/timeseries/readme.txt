@@ -1,11 +1,10 @@
 Requirements and warnings:
 
-1. version 2.0.x of the mx DateTime module MUST be installed. Only "tested" with 2.0.3
+1. version 2.0.x of the mx DateTime module MUST be installed. Only "tested" with 2.0.3. The cseries
+   code requires access to a couple of the header files included with this module when compiling
 2. Only tested with numpy 1.0.1
 3. Only tested with Python 2.4.x
 4. Only tested on Windows Platform
-5. the included cseries.pyd file was compiled for 32-bit windows, so if you are trying
-   this on another platform, the first thing you need to do is recompile it
    
 
 Instructions:
