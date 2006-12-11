@@ -7,15 +7,6 @@ To-do:
 	- make the various Date data types actual numpy data types instead of
 	  an ugly hack (this is probably beyond my ability)
 
-	- add month(), year(), day_of_week(), etc... functions that take a
-	  TimeSeries object with dtype as one of the Date types and returns
-	  a TimeSeries object of integer type with the relevant info.
-	  This would make it easy to do things like retrieving all the values
-	  that occur on a Friday for a particular series, for example.
-
-	  I could write a brute force method for this right now fairly easily,
-	  but it would be very slow.
-	  
 	- add support for a few more frequency conversions that are missing
 	  in the dateOf function in tsdate.py
 	  
