@@ -77,6 +77,20 @@ class TimeSeries(sa.ShiftingArray):
             return "<no data>"
             
             
+    def firstValue(self, asDate=False):
+        val = super(TimeSeries, self).firstValue()
+        if asDate:
+            return tsdate.Date(freq=self.freq, val=val)
+        else:
+            return val
+        
+    def lastValue(self, asDate=False):
+        val = super(TimeSeries, self).lastValue()
+        if asDate:
+            return tsdate.Date(freq=self.freq, val=val)
+        else:
+            return val
+
     ### DATA 
     
     def __add__(self, other):
@@ -178,6 +192,30 @@ def tser(start, end):
     if start.freq != end.freq:
         raise ValueError("start and end dates must have same frequency!")
     return TimeSeries(numpy.arange(int(start), int(end)+1), dtype=corelib.freqTypeMapping[start.freq], freq=start.freq, observed='END', startIndex=int(start))
+
+def year(dateSer):
+    return __getDateInfo(dateSer,'Y')
+
+def quarter(dateSer):
+    return __getDateInfo(dateSer,'Q')
+    
+def month(dateSer):
+    return __getDateInfo(dateSer,'M')
+    
+def day(dateSer):
+    return __getDateInfo(dateSer,'D')
+    
+def day_of_week(dateSer):
+    return __getDateInfo(dateSer,'W')
+
+def __getDateInfo(dateSer,infoCode):
+    newData = ma.array(cseries.getDateInfo(dateSer.data.filled(), dateSer.dtype.freq, infoCode))
+    newData[dateSer.data.mask] = ma.masked
+    newSer = copy.deepcopy(dateSer)
+    newSer.data = newData
+    newSer.dtype = numpy.int_
+    return newSer
+
         
 def validOpInputs(ser1, ser2):
     if isinstance(ser1, TimeSeries) and isinstance(ser2, TimeSeries) and ser1.freq != ser2.freq:
