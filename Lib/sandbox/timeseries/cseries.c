@@ -1,5 +1,4 @@
 #include <Python.h>
-//#include <datetime.h>
 #include <structmember.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,6 +9,21 @@ static char cseries_doc[] = "Speed sensitive time series operations";
 
 ///////////////////////////////////////////////////////////////////////
 
+
+static //PyArrayObject *
+setArrayItem(PyArrayObject **theArray, long index, PyObject *newVal)
+{
+	char *setptr;
+
+	if (index >= 0)
+	{
+		//set value in array
+		setptr = (*theArray)->data + (index) * (*theArray)->strides[0];
+		PyArray_SETITEM(*theArray,setptr,newVal);
+	}
+
+	//return theArray;
+}
 
 static int
 freqVal(char freq)
@@ -107,6 +121,76 @@ toDaily(long fromDate, char fromFreq)
 	}
 
 	return absdate;
+
+}
+
+
+static long
+getDateInfo_sub(long dateNum, char freq, char info) {
+
+	long monthNum;
+	mxDateTimeObject *convDate;
+	convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(toDaily(dateNum,freq),0);
+
+    switch(info)
+    {
+        case 'Y': //year
+
+			return (long)(convDate->year);
+
+        case 'Q': //quarter
+			monthNum = (long)(convDate->month);
+			return ((monthNum-1)/3)+1;
+
+        case 'M': //month
+			return (long)(convDate->month);
+
+        case 'D': //day
+			return (long)(convDate->day);
+
+        case 'W': //day of week
+			return (long)(convDate->day_of_week);
+        default:
+            return -1;
+    }
+}
+
+
+static char cseries_getDateInfo_doc[] = "";
+static PyObject *
+cseries_getDateInfo(PyObject *self, PyObject *args)
+{
+	char *freq;
+	char *info;
+
+    PyArrayObject *array;
+    PyArrayObject *tempArray;
+    PyArrayObject *newArray;
+
+    char *getptr;
+    PyObject *val;
+    long i, lngVal, dInfo, dim;
+
+	if (!PyArg_ParseTuple(args, "Oss:getDateInfo(array, freq, info)", &tempArray, &freq, &info)) return NULL;
+
+    array = PyArray_GETCONTIGUOUS(tempArray);
+
+	dim = array->dimensions[0];
+
+	//initialize new array
+    newArray = (PyArrayObject*)PyArray_SimpleNew(array->nd, &dim, array->descr->type_num);
+
+    for (i = 0; i < array->dimensions[0]; i++)
+    {
+		getptr = array->data + i*array->strides[0];
+		val = PyArray_GETITEM(array, getptr);
+		lngVal = PyInt_AsLong(val);
+		dInfo = getDateInfo_sub(lngVal, *freq, *info);
+
+		setArrayItem(&newArray, i, PyInt_FromLong(dInfo));
+	}
+
+	return (PyObject *) newArray;
 
 }
 
@@ -319,22 +403,6 @@ adjValForObsSet(PyArrayObject *theArray, char obs, PyObject **newVal, PyObject *
 }
 
 
-static //PyArrayObject *
-setArrayItem(PyArrayObject **theArray, long index, PyObject *newVal)
-{
-	char *setptr;
-
-	if (index >= 0)
-	{
-		//set value in array
-		setptr = (*theArray)->data + (index) * (*theArray)->strides[0];
-		PyArray_SETITEM(*theArray,setptr,newVal);
-	}
-
-	//return theArray;
-}
-
-
 static char cseries_reindex_doc[] = "";
 static PyObject *
 cseries_reindex(PyObject *self, PyObject *args)
@@ -533,6 +601,7 @@ cseries_convert(PyObject *self, PyObject *args)
 static PyMethodDef cseries_methods[] = {
     {"reindex", cseries_reindex, METH_VARARGS, cseries_reindex_doc},
     {"convert", cseries_convert, METH_VARARGS, cseries_convert_doc},
+	{"getDateInfo", cseries_getDateInfo, METH_VARARGS, cseries_getDateInfo_doc},
     {NULL, NULL}
 };
 
