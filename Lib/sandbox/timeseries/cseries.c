@@ -36,24 +36,18 @@ freqVal(char freq)
 	}
 }
 
-
-//fromDate is periods since Dec 31, 1849
 static long
-convert(long fromDate, char fromFreq, char toFreq, int notStartInd, int atEnd)
+toDaily(long fromDate, char fromFreq)
 {
-    long absdate, origin, secondorigin, secsInDay;
-    long converted;
-    int rem;
-    int y,m,d,s;
+    long absdate, origin, secondorigin;
+    int y,m,d;
 
 	mxDateTimeObject *theDate;
-	mxDateTimeObject *convDate;
 
     origin = 675333;
     secondorigin = 722814;
-    secsInDay = 86400;
 
-	//convert fromDate to days since Dec 31, 1849 (Jan 1, 1850 would have absdate of 1)
+	//convert fromDate to days since (0 AD - 1 day)
     switch(fromFreq)
     {
         case 'D':
@@ -65,7 +59,7 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd, int atEnd)
         case 'M':
 			y = fromDate/12 + 1;
 			m = fromDate%12;
-			if (atEnd) m++;
+
 			if (m == 0)
 			{
 				m = 12;
@@ -75,9 +69,8 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd, int atEnd)
 			break;
         case 'Q':
         	y = fromDate/4 + 1;
-        	m = (fromDate%4) * 3;
-			if (!atEnd) m -= 2;	//change to first month of quarter
-			else m += 1;
+        	m = (fromDate%4) * 3 - 2;
+
 			if (m < 1)
 			{
 				m += 12;
@@ -92,7 +85,6 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd, int atEnd)
 			break;
         case 'A':
         	y = fromDate-1;
-        	if (atEnd == 1) y++;
         	m = 1;
         	d = 1;
         	break;
@@ -107,7 +99,6 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd, int atEnd)
 
 		theDate = (mxDateTimeObject *)mxDateTime.DateTime_FromDateAndTime(y,m,d,0,0,0);
 		absdate = (long)(theDate->absdate);
-		if (atEnd == 1) absdate--;
 	}
 	else
 	{
@@ -115,10 +106,29 @@ convert(long fromDate, char fromFreq, char toFreq, int notStartInd, int atEnd)
 		absdate += origin;
 	}
 
-	if (atEnd) s = secsInDay-1;
-	else s = 0;
+	return absdate;
 
-	convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate,s);
+}
+
+
+//fromDate is periods since Dec 31, 1849
+static long
+convert(long fromDate, char fromFreq, char toFreq, int notStartInd)
+{
+    long absdate, origin, secondorigin, secsInDay;
+    long converted;
+    int rem;
+    int y,m,d;
+
+	mxDateTimeObject *convDate;
+
+    origin = 675333;
+    secondorigin = 722814;
+    secsInDay = 86400;
+
+	absdate = toDaily(fromDate, fromFreq);
+
+	convDate = (mxDateTimeObject *)mxDateTime.DateTime_FromAbsDateAndTime(absdate,0);
 
 	//switch back to days and years since 1849 for pyTSA Date
 	absdate -= origin;
@@ -339,7 +349,7 @@ cseries_reindex(PyObject *self, PyObject *args)
 
     PyObject *returnVal = NULL;
 
-    int notStartInd, atEnd;
+    int notStartInd;
     long startIndex, newStart;
     long i, curPerInd, nextPerInd, prevIndex, curIndex;
     long dim;
@@ -386,20 +396,18 @@ cseries_reindex(PyObject *self, PyObject *args)
 
 	//convert start index to new frequency
 	notStartInd = 0;
-	atEnd = 0;
-    newStart = convert(startIndex, fromFreq[0], toFreq[0], notStartInd, atEnd);
+    newStart = convert(startIndex, fromFreq[0], toFreq[0], notStartInd);
 
 	//initialize prevIndex
 	prevIndex = newStart - 1;
 
 	notStartInd = 1;
-	atEnd = 0;
 
 	//set values in the new array
     for (i = 0; i < array->dimensions[0]; i++)
     {
 		//find index for start of current period in new frequency
-        curPerInd = convert(startIndex + i, fromFreq[0], toFreq[0], notStartInd, atEnd);
+        curPerInd = convert(startIndex + i, fromFreq[0], toFreq[0], notStartInd);
 
 		//get frequency numeric mapping
 		fromFrVal = freqVal(fromFreq[0]);
@@ -421,7 +429,7 @@ cseries_reindex(PyObject *self, PyObject *args)
 			newValMask = valMask;
 
 			//find index for start of next period in new frequency
-			nextPerInd = convert(startIndex + i + 1, fromFreq[0], toFreq[0], notStartInd, atEnd);
+			nextPerInd = convert(startIndex + i + 1, fromFreq[0], toFreq[0], notStartInd);
 
 			//adjust for observed setting
 			if (observed[0] == 'S' && PyArray_ISFLOAT(array) && !( (fromFrVal == 4 && toFrVal == 5) || (fromFrVal == 5 && toFrVal == 4) ) )
@@ -509,15 +517,14 @@ cseries_convert(PyObject *self, PyObject *args)
     long fromDate;
     char* fromFreq;
     char* toFreq;
-    int notStartInd, atEnd;
+    int notStartInd;
 
     if (!PyArg_ParseTuple(args, "lss:convert(fromDate, fromfreq, tofreq)", &fromDate, &fromFreq, &toFreq)) return NULL;
 
 	//always want start of period (only matters when converting from lower freq to higher freq ie. m -> d)
-	atEnd = 0;
 	notStartInd = 0;
 
-    return PyInt_FromLong(convert(fromDate, fromFreq[0], toFreq[0], notStartInd, atEnd));
+    return PyInt_FromLong(convert(fromDate, fromFreq[0], toFreq[0], notStartInd));
 }
 
 
