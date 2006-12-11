@@ -15,6 +15,13 @@ bSer[ts.where(bSer < 0,True,False)] = 0
 
 
 """
+Set values occurring on Fridays to 100.
+"""
+weekdays = ts.day_of_week(ts.tser(bSer.firstValue(asDate=True),bSer.lastValue(asDate=True)))
+bSer[ts.where(weekdays == 4,True,False)] = 100
+
+
+"""
 Convert bSer to a monthly frequency series.
 
 The optional observed argument to the convert method specifies what
