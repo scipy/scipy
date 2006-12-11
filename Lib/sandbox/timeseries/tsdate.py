@@ -165,7 +165,7 @@ def thisday(freq):
     elif freq == 'M':
         return Date(freq, year=tempDate.year, month=tempDate.month)
     elif freq == 'Q':
-        return Date(freq, yaer=tempDate.year, quarter=monthToQuarter(tempDate.month))
+        return Date(freq, year=tempDate.year, quarter=monthToQuarter(tempDate.month))
     elif freq == 'A':
         return Date(freq, year=tempDate.year)
 
