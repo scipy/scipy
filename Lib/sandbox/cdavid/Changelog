@@ -1,3 +1,10 @@
+cdavid (0.2.1) Tue, 12 Dec 2006 17:14:18 +0900
+
+	* Correct bug in nextpow2 which causes circular
+	autocorrelation problem
+
+-- David Cournapeau <david@ar.media.kyoto-u.ac.jp> 
+
 cdavid (0.2) Tue, 12 Dec 2006 17:14:18 +0900
 
 	* second release

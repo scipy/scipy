@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Tue Dec 12 05:00 PM 2006 J
+# Last Change: Tue Dec 12 07:00 PM 2006 J
 
 from numpy.testing import *
 from numpy.random import randn, seed
@@ -294,6 +294,11 @@ class test_autocorr_2d(NumpyTestCase):
 class test_autocorr_fft(NumpyTestCase):
     n   = 5
     d   = 3
+    def check_nextpow2(self):
+        assert(nextpow2(255) == 8)
+        assert(nextpow2(256) == 8)
+        assert(nextpow2(257) == 9)
+
     def check_r1r(self):
         """real case, rank 1"""
         a   = randn(self.n)

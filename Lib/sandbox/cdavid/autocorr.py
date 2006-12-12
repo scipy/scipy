@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Tue Dec 12 05:00 PM 2006 J
+# Last Change: Tue Dec 12 07:00 PM 2006 J
 
 # TODO: - proper test
 # TODO: - proper profiling
@@ -282,9 +282,9 @@ def autocorr_oneside_nofft(signal, lag, axis = -1):
 def nextpow2(n):
     """Returns p such as 2 ** p >= n """
     if 2 ** N.log2(n) ==  n:
-        return int(N.log2(n))
+        return N.floor(N.log2(n)) + 1
     else:
-        return int(N.log2(n) + 1)
+        return N.floor(N.log2(n)) + 2
 
 def autocorr_fft(signal, axis = -1):
     """Return full autocorrelation along specified axis. Use fft
