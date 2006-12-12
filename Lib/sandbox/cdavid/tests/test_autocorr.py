@@ -1,9 +1,10 @@
 #! /usr/bin/env python
-# Last Change: Tue Nov 28 05:00 PM 2006 J
+# Last Change: Tue Dec 12 05:00 PM 2006 J
 
 from numpy.testing import *
 from numpy.random import randn, seed
-from numpy import correlate, array, concatenate, require
+from numpy import correlate, array, concatenate, require, corrcoef
+from numpy.fft import fft, ifft
 
 from numpy.ctypeslib import ndpointer, load_library
 from ctypes import c_uint
@@ -11,6 +12,7 @@ from ctypes import c_uint
 set_package_path()
 from cdavid.autocorr import _raw_autocorr_1d, _raw_autocorr_1d_noncontiguous
 from cdavid.autocorr import autocorr_oneside_nofft as autocorr
+from cdavid.autocorr import autocorr_fft 
 from cdavid.autocorr import _autocorr_oneside_nofft_py as autocorr_py
 restore_path()
 
@@ -288,6 +290,54 @@ class test_autocorr_2d(NumpyTestCase):
 
         yr      = autocorr_py(xt, lag, axis = axis)
         assert_array_equal(yt, yr)
+
+class test_autocorr_fft(NumpyTestCase):
+    n   = 5
+    d   = 3
+    def check_r1r(self):
+        """real case, rank 1"""
+        a   = randn(self.n)
+
+        aref    = correlate(a, a, mode = 'full')
+        atest   = autocorr_fft(a)
+        assert_array_almost_equal(atest, aref, decimal = md)
+        assert atest.dtype == a.dtype
+
+    def check_r1c(self):
+        """complex case, rank 1"""
+        a   = randn(self.n) + 1.0j * randn(self.n)
+
+        atest   = autocorr_fft(a)
+        aref    = numpy.sum(a * numpy.conj(a))
+        assert_array_almost_equal(atest[self.n - 1], aref, decimal = md)
+        assert atest.dtype == a.dtype
+
+    def check_r2c(self):
+        """complex case, rank 2"""
+        pass
+
+    def check_r2r(self):
+        """real case, rank 2"""
+
+        # axis 0
+        a       = randn(self.n, self.d)
+        axis    = 0
+
+        c       = [correlate(a[:, i], a[:, i], mode = 'full') for i in range(self.d)]
+        aref    = array(c).T
+
+        atest   = autocorr_fft(a, axis = axis)
+        assert_array_almost_equal(atest, aref, decimal = md)
+
+        # axis 1
+        a       = randn(self.n, self.d)
+        axis    = 1
+
+        c       = [correlate(a[i], a[i], mode = 'full') for i in range(self.n)]
+        aref    = array(c)
+
+        atest   = autocorr_fft(a, axis = axis)
+        assert_array_almost_equal(atest, aref, decimal = md)
 
 if __name__ == "__main__":
     ScipyTest().run()

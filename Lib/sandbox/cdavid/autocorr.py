@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Last Change: Tue Nov 28 03:00 PM 2006 J
+# Last Change: Tue Dec 12 05:00 PM 2006 J
 
 # TODO: - proper test
 # TODO: - proper profiling
@@ -279,6 +279,40 @@ def autocorr_oneside_nofft(signal, lag, axis = -1):
 
     return res
 
+def nextpow2(n):
+    """Returns p such as 2 ** p >= n """
+    if 2 ** N.log2(n) ==  n:
+        return int(N.log2(n))
+    else:
+        return int(N.log2(n) + 1)
+
+def autocorr_fft(signal, axis = -1):
+    """Return full autocorrelation along specified axis. Use fft
+    for computation."""
+    if N.ndim(signal) == 0:
+        return signal
+    elif signal.ndim == 1:
+        n       = signal.shape[0]
+        nfft    = int(2 ** nextpow2(2 * n - 1))
+        lag     = n - 1
+        a       = fft(signal, n = nfft, axis = -1)
+        au      = ifft(a * N.conj(a), n = nfft, axis = -1)
+        return N.require(N.concatenate((au[-lag:], au[:lag+1])), dtype = signal.dtype)
+    elif signal.ndim == 2:
+        n       = signal.shape[axis]
+        lag     = n - 1
+        nfft    = int(2 ** nextpow2(2 * n - 1))
+        a       = fft(signal, n = nfft, axis = axis)
+        au      = ifft(a * N.conj(a), n = nfft, axis = axis)
+        if axis == 0:
+            return N.require(N.concatenate( (au[-lag:], au[:lag+1]), axis = axis), \
+                    dtype = signal.dtype)
+        else:
+            return N.require(N.concatenate( (au[:, -lag:], au[:, :lag+1]), 
+                        axis = axis), dtype = signal.dtype)
+    else:
+        raise RuntimeError("rank >2 not supported yet")
+        
 def bench():
     size    = 256
     nframes = 4000

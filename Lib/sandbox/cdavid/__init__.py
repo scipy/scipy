@@ -1,8 +1,9 @@
-# Last Change: Tue Nov 28 04:00 PM 2006 J
+# Last Change: Tue Dec 12 05:00 PM 2006 J
 from info import __doc__
 
 from lpc import lpc2 as lpc
-from autocorr import autocorr_oneside_nofft as autocorr
+from autocorr import autocorr_oneside_nofft, autocorr_fft
+from segmentaxis import segment_axis
 
 from numpy.testing import NumpyTest
 test = NumpyTest().test
