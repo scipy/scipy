@@ -6,19 +6,13 @@ import timeseries as ts
 bSer = ts.TimeSeries(np.random.uniform(-100,100,600),dtype=np.float64,freq='B',observed='SUMMED',startIndex=ts.thisday('B')-600)
 
 
-"""
-Set negative values to zero. Note that ts.where returns a TimeSeries object.
-Indexing by booleans can only be done with TimeSeries objects of the same
-frequency.
-"""
-bSer[ts.where(bSer < 0,True,False)] = 0
+# Set negative values to zero.
+bSer[bSer < 0] = 0
 
 
-"""
-Set values occurring on Fridays to 100.
-"""
+# Set values occurring on Fridays to 100.
 weekdays = ts.day_of_week(ts.tser(bSer.firstValue(asDate=True),bSer.lastValue(asDate=True)))
-bSer[ts.where(weekdays == 4,True,False)] = 100
+bSer[weekdays == 4] = 100
 
 
 """
