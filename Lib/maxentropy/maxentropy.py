@@ -293,13 +293,15 @@ class basemodel(object):
         actually computing p_theta.  This is important if the sample
         space is continuous or innumerable in practice.  We approximate
         the norm constant Z using importance sampling as in
-        [Rosenfeld02whole].  Note that the gradient of this estimator is
-        equal to the importance sampling *ratio estimator* of the
-        gradient of the entropy dual [see my paper, ICSLP 2004], so using
-        this estimator in conjunction with grad() in gradient-based
-        optimization methods should be stable.  Also note that this
-        estimator is deterministic for any given sample.
-
+        [Rosenfeld01whole].  This estimator is deterministic for any
+        given sample.  Note that the gradient of this estimator is equal
+        to the importance sampling *ratio estimator* of the gradient of
+        the entropy dual [see my thesis], justifying the use of this
+        estimator in conjunction with grad() in optimization methods that
+        use both the function and gradient. Note, however, that
+        convergence guarantees break down for most optimization
+        algorithms in the presence of stochastic error.
+        
         Note that, for 'bigmodel' objects, the dual estimate is
         deterministic for any given sample.  It is given as:
         
@@ -387,8 +389,7 @@ class basemodel(object):
         # Do we perform a test on external sample(s) every iteration?
         # Only relevant to bigmodel objects
         if hasattr(self, 'testevery') and self.testevery > 0:
-            M = self.testevery
-            if (self.iters + 1) % M != 0:
+            if (self.iters + 1) % self.testevery != 0:
                 if self.verbose:
                     print "Skipping test on external sample(s) ..."
             else:
@@ -645,10 +646,10 @@ class model(basemodel):
         
         
     def setfeaturesandsamplespace(self, f, samplespace):
-        """Creates a new exponential model, where f is a list of feature
-        functions f_i mapping the sample space to real values.  The
-        parameter vector params is initialized to the zero vector, of the
-        same length as the list of feature functions f_i.
+        """Creates a new matrix self.F of features f of all points in the
+        sample space. f is a list of feature functions f_i mapping the
+        sample space to real values.  The parameter vector self.params is
+        initialized to zero.
         
         We also compute f(x) for each x in the sample space and store
         them as self.F.  This uses lots of memory but is much faster.
@@ -691,7 +692,7 @@ class model(basemodel):
         """
         # For discrete models, use the representation E_p[f(X)] = p . F
         if not hasattr(self, 'F'):
-            raise AttributeError, "first create a feature matrix F"
+            raise AttributeError, "first set the feature matrix F"
          
         # A pre-computed matrix of features exists
         p = self.pmf()
@@ -851,11 +852,11 @@ class conditionalmodel(model):
         #         N[c, x] += 1
         
         # This would be a nicer input format, but computations are more
-        # efficient internally with one long row vector.  What we really need
-        # is for sparse # matrices to offer a .reshape method so this
-        # conversion could be done internally and transparently.  Then the
-        # numcontexts argument to the conditionalmodel constructor could also
-        # be inferred from the matrix dimensions.
+        # efficient internally with one long row vector.  What we really need is
+        # for sparse matrices to offer a .reshape method so this conversion
+        # could be done internally and transparently.  Then the numcontexts
+        # argument to the conditionalmodel constructor could also be inferred
+        # from the matrix dimensions.
 
         super(conditionalmodel, self).__init__()
         self.F = F
@@ -1325,7 +1326,7 @@ class bigmodel(basemodel):
             {sum_j  p_dot(s_j)/aux_dist(s_j) f_i(s_j) } 
               / {sum_j p_dot(s_j) / aux_dist(s_j)}
         
-        Compute the estimator E_p f_i(X) using logs as:
+        Compute the estimator E_p f_i(X) in log space as:
             num_i / denom,
         where
             num_i = exp(logsumexp(theta.f(s_j) - log aux_dist(s_j) 
@@ -1373,9 +1374,8 @@ class bigmodel(basemodel):
            
             # We don't need to handle negative values separately,
             # because we don't need to take the log of the feature
-            # matrix sampleF.
+            # matrix sampleF. See my thesis, Section 4.4
             
-            #logwminuslogZ = self._logw() - logZs[-1]
             logwminuslogZ = logw - logZ
             if self.external is None:
                 averages = innerprod(self.sampleF, arrayexp(logwminuslogZ)) 
@@ -1385,8 +1385,8 @@ class bigmodel(basemodel):
             averages /= n
             mus.append(averages)
                         
-        # Now we have T=trials vectors of the sample means.  
-        # If trials > 1, estimate st dev of means and confidence intervals
+        # Now we have T=trials vectors of the sample means.  If trials > 1,
+        # estimate st dev of means and confidence intervals
         ttrials = len(mus)   # total number of trials performed
         if ttrials == 1:
             self.mu = mus[0]
