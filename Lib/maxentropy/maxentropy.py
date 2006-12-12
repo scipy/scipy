@@ -554,6 +554,7 @@ class basemodel(object):
         
         self.fnevals = 0
         self.gradevals = 0
+        self.iters = 0
         self.callingback = False
         
         # Clear the stored duals and gradient norms 
@@ -1401,12 +1402,10 @@ class bigmodel(basemodel):
             #     -log(n-1) + logsumexp(2*log|Z_k - meanZ|)
             
             self.logZapprox = logsumexp(logZs) - math.log(ttrials)
-            self.logZsapprox = logZs
-            #logstdevZ = 0.5*(-math.log(n-1) + logsumexp([2.*logdiffexp(logZ_k, self.logZapprox) for logZ_k in logZs]))
             stdevlogZ = numpy.array(logZs).std()
-            Etemp = numpy.array(mus)
-            self.varE = columnvariances(Etemp)
-            self.mu = columnmeans(Etemp)
+            mus = numpy.array(mus)
+            self.varE = columnvariances(mus)
+            self.mu = columnmeans(mus)
             return
   
     
