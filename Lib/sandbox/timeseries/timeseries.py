@@ -9,11 +9,13 @@ import tsdate
 import copy
 
 class TimeSeries(sa.ShiftingArray):
-    def __init__(self, values=[], dtype=numpy.float64, freq=None, observed='END', startIndex=None, mask=ma.nomask):
+    def __init__(self, values=[], dtype=None, freq=None, observed='END', startIndex=None, mask=ma.nomask):
     
         if freq is None: raise ValueError("freq not specified")
+        
+        if dtype is None: dtype = values.dtype
 
-        super(TimeSeries, self).__init__(values, dtype, startIndex,mask)
+        super(TimeSeries, self).__init__(values, dtype, startIndex, mask)
         self.freq = corelib.fmtFreq(freq)
         self.observed = corelib.fmtObserv(observed)
         self.dtype = dtype
