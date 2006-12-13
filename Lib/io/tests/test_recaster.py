@@ -29,14 +29,13 @@ class test_recaster(ScipyTestCase):
         F = N.finfo(T)
         R = Recaster(sctype_tols={T: {'rtol': F.eps*2, 'atol': F.tiny*2, 'silly': 'silly text'}})
         assert tols != R.sctype_tols, 'Tols dictionary not set correctly'
-        r, a = R.tols_from_sctype(T)
-        assert r == F.eps*2, 'Rtol not correctly set'
-        assert a == F.tiny*2, 'Atol not correctly set'
+        assert R.sctype_tols[T]['rtol'] == F.eps*2, 'Rtol not correctly set'
+        assert R.sctype_tols[T]['atol'] == F.tiny*2, 'Atol not correctly set'
         # Sctype size lists
         # Integer sizes
         # Cabable types
         
-    def test_smallest_same_kind(self):
+    def test_smallest_of_kind(self):
         R = self.recaster
         value = 1
         # smallest same kind
@@ -54,7 +53,7 @@ class test_recaster(ScipyTestCase):
                 expect_none = ((req_type is None) or 
                                ((tdtsz <= rdtsz) and not ok_T))
                 A = N.array(value, T)
-                C = R.smallest_same_kind(A)
+                C = R.smallest_of_kind(A)
                 if expect_none:
                     assert C is None, 'Expecting None for %s' % T
                 else:
@@ -98,7 +97,6 @@ class test_recaster(ScipyTestCase):
         R = self.recaster
         for T in (N.complex128, N.complex64,
                   N.float64, N.uint64):
-            B = R.downcast(N.array(value, T))
+            B = R.downcast_or_none(N.array(value, T))
             assert B is not None, 'Got None for %s' % T
             assert B.dtype.type == N.int32
-        
